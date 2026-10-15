@@ -1,0 +1,38 @@
+/*
+ * Component tokens: the third token layer (palette -> semantic -> component). They only
+ * reference semantic tokens, so a theme restyles components by changing semantic tokens,
+ * or overrides one of these through `Theme.components`.
+ */
+:root {
+	--page-background: var(--surface-texture, var(--surface));
+
+	--button-background: var(--button);
+	--button-color: var(--on-button);
+	--button-font: var(--font-display-weight) 0.95rem / 1.1 var(--font-display);
+	--button-radius: var(--radius-md);
+
+	--card-background: var(--surface-raised);
+	--card-border: 1px solid var(--border);
+	--card-radius: var(--radius-md);
+
+	--sheet-background: var(--sheet);
+	--sheet-color: var(--on-sheet);
+	--sheet-radius: var(--radius-lg);
+	--sheet-grabber: var(--on-sheet-muted);
+
+	--dialog-background: var(--surface-raised);
+	--dialog-color: var(--on-surface);
+
+	--choice-background: var(--surface-raised);
+	--choice-color: var(--on-surface);
+	--choice-selected-border: var(--accent);
+	--choice-selected-background: var(--surface-selected);
+
+	--seat-face: var(--token-face);
+	--seat-rim: var(--token-rim);
+	--seat-color: var(--on-token);
+	--seat-font: var(--font-display-weight) 0.8rem / 1.1 var(--font-display);
+
+	--toast-background: var(--sheet);
+	--toast-color: var(--on-sheet);
+}

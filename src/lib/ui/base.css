@@ -1,21 +1,19 @@
 /*
- * Baseline for a touch-first app (04-architecture.md §5). Theme tokens arrive with the
- * theme system; until then these are the Grimoire defaults (06-visuals-and-ui-kit.md).
+ * Baseline for a touch-first app (04-architecture.md §5). Colours and fonts are tokens
+ * written onto <html> by the active theme (src/lib/ui/themes); see 04-architecture.md §9.
  */
-:root {
-	--surface: #1c130e;
-	--on-surface: #efe3c6;
-	--accent: #b8322b;
-	--font-display: 'Cinzel', 'Times New Roman', serif;
-	--font-text: system-ui, sans-serif;
-	--tap-target: 44px;
-	color-scheme: dark;
-}
+@import './tokens/base.css';
+@import './tokens/components.css';
 
 *,
 *::before,
 *::after {
 	box-sizing: border-box;
+}
+
+html {
+	/* The user's text-size scale; everything sized in rem follows it. */
+	font-size: calc(100% * var(--text-scale));
 }
 
 html,
@@ -25,13 +23,46 @@ body {
 	background: var(--surface);
 	color: var(--on-surface);
 	font-family: var(--font-text);
+	line-height: 1.45;
 	/* Stop pull-to-refresh and rubber-banding from wiping a drag. */
 	overscroll-behavior: none;
 	-webkit-tap-highlight-color: transparent;
+}
+
+body {
+	background: var(--page-background);
+	background-attachment: fixed;
+}
+
+h1,
+h2,
+h3 {
+	font-family: var(--font-display);
+	font-weight: var(--font-display-weight);
+	color: var(--heading);
+	letter-spacing: 0.04em;
+	line-height: 1.2;
+}
+
+a {
+	color: var(--heading);
 }
 
 button,
 a {
 	min-height: var(--tap-target);
 	touch-action: manipulation;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+:focus-visible {
+	outline: 3px solid var(--focus);
+	outline-offset: 2px;
 }

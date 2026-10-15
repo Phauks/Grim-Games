@@ -15,7 +15,7 @@ Private project: not for public distribution until The Pandemonium Institute has
 ```
 src/lib/core/      pure TypeScript game rules (no Svelte, no DOM; enforced by ESLint)
 src/lib/features/  Svelte feature modules (setup, grimoire, night, ...)
-src/lib/ui/        touch primitives, theme tokens, icons; Ark UI is only imported here
+src/lib/ui/        touch primitives, theme tokens, fonts, icons, setting rows; Ark UI is only imported here
 src/routes/        thin SvelteKit routes that compose features
 worker/            Cloudflare Worker entry and Durable Objects
 e2e/               Playwright tests (`*.e2e.ts`)
@@ -30,7 +30,8 @@ static/data/       synced TPI data and icons (generated; see Data)
 | `npm run dev`                | Vite dev server (no Worker)                                              |
 | `npm run preview`            | Build, then run the full Worker locally with `wrangler dev` on port 8787 |
 | `npm run check`              | svelte-check for the app, tsc for the Worker                             |
-| `npm run lint`               | Prettier + ESLint (including module-boundary rules)                      |
+| `npm run lint`               | Prettier + ESLint (including module-boundary rules) + hex-colour check   |
+| `npm run icons`              | Regenerate the bundled icon modules after editing the icon catalogue     |
 | `npm run test:unit -- --run` | Vitest (node + browser projects)                                         |
 | `npm run test:e2e`           | Playwright touch tests (phone + tablet)                                  |
 | `npm run sync:data`          | Refresh TPI's data and icons in `static/data/` (see [Data](#data))       |
