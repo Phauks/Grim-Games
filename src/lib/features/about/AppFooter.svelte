@@ -53,8 +53,8 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.5rem 1rem;
-		padding: 0.5rem 1rem;
+		gap: calc(0.5 * var(--u)) calc(1 * var(--u));
+		padding: calc(0.5 * var(--u)) calc(1 * var(--u));
 		font-size: 0.8rem;
 		opacity: 0.8;
 	}
@@ -71,18 +71,18 @@
 		margin: 0;
 		display: flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: calc(0.4 * var(--u));
 	}
 	.build a {
 		text-decoration: underline;
 	}
 	.reference {
 		min-height: var(--tap-target);
-		padding: 0 0.25rem;
+		padding: 0 calc(0.25 * var(--u));
 	}
 	.about {
 		min-height: var(--tap-target);
-		padding: 0 0.25rem;
+		padding: 0 calc(0.25 * var(--u));
 		border: 0;
 		background: none;
 		color: inherit;

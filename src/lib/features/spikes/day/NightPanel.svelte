@@ -325,8 +325,8 @@
 		height: var(--tap-target);
 	}
 	.check input {
-		width: 1.4rem;
-		height: 1.4rem;
+		width: calc(1.4 * var(--u));
+		height: calc(1.4 * var(--u));
 	}
 	.check-body {
 		display: grid;

@@ -68,7 +68,7 @@
 	}
 	table {
 		width: 100%;
-		min-width: 56rem;
+		min-width: calc(56 * var(--u));
 		border-collapse: collapse;
 		font-size: 0.9rem;
 	}
@@ -93,7 +93,7 @@
 		white-space: nowrap;
 	}
 	.token {
-		width: 3rem;
+		width: calc(3 * var(--u));
 		padding-block: var(--space-2);
 	}
 	.num {
@@ -101,14 +101,14 @@
 		white-space: nowrap;
 	}
 	.tokens {
-		min-width: 10rem;
+		min-width: calc(10 * var(--u));
 	}
 	.tokens :global(.reminder) {
-		margin: 0.1rem 0.15rem 0.1rem 0;
+		margin: calc(0.1 * var(--u)) calc(0.15 * var(--u)) calc(0.1 * var(--u)) 0;
 	}
 	tbody tr {
 		content-visibility: auto;
-		contain-intrinsic-size: auto 3.5rem;
+		contain-intrinsic-size: auto calc(3.5 * var(--u));
 	}
 	.visually-hidden {
 		position: absolute;

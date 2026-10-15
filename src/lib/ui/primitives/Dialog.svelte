@@ -60,7 +60,7 @@
 		padding: var(--space-4);
 	}
 	:global([data-scope='dialog'][data-part='content']) {
-		width: min(100%, 28rem);
+		width: min(100%, calc(28 * var(--u)));
 		max-height: 85dvh;
 		overflow-y: auto;
 		padding: var(--space-4);
@@ -73,8 +73,8 @@
 	:global([data-scope='dialog'][data-part='content'][data-size='full']) {
 		display: flex;
 		flex-direction: column;
-		width: min(100%, 56rem);
-		height: min(100%, 46rem);
+		width: min(100%, calc(56 * var(--u)));
+		height: min(100%, calc(46 * var(--u)));
 		max-height: none;
 		overflow: hidden;
 	}

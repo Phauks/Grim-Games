@@ -71,7 +71,7 @@
 	main {
 		display: grid;
 		gap: var(--space-4);
-		max-width: 48rem;
+		max-width: calc(48 * var(--u));
 		margin: 0 auto;
 		padding: var(--space-4);
 	}

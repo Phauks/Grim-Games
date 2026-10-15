@@ -84,7 +84,7 @@
 
 <style>
 	main {
-		max-width: 90rem;
+		max-width: calc(90 * var(--u));
 		margin: 0 auto;
 		padding: var(--space-5) var(--space-4);
 	}
@@ -93,7 +93,7 @@
 		font-size: 1.8rem;
 	}
 	.view {
-		max-width: 20rem;
+		max-width: calc(20 * var(--u));
 		margin-bottom: var(--space-3);
 	}
 	.loading {

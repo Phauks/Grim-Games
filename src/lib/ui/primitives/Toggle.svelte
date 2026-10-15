@@ -34,8 +34,8 @@
 	:global([data-scope='switch'][data-part='control']) {
 		display: flex;
 		flex: none;
-		width: 3rem;
-		height: 1.75rem;
+		width: calc(3 * var(--u));
+		height: calc(1.75 * var(--u));
 		padding: 3px;
 		border-radius: var(--radius-full);
 		background: var(--surface-selected);
@@ -46,14 +46,14 @@
 		background: var(--accent);
 	}
 	:global([data-scope='switch'][data-part='thumb']) {
-		width: calc(1.75rem - 6px);
+		width: calc(calc(1.75 * var(--u)) - 6px);
 		aspect-ratio: 1;
 		border-radius: 50%;
 		background: var(--on-accent);
 		transition: translate var(--duration-fast) var(--ease-out);
 	}
 	:global([data-scope='switch'][data-part='thumb'][data-state='checked']) {
-		translate: calc(3rem - 1.75rem) 0;
+		translate: calc(calc(3 * var(--u)) - calc(1.75 * var(--u))) 0;
 	}
 	:global([data-scope='switch'][data-part='control'][data-focus-visible]) {
 		outline: 3px solid var(--focus);

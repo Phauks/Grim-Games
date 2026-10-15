@@ -109,7 +109,7 @@
 
 <style>
 	main {
-		max-width: 40rem;
+		max-width: calc(40 * var(--u));
 		margin: 0 auto;
 		padding: var(--space-4);
 	}
@@ -167,7 +167,7 @@
 	.reminders,
 	.placed {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(calc(8.5 * var(--u)), 1fr));
 		gap: var(--space-2);
 		margin: 0;
 		padding: 0;
@@ -189,8 +189,8 @@
 	.disc {
 		display: grid;
 		place-items: center;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: calc(2.25 * var(--u));
+		height: calc(2.25 * var(--u));
 		border-radius: 50%;
 		background: var(--reminder-face);
 		color: var(--on-reminder);

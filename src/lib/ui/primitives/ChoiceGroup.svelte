@@ -60,7 +60,7 @@
 <style>
 	.options {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(9.5 * var(--u))), 1fr));
 		gap: var(--space-2);
 	}
 	:global([data-scope='radio-group'][data-layout='row']) .options {

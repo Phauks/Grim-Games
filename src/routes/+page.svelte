@@ -29,7 +29,7 @@
 
 <style>
 	main {
-		max-width: 40rem;
+		max-width: calc(40 * var(--u));
 		margin: 0 auto;
 		padding: var(--space-5) var(--space-4);
 	}
@@ -44,7 +44,7 @@
 		padding: 0;
 		list-style: none;
 		color: var(--heading);
-		--icon-size: 2rem;
+		--icon-size: calc(2 * var(--u));
 	}
 	nav {
 		display: flex;

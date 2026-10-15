@@ -6,7 +6,7 @@ import {
 	resolveIcon,
 	type Preferences
 } from './preferences.ts';
-import { ASSIST_PRESETS } from './assistance.ts';
+import { DEFAULT_ASSISTANCE } from './assistance.ts';
 import { grimoire } from './themes/grimoire/theme.ts';
 
 const prefs = (change: Partial<Preferences> = {}): Preferences => ({
@@ -37,7 +37,7 @@ describe('parsePreferences', () => {
 			textScale: 1.25,
 			iconSet: 'ph-fill',
 			iconOverrides: { dead: 'ph:cross' },
-			assistance: { ...ASSIST_PRESETS.expert }
+			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false }
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
 	});

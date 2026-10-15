@@ -35,7 +35,7 @@
 	dl {
 		display: grid;
 		grid-template-columns: auto 1fr;
-		gap: 0.25rem 1rem;
+		gap: calc(0.25 * var(--u)) calc(1 * var(--u));
 	}
 	dt {
 		opacity: 0.75;
