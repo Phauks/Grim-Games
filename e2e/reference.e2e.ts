@@ -104,3 +104,23 @@ test('the table view is remembered and the night-order table is in night order',
 	);
 	expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test('token leaves are drawn inside the token', async ({ page }) => {
+	await page.goto('/reference');
+	await page.getByRole('searchbox').fill('Village Idiot');
+	const token = page.locator('.token[role="img"]').first();
+	await expect(token).toBeVisible();
+	const face = await token.locator('circle.face').boundingBox();
+	const leaves = token.locator('g.leaf');
+	await expect(leaves.first()).toBeAttached();
+	expect(face).not.toBeNull();
+	for (const leaf of await leaves.all()) {
+		const box = await leaf.boundingBox();
+		expect(box).not.toBeNull();
+		expect(box!.x).toBeGreaterThanOrEqual(face!.x);
+		expect(box!.y).toBeGreaterThanOrEqual(face!.y);
+		expect(box!.x + box!.width).toBeLessThanOrEqual(face!.x + face!.width);
+		expect(box!.y + box!.height).toBeLessThanOrEqual(face!.y + face!.height);
+	}
+	await token.screenshot({ path: 'test-results/village-idiot-token.png' });
+});
