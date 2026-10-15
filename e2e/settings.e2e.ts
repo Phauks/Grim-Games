@@ -95,41 +95,26 @@ test('display font, text size and icon weight apply live', async ({ page }) => {
 	);
 });
 
-test('Storyteller help presets set the switches, and a change makes a custom mix', async ({
-	page
-}) => {
+test('Storyteller help is a list of switches, saved on the device', async ({ page }) => {
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Storyteller help');
+	await expect(dialog.getByRole('radiogroup')).toHaveCount(0);
 	const walkthrough = dialog.getByRole('checkbox', {
 		name: 'Walk me through the night',
 		includeHidden: true
 	});
-	const preset = (name: string) =>
-		dialog.getByRole('radiogroup', { name: 'How much help' }).getByRole('radio', {
-			name,
-			includeHidden: true
-		});
-	await expect(preset('Guided')).toBeChecked();
 	await expect(walkthrough).toBeChecked();
-
-	await choose(page, 'How much help', 'Expert');
-	await expect(walkthrough).not.toBeChecked();
-	await expect(
-		dialog.getByRole('checkbox', { name: 'Setup and jinx warnings', includeHidden: true })
-	).toBeChecked();
-
 	await dialog.getByText('Walk me through the night', { exact: true }).tap();
-	await expect(walkthrough).toBeChecked();
-	await expect(preset('Custom')).toBeChecked();
+	await expect(walkthrough).not.toBeChecked();
 
 	await page.reload();
 	const again = await openSettings(page, 'Storyteller help');
 	await expect(
 		again.getByRole('checkbox', { name: 'Walk me through the night', includeHidden: true })
-	).toBeChecked();
+	).not.toBeChecked();
 	await expect(
 		again.getByRole('checkbox', { name: 'Work out night answers', includeHidden: true })
-	).not.toBeChecked();
+	).toBeChecked();
 });
 
 test('text size changes text only: icons, spacing and buttons keep their size', async ({
