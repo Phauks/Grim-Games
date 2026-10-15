@@ -1,0 +1,65 @@
+import { expect, test } from '@playwright/test';
+
+test('an uncaught error shows the corner card, and Details offers a scrubbed GitHub report', async ({
+	page
+}) => {
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	// Something nothing in the app catches, with a private-looking URL in its message.
+	await page.evaluate(() =>
+		setTimeout(() => {
+			throw new Error('test failure at https://example.com/room?code=SECRET#script=abc');
+		})
+	);
+
+	const card = page.getByTestId('error-notice');
+	await expect(card).toBeVisible();
+	await expect(card).toContainText('Something went wrong');
+	const box = await card.boundingBox();
+	const viewport = page.viewportSize();
+	// Over the page in a corner, never pushing content.
+	expect(await card.evaluate((el) => getComputedStyle(el).position)).toBe('fixed');
+	expect(box!.width).toBeLessThanOrEqual(viewport!.width);
+
+	await card.getByRole('button', { name: 'Details' }).tap();
+	await expect(card).toBeHidden();
+	const dialog = page.getByRole('dialog', { name: 'Problems on this device' });
+	await expect(dialog).toBeVisible();
+	await expect(dialog).toContainText('test failure at example.com/room');
+	const report = dialog.getByRole('link', { name: 'Report' });
+	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+	const href = new URL((await report.getAttribute('href'))!);
+	expect(href.searchParams.get('template')).toBe('bug_report.yml');
+	expect(href.searchParams.get('error')).toContain('uncaught');
+	expect(href.toString()).not.toContain('SECRET');
+	expect(href.toString()).not.toContain('script%3Dabc');
+
+	// The log survives a reload (so a crash can be reported after reopening), until cleared.
+	await page.reload();
+	expect(await page.evaluate(() => localStorage.getItem('grim-games:error-log:v1'))).toContain(
+		'test failure'
+	);
+	await expect(page.getByTestId('error-notice')).toBeHidden();
+});
+
+test('dismissing the card keeps the page as it was', async ({ page }) => {
+	await page.goto('/');
+	const heading = page.getByRole('heading', { level: 1 });
+	const before = await heading.boundingBox();
+	await page.evaluate(() => {
+		void Promise.reject(new Error('rejected promise'));
+	});
+	const card = page.getByTestId('error-notice');
+	await expect(card).toContainText('rejected promise');
+	expect(await heading.boundingBox()).toEqual(before);
+	await card.getByRole('button', { name: 'Dismiss' }).tap();
+	await expect(card).toBeHidden();
+});
+
+test('an unknown address shows Page not found without reporting an error', async ({ page }) => {
+	await page.goto('/no-such-page');
+	await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+	await expect(page.getByTestId('error-notice')).toBeHidden();
+	await page.getByRole('link', { name: 'Home' }).tap();
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+});

@@ -57,6 +57,12 @@ body:
     validations:
       required: true
   - type: textarea
+    id: error
+    attributes:
+      label: Error details
+      description: Filled in automatically when you report from the app's "Something went wrong" card. It holds the error and where it happened, never your game.
+      render: text
+  - type: textarea
     id: extra
     attributes:
       label: Screenshots or anything else
