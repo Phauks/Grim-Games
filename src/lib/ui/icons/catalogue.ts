@@ -48,6 +48,10 @@ export const ICON_SLOTS = {
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
 	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },
 	warning: { label: 'Warning', choices: ['ph:warning', 'ph:warning-circle'] },
+	sort: { label: 'Sort', choices: ['ph:arrows-down-up'] },
+	sortAscending: { label: 'Sorted ascending', choices: ['ph:caret-up', 'ph:sort-ascending'] },
+	sortDescending: { label: 'Sorted descending', choices: ['ph:caret-down', 'ph:sort-descending'] },
+	filter: { label: 'Filter', choices: ['ph:funnel'] },
 	assistance: { label: 'Storyteller help', choices: ['ph:lifebuoy', 'ph:hand-heart'] }
 } as const satisfies Record<string, IconSlotInfo>;
 

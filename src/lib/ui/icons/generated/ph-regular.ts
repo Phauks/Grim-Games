@@ -7,6 +7,7 @@ import ph_arrow_right from '~icons/ph/arrow-right';
 import ph_arrow_square_out from '~icons/ph/arrow-square-out';
 import ph_arrow_u_up_left from '~icons/ph/arrow-u-up-left';
 import ph_arrow_u_up_right from '~icons/ph/arrow-u-up-right';
+import ph_arrows_down_up from '~icons/ph/arrows-down-up';
 import ph_bag_simple from '~icons/ph/bag-simple';
 import ph_beer_bottle from '~icons/ph/beer-bottle';
 import ph_beer_stein from '~icons/ph/beer-stein';
@@ -16,8 +17,10 @@ import ph_book_open_text from '~icons/ph/book-open-text';
 import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_books from '~icons/ph/books';
 import ph_bug from '~icons/ph/bug';
+import ph_caret_down from '~icons/ph/caret-down';
 import ph_caret_left from '~icons/ph/caret-left';
 import ph_caret_right from '~icons/ph/caret-right';
+import ph_caret_up from '~icons/ph/caret-up';
 import ph_check from '~icons/ph/check';
 import ph_cross from '~icons/ph/cross';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
@@ -26,6 +29,7 @@ import ph_feather from '~icons/ph/feather';
 import ph_fire from '~icons/ph/fire';
 import ph_flag from '~icons/ph/flag';
 import ph_flask from '~icons/ph/flask';
+import ph_funnel from '~icons/ph/funnel';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
 import ph_ghost from '~icons/ph/ghost';
@@ -58,6 +62,8 @@ import ph_skull from '~icons/ph/skull';
 import ph_sliders from '~icons/ph/sliders';
 import ph_smiley from '~icons/ph/smiley';
 import ph_smiley_angry from '~icons/ph/smiley-angry';
+import ph_sort_ascending from '~icons/ph/sort-ascending';
+import ph_sort_descending from '~icons/ph/sort-descending';
 import ph_sun from '~icons/ph/sun';
 import ph_sun_horizon from '~icons/ph/sun-horizon';
 import ph_tag from '~icons/ph/tag';
@@ -82,6 +88,7 @@ const icons: IconMap = {
 	'ph:arrow-square-out': ph_arrow_square_out,
 	'ph:arrow-u-up-left': ph_arrow_u_up_left,
 	'ph:arrow-u-up-right': ph_arrow_u_up_right,
+	'ph:arrows-down-up': ph_arrows_down_up,
 	'ph:bag-simple': ph_bag_simple,
 	'ph:beer-bottle': ph_beer_bottle,
 	'ph:beer-stein': ph_beer_stein,
@@ -91,8 +98,10 @@ const icons: IconMap = {
 	'ph:bookmark-simple': ph_bookmark_simple,
 	'ph:books': ph_books,
 	'ph:bug': ph_bug,
+	'ph:caret-down': ph_caret_down,
 	'ph:caret-left': ph_caret_left,
 	'ph:caret-right': ph_caret_right,
+	'ph:caret-up': ph_caret_up,
 	'ph:check': ph_check,
 	'ph:cross': ph_cross,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
@@ -101,6 +110,7 @@ const icons: IconMap = {
 	'ph:fire': ph_fire,
 	'ph:flag': ph_flag,
 	'ph:flask': ph_flask,
+	'ph:funnel': ph_funnel,
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,
 	'ph:ghost': ph_ghost,
@@ -133,6 +143,8 @@ const icons: IconMap = {
 	'ph:sliders': ph_sliders,
 	'ph:smiley': ph_smiley,
 	'ph:smiley-angry': ph_smiley_angry,
+	'ph:sort-ascending': ph_sort_ascending,
+	'ph:sort-descending': ph_sort_descending,
 	'ph:sun': ph_sun,
 	'ph:sun-horizon': ph_sun_horizon,
 	'ph:tag': ph_tag,
