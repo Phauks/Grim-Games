@@ -16,9 +16,13 @@
 		alignment?: Alignment;
 		/** Shown after the role when the seat has a player name. */
 		playerName?: string;
+		/** Sized to sit inside a line of text; the tap area still reaches 44px. */
+		inline?: boolean;
+		/** The words as written ("Village Idiots"); defaults to the character's name. */
+		text?: string;
 	}
 
-	let { characterId, alignment, playerName }: Props = $props();
+	let { characterId, alignment, playerName, inline = false, text }: Props = $props();
 	let open = $state(false);
 	// The dialog is only created on first tap: pages like /reference show hundreds of badges.
 	let used = $state(false);
@@ -38,13 +42,15 @@
 			icons.good;
 		return file && `${ICONS_PATH}/${file}`;
 	});
-	const label = $derived(character?.name ?? characterId);
+	const label = $derived(text ?? character?.name ?? characterId);
 </script>
 
 <button
 	type="button"
 	class="badge"
+	class:inline
 	data-team={team}
+	data-character-id={characterId}
 	aria-haspopup="dialog"
 	onclick={() => {
 		used = true;
@@ -57,9 +63,7 @@
 	>
 	<span class="name">{label}</span>
 	{#if playerName}<span class="player">· {playerName}</span>{/if}
-</button>
-
-{#if character}
+</button>{#if character}
 	{#if used}<CharacterDialog bind:open {character} {icon} />{/if}
 {/if}
 
@@ -104,6 +108,30 @@
 	.name {
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
+	}
+	.badge.inline {
+		position: relative;
+		gap: 0.25em;
+		min-height: 0;
+		height: 1.45em;
+		padding: 0 0.5em 0 0.1em;
+		font-size: 0.92em;
+		line-height: 1;
+		vertical-align: baseline;
+	}
+	/* The tap area reaches the 44px minimum without making the line taller. */
+	.badge.inline::before {
+		content: '';
+		position: absolute;
+		inset: calc((1.45em - var(--tap-target)) / 2) 0;
+	}
+	.badge.inline .icon {
+		width: 1.25em;
+		height: 1.25em;
+	}
+	.badge.inline .icon img {
+		width: 1.1em;
+		height: 1.1em;
 	}
 	.player {
 		font-family: var(--font-player);

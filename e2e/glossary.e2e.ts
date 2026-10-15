@@ -9,35 +9,23 @@ async function poisonerCard(page: Page) {
 	return card;
 }
 
-test('tapping a rules term shows our definition and a Glossary link, without moving the page', async ({
+test('a rules term is a dotted link to the wiki Glossary that keeps its line height', async ({
 	page
 }) => {
 	const card = await poisonerCard(page);
-	const term = card.getByRole('button', { name: 'poisoned: explain rules term' });
+	const term = card.getByRole('link', { name: 'poisoned: open in the wiki Glossary' });
 	await expect(term).toBeVisible();
-	// A dotted underline, so it is not mistaken for a link.
 	expect(await term.evaluate((el) => getComputedStyle(el).textDecorationStyle)).toBe('dotted');
-
-	// Tap just above the word: the hit area is a full tap target, not only the letters.
-	await term.scrollIntoViewIfNeeded();
-	const box = (await term.boundingBox())!;
-	// The word sits in the line like plain text: no taller than the line around it.
-	expect(box.height).toBeLessThan(32);
-	const before = await card.boundingBox();
-	await page.touchscreen.tap(box.x + box.width / 2, box.y - 8);
-
-	const popover = page.getByRole('dialog', { name: 'Poisoned' });
-	await expect(popover).toBeVisible();
-	await expect(popover).toContainText('no ability');
-	await expect(popover.getByRole('link', { name: 'Open Glossary' })).toHaveAttribute(
+	await expect(term).toHaveAttribute(
 		'href',
 		/^https:\/\/wiki\.bloodontheclocktower\.com\/Glossary#/
 	);
-	// An overlay: the card did not reflow.
-	expect(await card.boundingBox()).toEqual(before);
-
-	await popover.getByRole('button', { name: 'Close' }).tap();
-	await expect(popover).toBeHidden();
+	await expect(term).toHaveAttribute('target', '_blank');
+	// The word sits in the line like plain text: no taller than the line around it.
+	const box = (await term.boundingBox())!;
+	expect(box.height).toBeLessThan(32);
+	// Our own definitions are parked (Trevor, 2026-10-15): no popover opens.
+	await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('with "Explain rules terms" off the terms are plain text', async ({ page }) => {
@@ -60,7 +48,7 @@ test('with "Explain rules terms" off the terms are plain text', async ({ page })
 	await expect(card.locator('.glossary-term')).toHaveCount(0);
 });
 
-test('terms in the character dialog open above it', async ({ page }) => {
+test('terms in the character dialog link to the Glossary', async ({ page }) => {
 	await page.goto('/spikes/day');
 	await page
 		.getByRole('radiogroup', { name: 'Sample game' })
@@ -73,12 +61,7 @@ test('terms in the character dialog open above it', async ({ page }) => {
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Slayer' });
 	await expect(dialog).toBeVisible();
-	await dialog.getByRole('button', { name: 'once per game: explain rules term' }).tap();
-	const popover = page.getByRole('dialog', { name: 'Once per game' });
-	await expect(popover).toBeVisible();
-	await expect(popover.getByRole('link', { name: 'Open Glossary' })).toBeVisible();
-	// Still usable above the modal dialog: closing it leaves the dialog open.
-	await popover.getByRole('button', { name: 'Close' }).tap();
-	await expect(popover).toBeHidden();
-	await expect(dialog).toBeVisible();
+	await expect(
+		dialog.getByRole('link', { name: 'once per game: open in the wiki Glossary' })
+	).toHaveAttribute('href', /Glossary#/);
 });

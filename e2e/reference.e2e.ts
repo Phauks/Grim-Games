@@ -217,3 +217,32 @@ test('token leaves and the setup flower are drawn inside the token', async ({ pa
 	}
 	await token.screenshot({ path: 'test-results/village-idiot-token.png' });
 });
+
+test('character names in text are badges and reminders are smaller token chips', async ({
+	page
+}) => {
+	await page.goto('/reference');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Witch');
+	const card = page.locator('[data-testid="reference-card"][data-character="witch"]');
+	const night = card.getByTestId('night-other');
+	// "The Witch chooses a player." draws the Witch as a badge inside the sentence.
+	const badge = night.locator('button.badge[data-character-id="witch"]');
+	await expect(badge).toBeVisible();
+	const chip = night.getByTestId('reminder-token');
+	await expect(chip).toHaveText('Cursed');
+	const [badgeBox, chipBox] = [await badge.boundingBox(), await chip.boundingBox()];
+	expect(chipBox!.height).toBeLessThan(badgeBox!.height);
+	// Different shapes: the badge is a pill, the chip a squarer token.
+	const radius = (el: typeof badge) =>
+		el.evaluate((e) => parseFloat(getComputedStyle(e).borderTopLeftRadius));
+	expect(await radius(chip)).toBeLessThan(await radius(badge));
+});
+
+test('the token key explains the leaves and the flower in an overlay', async ({ page }) => {
+	await page.goto('/reference');
+	await page.getByRole('button', { name: 'Token key' }).tap();
+	const key = page.getByRole('dialog', { name: 'Token key' });
+	await expect(key).toContainText('Leaf on the left: wakes on the first night.');
+	await expect(key).toContainText('Flower at the bottom right: changes setup.');
+	await expect(key.locator('g.flower')).toHaveCount(1);
+});

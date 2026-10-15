@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { GlossaryTerm } from '#lib/core/rules/glossary.ts';
-	import { glossaryPopover } from './glossary-popover.svelte.ts';
 
 	interface Props {
 		term: GlossaryTerm;
@@ -9,24 +8,24 @@
 	}
 
 	let { term, text }: Props = $props();
-	let button = $state<HTMLButtonElement>();
-	const open = $derived(glossaryPopover.open && glossaryPopover.anchor === button);
 </script>
 
 <!--
-	A rules term in game text: dotted underline (not a link); tap for our short definition
-	in the shared GlossaryPopover.
+	A rules term in game text: dotted underline; tapping opens the wiki Glossary at the entry.
+	Our own definitions (GlossaryPopover) are parked: Trevor asked to stop adding our own
+	information for now (2026-10-15).
 -->
-<button
-	bind:this={button}
-	type="button"
+<!-- External wiki Glossary (the rules authority), not an app route. -->
+<!-- eslint-disable svelte/no-navigation-without-resolve -->
+<a
+	href={term.url}
 	class="glossary-term"
-	aria-label={`${text}: explain rules term`}
-	aria-haspopup="dialog"
-	aria-expanded={open}
-	data-state={open ? 'open' : 'closed'}
-	onclick={() => button && glossaryPopover.show(term, button)}>{text}</button
+	target="_blank"
+	rel="noopener"
+	aria-label={`${text}: open in the wiki Glossary`}>{text}</a
 >
+
+<!-- eslint-enable svelte/no-navigation-without-resolve -->
 
 <style>
 	.glossary-term {
@@ -35,8 +34,6 @@
 		/* The line keeps its height; the ::after below is the tap target. */
 		min-height: 0;
 		padding: 0;
-		border: 0;
-		background: none;
 		color: inherit;
 		font: inherit;
 		letter-spacing: inherit;
@@ -57,9 +54,6 @@
 		width: max(calc(100% + var(--space-2)), var(--tap-target));
 		height: var(--tap-target);
 		translate: -50% -50%;
-	}
-	.glossary-term[data-state='open'] {
-		text-decoration-style: solid;
 	}
 	.glossary-term:focus-visible {
 		outline: 3px solid var(--focus);
