@@ -20,7 +20,7 @@
 <span class="sentence">
 	{#each segments as segment, i (i)}
 		{#if segment.kind === 'character'}
-			<CharacterBadge characterId={segment.characterId} />
+			<CharacterBadge characterId={segment.characterId} inline />
 		{:else if segment.kind === 'target'}
 			<span class="target">player with <ReminderToken label={segment.token} {type} /></span>
 		{:else if segment.kind === 'value'}

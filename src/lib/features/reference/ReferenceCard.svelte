@@ -79,7 +79,7 @@
 	}
 	h3 {
 		margin: 0;
-		font-size: 1.15rem;
+		font-size: 1rem;
 	}
 	.meta {
 		margin: 0;

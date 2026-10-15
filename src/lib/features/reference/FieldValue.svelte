@@ -74,7 +74,8 @@
 	{#if field === 'token'}
 		<CharacterToken {character} size={tokenSize} />
 	{:else if field === 'name'}
-		{character.name}
+		<!-- The same badge the game uses: icon, type colour and name (Trevor, 2026-10-15). -->
+		<CharacterBadge characterId={character.id} />
 	{:else if field === 'type'}
 		{TYPE_LABELS[character.type]}
 	{:else if field === 'edition'}

@@ -73,6 +73,33 @@ export default defineConfig(
 		}
 	},
 	{
+		// Player mode never sees Storyteller state, so a bug cannot leak the grimoire onto a
+		// player's screen (04-architecture.md §8.1). Repeats the Ark UI rule: this replaces it.
+		files: ['src/lib/features/player/**', 'src/routes/play/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['@ark-ui/*'],
+							message: 'Use the wrappers in #lib/ui/primitives instead of Ark UI directly.'
+						},
+						{
+							group: [
+								'#lib/features/game/*',
+								'#lib/core/engine/*',
+								'**/features/game/**',
+								'**/core/engine/**'
+							],
+							message: 'Player mode must not import Storyteller game state.'
+						}
+					]
+				}
+			]
+		}
+	},
+	{
 		// The Worker runs on workerd, not in the browser.
 		files: ['worker/**/*.ts'],
 		languageOptions: { globals: { ...globals.serviceworker } }

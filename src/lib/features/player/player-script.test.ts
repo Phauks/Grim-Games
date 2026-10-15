@@ -1,0 +1,47 @@
+import { describe, expect, it } from 'vitest';
+import { editionScript } from '#lib/core/data/index.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { groupByType, playerJinxes, playerNight } from './player-script.ts';
+
+const data = committedGameData();
+const tb = editionScript('tb', data)!;
+
+describe('player script view', () => {
+	it('groups Trouble Brewing as on its character sheet', () => {
+		// https://wiki.bloodontheclocktower.com/Trouble_Brewing: 13 Townsfolk, 4 Outsiders, 4 Minions, 1 Demon.
+		expect(groupByType(tb.characters).map((g) => [g.type, g.characters.length])).toEqual([
+			['townsfolk', 13],
+			['outsider', 4],
+			['minion', 4],
+			['demon', 1]
+		]);
+	});
+
+	it('lists the night order as names only, with Minion and Demon info on the first night', () => {
+		const first = playerNight(tb, data, 'first', 8);
+		const ids = first.entries.map((e) => (e.kind === 'marker' ? e.id : e.character.id));
+		expect(ids[0]).toBe('dusk');
+		expect(ids.at(-1)).toBe('dawn');
+		expect(ids.indexOf('minioninfo')).toBeLessThan(ids.indexOf('demoninfo'));
+		expect(ids).toContain('poisoner');
+		expect(ids).not.toContain('imp');
+		expect(first.evilInfo).toBe(true);
+		const other = playerNight(tb, data, 'other', 8);
+		expect(other.entries.some((e) => e.kind === 'character' && e.character.id === 'imp')).toBe(
+			true
+		);
+		expect(other.evilInfo).toBe(false);
+	});
+
+	it('keeps Minion and Demon info listed but off below 7 players (wiki: Glossary)', () => {
+		const five = playerNight(tb, data, 'first', 5);
+		expect(five.entries.some((e) => e.kind === 'marker' && e.id === 'minioninfo')).toBe(true);
+		expect(five.evilInfo).toBe(false);
+	});
+
+	it('has no jinxes on Trouble Brewing, and finds them on a script that has a pair', () => {
+		expect(playerJinxes(tb, data)).toEqual([]);
+		const pair = { ...tb, characters: [data.byId.get('spy')!, data.byId.get('heretic')!] };
+		expect(playerJinxes(pair, data)).toHaveLength(1);
+	});
+});

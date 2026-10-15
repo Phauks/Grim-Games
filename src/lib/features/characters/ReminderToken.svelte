@@ -25,43 +25,62 @@
 >
 
 <style>
+	/*
+	 * A reminder is drawn as a small parchment token with a rim in its character's type
+	 * colour, so it never looks like a character badge (a filled pill with an icon).
+	 */
 	.reminder {
-		display: inline-block;
-		padding: 0.05em 0.6em;
-		border-radius: var(--radius-full);
-		background: var(--reminder-face);
-		color: var(--on-reminder);
+		--rim: var(--reminder-face);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3em;
+		padding: 0 0.45em 0 0.2em;
+		border-radius: 0.35em;
+		background: var(--token-face);
+		box-shadow: inset 0 0 0 1.5px var(--rim);
+		color: var(--on-token);
 		font-family: var(--font-character);
-		font-size: 0.85em;
-		line-height: 1.4;
+		font-size: 0.78em;
+		font-variant: small-caps;
+		letter-spacing: 0.02em;
+		line-height: 1.5;
 		white-space: nowrap;
 		vertical-align: baseline;
 	}
+	/* The little round token mark. */
+	.reminder::before {
+		content: '';
+		flex: none;
+		width: 0.75em;
+		height: 0.75em;
+		border-radius: 50%;
+		background: var(--rim);
+	}
 	.reminder[data-type='townsfolk'],
 	.reminder[data-type='outsider'] {
-		background: var(--good);
-		color: var(--on-good);
+		--rim: var(--good);
 	}
 	.reminder[data-type='minion'],
 	.reminder[data-type='demon'] {
-		background: var(--evil);
-		color: var(--on-evil);
+		--rim: var(--evil);
 	}
 	.reminder[data-type='traveller'] {
-		background: var(--traveller);
-		color: var(--on-traveller);
+		--rim: var(--traveller);
 	}
 	.reminder[data-type='fabled'] {
-		background: var(--fabled);
-		color: var(--on-fabled);
+		--rim: var(--fabled);
 	}
 	.reminder[data-type='loric'] {
-		background: var(--loric);
-		color: var(--on-loric);
+		--rim: var(--loric);
 	}
+	/* Info tokens belong to no character: no mark, dashed rim. */
 	.reminder[data-variant='info'] {
-		background: var(--token-face);
-		color: var(--on-token);
-		font-variant: small-caps;
+		padding-left: 0.45em;
+		box-shadow: none;
+		outline: 1.5px dashed var(--reminder-face);
+		outline-offset: -1.5px;
+	}
+	.reminder[data-variant='info']::before {
+		display: none;
 	}
 </style>
