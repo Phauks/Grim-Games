@@ -8,11 +8,18 @@ import { readBuildInfo } from './build-info.ts';
 // Lets sandboxes with a preinstalled Chromium skip `playwright install`.
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
 
+const buildInfo = readBuildInfo();
+// One line naming the build, in the same format as describeBuild() in
+// src/lib/features/about/report-issue.ts. It is also SvelteKit's version name, so app.html's
+// boot-failure screen can show it (%sveltekit.version%) without the app bundle; the service
+// worker's cache name and `version` from $app/env change with every build, as before.
+const buildLine = `v${buildInfo.version} · ${buildInfo.commit.slice(0, 7)} · ${buildInfo.branch} · ${buildInfo.channel} · built ${buildInfo.builtAt}`;
+
 const rulesTests = ['src/lib/core/abilities/**/*.test.ts', 'src/lib/core/jinxes/**/*.test.ts'];
 
 export default defineConfig({
 	define: {
-		__BUILD_INFO__: JSON.stringify(readBuildInfo())
+		__BUILD_INFO__: JSON.stringify(buildInfo)
 	},
 	plugins: [
 		sveltekit({
@@ -23,7 +30,8 @@ export default defineConfig({
 			},
 			// Prerendered SPA served as Workers static assets; unknown paths fall back to
 			// index.html via `not_found_handling` in wrangler.jsonc.
-			adapter: adapter({ fallback: 'index.html' })
+			adapter: adapter({ fallback: 'index.html' }),
+			version: { name: buildLine }
 		}),
 		// Compiles `~icons/<set>/<name>` imports into Svelte components at build time, so icons
 		// are bundled and work offline (src/lib/ui/icons, scripts/generate-icons.ts).

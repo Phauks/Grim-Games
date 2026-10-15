@@ -63,3 +63,31 @@ test('an unknown address shows Page not found without reporting an error', async
 	await page.getByRole('link', { name: 'Home' }).tap();
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
 });
+
+test('if the app cannot start, a plain screen shows the error with Reload and Report', async ({
+	page
+}) => {
+	// Simulates a broken deploy: the app's entry chunk fails to load.
+	await page.route('**/_app/immutable/entry/**', (route) => route.abort());
+	await page.goto('/');
+	const screen = page.locator('#boot-failure');
+	await expect(screen).toBeVisible({ timeout: 15_000 });
+	await expect(screen.getByRole('heading')).toHaveText("Grim-Games couldn't start");
+	await expect(screen).toContainText('v0.0.1 · ');
+	for (const name of ['Reload', 'Load the latest version']) {
+		const button = screen.getByRole('button', { name });
+		expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+	}
+	const href = new URL(
+		(await screen.getByRole('link', { name: 'Report on GitHub' }).getAttribute('href'))!
+	);
+	expect(href.searchParams.get('template')).toBe('bug_report.yml');
+	expect(href.searchParams.get('error')).toBeTruthy();
+});
+
+test('a working app never shows the boot-failure screen', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	await page.waitForTimeout(3500);
+	await expect(page.locator('#boot-failure')).toHaveCount(0);
+});
