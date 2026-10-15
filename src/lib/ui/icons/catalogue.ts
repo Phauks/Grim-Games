@@ -52,7 +52,15 @@ export const ICON_SLOTS = {
 	sortAscending: { label: 'Sorted ascending', choices: ['ph:caret-up', 'ph:sort-ascending'] },
 	sortDescending: { label: 'Sorted descending', choices: ['ph:caret-down', 'ph:sort-descending'] },
 	filter: { label: 'Filter', choices: ['ph:funnel'] },
-	assistance: { label: 'Storyteller help', choices: ['ph:lifebuoy', 'ph:hand-heart'] }
+	assistance: { label: 'Storyteller help', choices: ['ph:lifebuoy', 'ph:hand-heart'] },
+	upsideDown: { label: 'Upside down', choices: ['ph:flip-vertical', 'ph:arrows-clockwise'] },
+	remove: { label: 'Remove', choices: ['ph:trash', 'ph:trash-simple'] },
+	swap: { label: 'Swap seats', choices: ['ph:arrows-left-right', 'ph:swap'] },
+	rename: { label: 'Rename', choices: ['ph:pencil-simple', 'ph:user-switch'] },
+	move: { label: 'Move', choices: ['ph:arrow-bend-up-right'] },
+	traveller: { label: 'Traveller', choices: ['ph:person-simple-walk', 'ph:user-plus'] },
+	fabled: { label: 'Fabled and Loric', choices: ['ph:sparkle'] },
+	grimoire: { label: 'Grimoire', choices: ['ph:users-four', 'ph:circle-dashed'] }
 } as const satisfies Record<string, IconSlotInfo>;
 
 export type IconSlot = keyof typeof ICON_SLOTS;
