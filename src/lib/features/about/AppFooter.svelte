@@ -4,7 +4,7 @@
 	import AboutDialog from './AboutDialog.svelte';
 	import { bugReportUrl, describeBuild, REPOSITORY_URL, shortCommit } from './report-issue.ts';
 
-	let about: AboutDialog;
+	let aboutOpen = $state(false);
 
 	const reportUrl = $derived(bugReportUrl(info, page.url.pathname, navigator.userAgent));
 </script>
@@ -40,9 +40,9 @@
 		<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener"
 			>{shortCommit(info)}</a
 		>
-		· <button type="button" class="about" onclick={() => about.open()}>About</button>
+		· <button type="button" class="about" onclick={() => (aboutOpen = true)}>About</button>
 	</p>
-	<AboutDialog bind:this={about} />
+	<AboutDialog bind:open={aboutOpen} />
 </footer>
 
 <style>
