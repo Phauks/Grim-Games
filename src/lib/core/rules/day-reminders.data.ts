@@ -17,10 +17,11 @@
  *   matches any Demon's id). An unknown cause counts as a match, flagged `uncertain`.
  *   The app does not track day or night, so nothing here depends on the day number.
  * - `minAlive`: only while at least this many players are alive.
+ * - `targetAlive`: with `reminder`, only while the player carrying the token is alive.
  *
- * `impairable: true` adds "[Slayer] is poisoned" / "[Slayer] is drunk" whenever a Poisoned
- * or Drunk token sits on that player: the ability matters today, so the Storyteller must
- * remember it may not work.
+ * `impairable: true`: while that player's ability does not work (drunk, poisoned, or no
+ * ability: `abilityState`), one line "[Slayer] is poisoned by [Poisoner]" replaces the
+ * character's lines about its living ability, so the two never show together.
  *
  * Wiki: each `wiki` is the character's page; text here is our summary, never wiki prose.
  * Characters with nothing to watch by day are in `NO_DAY_RELEVANCE` (a test checks every
@@ -58,6 +59,8 @@ export interface DayCondition {
 	noReminder?: string;
 	cause?: readonly DeathCauseMatch[];
 	minAlive?: number;
+	/** With `reminder`: only while the player carrying it is alive. */
+	targetAlive?: boolean;
 }
 
 export interface DayReminderSpec {
@@ -98,7 +101,12 @@ const on = (
 
 export const DAY_REMINDER_ENTRIES: readonly DayReminderEntry[] = [
 	// ── Townsfolk ──
-	{ id: 'pixie', wiki: `${W}Pixie`, reminders: [on('madness', 'must be mad as', 'Mad')] },
+	{
+		id: 'pixie',
+		wiki: `${W}Pixie`,
+		// Once that player dies, the Pixie gains the ability or not: nothing left to be mad about.
+		reminders: [on('madness', 'must be mad as', 'Mad', { targetAlive: true })]
+	},
 	{
 		id: 'sailor',
 		wiki: `${W}Sailor`,

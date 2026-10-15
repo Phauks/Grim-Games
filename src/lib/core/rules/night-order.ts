@@ -25,6 +25,8 @@ import {
 	type NightMarker,
 	type NightSheet
 } from '#lib/core/data/types.ts';
+import type { AbilityState } from './ability.ts';
+import type { GainedAbility } from './gained-abilities.ts';
 import type { NightStepInfo } from './night-info.ts';
 import { hasEvilTeamInfo } from './teensyville.ts';
 
@@ -94,6 +96,13 @@ export interface NightStep {
 	 * `nightOrder` never sets it: it has no game state.
 	 */
 	info?: NightStepInfo;
+	/**
+	 * The waking players whose ability does not work (drunk, poisoned, no ability), set by
+	 * `withNightInfo`; for a Minion the Preacher chose, it says not to wake them for it.
+	 */
+	impaired?: AbilityState[];
+	/** Set on a step added for a gained ability (the Pixie's), by `withGainedSteps`. */
+	gained?: GainedAbility;
 }
 
 export interface OmittedStep {

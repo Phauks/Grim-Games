@@ -15,5 +15,8 @@ export * from './setup-reminders.ts';
 export * from './describe.ts';
 export * from './reference.ts';
 export * from './night-text.ts';
+export * from './ability.ts';
+export * from './night-deaths.ts';
+export * from './gained-abilities.ts';
 export * from './glossary.ts';
 export * from './reference-table.ts';

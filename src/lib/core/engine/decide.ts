@@ -16,6 +16,7 @@ import {
 	type CharacterId
 } from '#lib/core/data/index.ts';
 import {
+	ABNORMAL_REASONS,
 	GENERAL_DEATH_CAUSES,
 	OVERRIDE_FIELDS,
 	getSeat,
@@ -24,6 +25,7 @@ import {
 	registersAsDead,
 	replacedBy,
 	trueCharacter,
+	type AbnormalCause,
 	type CharacterGuess,
 	type DayEntry,
 	type DeathCause,
@@ -65,7 +67,8 @@ export type ErrorCode =
 	| 'not-dead'
 	| 'invalid-override'
 	| 'unknown-entry'
-	| 'wrong-entry-kind';
+	| 'wrong-entry-kind'
+	| 'invalid-abnormal';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -1009,6 +1012,18 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				checkReminder(game, reminder, ctx, warn);
 				return { seatId: target.seatId, reminder: { reminderId: ctx.newId(), ...reminder } };
 			});
+			const abnormal = (command.abnormal ?? []).map((cause): AbnormalCause => {
+				if (!(ABNORMAL_REASONS as readonly string[]).includes(cause.reason)) {
+					refuse('invalid-abnormal', `unknown abnormal reason ${String(cause.reason)}`);
+				}
+				return {
+					reason: cause.reason,
+					...(cause.characterId !== undefined
+						? { characterId: characterOf(ctx, cause.characterId).id }
+						: {}),
+					...(cause.seatId !== undefined ? { seatId: seatOf(game, cause.seatId).seatId } : {})
+				};
+			});
 			if (text === '' && placements.length === 0) {
 				warn('no-change', 'nothing to record');
 				return [];
@@ -1023,7 +1038,8 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 						seatId: seat.seatId,
 						characterId,
 						text,
-						reminderIds: placements.map((p) => p.reminder.reminderId)
+						reminderIds: placements.map((p) => p.reminder.reminderId),
+						...(abnormal.length > 0 ? { abnormal } : {})
 					}
 				}
 			];

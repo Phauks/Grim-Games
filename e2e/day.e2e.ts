@@ -7,7 +7,7 @@ async function loaded(page: Page) {
 	await expect(page.getByRole('button', { name: 'Seat: Ana' })).toBeVisible();
 }
 
-async function sampleGame(page: Page, name: 'Sects & Violets' | 'Trouble Brewing') {
+async function sampleGame(page: Page, name: 'Sects & Violets' | 'Trouble Brewing' | 'Assorted') {
 	await page
 		.getByRole('radiogroup', { name: 'Sample game' })
 		.getByText(name, { exact: true })
@@ -175,4 +175,62 @@ test('with help switched off the night is a checklist with no worked-out answers
 	await expect(page.getByTestId('night-walkthrough')).toHaveCount(0);
 	await expect(checklist.locator('[data-step="towncrier"]')).toBeVisible();
 	await expect(page.getByRole('group', { name: 'Town Crier answer' })).toHaveCount(0);
+});
+
+test('impaired abilities, registration ranges, the Mathematician and a Gambler death', async ({
+	page
+}) => {
+	await loaded(page);
+	await sampleGame(page, 'Assorted');
+	// The Preacher (Gus) chose the Poisoner (Dev): one line, naming the Preacher.
+	const poisoner = page.locator('li[data-character="poisoner"]');
+	await expect(poisoner).toHaveCount(1);
+	await expect(poisoner).toContainText('has no ability');
+	await expect(poisoner).toContainText('Preacher · Gus');
+
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page
+		.getByRole('radiogroup', { name: 'Which night' })
+		.getByText('First', { exact: true })
+		.tap();
+	const dev = await walkTo(page, 'Poisoner');
+	await expect(dev.getByTestId('step-impaired')).toHaveText('Dev · No Ability · Gus (Preacher)');
+
+	// Cat the Recluse sits next to the Poisoner and the Imp: 1 pair, or 2 if evil.
+	const chef = await walkTo(page, 'Chef');
+	await expect(chef.getByTestId('info-range')).toHaveText('1 (1 / 2)');
+	await chef.getByRole('button', { name: 'Pick info for Ben' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Chef · Ben' });
+	await sheet.getByRole('group', { name: 'Number' }).getByRole('button', { name: '2' }).tap();
+	await expect(sheet.getByTestId('info-verdict')).toContainText('Might register falsely: Cat');
+	await sheet.getByRole('button', { name: 'Record' }).tap();
+	await expect(sheet).toBeHidden();
+
+	const mathematician = await walkTo(page, 'Mathematician');
+	await expect(mathematician.getByRole('group', { name: 'Mathematician answer' })).toContainText(
+		'Show 1: Ben (Chef)'
+	);
+
+	await page
+		.getByRole('radiogroup', { name: 'Which night' })
+		.getByText('Others', { exact: true })
+		.tap();
+	const gambler = await walkTo(page, 'Gambler');
+	await gambler.getByRole('button', { name: 'Pick for Ana' }).tap();
+	const choice = page.getByRole('dialog', { name: 'Gambler · Ana' });
+	await choice.getByRole('group', { name: 'Players' }).getByRole('button', { name: 'Ben' }).tap();
+	await choice
+		.getByRole('group', { name: 'Characters' })
+		.getByRole('button', { name: 'Imp' })
+		.tap();
+	await expect(choice.getByTestId('death-verdict')).toHaveText('Dead: Ana');
+	await choice.getByRole('button', { name: 'Dead: Ana' }).tap();
+	await expect(choice).toBeHidden();
+
+	await page.getByRole('button', { name: 'Back to day' }).tap();
+	await expect(page.getByRole('button', { name: 'Seat: Ana' })).toHaveAttribute(
+		'data-dead',
+		'true'
+	);
+	await expect(page.getByTestId('day-log')).toContainText('Gambler (Ana): Ben · Imp · Dead: Ana');
 });

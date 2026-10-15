@@ -23,7 +23,11 @@
 	onMount(async () => {
 		try {
 			const data = await loadOfficialData();
-			games = { snv: new DayGame('snv', data), tb: new DayGame('tb', data) };
+			games = {
+				snv: new DayGame('snv', data),
+				tb: new DayGame('tb', data),
+				mixed: new DayGame('mixed', data)
+			};
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		}
@@ -40,7 +44,8 @@
 		value={variant}
 		options={[
 			{ value: 'snv', label: 'Sects & Violets' },
-			{ value: 'tb', label: 'Trouble Brewing' }
+			{ value: 'tb', label: 'Trouble Brewing' },
+			{ value: 'mixed', label: 'Assorted' }
 		]}
 		onChange={(value) => (variant = value)}
 	/>
