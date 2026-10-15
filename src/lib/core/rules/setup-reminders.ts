@@ -15,6 +15,7 @@ import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, seatsInOrder, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, Seat, SeatId } from '#lib/core/model/types.ts';
+import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
 import {
 	NO_SETUP_REMINDERS,
 	SETUP_NOTES,
@@ -219,6 +220,8 @@ export interface SetupPrepStep {
 	tokens: string[];
 	/** Who gets the tokens: the character itself ("the Drunk") or what to choose. */
 	target?: string;
+	/** A value to type in (`SetupNote.value`). */
+	value?: { key: string; label: string };
 }
 
 /**
@@ -239,7 +242,49 @@ export function setupPrep(characterId: CharacterId, name: string): SetupPrepStep
 		} else steps.push({ text: spec.text, tokens: [spec.label], target });
 	}
 	for (const note of SETUP_NOTES[characterId] ?? []) {
-		steps.push({ text: note.text, tokens: [...(note.tokens ?? [])] });
+		steps.push({
+			text: note.text,
+			tokens: [...(note.tokens ?? [])],
+			...(note.value ? { value: note.value } : {})
+		});
 	}
 	return steps;
+}
+
+/**
+ * The reminder tokens a character's pre-game prep places (`timing: 'setup'`), so the
+ * first night can show them as already done. Tokens placed at the start of the first
+ * day are not included.
+ */
+export function prepTokens(characterId: CharacterId): string[] {
+	const out = new Set<string>();
+	for (const spec of ENTRIES.get(characterId)?.reminders ?? []) {
+		if ((spec.timing ?? 'setup') === 'setup') out.add(spec.label);
+	}
+	for (const note of SETUP_NOTES[characterId] ?? []) for (const t of note.tokens ?? []) out.add(t);
+	return [...out];
+}
+
+export type PrepSegment =
+	| { kind: 'text'; text: string }
+	| { kind: 'character'; id: CharacterId }
+	| { kind: 'reminder'; label: string };
+
+/**
+ * A prep step's text as segments: `[Token]` as the character's reminder token, character
+ * names (`names`) as badges.
+ */
+export function prepTextSegments(
+	text: string,
+	names: CharacterNames = NO_CHARACTER_NAMES
+): PrepSegment[] {
+	const out: PrepSegment[] = [];
+	let at = 0;
+	for (const match of text.matchAll(/\[([^\]]+)\]/g)) {
+		out.push(...names.split(text.slice(at, match.index)));
+		out.push({ kind: 'reminder', label: match[1] });
+		at = match.index + match[0].length;
+	}
+	out.push(...names.split(text.slice(at)));
+	return out;
 }

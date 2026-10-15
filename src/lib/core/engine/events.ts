@@ -64,6 +64,8 @@ export type GameEvent =
 	| { type: 'DayEntryRemoved'; entryId: DayEntryId }
 	/** No `voted` clears the mark. */
 	| { type: 'DemonVotedSet'; voted?: boolean }
+	/** No `value` clears it. */
+	| { type: 'PrepValueSet'; key: string; value?: string }
 	/** Today's log moves to `pastDays` and an empty one starts. */
 	| { type: 'DayStarted'; at: number };
 

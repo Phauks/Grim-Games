@@ -23,6 +23,9 @@
 			<CharacterBadge characterId={segment.characterId} />
 		{:else if segment.kind === 'target'}
 			<span class="target">player with <ReminderToken label={segment.token} {type} /></span>
+		{:else if segment.kind === 'value'}
+			<!-- A value the Storyteller enters during prep (the Yaggababble's phrase). -->
+			<span>({segment.placeholder})</span>
 		{:else}
 			<span><GlossaryText segments={explained[i] ?? []} /></span>
 		{/if}

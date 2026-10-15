@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Character } from '#lib/core/data/index.ts';
-	import { nightTextSegments } from '#lib/core/rules/night-text.ts';
+	import { nightTextFor, nightTextSegments } from '#lib/core/rules/night-text.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -8,10 +9,22 @@
 	interface Props {
 		text: string;
 		character: Character;
+		/**
+		 * Which night the text is for: TPI's `:reminder:`s are then drawn as the tokens they
+		 * mean (`REMINDER_PLACEHOLDERS`), and Trevor's reviewed edits replace TPI's text.
+		 */
+		night?: 'first' | 'other';
 	}
 
-	let { text, character }: Props = $props();
-	const segments = $derived(nightTextSegments(text, character));
+	let { text, character, night }: Props = $props();
+	const resolved = $derived(night ? nightTextFor(character, night, { text }) : undefined);
+	const segments = $derived(
+		nightTextSegments(
+			resolved?.text ?? text,
+			character,
+			resolved?.placeholders ? { placeholders: resolved.placeholders } : {}
+		)
+	);
 	// Terms are marked in the text between tokens only, once per night text.
 	const explained = $derived(
 		explainBlock(
@@ -29,10 +42,20 @@
 				label={s.label}
 				variant="info"
 				title="Info token"
+			/>{:else if s.kind === 'character'}<CharacterBadge
+				characterId={s.id}
+			/>{:else if s.kind === 'dead'}<ReminderToken
+				label="Dead"
+				type={character.type}
+				title={s.action === 'remove' ? 'Remove: the death marker' : 'The death marker'}
 			/>{:else}<ReminderToken
 				label={s.label}
 				type={character.type}
-				title={s.label ? undefined : `One of: ${s.options.join(', ')}`}
+				title={s.label
+					? s.action === 'remove'
+						? 'Remove this token'
+						: undefined
+					: `One of: ${s.options.join(', ')}`}
 			/>{/if}{/each}</span
 >
 

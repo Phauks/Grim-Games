@@ -8,11 +8,14 @@ import type { Command } from '#lib/core/engine/commands.ts';
 import { dispatch, redo, undo, type GameSession } from '#lib/core/engine/log.ts';
 import type { EngineContext } from '#lib/core/engine/context.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { characterNames } from './character-names.ts';
 import {
 	NO_SETUP_REMINDERS,
 	SETUP_NOTES,
 	SETUP_REMINDER_ENTRIES,
 	placeableSetupReminders,
+	prepTextSegments,
+	prepTokens,
 	setupPrep,
 	setupReminders,
 	type SetupReminderOptions
@@ -341,6 +344,57 @@ describe('setupPrep', () => {
 			{ text: 'Choose the Mezepheles’ secret word', tokens: [] }
 		]);
 		expect(setupPrep('chef', 'Chef')).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Grandmother, /Village_Idiot (Trevor’s review)
+	it('uses the reviewed wording for the Grandmother and Village Idiot', () => {
+		expect(setupPrep('grandmother', 'Grandmother')[0].text).toBe(
+			'Choose a good player: put [Grandchild] on them'
+		);
+		expect(setupPrep('villageidiot', 'Village Idiot')[0].text).toBe(
+			'If multiple Village Idiots, mark one as [Drunk] on them'
+		);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Yaggababble: the Storyteller picks the phrase.
+	it('asks for a value where the Storyteller chooses one', () => {
+		expect(setupPrep('yaggababble', 'Yaggababble')).toEqual([
+			{
+				text: 'Choose the Yaggababble’s secret phrase',
+				tokens: [],
+				value: { key: 'phrase', label: 'Secret phrase' }
+			}
+		]);
+	});
+});
+
+describe('prepTokens', () => {
+	// https://wiki.bloodontheclocktower.com/Fortune_Teller and /Village_Idiot
+	it('lists the tokens placed before the first night, not on the first day', () => {
+		expect(prepTokens('fortuneteller')).toEqual(['Red Herring']);
+		expect(prepTokens('villageidiot')).toEqual(['Drunk']);
+		expect(prepTokens('chef')).toEqual([]);
+		for (const entry of SETUP_REMINDER_ENTRIES) {
+			const firstDay = entry.reminders.filter((r) => r.timing === 'first-day').map((r) => r.label);
+			const setup = entry.reminders.filter((r) => r.timing !== 'first-day').map((r) => r.label);
+			for (const label of firstDay) {
+				if (!setup.includes(label)) expect(prepTokens(entry.id), entry.id).not.toContain(label);
+			}
+		}
+	});
+});
+
+describe('prepTextSegments', () => {
+	it('draws [Token] as a reminder and character names as badges', () => {
+		const names = characterNames(data.characters);
+		expect(
+			prepTextSegments('If multiple Village Idiots, put [Drunk] on the Fortune Teller', names)
+		).toEqual([
+			{ kind: 'text', text: 'If multiple Village Idiots, put ' },
+			{ kind: 'reminder', label: 'Drunk' },
+			{ kind: 'text', text: ' on the ' },
+			{ kind: 'character', id: 'fortuneteller' }
+		]);
 	});
 });
 

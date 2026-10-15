@@ -75,6 +75,8 @@ export interface DayState {
 	 * Poisoned and Drunk tokens are read.
 	 */
 	ability?: (seatId: SeatId) => AbilityState;
+	/** Values the Storyteller entered during prep (`Game.prepValues`). */
+	prepValues?: Readonly<Record<string, string>>;
 }
 
 /** A badge for a character, with the seat and player name when there is one. */
@@ -85,7 +87,16 @@ export interface CharacterRef {
 }
 
 export type ReminderSegment =
-	{ kind: 'character'; ref: CharacterRef } | { kind: 'text'; text: string };
+	| { kind: 'character'; ref: CharacterRef }
+	| { kind: 'text'; text: string }
+	/**
+	 * A value the Storyteller enters during prep (`prepValueKey(characterId, key)`); `value`
+	 * absent until entered, when the UI shows `placeholder`.
+	 */
+	| { kind: 'value'; characterId: CharacterId; key: string; placeholder: string; value?: string };
+
+/** Where a prep value is stored in `Game.prepValues`: "yaggababble.phrase". */
+export const prepValueKey = (characterId: CharacterId, key: string) => `${characterId}.${key}`;
 
 export interface DayReminder {
 	/** Stable id for overrides: the same state gives the same key. */
@@ -131,7 +142,9 @@ export function renderReminder(
 		.map((s) =>
 			s.kind === 'text'
 				? s.text
-				: `[${name(s.ref.characterId)}${s.ref.playerName ? ` · ${s.ref.playerName}` : ''}]`
+				: s.kind === 'value'
+					? `(${s.value ?? s.placeholder})`
+					: `[${name(s.ref.characterId)}${s.ref.playerName ? ` · ${s.ref.playerName}` : ''}]`
 		)
 		.join(' ');
 }
@@ -151,6 +164,7 @@ export function dayStateFromGame(
 		seats: game.seating.map((id) => game.seats[id]).filter((s) => s !== undefined),
 		ruleCharacters: game.ruleCharacters,
 		character,
+		...(game.prepValues ? { prepValues: game.prepValues } : {}),
 		...(overrides ? { overrides } : {}),
 		...(characters ? { ability: (seatId: SeatId) => abilityState(game, seatId, characters) } : {})
 	};
@@ -242,11 +256,22 @@ function carriers(state: DayState, source: CharacterId, label: string): DaySeat[
 function fill(
 	spec: DayReminderSpec,
 	selfRef: CharacterRef,
-	targetSeat: DaySeat | undefined
+	targetSeat: DaySeat | undefined,
+	values: Readonly<Record<string, string>> = {}
 ): ReminderSegment[] {
 	return spec.template.map((part): ReminderSegment => {
 		if ('text' in part) return { kind: 'text', text: part.text };
 		if ('self' in part) return { kind: 'character', ref: selfRef };
+		if ('value' in part) {
+			const value = values[prepValueKey(selfRef.characterId, part.value)];
+			return {
+				kind: 'value',
+				characterId: selfRef.characterId,
+				key: part.value,
+				placeholder: part.placeholder,
+				...(value ? { value } : {})
+			};
+		}
 		return { kind: 'character', ref: refFor(targetSeat, targetSeat?.characterId ?? '') };
 	});
 }
@@ -316,13 +341,13 @@ function curated(
 					out.push({
 						...base,
 						key: `${key}>${target.seatId}`,
-						segments: fill(spec, selfRef, target)
+						segments: fill(spec, selfRef, target, state.prepValues)
 					});
 				}
 			} else if (targets.length > 0) {
-				out.push({ ...base, key, segments: fill(spec, selfRef, undefined) });
+				out.push({ ...base, key, segments: fill(spec, selfRef, undefined, state.prepValues) });
 			}
-		} else out.push({ ...base, key, segments: fill(spec, selfRef, undefined) });
+		} else out.push({ ...base, key, segments: fill(spec, selfRef, undefined, state.prepValues) });
 	});
 	if (impaired.length > 0 && seat) {
 		out.push(

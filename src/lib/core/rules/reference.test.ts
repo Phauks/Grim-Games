@@ -36,6 +36,26 @@ describe('characterReference', () => {
 		]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Grandmother (Trevor's reviewed night text)
+	it('lists where our night text departs from TPI’s, with the reason', () => {
+		const gm = entry('grandmother');
+		expect(gm.differences.map((d) => d.part)).toEqual(['firstNight', 'otherNight']);
+		expect(gm.differences[1].source).toBe(data.byId.get('grandmother')!.otherNightReminder);
+		expect(gm.differences[1].ours).toContain('*DEAD*');
+		expect(gm.otherNight.ours?.reason).toBeTruthy();
+		expect(gm.filters.has('differs')).toBe(true);
+		expect(entry('chef').differences).toEqual([]);
+		// Parked fuller text is not in use.
+		expect(entry('witch').differences).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Yaggababble
+	it('shows the Yaggababble’s phrase as a value entered during prep', () => {
+		expect(referenceText(entry('yaggababble').dayReminders[0].segments, name)).toBe(
+			'[Yaggababble] secret phrase is (PHRASE)'
+		);
+	});
+
 	it('collects everything for the Witch', () => {
 		const witch = entry('witch');
 		expect(witch.alignment).toBe('evil');

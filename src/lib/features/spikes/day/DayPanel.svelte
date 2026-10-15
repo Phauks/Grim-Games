@@ -258,6 +258,9 @@
 												: undefined}
 											playerName={segment.ref.playerName}
 										/>
+									{:else if segment.kind === 'value'}
+										<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
+										<span>({segment.value ?? segment.placeholder})</span>
 									{:else}
 										<span><GlossaryText segments={explained[i] ?? []} /></span>
 									{/if}

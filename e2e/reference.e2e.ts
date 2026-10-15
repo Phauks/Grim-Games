@@ -144,6 +144,33 @@ test('the Witch row shows the same values as the Witch card', async ({ page }) =
 	await expect(row.locator('[data-field="icons"] img')).toHaveCount(2);
 });
 
+test('each :reminder: shows the token it means, and reviewed night text replaces TPI’s', async ({
+	page
+}) => {
+	await page.goto('/reference');
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+
+	// https://wiki.bloodontheclocktower.com/Pukka: the new target is poisoned; last night's
+	// target dies and their Poisoned token comes off.
+	await search.fill('Pukka');
+	const pukka = page.locator('[data-testid="reference-card"][data-character="pukka"]');
+	const tokens = pukka.getByTestId('night-other').getByTestId('reminder-token');
+	await expect(tokens).toHaveText(['Poisoned', 'Dead', 'Poisoned']);
+	await expect(tokens.nth(2)).toHaveAttribute('title', 'Remove this token');
+
+	// https://wiki.bloodontheclocktower.com/Grandmother: Trevor's reviewed edits.
+	await search.fill('Grandmother');
+	const grandmother = page.locator('[data-testid="reference-card"][data-character="grandmother"]');
+	await expect(grandmother.getByTestId('night-first').getByTestId('reminder-token')).toHaveText(
+		'Grandchild'
+	);
+	await expect(grandmother.getByTestId('night-other').getByTestId('reminder-token')).toHaveText(
+		'Dead'
+	);
+	// The "Differs from source" marker is parked.
+	await expect(grandmother.getByTestId('differs-from-source')).toHaveCount(0);
+});
+
 test('the night order runs from Dusk to Dawn', async ({ page }) => {
 	await page.goto('/reference');
 	await page.getByRole('tab', { name: 'Night order' }).tap();

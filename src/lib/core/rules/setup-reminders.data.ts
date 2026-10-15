@@ -154,7 +154,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Grandchild',
-				text: 'Choose the Grandmother’s grandchild, a good player: put [Grandchild] on them',
+				text: 'Choose a good player: put [Grandchild] on them',
 				target: { choose: 'good', choice: 'a good player', notSelf: true },
 				reason: 'The Grandmother learns this player and their character'
 			}
@@ -260,7 +260,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Drunk',
-				text: 'Choose which Village Idiot is drunk: put [Drunk] on them',
+				text: 'If multiple Village Idiots, mark one as [Drunk] on them',
 				target: { choose: 'copies', choice: 'one of the Village Idiots' },
 				reason: 'With more than one Village Idiot, one of them is drunk',
 				when: { minCopies: 2 }
@@ -674,6 +674,11 @@ export const NO_SETUP_REMINDERS: Record<CharacterId, string> = {
 export interface SetupNote {
 	text: string;
 	tokens?: readonly string[];
+	/**
+	 * A value the Storyteller types in during prep and the app shows later (the
+	 * Yaggababble's phrase in its pre-day reminder): stored as `Game.prepValues`.
+	 */
+	value?: { key: string; label: string };
 }
 
 export const SETUP_NOTES: Record<CharacterId, readonly SetupNote[]> = {
@@ -686,7 +691,12 @@ export const SETUP_NOTES: Record<CharacterId, readonly SetupNote[]> = {
 	],
 	summoner: [{ text: 'Choose 3 not-in-play good characters as the Summoner’s bluffs' }],
 	mezepheles: [{ text: 'Choose the Mezepheles’ secret word' }],
-	yaggababble: [{ text: 'Choose the Yaggababble’s secret phrase' }],
+	yaggababble: [
+		{
+			text: 'Choose the Yaggababble’s secret phrase',
+			value: { key: 'phrase', label: 'Secret phrase' }
+		}
+	],
 	amnesiac: [{ text: 'Decide what the Amnesiac’s ability is; note it with [?]', tokens: ['?'] }],
 	lordoftyphon: [
 		{ text: 'Check the evil players sit in a line with the Lord of Typhon in the middle' }

@@ -57,7 +57,7 @@
 	}
 </script>
 
-{#snippet night(testid: string, info: ReferenceNight)}
+{#snippet nightValue(testid: string, night: 'first' | 'other', info: ReferenceNight)}
 	<span class="night" data-testid={testid}>
 		<span class="pos" data-testid="{testid}-position" data-position={info.position}
 			>{#if info.position !== undefined}#{info.position}{:else}–{/if}{#if info.number !== undefined}<small
@@ -65,7 +65,7 @@
 				>{/if}</span
 		>
 		<span class="st"
-			>{#if info.text}<NightText text={info.text} {character} />{:else}None{/if}</span
+			>{#if info.text}<NightText text={info.text} {character} {night} />{:else}None{/if}</span
 		>
 	</span>
 {/snippet}
@@ -105,9 +105,9 @@
 			>{#each character.special as s, i (i)}<code>{special(s)}</code>{:else}None{/each}</span
 		>
 	{:else if field === 'firstNight'}
-		{@render night('night-first', entry.firstNight)}
+		{@render nightValue('night-first', 'first', entry.firstNight)}
 	{:else if field === 'otherNight'}
-		{@render night('night-other', entry.otherNight)}
+		{@render nightValue('night-other', 'other', entry.otherNight)}
 	{:else if field === 'jinxes'}
 		{#if entry.jinxes.length}
 			<ul class="list">

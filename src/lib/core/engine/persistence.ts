@@ -13,7 +13,7 @@
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 3;
+export const SAVED_GAME_VERSION = 4;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -86,10 +86,18 @@ const migrateV1toV2: Migration = (doc) => ({ ...doc, schemaVersion: 2 });
  */
 const migrateV2toV3: Migration = (doc) => ({ ...doc, schemaVersion: 3 });
 
+/**
+ * Version 4 (2026-10-15) added values chosen during prep (`Game.prepValues`, the
+ * `PrepValueSet` event), such as the Yaggababble's phrase. The log needs no change: an
+ * older game simply has none set.
+ */
+const migrateV3toV4: Migration = (doc) => ({ ...doc, schemaVersion: 4 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
-	2: migrateV2toV3
+	2: migrateV2toV3,
+	3: migrateV3toV4
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {

@@ -48,7 +48,12 @@ export const DAY_GROUP_TITLES: Record<DayGroup, string> = {
 	announcement: 'Public knowledge'
 };
 
-export type TemplateSegment = { self: true } | { target: true } | { text: string };
+/**
+ * `value`: a value the Storyteller entered during prep (`SetupNote.value`, stored on the
+ * game as `prepValues`), shown as `placeholder` until entered (the Yaggababble's phrase).
+ */
+export type TemplateSegment =
+	{ self: true } | { target: true } | { text: string } | { value: string; placeholder: string };
 
 /** How a death is matched: a cause the app records, or a character id. */
 export type DeathCauseMatch = 'execution' | 'demon' | 'other' | CharacterId;
@@ -104,14 +109,20 @@ export const DAY_REMINDER_ENTRIES: readonly DayReminderEntry[] = [
 	{
 		id: 'pixie',
 		wiki: `${W}Pixie`,
-		// Once that player dies, the Pixie gains the ability or not: nothing left to be mad about.
-		reminders: [on('madness', 'must be mad as', 'Mad', { targetAlive: true })]
+		reminders: [
+			{
+				group: 'madness',
+				template: [self, t('must be mad as'), target, t('to gain their ability when they die.')],
+				// Once that player dies, the Pixie gains the ability or not: nothing left to be mad about.
+				when: { reminder: 'Mad', targetAlive: true }
+			}
+		]
 	},
 	{
 		id: 'sailor',
 		wiki: `${W}Sailor`,
 		impairable: true,
-		reminders: [is('execution-death', 'cannot die')]
+		reminders: [is('execution-death', 'cannot die.')]
 	},
 	{
 		id: 'cultleader',
@@ -437,7 +448,12 @@ export const DAY_REMINDER_ENTRIES: readonly DayReminderEntry[] = [
 		id: 'yaggababble',
 		wiki: `${W}Yaggababble`,
 		impairable: true,
-		reminders: [is('day-ability', 'has a secret phrase')]
+		reminders: [
+			{
+				group: 'day-ability',
+				template: [self, t('secret phrase is'), { value: 'phrase', placeholder: 'PHRASE' }]
+			}
+		]
 	},
 	{
 		id: 'zombuul',

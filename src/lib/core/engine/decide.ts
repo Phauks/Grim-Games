@@ -68,7 +68,8 @@ export type ErrorCode =
 	| 'invalid-override'
 	| 'unknown-entry'
 	| 'wrong-entry-kind'
-	| 'invalid-abnormal';
+	| 'invalid-abnormal'
+	| 'invalid-prep-value';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -905,6 +906,18 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			}
 			const event: GameEvent = { type: 'DemonVotedSet' };
 			if (command.voted !== undefined) event.voted = command.voted;
+			return [event];
+		}
+
+		case 'SetPrepValue': {
+			const value = command.value?.trim() || undefined;
+			if (!command.key.trim()) refuse('invalid-prep-value', 'a prep value needs a key');
+			if (value === game.prepValues?.[command.key]) {
+				warn('no-change', 'the value is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'PrepValueSet', key: command.key };
+			if (value !== undefined) event.value = value;
 			return [event];
 		}
 

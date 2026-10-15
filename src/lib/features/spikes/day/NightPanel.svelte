@@ -195,6 +195,7 @@
 					character={step.gained
 						? (game.characters.get(step.gained.characterId) ?? step.character)
 						: step.character}
+					{night}
 				/>{:else}{step.reminder}{/if}
 		</p>{/if}
 	{#if step.gained}
