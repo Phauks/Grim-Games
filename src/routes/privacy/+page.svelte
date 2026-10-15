@@ -30,6 +30,7 @@
 			and when it happened. It never contains your games. You can view or clear it from About,
 			Problems on this device (localStorage).
 		</li>
+		<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 		<li>A copy of the app itself, so it works offline.</li>
 	</ul>
 	<p>
@@ -54,6 +55,17 @@
 			<strong>Blood on the Clocktower wiki.</strong> To show rules definitions, the app downloads the
 			wiki's Glossary page from wiki.bloodontheclocktower.com about once a week and keeps a copy on your
 			device. The request contains nothing about you or your games beyond what any web request carries.
+		</li>
+		<li>
+			<strong>BotC Scripts.</strong> When you load a script from botcscripts.com, the app asks our server
+			for that script by its public number, and our server fetches it from botcscripts.com. botcscripts.com
+			sees our server, not you.
+		</li>
+		<li>
+			<strong>A link you load a script from.</strong> "Load from a link" downloads the script straight
+			from the site you name (without cookies), so that site sees your request like any page visit. Pasted
+			and uploaded scripts never leave your device, and share links keep the script in the part of the
+			address that browsers never send to a server.
 		</li>
 		<li>
 			<strong>GitHub.</strong> "Report an issue" and "Report a problem" open a form on github.com, filled
