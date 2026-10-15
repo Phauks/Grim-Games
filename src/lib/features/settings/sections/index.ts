@@ -34,7 +34,7 @@ registerSettingsSection({
 registerSettingsSection({
 	id: 'rules-terms',
 	label: 'Rules terms',
-	icon: 'wiki',
+	icon: 'info',
 	component: RulesTermsSection,
 	audience: 'everyone',
 	order: 35
