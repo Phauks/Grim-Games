@@ -29,7 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # All work lands on beta (main only receives releases), whatever the default branch is.
       - uses: actions/checkout@v6
+        with:
+          ref: beta
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -52,6 +55,7 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.DATA_SYNC_TOKEN || github.token }}
+          base: beta
           branch: data-sync/botc-release
           delete-branch: true
           add-paths: static/data
