@@ -70,21 +70,28 @@
 		revealOpen = false;
 	}
 
-	function putBack() {
-		if (tile && send({ type: 'CancelDraw', tileId: tile.tileId })) revealOpen = false;
+	/** A Traveller's alignment is the Storyteller's call, so its tile waits for the reveal. */
+	function isTraveller(tileId: TileId): boolean {
+		const tile = port.game?.bag?.tiles[tileId];
+		return !!tile && port.lookup?.get(tile.grimoire)?.type === 'traveller';
 	}
 
-	/** Puts every tile left straight onto the empty seats, in bag order (no reveals). */
+	/**
+	 * Confirms the tiles players are holding, then puts every tile left straight onto the
+	 * empty seats, in bag order (no reveals).
+	 */
 	function addAll() {
 		if (!game?.bag) return;
-		for (const tileId of [...game.bag.order]) {
+		for (const t of Object.values(game.bag.tiles)) {
+			if (t.drawnBySeat !== undefined && !t.confirmed && !isTraveller(t.tileId)) {
+				if (!send({ type: 'ConfirmDraw', tileId: t.tileId })) return;
+			}
+		}
+		for (const tileId of [...(port.game?.bag?.order ?? [])]) {
 			const seatId = port.game && nextDrawSeat(port.game);
 			if (!seatId) break;
 			if (!send({ type: 'DrawTile', seatId, tileId })) break;
-			const drawn = port.game?.bag?.tiles[tileId];
-			const traveller = drawn && port.lookup?.get(drawn.grimoire)?.type === 'traveller';
-			// A Traveller's alignment is the Storyteller's call: leave it held to reveal.
-			if (traveller) continue;
+			if (isTraveller(tileId)) continue;
 			if (!send({ type: 'ConfirmDraw', tileId })) break;
 		}
 	}
@@ -140,7 +147,7 @@
 	</ErrorBoundary>
 
 	<div class="actions">
-		<Button variant="quiet" disabled={!bag || remaining === 0} onclick={addAll}>Add all</Button>
+		<Button variant="quiet" disabled={!bag || done} onclick={addAll}>Add all</Button>
 		<Button
 			variant="quiet"
 			icon="reminder"
@@ -167,7 +174,6 @@
 			seatLabel={label(tile.drawnBySeat)}
 			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
 			onConfirm={confirm}
-			onPutBack={putBack}
 		/>
 	{/if}
 {/if}

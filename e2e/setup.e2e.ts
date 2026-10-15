@@ -14,6 +14,18 @@ async function selectionFor(page: Page, players: number) {
 	await expect(page.getByTestId('player-count')).toHaveText(String(players));
 }
 
+test('the setup table is shown and follows the player count', async ({ page }) => {
+	await selectionFor(page, 6);
+	const table = page.getByTestId('setup-table');
+	await expect(table).toBeVisible();
+	const current = table.locator('thead [data-current]');
+	await expect(current).toHaveText('6');
+	await expect(table.locator('tbody [data-current]')).toHaveText(['3', '1', '1', '1']);
+	await page.getByRole('button', { name: 'More players' }).tap();
+	await expect(current).toHaveText('7');
+	await expect(table.locator('tbody [data-current]')).toHaveText(['5', '0', '1', '1']);
+});
+
 const choice = (page: Page, name: string) =>
 	page.getByRole('button', { name, exact: true }).and(page.locator('[aria-pressed]'));
 
@@ -76,7 +88,8 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 	await expect(page.getByTestId('next-seat')).toHaveText('Seat 2');
 
-	// Backing out keeps the tile in seat 2's hand, even across a reload.
+	// A drawn tile is never put back: closing the reveal keeps it in seat 2's hand, even
+	// across a reload.
 	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
 	await expect(reveal).toBeVisible();
 	await page.keyboard.press('Escape');
@@ -86,8 +99,9 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await expect(held).toBeVisible();
 	await expect(page.getByTestId('next-seat')).toHaveText('Seat 3');
 	await held.tap();
-	await page.getByRole('button', { name: 'Put back' }).tap();
-	await expect(page.getByRole('button', { name: 'Tile 2', exact: true })).toBeEnabled();
+	await expect(page.getByRole('button', { name: 'Put back' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByRole('button', { name: 'Tile 2, drawn' })).toBeDisabled();
 
 	// Add all seats everyone else without reveals.
 	await page.getByRole('button', { name: 'Add all' }).tap();

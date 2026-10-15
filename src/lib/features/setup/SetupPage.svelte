@@ -11,6 +11,7 @@
 	import type { Command } from '#lib/core/engine/index.ts';
 	import {
 		analyseSelection,
+		canDuplicate,
 		jinxSetupWarnings,
 		planBag,
 		randomSelection,
@@ -24,12 +25,11 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import CharacterChoice from './CharacterChoice.svelte';
 	import CountsBar from './CountsBar.svelte';
 	import type { SetupGamePort } from './game-port.ts';
 	import SetupCheckDialog from './SetupCheckDialog.svelte';
-	import SetupSheetDialog from './SetupSheetDialog.svelte';
+	import SetupTable from './SetupTable.svelte';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
 
 	interface Props {
@@ -39,7 +39,6 @@
 	let { port }: Props = $props();
 
 	let checkOpen = $state(false);
-	let sheetOpen = $state(false);
 	let replaceOpen = $state(false);
 
 	onMount(() => void loadOfficialData());
@@ -107,12 +106,13 @@
 		...jinxSetupWarnings(jinxes, ids, (id) => lookup(id)?.name ?? id).map((w) => w.message)
 	]);
 
-	function allowsDuplicates(character: Character): boolean {
-		return (
-			s.allowDuplicates ||
-			character.special.some((x) => x.type === 'selection' && x.name === 'bag-duplicate')
-		);
-	}
+	// Copies only where a character's rules allow them (Village Idiot, Legion, or with the
+	// Pope or Atheist in play), never through a general switch (Trevor, 2026-10-15).
+	const inPlay = $derived(
+		[...ids, ...(game?.ruleCharacters ?? [])]
+			.map((id) => lookup(id))
+			.filter((c): c is Character => c !== undefined)
+	);
 
 	function toggle(character: Character) {
 		const n = setupSelection.copies(character.id);
@@ -186,21 +186,11 @@
 					disabled={s.players >= MAX_SELECT_PLAYERS}
 					onclick={() => setupSelection.setPlayers(s.players + 1)}>+</button
 				>
-				<Button variant="quiet" onclick={() => (sheetOpen = true)}>Setup sheet</Button>
 			</div>
-			<CountsBar {analysis} {travellers} />
+			<SetupTable players={s.players} />
 		</section>
-		<div class="switches">
-			<Toggle
-				label="Show abilities"
-				checked={s.showAbilities}
-				onChange={(on) => setupSelection.setShowAbilities(on)}
-			/>
-			<Toggle
-				label="Allow duplicates"
-				checked={s.allowDuplicates}
-				onChange={(on) => setupSelection.setAllowDuplicates(on)}
-			/>
+		<div class="counts">
+			<CountsBar {analysis} {travellers} />
 		</div>
 
 		<div class="groups">
@@ -213,9 +203,8 @@
 								<CharacterChoice
 									{character}
 									copies={s.selection[character.id] ?? 0}
-									duplicates={allowsDuplicates(character)}
+									duplicates={canDuplicate(character, inPlay)}
 									jinxed={jinxed.has(character.id)}
-									showAbility={s.showAbilities}
 									onToggle={() => toggle(character)}
 									onAddCopy={() =>
 										setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
@@ -258,7 +247,6 @@
 		onStandIn={(id, shows) => setupSelection.setStandIn(id, shows)}
 	/>
 {/if}
-<SetupSheetDialog bind:open={sheetOpen} dealt={analysis.dealt} />
 <Dialog
 	bind:open={replaceOpen}
 	role="alertdialog"
@@ -303,11 +291,15 @@
 		font-weight: 600;
 	}
 	.controls {
+		display: grid;
+		gap: var(--space-2);
+		padding-top: var(--space-2);
+	}
+	/* Only the chosen counts stay in view while scrolling; the setup table scrolls away. */
+	.counts {
 		position: sticky;
 		top: 0;
 		z-index: var(--z-raised);
-		display: grid;
-		gap: var(--space-2);
 		padding: var(--space-2) 0;
 		background: var(--page-background, var(--surface));
 	}
@@ -343,11 +335,6 @@
 		text-align: center;
 		font-variant-numeric: tabular-nums;
 	}
-	.switches {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--space-4);
-	}
 	h2 {
 		margin: var(--space-3) 0 var(--space-2);
 		font-size: 1.1rem;
@@ -355,7 +342,7 @@
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(calc(12 * var(--u)), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
 		gap: var(--space-2);
 		margin: 0;
 		padding: 0;

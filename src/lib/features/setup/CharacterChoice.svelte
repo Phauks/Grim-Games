@@ -10,12 +10,11 @@
 		duplicates: boolean;
 		/** Jinxed with another selected character. */
 		jinxed: boolean;
-		showAbility: boolean;
 		onToggle: () => void;
 		onAddCopy: () => void;
 	}
 
-	let { character, copies, duplicates, jinxed, showAbility, onToggle, onAddCopy }: Props = $props();
+	let { character, copies, duplicates, jinxed, onToggle, onAddCopy }: Props = $props();
 	const selected = $derived(copies > 0);
 </script>
 
@@ -35,7 +34,7 @@
 		<CharacterToken {character} alignment={defaultAlignment(character.type)} size={44} />
 		<span class="text">
 			<span class="name">{character.name}</span>
-			{#if showAbility}<span class="ability">{character.ability}</span>{/if}
+			<span class="ability">{character.ability}</span>
 		</span>
 		<span class="marks" aria-hidden="true">
 			<span class="jinx" title="Jinxed">{jinxed ? '★' : ''}</span>
@@ -72,7 +71,7 @@
 	.main {
 		display: flex;
 		flex: 1;
-		align-items: center;
+		align-items: flex-start;
 		gap: var(--space-2);
 		min-width: 0;
 		min-height: var(--tap-target);
@@ -100,8 +99,10 @@
 		overflow-wrap: anywhere;
 	}
 	.ability {
+		font-family: var(--font-ability);
 		font-size: 0.8rem;
-		opacity: 0.85;
+		line-height: 1.3;
+		opacity: 0.9;
 	}
 	.marks {
 		display: grid;

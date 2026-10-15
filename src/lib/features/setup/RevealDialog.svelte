@@ -17,7 +17,6 @@
 		seatLabel: string;
 		playerName: string;
 		onConfirm: (details: { playerName: string; alignment?: Alignment }) => void;
-		onPutBack: () => void;
 	}
 
 	let {
@@ -27,8 +26,7 @@
 		needsAlignment,
 		seatLabel,
 		playerName,
-		onConfirm,
-		onPutBack
+		onConfirm
 	}: Props = $props();
 
 	let name = $state('');
@@ -42,8 +40,8 @@
 </script>
 
 <!--
-	The player's own reveal. Closing it keeps the tile in their hand (the draw is saved), so
-	backing out never loses it; Put back returns it to the bag.
+	The player's own reveal. A drawn tile is never put back (Trevor, 2026-10-15): closing the
+	reveal keeps it in the player's hand (the draw is saved) until it is confirmed.
 -->
 <Dialog bind:open title="Tile {number}" size="full">
 	<div class="reveal" data-testid="reveal">
@@ -73,7 +71,6 @@
 		</div>
 	</div>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={onPutBack}>Put back</Button>
 		<Button
 			variant="accent"
 			disabled={needsAlignment && alignment === ''}

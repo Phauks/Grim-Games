@@ -28,3 +28,24 @@ export function replacementReminder(character: Character): Reminder | undefined 
 export function isNotDealt(character: Character): boolean {
 	return isBagDisabled(character) && !replacementReminder(character);
 }
+
+/**
+ * Whether more than one copy of `character` may go in the bag, from TPI's `special` data:
+ * - `bag-duplicate` on the character itself: the Village Idiot
+ *   (https://wiki.bloodontheclocktower.com/Village_Idiot) and Legion
+ *   (https://wiki.bloodontheclocktower.com/Legion);
+ * - `good-duplicate` / `evil-duplicate` on a character in play, which lets good or evil
+ *   characters repeat: the Pope (https://wiki.bloodontheclocktower.com/Pope) and the
+ *   Atheist (https://wiki.bloodontheclocktower.com/Atheist).
+ * `inPlay` is everything selected plus the Fabled and Loric in play.
+ */
+export function canDuplicate(character: Character, inPlay: readonly Character[]): boolean {
+	if (hasSpecial(character, 'selection', 'bag-duplicate')) return true;
+	const good = character.type === 'townsfolk' || character.type === 'outsider';
+	const evil = character.type === 'minion' || character.type === 'demon';
+	return inPlay.some(
+		(c) =>
+			(good && hasSpecial(c, 'selection', 'good-duplicate')) ||
+			(evil && hasSpecial(c, 'selection', 'evil-duplicate'))
+	);
+}

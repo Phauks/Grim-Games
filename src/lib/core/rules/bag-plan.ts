@@ -18,9 +18,9 @@ import type { Character, CharacterId, CharacterType } from '#lib/core/data/types
 import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 import { analyseSetup, type SetupAnalysis } from './setup.ts';
-import { isBagDisabled, isNotDealt, replacementReminder } from './bag-characters.ts';
+import { canDuplicate, isBagDisabled, isNotDealt, replacementReminder } from './bag-characters.ts';
 
-export { isBagDisabled, isNotDealt, replacementReminder };
+export { canDuplicate, isBagDisabled, isNotDealt, replacementReminder };
 
 /** Copies of each selected character (a missing id or 0 is not selected). */
 export type BagSelection = Readonly<Record<CharacterId, number>>;

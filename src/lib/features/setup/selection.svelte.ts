@@ -1,6 +1,6 @@
 /**
  * The character selection being prepared for the bag: player count, copies of each
- * character, the Storyteller's stand-in choices and the two view switches. Kept on this
+ * character and the Storyteller's stand-in choices. Kept on this
  * device (localStorage) so leaving the page or reloading never loses it; another game
  * starts a fresh selection.
  */
@@ -19,8 +19,6 @@ export interface SelectionState {
 	players: number;
 	selection: Record<CharacterId, number>;
 	standIns: Record<CharacterId, CharacterId>;
-	showAbilities: boolean;
-	allowDuplicates: boolean;
 }
 
 function fresh(gameId: string, players = DEFAULT_PLAYERS): SelectionState {
@@ -28,9 +26,7 @@ function fresh(gameId: string, players = DEFAULT_PLAYERS): SelectionState {
 		gameId,
 		players,
 		selection: {},
-		standIns: {},
-		showAbilities: false,
-		allowDuplicates: false
+		standIns: {}
 	};
 }
 
@@ -44,9 +40,7 @@ function read(): SelectionState | undefined {
 		return {
 			...fresh(v.gameId, v.players),
 			selection: { ...v.selection },
-			standIns: { ...v.standIns },
-			showAbilities: v.showAbilities === true,
-			allowDuplicates: v.allowDuplicates === true
+			standIns: { ...v.standIns }
 		};
 	} catch {
 		return undefined;
@@ -112,14 +106,6 @@ export const setupSelection = {
 	clear() {
 		state.selection = {};
 		state.standIns = {};
-		save();
-	},
-	setShowAbilities(on: boolean) {
-		state.showAbilities = on;
-		save();
-	},
-	setAllowDuplicates(on: boolean) {
-		state.allowDuplicates = on;
 		save();
 	}
 };
