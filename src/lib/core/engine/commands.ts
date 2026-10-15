@@ -99,6 +99,11 @@ export type Command =
 	| { type: 'EditNomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
 	/** Marks whether the Demon voted today (for the Flowergirl); undefined clears it. */
 	| { type: 'SetDemonVoted'; voted?: boolean }
+	/**
+	 * Stores a value the Storyteller chose during prep (the Yaggababble's secret phrase) as
+	 * `Game.prepValues[key]`, `key` from `prepValueKey`; no `value` or an empty one clears it.
+	 */
+	| { type: 'SetPrepValue'; key: string; value?: string }
 	/** Logs an execution and marks the player dead by execution, if alive. */
 	| { type: 'Execute'; seatId: SeatId }
 	/**

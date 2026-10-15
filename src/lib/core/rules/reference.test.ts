@@ -36,6 +36,56 @@ describe('characterReference', () => {
 		]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Grandmother and /Bounty_Hunter
+	it('lists where our text departs from TPI’s, with the reason', () => {
+		const gm = entry('grandmother');
+		expect(gm.differences.map((d) => d.part)).toEqual(['firstNight', 'otherNight']);
+		expect(gm.differences[1].source).toBe(data.byId.get('grandmother')!.otherNightReminder);
+		expect(gm.differences[1].ours).toContain('*DEAD*');
+		expect(gm.otherNight.ours?.reason).toBeTruthy();
+		expect(gm.filters.has('differs')).toBe(true);
+		const bh = entry('bountyhunter');
+		expect(bh.differences).toEqual([
+			expect.objectContaining({ part: 'prep', source: data.byId.get('bountyhunter')!.ability })
+		]);
+		expect(entry('chef').differences).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Yaggababble and /Village_Idiot
+	it('shows prep steps with tokens, names and values', () => {
+		expect(entry('villageidiot').prep[0].segments).toContainEqual({
+			kind: 'reminder',
+			label: 'Drunk'
+		});
+		expect(entry('yaggababble').prep).toEqual([
+			{
+				segments: [
+					{ kind: 'text', text: 'Choose the ' },
+					{ kind: 'character', id: 'yaggababble' },
+					{ kind: 'text', text: '’s secret phrase' }
+				],
+				valueLabel: 'Secret phrase'
+			}
+		]);
+		expect(referenceText(entry('yaggababble').dayReminders[0].segments, name)).toBe(
+			'[Yaggababble] secret phrase is (PHRASE)'
+		);
+	});
+
+	it('draws character names in day reminders as badges', () => {
+		const texts = entries.flatMap((e) =>
+			e.dayReminders.flatMap((r) => r.segments.filter((s) => s.kind === 'text'))
+		);
+		for (const t of texts) {
+			if (t.kind !== 'text') continue;
+			for (const c of data.characters) {
+				expect(new RegExp(`(^|[^\\p{L}])${c.name}([^\\p{L}]|$)`, 'u').test(t.text), t.text).toBe(
+					false
+				);
+			}
+		}
+	});
+
 	it('collects everything for the Witch', () => {
 		const witch = entry('witch');
 		expect(witch.alignment).toBe('evil');

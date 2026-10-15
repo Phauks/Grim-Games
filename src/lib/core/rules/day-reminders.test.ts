@@ -92,6 +92,25 @@ describe('state-based reminders', () => {
 		expect(texts({ seats: [seat('witch'), seat('chef')] })).toEqual([]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Yaggababble: the Storyteller picks the phrase.
+	it('shows the Yaggababble’s phrase once the Storyteller entered it in prep', () => {
+		const yagg = seat('yaggababble');
+		expect(texts({ seats: [yagg] })).toEqual(['[Yaggababble] secret phrase is (PHRASE)']);
+		expect(
+			texts({ seats: [yagg], prepValues: { 'yaggababble.phrase': 'cheese and onion' } })
+		).toEqual(['[Yaggababble] secret phrase is (cheese and onion)']);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Pixie and /Sailor (Trevor’s review wording)
+	it('words the Pixie and Sailor reminders as reviewed', () => {
+		const pixie = seat('pixie');
+		const chef = seat('chef', { reminders: [token('pixie', 'Mad')] });
+		expect(texts({ seats: [pixie, chef] })).toEqual([
+			'[Pixie] must be mad as [Chef] to gain their ability when they die.'
+		]);
+		expect(texts({ seats: [seat('sailor')] })).toEqual(['[Sailor] cannot die.']);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Saint
 	it('shows the Saint only while alive', () => {
 		expect(texts({ seats: [seat('saint')] })).toEqual(['[Saint] is alive']);

@@ -291,6 +291,12 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 						? omit(game.today, 'demonVoted')
 						: { ...game.today, demonVoted: event.voted }
 			};
+		case 'PrepValueSet': {
+			const prepValues = { ...game.prepValues };
+			if (event.value === undefined) delete prepValues[event.key];
+			else prepValues[event.key] = event.value;
+			return { ...game, prepValues };
+		}
 		case 'DayStarted':
 			return {
 				...game,

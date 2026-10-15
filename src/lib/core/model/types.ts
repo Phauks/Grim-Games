@@ -196,6 +196,11 @@ export interface Game {
 	nightOrderOverrides: NightStepOverride[];
 	/** The Storyteller's changes to the pre-day reminders, applied in this order. */
 	dayReminderOverrides: DayReminderOverride[];
+	/**
+	 * Values the Storyteller chose during prep, by `prepValueKey` ("yaggababble.phrase").
+	 * Private: never in the public projection. Absent until one is set.
+	 */
+	prepValues?: Record<string, string>;
 	/** The current day log, since the last "New day". */
 	today: DayLog;
 	/** Earlier day logs, oldest first, closed by "New day". */

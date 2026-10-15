@@ -9,8 +9,11 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { EDITION_LABELS, TYPE_LABELS } from './labels.ts';
+	import DiffersButton from './DiffersButton.svelte';
 	import NightText from './NightText.svelte';
+	import PrepText from './PrepText.svelte';
 	import ReminderSentence from './ReminderSentence.svelte';
+	import SetupBadge from './SetupBadge.svelte';
 
 	interface Props {
 		entry: ReferenceEntry;
@@ -34,6 +37,7 @@
 			.filter(([, file]) => file !== undefined)
 			.map(([label, file]) => ({ label, src: `${ICONS_PATH}/${file}` }));
 	});
+	const prepDifferences = $derived(entry.differences.filter((d) => d.part === 'prep'));
 	const reportUrl = $derived(characterReportUrl(buildInfo, character, navigator.userAgent));
 
 	function special(s: Special): string {
@@ -48,7 +52,7 @@
 	}
 </script>
 
-{#snippet night(label: string, testid: string, info: ReferenceNight)}
+{#snippet nightRow(label: string, testid: string, night: 'first' | 'other', info: ReferenceNight)}
 	<dt>{label}</dt>
 	<dd class="pos" data-testid="{testid}-position">
 		{#if info.position !== undefined}#{info.position}{:else}–{/if}{#if info.number !== undefined}<small
@@ -56,7 +60,7 @@
 			>{/if}
 	</dd>
 	<dd class="st" data-testid={testid}>
-		{#if info.text}<NightText text={info.text} {character} />{:else}None{/if}
+		{#if info.text}<NightText {character} {night} />{:else}None{/if}
 	</dd>
 {/snippet}
 
@@ -69,6 +73,7 @@
 				{TYPE_LABELS[character.type]} · {character.edition
 					? (EDITION_LABELS[character.edition] ?? character.edition)
 					: 'None'}
+				{#if entry.setup}<SetupBadge {character} setup={entry.setup} />{/if}
 			</p>
 		</div>
 		<span class="variants">
@@ -80,14 +85,7 @@
 
 	<p class="facts">
 		<span><b>Starting alignment</b> {entry.alignmentNote}</span>
-		<span
-			><b>Setup</b>
-			{#if entry.setup}{character.name}: {entry.setup.summary}{:else}None{/if}</span
-		>
 	</p>
-	{#if entry.setup?.notes.length}
-		<p class="small">{entry.setup.notes.join(' ')}</p>
-	{/if}
 
 	<p class="ability">{character.ability}</p>
 
@@ -98,10 +96,12 @@
 				{#each character.reminders as token, i (i)}<ReminderToken
 						label={token}
 						type={character.type}
+						characterId={character.id}
 					/>{/each}
 				{#each character.remindersGlobal as token, i (i)}<ReminderToken
 						label="{token} (global)"
 						type={character.type}
+						characterId={character.id}
 					/>{/each}
 			</span>
 		{:else}
@@ -120,8 +120,8 @@
 	</div>
 
 	<dl class="nights">
-		{@render night('First night', 'night-first', entry.firstNight)}
-		{@render night('Other nights', 'night-other', entry.otherNight)}
+		{@render nightRow('First night', 'night-first', 'first', entry.firstNight)}
+		{@render nightRow('Other nights', 'night-other', 'other', entry.otherNight)}
 	</dl>
 
 	<div class="row" class:block={entry.jinxes.length > 0}>
@@ -140,13 +140,41 @@
 		{/if}
 	</div>
 
+	<div class="row" class:block={entry.prep.length > 0} data-testid="prep">
+		<b>Prep</b>
+		{#if entry.prep.length}
+			<ul class="list">
+				{#each entry.prep as step, i (i)}
+					<li>
+						<span
+							><PrepText segments={step.segments} {character} />{#if step.valueLabel}<span
+									class="small"
+								>
+									· you type in: {step.valueLabel}</span
+								>{/if}</span
+						>
+					</li>
+				{/each}
+			</ul>
+			{#if prepDifferences.length}<span
+					><DiffersButton {character} differences={prepDifferences} /></span
+				>{/if}
+		{:else}
+			<span>None</span>
+		{/if}
+	</div>
+
 	<div class="row" class:block={entry.dayReminders.length > 0}>
 		<b>Pre-day</b>
 		{#if entry.dayReminders.length}
 			<ul class="list">
 				{#each entry.dayReminders as reminder, i (i)}
 					<li>
-						<ReminderSentence segments={reminder.segments} type={character.type} />
+						<ReminderSentence
+							segments={reminder.segments}
+							type={character.type}
+							characterId={character.id}
+						/>
 						<span class="small"
 							>{reminder.groupTitle} · when {reminder.when}{#if reminder.autoDetected}
 								· guessed from the ability{/if}</span

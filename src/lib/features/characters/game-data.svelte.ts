@@ -4,6 +4,11 @@ import {
 	type GameData,
 	type NumericNightOrder
 } from '#lib/core/data/index.ts';
+import {
+	characterNames,
+	NO_CHARACTER_NAMES,
+	type CharacterNames
+} from '#lib/core/rules/character-names.ts';
 
 /**
  * Official character data, fetched once from the synced files in `static/data/` (the
@@ -32,6 +37,19 @@ export const officialData = {
 		return data;
 	}
 };
+
+let names: { for: GameData; names: CharacterNames } | undefined;
+
+/**
+ * Official character names, for drawing every name in text as a badge. Matches nothing
+ * until the data has loaded (reactive: reads `officialData`).
+ */
+export function officialNames(): CharacterNames {
+	const current = data;
+	if (!current) return NO_CHARACTER_NAMES;
+	if (names?.for !== current) names = { for: current, names: characterNames(current.characters) };
+	return names.names;
+}
 
 let numericLoading: Promise<NumericNightOrder> | undefined;
 

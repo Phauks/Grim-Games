@@ -10,6 +10,7 @@
 		type NightStep
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import NightText from '#lib/features/reference/NightText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -53,6 +54,14 @@
 
 	function seatsHolding(step: NightStep) {
 		return g.seating.filter((s) => g.seats[s].characterId === step.character?.id);
+	}
+
+	/** Whether this step's character has a reminder token with this label in the grimoire. */
+	function placed(step: NightStep, label: string): boolean {
+		const id = step.character?.id;
+		return g.seating.some((s) =>
+			g.seats[s].reminders.some((r) => r.characterId === id && r.label === label)
+		);
 	}
 
 	function stepTitle(step: NightStep): string {
@@ -138,7 +147,14 @@
 			<strong class="marker">{stepTitle(step)}</strong>
 		{/if}
 	</div>
-	{#if step.reminder}<p class="reminder">{step.reminder}</p>{/if}
+	{#if step.reminder}<p class="reminder">
+			{#if step.character}<NightText
+					text={step.reminder}
+					character={step.character}
+					{night}
+					placed={(label) => placed(step, label)}
+				/>{:else}{step.reminder}{/if}
+		</p>{/if}
 
 	{#if step.info?.kind === 'answer' && assistance.nightAnswers}
 		{#each step.info.answers as a (a.seatId)}
@@ -280,6 +296,7 @@
 	}
 	.reminder {
 		margin: 0;
+		line-height: 1.7;
 	}
 	.answer {
 		display: grid;

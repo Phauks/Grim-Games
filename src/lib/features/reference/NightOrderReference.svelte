@@ -45,10 +45,11 @@
 	}
 </script>
 
-{#snippet text(s: NightStep)}
+{#snippet text(night: Night, s: NightStep)}
 	{#if s.reminder && s.character}<NightText
 			text={s.reminder}
 			character={s.character}
+			{night}
 		/>{:else}{s.reminder ?? 'None'}{/if}
 {/snippet}
 
@@ -64,7 +65,7 @@
 			{/if}
 		</th>
 		<td class="text">
-			{@render text(s)}
+			{@render text(night, s)}
 			{#if s.afterDawn}<span class="muted"> (after Dawn: announce to everyone)</span>{/if}
 		</td>
 		<td class="tokens">
@@ -72,6 +73,7 @@
 				{#each [...s.character.reminders, ...s.character.remindersGlobal] as token, i (i)}<ReminderToken
 						label={token}
 						type={s.character.type}
+						characterId={s.character.id}
 					/>{/each}
 			{:else}None{/if}
 		</td>
@@ -89,7 +91,7 @@
 			{:else if s.character}
 				<CharacterBadge characterId={s.character.id} />
 			{/if}
-			{#if s.reminder}<p>{@render text(s)}</p>{/if}
+			{#if s.reminder}<p>{@render text(night, s)}</p>{/if}
 			{#if number !== undefined}<p class="muted">Provisional number {number}</p>{/if}
 			{#each s.notes as note (note)}<p class="muted">{note}</p>{/each}
 		</div>

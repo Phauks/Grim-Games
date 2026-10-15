@@ -114,6 +114,29 @@ describe('SetDemonVoted', () => {
 	});
 });
 
+// https://wiki.bloodontheclocktower.com/Yaggababble (the Storyteller picks the phrase)
+describe('SetPrepValue', () => {
+	it('stores, replaces and clears a value chosen during prep, with undo', () => {
+		const { session, ctx } = setup();
+		const key = 'yaggababble.phrase';
+		const s = run(session, ctx, { type: 'SetPrepValue', key, value: '  I am the walrus ' });
+		expect(s.game.prepValues).toEqual({ [key]: 'I am the walrus' });
+		expect(warned(s, ctx, { type: 'SetPrepValue', key, value: 'I am the walrus' })).toEqual([
+			'no-change'
+		]);
+		const cleared = run(s, ctx, { type: 'SetPrepValue', key, value: '' });
+		expect(cleared.game.prepValues).toEqual({});
+		expect(undo(s).game.prepValues).toBeUndefined();
+	});
+
+	it('refuses a value with no key', () => {
+		const { session, ctx } = setup();
+		expect(refused(session, ctx, { type: 'SetPrepValue', key: ' ', value: 'x' })).toBe(
+			'invalid-prep-value'
+		);
+	});
+});
+
 describe('Execute', () => {
 	it('logs the execution and kills the player by execution', () => {
 		const { session, ctx, seats } = setup();

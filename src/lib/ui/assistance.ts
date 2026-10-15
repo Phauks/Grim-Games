@@ -6,6 +6,7 @@
  */
 export const ASSIST_KEYS = [
 	'nightWalkthrough',
+	'fullNightText',
 	'nightAnswers',
 	'infoSuggestions',
 	'setupReminders',
@@ -21,6 +22,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Walk me through the night',
 		description:
 			'One character at a time with their Storyteller text. Off shows the whole night as a checklist.'
+	},
+	fullNightText: {
+		label: 'Full night instructions',
+		description:
+			'Our fuller Storyteller text where TPI’s does not say which reminder to place or remove, or when. Off shows TPI’s text. Either way, steps with our own text are marked “Differs from source”.'
 	},
 	nightAnswers: {
 		label: 'Work out night answers',
