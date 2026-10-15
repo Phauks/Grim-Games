@@ -148,6 +148,8 @@ export interface ScriptMeta {
 export interface Script {
 	meta?: ScriptMeta;
 	entries: ScriptEntry[];
+	/** Jinxes declared by homebrew characters on this script. Absent means none. */
+	jinxes?: Jinx[];
 }
 
 export type ScriptEntry =

@@ -7,8 +7,10 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	editionScript,
 	findEdition,
+	fromScript,
 	loadScript,
 	loadScriptText,
+	toScript,
 	type ScriptLoadResult
 } from './script.ts';
 
@@ -357,5 +359,63 @@ describe('pasted text', () => {
 	it('explains links and empty text', () => {
 		expect(errors(loadScriptText('https://example.com/s.json', data))[0].message).toContain('link');
 		expect(errors(loadScriptText('   ', data))[0].message).toContain('empty');
+	});
+});
+
+describe('toScript and fromScript (08-script-loading.md §5.2)', () => {
+	it('turns an official edition into official entries and back', () => {
+		const loaded = editionScript('tb', data)!;
+		const script = toScript(loaded);
+		expect(script.meta?.name).toBe('Trouble Brewing');
+		expect(script.entries.every((e) => e.kind === 'official')).toBe(true);
+		expect(script.entries.map((e) => (e.kind === 'official' ? e.id : ''))).toEqual(
+			loaded.characters.map((c) => c.id)
+		);
+		expect(script.jinxes).toBeUndefined();
+
+		const back = fromScript(script, data);
+		expect(back.missing).toEqual([]);
+		expect(back.script.edition).toBe('tb');
+		expect(back.script.characters.map((c) => c.id)).toEqual(loaded.characters.map((c) => c.id));
+	});
+
+	it('keeps homebrew characters whole, with their jinxes, in script order', () => {
+		const result = loadScript(
+			[
+				{ id: '_meta', name: 'Brew' },
+				'washerwoman',
+				{ ...homebrew, jinxes: [{ id: 'imp', reason: 'Our own test jinx.' }] },
+				'imp'
+			],
+			data
+		);
+		const loaded = result.script!;
+		expect(loaded.homebrew.length).toBeGreaterThan(0);
+		const script = toScript(loaded);
+		const custom = script.entries.filter((e) => e.kind === 'custom');
+		expect(custom.map((e) => e.kind === 'custom' && e.character.id)).toEqual(loaded.homebrew);
+		expect(loaded.homebrewJinxes).toHaveLength(1);
+		expect(script.jinxes).toEqual(loaded.homebrewJinxes);
+
+		const back = fromScript(script, data);
+		expect(back.script.characters).toEqual(loaded.characters);
+		expect(back.script.homebrew).toEqual(loaded.homebrew);
+		expect(back.script.edition).toBeUndefined();
+	});
+
+	it('reports official ids this build no longer knows instead of failing', () => {
+		const back = fromScript(
+			{
+				meta: { name: 'Old' },
+				entries: [
+					{ kind: 'official', id: 'washerwoman' },
+					{ kind: 'official', id: 'gone' }
+				]
+			},
+			data
+		);
+		expect(back.script.characters.map((c) => c.id)).toEqual(['washerwoman']);
+		expect(back.missing).toEqual(['gone']);
+		expect(back.script.name).toBe('Old');
 	});
 });

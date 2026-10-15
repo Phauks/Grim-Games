@@ -20,6 +20,7 @@ import {
 	type CharacterId,
 	type CharacterType,
 	type Jinx,
+	type Script,
 	type ScriptMeta,
 	type Special
 } from './types.ts';
@@ -683,4 +684,61 @@ export function scriptToJson(script: LoadedScript): unknown[] {
 
 function nightName(key: 'firstNight' | 'otherNight'): string {
 	return key === 'firstNight' ? 'first night' : 'other nights';
+}
+
+/**
+ * The engine's `Script` for a loaded script (08-script-loading.md §5.2): official
+ * characters by id, homebrew characters (and official ids the script overrides) with their
+ * full data, plus homebrew jinxes. The script's display name is kept in `meta.name`.
+ */
+export function toScript(loaded: LoadedScript): Script {
+	const homebrew = new Set(loaded.homebrew);
+	const script: Script = {
+		meta: { ...loaded.meta, name: loaded.meta.name || loaded.name },
+		entries: loaded.characters.map((character) =>
+			homebrew.has(character.id)
+				? { kind: 'custom', character }
+				: { kind: 'official', id: character.id }
+		)
+	};
+	if (loaded.homebrewJinxes.length > 0) script.jinxes = [...loaded.homebrewJinxes];
+	return script;
+}
+
+/**
+ * The reverse of `toScript`, for a saved game's script: official ids are resolved against
+ * `data`. Ids `data` no longer knows (a newer build removed them) are left out and returned
+ * in `missing`, so the caller can tell the Storyteller instead of failing.
+ */
+export function fromScript(
+	script: Script,
+	data: GameData
+): { script: LoadedScript; missing: CharacterId[] } {
+	const characters: Character[] = [];
+	const homebrew: CharacterId[] = [];
+	const missing: CharacterId[] = [];
+	for (const entry of script.entries) {
+		if (entry.kind === 'custom') {
+			characters.push(entry.character);
+			homebrew.push(entry.character.id);
+			continue;
+		}
+		const character = data.byId.get(entry.id);
+		if (character) characters.push(character);
+		else missing.push(entry.id);
+	}
+	const meta: ScriptMeta = { ...script.meta, name: script.meta?.name ?? '' };
+	const edition = OFFICIAL_EDITIONS.find((e) => e.name === meta.name && homebrew.length === 0);
+	return {
+		script: {
+			name: meta.name || edition?.name || 'Custom script',
+			meta,
+			...(edition ? { edition: edition.id } : {}),
+			characters,
+			homebrew,
+			homebrewJinxes: [...(script.jinxes ?? [])],
+			renamedIds: {}
+		},
+		missing
+	};
 }
