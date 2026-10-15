@@ -13,7 +13,7 @@
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 4;
+export const SAVED_GAME_VERSION = 5;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -93,11 +93,20 @@ const migrateV2toV3: Migration = (doc) => ({ ...doc, schemaVersion: 3 });
  */
 const migrateV3toV4: Migration = (doc) => ({ ...doc, schemaVersion: 4 });
 
+/**
+ * Version 5 (2026-10-15) added changing the script mid-game (the `ScriptChanged` event,
+ * 08-script-loading.md §5.6). The log needs no change: an older game never changed its
+ * script. The bump makes older builds refuse a version 5 save instead of failing on the
+ * unknown event.
+ */
+const migrateV4toV5: Migration = (doc) => ({ ...doc, schemaVersion: 5 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
 	2: migrateV2toV3,
-	3: migrateV3toV4
+	3: migrateV3toV4,
+	4: migrateV4toV5
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
@@ -184,15 +193,17 @@ export function summariseSavedGame(saved: SavedGame): SavedGameSummary {
 		createdAt: created?.createdAt ?? saved.savedAt,
 		seatCount: 0
 	};
-	if (created?.script.meta?.name) summary.scriptName = created.script.meta.name;
-	// Seat count at the cursor, without replaying the whole game.
+	// Script and seat count at the cursor, without replaying the whole game.
+	let script = created?.script;
 	let seats = created?.seatIds.length ?? 0;
 	for (const entry of saved.log.entries.slice(1, saved.log.cursor)) {
 		for (const event of entry.events) {
 			if (event.type === 'SeatAdded') seats++;
 			else if (event.type === 'SeatRemoved') seats--;
+			else if (event.type === 'ScriptChanged') script = event.script;
 		}
 	}
+	if (script?.meta?.name) summary.scriptName = script.meta.name;
 	summary.seatCount = seats;
 	return summary;
 }

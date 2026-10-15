@@ -13,7 +13,8 @@ import {
 	isSeatable,
 	type Alignment,
 	type Character,
-	type CharacterId
+	type CharacterId,
+	type Script
 } from '#lib/core/data/index.ts';
 import {
 	ABNORMAL_REASONS,
@@ -200,6 +201,28 @@ function inPlay(game: Game, ctx: EngineContext): Set<CharacterId> {
 		if (truly !== undefined) ids.add(truly);
 	}
 	return ids;
+}
+
+/**
+ * Characters the game holds that `script` lacks: seat tokens and true characters, reminder
+ * tokens, bluffs and bag tiles. Travellers, Fabled and Loric need not be on a script.
+ */
+function offScript(game: Game, script: Script, ctx: EngineContext): CharacterId[] {
+	const ids = inPlay(game, ctx);
+	for (const seatId of game.seating) {
+		for (const r of game.seats[seatId].reminders) ids.add(r.characterId);
+	}
+	for (const set of game.bluffs) for (const id of set) ids.add(id);
+	for (const tile of Object.values(game.bag?.tiles ?? {})) {
+		ids.add(tile.shows);
+		ids.add(tile.grimoire);
+		for (const r of tile.reminders) ids.add(r.characterId);
+	}
+	return [...ids].filter((id) => {
+		const type = ctx.characters.get(id)?.type;
+		const exempt = type === 'traveller' || type === 'fabled' || type === 'loric';
+		return !exempt && !isOnScript(script, id);
+	});
 }
 
 function allowsDuplicates(character: Character): boolean {
@@ -434,6 +457,18 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 	switch (command.type) {
 		case 'CreateGame':
 			return refuse('game-exists', 'this log already has a game');
+
+		case 'ChangeScript': {
+			if (JSON.stringify(command.script) === JSON.stringify(game.script)) {
+				warn('no-change', 'that is already the script');
+				return [];
+			}
+			for (const id of offScript(game, command.script, ctx)) {
+				const name = ctx.characters.get(id)?.name ?? id;
+				warn('not-on-script', `${name} is not on the script`);
+			}
+			return [{ type: 'ScriptChanged', script: command.script }];
+		}
 
 		case 'AddSeat': {
 			const position = command.position ?? game.seating.length;

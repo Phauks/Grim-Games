@@ -69,6 +69,8 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 	if (!game) throw new Error(`${event.type} applied before GameCreated`);
 
 	switch (event.type) {
+		case 'ScriptChanged':
+			return { ...game, script: event.script };
 		case 'SeatAdded': {
 			if (Object.hasOwn(game.seats, event.seatId)) return game;
 			const seating = [...game.seating];

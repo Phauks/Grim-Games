@@ -171,6 +171,36 @@ describe('version 2 saves', () => {
 	});
 });
 
+describe('version 4 saves', () => {
+	/** A game saved before the script could be changed mid-game. */
+	const readV4 = (): unknown =>
+		JSON.parse(readFileSync(new URL('./fixtures/saved-game-v4.json', import.meta.url), 'utf8'));
+
+	it('migrates to the current version with the log unchanged', () => {
+		const raw = readV4();
+		const loaded = migrateSavedGame(raw);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		expect(loaded.log).toEqual((raw as { log: unknown }).log);
+		const { game } = openSession(loaded.log);
+		expect(game.script.meta?.name).toBe('Older Brewing');
+		expect(game.prepValues).toEqual({ 'yaggababble.phrase': 'hello' });
+		expect(raw).toEqual(readV4());
+	});
+
+	it('takes ChangeScript after migrating, and the summary names the new script', () => {
+		const session = openSession(migrateSavedGame(readV4()).log);
+		const script = { meta: { name: 'Newer Brewing' }, entries: [] };
+		const changed = dispatch(session, { type: 'ChangeScript', script }, testContext());
+		if (!changed.ok) throw new Error(changed.error.message);
+		expect(changed.warnings.map((w) => w.message)).toEqual(['Imp is not on the script']);
+		const saved = migrateSavedGame(JSON.parse(JSON.stringify(toSavedGame(changed.session, 1))));
+		expect(openSession(saved.log).game.script).toEqual(script);
+		expect(summariseSavedGame(saved).scriptName).toBe('Newer Brewing');
+		const undone = { ...saved, log: { ...saved.log, cursor: saved.log.cursor - 1 } };
+		expect(summariseSavedGame(undone).scriptName).toBe('Older Brewing');
+	});
+});
+
 describe('migration chain', () => {
 	// A made-up history: v1 stored `name`, v2 renamed it to `title`, v3 added `tags`.
 	const chain: Record<number, Migration> = {
