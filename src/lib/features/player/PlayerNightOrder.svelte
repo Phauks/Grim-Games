@@ -32,7 +32,7 @@
 								>{MARKER_TEXT[entry.id].name}</span
 							>
 						{:else}
-							<CharacterBadge characterId={entry.character.id} />
+							<CharacterBadge characterId={entry.character.id} character={entry.character} />
 						{/if}
 					</li>
 				{/each}

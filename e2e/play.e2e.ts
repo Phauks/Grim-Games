@@ -94,3 +94,32 @@ test('shows the script chosen on the Scripts page, with its own notebook', async
 	// A new script starts its own circle; Trouble Brewing's is kept.
 	await expect(page.getByTestId('seat-count')).toHaveText('8');
 });
+
+test('a homebrew character from a loaded script shows as a badge with its ability', async ({
+	page
+}) => {
+	await page.goto('/scripts');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(
+			JSON.stringify([
+				{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
+				'chef',
+				{
+					id: 'stormwarden',
+					name: 'Storm Warden',
+					team: 'townsfolk',
+					ability: 'Each night, choose a player: they are safe from the Demon tonight.'
+				},
+				'imp'
+			])
+		)
+	});
+	await expect(page.getByTestId('current-script-name')).toHaveText('Storm Front');
+	await page.goto('/play');
+	await expect(page.getByRole('heading', { name: 'Storm Front', level: 1 })).toBeVisible();
+	const row = page.locator('[data-character="stormwarden"]');
+	await expect(row.getByRole('button', { name: /Storm Warden/ })).toBeVisible();
+	await expect(row).toContainText('safe from the Demon tonight');
+});

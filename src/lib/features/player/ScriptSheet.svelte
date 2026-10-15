@@ -27,12 +27,13 @@
 		(_, i) => MIN_PLAYERS + i
 	);
 	const highlighted = $derived(Math.min(players, MAX_DEALT_PLAYERS));
-	const nameOf = (id: string) => script.characters.find((c) => c.id === id)?.name ?? id;
+	const byId = $derived(new Map(script.characters.map((c) => [c.id, c])));
+	const nameOf = (id: string) => byId.get(id)?.name ?? id;
 </script>
 
 {#snippet row(c: Character)}
 	<li class="character" data-character={c.id}>
-		<CharacterBadge characterId={c.id} />
+		<CharacterBadge characterId={c.id} character={c} />
 		<p class="ability"><GlossaryText text={c.ability} {names} /></p>
 	</li>
 {/snippet}
@@ -54,8 +55,14 @@
 				{#each jinxes as jinx (jinx.characters.join('+'))}
 					<li class="jinx">
 						<span class="pair">
-							<CharacterBadge characterId={jinx.characters[0]} />
-							<CharacterBadge characterId={jinx.characters[1]} />
+							<CharacterBadge
+								characterId={jinx.characters[0]}
+								character={byId.get(jinx.characters[0])}
+							/>
+							<CharacterBadge
+								characterId={jinx.characters[1]}
+								character={byId.get(jinx.characters[1])}
+							/>
 						</span>
 						<p class="ability">
 							<GlossaryText
