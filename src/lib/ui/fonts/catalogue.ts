@@ -167,8 +167,7 @@ export const FONT_ROLE_INFO: Record<FontRole, FontRoleInfo> = {
 	body: {
 		id: 'body',
 		label: 'Body text',
-		description:
-			'Descriptions and hints, settings help, messages, notes, logs and night answers.',
+		description: 'Descriptions and hints, settings help, messages, notes, logs and night answers.',
 		sample: 'Alex nominates Sam.',
 		length: 'running'
 	}

@@ -262,7 +262,8 @@
 		color: var(--on-surface-muted);
 	}
 	.ability,
-	.list :global(.badge) + .small {
+	/* A jinx: the other character's badge, then the rule. */
+	.list li:has(> :global(.badge)) > .small {
 		font-family: var(--font-ability);
 	}
 	.ability {

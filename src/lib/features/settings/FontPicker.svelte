@@ -27,13 +27,7 @@
 </script>
 
 <!-- One font role as a dropdown; every font name is drawn in its own font. -->
-<SettingSelect
-	label={info.label}
-	description={info.description}
-	{value}
-	{options}
-	{onChange}
->
+<SettingSelect label={info.label} description={info.description} {value} {options} {onChange}>
 	{#snippet item(option)}
 		{@const font = FONTS[option.value]}
 		<span class="name" style:font-family={fontStack(font.id)} style:font-weight={weight(font)}>

@@ -25,8 +25,7 @@
 		selected?: Snippet<[Option]>;
 	}
 
-	let { label, hideLabel, labelledBy, value, options, onChange, item, selected }: Props =
-		$props();
+	let { label, hideLabel, labelledBy, value, options, onChange, item, selected }: Props = $props();
 
 	const collection = $derived(
 		createListCollection({
@@ -183,5 +182,9 @@
 		display: grid;
 		flex: none;
 		color: var(--accent);
+	}
+	/* Only the chosen option shows its tick; the others keep the space, so labels line up. */
+	:global([data-scope='select'][data-part='item-indicator'][hidden]) {
+		visibility: hidden;
 	}
 </style>

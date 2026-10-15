@@ -1,9 +1,4 @@
-import {
-	FONT_ROLES,
-	isFontFor,
-	type FontId,
-	type FontRole
-} from '#lib/ui/fonts/catalogue.ts';
+import { FONT_ROLES, isFontFor, type FontId, type FontRole } from '#lib/ui/fonts/catalogue.ts';
 import {
 	ICON_SETS,
 	ICON_SLOTS,
