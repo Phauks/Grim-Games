@@ -27,7 +27,9 @@
 			seat.dead ? (seat.ghostVoteUsed ? 'dead, ghost vote used' : 'dead, has ghost vote') : '',
 			upsideDown ? 'upside down' : '',
 			orphan ? 'not on the script' : '',
-			seat.reminders.length ? `${seat.reminders.length} reminders` : ''
+			seat.reminders.length
+				? `${seat.reminders.length} reminder${seat.reminders.length === 1 ? '' : 's'}`
+				: ''
 		]
 			.filter(Boolean)
 			.join(', ')

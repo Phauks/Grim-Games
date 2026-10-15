@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { characterLookup, type Seat } from '#lib/core/model/index.ts';
+import { deathCauses } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { deathCauseOptions, isOrphan, pickerGroups, seatPosition, tokenSize } from './board.ts';
 
@@ -69,13 +70,24 @@ describe('isOrphan', () => {
 });
 
 describe('deathCauseOptions', () => {
-	it('lists executed, the Demon, non-Demon characters in play, then something else', () => {
-		expect(deathCauseOptions(characters, ['slayer', 'imp', 'gunslinger', 'slayer'])).toEqual([
+	const options = deathCauses(['slayer', 'imp', 'gambler', 'philosopher', 'virgin'], characters, [
+		'gunslinger'
+	]);
+
+	it('lists executed and the Demon, the characters that can cause a death, then something else', () => {
+		expect(deathCauseOptions(options, characters)).toEqual([
 			'execution',
 			'demon',
 			'slayer',
+			'philosopher',
+			'virgin',
 			'gunslinger',
 			'other'
 		]);
+	});
+
+	it('offers a character that can only kill its own player on that seat only', () => {
+		expect(deathCauseOptions(options, characters, 'gambler')).toContain('gambler');
+		expect(deathCauseOptions(options, characters, 'slayer')).not.toContain('gambler');
 	});
 });

@@ -74,3 +74,16 @@ export const upsideDown = {
 		writeList(FLIPPED_KEY(gameId), seatIds),
 	forget: (gameId: GameId): void => writeList(FLIPPED_KEY(gameId), [])
 };
+
+const RECENT_REMINDERS_KEY = 'grim-games:recent-reminders:v1';
+/** How many recently placed reminders are offered first. */
+export const MAX_RECENT_REMINDERS = 8;
+
+/** Reminders placed recently on this device (as `reminderKey`s), newest first. */
+export const recentReminders = {
+	read: (): string[] => readList(RECENT_REMINDERS_KEY),
+	remember(key: string): void {
+		const list = readList(RECENT_REMINDERS_KEY).filter((k) => k !== key);
+		writeList(RECENT_REMINDERS_KEY, [key, ...list].slice(0, MAX_RECENT_REMINDERS));
+	}
+};

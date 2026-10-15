@@ -1,11 +1,7 @@
 <script lang="ts">
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import {
-		charactersInPlay,
-		type DeathCause,
-		type ReminderId,
-		type SeatId
-	} from '#lib/core/model/index.ts';
+	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
+	import { gameDeathCauses } from '#lib/core/rules/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -20,6 +16,7 @@
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import ReminderPicker from './ReminderPicker.svelte';
 	import SeatChooser from './SeatChooser.svelte';
 
 	interface Props {
@@ -84,7 +81,9 @@
 
 	// ── Death ──
 	let causeOpen = $state(false);
-	const causes = $derived(deathCauseOptions(characters, charactersInPlay(game)));
+	const causes = $derived(
+		deathCauseOptions(gameDeathCauses(game, characters), characters, seat?.characterId)
+	);
 
 	function toggleDead() {
 		if (!seat || !seatId) return;
@@ -104,9 +103,10 @@
 	let swapOpen = $state(false);
 	let removeOpen = $state(false);
 	let showOpen = $state(false);
+	let remindersOpen = $state(false);
 </script>
 
-<BottomSheet bind:open {title} description={`Seat ${number}`}>
+<BottomSheet bind:open {title} description={seat?.playerName ? `Seat ${number}` : 'No name'}>
 	{#if seat && seatId}
 		<div class="sheet">
 			<label class="field">
@@ -206,7 +206,12 @@
 				</button>
 			</div>
 
-			<h3>Reminders</h3>
+			<div class="row">
+				<h3>Reminders</h3>
+				<Button variant="quiet" icon="add" onclick={() => (remindersOpen = true)}>
+					Add reminder
+				</Button>
+			</div>
 			{#if seat.reminders.length === 0}
 				<p class="none">None</p>
 			{:else}
@@ -258,6 +263,8 @@
 		</div>
 	{/if}
 </BottomSheet>
+
+<ReminderPicker bind:open={remindersOpen} {grimoire} {seatId} {title} />
 
 <ShowToPlayer
 	bind:open={showOpen}

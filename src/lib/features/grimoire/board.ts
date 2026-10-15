@@ -4,6 +4,7 @@
  */
 import type { Character, CharacterId, CharacterType, Script } from '#lib/core/data/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
+import type { DeathCauseOption } from '#lib/core/rules/index.ts';
 import {
 	GENERAL_DEATH_CAUSES,
 	isOnScript,
@@ -104,19 +105,22 @@ export function isOrphan(seat: Seat, script: Script, characters: CharacterLookup
 }
 
 /**
- * Causes the death picker offers: executed, the Demon, each non-Demon character in play
- * (in seating order), then "something else". Which characters can kill is not in our
- * data yet, so every character in play is offered; the Storyteller can always choose
- * "something else", and the cause can be changed later.
+ * The death-cause picker's choices: executed and the Demon first, then the characters that
+ * can cause a death (core `gameDeathCauses`, in script order) and something else last.
+ * Demons are left out because "the Demon" covers them; a character that can only cause its
+ * own death is offered only on the seat that has it.
  */
 export function deathCauseOptions(
+	options: readonly DeathCauseOption[],
 	characters: CharacterLookup,
-	inPlay: readonly CharacterId[]
+	ownCharacter?: CharacterId
 ): DeathCause[] {
-	const ids = [...new Set(inPlay)].filter((id) => {
-		const type = characters.get(id)?.type;
-		return type !== undefined && type !== 'demon';
-	});
+	const ids = options
+		.filter(({ characterId, kind }) => {
+			if (characters.get(characterId)?.type === 'demon') return false;
+			return kind !== 'own-death' || characterId === ownCharacter;
+		})
+		.map(({ characterId }) => characterId);
 	const [execution, demon, other] = GENERAL_DEATH_CAUSES;
 	return [execution, demon, ...ids, other];
 }

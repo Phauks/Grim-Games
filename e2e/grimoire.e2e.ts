@@ -194,3 +194,44 @@ test('a new game can use a custom script from the Scripts page', async ({ page }
 	await startGame(page, 'Pocket Storm');
 	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Pocket Storm');
 });
+
+test('reminders: add several from the picker, recent first, then move and remove', async ({
+	page
+}) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	// Not in play: only the Drunk's global reminder; the Washerwoman's appear with "include".
+	await expect(picker.getByRole('group', { name: 'Drunk' })).toContainText('Is The Drunk');
+	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
+	const poisoner = picker.getByRole('group', { name: 'Poisoner' });
+	await poisoner.getByRole('button', { name: 'Poisoned' }).tap();
+	await picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first().tap();
+	await expect(picker.getByText('On this seat: 2')).toBeVisible();
+	// Recent reminders are read when the picker opens, so nothing moves under a finger.
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	await expect(
+		picker.getByRole('group', { name: 'Recent reminders' }).getByRole('button')
+	).toHaveCount(2);
+	await picker.getByText('Include reminders of characters not in play').tap();
+	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toContainText('Wrong');
+	await picker.getByRole('button', { name: 'Close' }).tap();
+
+	await expect(seatLabelled(page, 'Seat 1: no name, Poisoner, 2 reminders')).toBeAttached();
+	await sheet.getByRole('button', { name: 'Move Poisoned to another seat' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Move reminder to' })
+		.getByRole('button', { name: /^3/ })
+		.tap();
+	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
+	await sheet.getByRole('button', { name: 'Remove Is The Drunk' }).tap();
+	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
+});
