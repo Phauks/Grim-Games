@@ -1,0 +1,131 @@
+<script lang="ts">
+	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
+	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+
+	interface Props {
+		character: Character;
+		copies: number;
+		/** Whether more than one copy may be added (Village Idiot, Legion, or the switch). */
+		duplicates: boolean;
+		/** Jinxed with another selected character. */
+		jinxed: boolean;
+		showAbility: boolean;
+		onToggle: () => void;
+		onAddCopy: () => void;
+	}
+
+	let { character, copies, duplicates, jinxed, showAbility, onToggle, onAddCopy }: Props = $props();
+	const selected = $derived(copies > 0);
+</script>
+
+<!--
+	One selectable character. Tapping toggles it (or removes one copy when there are several);
+	the + button adds a copy. Every mark has a fixed slot, so selecting never moves anything.
+-->
+<div class="choice" data-selected={selected ? '' : undefined} data-type={character.type}>
+	<button
+		type="button"
+		class="main"
+		aria-pressed={selected}
+		aria-label={copies > 1 ? `${character.name}, ${copies} copies` : character.name}
+		data-character-id={character.id}
+		onclick={onToggle}
+	>
+		<CharacterToken {character} alignment={defaultAlignment(character.type)} size={44} />
+		<span class="text">
+			<span class="name">{character.name}</span>
+			{#if showAbility}<span class="ability">{character.ability}</span>{/if}
+		</span>
+		<span class="marks" aria-hidden="true">
+			<span class="jinx" title="Jinxed">{jinxed ? '★' : ''}</span>
+			<span class="copies">{copies > 1 ? `×${copies}` : ''}</span>
+			<span class="check"
+				>{#if selected}<Icon name="check" />{/if}</span
+			>
+		</span>
+	</button>
+	{#if duplicates}
+		<button
+			type="button"
+			class="add"
+			aria-label="Add another {character.name}"
+			title="Add another"
+			onclick={onAddCopy}><Icon name="add" /></button
+		>
+	{/if}
+</div>
+
+<style>
+	.choice {
+		display: flex;
+		align-items: stretch;
+		border-radius: var(--radius-md);
+		background: var(--choice-background);
+		color: var(--choice-color);
+		box-shadow: inset 0 0 0 1px var(--border);
+	}
+	.choice[data-selected] {
+		background: var(--choice-selected-background);
+		box-shadow: inset 0 0 0 2px var(--choice-selected-border);
+	}
+	.main {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		gap: var(--space-2);
+		min-width: 0;
+		min-height: var(--tap-target);
+		padding: var(--space-1) var(--space-2);
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	.main:hover {
+		background: var(--surface-selected);
+		border-radius: var(--radius-md);
+	}
+	.text {
+		display: grid;
+		flex: 1;
+		min-width: 0;
+	}
+	.name {
+		font-family: var(--font-character);
+		font-weight: var(--font-character-weight);
+		overflow-wrap: anywhere;
+	}
+	.ability {
+		font-size: 0.8rem;
+		opacity: 0.85;
+	}
+	.marks {
+		display: grid;
+		grid-template-columns: 1em 2em 1.25em;
+		align-items: center;
+		justify-items: center;
+		flex: none;
+		font-weight: 700;
+	}
+	.jinx {
+		color: var(--accent);
+	}
+	.add {
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: var(--tap-target);
+		border: 0;
+		border-inline-start: 1px solid var(--border);
+		background: none;
+		color: inherit;
+		cursor: pointer;
+	}
+	.add:hover {
+		background: var(--surface-selected);
+	}
+</style>

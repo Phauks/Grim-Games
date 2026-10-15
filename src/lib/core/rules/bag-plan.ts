@@ -15,7 +15,7 @@
  * - Fabled and Loric are rule characters and never go in the bag.
  */
 import type { Character, CharacterId, CharacterType } from '#lib/core/data/types.ts';
-import type { Reminder } from '#lib/core/model/types.ts';
+import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 import { analyseSetup, type SetupAnalysis } from './setup.ts';
 
@@ -302,4 +302,48 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 	).length;
 	take('traveller', Math.max(0, input.players - analysis.dealt - travellers));
 	return selection;
+}
+
+/**
+ * The seat the next draw goes to, for the parity draw (players draw in seating order): the
+ * first seat with no character that is not already holding a tile. Undefined when every
+ * seat has one.
+ */
+export function nextDrawSeat(game: Game): SeatId | undefined {
+	const holding = new Set(
+		Object.values(game.bag?.tiles ?? {})
+			.filter((t) => t.drawnBySeat !== undefined && !t.confirmed)
+			.map((t) => t.drawnBySeat)
+	);
+	return game.seating.find((id) => game.seats[id].characterId === undefined && !holding.has(id));
+}
+
+/** A numbered place on the draw screen. */
+export interface BagSlot {
+	tileId: TileId;
+	/** 1-based number shown on the tile. */
+	number: number;
+	state: 'in-bag' | 'held' | 'drawn';
+	/** The seat that holds the tile or drew it. */
+	seatId?: SeatId;
+}
+
+/**
+ * Every tile as a numbered place that never moves during the draw, so nothing reflows and
+ * a drawn tile leaves a gap. The places follow the tile ids, which are random, not the
+ * order the characters were selected in, so a number says nothing about the character.
+ */
+export function bagSlots(bag: Bag): BagSlot[] {
+	return Object.keys(bag.tiles)
+		.sort()
+		.map((tileId, i) => {
+			const tile = bag.tiles[tileId];
+			const state = tile.confirmed ? 'drawn' : tile.drawnBySeat !== undefined ? 'held' : 'in-bag';
+			return {
+				tileId,
+				number: i + 1,
+				state,
+				...(tile.drawnBySeat !== undefined ? { seatId: tile.drawnBySeat } : {})
+			};
+		});
 }

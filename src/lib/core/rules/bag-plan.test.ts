@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
+	newGame,
+	run,
+	testCharacters,
+	testContext
+} from '#lib/core/model/fixtures.test-support.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
+import {
 	analyseSelection,
+	bagSlots,
+	nextDrawSeat,
 	planBag,
 	randomSelection,
 	selectedIds,
@@ -234,5 +243,59 @@ describe('randomSelection', () => {
 		});
 		const travellers = Object.keys(selection).filter((id) => lookup(id)?.type === 'traveller');
 		expect(travellers).toHaveLength(2);
+	});
+});
+
+describe('the draw', () => {
+	// A 5-player Trouble Brewing-style bag with a Drunk, built with BuildBag.
+	function drawGame() {
+		const { session, ctx, seats } = newGame(5, { ctx: testContext({ seed: 7 }) });
+		const bag = plan(pick('chef', 'empath', 'drunk', 'poisoner', 'imp'));
+		const built = run(session, ctx, {
+			type: 'BuildBag',
+			tiles: bag.tiles,
+			includeTravellers: bag.includeTravellers
+		});
+		return { session: built, ctx, seats };
+	}
+
+	it('draws go to empty seats in seating order', () => {
+		const { session, ctx, seats } = drawGame();
+		expect(nextDrawSeat(session.game)).toBe(seats[0]);
+		const held = run(session, ctx, { type: 'DrawTile', seatId: seats[0] });
+		// A seat holding a tile is skipped until the draw is confirmed or put back.
+		expect(nextDrawSeat(held.game)).toBe(seats[1]);
+	});
+
+	it('numbers every tile once and keeps the numbers through the draw', () => {
+		const { session, ctx, seats } = drawGame();
+		const before = bagSlots(session.game.bag!);
+		expect(before.map((s) => s.number)).toEqual([1, 2, 3, 4, 5]);
+		const tileId = before[2].tileId;
+		const held = run(session, ctx, { type: 'DrawTile', seatId: seats[0], tileId });
+		const after = bagSlots(held.game.bag!);
+		expect(after.map((s) => s.tileId)).toEqual(before.map((s) => s.tileId));
+		expect(after[2]).toEqual({ tileId, number: 3, state: 'held', seatId: seats[0] });
+		const confirmed = run(held, ctx, { type: 'ConfirmDraw', tileId });
+		expect(bagSlots(confirmed.game.bag!)[2].state).toBe('drawn');
+	});
+
+	// https://wiki.bloodontheclocktower.com/Drunk: the Drunk's player believes they are the
+	// Townsfolk they were shown; the grimoire records the truth.
+	it('drawing every tile seats everyone, with the Drunk marked', () => {
+		const { session: start, ctx } = drawGame();
+		let session = start;
+		for (let seat = nextDrawSeat(session.game); seat; seat = nextDrawSeat(session.game)) {
+			session = run(session, ctx, { type: 'DrawTile', seatId: seat });
+			const tileId = Object.values(session.game.bag!.tiles).find(
+				(t) => t.drawnBySeat === seat
+			)!.tileId;
+			session = run(session, ctx, { type: 'ConfirmDraw', tileId });
+		}
+		const truths = session.game.seating.map((id) =>
+			trueCharacter(session.game, id, testCharacters)
+		);
+		expect([...truths].sort()).toEqual(['chef', 'drunk', 'empath', 'imp', 'poisoner']);
+		expect(session.game.bag!.order).toEqual([]);
 	});
 });
