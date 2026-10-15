@@ -1,0 +1,201 @@
+/**
+ * Characters that can cause a death. Each entry in `death-causes.data.ts` cites its
+ * character's wiki page; the tests below cite the pages they encode.
+ */
+import { describe, expect, it } from 'vitest';
+import type { Character, Script } from '#lib/core/data/types.ts';
+import { characterLookup } from '#lib/core/model/characters.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { newGame } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	DEATH_CAUSE_ENTRIES,
+	deathCauseEntry,
+	deathCauses,
+	gameDeathCauses,
+	NO_DEATH,
+	type DeathKind
+} from './death-causes.ts';
+
+const data = committedGameData();
+const official: Script = { entries: [] };
+const characters = characterLookup(data, official);
+const kindOf = (id: string) => deathCauseEntry(id)?.kind;
+const W = 'https://wiki.bloodontheclocktower.com/';
+
+describe('coverage', () => {
+	it('lists every official character exactly once, as a death cause or as no death', () => {
+		const listed = Object.keys(DEATH_CAUSE_ENTRIES);
+		const quiet = Object.keys(NO_DEATH);
+		expect(listed.filter((id) => quiet.includes(id))).toEqual([]);
+		const all = new Set([...listed, ...quiet]);
+		expect(data.characters.filter((c) => !all.has(c.id)).map((c) => c.id)).toEqual([]);
+		expect([...all].filter((id) => !data.byId.has(id))).toEqual([]);
+	});
+
+	it('cites the wiki page of every character that can cause a death', () => {
+		for (const [id, entry] of Object.entries(DEATH_CAUSE_ENTRIES)) {
+			const name = data.byId.get(id)?.name ?? id;
+			expect(entry.wiki, id).toBe(W + name.replaceAll(' ', '_'));
+		}
+	});
+});
+
+describe('kinds', () => {
+	it.each<[string, DeathKind, string]>([
+		// Kills another player.
+		['slayer', 'kills', 'Slayer: the chosen Demon dies'],
+		['assassin', 'kills', 'Assassin: the chosen player dies, even if protected'],
+		['golem', 'kills', 'Golem: a nominee who is not the Demon dies'],
+		['gossip', 'kills', 'Gossip: a true statement means a player dies tonight'],
+		['lycanthrope', 'kills', 'Lycanthrope: a chosen good player dies'],
+		['gunslinger', 'kills', 'Gunslinger: a player who voted dies'],
+		['moonchild', 'kills', 'Moonchild: the chosen good player dies, not the Moonchild'],
+		['harlot', 'kills', 'Harlot: both players might die'],
+		['angel', 'kills', 'Angel: a punishment may be a death'],
+		['bigwig', 'kills', 'Bigwig: the chosen player might die'],
+		// Only its own death.
+		['tinker', 'own-death', 'Tinker: the Tinker might die at any time'],
+		['gambler', 'own-death', 'Gambler: a wrong guess kills the Gambler'],
+		['acrobat', 'own-death', 'Acrobat: a drunk or poisoned choice kills the Acrobat'],
+		['grandmother', 'own-death', 'Grandmother: dies when the Demon kills the grandchild'],
+		// An execution or an extra one.
+		['virgin', 'execution', 'Virgin: a Townsfolk nominator is executed'],
+		['butcher', 'execution', 'Butcher: a second nomination, so a second execution'],
+		['judge', 'execution', 'Judge: forces the current execution to pass'],
+		['vizier', 'execution', 'Vizier: may execute immediately'],
+		// Only through an ability it has or gives.
+		['philosopher', 'gained-ability', 'Philosopher: gains a good ability'],
+		['plaguedoctor', 'gained-ability', 'Plague Doctor: the Storyteller gains a Minion ability']
+	])('%s: %s (%s)', (id, kind) => {
+		expect(kindOf(id)).toBe(kind);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Witch: the cursed player dies if they nominate.
+	it('the Witch kills the nominating player', () => {
+		expect(kindOf('witch')).toBe('kills');
+	});
+
+	// https://wiki.bloodontheclocktower.com/Pit-Hag: making a Demon makes tonight's deaths
+	// the Storyteller's choice, so the Pit-Hag can cause deaths.
+	it('the Pit-Hag can cause deaths', () => {
+		expect(kindOf('pithag')).toBe('kills');
+	});
+
+	// https://wiki.bloodontheclocktower.com/Barber: only swaps characters.
+	it('the Barber never causes a death', () => {
+		expect(kindOf('barber')).toBeUndefined();
+		expect(Object.hasOwn(NO_DEATH, 'barber')).toBe(true);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Mastermind: only adds a day; any execution that
+	// day is an ordinary one.
+	it('the Mastermind never causes a death', () => {
+		expect(Object.hasOwn(NO_DEATH, 'mastermind')).toBe(true);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Mayor: whoever dies instead is killed by the Demon.
+	it('the Mayor never causes a death', () => {
+		expect(Object.hasOwn(NO_DEATH, 'mayor')).toBe(true);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Storm_Catcher: it protects; it never kills.
+	it('the Storm Catcher never causes a death', () => {
+		expect(Object.hasOwn(NO_DEATH, 'stormcatcher')).toBe(true);
+	});
+});
+
+describe('Demons', () => {
+	const demons = data.characters.filter((c) => c.type === 'demon').map((c) => c.id);
+
+	// Each Demon's wiki page: every Demon kills, except the Leviathan (below).
+	it('every Demon but the Leviathan kills', () => {
+		expect(demons.length).toBeGreaterThan(15);
+		for (const id of demons.filter((d) => d !== 'leviathan')) {
+			expect(deathCauseEntry(id), id).toMatchObject({ kind: 'kills' });
+			expect(deathCauseEntry(id)?.onlyWith, id).toBeUndefined();
+		}
+	});
+
+	// https://wiki.bloodontheclocktower.com/Leviathan: it does not kill; with the Banshee
+	// jinx it chooses a player each night, and a chosen Banshee dies.
+	it('the Leviathan kills only with the Banshee', () => {
+		expect(deathCauses(['leviathan', 'empath'], characters)).toEqual([]);
+		expect(deathCauses(['leviathan', 'banshee'], characters)).toEqual([
+			{ characterId: 'leviathan', kind: 'kills' }
+		]);
+	});
+});
+
+describe('deathCauses', () => {
+	it('keeps script order and drops characters that never cause a death', () => {
+		expect(
+			deathCauses(
+				['washerwoman', 'virgin', 'slayer', 'tinker', 'poisoner', 'imp', 'philosopher'],
+				characters
+			)
+		).toEqual([
+			{ characterId: 'virgin', kind: 'execution' },
+			{ characterId: 'slayer', kind: 'kills' },
+			{ characterId: 'tinker', kind: 'own-death' },
+			{ characterId: 'imp', kind: 'kills' },
+			{ characterId: 'philosopher', kind: 'gained-ability' }
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Travellers and /Fabled: they can join any game,
+	// so those in play are offered even when the script does not list them.
+	it('adds Travellers, Fabled and Loric in play after the script, each once', () => {
+		expect(
+			deathCauses(['imp', 'gunslinger'], characters, [
+				'gunslinger',
+				'harlot',
+				'thief',
+				'doomsayer',
+				'stormcatcher',
+				'imp'
+			])
+		).toEqual([
+			{ characterId: 'imp', kind: 'kills' },
+			{ characterId: 'gunslinger', kind: 'kills' },
+			{ characterId: 'harlot', kind: 'kills' },
+			{ characterId: 'doomsayer', kind: 'kills' }
+		]);
+	});
+
+	it('offers a homebrew Demon as a killer and other homebrew characters as unknown', () => {
+		const brew = (id: string, type: Character['type']): Character => ({
+			...(data.byId.get('imp') as Character),
+			id,
+			name: id,
+			type
+		});
+		const script: Script = {
+			entries: [
+				{ kind: 'custom', character: brew('brewdemon', 'demon') },
+				{ kind: 'custom', character: brew('brewfolk', 'townsfolk') },
+				{ kind: 'official', id: 'chef' }
+			]
+		};
+		expect(deathCauses(['brewdemon', 'brewfolk', 'chef'], characterLookup(data, script))).toEqual([
+			{ characterId: 'brewdemon', kind: 'kills' },
+			{ characterId: 'brewfolk', kind: 'unknown' }
+		]);
+	});
+
+	it('reads a game: its script, its seats and its Fabled and Loric', () => {
+		const { session, seats } = newGame(3);
+		const game = {
+			...session.game,
+			seats: {
+				...session.game.seats,
+				[seats[0]]: { ...session.game.seats[seats[0]], characterId: 'gangster' }
+			},
+			ruleCharacters: ['angel']
+		};
+		const ids = gameDeathCauses(game, characters).map((o) => o.characterId);
+		expect(ids).toContain('slayer');
+		expect(ids).toContain('imp');
+		expect(ids.slice(-2)).toEqual(['gangster', 'angel']);
+		expect(ids).not.toContain('washerwoman');
+	});
+});
