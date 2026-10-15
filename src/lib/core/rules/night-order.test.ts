@@ -245,6 +245,62 @@ describe('homebrew characters', () => {
 	});
 });
 
+describe('Storyteller overrides', () => {
+	const inPlay = get('poisoner', 'washerwoman', 'chef', 'imp');
+
+	it('hides, edits, moves and adds steps', () => {
+		const result = order({
+			inPlay,
+			overrides: [
+				{ kind: 'hide', id: 'washerwoman' },
+				{ kind: 'edit', id: 'chef', text: 'Show 1 finger.' },
+				{ kind: 'move', id: 'poisoner', after: 'chef' },
+				{ kind: 'add', id: 'custom-1', text: 'Check the bag.', title: 'Bag check', after: 'dusk' },
+				{
+					kind: 'add',
+					id: 'custom-2',
+					text: 'Wake the Imp to wave.',
+					characterId: 'imp',
+					after: 'nowhere'
+				}
+			]
+		});
+		expect(result.steps.map((s) => s.id)).toEqual([
+			'dusk',
+			'custom-1',
+			'minioninfo',
+			'demoninfo',
+			'chef',
+			'poisoner',
+			'custom-2',
+			'dawn'
+		]);
+		expect(result.steps.find((s) => s.id === 'chef')).toMatchObject({
+			reminder: 'Show 1 finger.',
+			overridden: 'edited'
+		});
+		expect(result.steps.find((s) => s.id === 'poisoner')?.overridden).toBe('moved');
+		expect(result.steps.find((s) => s.id === 'custom-1')).toMatchObject({
+			kind: 'custom',
+			title: 'Bag check',
+			overridden: 'added'
+		});
+		expect(result.steps.find((s) => s.id === 'custom-2')?.character?.id).toBe('imp');
+		expect(result.omitted).toEqual([{ id: 'washerwoman', reason: 'Hidden by the Storyteller.' }]);
+	});
+
+	it('applies an override only to the night it names', () => {
+		const overrides = [{ kind: 'hide' as const, id: 'poisoner', night: 'other' as const }];
+		expect(stepIds({ inPlay, overrides })).toContain('poisoner');
+		expect(stepIds({ night: 'other', inPlay, overrides })).not.toContain('poisoner');
+	});
+
+	it('recomputes after-Dawn when a step is moved past Dawn', () => {
+		const steps = order({ inPlay, overrides: [{ kind: 'move', id: 'chef', after: 'dawn' }] }).steps;
+		expect(steps.at(-1)).toMatchObject({ id: 'chef', afterDawn: true });
+	});
+});
+
 describe('sheetPositions', () => {
 	it('keeps TPI order when filling gaps in the provisional numbers', () => {
 		for (const night of ['firstNight', 'otherNight'] as const) {

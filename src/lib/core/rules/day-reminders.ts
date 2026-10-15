@@ -6,10 +6,12 @@
  * The curated list is `day-reminders.data.ts`. Homebrew and unlisted characters fall back
  * to keywords in their ability text and TPI `special`, flagged `autoDetected`.
  *
- * The game state comes in as a minimal local shape (`DayState`) until the domain model
- * lands; the lead can map the real model onto it.
+ * Everything is driven by grimoire state: seats, their reminders, who is dead and (when
+ * known) how they died. The app does not track day or night. The Storyteller can override
+ * any generated reminder (hide or reword it) and add their own (`DayReminderOverride`).
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 import {
 	DAY_GROUP_TITLES,
 	DAY_GROUPS,
@@ -18,41 +20,63 @@ import {
 	type DayCondition,
 	type DayGroup,
 	type DayReminderEntry,
-	type DayReminderSpec
+	type DayReminderSpec,
+	type DeathCauseMatch
 } from './day-reminders.data.ts';
 
 export { DAY_GROUP_TITLES, DAY_GROUPS, DAY_REMINDER_ENTRIES, NO_DAY_RELEVANCE };
-export type { DayCondition, DayGroup, DayReminderEntry, DayReminderSpec };
+export type { DayCondition, DayGroup, DayReminderEntry, DayReminderSpec, DeathCauseMatch };
 
-/** A reminder token on a seat, placed by `source`'s ability ("Cursed" from the Witch). */
-export interface SeatReminder {
-	source: CharacterId;
-	token: string;
-}
+/**
+ * How a player died, when the Storyteller recorded it: executed, killed by the Demon, a
+ * character's ability (its id), or something else. Undefined means unknown.
+ */
+export type DeathCause = 'execution' | 'demon' | 'other' | CharacterId;
 
+/** The parts of a seat the reminders read (the model's `Seat` fits, plus `deathCause`). */
 export interface DaySeat {
-	seatId: string;
-	/** The character in the grimoire for this seat. */
-	characterId: CharacterId;
+	seatId: SeatId;
 	playerName?: string;
+	/** The character token in the grimoire; seats without one are skipped. */
+	characterId?: CharacterId;
 	dead: boolean;
-	reminders: readonly SeatReminder[];
+	deathCause?: DeathCause;
+	reminders: readonly Reminder[];
 }
+
+/**
+ * A Storyteller override, stored with the game:
+ * - `hide`: drop a generated reminder (by its `key`);
+ * - `edit`: keep the reminder's character badge but replace the rest with `text`;
+ * - `add`: a reminder of the Storyteller's own, optionally about a character or seat.
+ */
+export type DayReminderOverride =
+	| { kind: 'hide'; key: string }
+	| { kind: 'edit'; key: string; text: string }
+	| {
+			kind: 'add';
+			/** The Storyteller's own key, unique among overrides ("custom-1"). */
+			key: string;
+			group: DayGroup;
+			text: string;
+			characterId?: CharacterId;
+			seatId?: SeatId;
+	  };
 
 export interface DayState {
-	/** The coming day: 1 for the first day. */
-	day: number;
+	/** Seats in seating order. */
 	seats: readonly DaySeat[];
 	/** Fabled and Loric in play (not seated). */
-	rules?: readonly CharacterId[];
+	ruleCharacters?: readonly CharacterId[];
 	/** Character lookup (official and homebrew). */
 	character: (id: CharacterId) => Character | undefined;
+	overrides?: readonly DayReminderOverride[];
 }
 
 /** A badge for a character, with the seat and player name when there is one. */
 export interface CharacterRef {
 	characterId: CharacterId;
-	seatId?: string;
+	seatId?: SeatId;
 	playerName?: string;
 }
 
@@ -60,11 +84,17 @@ export type ReminderSegment =
 	{ kind: 'character'; ref: CharacterRef } | { kind: 'text'; text: string };
 
 export interface DayReminder {
-	characterId: CharacterId;
+	/** Stable id for overrides: the same state gives the same key. */
+	key: string;
+	characterId?: CharacterId;
 	group: DayGroup;
 	segments: ReminderSegment[];
 	/** True when found by keywords in a homebrew or unlisted character's ability. */
 	autoDetected: boolean;
+	/** True when it depends on a death whose cause was not recorded. */
+	uncertain?: boolean;
+	/** Set when a Storyteller override changed or added it. */
+	overridden?: 'edited' | 'added';
 	wiki?: string;
 }
 
@@ -74,15 +104,21 @@ export interface DayReminderGroup {
 	reminders: DayReminder[];
 }
 
+export interface DayReminders {
+	groups: DayReminderGroup[];
+	/** Generated reminders the Storyteller hid, so they can be shown again. */
+	hidden: DayReminder[];
+}
+
 const ENTRIES = new Map(DAY_REMINDER_ENTRIES.map((e) => [e.id, e]));
 const QUIET = new Set(Object.keys(NO_DAY_RELEVANCE));
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /** "poisoned" or "drunk" when a reminder token says so ("Poisoned", "Is The Drunk", "Drunk 2"). */
-export function impairment(token: string): 'poisoned' | 'drunk' | undefined {
-	if (/\bpoisoned\b/i.test(token)) return 'poisoned';
-	if (/\bdrunk\b/i.test(token)) return 'drunk';
+export function impairment(label: string): 'poisoned' | 'drunk' | undefined {
+	if (/\bpoisoned\b/i.test(label)) return 'poisoned';
+	if (/\bdrunk\b/i.test(label)) return 'drunk';
 	return undefined;
 }
 
@@ -100,6 +136,20 @@ export function renderReminder(
 		.join(' ');
 }
 
+/** The model's game as `DayState` (seats in seating order). */
+export function dayStateFromGame(
+	game: Game,
+	character: (id: CharacterId) => Character | undefined,
+	overrides?: readonly DayReminderOverride[]
+): DayState {
+	return {
+		seats: game.seating.map((id) => game.seats[id]).filter((s) => s !== undefined),
+		ruleCharacters: game.ruleCharacters,
+		character,
+		...(overrides ? { overrides } : {})
+	};
+}
+
 function refFor(seat: DaySeat | undefined, characterId: CharacterId): CharacterRef {
 	return seat
 		? {
@@ -110,9 +160,9 @@ function refFor(seat: DaySeat | undefined, characterId: CharacterId): CharacterR
 		: { characterId };
 }
 
-function carriers(state: DayState, source: CharacterId, token: string): DaySeat[] {
+function carriers(state: DayState, source: CharacterId, label: string): DaySeat[] {
 	return state.seats.filter((s) =>
-		s.reminders.some((r) => r.source === source && same(r.token, token))
+		s.reminders.some((r) => r.characterId === source && same(r.label, label))
 	);
 }
 
@@ -128,20 +178,33 @@ function fill(
 	});
 }
 
+/**
+ * Whether a death cause matches. Returns 'unknown' when no cause was recorded, so the
+ * reminder still shows, flagged uncertain.
+ */
+function causeMatches(
+	cause: DeathCause | undefined,
+	wanted: readonly DeathCauseMatch[],
+	state: DayState
+): boolean | 'unknown' {
+	if (cause === undefined) return 'unknown';
+	if (wanted.includes(cause)) return true;
+	return wanted.includes('demon') && state.character(cause)?.type === 'demon';
+}
+
 /** Whether `when` holds, apart from the reminder-carrier part. */
 function conditionHolds(
 	when: DayCondition,
 	seat: DaySeat | undefined,
 	state: DayState,
 	alive: number
-): boolean {
+): boolean | 'unknown' {
 	const self = when.self ?? 'alive';
 	const dead = seat?.dead ?? false;
 	if (self === 'alive' && dead) return false;
 	if (self === 'dead' && !dead) return false;
-	if (when.day !== undefined && state.day !== when.day) return false;
-	if (when.fromDay !== undefined && state.day < when.fromDay) return false;
 	if (when.minAlive !== undefined && alive < when.minAlive) return false;
+	if (when.cause && seat) return causeMatches(seat.deathCause, when.cause, state);
 	return true;
 }
 
@@ -153,36 +216,47 @@ function curated(
 ): DayReminder[] {
 	const out: DayReminder[] = [];
 	const selfRef = refFor(seat, entry.id);
-	for (const spec of entry.reminders) {
+	const at = seat?.seatId ?? 'rule';
+	entry.reminders.forEach((spec, index) => {
 		const when = spec.when ?? {};
-		if (!conditionHolds(when, seat, state, alive)) continue;
-		if (when.noReminder && carriers(state, entry.id, when.noReminder).length > 0) continue;
+		const holds = conditionHolds(when, seat, state, alive);
+		if (holds === false) return;
+		if (when.noReminder && carriers(state, entry.id, when.noReminder).length > 0) return;
 		const base = {
 			characterId: entry.id,
 			group: spec.group,
 			autoDetected: false,
-			wiki: entry.wiki
+			wiki: entry.wiki,
+			...(holds === 'unknown' ? { uncertain: true } : {})
 		};
+		const key = `${entry.id}#${index}@${at}`;
 		if (when.reminder) {
 			const targets = carriers(state, entry.id, when.reminder);
 			const hasTarget = spec.template.some((p) => 'target' in p);
-			if (hasTarget)
-				for (const target of targets) out.push({ ...base, segments: fill(spec, selfRef, target) });
-			else if (targets.length > 0) out.push({ ...base, segments: fill(spec, selfRef, undefined) });
-		} else out.push({ ...base, segments: fill(spec, selfRef, undefined) });
-	}
+			if (hasTarget) {
+				for (const target of targets) {
+					out.push({
+						...base,
+						key: `${key}>${target.seatId}`,
+						segments: fill(spec, selfRef, target)
+					});
+				}
+			} else if (targets.length > 0) {
+				out.push({ ...base, key, segments: fill(spec, selfRef, undefined) });
+			}
+		} else out.push({ ...base, key, segments: fill(spec, selfRef, undefined) });
+	});
 	if (entry.impairable && seat && !seat.dead) {
-		const states = new Set(
-			seat.reminders.map((r) => impairment(r.token)).filter((x) => x !== undefined)
-		);
-		for (const state of ['poisoned', 'drunk'] as const) {
-			if (!states.has(state)) continue;
+		const states = new Set(seat.reminders.map((r) => impairment(r.label)));
+		for (const impaired of ['poisoned', 'drunk'] as const) {
+			if (!states.has(impaired)) continue;
 			out.push({
+				key: `${entry.id}#${impaired}@${at}`,
 				characterId: entry.id,
 				group: entry.reminders[0]?.group ?? 'day-ability',
 				segments: [
 					{ kind: 'character', ref: selfRef },
-					{ kind: 'text', text: `is ${state}` }
+					{ kind: 'text', text: `is ${impaired}` }
 				],
 				autoDetected: false,
 				wiki: entry.wiki
@@ -217,6 +291,7 @@ export function detectDayReminders(
 		if (groups.has(group)) return;
 		groups.add(group);
 		out.push({
+			key: `${character.id}~${group}@${ref.seatId ?? 'rule'}`,
 			characterId: character.id,
 			group,
 			segments: [
@@ -237,8 +312,58 @@ export function detectDayReminders(
 	return out;
 }
 
+/** Applies the Storyteller's overrides: hide, edit, add. Unknown keys are ignored. */
+export function applyDayOverrides(
+	reminders: readonly DayReminder[],
+	overrides: readonly DayReminderOverride[],
+	state: Pick<DayState, 'seats'>
+): { shown: DayReminder[]; hidden: DayReminder[] } {
+	const hide = new Set<string>();
+	const edits = new Map<string, string>();
+	for (const o of overrides) {
+		if (o.kind === 'hide') hide.add(o.key);
+		else if (o.kind === 'edit') edits.set(o.key, o.text);
+	}
+	const shown: DayReminder[] = [];
+	const hidden: DayReminder[] = [];
+	for (const reminder of reminders) {
+		if (hide.has(reminder.key)) {
+			hidden.push(reminder);
+			continue;
+		}
+		const text = edits.get(reminder.key);
+		if (text === undefined) {
+			shown.push(reminder);
+			continue;
+		}
+		const badge = reminder.segments.find((s) => s.kind === 'character');
+		shown.push({
+			...reminder,
+			segments: [...(badge ? [badge] : []), { kind: 'text', text }],
+			overridden: 'edited'
+		});
+	}
+	for (const o of overrides) {
+		if (o.kind !== 'add' || hide.has(o.key)) continue;
+		const seat = o.seatId ? state.seats.find((s) => s.seatId === o.seatId) : undefined;
+		const characterId = o.characterId ?? seat?.characterId;
+		shown.push({
+			key: o.key,
+			...(characterId ? { characterId } : {}),
+			group: o.group,
+			segments: [
+				...(characterId ? [{ kind: 'character' as const, ref: refFor(seat, characterId) }] : []),
+				{ kind: 'text', text: edits.get(o.key) ?? o.text }
+			],
+			autoDetected: false,
+			overridden: 'added'
+		});
+	}
+	return { shown, hidden };
+}
+
 /** Reminders for the coming day, grouped in `DAY_GROUPS` order; empty groups left out. */
-export function dayReminders(state: DayState): DayReminderGroup[] {
+export function dayReminders(state: DayState): DayReminders {
 	const alive = state.seats.filter((s) => !s.dead).length;
 	const all: DayReminder[] = [];
 	const visit = (characterId: CharacterId, seat: DaySeat | undefined) => {
@@ -250,11 +375,13 @@ export function dayReminders(state: DayState): DayReminderGroup[] {
 			all.push(...detectDayReminders(character, refFor(seat, characterId)));
 		}
 	};
-	for (const seat of state.seats) visit(seat.characterId, seat);
-	for (const id of state.rules ?? []) visit(id, undefined);
-	return DAY_GROUPS.map((group) => ({
+	for (const seat of state.seats) if (seat.characterId) visit(seat.characterId, seat);
+	for (const id of state.ruleCharacters ?? []) visit(id, undefined);
+	const { shown, hidden } = applyDayOverrides(all, state.overrides ?? [], state);
+	const groups = DAY_GROUPS.map((group) => ({
 		group,
 		title: DAY_GROUP_TITLES[group],
-		reminders: all.filter((r) => r.group === group)
+		reminders: shown.filter((r) => r.group === group)
 	})).filter((g) => g.reminders.length > 0);
+	return { groups, hidden };
 }

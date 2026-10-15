@@ -8,6 +8,7 @@
  * reading the bracket text, flagged as auto-detected. The reminder text is our own words.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { SeatedType } from './distribution.ts';
 
 /**
@@ -34,8 +35,8 @@ export interface SetupModifier {
 	requires?: CharacterId;
 	/** Extra Storyteller notes for setup (bag contents, seating), in our words. */
 	notes: readonly string[];
-	/** Wiki page this entry encodes. */
-	wiki: string;
+	/** Wiki page this entry encodes; none for homebrew characters. */
+	wiki?: string;
 	/** `table` for curated entries; `ability-text` when read from the [bracketed] text. */
 	source: 'table' | 'ability-text';
 }
@@ -327,7 +328,7 @@ export function modifierFromText(
 		ops,
 		...(requires ? { requires } : {}),
 		notes,
-		wiki: `https://wiki.bloodontheclocktower.com/${encodeURI(character.name.replace(/ /g, '_'))}`,
+		...(wikiUrl(character) ? { wiki: wikiUrl(character) } : {}),
 		source: 'ability-text'
 	};
 }

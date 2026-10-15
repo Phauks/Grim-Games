@@ -13,7 +13,9 @@
  * - `reminder`: only while this character's reminder token (TPI's name) is on a player;
  *   one reminder per player carrying it;
  * - `noReminder`: only while that token is NOT on any player ("No Ability": not used yet);
- * - `day` / `fromDay`: only on that day, or from that day on;
+ * - `cause`: with `self: 'dead'`, only if the death's cause is one of these ('demon' also
+ *   matches any Demon's id). An unknown cause counts as a match, flagged `uncertain`.
+ *   The app does not track day or night, so nothing here depends on the day number.
  * - `minAlive`: only while at least this many players are alive.
  *
  * `impairable: true` adds "[Slayer] is poisoned" / "[Slayer] is drunk" whenever a Poisoned
@@ -47,12 +49,14 @@ export const DAY_GROUP_TITLES: Record<DayGroup, string> = {
 
 export type TemplateSegment = { self: true } | { target: true } | { text: string };
 
+/** How a death is matched: a cause the app records, or a character id. */
+export type DeathCauseMatch = 'execution' | 'demon' | 'other' | CharacterId;
+
 export interface DayCondition {
 	self?: 'alive' | 'dead' | 'any';
 	reminder?: string;
 	noReminder?: string;
-	day?: number;
-	fromDay?: number;
+	cause?: readonly DeathCauseMatch[];
 	minAlive?: number;
 }
 
@@ -162,13 +166,13 @@ export const DAY_REMINDER_ENTRIES: readonly DayReminderEntry[] = [
 		id: 'princess',
 		wiki: `${W}Princess`,
 		impairable: true,
-		reminders: [is('nomination', 'is on their first day', { day: 1 })]
+		reminders: [is('nomination', 'may stop tonight’s Demon kill', { noReminder: "Doesn't Kill" })]
 	},
 	{
 		id: 'juggler',
 		wiki: `${W}Juggler`,
 		impairable: true,
-		reminders: [is('day-ability', 'may juggle today', { day: 1 })]
+		reminders: [is('day-ability', 'may juggle', { noReminder: 'Correct' })]
 	},
 	{
 		id: 'alchemist',
@@ -203,9 +207,7 @@ export const DAY_REMINDER_ENTRIES: readonly DayReminderEntry[] = [
 	{
 		id: 'banshee',
 		wiki: `${W}Banshee`,
-		reminders: [
-			is('vote', 'may nominate and vote twice', { self: 'dead', reminder: 'Has Ability' })
-		]
+		reminders: [is('vote', 'may nominate and vote twice', { self: 'dead', cause: ['demon'] })]
 	},
 	{
 		id: 'tealady',
@@ -441,7 +443,11 @@ export const DAY_REMINDER_ENTRIES: readonly DayReminderEntry[] = [
 		wiki: `${W}Lleech`,
 		reminders: [on('execution-death', 'has chosen', 'Poisoned')]
 	},
-	{ id: 'riot', wiki: `${W}Riot`, reminders: [is('nomination', 'is rioting', { fromDay: 3 })] },
+	{
+		id: 'riot',
+		wiki: `${W}Riot`,
+		reminders: [is('nomination', 'is rioting', { reminder: 'Day 3' })]
+	},
 	{
 		id: 'leviathan',
 		wiki: `${W}Leviathan`,
