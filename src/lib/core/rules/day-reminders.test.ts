@@ -6,8 +6,14 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import {
+	newGame,
+	run as runCommands,
+	testCharacters
+} from '#lib/core/model/fixtures.test-support.ts';
+import {
 	DAY_REMINDER_ENTRIES,
 	dayReminders,
+	dayStateFromGame,
 	impairment,
 	isOnceOnlyDayAbility,
 	NO_DAY_RELEVANCE,
@@ -99,18 +105,17 @@ describe('state-based reminders', () => {
 	});
 
 	// https://wiki.bloodontheclocktower.com/Slayer
-	it('shows an unused Slayer shot, and whether the Slayer is poisoned or drunk', () => {
+	it('shows an unused Slayer shot, or instead that the Slayer is poisoned or drunk', () => {
 		expect(texts({ seats: [seat('slayer')] })).toEqual(['[Slayer] has an unused shot']);
 		const used = seat('slayer', { reminders: [token('slayer', 'No Ability')] });
 		expect(texts({ seats: [used] })).toEqual([]);
 		const poisoned = seat('slayer', { reminders: [token('poisoner', 'Poisoned')] });
 		expect(texts({ seats: [poisoned, seat('poisoner')] })).toEqual([
-			'[Slayer] has an unused shot',
-			'[Slayer] is poisoned'
+			'[Slayer] is poisoned by [Poisoner]'
 		]);
 		// https://wiki.bloodontheclocktower.com/Drunk: the Drunk thinks they are the Slayer.
 		const drunk = seat('slayer', { reminders: [token('drunk', 'Is The Drunk')] });
-		expect(texts({ seats: [drunk] })).toContain('[Slayer] is drunk');
+		expect(texts({ seats: [drunk] })).toEqual(['[Slayer] is really the [Drunk]']);
 	});
 
 	it('reads Poisoned and Drunk tokens from any source', () => {
@@ -259,5 +264,106 @@ describe('isOnceOnlyDayAbility', () => {
 		for (const id of ['gossip', 'savant', 'juggler', 'imp']) {
 			expect(isOnceOnlyDayAbility(id), id).toBe(false);
 		}
+	});
+});
+
+describe('impaired abilities', () => {
+	/** Seats for an entry: the character, a carrier for each reminder it watches, and fillers. */
+	function cast(id: string, selfReminders: { characterId: string; label: string }[]) {
+		const entry = DAY_REMINDER_ENTRIES.find((e) => e.id === id)!;
+		const self = seat(id, { reminders: selfReminders });
+		const carriers = entry.reminders.flatMap((spec) =>
+			spec.when?.reminder ? [seat('chef', { reminders: [token(id, spec.when.reminder)] })] : []
+		);
+		const fillers = Array.from({ length: 5 }, () => seat('chef'));
+		return { self, seats: [self, ...carriers, ...fillers] };
+	}
+
+	// https://wiki.bloodontheclocktower.com/Glossary: a drunk or poisoned player has no
+	// ability, so its normal lines would be wrong; https://wiki.bloodontheclocktower.com/Sailor
+	it('shows exactly one line for an impaired character: the impaired one replaces the rest', () => {
+		const impairable = DAY_REMINDER_ENTRIES.filter((e) => e.impairable);
+		expect(impairable.map((e) => e.id)).toEqual(expect.arrayContaining(['sailor', 'yaggababble']));
+		for (const e of impairable) {
+			const alive = (key: string) => {
+				const index = Number(/#(\d+)@/.exec(key)?.[1]);
+				return (e.reminders[index]?.when?.self ?? 'alive') === 'alive';
+			};
+			for (const label of ['Poisoned', 'Drunk']) {
+				const source = label === 'Drunk' ? 'sailor' : 'poisoner';
+				const { self, seats } = cast(e.id, [token(source, label)]);
+				const reminders = run({ seats }).groups.flatMap((g) => g.reminders);
+				const normal = reminders.filter(
+					(r) => r.characterId === e.id && /#\d+@/.test(r.key) && alive(r.key)
+				);
+				const impaired = reminders.filter(
+					(r) => r.key === `${e.id}#${label.toLowerCase()}@${self.seatId}`
+				);
+				expect(normal, `${e.id} ${label}`).toEqual([]);
+				expect(impaired, `${e.id} ${label}`).toHaveLength(1);
+			}
+			// Unimpaired, no impaired line shows.
+			const { seats } = cast(e.id, []);
+			const keys = run({ seats }).groups.flatMap((g) => g.reminders.map((r) => r.key));
+			expect(
+				keys.some((k) => /#(poisoned|drunk|no-ability)@/.test(k)),
+				e.id
+			).toBe(false);
+		}
+	});
+
+	it('the Sailor: "cannot die" or "is poisoned", never both', () => {
+		expect(texts({ seats: [seat('sailor')] })).toEqual(['[Sailor] cannot die']);
+		const poisoned = seat('sailor', { reminders: [token('poisoner', 'Poisoned')] });
+		expect(texts({ seats: [poisoned] })).toEqual(['[Sailor] is poisoned by [Poisoner]']);
+		const both = seat('sailor', {
+			reminders: [token('poisoner', 'Poisoned'), token('sailor', 'Drunk')]
+		});
+		expect(texts({ seats: [both] })).toEqual([
+			'[Sailor] is poisoned by [Poisoner] and drunk by [Sailor]'
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Minstrel: the Minstrel's own token does not make
+	// the Minstrel drunk.
+	it('does not read the Minstrel’s "Everyone Is Drunk" as the Minstrel being drunk', () => {
+		const minstrel = seat('minstrel', { reminders: [token('minstrel', 'Everyone Is Drunk')] });
+		expect(texts({ seats: [minstrel] })).toEqual([
+			'[Minstrel] is alive',
+			'[Minstrel] has made everyone drunk'
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Preacher
+	it('says a Minion the Preacher chose has no ability, naming the Preacher', () => {
+		const { session, ctx, seats } = newGame(['Ana', 'Ben', 'Cat', 'Dev']);
+		const g = runCommands(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'preacher' },
+			{ type: 'AssignCharacter', seatId: seats[1], characterId: 'witch' },
+			{ type: 'AssignCharacter', seatId: seats[2], characterId: 'spy' },
+			{ type: 'AssignCharacter', seatId: seats[3], characterId: 'nodashii' },
+			{ type: 'AddReminder', seatId: seats[1], reminder: token('preacher', 'No Ability') },
+			{ type: 'AddReminder', seatId: seats[2], reminder: token('preacher', 'No Ability') }
+		).game;
+		const state = dayStateFromGame(g, (id) => testCharacters.get(id), undefined, testCharacters);
+		const lines = dayReminders(state).groups.flatMap((gr) =>
+			gr.reminders.map((r) => renderReminder(r.segments, name))
+		);
+		expect(lines).toContain('[Witch · Ben] has no ability from [Preacher · Ana]');
+		// The Spy has nothing to watch by day, but losing its ability is worth saying.
+		expect(lines).toContain('[Spy · Cat] has no ability from [Preacher · Ana]');
+		expect(lines.some((l) => l.startsWith('[Witch · Ben] has chosen'))).toBe(false);
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Pixie
+describe('Pixie', () => {
+	it('stops asking the Pixie to be mad once the Mad player is dead', () => {
+		const pixie = seat('pixie');
+		const mad = seat('chef', { reminders: [token('pixie', 'Mad')] });
+		expect(texts({ seats: [pixie, mad] })).toEqual(['[Pixie] must be mad as [Chef]']);
+		expect(texts({ seats: [pixie, { ...mad, dead: true }] })).toEqual([]);
 	});
 });

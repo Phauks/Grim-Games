@@ -330,6 +330,30 @@ describe('RecordNightInfo', () => {
 		expect(removed.game.seats[seats[1]].reminders).toEqual([]);
 		expect(removed.game.seats[seats[2]].reminders).toEqual([]);
 	});
+
+	// https://wiki.bloodontheclocktower.com/Mathematician: abnormal info is recorded with why.
+	it('records why the info worked abnormally, and refuses an unknown reason', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'RecordNightInfo',
+			seatId: seats[4],
+			characterId: 'washerwoman',
+			text: 'Shown a lie',
+			abnormal: [{ reason: 'poisoned', characterId: 'poisoner', seatId: seats[3] }]
+		});
+		expect(s.game.today.entries[0]).toMatchObject({
+			abnormal: [{ reason: 'poisoned', characterId: 'poisoner', seatId: seats[3] }]
+		});
+		expect(
+			refused(session, ctx, {
+				type: 'RecordNightInfo',
+				seatId: seats[4],
+				characterId: 'washerwoman',
+				text: 'x',
+				abnormal: [{ reason: 'bad' as 'other' }]
+			})
+		).toBe('invalid-abnormal');
+	});
 });
 
 describe('NewDay', () => {

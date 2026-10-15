@@ -6,6 +6,7 @@
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type {
+	AbnormalCause,
 	CharacterGuess,
 	DayEntryId,
 	DeathCause,
@@ -127,6 +128,8 @@ export type Command =
 			characterId: CharacterId;
 			text: string;
 			reminders?: { seatId: SeatId; reminder: Reminder }[];
+			/** The info or ability worked abnormally because of these (see `abnormalCauses`). */
+			abnormal?: AbnormalCause[];
 	  }
 	/**
 	 * Removes a day-log entry and undoes what it did to the grimoire: an execution's death

@@ -11,7 +11,9 @@
  * any generated reminder (hide or reword it) and add their own (`DayReminderOverride`).
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { DeathCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
+import { abilityState, impairmentOfLabel, type AbilityState, type Impairment } from './ability.ts';
 import {
 	DAY_GROUP_TITLES,
 	DAY_GROUPS,
@@ -68,6 +70,11 @@ export interface DayState {
 	/** Character lookup (official and homebrew). */
 	character: (id: CharacterId) => Character | undefined;
 	overrides?: readonly DayReminderOverride[];
+	/**
+	 * Whether a seat's ability works (`abilityState`). Without it, only the seat's own
+	 * Poisoned and Drunk tokens are read.
+	 */
+	ability?: (seatId: SeatId) => AbilityState;
 }
 
 /** A badge for a character, with the seat and player name when there is one. */
@@ -113,11 +120,7 @@ const QUIET = new Set(Object.keys(NO_DAY_RELEVANCE));
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /** "poisoned" or "drunk" when a reminder token says so ("Poisoned", "Is The Drunk", "Drunk 2"). */
-export function impairment(label: string): 'poisoned' | 'drunk' | undefined {
-	if (/\bpoisoned\b/i.test(label)) return 'poisoned';
-	if (/\bdrunk\b/i.test(label)) return 'drunk';
-	return undefined;
-}
+export const impairment = impairmentOfLabel;
 
 /** Plain text, for the draft list and tests: "[Witch · Sam] has chosen [Librarian]". */
 export function renderReminder(
@@ -135,18 +138,88 @@ export function renderReminder(
 
 /**
  * The model's game as `DayState` (seats in seating order), with the Storyteller's stored
- * overrides unless `overrides` is given.
+ * overrides unless `overrides` is given. With `characters`, impairments come from
+ * `abilityState` (sources, the Preacher, the Minstrel), not only the seat's own tokens.
  */
 export function dayStateFromGame(
 	game: Game,
 	character: (id: CharacterId) => Character | undefined,
-	overrides: readonly DayReminderOverride[] | undefined = game.dayReminderOverrides
+	overrides: readonly DayReminderOverride[] | undefined = game.dayReminderOverrides,
+	characters?: CharacterLookup
 ): DayState {
 	return {
 		seats: game.seating.map((id) => game.seats[id]).filter((s) => s !== undefined),
 		ruleCharacters: game.ruleCharacters,
 		character,
-		...(overrides ? { overrides } : {})
+		...(overrides ? { overrides } : {}),
+		...(characters ? { ability: (seatId: SeatId) => abilityState(game, seatId, characters) } : {})
+	};
+}
+
+/** Why a living seat's ability does not work: from `state.ability`, or its own tokens. */
+function seatImpairments(state: DayState, seat: DaySeat): Impairment[] {
+	if (seat.dead) return [];
+	if (state.ability) return state.ability(seat.seatId).impairments;
+	return seat.reminders.flatMap((r): Impairment[] => {
+		const reason = impairmentOfLabel(r.label);
+		if (!reason || (r.characterId === 'minstrel' && reason === 'drunk')) return [];
+		return [
+			{
+				reason,
+				source: { characterId: r.characterId },
+				wiki: 'https://wiki.bloodontheclocktower.com/Glossary'
+			}
+		];
+	});
+}
+
+const IMPAIRED_TEXT: Record<Impairment['reason'], [first: string, more: string]> = {
+	poisoned: ['is poisoned', 'and poisoned'],
+	drunk: ['is drunk', 'and drunk'],
+	'no-ability': ['has no ability', 'and has no ability']
+};
+
+/**
+ * One line saying why the seat's ability does not work, naming each source
+ * ("[Sailor · Ana] is poisoned by [Poisoner · Ben]"). It replaces the character's normal
+ * lines: they would be wrong while the ability does not work.
+ */
+function impairedLine(
+	characterId: CharacterId,
+	seat: DaySeat,
+	impairments: readonly Impairment[],
+	state: DayState,
+	group: DayGroup,
+	wiki: string | undefined
+): DayReminder {
+	const segments: ReminderSegment[] = [{ kind: 'character', ref: refFor(seat, characterId) }];
+	const seen = new Set<string>();
+	for (const i of impairments) {
+		const key = `${i.reason}:${i.source.characterId}:${i.source.seatId ?? ''}`;
+		if (seen.has(key)) continue;
+		seen.add(key);
+		const first = seen.size === 1;
+		// The Drunk's own drunkenness: "[Slayer · Ana] is really the [Drunk]".
+		if (i.source.characterId === 'drunk' && (i.source.seatId ?? seat.seatId) === seat.seatId) {
+			segments.push({ kind: 'text', text: first ? 'is really the' : 'and really the' });
+			segments.push({ kind: 'character', ref: refFor(seat, 'drunk') });
+			continue;
+		}
+		segments.push({ kind: 'text', text: IMPAIRED_TEXT[i.reason][first ? 0 : 1] });
+		const own = i.source.seatId === seat.seatId && i.source.characterId === characterId;
+		if (!own) {
+			const sourceSeat = state.seats.find((s) => s.seatId === i.source.seatId);
+			segments.push({ kind: 'text', text: i.reason === 'no-ability' ? 'from' : 'by' });
+			segments.push({ kind: 'character', ref: refFor(sourceSeat, i.source.characterId) });
+		}
+	}
+	return {
+		key: `${characterId}#${impairments[0].reason}@${seat.seatId}`,
+		characterId,
+		group,
+		segments,
+		autoDetected: false,
+		...(wiki ? { wiki } : {})
 	};
 }
 
@@ -217,8 +290,11 @@ function curated(
 	const out: DayReminder[] = [];
 	const selfRef = refFor(seat, entry.id);
 	const at = seat?.seatId ?? 'rule';
+	const impaired = entry.impairable && seat ? seatImpairments(state, seat) : [];
 	entry.reminders.forEach((spec, index) => {
 		const when = spec.when ?? {};
+		// The impaired line replaces the lines about the living character's ability.
+		if (impaired.length > 0 && (when.self ?? 'alive') === 'alive') return;
 		const holds = conditionHolds(when, seat, state, alive);
 		if (holds === false) return;
 		if (when.noReminder && carriers(state, entry.id, when.noReminder).length > 0) return;
@@ -231,7 +307,9 @@ function curated(
 		};
 		const key = `${entry.id}#${index}@${at}`;
 		if (when.reminder) {
-			const targets = carriers(state, entry.id, when.reminder);
+			const targets = carriers(state, entry.id, when.reminder).filter(
+				(t) => !when.targetAlive || !t.dead
+			);
 			const hasTarget = spec.template.some((p) => 'target' in p);
 			if (hasTarget) {
 				for (const target of targets) {
@@ -246,22 +324,17 @@ function curated(
 			}
 		} else out.push({ ...base, key, segments: fill(spec, selfRef, undefined) });
 	});
-	if (entry.impairable && seat && !seat.dead) {
-		const states = new Set(seat.reminders.map((r) => impairment(r.label)));
-		for (const impaired of ['poisoned', 'drunk'] as const) {
-			if (!states.has(impaired)) continue;
-			out.push({
-				key: `${entry.id}#${impaired}@${at}`,
-				characterId: entry.id,
-				group: entry.reminders[0]?.group ?? 'day-ability',
-				segments: [
-					{ kind: 'character', ref: selfRef },
-					{ kind: 'text', text: `is ${impaired}` }
-				],
-				autoDetected: false,
-				wiki: entry.wiki
-			});
-		}
+	if (impaired.length > 0 && seat) {
+		out.push(
+			impairedLine(
+				entry.id,
+				seat,
+				impaired,
+				state,
+				entry.reminders[0]?.group ?? 'day-ability',
+				entry.wiki
+			)
+		);
 	}
 	return out;
 }
@@ -370,6 +443,16 @@ export function dayReminders(state: DayState): DayReminders {
 		const character = state.character(characterId);
 		const homebrew = character !== undefined && character.edition === undefined;
 		const entry = homebrew ? undefined : ENTRIES.get(characterId);
+		// A character with no ability at all (a Minion the Preacher chose) is always worth a
+		// line, even when its entry is not impairable or it has nothing to watch by day.
+		if (seat && !entry?.impairable) {
+			const none = seatImpairments(state, seat).filter((i) => i.reason === 'no-ability');
+			if (none.length > 0) {
+				const group = entry?.reminders[0]?.group ?? 'day-ability';
+				all.push(impairedLine(characterId, seat, none, state, group, none[0].wiki));
+				return;
+			}
+		}
 		if (entry) all.push(...curated(entry, seat, state, alive));
 		else if (character && (homebrew || !QUIET.has(characterId)) && !seat?.dead) {
 			all.push(...detectDayReminders(character, refFor(seat, characterId)));

@@ -1,7 +1,9 @@
 /**
  * Sample games for the /spikes/day demo: 8 players on Sects & Violets (Town Crier,
- * Flowergirl, Juggler, Gossip, Witch) or Trouble Brewing (Washerwoman, Slayer, Virgin,
- * Undertaker, and a Drunk who thinks they are the Chef). Built through the real engine.
+ * Flowergirl, Juggler, Gossip, Witch), Trouble Brewing (Washerwoman, Slayer, Virgin,
+ * Undertaker, and a Drunk who thinks they are the Chef), or an assorted script for
+ * abilities that misfire (a Gambler, a Chef beside a Recluse, a Mathematician, a Preacher
+ * who chose the Poisoner, a Grandmother). Built through the real engine.
  */
 import { editionScript, type GameData, type Script } from '#lib/core/data/index.ts';
 import {
@@ -13,7 +15,7 @@ import {
 } from '#lib/core/engine/index.ts';
 import type { Reminder } from '#lib/core/model/index.ts';
 
-export type Variant = 'snv' | 'tb';
+export type Variant = 'snv' | 'tb' | 'mixed';
 
 export const SAMPLE_NAMES = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
@@ -31,10 +33,35 @@ export const SAMPLES: Record<Variant, Sample> = {
 	tb: {
 		cast: ['washerwoman', 'slayer', 'virgin', 'undertaker', 'empath', 'chef', 'poisoner', 'imp'],
 		reminders: [[5, { characterId: 'drunk', label: 'Is The Drunk' }]]
+	},
+	mixed: {
+		cast: [
+			'gambler',
+			'chef',
+			'recluse',
+			'poisoner',
+			'imp',
+			'mathematician',
+			'preacher',
+			'grandmother'
+		],
+		reminders: [
+			[3, { characterId: 'preacher', label: 'No Ability' }],
+			[1, { characterId: 'grandmother', label: 'Grandchild' }]
+		]
 	}
 };
 
-export function editionAsScript(edition: Variant, data: GameData): Script {
+/** The assorted script: the sample's characters plus a few that misfire the same way. */
+const MIXED_SCRIPT: Script = {
+	meta: { name: 'Assorted' },
+	entries: [...SAMPLES.mixed.cast, 'acrobat', 'lycanthrope', 'pixie', 'spy'].map((id) => ({
+		kind: 'official',
+		id
+	}))
+};
+
+export function editionAsScript(edition: Exclude<Variant, 'mixed'>, data: GameData): Script {
 	const loaded = editionScript(edition, data);
 	if (!loaded) throw new Error(`no edition ${edition}`);
 	return {
@@ -48,7 +75,7 @@ export function sampleSession(variant: Variant, data: GameData, ctx: EngineConte
 	const created = createGame(
 		{
 			type: 'CreateGame',
-			script: editionAsScript(variant, data),
+			script: variant === 'mixed' ? MIXED_SCRIPT : editionAsScript(variant, data),
 			playerCount: SAMPLE_NAMES.length
 		},
 		ctx

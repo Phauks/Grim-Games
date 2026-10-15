@@ -1,0 +1,220 @@
+/**
+ * Whether an ability works, registration and protection. Each scenario paraphrases a wiki
+ * page:
+ * - https://wiki.bloodontheclocktower.com/Glossary (drunk, poisoned, no ability, dead)
+ * - https://wiki.bloodontheclocktower.com/Drunk, /Poisoner, /Minstrel, /Witch
+ * - https://wiki.bloodontheclocktower.com/Preacher
+ * - https://wiki.bloodontheclocktower.com/Recluse, /Spy, /Lycanthrope
+ * - https://wiki.bloodontheclocktower.com/Sailor, /Tea_Lady, /Monk, /Soldier
+ */
+import { describe, expect, it } from 'vitest';
+import type { Command } from '#lib/core/engine/index.ts';
+import {
+	newGame,
+	run,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
+import { abilityState, protection, registrations, registrationWorlds } from './ability.ts';
+
+const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
+
+function game(cast: string[], ...extra: ((seats: string[]) => Command)[]) {
+	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
+	const s = run(
+		session,
+		ctx,
+		...cast.map((characterId, i): Command => ({
+			type: 'AssignCharacter',
+			seatId: seats[i],
+			characterId
+		})),
+		...extra.map((f) => f(seats))
+	);
+	return { game: s.game, seats };
+}
+
+const add =
+	(i: number, characterId: string, label: string) =>
+	(s: string[]): Command => ({
+		type: 'AddReminder',
+		seatId: s[i],
+		reminder: { characterId, label }
+	});
+
+describe('abilityState', () => {
+	it('works for a sober, healthy, living player', () => {
+		const { game: g, seats } = game(['chef', 'imp', 'poisoner']);
+		expect(abilityState(g, seats[0], characters)).toMatchObject({
+			works: true,
+			dead: false,
+			impairments: []
+		});
+	});
+
+	it('names the poisoner as the source of a Poisoned token', () => {
+		const { game: g, seats } = game(['chef', 'imp', 'poisoner'], add(0, 'poisoner', 'Poisoned'));
+		expect(abilityState(g, seats[0], characters)).toMatchObject({
+			works: false,
+			impairments: [{ reason: 'poisoned', source: { characterId: 'poisoner', seatId: seats[2] } }]
+		});
+	});
+
+	it('treats the Drunk as drunk, with or without the token', () => {
+		const { game: g, seats } = game(['chef', 'imp'], add(0, 'drunk', 'Is The Drunk'));
+		expect(abilityState(g, seats[0], characters)).toMatchObject({
+			characterId: 'drunk',
+			works: false,
+			impairments: [{ reason: 'drunk', source: { characterId: 'drunk', seatId: seats[0] } }]
+		});
+	});
+
+	it('lists every reason, no ability first, then poisoned, then drunk', () => {
+		const { game: g, seats } = game(
+			['chef', 'imp', 'poisoner', 'sailor'],
+			add(0, 'sailor', 'Drunk'),
+			add(0, 'poisoner', 'Poisoned')
+		);
+		expect(abilityState(g, seats[0], characters).impairments.map((i) => i.reason)).toEqual([
+			'poisoned',
+			'drunk'
+		]);
+	});
+
+	it('dead players have no ability, unless it works even if dead (the Recluse)', () => {
+		const { game: g, seats } = game(
+			['chef', 'recluse', 'imp'],
+			(s) => ({ type: 'SetDead', seatId: s[0], dead: true }),
+			(s) => ({ type: 'SetDead', seatId: s[1], dead: true })
+		);
+		expect(abilityState(g, seats[0], characters)).toMatchObject({ works: false, dead: true });
+		expect(abilityState(g, seats[1], characters)).toMatchObject({ works: true, dead: false });
+	});
+
+	it('the Minstrel makes every other non-Traveller drunk, not the Minstrel', () => {
+		const { game: g, seats } = game(
+			['minstrel', 'chef', 'imp', 'monk'],
+			add(0, 'minstrel', 'Everyone Is Drunk'),
+			(s) => ({ type: 'AssignCharacter', seatId: s[3], characterId: 'beggar', alignment: 'good' })
+		);
+		expect(abilityState(g, seats[0], characters).works).toBe(true);
+		expect(abilityState(g, seats[1], characters).impairments).toMatchObject([
+			{ reason: 'drunk', source: { characterId: 'minstrel', seatId: seats[0] } }
+		]);
+		expect(abilityState(g, seats[3], characters).works).toBe(true);
+	});
+
+	it('the Witch has no ability once just 3 players live', () => {
+		const { game: g, seats } = game(['witch', 'chef', 'imp', 'monk'], (s) => ({
+			type: 'SetDead',
+			seatId: s[3],
+			dead: true
+		}));
+		expect(abilityState(g, seats[0], characters).impairments).toMatchObject([
+			{ reason: 'no-ability', source: { characterId: 'witch' } }
+		]);
+	});
+});
+
+describe('Preacher', () => {
+	const cast = ['preacher', 'cerenovus', 'nodashii', 'engineer', 'poisoner'];
+
+	it('a chosen Minion has no ability while the Preacher lives', () => {
+		const { game: g, seats } = game(cast, add(1, 'preacher', 'No Ability'));
+		expect(abilityState(g, seats[1], characters)).toMatchObject({
+			works: false,
+			impairments: [{ reason: 'no-ability', source: { characterId: 'preacher', seatId: seats[0] } }]
+		});
+	});
+
+	it('choosing a non-Minion (the Engineer) does nothing', () => {
+		const { game: g, seats } = game(cast, add(3, 'preacher', 'No Ability'));
+		expect(abilityState(g, seats[3], characters).works).toBe(true);
+	});
+
+	it('the Minion gets its ability back while the Preacher is poisoned, or once dead', () => {
+		const poisoned = game(cast, add(1, 'preacher', 'No Ability'), add(0, 'poisoner', 'Poisoned'));
+		expect(abilityState(poisoned.game, poisoned.seats[1], characters).works).toBe(true);
+		const dead = game(cast, add(1, 'preacher', 'No Ability'), (s) => ({
+			type: 'SetDead',
+			seatId: s[0],
+			dead: true
+		}));
+		expect(abilityState(dead.game, dead.seats[1], characters).works).toBe(true);
+	});
+});
+
+describe('registrations', () => {
+	it('the Recluse may register as evil and as a Minion or Demon', () => {
+		const { game: g, seats } = game(['chef', 'recluse', 'imp', 'spy']);
+		expect(registrations(g, characters)).toEqual([
+			expect.objectContaining({
+				seatId: seats[1],
+				alignments: ['good', 'evil'],
+				types: ['outsider', 'minion', 'demon']
+			}),
+			expect.objectContaining({
+				seatId: seats[3],
+				alignments: ['evil', 'good'],
+				types: ['minion', 'townsfolk', 'outsider']
+			})
+		]);
+		// 2 x 3 for each of them, the true world first.
+		const worlds = registrationWorlds(g, characters);
+		expect(worlds).toHaveLength(36);
+		expect(worlds[0].misregistered).toEqual([]);
+		expect(worlds[0].alignment(seats[1])).toBe('good');
+	});
+
+	it('a poisoned Recluse registers truly: no ability', () => {
+		const { game: g } = game(
+			['chef', 'recluse', 'imp', 'poisoner'],
+			add(1, 'poisoner', 'Poisoned')
+		);
+		expect(registrations(g, characters)).toEqual([]);
+	});
+
+	it('the Faux Paw player always registers as evil while the Lycanthrope lives', () => {
+		const { game: g, seats } = game(
+			['lycanthrope', 'chef', 'imp', 'poisoner'],
+			add(1, 'lycanthrope', 'Faux Paw')
+		);
+		expect(registrations(g, characters)).toMatchObject([
+			{ seatId: seats[1], alignments: ['evil'], source: { characterId: 'lycanthrope' } }
+		]);
+		expect(registrationWorlds(g, characters)[0].alignment(seats[1])).toBe('evil');
+	});
+});
+
+describe('protection', () => {
+	it('the Sailor cannot die, unless drunk or poisoned', () => {
+		const sober = game(['sailor', 'imp']);
+		expect(protection(sober.game, sober.seats[0], characters, 'other')).toMatchObject({
+			characterId: 'sailor'
+		});
+		const drunk = game(['sailor', 'imp'], add(0, 'sailor', 'Drunk'));
+		expect(protection(drunk.game, drunk.seats[0], characters, 'other')).toBeUndefined();
+	});
+
+	it('the Monk and Soldier only protect from the Demon; the Tea Lady from anything', () => {
+		const { game: g, seats } = game(
+			['monk', 'chef', 'soldier', 'tealady', 'imp'],
+			add(1, 'monk', 'Safe')
+		);
+		expect(protection(g, seats[1], characters, 'demon')).toMatchObject({ characterId: 'monk' });
+		expect(protection(g, seats[1], characters, 'other')).toBeUndefined();
+		expect(protection(g, seats[2], characters, 'other')).toBeUndefined();
+		const tea = game(['tealady', 'chef', 'imp'], add(1, 'tealady', 'Cannot Die'));
+		expect(protection(tea.game, tea.seats[1], characters, 'other')).toMatchObject({
+			characterId: 'tealady'
+		});
+	});
+
+	it('a Storyteller override wins', () => {
+		const { game: g, seats } = game(['sailor', 'imp'], (s) => ({
+			type: 'SetOverride',
+			seatId: s[0],
+			override: { field: 'canDie', value: true }
+		}));
+		expect(protection(g, seats[0], characters, 'other')).toBeUndefined();
+	});
+});

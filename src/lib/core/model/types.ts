@@ -136,7 +136,8 @@ export interface CharacterGuess {
  * - `ability`: a character used its ability; `reminderId` is the "No Ability" token placed.
  * - `note`: the Storyteller's free text about a character (a Gossip statement, the Artist's
  *   question, what the Savant was told), with structured `guesses` for the Juggler.
- * - `info`: what a waking character was shown, with the reminder tokens it placed.
+ * - `info`: what a waking character was shown, with the reminder tokens it placed, and
+ *   whether it worked abnormally (for the Mathematician).
  */
 export type DayEntry =
 	| { kind: 'nomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
@@ -163,9 +164,37 @@ export type DayEntry =
 			characterId: CharacterId;
 			text: string;
 			reminderIds: ReminderId[];
+			/** Set when the info or ability worked abnormally because of another character. */
+			abnormal?: AbnormalCause[];
 	  };
 
 export type DayEntryKind = DayEntry['kind'];
+
+/**
+ * Why an ability worked abnormally, for the Mathematician
+ * (https://wiki.bloodontheclocktower.com/Mathematician): the player was drunk or poisoned or
+ * had no ability, a Vortox made the info false, a player registered as something else, a
+ * protection stopped a death, or something else the Storyteller noted. `characterId` and
+ * `seatId` name the other character responsible, when known.
+ */
+export type AbnormalReason =
+	'drunk' | 'poisoned' | 'no-ability' | 'vortox' | 'registration' | 'protected' | 'other';
+
+export const ABNORMAL_REASONS = [
+	'drunk',
+	'poisoned',
+	'no-ability',
+	'vortox',
+	'registration',
+	'protected',
+	'other'
+] as const satisfies readonly AbnormalReason[];
+
+export interface AbnormalCause {
+	reason: AbnormalReason;
+	characterId?: CharacterId;
+	seatId?: SeatId;
+}
 
 /** The day log: everything logged since the last "New day". */
 export interface DayLog {

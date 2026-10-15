@@ -102,7 +102,9 @@
 	}
 
 	const reminders = $derived(
-		dayReminders(dayStateFromGame(atDayStart(g), (id) => game.characters.get(id)))
+		dayReminders(
+			dayStateFromGame(atDayStart(g), (id) => game.characters.get(id), undefined, game.characters)
+		)
 	);
 
 	/** The seat a reminder is about: its own character's badge. */

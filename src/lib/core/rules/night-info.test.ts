@@ -19,8 +19,12 @@ import {
 } from '#lib/core/model/fixtures.test-support.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
+	abnormalCauses,
+	abnormalSinceDawn,
+	answerCauses,
 	flowergirlAnswer,
 	infoPicker,
+	mathematicianAnswer,
 	infoRecord,
 	isAllowed,
 	isTruthful,
@@ -442,5 +446,271 @@ describe('withNightInfo', () => {
 			pickers: [{ seatId: seats[1], kind: 'pair-character' }]
 		});
 		expect(first.find((s) => s.id === 'chef')!.info).toMatchObject({ kind: 'picker' });
+	});
+});
+
+const add =
+	(i: number, characterId: string, label: string) =>
+	(s: string[]): Command => ({
+		type: 'AddReminder',
+		seatId: s[i],
+		reminder: { characterId, label }
+	});
+
+describe('registration ranges', () => {
+	// https://wiki.bloodontheclocktower.com/Chef and /Recluse: the Recluse might register as
+	// evil, so the Chef may be told either number.
+	it('Chef: the true number and every number a Recluse or Spy allows', () => {
+		// Poisoner, Imp, Recluse in a row: 1 true pair, 2 if the Recluse registers evil.
+		const { game: g, seats } = game(['chef', 'poisoner', 'imp', 'recluse', 'slayer']);
+		const picker = infoPicker(g, seats[0], 'chef', characters)!;
+		expect(picker.range).toEqual({ truth: 1, possible: [1, 2] });
+		expect(isTruthful(picker, { seats: [], number: 1 })).toBe(true);
+		expect(isTruthful(picker, { seats: [], number: 2 })).toBe(false);
+		expect(isAllowed(picker, { seats: [], number: 2 })).toBe(true);
+		expect(isAllowed(picker, { seats: [], number: 0 })).toBe(false);
+		// https://wiki.bloodontheclocktower.com/Spy: might register as good, breaking a pair.
+		const spy = game(['chef', 'spy', 'imp', 'slayer', 'monk']);
+		expect(infoPicker(spy.game, spy.seats[0], 'chef', characters)!.range).toEqual({
+			truth: 1,
+			possible: [0, 1]
+		});
+	});
+
+	it('Chef: no range when nobody may misregister, or when the Recluse is poisoned', () => {
+		const { game: g, seats } = game(
+			['chef', 'poisoner', 'imp', 'recluse', 'slayer'],
+			add(3, 'poisoner', 'Poisoned')
+		);
+		expect(infoPicker(g, seats[0], 'chef', characters)!.range).toEqual({
+			truth: 1,
+			possible: [1]
+		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Lycanthrope: the Faux Paw player registers as
+	// evil, so the true answer counts them as evil.
+	it('Chef: the Faux Paw player counts as evil in the true answer', () => {
+		const { game: g, seats } = game(
+			['chef', 'lycanthrope', 'slayer', 'imp', 'monk'],
+			add(2, 'lycanthrope', 'Faux Paw')
+		);
+		expect(infoPicker(g, seats[0], 'chef', characters)!.range).toEqual({
+			truth: 1,
+			possible: [1]
+		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Empath
+	it('Empath: a Recluse neighbour may count as evil', () => {
+		const { game: g, seats } = game(['recluse', 'empath', 'slayer', 'imp', 'monk']);
+		expect(infoPicker(g, seats[1], 'empath', characters)!.range).toEqual({
+			truth: 0,
+			possible: [0, 1]
+		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Clockmaker
+	it('Clockmaker: steps from the Demon to the nearest Minion, and what a Recluse allows', () => {
+		const { game: g, seats } = game(['clockmaker', 'imp', 'recluse', 'slayer', 'poisoner']);
+		// Imp at 1, Poisoner at 4: 2 steps round the circle; the Recluse at 2 as a Minion: 1;
+		// the Recluse as the Demon: 2 steps to the Poisoner.
+		expect(infoPicker(g, seats[0], 'clockmaker', characters)!.range).toEqual({
+			truth: 2,
+			possible: [1, 2]
+		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Investigator and /Recluse
+	it('Investigator: the Recluse may be shown as any Minion on the script', () => {
+		const { game: g, seats } = game(['investigator', 'recluse', 'imp', 'poisoner', 'chef']);
+		const picker = infoPicker(g, seats[0], 'investigator', characters)!;
+		const choice = { seats: [seats[1], seats[4]], characterId: 'baron' };
+		expect(isTruthful(picker, choice)).toBe(false);
+		expect(isAllowed(picker, choice)).toBe(true);
+		expect(abnormalCauses(picker, choice)).toEqual([
+			{ reason: 'registration', characterId: 'recluse', seatId: seats[1] }
+		]);
+		// Not a character type the Recluse can register as.
+		expect(isAllowed(picker, { ...choice, characterId: 'chef' })).toBe(false);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Washerwoman and /Spy
+	it('Washerwoman: the Spy may be shown as a Townsfolk', () => {
+		const { game: g, seats } = game(['washerwoman', 'spy', 'imp', 'chef', 'monk']);
+		const picker = infoPicker(g, seats[0], 'washerwoman', characters)!;
+		expect(isAllowed(picker, { seats: [seats[1], seats[2]], characterId: 'slayer' })).toBe(true);
+		expect(isTruthful(picker, { seats: [seats[3], seats[2]], characterId: 'chef' })).toBe(true);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Noble and /Steward
+	it('Noble and Steward: a Spy may register as good', () => {
+		const { game: g, seats } = game(['noble', 'spy', 'imp', 'chef', 'monk', 'steward']);
+		const noble = infoPicker(g, seats[0], 'noble', characters)!;
+		// Spy, Imp and Chef: two evil, unless the Spy registers as good.
+		const trio = { seats: [seats[1], seats[2], seats[3]] };
+		expect(isTruthful(noble, trio)).toBe(false);
+		expect(isAllowed(noble, trio)).toBe(true);
+		const steward = infoPicker(g, seats[5], 'steward', characters)!;
+		expect(isAllowed(steward, { seats: [seats[1]] })).toBe(true);
+		expect(isAllowed(steward, { seats: [seats[2]] })).toBe(false);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Fortune_Teller and /Recluse
+	it('Fortune Teller: a Recluse may register as the Demon', () => {
+		const { game: g, seats } = game(['fortuneteller', 'recluse', 'imp', 'chef', 'monk']);
+		const picker = infoPicker(g, seats[0], 'fortuneteller', characters)!;
+		expect(isTruthful(picker, { seats: [seats[1], seats[3]], yes: false })).toBe(true);
+		expect(isAllowed(picker, { seats: [seats[1], seats[3]], yes: true })).toBe(true);
+		expect(isAllowed(picker, { seats: [seats[3], seats[4]], yes: true })).toBe(false);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Oracle and /Town_Crier
+	it('Oracle and Town Crier answers list what registration allows', () => {
+		const oracle = game(['oracle', 'recluse', 'imp', 'chef', 'witch'], (s) => ({
+			type: 'SetDead',
+			seatId: s[1],
+			dead: true
+		}));
+		expect(oracleAnswer(oracle.game, oracle.seats[0], characters)).toMatchObject({
+			value: 0,
+			possible: [
+				{ kind: 'number', value: 0 },
+				{ kind: 'number', value: 1 }
+			]
+		});
+		const crier = game(['towncrier', 'recluse', 'imp', 'chef', 'witch'], (s) => ({
+			type: 'Nominate',
+			nominator: s[1],
+			nominee: s[3]
+		}));
+		expect(townCrierAnswer(crier.game, crier.seats[0], characters)).toMatchObject({
+			value: false,
+			possible: [
+				{ kind: 'yes-no', value: false },
+				{ kind: 'yes-no', value: true }
+			]
+		});
+	});
+});
+
+describe('impaired info', () => {
+	// https://wiki.bloodontheclocktower.com/Undertaker and /Glossary: a poisoned Undertaker
+	// may be shown anything, but the true answer is still worked out.
+	it('Undertaker: the true answer, and any answer allowed, naming the poisoner', () => {
+		const { game: g, seats } = game(
+			['undertaker', 'chef', 'poisoner', 'imp'],
+			add(0, 'poisoner', 'Poisoned'),
+			(s) => ({ type: 'Execute', seatId: s[1] })
+		);
+		expect(undertakerAnswer(g, seats[0], characters)).toMatchObject({
+			kind: 'character',
+			value: 'chef',
+			unreliable: 'poisoned',
+			impairments: [{ reason: 'poisoned', source: { characterId: 'poisoner', seatId: seats[2] } }]
+		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Preacher: the chosen Minion has no ability.
+	it('a Minion the Preacher chose: impaired info, and the step says so', () => {
+		const data = committedGameData();
+		const { game: g, seats } = game(
+			['preacher', 'widow', 'imp', 'chef', 'monk'],
+			add(1, 'preacher', 'No Ability')
+		);
+		const inPlay = g.seating.map((s) => data.byId.get(g.seats[s].characterId!)!);
+		const steps = withNightInfo(
+			nightOrder({ night: 'first', sheet: data.nightSheet, inPlay, players: 7 }).steps,
+			g,
+			characters
+		);
+		expect(steps.find((s) => s.id === 'widow')!.impaired).toMatchObject([
+			{ seatId: seats[1], impairments: [{ reason: 'no-ability', source: { seatId: seats[0] } }] }
+		]);
+		expect(steps.find((s) => s.id === 'chef')!.impaired).toBeUndefined();
+	});
+});
+
+describe('Mathematician', () => {
+	// https://wiki.bloodontheclocktower.com/Mathematician: info that is false because of
+	// another character's ability counts; true info from a poisoned player does not.
+	it('counts recorded abnormal info since dawn, and lists who and why', () => {
+		const { session, ctx, seats } = game(
+			['mathematician', 'chef', 'poisoner', 'imp', 'recluse', 'empath'],
+			add(5, 'poisoner', 'Poisoned')
+		);
+		const g0 = session.game;
+		const empath = infoPicker(g0, seats[5], 'empath', characters)!;
+		const chef = infoPicker(g0, seats[1], 'chef', characters)!;
+		const name = { seat: (s: string) => s, character: (id: string) => id };
+		// The poisoned Empath is told the truth: not abnormal.
+		const truthful = infoRecord(
+			empath,
+			{ seats: [], number: empath.range!.truth },
+			name,
+			g0,
+			characters
+		);
+		expect(truthful.abnormal).toBeUndefined();
+		// The Chef is told 2, because the Recluse registers as evil.
+		const registered = infoRecord(chef, { seats: [], number: 2 }, name, g0, characters);
+		expect(registered.abnormal).toEqual([
+			{ reason: 'registration', characterId: 'recluse', seatId: seats[4] }
+		]);
+		const lie = infoRecord(empath, { seats: [], number: 2 }, name, g0, characters);
+		const g = run(
+			session,
+			ctx,
+			{ type: 'RecordNightInfo', seatId: seats[5], characterId: 'empath', ...truthful },
+			{ type: 'RecordNightInfo', seatId: seats[1], characterId: 'chef', ...registered },
+			{ type: 'RecordNightInfo', seatId: seats[5], characterId: 'empath', ...lie }
+		).game;
+		const a = mathematicianAnswer(g, seats[0], characters);
+		expect(a).toMatchObject({ kind: 'number', value: 2, because: [seats[1], seats[5]] });
+		expect(a.abnormal).toMatchObject([
+			{ seatId: seats[1], characterId: 'chef', causes: [{ reason: 'registration' }] },
+			{
+				seatId: seats[5],
+				characterId: 'empath',
+				causes: [{ reason: 'poisoned', characterId: 'poisoner', seatId: seats[2] }]
+			}
+		]);
+		// A new day starts the count again.
+		const next = run({ ...session, game: g }, ctx, { type: 'NewDay' }).game;
+		expect(mathematicianAnswer(next, seats[0], characters)).toMatchObject({ value: 0 });
+	});
+
+	// https://wiki.bloodontheclocktower.com/Vortox: false info because of the Vortox counts.
+	it('a Vortox makes false Townsfolk info abnormal', () => {
+		const { game: g, seats } = game(['washerwoman', 'slayer', 'vortox', 'witch', 'savant']);
+		const picker = infoPicker(g, seats[0], 'washerwoman', characters)!;
+		expect(abnormalCauses(picker, { seats: [seats[1], seats[2]], characterId: 'savant' })).toEqual([
+			{ reason: 'vortox', characterId: 'vortox', seatId: seats[2] }
+		]);
+		expect(abnormalCauses(picker, { seats: [seats[1], seats[2]], characterId: 'slayer' })).toEqual(
+			[]
+		);
+	});
+
+	it('does not count the Mathematician’s own ability', () => {
+		const { game: g, seats } = game(['mathematician', 'chef', 'poisoner', 'imp'], (s) => ({
+			type: 'RecordNightInfo',
+			seatId: s[0],
+			characterId: 'mathematician',
+			text: 'Shown 3',
+			abnormal: [{ reason: 'poisoned', characterId: 'poisoner', seatId: s[2] }]
+		}));
+		expect(abnormalSinceDawn(g)).toEqual([]);
+		expect(mathematicianAnswer(g, seats[0], characters)).toMatchObject({ value: 0 });
+	});
+
+	it('free-text answers take their causes from the waking player', () => {
+		const { game: g, seats } = game(
+			['undertaker', 'chef', 'poisoner', 'imp'],
+			add(0, 'poisoner', 'Poisoned')
+		);
+		expect(answerCauses(undertakerAnswer(g, seats[0], characters))).toEqual([
+			{ reason: 'poisoned', characterId: 'poisoner', seatId: seats[2] }
+		]);
 	});
 });

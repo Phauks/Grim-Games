@@ -5,6 +5,7 @@
 		infoRecord,
 		isAllowed,
 		isTruthful,
+		matchingOption,
 		truthfulFirst,
 		type InfoChoice,
 		type InfoPicker
@@ -96,8 +97,15 @@
 		if (!picker || !complete || !suggestions) return '';
 		const truthful = isTruthful(picker, choice);
 		const allowed = isAllowed(picker, choice);
+		const registered = matchingOption(picker, choice)?.registered;
 		if (picker.unreliable) {
-			return `${truthful ? 'True' : 'False'}. ${game.seatName(picker.seatId)} is ${picker.unreliable}, so any info is allowed.`;
+			// "No Ability" is the Preacher's reminder token (TPI).
+			const state =
+				picker.unreliable === 'no-ability' ? ': No Ability' : ` is ${picker.unreliable}`;
+			return `${truthful ? 'True' : 'False'}. ${game.seatName(picker.seatId)}${state}, so any info is allowed.`;
+		}
+		if (!truthful && registered?.length && !picker.mustBeFalse) {
+			return `Might register falsely: ${registered.map((s) => game.seatName(s)).join(', ')}. Abnormal.`;
 		}
 		if (picker.mustBeFalse)
 			return allowed ? 'False, as the Vortox needs.' : 'True, but the Vortox needs false info.';
@@ -117,7 +125,7 @@
 
 	function record() {
 		if (!picker || !complete) return;
-		const { text, reminders } = infoRecord(
+		const { text, reminders, abnormal } = infoRecord(
 			picker,
 			choice,
 			{ seat: (s) => game.seatName(s), character: (id) => game.characterName(id) },
@@ -129,7 +137,8 @@
 			seatId: picker.seatId,
 			characterId: picker.characterId,
 			text,
-			reminders
+			reminders,
+			...(abnormal ? { abnormal } : {})
 		});
 		if (ok) open = false;
 	}
