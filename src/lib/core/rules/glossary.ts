@@ -282,6 +282,16 @@ const PATTERN = new RegExp(
 	'giu'
 );
 
+const NAME_PATTERNS = new Map<string, RegExp>();
+function namePattern(name: string): RegExp {
+	let re = NAME_PATTERNS.get(name);
+	if (!re) {
+		re = new RegExp(`(?<![\\p{L}\\p{N}_'’-])${escape(name)}(?![\\p{L}\\p{N}_-])`, 'gu');
+		NAME_PATTERNS.set(name, re);
+	}
+	return re;
+}
+
 export interface GlossaryOptions {
 	/**
 	 * Names that are never marked (character names: "the Drunk" is a character, not the
@@ -304,9 +314,11 @@ export function glossarySegments(text: string, options: GlossaryOptions = {}): G
 	const seen = options.seen ?? new Set<string>();
 	const blocked: [number, number][] = [];
 	for (const name of options.exclude ?? []) {
-		if (!name) continue;
-		const re = new RegExp(`(?<![\\p{L}\\p{N}_'’-])${escape(name)}(?![\\p{L}\\p{N}_-])`, 'gu');
-		for (const m of text.matchAll(re)) blocked.push([m.index, m.index + m[0].length]);
+		// A cheap substring test first: most blocks name no character.
+		if (!name || !text.includes(name)) continue;
+		for (const m of text.matchAll(namePattern(name))) {
+			blocked.push([m.index, m.index + m[0].length]);
+		}
 	}
 
 	const out: GlossarySegment[] = [];

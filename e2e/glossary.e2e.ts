@@ -40,7 +40,7 @@ test('tapping a rules term shows our definition and a Glossary link, without mov
 	await expect(popover).toBeHidden();
 });
 
-test('with Expert help the terms are plain text', async ({ page }) => {
+test('with "Explain rules terms" off the terms are plain text', async ({ page }) => {
 	await page.goto('/reference');
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
@@ -48,11 +48,10 @@ test('with Expert help the terms are plain text', async ({ page }) => {
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Storyteller help' })
 		.tap();
-	await settings
-		.getByRole('radiogroup', { name: 'How much help' })
-		.getByText('Expert', { exact: true })
-		.tap();
-	await expect(settings.getByRole('checkbox', { name: 'Explain rules terms' })).not.toBeChecked();
+	const explain = settings.getByRole('checkbox', { name: 'Explain rules terms' });
+	await expect(explain).toBeChecked();
+	await settings.getByText('Explain rules terms', { exact: true }).tap();
+	await expect(explain).not.toBeChecked();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(settings).toBeHidden();
 
