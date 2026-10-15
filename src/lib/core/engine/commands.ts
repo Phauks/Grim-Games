@@ -53,6 +53,12 @@ export type Command =
 	| { type: 'AddReminder'; seatId: SeatId; reminder: Reminder }
 	| { type: 'MoveReminder'; reminderId: ReminderId; toSeatId: SeatId }
 	| { type: 'RemoveReminder'; reminderId: ReminderId }
+	/**
+	 * Places several reminders at once, such as the suggested setup reminders
+	 * (`setupReminders`, `placeableSetupReminders`). Each becomes a normal reminder that can
+	 * be moved or removed; undo takes them all back in one step.
+	 */
+	| { type: 'ApplySetupReminders'; placements: { seatId: SeatId; reminder: Reminder }[] }
 	/** Swaps two players' places in the seating order (the Matron). */
 	| { type: 'SwapSeats'; seatA: SeatId; seatB: SeatId }
 	| { type: 'SetOverride'; seatId: SeatId; override: SeatOverride }
