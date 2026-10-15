@@ -1,16 +1,10 @@
 <script lang="ts">
-	import { CHARACTER_TYPES, type CharacterType } from '#lib/core/data/types.ts';
-	import {
-		groupByType,
-		matchesReference,
-		REFERENCE_FILTER_LABELS,
-		REFERENCE_FILTERS,
-		type ReferenceEntry,
-		type ReferenceFilter
-	} from '#lib/core/rules/reference.ts';
+	import { groupByType, matchesReference, type ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CharacterTable from './CharacterTable.svelte';
+	import FieldValue from './FieldValue.svelte';
+	import { fieldById, type FieldId } from './fields.ts';
 	import { TYPE_PLURALS } from './labels.ts';
 	import ReferenceCard from './ReferenceCard.svelte';
 	import type { ReferenceView } from './view-mode.svelte.ts';
@@ -22,24 +16,24 @@
 
 	let { entries, view }: Props = $props();
 
-	// One shared details overlay, so extra detail never expands a card inline.
-	let details = $state<{ title: string; text: string }>();
+	// One shared details overlay, so extra detail never expands a card or row inline.
+	let details = $state<
+		{ title: string; text: string } | { title: string; entry: ReferenceEntry; field: FieldId }
+	>();
 	let detailsOpen = $state(false);
 	function explain(title: string, text: string) {
 		details = { title, text };
 		detailsOpen = true;
 	}
-
-	let search = $state('');
-	let types = $state<CharacterType[]>([]);
-	let filters = $state<ReferenceFilter[]>([]);
-
-	const shown = $derived(entries.filter((e) => matchesReference(e, { search, types, filters })));
-	const groups = $derived(groupByType(shown));
-
-	function toggle<T>(list: T[], value: T): T[] {
-		return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+	function showField(entry: ReferenceEntry, field: FieldId) {
+		details = { title: `${entry.character.name}: ${fieldById(field).label}`, entry, field };
+		detailsOpen = true;
 	}
+
+	// Search is the one filter for cards; the table adds its own per-column filters.
+	let search = $state('');
+	const shown = $derived(entries.filter((e) => matchesReference(e, { search })));
+	const groups = $derived(groupByType(shown));
 </script>
 
 <div class="controls">
@@ -53,36 +47,13 @@
 			bind:value={search}
 		/>
 	</label>
-	<div class="chips" role="group" aria-label="Character types">
-		{#each CHARACTER_TYPES as type (type)}
-			<button
-				type="button"
-				class="chip"
-				aria-pressed={types.includes(type)}
-				onclick={() => (types = toggle(types, type))}>{TYPE_PLURALS[type]}</button
-			>
-		{/each}
-	</div>
-	<div class="chips" role="group" aria-label="Filters">
-		{#each REFERENCE_FILTERS as filter (filter)}
-			<button
-				type="button"
-				class="chip"
-				aria-pressed={filters.includes(filter)}
-				onclick={() => (filters = toggle(filters, filter))}
-				>{REFERENCE_FILTER_LABELS[filter]}</button
-			>
-		{/each}
-	</div>
-	<p class="count" aria-live="polite">
-		{shown.length} of {entries.length} characters
-	</p>
+	{#if view === 'cards'}
+		<p class="count" aria-live="polite">{shown.length} of {entries.length} characters</p>
+	{/if}
 </div>
 
 {#if view === 'table'}
-	{#if shown.length}<CharacterTable entries={shown} />{:else}<p class="empty">
-			No characters match.
-		</p>{/if}
+	<CharacterTable entries={shown} onExplain={explain} onShowField={showField} />
 {:else}
 	{#each groups as group (group.type)}
 		<section class="group" aria-labelledby="group-{group.type}">
@@ -101,7 +72,13 @@
 {/if}
 
 <Dialog bind:open={detailsOpen} title={details?.title ?? ''}>
-	<p>{details?.text}</p>
+	{#if details && 'text' in details}
+		<p>{details.text}</p>
+	{:else if details}
+		<div class="details">
+			<FieldValue field={details.field} entry={details.entry} onExplain={explain} />
+		</div>
+	{/if}
 </Dialog>
 
 <style>
@@ -145,35 +122,13 @@
 		clip-path: inset(50%);
 		white-space: nowrap;
 	}
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-	}
-	.chip {
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 0;
-		border-radius: var(--radius-full);
-		background: var(--choice-background);
-		box-shadow: inset 0 0 0 1px var(--border);
-		color: var(--choice-color);
-		font: inherit;
-		font-size: 0.9rem;
-		cursor: pointer;
-	}
-	.chip[aria-pressed='true'] {
-		background: var(--choice-selected-background);
-		box-shadow: inset 0 0 0 2px var(--choice-selected-border);
-	}
-	.chip:focus-visible {
-		outline: 3px solid var(--focus);
-		outline-offset: 2px;
-	}
 	.count {
 		margin: 0;
 		font-size: 0.9rem;
 		color: var(--on-surface-muted);
+	}
+	.details {
+		line-height: 1.5;
 	}
 	.group {
 		margin-bottom: var(--space-6);

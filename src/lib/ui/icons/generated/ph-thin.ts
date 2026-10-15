@@ -7,6 +7,7 @@ import ph_arrow_right_thin from '~icons/ph/arrow-right-thin';
 import ph_arrow_square_out_thin from '~icons/ph/arrow-square-out-thin';
 import ph_arrow_u_up_left_thin from '~icons/ph/arrow-u-up-left-thin';
 import ph_arrow_u_up_right_thin from '~icons/ph/arrow-u-up-right-thin';
+import ph_arrows_down_up_thin from '~icons/ph/arrows-down-up-thin';
 import ph_bag_simple_thin from '~icons/ph/bag-simple-thin';
 import ph_beer_bottle_thin from '~icons/ph/beer-bottle-thin';
 import ph_beer_stein_thin from '~icons/ph/beer-stein-thin';
@@ -16,8 +17,10 @@ import ph_book_open_text_thin from '~icons/ph/book-open-text-thin';
 import ph_bookmark_simple_thin from '~icons/ph/bookmark-simple-thin';
 import ph_books_thin from '~icons/ph/books-thin';
 import ph_bug_thin from '~icons/ph/bug-thin';
+import ph_caret_down_thin from '~icons/ph/caret-down-thin';
 import ph_caret_left_thin from '~icons/ph/caret-left-thin';
 import ph_caret_right_thin from '~icons/ph/caret-right-thin';
+import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_check_thin from '~icons/ph/check-thin';
 import ph_cross_thin from '~icons/ph/cross-thin';
 import ph_dots_three_vertical_thin from '~icons/ph/dots-three-vertical-thin';
@@ -26,6 +29,7 @@ import ph_feather_thin from '~icons/ph/feather-thin';
 import ph_fire_thin from '~icons/ph/fire-thin';
 import ph_flag_thin from '~icons/ph/flag-thin';
 import ph_flask_thin from '~icons/ph/flask-thin';
+import ph_funnel_thin from '~icons/ph/funnel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
@@ -58,6 +62,8 @@ import ph_skull_thin from '~icons/ph/skull-thin';
 import ph_sliders_thin from '~icons/ph/sliders-thin';
 import ph_smiley_thin from '~icons/ph/smiley-thin';
 import ph_smiley_angry_thin from '~icons/ph/smiley-angry-thin';
+import ph_sort_ascending_thin from '~icons/ph/sort-ascending-thin';
+import ph_sort_descending_thin from '~icons/ph/sort-descending-thin';
 import ph_sun_thin from '~icons/ph/sun-thin';
 import ph_sun_horizon_thin from '~icons/ph/sun-horizon-thin';
 import ph_tag_thin from '~icons/ph/tag-thin';
@@ -82,6 +88,7 @@ const icons: IconMap = {
 	'ph:arrow-square-out-thin': ph_arrow_square_out_thin,
 	'ph:arrow-u-up-left-thin': ph_arrow_u_up_left_thin,
 	'ph:arrow-u-up-right-thin': ph_arrow_u_up_right_thin,
+	'ph:arrows-down-up-thin': ph_arrows_down_up_thin,
 	'ph:bag-simple-thin': ph_bag_simple_thin,
 	'ph:beer-bottle-thin': ph_beer_bottle_thin,
 	'ph:beer-stein-thin': ph_beer_stein_thin,
@@ -91,8 +98,10 @@ const icons: IconMap = {
 	'ph:bookmark-simple-thin': ph_bookmark_simple_thin,
 	'ph:books-thin': ph_books_thin,
 	'ph:bug-thin': ph_bug_thin,
+	'ph:caret-down-thin': ph_caret_down_thin,
 	'ph:caret-left-thin': ph_caret_left_thin,
 	'ph:caret-right-thin': ph_caret_right_thin,
+	'ph:caret-up-thin': ph_caret_up_thin,
 	'ph:check-thin': ph_check_thin,
 	'ph:cross-thin': ph_cross_thin,
 	'ph:dots-three-vertical-thin': ph_dots_three_vertical_thin,
@@ -101,6 +110,7 @@ const icons: IconMap = {
 	'ph:fire-thin': ph_fire_thin,
 	'ph:flag-thin': ph_flag_thin,
 	'ph:flask-thin': ph_flask_thin,
+	'ph:funnel-thin': ph_funnel_thin,
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
 	'ph:ghost-thin': ph_ghost_thin,
@@ -133,6 +143,8 @@ const icons: IconMap = {
 	'ph:sliders-thin': ph_sliders_thin,
 	'ph:smiley-thin': ph_smiley_thin,
 	'ph:smiley-angry-thin': ph_smiley_angry_thin,
+	'ph:sort-ascending-thin': ph_sort_ascending_thin,
+	'ph:sort-descending-thin': ph_sort_descending_thin,
 	'ph:sun-thin': ph_sun_thin,
 	'ph:sun-horizon-thin': ph_sun_horizon_thin,
 	'ph:tag-thin': ph_tag_thin,
