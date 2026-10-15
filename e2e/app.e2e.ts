@@ -113,12 +113,9 @@ test('the footer sits at the bottom of the screen on a short page', async ({ pag
 	expect(Math.round(box!.y + box!.height)).toBe(Math.max(viewport, height));
 });
 
-test('About links to the changelog page, which is empty until 1.0', async ({ page }) => {
+test('the footer links to the changelog page, which is empty until 1.0', async ({ page }) => {
 	await page.goto('/');
-	await page.getByRole('contentinfo').getByRole('button', { name: 'About' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'About Grim-Games' });
-	await dialog.getByRole('link', { name: 'Changelog' }).tap();
-	await expect(dialog).toBeHidden();
+	await page.getByRole('contentinfo').getByRole('link', { name: 'Changelog' }).tap();
 	await expect(page).toHaveURL(/\/changelog$/);
 	await expect(page.getByRole('heading', { name: 'Changelog', level: 1 })).toBeVisible();
 	await expect(page.getByRole('main')).toContainText('None');
