@@ -8,3 +8,4 @@ bun.lockb
 # Generated
 worker/worker-configuration.d.ts
 static/data/
+.claude/

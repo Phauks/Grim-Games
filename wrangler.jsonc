@@ -1,5 +1,6 @@
 // One Worker serves the static SvelteKit build and the /api routes, and hosts the
 // Room Durable Object for live sync (04-architecture.md §1, 05-spike-results.md S2).
+// Cloudflare Workers Builds deploys it from GitHub: `main` -> production, other branches -> Previews.
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "grim-games",
@@ -16,15 +17,14 @@
 		"bindings": [{ "name": "ROOMS", "class_name": "Room" }]
 	},
 	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
-	"env": {
-		// Shared staging Worker for open PRs. Cloudflare does not generate preview URLs
-		// for Workers that implement a Durable Object, so there is one staging Worker
-		// instead of a preview per branch.
-		"staging": {
-			"name": "grim-games-staging",
-			"durable_objects": {
-				"bindings": [{ "name": "ROOMS", "class_name": "Room" }]
-			}
+	"vars": { "ENVIRONMENT": "production" },
+	// Worker Previews: Workers Builds runs `npx wrangler preview` for non-production branches,
+	// giving each branch/PR its own URL on this same Worker, with its own Durable Object
+	// namespace and storage. Previews don't inherit vars or bindings, so they're repeated here.
+	"previews": {
+		"vars": { "ENVIRONMENT": "preview" },
+		"durable_objects": {
+			"bindings": [{ "name": "ROOMS", "class_name": "Room" }]
 		}
 	}
 }

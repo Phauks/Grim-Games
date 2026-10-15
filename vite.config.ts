@@ -2,11 +2,15 @@ import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { readBuildInfo } from './build-info.ts';
 
 // Lets sandboxes with a preinstalled Chromium skip `playwright install`.
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
 
 export default defineConfig({
+	define: {
+		__BUILD_INFO__: JSON.stringify(readBuildInfo())
+	},
 	plugins: [
 		sveltekit({
 			compilerOptions: {

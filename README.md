@@ -36,12 +36,16 @@ If Chromium is already installed somewhere (for example a sandbox), set `PLAYWRI
 
 ## Deploying
 
-GitHub Actions deploys with `cloudflare/wrangler-action`:
+Cloudflare [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) builds and deploys straight from this repository, so there is no deploy workflow or API token in GitHub:
 
-- push to `main` deploys the `grim-games` Worker (production);
-- every pull request deploys the shared `grim-games-staging` Worker. Cloudflare does not create per-branch preview URLs for Workers that implement a Durable Object, so staging is one shared Worker.
+- build command `npm run build`, deploy command `npx wrangler deploy`: pushes to `main` deploy the `grim-games` Worker;
+- other branches and pull requests run `npx wrangler preview`, which creates a [Worker Preview](https://developers.cloudflare.com/workers/previews/) on the same Worker, with its own URL and its own Durable Object storage. The `previews` block in `wrangler.jsonc` repeats the bindings and vars previews need.
 
-The workflow needs two repository secrets, `CLOUDFLARE_API_TOKEN` (an account token with the "Edit Cloudflare Workers" template) and `CLOUDFLARE_ACCOUNT_ID`. Without them the deploy job is skipped.
+GitHub Actions (`.github/workflows/ci.yml`) only runs checks and tests.
+
+## Build info and issue reports
+
+Every page footer shows the version, commit, branch, channel (`production`, `preview` or `local`) and build time, read at build time by `build-info.ts` from Workers Builds' `WORKERS_CI_*` variables (or git locally). **Report an issue** opens the GitHub bug-report form with the build, page and device prefilled. Issue forms live in `.github/ISSUE_TEMPLATE/`.
 
 ## Data and acknowledgements
 

@@ -46,3 +46,14 @@ test('two devices in one room see the same names', async ({ page, browser }) => 
 	expect(new Set(theirs)).toEqual(new Set(['Trevor', 'Alex']));
 	await other.close();
 });
+
+test('every page shows build info and a prefilled report link', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.getByTestId('build-info')).toContainText(/v\d+\.\d+\.\d+ · [0-9a-f]{7}/);
+	const href = await page.getByRole('link', { name: 'Report an issue' }).getAttribute('href');
+	const url = new URL(href!);
+	expect(url.pathname).toBe('/Phauks/Grim-Games/issues/new');
+	expect(url.searchParams.get('template')).toBe('bug_report.yml');
+	expect(url.searchParams.get('page')).toBe('/');
+	expect(url.searchParams.get('build')).toMatch(/^v\d/);
+});

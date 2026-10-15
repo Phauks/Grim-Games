@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in Grim-Games doesn't work as it should.
+title: '[Bug] '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If you used **Report an issue** in the app, the build, page and device fields are already filled in.
+        For rules questions, the [official wiki](https://wiki.bloodontheclocktower.com) is the authority; please link the page if the app disagrees with it.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Script, player count, characters involved, and what you tapped.
+      placeholder: |
+        1. Load Trouble Brewing with 8 players
+        2. Tap a seat, then ...
+  - type: dropdown
+    id: role
+    attributes:
+      label: Were you using it as
+      options:
+        - Storyteller
+        - Player
+        - Both / not sure
+  - type: dropdown
+    id: device-type
+    attributes:
+      label: Device
+      options:
+        - Phone
+        - Tablet
+        - Desktop or laptop
+  - type: input
+    id: device
+    attributes:
+      label: Browser and device details
+      description: Filled in automatically from the app; otherwise e.g. "Safari on iPhone 13, iOS 19".
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The page you were on, e.g. /settings.
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: Shown at the bottom of every page (version · commit · branch · channel · built at).
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or anything else
+      description: Drag images in here. Please hide anything that would spoil a live game.
