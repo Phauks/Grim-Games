@@ -57,9 +57,9 @@
 			device. The request contains nothing about you or your games beyond what any web request carries.
 		</li>
 		<li>
-			<strong>BotC Scripts.</strong> When you load a script from botcscripts.com, the app asks our server
-			for that script by its public number, and our server fetches it from botcscripts.com. botcscripts.com
-			sees our server, not you.
+			<strong>BotC Scripts.</strong> When you search or browse botcscripts.com, or load a script from
+			it, the app sends your search words or the script's public number to our server, which asks botcscripts.com
+			and keeps the answer for a few minutes. botcscripts.com sees our server, not you.
 		</li>
 		<li>
 			<strong>A link you load a script from.</strong> "Load from a link" downloads the script straight
