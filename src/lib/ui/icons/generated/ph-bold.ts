@@ -10,9 +10,12 @@ import ph_arrow_u_up_right_bold from '~icons/ph/arrow-u-up-right-bold';
 import ph_bag_simple_bold from '~icons/ph/bag-simple-bold';
 import ph_beer_bottle_bold from '~icons/ph/beer-bottle-bold';
 import ph_beer_stein_bold from '~icons/ph/beer-stein-bold';
+import ph_book_bookmark_bold from '~icons/ph/book-bookmark-bold';
 import ph_book_open_bold from '~icons/ph/book-open-bold';
 import ph_book_open_text_bold from '~icons/ph/book-open-text-bold';
 import ph_bookmark_simple_bold from '~icons/ph/bookmark-simple-bold';
+import ph_books_bold from '~icons/ph/books-bold';
+import ph_bug_bold from '~icons/ph/bug-bold';
 import ph_caret_left_bold from '~icons/ph/caret-left-bold';
 import ph_caret_right_bold from '~icons/ph/caret-right-bold';
 import ph_check_bold from '~icons/ph/check-bold';
@@ -21,6 +24,7 @@ import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
 import ph_feather_bold from '~icons/ph/feather-bold';
 import ph_fire_bold from '~icons/ph/fire-bold';
+import ph_flag_bold from '~icons/ph/flag-bold';
 import ph_flask_bold from '~icons/ph/flask-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
@@ -31,6 +35,7 @@ import ph_hand_pointing_bold from '~icons/ph/hand-pointing-bold';
 import ph_handbag_bold from '~icons/ph/handbag-bold';
 import ph_info_bold from '~icons/ph/info-bold';
 import ph_list_bold from '~icons/ph/list-bold';
+import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_moon_bold from '~icons/ph/moon-bold';
 import ph_moon_stars_bold from '~icons/ph/moon-stars-bold';
@@ -61,6 +66,8 @@ import ph_user_bold from '~icons/ph/user-bold';
 import ph_user_circle_bold from '~icons/ph/user-circle-bold';
 import ph_users_bold from '~icons/ph/users-bold';
 import ph_users_three_bold from '~icons/ph/users-three-bold';
+import ph_warning_bold from '~icons/ph/warning-bold';
+import ph_warning_circle_bold from '~icons/ph/warning-circle-bold';
 import ph_wine_bold from '~icons/ph/wine-bold';
 import ph_x_bold from '~icons/ph/x-bold';
 import ph_x_circle_bold from '~icons/ph/x-circle-bold';
@@ -76,9 +83,12 @@ const icons: IconMap = {
 	'ph:bag-simple-bold': ph_bag_simple_bold,
 	'ph:beer-bottle-bold': ph_beer_bottle_bold,
 	'ph:beer-stein-bold': ph_beer_stein_bold,
+	'ph:book-bookmark-bold': ph_book_bookmark_bold,
 	'ph:book-open-bold': ph_book_open_bold,
 	'ph:book-open-text-bold': ph_book_open_text_bold,
 	'ph:bookmark-simple-bold': ph_bookmark_simple_bold,
+	'ph:books-bold': ph_books_bold,
+	'ph:bug-bold': ph_bug_bold,
 	'ph:caret-left-bold': ph_caret_left_bold,
 	'ph:caret-right-bold': ph_caret_right_bold,
 	'ph:check-bold': ph_check_bold,
@@ -87,6 +97,7 @@ const icons: IconMap = {
 	'ph:drop-bold': ph_drop_bold,
 	'ph:feather-bold': ph_feather_bold,
 	'ph:fire-bold': ph_fire_bold,
+	'ph:flag-bold': ph_flag_bold,
 	'ph:flask-bold': ph_flask_bold,
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,
@@ -97,6 +108,7 @@ const icons: IconMap = {
 	'ph:handbag-bold': ph_handbag_bold,
 	'ph:info-bold': ph_info_bold,
 	'ph:list-bold': ph_list_bold,
+	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:moon-bold': ph_moon_bold,
 	'ph:moon-stars-bold': ph_moon_stars_bold,
@@ -127,6 +139,8 @@ const icons: IconMap = {
 	'ph:user-circle-bold': ph_user_circle_bold,
 	'ph:users-bold': ph_users_bold,
 	'ph:users-three-bold': ph_users_three_bold,
+	'ph:warning-bold': ph_warning_bold,
+	'ph:warning-circle-bold': ph_warning_circle_bold,
 	'ph:wine-bold': ph_wine_bold,
 	'ph:x-bold': ph_x_bold,
 	'ph:x-circle-bold': ph_x_circle_bold

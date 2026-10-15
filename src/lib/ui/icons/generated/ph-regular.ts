@@ -10,9 +10,12 @@ import ph_arrow_u_up_right from '~icons/ph/arrow-u-up-right';
 import ph_bag_simple from '~icons/ph/bag-simple';
 import ph_beer_bottle from '~icons/ph/beer-bottle';
 import ph_beer_stein from '~icons/ph/beer-stein';
+import ph_book_bookmark from '~icons/ph/book-bookmark';
 import ph_book_open from '~icons/ph/book-open';
 import ph_book_open_text from '~icons/ph/book-open-text';
 import ph_bookmark_simple from '~icons/ph/bookmark-simple';
+import ph_books from '~icons/ph/books';
+import ph_bug from '~icons/ph/bug';
 import ph_caret_left from '~icons/ph/caret-left';
 import ph_caret_right from '~icons/ph/caret-right';
 import ph_check from '~icons/ph/check';
@@ -21,6 +24,7 @@ import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_drop from '~icons/ph/drop';
 import ph_feather from '~icons/ph/feather';
 import ph_fire from '~icons/ph/fire';
+import ph_flag from '~icons/ph/flag';
 import ph_flask from '~icons/ph/flask';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
@@ -31,6 +35,7 @@ import ph_hand_pointing from '~icons/ph/hand-pointing';
 import ph_handbag from '~icons/ph/handbag';
 import ph_info from '~icons/ph/info';
 import ph_list from '~icons/ph/list';
+import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_moon from '~icons/ph/moon';
 import ph_moon_stars from '~icons/ph/moon-stars';
@@ -61,6 +66,8 @@ import ph_user from '~icons/ph/user';
 import ph_user_circle from '~icons/ph/user-circle';
 import ph_users from '~icons/ph/users';
 import ph_users_three from '~icons/ph/users-three';
+import ph_warning from '~icons/ph/warning';
+import ph_warning_circle from '~icons/ph/warning-circle';
 import ph_wine from '~icons/ph/wine';
 import ph_x from '~icons/ph/x';
 import ph_x_circle from '~icons/ph/x-circle';
@@ -76,9 +83,12 @@ const icons: IconMap = {
 	'ph:bag-simple': ph_bag_simple,
 	'ph:beer-bottle': ph_beer_bottle,
 	'ph:beer-stein': ph_beer_stein,
+	'ph:book-bookmark': ph_book_bookmark,
 	'ph:book-open': ph_book_open,
 	'ph:book-open-text': ph_book_open_text,
 	'ph:bookmark-simple': ph_bookmark_simple,
+	'ph:books': ph_books,
+	'ph:bug': ph_bug,
 	'ph:caret-left': ph_caret_left,
 	'ph:caret-right': ph_caret_right,
 	'ph:check': ph_check,
@@ -87,6 +97,7 @@ const icons: IconMap = {
 	'ph:drop': ph_drop,
 	'ph:feather': ph_feather,
 	'ph:fire': ph_fire,
+	'ph:flag': ph_flag,
 	'ph:flask': ph_flask,
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,
@@ -97,6 +108,7 @@ const icons: IconMap = {
 	'ph:handbag': ph_handbag,
 	'ph:info': ph_info,
 	'ph:list': ph_list,
+	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-sad': ph_mask_sad,
 	'ph:moon': ph_moon,
 	'ph:moon-stars': ph_moon_stars,
@@ -127,6 +139,8 @@ const icons: IconMap = {
 	'ph:user-circle': ph_user_circle,
 	'ph:users': ph_users,
 	'ph:users-three': ph_users_three,
+	'ph:warning': ph_warning,
+	'ph:warning-circle': ph_warning_circle,
 	'ph:wine': ph_wine,
 	'ph:x': ph_x,
 	'ph:x-circle': ph_x_circle

@@ -10,9 +10,12 @@ import ph_arrow_u_up_right_thin from '~icons/ph/arrow-u-up-right-thin';
 import ph_bag_simple_thin from '~icons/ph/bag-simple-thin';
 import ph_beer_bottle_thin from '~icons/ph/beer-bottle-thin';
 import ph_beer_stein_thin from '~icons/ph/beer-stein-thin';
+import ph_book_bookmark_thin from '~icons/ph/book-bookmark-thin';
 import ph_book_open_thin from '~icons/ph/book-open-thin';
 import ph_book_open_text_thin from '~icons/ph/book-open-text-thin';
 import ph_bookmark_simple_thin from '~icons/ph/bookmark-simple-thin';
+import ph_books_thin from '~icons/ph/books-thin';
+import ph_bug_thin from '~icons/ph/bug-thin';
 import ph_caret_left_thin from '~icons/ph/caret-left-thin';
 import ph_caret_right_thin from '~icons/ph/caret-right-thin';
 import ph_check_thin from '~icons/ph/check-thin';
@@ -21,6 +24,7 @@ import ph_dots_three_vertical_thin from '~icons/ph/dots-three-vertical-thin';
 import ph_drop_thin from '~icons/ph/drop-thin';
 import ph_feather_thin from '~icons/ph/feather-thin';
 import ph_fire_thin from '~icons/ph/fire-thin';
+import ph_flag_thin from '~icons/ph/flag-thin';
 import ph_flask_thin from '~icons/ph/flask-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
@@ -31,6 +35,7 @@ import ph_hand_pointing_thin from '~icons/ph/hand-pointing-thin';
 import ph_handbag_thin from '~icons/ph/handbag-thin';
 import ph_info_thin from '~icons/ph/info-thin';
 import ph_list_thin from '~icons/ph/list-thin';
+import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
 import ph_moon_thin from '~icons/ph/moon-thin';
 import ph_moon_stars_thin from '~icons/ph/moon-stars-thin';
@@ -61,6 +66,8 @@ import ph_user_thin from '~icons/ph/user-thin';
 import ph_user_circle_thin from '~icons/ph/user-circle-thin';
 import ph_users_thin from '~icons/ph/users-thin';
 import ph_users_three_thin from '~icons/ph/users-three-thin';
+import ph_warning_thin from '~icons/ph/warning-thin';
+import ph_warning_circle_thin from '~icons/ph/warning-circle-thin';
 import ph_wine_thin from '~icons/ph/wine-thin';
 import ph_x_thin from '~icons/ph/x-thin';
 import ph_x_circle_thin from '~icons/ph/x-circle-thin';
@@ -76,9 +83,12 @@ const icons: IconMap = {
 	'ph:bag-simple-thin': ph_bag_simple_thin,
 	'ph:beer-bottle-thin': ph_beer_bottle_thin,
 	'ph:beer-stein-thin': ph_beer_stein_thin,
+	'ph:book-bookmark-thin': ph_book_bookmark_thin,
 	'ph:book-open-thin': ph_book_open_thin,
 	'ph:book-open-text-thin': ph_book_open_text_thin,
 	'ph:bookmark-simple-thin': ph_bookmark_simple_thin,
+	'ph:books-thin': ph_books_thin,
+	'ph:bug-thin': ph_bug_thin,
 	'ph:caret-left-thin': ph_caret_left_thin,
 	'ph:caret-right-thin': ph_caret_right_thin,
 	'ph:check-thin': ph_check_thin,
@@ -87,6 +97,7 @@ const icons: IconMap = {
 	'ph:drop-thin': ph_drop_thin,
 	'ph:feather-thin': ph_feather_thin,
 	'ph:fire-thin': ph_fire_thin,
+	'ph:flag-thin': ph_flag_thin,
 	'ph:flask-thin': ph_flask_thin,
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
@@ -97,6 +108,7 @@ const icons: IconMap = {
 	'ph:handbag-thin': ph_handbag_thin,
 	'ph:info-thin': ph_info_thin,
 	'ph:list-thin': ph_list_thin,
+	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
 	'ph:moon-thin': ph_moon_thin,
 	'ph:moon-stars-thin': ph_moon_stars_thin,
@@ -127,6 +139,8 @@ const icons: IconMap = {
 	'ph:user-circle-thin': ph_user_circle_thin,
 	'ph:users-thin': ph_users_thin,
 	'ph:users-three-thin': ph_users_three_thin,
+	'ph:warning-thin': ph_warning_thin,
+	'ph:warning-circle-thin': ph_warning_circle_thin,
 	'ph:wine-thin': ph_wine_thin,
 	'ph:x-thin': ph_x_thin,
 	'ph:x-circle-thin': ph_x_circle_thin

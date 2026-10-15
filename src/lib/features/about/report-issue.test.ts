@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bugReportUrl, describeBuild } from './report-issue.ts';
+import { bugReportUrl, characterReportUrl, describeBuild } from './report-issue.ts';
 
 const info = {
 	version: '0.0.1',
@@ -22,6 +22,17 @@ describe('report issue link', () => {
 		expect(url.searchParams.get('template')).toBe('bug_report.yml');
 		expect(url.searchParams.get('build')).toBe(describeBuild(info));
 		expect(url.searchParams.get('page')).toBe('/settings');
+		expect(url.searchParams.get('device')).toBe('Phone UA');
+	});
+});
+
+describe('character report link', () => {
+	it('names the character and its reference anchor', () => {
+		const url = new URL(characterReportUrl(info, { id: 'witch', name: 'Witch' }, 'Phone UA'));
+		expect(url.searchParams.get('template')).toBe('bug_report.yml');
+		expect(url.searchParams.get('title')).toBe('[Reference] Witch (witch): ');
+		expect(url.searchParams.get('page')).toBe('/reference#witch');
+		expect(url.searchParams.get('build')).toBe(describeBuild(info));
 		expect(url.searchParams.get('device')).toBe('Phone UA');
 	});
 });
