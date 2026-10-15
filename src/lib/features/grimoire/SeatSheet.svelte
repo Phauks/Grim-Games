@@ -6,6 +6,7 @@
 		type ReminderId,
 		type SeatId
 	} from '#lib/core/model/index.ts';
+	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -102,6 +103,7 @@
 	let moveOpen = $state(false);
 	let swapOpen = $state(false);
 	let removeOpen = $state(false);
+	let showOpen = $state(false);
 </script>
 
 <BottomSheet bind:open {title} description={`Seat ${number}`}>
@@ -237,6 +239,17 @@
 
 			<h3>Seat</h3>
 			<div class="actions">
+				<Button
+					variant="quiet"
+					disabled={!character}
+					onclick={() => {
+						// The sheet closes first: it is Storyteller-only, and the shown token covers the screen.
+						open = false;
+						showOpen = true;
+					}}
+				>
+					Show to player
+				</Button>
 				<Button variant="quiet" icon="swap" onclick={() => (swapOpen = true)}>Swap seats</Button>
 				<Button variant="quiet" icon="remove" onclick={() => (removeOpen = true)}>
 					Remove seat
@@ -245,6 +258,11 @@
 		</div>
 	{/if}
 </BottomSheet>
+
+<ShowToPlayer
+	bind:open={showOpen}
+	characters={character ? [{ character, alignment: seat?.alignment }] : []}
+/>
 
 <CharacterPicker
 	bind:open={pickerOpen}
