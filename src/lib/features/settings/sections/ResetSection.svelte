@@ -31,7 +31,7 @@
 </SettingRow>
 
 <Dialog bind:open={confirmReset} role="alertdialog" title="Reset settings?">
-	<p>Theme, fonts, text size, icons and Storyteller help go back to their defaults.</p>
+	<p>Theme, fonts, text size, icon size, icons and Storyteller help go back to their defaults.</p>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (confirmReset = false)}>Cancel</Button>
 		<Button onclick={reset}>Reset</Button>

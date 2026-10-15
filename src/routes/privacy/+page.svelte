@@ -25,6 +25,11 @@
 			Your settings, such as theme, fonts, text size, icons and Storyteller help, and how you last
 			viewed the <a href={resolve('/reference')}>Reference</a> page (localStorage).
 		</li>
+		<li>
+			A log of up to 20 recent problems the app ran into: the error message, the app area, the page
+			and when it happened. It never contains your games. You can view or clear it from About,
+			Problems on this device (localStorage).
+		</li>
 		<li>A copy of the app itself, so it works offline.</li>
 	</ul>
 	<p>
@@ -52,8 +57,9 @@
 		</li>
 		<li>
 			<strong>GitHub.</strong> "Report an issue" and "Report a problem" open a form on github.com, filled
-			in with the app version, the page you were on and your browser's description. Nothing is sent until
-			you submit it there, under your GitHub account.
+			in with the app version, the page you were on and your browser's description. Reporting a problem
+			from the problem log also adds that problem's details, with web addresses shortened so no game data
+			goes in. Nothing is sent until you submit it there, under your GitHub account.
 		</li>
 	</ul>
 

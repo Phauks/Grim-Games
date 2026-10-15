@@ -36,7 +36,8 @@ export function applyAppearance(theme: Theme, prefs: Preferences, root = documen
 		...theme.tokens,
 		...theme.components,
 		...fontVariables(theme, prefs),
-		'--text-scale': String(prefs.textScale)
+		'--text-scale': String(prefs.textScale),
+		'--icon-scale': String(prefs.iconScale)
 	};
 
 	// Clear tokens the previous theme set that this one does not.

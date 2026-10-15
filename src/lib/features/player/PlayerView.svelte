@@ -10,6 +10,9 @@
 		loadNumericNightOrder,
 		loadOfficialData
 	} from '#lib/features/characters/game-data.svelte.ts';
+	import { errorMessage } from '#lib/features/errors/app-error.ts';
+	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { NotebookState } from './notebook-store.svelte.ts';
 	import { playerCount, scriptKey } from './notebook.ts';
@@ -46,7 +49,9 @@
 			script = loaded;
 			notebook = book;
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			// Shown inline below, so only logged.
+			reportError(e, { area: 'play', notify: false });
+			error = errorMessage(e);
 		}
 	});
 
@@ -87,50 +92,55 @@
 		>
 			{#snippet panel(value)}
 				<div class="panel">
-					{#if !script || !notebook}
-						<p class="muted">Loading…</p>
-					{:else if value === 'script'}
-						<ScriptSheet {script} {jinxes} {players} />
-					{:else if value === 'night'}
-						<PlayerNightOrder {nights} {players} />
-					{:else if value === 'circle'}
-						<SeatCircle
-							seats={notebook.book.seats}
-							me={notebook.book.me}
-							characters={byId}
-							onSeatCount={(n) => notebook!.setSeatCount(n)}
-							onOpenSeat={openSeat}
-						/>
-					{:else}
-						<label class="notes">
-							<span>Notes</span>
-							<textarea
-								value={notebook.book.notes}
-								oninput={(event) => notebook!.setNotes(event.currentTarget.value)}></textarea>
-						</label>
-					{/if}
-					{#if notebook && (value === 'circle' || value === 'notes')}
-						<p class="private" data-testid="storage-note">
-							{notebook.saveError
-								? 'This browser cannot save: notes are lost when the page closes.'
-								: 'Saved on this device only. Nobody else can see it.'}
-						</p>
-					{/if}
+					<!-- A crash in one tab replaces only that tab. -->
+					<ErrorBoundary area="play">
+						{#if !script || !notebook}
+							<p class="muted">Loading…</p>
+						{:else if value === 'script'}
+							<ScriptSheet {script} {jinxes} {players} />
+						{:else if value === 'night'}
+							<PlayerNightOrder {nights} {players} />
+						{:else if value === 'circle'}
+							<SeatCircle
+								seats={notebook.book.seats}
+								me={notebook.book.me}
+								characters={byId}
+								onSeatCount={(n) => notebook!.setSeatCount(n)}
+								onOpenSeat={openSeat}
+							/>
+						{:else}
+							<label class="notes">
+								<span>Notes</span>
+								<textarea
+									value={notebook.book.notes}
+									oninput={(event) => notebook!.setNotes(event.currentTarget.value)}></textarea>
+							</label>
+						{/if}
+						{#if notebook && (value === 'circle' || value === 'notes')}
+							<p class="private" data-testid="storage-note">
+								{notebook.saveError
+									? 'This browser cannot save: notes are lost when the page closes.'
+									: 'Saved on this device only. Nobody else can see it.'}
+							</p>
+						{/if}
+					</ErrorBoundary>
 				</div>
 			{/snippet}
 		</Tabs>
 	{/if}
 
 	{#if notebook && script}
-		<SeatEditor
-			bind:open={editorOpen}
-			seat={notebook.book.seats[seatIndex]}
-			number={seatIndex + 1}
-			isMe={notebook.book.me === editing}
-			characters={script.characters}
-			onChange={(patch) => editing && notebook!.updateSeat(editing, patch)}
-			onToggleMe={() => editing && notebook!.toggleMe(editing)}
-		/>
+		<ErrorBoundary area="play">
+			<SeatEditor
+				bind:open={editorOpen}
+				seat={notebook.book.seats[seatIndex]}
+				number={seatIndex + 1}
+				isMe={notebook.book.me === editing}
+				characters={script.characters}
+				onChange={(patch) => editing && notebook!.updateSeat(editing, patch)}
+				onToggleMe={() => editing && notebook!.toggleMe(editing)}
+			/>
+		</ErrorBoundary>
 	{/if}
 </main>
 

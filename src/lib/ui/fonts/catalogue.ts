@@ -4,6 +4,8 @@
  * it as its own chunk and only the fonts a device actually uses are fetched.
  */
 
+import { reportError } from '#lib/features/errors/report.svelte.ts';
+
 /**
  * Where a font may be used. `display` fonts (all capitals or small capitals) only suit short
  * names and titles; `both` fonts also work for running text.
@@ -204,7 +206,8 @@ export function loadFont(id: FontId): Promise<unknown> {
 	if (!promise) {
 		promise = FONTS[id].load().catch((error) => {
 			loading.delete(id);
-			console.warn(`Could not load font ${id}`, error);
+			// The fallback font shows instead, so this is only logged.
+			reportError(error, { area: 'settings', notify: false });
 		});
 		loading.set(id, promise);
 	}

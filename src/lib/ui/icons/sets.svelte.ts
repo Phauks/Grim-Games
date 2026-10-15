@@ -1,3 +1,4 @@
+import { reportError } from '#lib/features/errors/report.svelte.ts';
 import type { IconSetId } from './catalogue.ts';
 import regular from './generated/ph-regular.ts';
 import type { IconMap } from './types.ts';
@@ -26,7 +27,8 @@ class IconSets {
 		this.#pending.add(id);
 		loaders[id]()
 			.then((module) => (this.#loaded = { ...this.#loaded, [id]: module.default }))
-			.catch((error) => console.warn(`Could not load icon set ${id}`, error))
+			// The regular set keeps showing, so this is only logged.
+			.catch((error) => reportError(error, { area: 'settings', notify: false }))
 			.finally(() => this.#pending.delete(id));
 	}
 }

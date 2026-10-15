@@ -33,8 +33,9 @@
 	.icon {
 		display: inline-block;
 		flex: none;
-		width: var(--icon-size);
-		height: var(--icon-size);
+		/* --icon-size is the design size; --icon-scale is the user's Icon size setting. */
+		width: calc(var(--icon-size) * var(--icon-scale, 1));
+		height: calc(var(--icon-size) * var(--icon-scale, 1));
 		line-height: 0;
 		vertical-align: middle;
 	}

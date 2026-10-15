@@ -147,3 +147,16 @@ test('the footer never makes the page wider than the screen, even at the largest
 	}));
 	expect(widths.page).toBeLessThanOrEqual(widths.screen);
 });
+
+test('About reopens the problem log after its card was dismissed', async ({ page }) => {
+	await page.goto('/');
+	// Tap once web fonts have swapped in, so the footer isn't moving under the finger.
+	await page.evaluate(() => document.fonts.ready);
+	await page.getByRole('contentinfo').getByRole('button', { name: 'About' }).tap();
+	await page
+		.getByRole('dialog', { name: 'About Grim-Games' })
+		.getByRole('button', { name: /Problems on this device/ })
+		.tap();
+	await expect(page.getByRole('dialog', { name: 'Problems on this device' })).toBeVisible();
+	await expect(page.getByRole('dialog', { name: 'About Grim-Games' })).toBeHidden();
+});
