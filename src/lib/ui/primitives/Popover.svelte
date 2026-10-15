@@ -7,38 +7,43 @@
 	interface Props {
 		open?: boolean;
 		title: string;
-		/** Class for the trigger button, which callers style (an inline term, a chip, ...). */
-		triggerClass?: string;
-		/** Accessible name of the trigger when its content alone is not enough. */
-		triggerLabel?: string;
-		/** What the trigger shows. */
-		trigger: Snippet;
+		/**
+		 * The element the popover points at. Many small triggers can share one popover this
+		 * way (a page of rules terms would otherwise mount hundreds); each trigger sets the
+		 * anchor and opens it. Focus returns to the anchor on close.
+		 */
+		anchor?: HTMLElement;
+		/** Taps on these elements do not dismiss it (another trigger that will switch it). */
+		keepOpenOn?: (target: Element) => boolean;
 		children: Snippet;
 	}
 
-	let {
-		open = $bindable(false),
-		title,
-		triggerClass,
-		triggerLabel,
-		trigger,
-		children
-	}: Props = $props();
+	let { open = $bindable(false), title, anchor, keepOpenOn, children }: Props = $props();
 </script>
 
 <!--
-	A small overlay anchored to its trigger: extra detail without moving the page.
+	A small overlay anchored to an element: extra detail without moving the page.
 	Tap outside, Escape or the close button dismisses it.
 -->
 <Popover.Root
 	bind:open
 	lazyMount
 	unmountOnExit
-	positioning={{ placement: 'bottom', gutter: 6, overflowPadding: 12, flip: true }}
+	positioning={{
+		placement: 'bottom',
+		gutter: 6,
+		overflowPadding: 12,
+		flip: true,
+		getAnchorElement: () => anchor ?? null
+	}}
+	finalFocusEl={() => anchor ?? null}
+	onInteractOutside={(event) => {
+		const target = event.detail.originalEvent.target;
+		if (target instanceof Element && (anchor?.contains(target) || keepOpenOn?.(target))) {
+			event.preventDefault();
+		}
+	}}
 >
-	<Popover.Trigger class={triggerClass} aria-label={triggerLabel}
-		>{@render trigger()}</Popover.Trigger
-	>
 	<Portal>
 		<Popover.Positioner>
 			<Popover.Content aria-label={title}>

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { GlossaryTerm } from '#lib/core/rules/glossary.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
-	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import { glossaryPopover } from './glossary-popover.svelte.ts';
 
 	interface Props {
 		term: GlossaryTerm;
@@ -10,25 +9,27 @@
 	}
 
 	let { term, text }: Props = $props();
+	let button = $state<HTMLButtonElement>();
+	const open = $derived(glossaryPopover.open && glossaryPopover.anchor === button);
 </script>
 
-<!-- A rules term in game text: dotted underline (not a link); tap for our short definition. -->
-<Popover
-	title={term.term}
-	triggerClass="glossary-term"
-	triggerLabel={`${text}: explain rules term`}
+<!--
+	A rules term in game text: dotted underline (not a link); tap for our short definition
+	in the shared GlossaryPopover.
+-->
+<button
+	bind:this={button}
+	type="button"
+	class="glossary-term"
+	aria-label={`${text}: explain rules term`}
+	aria-haspopup="dialog"
+	aria-expanded={open}
+	data-state={open ? 'open' : 'closed'}
+	onclick={() => button && glossaryPopover.show(term, button)}>{text}</button
 >
-	{#snippet trigger()}{text}{/snippet}
-	<p class="definition">{term.definition}</p>
-	<!-- External wiki Glossary (the rules authority), not an app route. -->
-	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-	<a class="wiki" href={term.url} target="_blank" rel="noopener"
-		><Icon name="wiki" /><span>Open Glossary</span></a
-	>
-</Popover>
 
 <style>
-	:global(.glossary-term) {
+	.glossary-term {
 		position: relative;
 		display: inline;
 		/* The line keeps its height; the ::after below is the tap target. */
@@ -48,7 +49,7 @@
 		-webkit-tap-highlight-color: transparent;
 	}
 	/* A 44px hit area around the word without changing the line's layout. */
-	:global(.glossary-term)::after {
+	.glossary-term::after {
 		content: '';
 		position: absolute;
 		left: 50%;
@@ -57,24 +58,12 @@
 		height: var(--tap-target);
 		translate: -50% -50%;
 	}
-	:global(.glossary-term[data-state='open']) {
+	.glossary-term[data-state='open'] {
 		text-decoration-style: solid;
 	}
-	:global(.glossary-term:focus-visible) {
+	.glossary-term:focus-visible {
 		outline: 3px solid var(--focus);
 		outline-offset: 2px;
 		border-radius: var(--radius-sm);
-	}
-	.definition {
-		margin: var(--space-1) 0 var(--space-2);
-	}
-	.wiki {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		color: inherit;
-		font-weight: 600;
-		--icon-size: 1.1rem;
 	}
 </style>
