@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { onMount } from 'svelte';
 	import type { Night } from '#lib/core/rules/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -29,7 +30,7 @@
 				mixed: new DayGame('mixed', data)
 			};
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = reportError(e, { area: 'day' })?.message ?? 'Unknown error';
 		}
 	});
 </script>
