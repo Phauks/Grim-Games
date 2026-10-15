@@ -1,0 +1,60 @@
+# Weekly sync of The Pandemonium Institute's toolmaker data (botc-release) into static/data/
+# (04-architecture.md §6). When anything changed, opens or updates one pull request on the
+# `data-sync/botc-release` branch for review.
+#
+# Repository setting needed: Settings > Actions > General > Workflow permissions >
+# "Allow GitHub Actions to create and approve pull requests" must be on, or the PR step fails.
+#
+# Pull requests opened with the default GITHUB_TOKEN do not trigger other workflows (so CI
+# will not run on them until someone pushes to the branch or closes and reopens the PR).
+# To get CI automatically, add a fine-grained token with contents + pull-requests write as
+# the DATA_SYNC_TOKEN secret; it is used when present.
+name: Data sync
+
+on:
+  schedule:
+    - cron: '17 6 * * 1' # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: data-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Sync botc-release data
+        run: |
+          {
+            echo 'Automated sync from [ThePandemoniumInstitute/botc-release](https://github.com/ThePandemoniumInstitute/botc-release) by `npm run sync:data`.'
+            echo
+            echo '```'
+            npm run -s sync:data
+            echo '```'
+            echo
+            echo 'Check the counts in `src/lib/core/data/tpi-data.test.ts` against the change before merging.'
+          } | tee "$RUNNER_TEMP/sync-summary.md"
+          cat "$RUNNER_TEMP/sync-summary.md" >> "$GITHUB_STEP_SUMMARY"
+        shell: bash
+      - name: Open or update pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.DATA_SYNC_TOKEN || github.token }}
+          branch: data-sync/botc-release
+          delete-branch: true
+          add-paths: static/data
+          commit-message: 'Sync TPI data from botc-release'
+          title: 'Sync TPI data from botc-release'
+          body-path: ${{ runner.temp }}/sync-summary.md
