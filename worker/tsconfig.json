@@ -12,5 +12,9 @@
 		"allowImportingTsExtensions": true
 	},
 	"include": ["./**/*.ts", "../src/lib/core/**/*.ts"],
-	"exclude": ["../src/lib/core/**/*.test.ts", "../src/lib/core/**/*.test-support.ts"]
+	"exclude": [
+		"../src/lib/core/**/*.test.ts",
+		"../src/lib/core/**/*.test-support.ts",
+		"../src/lib/core/testing/**"
+	]
 }

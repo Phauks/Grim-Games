@@ -8,6 +8,8 @@ import { readBuildInfo } from './build-info.ts';
 // Lets sandboxes with a preinstalled Chromium skip `playwright install`.
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
 
+const rulesTests = ['src/lib/core/abilities/**/*.test.ts', 'src/lib/core/jinxes/**/*.test.ts'];
+
 export default defineConfig({
 	define: {
 		__BUILD_INFO__: JSON.stringify(readBuildInfo())
@@ -50,7 +52,20 @@ export default defineConfig({
 					name: 'server',
 					environment: 'node',
 					include: ['src/**/*.{test,spec}.{js,ts}', 'scripts/**/*.{test,spec}.{js,ts}'],
-					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
+					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}', ...rulesTests]
+				}
+			},
+
+			{
+				// The per-character and per-jinx rules tests (04-architecture.md §10): over 300 small
+				// files of pure core tests, run in node without per-file isolation, which keeps them
+				// to a few seconds instead of ~25. They must not use vi.mock or leave module state.
+				extends: './vite.config.ts',
+				test: {
+					name: 'rules',
+					environment: 'node',
+					include: rulesTests,
+					isolate: false
 				}
 			}
 		]

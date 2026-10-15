@@ -25,18 +25,31 @@ static/data/       synced TPI data and icons (generated; see Data)
 
 ## Commands
 
-| Command                      | What it does                                                             |
-| ---------------------------- | ------------------------------------------------------------------------ |
-| `npm run dev`                | Vite dev server (no Worker)                                              |
-| `npm run preview`            | Build, then run the full Worker locally with `wrangler dev` on port 8787 |
-| `npm run check`              | svelte-check for the app, tsc for the Worker                             |
-| `npm run lint`               | Prettier + ESLint (including module-boundary rules) + hex-colour check   |
-| `npm run icons`              | Regenerate the bundled icon modules after editing the icon catalogue     |
-| `npm run test:unit -- --run` | Vitest (node + browser projects)                                         |
-| `npm run test:e2e`           | Playwright touch tests (phone + tablet)                                  |
-| `npm run sync:data`          | Refresh TPI's data and icons in `static/data/` (see [Data](#data))       |
+| Command                        | What it does                                                                            |
+| ------------------------------ | --------------------------------------------------------------------------------------- |
+| `npm run dev`                  | Vite dev server (no Worker)                                                             |
+| `npm run preview`              | Build, then run the full Worker locally with `wrangler dev` on port 8787                |
+| `npm run check`                | svelte-check for the app, tsc for the Worker                                            |
+| `npm run lint`                 | Prettier + ESLint (including module-boundary rules) + hex-colour check + rules coverage |
+| `npm run icons`                | Regenerate the bundled icon modules after editing the icon catalogue                    |
+| `npm run test:unit -- --run`   | Vitest (node + browser projects)                                                        |
+| `npm run test:e2e`             | Playwright touch tests (phone + tablet)                                                 |
+| `npm run sync:data`            | Refresh TPI's data and icons in `static/data/` (see [Data](#data))                      |
+| `npm run scaffold:rules-tests` | Create missing character and jinx test files (see [Rules tests](#rules-tests))          |
+| `npm run check:rules-coverage` | Fail if a character or jinx has no test file; count scenario todos                      |
 
 If Chromium is already installed somewhere (for example a sandbox), set `PLAYWRIGHT_CHROMIUM_PATH` to its executable instead of running `npx playwright install`.
+
+## Rules tests
+
+Every character and every jinx has a test file, based on the [BotC wiki](https://wiki.bloodontheclocktower.com) (the rules authority):
+
+- `src/lib/core/abilities/<characterId>.test.ts`: data checks generated from `roles.json` (type, default alignment, edition, setup, reminders, night sheet, `special`), then one `it.todo` per example in the wiki page's Examples section;
+- `src/lib/core/jinxes/<a>__<b>.test.ts` (ids sorted): the jinx is in `jinxes.json` and applies only with both characters, then an `it.todo` for the rule it imposes.
+
+To write a scenario, read the example on the wiki page and replace its `it.todo` with a test that sets up seats, characters and reminders, runs the action and checks the resulting state, prompts or warnings. Paraphrase it: the wiki has no licence, so never copy its prose. Keep the wiki URL at the top of the file. These files run in the `rules` Vitest project without per-file isolation (that keeps 300+ files fast), so don't use `vi.mock` or leave module state behind; read data with `#lib/core/testing/committed-data.ts`.
+
+`npm run check:rules-coverage` (part of `npm run lint`, so CI runs it) fails when a character or jinx pair in `static/data/` has no test file, when a file doesn't cite its character's wiki URL, or when a file is left for a character or jinx that no longer exists. When a data sync adds one, run `npm run scaffold:rules-tests`: it only creates missing files, never overwrites. It also prints the number of `todo`s left, which the roadmap takes to zero for 1.0. `-- --fetch-examples` makes one numbered todo per wiki example (it counts them through the wiki's API and writes no wiki text).
 
 ## Deploying
 
