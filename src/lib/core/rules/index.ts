@@ -9,6 +9,7 @@ export * from './setup.ts';
 export * from './jinxes.ts';
 export * from './teensyville.ts';
 export * from './night-order.ts';
+export * from './night-info.ts';
 export * from './day-reminders.ts';
 export * from './describe.ts';
 export * from './reference.ts';

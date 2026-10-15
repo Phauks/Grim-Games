@@ -25,6 +25,7 @@ import {
 	type NightMarker,
 	type NightSheet
 } from '#lib/core/data/types.ts';
+import type { NightStepInfo } from './night-info.ts';
 import { hasEvilTeamInfo } from './teensyville.ts';
 
 export type Night = 'first' | 'other';
@@ -88,6 +89,11 @@ export interface NightStep {
 	placement: Placement;
 	/** Short notes in our words: why it is here, and rules to remember for this step. */
 	notes: string[];
+	/**
+	 * Answers or info pickers worked out from the game (`withNightInfo` in night-info.ts).
+	 * `nightOrder` never sets it: it has no game state.
+	 */
+	info?: NightStepInfo;
 }
 
 export interface OmittedStep {

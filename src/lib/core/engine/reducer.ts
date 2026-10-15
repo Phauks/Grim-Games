@@ -61,7 +61,9 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			ruleCharacters: [],
 			bluffs: [],
 			nightOrderOverrides: [],
-			dayReminderOverrides: []
+			dayReminderOverrides: [],
+			today: { entries: [] },
+			pastDays: []
 		};
 	}
 	if (!game) throw new Error(`${event.type} applied before GameCreated`);
@@ -265,6 +267,36 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				}
 			};
 		}
+		case 'DayEntryAdded':
+			if (game.today.entries.some((e) => e.entryId === event.entry.entryId)) return game;
+			return {
+				...game,
+				today: { ...game.today, entries: [...game.today.entries, structuredClone(event.entry)] }
+			};
+		case 'DayEntryReplaced': {
+			const index = game.today.entries.findIndex((e) => e.entryId === event.entry.entryId);
+			const entries = replaceAt(game.today.entries, index, structuredClone(event.entry));
+			return entries === game.today.entries ? game : { ...game, today: { ...game.today, entries } };
+		}
+		case 'DayEntryRemoved': {
+			const index = game.today.entries.findIndex((e) => e.entryId === event.entryId);
+			const entries = removeAt(game.today.entries, index);
+			return entries === game.today.entries ? game : { ...game, today: { ...game.today, entries } };
+		}
+		case 'DemonVotedSet':
+			return {
+				...game,
+				today:
+					event.voted === undefined
+						? omit(game.today, 'demonVoted')
+						: { ...game.today, demonVoted: event.voted }
+			};
+		case 'DayStarted':
+			return {
+				...game,
+				today: { entries: [] },
+				pastDays: [...game.pastDays, { ...game.today, closedAt: event.at }]
+			};
 		case 'DrawCancelled': {
 			const bag = game.bag;
 			if (!bag || !Object.hasOwn(bag.tiles, event.tileId)) return game;
