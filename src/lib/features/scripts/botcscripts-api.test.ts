@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+	normaliseSearch,
+	parseSearchPath,
+	readProxiedSearchPage,
+	readSearchPage,
+	searchPath,
+	upstreamSearchPath,
 	parseBotcScriptsRef,
 	parseProxyPath,
 	pickVersionId,
@@ -118,5 +124,89 @@ describe('API responses', () => {
 
 	it('links to the script page', () => {
 		expect(scriptPageUrl(12, '1.1.0')).toBe('https://botcscripts.com/script/12/1.1.0');
+	});
+});
+
+describe('search', () => {
+	it('keeps the term in the path, tidied and capped', () => {
+		expect(normaliseSearch('  Storm   front ')).toBe('Storm front');
+		expect(normaliseSearch('x'.repeat(150))).toHaveLength(100);
+		expect(searchPath('storm front', 2)).toBe('/api/botcscripts/search/2/storm%20front');
+		expect(searchPath('  ')).toBe('/api/botcscripts/search/1');
+	});
+
+	it.each([
+		['/api/botcscripts/search/1', { term: '', page: 1 }],
+		['/api/botcscripts/search/3/storm%20front', { term: 'storm front', page: 3 }],
+		['/api/botcscripts/search/1/%E2%80%9Cquoted%E2%80%9D', { term: '“quoted”', page: 1 }]
+	])('reads %s', (path, expected) => {
+		expect(parseSearchPath(path)).toEqual(expected);
+		expect(parseSearchPath(searchPath(expected.term, expected.page))).toEqual(expected);
+	});
+
+	it.each([
+		'/api/botcscripts/search/0',
+		'/api/botcscripts/search/101',
+		'/api/botcscripts/search/x',
+		'/api/botcscripts/search/1/%E0%A4%A'
+	])('refuses %s', (path) => {
+		expect(parseSearchPath(path)).toBeUndefined();
+	});
+
+	it('asks the site for latest versions, most votes first', () => {
+		const url = new URL(upstreamSearchPath('storm', 2), 'https://botcscripts.com');
+		expect(url.pathname).toBe('/api/scripts/');
+		expect(Object.fromEntries(url.searchParams)).toEqual({
+			latest: 'true',
+			ordering: '-score',
+			page: '2',
+			search: 'storm'
+		});
+		expect(new URL(upstreamSearchPath('', 1), 'https://x.example').searchParams.has('search')).toBe(
+			false
+		);
+	});
+
+	it('slims a page of results to rows, without the script JSON', () => {
+		const page = readSearchPage(
+			{
+				count: 51,
+				next: 'https://botcscripts.com/api/scripts/?page=2',
+				previous: null,
+				results: [
+					{
+						pk: 9,
+						script_id: 3,
+						name: 'Storm Front',
+						version: '1.0.0',
+						script_type: 'Full',
+						author: 'Trevor',
+						content: ['chef'],
+						score: 12
+					},
+					{ broken: true }
+				]
+			},
+			1
+		);
+		expect(page).toEqual({
+			page: 1,
+			count: 51,
+			hasMore: true,
+			results: [
+				{
+					scriptId: 3,
+					versionId: 9,
+					name: 'Storm Front',
+					version: '1.0.0',
+					author: 'Trevor',
+					type: 'Full',
+					score: 12
+				}
+			]
+		});
+		expect(readProxiedSearchPage(page)).toEqual(page);
+		expect(readSearchPage({ results: [], next: null }, 4)?.hasMore).toBe(false);
+		expect(readSearchPage({ detail: 'Invalid page.' }, 9)).toBeUndefined();
 	});
 });

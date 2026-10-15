@@ -34,6 +34,7 @@
 		type SavedScript,
 		type ScriptSource
 	} from './saved-scripts.ts';
+	import BotcScriptsBrowser from './BotcScriptsBrowser.svelte';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
 
@@ -153,6 +154,22 @@
 	/** Loads script text that arrived another way (a share link), through the same checks. */
 	export function loadFetched(fetched: FetchedScript): Promise<void> {
 		return run(() => Promise.resolve(fetched));
+	}
+
+	/** A file dropped on the page: loaded like the File button. */
+	export function loadFile(file: File): Promise<void> {
+		closeAll();
+		return run(() => readScriptFile(file));
+	}
+
+	/** Text dropped on the page (a link or script JSON): loaded like Paste. */
+	export function loadText(text: string): Promise<void> {
+		closeAll();
+		return run(() =>
+			isLink(text)
+				? fetchLinkTarget(resolveLink(text), text)
+				: Promise.resolve({ text, source: { kind: 'paste' } })
+		);
 	}
 
 	function open(which: 'paste' | 'link' | 'botc') {
@@ -279,11 +296,12 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={botcOpen} title="BotC Scripts">
-	<label class="field">
-		<span>BotC Scripts link or script number</span>
-		<input type="text" inputmode="url" autocomplete="off" bind:value={botcText} />
-	</label>
+<Dialog bind:open={botcOpen} title="BotC Scripts" size="full">
+	<BotcScriptsBrowser
+		bind:query={botcText}
+		disabled={busy}
+		onpick={(ref) => run(() => fetchLinkTarget({ kind: 'botcscripts', ref }, ''))}
+	/>
 	{@render errorLine()}
 	{#snippet actions()}
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
@@ -300,7 +318,7 @@
 					}
 					return fetchLinkTarget({ kind: 'botcscripts', ref }, botcText);
 				})}
-			disabled={busy || botcText.trim() === ''}>Load</Button
+			disabled={busy || !parseBotcScriptsRef(botcText)}>Load</Button
 		>
 	{/snippet}
 </Dialog>

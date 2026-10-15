@@ -132,3 +132,100 @@ export function readProxiedVersion(json: unknown): BotcScriptsVersion | undefine
 	if (!Array.isArray(content) && !isObject(content)) return undefined;
 	return { scriptId, versionId, name, version, author, content };
 }
+
+/** One search result: enough to show a row and load that version. */
+export interface BotcScriptsSummary {
+	scriptId: number;
+	versionId: number;
+	name: string;
+	version: string;
+	author: string;
+	/** "Full" or "Teensyville" on the site. */
+	type: string;
+	/** Votes on the site. */
+	score: number;
+}
+
+export interface BotcScriptsSearchPage {
+	page: number;
+	/** Matching scripts in total, across pages. */
+	count: number;
+	hasMore: boolean;
+	results: BotcScriptsSummary[];
+}
+
+/** The site's own limit on search terms is generous; Pocket Grimoire sent at most 100. */
+export const MAX_SEARCH_LENGTH = 100;
+const MAX_PAGE = 100;
+
+/** Trims, collapses spaces and caps a search term. */
+export function normaliseSearch(term: string): string {
+	return term.trim().replace(/\s+/g, ' ').slice(0, MAX_SEARCH_LENGTH);
+}
+
+/** Our Worker's path for a search page: `/api/botcscripts/search/<page>[/<term>]`. */
+export function searchPath(term: string, page = 1): string {
+	const text = normaliseSearch(term);
+	return `/api/botcscripts/search/${page}${text ? `/${encodeURIComponent(text)}` : ''}`;
+}
+
+/** The reverse of `searchPath`, for the Worker. Undefined for anything else. */
+export function parseSearchPath(pathname: string): { term: string; page: number } | undefined {
+	const match = /^\/api\/botcscripts\/search\/(\d{1,3})(?:\/([^/]*))?\/?$/.exec(pathname);
+	if (!match) return undefined;
+	const page = Number(match[1]);
+	if (page < 1 || page > MAX_PAGE) return undefined;
+	try {
+		return { term: normaliseSearch(decodeURIComponent(match[2] ?? '')), page };
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * The site's search URL for a page: latest versions only, most votes first (the order
+ * Pocket Grimoire asked for). An empty term lists the most voted scripts.
+ */
+export function upstreamSearchPath(term: string, page: number): string {
+	const params = new URLSearchParams({ latest: 'true', ordering: '-score', page: String(page) });
+	if (term) params.set('search', term);
+	return `/api/scripts/?${params}`;
+}
+
+/** Reads a `/api/scripts/?…` page into slim rows (no script JSON). */
+export function readSearchPage(json: unknown, page: number): BotcScriptsSearchPage | undefined {
+	if (!isObject(json) || !Array.isArray(json.results)) return undefined;
+	const results: BotcScriptsSummary[] = [];
+	for (const row of json.results) {
+		if (!isObject(row) || typeof row.pk !== 'number' || typeof row.script_id !== 'number') continue;
+		results.push({
+			scriptId: row.script_id,
+			versionId: row.pk,
+			name: typeof row.name === 'string' ? row.name : '',
+			version: typeof row.version === 'string' ? row.version : String(row.version ?? ''),
+			author: typeof row.author === 'string' ? row.author : '',
+			type: typeof row.script_type === 'string' ? row.script_type : '',
+			score: typeof row.score === 'number' ? row.score : 0
+		});
+	}
+	return {
+		page,
+		count: typeof json.count === 'number' ? json.count : results.length,
+		hasMore: typeof json.next === 'string' && json.next !== '',
+		results
+	};
+}
+
+/** Reads our Worker's search response. Undefined when it isn't one. */
+export function readProxiedSearchPage(json: unknown): BotcScriptsSearchPage | undefined {
+	if (!isObject(json) || !Array.isArray(json.results)) return undefined;
+	if (typeof json.page !== 'number' || typeof json.count !== 'number') return undefined;
+	const results = json.results.filter(
+		(r): r is BotcScriptsSummary =>
+			isObject(r) &&
+			typeof r.scriptId === 'number' &&
+			typeof r.versionId === 'number' &&
+			typeof r.name === 'string'
+	);
+	return { page: json.page, count: json.count, hasMore: json.hasMore === true, results };
+}

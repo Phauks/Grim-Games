@@ -90,10 +90,16 @@ test('a BotC Scripts number loads through our Worker', async ({ page }) => {
 			}
 		})
 	);
+	await page.route('**/api/botcscripts/search/**', (route) =>
+		route.fulfill({ json: { page: 1, count: 0, hasMore: false, results: [] } })
+	);
 	await page.goto('/scripts');
 	await page.getByRole('button', { name: 'BotC Scripts' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'BotC Scripts' });
-	await dialog.getByLabel('BotC Scripts link or script number').fill('42');
+	await dialog.getByLabel('Search, link or script number').fill('42');
+	await expect(dialog.getByTestId('botc-status')).toHaveText(
+		'A BotC Scripts link or number: tap Load.'
+	);
 	await dialog.getByRole('button', { name: 'Load' }).tap();
 	await expect(currentName(page)).toHaveText('Storm Front');
 	await expect(page.getByRole('link', { name: 'BotC Scripts 1.2.0' })).toHaveAttribute(
@@ -139,5 +145,81 @@ test('the script can be shared as a player link or a QR code', async ({ page, co
 	const link = await page.evaluate(() => navigator.clipboard.readText());
 	// The link opens the player view, with the script in the hash (never the query string).
 	expect(link).toMatch(/^http:\/\/localhost:\d+\/play#s=1\.[\w-]+$/);
+	await noSidewaysScroll(page);
+});
+
+test('dropping a script file anywhere on the page loads it', async ({ page }) => {
+	await page.goto('/scripts');
+	const drop = async (name: string, type: string, body: string) => {
+		const data = await page.evaluateHandle(
+			({ name, type, body }) => {
+				const transfer = new DataTransfer();
+				transfer.items.add(new File([body], name, { type }));
+				return transfer;
+			},
+			{ name, type, body }
+		);
+		await page.dispatchEvent('main', 'dragenter', { dataTransfer: data });
+		await expect(page.getByTestId('drop-overlay')).toHaveClass(/active/);
+		await page.dispatchEvent('main', 'drop', { dataTransfer: data });
+	};
+
+	await drop('photo.png', 'image/png', 'not a script');
+	await expect(page.getByTestId('file-error')).toHaveText(
+		'photo.png is not a script. Scripts are .json files.'
+	);
+	await expect(currentName(page)).toHaveText('None');
+
+	await drop('storm-front.json', 'application/json', JSON.stringify(homebrew));
+	await expect(currentName(page)).toHaveText('Storm Front');
+	await expect(page.getByTestId('drop-overlay')).not.toHaveClass(/active/);
+});
+
+test('BotC Scripts can be browsed and searched, then a result loaded', async ({ page }) => {
+	const searches: string[] = [];
+	const row = (versionId: number, name: string) => ({
+		scriptId: versionId + 1000,
+		versionId,
+		name,
+		version: '1.0.0',
+		author: 'Someone',
+		type: 'Full',
+		score: 5
+	});
+	await page.route('**/api/botcscripts/search/**', (route) => {
+		const path = new URL(route.request().url()).pathname;
+		searches.push(decodeURIComponent(path));
+		const results = path.endsWith('/storm')
+			? [row(900, 'Storm Front')]
+			: [row(1, 'Most Voted One'), row(2, 'Most Voted Two')];
+		return route.fulfill({ json: { page: 1, count: results.length, hasMore: false, results } });
+	});
+	await page.route('**/api/botcscripts/version/900', (route) =>
+		route.fulfill({
+			json: {
+				scriptId: 1900,
+				versionId: 900,
+				name: 'Storm Front',
+				version: '1.0.0',
+				author: 'Trevor',
+				content: homebrew
+			}
+		})
+	);
+
+	await page.goto('/scripts');
+	await page.getByRole('button', { name: 'BotC Scripts' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'BotC Scripts' });
+	await expect(dialog.getByTestId('botc-status')).toHaveText('2 scripts, most voted first');
+	await expect(dialog.getByRole('button', { name: /Most Voted One/ })).toBeVisible();
+	await expect(dialog.getByRole('button', { name: 'More' })).toBeDisabled();
+
+	await dialog.getByLabel('Search, link or script number').fill('storm');
+	await expect(dialog.getByTestId('botc-status')).toHaveText('1 script');
+	// One request when the dialog opened, one after typing paused: no request per keystroke.
+	expect(searches).toEqual(['/api/botcscripts/search/1', '/api/botcscripts/search/1/storm']);
+
+	await dialog.getByRole('button', { name: /Storm Front/ }).tap();
+	await expect(currentName(page)).toHaveText('Storm Front');
 	await noSidewaysScroll(page);
 });

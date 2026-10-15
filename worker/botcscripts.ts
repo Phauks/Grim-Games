@@ -1,14 +1,20 @@
 /**
- * `/api/botcscripts/script/<pk>[/<version>]` and `/api/botcscripts/version/<pk>`: loads one
+ * `/api/botcscripts/script/<pk>[/<version>]` and `/api/botcscripts/version/<pk>` load one
  * script from BotC Scripts for the browser, which can't call botcscripts.com itself
- * (08-script-loading.md §4.2). Not an open proxy: it only ever requests the two read-only
- * API endpoints, with ids taken from the path, and returns one script version.
+ * (08-script-loading.md §4.2). `/api/botcscripts/search/<page>[/<term>]` lists one page of
+ * search results, slimmed to names (no script JSON). Not an open proxy: it only ever
+ * requests the site's read-only script endpoints, built from the path, and caches answers
+ * for 10 minutes so repeated searches don't reach the site (its robots.txt asks crawlers
+ * to stay away; this is only ever one request per tap or typed search).
  */
 import {
 	BOTC_SCRIPTS_ORIGIN,
 	parseProxyPath,
+	parseSearchPath,
 	pickVersionId,
-	readVersion
+	readSearchPage,
+	readVersion,
+	upstreamSearchPath
 } from '../src/lib/features/scripts/botcscripts-api.ts';
 
 /** Scripts are a few KB; anything far bigger is not a script. */
@@ -43,7 +49,27 @@ async function getJson(path: string): Promise<unknown> {
 	}
 }
 
+async function handleSearch(term: string, page: number): Promise<Response> {
+	try {
+		const found = readSearchPage(await getJson(upstreamSearchPath(term, page)), page);
+		if (!found) throw new LookupError(502, 'BotC Scripts returned something unexpected.');
+		return Response.json(found, {
+			headers: { 'Cache-Control': `public, max-age=${CACHE_SECONDS}` }
+		});
+	} catch (error) {
+		if (error instanceof LookupError) {
+			// The site answers 404 for a page past the end.
+			if (error.status === 404)
+				return Response.json({ page, count: 0, hasMore: false, results: [] });
+			return Response.json({ error: error.message }, { status: error.status });
+		}
+		return Response.json({ error: 'Could not reach BotC Scripts.' }, { status: 502 });
+	}
+}
+
 export async function handleBotcScripts(pathname: string): Promise<Response> {
+	const search = parseSearchPath(pathname);
+	if (search) return handleSearch(search.term, search.page);
 	const ref = parseProxyPath(pathname);
 	if (!ref) return Response.json({ error: 'Not a BotC Scripts script.' }, { status: 400 });
 	try {

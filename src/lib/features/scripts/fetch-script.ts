@@ -3,7 +3,14 @@
  * JSON) plus where it came from, or throws a `ScriptFetchError` with a message for the
  * Storyteller. Design: 08-script-loading.md §5.2.
  */
-import { proxyPath, readProxiedVersion, type BotcScriptsRef } from './botcscripts-api.ts';
+import {
+	proxyPath,
+	readProxiedSearchPage,
+	readProxiedVersion,
+	searchPath,
+	type BotcScriptsRef,
+	type BotcScriptsSearchPage
+} from './botcscripts-api.ts';
 import type { ScriptSource } from './saved-scripts.ts';
 import type { LinkTarget } from './script-links.ts';
 
@@ -28,7 +35,13 @@ export interface FetchedScript {
 
 const tooLarge = () => new ScriptFetchError('This file is too large to be a script.');
 
+/** Files that are plainly not script JSON (pictures, audio, video, PDFs, archives). */
+const NOT_TEXT = /^(image|audio|video|font)\/|^application\/(pdf|zip|gzip|x-7z|x-rar|vnd\.)/;
+
 export async function readScriptFile(file: File): Promise<FetchedScript> {
+	if (NOT_TEXT.test(file.type)) {
+		throw new ScriptFetchError(`${file.name} is not a script. Scripts are .json files.`);
+	}
 	if (file.size > MAX_SCRIPT_BYTES) throw tooLarge();
 	return { text: await file.text(), source: { kind: 'file', fileName: file.name } };
 }
@@ -87,4 +100,23 @@ export function fetchLinkTarget(target: LinkTarget, typed: string): Promise<Fetc
 		case 'fetch':
 			return fetchLink(target.url, /^https?:\/\//i.test(typed.trim()) ? typed.trim() : target.url);
 	}
+}
+
+/** One page of BotC Scripts search results, through our Worker. */
+export async function searchBotcScripts(
+	term: string,
+	page: number,
+	signal?: AbortSignal
+): Promise<BotcScriptsSearchPage> {
+	let response: Response;
+	try {
+		response = await fetch(searchPath(term, page), { signal });
+	} catch (e) {
+		if (e instanceof DOMException && e.name === 'AbortError') throw e;
+		throw new ScriptFetchError('Could not reach BotC Scripts. Check your connection.');
+	}
+	const body: unknown = await response.json().catch(() => undefined);
+	const found = response.ok ? readProxiedSearchPage(body) : undefined;
+	if (!found) throw new ScriptFetchError('BotC Scripts search is not available right now.');
+	return found;
 }
