@@ -142,6 +142,10 @@
 		padding: 0;
 		border: 0;
 	}
+	.field > span,
+	legend {
+		font-family: var(--font-control);
+	}
 	legend {
 		margin-bottom: var(--space-2);
 		font-weight: 600;

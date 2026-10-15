@@ -32,8 +32,7 @@ describe('parsePreferences', () => {
 	it('keeps valid choices', () => {
 		const valid = {
 			themeId: 'grimoire',
-			displayFont: 'im-fell-english-sc',
-			textFont: 'lexend',
+			fonts: { heading: 'im-fell-english-sc', ability: 'lexend' },
 			textScale: 1.25,
 			iconSet: 'ph-fill',
 			iconOverrides: { dead: 'ph:cross' },
@@ -43,10 +42,61 @@ describe('parsePreferences', () => {
 	});
 });
 
+describe('font roles in saved preferences', () => {
+	it('carries an old displayFont to Headings and Character names, and textFont to the rest', () => {
+		const old = parsePreferences({ displayFont: 'im-fell-english-sc', textFont: 'lexend' });
+		expect(old.fonts).toEqual({
+			heading: 'im-fell-english-sc',
+			character: 'im-fell-english-sc',
+			ability: 'lexend',
+			player: 'lexend',
+			control: 'lexend',
+			body: 'lexend'
+		});
+		expect(old).not.toHaveProperty('displayFont');
+		expect(old).not.toHaveProperty('textFont');
+	});
+
+	it('carries over only one of the old keys when the other is missing or invalid', () => {
+		expect(parsePreferences({ displayFont: 'cinzel', textFont: 'comic-sans' }).fonts).toEqual({
+			heading: 'cinzel',
+			character: 'cinzel'
+		});
+		expect(parsePreferences({ textFont: 'inter' }).fonts).toEqual({
+			ability: 'inter',
+			player: 'inter',
+			control: 'inter',
+			body: 'inter'
+		});
+	});
+
+	it('prefers the new per-role fonts over the old keys', () => {
+		expect(
+			parsePreferences({ fonts: { body: 'inter' }, displayFont: 'cinzel', textFont: 'lexend' })
+				.fonts
+		).toEqual({ body: 'inter' });
+	});
+
+	it('drops unknown roles, unknown fonts and display fonts in running-text roles', () => {
+		expect(
+			parsePreferences({
+				fonts: { ability: 'cinzel', body: 'comic-sans', nope: 'inter', player: 'cinzel' }
+			}).fonts
+		).toEqual({ player: 'cinzel' });
+	});
+
+	it('survives a save and reload', () => {
+		const saved = parsePreferences({ textFont: 'lexend' });
+		expect(parsePreferences(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
+	});
+});
+
 describe('resolution order: user override, then theme, then catalogue', () => {
 	it('uses theme fonts unless the user picked one', () => {
-		expect(resolveFonts(prefs(), grimoire)).toEqual({ display: 'cinzel', text: 'eb-garamond' });
-		expect(resolveFonts(prefs({ textFont: 'lexend' }), grimoire).text).toBe('lexend');
+		expect(resolveFonts(prefs(), grimoire)).toEqual(grimoire.fonts);
+		const fonts = resolveFonts(prefs({ fonts: { ability: 'lexend' } }), grimoire);
+		expect(fonts.ability).toBe('lexend');
+		expect(fonts.heading).toBe(grimoire.fonts.heading);
 	});
 
 	it('applies the icon weight after the slot override', () => {

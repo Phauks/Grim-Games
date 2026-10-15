@@ -98,8 +98,8 @@
 	}
 	:global([data-scope='dialog'][data-part='title']) {
 		margin: 0;
-		font-family: var(--font-display);
-		font-weight: var(--font-display-weight);
+		font-family: var(--font-heading);
+		font-weight: var(--font-heading-weight);
 		font-size: 1.25rem;
 		color: var(--heading);
 	}

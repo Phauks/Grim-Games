@@ -4,16 +4,21 @@
  * it as its own chunk and only the fonts a device actually uses are fetched.
  */
 
-export type FontRole = 'display' | 'text' | 'both';
+/**
+ * Where a font may be used. `display` fonts (all capitals or small capitals) only suit short
+ * names and titles; `both` fonts also work for running text.
+ */
+export type FontUse = 'display' | 'both';
 
 export interface FontInfo {
 	id: FontId;
 	family: string;
 	/** Fallbacks used while the font loads or if it fails. */
 	fallback: string;
-	role: FontRole;
-	/** Weight used when this font sets titles; only weights that ship are used. */
+	use: FontUse;
+	/** Weight used when this font sets short names and titles; only weights that ship are used. */
 	displayWeight: 400 | 600;
+	/** Shown under the font's name in the picker. */
 	note?: string;
 	load: () => Promise<unknown>;
 }
@@ -36,7 +41,7 @@ export const FONTS: Record<FontId, FontInfo> = {
 		id: 'cinzel',
 		family: 'Cinzel',
 		fallback: serif,
-		role: 'display',
+		use: 'display',
 		displayWeight: 600,
 		load: () => import('@fontsource/cinzel/600.css')
 	},
@@ -44,7 +49,7 @@ export const FONTS: Record<FontId, FontInfo> = {
 		id: 'im-fell-english-sc',
 		family: 'IM Fell English SC',
 		fallback: serif,
-		role: 'display',
+		use: 'display',
 		displayWeight: 400,
 		load: () => import('@fontsource/im-fell-english-sc/400.css')
 	},
@@ -52,7 +57,7 @@ export const FONTS: Record<FontId, FontInfo> = {
 		id: 'eb-garamond',
 		family: 'EB Garamond',
 		fallback: serif,
-		role: 'both',
+		use: 'both',
 		displayWeight: 600,
 		load: () =>
 			Promise.all([
@@ -65,7 +70,7 @@ export const FONTS: Record<FontId, FontInfo> = {
 		id: 'inter',
 		family: 'Inter',
 		fallback: sans,
-		role: 'both',
+		use: 'both',
 		displayWeight: 600,
 		load: () =>
 			Promise.all([import('@fontsource/inter/400.css'), import('@fontsource/inter/600.css')])
@@ -74,9 +79,9 @@ export const FONTS: Record<FontId, FontInfo> = {
 		id: 'atkinson-hyperlegible-next',
 		family: 'Atkinson Hyperlegible Next',
 		fallback: sans,
-		role: 'both',
+		use: 'both',
 		displayWeight: 600,
-		note: 'Readability',
+		note: 'Designed for easy reading',
 		load: () =>
 			Promise.all([
 				import('@fontsource/atkinson-hyperlegible-next/400.css'),
@@ -87,9 +92,9 @@ export const FONTS: Record<FontId, FontInfo> = {
 		id: 'lexend',
 		family: 'Lexend',
 		fallback: sans,
-		role: 'both',
+		use: 'both',
 		displayWeight: 600,
-		note: 'Readability',
+		note: 'Designed for easy reading',
 		load: () =>
 			Promise.all([import('@fontsource/lexend/400.css'), import('@fontsource/lexend/600.css')])
 	}
@@ -99,8 +104,91 @@ export function isFontId(value: unknown): value is FontId {
 	return (FONT_IDS as readonly unknown[]).includes(value);
 }
 
-export function fontsFor(role: 'display' | 'text'): FontInfo[] {
-	return FONT_IDS.map((id) => FONTS[id]).filter((f) => f.role === role || f.role === 'both');
+/**
+ * The font roles: every piece of text in the app is set in exactly one of them, through the
+ * role's CSS variable (`--font-<role>`). Short-text roles also get `--font-<role>-weight`.
+ * Components use these variables (or component tokens built from them), never a font name.
+ */
+export const FONT_ROLES = ['heading', 'character', 'ability', 'player', 'control', 'body'] as const;
+export type FontRole = (typeof FONT_ROLES)[number];
+
+export interface FontRoleInfo {
+	id: FontRole;
+	/** Settings label: names the role. */
+	label: string;
+	/** Settings hint: exactly where the role shows. */
+	description: string;
+	/** Preview line in Settings. */
+	sample: string;
+	/** `short` roles set names and titles, so they also offer the display-only fonts. */
+	length: 'short' | 'running';
+}
+
+export const FONT_ROLE_INFO: Record<FontRole, FontRoleInfo> = {
+	heading: {
+		id: 'heading',
+		label: 'Headings',
+		description: 'Page, section, dialog and sheet titles, and the app name in the header.',
+		sample: 'First night',
+		length: 'short'
+	},
+	character: {
+		id: 'character',
+		label: 'Character names',
+		description:
+			'Character badges, reminder tokens, character names on reference cards and tables, and night order steps such as Dusk.',
+		sample: 'Washerwoman · Poisoned',
+		length: 'short'
+	},
+	ability: {
+		id: 'ability',
+		label: 'Ability and rules text',
+		description:
+			'Ability text, jinxes, Storyteller night text and pre-day reminders, on reference cards and in the game.',
+		sample: 'Each night, choose a player: they are poisoned.',
+		length: 'running'
+	},
+	player: {
+		id: 'player',
+		label: 'Player names',
+		description:
+			'Seats in the grimoire and in the nomination strip, and player names next to character badges.',
+		sample: 'Alex · Sam · Jo',
+		length: 'short'
+	},
+	control: {
+		id: 'control',
+		label: 'Buttons, tabs and labels',
+		description:
+			'Buttons, tabs, choices, switches, setting names, settings menu, field and table labels.',
+		sample: 'Night order',
+		length: 'short'
+	},
+	body: {
+		id: 'body',
+		label: 'Body text',
+		description: 'Descriptions and hints, settings help, messages, notes, logs and night answers.',
+		sample: 'Alex nominates Sam.',
+		length: 'running'
+	}
+};
+
+export const isFontRole = (value: unknown): value is FontRole =>
+	(FONT_ROLES as readonly unknown[]).includes(value);
+
+/** The CSS variable a role's font stack is written to. */
+export const fontVariable = (role: FontRole) => `--font-${role}` as const;
+/** The CSS variable a short role's weight is written to. */
+export const fontWeightVariable = (role: FontRole) => `--font-${role}-weight` as const;
+
+/** Fonts offered for a role: display-only fonts are left out of running-text roles. */
+export function fontsFor(role: FontRole): FontInfo[] {
+	const running = FONT_ROLE_INFO[role].length === 'running';
+	return FONT_IDS.map((id) => FONTS[id]).filter((f) => !running || f.use === 'both');
+}
+
+export function isFontFor(role: FontRole, value: unknown): value is FontId {
+	return isFontId(value) && fontsFor(role).some((f) => f.id === value);
 }
 
 export function fontStack(id: FontId): string {

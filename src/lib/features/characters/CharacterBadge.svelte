@@ -96,7 +96,12 @@
 		width: calc(1.75 * var(--u));
 		height: calc(1.75 * var(--u));
 	}
+	.name {
+		font-family: var(--font-character);
+		font-weight: var(--font-character-weight);
+	}
 	.player {
+		font-family: var(--font-player);
 		font-weight: 400;
 		opacity: 0.9;
 	}

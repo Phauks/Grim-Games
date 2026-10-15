@@ -28,6 +28,7 @@
 
 <style>
 	.sentence {
+		font-family: var(--font-ability);
 		display: inline-flex;
 		flex-wrap: wrap;
 		align-items: center;

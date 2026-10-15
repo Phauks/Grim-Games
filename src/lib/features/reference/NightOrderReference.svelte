@@ -201,7 +201,7 @@
 		min-height: var(--tap-target);
 		font-variant-numeric: tabular-nums;
 		color: var(--heading);
-		font-family: var(--font-display);
+		font-family: var(--font-control);
 	}
 	.body {
 		display: grid;
@@ -213,7 +213,7 @@
 		display: inline-flex;
 		align-items: center;
 		min-height: var(--tap-target);
-		font-family: var(--font-display);
+		font-family: var(--font-character);
 		color: var(--heading);
 	}
 	p {
@@ -284,6 +284,7 @@
 		overflow-wrap: anywhere;
 	}
 	thead th {
+		font-family: var(--font-control);
 		font-size: 0.8rem;
 		color: var(--on-surface-muted);
 	}

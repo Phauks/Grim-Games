@@ -1,4 +1,4 @@
-import { isFontId, type FontId } from '#lib/ui/fonts/catalogue.ts';
+import { FONT_ROLES, isFontFor, type FontId, type FontRole } from '#lib/ui/fonts/catalogue.ts';
 import {
 	ICON_SETS,
 	ICON_SLOTS,
@@ -19,8 +19,8 @@ import type { Theme } from '#lib/ui/themes/types.ts';
  */
 export interface Preferences {
 	themeId: string;
-	displayFont: FontId | null;
-	textFont: FontId | null;
+	/** The user's font for each role; a missing role uses the theme's font. */
+	fonts: Partial<Record<FontRole, FontId>>;
 	textScale: TextScale;
 	iconSet: IconSetId | null;
 	iconOverrides: Partial<Record<IconSlot, string>>;
@@ -33,8 +33,7 @@ export type TextScale = (typeof TEXT_SCALES)[number];
 
 export const DEFAULT_PREFERENCES: Preferences = {
 	themeId: DEFAULT_THEME_ID,
-	displayFont: null,
-	textFont: null,
+	fonts: {},
 	textScale: 1,
 	iconSet: null,
 	iconOverrides: {},
@@ -54,8 +53,7 @@ export function parsePreferences(raw: unknown): Preferences {
 	}
 	return {
 		themeId: isThemeId(input.themeId) ? input.themeId : DEFAULT_PREFERENCES.themeId,
-		displayFont: isFontId(input.displayFont) ? input.displayFont : null,
-		textFont: isFontId(input.textFont) ? input.textFont : null,
+		fonts: parseFonts(input),
 		textScale: (TEXT_SCALES as readonly unknown[]).includes(input.textScale)
 			? (input.textScale as TextScale)
 			: DEFAULT_PREFERENCES.textScale,
@@ -65,11 +63,35 @@ export function parsePreferences(raw: unknown): Preferences {
 	};
 }
 
-export function resolveFonts(prefs: Preferences, theme: Theme): { display: FontId; text: FontId } {
-	return {
-		display: prefs.displayFont ?? theme.fonts.display,
-		text: prefs.textFont ?? theme.fonts.text
-	};
+/** Roles the two fonts of older builds (`displayFont`, `textFont`) covered. */
+const LEGACY_DISPLAY_ROLES: readonly FontRole[] = ['heading', 'character'];
+
+/**
+ * Per-role fonts. Older builds saved one `displayFont` (titles and character names) and one
+ * `textFont` (everything else); those carry over to the matching roles when `fonts` is absent.
+ */
+function parseFonts(input: Record<string, unknown>): Preferences['fonts'] {
+	const fonts: Preferences['fonts'] = {};
+	if (input.fonts && typeof input.fonts === 'object') {
+		const saved = input.fonts as Record<string, unknown>;
+		for (const role of FONT_ROLES) {
+			const font = saved[role];
+			if (isFontFor(role, font)) fonts[role] = font;
+		}
+		return fonts;
+	}
+	for (const role of FONT_ROLES) {
+		const legacy = LEGACY_DISPLAY_ROLES.includes(role) ? input.displayFont : input.textFont;
+		if (isFontFor(role, legacy)) fonts[role] = legacy;
+	}
+	return fonts;
+}
+
+/** The font for every role: the user's choice, else the theme's. */
+export function resolveFonts(prefs: Preferences, theme: Theme): Record<FontRole, FontId> {
+	return Object.fromEntries(
+		FONT_ROLES.map((role) => [role, prefs.fonts[role] ?? theme.fonts[role]])
+	) as Record<FontRole, FontId>;
 }
 
 export function resolveIconSet(prefs: Preferences, theme: Theme): IconSetId {

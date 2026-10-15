@@ -78,7 +78,14 @@ export const grimoire: Theme = {
 		'--seat-face':
 			'radial-gradient(circle at 40% 35%, var(--palette-parchment-100), var(--palette-parchment-400))'
 	},
-	fonts: { display: 'cinzel', text: 'eb-garamond' },
+	fonts: {
+		heading: 'cinzel',
+		character: 'cinzel',
+		ability: 'eb-garamond',
+		player: 'eb-garamond',
+		control: 'cinzel',
+		body: 'eb-garamond'
+	},
 	icons: {
 		dead: 'ph:skull',
 		ghostVote: 'ph:ghost',
