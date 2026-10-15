@@ -22,7 +22,8 @@ async function chooseFont(page: Page, role: string, font: RegExp) {
 	await page.getByRole('combobox', { name: role }).tap();
 	const option = page.getByRole('option', { name: font });
 	const box = await option.boundingBox();
-	expect(box?.height).toBeGreaterThanOrEqual(44);
+	// 44px tap target; allow sub-pixel rounding from the list's fixed positioning.
+	expect(box?.height).toBeGreaterThanOrEqual(43.9);
 	await option.tap();
 	await expect(page.getByRole('listbox')).toBeHidden();
 }
@@ -209,4 +210,39 @@ test('icon size changes interface icons only, not text', async ({ page }) => {
 	const after = await settingsIcon.boundingBox();
 	expect(after!.width).toBeCloseTo(before!.width * 1.5, 0);
 	expect(await page.evaluate(() => getComputedStyle(document.body).fontSize)).toBe(text);
+});
+
+test('the rules term switch has its own section, not Storyteller help', async ({ page }) => {
+	await page.goto('/');
+	const help = await openSettings(page, 'Storyteller help');
+	await expect(
+		help.getByRole('region', { name: 'Storyteller help' }).getByText(/rules terms/i)
+	).toHaveCount(0);
+	await page.reload();
+	const terms = await openSettings(page, 'Rules terms');
+	await expect(
+		terms.getByRole('checkbox', {
+			name: 'Underline rules terms with glossary definitions',
+			includeHidden: true
+		})
+	).toBeChecked();
+});
+
+test('settings are grouped by who they affect, and each section says so', async ({ page }) => {
+	await page.goto('/');
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const nav = page
+		.getByRole('dialog', { name: 'Settings' })
+		.getByRole('navigation', { name: 'Settings sections' });
+	const shared = nav.getByRole('list', { name: 'Storyteller and players' });
+	const storyteller = nav.getByRole('list', { name: 'Storyteller only' });
+	await expect(shared.getByRole('button', { name: 'Appearance' })).toBeVisible();
+	await expect(shared.getByRole('button', { name: 'Rules terms' })).toBeVisible();
+	await expect(storyteller.getByRole('button', { name: 'Storyteller help' })).toBeVisible();
+	await expect(storyteller.getByRole('button', { name: 'Appearance' })).toHaveCount(0);
+
+	await storyteller.getByRole('button', { name: 'Storyteller help' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Settings' })).toContainText(
+		'Applies to: Storyteller only'
+	);
 });

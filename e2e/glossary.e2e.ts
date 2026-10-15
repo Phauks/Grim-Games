@@ -53,17 +53,18 @@ test('tapping a rules term shows the wiki Glossary wording and link, without mov
 	await expect(popover).toBeHidden();
 });
 
-test('with "Explain rules terms" off the terms are plain text', async ({ page }) => {
+test('with rules term underlines off the terms are plain text', async ({ page }) => {
 	await page.goto('/reference');
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Storyteller help' })
+		.getByRole('button', { name: 'Rules terms' })
 		.tap();
-	const explain = settings.getByRole('checkbox', { name: 'Explain rules terms' });
+	const label = 'Underline rules terms with glossary definitions';
+	const explain = settings.getByRole('checkbox', { name: label, includeHidden: true });
 	await expect(explain).toBeChecked();
-	await settings.getByText('Explain rules terms', { exact: true }).tap();
+	await settings.getByText(label, { exact: true }).tap();
 	await expect(explain).not.toBeChecked();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(settings).toBeHidden();

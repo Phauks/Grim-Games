@@ -17,6 +17,9 @@ export const ASSIST_KEYS = [
 export type AssistKey = (typeof ASSIST_KEYS)[number];
 export type Assistance = Record<AssistKey, boolean>;
 
+/** Switches listed under Storyteller help; `explainTerms` has its own Rules terms section. */
+export const STORYTELLER_HELP_KEYS = ASSIST_KEYS.filter((key) => key !== 'explainTerms');
+
 export const ASSIST_LABELS: Record<AssistKey, { label: string; description: string }> = {
 	nightWalkthrough: {
 		label: 'Walk me through the night',
@@ -49,9 +52,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Setup and jinx warnings',
 		description: 'Point out a setup that breaks the rules or a jinx that applies.'
 	},
+	// Shown in Settings › Rules terms, not Storyteller help: players use it too (Trevor).
 	explainTerms: {
-		label: 'Explain rules terms',
-		description: 'Underline words like poisoned, drunk or might; tap one for a short definition.'
+		label: 'Underline rules terms with glossary definitions',
+		description:
+			'A dotted underline on rules words such as poisoned, drunk or might, on every screen. Tap one for its wiki Glossary definition. Off shows plain text.'
 	}
 };
 

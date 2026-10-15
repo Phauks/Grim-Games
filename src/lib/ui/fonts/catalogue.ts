@@ -83,7 +83,6 @@ export const FONTS: Record<FontId, FontInfo> = {
 		fallback: sans,
 		use: 'both',
 		displayWeight: 600,
-		note: 'Designed for easy reading',
 		load: () =>
 			Promise.all([
 				import('@fontsource/atkinson-hyperlegible-next/400.css'),
@@ -96,7 +95,6 @@ export const FONTS: Record<FontId, FontInfo> = {
 		fallback: sans,
 		use: 'both',
 		displayWeight: 600,
-		note: 'Designed for easy reading',
 		load: () =>
 			Promise.all([import('@fontsource/lexend/400.css'), import('@fontsource/lexend/600.css')])
 	}

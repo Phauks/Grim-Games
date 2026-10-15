@@ -8,7 +8,9 @@ describe('assistance', () => {
 			expect(DEFAULT_ASSISTANCE[key]).toBe(true);
 		}
 		expect(ASSIST_LABELS.setupReminders.label).toBe('Suggest setup reminders');
-		expect(ASSIST_LABELS.explainTerms.label).toBe('Explain rules terms');
+		expect(ASSIST_LABELS.explainTerms.label).toBe(
+			'Underline rules terms with glossary definitions'
+		);
 	});
 
 	it('keeps valid switches and fills the rest with defaults', () => {

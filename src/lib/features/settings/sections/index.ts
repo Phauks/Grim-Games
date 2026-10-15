@@ -4,6 +4,7 @@ import AppearanceSection from './AppearanceSection.svelte';
 import FontsSection from './FontsSection.svelte';
 import IconsSection from './IconsSection.svelte';
 import ResetSection from './ResetSection.svelte';
+import RulesTermsSection from './RulesTermsSection.svelte';
 
 // Built-in sections. Other features register theirs the same way from their own modules.
 registerSettingsSection({
@@ -11,6 +12,7 @@ registerSettingsSection({
 	label: 'Appearance',
 	icon: 'appearance',
 	component: AppearanceSection,
+	audience: 'everyone',
 	order: 10
 });
 registerSettingsSection({
@@ -18,6 +20,7 @@ registerSettingsSection({
 	label: 'Fonts',
 	icon: 'fonts',
 	component: FontsSection,
+	audience: 'everyone',
 	order: 20
 });
 registerSettingsSection({
@@ -25,13 +28,23 @@ registerSettingsSection({
 	label: 'Icons',
 	icon: 'icons',
 	component: IconsSection,
+	audience: 'everyone',
 	order: 30
+});
+registerSettingsSection({
+	id: 'rules-terms',
+	label: 'Rules terms',
+	icon: 'wiki',
+	component: RulesTermsSection,
+	audience: 'everyone',
+	order: 35
 });
 registerSettingsSection({
 	id: 'assistance',
 	label: 'Storyteller help',
 	icon: 'assistance',
 	component: AssistanceSection,
+	audience: 'storyteller',
 	order: 40
 });
 registerSettingsSection({
@@ -39,5 +52,6 @@ registerSettingsSection({
 	label: 'Reset settings',
 	icon: 'undo',
 	component: ResetSection,
+	audience: 'everyone',
 	order: 90
 });

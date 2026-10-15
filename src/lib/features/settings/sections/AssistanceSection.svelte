@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { ASSIST_KEYS, ASSIST_LABELS } from '#lib/ui/assistance.ts';
+	import { ASSIST_LABELS, STORYTELLER_HELP_KEYS } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 
 	const assistance = $derived(preferences.current.assistance);
 </script>
 
-{#each ASSIST_KEYS as key (key)}
+{#each STORYTELLER_HELP_KEYS as key (key)}
 	<SettingToggle
 		label={ASSIST_LABELS[key].label}
 		description={ASSIST_LABELS[key].description}
