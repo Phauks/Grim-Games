@@ -8,6 +8,8 @@
 		type ScriptLoadResult
 	} from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { errorMessage } from '#lib/features/errors/app-error.ts';
+	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -100,7 +102,9 @@
 		try {
 			await settle(await task());
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			// A refused link or a missing script is expected; anything else is a bug worth logging.
+			if (!(e instanceof ScriptFetchError)) reportError(e, { area: 'scripts', notify: false });
+			error = errorMessage(e);
 			errorLink = e instanceof ScriptFetchError ? e.openUrl : undefined;
 		} finally {
 			busy = false;
@@ -193,7 +197,8 @@
 						<IconButton
 							icon="close"
 							label="Remove {saved.name} from Recent"
-							onclick={() => forgetScript(saved.scriptId)}
+							onclick={() =>
+								forgetScript(saved.scriptId).catch((e) => reportError(e, { area: 'scripts' }))}
 						/>
 					</li>
 				{/each}

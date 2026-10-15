@@ -5,6 +5,7 @@
  */
 import { scriptToJson, type GameData, type LoadedScript } from '#lib/core/data/index.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { reloadSavedScript, type SavedScript, type ScriptSource } from './saved-scripts.ts';
 import { IdbScriptLibrary } from './script-library.ts';
 
@@ -50,8 +51,9 @@ export function restoreScripts(): Promise<void> {
 		const lib = getLibrary();
 		if (!lib) return;
 		await refresh(await loadOfficialData(), lib);
-	})().catch(() => {
+	})().catch((e) => {
 		// Storage can be unavailable (private browsing); the app still works without Recent.
+		reportError(e, { area: 'scripts', notify: false });
 		restoring = undefined;
 	});
 	return restoring;
@@ -90,8 +92,9 @@ export async function chooseScript(chosen: LoadedScript, source: ScriptSource): 
 		const saved = await lib.use(record);
 		current = { saved, script };
 		recent = await lib.list();
-	} catch {
+	} catch (e) {
 		// Storage full, blocked or missing: still usable for this visit.
+		if (lib) reportError(e, { area: 'scripts', notify: false });
 		current = { saved: unsaved(record), script };
 	}
 }

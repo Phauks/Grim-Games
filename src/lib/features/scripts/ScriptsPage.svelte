@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { CHARACTER_TYPES, scriptToJson } from '#lib/core/data/index.ts';
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import { errorMessage } from '#lib/features/errors/app-error.ts';
+	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { scriptPageUrl } from './botcscripts-api.ts';
@@ -32,7 +34,7 @@
 			const json = await decodeSharedScript(payload);
 			await picker?.loadFetched({ text: JSON.stringify(json), source: { kind: 'share' } });
 		} catch (e) {
-			toast('Could not open the shared script', e instanceof Error ? e.message : undefined);
+			toast('Could not open the shared script', errorMessage(e));
 		}
 	}
 
@@ -64,35 +66,39 @@
 	<h1>Scripts</h1>
 
 	<!-- Same size with or without a script, so choosing one never moves the picker. -->
-	<section class="current" aria-labelledby="current-heading" data-testid="current-script">
-		<h2 id="current-heading">Current script</h2>
-		<p class="name" data-testid="current-script-name">{script?.name ?? 'None'}</p>
-		<dl>
-			<dt>Author</dt>
-			<dd>{script?.meta.author || 'None'}</dd>
-			<dt>Characters</dt>
-			<dd class="counts" data-testid="current-script-counts">{counts}</dd>
-			<dt>Source</dt>
-			<dd>
-				{#if saved?.source.kind === 'botcscripts'}
-					<!-- eslint-disable svelte/no-navigation-without-resolve -->
-					<a
-						href={scriptPageUrl(saved.source.scriptId, saved.source.version)}
-						target="_blank"
-						rel="noopener noreferrer">{describeSource(saved.source)}</a
-					>
-					<!-- eslint-enable svelte/no-navigation-without-resolve -->
-				{:else}
-					{saved ? describeSource(saved.source) : 'None'}
-				{/if}
-			</dd>
-		</dl>
-		<div class="actions">
-			<Button onclick={share} disabled={!script}>Share link</Button>
-		</div>
-	</section>
+	<ErrorBoundary area="scripts">
+		<section class="current" aria-labelledby="current-heading" data-testid="current-script">
+			<h2 id="current-heading">Current script</h2>
+			<p class="name" data-testid="current-script-name">{script?.name ?? 'None'}</p>
+			<dl>
+				<dt>Author</dt>
+				<dd>{script?.meta.author || 'None'}</dd>
+				<dt>Characters</dt>
+				<dd class="counts" data-testid="current-script-counts">{counts}</dd>
+				<dt>Source</dt>
+				<dd>
+					{#if saved?.source.kind === 'botcscripts'}
+						<!-- eslint-disable svelte/no-navigation-without-resolve -->
+						<a
+							href={scriptPageUrl(saved.source.scriptId, saved.source.version)}
+							target="_blank"
+							rel="noopener noreferrer">{describeSource(saved.source)}</a
+						>
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
+					{:else}
+						{saved ? describeSource(saved.source) : 'None'}
+					{/if}
+				</dd>
+			</dl>
+			<div class="actions">
+				<Button onclick={share} disabled={!script}>Share link</Button>
+			</div>
+		</section>
+	</ErrorBoundary>
 
-	<ScriptPicker bind:this={picker} />
+	<ErrorBoundary area="scripts">
+		<ScriptPicker bind:this={picker} />
+	</ErrorBoundary>
 </main>
 
 <style>
