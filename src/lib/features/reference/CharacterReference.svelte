@@ -9,14 +9,26 @@
 		type ReferenceFilter
 	} from '#lib/core/rules/reference.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import CharacterTable from './CharacterTable.svelte';
 	import { TYPE_PLURALS } from './labels.ts';
 	import ReferenceCard from './ReferenceCard.svelte';
+	import type { ReferenceView } from './view-mode.svelte.ts';
 
 	interface Props {
 		entries: readonly ReferenceEntry[];
+		view: ReferenceView;
 	}
 
-	let { entries }: Props = $props();
+	let { entries, view }: Props = $props();
+
+	// One shared details overlay, so extra detail never expands a card inline.
+	let details = $state<{ title: string; text: string }>();
+	let detailsOpen = $state(false);
+	function explain(title: string, text: string) {
+		details = { title, text };
+		detailsOpen = true;
+	}
 
 	let search = $state('');
 	let types = $state<CharacterType[]>([]);
@@ -67,20 +79,30 @@
 	</p>
 </div>
 
-{#each groups as group (group.type)}
-	<section class="group" aria-labelledby="group-{group.type}">
-		<h2 id="group-{group.type}">
-			{TYPE_PLURALS[group.type]} <span>({group.entries.length})</span>
-		</h2>
-		<div class="cards">
-			{#each group.entries as entry (entry.character.id)}
-				<ReferenceCard {entry} />
-			{/each}
-		</div>
-	</section>
+{#if view === 'table'}
+	{#if shown.length}<CharacterTable entries={shown} />{:else}<p class="empty">
+			No characters match.
+		</p>{/if}
 {:else}
-	<p class="empty">No characters match.</p>
-{/each}
+	{#each groups as group (group.type)}
+		<section class="group" aria-labelledby="group-{group.type}">
+			<h2 id="group-{group.type}">
+				{TYPE_PLURALS[group.type]} <span>({group.entries.length})</span>
+			</h2>
+			<div class="cards">
+				{#each group.entries as entry (entry.character.id)}
+					<ReferenceCard {entry} onExplain={explain} />
+				{/each}
+			</div>
+		</section>
+	{:else}
+		<p class="empty">No characters match.</p>
+	{/each}
+{/if}
+
+<Dialog bind:open={detailsOpen} title={details?.title ?? ''}>
+	<p>{details?.text}</p>
+</Dialog>
 
 <style>
 	.controls {
@@ -166,9 +188,19 @@
 	}
 	.cards {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
-		gap: var(--space-4);
+		grid-template-columns: 1fr;
+		gap: var(--space-3);
 		align-items: start;
+	}
+	@media (min-width: 40rem) {
+		.cards {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	@media (min-width: 80rem) {
+		.cards {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
 	}
 	.empty {
 		color: var(--on-surface-muted);
