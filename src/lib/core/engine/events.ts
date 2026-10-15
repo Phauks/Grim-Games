@@ -6,7 +6,9 @@
  * (`#lib/core/engine/persistence.ts`).
  */
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
+import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type {
+	DeathCause,
 	GameId,
 	OverrideField,
 	ReminderId,
@@ -25,7 +27,10 @@ export type GameEvent =
 	| { type: 'CharacterAssigned'; seatId: SeatId; characterId: CharacterId; alignment: Alignment }
 	| { type: 'CharacterCleared'; seatId: SeatId }
 	| { type: 'AlignmentSet'; seatId: SeatId; alignment: Alignment }
-	| { type: 'DeathSet'; seatId: SeatId; dead: boolean }
+	/** `cause` only with `dead: true`; `dead: false` clears any cause. */
+	| { type: 'DeathSet'; seatId: SeatId; dead: boolean; cause?: DeathCause }
+	/** No `cause` clears it. */
+	| { type: 'DeathCauseSet'; seatId: SeatId; cause?: DeathCause }
 	| { type: 'GhostVoteSpent'; seatId: SeatId }
 	| { type: 'GhostVoteRestored'; seatId: SeatId }
 	| { type: 'ReminderAdded'; seatId: SeatId; reminder: ReminderInstance }
@@ -34,6 +39,12 @@ export type GameEvent =
 	| { type: 'SeatsSwapped'; seatA: SeatId; seatB: SeatId }
 	| { type: 'OverrideSet'; seatId: SeatId; override: SeatOverride }
 	| { type: 'OverrideCleared'; seatId: SeatId; field: OverrideField }
+	| { type: 'NightStepOverrideAdded'; index: number; override: NightStepOverride }
+	| { type: 'NightStepOverrideReplaced'; index: number; override: NightStepOverride }
+	| { type: 'NightStepOverrideRemoved'; index: number }
+	| { type: 'DayReminderOverrideAdded'; index: number; override: DayReminderOverride }
+	| { type: 'DayReminderOverrideReplaced'; index: number; override: DayReminderOverride }
+	| { type: 'DayReminderOverrideRemoved'; index: number }
 	| { type: 'RuleCharacterAdded'; characterId: CharacterId }
 	| { type: 'RuleCharacterRemoved'; characterId: CharacterId }
 	| { type: 'BluffsSet'; set: number; characterIds: CharacterId[] }

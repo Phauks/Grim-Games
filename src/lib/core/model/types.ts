@@ -9,6 +9,10 @@
  * are plain, JSON-serialisable data.
  */
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
+// Type-only: the Storyteller's night-order and day-reminder overrides are defined next to
+// the rules that apply them, and stored on the game.
+import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
+import type { NightStepOverride } from '#lib/core/rules/night-order.ts';
 
 export type GameId = string;
 export type SeatId = string;
@@ -53,6 +57,20 @@ export const OVERRIDE_FIELDS = [
 	'canDie'
 ] as const satisfies readonly OverrideField[];
 
+/**
+ * How a player died, when the Storyteller recorded it: executed, killed by the Demon, a
+ * character's ability (its id), or something else. Undefined means not recorded. The app
+ * does not track day or night, so the cause is never inferred.
+ */
+export type DeathCause = 'execution' | 'demon' | 'other' | CharacterId;
+
+/** The death causes that are not a character. */
+export const GENERAL_DEATH_CAUSES = [
+	'execution',
+	'demon',
+	'other'
+] as const satisfies readonly DeathCause[];
+
 /** A player, wherever they sit. */
 export interface Seat {
 	seatId: SeatId;
@@ -65,6 +83,8 @@ export interface Seat {
 	 */
 	alignment?: Alignment;
 	dead: boolean;
+	/** How the player died, if the Storyteller recorded it. Only set while `dead`. */
+	deathCause?: DeathCause;
 	/** True once a dead player has used their vote. */
 	ghostVoteUsed: boolean;
 	/** At most one override per field. */
@@ -112,4 +132,8 @@ export interface Game {
 	/** Demon bluffs; more than one set when more than one player gets bluffs. */
 	bluffs: CharacterId[][];
 	bag?: Bag;
+	/** The Storyteller's changes to the night order, applied in this order. */
+	nightOrderOverrides: NightStepOverride[];
+	/** The Storyteller's changes to the pre-day reminders, applied in this order. */
+	dayReminderOverrides: DayReminderOverride[];
 }

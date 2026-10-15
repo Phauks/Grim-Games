@@ -5,7 +5,8 @@
  * rule). Rules concerns are *warnings*: the events still happen. A command is refused
  * with an *error* only when it cannot be applied at all: it names a seat, reminder,
  * tile or character that does not exist, puts a Fabled or Loric on a seat, or assigns a
- * Traveller with no alignment (the Storyteller must choose it; the UI asks).
+ * Traveller with no alignment (the Storyteller must choose it; the UI asks), records a
+ * death cause for a living player, or gives a malformed Storyteller override.
  */
 import {
 	defaultAlignment,
@@ -15,6 +16,7 @@ import {
 	type CharacterId
 } from '#lib/core/data/index.ts';
 import {
+	GENERAL_DEATH_CAUSES,
 	OVERRIDE_FIELDS,
 	getSeat,
 	isKnownReminder,
@@ -22,11 +24,18 @@ import {
 	registersAsDead,
 	replacedBy,
 	trueCharacter,
+	type DeathCause,
 	type Game,
 	type Reminder,
 	type Seat,
 	type Tile
 } from '#lib/core/model/index.ts';
+import {
+	DAY_GROUPS,
+	type DayReminderOverride,
+	type Night,
+	type NightStepOverride
+} from '#lib/core/rules/index.ts';
 import type { Command, CommandOf } from './commands.ts';
 import type { EngineContext } from './context.ts';
 import type { GameEvent } from './events.ts';
@@ -50,7 +59,9 @@ export type ErrorCode =
 	| 'unknown-tile'
 	| 'tile-not-in-bag'
 	| 'tile-not-drawn'
-	| 'tile-confirmed';
+	| 'tile-confirmed'
+	| 'not-dead'
+	| 'invalid-override';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -71,7 +82,9 @@ export type WarningCode =
 	| 'traveller-in-bag'
 	| 'bag-replaced'
 	| 'seat-holds-tile'
-	| 'replaces-character';
+	| 'replaces-character'
+	| 'cause-ignored'
+	| 'duplicate-override';
 
 export interface Issue<C extends string> {
 	code: C;
@@ -228,6 +241,117 @@ function tileOf(game: Game, tileId: string): Tile {
 		: refuse('unknown-tile', `no tile ${tileId}`);
 }
 
+/** A recorded death cause, checked: a general cause or a character that exists. */
+function deathCause(ctx: EngineContext, cause: DeathCause): DeathCause {
+	if ((GENERAL_DEATH_CAUSES as readonly string[]).includes(cause)) return cause;
+	return characterOf(ctx, cause).id;
+}
+
+function badOverride(message: string): never {
+	return refuse('invalid-override', message);
+}
+
+function nonEmpty(value: unknown, name: string): string {
+	if (typeof value !== 'string' || value.trim() === '') badOverride(`${name} must be text`);
+	return value;
+}
+
+function textOf(value: unknown): string {
+	if (typeof value !== 'string') badOverride('text must be a string');
+	return value;
+}
+
+function nightOf(value: unknown): { night?: Night } {
+	if (value === undefined) return {};
+	if (value !== 'first' && value !== 'other') badOverride('night must be first or other');
+	return { night: value };
+}
+
+function anchorOf(value: unknown): string | null {
+	if (value === null) return null;
+	return nonEmpty(value, 'after');
+}
+
+/** A night-order override, checked and copied field by field. */
+function nightOverride(o: NightStepOverride, ctx: EngineContext): NightStepOverride {
+	const id = nonEmpty(o?.id, 'id');
+	switch (o.kind) {
+		case 'hide':
+			return { kind: 'hide', id, ...nightOf(o.night) };
+		case 'edit':
+			return { kind: 'edit', id, text: textOf(o.text), ...nightOf(o.night) };
+		case 'move':
+			return { kind: 'move', id, after: anchorOf(o.after), ...nightOf(o.night) };
+		case 'add': {
+			const copy: NightStepOverride = {
+				kind: 'add',
+				id,
+				text: textOf(o.text),
+				after: anchorOf(o.after),
+				...nightOf(o.night)
+			};
+			const title = o.title?.trim();
+			if (title) copy.title = title;
+			if (o.characterId !== undefined) copy.characterId = characterOf(ctx, o.characterId).id;
+			return copy;
+		}
+		default:
+			return badOverride(`no night override kind ${String((o as { kind?: unknown })?.kind)}`);
+	}
+}
+
+/** A day-reminder override, checked and copied field by field. */
+function dayOverride(game: Game, o: DayReminderOverride, ctx: EngineContext): DayReminderOverride {
+	const key = nonEmpty(o?.key, 'key');
+	switch (o.kind) {
+		case 'hide':
+			return { kind: 'hide', key };
+		case 'edit':
+			return { kind: 'edit', key, text: textOf(o.text) };
+		case 'add': {
+			if (!(DAY_GROUPS as readonly string[]).includes(o.group)) {
+				badOverride(`no day reminder group ${String(o.group)}`);
+			}
+			const copy: DayReminderOverride = { kind: 'add', key, group: o.group, text: textOf(o.text) };
+			if (o.characterId !== undefined) copy.characterId = characterOf(ctx, o.characterId).id;
+			if (o.seatId !== undefined) copy.seatId = seatOf(game, o.seatId).seatId;
+			return copy;
+		}
+		default:
+			return badOverride(`no day override kind ${String((o as { kind?: unknown })?.kind)}`);
+	}
+}
+
+/** Checks an override index: `0 <= index < length`, or `<= length` when adding. */
+function overrideIndex(index: number, length: number, adding: boolean): number {
+	const max = adding ? length : length - 1;
+	if (!Number.isInteger(index) || index < 0 || index > max) {
+		refuse(
+			'invalid-position',
+			max < 0 ? 'there are no overrides' : `index must be from 0 to ${max}`
+		);
+	}
+	return index;
+}
+
+/** Overrides are plain JSON copied field by field, so equal JSON means equal overrides. */
+function sameOverride(a: object, b: object): boolean {
+	return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/** Warns when an `add` override reuses the id or key of another `add` (it would be ignored). */
+function checkDuplicateAdd(
+	others: readonly { kind: string; id?: string; key?: string }[],
+	added: { kind: string; id?: string; key?: string },
+	warn: Warn
+): void {
+	if (added.kind !== 'add') return;
+	const name = added.id ?? added.key;
+	if (others.some((o) => o.kind === 'add' && (o.id ?? o.key) === name)) {
+		warn('duplicate-override', `another added item already uses ${name}`);
+	}
+}
+
 function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn): GameEvent[] {
 	switch (command.type) {
 		case 'CreateGame':
@@ -328,16 +452,97 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 
 		case 'SetDead': {
 			const seat = seatOf(game, command.seatId);
+			const cause = command.cause === undefined ? undefined : deathCause(ctx, command.cause);
+			if (!command.dead && cause !== undefined) {
+				warn('cause-ignored', 'a living player has no cause of death');
+			}
 			if (seat.dead === command.dead) {
+				// Marking a dead player dead again with a new cause records the cause.
+				if (command.dead && cause !== undefined && cause !== seat.deathCause) {
+					return [{ type: 'DeathCauseSet', seatId: seat.seatId, cause }];
+				}
 				warn('no-change', command.dead ? 'already dead' : 'already alive');
 				return [];
 			}
-			const events: GameEvent[] = [{ type: 'DeathSet', seatId: seat.seatId, dead: command.dead }];
+			const death: GameEvent = { type: 'DeathSet', seatId: seat.seatId, dead: command.dead };
+			if (command.dead && cause !== undefined) death.cause = cause;
+			const events: GameEvent[] = [death];
 			// A player who comes back to life has their vote again.
 			if (!command.dead && seat.ghostVoteUsed) {
 				events.push({ type: 'GhostVoteRestored', seatId: seat.seatId });
 			}
 			return events;
+		}
+
+		case 'SetDeathCause': {
+			const seat = seatOf(game, command.seatId);
+			const cause = command.cause === undefined ? undefined : deathCause(ctx, command.cause);
+			if (cause === seat.deathCause) {
+				warn('no-change', cause === undefined ? 'no cause is recorded' : `already ${cause}`);
+				return [];
+			}
+			if (!seat.dead) refuse('not-dead', 'only a dead player has a cause of death');
+			const event: GameEvent = { type: 'DeathCauseSet', seatId: seat.seatId };
+			if (cause !== undefined) event.cause = cause;
+			return [event];
+		}
+
+		case 'AddNightStepOverride': {
+			const list = game.nightOrderOverrides;
+			const index = overrideIndex(command.index ?? list.length, list.length, true);
+			const override = nightOverride(command.override, ctx);
+			checkDuplicateAdd(list, override, warn);
+			return [{ type: 'NightStepOverrideAdded', index, override }];
+		}
+
+		case 'ReplaceNightStepOverride': {
+			const list = game.nightOrderOverrides;
+			const index = overrideIndex(command.index, list.length, false);
+			const override = nightOverride(command.override, ctx);
+			checkDuplicateAdd(
+				list.filter((_, i) => i !== index),
+				override,
+				warn
+			);
+			if (sameOverride(list[index], override)) {
+				warn('no-change', 'the override is unchanged');
+				return [];
+			}
+			return [{ type: 'NightStepOverrideReplaced', index, override }];
+		}
+
+		case 'RemoveNightStepOverride': {
+			const index = overrideIndex(command.index, game.nightOrderOverrides.length, false);
+			return [{ type: 'NightStepOverrideRemoved', index }];
+		}
+
+		case 'AddDayReminderOverride': {
+			const list = game.dayReminderOverrides;
+			const index = overrideIndex(command.index ?? list.length, list.length, true);
+			const override = dayOverride(game, command.override, ctx);
+			checkDuplicateAdd(list, override, warn);
+			return [{ type: 'DayReminderOverrideAdded', index, override }];
+		}
+
+		case 'ReplaceDayReminderOverride': {
+			const list = game.dayReminderOverrides;
+			const index = overrideIndex(command.index, list.length, false);
+			const override = dayOverride(game, command.override, ctx);
+			checkDuplicateAdd(
+				list.filter((_, i) => i !== index),
+				override,
+				warn
+			);
+			if (sameOverride(list[index], override)) {
+				warn('no-change', 'the override is unchanged');
+				return [];
+			}
+			return [{ type: 'DayReminderOverrideReplaced', index, override }];
+		}
+
+		case 'RemoveDayReminderOverride': {
+			const index = overrideIndex(command.index, game.dayReminderOverrides.length, false);
+			return [{ type: 'DayReminderOverrideRemoved', index }];
 		}
 
 		case 'SpendGhostVote': {

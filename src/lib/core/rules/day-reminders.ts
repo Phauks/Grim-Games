@@ -11,7 +11,7 @@
  * any generated reminder (hide or reword it) and add their own (`DayReminderOverride`).
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
-import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
+import type { DeathCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 import {
 	DAY_GROUP_TITLES,
 	DAY_GROUPS,
@@ -27,11 +27,8 @@ import {
 export { DAY_GROUP_TITLES, DAY_GROUPS, DAY_REMINDER_ENTRIES, NO_DAY_RELEVANCE };
 export type { DayCondition, DayGroup, DayReminderEntry, DayReminderSpec, DeathCauseMatch };
 
-/**
- * How a player died, when the Storyteller recorded it: executed, killed by the Demon, a
- * character's ability (its id), or something else. Undefined means unknown.
- */
-export type DeathCause = 'execution' | 'demon' | 'other' | CharacterId;
+/** Defined with the model's `Seat`; re-exported here for existing imports. */
+export type { DeathCause };
 
 /** The parts of a seat the reminders read (the model's `Seat` fits, plus `deathCause`). */
 export interface DaySeat {
@@ -136,11 +133,14 @@ export function renderReminder(
 		.join(' ');
 }
 
-/** The model's game as `DayState` (seats in seating order). */
+/**
+ * The model's game as `DayState` (seats in seating order), with the Storyteller's stored
+ * overrides unless `overrides` is given.
+ */
 export function dayStateFromGame(
 	game: Game,
 	character: (id: CharacterId) => Character | undefined,
-	overrides?: readonly DayReminderOverride[]
+	overrides: readonly DayReminderOverride[] | undefined = game.dayReminderOverrides
 ): DayState {
 	return {
 		seats: game.seating.map((id) => game.seats[id]).filter((s) => s !== undefined),
