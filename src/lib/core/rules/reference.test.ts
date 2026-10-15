@@ -1,0 +1,120 @@
+/**
+ * The Character reference is built from TPI's data and our rules code. Rules cited:
+ * - https://wiki.bloodontheclocktower.com/Witch (the Cursed player; Witch day reminder)
+ * - https://wiki.bloodontheclocktower.com/Character_Types (alignment from type)
+ * - https://wiki.bloodontheclocktower.com/Glossary (Dusk, Dawn)
+ */
+import { describe, expect, it } from 'vitest';
+import { committedGameData, committedNumericNightOrder } from '#lib/core/testing/committed-data.ts';
+import {
+	characterReference,
+	compareNightOrders,
+	fullNightOrder,
+	groupByType,
+	matchesReference,
+	referenceText,
+	sheetPosition
+} from './reference.ts';
+
+const data = committedGameData();
+const numeric = committedNumericNightOrder();
+const entries = characterReference(data, numeric);
+const entry = (id: string) => entries.find((e) => e.character.id === id)!;
+const name = (id: string) => data.byId.get(id)?.name ?? id;
+
+describe('characterReference', () => {
+	it('has every official character once, grouped in TPI type order', () => {
+		expect(entries).toHaveLength(data.characters.length);
+		expect(groupByType(entries).map((g) => g.type)).toEqual([
+			'townsfolk',
+			'outsider',
+			'minion',
+			'demon',
+			'traveller',
+			'fabled',
+			'loric'
+		]);
+	});
+
+	it('collects everything for the Witch', () => {
+		const witch = entry('witch');
+		expect(witch.alignment).toBe('evil');
+		expect(witch.jinxes).toEqual([]);
+		expect(witch.firstNight.position).toBe(data.nightSheet.firstNight.indexOf('witch') + 1);
+		expect(witch.otherNight.position).toBe(data.nightSheet.otherNight.indexOf('witch') + 1);
+		expect(witch.firstNight.number).toBe(numeric.firstNight.get('witch'));
+		expect(witch.firstNight.text).toBe(data.byId.get('witch')!.firstNightReminder);
+		const texts = witch.dayReminders.map((r) => referenceText(r.segments, name));
+		expect(texts).toContain('[Witch] has chosen [player with “Cursed”]');
+		expect(texts).toContain('[Witch] is poisoned');
+		expect(witch.wiki).toBe('https://wiki.bloodontheclocktower.com/Witch');
+		expect(witch.filters.has('day')).toBe(true);
+		expect(witch.filters.has('jinxes')).toBe(false);
+	});
+
+	it('gives setup modifiers, jinxes and the no-day reason', () => {
+		expect(entry('baron').setup?.summary).toBe('+2 Outsiders');
+		expect(entry('baron').noDayReason).toBe('setup only');
+		expect(entry('baron').filters.has('setup')).toBe(true);
+		const spy = entry('spy');
+		expect(spy.jinxes.length).toBeGreaterThan(0);
+		expect(spy.jinxes.every((j) => j.with !== 'spy' && j.reason.length > 0)).toBe(true);
+	});
+
+	it('leaves alignment to the Storyteller for Travellers and to nobody for rule characters', () => {
+		expect(entry('gunslinger').alignment).toBeUndefined();
+		expect(entry('gunslinger').alignmentNote).toMatch(/Storyteller/);
+		expect(entry('angel').alignmentNote).toMatch(/rule character/);
+	});
+});
+
+describe('compareNightOrders', () => {
+	it('flags missing numbers, numbers off the sheet and out-of-order numbers', () => {
+		const numbers = new Map([
+			['a', 10],
+			['c', 5],
+			['d', 30],
+			['z', 99]
+		]);
+		const out = compareNightOrders(['dusk', 'a', 'b', 'c', 'd', 'dawn'], numbers);
+		expect(out.get('dusk')).toEqual({ position: 1, issues: [] });
+		expect(out.get('b')!.issues).toEqual(['On TPI’s night sheet but has no provisional number.']);
+		expect(out.get('a')!.issues[0]).toMatch(/different place/);
+		expect(out.get('c')!.issues[0]).toMatch(/different place/);
+		expect(out.get('d')).toEqual({ position: 5, number: 30, issues: [] });
+		expect(out.get('z')).toEqual({
+			number: 99,
+			issues: ['Has a provisional number but is not on TPI’s night sheet.']
+		});
+	});
+});
+
+describe('matchesReference', () => {
+	it('searches names, ability text and tokens, and filters by type and flags', () => {
+		const ids = (q: Parameters<typeof matchesReference>[1]) =>
+			entries.filter((e) => matchesReference(e, q)).map((e) => e.character.id);
+		expect(ids({ search: 'witch' })).toContain('witch');
+		expect(ids({ search: 'cursed' })).toContain('witch');
+		expect(ids({ search: 'lil monsta' })).toContain('lilmonsta');
+		expect(ids({ types: ['demon'] }).every((id) => data.byId.get(id)!.type === 'demon')).toBe(true);
+		const jinxedDemons = ids({ types: ['demon'], filters: ['jinxes'] });
+		expect(jinxedDemons).toContain('leviathan');
+		expect(jinxedDemons).not.toContain('imp');
+	});
+});
+
+describe('fullNightOrder', () => {
+	it('starts at Dusk and keeps TPI order, with announcements after Dawn', () => {
+		for (const night of ['first', 'other'] as const) {
+			const steps = fullNightOrder(data, night, numeric).steps;
+			expect(steps[0].id).toBe('dusk');
+			const dawn = steps.findIndex((s) => s.id === 'dawn');
+			expect(steps.slice(dawn + 1).every((s) => s.afterDawn)).toBe(true);
+			const positions = steps.map((s) => sheetPosition(data.nightSheet, night, s.id)!);
+			expect(positions).toEqual([...positions].sort((a, b) => a - b));
+		}
+		const first = fullNightOrder(data, 'first', numeric).steps.map((s) => s.id);
+		expect(first).toContain('minioninfo');
+		expect(first).toContain('demoninfo');
+	});
+});

@@ -25,3 +25,23 @@ export function bugReportUrl(info: BuildInfo, page: string, userAgent: string): 
 	});
 	return `${REPOSITORY_URL}/issues/new?${params}`;
 }
+
+/**
+ * Link to the bug-report form about one character's reference data (Character reference
+ * page). Only public information goes in the query string: the character, its page
+ * anchor, the build and the device.
+ */
+export function characterReportUrl(
+	info: BuildInfo,
+	character: { id: string; name: string },
+	userAgent: string
+): string {
+	const params = new URLSearchParams({
+		template: 'bug_report.yml',
+		title: `[Reference] ${character.name} (${character.id}): `,
+		build: describeBuild(info),
+		page: `/reference#${character.id}`,
+		device: userAgent
+	});
+	return `${REPOSITORY_URL}/issues/new?${params}`;
+}

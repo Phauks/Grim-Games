@@ -43,7 +43,11 @@ export const ICON_SLOTS = {
 	back: { label: 'Back', choices: ['ph:arrow-left', 'ph:caret-left'] },
 	forward: { label: 'Forward', choices: ['ph:caret-right', 'ph:arrow-right'] },
 	check: { label: 'Selected', choices: ['ph:check'] },
-	wiki: { label: 'Wiki link', choices: ['ph:arrow-square-out', 'ph:book-open-text'] }
+	wiki: { label: 'Wiki link', choices: ['ph:arrow-square-out', 'ph:book-open-text'] },
+	search: { label: 'Search', choices: ['ph:magnifying-glass'] },
+	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
+	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },
+	warning: { label: 'Warning', choices: ['ph:warning', 'ph:warning-circle'] }
 } as const satisfies Record<string, IconSlotInfo>;
 
 export type IconSlot = keyof typeof ICON_SLOTS;
