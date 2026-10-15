@@ -20,3 +20,4 @@ export * from './night-deaths.ts';
 export * from './gained-abilities.ts';
 export * from './glossary.ts';
 export * from './reference-table.ts';
+export * from './bag-plan.ts';
