@@ -38,8 +38,8 @@ If Chromium is already installed somewhere (for example a sandbox), set `PLAYWRI
 
 Cloudflare [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) builds and deploys straight from this repository, so there is no deploy workflow or API token in GitHub:
 
-- build command `npm run build`, deploy command `npx wrangler deploy`: pushes to `main` deploy the `grim-games` Worker;
-- other branches and pull requests run `npx wrangler preview`, which creates a [Worker Preview](https://developers.cloudflare.com/workers/previews/) on the same Worker, with its own URL and its own Durable Object storage. The `previews` block in `wrangler.jsonc` repeats the bindings and vars previews need.
+- build command `npm run build`, deploy command `npx wrangler deploy`: pushes to `main` deploy the `grim-games` Worker (production releases, merged from `beta`);
+- all day-to-day work goes on the `beta` branch. Workers Builds runs `npx wrangler preview` for it (and any other non-production branch), which creates a [Worker Preview](https://developers.cloudflare.com/workers/previews/) named after the branch on the same Worker, with its own URL and its own Durable Object storage. The `previews` block in `wrangler.jsonc` repeats the bindings and vars previews need.
 
 GitHub Actions (`.github/workflows/ci.yml`) only runs checks and tests.
 
