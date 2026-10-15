@@ -15,6 +15,7 @@ import {
 	type PlayerNotebook,
 	type SeatPatch
 } from './notebook.ts';
+import { reportError } from '#lib/features/errors/report.svelte.ts';
 
 const DB_NAME = 'grim-games-player';
 const DB_VERSION = 1;
@@ -81,7 +82,10 @@ export class NotebookState {
 		try {
 			const saved = migrateNotebook(await read(this.key));
 			if (saved && saved.scriptKey === this.key) this.book = saved;
-		} catch {
+		} catch (e) {
+			// The panel says this browser cannot save, so only logged. IndexedDB errors carry
+			// no notebook content (names, notes and guesses never go into an error).
+			reportError(e, { area: 'play', notify: false });
 			this.saveError = true;
 		}
 		this.ready = true;
@@ -93,7 +97,10 @@ export class NotebookState {
 		this.#timer = setTimeout(() => {
 			write(this.book).then(
 				() => (this.saveError = false),
-				() => (this.saveError = true)
+				(e: unknown) => {
+					reportError(e, { area: 'play', notify: false });
+					this.saveError = true;
+				}
 			);
 		}, SAVE_DELAY_MS);
 	}
