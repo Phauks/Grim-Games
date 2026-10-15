@@ -217,3 +217,12 @@ test('token leaves and the setup flower are drawn inside the token', async ({ pa
 	}
 	await token.screenshot({ path: 'test-results/village-idiot-token.png' });
 });
+
+test('the token key explains the leaves and the flower in an overlay', async ({ page }) => {
+	await page.goto('/reference');
+	await page.getByRole('button', { name: 'Token key' }).tap();
+	const key = page.getByRole('dialog', { name: 'Token key' });
+	await expect(key).toContainText('Leaf on the left: wakes on the first night.');
+	await expect(key).toContainText('Flower at the bottom right: changes setup.');
+	await expect(key.locator('g.flower')).toHaveCount(1);
+});
