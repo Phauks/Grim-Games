@@ -9,6 +9,7 @@ import {
 	type IconSetId,
 	type IconSlot
 } from '#lib/ui/icons/catalogue.ts';
+import { DEFAULT_ASSISTANCE, parseAssistance, type Assistance } from '#lib/ui/assistance.ts';
 import { DEFAULT_THEME_ID, isThemeId } from '#lib/ui/themes/registry.ts';
 import type { Theme } from '#lib/ui/themes/types.ts';
 
@@ -23,6 +24,8 @@ export interface Preferences {
 	textScale: TextScale;
 	iconSet: IconSetId | null;
 	iconOverrides: Partial<Record<IconSlot, string>>;
+	/** How much the app walks the Storyteller through the game. */
+	assistance: Assistance;
 }
 
 export const TEXT_SCALES = [0.875, 1, 1.125, 1.25, 1.5] as const;
@@ -34,7 +37,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	textFont: null,
 	textScale: 1,
 	iconSet: null,
-	iconOverrides: {}
+	iconOverrides: {},
+	assistance: DEFAULT_ASSISTANCE
 };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
@@ -56,7 +60,8 @@ export function parsePreferences(raw: unknown): Preferences {
 			? (input.textScale as TextScale)
 			: DEFAULT_PREFERENCES.textScale,
 		iconSet: isIconSetId(input.iconSet) ? input.iconSet : null,
-		iconOverrides
+		iconOverrides,
+		assistance: parseAssistance(input.assistance)
 	};
 }
 

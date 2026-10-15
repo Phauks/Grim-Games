@@ -30,10 +30,12 @@ import ph_gear_light from '~icons/ph/gear-light';
 import ph_gear_six_light from '~icons/ph/gear-six-light';
 import ph_ghost_light from '~icons/ph/ghost-light';
 import ph_hand_fist_light from '~icons/ph/hand-fist-light';
+import ph_hand_heart_light from '~icons/ph/hand-heart-light';
 import ph_hand_palm_light from '~icons/ph/hand-palm-light';
 import ph_hand_pointing_light from '~icons/ph/hand-pointing-light';
 import ph_handbag_light from '~icons/ph/handbag-light';
 import ph_info_light from '~icons/ph/info-light';
+import ph_lifebuoy_light from '~icons/ph/lifebuoy-light';
 import ph_list_light from '~icons/ph/list-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
@@ -103,10 +105,12 @@ const icons: IconMap = {
 	'ph:gear-six-light': ph_gear_six_light,
 	'ph:ghost-light': ph_ghost_light,
 	'ph:hand-fist-light': ph_hand_fist_light,
+	'ph:hand-heart-light': ph_hand_heart_light,
 	'ph:hand-palm-light': ph_hand_palm_light,
 	'ph:hand-pointing-light': ph_hand_pointing_light,
 	'ph:handbag-light': ph_handbag_light,
 	'ph:info-light': ph_info_light,
+	'ph:lifebuoy-light': ph_lifebuoy_light,
 	'ph:list-light': ph_list_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
 	'ph:mask-sad-light': ph_mask_sad_light,

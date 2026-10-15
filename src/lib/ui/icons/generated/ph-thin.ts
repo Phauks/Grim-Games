@@ -30,10 +30,12 @@ import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
 import ph_hand_fist_thin from '~icons/ph/hand-fist-thin';
+import ph_hand_heart_thin from '~icons/ph/hand-heart-thin';
 import ph_hand_palm_thin from '~icons/ph/hand-palm-thin';
 import ph_hand_pointing_thin from '~icons/ph/hand-pointing-thin';
 import ph_handbag_thin from '~icons/ph/handbag-thin';
 import ph_info_thin from '~icons/ph/info-thin';
+import ph_lifebuoy_thin from '~icons/ph/lifebuoy-thin';
 import ph_list_thin from '~icons/ph/list-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
@@ -103,10 +105,12 @@ const icons: IconMap = {
 	'ph:gear-six-thin': ph_gear_six_thin,
 	'ph:ghost-thin': ph_ghost_thin,
 	'ph:hand-fist-thin': ph_hand_fist_thin,
+	'ph:hand-heart-thin': ph_hand_heart_thin,
 	'ph:hand-palm-thin': ph_hand_palm_thin,
 	'ph:hand-pointing-thin': ph_hand_pointing_thin,
 	'ph:handbag-thin': ph_handbag_thin,
 	'ph:info-thin': ph_info_thin,
+	'ph:lifebuoy-thin': ph_lifebuoy_thin,
 	'ph:list-thin': ph_list_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
