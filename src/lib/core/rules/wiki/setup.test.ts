@@ -11,8 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import { BASE_DISTRIBUTION, splitPlayers } from '../distribution.ts';
-import { isNotDealt } from '../bag-plan.ts';
-import { analyseSetup, NOT_DEALT, type SetupInput } from '../setup.ts';
+import { analyseSetup, type SetupInput } from '../setup.ts';
 
 const data = committedGameData();
 const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
@@ -190,10 +189,6 @@ describe('[bracketed] setup modifiers', () => {
 		expect(result.chosen).toEqual({ townsfolk: 5, outsider: 1, minion: 2, demon: 0 });
 		expect(result.notDealt).toEqual(['lilmonsta']);
 		expect(result.warnings.map((w) => w.code)).toEqual([]);
-	});
-
-	it('the setup check and the bag plan agree on which characters are never dealt', () => {
-		for (const c of data.characters) expect(NOT_DEALT.has(c.id), c.id).toBe(isNotDealt(c));
 	});
 
 	// https://wiki.bloodontheclocktower.com/Drunk

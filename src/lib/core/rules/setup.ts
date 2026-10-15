@@ -5,6 +5,7 @@
  *
  * https://wiki.bloodontheclocktower.com/Setup
  */
+import { isNotDealt } from './bag-characters.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { SEATED_TYPES, splitPlayers, type SeatedType, type TypeCounts } from './distribution.ts';
 import { setupModifierFor, type CountOp, type SetupModifier } from './setup-modifiers.ts';
@@ -88,15 +89,6 @@ function listValues(values: readonly number[]): string {
 		? String(values[0])
 		: `${values.slice(0, -1).join(', ')} or ${values.at(-1)}`;
 }
-
-/**
- * Characters that are chosen for the game but never go to a player, with no stand-in token:
- * nobody is the Lil' Monsta, a Minion babysits it
- * (https://wiki.bloodontheclocktower.com/Lil%27_Monsta). The Drunk and the Marionette are
- * also kept out of the bag, but their player gets a Townsfolk token, so they still count as
- * their own type.
- */
-export const NOT_DEALT: ReadonlySet<CharacterId> = new Set(['lilmonsta']);
 
 function isDealt(type: Character['type']): type is SeatedType {
 	return (SEATED_TYPES as readonly string[]).includes(type);
@@ -217,7 +209,9 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	const notDealt: CharacterId[] = [];
 	for (const character of input.inPlay) {
 		if (!isDealt(character.type)) continue;
-		if (NOT_DEALT.has(character.id)) {
+		// Chosen but never dealt to a player, with no stand-in token: nobody is the Lil' Monsta,
+		// a Minion babysits it (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
+		if (isNotDealt(character)) {
 			if (!notDealt.includes(character.id)) notDealt.push(character.id);
 			continue;
 		}
