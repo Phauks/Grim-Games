@@ -18,6 +18,9 @@ import type { Character, CharacterId, CharacterType } from '#lib/core/data/types
 import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 import { analyseSetup, type SetupAnalysis } from './setup.ts';
+import { isBagDisabled, isNotDealt, replacementReminder } from './bag-characters.ts';
+
+export { isBagDisabled, isNotDealt, replacementReminder };
 
 /** Copies of each selected character (a missing id or 0 is not selected). */
 export type BagSelection = Readonly<Record<CharacterId, number>>;
@@ -73,34 +76,11 @@ export interface BagPlanInput {
 	random?: () => number;
 }
 
-function hasSpecial(character: Character, type: string, name: string): boolean {
-	return character.special.some((s) => s.type === type && s.name === name);
-}
-
-export function isBagDisabled(character: Character): boolean {
-	return hasSpecial(character, 'selection', 'bag-disabled');
-}
-
-/** The "Is The …" reminder a replace-character character leaves on its seat. */
-export function replacementReminder(character: Character): Reminder | undefined {
-	if (!hasSpecial(character, 'reveal', 'replace-character')) return undefined;
-	const label = character.remindersGlobal.find((l) => /^is the /i.test(l));
-	return label ? { characterId: character.id, label } : undefined;
-}
-
 /** Whether the character's tile shows something else, and what kind. */
 export function standInKind(character: Character): StandInKind | undefined {
 	if (character.id === 'lunatic' && character.edition !== undefined) return 'demon';
 	if (isBagDisabled(character) && replacementReminder(character)) return 'good';
 	return undefined;
-}
-
-/**
- * A selected character that is never dealt: bag-disabled with no stand-in (Lil' Monsta).
- * Its setup change still applies.
- */
-export function isNotDealt(character: Character): boolean {
-	return isBagDisabled(character) && !replacementReminder(character);
 }
 
 export function isRuleCharacter(type: CharacterType): boolean {
