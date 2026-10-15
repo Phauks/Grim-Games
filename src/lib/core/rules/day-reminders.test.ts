@@ -332,7 +332,7 @@ describe('impaired abilities', () => {
 	});
 
 	it('the Sailor: "cannot die" or "is poisoned", never both', () => {
-		expect(texts({ seats: [seat('sailor')] })).toEqual(['[Sailor] cannot die']);
+		expect(texts({ seats: [seat('sailor')] })).toEqual(['[Sailor] cannot die.']);
 		const poisoned = seat('sailor', { reminders: [token('poisoner', 'Poisoned')] });
 		expect(texts({ seats: [poisoned] })).toEqual(['[Sailor] is poisoned by [Poisoner]']);
 		const both = seat('sailor', {
@@ -382,7 +382,9 @@ describe('Pixie', () => {
 	it('stops asking the Pixie to be mad once the Mad player is dead', () => {
 		const pixie = seat('pixie');
 		const mad = seat('chef', { reminders: [token('pixie', 'Mad')] });
-		expect(texts({ seats: [pixie, mad] })).toEqual(['[Pixie] must be mad as [Chef]']);
+		expect(texts({ seats: [pixie, mad] })).toEqual([
+			'[Pixie] must be mad as [Chef] to gain their ability when they die.'
+		]);
 		expect(texts({ seats: [pixie, { ...mad, dead: true }] })).toEqual([]);
 	});
 });
