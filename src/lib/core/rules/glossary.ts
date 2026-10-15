@@ -3,8 +3,10 @@
  * that appear in the game text the app shows: ability text, TPI's Storyteller night text
  * and our pre-day reminders. A test checks every term here occurs in that text.
  *
- * The definitions are our own short summaries; the wiki has no content licence, so never
- * paste its wording here. Each term links to the Glossary page. Its entries have no HTML
+ * No definitions are kept here: Trevor (2026-10-15) wants the wiki's own wording only, and
+ * the wiki has no content licence, so its text is never bundled. The popover links to the
+ * entry and may show the wiki text fetched live on the device (glossary/wiki-glossary.ts).
+ * Each term links to the Glossary page. Its entries have no HTML
  * anchors, so the link uses a text fragment (`#:~:text=Term:`), which browsers that
  * support it scroll to and others ignore.
  *
@@ -21,8 +23,6 @@ export interface GlossaryTerm {
 	term: string;
 	/** Words in game text that mean this term, lower case. `term` is matched too. */
 	variants: readonly string[];
-	/** Our own 1–2 sentence summary in plain words. */
-	definition: string;
 	/** The Glossary page, scrolled to the entry where the browser supports it. */
 	url: string;
 }
@@ -39,49 +39,37 @@ const ENTRIES: readonly Entry[] = [
 	{
 		id: 'poisoned',
 		term: 'Poisoned',
-		variants: ['poison', 'poisons', 'poisoning'],
-		definition:
-			'The player has no ability but is not told, often because of an evil ability. The Storyteller acts as if it works, and its information may be wrong.'
+		variants: ['poison', 'poisons', 'poisoning']
 	},
 	{
 		id: 'healthy',
 		term: 'Healthy',
-		variants: [],
-		definition: 'Not poisoned.'
+		variants: []
 	},
 	{
 		id: 'drunk',
 		term: 'Drunk',
-		variants: ['drunkenness'],
-		definition:
-			'The player has no ability but thinks they have it. The Storyteller acts as if it works, and its information may be wrong.'
+		variants: ['drunkenness']
 	},
 	{
 		id: 'sober',
 		term: 'Sober',
-		variants: [],
-		definition: 'Not drunk.'
+		variants: []
 	},
 	{
 		id: 'mad',
 		term: 'Mad',
-		variants: ['madness'],
-		definition:
-			'The player must try to convince the group that something is true. The Storyteller judges whether they tried hard enough.'
+		variants: ['madness']
 	},
 	{
 		id: 'might',
 		term: 'Might',
-		variants: [],
-		definition:
-			'The Storyteller decides whether it happens. It is a choice, not a rule that always applies.'
+		variants: []
 	},
 	{
 		id: 'register',
 		term: 'Register',
-		variants: ['registers', 'registered', 'registering'],
-		definition:
-			'Counts as a different character or alignment for other abilities, without gaining that ability. The Storyteller decides each time.'
+		variants: ['registers', 'registered', 'registering']
 	},
 	{
 		id: 'alive-neighbors',
@@ -92,171 +80,137 @@ const ENTRIES: readonly Entry[] = [
 			'alive neighbour',
 			'living neighbors',
 			'living neighbours'
-		],
-		definition: 'The nearest living player on each side, skipping over dead players in between.'
+		]
 	},
 	{
 		id: 'neighbors',
 		term: 'Neighbors',
-		variants: ['neighbor', 'neighbours', 'neighbour', 'neighboring', 'neighbouring'],
-		definition: 'The two players sitting directly either side, whether alive or dead.'
+		variants: ['neighbor', 'neighbours', 'neighbour', 'neighboring', 'neighbouring']
 	},
 	{
 		id: 'in-play',
 		term: 'In play',
-		variants: ['in-play'],
-		definition: 'A character some player has in this game, alive or dead.'
+		variants: ['in-play']
 	},
 	{
 		id: 'not-in-play',
 		term: 'Not in play',
-		variants: ['not-in-play'],
-		definition: 'A character on the script that no player has in this game.'
+		variants: ['not-in-play']
 	},
 	{
 		id: 'start-knowing',
 		term: 'Start knowing',
-		variants: ['starts knowing'],
-		definition:
-			'Learned on the first night, or on the night the player becomes this character later on.'
+		variants: ['starts knowing']
 	},
 	{
 		id: 'each-night-star',
 		term: 'Each night*',
-		variants: [],
-		definition: 'Every night except the first one.'
+		variants: []
 	},
 	{
 		id: 'once-per-game',
 		term: 'Once per game',
-		variants: [],
-		definition: 'Usable one time only. A use while drunk or poisoned still counts as the one use.'
+		variants: []
 	},
 	{
 		id: 'choose',
 		term: 'Choose',
-		variants: ['chooses', 'chose', 'chosen'],
-		definition: 'The player makes the choice, not the Storyteller.'
+		variants: ['chooses', 'chose', 'chosen']
 	},
 	{
 		id: 'alive',
 		term: 'Alive',
-		variants: [],
-		definition: 'Not dead: the player has their ability, can nominate and can vote freely.'
+		variants: []
 	},
 	{
 		id: 'dead',
 		term: 'Dead',
-		variants: [],
-		definition:
-			'The player loses their ability and cannot nominate, and has one vote left for the rest of the game.'
+		variants: []
 	},
 	{
 		id: 'execution',
 		term: 'Execution',
-		variants: ['executions', 'execute', 'executes', 'executed', 'executee'],
-		definition:
-			'The town’s vote to kill a player during the day. There is at most one execution a day.'
+		variants: ['executions', 'execute', 'executes', 'executed', 'executee']
 	},
 	{
 		id: 'exile',
 		term: 'Exile',
-		variants: ['exiles', 'exiled'],
-		definition: 'The group’s choice to remove a Traveller during the day. It is not an execution.'
+		variants: ['exiles', 'exiled']
 	},
 	{
 		id: 'nomination',
 		term: 'Nomination',
-		variants: ['nominations', 'nominate', 'nominates', 'nominated', 'nominating', 'nominee'],
-		definition: 'Calling for a vote on whether to execute a player.'
+		variants: ['nominations', 'nominate', 'nominates', 'nominated', 'nominating', 'nominee']
 	},
 	{
 		id: 'vote',
 		term: 'Vote',
-		variants: ['votes', 'voted', 'voting', 'voter', 'voters'],
-		definition:
-			'Raising a hand while the votes on a nomination are counted. A player may vote on several nominations in a day.'
+		variants: ['votes', 'voted', 'voting', 'voter', 'voters']
 	},
 	{
 		id: 'public',
 		term: 'Public',
-		variants: ['publicly'],
-		definition: 'Something most players, and the Storyteller, know about.'
+		variants: ['publicly']
 	},
 	{
 		id: 'private',
 		term: 'Private',
-		variants: ['privately'],
-		definition: 'Said only to the people involved, where the rest of the group cannot hear.'
+		variants: ['privately']
 	},
 	{
 		id: 'think',
 		term: 'Think',
-		variants: ['thinks'],
-		definition: 'The player believes they are a different character from the one they really are.'
+		variants: ['thinks']
 	},
 	{
 		id: 'dawn',
 		term: 'Dawn',
-		variants: [],
-		definition: 'The end of the night. Abilities that act at dawn go after everyone else.'
+		variants: []
 	},
 	{
 		id: 'dusk',
 		term: 'Dusk',
-		variants: [],
-		definition: 'The start of the night. Abilities that act at dusk go before everyone else.'
+		variants: []
 	},
 	{
 		id: 'resurrected',
 		term: 'Resurrected',
-		variants: ['resurrect', 'resurrects', 'regurgitated', 'reborn'],
-		definition: 'A dead player comes back to life and gets their ability back.'
+		variants: ['resurrect', 'resurrects', 'regurgitated', 'reborn']
 	},
 	{
 		id: 'tomorrow',
 		term: 'Tomorrow',
-		variants: [],
-		definition: 'The day after the current night, and the night after that day.'
+		variants: []
 	},
 	{
 		id: 'false-info',
 		term: 'False info',
-		variants: [],
-		definition:
-			'Information that is wrong, usually because the player is drunk or poisoned. The Storyteller chooses it.'
+		variants: []
 	},
 	{
 		id: 'true-info',
 		term: 'True info',
-		variants: [],
-		definition:
-			'Information that is correct. Answers about the rules are always true, whatever a player’s state.'
+		variants: []
 	},
 	{
 		id: 'alignment',
 		term: 'Alignment',
-		variants: ['alignments'],
-		definition: 'Which team a player is on right now: good or evil. It can change during a game.'
+		variants: ['alignments']
 	},
 	{
 		id: 'info-token',
 		term: 'Info token',
-		variants: ['info tokens'],
-		definition: 'A rectangular card the Storyteller shows a player at night to tell them something.'
+		variants: ['info tokens']
 	},
 	{
 		id: 'reminder-token',
 		term: 'Reminder token',
-		variants: ['reminder tokens'],
-		definition:
-			'A small token in the Grimoire that tracks what a character has done or who it affects.'
+		variants: ['reminder tokens']
 	},
 	{
 		id: 'grimoire',
 		term: 'Grimoire',
-		variants: [],
-		definition: 'The Storyteller’s board, which shows the true state of the game to them only.'
+		variants: []
 	}
 ];
 
