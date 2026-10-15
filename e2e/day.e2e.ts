@@ -147,7 +147,9 @@ test('any reminder takes an optional long note in a sheet', async ({ page }) => 
 	);
 });
 
-test('with Expert help the night is a checklist with no worked-out answers', async ({ page }) => {
+test('with help switched off the night is a checklist with no worked-out answers', async ({
+	page
+}) => {
 	await loaded(page);
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
@@ -155,10 +157,9 @@ test('with Expert help the night is a checklist with no worked-out answers', asy
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Storyteller help' })
 		.tap();
-	await settings
-		.getByRole('radiogroup', { name: 'How much help' })
-		.getByText('Expert', { exact: true })
-		.tap();
+	for (const name of ['Walk me through the night', 'Work out night answers', 'Pre-day reminders']) {
+		await settings.getByText(name, { exact: true }).tap();
+	}
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(settings).toBeHidden();
 
