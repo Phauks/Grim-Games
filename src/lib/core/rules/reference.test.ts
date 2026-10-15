@@ -46,7 +46,7 @@ describe('characterReference', () => {
 		expect(witch.firstNight.text).toBe(data.byId.get('witch')!.firstNightReminder);
 		const texts = witch.dayReminders.map((r) => referenceText(r.segments, name));
 		expect(texts).toContain('[Witch] has chosen [player with “Cursed”]');
-		expect(texts).toContain('[Witch] is poisoned');
+		expect(texts).toContain('[Witch] is poisoned / is drunk');
 		expect(witch.wiki).toBe('https://wiki.bloodontheclocktower.com/Witch');
 		expect(witch.filters.has('day')).toBe(true);
 		expect(witch.filters.has('jinxes')).toBe(false);
@@ -63,8 +63,9 @@ describe('characterReference', () => {
 
 	it('leaves alignment to the Storyteller for Travellers and to nobody for rule characters', () => {
 		expect(entry('gunslinger').alignment).toBeUndefined();
-		expect(entry('gunslinger').alignmentNote).toMatch(/Storyteller/);
-		expect(entry('angel').alignmentNote).toMatch(/rule character/);
+		expect(entry('gunslinger').alignmentNote).toBe('Storyteller chooses');
+		expect(entry('angel').alignmentNote).toBe('None');
+		expect(entry('witch').alignmentNote).toBe('Evil');
 	});
 });
 

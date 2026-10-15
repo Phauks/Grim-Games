@@ -104,12 +104,12 @@ export interface ReferenceEntry {
 	filters: ReadonlySet<ReferenceFilter>;
 }
 
-/** Plain-words alignment from the type (`defaultAlignment`). */
+/** Starting alignment in plain words, from the type (`defaultAlignment`). */
 export function alignmentNote(type: CharacterType): string {
 	const alignment = defaultAlignment(type);
-	if (alignment) return `${alignment === 'good' ? 'Good' : 'Evil'} (from the character type)`;
-	if (type === 'traveller') return 'Set by the Storyteller when a Traveller joins';
-	return 'None: a rule character, never seated';
+	if (alignment) return alignment === 'good' ? 'Good' : 'Evil';
+	if (type === 'traveller') return 'Storyteller chooses';
+	return 'None';
 }
 
 /**
@@ -210,18 +210,17 @@ function dayFor(character: Character, name: (id: CharacterId) => string, problem
 		}
 		if (entry.impairable) {
 			const group = entry.reminders[0]?.group ?? 'day-ability';
-			for (const state of ['poisoned', 'drunk']) {
-				reminders.push({
-					group,
-					groupTitle: DAY_GROUP_TITLES[group],
-					segments: [
-						{ kind: 'character', characterId: character.id },
-						{ kind: 'text', text: `is ${state}` }
-					],
-					when: describeImpairable(character),
-					impairment: true
-				});
-			}
+			// The app shows "is poisoned" or "is drunk", whichever applies; one line here.
+			reminders.push({
+				group,
+				groupTitle: DAY_GROUP_TITLES[group],
+				segments: [
+					{ kind: 'character', characterId: character.id },
+					{ kind: 'text', text: 'is poisoned / is drunk' }
+				],
+				when: describeImpairable(character),
+				impairment: true
+			});
 		}
 		if (!samePage(entry.wiki, wikiUrl(character)))
 			problems.push(`Day-reminder wiki link (${entry.wiki}) is not the character’s wiki page.`);
