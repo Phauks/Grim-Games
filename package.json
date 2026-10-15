@@ -18,7 +18,9 @@
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
 		"deploy": "npm run build && wrangler deploy",
-		"deploy:staging": "npm run build && wrangler deploy --env staging"
+		"deploy:staging": "npm run build && wrangler deploy --env staging",
+		"sync:data": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/sync-data.ts",
+		"snapshot:night-order": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/snapshot-night-order.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

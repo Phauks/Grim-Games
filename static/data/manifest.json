@@ -1,0 +1,1932 @@
+{
+	"fetchedAt": "2026-10-15T18:29:16.843Z",
+	"files": {
+		"icons/bmr/apprentice.webp": {
+			"bytes": 22516,
+			"sha256": "394d1479c9eec07cffeb2b709e2a0d41e87900fa880df7dabe687ad70da0be20",
+			"source": "resources/characters/bmr/apprentice.webp"
+		},
+		"icons/bmr/apprentice_e.webp": {
+			"bytes": 21472,
+			"sha256": "c37524b9f161be31b842c2d9276223d1671d017d25e6b4050d7e56d7407965c5",
+			"source": "resources/characters/bmr/apprentice_e.webp"
+		},
+		"icons/bmr/apprentice_g.webp": {
+			"bytes": 22270,
+			"sha256": "2e86772a2b7fdefecbaa6104cd040f23d234285ca49c45b9b77ebc7b649e12b2",
+			"source": "resources/characters/bmr/apprentice_g.webp"
+		},
+		"icons/bmr/assassin_e.webp": {
+			"bytes": 14932,
+			"sha256": "dffcb8c301de48769deb384a61d43d88ac1291adaf8556e82e1f0f3b62fb2a2e",
+			"source": "resources/characters/bmr/assassin_e.webp"
+		},
+		"icons/bmr/assassin_g.webp": {
+			"bytes": 15498,
+			"sha256": "f4438e9164a4e0c7059290a4f288b2477595b099fda62bf71fb5fc9abb4b1c94",
+			"source": "resources/characters/bmr/assassin_g.webp"
+		},
+		"icons/bmr/bishop.webp": {
+			"bytes": 17300,
+			"sha256": "ceada58f6d44b02a05ae711ccfeb535531164b4323def2034f45f3d2a4f138ee",
+			"source": "resources/characters/bmr/bishop.webp"
+		},
+		"icons/bmr/bishop_e.webp": {
+			"bytes": 16750,
+			"sha256": "ce65f466ea8a84426ed011933318894e464e7033afc446e42e32e5b9210b4f5b",
+			"source": "resources/characters/bmr/bishop_e.webp"
+		},
+		"icons/bmr/bishop_g.webp": {
+			"bytes": 17224,
+			"sha256": "c63f50be11cb59ac1af1fddcf186cdda3e5227abce296f506b10cb060a70002a",
+			"source": "resources/characters/bmr/bishop_g.webp"
+		},
+		"icons/bmr/chambermaid_e.webp": {
+			"bytes": 19482,
+			"sha256": "fa6e0e012ead733823e9cd4b5c84e603cf220536a13c6e47931d1e4b3dbd75c1",
+			"source": "resources/characters/bmr/chambermaid_e.webp"
+		},
+		"icons/bmr/chambermaid_g.webp": {
+			"bytes": 20416,
+			"sha256": "1943757554b060902a43ff2685a99511cf5e76700a442d8a2daeff86adc4be6c",
+			"source": "resources/characters/bmr/chambermaid_g.webp"
+		},
+		"icons/bmr/courtier_e.webp": {
+			"bytes": 13290,
+			"sha256": "2ae72b160ea4ddd44b4a97527f6adb66d8345bd5eded17bbfcef7d3d44b85e34",
+			"source": "resources/characters/bmr/courtier_e.webp"
+		},
+		"icons/bmr/courtier_g.webp": {
+			"bytes": 13398,
+			"sha256": "fed18667615cfb991945591cda1b100daa5dfc14ed4bcb60e0136464b06ed1db",
+			"source": "resources/characters/bmr/courtier_g.webp"
+		},
+		"icons/bmr/devilsadvocate_e.webp": {
+			"bytes": 26332,
+			"sha256": "f556504b099d0db222e5f96dae2a9dee4097735698a56953d46fbd6b0f68acf0",
+			"source": "resources/characters/bmr/devilsadvocate_e.webp"
+		},
+		"icons/bmr/devilsadvocate_g.webp": {
+			"bytes": 27602,
+			"sha256": "c36524eb91ea24090eaf6b7deabbad317397a65f5752cca1e3ee0916a0c202ae",
+			"source": "resources/characters/bmr/devilsadvocate_g.webp"
+		},
+		"icons/bmr/exorcist_e.webp": {
+			"bytes": 20192,
+			"sha256": "38a1627a904ae08ba18c5b92a27ec13f0172a0b8a845f3daa415bde7187575df",
+			"source": "resources/characters/bmr/exorcist_e.webp"
+		},
+		"icons/bmr/exorcist_g.webp": {
+			"bytes": 22026,
+			"sha256": "8d3d1f0c2f99751cc41de13ab51b446f913f661e35b6845bdc650ee9760dbbe2",
+			"source": "resources/characters/bmr/exorcist_g.webp"
+		},
+		"icons/bmr/fool_e.webp": {
+			"bytes": 26044,
+			"sha256": "57abfef12aaa14983dc928509f65891e5e49d43c9b5941c56d6934b5ae624645",
+			"source": "resources/characters/bmr/fool_e.webp"
+		},
+		"icons/bmr/fool_g.webp": {
+			"bytes": 27658,
+			"sha256": "4d008a6168e6807506ae5248dd098a468439bcdcc97cce2e0e6e8a14a63fcf84",
+			"source": "resources/characters/bmr/fool_g.webp"
+		},
+		"icons/bmr/gambler_e.webp": {
+			"bytes": 19068,
+			"sha256": "08511130db0c6a445c9f23fc495ed5519aa1a8cba8514f89cd276e65f743b280",
+			"source": "resources/characters/bmr/gambler_e.webp"
+		},
+		"icons/bmr/gambler_g.webp": {
+			"bytes": 20280,
+			"sha256": "1eca60368c8944634f6789a162bda993510cb26d9aafd5d5fba7eb68ef660858",
+			"source": "resources/characters/bmr/gambler_g.webp"
+		},
+		"icons/bmr/godfather_e.webp": {
+			"bytes": 17576,
+			"sha256": "2170a87eb321e63b1e5a5a5597ebc9a9c22aac9accb9aec250824093af600b4d",
+			"source": "resources/characters/bmr/godfather_e.webp"
+		},
+		"icons/bmr/godfather_g.webp": {
+			"bytes": 18306,
+			"sha256": "429102bf78e2c4579e5fffa3a1e90bc148fd55fcd875b6ef795237e438a84ef0",
+			"source": "resources/characters/bmr/godfather_g.webp"
+		},
+		"icons/bmr/goon_e.webp": {
+			"bytes": 15136,
+			"sha256": "a22c0104a14ec2fd7c50d4cc7f03ed430411d5a1b641dab7d5a5d2a331775d78",
+			"source": "resources/characters/bmr/goon_e.webp"
+		},
+		"icons/bmr/goon_g.webp": {
+			"bytes": 15738,
+			"sha256": "a58f4776262ae2843435fb3fba69c874d419e22162b80ae18decab1460738f00",
+			"source": "resources/characters/bmr/goon_g.webp"
+		},
+		"icons/bmr/gossip_e.webp": {
+			"bytes": 16426,
+			"sha256": "75cfc1399b3effb21329c50ba6b57cb8c823471ba05c146132051e41ae50c022",
+			"source": "resources/characters/bmr/gossip_e.webp"
+		},
+		"icons/bmr/gossip_g.webp": {
+			"bytes": 17328,
+			"sha256": "31a44aa441d285f5288443fbd69d4d7b176ff297fe3db48115133064587df26d",
+			"source": "resources/characters/bmr/gossip_g.webp"
+		},
+		"icons/bmr/grandmother_e.webp": {
+			"bytes": 22572,
+			"sha256": "076eda441a93a73a6b5f9ff0001e12d9a05ce61375750857ce1451f9c7b40a2c",
+			"source": "resources/characters/bmr/grandmother_e.webp"
+		},
+		"icons/bmr/grandmother_g.webp": {
+			"bytes": 23458,
+			"sha256": "7e6c5d75805a7641197b2ab14657e64055b14109d21e630f58a84daa000aef36",
+			"source": "resources/characters/bmr/grandmother_g.webp"
+		},
+		"icons/bmr/innkeeper_e.webp": {
+			"bytes": 18402,
+			"sha256": "f7b4850a3bad51f2920680db9f27886c607d05fa6fe262245dc6176e51d735bc",
+			"source": "resources/characters/bmr/innkeeper_e.webp"
+		},
+		"icons/bmr/innkeeper_g.webp": {
+			"bytes": 19742,
+			"sha256": "65c7f2b6daa60183ef866bea627f885e3a5643de0e3a9bd1e6925607d28e9b0f",
+			"source": "resources/characters/bmr/innkeeper_g.webp"
+		},
+		"icons/bmr/judge.webp": {
+			"bytes": 18580,
+			"sha256": "6b0243cc85eba7d97c257b7949511d7ae0cb0f91d7c9f14da3db22b701bb176a",
+			"source": "resources/characters/bmr/judge.webp"
+		},
+		"icons/bmr/judge_e.webp": {
+			"bytes": 17978,
+			"sha256": "ca68a75a5e2e3adce28d5fc2d6a04556e08eed9c936a5cafefd2307397cfe9f1",
+			"source": "resources/characters/bmr/judge_e.webp"
+		},
+		"icons/bmr/judge_g.webp": {
+			"bytes": 18584,
+			"sha256": "01e0b998d1c54491f650535879f59965657ec612c4216e709230a95f6d2c7bc2",
+			"source": "resources/characters/bmr/judge_g.webp"
+		},
+		"icons/bmr/lunatic_e.webp": {
+			"bytes": 31650,
+			"sha256": "0e78304be4ae78a7b9233e3a97ffadc37360182bf83cbfa6f07a8496f3950a86",
+			"source": "resources/characters/bmr/lunatic_e.webp"
+		},
+		"icons/bmr/lunatic_g.webp": {
+			"bytes": 33486,
+			"sha256": "498e9f59921ada1bfb98d8fe1ea5ce5d0209629c340fe6770c1ce93447a488ac",
+			"source": "resources/characters/bmr/lunatic_g.webp"
+		},
+		"icons/bmr/mastermind_e.webp": {
+			"bytes": 18548,
+			"sha256": "657b4e62952d7d131161f2d8f9f9ceafccb335d054bdf4a6b72375e7e88c5a0a",
+			"source": "resources/characters/bmr/mastermind_e.webp"
+		},
+		"icons/bmr/mastermind_g.webp": {
+			"bytes": 19792,
+			"sha256": "110d52b9b340459684f2e680fb04946f5ca11d9509006c2a2ddbbdcae7d1ef04",
+			"source": "resources/characters/bmr/mastermind_g.webp"
+		},
+		"icons/bmr/matron.webp": {
+			"bytes": 16438,
+			"sha256": "be64f7153ae1f61ceacc56b309e2097679138aef883f67c0bdb86f1ffce1b201",
+			"source": "resources/characters/bmr/matron.webp"
+		},
+		"icons/bmr/matron_e.webp": {
+			"bytes": 16014,
+			"sha256": "634af9e943611998e82ba506f4735e66f9e045b781dc71644d5b1fed789c448e",
+			"source": "resources/characters/bmr/matron_e.webp"
+		},
+		"icons/bmr/matron_g.webp": {
+			"bytes": 16122,
+			"sha256": "7848d5331b9ffe3a1df059c12e214c88f3f4ea0ff72b76cca3b8c1e54cbfb9b9",
+			"source": "resources/characters/bmr/matron_g.webp"
+		},
+		"icons/bmr/minstrel_e.webp": {
+			"bytes": 26500,
+			"sha256": "75f861315512eab7a2c73d9220eb29e7a77daf834043ad3892d30acea8636406",
+			"source": "resources/characters/bmr/minstrel_e.webp"
+		},
+		"icons/bmr/minstrel_g.webp": {
+			"bytes": 27858,
+			"sha256": "e8546abb5bd4c29c5a0d2673127d28d30c52de73cb22d974af9e784e57e8f252",
+			"source": "resources/characters/bmr/minstrel_g.webp"
+		},
+		"icons/bmr/moonchild_e.webp": {
+			"bytes": 21188,
+			"sha256": "f10533ebc4be9f009a84a4bcf26ce742574d58df337216557aa93c8d04df06a5",
+			"source": "resources/characters/bmr/moonchild_e.webp"
+		},
+		"icons/bmr/moonchild_g.webp": {
+			"bytes": 22206,
+			"sha256": "5ff77d6210799d348be8e99491cc3eae6afb4a55733feb0c9e02780252cfdc2d",
+			"source": "resources/characters/bmr/moonchild_g.webp"
+		},
+		"icons/bmr/pacifist_e.webp": {
+			"bytes": 23800,
+			"sha256": "830986702d31ea0a719ef421101c43c36ce76ac842ac2c16dcf361f7e72b0ed2",
+			"source": "resources/characters/bmr/pacifist_e.webp"
+		},
+		"icons/bmr/pacifist_g.webp": {
+			"bytes": 24742,
+			"sha256": "031d23bb5106ebed69a8d650178730bffb85cf6b0da190f516f3c195448ef5f5",
+			"source": "resources/characters/bmr/pacifist_g.webp"
+		},
+		"icons/bmr/po_e.webp": {
+			"bytes": 17000,
+			"sha256": "373fdd662bd31540f3b20fc6cd308e3a56b8e184cfc257f21b65d50072a6d000",
+			"source": "resources/characters/bmr/po_e.webp"
+		},
+		"icons/bmr/po_g.webp": {
+			"bytes": 18050,
+			"sha256": "d344760c699ccad82f4db4c1f1b63ce4a710e67c921134c9b0dc1f86a51347ba",
+			"source": "resources/characters/bmr/po_g.webp"
+		},
+		"icons/bmr/professor_e.webp": {
+			"bytes": 35298,
+			"sha256": "c6b3703c3dd3d011e5efac91d9e3570aa59afd14e0c70dec9e4126f55fce377d",
+			"source": "resources/characters/bmr/professor_e.webp"
+		},
+		"icons/bmr/professor_g.webp": {
+			"bytes": 36868,
+			"sha256": "03de82e09a4f1fee3e09bcd63b81d8b2fd5fbe1cb024da76d9d1c9ed5b85b2b1",
+			"source": "resources/characters/bmr/professor_g.webp"
+		},
+		"icons/bmr/pukka_e.webp": {
+			"bytes": 22676,
+			"sha256": "d99478f8851ba5d9d6291a8e0b47d3f3d7527499e94bc968b7e811ad30939605",
+			"source": "resources/characters/bmr/pukka_e.webp"
+		},
+		"icons/bmr/pukka_g.webp": {
+			"bytes": 23768,
+			"sha256": "76a1254b4dc5b85ee0176f81432540e9d818f30f9948d578476f75bdce466cb9",
+			"source": "resources/characters/bmr/pukka_g.webp"
+		},
+		"icons/bmr/sailor_e.webp": {
+			"bytes": 26754,
+			"sha256": "7a47a1d5764c7eecfb3b2e5480a56af0ba120fb1e8def2897d88d99bcdde4570",
+			"source": "resources/characters/bmr/sailor_e.webp"
+		},
+		"icons/bmr/sailor_g.webp": {
+			"bytes": 27700,
+			"sha256": "d92cbf0cc51535e79f40344da3f474c5432fc5d105a7c6be13721dd54ca060da",
+			"source": "resources/characters/bmr/sailor_g.webp"
+		},
+		"icons/bmr/shabaloth_e.webp": {
+			"bytes": 20774,
+			"sha256": "6f3f1e16fa26ea7b1ab76de7d56af179e0bf6628d35439b3304d0c83ec55fe0a",
+			"source": "resources/characters/bmr/shabaloth_e.webp"
+		},
+		"icons/bmr/shabaloth_g.webp": {
+			"bytes": 22144,
+			"sha256": "927d18405b8c61d214da9f63dfccda6b3213fd124c1400f77c1c23ffc704f3db",
+			"source": "resources/characters/bmr/shabaloth_g.webp"
+		},
+		"icons/bmr/tealady_e.webp": {
+			"bytes": 22746,
+			"sha256": "8da9e04922814eb9f36b0333cdaf171b6182b15cc4b9e91ea2873edb966e15f9",
+			"source": "resources/characters/bmr/tealady_e.webp"
+		},
+		"icons/bmr/tealady_g.webp": {
+			"bytes": 23450,
+			"sha256": "0215009f6ad3c2034070aa3f38acce7b07b406b238d52438753719806f42ef45",
+			"source": "resources/characters/bmr/tealady_g.webp"
+		},
+		"icons/bmr/tinker_e.webp": {
+			"bytes": 17666,
+			"sha256": "cd67aa7e71149500a023c52481379d98c251f0828bf884f1f2a378eb01e63f0a",
+			"source": "resources/characters/bmr/tinker_e.webp"
+		},
+		"icons/bmr/tinker_g.webp": {
+			"bytes": 18620,
+			"sha256": "0555b864a8043a99f40414f05515f6b5cc0c03a24abdaf41009434bee822fd3d",
+			"source": "resources/characters/bmr/tinker_g.webp"
+		},
+		"icons/bmr/voudon.webp": {
+			"bytes": 24450,
+			"sha256": "fcc90d90022786f26547d733c9b12bff898cc0475d19a837a1b24fff6abd2a8c",
+			"source": "resources/characters/bmr/voudon.webp"
+		},
+		"icons/bmr/voudon_e.webp": {
+			"bytes": 23106,
+			"sha256": "1f5f153bce0922fba8a087dfa1e783e02dbdf8223f934f24fc3743320f2136a2",
+			"source": "resources/characters/bmr/voudon_e.webp"
+		},
+		"icons/bmr/voudon_g.webp": {
+			"bytes": 23462,
+			"sha256": "f456aea66c13150cd7fac06324b4dee2db571b64934885550162d2b6eece0d82",
+			"source": "resources/characters/bmr/voudon_g.webp"
+		},
+		"icons/bmr/zombuul_e.webp": {
+			"bytes": 21370,
+			"sha256": "c66372e56be1438f188eab1b350d936d16aa086367b04446b1b884d71ebb72ac",
+			"source": "resources/characters/bmr/zombuul_e.webp"
+		},
+		"icons/bmr/zombuul_g.webp": {
+			"bytes": 22338,
+			"sha256": "080565b0f27d76226c0d320cad15db6c9a200feb74d8d0093dd920fc63af6c6f",
+			"source": "resources/characters/bmr/zombuul_g.webp"
+		},
+		"icons/carousel/acrobat_e.webp": {
+			"bytes": 23646,
+			"sha256": "540c477fc43b681ae2b04e9c840d38f91498147fb6d75798cbfb356bac7f5018",
+			"source": "resources/characters/carousel/acrobat_e.webp"
+		},
+		"icons/carousel/acrobat_g.webp": {
+			"bytes": 24448,
+			"sha256": "918fc5b6db2311cf2289b15876465fb54dab21b0437eb17293a7b123e7685eda",
+			"source": "resources/characters/carousel/acrobat_g.webp"
+		},
+		"icons/carousel/alchemist_e.webp": {
+			"bytes": 23652,
+			"sha256": "2b9a8a121f5c17754fd2ad6c9ad770503fecbff3d5ad521757cbf9fe8a48a566",
+			"source": "resources/characters/carousel/alchemist_e.webp"
+		},
+		"icons/carousel/alchemist_g.webp": {
+			"bytes": 24950,
+			"sha256": "1df724b7777590620d22861558517f5f830693e313e3d2967313f51e24c1ba39",
+			"source": "resources/characters/carousel/alchemist_g.webp"
+		},
+		"icons/carousel/alhadikhia_e.webp": {
+			"bytes": 18634,
+			"sha256": "7ade4fd07c270c0c414c594a9ec0e0bb5f8b904309347228f8064f725b2e39a1",
+			"source": "resources/characters/carousel/alhadikhia_e.webp"
+		},
+		"icons/carousel/alhadikhia_g.webp": {
+			"bytes": 19754,
+			"sha256": "f45cffef878079dae07044679a7b2193511ca602c2d16ae06d608390cbea9c56",
+			"source": "resources/characters/carousel/alhadikhia_g.webp"
+		},
+		"icons/carousel/alsaahir_e.webp": {
+			"bytes": 20296,
+			"sha256": "65e642c8c864b0e3e0f509eff56b3c40ddb59a9444bdd59e2dee43227b6374cb",
+			"source": "resources/characters/carousel/alsaahir_e.webp"
+		},
+		"icons/carousel/alsaahir_g.webp": {
+			"bytes": 20808,
+			"sha256": "a0f37b66a5026c36c2f5d62baa5e24f806f73353af8ff6b0a1cb64d54bdf7a36",
+			"source": "resources/characters/carousel/alsaahir_g.webp"
+		},
+		"icons/carousel/amnesiac_e.webp": {
+			"bytes": 21942,
+			"sha256": "72e390fa764b9d8bd152ab202024c181a82788641cc4ac3cbdc8fe5f2e6313df",
+			"source": "resources/characters/carousel/amnesiac_e.webp"
+		},
+		"icons/carousel/amnesiac_g.webp": {
+			"bytes": 23432,
+			"sha256": "3a01286091de8c533fe56a051f28eda86d9d7161664a0033eb6db9a8699cc5d9",
+			"source": "resources/characters/carousel/amnesiac_g.webp"
+		},
+		"icons/carousel/atheist_e.webp": {
+			"bytes": 20914,
+			"sha256": "749f919a56d438c7008ddc5f73da2b95a19a3f5c8ef610fe822fb2a09749dcad",
+			"source": "resources/characters/carousel/atheist_e.webp"
+		},
+		"icons/carousel/atheist_g.webp": {
+			"bytes": 21830,
+			"sha256": "752465edf7384e86325a090b23511aeab6b7224d565d9e0640e270c3b847650b",
+			"source": "resources/characters/carousel/atheist_g.webp"
+		},
+		"icons/carousel/balloonist_e.webp": {
+			"bytes": 17492,
+			"sha256": "7002f91a76b9ab5d150ada0cac8fb1d2122598886c4fdc37152cbf33be50e3b1",
+			"source": "resources/characters/carousel/balloonist_e.webp"
+		},
+		"icons/carousel/balloonist_g.webp": {
+			"bytes": 18598,
+			"sha256": "dff5510427b752a342f017e4f9b96c4f8ca76dfd1bcc550901f13278b37a6eca",
+			"source": "resources/characters/carousel/balloonist_g.webp"
+		},
+		"icons/carousel/banshee_e.webp": {
+			"bytes": 13898,
+			"sha256": "5cdd85162b48e4cb76e33214463671593a771267fadf2dff0cfc8b936bf74afa",
+			"source": "resources/characters/carousel/banshee_e.webp"
+		},
+		"icons/carousel/banshee_g.webp": {
+			"bytes": 14030,
+			"sha256": "88225d8923e9a821366a88eccaea52f6a482ef514f4364ef24a93ce68a6c468a",
+			"source": "resources/characters/carousel/banshee_g.webp"
+		},
+		"icons/carousel/boffin_e.webp": {
+			"bytes": 16032,
+			"sha256": "b7da4bc6c6600d8f38af17c06b7321fe317549f8d1af400d98607e6b73882ea7",
+			"source": "resources/characters/carousel/boffin_e.webp"
+		},
+		"icons/carousel/boffin_g.webp": {
+			"bytes": 16772,
+			"sha256": "ba5aed8faa35f1a2c2138010b64e0bcc0ec08301271b077f012b8e13b538c236",
+			"source": "resources/characters/carousel/boffin_g.webp"
+		},
+		"icons/carousel/boomdandy_e.webp": {
+			"bytes": 19190,
+			"sha256": "ee8eb785d7a977974509b83585332679d79c319f7fa14c0ca9dabc826b4d7158",
+			"source": "resources/characters/carousel/boomdandy_e.webp"
+		},
+		"icons/carousel/boomdandy_g.webp": {
+			"bytes": 21112,
+			"sha256": "15c8f15ca2e27b4203b21dfc952c41e0c519cd42c3fbe7c9498a18fad7fef6d2",
+			"source": "resources/characters/carousel/boomdandy_g.webp"
+		},
+		"icons/carousel/bountyhunter_e.webp": {
+			"bytes": 18398,
+			"sha256": "609ac3e48b04665e44e8e86495ce917554b4a3b81d3f04cc46193883e4d483f3",
+			"source": "resources/characters/carousel/bountyhunter_e.webp"
+		},
+		"icons/carousel/bountyhunter_g.webp": {
+			"bytes": 19736,
+			"sha256": "51458a3c09060ac96abac49073a6fbd38869c0535514044e0e13c7b8425a59e5",
+			"source": "resources/characters/carousel/bountyhunter_g.webp"
+		},
+		"icons/carousel/cacklejack.webp": {
+			"bytes": 13732,
+			"sha256": "26cff63a550988dc36411958be792ea354196070b6a447ac5e43c1da198b96f0",
+			"source": "resources/characters/carousel/cacklejack.webp"
+		},
+		"icons/carousel/cacklejack_e.webp": {
+			"bytes": 13030,
+			"sha256": "ee23de20ac6d26421eed31e57031f912cea0c16b58616018851042123d51a39c",
+			"source": "resources/characters/carousel/cacklejack_e.webp"
+		},
+		"icons/carousel/cacklejack_g.webp": {
+			"bytes": 12992,
+			"sha256": "02fa3de75efc720dbe2e8d271d9a9ba057787a02bf0956d820ed63206c763724",
+			"source": "resources/characters/carousel/cacklejack_g.webp"
+		},
+		"icons/carousel/cannibal_e.webp": {
+			"bytes": 17680,
+			"sha256": "d14f4836408470e08705f757ebeaa4b58d36ec0fca49b1740ceafcc6bbc688e5",
+			"source": "resources/characters/carousel/cannibal_e.webp"
+		},
+		"icons/carousel/cannibal_g.webp": {
+			"bytes": 18680,
+			"sha256": "7b46b8b277b23f581f417b86e581706d7153911ebb57356bd17081f8d49899d2",
+			"source": "resources/characters/carousel/cannibal_g.webp"
+		},
+		"icons/carousel/choirboy_e.webp": {
+			"bytes": 19404,
+			"sha256": "3498d019b55b474abc7cda177a3fc497d55f20914816733d5e64eefd6f870fc3",
+			"source": "resources/characters/carousel/choirboy_e.webp"
+		},
+		"icons/carousel/choirboy_g.webp": {
+			"bytes": 20262,
+			"sha256": "e140759a08087876477c6d6bd185daa46f39393ed3c06fee05d04cd9f287a8f2",
+			"source": "resources/characters/carousel/choirboy_g.webp"
+		},
+		"icons/carousel/cultleader_e.webp": {
+			"bytes": 16666,
+			"sha256": "40aaeab31b41c3f82f3c6b73df86d4a437097d2119cba4eee2b21edf0362f357",
+			"source": "resources/characters/carousel/cultleader_e.webp"
+		},
+		"icons/carousel/cultleader_g.webp": {
+			"bytes": 17768,
+			"sha256": "0743b63df03d4cddb6d26cd72544e4d899f89049501140f8c4a4f5b857bf7d77",
+			"source": "resources/characters/carousel/cultleader_g.webp"
+		},
+		"icons/carousel/damsel_e.webp": {
+			"bytes": 16390,
+			"sha256": "1f87f4e1da8d24c4ec4f4557da7ee2066701dcb9aa19ef6d8632f33a5c3ad5af",
+			"source": "resources/characters/carousel/damsel_e.webp"
+		},
+		"icons/carousel/damsel_g.webp": {
+			"bytes": 17398,
+			"sha256": "e4f7778ac82655675587198ff550f86408d702a08f42b39233b8cdd5c505f568",
+			"source": "resources/characters/carousel/damsel_g.webp"
+		},
+		"icons/carousel/deusexfiasco.webp": {
+			"bytes": 13906,
+			"sha256": "986a77e9a82c9754daaa7c3b081da666e804f01eddeaba4a26ce20c49f9dde9c",
+			"source": "resources/characters/carousel/deusexfiasco.webp"
+		},
+		"icons/carousel/engineer_e.webp": {
+			"bytes": 20998,
+			"sha256": "4293462811bf523199bff4b8e689ac520ff9ffea3ce9341c3b3ea14357d5180f",
+			"source": "resources/characters/carousel/engineer_e.webp"
+		},
+		"icons/carousel/engineer_g.webp": {
+			"bytes": 23110,
+			"sha256": "5f520c856515c95710da5f7a9723117fb692ede2f70c3312c6b80feea3004edf",
+			"source": "resources/characters/carousel/engineer_g.webp"
+		},
+		"icons/carousel/farmer_e.webp": {
+			"bytes": 21492,
+			"sha256": "47abdbfd69db6cd9e1f57d6dc03f03eddcd90669583fdf4a2170bc254c55bc36",
+			"source": "resources/characters/carousel/farmer_e.webp"
+		},
+		"icons/carousel/farmer_g.webp": {
+			"bytes": 22542,
+			"sha256": "b456e7de540dab475c92583dd8db2757a14045694bed0abef08c86d1c963761a",
+			"source": "resources/characters/carousel/farmer_g.webp"
+		},
+		"icons/carousel/fearmonger_e.webp": {
+			"bytes": 17950,
+			"sha256": "3dcdce6e32227dfdcb3ff6e25e38390258f4df4d20a737683b9b8059542986fd",
+			"source": "resources/characters/carousel/fearmonger_e.webp"
+		},
+		"icons/carousel/fearmonger_g.webp": {
+			"bytes": 19030,
+			"sha256": "27be0868dd88e3284eb146c522a928e5491c9185e4972d3fe5067b6e2de8307a",
+			"source": "resources/characters/carousel/fearmonger_g.webp"
+		},
+		"icons/carousel/ferryman.webp": {
+			"bytes": 17664,
+			"sha256": "3b51bee5e7ff0d1398491174563be1e65a38a1c166e3ba67a1330d91d70c2a11",
+			"source": "resources/characters/carousel/ferryman.webp"
+		},
+		"icons/carousel/fisherman_e.webp": {
+			"bytes": 19018,
+			"sha256": "1b408d397bbfee5d07e351f4752864b02d0cbd85c451f8adce9599cc720104e5",
+			"source": "resources/characters/carousel/fisherman_e.webp"
+		},
+		"icons/carousel/fisherman_g.webp": {
+			"bytes": 19910,
+			"sha256": "2484ff1e626cfd24453a452c18764e7f7d4c44cf429bd438ce450691318b7e3e",
+			"source": "resources/characters/carousel/fisherman_g.webp"
+		},
+		"icons/carousel/gangster.webp": {
+			"bytes": 18366,
+			"sha256": "51f422b5547b1c232647a04efd71197d9f13b9aa4f77d66018340a9468a8e313",
+			"source": "resources/characters/carousel/gangster.webp"
+		},
+		"icons/carousel/gangster_e.webp": {
+			"bytes": 17970,
+			"sha256": "3e5ecdfe1d0d4436a2b2ca530972b69a1e5517e222ff01f0646cfd2ba7c118ed",
+			"source": "resources/characters/carousel/gangster_e.webp"
+		},
+		"icons/carousel/gangster_g.webp": {
+			"bytes": 18086,
+			"sha256": "4052ddbc789bb0ff9e23ff8e55e8b493a8ab2d402faef1ccc226d05a98607a58",
+			"source": "resources/characters/carousel/gangster_g.webp"
+		},
+		"icons/carousel/general_e.webp": {
+			"bytes": 17080,
+			"sha256": "0c19dce8498ff0524b240f981c39947883c58d2f2d4f0743be17e0ba0c51229e",
+			"source": "resources/characters/carousel/general_e.webp"
+		},
+		"icons/carousel/general_g.webp": {
+			"bytes": 18510,
+			"sha256": "4e8b0d8914541383926e879dab178f1daa5de0ce90f717bcc69793c52b7b2328",
+			"source": "resources/characters/carousel/general_g.webp"
+		},
+		"icons/carousel/gnome.webp": {
+			"bytes": 18082,
+			"sha256": "102c4abe6e03721ddd36204f2ad550c0ad38eb95544e857ac37dc66c97f56b3b",
+			"source": "resources/characters/carousel/gnome.webp"
+		},
+		"icons/carousel/gnome_e.webp": {
+			"bytes": 17664,
+			"sha256": "e670bacda802fc453a481d15b5a625aa747379d466f56eed8f51da28d95cee0f",
+			"source": "resources/characters/carousel/gnome_e.webp"
+		},
+		"icons/carousel/gnome_g.webp": {
+			"bytes": 17594,
+			"sha256": "a152b582c314e22c2b758462a5bbc9cc113b727e2907a56627bcf5d9b3ad6883",
+			"source": "resources/characters/carousel/gnome_g.webp"
+		},
+		"icons/carousel/goblin_e.webp": {
+			"bytes": 18014,
+			"sha256": "8a348bb44df98e1acd364a92d32307dd93eb8e0d828d0abe0db20758864f39f4",
+			"source": "resources/characters/carousel/goblin_e.webp"
+		},
+		"icons/carousel/goblin_g.webp": {
+			"bytes": 18860,
+			"sha256": "85557003c195c29350c41fb0a8ae72711daf6c5c9a60da6f3f5f6ce6bb61df04",
+			"source": "resources/characters/carousel/goblin_g.webp"
+		},
+		"icons/carousel/golem_e.webp": {
+			"bytes": 20608,
+			"sha256": "e827fff2c716456fbe4ba22f9accaabb3d9d8fea5822aa9b4719fb37d3d3e245",
+			"source": "resources/characters/carousel/golem_e.webp"
+		},
+		"icons/carousel/golem_g.webp": {
+			"bytes": 21834,
+			"sha256": "cfb83a9a8adc0ff622f3c0e0ff41605d59ceb524601288f6abf67bcdcbedae48",
+			"source": "resources/characters/carousel/golem_g.webp"
+		},
+		"icons/carousel/harpy_e.webp": {
+			"bytes": 15862,
+			"sha256": "77a12af82d45743fa2e5231ab0768f1811f92cd70ecfa74d197bf6be6ccbb824",
+			"source": "resources/characters/carousel/harpy_e.webp"
+		},
+		"icons/carousel/harpy_g.webp": {
+			"bytes": 16368,
+			"sha256": "eec76c91acaba9ac1f104383641610b451762fa53f74c236af0f092c39595507",
+			"source": "resources/characters/carousel/harpy_g.webp"
+		},
+		"icons/carousel/hatter_e.webp": {
+			"bytes": 16822,
+			"sha256": "0d06b04b169d4da3c685e9e29b8b589705bcde95d4b90d53721df229f3635908",
+			"source": "resources/characters/carousel/hatter_e.webp"
+		},
+		"icons/carousel/hatter_g.webp": {
+			"bytes": 17822,
+			"sha256": "e6805a3b4c9539681e8dea154c13c0bab102413567c9231bd0e34ef27dc2ce12",
+			"source": "resources/characters/carousel/hatter_g.webp"
+		},
+		"icons/carousel/heretic_e.webp": {
+			"bytes": 18166,
+			"sha256": "bdae6d0d1c514f399b919dc2272164129a757d4a569feea41a1c79fb1f38b15d",
+			"source": "resources/characters/carousel/heretic_e.webp"
+		},
+		"icons/carousel/heretic_g.webp": {
+			"bytes": 19026,
+			"sha256": "fad666122b82d3990147fae7042d7b475237a53234833b3aeb19bf8184be6eb8",
+			"source": "resources/characters/carousel/heretic_g.webp"
+		},
+		"icons/carousel/hermit_e.webp": {
+			"bytes": 8628,
+			"sha256": "375c5fd6b96f2465cf1487a3e6a178a3eb19732582cdd59f8da0ecb0a4853eb2",
+			"source": "resources/characters/carousel/hermit_e.webp"
+		},
+		"icons/carousel/hermit_g.webp": {
+			"bytes": 10782,
+			"sha256": "b9a99e4c4932597e74c80229bb6fa013c42e82bc98a13eba80740a1fe23ff4b4",
+			"source": "resources/characters/carousel/hermit_g.webp"
+		},
+		"icons/carousel/highpriestess_e.webp": {
+			"bytes": 12114,
+			"sha256": "7936ab8ce4c344fa8134e19ff6c50d8eabfc5f35a87c73a054a4e59080727226",
+			"source": "resources/characters/carousel/highpriestess_e.webp"
+		},
+		"icons/carousel/highpriestess_g.webp": {
+			"bytes": 12338,
+			"sha256": "4cb64259a86bc7ef9f72c6b6bf596b1985d9819312308bd39dbcef70096af745",
+			"source": "resources/characters/carousel/highpriestess_g.webp"
+		},
+		"icons/carousel/huntsman_e.webp": {
+			"bytes": 17974,
+			"sha256": "87a2314e408c271b228196fabbf7424232857e0a06becd5b411986748d9162e6",
+			"source": "resources/characters/carousel/huntsman_e.webp"
+		},
+		"icons/carousel/huntsman_g.webp": {
+			"bytes": 18866,
+			"sha256": "3ea4936d14ea19ce93ae4714a8d813283355caafb8fbab101d2cfbb5ee1ce0df",
+			"source": "resources/characters/carousel/huntsman_g.webp"
+		},
+		"icons/carousel/kazali_e.webp": {
+			"bytes": 19900,
+			"sha256": "c8310746c95c5723302c5eeb3c1d659bca7b0d1a82506eb74bc4dceb5b935e6f",
+			"source": "resources/characters/carousel/kazali_e.webp"
+		},
+		"icons/carousel/kazali_g.webp": {
+			"bytes": 20372,
+			"sha256": "088e6e4d7f6d224a8461a8b900e5183816b55c7317558788d0df19138c3fb8f2",
+			"source": "resources/characters/carousel/kazali_g.webp"
+		},
+		"icons/carousel/king_e.webp": {
+			"bytes": 24954,
+			"sha256": "cc652e3c2a32317ad59eecb2b23fc7ebbd1f625efe761f714bfc3ed4bb2524b9",
+			"source": "resources/characters/carousel/king_e.webp"
+		},
+		"icons/carousel/king_g.webp": {
+			"bytes": 26162,
+			"sha256": "a193d9803977d6f674270d5324a503bae5b8b7781134a2437a91275d525267b5",
+			"source": "resources/characters/carousel/king_g.webp"
+		},
+		"icons/carousel/knight_e.webp": {
+			"bytes": 18998,
+			"sha256": "b2b921741bf76245b6f910425d35add9d4cd1e6ed0cd9eef4faba17270c8022a",
+			"source": "resources/characters/carousel/knight_e.webp"
+		},
+		"icons/carousel/knight_g.webp": {
+			"bytes": 20680,
+			"sha256": "141a63b711c2a54070b7cd94a98d71cbc4d78162a3021d51cc979f2d5a4c49c6",
+			"source": "resources/characters/carousel/knight_g.webp"
+		},
+		"icons/carousel/legion_e.webp": {
+			"bytes": 26258,
+			"sha256": "5ada9965bb1928fbc2205e21e5ef2ab3cdb87c132975a392333ca3d8ca7c503b",
+			"source": "resources/characters/carousel/legion_e.webp"
+		},
+		"icons/carousel/legion_g.webp": {
+			"bytes": 27998,
+			"sha256": "7adaf932dc8a488d3eb3e0e327bef52e852281c7bd5bbb759f96806c60d04b4c",
+			"source": "resources/characters/carousel/legion_g.webp"
+		},
+		"icons/carousel/leviathan_e.webp": {
+			"bytes": 26534,
+			"sha256": "282f6880cf256a74f73cd232123ffbe99bfaf295d20bc787ee23a5bd3de3c650",
+			"source": "resources/characters/carousel/leviathan_e.webp"
+		},
+		"icons/carousel/leviathan_g.webp": {
+			"bytes": 28006,
+			"sha256": "44b7253d555307ad4a2c1f006d203fccfaaac92c104a273fde2bb319df9eb395",
+			"source": "resources/characters/carousel/leviathan_g.webp"
+		},
+		"icons/carousel/lilmonsta_e.webp": {
+			"bytes": 20156,
+			"sha256": "25a4c2651f9b53b1a86e8aa82dadc24b49352573767a7112120455e1a218dd11",
+			"source": "resources/characters/carousel/lilmonsta_e.webp"
+		},
+		"icons/carousel/lilmonsta_g.webp": {
+			"bytes": 21668,
+			"sha256": "363d064fa6e2617edf7106de6a05bdb2406db20fbd9b024fc8db6e82e1ee4d2b",
+			"source": "resources/characters/carousel/lilmonsta_g.webp"
+		},
+		"icons/carousel/lleech_e.webp": {
+			"bytes": 15860,
+			"sha256": "b96da230f41cca07f7d649e6d25a0ec98439c551758886c5fece511aac620e8f",
+			"source": "resources/characters/carousel/lleech_e.webp"
+		},
+		"icons/carousel/lleech_g.webp": {
+			"bytes": 16536,
+			"sha256": "256ee45ce9f40e742119d0ebdaff9c13d34c6b55c80a15e31d2b9b825b60f578",
+			"source": "resources/characters/carousel/lleech_g.webp"
+		},
+		"icons/carousel/lordoftyphon_e.webp": {
+			"bytes": 20376,
+			"sha256": "41babafe86b60e8f637f8e971210504a2a6a6da6f23401d093914da6006e5377",
+			"source": "resources/characters/carousel/lordoftyphon_e.webp"
+		},
+		"icons/carousel/lordoftyphon_g.webp": {
+			"bytes": 21290,
+			"sha256": "9ce7b85801066e405a1e59129b71d540df46ca09183d27011b9a5602c8bab3d0",
+			"source": "resources/characters/carousel/lordoftyphon_g.webp"
+		},
+		"icons/carousel/lycanthrope_e.webp": {
+			"bytes": 23994,
+			"sha256": "3556747038c9939f53d0de6908bf5138accfd429f9aba8350e94af2279d4af6a",
+			"source": "resources/characters/carousel/lycanthrope_e.webp"
+		},
+		"icons/carousel/lycanthrope_g.webp": {
+			"bytes": 25512,
+			"sha256": "11e7455b0f6d113a7e6861aa5f3fd9f78588c9d401f191c0fbe81e51db880342",
+			"source": "resources/characters/carousel/lycanthrope_g.webp"
+		},
+		"icons/carousel/magician_e.webp": {
+			"bytes": 22732,
+			"sha256": "a5e7be16adef7bd1ec1bd671b71f6bf928b99c597f36a10cb67af7a798ed9d89",
+			"source": "resources/characters/carousel/magician_e.webp"
+		},
+		"icons/carousel/magician_g.webp": {
+			"bytes": 24356,
+			"sha256": "7bd50536ffe01c86752af181453c59031dcc566d93ca1223532fecd68b510206",
+			"source": "resources/characters/carousel/magician_g.webp"
+		},
+		"icons/carousel/marionette_e.webp": {
+			"bytes": 15214,
+			"sha256": "f4a8f866a1aa4b527a984634a2eabe4787f2c05cdcbc3bed7f599d9401eeef45",
+			"source": "resources/characters/carousel/marionette_e.webp"
+		},
+		"icons/carousel/marionette_g.webp": {
+			"bytes": 16228,
+			"sha256": "8a38cdaeaa35906e15e420240da2a9db6c29c0d688658aa2719c4f75de1953b6",
+			"source": "resources/characters/carousel/marionette_g.webp"
+		},
+		"icons/carousel/mezepheles_e.webp": {
+			"bytes": 20072,
+			"sha256": "bf317bb72d59685de8181b04b5ad1f5c7ddb134c9dc26a0b502c769c95af3a10",
+			"source": "resources/characters/carousel/mezepheles_e.webp"
+		},
+		"icons/carousel/mezepheles_g.webp": {
+			"bytes": 20808,
+			"sha256": "046a5e30144e18c7dfce401b9659bb045e1acbdf5274abcd97d87ba3f23be522",
+			"source": "resources/characters/carousel/mezepheles_g.webp"
+		},
+		"icons/carousel/nightwatchman_e.webp": {
+			"bytes": 13380,
+			"sha256": "9137178e32a94ed56174a648d170e7f87f1a6b564a834a7af70cc805089207f8",
+			"source": "resources/characters/carousel/nightwatchman_e.webp"
+		},
+		"icons/carousel/nightwatchman_g.webp": {
+			"bytes": 13426,
+			"sha256": "8892f488adacc3829a17fc6faeab4fd08cdc33596600be87b569830480d2eb52",
+			"source": "resources/characters/carousel/nightwatchman_g.webp"
+		},
+		"icons/carousel/noble_e.webp": {
+			"bytes": 40916,
+			"sha256": "bc40226a48dbaa7250526a64243fc2ac32be3f5f11c42b8d91daa8ca215b15c4",
+			"source": "resources/characters/carousel/noble_e.webp"
+		},
+		"icons/carousel/noble_g.webp": {
+			"bytes": 42302,
+			"sha256": "5ce6764d36f2a2091eb36fe59550a0be800c5e10d4f9e0a03c546f35109473e2",
+			"source": "resources/characters/carousel/noble_g.webp"
+		},
+		"icons/carousel/ogre_e.webp": {
+			"bytes": 8696,
+			"sha256": "922d828dcffec7cd9888589aac51f787f86c9efca6c5f90a84512c2c8cb58478",
+			"source": "resources/characters/carousel/ogre_e.webp"
+		},
+		"icons/carousel/ogre_g.webp": {
+			"bytes": 8632,
+			"sha256": "aff819eecfd7e73411fef3ae8007eb72f640fd7d25d7d76ec5f3c0aee1282149",
+			"source": "resources/characters/carousel/ogre_g.webp"
+		},
+		"icons/carousel/ojo_e.webp": {
+			"bytes": 23652,
+			"sha256": "0d6e292356cebfb4510e9587449cdb3d2330a2b431d501b5845a8b85b96945c2",
+			"source": "resources/characters/carousel/ojo_e.webp"
+		},
+		"icons/carousel/ojo_g.webp": {
+			"bytes": 25434,
+			"sha256": "32d80e6fb8e39b31a8863bcd096d3511442e48583ac759dd2bdee3c6ee3b9b19",
+			"source": "resources/characters/carousel/ojo_g.webp"
+		},
+		"icons/carousel/organgrinder_e.webp": {
+			"bytes": 19238,
+			"sha256": "7fc46d73438ed4a895ab0ecfcea5f95fcd8a5292a142ff70395b54d8104f43e8",
+			"source": "resources/characters/carousel/organgrinder_e.webp"
+		},
+		"icons/carousel/organgrinder_g.webp": {
+			"bytes": 20754,
+			"sha256": "d7dd22ba94d1176f1240fbf626a5472287086a1a77f362db9be888a3fedaa5fb",
+			"source": "resources/characters/carousel/organgrinder_g.webp"
+		},
+		"icons/carousel/pixie_e.webp": {
+			"bytes": 19354,
+			"sha256": "8ef46f1d40b75438c6638cf78abc872d94392ff2cffe1a7a50a4f3d42848ec36",
+			"source": "resources/characters/carousel/pixie_e.webp"
+		},
+		"icons/carousel/pixie_g.webp": {
+			"bytes": 20552,
+			"sha256": "22e42bbfd4125e7894b4e35861a78cafe2041a1befd9bc0019cea2eacb46c21b",
+			"source": "resources/characters/carousel/pixie_g.webp"
+		},
+		"icons/carousel/plaguedoctor_e.webp": {
+			"bytes": 14088,
+			"sha256": "7cd3f978f852f432d1739d96493e57f570fb059079d04def73fa9723c250eadb",
+			"source": "resources/characters/carousel/plaguedoctor_e.webp"
+		},
+		"icons/carousel/plaguedoctor_g.webp": {
+			"bytes": 14352,
+			"sha256": "f3cf92146f7d27132335679425e93b7d1fec8d0ade04225872658b574aced428",
+			"source": "resources/characters/carousel/plaguedoctor_g.webp"
+		},
+		"icons/carousel/politician_e.webp": {
+			"bytes": 19282,
+			"sha256": "bb7e690ec1d75dc82c15837f56af3f64db5051c710709eead76e3e6698994238",
+			"source": "resources/characters/carousel/politician_e.webp"
+		},
+		"icons/carousel/politician_g.webp": {
+			"bytes": 20496,
+			"sha256": "87934391bced0b09babb32c69c59cf947acbb5ee5157fb1f12da8d33b7c905fb",
+			"source": "resources/characters/carousel/politician_g.webp"
+		},
+		"icons/carousel/poppygrower_e.webp": {
+			"bytes": 27262,
+			"sha256": "8bf729c630f9ec129abecc1d49023568b16bdda89540f0421909a3add0442a6c",
+			"source": "resources/characters/carousel/poppygrower_e.webp"
+		},
+		"icons/carousel/poppygrower_g.webp": {
+			"bytes": 28228,
+			"sha256": "aafa7e9f933261df3252a0533e04cdd72d81409b6b94ca61d2373d68c223b1d6",
+			"source": "resources/characters/carousel/poppygrower_g.webp"
+		},
+		"icons/carousel/preacher_e.webp": {
+			"bytes": 21444,
+			"sha256": "d4b4c6a8d7a9fd6334f222f92e158c164ebbeecfe6309e9d0979896b642267a6",
+			"source": "resources/characters/carousel/preacher_e.webp"
+		},
+		"icons/carousel/preacher_g.webp": {
+			"bytes": 23020,
+			"sha256": "07f68d0d5e7c4db16b5cd9793c9eee14aef57921e67f90e6eb67776c42345d5a",
+			"source": "resources/characters/carousel/preacher_g.webp"
+		},
+		"icons/carousel/princess_e.webp": {
+			"bytes": 21512,
+			"sha256": "65bd7306a447ed5a61fe62520fd3d3c5f6d594ec622ce77e736261a248076268",
+			"source": "resources/characters/carousel/princess_e.webp"
+		},
+		"icons/carousel/princess_g.webp": {
+			"bytes": 22178,
+			"sha256": "571fd922c9355518ea36647cf70b1ae56636ddaadb81f655902d9d96419bfe23",
+			"source": "resources/characters/carousel/princess_g.webp"
+		},
+		"icons/carousel/psychopath_e.webp": {
+			"bytes": 14808,
+			"sha256": "9b8491be6fa50e85a420dade14f833ea062dcf35c2f4832fcc6b35bade4f06ab",
+			"source": "resources/characters/carousel/psychopath_e.webp"
+		},
+		"icons/carousel/psychopath_g.webp": {
+			"bytes": 15564,
+			"sha256": "b5bac296f9a17c59f009e1b085060253cac875af1c0e3545a7fbb7f61999fd67",
+			"source": "resources/characters/carousel/psychopath_g.webp"
+		},
+		"icons/carousel/puzzlemaster_e.webp": {
+			"bytes": 25016,
+			"sha256": "179860d450a30baaef5ef1917844cf770be5bced69b53e2f1a4f643a869cce44",
+			"source": "resources/characters/carousel/puzzlemaster_e.webp"
+		},
+		"icons/carousel/puzzlemaster_g.webp": {
+			"bytes": 26598,
+			"sha256": "22935fcf9170a0b37a62a9feec77bfd353078cfdf2e00e546dd2e238a4566b8d",
+			"source": "resources/characters/carousel/puzzlemaster_g.webp"
+		},
+		"icons/carousel/riot_e.webp": {
+			"bytes": 20384,
+			"sha256": "e19941307e7b5d25d8246e5c2a254008d08d722cd7cfafcc9e86492b13660fd7",
+			"source": "resources/characters/carousel/riot_e.webp"
+		},
+		"icons/carousel/riot_g.webp": {
+			"bytes": 21750,
+			"sha256": "60bdad535087420b51a4a22a570ae5d2af519f67c6e77f0056e595a0128b16cf",
+			"source": "resources/characters/carousel/riot_g.webp"
+		},
+		"icons/carousel/shugenja_e.webp": {
+			"bytes": 23030,
+			"sha256": "e662384338b65c15cf79020677b1d650dac32aeb88a31f314cd2acd6fd3d3002",
+			"source": "resources/characters/carousel/shugenja_e.webp"
+		},
+		"icons/carousel/shugenja_g.webp": {
+			"bytes": 23780,
+			"sha256": "d1e4420c69a0ac0637deaabff138cb1ebe2a2d62ff9e6df8d20cc601a910f897",
+			"source": "resources/characters/carousel/shugenja_g.webp"
+		},
+		"icons/carousel/snitch_e.webp": {
+			"bytes": 19044,
+			"sha256": "c56410500fd1b010ccda255f3e253a49577c7196b73b3b43de2798a7b9c835d1",
+			"source": "resources/characters/carousel/snitch_e.webp"
+		},
+		"icons/carousel/snitch_g.webp": {
+			"bytes": 20574,
+			"sha256": "79582f25541b4302574baecb0119c80dc528af233f4914a2b01659997a155b13",
+			"source": "resources/characters/carousel/snitch_g.webp"
+		},
+		"icons/carousel/steward_e.webp": {
+			"bytes": 17730,
+			"sha256": "c38db519c939ca4cfa97bbee377115f4d627a3b812ca04ca3f05b782672361f7",
+			"source": "resources/characters/carousel/steward_e.webp"
+		},
+		"icons/carousel/steward_g.webp": {
+			"bytes": 18406,
+			"sha256": "f7c43e8c6ad49c98f12954179b407e36b4826e8e9095f8f6e224549450adedc8",
+			"source": "resources/characters/carousel/steward_g.webp"
+		},
+		"icons/carousel/summoner_e.webp": {
+			"bytes": 18456,
+			"sha256": "c9e44432fa53c63906d141dc7ea3c29aa3a94e9be6add0880680259eab76f100",
+			"source": "resources/characters/carousel/summoner_e.webp"
+		},
+		"icons/carousel/summoner_g.webp": {
+			"bytes": 19072,
+			"sha256": "bebd3ee5149e0017f9bdc0dd0839a5157b28319d76f17db0be3707d2c17a8c45",
+			"source": "resources/characters/carousel/summoner_g.webp"
+		},
+		"icons/carousel/villageidiot_e.webp": {
+			"bytes": 15710,
+			"sha256": "2cedd84afde456d8ff3c07b80ccadaa17efef4956c1aa622e4b2b88374aecba6",
+			"source": "resources/characters/carousel/villageidiot_e.webp"
+		},
+		"icons/carousel/villageidiot_g.webp": {
+			"bytes": 16018,
+			"sha256": "04205709e2b3da1ee2d621b6f5b243a7dd319ad11fd86405ee08f732eeff6446",
+			"source": "resources/characters/carousel/villageidiot_g.webp"
+		},
+		"icons/carousel/vizier_e.webp": {
+			"bytes": 18476,
+			"sha256": "5291aa235575eed806520bd1e60056301a95e744d37aa0c75215a325c405ff19",
+			"source": "resources/characters/carousel/vizier_e.webp"
+		},
+		"icons/carousel/vizier_g.webp": {
+			"bytes": 19016,
+			"sha256": "be322ec8aa16f970899190e9f67f2356da80a4d647c28121814d2e277f033e7e",
+			"source": "resources/characters/carousel/vizier_g.webp"
+		},
+		"icons/carousel/widow_e.webp": {
+			"bytes": 27764,
+			"sha256": "f5173bafcb6f3b2f2b91d0c2b038f85e1f2c36fb99b48bafce70c39e2fffd836",
+			"source": "resources/characters/carousel/widow_e.webp"
+		},
+		"icons/carousel/widow_g.webp": {
+			"bytes": 29026,
+			"sha256": "dbff731bde6f2fa5f8af01966e9bbbed73a72be5d65ff59d1a61401239b14081",
+			"source": "resources/characters/carousel/widow_g.webp"
+		},
+		"icons/carousel/wizard_e.webp": {
+			"bytes": 30468,
+			"sha256": "3470daa10e3dd95e7af14bba345e50b6f448ecfe593e078cfbe4b5f9176dd454",
+			"source": "resources/characters/carousel/wizard_e.webp"
+		},
+		"icons/carousel/wizard_g.webp": {
+			"bytes": 30258,
+			"sha256": "a6bb65b66e7dfe027685c084add16f0fbedafe1c8782f704d4f5152b8809893c",
+			"source": "resources/characters/carousel/wizard_g.webp"
+		},
+		"icons/carousel/wraith_e.webp": {
+			"bytes": 30616,
+			"sha256": "0c999e0f58177a8c622d3578f3a1a8021e2b318ef161b4667c1f6a309bfc10bc",
+			"source": "resources/characters/carousel/wraith_e.webp"
+		},
+		"icons/carousel/wraith_g.webp": {
+			"bytes": 31634,
+			"sha256": "a887f1710423a4812ea1d0e143cfbc5cf2516d706bce503867e5f96763143dcc",
+			"source": "resources/characters/carousel/wraith_g.webp"
+		},
+		"icons/carousel/xaan_e.webp": {
+			"bytes": 17464,
+			"sha256": "62b92973504055c1b835474463c619405eabd3072c199ac5a206cf293e61ed61",
+			"source": "resources/characters/carousel/xaan_e.webp"
+		},
+		"icons/carousel/xaan_g.webp": {
+			"bytes": 17904,
+			"sha256": "0da78277de5a1bccab0d21a91d9d40bcb90c378126c8006ee7f5450295d32981",
+			"source": "resources/characters/carousel/xaan_g.webp"
+		},
+		"icons/carousel/yaggababble_e.webp": {
+			"bytes": 17746,
+			"sha256": "e423eee8e6bd800c46c7110b700d573a936680ffaea1b0132a958f1dab358737",
+			"source": "resources/characters/carousel/yaggababble_e.webp"
+		},
+		"icons/carousel/yaggababble_g.webp": {
+			"bytes": 18182,
+			"sha256": "2d355e85f73ac3a572d134abf2bde1735553ae6efcd54377442980f4502c98f3",
+			"source": "resources/characters/carousel/yaggababble_g.webp"
+		},
+		"icons/carousel/zealot_e.webp": {
+			"bytes": 14144,
+			"sha256": "aaaebb77731fd29b8910ad391e56d5c762d962c909b448a9fa85bd9912b02c8d",
+			"source": "resources/characters/carousel/zealot_e.webp"
+		},
+		"icons/carousel/zealot_g.webp": {
+			"bytes": 15070,
+			"sha256": "5e580f782b0faaba61e515232de5756a8a5433ff8c91645757a6c8dd37291549",
+			"source": "resources/characters/carousel/zealot_g.webp"
+		},
+		"icons/fabled/angel.webp": {
+			"bytes": 17758,
+			"sha256": "6894eb62e59dc4d5667aa931beef1f998174f96ca183a5405eb15f32bf01935a",
+			"source": "resources/characters/fabled/angel.webp"
+		},
+		"icons/fabled/buddhist.webp": {
+			"bytes": 23968,
+			"sha256": "0351ad10d337daa1dbf75a8b6c73f2a0e73a889860e699a198b5fd41c36d17b2",
+			"source": "resources/characters/fabled/buddhist.webp"
+		},
+		"icons/fabled/djinn.webp": {
+			"bytes": 27894,
+			"sha256": "f108ab9b5cb54671d288935d1a6f8ed081402228cb573cb8bc3480e5bc10a95e",
+			"source": "resources/characters/fabled/djinn.webp"
+		},
+		"icons/fabled/doomsayer.webp": {
+			"bytes": 23160,
+			"sha256": "d6e939edb5ef8740f02f7f2e3e311fba1ae02ec3e03fb8aac781d921ef66e262",
+			"source": "resources/characters/fabled/doomsayer.webp"
+		},
+		"icons/fabled/duchess.webp": {
+			"bytes": 19524,
+			"sha256": "fa8b4871f341ca1b89e58020afcf5f30511e30485a55496c8390083e307264c1",
+			"source": "resources/characters/fabled/duchess.webp"
+		},
+		"icons/fabled/fibbin.webp": {
+			"bytes": 22358,
+			"sha256": "a9930d1c1f59d6e42640713083457b45e4a0b7fffaf1a66756e202e4f8bffea6",
+			"source": "resources/characters/fabled/fibbin.webp"
+		},
+		"icons/fabled/fiddler.webp": {
+			"bytes": 23658,
+			"sha256": "faaac7c8873bea6bc341f0d7c80a41f20039d53f7c970c3cfc1a72c35b27ab40",
+			"source": "resources/characters/fabled/fiddler.webp"
+		},
+		"icons/fabled/hellslibrarian.webp": {
+			"bytes": 24616,
+			"sha256": "cc7c1dcabdb708af276454e67d5d15043aead940b82185da90033919e1f93fb1",
+			"source": "resources/characters/fabled/hellslibrarian.webp"
+		},
+		"icons/fabled/revolutionary.webp": {
+			"bytes": 21356,
+			"sha256": "0db588a9856e57c382dbac1c946d67920b8a85bae6d4ac34f4a2bbc1b7164740",
+			"source": "resources/characters/fabled/revolutionary.webp"
+		},
+		"icons/fabled/sentinel.webp": {
+			"bytes": 28622,
+			"sha256": "9c5ce343b21cde0f67e469825a85629541ee3117076942da3624879edf1bea26",
+			"source": "resources/characters/fabled/sentinel.webp"
+		},
+		"icons/fabled/spiritofivory.webp": {
+			"bytes": 21652,
+			"sha256": "d93b7ea70617313a152beaf3bbd78b4959a2cfe625f597528a0ccb99c706c90e",
+			"source": "resources/characters/fabled/spiritofivory.webp"
+		},
+		"icons/fabled/toymaker.webp": {
+			"bytes": 24504,
+			"sha256": "d4b79bd9f98604b575ccacc6378127837b2e5469f1aff2ec5e34988deee3d977",
+			"source": "resources/characters/fabled/toymaker.webp"
+		},
+		"icons/generic/custom.webp": {
+			"bytes": 21608,
+			"sha256": "3da3d67a4bb5d486850373b9b171eb14f25b01b148a0633852123403224a105f",
+			"source": "resources/characters/generic/custom.webp"
+		},
+		"icons/generic/custom_e.webp": {
+			"bytes": 21608,
+			"sha256": "3da3d67a4bb5d486850373b9b171eb14f25b01b148a0633852123403224a105f",
+			"source": "resources/characters/generic/custom_e.webp"
+		},
+		"icons/generic/custom_g.webp": {
+			"bytes": 21608,
+			"sha256": "3da3d67a4bb5d486850373b9b171eb14f25b01b148a0633852123403224a105f",
+			"source": "resources/characters/generic/custom_g.webp"
+		},
+		"icons/generic/demon.webp": {
+			"bytes": 18446,
+			"sha256": "a5765ba173508f3166ff41aa9d8576514b4a130d6d752bd0ffd37b1b1ae1f834",
+			"source": "resources/characters/generic/demon.webp"
+		},
+		"icons/generic/demon_e.webp": {
+			"bytes": 18446,
+			"sha256": "a5765ba173508f3166ff41aa9d8576514b4a130d6d752bd0ffd37b1b1ae1f834",
+			"source": "resources/characters/generic/demon_e.webp"
+		},
+		"icons/generic/demon_g.webp": {
+			"bytes": 21792,
+			"sha256": "d92f517c052b512870f97db9440de71691d8c2021cbeaa6f51ac3ddbc2ec1be7",
+			"source": "resources/characters/generic/demon_g.webp"
+		},
+		"icons/generic/evil.webp": {
+			"bytes": 24564,
+			"sha256": "a72e10ed28240590fa4789c3ddfaa5ca946d967f7fa685bbab8e5e2becd10a55",
+			"source": "resources/characters/generic/evil.webp"
+		},
+		"icons/generic/fabled.webp": {
+			"bytes": 20912,
+			"sha256": "bd0dc39c6ab31723695014acd32f7743e909ba55a035cfa81b15fc555a754c82",
+			"source": "resources/characters/generic/fabled.webp"
+		},
+		"icons/generic/good.webp": {
+			"bytes": 17554,
+			"sha256": "8cd74ccf2200f68f394cc61bea20fcd374eef165c74f9d605bbafe76c6316f15",
+			"source": "resources/characters/generic/good.webp"
+		},
+		"icons/generic/loric.webp": {
+			"bytes": 22448,
+			"sha256": "f8f80c018f74a48455ddb9b15e3d5e42df51c53cd166c951fa7dc7b9a4588e97",
+			"source": "resources/characters/generic/loric.webp"
+		},
+		"icons/generic/minion.webp": {
+			"bytes": 18486,
+			"sha256": "1b59aeb8e2b3ac0088a40e9d5927d8137f9bd5a023eb7525d976f3d1238c738d",
+			"source": "resources/characters/generic/minion.webp"
+		},
+		"icons/generic/minion_e.webp": {
+			"bytes": 18486,
+			"sha256": "1b59aeb8e2b3ac0088a40e9d5927d8137f9bd5a023eb7525d976f3d1238c738d",
+			"source": "resources/characters/generic/minion_e.webp"
+		},
+		"icons/generic/minion_g.webp": {
+			"bytes": 21672,
+			"sha256": "c25a46bdb20cfff08174214dc4d3a722b993f4758077bf23aac7bccdd988f7c7",
+			"source": "resources/characters/generic/minion_g.webp"
+		},
+		"icons/generic/outsider.webp": {
+			"bytes": 15852,
+			"sha256": "764d3fc2cca181e54d6171d2793b9db629a3c592db03cb9a62e6b5fe4237e4ac",
+			"source": "resources/characters/generic/outsider.webp"
+		},
+		"icons/generic/outsider_e.webp": {
+			"bytes": 18316,
+			"sha256": "bf7cd755a8eafe945f236adf10ebcee85460151ee7da75ae959f87e75f683afd",
+			"source": "resources/characters/generic/outsider_e.webp"
+		},
+		"icons/generic/outsider_g.webp": {
+			"bytes": 15852,
+			"sha256": "764d3fc2cca181e54d6171d2793b9db629a3c592db03cb9a62e6b5fe4237e4ac",
+			"source": "resources/characters/generic/outsider_g.webp"
+		},
+		"icons/generic/townsfolk.webp": {
+			"bytes": 20292,
+			"sha256": "19f40410c10fbbe22d8925ea4cbd9b7bdc971c3c1865463fa2ba5c1a8bb91e74",
+			"source": "resources/characters/generic/townsfolk.webp"
+		},
+		"icons/generic/townsfolk_e.webp": {
+			"bytes": 22766,
+			"sha256": "b2706b61552b78d704ad1d8ec71fcf3d97b7544e2f19a4d55cde15bbbe6dbb73",
+			"source": "resources/characters/generic/townsfolk_e.webp"
+		},
+		"icons/generic/townsfolk_g.webp": {
+			"bytes": 20292,
+			"sha256": "19f40410c10fbbe22d8925ea4cbd9b7bdc971c3c1865463fa2ba5c1a8bb91e74",
+			"source": "resources/characters/generic/townsfolk_g.webp"
+		},
+		"icons/generic/traveller.webp": {
+			"bytes": 16200,
+			"sha256": "3f24b87b627528093c3108913ebe6b63ab7e7defc251ebc74837c2f631d7e9d7",
+			"source": "resources/characters/generic/traveller.webp"
+		},
+		"icons/generic/traveller_e.webp": {
+			"bytes": 19014,
+			"sha256": "ac9bc7a5187dec3a2d9fc3909b9634775b825f31119c87345add9e32f127d41e",
+			"source": "resources/characters/generic/traveller_e.webp"
+		},
+		"icons/generic/traveller_g.webp": {
+			"bytes": 20516,
+			"sha256": "d0e193a914a9e851df6f44d5a5df2cc340c3529a8d115e054b5e6b8a973fb079",
+			"source": "resources/characters/generic/traveller_g.webp"
+		},
+		"icons/loric/bigwig.webp": {
+			"bytes": 23948,
+			"sha256": "38d7206380c03e067d4ac8b97d6db82eb025cc7e8b3f1b72cb6ccc3b716590bb",
+			"source": "resources/characters/loric/bigwig.webp"
+		},
+		"icons/loric/bootlegger.webp": {
+			"bytes": 14220,
+			"sha256": "c9a8eae27501de9c18b76dc359433d05fdd62c11e86f265a6b1eaf7ed4711889",
+			"source": "resources/characters/loric/bootlegger.webp"
+		},
+		"icons/loric/gardener.webp": {
+			"bytes": 13472,
+			"sha256": "dee8d3da20037d735c44656015862ed91f8ad32cdf820b18eb9224c95d330d20",
+			"source": "resources/characters/loric/gardener.webp"
+		},
+		"icons/loric/godofug.webp": {
+			"bytes": 22184,
+			"sha256": "b036c9bbc8ec75da370fc486e09d5329ea5d50f6bb16a7e0b02e04bf45d3287a",
+			"source": "resources/characters/loric/godofug.webp"
+		},
+		"icons/loric/hindu.webp": {
+			"bytes": 26348,
+			"sha256": "3cf34e20207251bb98249583e12ceca12dfe8df79c89be6ef7cb613966b35bfb",
+			"source": "resources/characters/loric/hindu.webp"
+		},
+		"icons/loric/knaves.webp": {
+			"bytes": 18410,
+			"sha256": "a3d5f90dc3fad9d1d2d17b16f403d5af8d8870aa53702efb0caefb2f1232727c",
+			"source": "resources/characters/loric/knaves.webp"
+		},
+		"icons/loric/pope.webp": {
+			"bytes": 20452,
+			"sha256": "3572713e8db9d2e79b300785a73151aee670033d5dcd4d8e757f7299000d94f9",
+			"source": "resources/characters/loric/pope.webp"
+		},
+		"icons/loric/stormcatcher.webp": {
+			"bytes": 16458,
+			"sha256": "7e69972f91212d736633546f8708f946073eadb1014abb7a6a330661fc506e15",
+			"source": "resources/characters/loric/stormcatcher.webp"
+		},
+		"icons/loric/tor.webp": {
+			"bytes": 18426,
+			"sha256": "96fabc9c01440d2a05fd923745139f0e94bf3be9e071dbdf98096ee01f17f24d",
+			"source": "resources/characters/loric/tor.webp"
+		},
+		"icons/loric/ventriloquist.webp": {
+			"bytes": 18008,
+			"sha256": "29aca13e4da3b4b84927ecc5234306285a9c196d3b014131880176e69561cdd5",
+			"source": "resources/characters/loric/ventriloquist.webp"
+		},
+		"icons/loric/zenomancer.webp": {
+			"bytes": 30874,
+			"sha256": "059e82fe8cd7e174d4c9e214e59e8b5aa59dac1e13f3fd6ab5e2dd46fb7ca967",
+			"source": "resources/characters/loric/zenomancer.webp"
+		},
+		"icons/snv/artist_e.webp": {
+			"bytes": 21898,
+			"sha256": "81b0c5ea89b0a18aa284bf277dfcc70e59fd94db88d96d439e8fded1b49d2a01",
+			"source": "resources/characters/snv/artist_e.webp"
+		},
+		"icons/snv/artist_g.webp": {
+			"bytes": 22700,
+			"sha256": "5165190b5d9edcd30fde6e5b90871fe703fdfb86cff68bbd833fe2c2d702ce9f",
+			"source": "resources/characters/snv/artist_g.webp"
+		},
+		"icons/snv/barber_e.webp": {
+			"bytes": 15674,
+			"sha256": "24a6b602752261568e605bf81de4a7aff653b89d54cb97a25780f6bf33282fdd",
+			"source": "resources/characters/snv/barber_e.webp"
+		},
+		"icons/snv/barber_g.webp": {
+			"bytes": 16460,
+			"sha256": "47b7a2d77f9557ece1cfbe63d2cc52e5d42a5b22c6e92b61264bbdb7496c4794",
+			"source": "resources/characters/snv/barber_g.webp"
+		},
+		"icons/snv/barista.webp": {
+			"bytes": 24032,
+			"sha256": "745f7c06975fac7f2260780156ed6c852557d01543c341930d5a4b0f5bd589d8",
+			"source": "resources/characters/snv/barista.webp"
+		},
+		"icons/snv/barista_e.webp": {
+			"bytes": 23614,
+			"sha256": "3e41a9936d094c65a6ec541d8af99c77e6c19fb7b1484d4ac4c801af1eec1c5d",
+			"source": "resources/characters/snv/barista_e.webp"
+		},
+		"icons/snv/barista_g.webp": {
+			"bytes": 23750,
+			"sha256": "ef28f28c0eaba6abe5f53259f01fecda23bb22babebc94f8eaaba9ad045fae47",
+			"source": "resources/characters/snv/barista_g.webp"
+		},
+		"icons/snv/bonecollector.webp": {
+			"bytes": 29172,
+			"sha256": "4fcb5d6fa0199ccbca19dde83189630d69831c0232e7fd3e0e705d2dcea70608",
+			"source": "resources/characters/snv/bonecollector.webp"
+		},
+		"icons/snv/bonecollector_e.webp": {
+			"bytes": 27930,
+			"sha256": "7269f54251dce80d5a24d528574d2f6f0a460526349488bac3c050adaa1bc143",
+			"source": "resources/characters/snv/bonecollector_e.webp"
+		},
+		"icons/snv/bonecollector_g.webp": {
+			"bytes": 28434,
+			"sha256": "54c885ac6a0c123e04b26763bd0e0f354ec1a28af41f437745f70e2deff75150",
+			"source": "resources/characters/snv/bonecollector_g.webp"
+		},
+		"icons/snv/butcher.webp": {
+			"bytes": 18384,
+			"sha256": "734b3ff355bfac4642668f69fd54fe1cf879e7656b1d11d1eb84c614a88ab683",
+			"source": "resources/characters/snv/butcher.webp"
+		},
+		"icons/snv/butcher_e.webp": {
+			"bytes": 17354,
+			"sha256": "32d1a5f8ee21ab854861d498d71edf86771b69a65b0f9fa5cb45a41633b1e3a2",
+			"source": "resources/characters/snv/butcher_e.webp"
+		},
+		"icons/snv/butcher_g.webp": {
+			"bytes": 18004,
+			"sha256": "ff6c7f495bd5b0d1d1bf31ad0404b540fc7a95c7885558ee9df93cb2c43eca97",
+			"source": "resources/characters/snv/butcher_g.webp"
+		},
+		"icons/snv/cerenovus_e.webp": {
+			"bytes": 24416,
+			"sha256": "e1616f41f4d846552217cfc9f35815bcabde7064165a380a3714b51a9c001849",
+			"source": "resources/characters/snv/cerenovus_e.webp"
+		},
+		"icons/snv/cerenovus_g.webp": {
+			"bytes": 25910,
+			"sha256": "9c34382628b25f2c21915fde2478f86051c73304d0a723b7a85060cd680c61c4",
+			"source": "resources/characters/snv/cerenovus_g.webp"
+		},
+		"icons/snv/clockmaker_e.webp": {
+			"bytes": 22882,
+			"sha256": "b5acc8cafa620497b40ce6e570e383dbcf7e8fee535decf4bf5ffc68a92d5f42",
+			"source": "resources/characters/snv/clockmaker_e.webp"
+		},
+		"icons/snv/clockmaker_g.webp": {
+			"bytes": 24174,
+			"sha256": "2af391669dabd61aa32874ca5d37e5267558f3533fd8ff561759b8c56ff20b5a",
+			"source": "resources/characters/snv/clockmaker_g.webp"
+		},
+		"icons/snv/deviant.webp": {
+			"bytes": 22262,
+			"sha256": "727a95b4182e7bcd4ce655241b5095b42a6cd86e196879237dccada7ada51597",
+			"source": "resources/characters/snv/deviant.webp"
+		},
+		"icons/snv/deviant_e.webp": {
+			"bytes": 21614,
+			"sha256": "1cde9f5b73ef2812d9a7c02febfaaaaabbe4d321f3814c0fddd5ea9b8f3dcddd",
+			"source": "resources/characters/snv/deviant_e.webp"
+		},
+		"icons/snv/deviant_g.webp": {
+			"bytes": 22194,
+			"sha256": "1d356fdf0efa7ffad2afa8cb729b29c59b93b4a6d3e042d40045e9738a89b9a6",
+			"source": "resources/characters/snv/deviant_g.webp"
+		},
+		"icons/snv/dreamer_e.webp": {
+			"bytes": 21714,
+			"sha256": "a319ec9cbe28cc3eb2052a2fb5ddc64bb92d9bde103477ae0a04431089e6f7a7",
+			"source": "resources/characters/snv/dreamer_e.webp"
+		},
+		"icons/snv/dreamer_g.webp": {
+			"bytes": 22910,
+			"sha256": "09b8a9ffc456b685a4eba737c6b924a4cb9f36b42c4cae225b5e87f624cf754d",
+			"source": "resources/characters/snv/dreamer_g.webp"
+		},
+		"icons/snv/eviltwin_e.webp": {
+			"bytes": 28260,
+			"sha256": "7c9805bb300d4d96275be529ce1e1a47eff832c129bfc8152754f2ebb194f714",
+			"source": "resources/characters/snv/eviltwin_e.webp"
+		},
+		"icons/snv/eviltwin_g.webp": {
+			"bytes": 29466,
+			"sha256": "47dd2f200dff159cc9a18aa6ec13417e54831bda88e701ae23171892ff25f32b",
+			"source": "resources/characters/snv/eviltwin_g.webp"
+		},
+		"icons/snv/fanggu_e.webp": {
+			"bytes": 22808,
+			"sha256": "27893c4aa8473ab9d595f90e5f3172b46a36b1d89ecbbb1bb4d7c44a4dff152f",
+			"source": "resources/characters/snv/fanggu_e.webp"
+		},
+		"icons/snv/fanggu_g.webp": {
+			"bytes": 23894,
+			"sha256": "db60dcfefe505fecbb8c4c674af579090e8c7b94ffa8df28591e4a9b67329963",
+			"source": "resources/characters/snv/fanggu_g.webp"
+		},
+		"icons/snv/flowergirl_e.webp": {
+			"bytes": 20364,
+			"sha256": "d8727e16be5711f87c92ebd4ab2c4a50f70800bb20ebae3ba23ed491fe5ef5ed",
+			"source": "resources/characters/snv/flowergirl_e.webp"
+		},
+		"icons/snv/flowergirl_g.webp": {
+			"bytes": 21078,
+			"sha256": "6429d702570346b6ee4d9d13a64b9d9d67e2dee3cf1a888ec5dac192f2b0569f",
+			"source": "resources/characters/snv/flowergirl_g.webp"
+		},
+		"icons/snv/harlot.webp": {
+			"bytes": 23476,
+			"sha256": "7b178e82199acbdcd6401f3414b78bf7012c54e6adfe7cf8edb15bdd401b29bb",
+			"source": "resources/characters/snv/harlot.webp"
+		},
+		"icons/snv/harlot_e.webp": {
+			"bytes": 22400,
+			"sha256": "3a4525bef713046b1401c97779019b1714167d4d2634bb7b120b9cb4c97a3859",
+			"source": "resources/characters/snv/harlot_e.webp"
+		},
+		"icons/snv/harlot_g.webp": {
+			"bytes": 23100,
+			"sha256": "7772786d2f7ed918d99bb279ac7f4621418f77a94e4220c092893117c1057010",
+			"source": "resources/characters/snv/harlot_g.webp"
+		},
+		"icons/snv/juggler_e.webp": {
+			"bytes": 24408,
+			"sha256": "6c0a1ab329f21e2b62366c988a787a6978477183318325858a7b578c4b0031bd",
+			"source": "resources/characters/snv/juggler_e.webp"
+		},
+		"icons/snv/juggler_g.webp": {
+			"bytes": 25274,
+			"sha256": "851ce5d6cd44f549ce91058e200222e99e7c68baaaaade8353ae102a8da7e2fb",
+			"source": "resources/characters/snv/juggler_g.webp"
+		},
+		"icons/snv/klutz_e.webp": {
+			"bytes": 20088,
+			"sha256": "994a10893b3e63056437656f753fdd6a562d1270cd7d047b79122104daf2fad9",
+			"source": "resources/characters/snv/klutz_e.webp"
+		},
+		"icons/snv/klutz_g.webp": {
+			"bytes": 21108,
+			"sha256": "bcec69429e2ecf17a8dc41268bff51d8881218421f331a52daaa6e37972f4755",
+			"source": "resources/characters/snv/klutz_g.webp"
+		},
+		"icons/snv/mathematician_e.webp": {
+			"bytes": 15814,
+			"sha256": "51e529e87a8367f482aa26efab165f4eafccec5a53813940e073526308d77df3",
+			"source": "resources/characters/snv/mathematician_e.webp"
+		},
+		"icons/snv/mathematician_g.webp": {
+			"bytes": 16228,
+			"sha256": "aa082bcb959083595d3c5ed3463948ac7229c69f9e91ecc726d3f259196c04f3",
+			"source": "resources/characters/snv/mathematician_g.webp"
+		},
+		"icons/snv/mutant_e.webp": {
+			"bytes": 21762,
+			"sha256": "53beef5f363b19147e3dcd903b5cec873332b1be4f6be6e697fe0fea1ed84a3d",
+			"source": "resources/characters/snv/mutant_e.webp"
+		},
+		"icons/snv/mutant_g.webp": {
+			"bytes": 23030,
+			"sha256": "8a490cb60779d20e372ccd84f15fcd69a8e6e293045b087e43482df41890306c",
+			"source": "resources/characters/snv/mutant_g.webp"
+		},
+		"icons/snv/nodashii_e.webp": {
+			"bytes": 27244,
+			"sha256": "39205740bf59042cd8e206d51517a0dc577500b46a9f39b2fd43f458a03208dc",
+			"source": "resources/characters/snv/nodashii_e.webp"
+		},
+		"icons/snv/nodashii_g.webp": {
+			"bytes": 28888,
+			"sha256": "c1944154d2e79d7eb816589b36c49aa7f5b6b937c1ae350763e7a662839100b8",
+			"source": "resources/characters/snv/nodashii_g.webp"
+		},
+		"icons/snv/oracle_e.webp": {
+			"bytes": 24552,
+			"sha256": "5bf658b144e33b7c90be6ed9012abf8c00431b89616331e81a0db5a7c48c794d",
+			"source": "resources/characters/snv/oracle_e.webp"
+		},
+		"icons/snv/oracle_g.webp": {
+			"bytes": 25876,
+			"sha256": "122b1a4abfbd35e9bfef9a351fe002eeca5d1b9e2ce6a77e3774d397f1d14452",
+			"source": "resources/characters/snv/oracle_g.webp"
+		},
+		"icons/snv/philosopher_e.webp": {
+			"bytes": 15670,
+			"sha256": "b8de88dfd0bff183e337d1d999c31146b14880c1fc616982e267d985b104b513",
+			"source": "resources/characters/snv/philosopher_e.webp"
+		},
+		"icons/snv/philosopher_g.webp": {
+			"bytes": 16374,
+			"sha256": "0bc94fe3c5c094537e3042316ca11b2f97223d4a9656a021bb3ecfae98d15235",
+			"source": "resources/characters/snv/philosopher_g.webp"
+		},
+		"icons/snv/pithag_e.webp": {
+			"bytes": 28552,
+			"sha256": "8eae8678b77462d61cd934c1704c4a689642bcd722e8f7aa37204a72e9bcd191",
+			"source": "resources/characters/snv/pithag_e.webp"
+		},
+		"icons/snv/pithag_g.webp": {
+			"bytes": 30332,
+			"sha256": "9e90f0f42cdb6a4fdab0c82dcabaa92e15935d2db9eb740a07d169e896ba7dc5",
+			"source": "resources/characters/snv/pithag_g.webp"
+		},
+		"icons/snv/sage_e.webp": {
+			"bytes": 17192,
+			"sha256": "6264a05b4e4b0ad6f2766fd151cf994abcb33d8191308bd268d10c82862afdf6",
+			"source": "resources/characters/snv/sage_e.webp"
+		},
+		"icons/snv/sage_g.webp": {
+			"bytes": 17918,
+			"sha256": "1908826010aeaa917e6bc8b09a4fbf2da8b854a3283d526e355d10b29880d64d",
+			"source": "resources/characters/snv/sage_g.webp"
+		},
+		"icons/snv/savant_e.webp": {
+			"bytes": 25900,
+			"sha256": "94db001f3dc56934713e3fbe8bdaf29afdb90a056d026319bf984b61d4d83080",
+			"source": "resources/characters/snv/savant_e.webp"
+		},
+		"icons/snv/savant_g.webp": {
+			"bytes": 27038,
+			"sha256": "fec9f73ee0254d72e42c38ebff67b7c02be266ab0d82694ffb84d22e1974576b",
+			"source": "resources/characters/snv/savant_g.webp"
+		},
+		"icons/snv/seamstress_e.webp": {
+			"bytes": 27434,
+			"sha256": "6ac8bf954e3eb7829360bb289302ebd28cd1218c73bf5623c8e114a7d27e8b20",
+			"source": "resources/characters/snv/seamstress_e.webp"
+		},
+		"icons/snv/seamstress_g.webp": {
+			"bytes": 28640,
+			"sha256": "ed85f327d59cf56928c46357ab0388f24daf191e69c22183ae92ee7ab51652c0",
+			"source": "resources/characters/snv/seamstress_g.webp"
+		},
+		"icons/snv/snakecharmer_e.webp": {
+			"bytes": 22026,
+			"sha256": "e86a1ff3a0210e1be1fb31c6a22b6d4123d287db0d3952ab5ee3c225aa5c76eb",
+			"source": "resources/characters/snv/snakecharmer_e.webp"
+		},
+		"icons/snv/snakecharmer_g.webp": {
+			"bytes": 23016,
+			"sha256": "3b60b992a0a3ba46672695f7542f271a0c587baf5f67e9d180ee41959db8d21e",
+			"source": "resources/characters/snv/snakecharmer_g.webp"
+		},
+		"icons/snv/sweetheart_e.webp": {
+			"bytes": 24536,
+			"sha256": "57979701844b71d941b94ac41eb4ca1ce5bedcad6664956dc95ecac7751468fd",
+			"source": "resources/characters/snv/sweetheart_e.webp"
+		},
+		"icons/snv/sweetheart_g.webp": {
+			"bytes": 26214,
+			"sha256": "7feabd35a6a92650ddce21660a83abf613b34265c15eb6571513b186d240089e",
+			"source": "resources/characters/snv/sweetheart_g.webp"
+		},
+		"icons/snv/towncrier_e.webp": {
+			"bytes": 17526,
+			"sha256": "4a840baf55c0e460f847cf667bb7d3fe06cd5cd4a4c45653038416ac875bcd7e",
+			"source": "resources/characters/snv/towncrier_e.webp"
+		},
+		"icons/snv/towncrier_g.webp": {
+			"bytes": 18534,
+			"sha256": "7288fcbafe49b08a85c0af147cb4edc5d57485ed51d7b20c3f51c4d2dd93cf05",
+			"source": "resources/characters/snv/towncrier_g.webp"
+		},
+		"icons/snv/vigormortis_e.webp": {
+			"bytes": 20642,
+			"sha256": "4a0c5be30e023fa1e07ced3e787af57f82f525042eb479b1c7205d32a2d1ee4c",
+			"source": "resources/characters/snv/vigormortis_e.webp"
+		},
+		"icons/snv/vigormortis_g.webp": {
+			"bytes": 21664,
+			"sha256": "00ca75ab9d707db4f491f6c945aca3f34bfd1786fbc6631114a23d74968c40d1",
+			"source": "resources/characters/snv/vigormortis_g.webp"
+		},
+		"icons/snv/vortox_e.webp": {
+			"bytes": 20940,
+			"sha256": "a0c949a1f7bb1ca487a7568ac106eb0ca9c0e4106772ab9a5e14b78b41c61924",
+			"source": "resources/characters/snv/vortox_e.webp"
+		},
+		"icons/snv/vortox_g.webp": {
+			"bytes": 22040,
+			"sha256": "a1c9723e471a37eb642d976605a2c556c0c13763320c2f749dcf4fbee33429ea",
+			"source": "resources/characters/snv/vortox_g.webp"
+		},
+		"icons/snv/witch_e.webp": {
+			"bytes": 16146,
+			"sha256": "f998c4918f241a613717af6906fa1a046d050918099c9f83ae2d66eebfbaa6c5",
+			"source": "resources/characters/snv/witch_e.webp"
+		},
+		"icons/snv/witch_g.webp": {
+			"bytes": 17132,
+			"sha256": "2a4ae4e118b2693b30232142a62cb95fe83abc9f3604092cbfbf7a565543ea9f",
+			"source": "resources/characters/snv/witch_g.webp"
+		},
+		"icons/tb/baron_e.webp": {
+			"bytes": 20042,
+			"sha256": "db7749871a815fb1361b9dbc1b2c9bad925578ea3078dacecb17f218c850318a",
+			"source": "resources/characters/tb/baron_e.webp"
+		},
+		"icons/tb/baron_g.webp": {
+			"bytes": 21878,
+			"sha256": "6346b0e161174c9356a0682c9a3eccaa66090cf48b4f23b87a6085c80ec7dc63",
+			"source": "resources/characters/tb/baron_g.webp"
+		},
+		"icons/tb/beggar.webp": {
+			"bytes": 21748,
+			"sha256": "612d8988f49981f8f5a4bbdbe7e567371b53557120994aaadb898127d2e94751",
+			"source": "resources/characters/tb/beggar.webp"
+		},
+		"icons/tb/beggar_e.webp": {
+			"bytes": 20948,
+			"sha256": "052a96857058f98fe774dde557a6d4a766fea29799da999cbc78345bad67fb55",
+			"source": "resources/characters/tb/beggar_e.webp"
+		},
+		"icons/tb/beggar_g.webp": {
+			"bytes": 21340,
+			"sha256": "45c3bcf8c4f957648d43a2f237e6e0266e0718b7f9abaad7918584db320ec38b",
+			"source": "resources/characters/tb/beggar_g.webp"
+		},
+		"icons/tb/bureaucrat.webp": {
+			"bytes": 21054,
+			"sha256": "91110cd2325f46738182f62db8895df2f8617f6e6b70acfb229008e6d57857d1",
+			"source": "resources/characters/tb/bureaucrat.webp"
+		},
+		"icons/tb/bureaucrat_e.webp": {
+			"bytes": 19884,
+			"sha256": "6d927fb567adcf6e4464530c7e6b03bec4c39e62271a39dbcd01d2efb1cc6efc",
+			"source": "resources/characters/tb/bureaucrat_e.webp"
+		},
+		"icons/tb/bureaucrat_g.webp": {
+			"bytes": 20564,
+			"sha256": "93366ffbbcfc96bdcc4d4b01df68927507a7c891549d74a9c4bab8825840d998",
+			"source": "resources/characters/tb/bureaucrat_g.webp"
+		},
+		"icons/tb/butler_e.webp": {
+			"bytes": 20426,
+			"sha256": "07cad096819c754e10cd5bb5760340436d8019fd3d8167d8d689c8c5f73538d8",
+			"source": "resources/characters/tb/butler_e.webp"
+		},
+		"icons/tb/butler_g.webp": {
+			"bytes": 21904,
+			"sha256": "cd4b45201e3b127f60bd9a0e0df00b8436d50b2d6b5659b1fe1804ef10b13343",
+			"source": "resources/characters/tb/butler_g.webp"
+		},
+		"icons/tb/chef_e.webp": {
+			"bytes": 19386,
+			"sha256": "b55d17b12ae8c1cf5cbb92d43aad3558f85130c07efc078fb0efb3f4f6470e74",
+			"source": "resources/characters/tb/chef_e.webp"
+		},
+		"icons/tb/chef_g.webp": {
+			"bytes": 20216,
+			"sha256": "b356d50af2abe357ecf353090c22de3db5edd2ab617461b73f7117dd2cffe33c",
+			"source": "resources/characters/tb/chef_g.webp"
+		},
+		"icons/tb/drunk_e.webp": {
+			"bytes": 22128,
+			"sha256": "348f550addffb0714f27225a0bda52e816508cb982fbe8bcccde7882c0bc3a9e",
+			"source": "resources/characters/tb/drunk_e.webp"
+		},
+		"icons/tb/drunk_g.webp": {
+			"bytes": 23346,
+			"sha256": "8bb4b878da9212cd7c059d450a915edc024f45dc60e1abb0ada0264c008aafb6",
+			"source": "resources/characters/tb/drunk_g.webp"
+		},
+		"icons/tb/empath_e.webp": {
+			"bytes": 21012,
+			"sha256": "68bbeb801b6c67b33b92c8a0055cb7c0cb9e816063cad549ebb88d5cabd696f4",
+			"source": "resources/characters/tb/empath_e.webp"
+		},
+		"icons/tb/empath_g.webp": {
+			"bytes": 22720,
+			"sha256": "966c4578b6233f2e970977cd5a6db888bca29f1c60ca17c21da486c614fc7646",
+			"source": "resources/characters/tb/empath_g.webp"
+		},
+		"icons/tb/fortuneteller_e.webp": {
+			"bytes": 22696,
+			"sha256": "acd4d7784e6d9726c88cdbaf7fadc898baa0c1d6e43d0190e8b93b911fb20ca6",
+			"source": "resources/characters/tb/fortuneteller_e.webp"
+		},
+		"icons/tb/fortuneteller_g.webp": {
+			"bytes": 24552,
+			"sha256": "249b45e3191a08c1be4ea1fef7c6151d671cf6769d0fc27354cbd31a751c4abd",
+			"source": "resources/characters/tb/fortuneteller_g.webp"
+		},
+		"icons/tb/gunslinger.webp": {
+			"bytes": 20576,
+			"sha256": "2a7761fcd0986055f8ae50f366c32a28d40c803c6a3f5f50d7a8f76cc76356a5",
+			"source": "resources/characters/tb/gunslinger.webp"
+		},
+		"icons/tb/gunslinger_e.webp": {
+			"bytes": 20046,
+			"sha256": "c40c32ac15f5e57a6478c5fe5a34d36a3b88106d3e335fb971a45205d2092c07",
+			"source": "resources/characters/tb/gunslinger_e.webp"
+		},
+		"icons/tb/gunslinger_g.webp": {
+			"bytes": 20222,
+			"sha256": "97295e7ae101c14736d3532b20207eae5bcde7e2794faf33a236fa3ec8ad3256",
+			"source": "resources/characters/tb/gunslinger_g.webp"
+		},
+		"icons/tb/imp_e.webp": {
+			"bytes": 22442,
+			"sha256": "9ac8a8a7c40fcf53935b76bb2a70035d5afee89ebeca1be6a5bff8b92b8f7a97",
+			"source": "resources/characters/tb/imp_e.webp"
+		},
+		"icons/tb/imp_g.webp": {
+			"bytes": 24000,
+			"sha256": "4437f05d4dbb7037aa5601b822316fc39ea48a5ab0e9a93dd08bdddc0f8bb5d2",
+			"source": "resources/characters/tb/imp_g.webp"
+		},
+		"icons/tb/investigator_e.webp": {
+			"bytes": 17734,
+			"sha256": "eb85738a61950482a30e986666b5d51888a525b37d45233429f8a3f76ba44188",
+			"source": "resources/characters/tb/investigator_e.webp"
+		},
+		"icons/tb/investigator_g.webp": {
+			"bytes": 18548,
+			"sha256": "bab77bf0be542e9e08c743c9f9950c441ace522967d8f4d2ec78c92a03339ad7",
+			"source": "resources/characters/tb/investigator_g.webp"
+		},
+		"icons/tb/librarian_e.webp": {
+			"bytes": 18174,
+			"sha256": "f571fda195468207230e1da76e803dabeed2a8dd6251c308659c09fbba3ef776",
+			"source": "resources/characters/tb/librarian_e.webp"
+		},
+		"icons/tb/librarian_g.webp": {
+			"bytes": 19514,
+			"sha256": "d7bab4aae6a5b3c3637926cde058deac21863dd94785373914ab9c596b2f2598",
+			"source": "resources/characters/tb/librarian_g.webp"
+		},
+		"icons/tb/mayor_e.webp": {
+			"bytes": 18772,
+			"sha256": "ff094c41106410fb6eeda882ab417762c5072cbc955af7aa287f0adc7e6cb8ce",
+			"source": "resources/characters/tb/mayor_e.webp"
+		},
+		"icons/tb/mayor_g.webp": {
+			"bytes": 20210,
+			"sha256": "b908f9e19e68a4483d8992bde55d87e785efc699f1fa49a5f14d952c7f7de7a2",
+			"source": "resources/characters/tb/mayor_g.webp"
+		},
+		"icons/tb/monk_e.webp": {
+			"bytes": 21904,
+			"sha256": "a19e8ba675b5f49af690b2d7a8070bfbb1e406385d1b31c499758dc4abaa2420",
+			"source": "resources/characters/tb/monk_e.webp"
+		},
+		"icons/tb/monk_g.webp": {
+			"bytes": 23000,
+			"sha256": "dc036080e45dedf1b3aaaa3944f01e279754df40e2c03167c18e951312f81696",
+			"source": "resources/characters/tb/monk_g.webp"
+		},
+		"icons/tb/poisoner_e.webp": {
+			"bytes": 14524,
+			"sha256": "466d3b13d124cc96079e6585ceba81640fdd7e5dad7ecea767bacd1469b24783",
+			"source": "resources/characters/tb/poisoner_e.webp"
+		},
+		"icons/tb/poisoner_g.webp": {
+			"bytes": 15290,
+			"sha256": "8e1832ea4fc0fa30fd1df6d8b76209dba3800ea77f863909c340972429da80f4",
+			"source": "resources/characters/tb/poisoner_g.webp"
+		},
+		"icons/tb/ravenkeeper_e.webp": {
+			"bytes": 18430,
+			"sha256": "d8401cdd21fec8b876805a0d573a9746cab4196946c497d992a6c413cce4dc3e",
+			"source": "resources/characters/tb/ravenkeeper_e.webp"
+		},
+		"icons/tb/ravenkeeper_g.webp": {
+			"bytes": 19760,
+			"sha256": "d77197ad219978c882b3a63c9e1463abe19f1c5e0b6b2b8809abd75820dd25f3",
+			"source": "resources/characters/tb/ravenkeeper_g.webp"
+		},
+		"icons/tb/recluse_e.webp": {
+			"bytes": 18970,
+			"sha256": "c5628670bf957589521f40e9e3a2a6d305370d00ede3bbbaac679389633d85c6",
+			"source": "resources/characters/tb/recluse_e.webp"
+		},
+		"icons/tb/recluse_g.webp": {
+			"bytes": 19810,
+			"sha256": "e5319395de96c0337e1b1fc953b571293c944c9a10d9c16ee01355228f29358a",
+			"source": "resources/characters/tb/recluse_g.webp"
+		},
+		"icons/tb/saint_e.webp": {
+			"bytes": 23392,
+			"sha256": "8fa2ab3b3c46278223bcd864710d0f7db6c6eddb5a830ef83e4be714c92c4f7e",
+			"source": "resources/characters/tb/saint_e.webp"
+		},
+		"icons/tb/saint_g.webp": {
+			"bytes": 24346,
+			"sha256": "8d65203e9332bf0f01200a4fe0efd265ec2c725aa63378cb7b56662e4b64f374",
+			"source": "resources/characters/tb/saint_g.webp"
+		},
+		"icons/tb/scapegoat.webp": {
+			"bytes": 23502,
+			"sha256": "9b2934fe6af33167d55d25dc8298e2b611a142b266ae36f788b3cd92701f7863",
+			"source": "resources/characters/tb/scapegoat.webp"
+		},
+		"icons/tb/scapegoat_e.webp": {
+			"bytes": 22380,
+			"sha256": "d63e83cc9c36fcc47331b70d34d08067b82520228fb6fb9a73162c3d33ff647d",
+			"source": "resources/characters/tb/scapegoat_e.webp"
+		},
+		"icons/tb/scapegoat_g.webp": {
+			"bytes": 23942,
+			"sha256": "55fffea999e7c97828074ce1fe8571a4f9ae7138538590a5adc91c8f6596dc3b",
+			"source": "resources/characters/tb/scapegoat_g.webp"
+		},
+		"icons/tb/scarletwoman_e.webp": {
+			"bytes": 25060,
+			"sha256": "f076b9ad88b35d0fdd98ccc89ab44a0785dcd251bd96078f5fabb7b383fbc9b9",
+			"source": "resources/characters/tb/scarletwoman_e.webp"
+		},
+		"icons/tb/scarletwoman_g.webp": {
+			"bytes": 27082,
+			"sha256": "09d7d32ec11d1325309624e8472f1acab45a01f5ad4d355dfe973b67042398ca",
+			"source": "resources/characters/tb/scarletwoman_g.webp"
+		},
+		"icons/tb/slayer_e.webp": {
+			"bytes": 21080,
+			"sha256": "0667f6122839db7e9f57be6e84c14ece61dca9e57440bf0f30c61fd6b682a4e0",
+			"source": "resources/characters/tb/slayer_e.webp"
+		},
+		"icons/tb/slayer_g.webp": {
+			"bytes": 21960,
+			"sha256": "63564b2365e2e38aec7ae9e768be3de85d6c24b43b5858df786fb8d54d2bc49b",
+			"source": "resources/characters/tb/slayer_g.webp"
+		},
+		"icons/tb/soldier_e.webp": {
+			"bytes": 19180,
+			"sha256": "2a918ed0a3c68edf4a8df637294578486749ef6c5d2ffd99c18ba200601cc2c9",
+			"source": "resources/characters/tb/soldier_e.webp"
+		},
+		"icons/tb/soldier_g.webp": {
+			"bytes": 20942,
+			"sha256": "4e4df8d75cdb13cb2b58f490713a2c91c891e223524157775374ba4b1b5d4a4a",
+			"source": "resources/characters/tb/soldier_g.webp"
+		},
+		"icons/tb/spy_e.webp": {
+			"bytes": 20234,
+			"sha256": "3f138b9908e034b35b2199993401cee0ae6119b98d7bd94e42fa1d6963a67475",
+			"source": "resources/characters/tb/spy_e.webp"
+		},
+		"icons/tb/spy_g.webp": {
+			"bytes": 21410,
+			"sha256": "c318c59724a5051ed9a0369d4ef01dbcd36385a03d2fd7d6dd0dcebccd0f55b3",
+			"source": "resources/characters/tb/spy_g.webp"
+		},
+		"icons/tb/thief.webp": {
+			"bytes": 21106,
+			"sha256": "9a847ec72afcb0b58e7b596d467390f48456715d859f19ebcaba9a5cefef34ab",
+			"source": "resources/characters/tb/thief.webp"
+		},
+		"icons/tb/thief_e.webp": {
+			"bytes": 19912,
+			"sha256": "a9e3c038674b9d4a8f24b4429ff01f4a3f38a63bd557b56371766b658f660e23",
+			"source": "resources/characters/tb/thief_e.webp"
+		},
+		"icons/tb/thief_g.webp": {
+			"bytes": 20660,
+			"sha256": "989465af66feaf02cbdc046b20e03f485861ed69b81da6b588e7b4d4017c5e9e",
+			"source": "resources/characters/tb/thief_g.webp"
+		},
+		"icons/tb/undertaker_e.webp": {
+			"bytes": 15512,
+			"sha256": "a10df17448bfd80170c24d0ff61a7057736d5639b6eff6a5efd25798c09e1b2f",
+			"source": "resources/characters/tb/undertaker_e.webp"
+		},
+		"icons/tb/undertaker_g.webp": {
+			"bytes": 16298,
+			"sha256": "8f97ae58054e08b36126efbf3369cc3a99bea3e7f02e8dcee5cf5f7873e69339",
+			"source": "resources/characters/tb/undertaker_g.webp"
+		},
+		"icons/tb/virgin_e.webp": {
+			"bytes": 23614,
+			"sha256": "dd30270cdbaa612fa7f2931627ad53944517490921abf89b721c8468f1eb79f0",
+			"source": "resources/characters/tb/virgin_e.webp"
+		},
+		"icons/tb/virgin_g.webp": {
+			"bytes": 25302,
+			"sha256": "f2bb072f10920cf68d34da5f048acacb78074239af019395a362f4128755371b",
+			"source": "resources/characters/tb/virgin_g.webp"
+		},
+		"icons/tb/washerwoman_e.webp": {
+			"bytes": 23484,
+			"sha256": "d89a951b9fce6f163c1a8a8dc155527e0d5c42065a2b167dfbeaebfbf44e8fa7",
+			"source": "resources/characters/tb/washerwoman_e.webp"
+		},
+		"icons/tb/washerwoman_g.webp": {
+			"bytes": 24518,
+			"sha256": "d569850ceb9a85c83ad384cd5f99b3f266bee179eaf55e3e70820fe1433aca0b",
+			"source": "resources/characters/tb/washerwoman_g.webp"
+		},
+		"jinxes.json": {
+			"bytes": 21358,
+			"sha256": "5d3d8d0ac194fb1ea44af79b74f9e4bdc09712aef2123c3a3ef2b6c43efa7df7",
+			"source": "resources/data/jinxes.json"
+		},
+		"nightsheet.json": {
+			"bytes": 2923,
+			"sha256": "99a2815bb31bcec3e107bf7f1c2fb305e301d317981d855704d3d954ec4c3f75",
+			"source": "resources/data/nightsheet.json"
+		},
+		"roles.json": {
+			"bytes": 99614,
+			"sha256": "6c659354dee75cf3afdeaf6cbc750b274a87d1099cc5f68651a2114881eb85ca",
+			"source": "resources/data/roles.json"
+		},
+		"script-schema.json": {
+			"bytes": 17491,
+			"sha256": "fe5592e0e3ae8f082419c7d64056fc68a8791487f7585ebbf9fe23699df4da74",
+			"source": "script-schema.json"
+		}
+	},
+	"source": {
+		"commit": "f10cd02e3401af227ce406287eaae7bb99a06a42",
+		"committedAt": "2026-08-05T14:33:27+02:00",
+		"repository": "ThePandemoniumInstitute/botc-release"
+	},
+	"summary": {
+		"byType": {
+			"demon": 19,
+			"fabled": 14,
+			"loric": 11,
+			"minion": 27,
+			"outsider": 23,
+			"townsfolk": 69,
+			"traveller": 18
+		},
+		"characters": 181,
+		"firstNight": 80,
+		"iconBytes": 7894704,
+		"icons": 377,
+		"jinxes": 131,
+		"otherNight": 99
+	}
+}
