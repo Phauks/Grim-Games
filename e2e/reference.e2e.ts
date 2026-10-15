@@ -140,7 +140,8 @@ test('the Witch row shows the same values as the Witch card', async ({ page }) =
 	await page.getByText('Table', { exact: true }).tap();
 	const row = page.getByTestId('character-table').locator('tr[data-character="witch"]');
 	await row.scrollIntoViewIfNeeded();
-	await expect(row.locator('[data-field="ability"]')).toBeAttached();
+	// The table rebuilds all 181 rows on switching; slow emulated devices need the time.
+	await expect(row.locator('[data-field="ability"]')).toBeAttached({ timeout: 15_000 });
 	expect(await read(row)).toEqual(fromCard);
 	await expect(row.locator('[data-field="icons"] img')).toHaveCount(2);
 });

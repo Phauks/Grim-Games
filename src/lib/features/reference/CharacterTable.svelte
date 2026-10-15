@@ -326,8 +326,9 @@
 	th[data-col='token'] {
 		width: calc(4 * var(--u));
 	}
+	/* Wide enough for the longest name badge (Deus ex Fiasco, Hell's Librarian). */
 	th[data-col='name'] {
-		width: calc(9 * var(--u));
+		width: calc(14 * var(--u));
 	}
 	th[data-col='type'] {
 		width: calc(7 * var(--u));

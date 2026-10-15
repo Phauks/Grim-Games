@@ -89,8 +89,10 @@
 	{:else if field === 'alignment'}
 		{entry.alignmentNote}
 	{:else if field === 'setup'}
-		{#if entry.setup}{character.name}: {entry.setup.summary}{#if entry.setup.notes.length}<span
-					class="small block">{entry.setup.notes.join(' ')}</span
+		{#if entry.setup}<GlossaryText
+				text="{character.name}: {entry.setup.summary}"
+			/>{#if entry.setup.notes.length}<span class="small block"
+					><GlossaryText text={entry.setup.notes.join(' ')} /></span
 				>{/if}{:else}None{/if}
 	{:else if field === 'ability'}
 		<span class="ability"><GlossaryText text={character.ability} names={[character.name]} /></span>
@@ -115,7 +117,7 @@
 				{#each entry.jinxes as jinx (jinx.with)}
 					<li>
 						<CharacterBadge characterId={jinx.with} />
-						<span class="small">{jinx.reason}</span>
+						<span class="small"><GlossaryText text={jinx.reason} /></span>
 					</li>
 				{/each}
 			</ul>
@@ -127,7 +129,9 @@
 					<li>
 						<ReminderSentence segments={reminder.segments} type={character.type} />
 						<span class="small"
-							>{reminder.groupTitle} · when {reminder.when}{#if reminder.autoDetected}
+							>{reminder.groupTitle} · when <GlossaryText
+								text={reminder.when}
+							/>{#if reminder.autoDetected}
 								· guessed from the ability{/if}</span
 						>
 					</li>
