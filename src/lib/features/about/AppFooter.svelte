@@ -54,7 +54,8 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: calc(0.5 * var(--u)) calc(1 * var(--u));
-		padding: calc(0.5 * var(--u)) calc(1 * var(--u));
+		padding: calc(0.5 * var(--u)) calc(1 * var(--u))
+			calc(0.5 * var(--u) + env(safe-area-inset-bottom, 0px));
 		font-size: 0.8rem;
 		opacity: 0.8;
 	}

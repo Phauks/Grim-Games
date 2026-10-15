@@ -30,6 +30,9 @@ body {
 }
 
 body {
+	/* Header, page, footer: the footer stays at the bottom of short pages. */
+	display: flex;
+	flex-direction: column;
 	background: var(--page-background);
 	background-attachment: fixed;
 }
