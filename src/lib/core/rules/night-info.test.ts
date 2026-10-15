@@ -92,7 +92,7 @@ describe('Town Crier', () => {
 			nominee: s[0]
 		}));
 		const next = run(session, ctx, { type: 'NewDay' });
-		expect(townCrierAnswer(next.game, seats[0], characters).value).toBe(false);
+		expect(townCrierAnswer(next.game, seats[0], characters)).toMatchObject({ value: false });
 	});
 
 	it('is unreliable while the Town Crier is poisoned', () => {
@@ -166,7 +166,7 @@ describe('Undertaker', () => {
 			}),
 			(s) => ({ type: 'Execute', seatId: s[1] })
 		);
-		expect(undertakerAnswer(g, seats[0], characters).value).toBe('drunk');
+		expect(undertakerAnswer(g, seats[0], characters)).toMatchObject({ value: 'drunk' });
 	});
 
 	it('learns nothing when the executed player did not die by it', () => {
@@ -233,7 +233,7 @@ describe('Juggler', () => {
 				guesses: [{ seatId: s[1], characterId: 'witch' }]
 			})
 		);
-		expect(jugglerAnswer(g, seats[0], characters).value).toBe(1);
+		expect(jugglerAnswer(g, seats[0], characters)).toMatchObject({ value: 1 });
 	});
 
 	it('has no answer with no guesses logged', () => {
