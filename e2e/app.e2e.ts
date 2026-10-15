@@ -57,3 +57,10 @@ test('every page shows build info and a prefilled report link', async ({ page })
 	expect(url.searchParams.get('page')).toBe('/');
 	expect(url.searchParams.get('build')).toMatch(/^v\d/);
 });
+
+test('the footer shows the Community Created Content logo', async ({ page }) => {
+	await page.goto('/');
+	const logo = page.getByRole('img', { name: /Community Created Content/ });
+	await expect(logo).toBeVisible();
+	expect(await logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+});

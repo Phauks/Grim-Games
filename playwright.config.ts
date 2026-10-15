@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 // Touch-first (ROADMAP.md Phase 0): every e2e test runs on an emulated phone and tablet.
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
-const PORT = 8787;
+const PORT = Number(process.env.E2E_PORT) || 8787;
 
 export default defineConfig({
 	testDir: 'e2e',

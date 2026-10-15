@@ -7,6 +7,26 @@
 </script>
 
 <footer>
+	<!--
+		The Pandemonium Institute asks projects that use official assets to show a Community
+		Created Content logo (release.botc.app/resources, "Community Created Content logos").
+		static/brand/ccc-parchment.webp is resources/community/ccc-parchment.png from
+		ThePandemoniumInstitute/botc-release @ f10cd02, resized to 360px wide.
+	-->
+	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+	<a
+		class="ccc"
+		href="https://bloodontheclocktower.com/pages/community-created-content-policy"
+		target="_blank"
+		rel="noopener"
+	>
+		<img
+			src="/brand/ccc-parchment.webp"
+			width="120"
+			height="45"
+			alt="Community Created Content: not an official Blood on the Clocktower product"
+		/>
+	</a>
 	<!-- External GitHub links, not app routes. -->
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 	<a class="report" href={reportUrl} target="_blank" rel="noopener">Report an issue</a>
@@ -38,6 +58,10 @@
 	}
 	.build {
 		margin: 0;
+	}
+	.ccc img {
+		display: block;
+		height: auto;
 	}
 	.build a {
 		min-height: auto;
