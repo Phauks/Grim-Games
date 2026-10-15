@@ -21,8 +21,27 @@
 	const characters = $derived(grimoire.open.characters);
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
 
+	let board = $state<HTMLElement>();
 	let width = $state(0);
 	let height = $state(0);
+	// Measured on the next frame rather than with bind:clientWidth, so resizing the tokens
+	// never re-enters the ResizeObserver callback (a "ResizeObserver loop" error).
+	$effect(() => {
+		if (!board) return;
+		let frame = 0;
+		const observer = new ResizeObserver(([entry]) => {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => {
+				width = entry.contentRect.width;
+				height = entry.contentRect.height;
+			});
+		});
+		observer.observe(board);
+		return () => {
+			cancelAnimationFrame(frame);
+			observer.disconnect();
+		};
+	});
 	const size = $derived(tokenSize(width, height, seats.length));
 
 	// ── Seat sheet ──
@@ -74,7 +93,7 @@
 		<IconButton icon="fabled" label="Add Fabled or Loric" onclick={() => (ruleOpen = true)} />
 	</div>
 
-	<div class="board" bind:clientWidth={width} bind:clientHeight={height}>
+	<div class="board" bind:this={board}>
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = seatPosition(i, seats.length)}
 			<div class="slot" style:left="{at.x}%" style:top="{at.y}%">
