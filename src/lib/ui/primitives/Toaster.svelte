@@ -24,7 +24,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		width: min(calc(100vw - 2 * var(--space-4)), 24rem);
+		width: min(calc(100vw - 2 * var(--space-4)), calc(24 * var(--u)));
 		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
 		border-radius: var(--card-radius);
 		background: var(--toast-background);

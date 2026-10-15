@@ -187,8 +187,8 @@
 		vertical-align: middle;
 	}
 	.icons img {
-		width: 1.75rem;
-		height: 1.75rem;
+		width: calc(1.75 * var(--u));
+		height: calc(1.75 * var(--u));
 		border-radius: 50%;
 		background: var(--token-face);
 	}
@@ -251,6 +251,6 @@
 		gap: var(--space-1);
 		min-height: var(--tap-target);
 		white-space: nowrap;
-		--icon-size: 1.1rem;
+		--icon-size: calc(1.1 * var(--u));
 	}
 </style>

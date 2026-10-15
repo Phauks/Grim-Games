@@ -431,7 +431,7 @@
 		gap: var(--space-3);
 	}
 	.demon-voted {
-		min-width: 12rem;
+		min-width: calc(12 * var(--u));
 	}
 	.reminders,
 	.log {
@@ -503,7 +503,7 @@
 		-webkit-line-clamp: 3;
 		line-clamp: 3;
 		overflow: hidden;
-		flex: 1 1 12rem;
+		flex: 1 1 calc(12 * var(--u));
 		white-space: pre-line;
 		overflow-wrap: anywhere;
 	}

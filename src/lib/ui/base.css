@@ -12,7 +12,7 @@
 }
 
 html {
-	/* The user's text-size scale; everything sized in rem follows it. */
+	/* The text-size scale: text sized in rem follows it; layout uses --u (tokens/base.css). */
 	font-size: calc(100% * var(--text-scale));
 }
 

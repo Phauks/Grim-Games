@@ -666,6 +666,26 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			];
 		}
 
+		case 'ApplySetupReminders': {
+			const seats = command.placements.map((p) => seatOf(game, p.seatId));
+			if (seats.length === 0) {
+				warn('no-change', 'there are no reminders to place');
+				return [];
+			}
+			return command.placements.map((p, i): GameEvent => {
+				const reminder: Reminder = {
+					characterId: p.reminder.characterId,
+					label: p.reminder.label
+				};
+				checkReminder(game, reminder, ctx, warn);
+				return {
+					type: 'ReminderAdded',
+					seatId: seats[i].seatId,
+					reminder: { reminderId: ctx.newId(), ...reminder }
+				};
+			});
+		}
+
 		case 'MoveReminder': {
 			const to = seatOf(game, command.toSeatId);
 			const from = game.seating

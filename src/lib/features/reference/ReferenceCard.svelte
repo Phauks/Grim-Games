@@ -55,7 +55,7 @@
 		min-width: 0;
 		/* Off-screen cards skip layout and paint; the size estimate keeps the scrollbar steady. */
 		content-visibility: auto;
-		contain-intrinsic-size: auto 34rem;
+		contain-intrinsic-size: auto calc(34 * var(--u));
 		scroll-margin-top: calc(var(--tap-target) + var(--space-4));
 	}
 	header {
@@ -95,7 +95,7 @@
 	}
 	/* The value sits beside its label when there is room, and wraps under it otherwise. */
 	.row > :global(.value) {
-		flex: 1 1 8rem;
+		flex: 1 1 calc(8 * var(--u));
 	}
 	/* Lists (jinxes, pre-day) start on their own line under the label. */
 	.row:has(:global(ul)) {

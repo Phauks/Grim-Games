@@ -24,7 +24,8 @@
 		"deploy:staging": "npm run build && wrangler deploy --env staging",
 		"sync:data": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/sync-data.ts",
 		"snapshot:night-order": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/snapshot-night-order.ts",
-		"scaffold:rules-tests": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/scaffold-rules-tests.ts"
+		"scaffold:rules-tests": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/scaffold-rules-tests.ts",
+		"export:setup-prep": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/export-setup-prep.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

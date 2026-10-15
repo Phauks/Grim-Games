@@ -96,7 +96,7 @@
 		pointer-events: auto;
 		display: flex;
 		flex-direction: column;
-		width: min(100%, 40rem);
+		width: min(100%, calc(40 * var(--u)));
 		max-height: 92dvh;
 		padding: 0 var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
 		border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
@@ -120,8 +120,8 @@
 		cursor: grab;
 	}
 	:global([data-scope='drawer'][data-part='grabber-indicator']) {
-		width: 2.75rem;
-		height: 0.3rem;
+		width: calc(2.75 * var(--u));
+		height: calc(0.3 * var(--u));
 		border-radius: var(--radius-full);
 		background: var(--sheet-grabber);
 		opacity: 0.6;

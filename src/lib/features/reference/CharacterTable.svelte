@@ -259,7 +259,7 @@
 		text-transform: uppercase;
 		text-align: left;
 		white-space: nowrap;
-		--icon-size: 0.95rem;
+		--icon-size: calc(0.95 * var(--u));
 	}
 	.sort {
 		cursor: pointer;
@@ -279,7 +279,7 @@
 	.filters select,
 	.pick {
 		width: 100%;
-		min-width: 6.5rem;
+		min-width: calc(6.5 * var(--u));
 		min-height: var(--tap-target);
 		padding: 0 var(--space-2);
 		border: var(--card-border);
@@ -294,43 +294,43 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
-		max-width: 10rem;
+		max-width: calc(10 * var(--u));
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
 		font-size: 0.85rem;
 		cursor: pointer;
-		--icon-size: 1rem;
+		--icon-size: calc(1 * var(--u));
 	}
 	tbody th {
 		font-weight: 600;
 		white-space: nowrap;
 	}
 	td[data-col='token'] {
-		width: 3.5rem;
+		width: calc(3.5 * var(--u));
 	}
 	td[data-col='ability'] {
-		min-width: 16rem;
+		min-width: calc(16 * var(--u));
 	}
 	td[data-col='firstNight'],
 	td[data-col='otherNight'],
 	td[data-col='preDay'],
 	td[data-col='jinxes'] {
-		min-width: 15rem;
+		min-width: calc(15 * var(--u));
 	}
 	td[data-col='tokens'],
 	td[data-col='problems'] {
-		min-width: 10rem;
+		min-width: calc(10 * var(--u));
 	}
 	td[data-col='setup'],
 	td[data-col='special'] {
-		min-width: 9rem;
+		min-width: calc(9 * var(--u));
 	}
 	td[data-col='links'] {
-		min-width: 9rem;
+		min-width: calc(9 * var(--u));
 	}
 	.clamp {
-		max-height: 5.4rem;
+		max-height: calc(5.4 * var(--u));
 		overflow: hidden;
 		mask-image: linear-gradient(to bottom, black 70%, transparent);
 	}
@@ -362,8 +362,8 @@
 		min-height: var(--tap-target);
 	}
 	.check input {
-		width: 1.25rem;
-		height: 1.25rem;
+		width: calc(1.25 * var(--u));
+		height: calc(1.25 * var(--u));
 	}
 	.visually-hidden {
 		position: absolute;

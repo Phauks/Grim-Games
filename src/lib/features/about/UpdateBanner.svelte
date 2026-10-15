@@ -80,13 +80,13 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
-		width: min(24rem, calc(100vw - 2 * var(--space-3)));
+		width: min(calc(24 * var(--u)), calc(100vw - 2 * var(--space-3)));
 		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
 		color: var(--on-surface);
-		box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.4);
+		box-shadow: 0 calc(0.5 * var(--u)) calc(1.5 * var(--u)) rgb(0 0 0 / 0.4);
 	}
 	.text {
 		display: grid;

@@ -211,7 +211,7 @@
 	}
 	.steps {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(24 * var(--u))), 1fr));
 		gap: var(--space-2) var(--space-4);
 		margin: 0;
 		padding: 0;
@@ -219,7 +219,7 @@
 	}
 	.step {
 		display: grid;
-		grid-template-columns: 3rem 1fr;
+		grid-template-columns: calc(3 * var(--u)) 1fr;
 		gap: var(--space-2);
 		align-items: start;
 		padding: var(--space-2) var(--space-3);
@@ -227,7 +227,7 @@
 		border-radius: var(--card-radius);
 		background: var(--card-background);
 		content-visibility: auto;
-		contain-intrinsic-size: auto 8rem;
+		contain-intrinsic-size: auto calc(8 * var(--u));
 	}
 	.step[data-kind='marker'] {
 		background: var(--surface-selected);
@@ -269,7 +269,7 @@
 		background: var(--card-background);
 	}
 	table.order {
-		min-width: 40rem;
+		min-width: calc(40 * var(--u));
 		margin-top: 0;
 		table-layout: auto;
 		font-size: 0.9rem;
@@ -298,13 +298,13 @@
 		background: var(--surface-selected);
 	}
 	.order .text {
-		min-width: 18rem;
+		min-width: calc(18 * var(--u));
 	}
 	.order .tokens {
-		min-width: 8rem;
+		min-width: calc(8 * var(--u));
 	}
 	.order .tokens :global(.reminder) {
-		margin: 0.1rem 0.15rem 0.1rem 0;
+		margin: calc(0.1 * var(--u)) calc(0.15 * var(--u)) calc(0.1 * var(--u)) 0;
 	}
 	table {
 		width: 100%;

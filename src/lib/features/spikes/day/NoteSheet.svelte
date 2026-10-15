@@ -125,7 +125,7 @@
 	}
 	textarea {
 		width: 100%;
-		min-height: 9rem;
+		min-height: calc(9 * var(--u));
 		padding: var(--space-3);
 		border: 1px solid var(--on-sheet-muted);
 		border-radius: var(--radius-md);
@@ -148,7 +148,7 @@
 	}
 	.guess {
 		display: grid;
-		grid-template-columns: 5rem 1fr;
+		grid-template-columns: calc(5 * var(--u)) 1fr;
 		align-items: center;
 		gap: var(--space-2);
 	}

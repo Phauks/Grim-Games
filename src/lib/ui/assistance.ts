@@ -1,12 +1,14 @@
 /**
  * How much the app walks the Storyteller through the game (Trevor, 2026-10-15: "users can
  * control the handholding in settings ... power storytellers don't want to be walked
- * through the night"). Each kind of help is its own switch; the presets set them all.
+ * through the night"). Each kind of help is its own switch; there are no presets (Trevor:
+ * "only granular tools").
  */
 export const ASSIST_KEYS = [
 	'nightWalkthrough',
 	'nightAnswers',
 	'infoSuggestions',
+	'setupReminders',
 	'preDayReminders',
 	'deathCause',
 	'rulesWarnings'
@@ -29,6 +31,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Suggest information',
 		description: 'Washerwoman, Librarian, Investigator and similar steps list true options first.'
 	},
+	setupReminders: {
+		label: 'Suggest setup reminders',
+		description:
+			'Once characters are in the grimoire, offer the reminders to place before the first night.'
+	},
 	preDayReminders: {
 		label: 'Pre-day reminders',
 		description: 'After the night, list what to watch for today, like an unused Slayer shot.'
@@ -43,54 +50,15 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	}
 };
 
-export const ASSIST_PRESETS = {
-	guided: {
-		nightWalkthrough: true,
-		nightAnswers: true,
-		infoSuggestions: true,
-		preDayReminders: true,
-		deathCause: true,
-		rulesWarnings: true
-	},
-	standard: {
-		nightWalkthrough: true,
-		nightAnswers: true,
-		infoSuggestions: false,
-		preDayReminders: true,
-		deathCause: false,
-		rulesWarnings: true
-	},
-	expert: {
-		nightWalkthrough: false,
-		nightAnswers: false,
-		infoSuggestions: false,
-		preDayReminders: false,
-		deathCause: false,
-		rulesWarnings: true
-	}
-} as const satisfies Record<string, Assistance>;
-export type AssistPreset = keyof typeof ASSIST_PRESETS;
+/** New Storytellers get every kind of help; each switch turns one off. */
+export const DEFAULT_ASSISTANCE: Assistance = Object.fromEntries(
+	ASSIST_KEYS.map((key) => [key, true])
+) as Assistance;
 
-export const ASSIST_PRESET_LABELS: Record<AssistPreset | 'custom', string> = {
-	guided: 'Guided',
-	standard: 'Standard',
-	expert: 'Expert',
-	custom: 'Custom'
-};
-
-export const DEFAULT_ASSISTANCE: Assistance = { ...ASSIST_PRESETS.guided };
-
-/** The preset these settings match, or `custom`. */
-export function assistPreset(assistance: Assistance): AssistPreset | 'custom' {
-	for (const [id, preset] of Object.entries(ASSIST_PRESETS)) {
-		if (ASSIST_KEYS.every((key) => preset[key] === assistance[key])) return id as AssistPreset;
-	}
-	return 'custom';
-}
-
+/** Saved switches, with any missing or invalid ones taking their default. */
 export function parseAssistance(raw: unknown): Assistance {
 	const input = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-	const out = { ...DEFAULT_ASSISTANCE };
+	const out: Assistance = { ...DEFAULT_ASSISTANCE };
 	for (const key of ASSIST_KEYS) if (typeof input[key] === 'boolean') out[key] = input[key];
 	return out;
 }
