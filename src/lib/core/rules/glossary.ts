@@ -10,9 +10,12 @@
  * anchors, so the link uses a text fragment (`#:~:text=Term:`), which browsers that
  * support it scroll to and others ignore.
  *
- * Character type names (Demon, Townsfolk, ...) and everyday words (ability, player,
- * Storyteller) are left out on purpose: marking them would underline most sentences.
- * "May" is not a Glossary term (only "Might" is), so it is not marked.
+ * Character types, alignments, Ability and Storyteller are marked (Trevor, 2026-10-15).
+ * The commonest everyday entries (Player, Character, Day, Night, Wake, Info) are left out:
+ * they would underline most sentences. "Lose" is left out because the game text only uses
+ * it for losing an ability or roshambo, not losing the game. Entries for physical parts
+ * (Life token, Town Square, ...) never occur in game text. "May" is not a Glossary term
+ * (only "Might" is), and Loric has no Glossary entry, so neither is marked.
  */
 
 export const GLOSSARY_URL = 'https://wiki.bloodontheclocktower.com/Glossary';
@@ -210,6 +213,107 @@ const ENTRIES: readonly Entry[] = [
 	{
 		id: 'grimoire',
 		term: 'Grimoire',
+		variants: []
+	},
+	{
+		id: 'townsfolk',
+		term: 'Townsfolk',
+		variants: []
+	},
+	{
+		id: 'outsider',
+		term: 'Outsider',
+		variants: ['outsiders']
+	},
+	{
+		id: 'minion',
+		term: 'Minion',
+		variants: ['minions']
+	},
+	{
+		id: 'demon',
+		term: 'Demon',
+		variants: ['demons']
+	},
+	{
+		// The player who is the Demon, as opposed to the character type.
+		id: 'the-demon',
+		term: 'Demon, The',
+		variants: ['the demon']
+	},
+	{
+		id: 'traveller',
+		term: 'Traveller',
+		variants: ['travellers', 'traveler', 'travelers']
+	},
+	{
+		id: 'minion-info',
+		term: 'Minion info',
+		variants: []
+	},
+	{
+		id: 'demon-info',
+		term: 'Demon info',
+		variants: []
+	},
+	{
+		id: 'good',
+		term: 'Good',
+		variants: []
+	},
+	{
+		id: 'evil',
+		term: 'Evil',
+		variants: []
+	},
+	{
+		id: 'good-character',
+		term: 'Good character',
+		variants: ['good characters']
+	},
+	{
+		id: 'evil-character',
+		term: 'Evil character',
+		variants: ['evil characters']
+	},
+	{
+		id: 'team',
+		term: 'Team',
+		variants: ['teams']
+	},
+	{
+		id: 'type',
+		term: 'Type',
+		variants: ['types']
+	},
+	{
+		id: 'each-night',
+		term: 'Each night',
+		variants: []
+	},
+	{
+		id: 'win',
+		term: 'Win',
+		variants: ['wins', 'won', 'winning']
+	},
+	{
+		id: 'ability',
+		term: 'Ability',
+		variants: ['abilities']
+	},
+	{
+		id: 'storyteller',
+		term: 'Storyteller',
+		variants: []
+	},
+	{
+		id: 'vote-token',
+		term: 'Vote token',
+		variants: ['vote tokens']
+	},
+	{
+		id: 'script',
+		term: 'Script',
 		variants: []
 	}
 ];

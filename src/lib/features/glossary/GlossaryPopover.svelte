@@ -41,8 +41,6 @@
 <style>
 	.definition {
 		margin: var(--space-1) 0 var(--space-2);
-		padding-left: var(--space-2);
-		border-left: 2px solid var(--border);
 	}
 	.wiki {
 		display: inline-flex;

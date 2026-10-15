@@ -64,7 +64,7 @@ describe('glossarySegments', () => {
 	it('marks whole words only, ignoring case', () => {
 		const text = 'Each night, choose a player: they are Poisoned tonight.';
 		const segments = glossarySegments(text);
-		expect(terms(segments)).toEqual(['choose', 'poisoned']);
+		expect(terms(segments)).toEqual(['each-night', 'choose', 'poisoned']);
 		expect(segments.map((s) => s.text).join('')).toBe(text);
 		expect(terms(glossarySegments('The Poisoner is deadly; the mad hatter made it.'))).toEqual([
 			'mad'
@@ -92,6 +92,18 @@ describe('glossarySegments', () => {
 			const marked = segments.filter((s) => s.kind === 'term');
 			expect(new Set(marked.map((s) => s.term.id)).size).toBe(marked.length);
 		}
+	});
+
+	it('marks character types, the Demon and alignments', () => {
+		expect(
+			terms(glossarySegments('A Townsfolk, Outsiders, a Minion and Demons (except Travellers)'))
+		).toEqual(['townsfolk', 'outsider', 'minion', 'demon', 'traveller']);
+		expect(terms(glossarySegments('2 players that are not the Demon'))).toEqual(['the-demon']);
+		expect(terms(glossarySegments('1 good & 1 evil character token: good wins'))).toEqual([
+			'good',
+			'evil-character',
+			'win'
+		]);
 	});
 
 	it('does not mark character names', () => {
