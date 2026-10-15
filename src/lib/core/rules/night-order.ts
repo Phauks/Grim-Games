@@ -40,16 +40,47 @@ export interface NightOrderInput {
 	customOrder?: readonly string[];
 	/** Numeric positions of official characters, to slot in homebrew numbers. */
 	numeric?: NumericNightOrder;
+	/** The Storyteller's changes to this night's steps (see `NightStepOverride`). */
+	overrides?: readonly NightStepOverride[];
 }
+
+/**
+ * A Storyteller override of the night order, stored with the game. `night` limits it to
+ * the first night or to other nights; without it, it applies to both. `after` is the id of
+ * the step to follow (`null`: first, before everything else).
+ * - `hide`: leave a step out (it is listed in `omitted`);
+ * - `edit`: replace a step's text;
+ * - `move`: put a step after another;
+ * - `add`: a step of the Storyteller's own, with their own unique `id`.
+ */
+export type NightStepOverride =
+	| { kind: 'hide'; id: string; night?: Night }
+	| { kind: 'edit'; id: string; text: string; night?: Night }
+	| { kind: 'move'; id: string; after: string | null; night?: Night }
+	| {
+			kind: 'add';
+			id: string;
+			text: string;
+			/** Short heading for a step with no character. */
+			title?: string;
+			characterId?: CharacterId;
+			after: string | null;
+			night?: Night;
+	  };
 
 /** Why a step is where it is. */
 export type Placement = 'night-sheet' | 'custom-order' | 'numeric' | 'unplaced' | 'marker';
 
 export interface NightStep {
-	id: CharacterId | NightMarker;
-	kind: 'marker' | 'character';
-	/** For character steps. */
+	id: CharacterId | NightMarker | string;
+	/** `custom` for a step the Storyteller added. */
+	kind: 'marker' | 'character' | 'custom';
+	/** For character steps, and custom steps about a character. */
 	character?: Character;
+	/** For custom steps: the Storyteller's heading. */
+	title?: string;
+	/** Set when a Storyteller override changed or added this step. */
+	overridden?: 'edited' | 'moved' | 'added';
 	/** What to do: the character's night reminder, or our text for a marker step. */
 	reminder?: string;
 	/** True for steps after Dawn (public announcements such as the Leviathan's). */
@@ -60,7 +91,7 @@ export interface NightStep {
 }
 
 export interface OmittedStep {
-	id: CharacterId | NightMarker;
+	id: CharacterId | NightMarker | string;
 	reason: string;
 }
 
@@ -307,9 +338,8 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 		ordered = result;
 	}
 
-	const dawnIndex = ordered.findIndex((c) => c.id === 'dawn');
-	const steps = ordered.map((candidate, i): NightStep => {
-		const afterDawn = dawnIndex >= 0 && i > dawnIndex;
+	let steps = ordered.map((candidate): NightStep => {
+		const afterDawn = false;
 		if (!candidate.character) {
 			const marker = candidate.id as NightMarker;
 			return {
@@ -325,7 +355,6 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 		const notes = [...candidate.notes];
 		const reminder = reminderFor(character, night);
 		if (reminder === undefined) notes.push('No night text for this character tonight.');
-		if (afterDawn) notes.push('After Dawn: announce this to everyone.');
 		return {
 			id: character.id,
 			kind: 'character',
@@ -336,7 +365,80 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 			notes
 		};
 	});
+	if (input.overrides?.length) {
+		steps = applyNightOverrides(steps, input.overrides, night, omitted, (id) =>
+			input.inPlay.find((c) => c.id === id)
+		);
+	}
+	const dawnIndex = steps.findIndex((s) => s.id === 'dawn');
+	steps.forEach((step, i) => {
+		step.afterDawn = dawnIndex >= 0 && i > dawnIndex;
+		if (step.afterDawn && step.kind === 'character') {
+			step.notes.push('After Dawn: announce this to everyone.');
+		}
+	});
 	return { night, steps, omitted };
+}
+
+/** Applies the Storyteller's overrides for this night. Unknown ids are ignored. */
+export function applyNightOverrides(
+	steps: readonly NightStep[],
+	overrides: readonly NightStepOverride[],
+	night: Night,
+	omitted: OmittedStep[] = [],
+	character: (id: CharacterId) => Character | undefined = () => undefined
+): NightStep[] {
+	const out = steps.map((s) => ({ ...s, notes: [...s.notes] }));
+	const insertAfter = (step: NightStep, after: string | null) => {
+		let at = after === null ? 0 : out.findIndex((s) => s.id === after) + 1;
+		// Unknown anchor: just before Dawn, or at the end.
+		if (after !== null && at === 0) {
+			const dawn = out.findIndex((s) => s.id === 'dawn');
+			at = dawn >= 0 ? dawn : out.length;
+		}
+		out.splice(at, 0, step);
+	};
+	for (const o of overrides) {
+		if (o.night !== undefined && o.night !== night) continue;
+		const index = out.findIndex((s) => s.id === o.id);
+		switch (o.kind) {
+			case 'hide':
+				if (index >= 0) {
+					out.splice(index, 1);
+					omitted.push({ id: o.id, reason: 'Hidden by the Storyteller.' });
+				}
+				break;
+			case 'edit':
+				if (index >= 0) out[index] = { ...out[index], reminder: o.text, overridden: 'edited' };
+				break;
+			case 'move':
+				if (index >= 0 && o.after !== o.id) {
+					const [step] = out.splice(index, 1);
+					insertAfter({ ...step, overridden: step.overridden ?? 'moved' }, o.after);
+				}
+				break;
+			case 'add': {
+				if (index >= 0) break;
+				const c = o.characterId ? character(o.characterId) : undefined;
+				insertAfter(
+					{
+						id: o.id,
+						kind: 'custom',
+						...(c ? { character: c } : {}),
+						...(o.title ? { title: o.title } : {}),
+						reminder: o.text,
+						afterDawn: false,
+						placement: 'custom-order',
+						notes: [],
+						overridden: 'added'
+					},
+					o.after
+				);
+				break;
+			}
+		}
+	}
+	return out;
 }
 
 /** Rules to remember at the evil info steps, from characters in play. */

@@ -11,6 +11,7 @@ import {
 	impairment,
 	NO_DAY_RELEVANCE,
 	renderReminder,
+	type DayReminderOverride,
 	type DaySeat,
 	type DayState
 } from './day-reminders.ts';
@@ -25,9 +26,15 @@ const seat = (characterId: string, extra: Partial<DaySeat> = {}): DaySeat => ({
 	reminders: [],
 	...extra
 });
+const token = (characterId: string, label: string) => ({ characterId, label });
+
+function run(state: Partial<DayState> & Pick<DayState, 'seats'>, extra: Character[] = []) {
+	const lookup = (id: string) => extra.find((c) => c.id === id) ?? data.byId.get(id);
+	return dayReminders({ character: lookup, ...state });
+}
 function texts(state: Partial<DayState> & Pick<DayState, 'seats'>, extra: Character[] = []) {
 	const lookup = (id: string) => extra.find((c) => c.id === id) ?? data.byId.get(id);
-	return dayReminders({ day: 2, character: lookup, ...state }).flatMap((g) =>
+	return run(state, extra).groups.flatMap((g) =>
 		g.reminders.map((r) => renderReminder(r.segments, (id) => lookup(id)?.name ?? id))
 	);
 }
@@ -62,8 +69,8 @@ describe('coverage', () => {
 			const c = data.byId.get(entry.id)!;
 			const tokens = [...c.reminders, ...c.remindersGlobal].map((t) => t.toLowerCase());
 			for (const spec of entry.reminders) {
-				for (const token of [spec.when?.reminder, spec.when?.noReminder]) {
-					if (token) expect(tokens, `${entry.id}: ${token}`).toContain(token.toLowerCase());
+				for (const label of [spec.when?.reminder, spec.when?.noReminder]) {
+					if (label) expect(tokens, `${entry.id}: ${label}`).toContain(label.toLowerCase());
 				}
 			}
 		}
@@ -76,7 +83,7 @@ describe('state-based reminders', () => {
 		const witch = seat('witch', { playerName: 'Sam' });
 		const librarian = seat('librarian', {
 			playerName: 'Alex',
-			reminders: [{ source: 'witch', token: 'Cursed' }]
+			reminders: [token('witch', 'Cursed')]
 		});
 		expect(texts({ seats: [witch, librarian] })).toEqual([
 			'[Witch · Sam] has chosen [Librarian · Alex]'
@@ -93,15 +100,15 @@ describe('state-based reminders', () => {
 	// https://wiki.bloodontheclocktower.com/Slayer
 	it('shows an unused Slayer shot, and whether the Slayer is poisoned or drunk', () => {
 		expect(texts({ seats: [seat('slayer')] })).toEqual(['[Slayer] has an unused shot']);
-		const used = seat('slayer', { reminders: [{ source: 'slayer', token: 'No Ability' }] });
+		const used = seat('slayer', { reminders: [token('slayer', 'No Ability')] });
 		expect(texts({ seats: [used] })).toEqual([]);
-		const poisoned = seat('slayer', { reminders: [{ source: 'poisoner', token: 'Poisoned' }] });
+		const poisoned = seat('slayer', { reminders: [token('poisoner', 'Poisoned')] });
 		expect(texts({ seats: [poisoned, seat('poisoner')] })).toEqual([
 			'[Slayer] has an unused shot',
 			'[Slayer] is poisoned'
 		]);
 		// https://wiki.bloodontheclocktower.com/Drunk: the Drunk thinks they are the Slayer.
-		const drunk = seat('slayer', { reminders: [{ source: 'drunk', token: 'Is The Drunk' }] });
+		const drunk = seat('slayer', { reminders: [token('drunk', 'Is The Drunk')] });
 		expect(texts({ seats: [drunk] })).toContain('[Slayer] is drunk');
 	});
 
@@ -112,12 +119,14 @@ describe('state-based reminders', () => {
 		expect(impairment('Safe')).toBeUndefined();
 	});
 
-	// https://wiki.bloodontheclocktower.com/Juggler and /Riot
-	it('respects day limits', () => {
-		expect(texts({ day: 1, seats: [seat('juggler')] })).toEqual(['[Juggler] may juggle today']);
-		expect(texts({ day: 2, seats: [seat('juggler')] })).toEqual([]);
-		expect(texts({ day: 2, seats: [seat('riot')] })).toEqual([]);
-		expect(texts({ day: 3, seats: [seat('riot')] })).toEqual(['[Riot] is rioting']);
+	// https://wiki.bloodontheclocktower.com/Juggler and /Riot: no day tracking, so tokens decide.
+	it('uses reminder tokens instead of day numbers', () => {
+		expect(texts({ seats: [seat('juggler')] })).toEqual(['[Juggler] may juggle']);
+		const juggled = seat('juggler', { reminders: [token('juggler', 'Correct')] });
+		expect(texts({ seats: [juggled] })).toEqual([]);
+		expect(texts({ seats: [seat('riot')] })).toEqual([]);
+		const day3 = seat('riot', { reminders: [token('riot', 'Day 3')] });
+		expect(texts({ seats: [day3] })).toEqual(['[Riot] is rioting']);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Scarlet_Woman
@@ -133,23 +142,77 @@ describe('state-based reminders', () => {
 		expect(texts({ seats: [seat('klutz', { dead: true })] })).toEqual(['[Klutz] is dead']);
 	});
 
-	// https://wiki.bloodontheclocktower.com/Djinn
-	it('includes Fabled and Loric that are not seated', () => {
-		expect(texts({ seats: [], rules: ['djinn'] })).toEqual(['[Djinn] is in play']);
+	// https://wiki.bloodontheclocktower.com/Banshee
+	it('uses the death cause, treating an unknown cause as uncertain', () => {
+		const line = '[Banshee] may nominate and vote twice';
+		expect(texts({ seats: [seat('banshee', { dead: true, deathCause: 'demon' })] })).toEqual([
+			line
+		]);
+		expect(texts({ seats: [seat('banshee', { dead: true, deathCause: 'imp' })] })).toEqual([line]);
+		expect(texts({ seats: [seat('banshee', { dead: true, deathCause: 'execution' })] })).toEqual(
+			[]
+		);
+		const unknown = run({ seats: [seat('banshee', { dead: true })] });
+		expect(unknown.groups[0].reminders[0].uncertain).toBe(true);
 	});
 
-	it('leaves out characters with no day relevance', () => {
-		expect(texts({ seats: [seat('chef'), seat('imp'), seat('poisoner')] })).toEqual([]);
+	// https://wiki.bloodontheclocktower.com/Djinn
+	it('includes Fabled and Loric that are not seated', () => {
+		expect(texts({ seats: [], ruleCharacters: ['djinn'] })).toEqual(['[Djinn] is in play']);
+	});
+
+	it('leaves out characters with no day relevance and seats with no character', () => {
+		const empty: DaySeat = { seatId: 'x', dead: false, reminders: [] };
+		expect(texts({ seats: [seat('chef'), seat('imp'), seat('poisoner'), empty] })).toEqual([]);
 	});
 
 	it('groups reminders in a fixed order', () => {
-		const groups = dayReminders({
-			day: 2,
-			character: (id) => data.byId.get(id),
-			seats: [seat('saint'), seat('slayer'), seat('virgin')]
-		});
+		const { groups } = run({ seats: [seat('saint'), seat('slayer'), seat('virgin')] });
 		expect(groups.map((g) => g.group)).toEqual(['day-ability', 'nomination', 'execution-death']);
 		expect(groups[0].reminders[0].wiki).toBe('https://wiki.bloodontheclocktower.com/Slayer');
+	});
+});
+
+describe('Storyteller overrides', () => {
+	const witch = seat('witch', { playerName: 'Sam' });
+	const chef = seat('chef', { reminders: [token('witch', 'Cursed')] });
+	const saint = seat('saint');
+	const seats = [witch, chef, saint];
+	const keys = run({ seats }).groups.flatMap((g) => g.reminders.map((r) => r.key));
+
+	it('gives every generated reminder a stable, unique key', () => {
+		expect(new Set(keys).size).toBe(keys.length);
+		expect(run({ seats }).groups.flatMap((g) => g.reminders.map((r) => r.key))).toEqual(keys);
+		expect(keys).toContain(`witch#0@${witch.seatId}>${chef.seatId}`);
+	});
+
+	it('hides, edits and adds reminders', () => {
+		const overrides: DayReminderOverride[] = [
+			{ kind: 'hide', key: `saint#0@${saint.seatId}` },
+			{ kind: 'edit', key: `witch#0@${witch.seatId}>${chef.seatId}`, text: 'cursed the Chef' },
+			{
+				kind: 'add',
+				key: 'custom-1',
+				group: 'announcement',
+				text: 'Remind everyone of the house rule'
+			},
+			{ kind: 'add', key: 'custom-2', group: 'vote', text: 'is voting twice', seatId: chef.seatId }
+		];
+		const result = run({ seats, overrides });
+		const lines = result.groups.flatMap((g) =>
+			g.reminders.map((r) => renderReminder(r.segments, name))
+		);
+		expect(lines).toEqual([
+			'[Witch · Sam] cursed the Chef',
+			'[Chef] is voting twice',
+			'Remind everyone of the house rule'
+		]);
+		expect(result.hidden.map((r) => r.key)).toEqual([`saint#0@${saint.seatId}`]);
+		expect(result.groups.flatMap((g) => g.reminders.map((r) => r.overridden))).toEqual([
+			'edited',
+			'added',
+			'added'
+		]);
 	});
 });
 
@@ -167,12 +230,9 @@ describe('homebrew', () => {
 	};
 
 	it('is auto-detected from ability text and special', () => {
-		const groups = dayReminders({
-			day: 1,
-			character: (id) => (id === 'heckler' ? custom : undefined),
-			seats: [seat('heckler')]
-		});
-		const reminders = groups.flatMap((g) => g.reminders);
+		const reminders = run({ seats: [seat('heckler')] }, [custom]).groups.flatMap(
+			(g) => g.reminders
+		);
 		expect(reminders.every((r) => r.autoDetected)).toBe(true);
 		expect(reminders.map((r) => r.group)).toEqual(['day-ability', 'vote', 'execution-death']);
 		expect(renderReminder(reminders[0].segments, name)).toBe('[heckler] may act today');
