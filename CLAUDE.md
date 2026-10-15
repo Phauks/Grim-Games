@@ -9,3 +9,4 @@
 - Touch first: tap targets of at least 44px, Pointer Events, and every new flow gets a Playwright test on the phone and tablet projects.
 - Imports inside `src` use `#lib/...` with the `.ts` extension for TypeScript files.
 - Before pushing: `npm run check && npm run lint && npm run test:unit -- --run && npm run test:e2e`.
+- Worker logs keep query strings (`redact_query_string: false` in wrangler.jsonc). Never put private game state, room secrets or scripts in a query string; use the path or the URL hash (the hash never reaches the server).

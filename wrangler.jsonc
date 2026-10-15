@@ -6,7 +6,29 @@
 	"name": "grim-games",
 	"main": "worker/index.ts",
 	"compatibility_date": "2026-10-01",
-	"observability": { "enabled": true },
+	// Observability settings supplied by Trevor from the Cloudflare dashboard (2026-10-15).
+	// Query strings are kept in logs; nothing private travels in them (room codes are in the path).
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1,
+		"redact_query_string": false,
+		"logs": {
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"invocation_logs": true,
+			"persist": true
+		},
+		"traces": {
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"persist": true
+		},
+		// The dashboard snippet said "issue_detection"; wrangler 4.151 and the Issues docs
+		// (developers.cloudflare.com/workers/observability/issues/) use "issues".
+		"issues": {
+			"enabled": true
+		}
+	},
 	"assets": {
 		"directory": "./build",
 		"binding": "ASSETS",
