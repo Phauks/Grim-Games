@@ -192,3 +192,21 @@ test('there is one About: the footer dialog, not a settings section', async ({ p
 	await expect(nav.getByRole('button', { name: 'About' })).toHaveCount(0);
 	await expect(nav.getByRole('button', { name: 'Reset settings' })).toBeVisible();
 });
+
+test('icon size changes interface icons only, not text', async ({ page }) => {
+	await page.goto('/');
+	const settingsIcon = page
+		.getByRole('banner')
+		.getByRole('button', { name: 'Settings' })
+		.locator('.icon');
+	const before = await settingsIcon.boundingBox();
+	const text = await page.evaluate(() => getComputedStyle(document.body).fontSize);
+
+	const dialog = await openSettings(page, 'Appearance');
+	await choose(page, 'Icon size', 'XL');
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+
+	const after = await settingsIcon.boundingBox();
+	expect(after!.width).toBeCloseTo(before!.width * 1.5, 0);
+	expect(await page.evaluate(() => getComputedStyle(document.body).fontSize)).toBe(text);
+});

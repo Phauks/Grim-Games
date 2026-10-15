@@ -22,6 +22,8 @@ export interface Preferences {
 	/** The user's font for each role; a missing role uses the theme's font. */
 	fonts: Partial<Record<FontRole, FontId>>;
 	textScale: TextScale;
+	/** Multiplies the size of interface icons; independent of text size. */
+	iconScale: IconScale;
 	iconSet: IconSetId | null;
 	iconOverrides: Partial<Record<IconSlot, string>>;
 	/** How much the app walks the Storyteller through the game. */
@@ -31,10 +33,14 @@ export interface Preferences {
 export const TEXT_SCALES = [0.875, 1, 1.125, 1.25, 1.5] as const;
 export type TextScale = (typeof TEXT_SCALES)[number];
 
+export const ICON_SCALES = [0.875, 1, 1.25, 1.5] as const;
+export type IconScale = (typeof ICON_SCALES)[number];
+
 export const DEFAULT_PREFERENCES: Preferences = {
 	themeId: DEFAULT_THEME_ID,
 	fonts: {},
 	textScale: 1,
+	iconScale: 1,
 	iconSet: null,
 	iconOverrides: {},
 	assistance: DEFAULT_ASSISTANCE
@@ -57,6 +63,9 @@ export function parsePreferences(raw: unknown): Preferences {
 		textScale: (TEXT_SCALES as readonly unknown[]).includes(input.textScale)
 			? (input.textScale as TextScale)
 			: DEFAULT_PREFERENCES.textScale,
+		iconScale: (ICON_SCALES as readonly unknown[]).includes(input.iconScale)
+			? (input.iconScale as IconScale)
+			: DEFAULT_PREFERENCES.iconScale,
 		iconSet: isIconSetId(input.iconSet) ? input.iconSet : null,
 		iconOverrides,
 		assistance: parseAssistance(input.assistance)

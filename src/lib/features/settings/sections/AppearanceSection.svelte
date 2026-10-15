@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { TEXT_SCALES, type TextScale } from '#lib/ui/preferences.ts';
+	import { ICON_SCALES, TEXT_SCALES, type IconScale, type TextScale } from '#lib/ui/preferences.ts';
 	import SettingChoice from '#lib/ui/settings/SettingChoice.svelte';
 	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
 	import { THEMES } from '#lib/ui/themes/registry.ts';
@@ -12,6 +12,7 @@
 		1.25: 'XL',
 		1.5: 'XXL'
 	};
+	const iconScaleLabels: Record<IconScale, string> = { 0.875: 'S', 1: 'M', 1.25: 'L', 1.5: 'XL' };
 </script>
 
 <SettingChoice
@@ -26,4 +27,11 @@
 	value={String(preferences.current.textScale)}
 	options={TEXT_SCALES.map((scale) => ({ value: String(scale), label: scaleLabels[scale] }))}
 	onChange={(scale) => preferences.update({ textScale: Number(scale) as TextScale })}
+/>
+<SettingSegmented
+	label="Icon size"
+	description="Changes the size of interface icons: header, settings, menus, buttons and status markers such as dead or poisoned. Text size and character token size stay the same."
+	value={String(preferences.current.iconScale)}
+	options={ICON_SCALES.map((scale) => ({ value: String(scale), label: iconScaleLabels[scale] }))}
+	onChange={(scale) => preferences.update({ iconScale: Number(scale) as IconScale })}
 />
