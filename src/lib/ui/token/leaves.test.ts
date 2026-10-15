@@ -9,10 +9,15 @@ describe('leafLayout', () => {
 		]);
 	});
 
-	it('spreads one top leaf per reminder token around the top, setup leaf in the middle', () => {
-		const leaves = leafLayout({ firstNight: false, otherNight: false, reminders: 2, setup: true });
-		expect(leaves.map((l) => l.kind)).toEqual(['reminder', 'setup', 'reminder']);
+	it('spreads one top leaf per reminder token around the top', () => {
+		const leaves = leafLayout({ firstNight: false, otherNight: false, reminders: 3, setup: false });
+		expect(leaves.map((l) => l.kind)).toEqual(['reminder', 'reminder', 'reminder']);
 		expect(leaves.map((l) => l.angle)).toEqual([-90 - TOP_STEP, -90, -90 + TOP_STEP]);
+	});
+
+	it('marks a setup change with the flower, not a leaf', () => {
+		const leaves = leafLayout({ firstNight: false, otherNight: false, reminders: 1, setup: true });
+		expect(leaves).toEqual([{ angle: -90, kind: 'reminder' }]);
 	});
 
 	it('draws at most MAX_TOP top leaves', () => {

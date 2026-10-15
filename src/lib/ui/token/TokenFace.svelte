@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { leafLayout, type LeafMarks } from './leaves.ts';
+	import { FLOWER_ANGLE, leafLayout, type LeafMarks } from './leaves.ts';
 
 	interface Props {
 		/** Icon image URL; the face stays (empty) when there is none. */
@@ -16,6 +16,11 @@
 	// A leaf pointing up from (0,0) to (0,-19), with a midrib. Leaves hang from the rim of the
 	// face towards the middle, always inside the token (Trevor, 2026-10-15).
 	const LEAF = 'M0 0 C7 -5 7 -13 0 -19 C-7 -13 -7 -5 0 0 Z';
+	// The setup flower: five petals round a centre, inside the face at the bottom right.
+	const FLOWER_R = 36;
+	const flowerX = 50 + FLOWER_R * Math.cos((FLOWER_ANGLE * Math.PI) / 180);
+	const flowerY = 50 + FLOWER_R * Math.sin((FLOWER_ANGLE * Math.PI) / 180);
+	const PETALS = [0, 72, 144, 216, 288];
 </script>
 
 <span class="token" role="img" aria-label={label} style:--token-size="{size}px">
@@ -31,6 +36,14 @@
 				<path class="rib" d="M0 -2 L0 -16" />
 			</g>
 		{/each}
+		{#if leaves.setup}
+			<g class="flower" data-kind="setup" transform="translate({flowerX} {flowerY})">
+				{#each PETALS as angle (angle)}
+					<ellipse cx="0" cy="-4.2" rx="2.8" ry="4.2" transform="rotate({angle})" />
+				{/each}
+				<circle class="centre" r="2.4" />
+			</g>
+		{/if}
 	</svg>
 	{#if src}<img {src} alt="" width={size} height={size} loading="lazy" />{/if}
 </span>
@@ -57,8 +70,11 @@
 	.leaf path {
 		fill: var(--leaf);
 	}
-	.leaf[data-kind='setup'] path {
-		fill: var(--leaf-setup);
+	.flower ellipse {
+		fill: var(--token-flower);
+	}
+	.flower .centre {
+		fill: var(--token-flower-centre);
 	}
 	.leaf .rib {
 		fill: none;

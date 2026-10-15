@@ -196,13 +196,15 @@ test('the table view is remembered and the night-order table is in night order',
 	expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test('token leaves are drawn inside the token', async ({ page }) => {
+test('token leaves and the setup flower are drawn inside the token', async ({ page }) => {
 	await page.goto('/reference');
 	await page.getByRole('searchbox').fill('Village Idiot');
 	const token = page.locator('.token[role="img"]').first();
 	await expect(token).toBeVisible();
 	const face = await token.locator('circle.face').boundingBox();
-	const leaves = token.locator('g.leaf');
+	const leaves = token.locator('g.leaf, g.flower');
+	await expect(token.locator('g.flower')).toHaveCount(1);
+	await expect(token.locator('g.leaf[data-kind="setup"]')).toHaveCount(0);
 	await expect(leaves.first()).toBeAttached();
 	expect(face).not.toBeNull();
 	for (const leaf of await leaves.all()) {
