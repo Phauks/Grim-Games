@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
+import { handleBotcScripts } from './botcscripts.ts';
 
 export interface Env {
 	ASSETS: Fetcher;
@@ -83,6 +84,10 @@ export default {
 			const code = normaliseRoomCode(room[1]);
 			if (!code) return new Response('Invalid room code', { status: 400 });
 			return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(request);
+		}
+		if (url.pathname.startsWith('/api/botcscripts/')) {
+			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+			return handleBotcScripts(url.pathname);
 		}
 		if (url.pathname.startsWith('/api/')) {
 			return new Response('Not found', { status: 404 });

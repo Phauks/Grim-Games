@@ -11,7 +11,11 @@
 		"isolatedModules": true,
 		"allowImportingTsExtensions": true
 	},
-	"include": ["./**/*.ts", "../src/lib/core/**/*.ts"],
+	"include": [
+		"./**/*.ts",
+		"../src/lib/core/**/*.ts",
+		"../src/lib/features/scripts/botcscripts-api.ts"
+	],
 	"exclude": [
 		"../src/lib/core/**/*.test.ts",
 		"../src/lib/core/**/*.test-support.ts",

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { describeThrown } from '#lib/features/errors/app-error.ts';
+	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { onMount, tick } from 'svelte';
 	import type { GameData, NumericNightOrder } from '#lib/core/data/index.ts';
 	import { characterReference } from '#lib/core/rules/reference.ts';
@@ -35,7 +38,9 @@
 			numeric = numbers;
 			data = game;
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			// Shown in place below, so no corner card as well.
+			error = describeThrown(e).message;
+			reportError(e, { area: 'reference', notify: false });
 			return;
 		}
 		// A link to one character (#witch, from a bug report) scrolls to its card.
@@ -75,16 +80,18 @@
 		]}
 	>
 		{#snippet panel(tab)}
-			{#if error}
-				<p role="alert">Could not load the character data: {error}</p>
-			{:else if !data}
-				<!-- Reserved space while the data loads, so nothing below jumps. -->
-				<div class="loading" aria-busy="true">Loading characters…</div>
-			{:else if tab === 'characters'}
-				<CharacterReference {entries} view={referenceView.current} />
-			{:else}
-				<NightOrderReference {data} {numeric} view={referenceView.current} />
-			{/if}
+			<ErrorBoundary area="reference">
+				{#if error}
+					<p role="alert">Could not load the character data: {error}</p>
+				{:else if !data}
+					<!-- Reserved space while the data loads, so nothing below jumps. -->
+					<div class="loading" aria-busy="true">Loading characters…</div>
+				{:else if tab === 'characters'}
+					<CharacterReference {entries} view={referenceView.current} />
+				{:else}
+					<NightOrderReference {data} {numeric} view={referenceView.current} />
+				{/if}
+			</ErrorBoundary>
 		{/snippet}
 	</Tabs>
 </main>

@@ -18,6 +18,7 @@
 	</ul>
 
 	<nav>
+		<Button href={resolve('/scripts')} icon="script">Scripts</Button>
 		<Button href={resolve('/play')} icon="script">Player view</Button>
 		<Button href={resolve('/spikes/seat-sheet')} icon="players">Seat sheet spike</Button>
 	</nav>
