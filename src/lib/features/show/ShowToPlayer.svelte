@@ -4,6 +4,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { plainText } from '#lib/features/info-tokens/bold.ts';
 	import InfoTokenText from '#lib/features/info-tokens/InfoTokenText.svelte';
+	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { fitTokens } from './fit.ts';
 
 	export interface ShownCharacter {
@@ -38,11 +39,18 @@
 			labelHeight: 48
 		})
 	);
-	const label = $derived(
-		[title ? plainText(title) : undefined, ...characters.map((c) => c.character.name)]
-			.filter(Boolean)
-			.join(': ') || 'Shown to player'
-	);
+	const label = $derived.by(() => {
+		// Outside the error boundary, so it must not throw: the dialog has to stay up.
+		try {
+			return (
+				[title ? plainText(title) : undefined, ...characters.map((c) => c.character.name)]
+					.filter(Boolean)
+					.join(': ') || 'Shown to player'
+			);
+		} catch {
+			return 'Shown to player';
+		}
+	});
 
 	function close() {
 		open = false;
@@ -71,28 +79,39 @@
 		<button type="button" class="close" aria-label="Close" onclick={close}>
 			<Icon name="close" />
 		</button>
-		<div class="content" data-has-title={title ? '' : undefined}>
-			{#if title}
-				<h2 class="title"><InfoTokenText text={title} /></h2>
-			{/if}
-			{#if characters.length > 0}
-				<div class="area" bind:clientWidth={areaWidth} bind:clientHeight={areaHeight}>
-					<ul class="tokens" style:--columns={fit.columns} style:--size="{fit.size}px">
-						{#each characters as shown (shown.character.id)}
-							<li>
-								<CharacterToken
-									character={shown.character}
-									alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
-									size={fit.size}
-								/>
-								<span class="name">{shown.character.name}</span>
-							</li>
-						{/each}
-					</ul>
+		<!--
+			A crash inside is caught here, inside the opaque dialog, so the fallback is still
+			full screen and the grimoire never shows through; the close button stays above it.
+		-->
+		<ErrorBoundary area="show">
+			<div class="content" data-has-title={title ? '' : undefined}>
+				{#if title}
+					<h2 class="title"><InfoTokenText text={title} /></h2>
+				{/if}
+				{#if characters.length > 0}
+					<div class="area" bind:clientWidth={areaWidth} bind:clientHeight={areaHeight}>
+						<ul class="tokens" style:--columns={fit.columns} style:--size="{fit.size}px">
+							{#each characters as shown (shown.character.id)}
+								<li>
+									<CharacterToken
+										character={shown.character}
+										alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
+										size={fit.size}
+									/>
+									<span class="name">{shown.character.name}</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+					{#if single}<p class="ability">{single.ability}</p>{/if}
+				{/if}
+			</div>
+			{#snippet fallback()}
+				<div class="content" data-testid="show-failed">
+					<p class="failed">Couldn't show this.</p>
 				</div>
-				{#if single}<p class="ability">{single.ability}</p>{/if}
-			{/if}
-		</div>
+			{/snippet}
+		</ErrorBoundary>
 	{/if}
 </dialog>
 
@@ -105,13 +124,14 @@
 		margin: 0;
 		padding: 0;
 		border: 0;
-		/* Opaque: the grimoire must not show through (see the comment above). */
-		background: var(--surface);
+		/* Opaque: the grimoire must not show through (see the comment above). Canvas is an
+		   opaque system colour, used if the theme's surface is ever missing. */
+		background: var(--surface, Canvas);
 		color: var(--on-surface);
 		overscroll-behavior: none;
 	}
 	.show::backdrop {
-		background: var(--surface);
+		background: var(--surface, Canvas);
 	}
 	.close {
 		position: absolute;
@@ -189,6 +209,11 @@
 		font-size: 1.4rem;
 		line-height: 1.2;
 		color: var(--heading);
+	}
+	.failed {
+		margin: auto 0;
+		font-size: 1.3rem;
+		color: var(--on-surface-muted);
 	}
 	.ability {
 		margin: 0;

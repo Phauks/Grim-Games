@@ -24,6 +24,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 
 	export type BluffCommand = Extract<Command, { type: 'SetBluffs' | 'RemoveBluffSet' }>;
 	export type BluffDispatch = (
@@ -103,67 +104,70 @@
 	title={editing === undefined ? 'Demon bluffs' : `Demon bluffs · Set ${editing + 1}`}
 	height="85dvh"
 >
-	{#if editing === undefined}
-		<ul class="sets">
-			{#each sets as set, index (index)}
-				<li class="set" data-testid="bluff-set">
-					<span class="label">Set {index + 1}</span>
-					<ol class="tokens">
-						{#each Array.from({ length: BLUFFS_PER_SET }, (_, i) => set[i]) as id, i (i)}
-							{@const character = id ? characters.get(id) : undefined}
-							<li>
-								{#if character}
-									<CharacterToken {character} alignment="good" size={48} />
-									<span class="name">{character.name}</span>
-								{:else}
-									<span class="hole"></span>
-									<span class="name none">None</span>
-								{/if}
-							</li>
-						{/each}
-					</ol>
-					<div class="actions">
-						<Button variant="quiet" onclick={() => edit(index)}>Choose</Button>
-						<Button icon="forward" disabled={set.length === 0} onclick={() => show(set)}
-							>Show</Button
-						>
-						<Button
-							variant="quiet"
-							disabled={index >= game.bluffs.length}
-							onclick={() => run({ type: 'RemoveBluffSet', set: index })}>Remove</Button
-						>
-					</div>
-				</li>
-			{/each}
-		</ul>
-		<Button icon="add" variant="quiet" onclick={() => edit(game.bluffs.length)}>
-			Add bluff set
-		</Button>
-	{:else}
-		<div class="filter">
-			<Segmented
-				label="Characters"
-				hideLabel
-				value={filter}
-				options={[
-					{ value: 'good', label: 'Good' },
-					{ value: 'script', label: 'Whole script' }
-				]}
-				onChange={(value) => (filter = value)}
+	<!-- The player view below sits outside this boundary, so a crash here never closes it. -->
+	<ErrorBoundary area="bluffs">
+		{#if editing === undefined}
+			<ul class="sets">
+				{#each sets as set, index (index)}
+					<li class="set" data-testid="bluff-set">
+						<span class="label">Set {index + 1}</span>
+						<ol class="tokens">
+							{#each Array.from({ length: BLUFFS_PER_SET }, (_, i) => set[i]) as id, i (i)}
+								{@const character = id ? characters.get(id) : undefined}
+								<li>
+									{#if character}
+										<CharacterToken {character} alignment="good" size={48} />
+										<span class="name">{character.name}</span>
+									{:else}
+										<span class="hole"></span>
+										<span class="name none">None</span>
+									{/if}
+								</li>
+							{/each}
+						</ol>
+						<div class="actions">
+							<Button variant="quiet" onclick={() => edit(index)}>Choose</Button>
+							<Button icon="forward" disabled={set.length === 0} onclick={() => show(set)}
+								>Show</Button
+							>
+							<Button
+								variant="quiet"
+								disabled={index >= game.bluffs.length}
+								onclick={() => run({ type: 'RemoveBluffSet', set: index })}>Remove</Button
+							>
+						</div>
+					</li>
+				{/each}
+			</ul>
+			<Button icon="add" variant="quiet" onclick={() => edit(game.bluffs.length)}>
+				Add bluff set
+			</Button>
+		{:else}
+			<div class="filter">
+				<Segmented
+					label="Characters"
+					hideLabel
+					value={filter}
+					options={[
+						{ value: 'good', label: 'Good' },
+						{ value: 'script', label: 'Whole script' }
+					]}
+					onChange={(value) => (filter = value)}
+				/>
+			</div>
+			<CharacterPicker
+				characters={choices}
+				bind:selected={picked}
+				max={BLUFFS_PER_SET}
+				label="Bluff characters"
+				{inPlay}
 			/>
-		</div>
-		<CharacterPicker
-			characters={choices}
-			bind:selected={picked}
-			max={BLUFFS_PER_SET}
-			label="Bluff characters"
-			{inPlay}
-		/>
-		<div class="sheet-actions">
-			<Button variant="quiet" onclick={() => (editing = undefined)}>Cancel</Button>
-			<Button variant="accent" onclick={save}>Save</Button>
-		</div>
-	{/if}
+			<div class="sheet-actions">
+				<Button variant="quiet" onclick={() => (editing = undefined)}>Cancel</Button>
+				<Button variant="accent" onclick={save}>Save</Button>
+			</div>
+		{/if}
+	</ErrorBoundary>
 </BottomSheet>
 
 <ShowToPlayer

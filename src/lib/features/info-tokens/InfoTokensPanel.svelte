@@ -11,6 +11,7 @@
 	import { MAX_CUSTOM_TEXT } from './custom-tokens.ts';
 	import { customInfoTokens } from './custom-tokens.svelte.ts';
 	import InfoTokenText from './InfoTokenText.svelte';
+	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 
 	interface Props {
 		/** Characters the Storyteller can show with a card, in script order. */
@@ -56,89 +57,96 @@
 	}
 </script>
 
-<section aria-labelledby="standard-cards">
-	<h2 id="standard-cards">Standard</h2>
-	<ul class="cards">
-		{#each STANDARD_INFO_TOKENS as token (token.id)}
-			<li>
-				<button type="button" class="card" onclick={() => choose(token)}>
-					<span class="text">{token.text}</span>
-				</button>
-			</li>
-		{/each}
-	</ul>
-</section>
+<!-- The player view sits outside the boundary, so a crash here never closes it. -->
+<ErrorBoundary area="info-tokens">
+	<section aria-labelledby="standard-cards">
+		<h2 id="standard-cards">Standard</h2>
+		<ul class="cards">
+			{#each STANDARD_INFO_TOKENS as token (token.id)}
+				<li>
+					<button type="button" class="card" onclick={() => choose(token)}>
+						<span class="text">{token.text}</span>
+					</button>
+				</li>
+			{/each}
+		</ul>
+	</section>
 
-<section aria-labelledby="custom-cards">
-	<div class="heading">
-		<h2 id="custom-cards">Custom</h2>
-		<Button icon="add" variant="quiet" onclick={() => edit()}>Add info token</Button>
-	</div>
-	<ul class="cards">
-		{#each customInfoTokens.list as token (token.id)}
-			<li class="custom">
-				<button type="button" class="card" onclick={() => show(token.text)}>
-					<span class="text"><InfoTokenText text={token.text} /></span>
-				</button>
-				<IconButton icon="notes" label="Edit {plainText(token.text)}" onclick={() => edit(token)} />
-			</li>
-		{:else}
-			<li class="none">None</li>
-		{/each}
-	</ul>
-</section>
+	<section aria-labelledby="custom-cards">
+		<div class="heading">
+			<h2 id="custom-cards">Custom</h2>
+			<Button icon="add" variant="quiet" onclick={() => edit()}>Add info token</Button>
+		</div>
+		<ul class="cards">
+			{#each customInfoTokens.list as token (token.id)}
+				<li class="custom">
+					<button type="button" class="card" onclick={() => show(token.text)}>
+						<span class="text"><InfoTokenText text={token.text} /></span>
+					</button>
+					<IconButton
+						icon="notes"
+						label="Edit {plainText(token.text)}"
+						onclick={() => edit(token)}
+					/>
+				</li>
+			{:else}
+				<li class="none">None</li>
+			{/each}
+		</ul>
+	</section>
 
-<BottomSheet bind:open={pickOpen} title={picking?.text ?? ''} height="85dvh">
-	{#if picking}
-		<CharacterPicker
-			{characters}
-			bind:selected={picked}
-			max={PICK_MAX[picking.id] ?? 1}
-			label="Characters"
-		/>
-		<div class="sheet-actions">
+	<BottomSheet bind:open={pickOpen} title={picking?.text ?? ''} height="85dvh">
+		{#if picking}
+			<CharacterPicker
+				{characters}
+				bind:selected={picked}
+				max={PICK_MAX[picking.id] ?? 1}
+				label="Characters"
+			/>
+			<div class="sheet-actions">
+				<Button
+					variant="accent"
+					icon="forward"
+					onclick={() => {
+						pickOpen = false;
+						if (picking) show(picking.text, picked);
+					}}>Show</Button
+				>
+			</div>
+		{/if}
+	</BottomSheet>
+
+	<Dialog bind:open={editOpen} title={editing.id ? 'Edit info token' : 'Add info token'}>
+		<label class="field">
+			<span>Text</span>
+			<textarea
+				bind:value={editing.text}
+				maxlength={MAX_CUSTOM_TEXT}
+				rows="3"
+				aria-describedby="bold-hint"></textarea>
+		</label>
+		<p id="bold-hint" class="hint">Put **two stars** round words to make them bold.</p>
+		{#snippet actions()}
+			{#if editing.id}
+				<Button
+					variant="quiet"
+					onclick={() => {
+						if (editing.id) customInfoTokens.remove(editing.id);
+						editOpen = false;
+					}}>Delete</Button
+				>
+			{/if}
 			<Button
 				variant="accent"
-				icon="forward"
+				disabled={!editing.text.trim()}
 				onclick={() => {
-					pickOpen = false;
-					if (picking) show(picking.text, picked);
-				}}>Show</Button
-			>
-		</div>
-	{/if}
-</BottomSheet>
-
-<Dialog bind:open={editOpen} title={editing.id ? 'Edit info token' : 'Add info token'}>
-	<label class="field">
-		<span>Text</span>
-		<textarea
-			bind:value={editing.text}
-			maxlength={MAX_CUSTOM_TEXT}
-			rows="3"
-			aria-describedby="bold-hint"></textarea>
-	</label>
-	<p id="bold-hint" class="hint">Put **two stars** round words to make them bold.</p>
-	{#snippet actions()}
-		{#if editing.id}
-			<Button
-				variant="quiet"
-				onclick={() => {
-					if (editing.id) customInfoTokens.remove(editing.id);
+					customInfoTokens.save(editing.text, editing.id);
 					editOpen = false;
-				}}>Delete</Button
+				}}>Save</Button
 			>
-		{/if}
-		<Button
-			variant="accent"
-			disabled={!editing.text.trim()}
-			onclick={() => {
-				customInfoTokens.save(editing.text, editing.id);
-				editOpen = false;
-			}}>Save</Button
-		>
-	{/snippet}
-</Dialog>
+		{/snippet}
+	</Dialog>
+</ErrorBoundary>
 
 <ShowToPlayer bind:open={showOpen} title={shown.text} characters={shownCharacters} />
 

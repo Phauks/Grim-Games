@@ -1,4 +1,5 @@
 import type { InfoToken } from '#lib/core/data/info-tokens.ts';
+import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { MAX_CUSTOM_TEXT, parseStoredInfoTokens, type StoredInfoTokens } from './custom-tokens.ts';
 
 const STORAGE_KEY = 'grim-games:info-tokens';
@@ -7,7 +8,9 @@ function read(): StoredInfoTokens {
 	try {
 		const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
 		return parseStoredInfoTokens(raw ? JSON.parse(raw) : null);
-	} catch {
+	} catch (error) {
+		// Blocked storage or corrupt JSON: start empty. Logged only; the page still works.
+		reportError(error, { area: 'info-tokens', notify: false });
 		return parseStoredInfoTokens(null);
 	}
 }
@@ -24,8 +27,9 @@ class CustomInfoTokens {
 		this.#stored = { version: 1, custom };
 		try {
 			globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(this.#stored));
-		} catch {
-			// Storage full or blocked: the card still works until the page reloads.
+		} catch (error) {
+			// Storage full or blocked: the card works until the page reloads, so say it wasn't saved.
+			reportError(error, { area: 'info-tokens' });
 		}
 	}
 
