@@ -5,6 +5,7 @@
 	import { characterReportUrl } from '#lib/features/about/report-issue.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -89,7 +90,7 @@
 		<p class="small">{entry.setup.notes.join(' ')}</p>
 	{/if}
 
-	<p class="ability">{character.ability}</p>
+	<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
 
 	<div class="row">
 		<b>Tokens</b>

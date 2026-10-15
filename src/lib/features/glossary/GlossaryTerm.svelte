@@ -1,0 +1,69 @@
+<script lang="ts">
+	import type { GlossaryTerm } from '#lib/core/rules/glossary.ts';
+	import { glossaryPopover } from './glossary-popover.svelte.ts';
+
+	interface Props {
+		term: GlossaryTerm;
+		/** The word as written in the game text ("poisoned", "registers"). */
+		text: string;
+	}
+
+	let { term, text }: Props = $props();
+	let button = $state<HTMLButtonElement>();
+	const open = $derived(glossaryPopover.open && glossaryPopover.anchor === button);
+</script>
+
+<!--
+	A rules term in game text: dotted underline (not a link); tap for our short definition
+	in the shared GlossaryPopover.
+-->
+<button
+	bind:this={button}
+	type="button"
+	class="glossary-term"
+	aria-label={`${text}: explain rules term`}
+	aria-haspopup="dialog"
+	aria-expanded={open}
+	data-state={open ? 'open' : 'closed'}
+	onclick={() => button && glossaryPopover.show(term, button)}>{text}</button
+>
+
+<style>
+	.glossary-term {
+		position: relative;
+		display: inline;
+		/* The line keeps its height; the ::after below is the tap target. */
+		min-height: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		letter-spacing: inherit;
+		text-transform: inherit;
+		text-align: inherit;
+		text-decoration: underline dotted;
+		text-decoration-thickness: 1.5px;
+		text-underline-offset: 0.2em;
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+	}
+	/* A 44px hit area around the word without changing the line's layout. */
+	.glossary-term::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: max(calc(100% + var(--space-2)), var(--tap-target));
+		height: var(--tap-target);
+		translate: -50% -50%;
+	}
+	.glossary-term[data-state='open'] {
+		text-decoration-style: solid;
+	}
+	.glossary-term:focus-visible {
+		outline: 3px solid var(--focus);
+		outline-offset: 2px;
+		border-radius: var(--radius-sm);
+	}
+</style>

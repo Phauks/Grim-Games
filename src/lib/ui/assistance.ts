@@ -11,7 +11,8 @@ export const ASSIST_KEYS = [
 	'setupReminders',
 	'preDayReminders',
 	'deathCause',
-	'rulesWarnings'
+	'rulesWarnings',
+	'explainTerms'
 ] as const;
 export type AssistKey = (typeof ASSIST_KEYS)[number];
 export type Assistance = Record<AssistKey, boolean>;
@@ -47,6 +48,10 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	rulesWarnings: {
 		label: 'Setup and jinx warnings',
 		description: 'Point out a setup that breaks the rules or a jinx that applies.'
+	},
+	explainTerms: {
+		label: 'Explain rules terms',
+		description: 'Underline words like poisoned, drunk or might; tap one for a short definition.'
 	}
 };
 

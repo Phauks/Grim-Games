@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { wikiUrl, type Character } from '#lib/core/data/index.ts';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
@@ -21,7 +22,7 @@
 		>
 		<p class="type">{typeLabel}</p>
 	</div>
-	<p class="ability">{character.ability}</p>
+	<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
 	{#snippet actions()}
 		{#if wiki}
 			<!-- External wiki page (the rules authority), not an app route. -->

@@ -29,7 +29,7 @@
 	--z-backdrop: 100;
 	--z-sheet: 110;
 	--z-dialog: 120;
-	/* Dropdown lists, which can open from inside a dialog. */
+	/* Dropdown lists and Glossary popovers, which can open from inside a dialog. */
 	--z-popover: 150;
 	--z-toast: 200;
 
