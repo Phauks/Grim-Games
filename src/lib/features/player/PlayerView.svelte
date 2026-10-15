@@ -18,6 +18,8 @@
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { NotebookState } from './notebook-store.svelte.ts';
 	import { playerCount, scriptKey } from './notebook.ts';
+	import NoteEditor from './NoteEditor.svelte';
+	import NotesPanel from './NotesPanel.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import { playerJinxes, playerNight } from './player-script.ts';
 	import ScriptSheet from './ScriptSheet.svelte';
@@ -68,6 +70,7 @@
 		if (!key || notebook?.key === key) return;
 		const book = new NotebookState(key);
 		editorOpen = false;
+		noteOpen = false;
 		void book.load().then(() => {
 			if (book.key === key) notebook = book;
 		});
@@ -82,6 +85,13 @@
 	);
 	const byId = $derived(new Map(script?.characters.map((c) => [c.id, c]) ?? []));
 	const seatIndex = $derived(notebook?.book.seats.findIndex((s) => s.seatId === editing) ?? -1);
+
+	let noteId = $state<string>();
+	let noteOpen = $state(false);
+	function openNote(id: string) {
+		noteId = id;
+		noteOpen = true;
+	}
 
 	function openSeat(seatId: string) {
 		editing = seatId;
@@ -128,12 +138,13 @@
 								onOpenSeat={openSeat}
 							/>
 						{:else}
-							<label class="notes">
-								<span>Notes</span>
-								<textarea
-									value={notebook.book.notes}
-									oninput={(event) => notebook!.setNotes(event.currentTarget.value)}></textarea>
-							</label>
+							<NotesPanel
+								notes={notebook.book.notes}
+								seats={notebook.book.seats}
+								onAdd={() => openNote(notebook!.addNote())}
+								onOpenNote={openNote}
+								onOpenSeat={openSeat}
+							/>
 						{/if}
 						{#if notebook && (value === 'circle' || value === 'notes')}
 							<p class="private" data-testid="storage-note">
@@ -158,6 +169,14 @@
 				characters={script.characters}
 				onChange={(patch) => editing && notebook!.updateSeat(editing, patch)}
 				onToggleMe={() => editing && notebook!.toggleMe(editing)}
+			/>
+		</ErrorBoundary>
+		<ErrorBoundary area="play">
+			<NoteEditor
+				bind:open={noteOpen}
+				note={notebook.book.notes.find((n) => n.noteId === noteId)}
+				onChange={(patch) => noteId && notebook!.updateNote(noteId, patch)}
+				onDelete={() => noteId && notebook!.deleteNote(noteId)}
 			/>
 		</ErrorBoundary>
 	{/if}
@@ -210,20 +229,5 @@
 	.private {
 		margin: var(--space-3) 0 0;
 		text-align: center;
-	}
-	.notes {
-		display: grid;
-		gap: var(--space-1);
-		font-family: var(--font-control);
-	}
-	.notes textarea {
-		height: 60dvh;
-		padding: var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font-size: 1rem;
-		resize: none;
 	}
 </style>

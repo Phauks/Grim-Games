@@ -87,6 +87,7 @@
 				seat.name,
 				seat.seatId === me ? 'you' : '',
 				guess ? `guess ${guess.name}` : '',
+				seat.note.trim() ? 'has notes' : '',
 				seat.dead ? (seat.ghostVoteUsed ? 'dead, vote used' : 'dead') : ''
 			]
 				.filter(Boolean)
@@ -98,8 +99,10 @@
 		>
 			<span class="face">
 				{#if icon}<img src={icon} alt="" />{:else}<span class="number">{i + 1}</span>{/if}
-				{#if seat.dead}<span class="shroud"><Icon name="dead" /></span>{/if}
 				{#if seat.dead && !seat.ghostVoteUsed}<span class="vote"><Icon name="ghostVote" /></span
+					>{/if}
+				{#if seat.note.trim()}<span class="noted" data-testid="has-notes"
+						><Icon name="notes" /></span
 					>{/if}
 			</span>
 			<span class="name">{seat.name || ' '}</span>
@@ -206,20 +209,25 @@
 		font-weight: 700;
 		font-size: 1.1rem;
 	}
-	.shroud {
-		position: absolute;
-		inset: 0;
-		display: grid;
-		place-items: center;
-		border-radius: 50%;
-		background: color-mix(in srgb, var(--surface) 70%, transparent);
-		color: var(--on-surface);
-		--icon-size: 55%;
+	/* Dead: greyed out, so the guess stays visible (Trevor, 2026-10-15). */
+	.seat[data-dead] .face {
+		background: color-mix(in srgb, var(--token-face) 35%, var(--surface));
 	}
-	.vote {
+	.seat[data-dead] .face img,
+	.seat[data-dead] .number {
+		filter: grayscale(1);
+		opacity: 0.55;
+	}
+	.seat[data-dead] .name {
+		color: var(--on-surface-muted);
+		text-decoration: line-through;
+	}
+	/* Markers sit inside the token, like its leaves. */
+	.vote,
+	.noted {
 		position: absolute;
-		right: -4px;
-		top: -4px;
+		right: 6%;
+		top: 6%;
 		display: grid;
 		place-items: center;
 		width: 20px;
@@ -228,6 +236,12 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		--icon-size: 14px;
+	}
+	.noted {
+		top: auto;
+		bottom: 6%;
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 	.name {
 		/* Absolutely sized so long or missing names never move the ring. */

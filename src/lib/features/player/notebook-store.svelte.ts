@@ -7,10 +7,13 @@
  * never share a schema upgrade, and so player mode never reads Storyteller state.
  */
 import {
+	addNote,
+	deleteNote,
 	emptyNotebook,
 	migrateNotebook,
 	setSeatCount,
 	toggleMe,
+	updateNote,
 	updateSeat,
 	type PlayerNotebook,
 	type SeatPatch
@@ -114,7 +117,16 @@ export class NotebookState {
 	toggleMe(seatId: string) {
 		this.#change(toggleMe(this.book, seatId));
 	}
-	setNotes(notes: string) {
-		this.#change({ ...this.book, notes });
+	/** Adds an empty note and returns its id. */
+	addNote(): string {
+		const { book, noteId } = addNote(this.book);
+		this.#change(book);
+		return noteId;
+	}
+	updateNote(noteId: string, patch: { title?: string; text?: string }) {
+		this.#change(updateNote(this.book, noteId, patch));
+	}
+	deleteNote(noteId: string) {
+		this.#change(deleteNote(this.book, noteId));
 	}
 }

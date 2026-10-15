@@ -1,6 +1,6 @@
 /**
  * What players see of a script: characters grouped by type, the jinxes between them, and
- * the night order as names only (no Storyteller text). Built from core's script, jinx and
+ * the night order with TPI's night text (Trevor, 2026-10-15). Built from core's script, jinx and
  * night-order rules; nothing here is authored rules text.
  */
 import {
@@ -39,7 +39,13 @@ export function playerJinxes(script: LoadedScript, data: GameData): ScriptJinx[]
 }
 
 export type PlayerNightEntry =
-	{ kind: 'marker'; id: NightMarker } | { kind: 'character'; character: Character };
+	| { kind: 'marker'; id: NightMarker }
+	| {
+			kind: 'character';
+			character: Character;
+			/** TPI's night text for this step (the character's night reminder). */
+			text?: string;
+	  };
 
 export interface PlayerNight {
 	night: Night;
@@ -77,7 +83,7 @@ export function playerNight(
 		if (step.kind === 'marker' && isNightMarker(step.id))
 			entries.push({ kind: 'marker', id: step.id });
 		else if (step.kind === 'character' && step.character)
-			entries.push({ kind: 'character', character: step.character });
+			entries.push({ kind: 'character', character: step.character, text: step.reminder });
 	}
 	return {
 		night,

@@ -1,6 +1,7 @@
 /**
  * The player's own notebook for one script: their seat circle (names, guesses, deaths,
- * ghost votes, a note per player) and free-text notes. Private to the player's device
+ * ghost votes, a note per player) and titled notes (Trevor, 2026-10-15: e.g. an evil
+ * player keeps their real information apart from their bluff). Private to the player's device
  * (09-player-script-view.md "Privacy and storage").
  *
  * Saved notebooks carry `schemaVersion`: the app is an offline-first PWA, so a newer build
@@ -9,7 +10,7 @@
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
 
-export const NOTEBOOK_VERSION = 1;
+export const NOTEBOOK_VERSION = 2;
 
 /** 5 to 15 dealt players plus up to 5 Travellers (wiki: Setup, Travellers). */
 export const MIN_SEATS = 5;
@@ -27,6 +28,13 @@ export interface NotebookSeat {
 	note: string;
 }
 
+export interface PlayerNote {
+	noteId: string;
+	/** Empty until the player names it. */
+	title: string;
+	text: string;
+}
+
 export interface PlayerNotebook {
 	schemaVersion: typeof NOTEBOOK_VERSION;
 	/** Which script this notebook belongs to (`scriptKey`). */
@@ -34,7 +42,7 @@ export interface PlayerNotebook {
 	seats: NotebookSeat[];
 	/** The player's own seat. */
 	me?: string;
-	notes: string;
+	notes: PlayerNote[];
 	updatedAt: number;
 }
 
@@ -63,7 +71,7 @@ export function emptyNotebook(
 		schemaVersion: NOTEBOOK_VERSION,
 		scriptKey: key,
 		seats: Array.from({ length: seats }, (_, i) => newSeat(i + 1)),
-		notes: '',
+		notes: [{ noteId: 'n1', title: '', text: '' }],
 		updatedAt: now
 	};
 }
@@ -101,6 +109,28 @@ export function toggleMe(book: PlayerNotebook, seatId: string): PlayerNotebook {
 	return { ...book, me: book.me === seatId ? undefined : seatId };
 }
 
+/** Adds an empty note at the end and returns the notebook and the new note's id. */
+export function addNote(book: PlayerNotebook): { book: PlayerNotebook; noteId: string } {
+	const n = book.notes.reduce((max, x) => Math.max(max, Number(x.noteId.slice(1)) || 0), 0) + 1;
+	const noteId = `n${n}`;
+	return { book: { ...book, notes: [...book.notes, { noteId, title: '', text: '' }] }, noteId };
+}
+
+export function updateNote(
+	book: PlayerNotebook,
+	noteId: string,
+	patch: Partial<Omit<PlayerNote, 'noteId'>>
+): PlayerNotebook {
+	return {
+		...book,
+		notes: book.notes.map((x) => (x.noteId === noteId ? { ...x, ...patch } : x))
+	};
+}
+
+export function deleteNote(book: PlayerNotebook, noteId: string): PlayerNotebook {
+	return { ...book, notes: book.notes.filter((x) => x.noteId !== noteId) };
+}
+
 /**
  * Seats per player count that are not Travellers is unknown to the player view, so the
  * seat count stands in for the player count (09-player-script-view.md, open decision 3).
@@ -110,6 +140,24 @@ export function playerCount(book: PlayerNotebook): number {
 }
 
 const isString = (v: unknown): v is string => typeof v === 'string';
+
+function readNotes(raw: unknown): PlayerNote[] {
+	if (!Array.isArray(raw)) return [];
+	const seen = new Set<string>();
+	const notes: PlayerNote[] = [];
+	for (const [i, item] of raw.entries()) {
+		const o = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>;
+		let noteId = isString(o.noteId) && o.noteId ? o.noteId : `n${i + 1}`;
+		if (seen.has(noteId)) noteId = `n${raw.length + i + 1}`;
+		seen.add(noteId);
+		notes.push({
+			noteId,
+			title: isString(o.title) ? o.title : '',
+			text: isString(o.text) ? o.text : ''
+		});
+	}
+	return notes;
+}
 
 function readSeat(raw: unknown, n: number): NotebookSeat {
 	const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
@@ -132,7 +180,8 @@ function readSeat(raw: unknown, n: number): NotebookSeat {
 export function migrateNotebook(raw: unknown): PlayerNotebook | undefined {
 	if (!raw || typeof raw !== 'object') return undefined;
 	const o = raw as Record<string, unknown>;
-	if (o.schemaVersion !== 1 || !isString(o.scriptKey)) return undefined;
+	const version = o.schemaVersion;
+	if ((version !== 1 && version !== 2) || !isString(o.scriptKey)) return undefined;
 	const rawSeats = Array.isArray(o.seats) ? o.seats.slice(0, MAX_SEATS) : [];
 	const seats = rawSeats.map((s, i) => readSeat(s, i + 1));
 	while (seats.length < MIN_SEATS) seats.push(newSeat(nextSeatNumber(seats)));
@@ -142,7 +191,10 @@ export function migrateNotebook(raw: unknown): PlayerNotebook | undefined {
 		scriptKey: o.scriptKey,
 		seats,
 		me,
-		notes: isString(o.notes) ? o.notes : '',
+		notes:
+			version === 1
+				? [{ noteId: 'n1', title: '', text: isString(o.notes) ? o.notes : '' }]
+				: readNotes(o.notes),
 		updatedAt: typeof o.updatedAt === 'number' ? o.updatedAt : 0
 	};
 }

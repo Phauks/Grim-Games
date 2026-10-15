@@ -27,14 +27,17 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 	expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test('the night order shows who wakes, without Storyteller text', async ({ page }) => {
+test("the night order shows who wakes, with TPI's night text", async ({ page }) => {
 	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
 	const first = page.locator('section[data-night="first"]');
 	await expect(first.locator('[data-marker="minioninfo"]')).toBeVisible();
-	await expect(first.getByRole('button', { name: /Poisoner/ })).toBeVisible();
-	await expect(first).not.toContainText('Wake the Minions');
+	const poisoner = first.locator('li[data-step="poisoner"]');
+	await expect(poisoner.getByRole('button', { name: /Poisoner/ }).first()).toBeVisible();
+	// TPI's text, with its :reminder: drawn as the Poisoner's token.
+	await expect(poisoner).toContainText('chooses a player');
+	await expect(poisoner).not.toContainText(':reminder:');
 	const other = page.locator('section[data-night="other"]');
-	await expect(other.getByRole('button', { name: /^Imp/ })).toBeVisible();
+	await expect(other.locator('li[data-step="imp"]')).toContainText('chooses a player');
 });
 
 test('the circle keeps names, guesses and deaths on this device', async ({ page }) => {
@@ -66,13 +69,53 @@ test('the circle keeps names, guesses and deaths on this device', async ({ page 
 	).toBeVisible();
 });
 
-test('notes are kept after a reload', async ({ page }) => {
+test('titled notes are kept after a reload, and deleting asks first', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await page.getByRole('textbox', { name: 'Notes' }).fill('Sam claimed Chef: 1');
+	await expect(page.getByTestId('no-player-notes')).toHaveText('None');
+	await page.getByRole('button', { name: /^Untitled/ }).tap();
+	let sheet = page.getByRole('dialog', { name: 'Note' });
+	await sheet.getByRole('textbox', { name: 'Title' }).fill('What I really know');
+	await sheet.getByRole('textbox', { name: 'Text' }).fill('Sam is the Imp');
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('button', { name: 'New note' }).tap();
+	sheet = page.getByRole('dialog', { name: 'Note' });
+	await sheet.getByRole('textbox', { name: 'Title' }).fill('My bluff');
+	await sheet.getByRole('textbox', { name: 'Text' }).fill('Chef: 0');
+	await page.keyboard.press('Escape');
+	await expect(page.locator('[data-note]')).toHaveCount(2);
+
 	await page.waitForTimeout(500);
 	await page.reload();
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('Sam claimed Chef: 1');
+	await expect(
+		page.getByRole('button', { name: /What I really know\s*Sam is the Imp/ })
+	).toBeVisible();
+
+	await page.getByRole('button', { name: /^My bluff/ }).tap();
+	sheet = page.getByRole('dialog', { name: 'Note' });
+	await sheet.getByRole('button', { name: 'Delete note' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Delete this note?' });
+	await confirm.getByRole('button', { name: 'Delete' }).tap();
+	await expect(page.locator('[data-note]')).toHaveCount(1);
+});
+
+test('notes on a player show in Notes and mark their token', async ({ page }) => {
+	await page.getByRole('tab', { name: 'Circle' }).tap();
+	await page.getByRole('button', { name: /^Seat 2/ }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Seat 2' });
+	await sheet.getByRole('textbox', { name: 'Name' }).fill('Sam');
+	await sheet.getByRole('textbox', { name: 'Notes on this player' }).fill('Claimed Chef');
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('button', { name: /^Seat 2, Sam, has notes/ })).toBeVisible();
+	await expect(page.locator('[data-seat="s2"] [data-testid="has-notes"]')).toBeVisible();
+
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	const entry = page.locator('[data-player-note="s2"]');
+	await expect(entry).toContainText('Seat 2 · Sam');
+	await expect(entry).toContainText('Claimed Chef');
+	await entry.tap();
+	await expect(page.getByRole('dialog', { name: 'Seat 2' })).toBeVisible();
 });
 
 test('shows the script chosen on the Scripts page, with its own notebook', async ({ page }) => {

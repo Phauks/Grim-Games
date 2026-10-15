@@ -2,6 +2,7 @@
 	import type { NightMarker } from '#lib/core/data/index.ts';
 	import { MARKER_TEXT } from '#lib/core/rules/night-order.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import NightText from '#lib/features/reference/NightText.svelte';
 	import type { PlayerNight } from './player-script.ts';
 
 	interface Props {
@@ -13,14 +14,14 @@
 	const isEvilInfo = (id: NightMarker) => id === 'minioninfo' || id === 'demoninfo';
 </script>
 
-<!-- Who wakes, in order. Names only: how to run each step is the Storyteller's. -->
+<!-- Who wakes, in order, with TPI's night text (Trevor, 2026-10-15). -->
 <div class="nights">
 	{#each nights as n (n.night)}
 		<section aria-labelledby="night-{n.night}" data-night={n.night}>
 			<h2 id="night-{n.night}">{n.night === 'first' ? 'First night' : 'Other nights'}</h2>
 			<ol>
 				{#each n.entries as entry, i (i)}
-					<li>
+					<li data-step={entry.kind === 'marker' ? entry.id : entry.character.id}>
 						<span class="num">{i + 1}</span>
 						{#if entry.kind === 'marker'}
 							{@const off = isEvilInfo(entry.id) && !n.evilInfo}
@@ -32,7 +33,16 @@
 								>{MARKER_TEXT[entry.id].name}</span
 							>
 						{:else}
-							<CharacterBadge characterId={entry.character.id} character={entry.character} />
+							<div class="step">
+								<CharacterBadge characterId={entry.character.id} character={entry.character} />
+								<p class="text">
+									{#if entry.text}<NightText
+											text={entry.text}
+											character={entry.character}
+											night={n.night}
+										/>{:else}None{/if}
+								</p>
+							</div>
 						{/if}
 					</li>
 				{/each}
@@ -62,13 +72,32 @@
 		padding: 0;
 		list-style: none;
 	}
+	ol {
+		gap: var(--space-2);
+	}
 	li {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		gap: var(--space-2);
+	}
+	.step {
+		display: grid;
+		justify-items: start;
+		gap: 2px;
+		min-width: 0;
+	}
+	.text {
+		margin: 0;
+		padding-left: var(--space-1);
+		font-family: var(--font-ability);
+		line-height: 1.35;
 	}
 	.num {
 		flex: none;
+		min-height: var(--tap-target);
+		display: inline-flex;
+		align-items: center;
+		justify-content: flex-end;
 		width: 2ch;
 		text-align: right;
 		color: var(--on-surface-muted);
