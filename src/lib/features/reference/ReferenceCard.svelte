@@ -2,6 +2,7 @@
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import FieldValue from './FieldValue.svelte';
 	import { REFERENCE_FIELDS } from './fields.ts';
+	import { near } from './near.ts';
 
 	interface Props {
 		entry: ReferenceEntry;
@@ -13,10 +14,19 @@
 
 	const character = $derived(entry.character);
 	const body = REFERENCE_FIELDS.filter((f) => f.card !== 'header');
+	// The body is built when the card comes near the screen (near.ts); until then the
+	// card keeps its estimated size, so the page does not jump.
+	let shown = $state(false);
 </script>
 
 <!-- Every field in REFERENCE_FIELDS, the same list the table renders. -->
-<article class="card" id={character.id} data-testid="reference-card" data-character={character.id}>
+<article
+	class="card"
+	id={character.id}
+	data-testid="reference-card"
+	data-character={character.id}
+	{@attach near(() => (shown = true))}
+>
 	<header>
 		<FieldValue field="token" {entry} {onExplain} />
 		<div class="title">
@@ -29,7 +39,7 @@
 		<FieldValue field="icons" {entry} {onExplain} />
 	</header>
 
-	{#each body as field (field.id)}
+	{#each shown ? body : [] as field (field.id)}
 		{#if field.card === 'block'}
 			<div class="block" data-row={field.id}>
 				<FieldValue field={field.id} {entry} {onExplain} />

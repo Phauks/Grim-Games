@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { SvelteSet } from 'svelte/reactivity';
+	import { near } from './near.ts';
 	import { CHARACTER_TYPES } from '#lib/core/data/types.ts';
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import {
@@ -52,6 +54,8 @@
 			on ? [...types.filter((t) => t !== type), type] : types.filter((t) => t !== type)
 		);
 	}
+	// Rows whose cells have been built (near.ts).
+	const shownRows = new SvelteSet<string>();
 </script>
 
 <!-- Reserved line: the count and Clear button are always there, so nothing below moves. -->
@@ -155,10 +159,17 @@
 		</thead>
 		<tbody>
 			{#each rows as entry (entry.character.id)}
-				<tr data-character={entry.character.id} data-type={entry.character.type}>
+				<tr
+					data-character={entry.character.id}
+					data-type={entry.character.type}
+					{@attach near(() => shownRows.add(entry.character.id))}
+				>
 					{#each REFERENCE_FIELDS as field (field.id)}
 						{#if field.id === 'name'}
 							<th scope="row" data-col="name"><FieldValue field="name" {entry} {onExplain} /></th>
+						{:else if !shownRows.has(entry.character.id)}
+							<!-- Built when the row comes near the screen (near.ts); cells keep their size. -->
+							<td data-col={field.id}><div class="cell" class:clamp={field.long}></div></td>
 						{:else}
 							<td data-col={field.id}>
 								{#if field.long}
