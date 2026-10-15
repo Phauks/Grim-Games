@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -6,6 +9,12 @@
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 
 	let confirmReset = $state(false);
+
+	async function openReference() {
+		// Navigate first: on /settings, closing the modal would otherwise send you home.
+		await goto(resolve('/reference'));
+		settingsDialog.open = false;
+	}
 
 	function reset() {
 		preferences.reset();
@@ -19,6 +28,17 @@
 	Not affiliated with The Pandemonium Institute. Blood on the Clocktower is a trademark of Steven
 	Medway and The Pandemonium Institute.
 </p>
+
+<SettingRow
+	label="Character reference"
+	description="Every character's data, night order and reminders, exactly as the app uses them."
+>
+	{#snippet control(labelId)}
+		<Button variant="quiet" icon="reference" aria-describedby={labelId} onclick={openReference}>
+			Open reference
+		</Button>
+	{/snippet}
+</SettingRow>
 
 <SettingRow
 	label="Reset settings"

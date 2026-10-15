@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import AboutDialog from './AboutDialog.svelte';
@@ -40,6 +41,7 @@
 		<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener"
 			>{shortCommit(info)}</a
 		>
+		· <a class="reference" href={resolve('/reference')}>Reference</a>
 		· <button type="button" class="about" onclick={() => (aboutOpen = true)}>About</button>
 	</p>
 	<AboutDialog bind:open={aboutOpen} />
@@ -73,6 +75,10 @@
 	}
 	.build a {
 		text-decoration: underline;
+	}
+	.reference {
+		min-height: var(--tap-target);
+		padding: 0 0.25rem;
 	}
 	.about {
 		min-height: var(--tap-target);
