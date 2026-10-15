@@ -249,7 +249,7 @@
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(calc(6.5 * var(--u)), 1fr));
 		gap: var(--space-2);
 	}
 	.option {

@@ -131,3 +131,39 @@ test('Storyteller help presets set the switches, and a change makes a custom mix
 		again.getByRole('checkbox', { name: 'Work out night answers', includeHidden: true })
 	).not.toBeChecked();
 });
+
+test('text size changes text only: icons, spacing and buttons keep their size', async ({
+	page
+}) => {
+	await page.goto('/');
+	const settingsButton = page.getByRole('banner').getByRole('button', { name: 'Settings' });
+	const night = page.getByRole('img', { name: 'Night' });
+	const measure = async () => ({
+		button: await settingsButton.boundingBox(),
+		icon: await night.boundingBox(),
+		gap: await page.evaluate(() =>
+			getComputedStyle(document.documentElement).getPropertyValue('--space-4')
+		),
+		spacePx: await page.evaluate(() => {
+			const probe = document.createElement('div');
+			probe.style.width = 'var(--space-4)';
+			document.body.append(probe);
+			const width = probe.getBoundingClientRect().width;
+			probe.remove();
+			return width;
+		}),
+		text: await page.evaluate(() => getComputedStyle(document.body).fontSize)
+	});
+	const before = await measure();
+
+	const dialog = await openSettings(page, 'Appearance');
+	await choose(page, 'Text size', 'XXL');
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	const after = await measure();
+
+	expect(after.text).not.toBe(before.text);
+	expect(after.spacePx).toBe(before.spacePx);
+	expect(after.icon?.width).toBe(before.icon?.width);
+	expect(after.button?.width).toBe(before.button?.width);
+	expect(after.button?.height).toBe(before.button?.height);
+});

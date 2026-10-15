@@ -3,13 +3,13 @@
  * Colours and fonts come from the active theme (src/lib/ui/themes), never from here.
  */
 :root {
-	--space-1: 0.25rem;
-	--space-2: 0.5rem;
-	--space-3: 0.75rem;
-	--space-4: 1rem;
-	--space-5: 1.5rem;
-	--space-6: 2rem;
-	--space-7: 3rem;
+	--space-1: calc(0.25 * var(--u));
+	--space-2: calc(0.5 * var(--u));
+	--space-3: calc(0.75 * var(--u));
+	--space-4: calc(1 * var(--u));
+	--space-5: calc(1.5 * var(--u));
+	--space-6: calc(2 * var(--u));
+	--space-7: calc(3 * var(--u));
 
 	--radius-sm: 6px;
 	--radius-md: 12px;
@@ -17,7 +17,7 @@
 	--radius-full: 999px;
 
 	--tap-target: 44px;
-	--icon-size: 1.5rem;
+	--icon-size: calc(1.5 * var(--u));
 
 	--duration-fast: 120ms;
 	--duration-normal: 240ms;
@@ -33,6 +33,12 @@
 
 	/* Written by the preferences store; 1 is the browser's default size. */
 	--text-scale: 1;
+	/*
+	 * The root font size grows with --text-scale so text sized in rem follows it. Layout
+	 * (spacing, icons, widths) uses --u instead: one rem at the default size, whatever the
+	 * text scale, so a bigger text size never moves or resizes anything else (Trevor).
+	 */
+	--u: calc(1rem / var(--text-scale));
 }
 
 @media (prefers-reduced-motion: reduce) {

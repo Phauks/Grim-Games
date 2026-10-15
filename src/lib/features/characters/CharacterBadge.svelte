@@ -62,9 +62,9 @@
 	.badge {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-1, 0.25rem);
+		gap: var(--space-1, calc(0.25 * var(--u)));
 		min-height: var(--tap-target);
-		padding: 0 var(--space-3, 0.75rem) 0 var(--space-1, 0.25rem);
+		padding: 0 var(--space-3, calc(0.75 * var(--u))) 0 var(--space-1, calc(0.25 * var(--u)));
 		border: 0;
 		border-radius: 999px;
 		font: inherit;
@@ -85,16 +85,16 @@
 	.icon {
 		display: inline-grid;
 		place-items: center;
-		width: 2rem;
-		height: 2rem;
+		width: calc(2 * var(--u));
+		height: calc(2 * var(--u));
 		flex: none;
 		border-radius: 50%;
 		background: var(--token-face, var(--on-surface));
 		overflow: hidden;
 	}
 	.icon img {
-		width: 1.75rem;
-		height: 1.75rem;
+		width: calc(1.75 * var(--u));
+		height: calc(1.75 * var(--u));
 	}
 	.player {
 		font-weight: 400;

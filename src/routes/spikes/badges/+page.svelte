@@ -26,9 +26,9 @@
 
 <style>
 	main {
-		max-width: 40rem;
+		max-width: calc(40 * var(--u));
 		margin: 0 auto;
-		padding: var(--space-4, 1rem);
+		padding: var(--space-4, calc(1 * var(--u)));
 	}
 	h1 {
 		font-family: var(--font-display);
@@ -38,7 +38,7 @@
 	}
 	ul {
 		display: grid;
-		gap: var(--space-3, 0.75rem);
+		gap: var(--space-3, calc(0.75 * var(--u)));
 		padding: 0;
 		list-style: none;
 	}
@@ -46,6 +46,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--space-2, 0.5rem);
+		gap: var(--space-2, calc(0.5 * var(--u)));
 	}
 </style>

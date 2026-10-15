@@ -22,7 +22,7 @@
 />
 <SettingSegmented
 	label="Text size"
-	description="Scales all text and controls on this device."
+	description="Changes the size of text only; buttons, icons and spacing stay the same."
 	value={String(preferences.current.textScale)}
 	options={TEXT_SCALES.map((scale) => ({ value: String(scale), label: scaleLabels[scale] }))}
 	onChange={(scale) => preferences.update({ textScale: Number(scale) as TextScale })}

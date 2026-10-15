@@ -57,8 +57,8 @@
 		position: relative;
 		display: grid;
 		place-items: center;
-		width: 4.25rem;
-		height: 4.25rem;
+		width: calc(4.25 * var(--u));
+		height: calc(4.25 * var(--u));
 		border-radius: 50%;
 		border: 3px solid var(--seat-rim);
 		background: var(--seat-face);
@@ -78,16 +78,16 @@
 		inset: 0;
 		display: grid;
 		place-items: center;
-		--icon-size: 2.25rem;
+		--icon-size: calc(2.25 * var(--u));
 	}
 	.badge {
 		position: absolute;
-		right: -0.25rem;
-		bottom: -0.25rem;
+		right: calc(-0.25 * var(--u));
+		bottom: calc(-0.25 * var(--u));
 		display: grid;
 		place-items: center;
-		width: 1.5rem;
-		height: 1.5rem;
+		width: calc(1.5 * var(--u));
+		height: calc(1.5 * var(--u));
 		border-radius: 50%;
 		border: 2px solid var(--on-reminder);
 		background: var(--reminder-face);

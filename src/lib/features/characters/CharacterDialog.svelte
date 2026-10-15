@@ -40,13 +40,13 @@
 	.summary {
 		display: flex;
 		align-items: center;
-		gap: var(--space-3, 0.75rem);
+		gap: var(--space-3, calc(0.75 * var(--u)));
 	}
 	.icon {
 		display: inline-grid;
 		place-items: center;
-		width: 4.5rem;
-		height: 4.5rem;
+		width: calc(4.5 * var(--u));
+		height: calc(4.5 * var(--u));
 		border-radius: 50%;
 		background: var(--token-face, var(--on-surface));
 	}
@@ -61,10 +61,10 @@
 	.wiki {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-2, 0.5rem);
+		gap: var(--space-2, calc(0.5 * var(--u)));
 		min-height: var(--tap-target);
-		padding: 0 var(--space-4, 1rem);
-		border-radius: var(--radius-md, 0.5rem);
+		padding: 0 var(--space-4, calc(1 * var(--u)));
+		border-radius: var(--radius-md, calc(0.5 * var(--u)));
 		background: var(--accent);
 		color: var(--on-accent, var(--on-surface));
 		text-decoration: none;

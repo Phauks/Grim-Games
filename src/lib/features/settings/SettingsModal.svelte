@@ -46,7 +46,7 @@
 		flex: 1;
 		min-height: 0;
 		display: grid;
-		grid-template-columns: 12rem 1fr;
+		grid-template-columns: calc(12 * var(--u)) 1fr;
 		gap: var(--space-4);
 		margin-top: var(--space-3);
 	}

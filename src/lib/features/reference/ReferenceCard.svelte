@@ -205,7 +205,7 @@
 		min-width: 0;
 		/* Off-screen cards skip layout and paint; the size estimate keeps the scrollbar steady. */
 		content-visibility: auto;
-		contain-intrinsic-size: auto 32rem;
+		contain-intrinsic-size: auto calc(32 * var(--u));
 		scroll-margin-top: calc(var(--tap-target) + var(--space-4));
 	}
 	header {
@@ -230,8 +230,8 @@
 		gap: var(--space-1);
 	}
 	.variants img {
-		width: 1.75rem;
-		height: 1.75rem;
+		width: calc(1.75 * var(--u));
+		height: calc(1.75 * var(--u));
 		border-radius: 50%;
 		background: var(--token-face);
 	}
@@ -335,7 +335,7 @@
 		border-radius: var(--radius-md);
 		box-shadow: inset 0 0 0 1px var(--accent);
 		font-size: 0.85rem;
-		--icon-size: 1rem;
+		--icon-size: calc(1 * var(--u));
 	}
 	.problems ul {
 		margin: var(--space-1) 0 0;
@@ -352,6 +352,6 @@
 		align-items: center;
 		gap: var(--space-1);
 		min-height: var(--tap-target);
-		--icon-size: 1.1rem;
+		--icon-size: calc(1.1 * var(--u));
 	}
 </style>
