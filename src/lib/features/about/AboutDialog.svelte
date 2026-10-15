@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { REPOSITORY_URL, shortCommit } from './report-issue.ts';
@@ -6,7 +7,9 @@
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 </script>
 
+<!-- The one About view in the app, opened from the footer. -->
 <Dialog bind:open title="About Grim-Games">
+	<p>A touch-first grimoire for Blood on the Clocktower Storytellers.</p>
 	<dl>
 		<dt>Version</dt>
 		<dd>{info.version}</dd>
@@ -23,6 +26,8 @@
 		<dd>{info.channel}</dd>
 		<dt>Built</dt>
 		<dd>{new Date(info.builtAt).toLocaleString()}</dd>
+		<dt>Changes</dt>
+		<dd><a href={resolve('/changelog')} onclick={() => (open = false)}>Changelog</a></dd>
 	</dl>
 	<p class="small">
 		Not affiliated with The Pandemonium Institute. Blood on the Clocktower is a trademark of Steven
@@ -32,7 +37,11 @@
 </Dialog>
 
 <style>
+	p {
+		margin: var(--space-3) 0;
+	}
 	dl {
+		margin: 0;
 		display: grid;
 		grid-template-columns: auto 1fr;
 		gap: calc(0.25 * var(--u)) calc(1 * var(--u));

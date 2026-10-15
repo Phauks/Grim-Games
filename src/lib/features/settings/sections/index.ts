@@ -1,9 +1,9 @@
 import { registerSettingsSection } from '../registry.ts';
-import AboutSection from './AboutSection.svelte';
 import AssistanceSection from './AssistanceSection.svelte';
 import AppearanceSection from './AppearanceSection.svelte';
 import FontsSection from './FontsSection.svelte';
 import IconsSection from './IconsSection.svelte';
+import ResetSection from './ResetSection.svelte';
 
 // Built-in sections. Other features register theirs the same way from their own modules.
 registerSettingsSection({
@@ -35,9 +35,9 @@ registerSettingsSection({
 	order: 40
 });
 registerSettingsSection({
-	id: 'about',
-	label: 'About',
-	icon: 'info',
-	component: AboutSection,
+	id: 'reset',
+	label: 'Reset settings',
+	icon: 'undo',
+	component: ResetSection,
 	order: 90
 });

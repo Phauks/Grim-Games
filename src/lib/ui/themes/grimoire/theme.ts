@@ -59,7 +59,8 @@ export const grimoire: Theme = {
 		'--loric': 'var(--palette-moss-800)',
 		'--on-loric': 'var(--palette-parchment-100)',
 		'--leaf': 'var(--palette-leaf-500)',
-		'--leaf-setup': 'var(--palette-amber-500)',
+		'--token-flower': 'var(--palette-amber-500)',
+		'--token-flower-centre': 'var(--palette-gold-400)',
 		'--token-face': 'var(--palette-parchment-100)',
 		'--token-face-shade': 'var(--palette-parchment-400)',
 		'--token-rim': 'var(--palette-blood-700)',
@@ -78,7 +79,14 @@ export const grimoire: Theme = {
 		'--seat-face':
 			'radial-gradient(circle at 40% 35%, var(--palette-parchment-100), var(--palette-parchment-400))'
 	},
-	fonts: { display: 'cinzel', text: 'eb-garamond' },
+	fonts: {
+		heading: 'cinzel',
+		character: 'cinzel',
+		ability: 'eb-garamond',
+		player: 'eb-garamond',
+		control: 'cinzel',
+		body: 'eb-garamond'
+	},
 	icons: {
 		dead: 'ph:skull',
 		ghostVote: 'ph:ghost',

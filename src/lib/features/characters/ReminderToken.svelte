@@ -31,6 +31,7 @@
 		border-radius: var(--radius-full);
 		background: var(--reminder-face);
 		color: var(--on-reminder);
+		font-family: var(--font-character);
 		font-size: 0.85em;
 		line-height: 1.4;
 		white-space: nowrap;

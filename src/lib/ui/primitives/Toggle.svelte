@@ -25,6 +25,7 @@
 		justify-content: space-between;
 		gap: var(--space-3);
 		min-height: var(--tap-target);
+		font-family: var(--font-control);
 		cursor: pointer;
 		touch-action: manipulation;
 	}

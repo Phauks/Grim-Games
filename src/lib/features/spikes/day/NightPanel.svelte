@@ -16,6 +16,7 @@
 		type Reliability
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import NightText from '#lib/features/reference/NightText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -188,7 +189,14 @@
 			<strong class="marker">{stepTitle(step)}</strong>
 		{/if}
 	</div>
-	{#if step.reminder}<p class="reminder">{step.reminder}</p>{/if}
+	{#if step.reminder}<p class="reminder">
+			{#if step.character}<NightText
+					text={step.reminder}
+					character={step.gained
+						? (game.characters.get(step.gained.characterId) ?? step.character)
+						: step.character}
+				/>{:else}{step.reminder}{/if}
+		</p>{/if}
 	{#if step.gained}
 		<!-- The Pixie's reminder tokens (TPI): Mad until the Storyteller places Has Ability. -->
 		<p class="answer-sub" data-testid="step-gained">
@@ -357,15 +365,17 @@
 		gap: var(--space-2);
 	}
 	.players {
+		font-family: var(--font-player);
 		color: var(--on-surface-muted);
 	}
 	.marker {
-		font-family: var(--font-display);
+		font-family: var(--font-character);
 		font-size: 1.1rem;
 		color: var(--heading);
 	}
 	.reminder {
 		margin: 0;
+		font-family: var(--font-ability);
 	}
 	.answer {
 		display: grid;

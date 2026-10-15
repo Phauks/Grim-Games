@@ -73,6 +73,7 @@
 		border-radius: var(--radius-md);
 		background: none;
 		color: var(--on-surface);
+		font-family: var(--font-control);
 		text-align: left;
 	}
 	nav button[aria-current='page'] {
@@ -132,6 +133,7 @@
 			border: 0;
 			background: none;
 			color: var(--heading);
+			font-family: var(--font-control);
 		}
 	}
 </style>

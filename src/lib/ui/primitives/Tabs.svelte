@@ -44,8 +44,8 @@
 		border: 0;
 		background: none;
 		color: var(--on-surface-muted);
-		font-family: var(--font-display);
-		font-weight: var(--font-display-weight);
+		font-family: var(--font-control);
+		font-weight: var(--font-control-weight);
 	}
 	:global([data-scope='tabs'][data-part='trigger'][data-selected]) {
 		color: var(--heading);

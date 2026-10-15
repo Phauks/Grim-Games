@@ -22,6 +22,16 @@
 
 	let { data, numeric, view }: Props = $props();
 
+	// Text filter for the tables: hides steps, never reorders them.
+	let query = $state('');
+	function matches(s: NightStep): boolean {
+		const q = query.trim().toLowerCase();
+		if (!q) return true;
+		const name =
+			s.character?.name ?? (s.kind === 'marker' ? MARKER_TEXT[s.id as NightMarker].name : '');
+		return `${name} ${s.reminder ?? ''}`.toLowerCase().includes(q);
+	}
+
 	const nights = $derived(
 		(['first', 'other'] as const).map((night) => {
 			const order = fullNightOrder(data, night, numeric);
@@ -96,6 +106,13 @@
 	</li>
 {/snippet}
 
+{#if view === 'table'}
+	<label class="night-filter">
+		<span class="visually-hidden">Filter night steps</span>
+		<input type="search" placeholder="Filter steps (order is kept)" bind:value={query} />
+	</label>
+{/if}
+
 {#each nights as n (n.night)}
 	<section class="night" aria-labelledby="night-{n.night}" data-testid="night-{n.night}">
 		<h2 id="night-{n.night}">
@@ -114,7 +131,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each n.steps as s (s.id)}{@render row(n.night, s)}{/each}
+						{#each n.steps.filter(matches) as s (s.id)}{@render row(n.night, s)}{/each}
 					</tbody>
 				</table>
 			</div>
@@ -157,6 +174,26 @@
 </section>
 
 <style>
+	.night-filter input {
+		width: 100%;
+		min-height: var(--tap-target);
+		margin-bottom: var(--space-4);
+		padding: 0 var(--space-3);
+		border: var(--card-border);
+		border-radius: var(--radius-full);
+		background: var(--card-background);
+		color: var(--on-surface);
+		font: inherit;
+		font-size: max(1rem, 16px);
+	}
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
 	.night {
 		margin-bottom: var(--space-6);
 	}
@@ -201,7 +238,7 @@
 		min-height: var(--tap-target);
 		font-variant-numeric: tabular-nums;
 		color: var(--heading);
-		font-family: var(--font-display);
+		font-family: var(--font-control);
 	}
 	.body {
 		display: grid;
@@ -213,7 +250,7 @@
 		display: inline-flex;
 		align-items: center;
 		min-height: var(--tap-target);
-		font-family: var(--font-display);
+		font-family: var(--font-character);
 		color: var(--heading);
 	}
 	p {
@@ -284,6 +321,7 @@
 		overflow-wrap: anywhere;
 	}
 	thead th {
+		font-family: var(--font-control);
 		font-size: 0.8rem;
 		color: var(--on-surface-muted);
 	}

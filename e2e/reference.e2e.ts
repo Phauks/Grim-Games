@@ -42,13 +42,103 @@ test('searching shows everything the app uses for the Witch', async ({ page }) =
 	expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test('filter chips narrow the list', async ({ page }) => {
+test('the filter chips are gone; the table sorts and filters by column', async ({ page }) => {
+	// The full table (181 rows, every field) is rebuilt several times here.
+	test.slow();
 	await page.goto('/reference');
-	const demons = page.getByRole('button', { name: 'Demons' });
-	await demons.tap();
-	await expect(demons).toHaveAttribute('aria-pressed', 'true');
-	await expect(page.locator('#group-demon')).toBeVisible();
-	await expect(page.locator('#group-townsfolk')).toHaveCount(0);
+	await expect(page.getByRole('group', { name: 'Character types' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Demons', exact: true })).toHaveCount(0);
+
+	await page.getByText('Table', { exact: true }).tap();
+	const table = page.getByTestId('character-table');
+	const rows = table.locator('tbody tr');
+	await expect(rows).toHaveCount(181);
+
+	// Sort by first night: positions ascend, characters that do not wake go last.
+	await table.getByRole('button', { name: 'First night', exact: true }).tap();
+	await expect(table.locator('th[data-col="firstNight"]')).toHaveAttribute(
+		'aria-sort',
+		'ascending'
+	);
+	const positions = (
+		await rows
+			.locator('td[data-col="firstNight"] [data-testid="night-first-position"]')
+			.evaluateAll((els) => els.map((el) => el.getAttribute('data-position')))
+	)
+		.filter((p) => p !== null)
+		.map(Number);
+	expect(positions.length).toBeGreaterThan(50);
+	expect(positions).toEqual([...positions].sort((x, y) => x - y));
+	await table.getByRole('button', { name: 'First night', exact: true }).tap();
+	await expect(table.locator('th[data-col="firstNight"]')).toHaveAttribute(
+		'aria-sort',
+		'descending'
+	);
+
+	// Filter the type column to Demons.
+	await table.locator('td[data-col="type"] button').tap();
+	const dialog = page.getByRole('dialog', { name: 'Filter by type' });
+	await dialog.getByLabel('Demons').check();
+	await dialog.getByRole('button', { name: 'Done' }).tap();
+	await expect(page.getByTestId('table-count')).toContainText('1 filter');
+	const types = await rows.evaluateAll((trs) => trs.map((tr) => tr.getAttribute('data-type')));
+	expect(types.length).toBeGreaterThan(0);
+	expect(new Set(types)).toEqual(new Set(['demon']));
+
+	// The sort and filters are remembered on this device.
+	await page.reload();
+	await expect(page.getByTestId('table-count')).toContainText('1 filter');
+	await expect(
+		page.getByTestId('character-table').locator('th[data-col="firstNight"]')
+	).toHaveAttribute('aria-sort', 'descending');
+
+	await page.getByRole('button', { name: 'Clear filters' }).tap();
+	await expect(page.getByTestId('character-table').locator('tbody tr')).toHaveCount(181);
+	await expect(page.getByRole('button', { name: 'Clear filters' })).toBeDisabled();
+});
+
+test('the Witch row shows the same values as the Witch card', async ({ page }) => {
+	await page.goto('/reference');
+	const card = page.locator('[data-testid="reference-card"][data-character="witch"]');
+	await card.scrollIntoViewIfNeeded();
+	const fields = [
+		'name',
+		'type',
+		'edition',
+		'alignment',
+		'setup',
+		'ability',
+		'tokens',
+		'special',
+		'firstNight',
+		'otherNight',
+		'jinxes',
+		'preDay',
+		'problems',
+		'links'
+	];
+	const read = (scope: typeof card) =>
+		scope.evaluate(
+			(el, ids) =>
+				Object.fromEntries(
+					ids.map((id) => [
+						id,
+						(el.querySelector(`[data-field="${id}"]`)?.textContent ?? '')
+							.replace(/\s+/g, ' ')
+							.trim()
+					])
+				),
+			fields
+		);
+	const fromCard = await read(card);
+	expect(fromCard.ability).toContain('Each night, choose a player');
+	await expect(card.locator('[data-field="icons"] img')).toHaveCount(2);
+
+	await page.getByText('Table', { exact: true }).tap();
+	const row = page.getByTestId('character-table').locator('tr[data-character="witch"]');
+	await expect(row).toBeVisible();
+	expect(await read(row)).toEqual(fromCard);
+	await expect(row.locator('[data-field="icons"] img')).toHaveCount(2);
 });
 
 test('the night order runs from Dusk to Dawn', async ({ page }) => {
@@ -89,6 +179,7 @@ test('the table view is remembered and the night-order table is in night order',
 			.locator('td.num')
 			.allTextContents()
 			.then((all) => all.map((t) => Number(t.replace('#', ''))));
+		console.log(JSON.stringify(positions));
 		expect(positions.length).toBeGreaterThan(50);
 		expect(positions).toEqual([...positions].sort((a, b) => a - b));
 		// The last step before the after-Dawn announcements is Dawn.
@@ -103,4 +194,26 @@ test('the table view is remembered and the night-order table is in night order',
 		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
 	);
 	expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('token leaves and the setup flower are drawn inside the token', async ({ page }) => {
+	await page.goto('/reference');
+	await page.getByRole('searchbox').fill('Village Idiot');
+	const token = page.locator('.token[role="img"]').first();
+	await expect(token).toBeVisible();
+	const face = await token.locator('circle.face').boundingBox();
+	const leaves = token.locator('g.leaf, g.flower');
+	await expect(token.locator('g.flower')).toHaveCount(1);
+	await expect(token.locator('g.leaf[data-kind="setup"]')).toHaveCount(0);
+	await expect(leaves.first()).toBeAttached();
+	expect(face).not.toBeNull();
+	for (const leaf of await leaves.all()) {
+		const box = await leaf.boundingBox();
+		expect(box).not.toBeNull();
+		expect(box!.x).toBeGreaterThanOrEqual(face!.x);
+		expect(box!.y).toBeGreaterThanOrEqual(face!.y);
+		expect(box!.x + box!.width).toBeLessThanOrEqual(face!.x + face!.width);
+		expect(box!.y + box!.height).toBeLessThanOrEqual(face!.y + face!.height);
+	}
+	await token.screenshot({ path: 'test-results/village-idiot-token.png' });
 });

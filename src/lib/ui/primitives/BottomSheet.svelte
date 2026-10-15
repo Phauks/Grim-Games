@@ -130,8 +130,8 @@
 	:global([data-scope='drawer'][data-part='title']) {
 		margin: 0;
 		color: inherit;
-		font-family: var(--font-display);
-		font-weight: var(--font-display-weight);
+		font-family: var(--font-heading);
+		font-weight: var(--font-heading-weight);
 		font-size: 1.3rem;
 		letter-spacing: 0.04em;
 	}

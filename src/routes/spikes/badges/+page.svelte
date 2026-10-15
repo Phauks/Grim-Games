@@ -31,7 +31,7 @@
 		padding: var(--space-4, calc(1 * var(--u)));
 	}
 	h1 {
-		font-family: var(--font-display);
+		font-family: var(--font-heading);
 	}
 	.note {
 		color: var(--on-surface-muted);

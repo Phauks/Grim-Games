@@ -7,6 +7,7 @@ import ph_arrow_right_duotone from '~icons/ph/arrow-right-duotone';
 import ph_arrow_square_out_duotone from '~icons/ph/arrow-square-out-duotone';
 import ph_arrow_u_up_left_duotone from '~icons/ph/arrow-u-up-left-duotone';
 import ph_arrow_u_up_right_duotone from '~icons/ph/arrow-u-up-right-duotone';
+import ph_arrows_down_up_duotone from '~icons/ph/arrows-down-up-duotone';
 import ph_bag_simple_duotone from '~icons/ph/bag-simple-duotone';
 import ph_beer_bottle_duotone from '~icons/ph/beer-bottle-duotone';
 import ph_beer_stein_duotone from '~icons/ph/beer-stein-duotone';
@@ -16,8 +17,10 @@ import ph_book_open_text_duotone from '~icons/ph/book-open-text-duotone';
 import ph_bookmark_simple_duotone from '~icons/ph/bookmark-simple-duotone';
 import ph_books_duotone from '~icons/ph/books-duotone';
 import ph_bug_duotone from '~icons/ph/bug-duotone';
+import ph_caret_down_duotone from '~icons/ph/caret-down-duotone';
 import ph_caret_left_duotone from '~icons/ph/caret-left-duotone';
 import ph_caret_right_duotone from '~icons/ph/caret-right-duotone';
+import ph_caret_up_duotone from '~icons/ph/caret-up-duotone';
 import ph_check_duotone from '~icons/ph/check-duotone';
 import ph_cross_duotone from '~icons/ph/cross-duotone';
 import ph_dots_three_vertical_duotone from '~icons/ph/dots-three-vertical-duotone';
@@ -26,6 +29,7 @@ import ph_feather_duotone from '~icons/ph/feather-duotone';
 import ph_fire_duotone from '~icons/ph/fire-duotone';
 import ph_flag_duotone from '~icons/ph/flag-duotone';
 import ph_flask_duotone from '~icons/ph/flask-duotone';
+import ph_funnel_duotone from '~icons/ph/funnel-duotone';
 import ph_gear_duotone from '~icons/ph/gear-duotone';
 import ph_gear_six_duotone from '~icons/ph/gear-six-duotone';
 import ph_ghost_duotone from '~icons/ph/ghost-duotone';
@@ -58,6 +62,8 @@ import ph_skull_duotone from '~icons/ph/skull-duotone';
 import ph_sliders_duotone from '~icons/ph/sliders-duotone';
 import ph_smiley_duotone from '~icons/ph/smiley-duotone';
 import ph_smiley_angry_duotone from '~icons/ph/smiley-angry-duotone';
+import ph_sort_ascending_duotone from '~icons/ph/sort-ascending-duotone';
+import ph_sort_descending_duotone from '~icons/ph/sort-descending-duotone';
 import ph_sun_duotone from '~icons/ph/sun-duotone';
 import ph_sun_horizon_duotone from '~icons/ph/sun-horizon-duotone';
 import ph_tag_duotone from '~icons/ph/tag-duotone';
@@ -82,6 +88,7 @@ const icons: IconMap = {
 	'ph:arrow-square-out-duotone': ph_arrow_square_out_duotone,
 	'ph:arrow-u-up-left-duotone': ph_arrow_u_up_left_duotone,
 	'ph:arrow-u-up-right-duotone': ph_arrow_u_up_right_duotone,
+	'ph:arrows-down-up-duotone': ph_arrows_down_up_duotone,
 	'ph:bag-simple-duotone': ph_bag_simple_duotone,
 	'ph:beer-bottle-duotone': ph_beer_bottle_duotone,
 	'ph:beer-stein-duotone': ph_beer_stein_duotone,
@@ -91,8 +98,10 @@ const icons: IconMap = {
 	'ph:bookmark-simple-duotone': ph_bookmark_simple_duotone,
 	'ph:books-duotone': ph_books_duotone,
 	'ph:bug-duotone': ph_bug_duotone,
+	'ph:caret-down-duotone': ph_caret_down_duotone,
 	'ph:caret-left-duotone': ph_caret_left_duotone,
 	'ph:caret-right-duotone': ph_caret_right_duotone,
+	'ph:caret-up-duotone': ph_caret_up_duotone,
 	'ph:check-duotone': ph_check_duotone,
 	'ph:cross-duotone': ph_cross_duotone,
 	'ph:dots-three-vertical-duotone': ph_dots_three_vertical_duotone,
@@ -101,6 +110,7 @@ const icons: IconMap = {
 	'ph:fire-duotone': ph_fire_duotone,
 	'ph:flag-duotone': ph_flag_duotone,
 	'ph:flask-duotone': ph_flask_duotone,
+	'ph:funnel-duotone': ph_funnel_duotone,
 	'ph:gear-duotone': ph_gear_duotone,
 	'ph:gear-six-duotone': ph_gear_six_duotone,
 	'ph:ghost-duotone': ph_ghost_duotone,
@@ -133,6 +143,8 @@ const icons: IconMap = {
 	'ph:sliders-duotone': ph_sliders_duotone,
 	'ph:smiley-duotone': ph_smiley_duotone,
 	'ph:smiley-angry-duotone': ph_smiley_angry_duotone,
+	'ph:sort-ascending-duotone': ph_sort_ascending_duotone,
+	'ph:sort-descending-duotone': ph_sort_descending_duotone,
 	'ph:sun-duotone': ph_sun_duotone,
 	'ph:sun-horizon-duotone': ph_sun_horizon_duotone,
 	'ph:tag-duotone': ph_tag_duotone,

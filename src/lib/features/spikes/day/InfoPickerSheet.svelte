@@ -269,6 +269,7 @@
 		background: transparent;
 		color: inherit;
 		font: inherit;
+		font-family: var(--font-control);
 		cursor: pointer;
 	}
 	/* Truthful options: a heavier rim, so the choice is still the Storyteller's. */
