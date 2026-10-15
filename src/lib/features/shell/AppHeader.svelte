@@ -36,8 +36,8 @@
 	.brand {
 		display: inline-flex;
 		align-items: center;
-		font-family: var(--font-display);
-		font-weight: var(--font-display-weight);
+		font-family: var(--font-heading);
+		font-weight: var(--font-heading-weight);
 		font-size: 1.1rem;
 		letter-spacing: 0.06em;
 		color: var(--heading);

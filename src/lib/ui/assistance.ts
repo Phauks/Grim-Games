@@ -6,13 +6,13 @@
  */
 export const ASSIST_KEYS = [
 	'nightWalkthrough',
-	'fullNightText',
 	'nightAnswers',
 	'infoSuggestions',
 	'setupReminders',
 	'preDayReminders',
 	'deathCause',
-	'rulesWarnings'
+	'rulesWarnings',
+	'explainTerms'
 ] as const;
 export type AssistKey = (typeof ASSIST_KEYS)[number];
 export type Assistance = Record<AssistKey, boolean>;
@@ -22,11 +22,6 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Walk me through the night',
 		description:
 			'One character at a time with their Storyteller text. Off shows the whole night as a checklist.'
-	},
-	fullNightText: {
-		label: 'Full night instructions',
-		description:
-			'Our fuller Storyteller text where TPI’s does not say which reminder to place or remove, or when. Off shows TPI’s text. Either way, steps with our own text are marked “Differs from source”.'
 	},
 	nightAnswers: {
 		label: 'Work out night answers',
@@ -53,6 +48,10 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	rulesWarnings: {
 		label: 'Setup and jinx warnings',
 		description: 'Point out a setup that breaks the rules or a jinx that applies.'
+	},
+	explainTerms: {
+		label: 'Explain rules terms',
+		description: 'Underline words like poisoned, drunk or might; tap one for a short definition.'
 	}
 };
 

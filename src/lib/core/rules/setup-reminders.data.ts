@@ -679,18 +679,10 @@ export interface SetupNote {
 	 * Yaggababble's phrase in its pre-day reminder): stored as `Game.prepValues`.
 	 */
 	value?: { key: string; label: string };
-	/** Set when our step departs from TPI's wording: why (shown as "Differs from source"). */
-	differs?: string;
 }
 
 export const SETUP_NOTES: Record<CharacterId, readonly SetupNote[]> = {
-	bountyhunter: [
-		{
-			text: 'Choose a Townsfolk player who is evil: set their alignment to evil',
-			differs:
-				'TPI turns the player’s token upside down; in the app the seat’s alignment is the record (Trevor’s review).'
-		}
-	],
+	bountyhunter: [{ text: 'Choose a Townsfolk player who is evil; turn their token upside down' }],
 	huntsman: [{ text: 'If the Damsel is not in play, add her in place of a Townsfolk' }],
 	lunatic: [
 		{

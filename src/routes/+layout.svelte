@@ -3,6 +3,7 @@
 	import '#lib/ui/base.css';
 	import AppFooter from '#lib/features/about/AppFooter.svelte';
 	import UpdateBanner from '#lib/features/about/UpdateBanner.svelte';
+	import GlossaryPopover from '#lib/features/glossary/GlossaryPopover.svelte';
 	import SettingsModal from '#lib/features/settings/SettingsModal.svelte';
 	import AppHeader from '#lib/features/shell/AppHeader.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -27,6 +28,7 @@
 <AppFooter />
 
 <SettingsModal />
+<GlossaryPopover />
 <Toaster />
 <UpdateBanner />
 

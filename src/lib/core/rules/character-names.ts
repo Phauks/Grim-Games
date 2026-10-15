@@ -40,7 +40,10 @@ export function characterNames(
 	const names = [...exact.keys()].sort((a, b) => b.length - a.length);
 	if (names.length === 0) return NO_CHARACTER_NAMES;
 	const alternatives = names.map((n) => escape(n).replace(/'/g, "['’]"));
-	const pattern = new RegExp(`(?<![\\p{L}\\p{N}])(?:${alternatives.join('|')})(?![\\p{L}\\p{N}])`, 'gu');
+	const pattern = new RegExp(
+		`(?<![\\p{L}\\p{N}])(?:${alternatives.join('|')})(?![\\p{L}\\p{N}])`,
+		'gu'
+	);
 
 	return {
 		split(text) {

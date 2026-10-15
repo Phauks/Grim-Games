@@ -92,9 +92,10 @@
 		border: 2px solid var(--on-reminder);
 		background: var(--reminder-face);
 		color: var(--on-reminder);
-		font: 600 0.75rem / 1 var(--font-text);
+		font: 600 0.75rem / 1 var(--font-control);
 	}
 	.name {
+		font-family: var(--font-player);
 		font-size: 0.95rem;
 	}
 </style>

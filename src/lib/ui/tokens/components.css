@@ -8,7 +8,7 @@
 
 	--button-background: var(--button);
 	--button-color: var(--on-button);
-	--button-font: var(--font-display-weight) 0.95rem / 1.1 var(--font-display);
+	--button-font: var(--font-control-weight) 0.95rem / 1.1 var(--font-control);
 	--button-radius: var(--radius-md);
 
 	--card-background: var(--surface-raised);
@@ -31,7 +31,7 @@
 	--seat-face: var(--token-face);
 	--seat-rim: var(--token-rim);
 	--seat-color: var(--on-token);
-	--seat-font: var(--font-display-weight) 0.8rem / 1.1 var(--font-display);
+	--seat-font: var(--font-player-weight) 0.8rem / 1.1 var(--font-player);
 
 	--toast-background: var(--sheet);
 	--toast-color: var(--on-sheet);

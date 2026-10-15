@@ -56,14 +56,6 @@
 		return g.seating.filter((s) => g.seats[s].characterId === step.character?.id);
 	}
 
-	/** Whether this step's character has a reminder token with this label in the grimoire. */
-	function placed(step: NightStep, label: string): boolean {
-		const id = step.character?.id;
-		return g.seating.some((s) =>
-			g.seats[s].reminders.some((r) => r.characterId === id && r.label === label)
-		);
-	}
-
 	function stepTitle(step: NightStep): string {
 		if (step.kind === 'marker') return MARKER_TEXT[step.id as NightMarker].name;
 		return step.title ?? step.character?.name ?? step.id;
@@ -152,7 +144,6 @@
 					text={step.reminder}
 					character={step.character}
 					{night}
-					placed={(label) => placed(step, label)}
 				/>{:else}{step.reminder}{/if}
 		</p>{/if}
 
@@ -287,16 +278,17 @@
 		gap: var(--space-2);
 	}
 	.players {
+		font-family: var(--font-player);
 		color: var(--on-surface-muted);
 	}
 	.marker {
-		font-family: var(--font-display);
+		font-family: var(--font-character);
 		font-size: 1.1rem;
 		color: var(--heading);
 	}
 	.reminder {
 		margin: 0;
-		line-height: 1.7;
+		font-family: var(--font-ability);
 	}
 	.answer {
 		display: grid;

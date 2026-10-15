@@ -52,10 +52,7 @@ export const DAY_GROUP_TITLES: Record<DayGroup, string> = {
  * game as `prepValues`), shown as `placeholder` until entered (the Yaggababble's phrase).
  */
 export type TemplateSegment =
-	| { self: true }
-	| { target: true }
-	| { text: string }
-	| { value: string; placeholder: string };
+	{ self: true } | { target: true } | { text: string } | { value: string; placeholder: string };
 
 /** How a death is matched: a cause the app records, or a character id. */
 export type DeathCauseMatch = 'execution' | 'demon' | 'other' | CharacterId;

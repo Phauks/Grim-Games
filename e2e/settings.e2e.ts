@@ -17,13 +17,23 @@ async function openSettings(page: Page, section: string) {
 const choose = (page: Page, group: string, option: string) =>
 	page.getByRole('radiogroup', { name: group }).getByText(option, { exact: true }).tap();
 
+/** Opens a font role's dropdown and taps one font, as a finger would. */
+async function chooseFont(page: Page, role: string, font: RegExp) {
+	await page.getByRole('combobox', { name: role }).tap();
+	const option = page.getByRole('option', { name: font });
+	const box = await option.boundingBox();
+	expect(box?.height).toBeGreaterThanOrEqual(44);
+	await option.tap();
+	await expect(page.getByRole('listbox')).toBeHidden();
+}
+
 const rootStyle = (page: Page, name: string) =>
 	page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n), name);
 
 test('the grimoire theme and the app header are on every page', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'grimoire');
-	expect(await rootStyle(page, '--font-display')).toContain('Cinzel');
+	expect(await rootStyle(page, '--font-heading')).toContain('Cinzel');
 	const header = page.getByRole('banner');
 	await expect(header.getByRole('link', { name: 'Grim-Games' })).toBeVisible();
 	await expect(header.getByRole('button', { name: 'Settings' })).toBeVisible();
@@ -41,33 +51,52 @@ test('/settings deep-links to the settings modal', async ({ page }) => {
 	await expect(page).toHaveURL(/\/$/);
 });
 
-test('a chosen text font is applied and survives a reload', async ({ page }) => {
+test('a font chosen for one role from its dropdown applies to that role only and survives a reload', async ({
+	page
+}) => {
 	await page.goto('/');
-	await openSettings(page, 'Fonts');
-	await choose(page, 'Everything else', 'Lexend · Readability');
-	expect(await rootStyle(page, '--font-text')).toContain('Lexend');
+	const dialog = await openSettings(page, 'Fonts');
+	const headingBefore = await rootStyle(page, '--font-heading');
+	const trigger = dialog.getByRole('combobox', { name: 'Ability and rules text' });
+	expect((await trigger.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+	await expect(trigger).toContainText('EB Garamond');
+
+	await chooseFont(page, 'Ability and rules text', /^Lexend/);
+	expect(await rootStyle(page, '--font-ability')).toContain('Lexend');
+	expect(await rootStyle(page, '--font-heading')).toBe(headingBefore);
+	expect(await rootStyle(page, '--font-body')).not.toContain('Lexend');
+	// The closed dropdown shows the chosen font, drawn in that font.
+	await expect(trigger).toContainText('Lexend');
+	expect(
+		await trigger.getByText('Lexend').evaluate((el) => getComputedStyle(el).fontFamily)
+	).toContain('Lexend');
+	await expect(dialog.locator('.line[data-role="ability"] dd')).toHaveCSS('font-family', /Lexend/);
 
 	await page.reload();
-	await expect
-		.poll(() => page.evaluate(() => getComputedStyle(document.body).fontFamily))
-		.toContain('Lexend');
+	await expect.poll(() => rootStyle(page, '--font-ability')).toContain('Lexend');
+	expect(await rootStyle(page, '--font-heading')).toBe(headingBefore);
 	// Outside Settings only the chosen fonts are fetched (on demand).
 	const faces = () =>
 		page.evaluate(() => [...document.fonts].map((f) => `${f.family}:${f.status}`).join());
-	await expect.poll(faces).toMatch(/Lexend"?:loaded/);
+	// The chosen font's faces are registered (loaded once text uses them); others are not.
+	await expect.poll(faces).toMatch(/Lexend/);
 	expect(await faces()).not.toContain('IM Fell');
 
-	await openSettings(page, 'Fonts');
-	await expect(
-		page.getByRole('radiogroup', { name: 'Everything else' }).getByRole('radio', { name: /Lexend/ })
-	).toBeChecked();
+	const again = await openSettings(page, 'Fonts');
+	await expect(again.getByRole('combobox', { name: 'Ability and rules text' })).toContainText(
+		'Lexend'
+	);
 });
 
-test('display font, text size and icon weight apply live', async ({ page }) => {
+test('heading font, text size and icon weight apply live', async ({ page }) => {
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Fonts');
-	await choose(page, 'Titles and character names', 'IM Fell English SC');
-	expect(await rootStyle(page, '--font-display')).toContain('IM Fell English SC');
+	await chooseFont(page, 'Headings', /^IM Fell English SC/);
+	expect(await rootStyle(page, '--font-heading')).toContain('IM Fell English SC');
+	await expect(dialog.getByRole('heading', { name: 'Fonts', level: 2 })).toHaveCSS(
+		'font-family',
+		/IM Fell English SC/
+	);
 
 	// Phones drill in, so go back to the section list first; tablets show the sidebar.
 	const back = dialog.getByRole('button', { name: 'All settings' });

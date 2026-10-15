@@ -20,6 +20,8 @@
 
 	let { characterId, alignment, playerName }: Props = $props();
 	let open = $state(false);
+	// The dialog is only created on first tap: pages like /reference show hundreds of badges.
+	let used = $state(false);
 
 	onMount(() => void loadOfficialData());
 
@@ -44,7 +46,10 @@
 	class="badge"
 	data-team={team}
 	aria-haspopup="dialog"
-	onclick={() => (open = true)}
+	onclick={() => {
+		used = true;
+		open = true;
+	}}
 >
 	<!-- Fixed-size icon slot so the badge never changes size when data or icons arrive. -->
 	<span class="icon"
@@ -55,7 +60,7 @@
 </button>
 
 {#if character}
-	<CharacterDialog bind:open {character} {icon} />
+	{#if used}<CharacterDialog bind:open {character} {icon} />{/if}
 {/if}
 
 <style>
@@ -96,7 +101,12 @@
 		width: calc(1.75 * var(--u));
 		height: calc(1.75 * var(--u));
 	}
+	.name {
+		font-family: var(--font-character);
+		font-weight: var(--font-character-weight);
+	}
 	.player {
+		font-family: var(--font-player);
 		font-weight: 400;
 		opacity: 0.9;
 	}

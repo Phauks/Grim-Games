@@ -15,3 +15,5 @@ export * from './setup-reminders.ts';
 export * from './describe.ts';
 export * from './reference.ts';
 export * from './night-text.ts';
+export * from './glossary.ts';
+export * from './reference-table.ts';

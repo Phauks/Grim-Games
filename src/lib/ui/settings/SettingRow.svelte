@@ -26,8 +26,8 @@
 	.label {
 		display: block;
 		margin-bottom: var(--space-2);
-		font-family: var(--font-display);
-		font-weight: var(--font-display-weight);
+		font-family: var(--font-control);
+		font-weight: var(--font-control-weight);
 		color: var(--heading);
 		letter-spacing: 0.03em;
 	}

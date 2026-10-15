@@ -29,9 +29,7 @@ import { describeImpairable, describeWhen } from './describe.ts';
 import { MAX_DEALT_PLAYERS } from './distribution.ts';
 import { isExclusiveJinx } from './jinxes.ts';
 import { nightOrder, type Night, type NightOrder } from './night-order.ts';
-import { characterNames, type CharacterNames } from './character-names.ts';
 import { nightTextOverride, type NightTextOverride } from './night-text.ts';
-import { prepTextSegments, setupPrep, type PrepSegment } from './setup-reminders.ts';
 import { setupModifierFor, type SetupModifier } from './setup-modifiers.ts';
 
 /**
@@ -44,20 +42,13 @@ export type ReferenceSegment =
 	| { kind: 'value'; placeholder: string }
 	| { kind: 'text'; text: string };
 
-/** One step of pre-game prep, with its text as segments. */
-export interface ReferencePrepStep {
-	segments: PrepSegment[];
-	/** A value to type in during prep ("Secret phrase"). */
-	valueLabel?: string;
-}
-
 /**
- * Where our text departs from TPI's: TPI's original, ours, and why. For night text the
- * source is TPI's night text; for prep, TPI has no prep text, so it is the ability.
+ * Where our night text departs from TPI's: TPI's original, ours, and why (for the parked
+ * "Differs from source" marker, `SHOW_DIFFERS_FROM_SOURCE`).
  */
 export interface ReferenceDifference {
-	part: 'firstNight' | 'otherNight' | 'prep';
-	/** "First night", "Other nights", "Prep". */
+	part: 'firstNight' | 'otherNight';
+	/** "First night", "Other nights". */
 	title: string;
 	source: string;
 	ours: string;
@@ -83,7 +74,7 @@ export interface ReferenceNight {
 	/** Number in `night-order-provisional.json`. */
 	number?: number;
 	text?: string;
-	/** Our own fuller text, shown instead of TPI's when "Full night instructions" is on. */
+	/** Our text shown instead of TPI's (Trevor's reviewed edit), with why. */
 	ours?: NightTextOverride;
 	/** Where the two orders disagree, or one is missing. */
 	issues: string[];
@@ -127,9 +118,7 @@ export interface ReferenceEntry {
 	firstNight: ReferenceNight;
 	otherNight: ReferenceNight;
 	dayReminders: ReferenceDayReminder[];
-	/** Pre-game prep (`setupPrep`). */
-	prep: ReferencePrepStep[];
-	/** Where our text departs from TPI's. */
+	/** Where our night text departs from TPI's. */
 	differences: ReferenceDifference[];
 	/** Why the character has no pre-day reminders (`NO_DAY_RELEVANCE`). */
 	noDayReason?: string;
@@ -217,25 +206,7 @@ const samePage = (a: string | undefined, b: string | undefined) => {
 
 const ENTRIES = new Map(DAY_REMINDER_ENTRIES.map((e) => [e.id, e]));
 
-/** Text pieces with character names split out as badges. */
-function withNames(segments: ReferenceSegment[], names: CharacterNames): ReferenceSegment[] {
-	return segments.flatMap((s): ReferenceSegment[] =>
-		s.kind === 'text'
-			? names
-					.split(s.text)
-					.map((p) =>
-						p.kind === 'text' ? p : { kind: 'character' as const, characterId: p.id }
-					)
-			: [s]
-	);
-}
-
-function dayFor(
-	character: Character,
-	name: (id: CharacterId) => string,
-	names: CharacterNames,
-	problems: string[]
-) {
+function dayFor(character: Character, name: (id: CharacterId) => string, problems: string[]) {
 	const entry = ENTRIES.get(character.id);
 	const noDayReason = NO_DAY_RELEVANCE[character.id];
 	const reminders: ReferenceDayReminder[] = [];
@@ -247,17 +218,14 @@ function dayFor(
 			reminders.push({
 				group: spec.group,
 				groupTitle: DAY_GROUP_TITLES[spec.group],
-				segments: withNames(
-					spec.template.map((part): ReferenceSegment =>
-						'self' in part
-							? { kind: 'character', characterId: character.id }
-							: 'target' in part
-								? { kind: 'target', token: spec.when?.reminder ?? '' }
-								: 'value' in part
-									? { kind: 'value', placeholder: part.placeholder }
-									: { kind: 'text', text: part.text }
-					),
-					names
+				segments: spec.template.map((part): ReferenceSegment =>
+					'self' in part
+						? { kind: 'character', characterId: character.id }
+						: 'target' in part
+							? { kind: 'target', token: spec.when?.reminder ?? '' }
+							: 'value' in part
+								? { kind: 'value', placeholder: part.placeholder }
+								: { kind: 'text', text: part.text }
 				),
 				when: describeWhen(spec, character, name)
 			});
@@ -290,10 +258,12 @@ function dayFor(
 			reminders.push({
 				group: r.group,
 				groupTitle: DAY_GROUP_TITLES[r.group],
-				segments: r.segments.map((s) =>
+				segments: r.segments.map((s): ReferenceSegment =>
 					s.kind === 'character'
 						? { kind: 'character', characterId: s.ref.characterId }
-						: { kind: 'text', text: s.text }
+						: s.kind === 'value'
+							? { kind: 'value', placeholder: s.placeholder }
+							: { kind: 'text', text: s.text }
 				),
 				when: `${character.name} is alive`,
 				autoDetected: true
@@ -306,7 +276,6 @@ function dayFor(
 /** The reference for every official character, in TPI's order. */
 export function characterReference(data: GameData, numeric?: NumericNightOrder): ReferenceEntry[] {
 	const name = (id: CharacterId) => data.byId.get(id)?.name ?? id;
-	const names = characterNames(data.characters);
 	const byName = new Map(data.characters.map((c) => [c.name.toLowerCase(), c.id]));
 	const first = compareNightOrders(data.nightSheet.firstNight, numeric?.firstNight);
 	const other = compareNightOrders(data.nightSheet.otherNight, numeric?.otherNight);
@@ -327,12 +296,7 @@ export function characterReference(data: GameData, numeric?: NumericNightOrder):
 		const otherNight = nightFor(character, 'other', other);
 		problems.push(...firstNight.issues.map((i) => `First night: ${i}`));
 		problems.push(...otherNight.issues.map((i) => `Other nights: ${i}`));
-		const day = dayFor(character, name, names, problems);
-		const prepSteps = setupPrep(character.id, character.name);
-		const prep = prepSteps.map((step) => ({
-			segments: prepTextSegments(step.text, names),
-			...(step.value ? { valueLabel: step.value.label } : {})
-		}));
+		const day = dayFor(character, name, problems);
 		const differences: ReferenceDifference[] = [];
 		for (const [part, title, info] of [
 			['firstNight', 'First night', firstNight],
@@ -345,16 +309,6 @@ export function characterReference(data: GameData, numeric?: NumericNightOrder):
 					source: info.text,
 					ours: info.ours.text,
 					reason: info.ours.reason
-				});
-		}
-		for (const step of prepSteps) {
-			if (step.differs)
-				differences.push({
-					part: 'prep',
-					title: 'Prep',
-					source: character.ability,
-					ours: step.text,
-					reason: step.differs
 				});
 		}
 
@@ -377,7 +331,6 @@ export function characterReference(data: GameData, numeric?: NumericNightOrder):
 			firstNight,
 			otherNight,
 			dayReminders: day.reminders,
-			prep,
 			differences,
 			...(day.noDayReason !== undefined ? { noDayReason: day.noDayReason } : {}),
 			...(wiki ? { wiki } : {}),

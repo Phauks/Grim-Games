@@ -7,6 +7,7 @@ import ph_arrow_right_fill from '~icons/ph/arrow-right-fill';
 import ph_arrow_square_out_fill from '~icons/ph/arrow-square-out-fill';
 import ph_arrow_u_up_left_fill from '~icons/ph/arrow-u-up-left-fill';
 import ph_arrow_u_up_right_fill from '~icons/ph/arrow-u-up-right-fill';
+import ph_arrows_down_up_fill from '~icons/ph/arrows-down-up-fill';
 import ph_bag_simple_fill from '~icons/ph/bag-simple-fill';
 import ph_beer_bottle_fill from '~icons/ph/beer-bottle-fill';
 import ph_beer_stein_fill from '~icons/ph/beer-stein-fill';
@@ -16,8 +17,10 @@ import ph_book_open_text_fill from '~icons/ph/book-open-text-fill';
 import ph_bookmark_simple_fill from '~icons/ph/bookmark-simple-fill';
 import ph_books_fill from '~icons/ph/books-fill';
 import ph_bug_fill from '~icons/ph/bug-fill';
+import ph_caret_down_fill from '~icons/ph/caret-down-fill';
 import ph_caret_left_fill from '~icons/ph/caret-left-fill';
 import ph_caret_right_fill from '~icons/ph/caret-right-fill';
+import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_check_fill from '~icons/ph/check-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
@@ -26,6 +29,7 @@ import ph_feather_fill from '~icons/ph/feather-fill';
 import ph_fire_fill from '~icons/ph/fire-fill';
 import ph_flag_fill from '~icons/ph/flag-fill';
 import ph_flask_fill from '~icons/ph/flask-fill';
+import ph_funnel_fill from '~icons/ph/funnel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
@@ -58,6 +62,8 @@ import ph_skull_fill from '~icons/ph/skull-fill';
 import ph_sliders_fill from '~icons/ph/sliders-fill';
 import ph_smiley_fill from '~icons/ph/smiley-fill';
 import ph_smiley_angry_fill from '~icons/ph/smiley-angry-fill';
+import ph_sort_ascending_fill from '~icons/ph/sort-ascending-fill';
+import ph_sort_descending_fill from '~icons/ph/sort-descending-fill';
 import ph_sun_fill from '~icons/ph/sun-fill';
 import ph_sun_horizon_fill from '~icons/ph/sun-horizon-fill';
 import ph_tag_fill from '~icons/ph/tag-fill';
@@ -82,6 +88,7 @@ const icons: IconMap = {
 	'ph:arrow-square-out-fill': ph_arrow_square_out_fill,
 	'ph:arrow-u-up-left-fill': ph_arrow_u_up_left_fill,
 	'ph:arrow-u-up-right-fill': ph_arrow_u_up_right_fill,
+	'ph:arrows-down-up-fill': ph_arrows_down_up_fill,
 	'ph:bag-simple-fill': ph_bag_simple_fill,
 	'ph:beer-bottle-fill': ph_beer_bottle_fill,
 	'ph:beer-stein-fill': ph_beer_stein_fill,
@@ -91,8 +98,10 @@ const icons: IconMap = {
 	'ph:bookmark-simple-fill': ph_bookmark_simple_fill,
 	'ph:books-fill': ph_books_fill,
 	'ph:bug-fill': ph_bug_fill,
+	'ph:caret-down-fill': ph_caret_down_fill,
 	'ph:caret-left-fill': ph_caret_left_fill,
 	'ph:caret-right-fill': ph_caret_right_fill,
+	'ph:caret-up-fill': ph_caret_up_fill,
 	'ph:check-fill': ph_check_fill,
 	'ph:cross-fill': ph_cross_fill,
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
@@ -101,6 +110,7 @@ const icons: IconMap = {
 	'ph:fire-fill': ph_fire_fill,
 	'ph:flag-fill': ph_flag_fill,
 	'ph:flask-fill': ph_flask_fill,
+	'ph:funnel-fill': ph_funnel_fill,
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,
 	'ph:ghost-fill': ph_ghost_fill,
@@ -133,6 +143,8 @@ const icons: IconMap = {
 	'ph:sliders-fill': ph_sliders_fill,
 	'ph:smiley-fill': ph_smiley_fill,
 	'ph:smiley-angry-fill': ph_smiley_angry_fill,
+	'ph:sort-ascending-fill': ph_sort_ascending_fill,
+	'ph:sort-descending-fill': ph_sort_descending_fill,
 	'ph:sun-fill': ph_sun_fill,
 	'ph:sun-horizon-fill': ph_sun_horizon_fill,
 	'ph:tag-fill': ph_tag_fill,

@@ -10,12 +10,17 @@
  * Character names in the plain text are always found too (`characterNames`), so the UI
  * draws every one as a badge.
  *
- * `nightTextFor` picks the text to show for a night: TPI's, or our own fuller text from
- * `NIGHT_TEXT_OVERRIDES` when the "Full night instructions" help is on.
+ * `nightTextFor` picks the text to show for a night: Trevor's reviewed edit of TPI's text
+ * (`REVIEWED_NIGHT_TEXT`) when there is one, otherwise TPI's. Our fuller text
+ * (`FULL_NIGHT_TEXT`) is parked behind `FULL_NIGHT_INSTRUCTIONS`, which is off.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
-import { NIGHT_TEXT_OVERRIDES, type NightTextOverride } from './night-text-overrides.data.ts';
+import {
+	FULL_NIGHT_TEXT,
+	REVIEWED_NIGHT_TEXT,
+	type NightTextOverride
+} from './night-text-overrides.data.ts';
 import {
 	REMINDER_PLACEHOLDERS,
 	type PlaceholderAction,
@@ -23,7 +28,20 @@ import {
 	type ReminderPlaceholder
 } from './reminder-placeholders.data.ts';
 
-export { NIGHT_TEXT_OVERRIDES, REMINDER_PLACEHOLDERS };
+export { FULL_NIGHT_TEXT, REMINDER_PLACEHOLDERS, REVIEWED_NIGHT_TEXT };
+
+/**
+ * Parked (Trevor, 2026-10-15: "lets step back from adding our own information"): when
+ * true, `FULL_NIGHT_TEXT` replaces TPI's text. A code-level flag, so Settings gains no
+ * switch for hidden content.
+ */
+export const FULL_NIGHT_INSTRUCTIONS = false;
+
+/**
+ * Parked with it: the UI's "Differs from source" marker for text of ours. The data
+ * (`nightTextFor().ours`, `ReferenceEntry.differences`) is kept; nothing renders it.
+ */
+export const SHOW_DIFFERS_FROM_SOURCE = false;
 export type { NightTextOverride, PlaceholderAction, PlaceholderKey, ReminderPlaceholder };
 
 type NightName = 'first' | 'other';
@@ -79,9 +97,14 @@ export function placeholdersFor(
 	return REMINDER_PLACEHOLDERS[placeholderKey(id, night)];
 }
 
-/** Our fuller text for this night, if we have one. */
-export function nightTextOverride(id: CharacterId, night: NightName): NightTextOverride | undefined {
-	return NIGHT_TEXT_OVERRIDES[placeholderKey(id, night)];
+/** Our text in use for this night: Trevor's reviewed edit, or (flag on) our fuller text. */
+export function nightTextOverride(
+	id: CharacterId,
+	night: NightName,
+	full: boolean = FULL_NIGHT_INSTRUCTIONS
+): NightTextOverride | undefined {
+	const key = placeholderKey(id, night);
+	return (full ? FULL_NIGHT_TEXT[key] : undefined) ?? REVIEWED_NIGHT_TEXT[key];
 }
 
 export interface ResolvedNightText {
@@ -89,37 +112,41 @@ export interface ResolvedNightText {
 	text: string;
 	/** TPI's text for this night (`undefined` for a homebrew step with no text). */
 	source?: string;
-	/** Set when we have our own text for this night, whether or not it is shown. */
+	/** Set when the text shown is ours, with why it differs. */
 	ours?: NightTextOverride;
-	/** True when `text` is ours. */
-	showingOurs: boolean;
-	/** `:reminder:` mappings for `text` (only for TPI's text). */
+	/** `:reminder:` mappings for `text`, when it has any. */
 	placeholders?: readonly ReminderPlaceholder[];
 }
 
+const placeholderCount = (text: string) => text.match(/:reminder:/g)?.length ?? 0;
+
 /**
- * The night text to show: TPI's, or ours when `full` and we have one. `text` is the text
- * the step carries; when it is not TPI's (a Storyteller's edit), it is shown as it is.
- * Homebrew characters share no rules with an official id, so they always keep their own.
+ * The night text to show. `text` is the text the step carries; when it is not TPI's (a
+ * Storyteller's edit), it is shown as it is. Otherwise our text in use replaces TPI's
+ * (`nightTextOverride`). TPI's `:reminder:` mapping applies to TPI's text, and to a
+ * reviewed edit that kept the same `:reminder:`s (the Preacher's). Homebrew characters
+ * share no rules with an official id, so they always keep their own text.
  */
 export function nightTextFor(
 	character: Pick<Character, 'id' | 'edition' | 'firstNightReminder' | 'otherNightReminder'>,
 	night: NightName,
-	options: { full: boolean; text?: string }
+	options: { text?: string; full?: boolean } = {}
 ): ResolvedNightText | undefined {
 	const source = night === 'first' ? character.firstNightReminder : character.otherNightReminder;
-	const text = options.text ?? source;
-	if (text === undefined) return undefined;
-	const official = character.edition !== undefined;
-	const isSource = text === source;
-	const ours = official && isSource ? nightTextOverride(character.id, night) : undefined;
-	if (ours && options.full) return { text: ours.text, source, ours, showingOurs: true };
-	const placeholders = official && isSource ? placeholdersFor(character.id, night) : undefined;
+	const given = options.text ?? source;
+	if (given === undefined) return undefined;
+	const official = character.edition !== undefined && given === source;
+	const ours = official ? nightTextOverride(character.id, night, options.full) : undefined;
+	const text = ours?.text ?? given;
+	const mapping = official ? placeholdersFor(character.id, night) : undefined;
+	const placeholders =
+		mapping && mapping.length > 0 && mapping.length === placeholderCount(text)
+			? mapping
+			: undefined;
 	return {
 		text,
 		...(source !== undefined ? { source } : {}),
 		...(ours ? { ours } : {}),
-		showingOurs: false,
 		...(placeholders ? { placeholders } : {})
 	};
 }
@@ -216,4 +243,40 @@ export function nightTextPlain(
 			}
 		})
 		.join('');
+}
+
+/**
+ * Problems with the `:reminder:` mapping against TPI's data: a night text whose
+ * `:reminder:`s are not all mapped, a mapping for text that has a different number (or
+ * none), and a token that is not one of the character's own. Empty when all is well; the
+ * rules coverage check (`npm run check:rules-coverage`) fails otherwise.
+ */
+export function placeholderProblems(
+	characters: readonly Pick<
+		Character,
+		'id' | 'reminders' | 'remindersGlobal' | 'firstNightReminder' | 'otherNightReminder'
+	>[]
+): string[] {
+	const problems: string[] = [];
+	const seen = new Set<string>();
+	for (const c of characters) {
+		const own = new Set([...c.reminders, ...c.remindersGlobal]);
+		for (const night of ['first', 'other'] as const) {
+			const text = night === 'first' ? c.firstNightReminder : c.otherNightReminder;
+			const count = text?.match(/:reminder:/g)?.length ?? 0;
+			const key = placeholderKey(c.id, night);
+			const mapped = REMINDER_PLACEHOLDERS[key];
+			if (mapped) seen.add(key);
+			if ((mapped?.length ?? 0) !== count)
+				problems.push(
+					`${key}: ${count} :reminder: in TPI's text, ${mapped?.length ?? 0} in REMINDER_PLACEHOLDERS`
+				);
+			for (const p of mapped ?? [])
+				for (const t of p.tokens)
+					if (!own.has(t.label)) problems.push(`${key}: "${t.label}" is not one of its tokens`);
+		}
+	}
+	for (const key of Object.keys(REMINDER_PLACEHOLDERS))
+		if (!seen.has(key)) problems.push(`${key}: mapped, but no such character in TPI's data`);
+	return problems;
 }

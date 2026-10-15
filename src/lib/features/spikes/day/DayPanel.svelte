@@ -13,6 +13,8 @@
 		type DayReminder
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -240,6 +242,9 @@
 				<h3>{group.title}</h3>
 				<ul class="reminders">
 					{#each group.reminders as reminder (reminder.key)}
+						{@const explained = explainBlock(
+							reminder.segments.map((s) => (s.kind === 'text' ? s.text : ''))
+						)}
 						<li data-character={reminder.characterId}>
 							<span class="sentence">
 								{#each reminder.segments as segment, i (i)}
@@ -251,8 +256,11 @@
 												: undefined}
 											playerName={segment.ref.playerName}
 										/>
+									{:else if segment.kind === 'value'}
+										<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
+										<span>({segment.value ?? segment.placeholder})</span>
 									{:else}
-										<span>{segment.text}</span>
+										<span><GlossaryText segments={explained[i] ?? []} /></span>
 									{/if}
 								{/each}
 							</span>
@@ -405,6 +413,7 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font: inherit;
+		font-family: var(--font-player);
 		font-weight: 600;
 		cursor: pointer;
 	}
@@ -453,6 +462,7 @@
 		background: var(--card-background, var(--surface-raised));
 	}
 	.sentence {
+		font-family: var(--font-ability);
 		display: inline-flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -475,6 +485,7 @@
 		background: transparent;
 		color: inherit;
 		font: inherit;
+		font-family: var(--font-control);
 		cursor: pointer;
 	}
 	.chip[aria-pressed='true'] {

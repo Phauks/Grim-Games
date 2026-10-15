@@ -16,11 +16,15 @@ import type { Character } from '#lib/core/data/types.ts';
 import { committedCharacter, committedGameData } from '#lib/core/testing/committed-data.ts';
 import { characterNames } from './character-names.ts';
 import {
-	NIGHT_TEXT_OVERRIDES,
+	FULL_NIGHT_INSTRUCTIONS,
+	FULL_NIGHT_TEXT,
 	REMINDER_PLACEHOLDERS,
+	REVIEWED_NIGHT_TEXT,
+	SHOW_DIFFERS_FROM_SOURCE,
 	nightTextFor,
 	nightTextPlain,
 	nightTextSegments,
+	placeholderProblems,
 	placeholdersFor,
 	type PlaceholderKey
 } from './night-text.ts';
@@ -40,12 +44,18 @@ const plain = (id: string, night: 'first' | 'other' = 'other') => {
 	);
 };
 
-/** Our full text for a night, as plain text. */
-const ours = (id: string, night: 'first' | 'other') => {
+/** The text shown for a night (with the parked full text when `full`), as plain text. */
+const shown = (id: string, night: 'first' | 'other', full = false) => {
 	const c = committedCharacter(id);
-	const resolved = nightTextFor(c, night, { full: true })!;
-	expect(resolved.showingOurs).toBe(true);
-	return nightTextPlain(nightTextSegments(resolved.text, c, { names }), name);
+	const resolved = nightTextFor(c, night, { full })!;
+	expect(resolved.ours, `${id}:${night}`).toBeDefined();
+	return nightTextPlain(
+		nightTextSegments(resolved.text, c, {
+			names,
+			...(resolved.placeholders ? { placeholders: resolved.placeholders } : {})
+		}),
+		name
+	);
 };
 
 const placeholderCount = (text: string | undefined) => text?.match(/:reminder:/g)?.length ?? 0;
@@ -57,7 +67,9 @@ describe('nightTextSegments', () => {
 
 	it('maps each placeholder in turn when there are several', () => {
 		expect(plain('innkeeper')).toBe('The {Innkeeper} chooses 2 players. [+Safe] [+Safe] [+Drunk]');
-		expect(plain('courtier')).toBe('The {Courtier} might choose a character. [+Drunk 3] [+No Ability]');
+		expect(plain('courtier')).toBe(
+			'The {Courtier} might choose a character. [+Drunk 3] [+No Ability]'
+		);
 		expect(plain('professor')).toBe(
 			'The {Professor} might choose a dead player. [+Alive] [+No Ability]'
 		);
@@ -77,11 +89,17 @@ describe('nightTextSegments', () => {
 		expect(plain('investigator', 'first')).toContain(
 			'Point to both the [Minion] and [Wrong] players.'
 		);
-		expect(plain('exorcist')).toContain('Show the «This character selected you» & {Exorcist} tokens.');
-		const king = nightTextSegments('Show the *THIS PLAYER IS* & *King* tokens. *DEAD*', {
-			reminders: [],
-			remindersGlobal: []
-		}, { names });
+		expect(plain('exorcist')).toContain(
+			'Show the «This character selected you» & {Exorcist} tokens.'
+		);
+		const king = nightTextSegments(
+			'Show the *THIS PLAYER IS* & *King* tokens. *DEAD*',
+			{
+				reminders: [],
+				remindersGlobal: []
+			},
+			{ names }
+		);
 		expect(nightTextPlain(king, name)).toBe('Show the «This player is» & {King} tokens. [Dead]');
 	});
 
@@ -134,9 +152,7 @@ describe('REMINDER_PLACEHOLDERS', () => {
 		const expected = new Map<string, number>();
 		for (const c of data.characters) {
 			for (const night of ['first', 'other'] as const) {
-				const n = placeholderCount(
-					night === 'first' ? c.firstNightReminder : c.otherNightReminder
-				);
+				const n = placeholderCount(night === 'first' ? c.firstNightReminder : c.otherNightReminder);
 				if (n > 0) expected.set(`${c.id}:${night}`, n);
 			}
 		}
@@ -145,6 +161,17 @@ describe('REMINDER_PLACEHOLDERS', () => {
 		);
 		expect(mapped).toEqual(expected);
 		expect([...expected.values()].reduce((a, b) => a + b, 0)).toBe(118);
+	});
+
+	it('passes the coverage check (`npm run check:rules-coverage`)', () => {
+		expect(placeholderProblems(data.characters)).toEqual([]);
+		const extra = {
+			...committedCharacter('witch'),
+			otherNightReminder: 'Do it. :reminder: :reminder:'
+		};
+		expect(placeholderProblems([extra])).toContainEqual(
+			"witch:other: 2 :reminder: in TPI's text, 1 in REMINDER_PLACEHOLDERS"
+		);
 	});
 
 	it('only names the character’s own reminder tokens', () => {
@@ -159,66 +186,94 @@ describe('REMINDER_PLACEHOLDERS', () => {
 	});
 });
 
-describe('NIGHT_TEXT_OVERRIDES', () => {
-	const entries = Object.entries(NIGHT_TEXT_OVERRIDES) as [
-		PlaceholderKey,
-		{ text: string; reason: string }
-	][];
+const info = new Set([
+	'you are',
+	'this player is',
+	'this character selected you',
+	'these characters are not in play',
+	'this is the demon',
+	'these are your minions'
+]);
 
+const overrideEntries = (table: typeof REVIEWED_NIGHT_TEXT) =>
+	Object.entries(table) as [PlaceholderKey, { text: string; reason: string }][];
+
+/** Every `*WORD*` is the character's own token, an info token, the death marker or a name. */
+function checkMarkup(key: string, text: string) {
+	const c = committedCharacter(key.split(':')[0]);
+	const own = new Set([...c.reminders, ...c.remindersGlobal].map((t) => t.toLowerCase()));
+	for (const [, word] of text.matchAll(/\*([^*]+)\*/g)) {
+		const w = word.toLowerCase();
+		const known = own.has(w) || info.has(w) || w === 'dead' || names.byName(w) !== undefined;
+		expect(known, `${key}: *${word}*`).toBe(true);
+	}
+}
+
+describe('night text of ours', () => {
 	it('replaces text TPI has, never adds a night, and gives a reason', () => {
-		for (const [key, o] of entries) {
+		for (const [key, o] of [
+			...overrideEntries(REVIEWED_NIGHT_TEXT),
+			...overrideEntries(FULL_NIGHT_TEXT)
+		]) {
 			const [id, night] = key.split(':') as [string, 'first' | 'other'];
 			const c: Character = committedCharacter(id);
 			const source = night === 'first' ? c.firstNightReminder : c.otherNightReminder;
 			expect(source, key).toBeDefined();
 			expect(o.text, key).not.toBe(source);
 			expect(o.reason.length, key).toBeGreaterThan(10);
+			checkMarkup(key, o.text);
 		}
 	});
 
-	it('names every token instead of using :reminder:, and only known tokens', () => {
-		const info = new Set([
-			'you are',
-			'this player is',
-			'this character selected you',
-			'these characters are not in play',
-			'this is the demon',
-			'these are your minions'
-		]);
-		for (const [key, o] of entries) {
-			const c = committedCharacter(key.split(':')[0]);
+	it('keeps a reviewed edit’s :reminder:s mappable, and the parked text free of them', () => {
+		for (const [key, o] of overrideEntries(REVIEWED_NIGHT_TEXT)) {
+			const n = placeholderCount(o.text);
+			if (n > 0) expect(REMINDER_PLACEHOLDERS[key]?.length, key).toBe(n);
+		}
+		for (const [key, o] of overrideEntries(FULL_NIGHT_TEXT))
 			expect(o.text, key).not.toContain(':reminder:');
-			const own = new Set([...c.reminders, ...c.remindersGlobal].map((t) => t.toLowerCase()));
-			for (const [, word] of o.text.matchAll(/\*([^*]+)\*/g)) {
-				const w = word.toLowerCase();
-				expect(own.has(w) || info.has(w) || w === 'dead', `${key}: *${word}*`).toBe(true);
-			}
-		}
 	});
 
-	it('covers the steps from Trevor’s review', () => {
-		expect(ours('grandmother', 'first')).toBe(
+	it('shows Trevor’s reviewed edits', () => {
+		expect(shown('grandmother', 'first')).toBe(
 			'Point to the [Grandchild] player & show their character token.'
 		);
-		expect(ours('grandmother', 'other')).toContain('the {Grandmother} dies too: mark her [Dead].');
-		expect(ours('lycanthrope', 'other')).toContain('mark them [Dead]');
-		expect(ours('preacher', 'first')).toContain('& {Preacher} token.');
-		expect(ours('villageidiot', 'first')).toBe(
+		expect(shown('grandmother', 'other')).toBe(
+			'If the grandchild was killed by the Demon, the {Grandmother} dies too. [Dead]'
+		);
+		expect(shown('lycanthrope', 'other')).toBe('The {Lycanthrope} chooses a player. [Dead]');
+		expect(shown('preacher', 'first')).toBe(
+			'The {Preacher} chooses a player. [+No Ability] If they chose a Minion: Put the {Preacher} to sleep. Wake the target. Show the «This character selected you» & {Preacher} token.'
+		);
+		expect(shown('villageidiot', 'first')).toBe(
 			// “Village Idiots” is a plural, not the name as a whole word.
 			'If there are multiple Village Idiots, mark one as [Drunk]. Wake the Village Idiots one at a time to choose a player. Give a thumb signal.'
 		);
 	});
 
-	it('shows TPI’s text when full instructions are off, or when the Storyteller edited it', () => {
+	it('keeps the fuller text and the Differs marker parked', () => {
+		expect(FULL_NIGHT_INSTRUCTIONS).toBe(false);
+		expect(SHOW_DIFFERS_FROM_SOURCE).toBe(false);
+		const witch = committedCharacter('witch');
+		expect(nightTextFor(witch, 'other')).toEqual({
+			text: witch.otherNightReminder,
+			source: witch.otherNightReminder,
+			placeholders: REMINDER_PLACEHOLDERS['witch:other']
+		});
+		// With the flag on, the parked text would be used.
+		expect(shown('witch', 'other', true)).toBe(
+			'The {Witch} chooses a player: move [Cursed] to them.'
+		);
+	});
+
+	it('shows a Storyteller’s edit as it is, and a homebrew character’s own text', () => {
 		const gm = committedCharacter('grandmother');
-		const off = nightTextFor(gm, 'other', { full: false })!;
-		expect(off.text).toBe(gm.otherNightReminder);
-		expect(off.showingOurs).toBe(false);
-		expect(off.ours?.reason).toBeTruthy();
-		expect(off.placeholders).toHaveLength(1);
-		const edited = nightTextFor(gm, 'other', { full: true, text: 'My own words.' })!;
-		expect(edited).toEqual({ text: 'My own words.', source: gm.otherNightReminder, showingOurs: false });
-		const homebrew = nightTextFor({ ...gm, edition: undefined }, 'other', { full: true })!;
-		expect(homebrew.showingOurs).toBe(false);
+		expect(nightTextFor(gm, 'other', { text: 'My own words.' })).toEqual({
+			text: 'My own words.',
+			source: gm.otherNightReminder
+		});
+		const homebrew: Character = { ...gm };
+		delete homebrew.edition;
+		expect(nightTextFor(homebrew, 'other')?.text).toBe(gm.otherNightReminder);
 	});
 });

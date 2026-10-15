@@ -222,8 +222,6 @@ export interface SetupPrepStep {
 	target?: string;
 	/** A value to type in (`SetupNote.value`). */
 	value?: { key: string; label: string };
-	/** Why our step departs from TPI's wording (`SetupNote.differs`). */
-	differs?: string;
 }
 
 /**
@@ -247,8 +245,7 @@ export function setupPrep(characterId: CharacterId, name: string): SetupPrepStep
 		steps.push({
 			text: note.text,
 			tokens: [...(note.tokens ?? [])],
-			...(note.value ? { value: note.value } : {}),
-			...(note.differs ? { differs: note.differs } : {})
+			...(note.value ? { value: note.value } : {})
 		});
 	}
 	return steps;

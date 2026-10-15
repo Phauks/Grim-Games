@@ -13,7 +13,7 @@ import {
 } from '#lib/core/engine/index.ts';
 import type { Reminder } from '#lib/core/model/index.ts';
 
-export type Variant = 'snv' | 'tb' | 'review';
+export type Variant = 'snv' | 'tb';
 
 export const SAMPLE_NAMES = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
@@ -31,35 +31,10 @@ export const SAMPLES: Record<Variant, Sample> = {
 	tb: {
 		cast: ['washerwoman', 'slayer', 'virgin', 'undertaker', 'empath', 'chef', 'poisoner', 'imp'],
 		reminders: [[5, { characterId: 'drunk', label: 'Is The Drunk' }]]
-	},
-	/**
-	 * Characters from Trevor's reminder review, on Bad Moon Rising (the others are off the
-	 * script): prep is done for the Village Idiots and the Grandmother, skipped for the
-	 * Fortune Teller's Red Herring, and the Yaggababble's phrase is not chosen yet.
-	 */
-	review: {
-		cast: [
-			'grandmother',
-			'sailor',
-			'villageidiot',
-			'villageidiot',
-			'fortuneteller',
-			'pixie',
-			'godfather',
-			'yaggababble'
-		],
-		reminders: [
-			[4, { characterId: 'grandmother', label: 'Grandchild' }],
-			[3, { characterId: 'villageidiot', label: 'Drunk' }],
-			[0, { characterId: 'pixie', label: 'Mad' }]
-		]
 	}
 };
 
-/** The edition each sample is played on. */
-const SCRIPT: Record<Variant, 'snv' | 'tb' | 'bmr'> = { snv: 'snv', tb: 'tb', review: 'bmr' };
-
-export function editionAsScript(edition: 'snv' | 'tb' | 'bmr', data: GameData): Script {
+export function editionAsScript(edition: Variant, data: GameData): Script {
 	const loaded = editionScript(edition, data);
 	if (!loaded) throw new Error(`no edition ${edition}`);
 	return {
@@ -73,7 +48,7 @@ export function sampleSession(variant: Variant, data: GameData, ctx: EngineConte
 	const created = createGame(
 		{
 			type: 'CreateGame',
-			script: editionAsScript(SCRIPT[variant], data),
+			script: editionAsScript(variant, data),
 			playerCount: SAMPLE_NAMES.length
 		},
 		ctx

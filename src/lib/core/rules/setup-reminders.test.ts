@@ -366,11 +366,6 @@ describe('setupPrep', () => {
 			}
 		]);
 	});
-
-	// https://wiki.bloodontheclocktower.com/Bounty_Hunter
-	it('says why a step departs from TPI’s wording', () => {
-		expect(setupPrep('bountyhunter', 'Bounty Hunter').at(-1)?.differs).toMatch(/upside down/);
-	});
 });
 
 describe('prepTokens', () => {

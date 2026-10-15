@@ -20,13 +20,13 @@ describe('characterNames', () => {
 	});
 
 	it('matches a possessive but not a longer word', () => {
-		expect(show(names.split('Show the Spy’s grimoire. Spy\'s turn. Spyglass.'))).toBe(
-			'Show the {spy}’s grimoire. {spy}\'s turn. Spyglass.'
+		expect(show(names.split("Show the Spy’s grimoire. Spy's turn. Spyglass."))).toBe(
+			"Show the {spy}’s grimoire. {spy}'s turn. Spyglass."
 		);
 	});
 
 	it('prefers the longest name and handles apostrophes and hyphens', () => {
-		expect(show(names.split('The Devil’s Advocate and the Pit-Hag wake; Lil\' Monsta too.'))).toBe(
+		expect(show(names.split("The Devil’s Advocate and the Pit-Hag wake; Lil' Monsta too."))).toBe(
 			'The {devilsadvocate} and the {pithag} wake; {lilmonsta} too.'
 		);
 		expect(show(names.split('Hell’s Librarian, not the Librarian.'))).toBe(

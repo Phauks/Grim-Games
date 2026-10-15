@@ -69,6 +69,7 @@
 	}
 	:global([data-scope='radio-group'][data-part='label']) {
 		display: block;
+		font-family: var(--font-control);
 		margin-bottom: var(--space-2);
 		color: var(--on-surface-muted);
 	}
@@ -109,6 +110,7 @@
 	}
 	:global([data-scope='radio-group'][data-part='item-text']) {
 		display: block;
+		font-family: var(--font-control);
 		width: 100%;
 	}
 	:global([data-scope='radio-group'][data-layout='row'] [data-part='item']) {
