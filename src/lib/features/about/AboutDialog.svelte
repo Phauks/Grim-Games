@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { REPOSITORY_URL, shortCommit } from './report-issue.ts';
@@ -25,6 +26,8 @@
 		<dd>{info.channel}</dd>
 		<dt>Built</dt>
 		<dd>{new Date(info.builtAt).toLocaleString()}</dd>
+		<dt>Changes</dt>
+		<dd><a href={resolve('/changelog')} onclick={() => (open = false)}>Changelog</a></dd>
 	</dl>
 	<p class="small">
 		Not affiliated with The Pandemonium Institute. Blood on the Clocktower is a trademark of Steven
