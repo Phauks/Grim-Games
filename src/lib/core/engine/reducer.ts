@@ -1,0 +1,214 @@
+/**
+ * The reducer: applies one event to a game and returns a new game. Pure and total; it
+ * never looks at character data, the clock or randomness, which the events already
+ * carry. Events that refer to something missing (a seat removed since) change nothing.
+ */
+import type { Game, Seat, SeatId } from '#lib/core/model/index.ts';
+import type { GameEvent } from './events.ts';
+
+function newSeat(seatId: SeatId, playerName?: string): Seat {
+	const seat: Seat = { seatId, dead: false, ghostVoteUsed: false, overrides: [], reminders: [] };
+	if (playerName !== undefined) seat.playerName = playerName;
+	return seat;
+}
+
+function updateSeat(game: Game, seatId: SeatId, update: (seat: Seat) => Seat): Game {
+	if (!Object.hasOwn(game.seats, seatId)) return game;
+	return { ...game, seats: { ...game.seats, [seatId]: update(game.seats[seatId]) } };
+}
+
+function seatHoldingReminder(game: Game, reminderId: string): Seat | undefined {
+	return Object.values(game.seats).find((s) =>
+		s.reminders.some((r) => r.reminderId === reminderId)
+	);
+}
+
+/** A shallow copy without the given keys. */
+function omit<T extends object, K extends keyof T>(value: T, ...keys: K[]): Omit<T, K> {
+	const copy = { ...value };
+	for (const key of keys) delete copy[key];
+	return copy;
+}
+
+/** Applies `event` to `game`. Only `GameCreated` may be applied to no game. */
+export function applyEvent(game: Game | undefined, event: GameEvent): Game {
+	if (event.type === 'GameCreated') {
+		return {
+			gameId: event.gameId,
+			createdAt: event.createdAt,
+			script: event.script,
+			seats: Object.fromEntries(event.seatIds.map((id) => [id, newSeat(id)])),
+			seating: [...event.seatIds],
+			ruleCharacters: [],
+			bluffs: []
+		};
+	}
+	if (!game) throw new Error(`${event.type} applied before GameCreated`);
+
+	switch (event.type) {
+		case 'SeatAdded': {
+			if (Object.hasOwn(game.seats, event.seatId)) return game;
+			const seating = [...game.seating];
+			seating.splice(Math.max(0, Math.min(event.position, seating.length)), 0, event.seatId);
+			return {
+				...game,
+				seats: { ...game.seats, [event.seatId]: newSeat(event.seatId, event.playerName) },
+				seating
+			};
+		}
+		case 'SeatRemoved':
+			if (!Object.hasOwn(game.seats, event.seatId)) return game;
+			return {
+				...game,
+				seats: omit(game.seats, event.seatId),
+				seating: game.seating.filter((id) => id !== event.seatId)
+			};
+		case 'SeatRenamed':
+			return updateSeat(game, event.seatId, (seat) =>
+				event.playerName === undefined
+					? omit(seat, 'playerName')
+					: { ...seat, playerName: event.playerName }
+			);
+		case 'CharacterAssigned':
+			return updateSeat(game, event.seatId, (seat) => ({
+				...seat,
+				characterId: event.characterId,
+				alignment: event.alignment
+			}));
+		case 'CharacterCleared':
+			return updateSeat(game, event.seatId, (seat) => omit(seat, 'characterId', 'alignment'));
+		case 'AlignmentSet':
+			return updateSeat(game, event.seatId, (seat) => ({ ...seat, alignment: event.alignment }));
+		case 'DeathSet':
+			return updateSeat(game, event.seatId, (seat) => ({ ...seat, dead: event.dead }));
+		case 'GhostVoteSpent':
+			return updateSeat(game, event.seatId, (seat) => ({ ...seat, ghostVoteUsed: true }));
+		case 'GhostVoteRestored':
+			return updateSeat(game, event.seatId, (seat) => ({ ...seat, ghostVoteUsed: false }));
+		case 'ReminderAdded':
+			return updateSeat(game, event.seatId, (seat) => ({
+				...seat,
+				reminders: [...seat.reminders, { ...event.reminder }]
+			}));
+		case 'ReminderMoved': {
+			const from = seatHoldingReminder(game, event.reminderId);
+			if (!from || !Object.hasOwn(game.seats, event.toSeatId)) return game;
+			if (from.seatId === event.toSeatId) return game;
+			const reminder = from.reminders.find((r) => r.reminderId === event.reminderId)!;
+			const removed = updateSeat(game, from.seatId, (seat) => ({
+				...seat,
+				reminders: seat.reminders.filter((r) => r.reminderId !== event.reminderId)
+			}));
+			return updateSeat(removed, event.toSeatId, (seat) => ({
+				...seat,
+				reminders: [...seat.reminders, reminder]
+			}));
+		}
+		case 'ReminderRemoved': {
+			const from = seatHoldingReminder(game, event.reminderId);
+			if (!from) return game;
+			return updateSeat(game, from.seatId, (seat) => ({
+				...seat,
+				reminders: seat.reminders.filter((r) => r.reminderId !== event.reminderId)
+			}));
+		}
+		case 'SeatsSwapped': {
+			const a = game.seating.indexOf(event.seatA);
+			const b = game.seating.indexOf(event.seatB);
+			if (a === -1 || b === -1) return game;
+			const seating = [...game.seating];
+			seating[a] = event.seatB;
+			seating[b] = event.seatA;
+			return { ...game, seating };
+		}
+		case 'OverrideSet':
+			return updateSeat(game, event.seatId, (seat) => ({
+				...seat,
+				overrides: [
+					...seat.overrides.filter((o) => o.field !== event.override.field),
+					{ ...event.override }
+				]
+			}));
+		case 'OverrideCleared':
+			return updateSeat(game, event.seatId, (seat) => ({
+				...seat,
+				overrides: seat.overrides.filter((o) => o.field !== event.field)
+			}));
+		case 'RuleCharacterAdded':
+			if (game.ruleCharacters.includes(event.characterId)) return game;
+			return { ...game, ruleCharacters: [...game.ruleCharacters, event.characterId] };
+		case 'RuleCharacterRemoved':
+			return {
+				...game,
+				ruleCharacters: game.ruleCharacters.filter((id) => id !== event.characterId)
+			};
+		case 'BluffsSet': {
+			const bluffs = game.bluffs.map((set) => [...set]);
+			if (event.set < 0 || event.set > bluffs.length) return game;
+			bluffs[event.set] = [...event.characterIds];
+			return { ...game, bluffs };
+		}
+		case 'BluffSetRemoved':
+			return { ...game, bluffs: game.bluffs.filter((_, i) => i !== event.set) };
+		case 'BagBuilt':
+			return {
+				...game,
+				bag: {
+					tiles: Object.fromEntries(event.tiles.map((t) => [t.tileId, structuredClone(t)])),
+					order: [...event.order],
+					includeTravellers: event.includeTravellers
+				}
+			};
+		case 'BagCleared':
+			return omit(game, 'bag');
+		case 'TileDrawn': {
+			const bag = game.bag;
+			if (!bag || !Object.hasOwn(bag.tiles, event.tileId)) return game;
+			return {
+				...game,
+				bag: {
+					...bag,
+					tiles: {
+						...bag.tiles,
+						[event.tileId]: { ...bag.tiles[event.tileId], drawnBySeat: event.seatId }
+					},
+					order: bag.order.filter((id) => id !== event.tileId)
+				}
+			};
+		}
+		case 'DrawConfirmed': {
+			const bag = game.bag;
+			if (!bag || !Object.hasOwn(bag.tiles, event.tileId)) return game;
+			return {
+				...game,
+				bag: {
+					...bag,
+					tiles: { ...bag.tiles, [event.tileId]: { ...bag.tiles[event.tileId], confirmed: true } }
+				}
+			};
+		}
+		case 'DrawCancelled': {
+			const bag = game.bag;
+			if (!bag || !Object.hasOwn(bag.tiles, event.tileId)) return game;
+			const tile = omit(bag.tiles[event.tileId], 'drawnBySeat');
+			const order = bag.order.filter((id) => id !== event.tileId);
+			order.splice(Math.max(0, Math.min(event.position, order.length)), 0, event.tileId);
+			return {
+				...game,
+				bag: {
+					...bag,
+					tiles: { ...bag.tiles, [event.tileId]: { ...tile, confirmed: false } },
+					order
+				}
+			};
+		}
+	}
+}
+
+/** Applies events in order. */
+export function applyEvents(
+	game: Game | undefined,
+	events: readonly GameEvent[]
+): Game | undefined {
+	return events.reduce<Game | undefined>((g, e) => applyEvent(g, e), game);
+}
