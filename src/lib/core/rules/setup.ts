@@ -96,7 +96,7 @@ function listValues(values: readonly number[]): string {
  * also kept out of the bag, but their player gets a Townsfolk token, so they still count as
  * their own type.
  */
-const NOT_DEALT: ReadonlySet<CharacterId> = new Set(['lilmonsta']);
+export const NOT_DEALT: ReadonlySet<CharacterId> = new Set(['lilmonsta']);
 
 function isDealt(type: Character['type']): type is SeatedType {
 	return (SEATED_TYPES as readonly string[]).includes(type);
