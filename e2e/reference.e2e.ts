@@ -43,6 +43,8 @@ test('searching shows everything the app uses for the Witch', async ({ page }) =
 });
 
 test('the filter chips are gone; the table sorts and filters by column', async ({ page }) => {
+	// The full table (181 rows, every field) is rebuilt several times here.
+	test.slow();
 	await page.goto('/reference');
 	await expect(page.getByRole('group', { name: 'Character types' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Demons', exact: true })).toHaveCount(0);

@@ -163,7 +163,7 @@
 							<td data-col={field.id}>
 								{#if field.long}
 									<!-- Clamped to a fixed height; the whole value opens in the details dialog. -->
-									<div class="clamp"><FieldValue field={field.id} {entry} {onExplain} /></div>
+									<div class="cell clamp"><FieldValue field={field.id} {entry} {onExplain} /></div>
 									<button
 										type="button"
 										class="more"
@@ -171,7 +171,9 @@
 										aria-label="{field.label} for {entry.character.name}">More</button
 									>
 								{:else}
-									<FieldValue field={field.id} {entry} {onExplain} tokenSize={40} />
+									<div class="cell">
+										<FieldValue field={field.id} {entry} {onExplain} tokenSize={40} />
+									</div>
 								{/if}
 							</td>
 						{/if}
@@ -227,6 +229,8 @@
 		background: var(--card-background);
 	}
 	table {
+		table-layout: fixed;
+		width: calc(195.5 * var(--u));
 		border-collapse: collapse;
 		font-size: 0.9rem;
 	}
@@ -258,7 +262,8 @@
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
 		text-align: left;
-		white-space: nowrap;
+		/* Long labels (Starting alignment) wrap inside their fixed column instead of overlapping. */
+		overflow-wrap: anywhere;
 		--icon-size: calc(0.95 * var(--u));
 	}
 	.sort {
@@ -306,33 +311,58 @@
 		font-weight: 600;
 		white-space: nowrap;
 	}
-	td[data-col='token'] {
-		width: calc(3.5 * var(--u));
+	/* Fixed column widths: layout never depends on which rows are drawn, so nothing reflows. */
+	th[data-col='token'] {
+		width: calc(4 * var(--u));
 	}
-	td[data-col='ability'] {
-		min-width: calc(16 * var(--u));
+	th[data-col='name'] {
+		width: calc(9 * var(--u));
 	}
-	td[data-col='firstNight'],
-	td[data-col='otherNight'],
-	td[data-col='preDay'],
-	td[data-col='jinxes'] {
-		min-width: calc(15 * var(--u));
+	th[data-col='type'] {
+		width: calc(7 * var(--u));
 	}
-	td[data-col='tokens'],
-	td[data-col='problems'] {
-		min-width: calc(10 * var(--u));
+	th[data-col='edition'] {
+		width: calc(9 * var(--u));
 	}
-	td[data-col='setup'],
-	td[data-col='special'] {
-		min-width: calc(9 * var(--u));
+	th[data-col='icons'] {
+		width: calc(6.5 * var(--u));
 	}
-	td[data-col='links'] {
-		min-width: calc(9 * var(--u));
+	th[data-col='alignment'] {
+		width: calc(11 * var(--u));
+	}
+	th[data-col='setup'] {
+		width: calc(11 * var(--u));
+	}
+	th[data-col='ability'] {
+		width: calc(18 * var(--u));
+	}
+	th[data-col='tokens'] {
+		width: calc(12 * var(--u));
+	}
+	th[data-col='special'] {
+		width: calc(11 * var(--u));
+	}
+	th[data-col='firstNight'] {
+		width: calc(17 * var(--u));
+	}
+	th[data-col='otherNight'] {
+		width: calc(17 * var(--u));
+	}
+	th[data-col='jinxes'] {
+		width: calc(18 * var(--u));
+	}
+	th[data-col='preDay'] {
+		width: calc(19 * var(--u));
+	}
+	th[data-col='problems'] {
+		width: calc(15 * var(--u));
+	}
+	th[data-col='links'] {
+		width: calc(11 * var(--u));
 	}
 	.clamp {
 		max-height: calc(5.4 * var(--u));
 		overflow: hidden;
-		mask-image: linear-gradient(to bottom, black 70%, transparent);
 	}
 	.more {
 		min-height: var(--tap-target);
