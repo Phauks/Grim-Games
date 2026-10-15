@@ -22,7 +22,7 @@ body {
 	min-height: 100dvh;
 	background: var(--surface);
 	color: var(--on-surface);
-	font-family: var(--font-text);
+	font-family: var(--font-body);
 	line-height: 1.45;
 	/* Stop pull-to-refresh and rubber-banding from wiping a drag. */
 	overscroll-behavior: none;
@@ -37,8 +37,8 @@ body {
 h1,
 h2,
 h3 {
-	font-family: var(--font-display);
-	font-weight: var(--font-display-weight);
+	font-family: var(--font-heading);
+	font-weight: var(--font-heading-weight);
 	color: var(--heading);
 	letter-spacing: 0.04em;
 	line-height: 1.2;

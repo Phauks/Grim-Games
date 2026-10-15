@@ -219,6 +219,8 @@
 	}
 	h3 {
 		margin: 0;
+		font-family: var(--font-character);
+		font-weight: var(--font-character-weight);
 		font-size: 1.15rem;
 	}
 	.meta {
@@ -241,6 +243,7 @@
 	b,
 	dt {
 		margin-right: var(--space-1);
+		font-family: var(--font-control);
 		font-weight: 400;
 		font-size: 0.75rem;
 		letter-spacing: 0.05em;
@@ -257,6 +260,10 @@
 		font-size: 0.8rem;
 		line-height: 1.3;
 		color: var(--on-surface-muted);
+	}
+	.ability,
+	.list :global(.badge) + .small {
+		font-family: var(--font-ability);
 	}
 	.ability {
 		line-height: 1.4;

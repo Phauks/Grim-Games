@@ -55,6 +55,7 @@
 		color: var(--on-surface-muted);
 	}
 	.ability {
+		font-family: var(--font-ability);
 		font-size: 1.05rem;
 		line-height: 1.5;
 	}

@@ -58,6 +58,7 @@
 	}
 	:global([data-scope='segment-group'][data-part='label']) {
 		display: block;
+		font-family: var(--font-control);
 		margin-bottom: var(--space-2);
 		color: var(--on-surface-muted);
 	}
@@ -78,6 +79,7 @@
 		min-height: var(--tap-target);
 		padding: 0 var(--space-2);
 		color: var(--choice-color);
+		font-family: var(--font-control);
 		cursor: pointer;
 		touch-action: manipulation;
 	}

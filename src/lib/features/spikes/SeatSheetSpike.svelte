@@ -184,6 +184,7 @@
 		border-radius: var(--radius-md);
 		background: transparent;
 		color: inherit;
+		font-family: var(--font-control);
 		text-transform: capitalize;
 	}
 	.disc {

@@ -24,3 +24,9 @@
 				title={s.label ? undefined : `One of: ${s.options.join(', ')}`}
 			/>{/if}{/each}</span
 >
+
+<style>
+	.night-text {
+		font-family: var(--font-ability);
+	}
+</style>

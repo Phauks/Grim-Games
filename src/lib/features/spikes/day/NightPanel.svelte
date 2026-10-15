@@ -271,15 +271,17 @@
 		gap: var(--space-2);
 	}
 	.players {
+		font-family: var(--font-player);
 		color: var(--on-surface-muted);
 	}
 	.marker {
-		font-family: var(--font-display);
+		font-family: var(--font-character);
 		font-size: 1.1rem;
 		color: var(--heading);
 	}
 	.reminder {
 		margin: 0;
+		font-family: var(--font-ability);
 	}
 	.answer {
 		display: grid;

@@ -81,6 +81,7 @@
 	}
 	thead th {
 		background: var(--surface-selected);
+		font-family: var(--font-control);
 		font-weight: 400;
 		font-size: 0.75rem;
 		letter-spacing: 0.05em;
@@ -89,6 +90,7 @@
 		white-space: nowrap;
 	}
 	.name {
+		font-family: var(--font-character);
 		font-weight: 600;
 		white-space: nowrap;
 	}

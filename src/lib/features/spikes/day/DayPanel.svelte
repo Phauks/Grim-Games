@@ -405,6 +405,7 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font: inherit;
+		font-family: var(--font-player);
 		font-weight: 600;
 		cursor: pointer;
 	}
@@ -453,6 +454,7 @@
 		background: var(--card-background, var(--surface-raised));
 	}
 	.sentence {
+		font-family: var(--font-ability);
 		display: inline-flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -475,6 +477,7 @@
 		background: transparent;
 		color: inherit;
 		font: inherit;
+		font-family: var(--font-control);
 		cursor: pointer;
 	}
 	.chip[aria-pressed='true'] {

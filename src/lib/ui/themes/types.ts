@@ -1,4 +1,4 @@
-import type { FontId } from '#lib/ui/fonts/catalogue.ts';
+import type { FontId, FontRole } from '#lib/ui/fonts/catalogue.ts';
 import type { IconSetId, IconSlot } from '#lib/ui/icons/catalogue.ts';
 
 /**
@@ -80,7 +80,8 @@ export interface Theme {
 	tokens: Record<SemanticToken, string> & Record<CssVariable, string>;
 	/** Optional overrides of component tokens (src/lib/ui/tokens/components.css). */
 	components?: Record<CssVariable, string>;
-	fonts: { display: FontId; text: FontId };
+	/** The theme's font for every role (see FONT_ROLE_INFO). */
+	fonts: Record<FontRole, FontId>;
 	/** Slot -> Iconify id; ids must be one of the slot's catalogue choices. */
 	icons: Partial<Record<IconSlot, string>>;
 	iconSet: IconSetId;
