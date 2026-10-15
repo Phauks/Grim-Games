@@ -65,12 +65,20 @@ test('the footer shows the Community Created Content logo', async ({ page }) => 
 	expect(await logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
 });
 
-test('build details stay hidden until the version is tapped', async ({ page }) => {
+test('the commit is a link and About opens a dialog without moving the page', async ({ page }) => {
 	await page.goto('/');
-	const details = page.getByTestId('build-info');
-	await expect(details.getByRole('link', { name: 'commit' })).toBeHidden();
-	await details.locator('summary').tap();
-	await expect(details.getByRole('link', { name: 'commit' })).toBeVisible();
+	const build = page.getByTestId('build-info');
+	const commit = build.getByRole('link', { name: /^[0-9a-f]{7}$/ });
+	expect(await commit.getAttribute('href')).toMatch(/\/commit\/[0-9a-f]{40}$/);
+
+	const before = await build.boundingBox();
+	await build.getByRole('button', { name: 'About' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'About Grim-Games' });
+	await expect(dialog).toBeVisible();
+	await expect(dialog).toContainText('Channel');
+	expect(await build.boundingBox()).toEqual(before);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
 });
 
 test('installs as a PWA and reopens offline', async ({ page, context }) => {

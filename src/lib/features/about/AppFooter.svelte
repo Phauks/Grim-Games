@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { buildInfo as info } from '#lib/build-info.ts';
+	import AboutDialog from './AboutDialog.svelte';
 	import { bugReportUrl, describeBuild, REPOSITORY_URL, shortCommit } from './report-issue.ts';
+
+	let about: AboutDialog;
 
 	const reportUrl = $derived(bugReportUrl(info, page.url.pathname, navigator.userAgent));
 </script>
@@ -30,15 +33,16 @@
 	<!-- External GitHub links, not app routes. -->
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 	<a class="report" href={reportUrl} target="_blank" rel="noopener">Report an issue</a>
-	<!-- Version and commit only; tap (or hover) for branch, channel and build time. -->
-	<details class="build" title={describeBuild(info)} data-testid="build-info">
-		<summary>v{info.version} · {shortCommit(info)}</summary>
-		<p>
-			{info.branch} · {info.channel} · built {new Date(info.builtAt).toLocaleString()} ·
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener">commit</a>
-		</p>
-	</details>
+	<!-- Fixed-size line: more build detail lives in the About dialog, never inline (no reflow). -->
+	<p class="build" title={describeBuild(info)} data-testid="build-info">
+		<span>v{info.version}</span> ·
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+		<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener"
+			>{shortCommit(info)}</a
+		>
+		· <button type="button" class="about" onclick={() => about.open()}>About</button>
+	</p>
+	<AboutDialog bind:this={about} />
 </footer>
 
 <style>
@@ -57,25 +61,27 @@
 		display: inline-flex;
 		align-items: center;
 	}
-	.build summary {
-		cursor: pointer;
-		list-style: none;
-		min-height: var(--tap-target);
-		display: flex;
-		align-items: center;
-	}
-	.build summary::-webkit-details-marker {
-		display: none;
-	}
-	.build p {
-		margin: 0 0 0.5rem;
-	}
 	.ccc img {
 		display: block;
 		height: auto;
 	}
-	.build p a {
-		min-height: auto;
-		display: inline;
+	.build {
+		margin: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.build a {
+		text-decoration: underline;
+	}
+	.about {
+		min-height: var(--tap-target);
+		padding: 0 0.25rem;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-decoration: underline;
+		cursor: pointer;
 	}
 </style>

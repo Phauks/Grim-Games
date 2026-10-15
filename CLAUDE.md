@@ -12,3 +12,4 @@
 - Worker logs keep query strings (`redact_query_string: false` in wrangler.jsonc). Never put private game state, room secrets or scripts in a query string; use the path or the URL hash (the hash never reaches the server).
 - All work goes on the `beta` branch (Trevor, 2026-10-15); it deploys as the `beta` Worker Preview. `main` is production and only receives releases from `beta`.
 - The app is an offline-first PWA (`src/service-worker.ts`): each build is precached and only replaces the old one when the user taps Refresh. Saved game state must therefore be versioned with migrations, because a newer build can open a game saved by an older one.
+- **No layout reflow (Trevor).** Don't add information or fields unless needed. Anything that may appear later is rendered in place but disabled (or reserved space), or not at all if hiding it causes no reflow. Extra detail goes in a modal, sheet or toast overlay, never expanded inline.
