@@ -385,3 +385,14 @@ export function dayReminders(state: DayState): DayReminders {
 	})).filter((g) => g.reminders.length > 0);
 	return { groups, hidden };
 }
+
+/**
+ * Whether a character's day ability is once per game and marked by its "No Ability"
+ * reminder token (the Slayer, Artist, Fisherman, Virgin, Fool), so the day panel offers a
+ * one-tap "Used" (`UseAbility` places the token).
+ */
+export function isOnceOnlyDayAbility(characterId: CharacterId): boolean {
+	return (
+		ENTRIES.get(characterId)?.reminders.some((r) => r.when?.noReminder === 'No Ability') ?? false
+	);
+}

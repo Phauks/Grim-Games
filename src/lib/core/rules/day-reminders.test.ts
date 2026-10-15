@@ -9,6 +9,7 @@ import {
 	DAY_REMINDER_ENTRIES,
 	dayReminders,
 	impairment,
+	isOnceOnlyDayAbility,
 	NO_DAY_RELEVANCE,
 	renderReminder,
 	type DayReminderOverride,
@@ -245,5 +246,18 @@ describe('homebrew', () => {
 			ability: 'Each day, publicly cook.'
 		};
 		expect(texts({ seats: [seat('chef')] }, [copy])).toEqual(['[Chef] may act today']);
+	});
+});
+
+describe('isOnceOnlyDayAbility', () => {
+	it('is true for once-per-game day abilities marked with "No Ability"', () => {
+		// https://wiki.bloodontheclocktower.com/Slayer, /Artist, /Virgin
+		for (const id of ['slayer', 'artist', 'virgin', 'fisherman']) {
+			expect(isOnceOnlyDayAbility(id), id).toBe(true);
+		}
+		// https://wiki.bloodontheclocktower.com/Gossip: every day.
+		for (const id of ['gossip', 'savant', 'juggler', 'imp']) {
+			expect(isOnceOnlyDayAbility(id), id).toBe(false);
+		}
 	});
 });

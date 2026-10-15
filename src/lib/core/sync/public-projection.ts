@@ -26,9 +26,23 @@ export interface PublicSeat {
 	ghostVoteUsed: boolean;
 }
 
+/**
+ * Today's public events. Nominations and executions happen in front of everyone, so the
+ * town may see them; the day log's other entries stay private: ability uses (a "No
+ * Ability" token, or a use logged for a player who is not really that character), notes,
+ * night info and the Flowergirl's "Demon voted" mark all reveal characters. Whether an
+ * execution killed the player is not repeated here: `dead` on the seat already shows it.
+ */
+export interface PublicDay {
+	/** In the order they were made. */
+	nominations: { nominator: SeatId; nominee: SeatId }[];
+	executions: SeatId[];
+}
+
 export interface PublicGameState {
 	/** In clockwise seating order. */
 	seats: PublicSeat[];
+	today: PublicDay;
 }
 
 function appearsDead(seat: Seat): boolean {
@@ -53,7 +67,13 @@ export function publicProjection(game: Game): PublicGameState {
 			};
 			if (seat.playerName !== undefined) view.playerName = seat.playerName;
 			return view;
-		})
+		}),
+		today: {
+			nominations: game.today.entries.flatMap((e) =>
+				e.kind === 'nomination' ? [{ nominator: e.nominator, nominee: e.nominee }] : []
+			),
+			executions: game.today.entries.flatMap((e) => (e.kind === 'execution' ? [e.seatId] : []))
+		}
 	};
 }
 

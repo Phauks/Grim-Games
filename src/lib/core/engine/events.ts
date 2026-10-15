@@ -8,6 +8,8 @@
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type {
+	DayEntry,
+	DayEntryId,
 	DeathCause,
 	GameId,
 	OverrideField,
@@ -54,7 +56,16 @@ export type GameEvent =
 	| { type: 'TileDrawn'; tileId: TileId; seatId: SeatId }
 	| { type: 'DrawConfirmed'; tileId: TileId }
 	/** The tile goes back into the bag at `position` in the draw order. */
-	| { type: 'DrawCancelled'; tileId: TileId; position: number };
+	| { type: 'DrawCancelled'; tileId: TileId; position: number }
+	/** A new entry at the end of today's log (its own effects are separate events). */
+	| { type: 'DayEntryAdded'; entry: DayEntry }
+	/** Replaces the entry with the same `entryId`. */
+	| { type: 'DayEntryReplaced'; entry: DayEntry }
+	| { type: 'DayEntryRemoved'; entryId: DayEntryId }
+	/** No `voted` clears the mark. */
+	| { type: 'DemonVotedSet'; voted?: boolean }
+	/** Today's log moves to `pastDays` and an empty one starts. */
+	| { type: 'DayStarted'; at: number };
 
 export type GameEventType = GameEvent['type'];
 export type EventOf<T extends GameEventType> = Extract<GameEvent, { type: T }>;

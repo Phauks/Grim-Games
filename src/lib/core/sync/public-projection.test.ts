@@ -49,9 +49,22 @@ function busyGame() {
 			includeTravellers: false,
 			tiles: [{ shows: 'empath', grimoire: 'empath' }]
 		},
-		{ type: 'SwapSeats', seatA: seats[0], seatB: seats[1] }
+		{ type: 'SwapSeats', seatA: seats[0], seatB: seats[1] },
+		// The day log: nominations and executions are public, the rest is not.
+		{ type: 'Nominate', nominator: seats[0], nominee: seats[1] },
+		{ type: 'Execute', seatId: seats[1] },
+		{ type: 'UseAbility', seatId: seats[1], characterId: 'washerwoman' },
+		{ type: 'DayNote', characterId: 'washerwoman', seatId: seats[1], text: 'day note secret' },
+		{ type: 'SetDemonVoted', voted: true },
+		{
+			type: 'RecordNightInfo',
+			seatId: seats[1],
+			characterId: 'washerwoman',
+			text: 'info secret',
+			reminders: [{ seatId: seats[2], reminder: { characterId: 'washerwoman', label: 'Wrong' } }]
+		}
 	);
-	return { game: s.game, seats };
+	return { game: s.game, seats, session: s, ctx };
 }
 
 describe('publicProjection', () => {
@@ -66,7 +79,8 @@ describe('publicProjection', () => {
 				{ seatId: seats[3], seatNumber: 4, playerName: 'Dev', dead: true, ghostVoteUsed: true },
 				// A Storyteller override is private, so it does not show as a death.
 				{ seatId: seats[4], seatNumber: 5, playerName: 'Eve', dead: false, ghostVoteUsed: false }
-			]
+			].map((s) => (s.seatId === seats[1] ? { ...s, dead: true } : s)),
+			today: { nominations: [{ nominator: seats[0], nominee: seats[1] }], executions: [seats[1]] }
 		});
 	});
 
@@ -81,7 +95,13 @@ describe('publicProjection', () => {
 			'night-secret',
 			'night secret',
 			'day-secret',
-			'day secret'
+			'day secret',
+			'day note secret',
+			'info secret',
+			'demonVoted',
+			'ability',
+			'note',
+			'info'
 		]);
 		for (const seat of Object.values(game.seats)) {
 			if (seat.characterId) secrets.add(seat.characterId);
@@ -106,7 +126,19 @@ describe('publicProjection', () => {
 			return value;
 		});
 		expect([...keys].sort()).toEqual(
-			['dead', 'ghostVoteUsed', 'playerName', 'seatId', 'seatNumber', 'seats'].sort()
+			[
+				'dead',
+				'ghostVoteUsed',
+				'playerName',
+				'seatId',
+				'seatNumber',
+				'seats',
+				'today',
+				'nominations',
+				'nominator',
+				'nominee',
+				'executions'
+			].sort()
 		);
 	});
 
@@ -131,6 +163,12 @@ describe('publicProjection', () => {
 		expect(publicProjection(game)).toEqual(publicProjection(bare));
 	});
 
+	it('shows only the current day log, so "New day" clears it for the town too', () => {
+		const { session, ctx } = busyGame();
+		const next = run(session, ctx, { type: 'NewDay' }).game;
+		expect(publicProjection(next).today).toEqual({ nominations: [], executions: [] });
+	});
+
 	it('leaves out names that are not set', () => {
 		const { session } = newGame(2);
 		expect(publicProjection(session.game).seats.every((s) => !('playerName' in s))).toBe(true);
@@ -140,7 +178,9 @@ describe('publicProjection', () => {
 describe('NoopSyncProvider', () => {
 	it('accepts public state and publishes nothing', async () => {
 		const provider = new NoopSyncProvider();
-		await expect(provider.publish({ seats: [] })).resolves.toBeUndefined();
+		await expect(
+			provider.publish({ seats: [], today: { nominations: [], executions: [] } })
+		).resolves.toBeUndefined();
 		await expect(provider.close()).resolves.toBeUndefined();
 	});
 });

@@ -142,6 +142,35 @@ describe('version 1 saves', () => {
 	});
 });
 
+describe('version 2 saves', () => {
+	/** A game saved before the day log existed. */
+	const readV2 = (): unknown =>
+		JSON.parse(readFileSync(new URL('./fixtures/saved-game-v2.json', import.meta.url), 'utf8'));
+
+	it('migrates to the current version with an empty day log and no past days', () => {
+		const raw = readV2();
+		const loaded = migrateSavedGame(raw);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		expect(loaded.log).toEqual((raw as { log: unknown }).log);
+		const { game } = openSession(loaded.log);
+		expect(game.today).toEqual({ entries: [] });
+		expect(game.pastDays).toEqual([]);
+		expect(game.seats.b).toMatchObject({ dead: true, deathCause: 'execution' });
+		expect(game.dayReminderOverrides).toHaveLength(1);
+		expect(raw).toEqual(readV2());
+	});
+
+	it('takes day-log commands after migrating', () => {
+		const session = openSession(migrateSavedGame(readV2()).log);
+		const ctx = testContext();
+		const nominated = dispatch(session, { type: 'Nominate', nominator: 'a', nominee: 'c' }, ctx);
+		if (!nominated.ok) throw new Error(nominated.error.message);
+		expect(nominated.session.game.today.entries).toHaveLength(1);
+		const saved = migrateSavedGame(JSON.parse(JSON.stringify(toSavedGame(nominated.session, 1))));
+		expect(openSession(saved.log).game.today).toEqual(nominated.session.game.today);
+	});
+});
+
 describe('migration chain', () => {
 	// A made-up history: v1 stored `name`, v2 renamed it to `title`, v3 added `tags`.
 	const chain: Record<number, Migration> = {
