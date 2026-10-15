@@ -15,6 +15,8 @@
 		type UnreadableGame
 	} from '#lib/core/engine/index.ts';
 	import type { GameId } from '#lib/core/model/index.ts';
+	import { recentScripts, restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
+	import { reloadSavedScript } from '#lib/features/scripts/saved-scripts.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { gameStore, OpenGame } from '#lib/features/game/session.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -37,7 +39,10 @@
 		}
 		loaded = true;
 	}
-	onMount(() => void refresh());
+	onMount(() => {
+		void refresh();
+		void restoreScripts();
+	});
 
 	const when = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -57,7 +62,17 @@
 	}
 
 	// ── New game ──
-	let edition = $state<OfficialEditionId>('tb');
+	/** An official edition, or `recent:<scriptId>` for a script from the Scripts page. */
+	type ScriptChoice = OfficialEditionId | `recent:${string}`;
+	let edition = $state<ScriptChoice>('tb');
+	/** The editions, then up to three recent custom scripts, most recently used first. */
+	const scriptOptions = $derived([
+		...OFFICIAL_EDITIONS.map((e) => ({ value: e.id as ScriptChoice, label: e.name })),
+		...recentScripts.list
+			.filter((s) => !s.edition)
+			.slice(0, 3)
+			.map((s) => ({ value: `recent:${s.scriptId}` as ScriptChoice, label: s.name }))
+	]);
 	let players = $state(8);
 	let starting = $state(false);
 
@@ -65,8 +80,12 @@
 		starting = true;
 		try {
 			const data = await loadOfficialData();
-			const loaded = editionScript(edition, data);
-			if (!loaded) throw new Error('unknown edition');
+			const choice = edition;
+			const recent = choice.startsWith('recent:')
+				? recentScripts.list.find((s) => `recent:${s.scriptId}` === choice)
+				: undefined;
+			const loaded = recent ? reloadSavedScript(recent, data) : editionScript(choice, data);
+			if (!loaded) throw new Error('the chosen script could not be loaded');
 			const open = await OpenGame.create(data, toScript(loaded), players);
 			await goto(resolve('/grimoire/[gameId]', { gameId: open.game.gameId }));
 		} catch (e) {
@@ -82,7 +101,7 @@
 	<ChoiceGroup
 		label="Script"
 		value={edition}
-		options={OFFICIAL_EDITIONS.map((e) => ({ value: e.id, label: e.name }))}
+		options={scriptOptions}
 		onChange={(v) => (edition = v)}
 	/>
 	<div class="players">

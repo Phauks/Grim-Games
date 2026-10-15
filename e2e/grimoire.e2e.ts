@@ -14,6 +14,12 @@ async function startGame(page: Page, script = 'Trouble Brewing') {
 const seatLabelled = (page: Page, start: string) =>
 	page.locator(`[data-testid="seat"][aria-label^="${start}"]`);
 
+/** Runs an action from the toolbar's More menu. */
+async function menu(page: Page, action: string) {
+	await page.getByRole('button', { name: 'More' }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: action }).tap();
+}
+
 async function closeSheet(page: Page) {
 	await page.keyboard.press('Escape');
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
@@ -64,7 +70,7 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 
 test('undo, add seat, swap and remove', async ({ page }) => {
 	await startGame(page);
-	await page.getByRole('button', { name: 'Add seat' }).tap();
+	await menu(page, 'Add seat');
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 	await page.getByRole('button', { name: 'Undo' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
@@ -118,7 +124,7 @@ test('an orphan character is flagged and names are suggested', async ({ page }) 
 
 test('Travellers join as a new seat, and Fabled sit in the middle', async ({ page }) => {
 	await startGame(page);
-	await page.getByRole('button', { name: 'Add Traveller' }).tap();
+	await menu(page, 'Add Traveller');
 	await page
 		.getByRole('dialog', { name: 'Add a Traveller' })
 		.getByRole('button', { name: 'Thief', exact: true })
@@ -126,7 +132,7 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Evil' }).tap();
 	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toBeAttached();
 
-	await page.getByRole('button', { name: 'Add Fabled or Loric' }).tap();
+	await menu(page, 'Add Fabled or Loric');
 	await page
 		.getByRole('dialog', { name: 'Add Fabled or Loric' })
 		.getByRole('button', { name: 'Spirit of Ivory', exact: true })
@@ -141,4 +147,50 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		.getByRole('button', { name: 'Remove from the game' })
 		.tap();
 	await expect(fabled).toBeHidden();
+});
+
+test('Demon bluffs open from the toolbar, and a seat shows its token to the player', async ({
+	page
+}) => {
+	await startGame(page);
+	await menu(page, 'Demon bluffs');
+	await expect(page.getByRole('heading', { name: 'Demon bluffs' })).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	const sheet = await openSeat(page, 1);
+	await expect(sheet.getByRole('button', { name: 'Show to player' })).toBeDisabled();
+	await sheet.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Show to player' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown).toBeVisible();
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	await expect(shown).toBeHidden();
+});
+
+test('the toolbar leads to character selection and the bag draw', async ({ page }) => {
+	await startGame(page);
+	const board = page.url();
+	await page.getByRole('button', { name: 'Characters' }).tap();
+	await expect(page).toHaveURL(`${board}/setup`);
+	await page.goto(board);
+	await page.getByRole('button', { name: 'Bag draw' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+});
+
+test('a new game can use a custom script from the Scripts page', async ({ page }) => {
+	await page.goto('/scripts');
+	await page.getByRole('button', { name: 'Paste', exact: true }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
+	await dialog
+		.getByLabel('Script JSON or link')
+		.fill(JSON.stringify([{ id: '_meta', name: 'Pocket Storm' }, 'chef', 'saint', 'imp']));
+	await dialog.getByRole('button', { name: 'Load' }).tap();
+	await expect(page.getByTestId('current-script-name')).toHaveText('Pocket Storm');
+
+	await startGame(page, 'Pocket Storm');
+	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Pocket Storm');
 });
