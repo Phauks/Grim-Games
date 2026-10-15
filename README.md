@@ -19,6 +19,8 @@ src/lib/ui/        touch primitives, theme tokens, icons; Ark UI is only importe
 src/routes/        thin SvelteKit routes that compose features
 worker/            Cloudflare Worker entry and Durable Objects
 e2e/               Playwright tests (`*.e2e.ts`)
+scripts/           Node scripts run as TypeScript (data sync)
+static/data/       synced TPI data and icons (generated; see Data)
 ```
 
 ## Commands
@@ -31,6 +33,7 @@ e2e/               Playwright tests (`*.e2e.ts`)
 | `npm run lint`               | Prettier + ESLint (including module-boundary rules)                      |
 | `npm run test:unit -- --run` | Vitest (node + browser projects)                                         |
 | `npm run test:e2e`           | Playwright touch tests (phone + tablet)                                  |
+| `npm run sync:data`          | Refresh TPI's data and icons in `static/data/` (see [Data](#data))       |
 
 If Chromium is already installed somewhere (for example a sandbox), set `PLAYWRIGHT_CHROMIUM_PATH` to its executable instead of running `npx playwright install`.
 
@@ -46,6 +49,20 @@ GitHub Actions (`.github/workflows/ci.yml`) only runs checks and tests.
 ## Build info and issue reports
 
 Every page footer shows the version, commit, branch, channel (`production`, `preview` or `local`) and build time, read at build time by `build-info.ts` from Workers Builds' `WORKERS_CI_*` variables (or git locally). **Report an issue** opens the GitHub bug-report form with the build, page and device prefilled. Issue forms live in `.github/ISSUE_TEMPLATE/`.
+
+## Data
+
+`static/data/` holds The Pandemonium Institute's toolmaker data, committed to the repo and served as static files:
+
+- `roles.json`, `jinxes.json`, `nightsheet.json` (from `resources/data/` in botc-release) and `script-schema.json`, copied byte for byte;
+- `icons/<edition>/` character icons: `<id>_g.webp` (good), `<id>_e.webp` (evil) and `<id>.webp` (unaligned: Travellers, Fabled, Loric);
+- `manifest.json`: the botc-release commit, fetch date, counts, and a SHA-256 for every file.
+
+`npm run sync:data` refreshes it from a shallow git checkout of botc-release `main` (`-- --ref <sha>` pins a commit, `-- --source <dir>` uses a local checkout). It validates everything with the parsers in `src/lib/core/data` first and fails without writing if TPI's format has changed. With no upstream change it leaves no diff. The `Data sync` workflow runs it every Monday and opens or updates a pull request when something changed; `src/lib/core/data/tpi-data.test.ts` pins the expected counts, so update it after reviewing the change.
+
+`night-order-provisional.json` is a one-off snapshot of numeric night positions from [Official-Data-Sync](https://github.com/Phauks/Blood-on-the-Clocktower---Official-Data-Sync) (`npm run snapshot:night-order`), marked provisional: TPI's `nightsheet.json` order is the source of truth and this file is to be replaced, not maintained. Its `_meta.disagreements` lists where it differs from TPI.
+
+In code, load the files with `loadGameData` from `#lib/core/data/index.ts`; it maps TPI's `team` field to our character `type`.
 
 ## Data and acknowledgements
 

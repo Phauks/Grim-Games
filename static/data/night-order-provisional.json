@@ -1,0 +1,443 @@
+{
+	"_meta": {
+		"disagreements": {
+			"extraCharacters": [],
+			"extraPositions": {
+				"firstNight": [],
+				"otherNight": []
+			},
+			"missingCharacters": [
+				"cacklejack",
+				"djinn",
+				"godofug",
+				"hindu",
+				"knaves",
+				"pope",
+				"ventriloquist"
+			],
+			"missingPositions": {
+				"firstNight": [
+					"tor"
+				],
+				"otherNight": [
+					"barista",
+					"bonecollector",
+					"bureaucrat",
+					"harlot",
+					"riot",
+					"thief"
+				]
+			},
+			"orderConflicts": {
+				"firstNight": [],
+				"otherNight": []
+			}
+		},
+		"fetchedAt": "2026-10-15T18:30:16.770Z",
+		"note": "Provisional numeric night order, a one-off snapshot of Official-Data-Sync numbers for characters on TPI night sheet. TPI nightsheet.json order is authoritative; replace this file rather than updating it.",
+		"source": {
+			"commit": "fa269d8549629a8a3a8489e7476bd948458a062f",
+			"committedAt": "2026-03-21T00:10:54+00:00",
+			"path": "data/characters/<edition>/<id>.json",
+			"repository": "Phauks/Blood-on-the-Clocktower---Official-Data-Sync"
+		},
+		"status": "provisional"
+	},
+	"acrobat": {
+		"otherNight": 105
+	},
+	"alchemist": {
+		"firstNight": 89
+	},
+	"alhadikhia": {
+		"otherNight": 134
+	},
+	"amnesiac": {
+		"firstNight": 122,
+		"otherNight": 152
+	},
+	"angel": {
+		"firstNight": 76
+	},
+	"apprentice": {
+		"firstNight": 83
+	},
+	"assassin": {
+		"otherNight": 139
+	},
+	"balloonist": {
+		"firstNight": 137,
+		"otherNight": 168
+	},
+	"banshee": {
+		"otherNight": 147
+	},
+	"barber": {
+		"otherNight": 143
+	},
+	"barista": {
+		"firstNight": 84
+	},
+	"boffin": {
+		"firstNight": 87
+	},
+	"bountyhunter": {
+		"firstNight": 140,
+		"otherNight": 171
+	},
+	"buddhist": {
+		"firstNight": 77
+	},
+	"bureaucrat": {
+		"firstNight": 85
+	},
+	"butler": {
+		"firstNight": 129,
+		"otherNight": 174
+	},
+	"cerenovus": {
+		"firstNight": 114,
+		"otherNight": 111
+	},
+	"chambermaid": {
+		"firstNight": 147,
+		"otherNight": 178
+	},
+	"chef": {
+		"firstNight": 126
+	},
+	"choirboy": {
+		"otherNight": 149
+	},
+	"clockmaker": {
+		"firstNight": 131
+	},
+	"courtier": {
+		"firstNight": 106,
+		"otherNight": 101
+	},
+	"cultleader": {
+		"firstNight": 142,
+		"otherNight": 173
+	},
+	"damsel": {
+		"firstNight": 121,
+		"otherNight": 151
+	},
+	"devilsadvocate": {
+		"firstNight": 111,
+		"otherNight": 109
+	},
+	"dreamer": {
+		"firstNight": 132,
+		"otherNight": 162
+	},
+	"duchess": {
+		"otherNight": 91
+	},
+	"empath": {
+		"firstNight": 127,
+		"otherNight": 159
+	},
+	"engineer": {
+		"firstNight": 99,
+		"otherNight": 97
+	},
+	"eviltwin": {
+		"firstNight": 112
+	},
+	"exorcist": {
+		"otherNight": 119
+	},
+	"fanggu": {
+		"otherNight": 128
+	},
+	"farmer": {
+		"otherNight": 153
+	},
+	"fearmonger": {
+		"firstNight": 115,
+		"otherNight": 113
+	},
+	"flowergirl": {
+		"otherNight": 163
+	},
+	"fortuneteller": {
+		"firstNight": 128,
+		"otherNight": 160
+	},
+	"gambler": {
+		"otherNight": 104
+	},
+	"general": {
+		"firstNight": 146,
+		"otherNight": 177
+	},
+	"godfather": {
+		"firstNight": 109,
+		"otherNight": 140
+	},
+	"gossip": {
+		"otherNight": 141
+	},
+	"grandmother": {
+		"firstNight": 130,
+		"otherNight": 156
+	},
+	"harpy": {
+		"firstNight": 116,
+		"otherNight": 114
+	},
+	"hatter": {
+		"otherNight": 142
+	},
+	"highpriestess": {
+		"firstNight": 145,
+		"otherNight": 176
+	},
+	"huntsman": {
+		"firstNight": 120,
+		"otherNight": 150
+	},
+	"imp": {
+		"otherNight": 123
+	},
+	"innkeeper": {
+		"otherNight": 102
+	},
+	"investigator": {
+		"firstNight": 125
+	},
+	"juggler": {
+		"otherNight": 167
+	},
+	"kazali": {
+		"firstNight": 82,
+		"otherNight": 138
+	},
+	"king": {
+		"firstNight": 96,
+		"otherNight": 170
+	},
+	"knight": {
+		"firstNight": 135
+	},
+	"legion": {
+		"otherNight": 122
+	},
+	"leviathan": {
+		"firstNight": 149,
+		"otherNight": 180
+	},
+	"librarian": {
+		"firstNight": 124
+	},
+	"lilmonsta": {
+		"firstNight": 101,
+		"otherNight": 136
+	},
+	"lleech": {
+		"firstNight": 102,
+		"otherNight": 135
+	},
+	"lordoftyphon": {
+		"firstNight": 81,
+		"otherNight": 131
+	},
+	"lunatic": {
+		"firstNight": 94,
+		"otherNight": 118
+	},
+	"lycanthrope": {
+		"otherNight": 120
+	},
+	"magician": {
+		"firstNight": 92
+	},
+	"marionette": {
+		"firstNight": 98
+	},
+	"mathematician": {
+		"firstNight": 148,
+		"otherNight": 179
+	},
+	"mezepheles": {
+		"firstNight": 117,
+		"otherNight": 115
+	},
+	"monk": {
+		"otherNight": 107
+	},
+	"moonchild": {
+		"otherNight": 155
+	},
+	"nightwatchman": {
+		"firstNight": 141,
+		"otherNight": 172
+	},
+	"noble": {
+		"firstNight": 136
+	},
+	"nodashii": {
+		"otherNight": 129
+	},
+	"ogre": {
+		"firstNight": 144
+	},
+	"ojo": {
+		"otherNight": 133
+	},
+	"oracle": {
+		"otherNight": 165
+	},
+	"organgrinder": {
+		"firstNight": 110,
+		"otherNight": 108
+	},
+	"philosopher": {
+		"firstNight": 88,
+		"otherNight": 94
+	},
+	"pithag": {
+		"otherNight": 112
+	},
+	"pixie": {
+		"firstNight": 119
+	},
+	"plaguedoctor": {
+		"otherNight": 145
+	},
+	"po": {
+		"otherNight": 127
+	},
+	"poisoner": {
+		"firstNight": 104,
+		"otherNight": 100
+	},
+	"poppygrower": {
+		"firstNight": 90,
+		"otherNight": 95
+	},
+	"preacher": {
+		"firstNight": 100,
+		"otherNight": 98
+	},
+	"princess": {
+		"otherNight": 121
+	},
+	"professor": {
+		"otherNight": 148
+	},
+	"pukka": {
+		"firstNight": 118,
+		"otherNight": 125
+	},
+	"ravenkeeper": {
+		"otherNight": 158
+	},
+	"sage": {
+		"otherNight": 146
+	},
+	"sailor": {
+		"firstNight": 97,
+		"otherNight": 96
+	},
+	"scarletwoman": {
+		"otherNight": 116
+	},
+	"seamstress": {
+		"firstNight": 133,
+		"otherNight": 166
+	},
+	"shabaloth": {
+		"otherNight": 126
+	},
+	"shugenja": {
+		"firstNight": 138
+	},
+	"snakecharmer": {
+		"firstNight": 108,
+		"otherNight": 106
+	},
+	"snitch": {
+		"firstNight": 93
+	},
+	"spy": {
+		"firstNight": 143,
+		"otherNight": 175
+	},
+	"steward": {
+		"firstNight": 134
+	},
+	"stormcatcher": {
+		"firstNight": 79
+	},
+	"summoner": {
+		"firstNight": 95,
+		"otherNight": 117
+	},
+	"sweetheart": {
+		"otherNight": 144
+	},
+	"thief": {
+		"firstNight": 86
+	},
+	"tinker": {
+		"otherNight": 154
+	},
+	"tor": {
+		"otherNight": 157
+	},
+	"towncrier": {
+		"otherNight": 164
+	},
+	"toymaker": {
+		"firstNight": 78,
+		"otherNight": 92
+	},
+	"undertaker": {
+		"otherNight": 161
+	},
+	"vigormortis": {
+		"otherNight": 132
+	},
+	"villageidiot": {
+		"firstNight": 139,
+		"otherNight": 169
+	},
+	"vizier": {
+		"firstNight": 150
+	},
+	"vortox": {
+		"otherNight": 130
+	},
+	"washerwoman": {
+		"firstNight": 123
+	},
+	"widow": {
+		"firstNight": 105
+	},
+	"witch": {
+		"firstNight": 113,
+		"otherNight": 110
+	},
+	"wizard": {
+		"firstNight": 107,
+		"otherNight": 103
+	},
+	"wraith": {
+		"firstNight": 80,
+		"otherNight": 93
+	},
+	"xaan": {
+		"firstNight": 103,
+		"otherNight": 99
+	},
+	"yaggababble": {
+		"firstNight": 91,
+		"otherNight": 137
+	},
+	"zombuul": {
+		"otherNight": 124
+	}
+}
