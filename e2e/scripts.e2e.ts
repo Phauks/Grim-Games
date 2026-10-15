@@ -123,3 +123,21 @@ test('a share link opens its script and clears the hash', async ({ page }) => {
 	await expect(currentName(page)).toHaveText('Storm Front');
 	await expect(page).toHaveURL(/\/scripts$/);
 });
+
+test('the script can be shared as a player link or a QR code', async ({ page, context }) => {
+	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+	await page.goto('/scripts');
+	const share = page.getByRole('group', { name: 'Share script' });
+	await expect(share.getByRole('button', { name: 'QR code' })).toBeDisabled();
+	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
+	await expect(currentName(page)).toHaveText('Trouble Brewing');
+
+	await share.getByRole('button', { name: 'QR code' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Trouble Brewing QR code' });
+	await expect(dialog.getByRole('img', { name: 'QR code for Trouble Brewing' })).toBeVisible();
+	await dialog.getByRole('button', { name: 'Copy link' }).tap();
+	const link = await page.evaluate(() => navigator.clipboard.readText());
+	// The link opens the player view, with the script in the hash (never the query string).
+	expect(link).toMatch(/^http:\/\/localhost:\d+\/play#s=1\.[\w-]+$/);
+	await noSidewaysScroll(page);
+});

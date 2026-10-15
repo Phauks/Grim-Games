@@ -24,7 +24,11 @@ describe('share links', () => {
 	it('puts the script in the hash, never the query string', async () => {
 		const link = await shareLink('https://grim.example', script);
 		const url = new URL(link);
-		expect(url.pathname).toBe('/scripts');
+		// Players share scripts with each other, so links open the player view.
+		expect(url.pathname).toBe('/play');
+		expect(new URL(await shareLink('https://grim.example', script, '/scripts')).pathname).toBe(
+			'/scripts'
+		);
 		expect(url.search).toBe('');
 		expect(sharedPayloadFromHash(url.hash)).toBe(await encodeSharedScript(script));
 	});

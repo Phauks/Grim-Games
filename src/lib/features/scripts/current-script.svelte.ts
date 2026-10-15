@@ -3,11 +3,17 @@
  * list. Other features read `currentScript.current`; core's `toScript` turns it into the
  * engine's `Script` for CreateGame.
  */
-import { scriptToJson, type GameData, type LoadedScript } from '#lib/core/data/index.ts';
+import {
+	loadScript,
+	scriptToJson,
+	type GameData,
+	type LoadedScript
+} from '#lib/core/data/index.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { reloadSavedScript, type SavedScript, type ScriptSource } from './saved-scripts.ts';
 import { IdbScriptLibrary } from './script-library.ts';
+import { decodeSharedScript, sharedPayloadFromHash } from './share.ts';
 
 let library: IdbScriptLibrary | undefined;
 let current = $state.raw<{ saved: SavedScript; script: LoadedScript } | undefined>(undefined);
@@ -105,4 +111,22 @@ export async function forgetScript(scriptId: string): Promise<void> {
 	if (!lib) return;
 	await lib.delete(scriptId);
 	await refresh(await loadOfficialData(), lib);
+}
+
+/**
+ * For a page a share link opens (`/play#s=…`): makes the shared script the current script
+ * and clears the hash. Undefined when the address has no shared script. Throws an Error
+ * with a message to show when the link is damaged or has no usable characters. Unlike
+ * the Storyteller's Scripts page, there is no Script check: what loads, loads.
+ */
+export async function openSharedScript(): Promise<LoadedScript | undefined> {
+	const payload = sharedPayloadFromHash(location.hash);
+	if (!payload) return undefined;
+	history.replaceState(history.state, '', location.pathname + location.search);
+	const [json, data] = await Promise.all([decodeSharedScript(payload), loadOfficialData()]);
+	await restoreScripts();
+	const { script } = loadScript(json, data);
+	if (!script) throw new Error('The shared script has no characters this app knows.');
+	await chooseScript(script, { kind: 'share' });
+	return script;
 }

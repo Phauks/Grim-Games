@@ -4,12 +4,13 @@
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { scriptPageUrl } from './botcscripts-api.ts';
 	import { currentScript, restoreScripts } from './current-script.svelte.ts';
 	import { describeSource } from './saved-scripts.ts';
 	import ScriptPicker from './ScriptPicker.svelte';
+	import ShareControl from './ShareControl.svelte';
 	import { decodeSharedScript, shareLink, sharedPayloadFromHash } from './share.ts';
 
 	let picker: ScriptPicker | undefined = $state();
@@ -42,24 +43,23 @@
 		void restoreScripts().then(openSharedLink);
 	});
 
-	async function share() {
-		if (!script) return;
-		const url = await shareLink(location.origin, scriptToJson(script));
-		try {
-			if (typeof navigator.share === 'function') {
-				await navigator.share({ title: script.name, url });
-				return;
-			}
-		} catch (e) {
-			if (e instanceof DOMException && e.name === 'AbortError') return;
-		}
-		try {
-			await navigator.clipboard.writeText(url);
-			toast('Link copied');
-		} catch {
-			toast('Could not copy the link');
-		}
-	}
+	/** The player link for the current script (`/play#s=…`), rebuilt when the script changes. */
+	let shareUrl = $state<string>();
+	$effect(() => {
+		const current = script;
+		shareUrl = undefined;
+		if (!current) return;
+		let stale = false;
+		shareLink(location.origin, scriptToJson(current)).then(
+			(url) => {
+				if (!stale) shareUrl = url;
+			},
+			(e) => reportError(e, { area: 'scripts', notify: false })
+		);
+		return () => {
+			stale = true;
+		};
+	});
 </script>
 
 <main>
@@ -90,9 +90,7 @@
 					{/if}
 				</dd>
 			</dl>
-			<div class="actions">
-				<Button onclick={share} disabled={!script}>Share link</Button>
-			</div>
+			<ShareControl what="script" title={script?.name ?? 'Script'} url={shareUrl} />
 		</section>
 	</ErrorBoundary>
 
@@ -157,9 +155,5 @@
 	dd a {
 		min-height: auto;
 		color: inherit;
-	}
-	.actions {
-		display: flex;
-		justify-content: flex-end;
 	}
 </style>

@@ -75,7 +75,14 @@ export function sharedPayloadFromHash(hash: string): string | undefined {
 	return params.get('s') ?? undefined;
 }
 
-/** A full share link to the scripts page on this site. */
-export async function shareLink(origin: string, json: unknown): Promise<string> {
-	return `${origin}/scripts#s=${await encodeSharedScript(json)}`;
+/**
+ * A full share link. It opens the player view (`/play`) by default, since players share
+ * scripts with each other; `/scripts` loads it as a Storyteller's script instead.
+ */
+export async function shareLink(
+	origin: string,
+	json: unknown,
+	path: '/play' | '/scripts' = '/play'
+): Promise<string> {
+	return `${origin}${path}#s=${await encodeSharedScript(json)}`;
 }
