@@ -120,3 +120,26 @@ test('the footer links to the changelog page, which is empty until 1.0', async (
 	await expect(page.getByRole('heading', { name: 'Changelog', level: 1 })).toBeVisible();
 	await expect(page.getByRole('main')).toContainText('None');
 });
+
+test('the footer links to the privacy policy page', async ({ page }) => {
+	await page.goto('/');
+	await page.getByRole('contentinfo').getByRole('link', { name: 'Privacy' }).tap();
+	await expect(page).toHaveURL(/\/privacy$/);
+	await expect(page.getByRole('heading', { name: 'Privacy policy', level: 1 })).toBeVisible();
+});
+
+test('the footer never makes the page wider than the screen, even at the largest text size', async ({
+	page
+}) => {
+	await page.goto('/');
+	await page.evaluate(() =>
+		localStorage.setItem('grim-games:preferences:v1', JSON.stringify({ textScale: 1.5 }))
+	);
+	await page.reload();
+	await page.evaluate(() => document.fonts.ready);
+	const widths = await page.evaluate(() => ({
+		page: document.documentElement.scrollWidth,
+		screen: window.innerWidth
+	}));
+	expect(widths.page).toBeLessThanOrEqual(widths.screen);
+});

@@ -43,6 +43,7 @@
 		>
 		· <a class="page" href={resolve('/reference')}>Reference</a>
 		· <a class="page" href={resolve('/changelog')}>Changelog</a>
+		· <a class="page" href={resolve('/privacy')}>Privacy</a>
 		· <button type="button" class="about" onclick={() => (aboutOpen = true)}>About</button>
 	</p>
 	<AboutDialog bind:open={aboutOpen} />
@@ -72,6 +73,8 @@
 	.build {
 		margin: 0;
 		display: flex;
+		/* Large text sizes wrap the links instead of widening the page past the screen. */
+		flex-wrap: wrap;
 		align-items: center;
 		gap: calc(0.4 * var(--u));
 	}
