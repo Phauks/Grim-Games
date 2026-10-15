@@ -571,7 +571,7 @@ export const DAY_REMINDER_ENTRIES: readonly DayReminderEntry[] = [
 	// ── Loric ──
 	{
 		id: 'bigwig',
-		wiki: `${W}Bigwig`,
+		wiki: `${W}Big_Wig`,
 		reminders: [is('nomination', 'is in play', { self: 'any' })]
 	},
 	{
