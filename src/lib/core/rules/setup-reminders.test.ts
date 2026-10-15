@@ -10,8 +10,10 @@ import type { EngineContext } from '#lib/core/engine/context.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	NO_SETUP_REMINDERS,
+	SETUP_NOTES,
 	SETUP_REMINDER_ENTRIES,
 	placeableSetupReminders,
+	setupPrep,
 	setupReminders,
 	type SetupReminderOptions
 } from './setup-reminders.ts';
@@ -87,6 +89,27 @@ describe('coverage', () => {
 			for (const spec of entry.reminders) {
 				expect(spec.reason.length, entry.id).toBeGreaterThan(0);
 				if ('choose' in spec.target) expect(spec.target.choice.length, entry.id).toBeGreaterThan(0);
+			}
+		}
+	});
+
+	it('names its token in [brackets] in each step’s text', () => {
+		for (const entry of SETUP_REMINDER_ENTRIES) {
+			for (const spec of entry.reminders) {
+				expect(spec.text, entry.id).toContain(`[${spec.label}]`);
+			}
+		}
+	});
+
+	it('keeps other preparation notes to real characters and their real tokens', () => {
+		for (const [id, notes] of Object.entries(SETUP_NOTES)) {
+			const c = data.byId.get(id);
+			expect(c, id).toBeDefined();
+			for (const note of notes) {
+				for (const token of note.tokens ?? []) {
+					expect([...c!.reminders, ...c!.remindersGlobal], id).toContain(token);
+					expect(note.text, id).toContain(`[${token}]`);
+				}
 			}
 		}
 	});
@@ -286,6 +309,38 @@ describe('tokens on a player the Storyteller picks', () => {
 	it('suggests nothing for characters that need no setup tokens', () => {
 		expect(brief(['lunatic', 'sailor', 'huntsman', 'damsel', 'imp'])).toEqual([]);
 		expect(NO_SETUP_REMINDERS.lunatic).toBeDefined();
+	});
+});
+
+describe('setupPrep', () => {
+	// https://wiki.bloodontheclocktower.com/Drunk and https://wiki.bloodontheclocktower.com/Knight
+	it('lists each character’s preparation, one step per text', () => {
+		expect(setupPrep('drunk', 'Drunk')).toEqual([
+			{
+				text: 'Put [Is The Drunk] on the Drunk; choose a not-in-play Townsfolk they think they are',
+				tokens: ['Is The Drunk'],
+				target: 'the Drunk'
+			}
+		]);
+		expect(setupPrep('knight', 'Knight')).toEqual([
+			{
+				text: 'Choose 2 players who aren’t the Demon: put [Know] on each',
+				tokens: ['Know', 'Know'],
+				target: 'a player who isn’t the Demon'
+			}
+		]);
+		// https://wiki.bloodontheclocktower.com/Noble: 1 evil and 2 good, so no single target.
+		expect(setupPrep('noble', 'Noble')).toEqual([
+			{
+				text: 'Choose 3 players for the Noble, exactly 1 evil: put [Know] on each',
+				tokens: ['Know', 'Know', 'Know']
+			}
+		]);
+		// https://wiki.bloodontheclocktower.com/Mezepheles: a secret word, no token.
+		expect(setupPrep('mezepheles', 'Mezepheles')).toEqual([
+			{ text: 'Choose the Mezepheles’ secret word', tokens: [] }
+		]);
+		expect(setupPrep('chef', 'Chef')).toEqual([]);
 	});
 });
 

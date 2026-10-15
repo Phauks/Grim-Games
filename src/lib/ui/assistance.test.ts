@@ -34,10 +34,11 @@ describe('assistance', () => {
 	});
 
 	it('fills a switch missing from saved settings from the preset they match', () => {
-		const { setupReminders: _expert, ...expert } = ASSIST_PRESETS.expert;
+		const before = (preset: Record<string, boolean>) =>
+			Object.fromEntries(Object.entries(preset).filter(([key]) => key !== 'setupReminders'));
+		const expert = before(ASSIST_PRESETS.expert);
 		expect(parseAssistance(expert)).toEqual(ASSIST_PRESETS.expert);
-		const { setupReminders: _standard, ...standard } = ASSIST_PRESETS.standard;
-		expect(parseAssistance(standard)).toEqual(ASSIST_PRESETS.standard);
+		expect(parseAssistance(before(ASSIST_PRESETS.standard))).toEqual(ASSIST_PRESETS.standard);
 		const custom = { ...expert, nightAnswers: true };
 		expect(parseAssistance(custom).setupReminders).toBe(DEFAULT_ASSISTANCE.setupReminders);
 	});

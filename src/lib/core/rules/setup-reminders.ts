@@ -17,19 +17,22 @@ import { alignmentOf, seatsInOrder, trueCharacter } from '#lib/core/model/select
 import type { Game, Reminder, Seat, SeatId } from '#lib/core/model/types.ts';
 import {
 	NO_SETUP_REMINDERS,
+	SETUP_NOTES,
 	SETUP_REMINDER_ENTRIES,
 	type SeatFilter,
 	type SetupCondition,
+	type SetupNote,
 	type SetupReminderEntry,
 	type SetupReminderSpec,
 	type SetupTarget,
 	type SetupTiming
 } from './setup-reminders.data.ts';
 
-export { NO_SETUP_REMINDERS, SETUP_REMINDER_ENTRIES };
+export { NO_SETUP_REMINDERS, SETUP_NOTES, SETUP_REMINDER_ENTRIES };
 export type {
 	SeatFilter,
 	SetupCondition,
+	SetupNote,
 	SetupReminderEntry,
 	SetupReminderSpec,
 	SetupTarget,
@@ -38,6 +41,8 @@ export type {
 
 /** One suggested reminder token. */
 export interface SetupReminder extends Reminder {
+	/** What to do, one short line with the token in [brackets]. */
+	text: string;
 	/** Pre-filled when the grimoire settles who gets it. */
 	seatId?: SeatId;
 	/** Why the token is needed, in our words. */
@@ -132,6 +137,7 @@ function suggest(
 		const base = {
 			characterId: entry.id,
 			label: spec.label,
+			text: spec.text,
 			reason: spec.reason,
 			timing,
 			wiki: entry.wiki
@@ -205,4 +211,35 @@ export function placeableSetupReminders(
 			? []
 			: [{ seatId: s.seatId, reminder: { characterId: s.characterId, label: s.label } }]
 	);
+}
+
+/** One step of a character's pre-game preparation, for review lists and the setup screen. */
+export interface SetupPrepStep {
+	text: string;
+	tokens: string[];
+	/** Who gets the tokens: the character itself ("the Drunk") or what to choose. */
+	target?: string;
+}
+
+/**
+ * Everything the Storyteller prepares for one character between the draw and the first
+ * night (first-day tokens included), whatever is in play: the token steps of
+ * `SETUP_REMINDER_ENTRIES` (tokens with the same text are one step), then `SETUP_NOTES`.
+ * `name` is the character's name, used for a token on its own seat.
+ */
+export function setupPrep(characterId: CharacterId, name: string): SetupPrepStep[] {
+	const steps: SetupPrepStep[] = [];
+	for (const spec of ENTRIES.get(characterId)?.reminders ?? []) {
+		const target = 'self' in spec.target ? `the ${name}` : spec.target.choice;
+		const same = steps.find((s) => s.text === spec.text);
+		if (same) {
+			same.tokens.push(spec.label);
+			// Different targets (the Noble's 1 evil and 2 good): the text says it.
+			if (same.target !== target) delete same.target;
+		} else steps.push({ text: spec.text, tokens: [spec.label], target });
+	}
+	for (const note of SETUP_NOTES[characterId] ?? []) {
+		steps.push({ text: note.text, tokens: [...(note.tokens ?? [])] });
+	}
+	return steps;
 }

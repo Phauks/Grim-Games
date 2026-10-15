@@ -58,6 +58,11 @@ export interface SetupCondition {
 
 export interface SetupReminderSpec {
 	label: string;
+	/**
+	 * What the Storyteller does, as one short line with the token in [brackets]. Tokens of
+	 * one character with the same text are one step (the Knight's 2 KNOW tokens).
+	 */
+	text: string;
 	target: SetupTarget;
 	reason: string;
 	timing?: SetupTiming;
@@ -81,11 +86,13 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Townsfolk',
+				text: 'Choose a Townsfolk to show the Washerwoman: put [Townsfolk] on them',
 				target: { choose: 'townsfolk', choice: 'a Townsfolk player', notSelf: true },
 				reason: 'Marks the Townsfolk the Washerwoman learns about'
 			},
 			{
 				label: 'Wrong',
+				text: 'Choose another player: put [Wrong] on them',
 				target: { choose: 'any', choice: 'any other player', notSelf: true },
 				reason: 'Marks the second player the Washerwoman is shown'
 			}
@@ -97,12 +104,14 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Outsider',
+				text: 'Choose an Outsider to show the Librarian: put [Outsider] on them',
 				target: { choose: 'outsider', choice: 'an Outsider player', notSelf: true },
 				reason: 'Marks the Outsider the Librarian learns about (none in play: they learn 0)',
 				when: { minOutsiders: 1 }
 			},
 			{
 				label: 'Wrong',
+				text: 'Choose another player: put [Wrong] on them',
 				target: { choose: 'any', choice: 'any other player', notSelf: true },
 				reason: 'Marks the second player the Librarian is shown',
 				when: { minOutsiders: 1 }
@@ -115,11 +124,13 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Minion',
+				text: 'Choose a Minion to show the Investigator: put [Minion] on them',
 				target: { choose: 'minion', choice: 'a Minion player', notSelf: true },
 				reason: 'Marks the Minion the Investigator learns about'
 			},
 			{
 				label: 'Wrong',
+				text: 'Choose another player: put [Wrong] on them',
 				target: { choose: 'any', choice: 'any other player', notSelf: true },
 				reason: 'Marks the second player the Investigator is shown'
 			}
@@ -131,6 +142,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Red Herring',
+				text: 'Choose a good player as the [Red Herring]',
 				target: { choose: 'good', choice: 'any good player, even the Fortune Teller' },
 				reason: 'This good player registers as a Demon to the Fortune Teller'
 			}
@@ -142,6 +154,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Grandchild',
+				text: 'Choose the Grandmother’s grandchild, a good player: put [Grandchild] on them',
 				target: { choose: 'good', choice: 'a good player', notSelf: true },
 				reason: 'The Grandmother learns this player and their character'
 			}
@@ -153,6 +166,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Know',
+				text: 'Choose a good player to show the Steward: put [Know] on them',
 				target: { choose: 'good', choice: 'a good player', notSelf: true },
 				reason: 'The good player the Steward is shown'
 			}
@@ -164,14 +178,16 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Know',
+				text: 'Choose 2 players who aren’t the Demon: put [Know] on each',
 				target: { choose: 'not-demon', choice: 'a player who isn’t the Demon', notSelf: true },
 				reason: 'First of the 2 players the Knight is shown'
 			},
 			{
 				label: 'Know',
+				text: 'Choose 2 players who aren’t the Demon: put [Know] on each',
 				target: {
 					choose: 'not-demon',
-					choice: 'another player who isn’t the Demon',
+					choice: 'a player who isn’t the Demon',
 					notSelf: true
 				},
 				reason: 'Second of the 2 players the Knight is shown'
@@ -184,16 +200,19 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Know',
+				text: 'Choose 3 players for the Noble, exactly 1 evil: put [Know] on each',
 				target: { choose: 'evil', choice: 'an evil player' },
 				reason: 'The one evil player among the 3 the Noble is shown'
 			},
 			{
 				label: 'Know',
+				text: 'Choose 3 players for the Noble, exactly 1 evil: put [Know] on each',
 				target: { choose: 'good', choice: 'a good player', notSelf: true },
 				reason: 'A good player among the 3 the Noble is shown'
 			},
 			{
 				label: 'Know',
+				text: 'Choose 3 players for the Noble, exactly 1 evil: put [Know] on each',
 				target: { choose: 'good', choice: 'another good player', notSelf: true },
 				reason: 'A good player among the 3 the Noble is shown'
 			}
@@ -205,6 +224,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Mad',
+				text: 'Choose an in-play Townsfolk to show the Pixie: put [Mad] on them',
 				target: { choose: 'townsfolk', choice: 'an in-play Townsfolk', notSelf: true },
 				reason: 'The Townsfolk the Pixie is shown and must be mad about'
 			}
@@ -216,6 +236,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Know',
+				text: 'Choose an evil player to show the Bounty Hunter: put [Know] on them',
 				target: { choose: 'evil', choice: 'an evil player' },
 				reason: 'The evil player the Bounty Hunter is shown'
 			}
@@ -227,6 +248,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Know',
+				text: 'Choose any player to show the Balloonist: put [Know] on them',
 				target: { choose: 'any', choice: 'any player' },
 				reason: 'The player the Balloonist is shown on the first night'
 			}
@@ -238,6 +260,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Drunk',
+				text: 'Choose which Village Idiot is drunk: put [Drunk] on them',
 				target: { choose: 'copies', choice: 'one of the Village Idiots' },
 				reason: 'With more than one Village Idiot, one of them is drunk',
 				when: { minCopies: 2 }
@@ -250,6 +273,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Faux Paw',
+				text: 'Choose a good player who registers as evil: put [Faux Paw] on them',
 				target: { choose: 'good', choice: 'a good player' },
 				reason: 'This good player registers as evil'
 			}
@@ -261,6 +285,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Is The Alchemist',
+				text: 'Choose the Alchemist’s Minion ability; if that Minion is not in play, put [Is The Alchemist] on them',
 				target: self,
 				reason: 'When their Minion ability is not in play, the Alchemist shows that Minion'
 			}
@@ -273,6 +298,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Is The Drunk',
+				text: 'Put [Is The Drunk] on the Drunk; choose a not-in-play Townsfolk they think they are',
 				target: self,
 				reason: 'The Drunk is shown a Townsfolk; this marks who really is the Drunk'
 			}
@@ -284,6 +310,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Drunk',
+				text: 'Choose who the Puzzlemaster makes drunk, usually a Townsfolk: put [Drunk] on them',
 				target: { choose: 'townsfolk', choice: 'any player, usually a Townsfolk' },
 				reason: 'The player the Puzzlemaster makes drunk'
 			}
@@ -296,6 +323,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Is The Marionette',
+				text: 'Put [Is The Marionette] on the Marionette, a neighbour of the Demon; choose a good character they think they are',
 				target: self,
 				reason: 'The Marionette thinks they are good; this marks who really is the Marionette'
 			}
@@ -307,6 +335,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Twin',
+				text: 'Choose the Evil Twin’s good twin: put [Twin] on them',
 				target: { choose: 'good', choice: 'a good player (rarely a Traveller)' },
 				reason: 'The good twin; the twins learn each other'
 			}
@@ -318,6 +347,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Know',
+				text: 'Choose a good player who will learn a Widow is in play: put [Know] on them',
 				target: { choose: 'good', choice: 'a good player' },
 				reason: 'This good player learns a Widow is in play'
 			}
@@ -329,11 +359,13 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Night 1',
+				text: 'Put [Night 1] on the Xaan',
 				target: self,
 				reason: 'Counts the nights until night X'
 			},
 			{
 				label: 'X',
+				text: 'With 1 Outsider in play, also put [X] on the Xaan',
 				target: self,
 				reason: 'With 1 Outsider in play, night 1 is night X',
 				when: { exactOutsiders: 1 }
@@ -346,6 +378,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Night 1',
+				text: 'Put [Night 1] on the Summoner',
 				target: self,
 				reason: 'Counts the nights until the Summoner chooses on night 3'
 			}
@@ -358,6 +391,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Day 1',
+				text: 'At the start of the first day, put [Day 1] on the Riot',
 				target: self,
 				reason: 'Counts the days until day 3',
 				timing: 'first-day'
@@ -370,6 +404,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Day 1',
+				text: 'At the start of the first day, put [Day 1] on the Leviathan',
 				target: self,
 				reason: 'Counts the days; evil wins after day 5',
 				timing: 'first-day'
@@ -383,6 +418,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Is The Apprentice',
+				text: 'Choose the Apprentice’s Townsfolk (if good) or Minion (if evil) ability: put [Is The Apprentice] on them',
 				target: self,
 				reason: 'The Apprentice’s token is swapped for the ability they gain'
 			}
@@ -394,6 +430,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Amigo',
+				text: 'Choose a player of the Gnome’s alignment as their amigo: put [Amigo] on them',
 				target: {
 					choose: 'same-alignment',
 					choice: 'a player of the Gnome’s alignment',
@@ -410,6 +447,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Register Falsely?',
+				text: 'Choose 2 neighbours of the same alignment as the Revolutionaries: put [Register Falsely?] between them',
 				target: { choose: 'any', choice: 'between 2 neighbours of the same alignment' },
 				reason: 'Marks the 2 Revolutionaries'
 			}
@@ -421,6 +459,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Protected',
+				text: 'Choose the new players the Angel protects: put [Protected] on each',
 				target: { choose: 'any', choice: 'a new player who agrees to be protected' },
 				reason: 'Use one token per protected player'
 			}
@@ -432,6 +471,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Stormcaught',
+				text: 'Name a good character as stormcaught; if they are in play, put [Stormcaught] on that player',
 				target: { choose: 'good', choice: 'the player with the named character, if in play' },
 				reason: 'This player can only die by execution; evil learns who'
 			}
@@ -443,6 +483,7 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 		reminders: [
 			{
 				label: 'Hat',
+				text: 'Give the Ug hat to a player: put [Hat] on them',
 				target: { choose: 'any', choice: 'any player' },
 				reason: 'Who wears the Ug hat at the start'
 			}
@@ -623,4 +664,37 @@ export const NO_SETUP_REMINDERS: Record<CharacterId, string> = {
 	amnesiac: 'the ? tokens are optional notes on the Amnesiac’s ability',
 	hermit: 'the 1, 2, 3 tokens stand in for other Outsiders’ tokens when needed',
 	zenomancer: 'goals can be handed out at any time; mark a player with Goal when they get one'
+};
+
+/**
+ * Other preparation after the characters are drawn and before the first night that is
+ * not a token placement (or only an optional one): words to choose, abilities to pick,
+ * bluffs to set aside. `tokens` names any reminder the step may use.
+ */
+export interface SetupNote {
+	text: string;
+	tokens?: readonly string[];
+}
+
+export const SETUP_NOTES: Record<CharacterId, readonly SetupNote[]> = {
+	bountyhunter: [{ text: 'Choose a Townsfolk player who is evil; turn their token upside down' }],
+	huntsman: [{ text: 'If the Damsel is not in play, add her in place of a Townsfolk' }],
+	lunatic: [
+		{
+			text: 'Choose the Demon the Lunatic thinks they are; with 7 or more players, also choose fake Minions and 3 bluffs to show them'
+		}
+	],
+	summoner: [{ text: 'Choose 3 not-in-play good characters as the Summoner’s bluffs' }],
+	mezepheles: [{ text: 'Choose the Mezepheles’ secret word' }],
+	yaggababble: [{ text: 'Choose the Yaggababble’s secret phrase' }],
+	amnesiac: [{ text: 'Decide what the Amnesiac’s ability is; note it with [?]', tokens: ['?'] }],
+	lordoftyphon: [
+		{ text: 'Check the evil players sit in a line with the Lord of Typhon in the middle' }
+	],
+	zenomancer: [
+		{
+			text: 'Choose goals for one or more players: put [Goal] on each (or hand them out later)',
+			tokens: ['Goal']
+		}
+	]
 };
