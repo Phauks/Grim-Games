@@ -74,3 +74,23 @@ test('notes are kept after a reload', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('Sam claimed Chef: 1');
 });
+
+test('shows the script chosen on the Scripts page, with its own notebook', async ({ page }) => {
+	await page.getByRole('tab', { name: 'Circle' }).tap();
+	await page.getByRole('button', { name: 'Add a seat' }).tap();
+	await expect(page.getByTestId('seat-count')).toHaveText('9');
+
+	await page.getByRole('link', { name: 'Change script' }).tap();
+	await expect(page).toHaveURL(/\/scripts$/);
+	await page.getByRole('button', { name: 'Bad Moon Rising' }).tap();
+	await expect(page.getByRole('button', { name: 'Bad Moon Rising' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await page.goto('/play');
+	await expect(page.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
+	await expect(page.locator('[data-character="grandmother"]')).toBeVisible();
+	await page.getByRole('tab', { name: 'Circle' }).tap();
+	// A new script starts its own circle; Trouble Brewing's is kept.
+	await expect(page.getByTestId('seat-count')).toHaveText('8');
+});

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import {
 		editionScript,
 		type GameData,
@@ -13,6 +14,7 @@
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
+	import { currentScript, restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { NotebookState } from './notebook-store.svelte.ts';
 	import { playerCount, scriptKey } from './notebook.ts';
@@ -26,7 +28,7 @@
 
 	let data = $state<GameData>();
 	let numeric = $state<NumericNightOrder>();
-	let script = $state<LoadedScript>();
+	let fallback = $state<LoadedScript>();
 	let notebook = $state<NotebookState>();
 	let error = $state<string>();
 	let tab = $state<Tab>('script');
@@ -37,22 +39,38 @@
 		try {
 			const [game, numbers] = await Promise.all([
 				loadOfficialData(),
-				loadNumericNightOrder().catch(() => undefined)
+				loadNumericNightOrder().catch(() => undefined),
+				// The script chosen on /scripts; reports its own storage errors.
+				restoreScripts()
 			]);
-			// Prototype: Trouble Brewing until loaded scripts arrive (09-player-script-view.md).
-			const loaded = editionScript('tb', game);
-			if (!loaded) throw new Error('Trouble Brewing is missing from the data');
-			const book = new NotebookState(scriptKey(loaded));
-			await book.load();
+			// With no script chosen yet, show Trouble Brewing (09-player-script-view.md).
+			fallback = editionScript('tb', game);
+			if (!fallback) throw new Error('Trouble Brewing is missing from the data');
 			numeric = numbers;
 			data = game;
-			script = loaded;
-			notebook = book;
 		} catch (e) {
 			// Shown inline below, so only logged.
 			reportError(e, { area: 'play', notify: false });
 			error = errorMessage(e);
 		}
+	});
+
+	const script = $derived(data ? (currentScript.current ?? fallback) : undefined);
+	// One notebook per script: official editions by id, saved scripts by their library id.
+	const key = $derived.by(() => {
+		if (!script) return undefined;
+		const saved = currentScript.current === script ? currentScript.saved : undefined;
+		return !script.edition && saved && saved.scriptId !== 'unsaved'
+			? `saved:${saved.scriptId}`
+			: scriptKey(script);
+	});
+	$effect(() => {
+		if (!key || notebook?.key === key) return;
+		const book = new NotebookState(key);
+		editorOpen = false;
+		void book.load().then(() => {
+			if (book.key === key) notebook = book;
+		});
 	});
 
 	const players = $derived(notebook ? playerCount(notebook.book) : 0);
@@ -75,6 +93,7 @@
 	<header>
 		<h1>{script?.name ?? 'Player view'}</h1>
 		<p class="author">{script?.meta.author ?? ' '}</p>
+		<a class="change" href={resolve('/scripts')}>Change script</a>
 	</header>
 
 	{#if error}
@@ -151,7 +170,24 @@
 		padding: var(--space-3) var(--space-3) var(--space-6);
 	}
 	header {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		align-items: start;
+		column-gap: var(--space-3);
 		margin-bottom: var(--space-2);
+	}
+	header h1,
+	header .author {
+		grid-column: 1;
+	}
+	.change {
+		grid-column: 2;
+		grid-row: 1;
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--tap-target);
+		font-family: var(--font-control);
+		color: var(--heading);
 	}
 	h1 {
 		margin: 0;
