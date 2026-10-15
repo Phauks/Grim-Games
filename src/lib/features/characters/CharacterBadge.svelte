@@ -5,6 +5,7 @@
 		defaultAlignment,
 		ICONS_PATH,
 		type Alignment,
+		type Character,
 		type CharacterId
 	} from '#lib/core/data/index.ts';
 	import CharacterDialog from './CharacterDialog.svelte';
@@ -20,22 +21,33 @@
 		inline?: boolean;
 		/** The words as written ("Village Idiots"); defaults to the character's name. */
 		text?: string;
+		/** The character itself (homebrew from a loaded script); otherwise looked up by id. */
+		character?: Character;
 	}
 
-	let { characterId, alignment, playerName, inline = false, text }: Props = $props();
+	let {
+		characterId,
+		alignment,
+		playerName,
+		inline = false,
+		text,
+		character: given
+	}: Props = $props();
 	let open = $state(false);
 	// The dialog is only created on first tap: pages like /reference show hundreds of badges.
 	let used = $state(false);
 
 	onMount(() => void loadOfficialData());
 
-	const character = $derived(officialData.current?.byId.get(characterId));
+	const character = $derived(given ?? officialData.current?.byId.get(characterId));
 	const team = $derived(
 		alignment ?? (character ? (defaultAlignment(character.type) ?? 'neutral') : 'neutral')
 	);
 	const icon = $derived.by(() => {
-		const icons = character && characterIcons(character);
-		if (!icons) return undefined;
+		if (!character) return undefined;
+		const icons = characterIcons(character);
+		// Homebrew: the script's own image URL (the first is the good one).
+		if (!icons) return typeof character.image === 'string' ? character.image : character.image?.[0];
 		const file =
 			(team === 'evil' ? icons.evil : team === 'good' ? icons.good : undefined) ??
 			icons.unaligned ??
