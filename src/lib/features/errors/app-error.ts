@@ -74,6 +74,19 @@ export function describeThrown(error: unknown): { name: string; message: string;
 	return { name: 'Error', message: `a non-error value was thrown (${typeof error})` };
 }
 
+/**
+ * Browser warnings that arrive as `error` events but are not bugs: ResizeObserver reports
+ * when a resize callback changes layout again within the same frame, and the next frame
+ * delivers the rest (Chrome's "loop completed with undelivered notifications", older
+ * "loop limit exceeded"). Nothing is lost, so they are never logged.
+ */
+export function isBenignBrowserError(message: string | undefined): boolean {
+	return (
+		!!message &&
+		/ResizeObserver loop (completed with undelivered notifications|limit exceeded)/.test(message)
+	);
+}
+
 /** The message to show a person for anything thrown (replaces `e instanceof Error ? ...`). */
 export function errorMessage(error: unknown): string {
 	return describeThrown(error).message;

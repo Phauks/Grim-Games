@@ -1,5 +1,6 @@
 import {
 	describeThrown,
+	isBenignBrowserError,
 	errorKey,
 	parseErrorLog,
 	recordError,
@@ -122,6 +123,7 @@ export function installGlobalErrorHandlers(): void {
 	window.addEventListener('error', (event) => {
 		// Failed <img>/<script> loads also fire `error` but without an Error; skip those.
 		if (!(event.error instanceof Error) && !event.message) return;
+		if (isBenignBrowserError(event.message)) return;
 		errorLog.report(event.error ?? event.message, { area: 'app', handled: false });
 	});
 	window.addEventListener('unhandledrejection', (event) => {

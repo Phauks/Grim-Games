@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { errorLog, MAX_LOGGED, reportError } from './report.svelte.ts';
+import { errorLog, installGlobalErrorHandlers, MAX_LOGGED, reportError } from './report.svelte.ts';
 
 describe('reportError', () => {
 	afterEach(() => errorLog.clear());
@@ -37,5 +37,23 @@ describe('reportError', () => {
 		expect(errorLog.unseen).toEqual([]);
 		expect(errorLog.entries).toHaveLength(1);
 		errorLog.open = false;
+	});
+});
+
+describe('global error handlers', () => {
+	afterEach(() => errorLog.clear());
+
+	it('ignore harmless ResizeObserver loop warnings but log real uncaught errors', () => {
+		installGlobalErrorHandlers();
+		for (const message of [
+			'ResizeObserver loop completed with undelivered notifications.',
+			'ResizeObserver loop limit exceeded'
+		]) {
+			window.dispatchEvent(new ErrorEvent('error', { message }));
+		}
+		expect(errorLog.entries).toEqual([]);
+		window.dispatchEvent(new ErrorEvent('error', { message: 'x', error: new TypeError('real') }));
+		expect(errorLog.entries.map((e) => e.message)).toEqual(['real']);
+		expect(errorLog.unseen).toHaveLength(1);
 	});
 });

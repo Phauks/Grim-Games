@@ -41,7 +41,10 @@
 						// A script or stylesheet that failed to load (capture phase sees those too).
 						if (target && target !== window && (target.src || target.href)) {
 							remember('Could not load ' + (target.src || target.href));
-						} else remember(event.error, event.message);
+						} else if (!/ResizeObserver loop/.test(event.message || '')) {
+							// ResizeObserver loop warnings are harmless (isBenignBrowserError in app-error.ts).
+							remember(event.error, event.message);
+						}
 					},
 					true
 				);

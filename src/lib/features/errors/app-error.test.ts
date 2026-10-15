@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	describeThrown,
+	isBenignBrowserError,
 	errorDetails,
 	errorMessage,
 	errorReportUrl,
@@ -97,5 +98,19 @@ describe('parseErrorLog', () => {
 		const good = recordError(new Error('x'), at);
 		expect(parseErrorLog([good, { key: 1 }, null, good], 1)).toEqual([good]);
 		expect(parseErrorLog('nope', 5)).toEqual([]);
+	});
+});
+
+describe('isBenignBrowserError', () => {
+	it('ignores ResizeObserver loop warnings from Chrome and older browsers', () => {
+		expect(
+			isBenignBrowserError('ResizeObserver loop completed with undelivered notifications.')
+		).toBe(true);
+		expect(isBenignBrowserError('ResizeObserver loop limit exceeded')).toBe(true);
+	});
+
+	it('keeps real errors', () => {
+		expect(isBenignBrowserError("Cannot read properties of undefined (reading 'x')")).toBe(false);
+		expect(isBenignBrowserError(undefined)).toBe(false);
 	});
 });
