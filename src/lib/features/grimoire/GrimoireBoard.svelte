@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
+	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -66,6 +69,13 @@
 		traveller = undefined;
 	}
 
+	let bluffsOpen = $state(false);
+	let menuOpen = $state(false);
+	function fromMenu(action: () => void) {
+		menuOpen = false;
+		action();
+	}
+
 	// ── Fabled and Loric ──
 	let ruleOpen = $state(false);
 	let ruleShown = $state<CharacterId | undefined>();
@@ -88,9 +98,17 @@
 			disabled={!grimoire.open.canRedo}
 			onclick={() => grimoire.open.redo()}
 		/>
-		<IconButton icon="add" label="Add seat" onclick={() => grimoire.addSeat()} />
-		<IconButton icon="traveller" label="Add Traveller" onclick={() => (travellerOpen = true)} />
-		<IconButton icon="fabled" label="Add Fabled or Loric" onclick={() => (ruleOpen = true)} />
+		<IconButton
+			icon="players"
+			label="Characters"
+			onclick={() => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))}
+		/>
+		<IconButton
+			icon="bag"
+			label="Bag draw"
+			onclick={() => goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }))}
+		/>
+		<IconButton icon="menu" label="More" onclick={() => (menuOpen = true)} />
 	</div>
 
 	<div class="board" bind:this={board}>
@@ -133,7 +151,32 @@
 	</div>
 </div>
 
+<!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
+<Dialog bind:open={menuOpen} title="Grimoire">
+	<div class="menu">
+		<Button variant="quiet" icon="add" onclick={() => fromMenu(() => grimoire.addSeat())}>
+			Add seat
+		</Button>
+		<Button variant="quiet" icon="traveller" onclick={() => fromMenu(() => (travellerOpen = true))}>
+			Add Traveller
+		</Button>
+		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(() => (ruleOpen = true))}>
+			Add Fabled or Loric
+		</Button>
+		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
+			Demon bluffs
+		</Button>
+	</div>
+</Dialog>
+
 <SeatSheet bind:open={sheetOpen} {grimoire} seatId={selected} />
+
+<BluffsSheet
+	bind:open={bluffsOpen}
+	{game}
+	{characters}
+	dispatch={(command) => grimoire.open.run(command)}
+/>
 
 <CharacterPicker
 	bind:open={travellerOpen}
@@ -248,6 +291,11 @@
 		border-radius: 50%;
 		background: none;
 		cursor: pointer;
+	}
+	.menu {
+		display: grid;
+		gap: var(--space-2);
+		margin-top: var(--space-3);
 	}
 	.choices {
 		display: flex;
