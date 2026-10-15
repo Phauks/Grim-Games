@@ -20,6 +20,8 @@ export type SeatId = string;
 export type ReminderId = string;
 /** Identifies one tile in the bag. */
 export type TileId = string;
+/** Identifies one entry in a day log. */
+export type DayEntryId = string;
 
 /**
  * A reminder token as TPI's data names it: the character it belongs to and its text,
@@ -119,6 +121,64 @@ export interface Bag {
 	includeTravellers: boolean;
 }
 
+/** A public guess of one player's character (the Juggler's, for example). */
+export interface CharacterGuess {
+	seatId: SeatId;
+	characterId: CharacterId;
+}
+
+/**
+ * One thing the Storyteller logged since the last "New day" (Trevor, 2026-10-15: the log is
+ * cleared by hand, never by the night order, because the app does not track day or night):
+ * - `nomination`: who nominated whom. Votes are not tracked; a player-facing vote tracker
+ *   comes later.
+ * - `execution`: the player was executed (and marked dead by execution if they were alive).
+ * - `ability`: a character used its ability; `reminderId` is the "No Ability" token placed.
+ * - `note`: the Storyteller's free text about a character (a Gossip statement, the Artist's
+ *   question, what the Savant was told), with structured `guesses` for the Juggler.
+ * - `info`: what a waking character was shown, with the reminder tokens it placed.
+ */
+export type DayEntry =
+	| { kind: 'nomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
+	| { kind: 'execution'; entryId: DayEntryId; seatId: SeatId; died: boolean }
+	| {
+			kind: 'ability';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			characterId: CharacterId;
+			reminderId?: ReminderId;
+	  }
+	| {
+			kind: 'note';
+			entryId: DayEntryId;
+			characterId: CharacterId;
+			seatId?: SeatId;
+			text: string;
+			guesses?: CharacterGuess[];
+	  }
+	| {
+			kind: 'info';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			characterId: CharacterId;
+			text: string;
+			reminderIds: ReminderId[];
+	  };
+
+export type DayEntryKind = DayEntry['kind'];
+
+/** The day log: everything logged since the last "New day". */
+export interface DayLog {
+	entries: DayEntry[];
+	/**
+	 * Whether the Demon voted, as the Storyteller marked it (for the Flowergirl). Undefined
+	 * until marked. Votes themselves are not tracked.
+	 */
+	demonVoted?: boolean;
+	/** When "New day" closed this log (milliseconds since the epoch); only on past days. */
+	closedAt?: number;
+}
+
 export interface Game {
 	gameId: GameId;
 	/** Milliseconds since the epoch. */
@@ -136,4 +196,8 @@ export interface Game {
 	nightOrderOverrides: NightStepOverride[];
 	/** The Storyteller's changes to the pre-day reminders, applied in this order. */
 	dayReminderOverrides: DayReminderOverride[];
+	/** The current day log, since the last "New day". */
+	today: DayLog;
+	/** Earlier day logs, oldest first, closed by "New day". */
+	pastDays: DayLog[];
 }

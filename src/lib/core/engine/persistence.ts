@@ -13,7 +13,7 @@
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 2;
+export const SAVED_GAME_VERSION = 3;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -78,8 +78,19 @@ export type Migration = (doc: SavedDocument) => SavedDocument;
  */
 const migrateV1toV2: Migration = (doc) => ({ ...doc, schemaVersion: 2 });
 
+/**
+ * Version 3 (2026-10-15) added the day log: `Game.today` and `Game.pastDays`, and the
+ * `DayEntryAdded`, `DayEntryReplaced`, `DayEntryRemoved`, `DemonVotedSet` and `DayStarted`
+ * events. As with version 2, the log needs no change: `GameCreated` starts an empty day
+ * log on replay, so a version 2 game opens with nothing logged today and no past days.
+ */
+const migrateV2toV3: Migration = (doc) => ({ ...doc, schemaVersion: 3 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
-export const MIGRATIONS: Readonly<Record<number, Migration>> = { 1: migrateV1toV2 };
+export const MIGRATIONS: Readonly<Record<number, Migration>> = {
+	1: migrateV1toV2,
+	2: migrateV2toV3
+};
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
 	return {
