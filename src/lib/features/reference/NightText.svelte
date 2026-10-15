@@ -44,6 +44,7 @@
 				title="Info token"
 			/>{:else if s.kind === 'character'}<CharacterBadge
 				characterId={s.id}
+				inline
 			/>{:else if s.kind === 'dead'}<ReminderToken
 				label="Dead"
 				type={character.type}
@@ -51,11 +52,14 @@
 			/>{:else}<ReminderToken
 				label={s.label}
 				type={character.type}
-				title={s.label
-					? s.action === 'remove'
-						? 'Remove this token'
-						: undefined
-					: `One of: ${s.options.join(', ')}`}
+				done={s.prep}
+				title={s.prep
+					? 'Already placed during setup'
+					: s.label
+						? s.action === 'remove'
+							? 'Remove this token'
+							: undefined
+						: `One of: ${s.options.join(', ')}`}
 			/>{/if}{/each}</span
 >
 

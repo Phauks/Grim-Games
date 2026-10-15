@@ -26,6 +26,10 @@ describe('describeWhen', () => {
 		expect(describeWhen({ template: [self], when: { reminder: 'Day 3' } }, witch)).toBe(
 			'Witch is alive; a player has Witch’s “Day 3” reminder'
 		);
+		// Pixie: only while the Mad player is alive (day-reminders.data.ts `targetAlive`).
+		expect(
+			describeWhen({ template: [self], when: { reminder: 'Mad', targetAlive: true } }, witch)
+		).toBe('Witch is alive; an alive player has Witch’s “Mad” reminder');
 	});
 
 	it('describes dead, any, missing tokens and the alive count', () => {

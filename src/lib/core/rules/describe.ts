@@ -10,7 +10,7 @@ import type { DayCondition, DayReminderSpec, DeathCauseMatch } from './day-remin
 
 type Named = Pick<Character, 'name' | 'type'>;
 
-const KNOWN_KEYS = new Set(['self', 'reminder', 'noReminder', 'cause', 'minAlive']);
+const KNOWN_KEYS = new Set(['self', 'reminder', 'noReminder', 'cause', 'minAlive', 'targetAlive']);
 
 /** "killed by the Demon", "executed", "killed by the Assassin". */
 export function describeCause(
@@ -72,7 +72,7 @@ export function describeWhen(
 	if (when.reminder) {
 		const perPlayer = spec.template.some((p) => 'target' in p);
 		parts.push(
-			`a player has ${n}’s “${when.reminder}” reminder${perPlayer ? ' (one line per player)' : ''}`
+			`${when.targetAlive ? 'an alive' : 'a'} player has ${n}’s “${when.reminder}” reminder${perPlayer ? ' (one line per player)' : ''}`
 		);
 	}
 	if (when.noReminder) parts.push(`no player has ${n}’s “${when.noReminder}” reminder`);

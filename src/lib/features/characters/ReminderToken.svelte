@@ -10,9 +10,11 @@
 		title?: string;
 		/** `info` for the Storyteller's info tokens ("You are"), which belong to no character. */
 		variant?: 'reminder' | 'info';
+		/** Already placed (during pre-game prep): drawn ticked, in place. */
+		done?: boolean;
 	}
 
-	let { label, type, title, variant = 'reminder' }: Props = $props();
+	let { label, type, title, variant = 'reminder', done = false }: Props = $props();
 </script>
 
 <!-- A reminder token as a small chip, coloured by its character's type. -->
@@ -21,7 +23,9 @@
 	data-type={variant === 'info' ? undefined : type}
 	data-variant={variant}
 	data-testid="reminder-token"
-	{title}>{label ?? 'reminder'}</span
+	data-done={done || undefined}
+	{title}
+	>{label ?? 'reminder'}{#if done}<span class="tick" aria-label="already placed">✓</span>{/if}</span
 >
 
 <style>
@@ -82,5 +86,13 @@
 	}
 	.reminder[data-variant='info']::before {
 		display: none;
+	}
+	/* Already placed during prep: muted, with a tick. */
+	.reminder[data-done] {
+		opacity: 0.7;
+	}
+	.tick {
+		margin-left: 0.15em;
+		font-variant: normal;
 	}
 </style>
