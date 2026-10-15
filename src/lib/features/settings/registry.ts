@@ -13,7 +13,7 @@ export interface SettingsSection {
 	label: string;
 	icon: IconSlot;
 	component: Component;
-	/** Position in the sidebar, low first. Built-ins use 10, 20, 30 ... and 90 for About. */
+	/** Position in the sidebar, low first. Built-ins use 10, 20, 30 ... and 90 for Reset settings. */
 	order: number;
 }
 

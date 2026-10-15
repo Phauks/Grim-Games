@@ -9,9 +9,19 @@ async function poisonerCard(page: Page) {
 	return card;
 }
 
-test('tapping a rules term shows our definition and a Glossary link, without moving the page', async ({
+/** The wiki API, answered with a made-up page so no wiki text is in the repo. */
+async function mockWiki(page: Page) {
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({
+			json: { parse: { text: '<p><b>Poisoned:</b> Sample wiki wording for poisoned.</p>' } }
+		})
+	);
+}
+
+test('tapping a rules term shows the wiki Glossary wording and link, without moving the page', async ({
 	page
 }) => {
+	await mockWiki(page);
 	const card = await poisonerCard(page);
 	const term = card.getByRole('button', { name: 'poisoned: explain rules term' });
 	await expect(term).toBeVisible();
@@ -28,7 +38,10 @@ test('tapping a rules term shows our definition and a Glossary link, without mov
 
 	const popover = page.getByRole('dialog', { name: 'Poisoned' });
 	await expect(popover).toBeVisible();
-	await expect(popover).toContainText('no ability');
+	// The wiki's own wording, fetched live (mocked here with made-up text).
+	await expect(popover.getByTestId('wiki-definition')).toHaveText(
+		'Sample wiki wording for poisoned.'
+	);
 	await expect(popover.getByRole('link', { name: 'Open Glossary' })).toHaveAttribute(
 		'href',
 		/^https:\/\/wiki\.bloodontheclocktower\.com\/Glossary#/
@@ -81,4 +94,13 @@ test('terms in the character dialog open above it', async ({ page }) => {
 	await popover.getByRole('button', { name: 'Close' }).tap();
 	await expect(popover).toBeHidden();
 	await expect(dialog).toBeVisible();
+});
+
+test('without the wiki the popover shows only the term and the Glossary link', async ({ page }) => {
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) => route.abort());
+	const card = await poisonerCard(page);
+	await card.getByRole('button', { name: 'poisoned: explain rules term' }).tap();
+	const popover = page.getByRole('dialog', { name: 'Poisoned' });
+	await expect(popover.getByRole('link', { name: 'Open Glossary' })).toBeVisible();
+	await expect(popover.getByTestId('wiki-definition')).toHaveCount(0);
 });

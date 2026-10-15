@@ -6,10 +6,12 @@
 		loadNumericNightOrder,
 		loadOfficialData
 	} from '#lib/features/characters/game-data.svelte.ts';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import CharacterReference from './CharacterReference.svelte';
 	import NightOrderReference from './NightOrderReference.svelte';
+	import TokenKey from './TokenKey.svelte';
 	import { referenceView, type ReferenceView } from './view-mode.svelte.ts';
 
 	type View = 'characters' | 'night';
@@ -18,6 +20,7 @@
 	let numeric = $state<NumericNightOrder>();
 	let error = $state<string>();
 	let view = $state<View>('characters');
+	let keyOpen = $state(false);
 
 	// Built at runtime from the same data and rules code the app uses.
 	const entries = $derived(data ? characterReference(data, numeric) : []);
@@ -47,17 +50,21 @@
 <main>
 	<h1>Character reference</h1>
 	<div class="view">
-		<Segmented
-			label="Show as"
-			hideLabel
-			value={referenceView.current}
-			options={[
-				{ value: 'cards', label: 'Cards' },
-				{ value: 'table', label: 'Table' }
-			] satisfies { value: ReferenceView; label: string }[]}
-			onChange={(value) => (referenceView.current = value)}
-		/>
+		<div class="switch">
+			<Segmented
+				label="Show as"
+				hideLabel
+				value={referenceView.current}
+				options={[
+					{ value: 'cards', label: 'Cards' },
+					{ value: 'table', label: 'Table' }
+				] satisfies { value: ReferenceView; label: string }[]}
+				onChange={(value) => (referenceView.current = value)}
+			/>
+		</div>
+		<IconButton icon="info" label="Token key" onclick={() => (keyOpen = true)} />
 	</div>
+	<TokenKey bind:open={keyOpen} />
 
 	<Tabs
 		bind:value={view}
@@ -93,8 +100,13 @@
 		font-size: 1.8rem;
 	}
 	.view {
-		max-width: calc(20 * var(--u));
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 		margin-bottom: var(--space-3);
+	}
+	.switch {
+		flex: 0 1 calc(20 * var(--u));
 	}
 	.loading {
 		min-height: 100dvh;

@@ -41,7 +41,8 @@
 		<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener"
 			>{shortCommit(info)}</a
 		>
-		· <a class="reference" href={resolve('/reference')}>Reference</a>
+		· <a class="page" href={resolve('/reference')}>Reference</a>
+		· <a class="page" href={resolve('/changelog')}>Changelog</a>
 		· <button type="button" class="about" onclick={() => (aboutOpen = true)}>About</button>
 	</p>
 	<AboutDialog bind:open={aboutOpen} />
@@ -77,7 +78,7 @@
 	.build a {
 		text-decoration: underline;
 	}
-	.reference {
+	.page {
 		min-height: var(--tap-target);
 		padding: 0 calc(0.25 * var(--u));
 	}

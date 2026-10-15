@@ -6,7 +6,9 @@
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 </script>
 
+<!-- The one About view in the app, opened from the footer. -->
 <Dialog bind:open title="About Grim-Games">
+	<p>A touch-first grimoire for Blood on the Clocktower Storytellers.</p>
 	<dl>
 		<dt>Version</dt>
 		<dd>{info.version}</dd>
@@ -32,7 +34,11 @@
 </Dialog>
 
 <style>
+	p {
+		margin: var(--space-3) 0;
+	}
 	dl {
+		margin: 0;
 		display: grid;
 		grid-template-columns: auto 1fr;
 		gap: calc(0.25 * var(--u)) calc(1 * var(--u));

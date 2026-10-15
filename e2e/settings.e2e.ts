@@ -181,3 +181,14 @@ test('text size changes text only: icons, spacing and buttons keep their size', 
 	expect(after.button?.width).toBe(before.button?.width);
 	expect(after.button?.height).toBe(before.button?.height);
 });
+
+test('there is one About: the footer dialog, not a settings section', async ({ page }) => {
+	await page.goto('/');
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const nav = page
+		.getByRole('dialog', { name: 'Settings' })
+		.getByRole('navigation', { name: 'Settings sections' });
+	await expect(nav.getByRole('button', { name: 'Appearance' })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'About' })).toHaveCount(0);
+	await expect(nav.getByRole('button', { name: 'Reset settings' })).toBeVisible();
+});

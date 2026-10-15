@@ -101,6 +101,8 @@ test('the Witch row shows the same values as the Witch card', async ({ page }) =
 	await page.goto('/reference');
 	const card = page.locator('[data-testid="reference-card"][data-character="witch"]');
 	await card.scrollIntoViewIfNeeded();
+	// Card bodies and table rows are built as they come near the screen.
+	await expect(card.locator('[data-field="ability"]')).toBeVisible();
 	const fields = [
 		'name',
 		'type',
@@ -136,7 +138,8 @@ test('the Witch row shows the same values as the Witch card', async ({ page }) =
 
 	await page.getByText('Table', { exact: true }).tap();
 	const row = page.getByTestId('character-table').locator('tr[data-character="witch"]');
-	await expect(row).toBeVisible();
+	await row.scrollIntoViewIfNeeded();
+	await expect(row.locator('[data-field="ability"]')).toBeAttached();
 	expect(await read(row)).toEqual(fromCard);
 	await expect(row.locator('[data-field="icons"] img')).toHaveCount(2);
 });
@@ -192,6 +195,7 @@ test('the table view is remembered and the night-order table is in night order',
 	await expect(table).toBeVisible();
 	await expect(table.locator('tbody tr')).toHaveCount(181);
 	const witch = table.locator('tr[data-character="witch"]');
+	await witch.scrollIntoViewIfNeeded();
 	await expect(witch).toContainText('Evil');
 	await expect(witch).toContainText('Cursed');
 
@@ -243,4 +247,22 @@ test('token leaves and the setup flower are drawn inside the token', async ({ pa
 		expect(box!.y + box!.height).toBeLessThanOrEqual(face!.y + face!.height);
 	}
 	await token.screenshot({ path: 'test-results/village-idiot-token.png' });
+});
+
+test('the token key explains the leaves and the flower in an overlay', async ({ page }) => {
+	await page.goto('/reference');
+	await page.getByRole('button', { name: 'Token key' }).tap();
+	const key = page.getByRole('dialog', { name: 'Token key' });
+	await expect(key).toContainText('Leaf on the left: wakes on the first night.');
+	await expect(key).toContainText('Flower at the bottom right: changes setup.');
+	await expect(key.locator('g.flower')).toHaveCount(1);
+});
+
+test('cards and rows far below the screen are built only when scrolled near', async ({ page }) => {
+	await page.goto('/reference');
+	const last = page.locator('[data-testid="reference-card"]').last();
+	await expect(last).toBeAttached();
+	await expect(last.locator('[data-row]')).toHaveCount(0);
+	await last.scrollIntoViewIfNeeded();
+	await expect(last.locator('[data-row]').first()).toBeVisible();
 });

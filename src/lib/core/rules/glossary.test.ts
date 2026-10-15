@@ -1,6 +1,6 @@
 /**
  * Rules terms marked in game text: https://wiki.bloodontheclocktower.com/Glossary
- * (definitions are our own words; the fixture holds the page's entry names only).
+ * (the fixture holds the page's entry names only; no wiki prose is kept).
  */
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
@@ -55,12 +55,8 @@ describe('glossary terms', () => {
 		}
 	});
 
-	it('keeps definitions to one or two short sentences', () => {
-		for (const term of GLOSSARY) {
-			expect(term.definition.length, term.term).toBeLessThanOrEqual(200);
-			const sentences = term.definition.split(/[.!?](?:\s|$)/).filter((s) => s.trim());
-			expect(sentences.length, term.term).toBeLessThanOrEqual(2);
-		}
+	it('keeps no definitions of our own (Trevor: wiki wording only)', () => {
+		for (const term of GLOSSARY) expect(Object.keys(term), term.term).not.toContain('definition');
 	});
 });
 
