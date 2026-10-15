@@ -30,7 +30,7 @@
 />
 <SettingSegmented
 	label="Icon size"
-	description="Changes the size of interface icons: header, settings, menus, buttons and status markers such as dead or poisoned. Text size and character token size stay the same."
+	description="Changes the size of interface icons: header, settings, menus, buttons, status markers such as dead or poisoned, and character icons in badges. Text size and character token size stay the same."
 	value={String(preferences.current.iconScale)}
 	options={ICON_SCALES.map((scale) => ({ value: String(scale), label: iconScaleLabels[scale] }))}
 	onChange={(scale) => preferences.update({ iconScale: Number(scale) as IconScale })}
