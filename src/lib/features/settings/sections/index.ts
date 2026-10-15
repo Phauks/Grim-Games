@@ -1,5 +1,6 @@
 import { registerSettingsSection } from '../registry.ts';
 import AboutSection from './AboutSection.svelte';
+import AssistanceSection from './AssistanceSection.svelte';
 import AppearanceSection from './AppearanceSection.svelte';
 import FontsSection from './FontsSection.svelte';
 import IconsSection from './IconsSection.svelte';
@@ -25,6 +26,13 @@ registerSettingsSection({
 	icon: 'icons',
 	component: IconsSection,
 	order: 30
+});
+registerSettingsSection({
+	id: 'assistance',
+	label: 'Storyteller help',
+	icon: 'assistance',
+	component: AssistanceSection,
+	order: 40
 });
 registerSettingsSection({
 	id: 'about',

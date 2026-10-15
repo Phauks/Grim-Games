@@ -30,10 +30,12 @@ import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
+import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
 import ph_hand_palm_bold from '~icons/ph/hand-palm-bold';
 import ph_hand_pointing_bold from '~icons/ph/hand-pointing-bold';
 import ph_handbag_bold from '~icons/ph/handbag-bold';
 import ph_info_bold from '~icons/ph/info-bold';
+import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_list_bold from '~icons/ph/list-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
@@ -103,10 +105,12 @@ const icons: IconMap = {
 	'ph:gear-six-bold': ph_gear_six_bold,
 	'ph:ghost-bold': ph_ghost_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
+	'ph:hand-heart-bold': ph_hand_heart_bold,
 	'ph:hand-palm-bold': ph_hand_palm_bold,
 	'ph:hand-pointing-bold': ph_hand_pointing_bold,
 	'ph:handbag-bold': ph_handbag_bold,
 	'ph:info-bold': ph_info_bold,
+	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:list-bold': ph_list_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,

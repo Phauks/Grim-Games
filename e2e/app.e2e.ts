@@ -71,6 +71,8 @@ test('the commit is a link and About opens a dialog without moving the page', as
 	const commit = build.getByRole('link', { name: /^[0-9a-f]{7}$/ });
 	expect(await commit.getAttribute('href')).toMatch(/\/commit\/[0-9a-f]{40}$/);
 
+	// Measure once web fonts have swapped in, so only the dialog could move the footer.
+	await page.evaluate(() => document.fonts.ready);
 	const before = await build.boundingBox();
 	await build.getByRole('button', { name: 'About' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'About Grim-Games' });

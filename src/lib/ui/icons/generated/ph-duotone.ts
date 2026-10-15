@@ -30,10 +30,12 @@ import ph_gear_duotone from '~icons/ph/gear-duotone';
 import ph_gear_six_duotone from '~icons/ph/gear-six-duotone';
 import ph_ghost_duotone from '~icons/ph/ghost-duotone';
 import ph_hand_fist_duotone from '~icons/ph/hand-fist-duotone';
+import ph_hand_heart_duotone from '~icons/ph/hand-heart-duotone';
 import ph_hand_palm_duotone from '~icons/ph/hand-palm-duotone';
 import ph_hand_pointing_duotone from '~icons/ph/hand-pointing-duotone';
 import ph_handbag_duotone from '~icons/ph/handbag-duotone';
 import ph_info_duotone from '~icons/ph/info-duotone';
+import ph_lifebuoy_duotone from '~icons/ph/lifebuoy-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
@@ -103,10 +105,12 @@ const icons: IconMap = {
 	'ph:gear-six-duotone': ph_gear_six_duotone,
 	'ph:ghost-duotone': ph_ghost_duotone,
 	'ph:hand-fist-duotone': ph_hand_fist_duotone,
+	'ph:hand-heart-duotone': ph_hand_heart_duotone,
 	'ph:hand-palm-duotone': ph_hand_palm_duotone,
 	'ph:hand-pointing-duotone': ph_hand_pointing_duotone,
 	'ph:handbag-duotone': ph_handbag_duotone,
 	'ph:info-duotone': ph_info_duotone,
+	'ph:lifebuoy-duotone': ph_lifebuoy_duotone,
 	'ph:list-duotone': ph_list_duotone,
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,
