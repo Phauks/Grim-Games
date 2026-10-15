@@ -64,3 +64,26 @@ test('the footer shows the Community Created Content logo', async ({ page }) => 
 	await expect(logo).toBeVisible();
 	expect(await logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
 });
+
+test('build details stay hidden until the version is tapped', async ({ page }) => {
+	await page.goto('/');
+	const details = page.getByTestId('build-info');
+	await expect(details.getByRole('link', { name: 'commit' })).toBeHidden();
+	await details.locator('summary').tap();
+	await expect(details.getByRole('link', { name: 'commit' })).toBeVisible();
+});
+
+test('installs as a PWA and reopens offline', async ({ page, context }) => {
+	const manifest = await (await page.request.get('/manifest.webmanifest')).json();
+	expect(manifest.display).toBe('standalone');
+	expect(manifest.icons.length).toBeGreaterThanOrEqual(2);
+
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+
+	await context.setOffline(true);
+	await page.goto('/sheet/tb/washerwoman');
+	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+	await context.setOffline(false);
+});

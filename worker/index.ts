@@ -7,6 +7,12 @@ export interface Env {
 }
 
 const MAX_NAMES = 30;
+/**
+ * A room is deleted after this long with no connections or messages. Durable Object storage
+ * otherwise persists until deleted; the object itself hibernates after ~10 s idle and costs
+ * nothing then (developers.cloudflare.com/durable-objects/concepts/durable-object-lifecycle/).
+ */
+const ROOM_IDLE_MS = 24 * 60 * 60 * 1000;
 const MAX_NAME_LENGTH = 40;
 
 type ClientMessage = { type: 'add-name'; name: string };
@@ -22,7 +28,18 @@ export class Room extends DurableObject<Env> {
 		return (await this.ctx.storage.get<string[]>('names')) ?? [];
 	}
 
+	/** Pushes the expiry back; called on every connection and message. */
+	private async touch(): Promise<void> {
+		await this.ctx.storage.setAlarm(Date.now() + ROOM_IDLE_MS);
+	}
+
+	async alarm(): Promise<void> {
+		for (const socket of this.ctx.getWebSockets()) socket.close(1000, 'Room expired');
+		await this.ctx.storage.deleteAll();
+	}
+
 	async fetch(request: Request): Promise<Response> {
+		await this.touch();
 		if (request.headers.get('Upgrade') !== 'websocket') {
 			return Response.json({ names: await this.names() });
 		}
@@ -43,6 +60,7 @@ export class Room extends DurableObject<Env> {
 		} catch {
 			return;
 		}
+		await this.touch();
 		if (message?.type !== 'add-name' || typeof message.name !== 'string') return;
 		const name = message.name.trim().slice(0, MAX_NAME_LENGTH);
 		const names = await this.names();

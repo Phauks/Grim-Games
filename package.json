@@ -9,7 +9,7 @@
 		"preview": "npm run build && wrangler dev",
 		"prepare": "svelte-kit sync || echo \"\"",
 		"cf-typegen": "wrangler types worker/worker-configuration.d.ts --include-env=false",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && npm run check:worker",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.service-worker.json --noEmit && npm run check:worker",
 		"check:worker": "npm run cf-typegen && tsc -p worker/tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",

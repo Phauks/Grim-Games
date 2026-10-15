@@ -4,5 +4,6 @@
 		"strict": true,
 		"types": ["$app/types", "node"]
 	},
-	"include": ["src", "e2e", "scripts", "build-info.ts", "vite.config.ts", "playwright.config.ts"]
+	"include": ["src", "e2e", "scripts", "build-info.ts", "vite.config.ts", "playwright.config.ts"],
+	"exclude": ["src/service-worker.ts", "src/service-worker"]
 }

@@ -30,14 +30,15 @@
 	<!-- External GitHub links, not app routes. -->
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 	<a class="report" href={reportUrl} target="_blank" rel="noopener">Report an issue</a>
-	<p class="build" title={describeBuild(info)} data-testid="build-info">
-		v{info.version} ·
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-		<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener"
-			>{shortCommit(info)}</a
-		>
-		· {info.branch} · {info.channel} · built {new Date(info.builtAt).toLocaleString()}
-	</p>
+	<!-- Version and commit only; tap (or hover) for branch, channel and build time. -->
+	<details class="build" title={describeBuild(info)} data-testid="build-info">
+		<summary>v{info.version} · {shortCommit(info)}</summary>
+		<p>
+			{info.branch} · {info.channel} · built {new Date(info.builtAt).toLocaleString()} ·
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+			<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener">commit</a>
+		</p>
+	</details>
 </footer>
 
 <style>
@@ -56,14 +57,25 @@
 		display: inline-flex;
 		align-items: center;
 	}
-	.build {
-		margin: 0;
+	.build summary {
+		cursor: pointer;
+		list-style: none;
+		min-height: var(--tap-target);
+		display: flex;
+		align-items: center;
+	}
+	.build summary::-webkit-details-marker {
+		display: none;
+	}
+	.build p {
+		margin: 0 0 0.5rem;
 	}
 	.ccc img {
 		display: block;
 		height: auto;
 	}
-	.build a {
+	.build p a {
 		min-height: auto;
+		display: inline;
 	}
 </style>
