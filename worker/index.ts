@@ -1,0 +1,74 @@
+import { DurableObject } from 'cloudflare:workers';
+import { normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
+
+export interface Env {
+	ASSETS: Fetcher;
+	ROOMS: DurableObjectNamespace<Room>;
+}
+
+const MAX_NAMES = 30;
+const MAX_NAME_LENGTH = 40;
+
+type ClientMessage = { type: 'add-name'; name: string };
+type ServerMessage = { type: 'names'; names: string[] };
+
+/**
+ * One live game room. For now it only shares player names between devices, which is
+ * enough to prove the deploy path; the public game projection replaces this in 0.98
+ * (ROADMAP.md "Live multi-device").
+ */
+export class Room extends DurableObject<Env> {
+	async names(): Promise<string[]> {
+		return (await this.ctx.storage.get<string[]>('names')) ?? [];
+	}
+
+	async fetch(request: Request): Promise<Response> {
+		if (request.headers.get('Upgrade') !== 'websocket') {
+			return Response.json({ names: await this.names() });
+		}
+		const pair = new WebSocketPair();
+		const [client, server] = Object.values(pair);
+		this.ctx.acceptWebSocket(server);
+		server.send(
+			JSON.stringify({ type: 'names', names: await this.names() } satisfies ServerMessage)
+		);
+		return new Response(null, { status: 101, webSocket: client });
+	}
+
+	async webSocketMessage(_ws: WebSocket, raw: string | ArrayBuffer): Promise<void> {
+		if (typeof raw !== 'string') return;
+		let message: ClientMessage;
+		try {
+			message = JSON.parse(raw);
+		} catch {
+			return;
+		}
+		if (message?.type !== 'add-name' || typeof message.name !== 'string') return;
+		const name = message.name.trim().slice(0, MAX_NAME_LENGTH);
+		const names = await this.names();
+		if (!name || names.includes(name) || names.length >= MAX_NAMES) return;
+		names.push(name);
+		await this.ctx.storage.put('names', names);
+		const update = JSON.stringify({ type: 'names', names } satisfies ServerMessage);
+		for (const socket of this.ctx.getWebSockets()) socket.send(update);
+	}
+}
+
+export default {
+	async fetch(request, env): Promise<Response> {
+		const url = new URL(request.url);
+		if (url.pathname === '/api/health') {
+			return Response.json({ ok: true });
+		}
+		const room = url.pathname.match(/^\/api\/room\/([^/]+)$/);
+		if (room) {
+			const code = normaliseRoomCode(room[1]);
+			if (!code) return new Response('Invalid room code', { status: 400 });
+			return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(request);
+		}
+		if (url.pathname.startsWith('/api/')) {
+			return new Response('Not found', { status: 404 });
+		}
+		return env.ASSETS.fetch(request);
+	}
+} satisfies ExportedHandler<Env>;

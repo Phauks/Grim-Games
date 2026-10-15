@@ -1,0 +1,37 @@
+/*
+ * Baseline for a touch-first app (04-architecture.md §5). Theme tokens arrive with the
+ * theme system; until then these are the Grimoire defaults (06-visuals-and-ui-kit.md).
+ */
+:root {
+	--surface: #1c130e;
+	--on-surface: #efe3c6;
+	--accent: #b8322b;
+	--font-display: 'Cinzel', 'Times New Roman', serif;
+	--font-text: system-ui, sans-serif;
+	--tap-target: 44px;
+	color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	min-height: 100dvh;
+	background: var(--surface);
+	color: var(--on-surface);
+	font-family: var(--font-text);
+	/* Stop pull-to-refresh and rubber-banding from wiping a drag. */
+	overscroll-behavior: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+	min-height: var(--tap-target);
+	touch-action: manipulation;
+}

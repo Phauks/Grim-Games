@@ -1,0 +1,30 @@
+// One Worker serves the static SvelteKit build and the /api routes, and hosts the
+// Room Durable Object for live sync (04-architecture.md §1, 05-spike-results.md S2).
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "grim-games",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-10-01",
+	"observability": { "enabled": true },
+	"assets": {
+		"directory": "./build",
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*"]
+	},
+	"durable_objects": {
+		"bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+	},
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+	"env": {
+		// Shared staging Worker for open PRs. Cloudflare does not generate preview URLs
+		// for Workers that implement a Durable Object, so there is one staging Worker
+		// instead of a preview per branch.
+		"staging": {
+			"name": "grim-games-staging",
+			"durable_objects": {
+				"bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+			}
+		}
+	}
+}
