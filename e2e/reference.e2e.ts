@@ -67,7 +67,8 @@ test('the filter chips are gone; the table sorts and filters by column', async (
 	)
 		.filter((p) => p !== null)
 		.map(Number);
-	expect(positions.length).toBeGreaterThan(50);
+	// Only rows near the screen have their cells built (near.ts), so check those.
+	expect(positions.length).toBeGreaterThan(10);
 	expect(positions).toEqual([...positions].sort((x, y) => x - y));
 	await table.getByRole('button', { name: 'First night', exact: true }).tap();
 	await expect(table.locator('th[data-col="firstNight"]')).toHaveAttribute(
@@ -238,4 +239,28 @@ test('cards and rows far below the screen are built only when scrolled near', as
 	await expect(last.locator('[data-row]')).toHaveCount(0);
 	await last.scrollIntoViewIfNeeded();
 	await expect(last.locator('[data-row]').first()).toBeVisible();
+});
+
+test('character names are game badges and reminders are smaller token chips', async ({ page }) => {
+	await page.goto('/reference');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Witch');
+	const card = page.locator('[data-testid="reference-card"][data-character="witch"]');
+	// The card's title is the game's own badge, not a separate heading.
+	await expect(card.locator('[data-field="name"] button.badge')).toHaveAttribute(
+		'data-team',
+		'evil'
+	);
+	const night = card.getByTestId('night-other');
+	// "The Witch chooses a player." draws the Witch as a badge inside the sentence.
+	const badge = night.locator('button.badge[data-character-id="witch"]');
+	await expect(badge).toBeVisible();
+	const chip = night.getByTestId('reminder-token');
+	await expect(chip).toHaveText('Cursed');
+	const badgeBox = (await badge.boundingBox())!;
+	const chipBox = (await chip.boundingBox())!;
+	expect(chipBox.height).toBeLessThan(badgeBox.height);
+	// Different shapes: the badge is a pill, the chip a squarer token.
+	const radius = (el: typeof badge) =>
+		el.evaluate((e) => parseFloat(getComputedStyle(e).borderTopLeftRadius));
+	expect(await radius(chip)).toBeLessThan(await radius(badge));
 });
