@@ -27,6 +27,11 @@ export interface TileSpec {
 
 export type Command =
 	| { type: 'CreateGame'; script: Script; playerCount: number }
+	/**
+	 * Replaces the script mid-game (08-script-loading.md §5.6). Seats, reminders, bluffs and
+	 * the bag keep their characters; any that are not on the new script are only warned about.
+	 */
+	| { type: 'ChangeScript'; script: Script }
 	/** `position` is the 0-based place in the seating order; the default is the end. */
 	| { type: 'AddSeat'; playerName?: string; position?: number }
 	| { type: 'RemoveSeat'; seatId: SeatId }

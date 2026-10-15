@@ -1,0 +1,47 @@
+{
+	"schemaVersion": 4,
+	"gameId": "g4",
+	"savedAt": 1792022400000,
+	"log": {
+		"entries": [
+			{
+				"at": 1792022401000,
+				"command": "CreateGame",
+				"events": [
+					{
+						"type": "GameCreated",
+						"gameId": "g4",
+						"createdAt": 1792022401000,
+						"script": {
+							"meta": { "name": "Older Brewing" },
+							"entries": [
+								{ "kind": "official", "id": "imp" },
+								{ "kind": "official", "id": "chef" },
+								{ "kind": "official", "id": "slayer" }
+							]
+						},
+						"seatIds": ["a", "b", "c"]
+					}
+				]
+			},
+			{
+				"at": 1792022402000,
+				"command": "AssignCharacter",
+				"events": [
+					{
+						"type": "CharacterAssigned",
+						"seatId": "a",
+						"characterId": "imp",
+						"alignment": "evil"
+					}
+				]
+			},
+			{
+				"at": 1792022403000,
+				"command": "SetPrepValue",
+				"events": [{ "type": "PrepValueSet", "key": "yaggababble.phrase", "value": "hello" }]
+			}
+		],
+		"cursor": 3
+	}
+}
