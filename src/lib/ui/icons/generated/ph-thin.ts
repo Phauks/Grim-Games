@@ -4,12 +4,14 @@ import ph_arrow_clockwise_thin from '~icons/ph/arrow-clockwise-thin';
 import ph_arrow_counter_clockwise_thin from '~icons/ph/arrow-counter-clockwise-thin';
 import ph_arrow_left_thin from '~icons/ph/arrow-left-thin';
 import ph_arrow_right_thin from '~icons/ph/arrow-right-thin';
+import ph_arrow_square_out_thin from '~icons/ph/arrow-square-out-thin';
 import ph_arrow_u_up_left_thin from '~icons/ph/arrow-u-up-left-thin';
 import ph_arrow_u_up_right_thin from '~icons/ph/arrow-u-up-right-thin';
 import ph_bag_simple_thin from '~icons/ph/bag-simple-thin';
 import ph_beer_bottle_thin from '~icons/ph/beer-bottle-thin';
 import ph_beer_stein_thin from '~icons/ph/beer-stein-thin';
 import ph_book_open_thin from '~icons/ph/book-open-thin';
+import ph_book_open_text_thin from '~icons/ph/book-open-text-thin';
 import ph_bookmark_simple_thin from '~icons/ph/bookmark-simple-thin';
 import ph_caret_left_thin from '~icons/ph/caret-left-thin';
 import ph_caret_right_thin from '~icons/ph/caret-right-thin';
@@ -68,12 +70,14 @@ const icons: IconMap = {
 	'ph:arrow-counter-clockwise-thin': ph_arrow_counter_clockwise_thin,
 	'ph:arrow-left-thin': ph_arrow_left_thin,
 	'ph:arrow-right-thin': ph_arrow_right_thin,
+	'ph:arrow-square-out-thin': ph_arrow_square_out_thin,
 	'ph:arrow-u-up-left-thin': ph_arrow_u_up_left_thin,
 	'ph:arrow-u-up-right-thin': ph_arrow_u_up_right_thin,
 	'ph:bag-simple-thin': ph_bag_simple_thin,
 	'ph:beer-bottle-thin': ph_beer_bottle_thin,
 	'ph:beer-stein-thin': ph_beer_stein_thin,
 	'ph:book-open-thin': ph_book_open_thin,
+	'ph:book-open-text-thin': ph_book_open_text_thin,
 	'ph:bookmark-simple-thin': ph_bookmark_simple_thin,
 	'ph:caret-left-thin': ph_caret_left_thin,
 	'ph:caret-right-thin': ph_caret_right_thin,

@@ -4,12 +4,14 @@ import ph_arrow_clockwise_bold from '~icons/ph/arrow-clockwise-bold';
 import ph_arrow_counter_clockwise_bold from '~icons/ph/arrow-counter-clockwise-bold';
 import ph_arrow_left_bold from '~icons/ph/arrow-left-bold';
 import ph_arrow_right_bold from '~icons/ph/arrow-right-bold';
+import ph_arrow_square_out_bold from '~icons/ph/arrow-square-out-bold';
 import ph_arrow_u_up_left_bold from '~icons/ph/arrow-u-up-left-bold';
 import ph_arrow_u_up_right_bold from '~icons/ph/arrow-u-up-right-bold';
 import ph_bag_simple_bold from '~icons/ph/bag-simple-bold';
 import ph_beer_bottle_bold from '~icons/ph/beer-bottle-bold';
 import ph_beer_stein_bold from '~icons/ph/beer-stein-bold';
 import ph_book_open_bold from '~icons/ph/book-open-bold';
+import ph_book_open_text_bold from '~icons/ph/book-open-text-bold';
 import ph_bookmark_simple_bold from '~icons/ph/bookmark-simple-bold';
 import ph_caret_left_bold from '~icons/ph/caret-left-bold';
 import ph_caret_right_bold from '~icons/ph/caret-right-bold';
@@ -68,12 +70,14 @@ const icons: IconMap = {
 	'ph:arrow-counter-clockwise-bold': ph_arrow_counter_clockwise_bold,
 	'ph:arrow-left-bold': ph_arrow_left_bold,
 	'ph:arrow-right-bold': ph_arrow_right_bold,
+	'ph:arrow-square-out-bold': ph_arrow_square_out_bold,
 	'ph:arrow-u-up-left-bold': ph_arrow_u_up_left_bold,
 	'ph:arrow-u-up-right-bold': ph_arrow_u_up_right_bold,
 	'ph:bag-simple-bold': ph_bag_simple_bold,
 	'ph:beer-bottle-bold': ph_beer_bottle_bold,
 	'ph:beer-stein-bold': ph_beer_stein_bold,
 	'ph:book-open-bold': ph_book_open_bold,
+	'ph:book-open-text-bold': ph_book_open_text_bold,
 	'ph:bookmark-simple-bold': ph_bookmark_simple_bold,
 	'ph:caret-left-bold': ph_caret_left_bold,
 	'ph:caret-right-bold': ph_caret_right_bold,

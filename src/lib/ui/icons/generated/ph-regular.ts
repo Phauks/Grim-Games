@@ -4,12 +4,14 @@ import ph_arrow_clockwise from '~icons/ph/arrow-clockwise';
 import ph_arrow_counter_clockwise from '~icons/ph/arrow-counter-clockwise';
 import ph_arrow_left from '~icons/ph/arrow-left';
 import ph_arrow_right from '~icons/ph/arrow-right';
+import ph_arrow_square_out from '~icons/ph/arrow-square-out';
 import ph_arrow_u_up_left from '~icons/ph/arrow-u-up-left';
 import ph_arrow_u_up_right from '~icons/ph/arrow-u-up-right';
 import ph_bag_simple from '~icons/ph/bag-simple';
 import ph_beer_bottle from '~icons/ph/beer-bottle';
 import ph_beer_stein from '~icons/ph/beer-stein';
 import ph_book_open from '~icons/ph/book-open';
+import ph_book_open_text from '~icons/ph/book-open-text';
 import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_caret_left from '~icons/ph/caret-left';
 import ph_caret_right from '~icons/ph/caret-right';
@@ -68,12 +70,14 @@ const icons: IconMap = {
 	'ph:arrow-counter-clockwise': ph_arrow_counter_clockwise,
 	'ph:arrow-left': ph_arrow_left,
 	'ph:arrow-right': ph_arrow_right,
+	'ph:arrow-square-out': ph_arrow_square_out,
 	'ph:arrow-u-up-left': ph_arrow_u_up_left,
 	'ph:arrow-u-up-right': ph_arrow_u_up_right,
 	'ph:bag-simple': ph_bag_simple,
 	'ph:beer-bottle': ph_beer_bottle,
 	'ph:beer-stein': ph_beer_stein,
 	'ph:book-open': ph_book_open,
+	'ph:book-open-text': ph_book_open_text,
 	'ph:bookmark-simple': ph_bookmark_simple,
 	'ph:caret-left': ph_caret_left,
 	'ph:caret-right': ph_caret_right,

@@ -3,6 +3,7 @@ export * from './character-type.ts';
 export * from './game-data.ts';
 export * from './icons.ts';
 export * from './jinxes.ts';
+export * from './wiki.ts';
 export {
 	CHARACTER_ID_PATTERN,
 	normaliseCharacterId,

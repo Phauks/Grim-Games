@@ -1,0 +1,27 @@
+import { expect, test } from '@playwright/test';
+
+test('tapping a character badge shows its ability and a wiki link', async ({ page }) => {
+	await page.goto('/spikes/badges');
+	// CSS locator: the page behind an open dialog is aria-hidden, so role queries can't see it.
+	const badge = page.locator('button.badge', { hasText: 'Witch' });
+	await expect(badge).toContainText('Sam');
+	await expect(badge.locator('img')).toBeVisible();
+	const before = await badge.boundingBox();
+
+	await badge.tap();
+	const dialog = page.getByRole('dialog', { name: 'Witch' });
+	await expect(dialog).toBeVisible();
+	await expect(dialog).toContainText('Each night, choose a player');
+	await expect(dialog.getByRole('link', { name: 'Open wiki entry' })).toHaveAttribute(
+		'href',
+		'https://wiki.bloodontheclocktower.com/Witch'
+	);
+	expect(await badge.boundingBox()).toEqual(before);
+});
+
+test('badges are coloured by team', async ({ page }) => {
+	await page.goto('/spikes/badges');
+	await expect(page.getByRole('button', { name: /Witch/ })).toHaveAttribute('data-team', 'evil');
+	await expect(page.getByRole('button', { name: /Saint/ })).toHaveAttribute('data-team', 'good');
+	await expect(page.getByRole('button', { name: /Beggar/ })).toHaveAttribute('data-team', 'evil');
+});

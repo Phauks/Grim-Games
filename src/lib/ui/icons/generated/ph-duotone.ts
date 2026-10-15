@@ -4,12 +4,14 @@ import ph_arrow_clockwise_duotone from '~icons/ph/arrow-clockwise-duotone';
 import ph_arrow_counter_clockwise_duotone from '~icons/ph/arrow-counter-clockwise-duotone';
 import ph_arrow_left_duotone from '~icons/ph/arrow-left-duotone';
 import ph_arrow_right_duotone from '~icons/ph/arrow-right-duotone';
+import ph_arrow_square_out_duotone from '~icons/ph/arrow-square-out-duotone';
 import ph_arrow_u_up_left_duotone from '~icons/ph/arrow-u-up-left-duotone';
 import ph_arrow_u_up_right_duotone from '~icons/ph/arrow-u-up-right-duotone';
 import ph_bag_simple_duotone from '~icons/ph/bag-simple-duotone';
 import ph_beer_bottle_duotone from '~icons/ph/beer-bottle-duotone';
 import ph_beer_stein_duotone from '~icons/ph/beer-stein-duotone';
 import ph_book_open_duotone from '~icons/ph/book-open-duotone';
+import ph_book_open_text_duotone from '~icons/ph/book-open-text-duotone';
 import ph_bookmark_simple_duotone from '~icons/ph/bookmark-simple-duotone';
 import ph_caret_left_duotone from '~icons/ph/caret-left-duotone';
 import ph_caret_right_duotone from '~icons/ph/caret-right-duotone';
@@ -68,12 +70,14 @@ const icons: IconMap = {
 	'ph:arrow-counter-clockwise-duotone': ph_arrow_counter_clockwise_duotone,
 	'ph:arrow-left-duotone': ph_arrow_left_duotone,
 	'ph:arrow-right-duotone': ph_arrow_right_duotone,
+	'ph:arrow-square-out-duotone': ph_arrow_square_out_duotone,
 	'ph:arrow-u-up-left-duotone': ph_arrow_u_up_left_duotone,
 	'ph:arrow-u-up-right-duotone': ph_arrow_u_up_right_duotone,
 	'ph:bag-simple-duotone': ph_bag_simple_duotone,
 	'ph:beer-bottle-duotone': ph_beer_bottle_duotone,
 	'ph:beer-stein-duotone': ph_beer_stein_duotone,
 	'ph:book-open-duotone': ph_book_open_duotone,
+	'ph:book-open-text-duotone': ph_book_open_text_duotone,
 	'ph:bookmark-simple-duotone': ph_bookmark_simple_duotone,
 	'ph:caret-left-duotone': ph_caret_left_duotone,
 	'ph:caret-right-duotone': ph_caret_right_duotone,
