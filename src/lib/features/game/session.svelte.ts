@@ -1,0 +1,141 @@
+/**
+ * The game the Storyteller has open: the engine session, its character lookup and the
+ * saved copy. Every accepted command is saved straight away (saves are queued, so they
+ * land in order), which is what lets a reload or a PWA update reopen the game exactly.
+ *
+ * Rules warnings are returned to the caller, which shows them as toasts so nothing on the
+ * board moves (no layout reflow). Refusals change nothing.
+ */
+import type { GameData, Script } from '#lib/core/data/index.ts';
+import {
+	canRedo,
+	canUndo,
+	createGame,
+	dispatch,
+	MemoryGameStore,
+	openSession,
+	redo,
+	systemContext,
+	toSavedGame,
+	undo,
+	type Command,
+	type EngineContext,
+	type EngineError,
+	type EngineWarning,
+	type GameSession,
+	type GameStore
+} from '#lib/core/engine/index.ts';
+import {
+	characterLookup,
+	type CharacterLookup,
+	type Game,
+	type GameId
+} from '#lib/core/model/index.ts';
+import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { IdbGameStore } from './idb-store.ts';
+
+let defaultStore: GameStore | undefined;
+
+/** Saved games on this device: IndexedDB, or memory when the browser has none. */
+export function gameStore(): GameStore {
+	defaultStore ??= globalThis.indexedDB ? new IdbGameStore() : new MemoryGameStore();
+	return defaultStore;
+}
+
+export type RunResult = { ok: true; warnings: EngineWarning[] } | { ok: false; error: EngineError };
+
+export class OpenGame {
+	session = $state.raw<GameSession>() as GameSession;
+	readonly characters: CharacterLookup;
+	readonly #ctx: EngineContext;
+	readonly #store: GameStore;
+	#saving: Promise<void> = Promise.resolve();
+
+	private constructor(
+		session: GameSession,
+		characters: CharacterLookup,
+		store: GameStore,
+		ctx?: EngineContext
+	) {
+		this.session = session;
+		this.characters = characters;
+		this.#ctx = ctx ?? systemContext(characters);
+		this.#store = store;
+	}
+
+	/** Starts and saves a new game with `playerCount` empty seats. */
+	static async create(
+		data: Pick<GameData, 'characters'>,
+		script: Script,
+		playerCount: number,
+		store: GameStore = gameStore(),
+		ctx?: EngineContext
+	): Promise<OpenGame> {
+		const characters = characterLookup(data, script);
+		const context = ctx ?? systemContext(characters);
+		const created = createGame({ type: 'CreateGame', script, playerCount }, context);
+		if (!created.ok) throw new Error(created.error.message);
+		const game = new OpenGame(created.session, characters, store, context);
+		await game.save();
+		return game;
+	}
+
+	/** Opens a saved game; undefined when there is no such game. Throws `SavedGameError`. */
+	static async open(
+		data: Pick<GameData, 'characters'>,
+		gameId: GameId,
+		store: GameStore = gameStore(),
+		ctx?: EngineContext
+	): Promise<OpenGame | undefined> {
+		const saved = await store.load(gameId);
+		if (!saved) return undefined;
+		const session = openSession(saved.log);
+		const characters = characterLookup(data, session.game.script);
+		return new OpenGame(session, characters, store, ctx);
+	}
+
+	get game(): Game {
+		return this.session.game;
+	}
+
+	/** Runs a command and saves the result. */
+	run(command: Command): RunResult {
+		const result = dispatch(this.session, command, this.#ctx);
+		if (!result.ok) return result;
+		if (result.session !== this.session) {
+			this.session = result.session;
+			void this.save();
+		}
+		return { ok: true, warnings: result.warnings };
+	}
+
+	get canUndo(): boolean {
+		return canUndo(this.session);
+	}
+
+	get canRedo(): boolean {
+		return canRedo(this.session);
+	}
+
+	undo(): void {
+		if (!this.canUndo) return;
+		this.session = undo(this.session);
+		void this.save();
+	}
+
+	redo(): void {
+		if (!this.canRedo) return;
+		this.session = redo(this.session);
+		void this.save();
+	}
+
+	/** Queues a save of the current session; resolves once it (and earlier ones) landed. */
+	save(): Promise<void> {
+		const snapshot = toSavedGame(this.session, this.#ctx.now());
+		this.#saving = this.#saving
+			.then(() => this.#store.save(snapshot))
+			// A failed save is reported (corner card) and the next command saves again.
+			.catch((e: unknown) => void reportError(e, { area: 'grimoire' }));
+		return this.#saving;
+	}
+}

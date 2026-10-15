@@ -1,0 +1,76 @@
+/**
+ * Runs in the Vitest browser project. The open game saves after every command, so a
+ * reopened game (a reload, or a PWA update) is exactly where the Storyteller left it.
+ */
+import { describe, expect, it } from 'vitest';
+import type { Character } from '#lib/core/data/index.ts';
+import { MemoryGameStore, type EngineContext } from '#lib/core/engine/index.ts';
+import { OpenGame } from './session.svelte.ts';
+
+const chef: Character = {
+	id: 'chef',
+	name: 'Chef',
+	type: 'townsfolk',
+	ability: '',
+	setup: false,
+	reminders: [],
+	remindersGlobal: [],
+	special: []
+};
+const data = { characters: [chef] };
+const script = { meta: { name: 'Test' }, entries: [{ kind: 'official' as const, id: 'chef' }] };
+
+function context(): EngineContext {
+	let id = 0;
+	return {
+		characters: new Map([['chef', chef]]),
+		newId: () => `id-${++id}`,
+		now: () => 1_000 + id,
+		random: () => 0.5
+	};
+}
+
+describe('OpenGame', () => {
+	it('saves a new game and every command, and reopens it as it was', async () => {
+		const store = new MemoryGameStore();
+		const game = await OpenGame.create(data, script, 5, store, context());
+		const seatId = game.game.seating[0];
+		expect(game.run({ type: 'RenameSeat', seatId, playerName: 'Ana' })).toEqual({
+			ok: true,
+			warnings: []
+		});
+		expect(game.run({ type: 'AssignCharacter', seatId, characterId: 'chef' }).ok).toBe(true);
+		await game.save();
+
+		const reopened = await OpenGame.open(data, game.game.gameId, store, context());
+		expect(reopened?.game.seats[seatId]).toMatchObject({ playerName: 'Ana', characterId: 'chef' });
+		expect((await store.list()).games).toHaveLength(1);
+	});
+
+	it('refuses bad commands without changing or saving anything', async () => {
+		const store = new MemoryGameStore();
+		const game = await OpenGame.create(data, script, 5, store, context());
+		const before = game.session;
+		const result = game.run({ type: 'RenameSeat', seatId: 'nope', playerName: 'Ana' });
+		expect(result.ok).toBe(false);
+		expect(game.session).toBe(before);
+	});
+
+	it('keeps undo and redo across a reopen', async () => {
+		const store = new MemoryGameStore();
+		const game = await OpenGame.create(data, script, 5, store, context());
+		const seatId = game.game.seating[0];
+		game.run({ type: 'SetDead', seatId, dead: true });
+		game.undo();
+		await game.save();
+		const reopened = (await OpenGame.open(data, game.game.gameId, store, context()))!;
+		expect(reopened.game.seats[seatId].dead).toBe(false);
+		expect(reopened.canRedo).toBe(true);
+		reopened.redo();
+		expect(reopened.game.seats[seatId].dead).toBe(true);
+	});
+
+	it('is undefined for a game that is not saved', async () => {
+		expect(await OpenGame.open(data, 'missing', new MemoryGameStore())).toBeUndefined();
+	});
+});
