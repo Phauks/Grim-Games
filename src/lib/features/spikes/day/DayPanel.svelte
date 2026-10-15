@@ -13,6 +13,8 @@
 		type DayReminder
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -240,6 +242,9 @@
 				<h3>{group.title}</h3>
 				<ul class="reminders">
 					{#each group.reminders as reminder (reminder.key)}
+						{@const explained = explainBlock(
+							reminder.segments.map((s) => (s.kind === 'text' ? s.text : ''))
+						)}
 						<li data-character={reminder.characterId}>
 							<span class="sentence">
 								{#each reminder.segments as segment, i (i)}
@@ -252,7 +257,7 @@
 											playerName={segment.ref.playerName}
 										/>
 									{:else}
-										<span>{segment.text}</span>
+										<span><GlossaryText segments={explained[i] ?? []} /></span>
 									{/if}
 								{/each}
 							</span>

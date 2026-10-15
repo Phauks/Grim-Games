@@ -10,6 +10,7 @@
 		type NightStep
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import NightText from '#lib/features/reference/NightText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -138,7 +139,12 @@
 			<strong class="marker">{stepTitle(step)}</strong>
 		{/if}
 	</div>
-	{#if step.reminder}<p class="reminder">{step.reminder}</p>{/if}
+	{#if step.reminder}<p class="reminder">
+			{#if step.character}<NightText
+					text={step.reminder}
+					character={step.character}
+				/>{:else}{step.reminder}{/if}
+		</p>{/if}
 
 	{#if step.info?.kind === 'answer' && assistance.nightAnswers}
 		{#each step.info.answers as a (a.seatId)}
