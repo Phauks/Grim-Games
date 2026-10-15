@@ -360,6 +360,9 @@
 	th[data-col='otherNight'] {
 		width: calc(17 * var(--u));
 	}
+	th[data-col='prep'] {
+		width: calc(18 * var(--u));
+	}
 	th[data-col='jinxes'] {
 		width: calc(18 * var(--u));
 	}

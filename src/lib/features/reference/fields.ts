@@ -14,6 +14,7 @@ export const FIELD_IDS = [
 	'icons',
 	'alignment',
 	'setup',
+	'prep',
 	'ability',
 	'tokens',
 	'special',
@@ -56,6 +57,8 @@ export const REFERENCE_FIELDS: readonly ReferenceField[] = [
 		filter: 'alignment'
 	},
 	{ id: 'setup', label: 'Setup', card: 'inline', sort: 'setup', filter: 'presence' },
+	/** Pre-game preparation between the draw and the first night (`setupPrep`). */
+	{ id: 'prep', label: 'Prep', card: 'inline', long: true },
 	{ id: 'ability', label: 'Ability', card: 'block', long: true },
 	{ id: 'tokens', label: 'Tokens', card: 'inline', sort: 'tokens', filter: 'presence' },
 	{ id: 'special', label: 'Special', card: 'inline' },

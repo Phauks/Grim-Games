@@ -110,6 +110,7 @@ test('the Witch row shows the same values as the Witch card', async ({ page }) =
 		'edition',
 		'alignment',
 		'setup',
+		'prep',
 		'ability',
 		'tokens',
 		'special',
@@ -291,4 +292,14 @@ test('character names are game badges and reminders are smaller token chips', as
 	const radius = (el: typeof badge) =>
 		el.evaluate((e) => parseFloat(getComputedStyle(e).borderTopLeftRadius));
 	expect(await radius(chip)).toBeLessThan(await radius(badge));
+});
+
+test('prep steps show tokens as reminder chips', async ({ page }) => {
+	await page.goto('/reference');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Fortune Teller');
+	const card = page.locator('[data-testid="reference-card"][data-character="fortuneteller"]');
+	const prep = card.locator('[data-field="prep"]');
+	await expect(prep).toContainText('Choose a good player as the');
+	await expect(prep.getByTestId('reminder-token')).toHaveText('Red Herring');
+	await expect(prep).not.toContainText('[');
 });

@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { buildInfo } from '#lib/build-info.ts';
 	import { characterIcons, ICONS_PATH, type Special } from '#lib/core/data/index.ts';
+	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import type { ReferenceEntry, ReferenceNight } from '#lib/core/rules/reference.ts';
+	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup-reminders.ts';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { characterReportUrl } from '#lib/features/about/report-issue.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -26,6 +29,14 @@
 	let { field, entry, onExplain, tokenSize = 56 }: Props = $props();
 
 	const character = $derived(entry.character);
+	// Prep steps with [Token] as reminder chips and names as badges (built only for this field).
+	const prep = $derived.by(() => {
+		if (field !== 'prep') return [];
+		const names = characterNames(officialData.current?.characters ?? []);
+		return setupPrep(character.id, character.name).map((step) =>
+			prepTextSegments(step.text, names)
+		);
+	});
 	const variants = $derived.by(() => {
 		const set = characterIcons(character);
 		if (!set) return [];
@@ -122,6 +133,24 @@
 				{/each}
 			</ul>
 		{:else}<span data-testid="no-jinxes">None</span>{/if}
+	{:else if field === 'prep'}
+		{#if prep.length}
+			<ul class="list">
+				{#each prep as step, i (i)}
+					<li>
+						<span
+							>{#each step as s, j (j)}{#if s.kind === 'character'}<CharacterBadge
+										characterId={s.id}
+										inline
+									/>{:else if s.kind === 'reminder'}<ReminderToken
+										label={s.label}
+										type={character.type}
+									/>{:else}{s.text}{/if}{/each}</span
+						>
+					</li>
+				{/each}
+			</ul>
+		{:else}None{/if}
 	{:else if field === 'preDay'}
 		{#if entry.dayReminders.length}
 			<ul class="list">
