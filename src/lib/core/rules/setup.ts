@@ -57,6 +57,11 @@ export interface SetupAnalysis {
 	expected: Record<SeatedType, number[]>;
 	/** Counts of the chosen dealt characters, by type. */
 	chosen: TypeCounts;
+	/**
+	 * Chosen characters no player is dealt (Lil' Monsta). Their setup change still applies,
+	 * but they are not counted in `chosen`.
+	 */
+	notDealt: CharacterId[];
 	modifiers: AppliedModifier[];
 	warnings: SetupWarning[];
 	/** Setup notes from the modifiers (bag contents, seating), "Baron: …". */
@@ -83,6 +88,15 @@ function listValues(values: readonly number[]): string {
 		? String(values[0])
 		: `${values.slice(0, -1).join(', ')} or ${values.at(-1)}`;
 }
+
+/**
+ * Characters that are chosen for the game but never go to a player, with no stand-in token:
+ * nobody is the Lil' Monsta, a Minion babysits it
+ * (https://wiki.bloodontheclocktower.com/Lil%27_Monsta). The Drunk and the Marionette are
+ * also kept out of the bag, but their player gets a Townsfolk token, so they still count as
+ * their own type.
+ */
+const NOT_DEALT: ReadonlySet<CharacterId> = new Set(['lilmonsta']);
 
 function isDealt(type: Character['type']): type is SeatedType {
 	return (SEATED_TYPES as readonly string[]).includes(type);
@@ -200,8 +214,13 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	// What was chosen.
 	const chosen: TypeCounts = { townsfolk: 0, outsider: 0, minion: 0, demon: 0 };
 	const copies = new Map<CharacterId, number>();
+	const notDealt: CharacterId[] = [];
 	for (const character of input.inPlay) {
 		if (!isDealt(character.type)) continue;
+		if (NOT_DEALT.has(character.id)) {
+			if (!notDealt.includes(character.id)) notDealt.push(character.id);
+			continue;
+		}
 		chosen[character.type]++;
 		copies.set(character.id, (copies.get(character.id) ?? 0) + 1);
 	}
@@ -250,6 +269,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		base: split.counts,
 		expected,
 		chosen,
+		notDealt,
 		modifiers,
 		warnings,
 		notes

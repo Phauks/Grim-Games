@@ -180,6 +180,27 @@ describe('[bracketed] setup modifiers', () => {
 		});
 	});
 
+	// https://wiki.bloodontheclocktower.com/Lil%27_Monsta
+	it('Lil’ Monsta is not dealt to anyone, so it is not counted as a chosen Demon', () => {
+		const result = analyse(
+			8,
+			get('lilmonsta', 'poisoner', 'spy', 'butler', 'chef', 'empath', 'monk', 'mayor', 'slayer')
+		);
+		expect(result.chosen).toEqual({ townsfolk: 5, outsider: 1, minion: 2, demon: 0 });
+		expect(result.notDealt).toEqual(['lilmonsta']);
+		expect(result.warnings.map((w) => w.code)).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Drunk
+	it('the Drunk is kept out of the bag but still counts as an Outsider', () => {
+		const result = analyse(
+			8,
+			get('drunk', 'imp', 'poisoner', 'chef', 'empath', 'monk', 'mayor', 'slayer')
+		);
+		expect(result.chosen.outsider).toBe(1);
+		expect(result.notDealt).toEqual([]);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Summoner
 	it('Summoner: no Demon, a Townsfolk instead', () => {
 		const result = analyse(7, get('summoner'));
