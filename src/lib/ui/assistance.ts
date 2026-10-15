@@ -7,6 +7,7 @@ export const ASSIST_KEYS = [
 	'nightWalkthrough',
 	'nightAnswers',
 	'infoSuggestions',
+	'setupReminders',
 	'preDayReminders',
 	'deathCause',
 	'rulesWarnings'
@@ -29,6 +30,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Suggest information',
 		description: 'Washerwoman, Librarian, Investigator and similar steps list true options first.'
 	},
+	setupReminders: {
+		label: 'Suggest setup reminders',
+		description:
+			'Once characters are in the grimoire, offer the reminders to place before the first night.'
+	},
 	preDayReminders: {
 		label: 'Pre-day reminders',
 		description: 'After the night, list what to watch for today, like an unused Slayer shot.'
@@ -48,6 +54,7 @@ export const ASSIST_PRESETS = {
 		nightWalkthrough: true,
 		nightAnswers: true,
 		infoSuggestions: true,
+		setupReminders: true,
 		preDayReminders: true,
 		deathCause: true,
 		rulesWarnings: true
@@ -56,6 +63,7 @@ export const ASSIST_PRESETS = {
 		nightWalkthrough: true,
 		nightAnswers: true,
 		infoSuggestions: false,
+		setupReminders: true,
 		preDayReminders: true,
 		deathCause: false,
 		rulesWarnings: true
@@ -64,6 +72,7 @@ export const ASSIST_PRESETS = {
 		nightWalkthrough: false,
 		nightAnswers: false,
 		infoSuggestions: false,
+		setupReminders: false,
 		preDayReminders: false,
 		deathCause: false,
 		rulesWarnings: true
@@ -88,9 +97,24 @@ export function assistPreset(assistance: Assistance): AssistPreset | 'custom' {
 	return 'custom';
 }
 
+/** Switches added after the first release of these settings. */
+const ADDED_LATER: readonly AssistKey[] = ['setupReminders'];
+
+/**
+ * Saved switches, with any missing ones filled in. When only switches added later are
+ * missing, they take their value from the preset the saved ones match (so Expert stays
+ * Expert); otherwise from the default.
+ */
 export function parseAssistance(raw: unknown): Assistance {
 	const input = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-	const out = { ...DEFAULT_ASSISTANCE };
-	for (const key of ASSIST_KEYS) if (typeof input[key] === 'boolean') out[key] = input[key];
+	const saved = ASSIST_KEYS.filter((key) => typeof input[key] === 'boolean');
+	const onlyNewMissing = ASSIST_KEYS.every(
+		(key) => saved.includes(key) || ADDED_LATER.includes(key)
+	);
+	const preset = onlyNewMissing
+		? Object.values(ASSIST_PRESETS).find((p) => saved.every((key) => p[key] === input[key]))
+		: undefined;
+	const out: Assistance = { ...(preset ?? DEFAULT_ASSISTANCE) };
+	for (const key of saved) out[key] = input[key] as boolean;
 	return out;
 }
