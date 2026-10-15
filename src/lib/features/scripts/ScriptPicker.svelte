@@ -13,7 +13,6 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { BOTC_SCRIPTS_ORIGIN, parseBotcScriptsRef } from './botcscripts-api.ts';
 	import {
 		chooseScript,
@@ -80,7 +79,6 @@
 
 	async function use(script: LoadedScript, source: ScriptSource) {
 		await chooseScript(script, source);
-		toast(`Loaded ${script.name}`, `${script.characters.length} characters`);
 		onchoose?.(script);
 	}
 

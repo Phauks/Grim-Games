@@ -75,6 +75,8 @@ test('a script file loads straight away when nothing needs checking', async ({ p
 	await expect(currentName(page)).toHaveText('Storm Front');
 	await expect(page.getByRole('dialog', { name: 'Script check' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /Storm Front.*storm-front\.json/ })).toBeVisible();
+	// A load that worked needs no message (Trevor).
+	await expect(page.getByText('Loaded Storm Front')).toHaveCount(0);
 });
 
 test('a BotC Scripts number loads through our Worker', async ({ page }) => {
