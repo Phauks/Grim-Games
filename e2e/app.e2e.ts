@@ -118,7 +118,11 @@ test('the footer links to the changelog page, which is empty until 1.0', async (
 	await page.getByRole('contentinfo').getByRole('link', { name: 'Changelog' }).tap();
 	await expect(page).toHaveURL(/\/changelog$/);
 	await expect(page.getByRole('heading', { name: 'Changelog', level: 1 })).toBeVisible();
-	await expect(page.getByRole('main')).toContainText('None');
+	const main = page.getByRole('main');
+	await expect(main.getByRole('heading', { name: 'Unreleased', level: 2 })).toBeVisible();
+	for (const category of ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'])
+		await expect(main.getByRole('heading', { name: category, level: 3 })).toBeVisible();
+	await expect(main.getByText('None', { exact: true })).toHaveCount(6);
 });
 
 test('the footer links to the privacy policy page', async ({ page }) => {
