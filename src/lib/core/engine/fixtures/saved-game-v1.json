@@ -1,0 +1,52 @@
+{
+	"schemaVersion": 1,
+	"gameId": "g1",
+	"savedAt": 1792022400000,
+	"log": {
+		"entries": [
+			{
+				"at": 1792022401000,
+				"command": "CreateGame",
+				"events": [
+					{
+						"type": "GameCreated",
+						"gameId": "g1",
+						"createdAt": 1792022401000,
+						"script": {
+							"meta": { "name": "Old Brewing" },
+							"entries": [
+								{ "kind": "official", "id": "imp" },
+								{ "kind": "official", "id": "chef" },
+								{ "kind": "official", "id": "slayer" }
+							]
+						},
+						"seatIds": ["a", "b", "c"]
+					}
+				]
+			},
+			{
+				"at": 1792022402000,
+				"command": "AssignCharacter",
+				"events": [
+					{
+						"type": "CharacterAssigned",
+						"seatId": "a",
+						"characterId": "imp",
+						"alignment": "evil"
+					}
+				]
+			},
+			{
+				"at": 1792022403000,
+				"command": "SetDead",
+				"events": [{ "type": "DeathSet", "seatId": "b", "dead": true }]
+			},
+			{
+				"at": 1792022404000,
+				"command": "SetDead",
+				"events": [{ "type": "DeathSet", "seatId": "c", "dead": true }]
+			}
+		],
+		"cursor": 3
+	}
+}

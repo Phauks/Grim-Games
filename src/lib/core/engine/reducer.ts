@@ -30,6 +30,25 @@ function omit<T extends object, K extends keyof T>(value: T, ...keys: K[]): Omit
 	return copy;
 }
 
+/** Inserts `item` at `index` (clamped); the list is not changed. */
+function insertAt<T>(list: readonly T[], index: number, item: T): T[] {
+	const copy = [...list];
+	copy.splice(Math.max(0, Math.min(index, copy.length)), 0, item);
+	return copy;
+}
+
+/** Replaces the item at `index`, or returns the list itself when there is none. */
+function replaceAt<T>(list: T[], index: number, item: T): T[] {
+	if (!Number.isInteger(index) || index < 0 || index >= list.length) return list;
+	return list.map((x, i) => (i === index ? item : x));
+}
+
+/** Removes the item at `index`, or returns the list itself when there is none. */
+function removeAt<T>(list: T[], index: number): T[] {
+	if (!Number.isInteger(index) || index < 0 || index >= list.length) return list;
+	return list.filter((_, i) => i !== index);
+}
+
 /** Applies `event` to `game`. Only `GameCreated` may be applied to no game. */
 export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 	if (event.type === 'GameCreated') {
@@ -40,7 +59,9 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			seats: Object.fromEntries(event.seatIds.map((id) => [id, newSeat(id)])),
 			seating: [...event.seatIds],
 			ruleCharacters: [],
-			bluffs: []
+			bluffs: [],
+			nightOrderOverrides: [],
+			dayReminderOverrides: []
 		};
 	}
 	if (!game) throw new Error(`${event.type} applied before GameCreated`);
@@ -80,7 +101,64 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'AlignmentSet':
 			return updateSeat(game, event.seatId, (seat) => ({ ...seat, alignment: event.alignment }));
 		case 'DeathSet':
-			return updateSeat(game, event.seatId, (seat) => ({ ...seat, dead: event.dead }));
+			return updateSeat(game, event.seatId, (seat) => {
+				const next = omit(seat, 'deathCause');
+				return event.dead && event.cause !== undefined
+					? { ...next, dead: true, deathCause: event.cause }
+					: { ...next, dead: event.dead };
+			});
+		case 'DeathCauseSet':
+			return updateSeat(game, event.seatId, (seat) =>
+				event.cause === undefined ? omit(seat, 'deathCause') : { ...seat, deathCause: event.cause }
+			);
+		case 'NightStepOverrideAdded': {
+			const nightOrderOverrides = insertAt(
+				game.nightOrderOverrides,
+				event.index,
+				structuredClone(event.override)
+			);
+			return { ...game, nightOrderOverrides };
+		}
+		case 'NightStepOverrideReplaced': {
+			const nightOrderOverrides = replaceAt(
+				game.nightOrderOverrides,
+				event.index,
+				structuredClone(event.override)
+			);
+			return nightOrderOverrides === game.nightOrderOverrides
+				? game
+				: { ...game, nightOrderOverrides };
+		}
+		case 'NightStepOverrideRemoved': {
+			const nightOrderOverrides = removeAt(game.nightOrderOverrides, event.index);
+			return nightOrderOverrides === game.nightOrderOverrides
+				? game
+				: { ...game, nightOrderOverrides };
+		}
+		case 'DayReminderOverrideAdded': {
+			const dayReminderOverrides = insertAt(
+				game.dayReminderOverrides,
+				event.index,
+				structuredClone(event.override)
+			);
+			return { ...game, dayReminderOverrides };
+		}
+		case 'DayReminderOverrideReplaced': {
+			const dayReminderOverrides = replaceAt(
+				game.dayReminderOverrides,
+				event.index,
+				structuredClone(event.override)
+			);
+			return dayReminderOverrides === game.dayReminderOverrides
+				? game
+				: { ...game, dayReminderOverrides };
+		}
+		case 'DayReminderOverrideRemoved': {
+			const dayReminderOverrides = removeAt(game.dayReminderOverrides, event.index);
+			return dayReminderOverrides === game.dayReminderOverrides
+				? game
+				: { ...game, dayReminderOverrides };
+		}
 		case 'GhostVoteSpent':
 			return updateSeat(game, event.seatId, (seat) => ({ ...seat, ghostVoteUsed: true }));
 		case 'GhostVoteRestored':

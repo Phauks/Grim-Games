@@ -4,7 +4,9 @@
  * state itself.
  */
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
+import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type {
+	DeathCause,
 	OverrideField,
 	Reminder,
 	ReminderId,
@@ -36,7 +38,14 @@ export type Command =
 	| { type: 'AssignCharacter'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }
 	| { type: 'ClearCharacter'; seatId: SeatId }
 	| { type: 'SetAlignment'; seatId: SeatId; alignment: Alignment }
-	| { type: 'SetDead'; seatId: SeatId; dead: boolean }
+	/**
+	 * Marks a player dead or alive. `cause` is optional when marking dead (the Storyteller
+	 * can skip it and set it later with `SetDeathCause`); on an already dead player it sets
+	 * the cause. Coming back to life clears the cause.
+	 */
+	| { type: 'SetDead'; seatId: SeatId; dead: boolean; cause?: DeathCause }
+	/** Records how a dead player died; an undefined `cause` clears it. */
+	| { type: 'SetDeathCause'; seatId: SeatId; cause?: DeathCause }
 	| { type: 'SpendGhostVote'; seatId: SeatId }
 	| { type: 'RestoreGhostVote'; seatId: SeatId }
 	| { type: 'AddReminder'; seatId: SeatId; reminder: Reminder }
@@ -46,6 +55,17 @@ export type Command =
 	| { type: 'SwapSeats'; seatA: SeatId; seatB: SeatId }
 	| { type: 'SetOverride'; seatId: SeatId; override: SeatOverride }
 	| { type: 'ClearOverride'; seatId: SeatId; field: OverrideField }
+	/**
+	 * The Storyteller's night-order overrides, kept in the order they apply. `index` is the
+	 * 0-based place in `Game.nightOrderOverrides`; `Add` appends unless `index` is given.
+	 */
+	| { type: 'AddNightStepOverride'; override: NightStepOverride; index?: number }
+	| { type: 'ReplaceNightStepOverride'; index: number; override: NightStepOverride }
+	| { type: 'RemoveNightStepOverride'; index: number }
+	/** The same for the pre-day reminders (`Game.dayReminderOverrides`). */
+	| { type: 'AddDayReminderOverride'; override: DayReminderOverride; index?: number }
+	| { type: 'ReplaceDayReminderOverride'; index: number; override: DayReminderOverride }
+	| { type: 'RemoveDayReminderOverride'; index: number }
 	/** Fabled and Loric only. */
 	| { type: 'AddRuleCharacter'; characterId: CharacterId }
 	| { type: 'RemoveRuleCharacter'; characterId: CharacterId }

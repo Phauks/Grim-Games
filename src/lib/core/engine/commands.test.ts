@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, run, testContext, testScript } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	newGame,
+	run,
+	testCharacters,
+	testContext,
+	testScript
+} from '#lib/core/model/fixtures.test-support.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/index.ts';
 import type { Command } from './commands.ts';
 import { decide } from './decide.ts';
-import { createGame, dispatch, type GameSession } from './log.ts';
+import { createGame, dispatch, redo, undo, type GameSession } from './log.ts';
 import type { EngineContext } from './context.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -537,6 +544,286 @@ describe('bluffs', () => {
 		]);
 		expect(refused(s, ctx, { type: 'SetBluffs', set: 0, characterIds: ['nope'] })).toBe(
 			'unknown-character'
+		);
+	});
+});
+
+describe('cause of death', () => {
+	it('marks a player dead with an optional cause, and coming back clears it', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'SetDead', seatId: seats[0], dead: true, cause: 'execution' },
+			{ type: 'SetDead', seatId: seats[1], dead: true, cause: 'imp' },
+			{ type: 'SetDead', seatId: seats[2], dead: true }
+		);
+		expect(s.game.seats[seats[0]]).toMatchObject({ dead: true, deathCause: 'execution' });
+		expect(s.game.seats[seats[1]]).toMatchObject({ dead: true, deathCause: 'imp' });
+		expect('deathCause' in s.game.seats[seats[2]]).toBe(false);
+		const revived = run(s, ctx, { type: 'SetDead', seatId: seats[0], dead: false });
+		expect(revived.game.seats[seats[0]]).toEqual({
+			seatId: seats[0],
+			playerName: 'Ana',
+			dead: false,
+			ghostVoteUsed: false,
+			overrides: [],
+			reminders: []
+		});
+	});
+
+	it('records, changes and clears the cause later, with undo and redo', () => {
+		const { session, ctx, seats } = newGame(names);
+		const dead = run(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true });
+		const set = run(dead, ctx, { type: 'SetDeathCause', seatId: seats[0], cause: 'demon' });
+		expect(set.game.seats[seats[0]].deathCause).toBe('demon');
+		const changed = run(set, ctx, { type: 'SetDeathCause', seatId: seats[0], cause: 'slayer' });
+		expect(changed.game.seats[seats[0]].deathCause).toBe('slayer');
+		const cleared = run(changed, ctx, { type: 'SetDeathCause', seatId: seats[0] });
+		expect('deathCause' in cleared.game.seats[seats[0]]).toBe(false);
+
+		const back = undo(cleared);
+		expect(back.game.seats[seats[0]].deathCause).toBe('slayer');
+		expect(undo(undo(back)).game.seats[seats[0]].deathCause).toBeUndefined();
+		expect(redo(undo(back)).game).toEqual(back.game);
+		expect(redo(back).game).toEqual(cleared.game);
+	});
+
+	it('undoing a revival brings the cause back', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'SetDead', seatId: seats[0], dead: true, cause: 'other' },
+			{ type: 'SetDead', seatId: seats[0], dead: false }
+		);
+		expect(s.game.seats[seats[0]].deathCause).toBeUndefined();
+		expect(undo(s).game.seats[seats[0]]).toMatchObject({ dead: true, deathCause: 'other' });
+	});
+
+	it('sets the cause when an already dead player is marked dead with one', () => {
+		const { session, ctx, seats } = newGame(names);
+		const dead = run(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true });
+		const result = dispatch(
+			dead,
+			{ type: 'SetDead', seatId: seats[0], dead: true, cause: 'execution' },
+			ctx
+		);
+		if (!result.ok) throw new Error(result.error.message);
+		expect(result.session.log.entries.at(-1)?.events).toEqual([
+			{ type: 'DeathCauseSet', seatId: seats[0], cause: 'execution' }
+		]);
+		expect(
+			warned(result.session, ctx, {
+				type: 'SetDead',
+				seatId: seats[0],
+				dead: true,
+				cause: 'execution'
+			})
+		).toEqual(['no-change']);
+	});
+
+	it('refuses an unknown character as a cause, and a cause for a living player', () => {
+		const { session, ctx, seats } = newGame(names);
+		expect(
+			refused(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true, cause: 'nope' })
+		).toBe('unknown-character');
+		const dead = run(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true });
+		expect(refused(dead, ctx, { type: 'SetDeathCause', seatId: seats[0], cause: 'nope' })).toBe(
+			'unknown-character'
+		);
+		expect(refused(session, ctx, { type: 'SetDeathCause', seatId: seats[1], cause: 'demon' })).toBe(
+			'not-dead'
+		);
+		expect(refused(session, ctx, { type: 'SetDeathCause', seatId: 'nobody' })).toBe('unknown-seat');
+		expect(warned(dead, ctx, { type: 'SetDeathCause', seatId: seats[0] })).toEqual(['no-change']);
+	});
+
+	it('ignores a cause when bringing a player back, with a warning', () => {
+		const { session, ctx, seats } = newGame(names);
+		const dead = run(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true });
+		const result = dispatch(
+			dead,
+			{ type: 'SetDead', seatId: seats[0], dead: false, cause: 'execution' },
+			ctx
+		);
+		if (!result.ok) throw new Error(result.error.message);
+		expect(codes(result)).toEqual(['cause-ignored']);
+		expect(result.session.game.seats[seats[0]]).toMatchObject({ dead: false });
+		expect(result.session.game.seats[seats[0]].deathCause).toBeUndefined();
+	});
+});
+
+describe('night-order overrides', () => {
+	it('adds, inserts, replaces and removes overrides in order, with undo', () => {
+		const { session, ctx } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AddNightStepOverride', override: { kind: 'hide', id: 'chef', night: 'first' } },
+			{
+				type: 'AddNightStepOverride',
+				override: {
+					kind: 'add',
+					id: 'custom-1',
+					text: '  Check the house rule  ',
+					title: ' House rule ',
+					characterId: 'imp',
+					after: null
+				}
+			},
+			{
+				type: 'AddNightStepOverride',
+				index: 0,
+				override: { kind: 'move', id: 'monk', after: 'poisoner' }
+			}
+		);
+		expect(s.game.nightOrderOverrides).toEqual([
+			{ kind: 'move', id: 'monk', after: 'poisoner' },
+			{ kind: 'hide', id: 'chef', night: 'first' },
+			{
+				kind: 'add',
+				id: 'custom-1',
+				text: '  Check the house rule  ',
+				title: 'House rule',
+				characterId: 'imp',
+				after: null
+			}
+		]);
+		const replaced = run(s, ctx, {
+			type: 'ReplaceNightStepOverride',
+			index: 1,
+			override: { kind: 'edit', id: 'chef', text: 'Show a number' }
+		});
+		expect(replaced.game.nightOrderOverrides[1]).toEqual({
+			kind: 'edit',
+			id: 'chef',
+			text: 'Show a number'
+		});
+		const removed = run(replaced, ctx, { type: 'RemoveNightStepOverride', index: 0 });
+		expect(removed.game.nightOrderOverrides.map((o) => o.kind)).toEqual(['edit', 'add']);
+		expect(undo(removed).game).toEqual(replaced.game);
+		expect(undo(undo(removed)).game).toEqual(s.game);
+		expect(redo(undo(removed)).game).toEqual(removed.game);
+		expect(undo(undo(undo(undo(undo(removed))))).game.nightOrderOverrides).toEqual([]);
+	});
+
+	it('refuses bad indexes and malformed overrides', () => {
+		const { session, ctx } = newGame(names);
+		const hide = { kind: 'hide', id: 'chef' } as const;
+		expect(refused(session, ctx, { type: 'RemoveNightStepOverride', index: 0 })).toBe(
+			'invalid-position'
+		);
+		expect(
+			refused(session, ctx, { type: 'ReplaceNightStepOverride', index: 0, override: hide })
+		).toBe('invalid-position');
+		expect(refused(session, ctx, { type: 'AddNightStepOverride', index: 1, override: hide })).toBe(
+			'invalid-position'
+		);
+		for (const override of [
+			{ kind: 'hide', id: '' },
+			{ kind: 'hide', id: 'chef', night: 'third' },
+			{ kind: 'edit', id: 'chef' },
+			{ kind: 'move', id: 'chef', after: '' },
+			{ kind: 'wobble', id: 'chef' }
+		]) {
+			expect(refused(session, ctx, { type: 'AddNightStepOverride', override } as Command)).toBe(
+				'invalid-override'
+			);
+		}
+		expect(
+			refused(session, ctx, {
+				type: 'AddNightStepOverride',
+				override: { kind: 'add', id: 'x', text: 'x', characterId: 'nope', after: null }
+			})
+		).toBe('unknown-character');
+	});
+
+	it('warns about a reused id, and about replacing with the same override', () => {
+		const { session, ctx } = newGame(names);
+		const add = { kind: 'add', id: 'x', text: 'Wake X', after: null } as const;
+		const s = run(session, ctx, { type: 'AddNightStepOverride', override: add });
+		expect(warned(s, ctx, { type: 'AddNightStepOverride', override: add })).toEqual([
+			'duplicate-override'
+		]);
+		expect(warned(s, ctx, { type: 'ReplaceNightStepOverride', index: 0, override: add })).toEqual([
+			'no-change'
+		]);
+	});
+});
+
+describe('day-reminder overrides', () => {
+	it('adds, replaces and removes overrides, with undo', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AddDayReminderOverride', override: { kind: 'hide', key: 'saint#0@x' } },
+			{
+				type: 'AddDayReminderOverride',
+				override: {
+					kind: 'add',
+					key: 'custom-1',
+					group: 'vote',
+					text: 'votes twice',
+					seatId: seats[0]
+				}
+			}
+		);
+		expect(s.game.dayReminderOverrides).toEqual([
+			{ kind: 'hide', key: 'saint#0@x' },
+			{ kind: 'add', key: 'custom-1', group: 'vote', text: 'votes twice', seatId: seats[0] }
+		]);
+		const replaced = run(s, ctx, {
+			type: 'ReplaceDayReminderOverride',
+			index: 0,
+			override: { kind: 'edit', key: 'saint#0@x', text: 'is still alive' }
+		});
+		const removed = run(replaced, ctx, { type: 'RemoveDayReminderOverride', index: 1 });
+		expect(removed.game.dayReminderOverrides).toEqual([
+			{ kind: 'edit', key: 'saint#0@x', text: 'is still alive' }
+		]);
+		expect(undo(removed).game).toEqual(replaced.game);
+		expect(undo(undo(removed)).game).toEqual(s.game);
+		expect(redo(undo(removed)).game).toEqual(removed.game);
+	});
+
+	it('reach the pre-day reminders, with the recorded causes of death', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'saint' },
+			{ type: 'SetDead', seatId: seats[0], dead: true, cause: 'execution' },
+			{
+				type: 'AddDayReminderOverride',
+				override: { kind: 'add', key: 'custom-1', group: 'announcement', text: 'House rule' }
+			}
+		);
+		const state = dayStateFromGame(s.game, (id) => testCharacters.get(id));
+		expect(state.overrides).toEqual(s.game.dayReminderOverrides);
+		expect(state.seats[0].deathCause).toBe('execution');
+		const lines = dayReminders(state).groups.flatMap((g) =>
+			g.reminders.map((r) => renderReminder(r.segments))
+		);
+		expect(lines).toContain('House rule');
+		// An explicit list still wins over the stored one.
+		expect(dayStateFromGame(s.game, (id) => testCharacters.get(id), []).overrides).toEqual([]);
+	});
+
+	it('refuses unknown groups, seats and characters', () => {
+		const { session, ctx } = newGame(names);
+		const add = (extra: object) =>
+			({
+				type: 'AddDayReminderOverride',
+				override: { kind: 'add', key: 'k', group: 'vote', text: 't', ...extra }
+			}) as Command;
+		expect(refused(session, ctx, add({ group: 'nope' }))).toBe('invalid-override');
+		expect(refused(session, ctx, add({ key: ' ' }))).toBe('invalid-override');
+		expect(refused(session, ctx, add({ seatId: 'nobody' }))).toBe('unknown-seat');
+		expect(refused(session, ctx, add({ characterId: 'nope' }))).toBe('unknown-character');
+		expect(refused(session, ctx, { type: 'RemoveDayReminderOverride', index: 0 })).toBe(
+			'invalid-position'
 		);
 	});
 });

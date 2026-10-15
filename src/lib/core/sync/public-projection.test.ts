@@ -27,7 +27,20 @@ function busyGame() {
 			override: { field: 'registersAsDead', value: true, note: 'secret note' }
 		},
 		{ type: 'SetOverride', seatId: seats[0], override: { field: 'alignment', value: 'good' } },
-		{ type: 'SetDead', seatId: seats[3], dead: true },
+		{ type: 'SetDead', seatId: seats[3], dead: true, cause: 'slayer' },
+		{ type: 'SetDead', seatId: seats[1], dead: true, cause: 'execution' },
+		{ type: 'SetDead', seatId: seats[1], dead: false },
+		{ type: 'SetDead', seatId: seats[4], dead: true, cause: 'demon' },
+		{ type: 'SetDeathCause', seatId: seats[4], cause: 'imp' },
+		{ type: 'SetDead', seatId: seats[4], dead: false },
+		{
+			type: 'AddNightStepOverride',
+			override: { kind: 'add', id: 'night-secret', text: 'night secret', after: null }
+		},
+		{
+			type: 'AddDayReminderOverride',
+			override: { kind: 'add', key: 'day-secret', group: 'vote', text: 'day secret' }
+		},
 		{ type: 'SpendGhostVote', seatId: seats[3] },
 		{ type: 'AddRuleCharacter', characterId: 'djinn' },
 		{ type: 'SetBluffs', set: 0, characterIds: ['chef', 'monk', 'saint'] },
@@ -60,7 +73,16 @@ describe('publicProjection', () => {
 	it('leaks no characters, alignments, reminders, overrides, bluffs, rule characters or bag', () => {
 		const { game } = busyGame();
 		const json = JSON.stringify(publicProjection(game));
-		const secrets = new Set<string>(['good', 'evil', 'secret note', 'registersAsDead']);
+		const secrets = new Set<string>([
+			'good',
+			'evil',
+			'secret note',
+			'registersAsDead',
+			'night-secret',
+			'night secret',
+			'day-secret',
+			'day secret'
+		]);
 		for (const seat of Object.values(game.seats)) {
 			if (seat.characterId) secrets.add(seat.characterId);
 			for (const r of seat.reminders)
@@ -86,6 +108,27 @@ describe('publicProjection', () => {
 		expect([...keys].sort()).toEqual(
 			['dead', 'ghostVoteUsed', 'playerName', 'seatId', 'seatNumber', 'seats'].sort()
 		);
+	});
+
+	it('leaks no cause of death, which can reveal a character', () => {
+		const { game, seats } = busyGame();
+		const dev = game.seats[seats[3]];
+		expect(dev).toMatchObject({ dead: true, deathCause: 'slayer' });
+		const json = JSON.stringify(publicProjection(game));
+		expect(json).not.toContain('deathCause');
+		expect(json).not.toContain('slayer');
+		// The view of a dead player is the same whatever the cause.
+		const noCause = { ...game, seats: { ...game.seats, [dev.seatId]: { ...dev } } };
+		delete noCause.seats[dev.seatId].deathCause;
+		expect(publicProjection(noCause)).toEqual(publicProjection(game));
+	});
+
+	it('leaks no night-order or day-reminder overrides', () => {
+		const { game } = busyGame();
+		expect(game.nightOrderOverrides).toHaveLength(1);
+		expect(game.dayReminderOverrides).toHaveLength(1);
+		const bare = { ...game, nightOrderOverrides: [], dayReminderOverrides: [] };
+		expect(publicProjection(game)).toEqual(publicProjection(bare));
 	});
 
 	it('leaves out names that are not set', () => {

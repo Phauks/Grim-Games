@@ -1,6 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
-import { openSession } from './log.ts';
+import { newGame, run, testContext } from '#lib/core/model/fixtures.test-support.ts';
+import { dispatch, openSession, redo, undo } from './log.ts';
 import {
 	MIGRATIONS,
 	MemoryGameStore,
@@ -100,6 +101,44 @@ describe('saved games', () => {
 	it('has a migration for every version below the current one', () => {
 		const expected = Array.from({ length: SAVED_GAME_VERSION - 1 }, (_, i) => String(i + 1));
 		expect(Object.keys(MIGRATIONS)).toEqual(expected);
+	});
+});
+
+describe('version 1 saves', () => {
+	/** A game saved before causes of death and night or day overrides existed. */
+	const readV1 = (): unknown =>
+		JSON.parse(readFileSync(new URL('./fixtures/saved-game-v1.json', import.meta.url), 'utf8'));
+
+	it('migrates to the current version with no causes and no overrides', () => {
+		const raw = readV1();
+		const loaded = migrateSavedGame(raw);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		expect(loaded.log).toEqual((raw as { log: unknown }).log);
+		const { game } = openSession(loaded.log);
+		expect(game.seats.b).toEqual({
+			seatId: 'b',
+			dead: true,
+			ghostVoteUsed: false,
+			overrides: [],
+			reminders: []
+		});
+		expect(game.nightOrderOverrides).toEqual([]);
+		expect(game.dayReminderOverrides).toEqual([]);
+		expect(raw).toEqual(readV1());
+	});
+
+	it('keeps the redo stack, and the migrated game takes new commands', () => {
+		const loaded = migrateSavedGame(readV1());
+		const session = redo(openSession(loaded.log));
+		expect(session.game.seats.c.dead).toBe(true);
+		const caused = dispatch(
+			session,
+			{ type: 'SetDeathCause', seatId: 'b', cause: 'execution' },
+			testContext()
+		);
+		if (!caused.ok) throw new Error(caused.error.message);
+		expect(caused.session.game.seats.b.deathCause).toBe('execution');
+		expect(undo(caused.session).game.seats.b.deathCause).toBeUndefined();
 	});
 });
 
