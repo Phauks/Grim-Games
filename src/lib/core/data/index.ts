@@ -4,6 +4,8 @@ export * from './game-data.ts';
 export * from './icons.ts';
 export * from './jinxes.ts';
 export * from './wiki.ts';
+export * from './night-order-numeric.ts';
+export * from './script.ts';
 export {
 	CHARACTER_ID_PATTERN,
 	normaliseCharacterId,

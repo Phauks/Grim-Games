@@ -55,14 +55,14 @@ const SCRIPT_CHARACTER_KEYS = [
 ] as const;
 const SPECIAL_KEYS = ['type', 'name', 'value', 'time', 'global'] as const;
 
-interface CharacterOptions {
+export interface CharacterOptions {
 	/** Reject fields that are not in TPI's format (used for TPI's own files). */
 	strict: boolean;
 	/** Allow `image`, numeric night order and `jinxes` (script characters only). */
 	scriptFields: boolean;
 }
 
-function parseSpecial(raw: unknown, path: string, issues: Issues): Special | undefined {
+export function parseSpecial(raw: unknown, path: string, issues: Issues): Special | undefined {
 	if (!isObject(raw)) {
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
@@ -90,7 +90,7 @@ function nightText(raw: Record<string, unknown>, key: string, path: string, issu
 	return text === undefined || text.trim() === '' ? undefined : text;
 }
 
-function parseCharacter(
+export function parseCharacter(
 	raw: unknown,
 	path: string,
 	issues: Issues,
@@ -318,7 +318,15 @@ export function parseScript(json: unknown): Script {
 	return script;
 }
 
-/** Lower-cases an id and drops anything that is not a letter or digit. */
+/**
+ * Lower-cases an id, folds accented letters to their base letter (NFKD) and drops anything
+ * that is not a letter or digit, so "Fortune Teller", "fortune_teller" and "Lil' Monsta"
+ * become TPI's `fortuneteller` and `lilmonsta`. Ids in other scripts (Cyrillic, Greek)
+ * normalise to an empty string; callers must handle that (see `script.ts`).
+ */
 export function normaliseCharacterId(id: string): string {
-	return id.toLowerCase().replace(/[^a-z0-9]/g, '');
+	return id
+		.normalize('NFKD')
+		.toLowerCase()
+		.replace(/[^a-z0-9]/g, '');
 }
