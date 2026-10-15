@@ -62,7 +62,9 @@ test('the footer shows the Community Created Content logo', async ({ page }) => 
 	await page.goto('/');
 	const logo = page.getByRole('img', { name: /Community Created Content/ });
 	await expect(logo).toBeVisible();
-	expect(await logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+	await expect
+		.poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth))
+		.toBeGreaterThan(0);
 });
 
 test('the commit is a link and About opens a dialog without moving the page', async ({ page }) => {
@@ -73,6 +75,7 @@ test('the commit is a link and About opens a dialog without moving the page', as
 
 	// Measure once web fonts have swapped in, so only the dialog could move the footer.
 	await page.evaluate(() => document.fonts.ready);
+	await page.waitForLoadState('load');
 	const before = await build.boundingBox();
 	await build.getByRole('button', { name: 'About' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'About Grim-Games' });
@@ -96,4 +99,16 @@ test('installs as a PWA and reopens offline', async ({ page, context }) => {
 	await page.goto('/sheet/tb/washerwoman');
 	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 	await context.setOffline(false);
+});
+
+test('the footer sits at the bottom of the screen on a short page', async ({ page }) => {
+	await page.goto('/');
+	const footer = page.getByRole('contentinfo');
+	await expect(footer).toBeVisible();
+	const box = await footer.boundingBox();
+	const height = await page.evaluate(() => document.documentElement.scrollHeight);
+	const viewport = page.viewportSize()!.height;
+	// Either the page is short and the footer touches the bottom of the screen, or the page
+	// scrolls and the footer ends the document.
+	expect(Math.round(box!.y + box!.height)).toBe(Math.max(viewport, height));
 });

@@ -23,10 +23,18 @@
 </svelte:head>
 
 <AppHeader />
-{@render children()}
+<!-- Grows to fill the screen so the footer sits at the bottom on short pages. -->
+<div class="app-main">{@render children()}</div>
 <AppFooter />
 
 <SettingsModal />
 <GlossaryPopover />
 <Toaster />
 <UpdateBanner />
+
+<style>
+	.app-main {
+		flex: 1 0 auto;
+		min-width: 0;
+	}
+</style>
