@@ -1,0 +1,177 @@
+import { expect, test, type Locator, type Page } from '@playwright/test';
+
+// Spike: the day log and the night answers it feeds (/spikes/day), touch only.
+
+async function loaded(page: Page) {
+	await page.goto('/spikes/day');
+	await expect(page.getByRole('button', { name: 'Seat: Ana' })).toBeVisible();
+}
+
+async function sampleGame(page: Page, name: 'Sects & Violets' | 'Trouble Brewing') {
+	await page
+		.getByRole('radiogroup', { name: 'Sample game' })
+		.getByText(name, { exact: true })
+		.tap();
+}
+
+/** Walks the night one step at a time until the step for `title` is showing. */
+async function walkTo(page: Page, title: string): Promise<Locator> {
+	const step = page.getByRole('article', { name: `Night step: ${title}` });
+	for (let i = 0; i < 30 && !(await step.isVisible()); i++) {
+		await page.getByRole('button', { name: 'Next' }).tap();
+	}
+	await expect(step).toBeVisible();
+	return step;
+}
+
+/** Where an element sits on the page (not the viewport, which scrolls on tap). */
+const place = (locator: Locator) =>
+	locator.evaluate((el) => {
+		const r = el.getBoundingClientRect();
+		return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height };
+	});
+const top = async (locator: Locator) => (await place(locator)).y;
+
+test('a Witch nomination makes the Town Crier answer yes; Demon voted feeds the Flowergirl', async ({
+	page
+}) => {
+	await loaded(page);
+	const reminders = page.getByRole('heading', { name: 'Today', exact: true });
+	const before = await top(reminders);
+
+	// Eve is the Witch: tap the nominator, then the nominee.
+	await page.getByRole('button', { name: 'Seat: Eve' }).tap();
+	await expect(page.getByText('Eve nominates… tap the nominee.')).toBeVisible();
+	await page.getByRole('button', { name: 'Seat: Ana' }).tap();
+	const log = page.getByTestId('day-log');
+	await expect(log).toContainText('Eve nominated Ana');
+	// The log is last on the page: nothing above it moved.
+	expect(await top(reminders)).toBe(before);
+
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	const crier = await walkTo(page, 'Town Crier');
+	await expect(crier.getByRole('group', { name: 'Town Crier answer' })).toContainText(
+		'Yes: Eve (Witch) nominated'
+	);
+
+	// Opening the night order never clears the log.
+	await page.getByRole('button', { name: 'Back to day' }).tap();
+	await expect(log).toContainText('Eve nominated Ana');
+
+	await page.getByText('Demon voted', { exact: true }).tap();
+	await expect(
+		page.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })
+	).toBeChecked();
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	const flowergirl = await walkTo(page, 'Flowergirl');
+	await expect(flowergirl.getByRole('group', { name: 'Flowergirl answer' })).toContainText(
+		'Yes: the Demon Fay (Fang Gu) voted'
+	);
+
+	// New day asks first, then empties the log; Undo brings it back.
+	await page.getByRole('button', { name: 'Back to day' }).tap();
+	await page.getByRole('button', { name: 'New day' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Start a new day?' });
+	await confirm.getByRole('button', { name: 'Start new day' }).tap();
+	await expect(confirm).toBeHidden();
+	await expect(page.getByTestId('log-empty')).toBeVisible();
+	await expect(
+		page.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })
+	).not.toBeChecked();
+	await page.getByRole('button', { name: 'Undo' }).tap();
+	await expect(log).toContainText('Eve nominated Ana');
+});
+
+test('the Slayer is marked Used in one tap, and the Washerwoman picks her info', async ({
+	page
+}) => {
+	await loaded(page);
+	await sampleGame(page, 'Trouble Brewing');
+	const used = page.getByRole('button', { name: 'Used: Slayer (Ben)' });
+	const before = await place(used);
+	await used.tap();
+	await expect(used).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.getByTestId('day-log')).toContainText('Slayer (Ben) used their ability');
+	// The reminder stays where it was, pressed, so the list does not jump.
+	expect(await place(used)).toEqual(before);
+
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page
+		.getByRole('radiogroup', { name: 'Which night' })
+		.getByText('First', { exact: true })
+		.tap();
+	const step = await walkTo(page, 'Washerwoman');
+	await step.getByRole('button', { name: 'Pick info for Ana' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Washerwoman · Ana' });
+	await expect(sheet).toBeVisible();
+	const players = sheet.getByRole('group', { name: 'Players' });
+	// Truthful players come first: Ben (Slayer) leads.
+	await expect(players.getByRole('button').first()).toHaveText('Ben');
+	await expect(players.getByRole('button', { name: 'Ben' })).toHaveAttribute(
+		'data-truthful',
+		'true'
+	);
+	await players.getByRole('button', { name: 'Ben' }).tap();
+	await players.getByRole('button', { name: 'Gus' }).tap();
+	await sheet
+		.getByRole('group', { name: 'Characters' })
+		.getByRole('button', { name: 'Slayer' })
+		.tap();
+	await expect(sheet.getByTestId('info-verdict')).toHaveText('True.');
+	await sheet.getByRole('button', { name: 'Record' }).tap();
+	await expect(sheet).toBeHidden();
+	await expect(step.getByTestId('info-shown')).toHaveText(
+		'Recorded: Shown Ben and Gus: one is the Slayer'
+	);
+
+	await page.getByRole('button', { name: 'Back to day' }).tap();
+	await expect(page.getByTestId('day-log')).toContainText(
+		'Washerwoman (Ana): Shown Ben and Gus: one is the Slayer'
+	);
+});
+
+test('any reminder takes an optional long note in a sheet', async ({ page }) => {
+	await loaded(page);
+	await page.getByRole('button', { name: 'Note: Gossip (Dev)' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Note: Gossip · Dev' });
+	const text = `Said: “Eve is the Witch.”\n\n${'They were very sure of it. '.repeat(40)}`;
+	await sheet.getByTestId('note-text').fill(text);
+	await sheet.getByRole('button', { name: 'Save note' }).tap();
+	await expect(sheet).toBeHidden();
+	await expect(page.getByTestId('day-log')).toContainText(
+		'Gossip (Dev): Said: “Eve is the Witch.”'
+	);
+	await expect(page.getByRole('button', { name: 'Note: Gossip (Dev)' })).toHaveAttribute(
+		'data-has-note',
+		'true'
+	);
+});
+
+test('with Expert help the night is a checklist with no worked-out answers', async ({ page }) => {
+	await loaded(page);
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller help' })
+		.tap();
+	await settings
+		.getByRole('radiogroup', { name: 'How much help' })
+		.getByText('Expert', { exact: true })
+		.tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(settings).toBeHidden();
+
+	// Pre-day reminders are off, but Used, notes and nominations stay.
+	await expect(page.getByRole('heading', { name: 'Abilities and notes' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Seat: Eve' })).toBeVisible();
+
+	await page.getByRole('button', { name: 'Seat: Eve' }).tap();
+	await page.getByRole('button', { name: 'Seat: Ana' }).tap();
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	const checklist = page.getByTestId('night-checklist');
+	await expect(checklist).toBeVisible();
+	await expect(page.getByTestId('night-walkthrough')).toHaveCount(0);
+	await expect(checklist.locator('[data-step="towncrier"]')).toBeVisible();
+	await expect(page.getByRole('group', { name: 'Town Crier answer' })).toHaveCount(0);
+});

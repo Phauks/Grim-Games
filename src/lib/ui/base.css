@@ -54,6 +54,14 @@ a {
 	touch-action: manipulation;
 }
 
+/* Anything you can press shows the hand cursor (Trevor: buttons should feel like buttons). */
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+summary,
+label:has(input:not(:disabled)) {
+	cursor: pointer;
+}
+
 button,
 input,
 select,

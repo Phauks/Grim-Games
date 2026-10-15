@@ -24,6 +24,8 @@ import {
 	registersAsDead,
 	replacedBy,
 	trueCharacter,
+	type CharacterGuess,
+	type DayEntry,
 	type DeathCause,
 	type Game,
 	type Reminder,
@@ -61,7 +63,9 @@ export type ErrorCode =
 	| 'tile-not-drawn'
 	| 'tile-confirmed'
 	| 'not-dead'
-	| 'invalid-override';
+	| 'invalid-override'
+	| 'unknown-entry'
+	| 'wrong-entry-kind';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -84,7 +88,15 @@ export type WarningCode =
 	| 'seat-holds-tile'
 	| 'replaces-character'
 	| 'cause-ignored'
-	| 'duplicate-override';
+	| 'duplicate-override'
+	| 'dead-nominator'
+	| 'already-nominated'
+	| 'already-nominee'
+	| 'already-executed'
+	| 'already-dead'
+	| 'not-seat-character'
+	| 'already-used'
+	| 'empty-day';
 
 export interface Issue<C extends string> {
 	code: C;
@@ -349,6 +361,68 @@ function checkDuplicateAdd(
 	const name = added.id ?? added.key;
 	if (others.some((o) => o.kind === 'add' && (o.id ?? o.key) === name)) {
 		warn('duplicate-override', `another added item already uses ${name}`);
+	}
+}
+
+function entryOf(game: Game, entryId: string): DayEntry {
+	return (
+		game.today.entries.find((e) => e.entryId === entryId) ??
+		refuse('unknown-entry', `no entry ${entryId} in today's log`)
+	);
+}
+
+function entryOfKind<K extends DayEntry['kind']>(
+	game: Game,
+	entryId: string,
+	kind: K
+): Extract<DayEntry, { kind: K }> {
+	const entry = entryOf(game, entryId);
+	if (entry.kind !== kind) refuse('wrong-entry-kind', `entry ${entryId} is not a ${kind}`);
+	return entry as Extract<DayEntry, { kind: K }>;
+}
+
+function guessesOf(
+	game: Game,
+	ctx: EngineContext,
+	guesses: readonly CharacterGuess[] | undefined
+): CharacterGuess[] {
+	return (guesses ?? []).map((g) => ({
+		seatId: seatOf(game, g.seatId).seatId,
+		characterId: characterOf(ctx, g.characterId).id
+	}));
+}
+
+/** The reminder token a character places when its once-only ability is used. */
+export const NO_ABILITY_LABEL = 'No Ability';
+
+function hasPlacedReminder(game: Game, reminderId: string): boolean {
+	return game.seating.some((id) =>
+		game.seats[id].reminders.some((r) => r.reminderId === reminderId)
+	);
+}
+
+/**
+ * Checks a nomination. Each player may nominate once per day and be nominated once per
+ * day, and dead players may not nominate (https://wiki.bloodontheclocktower.com/Glossary,
+ * "Nomination"). These are warnings: abilities break them, and the Storyteller decides.
+ */
+function checkNomination(
+	game: Game,
+	nominator: string,
+	nominee: string,
+	warn: Warn,
+	ignore?: string
+): void {
+	const others = game.today.entries.filter(
+		(e): e is Extract<DayEntry, { kind: 'nomination' }> =>
+			e.kind === 'nomination' && e.entryId !== ignore
+	);
+	if (registersAsDead(game, nominator)) warn('dead-nominator', 'dead players may not nominate');
+	if (others.some((e) => e.nominator === nominator)) {
+		warn('already-nominated', 'this player has already nominated today');
+	}
+	if (others.some((e) => e.nominee === nominee)) {
+		warn('already-nominee', 'this player has already been nominated today');
 	}
 }
 
@@ -796,6 +870,194 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				}))
 			];
 		}
+
+		case 'Nominate': {
+			const nominator = seatOf(game, command.nominator).seatId;
+			const nominee = seatOf(game, command.nominee).seatId;
+			checkNomination(game, nominator, nominee, warn);
+			return [
+				{
+					type: 'DayEntryAdded',
+					entry: { kind: 'nomination', entryId: ctx.newId(), nominator, nominee }
+				}
+			];
+		}
+
+		case 'EditNomination': {
+			const entry = entryOfKind(game, command.entryId, 'nomination');
+			const nominator = seatOf(game, command.nominator).seatId;
+			const nominee = seatOf(game, command.nominee).seatId;
+			if (entry.nominator === nominator && entry.nominee === nominee) {
+				warn('no-change', 'the nomination is unchanged');
+				return [];
+			}
+			checkNomination(game, nominator, nominee, warn, entry.entryId);
+			return [{ type: 'DayEntryReplaced', entry: { ...entry, nominator, nominee } }];
+		}
+
+		case 'SetDemonVoted': {
+			if (command.voted === game.today.demonVoted) {
+				warn('no-change', 'already marked');
+				return [];
+			}
+			const event: GameEvent = { type: 'DemonVotedSet' };
+			if (command.voted !== undefined) event.voted = command.voted;
+			return [event];
+		}
+
+		case 'Execute': {
+			const seat = seatOf(game, command.seatId);
+			if (game.today.entries.some((e) => e.kind === 'execution')) {
+				warn('already-executed', 'there is usually one execution a day');
+			}
+			const entry: DayEntry = {
+				kind: 'execution',
+				entryId: ctx.newId(),
+				seatId: seat.seatId,
+				died: !seat.dead
+			};
+			if (seat.dead) {
+				warn('already-dead', 'the player was already dead, so the execution is only logged');
+				return [{ type: 'DayEntryAdded', entry }];
+			}
+			return [
+				{ type: 'DayEntryAdded', entry },
+				{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: 'execution' }
+			];
+		}
+
+		case 'UseAbility': {
+			const seat = seatOf(game, command.seatId);
+			const character = characterOf(ctx, command.characterId);
+			const truly = trueCharacter(game, seat.seatId, ctx.characters);
+			if (seat.characterId !== character.id && truly !== character.id) {
+				warn('not-seat-character', `this seat is not the ${character.name}`);
+			}
+			const entry: Extract<DayEntry, { kind: 'ability' }> = {
+				kind: 'ability',
+				entryId: ctx.newId(),
+				seatId: seat.seatId,
+				characterId: character.id
+			};
+			const usedToday = game.today.entries.some(
+				(e) => e.kind === 'ability' && e.seatId === seat.seatId && e.characterId === character.id
+			);
+			if (!character.reminders.includes(NO_ABILITY_LABEL)) {
+				if (usedToday) warn('already-used', `the ${character.name} already used it today`);
+				return [{ type: 'DayEntryAdded', entry }];
+			}
+			const placed = seat.reminders.some(
+				(r) => r.characterId === character.id && r.label === NO_ABILITY_LABEL
+			);
+			if (placed) {
+				warn('already-used', `the ${character.name} already has "${NO_ABILITY_LABEL}"`);
+				return [{ type: 'DayEntryAdded', entry }];
+			}
+			const reminderId = ctx.newId();
+			return [
+				{
+					type: 'ReminderAdded',
+					seatId: seat.seatId,
+					reminder: { reminderId, characterId: character.id, label: NO_ABILITY_LABEL }
+				},
+				{ type: 'DayEntryAdded', entry: { ...entry, reminderId } }
+			];
+		}
+
+		case 'DayNote': {
+			const characterId = characterOf(ctx, command.characterId).id;
+			const guesses = guessesOf(game, ctx, command.guesses);
+			const text = typeof command.text === 'string' ? command.text : '';
+			if (text.trim() === '' && guesses.length === 0) {
+				warn('no-change', 'the note is empty');
+				return [];
+			}
+			const entry: DayEntry = { kind: 'note', entryId: ctx.newId(), characterId, text };
+			if (command.seatId !== undefined) entry.seatId = seatOf(game, command.seatId).seatId;
+			if (guesses.length > 0) entry.guesses = guesses;
+			return [{ type: 'DayEntryAdded', entry }];
+		}
+
+		case 'EditDayNote': {
+			const entry = entryOfKind(game, command.entryId, 'note');
+			const guesses = guessesOf(game, ctx, command.guesses);
+			const text = typeof command.text === 'string' ? command.text : '';
+			// Clearing a note removes it: nothing requires a note.
+			if (text.trim() === '' && guesses.length === 0) {
+				return [{ type: 'DayEntryRemoved', entryId: entry.entryId }];
+			}
+			const next: Extract<DayEntry, { kind: 'note' }> = { ...entry, text };
+			delete next.guesses;
+			if (guesses.length > 0) next.guesses = guesses;
+			if (JSON.stringify(next) === JSON.stringify(entry)) {
+				warn('no-change', 'the note is unchanged');
+				return [];
+			}
+			return [{ type: 'DayEntryReplaced', entry: next }];
+		}
+
+		case 'RecordNightInfo': {
+			const seat = seatOf(game, command.seatId);
+			const characterId = characterOf(ctx, command.characterId).id;
+			const text = typeof command.text === 'string' ? command.text.trim() : '';
+			const placements = (command.reminders ?? []).map((p) => {
+				const target = seatOf(game, p.seatId);
+				const reminder: Reminder = {
+					characterId: p.reminder.characterId,
+					label: p.reminder.label
+				};
+				checkReminder(game, reminder, ctx, warn);
+				return { seatId: target.seatId, reminder: { reminderId: ctx.newId(), ...reminder } };
+			});
+			if (text === '' && placements.length === 0) {
+				warn('no-change', 'nothing to record');
+				return [];
+			}
+			return [
+				...placements.map((p): GameEvent => ({ type: 'ReminderAdded', ...p })),
+				{
+					type: 'DayEntryAdded',
+					entry: {
+						kind: 'info',
+						entryId: ctx.newId(),
+						seatId: seat.seatId,
+						characterId,
+						text,
+						reminderIds: placements.map((p) => p.reminder.reminderId)
+					}
+				}
+			];
+		}
+
+		case 'RemoveDayEntry': {
+			const entry = entryOf(game, command.entryId);
+			const events: GameEvent[] = [];
+			if (entry.kind === 'execution' && entry.died) {
+				const seat = getSeat(game, entry.seatId);
+				if (seat?.dead && seat.deathCause === 'execution') {
+					events.push({ type: 'DeathSet', seatId: seat.seatId, dead: false });
+					if (seat.ghostVoteUsed) events.push({ type: 'GhostVoteRestored', seatId: seat.seatId });
+				}
+			}
+			const placed =
+				entry.kind === 'info'
+					? entry.reminderIds
+					: entry.kind === 'ability' && entry.reminderId !== undefined
+						? [entry.reminderId]
+						: [];
+			for (const reminderId of placed) {
+				if (hasPlacedReminder(game, reminderId))
+					events.push({ type: 'ReminderRemoved', reminderId });
+			}
+			events.push({ type: 'DayEntryRemoved', entryId: entry.entryId });
+			return events;
+		}
+
+		case 'NewDay':
+			if (game.today.entries.length === 0 && game.today.demonVoted === undefined) {
+				warn('empty-day', 'nothing was logged since the last new day');
+			}
+			return [{ type: 'DayStarted', at: ctx.now() }];
 
 		case 'CancelDraw': {
 			const tile = tileOf(game, command.tileId);

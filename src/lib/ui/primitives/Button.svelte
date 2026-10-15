@@ -9,7 +9,8 @@
 		icon?: IconSlot;
 		/** Renders a link styled as a button; pass a path from `resolve()` in `$app/paths`. */
 		href?: ResolvedPathname;
-		variant?: 'solid' | 'quiet';
+		/** `accent` is the one main action in a group (e.g. Refresh). */
+		variant?: 'solid' | 'quiet' | 'accent';
 		children: Snippet;
 	}
 
@@ -50,6 +51,22 @@
 		background: transparent;
 		color: inherit;
 		box-shadow: inset 0 0 0 1px var(--border);
+	}
+	.button:hover {
+		filter: brightness(1.15);
+	}
+	.button[data-variant='accent'] {
+		background: var(--accent);
+		color: var(--on-accent);
+	}
+	.button[data-variant='quiet']:hover {
+		filter: none;
+		background: var(--surface-selected, rgb(255 255 255 / 0.06));
+	}
+	.button:disabled {
+		cursor: default;
+		opacity: 0.5;
+		filter: none;
 	}
 	.button:active {
 		transform: translateY(1px);

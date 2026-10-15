@@ -6,6 +6,8 @@
 import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type {
+	CharacterGuess,
+	DayEntryId,
 	DeathCause,
 	OverrideField,
 	Reminder,
@@ -89,7 +91,54 @@ export type Command =
 	 */
 	| { type: 'ConfirmDraw'; tileId: TileId; alignment?: Alignment }
 	/** The player puts the tile back; it returns to a random place in the bag. */
-	| { type: 'CancelDraw'; tileId: TileId };
+	| { type: 'CancelDraw'; tileId: TileId }
+	// ── The day log (`Game.today`). Every entry can be removed or edited: an override. ──
+	/** Logs a nomination: who nominated whom. Votes are not tracked. */
+	| { type: 'Nominate'; nominator: SeatId; nominee: SeatId }
+	/** Changes who nominated whom in a logged nomination. */
+	| { type: 'EditNomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
+	/** Marks whether the Demon voted today (for the Flowergirl); undefined clears it. */
+	| { type: 'SetDemonVoted'; voted?: boolean }
+	/** Logs an execution and marks the player dead by execution, if alive. */
+	| { type: 'Execute'; seatId: SeatId }
+	/**
+	 * Logs that a character used its ability. A character with a "No Ability" reminder
+	 * token gets it placed on the seat; otherwise only the use is logged.
+	 */
+	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId }
+	/** A free-text note about a character (any length; may be empty with `guesses`). */
+	| {
+			type: 'DayNote';
+			characterId: CharacterId;
+			seatId?: SeatId;
+			text: string;
+			guesses?: CharacterGuess[];
+	  }
+	/** Replaces a note's text and guesses (no `guesses` clears them). */
+	| { type: 'EditDayNote'; entryId: DayEntryId; text: string; guesses?: CharacterGuess[] }
+	/**
+	 * Records what a waking character was shown (`seatId` is the waking player), placing
+	 * reminder tokens such as the Washerwoman's "Townsfolk" and "Wrong". A later record for
+	 * the same seat and character is what the night order shows: the Storyteller's override.
+	 */
+	| {
+			type: 'RecordNightInfo';
+			seatId: SeatId;
+			characterId: CharacterId;
+			text: string;
+			reminders?: { seatId: SeatId; reminder: Reminder }[];
+	  }
+	/**
+	 * Removes a day-log entry and undoes what it did to the grimoire: an execution's death
+	 * (if still dead by execution) and the reminder tokens an ability use or night info placed
+	 * (if still there).
+	 */
+	| { type: 'RemoveDayEntry'; entryId: DayEntryId }
+	/**
+	 * Closes the day log and starts an empty one; the old one is kept as history. The
+	 * Storyteller does this by hand ("New day"); opening the night order never does.
+	 */
+	| { type: 'NewDay' };
 
 export type CommandType = Command['type'];
 export type CommandOf<T extends CommandType> = Extract<Command, { type: T }>;
