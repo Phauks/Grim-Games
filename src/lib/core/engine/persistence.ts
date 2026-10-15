@@ -13,7 +13,7 @@
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 1;
+export const SAVED_GAME_VERSION = 2;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -67,8 +67,19 @@ export type SavedDocument = { schemaVersion: number } & Record<string, unknown>;
 /** Turns a document of version `n` into version `n + 1`. Must not mutate its input. */
 export type Migration = (doc: SavedDocument) => SavedDocument;
 
+/**
+ * Version 2 (2026-10-15) added causes of death (`DeathSet.cause`, `DeathCauseSet`) and the
+ * Storyteller's night-order and day-reminder overrides (`NightStepOverride*` and
+ * `DayReminderOverride*` events, `Game.nightOrderOverrides` and `Game.dayReminderOverrides`).
+ * Saved games hold the event log, not the game, so the new fields are defaulted on replay:
+ * a version 1 death has no recorded cause, and `GameCreated` starts both override lists
+ * empty. The log itself needs no change. The version bump makes older builds refuse a
+ * version 2 save as too new instead of meeting events they cannot apply.
+ */
+const migrateV1toV2: Migration = (doc) => ({ ...doc, schemaVersion: 2 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
-export const MIGRATIONS: Readonly<Record<number, Migration>> = {};
+export const MIGRATIONS: Readonly<Record<number, Migration>> = { 1: migrateV1toV2 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
 	return {
