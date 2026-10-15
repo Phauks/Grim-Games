@@ -89,7 +89,7 @@ test('a font chosen for one role from its dropdown applies to that role only and
 });
 
 test('heading font, text size and icon weight apply live', async ({ page }) => {
-	await page.goto('/');
+	await page.goto('/spikes/icons');
 	const dialog = await openSettings(page, 'Fonts');
 	await chooseFont(page, 'Headings', /^IM Fell English SC/);
 	expect(await rootStyle(page, '--font-heading')).toContain('IM Fell English SC');
@@ -149,7 +149,7 @@ test('Storyteller help is a list of switches, saved on the device', async ({ pag
 test('text size changes text only: icons, spacing and buttons keep their size', async ({
 	page
 }) => {
-	await page.goto('/');
+	await page.goto('/spikes/icons');
 	const settingsButton = page.getByRole('banner').getByRole('button', { name: 'Settings' });
 	const night = page.getByRole('img', { name: 'Night' });
 	const measure = async () => ({

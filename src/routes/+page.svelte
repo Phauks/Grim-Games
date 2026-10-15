@@ -1,26 +1,20 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import Icon from '#lib/ui/icons/Icon.svelte';
+	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import SavedGames from '#lib/features/grimoire/SavedGames.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 </script>
 
 <main>
-	<h1>Grim-Games</h1>
-	<p>A touch-first grimoire for Blood on the Clocktower. Under construction.</p>
+	<!-- The page's name for screen readers; the header already shows it. -->
+	<h1 class="visually-hidden">Grim-Games</h1>
+	<ErrorBoundary area="grimoire">
+		<SavedGames />
+	</ErrorBoundary>
 
-	<ul class="slots" aria-label="Icon preview">
-		<li><Icon name="night" label="Night" /></li>
-		<li><Icon name="day" label="Day" /></li>
-		<li><Icon name="dead" label="Dead" /></li>
-		<li><Icon name="ghostVote" label="Ghost vote" /></li>
-		<li><Icon name="poisoned" label="Poisoned" /></li>
-		<li><Icon name="demon" label="Demon" /></li>
-	</ul>
-
-	<nav>
+	<nav aria-label="Other views">
 		<Button href={resolve('/scripts')} icon="script">Scripts</Button>
 		<Button href={resolve('/play')} icon="script">Player view</Button>
-		<Button href={resolve('/spikes/seat-sheet')} icon="players">Seat sheet spike</Button>
 	</nav>
 </main>
 
@@ -30,23 +24,17 @@
 		margin: 0 auto;
 		padding: var(--space-5) var(--space-4);
 	}
-	h1 {
-		margin-top: 0;
-		font-size: 2rem;
-	}
-	.slots {
-		display: flex;
-		gap: var(--space-4);
-		margin: var(--space-5) 0;
-		padding: 0;
-		list-style: none;
-		color: var(--heading);
-		--icon-size: calc(2 * var(--u));
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 	nav {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-3);
-		margin-bottom: var(--space-6);
 	}
 </style>
