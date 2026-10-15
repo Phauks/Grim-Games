@@ -20,11 +20,6 @@
 	<nav>
 		<Button href={resolve('/spikes/seat-sheet')} icon="players">Seat sheet spike</Button>
 	</nav>
-
-	<p class="small">
-		Not affiliated with The Pandemonium Institute. Blood on the Clocktower is a trademark of Steven
-		Medway and The Pandemonium Institute.
-	</p>
 </main>
 
 <style>
@@ -51,9 +46,5 @@
 		flex-wrap: wrap;
 		gap: var(--space-3);
 		margin-bottom: var(--space-6);
-	}
-	.small {
-		font-size: 0.85rem;
-		color: var(--on-surface-muted);
 	}
 </style>
