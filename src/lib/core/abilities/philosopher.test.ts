@@ -1,0 +1,51 @@
+/**
+ * Philosopher: rules tests.
+ *
+ * Wiki: https://wiki.bloodontheclocktower.com/Philosopher
+ *
+ * Data checks: generated from static/data/roles.json by `npm run scaffold:rules-tests`. They
+ * pin TPI's current data, so review and update them when a data sync changes Philosopher.
+ *
+ * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
+ * a scenario test (seats, characters and reminders, then the action, then the expected state)
+ * that paraphrases the example. Never copy wiki prose.
+ */
+import { describe, expect, it } from 'vitest';
+import { defaultAlignment } from '#lib/core/data/index.ts';
+import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+
+describe('Philosopher', () => {
+	const character = committedCharacter('philosopher');
+
+	describe('data (roles.json)', () => {
+		it('is a Townsfolk from edition snv', () => {
+			expect(character.name).toBe('Philosopher');
+			expect(character.type).toBe('townsfolk');
+			expect(character.edition).toBe('snv');
+			expect(defaultAlignment(character.type)).toBe('good');
+		});
+
+		it('does not change setup', () => {
+			expect(character.setup).toBe(false);
+		});
+
+		it('has its reminder tokens', () => {
+			expect(character.reminders).toEqual(['Drunk']);
+			expect(character.remindersGlobal).toEqual(['Is The Philosopher']);
+		});
+
+		it('is on the night sheet for the first night and other nights', () => {
+			expect(nightSheetPresence('philosopher')).toEqual({ firstNight: true, otherNight: true });
+		});
+
+		it('has its special app hooks', () => {
+			expect(character.special).toEqual([{ type: 'reveal', name: 'replace-character' }]);
+		});
+	});
+
+	describe('wiki examples (https://wiki.bloodontheclocktower.com/Philosopher#Examples)', () => {
+		it.todo('Example 1: Philosopher copies Dreamer on the first night');
+		it.todo('Example 2: Philosopher becomes Clockmaker on night three');
+		it.todo('Example 3: Copying in-play Artist drunk until Philosopher dies');
+	});
+});
