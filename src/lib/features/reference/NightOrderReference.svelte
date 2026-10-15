@@ -9,14 +9,18 @@
 	import { MARKER_TEXT, type Night, type NightStep } from '#lib/core/rules/night-order.ts';
 	import { fullNightOrder, sheetPosition } from '#lib/core/rules/reference.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { TYPE_PLURALS } from './labels.ts';
+	import NightText from './NightText.svelte';
+	import type { ReferenceView } from './view-mode.svelte.ts';
 
 	interface Props {
 		data: GameData;
 		numeric?: NumericNightOrder;
+		view: ReferenceView;
 	}
 
-	let { data, numeric }: Props = $props();
+	let { data, numeric, view }: Props = $props();
 
 	const nights = $derived(
 		(['first', 'other'] as const).map((night) => {
@@ -24,6 +28,7 @@
 			return {
 				night,
 				title: night === 'first' ? 'First night' : 'Other nights',
+				steps: order.steps,
 				beforeDawn: order.steps.filter((s) => !s.afterDawn),
 				afterDawn: order.steps.filter((s) => s.afterDawn),
 				omitted: order.omitted
@@ -40,6 +45,39 @@
 	}
 </script>
 
+{#snippet text(s: NightStep)}
+	{#if s.reminder && s.character}<NightText
+			text={s.reminder}
+			character={s.character}
+		/>{:else}{s.reminder ?? 'None'}{/if}
+{/snippet}
+
+{#snippet row(night: Night, s: NightStep)}
+	{@const position = sheetPosition(data.nightSheet, night, s.id)}
+	<tr data-step={s.id} data-kind={s.kind} data-after-dawn={s.afterDawn || undefined}>
+		<td class="num">#{position ?? '?'}</td>
+		<th scope="row">
+			{#if s.kind === 'marker'}
+				<span class="marker">{MARKER_TEXT[s.id as NightMarker].name}</span>
+			{:else if s.character}
+				<CharacterBadge characterId={s.character.id} />
+			{/if}
+		</th>
+		<td class="text">
+			{@render text(s)}
+			{#if s.afterDawn}<span class="muted"> (after Dawn: announce to everyone)</span>{/if}
+		</td>
+		<td class="tokens">
+			{#if s.character && (s.character.reminders.length || s.character.remindersGlobal.length)}
+				{#each [...s.character.reminders, ...s.character.remindersGlobal] as token, i (i)}<ReminderToken
+						label={token}
+						type={s.character.type}
+					/>{/each}
+			{:else}None{/if}
+		</td>
+	</tr>
+{/snippet}
+
 {#snippet step(night: Night, s: NightStep)}
 	{@const position = sheetPosition(data.nightSheet, night, s.id)}
 	{@const number = numberOf(night, s.id)}
@@ -51,7 +89,7 @@
 			{:else if s.character}
 				<CharacterBadge characterId={s.character.id} />
 			{/if}
-			{#if s.reminder}<p>{s.reminder}</p>{/if}
+			{#if s.reminder}<p>{@render text(s)}</p>{/if}
 			{#if number !== undefined}<p class="muted">Provisional number {number}</p>{/if}
 			{#each s.notes as note (note)}<p class="muted">{note}</p>{/each}
 		</div>
@@ -63,14 +101,33 @@
 		<h2 id="night-{n.night}">
 			{n.title} <span>({n.beforeDawn.length + n.afterDawn.length} steps)</span>
 		</h2>
-		<ol class="steps" aria-label="{n.title} until Dawn">
-			{#each n.beforeDawn as s (s.id)}{@render step(n.night, s)}{/each}
-		</ol>
-		{#if n.afterDawn.length}
-			<h3>After Dawn: announcements</h3>
-			<ol class="steps" aria-label="{n.title} after Dawn">
-				{#each n.afterDawn as s (s.id)}{@render step(n.night, s)}{/each}
+		{#if view === 'table'}
+			<!-- Strictly in night order; scrolls sideways inside its own box on a phone. -->
+			<div class="scroll" role="region" aria-label="{n.title} table">
+				<table class="order" data-testid="night-table-{n.night}">
+					<thead>
+						<tr>
+							<th scope="col">#</th>
+							<th scope="col">Step</th>
+							<th scope="col">Storyteller</th>
+							<th scope="col">Tokens</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each n.steps as s (s.id)}{@render row(n.night, s)}{/each}
+					</tbody>
+				</table>
+			</div>
+		{:else}
+			<ol class="steps" aria-label="{n.title} until Dawn">
+				{#each n.beforeDawn as s (s.id)}{@render step(n.night, s)}{/each}
 			</ol>
+			{#if n.afterDawn.length}
+				<h3>After Dawn: announcements</h3>
+				<ol class="steps" aria-label="{n.title} after Dawn">
+					{#each n.afterDawn as s (s.id)}{@render step(n.night, s)}{/each}
+				</ol>
+			{/if}
 		{/if}
 		{#each n.omitted as o (o.id)}<p class="muted">Left out: {o.id}: {o.reason}</p>{/each}
 	</section>
@@ -165,6 +222,52 @@
 	.muted {
 		font-size: 0.85rem;
 		color: var(--on-surface-muted);
+	}
+	.scroll {
+		max-width: 100%;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		border: var(--card-border);
+		border-radius: var(--card-radius);
+		background: var(--card-background);
+	}
+	table.order {
+		min-width: 40rem;
+		margin-top: 0;
+		table-layout: auto;
+		font-size: 0.9rem;
+	}
+	.order th,
+	.order td {
+		text-align: left;
+		vertical-align: top;
+		overflow-wrap: normal;
+	}
+	.order thead th {
+		background: var(--surface-selected);
+		font-size: 0.75rem;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+	.order .num {
+		color: var(--heading);
+		white-space: nowrap;
+	}
+	.order tbody th {
+		font-weight: 400;
+		white-space: nowrap;
+	}
+	.order tr[data-kind='marker'] {
+		background: var(--surface-selected);
+	}
+	.order .text {
+		min-width: 18rem;
+	}
+	.order .tokens {
+		min-width: 8rem;
+	}
+	.order .tokens :global(.reminder) {
+		margin: 0.1rem 0.15rem 0.1rem 0;
 	}
 	table {
 		width: 100%;

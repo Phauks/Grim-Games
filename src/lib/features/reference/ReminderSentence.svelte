@@ -1,12 +1,16 @@
 <script lang="ts">
+	import type { CharacterType } from '#lib/core/data/index.ts';
 	import type { ReferenceSegment } from '#lib/core/rules/reference.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 
 	interface Props {
 		segments: readonly ReferenceSegment[];
+		/** Type of the character the reminder belongs to, to colour its tokens. */
+		type: CharacterType;
 	}
 
-	let { segments }: Props = $props();
+	let { segments, type }: Props = $props();
 </script>
 
 <!-- A pre-day reminder as the Storyteller sees it: badges and our short words. -->
@@ -15,7 +19,7 @@
 		{#if segment.kind === 'character'}
 			<CharacterBadge characterId={segment.characterId} />
 		{:else if segment.kind === 'target'}
-			<span class="target">player with “{segment.token}”</span>
+			<span class="target">player with <ReminderToken label={segment.token} {type} /></span>
 		{:else}
 			<span>{segment.text}</span>
 		{/if}
@@ -32,10 +36,7 @@
 	.target {
 		display: inline-flex;
 		align-items: center;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border-radius: var(--radius-full);
-		border: 1px dashed var(--border);
+		gap: var(--space-1);
 		color: var(--on-surface-muted);
 	}
 </style>

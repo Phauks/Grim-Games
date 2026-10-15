@@ -4,25 +4,31 @@
 	import type { ReferenceEntry, ReferenceNight } from '#lib/core/rules/reference.ts';
 	import { characterReportUrl } from '#lib/features/about/report-issue.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { EDITION_LABELS, TYPE_LABELS } from './labels.ts';
+	import NightText from './NightText.svelte';
 	import ReminderSentence from './ReminderSentence.svelte';
 
 	interface Props {
 		entry: ReferenceEntry;
+		/** Opens the shared details overlay (e.g. why there are no pre-day reminders). */
+		onExplain: (title: string, text: string) => void;
 	}
 
-	let { entry }: Props = $props();
+	let { entry, onExplain }: Props = $props();
 
 	const character = $derived(entry.character);
-	const icons = $derived.by(() => {
+	// Small thumbnails of the other icon variants (the token shows the default one).
+	const variants = $derived.by(() => {
 		const set = characterIcons(character);
 		if (!set) return [];
 		return (
 			[
-				['Good', set.good],
-				['Evil', set.evil],
-				['Unaligned', set.unaligned]
+				['Good icon', set.good],
+				['Evil icon', set.evil]
 			] as const
 		)
 			.filter(([, file]) => file !== undefined)
@@ -42,121 +48,106 @@
 	}
 </script>
 
-{#snippet night(label: string, info: ReferenceNight)}
-	<div class="night" data-testid="night-{label === 'First night' ? 'first' : 'other'}">
-		<p class="night-head">
-			<Icon name="night" />
-			<strong>{label}</strong>
-			{#if info.position !== undefined}
-				<span class="pos">#{info.position} on TPI’s sheet</span>
-			{:else}
-				<span class="muted">does not wake</span>
-			{/if}
-			{#if info.number !== undefined}<span class="num">provisional {info.number}</span>{/if}
-		</p>
-		{#if info.text}<p class="st-text">{info.text}</p>{/if}
-	</div>
+{#snippet night(label: string, testid: string, info: ReferenceNight)}
+	<dt>{label}</dt>
+	<dd class="pos" data-testid="{testid}-position">
+		{#if info.position !== undefined}#{info.position}{:else}–{/if}{#if info.number !== undefined}<small
+				title="Provisional number">{info.number}</small
+			>{/if}
+	</dd>
+	<dd class="st" data-testid={testid}>
+		{#if info.text}<NightText text={info.text} {character} />{:else}None{/if}
+	</dd>
 {/snippet}
 
 <article class="card" id={character.id} data-testid="reference-card" data-character={character.id}>
 	<header>
-		<h3 class="visually-hidden">{character.name}</h3>
-		<CharacterBadge characterId={character.id} />
-		<span class="icons">
-			{#each icons as icon (icon.label)}
-				<span class="icon-variant">
-					<span class="face"
-						><img src={icon.src} alt="" width="40" height="40" loading="lazy" /></span
-					>
-					<span class="caption">{icon.label}</span>
-				</span>
+		<CharacterToken {character} size={56} />
+		<div class="title">
+			<h3>{character.name}</h3>
+			<p class="meta">
+				{TYPE_LABELS[character.type]} · {character.edition
+					? (EDITION_LABELS[character.edition] ?? character.edition)
+					: 'None'}
+			</p>
+		</div>
+		<span class="variants">
+			{#each variants as v (v.label)}
+				<img src={v.src} alt={v.label} title={v.label} width="28" height="28" loading="lazy" />
 			{/each}
 		</span>
 	</header>
 
-	<dl class="facts">
-		<div>
-			<dt>Type</dt>
-			<dd>{TYPE_LABELS[character.type]}</dd>
-		</div>
-		<div>
-			<dt>Edition</dt>
-			<dd>{character.edition ? (EDITION_LABELS[character.edition] ?? character.edition) : '—'}</dd>
-		</div>
-		<div>
-			<dt>Alignment</dt>
-			<dd>{entry.alignmentNote}</dd>
-		</div>
-		<div>
-			<dt>Setup</dt>
-			<dd>
-				{#if entry.setup}
-					{character.name}: {entry.setup.summary}{#if entry.setup.source === 'ability-text'}
-						(read from the text){/if}
-					{#each entry.setup.notes as note (note)}<span class="note">{note}</span>{/each}
-				{:else}
-					No setup change
-				{/if}
-				{#if character.setup}<span class="note">TPI setup flag: yes</span>{/if}
-			</dd>
-		</div>
-	</dl>
+	<p class="facts">
+		<span><b>Starting alignment</b> {entry.alignmentNote}</span>
+		<span
+			><b>Setup</b>
+			{#if entry.setup}{character.name}: {entry.setup.summary}{:else}None{/if}</span
+		>
+	</p>
+	{#if entry.setup?.notes.length}
+		<p class="small">{entry.setup.notes.join(' ')}</p>
+	{/if}
 
 	<p class="ability">{character.ability}</p>
 
-	<section>
-		<h4>Reminder tokens</h4>
+	<div class="row">
+		<b>Tokens</b>
 		{#if character.reminders.length || character.remindersGlobal.length}
-			<ul class="tokens">
-				{#each character.reminders as token, i (i)}<li>{token}</li>{/each}
-				{#each character.remindersGlobal as token, i (i)}<li class="global">
-						{token} <span class="muted">(global)</span>
-					</li>{/each}
-			</ul>
+			<span class="chips">
+				{#each character.reminders as token, i (i)}<ReminderToken
+						label={token}
+						type={character.type}
+					/>{/each}
+				{#each character.remindersGlobal as token, i (i)}<ReminderToken
+						label="{token} (global)"
+						type={character.type}
+					/>{/each}
+			</span>
 		{:else}
-			<p class="muted">None</p>
+			<span>None</span>
 		{/if}
+	</div>
+	<div class="row">
+		<b>Special</b>
 		{#if character.special.length}
-			<h4>Special</h4>
-			<ul class="specials">
-				{#each character.special as s, i (i)}<li><code>{special(s)}</code></li>{/each}
-			</ul>
+			<span class="specials">
+				{#each character.special as s, i (i)}<code>{special(s)}</code>{/each}
+			</span>
+		{:else}
+			<span>None</span>
 		{/if}
-	</section>
+	</div>
 
-	<section>
-		<h4>Jinxes</h4>
+	<dl class="nights">
+		{@render night('First night', 'night-first', entry.firstNight)}
+		{@render night('Other nights', 'night-other', entry.otherNight)}
+	</dl>
+
+	<div class="row" class:block={entry.jinxes.length > 0}>
+		<b>Jinxes</b>
 		{#if entry.jinxes.length}
-			<ul class="jinxes">
+			<ul class="list">
 				{#each entry.jinxes as jinx (jinx.with)}
 					<li>
 						<CharacterBadge characterId={jinx.with} />
-						<span
-							>{jinx.reason}{#if jinx.exclusive}
-								<em class="muted">(only one can be in play)</em>{/if}</span
-						>
+						<span class="small">{jinx.reason}</span>
 					</li>
 				{/each}
 			</ul>
 		{:else}
-			<p class="muted" data-testid="no-jinxes">No jinxes</p>
+			<span data-testid="no-jinxes">None</span>
 		{/if}
-	</section>
+	</div>
 
-	<section>
-		<h4>Night order</h4>
-		{@render night('First night', entry.firstNight)}
-		{@render night('Other nights', entry.otherNight)}
-	</section>
-
-	<section>
-		<h4>Pre-day reminders</h4>
+	<div class="row" class:block={entry.dayReminders.length > 0}>
+		<b>Pre-day</b>
 		{#if entry.dayReminders.length}
-			<ul class="day">
+			<ul class="list">
 				{#each entry.dayReminders as reminder, i (i)}
 					<li>
-						<ReminderSentence segments={reminder.segments} />
-						<span class="when"
+						<ReminderSentence segments={reminder.segments} type={character.type} />
+						<span class="small"
 							>{reminder.groupTitle} · when {reminder.when}{#if reminder.autoDetected}
 								· guessed from the ability{/if}</span
 						>
@@ -164,17 +155,30 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="muted">None: {entry.noDayReason ?? 'no reason given'}</p>
+			<span class="none-row" data-testid="no-day">
+				None
+				{#if entry.noDayReason}
+					<IconButton
+						icon="info"
+						label="Why no pre-day reminders"
+						onclick={() =>
+							onExplain(
+								`${character.name}: no pre-day reminders`,
+								`Left out of the pre-day list: ${entry.noDayReason}.`
+							)}
+					/>
+				{/if}
+			</span>
 		{/if}
-	</section>
+	</div>
 
 	{#if entry.problems.length}
-		<section class="problems" aria-label="Possible problems">
-			<h4><Icon name="warning" /> Possible problems</h4>
+		<div class="problems" role="note" aria-label="Possible problems">
+			<b><Icon name="warning" /> Possible problems</b>
 			<ul>
 				{#each entry.problems as problem (problem)}<li>{problem}</li>{/each}
 			</ul>
-		</section>
+		</div>
 	{/if}
 
 	<footer>
@@ -191,192 +195,163 @@
 
 <style>
 	.card {
+		position: relative;
 		display: grid;
-		gap: var(--space-3);
-		padding: var(--space-4);
+		gap: var(--space-2);
+		padding: var(--space-3);
 		border: var(--card-border);
 		border-radius: var(--card-radius);
 		background: var(--card-background);
 		min-width: 0;
 		/* Off-screen cards skip layout and paint; the size estimate keeps the scrollbar steady. */
 		content-visibility: auto;
-		contain-intrinsic-size: auto 40rem;
+		contain-intrinsic-size: auto 32rem;
 		scroll-margin-top: calc(var(--tap-target) + var(--space-4));
 	}
 	header {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
+		gap: var(--space-3);
 	}
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-	.icons {
-		display: flex;
-		gap: var(--space-2);
-	}
-	.icon-variant {
-		display: grid;
-		justify-items: center;
-		font-size: 0.75rem;
-		color: var(--on-surface-muted);
-	}
-	.face {
-		display: grid;
-		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		border-radius: 50%;
-		background: var(--token-face);
-		overflow: hidden;
-	}
-	.face img {
-		width: 2.5rem;
-		height: 2.5rem;
-	}
-	.facts {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
-		gap: var(--space-2) var(--space-4);
-		margin: 0;
-	}
-	.facts div {
+	.title {
+		flex: 1;
 		min-width: 0;
 	}
-	dt {
+	h3 {
+		margin: 0;
+		font-size: 1.15rem;
+	}
+	.meta {
 		font-size: 0.8rem;
 		color: var(--on-surface-muted);
 	}
-	dd {
-		margin: 0;
-	}
-	.note {
-		display: block;
-		font-size: 0.85rem;
-		color: var(--on-surface-muted);
-	}
-	.ability {
-		margin: 0;
-		font-size: 1.05rem;
-		line-height: 1.5;
-	}
-	section {
-		display: grid;
-		gap: var(--space-2);
-		min-width: 0;
-	}
-	h4 {
+	.variants {
 		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		margin: 0;
-		font-family: var(--font-display);
-		font-weight: var(--font-display-weight);
-		font-size: 0.9rem;
-		letter-spacing: 0.04em;
-		color: var(--heading);
-		--icon-size: 1.1rem;
+		gap: var(--space-1);
+	}
+	.variants img {
+		width: 1.75rem;
+		height: 1.75rem;
+		border-radius: 50%;
+		background: var(--token-face);
 	}
 	p {
 		margin: 0;
 	}
-	ul {
+	b,
+	dt {
+		margin-right: var(--space-1);
+		font-weight: 400;
+		font-size: 0.75rem;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--on-surface-muted);
+	}
+	.facts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 var(--space-4);
+		font-size: 0.95rem;
+	}
+	.small {
+		font-size: 0.8rem;
+		line-height: 1.3;
+		color: var(--on-surface-muted);
+	}
+	.ability {
+		line-height: 1.4;
+	}
+	.row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-1) var(--space-2);
+		font-size: 0.95rem;
+		min-width: 0;
+	}
+	.row.block {
+		display: grid;
+		gap: var(--space-1);
+	}
+	.chips {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+	}
+	.specials {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: 0 var(--space-3);
+	}
+	code {
+		font-size: 0.8rem;
+		overflow-wrap: anywhere;
+	}
+	.nights {
+		display: grid;
+		grid-template-columns: auto auto 1fr;
+		gap: var(--space-1) var(--space-2);
+		align-items: baseline;
+		margin: 0;
+		font-size: 0.95rem;
+	}
+	dd {
+		margin: 0;
+		min-width: 0;
+	}
+	.pos {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		color: var(--heading);
+	}
+	.pos small {
+		margin-left: var(--space-1);
+		font-size: 0.7rem;
+		color: var(--on-surface-muted);
+	}
+	.list {
+		display: grid;
+		gap: var(--space-2);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
-	.tokens {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-	}
-	.tokens li {
-		padding: var(--space-1) var(--space-3);
-		border-radius: var(--radius-full);
-		background: var(--reminder-face);
-		color: var(--on-reminder);
-		font-size: 0.9rem;
-	}
-	.tokens .muted {
-		color: inherit;
-		opacity: 0.8;
-	}
-	.specials code {
-		font-size: 0.85rem;
-		overflow-wrap: anywhere;
-	}
-	.jinxes,
-	.day {
+	.list li {
 		display: grid;
-		gap: var(--space-3);
-	}
-	.jinxes li {
-		display: grid;
-		gap: var(--space-1);
+		gap: 0;
 		justify-items: start;
 	}
-	.day li {
-		display: grid;
-		gap: var(--space-1);
-	}
-	.when {
-		font-size: 0.85rem;
-		color: var(--on-surface-muted);
-	}
-	.night {
-		display: grid;
-		gap: var(--space-1);
-	}
-	.night-head {
-		display: flex;
-		flex-wrap: wrap;
+	.none-row {
+		display: inline-flex;
 		align-items: center;
-		gap: var(--space-1) var(--space-2);
-		--icon-size: 1.1rem;
+		gap: var(--space-1);
+		margin-block: calc(var(--space-2) * -1);
 	}
-	.pos {
-		font-variant-numeric: tabular-nums;
-	}
-	.num {
-		font-size: 0.85rem;
-		color: var(--on-surface-muted);
-	}
-	.st-text {
-		padding-left: var(--space-3);
-		border-left: 2px solid var(--border);
-		font-size: 0.95rem;
-	}
-	.muted {
+	.none-row :global(.icon-button) {
 		color: var(--on-surface-muted);
 	}
 	.problems {
-		padding: var(--space-3);
+		padding: var(--space-2) var(--space-3);
 		border-radius: var(--radius-md);
 		box-shadow: inset 0 0 0 1px var(--accent);
+		font-size: 0.85rem;
+		--icon-size: 1rem;
 	}
 	.problems ul {
-		display: grid;
-		gap: var(--space-1);
+		margin: var(--space-1) 0 0;
 		padding-left: var(--space-4);
-		list-style: disc;
 	}
 	footer {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--space-2) var(--space-4);
+		gap: 0 var(--space-4);
+		font-size: 0.9rem;
 	}
 	footer a {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-2);
+		gap: var(--space-1);
 		min-height: var(--tap-target);
-		--icon-size: 1.2rem;
+		--icon-size: 1.1rem;
 	}
 </style>

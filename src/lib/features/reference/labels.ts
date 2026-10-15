@@ -26,7 +26,7 @@ export const EDITION_LABELS: Record<string, string> = {
 	tb: 'Trouble Brewing',
 	bmr: 'Bad Moon Rising',
 	snv: 'Sects & Violets',
-	carousel: 'Carousel (experimental)',
+	carousel: 'Carousel',
 	fabled: 'Fabled',
 	loric: 'Loric'
 };
