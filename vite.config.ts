@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import Icons from 'unplugin-icons/vite';
 
 // Lets sandboxes with a preinstalled Chromium skip `playwright install`.
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
@@ -17,7 +18,10 @@ export default defineConfig({
 			// Prerendered SPA served as Workers static assets; unknown paths fall back to
 			// index.html via `not_found_handling` in wrangler.jsonc.
 			adapter: adapter({ fallback: 'index.html' })
-		})
+		}),
+		// Compiles `~icons/<set>/<name>` imports into Svelte components at build time, so icons
+		// are bundled and work offline (src/lib/ui/icons, scripts/generate-icons.ts).
+		Icons({ compiler: 'svelte' })
 	],
 	test: {
 		expect: { requireAssertions: true },

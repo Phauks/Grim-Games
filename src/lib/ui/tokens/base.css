@@ -1,0 +1,44 @@
+/*
+ * Theme-independent tokens (04-architecture.md §9): spacing, radius, motion and z-index.
+ * Colours and fonts come from the active theme (src/lib/ui/themes), never from here.
+ */
+:root {
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.5rem;
+	--space-6: 2rem;
+	--space-7: 3rem;
+
+	--radius-sm: 6px;
+	--radius-md: 12px;
+	--radius-lg: 18px;
+	--radius-full: 999px;
+
+	--tap-target: 44px;
+	--icon-size: 1.5rem;
+
+	--duration-fast: 120ms;
+	--duration-normal: 240ms;
+	--duration-slow: 360ms;
+	--ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+	--ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+	--z-raised: 10;
+	--z-backdrop: 100;
+	--z-sheet: 110;
+	--z-dialog: 120;
+	--z-toast: 200;
+
+	/* Written by the preferences store; 1 is the browser's default size. */
+	--text-scale: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--duration-fast: 0ms;
+		--duration-normal: 0ms;
+		--duration-slow: 0ms;
+	}
+}
