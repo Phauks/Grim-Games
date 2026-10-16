@@ -15,46 +15,54 @@
 
 	const character = $derived(entry.character);
 	const body = REFERENCE_FIELDS.filter((f) => f.card !== 'header');
-	// The body is built when the card comes near the screen (near.ts); until then the
-	// card keeps its estimated size, so the page does not jump.
+	// The whole card is built when it comes near the screen (near.ts); until then it holds
+	// only the character's name and keeps its estimated size, so the page does not jump and
+	// switching from the table to 181 cards builds only the few on screen (Trevor,
+	// 2026-10-16: "toggle between table and card is very slow").
 	let shown = $state(false);
+	// One screen past each edge: a full card costs far more than a table row, so building
+	// two screens of them made the switch from the table slow.
+	const CARD_MARGIN = '100% 0px';
 </script>
 
 <!-- Every field in REFERENCE_FIELDS, the same list the table renders. -->
 <article
 	class="card"
+	class:waiting={!shown}
 	id={character.id}
 	data-testid="reference-card"
 	data-character={character.id}
-	{@attach near(() => (shown = true))}
+	{@attach near(() => (shown = true), CARD_MARGIN)}
 >
 	<!-- The card is the size container; this grid inside it changes with the card's width. -->
-	<div class="fields">
-		<header>
-			<FieldValue field="token" {entry} {onExplain} />
-			<div class="title">
-				<h3><FieldValue field="name" {entry} {onExplain} /></h3>
-				<p class="meta">
-					<FieldValue field="type" {entry} {onExplain} /> ·
-					<FieldValue field="edition" {entry} {onExplain} />
-				</p>
-			</div>
-			<FieldValue field="icons" {entry} {onExplain} />
-		</header>
+	{#if !shown}<!-- eslint-disable-next-line grim/names-as-badges -- stand-in until the card (with its badge) is built -->
+		<h3 class="placeholder">{character.name}</h3>{:else}
+		<div class="fields">
+			<header>
+				<FieldValue field="token" {entry} {onExplain} />
+				<div class="title">
+					<h3><FieldValue field="name" {entry} {onExplain} /></h3>
+					<p class="meta">
+						<FieldValue field="type" {entry} {onExplain} /> ·
+						<FieldValue field="edition" {entry} {onExplain} />
+					</p>
+				</div>
+				<FieldValue field="icons" {entry} {onExplain} />
+			</header>
 
-		{#each shown ? body : [] as field (field.id)}
-			{#if field.card === 'block'}
-				<div class="block" data-row={field.id}>
-					<FieldValue field={field.id} {entry} {onExplain} />
-				</div>
-			{:else}
-				<div class="row" data-row={field.id}>
-					<b>{field.label}</b>
-					<FieldValue field={field.id} {entry} {onExplain} />
-				</div>
-			{/if}
-		{/each}
-	</div>
+			{#each body as field (field.id)}
+				{#if field.card === 'block'}
+					<div class="block" data-row={field.id}>
+						<FieldValue field={field.id} {entry} {onExplain} />
+					</div>
+				{:else}
+					<div class="row" data-row={field.id}>
+						<b>{field.label}</b>
+						<FieldValue field={field.id} {entry} {onExplain} />
+					</div>
+				{/if}
+			{/each}
+		</div>{/if}
 </article>
 
 <style>
@@ -119,6 +127,15 @@
 		.block[data-row='ability'] {
 			order: -1;
 		}
+	}
+	/* Not built yet: about a built card's height, so only the cards near the screen are built
+	   and the page barely moves as they are. */
+	.card.waiting {
+		min-height: calc(17 * var(--u));
+	}
+	/* Off screen: the name only, kept for find-in-page and screen readers. */
+	.placeholder {
+		color: var(--on-surface-muted);
 	}
 	h3 {
 		margin: 0;
