@@ -75,7 +75,9 @@
 			})
 			.join('  ')
 	);
-	const title = $derived(view.kind === 'list' ? t('info-tokens.title') : plainText(view.token.text));
+	const title = $derived(
+		view.kind === 'list' ? t('info-tokens.title') : plainText(view.token.text)
+	);
 
 	// Each time the sheet opens it starts at the list.
 	$effect(() => {
