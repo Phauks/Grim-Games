@@ -23,10 +23,16 @@ export function parseStoredInfoTokens(raw: unknown): StoredInfoTokens {
 	const custom: InfoToken[] = [];
 	for (const item of value.custom) {
 		if (typeof item !== 'object' || item === null) continue;
-		const { id, text } = item as { id?: unknown; text?: unknown };
+		const { id, text, shows } = item as { id?: unknown; text?: unknown; shows?: unknown };
 		if (typeof id !== 'string' || typeof text !== 'string' || !text.trim()) continue;
 		if (custom.some((t) => t.id === id)) continue;
-		custom.push({ id, text: text.slice(0, MAX_CUSTOM_TEXT), source: 'custom', shows: 'none' });
+		custom.push({
+			id,
+			text: text.slice(0, MAX_CUSTOM_TEXT),
+			source: 'custom',
+			// A custom card may ask for characters, e.g. a madness card (Trevor, 2026-10-16).
+			shows: shows === 'characters' ? 'characters' : 'none'
+		});
 	}
 	return { version: 1, custom };
 }

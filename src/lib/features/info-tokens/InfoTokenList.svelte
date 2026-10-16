@@ -4,6 +4,7 @@
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { plainText } from './bold.ts';
 	import { MAX_CUSTOM_TEXT } from './custom-tokens.ts';
 	import { customInfoTokens } from './custom-tokens.svelte.ts';
@@ -42,12 +43,19 @@
 	});
 
 	let editOpen = $state(false);
-	let editing = $state<{ id?: string; text: string }>({ text: '' });
+	let editing = $state<{ id?: string; text: string; withCharacters: boolean }>({
+		text: '',
+		withCharacters: false
+	});
 	let confirmOpen = $state(false);
 	let confirming = $state<InfoToken>();
 
 	function edit(token?: InfoToken) {
-		editing = { id: token?.id, text: token?.text ?? '' };
+		editing = {
+			id: token?.id,
+			text: token?.text ?? '',
+			withCharacters: token?.shows === 'characters'
+		};
 		editOpen = true;
 	}
 
@@ -99,7 +107,8 @@
 						<Button variant="quiet" icon="undo" onclick={() => undo(row.token)}>Undo</Button>
 					{:else}
 						<button type="button" class="card" onclick={() => onchoose(row.token)}>
-							<InfoTokenText text={row.token.text} />
+							<!-- One inline box, so the card's flex layout keeps the spaces between runs. -->
+							<span><InfoTokenText text={row.token.text} /></span>
 						</button>
 						<span class="actions">
 							<IconButton icon="rename" label="Edit {name}" onclick={() => edit(row.token)} />
@@ -128,13 +137,18 @@
 			aria-describedby="bold-hint"></textarea>
 	</label>
 	<p id="bold-hint" class="hint">Put **two stars** round words to make them bold.</p>
+	<Toggle
+		label="Show with characters"
+		checked={editing.withCharacters}
+		onChange={(checked) => (editing.withCharacters = checked)}
+	/>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (editOpen = false)}>Cancel</Button>
 		<Button
 			variant="accent"
 			disabled={!editing.text.trim()}
 			onclick={() => {
-				customInfoTokens.save(editing.text, editing.id);
+				customInfoTokens.save(editing.text, editing.id, editing.withCharacters);
 				editOpen = false;
 			}}>Save</Button
 		>
@@ -163,6 +177,10 @@
 		display: grid;
 		gap: var(--space-3);
 		--collapsible-heading: currentColor;
+	}
+	/* The global heading colour (gold) is too faint on a parchment sheet. */
+	.sections :global(.collapsible .title) {
+		color: inherit;
 	}
 	.cards {
 		display: grid;

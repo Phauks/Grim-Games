@@ -6,5 +6,7 @@
 const PICK_MAX: Readonly<Record<string, number>> = { 'not-in-play': 3, 'this-player-is': 3 };
 
 export function pickMax(tokenId: string): number {
+	// The Storyteller's own cards may show up to 3, like the standard ones.
+	if (tokenId.startsWith('custom-')) return 3;
 	return PICK_MAX[tokenId] ?? 1;
 }

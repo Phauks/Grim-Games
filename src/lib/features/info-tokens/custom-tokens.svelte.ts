@@ -33,8 +33,11 @@ class CustomInfoTokens {
 		}
 	}
 
-	/** Adds a card, or changes the text of an existing one. Blank text does nothing. */
-	save(text: string, id?: string): void {
+	/**
+	 * Adds a card, or changes an existing one. `withCharacters`: the Storyteller picks
+	 * characters to show with it. Blank text does nothing.
+	 */
+	save(text: string, id?: string, withCharacters = false): void {
 		const clean = text.trim().slice(0, MAX_CUSTOM_TEXT);
 		if (!clean) return;
 		const custom = [...this.#stored.custom];
@@ -43,7 +46,7 @@ class CustomInfoTokens {
 			id: at >= 0 ? custom[at].id : `custom-${crypto.randomUUID()}`,
 			text: clean,
 			source: 'custom',
-			shows: 'none'
+			shows: withCharacters ? 'characters' : 'none'
 		};
 		if (at >= 0) custom[at] = token;
 		else custom.push(token);

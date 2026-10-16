@@ -32,3 +32,16 @@ describe('stored custom info tokens', () => {
 		expect(stored.custom.map((t) => t.text)).toEqual(['B']);
 	});
 });
+
+describe('custom cards with characters', () => {
+	it('keeps a card that asks for characters, and treats anything else as none', () => {
+		const parsed = parseStoredInfoTokens({
+			version: 1,
+			custom: [
+				{ id: 'a', text: 'You are **mad** that you are', shows: 'characters' },
+				{ id: 'b', text: 'Hello', shows: 'player' }
+			]
+		});
+		expect(parsed.custom.map((t) => t.shows)).toEqual(['characters', 'none']);
+	});
+});

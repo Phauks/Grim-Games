@@ -8,6 +8,8 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { plainText } from './bold.ts';
 	import { pickMax } from './pick.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
@@ -36,20 +38,41 @@
 	let query = $state('');
 	let picked = $state<CharacterId[]>([]);
 
+	interface Card {
+		text: string;
+		characterIds: CharacterId[];
+	}
+
+	/**
+	 * "Show now" shows a card at once. "Chain" collects cards in order and shows them
+	 * together, swiped left and right, e.g. the Cerenovus's card then the madness card
+	 * (Trevor, 2026-10-16).
+	 */
+	let mode = $state<'now' | 'chain'>('now');
+	let chainCards = $state<Card[]>([]);
+
 	let showOpen = $state(false);
-	let shown = $state<{ text: string; characterIds: CharacterId[] }>({
-		text: '',
-		characterIds: []
-	});
+	let shown = $state<Card[]>([]);
 
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const names = (ids: readonly CharacterId[]) =>
 		ids.map((id) => byId.get(id)?.name ?? id).join(', ');
-	const shownCharacters = $derived(
-		shown.characterIds.flatMap((id) => {
-			const character = byId.get(id);
-			return character ? [{ character }] : [];
-		})
+	const shownCards = $derived(
+		shown.map((card) => ({
+			title: card.text,
+			characters: card.characterIds.flatMap((id) => {
+				const character = byId.get(id);
+				return character ? [{ character }] : [];
+			})
+		}))
+	);
+	const chainSummary = $derived(
+		chainCards
+			.map((card, i) => {
+				const who = card.characterIds.length ? ` (${names(card.characterIds)})` : '';
+				return `${i + 1}. ${plainText(card.text)}${who}`;
+			})
+			.join('  ')
 	);
 	const title = $derived(view.kind === 'list' ? 'Info tokens' : plainText(view.token.text));
 
@@ -60,7 +83,7 @@
 
 	function choose(token: InfoToken) {
 		if (token.id === 'not-in-play' && bluffSets) {
-			if (bluffSets.length === 1) return show(token.text, bluffSets[0].characterIds);
+			if (bluffSets.length === 1) return use(token.text, bluffSets[0].characterIds);
 			if (bluffSets.length > 1) {
 				view = { kind: 'sets', token };
 				return;
@@ -77,15 +100,24 @@
 			return;
 		}
 		// "This is the Demon", "These are your Minions" and the rest: the Storyteller points.
-		show(token.text);
+		use(token.text);
+	}
+
+	/** Shows the card now, or adds it to the chain. */
+	function use(text: string, characterIds: readonly CharacterId[] = []) {
+		const card = { text, characterIds: [...characterIds] };
+		view = { kind: 'list' };
+		if (mode === 'chain') chainCards = [...chainCards, card];
+		else show([card]);
 	}
 
 	/**
 	 * The player view opens on its own: the sheet closes first and comes back when the player
 	 * view is closed, because the sheet hides everything outside it while open.
 	 */
-	function show(text: string, characterIds: readonly CharacterId[] = []) {
-		shown = { text, characterIds: [...characterIds] };
+	function show(cards: Card[]) {
+		if (cards.length === 0) return;
+		shown = cards;
 		view = { kind: 'list' };
 		open = false;
 		showOpen = true;
@@ -95,6 +127,18 @@
 <BottomSheet bind:open {title} height="85dvh" focusFirstField={false}>
 	<ErrorBoundary area="info-tokens">
 		{#if view.kind === 'list'}
+			<div class="mode">
+				<Segmented
+					label="How cards are shown"
+					hideLabel
+					value={mode}
+					options={[
+						{ value: 'now', label: 'Show now' },
+						{ value: 'chain', label: 'Chain' }
+					]}
+					onChange={(value) => (mode = value)}
+				/>
+			</div>
 			<div class="search">
 				<Icon name="search" />
 				<input
@@ -120,6 +164,33 @@
 				>
 			</div>
 			<InfoTokenList onchoose={choose} {query} level={3} />
+			{#if mode === 'chain'}
+				<div class="chain" role="group" aria-label="Chain">
+					<p class="chain-summary" data-testid="chain-summary">
+						{chainCards.length === 0 ? 'Tap cards to add them in order.' : chainSummary}
+					</p>
+					<div class="chain-actions">
+						<IconButton
+							icon="undo"
+							label="Remove last card"
+							disabled={chainCards.length === 0}
+							onclick={() => (chainCards = chainCards.slice(0, -1))}
+						/>
+						<Button
+							variant="quiet"
+							disabled={chainCards.length === 0}
+							onclick={() => (chainCards = [])}>Clear</Button
+						>
+						<Button
+							variant="accent"
+							icon="forward"
+							disabled={chainCards.length === 0}
+							onclick={() => show(chainCards)}
+							>Show {chainCards.length} {chainCards.length === 1 ? 'card' : 'cards'}</Button
+						>
+					</div>
+				</div>
+			{/if}
 		{:else if view.kind === 'characters'}
 			{@const token = view.token}
 			<CharacterPicker
@@ -130,8 +201,10 @@
 			/>
 			<div class="sheet-actions">
 				<Button variant="quiet" onclick={() => (view = { kind: 'list' })}>Cancel</Button>
-				<Button variant="accent" icon="forward" onclick={() => show(token.text, picked)}
-					>Show</Button
+				<Button
+					variant="accent"
+					icon={mode === 'chain' ? 'add' : 'forward'}
+					onclick={() => use(token.text, picked)}>{mode === 'chain' ? 'Add' : 'Show'}</Button
 				>
 			</div>
 		{:else}
@@ -139,7 +212,7 @@
 			<ul class="sets" aria-label="Bluff sets">
 				{#each bluffSets ?? [] as set (set.set)}
 					<li>
-						<button type="button" class="set" onclick={() => show(token.text, set.characterIds)}>
+						<button type="button" class="set" onclick={() => use(token.text, set.characterIds)}>
 							<span class="set-label">{set.label}</span>
 							<span class="set-names">{names(set.characterIds)}</span>
 						</button>
@@ -153,15 +226,40 @@
 	</ErrorBoundary>
 </BottomSheet>
 
-<ShowToPlayer
-	bind:open={showOpen}
-	title={shown.text}
-	characters={shownCharacters}
-	onclose={() => (open = true)}
-/>
+<ShowToPlayer bind:open={showOpen} cards={shownCards} onclose={() => (open = true)} />
 
 <style>
 	/* Lives in a sheet, so it follows the sheet's colours rather than the page's. */
+	.mode {
+		margin-bottom: var(--space-2);
+	}
+	/* Sits over the bottom of the list, so adding cards never moves the cards above. */
+	.chain {
+		position: sticky;
+		bottom: 0;
+		display: grid;
+		gap: var(--space-1);
+		margin-top: var(--space-3);
+		padding: var(--space-2) 0;
+		border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		background: var(--sheet-background);
+	}
+	.chain-summary {
+		margin: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		opacity: 0.85;
+	}
+	.chain-actions {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-2);
+	}
+	.chain-actions :global(.icon-button) {
+		color: inherit;
+	}
 	.search {
 		display: flex;
 		align-items: center;

@@ -1,57 +1,49 @@
 <script lang="ts">
-	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { plainText } from '#lib/features/info-tokens/bold.ts';
-	import InfoTokenText from '#lib/features/info-tokens/InfoTokenText.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import { fitTokens } from './fit.ts';
-	import CharacterLabel from './CharacterLabel.svelte';
-
-	export interface ShownCharacter {
-		character: Character;
-		/** Which icon to show; defaults from the character type. */
-		alignment?: Alignment;
-	}
+	import ShownCard from './ShownCard.svelte';
+	import type { ShownCharacter, ShownInfoCard } from './shown.ts';
 
 	interface Props {
 		open?: boolean;
 		/** Info-token text shown above the tokens; `**bold**` is supported. */
 		title?: string;
 		characters?: readonly ShownCharacter[];
-		/** Player names shown with the card, e.g. with "This is the Demon". */
-		players?: readonly string[];
+		/**
+		 * Several cards in a row, which the player moves through left and right (Trevor,
+		 * 2026-10-16). Given, `title` and `characters` are not used.
+		 */
+		cards?: readonly ShownInfoCard[];
 		onclose?: () => void;
 	}
 
-	let { open = $bindable(false), title, characters = [], players = [], onclose }: Props = $props();
+	let { open = $bindable(false), title, characters = [], cards, onclose }: Props = $props();
 
 	let dialog = $state<HTMLDialogElement>();
-	let areaWidth = $state(0);
-	let areaHeight = $state(0);
+	let track = $state<HTMLDivElement>();
+	let current = $state(0);
+
+	const shownCards = $derived<readonly ShownInfoCard[]>(cards ?? [{ title, characters }]);
+	const chain = $derived(shownCards.length > 1);
 
 	$effect(() => {
 		if (!dialog) return;
-		if (open && !dialog.open) dialog.showModal();
+		if (open && !dialog.open) {
+			current = 0;
+			dialog.showModal();
+		}
 		if (!open && dialog.open) dialog.close();
 	});
 
-	const single = $derived(characters.length === 1 ? characters[0].character : undefined);
-	const fit = $derived(
-		fitTokens(single ? 1 : 0, areaWidth, areaHeight, {
-			labelHeight: 48,
-			// A computer window has room for a bigger token than a phone (Trevor, 2026-10-16).
-			max: 640
-		})
-	);
 	const label = $derived.by(() => {
 		// Outside the error boundary, so it must not throw: the dialog has to stay up.
 		try {
+			const card = shownCards[current] ?? shownCards[0];
 			return (
 				[
-					title ? plainText(title) : undefined,
-					...characters.map((c) => c.character.name),
-					...players
+					card?.title ? plainText(card.title) : undefined,
+					...(card?.characters ?? []).map((c) => c.character.name)
 				]
 					.filter(Boolean)
 					.join(': ') || 'Shown to player'
@@ -64,6 +56,18 @@
 	function close() {
 		open = false;
 		onclose?.();
+	}
+
+	function go(index: number) {
+		if (!track) return;
+		const next = Math.max(0, Math.min(shownCards.length - 1, index));
+		track.scrollTo({ left: next * track.clientWidth, behavior: 'smooth' });
+		current = next;
+	}
+
+	function onscroll() {
+		if (!track || track.clientWidth === 0) return;
+		current = Math.round(track.scrollLeft / track.clientWidth);
 	}
 </script>
 
@@ -83,6 +87,11 @@
 		event.preventDefault();
 		close();
 	}}
+	onkeydown={(event) => {
+		if (!chain) return;
+		if (event.key === 'ArrowRight') go(current + 1);
+		if (event.key === 'ArrowLeft') go(current - 1);
+	}}
 >
 	{#if open}
 		<button type="button" class="close" aria-label="Close" onclick={close}>
@@ -93,46 +102,45 @@
 			full screen and the grimoire never shows through; the close button stays above it.
 		-->
 		<ErrorBoundary area="show">
-			<div class="content" data-has-title={title ? '' : undefined}>
-				{#if title}
-					<h2 class="title"><InfoTokenText text={title} /></h2>
-				{/if}
-				{#if single}
-					<div class="area" bind:clientWidth={areaWidth} bind:clientHeight={areaHeight}>
-						<div class="single" style:--size="{fit.size}px">
-							<CharacterToken
-								character={single}
-								alignment={characters[0].alignment ?? defaultAlignment(single.type)}
-								size={fit.size}
-							/>
-							<span class="name">{single.name}</span>
-						</div>
-					</div>
-					<p class="ability">{single.ability}</p>
-				{:else if characters.length > 1}
-					<!-- Several characters (bluffs): a list with each ability, not tokens (Trevor). -->
-					<ul class="list">
-						{#each characters as shown (shown.character.id)}
-							<li>
-								<CharacterLabel
-									character={shown.character}
-									alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
-								/>
-								<p>{shown.character.ability}</p>
-							</li>
+			{#if chain}
+				<!-- A chain of cards: swipe, or use the arrows, to move between them. -->
+				<div class="track" bind:this={track} {onscroll}>
+					{#each shownCards as card, i (i)}
+						<section
+							class="page"
+							aria-label="Card {i + 1} of {shownCards.length}"
+							inert={i !== current}
+						>
+							<ShownCard title={card.title} characters={card.characters} />
+						</section>
+					{/each}
+				</div>
+				<div class="nav">
+					<button
+						type="button"
+						class="arrow"
+						aria-label="Previous card"
+						disabled={current === 0}
+						onclick={() => go(current - 1)}><Icon name="back" /></button
+					>
+					<ol class="dots" aria-label="Cards">
+						{#each [...shownCards.keys()] as i (i)}
+							<li aria-current={i === current ? 'step' : undefined}></li>
 						{/each}
-					</ul>
-				{/if}
-				{#if players.length > 0}
-					<ul class="players" aria-label="Players">
-						{#each players as name, i (i)}
-							<li>{name}</li>
-						{/each}
-					</ul>
-				{/if}
-			</div>
+					</ol>
+					<button
+						type="button"
+						class="arrow"
+						aria-label="Next card"
+						disabled={current === shownCards.length - 1}
+						onclick={() => go(current + 1)}><Icon name="forward" /></button
+					>
+				</div>
+			{:else}
+				<ShownCard title={shownCards[0]?.title} characters={shownCards[0]?.characters} />
+			{/if}
 			{#snippet fallback()}
-				<div class="content" data-testid="show-failed">
+				<div class="fallback" data-testid="show-failed">
 					<p class="failed">Couldn't show this.</p>
 				</div>
 			{/snippet}
@@ -177,104 +185,79 @@
 	.close:hover {
 		background: var(--surface-selected);
 	}
-	.content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-4);
-		height: 100%;
-		padding: calc(var(--tap-target) + var(--space-4) + env(safe-area-inset-top)) var(--space-4)
-			calc(var(--space-5) + env(safe-area-inset-bottom));
-		text-align: center;
-	}
-	.content:not([data-has-title]) {
-		justify-content: center;
-	}
-	.title {
-		margin: 0;
-		max-width: 22ch;
-		font-family: var(--font-heading);
-		font-weight: var(--font-heading-weight);
-		font-size: clamp(2rem, 9vw, 4rem);
-		line-height: 1.15;
-		color: var(--heading);
-		overflow-wrap: anywhere;
-	}
-	.content:not(:has(.area)) .title {
-		margin: auto 0;
-	}
-	.content:has(.players) {
-		justify-content: center;
-	}
-	.content:has(.players) .title {
-		margin: 0;
-	}
-	.players {
-		display: grid;
-		gap: var(--space-2);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		font-family: var(--font-heading);
-		font-size: clamp(1.5rem, 7vw, 3rem);
-		line-height: 1.2;
-		overflow-wrap: anywhere;
-	}
-	.title :global(strong) {
-		color: var(--accent);
-	}
-	.area {
-		flex: 1;
-		width: 100%;
-		min-height: 0;
-		display: grid;
-		place-items: center;
-	}
-	.single {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-1);
-	}
-	.list {
-		display: grid;
-		gap: var(--space-4);
-		width: min(100%, 40rem);
-		margin: 0;
-		padding: 0;
-		overflow-y: auto;
-		list-style: none;
-		text-align: start;
-		font-size: 1.4rem;
-	}
-	.list li {
-		display: grid;
-		justify-items: start;
-		gap: var(--space-2);
-	}
-	.list p {
-		margin: 0;
-		font-family: var(--font-ability);
-		font-size: 1.2rem;
-		line-height: 1.35;
-	}
-	.name {
-		max-width: 100%;
-		font-family: var(--font-character);
-		font-weight: var(--font-character-weight);
-		font-size: 1.4rem;
-		line-height: 1.2;
-		color: var(--heading);
-	}
 	.failed {
 		margin: auto 0;
 		font-size: 1.3rem;
 		color: var(--on-surface-muted);
 	}
-	.ability {
+	.fallback {
+		display: grid;
+		place-items: center;
+		height: 100%;
+	}
+	.track {
+		display: flex;
+		height: 100%;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scroll-snap-type: x mandatory;
+		scrollbar-width: none;
+		overscroll-behavior-x: contain;
+	}
+	.track::-webkit-scrollbar {
+		display: none;
+	}
+	.page {
+		flex: none;
+		width: 100%;
+		height: 100%;
+		/* Room for the arrows and dots at the bottom. */
+		padding-bottom: calc(var(--tap-target) + var(--space-3));
+		scroll-snap-align: start;
+		scroll-snap-stop: always;
+	}
+	.nav {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-3);
+	}
+	.arrow {
+		display: grid;
+		place-items: center;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		border: 0;
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+	.arrow:disabled {
+		opacity: 0.35;
+		cursor: default;
+	}
+	.arrow:not(:disabled):hover {
+		background: var(--surface-selected);
+	}
+	.dots {
+		display: flex;
+		gap: var(--space-2);
 		margin: 0;
-		max-width: 32ch;
-		font-family: var(--font-ability);
-		font-size: 1.3rem;
-		line-height: 1.35;
+		padding: 0;
+		list-style: none;
+	}
+	.dots li {
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, currentColor 30%, transparent);
+	}
+	.dots li[aria-current='step'] {
+		background: var(--accent);
 	}
 </style>
