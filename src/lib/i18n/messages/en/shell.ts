@@ -10,7 +10,7 @@ export const shell = {
 	'shell.navHome': 'Home',
 	'shell.navNewGame': 'New game',
 	'shell.navResumeGame': 'Resume game',
-	'shell.navPreviousGames': 'Previous games',
+	'shell.navHistory': 'History',
 	'shell.navScripts': 'Scripts',
 	'shell.navPlayerView': 'Player view',
 	'shell.navReference': 'Character reference',

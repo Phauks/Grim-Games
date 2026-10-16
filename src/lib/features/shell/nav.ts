@@ -40,7 +40,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 			{
 				id: 'previous',
 				path: '/previous-games',
-				label: 'shell.navPreviousGames',
+				label: 'shell.navHistory',
 				icon: 'history'
 			}
 		]
