@@ -78,4 +78,16 @@ describe('historyItems', () => {
 			{ kind: 'text', text: ' moved to seat 4' }
 		]);
 	});
+
+	it("words day log changes in the day screen's words", () => {
+		const session = play(
+			(s) => ({ type: 'RenameSeat', seatId: first(s), playerName: 'Ana' }),
+			(s) => ({ type: 'RenameSeat', seatId: second(s), playerName: 'Ben' }),
+			(s) => ({ type: 'Nominate', nominator: first(s), nominee: second(s) }),
+			() => ({ type: 'SetDemonVoted', voted: true })
+		);
+		const [voted, nominated] = historyItems(session.log.entries, session.log.cursor, characters);
+		expect(nominated.parts).toEqual([{ kind: 'text', text: 'Ana nominated Ben' }]);
+		expect(voted.parts).toEqual([{ kind: 'text', text: 'Demon voted' }]);
+	});
 });

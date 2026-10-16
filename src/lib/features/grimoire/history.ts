@@ -6,6 +6,7 @@
 import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 import { applyEvents, type GameEvent, type LogEntry } from '#lib/core/engine/index.ts';
 import type { CharacterLookup, DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
+import { describeEntry as describeDayEntry } from '#lib/features/day/day-port.ts';
 import { causeLabel } from './board.ts';
 
 export type HistoryPart =
@@ -180,6 +181,30 @@ function describeEvent(
 			return [text('Started the day')];
 		case 'PrepValueSet':
 			return [text('Changed the setup notes')];
+		case 'DayEntryAdded':
+		case 'DayEntryReplaced': {
+			const name = (seatId: SeatId | undefined) => {
+				if (seatId === undefined) return 'None';
+				const part = seatName(after, seatId);
+				return part.kind === 'text' ? part.text : 'A seat';
+			};
+			const line = describeDayEntry(event.entry, name, (id) =>
+				id ? (characters.get(id)?.name ?? id) : 'None'
+			);
+			return [text(event.type === 'DayEntryReplaced' ? `Changed: ${line}` : line)];
+		}
+		case 'DayEntryRemoved':
+			return [text('Removed from the day log')];
+		case 'DemonVotedSet':
+			return [
+				text(
+					event.voted === undefined
+						? 'Cleared Demon voted'
+						: event.voted
+							? 'Demon voted'
+							: 'Demon did not vote'
+				)
+			];
 		default:
 			return [text('Changed the day log')];
 	}
