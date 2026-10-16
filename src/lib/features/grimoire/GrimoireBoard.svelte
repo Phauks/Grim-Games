@@ -917,7 +917,7 @@
 	</dl>
 </ConfirmDialog>
 
-<Dialog bind:open={endOpen} title="End game?" role="alertdialog">
+<ConfirmDialog bind:open={endOpen} title="End game?" danger onConfirm={endGame}>
 	<dl class="change">
 		<dt>Now</dt>
 		<dd>In Continue and Resume game</dd>
@@ -936,11 +936,7 @@
 			>
 		{/each}
 	</div>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (endOpen = false)}>Cancel</Button>
-		<Button variant="danger" icon="check" onclick={endGame}>Confirm</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <SeatSheet bind:open={sheetOpen} {grimoire} seatId={selected} />
 
