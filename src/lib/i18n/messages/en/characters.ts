@@ -16,7 +16,9 @@ export const characters = {
 	'characters.openWiki': 'Open wiki',
 	'characters.noWiki': 'No wiki entry',
 	'characters.wikiIntroduction': 'Introduction',
-	'characters.wikiSectionTitle': '{name}: {section}',
+	'characters.summary': 'Summary',
+	'characters.artist': 'Artist: {name}',
+	'characters.example': 'Example {number}',
 	'characters.previewReminder': 'Poisoned',
 	'characters.tokenSize': 'Character token size',
 	'characters.tokenSizeHelp':

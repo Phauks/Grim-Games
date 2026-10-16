@@ -32,6 +32,49 @@ describe('parseWikiPage', () => {
 		]);
 	});
 
+	it('keeps only the quote and artist from the details box, and each example whole', () => {
+		const page = `
+<div class="mw-parser-output"><div class="row"><div class="columns">
+	<div id="character-details">
+		<p><a class="image"><img src="i.png" /></a><span>Information</span></p>
+		<table><tr><td>Type</td><td>Sample type</td></tr><tr><td>Artist</td><td>Sample Artist</td></tr></table>
+		<p class="flavour">"A sample quote."</p>
+		<p><span>Appears in</span> <a><img alt="logo" /></a> <span>Sample episode</span></p>
+		<div class="html5audio"></div>
+	</div>
+</div><div class="columns">
+	<h2><span class="mw-headline">Examples</span></h2>
+	<div class="example"><p>First <span data-role="x">sample</span> example.</p></div>
+	<div class="example"><p>Second sample example.</p></div>
+	<h2><span class="mw-headline">Tips &amp; Tricks</span></h2>
+	<ul><li>Sample tip one.</li></ul>
+	<ul><li>Sample tip two.</li></ul>
+</div></div></div>`;
+		expect(parseWikiPage(page)).toEqual([
+			{
+				heading: '',
+				blocks: [
+					{ kind: 'quote', text: '"A sample quote."' },
+					{ kind: 'artist', name: 'Sample Artist' }
+				]
+			},
+			{
+				heading: 'Examples',
+				blocks: [
+					{ kind: 'example', text: 'First sample example.' },
+					{ kind: 'example', text: 'Second sample example.' }
+				]
+			},
+			{
+				heading: 'Tips & Tricks',
+				blocks: [
+					{ kind: 'list', items: ['Sample tip one.'] },
+					{ kind: 'list', items: ['Sample tip two.'] }
+				]
+			}
+		]);
+	});
+
 	it('reads the page title from a wiki URL', () => {
 		expect(wikiPageTitle('https://wiki.bloodontheclocktower.com/Fortune_Teller')).toBe(
 			'Fortune_Teller'

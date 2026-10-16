@@ -8,7 +8,8 @@ import { parseWikiPage, type WikiSection } from './wiki-page.ts';
  * it still works offline. Without either, the dialog shows only the "Open wiki" link.
  */
 const WIKI_API = 'https://wiki.bloodontheclocktower.com/api.php';
-const KEY = 'grim-games:wiki-pages';
+// v2: pages parsed with quote, artist and example blocks (older entries are dropped).
+const KEY = 'grim-games:wiki-pages:v2';
 /** Fetched again after this long, when online. */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Pages kept on the device; the least recently fetched go first. */
