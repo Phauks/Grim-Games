@@ -55,7 +55,7 @@
 		grimoire.run({ type: 'SetAlignment', seatId, alignment });
 	}
 
-	const holders = (step: NightStep) => stepHolders(game, step);
+	const holders = (step: NightStep) => stepHolders(game, step, grimoire.open.characters);
 	const seatName = (seatId: string) => nameOf(game, seatId);
 	const done = $derived(grimoire.nightDone);
 	const doneKey = (step: NightStep) => keyFor(game, night, step);

@@ -9,7 +9,12 @@ import {
 	type GameData,
 	type NightMarker
 } from '#lib/core/data/index.ts';
-import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
+import {
+	trueCharacter,
+	type CharacterLookup,
+	type Game,
+	type SeatId
+} from '#lib/core/model/index.ts';
 import {
 	MARKER_TEXT,
 	nightOrder,
@@ -64,9 +69,21 @@ export const MARKER_ICONS: Record<string, IconSlot> = {
 	[TRAVELLER_ALIGNMENT_STEP]: 'traveller'
 };
 
-/** Who holds a step's character, for "Empath · Sam". */
-export function stepHolders(game: Game, step: NightStep): SeatId[] {
-	return game.seating.filter((s) => game.seats[s].characterId === step.character?.id);
+/**
+ * Who wakes for a step, for "Empath · Sam" and the seats marked on the board: the holder of
+ * the step's character, or for Minion info and Demon info every player who really is a
+ * Minion or the Demon (Trevor, 2026-10-16), so a Drunk never shows as one.
+ */
+export function stepHolders(game: Game, step: NightStep, characters: CharacterLookup): SeatId[] {
+	const wakes = step.id === 'minioninfo' ? 'minion' : step.id === 'demoninfo' ? 'demon' : undefined;
+	if (wakes) {
+		return game.seating.filter((s) => {
+			const id = trueCharacter(game, s, characters);
+			return id !== undefined && characters.get(id)?.type === wakes;
+		});
+	}
+	const id = step.character?.id;
+	return id ? game.seating.filter((s) => game.seats[s].characterId === id) : [];
 }
 
 export const seatName = (game: Game, seatId: SeatId): string =>

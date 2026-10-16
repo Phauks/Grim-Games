@@ -25,7 +25,7 @@
 
 	const game = $derived(grimoire.game);
 	const step = $derived(steps[index]);
-	const holders = $derived(step ? stepHolders(game, step) : []);
+	const holders = $derived(step ? stepHolders(game, step, grimoire.open.characters) : []);
 	const ticked = $derived(step ? grimoire.nightDone.includes(doneKey(game, night, step)) : false);
 
 	function next() {
@@ -74,7 +74,10 @@
 		label={index < steps.length - 1 ? 'Next step' : 'Finish the night'}
 		onclick={next}
 	/>
-	<IconButton icon="close" label="Stop the walk-through" onclick={onClose} />
+	<!-- In the top corner (Trevor, 2026-10-16), so Previous and Next own the sides. -->
+	<span class="stop"
+		><IconButton icon="close" label="Stop the walk-through" onclick={onClose} /></span
+	>
 </section>
 
 <style>
@@ -82,7 +85,8 @@
 		position: absolute;
 		left: 0;
 		right: 0;
-		top: calc(100% + var(--space-2));
+		/* Under the step's reminders tray (NightTray). */
+		top: calc(100% + 2 * var(--space-2) + var(--tray-h));
 		z-index: 2;
 		display: flex;
 		align-items: stretch;
@@ -94,8 +98,21 @@
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
 	}
+	/* Previous and Next are the big targets down each side, under the Stop corner. */
 	.strip > :global(button:not(.step)) {
-		align-self: center;
+		align-self: stretch;
+		height: auto;
+		margin-top: var(--tap-target);
+	}
+	.stop {
+		position: absolute;
+		top: 0;
+		right: 0;
+		z-index: 1;
+	}
+	/* Clear of the Stop button in the corner. */
+	.name {
+		padding-inline-end: var(--tap-target);
 	}
 	.step {
 		flex: 1;

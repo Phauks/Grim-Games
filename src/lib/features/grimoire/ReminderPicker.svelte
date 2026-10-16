@@ -190,13 +190,15 @@
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 2px;
+		gap: var(--space-1);
+		padding: var(--space-1) 0;
 	}
+	/* Big, easy targets (Trevor, 2026-10-16), following the Reminder size setting. */
 	.chip {
 		display: inline-grid;
 		place-items: center;
-		min-width: var(--tap-target);
-		min-height: var(--tap-target);
+		min-width: calc(52px * var(--reminder-scale, 1));
+		min-height: calc(52px * var(--reminder-scale, 1));
 		padding: 0 2px;
 		border: 0;
 		background: none;
@@ -219,5 +221,12 @@
 	}
 	.chip:hover {
 		filter: brightness(1.15);
+	}
+	.chip > :global(.reminder) {
+		padding: 0.45em 0.7em 0.45em 0.45em;
+		font-size: calc(1rem * var(--reminder-scale, 1));
+	}
+	.recent {
+		height: calc(52px * var(--reminder-scale, 1));
 	}
 </style>

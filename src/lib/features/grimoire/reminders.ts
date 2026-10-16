@@ -3,7 +3,7 @@
  * with recent reminders first. Reminder tokens come from TPI's data: a character's
  * `reminders` while it is in play, and its `remindersGlobal` whenever it is on the script.
  */
-import type { Character } from '#lib/core/data/index.ts';
+import type { Character, CharacterId } from '#lib/core/data/index.ts';
 import { gainedAbilities } from '#lib/core/rules/index.ts';
 import {
 	charactersInPlay,
@@ -114,4 +114,37 @@ export function parseReminderKey(key: string): Reminder | undefined {
 		// An unreadable entry is skipped.
 	}
 	return undefined;
+}
+
+export interface BankReminder {
+	characterId: CharacterId;
+	label: string;
+	/** Copies not yet on the board. */
+	left: number;
+}
+
+/**
+ * The reminder bank once setup is over (Trevor, 2026-10-16): every reminder of a character
+ * in play that still has a copy off the board, in the picker's order, with `focus` (the
+ * character whose night step is being walked through) first.
+ */
+export function bankReminders(
+	game: Game,
+	characters: CharacterLookup,
+	focus?: CharacterId
+): BankReminder[] {
+	const left = reminderCopiesLeft(game, characters);
+	const groups = reminderGroups(game, characters);
+	const first = groups.filter((g) => g.character.id === focus);
+	const out: BankReminder[] = [];
+	for (const { character, labels } of [
+		...first,
+		...groups.filter((g) => g.character.id !== focus)
+	]) {
+		for (const label of labels) {
+			const n = left.get(reminderKey({ characterId: character.id, label })) ?? 1;
+			if (n > 0) out.push({ characterId: character.id, label, left: n });
+		}
+	}
+	return out;
 }

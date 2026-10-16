@@ -625,7 +625,9 @@ test('the cause of death offers only characters that could have killed the playe
 	await expect(sheet.getByRole('button', { name: 'Slayer' })).toBeVisible();
 });
 
-test('setup reminders wait in a tray on the board and are placed by hand', async ({ page }) => {
+test('the reminder bank holds setup reminders, placed by hand, then every reminder left', async ({
+	page
+}) => {
 	await startGame(page);
 	for (const [number, name] of [
 		[1, 'Washerwoman'],
@@ -639,7 +641,7 @@ test('setup reminders wait in a tray on the board and are placed by hand', async
 			.tap();
 		await closeSheet(page);
 	}
-	await menu(page, 'Setup reminders');
+	// While setup reminders are waiting, the bank under the board shows them.
 	const tray = page.getByRole('list', { name: 'Setup reminders' });
 	await expect(tray.getByRole('button', { name: 'Townsfolk reminder' })).toBeVisible();
 	await expect(seatLabelled(page, 'Seat 2: no name, Empath')).toHaveAttribute(
@@ -664,14 +666,18 @@ test('setup reminders wait in a tray on the board and are placed by hand', async
 	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
 	await page.mouse.up();
 	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).toBeAttached();
+	// Every setup reminder placed: the bank now holds every reminder left.
+	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 
-	// Dragged back onto the tray, it waits there again.
-	const placed = page.getByRole('button', { name: 'Wrong reminder' }).last();
+	// Dragged back onto the bank, it waits there again.
+	const placed = page.getByRole('button', { name: 'Wrong reminder' }).first();
 	const back = (await placed.boundingBox())!;
-	const trayBox = (await tray.boundingBox())!;
+	const trayBox = (await page.locator('[data-tray]').boundingBox())!;
 	await page.mouse.move(back.x + back.width / 2, back.y + back.height / 2);
 	await page.mouse.down();
-	await page.mouse.move(trayBox.x + 10, trayBox.y + trayBox.height / 2, { steps: 8 });
+	await page.mouse.move(trayBox.x + trayBox.width / 2, trayBox.y + trayBox.height / 2, {
+		steps: 8
+	});
 	await page.mouse.up();
 	await expect(seatLabelled(page, 'Seat 4: no name, no character')).toHaveAttribute(
 		'aria-label',
@@ -679,8 +685,12 @@ test('setup reminders wait in a tray on the board and are placed by hand', async
 	);
 	await expect(tray.getByRole('button', { name: 'Wrong reminder' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Done' }).tap();
-	await expect(tray).toBeHidden();
+	// Every reminder still off the board, on demand (and by itself once setup is done).
+	await page.getByRole('button', { name: 'Showing setup reminders; show all reminders' }).tap();
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	await expect(bank.getByRole('button', { name: 'Wrong reminder' })).toBeVisible();
+	await expect(bank.getByRole('button', { name: 'Townsfolk reminder' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Showing all reminders; show setup reminders' }).tap();
 
 	// From the seat sheet too: Return to setup tray.
 	const sheet = await openSeat(page, 2);

@@ -55,3 +55,6 @@ export function traySeats(suggestion: SetupReminder): string[] {
 	for (const id of suggestion.candidates) if (!out.includes(id)) out.push(id);
 	return out;
 }
+
+/** What the reminder bank under the board shows: setup suggestions, or every reminder left. */
+export type BankView = 'setup' | 'all';

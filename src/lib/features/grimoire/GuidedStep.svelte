@@ -31,7 +31,7 @@
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
-	const holders = $derived(step ? stepHolders(game, step) : []);
+	const holders = $derived(step ? stepHolders(game, step, characters) : []);
 	/** The character's own reminder tokens, each once (copies are placed one at a time). */
 	const labels = $derived(step?.character ? [...new Set(step.character.reminders)] : []);
 	/** Where each label already is on the board, if anywhere. */

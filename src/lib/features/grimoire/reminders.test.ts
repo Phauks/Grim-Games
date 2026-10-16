@@ -3,7 +3,13 @@ import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { parseReminderKey, reminderCopiesLeft, reminderGroups, reminderKey } from './reminders.ts';
+import {
+	bankReminders,
+	parseReminderKey,
+	reminderCopiesLeft,
+	reminderGroups,
+	reminderKey
+} from './reminders.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -77,6 +83,34 @@ describe('reminderCopiesLeft', () => {
 		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
 		run({ type: 'AssignCharacter', seatId: g.seating[3], characterId: 'poisoner' });
 		expect(reminderCopiesLeft(g, characters).get(key)).toBe(1);
+	});
+});
+
+describe('bankReminders', () => {
+	const run = (g: ReturnType<typeof game>, command: Parameters<typeof dispatch>[1]) => {
+		const result = dispatch({ log: { entries: [], cursor: 0 }, game: g }, command, ctx);
+		if (!result.ok) throw new Error(result.error.message);
+		return result.session.game;
+	};
+	it('holds every reminder still off the board, and loses one once it is placed', () => {
+		let g = game();
+		const poisoned = { characterId: 'poisoner', label: 'Poisoned', left: 1 };
+		expect(bankReminders(g, characters)).toContainEqual(poisoned);
+		g = run(g, {
+			type: 'AddReminder',
+			seatId: g.seating[2],
+			reminder: { characterId: 'poisoner', label: 'Poisoned' }
+		});
+		expect(bankReminders(g, characters)).not.toContainEqual(poisoned);
+	});
+	it("puts the walked-through character's reminders first", () => {
+		let g = game();
+		g = run(g, { type: 'AssignCharacter', seatId: g.seating[1], characterId: 'monk' });
+		expect(bankReminders(g, characters)[0].characterId).toBe('poisoner');
+		expect(bankReminders(g, characters, 'monk')[0]).toMatchObject({
+			characterId: 'monk',
+			label: 'Safe'
+		});
 	});
 });
 

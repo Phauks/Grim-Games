@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import { prepTextSegments, setupReminders } from '#lib/core/rules/index.ts';
@@ -11,65 +12,104 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import { bankReminders } from './reminders.ts';
+	import SeatChooser from './SeatChooser.svelte';
+	import type { BankView } from './setup-tray.ts';
 	import { pendingTray, trayItems, traySeats, type TrayItem } from './setup-tray.ts';
 
 	/**
-	 * Setup reminders on the board (Trevor, 2026-10-16): core's suggested tokens wait in a
-	 * tray in the middle of the circle, where the board stays in view. The Storyteller drags
-	 * each onto any seat, or taps it to read why and place it on a suggested seat. Nothing is
-	 * placed by itself; a suggestion can be dismissed.
+	 * The reminder bank (Trevor, 2026-10-16), always docked under the board. During setup it
+	 * holds core's suggested setup reminders; after that, every reminder of a character in
+	 * play still off the board, with the walked-through step's character first and marked.
+	 * Drag a token onto any seat, or tap it to choose one. Nothing is placed by itself, and a
+	 * reminder removed from a seat comes back. The Storyteller can switch views at any time.
 	 */
 	interface Props {
 		grimoire: Grimoire;
 		board: HTMLElement | undefined;
 		/** Token diameter in px. */
 		size: number;
+		view: BankView;
+		onView: (view: BankView) => void;
+		/** The character whose night step is being walked through. */
+		focus?: CharacterId;
 		/** The seat under a point (in % of the board), if any. */
 		seatAt: (at: SeatPoint) => SeatId | undefined;
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId }) => void;
 	}
 
-	let { grimoire, board, size, seatAt, onHints }: Props = $props();
+	let { grimoire, board, size, view, onView, focus, seatAt, onHints }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
-	const items = $derived(trayItems(setupReminders(game, characters)));
-	const pending = $derived(pendingTray(items, game, grimoire.trayDismissed));
 	const names = $derived(characterNames([...characters.values()]));
-	// Each copy is its own token, unless "Stack duplicate reminders" is on: then copies of one
-	// token show once with a count, and dragging or tapping takes the next copy.
-	const shownTray = $derived.by((): { item: TrayItem; count: number }[] => {
-		if (!preferences.current.assistance.stackReminders)
-			return pending.map((item) => ({ item, count: 1 }));
-		const stacks: { base: string; item: TrayItem; count: number }[] = [];
-		for (const item of pending) {
-			const base = `${item.suggestion.characterId}:${item.suggestion.label}`;
-			const stack = stacks.find((s) => s.base === base);
-			if (stack) stack.count += 1;
-			else stacks.push({ base, item, count: 1 });
+
+	/** One token in the bank: a setup suggestion, or a reminder still off the board. */
+	interface Item {
+		key: string;
+		characterId: CharacterId;
+		label: string;
+		/** Shown once with ×count when "Stack duplicate reminders" is on. */
+		count: number;
+		setup?: TrayItem;
+	}
+
+	const setupItems = $derived(
+		pendingTray(trayItems(setupReminders(game, characters)), game, grimoire.trayDismissed)
+	);
+	const items = $derived.by((): Item[] => {
+		const stack = preferences.current.assistance.stackReminders;
+		if (view === 'setup') {
+			const out: Item[] = [];
+			for (const item of setupItems) {
+				const { characterId, label } = item.suggestion;
+				const same = stack
+					? out.find((i) => i.characterId === characterId && i.label === label)
+					: undefined;
+				if (same) same.count += 1;
+				else out.push({ key: item.key, characterId, label, count: 1, setup: item });
+			}
+			return out;
 		}
-		return stacks.map(({ item, count }) => ({ item, count }));
+		return bankReminders(game, characters, focus).flatMap(({ characterId, label, left }) => {
+			const key = `${characterId}:${label}`;
+			if (stack) return [{ key, characterId, label, count: left }];
+			return Array.from({ length: left }, (_, i) => ({
+				key: `${key}:${i}`,
+				characterId,
+				label,
+				count: 1
+			}));
+		});
+	});
+
+	// A new step's reminders are at the front: show them.
+	let list = $state<HTMLElement>();
+	$effect(() => {
+		void focus;
+		list?.scrollTo({ left: 0 });
 	});
 
 	const seatName = (seatId: SeatId) =>
 		game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
+	const seatsFor = (item: Item) => (item.setup ? traySeats(item.setup.suggestion) : []);
 
-	function place(item: TrayItem, seatId: SeatId) {
-		const { characterId, label } = item.suggestion;
+	function place(item: Pick<Item, 'characterId' | 'label'>, seatId: SeatId) {
+		const { characterId, label } = item;
 		grimoire.run({ type: 'AddReminder', seatId, reminder: { characterId, label } });
 	}
 
-	// ── Drag a token from the tray onto a seat ──
-	let drag = $state<{ key: string; at: SeatPoint } | undefined>();
-	function dragItem(item: TrayItem, x: number, y: number, end: boolean) {
+	// ── Drag a token from the bank onto a seat ──
+	let drag = $state<{ item: Item; at: SeatPoint } | undefined>();
+	function dragItem(item: Item, x: number, y: number, end: boolean) {
 		if (!board) return;
 		const rect = board.getBoundingClientRect();
 		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
 		const target = seatAt(at);
 		if (!end) {
-			drag = { key: item.key, at };
-			onHints({ seats: traySeats(item.suggestion), target });
+			drag = { item, at };
+			onHints({ seats: seatsFor(item), target });
 			return;
 		}
 		drag = undefined;
@@ -81,21 +121,27 @@
 		drag = undefined;
 		onHints({ seats: [] });
 	}
-	const dragged = $derived(pending.find((i) => i.key === drag?.key));
 
-	// ── Tap: what it is for, and where it fits ──
+	// ── Tap: a setup suggestion says what it is for; any other token asks for a seat ──
 	let shown = $state<TrayItem | undefined>();
 	let shownOpen = $state(false);
-	function show(item: TrayItem) {
-		shown = item;
-		shownOpen = true;
-		onHints({ seats: traySeats(item.suggestion) });
+	let choosing = $state<Item | undefined>();
+	let chooserOpen = $state(false);
+	function tap(item: Item) {
+		if (item.setup) {
+			shown = item.setup;
+			shownOpen = true;
+			onHints({ seats: seatsFor(item) });
+		} else {
+			choosing = item;
+			chooserOpen = true;
+		}
 	}
 	$effect(() => {
 		if (!shownOpen && !drag) onHints({ seats: [] });
 	});
 	function placeShown(seatId: SeatId) {
-		if (shown) place(shown, seatId);
+		if (shown) place(shown.suggestion, seatId);
 		shownOpen = false;
 	}
 	function dismissShown() {
@@ -104,37 +150,70 @@
 	}
 </script>
 
-<ul class="tray" aria-label="Setup reminders" data-tray>
-	{#each shownTray as { item, count } (item.key)}
-		<li class:lifted={drag?.key === item.key && count === 1}>
-			{#if count > 1}<span class="count" aria-label={`${count} copies`}>×{count}</span>{/if}
-			<BoardReminder
-				label={item.suggestion.label}
-				character={characters.get(item.suggestion.characterId)}
-				alignment={placingAlignment(game, item.suggestion.characterId, characters)}
-				{size}
-				onTap={() => show(item)}
-				onDrag={(x, y, end) => dragItem(item, x, y, end)}
-				onCancel={cancelDrag}
-			/>
-		</li>
-	{:else}
-		<li class="none">None</li>
-	{/each}
-</ul>
+<div class="bank" data-tray>
+	<button
+		type="button"
+		class="view"
+		aria-label={view === 'setup'
+			? 'Showing setup reminders; show all reminders'
+			: 'Showing all reminders; show setup reminders'}
+		onclick={() => onView(view === 'setup' ? 'all' : 'setup')}
+	>
+		{view === 'setup' ? 'Setup' : 'All'}
+	</button>
+	<ul
+		class="tray"
+		bind:this={list}
+		aria-label={view === 'setup' ? 'Setup reminders' : 'Reminder bank'}
+	>
+		{#each items as item (item.key)}
+			<li
+				class:lifted={drag?.item.key === item.key && item.count === 1}
+				class:now={focus !== undefined && item.characterId === focus}
+			>
+				{#if item.count > 1}<span class="count" aria-label={`${item.count} copies`}
+						>×{item.count}</span
+					>{/if}
+				<BoardReminder
+					label={item.label}
+					character={characters.get(item.characterId)}
+					alignment={placingAlignment(game, item.characterId, characters)}
+					{size}
+					onTap={() => tap(item)}
+					onDrag={(x, y, end) => dragItem(item, x, y, end)}
+					onCancel={cancelDrag}
+				/>
+			</li>
+		{:else}
+			<li class="none">None</li>
+		{/each}
+	</ul>
+</div>
 
-{#if drag && dragged}
+{#if drag}
 	<div class="floating" style:left="{drag.at.x}%" style:top="{drag.at.y}%" aria-hidden="true">
 		<BoardReminder
-			label={dragged.suggestion.label}
-			character={characters.get(dragged.suggestion.characterId)}
-			alignment={placingAlignment(game, dragged.suggestion.characterId, characters)}
+			label={drag.item.label}
+			character={characters.get(drag.item.characterId)}
+			alignment={placingAlignment(game, drag.item.characterId, characters)}
 			{size}
 			disabled
 			onTap={() => {}}
 		/>
 	</div>
 {/if}
+
+<SeatChooser
+	bind:open={chooserOpen}
+	title={choosing ? `Put ${choosing.label} on` : 'Put on'}
+	{game}
+	{characters}
+	onChoose={(seatId) => {
+		chooserOpen = false;
+		if (choosing) place(choosing, seatId);
+		choosing = undefined;
+	}}
+/>
 
 <Dialog
 	bind:open={shownOpen}
@@ -192,7 +271,7 @@
 <style>
 	/* Docked under the board (Trevor, 2026-10-16): a strip of tokens that scrolls sideways
 	   within itself, so the seats stay uncovered. The board leaves room for it. */
-	.tray {
+	.bank {
 		position: absolute;
 		left: 0;
 		right: 0;
@@ -200,18 +279,46 @@
 		z-index: 2;
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
 		height: var(--tray-h);
+		box-sizing: border-box;
+		border: 1px dashed var(--border);
+		border-radius: var(--radius-md);
+		background: color-mix(in srgb, var(--surface) 85%, transparent);
+	}
+	.view {
+		flex: none;
+		align-self: stretch;
+		min-width: var(--tap-target);
+		padding: 0 var(--space-2);
+		border: 0;
+		border-inline-end: 1px solid var(--border);
+		background: none;
+		color: var(--on-surface);
+		font: 600 0.85rem var(--font-control);
+		cursor: pointer;
+	}
+	.view:hover {
+		background: var(--surface-selected);
+	}
+	.tray {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-width: 0;
+		height: 100%;
 		box-sizing: border-box;
 		margin: 0;
 		padding: var(--space-1) var(--space-2);
 		overflow-x: auto;
 		overflow-y: hidden;
 		overscroll-behavior: contain;
-		border: 1px dashed var(--border);
-		border-radius: var(--radius-md);
-		background: color-mix(in srgb, var(--surface) 85%, transparent);
 		list-style: none;
+	}
+	/* The walked-through step's reminders, at the front. */
+	li.now {
+		border-radius: 50%;
+		box-shadow: 0 0 0 3px var(--accent);
 	}
 	.tray > li {
 		flex: none;

@@ -2,7 +2,7 @@
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
-	import { boardNightSteps } from './night-steps.ts';
+	import { boardNightSteps, stepHolders } from './night-steps.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
@@ -18,7 +18,7 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
-	import { setupComplete } from '#lib/core/rules/index.ts';
+	import { setupComplete, setupReminders } from '#lib/core/rules/index.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -51,7 +51,8 @@
 	import NightOrderSheet from './NightOrderSheet.svelte';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
-	import SetupTray from './SetupTray.svelte';
+	import ReminderBank from './ReminderBank.svelte';
+	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 
 	interface Props {
@@ -377,11 +378,19 @@
 	}
 
 	// ── Setup reminders: a tray of suggested tokens in the middle of the board ──
-	let traying = $state(false);
+	// ── The reminder bank under the board (Trevor, 2026-10-16): setup suggestions until
+	// they are all placed or dismissed (or the first day starts), then every reminder left.
+	// The Storyteller can switch at any time.
 	let trayHints = $state<{ seats: SeatId[]; target?: SeatId }>({ seats: [] });
+	const setupPending = $derived(
+		pendingTray(trayItems(setupReminders(game, characters)), game, grimoire.trayDismissed).length
+	);
+	let bankChosen = $state<BankView | undefined>();
+	const bankView = $derived<BankView>(
+		bankChosen ?? (setupPending > 0 && game.pastDays.length === 0 ? 'setup' : 'all')
+	);
 	function startTray() {
-		traying = true;
-		toast('Setup reminders', 'Drag a token onto a seat, or tap it to see where it fits.');
+		bankChosen = 'setup';
 	}
 
 	/** Characters and Bag draw show in the middle until the game is set up, then go. */
@@ -403,6 +412,9 @@
 		const data = officialData.current;
 		return walk && data ? boardNightSteps(game, characters, walk.night, data) : [];
 	});
+	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
+	/** Who wakes for the current walk-through step, marked on the board. */
+	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
 	// ── Share the script (never the game) ──
 	let shareOpen = $state(false);
@@ -495,16 +507,6 @@
 		{:else if placing}
 			<span class="title">Add a seat</span>
 			<Button variant="quiet" icon="close" onclick={() => (placing = undefined)}>Cancel</Button>
-		{:else if traying}
-			<span class="title">Setup reminders</span>
-			<Button
-				variant="accent"
-				icon="check"
-				onclick={() => {
-					traying = false;
-					trayHints = { seats: [] };
-				}}>Done</Button
-			>
 		{:else}
 			<!-- Icons on phones; with their words on wider screens, where there is room. -->
 			<span class="spacer"></span>
@@ -536,9 +538,8 @@
 	<div
 		class="board"
 		class:arranging
-		class:traying
 		class:walking={walk !== undefined}
-		style:--tray-h={traying ? `${chip + 30}px` : undefined}
+		style:--tray-h="{chip + 30}px"
 		style:--strip-h={walk ? '7.5rem' : undefined}
 		bind:this={board}
 	>
@@ -582,6 +583,7 @@
 							reminderDrag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
 					hint={trayHints.seats.includes(seat.seatId) ||
+						walkHolders.includes(seat.seatId) ||
 						(dragOrigin?.holders.includes(seat.seatId) ?? false)}
 					namePlace={namePlaces[i] ?? 'below'}
 					onTap={() => !arranging && openSeat(seat.seatId)}
@@ -644,11 +646,18 @@
 				onClose={() => (walk = undefined)}
 			/>
 		{/if}
-		{#if traying}
-			<SetupTray {grimoire} {board} size={chip} {seatAt} onHints={(h) => (trayHints = h)} />
-		{/if}
+		<ReminderBank
+			{grimoire}
+			{board}
+			size={chip}
+			view={bankView}
+			onView={(v) => (bankChosen = v)}
+			focus={walkStep?.character?.id}
+			{seatAt}
+			onHints={(h) => (trayHints = h)}
+		/>
 
-		<div class="centre" class:hidden={traying}>
+		<div class="centre">
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if showSetup}
 				<div class="setup">
@@ -796,7 +805,6 @@
 		guideOpen = true;
 	}}
 	onWalk={(night) => {
-		traying = false;
 		walk = { night, index: 0 };
 	}}
 />
@@ -912,12 +920,12 @@
 		/* The board handles its own taps; no double-tap zoom delay. */
 		touch-action: manipulation;
 	}
-	/* Room under the board for the docked Setup reminders tray. */
-	.board.walking {
-		margin-bottom: calc(var(--strip-h) + 2 * var(--space-2));
-	}
-	.board.traying {
+	/* Room under the board for the docked reminder bank, and the walk-through strip. */
+	.board {
 		margin-bottom: calc(var(--tray-h) + 2 * var(--space-2));
+	}
+	.board.walking {
+		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
 	.slot {
 		position: absolute;
@@ -991,9 +999,6 @@
 		justify-items: center;
 		gap: var(--space-2);
 		max-width: 50%;
-	}
-	.centre.hidden {
-		visibility: hidden;
 	}
 	.setup {
 		display: grid;
