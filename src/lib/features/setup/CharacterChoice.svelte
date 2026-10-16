@@ -64,9 +64,24 @@
 		color: var(--choice-color);
 		box-shadow: inset 0 0 0 1px var(--border);
 	}
+	/*
+	 * Selected looks the same however it was chosen (tap, Random, reload): the ring is drawn
+	 * above the row, so a hover or a phone's sticky tap highlight can't paint over it, and it
+	 * is not red, which reads as an error (Trevor, 2026-10-16).
+	 */
+	.choice {
+		position: relative;
+	}
 	.choice[data-selected] {
 		background: var(--choice-selected-background);
-		box-shadow: inset 0 0 0 2px var(--choice-selected-border);
+	}
+	.choice[data-selected]::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		box-shadow: inset 0 0 0 2px var(--focus);
+		pointer-events: none;
 	}
 	.main {
 		display: flex;
@@ -84,9 +99,11 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
-	.main:hover {
-		background: var(--surface-selected);
-		border-radius: var(--radius-md);
+	@media (hover: hover) {
+		.main:hover {
+			background: var(--surface-selected);
+			border-radius: var(--radius-md);
+		}
 	}
 	.text {
 		display: grid;

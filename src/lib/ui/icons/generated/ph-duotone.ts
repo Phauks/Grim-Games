@@ -20,6 +20,7 @@ import ph_book_open_text_duotone from '~icons/ph/book-open-text-duotone';
 import ph_bookmark_simple_duotone from '~icons/ph/bookmark-simple-duotone';
 import ph_books_duotone from '~icons/ph/books-duotone';
 import ph_bug_duotone from '~icons/ph/bug-duotone';
+import ph_caret_circle_down_duotone from '~icons/ph/caret-circle-down-duotone';
 import ph_caret_down_duotone from '~icons/ph/caret-down-duotone';
 import ph_caret_left_duotone from '~icons/ph/caret-left-duotone';
 import ph_caret_right_duotone from '~icons/ph/caret-right-duotone';
@@ -120,6 +121,7 @@ const icons: IconMap = {
 	'ph:bookmark-simple-duotone': ph_bookmark_simple_duotone,
 	'ph:books-duotone': ph_books_duotone,
 	'ph:bug-duotone': ph_bug_duotone,
+	'ph:caret-circle-down-duotone': ph_caret_circle_down_duotone,
 	'ph:caret-down-duotone': ph_caret_down_duotone,
 	'ph:caret-left-duotone': ph_caret_left_duotone,
 	'ph:caret-right-duotone': ph_caret_right_duotone,

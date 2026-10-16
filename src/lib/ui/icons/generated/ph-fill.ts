@@ -20,6 +20,7 @@ import ph_book_open_text_fill from '~icons/ph/book-open-text-fill';
 import ph_bookmark_simple_fill from '~icons/ph/bookmark-simple-fill';
 import ph_books_fill from '~icons/ph/books-fill';
 import ph_bug_fill from '~icons/ph/bug-fill';
+import ph_caret_circle_down_fill from '~icons/ph/caret-circle-down-fill';
 import ph_caret_down_fill from '~icons/ph/caret-down-fill';
 import ph_caret_left_fill from '~icons/ph/caret-left-fill';
 import ph_caret_right_fill from '~icons/ph/caret-right-fill';
@@ -120,6 +121,7 @@ const icons: IconMap = {
 	'ph:bookmark-simple-fill': ph_bookmark_simple_fill,
 	'ph:books-fill': ph_books_fill,
 	'ph:bug-fill': ph_bug_fill,
+	'ph:caret-circle-down-fill': ph_caret_circle_down_fill,
 	'ph:caret-down-fill': ph_caret_down_fill,
 	'ph:caret-left-fill': ph_caret_left_fill,
 	'ph:caret-right-fill': ph_caret_right_fill,

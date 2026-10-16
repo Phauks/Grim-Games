@@ -106,6 +106,73 @@ test('bag tiles can show symbols instead of numbers, centred on the token', asyn
 	await expect(tile.locator('svg')).toHaveCount(1);
 });
 
+test('with Require a name, the token stays hidden until a name is typed', async ({ page }) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await page.getByRole('button', { name: 'Storyteller settings' }).tap();
+	await page.getByText('Require a name before drawing', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	const reveal = page.getByTestId('reveal');
+	await expect(reveal.getByTestId('reveal-locked')).toBeVisible();
+	await expect(reveal.getByTestId('reveal-name')).toHaveText('');
+	const show = page.getByRole('button', { name: 'Reveal' });
+	await expect(show).toBeDisabled();
+	await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
+	await show.tap();
+	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
+});
+
+test('type groups and the setup sheet close from their header and stay closed', async ({
+	page
+}) => {
+	await selectionFor(page, 5);
+	const townsfolk = page.getByRole('button', { name: 'Townsfolk', exact: true });
+	await expect(townsfolk).toHaveAttribute('aria-expanded', 'true');
+	await townsfolk.tap();
+	await expect(townsfolk).toHaveAttribute('aria-expanded', 'false');
+	await expect(choice(page, 'Chef')).toBeHidden();
+	await page.getByRole('button', { name: 'Setup sheet', exact: true }).tap();
+	await expect(page.getByTestId('setup-table')).toBeHidden();
+	await page.reload();
+	await expect(page.getByRole('button', { name: 'Townsfolk', exact: true })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
+	await expect(page.getByTestId('setup-table')).toBeHidden();
+	await expect(choice(page, 'Imp')).toBeVisible();
+});
+
+test('a character picked by Random looks the same as one picked by hand', async ({ page }) => {
+	await selectionFor(page, 5);
+	await page.getByRole('button', { name: 'Random' }).tap();
+	const picked = page.locator('.choice[data-selected]');
+	await expect(picked.first()).toBeVisible();
+	const random = picked.first();
+	const randomName = await random.locator('.main').getAttribute('data-character-id');
+	// Pick one by hand: clear, then tap the same character.
+	await page.getByRole('button', { name: 'Clear', exact: true }).tap();
+	await page.locator(`[data-character-id="${randomName}"]`).tap();
+	const manual = page.locator('.choice[data-selected]').first();
+	const ring = (l: typeof manual) =>
+		l.evaluate((el) => {
+			const after = getComputedStyle(el, '::after');
+			return { ring: after.boxShadow, bg: getComputedStyle(el).backgroundColor };
+		});
+	// Move the pointer away so a hover can't differ either.
+	await page.mouse.move(0, 0);
+	const byHand = await ring(manual);
+	await page.getByRole('button', { name: 'Random' }).tap();
+	await page.mouse.move(0, 0);
+	const byRandom = await ring(page.locator('.choice[data-selected]').first());
+	expect(byHand).toEqual(byRandom);
+	expect(byHand.ring).not.toBe('none');
+});
+
 test('building a bag with errors asks the Storyteller to confirm them', async ({ page }) => {
 	await selectionFor(page, 5);
 	// No Demon, and one character short.

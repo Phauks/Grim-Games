@@ -32,6 +32,11 @@ export interface Preferences {
 	assistance: Assistance;
 	/** What face-down bag tiles show on the draw screen. */
 	tileFace: TileFace;
+	/**
+	 * A player types their name before they can see the token they drew, in the
+	 * pass-the-phone draw and when drawing on their own phone (Trevor, 2026-10-16).
+	 */
+	requireName: boolean;
 }
 
 export const TILE_FACES = ['numbers', 'symbols'] as const;
@@ -55,7 +60,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	iconSet: null,
 	iconOverrides: {},
 	assistance: DEFAULT_ASSISTANCE,
-	tileFace: 'numbers'
+	tileFace: 'numbers',
+	requireName: false
 };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
@@ -86,7 +92,9 @@ export function parsePreferences(raw: unknown): Preferences {
 		assistance: parseAssistance(input.assistance),
 		tileFace: (TILE_FACES as readonly unknown[]).includes(input.tileFace)
 			? (input.tileFace as TileFace)
-			: DEFAULT_PREFERENCES.tileFace
+			: DEFAULT_PREFERENCES.tileFace,
+		requireName:
+			typeof input.requireName === 'boolean' ? input.requireName : DEFAULT_PREFERENCES.requireName
 	};
 }
 

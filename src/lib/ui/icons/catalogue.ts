@@ -43,6 +43,7 @@ export const ICON_SLOTS = {
 	back: { label: 'Back', choices: ['ph:arrow-left', 'ph:caret-left'] },
 	forward: { label: 'Forward', choices: ['ph:caret-right', 'ph:arrow-right'] },
 	check: { label: 'Selected', choices: ['ph:check'] },
+	expand: { label: 'Show or hide a section', choices: ['ph:caret-down', 'ph:caret-circle-down'] },
 	wiki: { label: 'Wiki link', choices: ['ph:arrow-square-out', 'ph:book-open-text'] },
 	search: { label: 'Search', choices: ['ph:magnifying-glass'] },
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },

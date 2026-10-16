@@ -20,6 +20,7 @@ import ph_book_open_text_thin from '~icons/ph/book-open-text-thin';
 import ph_bookmark_simple_thin from '~icons/ph/bookmark-simple-thin';
 import ph_books_thin from '~icons/ph/books-thin';
 import ph_bug_thin from '~icons/ph/bug-thin';
+import ph_caret_circle_down_thin from '~icons/ph/caret-circle-down-thin';
 import ph_caret_down_thin from '~icons/ph/caret-down-thin';
 import ph_caret_left_thin from '~icons/ph/caret-left-thin';
 import ph_caret_right_thin from '~icons/ph/caret-right-thin';
@@ -120,6 +121,7 @@ const icons: IconMap = {
 	'ph:bookmark-simple-thin': ph_bookmark_simple_thin,
 	'ph:books-thin': ph_books_thin,
 	'ph:bug-thin': ph_bug_thin,
+	'ph:caret-circle-down-thin': ph_caret_circle_down_thin,
 	'ph:caret-down-thin': ph_caret_down_thin,
 	'ph:caret-left-thin': ph_caret_left_thin,
 	'ph:caret-right-thin': ph_caret_right_thin,

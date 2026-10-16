@@ -4,6 +4,7 @@
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 
 	interface Props {
 		open: boolean;
@@ -34,10 +35,13 @@
 
 	let name = $state('');
 	let alignment = $state<Alignment | ''>('');
+	/** False while the player still has to type their name to see the token. */
+	let revealed = $state(true);
 	$effect(() => {
 		if (open) {
 			name = playerName;
 			alignment = '';
+			revealed = !preferences.current.requireName || playerName.trim() !== '';
 		}
 	});
 </script>
@@ -49,11 +53,6 @@
 <Dialog bind:open title="Tile {number}" size="full">
 	<div class="reveal" data-testid="reveal">
 		<p class="seat">{seatLabel}</p>
-		<div class="token">
-			<CharacterToken character={shows} size={160} />
-		</div>
-		<p class="name" data-testid="reveal-name">{shows.name}</p>
-		<p class="ability">{shows.ability}</p>
 		<label class="player">
 			<span>Name</span>
 			<input
@@ -71,6 +70,17 @@
 				}}
 			/>
 		</label>
+		<!-- Hidden until a name is entered when that's required; the space stays reserved. -->
+		<div class="token">
+			{#if revealed}<CharacterToken character={shows} size={160} />{:else}<span
+					class="hidden-token"
+					data-testid="reveal-locked">Enter your name to see your character</span
+				>{/if}
+		</div>
+		<p class="name" data-testid="reveal-name" class:concealed={!revealed}>
+			{revealed ? shows.name : ''}
+		</p>
+		<p class="ability" class:concealed={!revealed}>{revealed ? shows.ability : ''}</p>
 		<div class="alignment" aria-hidden={!needsAlignment}>
 			{#if needsAlignment}
 				<ChoiceGroup
@@ -88,11 +98,17 @@
 		</div>
 	</div>
 	{#snippet actions()}
-		<Button
-			variant="accent"
-			onclick={() => onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) })}
-			>Confirm</Button
-		>
+		{#if revealed}
+			<Button
+				variant="accent"
+				onclick={() => onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) })}
+				>Confirm</Button
+			>
+		{:else}
+			<Button variant="accent" disabled={name.trim() === ''} onclick={() => (revealed = true)}
+				>Reveal</Button
+			>
+		{/if}
 	{/snippet}
 </Dialog>
 
@@ -115,6 +131,21 @@
 		place-items: center;
 		width: 160px;
 		height: 160px;
+	}
+	.hidden-token {
+		display: grid;
+		place-items: center;
+		width: 160px;
+		height: 160px;
+		padding: var(--space-3);
+		border-radius: 50%;
+		background: var(--token-face);
+		color: var(--on-token);
+		box-shadow: inset 0 0 0 3px var(--token-rim);
+		font-size: 0.9rem;
+	}
+	.concealed {
+		min-height: 1.3em;
 	}
 	.name {
 		margin: 0;

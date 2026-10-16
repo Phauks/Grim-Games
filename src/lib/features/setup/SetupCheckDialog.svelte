@@ -4,6 +4,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 
 	interface Props {
@@ -26,17 +27,15 @@
 <!-- Everything the counts bar can't show: warnings, setup changes, stand-ins and jinxes. -->
 <Dialog bind:open title="Setup check" size="full">
 	<div class="body" data-testid="setup-check">
-		<section>
-			<h3>Warnings</h3>
+		<Collapsible title="Warnings" level={3} storageKey="setup-check:warnings">
 			{#if warnings.length}
 				<ul>
 					{#each warnings as warning, i (i)}<li><GlossaryText text={warning} /></li>{/each}
 				</ul>
 			{:else}<p>None</p>{/if}
-		</section>
+		</Collapsible>
 
-		<section>
-			<h3>Shown instead</h3>
+		<Collapsible title="Shown instead" level={3} storageKey="setup-check:shown-instead">
 			{#if plan.standIns.length}
 				<ul class="stand-ins">
 					{#each plan.standIns as standIn (standIn.characterId)}
@@ -56,10 +55,9 @@
 					{/each}
 				</ul>
 			{:else}<p>None</p>{/if}
-		</section>
+		</Collapsible>
 
-		<section>
-			<h3>Setup changes</h3>
+		<Collapsible title="Setup changes" level={3} storageKey="setup-check:setup-changes">
 			{#if analysis.modifiers.length || analysis.notes.length}
 				<ul>
 					{#each analysis.modifiers as modifier (modifier.id)}
@@ -68,10 +66,9 @@
 					{#each analysis.notes as note, i (i)}<li><GlossaryText text={note} /></li>{/each}
 				</ul>
 			{:else}<p>None</p>{/if}
-		</section>
+		</Collapsible>
 
-		<section>
-			<h3>Jinxes</h3>
+		<Collapsible title="Jinxes" level={3} storageKey="setup-check:jinxes">
 			{#if jinxes.length}
 				<ul>
 					{#each jinxes as jinx (jinx.characters.join('+'))}
@@ -82,7 +79,7 @@
 					{/each}
 				</ul>
 			{:else}<p>None</p>{/if}
-		</section>
+		</Collapsible>
 	</div>
 </Dialog>
 
@@ -92,11 +89,6 @@
 		gap: var(--space-3);
 		overflow-y: auto;
 		padding-top: var(--space-2);
-	}
-	h3 {
-		margin: 0 0 var(--space-1);
-		font-size: 1rem;
-		color: var(--heading);
 	}
 	p,
 	ul {

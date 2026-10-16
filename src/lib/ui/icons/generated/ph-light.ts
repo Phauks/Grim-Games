@@ -20,6 +20,7 @@ import ph_book_open_text_light from '~icons/ph/book-open-text-light';
 import ph_bookmark_simple_light from '~icons/ph/bookmark-simple-light';
 import ph_books_light from '~icons/ph/books-light';
 import ph_bug_light from '~icons/ph/bug-light';
+import ph_caret_circle_down_light from '~icons/ph/caret-circle-down-light';
 import ph_caret_down_light from '~icons/ph/caret-down-light';
 import ph_caret_left_light from '~icons/ph/caret-left-light';
 import ph_caret_right_light from '~icons/ph/caret-right-light';
@@ -120,6 +121,7 @@ const icons: IconMap = {
 	'ph:bookmark-simple-light': ph_bookmark_simple_light,
 	'ph:books-light': ph_books_light,
 	'ph:bug-light': ph_bug_light,
+	'ph:caret-circle-down-light': ph_caret_circle_down_light,
 	'ph:caret-down-light': ph_caret_down_light,
 	'ph:caret-left-light': ph_caret_left_light,
 	'ph:caret-right-light': ph_caret_right_light,

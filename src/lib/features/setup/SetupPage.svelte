@@ -23,6 +23,7 @@
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
@@ -201,7 +202,9 @@
 					onclick={() => setupSelection.setPlayers(s.players + 1)}>+</button
 				>
 			</div>
-			<SetupTable players={s.players} />
+			<Collapsible title="Setup sheet" storageKey="setup:sheet">
+				<SetupTable players={s.players} />
+			</Collapsible>
 		</section>
 		<div class="counts">
 			<CountsBar {analysis} {travellers} />
@@ -214,6 +217,7 @@
 			selected={ids}
 			bind:query
 			showSearch={false}
+			collapsibleKey="setup"
 			contained={false}
 			types={TYPES}
 			onSelect={(id) => {

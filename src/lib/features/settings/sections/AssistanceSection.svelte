@@ -21,3 +21,9 @@
 	checked={preferences.current.tileFace === 'symbols'}
 	onChange={(checked) => preferences.update({ tileFace: checked ? 'symbols' : 'numbers' })}
 />
+<SettingToggle
+	label="Require a name before drawing"
+	description="A player types their name before they can see the token they drew."
+	checked={preferences.current.requireName}
+	onChange={(requireName) => preferences.update({ requireName })}
+/>

@@ -18,7 +18,8 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterSearchBox from './CharacterSearchBox.svelte';
 	import CharacterToken from './CharacterToken.svelte';
-	import { PICKER_TYPES, searchGroups } from './character-search.ts';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import { PICKER_TYPES, searchGroups, type CharacterGroup } from './character-search.ts';
 
 	interface Props {
 		/** The characters to choose from, in the order to show them (usually script order). */
@@ -46,6 +47,11 @@
 		 * sheets and dialogs. False: the list grows with the page.
 		 */
 		contained?: boolean;
+		/**
+		 * Makes each type group a section that opens and closes from its header, remembered on
+		 * the device under this key plus the type.
+		 */
+		collapsibleKey?: string;
 		/** Custom row (the setup screen adds copies); the default is token, name and ability. */
 		item?: Snippet<[Character, PickerItemState]>;
 	}
@@ -63,6 +69,7 @@
 		query = $bindable(''),
 		showSearch = true,
 		contained = true,
+		collapsibleKey,
 		item
 	}: Props = $props();
 
@@ -77,6 +84,44 @@
 	}
 </script>
 
+{#snippet rows(group: CharacterGroup)}
+	<ul role="list">
+		{#each group.characters as character (character.id)}
+			{@const state = {
+				selected: chosen.has(character.id),
+				disabledReason: reasonFor(character, chosen.has(character.id))
+			}}
+			{@const note = state.disabledReason ?? marker?.(character)}
+			<li>
+				{#if item}
+					{@render item(character, state)}
+				{:else}
+					<button
+						type="button"
+						class="row"
+						data-character-id={character.id}
+						aria-label={note ? `${character.name}, ${note}` : character.name}
+						aria-pressed={mode === 'multi' ? state.selected : undefined}
+						aria-current={mode === 'single' && state.selected ? 'true' : undefined}
+						disabled={state.disabledReason !== undefined}
+						onclick={() => onSelect(character.id)}
+					>
+						<CharacterToken {character} alignment={defaultAlignment(character.type)} size={44} />
+						<span class="text">
+							<span class="name">{character.name}</span>
+							{#if notes}<span class="note">{note ?? ''}</span>{/if}
+							<span class="ability">{character.ability}</span>
+						</span>
+						<span class="check" aria-hidden="true"
+							>{#if state.selected}<Icon name="check" />{/if}</span
+						>
+					</button>
+				{/if}
+			</li>
+		{/each}
+	</ul>
+{/snippet}
+
 <!--
 	The shared way to choose characters: a search box that stays put, then characters by type
 	with their ability text. Single or multi select, an optional filter, and rows that are
@@ -86,48 +131,20 @@
 	{#if showSearch}<CharacterSearchBox bind:query />{/if}
 	<div class="list" data-testid="character-picker">
 		{#each groups as group (group.type)}
-			<section aria-labelledby="picker-{group.type}">
-				<h3 id="picker-{group.type}">{TYPE_PLURALS[group.type]}</h3>
-				<ul role="list">
-					{#each group.characters as character (character.id)}
-						{@const state = {
-							selected: chosen.has(character.id),
-							disabledReason: reasonFor(character, chosen.has(character.id))
-						}}
-						{@const note = state.disabledReason ?? marker?.(character)}
-						<li>
-							{#if item}
-								{@render item(character, state)}
-							{:else}
-								<button
-									type="button"
-									class="row"
-									data-character-id={character.id}
-									aria-label={note ? `${character.name}, ${note}` : character.name}
-									aria-pressed={mode === 'multi' ? state.selected : undefined}
-									aria-current={mode === 'single' && state.selected ? 'true' : undefined}
-									disabled={state.disabledReason !== undefined}
-									onclick={() => onSelect(character.id)}
-								>
-									<CharacterToken
-										{character}
-										alignment={defaultAlignment(character.type)}
-										size={44}
-									/>
-									<span class="text">
-										<span class="name">{character.name}</span>
-										{#if notes}<span class="note">{note ?? ''}</span>{/if}
-										<span class="ability">{character.ability}</span>
-									</span>
-									<span class="check" aria-hidden="true"
-										>{#if state.selected}<Icon name="check" />{/if}</span
-									>
-								</button>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			</section>
+			{#if collapsibleKey}
+				<Collapsible
+					title={TYPE_PLURALS[group.type]}
+					level={3}
+					storageKey="{collapsibleKey}:{group.type}"
+				>
+					{@render rows(group)}
+				</Collapsible>
+			{:else}
+				<section aria-labelledby="picker-{group.type}">
+					<h3 id="picker-{group.type}">{TYPE_PLURALS[group.type]}</h3>
+					{@render rows(group)}
+				</section>
+			{/if}
 		{:else}
 			<p class="none">None</p>
 		{/each}
@@ -188,13 +205,15 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
-	.row:hover:not(:disabled) {
-		background: var(--surface-selected);
+	@media (hover: hover) {
+		.row:hover:not(:disabled):not([aria-pressed='true']):not([aria-current='true']) {
+			background: var(--surface-selected);
+		}
 	}
 	.row[aria-pressed='true'],
 	.row[aria-current='true'] {
 		background: var(--choice-selected-background);
-		box-shadow: inset 0 0 0 2px var(--choice-selected-border);
+		box-shadow: inset 0 0 0 2px var(--focus);
 	}
 	.row:disabled {
 		opacity: 0.55;
