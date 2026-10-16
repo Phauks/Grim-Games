@@ -261,3 +261,45 @@ export function historyItems(
 	});
 	return items.reverse();
 }
+
+/** One change to who a seat is during the game, for the seat sheet (Trevor, 2026-10-16). */
+export type SeatChange =
+	| { kind: 'character'; at: number; from: CharacterId; to: CharacterId }
+	| { kind: 'alignment'; at: number; from: Alignment; to: Alignment };
+
+/**
+ * A seat's character and alignment changes, oldest first, from the applied log entries: a
+ * Fang Gu jumping into an Outsider, a Snake Charmer swap, a Pit-Hag, a turned alignment.
+ * The first character a seat gets is not a change; a character removed and later replaced
+ * counts as one change from the old character to the new.
+ */
+export function seatChanges(
+	entries: readonly LogEntry[],
+	cursor: number,
+	seatId: SeatId
+): SeatChange[] {
+	const out: SeatChange[] = [];
+	let character: CharacterId | undefined;
+	let alignment: Alignment | undefined;
+	const turn = (at: number, to: Alignment | undefined) => {
+		if (alignment !== undefined && to !== undefined && to !== alignment)
+			out.push({ kind: 'alignment', at, from: alignment, to });
+		if (to !== undefined) alignment = to;
+	};
+	for (const entry of entries.slice(0, cursor)) {
+		for (const event of entry.events) {
+			if (!('seatId' in event) || event.seatId !== seatId) continue;
+			if (event.type === 'CharacterAssigned') {
+				if (character !== undefined && character !== event.characterId)
+					out.push({ kind: 'character', at: entry.at, from: character, to: event.characterId });
+				character = event.characterId;
+				turn(entry.at, event.alignment);
+			} else if (event.type === 'AlignmentSet') {
+				turn(entry.at, event.alignment);
+			} else if (event.type === 'SeatRemoved') {
+				return [];
+			}
+		}
+	}
+	return out;
+}

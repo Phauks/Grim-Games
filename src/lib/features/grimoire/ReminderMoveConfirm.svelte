@@ -115,7 +115,7 @@
 				pending = undefined;
 			}}>Cancel</Button
 		>
-		<Button variant="accent" icon="check" onclick={confirm}>Confirm change</Button>
+		<Button variant="accent" icon="check" onclick={confirm}>Confirm</Button>
 	{/snippet}
 </Dialog>
 

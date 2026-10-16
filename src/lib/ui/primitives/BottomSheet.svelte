@@ -27,6 +27,8 @@
 		heading?: Snippet;
 		/** Right after the title on its line, such as an edit button. */
 		titleEnd?: Snippet;
+		/** Replaces the description's text, for one with parts of different sizes. */
+		subtitle?: Snippet;
 		children: Snippet;
 		/**
 		 * False: opening the sheet doesn't focus its first field, so a phone's keyboard stays
@@ -47,6 +49,7 @@
 		lead,
 		heading,
 		titleEnd,
+		subtitle,
 		children,
 		focusFirstField = true
 	}: Props = $props();
@@ -85,7 +88,9 @@
 						{:else}
 							<Drawer.Title>{title}</Drawer.Title>
 						{/if}
-						{#if description}<Drawer.Description>{description}</Drawer.Description>{/if}
+						{#if description}<Drawer.Description
+								>{#if subtitle}{@render subtitle()}{:else}{description}{/if}</Drawer.Description
+							>{/if}
 					</div>
 					{#if actions}{@render actions()}{/if}
 					<!-- Computers only (see the media query): no swipe there, so a visible way out. -->

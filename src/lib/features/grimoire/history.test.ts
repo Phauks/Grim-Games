@@ -10,7 +10,7 @@ import {
 } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { historyItems } from './history.ts';
+import { historyItems, seatChanges } from './history.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -89,5 +89,26 @@ describe('historyItems', () => {
 		const [voted, nominated] = historyItems(session.log.entries, session.log.cursor, characters);
 		expect(nominated.parts).toEqual([{ kind: 'text', text: 'Ana nominated Ben' }]);
 		expect(voted.parts).toEqual([{ kind: 'text', text: 'Demon voted' }]);
+	});
+});
+
+describe('seatChanges', () => {
+	it("lists a seat's character and alignment changes, not its first character", () => {
+		// The Fang Gu jumps into an Outsider, who becomes the evil Fang Gu
+		// (https://wiki.bloodontheclocktower.com/Fang_Gu); here shown as a Recluse turned evil.
+		const session = play(
+			(s) => ({ type: 'AssignCharacter', seatId: first(s), characterId: 'recluse' }),
+			(s) => ({ type: 'AssignCharacter', seatId: second(s), characterId: 'imp' }),
+			(s) => ({ type: 'AssignCharacter', seatId: first(s), characterId: 'imp' }),
+			(s) => ({ type: 'SetAlignment', seatId: first(s), alignment: 'evil' })
+		);
+		const seatId = first(session);
+		expect(seatChanges(session.log.entries, session.log.cursor, seatId)).toEqual([
+			{ kind: 'character', at: 0, from: 'recluse', to: 'imp' },
+			{ kind: 'alignment', at: 0, from: 'good', to: 'evil' }
+		]);
+		expect(seatChanges(session.log.entries, session.log.cursor, second(session))).toEqual([]);
+		// Undone changes are not shown.
+		expect(seatChanges(session.log.entries, session.log.cursor - 2, seatId)).toEqual([]);
 	});
 });

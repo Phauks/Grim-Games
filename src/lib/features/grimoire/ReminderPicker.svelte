@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
+	import type { Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -20,9 +20,11 @@
 		seatId: SeatId | undefined;
 		/** The seat's name, for the title. */
 		title: string;
+		/** Takes a reminder off this seat (asking first when it normally stays put). */
+		onRemove: (reminderId: ReminderId) => void;
 	}
 
-	let { open = $bindable(), grimoire, seatId, title }: Props = $props();
+	let { open = $bindable(), grimoire, seatId, title, onRemove }: Props = $props();
 
 	const characters = $derived(grimoire.open.characters);
 	const groups = $derived(reminderGroups(grimoire.game, characters));
@@ -34,18 +36,52 @@
 	// Storyteller turns on "Stack duplicate reminders" (Trevor, 2026-10-16).
 	const total = $derived(reminderCopies(grimoire.game, characters));
 	const stack = $derived(preferences.current.assistance.stackReminders);
-	/** The chips for one token: one per copy (the placed ones done), or one stacked chip. */
-	function copies(reminder: Reminder): { done: boolean; count?: number; label?: string }[] {
+	/** This seat's reminders, by key: tapping one of these takes it off (Trevor, 2026-10-16). */
+	const here = $derived.by(() => {
+		const out: Record<string, ReminderId[]> = {};
+		for (const r of seatId ? (grimoire.game.seats[seatId]?.reminders ?? []) : [])
+			(out[reminderKey(r)] ??= []).push(r.reminderId);
+		return out;
+	});
+	const onSeat = (reminder: Reminder) => here[reminderKey(reminder)]?.length ?? 0;
+	interface Copy {
+		/** Placed on another seat: disabled. */
+		done: boolean;
+		/** On this seat: shown selected, and a tap takes it off. */
+		on: boolean;
+		count?: number;
+		label?: string;
+	}
+	/**
+	 * The chips for one token: one per copy (free ones first, then those on this seat, then
+	 * those on other seats), or one stacked chip.
+	 */
+	function copies(reminder: Reminder): Copy[] {
 		const key = reminderKey(reminder);
 		const all = total.get(key) ?? 1;
 		const free = Math.max(0, left.get(key) ?? 1);
-		if (all <= 1) return [{ done: free === 0 }];
-		if (stack) return [{ done: free === 0, count: free, label: `${reminder.label}, ${free} left` }];
+		const mine = onSeat(reminder);
+		const state = (i: number) => ({ done: i >= free + mine, on: i >= free && i < free + mine });
+		if (all <= 1) return [state(0)];
+		if (stack)
+			return [
+				{
+					done: free === 0 && mine === 0,
+					on: mine > 0,
+					count: free,
+					label: `${reminder.label}, ${free} left`
+				}
+			];
 		return Array.from({ length: all }, (_, i) => ({
-			done: i >= free,
+			...state(i),
 			label: `${reminder.label}, copy ${i + 1} of ${all}`
 		}));
 	}
+	/** Recent chips: on this seat, free, or used up elsewhere. */
+	const recentCopy = (reminder: Reminder): Copy => ({
+		done: usedUp(reminder) && onSeat(reminder) === 0,
+		on: onSeat(reminder) > 0
+	});
 	/** Only reminders the picker offers now, so a recent one never brings back one not in play. */
 	const offered = $derived(
 		new Set(
@@ -64,9 +100,17 @@
 				.filter((r) => offered.has(reminderKey(r)));
 	});
 
-	/** Adds a reminder and keeps the picker open, so several can be added in a row. */
-	function add(reminder: Reminder) {
+	/**
+	 * Adds a reminder, or takes it off when it is on this seat, keeping the picker open so
+	 * several can be changed in a row.
+	 */
+	function toggle(reminder: Reminder, copy: Copy) {
 		if (!seatId) return;
+		if (copy.on) {
+			const ids = here[reminderKey(reminder)] ?? [];
+			if (ids.length > 0) onRemove(ids[ids.length - 1]);
+			return;
+		}
 		if (grimoire.run({ type: 'AddReminder', seatId, reminder })) {
 			recentReminders.remember(reminderKey(reminder));
 		}
@@ -81,16 +125,18 @@
 		<!-- A fixed-height row: recent reminders never move the list below. -->
 		<div class="recent" role="group" aria-label="Recent reminders">
 			{#each recent as reminder (reminderKey(reminder))}
+				{@const copy = recentCopy(reminder)}
 				<button
 					type="button"
 					class="chip"
-					disabled={usedUp(reminder)}
-					onclick={() => add(reminder)}
+					aria-pressed={copy.on}
+					disabled={copy.done}
+					onclick={() => toggle(reminder, copy)}
 				>
 					<ReminderToken
 						label={reminder.label}
 						type={characters.get(reminder.characterId)?.type}
-						done={usedUp(reminder)}
+						done={copy.done}
 					/>
 				</button>
 			{:else}
@@ -113,8 +159,9 @@
 								type="button"
 								class="chip"
 								aria-label={copy.label}
+								aria-pressed={copy.on}
 								disabled={copy.done}
-								onclick={() => add(reminder)}
+								onclick={() => toggle(reminder, copy)}
 							>
 								<ReminderToken {label} type={group.character.type} done={copy.done} />
 								{#if copy.count !== undefined}<span class="count-badge" aria-hidden="true"
@@ -218,6 +265,11 @@
 		color: var(--on-accent);
 		font: 700 0.75rem / 1.4 var(--font-control);
 		text-align: center;
+	}
+	/* On this seat: selected, with a ring that hugs the token; a tap takes it off. */
+	.chip[aria-pressed='true'] > :global(.reminder) {
+		outline: 0.2rem solid var(--accent);
+		outline-offset: 0.1rem;
 	}
 	.chip:hover {
 		filter: brightness(1.15);

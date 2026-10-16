@@ -30,6 +30,7 @@
 	import ReminderPicker from './ReminderPicker.svelte';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
+	import { seatChanges } from './history.ts';
 
 	interface Props {
 		open: boolean;
@@ -46,6 +47,13 @@
 	const character = $derived(seat?.characterId ? characters.get(seat.characterId) : undefined);
 	const traveller = $derived(character?.type === 'traveller');
 	const title = $derived(seat ? (seat.playerName ?? `Seat ${number}`) : '');
+	/** "Seat 3 (Cat)", or "Seat 3" with no name. */
+	const seatLabel = $derived(
+		seat?.playerName ? `Seat ${number} (${seat.playerName})` : `Seat ${number}`
+	);
+	const alignmentText = $derived(
+		seat?.alignment === 'evil' ? 'Evil' : seat?.alignment === 'good' ? 'Good' : 'None'
+	);
 
 	// ── Name, with suggestions from names used before on this device ──
 	// A different seat (or the same seat renamed elsewhere) resets the field.
@@ -147,6 +155,39 @@
 		}
 		assign(id);
 	}
+
+	/**
+	 * The previous character's reminders, wherever they are, that a change of character
+	 * takes off the board (Trevor, 2026-10-16), unless another seat still has that character.
+	 */
+	const dropped = $derived.by(() => {
+		const old = seat?.characterId;
+		if (!old || !seatId) return [];
+		const still = game.seating.some((id) => id !== seatId && game.seats[id].characterId === old);
+		if (still) return [];
+		return game.seating.flatMap((id) =>
+			game.seats[id].reminders
+				.filter((r) => r.characterId === old)
+				.map((reminder) => ({ seatId: id, reminder }))
+		);
+	});
+	function confirmChange() {
+		changeOpen = false;
+		const to = changeTo;
+		changeTo = undefined;
+		if (!to) return;
+		for (const { reminder } of dropped)
+			grimoire.run({ type: 'RemoveReminder', reminderId: reminder.reminderId });
+		assign(to);
+	}
+
+	// ── Changes to who this seat is during the game (Trevor, 2026-10-16) ──
+	const changes = $derived(
+		seatId
+			? seatChanges(grimoire.open.session.log.entries, grimoire.open.session.log.cursor, seatId)
+			: []
+	);
+	let changesOpen = $state(false);
 
 	function assign(id: CharacterId) {
 		if (!seatId) return;
@@ -284,9 +325,17 @@
 	bind:open
 	{title}
 	description={character
-		? `${character.name} · ${seat?.alignment === 'evil' ? 'Evil' : seat?.alignment === 'good' ? 'Good' : 'None'} · Seat ${number}`
+		? `${character.name} · ${alignmentText} · Seat ${number}`
 		: `Seat ${number}`}
 >
+	<!-- The character's name is the biggest thing here; alignment and seat are easy to see
+	     on the token already (Trevor, 2026-10-16). -->
+	{#snippet subtitle()}
+		{#if character}<span class="role">{character.name}</span>
+			<span class="meta">{alignmentText} · Seat {number}</span>{:else}<span class="meta"
+				>Seat {number}</span
+			>{/if}
+	{/snippet}
 	{#snippet lead()}
 		<button
 			type="button"
@@ -320,7 +369,9 @@
 				/>
 			</form>
 		{:else}
-			<span class:no-name={!seat?.playerName}>{seat?.playerName ?? 'No name'}</span>
+			<span class="player-name" class:no-name={!seat?.playerName}
+				>{seat?.playerName ?? 'No name'}</span
+			>
 		{/if}
 	{/snippet}
 	{#snippet titleEnd()}
@@ -385,6 +436,23 @@
 			</div>
 
 			<div class="row">
+				<span class="label">Changes</span>
+				<button
+					type="button"
+					class="value"
+					disabled={changes.length === 0}
+					aria-label={changes.length === 0
+						? 'Changes: None'
+						: `Changes: ${changes.length}, show them`}
+					onclick={() => (changesOpen = true)}
+				>
+					{changes.length === 0
+						? 'None'
+						: `${changes.length} ${changes.length === 1 ? 'change' : 'changes'}`}
+				</button>
+			</div>
+
+			<div class="row">
 				<h3>Reminders</h3>
 				<Button variant="quiet" icon="add" onclick={() => (remindersOpen = true)}>
 					Add reminder
@@ -427,7 +495,13 @@
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
-<ReminderPicker bind:open={remindersOpen} {grimoire} {seatId} {title} />
+<ReminderPicker
+	bind:open={remindersOpen}
+	{grimoire}
+	{seatId}
+	{title}
+	onRemove={(id) => moveConfirm?.requestReturn(id)}
+/>
 
 <ShowToPlayer
 	bind:open={showOpen}
@@ -466,31 +540,68 @@
 <Dialog bind:open={changeOpen} title="Change character?" role="alertdialog">
 	{#if seat?.characterId && changeTo}
 		<dl class="change">
-			<dt>Now</dt>
-			<dd>{@render seatBadge(seatId)}</dd>
-			<dt>Becomes</dt>
+			<dt>Player</dt>
+			<dd><strong>{seatLabel}</strong></dd>
+			<dt>Current role</dt>
 			<dd>
 				<CharacterBadge
-					characterId={changeTo}
-					character={characters.get(changeTo)}
-					playerName={title}
+					characterId={seat.characterId}
+					{character}
+					alignment={seat.alignment}
 					inline
 				/>
 			</dd>
+			<dt>New role</dt>
+			<dd>
+				<CharacterBadge characterId={changeTo} character={characters.get(changeTo)} inline />
+			</dd>
 		</dl>
-		<p class="note">Reminders stay on the seat. History can undo this.</p>
+		<p class="note">
+			Reminders on this player will remain in place. Reminders from the previous character will be
+			removed.
+		</p>
+		<h3>Removed</h3>
+		{#if dropped.length === 0}
+			<p class="none">None</p>
+		{:else}
+			<ul class="dropped" data-testid="dropped-reminders">
+				{#each dropped as { seatId: on, reminder } (reminder.reminderId)}
+					<li>
+						<ReminderToken
+							label={reminder.label}
+							type={characters.get(reminder.characterId)?.type}
+							alignment={placingAlignment(game, reminder.characterId, characters)}
+						/>
+						<span>on {@render seatBadge(on)}</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 	{/if}
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (changeOpen = false)}>Cancel</Button>
-		<Button
-			variant="accent"
-			onclick={() => {
-				changeOpen = false;
-				if (changeTo) assign(changeTo);
-				changeTo = undefined;
-			}}>Change</Button
-		>
+		<Button variant="accent" icon="check" onclick={confirmChange}>Confirm</Button>
 	{/snippet}
+</Dialog>
+
+<Dialog bind:open={changesOpen} title={`Changes for ${seatLabel}`}>
+	<ol class="changes" data-testid="seat-changes">
+		{#each changes as change, i (i)}
+			<li>
+				{#if change.kind === 'character'}
+					<CharacterBadge
+						characterId={change.from}
+						character={characters.get(change.from)}
+						inline
+					/>
+					→
+					<CharacterBadge characterId={change.to} character={characters.get(change.to)} inline />
+				{:else}
+					{@render team(change.from)} → {@render team(change.to)}
+				{/if}
+			</li>
+		{/each}
+	</ol>
 </Dialog>
 
 <!-- How the change affects the table: players (Travellers not counted) and the setup sheet. -->
@@ -890,6 +1001,34 @@
 	}
 	.no-name {
 		color: var(--on-sheet-muted);
+	}
+	.player-name {
+		font-size: 1.05rem;
+	}
+	.role {
+		font-family: var(--font-heading);
+		font-weight: var(--font-heading-weight);
+		font-size: 1.45rem;
+		letter-spacing: 0.04em;
+		color: var(--on-sheet);
+	}
+	.meta {
+		font-size: 0.8rem;
+	}
+	.dropped,
+	.changes {
+		display: grid;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.dropped li,
+	.changes li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
 	}
 	/* The same box as the name it replaces. */
 	.name-input {

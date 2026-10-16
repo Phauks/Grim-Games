@@ -115,7 +115,7 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	// A good Imp: as in the physical grimoire, the token turns upside down.
 	await seatMenu(page, sheet, 'Change alignment');
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
-	await expect(sheet).toContainText('Imp · Good · Seat 1');
+	await expect(sheet).toContainText(/Imp\s*Good · Seat 1/);
 
 	await page.reload();
 	const seat = page.getByRole('button', { name: /^Seat 1:/ });
@@ -141,7 +141,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	const details = page.getByRole('dialog', { name: 'Imp' });
 	await expect(details).toContainText('Demon');
 	await details.getByRole('button', { name: 'Close' }).tap();
-	await expect(sheet).toContainText('Imp · Evil · Seat 1');
+	await expect(sheet).toContainText(/Imp\s*Evil · Seat 1/);
 
 	// The … menu names the character first.
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
@@ -153,11 +153,20 @@ test('tapping the seat token shows the character; changing it goes through the �
 		.getByRole('button', { name: 'Baron', exact: true })
 		.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Change character?' });
-	await expect(confirm).toContainText('Now');
+	// The seat by number and name, both roles, and the reminders the change takes off.
+	await expect(confirm).toContainText(/Player\s*Seat 1\s*Current role/);
+	await expect(confirm).toContainText('New role');
 	await expect(confirm.locator('[data-character-id="imp"]')).toBeVisible();
 	await expect(confirm.locator('[data-character-id="baron"]')).toBeVisible();
-	await confirm.getByRole('button', { name: 'Change', exact: true }).tap();
-	await expect(sheet).toContainText('Baron · Evil · Seat 1');
+	await expect(confirm).toContainText('Reminders from the previous character will be removed.');
+	await expect(confirm).toContainText(/Removed\s*None/);
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(sheet).toContainText(/Baron\s*Evil · Seat 1/);
+	// The seat keeps its changes, in a window of their own.
+	await sheet.getByRole('button', { name: 'Changes: 1, show them' }).tap();
+	const changes = page.getByRole('dialog', { name: 'Changes for Seat 1' });
+	await expect(changes.getByTestId('seat-changes')).toContainText(/Imp\s*→\s*Baron/);
+	await changes.getByRole('button', { name: 'Close' }).tap();
 
 	// Alignment says what it is and what it becomes.
 	await seatMenu(page, sheet, 'Change alignment');
@@ -166,7 +175,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(alignment).toContainText('Evil');
 	await expect(alignment).toContainText('Becomes');
 	await alignment.getByRole('button', { name: 'Good', exact: true }).tap();
-	await expect(sheet).toContainText('Baron · Good · Seat 1');
+	await expect(sheet).toContainText(/Baron\s*Good · Seat 1/);
 });
 
 test('history, add seat and remove', async ({ page }) => {
@@ -351,8 +360,23 @@ test('reminders: add several from the picker, recent first, then move and remove
 	await expect(
 		picker.getByRole('group', { name: 'Recent reminders' }).getByRole('button')
 	).toHaveCount(2);
-	// Each token is placed once: the Poisoner has one "Poisoned".
-	await expect(poisoner.getByRole('button', { name: /Poisoned/ })).toBeDisabled();
+	// Each token is placed once: the Poisoner has one "Poisoned", shown as on this seat.
+	await expect(poisoner.getByRole('button', { name: /Poisoned/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	// Tapping a reminder on this seat takes it off (asking first when it stays put), and
+	// tapping it again puts it back (Trevor, 2026-10-16).
+	const drunk = picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first();
+	await drunk.tap();
+	await page
+		.getByRole('alertdialog', { name: 'Confirm change?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(picker.getByText('On this seat: 1')).toBeVisible();
+	await expect(drunk).toHaveAttribute('aria-pressed', 'false');
+	await drunk.tap();
+	await expect(picker.getByText('On this seat: 2')).toBeVisible();
 	// Only characters in play: no way to add the Washerwoman's reminders here.
 	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
 	await picker.getByRole('button', { name: 'Close' }).tap();
@@ -380,7 +404,7 @@ test('reminders: add several from the picker, recent first, then move and remove
 	// It normally stays put, so taking it off asks first.
 	await page
 		.getByRole('alertdialog', { name: 'Confirm change?' })
-		.getByRole('button', { name: 'Confirm change' })
+		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
@@ -706,7 +730,7 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	await page.mouse.up();
 	const back2 = page.getByRole('alertdialog', { name: 'Confirm change?' });
 	await expect(back2).toContainText(/Now\s*On Seat 4\s*Becomes\s*Back in the reminder bank/);
-	await back2.getByRole('button', { name: 'Confirm change' }).tap();
+	await back2.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 4: no name, no character')).toHaveAttribute(
 		'aria-label',
 		'Seat 4: no name, no character'
@@ -731,7 +755,7 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	await actions.getByRole('button', { name: 'Return to reminder bank' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Confirm change?' })
-		.getByRole('button', { name: 'Confirm change' })
+		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Empath')).toHaveAttribute(
 		'aria-label',
@@ -749,7 +773,7 @@ test("a seat's character can be searched by name or ability", async ({ page }) =
 	await expect(picker.getByRole('button', { name: 'Poisoner', exact: true })).toBeVisible();
 	await expect(picker.getByRole('button', { name: 'Washerwoman', exact: true })).toBeHidden();
 	await picker.getByRole('button', { name: 'Poisoner', exact: true }).tap();
-	await expect(sheet).toContainText('Poisoner · Evil · Seat 1');
+	await expect(sheet).toContainText(/Poisoner\s*Evil · Seat 1/);
 });
 
 test('players rotate one seat, or are dragged to a new place in the order', async ({ page }) => {
@@ -997,7 +1021,7 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Confirm change?' })
-		.getByRole('button', { name: 'Confirm change' })
+		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
 });
