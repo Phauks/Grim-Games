@@ -61,14 +61,14 @@
 		display: grid;
 		flex: none;
 		place-items: center;
-		width: calc(2 * var(--u) * var(--icon-scale, 1));
-		height: calc(2 * var(--u) * var(--icon-scale, 1));
+		width: calc(2 * var(--u) * var(--character-icon-scale, 1));
+		height: calc(2 * var(--u) * var(--character-icon-scale, 1));
 		border-radius: var(--radius-full);
 		background: var(--token-face, var(--on-surface));
 	}
 	img {
-		width: calc(1.75 * var(--u) * var(--icon-scale, 1));
-		height: calc(1.75 * var(--u) * var(--icon-scale, 1));
+		width: calc(1.75 * var(--u) * var(--character-icon-scale, 1));
+		height: calc(1.75 * var(--u) * var(--character-icon-scale, 1));
 		object-fit: contain;
 	}
 	.name {
