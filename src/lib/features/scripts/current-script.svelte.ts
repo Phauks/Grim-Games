@@ -48,12 +48,23 @@ export const recentScripts = {
 	}
 };
 
+/**
+ * Stores the script's icons for offline use, with its edition's Travellers: the player
+ * sheet and the Traveller picker show those even though they are not on the script.
+ */
+function keepScriptOffline(script: LoadedScript, data: GameData): void {
+	const travellers = script.edition
+		? data.characters.filter((c) => c.edition === script.edition && c.type === 'traveller')
+		: [];
+	keepIconsOffline([...script.characters, ...travellers]);
+}
+
 async function refresh(data: GameData, lib: IdbScriptLibrary): Promise<void> {
 	recent = await lib.list();
 	const first = recent[0];
 	const script = first && reloadSavedScript(first, data);
 	current = first && script ? { saved: first, script } : undefined;
-	if (script) keepIconsOffline(script.characters);
+	if (script) keepScriptOffline(script, data);
 }
 
 /** Restores the current script and Recent list from the device. Safe to call repeatedly. */
@@ -104,14 +115,15 @@ export async function chooseScript(chosen: LoadedScript, source: ScriptSource): 
 		// Signed in: also keep it in the account's scripts (no-op otherwise; never throws).
 		void saveScriptToProfile(saved);
 		current = { saved, script };
-		keepIconsOffline(script.characters);
 		recent = await lib.list();
 	} catch (e) {
 		// Storage full, blocked or missing: still usable for this visit.
 		if (lib) reportError(e, { area: 'scripts', notify: false });
 		current = { saved: unsaved(record), script };
-		keepIconsOffline(script.characters);
 	}
+	void loadOfficialData()
+		.then((data) => keepScriptOffline(script, data))
+		.catch(() => {});
 }
 
 /** Removes a script from Recent. Removing the current one makes the next one current. */
