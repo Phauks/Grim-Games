@@ -14,10 +14,7 @@
 	}
 </script>
 
-<SettingRow
-	label="Reset all settings"
-	description="Settings are saved on this device only and are not shared with other players."
->
+<SettingRow label="Reset all settings">
 	{#snippet control(labelId)}
 		<Button
 			variant="quiet"

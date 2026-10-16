@@ -54,6 +54,7 @@ describe('font roles in saved preferences', () => {
 		expect(old.fonts).toEqual({
 			heading: 'im-fell-english-sc',
 			character: 'im-fell-english-sc',
+			reminder: 'lexend',
 			ability: 'lexend',
 			player: 'lexend',
 			control: 'lexend',
@@ -69,6 +70,7 @@ describe('font roles in saved preferences', () => {
 			character: 'cinzel'
 		});
 		expect(parsePreferences({ textFont: 'inter' }).fonts).toEqual({
+			reminder: 'inter',
 			ability: 'inter',
 			player: 'inter',
 			control: 'inter',

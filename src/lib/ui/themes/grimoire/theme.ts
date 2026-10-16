@@ -82,6 +82,7 @@ export const grimoire: Theme = {
 	fonts: {
 		heading: 'cinzel',
 		character: 'cinzel',
+		reminder: 'eb-garamond',
 		ability: 'eb-garamond',
 		player: 'eb-garamond',
 		control: 'cinzel',

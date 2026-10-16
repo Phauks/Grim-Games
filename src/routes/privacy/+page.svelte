@@ -45,15 +45,18 @@
 	<h2>Shared scripts</h2>
 	<p>
 		When you tap Share or QR code for a custom script, the app uploads that script to our server and
-		stores it under a random four-word code, such as poisoned-drunk-imp-bell. Nothing is uploaded
-		just by opening a page. Official editions and BotC Scripts scripts are never uploaded: their
-		link only names the edition or the script's public number.
+		stores it under a random six-digit code, such as 482 913. Nothing is uploaded just by opening a
+		page. Official editions and BotC Scripts scripts are never uploaded: their link only names the
+		edition or the script's public number.
 	</p>
 	<ul>
 		<li>No name, account or IP address is stored with the script.</li>
-		<li>Anyone with the code or link can open the script.</li>
 		<li>
-			It is deleted automatically 90 days after it was last opened, or straight away when you tap
+			Anyone who has or guesses the code can open the script, so don't treat a shared script as
+			private.
+		</li>
+		<li>
+			It is deleted automatically 30 days after it was last opened, or straight away when you tap
 			Delete code on the device that shared it. That device keeps the delete key; our server keeps
 			only a scrambled (hashed) copy of it.
 		</li>

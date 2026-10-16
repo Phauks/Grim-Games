@@ -109,7 +109,15 @@ export function isFontId(value: unknown): value is FontId {
  * role's CSS variable (`--font-<role>`). Short-text roles also get `--font-<role>-weight`.
  * Components use these variables (or component tokens built from them), never a font name.
  */
-export const FONT_ROLES = ['heading', 'character', 'ability', 'player', 'control', 'body'] as const;
+export const FONT_ROLES = [
+	'heading',
+	'character',
+	'reminder',
+	'ability',
+	'player',
+	'control',
+	'body'
+] as const;
 export type FontRole = (typeof FONT_ROLES)[number];
 
 export interface FontRoleInfo {
@@ -136,9 +144,17 @@ export const FONT_ROLE_INFO: Record<FontRole, FontRoleInfo> = {
 		id: 'character',
 		label: 'Character names',
 		description:
-			'Character badges, reminder tokens, character names on reference cards and tables, and night order steps such as Dusk.',
-		sample: 'Washerwoman · Poisoned',
+			'Character badges, character names on reference cards and tables, and night order steps such as Dusk.',
+		sample: 'Washerwoman · Imp',
 		length: 'short'
+	},
+	reminder: {
+		id: 'reminder',
+		label: 'Reminder tokens',
+		description:
+			'The words on reminder tokens, such as Poisoned or Is the Drunk, wherever they show: the grimoire, reference cards and night steps.',
+		sample: 'Poisoned · Is the Drunk',
+		length: 'running'
 	},
 	ability: {
 		id: 'ability',
