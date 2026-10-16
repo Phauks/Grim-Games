@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
+	import BackgroundDialog from './BackgroundDialog.svelte';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
@@ -284,6 +288,39 @@
 			);
 	});
 	let menuOpen = $state(false);
+	let exitOpen = $state(false);
+
+	// ── Background: an image of the Storyteller's own, kept on this device ──
+	let backgroundOpen = $state(false);
+	let background = $state<BackgroundChoice>({ kind: 'none' });
+	let backgroundRead = $state(0);
+	$effect(() => {
+		void backgroundRead;
+		const gameId = game.gameId;
+		backgroundFor(gameId)
+			.then((choice) => {
+				if (game.gameId === gameId) background = choice;
+			})
+			.catch(() => (background = { kind: 'none' }));
+	});
+	/** The script's own background, only when it is a web link. */
+	const scriptBackground = $derived(
+		/^https:\/\//.test(game.script.meta?.background ?? '')
+			? game.script.meta?.background
+			: undefined
+	);
+	let backgroundUrl = $state<string | undefined>();
+	$effect(() => {
+		if (background.kind === 'image') {
+			const url = URL.createObjectURL(background.image);
+			backgroundUrl = url;
+			return () => URL.revokeObjectURL(url);
+		}
+		backgroundUrl = background.kind === 'script' ? scriptBackground : undefined;
+	});
+	const showTitle = $derived(
+		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
+	);
 	function fromMenu(action: () => void) {
 		menuOpen = false;
 		action();
@@ -349,8 +386,20 @@
 	</div>
 
 	<div class="board" class:arranging bind:this={board}>
-		<!-- The script's name sits behind the circle, so the toolbar keeps its room. -->
-		<p class="watermark" aria-hidden="true">{game.script.meta?.name ?? 'Custom script'}</p>
+		{#if backgroundUrl}
+			<div
+				class="backdrop"
+				data-testid="board-background"
+				style:background-image={`url("${backgroundUrl}")`}
+			></div>
+		{/if}
+		<!-- The script's name and author sit behind the circle, so the toolbar keeps its room. -->
+		{#if showTitle}
+			<p class="watermark" class:on-image={backgroundUrl !== undefined} aria-hidden="true">
+				<span class="script-name">{game.script.meta?.name ?? 'Custom script'}</span>
+				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
+			</p>
+		{/if}
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = drag?.seatId === seat.seatId ? drag.at : points[i]}
 			<div
@@ -480,7 +529,43 @@
 		<Button variant="quiet" icon="share" onclick={() => fromMenu(() => (shareOpen = true))}>
 			Share script
 		</Button>
+		<Button
+			variant="quiet"
+			icon="appearance"
+			onclick={() => fromMenu(() => (backgroundOpen = true))}
+		>
+			Background
+		</Button>
+		<!-- The site header is hidden in a game so nobody leaves by accident (Trevor, 2026-10-16). -->
+		<Button variant="quiet" icon="settings" onclick={() => fromMenu(() => settingsDialog.show())}>
+			Settings
+		</Button>
+		<Button variant="quiet" icon="account" href={resolve('/account')}>Account</Button>
+		<Button variant="quiet" icon="back" onclick={() => fromMenu(() => (exitOpen = true))}>
+			Exit game
+		</Button>
 	</div>
+</Dialog>
+
+<BackgroundDialog
+	bind:open={backgroundOpen}
+	gameId={game.gameId}
+	scriptImage={scriptBackground}
+	current={background}
+	onChange={() => (backgroundRead += 1)}
+/>
+
+<Dialog bind:open={exitOpen} title="Exit game?" role="alertdialog">
+	<dl class="change">
+		<dt>Now</dt>
+		<dd>In the grimoire for {game.script.meta?.name ?? 'this game'}</dd>
+		<dt>Becomes</dt>
+		<dd>The home page. The game stays saved and opens again from there.</dd>
+	</dl>
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (exitOpen = false)}>Cancel</Button>
+		<Button variant="accent" icon="back" onclick={() => goto(resolve('/'))}>Exit game</Button>
+	{/snippet}
 </Dialog>
 
 <SeatSheet bind:open={sheetOpen} {grimoire} seatId={selected} />
@@ -673,15 +758,24 @@
 		display: grid;
 		gap: var(--space-2);
 	}
+	/* Dimmed so seats and reminders stay clear over any image. */
+	.backdrop {
+		position: absolute;
+		inset: 0;
+		background: center / cover no-repeat;
+		filter: brightness(0.45) saturate(0.85);
+		pointer-events: none;
+	}
 	.watermark {
 		position: absolute;
 		inset: 0;
-		display: grid;
-		place-items: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
 		margin: 0;
 		padding: 0 15%;
 		font-family: var(--font-heading);
-		font-size: clamp(1.5rem, 7vmin, 4rem);
 		line-height: 1.1;
 		text-align: center;
 		color: var(--heading);
@@ -689,8 +783,35 @@
 		pointer-events: none;
 		user-select: none;
 	}
+	.script-name {
+		font-size: clamp(1.5rem, 7vmin, 4rem);
+	}
+	.author {
+		font-size: clamp(0.9rem, 3vmin, 1.5rem);
+	}
+	/* Over an image: a soft scrim and an outline keep the words readable. */
+	.watermark.on-image {
+		opacity: 0.5;
+		background: radial-gradient(ellipse 45% 22% at center, rgb(0 0 0 / 0.55), transparent 100%);
+		text-shadow:
+			0 0 2px #000,
+			0 0 6px #000;
+	}
 	.spacer {
 		flex: 1;
+	}
+	.change {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-1) var(--space-3);
+		margin: 0;
+	}
+	.change dt {
+		color: var(--on-surface-muted);
+		font-size: 0.85rem;
+	}
+	.change dd {
+		margin: 0;
 	}
 	/* Phones show the toolbar's icons only; wider screens add the words. */
 	.toolbar :global(.tool-label) {
