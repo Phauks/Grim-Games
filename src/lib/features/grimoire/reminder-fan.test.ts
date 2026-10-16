@@ -29,7 +29,7 @@ describe('reminderFan', () => {
 
 	it('keeps clear of the seat name beneath the token', () => {
 		const name = nameBox(seat, 'below', size, 80, 18);
-		const at = reminderFan({ seat, middle, count: 8, size, chip, name });
+		const at = reminderFan({ seat, middle, count: 8, size, chip, avoid: [name] });
 		for (const p of at) {
 			const clear =
 				Math.abs(p.x - name.x) >= (chip + name.w) / 2 ||

@@ -45,7 +45,7 @@
 		withoutPlaced,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
-	import { nameBox, placeNames } from './name-placement.ts';
+	import { nameBox, placeNames, type Box } from './name-placement.ts';
 	import { reminderFan } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
@@ -155,6 +155,17 @@
 		}));
 	});
 	const namePlaces = $derived(nameBoxes.map((n) => n.place));
+	/** What a seat's reminders keep off: its name, and the skull of a dead seat (SeatDisc). */
+	function avoidFor(i: number): Box[] {
+		const out: Box[] = [];
+		const name = nameBoxes[i]?.box;
+		if (name) out.push(name);
+		if (seats[i]?.dead) {
+			const c = toPx(shown[i]);
+			out.push({ x: c.x - 0.41 * size, y: c.y + 0.37 * size, w: 0.38 * size, h: 0.38 * size });
+		}
+		return out;
+	}
 	function chipPoints(i: number, count: number): SeatPoint[] {
 		if (width <= 0 || height <= 0) return Array.from({ length: count }, () => shown[i]);
 		return reminderFan({
@@ -163,7 +174,7 @@
 			count,
 			size,
 			chip,
-			name: nameBoxes[i]?.box
+			avoid: avoidFor(i)
 		}).map(toPercent);
 	}
 

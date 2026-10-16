@@ -775,6 +775,13 @@ test('the cause of death offers only characters that could have killed the playe
 	cause = page.getByRole('dialog', { name: 'Status of Seat 3' });
 	await cause.getByRole('button', { name: 'Slayer' }).tap();
 	await expect(sheet.getByRole('button', { name: 'Status: Dead: Slayer' })).toBeVisible();
+	await closeSheet(page);
+
+	// Dead (Trevor, 2026-10-16): the token dimmed with a skull badge, and the ghost vote shown.
+	const imp = seatLabelled(page, 'Seat 3:');
+	await expect(imp.getByTestId('dead-mark')).toBeVisible();
+	await expect(imp.getByTestId('ghost-vote')).toBeVisible();
+	await expect(seatLabelled(page, 'Seat 2:').getByTestId('dead-mark')).toHaveCount(0);
 });
 
 test('the reminder bank holds setup reminders, placed by hand, then every reminder left', async ({

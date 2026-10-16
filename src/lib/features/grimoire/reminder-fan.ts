@@ -3,7 +3,7 @@
  * however many a seat holds, Trevor 2026-10-16), lined up in front of the seat towards the
  * middle as on a real grimoire. When a line would reach the middle of the table, the rest
  * start a new line beside it, alternating sides, so the reminders fan out instead of
- * stacking. No reminder covers the seat's name. Pixels throughout.
+ * stacking. No reminder covers the seat's name or its dead mark. Pixels throughout.
  */
 import type { Box } from './name-placement.ts';
 
@@ -16,8 +16,8 @@ export interface FanInput {
 	/** Token and reminder diameters. */
 	size: number;
 	chip: number;
-	/** The seat's name, which reminders keep clear of. */
-	name?: Box;
+	/** The seat's name and marks (the dead skull), which reminders keep clear of. */
+	avoid?: readonly Box[];
 }
 
 /** Space between the token and the first reminder, and between reminders. */
@@ -29,7 +29,7 @@ function overlaps(a: Box, b: Box): boolean {
 }
 
 export function reminderFan(input: FanInput): { x: number; y: number }[] {
-	const { seat, middle, count, size, chip, name } = input;
+	const { seat, middle, count, size, chip, avoid = [] } = input;
 	if (count <= 0) return [];
 	const dx = middle.x - seat.x;
 	const dy = middle.y - seat.y;
@@ -52,14 +52,12 @@ export function reminderFan(input: FanInput): { x: number; y: number }[] {
 			x: seat.x + ux * d + px * offset,
 			y: seat.y + uy * d + py * offset
 		});
-		// Start the line where it clears the seat's own name.
+		// Start the line where it clears the seat's own name and marks.
 		let start = first;
-		if (name) {
-			for (let step = 0; step < 40; step++) {
-				const p = at(start);
-				if (!overlaps({ ...p, w: chip, h: chip }, name)) break;
-				start += 2;
-			}
+		for (let step = 0; step < 60; step++) {
+			const box = { ...at(start), w: chip, h: chip };
+			if (!avoid.some((a) => overlaps(box, a))) break;
+			start += 2;
 		}
 		const inLine = Math.min(perLine, count - line * perLine);
 		for (let k = 0; k < inLine; k++) out.push(at(start + k * pitch));

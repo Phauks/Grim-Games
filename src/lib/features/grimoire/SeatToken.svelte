@@ -91,6 +91,12 @@
 	<!-- Corner marks sit in fixed places, so one appearing never moves anything. -->
 	{#if orphan}<span class="mark orphan" title="Not on the script"><Icon name="warning" /></span
 		>{/if}
+	<!-- A dead player's ghost vote, upper left, until it is used. -->
+	{#if seat.dead && !seat.ghostVoteUsed}<span
+			class="vote"
+			data-testid="ghost-vote"
+			title="Ghost vote"><Icon name="ghostVote" /></span
+		>{/if}
 {/snippet}
 
 <button
@@ -152,8 +158,23 @@
 		box-shadow: var(--shadow);
 		--icon-size: calc(max(1.125 * var(--u), calc(var(--size) * 0.3)) * 0.65);
 	}
+	.vote {
+		position: absolute;
+		top: -6%;
+		left: -6%;
+		display: grid;
+		place-items: center;
+		width: calc(1.25 * var(--u));
+		height: calc(1.25 * var(--u));
+		border-radius: 50%;
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		box-shadow: var(--shadow);
+		--icon-size: calc(0.875 * var(--u));
+	}
+	/* Upper right, so the ghost vote keeps the upper left. */
 	.orphan {
-		left: -4%;
+		right: -4%;
 		top: -4%;
 		background: var(--accent);
 		color: var(--on-accent);
