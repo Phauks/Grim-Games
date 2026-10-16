@@ -11,7 +11,7 @@
 	import { officialData } from './game-data.svelte.ts';
 	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
 	import WikiBox from './WikiBox.svelte';
-	import { wikiPageTitle, type WikiSection } from './wiki-page.ts';
+	import { wikiPageTitle, withoutRepeats, type WikiSection } from './wiki-page.ts';
 	import { wikiPages } from './wiki-page.svelte.ts';
 
 	interface Props {
@@ -43,7 +43,12 @@
 	// overloaded (Trevor, 2026-10-16). Wide dialogs show the list of sections beside the text;
 	// on a phone the list sits under the Summary and a section slides in over it. Without a
 	// "Summary" heading, the first section is the summary.
-	const sections = $derived(page?.status === 'ready' ? page.sections : []);
+	// Without what the header already says (the ability) or the Bluffing lead-in.
+	const sections = $derived(
+		page?.status === 'ready'
+			? page.sections.map((section) => withoutRepeats(section, character.ability))
+			: []
+	);
 	const summaryIndex = $derived(
 		Math.max(
 			0,

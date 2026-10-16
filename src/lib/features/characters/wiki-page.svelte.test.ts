@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseWikiPage, wikiPageTitle } from './wiki-page.ts';
+import { parseWikiPage, wikiPageTitle, withoutRepeats } from './wiki-page.ts';
 
 // A made-up page in the wiki's shapes (old and new heading markup); no wiki text is copied.
 const PAGE = `
@@ -82,5 +82,43 @@ describe('parseWikiPage', () => {
 		expect(wikiPageTitle("https://wiki.bloodontheclocktower.com/Hell's_Librarian")).toBe(
 			"Hell's_Librarian"
 		);
+	});
+});
+
+// Made-up sample wording in the wiki's shapes.
+describe('withoutRepeats', () => {
+	const ability = 'Each night*, choose a sample player [+1 Sample].';
+	it("drops the Summary's copy of the ability, ignoring quotes, brackets and spacing", () => {
+		const section = {
+			heading: 'Summary',
+			blocks: [
+				{ kind: 'p' as const, text: '“Each night*, choose a  sample player (+1 Sample).”' },
+				{ kind: 'p' as const, text: 'More sample text.' }
+			]
+		};
+		expect(withoutRepeats(section, ability).blocks).toEqual([
+			{ kind: 'p', text: 'More sample text.' }
+		]);
+	});
+	it('keeps wording that differs from the ability', () => {
+		const section = {
+			heading: 'Summary',
+			blocks: [{ kind: 'p' as const, text: '"Each night, choose two sample players."' }]
+		};
+		expect(withoutRepeats(section, ability)).toBe(section);
+	});
+	it('drops the standard Bluffing lead-in and keeps the tips', () => {
+		const tips = { kind: 'list' as const, items: ['Sample tip.'] };
+		const section = {
+			heading: 'Bluffing as the Sample',
+			blocks: [
+				{
+					kind: 'p' as const,
+					text: 'When bluffing as the Sample, there are a few things you should keep in mind:'
+				},
+				tips
+			]
+		};
+		expect(withoutRepeats(section, ability).blocks).toEqual([tips]);
 	});
 });

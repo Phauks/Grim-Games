@@ -103,3 +103,33 @@ export function parseWikiPage(html: string): WikiSection[] {
 export function wikiPageTitle(url: string): string {
 	return decodeURIComponent(new URL(url).pathname.split('/').pop() ?? '');
 }
+
+/** Text compared without case, spacing, quote marks, brackets or the night asterisk. */
+const normalise = (text: string) =>
+	text
+		.toLowerCase()
+		.replace(/["'“”‘’()[\]{}*]/g, '')
+		.replace(/\s+/g, ' ')
+		.trim()
+		.replace(/[.\s]+$/, '');
+
+/**
+ * The wiki's standard lead-in to a Bluffing section ("When bluffing as the X, there are a
+ * few things you should keep in mind:"); the numbered boxes make it redundant.
+ */
+const BLUFFING_LEAD_IN =
+	/^when bluffing as (the )?.+, there are a few things you should keep in mind:?$/i;
+
+/**
+ * A section without what the dialog already shows: the character's ability, which the
+ * Summary repeats word for word under the dialog's own header, and the Bluffing lead-in
+ * (Trevor, 2026-10-16). Wording that differs at all from the ability is kept.
+ */
+export function withoutRepeats(section: WikiSection, ability: string): WikiSection {
+	const own = normalise(ability);
+	const blocks = section.blocks.filter(
+		(block) =>
+			block.kind !== 'p' || (normalise(block.text) !== own && !BLUFFING_LEAD_IN.test(block.text))
+	);
+	return blocks.length === section.blocks.length ? section : { ...section, blocks };
+}
