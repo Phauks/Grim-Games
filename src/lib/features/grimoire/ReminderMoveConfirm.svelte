@@ -5,7 +5,6 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { seatName } from './night-steps.ts';
 
 	/**
 	 * Moving a reminder that normally stays where it was put (an "Is The Drunk", a Poisoned
@@ -22,6 +21,12 @@
 	const characters = $derived(grimoire.open.characters);
 	let open = $state(false);
 	let pending = $state<{ reminderId: ReminderId; move: FixedReminderMove }>();
+	/** "Seat 3 (Alex)", or "Seat 3" without a name. */
+	function seatLabel(seatId: SeatId) {
+		const n = `Seat ${game.seating.indexOf(seatId) + 1}`;
+		const name = game.seats[seatId]?.playerName;
+		return name ? `${n} (${name})` : n;
+	}
 
 	/** Moves the reminder, or asks first when it normally stays put. */
 	export function request(reminderId: ReminderId, toSeatId: SeatId): void {
@@ -46,18 +51,20 @@
 	}
 </script>
 
-<Dialog
-	bind:open
-	title={pending ? `Move ${pending.move.reminder.label}?` : 'Move reminder?'}
-	role="alertdialog"
->
+<Dialog bind:open title="Confirm change?" role="alertdialog">
 	{#if pending}
 		{@const move = pending.move}
+		{@const owner = characters.get(move.reminder.characterId)}
+		<!-- Which token, from which character, and both seats (Trevor, 2026-10-16). -->
+		<p class="what">
+			<CharacterBadge characterId={move.reminder.characterId} character={owner} inline />'s
+			<strong>{move.reminder.label}</strong> reminder
+		</p>
 		<dl class="change">
 			<dt>Now</dt>
-			<dd>On {seatName(game, move.fromSeatId)}</dd>
+			<dd>On {seatLabel(move.fromSeatId)}</dd>
 			<dt>Becomes</dt>
-			<dd>On {seatName(game, move.toSeatId)}</dd>
+			<dd>On {seatLabel(move.toSeatId)}</dd>
 		</dl>
 		<p class="why">{move.why}</p>
 		{#each move.relocators as relocator (relocator.characterId)}
@@ -78,7 +85,7 @@
 				pending = undefined;
 			}}>Cancel</Button
 		>
-		<Button variant="accent" icon="move" onclick={confirm}>Move</Button>
+		<Button variant="accent" icon="check" onclick={confirm}>Confirm change</Button>
 	{/snippet}
 </Dialog>
 
@@ -96,6 +103,9 @@
 	}
 	.change dd {
 		margin: 0;
+	}
+	.what {
+		margin: 0 0 var(--space-2);
 	}
 	.why {
 		margin: 0 0 var(--space-2);

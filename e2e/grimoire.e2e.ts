@@ -928,7 +928,8 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 		.getByRole('dialog', { name: 'Move reminder to' })
 		.getByRole('button', { name: /^3/ })
 		.tap();
-	const confirm = page.getByRole('alertdialog', { name: 'Move Is The Drunk?' });
+	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
+	await expect(confirm).toContainText(/Drunk.*'s\s*Is The Drunk\s*reminder/);
 	await expect(confirm).toContainText('Marks which player is the Drunk.');
 	await expect(confirm).toContainText(/Now\s*On Seat 1\s*Becomes\s*On Seat 3/);
 	await confirm.getByRole('button', { name: 'Cancel' }).tap();
@@ -944,8 +945,8 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 		.getByRole('button', { name: /^3/ })
 		.tap();
 	await page
-		.getByRole('alertdialog', { name: 'Move Is The Drunk?' })
-		.getByRole('button', { name: 'Move' })
+		.getByRole('alertdialog', { name: 'Confirm change?' })
+		.getByRole('button', { name: 'Confirm change' })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
 });
