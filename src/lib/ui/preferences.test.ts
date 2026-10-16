@@ -41,6 +41,7 @@ describe('parsePreferences', () => {
 			textAlign: 'justify',
 			iconSet: 'ph-fill',
 			iconOverrides: { dead: 'ph:cross' },
+			tokenAppearance: { colours: {}, tokenScale: 1.25, reminderScale: 0.75 },
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'symbols',
 			requireName: true

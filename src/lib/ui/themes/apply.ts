@@ -8,6 +8,7 @@ import {
 	loadFont
 } from '#lib/ui/fonts/catalogue.ts';
 import { resolveFonts, type Preferences } from '#lib/ui/preferences.ts';
+import { tokenVariables } from '#lib/ui/token/token-appearance.ts';
 import type { CssVariable, Theme } from './types.ts';
 
 let written: CssVariable[] = [];
@@ -35,6 +36,7 @@ export function applyAppearance(theme: Theme, prefs: Preferences, root = documen
 		...theme.palette,
 		...theme.tokens,
 		...theme.components,
+		...tokenVariables(prefs.tokenAppearance),
 		...fontVariables(theme, prefs),
 		'--text-scale': String(prefs.textScale),
 		'--icon-scale': String(prefs.iconScale),

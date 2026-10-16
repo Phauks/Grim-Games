@@ -11,6 +11,11 @@ import {
 } from '#lib/ui/icons/catalogue.ts';
 import { DEFAULT_ASSISTANCE, parseAssistance, type Assistance } from '#lib/ui/assistance.ts';
 import { DEFAULT_THEME_ID, isThemeId } from '#lib/ui/themes/registry.ts';
+import {
+	DEFAULT_TOKEN_APPEARANCE,
+	parseTokenAppearance,
+	type TokenAppearance
+} from '#lib/ui/token/token-appearance.ts';
 import type { Theme } from '#lib/ui/themes/types.ts';
 
 /**
@@ -28,6 +33,8 @@ export interface Preferences {
 	textAlign: TextAlign;
 	iconSet: IconSetId | null;
 	iconOverrides: Partial<Record<IconSlot, string>>;
+	/** Character token and reminder token sizes, and any token colours the user changed. */
+	tokenAppearance: TokenAppearance;
 	/** How much the app walks the Storyteller through the game. */
 	assistance: Assistance;
 	/** What face-down bag tiles show on the draw screen. */
@@ -59,6 +66,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	textAlign: 'left',
 	iconSet: null,
 	iconOverrides: {},
+	tokenAppearance: DEFAULT_TOKEN_APPEARANCE,
 	assistance: DEFAULT_ASSISTANCE,
 	tileFace: 'numbers',
 	requireName: false
@@ -89,6 +97,7 @@ export function parsePreferences(raw: unknown): Preferences {
 			: DEFAULT_PREFERENCES.textAlign,
 		iconSet: isIconSetId(input.iconSet) ? input.iconSet : null,
 		iconOverrides,
+		tokenAppearance: parseTokenAppearance(input.tokenAppearance),
 		assistance: parseAssistance(input.assistance),
 		tileFace: (TILE_FACES as readonly unknown[]).includes(input.tileFace)
 			? (input.tileFace as TileFace)

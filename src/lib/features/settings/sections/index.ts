@@ -5,6 +5,7 @@ import FontsSection from './FontsSection.svelte';
 import IconsSection from './IconsSection.svelte';
 import ResetSection from './ResetSection.svelte';
 import RulesTermsSection from './RulesTermsSection.svelte';
+import TokensSection from './TokensSection.svelte';
 // Feature-owned sections, registered by their own modules.
 import '#lib/features/player/settings-section.ts';
 
@@ -24,6 +25,14 @@ registerSettingsSection({
 	component: FontsSection,
 	audience: 'everyone',
 	order: 20
+});
+registerSettingsSection({
+	id: 'tokens',
+	label: 'Tokens',
+	icon: 'reminder',
+	component: TokensSection,
+	audience: 'everyone',
+	order: 25
 });
 registerSettingsSection({
 	id: 'icons',

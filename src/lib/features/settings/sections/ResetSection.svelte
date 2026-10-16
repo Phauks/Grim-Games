@@ -29,8 +29,8 @@
 
 <Dialog bind:open={confirmReset} role="alertdialog" title="Reset settings?">
 	<p>
-		Theme, fonts, text size, text alignment, icon size, icons and Storyteller settings go back to
-		their defaults.
+		Theme, fonts, text size, text alignment, token sizes and colours, icon size, icons and
+		Storyteller settings go back to their defaults.
 	</p>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (confirmReset = false)}>Cancel</Button>
