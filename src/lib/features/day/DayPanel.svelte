@@ -527,8 +527,8 @@
 		position: relative;
 		display: inline-grid;
 		place-items: center;
-		width: calc(2.25 * var(--u) * var(--icon-scale, 1));
-		height: calc(2.25 * var(--u) * var(--icon-scale, 1));
+		width: calc(2.25 * var(--u) * var(--character-icon-scale, 1));
+		height: calc(2.25 * var(--u) * var(--character-icon-scale, 1));
 		border-radius: 50%;
 		background: var(--token-face, var(--on-surface));
 		overflow: hidden;
