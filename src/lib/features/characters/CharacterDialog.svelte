@@ -59,6 +59,7 @@
 			width < 40 * parseFloat(getComputedStyle(document.documentElement).fontSize)
 	);
 	const label = (section: WikiSection) => section.heading || t('characters.wikiIntroduction');
+	const isExamples = (section: WikiSection) => /^examples?$/i.test(section.heading.trim());
 	/** Sections whose bullet points are tips: each becomes a numbered box. */
 	const tipLabel = (section: WikiSection) =>
 		/^bluffing/i.test(section.heading)
@@ -84,6 +85,9 @@
 			<p class="quote">{block.text}</p>
 		{:else if block.kind === 'artist'}
 			<p class="artist">{t('characters.artist', { name: block.name })}</p>
+		{:else if block.kind === 'example' && !isExamples(section)}
+			<!-- The wiki marks worked steps in How to Run the same way; only Examples are boxed. -->
+			<p><GlossaryText text={block.text} names={[character.name]} /></p>
 		{:else if block.kind === 'example'}
 			<WikiBox label={t('characters.example', { number: examples.indexOf(block) + 1 })}>
 				<p><GlossaryText text={block.text} names={[character.name]} /></p>

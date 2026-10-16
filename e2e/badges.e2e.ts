@@ -53,7 +53,7 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 						'<table><tr><td>Artist</td><td>Sample Artist</td></tr></table>' +
 						'<p class="flavour">"Sample quote."</p><p><span>Appears in</span> <span>Sample episode</span></p></div>' +
 						`</div><div class="columns"><h2>Summary</h2><p>Sample page for ${title}.</p>` +
-						'<h2>How to Run</h2><ul><li>Sample step.</li></ul>' +
+						'<h2>How to Run</h2><ul><li>Sample step.</li></ul><div class="example"><p>Sample worked step.</p></div>' +
 						'<h2>Examples</h2><div class="example"><p>Sample example one.</p></div>' +
 						'<div class="example"><p>Sample example two.</p></div>' +
 						'<h2>Tips &amp; Tricks</h2><ul><li>Sample tip one.</li></ul><ul><li>Sample tip two.</li></ul>' +
@@ -81,6 +81,9 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 	const section = dialog.getByTestId('wiki-section');
 	await expect(section.getByRole('heading', { name: 'How to Run' })).toBeVisible();
 	await expect(section.getByRole('listitem')).toHaveText('Sample step.');
+	// How to Run stays plain text, even where the wiki marks a worked step as an example.
+	await expect(section).toContainText('Sample worked step.');
+	await expect(section.getByRole('region')).toHaveCount(0);
 	await expect(dialog.getByTestId('wiki-page')).toHaveCount(0);
 	// Two panes on a tablet: the list stays; on a phone the section replaces it, with Back.
 	await expect(sections).toBeVisible({ visible: wide });
