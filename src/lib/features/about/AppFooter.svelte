@@ -3,10 +3,8 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { buildInfo as info } from '#lib/build-info.ts';
-	import AboutDialog from './AboutDialog.svelte';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { bugReportUrl, describeBuild, REPOSITORY_URL, shortCommit } from './report-issue.ts';
-
-	let aboutOpen = $state(false);
 
 	const reportUrl = $derived(bugReportUrl(info, page.url.pathname, navigator.userAgent));
 </script>
@@ -27,7 +25,7 @@
 	>
 		<img src="/brand/ccc-parchment.webp" width="120" height="45" alt={t('shell.cccAlt')} />
 	</a>
-	<!-- Logo on the left, every text link on the right. Fixed-size line: more build detail lives in the About dialog, never inline (no reflow). -->
+	<!-- Logo on the left, every text link on the right. Fixed-size line: more build detail lives in Settings > About and Diagnostics, never inline (no reflow). -->
 	<p class="build" title={describeBuild(info)} data-testid="build-info">
 		<span class="nowrap"
 			>v{info.version} ·
@@ -42,7 +40,7 @@
 		<span class="sep" aria-hidden="true">·</span>
 		<a class="page" href={resolve('/privacy')}>{t('shell.privacy')}</a>
 		<span class="sep" aria-hidden="true">·</span>
-		<button type="button" class="about" onclick={() => (aboutOpen = true)}
+		<button type="button" class="about" onclick={() => settingsDialog.show('about')}
 			>{t('shell.about')}</button
 		>
 		<span class="sep" aria-hidden="true">·</span>
@@ -50,7 +48,6 @@
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 		<a class="page" href={reportUrl} target="_blank" rel="noopener">{t('shell.reportIssue')}</a>
 	</p>
-	<AboutDialog bind:open={aboutOpen} />
 </footer>
 
 <style>

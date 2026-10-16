@@ -4,11 +4,11 @@
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { ACCOUNT_ITEM, isCurrent, NAV_SECTIONS, type NavItem } from './nav.ts';
+	import { ACCOUNT_ITEM, DIAGNOSTICS_ITEM, isCurrent, NAV_SECTIONS, type NavItem } from './nav.ts';
 	import { openSettings } from './shell.ts';
 
 	interface Props {
-		/** Adds "You" (Account and Settings), for places without the header's buttons (drawer). */
+		/** Adds Account and Settings to "You", for places without the header's buttons (drawer). */
 		withAccount?: boolean;
 		/** Called after a choice, e.g. to close the drawer. */
 		onChoose?: () => void;
@@ -41,9 +41,9 @@
 			{#each section.items as item (item.id)}{@render link(item)}{/each}
 		</ul>
 	{/each}
-	{#if withAccount}
-		<h3 id="{listId}-you">{t('shell.navSectionYou')}</h3>
-		<ul aria-labelledby="{listId}-you">
+	<h3 id="{listId}-you">{t('shell.navSectionYou')}</h3>
+	<ul aria-labelledby="{listId}-you">
+		{#if withAccount}
 			{@render link(ACCOUNT_ITEM)}
 			<li>
 				<button
@@ -57,8 +57,9 @@
 					<span>{t('shell.settings')}</span>
 				</button>
 			</li>
-		</ul>
-	{/if}
+		{/if}
+		{@render link(DIAGNOSTICS_ITEM)}
+	</ul>
 </div>
 
 <style>

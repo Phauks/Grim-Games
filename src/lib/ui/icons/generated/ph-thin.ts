@@ -58,6 +58,7 @@ import ph_heart_thin from '~icons/ph/heart-thin';
 import ph_heartbeat_thin from '~icons/ph/heartbeat-thin';
 import ph_house_thin from '~icons/ph/house-thin';
 import ph_house_simple_thin from '~icons/ph/house-simple-thin';
+import ph_identification_card_thin from '~icons/ph/identification-card-thin';
 import ph_info_thin from '~icons/ph/info-thin';
 import ph_lifebuoy_thin from '~icons/ph/lifebuoy-thin';
 import ph_list_thin from '~icons/ph/list-thin';
@@ -81,6 +82,7 @@ import ph_play_thin from '~icons/ph/play-thin';
 import ph_play_circle_thin from '~icons/ph/play-circle-thin';
 import ph_plus_thin from '~icons/ph/plus-thin';
 import ph_plus_circle_thin from '~icons/ph/plus-circle-thin';
+import ph_pulse_thin from '~icons/ph/pulse-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
@@ -98,6 +100,7 @@ import ph_smiley_angry_thin from '~icons/ph/smiley-angry-thin';
 import ph_sort_ascending_thin from '~icons/ph/sort-ascending-thin';
 import ph_sort_descending_thin from '~icons/ph/sort-descending-thin';
 import ph_sparkle_thin from '~icons/ph/sparkle-thin';
+import ph_stethoscope_thin from '~icons/ph/stethoscope-thin';
 import ph_sun_thin from '~icons/ph/sun-thin';
 import ph_sun_horizon_thin from '~icons/ph/sun-horizon-thin';
 import ph_swap_thin from '~icons/ph/swap-thin';
@@ -179,6 +182,7 @@ const icons: IconMap = {
 	'ph:heartbeat-thin': ph_heartbeat_thin,
 	'ph:house-thin': ph_house_thin,
 	'ph:house-simple-thin': ph_house_simple_thin,
+	'ph:identification-card-thin': ph_identification_card_thin,
 	'ph:info-thin': ph_info_thin,
 	'ph:lifebuoy-thin': ph_lifebuoy_thin,
 	'ph:list-thin': ph_list_thin,
@@ -202,6 +206,7 @@ const icons: IconMap = {
 	'ph:play-circle-thin': ph_play_circle_thin,
 	'ph:plus-thin': ph_plus_thin,
 	'ph:plus-circle-thin': ph_plus_circle_thin,
+	'ph:pulse-thin': ph_pulse_thin,
 	'ph:push-pin-thin': ph_push_pin_thin,
 	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
@@ -219,6 +224,7 @@ const icons: IconMap = {
 	'ph:sort-ascending-thin': ph_sort_ascending_thin,
 	'ph:sort-descending-thin': ph_sort_descending_thin,
 	'ph:sparkle-thin': ph_sparkle_thin,
+	'ph:stethoscope-thin': ph_stethoscope_thin,
 	'ph:sun-thin': ph_sun_thin,
 	'ph:sun-horizon-thin': ph_sun_horizon_thin,
 	'ph:swap-thin': ph_swap_thin,

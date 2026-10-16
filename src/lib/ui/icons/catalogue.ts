@@ -48,6 +48,8 @@ export const ICON_SLOTS = {
 	close: { label: 'Close', choices: ['ph:x', 'ph:x-circle'] },
 	menu: { label: 'Menu', choices: ['ph:list', 'ph:dots-three-vertical'] },
 	info: { label: 'Info', choices: ['ph:info', 'ph:question'] },
+	about: { label: 'About', choices: ['ph:identification-card', 'ph:info'] },
+	diagnostics: { label: 'Diagnostics', choices: ['ph:stethoscope', 'ph:pulse'] },
 	back: { label: 'Back', choices: ['ph:arrow-left', 'ph:caret-left'] },
 	forward: { label: 'Forward', choices: ['ph:caret-right', 'ph:arrow-right'] },
 	check: { label: 'Selected', choices: ['ph:check'] },

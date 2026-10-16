@@ -53,7 +53,7 @@ test('the footer has the logo on the left and every text link on the right', asy
 	);
 });
 
-test('the commit is a link and About opens a dialog without moving the page', async ({ page }) => {
+test('the commit is a link and About opens Settings without moving the page', async ({ page }) => {
 	await page.goto('/');
 	const build = page.getByTestId('build-info');
 	const commit = build.getByRole('link', { name: /^[0-9a-f]{7}$/ });
@@ -66,11 +66,12 @@ test('the commit is a link and About opens a dialog without moving the page', as
 	await build.scrollIntoViewIfNeeded();
 	const before = await build.boundingBox();
 	await build.getByRole('button', { name: 'About' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'About Grim-Games' });
-	await expect(dialog).toBeVisible();
-	await expect(dialog).toContainText('Channel');
+	// About is a Settings section (Trevor, 2026-10-16).
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await expect(dialog.getByRole('heading', { name: 'About' })).toBeVisible();
+	await expect(dialog).toContainText('Version');
 	expect(await build.boundingBox()).toEqual(before);
-	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await dialog.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(dialog).toBeHidden();
 });
 
@@ -136,17 +137,17 @@ test('the footer never makes the page wider than the screen, even at the largest
 	expect(widths.page).toBeLessThanOrEqual(widths.screen);
 });
 
-test('About reopens the problem log after its card was dismissed', async ({ page }) => {
+test('About in Settings links to the Diagnostics page', async ({ page }) => {
 	await page.goto('/');
-	// Tap once web fonts have swapped in, so the footer isn't moving under the finger.
 	await page.evaluate(() => document.fonts.ready);
 	await page.getByRole('contentinfo').getByRole('button', { name: 'About' }).tap();
 	await page
-		.getByRole('dialog', { name: 'About Grim-Games' })
-		.getByRole('button', { name: /Problems on this device/ })
+		.getByRole('dialog', { name: 'Settings' })
+		.getByRole('link', { name: 'Diagnostics' })
 		.tap();
-	await expect(page.getByRole('dialog', { name: 'Problems on this device' })).toBeVisible();
-	await expect(page.getByRole('dialog', { name: 'About Grim-Games' })).toBeHidden();
+	await expect(page).toHaveURL(/\/diagnostics$/);
+	await expect(page.getByRole('dialog', { name: 'Settings' })).toBeHidden();
+	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
 // Turned on by the board's +layout.ts ({ chrome: 'game' }); the board's toolbar opens the

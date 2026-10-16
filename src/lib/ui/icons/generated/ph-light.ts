@@ -58,6 +58,7 @@ import ph_heart_light from '~icons/ph/heart-light';
 import ph_heartbeat_light from '~icons/ph/heartbeat-light';
 import ph_house_light from '~icons/ph/house-light';
 import ph_house_simple_light from '~icons/ph/house-simple-light';
+import ph_identification_card_light from '~icons/ph/identification-card-light';
 import ph_info_light from '~icons/ph/info-light';
 import ph_lifebuoy_light from '~icons/ph/lifebuoy-light';
 import ph_list_light from '~icons/ph/list-light';
@@ -81,6 +82,7 @@ import ph_play_light from '~icons/ph/play-light';
 import ph_play_circle_light from '~icons/ph/play-circle-light';
 import ph_plus_light from '~icons/ph/plus-light';
 import ph_plus_circle_light from '~icons/ph/plus-circle-light';
+import ph_pulse_light from '~icons/ph/pulse-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
 import ph_qr_code_light from '~icons/ph/qr-code-light';
 import ph_question_light from '~icons/ph/question-light';
@@ -98,6 +100,7 @@ import ph_smiley_angry_light from '~icons/ph/smiley-angry-light';
 import ph_sort_ascending_light from '~icons/ph/sort-ascending-light';
 import ph_sort_descending_light from '~icons/ph/sort-descending-light';
 import ph_sparkle_light from '~icons/ph/sparkle-light';
+import ph_stethoscope_light from '~icons/ph/stethoscope-light';
 import ph_sun_light from '~icons/ph/sun-light';
 import ph_sun_horizon_light from '~icons/ph/sun-horizon-light';
 import ph_swap_light from '~icons/ph/swap-light';
@@ -179,6 +182,7 @@ const icons: IconMap = {
 	'ph:heartbeat-light': ph_heartbeat_light,
 	'ph:house-light': ph_house_light,
 	'ph:house-simple-light': ph_house_simple_light,
+	'ph:identification-card-light': ph_identification_card_light,
 	'ph:info-light': ph_info_light,
 	'ph:lifebuoy-light': ph_lifebuoy_light,
 	'ph:list-light': ph_list_light,
@@ -202,6 +206,7 @@ const icons: IconMap = {
 	'ph:play-circle-light': ph_play_circle_light,
 	'ph:plus-light': ph_plus_light,
 	'ph:plus-circle-light': ph_plus_circle_light,
+	'ph:pulse-light': ph_pulse_light,
 	'ph:push-pin-light': ph_push_pin_light,
 	'ph:qr-code-light': ph_qr_code_light,
 	'ph:question-light': ph_question_light,
@@ -219,6 +224,7 @@ const icons: IconMap = {
 	'ph:sort-ascending-light': ph_sort_ascending_light,
 	'ph:sort-descending-light': ph_sort_descending_light,
 	'ph:sparkle-light': ph_sparkle_light,
+	'ph:stethoscope-light': ph_stethoscope_light,
 	'ph:sun-light': ph_sun_light,
 	'ph:sun-horizon-light': ph_sun_horizon_light,
 	'ph:swap-light': ph_swap_light,

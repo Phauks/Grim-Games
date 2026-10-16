@@ -58,6 +58,7 @@ import ph_heart_bold from '~icons/ph/heart-bold';
 import ph_heartbeat_bold from '~icons/ph/heartbeat-bold';
 import ph_house_bold from '~icons/ph/house-bold';
 import ph_house_simple_bold from '~icons/ph/house-simple-bold';
+import ph_identification_card_bold from '~icons/ph/identification-card-bold';
 import ph_info_bold from '~icons/ph/info-bold';
 import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_list_bold from '~icons/ph/list-bold';
@@ -81,6 +82,7 @@ import ph_play_bold from '~icons/ph/play-bold';
 import ph_play_circle_bold from '~icons/ph/play-circle-bold';
 import ph_plus_bold from '~icons/ph/plus-bold';
 import ph_plus_circle_bold from '~icons/ph/plus-circle-bold';
+import ph_pulse_bold from '~icons/ph/pulse-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
@@ -98,6 +100,7 @@ import ph_smiley_angry_bold from '~icons/ph/smiley-angry-bold';
 import ph_sort_ascending_bold from '~icons/ph/sort-ascending-bold';
 import ph_sort_descending_bold from '~icons/ph/sort-descending-bold';
 import ph_sparkle_bold from '~icons/ph/sparkle-bold';
+import ph_stethoscope_bold from '~icons/ph/stethoscope-bold';
 import ph_sun_bold from '~icons/ph/sun-bold';
 import ph_sun_horizon_bold from '~icons/ph/sun-horizon-bold';
 import ph_swap_bold from '~icons/ph/swap-bold';
@@ -179,6 +182,7 @@ const icons: IconMap = {
 	'ph:heartbeat-bold': ph_heartbeat_bold,
 	'ph:house-bold': ph_house_bold,
 	'ph:house-simple-bold': ph_house_simple_bold,
+	'ph:identification-card-bold': ph_identification_card_bold,
 	'ph:info-bold': ph_info_bold,
 	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:list-bold': ph_list_bold,
@@ -202,6 +206,7 @@ const icons: IconMap = {
 	'ph:play-circle-bold': ph_play_circle_bold,
 	'ph:plus-bold': ph_plus_bold,
 	'ph:plus-circle-bold': ph_plus_circle_bold,
+	'ph:pulse-bold': ph_pulse_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
@@ -219,6 +224,7 @@ const icons: IconMap = {
 	'ph:sort-ascending-bold': ph_sort_ascending_bold,
 	'ph:sort-descending-bold': ph_sort_descending_bold,
 	'ph:sparkle-bold': ph_sparkle_bold,
+	'ph:stethoscope-bold': ph_stethoscope_bold,
 	'ph:sun-bold': ph_sun_bold,
 	'ph:sun-horizon-bold': ph_sun_horizon_bold,
 	'ph:swap-bold': ph_swap_bold,

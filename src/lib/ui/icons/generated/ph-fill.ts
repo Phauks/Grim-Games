@@ -58,6 +58,7 @@ import ph_heart_fill from '~icons/ph/heart-fill';
 import ph_heartbeat_fill from '~icons/ph/heartbeat-fill';
 import ph_house_fill from '~icons/ph/house-fill';
 import ph_house_simple_fill from '~icons/ph/house-simple-fill';
+import ph_identification_card_fill from '~icons/ph/identification-card-fill';
 import ph_info_fill from '~icons/ph/info-fill';
 import ph_lifebuoy_fill from '~icons/ph/lifebuoy-fill';
 import ph_list_fill from '~icons/ph/list-fill';
@@ -81,6 +82,7 @@ import ph_play_fill from '~icons/ph/play-fill';
 import ph_play_circle_fill from '~icons/ph/play-circle-fill';
 import ph_plus_fill from '~icons/ph/plus-fill';
 import ph_plus_circle_fill from '~icons/ph/plus-circle-fill';
+import ph_pulse_fill from '~icons/ph/pulse-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
@@ -98,6 +100,7 @@ import ph_smiley_angry_fill from '~icons/ph/smiley-angry-fill';
 import ph_sort_ascending_fill from '~icons/ph/sort-ascending-fill';
 import ph_sort_descending_fill from '~icons/ph/sort-descending-fill';
 import ph_sparkle_fill from '~icons/ph/sparkle-fill';
+import ph_stethoscope_fill from '~icons/ph/stethoscope-fill';
 import ph_sun_fill from '~icons/ph/sun-fill';
 import ph_sun_horizon_fill from '~icons/ph/sun-horizon-fill';
 import ph_swap_fill from '~icons/ph/swap-fill';
@@ -179,6 +182,7 @@ const icons: IconMap = {
 	'ph:heartbeat-fill': ph_heartbeat_fill,
 	'ph:house-fill': ph_house_fill,
 	'ph:house-simple-fill': ph_house_simple_fill,
+	'ph:identification-card-fill': ph_identification_card_fill,
 	'ph:info-fill': ph_info_fill,
 	'ph:lifebuoy-fill': ph_lifebuoy_fill,
 	'ph:list-fill': ph_list_fill,
@@ -202,6 +206,7 @@ const icons: IconMap = {
 	'ph:play-circle-fill': ph_play_circle_fill,
 	'ph:plus-fill': ph_plus_fill,
 	'ph:plus-circle-fill': ph_plus_circle_fill,
+	'ph:pulse-fill': ph_pulse_fill,
 	'ph:push-pin-fill': ph_push_pin_fill,
 	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
@@ -219,6 +224,7 @@ const icons: IconMap = {
 	'ph:sort-ascending-fill': ph_sort_ascending_fill,
 	'ph:sort-descending-fill': ph_sort_descending_fill,
 	'ph:sparkle-fill': ph_sparkle_fill,
+	'ph:stethoscope-fill': ph_stethoscope_fill,
 	'ph:sun-fill': ph_sun_fill,
 	'ph:sun-horizon-fill': ph_sun_horizon_fill,
 	'ph:swap-fill': ph_swap_fill,

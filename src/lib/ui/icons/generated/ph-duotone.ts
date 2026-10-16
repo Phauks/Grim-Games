@@ -58,6 +58,7 @@ import ph_heart_duotone from '~icons/ph/heart-duotone';
 import ph_heartbeat_duotone from '~icons/ph/heartbeat-duotone';
 import ph_house_duotone from '~icons/ph/house-duotone';
 import ph_house_simple_duotone from '~icons/ph/house-simple-duotone';
+import ph_identification_card_duotone from '~icons/ph/identification-card-duotone';
 import ph_info_duotone from '~icons/ph/info-duotone';
 import ph_lifebuoy_duotone from '~icons/ph/lifebuoy-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
@@ -81,6 +82,7 @@ import ph_play_duotone from '~icons/ph/play-duotone';
 import ph_play_circle_duotone from '~icons/ph/play-circle-duotone';
 import ph_plus_duotone from '~icons/ph/plus-duotone';
 import ph_plus_circle_duotone from '~icons/ph/plus-circle-duotone';
+import ph_pulse_duotone from '~icons/ph/pulse-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
@@ -98,6 +100,7 @@ import ph_smiley_angry_duotone from '~icons/ph/smiley-angry-duotone';
 import ph_sort_ascending_duotone from '~icons/ph/sort-ascending-duotone';
 import ph_sort_descending_duotone from '~icons/ph/sort-descending-duotone';
 import ph_sparkle_duotone from '~icons/ph/sparkle-duotone';
+import ph_stethoscope_duotone from '~icons/ph/stethoscope-duotone';
 import ph_sun_duotone from '~icons/ph/sun-duotone';
 import ph_sun_horizon_duotone from '~icons/ph/sun-horizon-duotone';
 import ph_swap_duotone from '~icons/ph/swap-duotone';
@@ -179,6 +182,7 @@ const icons: IconMap = {
 	'ph:heartbeat-duotone': ph_heartbeat_duotone,
 	'ph:house-duotone': ph_house_duotone,
 	'ph:house-simple-duotone': ph_house_simple_duotone,
+	'ph:identification-card-duotone': ph_identification_card_duotone,
 	'ph:info-duotone': ph_info_duotone,
 	'ph:lifebuoy-duotone': ph_lifebuoy_duotone,
 	'ph:list-duotone': ph_list_duotone,
@@ -202,6 +206,7 @@ const icons: IconMap = {
 	'ph:play-circle-duotone': ph_play_circle_duotone,
 	'ph:plus-duotone': ph_plus_duotone,
 	'ph:plus-circle-duotone': ph_plus_circle_duotone,
+	'ph:pulse-duotone': ph_pulse_duotone,
 	'ph:push-pin-duotone': ph_push_pin_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
@@ -219,6 +224,7 @@ const icons: IconMap = {
 	'ph:sort-ascending-duotone': ph_sort_ascending_duotone,
 	'ph:sort-descending-duotone': ph_sort_descending_duotone,
 	'ph:sparkle-duotone': ph_sparkle_duotone,
+	'ph:stethoscope-duotone': ph_stethoscope_duotone,
 	'ph:sun-duotone': ph_sun_duotone,
 	'ph:sun-horizon-duotone': ph_sun_horizon_duotone,
 	'ph:swap-duotone': ph_swap_duotone,

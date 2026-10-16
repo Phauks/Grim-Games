@@ -58,6 +58,7 @@ import ph_heart from '~icons/ph/heart';
 import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_house from '~icons/ph/house';
 import ph_house_simple from '~icons/ph/house-simple';
+import ph_identification_card from '~icons/ph/identification-card';
 import ph_info from '~icons/ph/info';
 import ph_lifebuoy from '~icons/ph/lifebuoy';
 import ph_list from '~icons/ph/list';
@@ -81,6 +82,7 @@ import ph_play from '~icons/ph/play';
 import ph_play_circle from '~icons/ph/play-circle';
 import ph_plus from '~icons/ph/plus';
 import ph_plus_circle from '~icons/ph/plus-circle';
+import ph_pulse from '~icons/ph/pulse';
 import ph_push_pin from '~icons/ph/push-pin';
 import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
@@ -98,6 +100,7 @@ import ph_smiley_angry from '~icons/ph/smiley-angry';
 import ph_sort_ascending from '~icons/ph/sort-ascending';
 import ph_sort_descending from '~icons/ph/sort-descending';
 import ph_sparkle from '~icons/ph/sparkle';
+import ph_stethoscope from '~icons/ph/stethoscope';
 import ph_sun from '~icons/ph/sun';
 import ph_sun_horizon from '~icons/ph/sun-horizon';
 import ph_swap from '~icons/ph/swap';
@@ -179,6 +182,7 @@ const icons: IconMap = {
 	'ph:heartbeat': ph_heartbeat,
 	'ph:house': ph_house,
 	'ph:house-simple': ph_house_simple,
+	'ph:identification-card': ph_identification_card,
 	'ph:info': ph_info,
 	'ph:lifebuoy': ph_lifebuoy,
 	'ph:list': ph_list,
@@ -202,6 +206,7 @@ const icons: IconMap = {
 	'ph:play-circle': ph_play_circle,
 	'ph:plus': ph_plus,
 	'ph:plus-circle': ph_plus_circle,
+	'ph:pulse': ph_pulse,
 	'ph:push-pin': ph_push_pin,
 	'ph:qr-code': ph_qr_code,
 	'ph:question': ph_question,
@@ -219,6 +224,7 @@ const icons: IconMap = {
 	'ph:sort-ascending': ph_sort_ascending,
 	'ph:sort-descending': ph_sort_descending,
 	'ph:sparkle': ph_sparkle,
+	'ph:stethoscope': ph_stethoscope,
 	'ph:sun': ph_sun,
 	'ph:sun-horizon': ph_sun_horizon,
 	'ph:swap': ph_swap,

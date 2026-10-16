@@ -28,10 +28,9 @@ export const shell = {
 	'shell.aboutBranch': 'Branch',
 	'shell.aboutChannel': 'Channel',
 	'shell.aboutBuilt': 'Built',
-	'shell.aboutProblems': 'Problems',
-	'shell.aboutProblemsButton': 'Problems on this device ({count})',
 	'shell.aboutNotice':
 		"Not affiliated with The Pandemonium Institute. Blood on the Clocktower is a trademark of Steven Medway and The Pandemonium Institute. Character data and icons from TPI's toolmaker resources under the Community Created Content policy.",
+	'shell.navDiagnostics': 'Diagnostics',
 	'shell.updateReady': 'Update ready',
 	'shell.updateSaved': 'Your game is saved and reopens after refreshing.',
 	'shell.updateLater': 'Later',
