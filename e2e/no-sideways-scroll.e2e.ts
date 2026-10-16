@@ -30,8 +30,6 @@ const STATIC_ROUTES = [
  * route from this list when its fix lands; the guard then covers it like every other route.
  */
 const KNOWN_OVERFLOW: Record<string, string> = {
-	'/spikes/icons': 'Grimoire board: icon preview row',
-	board: 'Grimoire board: seat ring is wider than the screen'
 };
 
 /** The widest elements poking past the right edge, to name in the failure. */

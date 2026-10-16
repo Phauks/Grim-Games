@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	keepInside,
 	DEFAULT_SEAT_LAYOUT,
 	gapPoints,
 	isDefaultLayout,
@@ -128,5 +129,24 @@ describe('towardsMiddle', () => {
 		expect(near.y).toBeCloseTo(20);
 		expect(far.y).toBeCloseTo(30);
 		expect(towardsMiddle({ x: 50, y: 50 }, square, [40])[0].y).toBeCloseTo(60);
+	});
+});
+
+describe('keepInside', () => {
+	it('pulls points in so a token of the given half-width stays on the board', () => {
+		const board = { width: 200, height: 400 };
+		const [left, middle] = keepInside(
+			[
+				{ x: 2, y: 99 },
+				{ x: 50, y: 50 }
+			],
+			board,
+			20
+		);
+		expect(left).toEqual({ x: 10, y: 95 });
+		expect(middle).toEqual({ x: 50, y: 50 });
+	});
+	it('centres when the board is smaller than the token', () => {
+		expect(keepInside([{ x: 0, y: 0 }], { width: 10, height: 10 }, 20)).toEqual([{ x: 50, y: 50 }]);
 	});
 });

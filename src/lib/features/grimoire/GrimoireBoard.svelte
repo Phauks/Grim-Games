@@ -16,6 +16,7 @@
 		gapPoints,
 		isDefaultLayout,
 		nextGap,
+		keepInside,
 		seatPoints,
 		seatTokenSize,
 		towardsMiddle,
@@ -71,8 +72,17 @@
 		};
 	});
 	const layout = $derived(grimoire.layout);
-	const points = $derived(seatPoints(game.seating, layout, { width, height }));
 	const size = $derived(seatTokenSize(game.seating, layout, { width, height }));
+	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
+	// keep it all on the board so a narrow phone never scrolls sideways.
+	const unit = 16;
+	const points = $derived(
+		keepInside(
+			seatPoints(game.seating, layout, { width, height }),
+			{ width, height },
+			size / 2 + unit
+		)
+	);
 
 	// ── Reminder tokens on the board ──
 	// Each seat's reminders line up in front of it, towards the middle, as on a real
@@ -211,7 +221,7 @@
 	let travellerOpen = $state(false);
 	let traveller = $state<CharacterId | undefined>();
 	let travellerAlignmentOpen = $state(false);
-	function addTraveller(alignment: Alignment) {
+	function addTraveller(alignment: Alignment | undefined) {
 		travellerAlignmentOpen = false;
 		if (traveller) grimoire.addTraveller(traveller, alignment);
 		traveller = undefined;
@@ -449,6 +459,8 @@
 	<div class="choices">
 		<Button onclick={() => addTraveller('good')}>Good</Button>
 		<Button onclick={() => addTraveller('evil')}>Evil</Button>
+		<!-- Often chosen later: the night order asks for it first (Trevor, 2026-10-16). -->
+		<Button variant="quiet" onclick={() => addTraveller(undefined)}>Decide later</Button>
 	</div>
 </Dialog>
 

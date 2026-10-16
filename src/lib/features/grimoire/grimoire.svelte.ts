@@ -1,6 +1,7 @@
 import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
-import type { SeatId } from '#lib/core/model/index.ts';
+import { scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
+import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { warningText } from './board.ts';
@@ -18,6 +19,18 @@ export class Grimoire {
 	constructor(readonly open: OpenGame) {
 		forgetUpsideDownMarks();
 		this.layout = seatLayouts.read(open.game.gameId);
+		// Icons are stored only once shown; store the ones this game may need mid-game, so
+		// the Traveller and Fabled pickers and an older game's script work offline.
+		const onScript = scriptCharacterIds(open.game.script);
+		keepIconsOffline(
+			[...open.characters.values()].filter(
+				(c) =>
+					c.type === 'traveller' ||
+					c.type === 'fabled' ||
+					c.type === 'loric' ||
+					onScript.includes(c.id)
+			)
+		);
 	}
 
 	/**
@@ -72,7 +85,7 @@ export class Grimoire {
 	}
 
 	/** A Traveller joins: a new seat with the Traveller on it. */
-	addTraveller(characterId: CharacterId, alignment: Alignment): SeatId | undefined {
+	addTraveller(characterId: CharacterId, alignment: Alignment | undefined): SeatId | undefined {
 		const seatId = this.addSeat();
 		if (seatId === undefined) return undefined;
 		if (!this.run({ type: 'AssignCharacter', seatId, characterId, alignment })) {

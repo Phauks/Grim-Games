@@ -33,7 +33,12 @@
 			`Seat ${number}: ${seat.playerName ?? 'no name'}`,
 			character?.name ?? 'no character',
 			seat.dead ? (seat.ghostVoteUsed ? 'dead, ghost vote used' : 'dead, has ghost vote') : '',
-			shifted ? `${seat.alignment}` : '',
+			// A Traveller has no starting alignment: always say it, or that it is not set yet.
+			character?.type === 'traveller'
+				? (seat.alignment ?? 'alignment not set')
+				: shifted
+					? `${seat.alignment}`
+					: '',
 			orphan ? 'not on the script' : '',
 			seat.reminders.length
 				? `${seat.reminders.length} reminder${seat.reminders.length === 1 ? '' : 's'}`

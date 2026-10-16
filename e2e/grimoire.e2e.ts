@@ -454,3 +454,64 @@ test('the script is shared from the grimoire menu, never the game', async ({ pag
 	);
 	expect(link).not.toContain('seat');
 });
+
+test("a Traveller's alignment can wait for the night order", async ({ page }) => {
+	await startGame(page);
+	await menu(page, 'Add Traveller');
+	await page
+		.getByRole('dialog', { name: 'Add a Traveller' })
+		.getByRole('button', { name: 'Thief', exact: true })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: 'Decide later' })
+		.tap();
+	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toHaveAccessibleName(
+		/alignment not set/
+	);
+
+	// The night order starts by asking for it (core withTravellerAlignmentStep).
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	const night = page.getByRole('dialog', { name: 'Night order' });
+	const step = night.getByRole('listitem').filter({ hasText: 'Traveller alignment' });
+	await expect(step).toContainText('Thief');
+	await step.getByRole('button', { name: 'Evil' }).tap();
+	await expect(step).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toHaveAccessibleName(
+		/evil/
+	);
+});
+
+test('the cause of death offers only characters that could have killed the player', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Slayer : the Slayer only kills the Demon.
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Slayer'],
+		[2, 'Empath'],
+		[3, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	let sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: 'Dead' }).tap();
+	let cause = page.getByRole('dialog', { name: 'How did Seat 2 die?' });
+	await expect(cause.getByRole('button', { name: 'Executed' })).toBeVisible();
+	await expect(cause.getByRole('button', { name: 'Slayer' })).toBeHidden();
+	await cause.getByRole('button', { name: 'Skip' }).tap();
+	await closeSheet(page);
+
+	sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Dead' }).tap();
+	cause = page.getByRole('dialog', { name: 'How did Seat 3 die?' });
+	await cause.getByRole('button', { name: 'Slayer' }).tap();
+	await expect(sheet.getByRole('button', { name: 'Slayer' })).toBeVisible();
+});

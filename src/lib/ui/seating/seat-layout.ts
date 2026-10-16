@@ -85,6 +85,23 @@ export function seatPoints(
 }
 
 /**
+ * Points pulled in so that something `margin` px from its centre to its edge stays on the
+ * board: on a narrow phone the ring would otherwise put tokens past the screen edge.
+ */
+export function keepInside(
+	points: readonly SeatPoint[],
+	board: BoardSize,
+	margin: number
+): SeatPoint[] {
+	const clamp = (v: number, size: number) => {
+		if (size <= 0) return v;
+		const m = Math.min(50, (margin / size) * 100);
+		return Math.min(100 - m, Math.max(m, v));
+	};
+	return points.map((p) => ({ x: clamp(p.x, board.width), y: clamp(p.y, board.height) }));
+}
+
+/**
  * Where to draw the control for the gap after each seat: midway round the ring between it
  * and the next seat, even when either seat was placed by hand. `inset` (0 to 1) pulls the
  * controls towards the middle, so they sit inside the ring rather than over the tokens.

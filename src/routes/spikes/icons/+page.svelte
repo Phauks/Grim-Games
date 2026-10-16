@@ -27,6 +27,7 @@
 	}
 	.slots {
 		display: flex;
+		flex-wrap: wrap;
 		gap: var(--space-4);
 		padding: 0;
 		list-style: none;

@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { isSeatable, type Character, type NightMarker } from '#lib/core/data/index.ts';
-	import { MARKER_TEXT, nightOrder, type Night, type NightStep } from '#lib/core/rules/index.ts';
+	import {
+		MARKER_TEXT,
+		nightOrder,
+		TRAVELLER_ALIGNMENT_STEP,
+		withTravellerAlignmentStep,
+		type Night,
+		type NightStep
+	} from '#lib/core/rules/index.ts';
+	import type { Alignment } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
@@ -37,15 +45,21 @@
 			const c = id ? characters.get(id) : undefined;
 			if (c) inPlay.push(c);
 		}
-		return nightOrder({
+		const { steps } = nightOrder({
 			night,
 			sheet: data.nightSheet,
 			inPlay,
 			players: inPlay.filter((c) => isSeatable(c.type) && c.type !== 'traveller').length,
 			customOrder: night === 'first' ? game.script.meta?.firstNight : game.script.meta?.otherNight,
 			overrides: game.nightOrderOverrides
-		}).steps;
+		});
+		// A first step to choose any Traveller's alignment that is still unset.
+		return withTravellerAlignmentStep(steps, game, characters);
 	});
+
+	function setAlignment(seatId: string, alignment: Alignment) {
+		grimoire.run({ type: 'SetAlignment', seatId, alignment });
+	}
 
 	/** Who holds a step's character, for "Empath · Sam". */
 	function holders(step: NightStep) {
@@ -87,7 +101,9 @@
 				>
 				<div class="body">
 					<p class="title">
-						{#if step.kind === 'marker'}
+						{#if step.id === TRAVELLER_ALIGNMENT_STEP}
+							<strong>{step.title}</strong>
+						{:else if step.kind === 'marker'}
 							<strong>{MARKER_TEXT[step.id as NightMarker].name}</strong>
 						{:else if step.character}
 							{@const seats = holders(step)}
@@ -107,7 +123,26 @@
 							<strong>{step.title ?? step.id}</strong>
 						{/if}
 					</p>
-					{#if step.reminder}
+					{#if step.id === TRAVELLER_ALIGNMENT_STEP}
+						<ul class="travellers">
+							{#each step.travellers ?? [] as seatId (seatId)}
+								{@const id = game.seats[seatId]?.characterId}
+								<li>
+									{#if id}
+										<CharacterBadge
+											characterId={id}
+											character={characters.get(id)}
+											playerName={seatName(seatId)}
+											inline
+										/>
+									{/if}
+									<span class="spacer"></span>
+									<Button variant="quiet" onclick={() => setAlignment(seatId, 'good')}>Good</Button>
+									<Button variant="quiet" onclick={() => setAlignment(seatId, 'evil')}>Evil</Button>
+								</li>
+							{/each}
+						</ul>
+					{:else if step.reminder}
 						<p class="text">
 							{#if step.character}
 								<NightText text={step.reminder} character={step.character} {night} />
@@ -176,6 +211,19 @@
 		font-family: var(--font-ability);
 		font-size: 0.95rem;
 		line-height: 1.35;
+	}
+	.travellers {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.travellers li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+	.spacer {
+		flex: 1;
 	}
 	.none {
 		display: block;
