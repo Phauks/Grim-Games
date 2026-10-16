@@ -41,7 +41,7 @@
 	import NoteEditor from './NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
-	import { playerJinxes, playerNight } from './player-script.ts';
+	import { playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
 	import ScriptSheet from './ScriptSheet.svelte';
 	import SeatCircle from './SeatCircle.svelte';
 	import SeatEditor from './SeatEditor.svelte';
@@ -166,6 +166,7 @@
 
 	const players = $derived(notebook ? playerCount(notebook.book) : 0);
 	const jinxes = $derived(script && data ? playerJinxes(script, data) : []);
+	const sheet = $derived(script && data ? sheetCharacters(script, data) : []);
 	const nights = $derived(
 		script && data
 			? (['first', 'other'] as const).map((n) => playerNight(script!, data!, n, players, numeric))
@@ -220,7 +221,7 @@
 						{#if !script || !notebook}
 							<p class="muted">Loading…</p>
 						{:else if value === 'script'}
-							<ScriptSheet {script} {jinxes} {players} {shareTarget} />
+							<ScriptSheet {script} characters={sheet} {jinxes} {players} {shareTarget} />
 						{:else if value === 'night'}
 							<PlayerNightOrder {nights} {players} />
 						{:else if value === 'circle'}

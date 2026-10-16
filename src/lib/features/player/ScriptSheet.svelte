@@ -16,6 +16,8 @@
 
 	interface Props {
 		script: LoadedScript;
+		/** What the sheet lists: the script's characters plus recommended Travellers. */
+		characters: readonly Character[];
 		jinxes: readonly ScriptJinx[];
 		/** Seats in the player's circle; highlights that column of the breakdown. */
 		players: number;
@@ -23,15 +25,15 @@
 		shareTarget: (() => Promise<ShareTarget>) | undefined;
 	}
 
-	let { script, jinxes, players, shareTarget }: Props = $props();
-	const groups = $derived(groupByType(script.characters));
-	const names = $derived(script.characters.map((c) => c.name));
+	let { script, characters, jinxes, players, shareTarget }: Props = $props();
+	const groups = $derived(groupByType(characters));
+	const names = $derived(characters.map((c) => c.name));
 	const counts = Array.from(
 		{ length: MAX_DEALT_PLAYERS - MIN_PLAYERS + 1 },
 		(_, i) => MIN_PLAYERS + i
 	);
 	const highlighted = $derived(Math.min(players, MAX_DEALT_PLAYERS));
-	const byId = $derived(new Map(script.characters.map((c) => [c.id, c])));
+	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const nameOf = (id: string) => byId.get(id)?.name ?? id;
 </script>
 
@@ -49,7 +51,9 @@
 	</div>
 	{#each groups as group (group.type)}
 		<section aria-labelledby="type-{group.type}" data-type={group.type}>
-			<h2 id="type-{group.type}">{TYPE_PLURALS[group.type]}</h2>
+			<h2 id="type-{group.type}">
+				{group.type === 'traveller' ? 'Recommended Travellers' : TYPE_PLURALS[group.type]}
+			</h2>
 			<ul>
 				{#each group.characters as c (c.id)}{@render row(c)}{/each}
 			</ul>

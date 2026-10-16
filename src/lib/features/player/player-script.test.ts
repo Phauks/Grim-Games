@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { editionScript } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { groupByType, playerJinxes, playerNight } from './player-script.ts';
+import { groupByType, playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
 
 const data = committedGameData();
 const tb = editionScript('tb', data)!;
@@ -15,6 +15,17 @@ describe('player script view', () => {
 			['minion', 4],
 			['demon', 1]
 		]);
+	});
+
+	it("adds an edition's recommended Travellers to its sheet", () => {
+		// https://wiki.bloodontheclocktower.com/Trouble_Brewing: Scapegoat, Gunslinger, Beggar,
+		// Bureaucrat and Thief are its Travellers.
+		const travellers = groupByType(sheetCharacters(tb, data)).find((g) => g.type === 'traveller');
+		expect(travellers?.characters.map((c) => c.id).sort()).toEqual(
+			['beggar', 'bureaucrat', 'gunslinger', 'scapegoat', 'thief'].sort()
+		);
+		const custom = { ...tb, edition: undefined, characters: tb.characters.slice(0, 3) };
+		expect(sheetCharacters(custom, data)).toEqual(custom.characters);
 	});
 
 	it('lists the night order as names only, with Minion and Demon info on the first night', () => {

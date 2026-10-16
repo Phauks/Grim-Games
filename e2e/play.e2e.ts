@@ -10,7 +10,10 @@ test.beforeEach(async ({ page }) => {
 
 test('the script tab lists characters by type with their abilities', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Townsfolk' })).toBeVisible();
-	await expect(page.locator('[data-character]')).toHaveCount(22);
+	// 22 on the character sheet plus its 5 recommended Travellers (wiki: Trouble Brewing).
+	await expect(page.locator('[data-character]')).toHaveCount(27);
+	const travellers = page.getByRole('region', { name: 'Recommended Travellers' });
+	await expect(travellers.locator('[data-character="scapegoat"]')).toBeVisible();
 	const empath = page.locator('[data-character="empath"]');
 	await expect(empath).toContainText('Each night, you learn how many of your 2 alive neighbors');
 	await empath.getByRole('button', { name: /Empath/ }).tap();
