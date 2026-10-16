@@ -176,7 +176,7 @@ test("a character's own card is filled in and shown, e.g. the Mezepheles's secre
 }) => {
 	await page.goto('/info-tokens');
 	await page.getByRole('button', { name: 'Secret word (Mezepheles)' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Secret word (Mezepheles)' });
+	const dialog = page.getByRole('dialog', { name: /^Secret word \(\s*Mezepheles\s*\)$/ });
 	await dialog.getByRole('textbox', { name: 'Word' }).fill('lantern');
 	await dialog.getByRole('textbox', { name: 'Word' }).press('Enter');
 	const shown = page.locator('[data-testid="show-to-player"][open]');

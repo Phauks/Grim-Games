@@ -197,6 +197,7 @@
 						characterId={filling!.character.id}
 						character={filling!.character}
 						inline
+						interactive={false}
 					/>{/snippet}</Sentence
 			>{/if}{/snippet}
 	{#if filling}
