@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { BagPlan, ScriptJinx, SetupAnalysis } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -27,9 +28,9 @@
 	(Trevor, 2026-10-16): warnings, stand-ins, setup changes and jinxes. Each section keeps
 	its header and shows None when empty. It warns; it never blocks.
 -->
-<section class="check" aria-label="Setup check" data-testid="setup-check">
+<section class="check" aria-label={t('setup.check')} data-testid="setup-check">
 	<div class="body">
-		<Collapsible title="Warnings" level={3} storageKey="setup-check:warnings">
+		<Collapsible title={t('setup.check.warnings')} level={3} storageKey="setup-check:warnings">
 			{#snippet aside()}<span
 					class="count"
 					data-warn={warnings.length ? '' : undefined}
@@ -39,32 +40,40 @@
 				<ul class="warn">
 					{#each warnings as warning, i (i)}<li><GlossaryText text={warning} /></li>{/each}
 				</ul>
-			{:else}<p>None</p>{/if}
+			{:else}<p>{t('common.none')}</p>{/if}
 		</Collapsible>
 
-		<Collapsible title="Shown instead" level={3} storageKey="setup-check:shown-instead">
+		<Collapsible
+			title={t('setup.check.shownInstead')}
+			level={3}
+			storageKey="setup-check:shown-instead"
+		>
 			{#if plan.standIns.length}
 				<ul class="stand-ins">
 					{#each plan.standIns as standIn (standIn.characterId)}
 						<li data-testid="stand-in-{standIn.characterId}">
 							<CharacterBadge characterId={standIn.characterId} />
-							<span>is shown</span>
+							<span>{t('setup.check.isShown')}</span>
 							{#if standIn.options.length}
 								<Select
-									label="Shown to the {name(standIn.characterId)}"
+									label={t('setup.check.shownTo', { name: name(standIn.characterId) })}
 									hideLabel
 									value={standIn.shows ?? ''}
 									options={standIn.options.map((id) => ({ value: id, label: name(id) }))}
 									onChange={(id) => onStandIn(standIn.characterId, id)}
 								/>
-							{:else}<span>None</span>{/if}
+							{:else}<span>{t('common.none')}</span>{/if}
 						</li>
 					{/each}
 				</ul>
-			{:else}<p>None</p>{/if}
+			{:else}<p>{t('common.none')}</p>{/if}
 		</Collapsible>
 
-		<Collapsible title="Setup changes" level={3} storageKey="setup-check:setup-changes">
+		<Collapsible
+			title={t('setup.check.setupChanges')}
+			level={3}
+			storageKey="setup-check:setup-changes"
+		>
 			{#if analysis.modifiers.length || analysis.notes.length}
 				<ul>
 					{#each analysis.modifiers as modifier (modifier.id)}
@@ -72,20 +81,21 @@
 					{/each}
 					{#each analysis.notes as note, i (i)}<li><GlossaryText text={note} /></li>{/each}
 				</ul>
-			{:else}<p>None</p>{/if}
+			{:else}<p>{t('common.none')}</p>{/if}
 		</Collapsible>
 
-		<Collapsible title="Jinxes" level={3} storageKey="setup-check:jinxes">
+		<Collapsible title={t('setup.check.jinxes')} level={3} storageKey="setup-check:jinxes">
 			{#if jinxes.length}
 				<ul>
 					{#each jinxes as jinx (jinx.characters.join('+'))}
 						<li>
-							<CharacterBadge characterId={jinx.characters[0]} inline /> and
+							<CharacterBadge characterId={jinx.characters[0]} inline />
+							{t('setup.check.and')}
 							<CharacterBadge characterId={jinx.characters[1]} inline />: {jinx.reason}
 						</li>
 					{/each}
 				</ul>
-			{:else}<p>None</p>{/if}
+			{:else}<p>{t('common.none')}</p>{/if}
 		</Collapsible>
 	</div>
 </section>

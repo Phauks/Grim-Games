@@ -1,5 +1,6 @@
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
+import type { MessageKey } from '#lib/i18n/catalog.ts';
 import type { Game } from '#lib/core/model/index.ts';
 import { setupComplete } from '#lib/core/rules/index.ts';
 
@@ -9,11 +10,11 @@ import { setupComplete } from '#lib/core/rules/index.ts';
  */
 export type SetupStep = 'characters' | 'draw' | 'reminders';
 
-export const SETUP_STEPS: readonly { step: SetupStep; label: string }[] = [
-	{ step: 'characters', label: 'Characters' },
-	{ step: 'draw', label: 'Draw' },
-	{ step: 'reminders', label: 'Setup reminders' }
-];
+export const SETUP_STEPS = [
+	{ step: 'characters', label: 'setup.step.characters' },
+	{ step: 'draw', label: 'setup.step.draw' },
+	{ step: 'reminders', label: 'setup.step.reminders' }
+] as const satisfies readonly { step: SetupStep; label: MessageKey }[];
 
 /** The URL hash that opens the board with its setup reminders tray. */
 export const REMINDERS_HASH = '#setup-reminders';

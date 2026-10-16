@@ -1,6 +1,8 @@
 import type { Catalog } from '#lib/i18n/catalog.ts';
 import { account } from '#lib/i18n/messages/en/account.ts';
 import { common } from '#lib/i18n/messages/en/common.ts';
+import { picker } from '#lib/i18n/messages/en/picker.ts';
+import { setup } from '#lib/i18n/messages/en/setup.ts';
 import { bluffs } from '#lib/i18n/messages/en/bluffs.ts';
 import { infoTokens } from '#lib/i18n/messages/en/info-tokens.ts';
 import { show } from '#lib/i18n/messages/en/show.ts';
@@ -21,6 +23,8 @@ import { scripts } from '#lib/i18n/messages/en/scripts.ts';
  */
 export const en = {
 	...common,
+	...setup,
+	...picker,
 	...errors,
 	...room,
 	...show,

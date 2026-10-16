@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
@@ -39,12 +40,12 @@
 
 	function send(command: Command): boolean {
 		const result = port.dispatch(command);
-		if (!result.ok) toast("Couldn't do that", result.error.message);
+		if (!result.ok) toast(t('setup.couldNot'), result.error.message);
 		return result.ok;
 	}
 
 	function label(seatId: SeatId | undefined): string {
-		return game && seatId ? seatLabel(game, seatId) : 'None';
+		return game && seatId ? seatLabel(game, seatId) : t('common.none');
 	}
 
 	function draw(tileId: TileId, state: string) {
@@ -54,7 +55,7 @@
 			return;
 		}
 		if (!next) {
-			toast('Every seat has a character', 'Add a seat on the grimoire to draw for it.');
+			toast(t('setup.draw.everySeat'), t('setup.draw.everySeatHint'));
 			return;
 		}
 		if (send({ type: 'DrawTile', seatId: next, tileId })) {
@@ -98,23 +99,24 @@
 				<Button
 					variant="quiet"
 					icon="back"
-					href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>Grimoire</Button
+					href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}
+					>{t('setup.grimoire')}</Button
 				>
 			</div>
 			<SetupSteps gameId={game.gameId} current="draw" hasBag={bag !== undefined} />
 		{/if}
-		<h1>Draw</h1>
+		<h1>{t('setup.draw')}</h1>
 	</header>
 
 	<ErrorBoundary area="setup">
 		{#if !game || !bag}
-			<p class="empty" data-testid="no-bag">No bag. Select characters and build the bag first.</p>
+			<p class="empty" data-testid="no-bag">{t('setup.draw.noBag')}</p>
 		{:else}
 			<p class="next">
-				<span class="label">Next</span>
+				<span class="label">{t('setup.draw.next')}</span>
 				<span data-testid="next-seat">{label(next)}</span>
 			</p>
-			<ol class="tiles" aria-label="Bag">
+			<ol class="tiles" aria-label={t('setup.draw.bag')}>
 				{#each slots as s (s.tileId)}
 					<li>
 						<button
@@ -123,10 +125,10 @@
 							data-state={s.state}
 							disabled={s.state === 'drawn'}
 							aria-label={s.state === 'held'
-								? `Tile ${s.number}, held by ${label(s.seatId)}`
+								? t('setup.draw.tileHeld', { number: s.number, seat: label(s.seatId) })
 								: s.state === 'drawn'
-									? `Tile ${s.number}, drawn`
-									: `Tile ${s.number}`}
+									? t('setup.draw.tileDrawn', { number: s.number })
+									: t('setup.draw.tile', { number: s.number })}
 							onclick={() => draw(s.tileId, s.state)}
 						>
 							<span class="face" aria-hidden="true"
@@ -135,9 +137,9 @@
 									/>{:else}{s.number}{/if}</span
 							>
 							<span class="mark"
-								>{#if s.state === 'drawn'}<Icon
-										name="check"
-									/>{:else if s.state === 'held'}Held{/if}</span
+								>{#if s.state === 'drawn'}<Icon name="check" />{:else if s.state === 'held'}{t(
+										'setup.draw.held'
+									)}{/if}</span
 							>
 						</button>
 					</li>
@@ -150,7 +152,7 @@
 		{#if game}
 			<!-- The next step: the board, with its setup reminders tray open. -->
 			<Button variant={done ? 'accent' : 'quiet'} icon="forward" href={remindersHref(game.gameId)}
-				>Setup reminders</Button
+				>{t('setup.step.reminders')}</Button
 			>
 		{/if}
 	</div>

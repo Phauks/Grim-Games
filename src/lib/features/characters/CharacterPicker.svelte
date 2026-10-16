@@ -7,6 +7,7 @@
 </script>
 
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import {
 		defaultAlignment,
@@ -87,7 +88,10 @@
 	const notes = $derived(disabledReason !== undefined || marker !== undefined || max !== undefined);
 
 	function reasonFor(character: Character, isChosen: boolean): string | undefined {
-		return disabledReason?.(character) ?? (full && !isChosen ? `${max} chosen already` : undefined);
+		return (
+			disabledReason?.(character) ??
+			(full && !isChosen ? t('picker.full', { max: max ?? 0 }) : undefined)
+		);
 	}
 </script>
 
@@ -152,7 +156,7 @@
 				{@render rows(group)}
 			</Collapsible>
 		{:else}
-			<p class="none">None</p>
+			<p class="none">{t('common.none')}</p>
 		{/each}
 	</div>
 </div>

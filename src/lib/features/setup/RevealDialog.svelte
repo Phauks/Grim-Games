@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
@@ -66,16 +67,16 @@
 	The player's own reveal. A drawn tile is never put back (Trevor, 2026-10-15): closing the
 	reveal keeps it in the player's hand (the draw is saved) until it is confirmed.
 -->
-<Dialog bind:open title="Tile {number}" size="full">
+<Dialog bind:open title={t('setup.draw.tile', { number })} size="full">
 	<div class="reveal" data-testid="reveal">
 		<p class="seat">{seatLabel}</p>
 		<label class="player">
-			<span>Name</span>
+			<span>{t('setup.reveal.name')}</span>
 			<input
 				type="text"
 				autocomplete="off"
 				enterkeyhint="done"
-				placeholder="None"
+				placeholder={t('common.none')}
 				bind:value={name}
 				onkeydown={(e) => {
 					// Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap.
@@ -90,7 +91,7 @@
 		<div class="token">
 			{#if revealed}<CharacterToken character={shows} size={160} />{:else}<span
 					class="hidden-token"
-					data-testid="reveal-locked">Enter your name to see your character</span
+					data-testid="reveal-locked">{t('setup.reveal.locked')}</span
 				>{/if}
 		</div>
 		<p class="name" data-testid="reveal-name" class:concealed={!revealed}>
@@ -100,13 +101,13 @@
 		<div class="alignment" aria-hidden={!needsAlignment}>
 			{#if needsAlignment}
 				<ChoiceGroup
-					label="Alignment"
+					label={t('setup.reveal.alignment')}
 					layout="row"
 					value={alignment === '' ? 'none' : alignment}
 					options={[
-						{ value: 'none', label: 'None' },
-						{ value: 'good', label: 'Good' },
-						{ value: 'evil', label: 'Evil' }
+						{ value: 'none', label: t('common.none') },
+						{ value: 'good', label: t('setup.reveal.good') },
+						{ value: 'evil', label: t('setup.reveal.evil') }
 					]}
 					onChange={(v) => (alignment = v === 'none' ? '' : (v as Alignment))}
 				/>
@@ -115,10 +116,10 @@
 	</div>
 	{#snippet actions()}
 		{#if revealed}
-			<Button variant="accent" onclick={confirm}>Confirm</Button>
+			<Button variant="accent" onclick={confirm}>{t('setup.reveal.confirm')}</Button>
 		{:else}
 			<Button variant="accent" disabled={name.trim() === ''} onclick={() => (revealed = true)}
-				>Reveal</Button
+				>{t('setup.reveal.reveal')}</Button
 			>
 		{/if}
 	{/snippet}

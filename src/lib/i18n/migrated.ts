@@ -20,7 +20,12 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/scripts/',
 	'src/routes/scripts/',
 	'src/lib/features/player/',
-	'src/routes/play/'
+	'src/routes/play/',
+	'src/lib/features/setup/',
+	'src/routes/grimoire/[gameId]/setup/',
+	'src/routes/grimoire/[gameId]/draw/',
+	'src/lib/features/characters/CharacterPicker.svelte',
+	'src/lib/features/characters/CharacterSearchBox.svelte'
 ];
 
 export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {

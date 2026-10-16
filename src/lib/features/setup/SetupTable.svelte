@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		BASE_DISTRIBUTION,
 		MAX_DEALT_PLAYERS,
@@ -27,7 +28,7 @@
 <table class="setup-table" data-testid="setup-table">
 	<thead>
 		<tr>
-			<th scope="row">Players</th>
+			<th scope="row">{t('setup.players')}</th>
 			{#each columns as n (n)}
 				<th scope="col" data-current={n === current ? '' : undefined}
 					>{n === MAX_DEALT_PLAYERS ? `${n}+` : n}</th

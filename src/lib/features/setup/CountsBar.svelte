@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { SEATED_TYPES, type SetupAnalysis } from '#lib/core/rules/index.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 
@@ -13,7 +14,7 @@
 	function range(values: readonly number[]): string {
 		if (values.length === 1) return String(values[0]);
 		const contiguous = values.every((v, i) => i === 0 || v === values[i - 1] + 1);
-		return contiguous ? `${values[0]}–${values.at(-1)}` : values.join(' or ');
+		return contiguous ? `${values[0]}–${values.at(-1)}` : values.join(` ${t('setup.or')} `);
 	}
 </script>
 

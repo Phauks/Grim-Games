@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 
 	interface Props {
@@ -9,7 +10,7 @@
 		shortcut?: boolean;
 	}
 
-	let { query = $bindable(''), label = 'Search characters', shortcut = false }: Props = $props();
+	let { query = $bindable(''), label = t('picker.search'), shortcut = false }: Props = $props();
 	let input = $state<HTMLInputElement>();
 
 	function onWindowKey(event: KeyboardEvent) {
@@ -35,9 +36,9 @@
 		bind:value={query}
 		type="search"
 		aria-label={label}
-		placeholder="Search name or ability"
+		placeholder={t('picker.placeholder')}
 		aria-keyshortcuts={shortcut ? '/' : undefined}
-		title={shortcut ? 'Search (press /)' : undefined}
+		title={shortcut ? t('picker.searchShortcut') : undefined}
 		autocomplete="off"
 		autocapitalize="off"
 		spellcheck="false"
@@ -57,8 +58,8 @@
 	<button
 		type="button"
 		class="clear"
-		aria-label="Clear search"
-		title="Clear search"
+		aria-label={t('picker.clearSearch')}
+		title={t('picker.clearSearch')}
 		disabled={query === ''}
 		onclick={() => {
 			query = '';

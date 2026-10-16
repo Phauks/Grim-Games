@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { remindersHref, SETUP_STEPS, type SetupStep } from './setup-steps.ts';
 
@@ -24,7 +25,7 @@
 	Where the Storyteller is in setup: Characters, Draw, Setup reminders. Earlier steps and the
 	next one are links; the Draw step stays disabled until a bag exists. Fixed size, no reflow.
 -->
-<nav class="steps" aria-label="Setup steps">
+<nav class="steps" aria-label={t('setup.steps')}>
 	<ol>
 		{#each SETUP_STEPS as s, i (s.step)}
 			{@const reachable = s.step !== current && (s.step !== 'draw' || hasBag)}
@@ -32,7 +33,7 @@
 				{#if reachable}
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- href() resolves it -->
 					<a href={href(s.step)}
-						><span class="n" aria-hidden="true">{i + 1}</span><span class="label">{s.label}</span
+						><span class="n" aria-hidden="true">{i + 1}</span><span class="label">{t(s.label)}</span
 						></a
 					>
 				{:else}
@@ -40,7 +41,7 @@
 						class="here"
 						aria-current={s.step === current ? 'step' : undefined}
 						aria-disabled={s.step === current ? undefined : 'true'}
-						><span class="n" aria-hidden="true">{i + 1}</span><span class="label">{s.label}</span
+						><span class="n" aria-hidden="true">{i + 1}</span><span class="label">{t(s.label)}</span
 						></span
 					>
 				{/if}

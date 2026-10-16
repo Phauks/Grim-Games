@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -50,7 +51,7 @@
 					kind: 'error',
 					message:
 						e instanceof SavedGameError && e.problem === 'too-new'
-							? 'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.'
+							? t('setup.open.tooNew')
 							: errorMessage(e)
 				};
 			}
@@ -65,13 +66,13 @@
 {:else}
 	<main class="message">
 		{#if view.kind === 'loading'}
-			<p>Opening the game…</p>
+			<p>{t('setup.open.loading')}</p>
 		{:else if view.kind === 'missing'}
-			<p>There is no saved game here on this device.</p>
-			<Button href={resolve('/')} icon="back">Saved games</Button>
+			<p>{t('setup.open.missing')}</p>
+			<Button href={resolve('/')} icon="back">{t('setup.open.savedGames')}</Button>
 		{:else}
 			<p role="alert">{view.message}</p>
-			<Button href={resolve('/')} icon="back">Saved games</Button>
+			<Button href={resolve('/')} icon="back">{t('setup.open.savedGames')}</Button>
 		{/if}
 	</main>
 {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -37,7 +38,7 @@
 			<span class="ability">{character.ability}</span>
 		</span>
 		<span class="marks" aria-hidden="true">
-			<span class="jinx" title="Jinxed">{jinxed ? '★' : ''}</span>
+			<span class="jinx" title={t('setup.jinxed')}>{jinxed ? '★' : ''}</span>
 			<span class="copies">{copies > 1 ? `×${copies}` : ''}</span>
 			<span class="check"
 				>{#if selected}<Icon name="check" />{/if}</span
@@ -48,8 +49,8 @@
 		<button
 			type="button"
 			class="add"
-			aria-label="Add another {character.name}"
-			title="Add another"
+			aria-label={t('setup.addAnotherOf', { name: character.name })}
+			title={t('setup.addAnother')}
 			onclick={onAddCopy}><Icon name="add" /></button
 		>
 	{/if}

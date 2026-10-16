@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SetupPage from '#lib/features/setup/SetupPage.svelte';
 	import WithGame from '#lib/features/setup/WithGame.svelte';
 	import type { PageProps } from './$types';
@@ -7,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>Characters · Grim-Games</title>
+	<title>{t('setup.pageTitle.characters')}</title>
 </svelte:head>
 
 {#key params.gameId}

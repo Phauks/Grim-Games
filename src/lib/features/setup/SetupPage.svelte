@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -132,7 +133,7 @@
 
 	function send(command: Command): boolean {
 		const result = port.dispatch(command);
-		if (!result.ok) toast("Couldn't do that", result.error.message);
+		if (!result.ok) toast(t('setup.couldNot'), result.error.message);
 		return result.ok;
 	}
 
@@ -183,7 +184,8 @@
 				<Button
 					variant="quiet"
 					icon="back"
-					href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>Grimoire</Button
+					href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}
+					>{t('setup.grimoire')}</Button
 				>
 			</div>
 			<SetupSteps
@@ -192,23 +194,23 @@
 				hasBag={currentSetupStep(game) !== 'characters'}
 			/>
 		{/if}
-		<h1>Characters</h1>
+		<h1>{t('setup.characters')}</h1>
 		<p class="script">
-			<span class="label">Script</span>
-			<span class="name" data-testid="setup-script-name">{script?.name ?? 'None'}</span>
+			<span class="label">{t('setup.script')}</span>
+			<span class="name" data-testid="setup-script-name">{script?.name ?? t('common.none')}</span>
 		</p>
 	</header>
 
 	<ErrorBoundary area="setup">
 		<div class="layout">
 			<div class="side">
-				<section class="controls" aria-label="Players">
+				<section class="controls" aria-label={t('setup.players')}>
 					<div class="players">
-						<span id="players-label">Players</span>
+						<span id="players-label">{t('setup.players')}</span>
 						<button
 							type="button"
 							class="step"
-							aria-label="Fewer players"
+							aria-label={t('setup.fewerPlayers')}
 							disabled={s.players <= MIN_SELECT_PLAYERS}
 							onclick={() => setupSelection.setPlayers(s.players - 1)}>−</button
 						>
@@ -216,12 +218,12 @@
 						<button
 							type="button"
 							class="step"
-							aria-label="More players"
+							aria-label={t('setup.morePlayers')}
 							disabled={s.players >= MAX_SELECT_PLAYERS}
 							onclick={() => setupSelection.setPlayers(s.players + 1)}>+</button
 						>
 					</div>
-					<Collapsible title="Setup sheet" storageKey="setup:sheet">
+					<Collapsible title={t('setup.sheet')} storageKey="setup:sheet">
 						<SetupTable players={s.players} />
 					</Collapsible>
 				</section>
@@ -232,13 +234,13 @@
 						<div class="tools">
 							<IconButton
 								icon="random"
-								label="Random selection"
+								label={t('setup.random')}
 								disabled={!ready}
 								onclick={random}
 							/>
 							<IconButton
 								icon="clearSelection"
-								label="Clear selection"
+								label={t('setup.clearSelection')}
 								disabled={!ready || ids.length === 0}
 								onclick={() => (clearOpen = true)}
 							/>
@@ -260,7 +262,7 @@
 						variant="accent"
 						icon="bag"
 						disabled={!ready || plan.tiles.length === 0}
-						onclick={() => requestBuild()}>Build bag</Button
+						onclick={() => requestBuild()}>{t('setup.buildBag')}</Button
 					>
 				</div>
 			</div>
@@ -296,45 +298,44 @@
 	</ErrorBoundary>
 </main>
 
-<Dialog bind:open={clearOpen} role="alertdialog" title="Clear the selection?">
-	<p>
-		Now: {ids.length}
-		{ids.length === 1 ? 'character' : 'characters'} chosen. After: none.
-	</p>
+<Dialog bind:open={clearOpen} role="alertdialog" title={t('setup.clear.title')}>
+	<p>{t('setup.clear.body', { count: ids.length })}</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (clearOpen = false)}>Keep</Button>
+		<Button variant="quiet" onclick={() => (clearOpen = false)}>{t('setup.clear.keep')}</Button>
 		<Button
 			variant="accent"
 			onclick={() => {
 				setupSelection.clear();
 				clearOpen = false;
-			}}>Clear</Button
+			}}>{t('setup.clear.confirm')}</Button
 		>
 	{/snippet}
 </Dialog>
 <Dialog
 	bind:open={errorsOpen}
 	role="alertdialog"
-	title="Build with errors?"
-	description="This bag doesn't match the setup for {s.players} players."
+	title={t('setup.errors.title')}
+	description={t('setup.errors.description', { players: s.players })}
 >
 	<ul class="errors" data-testid="build-errors">
 		{#each errors as error, i (i)}<li><GlossaryText text={error} /></li>{/each}
 	</ul>
 	{#snippet actions()}
-		<Button variant="accent" onclick={() => (errorsOpen = false)}>Go back</Button>
-		<Button variant="quiet" onclick={() => requestBuild(true)}>Build anyway</Button>
+		<Button variant="accent" onclick={() => (errorsOpen = false)}>{t('setup.errors.back')}</Button>
+		<Button variant="quiet" onclick={() => requestBuild(true)}>{t('setup.errors.anyway')}</Button>
 	{/snippet}
 </Dialog>
-<Dialog bind:open={replaceOpen} role="alertdialog" title="Replace the bag?">
+<Dialog bind:open={replaceOpen} role="alertdialog" title={t('setup.replace.title')}>
 	<p>
-		Now: {drawnCount} of {bagTiles.length} tiles drawn. After: a new bag of {plan.tiles.length}
-		tiles and the draw starts again. The {drawnCount === 1 ? 'character' : 'characters'} already on seats
-		stay; History can restore the old bag.
+		{t('setup.replace.body', {
+			count: drawnCount,
+			total: bagTiles.length,
+			tiles: plan.tiles.length
+		})}
 	</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (replaceOpen = false)}>Keep</Button>
-		<Button variant="accent" onclick={buildBag}>Replace</Button>
+		<Button variant="quiet" onclick={() => (replaceOpen = false)}>{t('setup.replace.keep')}</Button>
+		<Button variant="accent" onclick={buildBag}>{t('setup.replace.confirm')}</Button>
 	{/snippet}
 </Dialog>
 

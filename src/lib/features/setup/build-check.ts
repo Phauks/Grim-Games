@@ -1,3 +1,4 @@
+import { t } from '#lib/i18n/locale.svelte.ts';
 import type { BagIssue, SetupAnalysis, SetupWarning } from '#lib/core/rules/index.ts';
 
 /**
@@ -35,7 +36,11 @@ export function buildErrors({ analysis, issues, travellers }: BuildCheckInput): 
 	// Players beyond 15 join as Travellers (https://wiki.bloodontheclocktower.com/Setup).
 	if (travellers < analysis.travellers) {
 		errors.push(
-			`${travellers} Traveller${travellers === 1 ? '' : 's'} chosen; expected ${analysis.travellers} for ${analysis.players} players.`
+			t('setup.errors.travellers', {
+				count: travellers,
+				expected: analysis.travellers,
+				players: analysis.players
+			})
 		);
 	}
 	return errors;
