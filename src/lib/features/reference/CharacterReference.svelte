@@ -187,21 +187,12 @@
 		font-size: 0.9rem;
 		color: var(--on-surface-muted);
 	}
+	/* As many readable columns as the page width allows (one on a phone). */
 	.cards {
 		display: grid;
-		grid-template-columns: 1fr;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
 		gap: var(--space-3);
 		align-items: start;
-	}
-	@media (min-width: 40rem) {
-		.cards {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-	}
-	@media (min-width: 80rem) {
-		.cards {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-		}
 	}
 	.empty {
 		color: var(--on-surface-muted);

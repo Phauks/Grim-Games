@@ -99,10 +99,10 @@
 
 <style>
 	main {
-		/* Centred on a computer, still wide enough for three columns of cards (App shell, 2026-10-16). */
-		max-width: calc(75 * var(--u));
+		/* The app's page width (App shell's --page-max): wide screens get more card columns. */
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-5) var(--space-4);
+		padding: var(--space-5) var(--page-gutter);
 	}
 	h1 {
 		margin-top: 0;
