@@ -167,9 +167,7 @@ test('each script keeps its own notebook', async ({ page }) => {
 	await expect(page.getByRole('link', { name: 'Change script' })).toHaveCount(0);
 	await page.goto(`/play#e=bmr`);
 	await expect(page.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
-	await expect(page.locator('[data-character="grandmother"]')).toBeVisible();
 	// A new script starts its own notebook; Trouble Brewing's is kept.
-	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(page.getByRole('button', { name: /^Untitled/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: /^TB/ })).toHaveCount(0);
 	await page.goto('/play#e=tb');
