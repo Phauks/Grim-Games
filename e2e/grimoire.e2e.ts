@@ -940,8 +940,19 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.getByTestId('board-background')).toHaveAttribute('style', /blob:/);
 	await menu(page, 'Background');
 	await expect(dialog).toContainText('Your image, for this game');
+	await expect(dialog).not.toContainText('never uploaded');
 	await dialog.getByRole('button', { name: 'None', exact: true }).tap();
 	await expect(page.getByTestId('board-background')).toHaveCount(0);
+
+	// Built-in backgrounds, drawn in CSS (Trevor, 2026-10-16), kept after a reload.
+	await menu(page, 'Background');
+	await dialog
+		.getByRole('group', { name: 'Built-in backgrounds' })
+		.getByRole('button', { name: 'Green felt' })
+		.tap();
+	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+	await page.reload();
+	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 });
 
 test('info tokens open from the toolbar and show player cards at once', async ({ page }) => {

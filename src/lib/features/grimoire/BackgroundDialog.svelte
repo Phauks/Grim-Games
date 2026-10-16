@@ -7,7 +7,9 @@
 		readBackground,
 		saveBackground,
 		shrinkImage,
-		type BackgroundChoice
+		PRESETS,
+		type BackgroundChoice,
+		type PresetId
 	} from './backgrounds.ts';
 
 	/**
@@ -40,9 +42,11 @@
 	const nowText = $derived(
 		current.kind === 'image'
 			? 'Your image'
-			: current.kind === 'script'
-				? "The script's background"
-				: 'None (plain board)'
+			: current.kind === 'preset'
+				? PRESETS[current.id].label
+				: current.kind === 'script'
+					? "The script's background"
+					: 'None (plain board)'
 	);
 
 	async function choose(choice: BackgroundChoice) {
@@ -90,6 +94,19 @@
 		]}
 		onChange={(s) => (scope = s)}
 	/>
+	<div class="presets" role="group" aria-label="Built-in backgrounds">
+		{#each Object.entries(PRESETS) as [id, preset] (id)}
+			<button
+				type="button"
+				class="preset"
+				aria-pressed={current.kind === 'preset' && current.id === id}
+				onclick={() => choose({ kind: 'preset', id: id as PresetId })}
+			>
+				<span class="swatch" style:background={preset.css}></span>
+				<span>{preset.label}</span>
+			</button>
+		{/each}
+	</div>
 	<div class="choices">
 		<Button icon="add" onclick={() => input?.click()}>Choose an image</Button>
 		<Button variant="quiet" disabled={!scriptImage} onclick={() => choose({ kind: 'script' })}>
@@ -100,8 +117,6 @@
 			Use the default for all games
 		</Button>
 	</div>
-	<!-- Stays on this device: the image is kept in this browser only. -->
-	<p class="note">Images stay on this device and are never uploaded.</p>
 	<p class="error" role="status">{error}</p>
 	<input
 		bind:this={input}
@@ -132,10 +147,33 @@
 		gap: var(--space-2);
 		margin-top: var(--space-3);
 	}
-	.note {
-		margin: var(--space-2) 0 0;
-		color: var(--on-surface-muted);
-		font-size: 0.85rem;
+	.presets {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(calc(6 * var(--u)), 1fr));
+		gap: var(--space-2);
+		margin-top: var(--space-3);
+	}
+	.preset {
+		display: grid;
+		justify-items: center;
+		gap: var(--space-1);
+		min-height: var(--tap-target);
+		padding: var(--space-1);
+		border: 0.1rem solid transparent;
+		border-radius: var(--radius-md);
+		background: none;
+		color: inherit;
+		font: 600 0.8rem var(--font-control);
+		cursor: pointer;
+	}
+	.preset[aria-pressed='true'] {
+		border-color: var(--accent);
+	}
+	.swatch {
+		width: 100%;
+		aspect-ratio: 3 / 2;
+		border-radius: var(--radius-md);
+		box-shadow: inset 0 0 0 0.06rem var(--border);
 	}
 	/* One reserved line, so an error never moves the dialog. */
 	.error {

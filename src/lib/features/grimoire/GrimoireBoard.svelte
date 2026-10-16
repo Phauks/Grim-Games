@@ -8,7 +8,7 @@
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
+	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
 	import BackgroundDialog from './BackgroundDialog.svelte';
 	import { openAccount, openSettings } from '#lib/features/shell/shell.ts';
 	import { goto, replaceState } from '$app/navigation';
@@ -601,10 +601,21 @@
 				data-testid="board-background"
 				style:background-image={`url("${backgroundUrl}")`}
 			></div>
+		{:else if background.kind === 'preset'}
+			<div
+				class="backdrop preset"
+				data-testid="board-background"
+				data-preset={background.id}
+				style:background={PRESETS[background.id].css}
+			></div>
 		{/if}
 		<!-- The script's name and author sit behind the circle, so the toolbar keeps its room. -->
 		{#if showTitle}
-			<p class="watermark" class:on-image={backgroundUrl !== undefined} aria-hidden="true">
+			<p
+				class="watermark"
+				class:on-image={backgroundUrl !== undefined || background.kind === 'preset'}
+				aria-hidden="true"
+			>
 				<span class="script-name">{game.script.meta?.name ?? 'Custom script'}</span>
 				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
 			</p>
@@ -1077,6 +1088,14 @@
 		background: center / cover no-repeat;
 		filter: brightness(0.45) saturate(0.85);
 		pointer-events: none;
+	}
+	/* Built-in backgrounds are drawn for the board already: only dimmed a little. */
+	.backdrop.preset {
+		filter: brightness(0.8);
+	}
+	/* Light parchment would wash out the seat names: dimmed like an image. */
+	.backdrop.preset[data-preset='parchment'] {
+		filter: brightness(0.5);
 	}
 	.watermark {
 		position: absolute;
