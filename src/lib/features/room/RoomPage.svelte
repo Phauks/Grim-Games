@@ -71,9 +71,9 @@
 	main {
 		display: grid;
 		gap: var(--space-4);
-		max-width: calc(72 * var(--u));
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-4);
+		padding: var(--space-4) var(--page-gutter);
 	}
 	main > :global(*) {
 		min-width: 0;

@@ -228,7 +228,7 @@
 		min-width: 0;
 	}
 	.empty {
-		max-width: calc(36 * var(--u));
+		max-width: var(--measure);
 	}
 	.empty p {
 		margin: 0;
