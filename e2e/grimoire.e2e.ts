@@ -195,13 +195,13 @@ test('history, add seat and remove', async ({ page }) => {
 	await added.getByRole('button', { name: 'Restore' }).tap();
 	const back = page.getByRole('alertdialog', { name: 'Restore?' });
 	await expect(back).toContainText('Undoes 1 change');
-	await back.getByRole('button', { name: 'Restore' }).tap();
+	await back.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	// The undone change stays, greyed out, and can be restored.
 	await added.getByRole('button', { name: 'Restore' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Restore?' })
-		.getByRole('button', { name: 'Restore' })
+		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 	await history.getByRole('button', { name: 'Close' }).tap();
@@ -217,7 +217,7 @@ test('history, add seat and remove', async ({ page }) => {
 	// The player count change, and whether the characters still fit the setup sheet.
 	await expect(remove.getByTestId('table-check')).toContainText('9 → 8');
 	await expect(remove.getByTestId('table-check')).toContainText('the setup sheet');
-	await remove.getByRole('button', { name: 'Remove' }).tap();
+	await remove.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 });
 

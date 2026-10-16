@@ -11,6 +11,7 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -553,7 +554,7 @@
 {/snippet}
 
 <!-- Every change of state says what it is now and what it becomes (Trevor, 2026-10-16). -->
-<Dialog bind:open={changeOpen} title="Change character?" role="alertdialog">
+<ConfirmDialog bind:open={changeOpen} title="Change character?" onConfirm={confirmChange}>
 	{#if seat?.characterId && changeTo}
 		<dl class="change">
 			<dt>Player</dt>
@@ -594,11 +595,7 @@
 			</ul>
 		{/if}
 	{/if}
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (changeOpen = false)}>Cancel</Button>
-		<Button variant="accent" icon="check" onclick={confirmChange}>Confirm</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <Dialog bind:open={changesOpen} title={`Changes for ${seatLabel}`}>
 	<ol class="changes" data-testid="seat-changes">
@@ -644,7 +641,12 @@
 	</dl>
 {/snippet}
 
-<Dialog bind:open={clearOpen} title="Remove character?" role="alertdialog">
+<ConfirmDialog
+	bind:open={clearOpen}
+	title="Remove character?"
+	danger
+	onConfirm={() => seatId && grimoire.run({ type: 'ClearCharacter', seatId })}
+>
 	<dl class="change">
 		<dt>Now</dt>
 		<dd>{@render seatBadge(seatId)}</dd>
@@ -652,18 +654,7 @@
 		<dd><strong>{title}</strong>, no character</dd>
 	</dl>
 	{#if clearOpen && seatId}{@render table('remove-character', seatId)}{/if}
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (clearOpen = false)}>Cancel</Button>
-		<Button
-			variant="danger"
-			icon="remove"
-			onclick={() => {
-				clearOpen = false;
-				if (seatId) grimoire.run({ type: 'ClearCharacter', seatId });
-			}}>Remove</Button
-		>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <Dialog
 	bind:open={alignmentOpen}
@@ -746,7 +737,7 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={reviveOpen} title={`Bring ${title} back to life?`} role="alertdialog">
+<ConfirmDialog bind:open={reviveOpen} title={`Bring ${title} back to life?`} onConfirm={revive}>
 	<dl class="change">
 		<dt>Now</dt>
 		<dd>
@@ -761,11 +752,7 @@
 		<dt>Becomes</dt>
 		<dd><span class="state-pill"><Icon name="alive" />Alive</span></dd>
 	</dl>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (reviveOpen = false)}>Cancel</Button>
-		<Button variant="accent" icon="alive" onclick={revive}>Alive</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <Dialog
 	bind:open={flagOpen}
@@ -940,7 +927,15 @@
 	}}
 />
 
-<Dialog bind:open={removeOpen} title={`Remove ${title}?`} role="alertdialog">
+<ConfirmDialog
+	bind:open={removeOpen}
+	title={`Remove ${title}?`}
+	danger
+	onConfirm={() => {
+		open = false;
+		if (seatId) grimoire.removeSeat(seatId);
+	}}
+>
 	<dl class="change">
 		<dt>Now</dt>
 		<dd>{game.seating.length} seats, with {@render seatBadge(seatId)} in Seat {number}</dd>
@@ -951,19 +946,7 @@
 	<p class="note">
 		The seat, its character and its reminders leave the grimoire. History can bring them back.
 	</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (removeOpen = false)}>Cancel</Button>
-		<Button
-			variant="danger"
-			icon="remove"
-			onclick={() => {
-				removeOpen = false;
-				open = false;
-				if (seatId) grimoire.removeSeat(seatId);
-			}}>Remove</Button
-		>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	/* Header buttons take the sheet's ink, not the dark page's. */
