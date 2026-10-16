@@ -11,7 +11,10 @@
 		number: number;
 		/** What the player sees: never the grimoire character (the Drunk sees a Townsfolk). */
 		shows: Character;
-		/** The grimoire character is a Traveller, whose alignment the Storyteller sets. */
+		/**
+		 * The grimoire character is a Traveller: the Storyteller may set its alignment now or
+		 * leave it as None and set it on the first night (Trevor, 2026-10-16).
+		 */
 		needsAlignment: boolean;
 		/** "Seat 3", the seat the draw goes to. */
 		seatLabel: string;
@@ -73,12 +76,13 @@
 				<ChoiceGroup
 					label="Alignment"
 					layout="row"
-					value={alignment}
+					value={alignment === '' ? 'none' : alignment}
 					options={[
+						{ value: 'none', label: 'None' },
 						{ value: 'good', label: 'Good' },
 						{ value: 'evil', label: 'Evil' }
 					]}
-					onChange={(v) => (alignment = v)}
+					onChange={(v) => (alignment = v === 'none' ? '' : (v as Alignment))}
 				/>
 			{/if}
 		</div>
@@ -86,7 +90,6 @@
 	{#snippet actions()}
 		<Button
 			variant="accent"
-			disabled={needsAlignment && alignment === ''}
 			onclick={() => onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) })}
 			>Confirm</Button
 		>

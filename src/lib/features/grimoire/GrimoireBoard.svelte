@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
+	import { setupComplete } from '#lib/core/rules/index.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -36,6 +37,8 @@
 	let { grimoire }: Props = $props();
 
 	const game = $derived(grimoire.game);
+	// Once every tile is drawn the bag and selection are closed; seats change here instead.
+	const setUp = $derived(setupComplete(game));
 	const characters = $derived(grimoire.open.characters);
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
 
@@ -191,11 +194,13 @@
 			<IconButton
 				icon="players"
 				label="Characters"
+				disabled={setUp}
 				onclick={() => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))}
 			/>
 			<IconButton
 				icon="bag"
 				label="Bag draw"
+				disabled={setUp}
 				onclick={() => goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }))}
 			/>
 			<IconButton icon="menu" label="More" onclick={() => (menuOpen = true)} />

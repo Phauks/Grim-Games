@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { SavedGameError } from '#lib/core/engine/index.ts';
+	import { setupComplete } from '#lib/core/rules/index.ts';
 	import type { GameId } from '#lib/core/model/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
@@ -34,6 +36,12 @@
 			try {
 				const open = await OpenGame.open(await loadOfficialData(), id);
 				if (cancelled) return;
+				// A set-up game's bag and selection are closed: back to its grimoire. Checked only
+				// on opening, so finishing the draw here doesn't jump away.
+				if (open?.game && setupComplete(open.game)) {
+					await goto(resolve('/grimoire/[gameId]', { gameId: id }), { replaceState: true });
+					return;
+				}
 				view = open ? { kind: 'ready', port: openGamePort(open) } : { kind: 'missing' };
 			} catch (e) {
 				if (cancelled) return;

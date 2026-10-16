@@ -64,10 +64,26 @@ test('selection counts against the setup sheet and explains the Drunk', async ({
 	await expect(choice(page, 'Drunk')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByTestId('warning-count')).toHaveText('0');
 
-	await page.getByRole('button', { name: 'Clear' }).tap();
+	await page.getByRole('button', { name: 'Clear', exact: true }).tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
 	await page.getByRole('button', { name: 'Random' }).tap();
 	await expect(page.getByTestId('warning-count')).toHaveText('0');
+});
+
+test('characters can be searched by name or ability', async ({ page }) => {
+	await selectionFor(page, 5);
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('pairs of EVIL');
+	await expect(choice(page, 'Chef')).toBeVisible();
+	await expect(choice(page, 'Imp')).toHaveCount(0);
+	await search.press('Enter');
+	await expect(search).not.toBeFocused();
+	await choice(page, 'Chef').tap();
+	await page.getByRole('button', { name: 'Clear search' }).tap();
+	await expect(choice(page, 'Imp')).toBeVisible();
+	await expect(choice(page, 'Chef')).toHaveAttribute('aria-pressed', 'true');
+	await search.fill('zzzz');
+	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
 test('building a bag with errors asks the Storyteller to confirm them', async ({ page }) => {
@@ -147,4 +163,11 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	for (let n = 1; n <= 5; n++) {
 		await expect(page.getByRole('button', { name: new RegExp(`^Seat ${n}: .+`) })).toBeVisible();
 	}
+
+	// Set up: the bag and the selection are closed, in place and by address.
+	await expect(page.getByRole('button', { name: 'Characters' })).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Bag draw' })).toBeDisabled();
+	const board = new URL(page.url()).pathname;
+	await page.goto(`${board}/draw`);
+	await expect(page).toHaveURL(new RegExp(`${board}$`));
 });

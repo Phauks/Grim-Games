@@ -327,3 +327,13 @@ export function bagSlots(bag: Bag): BagSlot[] {
 			};
 		});
 }
+
+/**
+ * Setup is done once a bag was built and every tile in it was drawn and confirmed. From
+ * then on the bag and the character selection are closed (Trevor, 2026-10-16): later
+ * changes to a seat go through the grimoire. A partly drawn bag stays open to resume.
+ */
+export function setupComplete(game: Game): boolean {
+	const tiles = Object.values(game.bag?.tiles ?? {});
+	return tiles.length > 0 && tiles.every((t) => t.confirmed);
+}

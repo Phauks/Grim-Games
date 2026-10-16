@@ -22,10 +22,11 @@
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
-	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
+	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';
 	import CharacterChoice from './CharacterChoice.svelte';
 	import CountsBar from './CountsBar.svelte';
 	import type { SetupGamePort } from './game-port.ts';
@@ -43,6 +44,7 @@
 	let checkOpen = $state(false);
 	let replaceOpen = $state(false);
 	let errorsOpen = $state(false);
+	let query = $state('');
 
 	onMount(() => void loadOfficialData());
 
@@ -63,11 +65,6 @@
 	const choices = $derived(script?.characters.filter((c) => !isRuleCharacter(c.type)) ?? []);
 	const scriptOrder = $derived(choices.map((c) => c.id));
 	const TYPES: CharacterType[] = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'];
-	const groups = $derived(
-		TYPES.map((type) => ({ type, list: choices.filter((c) => c.type === type) })).filter(
-			(g) => g.list.length > 0
-		)
-	);
 
 	const ready = $derived(script !== undefined && game !== undefined && s.gameId === game.gameId);
 	const analysis = $derived(
@@ -207,30 +204,34 @@
 		</section>
 		<div class="counts">
 			<CountsBar {analysis} {travellers} />
+			<CharacterSearchBox bind:query />
 		</div>
 
-		<div class="groups">
-			{#each groups as group (group.type)}
-				<section aria-labelledby="group-{group.type}">
-					<h2 id="group-{group.type}">{TYPE_PLURALS[group.type]}</h2>
-					<ul class="grid" role="list">
-						{#each group.list as character (character.id)}
-							<li>
-								<CharacterChoice
-									{character}
-									copies={s.selection[character.id] ?? 0}
-									duplicates={canDuplicate(character, inPlay)}
-									jinxed={jinxed.has(character.id)}
-									onToggle={() => toggle(character)}
-									onAddCopy={() =>
-										setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
-								/>
-							</li>
-						{/each}
-					</ul>
-				</section>
-			{/each}
-		</div>
+		<CharacterPicker
+			characters={choices}
+			mode="multi"
+			selected={ids}
+			bind:query
+			showSearch={false}
+			contained={false}
+			types={TYPES}
+			onSelect={(id) => {
+				const character = lookup(id);
+				if (character) toggle(character);
+			}}
+		>
+			{#snippet item(character)}
+				<CharacterChoice
+					{character}
+					copies={s.selection[character.id] ?? 0}
+					duplicates={canDuplicate(character, inPlay)}
+					jinxed={jinxed.has(character.id)}
+					onToggle={() => toggle(character)}
+					onAddCopy={() =>
+						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
+				/>
+			{/snippet}
+		</CharacterPicker>
 	</ErrorBoundary>
 
 	<div class="actions">
@@ -327,6 +328,8 @@
 	}
 	/* Only the chosen counts stay in view while scrolling; the setup table scrolls away. */
 	.counts {
+		display: grid;
+		gap: var(--space-2);
 		position: sticky;
 		top: 0;
 		z-index: var(--z-raised);
@@ -364,19 +367,6 @@
 		font-weight: 700;
 		text-align: center;
 		font-variant-numeric: tabular-nums;
-	}
-	h2 {
-		margin: var(--space-3) 0 var(--space-2);
-		font-size: 1.1rem;
-		color: var(--heading);
-	}
-	.grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
-		gap: var(--space-2);
-		margin: 0;
-		padding: 0;
-		list-style: none;
 	}
 	.actions {
 		position: sticky;

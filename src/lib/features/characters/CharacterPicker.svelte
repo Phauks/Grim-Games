@@ -1,0 +1,212 @@
+<script lang="ts" module>
+	export interface PickerItemState {
+		selected: boolean;
+		/** Why it can't be chosen; undefined when it can. */
+		disabledReason: string | undefined;
+	}
+</script>
+
+<script lang="ts">
+	import type { Snippet } from 'svelte';
+	import {
+		defaultAlignment,
+		type Character,
+		type CharacterId,
+		type CharacterType
+	} from '#lib/core/data/index.ts';
+	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import CharacterSearchBox from './CharacterSearchBox.svelte';
+	import CharacterToken from './CharacterToken.svelte';
+	import { PICKER_TYPES, searchGroups } from './character-search.ts';
+
+	interface Props {
+		/** The characters to choose from, in the order to show them (usually script order). */
+		characters: readonly Character[];
+		/** `single`: a tap picks one. `multi`: a tap toggles (aria-pressed rows). */
+		mode?: 'single' | 'multi';
+		selected?: readonly CharacterId[];
+		onSelect: (id: CharacterId) => void;
+		/** Which characters to list at all, e.g. "not in play" or "Fabled and Loric only". */
+		filter?: (character: Character) => boolean;
+		/** Listed but not choosable, with the reason shown on the row. */
+		disabledReason?: (character: Character) => string | undefined;
+		/** Group order; types not listed are left out. */
+		types?: readonly CharacterType[];
+		/** The search text; bind it to keep it, or to drive it from your own box. */
+		query?: string;
+		/** False when the page shows its own `CharacterSearchBox` bound to `query`. */
+		showSearch?: boolean;
+		/**
+		 * True (default): the list fills the picker's fixed height and scrolls inside it, for
+		 * sheets and dialogs. False: the list grows with the page.
+		 */
+		contained?: boolean;
+		/** Custom row (the setup screen adds copies); the default is token, name and ability. */
+		item?: Snippet<[Character, PickerItemState]>;
+	}
+
+	let {
+		characters,
+		mode = 'single',
+		selected = [],
+		onSelect,
+		filter,
+		disabledReason,
+		types = PICKER_TYPES,
+		query = $bindable(''),
+		showSearch = true,
+		contained = true,
+		item
+	}: Props = $props();
+
+	const groups = $derived(searchGroups(characters, query, filter, types));
+	const chosen = $derived(new Set(selected));
+</script>
+
+<!--
+	The shared way to choose characters: a search box that stays put, then characters by type
+	with their ability text. Single or multi select, an optional filter, and rows that are
+	shown disabled with a reason rather than hidden.
+-->
+<div class="picker" data-contained={contained ? '' : undefined}>
+	{#if showSearch}<CharacterSearchBox bind:query />{/if}
+	<div class="list" data-testid="character-picker">
+		{#each groups as group (group.type)}
+			<section aria-labelledby="picker-{group.type}">
+				<h3 id="picker-{group.type}">{TYPE_PLURALS[group.type]}</h3>
+				<ul role="list">
+					{#each group.characters as character (character.id)}
+						{@const state = {
+							selected: chosen.has(character.id),
+							disabledReason: disabledReason?.(character)
+						}}
+						<li>
+							{#if item}
+								{@render item(character, state)}
+							{:else}
+								<button
+									type="button"
+									class="row"
+									data-character-id={character.id}
+									aria-label={state.disabledReason
+										? `${character.name}, ${state.disabledReason}`
+										: character.name}
+									aria-pressed={mode === 'multi' ? state.selected : undefined}
+									aria-current={mode === 'single' && state.selected ? 'true' : undefined}
+									disabled={state.disabledReason !== undefined}
+									onclick={() => onSelect(character.id)}
+								>
+									<CharacterToken
+										{character}
+										alignment={defaultAlignment(character.type)}
+										size={44}
+									/>
+									<span class="text">
+										<span class="name">{character.name}</span>
+										<span class="ability">{state.disabledReason ?? character.ability}</span>
+									</span>
+									<span class="check" aria-hidden="true"
+										>{#if state.selected}<Icon name="check" />{/if}</span
+									>
+								</button>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{:else}
+			<p class="none">None</p>
+		{/each}
+	</div>
+</div>
+
+<style>
+	.picker {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		min-height: 0;
+	}
+	.picker[data-contained] {
+		flex: 1;
+		height: var(--picker-height, 100%);
+	}
+	.picker[data-contained] .list {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	h3 {
+		margin: var(--space-3) 0 var(--space-2);
+		font-size: 1.1rem;
+		color: var(--heading);
+	}
+	section:first-child h3 {
+		margin-top: 0;
+	}
+	ul {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
+		gap: var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.row {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2);
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: var(--space-1) var(--space-2);
+		border: 0;
+		border-radius: var(--radius-md);
+		background: var(--choice-background);
+		color: var(--choice-color);
+		box-shadow: inset 0 0 0 1px var(--border);
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	.row:hover:not(:disabled) {
+		background: var(--surface-selected);
+	}
+	.row[aria-pressed='true'],
+	.row[aria-current='true'] {
+		background: var(--choice-selected-background);
+		box-shadow: inset 0 0 0 2px var(--choice-selected-border);
+	}
+	.row:disabled {
+		opacity: 0.55;
+		cursor: default;
+	}
+	.text {
+		display: grid;
+		flex: 1;
+		min-width: 0;
+	}
+	.name {
+		font-family: var(--font-character);
+		font-weight: var(--font-character-weight);
+		overflow-wrap: anywhere;
+	}
+	.ability {
+		font-family: var(--font-ability);
+		font-size: 0.8rem;
+		line-height: 1.3;
+		opacity: 0.9;
+	}
+	.check {
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: 1.25em;
+		align-self: center;
+	}
+	.none {
+		margin: 0;
+	}
+</style>
