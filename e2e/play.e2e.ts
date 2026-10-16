@@ -50,9 +50,17 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 test("the night order shows who wakes, with TPI's night text", async ({ page }) => {
 	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
 	const first = page.locator('section[data-night="first"]');
-	await expect(first.locator('[data-marker="minioninfo"]')).toBeVisible();
+	// Dusk, Minion info, Demon info and Dawn show their own icons (Trevor, 2026-10-16).
+	const minionInfo = first.locator('li[data-step="minioninfo"]');
+	await expect(minionInfo).toContainText('Minion info');
+	await expect(minionInfo.locator('.token[data-marker="minioninfo"]')).toBeVisible();
 	const poisoner = first.locator('li[data-step="poisoner"]');
-	await expect(poisoner.getByRole('button', { name: /Poisoner/ }).first()).toBeVisible();
+	// Icon two lines tall, the name beside it, and tapping the name shows the ability.
+	await poisoner.locator('button.name').tap();
+	const dialog = page.getByRole('dialog', { name: 'Poisoner' });
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
 	// TPI's text, with its :reminder: drawn as the Poisoner's token.
 	await expect(poisoner).toContainText('chooses a player');
 	await expect(poisoner).not.toContainText(':reminder:');
@@ -116,12 +124,8 @@ test('seats can be arranged like the real table, and stay that way', async ({ pa
 	await expect(seat5).toBeVisible();
 	await page.getByRole('button', { name: 'Arrange seats' }).tap();
 
-	// A gap after seat 2 (a doorway), tapped up to two places.
-	const gap = page.getByRole('button', { name: /^Gap after seat 2/ });
-	await expect(gap).toHaveAccessibleName('Gap after seat 2: None');
-	await gap.tap();
-	await gap.tap();
-	await expect(gap).toHaveAccessibleName('Gap after seat 2: 2');
+	// Spacing is by dragging only; no "+" gap buttons (Trevor, 2026-10-16).
+	await expect(page.getByRole('button', { name: /^Gap after seat/ })).toHaveCount(0);
 
 	// Drag seat 5 into the middle, as if they sat on a couch apart from the circle.
 	const box = (await board.boundingBox())!;
@@ -151,7 +155,6 @@ test('seats can be arranged like the real table, and stay that way', async ({ pa
 	await expect(page.getByRole('dialog', { name: 'Seat 5' })).toBeHidden();
 	await page.getByTestId('seat-ring').locator('..').getByText('Circle', { exact: true }).tap();
 	await page.getByRole('button', { name: 'Done' }).tap();
-	await expect(page.getByRole('button', { name: /^Gap after seat/ })).toHaveCount(0);
 
 	// Where seat 5 sits, as a share of the board (the page may have scrolled).
 	const share = async () => {
@@ -173,9 +176,6 @@ test('seats can be arranged like the real table, and stay that way', async ({ pa
 	await page.getByRole('tab', { name: 'Circle' }).tap();
 	await expect.poll(share).toEqual({ x: 50, y: 45 });
 	await page.getByRole('button', { name: 'Arrange seats' }).tap();
-	await expect(page.getByRole('button', { name: /^Gap after seat 2/ })).toHaveAccessibleName(
-		'Gap after seat 2: 2'
-	);
 	await expect(page.getByRole('checkbox', { name: 'Circle' })).toBeChecked();
 });
 

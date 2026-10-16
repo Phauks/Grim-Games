@@ -1,8 +1,12 @@
 <script lang="ts">
 	import type { NightMarker } from '#lib/core/data/index.ts';
 	import { MARKER_TEXT } from '#lib/core/rules/night-order.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import type { Character } from '#lib/core/data/index.ts';
+	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
+	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
+	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
 	import type { PlayerNight } from './player-script.ts';
 
 	interface Props {
@@ -12,6 +16,14 @@
 
 	let { nights, players }: Props = $props();
 	const isEvilInfo = (id: NightMarker) => id === 'minioninfo' || id === 'demoninfo';
+
+	// Tapping a character's icon or name shows its ability and wiki link, like a badge.
+	let shown = $state<Character>();
+	let dialogOpen = $state(false);
+	function show(c: Character) {
+		shown = c;
+		dialogOpen = true;
+	}
 </script>
 
 <!-- Who wakes, in order, with TPI's night text (Trevor, 2026-10-15). -->
@@ -21,28 +33,40 @@
 			<h2 id="night-{n.night}">{n.night === 'first' ? 'First night' : 'Other nights'}</h2>
 			<ol>
 				{#each n.entries as entry, i (i)}
+					<!-- Icon two lines tall; name on the first line, TPI's text beneath (Trevor). -->
 					<li data-step={entry.kind === 'marker' ? entry.id : entry.character.id}>
 						<span class="num">{i + 1}</span>
 						{#if entry.kind === 'marker'}
 							{@const off = isEvilInfo(entry.id) && !n.evilInfo}
+							<span class="icon" data-off={off || undefined}
+								><MarkerToken marker={entry.id} size={48} label="" /></span
+							>
 							<span
-								class="marker"
+								class="name marker"
 								data-marker={entry.id}
 								aria-disabled={off || undefined}
 								title={off ? `Not with ${players} players` : undefined}
 								>{MARKER_TEXT[entry.id].name}</span
 							>
 						{:else}
-							<div class="step">
-								<CharacterBadge characterId={entry.character.id} character={entry.character} />
-								<p class="text">
-									{#if entry.text}<NightText
-											text={entry.text}
-											character={entry.character}
-											night={n.night}
-										/>{:else}None{/if}
-								</p>
-							</div>
+							{@const c = entry.character}
+							<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+							<span class="icon" onclick={() => show(c)}
+								><CharacterToken character={c} size={48} /></span
+							>
+							<button
+								type="button"
+								class="name character"
+								aria-haspopup="dialog"
+								onclick={() => show(c)}>{c.name}</button
+							>
+							<p class="text">
+								{#if entry.text}<NightText
+										text={entry.text}
+										character={c}
+										night={n.night}
+									/>{:else}None{/if}
+							</p>
 						{/if}
 					</li>
 				{/each}
@@ -50,6 +74,10 @@
 		</section>
 	{/each}
 </div>
+
+{#if shown}
+	<CharacterDialog bind:open={dialogOpen} character={shown} icon={iconUrl(shown)} />
+{/if}
 
 <style>
 	.nights {
@@ -76,45 +104,70 @@
 		gap: var(--space-2);
 	}
 	li {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-2);
-	}
-	.step {
 		display: grid;
-		justify-items: start;
-		gap: 2px;
-		min-width: 0;
-	}
-	.text {
-		margin: 0;
-		padding-left: var(--space-1);
-		font-family: var(--font-ability);
-		line-height: 1.35;
+		grid-template-columns: 2ch 48px minmax(0, 1fr);
+		column-gap: var(--space-2);
+		align-items: start;
 	}
 	.num {
-		flex: none;
-		min-height: var(--tap-target);
-		display: inline-flex;
-		align-items: center;
-		justify-content: flex-end;
-		width: 2ch;
+		grid-row: span 2;
+		align-self: center;
 		text-align: right;
 		color: var(--on-surface-muted);
 		font-variant-numeric: tabular-nums;
 	}
+	/* The icon is as tall as the name line and the first line of text together. */
+	.icon {
+		grid-row: span 2;
+		display: grid;
+		align-self: start;
+		width: 48px;
+		height: 48px;
+	}
+	.icon:has(:global(.token)) {
+		cursor: pointer;
+	}
+	.icon[data-off] {
+		opacity: 0.45;
+	}
+	.name {
+		grid-column: 3;
+		justify-self: start;
+		/* Above any badge's tap area in the text below; the 48px icon opens it too. */
+		position: relative;
+		z-index: 1;
+		min-height: 32px;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--heading);
+		font: 600 1rem / 1.5 var(--font-character);
+		text-align: start;
+	}
+	button.name {
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	button.name:hover {
+		text-decoration: underline;
+	}
 	.marker {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px dashed var(--border);
-		border-radius: 999px;
+		min-height: 48px;
+		grid-row: 1 / span 2;
 		font-family: var(--font-control);
 		color: var(--on-surface-muted);
 	}
 	.marker[aria-disabled] {
 		opacity: 0.45;
 		text-decoration: line-through;
+	}
+	.text {
+		grid-column: 3;
+		margin: 0;
+		font-family: var(--font-ability);
+		font-size: 0.95rem;
+		line-height: 1.35;
 	}
 </style>

@@ -12,13 +12,10 @@
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import {
 		DEFAULT_SEAT_LAYOUT,
-		gapPoints,
 		isDefaultLayout,
 		keepInside,
-		nextGap,
 		seatPoints,
 		seatTokenSize,
-		withGap,
 		withPlaced,
 		withShape,
 		type SeatLayout,
@@ -79,10 +76,9 @@
 	// Real tables have gaps, ovals and couch groups (Trevor, 2026-10-15). Only where seats are
 	// drawn changes; seat numbers (the seating order) stay as they are.
 	let arranging = $state(false);
-	const gapAt = $derived(arranging ? gapPoints(ids, layout, { width, height }, 0.3) : []);
 	function startArranging() {
 		arranging = true;
-		toast('Arrange seats', 'Drag a seat to move it. Tap + between seats to leave a gap.');
+		toast('Arrange seats', 'Drag a seat to move it, leaving space where people sit apart.');
 	}
 
 	interface Drag {
@@ -233,20 +229,6 @@
 				<span class="name">{seat.name || ' '}</span>
 			</button>
 		{/each}
-
-		{#each gapAt as at, i (ids[i])}
-			{@const seatId = ids[i]}
-			{@const gap = layout.gaps[seatId] ?? 0}
-			<button
-				type="button"
-				class="gap"
-				style:left="{at.x}%"
-				style:top="{at.y}%"
-				aria-label={`Gap after seat ${i + 1}: ${gap === 0 ? 'None' : gap}`}
-				onclick={() => onLayout(withGap(layout, seatId, nextGap(layout, seatId)))}
-				>{gap === 0 ? '+' : gap}</button
-			>
-		{/each}
 	</div>
 </div>
 
@@ -281,22 +263,6 @@
 		outline: 1px dashed var(--border);
 		outline-offset: var(--space-1);
 		border-radius: var(--radius-md);
-	}
-	.gap {
-		position: absolute;
-		translate: -50% -50%;
-		z-index: 1;
-		width: var(--tap-target);
-		height: var(--tap-target);
-		border: 1px dashed var(--border);
-		border-radius: 50%;
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font: 600 1rem / 1 var(--font-control);
-		cursor: pointer;
-	}
-	.gap:hover {
-		background: var(--surface-selected);
 	}
 	.alive {
 		color: var(--on-surface-muted);
