@@ -14,7 +14,7 @@
 </script>
 
 <!--
-	A rules term in game text: dotted underline (not a link); tap for our short definition
+	A rules term in game text: dotted underline (not a link); tap for the wiki definition
 	in the shared GlossaryPopover.
 -->
 <button
@@ -44,7 +44,10 @@
 		text-align: inherit;
 		text-decoration: underline dotted;
 		text-decoration-thickness: 1.5px;
-		text-underline-offset: 0.2em;
+		/* Below the descenders and unbroken, so g, p, q and y stay underlined in every font. */
+		text-underline-position: under;
+		text-underline-offset: 0.08em;
+		text-decoration-skip-ink: none;
 		touch-action: manipulation;
 		-webkit-tap-highlight-color: transparent;
 	}
