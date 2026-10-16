@@ -88,11 +88,9 @@ test('character names on grimoire tokens are off by default and shown when switc
 	await expect(seat.getByTestId('token-name')).toHaveCount(0);
 	const size = (await token.boundingBox())!;
 
-	await page.getByRole('button', { name: 'More' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings' })
-		.tap();
+	// Settings are in the app's menu, opened from the game toolbar.
+	await page.getByRole('button', { name: 'Open menu' }).tap();
+	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -128,11 +126,9 @@ test('character names on grimoire tokens are off by default and shown when switc
 	await expect(seat.getByTestId('token-name')).toHaveText('Fortune Teller');
 
 	// The name can sit at the top instead; the icon stays in the middle.
-	await page.getByRole('button', { name: 'More' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings' })
-		.tap();
+	// Settings are in the app's menu, opened from the game toolbar.
+	await page.getByRole('button', { name: 'Open menu' }).tap();
+	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Tokens' })
