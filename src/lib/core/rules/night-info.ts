@@ -260,15 +260,19 @@ export function flowergirlAnswer(
  * Undertaker: the character of the player who died by execution today
  * (https://wiki.bloodontheclocktower.com/Undertaker). The grimoire's true character: the
  * Drunk shows as the Drunk. Nobody died by execution: the Undertaker learns nothing.
+ *
+ * Today's execution comes from the day log; when the log has none (the Storyteller ran the
+ * day without the day screen), from the dead player carrying the Undertaker's "Died Today"
+ * reminder, which is how the Storyteller marks it on the board.
  */
 export function undertakerAnswer(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup
 ): NightAnswer {
-	const executed = entriesOf(game, 'execution').findLast(
-		(e) => e.died && getSeat(game, e.seatId)?.dead
-	);
+	const executed =
+		entriesOf(game, 'execution').findLast((e) => e.died && getSeat(game, e.seatId)?.dead) ??
+		marked(game, 'undertaker', 'Died Today');
 	const id = executed && trueCharacter(game, executed.seatId, characters);
 	return answer(
 		game,
@@ -280,6 +284,20 @@ export function undertakerAnswer(
 			: { kind: 'character', value: id },
 		executed ? [executed.seatId] : []
 	);
+}
+
+/** The dead player carrying a character's reminder, as `{ seatId }`. */
+function marked(
+	game: Game,
+	characterId: CharacterId,
+	label: string
+): { seatId: SeatId } | undefined {
+	const seatId = game.seating.find(
+		(s) =>
+			getSeat(game, s)?.dead &&
+			game.seats[s].reminders.some((r) => r.characterId === characterId && r.label === label)
+	);
+	return seatId ? { seatId } : undefined;
 }
 
 /**

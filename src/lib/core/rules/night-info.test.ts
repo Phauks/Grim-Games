@@ -191,6 +191,39 @@ describe('Undertaker', () => {
 		expect(undertakerAnswer(removed.game, seats[0], characters).kind).toBe('none');
 	});
 
+	it('without a day log, reads the dead player carrying the Died Today reminder', () => {
+		const { game: g, seats } = game(
+			tb,
+			(s) => ({ type: 'SetDead', seatId: s[5], dead: true, cause: 'execution' }),
+			(s) => ({
+				type: 'AddReminder',
+				seatId: s[5],
+				reminder: { characterId: 'undertaker', label: 'Died Today' }
+			})
+		);
+		expect(undertakerAnswer(g, seats[0], characters)).toMatchObject({
+			kind: 'character',
+			value: 'imp',
+			because: [seats[5]]
+		});
+	});
+
+	it('marks the answer unreliable when the Undertaker is poisoned', () => {
+		const { game: g, seats } = game(
+			tb,
+			(s) => ({ type: 'Execute', seatId: s[4] }),
+			(s) => ({
+				type: 'AddReminder',
+				seatId: s[0],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			})
+		);
+		expect(undertakerAnswer(g, seats[0], characters)).toMatchObject({
+			value: 'poisoner',
+			unreliable: 'poisoned'
+		});
+	});
+
 	// https://wiki.bloodontheclocktower.com/Exile: exile is not an execution.
 	it('learns nothing from an exiled Traveller', () => {
 		const { game: g, seats } = game(
