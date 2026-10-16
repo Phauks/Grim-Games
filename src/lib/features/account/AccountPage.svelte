@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { accountApi, EXPORT_PATH } from './account-api.ts';
 	import { account } from './account.svelte.ts';
@@ -184,16 +184,15 @@
 	</ErrorBoundary>
 </main>
 
-<Dialog bind:open={confirmDelete} role="alertdialog" title={t('account.data.confirmTitle')}>
+<ConfirmDialog
+	bind:open={confirmDelete}
+	title={t('account.data.confirmTitle')}
+	danger
+	disabled={busy}
+	onConfirm={deleteAccount}
+>
 	<p>{t('account.data.confirmText')}</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirmDelete = false)}>{t('account.data.keep')}</Button
-		>
-		<Button variant="accent" onclick={deleteAccount} disabled={busy}
-			>{t('account.data.delete')}</Button
-		>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	/* One column on a phone; on a computer the sections sit side by side, each at most a
