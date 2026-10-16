@@ -9,6 +9,8 @@ class GlossaryPopoverState {
 	open = $state(false);
 	term = $state<GlossaryTerm>();
 	anchor = $state<HTMLElement>();
+	/** Terms opened before this one from "see …" links, newest last, for Back. */
+	history = $state<GlossaryTerm[]>([]);
 
 	async show(term: GlossaryTerm, anchor: HTMLElement): Promise<void> {
 		if (this.open && this.anchor === anchor) {
@@ -22,7 +24,21 @@ class GlossaryPopoverState {
 		}
 		this.term = term;
 		this.anchor = anchor;
+		this.history = [];
 		this.open = true;
+	}
+
+	/** Follows a "see …" link to another entry in the same popover. */
+	go(term: GlossaryTerm): void {
+		if (this.term) this.history = [...this.history, this.term];
+		this.term = term;
+	}
+
+	back(): void {
+		const previous = this.history.at(-1);
+		if (!previous) return;
+		this.history = this.history.slice(0, -1);
+		this.term = previous;
 	}
 }
 

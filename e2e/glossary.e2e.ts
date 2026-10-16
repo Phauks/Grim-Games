@@ -105,3 +105,32 @@ test('without the wiki the popover shows only the term and the Glossary link', a
 	await expect(popover.getByRole('link', { name: 'Open Glossary' })).toBeVisible();
 	await expect(popover.getByTestId('wiki-definition')).toHaveCount(0);
 });
+
+test('a "see …" link in the wiki wording opens that entry, with Back, and characters are badges', async ({
+	page
+}) => {
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({
+			json: {
+				parse: {
+					text:
+						'<p><b>Poisoned:</b> Sample wording, see <a href="/Glossary#Healthy">Healthy</a>' +
+						' and the <a href="/Poisoner">Poisoner</a>.</p>' +
+						'<p><b>Healthy:</b> Sample wording for healthy.</p>'
+				}
+			}
+		})
+	);
+	const card = await poisonerCard(page);
+	await card.getByRole('button', { name: 'poisoned: explain rules term' }).tap();
+	const popover = page.getByRole('dialog', { name: 'Poisoned' });
+	const definition = popover.getByTestId('wiki-definition');
+	await expect(definition).toHaveText(/^Sample wording, see Healthy and the\s+Poisoner\s*\.$/);
+	await expect(definition.locator('[data-character-id="poisoner"]')).toBeVisible();
+
+	await definition.getByRole('button', { name: 'Healthy' }).tap();
+	const healthy = page.getByRole('dialog', { name: 'Healthy' });
+	await expect(healthy.getByTestId('wiki-definition')).toHaveText('Sample wording for healthy.');
+	await healthy.getByRole('button', { name: 'Back to Poisoned' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Poisoned' })).toBeVisible();
+});

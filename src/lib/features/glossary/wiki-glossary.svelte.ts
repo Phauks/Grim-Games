@@ -1,4 +1,4 @@
-import { parseGlossaryHtml, glossaryKey } from './wiki-glossary.ts';
+import { parseGlossaryHtml, glossaryKey, type WikiEntry } from './wiki-glossary.ts';
 
 /**
  * The wiki Glossary's own definitions, shown word for word (Trevor, 2026-10-15: "glossary
@@ -11,17 +11,19 @@ import { parseGlossaryHtml, glossaryKey } from './wiki-glossary.ts';
 const API =
 	'https://wiki.bloodontheclocktower.com/api.php?action=parse&page=Glossary&prop=text' +
 	'&format=json&formatversion=2&disableeditsection=1&disablelimitreport=1&origin=*';
-const KEY = 'grim-games:wiki-glossary';
+// v2 keeps the links in each entry ("see …").
+const KEY = 'grim-games:wiki-glossary:v2';
 /** Fetched again after this long, when online. */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface Cached {
 	fetchedAt: number;
-	entries: [string, string][];
+	entries: [string, WikiEntry][];
 }
 
 function readCache(): Cached | undefined {
 	try {
+		globalThis.localStorage?.removeItem('grim-games:wiki-glossary'); // v1, without links
 		const raw = globalThis.localStorage?.getItem(KEY);
 		const parsed = raw ? (JSON.parse(raw) as Cached) : undefined;
 		return parsed && Array.isArray(parsed.entries) ? parsed : undefined;
@@ -31,13 +33,18 @@ function readCache(): Cached | undefined {
 }
 
 class WikiGlossary {
-	#entries = $state<ReadonlyMap<string, string>>(new Map());
+	#entries = $state<ReadonlyMap<string, WikiEntry>>(new Map());
 	#loading: Promise<void> | undefined;
 	#fetchedAt = 0;
 
-	/** The wiki's definition of a Glossary entry, if it has been fetched. */
-	definition(term: string): string | undefined {
+	/** The wiki's entry for a Glossary term, if it has been fetched. */
+	definition(term: string): WikiEntry | undefined {
 		return this.#entries.get(glossaryKey(term));
+	}
+
+	/** Every fetched entry, by `glossaryKey`. */
+	get entries(): ReadonlyMap<string, WikiEntry> {
+		return this.#entries;
 	}
 
 	/** Loads the cached copy, then fetches a fresh one when it is missing or old. */
