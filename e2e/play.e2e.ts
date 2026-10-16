@@ -69,7 +69,8 @@ test('the circle keeps names, guesses and deaths on this device', async ({ page 
 	const seat = page.getByRole('button', { name: /^Seat 3, Alex, guess Empath, dead/ });
 	await expect(seat).toBeVisible();
 	await expect(page.getByTestId('alive-count')).toHaveText('8 alive');
-	await expect(page.getByTestId('storage-note')).toHaveText(/Saved on this device only/);
+	// No reassurance line under the circle (Trevor, 2026-10-16).
+	await expect(page.getByText(/Saved on this device/)).toHaveCount(0);
 
 	// Saved locally: a reload brings it back.
 	await page.waitForTimeout(500);

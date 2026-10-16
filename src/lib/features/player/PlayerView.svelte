@@ -163,6 +163,14 @@
 		});
 	});
 
+	// Saving can fail (private browsing, full storage): say so once, as a toast (no reflow).
+	let warnedSave = false;
+	$effect(() => {
+		if (!notebook?.saveError || warnedSave) return;
+		warnedSave = true;
+		toast('This browser cannot save', 'Notes are lost when the page closes.');
+	});
+
 	const players = $derived(notebook ? playerCount(notebook.book) : 0);
 	const jinxes = $derived(script && data ? playerJinxes(script, data) : []);
 	const sheet = $derived(script && data ? sheetCharacters(script, data) : []);
@@ -241,13 +249,6 @@
 								onOpenNote={openNote}
 								onOpenSeat={openSeat}
 							/>
-						{/if}
-						{#if notebook && (value === 'circle' || value === 'notes')}
-							<p class="private" data-testid="storage-note">
-								{notebook.saveError
-									? 'This browser cannot save: notes are lost when the page closes.'
-									: 'Saved on this device only. Nobody else can see it.'}
-							</p>
 						{/if}
 					</ErrorBoundary>
 				</div>
@@ -343,13 +344,8 @@
 	.panel {
 		padding-top: var(--space-3);
 	}
-	.muted,
-	.private {
+	.muted {
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
-	}
-	.private {
-		margin: var(--space-3) 0 0;
-		text-align: center;
 	}
 </style>
