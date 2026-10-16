@@ -5,7 +5,7 @@
  *
  * https://wiki.bloodontheclocktower.com/Setup
  */
-import { isNotDealt } from './bag-characters.ts';
+import { canDuplicate, isNotDealt } from './bag-characters.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { SEATED_TYPES, splitPlayers, type SeatedType, type TypeCounts } from './distribution.ts';
 import { setupModifierFor, type CountOp, type SetupModifier } from './setup-modifiers.ts';
@@ -240,14 +240,10 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		}
 	}
 
-	const duplicatesAllowed = (c: Character) =>
-		c.special.some(
-			(s) => s.type === 'selection' && (s.name === 'bag-duplicate' || s.name.endsWith('-duplicate'))
-		) || input.inPlay.some((p) => p.special.some((s) => s.name === 'good-duplicate'));
 	for (const [id, n] of copies) {
 		if (n < 2) continue;
 		const character = input.inPlay.find((c) => c.id === id)!;
-		if (!duplicatesAllowed(character)) {
+		if (!canDuplicate(character, input.inPlay)) {
 			warnings.push({
 				code: 'duplicate',
 				message: `${character.name} is chosen ${n} times.`,

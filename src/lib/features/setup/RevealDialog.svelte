@@ -53,7 +53,20 @@
 		<p class="ability">{shows.ability}</p>
 		<label class="player">
 			<span>Name</span>
-			<input type="text" autocomplete="off" placeholder="None" bind:value={name} />
+			<input
+				type="text"
+				autocomplete="off"
+				enterkeyhint="done"
+				placeholder="None"
+				bind:value={name}
+				onkeydown={(e) => {
+					// Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap.
+					if (e.key === 'Enter') {
+						e.preventDefault();
+						e.currentTarget.blur();
+					}
+				}}
+			/>
 		</label>
 		<div class="alignment" aria-hidden={!needsAlignment}>
 			{#if needsAlignment}

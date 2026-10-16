@@ -21,6 +21,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -30,6 +31,7 @@
 	import type { SetupGamePort } from './game-port.ts';
 	import SetupCheckDialog from './SetupCheckDialog.svelte';
 	import SetupTable from './SetupTable.svelte';
+	import { buildErrors } from './build-check.ts';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
 
 	interface Props {
@@ -40,6 +42,7 @@
 
 	let checkOpen = $state(false);
 	let replaceOpen = $state(false);
+	let errorsOpen = $state(false);
 
 	onMount(() => void loadOfficialData());
 
@@ -106,6 +109,8 @@
 		...jinxSetupWarnings(jinxes, ids, (id) => lookup(id)?.name ?? id).map((w) => w.message)
 	]);
 
+	const errors = $derived(buildErrors({ analysis, issues: plan.issues, travellers }));
+
 	// Copies only where a character's rules allow them (Village Idiot, Legion, or with the
 	// Pope or Atheist in play), never through a general switch (Trevor, 2026-10-15).
 	const inPlay = $derived(
@@ -128,6 +133,17 @@
 		const result = port.dispatch(command);
 		if (!result.ok) toast("Couldn't do that", result.error.message);
 		return result.ok;
+	}
+
+	/**
+	 * Build bag: errors are confirmed first (never by accident, but the Storyteller can
+	 * still build anyway), then replacing a bag that is being drawn from.
+	 */
+	function requestBuild(confirmedErrors = false) {
+		errorsOpen = false;
+		if (!confirmedErrors && errors.length > 0) errorsOpen = true;
+		else if (drawStarted) replaceOpen = true;
+		else void buildBag();
 	}
 
 	/** Adds seats for extra players (never removes any), builds the bag and opens the draw. */
@@ -231,7 +247,7 @@
 			variant="accent"
 			icon="bag"
 			disabled={!ready || plan.tiles.length === 0}
-			onclick={() => (drawStarted ? (replaceOpen = true) : buildBag())}>Build bag</Button
+			onclick={() => requestBuild()}>Build bag</Button
 		>
 	</div>
 </main>
@@ -247,6 +263,20 @@
 		onStandIn={(id, shows) => setupSelection.setStandIn(id, shows)}
 	/>
 {/if}
+<Dialog
+	bind:open={errorsOpen}
+	role="alertdialog"
+	title="Build with errors?"
+	description="This bag doesn't match the setup for {s.players} players."
+>
+	<ul class="errors" data-testid="build-errors">
+		{#each errors as error, i (i)}<li><GlossaryText text={error} /></li>{/each}
+	</ul>
+	{#snippet actions()}
+		<Button variant="accent" onclick={() => (errorsOpen = false)}>Go back</Button>
+		<Button variant="quiet" onclick={() => requestBuild(true)}>Build anyway</Button>
+	{/snippet}
+</Dialog>
 <Dialog
 	bind:open={replaceOpen}
 	role="alertdialog"
@@ -358,6 +388,12 @@
 		margin-top: var(--space-4);
 		padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
 		background: var(--page-background, var(--surface));
+	}
+	.errors {
+		display: grid;
+		gap: var(--space-1);
+		margin: 0;
+		padding-inline-start: 1.2em;
 	}
 	.badge {
 		display: inline-block;

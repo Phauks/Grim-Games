@@ -306,5 +306,14 @@ describe('[bracketed] setup modifiers', () => {
 		expect(
 			analyse(5, [imp, imp, ...get('chef', 'empath', 'monk')]).warnings.map((w) => w.code)
 		).toContain('duplicate');
+		// Copies follow the same rule as the selection screen: the Village Idiot may repeat
+		// (https://wiki.bloodontheclocktower.com/Village_Idiot), a Chef may not on its own.
+		const codes = (inPlay: Character[]) => analyse(7, inPlay).warnings.map((w) => w.code);
+		expect(
+			codes(get('villageidiot', 'villageidiot', 'chef', 'empath', 'monk', 'poisoner', 'imp'))
+		).not.toContain('duplicate');
+		expect(codes(get('chef', 'chef', 'empath', 'monk', 'saint', 'poisoner', 'imp'))).toContain(
+			'duplicate'
+		);
 	});
 });

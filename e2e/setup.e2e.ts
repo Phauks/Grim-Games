@@ -70,6 +70,23 @@ test('selection counts against the setup sheet and explains the Drunk', async ({
 	await expect(page.getByTestId('warning-count')).toHaveText('0');
 });
 
+test('building a bag with errors asks the Storyteller to confirm them', async ({ page }) => {
+	await selectionFor(page, 5);
+	// No Demon, and one character short.
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	const errors = page.getByTestId('build-errors');
+	await expect(errors).toBeVisible();
+	await expect(errors).toContainText('4 characters chosen for 5 players');
+	await page.getByRole('button', { name: 'Go back' }).tap();
+	await expect(errors).toBeHidden();
+	await expect(page).toHaveURL(/\/setup$/);
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Build anyway' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	await expect(page.getByRole('list', { name: 'Bag' }).getByRole('listitem')).toHaveCount(4);
+});
+
 test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
@@ -103,8 +120,18 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 2, drawn' })).toBeDisabled();
 
-	// Add all seats everyone else without reveals.
-	await page.getByRole('button', { name: 'Add all' }).tap();
+	// The rest are drawn one by one; Enter in the name field closes the keyboard, not the reveal.
+	for (let n = 3; n <= 5; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		const name = reveal.getByRole('textbox', { name: 'Name' });
+		await expect(name).toHaveAttribute('enterkeyhint', 'done');
+		await name.fill(`P${n}`);
+		await name.press('Enter');
+		await expect(name).not.toBeFocused();
+		await expect(reveal).toBeVisible();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	await expect(page.getByRole('button', { name: 'Add all' })).toHaveCount(0);
 	await expect(page.getByTestId('next-seat')).toHaveText('None');
 	await noSidewaysScroll(page);
 
