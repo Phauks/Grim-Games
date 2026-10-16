@@ -379,13 +379,13 @@
 			wide: true,
 			width: '20%'
 		},
-		{ id: 'source', label: t('scripts.column.source'), sortable: true, width: '6rem' },
+		{ id: 'source', label: t('scripts.column.source'), sortable: true, width: '8rem' },
 		{
 			id: 'kind',
 			label: t('scripts.column.type'),
 			sortable: true,
 			wide: true,
-			width: '8.5rem',
+			width: '9.5rem',
 			filterable: true,
 			filtered: kind !== ''
 		},
@@ -415,7 +415,7 @@
 			id: 'kind',
 			label: t('scripts.column.type'),
 			wide: true,
-			width: '8.5rem',
+			width: '9.5rem',
 			filterable: true,
 			filtered: botcFilters.type !== ''
 		},
@@ -632,6 +632,7 @@
 						{onSort}
 						{filter}
 						narrow="hide"
+						resizeKey="scripts"
 						fill
 						rowSelected={isSelected}
 						empty={botcRef ? '' : t('common.none')}

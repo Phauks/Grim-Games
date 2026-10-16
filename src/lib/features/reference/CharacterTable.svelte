@@ -31,13 +31,13 @@
 
 	/** Fixed widths (in --u): layout never depends on which rows are drawn, so nothing reflows. */
 	const WIDTHS: Record<FieldId, number> = {
-		token: 4,
+		token: 5,
 		// Wide enough for the longest name badge (Deus ex Fiasco, Hell's Librarian).
 		name: 14,
-		type: 7,
+		type: 9.5,
 		edition: 9,
 		icons: 6.5,
-		alignment: 11,
+		alignment: 12.5,
 		setup: 11,
 		prep: 18,
 		ability: 18,
@@ -210,6 +210,7 @@
 		{filter}
 		narrow="stack"
 		fit="content"
+		resizeKey="reference"
 		lazy
 		rowEstimate="calc(10 * var(--u))"
 		rowAttrs={(entry) => ({

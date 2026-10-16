@@ -22,6 +22,10 @@
 		flush?: boolean;
 		/** `narrow="stack"`: stays on the row's first line, beside the row header, unlabelled. */
 		stackHead?: boolean;
+		/** With `resizeKey`: this column keeps its width (no drag handle). */
+		fixed?: boolean;
+		/** With `resizeKey`: the narrowest it can be dragged, in --u (default MIN_WIDTH). */
+		minWidth?: number;
 	}
 
 	export interface DataSort<K extends string = string> {
@@ -36,6 +40,14 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { near } from '#lib/ui/near.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import { TableWidths } from '#lib/ui/table/column-widths.svelte.ts';
+	import {
+		KEY_STEP,
+		MAX_WIDTH,
+		MIN_WIDTH,
+		clampWidth,
+		columnTrack
+	} from '#lib/ui/table/column-widths.ts';
 
 	interface Props {
 		/** The table's accessible name. */
@@ -67,6 +79,11 @@
 		rowSelected?: (row: T) => boolean;
 		empty?: string;
 		testid?: string;
+		/**
+		 * Columns can be resized by dragging their header's edge; the widths are remembered on
+		 * this device under this name. Off on narrow tables, which never scroll sideways.
+		 */
+		resizeKey?: string;
 	}
 
 	let {
@@ -86,11 +103,19 @@
 		rowAttrs,
 		rowSelected,
 		empty = 'None',
-		testid
+		testid,
+		resizeKey
 	}: Props = $props();
 
+	const widths = $derived(resizeKey ? new TableWidths(resizeKey) : undefined);
+	const resizable = (column: DataColumn<K>) => !!widths && !column.fixed;
 	const track = (column: DataColumn<K>) => column.width ?? 'minmax(0, 1fr)';
-	const template = $derived(columns.map(track).join(' '));
+	// Dragged widths apply to the full table only; narrow tables keep their own tracks.
+	const template = $derived(
+		columns
+			.map((c) => columnTrack(resizable(c) ? widths?.current[c.id] : undefined, track(c)))
+			.join(' ')
+	);
 	const narrowTemplate = $derived(
 		columns
 			.filter((c) => !c.wide)
@@ -110,6 +135,105 @@
 		filterColumn = column;
 		filterAnchor = event.currentTarget as HTMLElement;
 		filterOpen = true;
+	}
+
+	/** One --u in pixels here (it follows the app's text size). */
+	function unitPx(inside: HTMLElement): number {
+		const probe = document.createElement('div');
+		// Out of flow, so a flex parent can't shrink it.
+		probe.style.cssText = 'position: absolute; visibility: hidden; width: var(--u)';
+		inside.append(probe);
+		const px = probe.getBoundingClientRect().width;
+		probe.remove();
+		return px || 16;
+	}
+
+	const minOf = (column: DataColumn<K>) => column.minWidth ?? MIN_WIDTH;
+
+	/** The column's width now, in --u: its dragged width, else what its header measures. */
+	function widthNow(column: DataColumn<K>, handle: HTMLElement): { width: number; unit: number } {
+		const th = handle.closest('th') as HTMLElement;
+		const unit = unitPx(th);
+		return { width: widths?.current[column.id] ?? th.getBoundingClientRect().width / unit, unit };
+	}
+
+	const rtl = (el: HTMLElement) => getComputedStyle(el).direction === 'rtl';
+
+	let resizing = $state<K>();
+	let drag:
+		| { pointer: number; startX: number; start: number; unit: number; sign: number; moved: boolean }
+		| undefined;
+	let pending: number | undefined;
+	let frame = 0;
+	let lastTap: { column: K; time: number } | undefined;
+
+	function startResize(column: DataColumn<K>, event: PointerEvent) {
+		if (!widths || event.button !== 0) return;
+		const handle = event.currentTarget as HTMLElement;
+		const { width, unit } = widthNow(column, handle);
+		drag = {
+			pointer: event.pointerId,
+			startX: event.clientX,
+			start: width,
+			unit,
+			sign: rtl(handle) ? -1 : 1,
+			moved: false
+		};
+		resizing = column.id;
+		handle.setPointerCapture(event.pointerId);
+		event.preventDefault();
+	}
+
+	function moveResize(column: DataColumn<K>, event: PointerEvent) {
+		if (!drag || drag.pointer !== event.pointerId) return;
+		const dx = (event.clientX - drag.startX) * drag.sign;
+		// A few pixels of wobble is still a tap (a double tap resets).
+		if (!drag.moved && Math.abs(dx) < drag.unit / 4) return;
+		drag.moved = true;
+		pending = clampWidth(drag.start + dx / drag.unit, minOf(column));
+		// One relayout per frame however fast the pointer moves.
+		frame ||= requestAnimationFrame(() => {
+			frame = 0;
+			if (pending !== undefined) widths?.set(column.id, pending, false);
+		});
+	}
+
+	function endResize(column: DataColumn<K>, event: PointerEvent) {
+		if (!drag || drag.pointer !== event.pointerId) return;
+		const moved = drag.moved;
+		drag = undefined;
+		resizing = undefined;
+		if (moved) {
+			cancelAnimationFrame(frame);
+			frame = 0;
+			if (pending !== undefined) widths?.set(column.id, pending);
+			pending = undefined;
+			lastTap = undefined;
+			return;
+		}
+		if (event.type !== 'pointerup') return;
+		// Double tap or double click: back to the column's own width.
+		if (lastTap?.column === column.id && event.timeStamp - lastTap.time < 400) {
+			widths?.reset(column.id);
+			lastTap = undefined;
+		} else {
+			lastTap = { column: column.id, time: event.timeStamp };
+		}
+	}
+
+	function keyResize(column: DataColumn<K>, event: KeyboardEvent) {
+		const handle = event.currentTarget as HTMLElement;
+		if (event.key === 'Enter') {
+			widths?.reset(column.id);
+			event.preventDefault();
+			return;
+		}
+		const direction = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+		if (!direction) return;
+		event.preventDefault();
+		const { width } = widthNow(column, handle);
+		const step = direction * (rtl(handle) ? -1 : 1) * KEY_STEP * (event.shiftKey ? 4 : 1);
+		widths?.set(column.id, clampWidth(width + step, minOf(column)));
 	}
 
 	function ariaSort(column: DataColumn<K>) {
@@ -163,6 +287,9 @@
 							class:wide={column.wide}
 							class:end={column.align === 'end'}
 							class:control={column.sortable || column.filterable}
+							class:resizable={resizable(column)}
+							class:after-resizable={i > 0 && resizable(columns[i - 1])}
+							class:last={i === columns.length - 1}
 							aria-sort={ariaSort(column)}
 						>
 							<div class="head">
@@ -189,6 +316,28 @@
 									{/each}
 								{/if}
 							</div>
+							{#if resizable(column)}
+								<!-- A focusable separator is a widget (ARIA 1.2 window splitter); Svelte lists it as static. -->
+								<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+								<span
+									class="resize"
+									class:last={i === columns.length - 1}
+									class:active={resizing === column.id}
+									role="separator"
+									aria-orientation="vertical"
+									aria-label="Resize {column.label}"
+									aria-valuemin={minOf(column)}
+									aria-valuemax={MAX_WIDTH}
+									aria-valuenow={widths?.current[column.id]}
+									tabindex="0"
+									data-resize={column.id}
+									onpointerdown={(e) => startResize(column, e)}
+									onpointermove={(e) => moveResize(column, e)}
+									onpointerup={(e) => endResize(column, e)}
+									onpointercancel={(e) => endResize(column, e)}
+									onkeydown={(e) => keyResize(column, e)}
+								></span>
+							{/if}
 						</th>
 					{/each}
 				</tr>
@@ -234,6 +383,8 @@
 
 <style>
 	.data-table {
+		/* A resize handle's width: a full tap target for touch, narrower for a mouse. */
+		--hit: var(--tap-target);
 		container: data-table / inline-size;
 		min-width: 0;
 	}
@@ -302,9 +453,58 @@
 		border-bottom: var(--card-border);
 	}
 	thead th {
+		position: relative;
 		display: flex;
 		align-items: flex-end;
 		padding: 0;
+	}
+	/*
+	 * The drag handle straddles the header's end edge (inside it for the last column).
+	 * A faint line shows where it is.
+	 */
+	@media (pointer: fine) {
+		.data-table {
+			--hit: calc(0.75 * var(--u));
+		}
+	}
+	/* Each half of a handle has its own room, so it never covers a sort or filter button. */
+	thead th.resizable {
+		padding-inline-end: calc(0.5 * var(--hit));
+	}
+	thead th.resizable.last {
+		padding-inline-end: var(--hit);
+	}
+	thead th.after-resizable {
+		padding-inline-start: calc(0.5 * var(--hit));
+	}
+	.resize {
+		position: absolute;
+		inset-block: 0;
+		inset-inline-end: calc(-0.5 * var(--hit));
+		z-index: 2;
+		display: flex;
+		justify-content: center;
+		width: var(--hit);
+		cursor: col-resize;
+		touch-action: none;
+	}
+	/* The last column's handle stays inside the table, so it never widens the scroll box. */
+	.resize.last {
+		inset-inline-end: 0;
+		justify-content: flex-end;
+	}
+	.resize::after {
+		content: '';
+		width: calc(0.125 * var(--u));
+		margin-block: var(--space-2);
+		border-radius: var(--radius-full);
+		background: var(--border);
+	}
+	.resize:hover::after,
+	.resize:focus-visible::after,
+	.resize.active::after {
+		width: calc(0.25 * var(--u));
+		background: var(--accent);
 	}
 	.head {
 		display: flex;
@@ -410,6 +610,15 @@
 	}
 
 	@container data-table (max-width: 40rem) {
+		/* Narrow tables fit the screen as they are: nothing to resize. */
+		.resize {
+			display: none;
+		}
+		thead th.resizable,
+		thead th.resizable.last,
+		thead th.after-resizable {
+			padding-inline: 0;
+		}
 		/* `hide`: the wide columns go; their filters sit in the first header. */
 		.hide tr {
 			grid-template-columns: var(--columns-narrow);
