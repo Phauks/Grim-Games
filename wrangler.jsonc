@@ -57,7 +57,10 @@
 		{ "name": "SHARE_LOOKUPS", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
 		{ "name": "SHARE_CREATES", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
 		// Sign-in codes requested per address (worker/account/routes.ts).
-		{ "name": "AUTH_STARTS", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } }
+		{ "name": "AUTH_STARTS", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
+		// Live rooms (worker/room.ts): joins and reconnects, and rooms opened, per address.
+		{ "name": "ROOM_JOINS", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
+		{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } }
 	],
 	"vars": { "ENVIRONMENT": "production" },
 	// Worker Previews: Workers Builds runs `npx wrangler preview` for non-production branches,
@@ -76,7 +79,9 @@
 		"ratelimits": [
 			{ "name": "SHARE_LOOKUPS", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
 			{ "name": "SHARE_CREATES", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
-			{ "name": "AUTH_STARTS", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } }
+			{ "name": "AUTH_STARTS", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
+			{ "name": "ROOM_JOINS", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
+			{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } }
 		]
 	}
 }

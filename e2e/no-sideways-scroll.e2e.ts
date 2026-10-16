@@ -18,6 +18,8 @@ const STATIC_ROUTES = [
 	'/settings',
 	'/play',
 	'/info-tokens',
+	'/join',
+	'/join/000001',
 	'/spikes/badges',
 	'/spikes/bluffs',
 	'/spikes/day',
