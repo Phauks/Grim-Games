@@ -1,11 +1,17 @@
 <script lang="ts">
-	import type { CharacterType } from '#lib/core/data/index.ts';
+	import type { Alignment, CharacterType } from '#lib/core/data/index.ts';
 
 	interface Props {
 		/** The token's text; leave out for "a reminder" when it is not known which. */
 		label?: string;
 		/** Type of the character the token belongs to: it sets the colour. */
 		type?: CharacterType;
+		/**
+		 * Alignment of the player whose character put the token down, when known: it sets the
+		 * colour instead of the type (Trevor, 2026-10-16), so a turned-evil good player's
+		 * reminders are red.
+		 */
+		alignment?: Alignment;
 		/** Shown on hover/long-press, e.g. the possible tokens. */
 		title?: string;
 		/** `info` for the Storyteller's info tokens ("You are"), which belong to no character. */
@@ -14,13 +20,14 @@
 		done?: boolean;
 	}
 
-	let { label, type, title, variant = 'reminder', done = false }: Props = $props();
+	let { label, type, alignment, title, variant = 'reminder', done = false }: Props = $props();
 </script>
 
 <!-- A reminder token as a small chip, coloured by its character's type. -->
 <span
 	class="reminder"
 	data-type={variant === 'info' ? undefined : type}
+	data-alignment={variant === 'info' ? undefined : alignment}
 	data-variant={variant}
 	data-testid="reminder-token"
 	data-done={done || undefined}
@@ -43,11 +50,14 @@
 		background: var(--token-face);
 		box-shadow: inset 0 0 0 1.5px var(--rim);
 		color: var(--on-token);
-		font-family: var(--font-character);
-		font-size: 0.78em;
-		font-variant: small-caps;
-		letter-spacing: 0.02em;
-		line-height: 1.5;
+		/*
+		 * Easy to read (Trevor, 2026-10-16): the running-text font in normal case and bold, not
+		 * the display font in small capitals. Never smaller than 0.8rem, which follows Text size.
+		 */
+		font-family: var(--font-body);
+		font-size: max(0.85em, 0.8rem);
+		font-weight: 600;
+		line-height: 1.4;
 		/* One line, unless the chip alone is wider than its line (tiny screen, largest text). */
 		max-width: 100%;
 		vertical-align: baseline;
@@ -77,6 +87,13 @@
 	}
 	.reminder[data-type='loric'] {
 		--rim: var(--loric);
+	}
+	/* The player's alignment, when known, wins over the type's. */
+	.reminder[data-alignment='good'] {
+		--rim: var(--good);
+	}
+	.reminder[data-alignment='evil'] {
+		--rim: var(--evil);
 	}
 	/* Info tokens belong to no character: no mark, dashed rim. */
 	.reminder[data-variant='info'] {

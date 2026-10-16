@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import {
-		characterIcons,
 		defaultAlignment,
-		ICONS_PATH,
 		type Alignment,
 		type Character,
 		type CharacterId
 	} from '#lib/core/data/index.ts';
+	import { iconUrl } from './icon-url.ts';
 	import CharacterDialog from './CharacterDialog.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 
@@ -43,17 +42,7 @@
 	const team = $derived(
 		alignment ?? (character ? (defaultAlignment(character.type) ?? 'neutral') : 'neutral')
 	);
-	const icon = $derived.by(() => {
-		if (!character) return undefined;
-		const icons = characterIcons(character);
-		// Homebrew: the script's own image URL (the first is the good one).
-		if (!icons) return typeof character.image === 'string' ? character.image : character.image?.[0];
-		const file =
-			(team === 'evil' ? icons.evil : team === 'good' ? icons.good : undefined) ??
-			icons.unaligned ??
-			icons.good;
-		return file && `${ICONS_PATH}/${file}`;
-	});
+	const icon = $derived(character && iconUrl(character, alignment));
 	const label = $derived(text ?? character?.name ?? characterId);
 </script>
 
@@ -125,6 +114,10 @@
 		overflow-wrap: anywhere;
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
+	}
+	/* An inline badge has a fixed height in the line, so its name never wraps. */
+	.badge.inline .name {
+		white-space: nowrap;
 	}
 	.badge.inline {
 		position: relative;

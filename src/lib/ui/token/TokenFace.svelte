@@ -26,6 +26,11 @@
 <span class="token" role="img" aria-label={label} style:--token-size="{size}px">
 	<svg viewBox="0 0 100 100" aria-hidden="true">
 		<circle class="face" cx="50" cy="50" r="48" />
+	</svg>
+	<!-- The icon fills most of the face, as on a real token (Trevor, 2026-10-16). -->
+	{#if src}<img {src} alt="" width={size} height={size} loading="lazy" />{/if}
+	<!-- Leaves and the flower are drawn over the icon, so they always show. -->
+	<svg class="marks" viewBox="0 0 100 100" aria-hidden="true">
 		{#each layout as leaf, i (i)}
 			<g
 				class="leaf"
@@ -45,7 +50,6 @@
 			</g>
 		{/if}
 	</svg>
-	{#if src}<img {src} alt="" width={size} height={size} loading="lazy" />{/if}
 </span>
 
 <style>
@@ -84,10 +88,10 @@
 	}
 	img {
 		position: absolute;
-		left: 25%;
-		top: 25%;
-		width: 50%;
-		height: 50%;
+		left: 13%;
+		top: 13%;
+		width: 74%;
+		height: 74%;
 		object-fit: contain;
 	}
 </style>

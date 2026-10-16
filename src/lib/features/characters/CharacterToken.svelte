@@ -1,13 +1,8 @@
 <script lang="ts">
-	import {
-		characterIcons,
-		defaultAlignment,
-		ICONS_PATH,
-		type Alignment,
-		type Character
-	} from '#lib/core/data/index.ts';
+	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import { describeLeaves, type LeafMarks } from '#lib/ui/token/leaves.ts';
 	import TokenFace from '#lib/ui/token/TokenFace.svelte';
+	import { iconUrl } from './icon-url.ts';
 
 	interface Props {
 		character: Character;
@@ -25,16 +20,7 @@
 		reminders: character.reminders.length + character.remindersGlobal.length,
 		setup: character.setup
 	});
-	const src = $derived.by(() => {
-		const icons = characterIcons(character);
-		if (!icons) return typeof character.image === 'string' ? character.image : character.image?.[0];
-		const team = alignment ?? defaultAlignment(character.type);
-		const file =
-			(team === 'evil' ? icons.evil : team === 'good' ? icons.good : undefined) ??
-			icons.unaligned ??
-			icons.good;
-		return file && `${ICONS_PATH}/${file}`;
-	});
+	const src = $derived(iconUrl(character, alignment));
 	const label = $derived(
 		[`${character.name} token`, describeLeaves(leaves)].filter(Boolean).join(': ')
 	);
