@@ -3,8 +3,8 @@
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import {
 		clearCache,
@@ -146,15 +146,15 @@
 	</SettingRow>
 {/each}
 
-<Dialog bind:open={confirmOpen} role="alertdialog" title={pending ? text(pending.title) : ''}>
+<ConfirmDialog
+	bind:open={confirmOpen}
+	title={pending ? text(pending.title) : ''}
+	danger={pending?.danger}
+	disabled={working}
+	onConfirm={confirm}
+>
 	{#if pending}<p>{text(pending.confirm)}</p>{/if}
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirmOpen = false)}>{t('common.cancel')}</Button>
-		<Button variant={pending?.danger ? 'danger' : 'solid'} disabled={working} onclick={confirm}
-			>{t('settings.confirm')}</Button
-		>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	.use {
