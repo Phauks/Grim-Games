@@ -7,6 +7,7 @@
  * phone sends changes the grimoire until the Storyteller approves it, and approving runs an
  * ordinary command, so it shows in History and can be rolled back.
  */
+import type { Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { publicProjection, type PublicGameState } from '#lib/core/sync/public-projection.ts';
 import {
@@ -35,6 +36,7 @@ export class RoomHost {
 	#game: OpenGame | undefined;
 	#stopWatching: (() => void) | undefined;
 	#published: { gameId: string; state: PublicGameState } | undefined;
+	#script: Script | undefined;
 
 	constructor() {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
@@ -75,7 +77,11 @@ export class RoomHost {
 		this.#forget();
 	}
 
-	/** Publishes this game's public state to the room while it is open on this device. */
+	/**
+	 * Publishes this game's public state, and its script, to the room while it is open on this
+	 * device. Any open game will do, including one still in setup: phones get the script as
+	 * soon as they join, before anyone has a seat.
+	 */
 	attach(game: OpenGame): void {
 		if (this.#game === game) return;
 		this.#stopWatching?.();
@@ -84,6 +90,12 @@ export class RoomHost {
 			$effect(() => {
 				const state = publicProjection(game.game);
 				this.#publish({ gameId: game.game.gameId, state });
+			});
+			$effect(() => {
+				const script = $state.snapshot(game.game.script) as Script;
+				if (JSON.stringify(script) === JSON.stringify(this.#script)) return;
+				this.#script = script;
+				this.#socket?.send({ type: 'script', script });
 			});
 		});
 	}
@@ -133,8 +145,8 @@ export class RoomHost {
 	}
 
 	#resend(): void {
-		if (!this.#published) return;
-		this.#socket?.send({ type: 'publish', ...this.#published });
+		if (this.#published) this.#socket?.send({ type: 'publish', ...this.#published });
+		if (this.#script) this.#socket?.send({ type: 'script', script: this.#script });
 	}
 
 	#forget(): void {

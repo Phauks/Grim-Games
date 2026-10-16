@@ -6,11 +6,14 @@
  * The room holds public state only. Phones ask (a name, a seat); the Storyteller approves,
  * and only then does the grimoire change, through its own commands.
  */
+import type { Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 
 export const MAX_MEMBERS = 40;
 export const MAX_PLAYER_NAME_LENGTH = 40;
+/** A script's own characters (homebrew) carry their text and images, so it can be large. */
+export const MAX_SCRIPT_BYTES = 256 * 1024;
 
 /** A phone in the room, known by a short hash of its own secret key. */
 export interface RoomMember {
@@ -64,6 +67,11 @@ export type ClientMessage =
 	| { type: 'leave-seat' }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
+	/**
+	 * The game's script, sent apart from `publish` and only when it changes: phones keep it as
+	 * their current script, so players can read it before seats are assigned.
+	 */
+	| { type: 'script'; script: Script }
 	/** `seatId` puts the player in a different seat from the one they asked for. */
 	| { type: 'resolve'; requestId: string; accept: boolean; seatId?: SeatId }
 	| { type: 'unseat'; memberId: string }
@@ -86,11 +94,40 @@ export interface PlayerView {
 	takenSeats: SeatId[];
 }
 
+/** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
+export interface ScriptView {
+	type: 'script';
+	script: Script;
+}
+
 export type ServerMessage =
-	HostView | PlayerView | { type: 'refused'; reason: RefusedReason } | { type: 'closed' };
+	| HostView
+	| PlayerView
+	| ScriptView
+	| { type: 'refused'; reason: RefusedReason }
+	| { type: 'closed' };
 
 /** `too-old`: the app must update before it can use the room; the room itself is fine. */
 export type RefusedReason = 'no-room' | 'not-host' | 'room-full' | 'too-old';
+
+/**
+ * A light shape check of a script from the Storyteller's device: the room only stores and
+ * relays it, and each phone loads it through its own script loader.
+ */
+export function isScript(value: unknown): value is Script {
+	if (typeof value !== 'object' || value === null) return false;
+	const { entries } = value as { entries?: unknown };
+	return (
+		Array.isArray(entries) &&
+		entries.every(
+			(e) =>
+				typeof e === 'object' &&
+				e !== null &&
+				((e.kind === 'official' && typeof e.id === 'string') ||
+					(e.kind === 'custom' && typeof e.character === 'object' && e.character !== null))
+		)
+	);
+}
 
 /** True when the room still speaks the protocol of the app that said this hello. */
 export function supportsProtocol(protocol: unknown): boolean {

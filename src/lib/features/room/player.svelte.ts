@@ -3,6 +3,7 @@
  * public table and asks the Storyteller for a name and a seat. The phone's key is its own
  * secret, kept on the device, so it is the same member when it comes back.
  */
+import type { Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { ROOM_PROTOCOL, type PlayerView } from '#lib/core/sync/room.ts';
 import { randomKey, readStored, RoomSocket, writeStored } from './room-socket.svelte.ts';
@@ -22,6 +23,8 @@ const NAME_KEY = 'grim-games-room-name';
 
 export class RoomPlayer {
 	view = $state.raw<PlayerView>();
+	/** The game's script, once the Storyteller's device has sent it. */
+	script = $state.raw<Script>();
 	readonly code: string;
 	readonly #socket: RoomSocket;
 
@@ -32,6 +35,7 @@ export class RoomPlayer {
 			{ type: 'hello', role: 'player', key: deviceKey(), protocol: ROOM_PROTOCOL },
 			(m) => {
 				if (m.type === 'player-view') this.view = m;
+				else if (m.type === 'script') this.script = m.script;
 			}
 		);
 	}

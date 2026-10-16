@@ -3,7 +3,9 @@ import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.
 import {
 	cancelRequest,
 	hostView,
+	isScript,
 	join,
+	MAX_SCRIPT_BYTES,
 	newRoom,
 	parseClientMessage,
 	playerView,
@@ -13,6 +15,7 @@ import {
 	supportsProtocol,
 	unseat,
 	type RoomState,
+	type ScriptView,
 	type ServerMessage
 } from '../src/lib/core/sync/room.ts';
 
@@ -28,7 +31,10 @@ export interface RoomEnv {
  * nothing then (developers.cloudflare.com/durable-objects/concepts/durable-object-lifecycle/).
  */
 const ROOM_IDLE_MS = 24 * 60 * 60 * 1000;
-/** Public state is small (names and flags for at most a few dozen seats). */
+/**
+ * Public state is small (names and flags for at most a few dozen seats). Only the
+ * Storyteller's device may send more, for a script with its own characters.
+ */
 const MAX_MESSAGE_BYTES = 64 * 1024;
 const KEY_PATTERN = /^[0-9a-f]{32,128}$/;
 
@@ -81,7 +87,9 @@ export class Room extends DurableObject<RoomEnv> {
 	}
 
 	async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer): Promise<void> {
-		if (typeof raw !== 'string' || raw.length > MAX_MESSAGE_BYTES) return;
+		const who = ws.deserializeAttachment() as Attachment | null;
+		const limit = who?.role === 'host' ? MAX_SCRIPT_BYTES : MAX_MESSAGE_BYTES;
+		if (typeof raw !== 'string' || raw.length > limit) return;
 		const message = parseClientMessage(raw);
 		if (!message) return;
 		let room = await this.load();
@@ -91,7 +99,6 @@ export class Room extends DurableObject<RoomEnv> {
 			return;
 		}
 		await this.touch();
-		const who = ws.deserializeAttachment() as Attachment | null;
 
 		if (message.type === 'hello') {
 			if (typeof message.key !== 'string' || !KEY_PATTERN.test(message.key)) return;
@@ -121,6 +128,8 @@ export class Room extends DurableObject<RoomEnv> {
 			ws.serializeAttachment({ role: 'player', memberId } satisfies Attachment);
 			if (joined !== room) await this.save(joined);
 			else send(ws, playerView(room, memberId));
+			const script = await this.ctx.storage.get<ScriptView>('script');
+			if (script) send(ws, script);
 			return;
 		}
 		if (!who) return;
@@ -143,6 +152,18 @@ export class Room extends DurableObject<RoomEnv> {
 				if (typeof message.gameId !== 'string' || !Array.isArray(message.state?.seats)) return;
 				room = publish(room, message.gameId, message.state);
 				break;
+			case 'script': {
+				// Kept apart from the room, so the table's frequent changes don't resend it.
+				if (!isScript(message.script)) return;
+				const view: ScriptView = { type: 'script', script: message.script };
+				await this.ctx.storage.put('script', view);
+				const text = JSON.stringify(view);
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'player') socket.send(text);
+				}
+				return;
+			}
 			case 'resolve':
 				room = resolve(
 					room,

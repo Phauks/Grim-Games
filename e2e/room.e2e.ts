@@ -57,6 +57,29 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await phoneContext.close();
 });
 
+test('a phone that joins gets the game script before anyone has a seat', async ({
+	page,
+	browser
+}, testInfo) => {
+	// A game with no characters assigned yet: the room can open while the game is in setup.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await page.getByRole('button', { name: 'Open a room' }).tap();
+	const code = (await page.getByTestId('room-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('room-script')).toHaveText('Trouble Brewing');
+	await expect(phone.getByTestId('join-status')).toHaveText(
+		'Choose your seat and type your name, then ask the Storyteller.'
+	);
+	await phone.getByRole('button', { name: 'Read the script' }).tap();
+	await expect(phone).toHaveURL(/\/play$/);
+	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
+	await phoneContext.close();
+});
+
 test('a phone can type a code, and wrong codes say so', async ({ page }) => {
 	await page.goto('/join/12345');
 	await expect(page.getByRole('alert')).toHaveText(

@@ -3,6 +3,7 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
 	cancelRequest,
+	isScript,
 	join,
 	MAX_MEMBERS,
 	MIN_ROOM_PROTOCOL,
@@ -141,5 +142,28 @@ describe('the live room', () => {
 		expect(supportsProtocol(MIN_ROOM_PROTOCOL - 1)).toBe(false);
 		expect(supportsProtocol('1')).toBe(false);
 		expect(supportsProtocol(1.5)).toBe(false);
+	});
+});
+
+describe('the script a room relays', () => {
+	it('accepts official and custom entries', () => {
+		expect(isScript({ entries: [] })).toBe(true);
+		expect(
+			isScript({
+				meta: { name: 'Mine' },
+				entries: [
+					{ kind: 'official', id: 'washerwoman' },
+					{ kind: 'custom', character: { id: 'x' } }
+				]
+			})
+		).toBe(true);
+	});
+
+	it('refuses anything else', () => {
+		expect(isScript(null)).toBe(false);
+		expect(isScript(['washerwoman'])).toBe(false);
+		expect(isScript({ entries: [{ kind: 'official' }] })).toBe(false);
+		expect(isScript({ entries: [{ kind: 'custom', character: null }] })).toBe(false);
+		expect(isScript({ entries: ['washerwoman'] })).toBe(false);
 	});
 });

@@ -6,6 +6,7 @@
 	import { formatRoomCode, normaliseRoomCode } from '#lib/core/sync/room-code.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { RoomPlayer } from './player.svelte.ts';
+	import { followRoomScript } from './room-script.ts';
 
 	interface Props {
 		/** The code from the link; undefined on /join, where it is typed. */
@@ -27,6 +28,20 @@
 		player = p;
 		name = p.savedName;
 		return () => p.stop();
+	});
+
+	// The game's script becomes this phone's current script, for /play.
+	let scriptName = $state<string>();
+	$effect(() => {
+		const sent = player?.script;
+		if (!sent) return;
+		let cancelled = false;
+		void followRoomScript(sent)
+			.then((loaded) => {
+				if (!cancelled && loaded) scriptName = loaded.name;
+			})
+			.catch(() => {});
+		return () => (cancelled = true);
 	});
 
 	const view = $derived(player?.view);
@@ -89,6 +104,20 @@
 			</Button>
 		</form>
 	{:else}
+		<section class="script" aria-labelledby="script-label">
+			<h2 id="script-label">{t('room.script')}</h2>
+			<p class="script-name" data-testid="room-script">
+				{scriptName === undefined ? t('common.none') : scriptName || t('common.none')}
+			</p>
+			<Button
+				icon="script"
+				disabled={scriptName === undefined}
+				onclick={() => goto(resolve('/play'))}
+			>
+				{t('room.readScript')}
+			</Button>
+		</section>
+
 		<div class="layout">
 			<section aria-labelledby="you-label">
 				<h2 id="you-label">{t('room.you')}</h2>
@@ -203,6 +232,21 @@
 		gap: var(--space-3);
 		align-content: start;
 		min-width: 0;
+	}
+	/* One row: the name takes the space, the button keeps its place when the script arrives. */
+	.script {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+	}
+	.script-name {
+		flex: 1;
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.code-form {
 		max-width: calc(28 * var(--u));
