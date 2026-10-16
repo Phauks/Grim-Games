@@ -26,21 +26,23 @@ describe('token appearance', () => {
 			tokenScale: 1.5,
 			reminderScale: 2,
 			boardNames: false,
-			namePlacement: 'edge'
+			playerNamePlacement: 'below'
 		});
 		expect(parseTokenAppearance(null)).toEqual({
 			colours: {},
 			tokenScale: 1,
 			reminderScale: 1,
 			boardNames: false,
-			namePlacement: 'edge'
+			playerNamePlacement: 'below'
 		});
 		expect(parseTokenAppearance({ boardNames: true }).boardNames).toBe(true);
 		expect(parseTokenAppearance({ boardNames: 'yes' }).boardNames).toBe(false);
-		expect(parseTokenAppearance({ namePlacement: 'badge' }).namePlacement).toBe('badge');
-		expect(parseTokenAppearance({ namePlacement: 'side' }).namePlacement).toBe('edge');
-		// An earlier build's "top" (along the top edge) becomes across the top of the icon.
-		expect(parseTokenAppearance({ namePosition: 'top' }).namePlacement).toBe('icon-top');
+		expect(parseTokenAppearance({ playerNamePlacement: 'badge' }).playerNamePlacement).toBe(
+			'badge'
+		);
+		expect(parseTokenAppearance({ playerNamePlacement: 'side' }).playerNamePlacement).toBe('below');
+		// An earlier build's character name placement says nothing about the player name.
+		expect(parseTokenAppearance({ namePlacement: 'icon-top' }).playerNamePlacement).toBe('below');
 	});
 
 	it('keeps sizes on the 50% to 200% range in 5% steps; old S/M/L/XL sizes keep', () => {
@@ -59,7 +61,7 @@ describe('token appearance', () => {
 				tokenScale: 1.25,
 				reminderScale: 0.75,
 				boardNames: true,
-				namePlacement: 'edge'
+				playerNamePlacement: 'below'
 			})
 		).toEqual({
 			'--token-scale': '1.25',

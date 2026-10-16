@@ -57,24 +57,30 @@ export interface TokenAppearance {
 	reminderScale: number;
 	/** The character's name curved along the bottom of grimoire tokens (Trevor, 2026-10-16). */
 	boardNames: boolean;
-	/** Where that name sits; the icon stays in the middle either way (Trevor, 2026-10-16). */
-	namePlacement: NamePlacement;
+	/** Where the player's name sits on the board (Trevor, 2026-10-16). */
+	playerNamePlacement: PlayerNamePlacement;
 }
 
 /**
- * Where the name sits on grimoire tokens (Trevor, 2026-10-16): curved along the bottom edge,
- * straight across the top or bottom of the icon, or as a badge on the bottom edge. The leaves,
- * the setup flower and the icon never move or change size for it.
+ * Where a seat's player name sits on the board (Trevor, 2026-10-16: "name placement was for
+ * the player name below"): in a pill below the token, straight across the top or bottom of the
+ * icon, or as a pill on the token's bottom edge. The leaves, the setup flower, the icon and the
+ * character name never move or change size for it.
  */
-export type NamePlacement = 'edge' | 'icon-top' | 'icon-bottom' | 'badge';
-const NAME_PLACEMENTS: readonly NamePlacement[] = ['edge', 'icon-top', 'icon-bottom', 'badge'];
+export type PlayerNamePlacement = 'below' | 'icon-top' | 'icon-bottom' | 'badge';
+export const PLAYER_NAME_PLACEMENTS: readonly PlayerNamePlacement[] = [
+	'below',
+	'icon-top',
+	'icon-bottom',
+	'badge'
+];
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	colours: {},
 	tokenScale: 1,
 	reminderScale: 1,
 	boardNames: false,
-	namePlacement: 'edge'
+	playerNamePlacement: 'below'
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -96,12 +102,13 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		tokenScale: parseScale(input.tokenScale),
 		reminderScale: parseScale(input.reminderScale),
 		boardNames: input.boardNames === true,
-		namePlacement: NAME_PLACEMENTS.includes(input.namePlacement as NamePlacement)
-			? (input.namePlacement as NamePlacement)
-			: // Saved by an earlier build as top or bottom of the edge; the top edge is under the leaves.
-				input.namePosition === 'top'
-				? 'icon-top'
-				: 'edge'
+		// Earlier builds' `namePlacement` placed the character name, which now always curves
+		// along the edge, so it is dropped.
+		playerNamePlacement: PLAYER_NAME_PLACEMENTS.includes(
+			input.playerNamePlacement as PlayerNamePlacement
+		)
+			? (input.playerNamePlacement as PlayerNamePlacement)
+			: 'below'
 	};
 }
 

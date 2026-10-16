@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
+	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import { describeLeaves, type LeafMarks } from '#lib/ui/token/leaves.ts';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import type { NamePlacement } from '#lib/ui/token/token-appearance.ts';
 	import TokenFace from '#lib/ui/token/TokenFace.svelte';
 	import { iconUrl } from './icon-url.ts';
 
@@ -15,17 +13,9 @@
 		size?: number;
 		/** Writes the character's name on the token (grimoire tokens, when the setting is on). */
 		showName?: boolean;
-		/** Where the name sits; the device's setting (Settings > Tokens) unless given. */
-		namePlacement?: NamePlacement;
 	}
 
-	let { character, alignment, size = 56, showName = false, namePlacement }: Props = $props();
-	// The name badge's colour, as on character badges (CharacterBadge).
-	const team = $derived(
-		alignment ??
-			defaultAlignment(character.type) ??
-			(character.type === 'traveller' ? 'traveller' : 'neutral')
-	);
+	let { character, alignment, size = 56, showName = false }: Props = $props();
 
 	const leaves = $derived<LeafMarks>({
 		firstNight: character.firstNightReminder !== undefined || character.firstNight !== undefined,
@@ -45,13 +35,5 @@
 
 <!-- The character token with its leaves (first night, other nights, reminders, setup). -->
 <!-- eslint-disable grim/names-as-badges -- the name printed on its own token (Settings > Tokens) -->
-<TokenFace
-	{src}
-	{label}
-	{leaves}
-	{size}
-	name={showName ? character.name : undefined}
-	namePlacement={namePlacement ?? preferences.current.tokenAppearance.namePlacement}
-	nameTeam={team}
-/>
+<TokenFace {src} {label} {leaves} {size} name={showName ? character.name : undefined} />
 <!-- eslint-enable grim/names-as-badges -->

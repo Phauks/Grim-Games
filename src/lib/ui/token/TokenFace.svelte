@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { FLOWER_ANGLE, leafLayout, type LeafMarks } from './leaves.ts';
-	import type { NamePlacement } from './token-appearance.ts';
 
 	interface Props {
 		/** Icon image URL; the face stays (empty) when there is none. */
@@ -12,24 +11,9 @@
 		size?: number;
 		/** The character's name, written on the token (grimoire tokens, when the setting is on). */
 		name?: string;
-		/**
-		 * Where the name sits (Settings > Tokens). The leaves, the setup flower and the icon
-		 * never move or change size for it (Trevor, 2026-10-16).
-		 */
-		namePlacement?: NamePlacement;
-		/** The badge colour for `badge` placement, as on character badges. */
-		nameTeam?: string;
 	}
 
-	let {
-		src,
-		label,
-		leaves,
-		size = 56,
-		name,
-		namePlacement = 'edge',
-		nameTeam = 'neutral'
-	}: Props = $props();
+	let { src, label, leaves, size = 56, name }: Props = $props();
 	const layout = $derived(leafLayout(leaves));
 	// A leaf pointing up from (0,0) to (0,-19), with a midrib. Leaves hang from the rim of the
 	// face towards the middle, always inside the token (Trevor, 2026-10-15).
@@ -60,18 +44,6 @@
 	});
 	const edgeLength = $derived(fit((EDGE_R * (EDGE_FROM - edgeTo) * Math.PI) / 180));
 
-	// Across the icon: one straight line, outlined in the face colour so it reads over any
-	// art. At the top it stays inside the circle the leaf tips reach (radius 30), so it never
-	// touches a leaf however many there are; at the bottom it stays left of the setup flower.
-	const iconTop = $derived(namePlacement === 'icon-top');
-	const lineX = $derived(!iconTop && leaves.setup ? 43 : 50);
-	const lineY = $derived(iconTop ? 40 : 78);
-	const lineLength = $derived(fit(iconTop ? 44 : leaves.setup ? 42 : 64));
-
-	// Badge: a small team-coloured label on the bottom edge, under the setup flower.
-	const BADGE_SIZE = 10;
-	const badgeWidth = $derived(Math.min(84, (name?.length ?? 0) * BADGE_SIZE * 0.6 + 10));
-	const badgeLength = $derived(fit(badgeWidth - 8, BADGE_SIZE));
 	const pathId = $props.id();
 </script>
 
@@ -99,51 +71,9 @@
 				<path class="rib" d="M0 -2 L0 -16" />
 			</g>
 		{/each}
-		{#if name && namePlacement === 'badge'}
-			<g class="badge" data-team={nameTeam} data-testid="token-name" data-placement="badge">
-				<defs>
-					<linearGradient id="split-{pathId}">
-						<stop offset="50%" stop-color="var(--good)" />
-						<stop offset="50%" stop-color="var(--evil)" />
-					</linearGradient>
-				</defs>
-				<rect
-					x={50 - badgeWidth / 2}
-					y="84"
-					width={badgeWidth}
-					height="14"
-					rx="7"
-					fill={nameTeam === 'traveller' ? `url(#split-${pathId})` : undefined}
-				/>
-				<text
-					x="50"
-					y="94.5"
-					font-size={BADGE_SIZE}
-					text-anchor="middle"
-					textLength={badgeLength}
-					lengthAdjust="spacingAndGlyphs">{name}</text
-				>
-			</g>
-		{:else if name && namePlacement !== 'edge'}
-			<text
-				class="name on-icon"
-				x={lineX}
-				y={lineY}
-				font-size={NAME_SIZE}
-				text-anchor="middle"
-				textLength={lineLength}
-				lengthAdjust="spacingAndGlyphs"
-				data-testid="token-name"
-				data-placement={namePlacement}>{name}</text
-			>
-		{:else if name}
+		{#if name}
 			<path id="name-{pathId}" d={edgePath} fill="none" />
-			<text
-				class="name"
-				font-size={NAME_SIZE}
-				text-anchor="middle"
-				data-testid="token-name"
-				data-placement="edge"
+			<text class="name" font-size={NAME_SIZE} text-anchor="middle" data-testid="token-name"
 				><textPath
 					href="#name-{pathId}"
 					startOffset="50%"
@@ -209,32 +139,5 @@
 		fill: var(--on-token);
 		font-family: var(--font-character);
 		font-weight: 700;
-	}
-	.on-icon {
-		stroke: var(--token-face);
-		stroke-width: 3;
-		stroke-linejoin: round;
-		paint-order: stroke;
-	}
-	.badge rect {
-		fill: var(--surface-raised);
-	}
-	.badge text {
-		fill: var(--on-surface);
-		font-family: var(--font-character);
-		font-weight: 700;
-	}
-	.badge[data-team='good'] rect {
-		fill: var(--good);
-	}
-	.badge[data-team='evil'] rect {
-		fill: var(--evil);
-	}
-	.badge[data-team='good'] text,
-	.badge[data-team='traveller'] text {
-		fill: var(--on-good);
-	}
-	.badge[data-team='evil'] text {
-		fill: var(--on-evil);
 	}
 </style>

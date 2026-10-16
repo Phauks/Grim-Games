@@ -113,39 +113,57 @@ test('character names on grimoire tokens are off by default and shown when switc
 	await openTokens();
 	const label = 'Show character names on grimoire tokens';
 	const toggle = dialog.getByRole('checkbox', { name: label, includeHidden: true });
-	const placement = dialog.getByRole('radiogroup', { name: 'Name placement on grimoire tokens' });
 	await expect(toggle).not.toBeChecked();
-	// Shown but unusable until names are on, so nothing moves when they are.
-	await expect(placement.getByRole('radio', { name: 'Badge', includeHidden: true })).toBeDisabled();
 	await dialog.getByText(label, { exact: true }).tap();
 	await expect(toggle).toBeChecked();
-	await expect(placement.getByRole('radio', { name: 'Badge', includeHidden: true })).toBeEnabled();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
-	// Along the edge by default, inside the token, which keeps its size.
+	// Curved along the edge, inside the token, which keeps its size; leaves and icon stay put.
 	const name = seat.getByTestId('token-name');
 	await expect(name).toHaveText('Fortune Teller');
-	await expect(name).toHaveAttribute('data-placement', 'edge');
 	const box = (await token.boundingBox())!;
 	expect(box.width).toBeCloseTo(size.width, 0);
+	const text = (await name.boundingBox())!;
+	expect(text.x).toBeGreaterThanOrEqual(box.x);
+	expect(text.x + text.width).toBeLessThanOrEqual(box.x + box.width + 1);
+	expect(text.y + text.height).toBeLessThanOrEqual(box.y + box.height + 1);
+	expect(await marks()).toEqual(before);
 	await page.reload();
 	await expect(name).toHaveText('Fortune Teller');
 
+	// The player name's placement (Trevor, 2026-10-16) shows on the preview; the sample
+	// token's leaves and icon never move for it.
+	await openTokens();
+	const preview = dialog.getByTestId('token-preview');
+	const placement = dialog.getByRole('radiogroup', {
+		name: 'Player name placement on the grimoire'
+	});
+	const sample = preview.locator('.token');
+	// Measured from the token's corner: tapping a choice may scroll the dialog.
+	const sampleMarks = () =>
+		sample.evaluate((el) => {
+			const t = el.getBoundingClientRect();
+			return [t.width, t.height]
+				.concat(
+					[...el.querySelectorAll('.leaf, img')].flatMap((m) => {
+						const r = m.getBoundingClientRect();
+						return [r.x - t.x, r.y - t.y, r.width, r.height];
+					})
+				)
+				.map(Math.round)
+				.join(',');
+		});
+	const sampleBefore = await sampleMarks();
+	await expect(preview.getByTestId('token-player-name')).toHaveCount(0);
 	for (const [choice, value] of [
 		['Icon top', 'icon-top'],
 		['Icon bottom', 'icon-bottom'],
-		['Badge', 'badge'],
-		['Edge', 'edge']
+		['Badge', 'badge']
 	]) {
-		await openTokens();
 		await placement.getByText(choice, { exact: true }).tap();
-		await dialog.getByRole('button', { name: 'Close' }).tap();
-		await expect(name).toHaveAttribute('data-placement', value);
-		// The name stays within the token, and the leaves and icon are exactly where they were.
-		const text = (await name.boundingBox())!;
-		expect(text.x).toBeGreaterThanOrEqual(box.x);
-		expect(text.x + text.width).toBeLessThanOrEqual(box.x + box.width + 1);
-		expect(text.y + text.height).toBeLessThanOrEqual(box.y + box.height + 1);
-		expect(await marks(), choice).toEqual(before);
+		await expect(preview.getByTestId('token-player-name')).toHaveAttribute('data-placement', value);
+		expect(await sampleMarks(), choice).toEqual(sampleBefore);
 	}
+	await placement.getByText('Below', { exact: true }).tap();
+	await expect(preview.getByTestId('token-player-name')).toHaveCount(0);
 });

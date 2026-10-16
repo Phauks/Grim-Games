@@ -50,7 +50,7 @@ describe('parsePreferences', () => {
 				tokenScale: 1.25,
 				reminderScale: 0.75,
 				boardNames: true,
-				namePlacement: 'edge'
+				playerNamePlacement: 'below'
 			},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'symbols',

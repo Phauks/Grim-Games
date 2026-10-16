@@ -17,6 +17,7 @@
 		type TokenAppearance,
 		type TokenColour
 	} from '#lib/ui/token/token-appearance.ts';
+	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 	import CharacterToken from './CharacterToken.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import ReminderToken from './ReminderToken.svelte';
@@ -48,12 +49,22 @@
 
 <!-- Space for the largest sizes is kept, so changing a size never moves the settings below. -->
 <div class="preview" aria-hidden="true" data-testid="token-preview">
-	{#if sample}<CharacterToken
-			character={sample}
-			size={56}
-			showName={value.boardNames}
-			namePlacement={value.namePlacement}
-		/>{/if}
+	{#if sample}<span class="seat">
+			<span class="disc"
+				><CharacterToken
+					character={sample}
+					size={56}
+					showName={value.boardNames}
+				/>{#if value.playerNamePlacement !== 'below'}<PlayerNameMark
+						name={t('characters.previewPlayer')}
+						placement={value.playerNamePlacement}
+					/>{/if}</span
+			>
+			<!-- Kept in place (hidden) when the name is on the token: no reflow. -->
+			<span class="player" class:hidden={value.playerNamePlacement !== 'below'}
+				>{t('characters.previewPlayer')}</span
+			>
+		</span>{/if}
 	<ReminderToken label={t('characters.previewReminder')} type="minion" />
 </div>
 
@@ -81,19 +92,18 @@
 		checked={value.boardNames}
 		onChange={(boardNames) => onChange({ ...value, boardNames })}
 	/>
-	<!-- Disabled, not hidden, while names are off: no reflow. -->
 	<SettingSegmented
-		label={t('characters.namePlacement')}
-		value={value.namePlacement}
-		defaultValue={DEFAULT_TOKEN_APPEARANCE.namePlacement}
+		label={t('characters.playerNamePlacement')}
+		description={t('characters.playerNamePlacementHelp')}
+		value={value.playerNamePlacement}
+		defaultValue={DEFAULT_TOKEN_APPEARANCE.playerNamePlacement}
 		options={[
-			{ value: 'edge', label: t('characters.namePlacement.edge') },
-			{ value: 'icon-top', label: t('characters.namePlacement.iconTop') },
-			{ value: 'icon-bottom', label: t('characters.namePlacement.iconBottom') },
-			{ value: 'badge', label: t('characters.namePlacement.badge') }
+			{ value: 'below', label: t('characters.playerNamePlacement.below') },
+			{ value: 'icon-top', label: t('characters.playerNamePlacement.iconTop') },
+			{ value: 'icon-bottom', label: t('characters.playerNamePlacement.iconBottom') },
+			{ value: 'badge', label: t('characters.playerNamePlacement.badge') }
 		]}
-		disabled={!value.boardNames}
-		onChange={(namePlacement) => onChange({ ...value, namePlacement })}
+		onChange={(playerNamePlacement) => onChange({ ...value, playerNamePlacement })}
 	/>
 </div>
 
@@ -131,12 +141,37 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
-		/* A fixed height that fits the largest token (56px × 2) and the largest chip at any Text size, so
-		   changing a size never moves the settings below. */
-		height: max(calc(56px * 2 + var(--space-2)), 4.4rem); /* px-ok: the sample token is 56px */
+		/* A fixed height that fits the largest token (56px × 2), the player name under it and the
+		   largest chip at any Text size, so changing a size never moves the settings below. */
+		--sample: 112px; /* px-ok: the sample token is 56px, at up to 200% */
+		height: max(calc(var(--sample) + var(--space-2) + 1.6rem), 4.4rem);
 		white-space: nowrap;
 		margin-bottom: var(--space-5);
 		overflow: hidden;
+	}
+	.seat {
+		display: inline-grid;
+		justify-items: center;
+		gap: calc(0.125 * var(--u));
+	}
+	.disc {
+		position: relative;
+		display: inline-block;
+		line-height: 0;
+	}
+	/* As the name under a seat on the board (SeatDisc). */
+	.player {
+		padding: 0.15em 0.5em;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font-family: var(--font-player);
+		font-size: 0.8rem;
+		line-height: 1.2;
+	}
+	.player.hidden {
+		visibility: hidden;
 	}
 	.names {
 		margin: var(--space-5) 0;
