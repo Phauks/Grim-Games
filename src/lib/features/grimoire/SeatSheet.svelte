@@ -1127,7 +1127,7 @@
 	/* One look for each state, here and on the board: Alive is plain ink with a heartbeat;
 	   Dead is the seat token's dark shroud with its skull. */
 	.status {
-		max-width: 70%;
+		min-width: 0;
 	}
 	.status-text {
 		overflow: hidden;
@@ -1171,8 +1171,9 @@
 		opacity: 0.45;
 		cursor: default;
 	}
+	/* One width whatever they say (Trevor, 2026-10-16): Alive or the longest cause alike. */
 	.value {
-		min-width: calc(9 * var(--u));
+		width: min(70%, 16rem);
 	}
 	h3 {
 		margin: var(--space-2) 0 0;

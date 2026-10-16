@@ -1192,7 +1192,7 @@ test('End game moves the game to Past games, where it can be reopened', async ({
 	const past = page.getByRole('region', { name: 'Past games' });
 	await expect(past).toContainText(/Trouble Brewing\s*Evil won/);
 	await page.screenshot({ path: `test-results/past-games-${test.info().project.name}.png` });
-	await past.getByRole('button', { name: /Trouble Brewing/ }).tap();
+	await past.getByRole('button', { name: /^Trouble Brewing/ }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen this game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
