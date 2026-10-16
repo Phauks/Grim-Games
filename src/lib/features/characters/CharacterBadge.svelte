@@ -4,7 +4,8 @@
 		defaultAlignment,
 		type Alignment,
 		type Character,
-		type CharacterId
+		type CharacterId,
+		type CharacterName
 	} from '#lib/core/data/index.ts';
 	import { iconUrl } from './icon-url.ts';
 	import CharacterDialog from './CharacterDialog.svelte';
@@ -19,9 +20,14 @@
 		/** Sized to sit inside a line of text; the tap area still reaches 44px. */
 		inline?: boolean;
 		/** The words as written ("Village Idiots"); defaults to the character's name. */
-		text?: string;
+		text?: CharacterName;
 		/** The character itself (homebrew from a loaded script); otherwise looked up by id. */
 		character?: Character;
+		/**
+		 * False inside another button (a seat to choose, a claim to change): the badge is
+		 * drawn the same but is not a button of its own, so tapping it taps the parent.
+		 */
+		interactive?: boolean;
 	}
 
 	let {
@@ -30,7 +36,8 @@
 		playerName,
 		inline = false,
 		text,
-		character: given
+		character: given,
+		interactive = true
 	}: Props = $props();
 	let open = $state(false);
 	// The dialog is only created on first tap: pages like /reference show hundreds of badges.
@@ -52,25 +59,29 @@
 	const label = $derived(text ?? character?.name ?? characterId);
 </script>
 
-<button
-	type="button"
-	class="badge"
-	class:inline
-	data-team={team}
-	data-character-id={characterId}
-	aria-haspopup="dialog"
-	onclick={() => {
-		used = true;
-		open = true;
-	}}
->
+{#snippet face()}
 	<!-- Fixed-size icon slot so the badge never changes size when data or icons arrive. -->
 	<span class="icon"
 		>{#if icon}<img src={icon} alt="" width="28" height="28" />{/if}</span
 	>
 	<span class="name">{label}</span>
 	{#if playerName}<span class="player">· {playerName}</span>{/if}
-</button>{#if character}
+{/snippet}
+
+{#if interactive}<button
+		type="button"
+		class="badge"
+		class:inline
+		data-team={team}
+		data-character-id={characterId}
+		aria-haspopup="dialog"
+		onclick={() => {
+			used = true;
+			open = true;
+		}}>{@render face()}</button
+	>{:else}<span class="badge still" class:inline data-team={team} data-character-id={characterId}
+		>{@render face()}</span
+	>{/if}{#if character && interactive}
 	{#if used}<CharacterDialog bind:open {character} {icon} />{/if}
 {/if}
 
@@ -90,6 +101,9 @@
 		cursor: pointer;
 		background: var(--surface-raised);
 		color: var(--on-surface);
+	}
+	.badge.still {
+		cursor: inherit;
 	}
 	.badge[data-team='good'] {
 		background: var(--good);

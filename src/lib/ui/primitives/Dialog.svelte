@@ -21,6 +21,10 @@
 		actions?: Snippet;
 		/** Shown before the title, e.g. a character badge for the seat a menu acts on. */
 		lead?: Snippet;
+		/** Replaces the title's text, e.g. with a reminder token (names show as badges). */
+		heading?: Snippet;
+		/** Replaces the description's text, e.g. with a character badge. */
+		subtitle?: Snippet;
 		/** Extra icon buttons in the header, just before Close (e.g. "Open wiki"). */
 		headActions?: Snippet;
 		/** False hides the ✕, for a dialog whose `lead` already closes it (the menu drawer). */
@@ -36,6 +40,8 @@
 		children,
 		actions,
 		lead,
+		heading,
+		subtitle,
 		headActions,
 		closeButton = true
 	}: Props = $props();
@@ -58,13 +64,16 @@
 			<Dialog.Content data-size={size}>
 				<div class="head">
 					{#if lead}<span class="lead">{@render lead()}</span>{/if}
-					<Dialog.Title>{title}</Dialog.Title>
+					<Dialog.Title
+						>{#if heading}{@render heading()}{:else}{title}{/if}</Dialog.Title
+					>
 					{#if headActions}<span class="head-actions">{@render headActions()}</span>{/if}
 					{#if closeButton}
 						<Dialog.CloseTrigger aria-label="Close"><Icon name="close" /></Dialog.CloseTrigger>
 					{/if}
 				</div>
-				{#if description}<Dialog.Description>{description}</Dialog.Description>{/if}
+				{#if subtitle}<Dialog.Description>{@render subtitle()}</Dialog.Description
+					>{:else if description}<Dialog.Description>{description}</Dialog.Description>{/if}
 				{@render children()}
 				{#if actions}<div class="actions">{@render actions()}</div>{/if}
 			</Dialog.Content>
