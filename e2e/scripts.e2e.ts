@@ -92,7 +92,7 @@ test('a BotC Scripts number loads through our Worker', async ({ page }) => {
 			}
 		})
 	);
-	await page.route('**/api/botcscripts/search/**', (route) =>
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
 		route.fulfill({ json: { page: 1, count: 0, hasMore: false, results: [] } })
 	);
 	await page.goto('/scripts');
@@ -135,20 +135,21 @@ test('a share link opens its script and clears the hash', async ({ page }) => {
 	await expect(page).toHaveURL(/\/scripts$/);
 });
 
-test('an official script is shared as a short player link or a QR code', async ({
+test('an official script is shared on one screen: QR code, link and code', async ({
 	page,
 	context
 }) => {
 	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 	await page.goto('/scripts');
-	const share = page.getByRole('group', { name: 'Share script' });
-	await expect(share.getByRole('button', { name: 'QR code' })).toBeDisabled();
+	const share = page.getByRole('button', { name: 'Share script' });
+	await expect(share).toBeDisabled();
 	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
 	await expect(currentName(page)).toHaveText('Trouble Brewing');
 
-	await share.getByRole('button', { name: 'QR code' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Trouble Brewing QR code' });
+	await share.tap();
+	const dialog = page.getByRole('dialog', { name: 'Share Trouble Brewing' });
 	await expect(dialog.getByRole('img', { name: 'QR code for Trouble Brewing' })).toBeVisible();
+	await expect(dialog.getByTestId('share-url')).toHaveValue(/\/play#e=tb$/);
 	// Official scripts need no stored code: the link names the edition.
 	await expect(dialog.getByTestId('share-code')).toHaveText(/^\s*Code\s*None\s*$/);
 	await expect(dialog.getByRole('button', { name: 'Delete code' })).toBeDisabled();
@@ -172,11 +173,8 @@ test('a custom script gets a six-digit code that another phone can type in, unti
 	});
 	await expect(currentName(page)).toHaveText('Storm Front');
 
-	await page
-		.getByRole('group', { name: 'Share script' })
-		.getByRole('button', { name: 'QR code' })
-		.tap();
-	const dialog = page.getByRole('dialog', { name: 'Storm Front QR code' });
+	await page.getByRole('button', { name: 'Share script' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Share Storm Front' });
 	await expect(dialog.getByRole('img', { name: 'QR code for Storm Front' })).toBeVisible();
 	const shown = dialog.getByTestId('share-digits');
 	await expect(shown).toHaveText(/^\d{3} \d{3}$/);
@@ -237,23 +235,34 @@ test('dropping a script file anywhere on the page loads it', async ({ page }) =>
 	await expect(page.getByTestId('drop-overlay')).not.toHaveClass(/active/);
 });
 
-test('BotC Scripts can be browsed and searched, then a result loaded', async ({ page }) => {
+test('BotC Scripts can be browsed, searched, sorted and filtered, then a result loaded', async ({
+	page
+}) => {
 	const searches: string[] = [];
-	const row = (versionId: number, name: string) => ({
+	const row = (versionId: number, name: string, characters: object[]) => ({
 		scriptId: versionId + 1000,
 		versionId,
 		name,
 		version: '1.0.0',
 		author: 'Someone',
 		type: 'Full',
-		score: 5
+		score: 5,
+		characters
 	});
-	await page.route('**/api/botcscripts/search/**', (route) => {
-		const path = new URL(route.request().url()).pathname;
-		searches.push(decodeURIComponent(path));
-		const results = path.endsWith('/storm')
-			? [row(900, 'Storm Front')]
-			: [row(1, 'Most Voted One'), row(2, 'Most Voted Two')];
+	const tb = ['washerwoman', 'chef', 'empath', 'drunk', 'saint', 'poisoner', 'imp'].map((id) => ({
+		id
+	}));
+	await page.route(/\/api\/botcscripts\/search\?/, (route) => {
+		const url = new URL(route.request().url());
+		searches.push(decodeURIComponent(url.search));
+		const results = url.searchParams.get('q')
+			? [
+					row(900, 'Storm Front', [
+						...tb,
+						{ id: 'stormwarden', name: 'Storm Warden', team: 'townsfolk' }
+					])
+				]
+			: [row(1, 'Most Voted One', tb), row(2, 'Most Voted Two', tb)];
 		return route.fulfill({ json: { page: 1, count: results.length, hasMore: false, results } });
 	});
 	await page.route('**/api/botcscripts/version/900', (route) =>
@@ -272,16 +281,48 @@ test('BotC Scripts can be browsed and searched, then a result loaded', async ({ 
 	await page.goto('/scripts');
 	await page.getByRole('button', { name: 'BotC Scripts' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'BotC Scripts' });
-	await expect(dialog.getByTestId('botc-status')).toHaveText('2 scripts, most voted first');
-	await expect(dialog.getByRole('button', { name: /Most Voted One/ })).toBeVisible();
+	const status = dialog.getByTestId('botc-status');
+	await expect(status).toHaveText('2 scripts · most votes');
+	// Each card counts the script's characters and names its Demons.
+	await expect(dialog.getByTestId('botc-makeup').first()).toContainText('3 · 2 · 1 · 1');
+	await expect(dialog.getByTestId('botc-makeup').first()).toContainText('Imp');
 	await expect(dialog.getByRole('button', { name: 'More' })).toBeDisabled();
 
 	await dialog.getByLabel('Search, link or script number').fill('storm');
-	await expect(dialog.getByTestId('botc-status')).toHaveText('1 script');
-	// One request when the dialog opened, one after typing paused: no request per keystroke.
-	expect(searches).toEqual(['/api/botcscripts/search/1', '/api/botcscripts/search/1/storm']);
+	await expect(status).toHaveText('1 script · most votes');
+	await expect(dialog.getByTestId('botc-makeup').first()).toContainText('Homebrew');
 
-	await dialog.getByRole('button', { name: /Storm Front/ }).tap();
+	// Filters: Teensyville scripts with the Imp.
+	await dialog.getByRole('button', { name: 'Filters' }).tap();
+	const filters = page.getByRole('dialog', { name: 'Filters' });
+	await filters.getByRole('button', { name: 'Teensyville' }).tap();
+	await filters
+		.getByRole('region', { name: 'Includes characters' })
+		.getByRole('button', { name: 'Choose' })
+		.tap();
+	const picker = page.getByRole('dialog', { name: 'Includes' });
+	await picker.getByRole('button', { name: 'Imp', exact: true }).tap();
+	await picker.getByRole('button', { name: 'Done' }).tap();
+	await expect(filters.getByTestId('filter-include')).toContainText('Imp');
+	await filters.getByRole('button', { name: 'Show scripts' }).tap();
+	await expect(dialog.getByRole('button', { name: 'Filters · 2' })).toBeVisible();
+	await expect.poll(() => searches.at(-1)).toBe('?page=1&q=storm&type=Teensyville&include=imp');
+	// One request when the dialog opened, one after typing paused, one for the filters.
+	expect(searches).toEqual([
+		'?page=1',
+		'?page=1&q=storm',
+		'?page=1&q=storm&type=Teensyville&include=imp'
+	]);
+
+	// Details, then load from there.
+	await dialog.getByRole('button', { name: 'Details of Storm Front' }).tap();
+	const details = page.getByRole('dialog', { name: 'Storm Front' });
+	await expect(details).toContainText('Storm Warden');
+	await expect(details.getByRole('link', { name: 'Open on BotC Scripts' })).toHaveAttribute(
+		'href',
+		'https://botcscripts.com/script/1900/1.0.0'
+	);
+	await details.getByRole('button', { name: 'Load' }).tap();
 	await expect(currentName(page)).toHaveText('Storm Front');
 	await noSidewaysScroll(page);
 });

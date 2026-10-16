@@ -526,15 +526,12 @@ test('the script is shared from the grimoire menu, never the game', async ({ pag
 	await menu(page, 'Share script');
 	const share = page.getByRole('dialog', { name: 'Share script' });
 	await expect(share).toContainText('never anything from this game');
-	await share.getByRole('button', { name: 'QR code' }).tap();
-	// An official edition shares by its id; nothing about seats or names is in the link.
-	await expect(page.getByRole('dialog').last()).toBeVisible();
-	const link = await page.evaluate(() =>
-		[...document.querySelectorAll('a[href*="#"], [data-testid="share-url"]')]
-			.map((e) => e.getAttribute('href') ?? e.textContent)
-			.join(' ')
-	);
-	expect(link).not.toContain('seat');
+	// The QR code and link show straight away; an official edition shares by its id,
+	// so nothing about seats or names is in the link.
+	await expect(share.getByRole('img', { name: /^QR code for / })).toBeVisible();
+	const link = share.getByTestId('share-url');
+	await expect(link).toHaveValue(/\/play#e=tb$/);
+	expect(await link.inputValue()).not.toContain('seat');
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {

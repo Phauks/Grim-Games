@@ -15,6 +15,11 @@ export interface ShareEnv {
 	/** Per-address limits, so codes can't be found by trying many (wrangler.jsonc). */
 	SHARE_LOOKUPS: RateLimit;
 	SHARE_CREATES: RateLimit;
+	/**
+	 * "off" only in the local e2e server (playwright.config.ts), where every test shares one
+	 * address and a full run would trip the limits. Never set on Cloudflare.
+	 */
+	SHARE_LIMITS?: string;
 }
 
 /** The most entries a stored script may have (the largest official one has about 30). */
@@ -96,6 +101,11 @@ async function readScriptBody(request: Request): Promise<string | { error: strin
 	return JSON.stringify(json);
 }
 
+async function allowed(env: ShareEnv, limiter: RateLimit, caller: string): Promise<boolean> {
+	if (env.SHARE_LIMITS === 'off') return true;
+	return (await limiter.limit({ key: caller })).success;
+}
+
 /** Handles `/api/share` and `/api/share/<code>`. */
 export async function handleShare(request: Request, env: ShareEnv): Promise<Response> {
 	const url = new URL(request.url);
@@ -104,7 +114,7 @@ export async function handleShare(request: Request, env: ShareEnv): Promise<Resp
 
 	if (url.pathname === SHARE_API || url.pathname === `${SHARE_API}/`) {
 		if (request.method !== 'POST') return text('Method not allowed', 405);
-		if (!(await env.SHARE_CREATES.limit({ key: caller })).success) return text('Slow down', 429);
+		if (!(await allowed(env, env.SHARE_CREATES, caller))) return text('Slow down', 429);
 		const json = await readScriptBody(request);
 		if (typeof json !== 'string') return text(json.error, 400);
 		const deleteKey = base64url(crypto.getRandomValues(new Uint8Array(16)));
@@ -127,7 +137,7 @@ export async function handleShare(request: Request, env: ShareEnv): Promise<Resp
 	const stub = () => env.SHARED_SCRIPTS.get(env.SHARED_SCRIPTS.idFromName(code));
 
 	if (request.method === 'GET') {
-		if (!(await env.SHARE_LOOKUPS.limit({ key: caller })).success) return text('Slow down', 429);
+		if (!(await allowed(env, env.SHARE_LOOKUPS, caller))) return text('Slow down', 429);
 		const json = await stub().read();
 		if (json === undefined) return text('Not found', 404);
 		return new Response(`{"json":${json}}`, {

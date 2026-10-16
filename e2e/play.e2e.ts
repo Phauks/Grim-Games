@@ -294,7 +294,7 @@ test('a shared /play link opens its script, and the script can be shared on', as
 	await expect(page.locator('[data-character]')).toHaveCount(3);
 	// The hash is cleared once the script is loaded.
 	await expect(page).toHaveURL(/\/play$/);
-	await expect(page.getByRole('button', { name: 'QR code' })).toBeEnabled();
+	await expect(page.getByRole('button', { name: 'Share script' })).toBeEnabled();
 
 	// Opened fresh from another page, as from a QR code.
 	const other = [{ id: '_meta', name: 'Second Script' }, 'washerwoman', 'imp'];
@@ -307,8 +307,8 @@ test('a six-digit code loads its script on /play', async ({ page }) => {
 	const shared = [{ id: '_meta', name: 'Code Night' }, 'chef', 'empath', 'imp'];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await expect(page.getByRole('heading', { name: 'Code Night', level: 1 })).toBeVisible();
-	await page.getByRole('button', { name: 'QR code' }).tap();
-	const qr = page.getByRole('dialog', { name: 'Code Night QR code' });
+	await page.getByRole('button', { name: 'Share script' }).tap();
+	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
 	const shown = qr.getByTestId('share-digits');
 	await expect(shown).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await shown.textContent())!;

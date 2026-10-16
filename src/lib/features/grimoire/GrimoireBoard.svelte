@@ -35,7 +35,7 @@
 	import { findEdition, fromScript, scriptToJson } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
-	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
+	import SharePanel from '#lib/features/scripts/SharePanel.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import NightOrderSheet from './NightOrderSheet.svelte';
 	import SeatSheet from './SeatSheet.svelte';
@@ -659,11 +659,13 @@
 	title="Share script"
 	description="Players get the script only, never anything from this game."
 >
-	<ShareControl
-		what="script"
-		title={game.script.meta?.name ?? 'Custom script'}
-		target={shareTarget}
-	/>
+	{#if shareTarget}
+		<SharePanel
+			title={game.script.meta?.name ?? 'Custom script'}
+			target={shareTarget}
+			ondelete={() => (shareOpen = false)}
+		/>
+	{/if}
 </Dialog>
 
 <NightOrderSheet bind:open={nightOpen} {grimoire} />

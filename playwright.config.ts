@@ -22,7 +22,9 @@ export default defineConfig({
 	],
 	// Runs the real Worker (static assets + /api + Durable Object) under workerd.
 	webServer: {
-		command: `npm run build && npx wrangler dev --port ${PORT} --ip 127.0.0.1`,
+		// SHARE_LIMITS:off: every test shares one address, so a full run would trip the
+		// share-code rate limits (worker/share.ts) and make share tests flaky.
+		command: `npm run build && npx wrangler dev --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off`,
 		url: `http://localhost:${PORT}/api/health`,
 		reuseExistingServer: !process.env.CI,
 		timeout: 180_000
