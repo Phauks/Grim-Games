@@ -12,6 +12,8 @@ import {
 	emptyNotebook,
 	migrateNotebook,
 	setLayout,
+	insertSeat,
+	removeSeat,
 	setSeatCount,
 	toggleClaim,
 	updateNote,
@@ -112,6 +114,15 @@ export class NotebookState {
 
 	setSeatCount(count: number) {
 		this.#change(setSeatCount(this.book, count));
+	}
+	/** Adds a seat at that place in the seating order and returns its id. */
+	insertSeat(index: number, patch: SeatPatch = {}): string {
+		const { book, seatId } = insertSeat(this.book, index, patch);
+		this.#change(book);
+		return seatId;
+	}
+	removeSeat(seatId: string) {
+		this.#change(removeSeat(this.book, seatId));
 	}
 	updateSeat(seatId: string, patch: SeatPatch) {
 		this.#change(updateSeat(this.book, seatId, patch));

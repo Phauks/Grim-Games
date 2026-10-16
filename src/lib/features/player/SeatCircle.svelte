@@ -1,11 +1,7 @@
 <script lang="ts">
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
-	import {
-		characterIcons,
-		defaultAlignment,
-		ICONS_PATH,
-		type Character
-	} from '#lib/core/data/index.ts';
+	import type { Character } from '#lib/core/data/index.ts';
+	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -21,19 +17,21 @@
 		type SeatLayout,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
-	import { MAX_SEATS, MIN_SEATS, type NotebookSeat } from './notebook.ts';
+	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
+	import { MAX_SEATS, type NotebookSeat } from './notebook.ts';
 
 	interface Props {
 		seats: readonly NotebookSeat[];
 		characters: ReadonlyMap<string, Character>;
 		/** Where seats are drawn: the shared seat layout (ovals, gaps, couch groups). */
 		layout: SeatLayout;
-		onSeatCount: (count: number) => void;
+		/** Opens the Add a seat dialog (who sits down, and where). */
+		onAddSeat: () => void;
 		onOpenSeat: (seatId: string) => void;
 		onLayout: (layout: SeatLayout) => void;
 	}
 
-	let { seats, characters, layout, onSeatCount, onOpenSeat, onLayout }: Props = $props();
+	let { seats, characters, layout, onAddSeat, onOpenSeat, onLayout }: Props = $props();
 
 	const ids = $derived(seats.map((s) => s.seatId));
 	const alive = $derived(seats.filter((s) => !s.dead).length);
@@ -67,13 +65,8 @@
 		keepInside(seatPoints(ids, layout, { width, height }), { width, height }, size / 2 + 8)
 	);
 
-	function iconFor(id: string | undefined) {
-		const c = id ? characters.get(id) : undefined;
-		const icons = c && characterIcons(c);
-		if (!c || !icons) return undefined;
-		const file = (defaultAlignment(c.type) === 'evil' ? icons.evil : icons.good) ?? icons.unaligned;
-		return file && `${ICONS_PATH}/${file}`;
-	}
+	/** Extra claims shown round the token: two, or one and "+N" when there are more. */
+	const EXTRA_SLOTS = 2;
 
 	// ── Arranging seats ──
 	// Real tables have gaps, ovals and couch groups (Trevor, 2026-10-15). Only where seats are
@@ -163,24 +156,13 @@
 				>{t('player.done')}</Button
 			>
 		{:else}
-			<div class="stepper" role="group" aria-label={t('player.seats')}>
-				<button
-					type="button"
-					class="step"
-					aria-label={t('player.removeSeat')}
-					disabled={seats.length <= MIN_SEATS}
-					onclick={() => onSeatCount(seats.length - 1)}>−</button
-				>
-				<output aria-live="polite" data-testid="seat-count">{seats.length}</output>
-				<button
-					type="button"
-					class="step"
-					aria-label={t('player.addSeat')}
-					disabled={seats.length >= MAX_SEATS}
-					onclick={() => onSeatCount(seats.length + 1)}>+</button
-				>
-			</div>
-			<span class="alive" data-testid="alive-count">{t('player.alive', { count: alive })}</span>
+			<!-- Adding is one deliberate flow, and removing is in the seat's sheet (Trevor). -->
+			<Button icon="add" disabled={seats.length >= MAX_SEATS} onclick={onAddSeat}
+				>{t('player.addSeatButton')}</Button
+			>
+			<span class="alive" data-testid="alive-count"
+				>{t('player.aliveOf', { alive, count: seats.length })}</span
+			>
 			<span class="spacer"></span>
 			<IconButton icon="arrange" label={t('player.arrangeSeats')} onclick={startArranging} />
 		{/if}
@@ -189,10 +171,15 @@
 	<div class="board" class:arranging bind:this={board} data-testid="seat-ring">
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = drag?.seatId === seat.seatId && arranging ? drag.at : points[i]}
-			{@const icon = iconFor(seat.claims[0])}
-			{@const claims = seat.claims
-				.map((id) => characters.get(id)?.name)
-				.filter((name): name is string => Boolean(name))}
+			{@const claimed = seat.claims
+				.map((id) => characters.get(id))
+				.filter((c): c is Character => Boolean(c))}
+			{@const claims = claimed.map((c) => c.name)}
+			{@const extra = claimed.slice(1)}
+			{@const shown = extra.length > EXTRA_SLOTS ? extra.slice(0, EXTRA_SLOTS - 1) : extra}
+			{#snippet claimFace()}
+				<CharacterToken character={claimed[0]} {size} />
+			{/snippet}
 			<button
 				type="button"
 				class="seat"
@@ -200,6 +187,7 @@
 				style:left="{at.x}%"
 				style:top="{at.y}%"
 				style:--seat-size="{size}px"
+				style:--token-scale="1"
 				data-seat={seat.seatId}
 				data-dead={seat.dead || undefined}
 				aria-label={[
@@ -218,18 +206,34 @@
 				onkeydown={(event) => nudge(event, seat.seatId, at)}
 				onclick={(event) => event.detail === 0 && !arranging && onOpenSeat(seat.seatId)}
 			>
-				<span class="face">
-					{#if icon}<img src={icon} alt="" />{:else}<span class="number">{i + 1}</span>{/if}
-					{#if seat.dead && !seat.ghostVoteUsed}<span class="vote"><Icon name="ghostVote" /></span
-						>{/if}
-					{#if claims.length > 1}<span class="more" data-testid="more-claims"
-							>+{claims.length - 1}</span
-						>{/if}
-					{#if seat.note.trim()}<span class="noted" data-testid="has-notes"
-							><Icon name="notes" /></span
-						>{/if}
-				</span>
-				<span class="name">{seat.name || ' '}</span>
+				<!-- The board's seat look (Trevor, 2026-10-16): token, dead shroud, name beneath. -->
+				<SeatDisc
+					{size}
+					dead={seat.dead}
+					name={seat.name || t('common.seat', { number: i + 1 })}
+					number={i + 1}
+					face={claimed[0] ? claimFace : undefined}
+				>
+					{#snippet marks()}
+						<!-- Every claim is visible: more tokens tucked under this one (Trevor). -->
+						{#each shown as c, n (c.id)}
+							<span class="extra" data-slot={n} data-testid="extra-claim" data-character={c.id}
+								><CharacterToken character={c} size={Math.round(size * 0.46)} /></span
+							>
+						{/each}
+						{#if extra.length > EXTRA_SLOTS}<span
+								class="extra more"
+								data-slot={EXTRA_SLOTS - 1}
+								data-testid="more-claims">+{extra.length - shown.length}</span
+							>{/if}
+						{#if seat.dead && !seat.ghostVoteUsed}<span class="mark vote"
+								><Icon name="ghostVote" /></span
+							>{/if}
+						{#if seat.note.trim()}<span class="mark noted" data-testid="has-notes"
+								><Icon name="notes" /></span
+							>{/if}
+					{/snippet}
+				</SeatDisc>
 			</button>
 		{/each}
 	</div>
@@ -271,45 +275,10 @@
 		color: var(--on-surface-muted);
 		font-family: var(--font-control);
 	}
-	.stepper {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.step {
-		width: var(--tap-target);
-		height: var(--tap-target);
-		border: 1px solid var(--border);
-		border-radius: 50%;
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font-size: 1.4rem;
-		line-height: 1;
-		cursor: pointer;
-		touch-action: manipulation;
-	}
-	.step:hover:not(:disabled) {
-		background: var(--surface-selected);
-	}
-	.step:disabled {
-		opacity: 0.4;
-		cursor: default;
-	}
-	output {
-		min-width: 2ch;
-		text-align: center;
-		font-size: 1.5rem;
-		font-weight: 700;
-		font-variant-numeric: tabular-nums;
-	}
 	.seat {
 		position: absolute;
-		/* Centred on the token, with the name hanging below. */
-		translate: -50% calc(-50% + 0.6em);
-		display: grid;
-		justify-items: center;
-		/* As wide as the name below the token, so the token is centred on its point. */
-		width: calc(var(--seat-size) + 2rem);
+		/* Centred on the token; the name hangs below it (SeatDisc). */
+		translate: -50% -50%;
 		padding: 0;
 		border: 0;
 		background: none;
@@ -325,82 +294,49 @@
 		z-index: 2;
 		cursor: grabbing;
 	}
-	.face {
-		position: relative;
+	/* Extra claims tucked against the lower sides of the token, clear of the name. */
+	.extra {
+		position: absolute;
+		bottom: 2%;
 		display: grid;
 		place-items: center;
-		width: var(--seat-size);
-		height: var(--seat-size);
+		width: 46%;
+		height: 46%;
 		border-radius: 50%;
-		background: var(--token-face);
-		color: var(--on-token);
-		box-shadow: 0 0 0 2px var(--token-rim);
+		box-shadow: var(--shadow);
 	}
-	.face img {
-		width: 88%;
-		height: 88%;
+	.extra[data-slot='0'] {
+		left: -24%;
 	}
-	.number {
-		font-weight: 700;
-		font-size: 1.1rem;
+	.extra[data-slot='1'] {
+		right: -24%;
 	}
-	/* Dead: greyed out, so the claim stays visible (Trevor, 2026-10-15). */
-	.seat[data-dead] .face {
-		background: color-mix(in srgb, var(--token-face) 35%, var(--surface));
+	.more {
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font: 700 0.8rem / 1 var(--font-control);
+		border: 1px solid var(--border);
 	}
-	.seat[data-dead] .face img,
-	.seat[data-dead] .number {
-		filter: grayscale(1);
-		opacity: 0.55;
-	}
-	.seat[data-dead] .name {
-		color: var(--on-surface-muted);
-		text-decoration: line-through;
-	}
-	/* Markers sit inside the token, like its leaves. */
-	.vote,
-	.noted {
+	/* Small marks on the top corners: a ghost vote left, notes right. */
+	.mark {
 		position: absolute;
-		right: 6%;
-		top: 6%;
+		top: -6%;
 		display: grid;
 		place-items: center;
 		width: calc(1.25 * var(--u));
 		height: calc(1.25 * var(--u));
 		border-radius: 50%;
-		background: var(--surface-raised);
-		color: var(--on-surface);
+		box-shadow: var(--shadow);
 		--icon-size: calc(0.875 * var(--u));
 	}
-	/* More than one claim: how many more, top left (Trevor, 2026-10-16). */
-	.more {
-		position: absolute;
-		left: 6%;
-		top: 6%;
-		min-width: calc(1.25 * var(--u));
-		height: calc(1.25 * var(--u));
-		padding: 0 calc(0.1875 * var(--u));
-		border-radius: calc(0.625 * var(--u));
+	.vote {
+		left: -6%;
 		background: var(--surface-raised);
 		color: var(--on-surface);
-		font: 700 0.7rem / calc(1.25 * var(--u)) var(--font-control);
-		text-align: center;
 	}
 	.noted {
-		top: auto;
-		bottom: 6%;
+		right: -6%;
 		background: var(--accent);
 		color: var(--on-accent);
-	}
-	.name {
-		/* Absolutely sized so long or missing names never move the ring. */
-		width: calc(var(--seat-size) + 2rem);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		font-family: var(--font-player);
-		font-size: 0.8rem;
-		line-height: 1.2;
-		text-align: center;
 	}
 </style>

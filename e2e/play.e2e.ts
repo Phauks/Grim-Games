@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 // Player view (09-player-script-view.md): the script, night order, a private seat circle and notes.
@@ -73,9 +73,9 @@ test("the night order shows who wakes, with TPI's night text", async ({ page }) 
 
 test('the circle keeps names, claims and deaths on this device', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Circle' }).tap();
-	await expect(page.getByTestId('seat-count')).toHaveText('8');
-	await page.getByRole('button', { name: 'Add a seat' }).tap();
-	await expect(page.getByTestId('seat-count')).toHaveText('9');
+	await expect(page.getByTestId('alive-count')).toHaveText('8 of 8 alive');
+	await addSeat(page, 'Between Seat 8 and Seat 1');
+	await expect(page.getByTestId('alive-count')).toHaveText('9 of 9 alive');
 
 	await page.getByRole('button', { name: /^Seat 3/ }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Seat 3' });
@@ -105,8 +105,9 @@ test('the circle keeps names, claims and deaths on this device', async ({ page }
 
 	const seat = page.getByRole('button', { name: /^Seat 3, Alex, claims Empath and Chef, dead/ });
 	await expect(seat).toBeVisible();
-	await expect(seat.getByTestId('more-claims')).toHaveText('+1');
-	await expect(page.getByTestId('alive-count')).toHaveText('8 alive');
+	// Every claim shows on the seat, not just a count (Trevor, 2026-10-16).
+	await expect(seat.locator('[data-testid="extra-claim"][data-character="chef"]')).toBeVisible();
+	await expect(page.getByTestId('alive-count')).toHaveText('8 of 9 alive');
 	// No reassurance line under the circle (Trevor, 2026-10-16).
 	await expect(page.getByText(/Saved on this device/)).toHaveCount(0);
 
@@ -114,7 +115,7 @@ test('the circle keeps names, claims and deaths on this device', async ({ page }
 	await page.waitForTimeout(500);
 	await page.reload();
 	await page.getByRole('tab', { name: 'Circle' }).tap();
-	await expect(page.getByTestId('seat-count')).toHaveText('9');
+	await expect(page.getByTestId('alive-count')).toHaveText('8 of 9 alive');
 	await expect(
 		page.getByRole('button', { name: /^Seat 3, Alex, claims Empath and Chef, dead/ })
 	).toBeVisible();
@@ -239,8 +240,8 @@ test('notes on a player show in Notes and mark their token', async ({ page }) =>
 
 test('shows the script chosen on the Scripts page, with its own notebook', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Circle' }).tap();
-	await page.getByRole('button', { name: 'Add a seat' }).tap();
-	await expect(page.getByTestId('seat-count')).toHaveText('9');
+	await addSeat(page, 'Between Seat 8 and Seat 1');
+	await expect(page.getByTestId('alive-count')).toHaveText('9 of 9 alive');
 
 	// Players have no Change script button (Trevor): the script comes from /scripts or a link.
 	await expect(page.getByRole('link', { name: 'Change script' })).toHaveCount(0);
@@ -259,7 +260,7 @@ test('shows the script chosen on the Scripts page, with its own notebook', async
 	await expect(page.locator('[data-character="grandmother"]')).toBeVisible();
 	await page.getByRole('tab', { name: 'Circle' }).tap();
 	// A new script starts its own circle; Trouble Brewing's is kept.
-	await expect(page.getByTestId('seat-count')).toHaveText('8');
+	await expect(page.getByTestId('alive-count')).toHaveText('8 of 8 alive');
 });
 
 test('a homebrew character from a loaded script shows as a badge with its ability', async ({
@@ -413,4 +414,46 @@ test('a player note can be added from the Notes tab by choosing the player', asy
 	await expect(page.getByRole('dialog', { name: 'Seat 3' }).getByLabel('Notes')).toHaveValue(
 		'Quiet on day one'
 	);
+});
+
+/** Adds a player's seat through the Add a seat dialog, at the place named. */
+async function addSeat(page: Page, place: string) {
+	await page.getByRole('button', { name: 'Add seat', exact: true }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Add a seat' });
+	await dialog.getByRole('button', { name: place }).tap();
+	await expect(dialog).toBeHidden();
+}
+
+test('a Traveller seat is added where they sit, and removing a seat asks first', async ({
+	page
+}) => {
+	await page.getByRole('tab', { name: 'Circle' }).tap();
+	// No one-tap add or remove buttons on the circle (Trevor, 2026-10-16).
+	await expect(page.getByRole('button', { name: 'Remove a seat' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Add seat', exact: true }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Add a seat' });
+	await dialog.getByRole('button', { name: 'Traveller' }).tap();
+	await dialog.getByRole('button', { name: 'Between Seat 2 and Seat 3' }).tap();
+	// The script's recommended Travellers (wiki: Trouble Brewing lists five).
+	const which = page.getByRole('dialog', { name: 'Which Traveller?' });
+	await which.getByRole('button', { name: 'Scapegoat', exact: true }).tap();
+	await expect(which).toBeHidden();
+	await expect(page.getByTestId('alive-count')).toHaveText('9 of 9 alive');
+	const traveller = page.getByRole('button', { name: /^Seat 3, claims Scapegoat/ });
+	await expect(traveller).toBeVisible();
+
+	await traveller.tap();
+	const sheet = page.getByRole('dialog', { name: 'Seat 3' });
+	await sheet.getByRole('button', { name: 'Remove seat' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Remove Seat 3?' });
+	await expect(confirm).toContainText('Claims: Scapegoat');
+	await confirm.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(page.getByTestId('alive-count')).toHaveText('9 of 9 alive');
+	await sheet.getByRole('button', { name: 'Remove seat' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Remove Seat 3?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(page.getByTestId('alive-count')).toHaveText('8 of 8 alive');
+	await expect(page.getByRole('button', { name: /claims Scapegoat/ })).toHaveCount(0);
 });

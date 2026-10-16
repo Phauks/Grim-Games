@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		characterIcons,
 		defaultAlignment,
@@ -22,6 +22,8 @@
 		onChange: (patch: SeatPatch) => void;
 		/** Adds or removes one character from this seat's claims. */
 		onToggleClaim: (id: Character['id']) => void;
+		/** Removes this seat; undefined when the circle is at its smallest. */
+		onRemove?: () => void;
 	}
 
 	let {
@@ -30,7 +32,8 @@
 		number,
 		characters,
 		onChange,
-		onToggleClaim
+		onToggleClaim,
+		onRemove
 	}: Props = $props();
 
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
@@ -38,6 +41,11 @@
 		(seat?.claims ?? []).map((id) => byId.get(id)).filter((c): c is Character => !!c)
 	);
 	let pickerOpen = $state(false);
+	// Removing a seat asks first, naming what goes with it (Trevor, 2026-10-16).
+	let removing = $state(false);
+	const seatLabel = $derived(
+		seat?.name ? `${t('common.seat', { number })} · ${seat.name}` : t('common.seat', { number })
+	);
 	let query = $state('');
 
 	function iconFor(c: Character) {
@@ -121,6 +129,15 @@
 					value={seat.note}
 					oninput={(event) => onChange({ note: event.currentTarget.value })}></textarea>
 			</label>
+
+			<div class="remove">
+				<Button
+					variant="danger-quiet"
+					icon="remove"
+					disabled={!onRemove}
+					onclick={() => (removing = true)}>{t('player.removeSeatButton')}</Button
+				>
+			</div>
 		</div>
 	{/if}
 </BottomSheet>
@@ -146,7 +163,48 @@
 	{/snippet}
 </Dialog>
 
+<Dialog
+	bind:open={removing}
+	role="alertdialog"
+	title={t('player.removeSeatTitle', { seat: seatLabel })}
+>
+	{#if seat}
+		<p>{t('player.removeSeatBody')}</p>
+		<ul class="loses">
+			<li>
+				{t('player.removeSeatClaims', {
+					claims: claimed.length ? intl.list(claimed.map((c) => c.name)) : t('common.none')
+				})}
+			</li>
+			<li>
+				{t('player.removeSeatNotes', {
+					notes: seat.note.trim() ? seat.note.trim().split('\n')[0] : t('common.none')
+				})}
+			</li>
+		</ul>
+	{/if}
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (removing = false)}>{t('common.cancel')}</Button>
+		<Button
+			variant="danger"
+			onclick={() => {
+				removing = false;
+				open = false;
+				onRemove?.();
+			}}>{t('player.confirm')}</Button
+		>
+	{/snippet}
+</Dialog>
+
 <style>
+	.remove {
+		display: flex;
+		justify-content: flex-end;
+	}
+	.loses {
+		margin: var(--space-2) 0 0;
+		padding-left: 1.25em;
+	}
 	.editor {
 		display: grid;
 		gap: var(--space-3);

@@ -102,6 +102,36 @@ export function setSeatCount(book: PlayerNotebook, count: number): PlayerNoteboo
 	return { ...book, seats, layout };
 }
 
+/**
+ * Adds an empty seat at `index` in the seating order (0 = before Seat 1, `seats.length` = after
+ * the last), e.g. a Traveller sitting down between two players. Returns the new seat's id.
+ */
+export function insertSeat(
+	book: PlayerNotebook,
+	index: number,
+	patch: SeatPatch = {}
+): { book: PlayerNotebook; seatId: string } {
+	if (book.seats.length >= MAX_SEATS) return { book, seatId: '' };
+	const seat = { ...newSeat(nextSeatNumber(book.seats)), ...patch };
+	const at = Math.min(book.seats.length, Math.max(0, Math.round(index)));
+	const seats = [...book.seats.slice(0, at), seat, ...book.seats.slice(at)];
+	return { book: { ...book, seats }, seatId: seat.seatId };
+}
+
+/** Removes one seat with its name, claims and notes; never below the minimum. */
+export function removeSeat(book: PlayerNotebook, seatId: string): PlayerNotebook {
+	if (book.seats.length <= MIN_SEATS) return book;
+	const seats = book.seats.filter((s) => s.seatId !== seatId);
+	return {
+		...book,
+		seats,
+		layout: pruneLayout(
+			book.layout,
+			seats.map((s) => s.seatId)
+		)
+	};
+}
+
 export function setLayout(book: PlayerNotebook, layout: SeatLayout): PlayerNotebook {
 	return {
 		...book,

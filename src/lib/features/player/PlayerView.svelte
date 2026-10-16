@@ -30,12 +30,13 @@
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { NotebookState } from './notebook-store.svelte.ts';
-	import { playerCount, scriptKey } from './notebook.ts';
+	import { MIN_SEATS, playerCount, scriptKey } from './notebook.ts';
 	import NoteEditor from './NoteEditor.svelte';
+	import AddSeatDialog from './AddSeatDialog.svelte';
 	import NotesPanel from './NotesPanel.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
-	import { playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
-	import ScriptSheet from './ScriptSheet.svelte';
+	import { playerNight, sheetCharacters } from './player-script.ts';
+	import ScriptCopy from './ScriptCopy.svelte';
 	import SeatCircle from './SeatCircle.svelte';
 	import SeatEditor from './SeatEditor.svelte';
 
@@ -140,14 +141,16 @@
 	});
 
 	const players = $derived(notebook ? playerCount(notebook.book) : 0);
-	const jinxes = $derived(script && data ? playerJinxes(script, data) : []);
 	const sheet = $derived(script && data ? sheetCharacters(script, data) : []);
 	const nights = $derived(
 		script && data
 			? (['first', 'other'] as const).map((n) => playerNight(script!, data!, n, players, numeric))
 			: []
 	);
-	const byId = $derived(new Map(script?.characters.map((c) => [c.id, c]) ?? []));
+	// The script's characters plus its recommended Travellers, so a Traveller can be claimed.
+	const byId = $derived(new Map(sheet.map((c) => [c.id, c])));
+	const travellers = $derived(sheet.filter((c) => c.type === 'traveller'));
+	let addingSeat = $state(false);
 	const seatIndex = $derived(notebook?.book.seats.findIndex((s) => s.seatId === editing) ?? -1);
 
 	let noteId = $state<string>();
@@ -197,7 +200,7 @@
 						{#if !script || !notebook}
 							<p class="muted">{t('player.loading')}</p>
 						{:else if value === 'script'}
-							<ScriptSheet characters={sheet} {jinxes} {players} />
+							<ScriptCopy {script} {players} />
 						{:else if value === 'night'}
 							<PlayerNightOrder {nights} {players} />
 						{:else if value === 'circle'}
@@ -205,7 +208,7 @@
 								seats={notebook.book.seats}
 								characters={byId}
 								layout={notebook.book.layout}
-								onSeatCount={(n) => notebook!.setSeatCount(n)}
+								onAddSeat={() => (addingSeat = true)}
 								onOpenSeat={openSeat}
 								onLayout={(layout) => notebook!.setLayout(layout)}
 							/>
@@ -240,9 +243,20 @@
 				bind:open={editorOpen}
 				seat={notebook.book.seats[seatIndex]}
 				number={seatIndex + 1}
-				characters={script.characters}
+				characters={sheet}
 				onChange={(patch) => editing && notebook!.updateSeat(editing, patch)}
 				onToggleClaim={(id) => editing && notebook!.toggleClaim(editing, id)}
+				onRemove={notebook.book.seats.length > MIN_SEATS
+					? () => editing && notebook!.removeSeat(editing)
+					: undefined}
+			/>
+		</ErrorBoundary>
+		<ErrorBoundary area="play">
+			<AddSeatDialog
+				bind:open={addingSeat}
+				seats={notebook.book.seats}
+				{travellers}
+				onAdd={(index, claims) => notebook!.insertSeat(index, { claims })}
 			/>
 		</ErrorBoundary>
 		<ErrorBoundary area="play">

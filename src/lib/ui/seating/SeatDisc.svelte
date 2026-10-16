@@ -1,0 +1,139 @@
+<script lang="ts">
+	import type { Snippet } from 'svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+
+	/**
+	 * How one seat looks on a ring of seats: the token, the dead shroud and the player's name.
+	 * Shared by the Storyteller's board and the player's Circle (/play) so a seat, alive or
+	 * dead, looks the same on both (Trevor, 2026-10-16). The caller wraps it in its own button
+	 * (taps, drags) and passes the face (a character token); without one, the seat number shows.
+	 */
+	interface Props {
+		/** Token size in px. */
+		size: number;
+		dead?: boolean;
+		/** Turned upside down: the player's alignment differs from their character's. */
+		flipped?: boolean;
+		name: string;
+		/** 1-based place in the seating order, shown when there is no face. */
+		number: number;
+		/** Which side of the token the name goes, so nothing covers it. */
+		namePlace?: 'below' | 'above' | 'left' | 'right';
+		face?: Snippet;
+		/** Marks drawn over or around the token (notes, extra claims, warnings). */
+		marks?: Snippet;
+	}
+
+	let {
+		size,
+		dead = false,
+		flipped = false,
+		name,
+		number,
+		namePlace = 'below',
+		face,
+		marks
+	}: Props = $props();
+</script>
+
+<span class="seat-disc" data-dead={dead || undefined} style:--size="{size}px">
+	<span class="disc">
+		<span class="face" class:flipped
+			>{#if face}{@render face()}{:else}<span class="empty">{number}</span>{/if}</span
+		>
+		{#if dead}<span class="shroud"><Icon name="dead" /></span>{/if}
+		{#if marks}{@render marks()}{/if}
+	</span>
+	<span class="name" data-place={namePlace}>{name}</span>
+</span>
+
+<style>
+	.seat-disc {
+		position: relative;
+		display: grid;
+		justify-items: center;
+		width: calc(var(--size) + 2 * var(--u));
+		color: var(--on-surface);
+	}
+	.disc {
+		position: relative;
+		width: var(--size);
+		height: var(--size);
+	}
+	.face {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		box-shadow: var(--shadow);
+		transition: rotate var(--duration-normal) var(--ease-out);
+	}
+	.face.flipped {
+		rotate: 180deg;
+	}
+	.empty {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		border: 2px dashed var(--border);
+		background: var(--surface-raised);
+		color: var(--on-surface-muted);
+		font: var(--seat-font);
+	}
+	.seat-disc[data-dead] .face {
+		filter: grayscale(1) brightness(0.65);
+	}
+	/* The shroud: a dark cap over the top of the token, as on a physical grimoire. */
+	.shroud {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		justify-items: center;
+		align-content: start;
+		padding-top: 6%;
+		border-radius: 50%;
+		background: linear-gradient(to bottom, rgb(0 0 0 / 0.85) 40%, transparent 40%);
+		color: var(--on-surface);
+		--icon-size: calc(var(--size) * 0.26);
+	}
+	/* Laid beside the token, outside its box, on whichever side is clear. */
+	.name {
+		position: absolute;
+		max-width: 100%;
+		overflow: hidden;
+		font-family: var(--font-player);
+		font-size: 0.9rem;
+		line-height: 1.2;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+	}
+	.name[data-place='below'] {
+		top: calc(100% + 0.125 * var(--u));
+		left: 50%;
+		translate: -50% 0;
+	}
+	.name[data-place='above'] {
+		bottom: calc(100% + 0.125 * var(--u));
+		left: 50%;
+		translate: -50% 0;
+	}
+	.name[data-place='left'],
+	.name[data-place='right'] {
+		top: 50%;
+		translate: 0 -50%;
+	}
+	.name[data-place='left'] {
+		right: calc(50% + var(--size) / 2 + 0.125 * var(--u));
+	}
+	.name[data-place='right'] {
+		left: calc(50% + var(--size) / 2 + 0.125 * var(--u));
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.face {
+			transition: none;
+		}
+	}
+</style>

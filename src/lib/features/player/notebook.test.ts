@@ -3,9 +3,11 @@ import {
 	addNote,
 	deleteNote,
 	emptyNotebook,
+	insertSeat,
 	MAX_SEATS,
 	migrateNotebook,
 	MIN_SEATS,
+	removeSeat,
 	scriptKey,
 	setLayout,
 	setSeatCount,
@@ -21,6 +23,20 @@ import {
 } from '#lib/ui/seating/seat-layout.ts';
 
 describe('player notebook', () => {
+	it('adds a seat between two players and removes one seat with its data', () => {
+		let book = emptyNotebook('edition:tb', 5, 0);
+		book = updateSeat(book, 's3', { name: 'Sam', note: 'quiet' });
+		const added = insertSeat(book, 2, { claims: ['beggar'] });
+		expect(added.book.seats.map((s) => s.seatId)).toEqual(['s1', 's2', 's6', 's3', 's4', 's5']);
+		expect(added.book.seats[2]).toMatchObject({ seatId: added.seatId, claims: ['beggar'] });
+		book = removeSeat(added.book, 's3');
+		expect(book.seats.map((s) => s.seatId)).toEqual(['s1', 's2', 's6', 's4', 's5']);
+		expect(book.seats.some((s) => s.name === 'Sam')).toBe(false);
+		let small = emptyNotebook('edition:tb', MIN_SEATS, 0);
+		small = removeSeat(small, 's1');
+		expect(small.seats).toHaveLength(MIN_SEATS);
+	});
+
 	it('keys official editions by id and custom scripts by name', () => {
 		expect(scriptKey({ edition: 'tb', name: 'Trouble Brewing' })).toBe('edition:tb');
 		expect(scriptKey({ name: ' My Script ' })).toBe('script:my script');
