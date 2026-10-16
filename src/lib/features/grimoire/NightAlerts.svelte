@@ -47,12 +47,13 @@
 		alert.source === 'override' ? undefined : alert.source.characterId;
 </script>
 
-<!-- In the walk-through strip the lines sit inside its step button: plain names, no badges. -->
+<!-- In the walk-through strip the lines sit inside its step button: badges that don't open. -->
 {#snippet badge(id: string | undefined)}
-	{#if id && compact}<strong>{characters.get(id)?.name ?? id}</strong>{:else if id}<CharacterBadge
+	{#if id}<CharacterBadge
 			characterId={id}
 			character={characters.get(id)}
 			inline
+			interactive={!compact}
 		/>{/if}
 {/snippet}
 

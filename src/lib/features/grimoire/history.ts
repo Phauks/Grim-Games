@@ -7,6 +7,7 @@ import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index
 import { applyEvents, type GameEvent, type LogEntry } from '#lib/core/engine/index.ts';
 import type { CharacterLookup, DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 import { describeEntry as describeDayEntry } from '#lib/features/day/day-port.ts';
+import { slot, splitSlots } from '#lib/features/characters/slots.ts';
 import { causeCharacter, causeLabel } from './board.ts';
 
 export type HistoryPart =
@@ -201,10 +202,17 @@ function describeEvent(
 				const part = seatName(after, seatId);
 				return part.kind === 'text' ? part.text : 'A seat';
 			};
-			const line = describeDayEntry(event.entry, name, (id) =>
-				id ? (characters.get(id)?.name ?? id) : 'None'
+			// Characters go in as slots and come back out as badges.
+			const ids: CharacterId[] = [];
+			const line = describeDayEntry(event.entry, name, (id) => {
+				if (!id) return 'None';
+				ids.push(id);
+				return slot(`c${ids.length - 1}`);
+			});
+			const parts = splitSlots(line).map((part, i): HistoryPart =>
+				i % 2 === 1 ? { kind: 'character', characterId: ids[Number(part.slice(1))] } : text(part)
 			);
-			return [text(event.type === 'DayEntryReplaced' ? `Changed: ${line}` : line)];
+			return event.type === 'DayEntryReplaced' ? [text('Changed: '), ...parts] : parts;
 		}
 		case 'DayEntryRemoved':
 			return [text('Removed from the day log')];

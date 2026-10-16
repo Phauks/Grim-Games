@@ -14,6 +14,8 @@
 	} from '#lib/core/engine/index.ts';
 	import { scriptCharacterIds, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
@@ -216,15 +218,23 @@
 </BottomSheet>
 
 <Dialog bind:open={deleteOpen} title={t('bluffs.deleteConfirm')} role="alertdialog">
+	{@const doomed = lookup(game.bluffs[deleting ?? -1] ?? [])}
 	<p class="confirm">
-		{t('bluffs.deleteSummary', {
-			set: deleting === undefined ? '' : label(deleting),
-			names:
-				intl.list(
-					lookup(game.bluffs[deleting ?? -1] ?? []).map((c) => c.name),
-					{ type: 'unit', style: 'narrow' }
-				) || t('common.none')
-		})}
+		<Sentence
+			text={t('bluffs.deleteSummary', {
+				set: deleting === undefined ? '' : label(deleting),
+				names:
+					intl.list(
+						doomed.map((_, i) => slot(`c${i}`)),
+						{ type: 'unit', style: 'narrow' }
+					) || t('common.none')
+			})}
+			>{#snippet fill(name)}{@const c = doomed[Number(name.slice(1))]}<CharacterBadge
+					characterId={c.id}
+					character={c}
+					inline
+				/>{/snippet}</Sentence
+		>
 	</p>
 	<p class="confirm hint">{t('bluffs.undoHint')}</p>
 	{#snippet actions()}
