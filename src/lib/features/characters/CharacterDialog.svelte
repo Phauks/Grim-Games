@@ -6,6 +6,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { fly } from 'svelte/transition';
 	import { iconUrl } from './icon-url.ts';
+	import WikiBox from './WikiBox.svelte';
 	import { wikiPageTitle, type WikiSection } from './wiki-page.ts';
 	import { wikiPages } from './wiki-page.svelte.ts';
 
@@ -58,7 +59,13 @@
 			width < 40 * parseFloat(getComputedStyle(document.documentElement).fontSize)
 	);
 	const label = (section: WikiSection) => section.heading || t('characters.wikiIntroduction');
-	const isTips = (section: WikiSection) => /tips/i.test(section.heading);
+	/** Sections whose bullet points are tips: each becomes a numbered box. */
+	const tipLabel = (section: WikiSection) =>
+		/^bluffing/i.test(section.heading)
+			? 'characters.bluffingTip'
+			: /tips/i.test(section.heading)
+				? 'characters.tip'
+				: undefined;
 	let direction = $state(1);
 	function go(index: number | undefined) {
 		direction = index === undefined ? -1 : 1;
@@ -68,6 +75,8 @@
 
 {#snippet blocks(section: WikiSection)}
 	{@const examples = section.blocks.filter((b) => b.kind === 'example')}
+	{@const tip = tipLabel(section)}
+	{@const tips = tip ? section.blocks.flatMap((b) => (b.kind === 'list' ? b.items : [])) : []}
 	{#each section.blocks as block, j (j)}
 		{#if block.kind === 'p'}
 			<p><GlossaryText text={block.text} names={[character.name]} /></p>
@@ -76,13 +85,14 @@
 		{:else if block.kind === 'artist'}
 			<p class="artist">{t('characters.artist', { name: block.name })}</p>
 		{:else if block.kind === 'example'}
-			<section class="box example">
-				<h4>{t('characters.example', { number: examples.indexOf(block) + 1 })}</h4>
+			<WikiBox label={t('characters.example', { number: examples.indexOf(block) + 1 })}>
 				<p><GlossaryText text={block.text} names={[character.name]} /></p>
-			</section>
-		{:else if isTips(section)}
+			</WikiBox>
+		{:else if tip}
 			{#each block.items as item, k (k)}
-				<p class="box tip"><GlossaryText text={item} names={[character.name]} /></p>
+				<WikiBox label={t(tip, { number: tips.indexOf(item) + 1 })}>
+					<p><GlossaryText text={item} names={[character.name]} /></p>
+				</WikiBox>
 			{/each}
 		{:else}
 			<ul>
@@ -95,6 +105,16 @@
 {/snippet}
 
 <Dialog bind:open title={character.name} size="full">
+	<!-- Always shown, whichever section is open (Trevor, 2026-10-16). -->
+	<header class="character">
+		<span class="icon"
+			>{#if icon}<img src={icon} alt="" width="64" height="64" />{/if}</span
+		>
+		<div>
+			<p class="type">{typeLabel}</p>
+			<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
+		</div>
+	</header>
 	<div class="frame" bind:clientWidth={width}>
 		<div class="layout" data-section={shown ? '' : undefined}>
 			{#if others.length}
@@ -105,7 +125,9 @@
 								type="button"
 								aria-current={shown ? undefined : 'page'}
 								onclick={() => go(undefined)}
-								><span>{t('characters.summary')}</span><Icon name="forward" /></button
+								><span>{t('characters.summary')}</span><span class="chevron"
+									><Icon name="forward" /></span
+								></button
 							>
 						</li>
 						{#each others as section, i (i)}
@@ -113,7 +135,9 @@
 								<button
 									type="button"
 									aria-current={selected === i ? 'page' : undefined}
-									onclick={() => go(i)}><span>{label(section)}</span><Icon name="forward" /></button
+									onclick={() => go(i)}
+									><span>{label(section)}</span><span class="chevron"><Icon name="forward" /></span
+									></button
 								>
 							</li>
 						{/each}
@@ -133,15 +157,6 @@
 								{@render blocks(shown)}
 							</section>
 						{:else}
-							<div class="summary">
-								<span class="icon"
-									>{#if icon}<img src={icon} alt="" width="64" height="64" />{/if}</span
-								>
-								<p class="type">{typeLabel}</p>
-							</div>
-							<p class="ability">
-								<GlossaryText text={character.ability} names={[character.name]} />
-							</p>
 							{#if page}
 								<section
 									class="wiki-page"
@@ -195,13 +210,18 @@
 </Dialog>
 
 <style>
-	.summary {
+	/* The character stays at the top on every section; only the section text scrolls. */
+	.character {
 		display: flex;
-		align-items: center;
-		gap: var(--space-3, calc(0.75 * var(--u)));
+		align-items: flex-start;
+		gap: var(--space-3);
+		flex: none;
+		padding: var(--space-2) 0 var(--space-3);
+		border-bottom: var(--card-border);
 	}
 	.icon {
 		display: inline-grid;
+		flex: none;
 		place-items: center;
 		width: calc(4.5 * var(--u));
 		height: calc(4.5 * var(--u));
@@ -213,6 +233,7 @@
 		color: var(--on-surface-muted);
 	}
 	.ability {
+		margin: 0;
 		font-family: var(--font-ability);
 		font-size: 1.05rem;
 		line-height: 1.5;
@@ -221,26 +242,33 @@
 		line-height: 1.5;
 	}
 	.wiki-page h3 {
-		margin: var(--space-4, calc(1 * var(--u))) 0 var(--space-1, calc(0.25 * var(--u)));
+		margin: 0 0 var(--space-2);
 		font-size: 1rem;
 	}
 	.wiki-page p {
-		margin: 0 0 var(--space-2, calc(0.5 * var(--u)));
+		margin: 0 0 var(--space-2);
 	}
 	.wiki-page ul {
-		margin: 0 0 var(--space-2, calc(0.5 * var(--u)));
-		padding-left: var(--space-4, calc(1 * var(--u)));
+		margin: 0 0 var(--space-2);
+		padding-left: var(--space-4);
 	}
-	/* Phone: Summary, then the list of sections; a section replaces both, with a Back button. */
+	/* Phone: Summary, then the list of sections, scrolling together; a section replaces both,
+	   with a Back button. */
 	.frame {
+		flex: 1;
+		min-height: 0;
 		container-type: inline-size;
-		overflow-x: clip;
 	}
 	.layout {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		grid-template-areas: 'pane' 'nav';
-		gap: var(--space-4, calc(1 * var(--u)));
+		align-content: start;
+		gap: var(--space-4);
+		height: 100%;
+		padding-top: var(--space-3);
+		overflow: hidden auto;
+		overscroll-behavior: contain;
 	}
 	.pane {
 		grid-area: pane;
@@ -253,41 +281,48 @@
 	.nav .home {
 		display: none;
 	}
+	/* The sections read as navigation, like a document's contents, not as buttons. */
 	.nav ul {
-		display: grid;
-		gap: var(--space-2, calc(0.5 * var(--u)));
 		margin: 0;
 		padding: 0;
 		list-style: none;
+		border-top: var(--card-border);
 	}
 	.nav button {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--space-2, calc(0.5 * var(--u)));
+		gap: var(--space-2);
 		width: 100%;
 		min-height: var(--tap-target);
-		padding: 0 var(--space-3, calc(0.75 * var(--u)));
-		border: var(--card-border, 1px solid var(--border));
-		border-radius: var(--radius-md, calc(0.5 * var(--u)));
-		background: var(--surface-raised);
+		padding: 0 var(--space-2);
+		border: 0;
+		border-bottom: var(--card-border);
+		border-inline-start: calc(0.2 * var(--u)) solid transparent;
+		background: none;
 		color: var(--on-surface);
 		font: inherit;
 		text-align: start;
 		cursor: pointer;
 	}
-	.nav button:hover,
-	.nav button[aria-current] {
+	.nav button:hover {
 		background: var(--surface-selected);
 	}
 	.nav button[aria-current] {
+		border-inline-start-color: var(--heading);
+		color: var(--heading);
 		font-weight: 700;
+	}
+	.chevron {
+		display: inline-flex;
+		color: var(--on-surface-muted);
 	}
 	.back {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-1, calc(0.25 * var(--u)));
+		gap: var(--space-1);
 		min-height: var(--tap-target);
+		margin-bottom: var(--space-1);
 		padding: 0;
 		border: 0;
 		background: none;
@@ -295,17 +330,32 @@
 		font: inherit;
 		cursor: pointer;
 	}
-	/* Wide enough for two readable columns: the sections on the left, the text on the right. */
+	/* Wide enough for two readable columns: the contents on the left, the text on the right,
+	   each scrolling on its own. */
 	@container (min-width: 40rem) {
 		.layout:has(.nav) {
 			grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+			grid-template-rows: 100%;
 			grid-template-areas: 'nav pane';
-			align-items: start;
+			overflow: hidden;
+		}
+		.layout:has(.nav) .nav,
+		.layout:has(.nav) .pane {
+			overflow: hidden auto;
+			overscroll-behavior: contain;
 		}
 		.layout[data-section] .nav,
 		.nav .home {
 			display: block;
 		}
+		.nav ul {
+			border-top: 0;
+		}
+		.nav button {
+			border-bottom: 0;
+			border-radius: 0 var(--radius-md) var(--radius-md) 0;
+		}
+		.chevron,
 		.back {
 			display: none;
 		}
@@ -316,24 +366,6 @@
 	.wiki-page .artist {
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
-	}
-	.box {
-		margin: 0 0 var(--space-3, calc(0.75 * var(--u)));
-		padding: var(--space-3, calc(0.75 * var(--u)));
-		border: var(--card-border, 1px solid var(--border));
-		border-radius: var(--radius-md, calc(0.5 * var(--u)));
-		background: var(--surface-raised);
-	}
-	.box p {
-		margin: 0;
-	}
-	.example h4 {
-		margin: 0 0 var(--space-1, calc(0.25 * var(--u)));
-		font-size: 0.9rem;
-		color: var(--on-surface-muted);
-	}
-	.tip {
-		border-inline-start: 0.25rem solid var(--heading);
 	}
 	.muted {
 		color: var(--on-surface-muted);

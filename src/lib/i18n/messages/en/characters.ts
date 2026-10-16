@@ -19,6 +19,8 @@ export const characters = {
 	'characters.summary': 'Summary',
 	'characters.artist': 'Artist: {name}',
 	'characters.example': 'Example {number}',
+	'characters.tip': 'Tip {number}',
+	'characters.bluffingTip': 'Bluffing tip {number}',
 	'characters.previewReminder': 'Poisoned',
 	'characters.tokenSize': 'Character token size',
 	'characters.tokenSizeHelp':

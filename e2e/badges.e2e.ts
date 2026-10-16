@@ -57,6 +57,8 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 						'<h2>Examples</h2><div class="example"><p>Sample example one.</p></div>' +
 						'<div class="example"><p>Sample example two.</p></div>' +
 						'<h2>Tips &amp; Tricks</h2><ul><li>Sample tip one.</li></ul><ul><li>Sample tip two.</li></ul>' +
+						'<h2>Bluffing as the Witch</h2><ul><li>Sample bluff.</li></ul>' +
+						`<h2>Long</h2>${'<p>Sample line.</p>'.repeat(80)}` +
 						'</div></div></div>'
 				}
 			}
@@ -102,6 +104,21 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 	await expect(section.getByRole('heading', { name: 'Example 2' })).toBeVisible();
 	if (!wide) await dialog.getByRole('button', { name: 'Summary' }).tap();
 	await sections.getByRole('button', { name: 'Tips & Tricks' }).tap();
-	await expect(section.locator('.tip')).toHaveText(['Sample tip one.', 'Sample tip two.']);
+	await expect(section.getByRole('region', { name: 'Tip 2' })).toContainText('Sample tip two.');
 	await expect(section.getByRole('listitem')).toHaveCount(0);
+	// The character stays at the top of every section.
+	await expect(dialog.locator('.character')).toContainText('Each night, choose a player');
+	if (!wide) await dialog.getByRole('button', { name: 'Summary' }).tap();
+	await sections.getByRole('button', { name: 'Bluffing as the Witch' }).tap();
+	await expect(section.getByRole('region', { name: 'Bluffing tip 1' })).toContainText(
+		'Sample bluff.'
+	);
+
+	// A long section scrolls inside the dialog, the character staying in view.
+	if (!wide) await dialog.getByRole('button', { name: 'Summary' }).tap();
+	await sections.getByRole('button', { name: 'Long' }).tap();
+	const last = section.getByText('Sample line.').last();
+	await last.scrollIntoViewIfNeeded();
+	await expect(last).toBeInViewport();
+	await expect(dialog.locator('.character')).toBeInViewport();
 });

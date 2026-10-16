@@ -140,7 +140,7 @@ test('a "see …" link in the wiki wording opens that entry, with Back, and char
 		.locator('[data-character-id="poisoner"]')
 		.tap();
 	const details = page.getByRole('dialog', { name: 'Poisoner', exact: true });
-	const icon = details.locator('.summary .icon img');
+	const icon = details.locator('.character .icon img');
 	await expect(icon).toBeVisible();
 	await expect(icon).toHaveAttribute('src', /poisoner_e\.webp$/);
 	expect(await icon.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
