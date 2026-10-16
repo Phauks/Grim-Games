@@ -34,6 +34,7 @@
 	<span class="icon"
 		>{#if icon}<img src={icon} alt="" width="28" height="28" />{/if}</span
 	>
+	<!-- eslint-disable-next-line grim/names-as-badges -- this is the badge look, for inside buttons -->
 	<span class="name">{character.name}</span>
 </span>
 

@@ -119,6 +119,7 @@
 					>
 						<CharacterToken {character} alignment={defaultAlignment(character.type)} size={44} />
 						<span class="text">
+							<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
 							<span class="name">{character.name}</span>
 							{#if notes}<span class="note">{note ?? ''}</span>{/if}
 							<span class="ability">{character.ability}</span>

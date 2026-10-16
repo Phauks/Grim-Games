@@ -12,6 +12,7 @@ export function foldForSearch(text: string): string {
 export function matchesSearch(character: Character, query: string): boolean {
 	const words = foldForSearch(query).split(/\s+/).filter(Boolean);
 	if (words.length === 0) return true;
+	// eslint-disable-next-line grim/names-as-badges -- text to search, never shown
 	const haystack = foldForSearch(`${character.name} ${character.ability}`);
 	return words.every((w) => haystack.includes(w));
 }

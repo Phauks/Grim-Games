@@ -51,6 +51,7 @@
 					alignment={characters[0].alignment ?? defaultAlignment(single.type)}
 					size={fit.size}
 				/>
+				<!-- eslint-disable-next-line grim/names-as-badges -- the token shown to a player, captioned -->
 				<span class="name">{single.name}</span>
 			</div>
 		</div>

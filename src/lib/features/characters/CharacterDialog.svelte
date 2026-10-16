@@ -137,6 +137,7 @@
 	{/each}
 {/snippet}
 
+<!-- eslint-disable-next-line grim/names-as-badges -- the character's own details; a badge here would reopen it -->
 <Dialog bind:open title={character.name} size="full">
 	<!-- Always shown, whichever section is open (Trevor, 2026-10-16). -->
 	<header class="character">

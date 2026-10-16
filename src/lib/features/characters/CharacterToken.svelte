@@ -34,11 +34,13 @@
 		setup: character.setup
 	});
 	const src = $derived(iconUrl(character, alignment));
+	/* eslint-disable grim/names-as-badges -- the token's accessible name */
 	const label = $derived(
 		describeLeaves(leaves)
 			? t('characters.tokenMarks', { name: character.name, marks: describeLeaves(leaves) })
 			: t('characters.token', { name: character.name })
 	);
+	/* eslint-enable grim/names-as-badges */
 </script>
 
 <!-- The character token with its leaves (first night, other nights, reminders, setup). -->

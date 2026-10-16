@@ -49,7 +49,9 @@
 								type="button"
 								class="name character"
 								aria-haspopup="dialog"
-								onclick={() => show(c)}>{c.name}</button
+								onclick={() => show(c)}
+								><!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
+								{c.name}</button
 							>
 							<p class="text">
 								{#if entry.text}<NightText

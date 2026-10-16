@@ -13,6 +13,7 @@
 		type EngineWarning
 	} from '#lib/core/engine/index.ts';
 	import { scriptCharacterIds, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';

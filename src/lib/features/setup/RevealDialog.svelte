@@ -95,6 +95,7 @@
 				>{/if}
 		</div>
 		<p class="name" data-testid="reveal-name" class:concealed={!revealed}>
+			<!-- eslint-disable-next-line grim/names-as-badges -- caption under the revealed token -->
 			{revealed ? shows.name : ''}
 		</p>
 		<p class="ability" class:concealed={!revealed}>{revealed ? shows.ability : ''}</p>
