@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -17,7 +18,7 @@
 	let confirmDelete = $state(false);
 	let busy = $state(false);
 
-	const date = (ms: number) => new Date(ms).toLocaleDateString();
+	const date = (ms: number) => intl.date(ms);
 
 	/** A sign-in link: the token is in the hash, which never reaches the server's logs. */
 	function openSignInLink(): boolean {
@@ -29,10 +30,12 @@
 			.verifyLink(link.email, link.token)
 			.then((info) => {
 				account.signedIn(info);
-				toast(`Signed in as ${link.email}`);
+				toast(t('account.signIn.done', { email: link.email }));
 			})
 			.catch((e) => {
-				linkError = `This sign-in link didn't work: ${e instanceof Error ? e.message : e}`;
+				linkError = t('account.signIn.linkFailed', {
+					reason: e instanceof Error ? e.message : String(e)
+				});
 				void startAccount();
 			});
 		return true;
@@ -66,7 +69,7 @@
 		try {
 			await action();
 		} catch (e) {
-			toast('That did not work', e instanceof Error ? e.message : String(e));
+			toast(t('account.failed'), e instanceof Error ? e.message : String(e));
 		} finally {
 			busy = false;
 		}
@@ -75,7 +78,7 @@
 	const signOut = () =>
 		act(async () => {
 			await account.signOut();
-			toast('Signed out on this device');
+			toast(t('account.signedOut'));
 		});
 
 	const endSession = (id: string) =>
@@ -95,34 +98,34 @@
 			await accountApi.deleteAccount();
 			confirmDelete = false;
 			account.forget();
-			toast('Your account and all its data were deleted');
+			toast(t('account.data.deleted'));
 		});
 </script>
 
 <main>
-	<h1>Account</h1>
+	<h1>{t('account.title')}</h1>
 	<ErrorBoundary area="account">
 		{#if account.status === 'signed-in' && account.user}
 			<section class="card" aria-labelledby="you">
-				<h2 id="you">Signed in</h2>
+				<h2 id="you">{t('account.you.title')}</h2>
 				<dl>
-					<dt>Email</dt>
+					<dt>{t('account.you.email')}</dt>
 					<dd data-testid="account-email">{account.user.email}</dd>
-					<dt>Since</dt>
+					<dt>{t('account.you.since')}</dt>
 					<dd>{date(account.user.createdAt)}</dd>
 				</dl>
 				<div class="buttons">
-					<Button variant="quiet" onclick={signOut} disabled={busy}>Sign out</Button>
+					<Button variant="quiet" onclick={signOut} disabled={busy}>{t('account.signOut')}</Button>
 				</div>
 			</section>
 
 			<section aria-labelledby="scripts">
-				<h2 id="scripts">Your scripts</h2>
+				<h2 id="scripts">{t('account.scripts.title')}</h2>
 				<ProfileScripts />
 			</section>
 
 			<section aria-labelledby="devices">
-				<h2 id="devices">Signed-in devices</h2>
+				<h2 id="devices">{t('account.devices.title')}</h2>
 				{#if sessionsError}
 					<p class="muted">{sessionsError}</p>
 				{:else if sessions}
@@ -130,50 +133,49 @@
 						{#each sessions as session (session.id)}
 							<li>
 								<span>
-									{session.device}{session.current ? ' (this device)' : ''}
-									<small>Last used {date(session.lastSeenAt)}</small>
+									{session.current
+										? t('account.devices.thisDevice', { device: session.device })
+										: session.device}
+									<small>{t('account.devices.lastUsed', { date: date(session.lastSeenAt) })}</small>
 								</span>
 								<Button
 									variant="quiet"
 									onclick={() => endSession(session.id)}
-									disabled={busy || session.current}>Sign out</Button
+									disabled={busy || session.current}>{t('account.signOut')}</Button
 								>
 							</li>
 						{/each}
 					</ul>
 					<div class="buttons">
 						<Button variant="quiet" onclick={endOthers} disabled={busy || sessions.length < 2}
-							>Sign out other devices</Button
+							>{t('account.devices.signOutOthers')}</Button
 						>
 					</div>
 				{:else}
-					<p class="muted">Loading…</p>
+					<p class="muted">{t('account.loading')}</p>
 				{/if}
 			</section>
 
 			<section aria-labelledby="data">
-				<h2 id="data">Your data</h2>
+				<h2 id="data">{t('account.data.title')}</h2>
 				<div class="buttons start">
 					<Button variant="quiet" onclick={() => location.assign(EXPORT_PATH)}
-						>Download my data</Button
+						>{t('account.data.download')}</Button
 					>
 					<Button variant="quiet" icon="remove" onclick={() => (confirmDelete = true)}
-						>Delete account</Button
+						>{t('account.data.delete')}</Button
 					>
 				</div>
 			</section>
 		{:else}
 			<section class="card" aria-labelledby="sign-in">
-				<h2 id="sign-in">Sign in</h2>
-				<p class="muted">
-					Optional. Signing in saves the scripts you add to your profile, so you can use them on
-					your other devices.
-				</p>
+				<h2 id="sign-in">{t('account.signIn.title')}</h2>
+				<p class="muted">{t('account.signIn.intro')}</p>
 				{#if account.status === 'checking'}
-					<p class="muted">Checking…</p>
+					<p class="muted">{t('account.signIn.checking')}</p>
 				{:else}
 					{#if account.status === 'offline'}
-						<p class="muted">You are offline. Connect to sign in.</p>
+						<p class="muted">{t('account.signIn.offline')}</p>
 					{/if}
 					<SignInForm notice={linkError} />
 				{/if}
@@ -182,14 +184,14 @@
 	</ErrorBoundary>
 </main>
 
-<Dialog bind:open={confirmDelete} role="alertdialog" title="Delete your account?">
-	<p>
-		This deletes your account and every script saved to your profile, and signs out all your
-		devices. Scripts and games saved on this device stay here. This can't be undone.
-	</p>
+<Dialog bind:open={confirmDelete} role="alertdialog" title={t('account.data.confirmTitle')}>
+	<p>{t('account.data.confirmText')}</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirmDelete = false)}>Keep my account</Button>
-		<Button variant="accent" onclick={deleteAccount} disabled={busy}>Delete account</Button>
+		<Button variant="quiet" onclick={() => (confirmDelete = false)}>{t('account.data.keep')}</Button
+		>
+		<Button variant="accent" onclick={deleteAccount} disabled={busy}
+			>{t('account.data.delete')}</Button
+		>
 	{/snippet}
 </Dialog>
 

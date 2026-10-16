@@ -6,6 +6,7 @@
 import { loadScript, scriptToJson } from '#lib/core/data/index.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { t } from '#lib/i18n/locale.svelte.ts';
 import { fetchLinkTarget, type FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 import type { SavedScript, ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 import { resolveLink } from '#lib/features/scripts/script-links.ts';
@@ -178,10 +179,10 @@ export const profileScripts = {
 		try {
 			raw = JSON.parse(fetched.text);
 		} catch {
-			throw new Error('The online version is not a script any more.');
+			throw new Error(t('account.scripts.notAScript'));
 		}
 		const { script } = loadScript(raw, await loadOfficialData());
-		if (!script) throw new Error('The online version has no characters this app knows.');
+		if (!script) throw new Error(t('account.scripts.onlineUnknownCharacters'));
 		const next: ProfileScript = {
 			...entry.script,
 			name: script.name || entry.script.name,

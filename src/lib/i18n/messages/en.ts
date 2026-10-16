@@ -1,4 +1,5 @@
 import type { Catalog } from '#lib/i18n/catalog.ts';
+import { account } from '#lib/i18n/messages/en/account.ts';
 import { common } from '#lib/i18n/messages/en/common.ts';
 import { bluffs } from '#lib/i18n/messages/en/bluffs.ts';
 import { infoTokens } from '#lib/i18n/messages/en/info-tokens.ts';
@@ -23,5 +24,6 @@ export const en = {
 	...show,
 	...infoTokens,
 	...bluffs,
-	...day
+	...day,
+	...account
 } as const satisfies Catalog;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { accountApi } from './account-api.ts';
 	import { account } from './account.svelte.ts';
@@ -19,6 +20,15 @@
 	let error = $state('');
 	let busy = $state(false);
 
+	/** The preview line, split around the code so the code can be bold. */
+	const previewLine = $derived.by(() => {
+		if (!previewCode) return undefined;
+		const [before, ...after] = t('account.signIn.previewCode', { code: previewCode }).split(
+			previewCode
+		);
+		return { before, after: after.join(previewCode) };
+	});
+
 	const unavailable = $derived(account.delivery === 'unavailable');
 
 	async function run(action: () => Promise<void>): Promise<void> {
@@ -37,7 +47,7 @@
 		event?.preventDefault();
 		const address = normaliseEmail(email);
 		if (!address) {
-			error = 'Enter a valid email address.';
+			error = t('account.signIn.badEmail');
 			return;
 		}
 		void run(async () => {
@@ -53,7 +63,7 @@
 		event?.preventDefault();
 		const typed = normaliseCode(code);
 		if (!typed) {
-			error = `Enter the ${CODE_LENGTH}-digit code.`;
+			error = t('account.signIn.badCode', { length: CODE_LENGTH });
 			return;
 		}
 		void run(async () => account.signedIn(await accountApi.verifyCode(sentTo, typed)));
@@ -70,7 +80,7 @@
 	{#if step === 'email'}
 		<form onsubmit={send}>
 			<label class="field">
-				<span>Email address</span>
+				<span>{t('account.signIn.email')}</span>
 				<input
 					type="email"
 					inputmode="email"
@@ -82,20 +92,20 @@
 				/>
 			</label>
 			<p class="note">
-				{#if unavailable}
-					Signing in is not available yet on this site.
-				{:else}
-					We email you a {CODE_LENGTH}-digit code. No password.
-				{/if}
+				{unavailable
+					? t('account.signIn.unavailable')
+					: t('account.signIn.howItWorks', { length: CODE_LENGTH })}
 			</p>
 			<div class="buttons">
-				<Button type="submit" variant="accent" disabled={unavailable || busy}>Send code</Button>
+				<Button type="submit" variant="accent" disabled={unavailable || busy}
+					>{t('account.signIn.sendCode')}</Button
+				>
 			</div>
 		</form>
 	{:else}
 		<form onsubmit={verify}>
 			<label class="field">
-				<span>Code sent to {sentTo}</span>
+				<span>{t('account.signIn.codeSentTo', { email: sentTo })}</span>
 				<input
 					type="text"
 					inputmode="numeric"
@@ -108,16 +118,20 @@
 				/>
 			</label>
 			<p class="note" data-testid="preview-code">
-				{#if previewCode}
-					Preview build: no email is sent. Your code is <strong>{previewCode}</strong>.
+				{#if previewLine}
+					{previewLine.before}<strong>{previewCode}</strong>{previewLine.after}
 				{:else}
-					Check your email. The code works for 10 minutes.
+					{t('account.signIn.checkEmail')}
 				{/if}
 			</p>
 			<div class="buttons">
-				<Button variant="quiet" onclick={changeEmail} disabled={busy}>Change email</Button>
-				<Button variant="quiet" onclick={() => send()} disabled={busy}>Send a new code</Button>
-				<Button type="submit" variant="accent" disabled={busy}>Sign in</Button>
+				<Button variant="quiet" onclick={changeEmail} disabled={busy}
+					>{t('account.signIn.changeEmail')}</Button
+				>
+				<Button variant="quiet" onclick={() => send()} disabled={busy}
+					>{t('account.signIn.resend')}</Button
+				>
+				<Button type="submit" variant="accent" disabled={busy}>{t('account.signIn.submit')}</Button>
 			</div>
 		</form>
 	{/if}

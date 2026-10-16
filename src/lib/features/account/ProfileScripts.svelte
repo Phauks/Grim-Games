@@ -3,6 +3,7 @@
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { chooseScript } from '#lib/features/scripts/current-script.svelte.ts';
 	import { describeSource } from '#lib/features/scripts/saved-scripts.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -46,16 +47,16 @@
 	const use = () =>
 		run(async (entry) => {
 			const { script } = loadScript(entry.script.json, await loadOfficialData());
-			if (!script) throw new Error('This script has no characters this app knows.');
+			if (!script) throw new Error(t('account.scripts.unknownCharacters'));
 			await chooseScript(script, entry.script.source);
 			open = false;
-			toast(`${entry.script.name} is now the current script`);
+			toast(t('account.scripts.nowCurrent', { name: entry.script.name }));
 		});
 
 	const check = () =>
 		run(async (entry) => {
 			newer = await profileScripts.checkForUpdate(entry);
-			if (!newer) message = 'This is the latest version.';
+			if (!newer) message = t('account.scripts.latest');
 		});
 
 	const update = () =>
@@ -63,21 +64,21 @@
 			if (!newer) return;
 			await profileScripts.applyUpdate(entry, newer);
 			newer = undefined;
-			message = 'Updated to the latest version.';
+			message = t('account.scripts.updated');
 		});
 
 	const unlink = () =>
 		run(async (entry) => {
 			await profileScripts.unlink(entry);
 			newer = undefined;
-			message = 'This is now a local copy. It no longer follows the online version.';
+			message = t('account.scripts.unlinked');
 		});
 
 	const remove = () =>
 		run(async (entry) => {
 			await profileScripts.remove(entry);
 			open = false;
-			toast(`${entry.script.name} was removed from your profile`);
+			toast(t('account.scripts.removed', { name: entry.script.name }));
 		});
 
 	function sourceLine(script: ProfileScript): string {
@@ -87,23 +88,25 @@
 
 {#if profileScripts.status === 'error'}
 	<p class="empty" role="status">
-		Your scripts could not be loaded: {profileScripts.error}
-		<Button variant="quiet" onclick={() => profileScripts.refresh()}>Try again</Button>
+		{t('account.scripts.loadFailed', { reason: profileScripts.error ?? '' })}
+		<Button variant="quiet" onclick={() => profileScripts.refresh()}
+			>{t('account.scripts.retry')}</Button
+		>
 	</p>
 {:else if profileScripts.list.length === 0}
 	<p class="empty">
 		{profileScripts.status === 'ready' || profileScripts.status === 'idle'
-			? 'None. Scripts you add on the Scripts page are saved here.'
-			: 'Loading…'}
+			? t('account.scripts.none')
+			: t('account.loading')}
 	</p>
 {:else}
 	<ul class="scripts" data-testid="profile-scripts">
 		{#each profileScripts.list as entry (entry.id)}
 			<li>
 				<button type="button" class="row" onclick={() => show(entry)}>
-					<span class="name">{entry.script.name || 'Untitled script'}</span>
+					<span class="name">{entry.script.name || t('account.scripts.untitled')}</span>
 					<span class="tag" data-online={entry.script.online}>
-						{entry.script.online ? 'Online' : 'Local copy'}
+						{entry.script.online ? t('account.scripts.online') : t('account.scripts.localCopy')}
 					</span>
 					<span class="source">{sourceLine(entry.script)}</span>
 				</button>
@@ -112,42 +115,50 @@
 	</ul>
 {/if}
 
-<Dialog bind:open title={selected?.script.name || 'Script'}>
+<Dialog bind:open title={selected?.script.name || t('account.scripts.dialogTitle')}>
 	{#if selected}
 		<dl>
-			<dt>Kept as</dt>
-			<dd>{selected.script.online ? 'Online: follows its online version' : 'Local copy'}</dd>
-			<dt>Online version</dt>
-			<dd>{selected.script.online ? onlineSourceLabel(selected.script.source) : 'None'}</dd>
-			<dt>Came from</dt>
+			<dt>{t('account.scripts.keptAs')}</dt>
+			<dd>
+				{selected.script.online ? t('account.scripts.keptOnline') : t('account.scripts.localCopy')}
+			</dd>
+			<dt>{t('account.scripts.onlineVersion')}</dt>
+			<dd>
+				{selected.script.online ? onlineSourceLabel(selected.script.source) : t('common.none')}
+			</dd>
+			<dt>{t('account.scripts.cameFrom')}</dt>
 			<dd>{describeSource(selected.script.source)}</dd>
-			<dt>Newer version</dt>
+			<dt>{t('account.scripts.newerVersion')}</dt>
 			<dd data-testid="newer-version">
 				{newer
 					? newer.source.kind === 'botcscripts'
-						? `Version ${newer.source.version}`
-						: 'The link has changed'
-					: 'None'}
+						? t('account.scripts.version', { version: newer.source.version })
+						: t('account.scripts.linkChanged')
+					: t('common.none')}
 			</dd>
 		</dl>
 		<p class="message" role="status">{message}</p>
 	{/if}
 	{#snippet actions()}
-		<Button variant="quiet" icon="remove" onclick={remove} disabled={busy}>Remove</Button>
+		<Button variant="quiet" icon="remove" onclick={remove} disabled={busy}
+			>{t('account.scripts.remove')}</Button
+		>
 		<Button
 			variant="quiet"
 			onclick={unlink}
 			disabled={busy || !selected?.script.online || !canBeOnline(selected.script.source)}
-			>Unlink</Button
+			>{t('account.scripts.unlink')}</Button
 		>
 		{#if newer}
-			<Button variant="accent" onclick={update} disabled={busy}>Update</Button>
+			<Button variant="accent" onclick={update} disabled={busy}
+				>{t('account.scripts.update')}</Button
+			>
 		{:else}
 			<Button variant="quiet" onclick={check} disabled={busy || !selected?.script.online}
-				>Check for update</Button
+				>{t('account.scripts.check')}</Button
 			>
 		{/if}
-		<Button variant="accent" onclick={use} disabled={busy}>Use</Button>
+		<Button variant="accent" onclick={use} disabled={busy}>{t('account.scripts.use')}</Button>
 	{/snippet}
 </Dialog>
 
