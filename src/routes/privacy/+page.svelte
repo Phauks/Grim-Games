@@ -93,8 +93,8 @@
 		everything, or delete your account and all its data immediately.
 	</p>
 	<p>
-		On the Preview (test) version no email is sent: the sign-in code is shown on screen and written
-		to our server log.
+		On the Preview (test) version no email is sent: the sign-in code is shown on screen, and the
+		code and your email address are written to our server log.
 	</p>
 
 	<h2>Hosting</h2>
