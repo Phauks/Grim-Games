@@ -69,7 +69,9 @@ import ph_note_pencil_light from '~icons/ph/note-pencil-light';
 import ph_notepad_light from '~icons/ph/notepad-light';
 import ph_paint_brush_light from '~icons/ph/paint-brush-light';
 import ph_palette_light from '~icons/ph/palette-light';
+import ph_pen_nib_light from '~icons/ph/pen-nib-light';
 import ph_pencil_simple_light from '~icons/ph/pencil-simple-light';
+import ph_pencil_simple_line_light from '~icons/ph/pencil-simple-line-light';
 import ph_person_simple_walk_light from '~icons/ph/person-simple-walk-light';
 import ph_plus_light from '~icons/ph/plus-light';
 import ph_plus_circle_light from '~icons/ph/plus-circle-light';
@@ -182,7 +184,9 @@ const icons: IconMap = {
 	'ph:notepad-light': ph_notepad_light,
 	'ph:paint-brush-light': ph_paint_brush_light,
 	'ph:palette-light': ph_palette_light,
+	'ph:pen-nib-light': ph_pen_nib_light,
 	'ph:pencil-simple-light': ph_pencil_simple_light,
+	'ph:pencil-simple-line-light': ph_pencil_simple_line_light,
 	'ph:person-simple-walk-light': ph_person_simple_walk_light,
 	'ph:plus-light': ph_plus_light,
 	'ph:plus-circle-light': ph_plus_circle_light,

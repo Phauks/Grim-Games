@@ -3,6 +3,8 @@
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import type { ScratchStroke } from '#lib/core/scratch/scratch.ts';
+	import ScratchPreview from '#lib/ui/scratch/ScratchPreview.svelte';
 	import type { NotebookSeat, PlayerNote } from './notebook.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 
@@ -11,12 +13,16 @@
 		seats: readonly NotebookSeat[];
 		/** The script's characters, to name each seat's claims in the player list. */
 		characters: ReadonlyMap<CharacterId, Character>;
+		/** The handwriting scratch pad, shown small; tapping it opens the pad. */
+		scratch: readonly ScratchStroke[];
 		onAdd: () => void;
 		onOpenNote: (noteId: string) => void;
 		onOpenSeat: (seatId: string) => void;
+		onOpenScratch: () => void;
 	}
 
-	let { notes, seats, characters, onAdd, onOpenNote, onOpenSeat }: Props = $props();
+	let { notes, seats, characters, scratch, onAdd, onOpenNote, onOpenSeat, onOpenScratch }: Props =
+		$props();
 	// Notes written on a player in the circle, in seat order (Trevor, 2026-10-15).
 	const playerNotes = $derived(
 		seats.map((seat, i) => ({ seat, number: i + 1 })).filter((s) => s.seat.note.trim())
@@ -68,6 +74,24 @@
 		{:else}
 			<p class="none">{t('common.none')}</p>
 		{/if}
+	</section>
+
+	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16). -->
+	<section aria-labelledby="scratch-pad">
+		<h2 id="scratch-pad">{t('scratch.title')}</h2>
+		<button
+			type="button"
+			class="scratch"
+			data-testid="open-scratch-pad"
+			aria-label={t('scratch.open')}
+			onclick={onOpenScratch}
+		>
+			{#if hidden}
+				<span class="preview" data-hidden>{t('player.hidden')}</span>
+			{:else}
+				<ScratchPreview strokes={scratch} />
+			{/if}
+		</button>
 	</section>
 
 	<section aria-labelledby="player-notes">
@@ -155,6 +179,10 @@
 		color: var(--on-surface);
 		font-weight: 600;
 	}
+	#scratch-pad {
+		border-bottom: 1px solid var(--border);
+		padding-bottom: var(--space-1);
+	}
 	ul {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
@@ -197,6 +225,23 @@
 	}
 	.preview[data-hidden] {
 		font-style: italic;
+	}
+	/* A fixed-size page, so drawing on it never moves anything below. */
+	.scratch {
+		display: grid;
+		place-items: center;
+		width: calc(9 * var(--u));
+		aspect-ratio: 3 / 4;
+		padding: 0;
+		border: 0;
+		border-radius: var(--radius-sm);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	.scratch :global(canvas) {
+		width: 100%;
 	}
 	.none {
 		margin: 0;
