@@ -8,6 +8,7 @@
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { Theme } from '#lib/ui/themes/types.ts';
 	import {
+		DEFAULT_TOKEN_APPEARANCE,
 		MIN_CONTRAST,
 		TOKEN_COLOURS,
 		TOKEN_SCALE,
@@ -84,6 +85,7 @@
 	<SettingSegmented
 		label={t('characters.namePlacement')}
 		value={value.namePlacement}
+		defaultValue={DEFAULT_TOKEN_APPEARANCE.namePlacement}
 		options={[
 			{ value: 'edge', label: t('characters.namePlacement.edge') },
 			{ value: 'icon-top', label: t('characters.namePlacement.iconTop') },

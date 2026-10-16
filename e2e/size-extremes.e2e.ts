@@ -15,6 +15,7 @@ async function setSizes(page: Page, size: (typeof SIZES)[number]) {
 			JSON.stringify({
 				textScale: size.textScale,
 				iconScale: size.iconScale,
+				characterIconScale: size.iconScale,
 				tokenAppearance: { tokenScale: size.scale, reminderScale: size.scale, boardNames: true }
 			})
 		);
