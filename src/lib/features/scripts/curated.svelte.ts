@@ -4,6 +4,7 @@
  * on the device, so it is there offline and the next visit shows it straight away.
  */
 import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { withTimeout } from './fetch-script.ts';
 import { CURATED_API, readCuratedList, type CuratedScript } from './curated-api.ts';
 
 const STORAGE_KEY = 'grim-games.curated-scripts';
@@ -51,7 +52,7 @@ export const curatedScripts = {
 			status = 'loading';
 			let response: Response;
 			try {
-				response = await fetch(CURATED_API);
+				response = await fetch(CURATED_API, { signal: withTimeout() });
 			} catch {
 				// Offline: expected, and the kept list still shows.
 				status = 'error';

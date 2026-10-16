@@ -119,6 +119,15 @@ export function fetchLinkTarget(target: LinkTarget, typed: string): Promise<Fetc
 }
 
 /** One page of BotC Scripts search results, through our Worker. */
+/** A remote source that hasn't answered by then is treated as unreachable. */
+export const REMOTE_TIMEOUT_MS = 10_000;
+
+/** `signal`, and a timeout, so a site that never answers can't keep a search waiting. */
+export function withTimeout(signal?: AbortSignal): AbortSignal {
+	const timeout = AbortSignal.timeout(REMOTE_TIMEOUT_MS);
+	return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
+
 export async function searchBotcScripts(
 	query: BotcScriptsQuery,
 	page: number,
@@ -126,7 +135,7 @@ export async function searchBotcScripts(
 ): Promise<BotcScriptsSearchPage> {
 	let response: Response;
 	try {
-		response = await fetch(searchPath(query, page), { signal });
+		response = await fetch(searchPath(query, page), { signal: withTimeout(signal) });
 	} catch (e) {
 		if (e instanceof DOMException && e.name === 'AbortError') throw e;
 		throw new ScriptFetchError(t('scripts.error.botcUnreachable'));

@@ -21,11 +21,21 @@ const homebrew = [
 const details = (page: Page) => page.getByRole('complementary', { name: 'Script details' });
 const detailsName = (page: Page) => page.getByTestId('script-details-name');
 
-/** Picks a source in the picker's Source dropdown. */
-async function chooseSource(page: Page, label: string) {
-	await page.getByRole('combobox', { name: 'Source' }).tap();
-	await page.getByRole('option', { name: label }).tap();
+/** Switches one source on or off under the search box. */
+async function toggleSource(page: Page, label: string) {
+	await page.getByTestId('search-sources').tap();
+	await page.getByRole('dialog', { name: 'Search in' }).getByText(label, { exact: true }).tap();
+	await page.keyboard.press('Escape');
 }
+
+// Every source is searched from the start; tests that need results route these again.
+test.beforeEach(async ({ page }) => {
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({ json: { page: 1, count: 0, hasMore: false, results: [] } })
+	);
+	await page.route('**/api/curated', (route) => route.fulfill({ json: { scripts: [] } }));
+	await page.route('**/api/collections/*', (route) => route.fulfill({ json: { scripts: [] } }));
+});
 
 /** Add script, top right, then one of its choices. */
 async function addScript(page: Page, choice: 'Paste' | 'Link') {
@@ -59,7 +69,6 @@ test('saved scripts are listed without the base three, survive a reload and can 
 	// The base three are always in New game, so the Scripts page leaves them out.
 	await expect(page.getByTestId('picker-status')).toHaveText('None');
 	await expect(page.getByRole('button', { name: /^Trouble Brewing/ })).toHaveCount(0);
-	await expect(page.getByRole('combobox', { name: 'Source' })).not.toContainText('Official');
 
 	await page.getByLabel('Script file').setInputFiles({
 		name: 'storm-front.json',
@@ -158,11 +167,7 @@ test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 			}
 		})
 	);
-	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
-		route.fulfill({ json: { page: 1, count: 0, hasMore: false, results: [] } })
-	);
 	await page.goto('/scripts');
-	await chooseSource(page, 'BotC Scripts');
 	await page.getByLabel('Search scripts').fill('42');
 	await expect(page.getByTestId('picker-status')).toHaveText(
 		'A BotC Scripts link or number: tap Save.'
@@ -308,29 +313,26 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 		})
 	);
 
-	await page.route('**/api/curated', (route) => route.fulfill({ json: { scripts: [] } }));
 	await page.goto('/scripts');
-	// Searching the table first, then taking the search to BotC Scripts.
-	await page.getByLabel('Search scripts').fill('storm');
-	await expect(page.getByTestId('picker-status')).toHaveText('None');
-	await page.getByLabel('Search scripts').fill('');
-	await page.getByRole('button', { name: 'Search BotC Scripts' }).tap();
+	// One search box looks in every source, named under it (Trevor, 2026-10-16).
+	await expect(page.getByTestId('search-sources')).toContainText(
+		'Official custom scripts, Carousel Script Collection, Saved, BotC Scripts'
+	);
+	await expect(page.getByRole('button', { name: 'Search BotC Scripts' })).toHaveCount(0);
 	const status = page.getByTestId('picker-status');
-	await expect(status).toHaveText('2 scripts · most votes');
-	const table = page.getByRole('table', { name: 'BotC Scripts results' });
+	await expect(status).toHaveText('2 scripts · 2 on BotC Scripts · most votes');
+	const table = page.getByRole('table', { name: 'Scripts' });
 	// The site's columns, with the characters counted from the script.
 	const first = table.locator('tbody tr').first();
 	await expect(first).toContainText('Most Voted One');
 	await expect(first.locator('[data-col="characters"]')).toHaveText('7');
-	await expect(first.locator('[data-col="likes"]')).toHaveText('5');
-	await expect(table.getByRole('columnheader', { name: 'Likes' })).toHaveAttribute(
-		'aria-sort',
-		'descending'
-	);
+	// Phones keep Name, Author, Type and Chars; Likes gives way.
+	const phone = test.info().project.name === 'phone';
+	if (!phone) await expect(first.locator('[data-col="likes"]')).toHaveText('5');
 	await expect(page.getByRole('button', { name: 'More' })).toBeDisabled();
 
 	await page.getByLabel('Search scripts').fill('storm');
-	await expect(status).toHaveText('1 script · most votes');
+	await expect(status).toHaveText('1 script · 1 on BotC Scripts · most votes');
 
 	// Filters sit in the header row: Teensyville scripts with the Imp.
 	await table.getByRole('button', { name: 'Filter Type', exact: true }).tap();
@@ -357,7 +359,7 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 		.poll(() => searches.at(-1))
 		.toBe('?page=1&q=storm&type=Teensyville&include=imp&editions=base,carousel');
 	await page.keyboard.press('Escape');
-	// One request when BotC Scripts was chosen, one after typing paused, one per filter.
+	// One request on opening, one after typing paused, one per filter.
 	expect(searches).toEqual([
 		'?page=1',
 		'?page=1&q=storm',
@@ -366,10 +368,13 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 		'?page=1&q=storm&type=Teensyville&include=imp&editions=base,carousel'
 	]);
 
-	// Likes, then (with a search) the closest names.
-	await table.getByRole('columnheader', { name: 'Likes' }).getByRole('button').tap();
-	await expect.poll(() => searches.at(-1)).toContain('&sort=match');
-	await expect(status).toHaveText('1 script · best match');
+	// Likes sorts what is loaded; the site already sends the most liked first.
+	if (!phone) {
+		const likes = table.getByRole('columnheader', { name: 'Likes' });
+		await likes.getByRole('button').tap();
+		await expect(likes).toHaveAttribute('aria-sort', 'ascending');
+		expect(searches).toHaveLength(5);
+	}
 
 	// Tapping a result shows its characters beside the list, no modal; nothing saves until Save.
 	await expect(detailsName(page)).toHaveText('None');
@@ -416,7 +421,7 @@ const bigTown = [
 	...['butler', 'drunk', 'recluse', 'saint', 'poisoner', 'spy', 'scarletwoman', 'baron', 'imp']
 ];
 
-test("the official site's curated scripts are listed when asked for, and saved", async ({
+test("the official site's custom scripts are listed, can be switched off, and saved", async ({
 	page
 }) => {
 	let asked = 0;
@@ -432,13 +437,13 @@ test("the official site's curated scripts are listed when asked for, and saved",
 		});
 	});
 	await page.goto('/scripts');
-	await expect(page.getByTestId('picker-status')).toHaveText('None');
-	// Nothing is fetched from the official site until its scripts are wanted.
-	expect(asked).toBe(0);
-
-	await chooseSource(page, 'Official custom scripts');
 	await expect(page.getByTestId('picker-status')).toHaveText('2 scripts');
 	expect(asked).toBe(1);
+	// Switched off, the official site's scripts leave the table.
+	await toggleSource(page, 'Official custom scripts');
+	await expect(page.getByTestId('picker-status')).toHaveText('None');
+	await toggleSource(page, 'Official custom scripts');
+	await expect(page.getByTestId('picker-status')).toHaveText('2 scripts');
 	const table = page.getByRole('table', { name: 'Scripts' });
 	await expect(table).toContainText('Little Hamlet');
 	await expect(table).toContainText('Teensyville');
@@ -452,10 +457,8 @@ test("the official site's curated scripts are listed when asked for, and saved",
 	await expect(name).toHaveAttribute('aria-sort', 'descending');
 	await expect(table.locator('tbody tr').first()).toContainText('Little Hamlet');
 
-	// Teensyville only, from the funnel in the header row. On phones the Type column is
-	// hidden and its funnel sits beside Name, labelled so moved funnels can be told apart.
+	// Teensyville only, from the funnel in the Type column's header (its own column on phones too).
 	const typeFilter = table.getByRole('button', { name: 'Filter Type', exact: true });
-	if (test.info().project.name === 'phone') await expect(typeFilter).toHaveText('Type');
 	await typeFilter.tap();
 	await page.getByRole('dialog', { name: 'Filter Type' }).getByLabel('Teensyville').tap();
 	await expect(page.getByTestId('picker-status')).toHaveText('1 script');

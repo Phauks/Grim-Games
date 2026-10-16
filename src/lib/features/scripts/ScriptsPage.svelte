@@ -92,7 +92,7 @@
 	<header>
 		<h1>{t('scripts.heading')}</h1>
 		<span bind:this={addAnchor}>
-			<Button icon="add" aria-haspopup="dialog" onclick={() => (adding = !adding)}
+			<Button icon="add" aria-haspopup="dialog" onclick={() => (adding = true)}
 				>{t('scripts.picker.add')}</Button
 			>
 		</span>
@@ -151,6 +151,7 @@
 	}
 	header {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);

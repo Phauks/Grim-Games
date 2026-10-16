@@ -1,5 +1,6 @@
 import { handleAccount, type Env as AccountRoutesEnv } from './account/routes.ts';
 import { handleBotcScripts } from './botcscripts.ts';
+import { handleCollection } from './collections.ts';
 import { handleCurated } from './curated.ts';
 import { handleRoom, Room, type RoomEnv } from './room.ts';
 import { handleShare, SharedScript, type ShareEnv } from './share.ts';
@@ -26,6 +27,11 @@ export default {
 		if (url.pathname === '/api/curated') {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
 			return handleCurated();
+		}
+		const collection = url.pathname.match(/^\/api\/collections\/([a-z0-9-]+)$/)?.[1];
+		if (collection) {
+			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+			return handleCollection(collection);
 		}
 		if (url.pathname === '/api/share' || url.pathname.startsWith('/api/share/')) {
 			return handleShare(request, env);

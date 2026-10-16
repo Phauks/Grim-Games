@@ -15,6 +15,7 @@ import {
 } from '#lib/core/data/index.ts';
 import type { ProfileScriptEntry } from '#lib/features/account/profile-scripts.ts';
 import type { BotcScriptsQuery, BotcScriptsRef, BotcScriptsSearchPage } from './botcscripts-api.ts';
+import type { CollectionScript } from './collection-api.ts';
 import type { CuratedScript } from './curated-api.ts';
 import { botcRow, pickerRow, type PickerRow, type PickerSource } from './picker-rows.ts';
 import {
@@ -45,6 +46,8 @@ export interface ScriptListing {
 export interface LocalContext {
 	data: GameData;
 	curated: readonly CuratedScript[];
+	/** The Carousel Script Collection (`collection-api.ts`). */
+	collection?: readonly CollectionScript[];
 	recent: readonly SavedScript[];
 	profile: readonly ProfileScriptEntry[];
 	/** Names a curated section in the app's words. */
@@ -113,6 +116,28 @@ export const curatedProvider: LocalProvider = {
 		})
 };
 
+export const collectionProvider: LocalProvider = {
+	kind: 'local',
+	id: 'collection',
+	listings: ({ data, collection = [] }) =>
+		collection.flatMap((entry) => {
+			const script = loadScript(entry.json, data).script;
+			return script
+				? [
+						{
+							row: pickerRow(script, `collection:${entry.link}`, 'collection'),
+							target: {
+								kind: 'json',
+								json: entry.json,
+								source: { kind: 'link', url: entry.link }
+							},
+							identity: { json: entry.json }
+						}
+					]
+				: [];
+		})
+};
+
 export const recentProvider: LocalProvider = {
 	kind: 'local',
 	id: 'recent',
@@ -167,6 +192,7 @@ export const LOCAL_PROVIDERS: readonly LocalProvider[] = [
 /** The Scripts page leaves out the base three: they are always in New game (Trevor, 2026-10-16). */
 export const SCRIPTS_PAGE_PROVIDERS: readonly LocalProvider[] = [
 	curatedProvider,
+	collectionProvider,
 	recentProvider,
 	profileProvider
 ];

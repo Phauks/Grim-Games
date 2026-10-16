@@ -26,6 +26,7 @@ const anon = pickerRow(
 	'recent'
 );
 const rows: PickerRow[] = [tb, small, anon];
+const ALL = ['official', 'curated', 'recent', 'profile', 'botc'] as const;
 
 describe('pickerRow', () => {
 	it('counts Townsfolk, Outsiders, Minions and Demons, and calls small scripts Teensyville', () => {
@@ -36,14 +37,28 @@ describe('pickerRow', () => {
 
 describe('filterRows', () => {
 	it('searches names, authors and character names, every word', () => {
-		expect(filterRows(rows, { term: 'tiny', source: 'all', kind: '' })).toEqual([small]);
-		expect(filterRows(rows, { term: 'zed', source: 'all', kind: '' })).toEqual([small]);
-		expect(filterRows(rows, { term: 'Baron imp', source: 'all', kind: '' })).toEqual([tb, anon]);
+		expect(filterRows(rows, { term: 'tiny', sources: ALL, kind: '' })).toEqual([small]);
+		expect(filterRows(rows, { term: 'zed', sources: ALL, kind: '' })).toEqual([small]);
+		expect(filterRows(rows, { term: 'Baron imp', sources: ALL, kind: '' })).toEqual([tb, anon]);
+	});
+
+	it('filters by author and characters, the way BotC Scripts does', () => {
+		expect(filterRows(rows, { term: '', sources: ALL, kind: '', author: 'ze' })).toEqual([small]);
+		expect(filterRows(rows, { term: '', sources: ALL, kind: '', include: ['Baron'] })).toEqual([
+			tb,
+			anon
+		]);
+		expect(filterRows(rows, { term: '', sources: ALL, kind: '', exclude: ['baron'] })).toEqual([
+			small
+		]);
+		expect(
+			filterRows(rows, { term: '', sources: ALL, kind: '', oneDemon: true }, data).map((r) => r.key)
+		).toEqual(['tb', 'tiny', 'anon']);
 	});
 
 	it('filters by source and by kind', () => {
-		expect(filterRows(rows, { term: '', source: 'official', kind: '' })).toEqual([tb]);
-		expect(filterRows(rows, { term: '', source: 'all', kind: 'Full' })).toEqual([tb]);
+		expect(filterRows(rows, { term: '', sources: ['official'], kind: '' })).toEqual([tb]);
+		expect(filterRows(rows, { term: '', sources: ALL, kind: 'Full' })).toEqual([tb]);
 	});
 });
 
