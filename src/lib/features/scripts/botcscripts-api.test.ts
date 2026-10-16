@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
 	normaliseSearch,
-	parseSearchPath,
+	EMPTY_QUERY,
+	filterCount,
+	normaliseQuery,
+	parseSearchUrl,
+	readEntries,
 	readProxiedSearchPage,
 	readSearchPage,
 	searchPath,
@@ -128,46 +132,126 @@ describe('API responses', () => {
 });
 
 describe('search', () => {
-	it('keeps the term in the path, tidied and capped', () => {
+	const q = (patch: Partial<typeof EMPTY_QUERY>) => ({ ...EMPTY_QUERY, ...patch });
+
+	it('tidies and caps the term', () => {
 		expect(normaliseSearch('  Storm   front ')).toBe('Storm front');
 		expect(normaliseSearch('x'.repeat(150))).toHaveLength(100);
-		expect(searchPath('storm front', 2)).toBe('/api/botcscripts/search/2/storm%20front');
-		expect(searchPath('  ')).toBe('/api/botcscripts/search/1');
+	});
+
+	it('sends only what is set to our Worker, so equal searches share a cache entry', () => {
+		expect(searchPath(EMPTY_QUERY)).toBe('/api/botcscripts/search?page=1');
+		expect(searchPath(q({ term: ' storm  front ' }), 2)).toBe(
+			'/api/botcscripts/search?page=2&q=storm+front'
+		);
+		// Same characters in another order or case: same URL.
+		expect(searchPath(q({ include: ['Imp', 'chef', 'imp'] }))).toBe(
+			searchPath(q({ include: ['chef', 'imp'] }))
+		);
+	});
+
+	it('round-trips every filter through the Worker URL', () => {
+		const query = q({
+			term: 'storm',
+			sort: 'newest',
+			type: 'Teensyville',
+			include: ['chef', 'imp'],
+			exclude: ['drunk'],
+			edition: 1,
+			author: 'Trevor',
+			oneDemon: true,
+			officialOnly: true
+		});
+		const url = new URL(searchPath(query, 3), 'https://grim.example');
+		expect(parseSearchUrl(url)).toEqual({ page: 3, query });
+		expect(filterCount(query)).toBe(8);
+	});
+
+	it('drops values the site would not understand', () => {
+		expect(
+			normaliseQuery(
+				q({
+					sort: 'name' as never,
+					type: 'Huge' as never,
+					include: ['<script>', 'ok'],
+					edition: 7
+				})
+			)
+		).toEqual(q({ include: ['ok'] }));
+		// Best match needs a term to match.
+		expect(normaliseQuery(q({ sort: 'match' })).sort).toBe('votes');
+		expect(normaliseQuery(q({ sort: 'match', term: 'x' })).sort).toBe('match');
+		expect(
+			normaliseQuery(q({ include: Array.from({ length: 20 }, (_, i) => `c${i}`) })).include
+		).toHaveLength(10);
 	});
 
 	it.each([
-		['/api/botcscripts/search/1', { term: '', page: 1 }],
-		['/api/botcscripts/search/3/storm%20front', { term: 'storm front', page: 3 }],
-		['/api/botcscripts/search/1/%E2%80%9Cquoted%E2%80%9D', { term: '“quoted”', page: 1 }]
-	])('reads %s', (path, expected) => {
-		expect(parseSearchPath(path)).toEqual(expected);
-		expect(parseSearchPath(searchPath(expected.term, expected.page))).toEqual(expected);
+		'https://g.example/api/botcscripts/search?page=0',
+		'https://g.example/api/botcscripts/search?page=101',
+		'https://g.example/api/botcscripts/search?page=x',
+		'https://g.example/api/botcscripts/searching?page=1'
+	])('refuses %s', (url) => {
+		expect(parseSearchUrl(new URL(url))).toBeUndefined();
 	});
 
-	it.each([
-		'/api/botcscripts/search/0',
-		'/api/botcscripts/search/101',
-		'/api/botcscripts/search/x',
-		'/api/botcscripts/search/1/%E0%A4%A'
-	])('refuses %s', (path) => {
-		expect(parseSearchPath(path)).toBeUndefined();
-	});
-
-	it('asks the site for latest versions, most votes first', () => {
-		const url = new URL(upstreamSearchPath('storm', 2), 'https://botcscripts.com');
-		expect(url.pathname).toBe('/api/scripts/');
-		expect(Object.fromEntries(url.searchParams)).toEqual({
+	it('maps sorts and filters onto the site’s own parameters', () => {
+		const params = (query: Partial<typeof EMPTY_QUERY>) =>
+			Object.fromEntries(
+				new URL(upstreamSearchPath(q(query), 2), 'https://botcscripts.com').searchParams
+			);
+		expect(params({ term: 'storm' })).toEqual({
 			latest: 'true',
 			ordering: '-score',
 			page: '2',
 			search: 'storm'
 		});
-		expect(new URL(upstreamSearchPath('', 1), 'https://x.example').searchParams.has('search')).toBe(
-			false
-		);
+		expect(params({ sort: 'newest' }).ordering).toBe('-pk');
+		expect(params({ sort: 'oldest' }).ordering).toBe('pk');
+		expect(params({ sort: 'match', term: 'storm' }).ordering).toBeUndefined();
+		expect(
+			params({
+				type: 'Teensyville',
+				include: ['imp', 'chef'],
+				exclude: ['drunk'],
+				edition: 0,
+				author: 'Trevor',
+				oneDemon: true,
+				officialOnly: true
+			})
+		).toEqual({
+			latest: 'true',
+			ordering: '-score',
+			page: '2',
+			script_type: 'Teensyville',
+			include: 'chef,imp',
+			exclude: 'drunk',
+			edition: '0',
+			author: 'Trevor',
+			mono_demon: 'true',
+			include_homebrew: 'false',
+			include_hybrid: 'false'
+		});
 	});
 
-	it('slims a page of results to rows, without the script JSON', () => {
+	it('keeps each character’s id, and a homebrew one’s name and team, but no ability', () => {
+		expect(
+			readEntries([
+				{ id: '_meta', name: 'Storm Front' },
+				'chef',
+				{ id: 'imp' },
+				{ id: 'stormwarden', name: 'Storm Warden', team: 'townsfolk', ability: 'Each night…' },
+				42
+			])
+		).toEqual([
+			{ id: 'chef' },
+			{ id: 'imp' },
+			{ id: 'stormwarden', name: 'Storm Warden', team: 'townsfolk' }
+		]);
+		expect(readEntries({ not: 'a list' })).toEqual([]);
+	});
+
+	it('slims a page of results to cards, without the script JSON', () => {
 		const page = readSearchPage(
 			{
 				count: 51,
@@ -181,7 +265,7 @@ describe('search', () => {
 						version: '1.0.0',
 						script_type: 'Full',
 						author: 'Trevor',
-						content: ['chef'],
+						content: [{ id: '_meta', name: 'Storm Front' }, 'chef'],
 						score: 12
 					},
 					{ broken: true }
@@ -201,7 +285,8 @@ describe('search', () => {
 					version: '1.0.0',
 					author: 'Trevor',
 					type: 'Full',
-					score: 12
+					score: 12,
+					characters: [{ id: 'chef' }]
 				}
 			]
 		});

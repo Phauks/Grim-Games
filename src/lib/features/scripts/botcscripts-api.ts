@@ -133,7 +133,15 @@ export function readProxiedVersion(json: unknown): BotcScriptsVersion | undefine
 	return { scriptId, versionId, name, version, author, content };
 }
 
-/** One search result: enough to show a row and load that version. */
+/** One character entry of a search result, as the script lists it. */
+export interface BotcScriptsEntry {
+	id: string;
+	/** Set for homebrew entries, which carry their own name and team. */
+	name?: string;
+	team?: string;
+}
+
+/** One search result: enough to show a card and load that version. */
 export interface BotcScriptsSummary {
 	scriptId: number;
 	versionId: number;
@@ -144,6 +152,8 @@ export interface BotcScriptsSummary {
 	type: string;
 	/** Votes on the site. */
 	score: number;
+	/** The script's characters (no abilities or night text), for counts and details. */
+	characters: BotcScriptsEntry[];
 }
 
 export interface BotcScriptsSearchPage {
@@ -154,45 +164,195 @@ export interface BotcScriptsSearchPage {
 	results: BotcScriptsSummary[];
 }
 
+/**
+ * Sort orders the site's API supports (`ordering_fields = ["pk", "score"]` in
+ * AdmiralGT/botc-scripts `scripts/viewsets.py`): votes, upload order, or, with a search
+ * term, how closely the name matches. Sorting by name is not offered by the site.
+ */
+export const BOTC_SORTS = ['votes', 'newest', 'oldest', 'match'] as const;
+export type BotcScriptsSort = (typeof BOTC_SORTS)[number];
+
+/**
+ * Which characters a script may use, as the site's `edition` filter counts it
+ * (`scripts/models.py` Edition): each step includes the ones before.
+ */
+export const BOTC_EDITIONS = [
+	{ value: 0, label: 'Base three only' },
+	{ value: 1, label: 'Up to Kickstarter' },
+	{ value: 2, label: 'Up to Carousel' }
+] as const;
+
+/** A search with filters (`scripts/filters.py` ScriptVersionFilter on the site). */
+export interface BotcScriptsQuery {
+	term: string;
+	sort: BotcScriptsSort;
+	/** "Full" or "Teensyville"; '' for both. */
+	type: '' | 'Full' | 'Teensyville';
+	/** Character ids every result must have / must not have. */
+	include: string[];
+	exclude: string[];
+	/** See `BOTC_EDITIONS`; undefined for any. */
+	edition?: number;
+	author: string;
+	/** Exactly one Demon. */
+	oneDemon: boolean;
+	/** No homebrew or hybrid scripts. */
+	officialOnly: boolean;
+}
+
+export const EMPTY_QUERY: BotcScriptsQuery = {
+	term: '',
+	sort: 'votes',
+	type: '',
+	include: [],
+	exclude: [],
+	author: '',
+	oneDemon: false,
+	officialOnly: false
+};
+
 /** The site's own limit on search terms is generous; Pocket Grimoire sent at most 100. */
 export const MAX_SEARCH_LENGTH = 100;
 const MAX_PAGE = 100;
+/** Characters per include or exclude list. */
+export const MAX_FILTER_CHARACTERS = 10;
+const CHARACTER_ID = /^[a-z0-9_-]{1,40}$/;
 
 /** Trims, collapses spaces and caps a search term. */
 export function normaliseSearch(term: string): string {
 	return term.trim().replace(/\s+/g, ' ').slice(0, MAX_SEARCH_LENGTH);
 }
 
-/** Our Worker's path for a search page: `/api/botcscripts/search/<page>[/<term>]`. */
-export function searchPath(term: string, page = 1): string {
-	const text = normaliseSearch(term);
-	return `/api/botcscripts/search/${page}${text ? `/${encodeURIComponent(text)}` : ''}`;
+function characterList(ids: readonly string[]): string[] {
+	return [...new Set(ids.map((id) => id.toLowerCase()).filter((id) => CHARACTER_ID.test(id)))]
+		.sort()
+		.slice(0, MAX_FILTER_CHARACTERS);
 }
 
-/** The reverse of `searchPath`, for the Worker. Undefined for anything else. */
-export function parseSearchPath(pathname: string): { term: string; page: number } | undefined {
-	const match = /^\/api\/botcscripts\/search\/(\d{1,3})(?:\/([^/]*))?\/?$/.exec(pathname);
-	if (!match) return undefined;
-	const page = Number(match[1]);
-	if (page < 1 || page > MAX_PAGE) return undefined;
-	try {
-		return { term: normaliseSearch(decodeURIComponent(match[2] ?? '')), page };
-	} catch {
-		return undefined;
-	}
+/** Same query in one canonical form, so equal searches share one cache entry. */
+export function normaliseQuery(query: BotcScriptsQuery): BotcScriptsQuery {
+	const term = normaliseSearch(query.term);
+	const edition = BOTC_EDITIONS.some((e) => e.value === query.edition) ? query.edition : undefined;
+	return {
+		term,
+		// "Best match" needs a term; without one it means the default order.
+		sort:
+			BOTC_SORTS.includes(query.sort) && (term || query.sort !== 'match') ? query.sort : 'votes',
+		type: query.type === 'Full' || query.type === 'Teensyville' ? query.type : '',
+		include: characterList(query.include),
+		exclude: characterList(query.exclude),
+		...(edition === undefined ? {} : { edition }),
+		author: normaliseSearch(query.author),
+		oneDemon: query.oneDemon === true,
+		officialOnly: query.officialOnly === true
+	};
+}
+
+/** How many filters (not the term or sort) are set, for the Filters button. */
+export function filterCount(query: BotcScriptsQuery): number {
+	const q = normaliseQuery(query);
+	return (
+		(q.type ? 1 : 0) +
+		q.include.length +
+		q.exclude.length +
+		(q.edition === undefined ? 0 : 1) +
+		(q.author ? 1 : 0) +
+		(q.oneDemon ? 1 : 0) +
+		(q.officialOnly ? 1 : 0)
+	);
 }
 
 /**
- * The site's search URL for a page: latest versions only, most votes first (the order
- * Pocket Grimoire asked for). An empty term lists the most voted scripts.
+ * Our Worker's URL for a search page. Search filters are public, so they travel in the
+ * query string (nothing private does, CLAUDE.md).
  */
-export function upstreamSearchPath(term: string, page: number): string {
-	const params = new URLSearchParams({ latest: 'true', ordering: '-score', page: String(page) });
-	if (term) params.set('search', term);
+export function searchPath(query: BotcScriptsQuery, page = 1): string {
+	const q = normaliseQuery(query);
+	const params = new URLSearchParams({ page: String(page) });
+	if (q.term) params.set('q', q.term);
+	if (q.sort !== 'votes') params.set('sort', q.sort);
+	if (q.type) params.set('type', q.type);
+	if (q.include.length) params.set('include', q.include.join(','));
+	if (q.exclude.length) params.set('exclude', q.exclude.join(','));
+	if (q.edition !== undefined) params.set('edition', String(q.edition));
+	if (q.author) params.set('author', q.author);
+	if (q.oneDemon) params.set('oneDemon', '1');
+	if (q.officialOnly) params.set('official', '1');
+	return `/api/botcscripts/search?${params}`;
+}
+
+/** The reverse of `searchPath`, for the Worker. Undefined for anything else. */
+export function parseSearchUrl(url: URL): { query: BotcScriptsQuery; page: number } | undefined {
+	if (url.pathname !== '/api/botcscripts/search') return undefined;
+	const p = url.searchParams;
+	const page = Number(p.get('page') ?? '1');
+	if (!Number.isInteger(page) || page < 1 || page > MAX_PAGE) return undefined;
+	const list = (name: string) => (p.get(name) ?? '').split(',').filter(Boolean);
+	const edition = p.get('edition');
+	return {
+		page,
+		query: normaliseQuery({
+			term: p.get('q') ?? '',
+			sort: (p.get('sort') ?? 'votes') as BotcScriptsSort,
+			type: (p.get('type') ?? '') as BotcScriptsQuery['type'],
+			include: list('include'),
+			exclude: list('exclude'),
+			edition: edition === null ? undefined : Number(edition),
+			author: p.get('author') ?? '',
+			oneDemon: p.get('oneDemon') === '1',
+			officialOnly: p.get('official') === '1'
+		})
+	};
+}
+
+const ORDERING: Record<BotcScriptsSort, string | undefined> = {
+	votes: '-score',
+	newest: '-pk',
+	oldest: 'pk',
+	// No ordering: the site then sorts a search by name similarity.
+	match: undefined
+};
+
+/** The site's search URL for a page of the latest versions. */
+export function upstreamSearchPath(query: BotcScriptsQuery, page: number): string {
+	const q = normaliseQuery(query);
+	const params = new URLSearchParams({ latest: 'true', page: String(page) });
+	const ordering = ORDERING[q.sort];
+	if (ordering) params.set('ordering', ordering);
+	if (q.term) params.set('search', q.term);
+	if (q.type) params.set('script_type', q.type);
+	if (q.include.length) params.set('include', q.include.join(','));
+	if (q.exclude.length) params.set('exclude', q.exclude.join(','));
+	if (q.edition !== undefined) params.set('edition', String(q.edition));
+	if (q.author) params.set('author', q.author);
+	if (q.oneDemon) params.set('mono_demon', 'true');
+	if (q.officialOnly) {
+		params.set('include_homebrew', 'false');
+		params.set('include_hybrid', 'false');
+	}
 	return `/api/scripts/?${params}`;
 }
 
-/** Reads a `/api/scripts/?…` page into slim rows (no script JSON). */
+const MAX_ENTRIES = 60;
+
+/** The character entries of a script's JSON, without `_meta`, abilities or night text. */
+export function readEntries(content: unknown): BotcScriptsEntry[] {
+	if (!Array.isArray(content)) return [];
+	const entries: BotcScriptsEntry[] = [];
+	for (const item of content) {
+		if (entries.length >= MAX_ENTRIES) break;
+		if (typeof item === 'string') entries.push({ id: item.slice(0, 40) });
+		else if (isObject(item) && typeof item.id === 'string' && item.id !== '_meta') {
+			const entry: BotcScriptsEntry = { id: item.id.slice(0, 40) };
+			if (typeof item.name === 'string') entry.name = item.name.slice(0, 60);
+			if (typeof item.team === 'string') entry.team = item.team.slice(0, 20);
+			entries.push(entry);
+		}
+	}
+	return entries;
+}
+
+/** Reads a `/api/scripts/?…` page into slim rows (character ids, not the script JSON). */
 export function readSearchPage(json: unknown, page: number): BotcScriptsSearchPage | undefined {
 	if (!isObject(json) || !Array.isArray(json.results)) return undefined;
 	const results: BotcScriptsSummary[] = [];
@@ -205,7 +365,8 @@ export function readSearchPage(json: unknown, page: number): BotcScriptsSearchPa
 			version: typeof row.version === 'string' ? row.version : String(row.version ?? ''),
 			author: typeof row.author === 'string' ? row.author : '',
 			type: typeof row.script_type === 'string' ? row.script_type : '',
-			score: typeof row.score === 'number' ? row.score : 0
+			score: typeof row.score === 'number' ? row.score : 0,
+			characters: readEntries(row.content)
 		});
 	}
 	return {
@@ -220,12 +381,14 @@ export function readSearchPage(json: unknown, page: number): BotcScriptsSearchPa
 export function readProxiedSearchPage(json: unknown): BotcScriptsSearchPage | undefined {
 	if (!isObject(json) || !Array.isArray(json.results)) return undefined;
 	if (typeof json.page !== 'number' || typeof json.count !== 'number') return undefined;
-	const results = json.results.filter(
-		(r): r is BotcScriptsSummary =>
-			isObject(r) &&
-			typeof r.scriptId === 'number' &&
-			typeof r.versionId === 'number' &&
-			typeof r.name === 'string'
-	);
+	const results = json.results
+		.filter(
+			(r): r is BotcScriptsSummary =>
+				isObject(r) &&
+				typeof r.scriptId === 'number' &&
+				typeof r.versionId === 'number' &&
+				typeof r.name === 'string'
+		)
+		.map((r) => ({ ...r, characters: Array.isArray(r.characters) ? r.characters : [] }));
 	return { page: json.page, count: json.count, hasMore: json.hasMore === true, results };
 }

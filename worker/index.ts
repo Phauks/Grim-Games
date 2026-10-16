@@ -20,7 +20,7 @@ export default {
 		if (room) return room;
 		if (url.pathname.startsWith('/api/botcscripts/')) {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
-			return handleBotcScripts(url.pathname);
+			return handleBotcScripts(url);
 		}
 		if (url.pathname === '/api/share' || url.pathname.startsWith('/api/share/')) {
 			return handleShare(request, env);

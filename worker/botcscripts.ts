@@ -1,24 +1,28 @@
 /**
  * `/api/botcscripts/script/<pk>[/<version>]` and `/api/botcscripts/version/<pk>` load one
  * script from BotC Scripts for the browser, which can't call botcscripts.com itself
- * (08-script-loading.md §4.2). `/api/botcscripts/search/<page>[/<term>]` lists one page of
- * search results, slimmed to names (no script JSON). Not an open proxy: it only ever
- * requests the site's read-only script endpoints, built from the path, and caches answers
- * for 10 minutes so repeated searches don't reach the site (its robots.txt asks crawlers
- * to stay away; this is only ever one request per tap or typed search).
+ * (08-script-loading.md §4.2). `/api/botcscripts/search?page=&q=&sort=&…` lists one page
+ * of search results with filters, slimmed to names and character ids (no abilities or
+ * night text). Not an open proxy: it only ever requests the site's read-only script
+ * endpoints, rebuilt from allow-listed parameters, and caches answers for 10 minutes so
+ * repeated searches don't reach the site (its robots.txt asks crawlers to stay away; this
+ * is only ever one request per tap or typed search).
  */
 import {
 	BOTC_SCRIPTS_ORIGIN,
 	parseProxyPath,
-	parseSearchPath,
+	parseSearchUrl,
 	pickVersionId,
 	readSearchPage,
 	readVersion,
-	upstreamSearchPath
+	upstreamSearchPath,
+	type BotcScriptsQuery
 } from '../src/lib/features/scripts/botcscripts-api.ts';
 
 /** Scripts are a few KB; anything far bigger is not a script. */
 const MAX_BYTES = 1_000_000;
+/** A search page holds 50 whole scripts, homebrew abilities included. */
+const MAX_SEARCH_BYTES = 6_000_000;
 const CACHE_SECONDS = 600;
 
 class LookupError extends Error {
@@ -30,7 +34,7 @@ class LookupError extends Error {
 	}
 }
 
-async function getJson(path: string): Promise<unknown> {
+async function getJson(path: string, maxBytes = MAX_BYTES): Promise<unknown> {
 	const response = await fetch(`${BOTC_SCRIPTS_ORIGIN}${path}`, {
 		headers: { Accept: 'application/json' },
 		redirect: 'follow',
@@ -41,7 +45,7 @@ async function getJson(path: string): Promise<unknown> {
 		throw new LookupError(502, `BotC Scripts answered with HTTP ${response.status}.`);
 	}
 	const text = await response.text();
-	if (text.length > MAX_BYTES) throw new LookupError(502, 'The script is too large.');
+	if (text.length > maxBytes) throw new LookupError(502, 'The answer is too large.');
 	try {
 		return JSON.parse(text);
 	} catch {
@@ -49,9 +53,12 @@ async function getJson(path: string): Promise<unknown> {
 	}
 }
 
-async function handleSearch(term: string, page: number): Promise<Response> {
+async function handleSearch(query: BotcScriptsQuery, page: number): Promise<Response> {
 	try {
-		const found = readSearchPage(await getJson(upstreamSearchPath(term, page)), page);
+		const found = readSearchPage(
+			await getJson(upstreamSearchPath(query, page), MAX_SEARCH_BYTES),
+			page
+		);
 		if (!found) throw new LookupError(502, 'BotC Scripts returned something unexpected.');
 		return Response.json(found, {
 			headers: { 'Cache-Control': `public, max-age=${CACHE_SECONDS}` }
@@ -67,9 +74,10 @@ async function handleSearch(term: string, page: number): Promise<Response> {
 	}
 }
 
-export async function handleBotcScripts(pathname: string): Promise<Response> {
-	const search = parseSearchPath(pathname);
-	if (search) return handleSearch(search.term, search.page);
+export async function handleBotcScripts(url: URL): Promise<Response> {
+	const { pathname } = url;
+	const search = parseSearchUrl(url);
+	if (search) return handleSearch(search.query, search.page);
 	const ref = parseProxyPath(pathname);
 	if (!ref) return Response.json({ error: 'Not a BotC Scripts script.' }, { status: 400 });
 	try {

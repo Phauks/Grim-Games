@@ -8,6 +8,7 @@ import {
 	readProxiedSearchPage,
 	readProxiedVersion,
 	searchPath,
+	type BotcScriptsQuery,
 	type BotcScriptsRef,
 	type BotcScriptsSearchPage
 } from './botcscripts-api.ts';
@@ -104,13 +105,13 @@ export function fetchLinkTarget(target: LinkTarget, typed: string): Promise<Fetc
 
 /** One page of BotC Scripts search results, through our Worker. */
 export async function searchBotcScripts(
-	term: string,
+	query: BotcScriptsQuery,
 	page: number,
 	signal?: AbortSignal
 ): Promise<BotcScriptsSearchPage> {
 	let response: Response;
 	try {
-		response = await fetch(searchPath(term, page), { signal });
+		response = await fetch(searchPath(query, page), { signal });
 	} catch (e) {
 		if (e instanceof DOMException && e.name === 'AbortError') throw e;
 		throw new ScriptFetchError('Could not reach BotC Scripts. Check your connection.');
