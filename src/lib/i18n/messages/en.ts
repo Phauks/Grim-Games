@@ -1,17 +1,15 @@
 import type { Catalog } from '#lib/i18n/catalog.ts';
+import { common } from '#lib/i18n/messages/en/common.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
  *
- * Keys are `<area>.<name>`, where the area is the feature folder that owns the text
- * (`common` for words every feature shares). A message is either a string with `{name}`
- * placeholders, or plural forms keyed by `Intl.PluralRules` category with a `{count}`.
- * Strings are added here as features move their text over; nothing else is translated yet.
+ * Each area keeps its English in its own file under messages/en/ (one per feature folder,
+ * plus `common` for shared words), so threads moving their text don't edit the same file.
+ * Keys are written out in full as `<area>.<name>` so a search for a key finds its use.
+ * A message is either a string with `{name}` placeholders, or plural forms keyed by
+ * `Intl.PluralRules` category with a `{count}`.
  */
 export const en = {
-	'common.cancel': 'Cancel',
-	'common.close': 'Close',
-	'common.none': 'None',
-	'common.seat': 'Seat {number}',
-	'common.players': { one: '{count} player', other: '{count} players' }
+	...common
 } as const satisfies Catalog;
