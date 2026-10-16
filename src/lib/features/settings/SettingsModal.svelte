@@ -84,6 +84,17 @@
 		font-family: var(--font-control);
 		text-align: left;
 	}
+	@media (hover: hover) and (pointer: fine) {
+		nav button:not([aria-current='page']):hover {
+			background: var(--surface-hover);
+		}
+	}
+	/* Wide windows: room for every section name on one line. */
+	@media (min-width: 64rem) {
+		.layout {
+			grid-template-columns: calc(15 * var(--u)) 1fr;
+		}
+	}
 	nav button[aria-current='page'] {
 		background: var(--surface-selected);
 		box-shadow: inset 3px 0 0 var(--accent);
@@ -135,6 +146,17 @@
 		nav button {
 			border-bottom: 1px solid var(--border);
 			border-radius: 0;
+		}
+		@media (hover: hover) and (pointer: fine) {
+			nav button:not([aria-current='page']):hover {
+				background: var(--surface-hover);
+			}
+		}
+		/* Wide windows: room for every section name on one line. */
+		@media (min-width: 64rem) {
+			.layout {
+				grid-template-columns: calc(15 * var(--u)) 1fr;
+			}
 		}
 		nav button[aria-current='page'] {
 			background: none;

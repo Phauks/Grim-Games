@@ -2,6 +2,7 @@
 	import { Drawer } from '@ark-ui/svelte/drawer';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { Snippet } from 'svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 
 	/** A snap point: a fraction of the viewport (0-1), or a size like `'20rem'` / `'300px'`. */
 	type SnapPoint = number | string;
@@ -87,6 +88,10 @@
 						{#if description}<Drawer.Description>{description}</Drawer.Description>{/if}
 					</div>
 					{#if actions}{@render actions()}{/if}
+					<!-- Computers only (see the media query): no swipe there, so a visible way out. -->
+					<Drawer.CloseTrigger class="desktop-close" aria-label="Close"
+						><Icon name="close" /></Drawer.CloseTrigger
+					>
 				</header>
 				<div class="body">{@render children()}</div>
 			</Drawer.Content>
@@ -210,6 +215,63 @@
 		overscroll-behavior: contain;
 	}
 
+	:global([data-scope='drawer'][data-part='close-trigger'].desktop-close) {
+		display: none;
+		place-items: center;
+		flex: none;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		border: 0;
+		border-radius: var(--radius-full);
+		background: none;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	/*
+	 * On a computer (a mouse and a wide window) a sheet sliding up from the bottom feels like
+	 * a phone app (Trevor, 2026-10-16), so it opens as a centred panel with a Close button.
+	 * Touch screens of any size keep the swipeable sheet.
+	 */
+	@media (hover: hover) and (pointer: fine) and (min-width: 48rem) {
+		:global([data-scope='drawer'][data-part='positioner']) {
+			align-items: center;
+			padding: var(--space-5);
+		}
+		:global([data-scope='drawer'][data-part='content']) {
+			width: min(100%, calc(36 * var(--u)));
+			max-height: min(85dvh, 100%);
+			padding: var(--space-4) var(--space-5) var(--space-5);
+			border: var(--card-border);
+			border-radius: var(--card-radius);
+		}
+		:global([data-scope='drawer'][data-part='content'][data-state='open']) {
+			animation: sheet-pop-in var(--duration-normal) var(--ease-out);
+		}
+		:global([data-scope='drawer'][data-part='content'][data-state='closed']) {
+			animation: sheet-fade-out var(--duration-fast) var(--ease-in) forwards;
+		}
+		:global([data-scope='drawer'][data-part='grabber']) {
+			display: none;
+		}
+		:global([data-scope='drawer'][data-part='close-trigger'].desktop-close) {
+			display: grid;
+		}
+		:global([data-scope='drawer'][data-part='close-trigger'].desktop-close:hover) {
+			background: var(--surface-hover);
+		}
+		header {
+			align-items: center;
+			touch-action: auto;
+		}
+	}
+
+	@keyframes -global-sheet-pop-in {
+		from {
+			opacity: 0;
+			transform: scale(0.97);
+		}
+	}
 	@keyframes -global-sheet-slide-in {
 		from {
 			transform: translate3d(0, 100%, 0);

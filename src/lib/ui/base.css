@@ -102,3 +102,26 @@ select:focus-visible {
 	outline-offset: -2px;
 	border-color: var(--focus);
 }
+
+/*
+ * Computers (Trevor, 2026-10-16: on a computer it shouldn't feel like a phone app). With a
+ * mouse, everything pressable answers the pointer before it is clicked, and scroll bars are
+ * slim and in the theme's colours. Touch screens never see these.
+ */
+@media (hover: hover) and (pointer: fine) {
+	:where(.icon-button):not(:disabled):hover,
+	[data-scope='tabs'][data-part='trigger']:not([data-selected]):hover,
+	[data-scope='segment-group'][data-part='item']:not([data-state='checked']):hover,
+	[data-scope='radio-group'][data-part='item']:not([data-state='checked']):hover,
+	[data-scope='select'][data-part='trigger']:hover,
+	[data-scope='dialog'][data-part='close-trigger']:hover {
+		background: var(--surface-hover);
+	}
+	[data-scope='tabs'][data-part='trigger']:not([data-selected]):hover {
+		color: var(--on-surface);
+	}
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--border) transparent;
+	}
+}

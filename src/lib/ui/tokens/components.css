@@ -27,6 +27,8 @@
 	--choice-color: var(--on-surface);
 	--choice-selected-border: var(--accent);
 	--choice-selected-background: var(--surface-selected);
+	/* Mouse hover on anything pressable: a faint wash of the text colour, on any surface. */
+	--surface-hover: color-mix(in srgb, currentColor 9%, transparent);
 
 	--seat-face: var(--token-face);
 	--seat-rim: var(--token-rim);
