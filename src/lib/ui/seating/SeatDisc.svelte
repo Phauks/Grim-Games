@@ -3,7 +3,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 
 	/**
-	 * How one seat looks on a ring of seats: the token, the dead shroud and the player's name.
+	 * How one seat looks on a ring of seats: the token, the dead mark and the player's name.
 	 * Shared by the Storyteller's board and the player's Circle (/play) so a seat, alive or
 	 * dead, looks the same on both (Trevor, 2026-10-16). The caller wraps it in its own button
 	 * (taps, drags) and passes the face (a character token); without one, the seat number shows.
@@ -41,7 +41,7 @@
 		<span class="face" class:flipped
 			>{#if face}{@render face()}{:else}<span class="empty">{number}</span>{/if}</span
 		>
-		{#if dead}<span class="shroud"><Icon name="dead" /></span>{/if}
+		{#if dead}<span class="skull" data-testid="dead-mark"><Icon name="dead" /></span>{/if}
 		{#if marks}{@render marks()}{/if}
 	</span>
 	<span class="name" data-place={namePlace}>{name}</span>
@@ -82,20 +82,24 @@
 		color: var(--on-surface-muted);
 		font: var(--seat-font);
 	}
+	/* Dead (Trevor, 2026-10-16): the token dimmed, colour kept, plus a skull badge. */
 	.seat-disc[data-dead] .face {
-		filter: grayscale(1) brightness(0.65);
+		filter: brightness(0.55);
 	}
-	/* The shroud: a dark cap over the top of the token, as on a physical grimoire. */
-	.shroud {
+	/* One skull badge on the lower-left rim, half outside the token. */
+	.skull {
 		position: absolute;
-		inset: 0;
+		left: -10%;
+		bottom: -6%;
 		display: grid;
-		justify-items: center;
-		align-content: start;
-		padding-top: 6%;
+		place-items: center;
+		width: calc(var(--size) * 0.38);
+		height: calc(var(--size) * 0.38);
+		border: calc(0.125 * var(--u)) solid oklch(0.93 0.02 85);
 		border-radius: 50%;
-		background: linear-gradient(to bottom, rgb(0 0 0 / 0.85) 40%, transparent 40%);
-		color: var(--on-surface);
+		background: oklch(0.16 0.01 60);
+		color: oklch(0.93 0.02 85);
+		box-shadow: var(--shadow);
 		--icon-size: calc(var(--size) * 0.26);
 	}
 	/*

@@ -218,7 +218,7 @@
 						<!-- Every claim is visible: more tokens tucked under this one (Trevor). -->
 						{#each shown as c, n (c.id)}
 							<span class="extra" data-slot={n} data-testid="extra-claim" data-character={c.id}
-								><CharacterToken character={c} size={Math.round(size * 0.46)} /></span
+								><CharacterToken character={c} size={Math.round(size * 0.4)} /></span
 							>
 						{/each}
 						{#if extra.length > EXTRA_SLOTS}<span
@@ -294,22 +294,26 @@
 		z-index: 2;
 		cursor: grabbing;
 	}
-	/* Extra claims tucked against the lower sides of the token, clear of the name. */
+	/* Extra claims tucked down the right side of the token, clear of the name and of the
+	   skull badge on the lower left (SeatDisc). */
 	.extra {
 		position: absolute;
-		bottom: 2%;
+		right: -26%;
 		display: grid;
 		place-items: center;
-		width: 46%;
-		height: 46%;
+		width: 40%;
+		height: 40%;
 		border-radius: 50%;
 		box-shadow: var(--shadow);
 	}
+	.seat[data-dead] .extra {
+		filter: brightness(0.55);
+	}
 	.extra[data-slot='0'] {
-		left: -24%;
+		bottom: 0;
 	}
 	.extra[data-slot='1'] {
-		right: -24%;
+		top: 24%;
 	}
 	.more {
 		background: var(--surface-raised);
