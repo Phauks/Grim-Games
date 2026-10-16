@@ -34,7 +34,7 @@ async function scribble(page: Page, canvas: Locator, row = 0.3) {
 }
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/play');
+	await page.goto('/play#e=tb');
 	await expect(page.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 });
 

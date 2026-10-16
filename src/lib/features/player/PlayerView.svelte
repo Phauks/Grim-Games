@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import {
 		editionScript,
 		loadScriptText,
+		OFFICIAL_EDITIONS,
 		type ScriptLoadResult,
 		type GameData,
-		type LoadedScript,
 		type NumericNightOrder
 	} from '#lib/core/data/index.ts';
 	import {
@@ -27,6 +28,7 @@
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 	import { fetchSharedRef, shareTargetFor } from '#lib/features/scripts/share-codes.ts';
 	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import ScratchPadDialog from '#lib/ui/scratch/ScratchPadDialog.svelte';
@@ -44,7 +46,6 @@
 
 	let data = $state<GameData>();
 	let numeric = $state<NumericNightOrder>();
-	let fallback = $state<LoadedScript>();
 	let notebook = $state<NotebookState>();
 	let error = $state<string>();
 	let tab = $state<Tab>('script');
@@ -57,9 +58,6 @@
 				// The script chosen on /scripts; reports its own storage errors.
 				restoreScripts()
 			]);
-			// With no script chosen yet, show Trouble Brewing (09-player-script-view.md).
-			fallback = editionScript('tb', game);
-			if (!fallback) throw new Error('Trouble Brewing is missing from the data');
 			numeric = numbers;
 			data = game;
 			// Restored first, so the shared script ends up current rather than the last one used.
@@ -99,7 +97,13 @@
 		}
 	}
 
-	const script = $derived(data ? (currentScript.current ?? fallback) : undefined);
+	const script = $derived(data ? currentScript.current : undefined);
+	/** No script yet: the Scripts page no longer lists the base three, so offer them here. */
+	const choosing = $derived(!!data && !currentScript.current);
+	function chooseEdition(id: string) {
+		const chosen = data && editionScript(id, data);
+		if (chosen) void chooseScript(chosen, { kind: 'edition' });
+	}
 
 	/** Makes the share link when Share or QR code is tapped (a short code for custom scripts). */
 	const shareTarget = $derived.by(() => {
@@ -179,6 +183,23 @@
 
 	{#if error}
 		<p role="alert">{t('player.loadFailed', { error })}</p>
+	{:else if choosing}
+		<!-- Only when no script is loaded; no Change script once there is one (Trevor). -->
+		<section class="choose" aria-labelledby="choose-script">
+			<h2 id="choose-script">{t('player.chooseScript')}</h2>
+			<ul>
+				{#each OFFICIAL_EDITIONS as edition (edition.id)}
+					<li>
+						<Button onclick={() => chooseEdition(edition.id)}>{edition.name}</Button>
+					</li>
+				{/each}
+				<li>
+					<Button href={resolve('/scripts')} variant="quiet" icon="search"
+						>{t('player.findScript')}</Button
+					>
+				</li>
+			</ul>
+		</section>
 	{:else}
 		<Tabs
 			bind:value={tab}
@@ -257,6 +278,23 @@
 	}
 	.author {
 		grid-column: 1 / -1;
+	}
+	.choose h2 {
+		margin: 0 0 var(--space-2);
+		font-size: 1.1rem;
+		color: var(--heading);
+	}
+	.choose ul {
+		display: grid;
+		gap: var(--space-2);
+		max-width: var(--measure);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.choose :global(a),
+	.choose :global(button) {
+		width: 100%;
 	}
 	h1 {
 		margin: 0;

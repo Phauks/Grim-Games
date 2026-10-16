@@ -5,6 +5,12 @@ import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/play');
+	// No script yet: the base three are offered here, since /scripts no longer lists them.
+	await expect(page.getByRole('link', { name: 'Find a script' })).toHaveAttribute(
+		'href',
+		'/scripts'
+	);
+	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
 	await expect(page.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 });
 
@@ -147,7 +153,7 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	await expect(page.locator('[data-note]')).toHaveCount(1);
 });
 
-test('shows the script chosen on the Scripts page, with its own notebook', async ({ page }) => {
+test('each script keeps its own notebook', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await page.getByRole('button', { name: /^Untitled/ }).tap();
 	await page
@@ -159,22 +165,16 @@ test('shows the script chosen on the Scripts page, with its own notebook', async
 
 	// Players have no Change script button (Trevor): the script comes from /scripts or a link.
 	await expect(page.getByRole('link', { name: 'Change script' })).toHaveCount(0);
-	await page.goto('/scripts');
-	await page.getByLabel('Script file').setInputFiles({
-		name: 'moon-night.json',
-		mimeType: 'application/json',
-		buffer: Buffer.from(
-			JSON.stringify([{ id: '_meta', name: 'Moon Night' }, 'grandmother', 'chef', 'imp'])
-		)
-	});
-	await expect(page.getByTestId('script-details-name')).toHaveText('Moon Night');
-	await page.goto('/play');
-	await expect(page.getByRole('heading', { name: 'Moon Night', level: 1 })).toBeVisible();
+	await page.goto(`/play#e=bmr`);
+	await expect(page.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
 	await expect(page.locator('[data-character="grandmother"]')).toBeVisible();
 	// A new script starts its own notebook; Trouble Brewing's is kept.
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(page.getByRole('button', { name: /^Untitled/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: /^TB/ })).toHaveCount(0);
+	await page.goto('/play#e=tb');
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(page.getByRole('button', { name: /^TB/ })).toBeVisible();
 });
 
 test('a homebrew character from a loaded script shows as a badge with its ability', async ({

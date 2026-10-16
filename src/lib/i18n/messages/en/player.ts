@@ -14,6 +14,8 @@ export const player = {
 	'player.recommendedTravellers': 'Recommended Travellers',
 	'player.notFirstNight': '* Not the first night',
 	'player.jinxes': 'Jinxes',
+	'player.chooseScript': 'Choose a script',
+	'player.findScript': 'Find a script',
 	'player.breakdown': 'Players',
 	'player.characterType': 'Character type',
 
