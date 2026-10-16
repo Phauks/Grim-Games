@@ -58,6 +58,7 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 						'<div class="example"><p>Sample example two.</p></div>' +
 						'<h2>Tips &amp; Tricks</h2><ul><li>Sample tip one.</li></ul><ul><li>Sample tip two.</li></ul>' +
 						'<h2>Bluffing as the Witch</h2><ul><li>Sample bluff.</li></ul>' +
+						'<h2>Related Jinxes (Open)</h2><p>Sample wiki jinx.</p>' +
 						`<h2>Long</h2>${'<p>Sample line.</p>'.repeat(80)}` +
 						'</div></div></div>'
 				}
@@ -117,6 +118,14 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 		'Sample bluff.'
 	);
 
+	// The wiki's jinx list is left out; Jinxes lists TPI's (the Witch has none).
+	await expect(sections.getByRole('button', { name: /Related Jinxes/ })).toHaveCount(0);
+	if (!wide) await dialog.getByRole('button', { name: 'Summary' }).tap();
+	await sections.getByRole('button', { name: 'Jinxes' }).tap();
+	await expect(dialog.getByTestId('jinx-section')).toContainText('None');
+	// The top band names the type and where the character comes from.
+	await expect(dialog.locator('.character .type')).toHaveText('Minion · Sects & Violets');
+
 	// A long section scrolls inside the dialog, the character staying in view.
 	if (!wide) await dialog.getByRole('button', { name: 'Summary' }).tap();
 	await sections.getByRole('button', { name: 'Long' }).tap();
@@ -124,4 +133,24 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 	await last.scrollIntoViewIfNeeded();
 	await expect(last).toBeInViewport();
 	await expect(dialog.locator('.character')).toBeInViewport();
+});
+
+test('the Jinxes section lists every TPI jinx with both characters', async ({ page }) => {
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({ json: { parse: { text: '<h2>Summary</h2><p>Sample.</p>' } } })
+	);
+	await page.goto('/reference');
+	await page.getByRole('searchbox').fill('Alchemist');
+	await page
+		.locator('[data-testid="reference-card"] button.badge[data-character-id="alchemist"]')
+		.first()
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Alchemist' });
+	const sections = dialog.getByRole('navigation', { name: 'More from the wiki' });
+	await sections.getByRole('button', { name: 'Jinxes' }).tap();
+	const jinxes = dialog.getByTestId('jinx-section');
+	await expect(jinxes.locator('[data-character-id="boffin"]').first()).toBeVisible();
+	await expect(
+		jinxes.locator('.jinx .pair').first().locator('[data-character-id="alchemist"]')
+	).toBeVisible();
 });

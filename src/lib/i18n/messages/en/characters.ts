@@ -17,6 +17,8 @@ export const characters = {
 	'characters.noWiki': 'No wiki entry',
 	'characters.wikiIntroduction': 'Introduction',
 	'characters.summary': 'Summary',
+	'characters.jinxes': 'Jinxes',
+	'characters.homebrew': 'Homebrew',
 	'characters.artist': 'Artist: {name}',
 	'characters.example': 'Example {number}',
 	'characters.tip': 'Tip {number}',
@@ -30,6 +32,7 @@ export const characters = {
 	'characters.boardNames': 'Show character names on grimoire tokens',
 	'characters.boardNamesHelp':
 		'Storyteller: writes each character’s name along the bottom of its token on the grimoire board.',
+	'characters.sizePercent': '{percent}%',
 	'characters.size.small': 'S',
 	'characters.size.medium': 'M',
 	'characters.size.large': 'L',

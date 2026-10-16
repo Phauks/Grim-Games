@@ -6,6 +6,10 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { fly } from 'svelte/transition';
 	import { iconUrl } from './icon-url.ts';
+	import { jinxesFor } from '#lib/core/data/jinxes.ts';
+	import CharacterBadge from './CharacterBadge.svelte';
+	import { officialData } from './game-data.svelte.ts';
+	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
 	import WikiBox from './WikiBox.svelte';
 	import { wikiPageTitle, type WikiSection } from './wiki-page.ts';
 	import { wikiPages } from './wiki-page.svelte.ts';
@@ -21,6 +25,13 @@
 	const icon = $derived(given ?? iconUrl(character));
 	const wiki = $derived(wikiUrl(character));
 	const typeLabel = $derived(character.type[0].toUpperCase() + character.type.slice(1));
+	// Where the character comes from, as in the Reference: TPI's edition, or Homebrew for a
+	// script's own character. Fabled and Loric are their own edition, so it is not repeated.
+	const source = $derived(
+		character.edition
+			? (EDITION_LABELS[character.edition] ?? character.edition)
+			: t('characters.homebrew')
+	);
 	// The whole wiki page, fetched live when the dialog opens (wiki-page.svelte.ts).
 	const title = $derived(wiki ? wikiPageTitle(wiki) : undefined);
 	const page = $derived(title ? wikiPages.get(title) : undefined);
@@ -40,10 +51,17 @@
 		)
 	);
 	const summary = $derived(sections[summaryIndex]);
-	const others = $derived(sections.filter((_, i) => i !== summaryIndex));
+	// The wiki's own jinx list ("Related Jinxes") is left out: Jinxes shows all of TPI's.
+	const others = $derived(
+		sections.filter((s, i) => i !== summaryIndex && !/jinx/i.test(s.heading))
+	);
+	/** Every TPI jinx with this character, not only those on the current script. */
+	const jinxes = $derived(
+		officialData.current ? jinxesFor(officialData.current.jinxes, character.id) : []
+	);
 	/** The section shown instead of the Summary, by its place in `others`. */
-	let selected = $state<number>();
-	const shown = $derived(selected === undefined ? undefined : others[selected]);
+	let selected = $state<number | 'jinxes'>();
+	const shown = $derived(typeof selected === 'number' ? others[selected] : undefined);
 	// Back to the Summary whenever the dialog opens again or shows another character.
 	$effect(() => {
 		void character.id;
@@ -68,7 +86,7 @@
 				? 'characters.tip'
 				: undefined;
 	let direction = $state(1);
-	function go(index: number | undefined) {
+	function go(index: number | 'jinxes' | undefined) {
 		direction = index === undefined ? -1 : 1;
 		selected = index;
 	}
@@ -115,21 +133,31 @@
 			>{#if icon}<img src={icon} alt="" width="64" height="64" />{/if}</span
 		>
 		<div>
-			<p class="type">{typeLabel}</p>
+			<p class="type">{source === typeLabel ? typeLabel : `${typeLabel} · ${source}`}</p>
 			<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
 		</div>
 	</header>
 	<div class="frame" bind:clientWidth={width}>
-		<div class="layout" data-section={shown ? '' : undefined}>
-			{#if others.length}
+		<div class="layout" data-section={selected !== undefined ? '' : undefined}>
+			{#if officialData.current}
 				<nav class="nav" aria-label={t('characters.moreFromWiki')}>
 					<ul>
 						<li class="home">
 							<button
 								type="button"
-								aria-current={shown ? undefined : 'page'}
+								aria-current={selected === undefined ? 'page' : undefined}
 								onclick={() => go(undefined)}
 								><span>{t('characters.summary')}</span><span class="chevron"
+									><Icon name="forward" /></span
+								></button
+							>
+						</li>
+						<li>
+							<button
+								type="button"
+								aria-current={selected === 'jinxes' ? 'page' : undefined}
+								onclick={() => go('jinxes')}
+								><span>{t('characters.jinxes')}</span><span class="chevron"
 									><Icon name="forward" /></span
 								></button
 							>
@@ -149,9 +177,33 @@
 				</nav>
 			{/if}
 			<div class="pane">
-				{#key shown}
+				{#key selected}
 					<div class="view" in:fly={{ x: slides ? direction * 48 : 0, duration: slides ? 200 : 0 }}>
-						{#if shown}
+						{#if selected === 'jinxes'}
+							<button type="button" class="back" onclick={() => go(undefined)}
+								><Icon name="back" /><span>{t('characters.summary')}</span></button
+							>
+							<section
+								class="wiki-page"
+								data-testid="jinx-section"
+								aria-label={t('characters.jinxes')}
+							>
+								<h3>{t('characters.jinxes')}</h3>
+								{#each jinxes as jinx (jinx.characters.join())}
+									<div class="jinx">
+										<span class="pair"
+											><CharacterBadge characterId={jinx.characters[0]} inline /><CharacterBadge
+												characterId={jinx.characters[1]}
+												inline
+											/></span
+										>
+										<p><GlossaryText text={jinx.reason} /></p>
+									</div>
+								{:else}
+									<p>{t('common.none')}</p>
+								{/each}
+							</section>
+						{:else if shown}
 							<button type="button" class="back" onclick={() => go(undefined)}
 								><Icon name="back" /><span>{t('characters.summary')}</span></button
 							>
@@ -363,6 +415,19 @@
 		.back {
 			display: none;
 		}
+	}
+	.jinx {
+		padding: var(--space-2) 0;
+		border-bottom: var(--card-border);
+	}
+	.jinx .pair {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-bottom: var(--space-1);
+	}
+	.jinx p {
+		margin: 0;
 	}
 	.wiki-page .quote {
 		font-style: italic;
