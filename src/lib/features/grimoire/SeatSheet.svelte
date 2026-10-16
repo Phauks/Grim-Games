@@ -1005,11 +1005,11 @@
 		gap: var(--space-1);
 		padding: 0 var(--space-2);
 		border: 1px solid var(--on-sheet-muted);
-		border-radius: 999px;
+		border-radius: var(--radius-full);
 	}
 	.status-icon {
 		border-radius: 50%;
-		--icon-size: 20px;
+		--icon-size: calc(1.25 * var(--u));
 	}
 	.value {
 		display: inline-flex;
