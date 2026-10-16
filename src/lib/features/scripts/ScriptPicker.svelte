@@ -1093,7 +1093,17 @@
 		text-align: left;
 		cursor: pointer;
 	}
-	.pick:hover:not(:disabled) {
+	/*
+	 * The whole row selects its script (Trevor, 2026-10-16): the name button's tap area is
+	 * stretched over the row (the row contains layout, so it holds the overlay). It stays one
+	 * button, so the row is still one focus stop and Enter selects it.
+	 */
+	.pick::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+	}
+	.picker :global(tbody tr:has(.pick:hover:not(:disabled))) {
 		background: var(--surface-selected);
 	}
 	.title {

@@ -1,5 +1,5 @@
 import { gzipSync } from 'node:zlib';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 const homebrew = [
@@ -120,6 +120,13 @@ test('saved scripts are listed without the base three, survive a reload and can 
 const saveToggle = (page: Page) => details(page).getByRole('button', { name: 'Save', exact: true });
 
 /** Phones: the details cover the list until Back. */
+/** Taps where an element is on screen, whatever covers it (a row's stretched tap area). */
+async function tapOver(page: Page, target: Locator) {
+	const box = await target.boundingBox();
+	if (!box) throw new Error('not on screen');
+	await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+}
+
 async function backToList(page: Page) {
 	const back = details(page).getByRole('button', { name: 'Back' });
 	if (await back.isVisible()) await back.tap();
@@ -480,6 +487,17 @@ test("the official site's custom scripts are listed, can be switched off, and sa
 	await name.getByRole('button', { name: /^Name/ }).tap();
 	await expect(name).toHaveAttribute('aria-sort', 'descending');
 	await expect(table.locator('tbody tr').first()).toContainText('Little Hamlet');
+
+	// Anywhere in a row selects its script, not just the name (Trevor).
+	await tapOver(page, table.getByRole('cell', { name: 'Someone Big' }));
+	await expect(detailsName(page)).toHaveText('Big Town');
+	await backToList(page);
+	await tapOver(
+		page,
+		table.locator('tbody tr').filter({ hasText: 'Little Hamlet' }).locator('[data-col="kind"]')
+	);
+	await expect(detailsName(page)).toHaveText('Little Hamlet');
+	await backToList(page);
 
 	// Teensyville only, from the funnel in the Type column's header (its own column on phones too).
 	const typeFilter = table.getByRole('button', { name: 'Filter Type', exact: true });
