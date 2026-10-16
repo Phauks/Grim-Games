@@ -10,6 +10,7 @@ import {
 	type LoadedScript
 } from '#lib/core/data/index.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+import { saveScriptToProfile } from '#lib/features/account/profile-scripts.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import { reloadSavedScript, type SavedScript, type ScriptSource } from './saved-scripts.ts';
@@ -99,6 +100,8 @@ export async function chooseScript(chosen: LoadedScript, source: ScriptSource): 
 	try {
 		if (!lib) throw new Error('No storage');
 		const saved = await lib.use(record);
+		// Signed in: also keep it in the account's scripts (no-op otherwise; never throws).
+		void saveScriptToProfile(saved);
 		current = { saved, script };
 		keepIconsOffline(script.characters);
 		recent = await lib.list();
