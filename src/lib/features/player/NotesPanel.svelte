@@ -17,7 +17,7 @@
 		seats.map((seat, i) => ({ seat, number: i + 1 })).filter((s) => s.seat.note.trim())
 	);
 	const preview = (text: string) => text.trim().split('\n')[0] || 'Empty';
-	// "Hide note contents" setting: same rows, contents replaced, so nothing reflows.
+	// "Hide note contents" setting: titles stay, the text is replaced, so nothing reflows.
 	const hidden = $derived(playerSettings.current.hideNoteContents);
 </script>
 
@@ -29,7 +29,7 @@
 		</div>
 		{#if notes.length}
 			<ul>
-				{#each notes as note, i (note.noteId)}
+				{#each notes as note (note.noteId)}
 					<li>
 						<button
 							type="button"
@@ -37,11 +37,11 @@
 							data-note={note.noteId}
 							onclick={() => onOpenNote(note.noteId)}
 						>
+							<!-- Titles always show, so notes can be found (Trevor, 2026-10-16). -->
+							<span class="title">{note.title.trim() || 'Untitled'}</span>
 							{#if hidden}
-								<span class="title">Note {i + 1}</span>
 								<span class="preview" data-hidden>Hidden</span>
 							{:else}
-								<span class="title">{note.title.trim() || 'Untitled'}</span>
 								<span class="preview">{preview(note.text)}</span>
 							{/if}
 						</button>

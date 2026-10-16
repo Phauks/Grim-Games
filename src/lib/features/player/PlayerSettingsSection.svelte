@@ -5,7 +5,7 @@
 
 <SettingToggle
 	label="Hide note contents"
-	description="In the player view, the Notes tab hides each note's title and text until you open it, so nobody glancing at your phone can read them."
+	description="In the player view, the Notes tab shows each note's title but hides its text until you open it, so nobody glancing at your phone can read it."
 	checked={playerSettings.current.hideNoteContents}
 	onChange={(hideNoteContents) => playerSettings.update({ hideNoteContents })}
 />

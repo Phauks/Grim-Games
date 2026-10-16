@@ -360,8 +360,9 @@ test('note contents can be hidden until a note is opened', async ({ page }) => {
 	await expect(hide).toBeChecked();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 
-	await expect(row).toHaveText(/^\s*Note 1\s*Hidden\s*$/);
-	await expect(row).not.toContainText('Evil team');
+	// The title stays so notes can be found; the text is hidden (Trevor, 2026-10-16).
+	await expect(row).toHaveText(/^\s*Evil team\s*Hidden\s*$/);
+	await expect(row).not.toContainText('Sam is the Imp');
 	// Opening the note shows it.
 	await row.tap();
 	await expect(sheet.getByRole('textbox', { name: 'Text' })).toHaveValue('Sam is the Imp');
@@ -369,7 +370,7 @@ test('note contents can be hidden until a note is opened', async ({ page }) => {
 	// Kept after a reload.
 	await page.reload();
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(page.locator('[data-note]')).toHaveText(/^\s*Note 1\s*Hidden\s*$/);
+	await expect(page.locator('[data-note]')).toHaveText(/^\s*Evil team\s*Hidden\s*$/);
 });
 
 test('Enter in a name or note title closes the keyboard', async ({ page }) => {

@@ -6,7 +6,7 @@ const KEY = 'grim-games:player-settings:v1';
 
 export interface PlayerSettings {
 	/**
-	 * Notes on the Notes tab show neither title nor text until opened, so someone glancing at
+	 * Notes on the Notes tab show their title but not their text until opened, so someone glancing at
 	 * the phone can't read them (Trevor, 2026-10-16). Off by default.
 	 */
 	hideNoteContents: boolean;
