@@ -299,7 +299,8 @@
 	.view {
 		flex: none;
 		align-self: stretch;
-		min-width: var(--tap-target);
+		/* Fits "Setup" or "All", so switching never moves the tokens (Trevor, 2026-10-16). */
+		width: 4.5rem;
 		padding: 0 var(--space-2);
 		border: 0;
 		border-inline-end: 1px solid var(--border);
@@ -338,6 +339,8 @@
 	}
 	.tray > li {
 		flex: none;
+		/* Room for the name band, which is wider than the token. */
+		padding-inline: 0.75rem;
 	}
 	li {
 		display: grid;
