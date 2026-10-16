@@ -29,6 +29,8 @@ export type GameEvent =
 	| { type: 'SeatAdded'; seatId: SeatId; position: number; playerName?: string }
 	| { type: 'SeatRemoved'; seatId: SeatId }
 	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: string }
+	/** No `note` clears it. */
+	| { type: 'SeatNoteSet'; seatId: SeatId; note?: string }
 	/** No `alignment`: not chosen yet (a Traveller's), so the seat has none. */
 	| { type: 'CharacterAssigned'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }
 	| { type: 'CharacterCleared'; seatId: SeatId }

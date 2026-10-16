@@ -93,6 +93,11 @@ export interface Seat {
 	ghostVoteUsed: boolean;
 	/** At most one override per field. */
 	overrides: SeatOverride[];
+	/**
+	 * The Storyteller's private note about this player (Trevor, 2026-10-16), e.g. the
+	 * Mezepheles' word or the Amnesiac's ability. Never in the public projection.
+	 */
+	note?: string;
 	reminders: ReminderInstance[];
 }
 

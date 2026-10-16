@@ -532,6 +532,18 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [event];
 		}
 
+		case 'SetSeatNote': {
+			const seat = seatOf(game, command.seatId);
+			const note = command.note?.trim() || undefined;
+			if (note === seat.note) {
+				warn('no-change', 'the note is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'SeatNoteSet', seatId: seat.seatId };
+			if (note !== undefined) event.note = note;
+			return [event];
+		}
+
 		case 'AssignCharacter': {
 			const seat = seatOf(game, command.seatId);
 			const character = seatableCharacter(ctx, command.characterId);

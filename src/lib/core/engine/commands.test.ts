@@ -129,6 +129,40 @@ describe('seats', () => {
 		expect(same.ok && codes(same)).toEqual(['no-change']);
 	});
 
+	it("keeps the Storyteller's note on a seat, trimmed, undoable and clearable", () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(session, ctx, {
+			type: 'SetSeatNote',
+			seatId: seats[2],
+			note: '  Word: banana\nAsked twice '
+		});
+		expect(s.game.seats[seats[2]].note).toBe('Word: banana\nAsked twice');
+		expect('note' in undo(s).game.seats[seats[2]]).toBe(false);
+		const same = dispatch(
+			s,
+			{ type: 'SetSeatNote', seatId: seats[2], note: 'Word: banana\nAsked twice' },
+			ctx
+		);
+		expect(same.ok && codes(same)).toEqual(['no-change']);
+		const cleared = run(s, ctx, { type: 'SetSeatNote', seatId: seats[2], note: ' ' });
+		expect('note' in cleared.game.seats[seats[2]]).toBe(false);
+		expect(refused(s, ctx, { type: 'SetSeatNote', seatId: 'nobody', note: 'x' })).toBe(
+			'unknown-seat'
+		);
+	});
+
+	it('moves the note with its player when seats swap', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'SetSeatNote', seatId: seats[0], note: 'Amnesiac: learns a yes/no' },
+			{ type: 'SwapSeats', seatA: seats[0], seatB: seats[4] }
+		);
+		expect(s.game.seats[seats[0]].note).toBe('Amnesiac: learns a yes/no');
+		expect(s.game.seating.at(-1)).toBe(seats[0]);
+	});
+
 	it('swaps seats (the Matron) and refuses swapping a seat with itself', () => {
 		const { session, ctx, seats } = newGame(names);
 		const s = run(session, ctx, { type: 'SwapSeats', seatA: seats[0], seatB: seats[4] });

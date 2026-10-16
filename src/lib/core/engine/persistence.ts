@@ -13,7 +13,7 @@
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 5;
+export const SAVED_GAME_VERSION = 6;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -106,12 +106,20 @@ const migrateV3toV4: Migration = (doc) => ({ ...doc, schemaVersion: 4 });
  */
 const migrateV4toV5: Migration = (doc) => ({ ...doc, schemaVersion: 5 });
 
+/**
+ * Version 6 (2026-10-16) added the Storyteller's note on a seat (`Seat.note`, the
+ * `SeatNoteSet` event). The log needs no change: an older game has no notes. The bump makes
+ * older builds refuse a version 6 save instead of failing on the unknown event.
+ */
+const migrateV5toV6: Migration = (doc) => ({ ...doc, schemaVersion: 6 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
 	2: migrateV2toV3,
 	3: migrateV3toV4,
-	4: migrateV4toV5
+	4: migrateV4toV5,
+	5: migrateV5toV6
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {

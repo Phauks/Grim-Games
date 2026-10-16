@@ -154,6 +154,12 @@ describe('publicProjection', () => {
 		expect(publicProjection(noCause)).toEqual(publicProjection(game));
 	});
 
+	it("leaks no Storyteller's seat notes", () => {
+		const { session, ctx, seats } = newGame(5);
+		const s = run(session, ctx, { type: 'SetSeatNote', seatId: seats[0], note: 'secret word' });
+		expect(JSON.stringify(publicProjection(s.game))).not.toContain('secret word');
+	});
+
 	it('leaks no night-order or day-reminder overrides', () => {
 		const { game } = busyGame();
 		expect(game.nightOrderOverrides).toHaveLength(1);

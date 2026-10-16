@@ -37,6 +37,8 @@ export type Command =
 	| { type: 'RemoveSeat'; seatId: SeatId }
 	/** An empty or missing name clears it. */
 	| { type: 'RenameSeat'; seatId: SeatId; playerName?: string }
+	/** The Storyteller's private note on a seat. Trimmed; an empty or missing note clears it. */
+	| { type: 'SetSeatNote'; seatId: SeatId; note?: string }
 	/**
 	 * Puts a character token on a seat. Without `alignment`, an empty seat takes the
 	 * default for the character type and a seat that had a character keeps its alignment
