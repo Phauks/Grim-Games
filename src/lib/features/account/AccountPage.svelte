@@ -166,7 +166,7 @@
 				<h2 id="sign-in">Sign in</h2>
 				<p class="muted">
 					Optional. Signing in saves the scripts you add to your profile, so you can use them on
-					your other devices. The app works fully without it.
+					your other devices.
 				</p>
 				{#if account.status === 'checking'}
 					<p class="muted">Checking…</p>

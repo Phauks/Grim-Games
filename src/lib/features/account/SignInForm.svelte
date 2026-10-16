@@ -76,7 +76,7 @@
 			</label>
 			<p class="note">
 				{#if unavailable}
-					Signing in is not available yet on this site. Everything is saved on this device.
+					Signing in is not available yet on this site.
 				{:else}
 					We email you a {CODE_LENGTH}-digit code. No password.
 				{/if}
