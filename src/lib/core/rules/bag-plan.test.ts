@@ -97,6 +97,24 @@ describe('planBag', () => {
 		expect(result.issues.map((i) => i.code)).toEqual(['stand-in-selected']);
 	});
 
+	it('Drunk without suggestions: no Townsfolk is picked until the Storyteller chooses one', () => {
+		// The Drunk's token is a Townsfolk chosen by the Storyteller
+		// (https://wiki.bloodontheclocktower.com/Drunk); the app doesn't choose it for them.
+		const result = plan(pick('chef', 'empath', 'drunk', 'poisoner', 'imp'), { suggest: false });
+		expect(result.standIns[0]).toMatchObject({ characterId: 'drunk', chosen: false });
+		expect(result.standIns[0].shows).toBeUndefined();
+		expect(result.tiles.map((t) => t.grimoire)).not.toContain('drunk');
+		expect(result.issues).toEqual([
+			expect.objectContaining({ code: 'no-stand-in', message: 'Choose what the Drunk is shown.' })
+		]);
+	});
+
+	it('Lunatic without suggestions is still shown the Demon in play', () => {
+		// https://wiki.bloodontheclocktower.com/Lunatic
+		const result = plan(pick('chef', 'empath', 'lunatic', 'poisoner', 'imp'), { suggest: false });
+		expect(result.standIns[0]).toMatchObject({ characterId: 'lunatic', shows: 'imp' });
+	});
+
 	it('two stand-ins are not shown the same Townsfolk', () => {
 		const result = planBag({
 			selection: { drunk: 1, marionette: 1, imp: 1 },

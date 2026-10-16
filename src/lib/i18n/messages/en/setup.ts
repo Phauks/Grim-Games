@@ -4,9 +4,9 @@ export const setup = {
 	'setup.pageTitle.draw': 'Draw · Grim-Games',
 	'setup.grimoire': 'Grimoire',
 	'setup.steps': 'Setup steps',
+	'setup.nav': 'Setup',
 	'setup.step.characters': 'Characters',
 	'setup.step.draw': 'Draw',
-	'setup.step.reminders': 'Setup reminders',
 	'setup.couldNot': "Couldn't do that",
 
 	'setup.characters': 'Characters',
@@ -47,6 +47,9 @@ export const setup = {
 	'setup.replace.keep': 'Keep',
 	'setup.replace.confirm': 'Replace',
 
+	'setup.standIn.title': 'What is the {name} shown?',
+	'setup.standIn.description': 'Choose the token that goes in the bag for the {name}.',
+	'setup.standIn.later': 'Decide later',
 	'setup.check': 'Setup check',
 	'setup.check.warnings': 'Warnings',
 	'setup.check.shownInstead': 'Shown instead',
@@ -55,6 +58,7 @@ export const setup = {
 	'setup.check.setupChanges': 'Setup changes',
 	'setup.check.jinxes': 'Jinxes',
 	'setup.check.and': 'and',
+	'setup.check.choose': 'Choose',
 
 	'setup.draw': 'Draw',
 	'setup.draw.noBag': 'No bag. Select characters and build the bag first.',

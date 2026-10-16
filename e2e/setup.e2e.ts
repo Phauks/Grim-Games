@@ -26,11 +26,25 @@ test('the setup table is shown and follows the player count', async ({ page }) =
 	await expect(table.locator('tbody [data-current]')).toHaveText(['5', '0', '1', '1']);
 });
 
-test('setup is one flow: Characters, Draw, then Setup reminders', async ({ page }) => {
+test('setup is one flow of two steps with the same bar on each', async ({ page }) => {
 	await selectionFor(page, 5);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
 	const steps = page.getByRole('navigation', { name: 'Setup steps' });
 	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Characters/);
+	await expect(steps.getByRole('listitem')).toHaveCount(2);
+	// The bar: Back on the left, the step's main action on the right.
+	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
+	const barButtons = async () => {
+		const [back, next] = await Promise.all([
+			bar.getByRole('link').first().boundingBox(),
+			bar.locator('a, button').last().boundingBox()
+		]);
+		expect(back!.x).toBeLessThan(next!.x);
+		return { back, next };
+	};
+	await expect(bar.getByRole('link', { name: 'Grimoire' })).toBeVisible();
+	await expect(bar.getByRole('button', { name: 'Build bag' })).toBeVisible();
+	const onCharacters = await barButtons();
 	// No bag yet, so the Draw step can't be opened.
 	await expect(steps.getByRole('link', { name: 'Draw' })).toHaveCount(0);
 
@@ -38,6 +52,16 @@ test('setup is one flow: Characters, Draw, then Setup reminders', async ({ page 
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
 	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
+	await expect(bar.getByRole('link', { name: 'Characters' })).toBeVisible();
+	await expect(bar.getByRole('link', { name: 'Grimoire' })).toBeVisible();
+	// Same place on both steps.
+	const onDraw = await barButtons();
+	expect(Math.abs(onDraw.back!.y - onCharacters.back!.y)).toBeLessThan(2);
+	expect(
+		Math.abs(
+			onDraw.next!.x + onDraw.next!.width - (onCharacters.next!.x + onCharacters.next!.width)
+		)
+	).toBeLessThan(2);
 	await steps.getByRole('link', { name: 'Characters' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	await steps.getByRole('link', { name: 'Draw' }).tap();
@@ -59,9 +83,9 @@ test('setup is one flow: Characters, Draw, then Setup reminders', async ({ page 
 	await steps.getByRole('link', { name: 'Draw' }).tap();
 	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
 
-	// Back to the board from any step.
-	await page.getByRole('link', { name: 'Grimoire' }).tap();
-	await expect(page).toHaveURL(board);
+	// Finishing goes to the board, which opens its setup reminders.
+	await bar.getByRole('link', { name: 'Grimoire' }).tap();
+	await expect(page).toHaveURL(new RegExp(`${board}(#setup-reminders)?$`));
 });
 
 const choice = (page: Page, name: string) =>
@@ -80,7 +104,18 @@ async function noSidewaysScroll(page: Page) {
 
 test('selection counts against the setup sheet and explains the Drunk', async ({ page }) => {
 	await selectionFor(page, 6);
-	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Drunk', 'Poisoner', 'Imp');
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Drunk');
+	// Adding the Drunk asks which Townsfolk goes in the bag for it; nothing is picked for you.
+	const ask = page.getByRole('dialog', { name: 'What is the Drunk shown?' });
+	await expect(ask).toBeVisible();
+	await expect(ask.getByRole('button', { name: 'Empath', exact: true })).toHaveCount(0);
+	await ask.getByRole('button', { name: 'Decide later' }).tap();
+	const check = page.getByTestId('setup-check');
+	await expect(check.getByTestId('stand-in-drunk')).toContainText('Choose');
+	await check.getByRole('button', { name: 'Shown to the Drunk' }).tap();
+	await ask.getByRole('button', { name: 'Chef', exact: true }).tap();
+	await expect(check.getByTestId('stand-in-drunk')).toContainText('Chef');
+	await select(page, 'Poisoner', 'Imp');
 	await expect(choice(page, 'Drunk')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('3');
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
@@ -92,7 +127,6 @@ test('selection counts against the setup sheet and explains the Drunk', async ({
 	await expect(page.getByTestId('warning-count')).not.toHaveText('0');
 	// The check is on the screen, not behind a button.
 	await expect(page.getByRole('button', { name: /Check/ })).toHaveCount(0);
-	const check = page.getByTestId('setup-check');
 	await expect(check).toBeVisible();
 	await expect(check).toContainText(/Baron\s*: \+2 Outsiders/);
 	await expect(check.getByTestId('stand-in-drunk')).toContainText('is shown');
@@ -285,7 +319,10 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	// The last step is the board's setup reminders tray, not a list in the draw.
 	const steps = page.getByRole('navigation', { name: 'Setup steps' });
 	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
-	await page.getByRole('link', { name: 'Setup reminders', exact: true }).last().tap();
+	await page
+		.getByRole('navigation', { name: 'Setup', exact: true })
+		.getByRole('link', { name: 'Grimoire' })
+		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
 	await expect(page.getByRole('button', { name: /^Seat 1: Ana, / })).toBeVisible();
 	for (let n = 1; n <= 5; n++) {
@@ -313,12 +350,13 @@ test.describe('in a computer window', () => {
 		await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 		await page.goto(`${new URL(page.url()).pathname}/setup`);
 
-		// The setup sheet and buttons are beside the characters, not above and below them.
+		// The setup sheet is beside the characters; Build bag is in the bar at the bottom right.
 		const sheet = await page.getByTestId('setup-table').boundingBox();
 		const build = await page.getByRole('button', { name: 'Build bag' }).boundingBox();
 		const list = await page.getByTestId('character-picker').boundingBox();
 		expect(sheet!.x + sheet!.width).toBeLessThan(list!.x);
-		expect(build!.x + build!.width).toBeLessThan(list!.x);
+		expect(build!.x).toBeGreaterThan(list!.x + list!.width / 2);
+		expect(build!.y + build!.height).toBeGreaterThan(900 - 2 * build!.height);
 		expect(list!.y).toBeLessThan(sheet!.y + sheet!.height);
 		await noSidewaysScroll(page);
 

@@ -15,6 +15,7 @@
 	import { seatLabel } from './seat-label.ts';
 	import { tileSymbols } from './tile-face.ts';
 	import SetupSteps from './SetupSteps.svelte';
+	import SetupNav from './SetupNav.svelte';
 	import { remindersHref } from './setup-steps.ts';
 
 	interface Props {
@@ -31,7 +32,6 @@
 	// Numbers or symbols on the face-down tiles (Storyteller settings).
 	const face = $derived(preferences.current.tileFace);
 	const symbols = $derived(tileSymbols(slots.map((s) => s.tileId)));
-	const done = $derived(slots.length > 0 && slots.every((s) => s.state === 'drawn'));
 
 	let revealing = $state<TileId | undefined>(undefined);
 	let revealOpen = $state(false);
@@ -95,14 +95,6 @@
 <main>
 	<header>
 		{#if game}
-			<div class="back">
-				<Button
-					variant="quiet"
-					icon="back"
-					href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}
-					>{t('setup.grimoire')}</Button
-				>
-			</div>
 			<SetupSteps gameId={game.gameId} current="draw" hasBag={bag !== undefined} />
 		{/if}
 		<h1>{t('setup.draw')}</h1>
@@ -148,14 +140,19 @@
 		{/if}
 	</ErrorBoundary>
 
-	<div class="actions">
-		{#if game}
-			<!-- The next step: the board, with its setup reminders tray open. -->
-			<Button variant={done ? 'accent' : 'quiet'} icon="forward" href={remindersHref(game.gameId)}
-				>{t('setup.step.reminders')}</Button
-			>
-		{/if}
-	</div>
+	{#if game}
+		<SetupNav
+			backHref={resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })}
+			backLabel={t('setup.step.characters')}
+		>
+			{#snippet next()}
+				<!-- Done: the board, with its setup reminders tray open. -->
+				<Button variant="accent" icon="forward" href={remindersHref(game.gameId)}
+					>{t('setup.grimoire')}</Button
+				>
+			{/snippet}
+		</SetupNav>
+	{/if}
 </main>
 
 {#if tile && slot && lookup}
@@ -183,9 +180,6 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-1);
-	}
-	.back {
-		display: flex;
 	}
 	h1 {
 		margin: var(--space-2) 0 0;
@@ -263,17 +257,6 @@
 		height: 1.2em;
 		margin-bottom: 14%;
 		font-size: 0.8rem;
-	}
-	.actions {
-		position: sticky;
-		bottom: 0;
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: end;
-		gap: var(--space-2);
-		margin-top: var(--space-4);
-		padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
-		background: var(--page-background, var(--surface));
 	}
 	/* A computer window: a wider bag with bigger tiles. */
 	@media (min-width: 75rem) {

@@ -74,6 +74,12 @@ export interface BagPlanInput {
 	standIns?: Readonly<Record<CharacterId, CharacterId>>;
 	/** A number in [0, 1); used only to suggest stand-ins. Defaults to the first option. */
 	random?: () => number;
+	/**
+	 * False: never pick a good stand-in the Storyteller hasn't chosen (Trevor, 2026-10-16:
+	 * which Townsfolk the Drunk is shown is the Storyteller's call, not an automatic one).
+	 * A Lunatic is still shown the Demon in play. Defaults to true.
+	 */
+	suggest?: boolean;
 }
 
 /** Whether the character's tile shows something else, and what kind. */
@@ -162,10 +168,12 @@ export function planBag(input: BagPlanInput): BagPlan {
 			.map((c) => c.id);
 		const chosen = input.standIns?.[id];
 		let shows: CharacterId | undefined;
+		const suggest = input.suggest !== false;
 		if (chosen !== undefined && lookup(chosen)) shows = chosen;
 		else if (kind === 'demon') {
-			shows = options.find((o) => selected.has(o)) ?? pick(options, input.random);
-		} else {
+			shows =
+				options.find((o) => selected.has(o)) ?? (suggest ? pick(options, input.random) : undefined);
+		} else if (suggest) {
 			shows = pick(
 				options.filter((o) => !selected.has(o) && !used.has(o)),
 				input.random
@@ -181,7 +189,10 @@ export function planBag(input: BagPlanInput): BagPlan {
 		if (shows === undefined) {
 			issues.push({
 				code: 'no-stand-in',
-				message: `Nothing on the script can be shown to the ${character.name}.`,
+				message:
+					options.length > 0
+						? `Choose what the ${character.name} is shown.`
+						: `Nothing on the script can be shown to the ${character.name}.`,
 				characters: [id]
 			});
 			continue;

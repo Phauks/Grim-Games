@@ -5,15 +5,14 @@ import type { Game } from '#lib/core/model/index.ts';
 import { setupComplete } from '#lib/core/rules/index.ts';
 
 /**
- * The one setup flow (Trevor, 2026-10-16): choose characters, draw the bag, then place the
- * setup reminders on the board.
+ * The one setup flow (Trevor, 2026-10-16): 1 Characters, 2 Draw. Finishing the draw opens
+ * the board with its setup reminders tray, which is not a step of its own.
  */
 export type SetupStep = 'characters' | 'draw' | 'reminders';
 
 export const SETUP_STEPS = [
 	{ step: 'characters', label: 'setup.step.characters' },
-	{ step: 'draw', label: 'setup.step.draw' },
-	{ step: 'reminders', label: 'setup.step.reminders' }
+	{ step: 'draw', label: 'setup.step.draw' }
 ] as const satisfies readonly { step: SetupStep; label: MessageKey }[];
 
 /** The URL hash that opens the board with its setup reminders tray. */

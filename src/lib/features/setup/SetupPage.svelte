@@ -18,6 +18,7 @@
 		randomSelection,
 		scriptJinxes,
 		selectedIds,
+		standInKind,
 		isRuleCharacter
 	} from '#lib/core/rules/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -33,9 +34,11 @@
 	import CountsBar from './CountsBar.svelte';
 	import type { SetupGamePort } from './game-port.ts';
 	import SetupCheckPanel from './SetupCheckPanel.svelte';
+	import StandInDialog from './StandInDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SetupTable from './SetupTable.svelte';
 	import SetupSteps from './SetupSteps.svelte';
+	import SetupNav from './SetupNav.svelte';
 	import { currentSetupStep } from './setup-steps.ts';
 	import { buildErrors } from './build-check.ts';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
@@ -88,17 +91,14 @@
 			scriptCharacters: choices,
 			lookup,
 			standIns: s.standIns,
-			random: Math.random
+			// The Drunk's or Marionette's token is the Storyteller's choice (Trevor, 2026-10-16).
+			suggest: false
 		})
 	);
-	// Keep a suggested stand-in once made, so the Drunk's Townsfolk doesn't change on every tap.
-	$effect(() => {
-		if (!ready) return;
-		for (const standIn of plan.standIns) {
-			if (!standIn.chosen && standIn.shows)
-				setupSelection.setStandIn(standIn.characterId, standIn.shows);
-		}
-	});
+	// Asked when a Drunk or Marionette is added: which token goes in the bag for it.
+	let askingFor = $state<CharacterId | undefined>(undefined);
+	let standInOpen = $state(false);
+	const askingStandIn = $derived(plan.standIns.find((x) => x.characterId === askingFor));
 	const ids = $derived(selectedIds(s.selection, scriptOrder));
 	const jinxes = $derived(
 		data && script ? scriptJinxes(data.jinxes, ids, script.homebrewJinxes) : []
@@ -124,6 +124,10 @@
 	function toggle(character: Character) {
 		const n = setupSelection.copies(character.id);
 		setupSelection.setCopies(character.id, n === 0 ? 1 : n - 1);
+		if (n === 0 && standInKind(character) === 'good' && !s.standIns[character.id]) {
+			askingFor = character.id;
+			standInOpen = true;
+		}
 	}
 
 	/** True once any tile of the current bag was drawn: rebuilding would put them back. */
@@ -162,32 +166,28 @@
 	}
 
 	function random() {
-		setupSelection.replace(
-			randomSelection({
-				players: s.players,
-				// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one.
-				selection: {},
-				scriptCharacters: choices,
-				scriptOrder,
-				lookup,
-				findByName,
-				random: Math.random
-			})
-		);
+		const selection = randomSelection({
+			players: s.players,
+			// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one.
+			selection: {},
+			scriptCharacters: choices,
+			scriptOrder,
+			lookup,
+			findByName,
+			random: Math.random
+		});
+		setupSelection.replace(selection);
+		// Random was asked for, so a Drunk's or Marionette's token is picked at random too.
+		const picked = planBag({ selection, scriptCharacters: choices, lookup, random: Math.random });
+		for (const standIn of picked.standIns) {
+			if (standIn.shows) setupSelection.setStandIn(standIn.characterId, standIn.shows);
+		}
 	}
 </script>
 
 <main>
 	<header class="top">
 		{#if game}
-			<div class="back">
-				<Button
-					variant="quiet"
-					icon="back"
-					href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}
-					>{t('setup.grimoire')}</Button
-				>
-			</div>
 			<SetupSteps
 				gameId={game.gameId}
 				current="characters"
@@ -254,17 +254,12 @@
 						{jinxes}
 						{warnings}
 						{lookup}
-						onStandIn={(id, shows) => setupSelection.setStandIn(id, shows)}
+						onStandIn={(id) => {
+							askingFor = id;
+							standInOpen = true;
+						}}
 					/>
 				{/if}
-				<div class="actions">
-					<Button
-						variant="accent"
-						icon="bag"
-						disabled={!ready || plan.tiles.length === 0}
-						onclick={() => requestBuild()}>{t('setup.buildBag')}</Button
-					>
-				</div>
 			</div>
 
 			<CharacterPicker
@@ -296,8 +291,31 @@
 			</CharacterPicker>
 		</div>
 	</ErrorBoundary>
+
+	{#if game}
+		<SetupNav
+			backHref={resolve('/grimoire/[gameId]', { gameId: game.gameId })}
+			backLabel={t('setup.grimoire')}
+		>
+			{#snippet next()}
+				<Button
+					variant="accent"
+					icon="bag"
+					disabled={!ready || plan.tiles.length === 0}
+					onclick={() => requestBuild()}>{t('setup.buildBag')}</Button
+				>
+			{/snippet}
+		</SetupNav>
+	{/if}
 </main>
 
+<StandInDialog
+	bind:open={standInOpen}
+	standIn={askingStandIn}
+	selected={ids}
+	{lookup}
+	onChoose={(shows) => askingFor && setupSelection.setStandIn(askingFor, shows)}
+/>
 <Dialog bind:open={clearOpen} role="alertdialog" title={t('setup.clear.title')}>
 	<p>{t('setup.clear.body', { count: ids.length })}</p>
 	{#snippet actions()}
@@ -353,9 +371,6 @@
 	h1 {
 		margin: var(--space-2) 0 0;
 		overflow-wrap: anywhere;
-	}
-	.back {
-		display: flex;
 	}
 	.script {
 		display: flex;
@@ -423,17 +438,6 @@
 		text-align: center;
 		font-variant-numeric: tabular-nums;
 	}
-	.actions {
-		position: sticky;
-		bottom: 0;
-		display: grid;
-		grid-template-columns: auto;
-		justify-content: end;
-		gap: var(--space-2);
-		margin-top: var(--space-4);
-		padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
-		background: var(--page-background, var(--surface));
-	}
 	/* Search, then Random and Clear as icon buttons right beside it. */
 	.find {
 		display: grid;
@@ -454,7 +458,7 @@
 			background: var(--surface-selected);
 		}
 	}
-	/* Phones and tablets: one column, the buttons stuck to the bottom after the list. */
+	/* Phones and tablets: one column. */
 	.layout {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -462,13 +466,8 @@
 	.side {
 		display: contents;
 	}
-	/* Sits before the list in the page, so it is raised to stay over the cards it sticks above. */
-	.actions {
-		order: 1;
-		z-index: var(--z-raised);
-	}
 	/*
-	 * A computer window: players, setup sheet, counts, search and buttons in a column beside
+	 * A computer window: players, setup sheet, counts, search and the check in a column beside
 	 * the list, so the list starts at the top and nothing needs scrolling back to.
 	 */
 	@media (min-width: 75rem) {
@@ -487,19 +486,12 @@
 			gap: var(--space-2);
 			position: sticky;
 			top: 0;
-			max-height: 100dvh;
+			max-height: calc(100dvh - 6 * var(--u));
 			overflow-y: auto;
 			padding-bottom: var(--space-4);
 		}
 		.counts {
 			position: static;
-		}
-		.actions {
-			position: static;
-			grid-template-columns: minmax(0, 1fr);
-			justify-content: stretch;
-			margin-top: var(--space-2);
-			padding: 0;
 		}
 	}
 	.errors {

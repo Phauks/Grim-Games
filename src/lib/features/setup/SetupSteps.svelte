@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
-	import { remindersHref, SETUP_STEPS, type SetupStep } from './setup-steps.ts';
+	import { SETUP_STEPS, type SetupStep } from './setup-steps.ts';
 
 	interface Props {
 		gameId: string;
@@ -15,14 +15,14 @@
 	const index = $derived(SETUP_STEPS.findIndex((s) => s.step === current));
 
 	function href(step: SetupStep): string {
-		if (step === 'characters') return resolve('/grimoire/[gameId]/setup', { gameId });
-		if (step === 'draw') return resolve('/grimoire/[gameId]/draw', { gameId });
-		return remindersHref(gameId);
+		return step === 'characters'
+			? resolve('/grimoire/[gameId]/setup', { gameId })
+			: resolve('/grimoire/[gameId]/draw', { gameId });
 	}
 </script>
 
 <!--
-	Where the Storyteller is in setup: Characters, Draw, Setup reminders. Earlier steps and the
+	Where the Storyteller is in setup: 1 Characters, 2 Draw. Earlier steps and the
 	next one are links; the Draw step stays disabled until a bag exists. Fixed size, no reflow.
 -->
 <nav class="steps" aria-label={t('setup.steps')}>
@@ -53,7 +53,7 @@
 <style>
 	ol {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: var(--space-1);
 		margin: 0;
 		padding: 0;

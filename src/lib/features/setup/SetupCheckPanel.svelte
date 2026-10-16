@@ -5,7 +5,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
 
 	interface Props {
 		analysis: SetupAnalysis;
@@ -15,7 +15,8 @@
 		/** Warnings in plain words, from the setup analysis, the bag and exclusive jinxes. */
 		warnings: readonly string[];
 		lookup: (id: CharacterId) => Character | undefined;
-		onStandIn: (characterId: CharacterId, shows: CharacterId) => void;
+		/** Opens the choice of what a Drunk, Marionette or Lunatic is shown. */
+		onStandIn: (characterId: CharacterId) => void;
 	}
 
 	let { analysis, plan, jinxes, warnings, lookup, onStandIn }: Props = $props();
@@ -55,13 +56,12 @@
 							<CharacterBadge characterId={standIn.characterId} />
 							<span>{t('setup.check.isShown')}</span>
 							{#if standIn.options.length}
-								<Select
-									label={t('setup.check.shownTo', { name: name(standIn.characterId) })}
-									hideLabel
-									value={standIn.shows ?? ''}
-									options={standIn.options.map((id) => ({ value: id, label: name(id) }))}
-									onChange={(id) => onStandIn(standIn.characterId, id)}
-								/>
+								<Button
+									variant="quiet"
+									aria-label={t('setup.check.shownTo', { name: name(standIn.characterId) })}
+									onclick={() => onStandIn(standIn.characterId)}
+									>{standIn.shows ? name(standIn.shows) : t('setup.check.choose')}</Button
+								>
 							{:else}<span>{t('common.none')}</span>{/if}
 						</li>
 					{/each}
