@@ -11,7 +11,7 @@ import {
 	type Script
 } from '#lib/core/data/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
-import type { DeathCauseFlag } from '#lib/core/rules/index.ts';
+import { analyseSetup, type DeathCauseFlag } from '#lib/core/rules/index.ts';
 import {
 	isOnScript,
 	scriptCharacterIds,
@@ -173,4 +173,72 @@ export function placingAlignment(
 		game.seating.find((s) => game.seats[s].characterId === characterId) ??
 		game.seating.find((s) => trueCharacter(game, s, characters) === characterId);
 	return holder ? game.seats[holder].alignment : undefined;
+}
+
+export interface TableCheck {
+	/** Players before and after, Travellers not counted. */
+	players: { before: number; after: number };
+	/** What no longer matches the setup sheet after the change; empty when it all fits. */
+	problems: string[];
+	/** The table already did not match before the change. */
+	wasOff: boolean;
+}
+
+const TABLE_WARNINGS = new Set(['count-mismatch', 'total-mismatch', 'missing-required']);
+
+function tableProblems(
+	game: Game,
+	characters: CharacterLookup,
+	seats: readonly { seatId: SeatId; characterId: CharacterId | undefined }[]
+): { players: number; problems: string[] } {
+	const inPlay: Character[] = [];
+	let travellers = 0;
+	for (const { characterId } of seats) {
+		const character = characterId ? characters.get(characterId) : undefined;
+		if (!character) continue;
+		if (character.type === 'traveller') travellers += 1;
+		inPlay.push(character);
+	}
+	for (const id of game.ruleCharacters) {
+		const character = characters.get(id);
+		if (character) inPlay.push(character);
+	}
+	const analysis = analyseSetup({
+		players: seats.length,
+		travellers,
+		inPlay,
+		findById: (id) => characters.get(id)
+	});
+	return {
+		players: seats.length - travellers,
+		problems: analysis.warnings.filter((w) => TABLE_WARNINGS.has(w.code)).map((w) => w.message)
+	};
+}
+
+/**
+ * How removing a seat or its character changes the table (Trevor, 2026-10-16): the player
+ * count before and after, and whether the characters still match the setup sheet for that
+ * count (core `analyseSetup`, setup modifiers such as the Baron included). Each seat counts
+ * as its true character, so a Drunk counts as the Outsider. A warning, never a lock.
+ */
+export function tableCheck(
+	game: Game,
+	characters: CharacterLookup,
+	change: { kind: 'remove-seat' | 'remove-character'; seatId: SeatId }
+): TableCheck {
+	const now = game.seating.map((seatId) => ({
+		seatId,
+		characterId: trueCharacter(game, seatId, characters)
+	}));
+	const after =
+		change.kind === 'remove-seat'
+			? now.filter((s) => s.seatId !== change.seatId)
+			: now.map((s) => (s.seatId === change.seatId ? { ...s, characterId: undefined } : s));
+	const before = tableProblems(game, characters, now);
+	const next = tableProblems(game, characters, after);
+	return {
+		players: { before: before.players, after: next.players },
+		problems: next.problems,
+		wasOff: before.problems.length > 0
+	};
 }

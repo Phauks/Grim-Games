@@ -46,6 +46,8 @@ import ph_hand_heart_duotone from '~icons/ph/hand-heart-duotone';
 import ph_hand_palm_duotone from '~icons/ph/hand-palm-duotone';
 import ph_hand_pointing_duotone from '~icons/ph/hand-pointing-duotone';
 import ph_handbag_duotone from '~icons/ph/handbag-duotone';
+import ph_heart_duotone from '~icons/ph/heart-duotone';
+import ph_heartbeat_duotone from '~icons/ph/heartbeat-duotone';
 import ph_info_duotone from '~icons/ph/info-duotone';
 import ph_lifebuoy_duotone from '~icons/ph/lifebuoy-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
@@ -147,6 +149,8 @@ const icons: IconMap = {
 	'ph:hand-palm-duotone': ph_hand_palm_duotone,
 	'ph:hand-pointing-duotone': ph_hand_pointing_duotone,
 	'ph:handbag-duotone': ph_handbag_duotone,
+	'ph:heart-duotone': ph_heart_duotone,
+	'ph:heartbeat-duotone': ph_heartbeat_duotone,
 	'ph:info-duotone': ph_info_duotone,
 	'ph:lifebuoy-duotone': ph_lifebuoy_duotone,
 	'ph:list-duotone': ph_list_duotone,

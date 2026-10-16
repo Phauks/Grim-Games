@@ -21,7 +21,8 @@
 		isOrphan,
 		placingAlignment,
 		recommendedTravellers,
-		SEAT_TYPES
+		SEAT_TYPES,
+		tableCheck
 	} from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
@@ -199,19 +200,26 @@
 			});
 	}
 
-	// ── Death ──
+	// ── Status: Alive, or dead with its cause, in one list (Trevor, 2026-10-16) ──
 	let causeOpen = $state(false);
+	let reviveOpen = $state(false);
+	const statusText = $derived(
+		seat?.dead ? `Dead: ${causeLabel(seat.deathCause, characters, traveller)}` : 'Alive'
+	);
 	// Only the causes that fit this player (core, which no longer offers "Something else").
 	const causes = $derived(seatId && open ? validDeathCauses(game, seatId, characters) : []);
 	let flagged = $state<ValidDeathCause | undefined>();
 	let flagOpen = $state(false);
 
-	// A death always has a cause (Trevor, 2026-10-16: "dead, no cause" does not exist): marking
-	// a player dead asks how, and Cancel leaves them alive.
-	function toggleDead() {
-		if (!seat || !seatId) return;
-		if (seat.dead) grimoire.run({ type: 'SetDead', seatId, dead: false });
-		else causeOpen = true;
+	// A death always has a cause (Trevor, 2026-10-16: "dead, no cause" does not exist). Alive
+	// brings a dead player back, after a confirm that states both sides.
+	function pickAlive() {
+		causeOpen = false;
+		if (seat?.dead) reviveOpen = true;
+	}
+	function revive() {
+		reviveOpen = false;
+		if (seatId) grimoire.run({ type: 'SetDead', seatId, dead: false });
 	}
 
 	function setCause(cause: DeathCause) {
@@ -362,21 +370,17 @@
 				</p>
 			</div>
 
-			<div class="toggles">
-				<button type="button" class="toggle" aria-pressed={seat.dead} onclick={toggleDead}>
-					<Icon name="dead" /> Dead
-				</button>
-			</div>
-
 			<div class="row">
-				<span class="label">Cause of death</span>
+				<span class="label">Status</span>
 				<button
 					type="button"
-					class="value"
-					disabled={!seat.dead}
+					class="value status"
+					data-dead={seat.dead || undefined}
+					aria-label={`Status: ${statusText}`}
 					onclick={() => (causeOpen = true)}
 				>
-					{seat.dead ? causeLabel(seat.deathCause, characters, traveller) : 'None'}
+					<Icon name={seat.dead ? 'dead' : 'alive'} />
+					<span class="status-text">{statusText}</span>
 				</button>
 			</div>
 
@@ -490,6 +494,30 @@
 	{/snippet}
 </Dialog>
 
+<!-- How the change affects the table: players (Travellers not counted) and the setup sheet. -->
+{#snippet table(kind: 'remove-seat' | 'remove-character', id: SeatId)}
+	{@const check = tableCheck(game, characters, { kind, seatId: id })}
+	<dl class="change" data-testid="table-check">
+		<dt>Players</dt>
+		<dd>
+			{check.players.before === check.players.after
+				? `${check.players.after}, unchanged`
+				: `${check.players.before} → ${check.players.after}`}
+		</dd>
+		<dt>Setup</dt>
+		<dd>
+			{#if check.problems.length === 0}
+				Still matches the setup sheet
+			{:else}
+				<span class="off"
+					>{check.wasOff ? 'Already did not match' : 'No longer matches'} the setup sheet:</span
+				>
+				{#each check.problems as problem (problem)}<span class="problem">{problem}</span>{/each}
+			{/if}
+		</dd>
+	</dl>
+{/snippet}
+
 <Dialog bind:open={clearOpen} title="Remove character?" role="alertdialog">
 	<dl class="change">
 		<dt>Now</dt>
@@ -497,10 +525,11 @@
 		<dt>Becomes</dt>
 		<dd><strong>{title}</strong>, no character</dd>
 	</dl>
+	{#if clearOpen && seatId}{@render table('remove-character', seatId)}{/if}
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (clearOpen = false)}>Cancel</Button>
 		<Button
-			variant="accent"
+			variant="danger"
 			icon="remove"
 			onclick={() => {
 				clearOpen = false;
@@ -548,8 +577,14 @@
 	{/if}
 </Dialog>
 
-<Dialog bind:open={causeOpen} title={`How did ${title} die?`}>
+<Dialog bind:open={causeOpen} title={`Status of ${title}`}>
 	<div class="causes">
+		<div class="cause-row">
+			<button type="button" class="cause" aria-pressed={!seat?.dead} onclick={pickAlive}>
+				<span class="slot status-icon"><Icon name="alive" /></span>
+				Alive
+			</button>
+		</div>
 		{#each causes as { cause, flags }, i (cause)}
 			{@const killer = characters.get(cause)}
 			<div class="cause-row">
@@ -559,8 +594,10 @@
 					aria-pressed={seat?.deathCause === cause}
 					onclick={() => setCause(cause)}
 				>
-					<span class="slot"
-						>{#if killer}<CharacterToken character={killer} size={32} />{/if}</span
+					<span class="slot" class:status-icon={!killer} data-dead
+						>{#if killer}<CharacterToken character={killer} size={32} />{:else}<Icon
+								name="dead"
+							/>{/if}</span
 					>
 					{causeLabel(cause, characters, traveller)}
 				</button>
@@ -580,6 +617,19 @@
 	{#snippet actions()}
 		<!-- Solid, unlike the causes above, so it never reads as one of them. -->
 		<Button variant="solid" icon="close" onclick={() => (causeOpen = false)}>Cancel</Button>
+	{/snippet}
+</Dialog>
+
+<Dialog bind:open={reviveOpen} title={`Bring ${title} back to life?`} role="alertdialog">
+	<dl class="change">
+		<dt>Now</dt>
+		<dd><span class="state-pill" data-dead><Icon name="dead" />{statusText}</span></dd>
+		<dt>Becomes</dt>
+		<dd><span class="state-pill"><Icon name="alive" />Alive</span></dd>
+	</dl>
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (reviveOpen = false)}>Cancel</Button>
+		<Button variant="accent" icon="alive" onclick={revive}>Alive</Button>
 	{/snippet}
 </Dialog>
 
@@ -670,15 +720,20 @@
 		>
 			Change alignment
 		</Button>
+		<!-- Destructive, so red (Trevor, 2026-10-16). -->
 		<Button
-			variant="quiet"
+			variant="danger-quiet"
 			icon="remove"
 			disabled={!character}
 			onclick={() => fromMenu(() => (clearOpen = true))}
 		>
 			Remove character
 		</Button>
-		<Button variant="quiet" icon="remove" onclick={() => fromMenu(() => (removeOpen = true))}>
+		<Button
+			variant="danger-quiet"
+			icon="remove"
+			onclick={() => fromMenu(() => (removeOpen = true))}
+		>
 			Remove seat
 		</Button>
 	</div>
@@ -740,13 +795,15 @@
 		<dt>Becomes</dt>
 		<dd>{game.seating.length - 1} seats</dd>
 	</dl>
+	{#if removeOpen && seatId}{@render table('remove-seat', seatId)}{/if}
 	<p class="note">
 		The seat, its character and its reminders leave the grimoire. History can bring them back.
 	</p>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (removeOpen = false)}>Cancel</Button>
 		<Button
-			variant="accent"
+			variant="danger"
+			icon="remove"
 			onclick={() => {
 				removeOpen = false;
 				open = false;
@@ -791,6 +848,13 @@
 	.team[data-team='evil'] {
 		background: var(--evil);
 		color: var(--on-evil);
+	}
+	.off {
+		color: var(--evil);
+	}
+	.problem {
+		display: block;
+		font-size: 0.9rem;
 	}
 	.note {
 		color: var(--on-surface-muted);
@@ -920,12 +984,34 @@
 		gap: var(--space-2);
 		min-height: var(--tap-target);
 	}
-	.toggles {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--space-1);
+	/* One look for each state, here and on the board: Alive is plain ink with a heartbeat;
+	   Dead is the seat token's dark shroud with its skull. */
+	.status {
+		max-width: 70%;
 	}
-	.toggle,
+	.status-text {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.status[data-dead],
+	.state-pill[data-dead],
+	.status-icon[data-dead] {
+		background: var(--backdrop);
+		color: var(--on-surface);
+	}
+	.state-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		padding: 0 var(--space-2);
+		border: 1px solid var(--on-sheet-muted);
+		border-radius: 999px;
+	}
+	.status-icon {
+		border-radius: 50%;
+		--icon-size: 20px;
+	}
 	.value {
 		display: inline-flex;
 		align-items: center;
@@ -941,12 +1027,6 @@
 		font-size: 0.8rem;
 		cursor: pointer;
 	}
-	.toggle[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--accent);
-		color: var(--on-accent);
-	}
-	.toggle:disabled,
 	.value:disabled {
 		opacity: 0.45;
 		cursor: default;

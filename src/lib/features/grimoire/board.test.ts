@@ -7,7 +7,8 @@ import {
 	isOrphan,
 	placingAlignment,
 	recommendedTravellers,
-	pickerGroups
+	pickerGroups,
+	tableCheck
 } from './board.ts';
 
 const data = committedGameData();
@@ -79,5 +80,46 @@ describe('placingAlignment', () => {
 		const game = { seating: ['a'], seats: { a: evilEmpath } } as unknown as Game;
 		expect(placingAlignment(game, 'empath', characters)).toBe('evil');
 		expect(placingAlignment(game, 'poisoner', characters)).toBeUndefined();
+	});
+});
+
+describe('tableCheck', () => {
+	// https://wiki.bloodontheclocktower.com/Setup : 5 players are 3 Townsfolk, 0 Outsiders,
+	// 1 Minion, 1 Demon; 6 players add an Outsider. The Baron adds two Outsiders.
+	function table(ids: (string | undefined)[]): Game {
+		const seats = ids.map((characterId, i) => ({ ...seat(characterId), seatId: `s${i}` }));
+		return {
+			seating: seats.map((s) => s.seatId),
+			seats: Object.fromEntries(seats.map((s) => [s.seatId, s])),
+			ruleCharacters: []
+		} as unknown as Game;
+	}
+	const five = ['washerwoman', 'chef', 'empath', 'poisoner', 'imp'];
+
+	it('says the player count and that a full, matching table stays valid', () => {
+		const g = table([...five, 'butler']);
+		const check = tableCheck(g, characters, { kind: 'remove-seat', seatId: 's5' });
+		expect(check.players).toEqual({ before: 6, after: 5 });
+		expect(check.problems).toEqual([]);
+		expect(check.wasOff).toBe(false);
+	});
+	it('names what no longer matches', () => {
+		const check = tableCheck(table(five), characters, { kind: 'remove-seat', seatId: 's3' });
+		expect(check.players).toEqual({ before: 5, after: 4 });
+		expect(check.problems.length).toBeGreaterThan(0);
+		expect(check.wasOff).toBe(false);
+	});
+	it('does not count Travellers as players', () => {
+		const check = tableCheck(table([...five, 'thief']), characters, {
+			kind: 'remove-seat',
+			seatId: 's5'
+		});
+		expect(check.players).toEqual({ before: 5, after: 5 });
+		expect(check.problems).toEqual([]);
+	});
+	it('keeps the count when only the character goes', () => {
+		const check = tableCheck(table(five), characters, { kind: 'remove-character', seatId: 's0' });
+		expect(check.players).toEqual({ before: 5, after: 5 });
+		expect(check.problems.length).toBeGreaterThan(0);
 	});
 });

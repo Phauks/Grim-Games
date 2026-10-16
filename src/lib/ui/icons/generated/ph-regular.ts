@@ -46,6 +46,8 @@ import ph_hand_heart from '~icons/ph/hand-heart';
 import ph_hand_palm from '~icons/ph/hand-palm';
 import ph_hand_pointing from '~icons/ph/hand-pointing';
 import ph_handbag from '~icons/ph/handbag';
+import ph_heart from '~icons/ph/heart';
+import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_info from '~icons/ph/info';
 import ph_lifebuoy from '~icons/ph/lifebuoy';
 import ph_list from '~icons/ph/list';
@@ -147,6 +149,8 @@ const icons: IconMap = {
 	'ph:hand-palm': ph_hand_palm,
 	'ph:hand-pointing': ph_hand_pointing,
 	'ph:handbag': ph_handbag,
+	'ph:heart': ph_heart,
+	'ph:heartbeat': ph_heartbeat,
 	'ph:info': ph_info,
 	'ph:lifebuoy': ph_lifebuoy,
 	'ph:list': ph_list,

@@ -46,6 +46,8 @@ import ph_hand_heart_thin from '~icons/ph/hand-heart-thin';
 import ph_hand_palm_thin from '~icons/ph/hand-palm-thin';
 import ph_hand_pointing_thin from '~icons/ph/hand-pointing-thin';
 import ph_handbag_thin from '~icons/ph/handbag-thin';
+import ph_heart_thin from '~icons/ph/heart-thin';
+import ph_heartbeat_thin from '~icons/ph/heartbeat-thin';
 import ph_info_thin from '~icons/ph/info-thin';
 import ph_lifebuoy_thin from '~icons/ph/lifebuoy-thin';
 import ph_list_thin from '~icons/ph/list-thin';
@@ -147,6 +149,8 @@ const icons: IconMap = {
 	'ph:hand-palm-thin': ph_hand_palm_thin,
 	'ph:hand-pointing-thin': ph_hand_pointing_thin,
 	'ph:handbag-thin': ph_handbag_thin,
+	'ph:heart-thin': ph_heart_thin,
+	'ph:heartbeat-thin': ph_heartbeat_thin,
 	'ph:info-thin': ph_info_thin,
 	'ph:lifebuoy-thin': ph_lifebuoy_thin,
 	'ph:list-thin': ph_list_thin,

@@ -94,10 +94,19 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await expect(picker).toBeHidden();
 	await expect(sheet.getByText('Imp', { exact: true }).first()).toBeVisible();
 
-	await sheet.getByRole('button', { name: 'Dead' }).tap();
-	const cause = page.getByRole('dialog', { name: 'How did Ana die?' });
+	// Status is one list: Alive, then the causes of death.
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	const cause = page.getByRole('dialog', { name: 'Status of Ana' });
+	await expect(cause.getByRole('button', { name: 'Alive' })).toHaveAttribute('aria-pressed', 'true');
 	await cause.getByRole('button', { name: 'Executed' }).tap();
-	await expect(sheet.getByRole('button', { name: 'Executed' })).toBeVisible();
+	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+	// Alive brings them back, after saying what changes.
+	await sheet.getByRole('button', { name: 'Status: Dead: Executed' }).tap();
+	await cause.getByRole('button', { name: 'Alive' }).tap();
+	const revive = page.getByRole('alertdialog', { name: 'Bring Ana back to life?' });
+	await expect(revive).toContainText(/Now\s*Dead: Executed\s*Becomes\s*Alive/);
+	await revive.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
 	// No ghost vote on the Storyteller's board (Trevor, 2026-10-16): players track it.
 	await expect(sheet.getByRole('button', { name: 'Vote used' })).toHaveCount(0);
 	// A good Imp: as in the physical grimoire, the token turns upside down.
@@ -191,10 +200,11 @@ test('history, add seat and remove', async ({ page }) => {
 	await expect(page.getByRole('dialog').getByRole('button', { name: 'Swap seats' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await seatMenu(page, sheet, 'Remove seat');
-	await page
-		.getByRole('alertdialog', { name: 'Remove Ben?' })
-		.getByRole('button', { name: 'Remove' })
-		.tap();
+	const remove = page.getByRole('alertdialog', { name: 'Remove Ben?' });
+	// The player count change, and whether the characters still fit the setup sheet.
+	await expect(remove.getByTestId('table-check')).toContainText('9 → 8');
+	await expect(remove.getByTestId('table-check')).toContainText('the setup sheet');
+	await remove.getByRole('button', { name: 'Remove' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 });
 
@@ -614,24 +624,21 @@ test('the cause of death offers only characters that could have killed the playe
 		await closeSheet(page);
 	}
 	let sheet = await openSeat(page, 2);
-	await sheet.getByRole('button', { name: 'Dead' }).tap();
-	let cause = page.getByRole('dialog', { name: 'How did Seat 2 die?' });
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	let cause = page.getByRole('dialog', { name: 'Status of Seat 2' });
 	await expect(cause.getByRole('button', { name: 'Executed' })).toBeVisible();
 	await expect(cause.getByRole('button', { name: 'Slayer' })).toBeHidden();
 	// A death always has a cause: there is no "None", and Cancel leaves the player alive.
 	await expect(cause.getByRole('button', { name: 'None' })).toHaveCount(0);
 	await cause.getByRole('button', { name: 'Cancel' }).tap();
-	await expect(sheet.getByRole('button', { name: 'Dead' })).toHaveAttribute(
-		'aria-pressed',
-		'false'
-	);
+	await expect(sheet.getByRole('button', { name: 'Status: Alive' })).toBeVisible();
 	await closeSheet(page);
 
 	sheet = await openSeat(page, 3);
-	await sheet.getByRole('button', { name: 'Dead' }).tap();
-	cause = page.getByRole('dialog', { name: 'How did Seat 3 die?' });
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	cause = page.getByRole('dialog', { name: 'Status of Seat 3' });
 	await cause.getByRole('button', { name: 'Slayer' }).tap();
-	await expect(sheet.getByRole('button', { name: 'Slayer' })).toBeVisible();
+	await expect(sheet.getByRole('button', { name: 'Status: Dead: Slayer' })).toBeVisible();
 });
 
 test('the reminder bank holds setup reminders, placed by hand, then every reminder left', async ({

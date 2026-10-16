@@ -46,6 +46,8 @@ import ph_hand_heart_light from '~icons/ph/hand-heart-light';
 import ph_hand_palm_light from '~icons/ph/hand-palm-light';
 import ph_hand_pointing_light from '~icons/ph/hand-pointing-light';
 import ph_handbag_light from '~icons/ph/handbag-light';
+import ph_heart_light from '~icons/ph/heart-light';
+import ph_heartbeat_light from '~icons/ph/heartbeat-light';
 import ph_info_light from '~icons/ph/info-light';
 import ph_lifebuoy_light from '~icons/ph/lifebuoy-light';
 import ph_list_light from '~icons/ph/list-light';
@@ -147,6 +149,8 @@ const icons: IconMap = {
 	'ph:hand-palm-light': ph_hand_palm_light,
 	'ph:hand-pointing-light': ph_hand_pointing_light,
 	'ph:handbag-light': ph_handbag_light,
+	'ph:heart-light': ph_heart_light,
+	'ph:heartbeat-light': ph_heartbeat_light,
 	'ph:info-light': ph_info_light,
 	'ph:lifebuoy-light': ph_lifebuoy_light,
 	'ph:list-light': ph_list_light,

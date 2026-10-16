@@ -15,6 +15,7 @@ export interface IconSlotInfo {
 }
 
 export const ICON_SLOTS = {
+	alive: { label: 'Alive', choices: ['ph:heartbeat', 'ph:heart'] },
 	dead: { label: 'Dead', choices: ['ph:skull', 'ph:cross', 'ph:x-circle'] },
 	ghostVote: { label: 'Ghost vote', choices: ['ph:ghost', 'ph:hand-pointing'] },
 	poisoned: { label: 'Poisoned', choices: ['ph:flask', 'ph:drop'] },

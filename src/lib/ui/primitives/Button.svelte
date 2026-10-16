@@ -10,7 +10,8 @@
 		/** Renders a link styled as a button; pass a path from `resolve()` in `$app/paths`. */
 		href?: ResolvedPathname;
 		/** `accent` is the one main action in a group (e.g. Refresh). */
-		variant?: 'solid' | 'quiet' | 'accent';
+		/** `danger` and `danger-quiet` mark a destructive action in red (Trevor, 2026-10-16). */
+		variant?: 'solid' | 'quiet' | 'accent' | 'danger' | 'danger-quiet';
 		children: Snippet;
 	}
 
@@ -52,6 +53,15 @@
 		color: inherit;
 		box-shadow: inset 0 0 0 1px var(--border);
 	}
+	.button[data-variant='danger'] {
+		background: var(--evil);
+		color: var(--on-evil);
+	}
+	.button[data-variant='danger-quiet'] {
+		background: transparent;
+		color: var(--evil);
+		box-shadow: inset 0 0 0 1px var(--evil);
+	}
 	.button:hover {
 		filter: brightness(1.15);
 	}
@@ -59,7 +69,8 @@
 		background: var(--accent);
 		color: var(--on-accent);
 	}
-	.button[data-variant='quiet']:hover {
+	.button[data-variant='quiet']:hover,
+	.button[data-variant='danger-quiet']:hover {
 		filter: none;
 		background: var(--surface-selected, rgb(255 255 255 / 0.06));
 	}

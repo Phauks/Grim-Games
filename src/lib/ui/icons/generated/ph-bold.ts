@@ -46,6 +46,8 @@ import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
 import ph_hand_palm_bold from '~icons/ph/hand-palm-bold';
 import ph_hand_pointing_bold from '~icons/ph/hand-pointing-bold';
 import ph_handbag_bold from '~icons/ph/handbag-bold';
+import ph_heart_bold from '~icons/ph/heart-bold';
+import ph_heartbeat_bold from '~icons/ph/heartbeat-bold';
 import ph_info_bold from '~icons/ph/info-bold';
 import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_list_bold from '~icons/ph/list-bold';
@@ -147,6 +149,8 @@ const icons: IconMap = {
 	'ph:hand-palm-bold': ph_hand_palm_bold,
 	'ph:hand-pointing-bold': ph_hand_pointing_bold,
 	'ph:handbag-bold': ph_handbag_bold,
+	'ph:heart-bold': ph_heart_bold,
+	'ph:heartbeat-bold': ph_heartbeat_bold,
 	'ph:info-bold': ph_info_bold,
 	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:list-bold': ph_list_bold,
