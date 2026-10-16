@@ -6,28 +6,63 @@
 		type Character
 	} from '#lib/core/data/index.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import {
+		DEFAULT_SEAT_LAYOUT,
+		gapPoints,
+		isDefaultLayout,
+		nextGap,
+		seatPoints,
+		seatTokenSize,
+		withGap,
+		withPlaced,
+		withShape,
+		type SeatLayout,
+		type SeatPoint
+	} from '#lib/ui/seating/seat-layout.ts';
 	import { MAX_SEATS, MIN_SEATS, type NotebookSeat } from './notebook.ts';
 
 	interface Props {
 		seats: readonly NotebookSeat[];
 		me?: string;
 		characters: ReadonlyMap<string, Character>;
+		/** Where seats are drawn: the shared seat layout (ovals, gaps, couch groups). */
+		layout: SeatLayout;
 		onSeatCount: (count: number) => void;
 		onOpenSeat: (seatId: string) => void;
+		onLayout: (layout: SeatLayout) => void;
 	}
 
-	let { seats, me, characters, onSeatCount, onOpenSeat }: Props = $props();
+	let { seats, me, characters, layout, onSeatCount, onOpenSeat, onLayout }: Props = $props();
 
-	const RADIUS = 38; // % of the ring's width, from the centre to each seat's centre
-	function place(i: number, n: number) {
-		const angle = (2 * Math.PI * i) / n; // seat 1 at the top, then clockwise
-		return { x: 50 + RADIUS * Math.sin(angle), y: 50 - RADIUS * Math.cos(angle) };
-	}
-	// Seats shrink as the ring fills, but never below a 44px tap target.
-	const seatSize = $derived(
-		`clamp(var(--tap-target), ${(RADIUS * 2 * Math.sin(Math.PI / seats.length) * 0.8).toFixed(2)}cqi, min(72px, 18cqi))`
-	);
+	const ids = $derived(seats.map((s) => s.seatId));
 	const alive = $derived(seats.filter((s) => !s.dead).length);
+
+	let board = $state<HTMLElement>();
+	let width = $state(0);
+	let height = $state(0);
+	// Measured on the next frame, so resizing tokens never re-enters the observer.
+	$effect(() => {
+		if (!board) return;
+		let frame = 0;
+		const observer = new ResizeObserver(([entry]) => {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => {
+				width = entry.contentRect.width;
+				height = entry.contentRect.height;
+			});
+		});
+		observer.observe(board);
+		return () => {
+			cancelAnimationFrame(frame);
+			observer.disconnect();
+		};
+	});
+	const points = $derived(seatPoints(ids, layout, { width, height }));
+	const size = $derived(seatTokenSize(ids, layout, { width, height }));
 
 	function iconFor(id: string | undefined) {
 		const c = id ? characters.get(id) : undefined;
@@ -37,105 +72,228 @@
 		return file && `${ICONS_PATH}/${file}`;
 	}
 
-	// Taps come from Pointer Events (CLAUDE.md: touch first); a drag that moves is not a tap.
-	let down: { x: number; y: number } | null = null;
-	const TAP_SLOP = 10;
-	function pointerup(event: PointerEvent, seatId: string) {
-		if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) < TAP_SLOP)
-			onOpenSeat(seatId);
-		down = null;
+	// ── Arranging seats ──
+	// Real tables have gaps, ovals and couch groups (Trevor, 2026-10-15). Only where seats are
+	// drawn changes; seat numbers (the seating order) stay as they are.
+	let arranging = $state(false);
+	const gapAt = $derived(arranging ? gapPoints(ids, layout, { width, height }, 0.3) : []);
+	function startArranging() {
+		arranging = true;
+		toast('Arrange seats', 'Drag a seat to move it. Tap + between seats to leave a gap.');
+	}
+
+	interface Drag {
+		seatId: string;
+		pointerId: number;
+		/** From the pointer to the seat's centre, so the seat does not jump under a finger. */
+		offset: SeatPoint;
+		at: SeatPoint;
+		moved: boolean;
+	}
+	let drag = $state<Drag | undefined>();
+	/** Pointer movement, in pixels, before a press counts as a drag rather than a tap. */
+	const SLOP = 8;
+	let pressedAt = { x: 0, y: 0 };
+
+	function boardPoint(event: PointerEvent): SeatPoint {
+		const rect = board!.getBoundingClientRect();
+		return {
+			x: ((event.clientX - rect.left) / rect.width) * 100,
+			y: ((event.clientY - rect.top) / rect.height) * 100
+		};
+	}
+	// Pointer Events for taps and drags (CLAUDE.md: touch first); a press that moves is not a tap.
+	function pointerdown(event: PointerEvent, seatId: string, at: SeatPoint) {
+		if (drag || !board) return;
+		pressedAt = { x: event.clientX, y: event.clientY };
+		if (arranging) (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		const p = boardPoint(event);
+		drag = {
+			seatId,
+			pointerId: event.pointerId,
+			offset: { x: at.x - p.x, y: at.y - p.y },
+			at,
+			moved: false
+		};
+	}
+	function pointermove(event: PointerEvent) {
+		if (!drag || event.pointerId !== drag.pointerId) return;
+		const moved =
+			drag.moved || Math.hypot(event.clientX - pressedAt.x, event.clientY - pressedAt.y) >= SLOP;
+		if (!arranging) {
+			drag = { ...drag, moved };
+			return;
+		}
+		const p = boardPoint(event);
+		drag = { ...drag, moved, at: { x: p.x + drag.offset.x, y: p.y + drag.offset.y } };
+	}
+	function pointerup(event: PointerEvent) {
+		if (!drag || event.pointerId !== drag.pointerId) return;
+		const { seatId, moved, at } = drag;
+		drag = undefined;
+		if (arranging && moved) onLayout(withPlaced(layout, seatId, at));
+		else if (!arranging && !moved) onOpenSeat(seatId);
+	}
+	/** Arrow keys move a seat while arranging, for keyboards and switch access. */
+	function nudge(event: KeyboardEvent, seatId: string, at: SeatPoint) {
+		if (!arranging) return;
+		const step = { ArrowLeft: [-2, 0], ArrowRight: [2, 0], ArrowUp: [0, -2], ArrowDown: [0, 2] }[
+			event.key
+		];
+		if (!step) return;
+		event.preventDefault();
+		onLayout(withPlaced(layout, seatId, { x: at.x + step[0], y: at.y + step[1] }));
 	}
 </script>
 
-<div class="ring" style:--seat-size={seatSize} data-testid="seat-ring">
-	<div class="centre">
-		<span class="label" id="seat-count-label">Seats</span>
-		<div class="stepper" role="group" aria-labelledby="seat-count-label">
-			<button
-				type="button"
-				class="step"
-				aria-label="Remove a seat"
-				disabled={seats.length <= MIN_SEATS}
-				onclick={() => onSeatCount(seats.length - 1)}>−</button
+<div class="circle">
+	<!-- One bar whose controls swap while arranging, so the board never moves. -->
+	<div class="bar">
+		{#if arranging}
+			<Toggle
+				label="Circle"
+				checked={layout.shape === 'circle'}
+				onChange={(circle) => onLayout(withShape(layout, circle ? 'circle' : 'oval'))}
+			/>
+			<span class="spacer"></span>
+			<Button
+				variant="quiet"
+				disabled={isDefaultLayout(layout)}
+				onclick={() => onLayout(DEFAULT_SEAT_LAYOUT)}>Reset</Button
 			>
-			<output aria-live="polite" data-testid="seat-count">{seats.length}</output>
-			<button
-				type="button"
-				class="step"
-				aria-label="Add a seat"
-				disabled={seats.length >= MAX_SEATS}
-				onclick={() => onSeatCount(seats.length + 1)}>+</button
-			>
-		</div>
-		<span class="alive" data-testid="alive-count">{alive} alive</span>
+			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
+		{:else}
+			<div class="stepper" role="group" aria-label="Seats">
+				<button
+					type="button"
+					class="step"
+					aria-label="Remove a seat"
+					disabled={seats.length <= MIN_SEATS}
+					onclick={() => onSeatCount(seats.length - 1)}>−</button
+				>
+				<output aria-live="polite" data-testid="seat-count">{seats.length}</output>
+				<button
+					type="button"
+					class="step"
+					aria-label="Add a seat"
+					disabled={seats.length >= MAX_SEATS}
+					onclick={() => onSeatCount(seats.length + 1)}>+</button
+				>
+			</div>
+			<span class="alive" data-testid="alive-count">{alive} alive</span>
+			<span class="spacer"></span>
+			<IconButton icon="arrange" label="Arrange seats" onclick={startArranging} />
+		{/if}
 	</div>
 
-	{#each seats as seat, i (seat.seatId)}
-		{@const p = place(i, seats.length)}
-		{@const icon = iconFor(seat.guess)}
-		{@const guess = seat.guess ? characters.get(seat.guess) : undefined}
-		<button
-			type="button"
-			class="seat"
-			style:left="{p.x}%"
-			style:top="{p.y}%"
-			data-seat={seat.seatId}
-			data-me={seat.seatId === me || undefined}
-			data-dead={seat.dead || undefined}
-			aria-label={[
-				`Seat ${i + 1}`,
-				seat.name,
-				seat.seatId === me ? 'you' : '',
-				guess ? `guess ${guess.name}` : '',
-				seat.note.trim() ? 'has notes' : '',
-				seat.dead ? (seat.ghostVoteUsed ? 'dead, vote used' : 'dead') : ''
-			]
-				.filter(Boolean)
-				.join(', ')}
-			onpointerdown={(event) => (down = { x: event.clientX, y: event.clientY })}
-			onpointerup={(event) => pointerup(event, seat.seatId)}
-			onpointercancel={() => (down = null)}
-			onclick={(event) => event.detail === 0 && onOpenSeat(seat.seatId)}
-		>
-			<span class="face">
-				{#if icon}<img src={icon} alt="" />{:else}<span class="number">{i + 1}</span>{/if}
-				{#if seat.dead && !seat.ghostVoteUsed}<span class="vote"><Icon name="ghostVote" /></span
-					>{/if}
-				{#if seat.note.trim()}<span class="noted" data-testid="has-notes"
-						><Icon name="notes" /></span
-					>{/if}
-			</span>
-			<span class="name">{seat.name || ' '}</span>
-		</button>
-	{/each}
+	<div class="board" class:arranging bind:this={board} data-testid="seat-ring">
+		{#each seats as seat, i (seat.seatId)}
+			{@const at = drag?.seatId === seat.seatId && arranging ? drag.at : points[i]}
+			{@const icon = iconFor(seat.guess)}
+			{@const guess = seat.guess ? characters.get(seat.guess) : undefined}
+			<button
+				type="button"
+				class="seat"
+				class:dragging={arranging && drag?.seatId === seat.seatId}
+				style:left="{at.x}%"
+				style:top="{at.y}%"
+				style:--seat-size="{size}px"
+				data-seat={seat.seatId}
+				data-me={seat.seatId === me || undefined}
+				data-dead={seat.dead || undefined}
+				aria-label={[
+					`Seat ${i + 1}`,
+					seat.name,
+					seat.seatId === me ? 'you' : '',
+					guess ? `guess ${guess.name}` : '',
+					seat.note.trim() ? 'has notes' : '',
+					seat.dead ? (seat.ghostVoteUsed ? 'dead, vote used' : 'dead') : ''
+				]
+					.filter(Boolean)
+					.join(', ')}
+				onpointerdown={(event) => pointerdown(event, seat.seatId, at)}
+				onpointermove={pointermove}
+				onpointerup={pointerup}
+				onpointercancel={() => (drag = undefined)}
+				onkeydown={(event) => nudge(event, seat.seatId, at)}
+				onclick={(event) => event.detail === 0 && !arranging && onOpenSeat(seat.seatId)}
+			>
+				<span class="face">
+					{#if icon}<img src={icon} alt="" />{:else}<span class="number">{i + 1}</span>{/if}
+					{#if seat.dead && !seat.ghostVoteUsed}<span class="vote"><Icon name="ghostVote" /></span
+						>{/if}
+					{#if seat.note.trim()}<span class="noted" data-testid="has-notes"
+							><Icon name="notes" /></span
+						>{/if}
+				</span>
+				<span class="name">{seat.name || ' '}</span>
+			</button>
+		{/each}
+
+		{#each gapAt as at, i (ids[i])}
+			{@const seatId = ids[i]}
+			{@const gap = layout.gaps[seatId] ?? 0}
+			<button
+				type="button"
+				class="gap"
+				style:left="{at.x}%"
+				style:top="{at.y}%"
+				aria-label={`Gap after seat ${i + 1}: ${gap === 0 ? 'None' : gap}`}
+				onclick={() => onLayout(withGap(layout, seatId, nextGap(layout, seatId)))}
+				>{gap === 0 ? '+' : gap}</button
+			>
+		{/each}
+	</div>
 </div>
 
 <style>
-	.ring {
+	.circle {
+		display: grid;
+		gap: var(--space-2);
+	}
+	.bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-2);
+		min-height: var(--tap-target);
+	}
+	.spacer {
+		flex: 1;
+	}
+	/* A fixed size, so the seats never move as data arrives. Ovals fill it (seat-layout). */
+	.board {
 		position: relative;
 		width: 100%;
-		max-width: 36rem;
-		aspect-ratio: 1;
-		margin: 0 auto;
-		container-type: inline-size;
+		max-width: 48rem;
+		height: clamp(20rem, 62dvh, 40rem);
+		/* Room for the bottom seat's name, which hangs below the board's edge. */
+		margin: 0 auto var(--space-5);
+		touch-action: manipulation;
 	}
-	.ring::before {
-		content: '';
+	/* While arranging, a press drags a seat instead of scrolling. */
+	.arranging {
+		touch-action: none;
+		outline: 1px dashed var(--border);
+		outline-offset: var(--space-1);
+		border-radius: var(--radius-md);
+	}
+	.gap {
 		position: absolute;
-		inset: 8%;
+		translate: -50% -50%;
+		z-index: 1;
+		width: var(--tap-target);
+		height: var(--tap-target);
 		border: 1px dashed var(--border);
 		border-radius: 50%;
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font: 600 1rem / 1 var(--font-control);
+		cursor: pointer;
 	}
-	.centre {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		translate: -50% -50%;
-		display: grid;
-		justify-items: center;
-		gap: var(--space-1);
+	.gap:hover {
+		background: var(--surface-selected);
 	}
-	.label,
 	.alive {
 		color: var(--on-surface-muted);
 		font-family: var(--font-control);
@@ -173,7 +331,8 @@
 	}
 	.seat {
 		position: absolute;
-		translate: -50% -50%;
+		/* Centred on the token, with the name hanging below. */
+		translate: -50% calc(-50% + 0.6em);
 		display: grid;
 		justify-items: center;
 		width: var(--seat-size);
@@ -184,6 +343,13 @@
 		font: inherit;
 		cursor: pointer;
 		touch-action: manipulation;
+	}
+	.arranging .seat {
+		cursor: grab;
+	}
+	.seat.dragging {
+		z-index: 2;
+		cursor: grabbing;
 	}
 	.face {
 		position: relative;

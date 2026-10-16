@@ -78,6 +78,76 @@ test('the circle keeps names, guesses and deaths on this device', async ({ page 
 	).toBeVisible();
 });
 
+test('seats can be arranged like the real table, and stay that way', async ({ page }) => {
+	await page.getByRole('tab', { name: 'Circle' }).tap();
+	const board = page.getByTestId('seat-ring');
+	const seat5 = page.getByRole('button', { name: /^Seat 5/ });
+	await expect(seat5).toBeVisible();
+	await page.getByRole('button', { name: 'Arrange seats' }).tap();
+
+	// A gap after seat 2 (a doorway), tapped up to two places.
+	const gap = page.getByRole('button', { name: /^Gap after seat 2/ });
+	await expect(gap).toHaveAccessibleName('Gap after seat 2: None');
+	await gap.tap();
+	await gap.tap();
+	await expect(gap).toHaveAccessibleName('Gap after seat 2: 2');
+
+	// Drag seat 5 into the middle, as if they sat on a couch apart from the circle.
+	const box = (await board.boundingBox())!;
+	const from = (await seat5.locator('.face').boundingBox())!;
+	const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
+	const end = { x: box.x + box.width * 0.5, y: box.y + box.height * 0.45 };
+	await seat5.dispatchEvent('pointerdown', {
+		pointerId: 1,
+		isPrimary: true,
+		clientX: start.x,
+		clientY: start.y
+	});
+	for (const t of [0.3, 0.7, 1])
+		await seat5.dispatchEvent('pointermove', {
+			pointerId: 1,
+			isPrimary: true,
+			clientX: start.x + (end.x - start.x) * t,
+			clientY: start.y + (end.y - start.y) * t
+		});
+	await seat5.dispatchEvent('pointerup', {
+		pointerId: 1,
+		isPrimary: true,
+		clientX: end.x,
+		clientY: end.y
+	});
+	// Dragging while arranging never opens the seat.
+	await expect(page.getByRole('dialog', { name: 'Seat 5' })).toBeHidden();
+	await page.getByTestId('seat-ring').locator('..').getByText('Circle', { exact: true }).tap();
+	await page.getByRole('button', { name: 'Done' }).tap();
+	await expect(page.getByRole('button', { name: /^Gap after seat/ })).toHaveCount(0);
+
+	// Where seat 5 sits, as a share of the board (the page may have scrolled).
+	const share = async () => {
+		const b = (await board.boundingBox())!;
+		const f = (await page
+			.getByRole('button', { name: /^Seat 5/ })
+			.locator('.face')
+			.boundingBox())!;
+		return {
+			x: Math.round(((f.x + f.width / 2 - b.x) / b.width) * 100),
+			y: Math.round(((f.y + f.height / 2 - b.y) / b.height) * 100)
+		};
+	};
+	expect(await share()).toEqual({ x: 50, y: 45 });
+
+	// Kept on this device.
+	await page.waitForTimeout(500);
+	await page.reload();
+	await page.getByRole('tab', { name: 'Circle' }).tap();
+	await expect.poll(share).toEqual({ x: 50, y: 45 });
+	await page.getByRole('button', { name: 'Arrange seats' }).tap();
+	await expect(page.getByRole('button', { name: /^Gap after seat 2/ })).toHaveAccessibleName(
+		'Gap after seat 2: 2'
+	);
+	await expect(page.getByRole('checkbox', { name: 'Circle' })).toBeChecked();
+});
+
 test('titled notes are kept after a reload, and deleting asks first', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(page.getByTestId('no-player-notes')).toHaveText('None');

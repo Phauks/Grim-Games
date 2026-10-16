@@ -9,8 +9,14 @@
  * version ever saved.
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
+import {
+	DEFAULT_SEAT_LAYOUT,
+	parseSeatLayout,
+	pruneLayout,
+	type SeatLayout
+} from '#lib/ui/seating/seat-layout.ts';
 
-export const NOTEBOOK_VERSION = 2;
+export const NOTEBOOK_VERSION = 3;
 
 /** 5 to 15 dealt players plus up to 5 Travellers (wiki: Setup, Travellers). */
 export const MIN_SEATS = 5;
@@ -43,6 +49,8 @@ export interface PlayerNotebook {
 	/** The player's own seat. */
 	me?: string;
 	notes: PlayerNote[];
+	/** Where the seats are drawn (ovals, gaps, couch groups); seating order is `seats`. */
+	layout: SeatLayout;
 	updatedAt: number;
 }
 
@@ -72,6 +80,7 @@ export function emptyNotebook(
 		scriptKey: key,
 		seats: Array.from({ length: seats }, (_, i) => newSeat(i + 1)),
 		notes: [{ noteId: 'n1', title: '', text: '' }],
+		layout: DEFAULT_SEAT_LAYOUT,
 		updatedAt: now
 	};
 }
@@ -86,7 +95,21 @@ export function setSeatCount(book: PlayerNotebook, count: number): PlayerNoteboo
 	const seats = book.seats.slice(0, target);
 	while (seats.length < target) seats.push(newSeat(nextSeatNumber(seats)));
 	const me = seats.some((s) => s.seatId === book.me) ? book.me : undefined;
-	return { ...book, seats, me };
+	const layout = pruneLayout(
+		book.layout,
+		seats.map((s) => s.seatId)
+	);
+	return { ...book, seats, me, layout };
+}
+
+export function setLayout(book: PlayerNotebook, layout: SeatLayout): PlayerNotebook {
+	return {
+		...book,
+		layout: pruneLayout(
+			layout,
+			book.seats.map((s) => s.seatId)
+		)
+	};
 }
 
 export type SeatPatch = Partial<Omit<NotebookSeat, 'seatId'>>;
@@ -181,7 +204,7 @@ export function migrateNotebook(raw: unknown): PlayerNotebook | undefined {
 	if (!raw || typeof raw !== 'object') return undefined;
 	const o = raw as Record<string, unknown>;
 	const version = o.schemaVersion;
-	if ((version !== 1 && version !== 2) || !isString(o.scriptKey)) return undefined;
+	if ((version !== 1 && version !== 2 && version !== 3) || !isString(o.scriptKey)) return undefined;
 	const rawSeats = Array.isArray(o.seats) ? o.seats.slice(0, MAX_SEATS) : [];
 	const seats = rawSeats.map((s, i) => readSeat(s, i + 1));
 	while (seats.length < MIN_SEATS) seats.push(newSeat(nextSeatNumber(seats)));
@@ -195,6 +218,11 @@ export function migrateNotebook(raw: unknown): PlayerNotebook | undefined {
 			version === 1
 				? [{ noteId: 'n1', title: '', text: isString(o.notes) ? o.notes : '' }]
 				: readNotes(o.notes),
+		// v1 and v2 had no layout: their seats were always drawn on the default ring.
+		layout: pruneLayout(
+			version === 3 ? parseSeatLayout(o.layout) : DEFAULT_SEAT_LAYOUT,
+			seats.map((s) => s.seatId)
+		),
 		updatedAt: typeof o.updatedAt === 'number' ? o.updatedAt : 0
 	};
 }

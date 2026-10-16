@@ -228,8 +228,10 @@
 								seats={notebook.book.seats}
 								me={notebook.book.me}
 								characters={byId}
+								layout={notebook.book.layout}
 								onSeatCount={(n) => notebook!.setSeatCount(n)}
 								onOpenSeat={openSeat}
+								onLayout={(layout) => notebook!.setLayout(layout)}
 							/>
 						{:else}
 							<NotesPanel

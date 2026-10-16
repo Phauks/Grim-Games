@@ -7,11 +7,18 @@ import {
 	migrateNotebook,
 	MIN_SEATS,
 	scriptKey,
+	setLayout,
 	setSeatCount,
 	toggleMe,
 	updateNote,
 	updateSeat
 } from './notebook.ts';
+import {
+	DEFAULT_SEAT_LAYOUT,
+	withGap,
+	withPlaced,
+	withShape
+} from '#lib/ui/seating/seat-layout.ts';
 
 describe('player notebook', () => {
 	it('keys official editions by id and custom scripts by name', () => {
@@ -41,10 +48,10 @@ describe('player notebook', () => {
 		expect(book.seats[0].ghostVoteUsed).toBe(false);
 	});
 
-	it('reads a saved v1 notebook and refuses data it does not understand', () => {
+	it('reads a saved notebook and refuses data it does not understand', () => {
 		const saved = JSON.parse(JSON.stringify(toggleMe(emptyNotebook('edition:tb', 5, 1), 's3')));
 		expect(migrateNotebook(saved)).toEqual(saved);
-		expect(migrateNotebook({ ...saved, schemaVersion: 3 })).toBeUndefined();
+		expect(migrateNotebook({ ...saved, schemaVersion: 4 })).toBeUndefined();
 		expect(migrateNotebook('nonsense')).toBeUndefined();
 		const damaged = migrateNotebook({
 			schemaVersion: 2,
@@ -77,5 +84,23 @@ describe('player notebook', () => {
 		book = deleteNote(book, 'n1');
 		expect(addNote(book).noteId).toBe('n3');
 		expect(migrateNotebook(JSON.parse(JSON.stringify(book)))?.notes).toEqual(book.notes);
+	});
+
+	it('keeps the seat layout, forgetting seats that have left', () => {
+		let book = emptyNotebook('edition:tb', 6, 0);
+		book = setLayout(
+			book,
+			withPlaced(withGap(withShape(book.layout, 'circle'), 's2', 2), 's6', { x: 20, y: 80 })
+		);
+		expect(migrateNotebook(JSON.parse(JSON.stringify(book)))?.layout).toEqual(book.layout);
+		book = setSeatCount(book, 5);
+		expect(book.layout).toEqual({ shape: 'circle', gaps: { s2: 2 }, placed: {} });
+	});
+
+	it('gives v2 notebooks the default ring and repairs a damaged layout', () => {
+		const v2 = { schemaVersion: 2, scriptKey: 'edition:tb', seats: [], notes: [] };
+		expect(migrateNotebook(v2)?.layout).toEqual(DEFAULT_SEAT_LAYOUT);
+		const damaged = migrateNotebook({ ...v2, schemaVersion: 3, layout: { shape: 7, gaps: 'x' } });
+		expect(damaged?.layout).toEqual(DEFAULT_SEAT_LAYOUT);
 	});
 });

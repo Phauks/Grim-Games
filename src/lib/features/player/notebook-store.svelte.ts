@@ -11,6 +11,7 @@ import {
 	deleteNote,
 	emptyNotebook,
 	migrateNotebook,
+	setLayout,
 	setSeatCount,
 	toggleMe,
 	updateNote,
@@ -18,6 +19,7 @@ import {
 	type PlayerNotebook,
 	type SeatPatch
 } from './notebook.ts';
+import type { SeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 
 const DB_NAME = 'grim-games-player';
@@ -128,5 +130,8 @@ export class NotebookState {
 	}
 	deleteNote(noteId: string) {
 		this.#change(deleteNote(this.book, noteId));
+	}
+	setLayout(layout: SeatLayout) {
+		this.#change(setLayout(this.book, layout));
 	}
 }
