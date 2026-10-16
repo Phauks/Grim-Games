@@ -81,6 +81,9 @@
 		margin: 0 auto;
 		padding: var(--space-4);
 	}
+	main > :global(*) {
+		min-width: 0;
+	}
 	h1 {
 		margin: 0;
 		font-size: 1.4rem;

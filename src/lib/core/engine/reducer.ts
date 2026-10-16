@@ -194,6 +194,14 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				reminders: seat.reminders.filter((r) => r.reminderId !== event.reminderId)
 			}));
 		}
+		case 'SeatingReordered': {
+			// Only a reordering of the same seats.
+			const same =
+				event.seating.length === game.seating.length &&
+				new Set(event.seating).size === event.seating.length &&
+				event.seating.every((id) => Object.hasOwn(game.seats, id));
+			return same ? { ...game, seating: [...event.seating] } : game;
+		}
 		case 'SeatsSwapped': {
 			const a = game.seating.indexOf(event.seatA);
 			const b = game.seating.indexOf(event.seatB);

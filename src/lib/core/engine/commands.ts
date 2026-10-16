@@ -67,6 +67,14 @@ export type Command =
 	| { type: 'ApplySetupReminders'; placements: { seatId: SeatId; reminder: Reminder }[] }
 	/** Swaps two players' places in the seating order (the Matron). */
 	| { type: 'SwapSeats'; seatA: SeatId; seatB: SeatId }
+	/**
+	 * Every player moves one place round the seating order, keeping their character,
+	 * reminders and state. Clockwise is the seating order: the player in seat 1 goes to seat 2
+	 * and the last player to seat 1.
+	 */
+	| { type: 'RotateSeats'; direction: 'clockwise' | 'anticlockwise' }
+	/** Moves a player to `position` (0-based) in the seating order; the others close up. */
+	| { type: 'MoveSeat'; seatId: SeatId; position: number }
 	| { type: 'SetOverride'; seatId: SeatId; override: SeatOverride }
 	| { type: 'ClearOverride'; seatId: SeatId; field: OverrideField }
 	/**

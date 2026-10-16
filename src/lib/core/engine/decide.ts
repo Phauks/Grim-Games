@@ -58,6 +58,7 @@ export type ErrorCode =
 	| 'not-seatable'
 	| 'not-rule-character'
 	| 'same-seat'
+	| 'invalid-direction'
 	| 'invalid-bluff-set'
 	| 'no-bag'
 	| 'bag-empty'
@@ -194,6 +195,16 @@ function seatableCharacter(ctx: EngineContext, id: CharacterId): Character {
 }
 
 /** Characters in play: tokens, true characters and rule characters. */
+/** True characters on seats, and the Fabled and Loric in play. */
+function trulyInPlay(game: Game, ctx: EngineContext): Set<CharacterId> {
+	const ids = new Set<CharacterId>(game.ruleCharacters);
+	for (const seatId of game.seating) {
+		const truly = trueCharacter(game, seatId, ctx.characters);
+		if (truly !== undefined) ids.add(truly);
+	}
+	return ids;
+}
+
 function inPlay(game: Game, ctx: EngineContext): Set<CharacterId> {
 	const ids = new Set<CharacterId>(game.ruleCharacters);
 	for (const seatId of game.seating) {
@@ -758,6 +769,38 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [{ type: 'SeatsSwapped', seatA: a.seatId, seatB: b.seatId }];
 		}
 
+		case 'RotateSeats': {
+			const { seating } = game;
+			if (command.direction !== 'clockwise' && command.direction !== 'anticlockwise') {
+				refuse('invalid-direction', 'rotate clockwise or anticlockwise');
+			}
+			if (seating.length < 2) {
+				warn('no-change', 'there are fewer than 2 seats');
+				return [];
+			}
+			const rotated =
+				command.direction === 'clockwise'
+					? [seating[seating.length - 1], ...seating.slice(0, -1)]
+					: [...seating.slice(1), seating[0]];
+			return [{ type: 'SeatingReordered', seating: rotated }];
+		}
+
+		case 'MoveSeat': {
+			const seat = seatOf(game, command.seatId);
+			const { position } = command;
+			const last = game.seating.length - 1;
+			if (!Number.isInteger(position) || position < 0 || position > last) {
+				refuse('invalid-position', `position must be from 0 to ${last}`);
+			}
+			if (game.seating.indexOf(seat.seatId) === position) {
+				warn('no-change', 'the player is already there');
+				return [];
+			}
+			const seating = game.seating.filter((id) => id !== seat.seatId);
+			seating.splice(position, 0, seat.seatId);
+			return [{ type: 'SeatingReordered', seating }];
+		}
+
 		case 'SetOverride': {
 			const seat = seatOf(game, command.seatId);
 			const { override } = command;
@@ -810,12 +853,18 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			if (characters.length > BLUFFS_PER_SET) {
 				warn('too-many-bluffs', `a bluff set usually has ${BLUFFS_PER_SET} characters`);
 			}
-			const playing = inPlay(game, ctx);
+			// In play means a true character (a Drunk shown the Chef leaves the Chef free to
+			// bluff: https://wiki.bloodontheclocktower.com/Drunk). Set 1 is the Lunatic's bluffs
+			// while a Lunatic is in play, and may hold characters in play (Trevor, 2026-10-16).
+			const playing = trulyInPlay(game, ctx);
+			const lunaticSet = set === 1 && playing.has('lunatic');
 			const seen = new Set<CharacterId>();
 			for (const character of characters) {
 				if (seen.has(character.id)) warn('bluff-duplicate', `${character.name} is listed twice`);
 				seen.add(character.id);
-				if (playing.has(character.id)) warn('bluff-in-play', `${character.name} is in play`);
+				if (!lunaticSet && playing.has(character.id)) {
+					warn('bluff-in-play', `${character.name} is in play`);
+				}
 				if (defaultAlignment(character.type) !== 'good' || character.type === 'traveller') {
 					warn('bluff-not-good', `${character.name} is not a good character`);
 				}

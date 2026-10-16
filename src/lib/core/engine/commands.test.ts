@@ -140,6 +140,33 @@ describe('seats', () => {
 			'unknown-seat'
 		);
 	});
+
+	it('rotates everyone one seat round, as one undoable step', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(session, ctx, { type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' });
+		const clockwise = run(s, ctx, { type: 'RotateSeats', direction: 'clockwise' });
+		// The player in seat 1 is now in seat 2, keeping their character.
+		expect(clockwise.game.seating).toEqual([seats[4], ...seats.slice(0, 4)]);
+		expect(clockwise.game.seats[seats[0]].characterId).toBe('chef');
+		const anticlockwise = run(s, ctx, { type: 'RotateSeats', direction: 'anticlockwise' });
+		expect(anticlockwise.game.seating).toEqual([...seats.slice(1), seats[0]]);
+		expect(undo(clockwise).game.seating).toEqual(seats);
+	});
+
+	it('moves one player to another place, the others closing up', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(session, ctx, { type: 'MoveSeat', seatId: seats[0], position: 3 });
+		expect(s.game.seating).toEqual([seats[1], seats[2], seats[3], seats[0], seats[4]]);
+		const back = run(s, ctx, { type: 'MoveSeat', seatId: seats[0], position: 0 });
+		expect(back.game.seating).toEqual(seats);
+		expect(warned(back, ctx, { type: 'MoveSeat', seatId: seats[0], position: 0 })).toEqual([
+			'no-change'
+		]);
+		expect(refused(s, ctx, { type: 'MoveSeat', seatId: seats[0], position: 5 })).toBe(
+			'invalid-position'
+		);
+		expect(undo(s).game.seating).toEqual(seats);
+	});
 });
 
 describe('AssignCharacter and alignment', () => {
@@ -549,6 +576,38 @@ describe('bluffs', () => {
 		expect(refused(s, ctx, { type: 'SetBluffs', set: 0, characterIds: ['nope'] })).toBe(
 			'unknown-character'
 		);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Drunk: the Drunk's Townsfolk is not in play.
+	it('counts true characters as in play, not a Drunk’s token', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
+			{
+				type: 'AddReminder',
+				seatId: seats[0],
+				reminder: { characterId: 'drunk', label: 'Is The Drunk' }
+			}
+		);
+		expect(warned(s, ctx, { type: 'SetBluffs', set: 0, characterIds: ['chef'] })).toEqual([]);
+	});
+
+	// Trevor, 2026-10-16: set 1 is the Lunatic's bluffs and may hold characters in play.
+	it('lets the Lunatic’s bluffs hold characters in play', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
+			{ type: 'AssignCharacter', seatId: seats[1], characterId: 'lunatic' },
+			{ type: 'SetBluffs', set: 0, characterIds: ['empath'] }
+		);
+		expect(warned(s, ctx, { type: 'SetBluffs', set: 1, characterIds: ['chef'] })).toEqual([]);
+		expect(warned(s, ctx, { type: 'SetBluffs', set: 0, characterIds: ['chef'] })).toEqual([
+			'bluff-in-play'
+		]);
 	});
 });
 

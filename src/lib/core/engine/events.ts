@@ -42,6 +42,8 @@ export type GameEvent =
 	| { type: 'ReminderMoved'; reminderId: ReminderId; toSeatId: SeatId }
 	| { type: 'ReminderRemoved'; reminderId: ReminderId }
 	| { type: 'SeatsSwapped'; seatA: SeatId; seatB: SeatId }
+	/** The whole seating order, the same seats in a new order (RotateSeats, MoveSeat). */
+	| { type: 'SeatingReordered'; seating: SeatId[] }
 	| { type: 'OverrideSet'; seatId: SeatId; override: SeatOverride }
 	| { type: 'OverrideCleared'; seatId: SeatId; field: OverrideField }
 	| { type: 'NightStepOverrideAdded'; index: number; override: NightStepOverride }

@@ -74,8 +74,12 @@
 		position: relative;
 		z-index: 1;
 		flex: 1;
+		/* Shrink and wrap a long label rather than widen the page (no sideways scrolling). */
+		min-width: 0;
 		display: grid;
 		place-items: center;
+		text-align: center;
+		overflow-wrap: anywhere;
 		min-height: var(--tap-target);
 		padding: 0 var(--space-2);
 		color: var(--choice-color);
