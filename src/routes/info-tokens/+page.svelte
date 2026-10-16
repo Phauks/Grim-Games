@@ -22,9 +22,11 @@
 
 <style>
 	main {
-		max-width: calc(48 * var(--u));
+		/* The page width the rest of the app uses; the tiles add columns as it widens. */
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-4);
+		padding-block: var(--space-4);
+		padding-inline: var(--page-gutter);
 	}
 	h1 {
 		margin-top: 0;
