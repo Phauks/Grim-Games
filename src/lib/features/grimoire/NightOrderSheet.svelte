@@ -1,11 +1,10 @@
 <script lang="ts">
+	import StepIcon from './StepIcon.svelte';
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import { TRAVELLER_ALIGNMENT_STEP, type Night, type NightStep } from '#lib/core/rules/index.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -14,7 +13,6 @@
 	import {
 		boardNightSteps,
 		doneKey as keyFor,
-		MARKER_ICONS,
 		seatName as nameOf,
 		stepHolders,
 		stepName,
@@ -99,11 +97,7 @@
 					onclick={() => grimoire.toggleNightStep(doneKey(step))}>{ticked ? '✓' : ''}</button
 				>
 				<span class="icon">
-					{#if step.character}
-						<CharacterToken character={step.character} size={48} />
-					{:else}
-						<Icon name={MARKER_ICONS[step.id] ?? 'night'} />
-					{/if}
+					<StepIcon {step} size={48} />
 				</span>
 				<div class="body">
 					{#if assistance.nightGuide && step.id !== TRAVELLER_ALIGNMENT_STEP}

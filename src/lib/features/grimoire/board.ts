@@ -139,7 +139,9 @@ export function causeFlagText(
 /** What a toast says for a warning the Storyteller went ahead with. */
 export function warningText(warning: EngineWarning): string | undefined {
 	switch (warning.code) {
+		// "reminder-fixed" was asked about before the move (ReminderMoveConfirm).
 		case 'no-change':
+		case 'reminder-fixed':
 			return undefined;
 		case 'not-on-script':
 			return 'That character is not on the script.';

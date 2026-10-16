@@ -52,6 +52,7 @@
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import SetupTray from './SetupTray.svelte';
+	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -87,7 +88,11 @@
 		};
 	});
 	const layout = $derived(grimoire.layout);
-	const size = $derived(seatTokenSize(game.seating, layout, { width, height }));
+	// The token size setting is applied here, within the spacing, so seats never overlap; the
+	// tokens on the ring then draw at exactly this size (SeatToken resets --token-scale).
+	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
+	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
+	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
@@ -103,7 +108,7 @@
 	// Each seat's reminders line up in front of it, towards the middle, as on a real
 	// grimoire. Up to three show; past that the third is a "+N" that opens the seat.
 	const MAX_SHOWN = 3;
-	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5))));
+	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5)) * reminderScale));
 	function chipPoints(i: number, count: number): SeatPoint[] {
 		const distances = Array.from(
 			{ length: Math.min(count, MAX_SHOWN) },
@@ -192,6 +197,7 @@
 		return best;
 	}
 
+	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	function dragReminder(reminderId: ReminderId, from: SeatId, x: number, y: number, end: boolean) {
 		if (!board) return;
 		const rect = board.getBoundingClientRect();
@@ -209,8 +215,7 @@
 			return;
 		}
 		// Dropped on another seat: moved (one History entry). Anywhere else: nothing changes.
-		if (target && target !== from)
-			grimoire.run({ type: 'MoveReminder', reminderId, toSeatId: target });
+		if (target && target !== from) moveConfirm?.request(reminderId, target);
 	}
 
 	// ── Arranging seats ──
@@ -714,6 +719,14 @@
 		</Button>
 		<Button
 			variant="quiet"
+			icon="players"
+			onclick={() =>
+				fromMenu(() => goto(resolve('/grimoire/[gameId]/room', { gameId: game.gameId })))}
+		>
+			Players' phones
+		</Button>
+		<Button
+			variant="quiet"
 			icon="appearance"
 			onclick={() => fromMenu(() => (backgroundOpen = true))}
 		>
@@ -731,6 +744,8 @@
 		</Button>
 	</div>
 </Dialog>
+
+<ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
 <InfoTokensSheet bind:open={infoOpen} characters={infoCharacters} players={infoPlayers} />
 
@@ -1071,6 +1086,8 @@
 		list-style: none;
 	}
 	.rule {
+		/* Sized from the seats, which already follow the token size setting. */
+		--token-scale: 1;
 		padding: 0;
 		border: 0;
 		border-radius: 50%;

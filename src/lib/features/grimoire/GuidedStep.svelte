@@ -1,17 +1,17 @@
 <script lang="ts">
+	import StepIcon from './StepIcon.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { doneKey, MARKER_ICONS, seatName, stepHolders, stepName } from './night-steps.ts';
+	import { doneKey, seatName, stepHolders, stepName } from './night-steps.ts';
 	import SeatChooser from './SeatChooser.svelte';
+	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 
 	/**
 	 * One night step, filled in with help (Trevor, 2026-10-16): TPI's text, who has the
@@ -45,6 +45,7 @@
 		return undefined;
 	}
 
+	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let choosing = $state<string | undefined>();
 	let chooserOpen = $state(false);
 	function choose(label: string) {
@@ -58,7 +59,7 @@
 		const id = step?.character?.id;
 		if (!label || !id) return;
 		const at = placed(label);
-		if (at) grimoire.run({ type: 'MoveReminder', reminderId: at.reminderId, toSeatId: seatId });
+		if (at) moveConfirm?.request(at.reminderId, seatId);
 		else grimoire.run({ type: 'AddReminder', seatId, reminder: { characterId: id, label } });
 	}
 
@@ -70,11 +71,7 @@
 	{#if step}
 		<div class="head">
 			<span class="icon">
-				{#if step.character}
-					<CharacterToken character={step.character} size={56} />
-				{:else}
-					<Icon name={MARKER_ICONS[step.id] ?? 'night'} />
-				{/if}
+				<StepIcon {step} size={56} />
 			</span>
 			<p class="who">
 				{holders.length > 0 ? holders.map((s) => seatName(game, s)).join(', ') : 'None'}
@@ -144,6 +141,8 @@
 	{characters}
 	onChoose={put}
 />
+
+<ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
 <ShowToPlayer
 	bind:open={showOpen}

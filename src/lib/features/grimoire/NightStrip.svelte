@@ -1,11 +1,10 @@
 <script lang="ts">
+	import StepIcon from './StepIcon.svelte';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import NightText from '#lib/features/reference/NightText.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { doneKey, MARKER_ICONS, seatName, stepHolders, stepName } from './night-steps.ts';
+	import { doneKey, seatName, stepHolders, stepName } from './night-steps.ts';
 
 	/**
 	 * Walking through the night (Trevor, 2026-10-16): the current step under the board, with
@@ -46,11 +45,7 @@
 	{#if step}
 		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
 			<span class="icon">
-				{#if step.character}
-					<CharacterToken character={step.character} size={40} />
-				{:else}
-					<Icon name={MARKER_ICONS[step.id] ?? 'night'} />
-				{/if}
+				<StepIcon {step} size={40} />
 			</span>
 			<span class="body">
 				<span class="name">

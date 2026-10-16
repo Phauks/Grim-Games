@@ -906,3 +906,68 @@ test('a night step is filled in with help, and the night can be walked through',
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
 	await expect(strip).toHaveCount(0);
 });
+
+test('moving a reminder that normally stays put asks first, saying why', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first().tap();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await sheet.getByRole('button', { name: 'Actions for Is The Drunk' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Is The Drunk' })
+		.getByRole('button', { name: 'Move to another seat' })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Move reminder to' })
+		.getByRole('button', { name: /^3/ })
+		.tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Move Is The Drunk?' });
+	await expect(confirm).toContainText('Marks which player is the Drunk.');
+	await expect(confirm).toContainText(/Now\s*On Seat 1\s*Becomes\s*On Seat 3/);
+	await confirm.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(seatLabelled(page, 'Seat 1: no name, no character, 1 reminder')).toBeAttached();
+
+	await sheet.getByRole('button', { name: 'Actions for Is The Drunk' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Is The Drunk' })
+		.getByRole('button', { name: 'Move to another seat' })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Move reminder to' })
+		.getByRole('button', { name: /^3/ })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'Move Is The Drunk?' })
+		.getByRole('button', { name: 'Move' })
+		.tap();
+	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
+});
+
+test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"', async ({
+	page
+}) => {
+	await startGame(page);
+	await menu(page, 'Add Traveller');
+	await page
+		.getByRole('dialog', { name: 'Add a Traveller' })
+		.getByRole('button', { name: 'Apprentice', exact: true })
+		.tap();
+	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
+	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	const sheet = await openSeat(page, 9);
+	await seatMenu(page, sheet, 'Gained ability…');
+	const gains = page.getByRole('dialog', { name: 'Ability Seat 9 gains' });
+	// Good, so only Townsfolk are offered.
+	await expect(gains.getByRole('button', { name: 'Poisoner', exact: true })).toHaveCount(0);
+	await gains.getByRole('button', { name: 'Monk', exact: true }).tap();
+	await expect(seatLabelled(page, 'Seat 9: no name, Monk, 1 reminder')).toBeAttached();
+	await expect(sheet.getByRole('button', { name: 'Actions for Is The Apprentice' })).toBeVisible();
+});
+
+test("Players' phones opens from the grimoire menu", async ({ page }) => {
+	await startGame(page);
+	await menu(page, "Players' phones");
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/room$/);
+});

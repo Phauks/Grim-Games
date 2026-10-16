@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { attachRoom } from '#lib/features/room/host.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { SavedGameError } from '#lib/core/engine/index.ts';
 	import type { GameId } from '#lib/core/model/index.ts';
@@ -34,6 +35,8 @@
 				const data = await loadOfficialData();
 				const open = await OpenGame.open(data, id);
 				if (cancelled) return;
+				// Phones in this device's live room follow the open game (a no-op without a room).
+				if (open) attachRoom(open);
 				view = open ? { kind: 'ready', grimoire: new Grimoire(open) } : { kind: 'missing' };
 			} catch (e) {
 				if (cancelled) return;

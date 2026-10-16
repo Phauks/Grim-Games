@@ -101,31 +101,13 @@ export function keepInside(
 	return points.map((p) => ({ x: clamp(p.x, board.width), y: clamp(p.y, board.height) }));
 }
 
-/**
- * Where to draw the control for the gap after each seat: midway round the ring between it
- * and the next seat, even when either seat was placed by hand. `inset` (0 to 1) pulls the
- * controls towards the middle, so they sit inside the ring rather than over the tokens.
- */
-export function gapPoints(
-	seatIds: readonly string[],
-	layout: SeatLayout,
-	board: BoardSize,
-	inset = 0
-): SeatPoint[] {
-	const starts = ringSlots(seatIds, layout);
-	const total = starts[seatIds.length];
-	const scale = 1 - clamp(inset, 0, 1);
-	return seatIds.map((_, i) => {
-		const p = ringPoint((starts[i] + starts[i + 1]) / 2, total, layout.shape, board);
-		return { x: 50 + (p.x - 50) * scale, y: 50 + (p.y - 50) * scale };
-	});
-}
-
 /** A token size in pixels that keeps neighbours on the ring from overlapping. */
 export function seatTokenSize(
 	seatIds: readonly string[],
 	layout: SeatLayout,
-	board: BoardSize
+	board: BoardSize,
+	/** The user's token size setting: grows or shrinks tokens, but never past the spacing. */
+	scale = 1
 ): number {
 	const { width, height } = board;
 	if (width <= 0 || height <= 0) return 56;
@@ -139,7 +121,8 @@ export function seatTokenSize(
 	const perimeter = Math.PI * (a + b) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
 	const bySpacing = (perimeter / Math.max(total, 1)) * 0.72;
 	const byBoard = Math.min(width, height) * 0.2;
-	return Math.round(Math.max(44, Math.min(96, bySpacing, byBoard)));
+	const fit = Math.max(44, Math.min(96, bySpacing, byBoard));
+	return Math.round(Math.max(44, Math.min(fit * scale, Math.max(fit, bySpacing))));
 }
 
 /**
@@ -175,11 +158,6 @@ export function withGap(layout: SeatLayout, seatId: string, gap: number): SeatLa
 	if (n === 0) delete gaps[seatId];
 	else gaps[seatId] = n;
 	return { ...layout, gaps };
-}
-
-/** The next gap size when the gap control is tapped: 0, 1, ... `MAX_GAP`, then 0 again. */
-export function nextGap(layout: SeatLayout, seatId: string): number {
-	return ((layout.gaps[seatId] ?? 0) + 1) % (MAX_GAP + 1);
 }
 
 /** Places a seat by hand, kept inside the board. */

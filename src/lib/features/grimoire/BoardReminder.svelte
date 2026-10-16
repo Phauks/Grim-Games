@@ -106,7 +106,7 @@
 		border-radius: 50%;
 		background: var(--reminder-face);
 		box-shadow: var(--shadow);
-		color: var(--on-token);
+		color: var(--on-reminder);
 		cursor: grab;
 		touch-action: none;
 		user-select: none;
@@ -152,7 +152,7 @@
 		background: var(--reminder-face);
 		box-shadow: 0 0 0 1.5px var(--rim);
 		font-family: var(--font-character);
-		font-size: 0.6rem;
+		font-size: calc(0.6rem * var(--reminder-scale, 1));
 		font-variant: small-caps;
 		line-height: 1.35;
 		white-space: nowrap;

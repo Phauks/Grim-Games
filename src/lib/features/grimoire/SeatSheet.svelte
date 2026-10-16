@@ -21,6 +21,7 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ReminderPicker from './ReminderPicker.svelte';
 	import SeatChooser from './SeatChooser.svelte';
+	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 
 	interface Props {
 		open: boolean;
@@ -161,15 +162,40 @@
 		alignmentFor = undefined;
 	}
 
+	// ── The Apprentice ──
+	// The Apprentice's token is swapped for the Townsfolk (if good) or Minion (if evil) whose
+	// ability they gain, with "Is The Apprentice" on it
+	// (https://wiki.bloodontheclocktower.com/Apprentice; Trevor, 2026-10-16).
+	const apprentice = $derived(
+		seatId !== undefined && trueCharacter(game, seatId, characters) === 'apprentice'
+	);
+	const gainTypes = $derived(
+		seat?.alignment === 'good'
+			? (['townsfolk'] as const)
+			: seat?.alignment === 'evil'
+				? (['minion'] as const)
+				: (['townsfolk', 'minion'] as const)
+	);
+	let gainOpen = $state(false);
+	function gain(id: CharacterId) {
+		gainOpen = false;
+		if (!seatId || !seat) return;
+		const marked = seat.reminders.some(
+			(r) => r.characterId === 'apprentice' && r.label === 'Is The Apprentice'
+		);
+		grimoire.run({ type: 'AssignCharacter', seatId, characterId: id, alignment: seat.alignment });
+		if (!marked)
+			grimoire.run({
+				type: 'AddReminder',
+				seatId,
+				reminder: { characterId: 'apprentice', label: 'Is The Apprentice' }
+			});
+	}
+
 	// ── Death ──
 	let causeOpen = $state(false);
-	// Only the causes that fit this player (core); "Something else" is always last.
-	// "Something else" is not offered (Trevor, 2026-10-16): None covers an unknown cause.
-	const causes = $derived(
-		seatId && open
-			? validDeathCauses(game, seatId, characters).filter((c) => c.cause !== 'other')
-			: []
-	);
+	// Only the causes that fit this player (core, which no longer offers "Something else").
+	const causes = $derived(seatId && open ? validDeathCauses(game, seatId, characters) : []);
 	let flagged = $state<ValidDeathCause | undefined>();
 	let flagOpen = $state(false);
 
@@ -191,6 +217,7 @@
 	// ── Reminders and seats ──
 	let moving = $state<ReminderId | undefined>();
 	let moveOpen = $state(false);
+	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let swapOpen = $state(false);
 	let swapWith = $state<SeatId | undefined>();
 	let swapConfirmOpen = $state(false);
@@ -391,11 +418,22 @@
 	{/if}
 </BottomSheet>
 
+<ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
+
 <ReminderPicker bind:open={remindersOpen} {grimoire} {seatId} {title} />
 
 <ShowToPlayer
 	bind:open={showOpen}
 	characters={character ? [{ character, alignment: seat?.alignment }] : []}
+/>
+
+<CharacterPicker
+	bind:open={gainOpen}
+	title={`Ability ${title} gains`}
+	{characters}
+	script={game.script}
+	types={gainTypes}
+	onPick={gain}
 />
 
 <CharacterPicker
@@ -657,6 +695,11 @@
 		<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (pickerOpen = true))}>
 			{character ? 'Change character' : 'Choose character'}
 		</Button>
+		{#if apprentice}
+			<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (gainOpen = true))}>
+				Gained ability…
+			</Button>
+		{/if}
 		<Button
 			variant="quiet"
 			disabled={!character}
@@ -729,7 +772,7 @@
 	exclude={seatId}
 	onChoose={(toSeatId) => {
 		moveOpen = false;
-		if (moving) grimoire.run({ type: 'MoveReminder', reminderId: moving, toSeatId });
+		if (moving) moveConfirm?.request(moving, toSeatId);
 		moving = undefined;
 	}}
 />

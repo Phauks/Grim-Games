@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	keepInside,
 	DEFAULT_SEAT_LAYOUT,
-	gapPoints,
 	isDefaultLayout,
-	nextGap,
 	parseSeatLayout,
 	pruneLayout,
 	seatPoints,
@@ -61,23 +59,9 @@ describe('seatPoints', () => {
 });
 
 describe('gaps', () => {
-	it('cycles 0 to 3 and back to 0', () => {
-		let layout = DEFAULT_SEAT_LAYOUT;
-		const seen = [];
-		for (let i = 0; i < 4; i++) {
-			layout = withGap(layout, 'a', nextGap(layout, 'a'));
-			seen.push(layout.gaps.a ?? 0);
-		}
-		expect(seen).toEqual([1, 2, 3, 0]);
-		expect(layout.gaps).toEqual({});
-	});
-
-	it('puts each gap control midway between a seat and the next', () => {
-		const [ab] = gapPoints(seats, DEFAULT_SEAT_LAYOUT, square);
-		const angle = (0.5 / 4) * 2 * Math.PI - Math.PI / 2;
-		expect(ab.x).toBeCloseTo(50 + 41 * Math.cos(angle));
-		const [inside] = gapPoints(seats, DEFAULT_SEAT_LAYOUT, square, 0.25);
-		expect(inside.x).toBeCloseTo(50 + 41 * 0.75 * Math.cos(angle));
+	it('keeps gaps between 0 and 3', () => {
+		expect(withGap(DEFAULT_SEAT_LAYOUT, 'a', 5).gaps).toEqual({ a: 3 });
+		expect(withGap(withGap(DEFAULT_SEAT_LAYOUT, 'a', 2), 'a', 0).gaps).toEqual({});
 	});
 
 	it('sizes tokens between 44px and 96px, smaller with more seats', () => {
@@ -85,6 +69,20 @@ describe('gaps', () => {
 		expect(seatTokenSize(ids(30), DEFAULT_SEAT_LAYOUT, { width: 320, height: 400 })).toBe(44);
 		expect(seatTokenSize(ids(5), DEFAULT_SEAT_LAYOUT, { width: 1200, height: 900 })).toBe(96);
 		expect(seatTokenSize(ids(8), DEFAULT_SEAT_LAYOUT, { width: 0, height: 0 })).toBe(56);
+	});
+
+	it('follows the token size setting, but never past the spacing or below 44px', () => {
+		const ids = (n: number) => Array.from({ length: n }, (_, i) => `s${i}`);
+		const roomy = { width: 1200, height: 900 };
+		const base = seatTokenSize(ids(8), DEFAULT_SEAT_LAYOUT, roomy);
+		expect(seatTokenSize(ids(8), DEFAULT_SEAT_LAYOUT, roomy, 1.25)).toBe(Math.round(base * 1.25));
+		expect(seatTokenSize(ids(8), DEFAULT_SEAT_LAYOUT, roomy, 0.75)).toBe(Math.round(base * 0.75));
+		// Crowded: already at the spacing limit, so a bigger setting changes nothing.
+		const crowded = { width: 320, height: 400 };
+		expect(seatTokenSize(ids(20), DEFAULT_SEAT_LAYOUT, crowded, 1.5)).toBe(
+			seatTokenSize(ids(20), DEFAULT_SEAT_LAYOUT, crowded)
+		);
+		expect(seatTokenSize(ids(30), DEFAULT_SEAT_LAYOUT, crowded, 0.75)).toBe(44);
 	});
 
 	it('makes tokens smaller as gaps take up the ring', () => {
