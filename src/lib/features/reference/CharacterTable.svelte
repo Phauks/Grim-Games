@@ -48,7 +48,6 @@
 		otherNight: 17,
 		jinxes: 18,
 		preDay: 19,
-		cards: 14,
 		problems: 15,
 		links: 11
 	};
