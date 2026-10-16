@@ -3,6 +3,7 @@
  * JSON) plus where it came from, or throws a `ScriptFetchError` with a message for the
  * Storyteller. Design: 08-script-loading.md §5.2.
  */
+import { t } from '#lib/i18n/locale.svelte.ts';
 import {
 	proxyPath,
 	readProxiedSearchPage,
@@ -35,14 +36,14 @@ export interface FetchedScript {
 	source: ScriptSource;
 }
 
-const tooLarge = () => new ScriptFetchError('This file is too large to be a script.');
+const tooLarge = () => new ScriptFetchError(t('scripts.error.tooLarge'));
 
 /** Files that are plainly not script JSON (pictures, audio, video, PDFs, archives). */
 const NOT_TEXT = /^(image|audio|video|font)\/|^application\/(pdf|zip|gzip|x-7z|x-rar|vnd\.)/;
 
 export async function readScriptFile(file: File): Promise<FetchedScript> {
 	if (NOT_TEXT.test(file.type)) {
-		throw new ScriptFetchError(`${file.name} is not a script. Scripts are .json files.`);
+		throw new ScriptFetchError(t('scripts.error.notScript', { name: file.name }));
 	}
 	if (file.size > MAX_SCRIPT_BYTES) throw tooLarge();
 	return { text: await file.text(), source: { kind: 'file', fileName: file.name } };
@@ -55,14 +56,12 @@ async function fetchLink(url: string, shownUrl: string): Promise<FetchedScript> 
 	} catch {
 		// A CORS refusal and being offline look the same to a page.
 		throw new ScriptFetchError(
-			navigator.onLine === false
-				? 'You are offline. Connect to load a link, or paste the script instead.'
-				: "This site doesn't let other apps read it. Open the link, copy everything, and use Paste.",
+			navigator.onLine === false ? t('scripts.error.offline') : t('scripts.error.blocked'),
 			shownUrl
 		);
 	}
 	if (!response.ok) {
-		throw new ScriptFetchError(`The link answered with HTTP ${response.status}.`, shownUrl);
+		throw new ScriptFetchError(t('scripts.error.http', { status: response.status }), shownUrl);
 	}
 	const text = await response.text();
 	if (text.length > MAX_SCRIPT_BYTES) throw tooLarge();
@@ -74,18 +73,18 @@ async function fetchBotcScripts(ref: BotcScriptsRef): Promise<FetchedScript> {
 	try {
 		response = await fetch(proxyPath(ref));
 	} catch {
-		throw new ScriptFetchError('Could not reach BotC Scripts. Check your connection.');
+		throw new ScriptFetchError(t('scripts.error.botcUnreachable'));
 	}
 	const body: unknown = await response.json().catch(() => undefined);
 	if (!response.ok) {
 		const message =
 			typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string'
 				? body.error
-				: `BotC Scripts lookup failed (HTTP ${response.status}).`;
+				: t('scripts.error.botcLookup', { status: response.status });
 		throw new ScriptFetchError(message);
 	}
 	const version = readProxiedVersion(body);
-	if (!version) throw new ScriptFetchError('BotC Scripts returned something unexpected.');
+	if (!version) throw new ScriptFetchError(t('scripts.error.botcUnexpected'));
 	return {
 		text: JSON.stringify(version.content),
 		source: { kind: 'botcscripts', scriptId: version.scriptId, version: version.version }
@@ -103,7 +102,15 @@ export function fetchLinkTarget(target: LinkTarget, typed: string): Promise<Fetc
 			return decodeScriptToolPayload(target.payload).then(
 				(text) => ({ text, source: { kind: 'link', url: target.url } }),
 				(e: unknown) => {
-					throw e instanceof ScriptToolLinkError ? new ScriptFetchError(e.message) : e;
+					throw e instanceof ScriptToolLinkError
+						? new ScriptFetchError(
+								t(
+									e.reason === 'tooLarge'
+										? 'scripts.error.scriptTooLarge'
+										: 'scripts.error.scriptToolDamaged'
+								)
+							)
+						: e;
 				}
 			);
 		case 'fetch':
@@ -122,10 +129,10 @@ export async function searchBotcScripts(
 		response = await fetch(searchPath(query, page), { signal });
 	} catch (e) {
 		if (e instanceof DOMException && e.name === 'AbortError') throw e;
-		throw new ScriptFetchError('Could not reach BotC Scripts. Check your connection.');
+		throw new ScriptFetchError(t('scripts.error.botcUnreachable'));
 	}
 	const body: unknown = await response.json().catch(() => undefined);
 	const found = response.ok ? readProxiedSearchPage(body) : undefined;
-	if (!found) throw new ScriptFetchError('BotC Scripts search is not available right now.');
+	if (!found) throw new ScriptFetchError(t('scripts.error.botcSearch'));
 	return found;
 }

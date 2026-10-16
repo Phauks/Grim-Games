@@ -8,13 +8,6 @@ import type { CharacterType, LoadedScript } from '#lib/core/data/index.ts';
 
 export type PickerSource = 'official' | 'curated' | 'recent' | 'profile';
 
-export const SOURCE_LABELS: Record<PickerSource, string> = {
-	official: 'Official',
-	curated: 'Curated',
-	recent: 'Recent',
-	profile: 'Profile'
-};
-
 export type ScriptKind = 'Full' | 'Teensyville';
 
 export interface PickerRow {

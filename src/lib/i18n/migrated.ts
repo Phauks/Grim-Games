@@ -16,7 +16,12 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/bluffs/',
 	'src/lib/features/day/',
 	'src/lib/features/account/',
-	'src/routes/account/'
+	'src/routes/account/',
+	'src/lib/features/scripts/',
+	'src/routes/scripts/'
 ];
 
-export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {};
+export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {
+	// The start of a web address, the same in every language.
+	'src/lib/features/scripts/ScriptPicker.svelte': ['https://']
+};

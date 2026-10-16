@@ -3,6 +3,7 @@
  * list. Other features read `currentScript.current`; core's `toScript` turns it into the
  * engine's `Script` for CreateGame.
  */
+import { t } from '#lib/i18n/locale.svelte.ts';
 import {
 	loadScriptText,
 	scriptToJson,
@@ -145,7 +146,7 @@ export async function openScriptCode(
 	const [fetched, data] = await Promise.all([fetching, loadOfficialData()]);
 	await restoreScripts();
 	const { script } = loadScriptText(fetched.text, data);
-	if (!script) throw new Error('The shared script has no characters this app knows.');
+	if (!script) throw new Error(t('scripts.error.noKnownCharacters'));
 	await chooseScript(script, fetched.source);
 	return script;
 }

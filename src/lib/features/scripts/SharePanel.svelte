@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { formatDigitCode } from '#lib/core/codes/digit-code.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -48,9 +49,9 @@
 		if (!made) return;
 		try {
 			await navigator.clipboard.writeText(made.url);
-			toast('Link copied');
+			toast(t('scripts.share.copied'));
 		} catch {
-			toast('Could not copy the link', 'Use the QR code instead.');
+			toast(t('scripts.share.copyFailed'), t('scripts.share.copyFailedHint'));
 		}
 	}
 
@@ -69,7 +70,7 @@
 		if (!code) return;
 		try {
 			await deleteShareCode(code);
-			toast('Code deleted', 'Sharing again makes a new code.');
+			toast(t('scripts.share.deleted'), t('scripts.share.deletedHint'));
 			made = undefined;
 			ondelete?.();
 		} catch (e) {
@@ -81,44 +82,46 @@
 <div class="panel">
 	<div class="code">
 		{#if made && fitsQrCode(made.url)}
-			<QrCode value={made.url} label="QR code for {title}" />
+			<QrCode value={made.url} label={t('scripts.share.qr', { title })} />
 		{:else}
 			<!-- Same square as the code, so nothing moves when it arrives. -->
 			<p class="placeholder">
 				{made
-					? 'Too long for a QR code. Use Copy link or Share.'
+					? t('scripts.share.tooLong')
 					: failed
-						? 'The link could not be made.'
-						: 'Making the link…'}
+						? t('scripts.share.failed')
+						: t('scripts.share.making')}
 			</p>
 		{/if}
 	</div>
 
 	<label class="link">
-		<span class="label">Link</span>
+		<span class="label">{t('scripts.share.link')}</span>
 		<input
 			type="text"
 			readonly
 			value={made?.url ?? ''}
-			placeholder="None"
+			placeholder={t('common.none')}
 			data-testid="share-url"
 		/>
 	</label>
 
 	<!-- One line either way, so nothing moves when the code arrives. -->
 	<p class="code-line" data-testid="share-code">
-		<span class="label">Code</span>
+		<span class="label">{t('scripts.share.code')}</span>
 		{#if made?.code}
 			<span class="digits" data-testid="share-digits">{formatDigitCode(made.code)}</span>
 		{:else}
-			<span class="none">None</span>
+			<span class="none">{t('common.none')}</span>
 		{/if}
 	</p>
 
 	<div class="buttons">
-		<Button variant="accent" onclick={copy} disabled={!made}>Copy link</Button>
-		<Button onclick={share} disabled={!made || !canShare}>Share</Button>
-		<Button variant="quiet" onclick={deleteCode} disabled={!made?.canDelete}>Delete code</Button>
+		<Button variant="accent" onclick={copy} disabled={!made}>{t('scripts.share.copy')}</Button>
+		<Button onclick={share} disabled={!made || !canShare}>{t('scripts.share.share')}</Button>
+		<Button variant="quiet" onclick={deleteCode} disabled={!made?.canDelete}
+			>{t('scripts.share.delete')}</Button
+		>
 	</div>
 </div>
 

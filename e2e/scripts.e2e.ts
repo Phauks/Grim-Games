@@ -376,8 +376,8 @@ test("the official site's curated scripts are listed when asked for, and load", 
 		return route.fulfill({
 			json: {
 				scripts: [
-					{ section: 'Teensyville', link: scriptToolLink(teensy), json: teensy },
-					{ section: 'Recommended', link: scriptToolLink(bigTown), json: bigTown }
+					{ section: 'teensyville', link: scriptToolLink(teensy), json: teensy },
+					{ section: 'recommended', link: scriptToolLink(bigTown), json: bigTown }
 				]
 			}
 		});

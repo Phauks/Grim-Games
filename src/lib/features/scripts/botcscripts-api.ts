@@ -176,11 +176,7 @@ export type BotcScriptsSort = (typeof BOTC_SORTS)[number];
  * Which characters a script may use, as the site's `edition` filter counts it
  * (`scripts/models.py` Edition): each step includes the ones before.
  */
-export const BOTC_EDITIONS = [
-	{ value: 0, label: 'Base three only' },
-	{ value: 1, label: 'Up to Kickstarter' },
-	{ value: 2, label: 'Up to Carousel' }
-] as const;
+export const BOTC_EDITIONS = [0, 1, 2] as const;
 
 /** A search with filters (`scripts/filters.py` ScriptVersionFilter on the site). */
 export interface BotcScriptsQuery {
@@ -232,7 +228,7 @@ function characterList(ids: readonly string[]): string[] {
 /** Same query in one canonical form, so equal searches share one cache entry. */
 export function normaliseQuery(query: BotcScriptsQuery): BotcScriptsQuery {
 	const term = normaliseSearch(query.term);
-	const edition = BOTC_EDITIONS.some((e) => e.value === query.edition) ? query.edition : undefined;
+	const edition = BOTC_EDITIONS.some((e) => e === query.edition) ? query.edition : undefined;
 	return {
 		term,
 		// "Best match" needs a term; without one it means the default order.
