@@ -215,7 +215,7 @@ test('Demon bluffs open from the toolbar, and a seat shows its token to the play
 	await expect(shown).toBeHidden();
 });
 
-test('the toolbar leads to character selection and the bag draw', async ({ page }) => {
+test('the toolbar leads to character selection, the bag draw and the day', async ({ page }) => {
 	await startGame(page);
 	const board = page.url();
 	await page.getByRole('button', { name: 'Characters' }).tap();
@@ -223,6 +223,9 @@ test('the toolbar leads to character selection and the bag draw', async ({ page 
 	await page.goto(board);
 	await page.getByRole('button', { name: 'Bag draw' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
+	await page.goto(board);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await expect(page).toHaveURL(`${board}/day`);
 });
 
 test('a new game can use a custom script from the Scripts page', async ({ page }) => {

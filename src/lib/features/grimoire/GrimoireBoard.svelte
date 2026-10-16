@@ -327,6 +327,11 @@
 		{:else}
 			<span class="title">{game.script.meta?.name ?? 'Custom script'}</span>
 			<IconButton icon="night" label="Night order" onclick={() => (nightOpen = true)} />
+			<IconButton
+				icon="day"
+				label="Day"
+				onclick={() => goto(resolve('/grimoire/[gameId]/day', { gameId: game.gameId }))}
+			/>
 			<IconButton icon="history" label="History" onclick={() => (historyOpen = true)} />
 			<IconButton
 				icon="players"
