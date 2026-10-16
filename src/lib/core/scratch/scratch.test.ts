@@ -5,7 +5,9 @@ import {
 	emptyPad,
 	isBlank,
 	migratePad,
+	parseSizes,
 	redo,
+	sizeWidth,
 	strokeWidth,
 	undo,
 	type ScratchStroke
@@ -14,6 +16,7 @@ import {
 const pen = (points: number[] = [0.1, 0.1, 0.5]): ScratchStroke => ({
 	tool: 'pen',
 	colour: 'ink',
+	size: 0.008,
 	points
 });
 
@@ -37,10 +40,35 @@ describe('addPoint', () => {
 
 describe('strokeWidth', () => {
 	it('thickens with pressure for the pen only', () => {
-		const light = strokeWidth({ tool: 'pen' }, 0.1);
-		const firm = strokeWidth({ tool: 'pen' }, 0.9);
+		const light = strokeWidth({ tool: 'pen', size: 0.008 }, 0.1);
+		const firm = strokeWidth({ tool: 'pen', size: 0.008 }, 0.9);
 		expect(firm).toBeGreaterThan(light);
-		expect(strokeWidth({ tool: 'eraser' }, 0.1)).toBe(strokeWidth({ tool: 'eraser' }, 0.9));
+		expect(strokeWidth({ tool: 'eraser', size: 0.05 }, 0.1)).toBe(
+			strokeWidth({ tool: 'eraser', size: 0.05 }, 0.9)
+		);
+	});
+});
+
+describe('sizeWidth', () => {
+	it('grows with the step and stays within the slider', () => {
+		expect(sizeWidth('pen', 4)).toBe(0.008);
+		expect(sizeWidth('pen', 8)).toBeGreaterThan(sizeWidth('pen', 4));
+		expect(sizeWidth('eraser', 0)).toBe(sizeWidth('eraser', 1));
+		expect(sizeWidth('eraser', 99)).toBe(sizeWidth('eraser', 20));
+	});
+
+	it('scales the stroke width', () => {
+		const thin = strokeWidth({ tool: 'pen', size: sizeWidth('pen', 2) }, 0.5);
+		const thick = strokeWidth({ tool: 'pen', size: sizeWidth('pen', 12) }, 0.5);
+		expect(thick).toBeCloseTo(thin * 6);
+	});
+});
+
+describe('parseSizes', () => {
+	it('keeps valid steps and defaults the rest', () => {
+		expect(parseSizes({ pen: 9, eraser: 'big' })).toEqual({ pen: 9, eraser: 7 });
+		expect(parseSizes({ pen: 50, eraser: 2.6 })).toEqual({ pen: 20, eraser: 3 });
+		expect(parseSizes(null)).toEqual({ pen: 4, eraser: 7 });
 	});
 });
 
@@ -80,8 +108,20 @@ describe('isBlank', () => {
 
 describe('migratePad', () => {
 	it('reads a saved pad and drops unreadable strokes', () => {
-		const saved = { schemaVersion: 1, strokes: [pen(), { tool: 'laser' }, pen([1, 2])] };
+		const saved = { schemaVersion: 2, strokes: [pen(), { tool: 'laser' }, pen([1, 2])] };
 		expect(migratePad(saved)?.strokes).toEqual([pen()]);
+	});
+
+	it('gives v1 strokes the width v1 drew them at', () => {
+		const v1 = {
+			schemaVersion: 1,
+			strokes: [
+				{ tool: 'pen', colour: 'ink', points: [0.1, 0.1, 0.5] },
+				{ tool: 'eraser', colour: 'ink', points: [0.2, 0.2, 0.5] }
+			]
+		};
+		expect(migratePad(v1)?.strokes.map((s) => s.size)).toEqual([0.008, 0.05]);
+		expect(migratePad(v1)?.schemaVersion).toBe(2);
 	});
 
 	it('rejects anything that is not a pad', () => {

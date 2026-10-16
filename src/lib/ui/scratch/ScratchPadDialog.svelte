@@ -3,6 +3,8 @@
 	import {
 		isBlank,
 		SCRATCH_COLOURS,
+		SIZE_STEPS,
+		sizeWidth,
 		type ScratchColour,
 		type ScratchTool
 	} from '#lib/core/scratch/scratch.ts';
@@ -11,6 +13,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ScratchCanvas from './ScratchCanvas.svelte';
+	import { scratchSizes, setScratchSize } from './scratch-sizes.svelte.ts';
 	import type { ScratchPadState } from './scratch-store.svelte.ts';
 
 	interface Props {
@@ -22,6 +25,18 @@
 	let tool = $state<ScratchTool>('pen');
 	let colour = $state<ScratchColour>('ink');
 	let confirming = $state(false);
+	/** True while the size slider moves, and briefly after, so the ring shows on the pad. */
+	let sizing = $state(false);
+	let sizingTimer: ReturnType<typeof setTimeout> | undefined;
+
+	const step = $derived(scratchSizes[tool]);
+
+	function resize(value: number) {
+		setScratchSize(tool, value);
+		sizing = true;
+		clearTimeout(sizingTimer);
+		sizingTimer = setTimeout(() => (sizing = false), 800);
+	}
 
 	const canUndo = $derived(pad.history.strokes.length > 0);
 	const canRedo = $derived(pad.history.undone.length > 0);
@@ -97,7 +112,21 @@
 				>
 			{/each}
 		</div>
-		<ScratchCanvas {pad} {tool} {colour} />
+		<!-- One slider for the chosen tool; each tool keeps its own size. -->
+		<div class="size">
+			<input
+				type="range"
+				aria-label={t(`scratch.size.${tool}`)}
+				min="1"
+				max={SIZE_STEPS}
+				step="1"
+				value={step}
+				oninput={(event) => resize(Number(event.currentTarget.value))}
+			/>
+			<!-- Fixed width, so the number changing never moves the slider. -->
+			<output aria-hidden="true">{step}</output>
+		</div>
+		<ScratchCanvas {pad} {tool} {colour} size={sizeWidth(tool, step)} preview={sizing} />
 	</div>
 </Dialog>
 
@@ -125,6 +154,32 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--space-1);
+	}
+	.size {
+		display: flex;
+		align-items: center;
+		align-self: center;
+		gap: var(--space-3);
+		width: min(100%, calc(20 * var(--u)));
+	}
+	.size input {
+		flex: 1;
+		min-width: 0;
+		min-height: var(--tap-target);
+		margin: 0;
+		accent-color: var(--accent);
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	.size input:focus-visible {
+		outline: 2px solid var(--focus);
+		outline-offset: 2px;
+	}
+	.size output {
+		flex: none;
+		min-width: 2ch;
+		text-align: end;
+		font-variant-numeric: tabular-nums;
 	}
 	.divider {
 		align-self: stretch;

@@ -7,6 +7,8 @@ export const scratch = {
 	'scratch.pen': 'Pen',
 	'scratch.eraser': 'Eraser',
 	'scratch.colour': 'Colour',
+	'scratch.size.pen': 'Pen size',
+	'scratch.size.eraser': 'Eraser size',
 	'scratch.colour.ink': 'Ink',
 	'scratch.colour.good': 'Blue',
 	'scratch.colour.evil': 'Red',

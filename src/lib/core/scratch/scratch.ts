@@ -6,7 +6,8 @@
  * through the theme, so ink stays readable in light and dark themes.
  */
 
-export const SCRATCH_SCHEMA_VERSION = 1;
+/** v2 (2026-10-16): each stroke carries its own size. */
+export const SCRATCH_SCHEMA_VERSION = 2;
 
 /** The pad's height as a multiple of its width: a portrait page. */
 export const PAD_ASPECT = 4 / 3;
@@ -16,9 +17,37 @@ export type ScratchColour = (typeof SCRATCH_COLOURS)[number];
 
 export type ScratchTool = 'pen' | 'eraser';
 
-/** The pen's width at the middle pressure (0.5) and the eraser's, as fractions of the width. */
-const PEN_WIDTH = 0.008;
-const ERASER_WIDTH = 0.05;
+/**
+ * Sizes are steps on a slider (1 to SIZE_STEPS); each step widens the pen or eraser by a fixed
+ * fraction of the pad's width. The pen's size is its width at the middle pressure (0.5).
+ */
+export const SIZE_STEPS = 20;
+const SIZE_UNIT: Record<ScratchTool, number> = { pen: 0.002, eraser: 0.0075 };
+export const DEFAULT_SIZE: Record<ScratchTool, number> = { pen: 4, eraser: 7 };
+
+/** A whole slider step from 1 to SIZE_STEPS. */
+export function clampStep(step: number): number {
+	return Math.min(SIZE_STEPS, Math.max(1, Math.round(step)));
+}
+
+/** Base width for a tool at a slider step, as a fraction of the pad's width. */
+export function sizeWidth(tool: ScratchTool, step: number): number {
+	return round(clampStep(step) * SIZE_UNIT[tool]);
+}
+
+/** Remembered slider steps; anything missing or invalid falls back to the default. */
+export function parseSizes(raw: unknown): Record<ScratchTool, number> {
+	const sizes = { ...DEFAULT_SIZE };
+	if (typeof raw !== 'object' || raw === null) return sizes;
+	for (const tool of ['pen', 'eraser'] as const) {
+		const step = (raw as Record<string, unknown>)[tool];
+		if (typeof step === 'number' && Number.isFinite(step)) sizes[tool] = clampStep(step);
+	}
+	return sizes;
+}
+
+/** v1 strokes had one fixed width per tool. */
+const V1_WIDTH: Record<ScratchTool, number> = { pen: 0.008, eraser: 0.05 };
 
 /** Points closer than this to the last one (a fraction of the width) are dropped. */
 export const MIN_POINT_DISTANCE = 0.0015;
@@ -26,6 +55,8 @@ export const MIN_POINT_DISTANCE = 0.0015;
 export interface ScratchStroke {
 	tool: ScratchTool;
 	colour: ScratchColour;
+	/** Base width, a fraction of the pad's width (see `sizeWidth`). */
+	size: number;
 	/** Flat x, y, pressure triples; pressure is 0-1 (0.5 when the input has none). */
 	points: number[];
 }
@@ -40,11 +71,11 @@ export function emptyPad(): ScratchPad {
 }
 
 /** Width of a stroke at one point, as a fraction of the pad's width. */
-export function strokeWidth(stroke: Pick<ScratchStroke, 'tool'>, pressure: number) {
-	if (stroke.tool === 'eraser') return ERASER_WIDTH;
+export function strokeWidth(stroke: Pick<ScratchStroke, 'tool' | 'size'>, pressure: number) {
+	if (stroke.tool === 'eraser') return stroke.size;
 	// Half pressure draws the base width; a light touch thins it, a firm one thickens it.
 	const p = Math.min(1, Math.max(0, pressure));
-	return PEN_WIDTH * (0.4 + 1.2 * p);
+	return stroke.size * (0.4 + 1.2 * p);
 }
 
 const round = (n: number) => Math.round(n * 10_000) / 10_000;
@@ -102,6 +133,9 @@ function isStroke(value: unknown): value is ScratchStroke {
 	return (
 		(s.tool === 'pen' || s.tool === 'eraser') &&
 		(SCRATCH_COLOURS as readonly unknown[]).includes(s.colour) &&
+		typeof s.size === 'number' &&
+		Number.isFinite(s.size) &&
+		s.size > 0 &&
 		Array.isArray(s.points) &&
 		s.points.length % 3 === 0 &&
 		s.points.every((n) => typeof n === 'number' && Number.isFinite(n))
@@ -115,10 +149,24 @@ function isStroke(value: unknown): value is ScratchStroke {
 export function migratePad(raw: unknown): ScratchPad | undefined {
 	if (!raw || typeof raw !== 'object') return undefined;
 	const record = raw as Record<string, unknown>;
-	if (record.schemaVersion !== SCRATCH_SCHEMA_VERSION || !Array.isArray(record.strokes))
-		return undefined;
+	if (!Array.isArray(record.strokes)) return undefined;
+	let strokes: unknown[] = record.strokes;
+	switch (record.schemaVersion) {
+		case 1:
+			// v1 -> v2: strokes gain the fixed width v1 drew them at.
+			strokes = strokes.map((s) =>
+				s && typeof s === 'object' && 'tool' in s
+					? { ...s, size: V1_WIDTH[(s as { tool: ScratchTool }).tool] ?? V1_WIDTH.pen }
+					: s
+			);
+			break;
+		case SCRATCH_SCHEMA_VERSION:
+			break;
+		default:
+			return undefined;
+	}
 	return {
 		schemaVersion: SCRATCH_SCHEMA_VERSION,
-		strokes: record.strokes.filter(isStroke).map((s) => ({ ...s, points: [...s.points] }))
+		strokes: strokes.filter(isStroke).map((s) => ({ ...s, points: [...s.points] }))
 	};
 }

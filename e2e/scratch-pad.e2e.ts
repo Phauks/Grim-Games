@@ -131,3 +131,84 @@ test('once a pen is used, a resting palm does not draw', async ({ page }) => {
 	await send('pointerup', 'touch', 4, 0.6, 0.95);
 	expect(await inked(canvas)).toBe(before);
 });
+
+test('pen and eraser keep their own sizes, shown as a ring where they touch the pad', async ({
+	page
+}) => {
+	const { dialog, canvas } = await openPad(page);
+	const penSize = dialog.getByRole('slider', { name: 'Pen size' });
+	const ring = dialog.getByTestId('scratch-ring');
+	await expect(ring).toBeHidden();
+
+	// Moving the slider shows the size in the middle of the pad, then the ring goes.
+	await penSize.fill('1');
+	await expect(ring).toBeVisible();
+	await expect(ring).toBeHidden();
+	await scribble(page, canvas);
+	await expect.poll(() => inked(canvas)).toBeGreaterThan(0);
+	const thin = await inked(canvas);
+	await dialog.getByRole('button', { name: 'Undo' }).tap();
+	await expect.poll(() => inked(canvas)).toBe(0);
+
+	await penSize.fill('20');
+	const small = (await ring.boundingBox())!.width;
+	await scribble(page, canvas);
+	await expect.poll(() => inked(canvas)).toBeGreaterThan(thin * 4);
+
+	// Each tool remembers its size, across a reload too.
+	await dialog.getByRole('button', { name: 'Eraser' }).tap();
+	const eraserSize = dialog.getByRole('slider', { name: 'Eraser size' });
+	await expect(eraserSize).toHaveValue('7');
+	await eraserSize.fill('20');
+	await expect.poll(async () => (await ring.boundingBox())?.width ?? 0).toBeGreaterThan(small);
+	await page.reload();
+	const { dialog: again } = await openPad(page);
+	await expect(again.getByRole('slider', { name: 'Pen size' })).toHaveValue('20');
+	await again.getByRole('button', { name: 'Eraser' }).tap();
+	await expect(again.getByRole('slider', { name: 'Eraser size' })).toHaveValue('20');
+});
+
+test('the size ring follows a finger while it draws and a hovering pen', async ({ page }) => {
+	const { dialog, canvas } = await openPad(page);
+	const ring = dialog.getByTestId('scratch-ring');
+	const send = (type: string, pointerType: string, x: number, y: number) =>
+		canvas.evaluate(
+			(element, e) => {
+				const rect = element.getBoundingClientRect();
+				element.dispatchEvent(
+					new PointerEvent(e.type, {
+						bubbles: true,
+						cancelable: true,
+						pointerType: e.pointerType,
+						pointerId: 7,
+						isPrimary: true,
+						pressure: 0.5,
+						clientX: rect.left + rect.width * e.x,
+						clientY: rect.top + rect.height * e.y
+					})
+				);
+			},
+			{ type, pointerType, x, y }
+		);
+	const centre = async () => {
+		const [r, c] = [(await ring.boundingBox())!, (await canvas.boundingBox())!];
+		return { x: (r.x + r.width / 2 - c.x) / c.width, y: (r.y + r.height / 2 - c.y) / c.height };
+	};
+
+	// A finger hovering is impossible; the ring shows only while it draws.
+	await send('pointermove', 'touch', 0.5, 0.5);
+	await expect(ring).toBeHidden();
+	await send('pointerdown', 'touch', 0.3, 0.4);
+	await send('pointermove', 'touch', 0.4, 0.4);
+	await expect(ring).toBeVisible();
+	expect((await centre()).x).toBeCloseTo(0.4, 1);
+	await send('pointerup', 'touch', 0.4, 0.4);
+	await expect(ring).toBeHidden();
+
+	// A pen shows the ring before it touches down, and it goes when the pen leaves.
+	await send('pointermove', 'pen', 0.7, 0.6);
+	await expect(ring).toBeVisible();
+	expect((await centre()).y).toBeCloseTo(0.6, 1);
+	await send('pointerleave', 'pen', 1.1, 0.6);
+	await expect(ring).toBeHidden();
+});
