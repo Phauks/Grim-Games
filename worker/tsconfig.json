@@ -15,7 +15,8 @@
 		"./**/*.ts",
 		"../src/lib/core/**/*.ts",
 		"../src/lib/features/scripts/botcscripts-api.ts",
-		"../src/lib/features/scripts/share-codes-api.ts"
+		"../src/lib/features/scripts/share-codes-api.ts",
+		"../src/lib/features/account/account-protocol.ts"
 	],
 	"exclude": [
 		"../src/lib/core/**/*.test.ts",

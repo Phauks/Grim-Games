@@ -35,22 +35,29 @@
 		"not_found_handling": "single-page-application",
 		"run_worker_first": ["/api/*"]
 	},
+	// Room (live sync), SharedScript (share codes), and for accounts (07-accounts-and-multi-device.md
+	// §2.1) AccountUser and AccountEmail. SQLite Durable Objects need nothing created by hand.
 	"durable_objects": {
 		"bindings": [
 			{ "name": "ROOMS", "class_name": "Room" },
-			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" }
+			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
+			{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
+			{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" }
 		]
 	},
 	"migrations": [
 		{ "tag": "v1", "new_sqlite_classes": ["Room"] },
-		{ "tag": "v2", "new_sqlite_classes": ["SharedScript"] }
+		{ "tag": "v2", "new_sqlite_classes": ["SharedScript"] },
+		{ "tag": "v3", "new_sqlite_classes": ["AccountUser", "AccountEmail"] }
 	],
 	// Script share codes (worker/share.ts): per-address limits so codes can't be guessed by
 	// trying many. namespace_id is our own number; nothing to create in the dashboard
 	// (developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
 	"ratelimits": [
 		{ "name": "SHARE_LOOKUPS", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
-		{ "name": "SHARE_CREATES", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } }
+		{ "name": "SHARE_CREATES", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
+		// Sign-in codes requested per address (worker/account/routes.ts).
+		{ "name": "AUTH_STARTS", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } }
 	],
 	"vars": { "ENVIRONMENT": "production" },
 	// Worker Previews: Workers Builds runs `npx wrangler preview` for non-production branches,
@@ -61,12 +68,15 @@
 		"durable_objects": {
 			"bindings": [
 				{ "name": "ROOMS", "class_name": "Room" },
-				{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" }
+				{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
+				{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
+				{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" }
 			]
 		},
 		"ratelimits": [
 			{ "name": "SHARE_LOOKUPS", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
-			{ "name": "SHARE_CREATES", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } }
+			{ "name": "SHARE_CREATES", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
+			{ "name": "AUTH_STARTS", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } }
 		]
 	}
 }
