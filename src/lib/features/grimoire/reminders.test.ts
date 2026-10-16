@@ -3,7 +3,7 @@ import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { parseReminderKey, reminderGroups, reminderKey } from './reminders.ts';
+import { parseReminderKey, reminderCopiesLeft, reminderGroups, reminderKey } from './reminders.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -55,6 +55,28 @@ describe('reminderGroups', () => {
 		]);
 		expect(groups.some((x) => x.character.id === 'drunk')).toBe(true);
 		expect(groups.some((x) => x.character.id === 'chef')).toBe(false);
+	});
+});
+
+describe('reminderCopiesLeft', () => {
+	// Reminder tokens come in the numbers TPI lists them: "Poisoned" once per Poisoner.
+	it('uses a token up once placed, and gives a second Poisoner its own', () => {
+		let g = game();
+		const key = reminderKey({ characterId: 'poisoner', label: 'Poisoned' });
+		expect(reminderCopiesLeft(g, characters).get(key)).toBe(1);
+		const run = (command: Parameters<typeof dispatch>[1]) => {
+			const result = dispatch({ log: { entries: [], cursor: 0 }, game: g }, command, ctx);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		};
+		run({
+			type: 'AddReminder',
+			seatId: g.seating[2],
+			reminder: { characterId: 'poisoner', label: 'Poisoned' }
+		});
+		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
+		run({ type: 'AssignCharacter', seatId: g.seating[3], characterId: 'poisoner' });
+		expect(reminderCopiesLeft(g, characters).get(key)).toBe(1);
 	});
 });
 

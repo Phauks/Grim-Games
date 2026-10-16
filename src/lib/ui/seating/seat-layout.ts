@@ -125,6 +125,28 @@ export function seatTokenSize(
 	return Math.round(Math.max(44, Math.min(96, bySpacing, byBoard)));
 }
 
+/**
+ * Points from a seat towards the middle of the board, at each distance (px) from the seat's
+ * centre: where its reminder tokens go, as in front of a token in the physical grimoire.
+ * A seat at the very middle sends them downwards.
+ */
+export function towardsMiddle(
+	seat: SeatPoint,
+	board: BoardSize,
+	distances: readonly number[]
+): SeatPoint[] {
+	const { width, height } = board;
+	if (width <= 0 || height <= 0) return distances.map(() => seat);
+	const dx = ((50 - seat.x) / 100) * width;
+	const dy = ((50 - seat.y) / 100) * height;
+	const length = Math.hypot(dx, dy);
+	const [ux, uy] = length < 1 ? [0, 1] : [dx / length, dy / length];
+	return distances.map((d) => ({
+		x: seat.x + ((ux * d) / width) * 100,
+		y: seat.y + ((uy * d) / height) * 100
+	}));
+}
+
 export function withShape(layout: SeatLayout, shape: SeatShape): SeatLayout {
 	return { ...layout, shape };
 }

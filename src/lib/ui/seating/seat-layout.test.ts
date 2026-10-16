@@ -11,6 +11,7 @@ import {
 	withGap,
 	withoutPlaced,
 	withPlaced,
+	towardsMiddle,
 	withShape
 } from './seat-layout.ts';
 
@@ -116,5 +117,16 @@ describe('saving', () => {
 			parseSeatLayout({ shape: 'hexagon', gaps: { a: 'x', b: 9 }, placed: { c: { x: 1 } } })
 		).toEqual({ shape: 'oval', gaps: { b: 3 }, placed: {} });
 		expect(parseSeatLayout(null)).toEqual(DEFAULT_SEAT_LAYOUT);
+	});
+});
+
+describe('towardsMiddle', () => {
+	it('lines reminders up from a seat towards the middle', () => {
+		const [near, far] = towardsMiddle({ x: 50, y: 10 }, square, [40, 80]);
+		// 40px on a 400px board is 10%, straight down from the top seat.
+		expect(near.x).toBeCloseTo(50);
+		expect(near.y).toBeCloseTo(20);
+		expect(far.y).toBeCloseTo(30);
+		expect(towardsMiddle({ x: 50, y: 50 }, square, [40])[0].y).toBeCloseTo(60);
 	});
 });

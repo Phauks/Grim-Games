@@ -5,7 +5,12 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { recentReminders } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { parseReminderKey, reminderGroups, reminderKey } from './reminders.ts';
+	import {
+		parseReminderKey,
+		reminderCopiesLeft,
+		reminderGroups,
+		reminderKey
+	} from './reminders.ts';
 
 	interface Props {
 		open: boolean;
@@ -19,6 +24,10 @@
 
 	const characters = $derived(grimoire.open.characters);
 	const groups = $derived(reminderGroups(grimoire.game, characters));
+	// Each token can be placed once unless the game gives more copies; used-up ones stay in
+	// place, disabled, so nothing moves.
+	const left = $derived(reminderCopiesLeft(grimoire.game, characters));
+	const usedUp = (reminder: Reminder) => (left.get(reminderKey(reminder)) ?? 1) <= 0;
 	/** Only reminders the picker offers now, so a recent one never brings back one not in play. */
 	const offered = $derived(
 		new Set(
@@ -54,8 +63,17 @@
 		<!-- A fixed-height row: recent reminders never move the list below. -->
 		<div class="recent" role="group" aria-label="Recent reminders">
 			{#each recent as reminder (reminderKey(reminder))}
-				<button type="button" class="chip" onclick={() => add(reminder)}>
-					<ReminderToken label={reminder.label} type={characters.get(reminder.characterId)?.type} />
+				<button
+					type="button"
+					class="chip"
+					disabled={usedUp(reminder)}
+					onclick={() => add(reminder)}
+				>
+					<ReminderToken
+						label={reminder.label}
+						type={characters.get(reminder.characterId)?.type}
+						done={usedUp(reminder)}
+					/>
 				</button>
 			{:else}
 				<span class="none">Recent: None</span>
@@ -71,12 +89,14 @@
 				</span>
 				<span class="chips" role="group" aria-label={group.character.name}>
 					{#each group.labels as label (label)}
+						{@const reminder = { characterId: group.character.id, label }}
 						<button
 							type="button"
 							class="chip"
-							onclick={() => add({ characterId: group.character.id, label })}
+							disabled={usedUp(reminder)}
+							onclick={() => add(reminder)}
 						>
-							<ReminderToken {label} type={group.character.type} />
+							<ReminderToken {label} type={group.character.type} done={usedUp(reminder)} />
 						</button>
 					{/each}
 				</span>
@@ -86,6 +106,10 @@
 </Dialog>
 
 <style>
+	.chip:disabled {
+		cursor: default;
+		opacity: 0.55;
+	}
 	.head {
 		display: grid;
 		gap: var(--space-1);

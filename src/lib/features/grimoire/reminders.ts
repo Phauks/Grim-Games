@@ -54,6 +54,46 @@ export function reminderGroups(game: Game, characters: CharacterLookup): Reminde
 	return groups;
 }
 
+/**
+ * How many of each reminder token are left to place. A token can be on the board once,
+ * unless the game gives more: a label listed more than once in TPI's data, or its
+ * character in play more than once (two seats, or a seat and its true character).
+ * Keyed by `reminderKey`; a reminder not in the map has one copy.
+ */
+export function reminderCopiesLeft(game: Game, characters: CharacterLookup): Map<string, number> {
+	const inPlay = new Map<string, number>();
+	const count = (id: string | undefined) => {
+		if (id !== undefined) inPlay.set(id, (inPlay.get(id) ?? 0) + 1);
+	};
+	for (const seatId of game.seating) {
+		const shown = game.seats[seatId].characterId;
+		const real = trueCharacter(game, seatId, characters);
+		count(shown);
+		if (real !== shown) count(real);
+	}
+	for (const id of game.ruleCharacters) count(id);
+
+	const left = new Map<string, number>();
+	for (const group of reminderGroups(game, characters)) {
+		const { character } = group;
+		const listed = [...character.reminders, ...character.remindersGlobal];
+		for (const label of group.labels) {
+			const perCharacter = listed.filter((l) => l === label).length;
+			left.set(
+				reminderKey({ characterId: character.id, label }),
+				perCharacter * Math.max(1, inPlay.get(character.id) ?? 0)
+			);
+		}
+	}
+	for (const seatId of game.seating) {
+		for (const r of game.seats[seatId].reminders) {
+			const key = reminderKey(r);
+			left.set(key, (left.get(key) ?? 1) - 1);
+		}
+	}
+	return left;
+}
+
 /** A reminder as a stable key, for the recent list. */
 export function reminderKey(reminder: Reminder): string {
 	return JSON.stringify([reminder.characterId, reminder.label]);
