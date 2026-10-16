@@ -24,8 +24,6 @@
 	interface Props {
 		/** A card was tapped. */
 		onchoose: (token: InfoToken) => void;
-		/** Only cards whose text contains this (any case). */
-		query?: string;
 		/** Heading level of the Standard and Custom sections. */
 		level?: 2 | 3;
 		/**
@@ -33,43 +31,35 @@
 		 * character. Given, a Characters section lists them (Trevor, 2026-10-16).
 		 */
 		characterCards?: readonly { card: CharacterCard; character: Character }[];
-		/** A character card was filled in: its text, character and what the Storyteller typed. */
-		onchooseCharacter?: (chosen: { title: string; character: Character; detail: string }) => void;
-		/** The fill-in dialog's main button, e.g. "Show" or "Add". */
-		fillAction?: string;
+		/**
+		 * A character card was filled in: its text, character, what the Storyteller typed, and
+		 * whether it came from the card's + (add to the cards to show) rather than a tap.
+		 */
+		onchooseCharacter?: (chosen: {
+			title: string;
+			character: Character;
+			detail: string;
+			add: boolean;
+		}) => void;
+		/** Given, each card has a + that adds it to the cards shown together (Trevor, 2026-10-16). */
+		onadd?: (token: InfoToken) => void;
 	}
 
-	let {
-		onchoose,
-		query = '',
-		level = 2,
-		characterCards,
-		onchooseCharacter,
-		fillAction
-	}: Props = $props();
+	let { onchoose, level = 2, characterCards, onchooseCharacter, onadd }: Props = $props();
 
-	const needle = $derived(query.trim().toLowerCase());
-	const matches = (token: InfoToken) =>
-		needle === '' || plainText(token.text).toLowerCase().includes(needle);
-	const standard = $derived(STANDARD_INFO_TOKENS.filter(matches));
+	// No search: there are too few cards for it to help (Trevor, 2026-10-16).
+	const standard = STANDARD_INFO_TOKENS;
 
 	// Alphabetical by their words, formatting ignored (Trevor, 2026-10-16).
 	const custom = $derived(
-		customInfoTokens.list.filter(matches).toSorted((a, b) =>
+		[...customInfoTokens.list].sort((a, b) =>
 			plainText(a.text).localeCompare(plainText(b.text), undefined, {
 				sensitivity: 'base',
 				numeric: true
 			})
 		)
 	);
-	const characterRows = $derived(
-		(characterCards ?? []).filter(
-			({ card, character }) =>
-				needle === '' ||
-				t(card.titleKey).toLowerCase().includes(needle) ||
-				character.name.toLowerCase().includes(needle)
-		)
-	);
+	const characterRows = $derived(characterCards ?? []);
 
 	let aboutOpen = $state(false);
 	let aboutAnchor = $state<HTMLElement>();
@@ -78,10 +68,12 @@
 	let filling = $state<{ card: CharacterCard; character: Character }>();
 	let fillOpen = $state(false);
 	let filled = $state<Record<string, string>>({});
+	let fillAdds = $state(false);
 	const fillText = $derived(filling ? (filled[filling.card.id] ?? '') : '');
 
-	function fill(row: { card: CharacterCard; character: Character }) {
+	function fill(row: { card: CharacterCard; character: Character }, add = false) {
 		filling = row;
+		fillAdds = add;
 		fillOpen = true;
 	}
 
@@ -91,7 +83,8 @@
 		onchooseCharacter?.({
 			title: t(filling.card.titleKey),
 			character: filling.character,
-			detail: fillText.trim()
+			detail: fillText.trim(),
+			add: fillAdds
 		});
 	}
 
@@ -136,6 +129,15 @@
 					<button type="button" class="card" onclick={() => onchoose(token)}>
 						<span class="text">{token.text}</span>
 					</button>
+					{#if onadd}
+						<span class="add">
+							<IconButton
+								icon="add"
+								label={t('info-tokens.addNamed', { name: token.text })}
+								onclick={() => onadd(token)}
+							/>
+						</span>
+					{/if}
 				</li>
 			{:else}
 				<li class="none">{t('common.none')}</li>
@@ -152,6 +154,15 @@
 						<!-- One inline box, so the card's flex layout keeps the spaces between runs. -->
 						<span class="text"><InfoTokenText text={token.text} /></span>
 					</button>
+					{#if onadd}
+						<span class="add">
+							<IconButton
+								icon="add"
+								label={t('info-tokens.addNamed', { name })}
+								onclick={() => onadd(token)}
+							/>
+						</span>
+					{/if}
 					<span class="actions">
 						<IconButton
 							icon="rename"
@@ -209,6 +220,17 @@
 							<span class="text">{title}</span>
 							<CharacterLabel character={row.character} />
 						</button>
+						{#if onadd}
+							<span class="add">
+								<IconButton
+									icon="add"
+									label={t('info-tokens.addNamed', {
+										name: t('info-tokens.cardFor', { card: title, name: row.character.name })
+									})}
+									onclick={() => fill(row, true)}
+								/>
+							</span>
+						{/if}
 					</li>
 				{:else}
 					<li class="none">{t('common.none')}</li>
@@ -266,8 +288,11 @@
 	{/if}
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (fillOpen = false)}>{t('common.cancel')}</Button>
-		<Button variant="accent" icon="forward" disabled={!fillText.trim()} onclick={useFilled}
-			>{fillAction ?? t('info-tokens.show')}</Button
+		<Button
+			variant="accent"
+			icon={fillAdds ? 'add' : 'forward'}
+			disabled={!fillText.trim()}
+			onclick={useFilled}>{t(fillAdds ? 'info-tokens.addToChain' : 'info-tokens.show')}</Button
 		>
 	{/snippet}
 </Dialog>
@@ -331,6 +356,17 @@
 		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 		border-radius: var(--card-radius);
 		overflow: hidden;
+	}
+	/* The + that adds a card to the ones shown together: a strip at the tile's edge. */
+	.add {
+		display: grid;
+		flex: none;
+		border-inline-start: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+	}
+	.add :global(.icon-button) {
+		height: 100%;
+		color: inherit;
+		border-radius: 0;
 	}
 	.actions {
 		display: flex;

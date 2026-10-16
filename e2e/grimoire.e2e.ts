@@ -1064,12 +1064,12 @@ test('info tokens open from the toolbar and show player cards at once', async ({
 	await startGame(page);
 	await page.getByRole('button', { name: 'Info tokens' }).tap();
 	// The Storyteller points at the players (Trevor, 2026-10-16), so nothing is asked first.
-	await page.getByRole('button', { name: 'This is the Demon' }).tap();
+	await page.getByRole('button', { name: 'This is the Demon', exact: true }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('This is the Demon');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	// No bluffs yet: "not in play" opens the bluffs sheet.
-	await page.getByRole('button', { name: 'These characters are not in play' }).tap();
+	await page.getByRole('button', { name: 'These characters are not in play', exact: true }).tap();
 	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
 });
 
@@ -1109,7 +1109,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(guide).toBeVisible();
 	await guide.getByRole('button', { name: 'Info tokens' }).tap();
-	await page.getByRole('button', { name: 'This is the Demon' }).tap();
+	await page.getByRole('button', { name: 'This is the Demon', exact: true }).tap();
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	const info = page.getByRole('dialog', { name: 'Info tokens' });
 	await expect(info).toBeVisible();

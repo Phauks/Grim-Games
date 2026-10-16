@@ -6,11 +6,9 @@
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { plainText } from './bold.ts';
 	import { pickMax } from './pick.ts';
 	import { characterCardsFor } from './character-cards.ts';
@@ -54,7 +52,6 @@
 		| { kind: 'sets'; token: InfoToken };
 
 	let view = $state<View>({ kind: 'list' });
-	let query = $state('');
 	let picked = $state<CharacterId[]>([]);
 
 	interface Card {
@@ -65,11 +62,11 @@
 	}
 
 	/**
-	 * "Show now" shows a card at once. "Chain" collects cards in order and shows them
-	 * together, swiped left and right, e.g. the Cerenovus's card then the madness card
-	 * (Trevor, 2026-10-16).
+	 * Tapping a card shows it at once; its + adds it to the cards shown together (Trevor,
+	 * 2026-10-16: no mode switch). `adding` is true while the + of a card that asks for
+	 * characters or a bluff set is being completed.
 	 */
-	let mode = $state<'now' | 'chain'>('now');
+	let adding = $state(false);
 	let chainCards = $state<Card[]>([]);
 
 	let showOpen = $state(false);
@@ -130,7 +127,8 @@
 		}
 	});
 
-	function choose(token: InfoToken) {
+	function choose(token: InfoToken, add = false) {
+		adding = add;
 		if (token.id === 'not-in-play' && bluffSets) {
 			if (bluffSets.length === 1) return use(token.text, bluffSets[0].characterIds);
 			if (bluffSets.length > 1) {
@@ -153,12 +151,13 @@
 		use(token.text);
 	}
 
-	/** Shows the card now, or adds it to the chain. */
+	/** Shows the card now, or adds it to the cards to show together. */
 	function use(text: string, characterIds: readonly CharacterId[] = [], detail?: string) {
 		const card = { text, characterIds: [...characterIds], detail };
 		view = { kind: 'list' };
-		if (mode === 'chain') chainCards = [...chainCards, card];
+		if (adding) chainCards = [...chainCards, card];
 		else show([card]);
+		adding = false;
 	}
 
 	/**
@@ -177,55 +176,19 @@
 <BottomSheet bind:open {title} height="85dvh" focusFirstField={false}>
 	<ErrorBoundary area="info-tokens">
 		{#if view.kind === 'list'}
-			<div class="mode">
-				<Segmented
-					label={t('info-tokens.mode')}
-					hideLabel
-					value={mode}
-					options={[
-						{ value: 'now', label: t('info-tokens.showNow') },
-						{ value: 'chain', label: t('info-tokens.chain') }
-					]}
-					onChange={(value) => (mode = value)}
-				/>
-			</div>
-			<div class="search">
-				<Icon name="search" />
-				<input
-					bind:value={query}
-					type="search"
-					aria-label={t('info-tokens.search')}
-					placeholder={t('info-tokens.searchPlaceholder')}
-					autocomplete="off"
-					enterkeyhint="search"
-					onkeydown={(e) => {
-						if (e.key === 'Enter') {
-							e.preventDefault();
-							e.currentTarget.blur();
-						}
-					}}
-				/>
-				<button
-					type="button"
-					class="clear"
-					aria-label={t('info-tokens.clearSearch')}
-					disabled={query === ''}
-					onclick={() => (query = '')}><Icon name="close" /></button
-				>
-			</div>
 			<InfoTokenList
 				onchoose={choose}
-				{query}
 				level={3}
 				{characterCards}
-				onchooseCharacter={({ title, detail }) => use(title, [], detail)}
-				fillAction={t(mode === 'chain' ? 'info-tokens.addToChain' : 'info-tokens.show')}
+				onadd={(token) => choose(token, true)}
+				onchooseCharacter={({ title, detail, add }) => {
+					adding = add;
+					use(title, [], detail);
+				}}
 			/>
-			{#if mode === 'chain'}
-				<div class="chain" role="group" aria-label={t('info-tokens.chain')}>
-					{#if chainCards.length === 0}
-						<p class="chain-empty">{t('info-tokens.chainEmpty')}</p>
-					{:else}
+			{#if chainCards.length > 0}
+				<div class="chain" role="group" aria-label={t('info-tokens.toShow')}>
+					{#if chainCards.length > 0}
 						<ol class="chain-list" data-testid="chain-list">
 							{#each chainCards as card, i (card)}
 								{@const name = chainLabel(card)}
@@ -291,9 +254,9 @@
 				>
 				<Button
 					variant="accent"
-					icon={mode === 'chain' ? 'add' : 'forward'}
+					icon={adding ? 'add' : 'forward'}
 					onclick={() => use(token.text, picked)}
-					>{t(mode === 'chain' ? 'info-tokens.addToChain' : 'info-tokens.show')}</Button
+					>{t(adding ? 'info-tokens.addToChain' : 'info-tokens.show')}</Button
 				>
 			</div>
 		{:else}
@@ -321,9 +284,6 @@
 
 <style>
 	/* Lives in a sheet, so it follows the sheet's colours rather than the page's. */
-	.mode {
-		margin-bottom: var(--space-2);
-	}
 	/* Sits over the bottom of the list, so adding cards never moves the cards above. */
 	.chain {
 		position: sticky;
@@ -334,10 +294,6 @@
 		padding: var(--space-2) 0;
 		border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 		background: var(--sheet-background);
-	}
-	.chain-empty {
-		margin: 0;
-		opacity: 0.85;
 	}
 	.chain-list {
 		display: grid;
@@ -378,49 +334,6 @@
 	}
 	.danger :global(.icon-button) {
 		color: var(--accent);
-	}
-	.search {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-		height: var(--tap-target);
-		margin-bottom: var(--space-3);
-		padding-inline-start: var(--space-2);
-		border-radius: var(--radius-md);
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
-	}
-	.search:focus-within {
-		box-shadow: inset 0 0 0 2px var(--focus);
-	}
-	.search input {
-		flex: 1;
-		min-width: 0;
-		height: 100%;
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		outline: none;
-	}
-	/* The field's border shows focus; the global input ring would draw a second one. */
-	.search input:focus-visible {
-		outline: none;
-	}
-	.search input::-webkit-search-cancel-button {
-		appearance: none;
-	}
-	.clear {
-		display: grid;
-		place-items: center;
-		width: var(--tap-target);
-		height: var(--tap-target);
-		border: 0;
-		background: none;
-		color: inherit;
-		cursor: pointer;
-	}
-	.clear:disabled {
-		visibility: hidden;
 	}
 	.sets {
 		display: grid;

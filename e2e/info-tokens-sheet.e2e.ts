@@ -5,31 +5,31 @@ import { expect, test, type Page } from '@playwright/test';
 async function openSheet(page: Page, name = 'Info tokens') {
 	await page.goto('/spikes/info-tokens');
 	await page.getByRole('button', { name, exact: true }).tap();
-	await expect(page.getByRole('button', { name: 'This is the Demon' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'This is the Demon', exact: true })).toBeVisible();
 }
 
 const shown = (page: Page) => page.locator('[data-testid="show-to-player"][open]');
 
 test('"This is the Demon" is shown at once, for the Storyteller to point', async ({ page }) => {
 	await openSheet(page);
-	await page.getByRole('searchbox', { name: 'Search info tokens' }).fill('demon');
-	await expect(page.getByRole('button', { name: 'Did you vote today?' })).toHaveCount(0);
-	await page.getByRole('button', { name: 'This is the Demon' }).tap();
+	// No search box: too few cards for it to help (Trevor, 2026-10-16).
+	await expect(page.getByRole('searchbox', { name: 'Search info tokens' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'This is the Demon', exact: true }).tap();
 	await expect(shown(page).getByRole('heading')).toHaveText('This is the Demon');
 	await shown(page).getByRole('button', { name: 'Close' }).tap();
 	// The sheet comes back, at the list, for the next card.
-	await expect(page.getByRole('button', { name: 'This is the Demon' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'This is the Demon', exact: true })).toBeVisible();
 });
 
 test('"not in play" with no bluffs yet opens the bluff picker', async ({ page }) => {
 	await openSheet(page);
-	await page.getByRole('button', { name: 'These characters are not in play' }).tap();
+	await page.getByRole('button', { name: 'These characters are not in play', exact: true }).tap();
 	await expect(page.getByTestId('bluff-picker')).toHaveText('Bluff picker opened');
 });
 
 test('"not in play" asks which bluff set when there are several', async ({ page }) => {
 	await openSheet(page, 'Info tokens (two bluff sets)');
-	await page.getByRole('button', { name: 'These characters are not in play' }).tap();
+	await page.getByRole('button', { name: 'These characters are not in play', exact: true }).tap();
 	await page.getByRole('list', { name: 'Bluff sets' }).getByRole('button', { name: /Set 2/ }).tap();
 	await expect(shown(page)).toContainText('Empath');
 	await expect(shown(page)).toContainText('Slayer');
@@ -62,7 +62,7 @@ test('the sheet shows a character card and edits and deletes a custom card', asy
 	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 });
 
-test('a chain of cards can be reordered and is shown together', async ({ page }) => {
+test("each card's + adds it to cards shown together, which can be reordered", async ({ page }) => {
 	await openSheet(page);
 	// A madness card of the Storyteller's own that asks for a character.
 	await page.getByRole('button', { name: 'New info token' }).tap();
@@ -70,15 +70,17 @@ test('a chain of cards can be reordered and is shown together', async ({ page })
 	await page.getByText('Show with characters').tap();
 	await page.getByRole('button', { name: 'Save' }).tap();
 
+	// No mode switch: a tap shows a card, its + adds it (Trevor, 2026-10-16).
+	await expect(page.getByRole('radiogroup', { name: 'How cards are shown' })).toHaveCount(0);
 	await page
-		.getByRole('radiogroup', { name: 'How cards are shown' })
-		.getByText('Chain', { exact: true })
+		.getByRole('button', { name: 'Add You are mad that you are to the cards to show' })
 		.tap();
-	await page.getByRole('button', { name: 'You are mad that you are', exact: true }).tap();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
 	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await page.getByRole('button', { name: 'Add', exact: true }).tap();
-	await page.getByRole('button', { name: 'This character selected you' }).tap();
+	await page
+		.getByRole('button', { name: 'Add This character selected you to the cards to show' })
+		.tap();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Chef');
 	await page.getByRole('button', { name: 'Chef', exact: true }).tap();
 	await page.getByRole('button', { name: 'Add', exact: true }).tap();
@@ -109,16 +111,16 @@ test('a chain of cards can be reordered and is shown together', async ({ page })
 	await view.getByRole('button', { name: 'Close' }).tap();
 
 	// More than three cards are swiped through.
-	await page.getByRole('button', { name: 'This is the Demon' }).tap();
-	await page.getByRole('button', { name: 'These are your Minions' }).tap();
+	await page.getByRole('button', { name: 'Add This is the Demon to the cards to show' }).tap();
+	await page.getByRole('button', { name: 'Add These are your Minions to the cards to show' }).tap();
 	await page.getByRole('button', { name: 'Show 4 cards' }).tap();
 	await expect(view.getByRole('region', { name: 'Card 1 of 4' })).toBeInViewport();
 	await view.getByRole('button', { name: 'Next card' }).tap();
 	await expect(view.getByRole('region', { name: 'Card 2 of 4' })).toBeInViewport();
 	await view.getByRole('button', { name: 'Close' }).tap();
 
-	// The red bin clears the chain.
-	await page.getByRole('button', { name: 'Clear the chain' }).tap();
+	// The red bin clears them.
+	await page.getByRole('button', { name: 'Clear the cards to show' }).tap();
 	await expect(page.getByTestId('chain-list')).toHaveCount(0);
 });
 

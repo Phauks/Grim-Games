@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('an info token is shown full screen and only the close button hides it', async ({ page }) => {
 	await page.goto('/info-tokens');
-	await page.getByRole('button', { name: 'Did you vote today?' }).tap();
+	await page.getByRole('button', { name: 'Did you vote today?', exact: true }).tap();
 
 	const shown = page.getByTestId('show-to-player');
 	await expect(shown).toBeVisible();
@@ -74,7 +74,7 @@ test('the Standard and Custom sections collapse and stay that way', async ({ pag
 
 test('"This player is" shows several characters, e.g. for the Dreamer', async ({ page }) => {
 	await page.goto('/info-tokens');
-	await page.getByRole('button', { name: 'This player is' }).tap();
+	await page.getByRole('button', { name: 'This player is', exact: true }).tap();
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
 	await search.fill('Empath');
 	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
