@@ -7,8 +7,7 @@
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -74,7 +73,6 @@
 	}
 
 	function confirm() {
-		open = false;
 		const to = pending?.move.toSeatId;
 		if (pending && to)
 			grimoire.run({ type: 'MoveReminder', reminderId: pending.reminderId, toSeatId: to });
@@ -83,7 +81,12 @@
 	}
 </script>
 
-<Dialog bind:open title="Confirm change?" role="alertdialog">
+<ConfirmDialog
+	bind:open
+	title="Confirm change?"
+	onConfirm={confirm}
+	onCancel={() => (pending = undefined)}
+>
 	{#if pending}
 		{@const move = pending.move}
 		{@const owner = characters.get(move.reminder.characterId)}
@@ -113,17 +116,7 @@
 			</p>
 		{/each}
 	{/if}
-	{#snippet actions()}
-		<Button
-			variant="quiet"
-			onclick={() => {
-				open = false;
-				pending = undefined;
-			}}>Cancel</Button
-		>
-		<Button variant="accent" icon="check" onclick={confirm}>Confirm</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	.change {
