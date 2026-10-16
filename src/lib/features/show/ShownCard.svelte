@@ -10,11 +10,13 @@
 		/** Info-token text shown above the characters; `**bold**` is supported. */
 		title?: string;
 		characters?: readonly ShownCharacter[];
+		/** What the Storyteller filled in (a secret word), shown as typed under the title. */
+		detail?: string;
 		/** Shares the screen with other cards: smaller text, no room kept for the close button. */
 		compact?: boolean;
 	}
 
-	let { title, characters = [], compact = false }: Props = $props();
+	let { title, characters = [], detail, compact = false }: Props = $props();
 
 	let areaWidth = $state(0);
 	let areaHeight = $state(0);
@@ -37,6 +39,9 @@
 >
 	{#if title}
 		<h2 class="title"><InfoTokenText text={title} /></h2>
+	{/if}
+	{#if detail}
+		<p class="detail">{detail}</p>
 	{/if}
 	{#if single}
 		<div class="area" bind:clientWidth={areaWidth} bind:clientHeight={areaHeight}>
@@ -102,8 +107,27 @@
 		color: var(--heading);
 		overflow-wrap: anywhere;
 	}
+	.detail {
+		margin: 0;
+		max-width: 22ch;
+		font-family: var(--font-heading);
+		font-size: clamp(2.4rem, 11vw, 5rem);
+		line-height: 1.1;
+		color: var(--accent);
+		overflow-wrap: anywhere;
+	}
+	.content[data-compact] .detail {
+		font-size: clamp(1.6rem, 7vw, 3rem);
+	}
 	.content:not(:has(.area)) .title {
 		margin: auto 0;
+	}
+	/* A title with a word under it: the two sit together in the middle. */
+	.content:not(:has(.area)):has(.detail) .title {
+		margin: auto 0 0;
+	}
+	.content:not(:has(.area)) .detail {
+		margin-bottom: auto;
 	}
 	.title :global(strong) {
 		color: var(--accent);

@@ -11,4 +11,6 @@ export interface ShownInfoCard {
 	/** The card's text; `**bold**` is supported. */
 	title?: string;
 	characters?: readonly ShownCharacter[];
+	/** What the Storyteller filled in, shown as typed, e.g. the Mezepheles's secret word. */
+	detail?: string;
 }

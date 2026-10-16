@@ -28,5 +28,11 @@ export const infoTokens = {
 	'info-tokens.removeFromChain': 'Remove {name} from the chain',
 	'info-tokens.clearChain': 'Clear the chain',
 	'info-tokens.showCards': { one: 'Show {count} card', other: 'Show {count} cards' },
-	'info-tokens.bluffSets': 'Bluff sets'
+	'info-tokens.bluffSets': 'Bluff sets',
+	'info-tokens.characterCards': 'Characters',
+	'info-tokens.card.secretWord': 'Secret word',
+	'info-tokens.card.secretPhrase': 'Secret phrase',
+	'info-tokens.fill.word': 'Word',
+	'info-tokens.fill.phrase': 'Phrase',
+	'info-tokens.cardFor': '{card} ({name})'
 } as const;

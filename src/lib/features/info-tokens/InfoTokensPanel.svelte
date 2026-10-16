@@ -7,6 +7,7 @@
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import { characterCardsFor } from './character-cards.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
 	import { pickMax } from './pick.ts';
 
@@ -18,7 +19,10 @@
 	let { characters }: Props = $props();
 
 	let showOpen = $state(false);
-	let shown = $state<{ text: string; characterIds: CharacterId[] }>({ text: '', characterIds: [] });
+	let shown = $state<{ text: string; characterIds: CharacterId[]; detail?: string }>({
+		text: '',
+		characterIds: []
+	});
 	let pickOpen = $state(false);
 	let picking = $state<InfoToken>();
 	let picked = $state<CharacterId[]>([]);
@@ -31,8 +35,16 @@
 		})
 	);
 
-	function show(text: string, characterIds: CharacterId[] = []) {
-		shown = { text, characterIds };
+	// With no game open, every character's cards are listed (Trevor, 2026-10-16).
+	const characterCards = $derived(
+		characterCardsFor(characters.map((c) => c.id)).flatMap((card) => {
+			const character = byId.get(card.characterId);
+			return character ? [{ card, character }] : [];
+		})
+	);
+
+	function show(text: string, characterIds: CharacterId[] = [], detail?: string) {
+		shown = { text, characterIds, detail };
 		showOpen = true;
 	}
 
@@ -47,7 +59,11 @@
 
 <!-- The player view sits outside the boundary, so a crash here never closes it. -->
 <ErrorBoundary area="info-tokens">
-	<InfoTokenList onchoose={choose} />
+	<InfoTokenList
+		onchoose={choose}
+		{characterCards}
+		onchooseCharacter={({ title, detail }) => show(title, [], detail)}
+	/>
 
 	<BottomSheet bind:open={pickOpen} title={picking?.text ?? ''} height="85dvh">
 		{#if picking}
@@ -72,7 +88,10 @@
 	</BottomSheet>
 </ErrorBoundary>
 
-<ShowToPlayer bind:open={showOpen} title={shown.text} characters={shownCharacters} />
+<ShowToPlayer
+	bind:open={showOpen}
+	cards={[{ title: shown.text, characters: shownCharacters, detail: shown.detail }]}
+/>
 
 <style>
 	.sheet-actions {

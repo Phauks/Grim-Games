@@ -121,3 +121,14 @@ test('a chain of cards can be reordered and is shown together', async ({ page })
 	await page.getByRole('button', { name: 'Clear the chain' }).tap();
 	await expect(page.getByTestId('chain-list')).toHaveCount(0);
 });
+
+test('character cards load only for characters on the script', async ({ page }) => {
+	// Trouble Brewing has no Mezepheles, so there is no secret word card.
+	await openSheet(page);
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Info tokens' })
+			.getByRole('button', { name: 'Characters', exact: true })
+	).toBeVisible();
+	await expect(page.getByRole('button', { name: /^Secret word/ })).toHaveCount(0);
+});

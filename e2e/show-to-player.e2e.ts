@@ -170,3 +170,20 @@ test('the Storyteller adds more bluff sets and deletes one after confirming', as
 	await expect(page.getByTestId('bluff-set')).toHaveCount(2);
 	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 2"]')).toContainText('Mayor');
 });
+
+test("a character's own card is filled in and shown, e.g. the Mezepheles's secret word", async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	await page.getByRole('button', { name: 'Secret word (Mezepheles)' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Secret word (Mezepheles)' });
+	await dialog.getByRole('textbox', { name: 'Word' }).fill('lantern');
+	await dialog.getByRole('textbox', { name: 'Word' }).press('Enter');
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('heading')).toHaveText('Secret word');
+	await expect(shown).toContainText('lantern');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	// The word is kept for the next time.
+	await page.getByRole('button', { name: 'Secret word (Mezepheles)' }).tap();
+	await expect(dialog.getByRole('textbox', { name: 'Word' })).toHaveValue('lantern');
+});

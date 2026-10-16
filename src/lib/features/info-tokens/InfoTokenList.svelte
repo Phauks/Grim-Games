@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import type { Character } from '#lib/core/data/index.ts';
 	import { STANDARD_INFO_TOKENS, type InfoToken } from '#lib/core/data/info-tokens.ts';
+	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { plainText } from './bold.ts';
+	import type { CharacterCard } from './character-cards.ts';
 	import { MAX_CUSTOM_TEXT } from './custom-tokens.ts';
 	import { customInfoTokens } from './custom-tokens.svelte.ts';
 	import InfoTokenText from './InfoTokenText.svelte';
@@ -18,9 +21,25 @@
 		query?: string;
 		/** Heading level of the Standard and Custom sections. */
 		level?: 2 | 3;
+		/**
+		 * Cards that belong to characters (the Mezepheles's secret word), each with its
+		 * character. Given, a Characters section lists them (Trevor, 2026-10-16).
+		 */
+		characterCards?: readonly { card: CharacterCard; character: Character }[];
+		/** A character card was filled in: its text, character and what the Storyteller typed. */
+		onchooseCharacter?: (chosen: { title: string; character: Character; detail: string }) => void;
+		/** The fill-in dialog's main button, e.g. "Show" or "Add". */
+		fillAction?: string;
 	}
 
-	let { onchoose, query = '', level = 2 }: Props = $props();
+	let {
+		onchoose,
+		query = '',
+		level = 2,
+		characterCards,
+		onchooseCharacter,
+		fillAction
+	}: Props = $props();
 
 	const needle = $derived(query.trim().toLowerCase());
 	const matches = (token: InfoToken) =>
@@ -28,6 +47,35 @@
 	const standard = $derived(STANDARD_INFO_TOKENS.filter(matches));
 
 	const custom = $derived(customInfoTokens.list.filter(matches));
+	const characterRows = $derived(
+		(characterCards ?? []).filter(
+			({ card, character }) =>
+				needle === '' ||
+				t(card.titleKey).toLowerCase().includes(needle) ||
+				character.name.toLowerCase().includes(needle)
+		)
+	);
+
+	/** The character card being filled in, and the last text typed for each card. */
+	let filling = $state<{ card: CharacterCard; character: Character }>();
+	let fillOpen = $state(false);
+	let filled = $state<Record<string, string>>({});
+	const fillText = $derived(filling ? (filled[filling.card.id] ?? '') : '');
+
+	function fill(row: { card: CharacterCard; character: Character }) {
+		filling = row;
+		fillOpen = true;
+	}
+
+	function useFilled() {
+		if (!filling || !fillText.trim()) return;
+		fillOpen = false;
+		onchooseCharacter?.({
+			title: t(filling.card.titleKey),
+			character: filling.character,
+			detail: fillText.trim()
+		});
+	}
 
 	let editOpen = $state(false);
 	let editing = $state<{ id?: string; text: string; withCharacters: boolean }>({
@@ -101,7 +149,75 @@
 			{/each}
 		</ul>
 	</Collapsible>
+
+	{#if characterCards}
+		<Collapsible
+			title={t('info-tokens.characterCards')}
+			storageKey="info-tokens-characters"
+			{level}
+		>
+			<ul class="cards">
+				{#each characterRows as row (row.card.id)}
+					{@const title = t(row.card.titleKey)}
+					<li class="tile">
+						<button
+							type="button"
+							class="card character"
+							aria-label={t('info-tokens.cardFor', { card: title, name: row.character.name })}
+							onclick={() => fill(row)}
+						>
+							<span class="text">{title}</span>
+							<CharacterLabel character={row.character} />
+						</button>
+					</li>
+				{:else}
+					<li class="none">{t('common.none')}</li>
+				{/each}
+			</ul>
+		</Collapsible>
+	{/if}
 </div>
+
+<Dialog
+	bind:open={fillOpen}
+	title={filling
+		? t('info-tokens.cardFor', {
+				card: t(filling.card.titleKey),
+				name: filling.character.name
+			})
+		: ''}
+>
+	{#if filling}
+		<label class="field">
+			<span
+				>{t(
+					filling.card.fills === 'word' ? 'info-tokens.fill.word' : 'info-tokens.fill.phrase'
+				)}</span
+			>
+			<input
+				type="text"
+				value={fillText}
+				oninput={(e) => {
+					if (filling) filled[filling.card.id] = e.currentTarget.value;
+				}}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') {
+						e.preventDefault();
+						useFilled();
+					}
+				}}
+				autocomplete="off"
+				enterkeyhint="done"
+			/>
+		</label>
+	{/if}
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (fillOpen = false)}>{t('common.cancel')}</Button>
+		<Button variant="accent" icon="forward" disabled={!fillText.trim()} onclick={useFilled}
+			>{fillAction ?? t('info-tokens.show')}</Button
+		>
+	{/snippet}
+</Dialog>
 
 <Dialog bind:open={editOpen} title={t(editing.id ? 'info-tokens.edit' : 'info-tokens.add')}>
 	<label class="field">
@@ -201,6 +317,13 @@
 		overflow-wrap: anywhere;
 		cursor: pointer;
 	}
+	/* A character card: its text, then the character it belongs to. */
+	.card.character {
+		flex-direction: column;
+		align-items: flex-start;
+		justify-content: center;
+		gap: var(--space-1);
+	}
 	.card:hover {
 		background: color-mix(in srgb, currentColor 8%, transparent);
 	}
@@ -218,6 +341,10 @@
 		display: grid;
 		gap: var(--space-1);
 	}
+	input {
+		min-height: var(--tap-target);
+	}
+	input,
 	textarea {
 		width: 100%;
 		padding: var(--space-2);

@@ -13,6 +13,7 @@
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { plainText } from './bold.ts';
 	import { pickMax } from './pick.ts';
+	import { characterCardsFor } from './character-cards.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
 
 	interface Props {
@@ -47,6 +48,8 @@
 	interface Card {
 		text: string;
 		characterIds: CharacterId[];
+		/** What the Storyteller filled in, e.g. the Mezepheles's secret word. */
+		detail?: string;
 	}
 
 	/**
@@ -63,9 +66,17 @@
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const names = (ids: readonly CharacterId[]) =>
 		ids.map((id) => byId.get(id)?.name ?? id).join(', ');
+	// Cards of characters on the script (Trevor, 2026-10-16).
+	const characterCards = $derived(
+		characterCardsFor(characters.map((c) => c.id)).flatMap((card) => {
+			const character = byId.get(card.characterId);
+			return character ? [{ card, character }] : [];
+		})
+	);
 	const shownCards = $derived(
 		shown.map((card) => ({
 			title: card.text,
+			detail: card.detail,
 			characters: card.characterIds.flatMap((id) => {
 				const character = byId.get(id);
 				return character ? [{ character }] : [];
@@ -73,9 +84,11 @@
 		}))
 	);
 	const chainLabel = (card: Card) =>
-		card.characterIds.length
-			? `${plainText(card.text)} (${names(card.characterIds)})`
-			: plainText(card.text);
+		card.detail
+			? `${plainText(card.text)}: ${card.detail}`
+			: card.characterIds.length
+				? `${plainText(card.text)} (${names(card.characterIds)})`
+				: plainText(card.text);
 
 	/** Moves a chain card one place up (-1) or down (1). */
 	function move(index: number, by: -1 | 1) {
@@ -129,8 +142,8 @@
 	}
 
 	/** Shows the card now, or adds it to the chain. */
-	function use(text: string, characterIds: readonly CharacterId[] = []) {
-		const card = { text, characterIds: [...characterIds] };
+	function use(text: string, characterIds: readonly CharacterId[] = [], detail?: string) {
+		const card = { text, characterIds: [...characterIds], detail };
 		view = { kind: 'list' };
 		if (mode === 'chain') chainCards = [...chainCards, card];
 		else show([card]);
@@ -188,7 +201,14 @@
 					onclick={() => (query = '')}><Icon name="close" /></button
 				>
 			</div>
-			<InfoTokenList onchoose={choose} {query} level={3} />
+			<InfoTokenList
+				onchoose={choose}
+				{query}
+				level={3}
+				{characterCards}
+				onchooseCharacter={({ title, detail }) => use(title, [], detail)}
+				fillAction={t(mode === 'chain' ? 'info-tokens.addToChain' : 'info-tokens.show')}
+			/>
 			{#if mode === 'chain'}
 				<div class="chain" role="group" aria-label={t('info-tokens.chain')}>
 					{#if chainCards.length === 0}

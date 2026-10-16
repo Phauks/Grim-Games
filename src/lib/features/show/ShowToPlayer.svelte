@@ -116,7 +116,12 @@
 							class="cell"
 							aria-label={t('show.card', { number: i + 1, count: shownCards.length })}
 						>
-							<ShownCard title={card.title} characters={card.characters} compact />
+							<ShownCard
+								title={card.title}
+								characters={card.characters}
+								detail={card.detail}
+								compact
+							/>
 						</section>
 					{/each}
 				</div>
@@ -129,7 +134,7 @@
 							aria-label={t('show.card', { number: i + 1, count: shownCards.length })}
 							inert={i !== current}
 						>
-							<ShownCard title={card.title} characters={card.characters} />
+							<ShownCard title={card.title} characters={card.characters} detail={card.detail} />
 						</section>
 					{/each}
 				</div>
@@ -155,7 +160,11 @@
 					>
 				</div>
 			{:else}
-				<ShownCard title={shownCards[0]?.title} characters={shownCards[0]?.characters} />
+				<ShownCard
+					title={shownCards[0]?.title}
+					characters={shownCards[0]?.characters}
+					detail={shownCards[0]?.detail}
+				/>
 			{/if}
 			{#snippet fallback()}
 				<div class="fallback" data-testid="show-failed">
