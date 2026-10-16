@@ -43,6 +43,11 @@ test('the day screen logs a nomination and execution, survives a reload and show
 	const log = page.getByTestId('day-log');
 	await expect(log).toContainText('Seat 1 nominated Seat 2');
 	await log.getByRole('button', { name: 'Execute Seat 2' }).tap();
+	// The confirm states the player's current state and the new one.
+	const execute = page.getByRole('alertdialog', { name: 'Execute Seat 2?' });
+	await expect(execute).toContainText('Seat 2 is alive.');
+	await expect(execute).toContainText('Seat 2 is executed and dead.');
+	await execute.getByRole('button', { name: 'Execute', exact: true }).tap();
 	await expect(log).toContainText('Seat 2 executed');
 	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
 
@@ -72,13 +77,22 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 	await seat(page, 'Seat 9').tap();
 	const log = page.getByTestId('day-log');
 	await log.getByRole('button', { name: 'Exile Seat 9' }).tap();
+	const exile = page.getByRole('alertdialog', { name: 'Exile Seat 9?' });
+	await expect(exile).toContainText('Seat 9 is exiled and dead.');
+	await exile.getByRole('button', { name: 'Exile', exact: true }).tap();
 	await expect(log).toContainText('Seat 9 exiled');
 
 	// Marking a death by hand: no characters are in play, so no character is offered.
 	await page.getByRole('radiogroup', { name: 'Tapping a player' }).getByText('Dead').tap();
 	await seat(page, 'Seat 3').tap();
-	const causes = page.getByRole('dialog', { name: 'How did Seat 3 die?' });
-	await expect(causes.getByRole('button')).toHaveText(['Executed', 'Killed by the Demon', 'Skip']);
+	const causes = page.getByRole('dialog', { name: 'Mark Seat 3 dead?' });
+	await expect(causes).toContainText('Now: alive. After: dead');
+	await expect(causes.getByRole('button')).toHaveText([
+		'Executed',
+		'Killed by the Demon',
+		'Dead, no cause',
+		'Cancel'
+	]);
 	await causes.getByRole('button', { name: 'Killed by the Demon' }).tap();
 	await expect(causes).toBeHidden();
 	await expect(seat(page, 'Seat 3')).toHaveAttribute('data-dead', 'true');

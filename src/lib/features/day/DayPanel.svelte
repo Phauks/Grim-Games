@@ -56,12 +56,10 @@
 
 	function tapSeat(seatId: SeatId) {
 		if (mode === 'dead') {
-			const dead = !g.seats[seatId].dead;
-			if (!game.run({ type: 'SetDead', seatId, dead })) return;
-			if (dead && assistance.deathCause) {
-				causeSeat = seatId;
-				causeOpen = true;
-			}
+			// Says what the player is now and what they will be before anything changes
+			// (Trevor, 2026-10-16).
+			causeSeat = seatId;
+			causeOpen = true;
 			return;
 		}
 		if (!nominator) {
@@ -72,9 +70,63 @@
 		nominator = undefined;
 	}
 
-	function setCause(cause: DeathCause) {
-		if (causeSeat) game.run({ type: 'SetDeathCause', seatId: causeSeat, cause });
+	/** Marks the chosen player dead (with a cause, if given) or alive again. */
+	function setDead(dead: boolean, cause?: DeathCause) {
+		if (causeSeat) {
+			game.run({ type: 'SetDead', seatId: causeSeat, dead, ...(cause ? { cause } : {}) });
+		}
 		causeOpen = false;
+	}
+
+	const causeSeatDead = $derived(causeSeat ? g.seats[causeSeat]?.dead === true : false);
+
+	// ── Confirming a change: what it is now, and what it will be ──
+	interface Pending {
+		title: string;
+		now: string;
+		after: string;
+		label: string;
+		run: () => void;
+	}
+	let pending = $state<Pending>();
+	let pendingOpen = $state(false);
+
+	function ask(change: Pending) {
+		pending = change;
+		pendingOpen = true;
+	}
+
+	function confirmPending() {
+		pending?.run();
+		pendingOpen = false;
+	}
+
+	function askRemove(seatId: SeatId) {
+		const exile = isTraveller(g, seatId, game.characters);
+		const name = game.seatName(seatId);
+		const dead = g.seats[seatId].dead;
+		const verb = exile ? 'exiled' : 'executed';
+		ask({
+			title: `${exile ? 'Exile' : 'Execute'} ${name}?`,
+			now: dead ? `${name} is dead.` : `${name} is alive.`,
+			after: dead
+				? `${name} stays dead; the ${exile ? 'exile' : 'execution'} is only logged.`
+				: `${name} is ${verb} and dead.`,
+			label: exile ? 'Exile' : 'Execute',
+			run: () => game.run({ type: exile ? 'Exile' : 'Execute', seatId })
+		});
+	}
+
+	function askUsed(seatId: SeatId, characterId: CharacterId) {
+		const who = `${game.characterName(characterId)} (${game.seatName(seatId)})`;
+		const token = game.characters.get(characterId)?.reminders.includes('No Ability');
+		ask({
+			title: `Mark ${who} as used?`,
+			now: `${who} has not used their ability.`,
+			after: `${who} has used their ability${token ? ' and gets the No Ability reminder' : ''}.`,
+			label: 'Mark used',
+			run: () => game.run({ type: 'UseAbility', seatId, characterId })
+		});
 	}
 
 	/** Only the causes that could be true for this player (core `validDeathCauses`). */
@@ -187,7 +239,7 @@
 				aria-pressed={isUsed}
 				aria-label={`Used: ${who}`}
 				disabled={isUsed}
-				onclick={() => game.run({ type: 'UseAbility', seatId, characterId })}
+				onclick={() => askUsed(seatId, characterId)}
 			>
 				<span class="tick"><Icon name="check" /></span>Used
 			</button>
@@ -346,12 +398,7 @@
 							{#if entry.kind === 'nomination'}
 								<!-- Travellers are exiled, not executed. -->
 								{@const exile = isTraveller(g, entry.nominee, game.characters)}
-								<button
-									type="button"
-									class="chip"
-									onclick={() =>
-										game.run({ type: exile ? 'Exile' : 'Execute', seatId: entry.nominee })}
-								>
+								<button type="button" class="chip" onclick={() => askRemove(entry.nominee)}>
 									{exile ? 'Exile' : 'Execute'}
 									{game.seatName(entry.nominee)}
 								</button>
@@ -384,22 +431,50 @@
 
 <BottomSheet
 	bind:open={causeOpen}
-	title={`How did ${game.seatName(causeSeat)} die?`}
-	description="Optional. You can set it later."
+	title={causeSeatDead
+		? `Mark ${game.seatName(causeSeat)} alive?`
+		: `Mark ${game.seatName(causeSeat)} dead?`}
+	description={causeSeatDead
+		? `Now: dead. After: alive.`
+		: `Now: alive. After: dead${assistance.deathCause ? ', with the cause you choose (optional)' : ''}.`}
 >
 	<div class="causes">
-		{#each causes as option (option.cause)}
-			{@const caution = causeCaution(option)}
-			<Button variant="quiet" onclick={() => setCause(option.cause)}>
-				{causeLabel(option.cause)}{#if caution}<span class="caution">({caution})</span>{/if}
-			</Button>
-		{/each}
-		<Button variant="quiet" onclick={() => (causeOpen = false)}>Skip</Button>
+		{#if causeSeatDead}
+			<Button onclick={() => setDead(false)}>Mark alive</Button>
+		{:else}
+			{#if assistance.deathCause}
+				{#each causes as option (option.cause)}
+					{@const caution = causeCaution(option)}
+					<Button variant="quiet" onclick={() => setDead(true, option.cause)}>
+						{causeLabel(option.cause)}{#if caution}<span class="caution">({caution})</span>{/if}
+					</Button>
+				{/each}
+			{/if}
+			<Button variant="quiet" onclick={() => setDead(true)}>Dead, no cause</Button>
+		{/if}
+		<Button variant="quiet" onclick={() => (causeOpen = false)}>Cancel</Button>
 	</div>
 </BottomSheet>
 
+<Dialog bind:open={pendingOpen} role="alertdialog" title={pending?.title ?? ''}>
+	{#if pending}
+		<p class="state"><span class="state-label">Now</span>{pending.now}</p>
+		<p class="state"><span class="state-label">After</span>{pending.after}</p>
+	{/if}
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (pendingOpen = false)}>Cancel</Button>
+		<Button onclick={confirmPending}>{pending?.label ?? ''}</Button>
+	{/snippet}
+</Dialog>
+
 <Dialog bind:open={confirmNewDay} role="alertdialog" title="Start a new day?">
-	<p>Today’s log moves to history and an empty one starts. History can roll this back.</p>
+	<p class="state">
+		<span class="state-label">Now</span>Today’s log has {g.today.entries.length}
+		{g.today.entries.length === 1 ? 'entry' : 'entries'}.
+	</p>
+	<p class="state">
+		<span class="state-label">After</span>The log is empty; today’s entries move to History.
+	</p>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (confirmNewDay = false)}>Cancel</Button>
 		<Button onclick={newDay}>Start new day</Button>
@@ -576,6 +651,15 @@
 	.causes {
 		display: grid;
 		gap: var(--space-2);
+	}
+	.state {
+		margin: 0 0 var(--space-2);
+	}
+	.state-label {
+		display: inline-block;
+		min-width: calc(4 * var(--u));
+		margin-right: var(--space-2);
+		font-weight: 700;
 	}
 	.caution {
 		margin-left: var(--space-1);

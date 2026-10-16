@@ -81,7 +81,7 @@ test('a Witch nomination makes the Town Crier answer yes; Demon voted feeds the 
 	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 });
 
-test('the Slayer is marked Used in one tap, and the Washerwoman picks her info', async ({
+test('the Slayer is marked Used after a confirm, and the Washerwoman picks her info', async ({
 	page
 }) => {
 	await loaded(page);
@@ -89,6 +89,9 @@ test('the Slayer is marked Used in one tap, and the Washerwoman picks her info',
 	const used = page.getByRole('button', { name: 'Used: Slayer (Ben)' });
 	const before = await place(used);
 	await used.tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Mark Slayer (Ben) as used?' });
+	await expect(confirm).toContainText('Slayer (Ben) has not used their ability.');
+	await confirm.getByRole('button', { name: 'Mark used' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByTestId('day-log')).toContainText('Slayer (Ben) used their ability');
 	// The reminder stays where it was, pressed, so the list does not jump.
