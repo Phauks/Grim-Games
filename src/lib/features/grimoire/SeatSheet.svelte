@@ -146,7 +146,12 @@
 	// ── Death ──
 	let causeOpen = $state(false);
 	// Only the causes that fit this player (core); "Something else" is always last.
-	const causes = $derived(seatId && open ? validDeathCauses(game, seatId, characters) : []);
+	// "Something else" is not offered (Trevor, 2026-10-16): None covers an unknown cause.
+	const causes = $derived(
+		seatId && open
+			? validDeathCauses(game, seatId, characters).filter((c) => c.cause !== 'other')
+			: []
+	);
 	let flagged = $state<ValidDeathCause | undefined>();
 	let flagOpen = $state(false);
 
@@ -315,6 +320,14 @@
 				<ul class="reminders">
 					{#each seat.reminders as reminder (reminder.reminderId)}
 						<li>
+							<!-- Ticking a reminder off takes it off the seat (History can bring it back). -->
+							<button
+								type="button"
+								class="tick"
+								aria-label={`Done: remove ${reminder.label}`}
+								onclick={() =>
+									grimoire.run({ type: 'RemoveReminder', reminderId: reminder.reminderId })}
+							></button>
 							<ReminderToken
 								label={reminder.label}
 								type={characters.get(reminder.characterId)?.type}
@@ -797,6 +810,18 @@
 	}
 	.cause[aria-pressed='true'] {
 		border-color: var(--focus);
+	}
+	.tick {
+		flex: none;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		border: 2px solid var(--border);
+		border-radius: var(--radius-md);
+		background: none;
+		cursor: pointer;
+	}
+	.tick:hover {
+		background: var(--surface-selected);
 	}
 	.cause-row {
 		display: grid;

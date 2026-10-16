@@ -59,7 +59,7 @@
 <Dialog
 	bind:open
 	title="History"
-	description="Newest first. Tap a change to go back to just before it."
+	description="Newest first. Restore takes the game back to just before a change."
 	size="full"
 >
 	<ol class="history">
@@ -70,20 +70,14 @@
 					{item.cursor === cursor ? 'Now · ' : item.undone ? 'Undone · ' : ''}{time.format(item.at)}
 				</span>
 				{#if item.cursor > 1}
-					<Button variant="quiet" onclick={() => choose(item)}>
-						{item.undone ? 'Restore' : 'Go back'}
-					</Button>
+					<Button variant="quiet" onclick={() => choose(item)}>Restore</Button>
 				{/if}
 			</li>
 		{/each}
 	</ol>
 </Dialog>
 
-<Dialog
-	bind:open={confirmOpen}
-	title={chosen?.item.undone ? 'Restore changes?' : 'Go back?'}
-	role="alertdialog"
->
+<Dialog bind:open={confirmOpen} title="Restore?" role="alertdialog">
 	{#if chosen}
 		<p>
 			{chosen.item.undone ? 'Restores' : 'Undoes'}
@@ -101,9 +95,7 @@
 	{/if}
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (confirmOpen = false)}>Cancel</Button>
-		<Button variant="accent" icon="history" onclick={confirm}>
-			{chosen?.item.undone ? 'Restore' : 'Go back'}
-		</Button>
+		<Button variant="accent" icon="history" onclick={confirm}>Restore</Button>
 	{/snippet}
 </Dialog>
 
