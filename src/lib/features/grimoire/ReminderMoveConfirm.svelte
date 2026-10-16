@@ -1,6 +1,10 @@
 <script lang="ts">
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import { fixedReminderMove, type FixedReminderMove } from '#lib/core/rules/index.ts';
+	import {
+		fixedReminderMove,
+		fixedReminderReason,
+		type FixedReminderMove
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -9,7 +13,9 @@
 	/**
 	 * Moving a reminder that normally stays where it was put (an "Is The Drunk", a Poisoned
 	 * on the Poisoner's target) asks first (Trevor, 2026-10-16), with why it stays and any
-	 * character in play that does move tokens. Confirming moves it as usual; nothing is locked.
+	 * character in play that does move tokens. Taking one off its seat, back to the reminder
+	 * bank, asks the same way. Confirming does it as usual (History can undo it); nothing is
+	 * locked.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -20,7 +26,11 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	let open = $state(false);
-	let pending = $state<{ reminderId: ReminderId; move: FixedReminderMove }>();
+	/** A move to another seat, or back to the bank when `toSeatId` is left out. */
+	let pending = $state<{
+		reminderId: ReminderId;
+		move: Omit<FixedReminderMove, 'toSeatId'> & { toSeatId?: SeatId };
+	}>();
 	/** "Seat 3 (Alex)", or "Seat 3" without a name. */
 	function seatLabel(seatId: SeatId) {
 		const n = `Seat ${game.seating.indexOf(seatId) + 1}`;
@@ -39,14 +49,34 @@
 		open = true;
 	}
 
+	/** Takes the reminder off its seat, back to the bank, asking first when it stays put. */
+	export function requestReturn(reminderId: ReminderId): void {
+		for (const seatId of game.seating) {
+			const reminder = game.seats[seatId].reminders.find((r) => r.reminderId === reminderId);
+			if (!reminder) continue;
+			const why = fixedReminderReason(reminder);
+			if (why === undefined) break;
+			pending = {
+				reminderId,
+				move: {
+					reminder: { characterId: reminder.characterId, label: reminder.label },
+					fromSeatId: seatId,
+					why,
+					relocators: []
+				}
+			};
+			open = true;
+			return;
+		}
+		grimoire.run({ type: 'RemoveReminder', reminderId });
+	}
+
 	function confirm() {
 		open = false;
-		if (pending)
-			grimoire.run({
-				type: 'MoveReminder',
-				reminderId: pending.reminderId,
-				toSeatId: pending.move.toSeatId
-			});
+		const to = pending?.move.toSeatId;
+		if (pending && to)
+			grimoire.run({ type: 'MoveReminder', reminderId: pending.reminderId, toSeatId: to });
+		else if (pending) grimoire.run({ type: 'RemoveReminder', reminderId: pending.reminderId });
 		pending = undefined;
 	}
 </script>
@@ -64,7 +94,7 @@
 			<dt>Now</dt>
 			<dd>On {seatLabel(move.fromSeatId)}</dd>
 			<dt>Becomes</dt>
-			<dd>On {seatLabel(move.toSeatId)}</dd>
+			<dd>{move.toSeatId ? `On ${seatLabel(move.toSeatId)}` : 'Back in the reminder bank'}</dd>
 		</dl>
 		<p class="why">{move.why}</p>
 		{#each move.relocators as relocator (relocator.characterId)}

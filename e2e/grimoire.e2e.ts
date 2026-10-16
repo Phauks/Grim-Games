@@ -97,7 +97,10 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	// Status is one list: Alive, then the causes of death.
 	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
 	const cause = page.getByRole('dialog', { name: 'Status of Ana' });
-	await expect(cause.getByRole('button', { name: 'Alive' })).toHaveAttribute('aria-pressed', 'true');
+	await expect(cause.getByRole('button', { name: 'Alive' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 	await cause.getByRole('button', { name: 'Executed' }).tap();
 	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
 	// Alive brings them back, after saying what changes.
@@ -374,6 +377,11 @@ test('reminders: add several from the picker, recent first, then move and remove
 		.getByRole('dialog', { name: 'Is The Drunk' })
 		.getByRole('button', { name: 'Remove' })
 		.tap();
+	// It normally stays put, so taking it off asks first.
+	await page
+		.getByRole('alertdialog', { name: 'Confirm change?' })
+		.getByRole('button', { name: 'Confirm change' })
+		.tap();
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
 
@@ -557,7 +565,8 @@ test('the night order opens from the board and steps are ticked by hand', async 
 
 test('the script is shared from the grimoire menu, never the game', async ({ page }) => {
 	await startGame(page);
-	await menu(page, 'Share script');
+	// Share sits in the toolbar, never hidden in the menu.
+	await page.getByRole('button', { name: 'Share script' }).tap();
 	const share = page.getByRole('dialog', { name: 'Share script' });
 	await expect(share).toContainText('never anything from this game');
 	// The QR code and link show straight away; an official edition shares by its id,
@@ -685,7 +694,7 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	// Every setup reminder placed: the bank now holds every reminder left.
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 
-	// Dragged back onto the bank, it waits there again.
+	// Dragged back onto the bank, it waits there again, once confirmed: it normally stays put.
 	const placed = page.getByRole('button', { name: 'Wrong reminder' }).first();
 	const back = (await placed.boundingBox())!;
 	const trayBox = (await page.locator('[data-tray]').boundingBox())!;
@@ -695,6 +704,9 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 		steps: 8
 	});
 	await page.mouse.up();
+	const back2 = page.getByRole('alertdialog', { name: 'Confirm change?' });
+	await expect(back2).toContainText(/Now\s*On Seat 4\s*Becomes\s*Back in the reminder bank/);
+	await back2.getByRole('button', { name: 'Confirm change' }).tap();
 	await expect(seatLabelled(page, 'Seat 4: no name, no character')).toHaveAttribute(
 		'aria-label',
 		'Seat 4: no name, no character'
@@ -708,12 +720,16 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	await expect(bank.getByRole('button', { name: 'Townsfolk reminder' })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Showing all reminders; show setup reminders' }).tap();
 
-	// From the seat sheet too: Return to setup tray.
+	// From the seat sheet too: Return to reminder bank.
 	const sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
 	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
 	await expect(actions).toContainText('From the Washerwoman (Seat 1)');
-	await actions.getByRole('button', { name: 'Return to setup tray' }).tap();
+	await actions.getByRole('button', { name: 'Return to reminder bank' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Confirm change?' })
+		.getByRole('button', { name: 'Confirm change' })
+		.tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Empath')).toHaveAttribute(
 		'aria-label',
 		'Seat 2: no name, Empath'
@@ -935,6 +951,13 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(strip).toContainText(/1 of \d+/);
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
 	await expect(strip).toHaveCount(0);
+
+	// A step shows the game state that matters: the Empath is poisoned (core nightStepAlerts).
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Guide: Empath' }).tap();
+	await expect(
+		page.getByRole('dialog', { name: 'Empath' }).getByTestId('night-alerts')
+	).toContainText(/Empath.*Seat 2.*poisoned.*Poisoner/);
 });
 
 test('moving a reminder that normally stays put asks first, saying why', async ({ page }) => {

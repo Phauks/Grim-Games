@@ -1,5 +1,6 @@
 <script lang="ts">
 	import StepIcon from './StepIcon.svelte';
+	import NightAlerts from './NightAlerts.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -77,6 +78,7 @@
 				{holders.length > 0 ? holders.map((s) => seatName(game, s)).join(', ') : 'None'}
 			</p>
 		</div>
+		<NightAlerts {grimoire} {step} />
 		{#if step.reminder}
 			<p class="text">
 				{#if step.character}

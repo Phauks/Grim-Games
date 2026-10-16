@@ -55,6 +55,7 @@
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
+	import { stepReminders } from './reminders.ts';
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 
@@ -215,7 +216,7 @@
 		// Dropped back on the setup reminders tray: it waits there again (History has it).
 		const tray = board.querySelector('[data-tray]')?.getBoundingClientRect();
 		if (tray && x >= tray.left && x <= tray.right && y >= tray.top && y <= tray.bottom) {
-			grimoire.run({ type: 'RemoveReminder', reminderId });
+			moveConfirm?.requestReturn(reminderId);
 			return;
 		}
 		// Dropped on another seat: moved (one History entry). Anywhere else: nothing changes.
@@ -524,6 +525,13 @@
 			<Button variant="quiet" icon="info" aria-label="Info tokens" onclick={() => (infoOpen = true)}
 				><span class="tool-label">Info tokens</span></Button
 			>
+			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). -->
+			<Button
+				variant="quiet"
+				icon="share"
+				aria-label="Share script"
+				onclick={() => (shareOpen = true)}><span class="tool-label">Share</span></Button
+			>
 			<Button variant="quiet" icon="arrange" aria-label="Arrange seats" onclick={startArranging}
 				><span class="tool-label">Arrange seats</span></Button
 			>
@@ -650,7 +658,9 @@
 			size={chip}
 			view={bankView}
 			onView={(v) => (bankChosen = v)}
-			focus={walkStep?.character?.id}
+			focus={walk && walkStep?.character
+				? stepReminders(walkStep.character.id, walk.night)
+				: undefined}
 			{seatAt}
 			onHints={(h) => (trayHints = h)}
 		/>
@@ -724,9 +734,6 @@
 		</Button>
 		<Button variant="quiet" icon="reminder" onclick={() => fromMenu(startTray)}>
 			Setup reminders
-		</Button>
-		<Button variant="quiet" icon="share" onclick={() => fromMenu(() => (shareOpen = true))}>
-			Share script
 		</Button>
 		<Button
 			variant="quiet"

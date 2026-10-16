@@ -4,7 +4,8 @@
  * `reminders` while it is in play, and its `remindersGlobal` whenever it is on the script.
  */
 import type { Character, CharacterId } from '#lib/core/data/index.ts';
-import { gainedAbilities } from '#lib/core/rules/index.ts';
+import { gainedAbilities, type Night } from '#lib/core/rules/index.ts';
+import { REMINDER_PLACEHOLDERS } from '#lib/core/rules/reminder-placeholders.data.ts';
 import {
 	charactersInPlay,
 	scriptCharacterIds,
@@ -16,7 +17,7 @@ import {
 
 export interface ReminderGroup {
 	character: Character;
-	/** Distinct labels, in TPI's order. */
+	/** Distinct labels, alphabetically with numbers in order (`byLabel`). */
 	labels: string[];
 }
 
@@ -41,7 +42,8 @@ export function reminderGroups(game: Game, characters: CharacterLookup): Reminde
 			...gainedAbilities(game).map((gained) => gained.characterId)
 		])
 	];
-	const onScript = scriptCharacterIds(game.script).filter((id) => !inPlay.includes(id));
+	const script = scriptCharacterIds(game.script);
+	const onScript = script.filter((id) => !inPlay.includes(id));
 	const groups: ReminderGroup[] = [];
 	for (const id of [...inPlay, ...onScript]) {
 		const character = characters.get(id);
@@ -49,10 +51,21 @@ export function reminderGroups(game: Game, characters: CharacterLookup): Reminde
 		const labels = inPlay.includes(id)
 			? unique([...character.reminders, ...character.remindersGlobal])
 			: unique(character.remindersGlobal);
-		if (labels.length > 0) groups.push({ character, labels });
+		if (labels.length > 0) groups.push({ character, labels: labels.sort(byLabel) });
 	}
-	return groups;
+	// In script order, then characters off the script by name (Trevor, 2026-10-16).
+	const at = (id: CharacterId) => {
+		const i = script.indexOf(id);
+		return i < 0 ? script.length : i;
+	};
+	return groups.sort(
+		(a, b) => at(a.character.id) - at(b.character.id) || byLabel(a.character.name, b.character.name)
+	);
 }
+
+/** Reminder names alphabetically, with numbers in order: "Drunk 2" before "Drunk 10". */
+export const byLabel = (a: string, b: string): number =>
+	a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 
 /**
  * How many of each reminder token the game has. A token can be on the board once, unless
@@ -121,30 +134,48 @@ export interface BankReminder {
 	label: string;
 	/** Copies not yet on the board. */
 	left: number;
+	/** Used by the night step being walked through: first in the bank, and marked. */
+	now: boolean;
+}
+
+/** The reminders a character's night step puts on players that night. */
+export interface StepReminders {
+	characterId: CharacterId;
+	labels: readonly string[];
+}
+
+/**
+ * The reminders a character places at its step on `night` (Trevor, 2026-10-16: "only
+ * highlight a token if it could be used that night"), from what each `:reminder:` in TPI's
+ * night text means (`REMINDER_PLACEHOLDERS`). A step whose text handles no token places none:
+ * the Grandmother's Dead token is never used on the first night.
+ */
+export function stepReminders(characterId: CharacterId, night: Night): StepReminders {
+	const entries = REMINDER_PLACEHOLDERS[`${characterId}:${night}`] ?? [];
+	const labels = entries.flatMap((e) =>
+		e.tokens.filter((t) => t.action === 'place').map((t) => t.label)
+	);
+	return { characterId, labels: [...new Set(labels)] };
 }
 
 /**
  * The reminder bank once setup is over (Trevor, 2026-10-16): every reminder of a character
- * in play that still has a copy off the board, in the picker's order, with `focus` (the
- * character whose night step is being walked through) first.
+ * in play that still has a copy off the board, in the picker's order, with the reminders the
+ * walked-through step uses tonight (`focus`) first.
  */
 export function bankReminders(
 	game: Game,
 	characters: CharacterLookup,
-	focus?: CharacterId
+	focus?: StepReminders
 ): BankReminder[] {
 	const left = reminderCopiesLeft(game, characters);
-	const groups = reminderGroups(game, characters);
-	const first = groups.filter((g) => g.character.id === focus);
 	const out: BankReminder[] = [];
-	for (const { character, labels } of [
-		...first,
-		...groups.filter((g) => g.character.id !== focus)
-	]) {
+	for (const { character, labels } of reminderGroups(game, characters)) {
 		for (const label of labels) {
 			const n = left.get(reminderKey({ characterId: character.id, label })) ?? 1;
-			if (n > 0) out.push({ characterId: character.id, label, left: n });
+			const now = focus?.characterId === character.id && focus.labels.includes(label);
+			if (n > 0) out.push({ characterId: character.id, label, left: n, now });
 		}
 	}
-	return out;
+	return [...out.filter((r) => r.now), ...out.filter((r) => !r.now)];
 }

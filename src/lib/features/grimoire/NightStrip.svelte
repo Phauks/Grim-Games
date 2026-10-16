@@ -1,5 +1,6 @@
 <script lang="ts">
 	import StepIcon from './StepIcon.svelte';
+	import NightAlerts from './NightAlerts.svelte';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -55,6 +56,7 @@
 						>{/each}
 					<span class="count">{index + 1} of {steps.length}</span>
 				</span>
+				<NightAlerts {grimoire} {step} compact />
 				<span class="text">
 					{#if step.reminder}
 						{#if step.character}
@@ -149,6 +151,11 @@
 		min-width: 0;
 		max-height: 100%;
 		overflow-y: auto;
+		/* Scrolls by swipe or wheel, with no bar drawn (Trevor, 2026-10-16). */
+		scrollbar-width: none;
+	}
+	.body::-webkit-scrollbar {
+		display: none;
 	}
 	.name {
 		font-family: var(--font-character);

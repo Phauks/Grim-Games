@@ -401,8 +401,7 @@
 								type="button"
 								class="tick"
 								aria-label={`Done: remove ${reminder.label}`}
-								onclick={() =>
-									grimoire.run({ type: 'RemoveReminder', reminderId: reminder.reminderId })}
+								onclick={() => moveConfirm?.requestReturn(reminder.reminderId)}
 							></button>
 							<ReminderToken
 								label={reminder.label}
@@ -754,19 +753,19 @@
 			disabled={!fromSetup}
 			onclick={() =>
 				fromMenu(() => {
-					// Taken off the seat, it waits in the Setup reminders tray again.
-					if (moving) grimoire.run({ type: 'RemoveReminder', reminderId: moving });
+					// Taken off the seat, it waits in the reminder bank again.
+					if (moving) moveConfirm?.requestReturn(moving);
 					moving = undefined;
 				})}
 		>
-			Return to setup tray
+			Return to reminder bank
 		</Button>
 		<Button
 			variant="quiet"
 			icon="remove"
 			onclick={() =>
 				fromMenu(() => {
-					if (moving) grimoire.run({ type: 'RemoveReminder', reminderId: moving });
+					if (moving) moveConfirm?.requestReturn(moving);
 					moving = undefined;
 				})}
 		>

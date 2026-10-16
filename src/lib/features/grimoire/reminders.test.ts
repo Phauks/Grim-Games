@@ -5,6 +5,8 @@ import { characterLookup } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	bankReminders,
+	byLabel,
+	stepReminders,
 	parseReminderKey,
 	reminderCopiesLeft,
 	reminderGroups,
@@ -32,9 +34,12 @@ function game() {
 
 describe('reminderGroups', () => {
 	// https://wiki.bloodontheclocktower.com/Drunk : "Is The Drunk" is a global reminder.
-	it('offers characters in play first, then only global reminders of the rest', () => {
+	it('offers characters in play, and only global reminders of the rest, in script order', () => {
 		const groups = reminderGroups(game(), characters);
-		expect(groups[0]).toMatchObject({ character: { id: 'poisoner' }, labels: ['Poisoned'] });
+		const ids = groups.map((g) => g.character.id);
+		// Trouble Brewing lists the Drunk (an Outsider) before the Poisoner (a Minion).
+		expect(ids.indexOf('drunk')).toBeLessThan(ids.indexOf('poisoner'));
+		expect(groups.find((g) => g.character.id === 'poisoner')?.labels).toEqual(['Poisoned']);
 		const drunk = groups.find((g) => g.character.id === 'drunk');
 		expect(drunk?.labels).toEqual(['Is The Drunk']);
 		expect(groups.some((g) => g.character.id === 'washerwoman')).toBe(false);
@@ -94,7 +99,7 @@ describe('bankReminders', () => {
 	};
 	it('holds every reminder still off the board, and loses one once it is placed', () => {
 		let g = game();
-		const poisoned = { characterId: 'poisoner', label: 'Poisoned', left: 1 };
+		const poisoned = { characterId: 'poisoner', label: 'Poisoned', left: 1, now: false };
 		expect(bankReminders(g, characters)).toContainEqual(poisoned);
 		g = run(g, {
 			type: 'AddReminder',
@@ -106,11 +111,31 @@ describe('bankReminders', () => {
 	it("puts the walked-through character's reminders first", () => {
 		let g = game();
 		g = run(g, { type: 'AssignCharacter', seatId: g.seating[1], characterId: 'monk' });
-		expect(bankReminders(g, characters)[0].characterId).toBe('poisoner');
-		expect(bankReminders(g, characters, 'monk')[0]).toMatchObject({
+		// Script order otherwise: the Monk (a Townsfolk) before the Poisoner.
+		expect(bankReminders(g, characters)[0].characterId).toBe('monk');
+		expect(bankReminders(g, characters)[0].now).toBe(false);
+		expect(bankReminders(g, characters, stepReminders('monk', 'other'))[0]).toMatchObject({
 			characterId: 'monk',
-			label: 'Safe'
+			label: 'Safe',
+			now: true
 		});
+	});
+	// https://wiki.bloodontheclocktower.com/Grandmother : her grandchild's death kills her,
+	// which can only happen after the first night.
+	it('marks only the reminders the step can use that night', () => {
+		expect(stepReminders('grandmother', 'first').labels).toEqual([]);
+		expect(stepReminders('grandmother', 'other').labels).toEqual(['Dead']);
+	});
+});
+
+describe('byLabel', () => {
+	it('sorts names alphabetically, with numbers in order', () => {
+		expect(['Drunk 10', 'Wrong', 'Drunk 2', 'drunk 1'].sort(byLabel)).toEqual([
+			'drunk 1',
+			'Drunk 2',
+			'Drunk 10',
+			'Wrong'
+		]);
 	});
 });
 

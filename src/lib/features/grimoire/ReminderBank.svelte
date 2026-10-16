@@ -12,7 +12,8 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { bankReminders } from './reminders.ts';
+	import { bankReminders, byLabel, type StepReminders } from './reminders.ts';
+	import { scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import type { BankView } from './setup-tray.ts';
 	import { pendingTray, trayItems, traySeats, type TrayItem } from './setup-tray.ts';
@@ -32,7 +33,7 @@
 		view: BankView;
 		onView: (view: BankView) => void;
 		/** The character whose night step is being walked through. */
-		focus?: CharacterId;
+		focus?: StepReminders;
 		/** The seat under a point (in % of the board), if any. */
 		seatAt: (at: SeatPoint) => SeatId | undefined;
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
@@ -53,10 +54,22 @@
 		/** Shown once with ×count when "Stack duplicate reminders" is on. */
 		count: number;
 		setup?: TrayItem;
+		/** Used by the walked-through step tonight. */
+		now?: boolean;
 	}
 
+	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list.
+	const scriptOrder = $derived(scriptCharacterIds(game.script));
+	const at = (id: CharacterId) => {
+		const i = scriptOrder.indexOf(id);
+		return i < 0 ? scriptOrder.length : i;
+	};
 	const setupItems = $derived(
-		pendingTray(trayItems(setupReminders(game, characters)), game, grimoire.trayDismissed)
+		pendingTray(trayItems(setupReminders(game, characters)), game, grimoire.trayDismissed).sort(
+			(a, b) =>
+				at(a.suggestion.characterId) - at(b.suggestion.characterId) ||
+				byLabel(a.suggestion.label, b.suggestion.label)
+		)
 	);
 	const items = $derived.by((): Item[] => {
 		const stack = preferences.current.assistance.stackReminders;
@@ -72,14 +85,15 @@
 			}
 			return out;
 		}
-		return bankReminders(game, characters, focus).flatMap(({ characterId, label, left }) => {
+		return bankReminders(game, characters, focus).flatMap(({ characterId, label, left, now }) => {
 			const key = `${characterId}:${label}`;
-			if (stack) return [{ key, characterId, label, count: left }];
+			if (stack) return [{ key, characterId, label, count: left, now }];
 			return Array.from({ length: left }, (_, i) => ({
 				key: `${key}:${i}`,
 				characterId,
 				label,
-				count: 1
+				count: 1,
+				now
 			}));
 		});
 	});
@@ -167,10 +181,7 @@
 		aria-label={view === 'setup' ? 'Setup reminders' : 'Reminder bank'}
 	>
 		{#each items as item (item.key)}
-			<li
-				class:lifted={drag?.item.key === item.key && item.count === 1}
-				class:now={focus !== undefined && item.characterId === focus}
-			>
+			<li class:lifted={drag?.item.key === item.key && item.count === 1} class:now={item.now}>
 				{#if item.count > 1}<span class="count" aria-label={`${item.count} copies`}
 						>×{item.count}</span
 					>{/if}
@@ -313,12 +324,17 @@
 		overflow-x: auto;
 		overflow-y: hidden;
 		overscroll-behavior: contain;
+		/* Scrolls by swipe or wheel; no bar drawn over the tokens (Trevor, 2026-10-16). */
+		scrollbar-width: none;
 		list-style: none;
 	}
-	/* The walked-through step's reminders, at the front. */
-	li.now {
-		border-radius: 50%;
-		box-shadow: 0 0 0 3px var(--accent);
+	.tray::-webkit-scrollbar {
+		display: none;
+	}
+	/* The walked-through step's reminders, at the front: a ring that hugs the round token. */
+	li.now > :global(.reminder) {
+		outline: 0.2rem solid var(--accent);
+		outline-offset: 0.15rem;
 	}
 	.tray > li {
 		flex: none;
