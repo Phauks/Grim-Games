@@ -42,7 +42,10 @@ export interface ScriptProblem {
 
 /** A script ready to play: official characters resolved, homebrew characters validated. */
 export interface LoadedScript {
-	/** Display name: `_meta.name`, the edition name, or "Custom script". */
+	/**
+	 * Display name: `_meta.name`, or the edition name; empty when the script has none (no
+	 * invented name, Trevor 2026-10-16: UIs show "None").
+	 */
 	name: string;
 	meta: ScriptMeta;
 	/** Set when this is an official edition loaded by id (`tb`, `bmr`, `snv`). */
@@ -105,7 +108,6 @@ export function editionScript(edition: string, data: GameData): LoadedScript | u
 }
 
 const MARKERS: readonly string[] = NIGHT_MARKERS;
-const DEFAULT_NAME = 'Custom script';
 
 /** Where a JSON.parse error happened, as "line 3, column 5". */
 function jsonErrorPosition(text: string, error: unknown): string | undefined {
@@ -387,7 +389,7 @@ export function loadScript(json: unknown, data: GameData): ScriptLoadResult {
 	}
 
 	const script: LoadedScript = {
-		name: meta.name || DEFAULT_NAME,
+		name: meta.name ?? '',
 		meta,
 		characters,
 		homebrew,
@@ -731,7 +733,7 @@ export function fromScript(
 	const edition = OFFICIAL_EDITIONS.find((e) => e.name === meta.name && homebrew.length === 0);
 	return {
 		script: {
-			name: meta.name || edition?.name || 'Custom script',
+			name: meta.name || edition?.name || '',
 			meta,
 			...(edition ? { edition: edition.id } : {}),
 			characters,

@@ -323,8 +323,8 @@ describe('odd homebrew shapes (PG 190, PG 195)', () => {
 		expect(result.script?.name).toBe('Wrapped');
 	});
 
-	it('falls back to "Custom script" without a name', () => {
-		expect(loadScript(['chef', 'imp'], data).script?.name).toBe('Custom script');
+	it('leaves the name empty without one, inventing none', () => {
+		expect(loadScript(['chef', 'imp'], data).script?.name).toBe('');
 	});
 
 	it('explains top-level shapes it cannot read', () => {
