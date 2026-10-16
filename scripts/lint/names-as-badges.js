@@ -10,7 +10,7 @@
  * so the mark follows a name through variables, `{#each}` blocks and function returns.
  * The rule reports a marked value where it turns into plain text:
  * - `{name}` as text in a Svelte template;
- * - inside a template literal, a `+` string concatenation or `.join()`;
+ * - inside a template literal, a `+` string concatenation, `.join()` or `intl.list()`;
  * - as a placeholder of a catalog message (`t()`, `say()`, `formatMessage()`), since
  *   catalog text is plain.
  *
@@ -262,12 +262,18 @@ export const namesAsBadges = {
 			},
 			CallExpression(node) {
 				const callee = node.callee;
-				if (
-					callee.type === 'MemberExpression' &&
-					!callee.computed &&
-					callee.property.name === 'join'
-				) {
-					const tsNode = services.esTreeNodeToTSNodeMap.get(callee.object);
+				// `names.join(', ')` and `intl.list(names)` turn a list of names into one string.
+				const joined =
+					callee.type === 'MemberExpression' && !callee.computed && callee.property.name === 'join'
+						? callee.object
+						: callee.type === 'MemberExpression' &&
+							  !callee.computed &&
+							  callee.property.name === 'list' &&
+							  node.arguments[0]
+							? node.arguments[0]
+							: undefined;
+				if (joined) {
+					const tsNode = services.esTreeNodeToTSNodeMap.get(joined);
 					const type = tsNode && checker.getTypeAtLocation(tsNode);
 					const element = type && checker.isArrayType(type) && checker.getTypeArguments(type)[0];
 					const kind = element && markOf(element);

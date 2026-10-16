@@ -17,6 +17,7 @@ const head = `<script lang="ts">
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	interface Props { character: Character; reminder: Reminder; list: Character[] }
 	let { character, reminder, list }: Props = $props();
 	let open = $state(false);
@@ -37,8 +38,10 @@ describe('grim/names-as-badges', () => {
 <p>{character.name}</p>
 <p>{list.map((c) => c.name).join(', ')}</p>
 <Dialog bind:open title={character.name}>x</Dialog>
-<p>{'Is the ' + character.name}</p>`)
-		).toEqual(['1:plain', '2:plain', '3:plain', '4:plain', '5:plain']);
+<p>{'Is the ' + character.name}</p>
+<p>{t('common.seat', { number: character.name })}</p>
+<p>{intl.list(list.map((c) => c.name))}</p>`)
+		).toEqual(['1:plain', '2:plain', '3:plain', '4:plain', '5:plain', '6:plain', '7:plain']);
 	}, 60_000);
 
 	it('allows badges, chips and plain-text attributes', async () => {
