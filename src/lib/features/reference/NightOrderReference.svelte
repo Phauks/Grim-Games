@@ -10,6 +10,7 @@
 	import { fullNightOrder, sheetPosition } from '#lib/core/rules/reference.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
 	import { TYPE_PLURALS } from './labels.ts';
 	import NightText from './NightText.svelte';
 	import type { ReferenceView } from './view-mode.svelte.ts';
@@ -69,7 +70,11 @@
 		<td class="num">#{position ?? '?'}</td>
 		<th scope="row">
 			{#if s.kind === 'marker'}
-				<span class="marker">{MARKER_TEXT[s.id as NightMarker].name}</span>
+				<span class="marker"
+					><MarkerToken marker={s.id as NightMarker} size={32} label="" />{MARKER_TEXT[
+						s.id as NightMarker
+					].name}</span
+				>
 			{:else if s.character}
 				<CharacterBadge characterId={s.character.id} />
 			{/if}
@@ -96,7 +101,11 @@
 		<span class="pos" title="Position on TPI’s night sheet">#{position ?? '?'}</span>
 		<div class="body">
 			{#if s.kind === 'marker'}
-				<strong class="marker">{MARKER_TEXT[s.id as NightMarker].name}</strong>
+				<strong class="marker"
+					><MarkerToken marker={s.id as NightMarker} size={40} label="" />{MARKER_TEXT[
+						s.id as NightMarker
+					].name}</strong
+				>
 			{:else if s.character}
 				<CharacterBadge characterId={s.character.id} />
 			{/if}
@@ -251,6 +260,7 @@
 	.marker {
 		display: inline-flex;
 		align-items: center;
+		gap: var(--space-2);
 		min-height: var(--tap-target);
 		font-family: var(--font-character);
 		color: var(--heading);
