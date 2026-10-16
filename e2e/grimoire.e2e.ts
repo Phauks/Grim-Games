@@ -590,6 +590,7 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 
 	// Arranging: dropping a seat onto another seat changes the seating order.
 	await menu(page, 'Arrange seats');
+	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
 	const centre = async (n: number) => {
 		const box = (await page
 			.getByRole('button', { name: new RegExp(`^Seat ${n}:`) })
