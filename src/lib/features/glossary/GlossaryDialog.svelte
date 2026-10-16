@@ -10,6 +10,7 @@
 	import { glossaryKey } from './wiki-glossary.ts';
 	import { wikiGlossary } from './wiki-glossary.svelte.ts';
 	import WikiEntryText from './WikiEntryText.svelte';
+	import { setTermHandler } from './term-handler.ts';
 
 	// The wiki's text is fetched live when the dialog opens (and cached on the device only).
 	let loading = $state(false);
@@ -18,6 +19,7 @@
 		loading = true;
 		void wikiGlossary.load().finally(() => (loading = false));
 	});
+	setTermHandler((term) => (glossaryDialog.key = glossaryKey(term.term)));
 	let search = $state('');
 	$effect(() => {
 		if (!glossaryDialog.open) search = '';
@@ -124,9 +126,14 @@
 		background: var(--card-background);
 		color: var(--on-surface-muted);
 	}
+	/* One focus mark, on the field's own rounded border, drawn inside so nothing clips it;
+	   the input's ring is off (Trevor, 2026-10-16: no double halo). */
 	.search:focus-within {
-		outline: 3px solid var(--focus); /* px-ok: focus ring width */
-		outline-offset: 2px; /* px-ok: focus ring offset */
+		border-color: var(--focus);
+		box-shadow: inset 0 0 0 calc(0.0625 * var(--u)) var(--focus);
+	}
+	.search input:focus-visible {
+		outline: none;
 	}
 	input {
 		flex: 1;

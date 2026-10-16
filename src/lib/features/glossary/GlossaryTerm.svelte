@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { GlossaryTerm } from '#lib/core/rules/glossary.ts';
 	import { glossaryPopover } from './glossary-popover.svelte.ts';
+	import { getTermHandler } from './term-handler.ts';
 
 	interface Props {
 		term: GlossaryTerm;
@@ -11,7 +12,9 @@
 
 	let { term, text }: Props = $props();
 	let button = $state<HTMLElement>();
-	const show = () => button && glossaryPopover.show(term, button);
+	// Inside the Glossary, the entry opens in place; elsewhere, in the popover.
+	const handler = getTermHandler();
+	const show = () => (handler ? handler(term) : button && glossaryPopover.show(term, button));
 	const open = $derived(glossaryPopover.open && glossaryPopover.anchor === button);
 </script>
 

@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { wikiUrl, type Character } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
+	import { clearTermHandler } from '#lib/features/glossary/term-handler.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { iconUrl } from './icon-url.ts';
@@ -21,6 +22,8 @@
 	}
 
 	let { open = $bindable(false), character, icon: given }: Props = $props();
+	// Terms here open their popover, even when these details were opened from the Glossary.
+	clearTermHandler();
 	// Callers may pass the seat's icon (its alignment); otherwise the character's own.
 	const icon = $derived(given ?? iconUrl(character));
 	const wiki = $derived(wikiUrl(character));

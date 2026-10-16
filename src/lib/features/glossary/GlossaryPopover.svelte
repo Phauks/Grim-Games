@@ -9,6 +9,7 @@
 	import { glossaryKey } from './wiki-glossary.ts';
 	import { wikiGlossary } from './wiki-glossary.svelte.ts';
 	import WikiEntryText from './WikiEntryText.svelte';
+	import { setTermHandler } from './term-handler.ts';
 
 	const keepOpenOn = (target: Element) => target.closest('.glossary-term') !== null;
 	// The wiki's own text is fetched the first time a term is opened (and cached on the device).
@@ -19,6 +20,9 @@
 		glossaryPopover.term ? wikiGlossary.definition(glossaryPopover.term.term) : undefined
 	);
 	const previous = $derived(glossaryPopover.history.at(-1));
+	setTermHandler((term) => {
+		if (glossaryPopover.term?.term !== term.term) glossaryPopover.go(term);
+	});
 
 	/** Our term for a Glossary entry, or one made from the wiki's entry name. */
 	function termFor(key: string): GlossaryTerm {

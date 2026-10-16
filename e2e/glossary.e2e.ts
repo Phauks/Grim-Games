@@ -159,7 +159,8 @@ test('Open Glossary shows every entry beside the tapped one, searchable, with th
 					text:
 						'<p><b>Poisoned:</b> Sample wording, see <a href="/Glossary#Healthy">Healthy</a>.</p>' +
 						'<p><b>Healthy:</b> Sample wording for healthy.</p>' +
-						'<p><b>Alive:</b> Sample wording for alive.</p>'
+						'<p><b>Alive:</b> Sample wording for alive, unlike a dead player.</p>' +
+						'<p><b>Dead:</b> Sample wording for dead.</p>'
 				}
 			}
 		})
@@ -196,15 +197,22 @@ test('Open Glossary shows every entry beside the tapped one, searchable, with th
 	}
 	await expect(list).toBeVisible();
 	// Every entry, alphabetical.
-	await expect(list.getByRole('button')).toHaveText(['Alive', 'Healthy', 'Poisoned']);
+	await expect(list.getByRole('button')).toHaveText(['Alive', 'Dead', 'Healthy', 'Poisoned']);
 	await list.getByRole('searchbox', { name: 'Search the Glossary' }).fill('ali');
 	await expect(list.getByRole('button')).toHaveText(['Alive']);
 	await list.getByRole('button', { name: 'Alive' }).tap();
-	await expect(entry.getByTestId('wiki-definition')).toHaveText('Sample wording for alive.');
+	await expect(entry.getByTestId('wiki-definition')).toHaveText(
+		'Sample wording for alive, unlike a dead player.'
+	);
 	if (phone) await expect(list).toBeHidden();
 	else
 		await expect(list.getByRole('button', { name: 'Alive' })).toHaveAttribute(
 			'aria-current',
 			'page'
 		);
+
+	// Rules terms in an entry are marked as anywhere else, and open their entry in place.
+	await entry.getByRole('button', { name: 'dead: explain rules term' }).tap();
+	await expect(entry.getByRole('heading', { name: 'Dead' })).toBeVisible();
+	await expect(page.getByRole('dialog', { name: 'Dead' })).toHaveCount(0);
 });

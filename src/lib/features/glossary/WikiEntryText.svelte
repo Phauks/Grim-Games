@@ -3,6 +3,7 @@
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { linkTarget, type WikiEntry } from './wiki-glossary.ts';
 	import { wikiGlossary } from './wiki-glossary.svelte.ts';
+	import GlossaryText from './GlossaryText.svelte';
 
 	interface Props {
 		entry: WikiEntry;
@@ -20,12 +21,15 @@
 
 <!--
 	One wiki Glossary entry, word for word (the popover and the Glossary dialog). Links in the
-	wording ("see Drunk") open that entry, show a character's badge, or open the wiki page.
+	wording ("see Drunk") open that entry, show a character's badge, or open the wiki page;
+	other rules terms and character names are marked as in any game text.
 -->
 <!-- Links in the wording go to the external wiki, not app routes. -->
 <!-- eslint-disable svelte/no-navigation-without-resolve -->
 <blockquote class="definition" {cite} data-testid="wiki-definition">
-	{#each entry.parts as part, i (i)}{#if !part.href}{part.text}{:else}{@const target = linkTarget(
+	{#each entry.parts as part, i (i)}{#if !part.href}<GlossaryText
+				text={part.text}
+			/>{:else}{@const target = linkTarget(
 				part.href,
 				wikiGlossary.entries,
 				names

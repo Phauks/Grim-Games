@@ -1,13 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // Trevor (2026-10-16): no horizontal scrolling on mobile. Every route, at the narrowest phone
-// widths, with the smallest and the largest text and icon sizes.
+// widths, with the smallest and the largest text, icon, token and reminder sizes.
 
 const PREFS_KEY = 'grim-games:preferences:v1';
 const WIDTHS = [320, 390];
 const SIZES = [
-	{ name: 'smallest text and icons', textScale: 0.75, iconScale: 0.75 },
-	{ name: 'largest text and icons', textScale: 1.5, iconScale: 1.5 }
+	{ name: 'smallest text and icons', textScale: 0.75, iconScale: 0.75, tokenScale: 0.5 },
+	{ name: 'largest text and icons', textScale: 1.5, iconScale: 1.5, tokenScale: 2 }
 ];
 const STATIC_ROUTES = [
 	'/',
@@ -84,7 +84,18 @@ test.describe('no sideways scrolling on phones', () => {
 				await page.goto('/');
 				await page.evaluate(
 					([key, prefs]) => localStorage.setItem(key, prefs),
-					[PREFS_KEY, JSON.stringify({ textScale: size.textScale, iconScale: size.iconScale })]
+					[
+						PREFS_KEY,
+						JSON.stringify({
+							textScale: size.textScale,
+							iconScale: size.iconScale,
+							tokenAppearance: {
+								tokenScale: size.tokenScale,
+								reminderScale: size.tokenScale,
+								boardNames: true
+							}
+						})
+					]
 				);
 				const game = await startGame(page);
 				const routes: [string, string][] = [
