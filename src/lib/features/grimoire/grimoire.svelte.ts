@@ -45,10 +45,6 @@ export class Grimoire {
 			: [...this.nightDone, key];
 	}
 
-	clearNight(): void {
-		this.nightDone = [];
-	}
-
 	/** Setup reminder suggestions the Storyteller dismissed from the tray (`setup-tray.ts`). */
 	trayDismissed = $state.raw<readonly string[]>([]);
 
