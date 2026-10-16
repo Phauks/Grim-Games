@@ -339,8 +339,12 @@
 	}
 	/* Narrow screens: each step is a block (position and character, then text, then tokens). */
 	@container (max-width: 40rem) {
+		/*
+		 * Nothing scrolls sideways here. clip, not visible: tap areas drawn past a word (the
+		 * glossary term's 44px ::after) must not make the box wider whatever the font.
+		 */
 		.scroll {
-			overflow-x: visible;
+			overflow-x: clip;
 		}
 		table.order,
 		.order tbody {
@@ -361,8 +365,13 @@
 		.order th,
 		.order td {
 			display: block;
+			min-width: 0;
 			padding: 0;
 			border: 0;
+			overflow-wrap: anywhere;
+		}
+		.order tbody th {
+			white-space: normal;
 		}
 		.order .text,
 		.order .tokens {

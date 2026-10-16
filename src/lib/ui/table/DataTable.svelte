@@ -426,8 +426,9 @@
 		}
 
 		/* `stack`: the same fields as the table, each with its label, one block per row. */
+		/* clip, not visible: tap areas past a word must not widen the box (no sideways scroll). */
 		.stack .scroll {
-			overflow-x: visible;
+			overflow-x: clip;
 			border: 0;
 			border-radius: 0;
 			background: none;

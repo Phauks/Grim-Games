@@ -323,11 +323,19 @@ test('on a phone the tables stack into labelled rows instead of scrolling sidewa
 	await witch.scrollIntoViewIfNeeded();
 	await expect(witch.locator('td[data-col="ability"]')).toHaveAttribute('data-label', 'Ability');
 	await expect(witch.locator('td[data-col="ability"] .cell')).not.toBeEmpty({ timeout: 15_000 });
+	// Sideways scrolling: a box that can scroll (overflow auto or scroll) and is wider than it
+	// shows, or the page itself. A clipped box can't scroll, whatever its scrollWidth says
+	// (tap areas drawn past a word at the end of a line count there).
 	const sideways = (selector: string) =>
-		page.evaluate(
-			(s) => [...document.querySelectorAll(s)].some((el) => el.scrollWidth > el.clientWidth + 1),
-			selector
-		);
+		page.evaluate((s) => {
+			const scrolls = (el: Element) =>
+				['auto', 'scroll'].includes(getComputedStyle(el).overflowX) &&
+				el.scrollWidth > el.clientWidth + 1;
+			const root = document.documentElement;
+			return (
+				root.scrollWidth > root.clientWidth + 1 || [...document.querySelectorAll(s)].some(scrolls)
+			);
+		}, selector);
 	expect(await sideways('.scroll')).toBe(false);
 	await page.getByRole('tab', { name: 'Night order' }).tap();
 	await expect(page.getByTestId('night-table-first')).toBeVisible();
