@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Draft for Trevor's review (2026-10-15). Describes only what the app does today; update it
-	// whenever a feature sends or stores something new (accounts, live rooms, script loading).
+	// whenever a feature sends or stores something new (accounts, live rooms).
 	import { resolve } from '$app/paths';
 </script>
 
@@ -10,12 +10,13 @@
 
 <main>
 	<h1>Privacy policy</h1>
-	<p class="muted">Last updated 15 October 2026</p>
+	<p class="muted">Last updated 16 October 2026</p>
 
 	<h2>Summary</h2>
 	<p>
 		Grim-Games has no accounts, no analytics, no advertising and no tracking cookies. Your games and
-		settings stay on your device.
+		settings stay on your device. The only thing our server stores is a custom script you choose to
+		share.
 	</p>
 
 	<h2>What stays on your device</h2>
@@ -31,12 +32,44 @@
 			Problems on this device (localStorage).
 		</li>
 		<li>Your 20 most recently loaded scripts (IndexedDB).</li>
+		<li>
+			For each script you shared with a code, a random key that lets you delete it (localStorage).
+		</li>
 		<li>A copy of the app itself, so it works offline.</li>
 	</ul>
 	<p>
-		None of this is sent to us. Clearing this site's data in your browser deletes it, as does Reset
-		settings for your settings.
+		None of this is sent to us, apart from a script you share (below). Clearing this site's data in
+		your browser deletes it, as does Reset settings for your settings.
 	</p>
+
+	<h2>Shared scripts</h2>
+	<p>
+		When you tap Share or QR code for a custom script, the app uploads that script to our server and
+		stores it under a random four-word code, such as poisoned-drunk-imp-bell. Nothing is uploaded
+		just by opening a page. Official editions and BotC Scripts scripts are never uploaded: their
+		link only names the edition or the script's public number.
+	</p>
+	<ul>
+		<li>No name, account or IP address is stored with the script.</li>
+		<li>Anyone with the code or link can open the script.</li>
+		<li>
+			It is deleted automatically 90 days after it was last opened, or straight away when you tap
+			Delete code on the device that shared it. That device keeps the delete key; our server keeps
+			only a scrambled (hashed) copy of it.
+		</li>
+		<li>
+			To stop people guessing codes, our server limits how many codes one IP address can look up or
+			create each minute, using Cloudflare's rate limiter. We do not store the address.
+		</li>
+		<li>
+			The code appears in our request logs as part of the page address; the script itself never
+			does.
+		</li>
+		<li>
+			If a code can't be made, for example while you are offline, the app shares a longer link that
+			carries the whole script in the part of the address browsers never send to a server.
+		</li>
+	</ul>
 
 	<h2>Hosting</h2>
 	<p>
@@ -64,8 +97,7 @@
 		<li>
 			<strong>A link you load a script from.</strong> "Load from a link" downloads the script straight
 			from the site you name (without cookies), so that site sees your request like any page visit. Pasted
-			and uploaded scripts never leave your device, and share links keep the script in the part of the
-			address that browsers never send to a server.
+			and uploaded scripts never leave your device unless you share them.
 		</li>
 		<li>
 			<strong>GitHub.</strong> "Report an issue" and "Report a problem" open a form on github.com, filled
