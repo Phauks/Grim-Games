@@ -24,6 +24,8 @@ export const settings = {
 	'settings.alignLeft': 'Left aligned',
 	'settings.alignJustify': 'Justified',
 	'settings.resetTo100': 'Reset to 100%',
+	// Named by the setting's label through aria-describedby, so it never matches the setting's name.
+	'settings.resetToDefault': 'Reset to default',
 	'settings.iconSize': 'Interface icon size',
 	'settings.iconSizeHelp':
 		'Changes the size of interface icons: header, settings, menus, buttons, and status markers such as dead or poisoned. Character icons, text and tokens stay the same.',

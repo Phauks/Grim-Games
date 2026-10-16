@@ -14,15 +14,22 @@
 		value: T;
 		options: Option[];
 		onChange: (value: T) => void;
+		/** The default; gives the label a reset icon. */
+		defaultValue?: T;
 		layout?: 'cards' | 'row';
 		item?: Snippet<[Option]>;
 	}
 
-	let { label, description, ...choice }: Props = $props();
+	let { label, description, defaultValue, ...choice }: Props = $props();
 </script>
 
 <!-- A setting picked from a visible set of options (themes, fonts, icon weights). -->
-<SettingRow {label} {description}>
+<SettingRow
+	{label}
+	{description}
+	onReset={defaultValue === undefined ? undefined : () => choice.onChange(defaultValue)}
+	isDefault={choice.value === defaultValue}
+>
 	{#snippet control(labelId)}
 		<ChoiceGroup {label} labelledBy={labelId} {...choice} />
 	{/snippet}

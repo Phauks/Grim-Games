@@ -13,10 +13,12 @@
 	interface Props {
 		role: FontRole;
 		value: FontId;
+		/** The theme's font for this role; gives the label a reset icon. */
+		defaultValue?: FontId;
 		onChange: (font: FontId) => void;
 	}
 
-	let { role, value, onChange }: Props = $props();
+	let { role, value, defaultValue, onChange }: Props = $props();
 
 	const info = $derived(FONT_ROLE_INFO[role]);
 	const options = $derived(
@@ -27,7 +29,14 @@
 </script>
 
 <!-- One font role as a dropdown; every font name is drawn in its own font. -->
-<SettingSelect label={info.label} description={info.description} {value} {options} {onChange}>
+<SettingSelect
+	label={info.label}
+	description={info.description}
+	{value}
+	{defaultValue}
+	{options}
+	{onChange}
+>
 	{#snippet item(option)}
 		{@const font = FONTS[option.value]}
 		<span class="name" style:font-family={fontStack(font.id)} style:font-weight={weight(font)}>

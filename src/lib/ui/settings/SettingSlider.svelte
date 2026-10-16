@@ -9,9 +9,9 @@
 		min: number;
 		max: number;
 		step: number;
-		/** @deprecated No Reset button any more (Trevor, 2026-10-16); ignored until callers drop it. */
+		/** The default; gives the label a reset icon (Trevor, 2026-10-16: an icon, not a button). */
 		defaultValue?: number;
-		/** @deprecated Ignored, as above. */
+		/** @deprecated The reset icon is labelled from the setting's name; ignored. */
 		resetLabel?: string;
 		/** How the value reads beside the slider; a whole percentage by default. */
 		format?: (value: number) => string;
@@ -19,7 +19,7 @@
 		onChange: (value: number) => void;
 	}
 
-	// Deprecated props stay accepted until TokenAppearanceSettings drops them.
+	// `resetLabel` stays accepted until TokenAppearanceSettings drops it.
 	// eslint-disable-next-line svelte/no-unused-props
 	let {
 		label,
@@ -28,6 +28,7 @@
 		min,
 		max,
 		step,
+		defaultValue,
 		format = (v) => `${Math.round(v * 100)}%`,
 		onChange
 	}: Props = $props();
@@ -49,7 +50,12 @@
 </script>
 
 <!-- A setting with a continuous size (Trevor, 2026-10-16: granular sliders, not S/M/L). -->
-<SettingRow {label} {description}>
+<SettingRow
+	{label}
+	{description}
+	onReset={defaultValue === undefined ? undefined : () => onChange(defaultValue)}
+	isDefault={defaultValue !== undefined && Math.abs(value - defaultValue) < step / 2}
+>
 	{#snippet control(labelId)}
 		<div class="slider">
 			<input

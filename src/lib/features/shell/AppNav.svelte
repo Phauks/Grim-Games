@@ -1,43 +1,21 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { navDrawer } from './nav-drawer.svelte.ts';
 	import NavList from './NavList.svelte';
 
-	const KEY = 'grim-games:nav-collapsed';
-
-	function readCollapsed(): boolean {
-		try {
-			return globalThis.localStorage?.getItem(KEY) === '1';
-		} catch {
-			return false;
-		}
-	}
-
-	let collapsed = $state(readCollapsed());
-
-	function toggle() {
-		collapsed = !collapsed;
-		try {
-			if (collapsed) localStorage.setItem(KEY, '1');
-			else localStorage.removeItem(KEY);
-		} catch {
-			// Storage blocked: the choice lasts for this visit.
-		}
-	}
+	// Lets the hamburger act on this sidebar rather than the drawer while it is on the page.
+	$effect(() => {
+		navDrawer.sidebarMounted = true;
+		return () => (navDrawer.sidebarMounted = false);
+	});
 </script>
 
-<!-- The left sidebar on wide screens; phones use the drawer from the header's menu button. -->
-<nav class="app-nav" class:collapsed aria-label={t('shell.navLabel')}>
-	<NavList compact={collapsed} />
-	<div class="toggle">
-		<IconButton
-			icon={collapsed ? 'forward' : 'back'}
-			label={collapsed ? t('shell.navExpand') : t('shell.navCollapse')}
-			aria-expanded={!collapsed}
-			onclick={toggle}
-		/>
-	</div>
-</nav>
+<!-- The left sidebar on wide screens, opened and closed by the header's hamburger. -->
+{#if !navDrawer.hidden}
+	<nav class="app-nav" aria-label={t('shell.navLabel')}>
+		<NavList />
+	</nav>
+{/if}
 
 <style>
 	.app-nav {
@@ -58,15 +36,5 @@
 			padding: var(--space-4) var(--space-2);
 			border-right: 1px solid var(--border);
 		}
-		.collapsed {
-			width: calc(var(--tap-target) + 2 * var(--space-2));
-		}
-	}
-	.toggle {
-		display: flex;
-		justify-content: flex-end;
-	}
-	.collapsed .toggle {
-		justify-content: center;
 	}
 </style>

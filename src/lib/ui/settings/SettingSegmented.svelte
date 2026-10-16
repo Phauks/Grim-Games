@@ -8,14 +8,21 @@
 		value: T;
 		options: { value: T; label: string }[];
 		onChange: (value: T) => void;
+		/** The default; gives the label a reset icon. */
+		defaultValue?: T;
 		disabled?: boolean;
 	}
 
-	let { label, description, ...segmented }: Props = $props();
+	let { label, description, defaultValue, ...segmented }: Props = $props();
 </script>
 
 <!-- A setting with a few short ordered options (sizes, levels). -->
-<SettingRow {label} {description}>
+<SettingRow
+	{label}
+	{description}
+	onReset={defaultValue === undefined ? undefined : () => segmented.onChange(defaultValue)}
+	isDefault={segmented.value === defaultValue}
+>
 	{#snippet control(labelId)}
 		<Segmented {label} labelledBy={labelId} {...segmented} />
 	{/snippet}

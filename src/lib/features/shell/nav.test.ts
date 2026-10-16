@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isCurrent, NAV_ITEMS } from './nav.ts';
+import { isCurrent, NAV_ITEMS, NAV_SECTIONS } from './nav.ts';
 
 describe('navigation', () => {
 	const scripts = NAV_ITEMS.find((item) => item.id === 'scripts')!;
@@ -14,5 +14,10 @@ describe('navigation', () => {
 	it('lists each destination once', () => {
 		const paths = NAV_ITEMS.map((item) => item.path);
 		expect(new Set(paths).size).toBe(paths.length);
+	});
+
+	it('groups games first, then preparation, then players (Trevor, 2026-10-16)', () => {
+		expect(NAV_SECTIONS.map((section) => section.id)).toEqual(['games', 'prepare', 'players']);
+		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual(['new', 'games']);
 	});
 });

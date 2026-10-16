@@ -30,7 +30,12 @@
 </script>
 
 {#each FONT_ROLES as role (role)}
-	<FontPicker {role} value={fonts[role]} onChange={(font) => choose(role, font)} />
+	<FontPicker
+		{role}
+		value={fonts[role]}
+		defaultValue={theme.fonts[role]}
+		onChange={(font) => choose(role, font)}
+	/>
 {/each}
 
 <!-- One line per role in the applied font. Each line has a fixed height, so nothing moves. -->

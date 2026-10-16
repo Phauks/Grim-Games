@@ -5,7 +5,13 @@
 </script>
 
 <!--
-	Opens the navigation drawer. In the header on narrow screens; a game screen mounts it in its
-	own toolbar, and leaving the game through the drawer asks first (setLeaveGuard in shell.ts).
+	The hamburger: opens and closes the sidebar on wide screens, the drawer otherwise. At the far
+	left of the header; a game screen mounts it at the far left of its own toolbar, and leaving
+	the game through the menu asks first (setLeaveGuard in shell.ts).
 -->
-<IconButton icon="menu" label={t('shell.navOpen')} onclick={() => navDrawer.show()} />
+<IconButton
+	icon="menu"
+	label={t('shell.navLabel')}
+	aria-expanded={navDrawer.expanded}
+	onclick={() => navDrawer.toggle()}
+/>

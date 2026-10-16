@@ -32,6 +32,10 @@ export const ICON_SLOTS = {
 	notes: { label: 'Notes', choices: ['ph:note-pencil', 'ph:notepad', 'ph:feather'] },
 	undo: { label: 'Undo', choices: ['ph:arrow-counter-clockwise', 'ph:arrow-u-up-left'] },
 	redo: { label: 'Redo', choices: ['ph:arrow-clockwise', 'ph:arrow-u-up-right'] },
+	reset: {
+		label: 'Reset to default',
+		choices: ['ph:arrow-counter-clockwise']
+	},
 	add: { label: 'Add', choices: ['ph:plus', 'ph:plus-circle'] },
 	minus: { label: 'Minus', choices: ['ph:minus', 'ph:minus-circle'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },

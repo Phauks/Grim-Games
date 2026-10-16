@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /** Opens settings from the header icon and goes to a section (drill-in on phones). */
 async function openSettings(page: Page, section: string) {
@@ -34,6 +34,17 @@ async function slide(page: Page, name: string, value: number) {
 	await slider.fill(String(value));
 	// The size applies on the next animation frame.
 	await expect(slider).toHaveAttribute('aria-valuetext', `${Math.round(value * 100)}%`);
+}
+
+/** The reset icon beside a setting's name (named "Reset to default", described by the name). */
+async function resetButton(scope: Locator, name: string) {
+	const id = await scope
+		.getByText(name, { exact: true })
+		.and(scope.locator('[id]'))
+		.getAttribute('id');
+	return scope
+		.getByRole('button', { name: 'Reset to default' })
+		.and(scope.locator(`[aria-describedby="${id}"]`));
 }
 
 const rootStyle = (page: Page, name: string) =>
@@ -232,13 +243,14 @@ test('character icon size is its own slider and leaves interface icons alone', a
 		.locator('.icon');
 	const before = await settingsIcon.boundingBox();
 
-	await openSettings(page, 'Appearance');
+	const dialog = await openSettings(page, 'Appearance');
 	await slide(page, 'Character icon size', 1.25);
 	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
 	expect(await rootStyle(page, '--icon-scale')).toBe('1');
+	await dialog.getByRole('button', { name: 'Close', exact: true }).tap();
 	expect((await settingsIcon.boundingBox())!.width).toBeCloseTo(before!.width, 0);
 	await page.reload();
-	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
+	await expect.poll(() => rootStyle(page, '--character-icon-scale')).toBe('1.25');
 });
 
 test('the rules term switch has its own section, not Storyteller settings', async ({ page }) => {
@@ -299,7 +311,8 @@ test('text size is a percentage slider that applies while it moves', async ({ pa
 	const dialog = await openSettings(page, 'Appearance');
 	const slider = dialog.getByRole('slider', { name: 'Text size' });
 	await expect(slider).toHaveAttribute('aria-valuetext', '100%');
-	await expect(dialog.getByRole('button', { name: /Reset to/ })).toHaveCount(0);
+	// The reset icon beside the label is always there, and disabled at the default.
+	await expect(await resetButton(dialog, 'Text size')).toBeDisabled();
 
 	// Each step applies as it is reached, without letting go.
 	await slider.focus();
@@ -316,4 +329,47 @@ test('text size is a percentage slider that applies while it moves', async ({ pa
 		'aria-valuetext',
 		'120%'
 	);
+
+	// Tapping the reset icon puts the default back at once.
+	await (await resetButton(again, 'Text size')).tap();
+	await expect(again.getByRole('slider', { name: 'Text size' })).toHaveAttribute(
+		'aria-valuetext',
+		'100%'
+	);
+	expect(await rootStyle(page, '--text-scale')).toBe('1');
+	await expect(await resetButton(again, 'Text size')).toBeDisabled();
+});
+
+test('every appearance and font setting has a reset icon beside its name', async ({ page }) => {
+	await page.goto('/');
+	const appearance = await openSettings(page, 'Appearance');
+	for (const name of [
+		'Theme',
+		'Text size',
+		'Text alignment',
+		'Interface icon size',
+		'Character icon size'
+	]) {
+		await expect(await resetButton(appearance, name)).toBeDisabled();
+	}
+});
+
+test('each settings section opens at its top, wherever the last one was scrolled', async ({
+	page
+}, testInfo) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Appearance');
+	const content = dialog.locator('section.content');
+	await content.evaluate((el) => (el.scrollTop = el.scrollHeight));
+	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+
+	if (testInfo.project.name === 'phone') {
+		await dialog.getByRole('button', { name: 'All settings' }).tap();
+	}
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Fonts' })
+		.tap();
+	await expect(dialog.getByRole('heading', { name: 'Fonts', level: 2 })).toBeVisible();
+	expect(await content.evaluate((el) => el.scrollTop)).toBe(0);
 });

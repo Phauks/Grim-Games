@@ -19,6 +19,14 @@
 		.map((audience) => ({ audience, sections: sections.filter((s) => s.audience === audience) }))
 		.filter((group) => group.sections.length);
 	const active = $derived(sections.find((s) => s.id === settingsDialog.section) ?? sections[0]);
+
+	// Each section opens at its top, not at the last section's scroll position (Trevor,
+	// 2026-10-16); the section list keeps its own scroll.
+	let content = $state<HTMLElement>();
+	$effect(() => {
+		void active?.id;
+		if (content) content.scrollTop = 0;
+	});
 </script>
 
 <Dialog bind:open={settingsDialog.open} title={t('settings.title')} size="full">
@@ -43,7 +51,7 @@
 			{/each}
 		</nav>
 		{#if active}
-			<section class="content" aria-labelledby="settings-section-title">
+			<section class="content" bind:this={content} aria-labelledby="settings-section-title">
 				<button class="back" onclick={() => (settingsDialog.section = null)}>
 					<Icon name="back" />
 					{t('settings.allSettings')}

@@ -33,6 +33,7 @@
 	label={t('settings.iconStyle')}
 	description={t('settings.iconStyleHelp')}
 	value={setId}
+	defaultValue={resolveIconSet({ ...preferences.current, iconSet: null }, theme)}
 	options={ICON_SETS.map((set) => ({ value: set.id, label: set.label }))}
 	onChange={chooseSet}
 >
@@ -51,6 +52,7 @@
 		label={ICON_SLOTS[slot].label}
 		layout="row"
 		value={resolveIconBase(slot, preferences.current, theme)}
+		defaultValue={resolveIconBase(slot, { ...preferences.current, iconOverrides: {} }, theme)}
 		options={ICON_SLOTS[slot].choices.map((id) => ({ value: id, label: id }))}
 		onChange={(id) => chooseIcon(slot, id)}
 	>

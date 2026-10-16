@@ -12,16 +12,41 @@ export interface NavItem {
 	icon: IconSlot;
 }
 
-export const NAV_ITEMS: readonly NavItem[] = [
-	{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
-	{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'history' },
-	{ id: 'scripts', path: '/scripts', label: 'shell.navScripts', icon: 'script' },
-	{ id: 'play', path: '/play', label: 'shell.navPlayerView', icon: 'players' },
-	{ id: 'reference', path: '/reference', label: 'shell.navReference', icon: 'reference' },
-	{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' }
+/** A labelled group of destinations (Trevor, 2026-10-16: games, then pre-game preparation). */
+export interface NavSection {
+	id: 'games' | 'prepare' | 'players' | 'you';
+	label: MessageKey;
+	items: readonly NavItem[];
+}
+
+export const NAV_SECTIONS: readonly NavSection[] = [
+	{
+		id: 'games',
+		label: 'shell.navSectionGames',
+		items: [
+			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
+			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'history' }
+		]
+	},
+	{
+		id: 'prepare',
+		label: 'shell.navSectionPrepare',
+		items: [
+			{ id: 'scripts', path: '/scripts', label: 'shell.navScripts', icon: 'script' },
+			{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' },
+			{ id: 'reference', path: '/reference', label: 'shell.navReference', icon: 'reference' }
+		]
+	},
+	{
+		id: 'players',
+		label: 'shell.navSectionPlayers',
+		items: [{ id: 'play', path: '/play', label: 'shell.navPlayerView', icon: 'players' }]
+	}
 ];
 
-/** The Account destination, listed with Settings at the end of the drawer. */
+export const NAV_ITEMS: readonly NavItem[] = NAV_SECTIONS.flatMap((section) => section.items);
+
+/** The Account destination, listed with Settings under "You" at the end of the drawer. */
 export const ACCOUNT_ITEM: NavItem = {
 	id: 'account',
 	path: '/account',

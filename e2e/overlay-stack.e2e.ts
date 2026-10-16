@@ -15,7 +15,7 @@ test('the Glossary opened from character details shows above them, and closes ba
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page
-		.getByRole('region', { name: 'Today' })
+		.locator('li[data-character="slayer"]')
 		.getByRole('button', { name: /^Slayer/ })
 		.first()
 		.tap();

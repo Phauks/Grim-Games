@@ -37,15 +37,6 @@
 		align-items: center;
 		gap: var(--space-1);
 	}
-	/* Wide screens have the sidebar instead (AppNav). */
-	@media (min-width: 64rem) {
-		.menu {
-			display: none;
-		}
-		.start {
-			padding-left: var(--space-2);
-		}
-	}
 	.brand {
 		display: inline-flex;
 		align-items: center;
