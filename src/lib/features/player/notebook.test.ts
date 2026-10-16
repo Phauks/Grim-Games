@@ -9,7 +9,7 @@ import {
 	scriptKey,
 	setLayout,
 	setSeatCount,
-	toggleMe,
+	toggleClaim,
 	updateNote,
 	updateSeat
 } from './notebook.ts';
@@ -28,12 +28,10 @@ describe('player notebook', () => {
 
 	it('keeps seat data when seats are added or removed, and never reuses an id', () => {
 		let book = emptyNotebook('edition:tb', 6, 0);
-		book = updateSeat(book, 's2', { name: 'Alex', guess: 'empath' });
-		book = toggleMe(book, 's6');
+		book = updateSeat(book, 's2', { name: 'Alex', claims: ['empath'] });
 		book = setSeatCount(book, 5);
 		expect(book.seats).toHaveLength(5);
-		expect(book.me).toBeUndefined();
-		expect(book.seats[1]).toMatchObject({ name: 'Alex', guess: 'empath' });
+		expect(book.seats[1]).toMatchObject({ name: 'Alex', claims: ['empath'] });
 		book = setSeatCount(book, 7);
 		expect(book.seats.map((s) => s.seatId)).toEqual(['s1', 's2', 's3', 's4', 's5', 's6', 's7']);
 		expect(setSeatCount(book, 99).seats).toHaveLength(MAX_SEATS);
@@ -49,9 +47,11 @@ describe('player notebook', () => {
 	});
 
 	it('reads a saved notebook and refuses data it does not understand', () => {
-		const saved = JSON.parse(JSON.stringify(toggleMe(emptyNotebook('edition:tb', 5, 1), 's3')));
+		const saved = JSON.parse(
+			JSON.stringify(toggleClaim(emptyNotebook('edition:tb', 5, 1), 's3', 'chef'))
+		);
 		expect(migrateNotebook(saved)).toEqual(saved);
-		expect(migrateNotebook({ ...saved, schemaVersion: 4 })).toBeUndefined();
+		expect(migrateNotebook({ ...saved, schemaVersion: 5 })).toBeUndefined();
 		expect(migrateNotebook('nonsense')).toBeUndefined();
 		const damaged = migrateNotebook({
 			schemaVersion: 2,
@@ -60,6 +60,28 @@ describe('player notebook', () => {
 		});
 		expect(damaged?.seats).toHaveLength(MIN_SEATS);
 		expect(damaged?.seats[0].name).toBe('');
+	});
+
+	it('a seat can claim several characters, toggled one at a time', () => {
+		let book = emptyNotebook('edition:tb', 5, 0);
+		book = toggleClaim(book, 's1', 'chef');
+		book = toggleClaim(book, 's1', 'empath');
+		expect(book.seats[0].claims).toEqual(['chef', 'empath']);
+		book = toggleClaim(book, 's1', 'chef');
+		expect(book.seats[0].claims).toEqual(['empath']);
+	});
+
+	it("turns an older notebook's single guess into a claim and drops 'This is me'", () => {
+		const v3 = {
+			schemaVersion: 3,
+			scriptKey: 'edition:tb',
+			seats: [{ seatId: 's1', name: 'Sam', guess: 'chef' }, { seatId: 's2' }],
+			me: 's1',
+			notes: []
+		};
+		const book = migrateNotebook(v3)!;
+		expect(book.seats.map((s) => s.claims)).toEqual([['chef'], [], [], [], []]);
+		expect(book).not.toHaveProperty('me');
 	});
 
 	it('moves a v1 notes pad into one untitled note', () => {

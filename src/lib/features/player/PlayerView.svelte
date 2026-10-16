@@ -236,7 +236,6 @@
 						{:else if value === 'circle'}
 							<SeatCircle
 								seats={notebook.book.seats}
-								me={notebook.book.me}
 								characters={byId}
 								layout={notebook.book.layout}
 								onSeatCount={(n) => notebook!.setSeatCount(n)}
@@ -285,10 +284,9 @@
 				bind:open={editorOpen}
 				seat={notebook.book.seats[seatIndex]}
 				number={seatIndex + 1}
-				isMe={notebook.book.me === editing}
 				characters={script.characters}
 				onChange={(patch) => editing && notebook!.updateSeat(editing, patch)}
-				onToggleMe={() => editing && notebook!.toggleMe(editing)}
+				onToggleClaim={(id) => editing && notebook!.toggleClaim(editing, id)}
 			/>
 		</ErrorBoundary>
 		<ErrorBoundary area="play">

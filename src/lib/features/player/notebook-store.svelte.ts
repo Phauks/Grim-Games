@@ -1,7 +1,7 @@
 /**
  * The player's notebook, kept in this browser's IndexedDB only (database
  * `grim-games-player`, one record per script). Nothing here is sent anywhere: notes and
- * guesses are private to the player's device (09-player-script-view.md).
+ * claims are private to the player's device (09-player-script-view.md).
  *
  * The database is separate from the Storyteller's saved games (`grim-games`) so the two
  * never share a schema upgrade, and so player mode never reads Storyteller state.
@@ -13,7 +13,7 @@ import {
 	migrateNotebook,
 	setLayout,
 	setSeatCount,
-	toggleMe,
+	toggleClaim,
 	updateNote,
 	updateSeat,
 	type PlayerNotebook,
@@ -89,7 +89,7 @@ export class NotebookState {
 			if (saved && saved.scriptKey === this.key) this.book = saved;
 		} catch (e) {
 			// The panel says this browser cannot save, so only logged. IndexedDB errors carry
-			// no notebook content (names, notes and guesses never go into an error).
+			// no notebook content (names, notes and claims never go into an error).
 			reportError(e, { area: 'play', notify: false });
 			this.saveError = true;
 		}
@@ -116,8 +116,8 @@ export class NotebookState {
 	updateSeat(seatId: string, patch: SeatPatch) {
 		this.#change(updateSeat(this.book, seatId, patch));
 	}
-	toggleMe(seatId: string) {
-		this.#change(toggleMe(this.book, seatId));
+	toggleClaim(seatId: string, id: string) {
+		this.#change(toggleClaim(this.book, seatId, id));
 	}
 	/** Adds an empty note and returns its id. */
 	addNote(): string {

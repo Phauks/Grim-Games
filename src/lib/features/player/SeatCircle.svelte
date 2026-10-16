@@ -28,7 +28,6 @@
 
 	interface Props {
 		seats: readonly NotebookSeat[];
-		me?: string;
 		characters: ReadonlyMap<string, Character>;
 		/** Where seats are drawn: the shared seat layout (ovals, gaps, couch groups). */
 		layout: SeatLayout;
@@ -37,7 +36,7 @@
 		onLayout: (layout: SeatLayout) => void;
 	}
 
-	let { seats, me, characters, layout, onSeatCount, onOpenSeat, onLayout }: Props = $props();
+	let { seats, characters, layout, onSeatCount, onOpenSeat, onLayout }: Props = $props();
 
 	const ids = $derived(seats.map((s) => s.seatId));
 	const alive = $derived(seats.filter((s) => !s.dead).length);
@@ -193,8 +192,8 @@
 	<div class="board" class:arranging bind:this={board} data-testid="seat-ring">
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = drag?.seatId === seat.seatId && arranging ? drag.at : points[i]}
-			{@const icon = iconFor(seat.guess)}
-			{@const guess = seat.guess ? characters.get(seat.guess) : undefined}
+			{@const icon = iconFor(seat.claims[0])}
+			{@const claims = seat.claims.map((id) => characters.get(id)?.name).filter(Boolean)}
 			<button
 				type="button"
 				class="seat"
@@ -203,13 +202,11 @@
 				style:top="{at.y}%"
 				style:--seat-size="{size}px"
 				data-seat={seat.seatId}
-				data-me={seat.seatId === me || undefined}
 				data-dead={seat.dead || undefined}
 				aria-label={[
 					`Seat ${i + 1}`,
 					seat.name,
-					seat.seatId === me ? 'you' : '',
-					guess ? `guess ${guess.name}` : '',
+					claims.length ? `claims ${claims.join(' and ')}` : '',
 					seat.note.trim() ? 'has notes' : '',
 					seat.dead ? (seat.ghostVoteUsed ? 'dead, vote used' : 'dead') : ''
 				]
@@ -225,6 +222,9 @@
 				<span class="face">
 					{#if icon}<img src={icon} alt="" />{:else}<span class="number">{i + 1}</span>{/if}
 					{#if seat.dead && !seat.ghostVoteUsed}<span class="vote"><Icon name="ghostVote" /></span
+						>{/if}
+					{#if claims.length > 1}<span class="more" data-testid="more-claims"
+							>+{claims.length - 1}</span
 						>{/if}
 					{#if seat.note.trim()}<span class="noted" data-testid="has-notes"
 							><Icon name="notes" /></span
@@ -339,7 +339,8 @@
 		translate: -50% calc(-50% + 0.6em);
 		display: grid;
 		justify-items: center;
-		width: var(--seat-size);
+		/* As wide as the name below the token, so the token is centred on its point. */
+		width: calc(var(--seat-size) + 2rem);
 		padding: 0;
 		border: 0;
 		background: none;
@@ -366,11 +367,6 @@
 		color: var(--on-token);
 		box-shadow: 0 0 0 2px var(--token-rim);
 	}
-	.seat[data-me] .face {
-		box-shadow:
-			0 0 0 2px var(--token-rim),
-			0 0 0 5px var(--accent);
-	}
 	.face img {
 		width: 88%;
 		height: 88%;
@@ -379,7 +375,7 @@
 		font-weight: 700;
 		font-size: 1.1rem;
 	}
-	/* Dead: greyed out, so the guess stays visible (Trevor, 2026-10-15). */
+	/* Dead: greyed out, so the claim stays visible (Trevor, 2026-10-15). */
 	.seat[data-dead] .face {
 		background: color-mix(in srgb, var(--token-face) 35%, var(--surface));
 	}
@@ -406,6 +402,20 @@
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		--icon-size: 14px;
+	}
+	/* More than one claim: how many more, top left (Trevor, 2026-10-16). */
+	.more {
+		position: absolute;
+		left: 6%;
+		top: 6%;
+		min-width: 20px;
+		height: 20px;
+		padding: 0 3px;
+		border-radius: 10px;
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font: 700 0.7rem / 20px var(--font-control);
+		text-align: center;
 	}
 	.noted {
 		top: auto;

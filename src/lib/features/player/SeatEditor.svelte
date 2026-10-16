@@ -17,24 +17,25 @@
 		seat?: NotebookSeat;
 		/** 1-based position round the circle. */
 		number: number;
-		isMe: boolean;
 		characters: readonly Character[];
 		onChange: (patch: SeatPatch) => void;
-		onToggleMe: () => void;
+		/** Adds or removes one character from this seat's claims. */
+		onToggleClaim: (id: Character['id']) => void;
 	}
 
 	let {
 		open = $bindable(false),
 		seat,
 		number,
-		isMe,
 		characters,
 		onChange,
-		onToggleMe
+		onToggleClaim
 	}: Props = $props();
 
-	const guessed = $derived(characters.find((c) => c.id === seat?.guess));
-	const guessIcon = $derived(guessed && iconFor(guessed));
+	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
+	const claimed = $derived(
+		(seat?.claims ?? []).map((id) => byId.get(id)).filter((c): c is Character => !!c)
+	);
 	let pickerOpen = $state(false);
 	let query = $state('');
 
@@ -48,10 +49,6 @@
 		query = '';
 		pickerOpen = true;
 	}
-	function guess(id: Character['id'] | undefined) {
-		onChange({ guess: id });
-		pickerOpen = false;
-	}
 	// Phones don't close the keyboard on Enter in a single-line field; Done should (Trevor).
 	function doneOnEnter(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
 		if (event.key !== 'Enter' || event.isComposing) return;
@@ -60,7 +57,7 @@
 	}
 </script>
 
-<!-- A fixed height, so picking a guess or marking a death never resizes the sheet. -->
+<!-- A fixed height, so claiming or marking a death never resizes the sheet. -->
 <BottomSheet bind:open title="Seat {number}" height="85dvh" focusFirstField={false}>
 	{#if seat}
 		<div class="editor">
@@ -76,7 +73,6 @@
 				/>
 			</label>
 			<div class="toggles">
-				<Toggle label="This is me" checked={isMe} onChange={onToggleMe} />
 				<Toggle label="Dead" checked={seat.dead} onChange={(dead) => onChange({ dead })} />
 				<!-- Always shown, disabled while alive, so the sheet never reflows. -->
 				<Toggle
@@ -89,23 +85,32 @@
 
 			<!-- One fixed-height row; the searchable list opens over the sheet (no reflow). -->
 			<div class="field">
-				<span id="guess-label">I think they are</span>
+				<span id="claim-label">Claim</span>
 				<button
 					type="button"
-					class="guess"
-					aria-labelledby="guess-label guess-value"
+					class="claim"
+					aria-labelledby="claim-label claim-value"
 					onclick={openPicker}
 				>
-					<span class="face"
-						>{#if guessIcon}<img src={guessIcon} alt="" />{/if}</span
+					<span class="faces" aria-hidden="true">
+						{#each claimed.slice(0, 3) as c (c.id)}
+							{@const icon = iconFor(c)}
+							<span class="face"
+								>{#if icon}<img src={icon} alt="" />{/if}</span
+							>
+						{:else}
+							<span class="face"></span>
+						{/each}
+					</span>
+					<span id="claim-value" class="value"
+						>{claimed.length ? claimed.map((c) => c.name).join(', ') : 'None'}</span
 					>
-					<span id="guess-value" class="value">{guessed?.name ?? 'None'}</span>
 					<span class="change" aria-hidden="true">Change</span>
 				</button>
 			</div>
 
 			<label class="field">
-				<span>Notes on this player</span>
+				<span>Notes</span>
 				<textarea
 					rows="4"
 					value={seat.note}
@@ -115,17 +120,20 @@
 	{/if}
 </BottomSheet>
 
-<Dialog bind:open={pickerOpen} title="I think they are" size="full">
+<!-- Several characters can be claimed at once (Trevor, 2026-10-16): taps toggle. -->
+<Dialog bind:open={pickerOpen} title="Claim" size="full">
 	<div class="picker">
 		<CharacterPicker
 			{characters}
-			selected={seat?.guess ? [seat.guess] : []}
-			onSelect={(id) => guess(id)}
+			mode="multi"
+			selected={seat?.claims ?? []}
+			onSelect={onToggleClaim}
 			bind:query
 		/>
 	</div>
 	{#snippet actions()}
-		<Button onclick={() => guess(undefined)} disabled={!seat?.guess}>No guess</Button>
+		<Button onclick={() => onChange({ claims: [] })} disabled={!seat?.claims.length}>Clear</Button>
+		<Button variant="accent" icon="check" onclick={() => (pickerOpen = false)}>Done</Button>
 	{/snippet}
 </Dialog>
 
@@ -158,7 +166,7 @@
 	.toggles {
 		display: grid;
 	}
-	.guess {
+	.claim {
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr) auto;
 		align-items: center;
@@ -174,11 +182,19 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
-	.guess:hover {
+	.claim:hover {
 		background: color-mix(in srgb, currentColor 10%, transparent);
+	}
+	.faces {
+		display: flex;
+	}
+	/* Several claims overlap like a hand of tokens. */
+	.face + .face {
+		margin-left: -24px;
 	}
 	.face {
 		display: grid;
+		box-shadow: 0 0 0 2px var(--token-rim);
 		place-items: center;
 		width: 44px;
 		height: 44px;

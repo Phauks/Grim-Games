@@ -60,7 +60,7 @@ test("the night order shows who wakes, with TPI's night text", async ({ page }) 
 	await expect(other.locator('li[data-step="imp"]')).toContainText('chooses a player');
 });
 
-test('the circle keeps names, guesses and deaths on this device', async ({ page }) => {
+test('the circle keeps names, claims and deaths on this device', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Circle' }).tap();
 	await expect(page.getByTestId('seat-count')).toHaveText('8');
 	await page.getByRole('button', { name: 'Add a seat' }).tap();
@@ -70,20 +70,31 @@ test('the circle keeps names, guesses and deaths on this device', async ({ page 
 	const sheet = page.getByRole('dialog', { name: 'Seat 3' });
 	await expect(sheet).toBeVisible();
 	await sheet.getByRole('textbox', { name: 'Name' }).fill('Alex');
-	await expect(sheet.getByRole('button', { name: 'I think they are None' })).toBeVisible();
-	await sheet.getByRole('button', { name: /^I think they are/ }).tap();
-	// The shared character picker, searchable (Trevor, 2026-10-16).
-	const picker = page.getByRole('dialog', { name: 'I think they are' });
-	await picker.getByRole('searchbox', { name: 'Search characters' }).fill('emp');
+	// No "This is me" (Trevor, 2026-10-16).
+	await expect(sheet.getByText('This is me')).toHaveCount(0);
+	await expect(sheet.getByRole('button', { name: 'Claim None' })).toBeVisible();
+	await sheet.getByRole('button', { name: /^Claim/ }).tap();
+	// The shared character picker, searchable; a player can claim several characters at once.
+	const picker = page.getByRole('dialog', { name: 'Claim' });
+	const search = picker.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('emp');
 	await expect(picker.getByRole('button', { name: 'Investigator' })).toBeHidden();
 	await picker.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await search.fill('chef');
+	await picker.getByRole('button', { name: 'Chef', exact: true }).tap();
+	await expect(picker.getByRole('button', { name: 'Chef', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await picker.getByRole('button', { name: 'Done' }).tap();
 	await expect(picker).toBeHidden();
-	await expect(sheet.getByRole('button', { name: 'I think they are Empath' })).toBeVisible();
+	await expect(sheet.getByRole('button', { name: 'Claim Empath, Chef' })).toBeVisible();
 	await sheet.getByText('Dead', { exact: true }).tap();
 	await page.keyboard.press('Escape');
 
-	const seat = page.getByRole('button', { name: /^Seat 3, Alex, guess Empath, dead/ });
+	const seat = page.getByRole('button', { name: /^Seat 3, Alex, claims Empath and Chef, dead/ });
 	await expect(seat).toBeVisible();
+	await expect(seat.getByTestId('more-claims')).toHaveText('+1');
 	await expect(page.getByTestId('alive-count')).toHaveText('8 alive');
 	// No reassurance line under the circle (Trevor, 2026-10-16).
 	await expect(page.getByText(/Saved on this device/)).toHaveCount(0);
@@ -94,7 +105,7 @@ test('the circle keeps names, guesses and deaths on this device', async ({ page 
 	await page.getByRole('tab', { name: 'Circle' }).tap();
 	await expect(page.getByTestId('seat-count')).toHaveText('9');
 	await expect(
-		page.getByRole('button', { name: /^Seat 3, Alex, guess Empath, dead/ })
+		page.getByRole('button', { name: /^Seat 3, Alex, claims Empath and Chef, dead/ })
 	).toBeVisible();
 });
 
@@ -208,7 +219,7 @@ test('notes on a player show in Notes and mark their token', async ({ page }) =>
 	await page.getByRole('button', { name: /^Seat 2/ }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Seat 2' });
 	await sheet.getByRole('textbox', { name: 'Name' }).fill('Sam');
-	await sheet.getByRole('textbox', { name: 'Notes on this player' }).fill('Claimed Chef');
+	await sheet.getByRole('textbox', { name: 'Notes' }).fill('Claimed Chef');
 	await page.keyboard.press('Escape');
 	await expect(page.getByRole('button', { name: /^Seat 2, Sam, has notes/ })).toBeVisible();
 	await expect(page.locator('[data-seat="s2"] [data-testid="has-notes"]')).toBeVisible();

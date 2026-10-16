@@ -16,7 +16,7 @@ import {
 	type SeatLayout
 } from '#lib/ui/seating/seat-layout.ts';
 
-export const NOTEBOOK_VERSION = 3;
+export const NOTEBOOK_VERSION = 4;
 
 /** 5 to 15 dealt players plus up to 5 Travellers (wiki: Setup, Travellers). */
 export const MIN_SEATS = 5;
@@ -27,8 +27,11 @@ export interface NotebookSeat {
 	/** Stable id; seat numbers are positions in `seats`, clockwise from the top. */
 	seatId: string;
 	name: string;
-	/** The character the player thinks this seat has. */
-	guess?: CharacterId;
+	/**
+	 * What this player has claimed to be: several characters, since players sometimes claim
+	 * more than one at once (Trevor, 2026-10-16). v1 to v3 saved one `guess`.
+	 */
+	claims: CharacterId[];
 	dead: boolean;
 	ghostVoteUsed: boolean;
 	note: string;
@@ -46,8 +49,6 @@ export interface PlayerNotebook {
 	/** Which script this notebook belongs to (`scriptKey`). */
 	scriptKey: string;
 	seats: NotebookSeat[];
-	/** The player's own seat. */
-	me?: string;
 	notes: PlayerNote[];
 	/** Where the seats are drawn (ovals, gaps, couch groups); seating order is `seats`. */
 	layout: SeatLayout;
@@ -62,7 +63,7 @@ export function scriptKey(script: { edition?: string; name: string }): string {
 }
 
 function newSeat(n: number): NotebookSeat {
-	return { seatId: `s${n}`, name: '', dead: false, ghostVoteUsed: false, note: '' };
+	return { seatId: `s${n}`, name: '', claims: [], dead: false, ghostVoteUsed: false, note: '' };
 }
 
 /** Next unused seat id, so ids never repeat after removing and adding seats. */
@@ -94,12 +95,11 @@ export function setSeatCount(book: PlayerNotebook, count: number): PlayerNoteboo
 	const target = clampSeats(count);
 	const seats = book.seats.slice(0, target);
 	while (seats.length < target) seats.push(newSeat(nextSeatNumber(seats)));
-	const me = seats.some((s) => s.seatId === book.me) ? book.me : undefined;
 	const layout = pruneLayout(
 		book.layout,
 		seats.map((s) => s.seatId)
 	);
-	return { ...book, seats, me, layout };
+	return { ...book, seats, layout };
 }
 
 export function setLayout(book: PlayerNotebook, layout: SeatLayout): PlayerNotebook {
@@ -127,9 +127,14 @@ export function updateSeat(book: PlayerNotebook, seatId: string, patch: SeatPatc
 	};
 }
 
-/** Marks a seat as the player's own; tapping it again clears it. */
-export function toggleMe(book: PlayerNotebook, seatId: string): PlayerNotebook {
-	return { ...book, me: book.me === seatId ? undefined : seatId };
+/** Adds a character to a seat's claims, or removes it if it is already there. */
+export function toggleClaim(book: PlayerNotebook, seatId: string, id: CharacterId): PlayerNotebook {
+	const seat = book.seats.find((s) => s.seatId === seatId);
+	if (!seat) return book;
+	const claims = seat.claims.includes(id)
+		? seat.claims.filter((c) => c !== id)
+		: [...seat.claims, id];
+	return updateSeat(book, seatId, { claims });
 }
 
 /** Adds an empty note at the end and returns the notebook and the new note's id. */
@@ -182,13 +187,19 @@ function readNotes(raw: unknown): PlayerNote[] {
 	return notes;
 }
 
+/** v4 `claims`, or v1 to v3's single `guess`. */
+function readClaims(o: Record<string, unknown>): CharacterId[] {
+	if (Array.isArray(o.claims)) return [...new Set(o.claims.filter(isString).filter(Boolean))];
+	return isString(o.guess) && o.guess ? [o.guess] : [];
+}
+
 function readSeat(raw: unknown, n: number): NotebookSeat {
 	const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
 	const dead = o.dead === true;
 	return {
 		seatId: isString(o.seatId) && o.seatId ? o.seatId : `s${n}`,
 		name: isString(o.name) ? o.name : '',
-		guess: isString(o.guess) && o.guess ? o.guess : undefined,
+		claims: readClaims(o),
 		dead,
 		ghostVoteUsed: dead && o.ghostVoteUsed === true,
 		note: isString(o.note) ? o.note : ''
@@ -203,24 +214,23 @@ function readSeat(raw: unknown, n: number): NotebookSeat {
 export function migrateNotebook(raw: unknown): PlayerNotebook | undefined {
 	if (!raw || typeof raw !== 'object') return undefined;
 	const o = raw as Record<string, unknown>;
-	const version = o.schemaVersion;
-	if ((version !== 1 && version !== 2 && version !== 3) || !isString(o.scriptKey)) return undefined;
+	const version = typeof o.schemaVersion === 'number' ? o.schemaVersion : 0;
+	if (![1, 2, 3, 4].includes(version) || !isString(o.scriptKey)) return undefined;
 	const rawSeats = Array.isArray(o.seats) ? o.seats.slice(0, MAX_SEATS) : [];
 	const seats = rawSeats.map((s, i) => readSeat(s, i + 1));
 	while (seats.length < MIN_SEATS) seats.push(newSeat(nextSeatNumber(seats)));
-	const me = isString(o.me) && seats.some((s) => s.seatId === o.me) ? o.me : undefined;
 	return {
 		schemaVersion: NOTEBOOK_VERSION,
 		scriptKey: o.scriptKey,
+		// v1 to v3's `me` ("This is me") was dropped in v4 (Trevor, 2026-10-16).
 		seats,
-		me,
 		notes:
 			version === 1
 				? [{ noteId: 'n1', title: '', text: isString(o.notes) ? o.notes : '' }]
 				: readNotes(o.notes),
 		// v1 and v2 had no layout: their seats were always drawn on the default ring.
 		layout: pruneLayout(
-			version === 3 ? parseSeatLayout(o.layout) : DEFAULT_SEAT_LAYOUT,
+			version >= 3 ? parseSeatLayout(o.layout) : DEFAULT_SEAT_LAYOUT,
 			seats.map((s) => s.seatId)
 		),
 		updatedAt: typeof o.updatedAt === 'number' ? o.updatedAt : 0
