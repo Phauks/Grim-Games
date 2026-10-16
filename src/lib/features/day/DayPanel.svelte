@@ -359,9 +359,9 @@
 				>
 					<!-- Icon two lines tall, character name above, player name below (Trevor). -->
 					<span class="seat-icon" aria-hidden="true"
-						>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}<span class="shroud"
-							><Icon name="dead" /></span
-						></span
+						><span class="face"
+							>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
+						><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span></span
 					>
 					<span class="seat-text">
 						<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
@@ -526,14 +526,17 @@
 	.seat-icon {
 		position: relative;
 		display: inline-grid;
-		place-items: center;
 		width: calc(2.25 * var(--u) * var(--character-icon-scale, 1));
 		height: calc(2.25 * var(--u) * var(--character-icon-scale, 1));
+	}
+	.face {
+		display: grid;
+		place-items: center;
 		border-radius: 50%;
 		background: var(--token-face, var(--on-surface));
 		overflow: hidden;
 	}
-	.seat-icon img {
+	.face img {
 		width: 88%;
 		height: 88%;
 	}
@@ -559,22 +562,30 @@
 		overflow-wrap: anywhere;
 		font-family: var(--font-player);
 	}
-	/* Dead: the board's shroud over the icon, never dimmed text (Trevor: dimming is harder
-	   to read). Always laid out, shown only when dead, so nothing shifts. */
-	.shroud {
+	/*
+	 * Dead, as on the board (Trevor, 2026-10-16): the icon dimmed with its colour kept, and
+	 * a skull badge on its lower-left rim. Names keep full contrast (dimming text is harder
+	 * to read). Always laid out, shown only when dead, so nothing shifts.
+	 */
+	.seat[data-dead='true'] .face {
+		filter: brightness(0.55);
+	}
+	.skull {
 		position: absolute;
-		inset: 0;
+		left: -10%;
+		bottom: -6%;
 		display: grid;
-		justify-items: center;
-		align-content: start;
-		padding-top: 6%;
+		place-items: center;
+		width: 45%;
+		height: 45%;
+		border: calc(0.125 * var(--u)) solid var(--on-surface);
 		border-radius: 50%;
-		background: linear-gradient(to bottom, rgb(0 0 0 / 0.85) 45%, transparent 45%);
+		background: var(--dialog-background);
 		color: var(--on-surface);
 		visibility: hidden;
-		--icon-size: calc(0.9 * var(--u));
+		--icon-size: calc(0.6 * var(--u) * var(--character-icon-scale, 1));
 	}
-	.seat[data-dead='true'] .shroud {
+	.seat[data-dead='true'] .skull {
 		visibility: visible;
 	}
 	.demon-voted {
