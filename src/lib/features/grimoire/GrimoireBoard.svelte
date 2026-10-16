@@ -58,6 +58,7 @@
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
 	import SharePanel from '#lib/features/scripts/SharePanel.svelte';
+	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import NightOrderSheet from './NightOrderSheet.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
@@ -499,6 +500,11 @@
 
 	// ── Share the script (never the game) ──
 	let shareOpen = $state(false);
+	// ── The players' copy of the script ──
+	let scriptOpen = $state(false);
+	const loadedScript = $derived(
+		officialData.current ? fromScript(game.script, officialData.current).script : undefined
+	);
 	const shareTarget = $derived.by(() => {
 		const data = officialData.current;
 		if (!data) return undefined;
@@ -639,8 +645,9 @@
 				aria-label="Share script"
 				onclick={() => (shareOpen = true)}><span class="tool-label">Share</span></Button
 			>
-			<Button variant="quiet" icon="arrange" aria-label="Arrange seats" onclick={startArranging}
-				><span class="tool-label">Arrange seats</span></Button
+			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16). -->
+			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
+				><span class="tool-label">Script</span></Button
 			>
 			<Button variant="quiet" icon="more" aria-label="More" onclick={() => (menuOpen = true)}
 				><span class="tool-label">More</span></Button
@@ -855,6 +862,9 @@
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
 			Demon bluffs
 		</Button>
+		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
+			Arrange seats
+		</Button>
 		<Button
 			variant="quiet"
 			icon="players"
@@ -941,6 +951,12 @@
 <SeatSheet bind:open={sheetOpen} {grimoire} seatId={selected} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
+
+<Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">
+	{#if loadedScript}
+		<ScriptCopy script={loadedScript} players={game.seating.length} />
+	{/if}
+</Dialog>
 
 <Dialog bind:open={shareOpen} title="Share script">
 	{#if shareTarget}

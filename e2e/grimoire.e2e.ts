@@ -426,7 +426,7 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	const board = (await page.locator('.board').boundingBox())!;
 	const seat2 = await centre(2);
 
-	await page.getByRole('button', { name: 'Arrange seats' }).tap();
+	await menu(page, 'Arrange seats');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar).toContainText('Arrange seats');
 	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
@@ -464,7 +464,7 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await closeSheet(page);
 
 	// Spread evenly puts everyone back round the table.
-	await page.getByRole('button', { name: 'Arrange seats' }).tap();
+	await menu(page, 'Arrange seats');
 	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
 	await expect(toolbar.getByRole('button', { name: 'Spread evenly' })).toBeDisabled();
 	const spread = await centre(1);
@@ -893,7 +893,7 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await closeSheet(page);
 
 	// Rotating is part of arranging: one tap, one place, no confirm.
-	await page.getByRole('button', { name: 'Arrange seats' }).tap();
+	await menu(page, 'Arrange seats');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: Ana')).toBeAttached();
@@ -1304,4 +1304,24 @@ test('End game moves the game to Past games, where it can be reopened', async ({
 	await expect(page).toHaveURL(board);
 	await page.goto('/');
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*Setting up/ })).toBeVisible();
+});
+
+test("the Script button opens the players' copy of the script", async ({ page }) => {
+	await startGame(page);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	// The same component as /play's Script tab (Trevor, 2026-10-16): 22 characters plus the
+	// edition's 5 recommended Travellers (wiki: Trouble Brewing).
+	await expect(sheet.locator('[data-character]')).toHaveCount(27);
+	await expect(sheet.locator('[data-character="empath"]')).toContainText(
+		'Each night, you learn how many of your 2 alive neighbors'
+	);
+	await expect(sheet.getByTestId('no-jinxes')).toHaveText('None');
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	// Arrange seats moved into More to make room.
+	await page.getByRole('button', { name: 'More' }).tap();
+	await expect(
+		page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Arrange seats' })
+	).toBeVisible();
 });
