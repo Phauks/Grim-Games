@@ -246,3 +246,21 @@ test('settings are grouped by who they affect, and each section says so', async 
 		'Applies to: Storyteller only'
 	);
 });
+
+test('text alignment switches body text between left aligned and justified', async ({ page }) => {
+	await page.goto('/privacy');
+	const paragraph = page.locator('main p').nth(1);
+	const align = () => paragraph.evaluate((el) => getComputedStyle(el).textAlign);
+	expect(await align()).toBe('start');
+
+	const dialog = await openSettings(page, 'Appearance');
+	await choose(page, 'Text alignment', 'Justified');
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	expect(await align()).toBe('justify');
+
+	// Headings and buttons keep their own alignment; the choice survives a reload.
+	await page.reload();
+	expect(await align()).toBe('justify');
+	const button = page.getByRole('banner').getByRole('button', { name: 'Settings' });
+	expect(await button.evaluate((el) => getComputedStyle(el).textAlign)).toBe('center');
+});

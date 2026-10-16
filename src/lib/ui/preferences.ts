@@ -24,6 +24,8 @@ export interface Preferences {
 	textScale: TextScale;
 	/** Multiplies the size of interface icons; independent of text size. */
 	iconScale: IconScale;
+	/** How paragraphs of body text line up: ragged right, or justified to both edges. */
+	textAlign: TextAlign;
 	iconSet: IconSetId | null;
 	iconOverrides: Partial<Record<IconSlot, string>>;
 	/** How much the app walks the Storyteller through the game. */
@@ -36,11 +38,15 @@ export type TextScale = (typeof TEXT_SCALES)[number];
 export const ICON_SCALES = [0.875, 1, 1.25, 1.5] as const;
 export type IconScale = (typeof ICON_SCALES)[number];
 
+export const TEXT_ALIGNS = ['left', 'justify'] as const;
+export type TextAlign = (typeof TEXT_ALIGNS)[number];
+
 export const DEFAULT_PREFERENCES: Preferences = {
 	themeId: DEFAULT_THEME_ID,
 	fonts: {},
 	textScale: 1,
 	iconScale: 1,
+	textAlign: 'left',
 	iconSet: null,
 	iconOverrides: {},
 	assistance: DEFAULT_ASSISTANCE
@@ -66,6 +72,9 @@ export function parsePreferences(raw: unknown): Preferences {
 		iconScale: (ICON_SCALES as readonly unknown[]).includes(input.iconScale)
 			? (input.iconScale as IconScale)
 			: DEFAULT_PREFERENCES.iconScale,
+		textAlign: (TEXT_ALIGNS as readonly unknown[]).includes(input.textAlign)
+			? (input.textAlign as TextAlign)
+			: DEFAULT_PREFERENCES.textAlign,
 		iconSet: isIconSetId(input.iconSet) ? input.iconSet : null,
 		iconOverrides,
 		assistance: parseAssistance(input.assistance)

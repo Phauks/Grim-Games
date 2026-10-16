@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { ICON_SCALES, TEXT_SCALES, type IconScale, type TextScale } from '#lib/ui/preferences.ts';
+	import {
+		ICON_SCALES,
+		TEXT_ALIGNS,
+		TEXT_SCALES,
+		type IconScale,
+		type TextAlign,
+		type TextScale
+	} from '#lib/ui/preferences.ts';
 	import SettingChoice from '#lib/ui/settings/SettingChoice.svelte';
 	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
 	import { THEMES } from '#lib/ui/themes/registry.ts';
@@ -12,6 +19,7 @@
 		1.25: 'XL',
 		1.5: 'XXL'
 	};
+	const alignLabels: Record<TextAlign, string> = { left: 'Left aligned', justify: 'Justified' };
 	const iconScaleLabels: Record<IconScale, string> = { 0.875: 'S', 1: 'M', 1.25: 'L', 1.5: 'XL' };
 </script>
 
@@ -27,6 +35,13 @@
 	value={String(preferences.current.textScale)}
 	options={TEXT_SCALES.map((scale) => ({ value: String(scale), label: scaleLabels[scale] }))}
 	onChange={(scale) => preferences.update({ textScale: Number(scale) as TextScale })}
+/>
+<SettingSegmented
+	label="Text alignment"
+	description="How paragraphs line up: ability text, night steps, notes and help text. Justified spreads each line to both edges. Headings, labels and buttons stay as they are."
+	value={preferences.current.textAlign}
+	options={TEXT_ALIGNS.map((align) => ({ value: align, label: alignLabels[align] }))}
+	onChange={(textAlign) => preferences.update({ textAlign: textAlign as TextAlign })}
 />
 <SettingSegmented
 	label="Icon size"

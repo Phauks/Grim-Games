@@ -37,7 +37,8 @@ export function applyAppearance(theme: Theme, prefs: Preferences, root = documen
 		...theme.components,
 		...fontVariables(theme, prefs),
 		'--text-scale': String(prefs.textScale),
-		'--icon-scale': String(prefs.iconScale)
+		'--icon-scale': String(prefs.iconScale),
+		'--text-align': prefs.textAlign === 'justify' ? 'justify' : 'start'
 	};
 
 	// Clear tokens the previous theme set that this one does not.
@@ -46,6 +47,7 @@ export function applyAppearance(theme: Theme, prefs: Preferences, root = documen
 	written = Object.keys(variables) as CssVariable[];
 
 	root.dataset.theme = theme.id;
+	root.dataset.textAlign = prefs.textAlign;
 	root.style.colorScheme = theme.colorScheme;
 	// Only the fonts in use are fetched; Settings loads the rest for its previews.
 	for (const font of new Set(Object.values(resolveFonts(prefs, theme)))) void loadFont(font);

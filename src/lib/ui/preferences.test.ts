@@ -24,6 +24,7 @@ describe('parsePreferences', () => {
 				displayFont: 'comic-sans',
 				textScale: 7,
 				iconScale: 9,
+				textAlign: 'center',
 				iconSet: 'ph-heavy',
 				iconOverrides: { dead: 'ph:not-offered', nope: 'ph:skull' }
 			})
@@ -36,6 +37,7 @@ describe('parsePreferences', () => {
 			fonts: { heading: 'im-fell-english-sc', ability: 'lexend' },
 			textScale: 1.25,
 			iconScale: 1.5,
+			textAlign: 'justify',
 			iconSet: 'ph-fill',
 			iconOverrides: { dead: 'ph:cross' },
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false }

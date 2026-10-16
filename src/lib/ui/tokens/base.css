@@ -37,6 +37,7 @@
 	--text-scale: 1;
 	/* Written by the preferences store: the user's icon size, applied by IconGlyph. */
 	--icon-scale: 1;
+	--text-align: start;
 	/*
 	 * The root font size grows with --text-scale so text sized in rem follows it. Layout
 	 * (spacing, icons, widths) uses --u instead: one rem at the default size, whatever the

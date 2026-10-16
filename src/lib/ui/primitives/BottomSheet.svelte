@@ -194,8 +194,11 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
+	/* Room for focus rings: a scroll box clips anything drawn past its edge. */
 	.body {
 		min-height: 0;
+		margin-inline: calc(-1 * var(--space-2));
+		padding: var(--space-1) var(--space-2);
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}

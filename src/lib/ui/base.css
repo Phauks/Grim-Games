@@ -24,6 +24,8 @@ body {
 	color: var(--on-surface);
 	font-family: var(--font-body);
 	line-height: 1.45;
+	/* Text alignment setting: inherited, so anything a component centres stays centred. */
+	text-align: var(--text-align);
 	/* Long words (names, script titles, web addresses) wrap instead of widening the page
 	   past a phone screen (Trevor: no sideways scrolling on mobile). */
 	overflow-wrap: break-word;
@@ -76,7 +78,27 @@ textarea {
 	color: inherit;
 }
 
+/* Notes follow the text alignment setting too. */
+textarea {
+	text-align: var(--text-align);
+}
+
+/* Justified text splits long words, so it doesn't leave wide gaps between words. */
+:root[data-text-align='justify'] p {
+	hyphens: auto;
+}
+
 :focus-visible {
 	outline: 3px solid var(--focus);
 	outline-offset: 2px;
+}
+
+/* Text fields draw their ring inside their own border, following its rounded corners, so a
+   sheet or dialog that scrolls can never clip it into stray bars (Trevor, 2026-10-16). */
+input:not([type='checkbox'], [type='radio'], [type='range']):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+	outline: 2px solid var(--focus);
+	outline-offset: -2px;
+	border-color: var(--focus);
 }
