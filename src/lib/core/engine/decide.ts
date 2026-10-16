@@ -40,7 +40,8 @@ import {
 	DAY_GROUPS,
 	type DayReminderOverride,
 	type Night,
-	type NightStepOverride
+	type NightStepOverride,
+	fixedReminderMove
 } from '#lib/core/rules/index.ts';
 import type { Command, CommandOf } from './commands.ts';
 import type { EngineContext } from './context.ts';
@@ -104,7 +105,8 @@ export type WarningCode =
 	| 'already-dead'
 	| 'not-seat-character'
 	| 'already-used'
-	| 'empty-day';
+	| 'empty-day'
+	| 'reminder-fixed';
 
 export interface Issue<C extends string> {
 	code: C;
@@ -751,6 +753,9 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				warn('no-change', 'the reminder is already on that seat');
 				return [];
 			}
+			const fixed = fixedReminderMove(game, command.reminderId, to.seatId);
+			if (fixed)
+				warn('reminder-fixed', `${fixed.reminder.label} usually stays where it was placed`);
 			return [{ type: 'ReminderMoved', reminderId: command.reminderId, toSeatId: to.seatId }];
 		}
 
