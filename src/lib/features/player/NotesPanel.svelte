@@ -117,7 +117,7 @@
 	}
 	.row {
 		display: grid;
-		gap: 2px;
+		gap: calc(0.125 * var(--u));
 		width: 100%;
 		min-height: var(--tap-target);
 		padding: var(--space-2) var(--space-3);

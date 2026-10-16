@@ -360,25 +360,25 @@
 		top: 6%;
 		display: grid;
 		place-items: center;
-		width: 20px;
-		height: 20px;
+		width: calc(1.25 * var(--u));
+		height: calc(1.25 * var(--u));
 		border-radius: 50%;
 		background: var(--surface-raised);
 		color: var(--on-surface);
-		--icon-size: 14px;
+		--icon-size: calc(0.875 * var(--u));
 	}
 	/* More than one claim: how many more, top left (Trevor, 2026-10-16). */
 	.more {
 		position: absolute;
 		left: 6%;
 		top: 6%;
-		min-width: 20px;
-		height: 20px;
-		padding: 0 3px;
-		border-radius: 10px;
+		min-width: calc(1.25 * var(--u));
+		height: calc(1.25 * var(--u));
+		padding: 0 calc(0.1875 * var(--u));
+		border-radius: calc(0.625 * var(--u));
 		background: var(--surface-raised);
 		color: var(--on-surface);
-		font: 700 0.7rem / 20px var(--font-control);
+		font: 700 0.7rem / calc(1.25 * var(--u)) var(--font-control);
 		text-align: center;
 	}
 	.noted {

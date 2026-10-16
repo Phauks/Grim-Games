@@ -136,7 +136,7 @@
 	.jinx {
 		display: grid;
 		justify-items: start;
-		gap: 2px;
+		gap: calc(0.125 * var(--u));
 		align-content: start;
 	}
 	.pair {
