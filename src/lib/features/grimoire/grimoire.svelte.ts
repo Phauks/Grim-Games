@@ -1,4 +1,3 @@
-import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
@@ -87,21 +86,6 @@ export class Grimoire {
 		if (!this.run({ type: 'AddSeat', ...(position !== undefined ? { position } : {}) }))
 			return undefined;
 		return this.game.seating.find((id) => !before.includes(id));
-	}
-
-	/** A Traveller joins: a new seat with the Traveller on it. */
-	addTraveller(
-		characterId: CharacterId,
-		alignment: Alignment | undefined,
-		position?: number
-	): SeatId | undefined {
-		const seatId = this.addSeat(position);
-		if (seatId === undefined) return undefined;
-		if (!this.run({ type: 'AssignCharacter', seatId, characterId, alignment })) {
-			this.open.undo();
-			return undefined;
-		}
-		return seatId;
 	}
 
 	removeSeat(seatId: SeatId): void {

@@ -157,13 +157,14 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(sheet).toContainText('Baron · Good · Seat 1');
 });
 
-test('history, add seat, swap and remove', async ({ page }) => {
+test('history, add seat and remove', async ({ page }) => {
 	await startGame(page);
-	// Adding a seat asks where it goes: between two neighbours.
+	// Adding a seat asks where it goes: between two neighbours. The new seat then opens.
 	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 2 and Seat 3' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 	await expect(page.getByRole('button', { name: /^Place between/ })).toHaveCount(0);
+	await closeSheet(page);
 
 	// History lists the change; going back to before it asks first.
 	await menu(page, 'History');
@@ -183,21 +184,12 @@ test('history, add seat, swap and remove', async ({ page }) => {
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 	await history.getByRole('button', { name: 'Close' }).tap();
 
-	let sheet = await openSeat(page, 2);
+	const sheet = await openSeat(page, 5);
 	await nameSeat(sheet, 'Ben');
-	await seatMenu(page, sheet, 'Swap seats');
-	await page
-		.getByRole('dialog', { name: 'Swap Ben with' })
-		.getByRole('button', { name: /^5/ })
-		.tap();
-	// Swapping is confirmed on its own.
-	const confirm = page.getByRole('alertdialog', { name: 'Swap seats?' });
-	await expect(confirm).toContainText('Swap Ben and Seat 5?');
-	await confirm.getByRole('button', { name: 'Swap' }).tap();
-	await expect(seatLabelled(page, 'Seat 5: Ben')).toBeAttached();
-
-	await closeSheet(page);
-	sheet = await openSeat(page, 5);
+	// No Swap seats: players are moved on the board (Arrange seats).
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	await expect(page.getByRole('dialog').getByRole('button', { name: 'Swap seats' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await seatMenu(page, sheet, 'Remove seat');
 	await page
 		.getByRole('alertdialog', { name: 'Remove Ben?' })
@@ -232,14 +224,21 @@ test('an orphan character is flagged and names are suggested', async ({ page }) 
 
 test('Travellers join as a new seat, and Fabled sit in the middle', async ({ page }) => {
 	await startGame(page);
-	await menu(page, 'Add Traveller');
+	// A Traveller joins as a new seat: Add seat, then choose them for it.
+	await menu(page, 'Add seat');
+	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
 	await page
-		.getByRole('dialog', { name: 'Add a Traveller' })
+		.locator('[data-scope="drawer"][data-part="content"]')
+		.getByRole('button', { name: 'Choose' })
+		.first()
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 9' })
 		.getByRole('button', { name: 'Thief, Recommended', exact: true })
 		.tap();
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Evil' }).tap();
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
-	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 9: no name, Thief')).toBeAttached();
+	await closeSheet(page);
 
 	await menu(page, 'Add Fabled or Loric');
 	await page
@@ -284,15 +283,17 @@ test('Demon bluffs open from the toolbar, and a seat shows its token to the play
 	await expect(shown).toBeHidden();
 });
 
-test('the toolbar leads to character selection, the bag draw and the day', async ({ page }) => {
+test('the board leads to setup and the day; setup ends on the setup reminders', async ({
+	page
+}) => {
 	await startGame(page);
 	const board = page.url();
-	await page.getByRole('button', { name: 'Characters' }).tap();
+	await page.getByRole('button', { name: 'Set up' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
-	await page.goto(board);
-	await page.getByRole('button', { name: 'Bag draw' }).tap();
-	await expect(page).toHaveURL(`${board}/draw`);
-	await page.goto(board);
+	// The last setup step opens the board with the setup reminders in the bank.
+	await page.goto(`${board}#setup-reminders`);
+	await expect(page).toHaveURL(board);
+	await expect(page.locator('[data-tray] .view')).toHaveText('Setup');
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(page).toHaveURL(`${board}/day`);
 });
@@ -559,19 +560,27 @@ test('the script is shared from the grimoire menu, never the game', async ({ pag
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
 	await startGame(page);
-	await menu(page, 'Add Traveller');
+	// A Traveller joins as a new seat: Add seat, then choose them for it.
+	await menu(page, 'Add seat');
+	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
 	await page
-		.getByRole('dialog', { name: 'Add a Traveller' })
+		.locator('[data-scope="drawer"][data-part="content"]')
+		.getByRole('button', { name: 'Choose' })
+		.first()
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 9' })
 		.getByRole('button', { name: 'Thief, Recommended', exact: true })
 		.tap();
 	await page
 		.getByRole('dialog', { name: 'Alignment' })
 		.getByRole('button', { name: 'Decide later' })
 		.tap();
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
-	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toHaveAccessibleName(
+	await expect(seatLabelled(page, 'Seat 9: no name, Thief')).toHaveAttribute(
+		'aria-label',
 		/alignment not set/
 	);
+	await closeSheet(page);
 
 	// The night order starts by asking for it (core withTravellerAlignmentStep).
 	await page.getByRole('button', { name: 'Night order' }).tap();
@@ -964,14 +973,14 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	page
 }) => {
 	await startGame(page);
-	await menu(page, 'Add Traveller');
-	await page
-		.getByRole('dialog', { name: 'Add a Traveller' })
-		.getByRole('button', { name: 'Apprentice', exact: true })
-		.tap();
-	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
+	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
-	const sheet = await openSeat(page, 9);
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 9' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Apprentice', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
 	await seatMenu(page, sheet, 'Gained ability…');
 	const gains = page.getByRole('dialog', { name: 'Ability Seat 9 gains' });
 	// Good, so only Townsfolk are offered.

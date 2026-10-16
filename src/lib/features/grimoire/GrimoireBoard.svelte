@@ -8,9 +8,11 @@
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BackgroundDialog from './BackgroundDialog.svelte';
 	import { openAccount, openSettings } from '#lib/features/shell/shell.ts';
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
-	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		scriptCharacterIds,
 		trueCharacter,
@@ -40,7 +42,7 @@
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { placeNames, type Box } from './name-placement.ts';
-	import { isOrphan, placingAlignment, recommendedTravellers } from './board.ts';
+	import { isOrphan, placingAlignment } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -342,16 +344,6 @@
 	});
 
 	// ── Travellers ──
-	let travellerOpen = $state(false);
-	let traveller = $state<CharacterId | undefined>();
-	let travellerAlignmentOpen = $state(false);
-	function addTraveller(alignment: Alignment | undefined) {
-		travellerAlignmentOpen = false;
-		const id = traveller;
-		traveller = undefined;
-		if (id) startPlacing((position) => grimoire.addTraveller(id, alignment, position));
-	}
-
 	// ── Placing a new seat: the Storyteller taps where it goes (Trevor, 2026-10-16) ──
 	let placing = $state<((position: number) => void) | undefined>();
 	function startPlacing(add: (position: number) => void) {
@@ -393,6 +385,12 @@
 	function startTray() {
 		bankChosen = 'setup';
 	}
+	// The setup flow's last step lands here with its setup reminders in the bank.
+	onMount(() => {
+		if (location.hash !== REMINDERS_HASH) return;
+		startTray();
+		replaceState(resolve('/grimoire/[gameId]', { gameId: game.gameId }), {});
+	});
 
 	/** Characters and Bag draw show in the middle until the game is set up, then go. */
 	const showSetup = $derived(
@@ -661,15 +659,15 @@
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if showSetup}
 				<div class="setup">
-					<Button
-						icon="players"
-						onclick={() => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))}
-						>Characters</Button
-					>
+					<!-- One setup flow (Trevor, 2026-10-16): Characters, Draw, then the reminders. -->
 					<Button
 						icon="bag"
-						onclick={() => goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }))}
-						>Bag draw</Button
+						onclick={() =>
+							goto(
+								currentSetupStep(game) === 'draw'
+									? resolve('/grimoire/[gameId]/draw', { gameId: game.gameId })
+									: resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })
+							)}>Set up</Button
 					>
 				</div>
 			{/if}
@@ -707,12 +705,16 @@
 		<Button
 			variant="quiet"
 			icon="add"
-			onclick={() => fromMenu(() => startPlacing((position) => grimoire.addSeat(position)))}
+			onclick={() =>
+				fromMenu(() =>
+					// The new seat opens, to choose its character or a Traveller (Trevor, 2026-10-16).
+					startPlacing((position) => {
+						const id = grimoire.addSeat(position);
+						if (id) openSeat(id);
+					})
+				)}
 		>
 			Add seat
-		</Button>
-		<Button variant="quiet" icon="traveller" onclick={() => fromMenu(() => (travellerOpen = true))}>
-			Add Traveller
 		</Button>
 		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(() => (ruleOpen = true))}>
 			Add Fabled or Loric
@@ -828,34 +830,6 @@
 	{characters}
 	dispatch={(command) => grimoire.open.run(command)}
 />
-
-<CharacterPicker
-	bind:open={travellerOpen}
-	title="Add a Traveller"
-	{characters}
-	script={game.script}
-	types={['traveller']}
-	alwaysAll
-	recommended={recommendedTravellers(game.script, characters)}
-	onPick={(id) => {
-		travellerOpen = false;
-		traveller = id;
-		travellerAlignmentOpen = true;
-	}}
-/>
-
-<Dialog
-	bind:open={travellerAlignmentOpen}
-	title="Alignment"
-	description="Travellers can be good or evil."
->
-	<div class="choices">
-		<Button onclick={() => addTraveller('good')}>Good</Button>
-		<Button onclick={() => addTraveller('evil')}>Evil</Button>
-		<!-- Often chosen later: the night order asks for it first (Trevor, 2026-10-16). -->
-		<Button variant="quiet" onclick={() => addTraveller(undefined)}>Decide later</Button>
-	</div>
-</Dialog>
 
 <CharacterPicker
 	bind:open={ruleOpen}
@@ -1106,11 +1080,6 @@
 	}
 	.menu {
 		display: grid;
-		gap: var(--space-2);
-		margin-top: var(--space-3);
-	}
-	.choices {
-		display: flex;
 		gap: var(--space-2);
 		margin-top: var(--space-3);
 	}

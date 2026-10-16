@@ -15,7 +15,14 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { causeFlagText, causeLabel, isOrphan, placingAlignment, SEAT_TYPES } from './board.ts';
+	import {
+		causeFlagText,
+		causeLabel,
+		isOrphan,
+		placingAlignment,
+		recommendedTravellers,
+		SEAT_TYPES
+	} from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -218,9 +225,6 @@
 	let moving = $state<ReminderId | undefined>();
 	let moveOpen = $state(false);
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
-	let swapOpen = $state(false);
-	let swapWith = $state<SeatId | undefined>();
-	let swapConfirmOpen = $state(false);
 	let menuOpen = $state(false);
 	let reminderMenuOpen = $state(false);
 	const movingReminder = $derived(seat?.reminders.find((r) => r.reminderId === moving));
@@ -442,6 +446,7 @@
 	{characters}
 	script={game.script}
 	types={SEAT_TYPES}
+	recommended={recommendedTravellers(game.script, characters)}
 	current={seat?.characterId}
 	onPick={pick}
 />
@@ -603,19 +608,6 @@
 	{/snippet}
 </Dialog>
 
-<SeatChooser
-	bind:open={swapOpen}
-	title={`Swap ${title} with`}
-	{game}
-	{characters}
-	exclude={seatId}
-	onChoose={(other) => {
-		swapOpen = false;
-		swapWith = other;
-		swapConfirmOpen = true;
-	}}
-/>
-
 {#snippet seatBadge(id: SeatId | undefined)}
 	{@const other = id ? game.seats[id] : undefined}
 	{#if other}
@@ -633,39 +625,6 @@
 		{/if}
 	{/if}
 {/snippet}
-
-<!-- Swapping moves two players at once, so it is confirmed on its own. -->
-<Dialog bind:open={swapConfirmOpen} title="Swap seats?" role="alertdialog">
-	<p class="swap">Swap {@render seatBadge(seatId)} and {@render seatBadge(swapWith)}?</p>
-	{#if seatId && swapWith}
-		<dl class="change">
-			<dt>Now</dt>
-			<dd>
-				{@render seatBadge(seatId)} in Seat {number}, {@render seatBadge(swapWith)} in Seat {game.seating.indexOf(
-					swapWith
-				) + 1}
-			</dd>
-			<dt>Becomes</dt>
-			<dd>
-				{@render seatBadge(seatId)} in Seat {game.seating.indexOf(swapWith) + 1}, {@render seatBadge(
-					swapWith
-				)} in Seat {number}
-			</dd>
-		</dl>
-	{/if}
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (swapConfirmOpen = false)}>Cancel</Button>
-		<Button
-			variant="accent"
-			icon="swap"
-			onclick={() => {
-				swapConfirmOpen = false;
-				if (seatId && swapWith) grimoire.run({ type: 'SwapSeats', seatA: seatId, seatB: swapWith });
-				swapWith = undefined;
-			}}>Swap</Button
-		>
-	{/snippet}
-</Dialog>
 
 <!-- The seat's less frequent actions, in an overlay so the sheet stays short. -->
 <Dialog bind:open={menuOpen} {title} description={`Seat ${number}`}>
@@ -710,9 +669,6 @@
 				})}
 		>
 			Change alignment
-		</Button>
-		<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (swapOpen = true))}>
-			Swap seats
 		</Button>
 		<Button
 			variant="quiet"
@@ -844,10 +800,6 @@
 		display: grid;
 		gap: var(--space-2);
 		margin-top: var(--space-3);
-	}
-	.swap {
-		margin: 0;
-		line-height: 2;
 	}
 	.name-form {
 		display: contents;

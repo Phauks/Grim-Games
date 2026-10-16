@@ -16,19 +16,25 @@ async function startGame(page: Page) {
 }
 
 async function addThief(page: Page) {
+	// A Traveller joins as a new seat: Add seat (the board asks where), then choose them.
 	await page.getByRole('button', { name: 'More' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add Traveller' })
+		.getByRole('button', { name: 'Add seat' })
 		.tap();
+	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
-		.getByRole('dialog', { name: 'Add a Traveller' })
+		.getByRole('dialog', { name: 'Character for Seat 9' })
 		.getByRole('button', { name: 'Thief, Recommended', exact: true })
 		.tap();
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Evil' }).tap();
-	// The board asks where the new seat goes.
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
-	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toBeAttached();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await expect(
+		page.locator('[data-testid="seat"][aria-label^="Seat 9: no name, Thief"]')
+	).toBeAttached();
 }
 
 const seat = (page: Page, name: string) => page.getByRole('button', { name: `Seat: ${name}` });
