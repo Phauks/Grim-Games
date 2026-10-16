@@ -326,6 +326,13 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
+	/* The bin and Show on one line, the bin set apart at the start. */
+	.chain-actions {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
 	.chain-buttons {
 		display: flex;
 		flex: none;
