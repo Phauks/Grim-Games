@@ -12,6 +12,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { isTraveller, trueCharacter } from '#lib/core/model/index.ts';
+import {
+	newGame,
+	run,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
+import { validDeathCauses } from '#lib/core/rules/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Apprentice', () => {
@@ -46,5 +54,46 @@ describe('Apprentice', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Apprentice#Examples)', () => {
 		it.todo('Example 1: Evil Apprentice gets Assassin, kills Fool');
 		it.todo('Example 2: Wrong Tea Lady guess kills the Gambler');
+	});
+
+	// The Storyteller swaps the Apprentice's token for the gained character and marks it
+	// "Is The Apprentice" (Trevor, 2026-10-16): the seat shows the Monk, the player is the
+	// Apprentice, a Traveller.
+	describe('a swapped token marked "Is The Apprentice"', () => {
+		function apprenticeAsMonk() {
+			const { session, ctx, seats } = newGame(['Ana', 'Ben', 'Cat']);
+			const s = run(
+				session,
+				ctx,
+				...[
+					['monk', 'good'],
+					['imp', undefined],
+					['chef', undefined]
+				].map(([characterId, alignment], i): Command => ({
+					type: 'AssignCharacter',
+					seatId: seats[i],
+					characterId: characterId!,
+					...(alignment ? { alignment: alignment as 'good' } : {})
+				})),
+				{
+					type: 'AddReminder',
+					seatId: seats[0],
+					reminder: { characterId: 'apprentice', label: 'Is The Apprentice' }
+				}
+			);
+			return { game: s.game, seats };
+		}
+
+		it('is really the Apprentice, a Traveller', () => {
+			const { game, seats } = apprenticeAsMonk();
+			expect(game.seats[seats[0]].characterId).toBe('monk');
+			expect(trueCharacter(game, seats[0], characters)).toBe('apprentice');
+			expect(isTraveller(game, seats[0], characters)).toBe(true);
+		});
+
+		it('is exiled, not executed', () => {
+			const { game, seats } = apprenticeAsMonk();
+			expect(validDeathCauses(game, seats[0], characters)[0].cause).toBe('exile');
+		});
 	});
 });

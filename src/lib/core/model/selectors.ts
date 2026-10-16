@@ -68,15 +68,26 @@ export function trueCharacter(
 }
 
 /**
- * The character an "Is The …" reminder says the player really is: its character has TPI's
- * `special: reveal/replace-character` and the reminder is one of its global reminders.
+ * The character an "Is The …" reminder says the player really is:
+ * - its character has TPI's `special: reveal/replace-character` and the reminder is one of
+ *   its global reminders (Drunk, Marionette, Philosopher, Alchemist);
+ * - or the reminder is the character's own "Is The <its name>" token, as with the Apprentice,
+ *   whose token is swapped for the character whose ability they gained
+ *   (https://wiki.bloodontheclocktower.com/Apprentice; Trevor, 2026-10-16). TPI gives the
+ *   Apprentice no `replace-character` flag, so the label decides.
  */
 export function replacedBy(reminder: Reminder, characters: CharacterLookup): Character | undefined {
 	const source = characters.get(reminder.characterId);
+	if (!source) return undefined;
 	if (
-		source &&
 		source.remindersGlobal.includes(reminder.label) &&
 		source.special.some((s) => s.type === 'reveal' && s.name === 'replace-character')
+	) {
+		return source;
+	}
+	if (
+		reminder.label === `Is The ${source.name}` &&
+		(source.reminders.includes(reminder.label) || source.remindersGlobal.includes(reminder.label))
 	) {
 		return source;
 	}
