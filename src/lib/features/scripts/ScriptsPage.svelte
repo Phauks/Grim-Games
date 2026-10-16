@@ -1,31 +1,15 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
-	import { CHARACTER_TYPES } from '#lib/core/data/index.ts';
-	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import { scriptPageUrl } from './botcscripts-api.ts';
-	import { currentScript, restoreScripts } from './current-script.svelte.ts';
-	import { describeSource } from './saved-scripts.ts';
+	import { restoreScripts } from './current-script.svelte.ts';
 	import ScriptPicker from './ScriptPicker.svelte';
-	import ShareControl from './ShareControl.svelte';
-	import { fetchSharedRef, shareTargetFor } from './share-codes.ts';
+	import { fetchSharedRef } from './share-codes.ts';
 	import { sharedRefFromHash } from './share.ts';
 
 	let picker: ScriptPicker | undefined = $state();
-
-	const script = $derived(currentScript.current);
-	const saved = $derived(currentScript.saved);
-	const counts = $derived(
-		script
-			? CHARACTER_TYPES.flatMap((type) => {
-					const n = script.characters.filter((c) => c.type === type).length;
-					return n === 0 ? [] : [`${n} ${n === 1 ? TYPE_LABELS[type] : TYPE_PLURALS[type]}`];
-				}).join(' · ')
-			: t('common.none')
-	);
 
 	/** A share link (`/scripts#c=…` and the like) loads through the usual checks, then is cleared. */
 	async function openSharedLink() {
@@ -84,12 +68,6 @@
 		const text = data.getData('text/uri-list').split('\n')[0] || data.getData('text/plain');
 		if (text.trim()) void picker.loadText(text);
 	}
-
-	/** The player link for the current script, made only when Share or QR code is tapped. */
-	const shareTarget = $derived.by(() => {
-		const current = saved;
-		return current && script ? () => shareTargetFor(current, location.origin) : undefined;
-	});
 </script>
 
 <!-- Anywhere on the page, so a missed drop never opens the file in place of the app. -->
@@ -104,45 +82,9 @@
 <main>
 	<h1>{t('scripts.heading')}</h1>
 
-	<!-- Side by side on wide windows: the current script beside the picker. -->
-	<div class="layout">
-		<!-- Same size with or without a script, so choosing one never moves the picker. -->
-		<ErrorBoundary area="scripts">
-			<section class="current" aria-labelledby="current-heading" data-testid="current-script">
-				<h2 id="current-heading">{t('scripts.current.heading')}</h2>
-				<p class="name" data-testid="current-script-name">{script?.name ?? t('common.none')}</p>
-				<dl>
-					<dt>{t('scripts.current.author')}</dt>
-					<dd>{script?.meta.author || t('common.none')}</dd>
-					<dt>{t('scripts.current.characters')}</dt>
-					<dd class="counts" data-testid="current-script-counts">{counts}</dd>
-					<dt>{t('scripts.current.source')}</dt>
-					<dd>
-						{#if saved?.source.kind === 'botcscripts'}
-							<!-- eslint-disable svelte/no-navigation-without-resolve -->
-							<a
-								href={scriptPageUrl(saved.source.scriptId, saved.source.version)}
-								target="_blank"
-								rel="noopener noreferrer">{describeSource(saved.source)}</a
-							>
-							<!-- eslint-enable svelte/no-navigation-without-resolve -->
-						{:else}
-							{saved ? describeSource(saved.source) : t('common.none')}
-						{/if}
-					</dd>
-				</dl>
-				<ShareControl
-					what="script"
-					title={script?.name ?? t('scripts.current.defaultName')}
-					target={shareTarget}
-				/>
-			</section>
-		</ErrorBoundary>
-
-		<ErrorBoundary area="scripts">
-			<ScriptPicker bind:this={picker} />
-		</ErrorBoundary>
-	</div>
+	<ErrorBoundary area="scripts">
+		<ScriptPicker bind:this={picker} />
+	</ErrorBoundary>
 
 	<!-- An overlay, so the page never moves while something is dragged over it. -->
 	<div class="drop" class:active={dragging} aria-hidden={!dragging} data-testid="drop-overlay">
@@ -186,61 +128,5 @@
 	h1 {
 		margin: 0;
 		font-size: 2rem;
-	}
-	.layout {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-5);
-		align-items: start;
-	}
-	@media (min-width: 64rem) {
-		.layout {
-			grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
-		}
-	}
-	h2 {
-		margin: 0;
-		font-size: 1.1rem;
-	}
-	.current {
-		display: grid;
-		gap: var(--space-2);
-		padding: var(--space-4);
-		border: var(--card-border);
-		border-radius: var(--card-radius);
-		background: var(--card-background);
-	}
-	.name {
-		margin: 0;
-		font-size: 1.3rem;
-		color: var(--heading);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	dl {
-		margin: 0;
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-1) var(--space-3);
-	}
-	dt {
-		color: var(--on-surface-muted);
-	}
-	dd {
-		margin: 0;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	/* Counts may need two lines on a phone; both are always reserved, so nothing moves. */
-	.counts {
-		min-height: 2lh;
-		white-space: normal;
-	}
-	dd a {
-		min-height: auto;
-		color: inherit;
 	}
 </style>

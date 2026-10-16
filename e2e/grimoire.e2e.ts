@@ -332,8 +332,8 @@ test('a new game can use a custom script from the Scripts page', async ({ page }
 	await dialog
 		.getByLabel('Script JSON or link')
 		.fill(JSON.stringify([{ id: '_meta', name: 'Pocket Storm' }, 'chef', 'saint', 'imp']));
-	await dialog.getByRole('button', { name: 'Load' }).tap();
-	await expect(page.getByTestId('current-script-name')).toHaveText('Pocket Storm');
+	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText('Pocket Storm');
 
 	await startGame(page, 'Pocket Storm');
 	await expect(page.locator('.watermark')).toHaveText('Pocket Storm');

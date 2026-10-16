@@ -8,9 +8,11 @@
 		open?: boolean;
 		result: ScriptLoadResult | undefined;
 		onconfirm: () => void;
+		/** The Scripts page saves; /play loads. */
+		action?: 'load' | 'save';
 	}
 
-	let { open = $bindable(false), result, onconfirm }: Props = $props();
+	let { open = $bindable(false), result, onconfirm, action = 'load' }: Props = $props();
 
 	const GROUPS = [
 		{ severity: 'error', title: 'scripts.check.notLoaded' },
@@ -55,7 +57,8 @@
 				onclick={() => {
 					open = false;
 					onconfirm();
-				}}>{t('scripts.check.loadAnyway')}</Button
+				}}
+				>{action === 'save' ? t('scripts.check.saveAnyway') : t('scripts.check.loadAnyway')}</Button
 			>
 		{/if}
 	{/snippet}

@@ -17,7 +17,9 @@ const homebrew = [
 	'imp'
 ];
 
-const currentName = (page: Page) => page.getByTestId('current-script-name');
+/** The details beside the list (over it on a phone). */
+const details = (page: Page) => page.getByRole('complementary', { name: 'Script details' });
+const detailsName = (page: Page) => page.getByTestId('script-details-name');
 
 /** Picks a source in the picker's Source dropdown. */
 async function chooseSource(page: Page, label: string) {
@@ -25,10 +27,12 @@ async function chooseSource(page: Page, label: string) {
 	await page.getByRole('option', { name: label }).tap();
 }
 
-/** Taps a row of the picker, then Load in its preview. */
+/** Taps a row of the list, then Save in its details. */
 async function pick(page: Page, name: string) {
 	await page.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
-	await page.getByRole('dialog', { name }).getByRole('button', { name: 'Load' }).tap();
+	await expect(detailsName(page)).toHaveText(name);
+	await details(page).getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(details(page).getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
 }
 
 async function noSidewaysScroll(page: Page) {
@@ -45,55 +49,84 @@ test('the home page links to Scripts', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Scripts', level: 1 })).toBeVisible();
 });
 
-test('choosing an official edition makes it current and survives a reload', async ({ page }) => {
+test('saved scripts are listed without the base three, survive a reload and can be removed', async ({
+	page
+}) => {
 	await page.goto('/scripts');
-	await expect(currentName(page)).toHaveText('None');
-	// Nothing recent yet: the three editions are the whole table.
-	await expect(page.getByTestId('picker-status')).toHaveText('3 scripts');
-	await pick(page, 'Trouble Brewing');
-	await expect(currentName(page)).toHaveText('Trouble Brewing');
-	await expect(page.getByTestId('current-script-counts')).toHaveText(
-		'13 Townsfolk · 4 Outsiders · 4 Minions · 1 Demon'
-	);
-	await page.reload();
-	await expect(currentName(page)).toHaveText('Trouble Brewing');
+	await expect(detailsName(page)).toHaveText('None');
+	// The base three are always in New game, so the Scripts page leaves them out.
+	await expect(page.getByTestId('picker-status')).toHaveText('None');
+	await expect(page.getByRole('button', { name: /^Trouble Brewing/ })).toHaveCount(0);
+	await expect(page.getByRole('combobox', { name: 'Source' })).not.toContainText('Official');
+
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(JSON.stringify(homebrew))
+	});
+	// Saving shows the script's details beside the list (over it on a phone), not in a modal.
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	await expect(details(page)).toBeVisible();
+	await expect(page.getByTestId('script-characters')).toContainText('Storm Warden');
+	await expect(details(page).getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
 	await noSidewaysScroll(page);
+	await backToList(page);
+	await expect(details(page)).toBeVisible({ visible: test.info().project.name !== 'phone' });
+
+	await page.reload();
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
+
+	// Remove from saved asks first.
+	await page.getByRole('button', { name: /^Storm Front/ }).tap();
+	await details(page).getByRole('button', { name: 'Remove from saved' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Remove from saved?' });
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('picker-status')).toHaveText('None');
+	await expect(detailsName(page)).toHaveText('None');
+	await expect(details(page).getByRole('button', { name: 'Remove from saved' })).toBeDisabled();
 });
 
-test('a pasted script with a typo is checked, then loaded anyway', async ({ page }) => {
+/** Phones: the details cover the list until Back. */
+async function backToList(page: Page) {
+	const back = details(page).getByRole('button', { name: 'Back' });
+	if (await back.isVisible()) await back.tap();
+}
+
+test('a pasted script with a typo is checked, then saved anyway', async ({ page }) => {
 	await page.goto('/scripts');
 	await page.getByRole('button', { name: 'Paste', exact: true }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
 	await dialog
 		.getByLabel('Script JSON or link')
 		.fill(JSON.stringify([...homebrew, 'fortune_teler']));
-	await dialog.getByRole('button', { name: 'Load' }).tap();
+	await dialog.getByRole('button', { name: 'Save' }).tap();
 
 	const check = page.getByRole('dialog', { name: 'Script check' });
 	await expect(check).toContainText('Not loaded');
 	await expect(check).toContainText('Did you mean Fortune Teller');
-	await check.getByRole('button', { name: 'Load anyway' }).tap();
+	await check.getByRole('button', { name: 'Save anyway' }).tap();
 
-	await expect(currentName(page)).toHaveText('Storm Front');
-	await expect(page.getByTestId('current-script')).toContainText('Trevor');
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	await expect(details(page)).toContainText('Trevor');
 	await expect(page.getByRole('button', { name: 'Storm Front Pasted' })).toBeVisible();
 });
 
-test('a script file loads straight away when nothing needs checking', async ({ page }) => {
+test('a script file is saved straight away when nothing needs checking', async ({ page }) => {
 	await page.goto('/scripts');
 	await page.getByLabel('Script file').setInputFiles({
 		name: 'storm-front.json',
 		mimeType: 'application/octet-stream',
 		buffer: Buffer.from(JSON.stringify(homebrew))
 	});
-	await expect(currentName(page)).toHaveText('Storm Front');
+	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(page.getByRole('dialog', { name: 'Script check' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /Storm Front.*storm-front\.json/ })).toBeVisible();
 	// A load that worked needs no message (Trevor).
-	await expect(page.getByText('Loaded Storm Front')).toHaveCount(0);
+	await expect(page.getByText('Saved Storm Front', { exact: true })).toHaveCount(0);
 });
 
-test('a BotC Scripts number loads through our Worker', async ({ page }) => {
+test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 	await page.route('**/api/botcscripts/script/42', (route) =>
 		route.fulfill({
 			json: {
@@ -113,11 +146,11 @@ test('a BotC Scripts number loads through our Worker', async ({ page }) => {
 	await chooseSource(page, 'BotC Scripts');
 	await page.getByLabel('Search scripts').fill('42');
 	await expect(page.getByTestId('picker-status')).toHaveText(
-		'A BotC Scripts link or number: tap Load.'
+		'A BotC Scripts link or number: tap Save.'
 	);
-	await page.getByRole('button', { name: 'Load', exact: true }).tap();
-	await expect(currentName(page)).toHaveText('Storm Front');
-	await expect(page.getByRole('link', { name: 'BotC Scripts 1.2.0' })).toHaveAttribute(
+	await page.getByTestId('picker-more').getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.2.0' })).toHaveAttribute(
 		'href',
 		'https://botcscripts.com/script/42/1.2.0'
 	);
@@ -127,8 +160,8 @@ test('a link the browser may not read explains how to paste instead', async ({ p
 	await page.route('https://scripts.example/blocked.json', (route) => route.abort('failed'));
 	await page.goto('/scripts');
 	await page.getByRole('button', { name: 'Link', exact: true }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Load from a link' });
-	const load = dialog.getByRole('button', { name: 'Load' });
+	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
+	const load = dialog.getByRole('button', { name: 'Save' });
 	await dialog.getByLabel('Link to the script JSON').fill('https://scripts.example/blocked.json');
 	await expect(dialog.getByRole('button', { name: 'Open link' })).toBeDisabled();
 	const before = await load.boundingBox();
@@ -139,40 +172,10 @@ test('a link the browser may not read explains how to paste instead', async ({ p
 	expect(await load.boundingBox()).toEqual(before);
 });
 
-test('a share link opens its script and clears the hash', async ({ page }) => {
+test('a share link saves its script and clears the hash', async ({ page }) => {
 	await page.goto(`/scripts#s=${await encodeSharedScript(homebrew)}`);
-	await expect(currentName(page)).toHaveText('Storm Front');
+	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(page).toHaveURL(/\/scripts$/);
-	await page.goto('/scripts#e=bmr');
-	await expect(currentName(page)).toHaveText('Bad Moon Rising');
-	await expect(page).toHaveURL(/\/scripts$/);
-});
-
-test('an official script is shared on one screen: QR code, link and code', async ({
-	page,
-	context
-}) => {
-	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-	await page.goto('/scripts');
-	const share = page.getByRole('button', { name: 'Share script' });
-	await expect(share).toBeDisabled();
-	await pick(page, 'Trouble Brewing');
-	await expect(currentName(page)).toHaveText('Trouble Brewing');
-
-	await share.tap();
-	const dialog = page.getByRole('dialog', { name: 'Share Trouble Brewing' });
-	await expect(dialog.getByRole('img', { name: 'QR code for Trouble Brewing' })).toBeVisible();
-	await expect(dialog.getByTestId('share-url')).toHaveValue(/\/play#e=tb$/);
-	// Official scripts need no stored code: the link names the edition.
-	await expect(dialog.getByTestId('share-code')).toHaveText(/^\s*Code\s*None\s*$/);
-	// One icon beside the link copies it; no success popup.
-	await expect(dialog.getByRole('button', { name: 'Delete code' })).toHaveCount(0);
-	await dialog.getByRole('button', { name: 'Copy link' }).tap();
-	await expect(page.getByText('Link copied')).toHaveCount(0);
-	const link = await page.evaluate(() => navigator.clipboard.readText());
-	// The link opens the player view, with the script in the hash (never the query string).
-	expect(link).toMatch(/^http:\/\/localhost:\d+\/play#e=tb$/);
-	await noSidewaysScroll(page);
 });
 
 test('a custom script gets a six-digit code that another phone can type in', async ({
@@ -186,18 +189,24 @@ test('a custom script gets a six-digit code that another phone can type in', asy
 		mimeType: 'application/json',
 		buffer: Buffer.from(JSON.stringify(homebrew))
 	});
-	await expect(currentName(page)).toHaveText('Storm Front');
+	await expect(detailsName(page)).toHaveText('Storm Front');
 
-	await page.getByRole('button', { name: 'Share script' }).tap();
+	// One screen: QR code, link and code.
+	await details(page).getByRole('button', { name: 'Share script' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Share Storm Front' });
 	await expect(dialog.getByRole('img', { name: 'QR code for Storm Front' })).toBeVisible();
 	const shown = dialog.getByTestId('share-digits');
 	await expect(shown).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await shown.textContent())!;
+	// One icon beside the link copies it; no success popup.
+	await expect(dialog.getByRole('button', { name: 'Delete code' })).toHaveCount(0);
 	await dialog.getByRole('button', { name: 'Copy link' }).tap();
+	await expect(page.getByText('Link copied')).toHaveCount(0);
+	// The link opens the player view, with the script in the hash (never the query string).
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
-		new RegExp(`/play#c=${code.replace(' ', '')}$`)
+		new RegExp(`^http://localhost:\\d+/play#c=${code.replace(' ', '')}$`)
 	);
+	await noSidewaysScroll(page);
 
 	// Another phone types it in on the number pad.
 	const other = await context.newPage();
@@ -206,16 +215,16 @@ test('a custom script gets a six-digit code that another phone can type in', asy
 	const entry = other.getByRole('dialog', { name: 'Have a code?' });
 	const box = entry.getByLabel('The 6-digit code');
 	await expect(box).toHaveAttribute('inputmode', 'numeric');
-	const load = entry.getByRole('button', { name: 'Load' });
+	const load = entry.getByRole('button', { name: 'Save' });
 	await box.fill(code.slice(0, 5));
 	await expect(load).toBeDisabled();
 	await box.fill(code);
 	await load.tap();
-	await expect(other.getByTestId('current-script-name')).toHaveText('Storm Front');
+	await expect(other.getByTestId('script-details-name')).toHaveText('Storm Front');
 	await noSidewaysScroll(other);
 });
 
-test('dropping a script file anywhere on the page loads it', async ({ page }) => {
+test('dropping a script file anywhere on the page saves it', async ({ page }) => {
 	await page.goto('/scripts');
 	const drop = async (name: string, type: string, body: string) => {
 		const data = await page.evaluateHandle(
@@ -235,14 +244,14 @@ test('dropping a script file anywhere on the page loads it', async ({ page }) =>
 	await expect(page.getByTestId('file-error')).toHaveText(
 		'photo.png is not a script. Scripts are .json files.'
 	);
-	await expect(currentName(page)).toHaveText('None');
+	await expect(detailsName(page)).toHaveText('None');
 
 	await drop('storm-front.json', 'application/json', JSON.stringify(homebrew));
-	await expect(currentName(page)).toHaveText('Storm Front');
+	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(page.getByTestId('drop-overlay')).not.toHaveClass(/active/);
 });
 
-test('BotC Scripts can be browsed, searched, sorted and filtered, then a result loaded', async ({
+test('BotC Scripts can be browsed, searched, sorted and filtered, then a result saved', async ({
 	page
 }) => {
 	const searches: string[] = [];
@@ -348,18 +357,20 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	await expect.poll(() => searches.at(-1)).toContain('&sort=match');
 	await expect(status).toHaveText('1 script · best match');
 
-	// Tapping a result shows its characters first; nothing loads until Load.
+	// Tapping a result shows its characters beside the list, no modal; nothing saves until Save.
+	await expect(detailsName(page)).toHaveText('None');
 	await table.getByRole('button', { name: /^Storm Front/ }).tap();
-	const preview = page.getByRole('dialog', { name: 'Storm Front' });
-	await expect(preview.getByTestId('script-preview')).toContainText('Storm Warden');
-	await expect(preview.getByTestId('script-preview')).toContainText('Imp');
-	await expect(preview.getByRole('link', { name: 'Open on BotC Scripts' })).toHaveAttribute(
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	await expect(page.getByTestId('script-characters')).toContainText('Storm Warden');
+	await expect(page.getByTestId('script-characters')).toContainText('Imp');
+	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.0.0' })).toHaveAttribute(
 		'href',
 		'https://botcscripts.com/script/1900/1.0.0'
 	);
-	await expect(currentName(page)).toHaveText('None');
-	await preview.getByRole('button', { name: 'Load' }).tap();
-	await expect(currentName(page)).toHaveText('Storm Front');
+	await details(page).getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(details(page).getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+	await expect(detailsName(page)).toHaveText('Storm Front');
 	await noSidewaysScroll(page);
 });
 
@@ -391,7 +402,7 @@ const bigTown = [
 	...['butler', 'drunk', 'recluse', 'saint', 'poisoner', 'spy', 'scarletwoman', 'baron', 'imp']
 ];
 
-test("the official site's curated scripts are listed when asked for, and load", async ({
+test("the official site's curated scripts are listed when asked for, and saved", async ({
 	page
 }) => {
 	let asked = 0;
@@ -407,7 +418,7 @@ test("the official site's curated scripts are listed when asked for, and load", 
 		});
 	});
 	await page.goto('/scripts');
-	await expect(page.getByTestId('picker-status')).toHaveText('3 scripts');
+	await expect(page.getByTestId('picker-status')).toHaveText('None');
 	// Nothing is fetched from the official site until its scripts are wanted.
 	expect(asked).toBe(0);
 
@@ -436,21 +447,21 @@ test("the official site's curated scripts are listed when asked for, and load", 
 	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
 
 	await pick(page, 'Little Hamlet');
-	await expect(currentName(page)).toHaveText('Little Hamlet');
-	await expect(page.getByTestId('current-script')).toContainText('Script Tool');
+	await expect(detailsName(page)).toHaveText('Little Hamlet');
+	await expect(details(page)).toContainText('Script Tool');
 	await noSidewaysScroll(page);
 });
 
-test('a Script Tool link loads from the link itself, with no request', async ({ page }) => {
+test('a Script Tool link is read from the link itself, with no request', async ({ page }) => {
 	const requests: string[] = [];
 	page.on('request', (r) => {
 		if (r.url().includes('bloodontheclocktower.com')) requests.push(r.url());
 	});
 	await page.goto('/scripts');
 	await page.getByRole('button', { name: 'Link', exact: true }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Load from a link' });
+	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
 	await dialog.getByLabel('Link to the script JSON').fill(scriptToolLink(teensy));
-	await dialog.getByRole('button', { name: 'Load' }).tap();
-	await expect(currentName(page)).toHaveText('Little Hamlet');
+	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await expect(detailsName(page)).toHaveText('Little Hamlet');
 	expect(requests).toEqual([]);
 });

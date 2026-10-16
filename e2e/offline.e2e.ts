@@ -27,13 +27,8 @@ test('a fresh visit stores only what a game needs, and a chosen script works off
 	expect(fresh.filter((path) => path.endsWith('.woff'))).toEqual([]);
 
 	// Choosing a script stores every icon on it, shown or not.
-	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Trouble Brewing' })
-		.getByRole('button', { name: 'Load' })
-		.tap();
-	await expect(page.getByTestId('current-script-name')).toHaveText('Trouble Brewing');
+	await page.goto('/play#e=tb');
+	await expect(page.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 	// The player sheet also shows the edition's Travellers, so theirs are stored too. The
 	// service worker stores them a few at a time: wait for every one before going offline.
 	const scriptIcons = await page.evaluate(async () => {

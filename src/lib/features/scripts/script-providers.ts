@@ -164,6 +164,13 @@ export const LOCAL_PROVIDERS: readonly LocalProvider[] = [
 	profileProvider
 ];
 
+/** The Scripts page leaves out the base three: they are always in New game (Trevor, 2026-10-16). */
+export const SCRIPTS_PAGE_PROVIDERS: readonly LocalProvider[] = [
+	curatedProvider,
+	recentProvider,
+	profileProvider
+];
+
 /** Every local row, each script once (the first source to list it wins). */
 export function localListings(
 	context: LocalContext,
@@ -206,4 +213,23 @@ export function botcProvider(
 			};
 		}
 	};
+}
+
+/** Whether a row is the script `saved` holds. */
+export function matchesSaved(saved: SavedScript, listing: ScriptListing): boolean {
+	if (listing.identity) return sameScript(saved, listing.identity);
+	return (
+		saved.source.kind === 'botcscripts' &&
+		listing.row.source === 'botc' &&
+		saved.source.scriptId === listing.row.number &&
+		saved.source.version === listing.row.version
+	);
+}
+
+/** The saved record for a row, if the row's script is in the user's saved scripts. */
+export function findSaved(
+	saved: readonly SavedScript[],
+	listing: ScriptListing
+): SavedScript | undefined {
+	return listing.saved ?? saved.find((s) => matchesSaved(s, listing));
 }

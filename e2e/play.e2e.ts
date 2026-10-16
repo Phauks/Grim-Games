@@ -248,17 +248,16 @@ test('shows the script chosen on the Scripts page, with its own notebook', async
 	// Players have no Change script button (Trevor): the script comes from /scripts or a link.
 	await expect(page.getByRole('link', { name: 'Change script' })).toHaveCount(0);
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Bad Moon Rising' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Bad Moon Rising' })
-		.getByRole('button', { name: 'Load' })
-		.tap();
-	await expect(page.getByRole('button', { name: 'Bad Moon Rising' })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'moon-night.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(
+			JSON.stringify([{ id: '_meta', name: 'Moon Night' }, 'grandmother', 'chef', 'imp'])
+		)
+	});
+	await expect(page.getByTestId('script-details-name')).toHaveText('Moon Night');
 	await page.goto('/play');
-	await expect(page.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Moon Night', level: 1 })).toBeVisible();
 	await expect(page.locator('[data-character="grandmother"]')).toBeVisible();
 	await page.getByRole('tab', { name: 'Circle' }).tap();
 	// A new script starts its own circle; Trouble Brewing's is kept.
@@ -286,7 +285,7 @@ test('a homebrew character from a loaded script shows as a badge with its abilit
 			])
 		)
 	});
-	await expect(page.getByTestId('current-script-name')).toHaveText('Storm Front');
+	await expect(page.getByTestId('script-details-name')).toHaveText('Storm Front');
 	await page.goto('/play');
 	await expect(page.getByRole('heading', { name: 'Storm Front', level: 1 })).toBeVisible();
 	const row = page.locator('[data-character="stormwarden"]');

@@ -18,6 +18,7 @@
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
@@ -32,6 +33,7 @@
 		type BotcScriptsSort
 	} from './botcscripts-api.ts';
 	import { botcCard } from './botcscripts-cards.ts';
+	import { scriptPageUrl } from './botcscripts-api.ts';
 	import BotcFilter from './BotcFilter.svelte';
 	import { curatedScripts } from './curated.svelte.ts';
 	import {
@@ -59,31 +61,47 @@
 		type SortColumn
 	} from './picker-rows.ts';
 	import { RemoteSearch } from './remote-search.svelte.ts';
-	import {
-		describeSource,
-		reloadSavedScript,
-		sameScript,
-		type ScriptSource
-	} from './saved-scripts.ts';
+	import { describeSource, reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
+	import ScriptDetails, { type ScriptFact } from './ScriptDetails.svelte';
 	import {
 		botcProvider,
+		findSaved,
 		localListings,
+		matchesSaved,
+		SCRIPTS_PAGE_PROVIDERS,
 		type LoadTarget,
 		type ScriptListing
 	} from './script-providers.ts';
-	import ScriptPreview from './ScriptPreview.svelte';
+	import ShareControl from './ShareControl.svelte';
 	import ShareCodeEntry from './ShareCodeEntry.svelte';
-	import { fetchSharedCode } from './share-codes.ts';
+	import { fetchSharedCode, shareTargetFor } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
 	import { CURATED_SECTIONS } from './script-tool-link.ts';
 
+	/**
+	 * The Scripts page's list and details (Trevor, 2026-10-16): search and sources on the left,
+	 * the tapped script's details on the right (on a phone they slide over the list). Its job
+	 * is to find, identify and save scripts; New game loads them.
+	 */
 	interface Props {
-		/** Called after a script is chosen (it is already the current script). */
+		/** Called after a script is saved (it is also the most recent saved script). */
 		onchoose?: (script: LoadedScript) => void;
+		busy?: boolean;
 	}
 
-	let { onchoose }: Props = $props();
+	let { onchoose, busy = $bindable(false) }: Props = $props();
+
+	/** The row tapped; undefined shows the most recently saved script. */
+	let selected = $state.raw<ScriptListing | undefined>();
+	/** Phones: the details cover the list. */
+	let paneOpen = $state(false);
+	let removing = $state(false);
+	let width = $state(0);
+	/** Below 56rem the two panes don't fit side by side (matches the container query below). */
+	const narrow = $derived(
+		width > 0 && width < 56 * parseFloat(getComputedStyle(document.documentElement).fontSize)
+	);
 
 	let pasteOpen = $state(false);
 	let linkOpen = $state(false);
@@ -102,14 +120,9 @@
 	let data = $state.raw<GameData>();
 	let error = $state('');
 	let errorLink = $state<string | undefined>(undefined);
-	let busy = $state(false);
 
 	let checking = $state.raw<{ result: ScriptLoadResult; source: ScriptSource } | undefined>();
 	let fileInput: HTMLInputElement | undefined = $state();
-
-	/** The row whose characters are shown before loading. */
-	let previewing = $state.raw<ScriptListing | undefined>();
-	let previewOpen = $state(false);
 
 	const canReadClipboard =
 		typeof navigator !== 'undefined' && typeof navigator.clipboard?.readText === 'function';
@@ -143,14 +156,17 @@
 
 	const local = $derived(
 		data
-			? localListings({
-					data,
-					curated: curatedScripts.list,
-					recent: recentScripts.list,
-					profile: account.user ? profileScripts.list : [],
-					curatedLabel: curatedSectionLabel,
-					describe: describeSource
-				})
+			? localListings(
+					{
+						data,
+						curated: curatedScripts.list,
+						recent: recentScripts.list,
+						profile: account.user ? profileScripts.list : [],
+						curatedLabel: curatedSectionLabel,
+						describe: describeSource
+					},
+					SCRIPTS_PAGE_PROVIDERS
+				)
 			: []
 	);
 
@@ -243,14 +259,74 @@
 
 	const shown = $derived<ScriptListing[]>(source === 'botc' ? botc.listings : shownLocal);
 
-	const isCurrent = (listing: ScriptListing) =>
-		!!currentScript.saved &&
-		(listing.identity
-			? sameScript(currentScript.saved, listing.identity)
-			: currentScript.saved.source.kind === 'botcscripts' &&
-				listing.row.source === 'botc' &&
-				currentScript.saved.source.scriptId === listing.row.number &&
-				currentScript.saved.source.version === listing.row.version);
+	/** The most recently saved script that is listed (base three are not). */
+	const latest = $derived(
+		recentScripts.list
+			.map((saved) => local.find((l) => l.saved?.scriptId === saved.scriptId))
+			.find((l) => l !== undefined)
+	);
+	const shownListing = $derived(selected ?? latest);
+	const shownSaved = $derived(
+		shownListing ? findSaved(recentScripts.list, shownListing) : undefined
+	);
+
+	function select(listing: ScriptListing) {
+		selected = listing;
+		paneOpen = true;
+	}
+
+	/** The shown row, or (in another source's list) the same script there. */
+	function isSelected(listing: ScriptListing): boolean {
+		if (!shownListing) return false;
+		if (shownListing.row.key === listing.row.key) return true;
+		return !!shownSaved && matchesSaved(shownSaved, listing);
+	}
+
+	function factsFor(listing: ScriptListing | undefined): ScriptFact[] {
+		const row = listing?.row;
+		const saved = listing && findSaved(recentScripts.list, listing);
+		const none = t('common.none');
+		const botcSource =
+			row?.source === 'botc' && row.number !== undefined
+				? { kind: 'botcscripts' as const, scriptId: row.number, version: row.version ?? '' }
+				: saved?.source.kind === 'botcscripts'
+					? saved.source
+					: undefined;
+		return [
+			{ label: t('scripts.current.author'), value: row ? row.author || none : none },
+			{ label: t('scripts.column.type'), value: row ? t(`scripts.kind.${row.kind}`) : none },
+			botcSource
+				? {
+						label: t('scripts.current.source'),
+						value: describeSource(botcSource),
+						href: scriptPageUrl(botcSource.scriptId, botcSource.version)
+					}
+				: {
+						label: t('scripts.current.source'),
+						value: saved
+							? describeSource(saved.source)
+							: row
+								? row.note || t(`scripts.sourceLabel.${row.source}`)
+								: none
+					}
+		];
+	}
+
+	/** The player link for a saved script, made only when Share is tapped. */
+	const shareTarget = $derived.by(() => {
+		const saved = shownSaved;
+		return saved && saved.scriptId !== 'unsaved'
+			? () => shareTargetFor(saved, location.origin)
+			: undefined;
+	});
+
+	async function removeShown() {
+		const saved = shownSaved;
+		removing = false;
+		if (!saved) return;
+		selected = undefined;
+		await forgetScript(saved.scriptId).catch((e) => reportError(e, { area: 'scripts' }));
+	}
 
 	const curatedNote = $derived(
 		(source === 'all' || source === 'curated') && curatedScripts.status === 'loading'
@@ -282,7 +358,7 @@
 	);
 
 	const SOURCE_OPTIONS = $derived<{ value: PickerSource | 'all'; label: string }[]>(
-		(['all', 'official', 'curated', 'recent', 'profile', 'botc'] as const).map((value) => ({
+		(['all', 'curated', 'recent', 'profile', 'botc'] as const).map((value) => ({
 			value,
 			label: t(`scripts.picker.source.${value}`)
 		}))
@@ -293,7 +369,7 @@
 		{ value: 'Teensyville', label: t('scripts.kind.Teensyville') }
 	]);
 
-	type ColumnId = SortColumn | 'remove';
+	type ColumnId = SortColumn;
 	const LOCAL_COLUMNS = $derived<DataColumn<ColumnId>[]>([
 		{ id: 'name', label: t('scripts.column.name'), sortable: true, flush: true },
 		{
@@ -319,13 +395,6 @@
 			sortable: true,
 			align: 'end',
 			width: '6rem'
-		},
-		{
-			id: 'remove',
-			label: t('scripts.picker.remove'),
-			hideLabel: true,
-			flush: true,
-			width: 'var(--tap-target)'
 		}
 	]);
 	/** BotC Scripts: the site's own columns (Name, Author, Type, Likes) plus character counts. */
@@ -385,7 +454,6 @@
 	);
 
 	function onSort(column: ColumnId) {
-		if (column === 'remove') return;
 		if (source === 'botc') sortBotc(column);
 		else sort = nextSort(sort, column);
 	}
@@ -406,8 +474,12 @@
 		pasteOpen = linkOpen = codeOpen = false;
 	}
 
+	/** Saves a script; the details then show it (the tapped row, if that is what was saved). */
 	async function use(script: LoadedScript, source: ScriptSource) {
 		await chooseScript(script, source);
+		const saved = currentScript.saved;
+		if (!selected || !saved || !matchesSaved(saved, selected)) selected = undefined;
+		paneOpen = true;
 		onchoose?.(script);
 	}
 
@@ -459,11 +531,6 @@
 			case 'botcscripts':
 				return run(() => fetchLinkTarget({ kind: 'botcscripts', ref: target.ref }, ''));
 		}
-	}
-
-	function preview(listing: ScriptListing) {
-		previewing = listing;
-		previewOpen = true;
 	}
 
 	function isLink(text: string): boolean {
@@ -525,101 +592,162 @@
 	}
 </script>
 
-<div class="picker">
-	<div class="search">
-		<label class="term">
-			<span class="visually-hidden">{t('scripts.picker.search')}</span>
-			<input
-				type="search"
-				autocomplete="off"
-				enterkeyhint="search"
-				placeholder={source === 'botc'
-					? t('scripts.picker.searchBotc')
-					: t('scripts.picker.searchLocal')}
-				bind:value={term}
-			/>
-		</label>
-		<Select
-			label={t('scripts.picker.source')}
-			hideLabel
-			value={source}
-			options={SOURCE_OPTIONS}
-			onChange={(v) => (source = v)}
-		/>
-	</div>
+<!-- The list on the left, the shown script's details on the right; on a phone the details
+     slide over the list and Back returns to it. -->
+<div class="panes" bind:clientWidth={width}>
+	<div class="grid" class:open={paneOpen}>
+		<div class="picker" inert={narrow && paneOpen}>
+			<div class="search">
+				<label class="term">
+					<span class="visually-hidden">{t('scripts.picker.search')}</span>
+					<input
+						type="search"
+						autocomplete="off"
+						enterkeyhint="search"
+						placeholder={source === 'botc'
+							? t('scripts.picker.searchBotc')
+							: t('scripts.picker.searchLocal')}
+						bind:value={term}
+					/>
+				</label>
+				<Select
+					label={t('scripts.picker.source')}
+					hideLabel
+					value={source}
+					options={SOURCE_OPTIONS}
+					onChange={(v) => (source = v)}
+				/>
+			</div>
 
-	<!-- One fixed height for every source, so switching moves nothing below. -->
-	<div class="body">
-		<div class="table" data-testid="picker-table" data-source={source}>
-			<DataTable
-				label={source === 'botc' ? t('scripts.botc.results') : t('scripts.picker.table')}
-				{columns}
-				rows={botcRef ? [] : shown}
-				key={(listing) => listing.row.key}
-				{cell}
-				sort={tableSort}
-				{onSort}
-				{filter}
-				narrow="hide"
-				fill
-				rowSelected={isCurrent}
-				empty={botcRef ? '' : t('common.none')}
-			/>
-		</div>
-
-		<!-- The count shares the line under the table with the next action; both always there. -->
-		<div class="more">
-			<p class="status" role="status" data-testid="picker-status">{status}</p>
-			{#if source === 'botc'}
-				<div class="buttons">
-					<Button
-						variant="quiet"
-						disabled={busy || botc.loading || !botc.hasMore || !!botcRef || !data}
-						onclick={() =>
-							data &&
-							botc.load($state.snapshot(botcQuery) as BotcScriptsQuery, botc.page + 1, data)}
-						>{t('scripts.botc.more')}</Button
-					>
-					<Button
-						variant="accent"
-						disabled={busy || !botcRef}
-						onclick={() =>
-							botcRef && run(() => fetchLinkTarget({ kind: 'botcscripts', ref: botcRef }, ''))}
-						>{t('scripts.picker.load')}</Button
-					>
+			<!-- One fixed height for every source, so switching moves nothing below. -->
+			<div class="body">
+				<div class="table" data-testid="picker-table" data-source={source}>
+					<DataTable
+						label={source === 'botc' ? t('scripts.botc.results') : t('scripts.picker.table')}
+						{columns}
+						rows={botcRef ? [] : shown}
+						key={(listing) => listing.row.key}
+						{cell}
+						sort={tableSort}
+						{onSort}
+						{filter}
+						narrow="hide"
+						fill
+						rowSelected={isSelected}
+						empty={botcRef ? '' : t('common.none')}
+					/>
 				</div>
-			{:else}
-				<Button variant="quiet" onclick={() => (source = 'botc')}
-					>{t('scripts.picker.searchBotcButton')}</Button
-				>
-			{/if}
-		</div>
-	</div>
 
-	<section aria-labelledby="custom-heading">
-		<h2 id="custom-heading" class="visually-hidden">{t('scripts.picker.add')}</h2>
-		<div class="row custom">
-			<Button onclick={() => open('paste')}>{t('scripts.picker.paste')}</Button>
-			<Button onclick={() => fileInput?.click()} disabled={busy}>{t('scripts.picker.file')}</Button>
-			<Button onclick={() => open('link')}>{t('scripts.picker.link')}</Button>
-			<Button onclick={() => open('code')}>{t('scripts.picker.code')}</Button>
-		</div>
-		<!-- Not limited to application/json: some iPad and Android file providers don't label
+				<!-- The count shares the line under the table with the next action; both always there. -->
+				<div class="more" data-testid="picker-more">
+					<p class="status" role="status" data-testid="picker-status">{status}</p>
+					{#if source === 'botc'}
+						<div class="buttons">
+							<Button
+								variant="quiet"
+								disabled={busy || botc.loading || !botc.hasMore || !!botcRef || !data}
+								onclick={() =>
+									data &&
+									botc.load($state.snapshot(botcQuery) as BotcScriptsQuery, botc.page + 1, data)}
+								>{t('scripts.botc.more')}</Button
+							>
+							<Button
+								variant="accent"
+								disabled={busy || !botcRef}
+								onclick={() =>
+									botcRef && run(() => fetchLinkTarget({ kind: 'botcscripts', ref: botcRef }, ''))}
+								>{t('scripts.picker.save')}</Button
+							>
+						</div>
+					{:else}
+						<Button variant="quiet" onclick={() => (source = 'botc')}
+							>{t('scripts.picker.searchBotcButton')}</Button
+						>
+					{/if}
+				</div>
+			</div>
+
+			<section aria-labelledby="custom-heading">
+				<h2 id="custom-heading" class="visually-hidden">{t('scripts.picker.add')}</h2>
+				<div class="row custom">
+					<Button onclick={() => open('paste')}>{t('scripts.picker.paste')}</Button>
+					<Button onclick={() => fileInput?.click()} disabled={busy}
+						>{t('scripts.picker.file')}</Button
+					>
+					<Button onclick={() => open('link')}>{t('scripts.picker.link')}</Button>
+					<Button onclick={() => open('code')}>{t('scripts.picker.code')}</Button>
+				</div>
+				<!-- Not limited to application/json: some iPad and Android file providers don't label
 		     .json files with that type, which greyed them out in Pocket Grimoire (PG 126, PG 162). -->
-		<input
-			bind:this={fileInput}
-			class="file"
-			type="file"
-			accept=".json,application/json,text/plain"
-			aria-label={t('scripts.picker.fileLabel')}
-			onchange={onFile}
-		/>
-		<!-- Load errors outside a dialog; the line is always there, so no reflow. -->
-		<p class="error" role="status" data-testid="file-error">
-			{#if !pasteOpen && !linkOpen && !codeOpen}{error}{/if}
-		</p>
-	</section>
+				<input
+					bind:this={fileInput}
+					class="file"
+					type="file"
+					accept=".json,application/json,text/plain"
+					aria-label={t('scripts.picker.fileLabel')}
+					onchange={onFile}
+				/>
+				<!-- Load errors outside a dialog; the line is always there, so no reflow. -->
+				<p class="error" role="status" data-testid="file-error">
+					{#if !pasteOpen && !linkOpen && !codeOpen}{error}{/if}
+				</p>
+			</section>
+		</div>
+
+		<aside class="pane" aria-label={t('scripts.details.label')} inert={narrow && !paneOpen}>
+			<div class="pane-scroll">
+				<button type="button" class="back" onclick={() => (paneOpen = false)}
+					><Icon name="back" /><span>{t('scripts.details.back')}</span></button
+				>
+				<ScriptDetails
+					heading={shownListing
+						? t(`scripts.sourceLabel.${shownListing.row.source}`)
+						: t('scripts.current.defaultName')}
+					name={shownListing?.row.name ?? ''}
+					facts={factsFor(shownListing)}
+					entries={shownListing?.row.entries ?? []}
+					{data}
+				>
+					{#snippet actions()}
+						<ShareControl
+							what="script"
+							title={shownListing?.row.name || t('scripts.current.defaultName')}
+							target={shareTarget}
+						/>
+						{#if shownSaved}
+							<Button disabled>{t('scripts.details.saved')}</Button>
+						{:else}
+							<Button
+								variant="accent"
+								disabled={busy || !shownListing}
+								onclick={() => shownListing && loadTarget(shownListing.target)}
+								>{t('scripts.picker.save')}</Button
+							>
+						{/if}
+						<span class="danger">
+							<IconButton
+								icon="remove"
+								label={t('scripts.details.remove')}
+								disabled={!shownSaved}
+								onclick={() => (removing = true)}
+							/>
+						</span>
+					{/snippet}
+				</ScriptDetails>
+			</div>
+		</aside>
+	</div>
 </div>
+
+<Dialog bind:open={removing} role="alertdialog" title={t('scripts.details.removeConfirm')}>
+	<p>{t('scripts.details.removeBody', { name: shownListing?.row.name || t('common.none') })}</p>
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (removing = false)}>{t('common.cancel')}</Button>
+		<Button variant="danger" onclick={() => void removeShown()}
+			>{t('scripts.details.confirm')}</Button
+		>
+	{/snippet}
+</Dialog>
 
 {#snippet cell(listing: ScriptListing, column: DataColumn<ColumnId>)}
 	{@const row = listing.row}
@@ -627,11 +755,10 @@
 		<button
 			type="button"
 			class="pick"
-			aria-pressed={isCurrent(listing)}
+			aria-pressed={isSelected(listing)}
 			aria-label="{row.name} {row.note || t(`scripts.sourceLabel.${row.source}`)}"
-			aria-haspopup="dialog"
 			disabled={busy}
-			onclick={() => preview(listing)}
+			onclick={() => select(listing)}
 		>
 			<span class="title">{row.name || t('common.none')}</span>
 			<span class="sub"
@@ -657,13 +784,6 @@
 		<span class="text numeric">{row.likes ?? 0}</span>
 	{:else if column.id === 'number'}
 		<span class="text numeric">{row.number ?? ''}</span>
-	{:else if listing.saved}
-		{@const saved = listing.saved}
-		<IconButton
-			icon="close"
-			label={t('scripts.picker.removeRecent', { name: saved.name })}
-			onclick={() => forgetScript(saved.scriptId).catch((e) => reportError(e, { area: 'scripts' }))}
-		/>
 	{/if}
 {/snippet}
 
@@ -700,14 +820,6 @@
 		</fieldset>
 	{/if}
 {/snippet}
-
-<ScriptPreview
-	bind:open={previewOpen}
-	row={previewing?.row}
-	{data}
-	disabled={busy}
-	onload={() => previewing && void loadTarget(previewing.target)}
-/>
 
 <Dialog
 	bind:open={choosingOpen}
@@ -746,7 +858,7 @@
 			>{t('scripts.paste.fromClipboard')}</Button
 		>
 		<Button variant="accent" onclick={loadPaste} disabled={busy || pasteText.trim() === ''}
-			>{t('scripts.picker.load')}</Button
+			>{t('scripts.picker.save')}</Button
 		>
 	{/snippet}
 </Dialog>
@@ -774,7 +886,7 @@
 		<Button
 			variant="accent"
 			onclick={() => run(() => fetchLinkTarget(resolveLink(linkText), linkText))}
-			disabled={busy || linkText.trim() === ''}>{t('scripts.picker.load')}</Button
+			disabled={busy || linkText.trim() === ''}>{t('scripts.picker.save')}</Button
 		>
 	{/snippet}
 </Dialog>
@@ -792,13 +904,14 @@
 		<Button
 			variant="accent"
 			onclick={() => run(() => fetchSharedCode(codeText))}
-			disabled={busy || codeText === ''}>{t('scripts.picker.load')}</Button
+			disabled={busy || codeText === ''}>{t('scripts.picker.save')}</Button
 		>
 	{/snippet}
 </Dialog>
 
 <ScriptCheckDialog
 	bind:open={checkOpen}
+	action="save"
 	result={checking?.result}
 	onconfirm={() => {
 		const script = checking?.result.script;
@@ -815,11 +928,85 @@
 		clip-path: inset(50%);
 		white-space: nowrap;
 	}
+	.panes {
+		container: script-panes / inline-size;
+	}
+	.grid {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+		/* The closed pane waits off to the side; never a sideways scroll. */
+		overflow-x: clip;
+	}
 	.picker {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
 		min-width: 0;
+	}
+	/* The list sets the height; the details scroll inside it. */
+	.pane {
+		position: absolute;
+		inset: 0;
+		border: var(--card-border);
+		border-radius: var(--card-radius);
+		background: var(--card-background);
+		transform: translateX(105%);
+		visibility: hidden;
+		transition:
+			transform var(--duration-fast) var(--ease-out),
+			visibility var(--duration-fast);
+	}
+	.grid.open .pane {
+		transform: none;
+		visibility: visible;
+	}
+	.pane-scroll {
+		position: absolute;
+		inset: 0;
+		overflow-y: auto;
+		padding: var(--space-4);
+		display: grid;
+		align-content: start;
+		gap: var(--space-2);
+	}
+	.back {
+		justify-self: start;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		min-height: var(--tap-target);
+		padding: 0 var(--space-2) 0 0;
+		border: 0;
+		background: none;
+		color: var(--accent);
+		font: inherit;
+		cursor: pointer;
+	}
+	.danger :global(.icon-button:not(:disabled)) {
+		color: var(--evil);
+	}
+	@container script-panes (min-width: 56rem) {
+		.grid {
+			grid-template-columns: minmax(0, 1fr) minmax(20rem, 28rem);
+		}
+		.pane {
+			position: relative;
+			inset: auto;
+			grid-column: 2;
+			transform: none;
+			visibility: visible;
+			transition: none;
+		}
+		.back {
+			display: none;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.pane {
+			transition: none;
+		}
 	}
 	.search {
 		display: grid;
