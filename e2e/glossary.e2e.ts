@@ -77,8 +77,8 @@ test('terms in the character dialog open above it', async ({ page }) => {
 		.getByRole('radiogroup', { name: 'Sample game' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	const reminders = page.getByRole('region', { name: 'Today' });
-	await reminders
+	await page
+		.locator('li[data-character="slayer"]')
 		.getByRole('button', { name: /^Slayer/ })
 		.first()
 		.tap();

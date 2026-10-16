@@ -3,16 +3,21 @@
 	import { recentDeaths } from '#lib/core/engine/index.ts';
 	import type { DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 	import {
+		afterDawn,
 		blockThreshold,
+		dayNumber,
 		dayReminders,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
+		type Night,
 		validDeathCauses,
 		type DayReminder,
 		type ValidDeathCause
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import NightText from '#lib/features/reference/NightText.svelte';
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -20,6 +25,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { DayPort } from './day-port.ts';
@@ -230,11 +236,24 @@
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g));
 
-	let confirmNewDay = $state(false);
-	function newDay() {
-		game.run({ type: 'NewDay' });
-		confirmNewDay = false;
-	}
+	/**
+	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
+	 * night that just ended (the Vizier, the Leviathan), for characters in play, with TPI's
+	 * night text. A new day starts when the night ends, so Day 1 follows the first night.
+	 */
+	const announcers = $derived.by(() => {
+		const day = dayNumber(g);
+		const sheet = officialData.current?.nightSheet;
+		if (day === 0 || !sheet) return [];
+		const night: Night = day === 1 ? 'first' : 'other';
+		return afterDawn(sheet, night).flatMap((characterId) => {
+			const character = game.characters.get(characterId);
+			const text =
+				night === 'first' ? character?.firstNightReminder : character?.otherNightReminder;
+			const seatId = g.seating.find((s) => g.seats[s].characterId === characterId);
+			return character && text && seatId ? [{ character, text, seatId, night }] : [];
+		});
+	});
 </script>
 
 {#snippet actions(characterId: CharacterId | undefined, seatId: SeatId | undefined)}
@@ -270,9 +289,6 @@
 
 <div class="panel">
 	<div class="toolbar">
-		<Button icon="day" variant="quiet" onclick={() => (confirmNewDay = true)}
-			>{t('day.newDay')}</Button
-		>
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
@@ -291,8 +307,44 @@
 		>
 	</div>
 
-	<section aria-labelledby="seats-heading">
-		<h2 id="seats-heading">{t('day.players')}</h2>
+	<Collapsible title={t('day.announcements')} storageKey="day.announcements">
+		<ul class="reminders" data-testid="announcements">
+			{#each died as death (death.seatId)}
+				{@const seat = g.seats[death.seatId]}
+				<li>
+					<span class="sentence">
+						{#if seat.characterId}
+							<CharacterBadge
+								characterId={seat.characterId}
+								alignment={seat.alignment}
+								playerName={game.seatName(seat.seatId)}
+							/>
+						{:else}
+							<span>{game.seatName(seat.seatId)}</span>
+						{/if}
+						<span>{diedText(death.cause)}</span>
+					</span>
+				</li>
+			{/each}
+			{#each announcers as a (a.character.id)}
+				<li data-character={a.character.id}>
+					<span class="sentence">
+						<CharacterBadge
+							characterId={a.character.id}
+							alignment={g.seats[a.seatId].alignment}
+							playerName={game.seatName(a.seatId)}
+						/>
+						<span><NightText text={a.text} character={a.character} night={a.night} /></span>
+					</span>
+				</li>
+			{/each}
+			{#if died.length === 0 && announcers.length === 0}
+				<li>{t('common.none')}</li>
+			{/if}
+		</ul>
+	</Collapsible>
+
+	<Collapsible title={t('day.players')} storageKey="day.players">
 		<p class="prompt">{t('day.tapPlayer')}</p>
 		<div class="seats">
 			{#each seats as seat (seat.seatId)}
@@ -329,69 +381,46 @@
 				/>
 			</div>
 		{/if}
-	</section>
+	</Collapsible>
 
 	{#if assistance.preDayReminders}
-		<section aria-labelledby="reminders-heading">
-			<h2 id="reminders-heading">{t('day.today')}</h2>
-			{#if died.length > 0}
-				<h3>{t('day.diedHeading')}</h3>
-				<ul class="reminders" data-testid="died">
-					{#each died as death (death.seatId)}
-						{@const seat = g.seats[death.seatId]}
-						<li>
-							<span class="sentence">
-								{#if seat.characterId}
-									<CharacterBadge
-										characterId={seat.characterId}
-										alignment={seat.alignment}
-										playerName={game.seatName(seat.seatId)}
-									/>
-								{:else}
-									<span>{game.seatName(seat.seatId)}</span>
-								{/if}
-								<span>{diedText(death.cause)}</span>
-							</span>
-						</li>
-					{/each}
-				</ul>
-			{/if}
+		<Collapsible title={t('day.today')} storageKey="day.today">
 			{#each reminders.groups as group (group.group)}
-				<h3>{group.title}</h3>
-				<ul class="reminders">
-					{#each group.reminders as reminder (reminder.key)}
-						{@const explained = explainBlock(
-							reminder.segments.map((s) => (s.kind === 'text' ? s.text : ''))
-						)}
-						<li data-character={reminder.characterId}>
-							<span class="sentence">
-								{#each reminder.segments as segment, i (i)}
-									{#if segment.kind === 'character'}
-										<CharacterBadge
-											characterId={segment.ref.characterId}
-											alignment={segment.ref.seatId
-												? g.seats[segment.ref.seatId]?.alignment
-												: undefined}
-											playerName={segment.ref.playerName}
-										/>
-									{:else if segment.kind === 'value'}
-										<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
-										<span>({segment.value ?? segment.placeholder})</span>
-									{:else}
-										<span><GlossaryText segments={explained[i] ?? []} /></span>
-									{/if}
-								{/each}
-							</span>
-							{@render ability(reminder.characterId)}
-							{@render actions(reminder.characterId, seatOf(reminder))}
-						</li>
-					{/each}
-				</ul>
+				<Collapsible title={group.title} level={3} storageKey={`day.group.${group.group}`}>
+					<ul class="reminders">
+						{#each group.reminders as reminder (reminder.key)}
+							{@const explained = explainBlock(
+								reminder.segments.map((s) => (s.kind === 'text' ? s.text : ''))
+							)}
+							<li data-character={reminder.characterId}>
+								<span class="sentence">
+									{#each reminder.segments as segment, i (i)}
+										{#if segment.kind === 'character'}
+											<CharacterBadge
+												characterId={segment.ref.characterId}
+												alignment={segment.ref.seatId
+													? g.seats[segment.ref.seatId]?.alignment
+													: undefined}
+												playerName={segment.ref.playerName}
+											/>
+										{:else if segment.kind === 'value'}
+											<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
+											<span>({segment.value ?? segment.placeholder})</span>
+										{:else}
+											<span><GlossaryText segments={explained[i] ?? []} /></span>
+										{/if}
+									{/each}
+								</span>
+								{@render ability(reminder.characterId)}
+								{@render actions(reminder.characterId, seatOf(reminder))}
+							</li>
+						{/each}
+					</ul>
+				</Collapsible>
 			{/each}
-		</section>
+		</Collapsible>
 	{:else}
-		<section aria-labelledby="abilities-heading">
-			<h2 id="abilities-heading">{t('day.abilitiesAndNotes')}</h2>
+		<Collapsible title={t('day.abilitiesAndNotes')} storageKey="day.abilities">
 			<ul class="reminders">
 				{#each seats as seat (seat.seatId)}
 					{#if seat.characterId}
@@ -409,7 +438,7 @@
 					{/if}
 				{/each}
 			</ul>
-		</section>
+		</Collapsible>
 	{/if}
 </div>
 
@@ -457,21 +486,6 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={confirmNewDay} role="alertdialog" title={t('day.newDayTitle')}>
-	<p class="state">
-		<span class="state-label">{t('day.now')}</span>{t('day.newDayNow', {
-			count: g.today.entries.length
-		})}
-	</p>
-	<p class="state">
-		<span class="state-label">{t('day.after')}</span>{t('day.newDayAfter')}
-	</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirmNewDay = false)}>{t('common.cancel')}</Button>
-		<Button onclick={newDay}>{t('day.startNewDay')}</Button>
-	{/snippet}
-</Dialog>
-
 <style>
 	.panel {
 		display: grid;
@@ -481,20 +495,6 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2);
-	}
-	section {
-		display: grid;
-		gap: var(--space-2);
-	}
-	h2 {
-		margin: 0;
-		font-size: 1.15rem;
-		color: var(--heading);
-	}
-	h3 {
-		margin: var(--space-3) 0 0;
-		font-size: 0.95rem;
-		color: var(--on-surface-muted);
 	}
 	.prompt {
 		margin: 0;

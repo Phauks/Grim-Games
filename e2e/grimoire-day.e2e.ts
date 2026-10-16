@@ -48,6 +48,14 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	const day = page.getByRole('dialog', { name: 'Day' });
 	await expect(day).toBeVisible();
 	await expect(page).toHaveURL(board);
+	// Announcements come first; before anything happens there is none (Trevor).
+	await expect(page.getByTestId('announcements')).toHaveText('None');
+	// Every section folds away with its caret.
+	const players = day.getByRole('button', { name: 'Players' });
+	await players.tap();
+	await expect(seat(page, 'Seat 1')).toBeHidden();
+	await players.tap();
+	await expect(seat(page, 'Seat 1')).toBeVisible();
 
 	// No nomination tracking, log, Undo or History here (Trevor, 2026-10-16).
 	await expect(page.getByRole('radiogroup', { name: 'Tapping a player' })).toHaveCount(0);
@@ -73,7 +81,7 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 			.locator('.seat-player')
 			.evaluate((el) => getComputedStyle(el).color);
 	expect(await colour('Seat 2')).toBe(await colour('Seat 1'));
-	await expect(page.getByTestId('died')).toContainText('Seat 2 died: Executed');
+	await expect(page.getByTestId('announcements')).toContainText('Seat 2 died: Executed');
 
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();

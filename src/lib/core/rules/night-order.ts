@@ -486,3 +486,24 @@ function markerNotes(marker: NightMarker, inPlay: ReadonlySet<CharacterId>): str
 	}
 	return notes;
 }
+
+/**
+ * The steps TPI's night sheet places after Dawn: announcements made as the day begins (the
+ * Vizier and Leviathan on the first night, the Leviathan on other nights). Order as on the
+ * sheet; filter by what is in play.
+ */
+export function afterDawn(sheet: NightSheet, night: Night): CharacterId[] {
+	const steps = night === 'first' ? sheet.firstNight : sheet.otherNight;
+	const dawn = steps.indexOf('dawn');
+	return dawn < 0
+		? []
+		: steps.slice(dawn + 1).filter((id): id is CharacterId => !isNightMarker(id));
+}
+
+/**
+ * Which day it is: the number of days started, each one at the end of a night (Trevor,
+ * 2026-10-16). 0 before the first night ends.
+ */
+export function dayNumber(game: { pastDays: readonly unknown[] }): number {
+	return game.pastDays.length;
+}

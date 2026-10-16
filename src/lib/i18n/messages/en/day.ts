@@ -1,7 +1,7 @@
 /** The day screen (src/lib/features/day). */
 export const day = {
 	'day.title': 'Day',
-	'day.newDay': 'New day',
+	'day.titleNumber': 'Day {number}',
 	'day.nightOrder': 'Night order',
 	'day.players': 'Players',
 	'day.tapPlayer': 'Tap a player to mark them dead or alive.',
@@ -38,13 +38,6 @@ export const day = {
 	'day.cautionRegisters': 'only if {character} registered falsely',
 	'day.cautionImpaired': 'drunk or poisoned now',
 	'day.cautionUnknown': 'alignment not set',
-	'day.newDayTitle': 'Start a new day?',
-	'day.newDayNow': {
-		one: 'Today has {count} entry (Used, notes, deaths).',
-		other: 'Today has {count} entries (Used, notes, deaths).'
-	},
-	'day.newDayAfter': 'A new day starts with none; today’s entries stay in History.',
-	'day.startNewDay': 'Start new day',
 	'day.noteTitle': 'Note: {character}',
 	'day.noteTitleSeat': 'Note: {character} · {seat}',
 	'day.jugglerGuesses': 'Juggler’s guesses',
@@ -55,7 +48,7 @@ export const day = {
 	'day.toastNote': 'Note',
 	'day.unknownSeat': 'Seat ?',
 	'day.noCharacter': 'No character',
-	'day.diedHeading': 'Died since the last day',
+	'day.announcements': 'Announcements',
 	'day.diedCause': 'died: {cause}',
 	'day.diedNoCause': 'died (no cause recorded)',
 	'day.logNomination': '{nominator} nominated {nominee}',

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { dayNumber } from '#lib/core/rules/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -20,10 +21,12 @@
 	let { open = $bindable(), game }: Props = $props();
 
 	const day = $derived(new LiveDay(game));
+	// Which day it is (Trevor): Day 1 starts when the first night ends.
+	const number = $derived(dayNumber(game.game));
 	const assistance = $derived(preferences.current.assistance);
 </script>
 
-<Dialog bind:open title={t('day.title')} size="max">
+<Dialog bind:open title={number > 0 ? t('day.titleNumber', { number }) : t('day.title')} size="max">
 	<div class="body">
 		<DayPanel game={day} {assistance} />
 	</div>

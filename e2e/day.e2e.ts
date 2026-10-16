@@ -31,7 +31,7 @@ const place = (locator: Locator) =>
 		return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height };
 	});
 
-test('Demon voted feeds the Flowergirl, and New day asks first', async ({ page }) => {
+test('Demon voted feeds the Flowergirl, and there is no New day button', async ({ page }) => {
 	await loaded(page);
 	// Nominations happen off the grimoire, so there is nothing to tap for them.
 	await expect(page.getByRole('radiogroup', { name: 'Tapping a player' })).toHaveCount(0);
@@ -46,16 +46,9 @@ test('Demon voted feeds the Flowergirl, and New day asks first', async ({ page }
 		'Yes: the Demon Fay (Fang Gu) voted'
 	);
 
-	// New day states what changes, then clears today. There is no Undo (Trevor, 2026-10-16).
+	// A new day starts when the night ends, not from a button here (Trevor, 2026-10-16).
 	await page.getByRole('button', { name: 'Back to day' }).tap();
-	await page.getByRole('button', { name: 'New day' }).tap();
-	const confirm = page.getByRole('alertdialog', { name: 'Start a new day?' });
-	await expect(confirm).toContainText('A new day starts with none');
-	await confirm.getByRole('button', { name: 'Start new day' }).tap();
-	await expect(confirm).toBeHidden();
-	await expect(
-		page.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })
-	).not.toBeChecked();
+	await expect(page.getByRole('button', { name: 'New day' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 });
 
