@@ -20,6 +20,7 @@ import ph_book_open_text_duotone from '~icons/ph/book-open-text-duotone';
 import ph_bookmark_simple_duotone from '~icons/ph/bookmark-simple-duotone';
 import ph_books_duotone from '~icons/ph/books-duotone';
 import ph_bug_duotone from '~icons/ph/bug-duotone';
+import ph_cards_duotone from '~icons/ph/cards-duotone';
 import ph_caret_circle_down_duotone from '~icons/ph/caret-circle-down-duotone';
 import ph_caret_down_duotone from '~icons/ph/caret-down-duotone';
 import ph_caret_left_duotone from '~icons/ph/caret-left-duotone';
@@ -48,6 +49,7 @@ import ph_funnel_duotone from '~icons/ph/funnel-duotone';
 import ph_gear_duotone from '~icons/ph/gear-duotone';
 import ph_gear_six_duotone from '~icons/ph/gear-six-duotone';
 import ph_ghost_duotone from '~icons/ph/ghost-duotone';
+import ph_graduation_cap_duotone from '~icons/ph/graduation-cap-duotone';
 import ph_hand_fist_duotone from '~icons/ph/hand-fist-duotone';
 import ph_hand_grabbing_duotone from '~icons/ph/hand-grabbing-duotone';
 import ph_hand_heart_duotone from '~icons/ph/hand-heart-duotone';
@@ -83,6 +85,7 @@ import ph_play_duotone from '~icons/ph/play-duotone';
 import ph_play_circle_duotone from '~icons/ph/play-circle-duotone';
 import ph_plus_duotone from '~icons/ph/plus-duotone';
 import ph_plus_circle_duotone from '~icons/ph/plus-circle-duotone';
+import ph_printer_duotone from '~icons/ph/printer-duotone';
 import ph_pulse_duotone from '~icons/ph/pulse-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
@@ -145,6 +148,7 @@ const icons: IconMap = {
 	'ph:bookmark-simple-duotone': ph_bookmark_simple_duotone,
 	'ph:books-duotone': ph_books_duotone,
 	'ph:bug-duotone': ph_bug_duotone,
+	'ph:cards-duotone': ph_cards_duotone,
 	'ph:caret-circle-down-duotone': ph_caret_circle_down_duotone,
 	'ph:caret-down-duotone': ph_caret_down_duotone,
 	'ph:caret-left-duotone': ph_caret_left_duotone,
@@ -173,6 +177,7 @@ const icons: IconMap = {
 	'ph:gear-duotone': ph_gear_duotone,
 	'ph:gear-six-duotone': ph_gear_six_duotone,
 	'ph:ghost-duotone': ph_ghost_duotone,
+	'ph:graduation-cap-duotone': ph_graduation_cap_duotone,
 	'ph:hand-fist-duotone': ph_hand_fist_duotone,
 	'ph:hand-grabbing-duotone': ph_hand_grabbing_duotone,
 	'ph:hand-heart-duotone': ph_hand_heart_duotone,
@@ -208,6 +213,7 @@ const icons: IconMap = {
 	'ph:play-circle-duotone': ph_play_circle_duotone,
 	'ph:plus-duotone': ph_plus_duotone,
 	'ph:plus-circle-duotone': ph_plus_circle_duotone,
+	'ph:printer-duotone': ph_printer_duotone,
 	'ph:pulse-duotone': ph_pulse_duotone,
 	'ph:push-pin-duotone': ph_push_pin_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,

@@ -37,6 +37,24 @@ export const player = {
 	'player.keep': 'Keep',
 	'player.delete': 'Delete',
 
+	'player.density': 'Script sheet layout',
+	'player.densityDetail':
+		"How tightly the Script sheet is laid out for you, on screen and in print. Applies to the player view and the Storyteller's copy of the script.",
+	'player.density.normal': 'Normal',
+	'player.density.compact': 'Compact',
+	'player.density.super': 'Super-compact',
+	'player.tab.practice': 'Practice',
+	'player.practiceKnown': 'Known: {known} of {total}',
+	'player.practiceReset': 'Start over',
+	'player.practiceResetConfirm': 'Start practice over?',
+	'player.practiceResetBody': 'Every character on this script goes back into the deck.',
+	'player.practiceShow': 'Show ability',
+	'player.practiceAnswer': 'Ability',
+	'player.practiceAgain': 'Again',
+	'player.practiceKnew': 'Knew it',
+	'player.practiceDone': 'You know every character on this script.',
+	'player.print': 'Print script',
+	'player.jinxedWith': 'Jinxed with {names}',
 	'player.hideNoteContents': 'Hide note contents',
 	'player.hideNoteContentsDetail':
 		"In the player view, the Notes tab shows each note's title but hides its text until you open it, so nobody glancing at your phone can read it."

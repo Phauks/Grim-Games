@@ -20,6 +20,7 @@ import ph_book_open_text_thin from '~icons/ph/book-open-text-thin';
 import ph_bookmark_simple_thin from '~icons/ph/bookmark-simple-thin';
 import ph_books_thin from '~icons/ph/books-thin';
 import ph_bug_thin from '~icons/ph/bug-thin';
+import ph_cards_thin from '~icons/ph/cards-thin';
 import ph_caret_circle_down_thin from '~icons/ph/caret-circle-down-thin';
 import ph_caret_down_thin from '~icons/ph/caret-down-thin';
 import ph_caret_left_thin from '~icons/ph/caret-left-thin';
@@ -48,6 +49,7 @@ import ph_funnel_thin from '~icons/ph/funnel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
+import ph_graduation_cap_thin from '~icons/ph/graduation-cap-thin';
 import ph_hand_fist_thin from '~icons/ph/hand-fist-thin';
 import ph_hand_grabbing_thin from '~icons/ph/hand-grabbing-thin';
 import ph_hand_heart_thin from '~icons/ph/hand-heart-thin';
@@ -83,6 +85,7 @@ import ph_play_thin from '~icons/ph/play-thin';
 import ph_play_circle_thin from '~icons/ph/play-circle-thin';
 import ph_plus_thin from '~icons/ph/plus-thin';
 import ph_plus_circle_thin from '~icons/ph/plus-circle-thin';
+import ph_printer_thin from '~icons/ph/printer-thin';
 import ph_pulse_thin from '~icons/ph/pulse-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
@@ -145,6 +148,7 @@ const icons: IconMap = {
 	'ph:bookmark-simple-thin': ph_bookmark_simple_thin,
 	'ph:books-thin': ph_books_thin,
 	'ph:bug-thin': ph_bug_thin,
+	'ph:cards-thin': ph_cards_thin,
 	'ph:caret-circle-down-thin': ph_caret_circle_down_thin,
 	'ph:caret-down-thin': ph_caret_down_thin,
 	'ph:caret-left-thin': ph_caret_left_thin,
@@ -173,6 +177,7 @@ const icons: IconMap = {
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
 	'ph:ghost-thin': ph_ghost_thin,
+	'ph:graduation-cap-thin': ph_graduation_cap_thin,
 	'ph:hand-fist-thin': ph_hand_fist_thin,
 	'ph:hand-grabbing-thin': ph_hand_grabbing_thin,
 	'ph:hand-heart-thin': ph_hand_heart_thin,
@@ -208,6 +213,7 @@ const icons: IconMap = {
 	'ph:play-circle-thin': ph_play_circle_thin,
 	'ph:plus-thin': ph_plus_thin,
 	'ph:plus-circle-thin': ph_plus_circle_thin,
+	'ph:printer-thin': ph_printer_thin,
 	'ph:pulse-thin': ph_pulse_thin,
 	'ph:push-pin-thin': ph_push_pin_thin,
 	'ph:qr-code-thin': ph_qr_code_thin,

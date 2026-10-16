@@ -20,6 +20,7 @@ import ph_book_open_text_fill from '~icons/ph/book-open-text-fill';
 import ph_bookmark_simple_fill from '~icons/ph/bookmark-simple-fill';
 import ph_books_fill from '~icons/ph/books-fill';
 import ph_bug_fill from '~icons/ph/bug-fill';
+import ph_cards_fill from '~icons/ph/cards-fill';
 import ph_caret_circle_down_fill from '~icons/ph/caret-circle-down-fill';
 import ph_caret_down_fill from '~icons/ph/caret-down-fill';
 import ph_caret_left_fill from '~icons/ph/caret-left-fill';
@@ -48,6 +49,7 @@ import ph_funnel_fill from '~icons/ph/funnel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
+import ph_graduation_cap_fill from '~icons/ph/graduation-cap-fill';
 import ph_hand_fist_fill from '~icons/ph/hand-fist-fill';
 import ph_hand_grabbing_fill from '~icons/ph/hand-grabbing-fill';
 import ph_hand_heart_fill from '~icons/ph/hand-heart-fill';
@@ -83,6 +85,7 @@ import ph_play_fill from '~icons/ph/play-fill';
 import ph_play_circle_fill from '~icons/ph/play-circle-fill';
 import ph_plus_fill from '~icons/ph/plus-fill';
 import ph_plus_circle_fill from '~icons/ph/plus-circle-fill';
+import ph_printer_fill from '~icons/ph/printer-fill';
 import ph_pulse_fill from '~icons/ph/pulse-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
@@ -145,6 +148,7 @@ const icons: IconMap = {
 	'ph:bookmark-simple-fill': ph_bookmark_simple_fill,
 	'ph:books-fill': ph_books_fill,
 	'ph:bug-fill': ph_bug_fill,
+	'ph:cards-fill': ph_cards_fill,
 	'ph:caret-circle-down-fill': ph_caret_circle_down_fill,
 	'ph:caret-down-fill': ph_caret_down_fill,
 	'ph:caret-left-fill': ph_caret_left_fill,
@@ -173,6 +177,7 @@ const icons: IconMap = {
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,
 	'ph:ghost-fill': ph_ghost_fill,
+	'ph:graduation-cap-fill': ph_graduation_cap_fill,
 	'ph:hand-fist-fill': ph_hand_fist_fill,
 	'ph:hand-grabbing-fill': ph_hand_grabbing_fill,
 	'ph:hand-heart-fill': ph_hand_heart_fill,
@@ -208,6 +213,7 @@ const icons: IconMap = {
 	'ph:play-circle-fill': ph_play_circle_fill,
 	'ph:plus-fill': ph_plus_fill,
 	'ph:plus-circle-fill': ph_plus_circle_fill,
+	'ph:printer-fill': ph_printer_fill,
 	'ph:pulse-fill': ph_pulse_fill,
 	'ph:push-pin-fill': ph_push_pin_fill,
 	'ph:qr-code-fill': ph_qr_code_fill,

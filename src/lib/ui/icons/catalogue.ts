@@ -58,6 +58,8 @@ export const ICON_SLOTS = {
 	expand: { label: 'Show or hide a section', choices: ['ph:caret-down', 'ph:caret-circle-down'] },
 	wiki: { label: 'Wiki link', choices: ['ph:arrow-square-out', 'ph:book-open-text'] },
 	search: { label: 'Search', choices: ['ph:magnifying-glass'] },
+	print: { label: 'Print', choices: ['ph:printer'] },
+	practice: { label: 'Practice', choices: ['ph:cards', 'ph:graduation-cap'] },
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
 	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },
 	glossary: { label: 'Glossary', choices: ['ph:book-open-text', 'ph:list-magnifying-glass'] },

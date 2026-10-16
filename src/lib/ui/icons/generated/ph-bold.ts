@@ -20,6 +20,7 @@ import ph_book_open_text_bold from '~icons/ph/book-open-text-bold';
 import ph_bookmark_simple_bold from '~icons/ph/bookmark-simple-bold';
 import ph_books_bold from '~icons/ph/books-bold';
 import ph_bug_bold from '~icons/ph/bug-bold';
+import ph_cards_bold from '~icons/ph/cards-bold';
 import ph_caret_circle_down_bold from '~icons/ph/caret-circle-down-bold';
 import ph_caret_down_bold from '~icons/ph/caret-down-bold';
 import ph_caret_left_bold from '~icons/ph/caret-left-bold';
@@ -48,6 +49,7 @@ import ph_funnel_bold from '~icons/ph/funnel-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
+import ph_graduation_cap_bold from '~icons/ph/graduation-cap-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
 import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
 import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
@@ -83,6 +85,7 @@ import ph_play_bold from '~icons/ph/play-bold';
 import ph_play_circle_bold from '~icons/ph/play-circle-bold';
 import ph_plus_bold from '~icons/ph/plus-bold';
 import ph_plus_circle_bold from '~icons/ph/plus-circle-bold';
+import ph_printer_bold from '~icons/ph/printer-bold';
 import ph_pulse_bold from '~icons/ph/pulse-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
@@ -145,6 +148,7 @@ const icons: IconMap = {
 	'ph:bookmark-simple-bold': ph_bookmark_simple_bold,
 	'ph:books-bold': ph_books_bold,
 	'ph:bug-bold': ph_bug_bold,
+	'ph:cards-bold': ph_cards_bold,
 	'ph:caret-circle-down-bold': ph_caret_circle_down_bold,
 	'ph:caret-down-bold': ph_caret_down_bold,
 	'ph:caret-left-bold': ph_caret_left_bold,
@@ -173,6 +177,7 @@ const icons: IconMap = {
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,
 	'ph:ghost-bold': ph_ghost_bold,
+	'ph:graduation-cap-bold': ph_graduation_cap_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
 	'ph:hand-grabbing-bold': ph_hand_grabbing_bold,
 	'ph:hand-heart-bold': ph_hand_heart_bold,
@@ -208,6 +213,7 @@ const icons: IconMap = {
 	'ph:play-circle-bold': ph_play_circle_bold,
 	'ph:plus-bold': ph_plus_bold,
 	'ph:plus-circle-bold': ph_plus_circle_bold,
+	'ph:printer-bold': ph_printer_bold,
 	'ph:pulse-bold': ph_pulse_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,

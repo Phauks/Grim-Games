@@ -20,6 +20,7 @@ import ph_book_open_text from '~icons/ph/book-open-text';
 import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_books from '~icons/ph/books';
 import ph_bug from '~icons/ph/bug';
+import ph_cards from '~icons/ph/cards';
 import ph_caret_circle_down from '~icons/ph/caret-circle-down';
 import ph_caret_down from '~icons/ph/caret-down';
 import ph_caret_left from '~icons/ph/caret-left';
@@ -48,6 +49,7 @@ import ph_funnel from '~icons/ph/funnel';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
 import ph_ghost from '~icons/ph/ghost';
+import ph_graduation_cap from '~icons/ph/graduation-cap';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
@@ -83,6 +85,7 @@ import ph_play from '~icons/ph/play';
 import ph_play_circle from '~icons/ph/play-circle';
 import ph_plus from '~icons/ph/plus';
 import ph_plus_circle from '~icons/ph/plus-circle';
+import ph_printer from '~icons/ph/printer';
 import ph_pulse from '~icons/ph/pulse';
 import ph_push_pin from '~icons/ph/push-pin';
 import ph_qr_code from '~icons/ph/qr-code';
@@ -145,6 +148,7 @@ const icons: IconMap = {
 	'ph:bookmark-simple': ph_bookmark_simple,
 	'ph:books': ph_books,
 	'ph:bug': ph_bug,
+	'ph:cards': ph_cards,
 	'ph:caret-circle-down': ph_caret_circle_down,
 	'ph:caret-down': ph_caret_down,
 	'ph:caret-left': ph_caret_left,
@@ -173,6 +177,7 @@ const icons: IconMap = {
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,
 	'ph:ghost': ph_ghost,
+	'ph:graduation-cap': ph_graduation_cap,
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,
@@ -208,6 +213,7 @@ const icons: IconMap = {
 	'ph:play-circle': ph_play_circle,
 	'ph:plus': ph_plus,
 	'ph:plus-circle': ph_plus_circle,
+	'ph:printer': ph_printer,
 	'ph:pulse': ph_pulse,
 	'ph:push-pin': ph_push_pin,
 	'ph:qr-code': ph_qr_code,

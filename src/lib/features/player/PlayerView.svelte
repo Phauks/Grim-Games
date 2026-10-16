@@ -38,11 +38,13 @@
 	import NoteEditor from './NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
-	import { playerNight } from './player-script.ts';
+	import PrintScriptButton from './PrintScriptButton.svelte';
+	import { playerNight, sheetCharacters } from './player-script.ts';
+	import PracticePanel from './PracticePanel.svelte';
 	import ScriptCopy from './ScriptCopy.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
-	type Tab = 'script' | 'night' | 'notes';
+	type Tab = 'script' | 'night' | 'notes' | 'practice';
 
 	let data = $state<GameData>();
 	let numeric = $state<NumericNightOrder>();
@@ -159,6 +161,8 @@
 			: []
 	);
 
+	const practiceCharacters = $derived(script && data ? sheetCharacters(script, data) : []);
+
 	let noteId = $state<string>();
 	let noteOpen = $state(false);
 	function openNote(id: string) {
@@ -176,6 +180,7 @@
 		<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 		     Another script loads only from a share link or QR code. -->
 		<div class="share">
+			<PrintScriptButton {script} />
 			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
 		</div>
 		<p class="author">{script?.meta.author ?? ' '}</p>
@@ -207,7 +212,8 @@
 			tabs={[
 				{ value: 'script', label: t('player.tab.script') },
 				{ value: 'night', label: t('player.tab.night') },
-				{ value: 'notes', label: t('player.tab.notes') }
+				{ value: 'notes', label: t('player.tab.notes') },
+				{ value: 'practice', label: t('player.tab.practice') }
 			]}
 		>
 			{#snippet panel(value)}
@@ -220,6 +226,8 @@
 							<ScriptCopy {script} />
 						{:else if value === 'night'}
 							<PlayerNightOrder {nights} />
+						{:else if value === 'practice'}
+							<PracticePanel characters={practiceCharacters} scriptKey={key ?? scriptKey(script)} />
 						{:else}
 							<NotesPanel
 								notes={notebook.book.notes}
@@ -278,6 +286,10 @@
 	}
 	.author {
 		grid-column: 1 / -1;
+	}
+	.share {
+		display: flex;
+		gap: var(--space-1);
 	}
 	.choose h2 {
 		margin: 0 0 var(--space-2);

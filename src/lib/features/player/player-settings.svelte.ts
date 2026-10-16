@@ -10,14 +10,25 @@ export interface PlayerSettings {
 	 * the phone can't read them (Trevor, 2026-10-16). Off by default.
 	 */
 	hideNoteContents: boolean;
+	/**
+	 * How tightly the Script sheet is laid out, on screen and when printed (Trevor approved,
+	 * 2026-10-16): long scripts fit a phone or one page.
+	 */
+	density: SheetDensity;
 }
 
-const DEFAULTS: PlayerSettings = { hideNoteContents: false };
+export const SHEET_DENSITIES = ['normal', 'compact', 'super'] as const;
+export type SheetDensity = (typeof SHEET_DENSITIES)[number];
+
+const DEFAULTS: PlayerSettings = { hideNoteContents: false, density: 'normal' };
 
 function read(): PlayerSettings {
 	try {
 		const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Record<string, unknown>;
-		return { hideNoteContents: raw.hideNoteContents === true };
+		return {
+			hideNoteContents: raw.hideNoteContents === true,
+			density: SHEET_DENSITIES.find((d) => d === raw.density) ?? DEFAULTS.density
+		};
 	} catch {
 		return DEFAULTS;
 	}
