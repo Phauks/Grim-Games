@@ -22,9 +22,18 @@
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
+	import WordCodeEntry from '#lib/features/codes/WordCodeEntry.svelte';
+	import { ScriptFetchError, type FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
-	import { fetchSharedRef, shareTargetFor } from '#lib/features/scripts/share-codes.ts';
+	import { SHARE_CODE_WORDS } from '#lib/features/scripts/share-codes-api.ts';
+	import {
+		fetchSharedCode,
+		fetchSharedRef,
+		shareTargetFor
+	} from '#lib/features/scripts/share-codes.ts';
 	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { NotebookState } from './notebook-store.svelte.ts';
@@ -76,21 +85,51 @@
 	let checking = $state<ScriptLoadResult>();
 	let checkingSource: ScriptSource = { kind: 'share' };
 	let checkOpen = $state(false);
+	/** Runs the Script check on fetched script text, or uses it straight away when clean. */
+	async function useFetched(fetched: FetchedScript) {
+		const result = loadScriptText(fetched.text, await loadOfficialData());
+		if (!result.script || result.problems.some((p) => p.severity !== 'info')) {
+			checking = result;
+			checkingSource = fetched.source;
+			checkOpen = true;
+		} else await chooseScript(result.script, fetched.source);
+	}
+
 	async function openSharedLink() {
 		const ref = sharedRefFromHash(location.hash);
 		if (!ref) return;
 		history.replaceState(history.state, '', location.pathname + location.search);
 		try {
-			const fetched = await fetchSharedRef(ref);
-			const result = loadScriptText(fetched.text, await loadOfficialData());
-			if (!result.script || result.problems.some((p) => p.severity !== 'info')) {
-				checking = result;
-				checkingSource = fetched.source;
-				checkOpen = true;
-			} else await chooseScript(result.script, fetched.source);
+			await useFetched(await fetchSharedRef(ref));
 		} catch (e) {
 			reportError(e, { area: 'play', notify: false });
 			toast('Could not open the shared script', errorMessage(e));
+		}
+	}
+
+	// "Have a code?": the four-word code from another phone's Share (08-script-loading.md §5.5).
+	let codeOpen = $state(false);
+	let codeText = $state('');
+	let codeBusy = $state(false);
+	let codeError = $state('');
+	function openCode() {
+		codeText = '';
+		codeError = '';
+		codeOpen = true;
+	}
+	async function loadCode() {
+		codeBusy = true;
+		codeError = '';
+		try {
+			const fetched = await fetchSharedCode(codeText);
+			codeOpen = false;
+			await useFetched(fetched);
+		} catch (e) {
+			// A code nobody has is expected; anything else is a bug worth logging.
+			if (!(e instanceof ScriptFetchError)) reportError(e, { area: 'play', notify: false });
+			codeError = errorMessage(e);
+		} finally {
+			codeBusy = false;
 		}
 	}
 
@@ -155,7 +194,10 @@
 	<header>
 		<h1>{script?.name ?? 'Player view'}</h1>
 		<p class="author">{script?.meta.author ?? ' '}</p>
-		<a class="change" href={resolve('/scripts')}>Change script</a>
+		<div class="load">
+			<a class="change" href={resolve('/scripts')}>Change script</a>
+			<Button variant="quiet" onclick={openCode}>Code</Button>
+		</div>
 	</header>
 
 	{#if error}
@@ -220,6 +262,18 @@
 		}}
 	/>
 
+	<Dialog bind:open={codeOpen} title="Have a code?" size="full">
+		{#if codeOpen}
+			<WordCodeEntry count={SHARE_CODE_WORDS} bind:value={codeText} disabled={codeBusy} />
+		{/if}
+		<p class="code-error" role="status">{codeError}</p>
+		{#snippet actions()}
+			<Button variant="accent" onclick={loadCode} disabled={codeBusy || codeText === ''}
+				>Load</Button
+			>
+		{/snippet}
+	</Dialog>
+
 	{#if notebook && script}
 		<ErrorBoundary area="play">
 			<SeatEditor
@@ -250,19 +304,16 @@
 		padding: var(--space-3) var(--space-3) var(--space-6);
 	}
 	header {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		align-items: start;
-		column-gap: var(--space-3);
 		margin-bottom: var(--space-2);
 	}
-	header h1,
-	header .author {
-		grid-column: 1;
+	/* Ways to load another script, on their own row so a long script name never squeezes them. */
+	.load {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
 	}
 	.change {
-		grid-column: 2;
-		grid-row: 1;
 		display: inline-flex;
 		align-items: center;
 		min-height: var(--tap-target);
@@ -271,6 +322,7 @@
 	}
 	h1 {
 		margin: 0;
+		overflow-wrap: anywhere;
 		font-size: 1.6rem;
 		color: var(--heading);
 	}
@@ -278,6 +330,13 @@
 		margin: 0;
 		min-height: 1.4em;
 		color: var(--on-surface-muted);
+	}
+	.code-error {
+		/* Space kept for the message so the dialog never grows (no reflow). */
+		min-height: 3lh;
+		margin: var(--space-2) 0 0;
+		color: var(--evil);
+		overflow-wrap: anywhere;
 	}
 	.panel {
 		padding-top: var(--space-3);
