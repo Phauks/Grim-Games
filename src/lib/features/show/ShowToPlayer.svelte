@@ -39,7 +39,9 @@
 	const single = $derived(characters.length === 1 ? characters[0].character : undefined);
 	const fit = $derived(
 		fitTokens(single ? 1 : 0, areaWidth, areaHeight, {
-			labelHeight: 48
+			labelHeight: 48,
+			// A computer window has room for a bigger token than a phone (Trevor, 2026-10-16).
+			max: 640
 		})
 	);
 	const label = $derived.by(() => {
