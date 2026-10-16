@@ -6,7 +6,7 @@
 	const assistance = $derived(preferences.current.assistance);
 </script>
 
-<!-- Glossary linking for everyone, players included, so it is not under Storyteller help. -->
+<!-- Glossary linking for everyone, players included, so it is not under Storyteller settings. -->
 <SettingToggle
 	label={ASSIST_LABELS.explainTerms.label}
 	description={ASSIST_LABELS.explainTerms.description}

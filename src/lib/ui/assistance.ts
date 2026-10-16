@@ -17,7 +17,7 @@ export const ASSIST_KEYS = [
 export type AssistKey = (typeof ASSIST_KEYS)[number];
 export type Assistance = Record<AssistKey, boolean>;
 
-/** Switches listed under Storyteller help; `explainTerms` has its own Rules terms section. */
+/** Switches listed under Storyteller settings; `explainTerms` has its own Rules terms section. */
 export const STORYTELLER_HELP_KEYS = ASSIST_KEYS.filter((key) => key !== 'explainTerms');
 
 export const ASSIST_LABELS: Record<AssistKey, { label: string; description: string }> = {
@@ -52,7 +52,7 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Setup and jinx warnings',
 		description: 'Point out a setup that breaks the rules or a jinx that applies.'
 	},
-	// Shown in Settings › Rules terms, not Storyteller help: players use it too (Trevor).
+	// Shown in Settings › Rules terms, not Storyteller settings: players use it too (Trevor).
 	explainTerms: {
 		label: 'Underline rules terms with glossary definitions',
 		description:

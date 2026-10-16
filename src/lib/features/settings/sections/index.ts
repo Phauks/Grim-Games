@@ -41,7 +41,7 @@ registerSettingsSection({
 });
 registerSettingsSection({
 	id: 'assistance',
-	label: 'Storyteller help',
+	label: 'Storyteller settings',
 	icon: 'assistance',
 	component: AssistanceSection,
 	audience: 'storyteller',

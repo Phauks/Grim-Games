@@ -22,8 +22,8 @@
 	<ul>
 		<li>Your games, saved in your browser's storage (IndexedDB).</li>
 		<li>
-			Your settings, such as theme, fonts, text size, icons and Storyteller help, and how you last
-			viewed the <a href={resolve('/reference')}>Reference</a> page (localStorage).
+			Your settings, such as theme, fonts, text size, icons and Storyteller settings, and how you
+			last viewed the <a href={resolve('/reference')}>Reference</a> page (localStorage).
 		</li>
 		<li>
 			A log of up to 20 recent problems the app ran into: the error message, the app area, the page
