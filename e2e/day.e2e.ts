@@ -71,7 +71,7 @@ test('the Slayer is marked Used after a confirm and unmarked by a tap, and the W
 	await expect(used).toHaveAttribute('aria-pressed', 'false');
 	await expect(confirm).toBeHidden();
 	await used.tap();
-	await confirm.getByRole('button', { name: 'Mark used' }).tap();
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
