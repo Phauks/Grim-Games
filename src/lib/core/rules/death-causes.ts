@@ -110,15 +110,16 @@ export type DeathCauseFlag =
 
 export interface ValidDeathCause {
 	cause: DeathCause;
-	/** `general` for executed, exiled, the Demon and something else. */
+	/** `general` for executed, exiled and the Demon. */
 	kind: DeathKind | 'unknown' | 'general';
 	flags: DeathCauseFlag[];
 }
 
 /**
  * The causes of death that are valid for this player given the grimoire, in picker order:
- * executed (exiled for a Traveller), the Demon, the characters that could have killed them (script order), something
- * else. "Something else" is always offered so the Storyteller can override.
+ * executed (exiled for a Traveller), the Demon, then the characters that could have killed
+ * them (script order). "Something else" is not offered (Trevor, 2026-10-16); a cause stays
+ * optional, and saved games may still hold 'other'.
  *
  * A character is left out when no player has it (true character, so a Drunk shown as the
  * Slayer is not one) and it is not a Fabled or Loric in play; when it only kills its own
@@ -132,9 +133,9 @@ export function validDeathCauses(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): ValidDeathCause[] {
-	const [execution, demon, other, exile] = GENERAL_DEATH_CAUSES;
+	const [execution, demon, , exile] = GENERAL_DEATH_CAUSES;
 	const general = (cause: DeathCause): ValidDeathCause => ({ cause, kind: 'general', flags: [] });
-	if (!getSeat(game, seatId)) return [general(other)];
+	if (!getSeat(game, seatId)) return [];
 
 	const regs = registrations(game, characters);
 	let worlds: RegistrationWorld[] | undefined;
@@ -172,7 +173,6 @@ export function validDeathCauses(
 		}
 		out.push({ cause: characterId, kind, flags });
 	}
-	out.push(general(other));
 	return out;
 }
 

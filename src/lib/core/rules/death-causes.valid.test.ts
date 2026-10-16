@@ -68,9 +68,9 @@ const entry = (g: ReturnType<typeof game>['game'], seat: string, cause: string) 
 	validDeathCauses(g, seat, characters).find((c) => c.cause === cause);
 
 describe('validDeathCauses', () => {
-	it('always offers executed and the Demon first and something else last', () => {
+	it('offers executed and the Demon first, and never something else', () => {
 		const { game: g, seats } = game(['chef', 'imp']);
-		expect(causes(g, seats[0])).toEqual(['execution', 'demon', 'other']);
+		expect(causes(g, seats[0])).toEqual(['execution', 'demon']);
 	});
 
 	it('does not offer the Slayer for a good player, but does for the Demon', () => {
@@ -173,7 +173,7 @@ describe('validDeathCauses', () => {
 			seatId: s[2],
 			alignment: 'good'
 		}));
-		expect(causes(g, seats[2])).toEqual(['exile', 'demon', 'other']);
+		expect(causes(g, seats[2])).toEqual(['exile', 'demon']);
 		expect(causes(g, seats[0])[0]).toBe('execution');
 	});
 

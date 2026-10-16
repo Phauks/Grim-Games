@@ -31,7 +31,7 @@ async function addThief(page: Page) {
 
 const seat = (page: Page, name: string) => page.getByRole('button', { name: `Seat: ${name}` });
 
-test('the day screen logs a nomination and execution, survives a reload and rolls back in History', async ({
+test('the day screen logs a nomination and execution, survives a reload and shows votes needed', async ({
 	page
 }) => {
 	const board = await startGame(page);
@@ -49,21 +49,13 @@ test('the day screen logs a nomination and execution, survives a reload and roll
 	await page.reload();
 	await expect(page.getByTestId('day-log')).toContainText('Seat 2 executed');
 
-	// No Undo: the game's History rolls back, after confirming.
+	// No Undo or History here: History is in the grimoire's menu.
 	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
-	await page.getByRole('button', { name: 'History' }).tap();
-	const history = page.getByRole('dialog', { name: 'History' });
-	await history.getByRole('button', { name: 'Go back' }).first().tap();
-	await page
-		.getByRole('alertdialog', { name: 'Go back?' })
-		.getByRole('button', { name: 'Go back' })
-		.tap();
-	await page.keyboard.press('Escape');
-	await expect(history).toBeHidden();
-	await expect(page.getByTestId('day-log')).not.toContainText('executed');
-	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'false');
-	await log.getByRole('button', { name: 'Execute Seat 2' }).tap();
-	await expect(log).toContainText('Seat 2 executed');
+	await expect(page.getByRole('button', { name: 'History' })).toHaveCount(0);
+	// 7 of 8 alive: 4 votes put a player on the block.
+	await expect(page.getByTestId('votes-needed')).toContainText(
+		'4 votes to put a player on the block (7 alive)'
+	);
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
 	await expect(page).toHaveURL(new RegExp(`${board}$`));
 	await expect(
@@ -86,13 +78,10 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 	await page.getByRole('radiogroup', { name: 'Tapping a player' }).getByText('Dead').tap();
 	await seat(page, 'Seat 3').tap();
 	const causes = page.getByRole('dialog', { name: 'How did Seat 3 die?' });
-	await expect(causes.getByRole('button')).toHaveText([
-		'Executed',
-		'Killed by the Demon',
-		'Something else',
-		'Skip'
-	]);
+	await expect(causes.getByRole('button')).toHaveText(['Executed', 'Killed by the Demon', 'Skip']);
 	await causes.getByRole('button', { name: 'Killed by the Demon' }).tap();
 	await expect(causes).toBeHidden();
 	await expect(seat(page, 'Seat 3')).toHaveAttribute('data-dead', 'true');
+	// 7 of 9 alive (the Thief exiled, Seat 3 dead): 4 votes.
+	await expect(page.getByTestId('votes-needed')).toContainText('(7 alive)');
 });

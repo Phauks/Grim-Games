@@ -2,6 +2,7 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { isTraveller, type DeathCause, type Game, type SeatId } from '#lib/core/model/index.ts';
 	import {
+		blockThreshold,
 		dayReminders,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
@@ -27,14 +28,11 @@
 		assistance: Assistance;
 		/** Shows a Night order button (the day spike); the grimoire has its own. */
 		onOpenNight?: () => void;
-		/**
-		 * Shows a History button: the game's History, where the Storyteller rolls back after
-		 * confirming. There is no Undo button (Trevor, 2026-10-16).
-		 */
-		onOpenHistory?: () => void;
 	}
 
-	let { game, assistance, onOpenNight, onOpenHistory }: Props = $props();
+	// No Undo or History here (Trevor, 2026-10-16): each day action is one entry in the
+	// game's History, in the grimoire's menu.
+	let { game, assistance, onOpenNight }: Props = $props();
 
 	const g = $derived(game.game);
 	const seats = $derived(g.seating.map((id) => g.seats[id]));
@@ -208,11 +206,18 @@
 	</span>
 {/snippet}
 
+{#snippet votes()}
+	{@const block = blockThreshold(g)}
+	<!-- Always shown, so the list below never moves when players die. -->
+	<p class="votes" data-testid="votes-needed">
+		<strong>{block.needed}</strong>
+		{block.needed === 1 ? 'vote' : 'votes'} to put a player on the block ({block.alive} alive), or more
+		than the player already on it.
+	</p>
+{/snippet}
+
 <div class="panel">
 	<div class="toolbar">
-		{#if onOpenHistory}
-			<Button icon="history" variant="quiet" onclick={onOpenHistory}>History</Button>
-		{/if}
 		<Button icon="day" variant="quiet" onclick={() => (confirmNewDay = true)}>New day</Button>
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>Night order</Button>
@@ -271,6 +276,7 @@
 	{#if assistance.preDayReminders}
 		<section aria-labelledby="reminders-heading">
 			<h2 id="reminders-heading">Today</h2>
+			{@render votes()}
 			{#each reminders.groups as group (group.group)}
 				<h3>{group.title}</h3>
 				<ul class="reminders">
@@ -306,6 +312,7 @@
 	{:else}
 		<section aria-labelledby="abilities-heading">
 			<h2 id="abilities-heading">Abilities and notes</h2>
+			{@render votes()}
 			<ul class="reminders">
 				{#each seats as seat (seat.seatId)}
 					{#if seat.characterId}
@@ -561,6 +568,10 @@
 	.muted {
 		margin: 0;
 		color: var(--on-surface-muted);
+	}
+	.votes {
+		margin: 0;
+		font-family: var(--font-ability);
 	}
 	.causes {
 		display: grid;
