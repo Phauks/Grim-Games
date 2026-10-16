@@ -176,9 +176,9 @@
 		font-size: 1.3rem;
 	}
 	main {
-		max-width: calc(40 * var(--u));
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-5) var(--space-4);
+		padding: var(--space-5) var(--page-gutter);
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-5);
@@ -194,9 +194,6 @@
 		align-items: start;
 	}
 	@media (min-width: 64rem) {
-		main {
-			max-width: calc(72 * var(--u));
-		}
 		.layout {
 			grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
 		}
