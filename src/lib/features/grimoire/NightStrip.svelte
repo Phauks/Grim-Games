@@ -6,7 +6,7 @@
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { doneKey, seatName, stepHolders, stepName } from './night-steps.ts';
+	import { seatName, stepHolders, stepName } from './night-steps.ts';
 
 	/**
 	 * Walking through the night (Trevor, 2026-10-16): the current step under the board, with
@@ -28,10 +28,10 @@
 	const game = $derived(grimoire.game);
 	const step = $derived(steps[index]);
 	const holders = $derived(step ? stepHolders(game, step, grimoire.open.characters) : []);
-	const ticked = $derived(step ? grimoire.nightDone.includes(doneKey(game, night, step)) : false);
+	const ticked = $derived(step ? grimoire.isNightStepDone(night, step) : false);
 
 	function next() {
-		if (step && !ticked) grimoire.toggleNightStep(doneKey(game, night, step));
+		if (step && !ticked) grimoire.toggleNightStep(night, step);
 		if (index < steps.length - 1) onIndex(index + 1);
 		else onClose();
 	}

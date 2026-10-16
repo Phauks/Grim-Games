@@ -662,6 +662,26 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	);
 	await night.getByText('First night').tap();
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
+
+	// Ticking Dawn ends the night and starts Day 1 (Trevor, 2026-10-16); the night's ticks
+	// stay on screen, and ticking Dawn again doesn't start another day.
+	const dawn = night.getByRole('button', { name: 'Done: Dawn' });
+	await dawn.tap();
+	await expect(dawn).toHaveAttribute('aria-pressed', 'true');
+	await expect(tick).toHaveAttribute('aria-pressed', 'true');
+	await dawn.tap();
+	await dawn.tap();
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	// The next night order opens on the other nights, unticked.
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await expect(night.getByRole('radio', { name: 'Other nights' })).toBeChecked();
+	await expect(night.getByRole('button', { name: 'Done: Dawn' })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
 });
 
 test('the script is shared from the grimoire menu, never the game', async ({ page }) => {

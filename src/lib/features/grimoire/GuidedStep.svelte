@@ -14,7 +14,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { doneKey, seatName, stepHolders, stepName } from './night-steps.ts';
+	import { seatName, stepHolders, stepName } from './night-steps.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 
@@ -76,7 +76,7 @@
 	const shownCharacter = $derived(
 		shownId ? characters.get(shownId) : (step?.character ?? undefined)
 	);
-	const done = $derived(step ? grimoire.nightDone.includes(doneKey(game, night, step)) : false);
+	const done = $derived(step ? grimoire.isNightStepDone(night, step) : false);
 </script>
 
 <Dialog bind:open title={step ? stepName(step) : 'Night step'} size="full">
@@ -160,7 +160,7 @@
 			variant="accent"
 			icon="check"
 			onclick={() => {
-				if (step && !done) grimoire.toggleNightStep(doneKey(game, night, step));
+				if (step && !done) grimoire.toggleNightStep(night, step);
 				open = false;
 			}}>Done</Button
 		>

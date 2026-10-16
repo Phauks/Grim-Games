@@ -107,6 +107,6 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 export const seatName = (game: Game, seatId: SeatId): string =>
 	game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
 
-/** A tick belongs to one night: a new day starts afresh. */
-export const doneKey = (game: Game, night: Night, step: NightStep): string =>
-	`${game.pastDays.length}:${night}:${step.id}`;
+/** A tick belongs to one night, by the number of days before it: a new day starts afresh. */
+export const doneKey = (day: number, night: Night, step: { id: string }): string =>
+	`${day}:${night}:${step.id}`;

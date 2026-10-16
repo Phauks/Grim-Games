@@ -9,14 +9,8 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import {
-		boardNightSteps,
-		doneKey as keyFor,
-		seatName as nameOf,
-		stepHolders,
-		stepName,
-		tonight
-	} from './night-steps.ts';
+	import { boardNightSteps, seatName as nameOf, stepHolders, stepName } from './night-steps.ts';
+	import { untrack } from 'svelte';
 
 	/**
 	 * The night order for this game: the characters in play that wake tonight, in order,
@@ -40,9 +34,9 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	let night = $state<Night>('first');
-	// Opens on tonight's list.
+	// Opens on the list of the night being run; ticking Dawn (a new day) doesn't switch it.
 	$effect(() => {
-		if (open) night = tonight(game);
+		if (open) night = untrack(() => (grimoire.nightDay === 0 ? 'first' : 'other'));
 	});
 	const assistance = $derived(preferences.current.assistance);
 
@@ -54,8 +48,6 @@
 
 	const holders = (step: NightStep) => stepHolders(game, step, grimoire.open.characters);
 	const seatName = (seatId: string) => nameOf(game, seatId);
-	const done = $derived(grimoire.nightDone);
-	const doneKey = (step: NightStep) => keyFor(game, night, step);
 </script>
 
 <Dialog bind:open title="Night order" size="full">
@@ -84,14 +76,14 @@
 	</div>
 	<ol class="steps">
 		{#each steps as step (step.id)}
-			{@const ticked = done.includes(doneKey(step))}
+			{@const ticked = grimoire.isNightStepDone(night, step)}
 			<li class:ticked>
 				<button
 					type="button"
 					class="tick"
 					aria-pressed={ticked}
 					aria-label={`Done: ${stepName(step)}`}
-					onclick={() => grimoire.toggleNightStep(doneKey(step))}>{ticked ? '✓' : ''}</button
+					onclick={() => grimoire.toggleNightStep(night, step)}>{ticked ? '✓' : ''}</button
 				>
 				<span class="icon">
 					<StepIcon {step} size={48} />

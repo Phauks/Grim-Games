@@ -142,6 +142,8 @@ export function warningText(warning: EngineWarning): string | undefined {
 		// "reminder-fixed" was asked about before the move (ReminderMoveConfirm).
 		case 'no-change':
 		case 'reminder-fixed':
+		// Ticking Dawn starts the new day by itself, logged or not.
+		case 'empty-day':
 			return undefined;
 		case 'not-on-script':
 			return 'That character is not on the script.';

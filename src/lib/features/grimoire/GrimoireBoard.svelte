@@ -607,7 +607,10 @@
 				variant="quiet"
 				icon="night"
 				aria-label="Night order"
-				onclick={() => (nightOpen = true)}><span class="tool-label">Night order</span></Button
+				onclick={() => {
+					grimoire.beginNight();
+					nightOpen = true;
+				}}><span class="tool-label">Night order</span></Button
 			>
 			<Button variant="quiet" icon="day" aria-label="Day" onclick={() => (dayOpen = true)}
 				><span class="tool-label">Day</span></Button

@@ -1,4 +1,6 @@
 import type { Command } from '#lib/core/engine/index.ts';
+import type { Night } from '#lib/core/rules/index.ts';
+import { doneKey } from './night-steps.ts';
 import { scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -26,6 +28,7 @@ export class Grimoire {
 		this.layout = seatLayouts.read(open.game.gameId);
 		this.nightView = nightViews.read(open.game.gameId);
 		this.nightDone = this.nightView.done;
+		this.nightDay = this.nightView.day ?? open.game.pastDays.length;
 		// Icons are stored only once shown; store the ones this game may need mid-game, so
 		// the Traveller and Fabled pickers and an older game's script work offline.
 		const onScript = scriptCharacterIds(open.game.script);
@@ -48,19 +51,45 @@ export class Grimoire {
 	/** The night as it was saved on this device, for the board to reopen after a reload. */
 	readonly nightView: NightView;
 
-	/** Saves which night order view is open, with the ticks. */
-	saveNightView(view: Omit<NightView, 'done'>): void {
-		nightViews.write(this.game.gameId, { ...view, done: [...this.nightDone] });
-	}
+	/**
+	 * The night being run, by the number of days before it. It is kept while the night order
+	 * is open, so ticking Dawn (which starts a new day) doesn't clear the night's ticks.
+	 */
+	nightDay = $state(0);
 
-	toggleNightStep(key: string): void {
-		this.nightDone = this.nightDone.includes(key)
-			? this.nightDone.filter((k) => k !== key)
-			: [...this.nightDone, key];
+	/** Saves which night order view is open, with the ticks. */
+	saveNightView(view: Omit<NightView, 'done' | 'day'>): void {
 		nightViews.write(this.game.gameId, {
-			...nightViews.read(this.game.gameId),
+			...view,
+			day: this.nightDay,
 			done: [...this.nightDone]
 		});
+	}
+
+	/** Opening the night order runs tonight's night. */
+	beginNight(): void {
+		this.nightDay = this.game.pastDays.length;
+	}
+
+	isNightStepDone(night: Night, step: { id: string }): boolean {
+		return this.nightDone.includes(doneKey(this.nightDay, night, step));
+	}
+
+	/**
+	 * Ticks or unticks a night step. Ticking Dawn ends the night and starts a new day
+	 * (Trevor, 2026-10-16), once a night; History's Restore undoes it.
+	 */
+	toggleNightStep(night: Night, step: { id: string }): void {
+		const key = doneKey(this.nightDay, night, step);
+		const ticking = !this.nightDone.includes(key);
+		this.nightDone = ticking ? [...this.nightDone, key] : this.nightDone.filter((k) => k !== key);
+		nightViews.write(this.game.gameId, {
+			...nightViews.read(this.game.gameId),
+			day: this.nightDay,
+			done: [...this.nightDone]
+		});
+		if (ticking && step.id === 'dawn' && this.nightDay === this.game.pastDays.length)
+			this.run({ type: 'NewDay' });
 	}
 
 	/** Setup reminder suggestions the Storyteller dismissed from the tray (`setup-tray.ts`). */

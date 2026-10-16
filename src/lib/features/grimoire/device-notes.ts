@@ -136,8 +136,10 @@ const NIGHT_KEY = (gameId: GameId) => `grim-games:night:v1:${gameId}`;
  * it again (Trevor, 2026-10-16): the steps ticked off, and which night order view was open.
  */
 export interface NightView {
-	/** Ticked steps (`<night>:<step id>`). */
+	/** Ticked steps (`<day>:<night>:<step id>`). */
 	done: string[];
+	/** The night being run, by the number of days before it (it ends when Dawn is ticked). */
+	day?: number;
 	/** The night order sheet was open. */
 	sheet?: boolean;
 	/** The walk-through under the board: which night and which step. */
@@ -154,6 +156,7 @@ export function parseNightView(raw: unknown): NightView {
 	const r = raw as Record<string, unknown>;
 	if (Array.isArray(r.done)) view.done = r.done.filter((v): v is string => typeof v === 'string');
 	if (r.sheet === true) view.sheet = true;
+	if (Number.isInteger(r.day) && (r.day as number) >= 0) view.day = r.day as number;
 	const walk = r.walk as Record<string, unknown> | undefined;
 	if (walk && isNight(walk.night) && Number.isInteger(walk.index) && (walk.index as number) >= 0)
 		view.walk = { night: walk.night, index: walk.index as number };
