@@ -44,6 +44,7 @@
 </script>
 
 <!-- The character token with its leaves (first night, other nights, reminders, setup). -->
+<!-- eslint-disable grim/names-as-badges -- the name printed on its own token (Settings > Tokens) -->
 <TokenFace
 	{src}
 	{label}
@@ -53,3 +54,4 @@
 	namePlacement={namePlacement ?? preferences.current.tokenAppearance.namePlacement}
 	nameTeam={team}
 />
+<!-- eslint-enable grim/names-as-badges -->

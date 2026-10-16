@@ -80,6 +80,8 @@
 	const causeSeatDead = $derived(causeSeat ? g.seats[causeSeat]?.dead === true : false);
 
 	// ── Confirming a change: what it is now, and what it will be ──
+	// TPI's reminder token text (game data, not interface text).
+	const NO_ABILITY = 'No Ability';
 	// The texts hold slots (slots.ts): `character` and `reminder` show as badges.
 	interface Pending {
 		title: string;
@@ -104,7 +106,7 @@
 
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
 		const who = t('day.who', { character: slot('character'), seat: game.seatName(seatId) });
-		const token = game.characters.get(characterId)?.reminders.includes('No Ability');
+		const token = game.characters.get(characterId)?.reminders.includes(NO_ABILITY);
 		ask({
 			title: t('day.markUsedTitle', { who }),
 			now: t('day.markUsedNow', { who }),
@@ -507,7 +509,7 @@
 			{interactive}
 		/>{/if}{/snippet}
 {#snippet pendingSlot(name: string)}{#if name === 'reminder'}<ReminderToken
-			label="No Ability"
+			label={NO_ABILITY}
 			type={pending ? game.characters.get(pending.characterId)?.type : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
 

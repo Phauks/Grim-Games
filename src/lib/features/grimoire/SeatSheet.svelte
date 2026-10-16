@@ -327,11 +327,7 @@
 	let remindersOpen = $state(false);
 </script>
 
-<BottomSheet
-	bind:open
-	{title}
-	description={`Seat ${number}`}
->
+<BottomSheet bind:open {title} description={`Seat ${number}`}>
 	<!-- The character's name is the biggest thing here; alignment and seat are easy to see
 	     on the token already (Trevor, 2026-10-16). -->
 	{#snippet subtitle()}
@@ -893,7 +889,7 @@
 				alignment={placingAlignment(game, movingReminder.characterId, characters)}
 			/>{:else}Reminder{/if}
 	{/snippet}
-	{#snippet subheading()}
+	{#snippet subtitle()}
 		{#if movingReminder}From the <CharacterBadge
 				characterId={movingReminder.characterId}
 				character={characters.get(movingReminder.characterId)}

@@ -97,6 +97,7 @@
 		// left of a solid line, then every other copy still off the board.
 		const pending: Record<string, number> = {};
 		for (const item of setupItems) {
+			// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
@@ -265,7 +266,7 @@
 				type={characters.get(shown.suggestion.characterId)?.type}
 			/>{/if}
 	{/snippet}
-	{#snippet subheading()}
+	{#snippet subtitle()}
 		{#if shown}<CharacterBadge
 				characterId={shown.suggestion.characterId}
 				character={characters.get(shown.suggestion.characterId)}
