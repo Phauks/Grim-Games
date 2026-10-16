@@ -100,7 +100,14 @@ export type Command =
 	| { type: 'SetBluffs'; set: number; characterIds: CharacterId[] }
 	| { type: 'RemoveBluffSet'; set: number }
 	/** Replaces the bag. Tiles are shuffled unless `shuffle` is false. */
-	| { type: 'BuildBag'; tiles: TileSpec[]; includeTravellers: boolean; shuffle?: boolean }
+	| {
+			type: 'BuildBag';
+			tiles: TileSpec[];
+			includeTravellers: boolean;
+			shuffle?: boolean;
+			/** "Is The …" reminders for characters in play with no tile (Drunk, Marionette). */
+			unseated?: Reminder[];
+	  }
 	| { type: 'ClearBag' }
 	/** A player takes a tile: `tileId` when they picked one, otherwise the next in order. */
 	| { type: 'DrawTile'; seatId: SeatId; tileId?: TileId }

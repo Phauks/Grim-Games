@@ -62,7 +62,11 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 			onDraw.next!.x + onDraw.next!.width - (onCharacters.next!.x + onCharacters.next!.width)
 		)
 	).toBeLessThan(2);
+	// Leaving the draw before every tile is drawn asks first (Trevor, 2026-10-16).
+	const leave = page.getByRole('alertdialog', { name: 'Leave the draw?' });
 	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await expect(leave).toContainText('Now: 5 of 5 tiles not yet drawn.');
+	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	await steps.getByRole('link', { name: 'Draw' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
@@ -74,6 +78,15 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
 	await expect(page.getByText(/\d+ left|Enter draws/)).toHaveCount(0);
 	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await expect(leave).toContainText('Now: 4 of 5 tiles not yet drawn.');
+	await leave.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+	await page.goBack();
+	await expect(leave).toBeVisible();
+	await leave.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// Going back changes nothing; building again says what happens to the drawn tile.
 	await page.getByRole('button', { name: 'Build bag' }).tap();
@@ -85,6 +98,7 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 
 	// Finishing goes to the board, which opens its setup reminders.
 	await bar.getByRole('link', { name: 'Grimoire' }).tap();
+	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(new RegExp(`${board}(#setup-reminders)?$`));
 });
 
@@ -104,20 +118,16 @@ async function noSidewaysScroll(page: Page) {
 
 test('selection counts against the setup sheet and explains the Drunk', async ({ page }) => {
 	await selectionFor(page, 6);
-	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Drunk');
-	// Adding the Drunk asks which Townsfolk goes in the bag for it; nothing is picked for you.
-	const ask = page.getByRole('dialog', { name: 'What is the Drunk shown?' });
-	await expect(ask).toBeVisible();
-	await expect(ask.getByRole('button', { name: 'Empath', exact: true })).toHaveCount(0);
-	await ask.getByRole('button', { name: 'Decide later' }).tap();
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Drunk', 'Poisoner', 'Imp');
+	// Adding the Drunk asks nothing (Trevor, 2026-10-16): the Drunk has no token in the bag,
+	// so the check asks for one more Townsfolk, and who is the Drunk is decided after the draw.
+	await expect(page.getByRole('dialog')).toHaveCount(0);
 	const check = page.getByTestId('setup-check');
-	await expect(check.getByTestId('stand-in-drunk')).toContainText('Choose');
-	await check.getByRole('button', { name: 'Shown to the Drunk' }).tap();
-	await ask.getByRole('button', { name: 'Chef', exact: true }).tap();
-	await expect(check.getByTestId('stand-in-drunk')).toContainText('Chef');
-	await select(page, 'Poisoner', 'Imp');
+	await expect(page.getByTestId('warning-count')).not.toHaveText('0');
+	await expect(check).toContainText(/Drunk\s*: \+1 Townsfolk in the bag/);
+	await select(page, 'Chef');
 	await expect(choice(page, 'Drunk')).toHaveAttribute('aria-pressed', 'true');
-	await expect(page.getByTestId('count-townsfolk')).toHaveText('3');
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('4');
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 	await expect(page.getByTestId('warning-count')).toHaveText('0');
 	await noSidewaysScroll(page);
@@ -129,7 +139,6 @@ test('selection counts against the setup sheet and explains the Drunk', async ({
 	await expect(page.getByRole('button', { name: /Check/ })).toHaveCount(0);
 	await expect(check).toBeVisible();
 	await expect(check).toContainText(/Baron\s*: \+2 Outsiders/);
-	await expect(check.getByTestId('stand-in-drunk')).toContainText('is shown');
 	await select(page, 'Baron');
 
 	// The selection is kept on the device.
@@ -140,7 +149,7 @@ test('selection counts against the setup sheet and explains the Drunk', async ({
 	// Clear is an icon by the search and says what it discards before clearing.
 	await page.getByRole('button', { name: 'Clear selection' }).tap();
 	const clear = page.getByRole('alertdialog', { name: 'Clear the selection?' });
-	await expect(clear).toContainText('Now: 6 characters chosen. After: none.');
+	await expect(clear).toContainText('Now: 7 characters chosen. After: none.');
 	await clear.getByRole('button', { name: 'Clear', exact: true }).tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
 	await page.getByRole('button', { name: 'Random selection' }).tap();
@@ -388,4 +397,27 @@ test.describe('in a computer window', () => {
 		// Enter takes a tile at random, so any one of them is now drawn.
 		await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
 	});
+});
+
+// https://wiki.bloodontheclocktower.com/Drunk: the Drunk has no token in the bag; one more
+// Townsfolk goes in, and the Storyteller marks who is the Drunk once the tokens come back
+// (Trevor, 2026-10-16).
+test('a Drunk game draws only Townsfolk tokens and offers Is The Drunk on the board', async ({
+	page
+}) => {
+	await selectionFor(page, 6);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Chef', 'Drunk', 'Poisoner', 'Imp');
+	await expect(page.getByTestId('warning-count')).toHaveText('0');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page.getByRole('button', { name: /^Tile \d$/ })).toHaveCount(6);
+	for (let n = 1; n <= 6; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		await expect(page.getByTestId('reveal')).not.toContainText('Drunk');
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	await page
+		.getByRole('navigation', { name: 'Setup', exact: true })
+		.getByRole('link', { name: 'Grimoire' })
+		.tap();
+	await expect(page.getByText('Is The Drunk')).toBeVisible();
 });

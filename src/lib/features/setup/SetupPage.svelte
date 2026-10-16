@@ -18,7 +18,6 @@
 		randomSelection,
 		scriptJinxes,
 		selectedIds,
-		standInKind,
 		isRuleCharacter
 	} from '#lib/core/rules/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -90,12 +89,10 @@
 			selection: s.selection,
 			scriptCharacters: choices,
 			lookup,
-			standIns: s.standIns,
-			// The Drunk's or Marionette's token is the Storyteller's choice (Trevor, 2026-10-16).
-			suggest: false
+			standIns: s.standIns
 		})
 	);
-	// Asked when a Drunk or Marionette is added: which token goes in the bag for it.
+	// The Lunatic's Demon token, changed from the setup check.
 	let askingFor = $state<CharacterId | undefined>(undefined);
 	let standInOpen = $state(false);
 	const askingStandIn = $derived(plan.standIns.find((x) => x.characterId === askingFor));
@@ -124,10 +121,6 @@
 	function toggle(character: Character) {
 		const n = setupSelection.copies(character.id);
 		setupSelection.setCopies(character.id, n === 0 ? 1 : n - 1);
-		if (n === 0 && standInKind(character) === 'good' && !s.standIns[character.id]) {
-			askingFor = character.id;
-			standInOpen = true;
-		}
 	}
 
 	/** True once any tile of the current bag was drawn: rebuilding would put them back. */
@@ -159,8 +152,13 @@
 		for (let n = port.game?.seating.length ?? 0; n < s.players; n++) {
 			if (!send({ type: 'AddSeat' })) return;
 		}
-		if (!send({ type: 'BuildBag', tiles: plan.tiles, includeTravellers: plan.includeTravellers }))
-			return;
+		const built = send({
+			type: 'BuildBag',
+			tiles: plan.tiles,
+			includeTravellers: plan.includeTravellers,
+			unseated: plan.unseated
+		});
+		if (!built) return;
 		await port.flush();
 		await goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }));
 	}
@@ -177,11 +175,6 @@
 			random: Math.random
 		});
 		setupSelection.replace(selection);
-		// Random was asked for, so a Drunk's or Marionette's token is picked at random too.
-		const picked = planBag({ selection, scriptCharacters: choices, lookup, random: Math.random });
-		for (const standIn of picked.standIns) {
-			if (standIn.shows) setupSelection.setStandIn(standIn.characterId, standIn.shows);
-		}
 	}
 </script>
 
@@ -312,7 +305,6 @@
 <StandInDialog
 	bind:open={standInOpen}
 	standIn={askingStandIn}
-	selected={ids}
 	{lookup}
 	onChoose={(shows) => askingFor && setupSelection.setStandIn(askingFor, shows)}
 />
@@ -359,9 +351,9 @@
 
 <style>
 	main {
-		max-width: calc(64 * var(--u));
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-4) var(--space-4) 0;
+		padding: var(--space-4) var(--page-gutter) 0;
 	}
 	.top {
 		display: grid;
@@ -471,9 +463,6 @@
 	 * the list, so the list starts at the top and nothing needs scrolling back to.
 	 */
 	@media (min-width: 75rem) {
-		main {
-			max-width: calc(120 * var(--u));
-		}
 		.layout {
 			grid-template-columns: calc(28 * var(--u)) minmax(0, 1fr);
 			align-items: start;

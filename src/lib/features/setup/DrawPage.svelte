@@ -16,6 +16,7 @@
 	import { tileSymbols } from './tile-face.ts';
 	import SetupSteps from './SetupSteps.svelte';
 	import SetupNav from './SetupNav.svelte';
+	import LeaveGuard from './LeaveGuard.svelte';
 	import { remindersHref } from './setup-steps.ts';
 
 	interface Props {
@@ -29,6 +30,8 @@
 	const bag = $derived(game?.bag);
 	const slots = $derived(bag ? bagSlots(bag) : []);
 	const next = $derived(game ? nextDrawSeat(game) : undefined);
+	// A stray tap mid-draw must not leave the draw (Trevor, 2026-10-16).
+	const inBag = $derived(slots.filter((s) => s.state !== 'drawn').length);
 	// Numbers or symbols on the face-down tiles (Storyteller settings).
 	const face = $derived(preferences.current.tileFace);
 	const symbols = $derived(tileSymbols(slots.map((s) => s.tileId)));
@@ -141,6 +144,11 @@
 	</ErrorBoundary>
 
 	{#if game}
+		<LeaveGuard
+			when={inBag > 0}
+			title={t('setup.leave.title')}
+			body={t('setup.leave.body', { count: inBag, total: slots.length })}
+		/>
 		<SetupNav
 			backHref={resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })}
 			backLabel={t('setup.step.characters')}
@@ -172,9 +180,9 @@
 
 <style>
 	main {
-		max-width: calc(48 * var(--u));
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-4) var(--space-4) 0;
+		padding: var(--space-4) var(--page-gutter) 0;
 	}
 	header {
 		display: grid;
@@ -260,9 +268,6 @@
 	}
 	/* A computer window: a wider bag with bigger tiles. */
 	@media (min-width: 75rem) {
-		main {
-			max-width: calc(80 * var(--u));
-		}
 		.tiles {
 			grid-template-columns: repeat(auto-fill, minmax(calc(10 * var(--u)), 1fr));
 			gap: var(--space-3);

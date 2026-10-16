@@ -22,6 +22,15 @@ export function replacementReminder(character: Character): Reminder | undefined 
 }
 
 /**
+ * A character with no token of its own in the bag that a player secretly is, marked with
+ * its "Is The …" reminder once the tokens come back: the Drunk and the Marionette
+ * (https://wiki.bloodontheclocktower.com/Drunk, https://wiki.bloodontheclocktower.com/Marionette).
+ */
+export function isReplacedAfterDraw(character: Character): boolean {
+	return isBagDisabled(character) && replacementReminder(character) !== undefined;
+}
+
+/**
  * A selected character that is never dealt: bag-disabled with no stand-in (Lil' Monsta).
  * Its setup change still applies.
  */

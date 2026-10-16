@@ -49,8 +49,8 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-2);
-		max-width: calc(120 * var(--u));
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-2) var(--space-4) calc(var(--space-2) + env(safe-area-inset-bottom));
+		padding: var(--space-2) var(--page-gutter) calc(var(--space-2) + env(safe-area-inset-bottom));
 	}
 </style>

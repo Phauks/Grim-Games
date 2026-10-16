@@ -923,9 +923,24 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 					confirmed: false
 				};
 			});
+			const unseated = (command.unseated ?? []).map((r) => {
+				const source = characterOf(ctx, r.characterId);
+				if (!isKnownReminder(source, r.label)) {
+					warn('reminder-not-for-character', `${source.name} has no "${r.label}" reminder`);
+				}
+				return { characterId: r.characterId, label: r.label };
+			});
 			const ids = tiles.map((t) => t.tileId);
 			const order = command.shuffle === false ? ids : shuffled(ids, ctx);
-			return [{ type: 'BagBuilt', tiles, order, includeTravellers: command.includeTravellers }];
+			return [
+				{
+					type: 'BagBuilt',
+					tiles,
+					order,
+					includeTravellers: command.includeTravellers,
+					...(unseated.length ? { unseated } : {})
+				}
+			];
 		}
 
 		case 'ClearBag':

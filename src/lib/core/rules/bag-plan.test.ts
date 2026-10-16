@@ -73,72 +73,34 @@ describe('planBag', () => {
 		expect(result.includeTravellers).toBe(false);
 	});
 
-	// https://wiki.bloodontheclocktower.com/Drunk: the Drunk's token is never in the bag; a
-	// Townsfolk that is not in play goes in, and the Drunk believes they are that Townsfolk.
-	it('Drunk: a Townsfolk not in play stands in, marked "Is The Drunk"', () => {
-		const result = plan(pick('chef', 'empath', 'drunk', 'poisoner', 'imp'));
-		const drunk = result.tiles[2];
-		expect(drunk.grimoire).toBe(drunk.shows);
-		expect(lookup(drunk.shows)?.type).toBe('townsfolk');
-		expect(['chef', 'empath']).not.toContain(drunk.shows);
-		expect(drunk.reminders).toEqual([{ characterId: 'drunk', label: 'Is The Drunk' }]);
-		expect(result.standIns).toEqual([
-			expect.objectContaining({ characterId: 'drunk', kind: 'good', shows: drunk.shows })
+	// https://wiki.bloodontheclocktower.com/Drunk: the Drunk's token is never in the bag; the
+	// Drunk's player holds a Townsfolk token. The Storyteller adds that Townsfolk like any
+	// other and decides who is the Drunk after the draw (Trevor, 2026-10-16).
+	it('Drunk: no tile of its own, and "Is The Drunk" waits for the draw', () => {
+		const result = plan(pick('chef', 'empath', 'monk', 'drunk', 'poisoner', 'imp'));
+		expect(result.tiles.map((t) => t.grimoire)).toEqual([
+			'chef',
+			'empath',
+			'monk',
+			'poisoner',
+			'imp'
 		]);
-		expect(result.standIns[0].options.every((id) => lookup(id)?.type === 'townsfolk')).toBe(true);
-	});
-
-	it('Drunk: the Storyteller can choose the Townsfolk, and is warned when it is in play', () => {
-		const result = plan(pick('chef', 'empath', 'drunk', 'poisoner', 'imp'), {
-			standIns: { drunk: 'chef' }
-		});
-		expect(result.tiles[2]).toMatchObject({ shows: 'chef', grimoire: 'chef' });
-		expect(result.standIns[0].chosen).toBe(true);
-		expect(result.issues.map((i) => i.code)).toEqual(['stand-in-selected']);
-	});
-
-	it('Drunk without suggestions: no Townsfolk is picked until the Storyteller chooses one', () => {
-		// The Drunk's token is a Townsfolk chosen by the Storyteller
-		// (https://wiki.bloodontheclocktower.com/Drunk); the app doesn't choose it for them.
-		const result = plan(pick('chef', 'empath', 'drunk', 'poisoner', 'imp'), { suggest: false });
-		expect(result.standIns[0]).toMatchObject({ characterId: 'drunk', chosen: false });
-		expect(result.standIns[0].shows).toBeUndefined();
-		expect(result.tiles.map((t) => t.grimoire)).not.toContain('drunk');
-		expect(result.issues).toEqual([
-			expect.objectContaining({ code: 'no-stand-in', message: 'Choose what the Drunk is shown.' })
-		]);
-	});
-
-	it('Lunatic without suggestions is still shown the Demon in play', () => {
-		// https://wiki.bloodontheclocktower.com/Lunatic
-		const result = plan(pick('chef', 'empath', 'lunatic', 'poisoner', 'imp'), { suggest: false });
-		expect(result.standIns[0]).toMatchObject({ characterId: 'lunatic', shows: 'imp' });
-	});
-
-	it('two stand-ins are not shown the same Townsfolk', () => {
-		const result = planBag({
-			selection: { drunk: 1, marionette: 1, imp: 1 },
-			scriptCharacters: script(['chef', 'empath', 'drunk', 'marionette', 'imp']),
-			lookup
-		});
-		expect(new Set(result.tiles.slice(0, 2).map((t) => t.shows)).size).toBe(2);
+		expect(result.tiles.every((t) => t.shows === t.grimoire)).toBe(true);
+		expect(result.unseated).toEqual([{ characterId: 'drunk', label: 'Is The Drunk' }]);
+		expect(result.standIns).toEqual([]);
+		expect(result.issues).toEqual([]);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Marionette: the Marionette thinks they are a good
-	// character; their token is not in the bag.
-	it('Marionette: a good character stands in, marked "Is The Marionette"', () => {
+	// character and neighbours the Demon; their token is not in the bag.
+	it('Marionette: no tile of its own, and "Is The Marionette" waits for the draw', () => {
 		const result = planBag({
-			selection: pick('chef', 'marionette', 'imp'),
+			selection: pick('chef', 'saint', 'marionette', 'imp'),
 			scriptCharacters: script(['chef', 'empath', 'saint', 'marionette', 'imp']),
-			lookup,
-			random: () => 0.99
+			lookup
 		});
-		expect(result.tiles[1]).toEqual({
-			shows: 'saint',
-			grimoire: 'saint',
-			reminders: [{ characterId: 'marionette', label: 'Is The Marionette' }]
-		});
-		expect(result.standIns[0].options).toEqual(['chef', 'empath', 'saint']);
+		expect(result.tiles.map((t) => t.grimoire)).toEqual(['chef', 'saint', 'imp']);
+		expect(result.unseated).toEqual([{ characterId: 'marionette', label: 'Is The Marionette' }]);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Lunatic: the Lunatic is shown a Demon token.
@@ -269,11 +231,12 @@ describe('the draw', () => {
 	// A 5-player Trouble Brewing-style bag with a Drunk, built with BuildBag.
 	function drawGame() {
 		const { session, ctx, seats } = newGame(5, { ctx: testContext({ seed: 7 }) });
-		const bag = plan(pick('chef', 'empath', 'drunk', 'poisoner', 'imp'));
+		const bag = plan(pick('chef', 'empath', 'monk', 'drunk', 'poisoner', 'imp'));
 		const built = run(session, ctx, {
 			type: 'BuildBag',
 			tiles: bag.tiles,
-			includeTravellers: bag.includeTravellers
+			includeTravellers: bag.includeTravellers,
+			unseated: bag.unseated
 		});
 		return { session: built, ctx, seats };
 	}
@@ -300,7 +263,7 @@ describe('the draw', () => {
 	});
 
 	// https://wiki.bloodontheclocktower.com/Drunk: the Drunk's player believes they are the
-	// Townsfolk they were shown; the grimoire records the truth.
+	// Townsfolk they hold; the grimoire records the truth once the Storyteller marks them.
 	it('drawing every tile seats everyone, with the Drunk marked', () => {
 		const { session: start, ctx } = drawGame();
 		let session = start;
@@ -311,14 +274,21 @@ describe('the draw', () => {
 			)!.tileId;
 			session = run(session, ctx, { type: 'ConfirmDraw', tileId });
 		}
-		// The Drunk's token is suggested on the right seat, not placed by the draw.
+		// The Drunk's token is suggested for any Townsfolk; the Storyteller picks who.
 		const suggested = setupReminders(session.game, testCharacters).filter(
 			(r) => r.label === 'Is The Drunk'
 		);
 		expect(suggested).toHaveLength(1);
+		expect(suggested[0].seatId).toBeUndefined();
+		const townsfolk = session.game.seating.filter((id) =>
+			['chef', 'empath', 'monk'].includes(session.game.seats[id].characterId!)
+		);
+		expect([...suggested[0].candidates].sort()).toEqual([...townsfolk].sort());
+		expect(placeableSetupReminders(suggested)).toEqual([]);
+		const empath = townsfolk.find((id) => session.game.seats[id].characterId === 'empath')!;
 		session = run(session, ctx, {
 			type: 'ApplySetupReminders',
-			placements: placeableSetupReminders(suggested)
+			placements: [{ seatId: empath, reminder: { characterId: 'drunk', label: 'Is The Drunk' } }]
 		});
 		expect(
 			setupReminders(session.game, testCharacters).some((r) => r.label === 'Is The Drunk')
@@ -326,7 +296,7 @@ describe('the draw', () => {
 		const truths = session.game.seating.map((id) =>
 			trueCharacter(session.game, id, testCharacters)
 		);
-		expect([...truths].sort()).toEqual(['chef', 'drunk', 'empath', 'imp', 'poisoner']);
+		expect([...truths].sort()).toEqual(['chef', 'drunk', 'imp', 'monk', 'poisoner']);
 		expect(session.game.bag!.order).toEqual([]);
 	});
 });

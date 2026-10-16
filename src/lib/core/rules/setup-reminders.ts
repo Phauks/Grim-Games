@@ -192,7 +192,8 @@ export function setupReminders(
 	}
 	for (const id of game.ruleCharacters) if (!order.includes(id)) order.push(id);
 	const out: SetupReminder[] = [];
-	if (timings.has('setup')) out.push(...drawnTileReminders(game));
+	if (timings.has('setup'))
+		out.push(...drawnTileReminders(game), ...unseatedReminders(game, seats));
 	for (const id of order) {
 		const entry = ENTRIES.get(id);
 		const character = lookup.get(id);
@@ -237,6 +238,70 @@ function drawnTileReminders(game: Game): SetupReminder[] {
 				wiki: entry?.wiki ?? 'https://wiki.bloodontheclocktower.com/Setup'
 			});
 		}
+	}
+	return out;
+}
+
+/**
+ * The Drunk's and Marionette's "Is The …" tokens: they had no tile, so the Storyteller
+ * decides who is secretly the Drunk or Marionette once the tokens come back (Trevor,
+ * 2026-10-16). A Drunk is a player holding a Townsfolk token
+ * (https://wiki.bloodontheclocktower.com/Drunk); a Marionette a good player next to the
+ * Demon (https://wiki.bloodontheclocktower.com/Marionette). One suggestion per copy not yet
+ * on a seat.
+ */
+function unseatedReminders(game: Game, seats: readonly SeatFacts[]): SetupReminder[] {
+	const out: SetupReminder[] = [];
+	const unseated = game.bag?.unseated ?? [];
+	const placed = (r: Reminder) =>
+		seats.filter((f) =>
+			f.seat.reminders.some((p) => p.characterId === r.characterId && p.label === r.label)
+		).length;
+	const n = seats.length;
+	const nextToDemon = (i: number) =>
+		n > 1 && [seats[(i + n - 1) % n], seats[(i + 1) % n]].some((f) => f.type === 'demon');
+	const marked = new Set(
+		unseated.flatMap((r) =>
+			seats
+				.filter((f) =>
+					f.seat.reminders.some((p) => p.characterId === r.characterId && p.label === r.label)
+				)
+				.map((f) => f.seat.seatId)
+		)
+	);
+	const seen = new Map<string, number>();
+	for (const r of unseated) {
+		const key = `${r.characterId}\u0000${r.label}`;
+		const copy = (seen.get(key) ?? 0) + 1;
+		seen.set(key, copy);
+		if (copy <= placed(r)) continue;
+		const marionette = r.characterId === 'marionette';
+		const candidates = seats
+			.filter((f, i) =>
+				marionette
+					? (f.type === 'townsfolk' || f.type === 'outsider') && nextToDemon(i)
+					: f.type === 'townsfolk'
+			)
+			.filter((f) => !marked.has(f.seat.seatId))
+			.map((f) => f.seat.seatId);
+		const entry = ENTRIES.get(r.characterId);
+		const name = marionette
+			? 'Marionette'
+			: r.characterId === 'drunk'
+				? 'Drunk'
+				: r.label.replace(/^is the /i, '');
+		out.push({
+			characterId: r.characterId,
+			label: r.label,
+			text: `Put [${r.label}] on the player who is secretly the ${name}`,
+			reason: marionette
+				? 'The Marionette had no token in the bag: it is a good player next to the Demon'
+				: `The ${name} had no token in the bag: it is one of the players holding a Townsfolk`,
+			choice: `Who is the ${name}`,
+			candidates,
+			timing: 'setup',
+			wiki: entry?.wiki ?? 'https://wiki.bloodontheclocktower.com/Setup'
+		});
 	}
 	return out;
 }

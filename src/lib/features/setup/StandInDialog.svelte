@@ -8,23 +8,17 @@
 
 	interface Props {
 		open: boolean;
-		/** The Drunk, Marionette or Lunatic, and what may go in the bag for it. */
+		/** The Lunatic, and the Demons its token may show. */
 		standIn: StandIn | undefined;
-		/** Characters already chosen for the bag: not offered, as they'd be in it twice. */
-		selected: readonly CharacterId[];
 		lookup: (id: CharacterId) => Character | undefined;
 		onChoose: (shows: CharacterId) => void;
 	}
 
-	let { open = $bindable(), standIn, selected, lookup, onChoose }: Props = $props();
+	let { open = $bindable(), standIn, lookup, onChoose }: Props = $props();
 
 	const name = $derived(standIn ? (lookup(standIn.characterId)?.name ?? '') : '');
 	const options = $derived(
-		(standIn?.options ?? [])
-			// A Lunatic is usually shown the Demon in play; a good stand-in shouldn't be in the bag.
-			.filter((id) => standIn?.kind === 'demon' || !selected.includes(id))
-			.map((id) => lookup(id))
-			.filter((c): c is Character => c !== undefined)
+		(standIn?.options ?? []).map((id) => lookup(id)).filter((c): c is Character => c !== undefined)
 	);
 	let query = $state('');
 	$effect(() => {
@@ -33,9 +27,8 @@
 </script>
 
 <!--
-	Asked when a Drunk or Marionette is added (Trevor, 2026-10-16): which token goes in the
-	bag in its place. Never picked for the Storyteller; "Decide later" leaves it to the
-	setup check, and the build confirms it if still unchosen.
+	Which Demon token goes in the bag for the Lunatic, opened from the setup check. The
+	Demon in play is the default (https://wiki.bloodontheclocktower.com/Lunatic).
 -->
 <Dialog
 	bind:open
@@ -56,7 +49,7 @@
 		/>
 	</div>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (open = false)}>{t('setup.standIn.later')}</Button>
+		<Button variant="quiet" onclick={() => (open = false)}>{t('common.cancel')}</Button>
 	{/snippet}
 </Dialog>
 

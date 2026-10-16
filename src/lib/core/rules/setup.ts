@@ -5,7 +5,7 @@
  *
  * https://wiki.bloodontheclocktower.com/Setup
  */
-import { canDuplicate, isNotDealt } from './bag-characters.ts';
+import { canDuplicate, isNotDealt, isReplacedAfterDraw } from './bag-characters.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { SEATED_TYPES, splitPlayers, type SeatedType, type TypeCounts } from './distribution.ts';
 import { setupModifierFor, type CountOp, type SetupModifier } from './setup-modifiers.ts';
@@ -52,6 +52,11 @@ export interface SetupAnalysis {
 	/** Players dealt a character from the bag. */
 	dealt: number;
 	travellers: number;
+	/**
+	 * Tokens in the bag plus the Drunks and Marionettes, who have none: what the chosen
+	 * characters should add up to.
+	 */
+	tokens: number;
 	/** The setup sheet's counts for `dealt` players. */
 	base: TypeCounts;
 	/** Every count the modifiers allow, per type, ascending. One value when fixed. */
@@ -178,6 +183,23 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		}
 	}
 
+	// A Drunk or Marionette has no token in the bag: one more good character goes in instead,
+	// and who is secretly the Drunk or Marionette is decided once the tokens come back
+	// (Trevor, 2026-10-16; https://wiki.bloodontheclocktower.com/Drunk,
+	// https://wiki.bloodontheclocktower.com/Marionette). The Drunk's extra is a Townsfolk; the
+	// Marionette's a Townsfolk or an Outsider.
+	const extraFor: Character[] = [];
+	for (const character of input.inPlay) {
+		if (isDealt(character.type) && isReplacedAfterDraw(character)) extraFor.push(character);
+	}
+	for (const character of extraFor) {
+		if (character.id !== 'drunk' && character.type !== 'outsider') {
+			applyOp({ kind: 'delta', type: 'outsider', values: [0, 1] });
+		}
+	}
+	const extraNames = [...new Set(extraFor.map((c) => c.name))];
+	const tokens = dealt + extraFor.length;
+
 	const expected = {} as Record<SeatedType, number[]>;
 	for (const type of ['outsider', 'minion', 'demon'] as const) {
 		let values: Set<number>;
@@ -188,7 +210,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		}
 		expected[type] = [...values]
 			.map((v) => Math.max(0, v))
-			.filter((v, i, a) => a.indexOf(v) === i && v <= dealt);
+			.filter((v, i, a) => a.indexOf(v) === i && v <= tokens);
 		expected[type].sort((a, b) => a - b);
 		if (expected[type].length === 0) expected[type] = [0];
 	}
@@ -197,7 +219,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	for (const o of expected.outsider)
 		for (const m of expected.minion)
 			for (const d of expected.demon) {
-				const t = dealt - o - m - d;
+				const t = tokens - o - m - d;
 				if (t >= 0) townsfolk.add(t);
 			}
 	expected.townsfolk = [...townsfolk].sort((a, b) => a - b);
@@ -224,18 +246,27 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	if (anyChosen) {
 		for (const type of SEATED_TYPES) {
 			if (expected[type].includes(chosen[type])) continue;
-			const because = modifiers
-				.filter((m) => m.ops.some((op) => op.type === type))
-				.map((m) => m.explanation);
+			const because = [
+				...modifiers.filter((m) => m.ops.some((op) => op.type === type)).map((m) => m.explanation),
+				...(type === 'townsfolk' || type === 'outsider'
+					? extraFor
+							.filter((c, i) => extraFor.findIndex((o) => o.id === c.id) === i)
+							.map(
+								(c) =>
+									`${c.name}: +1 ${c.id === 'drunk' || c.type === 'outsider' ? 'Townsfolk' : 'good character'} in the bag`
+							)
+					: [])
+			];
 			warnings.push({
 				code: 'count-mismatch',
 				message: `${plural(type, chosen[type])} chosen; expected ${listValues(expected[type])} for ${dealt} players${because.length ? ` (${because.join('; ')})` : ''}.`
 			});
 		}
-		if (total !== dealt) {
+		if (total !== tokens) {
+			const extras = extraNames.map((name) => `+1 for the ${name}`);
 			warnings.push({
 				code: 'total-mismatch',
-				message: `${total} characters chosen for ${dealt} players${split.travellers ? ` (plus ${split.travellers} Traveller${split.travellers === 1 ? '' : 's'})` : ''}.`
+				message: `${total} characters chosen for ${dealt} players${split.travellers ? ` (plus ${split.travellers} Traveller${split.travellers === 1 ? '' : 's'})` : ''}${extras.length ? `; expected ${tokens} (${extras.join(', ')})` : ''}.`
 			});
 		}
 	}
@@ -255,6 +286,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	return {
 		players: split.dealt + split.travellers,
 		dealt,
+		tokens,
 		travellers: split.travellers,
 		base: split.counts,
 		expected,

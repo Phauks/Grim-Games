@@ -13,6 +13,7 @@ import type {
 	DeathCause,
 	GameId,
 	OverrideField,
+	Reminder,
 	ReminderId,
 	ReminderInstance,
 	SeatId,
@@ -56,7 +57,13 @@ export type GameEvent =
 	| { type: 'RuleCharacterRemoved'; characterId: CharacterId }
 	| { type: 'BluffsSet'; set: number; characterIds: CharacterId[] }
 	| { type: 'BluffSetRemoved'; set: number }
-	| { type: 'BagBuilt'; tiles: Tile[]; order: TileId[]; includeTravellers: boolean }
+	| {
+			type: 'BagBuilt';
+			tiles: Tile[];
+			order: TileId[];
+			includeTravellers: boolean;
+			unseated?: Reminder[];
+	  }
 	| { type: 'BagCleared' }
 	| { type: 'TileDrawn'; tileId: TileId; seatId: SeatId }
 	| { type: 'DrawConfirmed'; tileId: TileId }

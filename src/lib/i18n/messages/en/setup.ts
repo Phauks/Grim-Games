@@ -39,6 +39,12 @@ export const setup = {
 		other: '{count} Travellers chosen; expected {expected} for {players} players.'
 	},
 	'setup.replace.title': 'Replace the bag?',
+	'setup.leave.title': 'Leave the draw?',
+	'setup.leave.body': {
+		one: 'Now: {count} of {total} tiles not yet drawn. The bag is kept, so you can come back to the draw.',
+		other:
+			'Now: {count} of {total} tiles not yet drawn. The bag is kept, so you can come back to the draw.'
+	},
 	'setup.replace.body': {
 		one: 'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The character already on a seat stays; History can restore the old bag.',
 		other:
@@ -49,7 +55,6 @@ export const setup = {
 
 	'setup.standIn.title': 'What is the {name} shown?',
 	'setup.standIn.description': 'Choose the token that goes in the bag for the {name}.',
-	'setup.standIn.later': 'Decide later',
 	'setup.check': 'Setup check',
 	'setup.check.warnings': 'Warnings',
 	'setup.check.shownInstead': 'Shown instead',

@@ -256,10 +256,13 @@ describe('[bracketed] setup modifiers', () => {
 		expect(result.modifiers[0].summary).toBe('No setup change');
 	});
 
-	// https://wiki.bloodontheclocktower.com/Marionette and /Drunk
-	it('Marionette and Drunk: counts unchanged, bag notes added', () => {
+	// https://wiki.bloodontheclocktower.com/Marionette and /Drunk: neither token goes in the
+	// bag, so each needs one more good character in it (a Townsfolk for the Drunk; for the
+	// Marionette any good character), and the chosen characters add up to 10 for 8 players.
+	it('Marionette and Drunk: one more good token each, bag notes added', () => {
 		const result = analyse(8, get('marionette', 'drunk'));
-		expect(result.expected).toMatchObject({ townsfolk: [5], outsider: [1], minion: [1] });
+		expect(result.tokens).toBe(10);
+		expect(result.expected).toMatchObject({ townsfolk: [6, 7], outsider: [1, 2], minion: [1] });
 		expect(result.notes).toEqual(
 			expect.arrayContaining([
 				'Marionette: Put a Townsfolk in the bag instead of the Marionette.',

@@ -14,11 +14,7 @@ const ERROR_WARNINGS: ReadonlySet<SetupWarning['code']> = new Set([
 	'missing-required',
 	'duplicate'
 ]);
-const ERROR_ISSUES: ReadonlySet<BagIssue['code']> = new Set([
-	'no-stand-in',
-	'stand-in-selected',
-	'unknown-character'
-]);
+const ERROR_ISSUES: ReadonlySet<BagIssue['code']> = new Set(['no-stand-in', 'unknown-character']);
 
 export interface BuildCheckInput {
 	analysis: SetupAnalysis;

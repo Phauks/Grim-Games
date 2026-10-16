@@ -5,9 +5,10 @@
  *
  * - Characters marked `selection/bag-disabled` are never put in the bag
  *   (https://wiki.bloodontheclocktower.com/Setup). Those that secretly replace a good
- *   character (`reveal/replace-character`: the Drunk, the Marionette) get a stand-in tile
- *   that shows a good character and puts that character's token in the grimoire with the
- *   "Is The …" reminder (https://wiki.bloodontheclocktower.com/Drunk,
+ *   character (`reveal/replace-character`: the Drunk, the Marionette) need one more good
+ *   character in the bag instead, chosen like any other; who is secretly the Drunk or the
+ *   Marionette is decided once the tokens come back, with the "Is The …" reminder (Trevor,
+ *   2026-10-16; https://wiki.bloodontheclocktower.com/Drunk,
  *   https://wiki.bloodontheclocktower.com/Marionette). Any other (Lil' Monsta) is not dealt
  *   at all (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
  * - The Lunatic's tile shows a Demon and puts the Lunatic in the grimoire
@@ -18,9 +19,15 @@ import type { Character, CharacterId, CharacterType } from '#lib/core/data/types
 import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 import { analyseSetup, type SetupAnalysis } from './setup.ts';
-import { canDuplicate, isBagDisabled, isNotDealt, replacementReminder } from './bag-characters.ts';
+import {
+	canDuplicate,
+	isBagDisabled,
+	isNotDealt,
+	isReplacedAfterDraw,
+	replacementReminder
+} from './bag-characters.ts';
 
-export { canDuplicate, isBagDisabled, isNotDealt, replacementReminder };
+export { canDuplicate, isBagDisabled, isNotDealt, isReplacedAfterDraw, replacementReminder };
 
 /** Copies of each selected character (a missing id or 0 is not selected). */
 export type BagSelection = Readonly<Record<CharacterId, number>>;
@@ -32,8 +39,8 @@ export interface PlannedTile {
 	reminders?: Reminder[];
 }
 
-/** What a stand-in tile shows: a good character, or (Lunatic) a Demon. */
-export type StandInKind = 'good' | 'demon';
+/** What a stand-in tile shows: (Lunatic) a Demon. */
+export type StandInKind = 'demon';
 
 export interface StandIn {
 	/** The selected character that is not put in the bag as itself. */
@@ -47,8 +54,7 @@ export interface StandIn {
 	options: CharacterId[];
 }
 
-export type BagIssueCode =
-	'no-stand-in' | 'stand-in-selected' | 'not-dealt' | 'rule-character' | 'unknown-character';
+export type BagIssueCode = 'no-stand-in' | 'not-dealt' | 'rule-character' | 'unknown-character';
 
 export interface BagIssue {
 	code: BagIssueCode;
@@ -59,6 +65,11 @@ export interface BagIssue {
 export interface BagPlan {
 	tiles: PlannedTile[];
 	standIns: StandIn[];
+	/**
+	 * "Is The …" reminders for characters in play with no token in the bag (Drunk,
+	 * Marionette), placed on a player after the draw (`BuildBag.unseated`).
+	 */
+	unseated: Reminder[];
 	/** True when a Traveller is in the bag (`BuildBag.includeTravellers`). */
 	includeTravellers: boolean;
 	issues: BagIssue[];
@@ -74,18 +85,11 @@ export interface BagPlanInput {
 	standIns?: Readonly<Record<CharacterId, CharacterId>>;
 	/** A number in [0, 1); used only to suggest stand-ins. Defaults to the first option. */
 	random?: () => number;
-	/**
-	 * False: never pick a good stand-in the Storyteller hasn't chosen (Trevor, 2026-10-16:
-	 * which Townsfolk the Drunk is shown is the Storyteller's call, not an automatic one).
-	 * A Lunatic is still shown the Demon in play. Defaults to true.
-	 */
-	suggest?: boolean;
 }
 
 /** Whether the character's tile shows something else, and what kind. */
 export function standInKind(character: Character): StandInKind | undefined {
 	if (character.id === 'lunatic' && character.edition !== undefined) return 'demon';
-	if (isBagDisabled(character) && replacementReminder(character)) return 'good';
 	return undefined;
 }
 
@@ -117,9 +121,8 @@ export function planBag(input: BagPlanInput): BagPlan {
 	const selected = new Set(ids);
 	const tiles: PlannedTile[] = [];
 	const standIns: StandIn[] = [];
+	const unseated: Reminder[] = [];
 	const issues: BagIssue[] = [];
-	// Stand-ins already used, so two Drunks are not both shown the same Townsfolk.
-	const used = new Set<CharacterId>();
 	let includeTravellers = false;
 
 	for (const id of ids) {
@@ -148,37 +151,25 @@ export function planBag(input: BagPlanInput): BagPlan {
 			});
 			continue;
 		}
+		if (isReplacedAfterDraw(character)) {
+			unseated.push(replacementReminder(character)!);
+			continue;
+		}
 		if (character.type === 'traveller') includeTravellers = true;
 		const kind = standInKind(character);
 		if (!kind) {
 			tiles.push({ shows: id, grimoire: id });
 			continue;
 		}
-		// A Drunk is shown a Townsfolk; a Marionette a good character; both should be
-		// characters not in play. A Lunatic is shown a Demon, usually the one in play.
+		// A Lunatic is shown a Demon, usually the one in play.
 		const options = scriptCharacters
-			.filter((c) =>
-				kind === 'demon'
-					? c.type === 'demon'
-					: character.id === 'drunk' || character.type === 'outsider'
-						? c.type === 'townsfolk'
-						: c.type === 'townsfolk' || c.type === 'outsider'
-			)
-			.filter((c) => !isBagDisabled(c) && c.id !== id)
+			.filter((c) => c.type === 'demon' && !isBagDisabled(c) && c.id !== id)
 			.map((c) => c.id);
 		const chosen = input.standIns?.[id];
-		let shows: CharacterId | undefined;
-		const suggest = input.suggest !== false;
-		if (chosen !== undefined && lookup(chosen)) shows = chosen;
-		else if (kind === 'demon') {
-			shows =
-				options.find((o) => selected.has(o)) ?? (suggest ? pick(options, input.random) : undefined);
-		} else if (suggest) {
-			shows = pick(
-				options.filter((o) => !selected.has(o) && !used.has(o)),
-				input.random
-			);
-		}
+		const shows =
+			chosen !== undefined && lookup(chosen)
+				? chosen
+				: (options.find((o) => selected.has(o)) ?? pick(options, input.random));
 		standIns.push({
 			characterId: id,
 			kind,
@@ -189,30 +180,14 @@ export function planBag(input: BagPlanInput): BagPlan {
 		if (shows === undefined) {
 			issues.push({
 				code: 'no-stand-in',
-				message:
-					options.length > 0
-						? `Choose what the ${character.name} is shown.`
-						: `Nothing on the script can be shown to the ${character.name}.`,
+				message: `Nothing on the script can be shown to the ${character.name}.`,
 				characters: [id]
 			});
 			continue;
 		}
-		used.add(shows);
-		if (kind === 'good' && selected.has(shows)) {
-			issues.push({
-				code: 'stand-in-selected',
-				message: `The ${character.name} is shown the ${lookup(shows)?.name ?? shows}, which is also in the bag.`,
-				characters: [id, shows]
-			});
-		}
-		const reminder = replacementReminder(character);
-		tiles.push(
-			kind === 'demon'
-				? { shows, grimoire: id }
-				: { shows, grimoire: shows, ...(reminder ? { reminders: [reminder] } : {}) }
-		);
+		tiles.push({ shows, grimoire: id });
 	}
-	return { tiles, standIns, includeTravellers, issues };
+	return { tiles, standIns, unseated, includeTravellers, issues };
 }
 
 export interface SelectionAnalysisInput {
@@ -280,7 +255,7 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 				(sum, t) => sum + analysis.chosen[t],
 				0
 			);
-			target = analysis.dealt - others;
+			target = analysis.tokens - others;
 		} else {
 			const fits = analysis.expected[type].filter((n) => n >= have);
 			target = fits.length ? fits[Math.floor(input.random() * fits.length)] : have;

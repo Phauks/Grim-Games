@@ -121,6 +121,12 @@ export interface Bag {
 	order: TileId[];
 	/** Travellers drawn from the bag get their alignment when the draw is confirmed, or later. */
 	includeTravellers: boolean;
+	/**
+	 * "Is The …" reminders for characters in play with no tile (the Drunk, the Marionette):
+	 * the Storyteller puts them on a player once the tokens come back (Trevor, 2026-10-16).
+	 * Absent in games saved before this existed, which is the same as none.
+	 */
+	unseated?: Reminder[];
 }
 
 /** A public guess of one player's character (the Juggler's, for example). */

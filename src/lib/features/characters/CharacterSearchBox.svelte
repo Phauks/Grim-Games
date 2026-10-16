@@ -82,6 +82,10 @@
 	.search:focus-within {
 		box-shadow: inset 0 0 0 2px var(--focus);
 	}
+	/* The field's own rounded border shows focus; no second ring on the input. */
+	.search input:focus-visible {
+		outline: none;
+	}
 	input {
 		flex: 1;
 		min-width: 0;

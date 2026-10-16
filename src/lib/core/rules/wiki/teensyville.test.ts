@@ -63,7 +63,8 @@ describe('Teensyville sheets', () => {
 		expect(
 			analyseSetup({
 				players: 6,
-				inPlay: get('washerwoman', 'chef', 'empath', 'drunk', 'poisoner', 'imp')
+				// The Drunk has no token, so one more Townsfolk goes in the bag.
+				inPlay: get('washerwoman', 'chef', 'empath', 'monk', 'drunk', 'poisoner', 'imp')
 			}).warnings
 		).toEqual([]);
 	});

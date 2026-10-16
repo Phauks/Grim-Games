@@ -246,7 +246,8 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				bag: {
 					tiles: Object.fromEntries(event.tiles.map((t) => [t.tileId, structuredClone(t)])),
 					order: [...event.order],
-					includeTravellers: event.includeTravellers
+					includeTravellers: event.includeTravellers,
+					...(event.unseated?.length ? { unseated: structuredClone(event.unseated) } : {})
 				}
 			};
 		case 'BagCleared':
