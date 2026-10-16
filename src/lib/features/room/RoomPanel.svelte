@@ -5,8 +5,8 @@
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import type { RoomMember, RoomRequest } from '#lib/core/sync/room.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import QrCode from '#lib/ui/primitives/QrCode.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -194,23 +194,16 @@
 	</div>
 {/if}
 
-<Dialog bind:open={closeOpen} role="alertdialog" title={t('room.closeTitle')}>
+<ConfirmDialog
+	bind:open={closeOpen}
+	title={t('room.closeTitle')}
+	danger
+	onConfirm={() => host.close()}
+>
 	<p class="dialog-text">
 		{t('room.closeText')}
 	</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (closeOpen = false)}>{t('room.keepOpen')}</Button>
-		<Button
-			variant="accent"
-			onclick={() => {
-				host.close();
-				closeOpen = false;
-			}}
-		>
-			{t('room.close')}
-		</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	.dialog-text {
