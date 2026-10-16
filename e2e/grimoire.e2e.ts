@@ -1154,7 +1154,6 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 
 test("the Undertaker's step suggests the executed player's character", async ({ page }) => {
 	await startGame(page);
-	const board = page.url();
 	for (const [number, name] of [
 		[1, 'Undertaker'],
 		[2, 'Imp']
@@ -1168,13 +1167,14 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 		await closeSheet(page);
 	}
 	// Seat 2 is executed today (https://wiki.bloodontheclocktower.com/Undertaker).
-	await page.goto(`${board}/day`);
-	await page.getByRole('button', { name: 'Seat: Seat 2' }).tap();
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: 'Day' });
+	await day.getByRole('button', { name: 'Seat: Seat 2' }).tap();
 	await page
 		.getByRole('dialog', { name: 'How did Seat 2 die?' })
 		.getByRole('button', { name: 'Executed' })
 		.tap();
-	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await day.getByRole('button', { name: 'Close' }).tap();
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	const order = page.getByRole('dialog', { name: 'Night order' });
