@@ -103,38 +103,41 @@
 <main>
 	<h1>Scripts</h1>
 
-	<!-- Same size with or without a script, so choosing one never moves the picker. -->
-	<ErrorBoundary area="scripts">
-		<section class="current" aria-labelledby="current-heading" data-testid="current-script">
-			<h2 id="current-heading">Current script</h2>
-			<p class="name" data-testid="current-script-name">{script?.name ?? 'None'}</p>
-			<dl>
-				<dt>Author</dt>
-				<dd>{script?.meta.author || 'None'}</dd>
-				<dt>Characters</dt>
-				<dd class="counts" data-testid="current-script-counts">{counts}</dd>
-				<dt>Source</dt>
-				<dd>
-					{#if saved?.source.kind === 'botcscripts'}
-						<!-- eslint-disable svelte/no-navigation-without-resolve -->
-						<a
-							href={scriptPageUrl(saved.source.scriptId, saved.source.version)}
-							target="_blank"
-							rel="noopener noreferrer">{describeSource(saved.source)}</a
-						>
-						<!-- eslint-enable svelte/no-navigation-without-resolve -->
-					{:else}
-						{saved ? describeSource(saved.source) : 'None'}
-					{/if}
-				</dd>
-			</dl>
-			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
-		</section>
-	</ErrorBoundary>
+	<!-- Side by side on wide windows: the current script beside the picker. -->
+	<div class="layout">
+		<!-- Same size with or without a script, so choosing one never moves the picker. -->
+		<ErrorBoundary area="scripts">
+			<section class="current" aria-labelledby="current-heading" data-testid="current-script">
+				<h2 id="current-heading">Current script</h2>
+				<p class="name" data-testid="current-script-name">{script?.name ?? 'None'}</p>
+				<dl>
+					<dt>Author</dt>
+					<dd>{script?.meta.author || 'None'}</dd>
+					<dt>Characters</dt>
+					<dd class="counts" data-testid="current-script-counts">{counts}</dd>
+					<dt>Source</dt>
+					<dd>
+						{#if saved?.source.kind === 'botcscripts'}
+							<!-- eslint-disable svelte/no-navigation-without-resolve -->
+							<a
+								href={scriptPageUrl(saved.source.scriptId, saved.source.version)}
+								target="_blank"
+								rel="noopener noreferrer">{describeSource(saved.source)}</a
+							>
+							<!-- eslint-enable svelte/no-navigation-without-resolve -->
+						{:else}
+							{saved ? describeSource(saved.source) : 'None'}
+						{/if}
+					</dd>
+				</dl>
+				<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
+			</section>
+		</ErrorBoundary>
 
-	<ErrorBoundary area="scripts">
-		<ScriptPicker bind:this={picker} />
-	</ErrorBoundary>
+		<ErrorBoundary area="scripts">
+			<ScriptPicker bind:this={picker} />
+		</ErrorBoundary>
+	</div>
 
 	<!-- An overlay, so the page never moves while something is dragged over it. -->
 	<div class="drop" class:active={dragging} aria-hidden={!dragging} data-testid="drop-overlay">
@@ -178,6 +181,20 @@
 	h1 {
 		margin: 0;
 		font-size: 2rem;
+	}
+	.layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+		align-items: start;
+	}
+	@media (min-width: 64rem) {
+		main {
+			max-width: calc(72 * var(--u));
+		}
+		.layout {
+			grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+		}
 	}
 	h2 {
 		margin: 0;
