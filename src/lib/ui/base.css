@@ -24,6 +24,9 @@ body {
 	color: var(--on-surface);
 	font-family: var(--font-body);
 	line-height: 1.45;
+	/* Long words (names, script titles, web addresses) wrap instead of widening the page
+	   past a phone screen (Trevor: no sideways scrolling on mobile). */
+	overflow-wrap: break-word;
 	/* Stop pull-to-refresh and rubber-banding from wiping a drag. */
 	overscroll-behavior: none;
 	-webkit-tap-highlight-color: transparent;
