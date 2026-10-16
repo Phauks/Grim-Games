@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -113,7 +114,7 @@
 	</ol>
 </Dialog>
 
-<Dialog bind:open={confirmOpen} title="Restore?" role="alertdialog">
+<ConfirmDialog bind:open={confirmOpen} title="Restore?" onConfirm={confirm}>
 	{#if chosen}
 		<p>
 			{chosen.item.undone ? 'Restores' : 'Undoes'}
@@ -129,11 +130,7 @@
 				: 'Undone changes stay in History, greyed out, until you make a new change.'}
 		</p>
 	{/if}
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirmOpen = false)}>Cancel</Button>
-		<Button variant="accent" icon="history" onclick={confirm}>Restore</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	/* One fixed row, scrolled sideways, so filtering never moves the list (Trevor). */
