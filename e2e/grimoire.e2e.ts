@@ -1346,3 +1346,43 @@ test("the Script button opens the players' copy of the script", async ({ page })
 		page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Arrange seats' })
 	).toBeVisible();
 });
+
+test("the day's Announcements explain a kill that didn't happen", async ({ page }) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Soldier']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: 'Day' });
+	// Nothing to explain yet: the button is there but off, so nothing moves (Trevor).
+	await expect(day.getByTestId('prevented-button')).toBeDisabled();
+	await day.getByRole('button', { name: 'Close' }).tap();
+
+	// The Storyteller puts the Imp's Dead token on the Soldier, who doesn't die (Trevor,
+	// 2026-10-16; https://wiki.bloodontheclocktower.com/Soldier).
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 2' });
+	await picker.getByRole('group', { name: 'Imp' }).getByRole('button', { name: 'Dead' }).tap();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await day.getByTestId('prevented-button').tap();
+	const prevented = page.getByRole('dialog', { name: 'What didn’t happen' });
+	await expect(prevented.getByTestId('prevented')).toContainText('chose');
+	// The Soldier's own TPI ability text says why.
+	await expect(prevented.locator('[data-character="soldier"]')).toContainText(
+		'You are safe from the Demon.'
+	);
+	await page.screenshot({ path: `test-results/prevented-${test.info().project.name}.png` });
+});

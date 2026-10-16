@@ -9,6 +9,8 @@
 		dayReminders,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
+		preventedDeaths,
+		type PreventedBecause,
 		type Night,
 		validDeathCauses,
 		type DayReminder,
@@ -198,6 +200,23 @@
 	/** Everyone who died since the previous day ended, to announce (Trevor, 2026-10-16). */
 	const died = $derived(recentDeaths(game.log, g));
 
+	// ── What didn't happen: a kill whose Dead token sits on a living player (Trevor) ──
+	const prevented = $derived(preventedDeaths(g, game.characters));
+	let preventedOpen = $state(false);
+
+	/** The characters that explain a survival, with their seats, for their ability text. */
+	function blockers(because: PreventedBecause): { characterId: CharacterId; seatId?: SeatId }[] {
+		switch (because.kind) {
+			case 'protected':
+				return because.source === 'override' ? [] : [because.source];
+			case 'killer-impaired':
+				return because.impairments.map((i) => i.source);
+			case 'fool':
+			case 'mayor':
+				return [{ characterId: because.kind, seatId: because.seatId }];
+		}
+	}
+
 	function diedText(cause: DeathCause | undefined): string {
 		return cause === undefined
 			? t('day.diedNoCause')
@@ -319,6 +338,17 @@
 	</div>
 
 	<Collapsible title={t('day.announcements')} storageKey="day.announcements">
+		{#snippet aside()}
+			<Button
+				variant="quiet"
+				icon="protected"
+				data-testid="prevented-button"
+				disabled={prevented.length === 0}
+				aria-label={t('day.preventedButton', { count: prevented.length })}
+				title={t('day.preventedButton', { count: prevented.length })}
+				onclick={() => (preventedOpen = true)}>{prevented.length}</Button
+			>
+		{/snippet}
 		<ul class="reminders" data-testid="announcements">
 			{#each died as death (death.seatId)}
 				{@const seat = g.seats[death.seatId]}
@@ -466,6 +496,52 @@
 {/snippet}
 
 <NoteSheet bind:open={noteOpen} {game} target={noteTarget} />
+
+<BottomSheet bind:open={preventedOpen} title={t('day.prevented')}>
+	<ul class="prevented" data-testid="prevented">
+		{#each prevented as p (p.reminderId)}
+			{@const target = g.seats[p.seatId]}
+			<li>
+				<span class="sentence">
+					<CharacterBadge
+						characterId={p.killer}
+						alignment={p.killerSeats[0] ? g.seats[p.killerSeats[0]].alignment : undefined}
+						playerName={p.killerSeats[0] ? game.seatName(p.killerSeats[0]) : undefined}
+					/>
+					<span>{t('day.preventedChose')}</span>
+					{#if target.characterId}
+						<CharacterBadge
+							characterId={target.characterId}
+							alignment={target.alignment}
+							playerName={game.seatName(p.seatId)}
+						/>
+					{:else}
+						<span>{game.seatName(p.seatId)}</span>
+					{/if}
+				</span>
+				<ul class="because">
+					{#each p.because as because, i (i)}
+						{#if because.kind === 'protected' && because.source === 'override'}
+							<li>{t('day.preventedOverride')}</li>
+						{/if}
+						{#each blockers(because) as b (b.characterId)}
+							<li data-character={b.characterId}>
+								<CharacterBadge
+									characterId={b.characterId}
+									alignment={b.seatId ? g.seats[b.seatId].alignment : undefined}
+									playerName={b.seatId ? game.seatName(b.seatId) : undefined}
+								/>
+								{@render ability(b.characterId)}
+							</li>
+						{/each}
+					{:else}
+						<li>{t('day.preventedNoReason')}</li>
+					{/each}
+				</ul>
+			</li>
+		{/each}
+	</ul>
+</BottomSheet>
 
 <BottomSheet
 	bind:open={causeOpen}
@@ -749,5 +825,17 @@
 		margin-left: var(--space-1);
 		color: var(--on-surface-muted);
 		font-weight: normal;
+	}
+	.prevented,
+	.because {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: var(--space-3);
+	}
+	.because {
+		padding-inline-start: var(--space-4);
+		margin-block-start: var(--space-2);
 	}
 </style>
