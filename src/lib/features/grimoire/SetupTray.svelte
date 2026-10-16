@@ -5,6 +5,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -35,6 +36,20 @@
 	const items = $derived(trayItems(setupReminders(game, characters)));
 	const pending = $derived(pendingTray(items, game, grimoire.trayDismissed));
 	const names = $derived(characterNames([...characters.values()]));
+	// Each copy is its own token, unless "Stack duplicate reminders" is on: then copies of one
+	// token show once with a count, and dragging or tapping takes the next copy.
+	const shownTray = $derived.by((): { item: TrayItem; count: number }[] => {
+		if (!preferences.current.assistance.stackReminders)
+			return pending.map((item) => ({ item, count: 1 }));
+		const stacks: { base: string; item: TrayItem; count: number }[] = [];
+		for (const item of pending) {
+			const base = `${item.suggestion.characterId}:${item.suggestion.label}`;
+			const stack = stacks.find((s) => s.base === base);
+			if (stack) stack.count += 1;
+			else stacks.push({ base, item, count: 1 });
+		}
+		return stacks.map(({ item, count }) => ({ item, count }));
+	});
 
 	const seatName = (seatId: SeatId) =>
 		game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
@@ -89,8 +104,9 @@
 </script>
 
 <ul class="tray" aria-label="Setup reminders">
-	{#each pending as item (item.key)}
-		<li class:lifted={drag?.key === item.key}>
+	{#each shownTray as { item, count } (item.key)}
+		<li class:lifted={drag?.key === item.key && count === 1}>
+			{#if count > 1}<span class="count" aria-label={`${count} copies`}>×{count}</span>{/if}
 			<BoardReminder
 				label={item.suggestion.label}
 				character={characters.get(item.suggestion.characterId)}
@@ -200,6 +216,23 @@
 	}
 	li.lifted {
 		opacity: 0.3;
+	}
+	.tray > li {
+		position: relative;
+	}
+	.count {
+		position: absolute;
+		top: 0;
+		right: 0;
+		z-index: 1;
+		min-width: 1.4em;
+		padding: 0 3px;
+		border-radius: 999px;
+		background: var(--accent);
+		color: var(--on-accent);
+		font: 700 0.75rem / 1.4 var(--font-control);
+		text-align: center;
+		pointer-events: none;
 	}
 	.none {
 		color: var(--on-surface-muted);

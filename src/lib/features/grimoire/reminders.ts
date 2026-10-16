@@ -55,12 +55,12 @@ export function reminderGroups(game: Game, characters: CharacterLookup): Reminde
 }
 
 /**
- * How many of each reminder token are left to place. A token can be on the board once,
- * unless the game gives more: a label listed more than once in TPI's data, or its
- * character in play more than once (two seats, or a seat and its true character).
- * Keyed by `reminderKey`; a reminder not in the map has one copy.
+ * How many of each reminder token the game has. A token can be on the board once, unless
+ * the game gives more: a label listed more than once in TPI's data, or its character in
+ * play more than once (two seats, or a seat and its true character). Keyed by
+ * `reminderKey`; a reminder not in the map has one copy.
  */
-export function reminderCopiesLeft(game: Game, characters: CharacterLookup): Map<string, number> {
+export function reminderCopies(game: Game, characters: CharacterLookup): Map<string, number> {
 	const inPlay = new Map<string, number>();
 	const count = (id: string | undefined) => {
 		if (id !== undefined) inPlay.set(id, (inPlay.get(id) ?? 0) + 1);
@@ -73,18 +73,24 @@ export function reminderCopiesLeft(game: Game, characters: CharacterLookup): Map
 	}
 	for (const id of game.ruleCharacters) count(id);
 
-	const left = new Map<string, number>();
+	const total = new Map<string, number>();
 	for (const group of reminderGroups(game, characters)) {
 		const { character } = group;
 		const listed = [...character.reminders, ...character.remindersGlobal];
 		for (const label of group.labels) {
 			const perCharacter = listed.filter((l) => l === label).length;
-			left.set(
+			total.set(
 				reminderKey({ characterId: character.id, label }),
 				perCharacter * Math.max(1, inPlay.get(character.id) ?? 0)
 			);
 		}
 	}
+	return total;
+}
+
+/** How many of each reminder token are left to place (`reminderCopies` less those placed). */
+export function reminderCopiesLeft(game: Game, characters: CharacterLookup): Map<string, number> {
+	const left = reminderCopies(game, characters);
 	for (const seatId of game.seating) {
 		for (const r of game.seats[seatId].reminders) {
 			const key = reminderKey(r);

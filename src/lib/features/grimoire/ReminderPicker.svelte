@@ -2,11 +2,13 @@
 	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { recentReminders } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import {
 		parseReminderKey,
+		reminderCopies,
 		reminderCopiesLeft,
 		reminderGroups,
 		reminderKey
@@ -28,6 +30,22 @@
 	// place, disabled, so nothing moves.
 	const left = $derived(reminderCopiesLeft(grimoire.game, characters));
 	const usedUp = (reminder: Reminder) => (left.get(reminderKey(reminder)) ?? 1) <= 0;
+	// Several copies of one token are shown one by one, or as one token with a count when the
+	// Storyteller turns on "Stack duplicate reminders" (Trevor, 2026-10-16).
+	const total = $derived(reminderCopies(grimoire.game, characters));
+	const stack = $derived(preferences.current.assistance.stackReminders);
+	/** The chips for one token: one per copy (the placed ones done), or one stacked chip. */
+	function copies(reminder: Reminder): { done: boolean; count?: number; label?: string }[] {
+		const key = reminderKey(reminder);
+		const all = total.get(key) ?? 1;
+		const free = Math.max(0, left.get(key) ?? 1);
+		if (all <= 1) return [{ done: free === 0 }];
+		if (stack) return [{ done: free === 0, count: free, label: `${reminder.label}, ${free} left` }];
+		return Array.from({ length: all }, (_, i) => ({
+			done: i >= free,
+			label: `${reminder.label}, copy ${i + 1} of ${all}`
+		}));
+	}
 	/** Only reminders the picker offers now, so a recent one never brings back one not in play. */
 	const offered = $derived(
 		new Set(
@@ -90,14 +108,20 @@
 				<span class="chips" role="group" aria-label={group.character.name}>
 					{#each group.labels as label (label)}
 						{@const reminder = { characterId: group.character.id, label }}
-						<button
-							type="button"
-							class="chip"
-							disabled={usedUp(reminder)}
-							onclick={() => add(reminder)}
-						>
-							<ReminderToken {label} type={group.character.type} done={usedUp(reminder)} />
-						</button>
+						{#each copies(reminder) as copy, i (i)}
+							<button
+								type="button"
+								class="chip"
+								aria-label={copy.label}
+								disabled={copy.done}
+								onclick={() => add(reminder)}
+							>
+								<ReminderToken {label} type={group.character.type} done={copy.done} />
+								{#if copy.count !== undefined}<span class="count-badge" aria-hidden="true"
+										>×{copy.count}</span
+									>{/if}
+							</button>
+						{/each}
 					{/each}
 				</span>
 			</li>
@@ -177,6 +201,21 @@
 		border: 0;
 		background: none;
 		cursor: pointer;
+	}
+	.chip {
+		position: relative;
+	}
+	.count-badge {
+		position: absolute;
+		top: 0;
+		right: 0;
+		min-width: 1.4em;
+		padding: 0 3px;
+		border-radius: 999px;
+		background: var(--accent);
+		color: var(--on-accent);
+		font: 700 0.75rem / 1.4 var(--font-control);
+		text-align: center;
 	}
 	.chip:hover {
 		filter: brightness(1.15);

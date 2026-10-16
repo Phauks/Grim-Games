@@ -12,6 +12,8 @@ export const ASSIST_KEYS = [
 	'preDayReminders',
 	'deathCause',
 	'rulesWarnings',
+	'stackReminders',
+	'scriptTitle',
 	'explainTerms'
 ] as const;
 export type AssistKey = (typeof ASSIST_KEYS)[number];
@@ -52,6 +54,15 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Setup and jinx warnings',
 		description: 'Point out a setup that breaks the rules or a jinx that applies.'
 	},
+	stackReminders: {
+		label: 'Stack duplicate reminders',
+		description:
+			'Show several copies of one reminder as a single token with a count. Off shows each copy.'
+	},
+	scriptTitle: {
+		label: 'Script name on the board',
+		description: "Show the script's name and author behind the grimoire circle."
+	},
 	// Shown in Settings › Rules terms, not Storyteller settings: players use it too (Trevor).
 	explainTerms: {
 		label: 'Underline rules terms with glossary definitions',
@@ -60,9 +71,12 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	}
 };
 
-/** New Storytellers get every kind of help; each switch turns one off. */
+/**
+ * New Storytellers get every kind of help; each switch turns one off. Stacking reminders is
+ * a way of showing them, not help, so it starts off (Trevor, 2026-10-16).
+ */
 export const DEFAULT_ASSISTANCE: Assistance = Object.fromEntries(
-	ASSIST_KEYS.map((key) => [key, true])
+	ASSIST_KEYS.map((key) => [key, key !== 'stackReminders'])
 ) as Assistance;
 
 /** Saved switches, with any missing or invalid ones taking their default. */
