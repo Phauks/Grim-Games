@@ -103,6 +103,23 @@ test('scripts added on the device are saved to the profile as local copies', asy
 	await expect(
 		page.getByText('None. Scripts you add on the Scripts page are saved here.')
 	).toBeVisible();
+
+	// Adding a script while signed in saves it straight away.
+	await page.goto('/scripts');
+	await page.getByRole('button', { name: 'Paste', exact: true }).tap();
+	const again = page.getByRole('dialog', { name: 'Paste a script' });
+	await again
+		.getByLabel('Script JSON or link')
+		.fill(JSON.stringify([{ id: '_meta', name: 'Second Wind' }, ...homebrew.slice(1)]));
+	const saving = page.waitForResponse(
+		(r) => r.url().includes('/api/account/docs/script/') && r.request().method() === 'PUT'
+	);
+	await again.getByRole('button', { name: 'Load' }).tap();
+	await expect(page.getByTestId('current-script-name')).toHaveText('Second Wind');
+	expect((await saving).status()).toBe(200);
+	await page.goto('/account');
+	await expect(page.getByTestId('profile-scripts')).toContainText('Second Wind');
+	await expect(page.getByTestId('profile-scripts')).not.toContainText('Storm Front');
 });
 
 test('deleting the account signs out and removes it', async ({ page }) => {

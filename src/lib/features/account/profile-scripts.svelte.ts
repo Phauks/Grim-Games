@@ -205,8 +205,11 @@ export const profileScripts = {
  */
 export async function saveScriptToProfile(saved: SavedScript): Promise<void> {
 	try {
+		if (saved.scriptId === 'unsaved') return;
+		// The session may not have been checked yet on this page load.
+		if (account.status === 'checking') await account.refresh();
 		const user = account.user;
-		if (!user || saved.scriptId === 'unsaved') return;
+		if (!user) return;
 		const script = fromSavedScript($state.snapshot(saved) as SavedScript, Date.now());
 		if (!script) return;
 		if (loadedFor !== user.id) await profileScripts.refresh();
