@@ -4,6 +4,7 @@
  * updates disconnect all WebSockets", 07-accounts-and-multi-device.md §4).
  */
 import type { ClientMessage, RefusedReason, ServerMessage } from '#lib/core/sync/room.ts';
+import { setDiagnostic } from '#lib/features/errors/diagnostics.ts';
 
 export type RoomStatus = 'connecting' | 'open' | 'offline' | 'refused' | 'closed';
 
@@ -21,6 +22,7 @@ export class RoomSocket {
 	#retry: ReturnType<typeof setTimeout> | undefined;
 	#attempt = 0;
 	#stopped = false;
+	#unregister: () => void;
 
 	/** `onOpen` runs after each hello, to resend what the room may have missed. */
 	constructor(
@@ -33,6 +35,13 @@ export class RoomSocket {
 		this.#hello = hello;
 		this.#onMessage = onMessage;
 		this.#onOpen = onOpen;
+		// Diagnostics shows the role and connection state only: never the code, names or keys.
+		const role = hello.type === 'hello' ? hello.role : 'unknown';
+		this.#unregister = setDiagnostic('errors.diag.roomStatus', () =>
+			this.#stopped
+				? undefined
+				: `${role} ${this.status}${this.refusedReason ? ` (${this.refusedReason})` : ''}`
+		);
 		this.#connect();
 		addEventListener('online', this.#reconnectNow);
 		document.addEventListener('visibilitychange', this.#reconnectNow);
@@ -47,6 +56,7 @@ export class RoomSocket {
 
 	stop(): void {
 		this.#stopped = true;
+		this.#unregister();
 		clearTimeout(this.#retry);
 		removeEventListener('online', this.#reconnectNow);
 		document.removeEventListener('visibilitychange', this.#reconnectNow);
