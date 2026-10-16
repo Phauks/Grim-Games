@@ -41,22 +41,16 @@
 	const name = (seatId: SeatId) => seatName(game, seatId);
 	const names = (seats: readonly SeatId[]) => seats.map(name).join(', ');
 
-	function source(i: Impairment): string {
-		const c = characters.get(i.source.characterId)?.name ?? i.source.characterId;
-		return i.source.seatId ? `${name(i.source.seatId)} (${c})` : c;
-	}
-	/** "poisoned · Ben (Poisoner)"; the Preacher's reminder is "No Ability" (TPI). */
-	const impairments = (list: readonly Impairment[]) =>
-		list
-			.map((i) => `${i.reason === 'no-ability' ? 'No Ability' : i.reason} · ${source(i)}`)
-			.join('; ');
+	/** "poisoned", or the Preacher's reminder "No Ability" (TPI). */
+	const reason = (i: Impairment) => (i.reason === 'no-ability' ? 'No Ability' : i.reason);
 
 	function valueText(v: AnswerValue): string {
 		switch (v.kind) {
 			case 'yes-no':
 				return v.value ? 'Yes' : 'No';
 			case 'character':
-				return characters.get(v.value)?.name ?? v.value;
+				// Drawn as a badge (the value snippet); only its id here.
+				return v.value;
 			case 'number':
 				return String(v.value);
 			case 'none':
@@ -64,14 +58,22 @@
 		}
 	}
 
-	/** Why an answer may not be the truth: impaired, the Vortox, registration. */
-	function flags(r: Reliability & { possible?: AnswerValue[] }): string[] {
-		const out: string[] = [];
-		if (r.unreliable) out.push(`Not reliable: ${impairments(r.impairments)}`);
-		if (r.mustBeFalse) out.push('Vortox: must be false');
-		if (r.misregister.length > 0) out.push(`Might register falsely: ${names(r.misregister)}`);
-		if (r.possible && r.possible.length > 1)
-			out.push(`Allowed: ${r.possible.map(valueText).join(' / ')}`);
+	/**
+	 * Why an answer may not be the truth: impaired, the Vortox, registration. Impairments and
+	 * allowed values are drawn after the text, so their characters show as badges.
+	 */
+	interface Flag {
+		text: string;
+		impairments?: readonly Impairment[];
+		allowed?: readonly AnswerValue[];
+	}
+	function flags(r: Reliability & { possible?: AnswerValue[] }): Flag[] {
+		const out: Flag[] = [];
+		if (r.unreliable) out.push({ text: 'Not reliable:', impairments: r.impairments });
+		if (r.mustBeFalse) out.push({ text: 'Vortox: must be false' });
+		if (r.misregister.length > 0)
+			out.push({ text: `Might register falsely: ${names(r.misregister)}` });
+		if (r.possible && r.possible.length > 1) out.push({ text: 'Allowed:', allowed: r.possible });
 		return out;
 	}
 
@@ -92,28 +94,52 @@
 				info.checks.some((c) => c.verdict && c.verdict.kind !== 'choose'))
 	);
 
-	/** The strip's one line: the first answer or range. */
-	const line = $derived.by(() => {
-		if (!info || !has) return '';
+	/** The strip's one line: the first answer or range; a character shows as a badge first. */
+	const line = $derived.by((): { characterId?: CharacterId; text: string } => {
+		if (!info || !has) return { text: '' };
 		if (info.kind === 'answer') {
 			const a = info.answers[0];
-			return `${valueText(a)}${a.unreliable ? ' (not reliable)' : ''}`;
+			const note = a.unreliable ? ' (not reliable)' : '';
+			return a.kind === 'character'
+				? { characterId: a.value, text: note }
+				: { text: `${valueText(a)}${note}` };
 		}
 		if (info.kind === 'picker') {
 			const p = info.pickers[0];
 			const r = rangeText(p);
-			if (r) return r;
+			if (r) return { text: r };
 			const o = p.options[0];
-			return o
-				? `${o.characterId ? `${characters.get(o.characterId)?.name ?? o.characterId}: ` : ''}${names(o.seats)}`
-				: '';
+			if (!o) return { text: '' };
+			return o.characterId
+				? { characterId: o.characterId, text: `: ${names(o.seats)}` }
+				: { text: names(o.seats) };
 		}
 		const v = info.checks.find((c) => c.verdict && c.verdict.kind !== 'choose')?.verdict;
-		if (v?.kind === 'dies') return `Dead: ${names(v.seatIds)}`;
-		if (v?.kind === 'ask') return `Dead? ${names(v.ifYes)}`;
-		return v?.kind === 'no-death' ? 'No death' : '';
+		if (v?.kind === 'dies') return { text: `Dead: ${names(v.seatIds)}` };
+		if (v?.kind === 'ask') return { text: `Dead? ${names(v.ifYes)}` };
+		return { text: v?.kind === 'no-death' ? 'No death' : '' };
 	});
 </script>
+
+{#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
+			characterId={v.value}
+			character={characters.get(v.value)}
+			inline
+		/>{:else}{valueText(v)}{/if}{/snippet}
+
+{#snippet flagBody(flag: Flag)}{flag.text}{#each flag.impairments ?? [] as i, n (n)}{n
+			? '; '
+			: ' '}{reason(i)} · {#if i.source.seatId}{name(i.source.seatId)} (<CharacterBadge
+				characterId={i.source.characterId}
+				character={characters.get(i.source.characterId)}
+				inline
+			/>){:else}<CharacterBadge
+				characterId={i.source.characterId}
+				character={characters.get(i.source.characterId)}
+				inline
+			/>{/if}{/each}{#each flag.allowed ?? [] as v, n (n)}{n ? ' / ' : ' '}{@render value(
+			v
+		)}{/each}{/snippet}
 
 {#snippet answer(a: NightAnswer)}
 	<li data-unreliable={a.unreliable ? '' : undefined}>
@@ -128,9 +154,9 @@
 			{/if}
 			{#if a.because.length > 0}<span class="because">({names(a.because)})</span>{/if}
 		</span>
-		{#each flags(a) as flag (flag)}
+		{#each flags(a) as flag (flag.text)}
 			<span class="flag" class:warn={a.unreliable || a.mustBeFalse}>
-				{#if a.unreliable}<Icon name="warning" />{/if}{flag}
+				{#if a.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
 			</span>
 		{/each}
 		{#if a.kind === 'character' && onShow}
@@ -141,7 +167,14 @@
 {/snippet}
 
 {#if compact}
-	{#if has}<span class="compact" data-testid="night-suggested">Suggested: {line}</span>{/if}
+	{#if has}<span class="compact" data-testid="night-suggested"
+			>Suggested: {#if line.characterId}<CharacterBadge
+					characterId={line.characterId}
+					character={characters.get(line.characterId)}
+					inline
+					interactive={false}
+				/>{/if}{line.text}</span
+		>{/if}
 {:else if has && info}
 	<section class="suggested" aria-label="Suggested" data-testid="night-suggested">
 		<h3>Suggested</h3>
@@ -169,9 +202,9 @@
 								</span>
 							{/each}
 						{/if}
-						{#each flags(p) as flag (flag)}
+						{#each flags(p) as flag (flag.text)}
 							<span class="flag" class:warn={p.unreliable || p.mustBeFalse}>
-								{#if p.unreliable}<Icon name="warning" />{/if}{flag}
+								{#if p.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
 							</span>
 						{/each}
 					</li>
