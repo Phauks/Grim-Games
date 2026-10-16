@@ -13,10 +13,12 @@
 		size: number;
 		/** The character is not on the script. */
 		orphan: boolean;
+		/** Highlighted while a reminder is dragged over it. */
+		dropTarget?: boolean;
 		onTap: () => void;
 	}
 
-	let { seat, number, character, size, orphan, onTap }: Props = $props();
+	let { seat, number, character, size, orphan, dropTarget = false, onTap }: Props = $props();
 
 	// As in the physical grimoire, a token is upside down when the player's alignment is not
 	// the one their character type starts with (a good Minion, an evil Townsfolk).
@@ -56,6 +58,7 @@
 	type="button"
 	class="seat"
 	data-dead={seat.dead || undefined}
+	data-drop={dropTarget || undefined}
 	data-testid="seat"
 	aria-label={label}
 	style:--size="{size}px"
@@ -79,12 +82,16 @@
 		{/if}
 		{#if orphan}<span class="mark orphan" title="Not on the script"><Icon name="warning" /></span
 			>{/if}
-		{#if seat.reminders.length > 0}<span class="mark count">{seat.reminders.length}</span>{/if}
 	</span>
 	<span class="name">{name}</span>
 </button>
 
 <style>
+	.seat[data-drop] .disc {
+		outline: 3px solid var(--focus);
+		outline-offset: 4px;
+		border-radius: 50%;
+	}
 	.seat {
 		display: grid;
 		justify-items: center;
@@ -161,13 +168,6 @@
 		top: -4%;
 		background: var(--accent);
 		color: var(--on-accent);
-	}
-	.count {
-		right: -4%;
-		bottom: -4%;
-		background: var(--reminder-face);
-		color: var(--on-reminder);
-		font: 600 0.75rem / 1 var(--font-control);
 	}
 	.name {
 		max-width: 100%;

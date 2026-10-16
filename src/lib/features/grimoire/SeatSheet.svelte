@@ -225,10 +225,19 @@
 		{/if}
 	{/snippet}
 	{#snippet titleEnd()}
-		<IconButton icon="rename" label="Edit player name" disabled={editingName} onclick={editName} />
+		<span class="ink"
+			><IconButton
+				icon="rename"
+				label="Edit player name"
+				disabled={editingName}
+				onclick={editName}
+			/></span
+		>
 	{/snippet}
 	{#snippet actions()}
-		<IconButton icon="more" label="Seat actions" onclick={() => (menuOpen = true)} />
+		<span class="ink"
+			><IconButton icon="more" label="Seat actions" onclick={() => (menuOpen = true)} /></span
+		>
 	{/snippet}
 	{#if seat && seatId}
 		<div class="sheet">
@@ -525,6 +534,12 @@
 </Dialog>
 
 <style>
+	/* Header buttons take the sheet's ink, not the dark page's. */
+	.ink {
+		display: contents;
+		--on-surface: var(--on-sheet);
+		--surface-selected: rgb(0 0 0 / 0.08);
+	}
 	.menu {
 		display: grid;
 		gap: var(--space-2);
