@@ -3,6 +3,7 @@
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { layerStyle, openLayer } from './layers.ts';
 
 	interface Props {
 		open?: boolean;
@@ -35,12 +36,22 @@
 		lead,
 		headActions
 	}: Props = $props();
+
+	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
+	// animation stays where it was.
+	let layer = $state(1);
+	$effect(() => {
+		if (!open) return;
+		const taken = openLayer();
+		layer = taken.layer;
+		return taken.close;
+	});
 </script>
 
 <Dialog.Root bind:open {role} lazyMount unmountOnExit>
 	<Portal>
-		<Dialog.Backdrop />
-		<Dialog.Positioner>
+		<Dialog.Backdrop style={layerStyle(layer, 'backdrop')} />
+		<Dialog.Positioner style={layerStyle(layer, 'content')}>
 			<Dialog.Content data-size={size}>
 				<div class="head">
 					{#if lead}<span class="lead">{@render lead()}</span>{/if}
@@ -60,13 +71,13 @@
 	:global([data-scope='dialog'][data-part='backdrop']) {
 		position: fixed;
 		inset: 0;
-		z-index: var(--z-backdrop);
+		z-index: calc(var(--z-overlay) + var(--layer, 0));
 		background: var(--backdrop);
 	}
 	:global([data-scope='dialog'][data-part='positioner']) {
 		position: fixed;
 		inset: 0;
-		z-index: var(--z-dialog);
+		z-index: calc(var(--z-overlay) + var(--layer, 1));
 		display: grid;
 		place-items: center;
 		padding: var(--space-4);

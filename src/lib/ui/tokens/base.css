@@ -35,12 +35,11 @@
 	--ease-in: cubic-bezier(0.4, 0, 1, 1);
 
 	--z-raised: 10;
-	--z-backdrop: 100;
-	--z-sheet: 110;
-	--z-dialog: 120;
-	/* Dropdown lists and Glossary popovers, which can open from inside a dialog. */
-	--z-popover: 150;
-	--z-toast: 200;
+	/* Dialogs and sheets: the base, plus each overlay's place in the order opened (layers.ts). */
+	--z-overlay: 100;
+	/* Dropdown lists and Glossary popovers, which can open from inside any overlay. */
+	--z-popover: 1000;
+	--z-toast: 1100;
 
 	/* Written by the preferences store; 1 is the browser's default size. */
 	--text-scale: 1;

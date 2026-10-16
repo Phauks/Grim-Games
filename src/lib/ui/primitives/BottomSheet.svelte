@@ -3,6 +3,7 @@
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { layerStyle, openLayer } from './layers.ts';
 
 	/** A snap point: a fraction of the viewport (0-1), or a size like `'20rem'` / `'300px'`. */
 	type SnapPoint = number | string;
@@ -53,6 +54,16 @@
 		children,
 		focusFirstField = true
 	}: Props = $props();
+
+	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
+	// animation stays where it was.
+	let layer = $state(1);
+	$effect(() => {
+		if (!open) return;
+		const taken = openLayer();
+		layer = taken.layer;
+		return taken.close;
+	});
 </script>
 
 <!--
@@ -69,8 +80,8 @@
 	initialFocusEl={focusFirstField ? undefined : () => false}
 >
 	<Portal>
-		<Drawer.Backdrop />
-		<Drawer.Positioner>
+		<Drawer.Backdrop style={layerStyle(layer, 'backdrop')} />
+		<Drawer.Positioner style={layerStyle(layer, 'content')}>
 			<Drawer.Content style={height ? `height: ${height}` : undefined}>
 				<Drawer.Grabber>
 					<Drawer.GrabberIndicator />
@@ -109,7 +120,7 @@
 	:global([data-scope='drawer'][data-part='backdrop']) {
 		position: fixed;
 		inset: 0;
-		z-index: var(--z-backdrop);
+		z-index: calc(var(--z-overlay) + var(--layer, 0));
 		background: var(--backdrop);
 		opacity: calc(1 - var(--drawer-swipe-progress, 0));
 		transition: opacity var(--duration-normal) var(--ease-out);
@@ -127,7 +138,7 @@
 	:global([data-scope='drawer'][data-part='positioner']) {
 		position: fixed;
 		inset: 0;
-		z-index: var(--z-sheet);
+		z-index: calc(var(--z-overlay) + var(--layer, 1));
 		display: flex;
 		align-items: flex-end;
 		justify-content: center;
