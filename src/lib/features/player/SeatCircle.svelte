@@ -6,6 +6,7 @@
 		type Character
 	} from '#lib/core/data/index.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -56,7 +57,10 @@
 			observer.disconnect();
 		};
 	});
-	const size = $derived(seatTokenSize(ids, layout, { width, height }));
+	// The Character token size setting, capped by the ring spacing like the board (seat-layout).
+	const size = $derived(
+		seatTokenSize(ids, layout, { width, height }, preferences.current.tokenAppearance.tokenScale)
+	);
 	// Pulled in so edge seats never stick out past a narrow phone screen.
 	const points = $derived(
 		keepInside(seatPoints(ids, layout, { width, height }), { width, height }, size / 2 + 8)
