@@ -6,6 +6,7 @@ import {
 	undo,
 	type Command,
 	type EngineContext,
+	type GameLog,
 	type GameSession
 } from '#lib/core/engine/index.ts';
 import {
@@ -43,6 +44,10 @@ export class DayGame implements DayPort {
 
 	get game(): Game {
 		return this.session.game;
+	}
+
+	get log(): GameLog {
+		return this.session.log;
 	}
 
 	/** Runs a command; warnings and refusals show as toasts. Returns whether it ran. */

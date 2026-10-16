@@ -60,6 +60,9 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await sheet.getByRole('button', { name: 'Executed' }).tap();
 	await expect(sheet).toBeHidden();
 	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
+	// Each player shows their character (none yet) and name; the death is listed to announce.
+	await expect(seat(page, 'Seat 2')).toContainText('No character');
+	await expect(page.getByTestId('died')).toContainText('Seat 2 died: Executed');
 
 	await page.reload();
 	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
