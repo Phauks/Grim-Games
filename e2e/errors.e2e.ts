@@ -91,3 +91,49 @@ test('a working app never shows the boot-failure screen', async ({ page }) => {
 	await page.waitForTimeout(3500);
 	await expect(page.locator('#boot-failure')).toHaveCount(0);
 });
+
+test('Diagnostics gathers build, device and problems on the device, without game data', async ({
+	page
+}) => {
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	await page.evaluate(() => {
+		localStorage.setItem('grim-games:player-name-test', 'Sam the Storyteller');
+		setTimeout(() => {
+			throw new Error('diagnostics test at https://example.com/room?code=SECRET');
+		});
+	});
+	await expect(page.getByTestId('error-notice')).toBeVisible();
+
+	await page.goto('/diagnostics');
+	const panel = page.getByTestId('diagnostics');
+	await expect(page.getByRole('heading', { level: 1, name: 'Diagnostics' })).toBeVisible();
+	await expect(panel).toHaveAttribute('aria-busy', 'false');
+	for (const name of [
+		'Build',
+		'Problems',
+		'App updates',
+		'Storage',
+		'Device',
+		'Settings',
+		'Live room'
+	]) {
+		await expect(panel.getByRole('heading', { level: 2, name })).toBeVisible();
+	}
+	await expect(panel).toContainText('1 problem');
+
+	const report = panel.getByRole('link', { name: 'Report an issue' });
+	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+	const href = (await report.getAttribute('href'))!;
+	expect(href.length).toBeLessThanOrEqual(7000);
+	const error = new URL(href).searchParams.get('error')!;
+	expect(error).toContain('diagnostics test at example.com/room');
+	expect(href).not.toContain('SECRET');
+	expect(error).not.toContain('Sam the Storyteller');
+
+	const [download] = await Promise.all([
+		page.waitForEvent('download'),
+		panel.getByRole('button', { name: 'Download' }).tap()
+	]);
+	expect(download.suggestedFilename()).toMatch(/^grim-games-diagnostics-\d{4}-\d{2}-\d{2}\.txt$/);
+});
