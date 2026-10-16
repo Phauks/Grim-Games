@@ -43,6 +43,7 @@
 		ability: 18,
 		tokens: 12,
 		special: 11,
+		cards: 9,
 		firstNight: 17,
 		otherNight: 17,
 		jinxes: 18,
