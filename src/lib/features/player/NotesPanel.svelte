@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { NotebookSeat, PlayerNote } from './notebook.ts';
+	import { playerSettings } from './player-settings.svelte.ts';
 
 	interface Props {
 		notes: readonly PlayerNote[];
@@ -16,6 +17,8 @@
 		seats.map((seat, i) => ({ seat, number: i + 1 })).filter((s) => s.seat.note.trim())
 	);
 	const preview = (text: string) => text.trim().split('\n')[0] || 'Empty';
+	// "Hide note contents" setting: same rows, contents replaced, so nothing reflows.
+	const hidden = $derived(playerSettings.current.hideNoteContents);
 </script>
 
 <div class="notes">
@@ -26,7 +29,7 @@
 		</div>
 		{#if notes.length}
 			<ul>
-				{#each notes as note (note.noteId)}
+				{#each notes as note, i (note.noteId)}
 					<li>
 						<button
 							type="button"
@@ -34,8 +37,13 @@
 							data-note={note.noteId}
 							onclick={() => onOpenNote(note.noteId)}
 						>
-							<span class="title">{note.title.trim() || 'Untitled'}</span>
-							<span class="preview">{preview(note.text)}</span>
+							{#if hidden}
+								<span class="title">Note {i + 1}</span>
+								<span class="preview" data-hidden>Hidden</span>
+							{:else}
+								<span class="title">{note.title.trim() || 'Untitled'}</span>
+								<span class="preview">{preview(note.text)}</span>
+							{/if}
 						</button>
 					</li>
 				{/each}
@@ -58,7 +66,11 @@
 							onclick={() => onOpenSeat(seat.seatId)}
 						>
 							<span class="title">Seat {number}{seat.name ? ` · ${seat.name}` : ''}</span>
-							<span class="preview">{preview(seat.note)}</span>
+							{#if hidden}
+								<span class="preview" data-hidden>Hidden</span>
+							{:else}
+								<span class="preview">{preview(seat.note)}</span>
+							{/if}
 						</button>
 					</li>
 				{/each}
@@ -134,6 +146,9 @@
 	.preview {
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
+	}
+	.preview[data-hidden] {
+		font-style: italic;
 	}
 	.none {
 		margin: 0;

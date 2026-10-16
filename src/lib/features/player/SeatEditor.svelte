@@ -61,7 +61,7 @@
 </script>
 
 <!-- A fixed height, so picking a guess or marking a death never resizes the sheet. -->
-<BottomSheet bind:open title="Seat {number}" height="85dvh">
+<BottomSheet bind:open title="Seat {number}" height="85dvh" focusFirstField={false}>
 	{#if seat}
 		<div class="editor">
 			<label class="field">

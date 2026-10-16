@@ -27,6 +27,11 @@
 		/** Right after the title on its line, such as an edit button. */
 		titleEnd?: Snippet;
 		children: Snippet;
+		/**
+		 * False: opening the sheet doesn't focus its first field, so a phone's keyboard stays
+		 * closed until a field is tapped (Trevor, 2026-10-16).
+		 */
+		focusFirstField?: boolean;
 	}
 
 	let {
@@ -41,7 +46,8 @@
 		lead,
 		heading,
 		titleEnd,
-		children
+		children,
+		focusFirstField = true
 	}: Props = $props();
 </script>
 
@@ -56,6 +62,7 @@
 	onSnapPointChange={(details) => onSnap?.(details.snapPoint)}
 	lazyMount
 	unmountOnExit
+	initialFocusEl={focusFirstField ? undefined : () => false}
 >
 	<Portal>
 		<Drawer.Backdrop />

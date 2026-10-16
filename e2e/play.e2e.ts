@@ -153,6 +153,10 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	await expect(page.getByTestId('no-player-notes')).toHaveText('None');
 	await page.getByRole('button', { name: /^Untitled/ }).tap();
 	let sheet = page.getByRole('dialog', { name: 'Note' });
+	// Opening a note doesn't focus a field, so the phone keyboard stays closed (Trevor).
+	await expect(sheet.getByRole('textbox', { name: 'Title' })).toBeVisible();
+	await expect(sheet.getByRole('textbox', { name: 'Title' })).not.toBeFocused();
+	await expect(sheet.getByRole('textbox', { name: 'Text' })).not.toBeFocused();
 	await sheet.getByRole('textbox', { name: 'Title' }).fill('What I really know');
 	await sheet.getByRole('textbox', { name: 'Text' }).fill('Sam is the Imp');
 	await page.keyboard.press('Escape');
@@ -302,6 +306,40 @@ test('a shared link with problems opens the Script check first', async ({ page }
 	await check.getByRole('button', { name: 'Load anyway' }).tap();
 	await expect(page.getByRole('heading', { name: 'Typo Script', level: 1 })).toBeVisible();
 	await expect(page.locator('[data-character]')).toHaveCount(2);
+});
+
+test('note contents can be hidden until a note is opened', async ({ page }) => {
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await page.getByRole('button', { name: /^Untitled/ }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Note' });
+	await sheet.getByRole('textbox', { name: 'Title' }).fill('Evil team');
+	await sheet.getByRole('textbox', { name: 'Text' }).fill('Sam is the Imp');
+	await page.keyboard.press('Escape');
+	const row = page.locator('[data-note]');
+	await expect(row).toContainText('Sam is the Imp');
+
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Player view' })
+		.tap();
+	const hide = settings.getByRole('checkbox', { name: 'Hide note contents', includeHidden: true });
+	await expect(hide).not.toBeChecked();
+	await settings.getByText('Hide note contents', { exact: true }).tap();
+	await expect(hide).toBeChecked();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+
+	await expect(row).toHaveText(/^\s*Note 1\s*Hidden\s*$/);
+	await expect(row).not.toContainText('Evil team');
+	// Opening the note shows it.
+	await row.tap();
+	await expect(sheet.getByRole('textbox', { name: 'Text' })).toHaveValue('Sam is the Imp');
+	await page.keyboard.press('Escape');
+	// Kept after a reload.
+	await page.reload();
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(page.locator('[data-note]')).toHaveText(/^\s*Note 1\s*Hidden\s*$/);
 });
 
 test('Enter in a name or note title closes the keyboard', async ({ page }) => {

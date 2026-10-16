@@ -5,6 +5,8 @@ import FontsSection from './FontsSection.svelte';
 import IconsSection from './IconsSection.svelte';
 import ResetSection from './ResetSection.svelte';
 import RulesTermsSection from './RulesTermsSection.svelte';
+// Feature-owned sections, registered by their own modules.
+import '#lib/features/player/settings-section.ts';
 
 // Built-in sections. Other features register theirs the same way from their own modules.
 registerSettingsSection({

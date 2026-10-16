@@ -23,7 +23,7 @@
 
 <!-- A fixed height, so typing never resizes the sheet. -->
 <!-- The heading stays "Note" so it doesn't change while the title is typed. -->
-<BottomSheet bind:open title="Note" height="85dvh">
+<BottomSheet bind:open title="Note" height="85dvh" focusFirstField={false}>
 	{#if note}
 		<div class="editor">
 			<label class="field">
