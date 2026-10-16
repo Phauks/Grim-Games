@@ -32,14 +32,24 @@ export interface CharacterGroup {
 	characters: Character[];
 }
 
-/** The characters that match, grouped by type in `types` order, keeping their given order. */
+/** The characters that match, grouped by type in `types` order, name matches first. */
 export function searchGroups(
 	characters: readonly Character[],
 	query: string,
 	filter: (c: Character) => boolean = () => true,
 	types: readonly CharacterType[] = PICKER_TYPES
 ): CharacterGroup[] {
-	const matching = characters.filter((c) => filter(c) && matchesSearch(c, query));
+	const words = foldForSearch(query).split(/\s+/).filter(Boolean);
+	const byName = (c: Character) => {
+		const name = foldForSearch(c.name);
+		return words.length > 0 && words.every((w) => name.includes(w)) ? 0 : 1;
+	};
+	// Name matches come before ability-text matches; otherwise the given order is kept.
+	const matching = characters
+		.filter((c) => filter(c) && matchesSearch(c, query))
+		.map((c, i) => ({ c, i, rank: byName(c) }))
+		.sort((a, b) => a.rank - b.rank || a.i - b.i)
+		.map(({ c }) => c);
 	return types
 		.map((type) => ({ type, characters: matching.filter((c) => c.type === type) }))
 		.filter((g) => g.characters.length > 0);

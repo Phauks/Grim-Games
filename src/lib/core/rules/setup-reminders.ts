@@ -192,6 +192,7 @@ export function setupReminders(
 	}
 	for (const id of game.ruleCharacters) if (!order.includes(id)) order.push(id);
 	const out: SetupReminder[] = [];
+	if (timings.has('setup')) out.push(...drawnTileReminders(game));
 	for (const id of order) {
 		const entry = ENTRIES.get(id);
 		const character = lookup.get(id);
@@ -199,6 +200,43 @@ export function setupReminders(
 		if (!entry || (character && character.edition === undefined)) continue;
 		const selfSeats = seats.filter((f) => f.truly === id || f.seat.characterId === id);
 		out.push(...suggest(entry, seats, selfSeats, timings));
+	}
+	return out;
+}
+
+/**
+ * The "Is The Drunk" style tokens a confirmed bag tile carries (Drunk, Marionette,
+ * Lunatic...), suggested on the seat that drew it rather than placed automatically (Trevor,
+ * 2026-10-16: the Drunk token goes in the setup reminders). Until it is placed the grimoire
+ * shows only the token the player saw, so the seat is pre-filled. Skipped once a matching
+ * reminder is on that seat.
+ */
+function drawnTileReminders(game: Game): SetupReminder[] {
+	const out: SetupReminder[] = [];
+	const tiles = game.bag ? Object.values(game.bag.tiles) : [];
+	for (const tile of tiles) {
+		const seatId = tile.drawnBySeat;
+		if (!tile.confirmed || seatId === undefined) continue;
+		const seat = game.seats[seatId];
+		if (!seat) continue;
+		for (const r of tile.reminders) {
+			const placed = seat.reminders.some(
+				(p) => p.characterId === r.characterId && p.label === r.label
+			);
+			if (placed) continue;
+			const entry = ENTRIES.get(r.characterId);
+			const spec = entry?.reminders.find((s) => s.label === r.label);
+			out.push({
+				characterId: r.characterId,
+				label: r.label,
+				text: spec?.text ?? `Put [${r.label}] on this player`,
+				seatId,
+				reason: spec?.reason ?? 'This player drew a token that is not their true character',
+				candidates: [],
+				timing: 'setup',
+				wiki: entry?.wiki ?? 'https://wiki.bloodontheclocktower.com/Setup'
+			});
+		}
 	}
 	return out;
 }

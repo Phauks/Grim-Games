@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { trueCharacter } from '#lib/core/model/index.ts';
-import {
-	newGame,
-	run,
-	testCharacters,
-	testContext
-} from '#lib/core/model/fixtures.test-support.ts';
+import { newGame, run, testContext } from '#lib/core/model/fixtures.test-support.ts';
 import type { TileSpec } from './commands.ts';
 import { dispatch, undo } from './log.ts';
 
@@ -142,7 +136,7 @@ describe('drawing', () => {
 		expect(s.game.seats[seats[0]].characterId).toBeUndefined();
 	});
 
-	it('confirms a draw: the grimoire character, its alignment and its reminders go on the seat', () => {
+	it('confirms a draw: the grimoire character and its alignment go on the seat; its reminders wait for setup reminders', () => {
 		const { session, ctx, seats } = withBag({ shuffle: false });
 		const order = session.game.bag!.order;
 		const s = run(
@@ -156,8 +150,10 @@ describe('drawing', () => {
 		const drunk = s.game.seats[seats[0]];
 		expect(drunk.characterId).toBe('empath');
 		expect(drunk.alignment).toBe('good');
-		expect(drunk.reminders.map((r) => r.label)).toEqual(['Is The Drunk']);
-		expect(trueCharacter(s.game, seats[0], testCharacters)).toBe('drunk');
+		// "Is The Drunk" stays on the tile; setupReminders suggests it on this seat (Trevor,
+		// 2026-10-16), so nothing is placed automatically.
+		expect(drunk.reminders).toEqual([]);
+		expect(s.game.bag!.tiles[order[1]].reminders.map((r) => r.label)).toEqual(['Is The Drunk']);
 		expect(s.game.bag!.tiles[order[1]].confirmed).toBe(true);
 		// The Lunatic saw the Imp; the grimoire has the Lunatic, who is good.
 		expect(s.game.seats[seats[1]]).toMatchObject({ characterId: 'lunatic', alignment: 'good' });

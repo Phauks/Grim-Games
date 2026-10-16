@@ -44,7 +44,23 @@
 			revealed = !preferences.current.requireName || playerName.trim() !== '';
 		}
 	});
+
+	function confirm() {
+		onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) });
+	}
+
+	// On a computer, Enter (outside a field or button) does the main action: Reveal, then Confirm.
+	function onWindowKey(event: KeyboardEvent) {
+		if (!open || event.key !== 'Enter' || event.repeat || event.defaultPrevented) return;
+		const target = event.target as HTMLElement | null;
+		if (target?.closest('input, textarea, select, button, a, [role="radio"]')) return;
+		event.preventDefault();
+		if (revealed) confirm();
+		else if (name.trim() !== '') revealed = true;
+	}
 </script>
+
+<svelte:window onkeydown={onWindowKey} />
 
 <!--
 	The player's own reveal. A drawn tile is never put back (Trevor, 2026-10-15): closing the
@@ -99,11 +115,7 @@
 	</div>
 	{#snippet actions()}
 		{#if revealed}
-			<Button
-				variant="accent"
-				onclick={() => onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) })}
-				>Confirm</Button
-			>
+			<Button variant="accent" onclick={confirm}>Confirm</Button>
 		{:else}
 			<Button variant="accent" disabled={name.trim() === ''} onclick={() => (revealed = true)}
 				>Reveal</Button

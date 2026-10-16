@@ -183,79 +183,88 @@
 	</header>
 
 	<ErrorBoundary area="setup">
-		<section class="controls" aria-label="Players">
-			<div class="players">
-				<span id="players-label">Players</span>
-				<button
-					type="button"
-					class="step"
-					aria-label="Fewer players"
-					disabled={s.players <= MIN_SELECT_PLAYERS}
-					onclick={() => setupSelection.setPlayers(s.players - 1)}>−</button
-				>
-				<output aria-labelledby="players-label" data-testid="player-count">{s.players}</output>
-				<button
-					type="button"
-					class="step"
-					aria-label="More players"
-					disabled={s.players >= MAX_SELECT_PLAYERS}
-					onclick={() => setupSelection.setPlayers(s.players + 1)}>+</button
-				>
+		<div class="layout">
+			<div class="side">
+				<section class="controls" aria-label="Players">
+					<div class="players">
+						<span id="players-label">Players</span>
+						<button
+							type="button"
+							class="step"
+							aria-label="Fewer players"
+							disabled={s.players <= MIN_SELECT_PLAYERS}
+							onclick={() => setupSelection.setPlayers(s.players - 1)}>−</button
+						>
+						<output aria-labelledby="players-label" data-testid="player-count">{s.players}</output>
+						<button
+							type="button"
+							class="step"
+							aria-label="More players"
+							disabled={s.players >= MAX_SELECT_PLAYERS}
+							onclick={() => setupSelection.setPlayers(s.players + 1)}>+</button
+						>
+					</div>
+					<Collapsible title="Setup sheet" storageKey="setup:sheet">
+						<SetupTable players={s.players} />
+					</Collapsible>
+				</section>
+				<div class="counts">
+					<CountsBar {analysis} {travellers} />
+					<CharacterSearchBox bind:query shortcut />
+				</div>
+				<div class="actions">
+					<Button
+						variant="quiet"
+						disabled={!ready || ids.length === 0}
+						onclick={() => setupSelection.clear()}>Clear</Button
+					>
+					<Button variant="quiet" disabled={!ready} onclick={random}>Random</Button>
+					<Button
+						variant="quiet"
+						icon="warning"
+						disabled={!ready}
+						onclick={() => (checkOpen = true)}
+					>
+						Check <span class="badge" data-testid="warning-count">{warnings.length}</span>
+					</Button>
+					<Button
+						variant="accent"
+						icon="bag"
+						disabled={!ready || plan.tiles.length === 0}
+						onclick={() => requestBuild()}>Build bag</Button
+					>
+				</div>
 			</div>
-			<Collapsible title="Setup sheet" storageKey="setup:sheet">
-				<SetupTable players={s.players} />
-			</Collapsible>
-		</section>
-		<div class="counts">
-			<CountsBar {analysis} {travellers} />
-			<CharacterSearchBox bind:query />
+
+			<CharacterPicker
+				characters={choices}
+				mode="multi"
+				selected={ids}
+				bind:query
+				showSearch={false}
+				collapsibleKey="setup"
+				surface="page"
+				contained={false}
+				types={TYPES}
+				onSelect={(id) => {
+					const character = lookup(id);
+					if (character) toggle(character);
+				}}
+			>
+				{#snippet item(character)}
+					<CharacterChoice
+						{character}
+						copies={s.selection[character.id] ?? 0}
+						duplicates={canDuplicate(character, inPlay)}
+						jinxed={jinxed.has(character.id)}
+						onToggle={() => toggle(character)}
+						onAddCopy={() =>
+							setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
+					/>
+				{/snippet}
+			</CharacterPicker>
 		</div>
-
-		<CharacterPicker
-			characters={choices}
-			mode="multi"
-			selected={ids}
-			bind:query
-			showSearch={false}
-			collapsibleKey="setup"
-			contained={false}
-			types={TYPES}
-			onSelect={(id) => {
-				const character = lookup(id);
-				if (character) toggle(character);
-			}}
-		>
-			{#snippet item(character)}
-				<CharacterChoice
-					{character}
-					copies={s.selection[character.id] ?? 0}
-					duplicates={canDuplicate(character, inPlay)}
-					jinxed={jinxed.has(character.id)}
-					onToggle={() => toggle(character)}
-					onAddCopy={() =>
-						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
-				/>
-			{/snippet}
-		</CharacterPicker>
 	</ErrorBoundary>
-
-	<div class="actions">
-		<Button
-			variant="quiet"
-			disabled={!ready || ids.length === 0}
-			onclick={() => setupSelection.clear()}>Clear</Button
-		>
-		<Button variant="quiet" disabled={!ready} onclick={random}>Random</Button>
-		<Button variant="quiet" icon="warning" disabled={!ready} onclick={() => (checkOpen = true)}>
-			Check <span class="badge" data-testid="warning-count">{warnings.length}</span>
-		</Button>
-		<Button
-			variant="accent"
-			icon="bag"
-			disabled={!ready || plan.tiles.length === 0}
-			onclick={() => requestBuild()}>Build bag</Button
-		>
-	</div>
 </main>
 
 {#if ready}
@@ -387,6 +396,52 @@
 		margin-top: var(--space-4);
 		padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
 		background: var(--page-background, var(--surface));
+	}
+	/* Phones and tablets: one column, the buttons stuck to the bottom after the list. */
+	.layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.side {
+		display: contents;
+	}
+	.actions {
+		order: 1;
+	}
+	/*
+	 * A computer window: players, setup sheet, counts, search and buttons in a column beside
+	 * the list, so the list starts at the top and nothing needs scrolling back to.
+	 */
+	@media (min-width: 75rem) {
+		main {
+			max-width: calc(120 * var(--u));
+		}
+		.layout {
+			grid-template-columns: calc(28 * var(--u)) minmax(0, 1fr);
+			align-items: start;
+			gap: var(--space-5);
+			padding-top: var(--space-2);
+		}
+		.side {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--space-2);
+			position: sticky;
+			top: 0;
+			max-height: 100dvh;
+			overflow-y: auto;
+			padding-bottom: var(--space-4);
+		}
+		.counts {
+			position: static;
+		}
+		.actions {
+			position: static;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			justify-content: stretch;
+			margin-top: var(--space-2);
+			padding: 0;
+		}
 	}
 	.errors {
 		display: grid;

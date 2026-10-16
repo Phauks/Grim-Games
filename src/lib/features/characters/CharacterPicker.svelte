@@ -52,6 +52,11 @@
 		 * the device under this key plus the type.
 		 */
 		collapsibleKey?: string;
+		/**
+		 * `sheet` (default): takes the colours of the sheet, dialog or panel it sits in.
+		 * `page`: the page's own character cards (the Characters screen).
+		 */
+		surface?: 'sheet' | 'page';
 		/** Custom row (the setup screen adds copies); the default is token, name and ability. */
 		item?: Snippet<[Character, PickerItemState]>;
 	}
@@ -70,6 +75,7 @@
 		showSearch = true,
 		contained = true,
 		collapsibleKey,
+		surface = 'sheet',
 		item
 	}: Props = $props();
 
@@ -127,7 +133,7 @@
 	with their ability text. Single or multi select, an optional filter, and rows that are
 	shown disabled with a reason rather than hidden.
 -->
-<div class="picker" data-contained={contained ? '' : undefined}>
+<div class="picker" data-contained={contained ? '' : undefined} data-surface={surface}>
 	{#if showSearch}<CharacterSearchBox bind:query />{/if}
 	<div class="list" data-testid="character-picker">
 		{#each groups as group (group.type)}
@@ -135,6 +141,11 @@
 				<Collapsible
 					title={TYPE_PLURALS[group.type]}
 					level={3}
+					tone={group.type === 'townsfolk' || group.type === 'outsider'
+						? 'good'
+						: group.type === 'minion' || group.type === 'demon'
+							? 'evil'
+							: undefined}
 					storageKey="{collapsibleKey}:{group.type}"
 				>
 					{@render rows(group)}
@@ -174,8 +185,32 @@
 		color: var(--heading);
 	}
 	/* In sheets and dialogs the panel has its own colours; the page's gold heading is too faint. */
-	.picker[data-contained] h3 {
+	/*
+	 * In sheets, dialogs and desktop panels the picker takes the panel's own text colour and
+	 * tints from it, so it reads on parchment as well as on the dark page.
+	 */
+	.picker[data-surface='sheet'] {
+		--collapsible-heading: currentColor;
+	}
+	.picker[data-surface='sheet'] h3 {
 		color: inherit;
+	}
+	.picker[data-surface='sheet'] .row {
+		background: color-mix(in srgb, currentColor 6%, transparent);
+		color: inherit;
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 25%, transparent);
+	}
+	.picker[data-surface='sheet'] .row[aria-pressed='true'],
+	.picker[data-surface='sheet'] .row[aria-current='true'] {
+		background: color-mix(in srgb, currentColor 14%, transparent);
+		box-shadow: inset 0 0 0 2px var(--focus);
+	}
+	.picker[data-surface='sheet'] :global(.search) {
+		background: color-mix(in srgb, currentColor 8%, transparent);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+	}
+	.picker[data-surface='sheet'] :global(.search:focus-within) {
+		box-shadow: inset 0 0 0 2px var(--focus);
 	}
 	section:first-child h3 {
 		margin-top: 0;

@@ -29,12 +29,14 @@
 		storageKey?: string;
 		/** Heading level of the title. */
 		level?: 2 | 3 | 4;
+		/** Colours the title by alignment, for character type groups. */
+		tone?: 'good' | 'evil';
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
 		aside?: Snippet;
 		children: Snippet;
 	}
 
-	let { title, storageKey, level = 2, aside, children }: Props = $props();
+	let { title, storageKey, level = 2, tone, aside, children }: Props = $props();
 
 	// Open by default; a section closed before stays closed. Read again if the key changes.
 	let open = $derived(!(storageKey && readClosed(storageKey)));
@@ -51,7 +53,7 @@
 	sections keep their header, so only the content below moves.
 -->
 <section class="collapsible" data-open={open ? '' : undefined}>
-	<div class="head">
+	<div class="head" data-tone={tone}>
 		<svelte:element this={`h${level}`} class="title">
 			<button
 				type="button"
@@ -99,6 +101,12 @@
 		text-align: start;
 		cursor: pointer;
 		touch-action: manipulation;
+	}
+	.head[data-tone='good'] .toggle {
+		color: var(--good);
+	}
+	.head[data-tone='evil'] .toggle {
+		color: var(--evil);
 	}
 	.toggle:hover .label {
 		text-decoration: underline;

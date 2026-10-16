@@ -7,6 +7,7 @@ import {
 	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
+import { placeableSetupReminders, setupReminders } from './setup-reminders.ts';
 import {
 	analyseSelection,
 	bagSlots,
@@ -292,6 +293,18 @@ describe('the draw', () => {
 			)!.tileId;
 			session = run(session, ctx, { type: 'ConfirmDraw', tileId });
 		}
+		// The Drunk's token is suggested on the right seat, not placed by the draw.
+		const suggested = setupReminders(session.game, testCharacters).filter(
+			(r) => r.label === 'Is The Drunk'
+		);
+		expect(suggested).toHaveLength(1);
+		session = run(session, ctx, {
+			type: 'ApplySetupReminders',
+			placements: placeableSetupReminders(suggested)
+		});
+		expect(
+			setupReminders(session.game, testCharacters).some((r) => r.label === 'Is The Drunk')
+		).toBe(false);
 		const truths = session.game.seating.map((id) =>
 			trueCharacter(session.game, id, testCharacters)
 		);

@@ -62,6 +62,20 @@
 		}
 	}
 
+	// On a computer, Enter draws: the held tile again if there is one, else a tile at random.
+	function onWindowKey(event: KeyboardEvent) {
+		if (revealOpen || event.key !== 'Enter' || event.repeat || event.defaultPrevented) return;
+		const target = event.target as HTMLElement | null;
+		if (target?.closest('input, textarea, select, button, a, [role="dialog"]')) return;
+		if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+		const held = slots.find((s) => s.state === 'held');
+		const inBag = slots.filter((s) => s.state === 'in-bag');
+		const pick = held ?? inBag[Math.floor(Math.random() * inBag.length)];
+		if (!pick) return;
+		event.preventDefault();
+		draw(pick.tileId, pick.state);
+	}
+
 	function confirm(details: { playerName: string; alignment?: Alignment }) {
 		if (!tile?.drawnBySeat) return;
 		const seatId = tile.drawnBySeat;
@@ -73,6 +87,8 @@
 		revealOpen = false;
 	}
 </script>
+
+<svelte:window onkeydown={onWindowKey} />
 
 <main>
 	<header>
@@ -94,6 +110,7 @@
 				<span class="label">Next</span>
 				<span data-testid="next-seat">{label(next)}</span>
 				<span class="left">{remaining} left</span>
+				<kbd class="hint">Enter draws</kbd>
 			</p>
 			<ol class="tiles" aria-label="Bag">
 				{#each slots as s (s.tileId)}
@@ -182,6 +199,18 @@
 		margin-inline-start: auto;
 		font-variant-numeric: tabular-nums;
 	}
+	/* Only with a mouse and keyboard; on touch screens the space isn't taken. */
+	.hint {
+		display: none;
+		font: inherit;
+		font-size: 0.8rem;
+		color: var(--on-surface-muted);
+	}
+	@media (hover: hover) and (pointer: fine) {
+		.hint {
+			display: inline;
+		}
+	}
 	.empty {
 		margin: var(--space-4) 0;
 	}
@@ -211,8 +240,10 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
-	.tile:hover {
-		filter: brightness(1.1);
+	@media (hover: hover) {
+		.tile:hover {
+			filter: brightness(1.1);
+		}
 	}
 	.tile[data-state='held'] {
 		box-shadow: inset 0 0 0 4px var(--accent);
@@ -253,5 +284,15 @@
 		margin-top: var(--space-4);
 		padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
 		background: var(--page-background, var(--surface));
+	}
+	/* A computer window: a wider bag with bigger tiles. */
+	@media (min-width: 75rem) {
+		main {
+			max-width: calc(80 * var(--u));
+		}
+		.tiles {
+			grid-template-columns: repeat(auto-fill, minmax(calc(10 * var(--u)), 1fr));
+			gap: var(--space-3);
+		}
 	}
 </style>

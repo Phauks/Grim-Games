@@ -255,3 +255,54 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await page.goto(`${board}/draw`);
 	await expect(page).toHaveURL(new RegExp(`${board}$`));
 });
+
+test.describe('in a computer window', () => {
+	test.use({ viewport: { width: 1440, height: 900 }, hasTouch: false, isMobile: false });
+
+	test('controls sit beside the list, and the keyboard reaches search and the draw', async ({
+		page
+	}) => {
+		await page.goto('/');
+		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
+		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
+		await page.getByRole('button', { name: 'Start game' }).click();
+		await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+		await page.goto(`${new URL(page.url()).pathname}/setup`);
+
+		// The setup sheet and buttons are beside the characters, not above and below them.
+		const sheet = await page.getByTestId('setup-table').boundingBox();
+		const build = await page.getByRole('button', { name: 'Build bag' }).boundingBox();
+		const list = await page.getByTestId('character-picker').boundingBox();
+		expect(sheet!.x + sheet!.width).toBeLessThan(list!.x);
+		expect(build!.x + build!.width).toBeLessThan(list!.x);
+		expect(list!.y).toBeLessThan(sheet!.y + sheet!.height);
+		await noSidewaysScroll(page);
+
+		// "/" jumps to search; Esc clears it.
+		const search = page.getByRole('searchbox', { name: 'Search characters' });
+		await page.keyboard.press('/');
+		await expect(search).toBeFocused();
+		await page.keyboard.type('imp');
+		await expect(choice(page, 'Chef')).toHaveCount(0);
+		await page.keyboard.press('Escape');
+		await expect(search).toHaveValue('');
+		await expect(choice(page, 'Chef')).toBeVisible();
+
+		for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])
+			await choice(page, name).click();
+		await page.getByRole('button', { name: 'Build bag' }).click();
+		await expect(page).toHaveURL(/\/draw$/);
+		await noSidewaysScroll(page);
+
+		// Enter draws the next tile; Enter again confirms it.
+		await page.keyboard.press('Enter');
+		const reveal = page.getByTestId('reveal');
+		await expect(reveal).toBeVisible();
+		await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
+		await page.keyboard.press('Enter');
+		await expect(reveal.getByRole('textbox', { name: 'Name' })).not.toBeFocused();
+		await page.keyboard.press('Enter');
+		await expect(reveal).toBeHidden();
+		await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
+	});
+});

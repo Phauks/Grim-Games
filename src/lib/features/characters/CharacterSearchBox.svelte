@@ -5,11 +5,24 @@
 		query: string;
 		/** Accessible name of the box. */
 		label?: string;
+		/** On a computer, "/" anywhere on the page (outside a field or dialog) jumps to this box. */
+		shortcut?: boolean;
 	}
 
-	let { query = $bindable(''), label = 'Search characters' }: Props = $props();
+	let { query = $bindable(''), label = 'Search characters', shortcut = false }: Props = $props();
 	let input = $state<HTMLInputElement>();
+
+	function onWindowKey(event: KeyboardEvent) {
+		if (!shortcut || event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+		const target = event.target as HTMLElement | null;
+		if (target?.closest('input, textarea, select, [contenteditable], [role="dialog"]')) return;
+		if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+		event.preventDefault();
+		input?.focus();
+	}
 </script>
+
+<svelte:window onkeydown={onWindowKey} />
 
 <!--
 	The character search box. Fixed height; the clear button keeps its place (disabled when
@@ -23,6 +36,8 @@
 		type="search"
 		aria-label={label}
 		placeholder="Search name or ability"
+		aria-keyshortcuts={shortcut ? '/' : undefined}
+		title={shortcut ? 'Search (press /)' : undefined}
 		autocomplete="off"
 		autocapitalize="off"
 		spellcheck="false"
@@ -31,6 +46,11 @@
 			if (e.key === 'Enter') {
 				e.preventDefault();
 				e.currentTarget.blur();
+			} else if (e.key === 'Escape' && query !== '') {
+				// The first Esc clears the search; the next one reaches the sheet and closes it.
+				e.preventDefault();
+				e.stopPropagation();
+				query = '';
 			}
 		}}
 	/>

@@ -967,12 +967,9 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 					seatId: seat.seatId,
 					characterId: grimoire.id,
 					...(alignment !== undefined ? { alignment } : {})
-				},
-				...tile.reminders.map((r): GameEvent => ({
-					type: 'ReminderAdded',
-					seatId: seat.seatId,
-					reminder: { reminderId: ctx.newId(), characterId: r.characterId, label: r.label }
-				}))
+				}
+				// The tile's "Is The Drunk" style reminders are not placed here: setupReminders
+				// suggests them on this seat (Trevor, 2026-10-16).
 			];
 		}
 

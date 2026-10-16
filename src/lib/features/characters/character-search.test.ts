@@ -33,4 +33,11 @@ describe('character search', () => {
 			'poisoner'
 		]);
 	});
+
+	it('lists name matches before ability-text matches', () => {
+		const chars = ['chef', 'empath', 'washerwoman'].map(get);
+		// "em" is in the Empath's name and in other abilities ("them").
+		const ids = searchGroups(chars, 'em')[0].characters.map((c) => c.id);
+		expect(ids[0]).toBe('empath');
+	});
 });
