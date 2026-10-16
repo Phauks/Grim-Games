@@ -32,8 +32,9 @@ interface Registered {
 }
 
 let registered: Registered | null = null;
-// Set while a confirmed leave navigates, so that navigation isn't asked about again.
+// A one-shot pass for the confirmed leave's navigation, so it isn't asked about again.
 let confirmed = false;
+let passes = 0;
 
 /**
  * Registers the guard; returns a function that removes it (use as an `$effect` cleanup).
@@ -46,7 +47,9 @@ export function setLeaveGuard(
 	const entry = { guard, within };
 	registered = entry;
 	return () => {
-		if (registered === entry) registered = null;
+		if (registered !== entry) return;
+		registered = null;
+		confirmed = false;
 	};
 }
 
@@ -55,12 +58,13 @@ export function leaveTo(leave: () => void): void {
 	if (!registered) return leave();
 	registered.guard(() => {
 		confirmed = true;
-		try {
-			leave();
-		} finally {
-			// goto() checks navigation synchronously; clear the pass in case it didn't navigate.
-			queueMicrotask(() => (confirmed = false));
-		}
+		const pass = ++passes;
+		// goto() awaits route resolution before asking, so the pass must outlive the call; the
+		// navigation uses it up, and this only clears it if `leave` never navigated.
+		setTimeout(() => {
+			if (pass === passes) confirmed = false;
+		}, 5000);
+		leave();
 	});
 }
 
@@ -69,7 +73,11 @@ export function leaveTo(leave: () => void): void {
  * the tab, typing an address) can only show the browser's own prompt, so it never asks here.
  */
 export function mustAskBeforeLeaving(to: URL | null, type: string, from: URL): boolean {
-	if (!registered || confirmed || type === 'leave' || !to) return false;
+	if (!registered || type === 'leave' || !to) return false;
+	if (confirmed) {
+		confirmed = false;
+		return false;
+	}
 	if (to.origin !== from.origin) return false;
 	if (to.pathname === from.pathname) return false;
 	return !registered.within(to);

@@ -58,4 +58,19 @@ describe('which navigations ask before leaving', () => {
 		expect(asked).toBe(false);
 		remove();
 	});
+
+	it('keeps the pass until the navigation asks, even after an await, and only once', async () => {
+		const from = at('/draw');
+		const remove = setLeaveGuard((leave) => leave());
+		let navigation: Promise<boolean> | undefined;
+		leaveTo(() => {
+			// Like goto(): resolves the route first, then runs beforeNavigate.
+			navigation = Promise.resolve()
+				.then(() => new Promise((done) => setTimeout(done)))
+				.then(() => mustAskBeforeLeaving(at('/'), 'goto', from));
+		});
+		expect(await navigation).toBe(false);
+		expect(mustAskBeforeLeaving(at('/'), 'goto', from)).toBe(true);
+		remove();
+	});
 });
