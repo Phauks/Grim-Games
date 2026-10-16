@@ -133,4 +133,16 @@ test('a "see …" link in the wiki wording opens that entry, with Back, and char
 	await expect(healthy.getByTestId('wiki-definition')).toHaveText('Sample wording for healthy.');
 	await healthy.getByRole('button', { name: 'Back to Poisoned' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Poisoned' })).toBeVisible();
+
+	// The character in the definition opens its details with its icon and the wiki button.
+	await page
+		.getByRole('dialog', { name: 'Poisoned' })
+		.locator('[data-character-id="poisoner"]')
+		.tap();
+	const details = page.getByRole('dialog', { name: 'Poisoner', exact: true });
+	const icon = details.locator('.summary .icon img');
+	await expect(icon).toBeVisible();
+	await expect(icon).toHaveAttribute('src', /poisoner_e\.webp$/);
+	expect(await icon.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+	await expect(details.getByRole('link', { name: 'Open wiki' })).toBeVisible();
 });

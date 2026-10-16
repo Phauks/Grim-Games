@@ -18,7 +18,7 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 	await expect(empath).toContainText('Each night, you learn how many of your 2 alive neighbors');
 	await empath.getByRole('button', { name: /Empath/ }).tap();
 	await expect(page.getByRole('dialog', { name: 'Empath' })).toBeVisible();
-	await expect(page.getByRole('link', { name: 'Open wiki entry' })).toHaveAttribute(
+	await expect(page.getByRole('link', { name: 'Open wiki' })).toHaveAttribute(
 		'href',
 		/wiki\.bloodontheclocktower\.com\/Empath/
 	);

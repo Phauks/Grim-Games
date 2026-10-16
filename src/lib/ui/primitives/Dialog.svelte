@@ -16,6 +16,8 @@
 		actions?: Snippet;
 		/** Shown before the title, e.g. a character badge for the seat a menu acts on. */
 		lead?: Snippet;
+		/** Extra icon buttons in the header, just before Close (e.g. "Open wiki"). */
+		headActions?: Snippet;
 	}
 
 	let {
@@ -26,7 +28,8 @@
 		size = 'normal',
 		children,
 		actions,
-		lead
+		lead,
+		headActions
 	}: Props = $props();
 </script>
 
@@ -38,6 +41,7 @@
 				<div class="head">
 					{#if lead}<span class="lead">{@render lead()}</span>{/if}
 					<Dialog.Title>{title}</Dialog.Title>
+					{#if headActions}<span class="head-actions">{@render headActions()}</span>{/if}
 					<Dialog.CloseTrigger aria-label="Close"><Icon name="close" /></Dialog.CloseTrigger>
 				</div>
 				{#if description}<Dialog.Description>{description}</Dialog.Description>{/if}
@@ -120,8 +124,13 @@
 		justify-content: space-between;
 		gap: var(--space-3);
 	}
-	.lead {
+	.lead,
+	.head-actions {
 		flex: none;
+	}
+	.head-actions {
+		display: flex;
+		align-items: center;
 	}
 	.head :global([data-part='title']) {
 		flex: 1;

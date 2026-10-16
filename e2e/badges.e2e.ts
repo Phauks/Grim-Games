@@ -18,7 +18,7 @@ test('tapping a character badge shows its ability and a wiki link', async ({ pag
 	const dialog = page.getByRole('dialog', { name: 'Witch' });
 	await expect(dialog).toBeVisible();
 	await expect(dialog).toContainText('Each night, choose a player');
-	await expect(dialog.getByRole('link', { name: 'Open wiki entry' })).toHaveAttribute(
+	await expect(dialog.getByRole('link', { name: 'Open wiki' })).toHaveAttribute(
 		'href',
 		'https://wiki.bloodontheclocktower.com/Witch'
 	);
@@ -53,6 +53,10 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 	await expect(wiki.getByRole('heading', { name: 'Summary' })).toBeVisible();
 	// The name is a badge, whose own markup spacing shows up in the text.
 	await expect(wiki).toContainText(/Sample page for\s+Witch\s*\./);
-	await expect(wiki.getByRole('heading', { name: 'How to Run' })).toBeVisible();
-	await expect(wiki.getByRole('listitem')).toHaveText('Sample step.');
+	// Only the Summary shows; the other sections are buttons that open on their own.
+	await expect(wiki.getByRole('heading', { name: 'How to Run' })).toHaveCount(0);
+	await expect(wiki).not.toContainText('Sample step.');
+	await wiki.getByRole('button', { name: 'How to Run' }).tap();
+	const section = page.getByRole('dialog', { name: 'Witch: How to Run' });
+	await expect(section.getByRole('listitem')).toHaveText('Sample step.');
 });
