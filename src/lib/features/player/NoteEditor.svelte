@@ -1,6 +1,7 @@
 <script lang="ts">
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
@@ -44,7 +45,8 @@
 					oninput={(event) => onChange({ text: event.currentTarget.value })}></textarea>
 			</label>
 			<div class="actions">
-				<Button variant="quiet" onclick={() => (confirming = true)}>Delete note</Button>
+				<!-- A red trash can (Trevor, 2026-10-16); still confirms first. -->
+				<IconButton icon="remove" label="Delete note" onclick={() => (confirming = true)} />
 			</div>
 		</div>
 	{/if}
@@ -99,5 +101,8 @@
 	.actions {
 		display: flex;
 		justify-content: flex-end;
+	}
+	.actions :global(.icon-button) {
+		color: var(--evil);
 	}
 </style>

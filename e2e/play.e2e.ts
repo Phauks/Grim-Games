@@ -30,6 +30,9 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 	await expect(jinxes).toHaveAttribute('aria-expanded', 'true');
 	await jinxes.tap();
 	await expect(page.getByTestId('no-jinxes')).toBeHidden();
+	// The * legend explains ability text, so it stays when Players closes (Trevor).
+	await page.getByRole('button', { name: 'Players', exact: true }).tap();
+	await expect(page.getByText('* Not the first night')).toBeVisible();
 	await page.getByRole('button', { name: 'Townsfolk', exact: true }).tap();
 	await expect(empath).toBeHidden();
 	await page.reload();
@@ -305,28 +308,15 @@ test('a shared /play link opens its script, and the script can be shared on', as
 	await expect(page.getByRole('heading', { name: 'Second Script', level: 1 })).toBeVisible();
 });
 
-test('a six-digit code loads its script on /play', async ({ page }) => {
+test('the header shares the script from an icon and has no Code button', async ({ page }) => {
 	const shared = [{ id: '_meta', name: 'Code Night' }, 'chef', 'empath', 'imp'];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await expect(page.getByRole('heading', { name: 'Code Night', level: 1 })).toBeVisible();
+	// Players are already in a script, so there is no code to enter here (Trevor, 2026-10-16).
+	await expect(page.getByRole('button', { name: 'Code', exact: true })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
-	const shown = qr.getByTestId('share-digits');
-	await expect(shown).toHaveText(/^\d{3} \d{3}$/);
-	const code = (await shown.textContent())!;
-
-	// Switch away, then come back with the code, as a player at the table would.
-	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
-	await page.goto('/play');
-	await expect(page.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
-	await page.getByRole('button', { name: 'Code', exact: true }).tap();
-	const entry = page.getByRole('dialog', { name: 'Have a code?' });
-	await entry.getByLabel('The 6-digit code').fill(code);
-	await entry.getByRole('button', { name: 'Load' }).tap();
-	await expect(page.getByRole('heading', { name: 'Code Night', level: 1 })).toBeVisible();
-	await expect(entry).toBeHidden();
-	await expect(page.locator('[data-character]')).toHaveCount(3);
+	await expect(qr.getByTestId('share-digits')).toHaveText(/^\d{3} \d{3}$/);
 });
 
 test('a shared link with problems opens the Script check first', async ({ page }) => {

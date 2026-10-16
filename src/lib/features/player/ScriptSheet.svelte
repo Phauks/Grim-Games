@@ -59,6 +59,8 @@
 			</ul>
 		</Collapsible>
 	{/each}
+	<!-- Explains the * in ability text, so it stays when any section is closed (Trevor). -->
+	<p class="legend">* Not the first night</p>
 
 	<Collapsible title="Jinxes" storageKey="play:jinxes">
 		{#if jinxes.length}
@@ -112,7 +114,6 @@
 				</tbody>
 			</table>
 		</div>
-		<p class="legend">* Not the first night</p>
 	</Collapsible>
 </div>
 

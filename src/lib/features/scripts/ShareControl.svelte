@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { ShareTarget } from './share-codes.ts';
 	import SharePanel from './SharePanel.svelte';
@@ -16,14 +17,25 @@
 		title: string;
 		/** Makes the link; undefined disables the control (nothing to share yet). */
 		target: (() => Promise<ShareTarget>) | undefined;
+		/** A share icon (labelled "Share {what}") instead of a text button, e.g. on /play. */
+		icon?: boolean;
 	}
 
-	let { what, title, target }: Props = $props();
+	let { what, title, target, icon = false }: Props = $props();
 	let open = $state(false);
 </script>
 
 <div class="share">
-	<Button onclick={() => (open = true)} disabled={!target}>Share {what}</Button>
+	{#if icon}
+		<IconButton
+			icon="share"
+			label="Share {what}"
+			onclick={() => (open = true)}
+			disabled={!target}
+		/>
+	{:else}
+		<Button onclick={() => (open = true)} disabled={!target}>Share {what}</Button>
+	{/if}
 </div>
 
 <Dialog bind:open title="Share {title}">

@@ -22,17 +22,10 @@
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
-	import { ScriptFetchError, type FetchedScript } from '#lib/features/scripts/fetch-script.ts';
+	import type { FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
-	import ShareCodeEntry from '#lib/features/scripts/ShareCodeEntry.svelte';
-	import {
-		fetchSharedCode,
-		fetchSharedRef,
-		shareTargetFor
-	} from '#lib/features/scripts/share-codes.ts';
+	import { fetchSharedRef, shareTargetFor } from '#lib/features/scripts/share-codes.ts';
 	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { NotebookState } from './notebook-store.svelte.ts';
@@ -106,32 +99,6 @@
 		}
 	}
 
-	// "Have a code?": the six-digit code from another phone's Share (08-script-loading.md §5.5).
-	let codeOpen = $state(false);
-	let codeText = $state('');
-	let codeBusy = $state(false);
-	let codeError = $state('');
-	function openCode() {
-		codeText = '';
-		codeError = '';
-		codeOpen = true;
-	}
-	async function loadCode() {
-		codeBusy = true;
-		codeError = '';
-		try {
-			const fetched = await fetchSharedCode(codeText);
-			codeOpen = false;
-			await useFetched(fetched);
-		} catch (e) {
-			// A code nobody has is expected; anything else is a bug worth logging.
-			if (!(e instanceof ScriptFetchError)) reportError(e, { area: 'play', notify: false });
-			codeError = errorMessage(e);
-		} finally {
-			codeBusy = false;
-		}
-	}
-
 	const script = $derived(data ? (currentScript.current ?? fallback) : undefined);
 
 	/** Makes the share link when Share or QR code is tapped (a short code for custom scripts). */
@@ -201,13 +168,12 @@
 <main>
 	<header>
 		<h1>{script?.name ?? 'Player view'}</h1>
-		<p class="author">{script?.meta.author ?? ' '}</p>
-		<!-- Players stay in their game: no Change script (Trevor, 2026-10-16). Another script
-		     loads only from a share link, QR code or code. A Room link will sit beside Share. -->
-		<div class="load">
-			<Button variant="quiet" onclick={openCode}>Code</Button>
-			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
+		<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
+		     Another script loads only from a share link or QR code. -->
+		<div class="share">
+			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} icon />
 		</div>
+		<p class="author">{script?.meta.author ?? ' '}</p>
 	</header>
 
 	{#if error}
@@ -266,18 +232,6 @@
 		}}
 	/>
 
-	<Dialog bind:open={codeOpen} title="Have a code?">
-		{#if codeOpen}
-			<ShareCodeEntry bind:value={codeText} disabled={codeBusy} onsubmit={() => loadCode()} />
-		{/if}
-		<p class="code-error" role="status">{codeError}</p>
-		{#snippet actions()}
-			<Button variant="accent" onclick={loadCode} disabled={codeBusy || codeText === ''}
-				>Load</Button
-			>
-		{/snippet}
-	</Dialog>
-
 	{#if notebook && script}
 		<ErrorBoundary area="play">
 			<SeatEditor
@@ -306,15 +260,16 @@
 		margin: 0 auto;
 		padding: var(--space-3) var(--space-3) var(--space-6);
 	}
+	/* Title and the share icon on one row, the author beneath. */
 	header {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		column-gap: var(--space-2);
 		margin-bottom: var(--space-2);
 	}
-	/* Code, Share and QR code, on their own row so a long script name never squeezes them. */
-	.load {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2) var(--space-3);
+	.author {
+		grid-column: 1 / -1;
 	}
 	h1 {
 		margin: 0;
@@ -326,13 +281,6 @@
 		margin: 0;
 		min-height: 1.4em;
 		color: var(--on-surface-muted);
-	}
-	.code-error {
-		/* Space kept for the message so the dialog never grows (no reflow). */
-		min-height: 3lh;
-		margin: var(--space-2) 0 0;
-		color: var(--evil);
-		overflow-wrap: anywhere;
 	}
 	.panel {
 		padding-top: var(--space-3);
