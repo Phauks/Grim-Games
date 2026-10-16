@@ -10,8 +10,11 @@
 		description?: string;
 		/** Use `alertdialog` for confirmations that interrupt the user. */
 		role?: 'dialog' | 'alertdialog';
-		/** `full` fills a phone screen and becomes a large panel on wider screens. */
-		size?: 'normal' | 'full';
+		/**
+		 * `full` fills a phone screen and becomes a large panel on wider screens; `max` fills
+		 * a phone screen and nearly all of a wider one (the day sheet, Trevor 2026-10-16).
+		 */
+		size?: 'normal' | 'full' | 'max';
 		children: Snippet;
 		actions?: Snippet;
 		/** Shown before the title, e.g. a character badge for the seat a menu acts on. */
@@ -86,11 +89,21 @@
 		max-height: none;
 		overflow: hidden;
 	}
+	:global([data-scope='dialog'][data-part='content'][data-size='max']) {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		height: 100%;
+		max-height: none;
+		overflow: hidden;
+	}
 	@media (max-width: 40rem) {
-		:global([data-scope='dialog'][data-part='positioner']:has([data-size='full'])) {
+		:global([data-scope='dialog'][data-part='positioner']:has([data-size='full'])),
+		:global([data-scope='dialog'][data-part='positioner']:has([data-size='max'])) {
 			padding: 0;
 		}
-		:global([data-scope='dialog'][data-part='content'][data-size='full']) {
+		:global([data-scope='dialog'][data-part='content'][data-size='full']),
+		:global([data-scope='dialog'][data-part='content'][data-size='max']) {
 			width: 100%;
 			height: 100%;
 			border: 0;

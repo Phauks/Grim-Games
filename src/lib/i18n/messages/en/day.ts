@@ -1,11 +1,6 @@
 /** The day screen (src/lib/features/day). */
 export const day = {
 	'day.title': 'Day',
-	'day.backToGrimoire': 'Grimoire',
-	'day.opening': 'Opening the game…',
-	'day.noSavedGame': 'There is no saved game here on this device.',
-	'day.tooNew':
-		'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.',
 	'day.newDay': 'New day',
 	'day.nightOrder': 'Night order',
 	'day.players': 'Players',

@@ -321,7 +321,8 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	await expect(page).toHaveURL(board);
 	await expect(page.locator('[data-tray] .view')).toHaveText('Setup');
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await expect(page).toHaveURL(`${board}/day`);
+	await expect(page.getByRole('dialog', { name: 'Day' })).toBeVisible();
+	await expect(page).toHaveURL(board);
 });
 
 test('a new game can use a custom script from the Scripts page', async ({ page }) => {

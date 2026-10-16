@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The day screen on a saved game (/grimoire/<id>/day): executions, exiles and deaths, all
+// The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
 
 async function startGame(page: Page) {
@@ -44,8 +44,10 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	page
 }) => {
 	const board = await startGame(page);
-	await page.goto(`${board}/day`);
-	await expect(page.getByRole('heading', { name: 'Day', exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: 'Day' });
+	await expect(day).toBeVisible();
+	await expect(page).toHaveURL(board);
 
 	// No nomination tracking, log, Undo or History here (Trevor, 2026-10-16).
 	await expect(page.getByRole('radiogroup', { name: 'Tapping a player' })).toHaveCount(0);
@@ -74,6 +76,7 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByTestId('died')).toContainText('Seat 2 died: Executed');
 
 	await page.reload();
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
 	// 7 of 8 alive: 4 votes put a player on the block.
 	await expect(page.getByTestId('votes-needed')).toContainText(
@@ -87,8 +90,9 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await revive.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(revive).toBeHidden();
 
-	await page.getByRole('link', { name: 'Grimoire' }).tap();
-	await expect(page).toHaveURL(new RegExp(`${board}$`));
+	// Closing the sheet shows the board behind it, already updated.
+	await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Day' })).toBeHidden();
 	await expect(
 		page.getByRole('button', { name: /^Seat 2: no name, no character, dead/ })
 	).toBeAttached();
@@ -97,7 +101,10 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {
 	const board = await startGame(page);
 	await addThief(page);
+	// The old day link opens the day sheet over the board.
 	await page.goto(`${board}/day`);
+	await expect(page).toHaveURL(board);
+	await expect(page.getByRole('dialog', { name: 'Day' })).toBeVisible();
 
 	await seat(page, 'Seat 9').tap();
 	const thief = page.getByRole('dialog', { name: 'How did Seat 9 die?' });

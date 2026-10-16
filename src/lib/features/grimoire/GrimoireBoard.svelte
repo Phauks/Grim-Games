@@ -55,6 +55,8 @@
 	import SharePanel from '#lib/features/scripts/SharePanel.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import NightOrderSheet from './NightOrderSheet.svelte';
+	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
@@ -391,6 +393,11 @@
 	}
 	// The setup flow's last step lands here with its setup reminders in the bank.
 	onMount(() => {
+		if (location.hash === DAY_HASH) {
+			dayOpen = true;
+			replaceState(resolve('/grimoire/[gameId]', { gameId: game.gameId }), {});
+			return;
+		}
 		if (location.hash !== REMINDERS_HASH) return;
 		startTray();
 		replaceState(resolve('/grimoire/[gameId]', { gameId: game.gameId }), {});
@@ -409,6 +416,8 @@
 	// update (Trevor, 2026-10-16), from what this device saved.
 	const saved = untrack(() => grimoire.nightView);
 	let nightOpen = $state(saved.sheet === true);
+	/** The day sheet; the old /day route lands here with `#day` to open it. */
+	let dayOpen = $state(false);
 	// ── Assisted night order (Trevor, 2026-10-16) ──
 	let guided = $state<{ step: NightStep; night: Night } | undefined>();
 	let guideOpen = $state(false);
@@ -561,11 +570,7 @@
 				aria-label="Night order"
 				onclick={() => (nightOpen = true)}><span class="tool-label">Night order</span></Button
 			>
-			<Button
-				variant="quiet"
-				icon="day"
-				aria-label="Day"
-				onclick={() => goto(resolve('/grimoire/[gameId]/day', { gameId: game.gameId }))}
+			<Button variant="quiet" icon="day" aria-label="Day" onclick={() => (dayOpen = true)}
 				><span class="tool-label">Day</span></Button
 			>
 			<Button variant="quiet" icon="info" aria-label="Info tokens" onclick={() => (infoOpen = true)}
@@ -890,6 +895,8 @@
 		<SharePanel title={game.script.meta?.name ?? 'Custom script'} target={shareTarget} />
 	{/if}
 </Dialog>
+
+<DaySheet bind:open={dayOpen} game={grimoire.open} />
 
 <NightOrderSheet
 	bind:open={nightOpen}
