@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
-	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 
 	interface Props {
 		/** Ask before leaving while this is true. */
@@ -34,7 +32,6 @@
 	}
 
 	function leave() {
-		open = false;
 		pending?.();
 		pending = undefined;
 	}
@@ -46,10 +43,6 @@
 	Asks before leaving a page whose work a stray tap would interrupt (Trevor, 2026-10-16: the
 	bag draw).
 -->
-<Dialog bind:open role="alertdialog" {title}>
+<ConfirmDialog bind:open {title} onConfirm={leave}>
 	<p>{body}</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (open = false)}>{t('common.cancel')}</Button>
-		<Button variant="accent" onclick={leave}>{t('common.confirm')}</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
