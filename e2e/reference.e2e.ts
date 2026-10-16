@@ -152,7 +152,12 @@ test('the Witch row shows the same values as the Witch card', async ({ page }) =
 	const row = page.getByTestId('character-table').locator('tr[data-character="witch"]');
 	await built(row);
 	expect(await read(row)).toEqual(fromCard);
-	await expect(row.locator('[data-field="icons"] img')).toHaveCount(2);
+	// The table shows the token (with its icon), not the icon pair (Trevor, 2026-10-16).
+	await expect(row.locator('[data-field="token"] .token')).toBeVisible();
+	await expect(row.locator('[data-field="icons"]')).toHaveCount(0);
+	await expect(
+		page.getByTestId('character-table').getByRole('columnheader', { name: /Icons/ })
+	).toHaveCount(0);
 });
 
 test('each :reminder: shows the token it means, and reviewed night text replaces TPI’s', async ({

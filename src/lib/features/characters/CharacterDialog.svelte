@@ -174,10 +174,13 @@
 			<section class="wiki-page" data-testid="jinx-section" aria-label={t('characters.jinxes')}>
 				<h3>{t('characters.jinxes')}</h3>
 				{#each jinxes as jinx (jinx.characters.join())}
+					<!-- The other character as a text-size badge across the section, the jinx indented
+					     under it, as on the Reference card (Trevor, 2026-10-16). -->
 					<div class="jinx">
-						<span class="pair"
-							><CharacterBadge characterId={jinx.characters[0]} inline /><CharacterBadge
-								characterId={jinx.characters[1]}
+						<span class="jinx-bar"
+							><CharacterBadge
+								characterId={jinx.characters.find((id) => id !== character.id) ??
+									jinx.characters[1]}
 								inline
 							/></span
 						>
@@ -289,10 +292,15 @@
 		padding: var(--space-2) 0;
 		border-bottom: var(--card-border);
 	}
-	.jinx .pair {
+	.jinx-bar :global(.badge) {
 		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
+		width: 100%;
+	}
+	.jinx p {
+		padding-inline-start: var(--space-3);
+	}
+	.jinx-bar {
+		display: block;
 		margin-bottom: var(--space-1);
 	}
 	.jinx p {

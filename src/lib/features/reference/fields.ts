@@ -50,13 +50,13 @@ export interface ReferenceField {
 }
 
 const FIELDS: readonly Omit<ReferenceField, 'label'>[] = [
-	// The table's name badge already shows the icon, so its row spends no space on a token
-	// preview (Trevor, 2026-10-16).
-	{ id: 'token', card: 'header', cardOnly: true },
+	{ id: 'token', card: 'header' },
 	{ id: 'name', card: 'header', sort: 'name', filter: 'text' },
 	{ id: 'type', card: 'header', sort: 'type', filter: 'types' },
 	{ id: 'edition', card: 'header', sort: 'edition' },
-	{ id: 'icons', card: 'header' },
+	// The table's token column already shows the icon, so it spends no space on the icon pair
+	// (Trevor, 2026-10-16).
+	{ id: 'icons', card: 'header', cardOnly: true },
 	{
 		id: 'alignment',
 		card: 'inline',

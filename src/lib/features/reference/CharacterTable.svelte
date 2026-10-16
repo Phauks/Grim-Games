@@ -32,8 +32,8 @@
 	/** Fixed widths (in --u): layout never depends on which rows are drawn, so nothing reflows. */
 	const WIDTHS: Record<FieldId, number> = {
 		token: 5,
-		// Wide enough for the longest name badge (Deus ex Fiasco, Hell's Librarian).
-		name: 14,
+		// Plain text: wide enough for the longest names (Deus ex Fiasco, Hell's Librarian).
+		name: 10,
 		type: 9.5,
 		edition: 9,
 		icons: 6.5,
@@ -79,7 +79,8 @@
 			sortable: field.sort !== undefined,
 			filterable: field.filter !== undefined,
 			filtered: filterSet(field),
-			rowHeader: field.id === 'name'
+			rowHeader: field.id === 'name',
+			stackHead: field.id === 'token'
 		}))
 	);
 

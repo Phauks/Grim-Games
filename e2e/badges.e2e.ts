@@ -139,7 +139,7 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 	await expect(dialog.locator('.character')).toBeInViewport();
 });
 
-test('the Jinxes section lists every TPI jinx with both characters', async ({ page }) => {
+test('the Jinxes section lists every TPI jinx under the other character', async ({ page }) => {
 	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
 		route.fulfill({ json: { parse: { text: '<h2>Summary</h2><p>Sample.</p>' } } })
 	);
@@ -153,8 +153,13 @@ test('the Jinxes section lists every TPI jinx with both characters', async ({ pa
 	const sections = dialog.getByRole('navigation', { name: 'More from the wiki' });
 	await sections.getByRole('button', { name: 'Jinxes' }).tap();
 	const jinxes = dialog.getByTestId('jinx-section');
-	await expect(jinxes.locator('[data-character-id="boffin"]').first()).toBeVisible();
-	await expect(
-		jinxes.locator('.jinx .pair').first().locator('[data-character-id="alchemist"]')
-	).toBeVisible();
+	// Each jinx is headed by the other character's text-size badge, across the section, with
+	// the jinx indented under it (Trevor, 2026-10-16).
+	const bar = jinxes.locator('.jinx-bar').first().locator('.badge');
+	await expect(bar).toHaveAttribute('data-character-id', 'boffin');
+	await expect(bar).toHaveClass(/inline/);
+	const barBox = (await bar.boundingBox())!;
+	const sectionBox = (await jinxes.locator('.jinx').first().boundingBox())!;
+	expect(barBox.width).toBeGreaterThan(sectionBox.width - 2);
+	await expect(jinxes.locator('.jinx p').first()).not.toHaveCSS('padding-inline-start', '0px');
 });

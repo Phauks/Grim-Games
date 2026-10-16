@@ -151,9 +151,10 @@
 		{#if entry.jinxes.length}
 			<ul class="list">
 				{#each entry.jinxes as jinx (jinx.with)}
-					<li>
-						<CharacterBadge characterId={jinx.with} />
-						<span class="small"><GlossaryText text={jinx.reason} /></span>
+					<!-- The text-size badge as a bar across, the jinx indented under it (Trevor, 2026-10-16). -->
+					<li class="jinx">
+						<span class="jinx-bar"><CharacterBadge characterId={jinx.with} inline /></span>
+						<span class="small jinx-reason"><GlossaryText text={jinx.reason} /></span>
 					</li>
 				{/each}
 			</ul>
@@ -294,6 +295,17 @@
 	.list li {
 		display: grid;
 		justify-items: start;
+	}
+	.list li.jinx {
+		justify-items: stretch;
+		gap: var(--space-1);
+	}
+	.jinx-bar :global(.badge) {
+		display: flex;
+		width: 100%;
+	}
+	.jinx-reason {
+		padding-inline-start: var(--space-3);
 	}
 	.none-row {
 		display: inline-flex;
