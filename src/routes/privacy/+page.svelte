@@ -167,9 +167,13 @@
 	}
 	.sections {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--measure)), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(28 * var(--u))), 1fr));
 		gap: 0 var(--space-6);
 		align-items: start;
+	}
+	/* However wide a column gets, lines stay readable. */
+	section {
+		max-width: var(--measure);
 	}
 	h1 {
 		margin-top: 0;
