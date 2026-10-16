@@ -632,6 +632,66 @@ export const DAY_REMINDER_ENTRIES: readonly DayReminderEntry[] = [
 ];
 
 /**
+ * Registration interactions to watch by day (Trevor, 2026-10-16: "if the Spy is alive, it
+ * can register as good, which means it can trigger the Virgin"). Each shows while both
+ * characters are in play and alive, the registering character's ability works, and the
+ * other's ability is unused (`otherNoReminder`). The line reads
+ * "[registrant] {text} [other]". Our own short words; `wiki` cites both pages.
+ */
+export interface DayInteraction {
+	/** The character who may register falsely (the Spy, the Recluse). */
+	registrant: CharacterId;
+	/** The character whose ability that registration can set off or block. */
+	other: CharacterId;
+	group: DayGroup;
+	text: string;
+	/** Only while this reminder of `other` is on no player ("No Ability": unused). */
+	otherNoReminder?: string;
+	wiki: readonly string[];
+}
+
+export const DAY_INTERACTIONS: readonly DayInteraction[] = [
+	{
+		registrant: 'spy',
+		other: 'virgin',
+		group: 'nomination',
+		text: 'may register as a Townsfolk if they nominate',
+		otherNoReminder: 'No Ability',
+		wiki: [`${W}Spy`, `${W}Virgin`]
+	},
+	{
+		registrant: 'spy',
+		other: 'towncrier',
+		group: 'nomination',
+		text: 'may register as not a Minion when nominating, for',
+		wiki: [`${W}Spy`, `${W}Town_Crier`]
+	},
+	{
+		registrant: 'recluse',
+		other: 'slayer',
+		group: 'day-ability',
+		text: 'may register as the Demon if shot by',
+		otherNoReminder: 'No Ability',
+		wiki: [`${W}Recluse`, `${W}Slayer`]
+	},
+	{
+		registrant: 'recluse',
+		other: 'golem',
+		group: 'nomination',
+		text: 'may register as the Demon if nominated by',
+		otherNoReminder: 'May Not Nominate',
+		wiki: [`${W}Recluse`, `${W}Golem`]
+	},
+	{
+		registrant: 'recluse',
+		other: 'towncrier',
+		group: 'nomination',
+		text: 'may register as a Minion when nominating, for',
+		wiki: [`${W}Recluse`, `${W}Town_Crier`]
+	}
+];
+
+/**
  * Official characters deliberately left out, each with a few-word reason: their abilities
  * act at night or at setup, or only change information given at night.
  */

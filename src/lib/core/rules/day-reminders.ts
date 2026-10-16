@@ -17,17 +17,26 @@ import { abilityState, impairmentOfLabel, type AbilityState, type Impairment } f
 import {
 	DAY_GROUP_TITLES,
 	DAY_GROUPS,
+	DAY_INTERACTIONS,
 	DAY_REMINDER_ENTRIES,
 	NO_DAY_RELEVANCE,
 	type DayCondition,
 	type DayGroup,
+	type DayInteraction,
 	type DayReminderEntry,
 	type DayReminderSpec,
 	type DeathCauseMatch
 } from './day-reminders.data.ts';
 
-export { DAY_GROUP_TITLES, DAY_GROUPS, DAY_REMINDER_ENTRIES, NO_DAY_RELEVANCE };
-export type { DayCondition, DayGroup, DayReminderEntry, DayReminderSpec, DeathCauseMatch };
+export { DAY_GROUP_TITLES, DAY_GROUPS, DAY_INTERACTIONS, DAY_REMINDER_ENTRIES, NO_DAY_RELEVANCE };
+export type {
+	DayCondition,
+	DayGroup,
+	DayInteraction,
+	DayReminderEntry,
+	DayReminderSpec,
+	DeathCauseMatch
+};
 
 /** Defined with the model's `Seat`; re-exported here for existing imports. */
 export type { DeathCause };
@@ -460,6 +469,37 @@ export function applyDayOverrides(
 	return { shown, hidden };
 }
 
+/** Registration interactions (`DAY_INTERACTIONS`) between living characters in play. */
+function interactions(state: DayState): DayReminder[] {
+	const out: DayReminder[] = [];
+	const living = (id: CharacterId) => state.seats.filter((s) => s.characterId === id && !s.dead);
+	DAY_INTERACTIONS.forEach((rule: DayInteraction, index) => {
+		const others = living(rule.other);
+		if (others.length === 0) return;
+		if (rule.otherNoReminder && carriers(state, rule.other, rule.otherNoReminder).length > 0) {
+			return;
+		}
+		for (const registrant of living(rule.registrant)) {
+			if (seatImpairments(state, registrant).length > 0) continue;
+			for (const other of others) {
+				out.push({
+					key: `interaction#${index}@${registrant.seatId}>${other.seatId}`,
+					characterId: rule.registrant,
+					group: rule.group,
+					segments: [
+						{ kind: 'character', ref: refFor(registrant, rule.registrant) },
+						{ kind: 'text', text: rule.text },
+						{ kind: 'character', ref: refFor(other, rule.other) }
+					],
+					autoDetected: false,
+					wiki: rule.wiki[0]
+				});
+			}
+		}
+	});
+	return out;
+}
+
 /** Reminders for the coming day, grouped in `DAY_GROUPS` order; empty groups left out. */
 export function dayReminders(state: DayState): DayReminders {
 	const alive = state.seats.filter((s) => !s.dead).length;
@@ -485,6 +525,7 @@ export function dayReminders(state: DayState): DayReminders {
 	};
 	for (const seat of state.seats) if (seat.characterId) visit(seat.characterId, seat);
 	for (const id of state.ruleCharacters ?? []) visit(id, undefined);
+	all.push(...interactions(state));
 	const { shown, hidden } = applyDayOverrides(all, state.overrides ?? [], state);
 	const groups = DAY_GROUPS.map((group) => ({
 		group,

@@ -388,3 +388,35 @@ describe('Pixie', () => {
 		expect(texts({ seats: [pixie, { ...mad, dead: true }] })).toEqual([]);
 	});
 });
+
+describe('registration interactions', () => {
+	it('the living Spy may register as a Townsfolk for the Virgin (https://wiki.bloodontheclocktower.com/Spy, /Virgin)', () => {
+		const lines = texts({ seats: [seat('spy'), seat('virgin', { playerName: 'Vi' })] });
+		expect(lines).toContain('[Spy] may register as a Townsfolk if they nominate [Virgin · Vi]');
+	});
+
+	it('not once the Virgin’s ability is used, the Spy is dead or poisoned', () => {
+		const used = texts({
+			seats: [seat('spy'), seat('virgin', { reminders: [token('virgin', 'No Ability')] })]
+		});
+		expect(used.some((l) => l.startsWith('[Spy] may register'))).toBe(false);
+		const dead = texts({ seats: [seat('spy', { dead: true }), seat('virgin')] });
+		expect(dead.some((l) => l.startsWith('[Spy] may register'))).toBe(false);
+		const poisoned = texts({
+			seats: [seat('spy', { reminders: [token('poisoner', 'Poisoned')] }), seat('virgin')]
+		});
+		expect(poisoned.some((l) => l.startsWith('[Spy] may register'))).toBe(false);
+	});
+
+	it('the Recluse may register as the Demon for the Slayer and the Golem (https://wiki.bloodontheclocktower.com/Recluse, /Slayer, /Golem)', () => {
+		const lines = texts({ seats: [seat('recluse'), seat('slayer'), seat('golem')] });
+		expect(lines).toContain('[Recluse] may register as the Demon if shot by [Slayer]');
+		expect(lines).toContain('[Recluse] may register as the Demon if nominated by [Golem]');
+	});
+
+	it('nominations for the Town Crier (https://wiki.bloodontheclocktower.com/Town_Crier)', () => {
+		const lines = texts({ seats: [seat('recluse'), seat('spy'), seat('towncrier')] });
+		expect(lines).toContain('[Recluse] may register as a Minion when nominating, for [Town Crier]');
+		expect(lines).toContain('[Spy] may register as not a Minion when nominating, for [Town Crier]');
+	});
+});
