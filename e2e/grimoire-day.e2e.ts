@@ -23,6 +23,7 @@ async function addThief(page: Page) {
 		.getByRole('button', { name: 'Add seat' })
 		.tap();
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await page.getByRole('button', { name: /^Seat 9:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page

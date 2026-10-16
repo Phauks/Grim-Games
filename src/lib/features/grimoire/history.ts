@@ -303,3 +303,12 @@ export function seatChanges(
 	}
 	return out;
 }
+
+/** The characters an entry names: a seat's character, a reminder's source or a change. */
+export function itemCharacters(item: HistoryItem): CharacterId[] {
+	return [
+		...new Set(
+			item.parts.flatMap((p) => ('characterId' in p && p.characterId ? [p.characterId] : []))
+		)
+	];
+}

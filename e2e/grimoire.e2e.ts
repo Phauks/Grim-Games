@@ -185,7 +185,8 @@ test('history, add seat and remove', async ({ page }) => {
 	await page.getByRole('button', { name: 'Place between Seat 2 and Seat 3' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 	await expect(page.getByRole('button', { name: /^Place between/ })).toHaveCount(0);
-	await closeSheet(page);
+	// The new seat just appears; nothing opens by itself (Trevor, 2026-10-16).
+	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toHaveCount(0);
 
 	// History lists the change; going back to before it asks first.
 	await menu(page, 'History');
@@ -249,6 +250,7 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
 	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
 		.getByRole('button', { name: 'Choose' })
@@ -549,6 +551,19 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
 		/Drunk moved from\s+Sailor.* to Seat 3/
 	);
+	// Filtered by a character (Trevor, 2026-10-16): only entries naming the Sailor.
+	const history = page.getByRole('dialog', { name: 'History' });
+	const filter = history.getByRole('group', { name: 'Show changes for' });
+	await filter.getByRole('button', { name: 'Sailor' }).tap();
+	await expect(filter.getByRole('button', { name: 'All' })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
+	await expect(history.locator('.history > li')).not.toHaveCount(0);
+	for (const text of await history.locator('.history > li .text').allTextContents())
+		expect(text).toMatch(/Sailor/);
+	await filter.getByRole('button', { name: 'All' }).tap();
+	await expect(history).toContainText('New game:');
 	await page.keyboard.press('Escape');
 
 	// A tap opens the seat it is on.
@@ -606,6 +621,7 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
 	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
 		.getByRole('button', { name: 'Choose' })
@@ -860,7 +876,11 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	// TPI's data gives the Shabaloth two "Dead" tokens: each is its own chip.
 	await expect(shabaloth.getByRole('button', { name: /^Dead, copy/ })).toHaveCount(2);
 	await shabaloth.getByRole('button', { name: 'Dead, copy 1 of 2' }).tap();
-	await expect(shabaloth.getByRole('button', { name: 'Dead, copy 2 of 2' })).toBeDisabled();
+	// The placed copy shows as on this seat: tapping it again would take it off.
+	await expect(shabaloth.getByRole('button', { name: 'Dead, copy 2 of 2' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 	await expect(shabaloth.getByRole('button', { name: 'Dead, copy 1 of 2' })).toBeEnabled();
 	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
@@ -1032,6 +1052,7 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	await startGame(page);
 	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await openSeat(page, 9);
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	const picker = page.getByRole('dialog', { name: 'Character for Seat 9' });

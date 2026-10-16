@@ -717,11 +717,8 @@
 			icon="add"
 			onclick={() =>
 				fromMenu(() =>
-					// The new seat opens, to choose its character or a Traveller (Trevor, 2026-10-16).
-					startPlacing((position) => {
-						const id = grimoire.addSeat(position);
-						if (id) openSeat(id);
-					})
+					// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
+					startPlacing((position) => void grimoire.addSeat(position))
 				)}
 		>
 			Add seat
@@ -731,9 +728,6 @@
 		</Button>
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
 			Demon bluffs
-		</Button>
-		<Button variant="quiet" icon="reminder" onclick={() => fromMenu(startTray)}>
-			Setup reminders
 		</Button>
 		<Button
 			variant="quiet"

@@ -4,7 +4,9 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { historyItems, type HistoryItem, type HistoryPart } from './history.ts';
+	import { historyItems, itemCharacters, type HistoryItem, type HistoryPart } from './history.ts';
+	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 
 	interface Props {
 		open: boolean;
@@ -19,6 +21,21 @@
 	const items = $derived(
 		open ? historyItems(grimoire.open.session.log.entries, cursor, characters) : []
 	);
+	// ── Filter by character (Trevor, 2026-10-16): any of those chosen, in a fixed row ──
+	let chosenIds = $state<CharacterId[]>([]);
+	$effect(() => {
+		if (!open) chosenIds = [];
+	});
+	/** Every character History names, in the order they first appear. */
+	const named = $derived([...new Set([...items].reverse().flatMap(itemCharacters))]);
+	const shown = $derived(
+		chosenIds.length === 0
+			? items
+			: items.filter((item) => itemCharacters(item).some((id) => chosenIds.includes(id)))
+	);
+	function toggleFilter(id: CharacterId) {
+		chosenIds = chosenIds.includes(id) ? chosenIds.filter((c) => c !== id) : [...chosenIds, id];
+	}
 	const time = new Intl.DateTimeFormat(undefined, { timeStyle: 'short' });
 
 	/** The entry the Storyteller tapped, and where the game would go. */
@@ -56,14 +73,31 @@
 			>{/if}{/each}
 {/snippet}
 
-<Dialog
-	bind:open
-	title="History"
-	description="Newest first. Restore takes the game back to just before a change."
-	size="full"
->
+<Dialog bind:open title="History" size="full">
+	<div class="filter" role="group" aria-label="Show changes for">
+		<button
+			type="button"
+			class="all"
+			aria-pressed={chosenIds.length === 0}
+			onclick={() => (chosenIds = [])}>All</button
+		>
+		{#each named as id (id)}
+			{@const character = characters.get(id)}
+			{#if character}
+				<button
+					type="button"
+					class="who"
+					aria-label={character.name}
+					aria-pressed={chosenIds.includes(id)}
+					onclick={() => toggleFilter(id)}
+				>
+					<CharacterToken {character} size={36} />
+				</button>
+			{/if}
+		{/each}
+	</div>
 	<ol class="history">
-		{#each items as item (item.cursor)}
+		{#each shown as item (item.cursor)}
 			<li class:undone={item.undone} class:now={item.cursor === cursor}>
 				<span class="text">{@render line(item.parts)}</span>
 				<span class="when">
@@ -73,6 +107,8 @@
 					<Button variant="quiet" onclick={() => choose(item)}>Restore</Button>
 				{/if}
 			</li>
+		{:else}
+			<li class="none">None</li>
 		{/each}
 	</ol>
 </Dialog>
@@ -100,6 +136,42 @@
 </Dialog>
 
 <style>
+	/* One fixed row, scrolled sideways, so filtering never moves the list (Trevor). */
+	.filter {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		flex: none;
+		height: calc(var(--tap-target) + var(--space-2));
+		overflow-x: auto;
+		scrollbar-width: none;
+		border-bottom: 1px solid var(--border);
+	}
+	.filter button {
+		flex: none;
+		display: grid;
+		place-items: center;
+		min-width: var(--tap-target);
+		height: var(--tap-target);
+		padding: 0 var(--space-2);
+		border: 1px solid transparent;
+		border-radius: var(--radius-full);
+		background: none;
+		color: inherit;
+		font: 600 0.85rem var(--font-control);
+		cursor: pointer;
+	}
+	.filter .who {
+		padding: 0;
+	}
+	.filter button[aria-pressed='true'] {
+		border-color: var(--accent);
+		background: var(--surface-selected);
+	}
+	.none {
+		display: block;
+		color: var(--on-surface-muted);
+	}
 	.history {
 		flex: 1;
 		min-height: 0;
