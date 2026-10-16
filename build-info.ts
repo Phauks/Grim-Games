@@ -29,3 +29,20 @@ export function readBuildInfo(env: NodeJS.ProcessEnv = process.env): BuildInfo {
 	const channel = env.WORKERS_CI ? (branch === 'main' ? 'production' : 'preview') : 'local';
 	return { version: pkg.version, commit, branch, builtAt: new Date().toISOString(), channel };
 }
+
+/** How many recent commits each build lists in `/build-notes.json` for the update prompt. */
+const NOTE_COMMITS = 100;
+
+/**
+ * Recent commit subjects, newest first, for the update prompt's "What changed" list
+ * (src/lib/features/about/update-notes.ts). Empty when git history is unavailable.
+ */
+export function readCommits(limit = NOTE_COMMITS): { sha: string; subject: string }[] {
+	return git(`log -n ${limit} --format=%H%x1f%s`)
+		.split('\n')
+		.filter(Boolean)
+		.map((line) => {
+			const [sha, subject = ''] = line.split('\x1f');
+			return { sha, subject };
+		});
+}

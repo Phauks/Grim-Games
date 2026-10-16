@@ -3,7 +3,8 @@ import { playwright } from '@vitest/browser-playwright';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import Icons from 'unplugin-icons/vite';
-import { readBuildInfo } from './build-info.ts';
+import type { Plugin } from 'vite';
+import { readBuildInfo, readCommits } from './build-info.ts';
 
 // Lets sandboxes with a preinstalled Chromium skip `playwright install`.
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
@@ -14,6 +15,30 @@ const buildInfo = readBuildInfo();
 // boot-failure screen can show it (%sveltekit.version%) without the app bundle; the service
 // worker's cache name and `version` from $app/env change with every build, as before.
 const buildLine = `v${buildInfo.version} · ${buildInfo.commit.slice(0, 7)} · ${buildInfo.branch} · ${buildInfo.channel} · built ${buildInfo.builtAt}`;
+
+/**
+ * Publishes `/build-notes.json` with the build's recent commits, which an older build's
+ * update prompt fetches to show what changed (src/lib/features/about/update-notes.ts).
+ * It is not in the service worker's precache, so the prompt always reaches the network.
+ */
+function buildNotes(): Plugin {
+	let ssr = false;
+	return {
+		name: 'grim-games-build-notes',
+		apply: 'build',
+		configResolved(config) {
+			ssr = !!config.build.ssr;
+		},
+		generateBundle() {
+			if (ssr) return;
+			this.emitFile({
+				type: 'asset',
+				fileName: 'build-notes.json',
+				source: JSON.stringify({ commit: buildInfo.commit, commits: readCommits() })
+			});
+		}
+	};
+}
 
 const rulesTests = ['src/lib/core/abilities/**/*.test.ts', 'src/lib/core/jinxes/**/*.test.ts'];
 
@@ -35,7 +60,8 @@ export default defineConfig({
 		}),
 		// Compiles `~icons/<set>/<name>` imports into Svelte components at build time, so icons
 		// are bundled and work offline (src/lib/ui/icons, scripts/generate-icons.ts).
-		Icons({ compiler: 'svelte' })
+		Icons({ compiler: 'svelte' }),
+		buildNotes()
 	],
 	test: {
 		expect: { requireAssertions: true },
