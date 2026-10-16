@@ -856,3 +856,53 @@ test('info tokens open from the toolbar and name the seats', async ({ page }) =>
 	await expect(shown.getByRole('heading')).toHaveText('This is the Demon');
 	await expect(shown.getByRole('list', { name: 'Players' })).toHaveText('Sam');
 });
+
+test('a night step is filled in with help, and the night can be walked through', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+
+	// Tap a step: TPI's text, its reminder placed on a chosen seat, then Done ticks it.
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Guide: Poisoner' }).tap();
+	const guide = page.getByRole('dialog', { name: 'Poisoner' });
+	await expect(guide).toContainText('Seat 1');
+	await expect(guide).toContainText('Not placed');
+	await guide.getByRole('button', { name: 'Place' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Put Poisoned on' })
+		.getByRole('button', { name: /Seat 2 Empath/ })
+		.tap();
+	await expect(guide).toContainText('On Seat 2');
+	await guide.getByRole('button', { name: 'Done' }).tap();
+	await expect(seatLabelled(page, 'Seat 2: no name, Empath, 1 reminder')).toBeAttached();
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	const order = page.getByRole('dialog', { name: 'Night order' });
+	await expect(order.getByRole('button', { name: 'Done: Poisoner' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+
+	// Walk through: one step at a time under the board, with Previous and Next.
+	await order.getByRole('button', { name: 'Walk through' }).tap();
+	const strip = page.getByTestId('night-strip');
+	await expect(strip).toContainText(/^.*1 of \d+/);
+	await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip).toContainText(/2 of \d+/);
+	await strip.getByRole('button', { name: 'Previous step' }).tap();
+	await expect(strip).toContainText(/1 of \d+/);
+	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
+	await expect(strip).toHaveCount(0);
+});

@@ -1,101 +1,81 @@
 <script lang="ts">
-	import {
-		isSeatable,
-		type Alignment,
-		type Character,
-		type NightMarker
-	} from '#lib/core/data/index.ts';
-	import {
-		MARKER_TEXT,
-		nightOrder,
-		TRAVELLER_ALIGNMENT_STEP,
-		withTravellerAlignmentStep,
-		type Night,
-		type NightStep
-	} from '#lib/core/rules/index.ts';
+	import type { Alignment } from '#lib/core/data/index.ts';
+	import { TRAVELLER_ALIGNMENT_STEP, type Night, type NightStep } from '#lib/core/rules/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import {
+		boardNightSteps,
+		doneKey as keyFor,
+		MARKER_ICONS,
+		seatName as nameOf,
+		stepHolders,
+		stepName,
+		tonight
+	} from './night-steps.ts';
 
 	/**
 	 * The night order for this game: the characters in play that wake tonight, in order,
 	 * with TPI's night text. Each row is the character's icon (two lines tall), its name and
-	 * who has it on the first line, and what happens beneath. Nothing is automatic: the
-	 * Storyteller ticks steps off by hand; a new day starts with no ticks.
+	 * who has it on the first line, and what happens beneath. The Storyteller ticks steps off
+	 * by hand; a new day starts with no ticks. With "Guide night steps" on, tapping a step
+	 * opens it to be filled in; with "Walk me through the night" on, the night can be walked
+	 * through one step at a time under the board.
 	 */
 	interface Props {
 		open: boolean;
 		grimoire: Grimoire;
+		onGuide: (step: NightStep, night: Night) => void;
+		onWalk: (night: Night) => void;
 	}
 
-	let { open = $bindable(), grimoire }: Props = $props();
+	let { open = $bindable(), grimoire, onGuide, onWalk }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	let night = $state<Night>('first');
+	// Opens on tonight's list.
+	$effect(() => {
+		if (open) night = tonight(game);
+	});
+	const assistance = $derived(preferences.current.assistance);
 
 	const steps = $derived.by((): NightStep[] => {
 		const data = officialData.current;
 		if (!data || !open) return [];
-		// Players wake by the token they hold (a Drunk wakes as their Townsfolk).
-		const inPlay: Character[] = [];
-		for (const id of [
-			...game.seating.map((s) => game.seats[s].characterId),
-			...game.ruleCharacters
-		]) {
-			const c = id ? characters.get(id) : undefined;
-			if (c) inPlay.push(c);
-		}
-		const { steps } = nightOrder({
-			night,
-			sheet: data.nightSheet,
-			inPlay,
-			players: inPlay.filter((c) => isSeatable(c.type) && c.type !== 'traveller').length,
-			customOrder: night === 'first' ? game.script.meta?.firstNight : game.script.meta?.otherNight,
-			overrides: game.nightOrderOverrides
-		});
-		// A first step to choose any Traveller's alignment that is still unset.
-		return withTravellerAlignmentStep(steps, game, characters);
+		return boardNightSteps(game, characters, night, data);
 	});
 
 	function setAlignment(seatId: string, alignment: Alignment) {
 		grimoire.run({ type: 'SetAlignment', seatId, alignment });
 	}
 
-	/** Who holds a step's character, for "Empath · Sam". */
-	function holders(step: NightStep) {
-		return game.seating.filter((s) => game.seats[s].characterId === step.character?.id);
-	}
-	const seatName = (seatId: string) =>
-		game.seats[seatId].playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
-
-	function stepName(step: NightStep): string {
-		if (step.kind === 'marker') return MARKER_TEXT[step.id as NightMarker].name;
-		return step.title ?? step.character?.name ?? step.id;
-	}
-	/** Steps with no character get an icon of their own. */
-	const MARKER_ICONS: Record<string, IconSlot> = {
-		dusk: 'night',
-		dawn: 'day',
-		minioninfo: 'players',
-		demoninfo: 'demon',
-		[TRAVELLER_ALIGNMENT_STEP]: 'traveller'
-	};
-
+	const holders = (step: NightStep) => stepHolders(game, step);
+	const seatName = (seatId: string) => nameOf(game, seatId);
 	const done = $derived(grimoire.nightDone);
-	// Ticks belong to one night: a new day (the day screen's New day) starts afresh.
-	const doneKey = (step: NightStep) => `${game.pastDays.length}:${night}:${step.id}`;
+	const doneKey = (step: NightStep) => keyFor(game, night, step);
 </script>
 
 <Dialog bind:open title="Night order" size="full">
 	<div class="head">
+		{#if assistance.nightWalkthrough}
+			<Button
+				variant="accent"
+				icon="forward"
+				disabled={steps.length === 0}
+				onclick={() => {
+					open = false;
+					onWalk(night);
+				}}>Walk through</Button
+			>
+		{/if}
 		<Segmented
 			label="Night"
 			hideLabel
@@ -126,6 +106,17 @@
 					{/if}
 				</span>
 				<div class="body">
+					{#if assistance.nightGuide && step.id !== TRAVELLER_ALIGNMENT_STEP}
+						<button
+							type="button"
+							class="guide"
+							aria-label={`Guide: ${stepName(step)}`}
+							onclick={() => {
+								open = false;
+								onGuide(step, night);
+							}}
+						></button>
+					{/if}
 					<p class="name">
 						<strong>{stepName(step)}</strong>
 						{#if step.character}
@@ -172,6 +163,10 @@
 
 <style>
 	.head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 		padding-bottom: var(--space-2);
 		border-bottom: 1px solid var(--border);
 	}
@@ -218,8 +213,24 @@
 		--icon-size: 32px;
 		color: var(--heading);
 	}
+	.body {
+		position: relative;
+	}
 	.body p {
 		margin: 0;
+	}
+	/* The whole step is the tap target that opens it to be filled in. */
+	.guide {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		border: 0;
+		border-radius: var(--radius-md);
+		background: none;
+		cursor: pointer;
+	}
+	.guide:hover {
+		background: var(--surface-selected);
 	}
 	.name {
 		font-family: var(--font-character);

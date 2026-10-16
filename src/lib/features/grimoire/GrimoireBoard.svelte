@@ -1,4 +1,8 @@
 <script lang="ts">
+	import type { Night, NightStep } from '#lib/core/rules/index.ts';
+	import GuidedStep from './GuidedStep.svelte';
+	import NightStrip from './NightStrip.svelte';
+	import { boardNightSteps } from './night-steps.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
@@ -385,6 +389,15 @@
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
 	let nightOpen = $state(false);
+	// ── Assisted night order (Trevor, 2026-10-16) ──
+	let guided = $state<{ step: NightStep; night: Night } | undefined>();
+	let guideOpen = $state(false);
+	/** Walking through the night under the board: which night and which step. */
+	let walk = $state<{ night: Night; index: number } | undefined>();
+	const walkSteps = $derived.by(() => {
+		const data = officialData.current;
+		return walk && data ? boardNightSteps(game, characters, walk.night, data) : [];
+	});
 
 	// ── Share the script (never the game) ──
 	let shareOpen = $state(false);
@@ -519,7 +532,9 @@
 		class="board"
 		class:arranging
 		class:traying
+		class:walking={walk !== undefined}
 		style:--tray-h={traying ? `${chip + 30}px` : undefined}
+		style:--strip-h={walk ? '7.5rem' : undefined}
 		bind:this={board}
 	>
 		{#if backgroundUrl}
@@ -608,6 +623,21 @@
 		{/each}
 		{#if reminderDrag && dragOrigin}
 			<p class="origin" role="status">{dragOrigin.text}</p>
+		{/if}
+		{#if walk}
+			<NightStrip
+				{grimoire}
+				steps={walkSteps}
+				night={walk.night}
+				index={walk.index}
+				onIndex={(index) => walk && (walk = { ...walk, index })}
+				onOpen={(step) => {
+					if (!walk) return;
+					guided = { step, night: walk.night };
+					guideOpen = true;
+				}}
+				onClose={() => (walk = undefined)}
+			/>
 		{/if}
 		{#if traying}
 			<SetupTray {grimoire} {board} size={chip} {seatAt} onHints={(h) => (trayHints = h)} />
@@ -743,7 +773,26 @@
 	{/if}
 </Dialog>
 
-<NightOrderSheet bind:open={nightOpen} {grimoire} />
+<NightOrderSheet
+	bind:open={nightOpen}
+	{grimoire}
+	onGuide={(step, night) => {
+		guided = { step, night };
+		guideOpen = true;
+	}}
+	onWalk={(night) => {
+		traying = false;
+		walk = { night, index: 0 };
+	}}
+/>
+
+<GuidedStep
+	bind:open={guideOpen}
+	{grimoire}
+	step={guided?.step}
+	night={guided?.night ?? 'first'}
+	onInfoTokens={() => (infoOpen = true)}
+/>
 
 <BluffsSheet
 	bind:open={bluffsOpen}
@@ -849,6 +898,9 @@
 		touch-action: manipulation;
 	}
 	/* Room under the board for the docked Setup reminders tray. */
+	.board.walking {
+		margin-bottom: calc(var(--strip-h) + 2 * var(--space-2));
+	}
 	.board.traying {
 		margin-bottom: calc(var(--tray-h) + 2 * var(--space-2));
 	}
