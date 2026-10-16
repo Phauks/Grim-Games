@@ -24,9 +24,12 @@ export const settings = {
 	'settings.alignLeft': 'Left aligned',
 	'settings.alignJustify': 'Justified',
 	'settings.resetTo100': 'Reset to 100%',
-	'settings.iconSize': 'Icon size',
+	'settings.iconSize': 'Interface icon size',
 	'settings.iconSizeHelp':
-		'Changes the size of interface icons: header, settings, menus, buttons, status markers such as dead or poisoned, and character icons in badges. Text size and character token size stay the same.',
+		'Changes the size of interface icons: header, settings, menus, buttons, and status markers such as dead or poisoned. Character icons, text and tokens stay the same.',
+	'settings.characterIconSize': 'Character icon size',
+	'settings.characterIconSizeHelp':
+		'Changes the size of character icons in names, lists and the day. Grimoire tokens use Token size instead.',
 	'settings.tileSymbols': 'Symbols on bag tiles',
 	'settings.tileSymbolsHelp':
 		'Face-down tiles on the bag draw show a random symbol. Off shows numbers.',

@@ -40,6 +40,7 @@ export function applyAppearance(theme: Theme, prefs: Preferences, root = documen
 		...fontVariables(theme, prefs),
 		'--text-scale': String(prefs.textScale),
 		'--icon-scale': String(prefs.iconScale),
+		'--character-icon-scale': String(prefs.characterIconScale),
 		'--text-align': prefs.textAlign === 'justify' ? 'justify' : 'start'
 	};
 

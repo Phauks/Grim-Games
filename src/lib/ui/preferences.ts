@@ -29,6 +29,8 @@ export interface Preferences {
 	textScale: TextScale;
 	/** Multiplies the size of interface icons; independent of text size. */
 	iconScale: IconScale;
+	/** Multiplies the size of character art in badges and lists (Trevor, 2026-10-16), not tokens. */
+	characterIconScale: IconScale;
 	/** How paragraphs of body text line up: ragged right, or justified to both edges. */
 	textAlign: TextAlign;
 	iconSet: IconSetId | null;
@@ -83,6 +85,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	fonts: {},
 	textScale: 1,
 	iconScale: 1,
+	characterIconScale: 1,
 	textAlign: 'left',
 	iconSet: null,
 	iconOverrides: {},
@@ -103,11 +106,14 @@ export function parsePreferences(raw: unknown): Preferences {
 		const id = overrides[slot];
 		if (isIconChoice(slot, id)) iconOverrides[slot] = id;
 	}
+	const iconScale = parseScale(input.iconScale, ICON_SCALE, DEFAULT_PREFERENCES.iconScale);
 	return {
 		themeId: isThemeId(input.themeId) ? input.themeId : DEFAULT_PREFERENCES.themeId,
 		fonts: parseFonts(input),
 		textScale: parseScale(input.textScale, TEXT_SCALE, DEFAULT_PREFERENCES.textScale),
-		iconScale: parseScale(input.iconScale, ICON_SCALE, DEFAULT_PREFERENCES.iconScale),
+		iconScale,
+		// Saved before the split, the one icon size applied to both.
+		characterIconScale: parseScale(input.characterIconScale, ICON_SCALE, iconScale),
 		textAlign: (TEXT_ALIGNS as readonly unknown[]).includes(input.textAlign)
 			? (input.textAlign as TextAlign)
 			: DEFAULT_PREFERENCES.textAlign,

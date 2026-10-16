@@ -41,6 +41,7 @@ describe('parsePreferences', () => {
 			fonts: { heading: 'im-fell-english-sc', ability: 'lexend' },
 			textScale: 1.25,
 			iconScale: 1.5,
+			characterIconScale: 0.8,
 			textAlign: 'justify',
 			iconSet: 'ph-fill',
 			iconOverrides: { dead: 'ph:cross' },
@@ -56,6 +57,11 @@ describe('parsePreferences', () => {
 			requireName: true
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
+	});
+
+	it('gives character icons the one icon size saved before the split', () => {
+		expect(parsePreferences({ iconScale: 1.25 }).characterIconScale).toBe(1.25);
+		expect(parsePreferences({ iconScale: 1.25, characterIconScale: 1 }).characterIconScale).toBe(1);
 	});
 });
 

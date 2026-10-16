@@ -203,7 +203,9 @@ test('there is one About: the footer dialog, not a settings section', async ({ p
 	await expect(nav.getByRole('button', { name: 'Reset settings' })).toHaveCount(0);
 });
 
-test('icon size changes interface icons only, not text', async ({ page }) => {
+test('interface icon size changes interface icons only, not text or character icons', async ({
+	page
+}) => {
 	await page.goto('/');
 	const settingsIcon = page
 		.getByRole('banner')
@@ -213,12 +215,30 @@ test('icon size changes interface icons only, not text', async ({ page }) => {
 	const text = await page.evaluate(() => getComputedStyle(document.body).fontSize);
 
 	const dialog = await openSettings(page, 'Appearance');
-	await slide(page, 'Icon size', 1.5);
+	await slide(page, 'Interface icon size', 1.5);
+	expect(await rootStyle(page, '--character-icon-scale')).toBe('1');
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	const after = await settingsIcon.boundingBox();
 	expect(after!.width).toBeCloseTo(before!.width * 1.5, 0);
 	expect(await page.evaluate(() => getComputedStyle(document.body).fontSize)).toBe(text);
+});
+
+test('character icon size is its own slider and leaves interface icons alone', async ({ page }) => {
+	await page.goto('/');
+	const settingsIcon = page
+		.getByRole('banner')
+		.getByRole('button', { name: 'Settings' })
+		.locator('.icon');
+	const before = await settingsIcon.boundingBox();
+
+	await openSettings(page, 'Appearance');
+	await slide(page, 'Character icon size', 1.25);
+	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
+	expect(await rootStyle(page, '--icon-scale')).toBe('1');
+	expect((await settingsIcon.boundingBox())!.width).toBeCloseTo(before!.width, 0);
+	await page.reload();
+	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
 });
 
 test('the rules term switch has its own section, not Storyteller settings', async ({ page }) => {

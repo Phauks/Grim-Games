@@ -42,3 +42,11 @@
 	format={(scale) => intl.number(scale, { style: 'percent' })}
 	onChange={(iconScale) => preferences.update({ iconScale })}
 />
+<SettingSlider
+	label={t('settings.characterIconSize')}
+	description={t('settings.characterIconSizeHelp')}
+	value={preferences.current.characterIconScale}
+	{...ICON_SCALE}
+	format={(scale) => intl.number(scale, { style: 'percent' })}
+	onChange={(characterIconScale) => preferences.update({ characterIconScale })}
+/>
