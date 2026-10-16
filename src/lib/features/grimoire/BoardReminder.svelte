@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { characterIcons, ICONS_PATH, type Character } from '#lib/core/data/index.ts';
+	import type { Alignment, Character } from '#lib/core/data/index.ts';
+	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 
 	/**
 	 * A reminder token on the board, as in the physical grimoire: a round parchment token
@@ -11,6 +12,11 @@
 		character: Character | undefined;
 		/** Diameter in px. */
 		size: number;
+		/**
+		 * Alignment of the player whose character put the token down: the icon is drawn in
+		 * its colour, so a turned-evil good player's reminders are red (Trevor, 2026-10-16).
+		 */
+		alignment?: Alignment;
 		/** "+3" style overflow marker instead of a token. */
 		more?: number;
 		disabled?: boolean;
@@ -20,15 +26,19 @@
 		onCancel?: () => void;
 	}
 
-	let { label, character, size, more, disabled = false, onTap, onDrag, onCancel }: Props = $props();
+	let {
+		label,
+		character,
+		size,
+		alignment,
+		more,
+		disabled = false,
+		onTap,
+		onDrag,
+		onCancel
+	}: Props = $props();
 
-	const src = $derived.by(() => {
-		if (!character) return undefined;
-		const icons = characterIcons(character);
-		const file = icons ? (icons.unaligned ?? icons.good ?? icons.evil) : undefined;
-		if (file) return `${ICONS_PATH}/${file}`;
-		return typeof character.image === 'string' ? character.image : character.image?.[0];
-	});
+	const src = $derived(character ? iconUrl(character, alignment) : undefined);
 
 	/** Pointer movement, in px, before a press becomes a drag. */
 	const SLOP = 8;
@@ -123,9 +133,9 @@
 		--rim: var(--loric);
 	}
 	img {
-		width: 72%;
-		height: 72%;
-		margin-top: -14%;
+		width: 84%;
+		height: 84%;
+		margin-top: -16%;
 		object-fit: contain;
 		pointer-events: none;
 	}

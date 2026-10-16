@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { editionScript, toScript } from '#lib/core/data/index.ts';
-import { characterLookup, type Seat } from '#lib/core/model/index.ts';
+import { characterLookup, type Game, type Seat } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { causeLabel, isOrphan, recommendedTravellers, pickerGroups } from './board.ts';
+import {
+	causeLabel,
+	isOrphan,
+	placingAlignment,
+	recommendedTravellers,
+	pickerGroups
+} from './board.ts';
 
 const data = committedGameData();
 const tb = toScript(editionScript('tb', data)!);
@@ -64,5 +70,14 @@ describe('recommendedTravellers', () => {
 		expect(new Set(recommendedTravellers(tb, characters))).toEqual(
 			new Set(['scapegoat', 'gunslinger', 'beggar', 'bureaucrat', 'thief'])
 		);
+	});
+});
+
+describe('placingAlignment', () => {
+	it("is the alignment of the seat holding the reminder's character", () => {
+		const evilEmpath: Seat = { ...seat('empath'), seatId: 'a', alignment: 'evil' };
+		const game = { seating: ['a'], seats: { a: evilEmpath } } as unknown as Game;
+		expect(placingAlignment(game, 'empath', characters)).toBe('evil');
+		expect(placingAlignment(game, 'poisoner', characters)).toBeUndefined();
 	});
 });
