@@ -37,8 +37,9 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Players',
 		'You'
 	]);
+	// Home stands first on its own, outside the groups (Trevor, 2026-10-16).
+	await expect(drawer.getByRole('link').first()).toHaveText('Home');
 	await expect(drawer.getByRole('list', { name: 'Games' }).getByRole('link')).toHaveText([
-		'Home',
 		'New game',
 		'Resume game',
 		'History'

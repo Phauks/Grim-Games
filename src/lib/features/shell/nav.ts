@@ -29,13 +29,14 @@ export interface NavSection {
 	items: readonly NavItem[];
 }
 
+/** The landing page, reachable without Back; first, outside any group (Trevor, 2026-10-16). */
+export const HOME_ITEM: NavItem = { id: 'home', path: '/', label: 'shell.navHome', icon: 'home' };
+
 export const NAV_SECTIONS: readonly NavSection[] = [
 	{
 		id: 'games',
 		label: 'shell.navSectionGames',
 		items: [
-			// The landing page, reachable without Back (Trevor, 2026-10-16).
-			{ id: 'home', path: '/', label: 'shell.navHome', icon: 'home' },
 			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
 			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'resume' },
 			{
@@ -62,7 +63,10 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 	}
 ];
 
-export const NAV_ITEMS: readonly NavItem[] = NAV_SECTIONS.flatMap((section) => section.items);
+export const NAV_ITEMS: readonly NavItem[] = [
+	HOME_ITEM,
+	...NAV_SECTIONS.flatMap((section) => section.items)
+];
 
 /** The Account destination, listed with Settings under "You" at the end of the drawer. */
 export const ACCOUNT_ITEM: NavItem = {

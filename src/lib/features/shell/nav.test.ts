@@ -31,11 +31,11 @@ describe('navigation', () => {
 
 	it('groups games first, then preparation, then players (Trevor, 2026-10-16)', () => {
 		expect(NAV_SECTIONS.map((section) => section.id)).toEqual(['games', 'prepare', 'players']);
-		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual([
-			'home',
-			'new',
-			'games',
-			'previous'
-		]);
+		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual(['new', 'games', 'previous']);
+	});
+
+	it('puts Home first, outside the groups (Trevor, 2026-10-16)', () => {
+		expect(NAV_ITEMS[0].id).toBe('home');
+		expect(NAV_SECTIONS.some((s) => s.items.some((item) => item.id === 'home'))).toBe(false);
 	});
 });
