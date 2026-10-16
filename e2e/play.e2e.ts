@@ -51,7 +51,15 @@ test('the circle keeps names, guesses and deaths on this device', async ({ page 
 	const sheet = page.getByRole('dialog', { name: 'Seat 3' });
 	await expect(sheet).toBeVisible();
 	await sheet.getByRole('textbox', { name: 'Name' }).fill('Alex');
-	await sheet.getByRole('radio', { name: 'Empath' }).tap();
+	await expect(sheet.getByRole('button', { name: 'I think they are None' })).toBeVisible();
+	await sheet.getByRole('button', { name: /^I think they are/ }).tap();
+	// The shared character picker, searchable (Trevor, 2026-10-16).
+	const picker = page.getByRole('dialog', { name: 'I think they are' });
+	await picker.getByRole('searchbox', { name: 'Search characters' }).fill('emp');
+	await expect(picker.getByRole('button', { name: 'Investigator' })).toBeHidden();
+	await picker.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await expect(picker).toBeHidden();
+	await expect(sheet.getByRole('button', { name: 'I think they are Empath' })).toBeVisible();
 	await sheet.getByText('Dead', { exact: true }).tap();
 	await page.keyboard.press('Escape');
 
