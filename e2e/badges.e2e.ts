@@ -31,3 +31,28 @@ test('badges are coloured by team', async ({ page }) => {
 	await expect(page.getByRole('button', { name: /Saint/ })).toHaveAttribute('data-team', 'good');
 	await expect(page.getByRole('button', { name: /Beggar/ })).toHaveAttribute('data-team', 'evil');
 });
+
+test('opening a character shows its whole wiki page, fetched live', async ({ page }) => {
+	// A made-up page in the wiki's shape, so no wiki text is in the repo.
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) => {
+		const title = new URL(route.request().url()).searchParams.get('page');
+		route.fulfill({
+			json: {
+				parse: {
+					text:
+						`<div class="mw-parser-output"><h2>Summary</h2><p>Sample page for ${title}.</p>` +
+						'<h2>How to Run</h2><ul><li>Sample step.</li></ul></div>'
+				}
+			}
+		});
+	});
+	await page.goto('/spikes/badges');
+	await page.locator('button.badge', { hasText: 'Witch' }).first().tap();
+	const dialog = page.getByRole('dialog', { name: 'Witch' });
+	const wiki = dialog.getByTestId('wiki-page');
+	await expect(wiki.getByRole('heading', { name: 'Summary' })).toBeVisible();
+	// The name is a badge, whose own markup spacing shows up in the text.
+	await expect(wiki).toContainText(/Sample page for\s+Witch\s*\./);
+	await expect(wiki.getByRole('heading', { name: 'How to Run' })).toBeVisible();
+	await expect(wiki.getByRole('listitem')).toHaveText('Sample step.');
+});
