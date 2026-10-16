@@ -4,6 +4,13 @@
 	import { account } from './account.svelte.ts';
 	import { CODE_LENGTH, normaliseCode, normaliseEmail } from './account-protocol.ts';
 
+	interface Props {
+		/** A message from outside the form, such as a sign-in link that didn't work. */
+		notice?: string;
+	}
+
+	let { notice = '' }: Props = $props();
+
 	let step = $state<'email' | 'code'>('email');
 	let email = $state('');
 	let code = $state('');
@@ -115,7 +122,7 @@
 		</form>
 	{/if}
 	<!-- Always there, so an error never moves the buttons. -->
-	<p class="error" role="status">{error}</p>
+	<p class="error" role="status">{error || notice}</p>
 </div>
 
 <style>
@@ -143,6 +150,15 @@
 		border-radius: var(--radius-sm);
 		background: var(--surface);
 		font-size: max(1rem, 16px);
+	}
+	/* Full width on a phone; on a computer, sized to what goes in them. */
+	.field input[type='email'] {
+		max-width: 28rem;
+	}
+	.field input[inputmode='numeric'] {
+		max-width: 12rem;
+		letter-spacing: 0.3em;
+		font-variant-numeric: tabular-nums;
 	}
 	.field input:disabled {
 		opacity: 0.6;

@@ -39,7 +39,8 @@
 	}
 
 	onMount(() => {
-		if (!openSignInLink()) void startAccount();
+		// The root layout already checks the session; a sign-in link replaces that check.
+		openSignInLink();
 		// The link can also be opened while this page is already showing.
 		const onHash = () => void openSignInLink();
 		window.addEventListener('hashchange', onHash);
@@ -174,9 +175,8 @@
 					{#if account.status === 'offline'}
 						<p class="muted">You are offline. Connect to sign in.</p>
 					{/if}
-					<SignInForm />
+					<SignInForm notice={linkError} />
 				{/if}
-				<p class="error" role="status">{linkError}</p>
 			</section>
 		{/if}
 	</ErrorBoundary>
@@ -262,10 +262,5 @@
 	}
 	.devices small {
 		display: block;
-	}
-	.error {
-		margin: 0;
-		min-height: 1lh;
-		color: var(--evil);
 	}
 </style>
