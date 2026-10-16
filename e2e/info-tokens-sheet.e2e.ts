@@ -56,7 +56,7 @@ test('the sheet shows a character card and edits and deletes a custom card', asy
 	await shown(page).getByRole('button', { name: 'Close' }).tap();
 
 	await page.getByRole('button', { name: 'Delete You are hexed' }).tap();
-	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'You are hexed', exact: true })).toHaveCount(0);
 	// No Undo on the info screens (Trevor, 2026-10-16): the confirm is the safeguard.
 	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);

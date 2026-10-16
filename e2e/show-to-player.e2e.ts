@@ -52,7 +52,7 @@ test('a custom info token keeps its bold words and survives a reload', async ({ 
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).tap();
 	await expect(card).toBeVisible();
 	await page.getByRole('button', { name: 'Delete You are mad about something' }).tap();
-	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await page.reload();
 	await expect(card).toHaveCount(0);
 });
@@ -166,7 +166,7 @@ test('the Storyteller adds more bluff sets and deletes one after confirming', as
 	const second = page.locator('[data-testid="bluff-set"][data-set="Set 2"]');
 	await expect(second).toContainText('Monk');
 	await second.getByRole('button', { name: 'Delete the Set 2 bluffs' }).tap();
-	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('bluff-set')).toHaveCount(2);
 	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 2"]')).toContainText('Mayor');
 });

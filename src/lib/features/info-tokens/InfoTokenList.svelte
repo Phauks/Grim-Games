@@ -3,6 +3,7 @@
 	import type { Character } from '#lib/core/data/index.ts';
 	import { STANDARD_INFO_TOKENS, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -247,21 +248,16 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={confirmOpen} title={t('info-tokens.deleteConfirm')} role="alertdialog">
+<ConfirmDialog
+	bind:open={confirmOpen}
+	title={t('info-tokens.deleteConfirm')}
+	danger
+	onConfirm={() => confirming && remove(confirming)}
+>
 	<p class="confirm-text">
 		{#if confirming}<InfoTokenText text={confirming.text} />{/if}
 	</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirmOpen = false)}>{t('common.cancel')}</Button>
-		<Button
-			variant="accent"
-			onclick={() => {
-				if (confirming) remove(confirming);
-				confirmOpen = false;
-			}}>{t('info-tokens.delete')}</Button
-		>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	/* Follows the colours of whatever holds it: the page or a parchment sheet. */
