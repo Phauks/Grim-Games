@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cachedOnUse, precached } from './cache-rules.ts';
+import { cachedOnUse, precached, RUNTIME_CACHE, staleCaches } from './cache-rules.ts';
 
 describe('precached', () => {
 	it('keeps what a game needs at install', () => {
@@ -26,5 +26,21 @@ describe('cachedOnUse', () => {
 		expect(cachedOnUse('/_app/immutable/assets/inter-latin-400-normal.x1.woff')).toBe(true);
 		expect(cachedOnUse('/api/health')).toBe(false);
 		expect(cachedOnUse('/grimoire/abc')).toBe(false);
+	});
+});
+
+describe('staleCaches', () => {
+	const keys = ['grim-games-c', 'grim-games-b', 'grim-games-a', RUNTIME_CACHE, 'other-app'];
+
+	it('keeps the new build, the one it replaces and the runtime cache', () => {
+		expect(staleCaches(keys, 'grim-games-c', 'grim-games-b')).toEqual(['grim-games-a']);
+	});
+
+	it('deletes every older build when there is no record of the previous one', () => {
+		expect(staleCaches(keys, 'grim-games-c', undefined)).toEqual(['grim-games-b', 'grim-games-a']);
+	});
+
+	it('leaves caches that are not ours', () => {
+		expect(staleCaches(['other-app'], 'grim-games-c', undefined)).toEqual([]);
 	});
 });
