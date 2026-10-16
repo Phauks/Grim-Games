@@ -7,6 +7,7 @@ export * from './distribution.ts';
 export * from './setup-modifiers.ts';
 export * from './setup.ts';
 export * from './jinxes.ts';
+export * from './script-facts.ts';
 export * from './teensyville.ts';
 export * from './night-order.ts';
 export * from './night-info.ts';
