@@ -15,7 +15,8 @@
  * they would underline most sentences. "Lose" is left out because the game text only uses
  * it for losing an ability or roshambo, not losing the game. Entries for physical parts
  * (Life token, Town Square, ...) never occur in game text. "May" is not a Glossary term
- * (only "Might" is), and Loric has no Glossary entry, so neither is marked.
+ * (only "Might" is), and Loric has no Glossary entry, so neither is marked. Fabled is marked
+ * although no game text names it: it is a character type the app shows (Trevor, 2026-10-16).
  */
 
 export const GLOSSARY_URL = 'https://wiki.bloodontheclocktower.com/Glossary';
@@ -245,6 +246,13 @@ const ENTRIES: readonly Entry[] = [
 		id: 'traveller',
 		term: 'Traveller',
 		variants: ['travellers', 'traveler', 'travelers']
+	},
+	{
+		// No ability or night text names it, but the app shows it as a character type and in
+		// the wiki pages it fetches (Trevor, 2026-10-16).
+		id: 'fabled',
+		term: 'Fabled',
+		variants: []
 	},
 	{
 		id: 'minion-info',

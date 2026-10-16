@@ -8,9 +8,10 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { glossaryDialog } from './glossary-dialog.svelte.ts';
 	import { glossaryKey } from './wiki-glossary.ts';
-	import { wikiGlossary } from './wiki-glossary.svelte.ts';
+	import { glossaryPopover } from './glossary-popover.svelte.ts';
+	import { glossaryTermFor, wikiGlossary } from './wiki-glossary.svelte.ts';
 	import WikiEntryText from './WikiEntryText.svelte';
-	import { setTermHandler } from './term-handler.ts';
+	import { clearTermHandler } from './term-handler.ts';
 
 	// The wiki's text is fetched live when the dialog opens (and cached on the device only).
 	let loading = $state(false);
@@ -19,7 +20,8 @@
 		loading = true;
 		void wikiGlossary.load().finally(() => (loading = false));
 	});
-	setTermHandler((term) => (glossaryDialog.key = glossaryKey(term.term)));
+	// Terms in an entry open their popup over it, as anywhere else (Trevor, 2026-10-16).
+	clearTermHandler();
 	let search = $state('');
 	$effect(() => {
 		if (!glossaryDialog.open) search = '';
@@ -77,7 +79,7 @@
 					<WikiEntryText
 						{entry}
 						cite={glossaryEntryUrl(entry.name)}
-						onTerm={(id) => (glossaryDialog.key = id)}
+						onTerm={(id, link) => glossaryPopover.show(glossaryTermFor(id), link)}
 					/>
 				{:else if loading}
 					<p class="muted">{t('glossary.loading')}</p>

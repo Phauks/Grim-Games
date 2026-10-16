@@ -9,8 +9,8 @@
 		entry: WikiEntry;
 		/** The entry's address on the wiki, for `cite`. */
 		cite: string;
-		/** Follows a "see …" link to another Glossary entry, by `glossaryKey`. */
-		onTerm: (key: string) => void;
+		/** Follows a "see …" link to another Glossary entry, by `glossaryKey`, from `link`. */
+		onTerm: (key: string, link: HTMLElement) => void;
 	}
 
 	let { entry, cite, onTerm }: Props = $props();
@@ -36,7 +36,7 @@
 			)}{#if target.kind === 'term'}<button
 					type="button"
 					class="see"
-					onclick={() => onTerm(target.key)}>{part.text}</button
+					onclick={(event) => onTerm(target.key, event.currentTarget)}>{part.text}</button
 				>{:else if target.kind === 'character'}<CharacterBadge
 					characterId={idOf(target.name)}
 					text={part.text}

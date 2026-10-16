@@ -42,7 +42,8 @@ describe('glossary terms', () => {
 			blocks.flatMap((text) => terms(glossarySegments(text, { exclude: names })))
 		);
 		const missing = GLOSSARY.filter((t) => !found.has(t.id)).map((t) => t.term);
-		expect(missing).toEqual([]);
+		// Fabled is a character type the app shows, though no game text names it.
+		expect(missing).toEqual(['Fabled']);
 	});
 
 	it('links each term to its entry on the wiki Glossary page', () => {
@@ -98,6 +99,7 @@ describe('glossarySegments', () => {
 		expect(
 			terms(glossarySegments('A Townsfolk, Outsiders, a Minion and Demons (except Travellers)'))
 		).toEqual(['townsfolk', 'outsider', 'minion', 'demon', 'traveller']);
+		expect(terms(glossarySegments('One Fabled is in play'))).toEqual(['fabled', 'in-play']);
 		expect(terms(glossarySegments('2 players that are not the Demon'))).toEqual(['the-demon']);
 		expect(terms(glossarySegments('1 good & 1 evil character token: good wins'))).toEqual([
 			'good',

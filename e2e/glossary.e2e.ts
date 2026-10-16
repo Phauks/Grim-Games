@@ -184,9 +184,13 @@ test('Open Glossary shows every entry beside the tapped one, searchable, with th
 	);
 	await expect(wiki).toHaveAttribute('target', '_blank');
 
-	// A "see …" link moves to that entry in the dialog.
+	// A "see …" link opens that entry's popup over the dialog, which stays on its entry.
 	await entry.getByRole('button', { name: 'Healthy' }).tap();
-	await expect(entry.getByRole('heading', { name: 'Healthy' })).toBeVisible();
+	const healthy = page.getByRole('dialog', { name: 'Healthy' });
+	await expect(healthy.getByTestId('wiki-definition')).toHaveText('Sample wording for healthy.');
+	await expect(entry.getByRole('heading', { name: 'Poisoned' })).toBeVisible();
+	await healthy.getByRole('button', { name: 'Close' }).tap();
+	await expect(healthy).toBeHidden();
 
 	const phone = testInfo.project.name === 'phone';
 	const list = glossary.getByRole('navigation', { name: 'Glossary entries' });
@@ -211,8 +215,10 @@ test('Open Glossary shows every entry beside the tapped one, searchable, with th
 			'page'
 		);
 
-	// Rules terms in an entry are marked as anywhere else, and open their entry in place.
+	// Rules terms in an entry are marked as anywhere else and open their popup over it.
 	await entry.getByRole('button', { name: 'dead: explain rules term' }).tap();
-	await expect(entry.getByRole('heading', { name: 'Dead' })).toBeVisible();
-	await expect(page.getByRole('dialog', { name: 'Dead' })).toHaveCount(0);
+	await expect(
+		page.getByRole('dialog', { name: 'Dead' }).getByTestId('wiki-definition')
+	).toHaveText('Sample wording for dead.');
+	await expect(entry.getByRole('heading', { name: 'Alive' })).toBeVisible();
 });

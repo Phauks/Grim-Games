@@ -1,3 +1,4 @@
+import { GLOSSARY, glossaryEntryUrl, type GlossaryTerm } from '#lib/core/rules/glossary.ts';
 import { parseGlossaryHtml, glossaryKey, type WikiEntry } from './wiki-glossary.ts';
 
 /**
@@ -86,3 +87,11 @@ class WikiGlossary {
 }
 
 export const wikiGlossary = new WikiGlossary();
+
+/** Our term for a Glossary entry, or one made from the wiki's entry name. */
+export function glossaryTermFor(key: string): GlossaryTerm {
+	const ours = GLOSSARY.find((term) => glossaryKey(term.term) === key);
+	if (ours) return ours;
+	const name = wikiGlossary.entries.get(key)?.name ?? key;
+	return { id: `wiki:${key}`, term: name, variants: [], url: glossaryEntryUrl(name) };
+}

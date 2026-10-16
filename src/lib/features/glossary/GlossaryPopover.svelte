@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { GLOSSARY, glossaryEntryUrl, type GlossaryTerm } from '#lib/core/rules/glossary.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { glossaryPopover } from './glossary-popover.svelte.ts';
 	import { glossaryDialog } from './glossary-dialog.svelte.ts';
 	import GlossaryDialog from './GlossaryDialog.svelte';
 	import { glossaryKey } from './wiki-glossary.ts';
-	import { wikiGlossary } from './wiki-glossary.svelte.ts';
+	import { glossaryTermFor, wikiGlossary } from './wiki-glossary.svelte.ts';
 	import WikiEntryText from './WikiEntryText.svelte';
 	import { setTermHandler } from './term-handler.ts';
 
@@ -24,13 +23,6 @@
 		if (glossaryPopover.term?.term !== term.term) glossaryPopover.go(term);
 	});
 
-	/** Our term for a Glossary entry, or one made from the wiki's entry name. */
-	function termFor(key: string): GlossaryTerm {
-		const ours = GLOSSARY.find((t) => glossaryKey(t.term) === key);
-		if (ours) return ours;
-		const name = wikiGlossary.entries.get(key)?.name ?? key;
-		return { id: `wiki:${key}`, term: name, variants: [], url: glossaryEntryUrl(name) };
-	}
 	/** The whole Glossary in a dialog, open on this entry (Trevor, 2026-10-16). */
 	function openGlossary() {
 		const term = glossaryPopover.term;
@@ -61,7 +53,7 @@
 			<WikiEntryText
 				{entry}
 				cite={glossaryPopover.term.url}
-				onTerm={(key) => glossaryPopover.go(termFor(key))}
+				onTerm={(key) => glossaryPopover.go(glossaryTermFor(key))}
 			/>
 		{/if}
 		<button type="button" class="open" onclick={openGlossary}
