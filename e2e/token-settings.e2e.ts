@@ -166,4 +166,14 @@ test('character names on grimoire tokens are off by default and shown when switc
 	}
 	await placement.getByText('Below', { exact: true }).tap();
 	await expect(preview.getByTestId('token-player-name')).toHaveCount(0);
+
+	// On the board, a seat with a character draws its name on the token instead of the pill
+	// under it; an empty seat keeps the pill.
+	await placement.getByText('Badge', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(seat.getByTestId('token-player-name')).toHaveAttribute('data-placement', 'badge');
+	await expect(seat.locator('.seat-disc > .name')).toHaveCount(0);
+	const empty = page.locator('[data-testid="seat"][aria-label^="Seat 2:"]');
+	await expect(empty.getByTestId('token-player-name')).toHaveCount(0);
+	await expect(empty.locator('.seat-disc > .name')).toHaveText('Seat 2');
 });
