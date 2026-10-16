@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import { validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
+	import { setupReminders, validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
+	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import { abilityState, type ImpairmentReason } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -10,12 +11,11 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { causeFlagText, causeLabel, isOrphan, SEAT_TYPES } from './board.ts';
+	import { causeFlagText, causeLabel, isOrphan, placingAlignment, SEAT_TYPES } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -173,16 +173,19 @@
 	let flagged = $state<ValidDeathCause | undefined>();
 	let flagOpen = $state(false);
 
+	// A death always has a cause (Trevor, 2026-10-16: "dead, no cause" does not exist): marking
+	// a player dead asks how, and Cancel leaves them alive.
 	function toggleDead() {
 		if (!seat || !seatId) return;
-		const dead = !seat.dead;
-		if (!grimoire.run({ type: 'SetDead', seatId, dead })) return;
-		if (dead && preferences.current.assistance.deathCause) causeOpen = true;
+		if (seat.dead) grimoire.run({ type: 'SetDead', seatId, dead: false });
+		else causeOpen = true;
 	}
 
-	function setCause(cause: DeathCause | undefined) {
+	function setCause(cause: DeathCause) {
 		causeOpen = false;
-		if (seatId) grimoire.run({ type: 'SetDeathCause', seatId, cause });
+		if (!seat || !seatId) return;
+		if (seat.dead) grimoire.run({ type: 'SetDeathCause', seatId, cause });
+		else grimoire.run({ type: 'SetDead', seatId, dead: true, cause });
 	}
 
 	// ── Reminders and seats ──
@@ -194,6 +197,39 @@
 	let menuOpen = $state(false);
 	let reminderMenuOpen = $state(false);
 	const movingReminder = $derived(seat?.reminders.find((r) => r.reminderId === moving));
+	/** Where a reminder came from: its character and who holds that character. */
+	const movingOrigin = $derived.by(() => {
+		const r = movingReminder;
+		if (!r) return '';
+		const character = characters.get(r.characterId)?.name ?? r.characterId;
+		const holders = game.seating
+			.filter(
+				(s) =>
+					game.seats[s].characterId === r.characterId ||
+					trueCharacter(game, s, characters) === r.characterId
+			)
+			.map((s) => {
+				const n = game.seating.indexOf(s) + 1;
+				return game.seats[s].playerName ? `Seat ${n} · ${game.seats[s].playerName}` : `Seat ${n}`;
+			});
+		return `From the ${character}${holders.length ? ` (${holders.join(', ')})` : ''}, on ${title}`;
+	});
+	/** A setup reminder can go back to the Setup reminders tray (Trevor, 2026-10-16). */
+	const fromSetup = $derived.by(() => {
+		const r = movingReminder;
+		if (!r || !seat || !seatId) return false;
+		// Suggested at setup once this token is off the board again.
+		const without = {
+			...game,
+			seats: {
+				...game.seats,
+				[seatId]: { ...seat, reminders: seat.reminders.filter((x) => x !== r) }
+			}
+		};
+		return setupReminders(without, characters).some(
+			(s) => s.characterId === r.characterId && s.label === r.label
+		);
+	});
 	/** Runs a menu action after closing the menu. */
 	function fromMenu(action: () => void) {
 		menuOpen = false;
@@ -299,19 +335,6 @@
 				<button type="button" class="toggle" aria-pressed={seat.dead} onclick={toggleDead}>
 					<Icon name="dead" /> Dead
 				</button>
-				<button
-					type="button"
-					class="toggle"
-					aria-pressed={seat.dead && seat.ghostVoteUsed}
-					disabled={!seat.dead}
-					onclick={() =>
-						grimoire.run({
-							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
-							seatId
-						})}
-				>
-					<Icon name="ghostVote" /> Vote used
-				</button>
 			</div>
 
 			<div class="row">
@@ -349,6 +372,7 @@
 							<ReminderToken
 								label={reminder.label}
 								type={characters.get(reminder.characterId)?.type}
+								alignment={placingAlignment(game, reminder.characterId, characters)}
 							/>
 							<span class="spacer"></span>
 							<IconButton
@@ -511,8 +535,8 @@
 		{/each}
 	</div>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => setCause(undefined)}>None</Button>
-		<Button variant="quiet" onclick={() => (causeOpen = false)}>Skip</Button>
+		<!-- Solid, unlike the causes above, so it never reads as one of them. -->
+		<Button variant="solid" icon="close" onclick={() => (causeOpen = false)}>Cancel</Button>
 	{/snippet}
 </Dialog>
 
@@ -661,10 +685,27 @@
 	</div>
 </Dialog>
 
-<Dialog bind:open={reminderMenuOpen} title={movingReminder?.label ?? 'Reminder'}>
+<Dialog
+	bind:open={reminderMenuOpen}
+	title={movingReminder?.label ?? 'Reminder'}
+	description={movingOrigin}
+>
 	<div class="menu">
 		<Button variant="quiet" icon="move" onclick={() => fromMenu(() => (moveOpen = true))}>
 			Move to another seat
+		</Button>
+		<Button
+			variant="quiet"
+			icon="reminder"
+			disabled={!fromSetup}
+			onclick={() =>
+				fromMenu(() => {
+					// Taken off the seat, it waits in the Setup reminders tray again.
+					if (moving) grimoire.run({ type: 'RemoveReminder', reminderId: moving });
+					moving = undefined;
+				})}
+		>
+			Return to setup tray
 		</Button>
 		<Button
 			variant="quiet"

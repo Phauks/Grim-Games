@@ -9,6 +9,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
+	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { pendingTray, trayItems, traySeats, type TrayItem } from './setup-tray.ts';
 
@@ -103,13 +104,14 @@
 	}
 </script>
 
-<ul class="tray" aria-label="Setup reminders">
+<ul class="tray" aria-label="Setup reminders" data-tray>
 	{#each shownTray as { item, count } (item.key)}
 		<li class:lifted={drag?.key === item.key && count === 1}>
 			{#if count > 1}<span class="count" aria-label={`${count} copies`}>×{count}</span>{/if}
 			<BoardReminder
 				label={item.suggestion.label}
 				character={characters.get(item.suggestion.characterId)}
+				alignment={placingAlignment(game, item.suggestion.characterId, characters)}
 				{size}
 				onTap={() => show(item)}
 				onDrag={(x, y, end) => dragItem(item, x, y, end)}
@@ -126,6 +128,7 @@
 		<BoardReminder
 			label={dragged.suggestion.label}
 			character={characters.get(dragged.suggestion.characterId)}
+			alignment={placingAlignment(game, dragged.suggestion.characterId, characters)}
 			{size}
 			disabled
 			onTap={() => {}}

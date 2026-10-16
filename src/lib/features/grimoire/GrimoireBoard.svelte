@@ -6,27 +6,29 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
+	import { trueCharacter, type ReminderId, type SeatId } from '#lib/core/model/index.ts';
 	import { setupComplete } from '#lib/core/rules/index.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
-		DEFAULT_SEAT_LAYOUT,
+		followSeating,
 		isDefaultLayout,
+		isRotation,
 		keepInside,
 		seatPoints,
 		seatTokenSize,
+		spreadEvenly,
 		towardsMiddle,
 		withPlaced,
 		withoutPlaced,
-		withShape,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
-	import { isOrphan, recommendedTravellers } from './board.ts';
+	import { placeNames, type Box } from './name-placement.ts';
+	import { isOrphan, placingAlignment, recommendedTravellers } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -96,8 +98,35 @@
 			{ length: Math.min(count, MAX_SHOWN) },
 			(_, k) => size / 2 + chip / 2 + 6 + k * (chip + 10)
 		);
-		return towardsMiddle(points[i], { width, height }, distances);
+		return towardsMiddle(shown[i], { width, height }, distances);
 	}
+
+	// ── Player names: placed where nothing covers them (outside first) ──
+	let rootFont = $state(16);
+	$effect(() => {
+		void preferences.current;
+		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+	});
+	const namePlaces = $derived.by(() => {
+		if (width <= 0 || height <= 0) return [];
+		const px = (p: SeatPoint) => ({ x: (p.x / 100) * width, y: (p.y / 100) * height });
+		const lineHeight = Math.ceil(rootFont * 0.9 * 1.2);
+		const widths = seats.map((seat, i) => {
+			const name = seat.playerName ?? `Seat ${i + 1}`;
+			return Math.min(size + 2 * unit, name.length * rootFont * 0.9 * 0.55 + 6);
+		});
+		const obstacles: Box[] = seats.flatMap((seat, i) =>
+			chipPoints(i, seat.reminders.length).map((p) => ({ ...px(p), w: chip, h: chip }))
+		);
+		return placeNames({
+			seats: shown.map(px),
+			size,
+			widths,
+			height: lineHeight,
+			obstacles,
+			board: { width, height }
+		});
+	});
 
 	interface ReminderDrag {
 		reminderId: ReminderId;
@@ -107,6 +136,33 @@
 		target?: SeatId;
 	}
 	let reminderDrag = $state<ReminderDrag | undefined>();
+	/**
+	 * Where a dragged reminder came from (Trevor, 2026-10-16): its character, the seats that
+	 * hold that character (marked on the board) and the seat it is on now.
+	 */
+	const dragOrigin = $derived.by(() => {
+		if (!reminderDrag) return undefined;
+		const id = reminderDrag.reminderId;
+		const reminder = game.seats[reminderDrag.from]?.reminders.find((r) => r.reminderId === id);
+		if (!reminder) return undefined;
+		const holders = game.seating.filter(
+			(s) =>
+				game.seats[s].characterId === reminder.characterId ||
+				trueCharacter(game, s, characters) === reminder.characterId
+		);
+		const name = (s: SeatId) =>
+			game.seats[s].playerName
+				? `Seat ${game.seating.indexOf(s) + 1} · ${game.seats[s].playerName}`
+				: `Seat ${game.seating.indexOf(s) + 1}`;
+		const character = characters.get(reminder.characterId)?.name ?? reminder.characterId;
+		return {
+			holders,
+			text:
+				`${reminder.label}, from ${character}` +
+				(holders.length > 0 ? ` (${holders.map(name).join(', ')})` : '') +
+				` · on ${name(reminderDrag.from)}`
+		};
+	});
 
 	/** The seat under a point (in % of the board), if it is within reach of a token. */
 	function seatAt(at: SeatPoint): SeatId | undefined {
@@ -135,6 +191,12 @@
 			return;
 		}
 		reminderDrag = undefined;
+		// Dropped back on the setup reminders tray: it waits there again (History has it).
+		const tray = board.querySelector('[data-tray]')?.getBoundingClientRect();
+		if (tray && x >= tray.left && x <= tray.right && y >= tray.top && y <= tray.bottom) {
+			grimoire.run({ type: 'RemoveReminder', reminderId });
+			return;
+		}
 		// Dropped on another seat: moved (one History entry). Anywhere else: nothing changes.
 		if (target && target !== from)
 			grimoire.run({ type: 'MoveReminder', reminderId, toSeatId: target });
@@ -161,6 +223,20 @@
 		moved: boolean;
 	}
 	let drag = $state<Drag | undefined>();
+	/** Where seats are drawn now: a dragged seat follows the finger, with its reminders. */
+	const shown = $derived(
+		drag ? points.map((p, i) => (game.seating[i] === drag!.seatId ? drag!.at : p)) : points
+	);
+
+	// Rotating moves the players, not the places: a hand-placed spot or a gap stays where it
+	// is and whoever now sits there takes it. Also after History restores a rotation.
+	let lastSeating: readonly SeatId[] = [];
+	$effect(() => {
+		const seating = game.seating;
+		if (isRotation(lastSeating, seating) && !isDefaultLayout(grimoire.layout))
+			grimoire.setLayout(followSeating(grimoire.layout, lastSeating, seating));
+		lastSeating = seating;
+	});
 	/** Pointer movement, in pixels, before a press counts as a drag. */
 	const DRAG_SLOP = 6;
 	let pressedAt = { x: 0, y: 0 };
@@ -269,7 +345,6 @@
 	const showSetup = $derived(
 		!setUp && !arranging && game.seating.some((id) => game.seats[id].characterId === undefined)
 	);
-	let rotateOpen = $state(false);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
 	let nightOpen = $state(false);
@@ -336,18 +411,22 @@
 <div class="grimoire">
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
 		{#if arranging}
-			<span class="title">Arrange seats</span>
-			<div class="shape">
-				<Toggle
-					label="Circle"
-					checked={layout.shape === 'circle'}
-					onChange={(circle) => grimoire.setLayout(withShape(layout, circle ? 'circle' : 'oval'))}
-				/>
-			</div>
+			<span class="title arranging-title">Arrange seats</span>
+			<span class="spacer"></span>
+			<IconButton
+				icon="undo"
+				label="Rotate players anticlockwise"
+				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
+			/>
+			<IconButton
+				icon="redo"
+				label="Rotate players clockwise"
+				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
+			/>
 			<Button
 				variant="quiet"
-				disabled={isDefaultLayout(layout)}
-				onclick={() => grimoire.setLayout(DEFAULT_SEAT_LAYOUT)}>Reset</Button
+				disabled={Object.keys(layout.placed).length === 0 && Object.keys(layout.gaps).length === 0}
+				onclick={() => grimoire.setLayout(spreadEvenly(layout))}>Spread evenly</Button
 			>
 			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
 		{:else if traying}
@@ -401,7 +480,7 @@
 			</p>
 		{/if}
 		{#each seats as seat, i (seat.seatId)}
-			{@const at = drag?.seatId === seat.seatId ? drag.at : points[i]}
+			{@const at = shown[i]}
 			<div
 				class="slot"
 				class:dragging={drag?.seatId === seat.seatId}
@@ -425,7 +504,9 @@
 							reminderDrag.target === seat.seatId &&
 							reminderDrag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
-					hint={trayHints.seats.includes(seat.seatId)}
+					hint={trayHints.seats.includes(seat.seatId) ||
+						(dragOrigin?.holders.includes(seat.seatId) ?? false)}
+					namePlace={namePlaces[i] ?? 'below'}
 					onTap={() => !arranging && openSeat(seat.seatId)}
 				/>
 			</div>
@@ -443,6 +524,7 @@
 						<BoardReminder
 							label={reminder.label}
 							character={characters.get(reminder.characterId)}
+							alignment={placingAlignment(game, reminder.characterId, characters)}
 							size={chip}
 							more={overflow}
 							disabled={arranging}
@@ -457,6 +539,9 @@
 			{/if}
 		{/each}
 
+		{#if reminderDrag && dragOrigin}
+			<p class="origin" role="status">{dragOrigin.text}</p>
+		{/if}
 		{#if traying}
 			<SetupTray {grimoire} {board} size={chip} {seatAt} onHints={(h) => (trayHints = h)} />
 		{/if}
@@ -523,9 +608,6 @@
 		<Button variant="quiet" icon="reminder" onclick={() => fromMenu(startTray)}>
 			Setup reminders
 		</Button>
-		<Button variant="quiet" icon="redo" onclick={() => fromMenu(() => (rotateOpen = true))}>
-			Rotate seats
-		</Button>
 		<Button variant="quiet" icon="share" onclick={() => fromMenu(() => (shareOpen = true))}>
 			Share script
 		</Button>
@@ -585,28 +667,6 @@
 </Dialog>
 
 <NightOrderSheet bind:open={nightOpen} {grimoire} />
-
-<Dialog
-	bind:open={rotateOpen}
-	title="Rotate seats"
-	description="Every player moves one seat, with their character and reminders."
->
-	<div class="choices">
-		<Button
-			icon="undo"
-			onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
-			>Anticlockwise</Button
-		>
-		<Button
-			icon="redo"
-			onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
-			>Clockwise</Button
-		>
-	</div>
-	{#snippet actions()}
-		<Button variant="accent" icon="check" onclick={() => (rotateOpen = false)}>Done</Button>
-	{/snippet}
-</Dialog>
 
 <BluffsSheet
 	bind:open={bluffsOpen}
@@ -703,9 +763,6 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
-	.shape {
-		flex: none;
-	}
 	.board {
 		position: relative;
 		flex: 1;
@@ -716,7 +773,7 @@
 	}
 	.slot {
 		position: absolute;
-		translate: -50% calc(-50% + 0.6em);
+		translate: -50% -50%;
 	}
 	/* While arranging, a press drags a seat instead of scrolling or zooming. */
 	.arranging {
@@ -731,6 +788,25 @@
 	.slot.dragging {
 		z-index: 2;
 		cursor: grabbing;
+	}
+	/* Over the top of the board while a reminder is dragged: where it came from. */
+	.origin {
+		position: absolute;
+		top: var(--space-1);
+		left: 50%;
+		z-index: 4;
+		max-width: calc(100% - 2 * var(--space-2));
+		margin: 0;
+		padding: var(--space-1) var(--space-2);
+		translate: -50% 0;
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font-size: 0.85rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		pointer-events: none;
 	}
 	.chip-slot {
 		position: absolute;
@@ -812,6 +888,12 @@
 	}
 	.change dd {
 		margin: 0;
+	}
+	/* On a phone the arranging controls need the whole bar. */
+	@media (max-width: 479.98px) {
+		.arranging-title {
+			display: none;
+		}
 	}
 	/* Phones show the toolbar's icons only; wider screens add the words. */
 	.toolbar :global(.tool-label) {

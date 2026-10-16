@@ -124,7 +124,9 @@ function describeEvent(
 			return r
 				? [
 						{ kind: 'reminder', label: r.label, characterId: r.characterId },
-						text(' moved to '),
+						text(' moved from '),
+						seatPart(before, r.seatId),
+						text(' to '),
 						seatPart(before, event.toSeatId)
 					]
 				: [text('Moved a reminder')];

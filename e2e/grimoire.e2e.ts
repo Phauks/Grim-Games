@@ -79,7 +79,8 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	const cause = page.getByRole('dialog', { name: 'How did Ana die?' });
 	await cause.getByRole('button', { name: 'Executed' }).tap();
 	await expect(sheet.getByRole('button', { name: 'Executed' })).toBeVisible();
-	await sheet.getByRole('button', { name: 'Vote used' }).tap();
+	// No ghost vote on the Storyteller's board (Trevor, 2026-10-16): players track it.
+	await expect(sheet.getByRole('button', { name: 'Vote used' })).toHaveCount(0);
 	// A good Imp: as in the physical grimoire, the token turns upside down.
 	await seatMenu(page, sheet, 'Change alignment');
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
@@ -87,7 +88,7 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 
 	await page.reload();
 	const seat = page.getByRole('button', { name: /^Seat 1:/ });
-	await expect(seat).toHaveAccessibleName('Seat 1: Ana, Imp, dead, ghost vote used, good');
+	await expect(seat).toHaveAccessibleName('Seat 1: Ana, Imp, dead, good');
 	sheet = await openSeat(page, 1);
 	await expect(sheet.getByRole('button', { name: 'Executed' })).toBeVisible();
 });
@@ -320,6 +321,10 @@ test('reminders: add several from the picker, recent first, then move and remove
 	await picker.getByRole('button', { name: 'Close' }).tap();
 
 	await expect(seatLabelled(page, 'Seat 1: no name, Poisoner, 2 reminders')).toBeAttached();
+	// The Poisoner is evil, so its reminder's icon is the red one (not the blue good icon).
+	await expect(
+		page.locator('[data-testid="board-reminder"][aria-label="Poisoned reminder"] img')
+	).toHaveAttribute('src', /poisoner_e\.webp$/);
 	await sheet.getByRole('button', { name: 'Actions for Poisoned' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Poisoned' })
@@ -338,7 +343,9 @@ test('reminders: add several from the picker, recent first, then move and remove
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
 
-test('seats can be arranged: dragged into groups, gaps left, oval or circle', async ({ page }) => {
+test('seats can be arranged: dragged anywhere, kept through a rotation, spread evenly', async ({
+	page
+}) => {
 	await startGame(page);
 	const seat = (n: number) => page.getByRole('button', { name: new RegExp(`^Seat ${n}:`) });
 	const centre = async (n: number) => {
@@ -369,8 +376,12 @@ test('seats can be arranged: dragged into groups, gaps left, oval or circle', as
 	// No gap buttons: spacing is set by dragging seats (Trevor, 2026-10-16).
 	await expect(page.getByRole('button', { name: /^Space after seat/ })).toHaveCount(0);
 
-	await toolbar.getByText('Circle', { exact: true }).tap();
-	await expect(toolbar.getByRole('checkbox', { name: 'Circle' })).toBeChecked();
+	// Rotating moves the players, not the places: the hand-placed spot stays put.
+	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
+	await expect(seatLabelled(page, 'Seat 1: no name')).toBeAttached();
+	const turned = await centre(1);
+	expect(Math.abs(turned.x - to.x)).toBeLessThan(4);
+	expect(Math.abs(turned.y - to.y)).toBeLessThan(4);
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 
 	// The layout is kept on this device, and seats open their sheet again.
@@ -379,6 +390,15 @@ test('seats can be arranged: dragged into groups, gaps left, oval or circle', as
 	const after = await centre(1);
 	expect(Math.abs(after.x - to.x)).toBeLessThan(4);
 	await openSeat(page, 1);
+	await closeSheet(page);
+
+	// Spread evenly puts everyone back round the table.
+	await page.getByRole('button', { name: 'Arrange seats' }).tap();
+	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
+	await expect(toolbar.getByRole('button', { name: 'Spread evenly' })).toBeDisabled();
+	const spread = await centre(1);
+	expect(Math.abs(spread.x - from.x)).toBeLessThan(4);
+	expect(Math.abs(spread.y - from.y)).toBeLessThan(4);
 });
 
 test('the name is edited in place; Done saves and closes the keyboard', async ({ page }) => {
@@ -433,6 +453,19 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		await page.mouse.up();
 	};
 
+	// While dragged, the board says where the token came from.
+	{
+		const from = await centre(token);
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(from.x + 30, from.y + 30, { steps: 4 });
+		await expect(page.getByRole('status').filter({ hasText: 'Drunk, from Sailor' })).toContainText(
+			'on Seat 1'
+		);
+		await page.mouse.move(from.x, from.y, { steps: 2 });
+		await page.mouse.up();
+	}
+
 	// Dropped away from any seat: nothing changes.
 	const board = (await page.locator('.board').boundingBox())!;
 	await drag({ x: board.x + board.width / 2, y: board.y + board.height / 2 });
@@ -446,8 +479,9 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		'Seat 1: no name, Sailor'
 	);
 	await menu(page, 'History');
+	// The entry says where the token came from as well as where it went.
 	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
-		'Drunk moved to Seat 3'
+		/Drunk moved from\s+Sailor.* to Seat 3/
 	);
 	await page.keyboard.press('Escape');
 
@@ -554,7 +588,13 @@ test('the cause of death offers only characters that could have killed the playe
 	let cause = page.getByRole('dialog', { name: 'How did Seat 2 die?' });
 	await expect(cause.getByRole('button', { name: 'Executed' })).toBeVisible();
 	await expect(cause.getByRole('button', { name: 'Slayer' })).toBeHidden();
-	await cause.getByRole('button', { name: 'Skip' }).tap();
+	// A death always has a cause: there is no "None", and Cancel leaves the player alive.
+	await expect(cause.getByRole('button', { name: 'None' })).toHaveCount(0);
+	await cause.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(sheet.getByRole('button', { name: 'Dead' })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
 	await closeSheet(page);
 
 	sheet = await openSeat(page, 3);
@@ -604,8 +644,33 @@ test('setup reminders wait in a tray on the board and are placed by hand', async
 	await page.mouse.up();
 	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).toBeAttached();
 
+	// Dragged back onto the tray, it waits there again.
+	const placed = page.getByRole('button', { name: 'Wrong reminder' }).last();
+	const back = (await placed.boundingBox())!;
+	const trayBox = (await tray.boundingBox())!;
+	await page.mouse.move(back.x + back.width / 2, back.y + back.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(trayBox.x + 10, trayBox.y + trayBox.height / 2, { steps: 8 });
+	await page.mouse.up();
+	await expect(seatLabelled(page, 'Seat 4: no name, no character')).toHaveAttribute(
+		'aria-label',
+		'Seat 4: no name, no character'
+	);
+	await expect(tray.getByRole('button', { name: 'Wrong reminder' })).toBeVisible();
+
 	await page.getByRole('button', { name: 'Done' }).tap();
 	await expect(tray).toBeHidden();
+
+	// From the seat sheet too: Return to setup tray.
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
+	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
+	await expect(actions).toContainText('From the Washerwoman (Seat 1)');
+	await actions.getByRole('button', { name: 'Return to setup tray' }).tap();
+	await expect(seatLabelled(page, 'Seat 2: no name, Empath')).toHaveAttribute(
+		'aria-label',
+		'Seat 2: no name, Empath'
+	);
 });
 
 test("a seat's character can be searched by name or ability", async ({ page }) => {
@@ -627,18 +692,15 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await nameSeat(sheet, 'Ana');
 	await closeSheet(page);
 
-	await menu(page, 'Rotate seats');
-	const rotate = page.getByRole('dialog', { name: 'Rotate seats' });
-	await rotate.getByRole('button', { name: 'Clockwise', exact: true }).tap();
+	// Rotating is part of arranging: one tap, one place, no confirm.
+	await page.getByRole('button', { name: 'Arrange seats' }).tap();
+	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: Ana')).toBeAttached();
-	await rotate.getByRole('button', { name: 'Anticlockwise', exact: true }).tap();
+	await toolbar.getByRole('button', { name: 'Rotate players anticlockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
-	await rotate.getByRole('button', { name: 'Done' }).tap();
-	await expect(rotate).toBeHidden();
 
 	// Arranging: dropping a seat onto another seat changes the seating order.
-	await page.getByRole('button', { name: 'Arrange seats' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
 	const centre = async (n: number) => {
 		const box = (await page
 			.getByRole('button', { name: new RegExp(`^Seat ${n}:`) })
