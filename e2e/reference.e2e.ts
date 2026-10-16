@@ -182,6 +182,24 @@ test('each :reminder: shows the token it means, and reviewed night text replaces
 	await expect(grandmother.getByTestId('differs-from-source')).toHaveCount(0);
 });
 
+test('Info cards lists the info cards a character brings, or None', async ({ page }) => {
+	await page.goto('/reference');
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('Mezepheles');
+	const card = page.locator('[data-testid="reference-card"][data-character="mezepheles"]');
+	await expect(card.locator('[data-field="cards"]')).toContainText('Secret word');
+	await search.fill('Washerwoman');
+	const washerwoman = page.locator('[data-testid="reference-card"][data-character="washerwoman"]');
+	await expect(washerwoman.locator('[data-field="cards"]')).toContainText('None');
+	await page.getByText('Table', { exact: true }).tap();
+	await search.fill('Mezepheles');
+	await expect(
+		page
+			.getByTestId('character-table')
+			.locator('tr[data-character="mezepheles"] [data-field="cards"]')
+	).toHaveText('Secret word');
+});
+
 test('the night order runs from Dusk to Dawn', async ({ page }) => {
 	await page.goto('/reference');
 	await page.getByRole('tab', { name: 'Night order' }).tap();

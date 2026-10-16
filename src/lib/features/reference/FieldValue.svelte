@@ -10,6 +10,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
+	import { characterCardsFor } from '#lib/features/info-tokens/character-cards.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -129,6 +130,11 @@
 			>{#each character.special as s, i (i)}<code>{special(s)}</code>{:else}{t(
 					'common.none'
 				)}{/each}</span
+		>
+	{:else if field === 'cards'}
+		<span class="spaced"
+			>{#each characterCardsFor([character.id]) as card (card.id)}<span>{t(card.titleKey)}</span
+				>{:else}{t('common.none')}{/each}</span
 		>
 	{:else if field === 'firstNight'}
 		{@render nightValue('night-first', 'first', entry.firstNight)}

@@ -33,6 +33,7 @@ export const reference = {
 	'reference.field.ability': 'Ability',
 	'reference.field.tokens': 'Tokens',
 	'reference.field.special': 'Special',
+	'reference.field.cards': 'Info cards',
 	'reference.field.firstNight': 'First night',
 	'reference.field.otherNight': 'Other nights',
 	'reference.field.jinxes': 'Jinxes',

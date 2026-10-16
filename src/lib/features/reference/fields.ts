@@ -20,6 +20,7 @@ export const FIELD_IDS = [
 	'ability',
 	'tokens',
 	'special',
+	'cards',
 	'firstNight',
 	'otherNight',
 	'jinxes',
@@ -68,6 +69,8 @@ const FIELDS: readonly Omit<ReferenceField, 'label'>[] = [
 	{ id: 'ability', card: 'block', long: true },
 	{ id: 'tokens', card: 'inline', sort: 'tokens', filter: 'presence' },
 	{ id: 'special', card: 'inline' },
+	/** Info cards that belong to the character, e.g. the Mezepheles's secret word. */
+	{ id: 'cards', card: 'inline' },
 	{
 		id: 'firstNight',
 		card: 'inline',
