@@ -8,7 +8,7 @@
  * State is only ever changed by the engine's reducer (`#lib/core/engine`), so these types
  * are plain, JSON-serialisable data.
  */
-import type { Alignment, CharacterId, Script } from '#lib/core/data/index.ts';
+import type { Alignment, CharacterId, ReminderLabel, Script } from '#lib/core/data/index.ts';
 // Type-only: the Storyteller's night-order and day-reminder overrides are defined next to
 // the rules that apply them, and stored on the game.
 import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
@@ -30,7 +30,7 @@ export type DayEntryId = string;
  */
 export interface Reminder {
 	characterId: CharacterId;
-	label: string;
+	label: ReminderLabel;
 }
 
 /** A reminder token placed in the grimoire. It belongs to a seat and moves with it. */

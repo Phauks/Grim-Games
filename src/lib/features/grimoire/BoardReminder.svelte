@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Alignment, Character } from '#lib/core/data/index.ts';
+	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 
 	/**
@@ -8,7 +8,7 @@
 	 * seat (the parent decides where it lands).
 	 */
 	interface Props {
-		label: string;
+		label: ReminderLabel;
 		character: Character | undefined;
 		/** Diameter in px. */
 		size: number;
@@ -89,6 +89,7 @@
 		<span class="more">+{more}</span>
 	{:else}
 		{#if src}<img {src} alt="" draggable="false" />{/if}
+		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
 		<span class="label">{label}</span>
 	{/if}
 </button>

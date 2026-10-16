@@ -23,6 +23,27 @@ export type Alignment = (typeof ALIGNMENTS)[number];
 
 export type CharacterId = string;
 
+/*
+ * Character names and reminder token texts are marked so the `grim/names-as-badges` lint
+ * can tell them from other strings: wherever one reaches the screen it must be a
+ * CharacterBadge or ReminderToken, never plain text (Trevor, 2026-10-16). The marks are
+ * type-only (no runtime cost) and optional, so any string still fits either way.
+ */
+declare const characterNameMark: unique symbol;
+declare const reminderLabelMark: unique symbol;
+/** Marks a character name; the lint looks for this interface by name. */
+export interface CharacterNameMark {
+	readonly [characterNameMark]?: true;
+}
+/** Marks a reminder token text; the lint looks for this interface by name. */
+export interface ReminderLabelMark {
+	readonly [reminderLabelMark]?: true;
+}
+/** A character's name, e.g. "Imp". Shown as a CharacterBadge. */
+export type CharacterName = string & CharacterNameMark;
+/** A reminder token's text, e.g. "Is The Drunk". Shown as a ReminderToken. */
+export type ReminderLabel = string & ReminderLabelMark;
+
 /** `special` vocabulary from `script-schema.json` (botc-release README, "special"). */
 export const SPECIAL_TYPES = [
 	'selection',
@@ -86,7 +107,7 @@ export interface Special {
 
 export interface Character {
 	id: CharacterId;
-	name: string;
+	name: CharacterName;
 	type: CharacterType;
 	/** Edition id, e.g. `tb`, `bmr`, `snv`, `carousel`, `fabled`, `loric`. Optional in custom scripts. */
 	edition?: string;
@@ -95,9 +116,9 @@ export interface Character {
 	/** True when the character changes setup (bracketed ability text). */
 	setup: boolean;
 	/** Reminder tokens placed by this character. Duplicates are meaningful (two of a token). */
-	reminders: string[];
+	reminders: ReminderLabel[];
 	/** Reminder tokens available whenever the character is on the script, even if not in play. */
-	remindersGlobal: string[];
+	remindersGlobal: ReminderLabel[];
 	/** Storyteller text for the first night; absent when the character does not act then. */
 	firstNightReminder?: string;
 	/** Storyteller text for other nights; absent when the character does not act then. */

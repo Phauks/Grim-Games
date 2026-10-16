@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { Alignment, CharacterType } from '#lib/core/data/index.ts';
+	import type { Alignment, CharacterType, ReminderLabel } from '#lib/core/data/index.ts';
 
 	interface Props {
 		/** The token's text; leave out for "a reminder" when it is not known which. */
-		label?: string;
+		label?: ReminderLabel;
 		/** Type of the character the token belongs to: it sets the colour. */
 		type?: CharacterType;
 		/**
@@ -25,6 +25,7 @@
 </script>
 
 <!-- A reminder token as a small chip, coloured by its character's type. -->
+<!-- eslint-disable grim/names-as-badges -- this is the chip -->
 <span
 	class="reminder"
 	data-type={variant === 'info' ? undefined : type}
@@ -38,6 +39,8 @@
 			aria-label={t('characters.reminderPlaced')}>✓</span
 		>{/if}</span
 >
+
+<!-- eslint-enable grim/names-as-badges -->
 
 <style>
 	/*

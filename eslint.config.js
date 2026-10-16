@@ -5,6 +5,7 @@ import svelte from 'eslint-plugin-svelte';
 import { defineConfig, includeIgnoreFile } from 'eslint/config';
 import globals from 'globals';
 import ts from 'typescript-eslint';
+import grim from './scripts/lint/names-as-badges.js';
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
@@ -98,6 +99,30 @@ export default defineConfig(
 				}
 			]
 		}
+	},
+	{
+		// Character and reminder names show as badges, never plain text (Trevor, 2026-10-16).
+		// Type-aware: see scripts/lint/names-as-badges.js for what it catches and allows.
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
+		// Spikes are prototypes kept as test fixtures.
+		ignores: [
+			'src/**/*.test.ts',
+			'src/lib/core/**',
+			'src/service-worker.ts',
+			'src/lib/features/spikes/**',
+			'src/routes/spikes/**'
+		],
+		languageOptions: { parserOptions: { projectService: true, extraFileExtensions: ['.svelte'] } },
+		plugins: { grim },
+		rules: { 'grim/names-as-badges': 'error' }
+	},
+	{
+		// Core builds no screen text, but its fields must keep the name marks for the UI.
+		files: ['src/lib/core/**/*.ts'],
+		ignores: ['src/lib/core/**/*.test.ts'],
+		languageOptions: { parserOptions: { projectService: true } },
+		plugins: { grim },
+		rules: { 'grim/names-as-badges': ['error', { plainText: false }] }
 	},
 	{
 		// The Worker runs on workerd, not in the browser.

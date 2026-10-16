@@ -6,7 +6,7 @@
  * https://wiki.bloodontheclocktower.com/Setup
  */
 import { canDuplicate, isNotDealt, isReplacedAfterDraw } from './bag-characters.ts';
-import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import type { Character, CharacterId, CharacterName } from '#lib/core/data/types.ts';
 import { SEATED_TYPES, splitPlayers, type SeatedType, type TypeCounts } from './distribution.ts';
 import { setupModifierFor, type CountOp, type SetupModifier } from './setup-modifiers.ts';
 
@@ -28,7 +28,7 @@ export interface SetupInput {
 }
 
 export interface AppliedModifier extends SetupModifier {
-	name: string;
+	name: CharacterName;
 	/** "Baron: +2 Outsiders". */
 	explanation: string;
 }
