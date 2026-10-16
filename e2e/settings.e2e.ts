@@ -30,7 +30,10 @@ async function chooseFont(page: Page, role: string, font: RegExp) {
 
 /** Sets a size slider, as a finished drag (input then change). */
 async function slide(page: Page, name: string, value: number) {
-	await page.getByRole('slider', { name }).fill(String(value));
+	const slider = page.getByRole('slider', { name });
+	await slider.fill(String(value));
+	// The size applies on the next animation frame.
+	await expect(slider).toHaveAttribute('aria-valuetext', `${Math.round(value * 100)}%`);
 }
 
 const rootStyle = (page: Page, name: string) =>
@@ -271,20 +274,19 @@ test('text alignment switches body text between left aligned and justified', asy
 	expect(await button.evaluate((el) => getComputedStyle(el).textAlign)).toBe('center');
 });
 
-test('text size is a percentage slider with a Reset to 100%', async ({ page }) => {
+test('text size is a percentage slider that applies while it moves', async ({ page }) => {
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Appearance');
 	const slider = dialog.getByRole('slider', { name: 'Text size' });
-	const reset = dialog.getByRole('button', { name: 'Reset to 100%' }).first();
 	await expect(slider).toHaveAttribute('aria-valuetext', '100%');
-	await expect(reset).toBeDisabled();
+	await expect(dialog.getByRole('button', { name: /Reset to/ })).toHaveCount(0);
 
-	await slider.fill('1.15');
-	await expect(slider).toHaveAttribute('aria-valuetext', '115%');
-	expect(await rootStyle(page, '--text-scale')).toBe('1.15');
-	// Arrow keys move one 5% step.
+	// Each step applies as it is reached, without letting go.
 	await slider.focus();
 	await page.keyboard.press('ArrowRight');
+	await expect(slider).toHaveAttribute('aria-valuetext', '105%');
+	expect(await rootStyle(page, '--text-scale')).toBe('1.05');
+	await slider.fill('1.2');
 	await expect(slider).toHaveAttribute('aria-valuetext', '120%');
 	expect(await rootStyle(page, '--text-scale')).toBe('1.2');
 
@@ -294,6 +296,4 @@ test('text size is a percentage slider with a Reset to 100%', async ({ page }) =
 		'aria-valuetext',
 		'120%'
 	);
-	await again.getByRole('button', { name: 'Reset to 100%' }).first().tap();
-	expect(await rootStyle(page, '--text-scale')).toBe('1');
 });

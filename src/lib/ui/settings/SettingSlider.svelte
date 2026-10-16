@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from './SettingRow.svelte';
 
 	interface Props {
@@ -10,16 +9,18 @@
 		min: number;
 		max: number;
 		step: number;
-		/** What Reset goes back to; Reset is disabled while the value is already there. */
-		defaultValue: number;
-		/** Text for the Reset button, e.g. "Reset to 100%", in the interface language. */
-		resetLabel: string;
+		/** @deprecated No Reset button any more (Trevor, 2026-10-16); ignored until callers drop it. */
+		defaultValue?: number;
+		/** @deprecated Ignored, as above. */
+		resetLabel?: string;
 		/** How the value reads beside the slider; a whole percentage by default. */
 		format?: (value: number) => string;
-		/** Called when a drag ends, a key is pressed or Reset is tapped, not on every move. */
+		/** Called as the slider moves (at most once a frame), so the change shows while dragging. */
 		onChange: (value: number) => void;
 	}
 
+	// Deprecated props stay accepted until TokenAppearanceSettings drops them.
+	// eslint-disable-next-line svelte/no-unused-props
 	let {
 		label,
 		description,
@@ -27,16 +28,24 @@
 		min,
 		max,
 		step,
-		defaultValue,
-		resetLabel,
 		format = (v) => `${Math.round(v * 100)}%`,
 		onChange
 	}: Props = $props();
 
-	// Follows the finger while dragging; the saved value applies only when the drag ends, so a
-	// text-size change can't resize the slider under the finger mid-drag.
-	let dragging = $state<number | null>(null);
-	const shown = $derived(dragging ?? value);
+	// Applies the size live while dragging (Trevor: show the change as it happens), at most
+	// once per animation frame so a fast drag doesn't restyle the page more than it can paint.
+	let next: number | null = null;
+	let frame = 0;
+
+	function move(raw: number) {
+		next = raw;
+		if (frame) return;
+		frame = requestAnimationFrame(() => {
+			frame = 0;
+			if (next !== null && next !== value) onChange(next);
+			next = null;
+		});
+	}
 </script>
 
 <!-- A setting with a continuous size (Trevor, 2026-10-16: granular sliders, not S/M/L). -->
@@ -46,26 +55,15 @@
 			<input
 				type="range"
 				aria-labelledby={labelId}
-				aria-valuetext={format(shown)}
+				aria-valuetext={format(value)}
 				{min}
 				{max}
 				{step}
-				value={shown}
-				oninput={(event) => (dragging = Number(event.currentTarget.value))}
-				onchange={(event) => {
-					dragging = null;
-					onChange(Number(event.currentTarget.value));
-				}}
+				{value}
+				oninput={(event) => move(Number(event.currentTarget.value))}
 			/>
-			<output aria-hidden="true">{format(shown)}</output>
-			<Button
-				variant="quiet"
-				icon="undo"
-				disabled={Math.abs(value - defaultValue) < step / 2}
-				onclick={() => onChange(defaultValue)}
-			>
-				{resetLabel}
-			</Button>
+			<!-- Fixed width, so the number changing never moves the slider. -->
+			<output aria-hidden="true">{format(value)}</output>
 		</div>
 	{/snippet}
 </SettingRow>
@@ -73,7 +71,6 @@
 <style>
 	.slider {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2) var(--space-3);
 	}
@@ -89,7 +86,6 @@
 		outline: 2px solid var(--focus);
 		outline-offset: 2px;
 	}
-	/* Fixed width, so the value changing never moves the Reset button. */
 	output {
 		flex: none;
 		min-width: 5ch;

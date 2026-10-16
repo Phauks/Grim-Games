@@ -1,13 +1,7 @@
 <script lang="ts">
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import {
-		DEFAULT_PREFERENCES,
-		ICON_SCALE,
-		TEXT_ALIGNS,
-		TEXT_SCALE,
-		type TextAlign
-	} from '#lib/ui/preferences.ts';
+	import { ICON_SCALE, TEXT_ALIGNS, TEXT_SCALE, type TextAlign } from '#lib/ui/preferences.ts';
 	import SettingChoice from '#lib/ui/settings/SettingChoice.svelte';
 	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
@@ -30,8 +24,6 @@
 	description={t('settings.textSizeHelp')}
 	value={preferences.current.textScale}
 	{...TEXT_SCALE}
-	defaultValue={DEFAULT_PREFERENCES.textScale}
-	resetLabel={t('settings.resetTo100')}
 	format={(scale) => intl.number(scale, { style: 'percent' })}
 	onChange={(textScale) => preferences.update({ textScale })}
 />
@@ -47,8 +39,6 @@
 	description={t('settings.iconSizeHelp')}
 	value={preferences.current.iconScale}
 	{...ICON_SCALE}
-	defaultValue={DEFAULT_PREFERENCES.iconScale}
-	resetLabel={t('settings.resetTo100')}
 	format={(scale) => intl.number(scale, { style: 'percent' })}
 	onChange={(iconScale) => preferences.update({ iconScale })}
 />
