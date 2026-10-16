@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CHARACTER_TYPES } from '#lib/core/data/types.ts';
+	import { CHARACTER_TYPES, type Character } from '#lib/core/data/types.ts';
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import {
 		ALIGNMENT_CHOICES,
@@ -22,7 +22,7 @@
 	interface Props {
 		/** Already filtered and sorted (`tableRows`), so the page can show the count. */
 		rows: readonly ReferenceEntry[];
-		onExplain: (title: string, text: string) => void;
+		onExplain: (title: string, text: string, character?: Character) => void;
 	}
 
 	let { rows, onExplain }: Props = $props();

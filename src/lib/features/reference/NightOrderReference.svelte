@@ -30,6 +30,7 @@
 		if (!q) return true;
 		const name =
 			s.character?.name ?? (s.kind === 'marker' ? MARKER_TEXT[s.id as NightMarker].name : '');
+		// eslint-disable-next-line grim/names-as-badges -- text to search, never shown
 		return `${name} ${s.reminder ?? ''}`.toLowerCase().includes(q);
 	}
 

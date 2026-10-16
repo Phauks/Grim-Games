@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Character } from '#lib/core/data/index.ts';
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import FieldValue from './FieldValue.svelte';
 	import { REFERENCE_FIELDS } from './fields.ts';
@@ -7,7 +8,7 @@
 	interface Props {
 		entry: ReferenceEntry;
 		/** Opens the shared details overlay (e.g. why there are no pre-day reminders). */
-		onExplain: (title: string, text: string) => void;
+		onExplain: (title: string, text: string, character?: Character) => void;
 	}
 
 	let { entry, onExplain }: Props = $props();

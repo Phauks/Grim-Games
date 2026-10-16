@@ -1,4 +1,7 @@
 <script lang="ts">
+	import type { Character } from '#lib/core/data/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { groupByType, matchesReference, type ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import { activeFilterCount, tableRows } from '#lib/core/rules/reference-table.ts';
@@ -19,10 +22,11 @@
 	let { entries, view }: Props = $props();
 
 	// One shared details overlay, so extra detail never expands a card or row inline.
-	let details = $state<{ title: string; text: string }>();
+	// `title` may hold the `character` slot (slots.ts), shown as `character`'s badge.
+	let details = $state<{ title: string; text: string; character?: Character }>();
 	let detailsOpen = $state(false);
-	function explain(title: string, text: string) {
-		details = { title, text };
+	function explain(title: string, text: string, character?: Character) {
+		details = { title, text, character };
 		detailsOpen = true;
 	}
 
@@ -112,6 +116,15 @@
 {/if}
 
 <Dialog bind:open={detailsOpen} title={details?.title ?? ''}>
+	{#snippet heading()}
+		<Sentence text={details?.title ?? ''}
+			>{#snippet fill()}{#if details?.character}<CharacterBadge
+						characterId={details.character.id}
+						character={details.character}
+						inline
+					/>{/if}{/snippet}</Sentence
+		>
+	{/snippet}
 	{#if details}<p>{details.text}</p>{/if}
 </Dialog>
 

@@ -1,13 +1,19 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { buildInfo } from '#lib/build-info.ts';
-	import { characterIcons, ICONS_PATH, type Special } from '#lib/core/data/index.ts';
+	import {
+		characterIcons,
+		ICONS_PATH,
+		type Character,
+		type Special
+	} from '#lib/core/data/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import type { ReferenceEntry, ReferenceNight } from '#lib/core/rules/reference.ts';
 	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup-reminders.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { characterReportUrl } from '#lib/features/about/report-issue.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { characterCardsFor } from '#lib/features/info-tokens/character-cards.ts';
@@ -23,7 +29,8 @@
 		field: FieldId;
 		entry: ReferenceEntry;
 		/** Opens the shared details overlay (e.g. why there are no pre-day reminders). */
-		onExplain: (title: string, text: string) => void;
+		/** `character`: the overlay's title starts with its badge. */
+		onExplain: (title: string, text: string, character?: Character) => void;
 		/** Token size in px (fixed, so nothing reflows). */
 		tokenSize?: number;
 		/** The name as plain text, not a badge: the table is pure information (Trevor, 2026-10-16). */
@@ -111,8 +118,8 @@
 	{:else if field === 'alignment'}
 		{entry.alignmentNote}
 	{:else if field === 'setup'}
-		{#if entry.setup}<GlossaryText
-				text="{character.name}: {entry.setup.summary}"
+		{#if entry.setup}<CharacterBadge characterId={character.id} {character} inline />: <GlossaryText
+				text={entry.setup.summary}
 			/>{#if entry.setup.notes.length}<span class="small block"
 					><GlossaryText text={entry.setup.notes.join(' ')} /></span
 				>{/if}{:else}{t('common.none')}{/if}
@@ -190,8 +197,9 @@
 						label={t('reference.whyNoDay')}
 						onclick={() =>
 							onExplain(
-								t('reference.noDayTitle', { name: character.name }),
-								t('reference.noDayText', { reason: entry.noDayReason ?? '' })
+								t('reference.noDayTitle', { name: slot('character') }),
+								t('reference.noDayText', { reason: entry.noDayReason ?? '' }),
+								character
 							)}
 					/>{/if}</span
 			>
