@@ -143,6 +143,9 @@ test('a "see …" link in the wiki wording opens that entry, with Back, and char
 	const icon = details.locator('.character .icon img');
 	await expect(icon).toBeVisible();
 	await expect(icon).toHaveAttribute('src', /poisoner_e\.webp$/);
-	expect(await icon.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+	// The image may still be loading when it first shows: wait for it to decode.
+	await expect
+		.poll(() => icon.evaluate((img: HTMLImageElement) => img.naturalWidth))
+		.toBeGreaterThan(0);
 	await expect(details.getByRole('link', { name: 'Open wiki' })).toBeVisible();
 });
