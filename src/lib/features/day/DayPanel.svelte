@@ -1,16 +1,13 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import {
-		GENERAL_DEATH_CAUSES,
-		type DeathCause,
-		type Game,
-		type SeatId
-	} from '#lib/core/model/index.ts';
+	import { isTraveller, type DeathCause, type Game, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		dayReminders,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
-		type DayReminder
+		validDeathCauses,
+		type DayReminder,
+		type ValidDeathCause
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
@@ -22,13 +19,14 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import type { DayGame } from './day-game.svelte.ts';
+	import type { DayPort } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
 
 	interface Props {
-		game: DayGame;
+		game: DayPort;
 		assistance: Assistance;
-		onOpenNight: () => void;
+		/** Shows a Night order button (the day spike); the grimoire has its own. */
+		onOpenNight?: () => void;
 	}
 
 	let { game, assistance, onOpenNight }: Props = $props();
@@ -76,12 +74,37 @@
 		causeOpen = false;
 	}
 
-	const CAUSE_LABELS: Record<(typeof GENERAL_DEATH_CAUSES)[number], string> = {
-		execution: 'Executed',
-		demon: 'Killed by the Demon',
-		other: 'Something else',
-		exile: 'Exiled'
-	};
+	/** Only the causes that could be true for this player (core `validDeathCauses`). */
+	const causes = $derived(causeSeat ? validDeathCauses(g, causeSeat, game.characters) : []);
+
+	function causeLabel(cause: DeathCause): string {
+		switch (cause) {
+			case 'execution':
+				return 'Executed';
+			case 'exile':
+				return 'Exiled';
+			case 'demon':
+				return 'Killed by the Demon';
+			case 'other':
+				return 'Something else';
+			default:
+				return game.characterName(cause);
+		}
+	}
+
+	/** Why a cause is offered with a caution, in a few words. */
+	function causeCaution(option: ValidDeathCause): string | undefined {
+		const flag = option.flags[0];
+		if (!flag) return undefined;
+		switch (flag.code) {
+			case 'registers':
+				return `only if ${game.characterName(flag.source.characterId)} registered falsely`;
+			case 'impaired':
+				return 'drunk or poisoned now';
+			case 'unknown':
+				return 'alignment not set';
+		}
+	}
 
 	// ── Pre-day reminders ──
 	/**
@@ -186,7 +209,9 @@
 			Undo
 		</Button>
 		<Button icon="day" variant="quiet" onclick={() => (confirmNewDay = true)}>New day</Button>
-		<Button icon="night" onclick={onOpenNight}>Night order</Button>
+		{#if onOpenNight}
+			<Button icon="night" onclick={onOpenNight}>Night order</Button>
+		{/if}
 	</div>
 
 	<section aria-labelledby="seats-heading">
@@ -212,13 +237,13 @@
 				<button
 					type="button"
 					class="seat"
-					aria-label={`Seat: ${seat.playerName}`}
+					aria-label={`Seat: ${game.seatName(seat.seatId)}`}
 					aria-pressed={seat.seatId === nominator}
 					data-dead={seat.dead}
 					onclick={() => tapSeat(seat.seatId)}
 				>
 					<span class="dead-mark" aria-hidden="true"><Icon name="dead" /></span>
-					<span>{seat.playerName}</span>
+					<span>{game.seatName(seat.seatId)}</span>
 				</button>
 			{/each}
 		</div>
@@ -307,12 +332,16 @@
 						<span class="entry-text">{game.describe(entry)}</span>
 						<span class="row-actions">
 							{#if entry.kind === 'nomination'}
+								<!-- Travellers are exiled, not executed. -->
+								{@const exile = isTraveller(g, entry.nominee, game.characters)}
 								<button
 									type="button"
 									class="chip"
-									onclick={() => game.run({ type: 'Execute', seatId: entry.nominee })}
+									onclick={() =>
+										game.run({ type: exile ? 'Exile' : 'Execute', seatId: entry.nominee })}
 								>
-									Execute {game.seatName(entry.nominee)}
+									{exile ? 'Exile' : 'Execute'}
+									{game.seatName(entry.nominee)}
 								</button>
 							{:else if entry.kind === 'note'}
 								<button
@@ -347,8 +376,11 @@
 	description="Optional. You can set it later."
 >
 	<div class="causes">
-		{#each GENERAL_DEATH_CAUSES as cause (cause)}
-			<Button variant="quiet" onclick={() => setCause(cause)}>{CAUSE_LABELS[cause]}</Button>
+		{#each causes as option (option.cause)}
+			{@const caution = causeCaution(option)}
+			<Button variant="quiet" onclick={() => setCause(option.cause)}>
+				{causeLabel(option.cause)}{#if caution}<span class="caution">({caution})</span>{/if}
+			</Button>
 		{/each}
 		<Button variant="quiet" onclick={() => (causeOpen = false)}>Skip</Button>
 	</div>
@@ -528,5 +560,10 @@
 	.causes {
 		display: grid;
 		gap: var(--space-2);
+	}
+	.caution {
+		margin-left: var(--space-1);
+		color: var(--on-surface-muted);
+		font-weight: normal;
 	}
 </style>

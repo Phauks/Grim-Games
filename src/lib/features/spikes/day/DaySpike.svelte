@@ -6,7 +6,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { DayGame } from './day-game.svelte.ts';
-	import DayPanel from './DayPanel.svelte';
+	import DayPanel from '#lib/features/day/DayPanel.svelte';
 	import NightPanel from './NightPanel.svelte';
 	import type { Variant } from './sample-games.ts';
 

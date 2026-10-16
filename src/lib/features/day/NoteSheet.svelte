@@ -3,7 +3,7 @@
 	import type { CharacterGuess, DayEntry, SeatId } from '#lib/core/model/index.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import type { DayGame } from './day-game.svelte.ts';
+	import type { DayPort } from './day-port.ts';
 
 	export interface NoteTarget {
 		characterId: CharacterId;
@@ -12,7 +12,7 @@
 
 	interface Props {
 		open?: boolean;
-		game: DayGame;
+		game: DayPort;
 		target?: NoteTarget;
 	}
 

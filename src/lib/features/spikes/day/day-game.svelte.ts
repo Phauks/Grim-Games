@@ -16,13 +16,14 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
+import { describeEntry, type DayPort } from '#lib/features/day/day-port.ts';
 import { sampleSession, type Variant } from './sample-games.ts';
 
 /**
  * One sample game for the day spike, run through the real engine: commands, warnings
  * (shown as toasts, so nothing moves), and undo back to the end of the sample setup.
  */
-export class DayGame {
+export class DayGame implements DayPort {
 	session = $state.raw<GameSession>() as GameSession;
 	readonly characters: CharacterLookup;
 	readonly #ctx: EngineContext;
@@ -78,24 +79,10 @@ export class DayGame {
 
 	/** A short line for a day-log entry, in our words. */
 	describe(entry: DayEntry): string {
-		switch (entry.kind) {
-			case 'nomination':
-				return `${this.seatName(entry.nominator)} nominated ${this.seatName(entry.nominee)}`;
-			case 'execution':
-				return `${this.seatName(entry.seatId)} executed${entry.died ? '' : ' (already dead)'}`;
-			case 'exile':
-				return `${this.seatName(entry.seatId)} exiled${entry.died ? '' : ' (already dead)'}`;
-			case 'ability':
-				return `${this.characterName(entry.characterId)} (${this.seatName(entry.seatId)}) used their ability`;
-			case 'note': {
-				const who = entry.seatId ? ` (${this.seatName(entry.seatId)})` : '';
-				const guesses = entry.guesses?.length
-					? ` · ${entry.guesses.length} guess${entry.guesses.length === 1 ? '' : 'es'}`
-					: '';
-				return `${this.characterName(entry.characterId)}${who}: ${entry.text}${guesses}`;
-			}
-			case 'info':
-				return `${this.characterName(entry.characterId)} (${this.seatName(entry.seatId)}): ${entry.text}`;
-		}
+		return describeEntry(
+			entry,
+			(s) => this.seatName(s),
+			(id) => this.characterName(id)
+		);
 	}
 }
