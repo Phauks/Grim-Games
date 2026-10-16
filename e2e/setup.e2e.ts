@@ -151,11 +151,8 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await expect(page.getByTestId('next-seat')).toHaveText('None');
 	await noSidewaysScroll(page);
 
-	// Setup reminders: the Washerwoman's tokens, the Storyteller picks the seats.
-	await page.getByRole('button', { name: 'Setup reminders' }).tap();
-	const reminders = page.getByTestId('setup-reminders');
-	await expect(reminders.locator('[data-character-id="washerwoman"]').first()).toBeVisible();
-	await page.keyboard.press('Escape');
+	// Setup reminders live on the board now, not in the draw.
+	await expect(page.getByRole('button', { name: 'Setup reminders' })).toHaveCount(0);
 
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);

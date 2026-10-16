@@ -11,7 +11,6 @@
 	import type { SetupGamePort } from './game-port.ts';
 	import RevealDialog from './RevealDialog.svelte';
 	import { seatLabel } from './seat-label.ts';
-	import SetupRemindersDialog from './SetupRemindersDialog.svelte';
 
 	interface Props {
 		port: SetupGamePort;
@@ -29,7 +28,6 @@
 
 	let revealing = $state<TileId | undefined>(undefined);
 	let revealOpen = $state(false);
-	let remindersOpen = $state(false);
 	const tile = $derived(revealing && bag ? bag.tiles[revealing] : undefined);
 	const slot = $derived(slots.find((s) => s.tileId === revealing));
 
@@ -121,12 +119,6 @@
 	</ErrorBoundary>
 
 	<div class="actions">
-		<Button
-			variant="quiet"
-			icon="reminder"
-			disabled={!game || !lookup}
-			onclick={() => (remindersOpen = true)}>Setup reminders</Button
-		>
 		{#if game}
 			<Button
 				variant={done ? 'accent' : 'quiet'}
@@ -149,19 +141,6 @@
 			onConfirm={confirm}
 		/>
 	{/if}
-{/if}
-{#if game && lookup}
-	<SetupRemindersDialog
-		bind:open={remindersOpen}
-		{game}
-		{lookup}
-		onPlace={(placements) => {
-			if (send({ type: 'ApplySetupReminders', placements })) {
-				remindersOpen = false;
-				toast(`Placed ${placements.length} reminder${placements.length === 1 ? '' : 's'}`);
-			}
-		}}
-	/>
 {/if}
 
 <style>
