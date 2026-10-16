@@ -11,9 +11,11 @@
 	interface Props {
 		/** Everyone at the table, Travellers included; the dealt players' column is highlighted. */
 		players: number;
+		/** Tapping a column sets the player count to it (Trevor, 2026-10-16). */
+		onPick?: (players: number) => void;
 	}
 
-	let { players }: Props = $props();
+	let { players, onPick }: Props = $props();
 
 	const columns = Object.keys(BASE_DISTRIBUTION).map(Number);
 	// Beyond 15 the extra players are Travellers, so the 15 column still applies.
@@ -30,9 +32,16 @@
 		<tr>
 			<th scope="row">{t('setup.players')}</th>
 			{#each columns as n (n)}
-				<th scope="col" data-current={n === current ? '' : undefined}
-					>{n === MAX_DEALT_PLAYERS ? `${n}+` : n}</th
-				>
+				<th scope="col" data-current={n === current ? '' : undefined}>
+					{#if onPick}
+						<button
+							type="button"
+							aria-label={t('common.players', { count: n })}
+							aria-pressed={n === current}
+							onclick={() => onPick(n)}>{n === MAX_DEALT_PLAYERS ? `${n}+` : n}</button
+						>
+					{:else}{n === MAX_DEALT_PLAYERS ? `${n}+` : n}{/if}
+				</th>
 			{/each}
 		</tr>
 	</thead>
@@ -41,7 +50,14 @@
 			<tr data-type={type}>
 				<th scope="row">{TYPE_PLURALS[type]}</th>
 				{#each columns as n (n)}
-					<td data-current={n === current ? '' : undefined}>{BASE_DISTRIBUTION[n][type]}</td>
+					<!-- The whole column is the tap target; the header's button serves the keyboard. -->
+					<td
+						data-current={n === current ? '' : undefined}
+						data-pick={onPick ? '' : undefined}
+						onclick={() => onPick?.(n)}
+					>
+						{BASE_DISTRIBUTION[n][type]}
+					</td>
 				{/each}
 			</tr>
 		{/each}
@@ -80,6 +96,19 @@
 	tbody tr[data-type='minion'] th,
 	tbody tr[data-type='demon'] th {
 		color: var(--evil);
+	}
+	button {
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+	[data-pick] {
+		cursor: pointer;
 	}
 	[data-current] {
 		background: var(--accent);

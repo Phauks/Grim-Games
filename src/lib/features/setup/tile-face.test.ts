@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { iconSlots } from '#lib/ui/icons/catalogue.ts';
-import { TILE_SYMBOLS, tileSymbols } from './tile-face.ts';
+import { tileLabel, tileLetters } from './tile-face.ts';
 
-describe('tileSymbols', () => {
-	const ids = Array.from({ length: 20 }, (_, i) => `t${i}`);
-
-	it('gives every tile of a 20-player bag its own symbol', () => {
-		expect(new Set(tileSymbols(ids)).size).toBe(20);
+describe('tile labels', () => {
+	it('letters run A to Z, then AA, AB', () => {
+		expect([1, 2, 26, 27, 28, 52, 53].map(tileLetters)).toEqual([
+			'A',
+			'B',
+			'Z',
+			'AA',
+			'AB',
+			'AZ',
+			'BA'
+		]);
 	});
 
-	it('is the same for the same bag and differs between bags', () => {
-		expect(tileSymbols(ids)).toEqual(tileSymbols(ids));
-		expect(tileSymbols(ids.map((id) => `${id}x`))).not.toEqual(tileSymbols(ids));
-	});
-
-	it('only uses real icon slots', () => {
-		for (const slot of TILE_SYMBOLS) expect(iconSlots).toContain(slot);
+	it('numbers by default, letters when chosen', () => {
+		expect(tileLabel(3, 'numbers')).toBe('3');
+		expect(tileLabel(3, 'letters')).toBe('C');
 	});
 });

@@ -10,6 +10,7 @@
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
+	import { attachRoom } from '#lib/features/room/host.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { SetupGamePort } from './game-port.ts';
 	import { openGamePort } from './open-game-port.ts';
@@ -43,6 +44,8 @@
 					await goto(resolve('/grimoire/[gameId]', { gameId: id }), { replaceState: true });
 					return;
 				}
+				// Phones in the room follow the game (and its script) while setup is open.
+				if (open) attachRoom(open);
 				view = open ? { kind: 'ready', port: openGamePort(open) } : { kind: 'missing' };
 			} catch (e) {
 				if (cancelled) return;

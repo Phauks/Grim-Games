@@ -5,6 +5,7 @@
  */
 import type { Command, EngineError, EngineWarning } from '#lib/core/engine/index.ts';
 import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
+import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 
 export type PortResult =
 	{ ok: true; warnings: EngineWarning[] } | { ok: false; error: EngineError };
@@ -17,4 +18,6 @@ export interface SetupGamePort {
 	dispatch(command: Command): PortResult;
 	/** Resolves once every change so far is saved (before going to another page). */
 	flush(): Promise<void>;
+	/** The grimoire's session, for the players' join room; absent in tests. */
+	readonly openGame?: OpenGame;
 }

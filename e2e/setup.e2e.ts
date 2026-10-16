@@ -24,6 +24,15 @@ test('the setup table is shown and follows the player count', async ({ page }) =
 	await page.getByRole('button', { name: 'More players' }).tap();
 	await expect(current).toHaveText('7');
 	await expect(table.locator('tbody [data-current]')).toHaveText(['5', '0', '1', '1']);
+	// Tapping a column sets the count too (Trevor, 2026-10-16), anywhere in the column.
+	await table.locator('tbody tr[data-type="minion"] td').nth(5).tap();
+	await expect(page.getByTestId('player-count')).toHaveText('10');
+	await table.getByRole('button', { name: '5 players', exact: true }).tap();
+	await expect(page.getByTestId('player-count')).toHaveText('5');
+	await expect(table.getByRole('button', { name: '5 players', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 });
 
 test('setup is one flow of two steps with the same bar on each', async ({ page }) => {
@@ -172,7 +181,7 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
-test('bag tiles can show symbols instead of numbers, centred on the token', async ({ page }) => {
+test('bag tiles show numbers, or letters when chosen, centred on the token', async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
@@ -184,12 +193,14 @@ test('bag tiles can show symbols instead of numbers, centred on the token', asyn
 	expect(Math.abs(t!.x + t!.width / 2 - (f!.x + f!.width / 2))).toBeLessThan(2);
 	expect(Math.abs(t!.y + t!.height / 2 - (f!.y + f!.height / 2))).toBeLessThan(2);
 
+	// A dropdown, not a switch (Trevor, 2026-10-16).
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
 	await page.getByRole('button', { name: 'Storyteller settings' }).tap();
-	await page.getByText('Symbols on bag tiles', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+	await page.getByRole('option', { name: 'Letters' }).tap();
 	await page.keyboard.press('Escape');
-	await expect(tile).toHaveText('');
-	await expect(tile.locator('svg')).toHaveCount(1);
+	await expect(page.getByRole('button', { name: 'Tile A', exact: true })).toHaveText('A');
+	await expect(page.getByRole('button', { name: 'Tile E', exact: true })).toHaveText('E');
 });
 
 test('with Require a name, the token stays hidden until a name is typed', async ({ page }) => {
@@ -420,4 +431,14 @@ test('a Drunk game draws only Townsfolk tokens and offers Is The Drunk on the bo
 		.getByRole('link', { name: 'Grimoire' })
 		.tap();
 	await expect(page.getByText('Is The Drunk')).toBeVisible();
+});
+
+// Trevor, 2026-10-16: share the join code from setup, before the draw.
+test("setup opens the players' join code and QR", async ({ page }) => {
+	await selectionFor(page, 5);
+	await page.getByRole('button', { name: "Players' phones" }).tap();
+	const dialog = page.getByRole('dialog', { name: "Players' phones" });
+	await dialog.getByRole('button', { name: 'Open a room' }).tap();
+	await expect(dialog.getByTestId('room-code')).toHaveText(/\d/);
+	await expect(dialog.getByRole('img', { name: /QR/i })).toBeVisible();
 });

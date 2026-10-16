@@ -31,9 +31,9 @@ export const settings = {
 	'settings.characterIconSize': 'Character icon size',
 	'settings.characterIconSizeHelp':
 		'Changes the size of character icons in names, lists and the day. Grimoire tokens use Token size instead.',
-	'settings.tileSymbols': 'Symbols on bag tiles',
-	'settings.tileSymbolsHelp':
-		'Face-down tiles on the bag draw show a random symbol. Off shows numbers.',
+	'settings.tileLabels': 'Bag tile labels',
+	'settings.tileLabels.numbers': 'Numbers',
+	'settings.tileLabels.letters': 'Letters',
 	'settings.requireName': 'Require a name before drawing',
 	'settings.requireNameHelp': 'A player types their name before they can see the token they drew.',
 	'settings.fontPreview': 'Preview',

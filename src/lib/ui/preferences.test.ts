@@ -53,10 +53,14 @@ describe('parsePreferences', () => {
 				playerNamePlacement: 'below'
 			},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
-			tileFace: 'symbols',
+			tileFace: 'letters',
 			requireName: true
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
+	});
+
+	it('reads the random symbols bag tiles once had as numbers', () => {
+		expect(parsePreferences({ tileFace: 'symbols' }).tileFace).toBe('numbers');
 	});
 
 	it('gives character icons the one icon size saved before the split', () => {

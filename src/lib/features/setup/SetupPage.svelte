@@ -38,6 +38,7 @@
 	import SetupTable from './SetupTable.svelte';
 	import SetupSteps from './SetupSteps.svelte';
 	import SetupNav from './SetupNav.svelte';
+	import JoinButton from './JoinButton.svelte';
 	import { currentSetupStep } from './setup-steps.ts';
 	import { buildErrors } from './build-check.ts';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
@@ -187,7 +188,10 @@
 				hasBag={currentSetupStep(game) !== 'characters'}
 			/>
 		{/if}
-		<h1>{t('setup.characters')}</h1>
+		<div class="title">
+			<h1>{t('setup.characters')}</h1>
+			{#if port.openGame}<JoinButton game={port.openGame} />{/if}
+		</div>
 		<p class="script">
 			<span class="label">{t('setup.script')}</span>
 			<span class="name" data-testid="setup-script-name">{script?.name ?? t('common.none')}</span>
@@ -217,7 +221,7 @@
 						>
 					</div>
 					<Collapsible title={t('setup.sheet')} storageKey="setup:sheet">
-						<SetupTable players={s.players} />
+						<SetupTable players={s.players} onPick={(n) => setupSelection.setPlayers(n)} />
 					</Collapsible>
 				</section>
 				<div class="counts">
@@ -350,6 +354,12 @@
 	h1 {
 		margin: var(--space-2) 0 0;
 		overflow-wrap: anywhere;
+	}
+	.title {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
 	}
 	.script {
 		display: flex;

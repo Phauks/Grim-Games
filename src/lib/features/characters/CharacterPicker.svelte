@@ -233,6 +233,13 @@
 			background: var(--surface-selected);
 		}
 	}
+	/* On parchment the hover darkens the paper slightly, so the ink stays readable. */
+	@media (hover: hover) {
+		.picker[data-surface='sheet']
+			.row:hover:not(:disabled):not([aria-pressed='true']):not([aria-current='true']) {
+			background: color-mix(in srgb, currentColor 10%, transparent);
+		}
+	}
 	.row[aria-pressed='true'],
 	.row[aria-current='true'] {
 		background: var(--choice-selected-background);

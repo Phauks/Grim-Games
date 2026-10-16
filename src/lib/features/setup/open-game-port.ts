@@ -11,6 +11,7 @@ export function openGamePort(open: OpenGame): SetupGamePort {
 			return open.characters;
 		},
 		dispatch: (command) => open.run(command),
-		flush: () => open.save()
+		flush: () => open.save(),
+		openGame: open
 	};
 }

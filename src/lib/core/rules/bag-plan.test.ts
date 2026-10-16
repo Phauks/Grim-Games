@@ -91,6 +91,21 @@ describe('planBag', () => {
 		expect(result.issues).toEqual([]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Philosopher: the Philosopher's own token is in the
+	// bag; "Is The Philosopher" only matters once they gain an ability, so nothing waits on it.
+	it('Philosopher: an ordinary tile, and no "Is The …" token waits for the draw', () => {
+		const result = planBag({
+			selection: pick('philosopher', 'imp'),
+			scriptCharacters: script(['philosopher', 'chef', 'imp']),
+			lookup
+		});
+		expect(result.tiles).toEqual([
+			{ shows: 'philosopher', grimoire: 'philosopher' },
+			{ shows: 'imp', grimoire: 'imp' }
+		]);
+		expect(result.unseated).toEqual([]);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Marionette: the Marionette thinks they are a good
 	// character and neighbours the Demon; their token is not in the bag.
 	it('Marionette: no tile of its own, and "Is The Marionette" waits for the draw', () => {

@@ -13,10 +13,11 @@
 	import type { SetupGamePort } from './game-port.ts';
 	import RevealDialog from './RevealDialog.svelte';
 	import { seatLabel } from './seat-label.ts';
-	import { tileSymbols } from './tile-face.ts';
+	import { tileLabel } from './tile-face.ts';
 	import SetupSteps from './SetupSteps.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
+	import JoinButton from './JoinButton.svelte';
 	import { remindersHref } from './setup-steps.ts';
 
 	interface Props {
@@ -32,9 +33,8 @@
 	const next = $derived(game ? nextDrawSeat(game) : undefined);
 	// A stray tap mid-draw must not leave the draw (Trevor, 2026-10-16).
 	const inBag = $derived(slots.filter((s) => s.state !== 'drawn').length);
-	// Numbers or symbols on the face-down tiles (Storyteller settings).
+	// Numbers or letters on the face-down tiles (Storyteller settings).
 	const face = $derived(preferences.current.tileFace);
-	const symbols = $derived(tileSymbols(slots.map((s) => s.tileId)));
 
 	let revealing = $state<TileId | undefined>(undefined);
 	let revealOpen = $state(false);
@@ -100,7 +100,10 @@
 		{#if game}
 			<SetupSteps gameId={game.gameId} current="draw" hasBag={bag !== undefined} />
 		{/if}
-		<h1>{t('setup.draw')}</h1>
+		<div class="title">
+			<h1>{t('setup.draw')}</h1>
+			{#if port.openGame}<JoinButton game={port.openGame} />{/if}
+		</div>
 	</header>
 
 	<ErrorBoundary area="setup">
@@ -120,17 +123,16 @@
 							data-state={s.state}
 							disabled={s.state === 'drawn'}
 							aria-label={s.state === 'held'
-								? t('setup.draw.tileHeld', { number: s.number, seat: label(s.seatId) })
+								? t('setup.draw.tileHeld', {
+										number: tileLabel(s.number, face),
+										seat: label(s.seatId)
+									})
 								: s.state === 'drawn'
-									? t('setup.draw.tileDrawn', { number: s.number })
-									: t('setup.draw.tile', { number: s.number })}
+									? t('setup.draw.tileDrawn', { number: tileLabel(s.number, face) })
+									: t('setup.draw.tile', { number: tileLabel(s.number, face) })}
 							onclick={() => draw(s.tileId, s.state)}
 						>
-							<span class="face" aria-hidden="true"
-								>{#if face === 'symbols'}<Icon
-										name={symbols[s.number - 1]}
-									/>{:else}{s.number}{/if}</span
-							>
+							<span class="face" aria-hidden="true">{tileLabel(s.number, face)}</span>
 							<span class="mark"
 								>{#if s.state === 'drawn'}<Icon name="check" />{:else if s.state === 'held'}{t(
 										'setup.draw.held'
@@ -168,7 +170,7 @@
 	{#if shows}
 		<RevealDialog
 			bind:open={revealOpen}
-			number={slot.number}
+			number={tileLabel(slot.number, face)}
 			{shows}
 			needsAlignment={lookup.get(tile.grimoire)?.type === 'traveller'}
 			seatLabel={label(tile.drawnBySeat)}
@@ -192,6 +194,12 @@
 	h1 {
 		margin: var(--space-2) 0 0;
 		overflow-wrap: anywhere;
+	}
+	.title {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
 	}
 	.next {
 		display: flex;

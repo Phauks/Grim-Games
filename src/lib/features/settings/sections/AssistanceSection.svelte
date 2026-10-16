@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS, STORYTELLER_HELP_KEYS } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 
 	const assistance = $derived(preferences.current.assistance);
@@ -15,12 +16,16 @@
 		onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
 	/>
 {/each}
-<!-- A switch like the rest of this section (no radio groups here). -->
-<SettingToggle
-	label={t('settings.tileSymbols')}
-	description={t('settings.tileSymbolsHelp')}
-	checked={preferences.current.tileFace === 'symbols'}
-	onChange={(checked) => preferences.update({ tileFace: checked ? 'symbols' : 'numbers' })}
+<!-- What face-down bag tiles show (Trevor, 2026-10-16: a dropdown, not a switch). -->
+<SettingSelect
+	label={t('settings.tileLabels')}
+	value={preferences.current.tileFace}
+	options={[
+		{ value: 'numbers', label: t('settings.tileLabels.numbers') },
+		{ value: 'letters', label: t('settings.tileLabels.letters') }
+	]}
+	defaultValue="numbers"
+	onChange={(tileFace) => preferences.update({ tileFace })}
 />
 <SettingToggle
 	label={t('settings.requireName')}

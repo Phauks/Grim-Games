@@ -9,8 +9,8 @@
 
 	interface Props {
 		open: boolean;
-		/** The tile's number on the draw screen. */
-		number: number;
+		/** The tile's label on the draw screen: its number or letter. */
+		number: string;
 		/** What the player sees: never the grimoire character (the Drunk sees a Townsfolk). */
 		shows: Character;
 		/**
