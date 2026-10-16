@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Character, CharacterId, CharacterType } from '#lib/core/data/index.ts';
-	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterLabel from './CharacterLabel.svelte';
 
@@ -12,7 +12,7 @@
 		max: number;
 		/** Accessible name of the list. */
 		label: string;
-		/** Characters in play: marked, and not choosable when `blockInPlay` is set. */
+		/** Characters in play: not choosable when `blockInPlay` is set. */
 		inPlay?: ReadonlySet<CharacterId>;
 		blockInPlay?: boolean;
 	}
@@ -25,28 +25,8 @@
 		inPlay,
 		blockInPlay = false
 	}: Props = $props();
-	let query = $state('');
 
-	const TYPE_ORDER: CharacterType[] = [
-		'townsfolk',
-		'outsider',
-		'minion',
-		'demon',
-		'traveller',
-		'fabled',
-		'loric'
-	];
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
-	const groups = $derived.by(() => {
-		const needle = query.trim().toLowerCase();
-		const shown = needle
-			? characters.filter((c) => c.name.toLowerCase().includes(needle))
-			: characters;
-		return TYPE_ORDER.map((type) => ({
-			type,
-			list: shown.filter((c) => c.type === type)
-		})).filter((g) => g.list.length > 0);
-	});
 	const full = $derived(selected.length >= max);
 
 	function toggle(id: CharacterId) {
@@ -54,8 +34,19 @@
 		else if (max === 1) selected = [id];
 		else if (!full) selected = [...selected, id];
 	}
+
+	function disabledReason(character: Character): string | undefined {
+		if (selected.includes(character.id)) return undefined;
+		if (blockInPlay && inPlay?.has(character.id)) return 'In play';
+		if (full && max > 1) return 'Remove a choice first';
+		return undefined;
+	}
 </script>
 
+<!--
+	The chosen characters in fixed slots (so choosing never moves anything), then the shared
+	searchable character list.
+-->
 <div class="picker">
 	<ol class="slots" aria-label="Chosen">
 		{#each Array.from({ length: max }, (_, i) => selected[i]) as id, i (i)}
@@ -80,48 +71,15 @@
 		{/each}
 	</ol>
 
-	<label class="search">
-		<Icon name="search" />
-		<input
-			type="search"
-			placeholder="Find a character"
-			aria-label="Find a character"
-			bind:value={query}
+	<div role="group" aria-label={label}>
+		<SharedPicker
+			{characters}
+			mode={max === 1 ? 'single' : 'multi'}
+			{selected}
+			onSelect={toggle}
+			{disabledReason}
+			contained={false}
 		/>
-	</label>
-
-	<div class="groups" role="group" aria-label={label}>
-		{#each groups as group (group.type)}
-			<h3>{TYPE_PLURALS[group.type]}</h3>
-			<ul>
-				{#each group.list as character (character.id)}
-					{@const chosen = selected.includes(character.id)}
-					{@const playing = inPlay?.has(character.id) ?? false}
-					<li>
-						<button
-							type="button"
-							class="choice"
-							aria-pressed={chosen}
-							aria-label="{character.name}{playing ? ', in play' : ''}"
-							data-character-id={character.id}
-							disabled={!chosen && ((full && max > 1) || (blockInPlay && playing))}
-							onclick={() => toggle(character.id)}
-						>
-							<span class="head">
-								<CharacterLabel {character} />
-								<span class="in-play">{playing ? 'In play' : ''}</span>
-								<span class="mark" aria-hidden="true"
-									>{#if chosen}<Icon name="check" />{/if}</span
-								>
-							</span>
-							<span class="ability">{character.ability}</span>
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="none">None</p>
-		{/each}
 	</div>
 </div>
 
@@ -163,92 +121,5 @@
 		color: var(--on-sheet-muted);
 		cursor: default;
 		padding-left: var(--space-3);
-	}
-	.search {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
-	}
-	.search input {
-		flex: 1;
-		min-width: 0;
-		min-height: var(--tap-target);
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		outline: none;
-	}
-	h3 {
-		margin: var(--space-2) 0 var(--space-1);
-		font-family: var(--font-heading);
-		font-size: 1rem;
-		color: inherit;
-	}
-	ul {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	li {
-		min-width: 0;
-	}
-	.choice {
-		display: grid;
-		gap: var(--space-1);
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: var(--space-1) var(--space-2);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
-		background: none;
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-		touch-action: manipulation;
-	}
-	.choice:hover {
-		background: color-mix(in srgb, currentColor 8%, transparent);
-	}
-	.choice[aria-pressed='true'] {
-		border: 2px solid var(--accent);
-		background: color-mix(in srgb, var(--accent) 14%, transparent);
-	}
-	.choice:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
-	}
-	.head {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-width: 0;
-	}
-	.in-play {
-		flex: 1;
-		font-size: 0.75rem;
-		color: var(--on-sheet-muted);
-		text-align: end;
-	}
-	.mark {
-		flex: none;
-		width: calc(1.25 * var(--u));
-		color: var(--accent);
-	}
-	.ability {
-		font-family: var(--font-ability);
-		font-size: 0.85rem;
-		line-height: 1.3;
-	}
-	.none {
-		color: var(--on-sheet-muted);
 	}
 </style>

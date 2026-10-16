@@ -24,7 +24,7 @@ test('an info token is shown full screen and only the close button hides it', as
 test('"You are" asks for a character, then shows its token and ability', async ({ page }) => {
 	await page.goto('/info-tokens');
 	await page.getByRole('button', { name: 'You are' }).tap();
-	await page.getByRole('searchbox', { name: 'Find a character' }).fill('Empath');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
 	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await page.getByRole('button', { name: 'Show' }).tap();
 
@@ -54,7 +54,7 @@ test('a custom info token keeps its bold words and survives a reload', async ({ 
 
 const choice = (page: import('@playwright/test').Page, name: string) =>
 	page.getByRole('group', { name: 'Bluff characters' }).getByRole('button', {
-		name: new RegExp(`^${name}(, in play)?$`)
+		name: new RegExp(`^${name}(, .*)?$`)
 	});
 
 test('the Storyteller sets the 3 Demon bluffs at once and shows them as a list', async ({
@@ -68,9 +68,9 @@ test('the Storyteller sets the 3 Demon bluffs at once and shows them as a list',
 
 	// Each choice shows its ability text, and the list can be searched.
 	await expect(choice(page, 'Monk')).toContainText('Each night*, choose a player');
-	await page.getByRole('searchbox', { name: 'Find a character' }).fill('inv');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('inv');
 	await choice(page, 'Investigator').tap();
-	await page.getByRole('searchbox', { name: 'Find a character' }).fill('');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('');
 	await choice(page, 'Monk').tap();
 	await choice(page, 'Saint').tap();
 	await expect(choice(page, 'Librarian')).toBeDisabled();
