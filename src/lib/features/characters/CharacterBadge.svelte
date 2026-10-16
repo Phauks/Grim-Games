@@ -148,13 +148,18 @@
 		position: relative;
 		gap: 0.25em;
 		min-height: 0;
-		/* Fits the line; grows only when a larger Icon size needs it. */
-		--badge-h: max(1.45em, calc(1.25em * var(--character-icon-scale, 1) + 0.2em));
+		/*
+		 * Fits inside the line box (Trevor, 2026-10-16: names sat high and crowded the
+		 * underlined word above), so it never makes the line taller; grows only when a
+		 * larger Icon size needs it.
+		 */
+		--badge-h: max(1.3em, calc(1.1em * var(--character-icon-scale, 1) + 0.2em));
 		height: var(--badge-h);
 		padding: 0 0.5em 0 0.1em;
 		font-size: 0.92em;
 		line-height: 1;
-		vertical-align: baseline;
+		/* Centred on the text's x-height, not sitting on the baseline (which lifts it). */
+		vertical-align: middle;
 	}
 	/* The tap area reaches the 44px minimum without making the line taller. */
 	.badge.inline::before {
@@ -163,12 +168,12 @@
 		inset: calc((var(--badge-h) - var(--tap-target)) / 2) 0;
 	}
 	.badge.inline .icon {
-		width: calc(1.25em * var(--character-icon-scale, 1));
-		height: calc(1.25em * var(--character-icon-scale, 1));
-	}
-	.badge.inline .icon img {
 		width: calc(1.1em * var(--character-icon-scale, 1));
 		height: calc(1.1em * var(--character-icon-scale, 1));
+	}
+	.badge.inline .icon img {
+		width: calc(0.95em * var(--character-icon-scale, 1));
+		height: calc(0.95em * var(--character-icon-scale, 1));
 	}
 	.player {
 		font-family: var(--font-player);
