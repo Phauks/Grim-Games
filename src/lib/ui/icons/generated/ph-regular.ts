@@ -68,7 +68,9 @@ import ph_note_pencil from '~icons/ph/note-pencil';
 import ph_notepad from '~icons/ph/notepad';
 import ph_paint_brush from '~icons/ph/paint-brush';
 import ph_palette from '~icons/ph/palette';
+import ph_pen_nib from '~icons/ph/pen-nib';
 import ph_pencil_simple from '~icons/ph/pencil-simple';
+import ph_pencil_simple_line from '~icons/ph/pencil-simple-line';
 import ph_person_simple_walk from '~icons/ph/person-simple-walk';
 import ph_plus from '~icons/ph/plus';
 import ph_plus_circle from '~icons/ph/plus-circle';
@@ -180,7 +182,9 @@ const icons: IconMap = {
 	'ph:notepad': ph_notepad,
 	'ph:paint-brush': ph_paint_brush,
 	'ph:palette': ph_palette,
+	'ph:pen-nib': ph_pen_nib,
 	'ph:pencil-simple': ph_pencil_simple,
+	'ph:pencil-simple-line': ph_pencil_simple_line,
 	'ph:person-simple-walk': ph_person_simple_walk,
 	'ph:plus': ph_plus,
 	'ph:plus-circle': ph_plus_circle,

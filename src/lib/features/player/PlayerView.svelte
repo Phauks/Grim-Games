@@ -29,6 +29,8 @@
 	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
+	import ScratchPadDialog from '#lib/ui/scratch/ScratchPadDialog.svelte';
+	import { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import { NotebookState } from './notebook-store.svelte.ts';
 	import { MIN_SEATS, playerCount, scriptKey } from './notebook.ts';
 	import NoteEditor from './NoteEditor.svelte';
@@ -132,10 +134,22 @@
 		});
 	});
 
+	// One scratch pad per script, like the notebook, in its own database on the device.
+	let scratch = $state<ScratchPadState>();
+	let scratchOpen = $state(false);
+	$effect(() => {
+		if (!key || scratch?.key === `player:${key}`) return;
+		const pad = new ScratchPadState(`player:${key}`);
+		scratchOpen = false;
+		void pad.load().then(() => {
+			if (pad.key === `player:${key}`) scratch = pad;
+		});
+	});
+
 	// Saving can fail (private browsing, full storage): say so once, as a toast (no reflow).
 	let warnedSave = false;
 	$effect(() => {
-		if (!notebook?.saveError || warnedSave) return;
+		if (!(notebook?.saveError || scratch?.saveError) || warnedSave) return;
 		warnedSave = true;
 		toast(t('player.cannotSave'), t('player.cannotSaveDetail'));
 	});
@@ -217,9 +231,11 @@
 								notes={notebook.book.notes}
 								seats={notebook.book.seats}
 								characters={byId}
+								scratch={scratch?.strokes ?? []}
 								onAdd={() => openNote(notebook!.addNote())}
 								onOpenNote={openNote}
 								onOpenSeat={openSeat}
+								onOpenScratch={() => scratch && (scratchOpen = true)}
 							/>
 						{/if}
 					</ErrorBoundary>
@@ -266,6 +282,11 @@
 				onChange={(patch) => noteId && notebook!.updateNote(noteId, patch)}
 				onDelete={() => noteId && notebook!.deleteNote(noteId)}
 			/>
+		</ErrorBoundary>
+	{/if}
+	{#if scratch}
+		<ErrorBoundary area="play">
+			<ScratchPadDialog bind:open={scratchOpen} pad={scratch} />
 		</ErrorBoundary>
 	{/if}
 </main>
