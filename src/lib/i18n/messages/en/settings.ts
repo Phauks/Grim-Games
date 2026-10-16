@@ -49,35 +49,40 @@ export const settings = {
 	'settings.resetDoneText': 'Back to the defaults on this device.',
 	'settings.confirm': 'Confirm',
 	'settings.storageUsed': 'Storage used on this device',
-	'settings.storageTotal': 'Total',
-	'settings.storageSaved': 'Games, notes and scripts',
-	'settings.storageOffline': 'Offline copy and icons',
+	'settings.storageUsedHelp':
+		'What Grim-Games keeps on this device and how much room each part takes. Choose rows to clear them.',
+	'settings.storageTable': 'Storage on this device',
+	'settings.storageSelect': 'Select',
+	'settings.storageItem': 'Item',
+	'settings.storageSize': 'Size',
+	'settings.storageSelectAll': 'Select all',
+	'settings.storageSelectRow': 'Select {item}',
+	'settings.storageClearSelected': 'Clear selected',
+	'settings.storageMeasured': 'Total measured',
+	'settings.storageBrowser': 'Browser reports',
 	'settings.storageUnknown': 'Not shown by this browser',
-	'settings.clearCache': 'Clear cache',
-	'settings.clearCacheHelp':
-		'Stored character icons and wiki text. They download again when needed.',
-	'settings.clearCacheTitle': 'Clear cache?',
-	'settings.clearCacheConfirm':
-		"Removes the character icons and wiki text stored on this device, then reloads the app. They download again when needed; the current script's icons download again straight away. Games, notes, scripts and settings stay.",
-	'settings.clearGames': 'Clear saved games',
-	'settings.clearGamesHelp': 'Every Storyteller game on this device, including one in progress.',
-	'settings.clearGamesTitle': 'Clear saved games?',
-	'settings.clearGamesConfirm':
-		"Deletes every saved game on this device, including any game in progress and its history, then reloads the app. This can't be undone.",
-	'settings.clearNotes': 'Clear player notes',
-	'settings.clearNotesHelp': 'Everything written in Player view: notes, names and claims.',
-	'settings.clearNotesTitle': 'Clear player notes?',
-	'settings.clearNotesConfirm':
-		"Deletes every Player view notebook on this device (notes, player names, claims and seat layout) for every script, then reloads the app. This can't be undone.",
-	'settings.clearScripts': 'Clear recent scripts',
-	'settings.clearScriptsHelp': 'Scripts loaded on this device. Scripts saved to your account stay.',
-	'settings.clearScriptsTitle': 'Clear recent scripts?',
-	'settings.clearScriptsConfirm':
-		"Deletes the recently loaded scripts kept on this device, then reloads the app. Scripts saved to your account and shared codes stay. This can't be undone.",
-	'settings.clearAll': 'Clear all data on this device',
-	'settings.clearAllHelp':
-		'Games, notes, scripts, settings, problem log and stored files. The app itself stays installed.',
-	'settings.clearAllTitle': 'Clear all data on this device?',
-	'settings.clearAllConfirm':
-		"Deletes everything Grim-Games keeps on this device: saved games, player notes, recent scripts, settings, custom info tokens, the problem log, stored icons and wiki text. Signs you out if you are signed in, then reloads the app. The app itself stays installed so it still opens offline. This can't be undone."
+	'settings.storageClearTitle': 'Clear the selected data?',
+	'settings.storageClearText':
+		"Removes these from this device, then reloads the app. Saved games, notes, scripts and settings can't be brought back.",
+	'settings.storageSignOut': 'Clearing everything also signs you out.',
+	'settings.storage.games': 'Saved games',
+	'settings.storage.gamesHelp':
+		'Every Storyteller game, including one in progress, with its history.',
+	'settings.storage.notes': 'Player notes',
+	'settings.storage.notesHelp': 'Player view notebooks: notes, names, claims and seat layout.',
+	'settings.storage.scripts': 'Recent scripts',
+	'settings.storage.scriptsHelp':
+		'Scripts loaded on this device. Scripts saved to your account stay.',
+	'settings.storage.settings': 'Settings',
+	'settings.storage.settingsHelp':
+		'Appearance, Storyteller settings, custom info tokens, the problem log and other choices.',
+	'settings.storage.other-databases': 'Other saved data',
+	'settings.storage.other-databasesHelp': 'Data saved by other or newer parts of the app.',
+	'settings.storage.wiki': 'Wiki text copies',
+	'settings.storage.wikiHelp': 'Glossary and character pages; they download again when needed.',
+	'settings.storage.icons': 'Stored character icons',
+	'settings.storage.iconsHelp':
+		"They download again when needed; the current script's straight away.",
+	'settings.storage.app': 'Offline copy of the app',
+	'settings.storage.appHelp': 'Needed to open the app offline; replaced with each update.'
 } as const;

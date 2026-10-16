@@ -75,6 +75,8 @@ import ph_pen_nib_duotone from '~icons/ph/pen-nib-duotone';
 import ph_pencil_simple_duotone from '~icons/ph/pencil-simple-duotone';
 import ph_pencil_simple_line_duotone from '~icons/ph/pencil-simple-line-duotone';
 import ph_person_simple_walk_duotone from '~icons/ph/person-simple-walk-duotone';
+import ph_play_duotone from '~icons/ph/play-duotone';
+import ph_play_circle_duotone from '~icons/ph/play-circle-duotone';
 import ph_plus_duotone from '~icons/ph/plus-duotone';
 import ph_plus_circle_duotone from '~icons/ph/plus-circle-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
@@ -192,6 +194,8 @@ const icons: IconMap = {
 	'ph:pencil-simple-duotone': ph_pencil_simple_duotone,
 	'ph:pencil-simple-line-duotone': ph_pencil_simple_line_duotone,
 	'ph:person-simple-walk-duotone': ph_person_simple_walk_duotone,
+	'ph:play-duotone': ph_play_duotone,
+	'ph:play-circle-duotone': ph_play_circle_duotone,
 	'ph:plus-duotone': ph_plus_duotone,
 	'ph:plus-circle-duotone': ph_plus_circle_duotone,
 	'ph:push-pin-duotone': ph_push_pin_duotone,

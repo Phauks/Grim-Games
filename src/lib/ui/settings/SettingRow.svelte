@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 
 	interface Props {
 		label: string;
@@ -23,15 +23,15 @@
 	<div class="head">
 		<span class="label" id={labelId}>{label}</span>
 		{#if onReset}
-			<span class="reset">
-				<IconButton
-					icon="reset"
-					label={t('settings.resetToDefault')}
-					aria-describedby={labelId}
-					disabled={isDefault}
-					onclick={onReset}
-				/>
-			</span>
+			<button
+				class="reset"
+				type="button"
+				aria-label={t('settings.resetToDefault')}
+				title={t('settings.resetToDefault')}
+				aria-describedby={labelId}
+				disabled={isDefault}
+				onclick={onReset}><Icon name="reset" /></button
+			>
 		{/if}
 	</div>
 	{#if description}<p class="description">{description}</p>{/if}
@@ -45,7 +45,7 @@
 	.head {
 		display: flex;
 		align-items: center;
-		gap: var(--space-1);
+		gap: var(--space-2);
 		margin-bottom: var(--space-2);
 	}
 	.label {
@@ -54,18 +54,37 @@
 		color: var(--heading);
 		letter-spacing: 0.03em;
 	}
-	/* A full tap target centred on the label's line without making the line taller. */
+	/* The label's own size and colour (Trevor, 2026-10-16), with an invisible full-size tap
+	   area around it so it stays easy to hit. */
 	.reset {
-		display: flex;
-		align-items: center;
-		height: 0;
-		color: var(--on-surface-muted);
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		width: 1em;
+		height: 1em;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--heading);
+		font-size: inherit;
+		cursor: pointer;
 	}
-	.reset :global(.icon-button) {
-		color: inherit;
+	.reset::before {
+		content: '';
+		position: absolute;
+		inset: calc((1em - var(--tap-target)) / 2);
 	}
-	.reset :global(.icon-button:disabled) {
+	.reset :global(.icon) {
+		width: 1em;
+		height: 1em;
+	}
+	.reset:disabled {
 		opacity: 0.35;
+		cursor: default;
+	}
+	.reset:focus-visible {
+		outline: 2px solid var(--focus);
+		outline-offset: 2px;
 	}
 	.description {
 		margin: calc(-1 * var(--space-1)) 0 var(--space-2);

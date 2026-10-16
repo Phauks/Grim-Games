@@ -75,6 +75,8 @@ import ph_pen_nib from '~icons/ph/pen-nib';
 import ph_pencil_simple from '~icons/ph/pencil-simple';
 import ph_pencil_simple_line from '~icons/ph/pencil-simple-line';
 import ph_person_simple_walk from '~icons/ph/person-simple-walk';
+import ph_play from '~icons/ph/play';
+import ph_play_circle from '~icons/ph/play-circle';
 import ph_plus from '~icons/ph/plus';
 import ph_plus_circle from '~icons/ph/plus-circle';
 import ph_push_pin from '~icons/ph/push-pin';
@@ -192,6 +194,8 @@ const icons: IconMap = {
 	'ph:pencil-simple': ph_pencil_simple,
 	'ph:pencil-simple-line': ph_pencil_simple_line,
 	'ph:person-simple-walk': ph_person_simple_walk,
+	'ph:play': ph_play,
+	'ph:play-circle': ph_play_circle,
 	'ph:plus': ph_plus,
 	'ph:plus-circle': ph_plus_circle,
 	'ph:push-pin': ph_push_pin,

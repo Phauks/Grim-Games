@@ -75,6 +75,8 @@ import ph_pen_nib_light from '~icons/ph/pen-nib-light';
 import ph_pencil_simple_light from '~icons/ph/pencil-simple-light';
 import ph_pencil_simple_line_light from '~icons/ph/pencil-simple-line-light';
 import ph_person_simple_walk_light from '~icons/ph/person-simple-walk-light';
+import ph_play_light from '~icons/ph/play-light';
+import ph_play_circle_light from '~icons/ph/play-circle-light';
 import ph_plus_light from '~icons/ph/plus-light';
 import ph_plus_circle_light from '~icons/ph/plus-circle-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
@@ -192,6 +194,8 @@ const icons: IconMap = {
 	'ph:pencil-simple-light': ph_pencil_simple_light,
 	'ph:pencil-simple-line-light': ph_pencil_simple_line_light,
 	'ph:person-simple-walk-light': ph_person_simple_walk_light,
+	'ph:play-light': ph_play_light,
+	'ph:play-circle-light': ph_play_circle_light,
 	'ph:plus-light': ph_plus_light,
 	'ph:plus-circle-light': ph_plus_circle_light,
 	'ph:push-pin-light': ph_push_pin_light,

@@ -75,6 +75,8 @@ import ph_pen_nib_fill from '~icons/ph/pen-nib-fill';
 import ph_pencil_simple_fill from '~icons/ph/pencil-simple-fill';
 import ph_pencil_simple_line_fill from '~icons/ph/pencil-simple-line-fill';
 import ph_person_simple_walk_fill from '~icons/ph/person-simple-walk-fill';
+import ph_play_fill from '~icons/ph/play-fill';
+import ph_play_circle_fill from '~icons/ph/play-circle-fill';
 import ph_plus_fill from '~icons/ph/plus-fill';
 import ph_plus_circle_fill from '~icons/ph/plus-circle-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
@@ -192,6 +194,8 @@ const icons: IconMap = {
 	'ph:pencil-simple-fill': ph_pencil_simple_fill,
 	'ph:pencil-simple-line-fill': ph_pencil_simple_line_fill,
 	'ph:person-simple-walk-fill': ph_person_simple_walk_fill,
+	'ph:play-fill': ph_play_fill,
+	'ph:play-circle-fill': ph_play_circle_fill,
 	'ph:plus-fill': ph_plus_fill,
 	'ph:plus-circle-fill': ph_plus_circle_fill,
 	'ph:push-pin-fill': ph_push_pin_fill,

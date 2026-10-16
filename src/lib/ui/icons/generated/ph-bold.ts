@@ -75,6 +75,8 @@ import ph_pen_nib_bold from '~icons/ph/pen-nib-bold';
 import ph_pencil_simple_bold from '~icons/ph/pencil-simple-bold';
 import ph_pencil_simple_line_bold from '~icons/ph/pencil-simple-line-bold';
 import ph_person_simple_walk_bold from '~icons/ph/person-simple-walk-bold';
+import ph_play_bold from '~icons/ph/play-bold';
+import ph_play_circle_bold from '~icons/ph/play-circle-bold';
 import ph_plus_bold from '~icons/ph/plus-bold';
 import ph_plus_circle_bold from '~icons/ph/plus-circle-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
@@ -192,6 +194,8 @@ const icons: IconMap = {
 	'ph:pencil-simple-bold': ph_pencil_simple_bold,
 	'ph:pencil-simple-line-bold': ph_pencil_simple_line_bold,
 	'ph:person-simple-walk-bold': ph_person_simple_walk_bold,
+	'ph:play-bold': ph_play_bold,
+	'ph:play-circle-bold': ph_play_circle_bold,
 	'ph:plus-bold': ph_plus_bold,
 	'ph:plus-circle-bold': ph_plus_circle_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,

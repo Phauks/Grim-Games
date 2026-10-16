@@ -1,173 +1,239 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
-	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
+	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
+	import { reloadApp, storageUse } from '../data/device-data.ts';
 	import {
-		clearCache,
-		clearDatabases,
-		clearEverything,
-		GAMES_DB,
-		NOTES_DB,
-		reloadApp,
-		SCRIPTS_DB,
-		storageUse,
-		type StorageUse
-	} from '../data/device-data.ts';
+		clearItems,
+		measureStorage,
+		STORAGE_ITEM_IDS,
+		totalBytes,
+		type StorageItem,
+		type StorageItemId
+	} from '../data/storage-items.ts';
 	import ResetSection from './ResetSection.svelte';
 
-	interface DataAction {
-		id: string;
-		label: MessageKey;
-		description: MessageKey;
-		title: MessageKey;
-		confirm: MessageKey;
-		/** Red: removes something the user made (Trevor: destructive actions in red). */
-		danger: boolean;
-		run: () => Promise<void>;
-	}
+	type Column = 'select' | 'item' | 'size';
 
-	const ACTIONS: DataAction[] = [
-		{
-			id: 'cache',
-			label: 'settings.clearCache',
-			description: 'settings.clearCacheHelp',
-			title: 'settings.clearCacheTitle',
-			confirm: 'settings.clearCacheConfirm',
-			danger: false,
-			run: clearCache
-		},
-		{
-			id: 'games',
-			label: 'settings.clearGames',
-			description: 'settings.clearGamesHelp',
-			title: 'settings.clearGamesTitle',
-			confirm: 'settings.clearGamesConfirm',
-			danger: true,
-			run: () => clearDatabases([GAMES_DB])
-		},
-		{
-			id: 'notes',
-			label: 'settings.clearNotes',
-			description: 'settings.clearNotesHelp',
-			title: 'settings.clearNotesTitle',
-			confirm: 'settings.clearNotesConfirm',
-			danger: true,
-			run: () => clearDatabases([NOTES_DB])
-		},
-		{
-			id: 'scripts',
-			label: 'settings.clearScripts',
-			description: 'settings.clearScriptsHelp',
-			title: 'settings.clearScriptsTitle',
-			confirm: 'settings.clearScriptsConfirm',
-			danger: true,
-			run: () => clearDatabases([SCRIPTS_DB])
-		},
-		{
-			id: 'all',
-			label: 'settings.clearAll',
-			description: 'settings.clearAllHelp',
-			title: 'settings.clearAllTitle',
-			confirm: 'settings.clearAllConfirm',
-			danger: true,
-			run: async () => {
-				if (account.status === 'signed-in') await account.signOut().catch(() => {});
-				await clearEverything();
-			}
-		}
-	];
+	/** `t` for keys built from an item id, none of which take placeholders. */
+	const text = (key: string): string => (t as (key: MessageKey) => string)(key as MessageKey);
+	const itemName = (id: StorageItemId) => text(`settings.storage.${id}`);
+	const itemHelp = (id: StorageItemId) => text(`settings.storage.${id}Help`);
 
-	/** `t` for the keys above, none of which take placeholders. */
-	const text = (key: MessageKey): string => (t as (key: MessageKey) => string)(key);
-
-	let use = $state<StorageUse | null>(null);
-	let pending = $state<DataAction | null>(null);
+	// Rows are in place before they are measured, so nothing moves when the sizes arrive.
+	let items = $state<StorageItem[]>(
+		STORAGE_ITEM_IDS.map((id) => ({ id, bytes: null, clearable: id !== 'app', userData: false }))
+	);
+	let measured = $state(false);
+	let browserTotal = $state<number | null | undefined>(undefined);
+	const selected = new SvelteSet<StorageItemId>();
+	let sort = $state<DataSort<Column> | undefined>();
 	let confirmOpen = $state(false);
 	let working = $state(false);
 
 	onMount(() => {
-		void storageUse().then((value) => (use = value));
+		void measureStorage().then((value) => {
+			items = value;
+			measured = true;
+		});
+		void storageUse().then((use) => (browserTotal = use.total));
 	});
 
-	function size(bytes: number | null | undefined): string {
-		if (use === null) return '…';
-		if (bytes === null || bytes === undefined) return t('settings.storageUnknown');
+	const columns = $derived<DataColumn<Column>[]>([
+		{
+			id: 'select',
+			label: t('settings.storageSelect'),
+			hideLabel: true,
+			flush: true,
+			fixed: true,
+			width: 'var(--tap-target)'
+		},
+		{ id: 'item', label: t('settings.storageItem'), rowHeader: true },
+		{
+			id: 'size',
+			label: t('settings.storageSize'),
+			align: 'end',
+			sortable: true,
+			width: 'calc(7 * var(--u))'
+		}
+	]);
+
+	const rows = $derived.by(() => {
+		if (sort?.column !== 'size') return items;
+		const sign = sort.direction === 'ascending' ? 1 : -1;
+		return [...items].sort((a, b) => sign * ((a.bytes ?? 0) - (b.bytes ?? 0)));
+	});
+
+	const clearable = $derived(items.filter((item) => item.clearable));
+	const allSelected = $derived(clearable.length > 0 && clearable.every((i) => selected.has(i.id)));
+	const chosen = $derived(items.filter((item) => selected.has(item.id)));
+	const destructive = $derived(chosen.some((item) => item.userData));
+
+	function onSort(column: Column) {
+		if (column !== 'size') return;
+		sort =
+			sort?.direction === 'descending'
+				? { column, direction: 'ascending' }
+				: { column, direction: 'descending' };
+	}
+
+	function toggle(id: StorageItemId, on: boolean) {
+		if (on) selected.add(id);
+		else selected.delete(id);
+	}
+
+	function toggleAll(on: boolean) {
+		for (const item of clearable) toggle(item.id, on);
+	}
+
+	function size(bytes: number | null | undefined, ready = measured): string {
+		if (!ready || bytes === undefined) return '…';
+		if (bytes === null) return t('settings.storageUnknown');
 		const mb = bytes / 1_000_000;
 		return mb >= 0.1
 			? intl.number(mb, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1 })
 			: intl.number(bytes / 1000, { style: 'unit', unit: 'kilobyte', maximumFractionDigits: 0 });
 	}
 
-	function ask(action: DataAction) {
-		pending = action;
-		confirmOpen = true;
-	}
-
 	async function confirm() {
-		if (!pending || working) return;
+		if (working || chosen.length === 0) return;
 		working = true;
-		await pending.run();
+		// Everything the user can clear: sign out too, as a clean start (Trevor, 2026-10-16).
+		if (allSelected && account.status === 'signed-in') await account.signOut().catch(() => {});
+		await clearItems(new Set(selected));
 		reloadApp();
 	}
 </script>
 
-<!-- Fixed rows: the sizes arrive a moment later in the same places, so nothing moves. -->
-<SettingRow label={t('settings.storageUsed')}>
+<SettingRow label={t('settings.storageUsed')} description={t('settings.storageUsedHelp')}>
 	{#snippet control()}
-		<dl class="use" data-testid="storage-use">
-			<dt>{t('settings.storageTotal')}</dt>
-			<dd>{size(use?.total)}</dd>
-			<dt>{t('settings.storageSaved')}</dt>
-			<dd>{size(use?.saved)}</dd>
-			<dt>{t('settings.storageOffline')}</dt>
-			<dd>{size(use?.offline)}</dd>
+		<div class="tools">
+			<label class="all">
+				<input
+					type="checkbox"
+					checked={allSelected}
+					indeterminate={selected.size > 0 && !allSelected}
+					onchange={(event) => toggleAll(event.currentTarget.checked)}
+				/>
+				{t('settings.storageSelectAll')}
+			</label>
+			<Button
+				variant="danger-quiet"
+				icon="remove"
+				disabled={selected.size === 0}
+				onclick={() => (confirmOpen = true)}>{t('settings.storageClearSelected')}</Button
+			>
+		</div>
+		<DataTable
+			label={t('settings.storageTable')}
+			{columns}
+			{rows}
+			key={(item) => item.id}
+			{sort}
+			{onSort}
+			testid="storage-table"
+		>
+			{#snippet cell(item, column)}
+				{#if column.id === 'select'}
+					<label class="pick">
+						<input
+							type="checkbox"
+							aria-label={t('settings.storageSelectRow', { item: itemName(item.id) })}
+							checked={selected.has(item.id)}
+							disabled={!item.clearable}
+							onchange={(event) => toggle(item.id, event.currentTarget.checked)}
+						/>
+					</label>
+				{:else if column.id === 'item'}
+					<span class="name">{itemName(item.id)}</span>
+					<span class="help">{itemHelp(item.id)}</span>
+				{:else}
+					<span class="size">{size(item.bytes)}</span>
+				{/if}
+			{/snippet}
+		</DataTable>
+		<dl class="totals" data-testid="storage-use">
+			<dt>{t('settings.storageMeasured')}</dt>
+			<dd>{size(totalBytes(items))}</dd>
+			<dt>{t('settings.storageBrowser')}</dt>
+			<dd>{size(browserTotal, browserTotal !== undefined)}</dd>
 		</dl>
 	{/snippet}
 </SettingRow>
 
 <ResetSection />
 
-{#each ACTIONS as action (action.id)}
-	<SettingRow label={text(action.label)} description={text(action.description)}>
-		{#snippet control(labelId)}
-			<Button
-				variant={action.danger ? 'danger-quiet' : 'quiet'}
-				icon={action.danger ? 'remove' : 'undo'}
-				aria-describedby={labelId}
-				onclick={() => ask(action)}
-			>
-				{text(action.label)}
-			</Button>
-		{/snippet}
-	</SettingRow>
-{/each}
-
 <ConfirmDialog
 	bind:open={confirmOpen}
-	title={pending ? text(pending.title) : ''}
-	danger={pending?.danger}
+	title={t('settings.storageClearTitle')}
+	danger={destructive}
 	disabled={working}
 	onConfirm={confirm}
 >
-	{#if pending}<p>{text(pending.confirm)}</p>{/if}
+	<p>{t('settings.storageClearText')}</p>
+	<ul>
+		{#each chosen as item (item.id)}<li>{itemName(item.id)}</li>{/each}
+	</ul>
+	{#if allSelected && account.status === 'signed-in'}<p>{t('settings.storageSignOut')}</p>{/if}
 </ConfirmDialog>
 
 <style>
-	.use {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-1) var(--space-4);
-		margin: 0;
+	.tools {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		margin-bottom: var(--space-2);
 	}
-	.use dt {
+	.all,
+	.pick {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: var(--tap-target);
+		cursor: pointer;
+	}
+	.pick {
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+	}
+	input[type='checkbox'] {
+		width: 1.2em;
+		height: 1.2em;
+		margin: 0;
+		accent-color: var(--accent);
+	}
+	.name {
+		display: block;
+	}
+	.help {
+		display: block;
+		font-size: 0.85rem;
 		color: var(--on-surface-muted);
 	}
-	.use dd {
-		margin: 0;
+	.size,
+	.totals dd {
 		font-variant-numeric: tabular-nums;
+	}
+	.totals {
+		display: grid;
+		grid-template-columns: auto auto;
+		justify-content: end;
+		gap: var(--space-1) var(--space-4);
+		margin: var(--space-2) 0 0;
+	}
+	.totals dt {
+		color: var(--on-surface-muted);
+	}
+	.totals dd {
+		margin: 0;
+		text-align: end;
 	}
 </style>

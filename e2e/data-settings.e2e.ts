@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// Trevor (2026-10-16): Reset settings becomes a Data section with storage use and clear options.
+// Trevor (2026-10-16): the Data section is a table of what is stored, by size; chosen rows clear.
 
 async function openData(page: Page) {
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
@@ -52,29 +52,52 @@ const seedDatabase = (page: Page, name: string) =>
 		name
 	);
 
-test('the Data section shows storage use and Reset settings', async ({ page }) => {
+test('the Data section is a table of what is stored and its size, with Reset settings', async ({
+	page
+}) => {
 	await page.goto('/');
+	await seedDatabase(page, 'grim-games-scripts');
 	const dialog = await openData(page);
-	const use = dialog.getByTestId('storage-use');
-	await expect(use).toContainText('Total');
-	await expect(use).not.toContainText('…');
+	const table = dialog.getByTestId('storage-table');
+	for (const name of [
+		'Saved games',
+		'Player notes',
+		'Recent scripts',
+		'Settings',
+		'Other saved data',
+		'Wiki text copies',
+		'Stored character icons',
+		'Offline copy of the app'
+	]) {
+		await expect(table.getByRole('rowheader', { name: new RegExp(`^${name}`) })).toBeVisible();
+	}
+	// Measured sizes replace the placeholders in place.
+	await expect(table).not.toContainText('…');
+	await expect(dialog.getByTestId('storage-use')).toContainText('Total measured');
+	// The app's own offline copy can't be cleared; nothing is selected at first.
+	await expect(
+		table.getByRole('checkbox', { name: 'Select Offline copy of the app' })
+	).toBeDisabled();
+	await expect(dialog.getByRole('button', { name: 'Clear selected' })).toBeDisabled();
 	await expect(dialog.getByRole('button', { name: 'Reset all' })).toBeVisible();
 });
 
-test('clearing recent scripts asks first, then deletes only that store', async ({ page }) => {
+test('clearing the selected rows asks first, then deletes only those', async ({ page }) => {
 	await page.goto('/');
 	await seedDatabase(page, 'grim-games-scripts');
 	await seedDatabase(page, 'grim-games-player');
 	const dialog = await openData(page);
+	const table = dialog.getByTestId('storage-table');
 
-	await dialog.getByRole('button', { name: 'Clear recent scripts' }).tap();
-	const confirm = page.getByRole('alertdialog', { name: 'Clear recent scripts?' });
-	await expect(confirm).toContainText('Scripts saved to your account');
+	await table.getByRole('checkbox', { name: 'Select Recent scripts' }).tap();
+	await dialog.getByRole('button', { name: 'Clear selected' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Clear the selected data?' });
+	await expect(confirm.getByRole('listitem')).toHaveText(['Recent scripts']);
 	await confirm.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(confirm).toBeHidden();
 	expect(await stillSeeded(page, 'grim-games-scripts')).toBe(true);
 
-	await dialog.getByRole('button', { name: 'Clear recent scripts' }).tap();
+	await dialog.getByRole('button', { name: 'Clear selected' }).tap();
 	// The app reloads once the store is gone.
 	const reloaded = page.waitForEvent('load');
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
@@ -83,21 +106,22 @@ test('clearing recent scripts asks first, then deletes only that store', async (
 	expect(await stillSeeded(page, 'grim-games-player')).toBe(true);
 });
 
-test('clearing all data removes settings and saved data, not other sites', async ({ page }) => {
+test('Select all clears settings and saved data, not other sites', async ({ page }) => {
 	await page.goto('/');
 	await page.evaluate(() => {
 		localStorage.setItem('grim-games:preferences:v1', JSON.stringify({ textScale: 1.25 }));
 		localStorage.setItem('someone-else', 'stays');
 	});
-	// A database name the app doesn't know yet: clearing everything sweeps every app database.
+	// A database name the app doesn't know yet: it is listed as Other saved data.
 	await seedDatabase(page, 'grim-games-future');
 	await page.reload();
 	const dialog = await openData(page);
 
-	await dialog.getByRole('button', { name: 'Clear all data on this device' }).tap();
+	await dialog.getByRole('checkbox', { name: 'Select all' }).tap();
+	await dialog.getByRole('button', { name: 'Clear selected' }).tap();
 	const reloaded = page.waitForEvent('load');
 	await page
-		.getByRole('alertdialog', { name: 'Clear all data on this device?' })
+		.getByRole('alertdialog', { name: 'Clear the selected data?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await reloaded;

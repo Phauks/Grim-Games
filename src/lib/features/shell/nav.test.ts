@@ -17,6 +17,11 @@ describe('navigation', () => {
 		expect(isCurrent(home, '/scripts')).toBe(false);
 	});
 
+	it('gives every destination its own icon (Trevor, 2026-10-16)', () => {
+		const icons = NAV_ITEMS.map((item) => item.icon);
+		expect(new Set(icons).size).toBe(icons.length);
+	});
+
 	it('lists each destination once', () => {
 		const paths = NAV_ITEMS.map((item) => item.path);
 		expect(new Set(paths).size).toBe(paths.length);

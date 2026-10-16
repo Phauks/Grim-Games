@@ -36,7 +36,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 			// The landing page, reachable without Back (Trevor, 2026-10-16).
 			{ id: 'home', path: '/', label: 'shell.navHome', icon: 'home' },
 			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
-			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'history' },
+			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'resume' },
 			{
 				id: 'previous',
 				path: '/previous-games',

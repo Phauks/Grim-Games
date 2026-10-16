@@ -31,7 +31,9 @@
 			gap: var(--space-2);
 			align-self: flex-start;
 			width: calc(14 * var(--u));
-			max-height: calc(100dvh - var(--tap-target));
+			/* Always the full height below the header, so its dividing line reaches the bottom of
+			   the screen whatever the page's length (Trevor, 2026-10-16). */
+			height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top));
 			overflow-y: auto;
 			padding: var(--space-4) var(--space-2);
 			border-right: 1px solid var(--border);

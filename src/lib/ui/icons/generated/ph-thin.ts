@@ -75,6 +75,8 @@ import ph_pen_nib_thin from '~icons/ph/pen-nib-thin';
 import ph_pencil_simple_thin from '~icons/ph/pencil-simple-thin';
 import ph_pencil_simple_line_thin from '~icons/ph/pencil-simple-line-thin';
 import ph_person_simple_walk_thin from '~icons/ph/person-simple-walk-thin';
+import ph_play_thin from '~icons/ph/play-thin';
+import ph_play_circle_thin from '~icons/ph/play-circle-thin';
 import ph_plus_thin from '~icons/ph/plus-thin';
 import ph_plus_circle_thin from '~icons/ph/plus-circle-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
@@ -192,6 +194,8 @@ const icons: IconMap = {
 	'ph:pencil-simple-thin': ph_pencil_simple_thin,
 	'ph:pencil-simple-line-thin': ph_pencil_simple_line_thin,
 	'ph:person-simple-walk-thin': ph_person_simple_walk_thin,
+	'ph:play-thin': ph_play_thin,
+	'ph:play-circle-thin': ph_play_circle_thin,
 	'ph:plus-thin': ph_plus_thin,
 	'ph:plus-circle-thin': ph_plus_circle_thin,
 	'ph:push-pin-thin': ph_push_pin_thin,
