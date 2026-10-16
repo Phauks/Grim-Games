@@ -5,6 +5,7 @@
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import { abilityState, type ImpairmentReason } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -111,17 +112,34 @@
 			parts.push(`${impairmentWords[impairment.reason]}${by ? ` (${by})` : ''}`);
 		}
 		if (ability?.dead) parts.push('Dead: no ability');
-		return parts.length > 0 ? parts.join(' · ') : 'Ability works';
+		// An ability works unless something says otherwise (Trevor, 2026-10-16): the line stays
+		// reserved but empty.
+		return parts.join(' · ');
 	});
-	const stateWarn = $derived(abilityLine !== 'Ability works' && abilityLine !== 'None');
+	const stateWarn = $derived(abilityLine !== '' && abilityLine !== 'None');
 
 	// ── Character ──
 	let pickerOpen = $state(false);
+	let detailsOpen = $state(false);
 	let alignmentFor = $state<CharacterId | undefined>();
 	let alignmentOpen = $state(false);
+	/** A character change waiting for its confirmation (the seat already had one). */
+	let changeTo = $state<CharacterId | undefined>();
+	let changeOpen = $state(false);
+	let clearOpen = $state(false);
 
 	function pick(id: CharacterId) {
 		pickerOpen = false;
+		if (!seatId || id === seat?.characterId) return;
+		if (seat?.characterId) {
+			changeTo = id;
+			changeOpen = true;
+			return;
+		}
+		assign(id);
+	}
+
+	function assign(id: CharacterId) {
 		if (!seatId) return;
 		const chosen = characters.get(id);
 		// A Traveller needs its alignment chosen, unless the seat already has one.
@@ -198,8 +216,8 @@
 		<button
 			type="button"
 			class="lead-token"
-			aria-label={character ? 'Change character' : 'Choose character'}
-			onclick={() => (pickerOpen = true)}
+			aria-label={character ? `About the ${character.name}` : 'Choose character'}
+			onclick={() => (character ? (detailsOpen = true) : (pickerOpen = true))}
 		>
 			{#if character}
 				<CharacterToken {character} alignment={seat?.alignment} size={60} />
@@ -366,25 +384,101 @@
 	onPick={pick}
 />
 
+{#if character}<CharacterDialog bind:open={detailsOpen} {character} />{/if}
+
+{#snippet team(alignment: Alignment | undefined)}
+	<strong class="team" data-team={alignment ?? 'neutral'}
+		>{alignment === 'good' ? 'Good' : alignment === 'evil' ? 'Evil' : 'Not set'}</strong
+	>
+{/snippet}
+
+<!-- Every change of state says what it is now and what it becomes (Trevor, 2026-10-16). -->
+<Dialog bind:open={changeOpen} title="Change character?" role="alertdialog">
+	{#if seat?.characterId && changeTo}
+		<dl class="change">
+			<dt>Now</dt>
+			<dd>{@render seatBadge(seatId)}</dd>
+			<dt>Becomes</dt>
+			<dd>
+				<CharacterBadge
+					characterId={changeTo}
+					character={characters.get(changeTo)}
+					playerName={title}
+					inline
+				/>
+			</dd>
+		</dl>
+		<p class="note">Reminders stay on the seat. History can undo this.</p>
+	{/if}
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (changeOpen = false)}>Cancel</Button>
+		<Button
+			variant="accent"
+			onclick={() => {
+				changeOpen = false;
+				if (changeTo) assign(changeTo);
+				changeTo = undefined;
+			}}>Change</Button
+		>
+	{/snippet}
+</Dialog>
+
+<Dialog bind:open={clearOpen} title="Remove character?" role="alertdialog">
+	<dl class="change">
+		<dt>Now</dt>
+		<dd>{@render seatBadge(seatId)}</dd>
+		<dt>Becomes</dt>
+		<dd><strong>{title}</strong>, no character</dd>
+	</dl>
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (clearOpen = false)}>Cancel</Button>
+		<Button
+			variant="accent"
+			icon="remove"
+			onclick={() => {
+				clearOpen = false;
+				if (seatId) grimoire.run({ type: 'ClearCharacter', seatId });
+			}}>Remove</Button
+		>
+	{/snippet}
+</Dialog>
+
 <Dialog
 	bind:open={alignmentOpen}
 	title="Alignment"
-	description={alignmentFor ? 'Travellers can be good or evil.' : title}
+	description={alignmentFor ? 'Travellers can be good or evil.' : undefined}
 >
-	<div class="choices">
-		<Button
-			aria-pressed={!alignmentFor && seat?.alignment === 'good'}
-			onclick={() => pickAlignment('good')}>Good</Button
-		>
-		<Button
-			aria-pressed={!alignmentFor && seat?.alignment === 'evil'}
-			onclick={() => pickAlignment('evil')}>Evil</Button
-		>
-		{#if alignmentFor}
+	{#if alignmentFor}
+		<div class="choices">
+			<Button onclick={() => pickAlignment('good')}>Good</Button>
+			<Button onclick={() => pickAlignment('evil')}>Evil</Button>
 			<!-- Often chosen later: the night order asks for it first (Trevor, 2026-10-16). -->
 			<Button variant="quiet" onclick={() => pickAlignment(undefined)}>Decide later</Button>
-		{/if}
-	</div>
+		</div>
+	{:else}
+		{@const next = seat?.alignment === 'evil' ? 'good' : 'evil'}
+		<dl class="change">
+			<dt>Now</dt>
+			<dd>{@render seatBadge(seatId)} is {@render team(seat?.alignment)}</dd>
+			<dt>Becomes</dt>
+			<dd>
+				{#if seat?.alignment === undefined}{@render team('good')} or {@render team(
+						'evil'
+					)}{:else}{@render team(next)}{/if}
+			</dd>
+		</dl>
+		<div class="choices">
+			{#if seat?.alignment === undefined}
+				<Button onclick={() => pickAlignment('good')}>Good</Button>
+				<Button onclick={() => pickAlignment('evil')}>Evil</Button>
+			{:else}
+				<Button variant="quiet" onclick={() => (alignmentOpen = false)}>Cancel</Button>
+				<Button variant="accent" onclick={() => pickAlignment(next)}
+					>{next === 'good' ? 'Good' : 'Evil'}</Button
+				>
+			{/if}
+		</div>
+	{/if}
 </Dialog>
 
 <Dialog bind:open={causeOpen} title={`How did ${title} die?`}>
@@ -481,6 +575,22 @@
 <!-- Swapping moves two players at once, so it is confirmed on its own. -->
 <Dialog bind:open={swapConfirmOpen} title="Swap seats?" role="alertdialog">
 	<p class="swap">Swap {@render seatBadge(seatId)} and {@render seatBadge(swapWith)}?</p>
+	{#if seatId && swapWith}
+		<dl class="change">
+			<dt>Now</dt>
+			<dd>
+				{@render seatBadge(seatId)} in Seat {number}, {@render seatBadge(swapWith)} in Seat {game.seating.indexOf(
+					swapWith
+				) + 1}
+			</dd>
+			<dt>Becomes</dt>
+			<dd>
+				{@render seatBadge(seatId)} in Seat {game.seating.indexOf(swapWith) + 1}, {@render seatBadge(
+					swapWith
+				)} in Seat {number}
+			</dd>
+		</dl>
+	{/if}
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (swapConfirmOpen = false)}>Cancel</Button>
 		<Button
@@ -497,6 +607,16 @@
 
 <!-- The seat's less frequent actions, in an overlay so the sheet stays short. -->
 <Dialog bind:open={menuOpen} {title} description={`Seat ${number}`}>
+	{#snippet lead()}
+		{#if seat?.characterId}
+			<CharacterBadge
+				characterId={seat.characterId}
+				{character}
+				alignment={seat.alignment}
+				inline
+			/>
+		{/if}
+	{/snippet}
 	<div class="menu">
 		<Button
 			variant="quiet"
@@ -531,7 +651,7 @@
 			variant="quiet"
 			icon="remove"
 			disabled={!character}
-			onclick={() => fromMenu(() => seatId && grimoire.run({ type: 'ClearCharacter', seatId }))}
+			onclick={() => fromMenu(() => (clearOpen = true))}
 		>
 			Remove character
 		</Button>
@@ -574,7 +694,15 @@
 />
 
 <Dialog bind:open={removeOpen} title={`Remove ${title}?`} role="alertdialog">
-	<p>The seat, its character and its reminders leave the grimoire. History can bring them back.</p>
+	<dl class="change">
+		<dt>Now</dt>
+		<dd>{game.seating.length} seats, with {@render seatBadge(seatId)} in Seat {number}</dd>
+		<dt>Becomes</dt>
+		<dd>{game.seating.length - 1} seats</dd>
+	</dl>
+	<p class="note">
+		The seat, its character and its reminders leave the grimoire. History can bring them back.
+	</p>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (removeOpen = false)}>Cancel</Button>
 		<Button
@@ -594,6 +722,39 @@
 		display: contents;
 		--on-surface: var(--on-sheet);
 		--surface-selected: rgb(0 0 0 / 0.08);
+	}
+	.change {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-1) var(--space-3);
+		align-items: center;
+		margin: 0 0 var(--space-2);
+	}
+	.change dt {
+		color: var(--on-surface-muted);
+		font-size: 0.85rem;
+	}
+	.change dd {
+		margin: 0;
+	}
+	.team {
+		display: inline-block;
+		padding: 0 var(--space-2);
+		border-radius: 999px;
+		background: var(--surface-raised);
+		color: var(--on-surface);
+	}
+	.team[data-team='good'] {
+		background: var(--good);
+		color: var(--on-good);
+	}
+	.team[data-team='evil'] {
+		background: var(--evil);
+		color: var(--on-evil);
+	}
+	.note {
+		color: var(--on-surface-muted);
+		font-size: 0.9rem;
 	}
 	.menu {
 		display: grid;

@@ -14,6 +14,8 @@
 		size?: 'normal' | 'full';
 		children: Snippet;
 		actions?: Snippet;
+		/** Shown before the title, e.g. a character badge for the seat a menu acts on. */
+		lead?: Snippet;
 	}
 
 	let {
@@ -23,7 +25,8 @@
 		role = 'dialog',
 		size = 'normal',
 		children,
-		actions
+		actions,
+		lead
 	}: Props = $props();
 </script>
 
@@ -33,6 +36,7 @@
 		<Dialog.Positioner>
 			<Dialog.Content data-size={size}>
 				<div class="head">
+					{#if lead}<span class="lead">{@render lead()}</span>{/if}
 					<Dialog.Title>{title}</Dialog.Title>
 					<Dialog.CloseTrigger aria-label="Close"><Icon name="close" /></Dialog.CloseTrigger>
 				</div>
@@ -115,6 +119,13 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
+	}
+	.lead {
+		flex: none;
+	}
+	.head :global([data-part='title']) {
+		flex: 1;
+		min-width: 0;
 	}
 	.actions {
 		display: flex;
