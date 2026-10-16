@@ -5,8 +5,7 @@
 	import type { SavedGameSummary, UnreadableGame } from '#lib/core/engine/index.ts';
 	import type { GameId } from '#lib/core/model/index.ts';
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { endedGames, seatLayouts, type EndedGame } from './device-notes.ts';
@@ -158,7 +157,7 @@
 	</ul>
 </section>
 
-<Dialog bind:open={reopenOpen} title="Reopen this game?" role="alertdialog">
+<ConfirmDialog bind:open={reopenOpen} title="Reopen this game?" onConfirm={reopen}>
 	{#if reopening}
 		<dl class="change">
 			<dt>Now</dt>
@@ -167,19 +166,11 @@
 			<dd>Back in Resume game, open in the grimoire</dd>
 		</dl>
 	{/if}
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (reopenOpen = false)}>Cancel</Button>
-		<Button variant="accent" icon="check" onclick={reopen}>Confirm</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
-<Dialog bind:open={deleteOpen} title="Delete this game?" role="alertdialog">
+<ConfirmDialog bind:open={deleteOpen} title="Delete this game?" danger onConfirm={confirmDelete}>
 	<p>It is removed from this device and cannot be brought back.</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (deleteOpen = false)}>Cancel</Button>
-		<Button variant="danger" icon="remove" onclick={confirmDelete}>Confirm</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	section {
