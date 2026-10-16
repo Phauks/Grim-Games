@@ -58,17 +58,23 @@ export interface TokenAppearance {
 	/** The character's name curved along the bottom of grimoire tokens (Trevor, 2026-10-16). */
 	boardNames: boolean;
 	/** Where that name sits; the icon stays in the middle either way (Trevor, 2026-10-16). */
-	namePosition: NamePosition;
+	namePlacement: NamePlacement;
 }
 
-export type NamePosition = 'top' | 'bottom';
+/**
+ * Where the name sits on grimoire tokens (Trevor, 2026-10-16): curved along the bottom edge,
+ * straight across the top or bottom of the icon, or as a badge on the bottom edge. The leaves,
+ * the setup flower and the icon never move or change size for it.
+ */
+export type NamePlacement = 'edge' | 'icon-top' | 'icon-bottom' | 'badge';
+const NAME_PLACEMENTS: readonly NamePlacement[] = ['edge', 'icon-top', 'icon-bottom', 'badge'];
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	colours: {},
 	tokenScale: 1,
 	reminderScale: 1,
 	boardNames: false,
-	namePosition: 'bottom'
+	namePlacement: 'edge'
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -90,7 +96,12 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		tokenScale: parseScale(input.tokenScale),
 		reminderScale: parseScale(input.reminderScale),
 		boardNames: input.boardNames === true,
-		namePosition: input.namePosition === 'top' ? 'top' : 'bottom'
+		namePlacement: NAME_PLACEMENTS.includes(input.namePlacement as NamePlacement)
+			? (input.namePlacement as NamePlacement)
+			: // Saved by an earlier build as top or bottom of the edge; the top edge is under the leaves.
+				input.namePosition === 'top'
+				? 'icon-top'
+				: 'edge'
 	};
 }
 

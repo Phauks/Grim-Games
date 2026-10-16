@@ -87,58 +87,65 @@ test('character names on grimoire tokens are off by default and shown when switc
 	await expect(token).toBeVisible();
 	await expect(seat.getByTestId('token-name')).toHaveCount(0);
 	const size = (await token.boundingBox())!;
+	/** Where the leaves and the icon are: no name setting may move or resize them. */
+	const marks = () =>
+		token.evaluate((el) =>
+			[...el.querySelectorAll('.leaf, img')].map((m) => {
+				const r = m.getBoundingClientRect();
+				return [r.x, r.y, r.width, r.height].map(Math.round).join(',');
+			})
+		);
+	const before = await marks();
 
-	// Settings are in the app's menu, opened from the game toolbar.
-	await page.getByRole('button', { name: 'Open menu' }).tap();
-	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await dialog
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Tokens' })
-		.tap();
+	async function openTokens() {
+		// Settings are in the app's menu, opened from the game toolbar.
+		await page.getByRole('button', { name: 'Open menu' }).tap();
+		await page
+			.getByRole('dialog', { name: 'Menu' })
+			.getByRole('button', { name: 'Settings' })
+			.tap();
+		await dialog
+			.getByRole('navigation', { name: 'Settings sections' })
+			.getByRole('button', { name: 'Tokens' })
+			.tap();
+	}
+	await openTokens();
 	const label = 'Show character names on grimoire tokens';
 	const toggle = dialog.getByRole('checkbox', { name: label, includeHidden: true });
-	const position = dialog.getByRole('radiogroup', { name: 'Name position on grimoire tokens' });
+	const placement = dialog.getByRole('radiogroup', { name: 'Name placement on grimoire tokens' });
 	await expect(toggle).not.toBeChecked();
 	// Shown but unusable until names are on, so nothing moves when they are.
-	await expect(position.getByRole('radio', { name: 'Top', includeHidden: true })).toBeDisabled();
+	await expect(placement.getByRole('radio', { name: 'Badge', includeHidden: true })).toBeDisabled();
 	await dialog.getByText(label, { exact: true }).tap();
 	await expect(toggle).toBeChecked();
-	await expect(position.getByRole('radio', { name: 'Top', includeHidden: true })).toBeEnabled();
+	await expect(placement.getByRole('radio', { name: 'Badge', includeHidden: true })).toBeEnabled();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
-	// The name sits inside the token: the token keeps its size and nothing moves.
+	// Along the edge by default, inside the token, which keeps its size.
 	const name = seat.getByTestId('token-name');
 	await expect(name).toHaveText('Fortune Teller');
+	await expect(name).toHaveAttribute('data-placement', 'edge');
 	const box = (await token.boundingBox())!;
 	expect(box.width).toBeCloseTo(size.width, 0);
-	const text = (await name.boundingBox())!;
-	expect(text.x).toBeGreaterThanOrEqual(box.x);
-	expect(text.x + text.width).toBeLessThanOrEqual(box.x + box.width);
-	expect(text.y + text.height).toBeLessThanOrEqual(box.y + box.height);
-
-	// The icon stays in the middle of the token with a name.
-	const icon = (await token.locator('img').boundingBox())!;
-	expect(icon.x + icon.width / 2).toBeCloseTo(box.x + box.width / 2, 0);
-	expect(icon.y + icon.height / 2).toBeCloseTo(box.y + box.height / 2, 0);
-
 	await page.reload();
-	await expect(seat.getByTestId('token-name')).toHaveText('Fortune Teller');
+	await expect(name).toHaveText('Fortune Teller');
 
-	// The name can sit at the top instead; the icon stays in the middle.
-	// Settings are in the app's menu, opened from the game toolbar.
-	await page.getByRole('button', { name: 'Open menu' }).tap();
-	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
-	await dialog
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Tokens' })
-		.tap();
-	await position.getByText('Top', { exact: true }).tap();
-	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(seat.getByTestId('token-name')).toHaveAttribute('data-position', 'top');
-	const top = (await seat.getByTestId('token-name').boundingBox())!;
-	const middle = (await token.boundingBox())!;
-	expect(top.y + top.height).toBeLessThan(middle.y + middle.height / 2);
-	const centred = (await token.locator('img').boundingBox())!;
-	expect(centred.y + centred.height / 2).toBeCloseTo(middle.y + middle.height / 2, 0);
+	for (const [choice, value] of [
+		['Icon top', 'icon-top'],
+		['Icon bottom', 'icon-bottom'],
+		['Badge', 'badge'],
+		['Edge', 'edge']
+	]) {
+		await openTokens();
+		await placement.getByText(choice, { exact: true }).tap();
+		await dialog.getByRole('button', { name: 'Close' }).tap();
+		await expect(name).toHaveAttribute('data-placement', value);
+		// The name stays within the token, and the leaves and icon are exactly where they were.
+		const text = (await name.boundingBox())!;
+		expect(text.x).toBeGreaterThanOrEqual(box.x);
+		expect(text.x + text.width).toBeLessThanOrEqual(box.x + box.width + 1);
+		expect(text.y + text.height).toBeLessThanOrEqual(box.y + box.height + 1);
+		expect(await marks(), choice).toEqual(before);
+	}
 });

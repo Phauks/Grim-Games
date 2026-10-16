@@ -38,6 +38,10 @@ async function setSizes(page: Page, size: (typeof SIZES)[number]) {
 
 /** Nothing in the dialog pokes out of it sideways, and its header is on screen. */
 async function expectFits(dialog: Locator) {
+	// A section slides in over a moment on phones; measure where it comes to rest.
+	await dialog.evaluate((el) =>
+		Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished))
+	);
 	const result = await dialog.evaluate((el) => {
 		const box = el.getBoundingClientRect();
 		const offenders = [...el.querySelectorAll('*')]
@@ -46,7 +50,10 @@ async function expectFits(dialog: Locator) {
 				return r.width > 0 && (r.right > box.right + 1 || r.left < box.left - 1);
 			})
 			.slice(0, 5)
-			.map((child) => `${child.tagName.toLowerCase()}.${String(child.className).split(' ')[0]}`);
+			.map((child) => {
+				const r = child.getBoundingClientRect();
+				return `${child.tagName.toLowerCase()}.${String(child.className).split(' ')[0]} ${Math.round(r.left)}-${Math.round(r.right)} in ${Math.round(box.left)}-${Math.round(box.right)}`;
+			});
 		return {
 			offenders,
 			wider: el.scrollWidth > el.clientWidth + 1,
@@ -90,3 +97,18 @@ for (const size of SIZES) {
 		await expectFits(dialog);
 	});
 }
+
+test('a rules term’s tap area never reaches past the word sideways', async ({ page }) => {
+	// A wider hit area widened the line when a term ended it at the right edge, so the page
+	// scrolled sideways on some phones (2026-10-16).
+	await page.goto('/reference');
+	const terms = page.locator('.glossary-term');
+	await expect(terms.first()).toBeVisible();
+	const wide = await terms.evaluateAll(
+		(els) =>
+			els
+				.map((el) => getComputedStyle(el, '::after'))
+				.filter((after) => after.left !== '0px' || after.right !== '0px').length
+	);
+	expect(wide).toBe(0);
+});

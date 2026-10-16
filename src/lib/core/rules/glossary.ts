@@ -1,7 +1,7 @@
 /**
  * Rules terms from the BotC wiki Glossary (https://wiki.bloodontheclocktower.com/Glossary)
- * that appear in the game text the app shows: ability text, TPI's Storyteller night text
- * and our pre-day reminders. A test checks every term here occurs in that text.
+ * that appear in the game text the app shows: ability text, TPI's Storyteller night text,
+ * jinx text and our pre-day reminders. A test checks every term here occurs in that text.
  *
  * No definitions are kept here: Trevor (2026-10-15) wants the wiki's own wording only, and
  * the wiki has no content licence, so its text is never bundled. The popover links to the
@@ -10,11 +10,11 @@
  * anchors, so the link uses a text fragment (`#:~:text=Term:`), which browsers that
  * support it scroll to and others ignore.
  *
- * Character types, alignments, Ability and Storyteller are marked (Trevor, 2026-10-15).
- * The commonest everyday entries (Player, Character, Day, Night, Wake, Info) are left out:
- * they would underline most sentences. "Lose" is left out because the game text only uses
- * it for losing an ability or roshambo, not losing the game. Entries for physical parts
- * (Life token, Town Square, ...) never occur in game text. "May" is not a Glossary term
+ * Every Glossary entry that occurs in that text is marked (Trevor, 2026-10-16: "if something
+ * is defined, we identify if it would populate anywhere"; "add all for now"), the everyday
+ * ones (Player, Character, Day, Night, Wake, Info, Lose) included. Entries for physical parts
+ * (Life token, Town Square, ...) never occur in game text, and "About to die" only names
+ * reminder tokens, which are not marked. "May" is not a Glossary term
  * (only "Might" is), and Loric has no Glossary entry, so neither is marked. Fabled is marked
  * although no game text names it: it is a character type the app shows (Trevor, 2026-10-16).
  */
@@ -323,6 +323,53 @@ const ENTRIES: readonly Entry[] = [
 		id: 'script',
 		term: 'Script',
 		variants: []
+	},
+	// Everyday entries, added 2026-10-16 (Trevor: "add all for now and identify if it is too
+	// much").
+	{
+		id: 'player',
+		term: 'Player',
+		variants: ['players']
+	},
+	{
+		id: 'night',
+		term: 'Night',
+		variants: ['nights']
+	},
+	{
+		id: 'character',
+		term: 'Character',
+		variants: ['characters']
+	},
+	{
+		id: 'character-token',
+		term: 'Character token',
+		variants: ['character tokens']
+	},
+	{
+		id: 'wake',
+		term: 'Wake',
+		variants: ['wakes', 'woken', 'waking']
+	},
+	{
+		id: 'day',
+		term: 'Day',
+		variants: ['days']
+	},
+	{
+		id: 'info',
+		term: 'Info',
+		variants: []
+	},
+	{
+		id: 'lose',
+		term: 'Lose',
+		variants: ['loses', 'lost', 'losing']
+	},
+	{
+		id: 'declare',
+		term: 'Declare',
+		variants: ['declares', 'declared']
 	}
 ];
 

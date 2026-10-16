@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { FLOWER_ANGLE, leafLayout, type LeafMarks } from './leaves.ts';
-	import type { NamePosition } from './token-appearance.ts';
+	import type { NamePlacement } from './token-appearance.ts';
 
 	interface Props {
 		/** Icon image URL; the face stays (empty) when there is none. */
@@ -10,50 +10,68 @@
 		leaves: LeafMarks;
 		/** Fixed size in px, so the token never changes size when data or icons arrive. */
 		size?: number;
-		/** A name curved inside the rim, as on the printed tokens; the icon shrinks for it. */
+		/** The character's name, written on the token (grimoire tokens, when the setting is on). */
 		name?: string;
 		/**
-		 * Where the name sits (Settings > Tokens). At the top, the reminder leaves and the setup
-		 * flower move to the bottom, mirrored, so nothing overlaps the name.
+		 * Where the name sits (Settings > Tokens). The leaves, the setup flower and the icon
+		 * never move or change size for it (Trevor, 2026-10-16).
 		 */
-		namePosition?: NamePosition;
+		namePlacement?: NamePlacement;
+		/** The badge colour for `badge` placement, as on character badges. */
+		nameTeam?: string;
 	}
 
-	let { src, label, leaves, size = 56, name, namePosition = 'bottom' }: Props = $props();
-	const top = $derived(name !== undefined && namePosition === 'top');
-	const layout = $derived(
-		leafLayout(leaves).map((leaf) => (top ? { ...leaf, angle: -leaf.angle } : leaf))
-	);
+	let {
+		src,
+		label,
+		leaves,
+		size = 56,
+		name,
+		namePlacement = 'edge',
+		nameTeam = 'neutral'
+	}: Props = $props();
+	const layout = $derived(leafLayout(leaves));
 	// A leaf pointing up from (0,0) to (0,-19), with a midrib. Leaves hang from the rim of the
 	// face towards the middle, always inside the token (Trevor, 2026-10-15).
 	const LEAF = 'M0 0 C7 -5 7 -13 0 -19 C-7 -13 -7 -5 0 0 Z';
 	// The setup flower: five petals round a centre, inside the face at the bottom right.
 	const FLOWER_R = 36;
-	const flowerAngle = $derived(((top ? -FLOWER_ANGLE : FLOWER_ANGLE) * Math.PI) / 180);
-	const flowerX = $derived(50 + FLOWER_R * Math.cos(flowerAngle));
-	const flowerY = $derived(50 + FLOWER_R * Math.sin(flowerAngle));
+	const flowerX = 50 + FLOWER_R * Math.cos((FLOWER_ANGLE * Math.PI) / 180);
+	const flowerY = 50 + FLOWER_R * Math.sin((FLOWER_ANGLE * Math.PI) / 180);
 	const PETALS = [0, 72, 144, 216, 288];
-	// The name runs left to right inside the rim, clear of the side leaves (at 180° and 0°).
-	// With the setup flower (at 45°, or -45° when the name is on top) it stops short of the
-	// flower, so it sits a little left of centre. Letters stand towards the middle at the
-	// bottom and away from it at the top, so the top baseline is further in: both fill the
-	// same band inside the rim.
+
 	const NAME_SIZE = 13;
-	const nameR = $derived(top ? 28 : 37);
-	const NAME_FROM = 150;
-	const nameTo = $derived(leaves.setup ? 68 : 30);
-	const namePath = $derived.by(() => {
+	/** Squeezes a long name into `room`; short ones keep their natural width. */
+	const fit = (room: number, fontSize = NAME_SIZE) =>
+		name && name.length * fontSize * 0.62 > room ? room : undefined;
+
+	// Edge: along the bottom inside the rim, clear of the side leaves (at 180° and 0°). With
+	// the setup flower (at 45°) it stops short of the flower, so it sits a little left of
+	// centre. The top of the rim belongs to the reminder leaves.
+	const EDGE_R = 37;
+	const EDGE_FROM = 150;
+	const edgeTo = $derived(leaves.setup ? 68 : 30);
+	const edgePath = $derived.by(() => {
 		const point = (degrees: number) => {
-			const a = ((top ? -degrees : degrees) * Math.PI) / 180;
-			return `${(50 + nameR * Math.cos(a)).toFixed(2)} ${(50 + nameR * Math.sin(a)).toFixed(2)}`;
+			const a = (degrees * Math.PI) / 180;
+			return `${(50 + EDGE_R * Math.cos(a)).toFixed(2)} ${(50 + EDGE_R * Math.sin(a)).toFixed(2)}`;
 		};
-		return `M ${point(NAME_FROM)} A ${nameR} ${nameR} 0 0 ${top ? 1 : 0} ${point(nameTo)}`;
+		return `M ${point(EDGE_FROM)} A ${EDGE_R} ${EDGE_R} 0 0 0 ${point(edgeTo)}`;
 	});
-	// Long names are squeezed to fit the arc; short ones keep their natural width.
-	const arcLength = $derived((nameR * (NAME_FROM - nameTo) * Math.PI) / 180);
-	const nameLength = $derived(
-		name && name.length * NAME_SIZE * 0.62 > arcLength ? arcLength : undefined
-	);
+	const edgeLength = $derived(fit((EDGE_R * (EDGE_FROM - edgeTo) * Math.PI) / 180));
+
+	// Across the icon: one straight line, outlined in the face colour so it reads over any
+	// art. At the top it stays inside the circle the leaf tips reach (radius 30), so it never
+	// touches a leaf however many there are; at the bottom it stays left of the setup flower.
+	const iconTop = $derived(namePlacement === 'icon-top');
+	const lineX = $derived(!iconTop && leaves.setup ? 45 : 50);
+	const lineY = $derived(iconTop ? 40 : 78);
+	const lineLength = $derived(fit(iconTop ? 44 : leaves.setup ? 46 : 64));
+
+	// Badge: a small team-coloured label on the bottom edge, under the setup flower.
+	const BADGE_SIZE = 10;
+	const badgeWidth = $derived(Math.min(84, (name?.length ?? 0) * BADGE_SIZE * 0.6 + 10));
+	const badgeLength = $derived(fit(badgeWidth - 8, BADGE_SIZE));
 	const pathId = $props.id();
 </script>
 
@@ -68,14 +86,7 @@
 		<circle class="face" cx="50" cy="50" r="48" />
 	</svg>
 	<!-- The icon fills most of the face, as on a real token (Trevor, 2026-10-16). -->
-	{#if src}<img
-			{src}
-			alt=""
-			width={size}
-			height={size}
-			loading="lazy"
-			data-named={name ? '' : undefined}
-		/>{/if}
+	{#if src}<img {src} alt="" width={size} height={size} loading="lazy" />{/if}
 	<!-- Leaves and the flower are drawn over the icon, so they always show. -->
 	<svg class="marks" viewBox="0 0 100 100" aria-hidden="true">
 		{#each layout as leaf, i (i)}
@@ -88,18 +99,55 @@
 				<path class="rib" d="M0 -2 L0 -16" />
 			</g>
 		{/each}
-		{#if name}
-			<path id="name-{pathId}" d={namePath} fill="none" />
+		{#if name && namePlacement === 'badge'}
+			<g class="badge" data-team={nameTeam} data-testid="token-name" data-placement="badge">
+				<defs>
+					<linearGradient id="split-{pathId}">
+						<stop offset="50%" stop-color="var(--good)" />
+						<stop offset="50%" stop-color="var(--evil)" />
+					</linearGradient>
+				</defs>
+				<rect
+					x={50 - badgeWidth / 2}
+					y="84"
+					width={badgeWidth}
+					height="14"
+					rx="7"
+					fill={nameTeam === 'traveller' ? `url(#split-${pathId})` : undefined}
+				/>
+				<text
+					x="50"
+					y="94.5"
+					font-size={BADGE_SIZE}
+					text-anchor="middle"
+					textLength={badgeLength}
+					lengthAdjust="spacingAndGlyphs">{name}</text
+				>
+			</g>
+		{:else if name && namePlacement !== 'edge'}
+			<text
+				class="name on-icon"
+				x={lineX}
+				y={lineY}
+				font-size={NAME_SIZE}
+				text-anchor="middle"
+				textLength={lineLength}
+				lengthAdjust="spacingAndGlyphs"
+				data-testid="token-name"
+				data-placement={namePlacement}>{name}</text
+			>
+		{:else if name}
+			<path id="name-{pathId}" d={edgePath} fill="none" />
 			<text
 				class="name"
 				font-size={NAME_SIZE}
 				text-anchor="middle"
 				data-testid="token-name"
-				data-position={top ? 'top' : 'bottom'}
+				data-placement="edge"
 				><textPath
 					href="#name-{pathId}"
 					startOffset="50%"
-					textLength={nameLength}
+					textLength={edgeLength}
 					lengthAdjust="spacingAndGlyphs">{name}</textPath
 				></text
 			>
@@ -157,16 +205,36 @@
 		height: 74%;
 		object-fit: contain;
 	}
-	/* With a name the icon is smaller but still in the middle, leaving the rim to the name. */
-	img[data-named] {
-		left: 22%;
-		top: 22%;
-		width: 56%;
-		height: 56%;
-	}
 	.name {
 		fill: var(--on-token);
 		font-family: var(--font-character);
 		font-weight: 700;
+	}
+	.on-icon {
+		stroke: var(--token-face);
+		stroke-width: 3;
+		stroke-linejoin: round;
+		paint-order: stroke;
+	}
+	.badge rect {
+		fill: var(--surface-raised);
+	}
+	.badge text {
+		fill: var(--on-surface);
+		font-family: var(--font-character);
+		font-weight: 700;
+	}
+	.badge[data-team='good'] rect {
+		fill: var(--good);
+	}
+	.badge[data-team='evil'] rect {
+		fill: var(--evil);
+	}
+	.badge[data-team='good'] text,
+	.badge[data-team='traveller'] text {
+		fill: var(--on-good);
+	}
+	.badge[data-team='evil'] text {
+		fill: var(--on-evil);
 	}
 </style>

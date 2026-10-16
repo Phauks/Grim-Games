@@ -11,13 +11,14 @@ import { GLOSSARY, GLOSSARY_URL, glossarySegments, type GlossarySegment } from '
 const data = committedGameData();
 const names = data.characters.map((c) => c.name);
 
-/** Everything the app shows that the glossary marks: ability, night text, day reminders. */
+/** Everything the app shows that the glossary marks: ability, night and jinx text, day reminders. */
 const blocks: string[] = [
 	...data.characters.flatMap((c) => [
 		c.ability,
 		c.firstNightReminder ?? '',
 		c.otherNightReminder ?? ''
 	]),
+	...data.jinxes.all.map((j) => j.reason),
 	...DAY_REMINDER_ENTRIES.flatMap((e) =>
 		e.reminders.flatMap((r) => r.template.flatMap((s) => ('text' in s ? [s.text] : [])))
 	),
@@ -65,7 +66,7 @@ describe('glossarySegments', () => {
 	it('marks whole words only, ignoring case', () => {
 		const text = 'Each night, choose a player: they are Poisoned tonight.';
 		const segments = glossarySegments(text);
-		expect(terms(segments)).toEqual(['each-night', 'choose', 'poisoned']);
+		expect(terms(segments)).toEqual(['each-night', 'choose', 'player', 'poisoned']);
 		expect(segments.map((s) => s.text).join('')).toBe(text);
 		expect(terms(glossarySegments('The Poisoner is deadly; the mad hatter made it.'))).toEqual([
 			'mad'
@@ -83,7 +84,12 @@ describe('glossarySegments', () => {
 	it('prefers the longest term and never overlaps', () => {
 		expect(terms(glossarySegments('a not-in-play character and an in play one'))).toEqual([
 			'not-in-play',
+			'character',
 			'in-play'
+		]);
+		expect(terms(glossarySegments('the character token of a character'))).toEqual([
+			'character-token',
+			'character'
 		]);
 		expect(terms(glossarySegments('your 2 alive neighbors'))).toEqual(['alive-neighbors']);
 		expect(terms(glossarySegments('Each night*, you learn'))).toEqual(['each-night-star']);
@@ -100,7 +106,10 @@ describe('glossarySegments', () => {
 			terms(glossarySegments('A Townsfolk, Outsiders, a Minion and Demons (except Travellers)'))
 		).toEqual(['townsfolk', 'outsider', 'minion', 'demon', 'traveller']);
 		expect(terms(glossarySegments('One Fabled is in play'))).toEqual(['fabled', 'in-play']);
-		expect(terms(glossarySegments('2 players that are not the Demon'))).toEqual(['the-demon']);
+		expect(terms(glossarySegments('2 players that are not the Demon'))).toEqual([
+			'player',
+			'the-demon'
+		]);
 		expect(terms(glossarySegments('1 good & 1 evil character token: good wins'))).toEqual([
 			'good',
 			'evil-character',

@@ -65,14 +65,13 @@
 		text-underline-offset: 0.15em;
 		cursor: pointer;
 	}
-	/* A 44px hit area without changing the line. */
+	/* A 44px-tall hit area that never reaches past the words sideways (see GlossaryTerm). */
 	.see::after {
 		content: '';
 		position: absolute;
-		left: 50%;
+		inset-inline: 0;
 		top: 50%;
-		width: max(100%, var(--tap-target));
 		height: var(--tap-target);
-		translate: -50% -50%;
+		translate: 0 -50%;
 	}
 </style>

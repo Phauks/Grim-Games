@@ -49,7 +49,7 @@ describe('parsePreferences', () => {
 				tokenScale: 1.25,
 				reminderScale: 0.75,
 				boardNames: true,
-				namePosition: 'bottom'
+				namePlacement: 'edge'
 			},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'symbols',

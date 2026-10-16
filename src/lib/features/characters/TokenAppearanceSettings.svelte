@@ -51,7 +51,7 @@
 			character={sample}
 			size={56}
 			showName={value.boardNames}
-			namePosition={value.namePosition}
+			namePlacement={value.namePlacement}
 		/>{/if}
 	<ReminderToken label={t('characters.previewReminder')} type="minion" />
 </div>
@@ -62,7 +62,6 @@
 	value={value.tokenScale}
 	{...TOKEN_SCALE}
 	defaultValue={1}
-	resetLabel={t('settings.resetTo100')}
 	onChange={(tokenScale) => onChange({ ...value, tokenScale })}
 />
 <SettingSlider
@@ -71,7 +70,6 @@
 	value={value.reminderScale}
 	{...TOKEN_SCALE}
 	defaultValue={1}
-	resetLabel={t('settings.resetTo100')}
 	onChange={(reminderScale) => onChange({ ...value, reminderScale })}
 />
 
@@ -84,14 +82,16 @@
 	/>
 	<!-- Disabled, not hidden, while names are off: no reflow. -->
 	<SettingSegmented
-		label={t('characters.namePosition')}
-		value={value.namePosition}
+		label={t('characters.namePlacement')}
+		value={value.namePlacement}
 		options={[
-			{ value: 'top', label: t('characters.namePosition.top') },
-			{ value: 'bottom', label: t('characters.namePosition.bottom') }
+			{ value: 'edge', label: t('characters.namePlacement.edge') },
+			{ value: 'icon-top', label: t('characters.namePlacement.iconTop') },
+			{ value: 'icon-bottom', label: t('characters.namePlacement.iconBottom') },
+			{ value: 'badge', label: t('characters.namePlacement.badge') }
 		]}
 		disabled={!value.boardNames}
-		onChange={(namePosition) => onChange({ ...value, namePosition })}
+		onChange={(namePlacement) => onChange({ ...value, namePlacement })}
 	/>
 </div>
 

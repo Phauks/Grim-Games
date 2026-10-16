@@ -65,15 +65,16 @@
 		touch-action: manipulation;
 		-webkit-tap-highlight-color: transparent;
 	}
-	/* A 44px hit area around the word without changing the line's layout. */
+	/* A 44px-tall hit area around the word. It never reaches past the word sideways: a wider
+	   one widened its line box when a term ended a line at the right edge, scrolling the page
+	   sideways (Night order on phones, 2026-10-16). */
 	.glossary-term::after {
 		content: '';
 		position: absolute;
-		left: 50%;
+		inset-inline: 0;
 		top: 50%;
-		width: max(calc(100% + var(--space-2)), var(--tap-target));
 		height: var(--tap-target);
-		translate: -50% -50%;
+		translate: 0 -50%;
 	}
 	.glossary-term[data-state='open'] {
 		text-decoration-style: solid;

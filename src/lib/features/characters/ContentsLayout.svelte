@@ -56,6 +56,17 @@
 			width < 40 * parseFloat(getComputedStyle(document.documentElement).fontSize)
 	);
 	let direction = $state(1);
+	// Another item's text always starts at its top; the list keeps its own scroll (Trevor,
+	// 2026-10-16). On a phone the whole layout scrolls, so it goes back to the top too.
+	let layoutEl = $state<HTMLElement>();
+	let paneEl = $state<HTMLElement>();
+	$effect(() => {
+		void current;
+		void home;
+		paneEl?.scrollTo({ top: 0 });
+		if (layoutEl && getComputedStyle(layoutEl).overflowY !== 'hidden')
+			layoutEl.scrollTo({ top: 0 });
+	});
 	function select(id: string) {
 		direction = 1;
 		onSelect(id);
@@ -75,6 +86,7 @@
 <div class="frame" bind:clientWidth={width}>
 	<div
 		class="layout"
+		bind:this={layoutEl}
 		data-home={home ? '' : undefined}
 		data-pane-at-home={paneAtHome ? '' : undefined}
 	>
@@ -98,7 +110,7 @@
 				</ul>
 			</nav>
 		{/if}
-		<div class="pane">
+		<div class="pane" bind:this={paneEl}>
 			{#key current}
 				<div class="view" in:fly={{ x: slides ? direction * 48 : 0, duration: slides ? 200 : 0 }}>
 					{#if !home}

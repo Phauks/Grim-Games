@@ -107,17 +107,17 @@
 	.icon {
 		display: inline-grid;
 		place-items: center;
-		/* Character icons follow the Icon size setting (--icon-scale); tokens do not. */
-		width: calc(2 * var(--u) * var(--icon-scale, 1));
-		height: calc(2 * var(--u) * var(--icon-scale, 1));
+		/* Character icons follow the Character icon size setting (--character-icon-scale); tokens do not. */
+		width: calc(2 * var(--u) * var(--character-icon-scale, 1));
+		height: calc(2 * var(--u) * var(--character-icon-scale, 1));
 		flex: none;
 		border-radius: 50%;
 		background: var(--token-face, var(--on-surface));
 		overflow: hidden;
 	}
 	.icon img {
-		width: calc(1.75 * var(--u) * var(--icon-scale, 1));
-		height: calc(1.75 * var(--u) * var(--icon-scale, 1));
+		width: calc(1.75 * var(--u) * var(--character-icon-scale, 1));
+		height: calc(1.75 * var(--u) * var(--character-icon-scale, 1));
 	}
 	.name {
 		/* Only when the badge alone is wider than its line (tiny screen, largest text). */
@@ -135,7 +135,7 @@
 		gap: 0.25em;
 		min-height: 0;
 		/* Fits the line; grows only when a larger Icon size needs it. */
-		--badge-h: max(1.45em, calc(1.25em * var(--icon-scale, 1) + 0.2em));
+		--badge-h: max(1.45em, calc(1.25em * var(--character-icon-scale, 1) + 0.2em));
 		height: var(--badge-h);
 		padding: 0 0.5em 0 0.1em;
 		font-size: 0.92em;
@@ -149,12 +149,12 @@
 		inset: calc((var(--badge-h) - var(--tap-target)) / 2) 0;
 	}
 	.badge.inline .icon {
-		width: calc(1.25em * var(--icon-scale, 1));
-		height: calc(1.25em * var(--icon-scale, 1));
+		width: calc(1.25em * var(--character-icon-scale, 1));
+		height: calc(1.25em * var(--character-icon-scale, 1));
 	}
 	.badge.inline .icon img {
-		width: calc(1.1em * var(--icon-scale, 1));
-		height: calc(1.1em * var(--icon-scale, 1));
+		width: calc(1.1em * var(--character-icon-scale, 1));
+		height: calc(1.1em * var(--character-icon-scale, 1));
 	}
 	.player {
 		font-family: var(--font-player);
