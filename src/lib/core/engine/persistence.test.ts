@@ -63,8 +63,16 @@ describe('saved games', () => {
 			savedAt: 5000,
 			createdAt: session.game.createdAt,
 			scriptName: 'Test Brewing',
-			seatCount: 6
+			seatCount: 6,
+			stage: { kind: 'day', day: 1 }
 		});
+	});
+
+	it('says how far a game has got: setup until a character is in, then the day', () => {
+		const { session, ctx } = newGame(names);
+		expect(summariseSavedGame(toSavedGame(session, 1)).stage).toEqual({ kind: 'setup' });
+		const later = run(session, ctx, { type: 'NewDay' }, { type: 'NewDay' });
+		expect(summariseSavedGame(toSavedGame(later, 1)).stage).toEqual({ kind: 'day', day: 3 });
 	});
 
 	it('counts seats at the cursor, so an undone seat is not counted', () => {
