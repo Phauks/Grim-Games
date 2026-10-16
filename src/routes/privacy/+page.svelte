@@ -139,7 +139,9 @@
 					<strong>GitHub.</strong> "Report an issue" and "Report a problem" open a form on github.com,
 					filled in with the app version, the page you were on and your browser's description. Reporting
 					a problem from the problem log also adds that problem's details, with web addresses shortened
-					so no game data goes in. Nothing is sent until you submit it there, under your GitHub account.
+					so no game data goes in. The Diagnostics page's Report adds a summary of this device and the
+					app (read only when you open that page; never player names, notes, scripts, games or room codes).
+					Nothing is sent until you submit it there, under your GitHub account.
 				</li>
 				<li>
 					<strong>GitHub's public API.</strong> When an update is ready, the update card may ask api.github.com
