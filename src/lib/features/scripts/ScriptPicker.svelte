@@ -16,6 +16,7 @@
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -740,15 +741,14 @@
 	</div>
 </div>
 
-<Dialog bind:open={removing} role="alertdialog" title={t('scripts.details.removeConfirm')}>
+<ConfirmDialog
+	bind:open={removing}
+	title={t('scripts.details.removeConfirm')}
+	danger
+	onConfirm={() => void removeShown()}
+>
 	<p>{t('scripts.details.removeBody', { name: shownListing?.row.name || t('common.none') })}</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (removing = false)}>{t('common.cancel')}</Button>
-		<Button variant="danger" onclick={() => void removeShown()}
-			>{t('scripts.details.confirm')}</Button
-		>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 {#snippet cell(listing: ScriptListing, column: DataColumn<ColumnId>)}
 	{@const row = listing.row}
