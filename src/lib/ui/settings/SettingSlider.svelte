@@ -11,16 +11,12 @@
 		step: number;
 		/** The default; gives the label a reset icon (Trevor, 2026-10-16: an icon, not a button). */
 		defaultValue?: number;
-		/** @deprecated The reset icon is labelled from the setting's name; ignored. */
-		resetLabel?: string;
 		/** How the value reads beside the slider; a whole percentage by default. */
 		format?: (value: number) => string;
 		/** Called as the slider moves (at most once a frame), so the change shows while dragging. */
 		onChange: (value: number) => void;
 	}
 
-	// `resetLabel` stays accepted until TokenAppearanceSettings drops it.
-	// eslint-disable-next-line svelte/no-unused-props
 	let {
 		label,
 		description,

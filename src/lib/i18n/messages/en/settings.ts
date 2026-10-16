@@ -23,7 +23,6 @@ export const settings = {
 		'How paragraphs line up: ability text, night steps, notes and help text. Justified spreads each line to both edges. Headings, labels and buttons stay as they are.',
 	'settings.alignLeft': 'Left aligned',
 	'settings.alignJustify': 'Justified',
-	'settings.resetTo100': 'Reset to 100%',
 	// Named by the setting's label through aria-describedby, so it never matches the setting's name.
 	'settings.resetToDefault': 'Reset to default',
 	'settings.iconSize': 'Interface icon size',
