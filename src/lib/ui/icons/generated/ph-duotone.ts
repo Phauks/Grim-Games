@@ -62,9 +62,11 @@ import ph_person_simple_walk_duotone from '~icons/ph/person-simple-walk-duotone'
 import ph_plus_duotone from '~icons/ph/plus-duotone';
 import ph_plus_circle_duotone from '~icons/ph/plus-circle-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
+import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
 import ph_shapes_duotone from '~icons/ph/shapes-duotone';
+import ph_share_network_duotone from '~icons/ph/share-network-duotone';
 import ph_shield_duotone from '~icons/ph/shield-duotone';
 import ph_shield_check_duotone from '~icons/ph/shield-check-duotone';
 import ph_shield_star_duotone from '~icons/ph/shield-star-duotone';
@@ -160,9 +162,11 @@ const icons: IconMap = {
 	'ph:plus-duotone': ph_plus_duotone,
 	'ph:plus-circle-duotone': ph_plus_circle_duotone,
 	'ph:push-pin-duotone': ph_push_pin_duotone,
+	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,
 	'ph:shapes-duotone': ph_shapes_duotone,
+	'ph:share-network-duotone': ph_share_network_duotone,
 	'ph:shield-duotone': ph_shield_duotone,
 	'ph:shield-check-duotone': ph_shield_check_duotone,
 	'ph:shield-star-duotone': ph_shield_star_duotone,

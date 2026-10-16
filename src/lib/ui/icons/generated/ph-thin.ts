@@ -62,9 +62,11 @@ import ph_person_simple_walk_thin from '~icons/ph/person-simple-walk-thin';
 import ph_plus_thin from '~icons/ph/plus-thin';
 import ph_plus_circle_thin from '~icons/ph/plus-circle-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
+import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
 import ph_scroll_thin from '~icons/ph/scroll-thin';
 import ph_shapes_thin from '~icons/ph/shapes-thin';
+import ph_share_network_thin from '~icons/ph/share-network-thin';
 import ph_shield_thin from '~icons/ph/shield-thin';
 import ph_shield_check_thin from '~icons/ph/shield-check-thin';
 import ph_shield_star_thin from '~icons/ph/shield-star-thin';
@@ -160,9 +162,11 @@ const icons: IconMap = {
 	'ph:plus-thin': ph_plus_thin,
 	'ph:plus-circle-thin': ph_plus_circle_thin,
 	'ph:push-pin-thin': ph_push_pin_thin,
+	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
 	'ph:scroll-thin': ph_scroll_thin,
 	'ph:shapes-thin': ph_shapes_thin,
+	'ph:share-network-thin': ph_share_network_thin,
 	'ph:shield-thin': ph_shield_thin,
 	'ph:shield-check-thin': ph_shield_check_thin,
 	'ph:shield-star-thin': ph_shield_star_thin,

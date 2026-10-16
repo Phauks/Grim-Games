@@ -62,9 +62,11 @@ import ph_person_simple_walk_bold from '~icons/ph/person-simple-walk-bold';
 import ph_plus_bold from '~icons/ph/plus-bold';
 import ph_plus_circle_bold from '~icons/ph/plus-circle-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
+import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
+import ph_share_network_bold from '~icons/ph/share-network-bold';
 import ph_shield_bold from '~icons/ph/shield-bold';
 import ph_shield_check_bold from '~icons/ph/shield-check-bold';
 import ph_shield_star_bold from '~icons/ph/shield-star-bold';
@@ -160,9 +162,11 @@ const icons: IconMap = {
 	'ph:plus-bold': ph_plus_bold,
 	'ph:plus-circle-bold': ph_plus_circle_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
+	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
 	'ph:scroll-bold': ph_scroll_bold,
 	'ph:shapes-bold': ph_shapes_bold,
+	'ph:share-network-bold': ph_share_network_bold,
 	'ph:shield-bold': ph_shield_bold,
 	'ph:shield-check-bold': ph_shield_check_bold,
 	'ph:shield-star-bold': ph_shield_star_bold,

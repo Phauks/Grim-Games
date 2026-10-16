@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import type { SeatId } from '#lib/core/model/index.ts';
+	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { setupComplete } from '#lib/core/rules/index.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -18,6 +18,7 @@
 		nextGap,
 		seatPoints,
 		seatTokenSize,
+		towardsMiddle,
 		withGap,
 		withPlaced,
 		withShape,
@@ -26,7 +27,13 @@
 	import { isOrphan } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import BoardReminder from './BoardReminder.svelte';
+	import { findEdition, fromScript, scriptToJson } from '#lib/core/data/index.ts';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
+	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
+	import NightOrderSheet from './NightOrderSheet.svelte';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
 
@@ -66,6 +73,60 @@
 	const layout = $derived(grimoire.layout);
 	const points = $derived(seatPoints(game.seating, layout, { width, height }));
 	const size = $derived(seatTokenSize(game.seating, layout, { width, height }));
+
+	// ── Reminder tokens on the board ──
+	// Each seat's reminders line up in front of it, towards the middle, as on a real
+	// grimoire. Up to three show; past that the third is a "+N" that opens the seat.
+	const MAX_SHOWN = 3;
+	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5))));
+	function chipPoints(i: number, count: number): SeatPoint[] {
+		const distances = Array.from(
+			{ length: Math.min(count, MAX_SHOWN) },
+			(_, k) => size / 2 + chip / 2 + 6 + k * (chip + 10)
+		);
+		return towardsMiddle(points[i], { width, height }, distances);
+	}
+
+	interface ReminderDrag {
+		reminderId: ReminderId;
+		from: SeatId;
+		/** Where the token is, in % of the board. */
+		at: SeatPoint;
+		target?: SeatId;
+	}
+	let reminderDrag = $state<ReminderDrag | undefined>();
+
+	/** The seat under a point (in % of the board), if it is within reach of a token. */
+	function seatAt(at: SeatPoint): SeatId | undefined {
+		let best: SeatId | undefined;
+		let bestDistance = size * 0.75;
+		game.seating.forEach((id, i) => {
+			const d = Math.hypot(
+				((points[i].x - at.x) / 100) * width,
+				((points[i].y - at.y) / 100) * height
+			);
+			if (d < bestDistance) {
+				best = id;
+				bestDistance = d;
+			}
+		});
+		return best;
+	}
+
+	function dragReminder(reminderId: ReminderId, from: SeatId, x: number, y: number, end: boolean) {
+		if (!board) return;
+		const rect = board.getBoundingClientRect();
+		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
+		const target = seatAt(at);
+		if (!end) {
+			reminderDrag = { reminderId, from, at, target };
+			return;
+		}
+		reminderDrag = undefined;
+		// Dropped on another seat: moved (one History entry). Anywhere else: nothing changes.
+		if (target && target !== from)
+			grimoire.run({ type: 'MoveReminder', reminderId, toSeatId: target });
+	}
 
 	// ── Arranging seats ──
 	// Seats can be dragged anywhere (people on a couch, a gap by the door) and gaps left
@@ -158,6 +219,21 @@
 
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
+	let nightOpen = $state(false);
+
+	// ── Share the script (never the game) ──
+	let shareOpen = $state(false);
+	const shareTarget = $derived.by(() => {
+		const data = officialData.current;
+		if (!data) return undefined;
+		const { script } = fromScript(game.script, data);
+		const edition = script.homebrew.length === 0 ? findEdition(script.name)?.id : undefined;
+		return () =>
+			shareTargetFor(
+				{ edition, json: scriptToJson(script), source: { kind: 'paste' } },
+				location.origin
+			);
+	});
 	let menuOpen = $state(false);
 	function fromMenu(action: () => void) {
 		menuOpen = false;
@@ -190,6 +266,7 @@
 			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
 		{:else}
 			<span class="title">{game.script.meta?.name ?? 'Custom script'}</span>
+			<IconButton icon="night" label="Night order" onclick={() => (nightOpen = true)} />
 			<IconButton icon="history" label="History" onclick={() => (historyOpen = true)} />
 			<IconButton
 				icon="players"
@@ -228,9 +305,38 @@
 					character={seat.characterId ? characters.get(seat.characterId) : undefined}
 					{size}
 					orphan={isOrphan(seat, game.script, characters)}
+					dropTarget={reminderDrag !== undefined &&
+						reminderDrag.target === seat.seatId &&
+						reminderDrag.from !== seat.seatId}
 					onTap={() => !arranging && openSeat(seat.seatId)}
 				/>
 			</div>
+		{/each}
+
+		{#each seats as seat, i (seat.seatId)}
+			{@const count = seat.reminders.length}
+			{#if count > 0}
+				{@const at = chipPoints(i, count)}
+				{#each seat.reminders.slice(0, MAX_SHOWN) as reminder, k (reminder.reminderId)}
+					{@const overflow = k === MAX_SHOWN - 1 && count > MAX_SHOWN ? count - k : undefined}
+					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
+					{@const p = dragged ? reminderDrag!.at : at[k]}
+					<div class="chip-slot" class:dragging={dragged} style:left="{p.x}%" style:top="{p.y}%">
+						<BoardReminder
+							label={reminder.label}
+							character={characters.get(reminder.characterId)}
+							size={chip}
+							more={overflow}
+							disabled={arranging}
+							onTap={() => openSeat(seat.seatId)}
+							onDrag={overflow
+								? undefined
+								: (x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
+							onCancel={() => (reminderDrag = undefined)}
+						/>
+					</div>
+				{/each}
+			{/if}
 		{/each}
 
 		{#each gapAt as at, i (game.seating[i])}
@@ -289,12 +395,29 @@
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
+		<Button variant="quiet" icon="share" onclick={() => fromMenu(() => (shareOpen = true))}>
+			Share script
+		</Button>
 	</div>
 </Dialog>
 
 <SeatSheet bind:open={sheetOpen} {grimoire} seatId={selected} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
+
+<Dialog
+	bind:open={shareOpen}
+	title="Share script"
+	description="Players get the script only, never anything from this game."
+>
+	<ShareControl
+		what="script"
+		title={game.script.meta?.name ?? 'Custom script'}
+		target={shareTarget}
+	/>
+</Dialog>
+
+<NightOrderSheet bind:open={nightOpen} {grimoire} />
 
 <BluffsSheet
 	bind:open={bluffsOpen}
@@ -418,6 +541,15 @@
 	.slot.dragging {
 		z-index: 2;
 		cursor: grabbing;
+	}
+	.chip-slot {
+		position: absolute;
+		translate: -50% -50%;
+		z-index: 1;
+	}
+	.chip-slot.dragging {
+		z-index: 3;
+		scale: 1.15;
 	}
 	.gap {
 		position: absolute;

@@ -62,9 +62,11 @@ import ph_person_simple_walk from '~icons/ph/person-simple-walk';
 import ph_plus from '~icons/ph/plus';
 import ph_plus_circle from '~icons/ph/plus-circle';
 import ph_push_pin from '~icons/ph/push-pin';
+import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
 import ph_scroll from '~icons/ph/scroll';
 import ph_shapes from '~icons/ph/shapes';
+import ph_share_network from '~icons/ph/share-network';
 import ph_shield from '~icons/ph/shield';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
@@ -160,9 +162,11 @@ const icons: IconMap = {
 	'ph:plus': ph_plus,
 	'ph:plus-circle': ph_plus_circle,
 	'ph:push-pin': ph_push_pin,
+	'ph:qr-code': ph_qr_code,
 	'ph:question': ph_question,
 	'ph:scroll': ph_scroll,
 	'ph:shapes': ph_shapes,
+	'ph:share-network': ph_share_network,
 	'ph:shield': ph_shield,
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,

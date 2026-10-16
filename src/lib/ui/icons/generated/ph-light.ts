@@ -62,9 +62,11 @@ import ph_person_simple_walk_light from '~icons/ph/person-simple-walk-light';
 import ph_plus_light from '~icons/ph/plus-light';
 import ph_plus_circle_light from '~icons/ph/plus-circle-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
+import ph_qr_code_light from '~icons/ph/qr-code-light';
 import ph_question_light from '~icons/ph/question-light';
 import ph_scroll_light from '~icons/ph/scroll-light';
 import ph_shapes_light from '~icons/ph/shapes-light';
+import ph_share_network_light from '~icons/ph/share-network-light';
 import ph_shield_light from '~icons/ph/shield-light';
 import ph_shield_check_light from '~icons/ph/shield-check-light';
 import ph_shield_star_light from '~icons/ph/shield-star-light';
@@ -160,9 +162,11 @@ const icons: IconMap = {
 	'ph:plus-light': ph_plus_light,
 	'ph:plus-circle-light': ph_plus_circle_light,
 	'ph:push-pin-light': ph_push_pin_light,
+	'ph:qr-code-light': ph_qr_code_light,
 	'ph:question-light': ph_question_light,
 	'ph:scroll-light': ph_scroll_light,
 	'ph:shapes-light': ph_shapes_light,
+	'ph:share-network-light': ph_share_network_light,
 	'ph:shield-light': ph_shield_light,
 	'ph:shield-check-light': ph_shield_check_light,
 	'ph:shield-star-light': ph_shield_star_light,

@@ -265,6 +265,8 @@ test('reminders: add several from the picker, recent first, then move and remove
 	await expect(
 		picker.getByRole('group', { name: 'Recent reminders' }).getByRole('button')
 	).toHaveCount(2);
+	// Each token is placed once: the Poisoner has one "Poisoned".
+	await expect(poisoner.getByRole('button', { name: /Poisoned/ })).toBeDisabled();
 	// Only characters in play: no way to add the Washerwoman's reminders here.
 	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
 	await picker.getByRole('button', { name: 'Close' }).tap();
@@ -355,4 +357,100 @@ test('the name is edited in place; Done saves and closes the keyboard', async ({
 	await name.press('Escape');
 	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
 	await expect(sheet).toBeVisible();
+});
+
+test('a reminder on the board drags to another seat (the Sailor picks again)', async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Sailor', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await picker.getByRole('group', { name: 'Sailor' }).getByRole('button', { name: 'Drunk' }).tap();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	// The token is drawn on the board, not as a number.
+	const token = page.getByRole('button', { name: 'Drunk reminder' });
+	await expect(token).toBeVisible();
+	const centre = async (locator: ReturnType<Page['getByRole']>) => {
+		const box = (await locator.boundingBox())!;
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+	const drag = async (to: { x: number; y: number }) => {
+		const from = await centre(token);
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+		await page.mouse.move(to.x, to.y, { steps: 4 });
+		await page.mouse.up();
+	};
+
+	// Dropped away from any seat: nothing changes.
+	const board = (await page.locator('.board').boundingBox())!;
+	await drag({ x: board.x + board.width / 2, y: board.y + board.height / 2 });
+	await expect(seatLabelled(page, 'Seat 1: no name, Sailor, 1 reminder')).toBeAttached();
+
+	// Dropped on seat 3: moved there, and History has it.
+	await drag(await centre(page.getByRole('button', { name: /^Seat 3:/ })));
+	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 1: no name, Sailor')).toHaveAttribute(
+		'aria-label',
+		'Seat 1: no name, Sailor'
+	);
+	await page.getByRole('button', { name: 'History' }).tap();
+	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
+		'Drunk moved to Seat 3'
+	);
+	await page.keyboard.press('Escape');
+
+	// A tap opens the seat it is on.
+	await token.tap();
+	await expect(page.getByRole('heading', { name: 'No name' })).toBeVisible();
+	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toContainText('Seat 3');
+});
+
+test('the night order opens from the board and steps are ticked by hand', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await nameSeat(sheet, 'Sam');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Sam' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	const night = page.getByRole('dialog', { name: 'Night order' });
+	await expect(night).toContainText('Dusk');
+	const empath = night.getByRole('listitem').filter({ hasText: 'Empath' });
+	await expect(empath).toContainText('Sam');
+	const tick = empath.getByRole('button', { name: 'Done: Empath' });
+	await tick.tap();
+	await expect(tick).toHaveAttribute('aria-pressed', 'true');
+	await night.getByText('Other nights').tap();
+	await expect(night.getByRole('listitem').filter({ hasText: 'Empath' })).toBeVisible();
+	await night.getByRole('button', { name: 'Clear ticks' }).tap();
+	await night.getByText('First night').tap();
+	await expect(tick).toHaveAttribute('aria-pressed', 'false');
+});
+
+test('the script is shared from the grimoire menu, never the game', async ({ page }) => {
+	await startGame(page);
+	await menu(page, 'Share script');
+	const share = page.getByRole('dialog', { name: 'Share script' });
+	await expect(share).toContainText('never anything from this game');
+	await share.getByRole('button', { name: 'QR code' }).tap();
+	// An official edition shares by its id; nothing about seats or names is in the link.
+	await expect(page.getByRole('dialog').last()).toBeVisible();
+	const link = await page.evaluate(() =>
+		[...document.querySelectorAll('a[href*="#"], [data-testid="share-url"]')]
+			.map((e) => e.getAttribute('href') ?? e.textContent)
+			.join(' ')
+	);
+	expect(link).not.toContain('seat');
 });

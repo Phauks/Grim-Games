@@ -62,9 +62,11 @@ import ph_person_simple_walk_fill from '~icons/ph/person-simple-walk-fill';
 import ph_plus_fill from '~icons/ph/plus-fill';
 import ph_plus_circle_fill from '~icons/ph/plus-circle-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
+import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
 import ph_scroll_fill from '~icons/ph/scroll-fill';
 import ph_shapes_fill from '~icons/ph/shapes-fill';
+import ph_share_network_fill from '~icons/ph/share-network-fill';
 import ph_shield_fill from '~icons/ph/shield-fill';
 import ph_shield_check_fill from '~icons/ph/shield-check-fill';
 import ph_shield_star_fill from '~icons/ph/shield-star-fill';
@@ -160,9 +162,11 @@ const icons: IconMap = {
 	'ph:plus-fill': ph_plus_fill,
 	'ph:plus-circle-fill': ph_plus_circle_fill,
 	'ph:push-pin-fill': ph_push_pin_fill,
+	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
 	'ph:scroll-fill': ph_scroll_fill,
 	'ph:shapes-fill': ph_shapes_fill,
+	'ph:share-network-fill': ph_share_network_fill,
 	'ph:shield-fill': ph_shield_fill,
 	'ph:shield-check-fill': ph_shield_check_fill,
 	'ph:shield-star-fill': ph_shield_star_fill,

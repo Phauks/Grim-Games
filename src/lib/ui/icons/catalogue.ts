@@ -62,7 +62,8 @@ export const ICON_SLOTS = {
 	grimoire: { label: 'Grimoire', choices: ['ph:users-four', 'ph:circle-dashed'] },
 	arrange: { label: 'Arrange seats', choices: ['ph:arrows-out-cardinal', 'ph:hand-grabbing'] },
 	more: { label: 'More actions', choices: ['ph:dots-three', 'ph:dots-three-vertical'] },
-	history: { label: 'History', choices: ['ph:clock-counter-clockwise', 'ph:list-bullets'] }
+	history: { label: 'History', choices: ['ph:clock-counter-clockwise', 'ph:list-bullets'] },
+	share: { label: 'Share', choices: ['ph:share-network', 'ph:qr-code'] }
 } as const satisfies Record<string, IconSlotInfo>;
 
 export type IconSlot = keyof typeof ICON_SLOTS;
