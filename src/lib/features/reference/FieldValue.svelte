@@ -98,7 +98,7 @@
 	{#if field === 'token'}
 		<CharacterToken {character} size={tokenSize} />
 	{:else if field === 'name' && plainName}
-		<!-- A deliberate exception to names-as-badges: table cells are plain information. -->
+		<!-- eslint-disable-next-line grim/names-as-badges -- Reference table cells are plain information (Trevor, 2026-10-16) -->
 		{character.name}
 	{:else if field === 'name'}
 		<!-- The same badge the game uses: icon, type colour and name (Trevor, 2026-10-15). -->

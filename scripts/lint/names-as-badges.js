@@ -16,8 +16,10 @@
  *
  * Plain text is fine where it cannot be a badge: `aria-*` labels, `alt`, `title`
  * tooltips, `placeholder`, `value`, an IconButton's `label` (its accessible name) and
- * `<title>` / `<svelte:head>` and a native `<option>`. Anything else plain must carry an eslint-disable comment
- * saying why.
+ * `<title>` / `<svelte:head>` and a native `<option>`. Anything else plain must carry an
+ * eslint-disable comment saying why. Deliberate ones: a caption beside its own token, the
+ * character's own dialog title, search text, identity keys, and the Reference table's name
+ * cells (FieldValue `plainName`; Trevor, 2026-10-16: "this is pure info. so just the name").
  */
 
 import { readFileSync } from 'node:fs';
