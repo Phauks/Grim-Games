@@ -62,6 +62,9 @@
 		position: relative;
 		z-index: var(--z-popover);
 		width: min(20rem, calc(100vw - 2 * var(--space-4)));
+		/* Never taller than the room beside its anchor (Ark sets --available-height). */
+		max-height: var(--available-height, none);
+		overflow-y: auto;
 		padding: var(--space-2) var(--space-3) var(--space-3);
 		border: var(--card-border);
 		border-radius: var(--card-radius);

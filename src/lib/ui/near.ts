@@ -1,8 +1,8 @@
 /**
  * Calls `onNear` once when an element comes within about two screens of the viewport. The
- * Reference page builds each card body and table row this way, so a page of 181
- * characters starts with a few thousand DOM nodes instead of about 20,000. One shared
- * observer serves every element.
+ * Reference cards and `DataTable` rows are built this way, so a page of 181 characters
+ * starts with a few thousand DOM nodes instead of about 20,000. One shared observer serves
+ * every element.
  */
 const callbacks = new WeakMap<Element, () => void>();
 let observer: IntersectionObserver | undefined;

@@ -396,16 +396,17 @@ test("the official site's curated scripts are listed when asked for, and load", 
 
 	// Sorting by name, then the other way round.
 	const name = table.getByRole('columnheader', { name: 'Name' });
-	await name.getByRole('button').tap();
+	await name.getByRole('button', { name: /^Name/ }).tap();
 	await expect(name).toHaveAttribute('aria-sort', 'ascending');
 	await expect(table.locator('tbody tr').first()).toContainText('Big Town');
-	await name.getByRole('button').tap();
+	await name.getByRole('button', { name: /^Name/ }).tap();
 	await expect(name).toHaveAttribute('aria-sort', 'descending');
 	await expect(table.locator('tbody tr').first()).toContainText('Little Hamlet');
 
-	// Teensyville only.
-	await page.getByRole('combobox', { name: 'Script type' }).tap();
-	await page.getByRole('option', { name: 'Teensyville' }).tap();
+	// Teensyville only, from the funnel in the header row (under the Name header on phones,
+	// where the Type column is hidden).
+	await table.getByRole('button', { name: 'Filter Type', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Filter Type' }).getByLabel('Teensyville').tap();
 	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
 
 	await page.getByRole('button', { name: /^Little Hamlet/ }).tap();

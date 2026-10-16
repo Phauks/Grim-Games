@@ -1,19 +1,14 @@
 <script lang="ts">
-	import { SvelteSet } from 'svelte/reactivity';
-	import { near } from './near.ts';
 	import { CHARACTER_TYPES } from '#lib/core/data/types.ts';
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import {
-		activeFilterCount,
 		ALIGNMENT_CHOICES,
 		nextSort,
-		tableRows,
 		type Presence,
 		type TableColumn
 	} from '#lib/core/rules/reference-table.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import FieldValue from './FieldValue.svelte';
 	import {
 		PRESENCE_LABELS,
@@ -25,26 +20,81 @@
 	import { referenceTable } from './table-state.svelte.ts';
 
 	interface Props {
-		entries: readonly ReferenceEntry[];
+		/** Already filtered and sorted (`tableRows`), so the page can show the count. */
+		rows: readonly ReferenceEntry[];
 		onExplain: (title: string, text: string) => void;
 		/** Shows one field's whole value in the shared details dialog. */
 		onShowField: (entry: ReferenceEntry, field: FieldId) => void;
 	}
 
-	let { entries, onExplain, onShowField }: Props = $props();
+	let { rows, onExplain, onShowField }: Props = $props();
 
 	const table = $derived(referenceTable.current);
-	const rows = $derived(tableRows(entries, table));
-	const active = $derived(activeFilterCount(table.filters));
-	let typesOpen = $state(false);
 
-	function ariaSort(column: TableColumn | undefined) {
-		if (!column || table.sort?.column !== column) return undefined;
-		return table.sort.direction;
+	/** Fixed widths (in --u): layout never depends on which rows are drawn, so nothing reflows. */
+	const WIDTHS: Record<FieldId, number> = {
+		token: 4,
+		// Wide enough for the longest name badge (Deus ex Fiasco, Hell's Librarian).
+		name: 14,
+		type: 7,
+		edition: 9,
+		icons: 6.5,
+		alignment: 11,
+		setup: 11,
+		prep: 18,
+		ability: 18,
+		tokens: 12,
+		special: 11,
+		firstNight: 17,
+		otherNight: 17,
+		jinxes: 18,
+		preDay: 19,
+		problems: 15,
+		links: 11
+	};
+
+	type PresenceColumn = Exclude<TableColumn, 'name' | 'type' | 'edition' | 'alignment'>;
+
+	function filterSet(field: ReferenceField): boolean {
+		const f = table.filters;
+		switch (field.filter) {
+			case 'text':
+				return !!f.name?.trim();
+			case 'types':
+				return !!f.types?.length;
+			case 'alignment':
+				return !!f.alignment;
+			case 'presence':
+				return !!f[field.sort as PresenceColumn];
+			default:
+				return false;
+		}
 	}
 
-	function presenceKey(field: ReferenceField) {
-		return field.sort as Exclude<TableColumn, 'name' | 'type' | 'edition' | 'alignment'>;
+	const columns = $derived(
+		REFERENCE_FIELDS.map((field): DataColumn<FieldId> => ({
+			id: field.id,
+			label: field.label,
+			width: `calc(${WIDTHS[field.id]} * var(--u))`,
+			sortable: field.sort !== undefined,
+			filterable: field.filter !== undefined,
+			filtered: filterSet(field),
+			rowHeader: field.id === 'name',
+			stackHead: field.id === 'token'
+		}))
+	);
+
+	const sort = $derived(
+		table.sort && { column: fieldOf(table.sort.column), direction: table.sort.direction }
+	);
+
+	function fieldOf(column: TableColumn): FieldId {
+		return REFERENCE_FIELDS.find((f) => f.sort === column)!.id;
+	}
+
+	function onSort(id: FieldId) {
+		const column = REFERENCE_FIELDS.find((f) => f.id === id)?.sort;
+		if (column) referenceTable.sort = nextSort(table.sort, column);
 	}
 
 	function toggleType(type: (typeof CHARACTER_TYPES)[number], on: boolean) {
@@ -54,341 +104,138 @@
 			on ? [...types.filter((t) => t !== type), type] : types.filter((t) => t !== type)
 		);
 	}
-	// Rows whose cells have been built (near.ts).
-	const shownRows = new SvelteSet<string>();
+
+	const field = (id: FieldId) => REFERENCE_FIELDS.find((f) => f.id === id)!;
 </script>
+
+{#snippet choices(
+	name: string,
+	options: readonly { value: string; label: string }[],
+	value: string,
+	onPick: (value: string) => void
+)}
+	<fieldset>
+		<legend class="visually-hidden">{name}</legend>
+		{#each options as option (option.value)}
+			<label class="check">
+				<input
+					type="radio"
+					{name}
+					value={option.value}
+					checked={value === option.value}
+					onchange={() => onPick(option.value)}
+				/>
+				{option.label}
+			</label>
+		{/each}
+	</fieldset>
+{/snippet}
+
+{#snippet filter(column: DataColumn<FieldId>, close: () => void)}
+	{@const f = field(column.id)}
+	{#if f.filter === 'text'}
+		<input
+			class="text"
+			type="search"
+			aria-label="Filter {f.label}"
+			placeholder="Filter"
+			enterkeyhint="done"
+			value={table.filters.name ?? ''}
+			oninput={(e) => referenceTable.setFilter('name', e.currentTarget.value)}
+			onkeydown={(e) => e.key === 'Enter' && close()}
+		/>
+	{:else if f.filter === 'types'}
+		<fieldset>
+			<legend class="visually-hidden">Character types</legend>
+			{#each CHARACTER_TYPES as type (type)}
+				<label class="check">
+					<input
+						type="checkbox"
+						checked={table.filters.types?.includes(type) ?? false}
+						onchange={(e) => toggleType(type, e.currentTarget.checked)}
+					/>
+					{TYPE_PLURALS[type]}
+				</label>
+			{/each}
+		</fieldset>
+		<div class="actions">
+			<Button variant="quiet" onclick={() => referenceTable.setFilter('types', undefined)}
+				>All types</Button
+			>
+		</div>
+	{:else if f.filter === 'alignment'}
+		{@render choices(
+			`filter-${f.id}`,
+			[{ value: '', label: 'All' }, ...ALIGNMENT_CHOICES.map((c) => ({ value: c, label: c }))],
+			table.filters.alignment ?? '',
+			(v) => referenceTable.setFilter('alignment', v || undefined)
+		)}
+	{:else if f.filter === 'presence'}
+		{@const key = f.sort as PresenceColumn}
+		{@const labels = PRESENCE_LABELS[f.id] ?? { yes: 'Has', no: 'None' }}
+		{@render choices(
+			`filter-${f.id}`,
+			[
+				{ value: '', label: 'All' },
+				{ value: 'yes', label: labels.yes },
+				{ value: 'no', label: labels.no }
+			],
+			table.filters[key] ?? '',
+			(v) => referenceTable.setFilter(key, (v || undefined) as Presence | undefined)
+		)}
+	{/if}
+{/snippet}
+
+{#snippet cell(entry: ReferenceEntry, column: DataColumn<FieldId>)}
+	{@const f = field(column.id)}
+	{#if f.long}
+		<!-- Clamped to a fixed height; the whole value opens in the details dialog. -->
+		<div class="cell clamp">
+			<FieldValue field={f.id} {entry} {onExplain} />
+		</div>
+		<button
+			type="button"
+			class="more"
+			onclick={() => onShowField(entry, f.id)}
+			aria-label="{f.label} for {entry.character.name}">More</button
+		>
+	{:else}
+		<div class="cell">
+			<FieldValue field={f.id} {entry} {onExplain} tokenSize={40} />
+		</div>
+	{/if}
+{/snippet}
 
 <!--
 	Wide screens get a real table. Narrow ones (phones, or large text) stack each row into a
 	block of labelled fields, so the page never scrolls sideways (Trevor, 2026-10-16).
 -->
 <div class="table-view">
-	<!-- Reserved line: the count and Clear button are always there, so nothing below moves. -->
-	<div class="filter-bar">
-		<span class="count" aria-live="polite" data-testid="table-count">
-			{rows.length} of {entries.length} · {active === 0
-				? 'no filters'
-				: `${active} filter${active === 1 ? '' : 's'}`}
-		</span>
-		<Button
-			variant="quiet"
-			icon="close"
-			disabled={active === 0}
-			onclick={() => referenceTable.clearFilters()}>Clear filters</Button
-		>
-	</div>
-
-	<div class="scroll" role="region" aria-label="Characters table">
-		<table data-testid="character-table">
-			<thead>
-				<tr>
-					{#each REFERENCE_FIELDS as field (field.id)}
-						<th scope="col" data-col={field.id} aria-sort={ariaSort(field.sort)}>
-							{#if field.sort}
-								{@const sort = field.sort}
-								<button
-									type="button"
-									class="sort"
-									onclick={() => (referenceTable.sort = nextSort(table.sort, sort))}
-								>
-									{field.label}
-									{#if table.sort?.column === sort}
-										<Icon
-											name={table.sort.direction === 'ascending'
-												? 'sortAscending'
-												: 'sortDescending'}
-										/>
-									{:else}
-										<span class="unsorted"><Icon name="sort" /></span>
-									{/if}
-								</button>
-							{:else}
-								<span class="plain">{field.label}</span>
-							{/if}
-						</th>
-					{/each}
-				</tr>
-				<tr class="filters">
-					{#each REFERENCE_FIELDS as field (field.id)}
-						<td data-col={field.id} data-label={field.label}>
-							{#if field.filter === 'text'}
-								<input
-									type="search"
-									aria-label="Filter {field.label}"
-									placeholder="Filter"
-									value={table.filters.name ?? ''}
-									oninput={(e) => referenceTable.setFilter('name', e.currentTarget.value)}
-								/>
-							{:else if field.filter === 'types'}
-								<button
-									type="button"
-									class="pick"
-									aria-haspopup="dialog"
-									onclick={() => (typesOpen = true)}
-								>
-									<Icon name="filter" />
-									{table.filters.types?.length
-										? table.filters.types.map((t) => TYPE_PLURALS[t]).join(', ')
-										: 'All'}
-								</button>
-							{:else if field.filter === 'alignment'}
-								<select
-									aria-label="Filter {field.label}"
-									value={table.filters.alignment ?? ''}
-									onchange={(e) =>
-										referenceTable.setFilter('alignment', e.currentTarget.value || undefined)}
-								>
-									<option value="">All</option>
-									{#each ALIGNMENT_CHOICES as choice (choice)}<option value={choice}
-											>{choice}</option
-										>{/each}
-								</select>
-							{:else if field.filter === 'presence'}
-								{@const key = presenceKey(field)}
-								{@const labels = PRESENCE_LABELS[field.id] ?? { yes: 'Has', no: 'None' }}
-								<select
-									aria-label="Filter {field.label}"
-									value={table.filters[key] ?? ''}
-									onchange={(e) =>
-										referenceTable.setFilter(
-											key,
-											(e.currentTarget.value || undefined) as Presence | undefined
-										)}
-								>
-									<option value="">All</option>
-									<option value="yes">{labels.yes}</option>
-									<option value="no">{labels.no}</option>
-								</select>
-							{/if}
-						</td>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each rows as entry (entry.character.id)}
-					<tr
-						data-character={entry.character.id}
-						data-type={entry.character.type}
-						{@attach near(() => shownRows.add(entry.character.id))}
-					>
-						{#each REFERENCE_FIELDS as field (field.id)}
-							{#if field.id === 'name'}
-								<th scope="row" data-col="name"><FieldValue field="name" {entry} {onExplain} /></th>
-							{:else if !shownRows.has(entry.character.id)}
-								<!-- Built when the row comes near the screen (near.ts); cells keep their size. -->
-								<td data-col={field.id} data-label={field.label}>
-									<div class="cell" class:clamp={field.long}></div>
-								</td>
-							{:else}
-								<td data-col={field.id} data-label={field.label}>
-									{#if field.long}
-										<!-- Clamped to a fixed height; the whole value opens in the details dialog. -->
-										<div class="cell clamp">
-											<FieldValue field={field.id} {entry} {onExplain} />
-										</div>
-										<button
-											type="button"
-											class="more"
-											onclick={() => onShowField(entry, field.id)}
-											aria-label="{field.label} for {entry.character.name}">More</button
-										>
-									{:else}
-										<div class="cell">
-											<FieldValue field={field.id} {entry} {onExplain} tokenSize={40} />
-										</div>
-									{/if}
-								</td>
-							{/if}
-						{/each}
-					</tr>
-				{:else}
-					<tr><td class="empty" colspan={REFERENCE_FIELDS.length}>No characters match.</td></tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
+	<DataTable
+		label="Characters"
+		testid="character-table"
+		{columns}
+		{rows}
+		key={(entry) => entry.character.id}
+		{cell}
+		{sort}
+		{onSort}
+		{filter}
+		narrow="stack"
+		fit="content"
+		lazy
+		rowEstimate="calc(7 * var(--u))"
+		rowAttrs={(entry) => ({
+			'data-character': entry.character.id,
+			'data-type': entry.character.type
+		})}
+		empty="No characters match."
+	/>
 </div>
-
-<Dialog bind:open={typesOpen} title="Filter by type">
-	<fieldset>
-		<legend class="visually-hidden">Character types</legend>
-		{#each CHARACTER_TYPES as type (type)}
-			<label class="check">
-				<input
-					type="checkbox"
-					checked={table.filters.types?.includes(type) ?? false}
-					onchange={(e) => toggleType(type, e.currentTarget.checked)}
-				/>
-				{TYPE_PLURALS[type]}
-			</label>
-		{/each}
-	</fieldset>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => referenceTable.setFilter('types', undefined)}
-			>All types</Button
-		>
-		<Button onclick={() => (typesOpen = false)}>Done</Button>
-	{/snippet}
-</Dialog>
 
 <style>
 	.table-view {
-		container-type: inline-size;
-	}
-	.filter-bar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-		margin-bottom: var(--space-2);
-	}
-	.count {
 		font-size: 0.9rem;
-		color: var(--on-surface-muted);
-	}
-	.scroll {
-		max-width: 100%;
-		overflow-x: auto;
-		overscroll-behavior-x: contain;
-		border: var(--card-border);
-		border-radius: var(--card-radius);
-		background: var(--card-background);
-	}
-	table {
-		table-layout: fixed;
-		width: calc(195.5 * var(--u));
-		border-collapse: collapse;
-		font-size: 0.9rem;
-	}
-	th,
-	td {
-		padding: var(--space-1) var(--space-2);
-		border-bottom: 1px solid var(--border);
-		text-align: left;
-		vertical-align: top;
-	}
-	thead th {
-		padding: 0;
-		background: var(--surface-selected);
-		vertical-align: bottom;
-	}
-	.sort,
-	.plain {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-2);
-		border: 0;
-		background: none;
-		color: var(--on-surface-muted);
-		font: inherit;
-		font-size: 0.75rem;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		text-align: left;
-		/* Long labels (Starting alignment) wrap inside their fixed column instead of overlapping. */
-		overflow-wrap: anywhere;
-		--icon-size: calc(0.95 * var(--u));
-	}
-	.sort {
-		cursor: pointer;
-	}
-	th[aria-sort] .sort {
-		color: var(--heading);
-	}
-	.unsorted {
-		display: inline-flex;
-		opacity: 0.45;
-	}
-	.filters td {
-		background: var(--surface-selected);
-		padding-top: 0;
-	}
-	.filters input,
-	.filters select,
-	.pick {
-		width: 100%;
-		min-width: calc(6.5 * var(--u));
-		min-height: var(--tap-target);
-		padding: 0 var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		color: var(--on-surface);
-		font: inherit;
-		/* 16px or more stops iOS zooming into the field. */
-		font-size: max(0.9rem, 16px); /* px-ok: iOS zooms into fields under 16px */
-	}
-	.pick {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-		max-width: calc(10 * var(--u));
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-		font-size: 0.85rem;
-		cursor: pointer;
-		--icon-size: calc(1 * var(--u));
-	}
-	tbody th {
-		font-weight: 600;
-		white-space: nowrap;
-	}
-	/* Fixed column widths: layout never depends on which rows are drawn, so nothing reflows. */
-	th[data-col='token'] {
-		width: calc(4 * var(--u));
-	}
-	/* Wide enough for the longest name badge (Deus ex Fiasco, Hell's Librarian). */
-	th[data-col='name'] {
-		width: calc(14 * var(--u));
-	}
-	th[data-col='type'] {
-		width: calc(7 * var(--u));
-	}
-	th[data-col='edition'] {
-		width: calc(9 * var(--u));
-	}
-	th[data-col='icons'] {
-		width: calc(6.5 * var(--u));
-	}
-	th[data-col='alignment'] {
-		width: calc(11 * var(--u));
-	}
-	th[data-col='setup'] {
-		width: calc(11 * var(--u));
-	}
-	th[data-col='ability'] {
-		width: calc(18 * var(--u));
-	}
-	th[data-col='tokens'] {
-		width: calc(12 * var(--u));
-	}
-	th[data-col='special'] {
-		width: calc(11 * var(--u));
-	}
-	th[data-col='firstNight'] {
-		width: calc(17 * var(--u));
-	}
-	th[data-col='otherNight'] {
-		width: calc(17 * var(--u));
-	}
-	th[data-col='prep'] {
-		width: calc(18 * var(--u));
-	}
-	th[data-col='jinxes'] {
-		width: calc(18 * var(--u));
-	}
-	th[data-col='preDay'] {
-		width: calc(19 * var(--u));
-	}
-	th[data-col='problems'] {
-		width: calc(15 * var(--u));
-	}
-	th[data-col='links'] {
-		width: calc(11 * var(--u));
 	}
 	.clamp {
 		max-height: calc(5.4 * var(--u));
@@ -405,13 +252,9 @@
 		text-decoration: underline;
 		cursor: pointer;
 	}
-	.empty {
-		padding: var(--space-4);
-		color: var(--on-surface-muted);
-	}
 	fieldset {
 		display: grid;
-		margin: 0;
+		margin: var(--space-2) 0 0;
 		padding: 0;
 		border: 0;
 	}
@@ -425,6 +268,24 @@
 		width: calc(1.25 * var(--u));
 		height: calc(1.25 * var(--u));
 	}
+	.text {
+		width: 100%;
+		box-sizing: border-box;
+		min-height: var(--tap-target);
+		margin-top: var(--space-2);
+		padding: 0 var(--space-2);
+		border: var(--card-border);
+		border-radius: var(--radius-sm);
+		background: var(--surface);
+		color: var(--on-surface);
+		font: inherit;
+		/* 16px or more stops iOS zooming into the field. */
+		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
+	}
+	.actions {
+		display: flex;
+		justify-content: flex-end;
+	}
 	.visually-hidden {
 		position: absolute;
 		width: 1px;
@@ -433,115 +294,16 @@
 		clip-path: inset(50%);
 		white-space: nowrap;
 	}
-	/* Stacked rows: the same fields as the table, each with its label, one row per block. */
-	@container (max-width: 40rem) {
-		.scroll {
-			overflow-x: visible;
-			border: 0;
-			background: none;
-		}
-		table,
-		thead,
-		tbody,
-		tr,
-		th,
-		td {
-			display: block;
-		}
-		table,
-		th[data-col] {
-			width: auto;
-		}
-		thead tr:first-child {
-			display: flex;
-			flex-wrap: wrap;
-			gap: var(--space-1);
-			margin-bottom: var(--space-2);
-		}
-		thead th {
-			border: 0;
-			background: none;
-		}
-		/* Unsortable columns have no control; their names label each row's fields below. */
-		thead th:not([aria-sort]):not(:has(.sort)) {
-			display: none;
-		}
-		.sort {
-			width: auto;
-			border: var(--card-border);
-			border-radius: var(--radius-full);
-			background: var(--card-background);
-		}
-		.filters {
-			display: grid;
-			grid-template-columns: repeat(auto-fill, minmax(calc(9 * var(--u)), 1fr));
-			gap: var(--space-2);
-			margin-bottom: var(--space-3);
-		}
-		.filters td {
-			padding: 0;
-			border: 0;
-			background: none;
-		}
-		.filters td:not(:has(input, select, button)) {
-			display: none;
-		}
-		.filters td::before,
-		tbody td::before {
-			content: attr(data-label);
-			color: var(--on-surface-muted);
-			font-size: 0.75rem;
-			letter-spacing: 0.05em;
-			text-transform: uppercase;
-		}
-		.filters td::before {
-			display: block;
-		}
-		.pick {
-			max-width: none;
-		}
-		tbody tr {
-			display: grid;
-			grid-template-columns: auto minmax(0, 1fr);
-			align-items: center;
-			margin-bottom: var(--space-3);
-			padding: var(--space-2);
-			border: var(--card-border);
-			border-radius: var(--card-radius);
-			background: var(--card-background);
-		}
-		tbody th,
-		tbody td {
-			border: 0;
-		}
-		tbody th {
-			white-space: normal;
-		}
-		/* The token sits beside the name, so it needs no label. */
-		tbody td[data-col='token']::before {
-			content: none;
-		}
-		/* As on the cards: the value sits beside its label when there is room, else under it. */
-		tbody td:not([data-col='token']) {
-			grid-column: 1 / -1;
-			display: flex;
-			flex-wrap: wrap;
-			align-items: baseline;
-			gap: var(--space-1) var(--space-2);
-			min-width: 0;
-		}
-		tbody td .cell {
+	/* Stacked rows are as tall as they need, so nothing is clipped and More isn't needed. */
+	@container data-table (max-width: 40rem) {
+		.cell {
 			flex: 1 1 calc(8 * var(--u));
 		}
-		/* Rows here are as tall as they need, so nothing is clipped and More isn't needed. */
-		tbody td .clamp {
+		.clamp {
 			max-height: none;
 		}
-		tbody td .more {
+		.more {
 			display: none;
-		}
-		td.empty {
-			display: block;
 		}
 	}
 </style>

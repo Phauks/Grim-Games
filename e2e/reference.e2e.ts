@@ -78,10 +78,12 @@ test('the filter chips are gone; the table sorts and filters by column', async (
 	);
 
 	// Filter the type column to Demons.
-	await table.locator('td[data-col="type"] button').tap();
-	const dialog = page.getByRole('dialog', { name: 'Filter by type' });
+	// Filters sit in the header row: the funnel beside a column's name opens its choices.
+	await table.getByRole('button', { name: 'Filter Type', exact: true }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Filter Type' });
 	await dialog.getByLabel('Demons').check();
-	await dialog.getByRole('button', { name: 'Done' }).tap();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(table.getByRole('button', { name: 'Filter Type (set)' })).toBeVisible();
 	await expect(page.getByTestId('table-count')).toContainText('1 filter');
 	const types = await rows.evaluateAll((trs) => trs.map((tr) => tr.getAttribute('data-type')));
 	expect(types.length).toBeGreaterThan(0);

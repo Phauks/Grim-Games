@@ -19,6 +19,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import { parseBotcScriptsRef } from './botcscripts-api.ts';
 	import { curatedScripts } from './curated.svelte.ts';
 	import {
@@ -231,17 +232,30 @@
 			: section;
 	}
 
-	const COLUMNS: { column: SortColumn; label: string; wide?: boolean; numeric?: boolean }[] = [
-		{ column: 'name', label: 'Name' },
-		{ column: 'author', label: 'Author', wide: true },
-		{ column: 'source', label: 'Source' },
-		{ column: 'kind', label: 'Type', wide: true },
-		{ column: 'characters', label: 'Chars', numeric: true }
+	type ColumnId = SortColumn | 'remove';
+	const COLUMNS: readonly DataColumn<ColumnId>[] = [
+		{ id: 'name', label: 'Name', sortable: true, flush: true },
+		{ id: 'author', label: 'Author', sortable: true, wide: true, width: '20%' },
+		{ id: 'source', label: 'Source', sortable: true, width: '6rem' },
+		{ id: 'kind', label: 'Type', sortable: true, wide: true, width: '8.5rem', filterable: true },
+		{ id: 'characters', label: 'Chars', sortable: true, align: 'end', width: '6rem' },
+		{
+			id: 'remove',
+			label: t('scripts.picker.remove'),
+			hideLabel: true,
+			flush: true,
+			width: 'var(--tap-target)'
+		}
 	];
-
-	function ariaSort(column: SortColumn): 'ascending' | 'descending' | 'none' {
-		return sort?.column !== column ? 'none' : sort.descending ? 'descending' : 'ascending';
-	}
+	const columns = $derived(
+		COLUMNS.map((c) => (c.id === 'kind' ? { ...c, filtered: kind !== '' } : c))
+	);
+	const tableSort = $derived(
+		sort && {
+			column: sort.column as ColumnId,
+			direction: sort.descending ? ('descending' as const) : ('ascending' as const)
+		}
+	);
 
 	function clearError() {
 		error = '';
@@ -386,92 +400,25 @@
 				onpick={(ref) => run(() => fetchLinkTarget({ kind: 'botcscripts', ref }, ''))}
 			/>
 		{:else}
-			<div class="tools">
-				<Select
-					label={t('scripts.picker.type')}
-					hideLabel
-					value={kind}
-					options={KIND_OPTIONS}
-					onChange={(v) => (kind = v)}
-				/>
-				<p class="status" role="status" data-testid="picker-status">{status}</p>
-			</div>
-
 			<div class="table">
-				<table aria-label={t('scripts.picker.table')}>
-					<thead>
-						<tr>
-							{#each COLUMNS as col (col.column)}
-								<th
-									scope="col"
-									class:wide={col.wide}
-									class:numeric={col.numeric}
-									aria-sort={ariaSort(col.column)}
-								>
-									<button type="button" onclick={() => (sort = nextSort(sort, col.column))}
-										>{col.label}<span class="arrow" aria-hidden="true"
-											>{ariaSort(col.column) === 'ascending'
-												? '▲'
-												: ariaSort(col.column) === 'descending'
-													? '▼'
-													: ''}</span
-										></button
-									>
-								</th>
-							{/each}
-							<th scope="col" class="remove"
-								><span class="visually-hidden">{t('scripts.picker.remove')}</span></th
-							>
-						</tr>
-					</thead>
-					<tbody>
-						{#each shown as entry (entry.row.key)}
-							{@const row = entry.row}
-							<tr class:current={isCurrent(entry)}>
-								<td class="name">
-									<button
-										type="button"
-										aria-pressed={isCurrent(entry)}
-										aria-label="{row.name} {row.note || t(`scripts.sourceLabel.${row.source}`)}"
-										disabled={busy}
-										onclick={() => void entry.load()}
-									>
-										<span class="title">{row.name}</span>
-										<span class="sub"
-											>{[
-												row.note,
-												row.author || t('scripts.picker.noAuthor'),
-												t(`scripts.kind.${row.kind}`)
-											]
-												.filter(Boolean)
-												.join(' · ')}</span
-										>
-									</button>
-								</td>
-								<td class="wide">{row.author || t('common.none')}</td>
-								<td>{t(`scripts.sourceLabel.${row.source}`)}</td>
-								<td class="wide">{t(`scripts.kind.${row.kind}`)}</td>
-								<td class="numeric">{row.characters}</td>
-								<td class="remove">
-									{#if entry.saved}
-										{@const saved = entry.saved}
-										<IconButton
-											icon="close"
-											label={t('scripts.picker.removeRecent', { name: saved.name })}
-											onclick={() =>
-												forgetScript(saved.scriptId).catch((e) =>
-													reportError(e, { area: 'scripts' })
-												)}
-										/>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+				<DataTable
+					label={t('scripts.picker.table')}
+					{columns}
+					rows={shown}
+					key={(entry) => entry.row.key}
+					{cell}
+					sort={tableSort}
+					onSort={(column) => column !== 'remove' && (sort = nextSort(sort, column))}
+					{filter}
+					narrow="hide"
+					fill
+					rowSelected={isCurrent}
+				/>
 			</div>
 
+			<!-- The count shares the line under the table with the BotC Scripts link. -->
 			<div class="more">
+				<p class="status" role="status" data-testid="picker-status">{status}</p>
 				<Button variant="quiet" onclick={() => (source = 'botc')}
 					>{t('scripts.picker.searchBotcButton')}</Button
 				>
@@ -503,6 +450,63 @@
 		</p>
 	</section>
 </div>
+
+{#snippet cell(entry: Entry, column: DataColumn<ColumnId>)}
+	{@const row = entry.row}
+	{#if column.id === 'name'}
+		<button
+			type="button"
+			class="pick"
+			aria-pressed={isCurrent(entry)}
+			aria-label="{row.name} {row.note || t(`scripts.sourceLabel.${row.source}`)}"
+			disabled={busy}
+			onclick={() => void entry.load()}
+		>
+			<span class="title">{row.name}</span>
+			<span class="sub"
+				>{[row.note, row.author || t('scripts.picker.noAuthor'), t(`scripts.kind.${row.kind}`)]
+					.filter(Boolean)
+					.join(' · ')}</span
+			>
+		</button>
+	{:else if column.id === 'author'}
+		<span class="text">{row.author || t('common.none')}</span>
+	{:else if column.id === 'source'}
+		<span class="text">{t(`scripts.sourceLabel.${row.source}`)}</span>
+	{:else if column.id === 'kind'}
+		<span class="text">{t(`scripts.kind.${row.kind}`)}</span>
+	{:else if column.id === 'characters'}
+		<span class="text numeric">{row.characters}</span>
+	{:else if entry.saved}
+		{@const saved = entry.saved}
+		<IconButton
+			icon="close"
+			label={t('scripts.picker.removeRecent', { name: saved.name })}
+			onclick={() => forgetScript(saved.scriptId).catch((e) => reportError(e, { area: 'scripts' }))}
+		/>
+	{/if}
+{/snippet}
+
+{#snippet filter(column: DataColumn<ColumnId>, close: () => void)}
+	<fieldset class="kinds" data-col={column.id}>
+		<legend class="visually-hidden">{t('scripts.picker.type')}</legend>
+		{#each KIND_OPTIONS as option (option.value)}
+			<label class="check">
+				<input
+					type="radio"
+					name="script-kind"
+					value={option.value}
+					checked={kind === option.value}
+					onchange={() => {
+						kind = option.value;
+						close();
+					}}
+				/>
+				{option.label}
+			</label>
+		{/each}
+	</fieldset>
+{/snippet}
 
 {#snippet errorLine()}
 	<p class="error" role="status">{error}</p>
@@ -618,16 +622,9 @@
 		gap: var(--space-2);
 		min-height: 0;
 	}
-	.tools {
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		gap: var(--space-2);
-		align-items: center;
-	}
 	.status {
 		margin: 0;
 		color: var(--on-surface-muted);
-		text-align: right;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -635,132 +632,77 @@
 	.table {
 		flex: 1;
 		min-height: 0;
-		overflow-y: auto;
-		overscroll-behavior: contain;
-		border: var(--card-border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
 	}
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		table-layout: fixed;
-	}
-	thead th {
-		position: sticky;
-		top: 0;
-		z-index: 1;
-		background: var(--surface-raised);
-		border-bottom: var(--card-border);
-		text-align: left;
-		font-weight: 600;
-	}
-	th button,
-	td.name button {
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		cursor: pointer;
-	}
-	th button:hover {
-		color: var(--on-surface);
-	}
-	th button {
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-2);
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-		text-align: inherit;
-		color: var(--on-surface-muted);
-		font-weight: 600;
-	}
-	th.numeric button {
-		justify-content: flex-end;
-	}
-	.arrow {
-		display: inline-block;
-		width: 1em;
-		font-size: 0.75em;
-	}
-	td {
-		padding: 0 var(--space-2);
-		border-bottom: var(--card-border);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	tr.current td {
-		background: var(--surface-selected);
-	}
-	td.name {
-		padding: 0;
-	}
-	td.name button {
+	.pick {
 		width: 100%;
 		height: 100%;
 		min-height: var(--tap-target);
 		align-content: center;
 		padding: var(--space-1) var(--space-2);
 		display: grid;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
 		text-align: left;
+		cursor: pointer;
 	}
-	td.name button:hover:not(:disabled) {
+	.pick:hover:not(:disabled) {
 		background: var(--surface-selected);
 	}
 	.title {
 		font-weight: 600;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.sub {
+		display: none;
 		font-size: 0.8rem;
 		color: var(--on-surface-muted);
 		overflow: hidden;
 		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	/* Narrow tables: author and type sit under the name instead of in columns of their own. */
+	@container data-table (max-width: 40rem) {
+		.sub {
+			display: block;
+		}
+	}
+	.text {
+		display: flex;
+		align-items: center;
+		min-height: var(--tap-target);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.numeric {
-		text-align: right;
+		justify-content: flex-end;
 		font-variant-numeric: tabular-nums;
-	}
-	th:nth-child(1) {
-		width: auto;
-	}
-	th:nth-child(3) {
-		width: 5.5rem;
-	}
-	th:nth-child(5) {
-		width: 4.5rem;
-	}
-	th.remove {
-		width: var(--tap-target);
-	}
-	td.remove {
-		padding: 0;
-	}
-	/* Phones: author and type sit under the name instead of in columns of their own. */
-	.wide {
-		display: none;
-	}
-	@media (min-width: 40rem) {
-		.wide {
-			display: table-cell;
-		}
-		th:nth-child(2) {
-			width: 20%;
-		}
-		th:nth-child(4) {
-			width: 6.5rem;
-		}
-		.sub {
-			display: none;
-		}
 	}
 	.more {
 		display: flex;
-		justify-content: center;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+	.kinds {
+		display: grid;
+		margin: var(--space-2) 0 0;
+		padding: 0;
+		border: 0;
+	}
+	.check {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		min-height: var(--tap-target);
+	}
+	.check input {
+		width: calc(1.25 * var(--u));
+		height: calc(1.25 * var(--u));
 	}
 	section {
 		display: grid;

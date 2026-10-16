@@ -2,7 +2,7 @@
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import FieldValue from './FieldValue.svelte';
 	import { REFERENCE_FIELDS } from './fields.ts';
-	import { near } from './near.ts';
+	import { near } from '#lib/ui/near.ts';
 
 	interface Props {
 		entry: ReferenceEntry;

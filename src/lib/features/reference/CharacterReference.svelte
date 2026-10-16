@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { groupByType, matchesReference, type ReferenceEntry } from '#lib/core/rules/reference.ts';
+	import { activeFilterCount, tableRows } from '#lib/core/rules/reference-table.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CharacterTable from './CharacterTable.svelte';
@@ -7,6 +9,7 @@
 	import { fieldById, type FieldId } from './fields.ts';
 	import { TYPE_PLURALS } from './labels.ts';
 	import ReferenceCard from './ReferenceCard.svelte';
+	import { referenceTable } from './table-state.svelte.ts';
 	import type { ReferenceView } from './view-mode.svelte.ts';
 
 	interface Props {
@@ -50,6 +53,9 @@
 	}
 	const shown = $derived(entries.filter((e) => matchesReference(e, { search })));
 	const groups = $derived(groupByType(shown));
+	// The table's own column filters and sort apply on top of the search.
+	const rows = $derived(view === 'table' ? tableRows(shown, referenceTable.current) : []);
+	const filters = $derived(activeFilterCount(referenceTable.current.filters));
 </script>
 
 <svelte:window onkeydown={onWindowKey} />
@@ -70,11 +76,26 @@
 	</label>
 	{#if view === 'cards'}
 		<p class="count" aria-live="polite">{shown.length} of {entries.length} characters</p>
+	{:else}
+		<!-- The table's count and Clear sit on the search line, not a line of their own. -->
+		<div class="table-count">
+			<p class="count" aria-live="polite" data-testid="table-count">
+				{rows.length} of {entries.length} · {filters === 0
+					? 'no filters'
+					: `${filters} filter${filters === 1 ? '' : 's'}`}
+			</p>
+			<Button
+				variant="quiet"
+				icon="close"
+				disabled={filters === 0}
+				onclick={() => referenceTable.clearFilters()}>Clear filters</Button
+			>
+		</div>
 	{/if}
 </div>
 
 {#if view === 'table'}
-	<CharacterTable entries={shown} onExplain={explain} onShowField={showField} />
+	<CharacterTable {rows} onExplain={explain} onShowField={showField} />
 {:else}
 	{#each groups as group (group.type)}
 		<section class="group" aria-labelledby="group-{group.type}">
@@ -151,6 +172,12 @@
 		overflow: hidden;
 		clip-path: inset(50%);
 		white-space: nowrap;
+	}
+	.table-count {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
 	}
 	.count {
 		margin: 0;
