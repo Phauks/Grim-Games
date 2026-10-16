@@ -1,6 +1,7 @@
 import type { Catalog } from '#lib/i18n/catalog.ts';
 import { common } from '#lib/i18n/messages/en/common.ts';
 import { errors } from '#lib/i18n/messages/en/errors.ts';
+import { room } from '#lib/i18n/messages/en/room.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -13,5 +14,6 @@ import { errors } from '#lib/i18n/messages/en/errors.ts';
  */
 export const en = {
 	...common,
-	...errors
+	...errors,
+	...room
 } as const satisfies Catalog;

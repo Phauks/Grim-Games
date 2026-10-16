@@ -24,8 +24,8 @@ export class RoomHost {
 	code = $state<string>();
 	members = $state.raw<RoomMember[]>([]);
 	requests = $state.raw<RoomRequest[]>([]);
-	/** Set when opening a room failed, e.g. offline. */
-	problem = $state<string>();
+	/** True when opening a room failed, e.g. offline. */
+	problem = $state(false);
 	#socket = $state.raw<RoomSocket>();
 	#game: OpenGame | undefined;
 	#stopWatching: (() => void) | undefined;
@@ -42,7 +42,7 @@ export class RoomHost {
 
 	/** Opens a new room for this device. */
 	async open(): Promise<void> {
-		this.problem = undefined;
+		this.problem = false;
 		const key = randomKey();
 		try {
 			const response = await fetch('/api/rooms', {
@@ -56,7 +56,7 @@ export class RoomHost {
 			writeStored(STORAGE_KEY, room);
 			this.#connect(room);
 		} catch {
-			this.problem = 'Could not open a room. Check the connection and try again.';
+			this.problem = true;
 		}
 	}
 

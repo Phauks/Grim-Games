@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { seatsInOrder, type SeatId } from '#lib/core/model/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
@@ -28,16 +29,18 @@
 	const seats = $derived(seatsInOrder(game.game));
 	const seatLabel = (seatId?: SeatId) => {
 		const i = seats.findIndex((s) => s.seatId === seatId);
-		if (i < 0) return 'No seat';
+		if (i < 0) return t('room.noSeat');
 		const name = seats[i].playerName;
-		return name ? `Seat ${i + 1} · ${name}` : `Seat ${i + 1}`;
+		return name
+			? t('room.seatWithName', { number: i + 1, name })
+			: t('common.seat', { number: i + 1 });
 	};
 	const seatNumberLabel = (seatId?: SeatId) => {
 		const i = seats.findIndex((s) => s.seatId === seatId);
-		return i < 0 ? 'No seat' : `Seat ${i + 1}`;
+		return i < 0 ? t('room.noSeat') : t('common.seat', { number: i + 1 });
 	};
 	const seatOptions = $derived([
-		{ value: '' as SeatId | '', label: 'No seat' },
+		{ value: '' as SeatId | '', label: t('room.noSeat') },
 		...seats.map((s) => ({ value: s.seatId as SeatId | '', label: seatLabel(s.seatId) }))
 	]);
 	const link = $derived(
@@ -47,10 +50,10 @@
 	const seated = $derived(host.members.filter((m) => m.name !== undefined));
 	const statusText = $derived(
 		host.status === 'open'
-			? 'Connected'
+			? t('room.connected')
 			: host.status === 'connecting'
-				? 'Connecting…'
-				: 'Offline: reconnecting. The game carries on here.'
+				? t('room.connecting')
+				: t('room.offline')
 	);
 
 	function seatFor(request: RoomRequest): SeatId | '' {
@@ -70,9 +73,9 @@
 	async function copy() {
 		try {
 			await navigator.clipboard.writeText(link);
-			toast('Link copied');
+			toast(t('room.linkCopied'));
 		} catch {
-			toast('Could not copy the link', 'Use the QR code instead.');
+			toast(t('room.copyFailed'), t('room.copyFailedHint'));
 		}
 	}
 
@@ -88,34 +91,32 @@
 -->
 {#if !host.code}
 	<section class="empty">
-		<p>
-			Players open the room on their own phones, ask for their seat and name, and see names and
-			deaths as you change them. Nothing changes in the grimoire until you approve it, and phones
-			never see characters or reminders.
-		</p>
+		<p>{t('room.intro')}</p>
 		<Button variant="accent" icon="players" onclick={openRoom} disabled={opening}>
-			Open a room
+			{t('room.open')}
 		</Button>
-		<p class="problem" role="status">{host.problem ?? ''}</p>
+		<p class="problem" role="status">{host.problem ? t('room.openFailed') : ''}</p>
 	</section>
 {:else}
 	<div class="layout">
 		<section class="join" aria-labelledby="room-code-label">
-			<h2 id="room-code-label">Join code</h2>
+			<h2 id="room-code-label">{t('room.joinCode')}</h2>
 			<p class="code" data-testid="room-code">{formatRoomCode(host.code)}</p>
-			<div class="qr"><QrCode value={link} label="QR code to join the room" /></div>
+			<div class="qr"><QrCode value={link} label={t('room.qrLabel')} /></div>
 			<p class="link">{link}</p>
 			<div class="row">
-				<Button icon="share" onclick={copy}>Copy link</Button>
-				<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>Close room</Button>
+				<Button icon="share" onclick={copy}>{t('room.copyLink')}</Button>
+				<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
+					{t('room.close')}
+				</Button>
 			</div>
 			<p class="status" role="status" data-status={host.status}>{statusText}</p>
 		</section>
 
 		<section aria-labelledby="requests-label">
-			<h2 id="requests-label">Requests</h2>
+			<h2 id="requests-label">{t('room.requests')}</h2>
 			{#if host.requests.length === 0}
-				<p class="none">None</p>
+				<p class="none">{t('common.none')}</p>
 			{:else}
 				<ul class="list">
 					{#each host.requests as request (request.requestId)}
@@ -123,21 +124,32 @@
 						{@const taken = holder(seatId)}
 						<li
 							class="request"
-							aria-label={`${request.name} asks for ${seatLabel(request.seatId)}`}
+							aria-label={t('room.asksFor', {
+								name: request.name,
+								seat: seatLabel(request.seatId)
+							})}
 						>
 							<p class="who">
 								<strong>{request.name}</strong>
-								<span>asks for {request.seatId ? seatLabel(request.seatId) : 'any seat'}</span>
+								<span>
+									{request.seatId
+										? t('room.asksForSeat', { seat: seatLabel(request.seatId) })
+										: t('room.asksForAnySeat')}
+								</span>
 							</p>
 							<Select
-								label={`Seat for ${request.name}`}
+								label={t('room.seatFor', { name: request.name })}
 								hideLabel
 								value={seatId}
 								options={seatOptions}
 								onChange={(v) => (chosen[request.requestId] = v)}
 							/>
 							<p class="note">
-								{taken ? `Moves ${taken.name ?? 'another phone'} out of this seat.` : ''}
+								{taken
+									? taken.name
+										? t('room.movesOut', { name: taken.name })
+										: t('room.movesOutAnother')
+									: ''}
 							</p>
 							<div class="row">
 								<Button
@@ -146,10 +158,10 @@
 									disabled={!connected}
 									onclick={() => approve(request)}
 								>
-									Approve
+									{t('room.approve')}
 								</Button>
 								<Button variant="quiet" disabled={!connected} onclick={() => host.decline(request)}>
-									Decline
+									{t('room.decline')}
 								</Button>
 							</div>
 						</li>
@@ -157,9 +169,9 @@
 				</ul>
 			{/if}
 
-			<h2 id="players-label">Players in the room</h2>
+			<h2 id="players-label">{t('room.playersInRoom')}</h2>
 			{#if seated.length === 0}
-				<p class="none">None</p>
+				<p class="none">{t('common.none')}</p>
 			{:else}
 				<ul class="list" aria-labelledby="players-label">
 					{#each seated as member (member.memberId)}
@@ -170,7 +182,7 @@
 								disabled={!connected || !member.seatId}
 								onclick={() => host.unseat(member)}
 							>
-								Unseat
+								{t('room.unseat')}
 							</Button>
 						</li>
 					{/each}
@@ -180,12 +192,12 @@
 	</div>
 {/if}
 
-<Dialog bind:open={closeOpen} role="alertdialog" title="Close the room?">
+<Dialog bind:open={closeOpen} role="alertdialog" title={t('room.closeTitle')}>
 	<p class="dialog-text">
-		Everyone's phone leaves the room and its code stops working. The grimoire is not changed.
+		{t('room.closeText')}
 	</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (closeOpen = false)}>Keep it open</Button>
+		<Button variant="quiet" onclick={() => (closeOpen = false)}>{t('room.keepOpen')}</Button>
 		<Button
 			variant="accent"
 			onclick={() => {
@@ -193,7 +205,7 @@
 				closeOpen = false;
 			}}
 		>
-			Close room
+			{t('room.close')}
 		</Button>
 	{/snippet}
 </Dialog>

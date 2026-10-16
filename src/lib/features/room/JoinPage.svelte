@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { SeatId } from '#lib/core/model/index.ts';
@@ -34,15 +35,15 @@
 	const mine = $derived(view?.me.seatId);
 	const seatName = (seatId?: SeatId) => {
 		const s = seats.find((x) => x.seatId === seatId);
-		return s ? `seat ${s.seatNumber}` : 'any seat';
+		return s ? t('room.seatLower', { number: s.seatNumber }) : t('room.anySeatLower');
 	};
 	const summary = $derived.by(() => {
-		if (!view) return status === 'offline' ? 'Offline: reconnecting…' : 'Joining the room…';
+		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
 		if (view.request)
-			return `Waiting for the Storyteller: ${view.request.name}, ${seatName(view.request.seatId)}.`;
-		if (mine) return `You are in ${seatName(mine)} as ${view.me.name}.`;
-		if (view.me.name) return `You are in the room as ${view.me.name}, without a seat yet.`;
-		return 'Choose your seat and type your name, then ask the Storyteller.';
+			return t('room.waiting', { name: view.request.name, seat: seatName(view.request.seatId) });
+		if (mine) return t('room.seated', { seat: seatName(mine), name: view.me.name ?? '' });
+		if (view.me.name) return t('room.unseated', { name: view.me.name });
+		return t('room.choose');
 	});
 
 	function enterCode(event: SubmitEvent) {
@@ -60,18 +61,16 @@
 </script>
 
 <main>
-	<h1>{valid ? `Room ${formatRoomCode(valid)}` : 'Join a room'}</h1>
+	<h1>{valid ? t('room.roomTitle', { code: formatRoomCode(valid) }) : t('room.joinTitle')}</h1>
 
 	{#if !valid || status === 'refused' || status === 'closed'}
 		{#if code !== undefined}
 			<p class="problem" role="alert">
-				{!valid
-					? 'That is not a room code. Codes are six digits.'
-					: 'This room is closed, or the code is wrong.'}
+				{!valid ? t('room.notACode') : t('room.closedOrWrong')}
 			</p>
 		{/if}
 		<form class="code-form" onsubmit={enterCode}>
-			<label for="room-code">Room code from the Storyteller</label>
+			<label for="room-code">{t('room.codeLabel')}</label>
 			<input
 				id="room-code"
 				bind:value={typed}
@@ -81,15 +80,17 @@
 				placeholder="482 913"
 				maxlength="7"
 			/>
-			<Button type="submit" variant="accent" disabled={!normaliseRoomCode(typed)}>Join</Button>
+			<Button type="submit" variant="accent" disabled={!normaliseRoomCode(typed)}>
+				{t('room.join')}
+			</Button>
 		</form>
 	{:else}
 		<div class="layout">
 			<section aria-labelledby="you-label">
-				<h2 id="you-label">You</h2>
+				<h2 id="you-label">{t('room.you')}</h2>
 				<p class="summary" role="status" data-testid="join-status">{summary}</p>
 				<form onsubmit={ask}>
-					<label for="player-name">Your name</label>
+					<label for="player-name">{t('room.yourName')}</label>
 					<input
 						id="player-name"
 						bind:value={name}
@@ -99,20 +100,21 @@
 						onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
 					/>
 					<fieldset>
-						<legend>Your seat</legend>
+						<legend>{t('room.yourSeat')}</legend>
 						<div class="seats">
 							<label class="seat">
 								<input type="radio" bind:group={seat} value="" />
-								<span>Any seat</span>
+								<span>{t('room.anySeat')}</span>
 							</label>
 							{#each seats as s (s.seatId)}
 								<label class="seat" data-mine={s.seatId === mine || undefined}>
 									<input type="radio" bind:group={seat} value={s.seatId} />
-									<span>Seat {s.seatNumber}</span>
+									<span>{t('common.seat', { number: s.seatNumber })}</span>
 									<span class="sub">
 										{s.seatId === mine
-											? 'You'
-											: (s.playerName ?? (view?.takenSeats.includes(s.seatId) ? 'Taken' : 'Empty'))}
+											? t('room.mine')
+											: (s.playerName ??
+												(view?.takenSeats.includes(s.seatId) ? t('room.taken') : t('room.empty')))}
 									</span>
 								</label>
 							{/each}
@@ -120,38 +122,38 @@
 					</fieldset>
 					<div class="row">
 						<Button type="submit" variant="accent" disabled={!name.trim() || status !== 'open'}>
-							Ask the Storyteller
+							{t('room.ask')}
 						</Button>
 						<Button
 							variant="quiet"
 							disabled={!view?.request || status !== 'open'}
 							onclick={() => player?.cancel()}
 						>
-							Cancel request
+							{t('room.cancelRequest')}
 						</Button>
 						<Button
 							variant="quiet"
 							disabled={!mine || status !== 'open'}
 							onclick={() => player?.leaveSeat()}
 						>
-							Leave seat
+							{t('room.leaveSeat')}
 						</Button>
 					</div>
 				</form>
 			</section>
 
 			<section aria-labelledby="table-label">
-				<h2 id="table-label">Table</h2>
+				<h2 id="table-label">{t('room.table')}</h2>
 				{#if seats.length === 0}
-					<p class="none">None</p>
+					<p class="none">{t('common.none')}</p>
 				{:else}
 					<ol class="table">
 						{#each seats as s (s.seatId)}
 							<li data-dead={s.dead || undefined} data-mine={s.seatId === mine || undefined}>
 								<span class="number">{s.seatNumber}</span>
-								<span class="name">{s.playerName ?? 'None'}</span>
+								<span class="name">{s.playerName ?? t('common.none')}</span>
 								<span class="state">
-									{s.dead ? 'Dead' : ''}
+									{s.dead ? t('room.dead') : ''}
 								</span>
 							</li>
 						{/each}

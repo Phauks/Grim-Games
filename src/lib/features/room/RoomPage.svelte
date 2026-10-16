@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { SavedGameError } from '#lib/core/engine/index.ts';
 	import type { GameId } from '#lib/core/model/index.ts';
@@ -39,7 +40,7 @@
 					kind: 'error',
 					message:
 						e instanceof SavedGameError && e.problem === 'too-new'
-							? 'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.'
+							? t('room.tooNew')
 							: errorMessage(e)
 				};
 			}
@@ -51,16 +52,16 @@
 <main>
 	<header>
 		<Button href={resolve('/grimoire/[gameId]', { gameId })} icon="back" variant="quiet">
-			Grimoire
+			{t('room.back')}
 		</Button>
-		<h1>Players' phones</h1>
+		<h1>{t('room.title')}</h1>
 	</header>
 	{#if view.kind === 'ready'}
 		<RoomPanel game={view.game} />
 	{:else if view.kind === 'loading'}
-		<p class="message" aria-busy="true">Opening the game…</p>
+		<p class="message" aria-busy="true">{t('room.opening')}</p>
 	{:else if view.kind === 'missing'}
-		<p class="message">There is no saved game here on this device.</p>
+		<p class="message">{t('room.missing')}</p>
 	{:else}
 		<p class="message" role="alert">{view.message}</p>
 	{/if}
