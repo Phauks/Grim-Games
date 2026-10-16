@@ -299,10 +299,12 @@
 	}
 	.top {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-1);
 	}
 	h1 {
 		margin: 0;
+		overflow-wrap: anywhere;
 	}
 	.script {
 		display: flex;
@@ -323,12 +325,14 @@
 	}
 	.controls {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		padding-top: var(--space-2);
 	}
 	/* Only the chosen counts stay in view while scrolling; the setup table scrolls away. */
 	.counts {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		position: sticky;
 		top: 0;

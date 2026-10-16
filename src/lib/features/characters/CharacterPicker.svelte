@@ -31,6 +31,10 @@
 		filter?: (character: Character) => boolean;
 		/** Listed but not choosable, with the reason shown on the row. */
 		disabledReason?: (character: Character) => string | undefined;
+		/** Multi mode: once this many are chosen, the rest are disabled until one is removed. */
+		max?: number;
+		/** A short note on the row that doesn't stop the choice, e.g. "In play". */
+		marker?: (character: Character) => string | undefined;
 		/** Group order; types not listed are left out. */
 		types?: readonly CharacterType[];
 		/** The search text; bind it to keep it, or to drive it from your own box. */
@@ -53,6 +57,8 @@
 		onSelect,
 		filter,
 		disabledReason,
+		max,
+		marker,
 		types = PICKER_TYPES,
 		query = $bindable(''),
 		showSearch = true,
@@ -62,6 +68,13 @@
 
 	const groups = $derived(searchGroups(characters, query, filter, types));
 	const chosen = $derived(new Set(selected));
+	const full = $derived(mode === 'multi' && max !== undefined && chosen.size >= max);
+	// The note line is reserved on every row when any row may show one, so nothing reflows.
+	const notes = $derived(disabledReason !== undefined || marker !== undefined || max !== undefined);
+
+	function reasonFor(character: Character, isChosen: boolean): string | undefined {
+		return disabledReason?.(character) ?? (full && !isChosen ? `${max} chosen already` : undefined);
+	}
 </script>
 
 <!--
@@ -79,8 +92,9 @@
 					{#each group.characters as character (character.id)}
 						{@const state = {
 							selected: chosen.has(character.id),
-							disabledReason: disabledReason?.(character)
+							disabledReason: reasonFor(character, chosen.has(character.id))
 						}}
+						{@const note = state.disabledReason ?? marker?.(character)}
 						<li>
 							{#if item}
 								{@render item(character, state)}
@@ -89,9 +103,7 @@
 									type="button"
 									class="row"
 									data-character-id={character.id}
-									aria-label={state.disabledReason
-										? `${character.name}, ${state.disabledReason}`
-										: character.name}
+									aria-label={note ? `${character.name}, ${note}` : character.name}
 									aria-pressed={mode === 'multi' ? state.selected : undefined}
 									aria-current={mode === 'single' && state.selected ? 'true' : undefined}
 									disabled={state.disabledReason !== undefined}
@@ -104,7 +116,8 @@
 									/>
 									<span class="text">
 										<span class="name">{character.name}</span>
-										<span class="ability">{state.disabledReason ?? character.ability}</span>
+										{#if notes}<span class="note">{note ?? ''}</span>{/if}
+										<span class="ability">{character.ability}</span>
 									</span>
 									<span class="check" aria-hidden="true"
 										>{#if state.selected}<Icon name="check" />{/if}</span
@@ -192,6 +205,13 @@
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
 		overflow-wrap: anywhere;
+	}
+	.note {
+		min-height: 1.2em;
+		font-size: 0.75rem;
+		font-weight: 600;
+		line-height: 1.2;
+		color: var(--accent);
 	}
 	.ability {
 		font-family: var(--font-ability);

@@ -32,9 +32,7 @@ const STATIC_ROUTES = [
 const KNOWN_OVERFLOW: Record<string, string> = {
 	'/spikes/day': 'Foundation build: day spike heading and segmented controls',
 	'/spikes/icons': 'Grimoire board: icon preview row',
-	board: 'Grimoire board: seat ring is wider than the screen',
-	setup: 'Character selection: page heading with the script name',
-	draw: 'Character selection: draw page action buttons'
+	board: 'Grimoire board: seat ring is wider than the screen'
 };
 
 /** The widest elements poking past the right edge, to name in the failure. */
