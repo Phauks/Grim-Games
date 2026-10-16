@@ -190,26 +190,31 @@
 </Dialog>
 
 <style>
+	/* Docked under the board (Trevor, 2026-10-16): a strip of tokens that scrolls sideways
+	   within itself, so the seats stay uncovered. The board leaves room for it. */
 	.tray {
 		position: absolute;
-		left: 50%;
-		top: 50%;
-		translate: -50% -50%;
+		left: 0;
+		right: 0;
+		top: calc(100% + var(--space-2));
 		z-index: 2;
 		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
+		align-items: center;
 		gap: var(--space-2);
-		max-width: 56%;
-		max-height: 56%;
+		height: var(--tray-h);
+		box-sizing: border-box;
 		margin: 0;
-		padding: var(--space-2);
-		overflow-y: auto;
+		padding: var(--space-1) var(--space-2);
+		overflow-x: auto;
+		overflow-y: hidden;
 		overscroll-behavior: contain;
 		border: 1px dashed var(--border);
 		border-radius: var(--radius-md);
 		background: color-mix(in srgb, var(--surface) 85%, transparent);
 		list-style: none;
+	}
+	.tray > li {
+		flex: none;
 	}
 	li {
 		display: grid;

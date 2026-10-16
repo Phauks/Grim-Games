@@ -81,15 +81,21 @@ export class Grimoire {
 	}
 
 	/** Adds a seat at the end of the seating order; returns its id. */
-	addSeat(): SeatId | undefined {
+	/** Adds a seat at `position` in the seating order (the end when left out). */
+	addSeat(position?: number): SeatId | undefined {
 		const before = this.game.seating;
-		if (!this.run({ type: 'AddSeat' })) return undefined;
+		if (!this.run({ type: 'AddSeat', ...(position !== undefined ? { position } : {}) }))
+			return undefined;
 		return this.game.seating.find((id) => !before.includes(id));
 	}
 
 	/** A Traveller joins: a new seat with the Traveller on it. */
-	addTraveller(characterId: CharacterId, alignment: Alignment | undefined): SeatId | undefined {
-		const seatId = this.addSeat();
+	addTraveller(
+		characterId: CharacterId,
+		alignment: Alignment | undefined,
+		position?: number
+	): SeatId | undefined {
+		const seatId = this.addSeat(position);
 		if (seatId === undefined) return undefined;
 		if (!this.run({ type: 'AssignCharacter', seatId, characterId, alignment })) {
 			this.open.undo();

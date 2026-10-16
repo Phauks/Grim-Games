@@ -26,6 +26,8 @@ async function addThief(page: Page) {
 		.getByRole('button', { name: 'Thief, Recommended', exact: true })
 		.tap();
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Evil' }).tap();
+	// The board asks where the new seat goes.
+	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
 	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toBeAttached();
 }
 

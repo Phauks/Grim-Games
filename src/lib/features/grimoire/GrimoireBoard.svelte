@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BackgroundDialog from './BackgroundDialog.svelte';
@@ -6,7 +7,13 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import { trueCharacter, type ReminderId, type SeatId } from '#lib/core/model/index.ts';
+	import {
+		scriptCharacterIds,
+		trueCharacter,
+		type ReminderId,
+		type SeatId
+	} from '#lib/core/model/index.ts';
+	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import { setupComplete } from '#lib/core/rules/index.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -329,8 +336,35 @@
 	let travellerAlignmentOpen = $state(false);
 	function addTraveller(alignment: Alignment | undefined) {
 		travellerAlignmentOpen = false;
-		if (traveller) grimoire.addTraveller(traveller, alignment);
+		const id = traveller;
 		traveller = undefined;
+		if (id) startPlacing((position) => grimoire.addTraveller(id, alignment, position));
+	}
+
+	// ── Placing a new seat: the Storyteller taps where it goes (Trevor, 2026-10-16) ──
+	let placing = $state<((position: number) => void) | undefined>();
+	function startPlacing(add: (position: number) => void) {
+		placing = add;
+		toast('Add a seat', 'Tap between two players to put the new seat there.');
+	}
+	/** One spot between each pair of neighbours; the one after the last seat wraps round. */
+	const placeSpots = $derived(
+		placing
+			? shown.map((p, i) => {
+					const next = shown[(i + 1) % shown.length];
+					const name = (k: number) => game.seats[game.seating[k]].playerName ?? `Seat ${k + 1}`;
+					return {
+						position: i + 1,
+						at: { x: (p.x + next.x) / 2, y: (p.y + next.y) / 2 },
+						label: `Place between ${name(i)} and ${name((i + 1) % shown.length)}`
+					};
+				})
+			: []
+	);
+	function placeAt(position: number) {
+		const add = placing;
+		placing = undefined;
+		add?.(position);
 	}
 
 	// ── Setup reminders: a tray of suggested tokens in the middle of the board ──
@@ -343,7 +377,10 @@
 
 	/** Characters and Bag draw show in the middle until the game is set up, then go. */
 	const showSetup = $derived(
-		!setUp && !arranging && game.seating.some((id) => game.seats[id].characterId === undefined)
+		!setUp &&
+			!arranging &&
+			!placing &&
+			game.seating.some((id) => game.seats[id].characterId === undefined)
 	);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
@@ -363,6 +400,14 @@
 			);
 	});
 	let menuOpen = $state(false);
+	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
+	let infoOpen = $state(false);
+	const infoCharacters = $derived(
+		scriptCharacterIds(game.script).flatMap((id) => characters.get(id) ?? [])
+	);
+	const infoPlayers = $derived(
+		game.seating.map((id, i) => ({ id, label: game.seats[id].playerName ?? `Seat ${i + 1}` }))
+	);
 	let exitOpen = $state(false);
 
 	// ── Background: an image of the Storyteller's own, kept on this device ──
@@ -429,6 +474,9 @@
 				onclick={() => grimoire.setLayout(spreadEvenly(layout))}>Spread evenly</Button
 			>
 			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
+		{:else if placing}
+			<span class="title">Add a seat</span>
+			<Button variant="quiet" icon="close" onclick={() => (placing = undefined)}>Cancel</Button>
 		{:else if traying}
 			<span class="title">Setup reminders</span>
 			<Button
@@ -455,6 +503,9 @@
 				onclick={() => goto(resolve('/grimoire/[gameId]/day', { gameId: game.gameId }))}
 				><span class="tool-label">Day</span></Button
 			>
+			<Button variant="quiet" icon="info" aria-label="Info tokens" onclick={() => (infoOpen = true)}
+				><span class="tool-label">Info tokens</span></Button
+			>
 			<Button variant="quiet" icon="arrange" aria-label="Arrange seats" onclick={startArranging}
 				><span class="tool-label">Arrange seats</span></Button
 			>
@@ -464,7 +515,13 @@
 		{/if}
 	</div>
 
-	<div class="board" class:arranging bind:this={board}>
+	<div
+		class="board"
+		class:arranging
+		class:traying
+		style:--tray-h={traying ? `${chip + 30}px` : undefined}
+		bind:this={board}
+	>
 		{#if backgroundUrl}
 			<div
 				class="backdrop"
@@ -539,6 +596,16 @@
 			{/if}
 		{/each}
 
+		{#each placeSpots as spot (spot.position)}
+			<button
+				type="button"
+				class="place-spot"
+				style:left="{spot.at.x}%"
+				style:top="{spot.at.y}%"
+				aria-label={spot.label}
+				onclick={() => placeAt(spot.position)}><Icon name="add" /></button
+			>
+		{/each}
 		{#if reminderDrag && dragOrigin}
 			<p class="origin" role="status">{dragOrigin.text}</p>
 		{/if}
@@ -593,7 +660,11 @@
 		<Button variant="quiet" icon="history" onclick={() => fromMenu(() => (historyOpen = true))}>
 			History
 		</Button>
-		<Button variant="quiet" icon="add" onclick={() => fromMenu(() => grimoire.addSeat())}>
+		<Button
+			variant="quiet"
+			icon="add"
+			onclick={() => fromMenu(() => startPlacing((position) => grimoire.addSeat(position)))}
+		>
 			Add seat
 		</Button>
 		<Button variant="quiet" icon="traveller" onclick={() => fromMenu(() => (travellerOpen = true))}>
@@ -628,6 +699,8 @@
 		</Button>
 	</div>
 </Dialog>
+
+<InfoTokensSheet bind:open={infoOpen} characters={infoCharacters} players={infoPlayers} />
 
 <BackgroundDialog
 	bind:open={backgroundOpen}
@@ -773,6 +846,10 @@
 		/* The board handles its own taps; no double-tap zoom delay. */
 		touch-action: manipulation;
 	}
+	/* Room under the board for the docked Setup reminders tray. */
+	.board.traying {
+		margin-bottom: calc(var(--tray-h) + 2 * var(--space-2));
+	}
 	.slot {
 		position: absolute;
 		translate: -50% -50%;
@@ -790,6 +867,23 @@
 	.slot.dragging {
 		z-index: 2;
 		cursor: grabbing;
+	}
+	.place-spot {
+		position: absolute;
+		z-index: 3;
+		display: grid;
+		place-items: center;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		translate: -50% -50%;
+		border: 2px dashed var(--accent);
+		border-radius: 50%;
+		background: var(--surface-raised);
+		color: var(--accent);
+		cursor: pointer;
+	}
+	.place-spot:hover {
+		background: var(--surface-selected);
 	}
 	/* Over the top of the board while a reminder is dragged: where it came from. */
 	.origin {

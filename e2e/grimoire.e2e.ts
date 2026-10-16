@@ -140,13 +140,16 @@ test('tapping the seat token shows the character; changing it goes through the â
 
 test('history, add seat, swap and remove', async ({ page }) => {
 	await startGame(page);
+	// Adding a seat asks where it goes: between two neighbours.
 	await menu(page, 'Add seat');
+	await page.getByRole('button', { name: 'Place between Seat 2 and Seat 3' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(9);
+	await expect(page.getByRole('button', { name: /^Place between/ })).toHaveCount(0);
 
 	// History lists the change; going back to before it asks first.
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
-	const added = history.getByRole('listitem').filter({ hasText: 'Added Seat 9' });
+	const added = history.getByRole('listitem').filter({ hasText: 'Added Seat 3' });
 	await added.getByRole('button', { name: 'Restore' }).tap();
 	const back = page.getByRole('alertdialog', { name: 'Restore?' });
 	await expect(back).toContainText('Undoes 1 change');
@@ -216,6 +219,7 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		.getByRole('button', { name: 'Thief, Recommended', exact: true })
 		.tap();
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Evil' }).tap();
+	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
 	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toBeAttached();
 
 	await menu(page, 'Add Fabled or Loric');
@@ -545,6 +549,7 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 		.getByRole('dialog', { name: 'Alignment' })
 		.getByRole('button', { name: 'Decide later' })
 		.tap();
+	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
 	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toHaveAccessibleName(
 		/alignment not set/
 	);
@@ -822,4 +827,18 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(dialog).toContainText('Your image, for this game');
 	await dialog.getByRole('button', { name: 'None', exact: true }).tap();
 	await expect(page.getByTestId('board-background')).toHaveCount(0);
+});
+
+test('info tokens open from the toolbar and name the seats', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 2);
+	await nameSeat(sheet, 'Sam');
+	await closeSheet(page);
+	await page.getByRole('button', { name: 'Info tokens' }).tap();
+	await page.getByRole('button', { name: 'This is the Demon' }).tap();
+	await page.getByRole('button', { name: 'Sam' }).tap();
+	await page.getByRole('button', { name: 'Show' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('heading')).toHaveText('This is the Demon');
+	await expect(shown.getByRole('list', { name: 'Players' })).toHaveText('Sam');
 });
