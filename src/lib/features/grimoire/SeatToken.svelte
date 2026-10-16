@@ -120,7 +120,7 @@
 		position: relative;
 		display: grid;
 		justify-items: center;
-		gap: 2px;
+		gap: calc(0.125 * var(--u));
 		width: calc(var(--size) + 2 * var(--u));
 		padding: 0;
 		border: 0;
@@ -176,11 +176,11 @@
 		position: absolute;
 		display: grid;
 		place-items: center;
-		width: max(18px, calc(var(--size) * 0.3));
-		height: max(18px, calc(var(--size) * 0.3));
+		width: max(1.125 * var(--u), calc(var(--size) * 0.3));
+		height: max(1.125 * var(--u), calc(var(--size) * 0.3));
 		border-radius: 50%;
 		box-shadow: var(--shadow);
-		--icon-size: calc(max(18px, calc(var(--size) * 0.3)) * 0.65);
+		--icon-size: calc(max(1.125 * var(--u), calc(var(--size) * 0.3)) * 0.65);
 	}
 	.orphan {
 		left: -4%;
@@ -201,12 +201,12 @@
 		text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
 	}
 	.name[data-place='below'] {
-		top: calc(100% + 2px);
+		top: calc(100% + 0.125 * var(--u));
 		left: 50%;
 		translate: -50% 0;
 	}
 	.name[data-place='above'] {
-		bottom: calc(100% + 2px);
+		bottom: calc(100% + 0.125 * var(--u));
 		left: 50%;
 		translate: -50% 0;
 	}
@@ -216,9 +216,9 @@
 		translate: 0 -50%;
 	}
 	.name[data-place='left'] {
-		right: calc(50% + var(--size) / 2 + 2px);
+		right: calc(50% + var(--size) / 2 + 0.125 * var(--u));
 	}
 	.name[data-place='right'] {
-		left: calc(50% + var(--size) / 2 + 2px);
+		left: calc(50% + var(--size) / 2 + 0.125 * var(--u));
 	}
 </style>

@@ -143,7 +143,7 @@
 	.label {
 		position: absolute;
 		left: 50%;
-		bottom: -2px;
+		bottom: calc(-0.125 * var(--u));
 		translate: -50% 0;
 		max-width: calc(var(--d) * 1.5);
 		padding: 0 0.3em;

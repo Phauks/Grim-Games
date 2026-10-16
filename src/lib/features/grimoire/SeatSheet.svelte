@@ -836,7 +836,7 @@
 	.team {
 		display: inline-block;
 		padding: 0 var(--space-2);
-		border-radius: 999px;
+		border-radius: var(--radius-full);
 		background: var(--surface-raised);
 		color: var(--on-surface);
 	}
@@ -875,8 +875,8 @@
 		cursor: pointer;
 		display: grid;
 		place-items: center;
-		width: 60px;
-		height: 60px;
+		width: calc(3.75 * var(--u));
+		height: calc(3.75 * var(--u));
 	}
 	.no-token {
 		display: grid;
@@ -946,7 +946,7 @@
 	}
 	.ability {
 		display: grid;
-		gap: 2px;
+		gap: calc(0.125 * var(--u));
 	}
 	.ability p {
 		margin: 0;
@@ -973,8 +973,8 @@
 	.slot {
 		display: grid;
 		place-items: center;
-		width: 48px;
-		height: 48px;
+		width: calc(3 * var(--u));
+		height: calc(3 * var(--u));
 	}
 	.row {
 		display: flex;
@@ -1064,7 +1064,7 @@
 	}
 	.causes {
 		display: grid;
-		gap: 2px;
+		gap: calc(0.125 * var(--u));
 		margin-top: var(--space-2);
 	}
 	.cause {
@@ -1124,7 +1124,7 @@
 		margin-top: var(--space-1);
 	}
 	.cause .slot {
-		width: 32px;
-		height: 32px;
+		width: calc(2 * var(--u));
+		height: calc(2 * var(--u));
 	}
 </style>

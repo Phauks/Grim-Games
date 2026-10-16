@@ -141,9 +141,9 @@
 		display: grid;
 		flex: none;
 		place-items: center;
-		width: 40px;
-		height: 40px;
-		--icon-size: 28px;
+		width: calc(2.5 * var(--u));
+		height: calc(2.5 * var(--u));
+		--icon-size: calc(1.75 * var(--u));
 		color: var(--heading);
 	}
 	.body {

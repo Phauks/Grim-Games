@@ -343,7 +343,7 @@
 		display: grid;
 		place-items: center;
 		/* Room for the label band under each token. */
-		padding-bottom: 6px;
+		padding-bottom: calc(0.375 * var(--u));
 	}
 	li.lifted {
 		opacity: 0.3;
@@ -357,8 +357,8 @@
 		right: 0;
 		z-index: 1;
 		min-width: 1.4em;
-		padding: 0 3px;
-		border-radius: 999px;
+		padding: 0 calc(0.1875 * var(--u));
+		border-radius: var(--radius-full);
 		background: var(--accent);
 		color: var(--on-accent);
 		font: 700 0.75rem / 1.4 var(--font-control);
