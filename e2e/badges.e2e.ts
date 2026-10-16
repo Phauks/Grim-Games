@@ -68,6 +68,9 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 	await page.goto('/spikes/badges');
 	await page.locator('button.badge', { hasText: 'Witch' }).first().tap();
 	const dialog = page.getByRole('dialog', { name: 'Witch' });
+	// Its reminder tokens sit with the ability, above every section.
+	const reminders = dialog.getByTestId('character-reminders');
+	await expect(reminders.getByTestId('reminder-token')).toHaveText(['Cursed']);
 	const wiki = dialog.getByTestId('wiki-page');
 	await expect(wiki.getByRole('heading', { name: 'Summary' })).toBeVisible();
 	// The name is a badge, whose own markup spacing shows up in the text.
@@ -125,6 +128,7 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 	await expect(dialog.getByTestId('jinx-section')).toContainText('None');
 	// The top band names the type and where the character comes from.
 	await expect(dialog.locator('.character .type')).toHaveText('Minion · Sects & Violets');
+	await expect(reminders).toBeInViewport();
 
 	// A long section scrolls inside the dialog, the character staying in view.
 	if (!wide) await dialog.getByRole('button', { name: 'Summary' }).tap();

@@ -25,9 +25,11 @@
 		onExplain: (title: string, text: string) => void;
 		/** Token size in px (fixed, so nothing reflows). */
 		tokenSize?: number;
+		/** The name as plain text, not a badge: the table is pure information (Trevor, 2026-10-16). */
+		plainName?: boolean;
 	}
 
-	let { field, entry, onExplain, tokenSize = 56 }: Props = $props();
+	let { field, entry, onExplain, tokenSize = 56, plainName = false }: Props = $props();
 
 	const character = $derived(entry.character);
 	// Prep steps with [Token] as reminder chips and names as badges (built only for this field).
@@ -87,6 +89,9 @@
 <span class="value" data-field={field}>
 	{#if field === 'token'}
 		<CharacterToken {character} size={tokenSize} />
+	{:else if field === 'name' && plainName}
+		<!-- A deliberate exception to names-as-badges: table cells are plain information. -->
+		{character.name}
 	{:else if field === 'name'}
 		<!-- The same badge the game uses: icon, type colour and name (Trevor, 2026-10-15). -->
 		<CharacterBadge characterId={character.id} />

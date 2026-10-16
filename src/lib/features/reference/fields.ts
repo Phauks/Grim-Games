@@ -40,6 +40,8 @@ export interface ReferenceField {
 	card: 'header' | 'inline' | 'block';
 	/** Long content: the table keeps the default token size in these cells. */
 	long?: boolean;
+	/** Cards only: the table leaves it out. */
+	cardOnly?: boolean;
 	/** Table sort column (core `reference-table.ts`), when the field sorts. */
 	sort?: TableColumn;
 	/** Table filter, when the field filters. */
@@ -47,7 +49,9 @@ export interface ReferenceField {
 }
 
 const FIELDS: readonly Omit<ReferenceField, 'label'>[] = [
-	{ id: 'token', card: 'header' },
+	// The table's name badge already shows the icon, so its row spends no space on a token
+	// preview (Trevor, 2026-10-16).
+	{ id: 'token', card: 'header', cardOnly: true },
 	{ id: 'name', card: 'header', sort: 'name', filter: 'text' },
 	{ id: 'type', card: 'header', sort: 'type', filter: 'types' },
 	{ id: 'edition', card: 'header', sort: 'edition' },

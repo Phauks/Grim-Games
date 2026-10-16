@@ -69,16 +69,16 @@
 		}
 	}
 
+	const TABLE_FIELDS = REFERENCE_FIELDS.filter((f) => !f.cardOnly);
 	const columns = $derived(
-		REFERENCE_FIELDS.map((field): DataColumn<FieldId> => ({
+		TABLE_FIELDS.map((field): DataColumn<FieldId> => ({
 			id: field.id,
 			label: field.label,
 			width: `calc(${WIDTHS[field.id]} * var(--u))`,
 			sortable: field.sort !== undefined,
 			filterable: field.filter !== undefined,
 			filtered: filterSet(field),
-			rowHeader: field.id === 'name',
-			stackHead: field.id === 'token'
+			rowHeader: field.id === 'name'
 		}))
 	);
 
@@ -188,7 +188,7 @@
 	{@const f = field(column.id)}
 	<!-- Shown in full: rows are as tall as their longest field (Trevor, 2026-10-16). -->
 	<div class="cell">
-		<FieldValue field={f.id} {entry} {onExplain} tokenSize={f.long ? undefined : 40} />
+		<FieldValue field={f.id} {entry} {onExplain} tokenSize={f.long ? undefined : 40} plainName />
 	</div>
 {/snippet}
 

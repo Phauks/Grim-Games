@@ -11,6 +11,7 @@
 	import { officialData } from './game-data.svelte.ts';
 	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
 	import ContentsLayout, { type ContentsItem } from './ContentsLayout.svelte';
+	import ReminderToken from './ReminderToken.svelte';
 	import WikiBox from './WikiBox.svelte';
 	import { wikiPageTitle, withoutRepeats, type WikiSection } from './wiki-page.ts';
 	import { wikiPages } from './wiki-page.svelte.ts';
@@ -35,6 +36,11 @@
 			? (EDITION_LABELS[character.edition] ?? character.edition)
 			: t('characters.homebrew')
 	);
+	/** TPI's reminder tokens, then the global ones, as in the Reference. */
+	const reminders = $derived([
+		...character.reminders.map((label) => ({ label, global: false })),
+		...character.remindersGlobal.map((label) => ({ label, global: true }))
+	]);
 	// The whole wiki page, fetched live when the dialog opens (wiki-page.svelte.ts).
 	const title = $derived(wiki ? wikiPageTitle(wiki) : undefined);
 	const page = $derived(title ? wikiPages.get(title) : undefined);
@@ -140,6 +146,17 @@
 		<div>
 			<p class="type">{source === typeLabel ? typeLabel : `${typeLabel} · ${source}`}</p>
 			<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
+			<!-- Every reminder token, beside the ability on every section (Trevor, 2026-10-16). -->
+			{#if reminders.length}
+				<p class="reminders" data-testid="character-reminders">
+					{#each reminders as reminder, i (i)}<ReminderToken
+							label={reminder.global
+								? t('reference.globalReminder', { label: reminder.label })
+								: reminder.label}
+							type={character.type}
+						/>{/each}
+				</p>
+			{/if}
 		</div>
 	</header>
 	<ContentsLayout
@@ -246,6 +263,12 @@
 		font-family: var(--font-ability);
 		font-size: 1.05rem;
 		line-height: 1.5;
+	}
+	.reminders {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		margin: var(--space-2) 0 0;
 	}
 	.wiki-page {
 		line-height: 1.5;
