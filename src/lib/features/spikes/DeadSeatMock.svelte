@@ -8,7 +8,8 @@
 	 * Mock-ups of ways to mark a dead player on a seat (Trevor, 2026-10-16: the shroud can
 	 * cover names, info and roles). Spike only: the chosen look goes into SeatDisc.
 	 */
-	export type DeadLook = 'current' | 'ring' | 'hood' | 'pill' | 'corner' | 'ring-pill';
+	export type DeadLook =
+		'current' | 'ring' | 'hood' | 'pill' | 'corner' | 'ring-pill' | 'dim-corner';
 
 	interface Props {
 		look: DeadLook;
@@ -39,7 +40,9 @@
 		<span class="face"><CharacterToken {character} {size} {showName} /></span>
 		{#if dead && look === 'current'}<span class="shroud"><Icon name="dead" /></span>{/if}
 		{#if dead && look === 'ring'}<span class="rim-skull"><Icon name="dead" /></span>{/if}
-		{#if dead && look === 'corner'}<span class="corner-skull"><Icon name="dead" /></span>{/if}
+		{#if dead && (look === 'corner' || look === 'dim-corner')}<span class="corner-skull"
+				><Icon name="dead" /></span
+			>{/if}
 		{#if dead && !voteUsed}<span class="vote"><Icon name="ghostVote" /></span>{/if}
 		{#if reminders.length}
 			<span class="reminders">
@@ -147,6 +150,11 @@
 		color: var(--bone);
 		clip-path: inset(0 0 52% 0);
 		--icon-size: calc(var(--size) * 0.18);
+	}
+
+	/* F: the token dimmed (colour kept), plus the skull badge. */
+	[data-look='dim-corner'][data-dead] .face {
+		filter: brightness(0.55);
 	}
 
 	/* D: one skull badge on the lower-left rim, half outside. */

@@ -6,14 +6,18 @@
 
 	onMount(() => void loadOfficialData());
 
-	const looks: { look: DeadLook; title: string }[] = [
+	const only =
+		typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('only');
+	const all: { look: DeadLook; title: string }[] = [
 		{ look: 'current', title: 'Today: shroud over the token' },
 		{ look: 'ring', title: 'A · Mourning ring + skull on the rim' },
 		{ look: 'hood', title: 'B · Shroud as a hood outside the token' },
 		{ look: 'pill', title: 'C · Black name pill with skull' },
 		{ look: 'corner', title: 'D · Skull badge on the lower rim' },
-		{ look: 'ring-pill', title: 'E · Ring + black name pill' }
+		{ look: 'ring-pill', title: 'E · Ring + black name pill' },
+		{ look: 'dim-corner', title: 'F · Dimmed token + skull badge' }
 	];
+	const looks = only ? all.filter((l) => only.split(',').includes(l.look)) : all;
 
 	const params = new URLSearchParams(typeof location === 'undefined' ? '' : location.search);
 	const size = Number(params.get('size') ?? 56);
