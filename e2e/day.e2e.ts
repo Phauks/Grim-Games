@@ -68,7 +68,7 @@ test('a Witch nomination makes the Town Crier answer yes; Demon voted feeds the 
 		'Yes: the Demon Fay (Fang Gu) voted'
 	);
 
-	// New day asks first, then empties the log; Undo brings it back.
+	// New day asks first, then empties the log. There is no Undo (Trevor, 2026-10-16).
 	await page.getByRole('button', { name: 'Back to day' }).tap();
 	await page.getByRole('button', { name: 'New day' }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Start a new day?' });
@@ -78,8 +78,7 @@ test('a Witch nomination makes the Town Crier answer yes; Demon voted feeds the 
 	await expect(
 		page.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })
 	).not.toBeChecked();
-	await page.getByRole('button', { name: 'Undo' }).tap();
-	await expect(log).toContainText('Eve nominated Ana');
+	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 });
 
 test('the Slayer is marked Used in one tap, and the Washerwoman picks her info', async ({

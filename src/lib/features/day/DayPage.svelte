@@ -6,6 +6,8 @@
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
+	import { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
+	import HistoryDialog from '#lib/features/grimoire/HistoryDialog.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DayPanel from './DayPanel.svelte';
@@ -19,12 +21,13 @@
 
 	type View =
 		| { kind: 'loading' }
-		| { kind: 'ready'; day: LiveDay }
+		| { kind: 'ready'; day: LiveDay; grimoire: Grimoire }
 		| { kind: 'missing' }
 		| { kind: 'error'; message: string };
 
 	let view = $state<View>({ kind: 'loading' });
 	const assistance = $derived(preferences.current.assistance);
+	let historyOpen = $state(false);
 
 	$effect(() => {
 		const id = gameId;
@@ -34,7 +37,9 @@
 			try {
 				const open = await OpenGame.open(await loadOfficialData(), id);
 				if (cancelled) return;
-				view = open ? { kind: 'ready', day: new LiveDay(open) } : { kind: 'missing' };
+				view = open
+					? { kind: 'ready', day: new LiveDay(open), grimoire: new Grimoire(open) }
+					: { kind: 'missing' };
 			} catch (e) {
 				if (cancelled) return;
 				reportError(e, { area: 'day', notify: false });
@@ -64,7 +69,9 @@
 		<h1>Day</h1>
 	</header>
 	{#if view.kind === 'ready'}
-		<DayPanel game={view.day} {assistance} />
+		<DayPanel game={view.day} {assistance} onOpenHistory={() => (historyOpen = true)} />
+		<!-- The game's one History (the board's), so day actions roll back like any other. -->
+		<HistoryDialog bind:open={historyOpen} grimoire={view.grimoire} />
 	{:else if view.kind === 'loading'}
 		<!-- Reserved space while the game opens, so nothing below jumps. -->
 		<p class="message" aria-busy="true">Opening the game…</p>

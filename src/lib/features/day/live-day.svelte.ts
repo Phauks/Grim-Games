@@ -40,14 +40,6 @@ export class LiveDay implements DayPort {
 		return true;
 	}
 
-	get canUndo(): boolean {
-		return this.open.canUndo;
-	}
-
-	undo(): void {
-		this.open.undo();
-	}
-
 	seatName(seatId: SeatId | undefined): string {
 		if (seatId === undefined) return '';
 		const name = this.game.seats[seatId]?.playerName;

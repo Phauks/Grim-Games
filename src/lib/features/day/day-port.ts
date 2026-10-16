@@ -10,8 +10,6 @@ export interface DayPort {
 	readonly game: Game;
 	readonly characters: CharacterLookup;
 	run(command: Command): boolean;
-	readonly canUndo: boolean;
-	undo(): void;
 	seatName(seatId: SeatId | undefined): string;
 	characterName(id: CharacterId | undefined): string;
 	describe(entry: DayEntry): string;

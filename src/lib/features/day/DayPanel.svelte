@@ -27,9 +27,14 @@
 		assistance: Assistance;
 		/** Shows a Night order button (the day spike); the grimoire has its own. */
 		onOpenNight?: () => void;
+		/**
+		 * Shows a History button: the game's History, where the Storyteller rolls back after
+		 * confirming. There is no Undo button (Trevor, 2026-10-16).
+		 */
+		onOpenHistory?: () => void;
 	}
 
-	let { game, assistance, onOpenNight }: Props = $props();
+	let { game, assistance, onOpenNight, onOpenHistory }: Props = $props();
 
 	const g = $derived(game.game);
 	const seats = $derived(g.seating.map((id) => g.seats[id]));
@@ -205,9 +210,9 @@
 
 <div class="panel">
 	<div class="toolbar">
-		<Button icon="undo" variant="quiet" disabled={!game.canUndo} onclick={() => game.undo()}>
-			Undo
-		</Button>
+		{#if onOpenHistory}
+			<Button icon="history" variant="quiet" onclick={onOpenHistory}>History</Button>
+		{/if}
 		<Button icon="day" variant="quiet" onclick={() => (confirmNewDay = true)}>New day</Button>
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>Night order</Button>
@@ -387,7 +392,7 @@
 </BottomSheet>
 
 <Dialog bind:open={confirmNewDay} role="alertdialog" title="Start a new day?">
-	<p>Today’s log moves to history and an empty one starts. You can undo this.</p>
+	<p>Today’s log moves to history and an empty one starts. History can roll this back.</p>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (confirmNewDay = false)}>Cancel</Button>
 		<Button onclick={newDay}>Start new day</Button>

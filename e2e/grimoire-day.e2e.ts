@@ -31,7 +31,7 @@ async function addThief(page: Page) {
 
 const seat = (page: Page, name: string) => page.getByRole('button', { name: `Seat: ${name}` });
 
-test('the day screen logs a nomination and execution, and they survive a reload', async ({
+test('the day screen logs a nomination and execution, survives a reload and rolls back in History', async ({
 	page
 }) => {
 	const board = await startGame(page);
@@ -48,6 +48,22 @@ test('the day screen logs a nomination and execution, and they survive a reload'
 
 	await page.reload();
 	await expect(page.getByTestId('day-log')).toContainText('Seat 2 executed');
+
+	// No Undo: the game's History rolls back, after confirming.
+	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'History' }).tap();
+	const history = page.getByRole('dialog', { name: 'History' });
+	await history.getByRole('button', { name: 'Go back' }).first().tap();
+	await page
+		.getByRole('alertdialog', { name: 'Go back?' })
+		.getByRole('button', { name: 'Go back' })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(history).toBeHidden();
+	await expect(page.getByTestId('day-log')).not.toContainText('executed');
+	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'false');
+	await log.getByRole('button', { name: 'Execute Seat 2' }).tap();
+	await expect(log).toContainText('Seat 2 executed');
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
 	await expect(page).toHaveURL(new RegExp(`${board}$`));
 	await expect(
