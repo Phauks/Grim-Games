@@ -15,7 +15,7 @@
 	onMount(async () => {
 		try {
 			const { games } = await gameStore().list();
-			// An ended game is in Past games, not Continue (Trevor, 2026-10-16).
+			// An ended game is in Previous games, not Continue (Trevor, 2026-10-16).
 			const ended = endedGames.read();
 			latest = games.find((g) => !ended[g.gameId]);
 		} catch (e) {

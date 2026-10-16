@@ -1,5 +1,9 @@
 <script lang="ts">
-	/** Resume game (its own screen, Trevor 2026-10-16): every saved game, newest first. */
+	/**
+	 * Resume game: the games still being played, newest first. With `view="previous"`, the
+	 * Previous games page (Trevor, 2026-10-16): ended games, which can be reopened.
+	 */
+	let { view = 'active' }: { view?: 'active' | 'previous' } = $props();
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import type { SavedGameSummary, UnreadableGame } from '#lib/core/engine/index.ts';
@@ -14,7 +18,7 @@
 	// ── Saved games ──
 	let all = $state<SavedGameSummary[]>([]);
 	let ended = $state<Record<string, EndedGame>>({});
-	/** Games still being played; ended ones are listed under Past games (Trevor, 2026-10-16). */
+	/** Games still being played; ended ones are in Previous games (Trevor, 2026-10-16). */
 	const games = $derived(all.filter((g) => !ended[g.gameId]));
 	const past = $derived(
 		all
@@ -53,7 +57,7 @@
 		await refresh();
 	}
 
-	// ── Past games: reopening one puts it back in Resume game ──
+	// ── Previous games: reopening one puts it back in Resume game ──
 	let reopening = $state<SavedGameSummary | undefined>();
 	let reopenOpen = $state(false);
 	function reopen() {
@@ -74,94 +78,93 @@
 		game.stage.kind === 'setup' ? 'Setting up' : `Day ${game.stage.day}`;
 </script>
 
-<section aria-labelledby="saved-games">
-	<h2 id="saved-games">Resume game</h2>
-	{#if loaded && games.length === 0 && unreadable.length === 0}
-		<p class="none">None</p>
-	{/if}
-	<ul class="games">
-		{#each games as game (game.gameId)}
-			<li>
-				<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
-					<span class="name">{game.scriptName || 'None'}</span>
-					<span class="meta"
-						>{stageText(game)} · {game.seatCount} seats · {when.format(game.savedAt)}</span
+{#if view === 'active'}<section aria-labelledby="saved-games">
+		<h2 id="saved-games">Resume game</h2>
+		{#if loaded && games.length === 0 && unreadable.length === 0}
+			<p class="none">None</p>
+		{/if}
+		<ul class="games">
+			{#each games as game (game.gameId)}
+				<li>
+					<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
+						<span class="name">{game.scriptName || 'None'}</span>
+						<span class="meta"
+							>{stageText(game)} · {game.seatCount} seats · {when.format(game.savedAt)}</span
+						>
+					</a>
+					<IconButton
+						icon="remove"
+						label={`Delete ${game.scriptName ?? 'game'} saved ${when.format(game.savedAt)}`}
+						onclick={() => {
+							deleting = game.gameId;
+							deleteOpen = true;
+						}}
+					/>
+				</li>
+			{/each}
+			{#each unreadable as game (game.gameId)}
+				<li>
+					<span class="open" aria-disabled="true">
+						<span class="name">Unreadable game</span>
+						<span class="meta"
+							>{game.problem === 'too-new'
+								? 'Saved by a newer version: refresh to update'
+								: 'This save is damaged'}</span
+						>
+					</span>
+					<IconButton
+						icon="remove"
+						label="Delete unreadable game"
+						onclick={() => {
+							deleting = game.gameId;
+							deleteOpen = true;
+						}}
+					/>
+				</li>
+			{/each}
+		</ul>
+	</section>
+{:else}<section aria-labelledby="past-games">
+		<h2 id="past-games">Previous games</h2>
+		{#if loaded && past.length === 0}
+			<p class="none">None</p>
+		{/if}
+		<ul class="games">
+			{#each past as game (game.gameId)}
+				<li>
+					<button
+						type="button"
+						class="open"
+						onclick={() => {
+							reopening = game;
+							reopenOpen = true;
+						}}
 					>
-				</a>
-				<IconButton
-					icon="remove"
-					label={`Delete ${game.scriptName ?? 'game'} saved ${when.format(game.savedAt)}`}
-					onclick={() => {
-						deleting = game.gameId;
-						deleteOpen = true;
-					}}
-				/>
-			</li>
-		{/each}
-		{#each unreadable as game (game.gameId)}
-			<li>
-				<span class="open" aria-disabled="true">
-					<span class="name">Unreadable game</span>
-					<span class="meta"
-						>{game.problem === 'too-new'
-							? 'Saved by a newer version: refresh to update'
-							: 'This save is damaged'}</span
-					>
-				</span>
-				<IconButton
-					icon="remove"
-					label="Delete unreadable game"
-					onclick={() => {
-						deleting = game.gameId;
-						deleteOpen = true;
-					}}
-				/>
-			</li>
-		{/each}
-	</ul>
-</section>
-
-<section aria-labelledby="past-games">
-	<h2 id="past-games">Past games</h2>
-	{#if loaded && past.length === 0}
-		<p class="none">None</p>
-	{/if}
-	<ul class="games">
-		{#each past as game (game.gameId)}
-			<li>
-				<button
-					type="button"
-					class="open"
-					onclick={() => {
-						reopening = game;
-						reopenOpen = true;
-					}}
-				>
-					<span class="name">{game.scriptName || 'None'}</span>
-					<span class="meta"
-						>{winnerText(game.gameId)} · {stageText(game)} · {when.format(
-							ended[game.gameId].endedAt
-						)}</span
-					>
-				</button>
-				<IconButton
-					icon="remove"
-					label={`Delete ${game.scriptName ?? 'game'} ended ${when.format(ended[game.gameId].endedAt)}`}
-					onclick={() => {
-						deleting = game.gameId;
-						deleteOpen = true;
-					}}
-				/>
-			</li>
-		{/each}
-	</ul>
-</section>
+						<span class="name">{game.scriptName || 'None'}</span>
+						<span class="meta"
+							>{winnerText(game.gameId)} · {stageText(game)} · {when.format(
+								ended[game.gameId].endedAt
+							)}</span
+						>
+					</button>
+					<IconButton
+						icon="remove"
+						label={`Delete ${game.scriptName ?? 'game'} ended ${when.format(ended[game.gameId].endedAt)}`}
+						onclick={() => {
+							deleting = game.gameId;
+							deleteOpen = true;
+						}}
+					/>
+				</li>
+			{/each}
+		</ul>
+	</section>{/if}
 
 <ConfirmDialog bind:open={reopenOpen} title="Reopen this game?" onConfirm={reopen}>
 	{#if reopening}
 		<dl class="change">
 			<dt>Now</dt>
-			<dd>{reopening.scriptName || 'None'} in Past games</dd>
+			<dd>{reopening.scriptName || 'None'} in Previous games</dd>
 			<dt>Becomes</dt>
 			<dd>Back in Resume game, open in the grimoire</dd>
 		</dl>

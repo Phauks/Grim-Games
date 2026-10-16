@@ -1279,12 +1279,14 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('Imp');
 });
 
-test('End game moves the game to Past games, where it can be reopened', async ({ page }) => {
+test('End game moves the game to Previous games, where it can be reopened', async ({ page }) => {
 	await startGame(page);
 	const board = page.url();
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await expect(end).toContainText(/Now\s*In Continue and Resume game\s*Becomes\s*In Past games/);
+	await expect(end).toContainText(
+		/Now\s*In Continue and Resume game\s*Becomes\s*In Previous games/
+	);
 	await end.getByRole('radio', { name: 'Evil' }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page).toHaveURL(/\/$/);
@@ -1293,9 +1295,11 @@ test('End game moves the game to Past games, where it can be reopened', async ({
 	await expect(
 		page.getByRole('region', { name: 'Resume game' }).getByRole('link', { name: /Trouble Brewing/ })
 	).toHaveCount(0);
-	const past = page.getByRole('region', { name: 'Past games' });
+	// Ended games are on their own page (Trevor, 2026-10-16), not under Resume game.
+	await expect(page.getByRole('region', { name: 'Previous games' })).toHaveCount(0);
+	await page.goto('/previous-games');
+	const past = page.getByRole('region', { name: 'Previous games' });
 	await expect(past).toContainText(/Trouble Brewing\s*Evil won/);
-	await page.screenshot({ path: `test-results/past-games-${test.info().project.name}.png` });
 	await past.getByRole('button', { name: /^Trouble Brewing/ }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen this game?' })

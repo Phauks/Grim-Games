@@ -479,7 +479,7 @@
 	/** Who wakes for the current walk-through step, marked on the board. */
 	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
-	// ── End game (Trevor, 2026-10-16): the game moves to Past games; its live room closes ──
+	// ── End game (Trevor, 2026-10-16): the game moves to Previous games; its live room closes ──
 	let endOpen = $state(false);
 	let winner = $state<'good' | 'evil' | undefined>();
 	function endGame() {
@@ -886,7 +886,7 @@
 				Navigation
 			</Button>
 		</span>
-		<!-- Leaving keeps the game to come back to; End moves it to Past games (Trevor, 2026-10-16). -->
+		<!-- Leaving keeps the game to come back to; End moves it to Previous games (Trevor, 2026-10-16). -->
 		<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
 			End game
 		</Button>
@@ -932,7 +932,7 @@
 		<dt>Now</dt>
 		<dd>In Continue and Resume game</dd>
 		<dt>Becomes</dt>
-		<dd>In Past games on Resume game, where it can be reopened</dd>
+		<dd>In Previous games, where it can be reopened</dd>
 	</dl>
 	<div class="winner" role="radiogroup" aria-label="Winning team">
 		<span class="winner-label">Winner</span>
