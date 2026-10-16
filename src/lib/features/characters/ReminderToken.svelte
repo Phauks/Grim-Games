@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, CharacterType } from '#lib/core/data/index.ts';
 
 	interface Props {
@@ -32,7 +33,10 @@
 	data-testid="reminder-token"
 	data-done={done || undefined}
 	{title}
-	>{label ?? 'reminder'}{#if done}<span class="tick" aria-label="already placed">✓</span>{/if}</span
+	>{label ?? t('characters.reminder')}{#if done}<span
+			class="tick"
+			aria-label={t('characters.reminderPlaced')}>✓</span
+		>{/if}</span
 >
 
 <style>

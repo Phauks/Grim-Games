@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { describeThrown } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -53,39 +54,39 @@
 </script>
 
 <main>
-	<h1>Character reference</h1>
+	<h1>{t('reference.title')}</h1>
 	<div class="view">
 		<div class="switch">
 			<Segmented
-				label="Show as"
+				label={t('reference.showAs')}
 				hideLabel
 				value={referenceView.current}
 				options={[
-					{ value: 'cards', label: 'Cards' },
-					{ value: 'table', label: 'Table' }
+					{ value: 'cards', label: t('reference.viewCards') },
+					{ value: 'table', label: t('reference.viewTable') }
 				] satisfies { value: ReferenceView; label: string }[]}
 				onChange={(value) => (referenceView.current = value)}
 			/>
 		</div>
-		<IconButton icon="info" label="Token key" onclick={() => (keyOpen = true)} />
+		<IconButton icon="info" label={t('reference.tokenKey')} onclick={() => (keyOpen = true)} />
 	</div>
 	<TokenKey bind:open={keyOpen} />
 
 	<Tabs
 		bind:value={view}
-		label="Reference views"
+		label={t('reference.views')}
 		tabs={[
-			{ value: 'characters', label: 'Characters' },
-			{ value: 'night', label: 'Night order' }
+			{ value: 'characters', label: t('reference.tabCharacters') },
+			{ value: 'night', label: t('reference.tabNight') }
 		]}
 	>
 		{#snippet panel(tab)}
 			<ErrorBoundary area="reference">
 				{#if error}
-					<p role="alert">Could not load the character data: {error}</p>
+					<p role="alert">{t('reference.loadError', { error })}</p>
 				{:else if !data}
 					<!-- Reserved space while the data loads, so nothing below jumps. -->
-					<div class="loading" aria-busy="true">Loading characters…</div>
+					<div class="loading" aria-busy="true">{t('reference.loading')}</div>
 				{:else if tab === 'characters'}
 					<CharacterReference {entries} view={referenceView.current} />
 				{:else}

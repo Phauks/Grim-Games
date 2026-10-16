@@ -5,6 +5,8 @@
  * information parity").
  */
 import type { TableColumn } from '#lib/core/rules/reference-table.ts';
+import type { PlainMessageKey } from '#lib/i18n/catalog.ts';
+import { t } from '#lib/i18n/locale.svelte.ts';
 
 export const FIELD_IDS = [
 	'token',
@@ -32,10 +34,11 @@ export type FilterKind = 'text' | 'types' | 'alignment' | 'presence';
 
 export interface ReferenceField {
 	id: FieldId;
-	label: string;
+	/** In the current language. */
+	readonly label: string;
 	/** Where the card shows it: in its header, on one line with its label, or as a block. */
 	card: 'header' | 'inline' | 'block';
-	/** Long content: clamped in a table cell, with the whole value in the details dialog. */
+	/** Long content: the table keeps the default token size in these cells. */
 	long?: boolean;
 	/** Table sort column (core `reference-table.ts`), when the field sorts. */
 	sort?: TableColumn;
@@ -43,28 +46,26 @@ export interface ReferenceField {
 	filter?: FilterKind;
 }
 
-export const REFERENCE_FIELDS: readonly ReferenceField[] = [
-	{ id: 'token', label: 'Token', card: 'header' },
-	{ id: 'name', label: 'Name', card: 'header', sort: 'name', filter: 'text' },
-	{ id: 'type', label: 'Type', card: 'header', sort: 'type', filter: 'types' },
-	{ id: 'edition', label: 'Edition', card: 'header', sort: 'edition' },
-	{ id: 'icons', label: 'Icons', card: 'header' },
+const FIELDS: readonly Omit<ReferenceField, 'label'>[] = [
+	{ id: 'token', card: 'header' },
+	{ id: 'name', card: 'header', sort: 'name', filter: 'text' },
+	{ id: 'type', card: 'header', sort: 'type', filter: 'types' },
+	{ id: 'edition', card: 'header', sort: 'edition' },
+	{ id: 'icons', card: 'header' },
 	{
 		id: 'alignment',
-		label: 'Starting alignment',
 		card: 'inline',
 		sort: 'alignment',
 		filter: 'alignment'
 	},
-	{ id: 'setup', label: 'Setup', card: 'inline', sort: 'setup', filter: 'presence' },
+	{ id: 'setup', card: 'inline', sort: 'setup', filter: 'presence' },
 	/** Pre-game preparation between the draw and the first night (`setupPrep`). */
-	{ id: 'prep', label: 'Prep', card: 'inline', long: true },
-	{ id: 'ability', label: 'Ability', card: 'block', long: true },
-	{ id: 'tokens', label: 'Tokens', card: 'inline', sort: 'tokens', filter: 'presence' },
-	{ id: 'special', label: 'Special', card: 'inline' },
+	{ id: 'prep', card: 'inline', long: true },
+	{ id: 'ability', card: 'block', long: true },
+	{ id: 'tokens', card: 'inline', sort: 'tokens', filter: 'presence' },
+	{ id: 'special', card: 'inline' },
 	{
 		id: 'firstNight',
-		label: 'First night',
 		card: 'inline',
 		long: true,
 		sort: 'firstNight',
@@ -72,24 +73,30 @@ export const REFERENCE_FIELDS: readonly ReferenceField[] = [
 	},
 	{
 		id: 'otherNight',
-		label: 'Other nights',
 		card: 'inline',
 		long: true,
 		sort: 'otherNight',
 		filter: 'presence'
 	},
-	{ id: 'jinxes', label: 'Jinxes', card: 'inline', long: true, sort: 'jinxes', filter: 'presence' },
+	{ id: 'jinxes', card: 'inline', long: true, sort: 'jinxes', filter: 'presence' },
 	{
 		id: 'preDay',
-		label: 'Pre-day',
 		card: 'inline',
 		long: true,
 		sort: 'preDay',
 		filter: 'presence'
 	},
-	{ id: 'problems', label: 'Possible problems', card: 'inline', long: true },
-	{ id: 'links', label: 'Links', card: 'block' }
+	{ id: 'problems', card: 'inline', long: true },
+	{ id: 'links', card: 'block' }
 ];
+
+/** Each field with its label read from the catalog when used, so it follows the language. */
+export const REFERENCE_FIELDS: readonly ReferenceField[] = FIELDS.map((field) => ({
+	...field,
+	get label() {
+		return t(`reference.field.${field.id}` as const);
+	}
+}));
 
 /** Fields the card view renders: every field, header ones first. */
 export function cardFieldIds(): FieldId[] {
@@ -107,11 +114,26 @@ export const fieldById = (id: FieldId): ReferenceField =>
 	REFERENCE_FIELDS.find((f) => f.id === id)!;
 
 /** Labels for the presence filter, per field. */
-export const PRESENCE_LABELS: Partial<Record<FieldId, { yes: string; no: string }>> = {
-	firstNight: { yes: 'Wakes', no: 'Doesn’t wake' },
-	otherNight: { yes: 'Wakes', no: 'Doesn’t wake' },
-	tokens: { yes: 'Has tokens', no: 'None' },
-	setup: { yes: 'Changes setup', no: 'None' },
-	jinxes: { yes: 'Has jinxes', no: 'None' },
-	preDay: { yes: 'Has reminders', no: 'None' }
+const PRESENCE_KEYS: Partial<Record<FieldId, { yes: PlainMessageKey; no: PlainMessageKey }>> = {
+	firstNight: { yes: 'reference.presence.wakes', no: 'reference.presence.notWakes' },
+	otherNight: { yes: 'reference.presence.wakes', no: 'reference.presence.notWakes' },
+	tokens: { yes: 'reference.presence.tokens', no: 'common.none' },
+	setup: { yes: 'reference.presence.setup', no: 'common.none' },
+	jinxes: { yes: 'reference.presence.jinxes', no: 'common.none' },
+	preDay: { yes: 'reference.presence.preDay', no: 'common.none' }
 };
+export const PRESENCE_LABELS: Partial<
+	Record<FieldId, { readonly yes: string; readonly no: string }>
+> = Object.fromEntries(
+	Object.entries(PRESENCE_KEYS).map(([id, keys]) => [
+		id,
+		{
+			get yes() {
+				return t(keys.yes);
+			},
+			get no() {
+				return t(keys.no);
+			}
+		}
+	])
+);

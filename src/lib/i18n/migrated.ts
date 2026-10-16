@@ -25,7 +25,24 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/routes/grimoire/[gameId]/setup/',
 	'src/routes/grimoire/[gameId]/draw/',
 	'src/lib/features/characters/CharacterPicker.svelte',
-	'src/lib/features/characters/CharacterSearchBox.svelte'
+	'src/lib/features/characters/CharacterSearchBox.svelte',
+	// Reference and token visuals; the table files belong to the shared table thread and the
+	// picker files to character selection, so they are listed one by one.
+	'src/routes/reference/',
+	'src/lib/features/reference/CharacterReference.svelte',
+	'src/lib/features/reference/FieldValue.svelte',
+	'src/lib/features/reference/NightText.svelte',
+	'src/lib/features/reference/ReferenceCard.svelte',
+	'src/lib/features/reference/ReferencePage.svelte',
+	'src/lib/features/reference/ReminderSentence.svelte',
+	'src/lib/features/reference/TokenKey.svelte',
+	'src/lib/features/characters/CharacterBadge.svelte',
+	'src/lib/features/characters/CharacterDialog.svelte',
+	'src/lib/features/characters/CharacterToken.svelte',
+	'src/lib/features/characters/ReminderToken.svelte',
+	'src/lib/features/characters/TokenAppearanceSettings.svelte',
+	'src/lib/features/glossary/',
+	'src/lib/ui/token/'
 ];
 
 export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { wikiUrl, type Character } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -64,14 +65,14 @@
 	<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
 	{#if page}
 		<!-- The wiki's own page, word for word (never bundled; see wiki-page.svelte.ts). -->
-		<section class="wiki-page" aria-label="Wiki page" data-testid="wiki-page">
+		<section class="wiki-page" aria-label={t('characters.wikiPage')} data-testid="wiki-page">
 			{#if page.status === 'ready'}
 				{#if summary}
 					{#if summary.heading}<h3>{summary.heading}</h3>{/if}
 					{@render blocks(summary)}
 				{/if}
 				{#if others.length}
-					<ul class="more" aria-label="More from the wiki">
+					<ul class="more" aria-label={t('characters.moreFromWiki')}>
 						{#each others as section, i (i)}
 							<li>
 								<button
@@ -79,16 +80,16 @@
 									onclick={() => {
 										shown = section;
 										sectionOpen = true;
-									}}>{section.heading || 'Introduction'}</button
+									}}>{section.heading || t('characters.wikiIntroduction')}</button
 								>
 							</li>
 						{/each}
 					</ul>
 				{/if}
 			{:else if page.status === 'loading'}
-				<p class="muted">Loading the wiki page…</p>
+				<p class="muted">{t('characters.wikiLoading')}</p>
 			{:else}
-				<p class="muted">The wiki page can't be loaded right now. Open it with the button below.</p>
+				<p class="muted">{t('characters.wikiFailed')}</p>
 			{/if}
 		</section>
 	{/if}
@@ -101,23 +102,33 @@
 				href={wiki}
 				target="_blank"
 				rel="noopener"
-				aria-label="Open wiki"
-				title="Open wiki"
+				aria-label={t('characters.openWiki')}
+				title={t('characters.openWiki')}
 			>
 				<Icon name="wiki" />
 			</a>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{:else}
 			<!-- Homebrew: no wiki page. Shown disabled so the header is the same for every character. -->
-			<span class="wiki" role="img" aria-label="No wiki entry" title="No wiki entry" data-disabled
-				><Icon name="wiki" /></span
+			<span
+				class="wiki"
+				role="img"
+				aria-label={t('characters.noWiki')}
+				title={t('characters.noWiki')}
+				data-disabled><Icon name="wiki" /></span
 			>
 		{/if}
 	{/snippet}
 </Dialog>
 
 {#if shown}
-	<Dialog bind:open={sectionOpen} title="{character.name}: {shown.heading || 'Introduction'}">
+	<Dialog
+		bind:open={sectionOpen}
+		title={t('characters.wikiSectionTitle', {
+			name: character.name,
+			section: shown.heading || t('characters.wikiIntroduction')
+		})}
+	>
 		<section class="wiki-page" data-testid="wiki-section">{@render blocks(shown)}</section>
 	</Dialog>
 {/if}

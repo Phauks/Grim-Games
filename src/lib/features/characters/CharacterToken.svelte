@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import { describeLeaves, type LeafMarks } from '#lib/ui/token/leaves.ts';
 	import TokenFace from '#lib/ui/token/TokenFace.svelte';
@@ -22,7 +23,9 @@
 	});
 	const src = $derived(iconUrl(character, alignment));
 	const label = $derived(
-		[`${character.name} token`, describeLeaves(leaves)].filter(Boolean).join(': ')
+		describeLeaves(leaves)
+			? t('characters.tokenMarks', { name: character.name, marks: describeLeaves(leaves) })
+			: t('characters.token', { name: character.name })
 	);
 </script>
 

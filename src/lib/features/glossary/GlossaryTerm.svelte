@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { GlossaryTerm } from '#lib/core/rules/glossary.ts';
 	import { glossaryPopover } from './glossary-popover.svelte.ts';
 
@@ -26,7 +27,7 @@
 	role="button"
 	tabindex="0"
 	class="glossary-term"
-	aria-label={`${text}: explain rules term`}
+	aria-label={t('glossary.explain', { term: text })}
 	aria-haspopup="dialog"
 	aria-expanded={open}
 	data-state={open ? 'open' : 'closed'}

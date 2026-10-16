@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { groupByType, matchesReference, type ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import { activeFilterCount, tableRows } from '#lib/core/rules/reference-table.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -54,11 +55,11 @@
 
 <div class="controls">
 	<label class="search">
-		<span class="visually-hidden">Search characters</span>
+		<span class="visually-hidden">{t('reference.searchLabel')}</span>
 		<Icon name="search" />
 		<input
 			type="search"
-			placeholder="Search name, ability or reminder"
+			placeholder={t('reference.searchPlaceholder')}
 			autocomplete="off"
 			aria-keyshortcuts="/"
 			bind:this={searchInput}
@@ -67,20 +68,25 @@
 		/>
 	</label>
 	{#if view === 'cards'}
-		<p class="count" aria-live="polite">{shown.length} of {entries.length} characters</p>
+		<p class="count" aria-live="polite">
+			{t('reference.count', { shown: shown.length, count: entries.length })}
+		</p>
 	{:else}
 		<!-- The table's count and Clear sit on the search line, not a line of their own. -->
 		<div class="table-count">
 			<p class="count" aria-live="polite" data-testid="table-count">
-				{rows.length} of {entries.length} · {filters === 0
-					? 'no filters'
-					: `${filters} filter${filters === 1 ? '' : 's'}`}
+				{t('reference.tableCount', {
+					shown: rows.length,
+					total: entries.length,
+					filters:
+						filters === 0 ? t('reference.noFilters') : t('reference.filters', { count: filters })
+				})}
 			</p>
 			<Button
 				variant="quiet"
 				icon="close"
 				disabled={filters === 0}
-				onclick={() => referenceTable.clearFilters()}>Clear filters</Button
+				onclick={() => referenceTable.clearFilters()}>{t('reference.clearFilters')}</Button
 			>
 		</div>
 	{/if}
@@ -101,7 +107,7 @@
 			</div>
 		</section>
 	{:else}
-		<p class="empty">No characters match.</p>
+		<p class="empty">{t('reference.noMatch')}</p>
 	{/each}
 {/if}
 

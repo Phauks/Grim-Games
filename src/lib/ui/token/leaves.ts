@@ -1,3 +1,5 @@
+import { t } from '#lib/i18n/locale.svelte.ts';
+
 /**
  * Marks inside a character token, as on the printed tokens: one leaf on the left when the
  * character acts on the first night, one on the right when it acts on other nights, and
@@ -43,10 +45,9 @@ export const FLOWER_ANGLE = 45;
 /** Words for the leaves, for screen readers. */
 export function describeLeaves(marks: LeafMarks): string {
 	const parts: string[] = [];
-	if (marks.firstNight) parts.push('wakes on the first night');
-	if (marks.otherNight) parts.push('wakes on other nights');
-	if (marks.reminders > 0)
-		parts.push(`${marks.reminders} reminder token${marks.reminders === 1 ? '' : 's'}`);
-	if (marks.setup) parts.push('changes setup');
+	if (marks.firstNight) parts.push(t('characters.marks.firstNight'));
+	if (marks.otherNight) parts.push(t('characters.marks.otherNight'));
+	if (marks.reminders > 0) parts.push(t('characters.marks.reminders', { count: marks.reminders }));
+	if (marks.setup) parts.push(t('characters.marks.setup'));
 	return parts.join(', ');
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import { nightTextFor, nightTextSegments } from '#lib/core/rules/night-text.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -41,25 +42,27 @@
 			/>{:else if s.kind === 'info'}<ReminderToken
 				label={s.label}
 				variant="info"
-				title="Info token"
+				title={t('reference.infoToken')}
 			/>{:else if s.kind === 'character'}<CharacterBadge
 				characterId={s.id}
 				inline
 			/>{:else if s.kind === 'dead'}<ReminderToken
-				label="Dead"
+				label={t('reference.dead')}
 				type={character.type}
-				title={s.action === 'remove' ? 'Remove: the death marker' : 'The death marker'}
+				title={s.action === 'remove'
+					? t('reference.removeDeathMarker')
+					: t('reference.deathMarker')}
 			/>{:else}<ReminderToken
 				label={s.label}
 				type={character.type}
 				done={s.prep}
 				title={s.prep
-					? 'Already placed during setup'
+					? t('reference.alreadyPlaced')
 					: s.label
 						? s.action === 'remove'
-							? 'Remove this token'
+							? t('reference.removeToken')
 							: undefined
-						: `One of: ${s.options.join(', ')}`}
+						: t('reference.oneOf', { options: s.options.join(', ') })}
 			/>{/if}{/each}</span
 >
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { GLOSSARY, glossaryEntryUrl, type GlossaryTerm } from '#lib/core/rules/glossary.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -45,7 +46,7 @@
 	{#if glossaryPopover.term}
 		{#if previous}
 			<button type="button" class="back" onclick={() => glossaryPopover.back()}
-				><Icon name="back" /><span>Back to {previous.term}</span></button
+				><Icon name="back" /><span>{t('glossary.back', { term: previous.term })}</span></button
 			>
 		{/if}
 		{#if entry}
@@ -70,7 +71,7 @@
 		<!-- External wiki Glossary (the rules authority), not an app route. -->
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 		<a class="wiki" href={glossaryPopover.term.url} target="_blank" rel="noopener"
-			><Icon name="wiki" /><span>Open Glossary</span></a
+			><Icon name="wiki" /><span>{t('glossary.open')}</span></a
 		>
 	{/if}
 </Popover>

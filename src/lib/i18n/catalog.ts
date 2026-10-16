@@ -36,6 +36,11 @@ export type ParamsArg<K extends MessageKey> = [keyof MessageParams<K>] extends [
 	? []
 	: [params: MessageParams<K>];
 
+/** Keys of messages without placeholders, for tables of labels that `t(key)` reads. */
+export type PlainMessageKey = {
+	[K in MessageKey]: ParamsArg<K> extends [] ? K : never;
+}[MessageKey];
+
 /** Text described rather than written: what core returns where it used to return English. */
 export type Message = {
 	[K in MessageKey]: [keyof MessageParams<K>] extends [never]

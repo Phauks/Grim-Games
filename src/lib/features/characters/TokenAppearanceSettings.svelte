@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
@@ -39,38 +40,40 @@
 	}
 
 	const readable = (ratio: number) =>
-		`${ratio.toFixed(1)}:1, ${ratio >= MIN_CONTRAST ? 'easy to read' : 'hard to read'}`;
+		t(ratio >= MIN_CONTRAST ? 'characters.contrast.good' : 'characters.contrast.poor', {
+			ratio: ratio.toFixed(1)
+		});
 </script>
 
 <!-- Space for the largest sizes is kept, so changing a size never moves the settings below. -->
 <div class="preview" aria-hidden="true" data-testid="token-preview">
 	{#if sample}<CharacterToken character={sample} size={56} />{/if}
-	<ReminderToken label="Poisoned" type="minion" />
+	<ReminderToken label={t('characters.previewReminder')} type="minion" />
 </div>
 
 <SettingSegmented
-	label="Character token size"
-	description="Character tokens on the board, reference cards and setup. Text size and Icon size stay the same."
+	label={t('characters.tokenSize')}
+	description={t('characters.tokenSizeHelp')}
 	value={String(value.tokenScale)}
 	options={TOKEN_SCALES.map((scale) => ({
 		value: String(scale),
-		label: TOKEN_SCALE_LABELS[scale]
+		label: t(TOKEN_SCALE_LABELS[scale])
 	}))}
 	onChange={(scale) => onChange({ ...value, tokenScale: Number(scale) as TokenScale })}
 />
 <SettingSegmented
-	label="Reminder token size"
-	description="Reminder tokens wherever they show."
+	label={t('characters.reminderSize')}
+	description={t('characters.reminderSizeHelp')}
 	value={String(value.reminderScale)}
 	options={TOKEN_SCALES.map((scale) => ({
 		value: String(scale),
-		label: TOKEN_SCALE_LABELS[scale]
+		label: t(TOKEN_SCALE_LABELS[scale])
 	}))}
 	onChange={(scale) => onChange({ ...value, reminderScale: Number(scale) as TokenScale })}
 />
 
 {#each TOKEN_COLOURS as colour (colour.key)}
-	<SettingRow label={colour.label} description={colour.description}>
+	<SettingRow label={t(colour.label)} description={t(colour.description)}>
 		{#snippet control(labelId)}
 			<div class="colour">
 				<input
@@ -82,9 +85,9 @@
 				<!-- Disabled, not hidden, when nothing changed: no reflow. -->
 				<Button
 					variant="quiet"
-					aria-label="Reset {colour.label}"
+					aria-label={t('characters.colour.resetOne', { colour: t(colour.label) })}
 					disabled={!value.colours[colour.key]}
-					onclick={() => setColour(colour.key, undefined)}>Reset</Button
+					onclick={() => setColour(colour.key, undefined)}>{t('characters.colour.reset')}</Button
 				>
 			</div>
 		{/snippet}
@@ -92,9 +95,9 @@
 {/each}
 
 <dl class="contrast" data-testid="token-contrast">
-	<dt>Text on tokens</dt>
+	<dt>{t('characters.contrast.face')}</dt>
 	<dd data-poor={contrast.face < MIN_CONTRAST || undefined}>{readable(contrast.face)}</dd>
-	<dt>Text on reminders</dt>
+	<dt>{t('characters.contrast.reminder')}</dt>
 	<dd data-poor={contrast.reminder < MIN_CONTRAST || undefined}>{readable(contrast.reminder)}</dd>
 </dl>
 

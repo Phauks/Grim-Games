@@ -11,6 +11,9 @@ import { player } from '#lib/i18n/messages/en/player.ts';
 import { room } from '#lib/i18n/messages/en/room.ts';
 import { day } from '#lib/i18n/messages/en/day.ts';
 import { scripts } from '#lib/i18n/messages/en/scripts.ts';
+import { characters } from '#lib/i18n/messages/en/characters.ts';
+import { glossary } from '#lib/i18n/messages/en/glossary.ts';
+import { reference } from '#lib/i18n/messages/en/reference.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -33,5 +36,8 @@ export const en = {
 	...day,
 	...account,
 	...scripts,
-	...player
+	...player,
+	...characters,
+	...glossary,
+	...reference
 } as const satisfies Catalog;

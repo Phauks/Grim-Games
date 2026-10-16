@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { buildInfo } from '#lib/build-info.ts';
 	import { characterIcons, ICONS_PATH, type Special } from '#lib/core/data/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
@@ -42,9 +43,9 @@
 		if (!set) return [];
 		return (
 			[
-				['Good icon', set.good],
-				['Evil icon', set.evil],
-				['Unaligned icon', set.unaligned]
+				[t('reference.iconGood'), set.good],
+				[t('reference.iconEvil'), set.evil],
+				[t('reference.iconUnaligned'), set.unaligned]
 			] as const
 		)
 			.filter(([, file]) => file !== undefined)
@@ -72,11 +73,13 @@
 	<span class="night" data-testid={testid}>
 		<span class="pos" data-testid="{testid}-position" data-position={info.position}
 			>{#if info.position !== undefined}#{info.position}{:else}–{/if}{#if info.number !== undefined}<small
-					title="Provisional number">{info.number}</small
+					title={t('reference.provisionalNumber')}>{info.number}</small
 				>{/if}</span
 		>
 		<span class="st"
-			>{#if info.text}<NightText text={info.text} {character} {night} />{:else}None{/if}</span
+			>{#if info.text}<NightText text={info.text} {character} {night} />{:else}{t(
+					'common.none'
+				)}{/if}</span
 		>
 	</span>
 {/snippet}
@@ -90,12 +93,14 @@
 	{:else if field === 'type'}
 		{TYPE_LABELS[character.type]}
 	{:else if field === 'edition'}
-		{character.edition ? (EDITION_LABELS[character.edition] ?? character.edition) : 'None'}
+		{character.edition
+			? (EDITION_LABELS[character.edition] ?? character.edition)
+			: t('common.none')}
 	{:else if field === 'icons'}
 		<span class="icons">
 			{#each variants as v (v.label)}
 				<img src={v.src} alt={v.label} title={v.label} width="28" height="28" loading="lazy" />
-			{:else}None{/each}
+			{:else}{t('common.none')}{/each}
 		</span>
 	{:else if field === 'alignment'}
 		{entry.alignmentNote}
@@ -104,19 +109,21 @@
 				text="{character.name}: {entry.setup.summary}"
 			/>{#if entry.setup.notes.length}<span class="small block"
 					><GlossaryText text={entry.setup.notes.join(' ')} /></span
-				>{/if}{:else}None{/if}
+				>{/if}{:else}{t('common.none')}{/if}
 	{:else if field === 'ability'}
 		<span class="ability"><GlossaryText text={character.ability} names={[character.name]} /></span>
 	{:else if field === 'tokens'}
 		<span class="spaced"
-			>{#each tokens as t, i (i)}<ReminderToken
-					label={t.global ? `${t.label} (global)` : t.label}
+			>{#each tokens as token, i (i)}<ReminderToken
+					label={token.global ? t('reference.globalReminder', { label: token.label }) : token.label}
 					type={character.type}
-				/>{:else}None{/each}</span
+				/>{:else}{t('common.none')}{/each}</span
 		>
 	{:else if field === 'special'}
 		<span class="spaced"
-			>{#each character.special as s, i (i)}<code>{special(s)}</code>{:else}None{/each}</span
+			>{#each character.special as s, i (i)}<code>{special(s)}</code>{:else}{t(
+					'common.none'
+				)}{/each}</span
 		>
 	{:else if field === 'firstNight'}
 		{@render nightValue('night-first', 'first', entry.firstNight)}
@@ -132,7 +139,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else}<span data-testid="no-jinxes">None</span>{/if}
+		{:else}<span data-testid="no-jinxes">{t('common.none')}</span>{/if}
 	{:else if field === 'prep'}
 		{#if prep.length}
 			<ul class="list">
@@ -150,7 +157,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else}None{/if}
+		{:else}{t('common.none')}{/if}
 	{:else if field === 'preDay'}
 		{#if entry.dayReminders.length}
 			<ul class="list">
@@ -158,23 +165,22 @@
 					<li>
 						<ReminderSentence segments={reminder.segments} type={character.type} />
 						<span class="small"
-							>{reminder.groupTitle} · when <GlossaryText
-								text={reminder.when}
-							/>{#if reminder.autoDetected}
-								· guessed from the ability{/if}</span
+							>{reminder.groupTitle} · {t('reference.when')}
+							<GlossaryText text={reminder.when} />{#if reminder.autoDetected}
+								· {t('reference.guessed')}{/if}</span
 						>
 					</li>
 				{/each}
 			</ul>
 		{:else}
 			<span class="none-row" data-testid="no-day"
-				>None{#if entry.noDayReason}<IconButton
+				>{t('common.none')}{#if entry.noDayReason}<IconButton
 						icon="info"
-						label="Why no pre-day reminders"
+						label={t('reference.whyNoDay')}
 						onclick={() =>
 							onExplain(
-								`${character.name}: no pre-day reminders`,
-								`Left out of the pre-day list: ${entry.noDayReason}.`
+								t('reference.noDayTitle', { name: character.name }),
+								t('reference.noDayText', { reason: entry.noDayReason ?? '' })
 							)}
 					/>{/if}</span
 			>
@@ -184,17 +190,21 @@
 			<ul class="problems">
 				{#each entry.problems as problem (problem)}<li>{problem}</li>{/each}
 			</ul>
-		{:else}None{/if}
+		{:else}{t('common.none')}{/if}
 	{:else if field === 'links'}
 		<span class="links">
 			{#if entry.wiki}
 				<!-- External wiki page (the rules authority), not an app route. -->
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-				<a href={entry.wiki} target="_blank" rel="noopener"><Icon name="wiki" /> Wiki</a>
+				<a href={entry.wiki} target="_blank" rel="noopener"
+					><Icon name="wiki" /> {t('reference.wiki')}</a
+				>
 			{/if}
 			<!-- External GitHub issue form; only public build and character info in it. -->
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a href={reportUrl} target="_blank" rel="noopener"><Icon name="report" /> Report a problem</a>
+			<a href={reportUrl} target="_blank" rel="noopener"
+				><Icon name="report" /> {t('reference.report')}</a
+			>
 		</span>
 	{/if}
 </span>
