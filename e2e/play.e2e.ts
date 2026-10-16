@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 // Player view (09-player-script-view.md): the script, night order, a private seat circle and notes.
 
@@ -165,4 +166,36 @@ test('a homebrew character from a loaded script shows as a badge with its abilit
 	const row = page.locator('[data-character="stormwarden"]');
 	await expect(row.getByRole('button', { name: /Storm Warden/ })).toBeVisible();
 	await expect(row).toContainText('safe from the Demon tonight');
+});
+
+test('a shared /play link opens its script, and the script can be shared on', async ({ page }) => {
+	const shared = [
+		{ id: '_meta', name: 'Pass The Phone', author: 'Trevor' },
+		'chef',
+		'empath',
+		'imp'
+	];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	await expect(page.getByRole('heading', { name: 'Pass The Phone', level: 1 })).toBeVisible();
+	await expect(page.locator('[data-character]')).toHaveCount(3);
+	// The hash is cleared once the script is loaded.
+	await expect(page).toHaveURL(/\/play$/);
+	await expect(page.getByRole('button', { name: 'QR code' })).toBeEnabled();
+
+	// Opened fresh from another page, as from a QR code.
+	const other = [{ id: '_meta', name: 'Second Script' }, 'washerwoman', 'imp'];
+	await page.goto('/');
+	await page.goto(`/play#s=${await encodeSharedScript(other)}`);
+	await expect(page.getByRole('heading', { name: 'Second Script', level: 1 })).toBeVisible();
+});
+
+test('a shared link with problems opens the Script check first', async ({ page }) => {
+	const shared = [{ id: '_meta', name: 'Typo Script' }, 'chef', 'fortune_teler', 'imp'];
+	await page.goto('/');
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	const check = page.getByRole('dialog', { name: 'Script check' });
+	await expect(check).toContainText('Did you mean Fortune Teller');
+	await check.getByRole('button', { name: 'Load anyway' }).tap();
+	await expect(page.getByRole('heading', { name: 'Typo Script', level: 1 })).toBeVisible();
+	await expect(page.locator('[data-character]')).toHaveCount(2);
 });

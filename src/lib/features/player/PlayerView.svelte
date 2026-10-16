@@ -3,6 +3,9 @@
 	import { resolve } from '$app/paths';
 	import {
 		editionScript,
+		loadScript,
+		scriptToJson,
+		type ScriptLoadResult,
 		type GameData,
 		type LoadedScript,
 		type NumericNightOrder
@@ -14,7 +17,18 @@
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import { currentScript, restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
+	import {
+		chooseScript,
+		currentScript,
+		restoreScripts
+	} from '#lib/features/scripts/current-script.svelte.ts';
+	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
+	import {
+		decodeSharedScript,
+		sharedPayloadFromHash,
+		shareLink
+	} from '#lib/features/scripts/share.ts';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { NotebookState } from './notebook-store.svelte.ts';
 	import { playerCount, scriptKey } from './notebook.ts';
@@ -50,6 +64,8 @@
 			if (!fallback) throw new Error('Trouble Brewing is missing from the data');
 			numeric = numbers;
 			data = game;
+			// Restored first, so the shared script ends up current rather than the last one used.
+			await openSharedLink();
 		} catch (e) {
 			// Shown inline below, so only logged.
 			reportError(e, { area: 'play', notify: false });
@@ -57,7 +73,44 @@
 		}
 	});
 
+	// A shared link (/play#s=…) loads its script through the same checks as the Scripts page:
+	// the Script check opens when something was skipped or changed (08-script-loading.md §5.3).
+	let checking = $state<ScriptLoadResult>();
+	let checkOpen = $state(false);
+	async function openSharedLink() {
+		const payload = sharedPayloadFromHash(location.hash);
+		if (!payload) return;
+		history.replaceState(history.state, '', location.pathname + location.search);
+		try {
+			const result = loadScript(await decodeSharedScript(payload), await loadOfficialData());
+			if (!result.script || result.problems.some((p) => p.severity !== 'info')) {
+				checking = result;
+				checkOpen = true;
+			} else await chooseScript(result.script, { kind: 'share' });
+		} catch (e) {
+			reportError(e, { area: 'play', notify: false });
+			toast('Could not open the shared script', errorMessage(e));
+		}
+	}
+
 	const script = $derived(data ? (currentScript.current ?? fallback) : undefined);
+
+	let shareUrl = $state<string>();
+	$effect(() => {
+		const current = script;
+		shareUrl = undefined;
+		if (!current) return;
+		let stale = false;
+		shareLink(location.origin, scriptToJson(current)).then(
+			(url) => {
+				if (!stale) shareUrl = url;
+			},
+			(e) => reportError(e, { area: 'play', notify: false })
+		);
+		return () => {
+			stale = true;
+		};
+	});
 	// One notebook per script: official editions by id, saved scripts by their library id.
 	const key = $derived.by(() => {
 		if (!script) return undefined;
@@ -99,6 +152,9 @@
 	}
 </script>
 
+<!-- A shared link opened while /play is already showing changes only the hash. -->
+<svelte:window onhashchange={() => data && void openSharedLink()} />
+
 <main>
 	<header>
 		<h1>{script?.name ?? 'Player view'}</h1>
@@ -126,7 +182,7 @@
 						{#if !script || !notebook}
 							<p class="muted">Loading…</p>
 						{:else if value === 'script'}
-							<ScriptSheet {script} {jinxes} {players} />
+							<ScriptSheet {script} {jinxes} {players} {shareUrl} />
 						{:else if value === 'night'}
 							<PlayerNightOrder {nights} {players} />
 						{:else if value === 'circle'}
@@ -158,6 +214,15 @@
 			{/snippet}
 		</Tabs>
 	{/if}
+
+	<ScriptCheckDialog
+		bind:open={checkOpen}
+		result={checking}
+		onconfirm={() => {
+			const loaded = checking?.script;
+			if (loaded) void chooseScript(loaded, { kind: 'share' });
+		}}
+	/>
 
 	{#if notebook && script}
 		<ErrorBoundary area="play">

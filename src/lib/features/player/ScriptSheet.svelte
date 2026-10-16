@@ -9,6 +9,7 @@
 	import type { ScriptJinx } from '#lib/core/rules/jinxes.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
+	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { groupByType } from './player-script.ts';
 
@@ -17,9 +18,11 @@
 		jinxes: readonly ScriptJinx[];
 		/** Seats in the player's circle; highlights that column of the breakdown. */
 		players: number;
+		/** Share link for this script; undefined while it is being made. */
+		shareUrl: string | undefined;
 	}
 
-	let { script, jinxes, players }: Props = $props();
+	let { script, jinxes, players, shareUrl }: Props = $props();
 	const groups = $derived(groupByType(script.characters));
 	const names = $derived(script.characters.map((c) => c.name));
 	const counts = Array.from(
@@ -39,6 +42,10 @@
 {/snippet}
 
 <div class="sheet">
+	<!-- One control per link; a Room link (live sync) will sit beside this one. -->
+	<div class="share">
+		<ShareControl what="script" title={script.name} url={shareUrl} />
+	</div>
 	{#each groups as group (group.type)}
 		<section aria-labelledby="type-{group.type}" data-type={group.type}>
 			<h2 id="type-{group.type}">{TYPE_PLURALS[group.type]}</h2>
@@ -110,6 +117,11 @@
 	.sheet {
 		display: grid;
 		gap: var(--space-4);
+	}
+	.share {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 	}
 	section {
 		display: grid;
