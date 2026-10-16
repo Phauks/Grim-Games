@@ -188,7 +188,7 @@
 	/* Three big tiles a row on a phone, more on wider screens (Trevor, 2026-10-16). */
 	.tiles {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(max(28%, calc(8 * var(--u))), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(30%, calc(8 * var(--u))), 1fr));
 		gap: var(--space-2);
 		margin: 0;
 		padding: 0;
@@ -229,6 +229,10 @@
 		font-size: 2.25rem;
 		font-weight: 700;
 		line-height: 1;
+	}
+	.face :global(svg) {
+		width: 1.6em;
+		height: 1.6em;
 	}
 	.mark {
 		grid-area: tile;
