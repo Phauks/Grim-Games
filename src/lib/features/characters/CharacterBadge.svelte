@@ -39,8 +39,14 @@
 	onMount(() => void loadOfficialData());
 
 	const character = $derived(given ?? officialData.current?.byId.get(characterId));
+	// A Traveller with no alignment yet is half good, half evil, like its token (blue on the
+	// left, red on the right, as in TPI's Traveller icons). Once set, it takes that colour.
 	const team = $derived(
-		alignment ?? (character ? (defaultAlignment(character.type) ?? 'neutral') : 'neutral')
+		alignment ??
+			(character
+				? (defaultAlignment(character.type) ??
+					(character.type === 'traveller' ? 'traveller' : 'neutral'))
+				: 'neutral')
 	);
 	const icon = $derived(character && iconUrl(character, alignment));
 	const label = $derived(text ?? character?.name ?? characterId);
@@ -92,6 +98,11 @@
 	.badge[data-team='evil'] {
 		background: var(--evil);
 		color: var(--on-evil);
+	}
+	/* --on-good reads on both halves (badge-colours.test.ts). */
+	.badge[data-team='traveller'] {
+		background: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
+		color: var(--on-good);
 	}
 	.icon {
 		display: inline-grid;

@@ -32,6 +32,14 @@ test('badges are coloured by team', async ({ page }) => {
 	await expect(page.getByRole('button', { name: /Beggar/ })).toHaveAttribute('data-team', 'evil');
 });
 
+test('a Traveller badge is half good, half evil until its alignment is set', async ({ page }) => {
+	await page.goto('/reference');
+	await page.getByRole('searchbox').fill('Beggar');
+	const badge = page.locator('button.badge[data-character-id="beggar"]').first();
+	await expect(badge).toHaveAttribute('data-team', 'traveller');
+	await expect(badge).toHaveCSS('background-image', /linear-gradient/);
+});
+
 test('opening a character shows its whole wiki page, fetched live', async ({ page }) => {
 	// A made-up page in the wiki's shape, so no wiki text is in the repo.
 	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) => {
