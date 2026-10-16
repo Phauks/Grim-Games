@@ -64,9 +64,9 @@
 	// art. At the top it stays inside the circle the leaf tips reach (radius 30), so it never
 	// touches a leaf however many there are; at the bottom it stays left of the setup flower.
 	const iconTop = $derived(namePlacement === 'icon-top');
-	const lineX = $derived(!iconTop && leaves.setup ? 45 : 50);
+	const lineX = $derived(!iconTop && leaves.setup ? 43 : 50);
 	const lineY = $derived(iconTop ? 40 : 78);
-	const lineLength = $derived(fit(iconTop ? 44 : leaves.setup ? 46 : 64));
+	const lineLength = $derived(fit(iconTop ? 44 : leaves.setup ? 42 : 64));
 
 	// Badge: a small team-coloured label on the bottom edge, under the setup flower.
 	const BADGE_SIZE = 10;
