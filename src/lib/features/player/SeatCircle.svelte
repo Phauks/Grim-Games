@@ -9,7 +9,6 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import {
 		DEFAULT_SEAT_LAYOUT,
 		isDefaultLayout,
@@ -17,7 +16,6 @@
 		seatPoints,
 		seatTokenSize,
 		withPlaced,
-		withShape,
 		type SeatLayout,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
@@ -149,16 +147,12 @@
 	<!-- One bar whose controls swap while arranging, so the board never moves. -->
 	<div class="bar">
 		{#if arranging}
-			<Toggle
-				label="Circle"
-				checked={layout.shape === 'circle'}
-				onChange={(circle) => onLayout(withShape(layout, circle ? 'circle' : 'oval'))}
-			/>
 			<span class="spacer"></span>
+			<!-- Matches the board (Trevor): everyone back on the oval, evenly spaced. -->
 			<Button
 				variant="quiet"
 				disabled={isDefaultLayout(layout)}
-				onclick={() => onLayout(DEFAULT_SEAT_LAYOUT)}>Reset</Button
+				onclick={() => onLayout(DEFAULT_SEAT_LAYOUT)}>Spread evenly</Button
 			>
 			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
 		{:else}

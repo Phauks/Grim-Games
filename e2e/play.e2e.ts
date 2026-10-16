@@ -153,7 +153,6 @@ test('seats can be arranged like the real table, and stay that way', async ({ pa
 	});
 	// Dragging while arranging never opens the seat.
 	await expect(page.getByRole('dialog', { name: 'Seat 5' })).toBeHidden();
-	await page.getByTestId('seat-ring').locator('..').getByText('Circle', { exact: true }).tap();
 	await page.getByRole('button', { name: 'Done' }).tap();
 
 	// Where seat 5 sits, as a share of the board (the page may have scrolled).
@@ -176,7 +175,10 @@ test('seats can be arranged like the real table, and stay that way', async ({ pa
 	await page.getByRole('tab', { name: 'Circle' }).tap();
 	await expect.poll(share).toEqual({ x: 50, y: 45 });
 	await page.getByRole('button', { name: 'Arrange seats' }).tap();
-	await expect(page.getByRole('checkbox', { name: 'Circle' })).toBeChecked();
+	// Spread evenly puts everyone back on the oval.
+	await page.getByRole('button', { name: 'Spread evenly' }).tap();
+	await expect.poll(share).not.toEqual({ x: 50, y: 45 });
+	await expect(page.getByRole('button', { name: 'Spread evenly' })).toBeDisabled();
 });
 
 test('titled notes are kept after a reload, and deleting asks first', async ({ page }) => {
