@@ -227,6 +227,9 @@
 		noteOpen = true;
 	}
 
+	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
+	const block = $derived(blockThreshold(g));
+
 	let confirmNewDay = $state(false);
 	function newDay() {
 		game.run({ type: 'NewDay' });
@@ -265,15 +268,6 @@
 	</span>
 {/snippet}
 
-{#snippet votes()}
-	{@const block = blockThreshold(g)}
-	<!-- Always shown, so the list below never moves when players die. -->
-	<p class="votes" data-testid="votes-needed">
-		<strong>{block.needed}</strong>
-		{t('day.votesNeeded', { count: block.needed, alive: block.alive })}
-	</p>
-{/snippet}
-
 <div class="panel">
 	<div class="toolbar">
 		<Button icon="day" variant="quiet" onclick={() => (confirmNewDay = true)}
@@ -282,6 +276,19 @@
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
+		<!--
+			Votes the first nominee needs to go on the block (Trevor: a badge, not a sentence),
+			from who is alive now, so a death mid-day updates it. Nominations and votes are not
+			tracked, so "more than the player on the block" is left to the Storyteller.
+		-->
+		<span
+			class="votes"
+			role="note"
+			data-testid="votes-needed"
+			aria-label={t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })}
+			title={t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })}
+			>{t('day.votesBadge', { count: block.needed })}</span
+		>
 	</div>
 
 	<section aria-labelledby="seats-heading">
@@ -327,7 +334,6 @@
 	{#if assistance.preDayReminders}
 		<section aria-labelledby="reminders-heading">
 			<h2 id="reminders-heading">{t('day.today')}</h2>
-			{@render votes()}
 			{#if died.length > 0}
 				<h3>{t('day.diedHeading')}</h3>
 				<ul class="reminders" data-testid="died">
@@ -386,7 +392,6 @@
 	{:else}
 		<section aria-labelledby="abilities-heading">
 			<h2 id="abilities-heading">{t('day.abilitiesAndNotes')}</h2>
-			{@render votes()}
 			<ul class="reminders">
 				{#each seats as seat (seat.seatId)}
 					{#if seat.characterId}
@@ -645,9 +650,21 @@
 	.chip[data-has-note='true'] {
 		border-color: var(--heading);
 	}
+	/* Fixed width (room for "10 votes"), so the number changing never moves anything. */
 	.votes {
-		margin: 0;
-		font-family: var(--font-ability);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 8.5ch;
+		min-height: var(--tap-target);
+		margin-left: auto;
+		padding: 0 var(--space-3);
+		border: 1px solid var(--heading);
+		border-radius: var(--radius-full);
+		color: var(--heading);
+		font-family: var(--font-control);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
 	}
 	.causes {
 		display: grid;

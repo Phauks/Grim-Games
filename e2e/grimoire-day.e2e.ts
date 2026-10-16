@@ -79,8 +79,11 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
 	// 7 of 8 alive: 4 votes put a player on the block.
-	await expect(page.getByTestId('votes-needed')).toContainText(
-		'4 votes to put a player on the block (7 alive)'
+	const votes = page.getByTestId('votes-needed');
+	await expect(votes).toHaveText('4 votes');
+	await expect(votes).toHaveAttribute(
+		'aria-label',
+		'4 votes put the first nominee on the block (7 alive)'
 	);
 
 	// A dead player can be marked alive again.
@@ -124,5 +127,5 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 	await expect(causes).toBeHidden();
 	await expect(seat(page, 'Seat 3')).toHaveAttribute('data-dead', 'true');
 	// 7 of 9 alive (the Thief exiled, Seat 3 dead): 4 votes.
-	await expect(page.getByTestId('votes-needed')).toContainText('(7 alive)');
+	await expect(page.getByTestId('votes-needed')).toHaveAttribute('aria-label', /\(7 alive\)$/);
 });

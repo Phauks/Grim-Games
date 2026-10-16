@@ -9,10 +9,10 @@ export const day = {
 	'day.demonVoted': 'Demon voted',
 	'day.today': 'Today',
 	'day.abilitiesAndNotes': 'Abilities and notes',
-	'day.votesNeeded': {
-		one: 'vote to put a player on the block ({alive} alive), or more than the player already on it.',
-		other:
-			'votes to put a player on the block ({alive} alive), or more than the player already on it.'
+	'day.votesBadge': { one: '{count} vote', other: '{count} votes' },
+	'day.votesBadgeLabel': {
+		one: '{count} vote puts the first nominee on the block ({alive} alive)',
+		other: '{count} votes put the first nominee on the block ({alive} alive)'
 	},
 	'day.who': '{character} ({seat})',
 	'day.used': 'Used',
