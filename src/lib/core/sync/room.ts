@@ -42,9 +42,22 @@ export interface RoomState {
 	requests: RoomRequest[];
 }
 
+/**
+ * The room protocol this build speaks. The Worker updates the moment a build deploys, but an
+ * open app keeps its build until the user taps Refresh, so the two can differ for hours.
+ * Changes to these messages stay backward compatible (new optional fields only); when one
+ * cannot, bump `ROOM_PROTOCOL` and raise `MIN_ROOM_PROTOCOL` so older apps are told to update.
+ */
+export const ROOM_PROTOCOL = 1;
+/** The oldest protocol the room still accepts. */
+export const MIN_ROOM_PROTOCOL = 1;
+
 export type ClientMessage =
-	/** First message on every socket. Keys never go in the URL. */
-	| { type: 'hello'; role: 'host' | 'player'; key: string }
+	/**
+	 * First message on every socket. Keys never go in the URL. `protocol` is missing from
+	 * apps built before it existed, which speak protocol 1.
+	 */
+	| { type: 'hello'; role: 'host' | 'player'; key: string; protocol?: number }
 	// From a player.
 	| { type: 'request'; name: string; seatId?: SeatId }
 	| { type: 'cancel-request' }
@@ -74,10 +87,16 @@ export interface PlayerView {
 }
 
 export type ServerMessage =
-	| HostView
-	| PlayerView
-	| { type: 'refused'; reason: 'no-room' | 'not-host' | 'room-full' }
-	| { type: 'closed' };
+	HostView | PlayerView | { type: 'refused'; reason: RefusedReason } | { type: 'closed' };
+
+/** `too-old`: the app must update before it can use the room; the room itself is fine. */
+export type RefusedReason = 'no-room' | 'not-host' | 'room-full' | 'too-old';
+
+/** True when the room still speaks the protocol of the app that said this hello. */
+export function supportsProtocol(protocol: unknown): boolean {
+	const version = protocol === undefined ? 1 : protocol;
+	return typeof version === 'number' && Number.isInteger(version) && version >= MIN_ROOM_PROTOCOL;
+}
 
 export function newRoom(hostKeyHash: string): RoomState {
 	return { hostKeyHash, members: [], requests: [] };

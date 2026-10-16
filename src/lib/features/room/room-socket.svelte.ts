@@ -3,7 +3,7 @@
  * (re)connect and retries with backoff when the phone sleeps or the Wi-Fi drops ("Code
  * updates disconnect all WebSockets", 07-accounts-and-multi-device.md §4).
  */
-import type { ClientMessage, ServerMessage } from '#lib/core/sync/room.ts';
+import type { ClientMessage, RefusedReason, ServerMessage } from '#lib/core/sync/room.ts';
 
 export type RoomStatus = 'connecting' | 'open' | 'offline' | 'refused' | 'closed';
 
@@ -11,6 +11,8 @@ const MAX_BACKOFF_MS = 15_000;
 
 export class RoomSocket {
 	status = $state<RoomStatus>('connecting');
+	/** Why the room turned this device away, when `status` is `refused`. */
+	refusedReason = $state<RefusedReason>();
 	readonly #url: string;
 	readonly #hello: ClientMessage;
 	readonly #onMessage: (message: ServerMessage) => void;
@@ -70,7 +72,10 @@ export class RoomSocket {
 			}
 			if (message.type === 'refused') {
 				this.status = 'refused';
+				this.refusedReason = message.reason;
 				this.#stopped = true;
+				// The room needs a newer build: look for it now, so the update prompt shows.
+				if (message.reason === 'too-old') checkForUpdate();
 			} else if (message.type === 'closed') {
 				this.status = 'closed';
 				this.#stopped = true;
@@ -94,6 +99,13 @@ export class RoomSocket {
 		this.#attempt = 0;
 		this.#connect();
 	};
+}
+
+function checkForUpdate(): void {
+	navigator.serviceWorker
+		?.getRegistration()
+		.then((registration) => registration?.update())
+		.catch(() => {});
 }
 
 /** A random 32-byte key in hex: this device's secret for one room. */

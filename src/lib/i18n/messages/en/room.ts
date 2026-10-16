@@ -21,6 +21,8 @@ export const room = {
 	'room.connected': 'Connected',
 	'room.connecting': 'Connecting…',
 	'room.offline': 'Offline: reconnecting. The game carries on here.',
+	'room.tooOld':
+		'This room needs a newer version of Grim-Games. Refresh to update, then try again.',
 	'room.requests': 'Requests',
 	'room.noSeat': 'No seat',
 	'room.seatWithName': 'Seat {number} · {name}',

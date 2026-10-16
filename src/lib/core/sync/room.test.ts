@@ -5,12 +5,15 @@ import {
 	cancelRequest,
 	join,
 	MAX_MEMBERS,
+	MIN_ROOM_PROTOCOL,
 	newRoom,
 	parseClientMessage,
 	playerView,
 	publish,
 	request,
 	resolve,
+	ROOM_PROTOCOL,
+	supportsProtocol,
 	unseat,
 	type RoomState
 } from './room.ts';
@@ -129,5 +132,14 @@ describe('the live room', () => {
 		expect(parseClientMessage('[1]')).toBeNull();
 		expect(parseClientMessage('{"type":1}')).toBeNull();
 		expect(parseClientMessage('{"type":"leave-seat"}')).toEqual({ type: 'leave-seat' });
+	});
+
+	it('tells apps older than the room speaks to update, and still accepts this build', () => {
+		expect(supportsProtocol(ROOM_PROTOCOL)).toBe(true);
+		// Apps from before the protocol number existed speak protocol 1.
+		expect(supportsProtocol(undefined)).toBe(MIN_ROOM_PROTOCOL <= 1);
+		expect(supportsProtocol(MIN_ROOM_PROTOCOL - 1)).toBe(false);
+		expect(supportsProtocol('1')).toBe(false);
+		expect(supportsProtocol(1.5)).toBe(false);
 	});
 });
