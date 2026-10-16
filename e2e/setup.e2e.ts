@@ -86,6 +86,26 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
+test('bag tiles can show symbols instead of numbers, centred on the token', async ({ page }) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	const tile = page.getByRole('button', { name: 'Tile 1', exact: true });
+	await expect(tile).toHaveText('1');
+	// The number's centre is the tile's centre.
+	const [t, f] = await Promise.all([tile.boundingBox(), tile.locator('.face').boundingBox()]);
+	expect(Math.abs(t!.x + t!.width / 2 - (f!.x + f!.width / 2))).toBeLessThan(2);
+	expect(Math.abs(t!.y + t!.height / 2 - (f!.y + f!.height / 2))).toBeLessThan(2);
+
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	await page.getByRole('button', { name: 'Storyteller settings' }).tap();
+	await page.getByText('Symbols on bag tiles', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(tile).toHaveText('');
+	await expect(tile.locator('svg')).toHaveCount(1);
+});
+
 test('building a bag with errors asks the Storyteller to confirm them', async ({ page }) => {
 	await selectionFor(page, 5);
 	// No Demon, and one character short.

@@ -6,11 +6,13 @@
 	import { bagSlots, nextDrawSeat } from '#lib/core/rules/index.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import type { SetupGamePort } from './game-port.ts';
 	import RevealDialog from './RevealDialog.svelte';
 	import { seatLabel } from './seat-label.ts';
+	import { tileSymbols } from './tile-face.ts';
 
 	interface Props {
 		port: SetupGamePort;
@@ -24,6 +26,9 @@
 	const slots = $derived(bag ? bagSlots(bag) : []);
 	const next = $derived(game ? nextDrawSeat(game) : undefined);
 	const remaining = $derived(slots.filter((s) => s.state === 'in-bag').length);
+	// Numbers or symbols on the face-down tiles (Storyteller settings).
+	const face = $derived(preferences.current.tileFace);
+	const symbols = $derived(tileSymbols(slots.map((s) => s.tileId)));
 	const done = $derived(slots.length > 0 && slots.every((s) => s.state === 'drawn'));
 
 	let revealing = $state<TileId | undefined>(undefined);
@@ -105,7 +110,11 @@
 									: `Tile ${s.number}`}
 							onclick={() => draw(s.tileId, s.state)}
 						>
-							<span class="number">{s.number}</span>
+							<span class="face" aria-hidden="true"
+								>{#if face === 'symbols'}<Icon
+										name={symbols[s.number - 1]}
+									/>{:else}{s.number}{/if}</span
+							>
 							<span class="mark"
 								>{#if s.state === 'drawn'}<Icon
 										name="check"
@@ -176,16 +185,19 @@
 	.empty {
 		margin: var(--space-4) 0;
 	}
+	/* Three big tiles a row on a phone, more on wider screens (Trevor, 2026-10-16). */
 	.tiles {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(calc(4.5 * var(--u)), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(max(28%, calc(8 * var(--u))), 1fr));
 		gap: var(--space-2);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
+	/* The number or symbol sits dead centre; the Held/✓ mark overlays the lower rim. */
 	.tile {
 		display: grid;
+		grid-template-areas: 'tile';
 		place-items: center;
 		width: 100%;
 		aspect-ratio: 1;
@@ -210,16 +222,22 @@
 		cursor: default;
 		filter: none;
 	}
-	.number {
-		font-size: 1.5rem;
+	.face {
+		grid-area: tile;
+		display: grid;
+		place-items: center;
+		font-size: 2.25rem;
 		font-weight: 700;
 		line-height: 1;
 	}
 	.mark {
+		grid-area: tile;
+		align-self: end;
 		display: grid;
 		place-items: center;
 		height: 1.2em;
-		font-size: 0.75rem;
+		margin-bottom: 14%;
+		font-size: 0.8rem;
 	}
 	.actions {
 		position: sticky;

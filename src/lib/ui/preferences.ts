@@ -30,7 +30,12 @@ export interface Preferences {
 	iconOverrides: Partial<Record<IconSlot, string>>;
 	/** How much the app walks the Storyteller through the game. */
 	assistance: Assistance;
+	/** What face-down bag tiles show on the draw screen. */
+	tileFace: TileFace;
 }
+
+export const TILE_FACES = ['numbers', 'symbols'] as const;
+export type TileFace = (typeof TILE_FACES)[number];
 
 export const TEXT_SCALES = [0.875, 1, 1.125, 1.25, 1.5] as const;
 export type TextScale = (typeof TEXT_SCALES)[number];
@@ -49,7 +54,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	textAlign: 'left',
 	iconSet: null,
 	iconOverrides: {},
-	assistance: DEFAULT_ASSISTANCE
+	assistance: DEFAULT_ASSISTANCE,
+	tileFace: 'numbers'
 };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
@@ -77,7 +83,10 @@ export function parsePreferences(raw: unknown): Preferences {
 			: DEFAULT_PREFERENCES.textAlign,
 		iconSet: isIconSetId(input.iconSet) ? input.iconSet : null,
 		iconOverrides,
-		assistance: parseAssistance(input.assistance)
+		assistance: parseAssistance(input.assistance),
+		tileFace: (TILE_FACES as readonly unknown[]).includes(input.tileFace)
+			? (input.tileFace as TileFace)
+			: DEFAULT_PREFERENCES.tileFace
 	};
 }
 

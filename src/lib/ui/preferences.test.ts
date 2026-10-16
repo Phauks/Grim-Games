@@ -26,7 +26,8 @@ describe('parsePreferences', () => {
 				iconScale: 9,
 				textAlign: 'center',
 				iconSet: 'ph-heavy',
-				iconOverrides: { dead: 'ph:not-offered', nope: 'ph:skull' }
+				iconOverrides: { dead: 'ph:not-offered', nope: 'ph:skull' },
+				tileFace: 'pictures'
 			})
 		).toEqual(DEFAULT_PREFERENCES);
 	});
@@ -40,7 +41,8 @@ describe('parsePreferences', () => {
 			textAlign: 'justify',
 			iconSet: 'ph-fill',
 			iconOverrides: { dead: 'ph:cross' },
-			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false }
+			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
+			tileFace: 'symbols'
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
 	});

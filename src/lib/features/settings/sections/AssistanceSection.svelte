@@ -14,3 +14,10 @@
 		onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
 	/>
 {/each}
+<!-- A switch like the rest of this section (no radio groups here). -->
+<SettingToggle
+	label="Symbols on bag tiles"
+	description="Face-down tiles on the bag draw show a random symbol. Off shows numbers."
+	checked={preferences.current.tileFace === 'symbols'}
+	onChange={(checked) => preferences.update({ tileFace: checked ? 'symbols' : 'numbers' })}
+/>

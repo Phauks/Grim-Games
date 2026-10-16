@@ -160,7 +160,8 @@
 		setupSelection.replace(
 			randomSelection({
 				players: s.players,
-				selection: s.selection,
+				// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one.
+				selection: {},
 				scriptCharacters: choices,
 				scriptOrder,
 				lookup,
