@@ -29,10 +29,21 @@ describe('report issue link', () => {
 describe('character report link', () => {
 	it('names the character and its reference anchor', () => {
 		const url = new URL(characterReportUrl(info, { id: 'witch', name: 'Witch' }, 'Phone UA'));
-		expect(url.searchParams.get('template')).toBe('bug_report.yml');
-		expect(url.searchParams.get('title')).toBe('[Reference] Witch (witch): ');
+		expect(url.searchParams.get('template')).toBe('rules_error.yml');
+		expect(url.searchParams.get('title')).toBe('[Rules] Witch: ');
+		expect(url.searchParams.get('character')).toBe('Witch (witch)');
+		expect(url.searchParams.get('wiki')).toBe('https://wiki.bloodontheclocktower.com/Witch');
 		expect(url.searchParams.get('page')).toBe('/reference#witch');
 		expect(url.searchParams.get('build')).toBe(describeBuild(info));
 		expect(url.searchParams.get('device')).toBe('Phone UA');
+	});
+
+	it('links two-word characters to their wiki page', () => {
+		const url = new URL(
+			characterReportUrl(info, { id: 'fortuneteller', name: 'Fortune Teller' }, 'UA')
+		);
+		expect(url.searchParams.get('wiki')).toBe(
+			'https://wiki.bloodontheclocktower.com/Fortune_Teller'
+		);
 	});
 });

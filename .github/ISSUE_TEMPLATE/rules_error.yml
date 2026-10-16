@@ -1,0 +1,51 @@
+name: Rules or character error
+description: The app disagrees with the official wiki about a character, jinx, night order or rule.
+title: '[Rules] '
+labels: [rules]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The [official wiki](https://wiki.bloodontheclocktower.com) is the rules authority. Please link the page and describe the difference in your own words.
+  - type: input
+    id: character
+    attributes:
+      label: Character, jinx or rule
+      description: e.g. "Fortune Teller", "Spy + Damsel jinx", "first-night order".
+    validations:
+      required: true
+  - type: input
+    id: wiki
+    attributes:
+      label: Wiki page
+      description: Link to the wiki page the app should match.
+      placeholder: https://wiki.bloodontheclocktower.com/...
+    validations:
+      required: true
+  - type: textarea
+    id: app-shows
+    attributes:
+      label: What the app shows or does
+    validations:
+      required: true
+  - type: textarea
+    id: should-be
+    attributes:
+      label: What it should be
+      description: In your own words; please don't paste wiki text.
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: Where you saw it, e.g. /reference#witch.
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: Shown at the bottom of every page.
+  - type: input
+    id: device
+    attributes:
+      label: Browser and device details

@@ -1,0 +1,41 @@
+name: Script or data problem
+description: A script won't load or loads wrongly, or character data, icons or reminders look wrong.
+title: '[Data] '
+labels: [data]
+body:
+  - type: input
+    id: script
+    attributes:
+      label: Script
+      description: Its name, and a botcscripts.com link or ID if it has one.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of problem?
+      options:
+        - A script won't load
+        - A script loads with the wrong characters or order
+        - A character's icon, reminders or text look wrong
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you expected, and what you saw instead (any error message too).
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: Shown at the bottom of every page.
+  - type: input
+    id: device
+    attributes:
+      label: Browser and device details

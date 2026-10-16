@@ -26,8 +26,27 @@ export function bugReportUrl(info: BuildInfo, page: string, userAgent: string): 
 	return `${REPOSITORY_URL}/issues/new?${params}`;
 }
 
+/** The issue forms in `.github/ISSUE_TEMPLATE/`, one per kind of report. */
+export const ISSUE_FORMS = {
+	bug: 'bug_report.yml',
+	enhancement: 'feature_request.yml',
+	rules: 'rules_error.yml',
+	data: 'data_problem.yml',
+	question: 'question.yml'
+} as const;
+export type IssueForm = keyof typeof ISSUE_FORMS;
+
 /**
- * Link to the bug-report form about one character's reference data (Character reference
+ * Link to one issue form with some fields filled in (keys are the form's field ids, plus
+ * `title`). Only put public information in `fields`: it travels in the link.
+ */
+export function issueFormUrl(form: IssueForm, fields: Record<string, string>): string {
+	const params = new URLSearchParams({ template: ISSUE_FORMS[form], ...fields });
+	return `${REPOSITORY_URL}/issues/new?${params}`;
+}
+
+/**
+ * Link to the Rules or character error form about one character (Character reference
  * page). Only public information goes in the query string: the character, its page
  * anchor, the build and the device.
  */
@@ -36,12 +55,12 @@ export function characterReportUrl(
 	character: { id: string; name: string },
 	userAgent: string
 ): string {
-	const params = new URLSearchParams({
-		template: 'bug_report.yml',
-		title: `[Reference] ${character.name} (${character.id}): `,
+	return issueFormUrl('rules', {
+		title: `[Rules] ${character.name}: `,
+		character: `${character.name} (${character.id})`,
+		wiki: `https://wiki.bloodontheclocktower.com/${encodeURIComponent(character.name.replaceAll(' ', '_'))}`,
 		build: describeBuild(info),
 		page: `/reference#${character.id}`,
 		device: userAgent
 	});
-	return `${REPOSITORY_URL}/issues/new?${params}`;
 }

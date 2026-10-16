@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Grim-Games doesn't work as it should.
+description: "Something in the app doesn't work: it crashes, freezes, looks broken or does the wrong thing."
 title: '[Bug] '
 labels: [bug]
 body:
@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thanks for reporting. If you used **Report an issue** in the app, the build, page and device fields are already filled in.
-        For rules questions, the [official wiki](https://wiki.bloodontheclocktower.com) is the authority; please link the page if the app disagrees with it.
+        If the app disagrees with the wiki about a character or rule, use **Rules or character error** instead.
   - type: textarea
     id: what-happened
     attributes:

@@ -1,6 +1,6 @@
-name: Feature request
-description: An idea or improvement for Grim-Games.
-title: '[Idea] '
+name: Enhancement request
+description: Something new, or a better way for something to work.
+title: '[Enhancement] '
 labels: [enhancement]
 body:
   - type: textarea
@@ -28,3 +28,8 @@ body:
     attributes:
       label: Characters or rules involved
       description: Character names, jinxes or wiki pages, if any.
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: Shown at the bottom of every page, if you know it.
