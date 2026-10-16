@@ -48,8 +48,8 @@
 		 */
 		contained?: boolean;
 		/**
-		 * Makes each type group a section that opens and closes from its header, remembered on
-		 * the device under this key plus the type.
+		 * Each type group opens and closes from its header (Trevor, 2026-10-16), remembered on
+		 * the device under this key plus the type. While searching, every group shows open.
 		 */
 		collapsibleKey?: string;
 		/**
@@ -74,13 +74,14 @@
 		query = $bindable(''),
 		showSearch = true,
 		contained = true,
-		collapsibleKey,
+		collapsibleKey = 'picker',
 		surface = 'sheet',
 		item
 	}: Props = $props();
 
 	const groups = $derived(searchGroups(characters, query, filter, types));
 	const chosen = $derived(new Set(selected));
+	const searching = $derived(query.trim() !== '');
 	const full = $derived(mode === 'multi' && max !== undefined && chosen.size >= max);
 	// The note line is reserved on every row when any row may show one, so nothing reflows.
 	const notes = $derived(disabledReason !== undefined || marker !== undefined || max !== undefined);
@@ -137,25 +138,19 @@
 	{#if showSearch}<CharacterSearchBox bind:query />{/if}
 	<div class="list" data-testid="character-picker">
 		{#each groups as group (group.type)}
-			{#if collapsibleKey}
-				<Collapsible
-					title={TYPE_PLURALS[group.type]}
-					level={3}
-					tone={group.type === 'townsfolk' || group.type === 'outsider'
-						? 'good'
-						: group.type === 'minion' || group.type === 'demon'
-							? 'evil'
-							: undefined}
-					storageKey="{collapsibleKey}:{group.type}"
-				>
-					{@render rows(group)}
-				</Collapsible>
-			{:else}
-				<section aria-labelledby="picker-{group.type}">
-					<h3 id="picker-{group.type}">{TYPE_PLURALS[group.type]}</h3>
-					{@render rows(group)}
-				</section>
-			{/if}
+			<Collapsible
+				title={TYPE_PLURALS[group.type]}
+				level={3}
+				tone={group.type === 'townsfolk' || group.type === 'outsider'
+					? 'good'
+					: group.type === 'minion' || group.type === 'demon'
+						? 'evil'
+						: undefined}
+				storageKey="{collapsibleKey}:{group.type}"
+				forceOpen={searching}
+			>
+				{@render rows(group)}
+			</Collapsible>
 		{:else}
 			<p class="none">None</p>
 		{/each}
@@ -179,21 +174,12 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
-	h3 {
-		margin: var(--space-3) 0 var(--space-2);
-		font-size: 1.1rem;
-		color: var(--heading);
-	}
-	/* In sheets and dialogs the panel has its own colours; the page's gold heading is too faint. */
 	/*
 	 * In sheets, dialogs and desktop panels the picker takes the panel's own text colour and
 	 * tints from it, so it reads on parchment as well as on the dark page.
 	 */
 	.picker[data-surface='sheet'] {
 		--collapsible-heading: currentColor;
-	}
-	.picker[data-surface='sheet'] h3 {
-		color: inherit;
 	}
 	.picker[data-surface='sheet'] .row {
 		background: color-mix(in srgb, currentColor 6%, transparent);
@@ -211,9 +197,6 @@
 	}
 	.picker[data-surface='sheet'] :global(.search:focus-within) {
 		box-shadow: inset 0 0 0 2px var(--focus);
-	}
-	section:first-child h3 {
-		margin-top: 0;
 	}
 	ul {
 		display: grid;

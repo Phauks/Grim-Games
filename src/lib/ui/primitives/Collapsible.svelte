@@ -31,18 +31,25 @@
 		level?: 2 | 3 | 4;
 		/** Colours the title by alignment, for character type groups. */
 		tone?: 'good' | 'evil';
+		/**
+		 * Shown open regardless of the remembered choice, e.g. while a search is typed so every
+		 * match is visible. The header can't close it meanwhile; the remembered choice is kept.
+		 */
+		forceOpen?: boolean;
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
 		aside?: Snippet;
 		children: Snippet;
 	}
 
-	let { title, storageKey, level = 2, tone, aside, children }: Props = $props();
+	let { title, storageKey, level = 2, tone, forceOpen = false, aside, children }: Props = $props();
 
 	// Open by default; a section closed before stays closed. Read again if the key changes.
 	let open = $derived(!(storageKey && readClosed(storageKey)));
+	const shown = $derived(open || forceOpen);
 	const id = $props.id();
 
 	function toggle() {
+		if (forceOpen) return;
 		open = !open;
 		if (storageKey) writeClosed(storageKey, !open);
 	}
@@ -52,13 +59,14 @@
 	A section whose whole header row opens and closes it, with a caret like a menu. Closed
 	sections keep their header, so only the content below moves.
 -->
-<section class="collapsible" data-open={open ? '' : undefined}>
+<section class="collapsible" data-open={shown ? '' : undefined}>
 	<div class="head" data-tone={tone}>
 		<svelte:element this={`h${level}`} class="title">
 			<button
 				type="button"
 				class="toggle"
-				aria-expanded={open}
+				aria-expanded={shown}
+				aria-disabled={forceOpen ? 'true' : undefined}
 				aria-controls="{id}-body"
 				onclick={toggle}
 			>
@@ -68,7 +76,7 @@
 		</svelte:element>
 		{#if aside}<div class="aside">{@render aside()}</div>{/if}
 	</div>
-	<div id="{id}-body" class="body" hidden={!open}>
+	<div id="{id}-body" class="body" hidden={!shown}>
 		{@render children()}
 	</div>
 </section>
@@ -108,7 +116,10 @@
 	.head[data-tone='evil'] .toggle {
 		color: var(--evil);
 	}
-	.toggle:hover .label {
+	.toggle[aria-disabled='true'] {
+		cursor: default;
+	}
+	.toggle:not([aria-disabled='true']):hover .label {
 		text-decoration: underline;
 	}
 	.caret {
