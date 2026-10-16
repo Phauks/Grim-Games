@@ -127,7 +127,7 @@ test('deleting the account signs out and removes it', async ({ page }) => {
 	await signInWithCode(page, email);
 	await page.getByRole('button', { name: 'Delete account' }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Delete your account?' });
-	await confirm.getByRole('button', { name: 'Delete account' }).tap();
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByLabel('Email address')).toBeVisible();
 	const session = await page.evaluate(async () => (await fetch('/api/auth/session')).json());
 	expect(session.user).toBeNull();

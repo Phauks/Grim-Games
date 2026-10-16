@@ -149,7 +149,7 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	sheet = page.getByRole('dialog', { name: 'Note' });
 	await sheet.getByRole('button', { name: 'Delete note' }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Delete this note?' });
-	await confirm.getByRole('button', { name: 'Delete' }).tap();
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.locator('[data-note]')).toHaveCount(1);
 });
 

@@ -51,7 +51,7 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	// Closing the room sends the phone back to the code form.
 	await page.goto(`${board}/room`);
 	await page.getByRole('button', { name: 'Close room' }).tap();
-	await page.getByRole('alertdialog').getByRole('button', { name: 'Close room' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Open a room' })).toBeVisible();
 	await expect(phone.getByRole('alert')).toHaveText('This room is closed, or the code is wrong.');
 	await phoneContext.close();
