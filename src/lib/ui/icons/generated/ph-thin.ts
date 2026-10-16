@@ -58,6 +58,8 @@ import ph_list_thin from '~icons/ph/list-thin';
 import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
+import ph_minus_thin from '~icons/ph/minus-thin';
+import ph_minus_circle_thin from '~icons/ph/minus-circle-thin';
 import ph_moon_thin from '~icons/ph/moon-thin';
 import ph_moon_stars_thin from '~icons/ph/moon-stars-thin';
 import ph_note_pencil_thin from '~icons/ph/note-pencil-thin';
@@ -166,6 +168,8 @@ const icons: IconMap = {
 	'ph:list-bullets-thin': ph_list_bullets_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
+	'ph:minus-thin': ph_minus_thin,
+	'ph:minus-circle-thin': ph_minus_circle_thin,
 	'ph:moon-thin': ph_moon_thin,
 	'ph:moon-stars-thin': ph_moon_stars_thin,
 	'ph:note-pencil-thin': ph_note_pencil_thin,

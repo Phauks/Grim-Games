@@ -5,7 +5,13 @@ import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { warningText } from './board.ts';
 import { DEFAULT_SEAT_LAYOUT, type SeatLayout } from '#lib/ui/seating/seat-layout.ts';
-import { forgetUpsideDownMarks, pastNames, seatLayouts } from './device-notes.ts';
+import {
+	forgetUpsideDownMarks,
+	nightViews,
+	pastNames,
+	seatLayouts,
+	type NightView
+} from './device-notes.ts';
 
 /**
  * The grimoire board's controller: runs commands on the open game and shows warnings and
@@ -18,6 +24,8 @@ export class Grimoire {
 	constructor(readonly open: OpenGame) {
 		forgetUpsideDownMarks();
 		this.layout = seatLayouts.read(open.game.gameId);
+		this.nightView = nightViews.read(open.game.gameId);
+		this.nightDone = this.nightView.done;
 		// Icons are stored only once shown; store the ones this game may need mid-game, so
 		// the Traveller and Fabled pickers and an older game's script work offline.
 		const onScript = scriptCharacterIds(open.game.script);
@@ -33,15 +41,26 @@ export class Grimoire {
 	}
 
 	/**
-	 * Night steps the Storyteller ticked off (`<night>:<step id>`). Kept while the game is
-	 * open; the night order never ticks anything by itself.
+	 * Night steps the Storyteller ticked off (`<night>:<step id>`), kept on this device with
+	 * the night order view (`nightViews`); the night order never ticks anything by itself.
 	 */
 	nightDone = $state.raw<readonly string[]>([]);
+	/** The night as it was saved on this device, for the board to reopen after a reload. */
+	readonly nightView: NightView;
+
+	/** Saves which night order view is open, with the ticks. */
+	saveNightView(view: Omit<NightView, 'done'>): void {
+		nightViews.write(this.game.gameId, { ...view, done: [...this.nightDone] });
+	}
 
 	toggleNightStep(key: string): void {
 		this.nightDone = this.nightDone.includes(key)
 			? this.nightDone.filter((k) => k !== key)
 			: [...this.nightDone, key];
+		nightViews.write(this.game.gameId, {
+			...nightViews.read(this.game.gameId),
+			done: [...this.nightDone]
+		});
 	}
 
 	/** Setup reminder suggestions the Storyteller dismissed from the tray (`setup-tray.ts`). */

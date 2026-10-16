@@ -58,6 +58,8 @@ import ph_list_bold from '~icons/ph/list-bold';
 import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
+import ph_minus_bold from '~icons/ph/minus-bold';
+import ph_minus_circle_bold from '~icons/ph/minus-circle-bold';
 import ph_moon_bold from '~icons/ph/moon-bold';
 import ph_moon_stars_bold from '~icons/ph/moon-stars-bold';
 import ph_note_pencil_bold from '~icons/ph/note-pencil-bold';
@@ -166,6 +168,8 @@ const icons: IconMap = {
 	'ph:list-bullets-bold': ph_list_bullets_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
+	'ph:minus-bold': ph_minus_bold,
+	'ph:minus-circle-bold': ph_minus_circle_bold,
 	'ph:moon-bold': ph_moon_bold,
 	'ph:moon-stars-bold': ph_moon_stars_bold,
 	'ph:note-pencil-bold': ph_note_pencil_bold,

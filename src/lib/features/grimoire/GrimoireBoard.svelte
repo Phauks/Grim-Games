@@ -3,13 +3,14 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import { boardNightSteps, stepHolders } from './night-steps.ts';
+	import AlignmentDraw from './AlignmentDraw.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BackgroundDialog from './BackgroundDialog.svelte';
 	import { openAccount, openSettings } from '#lib/features/shell/shell.ts';
 	import { goto, replaceState } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
@@ -402,19 +403,50 @@
 	);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
-	let nightOpen = $state(false);
+	// The night order, the walk-through and the open step come back after a reload or an
+	// update (Trevor, 2026-10-16), from what this device saved.
+	const saved = untrack(() => grimoire.nightView);
+	let nightOpen = $state(saved.sheet === true);
 	// ── Assisted night order (Trevor, 2026-10-16) ──
 	let guided = $state<{ step: NightStep; night: Night } | undefined>();
 	let guideOpen = $state(false);
 	/** Walking through the night under the board: which night and which step. */
-	let walk = $state<{ night: Night; index: number } | undefined>();
+	let walk = $state<{ night: Night; index: number } | undefined>(saved.walk);
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
 		return walk && data ? boardNightSteps(game, characters, walk.night, data) : [];
 	});
+	// The saved step dialog opens once the night order can be worked out.
+	let guidedPending = $state(saved.guided);
+	$effect(() => {
+		const data = officialData.current;
+		if (!guidedPending || !data) return;
+		const { night, stepId } = guidedPending;
+		guidedPending = undefined;
+		const step = boardNightSteps(game, characters, night, data).find((s) => s.id === stepId);
+		if (step) {
+			guided = { step, night };
+			guideOpen = true;
+		}
+	});
+	$effect(() => {
+		grimoire.saveNightView({
+			sheet: nightOpen || undefined,
+			walk: walk ? { ...walk } : undefined,
+			guided: guideOpen && guided ? { night: guided.night, stepId: guided.step.id } : guidedPending
+		});
+	});
 	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
 	/** Who wakes for the current walk-through step, marked on the board. */
 	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
+
+	// A Traveller's alignment by draw, kept here: setting it ends the step that opened it.
+	let drawFor = $state<SeatId | undefined>();
+	let drawOpen = $state(false);
+	function onDraw(seatId: SeatId) {
+		drawFor = seatId;
+		drawOpen = true;
+	}
 
 	// ── Share the script (never the game) ──
 	let shareOpen = $state(false);
@@ -817,6 +849,7 @@
 	onWalk={(night) => {
 		walk = { night, index: 0 };
 	}}
+	{onDraw}
 />
 
 <GuidedStep
@@ -829,7 +862,10 @@
 		infoReturn = () => (guideOpen = true);
 		infoOpen = true;
 	}}
+	{onDraw}
 />
+
+<AlignmentDraw bind:open={drawOpen} {grimoire} seatId={drawFor} />
 
 <BluffsSheet
 	bind:open={bluffsOpen}

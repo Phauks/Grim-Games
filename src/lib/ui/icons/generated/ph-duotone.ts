@@ -58,6 +58,8 @@ import ph_list_duotone from '~icons/ph/list-duotone';
 import ph_list_bullets_duotone from '~icons/ph/list-bullets-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
+import ph_minus_duotone from '~icons/ph/minus-duotone';
+import ph_minus_circle_duotone from '~icons/ph/minus-circle-duotone';
 import ph_moon_duotone from '~icons/ph/moon-duotone';
 import ph_moon_stars_duotone from '~icons/ph/moon-stars-duotone';
 import ph_note_pencil_duotone from '~icons/ph/note-pencil-duotone';
@@ -166,6 +168,8 @@ const icons: IconMap = {
 	'ph:list-bullets-duotone': ph_list_bullets_duotone,
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,
+	'ph:minus-duotone': ph_minus_duotone,
+	'ph:minus-circle-duotone': ph_minus_circle_duotone,
 	'ph:moon-duotone': ph_moon_duotone,
 	'ph:moon-stars-duotone': ph_moon_stars_duotone,
 	'ph:note-pencil-duotone': ph_note_pencil_duotone,

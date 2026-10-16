@@ -271,7 +271,9 @@
 		</p>
 		{@const seats = traySeats(s)}
 		<p class="hint">
-			{seats.length > 0 ? 'Suggested seats, or drag it onto any seat.' : 'Drag it onto any seat.'}
+			{seats.length > 0
+				? 'Suggested seats, or drag it onto any seat.'
+				: 'Drag it onto any seat, or choose one.'}
 		</p>
 		<ul class="seats">
 			{#each seats as seatId (seatId)}
@@ -300,6 +302,18 @@
 	{/if}
 	{#snippet actions()}
 		<Button variant="quiet" icon="remove" onclick={dismissShown}>Dismiss</Button>
+		<!-- Any seat will do (a Drunk decided later goes anywhere). -->
+		<Button
+			variant="quiet"
+			onclick={() => {
+				const s = shown?.suggestion;
+				shownOpen = false;
+				if (s) {
+					choosing = { key: shown!.key, characterId: s.characterId, label: s.label, count: 1 };
+					chooserOpen = true;
+				}
+			}}>Choose seat</Button
+		>
 		<Button variant="quiet" onclick={() => (shownOpen = false)}>Close</Button>
 	{/snippet}
 </Dialog>

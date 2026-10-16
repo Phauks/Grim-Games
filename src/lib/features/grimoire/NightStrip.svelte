@@ -1,6 +1,7 @@
 <script lang="ts">
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
+	import NightSuggested from './NightSuggested.svelte';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -57,6 +58,7 @@
 					<span class="count">{index + 1} of {steps.length}</span>
 				</span>
 				<NightAlerts {grimoire} {step} compact />
+				<NightSuggested {grimoire} {step} compact />
 				<span class="text">
 					{#if step.reminder}
 						{#if step.character}

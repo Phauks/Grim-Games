@@ -33,6 +33,7 @@ export const ICON_SLOTS = {
 	undo: { label: 'Undo', choices: ['ph:arrow-counter-clockwise', 'ph:arrow-u-up-left'] },
 	redo: { label: 'Redo', choices: ['ph:arrow-clockwise', 'ph:arrow-u-up-right'] },
 	add: { label: 'Add', choices: ['ph:plus', 'ph:plus-circle'] },
+	minus: { label: 'Minus', choices: ['ph:minus', 'ph:minus-circle'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
 	appearance: { label: 'Appearance', choices: ['ph:palette', 'ph:paint-brush'] },

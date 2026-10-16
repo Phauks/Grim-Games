@@ -1,8 +1,7 @@
 <script lang="ts">
 	import StepIcon from './StepIcon.svelte';
-	import type { Alignment } from '#lib/core/data/index.ts';
 	import { TRAVELLER_ALIGNMENT_STEP, type Night, type NightStep } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import TravellerAlignment from './TravellerAlignment.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -32,9 +31,11 @@
 		grimoire: Grimoire;
 		onGuide: (step: NightStep, night: Night) => void;
 		onWalk: (night: Night) => void;
+		/** A Traveller's alignment by draw. */
+		onDraw: (seatId: string) => void;
 	}
 
-	let { open = $bindable(), grimoire, onGuide, onWalk }: Props = $props();
+	let { open = $bindable(), grimoire, onGuide, onWalk, onDraw }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -50,10 +51,6 @@
 		if (!data || !open) return [];
 		return boardNightSteps(game, characters, night, data);
 	});
-
-	function setAlignment(seatId: string, alignment: Alignment) {
-		grimoire.run({ type: 'SetAlignment', seatId, alignment });
-	}
 
 	const holders = (step: NightStep) => stepHolders(game, step, grimoire.open.characters);
 	const seatName = (seatId: string) => nameOf(game, seatId);
@@ -120,24 +117,14 @@
 						{/if}
 					</p>
 					{#if step.id === TRAVELLER_ALIGNMENT_STEP}
-						<ul class="travellers">
-							{#each step.travellers ?? [] as seatId (seatId)}
-								{@const id = game.seats[seatId]?.characterId}
-								<li>
-									{#if id}
-										<CharacterBadge
-											characterId={id}
-											character={characters.get(id)}
-											playerName={seatName(seatId)}
-											inline
-										/>
-									{/if}
-									<span class="spacer"></span>
-									<Button variant="quiet" onclick={() => setAlignment(seatId, 'good')}>Good</Button>
-									<Button variant="quiet" onclick={() => setAlignment(seatId, 'evil')}>Evil</Button>
-								</li>
-							{/each}
-						</ul>
+						<TravellerAlignment
+							{grimoire}
+							travellers={step.travellers ?? []}
+							onDraw={(seatId) => {
+								open = false;
+								onDraw(seatId);
+							}}
+						/>
 					{:else if step.reminder}
 						<p class="text">
 							{#if step.character}
@@ -237,20 +224,6 @@
 		font-family: var(--font-ability);
 		font-size: 0.95rem;
 		line-height: 1.35;
-	}
-	.travellers {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.travellers li {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-		border-bottom: none;
-	}
-	.spacer {
-		flex: 1;
 	}
 	.none {
 		display: block;

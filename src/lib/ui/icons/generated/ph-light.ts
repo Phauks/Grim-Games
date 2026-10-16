@@ -58,6 +58,8 @@ import ph_list_light from '~icons/ph/list-light';
 import ph_list_bullets_light from '~icons/ph/list-bullets-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
+import ph_minus_light from '~icons/ph/minus-light';
+import ph_minus_circle_light from '~icons/ph/minus-circle-light';
 import ph_moon_light from '~icons/ph/moon-light';
 import ph_moon_stars_light from '~icons/ph/moon-stars-light';
 import ph_note_pencil_light from '~icons/ph/note-pencil-light';
@@ -166,6 +168,8 @@ const icons: IconMap = {
 	'ph:list-bullets-light': ph_list_bullets_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
 	'ph:mask-sad-light': ph_mask_sad_light,
+	'ph:minus-light': ph_minus_light,
+	'ph:minus-circle-light': ph_minus_circle_light,
 	'ph:moon-light': ph_moon_light,
 	'ph:moon-stars-light': ph_moon_stars_light,
 	'ph:note-pencil-light': ph_note_pencil_light,

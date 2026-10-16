@@ -19,7 +19,7 @@ import {
 	MARKER_TEXT,
 	nightOrder,
 	TRAVELLER_ALIGNMENT_STEP,
-	withTravellerAlignmentStep,
+	withNightInfo,
 	type Night,
 	type NightStep
 } from '#lib/core/rules/index.ts';
@@ -48,8 +48,26 @@ export function boardNightSteps(
 		customOrder: night === 'first' ? game.script.meta?.firstNight : game.script.meta?.otherNight,
 		overrides: game.nightOrderOverrides
 	});
-	// A first step to choose any Traveller's alignment that is still unset.
-	return withTravellerAlignmentStep(steps, game, characters);
+	// What the game says for each step (suggested answers, impairments), a step for each
+	// gained ability, and a step to choose any Traveller's alignment still unset.
+	return duskToDawn(withNightInfo(steps, game, characters, night));
+}
+
+/**
+ * Dusk is always the first step and Dawn the last (Trevor, 2026-10-16); everything else,
+ * Traveller alignment included, falls between them. TPI's few "after Dawn" steps (said to
+ * everyone once the night is over) stay after Dawn, as on TPI's night sheet.
+ */
+export function duskToDawn<T extends NightStep>(steps: readonly T[]): T[] {
+	const dusk = steps.filter((s) => s.id === 'dusk');
+	const dawn = steps.filter((s) => s.id === 'dawn');
+	const rest = steps.filter((s) => s.id !== 'dusk' && s.id !== 'dawn');
+	return [
+		...dusk,
+		...rest.filter((s) => !s.afterDawn),
+		...dawn,
+		...rest.filter((s) => s.afterDawn)
+	];
 }
 
 /** Tonight: the first night until a day has been played, then the other nights. */

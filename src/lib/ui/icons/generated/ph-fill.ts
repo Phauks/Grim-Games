@@ -58,6 +58,8 @@ import ph_list_fill from '~icons/ph/list-fill';
 import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
+import ph_minus_fill from '~icons/ph/minus-fill';
+import ph_minus_circle_fill from '~icons/ph/minus-circle-fill';
 import ph_moon_fill from '~icons/ph/moon-fill';
 import ph_moon_stars_fill from '~icons/ph/moon-stars-fill';
 import ph_note_pencil_fill from '~icons/ph/note-pencil-fill';
@@ -166,6 +168,8 @@ const icons: IconMap = {
 	'ph:list-bullets-fill': ph_list_bullets_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
+	'ph:minus-fill': ph_minus_fill,
+	'ph:minus-circle-fill': ph_minus_circle_fill,
 	'ph:moon-fill': ph_moon_fill,
 	'ph:moon-stars-fill': ph_moon_stars_fill,
 	'ph:note-pencil-fill': ph_note_pencil_fill,

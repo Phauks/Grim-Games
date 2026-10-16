@@ -128,3 +128,58 @@ export const seatLayouts = {
 		this.write(gameId, DEFAULT_SEAT_LAYOUT);
 	}
 };
+
+const NIGHT_KEY = (gameId: GameId) => `grim-games:night:v1:${gameId}`;
+
+/**
+ * Where the Storyteller is in the night on this device, so a reload or an app update opens
+ * it again (Trevor, 2026-10-16): the steps ticked off, and which night order view was open.
+ */
+export interface NightView {
+	/** Ticked steps (`<night>:<step id>`). */
+	done: string[];
+	/** The night order sheet was open. */
+	sheet?: boolean;
+	/** The walk-through under the board: which night and which step. */
+	walk?: { night: 'first' | 'other'; index: number };
+	/** The step dialog: which night and which step. */
+	guided?: { night: 'first' | 'other'; stepId: string };
+}
+
+const isNight = (v: unknown): v is 'first' | 'other' => v === 'first' || v === 'other';
+
+export function parseNightView(raw: unknown): NightView {
+	const view: NightView = { done: [] };
+	if (typeof raw !== 'object' || raw === null) return view;
+	const r = raw as Record<string, unknown>;
+	if (Array.isArray(r.done)) view.done = r.done.filter((v): v is string => typeof v === 'string');
+	if (r.sheet === true) view.sheet = true;
+	const walk = r.walk as Record<string, unknown> | undefined;
+	if (walk && isNight(walk.night) && Number.isInteger(walk.index) && (walk.index as number) >= 0)
+		view.walk = { night: walk.night, index: walk.index as number };
+	const guided = r.guided as Record<string, unknown> | undefined;
+	if (guided && isNight(guided.night) && typeof guided.stepId === 'string')
+		view.guided = { night: guided.night, stepId: guided.stepId };
+	return view;
+}
+
+export const nightViews = {
+	read(gameId: GameId): NightView {
+		try {
+			return parseNightView(
+				JSON.parse(globalThis.localStorage?.getItem(NIGHT_KEY(gameId)) ?? '{}')
+			);
+		} catch {
+			return { done: [] };
+		}
+	},
+	write(gameId: GameId, view: NightView): void {
+		try {
+			const empty = view.done.length === 0 && !view.sheet && !view.walk && !view.guided;
+			if (empty) globalThis.localStorage?.removeItem(NIGHT_KEY(gameId));
+			else globalThis.localStorage?.setItem(NIGHT_KEY(gameId), JSON.stringify(view));
+		} catch {
+			// Storage full or blocked: the night lasts until the page is closed.
+		}
+	}
+};

@@ -1,6 +1,10 @@
 <script lang="ts">
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
+	import NightSuggested from './NightSuggested.svelte';
+	import TravellerAlignment from './TravellerAlignment.svelte';
+	import type { CharacterId } from '#lib/core/data/index.ts';
+	import { TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -26,9 +30,11 @@
 		night: Night;
 		/** Info tokens, for the steps that show the player something. */
 		onInfoTokens: () => void;
+		/** A Traveller's alignment by draw. */
+		onDraw: (seatId: string) => void;
 	}
 
-	let { open = $bindable(), grimoire, step, night, onInfoTokens }: Props = $props();
+	let { open = $bindable(), grimoire, step, night, onInfoTokens, onDraw }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -65,6 +71,11 @@
 	}
 
 	let showOpen = $state(false);
+	/** Shown: the step's character, or a suggested answer's (the Undertaker's). */
+	let shownId = $state<CharacterId | undefined>();
+	const shownCharacter = $derived(
+		shownId ? characters.get(shownId) : (step?.character ?? undefined)
+	);
 	const done = $derived(step ? grimoire.nightDone.includes(doneKey(game, night, step)) : false);
 </script>
 
@@ -79,6 +90,25 @@
 			</p>
 		</div>
 		<NightAlerts {grimoire} {step} />
+		{#if step.id === TRAVELLER_ALIGNMENT_STEP}
+			<TravellerAlignment
+				{grimoire}
+				travellers={step.travellers ?? []}
+				onDraw={(seatId) => {
+					open = false;
+					onDraw(seatId);
+				}}
+			/>
+		{/if}
+		<NightSuggested
+			{grimoire}
+			{step}
+			onShow={(id) => {
+				open = false;
+				shownId = id;
+				showOpen = true;
+			}}
+		/>
 		{#if step.reminder}
 			<p class="text">
 				{#if step.character}
@@ -122,6 +152,7 @@
 			disabled={!step?.character}
 			onclick={() => {
 				open = false;
+				shownId = undefined;
 				showOpen = true;
 			}}>Show to player</Button
 		>
@@ -149,7 +180,7 @@
 <!-- Closing the player view returns to this step (Trevor, 2026-10-16). -->
 <ShowToPlayer
 	bind:open={showOpen}
-	characters={step?.character ? [{ character: step.character }] : []}
+	characters={shownCharacter ? [{ character: shownCharacter }] : []}
 	onclose={() => (open = true)}
 />
 
