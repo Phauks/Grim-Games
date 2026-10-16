@@ -5,7 +5,7 @@ import svelte from 'eslint-plugin-svelte';
 import { defineConfig, includeIgnoreFile } from 'eslint/config';
 import globals from 'globals';
 import ts from 'typescript-eslint';
-import grim from './scripts/lint/names-as-badges.js';
+import grim from './scripts/lint/plugin.js';
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
@@ -115,6 +115,12 @@ export default defineConfig(
 		languageOptions: { parserOptions: { projectService: true, extraFileExtensions: ['.svelte'] } },
 		plugins: { grim },
 		rules: { 'grim/names-as-badges': 'error' }
+	},
+	{
+		// Every confirmation is a ConfirmDialog: Cancel and Confirm (Trevor, 2026-10-16).
+		files: ['src/**/*.svelte'],
+		plugins: { grim },
+		rules: { 'grim/confirm-dialog': 'error' }
 	},
 	{
 		// Core builds no screen text, but its fields must keep the name marks for the UI.

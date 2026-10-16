@@ -292,5 +292,3 @@ export const namesAsBadges = {
 		};
 	}
 };
-
-export default { rules: { 'names-as-badges': namesAsBadges } };
