@@ -39,6 +39,12 @@
 			icons && ((defaultAlignment(c.type) === 'evil' ? icons.evil : icons.good) ?? icons.unaligned);
 		return file && `${ICONS_PATH}/${file}`;
 	}
+	// Phones don't close the keyboard on Enter in a single-line field; Done should (Trevor).
+	function doneOnEnter(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+		if (event.key !== 'Enter' || event.isComposing) return;
+		event.preventDefault();
+		event.currentTarget.blur();
+	}
 </script>
 
 <!-- A fixed height, so picking a guess or marking a death never resizes the sheet. -->
@@ -53,6 +59,7 @@
 					autocomplete="off"
 					enterkeyhint="done"
 					oninput={(event) => onChange({ name: event.currentTarget.value })}
+					onkeydown={doneOnEnter}
 				/>
 			</label>
 			<div class="toggles">

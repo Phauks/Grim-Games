@@ -13,6 +13,12 @@
 
 	let { open = $bindable(false), note, onChange, onDelete }: Props = $props();
 	let confirming = $state(false);
+	// Phones don't close the keyboard on Enter in a single-line field; Done should (Trevor).
+	function doneOnEnter(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+		if (event.key !== 'Enter' || event.isComposing) return;
+		event.preventDefault();
+		event.currentTarget.blur();
+	}
 </script>
 
 <!-- A fixed height, so typing never resizes the sheet. -->
@@ -28,6 +34,7 @@
 					autocomplete="off"
 					enterkeyhint="done"
 					oninput={(event) => onChange({ title: event.currentTarget.value })}
+					onkeydown={doneOnEnter}
 				/>
 			</label>
 			<label class="field grow">

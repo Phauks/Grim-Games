@@ -199,3 +199,28 @@ test('a shared link with problems opens the Script check first', async ({ page }
 	await expect(page.getByRole('heading', { name: 'Typo Script', level: 1 })).toBeVisible();
 	await expect(page.locator('[data-character]')).toHaveCount(2);
 });
+
+test('Enter in a name or note title closes the keyboard', async ({ page }) => {
+	await page.getByRole('tab', { name: 'Circle' }).tap();
+	await page.getByRole('button', { name: /^Seat 1/ }).tap();
+	const name = page.getByRole('dialog', { name: 'Seat 1' }).getByRole('textbox', { name: 'Name' });
+	await name.fill('Alex');
+	await name.press('Enter');
+	await expect(name).not.toBeFocused();
+	await expect(name).toHaveValue('Alex');
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await page.getByRole('button', { name: /^Untitled/ }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Note' });
+	const title = sheet.getByRole('textbox', { name: 'Title' });
+	await title.fill('Bluff');
+	await title.press('Enter');
+	await expect(title).not.toBeFocused();
+	// Note text is multi-line: Enter is a new line there.
+	const text = sheet.getByRole('textbox', { name: 'Text' });
+	await text.fill('one');
+	await text.press('Enter');
+	await text.pressSequentially('two');
+	await expect(text).toHaveValue('one\ntwo');
+});
