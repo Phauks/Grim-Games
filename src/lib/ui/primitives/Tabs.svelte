@@ -33,14 +33,17 @@
 	:global([data-scope='tabs'][data-part='list']) {
 		position: relative;
 		display: flex;
-		gap: var(--space-1);
-		overflow-x: auto;
+		flex-wrap: wrap;
+		gap: 0 var(--space-1);
 		border-bottom: 1px solid var(--border);
 	}
+	/* Tabs that don't fit move to a second row, whole, so the list never scrolls sideways
+	   at large text sizes (Trevor, 2026-10-16). */
 	:global([data-scope='tabs'][data-part='trigger']) {
 		flex: none;
 		min-height: var(--tap-target);
-		padding: 0 var(--space-4);
+		padding: 0 var(--space-3);
+		white-space: nowrap;
 		border: 0;
 		background: none;
 		color: var(--on-surface-muted);
@@ -52,7 +55,8 @@
 	}
 	:global([data-scope='tabs'][data-part='indicator']) {
 		left: var(--left);
-		bottom: 0;
+		/* Under the selected tab, whichever row it is on. */
+		top: calc(var(--top) + var(--height) - 3px);
 		width: var(--width);
 		height: 3px;
 		background: var(--accent);

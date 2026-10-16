@@ -55,7 +55,14 @@ async function overflow(page: Page) {
 				const cls = typeof el.className === 'string' ? el.className.split(' ')[0] : '';
 				return `${el.tagName.toLowerCase()}${cls ? '.' + cls : ''} right=${Math.round(right)}`;
 			});
-		return { page: document.documentElement.scrollWidth, screen: width, offenders };
+		// Tab lists must fit too: a row of tabs that scrolls inside its own box hides tabs.
+		const tablists = [...document.querySelectorAll('[role="tablist"]')]
+			.filter((el) => el.scrollWidth > el.clientWidth + 1)
+			.map(
+				(el) =>
+					`tablist "${el.getAttribute('aria-label') ?? ''}" ${el.scrollWidth}px in ${el.clientWidth}px`
+			);
+		return { page: document.documentElement.scrollWidth, screen: width, offenders, tablists };
 	});
 }
 
@@ -97,6 +104,7 @@ test.describe('no sideways scrolling on phones', () => {
 						failures.push(
 							`${route}: ${result.page}px wide on a ${result.screen}px screen (${result.offenders.join(', ')})`
 						);
+					for (const tablist of result.tablists) failures.push(`${route}: ${tablist}`);
 				}
 				expect(failures, failures.join('\n')).toEqual([]);
 			});
