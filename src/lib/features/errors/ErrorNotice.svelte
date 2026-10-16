@@ -38,11 +38,7 @@
 	</div>
 {/if}
 
-<Dialog
-	bind:open={errorLog.open}
-	title="Problems on this device"
-	description="Kept on this device only. Reporting opens a GitHub issue you can read and edit before sending; it holds the error and build, never your game."
->
+<Dialog bind:open={errorLog.open} title="Problems on this device">
 	{#if errorLog.entries.length === 0}
 		<p class="none">None</p>
 	{:else}
