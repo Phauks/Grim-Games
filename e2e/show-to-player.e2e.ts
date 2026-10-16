@@ -113,6 +113,7 @@ test('a Lunatic game adds an optional Lunatic set that may include characters in
 	const lunatic = page.locator('[data-testid="bluff-set"][data-set="Lunatic"]');
 	await lunatic.getByRole('button', { name: 'Choose' }).tap();
 	await expect(choice(page, 'Sailor')).toBeEnabled();
+	await expect(choice(page, 'Sailor')).toContainText('In play');
 	await choice(page, 'Sailor').tap();
 	await page.getByRole('button', { name: 'Save' }).tap();
 	await expect(lunatic).toContainText('Sailor');

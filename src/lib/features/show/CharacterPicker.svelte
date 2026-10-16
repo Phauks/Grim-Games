@@ -38,8 +38,12 @@
 	function disabledReason(character: Character): string | undefined {
 		if (selected.includes(character.id)) return undefined;
 		if (blockInPlay && inPlay?.has(character.id)) return 'In play';
-		if (full && max > 1) return 'Remove a choice first';
 		return undefined;
+	}
+
+	/** Where in-play characters are allowed (the Lunatic's set), they are still marked. */
+	function marker(character: Character): string | undefined {
+		return !blockInPlay && inPlay?.has(character.id) ? 'In play' : undefined;
 	}
 </script>
 
@@ -78,6 +82,8 @@
 			{selected}
 			onSelect={toggle}
 			{disabledReason}
+			max={max > 1 ? max : undefined}
+			marker={inPlay ? marker : undefined}
 			contained={false}
 		/>
 	</div>
