@@ -100,7 +100,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	async function openTokens() {
 		// Settings are in the app's menu, opened from the game toolbar.
-		await page.getByRole('button', { name: 'Open menu' }).tap();
+		await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 		await page
 			.getByRole('dialog', { name: 'Menu' })
 			.getByRole('button', { name: 'Settings' })

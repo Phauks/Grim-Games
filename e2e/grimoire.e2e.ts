@@ -939,7 +939,7 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 	await page.keyboard.press('Escape');
 
 	// Settings open over the board, so the game is never left.
-	await page.getByRole('button', { name: 'Open menu' }).tap();
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	const drawer = page.getByRole('dialog', { name: 'Menu' });
 	await drawer.getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
@@ -947,14 +947,14 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 	await settings.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(page).toHaveURL(board);
 
-	await page.getByRole('button', { name: 'Open menu' }).tap();
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await drawer.getByRole('link', { name: 'Scripts' }).tap();
 	const leave = page.getByRole('alertdialog', { name: 'Leave the game?' });
 	await expect(leave).toContainText('Trouble Brewing');
 	await leave.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(page).toHaveURL(board);
 
-	await page.getByRole('button', { name: 'Open menu' }).tap();
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await drawer.getByRole('link', { name: 'Resume game' }).tap();
 	await leave.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page).toHaveURL(/\/games$/);
@@ -985,7 +985,7 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	await closeSheet(page);
 
 	// With "Stack duplicate reminders" on, they show as one token with what is left.
-	await page.getByRole('button', { name: 'Open menu' }).tap();
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
