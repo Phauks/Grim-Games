@@ -7,6 +7,7 @@
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import QrCode from '#lib/ui/primitives/QrCode.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -107,7 +108,7 @@
 			<div class="qr"><QrCode value={link} label={t('room.qrLabel')} /></div>
 			<p class="link">{link}</p>
 			<div class="row">
-				<Button icon="share" onclick={copy}>{t('room.copyLink')}</Button>
+				<IconButton icon="copy" label={t('room.copyLink')} onclick={copy} />
 				<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
 					{t('room.close')}
 				</Button>
