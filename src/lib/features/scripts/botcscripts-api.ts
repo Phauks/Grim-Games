@@ -173,10 +173,48 @@ export const BOTC_SORTS = ['votes', 'newest', 'oldest', 'match'] as const;
 export type BotcScriptsSort = (typeof BOTC_SORTS)[number];
 
 /**
- * Which characters a script may use, as the site's `edition` filter counts it
- * (`scripts/models.py` Edition): each step includes the ones before.
+ * The site's character groups (`scripts/models.py` Edition: 0 Base, 1 Kickstarter,
+ * 2 Carousel; 3 "All" means unknown or homebrew characters). Which official character is in
+ * which group is data on the site, published at `/api/characters`.
  */
-export const BOTC_EDITIONS = [0, 1, 2] as const;
+export const BOTC_EDITION_GROUPS = ['base', 'kickstarter', 'carousel'] as const;
+export type BotcEditionGroup = (typeof BOTC_EDITION_GROUPS)[number];
+
+/** Each official character's group, from the site's `/api/characters`. */
+export type CharacterEditions = ReadonlyMap<string, number>;
+
+/** Reads `/api/characters` (`[{ id, edition, … }]`); undefined if it isn't that. */
+export function readCharacterEditions(json: unknown): CharacterEditions | undefined {
+	if (!Array.isArray(json)) return undefined;
+	const map = new Map<string, number>();
+	for (const item of json) {
+		if (!isObject(item) || typeof item.id !== 'string' || typeof item.edition !== 'number')
+			continue;
+		if (item.edition >= 0 && item.edition < BOTC_EDITION_GROUPS.length)
+			map.set(item.id, item.edition);
+	}
+	return map.size > 0 ? map : undefined;
+}
+
+/**
+ * The site's filters for a choice of groups. It only filters "up to" an edition
+ * (`filter_edition`: `edition <= value`), so a group left out below the highest one chosen
+ * is left out by excluding its characters. Undefined: no edition filter (every group).
+ */
+export function editionFilter(
+	groups: readonly BotcEditionGroup[] | undefined,
+	editions: CharacterEditions
+): { edition: number; exclude: string[] } | undefined {
+	if (!groups) return undefined;
+	const chosen = BOTC_EDITION_GROUPS.map((g) => groups.includes(g));
+	const edition = chosen.lastIndexOf(true);
+	if (edition < 0) return undefined;
+	const exclude = [...editions]
+		.filter(([, e]) => e < edition && !chosen[e])
+		.map(([id]) => id)
+		.sort();
+	return { edition, exclude };
+}
 
 /** A search with filters (`scripts/filters.py` ScriptVersionFilter on the site). */
 export interface BotcScriptsQuery {
@@ -187,8 +225,8 @@ export interface BotcScriptsQuery {
 	/** Character ids every result must have / must not have. */
 	include: string[];
 	exclude: string[];
-	/** See `BOTC_EDITIONS`; undefined for any. */
-	edition?: number;
+	/** The groups whose characters a result may use; undefined for any (homebrew too). */
+	editions?: BotcEditionGroup[];
 	author: string;
 	/** Exactly one Demon. */
 	oneDemon: boolean;
@@ -228,7 +266,12 @@ function characterList(ids: readonly string[]): string[] {
 /** Same query in one canonical form, so equal searches share one cache entry. */
 export function normaliseQuery(query: BotcScriptsQuery): BotcScriptsQuery {
 	const term = normaliseSearch(query.term);
-	const edition = BOTC_EDITIONS.some((e) => e === query.edition) ? query.edition : undefined;
+	const groups = query.editions?.filter((g) => BOTC_EDITION_GROUPS.includes(g));
+	// All three, or none, is no filter.
+	const editions =
+		groups && groups.length > 0 && groups.length < BOTC_EDITION_GROUPS.length
+			? BOTC_EDITION_GROUPS.filter((g) => groups.includes(g))
+			: undefined;
 	return {
 		term,
 		// "Best match" needs a term; without one it means the default order.
@@ -237,7 +280,7 @@ export function normaliseQuery(query: BotcScriptsQuery): BotcScriptsQuery {
 		type: query.type === 'Full' || query.type === 'Teensyville' ? query.type : '',
 		include: characterList(query.include),
 		exclude: characterList(query.exclude),
-		...(edition === undefined ? {} : { edition }),
+		...(editions ? { editions } : {}),
 		author: normaliseSearch(query.author),
 		oneDemon: query.oneDemon === true,
 		officialOnly: query.officialOnly === true
@@ -251,7 +294,7 @@ export function filterCount(query: BotcScriptsQuery): number {
 		(q.type ? 1 : 0) +
 		q.include.length +
 		q.exclude.length +
-		(q.edition === undefined ? 0 : 1) +
+		(q.editions ? 1 : 0) +
 		(q.author ? 1 : 0) +
 		(q.oneDemon ? 1 : 0) +
 		(q.officialOnly ? 1 : 0)
@@ -270,7 +313,7 @@ export function searchPath(query: BotcScriptsQuery, page = 1): string {
 	if (q.type) params.set('type', q.type);
 	if (q.include.length) params.set('include', q.include.join(','));
 	if (q.exclude.length) params.set('exclude', q.exclude.join(','));
-	if (q.edition !== undefined) params.set('edition', String(q.edition));
+	if (q.editions) params.set('editions', q.editions.join(','));
 	if (q.author) params.set('author', q.author);
 	if (q.oneDemon) params.set('oneDemon', '1');
 	if (q.officialOnly) params.set('official', '1');
@@ -284,7 +327,7 @@ export function parseSearchUrl(url: URL): { query: BotcScriptsQuery; page: numbe
 	const page = Number(p.get('page') ?? '1');
 	if (!Number.isInteger(page) || page < 1 || page > MAX_PAGE) return undefined;
 	const list = (name: string) => (p.get(name) ?? '').split(',').filter(Boolean);
-	const edition = p.get('edition');
+	const editions = p.get('editions');
 	return {
 		page,
 		query: normaliseQuery({
@@ -293,7 +336,7 @@ export function parseSearchUrl(url: URL): { query: BotcScriptsQuery; page: numbe
 			type: (p.get('type') ?? '') as BotcScriptsQuery['type'],
 			include: list('include'),
 			exclude: list('exclude'),
-			edition: edition === null ? undefined : Number(edition),
+			editions: editions === null ? undefined : (list('editions') as BotcEditionGroup[]),
 			author: p.get('author') ?? '',
 			oneDemon: p.get('oneDemon') === '1',
 			officialOnly: p.get('official') === '1'
@@ -309,17 +352,26 @@ const ORDERING: Record<BotcScriptsSort, string | undefined> = {
 	match: undefined
 };
 
-/** The site's search URL for a page of the latest versions. */
-export function upstreamSearchPath(query: BotcScriptsQuery, page: number): string {
+/**
+ * The site's search URL for a page of the latest versions. `editions` (from `/api/characters`)
+ * is needed only when the query leaves out a group.
+ */
+export function upstreamSearchPath(
+	query: BotcScriptsQuery,
+	page: number,
+	editions?: CharacterEditions
+): string {
 	const q = normaliseQuery(query);
+	const byEdition = editions ? editionFilter(q.editions, editions) : undefined;
+	const exclude = [...new Set([...q.exclude, ...(byEdition?.exclude ?? [])])];
 	const params = new URLSearchParams({ latest: 'true', page: String(page) });
 	const ordering = ORDERING[q.sort];
 	if (ordering) params.set('ordering', ordering);
 	if (q.term) params.set('search', q.term);
 	if (q.type) params.set('script_type', q.type);
 	if (q.include.length) params.set('include', q.include.join(','));
-	if (q.exclude.length) params.set('exclude', q.exclude.join(','));
-	if (q.edition !== undefined) params.set('edition', String(q.edition));
+	if (exclude.length) params.set('exclude', exclude.join(','));
+	if (byEdition) params.set('edition', String(byEdition.edition));
 	if (q.author) params.set('author', q.author);
 	if (q.oneDemon) params.set('mono_demon', 'true');
 	if (q.officialOnly) {

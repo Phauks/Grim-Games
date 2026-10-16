@@ -25,6 +25,12 @@ async function chooseSource(page: Page, label: string) {
 	await page.getByRole('option', { name: label }).tap();
 }
 
+/** Taps a row of the picker, then Load in its preview. */
+async function pick(page: Page, name: string) {
+	await page.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
+	await page.getByRole('dialog', { name }).getByRole('button', { name: 'Load' }).tap();
+}
+
 async function noSidewaysScroll(page: Page) {
 	const overflow = await page.evaluate(
 		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -44,7 +50,7 @@ test('choosing an official edition makes it current and survives a reload', asyn
 	await expect(currentName(page)).toHaveText('None');
 	// Nothing recent yet: the three editions are the whole table.
 	await expect(page.getByTestId('picker-status')).toHaveText('3 scripts');
-	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
+	await pick(page, 'Trouble Brewing');
 	await expect(currentName(page)).toHaveText('Trouble Brewing');
 	await expect(page.getByTestId('current-script-counts')).toHaveText(
 		'13 Townsfolk · 4 Outsiders · 4 Minions · 1 Demon'
@@ -106,7 +112,7 @@ test('a BotC Scripts number loads through our Worker', async ({ page }) => {
 	await page.goto('/scripts');
 	await chooseSource(page, 'BotC Scripts');
 	await page.getByLabel('Search scripts').fill('42');
-	await expect(page.getByTestId('botc-status')).toHaveText(
+	await expect(page.getByTestId('picker-status')).toHaveText(
 		'A BotC Scripts link or number: tap Load.'
 	);
 	await page.getByRole('button', { name: 'Load', exact: true }).tap();
@@ -150,7 +156,7 @@ test('an official script is shared on one screen: QR code, link and code', async
 	await page.goto('/scripts');
 	const share = page.getByRole('button', { name: 'Share script' });
 	await expect(share).toBeDisabled();
-	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
+	await pick(page, 'Trouble Brewing');
 	await expect(currentName(page)).toHaveText('Trouble Brewing');
 
 	await share.tap();
@@ -286,49 +292,73 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	await expect(page.getByTestId('picker-status')).toHaveText('None');
 	await page.getByLabel('Search scripts').fill('');
 	await page.getByRole('button', { name: 'Search BotC Scripts' }).tap();
-	const dialog = page.locator('main');
-	const status = dialog.getByTestId('botc-status');
+	const status = page.getByTestId('picker-status');
 	await expect(status).toHaveText('2 scripts · most votes');
-	// Each card counts the script's characters and names its Demons.
-	await expect(dialog.getByTestId('botc-makeup').first()).toContainText('3 · 2 · 1 · 1');
-	await expect(dialog.getByTestId('botc-makeup').first()).toContainText('Imp');
-	await expect(dialog.getByRole('button', { name: 'More' })).toBeDisabled();
+	const table = page.getByRole('table', { name: 'BotC Scripts results' });
+	// The site's columns, with the characters counted from the script.
+	const first = table.locator('tbody tr').first();
+	await expect(first).toContainText('Most Voted One');
+	await expect(first.locator('[data-col="characters"]')).toHaveText('7');
+	await expect(first.locator('[data-col="likes"]')).toHaveText('5');
+	await expect(table.getByRole('columnheader', { name: 'Likes' })).toHaveAttribute(
+		'aria-sort',
+		'descending'
+	);
+	await expect(page.getByRole('button', { name: 'More' })).toBeDisabled();
 
-	await dialog.getByLabel('Search scripts').fill('storm');
+	await page.getByLabel('Search scripts').fill('storm');
 	await expect(status).toHaveText('1 script · most votes');
-	await expect(dialog.getByTestId('botc-makeup').first()).toContainText('Homebrew');
 
-	// Filters: Teensyville scripts with the Imp.
-	await dialog.getByRole('button', { name: 'Filters' }).tap();
-	const filters = page.getByRole('dialog', { name: 'Filters' });
-	await filters.getByRole('button', { name: 'Teensyville' }).tap();
-	await filters
+	// Filters sit in the header row: Teensyville scripts with the Imp.
+	await table.getByRole('button', { name: 'Filter Type', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Filter Type' }).getByLabel('Teensyville').tap();
+	await expect.poll(() => searches.at(-1)).toBe('?page=1&q=storm&type=Teensyville');
+	await table.getByRole('button', { name: 'Filter Chars', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Filter Chars' })
 		.getByRole('region', { name: 'Includes characters' })
 		.getByRole('button', { name: 'Choose' })
 		.tap();
 	const picker = page.getByRole('dialog', { name: 'Includes' });
 	await picker.getByRole('button', { name: 'Imp', exact: true }).tap();
 	await picker.getByRole('button', { name: 'Done' }).tap();
-	await expect(filters.getByTestId('filter-include')).toContainText('Imp');
-	await filters.getByRole('button', { name: 'Show scripts' }).tap();
-	await expect(dialog.getByRole('button', { name: 'Filters · 2' })).toBeVisible();
 	await expect.poll(() => searches.at(-1)).toBe('?page=1&q=storm&type=Teensyville&include=imp');
-	// One request when BotC Scripts was chosen, one after typing paused, one for the filters.
+	await expect(table.getByRole('button', { name: 'Filter Chars (set)' })).toBeVisible();
+
+	// Base three and Carousel, without Kickstarter.
+	await table.getByRole('button', { name: 'Filter Chars (set)' }).tap();
+	const chars = page.getByRole('dialog', { name: 'Filter Chars' });
+	await expect(chars.getByTestId('filter-include')).toContainText('Imp');
+	await chars.getByText('Kickstarter', { exact: true }).tap();
+	await expect
+		.poll(() => searches.at(-1))
+		.toBe('?page=1&q=storm&type=Teensyville&include=imp&editions=base,carousel');
+	await page.keyboard.press('Escape');
+	// One request when BotC Scripts was chosen, one after typing paused, one per filter.
 	expect(searches).toEqual([
 		'?page=1',
 		'?page=1&q=storm',
-		'?page=1&q=storm&type=Teensyville&include=imp'
+		'?page=1&q=storm&type=Teensyville',
+		'?page=1&q=storm&type=Teensyville&include=imp',
+		'?page=1&q=storm&type=Teensyville&include=imp&editions=base,carousel'
 	]);
 
-	// Details, then load from there.
-	await dialog.getByRole('button', { name: 'Details of Storm Front' }).tap();
-	const details = page.getByRole('dialog', { name: 'Storm Front' });
-	await expect(details).toContainText('Storm Warden');
-	await expect(details.getByRole('link', { name: 'Open on BotC Scripts' })).toHaveAttribute(
+	// Likes, then (with a search) the closest names.
+	await table.getByRole('columnheader', { name: 'Likes' }).getByRole('button').tap();
+	await expect.poll(() => searches.at(-1)).toContain('&sort=match');
+	await expect(status).toHaveText('1 script · best match');
+
+	// Tapping a result shows its characters first; nothing loads until Load.
+	await table.getByRole('button', { name: /^Storm Front/ }).tap();
+	const preview = page.getByRole('dialog', { name: 'Storm Front' });
+	await expect(preview.getByTestId('script-preview')).toContainText('Storm Warden');
+	await expect(preview.getByTestId('script-preview')).toContainText('Imp');
+	await expect(preview.getByRole('link', { name: 'Open on BotC Scripts' })).toHaveAttribute(
 		'href',
 		'https://botcscripts.com/script/1900/1.0.0'
 	);
-	await details.getByRole('button', { name: 'Load' }).tap();
+	await expect(currentName(page)).toHaveText('None');
+	await preview.getByRole('button', { name: 'Load' }).tap();
 	await expect(currentName(page)).toHaveText('Storm Front');
 	await noSidewaysScroll(page);
 });
@@ -403,7 +433,7 @@ test("the official site's curated scripts are listed when asked for, and load", 
 	await page.getByRole('dialog', { name: 'Filter Type' }).getByLabel('Teensyville').tap();
 	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
 
-	await page.getByRole('button', { name: /^Little Hamlet/ }).tap();
+	await pick(page, 'Little Hamlet');
 	await expect(currentName(page)).toHaveText('Little Hamlet');
 	await expect(page.getByTestId('current-script')).toContainText('Script Tool');
 	await noSidewaysScroll(page);

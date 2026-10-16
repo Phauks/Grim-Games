@@ -29,6 +29,10 @@ test('a fresh visit stores only what a game needs, and a chosen script works off
 	// Choosing a script stores every icon on it, shown or not.
 	await page.goto('/scripts');
 	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Trouble Brewing' })
+		.getByRole('button', { name: 'Load' })
+		.tap();
 	await expect(page.getByTestId('current-script-name')).toHaveText('Trouble Brewing');
 	await expect
 		.poll(async () => (await cachedPaths(page))['grim-games-runtime-v1'] ?? [])

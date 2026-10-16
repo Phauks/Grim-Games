@@ -16,8 +16,20 @@ import {
 	proxyPath,
 	readProxiedVersion,
 	readVersion,
-	scriptPageUrl
+	scriptPageUrl,
+	editionFilter,
+	readCharacterEditions,
+	type BotcEditionGroup
 } from './botcscripts-api.ts';
+
+/** A small stand-in for the site's `/api/characters`: two base, two Kickstarter, one Carousel. */
+const EDITIONS = new Map([
+	['chef', 0],
+	['imp', 0],
+	['ks1', 1],
+	['ks2', 1],
+	['car1', 2]
+]);
 
 describe('parseBotcScriptsRef', () => {
 	it.each([
@@ -157,7 +169,7 @@ describe('search', () => {
 			type: 'Teensyville',
 			include: ['chef', 'imp'],
 			exclude: ['drunk'],
-			edition: 1,
+			editions: ['base', 'carousel'],
 			author: 'Trevor',
 			oneDemon: true,
 			officialOnly: true
@@ -174,10 +186,14 @@ describe('search', () => {
 					sort: 'name' as never,
 					type: 'Huge' as never,
 					include: ['<script>', 'ok'],
-					edition: 7
+					editions: ['huge' as never]
 				})
 			)
 		).toEqual(q({ include: ['ok'] }));
+		// All three groups is no filter at all.
+		expect(
+			normaliseQuery(q({ editions: ['carousel', 'base', 'kickstarter'] })).editions
+		).toBeUndefined();
 		// Best match needs a term to match.
 		expect(normaliseQuery(q({ sort: 'match' })).sort).toBe('votes');
 		expect(normaliseQuery(q({ sort: 'match', term: 'x' })).sort).toBe('match');
@@ -198,7 +214,7 @@ describe('search', () => {
 	it('maps sorts and filters onto the site’s own parameters', () => {
 		const params = (query: Partial<typeof EMPTY_QUERY>) =>
 			Object.fromEntries(
-				new URL(upstreamSearchPath(q(query), 2), 'https://botcscripts.com').searchParams
+				new URL(upstreamSearchPath(q(query), 2, EDITIONS), 'https://botcscripts.com').searchParams
 			);
 		expect(params({ term: 'storm' })).toEqual({
 			latest: 'true',
@@ -214,7 +230,7 @@ describe('search', () => {
 				type: 'Teensyville',
 				include: ['imp', 'chef'],
 				exclude: ['drunk'],
-				edition: 0,
+				editions: ['base'],
 				author: 'Trevor',
 				oneDemon: true,
 				officialOnly: true
@@ -232,6 +248,33 @@ describe('search', () => {
 			include_homebrew: 'false',
 			include_hybrid: 'false'
 		});
+	});
+
+	it('leaves a group out by excluding its characters, as the site filters only "up to"', () => {
+		const exclude = (editions: BotcEditionGroup[]) =>
+			new URL(
+				upstreamSearchPath(q({ editions, exclude: ['drunk'] }), 1, EDITIONS),
+				'https://botcscripts.com'
+			).searchParams;
+		// Base and Carousel without Kickstarter: up to Carousel, minus the Kickstarter ones.
+		expect(exclude(['base', 'carousel']).get('edition')).toBe('2');
+		expect(exclude(['base', 'carousel']).get('exclude')).toBe('drunk,ks1,ks2');
+		// Kickstarter alone: up to Kickstarter, minus the base three.
+		expect(exclude(['kickstarter']).get('exclude')).toBe('drunk,chef,imp');
+		expect(exclude(['base', 'kickstarter']).get('exclude')).toBe('drunk');
+	});
+
+	it('reads the site’s character groups and skips anything else', () => {
+		expect(
+			readCharacterEditions([
+				{ id: 'chef', name: 'Chef', edition: 0, character_type: 'Townsfolk' },
+				{ id: 'odd', edition: 3 },
+				{ id: 5, edition: 1 },
+				'imp'
+			])
+		).toEqual(new Map([['chef', 0]]));
+		expect(readCharacterEditions({})).toBeUndefined();
+		expect(editionFilter(undefined, EDITIONS)).toBeUndefined();
 	});
 
 	it('keeps each character’s id, and a homebrew one’s name and team, but no ability', () => {

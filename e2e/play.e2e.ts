@@ -246,6 +246,10 @@ test('shows the script chosen on the Scripts page, with its own notebook', async
 	await expect(page.getByRole('link', { name: 'Change script' })).toHaveCount(0);
 	await page.goto('/scripts');
 	await page.getByRole('button', { name: 'Bad Moon Rising' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Bad Moon Rising' })
+		.getByRole('button', { name: 'Load' })
+		.tap();
 	await expect(page.getByRole('button', { name: 'Bad Moon Rising' })).toHaveAttribute(
 		'aria-pressed',
 		'true'

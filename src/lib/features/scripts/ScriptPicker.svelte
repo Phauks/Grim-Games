@@ -3,15 +3,16 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		editionScript,
-		loadScript,
 		loadScriptText,
-		OFFICIAL_EDITIONS,
+		type CharacterId,
+		type CharacterType,
 		type GameData,
 		type LoadedScript,
 		type ScriptLoadResult
 	} from '#lib/core/data/index.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
+	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -19,8 +20,19 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
-	import { parseBotcScriptsRef } from './botcscripts-api.ts';
+	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
+	import {
+		EMPTY_QUERY,
+		MAX_FILTER_CHARACTERS,
+		filterCount,
+		normaliseSearch,
+		parseBotcScriptsRef,
+		searchPath,
+		type BotcScriptsQuery,
+		type BotcScriptsSort
+	} from './botcscripts-api.ts';
+	import { botcCard } from './botcscripts-cards.ts';
+	import BotcFilter from './BotcFilter.svelte';
 	import { curatedScripts } from './curated.svelte.ts';
 	import {
 		chooseScript,
@@ -33,12 +45,12 @@
 		fetchLinkTarget,
 		readScriptFile,
 		ScriptFetchError,
+		searchBotcScripts,
 		type FetchedScript
 	} from './fetch-script.ts';
 	import {
 		filterRows,
 		nextSort,
-		pickerRow,
 		sortRows,
 		type PickerRow,
 		type PickerSource,
@@ -46,14 +58,20 @@
 		type ScriptKind,
 		type SortColumn
 	} from './picker-rows.ts';
+	import { RemoteSearch } from './remote-search.svelte.ts';
 	import {
 		describeSource,
 		reloadSavedScript,
 		sameScript,
-		type SavedScript,
 		type ScriptSource
 	} from './saved-scripts.ts';
-	import BotcScriptsBrowser from './BotcScriptsBrowser.svelte';
+	import {
+		botcProvider,
+		localListings,
+		type LoadTarget,
+		type ScriptListing
+	} from './script-providers.ts';
+	import ScriptPreview from './ScriptPreview.svelte';
 	import ShareCodeEntry from './ShareCodeEntry.svelte';
 	import { fetchSharedCode } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
@@ -76,9 +94,9 @@
 	let linkText = $state('');
 	let codeText = $state('');
 
-	/** The one search box: local scripts, or BotC Scripts when that is the source. */
+	/** The one search box: local scripts, or the remote source when that is chosen. */
 	let term = $state('');
-	let source = $state<PickerSource | 'all' | 'botc'>('all');
+	let source = $state<PickerSource | 'all'>('all');
 	let kind = $state<ScriptKind | ''>('');
 	let sort = $state<RowSort | undefined>();
 	let data = $state.raw<GameData>();
@@ -88,6 +106,10 @@
 
 	let checking = $state.raw<{ result: ScriptLoadResult; source: ScriptSource } | undefined>();
 	let fileInput: HTMLInputElement | undefined = $state();
+
+	/** The row whose characters are shown before loading. */
+	let previewing = $state.raw<ScriptListing | undefined>();
+	let previewOpen = $state(false);
 
 	const canReadClipboard =
 		typeof navigator !== 'undefined' && typeof navigator.clipboard?.readText === 'function';
@@ -112,89 +134,123 @@
 		}
 	});
 
-	/** One table row, with how to load it and what it is, to mark the current script. */
-	interface Entry {
-		row: PickerRow;
-		script: Pick<SavedScript, 'edition' | 'json'>;
-		load: () => Promise<void>;
-		/** Set for Recent rows, which can be removed. */
-		saved?: SavedScript;
+	/** The official site's known sections in the app's words; any other heading as written. */
+	function curatedSectionLabel(section: string): string {
+		return CURATED_SECTIONS.some((known) => known === section)
+			? t(`scripts.curated.${section as (typeof CURATED_SECTIONS)[number]}`)
+			: section;
 	}
 
-	/** Loads script JSON through the usual checks, remembering where it came from. */
-	const fromJson = (json: unknown[], from: ScriptSource) => () =>
-		run(() => Promise.resolve({ text: JSON.stringify(json), source: from }));
+	const local = $derived(
+		data
+			? localListings({
+					data,
+					curated: curatedScripts.list,
+					recent: recentScripts.list,
+					profile: account.user ? profileScripts.list : [],
+					curatedLabel: curatedSectionLabel,
+					describe: describeSource
+				})
+			: []
+	);
 
-	const entries = $derived.by((): Entry[] => {
-		if (!data) return [];
-		const d = data;
-		const list: Entry[] = [];
-		const seen: Pick<SavedScript, 'edition' | 'json'>[] = [];
-		const add = (entry: Entry) => {
-			if (seen.some((other) => sameScript(other, entry.script))) return;
-			seen.push(entry.script);
-			list.push(entry);
-		};
-		for (const edition of OFFICIAL_EDITIONS) {
-			const script = editionScript(edition.id, d);
-			if (!script) continue;
-			add({
-				row: pickerRow(script, `official:${edition.id}`, 'official'),
-				script: { edition: edition.id, json: [] },
-				load: () => chooseEdition(edition.id)
-			});
-		}
-		for (const [i, curated] of curatedScripts.list.entries()) {
-			const script = loadScript(curated.json, d).script;
-			if (!script) continue;
-			add({
-				row: pickerRow(script, `curated:${i}`, 'curated', curatedSectionLabel(curated.section)),
-				script: { json: curated.json },
-				load: fromJson(curated.json, { kind: 'link', url: curated.link })
-			});
-		}
-		for (const saved of recentScripts.list) {
-			if (saved.edition) continue;
-			const script = reloadSavedScript(saved, d);
-			if (!script) continue;
-			add({
-				row: pickerRow(script, `recent:${saved.scriptId}`, 'recent', describeSource(saved.source)),
-				script: saved,
-				load: () => chooseRecent(saved),
-				saved
-			});
-		}
-		if (account.user) {
-			for (const entry of profileScripts.list) {
-				const script = loadScript(entry.script.json, d).script;
-				if (!script) continue;
-				add({
-					row: pickerRow(
-						script,
-						`profile:${entry.id}`,
-						'profile',
-						describeSource(entry.script.source)
-					),
-					script: { json: entry.script.json },
-					load: fromJson(entry.script.json, entry.script.source)
-				});
-			}
-		}
-		return list;
-	});
-
-	const shown = $derived.by(() => {
+	const shownLocal = $derived.by(() => {
 		if (source === 'botc') return [];
-		const byKey = new Map(entries.map((e) => [e.row.key, e]));
+		const byKey = new Map(local.map((l) => [l.row.key, l]));
 		const rows = filterRows(
-			entries.map((e) => e.row),
+			local.map((l) => l.row),
 			{ term, source, kind }
 		);
 		return sortRows(rows, sort).map((row) => byKey.get(row.key)!);
 	});
 
-	const isCurrent = (entry: Entry) =>
-		!!currentScript.saved && sameScript(currentScript.saved, entry.script);
+	// ---- BotC Scripts: searched on the site, page by page ----
+
+	type BotcFilters = Omit<BotcScriptsQuery, 'term'>;
+	function noFilters(): BotcFilters {
+		const blank: Partial<BotcScriptsQuery> = { ...EMPTY_QUERY };
+		delete blank.term;
+		return blank as BotcFilters;
+	}
+	let botcFilters = $state<BotcFilters>(noFilters());
+	const botc = new RemoteSearch(botcProvider(searchBotcScripts), (q) => searchPath(q));
+	const DEBOUNCE_MS = 400;
+
+	const botcRef = $derived(source === 'botc' ? parseBotcScriptsRef(term) : undefined);
+	const botcQuery = $derived<BotcScriptsQuery>({ ...botcFilters, term: normaliseSearch(term) });
+	const botcKey = $derived(searchPath(botcQuery));
+
+	// A search runs after a pause in typing or a change of filters; links and numbers don't search.
+	$effect(() => {
+		if (source !== 'botc' || !data || botcRef || botcKey === botc.searched) return;
+		const q = $state.snapshot(botcQuery) as BotcScriptsQuery;
+		const d = data;
+		const timer = setTimeout(
+			() => void botc.load(q, 1, d),
+			botc.searched === undefined ? 0 : DEBOUNCE_MS
+		);
+		return () => clearTimeout(timer);
+	});
+	$effect(() => () => botc.abort());
+
+	/** Characters chosen for Includes or Leaves out, in a full-screen list. */
+	let choosing = $state<'include' | 'exclude' | undefined>();
+	let choosingOpen = $state(false);
+	const FILTER_TYPES: readonly CharacterType[] = [
+		'townsfolk',
+		'outsider',
+		'minion',
+		'demon',
+		'traveller'
+	];
+	const pickable = $derived(
+		data ? data.characters.filter((c) => FILTER_TYPES.includes(c.type)) : []
+	);
+
+	function toggleCharacter(list: 'include' | 'exclude', id: CharacterId) {
+		const other = list === 'include' ? 'exclude' : 'include';
+		const has = botcFilters[list].includes(id);
+		botcFilters[list] = has
+			? botcFilters[list].filter((c) => c !== id)
+			: [...botcFilters[list], id];
+		// A character can't be both required and ruled out.
+		if (!has) botcFilters[other] = botcFilters[other].filter((c) => c !== id);
+	}
+
+	/** Header sorts the site supports: Likes (most first) and No. (upload order, both ways). */
+	const BOTC_SORT_OF: Record<BotcScriptsSort, DataSort<ColumnId> | undefined> = {
+		votes: { column: 'likes', direction: 'descending' },
+		newest: { column: 'number', direction: 'descending' },
+		oldest: { column: 'number', direction: 'ascending' },
+		match: undefined
+	};
+	const effectiveBotcSort = $derived<BotcScriptsSort>(
+		botcFilters.sort === 'match' && !botcQuery.term ? 'votes' : botcFilters.sort
+	);
+
+	function sortBotc(column: ColumnId) {
+		const current = effectiveBotcSort;
+		if (column === 'likes') {
+			// Most likes, then (with a search) the closest names.
+			botcFilters.sort = current === 'votes' && botcQuery.term ? 'match' : 'votes';
+		} else if (column === 'number') {
+			botcFilters.sort =
+				current === 'newest' ? 'oldest' : current === 'oldest' ? 'votes' : 'newest';
+		}
+	}
+
+	// ---- The table ----
+
+	const shown = $derived<ScriptListing[]>(source === 'botc' ? botc.listings : shownLocal);
+
+	const isCurrent = (listing: ScriptListing) =>
+		!!currentScript.saved &&
+		(listing.identity
+			? sameScript(currentScript.saved, listing.identity)
+			: currentScript.saved.source.kind === 'botcscripts' &&
+				listing.row.source === 'botc' &&
+				currentScript.saved.source.scriptId === listing.row.number &&
+				currentScript.saved.source.version === listing.row.version);
 
 	const curatedNote = $derived(
 		(source === 'all' || source === 'curated') && curatedScripts.status === 'loading'
@@ -205,15 +261,27 @@
 				? t('scripts.picker.curatedFailed')
 				: ''
 	);
+	const botcSortLabel = $derived(t(`scripts.botc.sort.${effectiveBotcSort}`).toLowerCase());
 	const status = $derived(
 		!data
 			? t('scripts.picker.loading')
-			: (shown.length === 0
-					? t('common.none')
-					: t('scripts.picker.count', { count: shown.length })) + curatedNote
+			: source === 'botc'
+				? botcRef
+					? t('scripts.botc.refHint')
+					: botc.failure ||
+						(botc.loading && botc.listings.length === 0
+							? t('scripts.botc.searching')
+							: botc.searched === undefined
+								? ''
+								: botc.listings.length === 0
+									? t('common.none')
+									: t('scripts.botc.count', { count: botc.count, sort: botcSortLabel }))
+				: (shown.length === 0
+						? t('common.none')
+						: t('scripts.picker.count', { count: shown.length })) + curatedNote
 	);
 
-	const SOURCE_OPTIONS = $derived<{ value: PickerSource | 'all' | 'botc'; label: string }[]>(
+	const SOURCE_OPTIONS = $derived<{ value: PickerSource | 'all'; label: string }[]>(
 		(['all', 'official', 'curated', 'recent', 'profile', 'botc'] as const).map((value) => ({
 			value,
 			label: t(`scripts.picker.source.${value}`)
@@ -225,20 +293,33 @@
 		{ value: 'Teensyville', label: t('scripts.kind.Teensyville') }
 	]);
 
-	/** The official site's known sections in the app's words; any other heading as written. */
-	function curatedSectionLabel(section: string): string {
-		return CURATED_SECTIONS.some((known) => known === section)
-			? t(`scripts.curated.${section as (typeof CURATED_SECTIONS)[number]}`)
-			: section;
-	}
-
 	type ColumnId = SortColumn | 'remove';
-	const COLUMNS: readonly DataColumn<ColumnId>[] = [
-		{ id: 'name', label: 'Name', sortable: true, flush: true },
-		{ id: 'author', label: 'Author', sortable: true, wide: true, width: '20%' },
-		{ id: 'source', label: 'Source', sortable: true, width: '6rem' },
-		{ id: 'kind', label: 'Type', sortable: true, wide: true, width: '8.5rem', filterable: true },
-		{ id: 'characters', label: 'Chars', sortable: true, align: 'end', width: '6rem' },
+	const LOCAL_COLUMNS = $derived<DataColumn<ColumnId>[]>([
+		{ id: 'name', label: t('scripts.column.name'), sortable: true, flush: true },
+		{
+			id: 'author',
+			label: t('scripts.column.author'),
+			sortable: true,
+			wide: true,
+			width: '20%'
+		},
+		{ id: 'source', label: t('scripts.column.source'), sortable: true, width: '6rem' },
+		{
+			id: 'kind',
+			label: t('scripts.column.type'),
+			sortable: true,
+			wide: true,
+			width: '8.5rem',
+			filterable: true,
+			filtered: kind !== ''
+		},
+		{
+			id: 'characters',
+			label: t('scripts.column.characters'),
+			sortable: true,
+			align: 'end',
+			width: '6rem'
+		},
 		{
 			id: 'remove',
 			label: t('scripts.picker.remove'),
@@ -246,16 +327,75 @@
 			flush: true,
 			width: 'var(--tap-target)'
 		}
-	];
-	const columns = $derived(
-		COLUMNS.map((c) => (c.id === 'kind' ? { ...c, filtered: kind !== '' } : c))
+	]);
+	/** BotC Scripts: the site's own columns (Name, Author, Type, Likes) plus character counts. */
+	const characterFilters = $derived(
+		filterCount({ ...botcFilters, term: '', type: '', author: '' })
 	);
-	const tableSort = $derived(
-		sort && {
-			column: sort.column as ColumnId,
-			direction: sort.descending ? ('descending' as const) : ('ascending' as const)
+	const BOTC_COLUMNS = $derived<DataColumn<ColumnId>[]>([
+		{ id: 'name', label: t('scripts.column.name'), flush: true },
+		{
+			id: 'author',
+			label: t('scripts.column.author'),
+			wide: true,
+			width: '20%',
+			filterable: true,
+			filtered: botcQuery.author !== ''
+		},
+		{
+			id: 'kind',
+			label: t('scripts.column.type'),
+			wide: true,
+			width: '8.5rem',
+			filterable: true,
+			filtered: botcFilters.type !== ''
+		},
+		{
+			id: 'characters',
+			label: t('scripts.column.characters'),
+			align: 'end',
+			width: '6rem',
+			filterable: true,
+			filtered: characterFilters > 0
+		},
+		{
+			id: 'likes',
+			label: t('scripts.column.likes'),
+			sortable: true,
+			align: 'end',
+			width: '6rem'
+		},
+		{
+			id: 'number',
+			label: t('scripts.column.number'),
+			sortable: true,
+			wide: true,
+			align: 'end',
+			width: '6rem'
 		}
+	]);
+	const columns = $derived(source === 'botc' ? BOTC_COLUMNS : LOCAL_COLUMNS);
+	const tableSort = $derived<DataSort<ColumnId> | undefined>(
+		source === 'botc'
+			? BOTC_SORT_OF[effectiveBotcSort]
+			: sort && {
+					column: sort.column,
+					direction: sort.descending ? 'descending' : 'ascending'
+				}
 	);
+
+	function onSort(column: ColumnId) {
+		if (column === 'remove') return;
+		if (source === 'botc') sortBotc(column);
+		else sort = nextSort(sort, column);
+	}
+
+	/** Counts under the name on narrow tables: good and evil characters. */
+	function makeup(row: PickerRow): string {
+		if (!data || row.source !== 'botc') return '';
+		const c = botcCard(row.entries, data).counts;
+		return [c.townsfolk, c.outsider, c.minion, c.demon].map((n) => n ?? 0).join('/');
+	}
 
 	function clearError() {
 		error = '';
@@ -299,14 +439,31 @@
 		}
 	}
 
-	async function chooseEdition(id: string) {
-		const script = editionScript(id, await loadOfficialData());
-		if (script) await use(script, { kind: 'edition' });
+	/** Loads a row's script: built in, saved, carried in the row, or fetched. */
+	async function loadTarget(target: LoadTarget) {
+		switch (target.kind) {
+			case 'edition': {
+				const script = editionScript(target.edition, await loadOfficialData());
+				if (script) await use(script, { kind: 'edition' });
+				return;
+			}
+			case 'saved': {
+				const script = reloadSavedScript(target.saved, await loadOfficialData());
+				if (script) await use(script, target.saved.source);
+				return;
+			}
+			case 'json':
+				return run(() =>
+					Promise.resolve({ text: JSON.stringify(target.json), source: target.source })
+				);
+			case 'botcscripts':
+				return run(() => fetchLinkTarget({ kind: 'botcscripts', ref: target.ref }, ''));
+		}
 	}
 
-	async function chooseRecent(saved: SavedScript) {
-		const script = reloadSavedScript(saved, await loadOfficialData());
-		if (script) await use(script, saved.source);
+	function preview(listing: ScriptListing) {
+		previewing = listing;
+		previewOpen = true;
 	}
 
 	function isLink(text: string): boolean {
@@ -391,39 +548,52 @@
 		/>
 	</div>
 
-	<!-- One fixed height for both views, so switching to BotC Scripts moves nothing below. -->
+	<!-- One fixed height for every source, so switching moves nothing below. -->
 	<div class="body">
-		{#if source === 'botc'}
-			<BotcScriptsBrowser
-				bind:query={term}
-				disabled={busy}
-				onpick={(ref) => run(() => fetchLinkTarget({ kind: 'botcscripts', ref }, ''))}
+		<div class="table" data-testid="picker-table" data-source={source}>
+			<DataTable
+				label={source === 'botc' ? t('scripts.botc.results') : t('scripts.picker.table')}
+				{columns}
+				rows={botcRef ? [] : shown}
+				key={(listing) => listing.row.key}
+				{cell}
+				sort={tableSort}
+				{onSort}
+				{filter}
+				narrow="hide"
+				fill
+				rowSelected={isCurrent}
+				empty={botcRef ? '' : t('common.none')}
 			/>
-		{:else}
-			<div class="table">
-				<DataTable
-					label={t('scripts.picker.table')}
-					{columns}
-					rows={shown}
-					key={(entry) => entry.row.key}
-					{cell}
-					sort={tableSort}
-					onSort={(column) => column !== 'remove' && (sort = nextSort(sort, column))}
-					{filter}
-					narrow="hide"
-					fill
-					rowSelected={isCurrent}
-				/>
-			</div>
+		</div>
 
-			<!-- The count shares the line under the table with the BotC Scripts link. -->
-			<div class="more">
-				<p class="status" role="status" data-testid="picker-status">{status}</p>
+		<!-- The count shares the line under the table with the next action; both always there. -->
+		<div class="more">
+			<p class="status" role="status" data-testid="picker-status">{status}</p>
+			{#if source === 'botc'}
+				<div class="buttons">
+					<Button
+						variant="quiet"
+						disabled={busy || botc.loading || !botc.hasMore || !!botcRef || !data}
+						onclick={() =>
+							data &&
+							botc.load($state.snapshot(botcQuery) as BotcScriptsQuery, botc.page + 1, data)}
+						>{t('scripts.botc.more')}</Button
+					>
+					<Button
+						variant="accent"
+						disabled={busy || !botcRef}
+						onclick={() =>
+							botcRef && run(() => fetchLinkTarget({ kind: 'botcscripts', ref: botcRef }, ''))}
+						>{t('scripts.picker.load')}</Button
+					>
+				</div>
+			{:else}
 				<Button variant="quiet" onclick={() => (source = 'botc')}
 					>{t('scripts.picker.searchBotcButton')}</Button
 				>
-			</div>
-		{/if}
+			{/if}
+		</div>
 	</div>
 
 	<section aria-labelledby="custom-heading">
@@ -451,20 +621,26 @@
 	</section>
 </div>
 
-{#snippet cell(entry: Entry, column: DataColumn<ColumnId>)}
-	{@const row = entry.row}
+{#snippet cell(listing: ScriptListing, column: DataColumn<ColumnId>)}
+	{@const row = listing.row}
 	{#if column.id === 'name'}
 		<button
 			type="button"
 			class="pick"
-			aria-pressed={isCurrent(entry)}
+			aria-pressed={isCurrent(listing)}
 			aria-label="{row.name} {row.note || t(`scripts.sourceLabel.${row.source}`)}"
+			aria-haspopup="dialog"
 			disabled={busy}
-			onclick={() => void entry.load()}
+			onclick={() => preview(listing)}
 		>
-			<span class="title">{row.name}</span>
+			<span class="title">{row.name || t('common.none')}</span>
 			<span class="sub"
-				>{[row.note, row.author || t('scripts.picker.noAuthor'), t(`scripts.kind.${row.kind}`)]
+				>{[
+					row.note,
+					row.author || t('scripts.picker.noAuthor'),
+					t(`scripts.kind.${row.kind}`),
+					makeup(row)
+				]
 					.filter(Boolean)
 					.join(' · ')}</span
 			>
@@ -477,8 +653,12 @@
 		<span class="text">{t(`scripts.kind.${row.kind}`)}</span>
 	{:else if column.id === 'characters'}
 		<span class="text numeric">{row.characters}</span>
-	{:else if entry.saved}
-		{@const saved = entry.saved}
+	{:else if column.id === 'likes'}
+		<span class="text numeric">{row.likes ?? 0}</span>
+	{:else if column.id === 'number'}
+		<span class="text numeric">{row.number ?? ''}</span>
+	{:else if listing.saved}
+		{@const saved = listing.saved}
 		<IconButton
 			icon="close"
 			label={t('scripts.picker.removeRecent', { name: saved.name })}
@@ -488,25 +668,68 @@
 {/snippet}
 
 {#snippet filter(column: DataColumn<ColumnId>, close: () => void)}
-	<fieldset class="kinds" data-col={column.id}>
-		<legend class="visually-hidden">{t('scripts.picker.type')}</legend>
-		{#each KIND_OPTIONS as option (option.value)}
-			<label class="check">
-				<input
-					type="radio"
-					name="script-kind"
-					value={option.value}
-					checked={kind === option.value}
-					onchange={() => {
-						kind = option.value;
-						close();
-					}}
-				/>
-				{option.label}
-			</label>
-		{/each}
-	</fieldset>
+	{#if source === 'botc'}
+		<BotcFilter
+			column={column.id}
+			bind:filters={botcFilters}
+			{close}
+			onchoose={(list) => {
+				close();
+				choosing = list;
+				choosingOpen = true;
+			}}
+		/>
+	{:else}
+		<fieldset class="kinds" data-col={column.id}>
+			<legend class="visually-hidden">{t('scripts.picker.type')}</legend>
+			{#each KIND_OPTIONS as option (option.value)}
+				<label class="check">
+					<input
+						type="radio"
+						name="script-kind"
+						value={option.value}
+						checked={kind === option.value}
+						onchange={() => {
+							kind = option.value;
+							close();
+						}}
+					/>
+					{option.label}
+				</label>
+			{/each}
+		</fieldset>
+	{/if}
 {/snippet}
+
+<ScriptPreview
+	bind:open={previewOpen}
+	row={previewing?.row}
+	{data}
+	disabled={busy}
+	onload={() => previewing && void loadTarget(previewing.target)}
+/>
+
+<Dialog
+	bind:open={choosingOpen}
+	title={choosing === 'exclude' ? t('scripts.botc.leavesOut') : t('scripts.botc.includes')}
+	size="full"
+>
+	{#if choosing}
+		{@const list = choosing}
+		<CharacterPicker
+			characters={pickable}
+			mode="multi"
+			types={FILTER_TYPES}
+			selected={botcFilters[list] as CharacterId[]}
+			max={MAX_FILTER_CHARACTERS}
+			onSelect={(id) => toggleCharacter(list, id)}
+		/>
+	{/if}
+	{#snippet actions()}
+		<Button variant="accent" onclick={() => (choosingOpen = false)}>{t('scripts.botc.done')}</Button
+		>
+	{/snippet}
+</Dialog>
 
 {#snippet errorLine()}
 	<p class="error" role="status">{error}</p>
@@ -686,6 +909,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		gap: var(--space-2);
+	}
+	.more .status {
+		flex: 1;
+		min-width: 0;
+	}
+	.buttons {
+		display: flex;
 		gap: var(--space-2);
 	}
 	.kinds {

@@ -1,12 +1,13 @@
 /**
- * Rows of the script picker's table: one per script from every local source (Official,
- * Curated, Recent, profile), with search, filters and column sorting. BotC Scripts has
- * its own search (`BotcScriptsBrowser`), since the site sorts and filters for us.
- * Design: 08-script-loading.md §5.6.
+ * Rows of the script picker's table: one per script, from any source (`script-providers.ts`).
+ * Local sources are searched, filtered and sorted here; BotC Scripts does that on the site,
+ * so its rows arrive ready (`botcRow`). Design: 08-script-loading.md §5.6.
  */
-import type { CharacterType, LoadedScript } from '#lib/core/data/index.ts';
+import type { CharacterType, GameData, LoadedScript } from '#lib/core/data/index.ts';
+import type { BotcScriptsEntry, BotcScriptsSummary } from './botcscripts-api.ts';
+import { botcCard } from './botcscripts-cards.ts';
 
-export type PickerSource = 'official' | 'curated' | 'recent' | 'profile';
+export type PickerSource = 'official' | 'curated' | 'recent' | 'profile' | 'botc';
 
 export type ScriptKind = 'Full' | 'Teensyville';
 
@@ -22,6 +23,13 @@ export interface PickerRow {
 	kind: ScriptKind;
 	/** Townsfolk, Outsiders, Minions and Demons on the script. */
 	characters: number;
+	/** Every character on the script, for the preview. */
+	entries: BotcScriptsEntry[];
+	/** Votes ("Likes") on BotC Scripts. */
+	likes?: number;
+	/** The script's number on BotC Scripts, and the version listed. */
+	number?: number;
+	version?: string;
 	/** Lower-cased name, author and character names, for search. */
 	haystack: string;
 }
@@ -51,9 +59,34 @@ export function pickerRow(
 		note,
 		kind: characters <= TEENSYVILLE_MAX_CHARACTERS ? 'Teensyville' : 'Full',
 		characters,
+		entries: script.characters.map((c) => ({ id: c.id, name: c.name, team: c.type })),
 		haystack: [script.name, author, ...script.characters.map((c) => c.name)]
 			.join('\n')
 			.toLowerCase()
+	};
+}
+
+/** A BotC Scripts search result. The site says whether it is Teensyville; we count the rest. */
+export function botcRow(summary: BotcScriptsSummary, data: GameData): PickerRow {
+	const card = botcCard(summary.characters, data);
+	const characters = PLAYABLE.reduce((n, type) => n + (card.counts[type] ?? 0), 0);
+	return {
+		key: `botc:${summary.versionId}`,
+		name: summary.name,
+		author: summary.author.trim(),
+		source: 'botc',
+		note: '',
+		kind:
+			summary.type === 'Teensyville' ||
+			(summary.type !== 'Full' && characters <= TEENSYVILLE_MAX_CHARACTERS)
+				? 'Teensyville'
+				: 'Full',
+		characters,
+		entries: summary.characters,
+		likes: summary.score,
+		number: summary.scriptId,
+		version: summary.version,
+		haystack: summary.name.toLowerCase()
 	};
 }
 
@@ -73,18 +106,22 @@ export function filterRows(rows: readonly PickerRow[], filter: RowFilter): Picke
 	);
 }
 
-export type SortColumn = 'name' | 'author' | 'source' | 'kind' | 'characters';
+export type SortColumn = 'name' | 'author' | 'source' | 'kind' | 'characters' | 'likes' | 'number';
 export interface RowSort {
 	column: SortColumn;
 	descending: boolean;
 }
 
-const SOURCE_ORDER: readonly PickerSource[] = ['official', 'curated', 'recent', 'profile'];
+const SOURCE_ORDER: readonly PickerSource[] = ['official', 'curated', 'recent', 'profile', 'botc'];
 
 function compare(a: PickerRow, b: PickerRow, column: SortColumn): number {
 	switch (column) {
 		case 'characters':
 			return a.characters - b.characters;
+		case 'likes':
+			return (a.likes ?? 0) - (b.likes ?? 0);
+		case 'number':
+			return (a.number ?? 0) - (b.number ?? 0);
 		case 'source':
 			return SOURCE_ORDER.indexOf(a.source) - SOURCE_ORDER.indexOf(b.source);
 		case 'author':

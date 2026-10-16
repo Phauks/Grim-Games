@@ -13,10 +13,12 @@ import {
 	parseProxyPath,
 	parseSearchUrl,
 	pickVersionId,
+	readCharacterEditions,
 	readSearchPage,
 	readVersion,
 	upstreamSearchPath,
-	type BotcScriptsQuery
+	type BotcScriptsQuery,
+	type CharacterEditions
 } from '../src/lib/features/scripts/botcscripts-api.ts';
 
 /** Scripts are a few KB; anything far bigger is not a script. */
@@ -24,6 +26,8 @@ const MAX_BYTES = 1_000_000;
 /** A search page holds 50 whole scripts, homebrew abilities included. */
 const MAX_SEARCH_BYTES = 6_000_000;
 const CACHE_SECONDS = 600;
+/** Which group each character is in changes only when TPI releases characters. */
+const CHARACTERS_CACHE_SECONDS = 86_400;
 
 class LookupError extends Error {
 	constructor(
@@ -34,11 +38,15 @@ class LookupError extends Error {
 	}
 }
 
-async function getJson(path: string, maxBytes = MAX_BYTES): Promise<unknown> {
+async function getJson(
+	path: string,
+	maxBytes = MAX_BYTES,
+	cacheTtl = CACHE_SECONDS
+): Promise<unknown> {
 	const response = await fetch(`${BOTC_SCRIPTS_ORIGIN}${path}`, {
 		headers: { Accept: 'application/json' },
 		redirect: 'follow',
-		cf: { cacheTtl: CACHE_SECONDS, cacheEverything: true }
+		cf: { cacheTtl, cacheEverything: true }
 	});
 	if (response.status === 404) throw new LookupError(404, 'BotC Scripts has no such script.');
 	if (!response.ok) {
@@ -53,10 +61,24 @@ async function getJson(path: string, maxBytes = MAX_BYTES): Promise<unknown> {
 	}
 }
 
+let characterEditions: CharacterEditions | undefined;
+
+/** The site's character groups, needed only to leave a group out (`editionFilter`). */
+async function siteEditions(): Promise<CharacterEditions> {
+	if (characterEditions) return characterEditions;
+	const found = readCharacterEditions(
+		await getJson('/api/characters', MAX_BYTES, CHARACTERS_CACHE_SECONDS)
+	);
+	if (!found) throw new LookupError(502, 'BotC Scripts returned something unexpected.');
+	characterEditions = found;
+	return found;
+}
+
 async function handleSearch(query: BotcScriptsQuery, page: number): Promise<Response> {
 	try {
+		const editions = query.editions ? await siteEditions() : undefined;
 		const found = readSearchPage(
-			await getJson(upstreamSearchPath(query, page), MAX_SEARCH_BYTES),
+			await getJson(upstreamSearchPath(query, page, editions), MAX_SEARCH_BYTES),
 			page
 		);
 		if (!found) throw new LookupError(502, 'BotC Scripts returned something unexpected.');
