@@ -67,8 +67,9 @@ test('the filter chips are gone; the table sorts and filters by column', async (
 	)
 		.filter((p) => p !== null)
 		.map(Number);
-	// Only rows near the screen have their cells built (near.ts), so check those.
-	expect(positions.length).toBeGreaterThan(10);
+	// Only rows near the screen have their cells built (near.ts), so check those. Phones
+	// stack each row into a tall block, so fewer rows are near there.
+	expect(positions.length).toBeGreaterThan(3);
 	expect(positions).toEqual([...positions].sort((x, y) => x - y));
 	await table.getByRole('button', { name: 'First night', exact: true }).tap();
 	await expect(table.locator('th[data-col="firstNight"]')).toHaveAttribute(
@@ -99,11 +100,18 @@ test('the filter chips are gone; the table sorts and filters by column', async (
 });
 
 test('the Witch row shows the same values as the Witch card', async ({ page }) => {
+	// Builds the full table (181 rows); slow on emulated devices when the whole suite runs.
+	test.slow();
 	await page.goto('/reference');
 	const card = page.locator('[data-testid="reference-card"][data-character="witch"]');
-	await card.scrollIntoViewIfNeeded();
-	// Card bodies and table rows are built as they come near the screen.
-	await expect(card.locator('[data-field="ability"]')).toBeVisible();
+	// Card bodies and table rows are built as they come near the screen. Rows above can
+	// still grow while they build and push the Witch away, so scroll again until it is built.
+	const built = async (scope: typeof card) =>
+		expect(async () => {
+			await scope.scrollIntoViewIfNeeded();
+			await expect(scope.locator('[data-field="ability"]')).toBeAttached({ timeout: 2_000 });
+		}).toPass({ timeout: 30_000 });
+	await built(card);
 	const fields = [
 		'name',
 		'type',
@@ -140,9 +148,7 @@ test('the Witch row shows the same values as the Witch card', async ({ page }) =
 
 	await page.getByText('Table', { exact: true }).tap();
 	const row = page.getByTestId('character-table').locator('tr[data-character="witch"]');
-	await row.scrollIntoViewIfNeeded();
-	// The table rebuilds all 181 rows on switching; slow emulated devices need the time.
-	await expect(row.locator('[data-field="ability"]')).toBeAttached({ timeout: 15_000 });
+	await built(row);
 	expect(await read(row)).toEqual(fromCard);
 	await expect(row.locator('[data-field="icons"] img')).toHaveCount(2);
 });
@@ -302,4 +308,26 @@ test('prep steps show tokens as reminder chips', async ({ page }) => {
 	await expect(prep).toContainText('Choose a good player as the');
 	await expect(prep.getByTestId('reminder-token')).toHaveText('Red Herring');
 	await expect(prep).not.toContainText('[');
+});
+
+test('on a phone the tables stack into labelled rows instead of scrolling sideways', async ({
+	page
+}) => {
+	test.skip(test.info().project.name !== 'phone', 'phones stack; wider screens keep the table');
+	await page.goto('/reference');
+	await page.getByText('Table', { exact: true }).tap();
+	const table = page.getByTestId('character-table');
+	const witch = table.locator('tr[data-character="witch"]');
+	await witch.scrollIntoViewIfNeeded();
+	await expect(witch.locator('td[data-col="ability"]')).toHaveAttribute('data-label', 'Ability');
+	await expect(witch.locator('td[data-col="ability"] .cell')).not.toBeEmpty({ timeout: 15_000 });
+	const sideways = (selector: string) =>
+		page.evaluate(
+			(s) => [...document.querySelectorAll(s)].some((el) => el.scrollWidth > el.clientWidth + 1),
+			selector
+		);
+	expect(await sideways('.scroll')).toBe(false);
+	await page.getByRole('tab', { name: 'Night order' }).tap();
+	await expect(page.getByTestId('night-table-first')).toBeVisible();
+	expect(await sideways('.scroll')).toBe(false);
 });

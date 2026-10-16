@@ -239,6 +239,11 @@
 		gap: var(--space-2);
 		align-items: baseline;
 	}
+	/* The step text wraps beside the position instead of widening the row. */
+	.st {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
 	.pos {
 		flex: none;
 		font-variant-numeric: tabular-nums;

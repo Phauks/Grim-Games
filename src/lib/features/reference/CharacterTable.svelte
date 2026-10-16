@@ -58,143 +58,155 @@
 	const shownRows = new SvelteSet<string>();
 </script>
 
-<!-- Reserved line: the count and Clear button are always there, so nothing below moves. -->
-<div class="filter-bar">
-	<span class="count" aria-live="polite" data-testid="table-count">
-		{rows.length} of {entries.length} · {active === 0
-			? 'no filters'
-			: `${active} filter${active === 1 ? '' : 's'}`}
-	</span>
-	<Button
-		variant="quiet"
-		icon="close"
-		disabled={active === 0}
-		onclick={() => referenceTable.clearFilters()}>Clear filters</Button
-	>
-</div>
+<!--
+	Wide screens get a real table. Narrow ones (phones, or large text) stack each row into a
+	block of labelled fields, so the page never scrolls sideways (Trevor, 2026-10-16).
+-->
+<div class="table-view">
+	<!-- Reserved line: the count and Clear button are always there, so nothing below moves. -->
+	<div class="filter-bar">
+		<span class="count" aria-live="polite" data-testid="table-count">
+			{rows.length} of {entries.length} · {active === 0
+				? 'no filters'
+				: `${active} filter${active === 1 ? '' : 's'}`}
+		</span>
+		<Button
+			variant="quiet"
+			icon="close"
+			disabled={active === 0}
+			onclick={() => referenceTable.clearFilters()}>Clear filters</Button
+		>
+	</div>
 
-<!-- Scrolls sideways inside its own box on a phone; the page never does. -->
-<div class="scroll" role="region" aria-label="Characters table">
-	<table data-testid="character-table">
-		<thead>
-			<tr>
-				{#each REFERENCE_FIELDS as field (field.id)}
-					<th scope="col" data-col={field.id} aria-sort={ariaSort(field.sort)}>
-						{#if field.sort}
-							{@const sort = field.sort}
-							<button
-								type="button"
-								class="sort"
-								onclick={() => (referenceTable.sort = nextSort(table.sort, sort))}
-							>
-								{field.label}
-								{#if table.sort?.column === sort}
-									<Icon
-										name={table.sort.direction === 'ascending' ? 'sortAscending' : 'sortDescending'}
-									/>
-								{:else}
-									<span class="unsorted"><Icon name="sort" /></span>
-								{/if}
-							</button>
-						{:else}
-							<span class="plain">{field.label}</span>
-						{/if}
-					</th>
-				{/each}
-			</tr>
-			<tr class="filters">
-				{#each REFERENCE_FIELDS as field (field.id)}
-					<td data-col={field.id}>
-						{#if field.filter === 'text'}
-							<input
-								type="search"
-								aria-label="Filter {field.label}"
-								placeholder="Filter"
-								value={table.filters.name ?? ''}
-								oninput={(e) => referenceTable.setFilter('name', e.currentTarget.value)}
-							/>
-						{:else if field.filter === 'types'}
-							<button
-								type="button"
-								class="pick"
-								aria-haspopup="dialog"
-								onclick={() => (typesOpen = true)}
-							>
-								<Icon name="filter" />
-								{table.filters.types?.length
-									? table.filters.types.map((t) => TYPE_PLURALS[t]).join(', ')
-									: 'All'}
-							</button>
-						{:else if field.filter === 'alignment'}
-							<select
-								aria-label="Filter {field.label}"
-								value={table.filters.alignment ?? ''}
-								onchange={(e) =>
-									referenceTable.setFilter('alignment', e.currentTarget.value || undefined)}
-							>
-								<option value="">All</option>
-								{#each ALIGNMENT_CHOICES as choice (choice)}<option value={choice}>{choice}</option
-									>{/each}
-							</select>
-						{:else if field.filter === 'presence'}
-							{@const key = presenceKey(field)}
-							{@const labels = PRESENCE_LABELS[field.id] ?? { yes: 'Has', no: 'None' }}
-							<select
-								aria-label="Filter {field.label}"
-								value={table.filters[key] ?? ''}
-								onchange={(e) =>
-									referenceTable.setFilter(
-										key,
-										(e.currentTarget.value || undefined) as Presence | undefined
-									)}
-							>
-								<option value="">All</option>
-								<option value="yes">{labels.yes}</option>
-								<option value="no">{labels.no}</option>
-							</select>
-						{/if}
-					</td>
-				{/each}
-			</tr>
-		</thead>
-		<tbody>
-			{#each rows as entry (entry.character.id)}
-				<tr
-					data-character={entry.character.id}
-					data-type={entry.character.type}
-					{@attach near(() => shownRows.add(entry.character.id))}
-				>
+	<div class="scroll" role="region" aria-label="Characters table">
+		<table data-testid="character-table">
+			<thead>
+				<tr>
 					{#each REFERENCE_FIELDS as field (field.id)}
-						{#if field.id === 'name'}
-							<th scope="row" data-col="name"><FieldValue field="name" {entry} {onExplain} /></th>
-						{:else if !shownRows.has(entry.character.id)}
-							<!-- Built when the row comes near the screen (near.ts); cells keep their size. -->
-							<td data-col={field.id}><div class="cell" class:clamp={field.long}></div></td>
-						{:else}
-							<td data-col={field.id}>
-								{#if field.long}
-									<!-- Clamped to a fixed height; the whole value opens in the details dialog. -->
-									<div class="cell clamp"><FieldValue field={field.id} {entry} {onExplain} /></div>
-									<button
-										type="button"
-										class="more"
-										onclick={() => onShowField(entry, field.id)}
-										aria-label="{field.label} for {entry.character.name}">More</button
-									>
-								{:else}
-									<div class="cell">
-										<FieldValue field={field.id} {entry} {onExplain} tokenSize={40} />
-									</div>
-								{/if}
-							</td>
-						{/if}
+						<th scope="col" data-col={field.id} aria-sort={ariaSort(field.sort)}>
+							{#if field.sort}
+								{@const sort = field.sort}
+								<button
+									type="button"
+									class="sort"
+									onclick={() => (referenceTable.sort = nextSort(table.sort, sort))}
+								>
+									{field.label}
+									{#if table.sort?.column === sort}
+										<Icon
+											name={table.sort.direction === 'ascending'
+												? 'sortAscending'
+												: 'sortDescending'}
+										/>
+									{:else}
+										<span class="unsorted"><Icon name="sort" /></span>
+									{/if}
+								</button>
+							{:else}
+								<span class="plain">{field.label}</span>
+							{/if}
+						</th>
 					{/each}
 				</tr>
-			{:else}
-				<tr><td class="empty" colspan={REFERENCE_FIELDS.length}>No characters match.</td></tr>
-			{/each}
-		</tbody>
-	</table>
+				<tr class="filters">
+					{#each REFERENCE_FIELDS as field (field.id)}
+						<td data-col={field.id} data-label={field.label}>
+							{#if field.filter === 'text'}
+								<input
+									type="search"
+									aria-label="Filter {field.label}"
+									placeholder="Filter"
+									value={table.filters.name ?? ''}
+									oninput={(e) => referenceTable.setFilter('name', e.currentTarget.value)}
+								/>
+							{:else if field.filter === 'types'}
+								<button
+									type="button"
+									class="pick"
+									aria-haspopup="dialog"
+									onclick={() => (typesOpen = true)}
+								>
+									<Icon name="filter" />
+									{table.filters.types?.length
+										? table.filters.types.map((t) => TYPE_PLURALS[t]).join(', ')
+										: 'All'}
+								</button>
+							{:else if field.filter === 'alignment'}
+								<select
+									aria-label="Filter {field.label}"
+									value={table.filters.alignment ?? ''}
+									onchange={(e) =>
+										referenceTable.setFilter('alignment', e.currentTarget.value || undefined)}
+								>
+									<option value="">All</option>
+									{#each ALIGNMENT_CHOICES as choice (choice)}<option value={choice}
+											>{choice}</option
+										>{/each}
+								</select>
+							{:else if field.filter === 'presence'}
+								{@const key = presenceKey(field)}
+								{@const labels = PRESENCE_LABELS[field.id] ?? { yes: 'Has', no: 'None' }}
+								<select
+									aria-label="Filter {field.label}"
+									value={table.filters[key] ?? ''}
+									onchange={(e) =>
+										referenceTable.setFilter(
+											key,
+											(e.currentTarget.value || undefined) as Presence | undefined
+										)}
+								>
+									<option value="">All</option>
+									<option value="yes">{labels.yes}</option>
+									<option value="no">{labels.no}</option>
+								</select>
+							{/if}
+						</td>
+					{/each}
+				</tr>
+			</thead>
+			<tbody>
+				{#each rows as entry (entry.character.id)}
+					<tr
+						data-character={entry.character.id}
+						data-type={entry.character.type}
+						{@attach near(() => shownRows.add(entry.character.id))}
+					>
+						{#each REFERENCE_FIELDS as field (field.id)}
+							{#if field.id === 'name'}
+								<th scope="row" data-col="name"><FieldValue field="name" {entry} {onExplain} /></th>
+							{:else if !shownRows.has(entry.character.id)}
+								<!-- Built when the row comes near the screen (near.ts); cells keep their size. -->
+								<td data-col={field.id} data-label={field.label}>
+									<div class="cell" class:clamp={field.long}></div>
+								</td>
+							{:else}
+								<td data-col={field.id} data-label={field.label}>
+									{#if field.long}
+										<!-- Clamped to a fixed height; the whole value opens in the details dialog. -->
+										<div class="cell clamp">
+											<FieldValue field={field.id} {entry} {onExplain} />
+										</div>
+										<button
+											type="button"
+											class="more"
+											onclick={() => onShowField(entry, field.id)}
+											aria-label="{field.label} for {entry.character.name}">More</button
+										>
+									{:else}
+										<div class="cell">
+											<FieldValue field={field.id} {entry} {onExplain} tokenSize={40} />
+										</div>
+									{/if}
+								</td>
+							{/if}
+						{/each}
+					</tr>
+				{:else}
+					<tr><td class="empty" colspan={REFERENCE_FIELDS.length}>No characters match.</td></tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 </div>
 
 <Dialog bind:open={typesOpen} title="Filter by type">
@@ -220,6 +232,9 @@
 </Dialog>
 
 <style>
+	.table-view {
+		container-type: inline-size;
+	}
 	.filter-bar {
 		display: flex;
 		align-items: center;
@@ -417,5 +432,116 @@
 		overflow: hidden;
 		clip-path: inset(50%);
 		white-space: nowrap;
+	}
+	/* Stacked rows: the same fields as the table, each with its label, one row per block. */
+	@container (max-width: 40rem) {
+		.scroll {
+			overflow-x: visible;
+			border: 0;
+			background: none;
+		}
+		table,
+		thead,
+		tbody,
+		tr,
+		th,
+		td {
+			display: block;
+		}
+		table,
+		th[data-col] {
+			width: auto;
+		}
+		thead tr:first-child {
+			display: flex;
+			flex-wrap: wrap;
+			gap: var(--space-1);
+			margin-bottom: var(--space-2);
+		}
+		thead th {
+			border: 0;
+			background: none;
+		}
+		/* Unsortable columns have no control; their names label each row's fields below. */
+		thead th:not([aria-sort]):not(:has(.sort)) {
+			display: none;
+		}
+		.sort {
+			width: auto;
+			border: var(--card-border);
+			border-radius: var(--radius-full);
+			background: var(--card-background);
+		}
+		.filters {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(calc(9 * var(--u)), 1fr));
+			gap: var(--space-2);
+			margin-bottom: var(--space-3);
+		}
+		.filters td {
+			padding: 0;
+			border: 0;
+			background: none;
+		}
+		.filters td:not(:has(input, select, button)) {
+			display: none;
+		}
+		.filters td::before,
+		tbody td::before {
+			content: attr(data-label);
+			color: var(--on-surface-muted);
+			font-size: 0.75rem;
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+		}
+		.filters td::before {
+			display: block;
+		}
+		.pick {
+			max-width: none;
+		}
+		tbody tr {
+			display: grid;
+			grid-template-columns: auto minmax(0, 1fr);
+			align-items: center;
+			margin-bottom: var(--space-3);
+			padding: var(--space-2);
+			border: var(--card-border);
+			border-radius: var(--card-radius);
+			background: var(--card-background);
+		}
+		tbody th,
+		tbody td {
+			border: 0;
+		}
+		tbody th {
+			white-space: normal;
+		}
+		/* The token sits beside the name, so it needs no label. */
+		tbody td[data-col='token']::before {
+			content: none;
+		}
+		/* As on the cards: the value sits beside its label when there is room, else under it. */
+		tbody td:not([data-col='token']) {
+			grid-column: 1 / -1;
+			display: flex;
+			flex-wrap: wrap;
+			align-items: baseline;
+			gap: var(--space-1) var(--space-2);
+			min-width: 0;
+		}
+		tbody td .cell {
+			flex: 1 1 calc(8 * var(--u));
+		}
+		/* Rows here are as tall as they need, so nothing is clipped and More isn't needed. */
+		tbody td .clamp {
+			max-height: none;
+		}
+		tbody td .more {
+			display: none;
+		}
+		td.empty {
+			display: block;
+		}
 	}
 </style>

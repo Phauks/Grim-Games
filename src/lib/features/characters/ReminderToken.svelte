@@ -48,7 +48,8 @@
 		font-variant: small-caps;
 		letter-spacing: 0.02em;
 		line-height: 1.5;
-		white-space: nowrap;
+		/* One line, unless the chip alone is wider than its line (tiny screen, largest text). */
+		max-width: 100%;
 		vertical-align: baseline;
 	}
 	/* The little round token mark. */

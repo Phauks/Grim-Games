@@ -90,6 +90,7 @@
 		border-radius: 999px;
 		font: inherit;
 		font-weight: 600;
+		max-width: 100%;
 		vertical-align: middle;
 		cursor: pointer;
 		background: var(--surface-raised);
@@ -119,6 +120,9 @@
 		height: calc(1.75 * var(--u) * var(--icon-scale, 1));
 	}
 	.name {
+		/* Only when the badge alone is wider than its line (tiny screen, largest text). */
+		min-width: 0;
+		overflow-wrap: anywhere;
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
 	}

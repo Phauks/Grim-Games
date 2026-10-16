@@ -6,6 +6,12 @@ test('tapping a character badge shows its ability and a wiki link', async ({ pag
 	const badge = page.locator('button.badge', { hasText: 'Witch' });
 	await expect(badge).toContainText('Sam');
 	await expect(badge.locator('img')).toBeVisible();
+	// Measure only once the icon and fonts have loaded: a late font swap or image resizes the
+	// badge, which made this check flaky under a loaded full-suite run.
+	await expect
+		.poll(() => badge.locator('img').evaluate((img: HTMLImageElement) => img.complete))
+		.toBe(true);
+	await page.evaluate(() => document.fonts.ready);
 	const before = await badge.boundingBox();
 
 	await badge.tap();

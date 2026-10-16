@@ -84,6 +84,8 @@
 <style>
 	.controls {
 		display: grid;
+		/* minmax(0, …): the search field shrinks to the screen instead of widening the page. */
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
 		margin-bottom: var(--space-5);
 	}

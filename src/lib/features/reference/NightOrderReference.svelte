@@ -78,7 +78,7 @@
 			{@render text(night, s)}
 			{#if s.afterDawn}<span class="muted"> (after Dawn: announce to everyone)</span>{/if}
 		</td>
-		<td class="tokens">
+		<td class="tokens" data-label="Tokens">
 			{#if s.character && (s.character.reminders.length || s.character.remindersGlobal.length)}
 				{#each [...s.character.reminders, ...s.character.remindersGlobal] as token, i (i)}<ReminderToken
 						label={token}
@@ -120,7 +120,7 @@
 			{n.title} <span>({n.beforeDawn.length + n.afterDawn.length} steps)</span>
 		</h2>
 		{#if view === 'table'}
-			<!-- Strictly in night order; scrolls sideways inside its own box on a phone. -->
+			<!-- Strictly in night order; on a phone each row stacks, so nothing scrolls sideways. -->
 			<div class="scroll" role="region" aria-label="{n.title} table">
 				<table class="order" data-testid="night-table-{n.night}">
 					<thead>
@@ -197,6 +197,7 @@
 	}
 	.night {
 		margin-bottom: var(--space-6);
+		container-type: inline-size;
 	}
 	h2 {
 		margin: 0 0 var(--space-3);
@@ -325,5 +326,45 @@
 		font-family: var(--font-control);
 		font-size: 0.8rem;
 		color: var(--on-surface-muted);
+	}
+	/* Narrow screens: each step is a block (position and character, then text, then tokens). */
+	@container (max-width: 40rem) {
+		.scroll {
+			overflow-x: visible;
+		}
+		table.order,
+		.order tbody {
+			display: block;
+			min-width: 0;
+		}
+		.order thead {
+			display: none;
+		}
+		.order tr {
+			display: grid;
+			grid-template-columns: auto minmax(0, 1fr);
+			align-items: center;
+			gap: var(--space-1) var(--space-2);
+			padding: var(--space-2);
+			border-bottom: 1px solid var(--border);
+		}
+		.order th,
+		.order td {
+			display: block;
+			padding: 0;
+			border: 0;
+		}
+		.order .text,
+		.order .tokens {
+			grid-column: 1 / -1;
+			min-width: 0;
+		}
+		.order .tokens::before {
+			content: attr(data-label) ' ';
+			color: var(--on-surface-muted);
+			font-size: 0.75rem;
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+		}
 	}
 </style>

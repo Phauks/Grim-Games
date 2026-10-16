@@ -63,6 +63,9 @@
 		border-radius: var(--card-radius);
 		background: var(--card-background);
 		min-width: 0;
+		/* minmax(0, …): rows wrap to the card's width instead of widening it past the screen. */
+		grid-template-columns: minmax(0, 1fr);
+		container-type: inline-size;
 		/* Off-screen cards skip layout and paint; the size estimate keeps the scrollbar steady. */
 		content-visibility: auto;
 		contain-intrinsic-size: auto calc(34 * var(--u));
@@ -76,6 +79,20 @@
 	.title {
 		flex: 1;
 		min-width: 0;
+	}
+	/* A narrow card (a small phone, or large text) puts the name on its own line under the
+	   token, so a long name badge never runs past the screen. */
+	@container (max-width: 18rem) {
+		header {
+			flex-wrap: wrap;
+		}
+		.title {
+			flex-basis: 100%;
+			order: 1;
+		}
+		header > :global(.value[data-field='icons']) {
+			margin-left: auto;
+		}
 	}
 	h3 {
 		margin: 0;
@@ -106,6 +123,8 @@
 	/* The value sits beside its label when there is room, and wraps under it otherwise. */
 	.row > :global(.value) {
 		flex: 1 1 calc(8 * var(--u));
+		/* Its narrowest width counts, so a value that can't fit beside the label moves under it. */
+		min-width: auto;
 	}
 	/* Lists (jinxes, pre-day) start on their own line under the label. */
 	.row:has(:global(ul)) {
