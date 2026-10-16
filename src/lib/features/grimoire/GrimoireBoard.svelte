@@ -471,7 +471,6 @@
 	script={game.script}
 	types={['traveller']}
 	alwaysAll
-	list
 	onPick={(id) => {
 		travellerOpen = false;
 		traveller = id;
@@ -499,7 +498,6 @@
 	script={game.script}
 	types={['fabled', 'loric']}
 	alwaysAll
-	list
 	onPick={(characterId) => {
 		ruleOpen = false;
 		grimoire.run({ type: 'AddRuleCharacter', characterId });

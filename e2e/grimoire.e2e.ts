@@ -544,6 +544,7 @@ test('setup reminders wait in a tray on the board and are placed by hand', async
 	await details.getByRole('button', { name: 'Place on Seat 2' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Empath, 1 reminder')).toBeAttached();
 	await expect(tray.getByRole('button', { name: 'Townsfolk reminder' })).toBeHidden();
+	await expect(details).toBeHidden();
 
 	// Drag: any seat will do.
 	const wrong = tray.getByRole('button', { name: 'Wrong reminder' });
@@ -557,4 +558,17 @@ test('setup reminders wait in a tray on the board and are placed by hand', async
 
 	await page.getByRole('button', { name: 'Done' }).tap();
 	await expect(tray).toBeHidden();
+});
+
+test("a seat's character can be searched by name or ability", async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByRole('searchbox', { name: 'Search characters' }).fill('poison');
+	// The Poisoner by its ability; the Washerwoman is filtered out.
+	await expect(picker.getByRole('button', { name: 'Poisoner', exact: true })).toBeVisible();
+	await expect(picker.getByRole('button', { name: 'Washerwoman', exact: true })).toBeHidden();
+	await picker.getByRole('button', { name: 'Poisoner', exact: true }).tap();
+	await expect(sheet).toContainText('Poisoner · Evil · Seat 1');
 });

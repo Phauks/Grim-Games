@@ -24,16 +24,6 @@ export const SEAT_TYPES: readonly CharacterType[] = [
 	'traveller'
 ];
 
-export const TYPE_LABELS: Record<CharacterType, string> = {
-	townsfolk: 'Townsfolk',
-	outsider: 'Outsiders',
-	minion: 'Minions',
-	demon: 'Demons',
-	traveller: 'Travellers',
-	fabled: 'Fabled',
-	loric: 'Loric'
-};
-
 export interface CharacterGroup {
 	type: CharacterType;
 	characters: Character[];
