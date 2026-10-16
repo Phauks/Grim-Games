@@ -572,3 +572,45 @@ test("a seat's character can be searched by name or ability", async ({ page }) =
 	await picker.getByRole('button', { name: 'Poisoner', exact: true }).tap();
 	await expect(sheet).toContainText('Poisoner · Evil · Seat 1');
 });
+
+test('players rotate one seat, or are dragged to a new place in the order', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await nameSeat(sheet, 'Ana');
+	await closeSheet(page);
+
+	await menu(page, 'Rotate seats');
+	const rotate = page.getByRole('dialog', { name: 'Rotate seats' });
+	await rotate.getByRole('button', { name: 'Clockwise', exact: true }).tap();
+	await expect(seatLabelled(page, 'Seat 2: Ana')).toBeAttached();
+	await rotate.getByRole('button', { name: 'Anticlockwise', exact: true }).tap();
+	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
+	await rotate.getByRole('button', { name: 'Done' }).tap();
+	await expect(rotate).toBeHidden();
+
+	// Arranging: dropping a seat onto another seat changes the seating order.
+	await menu(page, 'Arrange seats');
+	const centre = async (n: number) => {
+		const box = (await page
+			.getByRole('button', { name: new RegExp(`^Seat ${n}:`) })
+			.boundingBox())!;
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+	const from = await centre(1);
+	const to = await centre(4);
+	await page.mouse.move(from.x, from.y);
+	await page.mouse.down();
+	await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+	await page.mouse.move(to.x, to.y, { steps: 4 });
+	await page.mouse.up();
+	await expect(seatLabelled(page, 'Seat 4: Ana')).toBeAttached();
+	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+
+	await page.getByRole('button', { name: 'History' }).tap();
+	const history = page.getByRole('dialog', { name: 'History' });
+	await expect(history).toContainText('Ana moved to seat 4');
+	await expect(history).toContainText('Rotated the seats clockwise');
+	await page.keyboard.press('Escape');
+	await openSeat(page, 4);
+	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
+});

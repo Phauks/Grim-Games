@@ -22,6 +22,7 @@
 		towardsMiddle,
 		withGap,
 		withPlaced,
+		withoutPlaced,
 		withShape,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
@@ -146,7 +147,10 @@
 	const gapAt = $derived(arranging ? gapPoints(game.seating, layout, { width, height }, 0.3) : []);
 	function startArranging() {
 		arranging = true;
-		toast('Arrange seats', 'Drag a seat to move it. Tap + between seats to leave a gap.');
+		toast(
+			'Arrange seats',
+			'Drag a seat to move it, or onto another seat to change the seating order. Tap + between seats to leave a gap.'
+		);
 	}
 
 	interface Drag {
@@ -190,9 +194,35 @@
 		const p = boardPoint(event);
 		drag = { ...drag, moved, at: { x: p.x + drag.offset.x, y: p.y + drag.offset.y } };
 	}
+	/** The other seat a dragged seat is over, if any: dropping there changes the order. */
+	const reorderTarget = $derived.by(() => {
+		if (!drag?.moved) return undefined;
+		const dragged = drag.seatId;
+		let best: SeatId | undefined;
+		let bestDistance = size * 0.6;
+		game.seating.forEach((id, i) => {
+			if (id === dragged) return;
+			const d = Math.hypot(
+				((points[i].x - drag!.at.x) / 100) * width,
+				((points[i].y - drag!.at.y) / 100) * height
+			);
+			if (d < bestDistance) {
+				best = id;
+				bestDistance = d;
+			}
+		});
+		return best;
+	});
 	function dragEnd(event: PointerEvent) {
 		if (!drag || event.pointerId !== drag.pointerId) return;
-		if (drag.moved) grimoire.setLayout(withPlaced(layout, drag.seatId, drag.at));
+		const target = reorderTarget;
+		if (target) {
+			// Onto another seat: the player takes that place in the seating order (one History
+			// entry), and follows the ring rather than a hand-placed spot.
+			const position = game.seating.indexOf(target);
+			if (grimoire.run({ type: 'MoveSeat', seatId: drag.seatId, position }))
+				grimoire.setLayout(withoutPlaced(layout, drag.seatId));
+		} else if (drag.moved) grimoire.setLayout(withPlaced(layout, drag.seatId, drag.at));
 		drag = undefined;
 	}
 	/** Arrow keys move a seat while arranging, for keyboards and switch access. */
@@ -236,6 +266,7 @@
 		toast('Setup reminders', 'Drag a token onto a seat, or tap it to see where it fits.');
 	}
 
+	let rotateOpen = $state(false);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
 	let nightOpen = $state(false);
@@ -334,9 +365,10 @@
 					character={seat.characterId ? characters.get(seat.characterId) : undefined}
 					{size}
 					orphan={isOrphan(seat, game.script, characters)}
-					dropTarget={(reminderDrag !== undefined &&
-						reminderDrag.target === seat.seatId &&
-						reminderDrag.from !== seat.seatId) ||
+					dropTarget={reorderTarget === seat.seatId ||
+						(reminderDrag !== undefined &&
+							reminderDrag.target === seat.seatId &&
+							reminderDrag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
 					hint={trayHints.seats.includes(seat.seatId)}
 					onTap={() => !arranging && openSeat(seat.seatId)}
@@ -433,6 +465,9 @@
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
+		<Button variant="quiet" icon="redo" onclick={() => fromMenu(() => (rotateOpen = true))}>
+			Rotate seats
+		</Button>
 		<Button variant="quiet" icon="share" onclick={() => fromMenu(() => (shareOpen = true))}>
 			Share script
 		</Button>
@@ -456,6 +491,28 @@
 </Dialog>
 
 <NightOrderSheet bind:open={nightOpen} {grimoire} />
+
+<Dialog
+	bind:open={rotateOpen}
+	title="Rotate seats"
+	description="Every player moves one seat, with their character and reminders."
+>
+	<div class="choices">
+		<Button
+			icon="undo"
+			onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
+			>Anticlockwise</Button
+		>
+		<Button
+			icon="redo"
+			onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
+			>Clockwise</Button
+		>
+	</div>
+	{#snippet actions()}
+		<Button variant="accent" icon="check" onclick={() => (rotateOpen = false)}>Done</Button>
+	{/snippet}
+</Dialog>
 
 <BluffsSheet
 	bind:open={bluffsOpen}

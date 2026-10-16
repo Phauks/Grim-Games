@@ -146,6 +146,8 @@ function describeEvent(
 				text(' and '),
 				seatPart(before, event.seatB)
 			];
+		case 'SeatingReordered':
+			return [text('Changed the seating order')];
 		case 'OverrideSet':
 		case 'OverrideCleared':
 			return [text('Changed an override on '), seatPart(before, event.seatId)];
@@ -192,6 +194,19 @@ export function describeEntry(
 ): HistoryPart[] {
 	const [first] = entry.events;
 	if (!first) return [text('No change')];
+	if (first.type === 'SeatingReordered' && before) {
+		const was = before.seating;
+		const now = first.seating;
+		if (entry.command === 'RotateSeats' && now.length > 1)
+			return [text(`Rotated the seats ${now[1] === was[0] ? 'clockwise' : 'anticlockwise'}`)];
+		// MoveSeat: the one seat whose removal leaves the same order.
+		const moved = now.find((id) => {
+			const a = was.filter((x) => x !== id);
+			const b = now.filter((x) => x !== id);
+			return was.indexOf(id) !== now.indexOf(id) && a.every((x, i) => x === b[i]);
+		});
+		if (moved) return [seatPart(before, moved), text(` moved to seat ${now.indexOf(moved) + 1}`)];
+	}
 	if (entry.events.length > 1 && entry.events.every((e) => e.type === 'ReminderAdded')) {
 		return [text(`Placed ${entry.events.length} reminders`)];
 	}

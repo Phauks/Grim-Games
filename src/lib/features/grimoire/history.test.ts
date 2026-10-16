@@ -64,4 +64,18 @@ describe('historyItems', () => {
 		expect(items[0]).toMatchObject({ cursor: 2, undone: true });
 		expect(items[1]).toMatchObject({ cursor: 1, undone: false });
 	});
+
+	it('words seat order changes: a rotation and a move', () => {
+		const session = play(
+			(s) => ({ type: 'RenameSeat', seatId: first(s), playerName: 'Ana' }),
+			() => ({ type: 'RotateSeats', direction: 'clockwise' }),
+			(s) => ({ type: 'MoveSeat', seatId: s.game.seating[1], position: 3 })
+		);
+		const [moved, rotated] = historyItems(session.log.entries, session.log.cursor, characters);
+		expect(rotated.parts).toEqual([{ kind: 'text', text: 'Rotated the seats clockwise' }]);
+		expect(moved.parts).toEqual([
+			{ kind: 'seat', name: 'Ana' },
+			{ kind: 'text', text: ' moved to seat 4' }
+		]);
+	});
 });
