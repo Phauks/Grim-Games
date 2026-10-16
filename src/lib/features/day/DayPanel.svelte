@@ -106,6 +106,25 @@
 		});
 	}
 
+	/**
+	 * Unmarks a used ability (Trevor: "need to be able to undo something being marked as
+	 * used"): removes today's use, which also takes back the No Ability reminder it placed,
+	 * or else the No Ability reminder itself. No confirm: nothing is lost, and History has it.
+	 */
+	function unmarkUsed(seatId: SeatId, characterId: CharacterId) {
+		const entry = g.today.entries.findLast(
+			(e) => e.kind === 'ability' && e.seatId === seatId && e.characterId === characterId
+		);
+		if (entry) {
+			game.run({ type: 'RemoveDayEntry', entryId: entry.entryId });
+			return;
+		}
+		const token = g.seats[seatId].reminders.find(
+			(r) => r.characterId === characterId && r.label === 'No Ability'
+		);
+		if (token) game.run({ type: 'RemoveReminder', reminderId: token.reminderId });
+	}
+
 	/** Only the causes that could be true for this player (core `validDeathCauses`). */
 	const causes = $derived(causeSeat ? validDeathCauses(g, causeSeat, game.characters) : []);
 
@@ -227,8 +246,7 @@
 				class="chip"
 				aria-pressed={isUsed}
 				aria-label={t('day.usedLabel', { who })}
-				disabled={isUsed}
-				onclick={() => askUsed(seatId, characterId)}
+				onclick={() => (isUsed ? unmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
 			>
 				<span class="tick"><Icon name="check" /></span>{t('day.used')}
 			</button>
