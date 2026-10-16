@@ -400,3 +400,30 @@ test('on a wide screen a card is long, with its fields side by side', async ({ p
 	expect(setup.x).toBeGreaterThan(alignment.x + alignment.width - 1);
 	expect(ability.y).toBeLessThan(alignment.y);
 });
+
+test('each character type folds under its caret, a search opens it, and it stays folded', async ({
+	page
+}) => {
+	// Trevor (2026-10-16): "make character types carrot menus in reference".
+	await page.goto('/reference');
+	const townsfolk = page.getByRole('button', { name: 'Townsfolk', exact: true });
+	const steward = page.locator('[data-testid="reference-card"][data-character="steward"]');
+	await expect(townsfolk).toHaveAttribute('aria-expanded', 'true');
+	await expect(steward).toBeVisible();
+	await townsfolk.tap();
+	await expect(townsfolk).toHaveAttribute('aria-expanded', 'false');
+	await expect(steward).toBeHidden();
+	await expect(page.getByRole('button', { name: 'Minions', exact: true })).toHaveAttribute(
+		'aria-expanded',
+		'true'
+	);
+
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('Steward');
+	await expect(steward).toBeVisible();
+	await search.fill('');
+	await expect(steward).toBeHidden();
+
+	await page.reload();
+	await expect(townsfolk).toHaveAttribute('aria-expanded', 'false');
+});

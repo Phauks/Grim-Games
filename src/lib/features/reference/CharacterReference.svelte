@@ -6,6 +6,7 @@
 	import { groupByType, matchesReference, type ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import { activeFilterCount, tableRows } from '#lib/core/rules/reference-table.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CharacterTable from './CharacterTable.svelte';
@@ -100,16 +101,27 @@
 	<CharacterTable {rows} onExplain={explain} />
 {:else}
 	{#each groups as group (group.type)}
-		<section class="group" aria-labelledby="group-{group.type}">
-			<h2 id="group-{group.type}">
-				{TYPE_PLURALS[group.type]} <span>({group.entries.length})</span>
-			</h2>
-			<div class="cards">
-				{#each group.entries as entry (entry.character.id)}
-					<ReferenceCard {entry} onExplain={explain} />
-				{/each}
-			</div>
-		</section>
+		<!-- Each character type folds away under its caret (Trevor, 2026-10-16); a search shows
+		     every match. -->
+		<div class="group">
+			<Collapsible
+				title={TYPE_PLURALS[group.type]}
+				tone={group.type === 'townsfolk' || group.type === 'outsider'
+					? 'good'
+					: group.type === 'minion' || group.type === 'demon'
+						? 'evil'
+						: undefined}
+				storageKey="reference:{group.type}"
+				forceOpen={search.trim() !== ''}
+			>
+				{#snippet aside()}<span class="group-count">({group.entries.length})</span>{/snippet}
+				<div class="cards">
+					{#each group.entries as entry (entry.character.id)}
+						<ReferenceCard {entry} onExplain={explain} />
+					{/each}
+				</div>
+			</Collapsible>
+		</div>
 	{:else}
 		<p class="empty">{t('reference.noMatch')}</p>
 	{/each}
@@ -197,11 +209,7 @@
 	.group {
 		margin-bottom: var(--space-6);
 	}
-	h2 {
-		margin: 0 0 var(--space-3);
-		font-size: 1.3rem;
-	}
-	h2 span {
+	.group-count {
 		font-size: 0.9rem;
 		color: var(--on-surface-muted);
 	}
