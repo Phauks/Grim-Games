@@ -29,8 +29,7 @@ const STATIC_ROUTES = [
  * Routes that still overflow, each waiting on the thread that owns it (2026-10-16). Remove a
  * route from this list when its fix lands; the guard then covers it like every other route.
  */
-const KNOWN_OVERFLOW: Record<string, string> = {
-};
+const KNOWN_OVERFLOW: Record<string, string> = {};
 
 /** The widest elements poking past the right edge, to name in the failure. */
 async function overflow(page: Page) {
