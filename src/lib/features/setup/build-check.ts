@@ -1,5 +1,11 @@
 import { t } from '#lib/i18n/locale.svelte.ts';
-import type { BagIssue, SetupAnalysis, SetupWarning } from '#lib/core/rules/index.ts';
+import type { CharacterId } from '#lib/core/data/index.ts';
+import type {
+	BagIssue,
+	ScriptRequirement,
+	SetupAnalysis,
+	SetupWarning
+} from '#lib/core/rules/index.ts';
 
 /**
  * Problems that make the bag wrong for this table, which the Storyteller must confirm
@@ -40,4 +46,23 @@ export function buildErrors({ analysis, issues, travellers }: BuildCheckInput): 
 		);
 	}
 	return errors;
+}
+
+/**
+ * The setup analysis says to swap a Townsfolk for a required character (the Choirboy needs
+ * the King, https://wiki.bloodontheclocktower.com/Choirboy). When that character isn't on
+ * the script there is nothing to swap in, so the warning says so instead.
+ */
+export function setupWarningMessages(
+	warnings: readonly SetupWarning[],
+	requirements: readonly ScriptRequirement[],
+	name: (id: CharacterId) => string
+): string[] {
+	const offScript = new Set(requirements.filter((r) => !r.onScript).map((r) => r.requires));
+	return warnings.map((w) => {
+		const [id, required] = w.characters ?? [];
+		return w.code === 'missing-required' && id && required && offScript.has(required)
+			? t('setup.check.notOnScript', { name: name(id), required: name(required) })
+			: w.message;
+	});
 }

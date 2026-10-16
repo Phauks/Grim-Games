@@ -16,7 +16,7 @@
 		jinxSetupWarnings,
 		planBag,
 		randomSelection,
-		scriptJinxes,
+		scriptFacts,
 		selectedIds,
 		isRuleCharacter
 	} from '#lib/core/rules/index.ts';
@@ -40,7 +40,7 @@
 	import SetupNav from './SetupNav.svelte';
 	import JoinButton from './JoinButton.svelte';
 	import { currentSetupStep } from './setup-steps.ts';
-	import { buildErrors } from './build-check.ts';
+	import { buildErrors, setupWarningMessages } from './build-check.ts';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
 
 	interface Props {
@@ -98,15 +98,30 @@
 	let standInOpen = $state(false);
 	const askingStandIn = $derived(plan.standIns.find((x) => x.characterId === askingFor));
 	const ids = $derived(selectedIds(s.selection, scriptOrder));
-	const jinxes = $derived(
-		data && script ? scriptJinxes(data.jinxes, ids, script.homebrewJinxes) : []
+	const name = (id: CharacterId) => lookup(id)?.name ?? id;
+	// Jinxes and the Djinn from the characters chosen for play; "requires" from the whole
+	// script, to know whether the required character could be put in play at all.
+	const facts = $derived(
+		data && script
+			? scriptFacts(
+					ids.map((id) => lookup(id)).filter((c): c is Character => c !== undefined),
+					data.jinxes,
+					script.homebrewJinxes
+				)
+			: undefined
 	);
+	const requirements = $derived(
+		data && script
+			? scriptFacts(script.characters, data.jinxes, script.homebrewJinxes).requirements
+			: []
+	);
+	const jinxes = $derived(facts?.jinxes ?? []);
 	const jinxed = $derived(new Set(jinxes.flatMap((j) => j.characters)));
 	const travellers = $derived(ids.filter((id) => lookup(id)?.type === 'traveller').length);
 	const warnings = $derived([
-		...analysis.warnings.map((w) => w.message),
+		...setupWarningMessages(analysis.warnings, requirements, name),
 		...plan.issues.map((i) => i.message),
-		...jinxSetupWarnings(jinxes, ids, (id) => lookup(id)?.name ?? id).map((w) => w.message)
+		...jinxSetupWarnings(jinxes, ids, name).map((w) => w.message)
 	]);
 
 	const errors = $derived(buildErrors({ analysis, issues: plan.issues, travellers }));
@@ -249,6 +264,7 @@
 						{analysis}
 						{plan}
 						{jinxes}
+						djinn={facts?.djinn ?? false}
 						{warnings}
 						{lookup}
 						onStandIn={(id) => {

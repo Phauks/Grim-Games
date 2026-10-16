@@ -12,6 +12,8 @@
 		plan: BagPlan;
 		/** Jinxes between selected characters. */
 		jinxes: readonly ScriptJinx[];
+		/** A jinxed pair is in play, so the Djinn's rule applies. */
+		djinn: boolean;
 		/** Warnings in plain words, from the setup analysis, the bag and exclusive jinxes. */
 		warnings: readonly string[];
 		lookup: (id: CharacterId) => Character | undefined;
@@ -19,7 +21,7 @@
 		onStandIn: (characterId: CharacterId) => void;
 	}
 
-	let { analysis, plan, jinxes, warnings, lookup, onStandIn }: Props = $props();
+	let { analysis, plan, jinxes, djinn, warnings, lookup, onStandIn }: Props = $props();
 
 	const name = (id: CharacterId) => lookup(id)?.name ?? id;
 </script>
@@ -87,6 +89,12 @@
 		<Collapsible title={t('setup.check.jinxes')} level={3} storageKey="setup-check:jinxes">
 			{#if jinxes.length}
 				<ul>
+					{#if djinn}
+						<li data-testid="djinn-applies">
+							<CharacterBadge characterId="djinn" inline />
+							{t('setup.check.djinn')}
+						</li>
+					{/if}
 					{#each jinxes as jinx (jinx.characters.join('+'))}
 						<li>
 							<CharacterBadge characterId={jinx.characters[0]} inline />
