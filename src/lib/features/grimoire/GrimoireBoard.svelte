@@ -432,6 +432,8 @@
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
+	/** Where closing the info sheet goes back to, when something other than the toolbar opened it. */
+	let infoReturn: (() => void) | undefined;
 	const infoCharacters = $derived(
 		scriptCharacterIds(game.script).flatMap((id) => characters.get(id) ?? [])
 	);
@@ -763,7 +765,15 @@
 	bind:open={infoOpen}
 	characters={infoCharacters}
 	bluffSets={infoBluffSets}
-	onChooseBluffs={() => (bluffsOpen = true)}
+	onChooseBluffs={() => {
+		infoReturn = undefined;
+		bluffsOpen = true;
+	}}
+	onclose={() => {
+		const back = infoReturn;
+		infoReturn = undefined;
+		back?.();
+	}}
 />
 
 <BackgroundDialog
@@ -814,7 +824,11 @@
 	{grimoire}
 	step={guided?.step}
 	night={guided?.night ?? 'first'}
-	onInfoTokens={() => (infoOpen = true)}
+	onInfoTokens={() => {
+		// Closing the info sheet returns to this night step (Trevor, 2026-10-16).
+		infoReturn = () => (guideOpen = true);
+		infoOpen = true;
+	}}
 />
 
 <BluffsSheet

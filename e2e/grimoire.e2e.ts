@@ -305,6 +305,8 @@ test('Demon bluffs open from the toolbar, and a seat shows its token to the play
 	await expect(shown).toBeVisible();
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(shown).toBeHidden();
+	// Back where the Storyteller was: the seat's sheet (Trevor, 2026-10-16).
+	await expect(sheet).toBeVisible();
 });
 
 test('the board leads to setup and the day; setup ends on the setup reminders', async ({
@@ -979,6 +981,21 @@ test('a night step is filled in with help, and the night can be walked through',
 		.getByRole('button', { name: /Seat 2 Empath/ })
 		.tap();
 	await expect(guide).toContainText('On Seat 2');
+
+	// Show to player and Info tokens come back to the step (Trevor, 2026-10-16).
+	await guide.getByRole('button', { name: 'Show to player' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	await expect(guide).toBeVisible();
+	await guide.getByRole('button', { name: 'Info tokens' }).tap();
+	await page.getByRole('button', { name: 'This is the Demon' }).tap();
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	const info = page.getByRole('dialog', { name: 'Info tokens' });
+	await expect(info).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(info).toBeHidden();
+	await expect(guide).toBeVisible();
+
 	await guide.getByRole('button', { name: 'Done' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Empath, 1 reminder')).toBeAttached();
 	await page.getByRole('button', { name: 'Night order' }).tap();

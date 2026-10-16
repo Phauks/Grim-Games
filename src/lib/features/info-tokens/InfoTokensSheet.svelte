@@ -26,9 +26,14 @@
 		bluffSets?: readonly ShowableBluffSet[];
 		/** No bluffs chosen yet: called (with this sheet closed) to open the bluff picker. */
 		onChooseBluffs?: () => void;
+		/**
+		 * The Storyteller closed the sheet; not called while it steps aside for the player view
+		 * or the bluff picker. Lets whatever opened it come back (Trevor, 2026-10-16).
+		 */
+		onclose?: () => void;
 	}
 
-	let { open = $bindable(false), characters, bluffSets, onChooseBluffs }: Props = $props();
+	let { open = $bindable(false), characters, bluffSets, onChooseBluffs, onclose }: Props = $props();
 
 	type View =
 		| { kind: 'list' }
@@ -89,6 +94,17 @@
 		if (!open && !showOpen) view = { kind: 'list' };
 	});
 
+	let wasOpen = false;
+	let handedOff = false;
+	$effect(() => {
+		if (open) wasOpen = true;
+		else if (wasOpen && !showOpen) {
+			wasOpen = false;
+			if (!handedOff) onclose?.();
+			handedOff = false;
+		}
+	});
+
 	function choose(token: InfoToken) {
 		if (token.id === 'not-in-play' && bluffSets) {
 			if (bluffSets.length === 1) return use(token.text, bluffSets[0].characterIds);
@@ -97,6 +113,7 @@
 				return;
 			}
 			if (onChooseBluffs) {
+				handedOff = true;
 				open = false;
 				onChooseBluffs();
 				return;

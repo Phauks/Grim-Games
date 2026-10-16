@@ -503,9 +503,11 @@
 	onRemove={(id) => moveConfirm?.requestReturn(id)}
 />
 
+<!-- Closing the player view returns to this seat's sheet (Trevor, 2026-10-16). -->
 <ShowToPlayer
 	bind:open={showOpen}
 	characters={character ? [{ character, alignment: seat?.alignment }] : []}
+	onclose={() => (open = true)}
 />
 
 <CharacterPicker

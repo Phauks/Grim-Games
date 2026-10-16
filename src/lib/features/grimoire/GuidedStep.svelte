@@ -146,9 +146,11 @@
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
+<!-- Closing the player view returns to this step (Trevor, 2026-10-16). -->
 <ShowToPlayer
 	bind:open={showOpen}
 	characters={step?.character ? [{ character: step.character }] : []}
+	onclose={() => (open = true)}
 />
 
 <style>
