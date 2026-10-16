@@ -5,12 +5,21 @@
 import { characterIcons, ICONS_PATH, type Character } from '#lib/core/data/index.ts';
 import type { KeepOfflineMessage } from './cache-rules.ts';
 
-/** Icon URLs of these characters, good and evil alike. */
+/**
+ * Icon URLs of these characters, good and evil alike: the synced icons of official
+ * characters, and every web image a homebrew character brings (`image`, good side first).
+ * Images inlined as `data:` URLs need no storing.
+ */
 export function iconUrls(characters: readonly Character[]): string[] {
 	const urls = new Set<string>();
 	for (const character of characters) {
 		const icons = characterIcons(character);
-		for (const file of Object.values(icons ?? {})) urls.add(`${ICONS_PATH}/${file}`);
+		if (icons) {
+			for (const file of Object.values(icons)) urls.add(`${ICONS_PATH}/${file}`);
+			continue;
+		}
+		const images = typeof character.image === 'string' ? [character.image] : character.image;
+		for (const image of images ?? []) if (/^https?:\/\//i.test(image)) urls.add(image);
 	}
 	return [...urls];
 }

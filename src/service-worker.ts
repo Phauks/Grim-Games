@@ -45,8 +45,9 @@ async function refreshIcons(cache: Cache): Promise<void> {
 	const marker = await runtime.match(ICON_DATA_KEY);
 	if (marker && (await marker.text()) === fetchedAt) return;
 	const icons = (await runtime.keys())
-		.map((request) => new URL(request.url).pathname)
-		.filter((path) => path.startsWith('/data/icons/'));
+		.map((request) => new URL(request.url))
+		.filter((url) => url.origin === sw.location.origin && url.pathname.startsWith('/data/icons/'))
+		.map((url) => url.pathname);
 	await Promise.all(icons.map((path) => store(runtime, path)));
 	await runtime.put(ICON_DATA_KEY, new Response(fetchedAt ?? ''));
 }
@@ -96,18 +97,36 @@ async function store(cache: Cache, path: string): Promise<Response | undefined> 
 	}
 }
 
+/**
+ * Stores a homebrew character's image from another site, keyed by its full URL. Only a host
+ * that allows CORS can be stored: an opaque (no-cors) response would be counted as several
+ * MB of storage each by Chrome, which is what this cache exists to avoid.
+ */
+async function storeImage(cache: Cache, url: string): Promise<void> {
+	try {
+		const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
+		if (response.ok) await cache.put(url, response);
+	} catch {
+		// No CORS, or offline: the image still shows online, straight from its host.
+	}
+}
+
 /** Stores the URLs the app asked for that are not stored yet, a few at a time. */
 async function keepOffline(urls: string[]): Promise<void> {
 	const cache = await caches.open(RUNTIME_CACHE);
 	const missing: string[] = [];
-	for (const url of urls) {
-		const path = new URL(url, sw.location.origin).pathname;
-		if (cachedOnUse(path) && !(await cache.match(path))) missing.push(path);
+	for (const raw of urls) {
+		const url = new URL(raw, sw.location.origin);
+		const key = url.origin === sw.location.origin ? url.pathname : url.href;
+		if (url.origin === sw.location.origin && !cachedOnUse(key)) continue;
+		if (!/^https?:$/.test(url.protocol)) continue;
+		if (!(await cache.match(key))) missing.push(key);
 	}
 	const next = async (): Promise<void> => {
-		const path = missing.shift();
-		if (!path) return;
-		await store(cache, path);
+		const key = missing.shift();
+		if (!key) return;
+		if (key.startsWith('/')) await store(cache, key);
+		else await storeImage(cache, key);
 		await next();
 	};
 	await Promise.all([next(), next(), next(), next()]);
@@ -124,6 +143,16 @@ sw.addEventListener('fetch', (event) => {
 	const request = event.request;
 	if (request.method !== 'GET') return;
 	const url = new URL(request.url);
+	// Homebrew images from other sites: the copy stored with the script, else the network.
+	if (url.origin !== sw.location.origin && request.destination === 'image') {
+		event.respondWith(
+			(async () => {
+				const runtime = await caches.open(RUNTIME_CACHE);
+				return (await runtime.match(url.href)) ?? fetch(request);
+			})()
+		);
+		return;
+	}
 	// Live sync and other APIs always go to the network.
 	if (url.origin !== sw.location.origin || url.pathname.startsWith('/api/')) return;
 

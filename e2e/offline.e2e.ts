@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 /** Paths stored in every cache, by cache name. */
 function cachedPaths(page: Page) {
@@ -62,6 +63,57 @@ test('a fresh visit stores only what a game needs, and a chosen script works off
 				(images as HTMLImageElement[]).every((img) => img.complete && img.naturalWidth > 0)
 			)
 		)
+		.toBe(true);
+	await context.setOffline(false);
+});
+
+test("a homebrew character's good and evil images are stored with the script", async ({
+	page,
+	context
+}) => {
+	// A host that allows CORS, as GitHub and most image hosts do. A tiny PNG stands in.
+	const png = Buffer.from(
+		'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+		'base64'
+	);
+	const host = 'https://homebrew-images.example';
+	await context.route(`${host}/**`, (route) =>
+		route.fulfill({
+			body: png,
+			contentType: 'image/png',
+			headers: { 'access-control-allow-origin': '*' }
+		})
+	);
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+
+	const script = [
+		{ id: '_meta', name: 'Storm Front' },
+		{
+			id: 'stormwarden',
+			name: 'Storm Warden',
+			team: 'townsfolk',
+			ability: 'Each night, choose a player: they are safe from the Demon tonight.',
+			image: [`${host}/stormwarden.png`, `${host}/stormwarden-evil.png`]
+		},
+		'imp'
+	];
+	await page.goto(`/play#s=${await encodeSharedScript(script)}`);
+	await expect(page.getByRole('heading', { name: 'Storm Front', level: 1 })).toBeVisible();
+	await expect
+		.poll(async () => (await cachedPaths(page))['grim-games-runtime-v1'] ?? [], { timeout: 30_000 })
+		.toEqual(expect.arrayContaining(['/stormwarden.png', '/stormwarden-evil.png']));
+
+	// The host is gone: only the stored copies can show.
+	await context.unroute(`${host}/**`);
+	await context.route(`${host}/**`, (route) => route.abort('internetdisconnected'));
+	await context.setOffline(true);
+	await page.reload();
+	const image = page.locator(`img[src="${host}/stormwarden.png"]`).first();
+	await expect(image).toBeVisible();
+	await expect
+		.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
 		.toBe(true);
 	await context.setOffline(false);
 });
