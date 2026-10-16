@@ -47,11 +47,9 @@ test('a custom info token keeps its bold words and survives a reload', async ({ 
 	await expect(page.getByTestId('show-to-player').locator('strong')).toHaveText('mad');
 	await page.getByTestId('show-to-player').getByRole('button', { name: 'Close' }).tap();
 
-	// Delete confirms in its own dialog, then the row offers Undo in place.
+	// Delete confirms in its own dialog; Cancel keeps the card.
 	await page.getByRole('button', { name: 'Delete You are mad about something' }).tap();
-	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).tap();
-	await expect(card).toHaveCount(0);
-	await page.getByRole('button', { name: 'Undo' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).tap();
 	await expect(card).toBeVisible();
 	await page.getByRole('button', { name: 'Delete You are mad about something' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).tap();
@@ -167,7 +165,7 @@ test('the Storyteller adds more bluff sets and deletes one after confirming', as
 	await expect(page.getByTestId('bluff-set')).toHaveCount(3);
 	const second = page.locator('[data-testid="bluff-set"][data-set="Set 2"]');
 	await expect(second).toContainText('Monk');
-	await second.getByRole('button', { name: 'Delete' }).tap();
+	await second.getByRole('button', { name: 'Delete the Set 2 bluffs' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).tap();
 	await expect(page.getByTestId('bluff-set')).toHaveCount(2);
 	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 2"]')).toContainText('Mayor');

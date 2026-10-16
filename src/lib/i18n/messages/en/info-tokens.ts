@@ -7,8 +7,6 @@ export const infoTokens = {
 	'info-tokens.edit': 'Edit info token',
 	'info-tokens.editNamed': 'Edit {name}',
 	'info-tokens.deleteNamed': 'Delete {name}',
-	'info-tokens.deleted': 'Deleted: {name}',
-	'info-tokens.undo': 'Undo',
 	'info-tokens.text': 'Text',
 	'info-tokens.boldHint': 'Put **two stars** round words to make them bold.',
 	'info-tokens.withCharacters': 'Show with characters',
@@ -25,8 +23,10 @@ export const infoTokens = {
 	'info-tokens.searchPlaceholder': 'Search',
 	'info-tokens.clearSearch': 'Clear search',
 	'info-tokens.chainEmpty': 'Tap cards to add them in order.',
-	'info-tokens.removeLast': 'Remove last card',
-	'info-tokens.clear': 'Clear',
+	'info-tokens.moveUp': 'Move {name} up',
+	'info-tokens.moveDown': 'Move {name} down',
+	'info-tokens.removeFromChain': 'Remove {name} from the chain',
+	'info-tokens.clearChain': 'Clear the chain',
 	'info-tokens.showCards': { one: 'Show {count} card', other: 'Show {count} cards' },
 	'info-tokens.bluffSets': 'Bluff sets'
 } as const;

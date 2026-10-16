@@ -67,14 +67,19 @@
 			})
 		}))
 	);
-	const chainSummary = $derived(
-		chainCards
-			.map((card, i) => {
-				const who = card.characterIds.length ? ` (${names(card.characterIds)})` : '';
-				return `${i + 1}. ${plainText(card.text)}${who}`;
-			})
-			.join('  ')
-	);
+	const chainLabel = (card: Card) =>
+		card.characterIds.length
+			? `${plainText(card.text)} (${names(card.characterIds)})`
+			: plainText(card.text);
+
+	/** Moves a chain card one place up (-1) or down (1). */
+	function move(index: number, by: -1 | 1) {
+		const to = index + by;
+		if (to < 0 || to >= chainCards.length) return;
+		const next = [...chainCards];
+		[next[index], next[to]] = [next[to], next[index]];
+		chainCards = next;
+	}
 	const title = $derived(
 		view.kind === 'list' ? t('info-tokens.title') : plainText(view.token.text)
 	);
@@ -169,21 +174,50 @@
 			<InfoTokenList onchoose={choose} {query} level={3} />
 			{#if mode === 'chain'}
 				<div class="chain" role="group" aria-label={t('info-tokens.chain')}>
-					<p class="chain-summary" data-testid="chain-summary">
-						{chainCards.length === 0 ? t('info-tokens.chainEmpty') : chainSummary}
-					</p>
+					{#if chainCards.length === 0}
+						<p class="chain-empty">{t('info-tokens.chainEmpty')}</p>
+					{:else}
+						<ol class="chain-list" data-testid="chain-list">
+							{#each chainCards as card, i (card)}
+								{@const name = chainLabel(card)}
+								<li>
+									<span class="chain-text">{i + 1}. {name}</span>
+									<span class="chain-buttons">
+										<span class="up">
+											<IconButton
+												icon="expand"
+												label={t('info-tokens.moveUp', { name })}
+												disabled={i === 0}
+												onclick={() => move(i, -1)}
+											/>
+										</span>
+										<IconButton
+											icon="expand"
+											label={t('info-tokens.moveDown', { name })}
+											disabled={i === chainCards.length - 1}
+											onclick={() => move(i, 1)}
+										/>
+										<span class="danger">
+											<IconButton
+												icon="remove"
+												label={t('info-tokens.removeFromChain', { name })}
+												onclick={() => (chainCards = chainCards.filter((_, j) => j !== i))}
+											/>
+										</span>
+									</span>
+								</li>
+							{/each}
+						</ol>
+					{/if}
 					<div class="chain-actions">
-						<IconButton
-							icon="undo"
-							label={t('info-tokens.removeLast')}
-							disabled={chainCards.length === 0}
-							onclick={() => (chainCards = chainCards.slice(0, -1))}
-						/>
-						<Button
-							variant="quiet"
-							disabled={chainCards.length === 0}
-							onclick={() => (chainCards = [])}>{t('info-tokens.clear')}</Button
-						>
+						<span class="danger">
+							<IconButton
+								icon="remove"
+								label={t('info-tokens.clearChain')}
+								disabled={chainCards.length === 0}
+								onclick={() => (chainCards = [])}
+							/>
+						</span>
 						<Button
 							variant="accent"
 							icon="forward"
@@ -252,21 +286,42 @@
 		border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 		background: var(--sheet-background);
 	}
-	.chain-summary {
+	.chain-empty {
 		margin: 0;
+		opacity: 0.85;
+	}
+	.chain-list {
+		display: grid;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.chain-list li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+	.chain-text {
+		flex: 1;
+		min-width: 0;
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
-		opacity: 0.85;
 	}
-	.chain-actions {
+	.chain-buttons {
 		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		gap: var(--space-2);
+		flex: none;
 	}
-	.chain-actions :global(.icon-button) {
+	/* The same caret as the sections, turned to point up. */
+	.up :global(.icon) {
+		rotate: 180deg;
+	}
+	.chain-buttons :global(.icon-button) {
 		color: inherit;
+	}
+	.danger :global(.icon-button) {
+		color: var(--accent);
 	}
 	.search {
 		display: flex;

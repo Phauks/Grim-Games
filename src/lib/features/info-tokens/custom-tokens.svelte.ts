@@ -56,14 +56,6 @@ class CustomInfoTokens {
 	remove(id: string): void {
 		this.#save(this.#stored.custom.filter((t) => t.id !== id));
 	}
-
-	/** Puts a deleted card back where it was (undo). */
-	restore(token: InfoToken, index: number): void {
-		if (this.#stored.custom.some((t) => t.id === token.id)) return;
-		const custom = [...this.#stored.custom];
-		custom.splice(Math.min(index, custom.length), 0, token);
-		this.#save(custom);
-	}
 }
 
 export const customInfoTokens = new CustomInfoTokens();

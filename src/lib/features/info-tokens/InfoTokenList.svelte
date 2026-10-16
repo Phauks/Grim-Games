@@ -27,21 +27,7 @@
 		needle === '' || plainText(token.text).toLowerCase().includes(needle);
 	const standard = $derived(STANDARD_INFO_TOKENS.filter(matches));
 
-	/**
-	 * Deleted cards stay in their row as "Deleted" with Undo until the list closes, so
-	 * deleting moves nothing and can be taken back (Trevor, 2026-10-16).
-	 */
-	let deleted = $state<{ token: InfoToken; index: number }[]>([]);
-	const custom = $derived.by(() => {
-		const rows: { token: InfoToken; deleted: boolean }[] = customInfoTokens.list.map((token) => ({
-			token,
-			deleted: false
-		}));
-		for (const d of [...deleted].sort((a, b) => a.index - b.index)) {
-			rows.splice(Math.min(d.index, rows.length), 0, { token: d.token, deleted: true });
-		}
-		return rows.filter((row) => matches(row.token));
-	});
+	const custom = $derived(customInfoTokens.list.filter(matches));
 
 	let editOpen = $state(false);
 	let editing = $state<{ id?: string; text: string; withCharacters: boolean }>({
@@ -66,17 +52,7 @@
 	}
 
 	function remove(token: InfoToken) {
-		const index = customInfoTokens.list.findIndex((t) => t.id === token.id);
-		if (index < 0) return;
 		customInfoTokens.remove(token.id);
-		deleted = [...deleted, { token, index }];
-	}
-
-	function undo(token: InfoToken) {
-		const entry = deleted.find((d) => d.token.id === token.id);
-		if (!entry) return;
-		deleted = deleted.filter((d) => d !== entry);
-		customInfoTokens.restore(entry.token, entry.index);
 	}
 </script>
 
@@ -84,9 +60,9 @@
 	<Collapsible title={t('info-tokens.standard')} storageKey="info-tokens-standard" {level}>
 		<ul class="cards">
 			{#each standard as token (token.id)}
-				<li>
+				<li class="tile">
 					<button type="button" class="card" onclick={() => onchoose(token)}>
-						{token.text}
+						<span class="text">{token.text}</span>
 					</button>
 				</li>
 			{:else}
@@ -100,32 +76,25 @@
 			<Button icon="add" variant="quiet" onclick={() => edit()}>{t('info-tokens.add')}</Button>
 		{/snippet}
 		<ul class="cards">
-			{#each custom as row (row.token.id)}
-				{@const name = plainText(row.token.text)}
-				<li class="custom">
-					{#if row.deleted}
-						<span class="card deleted">{t('info-tokens.deleted', { name })}</span>
-						<Button variant="quiet" icon="undo" onclick={() => undo(row.token)}
-							>{t('info-tokens.undo')}</Button
-						>
-					{:else}
-						<button type="button" class="card" onclick={() => onchoose(row.token)}>
-							<!-- One inline box, so the card's flex layout keeps the spaces between runs. -->
-							<span><InfoTokenText text={row.token.text} /></span>
-						</button>
-						<span class="actions">
-							<IconButton
-								icon="rename"
-								label={t('info-tokens.editNamed', { name })}
-								onclick={() => edit(row.token)}
-							/>
-							<IconButton
-								icon="remove"
-								label={t('info-tokens.deleteNamed', { name })}
-								onclick={() => askDelete(row.token)}
-							/>
-						</span>
-					{/if}
+			{#each custom as token (token.id)}
+				{@const name = plainText(token.text)}
+				<li class="tile">
+					<button type="button" class="card" onclick={() => onchoose(token)}>
+						<!-- One inline box, so the card's flex layout keeps the spaces between runs. -->
+						<span class="text"><InfoTokenText text={token.text} /></span>
+					</button>
+					<span class="actions">
+						<IconButton
+							icon="rename"
+							label={t('info-tokens.editNamed', { name })}
+							onclick={() => edit(token)}
+						/>
+						<IconButton
+							icon="remove"
+							label={t('info-tokens.deleteNamed', { name })}
+							onclick={() => askDelete(token)}
+						/>
+					</span>
 				</li>
 			{:else}
 				<li class="none">{t('common.none')}</li>
@@ -197,43 +166,50 @@
 		padding: 0;
 		list-style: none;
 	}
-	.custom {
+	/* Every tile is the same size (Trevor, 2026-10-16); long text is cut to fit and shown
+	   in full on the player's screen. */
+	.tile {
 		display: flex;
-		align-items: center;
-		gap: var(--space-1);
+		align-items: stretch;
+		height: calc(2 * var(--tap-target));
+		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border-radius: var(--card-radius);
+		overflow: hidden;
 	}
 	.actions {
 		display: flex;
+		flex-direction: column;
 		flex: none;
 	}
 	.actions :global(.icon-button) {
 		color: inherit;
+		border-radius: 0;
 	}
 	.card {
 		flex: 1;
 		min-width: 0;
 		display: flex;
 		align-items: center;
-		width: 100%;
-		min-height: calc(3.5 * var(--u));
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: var(--card-radius);
+		padding: var(--space-1) var(--space-3);
+		border: 0;
 		background: none;
 		color: inherit;
 		font-family: var(--font-heading);
 		font-size: 1.05rem;
+		line-height: 1.25;
 		text-align: left;
 		overflow-wrap: anywhere;
 		cursor: pointer;
 	}
-	button.card:hover {
+	.card:hover {
 		background: color-mix(in srgb, currentColor 8%, transparent);
 	}
-	.card.deleted {
-		border-style: dashed;
-		opacity: 0.7;
-		cursor: default;
+	.text {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		overflow: hidden;
 	}
 	.none {
 		opacity: 0.7;

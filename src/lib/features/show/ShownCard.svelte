@@ -10,9 +10,11 @@
 		/** Info-token text shown above the characters; `**bold**` is supported. */
 		title?: string;
 		characters?: readonly ShownCharacter[];
+		/** Shares the screen with other cards: smaller text, no room kept for the close button. */
+		compact?: boolean;
 	}
 
-	let { title, characters = [] }: Props = $props();
+	let { title, characters = [], compact = false }: Props = $props();
 
 	let areaWidth = $state(0);
 	let areaHeight = $state(0);
@@ -28,7 +30,11 @@
 </script>
 
 <!-- One card as the player sees it: the card's text, then one big token or a list. -->
-<div class="content" data-has-title={title ? '' : undefined}>
+<div
+	class="content"
+	data-has-title={title ? '' : undefined}
+	data-compact={compact ? '' : undefined}
+>
 	{#if title}
 		<h2 class="title"><InfoTokenText text={title} /></h2>
 	{/if}
@@ -70,6 +76,18 @@
 		padding: calc(var(--tap-target) + var(--space-4) + env(safe-area-inset-top)) var(--space-4)
 			calc(var(--space-5) + env(safe-area-inset-bottom));
 		text-align: center;
+	}
+	/* Several cards on one screen (Trevor, 2026-10-16): each fits its own share. */
+	.content[data-compact] {
+		gap: var(--space-2);
+		padding: var(--space-3);
+		overflow-y: auto;
+	}
+	.content[data-compact] .title {
+		font-size: clamp(1.3rem, 5vw, 2.4rem);
+	}
+	.content[data-compact] .ability {
+		font-size: 1.05rem;
 	}
 	.content:not([data-has-title]) {
 		justify-content: center;

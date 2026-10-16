@@ -20,6 +20,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -156,19 +157,25 @@
 							<Button icon="forward" disabled={ids.length === 0 || stale} onclick={() => show(ids)}
 								>{t('bluffs.show')}</Button
 							>
-							{#if index === DEMON_SET}
-								<Button variant="quiet" disabled={ids.length === 0} onclick={() => set(index, [])}
-									>{t('bluffs.clear')}</Button
-								>
-							{:else}
-								<Button
-									variant="quiet"
-									onclick={() => {
-										deleting = index;
-										deleteOpen = true;
-									}}>{t('bluffs.delete')}</Button
-								>
-							{/if}
+							<span class="danger">
+								{#if index === DEMON_SET}
+									<IconButton
+										icon="remove"
+										label={t('bluffs.clearNamed', { set: label(index) })}
+										disabled={ids.length === 0}
+										onclick={() => set(index, [])}
+									/>
+								{:else}
+									<IconButton
+										icon="remove"
+										label={t('bluffs.deleteNamed', { set: label(index) })}
+										onclick={() => {
+											deleting = index;
+											deleteOpen = true;
+										}}
+									/>
+								{/if}
+							</span>
 						</div>
 					</li>
 				{/each}
@@ -239,6 +246,10 @@
 />
 
 <style>
+	/* Clearing or deleting a set is the red bin (Trevor, 2026-10-16). */
+	.danger :global(.icon-button) {
+		color: var(--accent);
+	}
 	.add {
 		display: flex;
 		justify-content: flex-start;

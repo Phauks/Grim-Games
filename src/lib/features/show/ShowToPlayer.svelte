@@ -26,7 +26,13 @@
 	let current = $state(0);
 
 	const shownCards = $derived<readonly ShownInfoCard[]>(cards ?? [{ title, characters }]);
-	const chain = $derived(shownCards.length > 1);
+	/**
+	 * Up to 3 cards are shown together on one screen (Trevor, 2026-10-16: chains are mostly
+	 * one or two cards); longer chains are swiped through, so nothing gets too small to read.
+	 */
+	const MAX_TOGETHER = 3;
+	const together = $derived(shownCards.length > 1 && shownCards.length <= MAX_TOGETHER);
+	const chain = $derived(shownCards.length > MAX_TOGETHER);
 
 	$effect(() => {
 		if (!dialog) return;
@@ -103,7 +109,18 @@
 			full screen and the grimoire never shows through; the close button stays above it.
 		-->
 		<ErrorBoundary area="show">
-			{#if chain}
+			{#if together}
+				<div class="together" style:--count={shownCards.length}>
+					{#each shownCards as card, i (i)}
+						<section
+							class="cell"
+							aria-label={t('show.card', { number: i + 1, count: shownCards.length })}
+						>
+							<ShownCard title={card.title} characters={card.characters} compact />
+						</section>
+					{/each}
+				</div>
+			{:else if chain}
 				<!-- A chain of cards: swipe, or use the arrows, to move between them. -->
 				<div class="track" bind:this={track} {onscroll}>
 					{#each shownCards as card, i (i)}
@@ -195,6 +212,30 @@
 		display: grid;
 		place-items: center;
 		height: 100%;
+	}
+	/* Side by side on a wide screen, one above the other on a phone held upright. */
+	.together {
+		display: grid;
+		grid-template-rows: repeat(var(--count), minmax(0, 1fr));
+		height: 100%;
+		padding: calc(var(--tap-target) + var(--space-2) + env(safe-area-inset-top)) var(--space-2)
+			calc(var(--space-2) + env(safe-area-inset-bottom));
+	}
+	.cell {
+		min-height: 0;
+	}
+	.cell + .cell {
+		border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+	}
+	@media (orientation: landscape) {
+		.together {
+			grid-template-rows: none;
+			grid-template-columns: repeat(var(--count), minmax(0, 1fr));
+		}
+		.cell + .cell {
+			border-top: 0;
+			border-left: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+		}
 	}
 	.track {
 		display: flex;
