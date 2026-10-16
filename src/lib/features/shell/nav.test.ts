@@ -33,7 +33,7 @@ describe('navigation', () => {
 			'home',
 			'new',
 			'games',
-			'previous'
+			'history'
 		]);
 	});
 });

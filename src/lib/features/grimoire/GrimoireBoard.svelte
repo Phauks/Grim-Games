@@ -508,7 +508,7 @@
 	/** Who wakes for the current walk-through step, marked on the board. */
 	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
-	// ── End game (Trevor, 2026-10-16): the game moves to Previous games; its live room closes ──
+	// ── End game (Trevor, 2026-10-16): the game moves to History; its live room closes ──
 	let endOpen = $state(false);
 	let winner = $state<'good' | 'evil' | undefined>();
 	function endGame() {
@@ -516,7 +516,7 @@
 		releaseGuard?.();
 		endedGames.end(game.gameId, winner);
 		if (roomHost().code) roomHost().close();
-		void goto(resolve('/previous-games'));
+		void goto(resolve('/history'));
 	}
 
 	// A Traveller's alignment by draw, kept here: setting it ends the step that opened it.
@@ -916,7 +916,7 @@
 				Navigation
 			</Button>
 		</span>
-		<!-- Leaving keeps the game to come back to; End moves it to Previous games (Trevor, 2026-10-16). -->
+		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
 		<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
 			End game
 		</Button>
@@ -963,7 +963,7 @@
 		<dt>Now</dt>
 		<dd>In Resume game</dd>
 		<dt>Becomes</dt>
-		<dd>In Previous games, where it can be reopened</dd>
+		<dd>In History, where it can be reopened</dd>
 	</dl>
 	<div class="winner" role="radiogroup" aria-label="Winning team">
 		<span class="winner-label">Winner</span>
