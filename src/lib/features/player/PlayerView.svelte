@@ -271,10 +271,11 @@
 </main>
 
 <style>
+	/* Wide windows get a wide page; the sheets inside keep text to --measure per column. */
 	main {
-		max-width: 64rem;
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-3) var(--space-3) var(--space-6);
+		padding: var(--space-3) var(--page-gutter) var(--space-6);
 	}
 	/* Title and the share icon on one row, the author beneath. */
 	header {

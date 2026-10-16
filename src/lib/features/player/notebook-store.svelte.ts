@@ -24,7 +24,8 @@ import {
 import type { SeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 
-const DB_NAME = 'grim-games-player';
+/** The player view's own database; Settings > Data clears it by this name. */
+export const DB_NAME = 'grim-games-player';
 const DB_VERSION = 1;
 const NOTEBOOKS = 'notebooks';
 const SAVE_DELAY_MS = 300;

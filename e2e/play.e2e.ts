@@ -26,20 +26,20 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 	await expect(page.getByTestId('no-jinxes')).toHaveText('None');
 
 	// Sections close from their header and stay closed after a reload (Trevor, 2026-10-16).
-	const jinxes = page.getByRole('button', { name: 'Jinxes' });
+	const panel = page.getByRole('tabpanel', { name: 'Script' });
+	const jinxes = panel.getByRole('button', { name: 'Jinxes' });
 	await expect(jinxes).toHaveAttribute('aria-expanded', 'true');
 	await jinxes.tap();
 	await expect(page.getByTestId('no-jinxes')).toBeHidden();
 	// The * legend explains ability text, so it stays when Players closes (Trevor).
-	await page.getByRole('button', { name: 'Players', exact: true }).tap();
+	await panel.getByRole('button', { name: 'Players', exact: true }).tap();
 	await expect(page.getByText('* Not the first night')).toBeVisible();
-	await page.getByRole('button', { name: 'Townsfolk', exact: true }).tap();
+	await panel.getByRole('button', { name: 'Townsfolk', exact: true }).tap();
 	await expect(empath).toBeHidden();
 	await page.reload();
-	await expect(page.getByRole('button', { name: 'Jinxes' })).toHaveAttribute(
-		'aria-expanded',
-		'false'
-	);
+	await expect(
+		page.getByRole('tabpanel', { name: 'Script' }).getByRole('button', { name: 'Jinxes' })
+	).toHaveAttribute('aria-expanded', 'false');
 	await expect(empath).toBeHidden();
 	await page.getByRole('button', { name: 'Townsfolk', exact: true }).tap();
 	await expect(empath).toBeVisible();
