@@ -196,14 +196,19 @@
 </Dialog>
 
 <style>
+	/* One column on a phone; on a computer the sections sit side by side, each at most a
+	   reading width, instead of one narrow strip down the middle. */
 	main {
-		max-width: calc(40 * var(--u));
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-5) var(--space-4);
+		padding: var(--space-5) var(--page-gutter);
 		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--measure)), 1fr));
+		align-items: start;
 		gap: var(--space-5);
 	}
 	h1 {
+		grid-column: 1 / -1;
 		margin: 0;
 		font-size: 2rem;
 	}
