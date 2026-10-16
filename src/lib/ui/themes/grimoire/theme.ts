@@ -65,8 +65,10 @@ export const grimoire: Theme = {
 		'--token-face-shade': 'var(--palette-parchment-400)',
 		'--token-rim': 'var(--palette-blood-700)',
 		'--on-token': 'var(--palette-ink-800)',
-		'--reminder-face': 'var(--palette-arcane-600)',
-		'--on-reminder': 'var(--palette-parchment-200)',
+		// Reminders are parchment with dark ink, like the tokens: the old purple was too hard to
+		// read on a phone (Trevor, 2026-10-16). The rim still shows the character's colour.
+		'--reminder-face': 'var(--palette-parchment-50)',
+		'--on-reminder': 'var(--palette-ink-800)',
 		'--sheet': 'var(--palette-parchment-200)',
 		'--on-sheet': 'var(--palette-ink-900)',
 		'--on-sheet-muted': 'var(--palette-ink-600)',

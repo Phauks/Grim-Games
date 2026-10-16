@@ -41,15 +41,15 @@
 	 * colour, so it never looks like a character badge (a filled pill with an icon).
 	 */
 	.reminder {
-		--rim: var(--reminder-face);
+		--rim: var(--token-face-shade);
 		display: inline-flex;
 		align-items: center;
 		gap: 0.3em;
 		padding: 0 0.45em 0 0.2em;
 		border-radius: 0.35em;
-		background: var(--token-face);
+		background: var(--reminder-face);
 		box-shadow: inset 0 0 0 1.5px var(--rim);
-		color: var(--on-token);
+		color: var(--on-reminder);
 		/*
 		 * Easy to read (Trevor, 2026-10-16): the running-text font in normal case and bold, not
 		 * the display font in small capitals. Never smaller than 0.8rem, which follows Text size.
@@ -99,7 +99,7 @@
 	.reminder[data-variant='info'] {
 		padding-left: 0.45em;
 		box-shadow: none;
-		outline: 1.5px dashed var(--reminder-face);
+		outline: 1.5px dashed var(--on-token);
 		outline-offset: -1.5px;
 	}
 	.reminder[data-variant='info']::before {
