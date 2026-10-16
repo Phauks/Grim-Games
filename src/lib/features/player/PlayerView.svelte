@@ -3,8 +3,7 @@
 	import { resolve } from '$app/paths';
 	import {
 		editionScript,
-		loadScript,
-		scriptToJson,
+		loadScriptText,
 		type ScriptLoadResult,
 		type GameData,
 		type LoadedScript,
@@ -23,11 +22,9 @@
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
-	import {
-		decodeSharedScript,
-		sharedPayloadFromHash,
-		shareLink
-	} from '#lib/features/scripts/share.ts';
+	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
+	import { fetchSharedRef, shareTargetFor } from '#lib/features/scripts/share-codes.ts';
+	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { NotebookState } from './notebook-store.svelte.ts';
@@ -73,20 +70,24 @@
 		}
 	});
 
-	// A shared link (/play#s=…) loads its script through the same checks as the Scripts page:
-	// the Script check opens when something was skipped or changed (08-script-loading.md §5.3).
+	// A shared link (/play#c=…, #e=, #bs= or #s=) loads its script through the same checks as
+	// the Scripts page: the Script check opens when something was skipped or changed
+	// (08-script-loading.md §5.3, §5.5).
 	let checking = $state<ScriptLoadResult>();
+	let checkingSource: ScriptSource = { kind: 'share' };
 	let checkOpen = $state(false);
 	async function openSharedLink() {
-		const payload = sharedPayloadFromHash(location.hash);
-		if (!payload) return;
+		const ref = sharedRefFromHash(location.hash);
+		if (!ref) return;
 		history.replaceState(history.state, '', location.pathname + location.search);
 		try {
-			const result = loadScript(await decodeSharedScript(payload), await loadOfficialData());
+			const fetched = await fetchSharedRef(ref);
+			const result = loadScriptText(fetched.text, await loadOfficialData());
 			if (!result.script || result.problems.some((p) => p.severity !== 'info')) {
 				checking = result;
+				checkingSource = fetched.source;
 				checkOpen = true;
-			} else await chooseScript(result.script, { kind: 'share' });
+			} else await chooseScript(result.script, fetched.source);
 		} catch (e) {
 			reportError(e, { area: 'play', notify: false });
 			toast('Could not open the shared script', errorMessage(e));
@@ -95,21 +96,16 @@
 
 	const script = $derived(data ? (currentScript.current ?? fallback) : undefined);
 
-	let shareUrl = $state<string>();
-	$effect(() => {
-		const current = script;
-		shareUrl = undefined;
-		if (!current) return;
-		let stale = false;
-		shareLink(location.origin, scriptToJson(current)).then(
-			(url) => {
-				if (!stale) shareUrl = url;
-			},
-			(e) => reportError(e, { area: 'play', notify: false })
-		);
-		return () => {
-			stale = true;
+	/** Makes the share link when Share or QR code is tapped (a short code for custom scripts). */
+	const shareTarget = $derived.by(() => {
+		if (!script) return undefined;
+		const saved = currentScript.current === script ? currentScript.saved : undefined;
+		const from = saved ?? {
+			edition: script.edition,
+			json: script.edition ? [script.edition] : [],
+			source: { kind: 'edition' as const }
 		};
+		return () => shareTargetFor(from, location.origin);
 	});
 	// One notebook per script: official editions by id, saved scripts by their library id.
 	const key = $derived.by(() => {
@@ -182,7 +178,7 @@
 						{#if !script || !notebook}
 							<p class="muted">Loading…</p>
 						{:else if value === 'script'}
-							<ScriptSheet {script} {jinxes} {players} {shareUrl} />
+							<ScriptSheet {script} {jinxes} {players} {shareTarget} />
 						{:else if value === 'night'}
 							<PlayerNightOrder {nights} {players} />
 						{:else if value === 'circle'}
@@ -220,7 +216,7 @@
 		result={checking}
 		onconfirm={() => {
 			const loaded = checking?.script;
-			if (loaded) void chooseScript(loaded, { kind: 'share' });
+			if (loaded) void chooseScript(loaded, checkingSource);
 		}}
 	/>
 

@@ -21,6 +21,9 @@ import {
 	type SharedRef
 } from './share.ts';
 
+/** What a link is made from: a saved script, or an edition shown before one is chosen. */
+export type Shareable = Pick<SavedScript, 'edition' | 'json' | 'source'>;
+
 /** A link ready to share, and its word code when it has one. */
 export interface ShareTarget {
 	url: string;
@@ -118,7 +121,7 @@ async function scriptKey(json: unknown[]): Promise<string> {
 }
 
 /** A code for this script: the one it was opened with, one made earlier, or a new one. */
-async function codeFor(saved: SavedScript): Promise<{ code: string; canDelete: boolean }> {
+async function codeFor(saved: Shareable): Promise<{ code: string; canDelete: boolean }> {
 	const key = await scriptKey(saved.json);
 	const store = readStore();
 	const mine = store.codes[key];
@@ -143,7 +146,7 @@ async function codeFor(saved: SavedScript): Promise<{ code: string; canDelete: b
  * if that fails, falls back to the long link with the whole script in it.
  */
 export async function shareTargetFor(
-	saved: SavedScript,
+	saved: Shareable,
 	origin: string,
 	path: SharePath = '/play'
 ): Promise<ShareTarget> {
