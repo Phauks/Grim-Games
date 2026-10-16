@@ -50,7 +50,7 @@ export const ICON_SLOTS = {
 	info: { label: 'Info', choices: ['ph:info', 'ph:question'] },
 	about: { label: 'About', choices: ['ph:identification-card', 'ph:info'] },
 	diagnostics: { label: 'Diagnostics', choices: ['ph:stethoscope', 'ph:pulse'] },
-	back: { label: 'Back', choices: ['ph:arrow-left', 'ph:caret-left'] },
+	back: { label: 'Back', choices: ['ph:caret-left', 'ph:arrow-left'] },
 	forward: { label: 'Forward', choices: ['ph:caret-right', 'ph:arrow-right'] },
 	check: { label: 'Selected', choices: ['ph:check'] },
 	random: { label: 'Random selection', choices: ['ph:shuffle', 'ph:dice-five'] },
