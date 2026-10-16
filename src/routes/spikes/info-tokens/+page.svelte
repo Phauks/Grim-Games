@@ -10,14 +10,14 @@
 		const data = officialData.current;
 		return data ? (editionScript('tb', data)?.characters ?? []) : [];
 	});
-	// Sample seats as the grimoire board passes them: a name, or "Seat N" without one.
-	const players = [
-		{ id: 's1', label: 'Alex' },
-		{ id: 's2', label: 'Sam' },
-		{ id: 's3', label: 'Seat 3' },
-		{ id: 's4', label: 'Jo' }
+	// Sample bluff sets as the grimoire board passes them (`showableBluffSets`).
+	const twoSets = [
+		{ set: 0, label: 'Demon', characterIds: ['chef', 'monk', 'mayor'] },
+		{ set: 1, label: 'Set 2', characterIds: ['empath', 'slayer'] }
 	];
 	let open = $state(false);
+	let openTwo = $state(false);
+	let bluffPicker = $state(false);
 </script>
 
 <svelte:head>
@@ -26,10 +26,22 @@
 
 <main>
 	<h1>Info tokens sheet (preview)</h1>
-	<Button icon="info" disabled={characters.length === 0} onclick={() => (open = true)}
-		>Info tokens</Button
-	>
-	<InfoTokensSheet bind:open {characters} {players} />
+	<div class="demos">
+		<Button icon="info" disabled={characters.length === 0} onclick={() => (open = true)}
+			>Info tokens</Button
+		>
+		<Button icon="info" disabled={characters.length === 0} onclick={() => (openTwo = true)}
+			>Info tokens (two bluff sets)</Button
+		>
+	</div>
+	<p data-testid="bluff-picker">{bluffPicker ? 'Bluff picker opened' : 'None'}</p>
+	<InfoTokensSheet
+		bind:open
+		{characters}
+		bluffSets={[]}
+		onChooseBluffs={() => (bluffPicker = true)}
+	/>
+	<InfoTokensSheet bind:open={openTwo} {characters} bluffSets={twoSets} />
 </main>
 
 <style>
@@ -40,5 +52,10 @@
 	}
 	h1 {
 		font-family: var(--font-heading);
+	}
+	.demos {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 	}
 </style>

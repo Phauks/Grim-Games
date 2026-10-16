@@ -18,10 +18,11 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import { charactersReallyInPlay, DEMON_SET, LUNATIC_SET, lunaticInPlay } from './bluffs.ts';
+	import { bluffSetLabel, charactersReallyInPlay, DEMON_SET, lunaticInPlay } from './bluffs.ts';
 
 	export type BluffCommand = Extract<Command, { type: 'SetBluffs' | 'RemoveBluffSet' }>;
 	export type BluffDispatch = (
@@ -38,13 +39,9 @@
 
 	let { open = $bindable(false), game, characters, dispatch }: Props = $props();
 
-	type SetIndex = typeof DEMON_SET | typeof LUNATIC_SET;
-	const SET_LABELS: Record<SetIndex, string> = {
-		[DEMON_SET]: 'Demon',
-		[LUNATIC_SET]: 'Lunatic'
-	};
-
-	let editing = $state<SetIndex>();
+	let editing = $state<number>();
+	let deleteOpen = $state(false);
+	let deleting = $state<number>();
 	let picked = $state<CharacterId[]>([]);
 	let filter = $state<'good' | 'script'>('good');
 	let showOpen = $state(false);
@@ -63,12 +60,12 @@
 			: scriptList
 	);
 	const inPlay = $derived(charactersReallyInPlay(game, characters));
-	// One set for the Demon; a second only in a game with a Lunatic (Trevor, 2026-10-16).
-	const sets = $derived<SetIndex[]>(
-		lunaticInPlay(game, characters) ? [DEMON_SET, LUNATIC_SET] : [DEMON_SET]
-	);
-	/** The Demon's bluffs must not be in play; the Lunatic's may be. */
-	const blocks = (set: SetIndex) => set === DEMON_SET;
+	const lunatic = $derived(lunaticInPlay(game, characters));
+	// The Demon's set always, then any others the Storyteller added (Trevor, 2026-10-16).
+	const sets = $derived(Array.from({ length: Math.max(1, game.bluffs.length) }, (_, i) => i));
+	const label = (set: number) => bluffSetLabel(set, lunatic);
+	/** The Demon's bluffs must not be in play; other sets (the Lunatic's) may be. */
+	const blocks = (set: number) => set === DEMON_SET;
 	const pickedBlocked = $derived(
 		editing !== undefined && blocks(editing) && picked.some((id) => inPlay.has(id))
 	);
@@ -95,14 +92,14 @@
 		return true;
 	}
 
-	function set(index: SetIndex, characterIds: CharacterId[]): boolean {
-		// The Lunatic's set is the second one, so the Demon's must exist first.
+	function set(index: number, characterIds: CharacterId[]): boolean {
+		// Other sets come after the Demon's, so the Demon's must exist first.
 		if (index > game.bluffs.length && !run({ type: 'SetBluffs', set: DEMON_SET, characterIds: [] }))
 			return false;
 		return run({ type: 'SetBluffs', set: index, characterIds });
 	}
 
-	function edit(index: SetIndex) {
+	function edit(index: number) {
 		editing = index;
 		picked = [...(game.bluffs[index] ?? [])];
 	}
@@ -122,7 +119,7 @@
 
 <BottomSheet
 	bind:open
-	title={editing === undefined ? 'Demon bluffs' : `${SET_LABELS[editing]} bluffs`}
+	title={editing === undefined ? 'Demon bluffs' : `${label(editing)} bluffs`}
 	height="85dvh"
 >
 	<!-- The player view below sits outside this boundary, so a crash here never closes it. -->
@@ -132,8 +129,8 @@
 				{#each sets as index (index)}
 					{@const ids = game.bluffs[index] ?? []}
 					{@const stale = blocks(index) && ids.some((id) => inPlay.has(id))}
-					<li class="set" data-testid="bluff-set" data-set={SET_LABELS[index]}>
-						<span class="label">{SET_LABELS[index]}</span>
+					<li class="set" data-testid="bluff-set" data-set={label(index)}>
+						<span class="label">{label(index)}</span>
 						<ol class="rows">
 							{#each Array.from({ length: BLUFFS_PER_SET }, (_, i) => ids[i]) as id, i (i)}
 								{@const character = id ? characters.get(id) : undefined}
@@ -158,13 +155,28 @@
 							<Button icon="forward" disabled={ids.length === 0 || stale} onclick={() => show(ids)}
 								>Show</Button
 							>
-							<Button variant="quiet" disabled={ids.length === 0} onclick={() => set(index, [])}
-								>Clear</Button
-							>
+							{#if index === DEMON_SET}
+								<Button variant="quiet" disabled={ids.length === 0} onclick={() => set(index, [])}
+									>Clear</Button
+								>
+							{:else}
+								<Button
+									variant="quiet"
+									onclick={() => {
+										deleting = index;
+										deleteOpen = true;
+									}}>Delete</Button
+								>
+							{/if}
 						</div>
 					</li>
 				{/each}
 			</ul>
+			<div class="add">
+				<Button icon="add" variant="quiet" onclick={() => edit(Math.max(1, game.bluffs.length))}
+					>Add a set</Button
+				>
+			</div>
 		{:else}
 			<div class="filter">
 				<Segmented
@@ -194,6 +206,25 @@
 	</ErrorBoundary>
 </BottomSheet>
 
+<Dialog bind:open={deleteOpen} title="Delete bluff set?" role="alertdialog">
+	<p class="confirm">
+		{deleting === undefined ? '' : label(deleting)}: {lookup(game.bluffs[deleting ?? -1] ?? [])
+			.map((c) => c.name)
+			.join(', ') || 'None'}
+	</p>
+	<p class="confirm hint">You can undo it from History.</p>
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (deleteOpen = false)}>Cancel</Button>
+		<Button
+			variant="accent"
+			onclick={() => {
+				if (deleting !== undefined) run({ type: 'RemoveBluffSet', set: deleting });
+				deleteOpen = false;
+			}}>Delete</Button
+		>
+	{/snippet}
+</Dialog>
+
 <ShowToPlayer
 	bind:open={showOpen}
 	title={notInPlay}
@@ -202,6 +233,18 @@
 />
 
 <style>
+	.add {
+		display: flex;
+		justify-content: flex-start;
+		margin-top: var(--space-2);
+	}
+	.confirm {
+		margin: 0;
+	}
+	.confirm.hint {
+		margin-top: var(--space-2);
+		opacity: 0.8;
+	}
 	.sets {
 		display: grid;
 		gap: var(--space-3);

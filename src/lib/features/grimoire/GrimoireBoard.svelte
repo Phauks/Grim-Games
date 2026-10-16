@@ -20,6 +20,7 @@
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import { setupComplete, setupReminders } from '#lib/core/rules/index.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
+	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -435,9 +436,8 @@
 	const infoCharacters = $derived(
 		scriptCharacterIds(game.script).flatMap((id) => characters.get(id) ?? [])
 	);
-	const infoPlayers = $derived(
-		game.seating.map((id, i) => ({ id, label: game.seats[id].playerName ?? `Seat ${i + 1}` }))
-	);
+	// "These characters are not in play" shows a bluff set (Trevor, 2026-10-16).
+	const infoBluffSets = $derived(showableBluffSets(game, characters));
 	let exitOpen = $state(false);
 
 	// ── Background: an image of the Storyteller's own, kept on this device ──
@@ -756,7 +756,12 @@
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
-<InfoTokensSheet bind:open={infoOpen} characters={infoCharacters} players={infoPlayers} />
+<InfoTokensSheet
+	bind:open={infoOpen}
+	characters={infoCharacters}
+	bluffSets={infoBluffSets}
+	onChooseBluffs={() => (bluffsOpen = true)}
+/>
 
 <BackgroundDialog
 	bind:open={backgroundOpen}

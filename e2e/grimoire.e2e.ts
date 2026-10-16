@@ -858,18 +858,17 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.getByTestId('board-background')).toHaveCount(0);
 });
 
-test('info tokens open from the toolbar and name the seats', async ({ page }) => {
+test('info tokens open from the toolbar and show player cards at once', async ({ page }) => {
 	await startGame(page);
-	const sheet = await openSeat(page, 2);
-	await nameSeat(sheet, 'Sam');
-	await closeSheet(page);
 	await page.getByRole('button', { name: 'Info tokens' }).tap();
+	// The Storyteller points at the players (Trevor, 2026-10-16), so nothing is asked first.
 	await page.getByRole('button', { name: 'This is the Demon' }).tap();
-	await page.getByRole('button', { name: 'Sam' }).tap();
-	await page.getByRole('button', { name: 'Show' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('This is the Demon');
-	await expect(shown.getByRole('list', { name: 'Players' })).toHaveText('Sam');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	// No bluffs yet: "not in play" opens the bluffs sheet.
+	await page.getByRole('button', { name: 'These characters are not in play' }).tap();
+	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
 });
 
 test('a night step is filled in with help, and the night can be walked through', async ({

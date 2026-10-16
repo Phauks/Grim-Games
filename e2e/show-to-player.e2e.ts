@@ -47,9 +47,45 @@ test('a custom info token keeps its bold words and survives a reload', async ({ 
 	await expect(page.getByTestId('show-to-player').locator('strong')).toHaveText('mad');
 	await page.getByTestId('show-to-player').getByRole('button', { name: 'Close' }).tap();
 
-	await page.getByRole('button', { name: 'Edit You are mad about something' }).tap();
-	await page.getByRole('button', { name: 'Delete' }).tap();
-	await expect(page.getByText('You are mad about something')).toHaveCount(0);
+	// Delete confirms in its own dialog, then the row offers Undo in place.
+	await page.getByRole('button', { name: 'Delete You are mad about something' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).tap();
+	await expect(card).toHaveCount(0);
+	await page.getByRole('button', { name: 'Undo' }).tap();
+	await expect(card).toBeVisible();
+	await page.getByRole('button', { name: 'Delete You are mad about something' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).tap();
+	await page.reload();
+	await expect(card).toHaveCount(0);
+});
+
+test('the Standard and Custom sections collapse and stay that way', async ({ page }) => {
+	await page.goto('/info-tokens');
+	const toggle = page.getByRole('button', { name: 'Standard' });
+	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+	await toggle.tap();
+	await expect(page.getByRole('button', { name: 'You are', exact: true })).toBeHidden();
+	await page.reload();
+	await expect(page.getByRole('button', { name: 'Standard' })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
+	await page.getByRole('button', { name: 'Standard' }).tap();
+	await expect(page.getByRole('button', { name: 'You are', exact: true })).toBeVisible();
+});
+
+test('"This player is" shows several characters, e.g. for the Dreamer', async ({ page }) => {
+	await page.goto('/info-tokens');
+	await page.getByRole('button', { name: 'This player is' }).tap();
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('Empath');
+	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await search.fill('Imp');
+	await page.getByRole('button', { name: 'Imp', exact: true }).tap();
+	await page.getByRole('button', { name: 'Show' }).tap();
+	const shown = page.getByTestId('show-to-player');
+	await expect(shown).toContainText('Empath');
+	await expect(shown).toContainText('Imp');
 });
 
 const choice = (page: import('@playwright/test').Page, name: string) =>
@@ -104,18 +140,35 @@ test("characters in play can't be Demon bluffs, but the Drunk's Townsfolk can", 
 	await expect(page.getByTestId('bluff-set')).toContainText('Chef');
 });
 
-test('a Lunatic game adds an optional Lunatic set that may include characters in play', async ({
+test("in a Lunatic game the second set is the Lunatic's and may include characters in play", async ({
 	page
 }) => {
 	await page.goto('/spikes/bluffs');
 	await page.getByRole('button', { name: 'Demon bluffs (Lunatic game)' }).tap();
-	await expect(page.getByTestId('bluff-set')).toHaveCount(2);
-	const lunatic = page.locator('[data-testid="bluff-set"][data-set="Lunatic"]');
-	await lunatic.getByRole('button', { name: 'Choose' }).tap();
+	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
+	await page.getByRole('button', { name: 'Add a set' }).tap();
 	await expect(choice(page, 'Sailor')).toBeEnabled();
 	await expect(choice(page, 'Sailor')).toContainText('In play');
 	await choice(page, 'Sailor').tap();
 	await page.getByRole('button', { name: 'Save' }).tap();
+	const lunatic = page.locator('[data-testid="bluff-set"][data-set="Lunatic"]');
 	await expect(lunatic).toContainText('Sailor');
 	await expect(lunatic).not.toContainText('In play: replace');
+});
+
+test('the Storyteller adds more bluff sets and deletes one after confirming', async ({ page }) => {
+	await page.goto('/spikes/bluffs');
+	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
+	for (const name of ['Monk', 'Mayor']) {
+		await page.getByRole('button', { name: 'Add a set' }).tap();
+		await choice(page, name).tap();
+		await page.getByRole('button', { name: 'Save' }).tap();
+	}
+	await expect(page.getByTestId('bluff-set')).toHaveCount(3);
+	const second = page.locator('[data-testid="bluff-set"][data-set="Set 2"]');
+	await expect(second).toContainText('Monk');
+	await second.getByRole('button', { name: 'Delete' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).tap();
+	await expect(page.getByTestId('bluff-set')).toHaveCount(2);
+	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 2"]')).toContainText('Mayor');
 });

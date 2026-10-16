@@ -3,7 +3,12 @@ import { editionScript, type Script } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type Command, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { charactersReallyInPlay, demonBluffsInPlay, lunaticInPlay } from './bluffs.ts';
+import {
+	charactersReallyInPlay,
+	demonBluffsInPlay,
+	lunaticInPlay,
+	showableBluffSets
+} from './bluffs.ts';
 
 const data = committedGameData();
 
@@ -67,5 +72,32 @@ describe('bluffs and characters in play', () => {
 	it('has no Lunatic set without a Lunatic', () => {
 		const { game: g, characters } = game('tb', ['chef', 'imp']);
 		expect(lunaticInPlay(g, characters)).toBe(false);
+	});
+
+	it('offers every set with characters, named by position', () => {
+		const lunatic = game('bmr', ['sailor', 'lunatic', 'zombuul'], () => [
+			{ type: 'SetBluffs', set: 0, characterIds: ['chambermaid', 'exorcist', 'innkeeper'] },
+			{ type: 'SetBluffs', set: 1, characterIds: ['sailor'] }
+		]);
+		expect(showableBluffSets(lunatic.game, lunatic.characters).map((s) => s.label)).toEqual([
+			'Demon',
+			'Lunatic'
+		]);
+		const plain = game('tb', ['chef', 'imp'], () => [
+			{ type: 'SetBluffs', set: 0, characterIds: ['empath'] }
+		]);
+		expect(showableBluffSets(plain.game, plain.characters)).toEqual([
+			{ set: 0, label: 'Demon', characterIds: ['empath'] }
+		]);
+		expect(showableBluffSets(game('tb', ['chef', 'imp']).game, plain.characters)).toEqual([]);
+		const three = game('tb', ['chef', 'imp'], () => [
+			{ type: 'SetBluffs', set: 0, characterIds: ['empath'] },
+			{ type: 'SetBluffs', set: 1, characterIds: [] },
+			{ type: 'SetBluffs', set: 2, characterIds: ['monk'] }
+		]);
+		expect(showableBluffSets(three.game, three.characters).map((s) => s.label)).toEqual([
+			'Demon',
+			'Set 3'
+		]);
 	});
 });
