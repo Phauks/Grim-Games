@@ -2,16 +2,17 @@
  * Board helpers that are UI only: which characters the pickers offer and the text shown
  * for engine warnings. Rules stay in `#lib/core`; where seats sit is `#lib/ui/seating`.
  */
-import type { Character, CharacterId, CharacterType, Script } from '#lib/core/data/index.ts';
+import type { Character, CharacterType, Script } from '#lib/core/data/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
-import type { DeathCauseOption } from '#lib/core/rules/index.ts';
+import type { DeathCauseFlag } from '#lib/core/rules/index.ts';
 import {
-	GENERAL_DEATH_CAUSES,
 	isOnScript,
 	scriptCharacterIds,
 	type CharacterLookup,
 	type DeathCause,
-	type Seat
+	type Game,
+	type Seat,
+	type SeatId
 } from '#lib/core/model/index.ts';
 
 /** The types offered for a seat, in script-sheet order. */
@@ -76,27 +77,6 @@ export function isOrphan(seat: Seat, script: Script, characters: CharacterLookup
 	return character.type !== 'traveller' && !isOnScript(script, seat.characterId);
 }
 
-/**
- * The death-cause picker's choices: executed and the Demon first, then the characters that
- * can cause a death (core `gameDeathCauses`, in script order) and something else last.
- * Demons are left out because "the Demon" covers them; a character that can only cause its
- * own death is offered only on the seat that has it.
- */
-export function deathCauseOptions(
-	options: readonly DeathCauseOption[],
-	characters: CharacterLookup,
-	ownCharacter?: CharacterId
-): DeathCause[] {
-	const ids = options
-		.filter(({ characterId, kind }) => {
-			if (characters.get(characterId)?.type === 'demon') return false;
-			return kind !== 'own-death' || characterId === ownCharacter;
-		})
-		.map(({ characterId }) => characterId);
-	const [execution, demon, other] = GENERAL_DEATH_CAUSES;
-	return [execution, demon, ...ids, other];
-}
-
 /** A cause's words. Travellers are exiled rather than executed. */
 export function causeLabel(
 	cause: DeathCause | undefined,
@@ -108,12 +88,38 @@ export function causeLabel(
 			return 'None';
 		case 'execution':
 			return traveller ? 'Exiled' : 'Executed';
+		case 'exile':
+			return 'Exiled';
 		case 'demon':
 			return 'The Demon';
 		case 'other':
 			return 'Something else';
 		default:
 			return characters.get(cause)?.name ?? cause;
+	}
+}
+
+/**
+ * Why a death cause is offered with a caution, for the overlay behind its marker. Uses
+ * player names (or "Seat N") and character names only; the rule itself is core's.
+ */
+export function causeFlagText(
+	flag: DeathCauseFlag,
+	game: Game,
+	characters: CharacterLookup,
+	victim: string
+): string {
+	const name = (seatId: SeatId) =>
+		game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
+	switch (flag.code) {
+		case 'registers': {
+			const by = characters.get(flag.source.characterId)?.name ?? flag.source.characterId;
+			return `Only if ${victim} registered falsely (${by}).`;
+		}
+		case 'impaired':
+			return `${flag.seatIds.map(name).join(', ')} ${flag.seatIds.length === 1 ? 'is' : 'are'} drunk, poisoned or without an ability now.`;
+		case 'unknown':
+			return `${victim}'s alignment or character is not set, so this can't be checked.`;
 	}
 }
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import { gameDeathCauses } from '#lib/core/rules/index.ts';
+	import { validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import { abilityState, type ImpairmentReason } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -14,7 +14,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { causeLabel, deathCauseOptions, isOrphan, SEAT_TYPES } from './board.ts';
+	import { causeFlagText, causeLabel, isOrphan, SEAT_TYPES } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -134,20 +134,21 @@
 	}
 
 	/** Finishes assigning a Traveller, or changes the seat's alignment from the … menu. */
-	function pickAlignment(alignment: Alignment) {
+	function pickAlignment(alignment: Alignment | undefined) {
 		alignmentOpen = false;
 		if (seatId && alignmentFor)
 			grimoire.run({ type: 'AssignCharacter', seatId, characterId: alignmentFor, alignment });
-		else if (seatId && alignment !== seat?.alignment)
+		else if (seatId && alignment && alignment !== seat?.alignment)
 			grimoire.run({ type: 'SetAlignment', seatId, alignment });
 		alignmentFor = undefined;
 	}
 
 	// ── Death ──
 	let causeOpen = $state(false);
-	const causes = $derived(
-		deathCauseOptions(gameDeathCauses(game, characters), characters, seat?.characterId)
-	);
+	// Only the causes that fit this player (core); "Something else" is always last.
+	const causes = $derived(seatId && open ? validDeathCauses(game, seatId, characters) : []);
+	let flagged = $state<ValidDeathCause | undefined>();
+	let flagOpen = $state(false);
 
 	function toggleDead() {
 		if (!seat || !seatId) return;
@@ -366,29 +367,70 @@
 			aria-pressed={!alignmentFor && seat?.alignment === 'evil'}
 			onclick={() => pickAlignment('evil')}>Evil</Button
 		>
+		{#if alignmentFor}
+			<!-- Often chosen later: the night order asks for it first (Trevor, 2026-10-16). -->
+			<Button variant="quiet" onclick={() => pickAlignment(undefined)}>Decide later</Button>
+		{/if}
 	</div>
 </Dialog>
 
 <Dialog bind:open={causeOpen} title={`How did ${title} die?`}>
 	<div class="causes">
-		{#each causes as cause (cause)}
+		{#each causes as { cause, flags }, i (cause)}
 			{@const killer = characters.get(cause)}
-			<button
-				type="button"
-				class="cause"
-				aria-pressed={seat?.deathCause === cause}
-				onclick={() => setCause(cause)}
-			>
-				<span class="slot"
-					>{#if killer}<CharacterToken character={killer} size={32} />{/if}</span
+			<div class="cause-row">
+				<button
+					type="button"
+					class="cause"
+					aria-pressed={seat?.deathCause === cause}
+					onclick={() => setCause(cause)}
 				>
-				{causeLabel(cause, characters, traveller)}
-			</button>
+					<span class="slot"
+						>{#if killer}<CharacterToken character={killer} size={32} />{/if}</span
+					>
+					{causeLabel(cause, characters, traveller)}
+				</button>
+				{#if flags.length > 0}
+					<IconButton
+						icon="warning"
+						label={`Why ${causeLabel(cause, characters, traveller)} is marked`}
+						onclick={() => {
+							flagged = causes[i];
+							flagOpen = true;
+						}}
+					/>
+				{/if}
+			</div>
 		{/each}
 	</div>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => setCause(undefined)}>None</Button>
 		<Button variant="quiet" onclick={() => (causeOpen = false)}>Skip</Button>
+	{/snippet}
+</Dialog>
+
+<Dialog
+	bind:open={flagOpen}
+	title={flagged ? causeLabel(flagged.cause, characters, traveller) : ''}
+	description="Offered with a caution"
+>
+	{#if flagged}
+		<ul class="flags">
+			{#each flagged.flags as flag, i (i)}
+				<li>{causeFlagText(flag, game, characters, title)}</li>
+			{/each}
+		</ul>
+	{/if}
+	{#snippet actions()}
+		{@const registers = flagged?.flags.find((f) => f.code === 'registers')}
+		{#if registers?.code === 'registers'}
+			<!-- External wiki page (the rules authority), not an app route. -->
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+			<a class="wiki" href={registers.wiki} target="_blank" rel="noopener">
+				<Icon name="wiki" /><span>Open wiki entry</span>
+			</a>
+		{/if}
+		<Button variant="quiet" onclick={() => (flagOpen = false)}>Close</Button>
 	{/snippet}
 </Dialog>
 
@@ -755,6 +797,30 @@
 	}
 	.cause[aria-pressed='true'] {
 		border-color: var(--focus);
+	}
+	.cause-row {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		align-items: center;
+	}
+	.wiki {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: var(--tap-target);
+		padding: 0 var(--space-4);
+		border-radius: var(--radius-md);
+		background: var(--accent);
+		color: var(--on-accent, var(--on-surface));
+		text-decoration: none;
+		font-weight: 600;
+	}
+	.flags {
+		margin: var(--space-2) 0 0;
+		padding-left: var(--space-3);
+	}
+	.flags li + li {
+		margin-top: var(--space-1);
 	}
 	.cause .slot {
 		width: 32px;
