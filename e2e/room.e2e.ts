@@ -75,3 +75,37 @@ test('the Worker refuses bad room requests', async ({ request }) => {
 	expect((await request.post('/api/rooms', { data: { hostKeyHash: 'nope' } })).status()).toBe(400);
 	expect((await request.get('/api/rooms')).status()).toBe(405);
 });
+
+test('a room tells an app too old for it to update', async ({ page, browser }, testInfo) => {
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await page.getByRole('button', { name: 'Open a room' }).tap();
+	const code = (await page.getByTestId('room-code').textContent())!.replace(/\D/g, '');
+
+	// The real Worker turns away a hello in a protocol older than it accepts.
+	const reply = await page.evaluate(
+		(url) =>
+			new Promise<string>((done) => {
+				const ws = new WebSocket(url);
+				ws.onopen = () =>
+					ws.send(
+						JSON.stringify({ type: 'hello', role: 'player', key: 'a'.repeat(64), protocol: 0 })
+					);
+				ws.onmessage = (event) => done(String(event.data));
+			}),
+		`${new URL(page.url()).origin.replace(/^http/, 'ws')}/api/room/${code}`
+	);
+	expect(JSON.parse(reply)).toEqual({ type: 'refused', reason: 'too-old' });
+
+	// A phone told so says what to do instead of "closed or wrong".
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.routeWebSocket(/\/api\/room\//, (ws) => {
+		ws.onMessage(() => ws.send(JSON.stringify({ type: 'refused', reason: 'too-old' })));
+	});
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByRole('alert')).toHaveText(
+		'This room needs a newer version of Grim-Games. Refresh to update, then try again.'
+	);
+	await phoneContext.close();
+});

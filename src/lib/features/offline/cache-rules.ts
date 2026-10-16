@@ -38,3 +38,23 @@ export function precached(path: string): boolean {
 export function cachedOnUse(path: string): boolean {
 	return path.startsWith('/data/icons/') || path.startsWith('/_app/immutable/');
 }
+
+/** Prefix of each build's precache name (`grim-games-<version>`). */
+export const BUILD_CACHE_PREFIX = 'grim-games-';
+
+/**
+ * The caches a newly active build may delete. Refresh in one tab activates the new build for
+ * every tab, and the other tabs keep running the build they loaded until they reload. So the
+ * build being replaced (`previous`) keeps its cache until the next update: those tabs can
+ * still load the chunks they have not used yet, even offline, while Cloudflare only serves
+ * the new build's files (developers.cloudflare.com/workers/static-assets/routing/advanced/gradual-rollouts/).
+ */
+export function staleCaches(
+	keys: string[],
+	current: string,
+	previous: string | undefined
+): string[] {
+	const keep = new Set([current, RUNTIME_CACHE]);
+	if (previous) keep.add(previous);
+	return keys.filter((key) => key.startsWith(BUILD_CACHE_PREFIX) && !keep.has(key));
+}

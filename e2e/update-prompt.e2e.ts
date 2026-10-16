@@ -70,3 +70,47 @@ test('with no notes to fetch, What changed stays disabled', async ({ page }) => 
 	await expect(prompt.getByRole('button', { name: 'Refresh' })).toBeVisible();
 	await expect(prompt.getByRole('button', { name: 'What changed' })).toBeDisabled();
 });
+
+test('a tab left behind by Refresh in another tab offers to reload', async ({ page }) => {
+	// The new build activates for every tab; this one never asked, so it is still on the old build.
+	await page.addInitScript(() => {
+		const worker = { postMessage() {}, addEventListener() {} };
+		const listeners: Array<() => void> = [];
+		const registration = {
+			waiting: null,
+			active: worker,
+			addEventListener() {},
+			update: () => Promise.resolve()
+		};
+		Object.defineProperty(navigator, 'serviceWorker', {
+			value: {
+				controller: worker,
+				ready: Promise.resolve(registration),
+				register: () => Promise.resolve(registration),
+				addEventListener: (type: string, listener: () => void) => {
+					if (type === 'controllerchange') listeners.push(listener);
+				},
+				removeEventListener() {}
+			}
+		});
+		(window as unknown as { controllerListeners: Array<() => void> }).controllerListeners =
+			listeners;
+	});
+	type Fake = { controllerListeners: Array<() => void> };
+	await page.goto('/');
+	const prompt = page.getByTestId('update-banner');
+	await expect
+		.poll(() => page.evaluate(() => (window as unknown as Fake).controllerListeners.length))
+		.toBe(1);
+	await expect(prompt).toBeHidden();
+
+	await page.evaluate(() =>
+		(window as unknown as Fake).controllerListeners.forEach((listener) => listener())
+	);
+	await expect(prompt).toBeVisible();
+
+	const reloaded = page.waitForEvent('load');
+	await prompt.getByRole('button', { name: 'Refresh' }).tap();
+	await reloaded;
+	await expect(prompt).toBeHidden();
+});

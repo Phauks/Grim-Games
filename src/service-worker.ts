@@ -4,18 +4,22 @@
 
 // Offline-first service worker (04-architecture.md §1 "Offline"). Every build is precached
 // under its own cache name, so a game can run with no signal. A new build waits until the
-// user chooses to refresh (UpdateBanner), so an update never reloads a game mid-night.
+// user chooses to refresh (UpdateBanner), so an open game is never reloaded by an update. A
+// new build still starts by itself when the app is next launched with no tab open (web.dev/
+// articles/service-worker-lifecycle); the game then reopens from its save (persistence.ts).
 import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
 import { self as sw } from '$app/service-worker';
 import {
+	BUILD_CACHE_PREFIX,
 	cachedOnUse,
 	precached,
 	RUNTIME_CACHE,
+	staleCaches,
 	type KeepOfflineMessage
 } from '#lib/features/offline/cache-rules.ts';
 
-const CACHE = `grim-games-${version}`;
+const CACHE = `${BUILD_CACHE_PREFIX}${version}`;
 const SHELL = '/';
 // Manifest paths are relative to the worker; the cache rules match absolute paths.
 const BUILD = [...immutable, ...assets].map(
@@ -26,6 +30,8 @@ const ASSETS = [SHELL, ...BUILD.filter(precached)];
 
 /** Marks which icon data the runtime cache holds (`fetchedAt` of `/data/manifest.json`). */
 const ICON_DATA_KEY = '/__icon-data';
+/** Names the precache of the build that is active, so the next build knows which it replaces. */
+const ACTIVE_BUILD_KEY = '/__active-build';
 
 /**
  * Icons are not hashed, so when a build brings newly synced icon data, the icons already
@@ -58,11 +64,15 @@ sw.addEventListener('install', (event) => {
 sw.addEventListener('activate', (event) => {
 	event.waitUntil(
 		(async () => {
-			for (const key of await caches.keys()) {
-				if (key !== CACHE && key !== RUNTIME_CACHE) await caches.delete(key);
-			}
-			// Hashed files from older builds are never asked for again.
 			const runtime = await caches.open(RUNTIME_CACHE);
+			const marker = await runtime.match(ACTIVE_BUILD_KEY);
+			const previous = marker ? await marker.text() : undefined;
+			// Tabs still on the previous build keep its files until the next update.
+			for (const key of staleCaches(await caches.keys(), CACHE, previous)) {
+				await caches.delete(key);
+			}
+			if (previous !== CACHE) await runtime.put(ACTIVE_BUILD_KEY, new Response(CACHE));
+			// Runtime copies of older builds' hashed files (fonts) are not kept.
 			const current = new Set(BUILD);
 			for (const request of await runtime.keys()) {
 				const path = new URL(request.url).pathname;
@@ -126,6 +136,11 @@ sw.addEventListener('fetch', (event) => {
 			}
 			const cached = await cache.match(url.pathname);
 			if (cached) return cached;
+			// A tab still running the previous build asks for its own hashed files.
+			if (url.pathname.startsWith('/_app/immutable/')) {
+				const older = await caches.match(url.pathname);
+				if (older) return older;
+			}
 			if (!cachedOnUse(url.pathname)) return fetch(request);
 			const runtime = await caches.open(RUNTIME_CACHE);
 			const stored = await runtime.match(url.pathname);

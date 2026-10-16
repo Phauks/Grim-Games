@@ -66,7 +66,11 @@
 	{#if !valid || status === 'refused' || status === 'closed'}
 		{#if code !== undefined}
 			<p class="problem" role="alert">
-				{!valid ? t('room.notACode') : t('room.closedOrWrong')}
+				{!valid
+					? t('room.notACode')
+					: player?.refusedReason === 'too-old'
+						? t('room.tooOld')
+						: t('room.closedOrWrong')}
 			</p>
 		{/if}
 		<form class="code-form" onsubmit={enterCode}>

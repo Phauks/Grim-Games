@@ -19,6 +19,9 @@
 
 	let waiting = $state<ServiceWorker | null>(null);
 	let dismissed = $state(false);
+	// Another tab tapped Refresh: the new build is active here too, but this page still runs
+	// the old one until it reloads.
+	let activated = $state(false);
 	// Set only when the user taps Refresh, so the first install's clients.claim() never reloads.
 	let refreshRequested = false;
 	// What the waiting build changed; null until fetched, or when offline.
@@ -59,7 +62,7 @@
 	}
 
 	$effect(() => {
-		if (waiting) void loadChanges();
+		if (waiting || activated) void loadChanges();
 	});
 
 	onMount(() => {
@@ -83,10 +86,15 @@
 		};
 
 		navigator.serviceWorker.ready.then(watch);
+		let hadController = !!navigator.serviceWorker.controller;
 		const onControllerChange = () => {
-			if (!refreshRequested) return;
-			refreshRequested = false;
-			location.reload();
+			if (refreshRequested) return location.reload();
+			// A first install claims the page too; only a page that had a controller is behind.
+			if (hadController) {
+				activated = true;
+				dismissed = false;
+			}
+			hadController = true;
 		};
 		navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
 
@@ -103,12 +111,13 @@
 	});
 
 	function refresh() {
+		if (activated) return location.reload();
 		refreshRequested = true;
 		waiting?.postMessage({ type: 'SKIP_WAITING' });
 	}
 </script>
 
-{#if waiting && !dismissed}
+{#if (waiting || activated) && !dismissed}
 	<div class="update" role="status" data-testid="update-banner">
 		<div class="main">
 			<p class="text">

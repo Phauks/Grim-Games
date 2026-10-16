@@ -9,7 +9,12 @@
  */
 import type { SeatId } from '#lib/core/model/index.ts';
 import { publicProjection, type PublicGameState } from '#lib/core/sync/public-projection.ts';
-import type { RoomMember, RoomRequest, ServerMessage } from '#lib/core/sync/room.ts';
+import {
+	ROOM_PROTOCOL,
+	type RoomMember,
+	type RoomRequest,
+	type ServerMessage
+} from '#lib/core/sync/room.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { randomKey, readStored, RoomSocket, sha256Hex, writeStored } from './room-socket.svelte.ts';
 
@@ -38,6 +43,10 @@ export class RoomHost {
 
 	get status() {
 		return this.#socket?.status;
+	}
+
+	get refusedReason() {
+		return this.#socket?.refusedReason;
 	}
 
 	/** Opens a new room for this device. */
@@ -100,7 +109,7 @@ export class RoomHost {
 		this.code = room.code;
 		this.#socket = new RoomSocket(
 			room.code,
-			{ type: 'hello', role: 'host', key: room.key },
+			{ type: 'hello', role: 'host', key: room.key, protocol: ROOM_PROTOCOL },
 			(m) => this.#receive(m),
 			() => this.#resend()
 		);
@@ -110,6 +119,8 @@ export class RoomHost {
 		if (message.type === 'host-view') {
 			this.members = message.members;
 			this.requests = message.requests;
+		} else if (message.type === 'refused' && message.reason === 'too-old') {
+			// The room is still this device's: keep it for after the update.
 		} else if (message.type === 'refused' || message.type === 'closed') {
 			// The room expired or this device no longer owns it.
 			this.#forget();

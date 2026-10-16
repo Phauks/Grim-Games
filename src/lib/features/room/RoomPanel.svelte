@@ -49,11 +49,13 @@
 	const connected = $derived(host.status === 'open');
 	const seated = $derived(host.members.filter((m) => m.name !== undefined));
 	const statusText = $derived(
-		host.status === 'open'
-			? t('room.connected')
-			: host.status === 'connecting'
-				? t('room.connecting')
-				: t('room.offline')
+		host.refusedReason === 'too-old'
+			? t('room.tooOld')
+			: host.status === 'open'
+				? t('room.connected')
+				: host.status === 'connecting'
+					? t('room.connecting')
+					: t('room.offline')
 	);
 
 	function seatFor(request: RoomRequest): SeatId | '' {

@@ -10,6 +10,7 @@ import {
 	publish,
 	request,
 	resolve,
+	supportsProtocol,
 	unseat,
 	type RoomState,
 	type ServerMessage
@@ -94,6 +95,11 @@ export class Room extends DurableObject<RoomEnv> {
 
 		if (message.type === 'hello') {
 			if (typeof message.key !== 'string' || !KEY_PATTERN.test(message.key)) return;
+			if (!supportsProtocol(message.protocol)) {
+				send(ws, { type: 'refused', reason: 'too-old' });
+				ws.close(4426, 'Update the app');
+				return;
+			}
 			const hash = await sha256(message.key);
 			if (message.role === 'host') {
 				if (hash !== room.hostKeyHash) {

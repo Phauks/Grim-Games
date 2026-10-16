@@ -4,7 +4,7 @@
  * secret, kept on the device, so it is the same member when it comes back.
  */
 import type { SeatId } from '#lib/core/model/index.ts';
-import type { PlayerView } from '#lib/core/sync/room.ts';
+import { ROOM_PROTOCOL, type PlayerView } from '#lib/core/sync/room.ts';
 import { randomKey, readStored, RoomSocket, writeStored } from './room-socket.svelte.ts';
 
 const STORAGE_KEY = 'grim-games-room-player';
@@ -29,7 +29,7 @@ export class RoomPlayer {
 		this.code = code;
 		this.#socket = new RoomSocket(
 			code,
-			{ type: 'hello', role: 'player', key: deviceKey() },
+			{ type: 'hello', role: 'player', key: deviceKey(), protocol: ROOM_PROTOCOL },
 			(m) => {
 				if (m.type === 'player-view') this.view = m;
 			}
@@ -38,6 +38,10 @@ export class RoomPlayer {
 
 	get status() {
 		return this.#socket.status;
+	}
+
+	get refusedReason() {
+		return this.#socket.refusedReason;
 	}
 
 	get savedName(): string {
