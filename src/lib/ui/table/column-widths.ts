@@ -29,7 +29,14 @@ export function parseWidths(value: unknown): ColumnWidths {
 	return widths;
 }
 
-/** The grid track for a column: its dragged width if it has one, else its own. */
-export function columnTrack(dragged: number | undefined, fallback: string): string {
-	return dragged === undefined ? fallback : `calc(${dragged} * var(--u))`;
+/**
+ * The grid track for a column: its dragged width if it has one, else its own. `room` (the
+ * resize handle's width) is added to fixed widths, so the handle never squeezes the header;
+ * flexible tracks (fr, %, minmax) share out the space as they are.
+ */
+export function columnTrack(dragged: number | undefined, fallback: string, room?: string): string {
+	const extra = room ? ` + ${room}` : '';
+	if (dragged !== undefined) return `calc(${dragged} * var(--u)${extra})`;
+	if (!room || /fr|%|minmax|auto|content/.test(fallback)) return fallback;
+	return `calc(${fallback}${extra})`;
 }

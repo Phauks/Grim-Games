@@ -84,6 +84,8 @@
 		 * this device under this name. Off on narrow tables, which never scroll sideways.
 		 */
 		resizeKey?: string;
+		/** With `lazy`: plain text for a row header until the row comes near the screen. */
+		rowLabel?: (row: T) => string;
 	}
 
 	let {
@@ -104,17 +106,25 @@
 		rowSelected,
 		empty = 'None',
 		testid,
-		resizeKey
+		resizeKey,
+		rowLabel
 	}: Props = $props();
 
 	const widths = $derived(resizeKey ? new TableWidths(resizeKey) : undefined);
 	const resizable = (column: DataColumn<K>) => !!widths && !column.fixed;
 	const track = (column: DataColumn<K>) => column.width ?? 'minmax(0, 1fr)';
+	const dragged = (column: DataColumn<K>) =>
+		resizable(column) ? widths?.current[column.id] : undefined;
+	/** The header padding the handles take in column `i` (see `th.resizable` below), in --hit. */
+	function room(i: number): string | undefined {
+		const end = resizable(columns[i]) ? (i === columns.length - 1 ? 1 : 0.5) : 0;
+		const start = i > 0 && resizable(columns[i - 1]) ? 0.5 : 0;
+		return end + start ? `${end + start} * var(--hit)` : undefined;
+	}
 	// Dragged widths apply to the full table only; narrow tables keep their own tracks.
+	// A resizable column also gets room for its handle, so its header keeps its width.
 	const template = $derived(
-		columns
-			.map((c) => columnTrack(resizable(c) ? widths?.current[c.id] : undefined, track(c)))
-			.join(' ')
+		columns.map((c, i) => columnTrack(dragged(c), track(c), room(i))).join(' ')
 	);
 	const narrowTemplate = $derived(
 		columns
@@ -137,15 +147,15 @@
 		filterOpen = true;
 	}
 
-	/** One --u in pixels here (it follows the app's text size). */
-	function unitPx(inside: HTMLElement): number {
+	/** A CSS width in pixels here (--u follows the app's text size). */
+	function px(width: string, inside: HTMLElement): number {
 		const probe = document.createElement('div');
 		// Out of flow, so a flex parent can't shrink it.
-		probe.style.cssText = 'position: absolute; visibility: hidden; width: var(--u)';
+		probe.style.cssText = `position: absolute; visibility: hidden; width: ${width}`;
 		inside.append(probe);
-		const px = probe.getBoundingClientRect().width;
+		const result = probe.getBoundingClientRect().width;
 		probe.remove();
-		return px || 16;
+		return result;
 	}
 
 	const minOf = (column: DataColumn<K>) => column.minWidth ?? MIN_WIDTH;
@@ -153,8 +163,12 @@
 	/** The column's width now, in --u: its dragged width, else what its header measures. */
 	function widthNow(column: DataColumn<K>, handle: HTMLElement): { width: number; unit: number } {
 		const th = handle.closest('th') as HTMLElement;
-		const unit = unitPx(th);
-		return { width: widths?.current[column.id] ?? th.getBoundingClientRect().width / unit, unit };
+		const unit = px('var(--u)', th) || 16;
+		// The handle's room is added on top of the stored width (columnTrack).
+		const index = columns.indexOf(column);
+		const handles = px(`calc(${room(index) ?? '0px'})`, th);
+		const measured = (th.getBoundingClientRect().width - handles) / unit;
+		return { width: widths?.current[column.id] ?? measured, unit };
 	}
 
 	const rtl = (el: HTMLElement) => getComputedStyle(el).direction === 'rtl';
@@ -345,15 +359,25 @@
 			<tbody>
 				{#each rows as row (key(row))}
 					{@const id = key(row)}
+					{@const ready = !lazy || built.has(id)}
+					<!--
+						A row far from the screen is only its row header: no empty cells, so switching
+						to the table or re-sorting creates a few hundred elements, not a few thousand.
+					-->
 					<tr
 						{...rowAttrs?.(row)}
 						class:selected={rowSelected?.(row)}
+						class:pending={!ready}
 						{@attach lazy && near(() => built.add(id))}
 					>
-						{#each columns as column (column.id)}
+						{#each columns as column, c (column.id)}
 							{#if column.rowHeader}
-								<th scope="row" data-col={column.id}>{@render cell(row, column)}</th>
-							{:else}
+								<th scope="row" data-col={column.id} style:--col={ready ? undefined : c + 1}
+									>{#if ready || !rowLabel}{@render cell(row, column)}{:else}{rowLabel(
+											row
+										)}{/if}</th
+								>
+							{:else if ready}
 								<td
 									data-col={column.id}
 									data-label={column.label}
@@ -362,7 +386,7 @@
 									class:stack-head={column.stackHead}
 									class:flush={column.flush}
 								>
-									{#if !lazy || built.has(id)}{@render cell(row, column)}{/if}
+									{@render cell(row, column)}
 								</td>
 							{/if}
 						{/each}
@@ -465,6 +489,18 @@
 	@media (pointer: fine) {
 		.data-table {
 			--hit: calc(0.75 * var(--u));
+		}
+	}
+	/*
+	 * A table that fits its box (Scripts) has no room for touch-sized handles beside its
+	 * columns, so on touch screens it keeps its own widths and shows no handles.
+	 */
+	@media (pointer: coarse) {
+		.data-table:not(.fit-content) {
+			--hit: 0rem;
+		}
+		.data-table:not(.fit-content) .resize {
+			display: none;
 		}
 	}
 	/* Each half of a handle has its own room, so it never covers a sort or filter button. */
@@ -595,6 +631,10 @@
 	tbody th {
 		font-weight: 600;
 	}
+	/* A row not built yet keeps its header in its own column. */
+	tr.pending th {
+		grid-column: var(--col);
+	}
 	.empty td {
 		grid-column: 1 / -1;
 		padding: var(--space-4);
@@ -630,7 +670,7 @@
 			display: contents;
 		}
 		/* The first header wraps its moved filters onto a second line if they don't fit. */
-		.hide .head {
+		.hide th:first-child .head {
 			flex-wrap: wrap;
 		}
 
@@ -691,6 +731,9 @@
 			font-size: 0.75rem;
 			letter-spacing: 0.05em;
 			text-transform: uppercase;
+		}
+		.stack tr.pending th {
+			grid-column: auto;
 		}
 		.stack .empty td::before {
 			content: none;

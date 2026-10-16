@@ -31,13 +31,13 @@
 
 	/** Fixed widths (in --u): layout never depends on which rows are drawn, so nothing reflows. */
 	const WIDTHS: Record<FieldId, number> = {
-		token: 5,
+		token: 4,
 		// Plain text: wide enough for the longest names (Deus ex Fiasco, Hell's Librarian).
 		name: 10,
-		type: 9.5,
+		type: 7,
 		edition: 9,
 		icons: 6.5,
-		alignment: 12.5,
+		alignment: 11,
 		setup: 11,
 		prep: 18,
 		ability: 18,
@@ -205,6 +205,7 @@
 		{columns}
 		{rows}
 		key={(entry) => entry.character.id}
+		rowLabel={(entry) => entry.character.name}
 		{cell}
 		{sort}
 		{onSort}

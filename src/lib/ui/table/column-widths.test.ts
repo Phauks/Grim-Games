@@ -38,4 +38,15 @@ describe('columnTrack', () => {
 		expect(columnTrack(12.5, '6rem')).toBe('calc(12.5 * var(--u))');
 		expect(columnTrack(undefined, '6rem')).toBe('6rem');
 	});
+
+	it('adds room for the resize handle to fixed widths only', () => {
+		expect(columnTrack(12.5, '6rem', '0.5 * var(--hit)')).toBe(
+			'calc(12.5 * var(--u) + 0.5 * var(--hit))'
+		);
+		expect(columnTrack(undefined, '6rem', '0.5 * var(--hit)')).toBe(
+			'calc(6rem + 0.5 * var(--hit))'
+		);
+		expect(columnTrack(undefined, '20%', '0.5 * var(--hit)')).toBe('20%');
+		expect(columnTrack(undefined, 'minmax(0, 1fr)', '0.5 * var(--hit)')).toBe('minmax(0, 1fr)');
+	});
 });
