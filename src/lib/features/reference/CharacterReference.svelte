@@ -142,7 +142,7 @@
 		color: var(--on-surface);
 		/* 16px or more stops iOS zooming into the field. */
 		font: inherit;
-		font-size: max(1rem, 16px);
+		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	.visually-hidden {
 		position: absolute;

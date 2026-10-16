@@ -37,7 +37,7 @@
 		flex: none;
 		width: calc(3 * var(--u));
 		height: calc(1.75 * var(--u));
-		padding: 3px;
+		padding: calc(0.1875 * var(--u));
 		border-radius: var(--radius-full);
 		background: var(--surface-selected);
 		box-shadow: inset 0 0 0 1px var(--border);
@@ -47,7 +47,7 @@
 		background: var(--accent);
 	}
 	:global([data-scope='switch'][data-part='thumb']) {
-		width: calc(calc(1.75 * var(--u)) - 6px);
+		width: calc(calc(1.75 * var(--u)) - 0.375 * var(--u));
 		aspect-ratio: 1;
 		border-radius: 50%;
 		background: var(--on-accent);

@@ -876,7 +876,7 @@
 		flex-direction: column;
 		/* Fills the screen: a game hides the app header and footer (route data). */
 		height: calc(100dvh - env(safe-area-inset-top));
-		min-height: 320px;
+		min-height: calc(20 * var(--u));
 	}
 	.toolbar {
 		/* A fixed height, so swapping in the arranging controls never moves the board. */

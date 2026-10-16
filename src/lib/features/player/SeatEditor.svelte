@@ -199,20 +199,20 @@
 	}
 	/* Several claims overlap like a hand of tokens. */
 	.face + .face {
-		margin-left: -24px;
+		margin-left: calc(-1.5 * var(--u));
 	}
 	.face {
 		display: grid;
 		box-shadow: 0 0 0 2px var(--token-rim);
 		place-items: center;
-		width: 44px;
-		height: 44px;
+		width: calc(2.75 * var(--u));
+		height: calc(2.75 * var(--u));
 		border-radius: 50%;
 		background: var(--token-face);
 	}
 	.face img {
-		width: 40px;
-		height: 40px;
+		width: calc(2.5 * var(--u));
+		height: calc(2.5 * var(--u));
 	}
 	.value {
 		overflow: hidden;

@@ -105,7 +105,7 @@
 		gap: var(--space-4);
 		/* A fixed height that fits the XL token (56px × 1.5) and the XL chip at any Text size, so
 		   changing a size never moves the settings below. */
-		height: max(calc(56px * 1.5 + var(--space-2)), 3.3rem);
+		height: max(calc(56px * 1.5 + var(--space-2)), 3.3rem); /* px-ok: the sample token is 56px */
 		white-space: nowrap;
 		margin-bottom: var(--space-5);
 		overflow: hidden;
@@ -119,7 +119,7 @@
 		width: calc(4 * var(--u));
 		min-width: var(--tap-target);
 		height: var(--tap-target);
-		padding: 2px;
+		padding: calc(0.125 * var(--u));
 		border: var(--card-border);
 		border-radius: var(--radius-sm);
 		background: var(--surface-raised);

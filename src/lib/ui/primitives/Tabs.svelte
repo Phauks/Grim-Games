@@ -56,9 +56,9 @@
 	:global([data-scope='tabs'][data-part='indicator']) {
 		left: var(--left);
 		/* Under the selected tab, whichever row it is on. */
-		top: calc(var(--top) + var(--height) - 3px);
+		top: calc(var(--top) + var(--height) - 0.1875 * var(--u));
 		width: var(--width);
-		height: 3px;
+		height: calc(0.1875 * var(--u));
 		background: var(--accent);
 	}
 	:global([data-scope='tabs'][data-part='content']) {

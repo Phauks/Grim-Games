@@ -194,7 +194,7 @@
 		background: var(--card-background);
 		color: var(--on-surface);
 		font: inherit;
-		font-size: max(1rem, 16px);
+		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	.visually-hidden {
 		position: absolute;

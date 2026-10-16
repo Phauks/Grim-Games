@@ -175,7 +175,7 @@
 	}
 	li {
 		display: grid;
-		grid-template-columns: var(--tap-target) 48px 1fr;
+		grid-template-columns: var(--tap-target) calc(3 * var(--u)) 1fr;
 		gap: var(--space-2);
 		align-items: start;
 		padding: var(--space-1) 0;
@@ -202,9 +202,9 @@
 	.icon {
 		display: grid;
 		place-items: center;
-		width: 48px;
-		height: 48px;
-		--icon-size: 32px;
+		width: calc(3 * var(--u));
+		height: calc(3 * var(--u));
+		--icon-size: calc(2 * var(--u));
 		color: var(--heading);
 	}
 	.body {

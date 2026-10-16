@@ -47,19 +47,19 @@
 <style>
 	ul {
 		display: grid;
-		gap: 2px;
+		gap: calc(0.125 * var(--u));
 		margin: var(--space-2) 0 0;
 		padding: 0;
 		list-style: none;
 	}
 	button {
 		display: grid;
-		grid-template-columns: 36px 1.5em 1fr auto;
+		grid-template-columns: calc(2.25 * var(--u)) 1.5em 1fr auto;
 		align-items: center;
 		gap: var(--space-2);
 		width: 100%;
 		min-height: var(--tap-target);
-		padding: 2px var(--space-2);
+		padding: calc(0.125 * var(--u)) var(--space-2);
 		border: 0;
 		border-radius: var(--radius-md);
 		background: none;
@@ -72,8 +72,8 @@
 		background: var(--surface-selected);
 	}
 	.slot {
-		width: 36px;
-		height: 36px;
+		width: calc(2.25 * var(--u));
+		height: calc(2.25 * var(--u));
 	}
 	.number {
 		opacity: 0.7;

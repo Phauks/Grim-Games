@@ -9,7 +9,8 @@
 	}
 
 	let { term, text }: Props = $props();
-	let button = $state<HTMLButtonElement>();
+	let button = $state<HTMLElement>();
+	const show = () => button && glossaryPopover.show(term, button);
 	const open = $derived(glossaryPopover.open && glossaryPopover.anchor === button);
 </script>
 
@@ -17,15 +18,24 @@
 	A rules term in game text: dotted underline (not a link); tap for the wiki definition
 	in the shared GlossaryPopover.
 -->
-<button
+<!-- A span with the button role, not a <button>: a button is one unbreakable box, so a
+     two-word term ("start knowing", "alive neighbors") jumped whole to the next line and left
+     a gap. A span wraps like the words around it. -->
+<span
 	bind:this={button}
-	type="button"
+	role="button"
+	tabindex="0"
 	class="glossary-term"
 	aria-label={`${text}: explain rules term`}
 	aria-haspopup="dialog"
 	aria-expanded={open}
 	data-state={open ? 'open' : 'closed'}
-	onclick={() => button && glossaryPopover.show(term, button)}>{text}</button
+	onclick={show}
+	onkeydown={(event) => {
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+		event.preventDefault();
+		show();
+	}}>{text}</span
 >
 
 <style>

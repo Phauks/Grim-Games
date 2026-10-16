@@ -64,7 +64,7 @@
 		border: var(--card-border);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
-		font-size: max(1.8rem, 16px);
+		font-size: max(1.8rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 		font-variant-numeric: tabular-nums;
 		letter-spacing: 0.15em;
 		text-align: center;

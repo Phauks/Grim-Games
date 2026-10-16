@@ -608,7 +608,7 @@
 		border: var(--card-border);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
-		font-size: max(1rem, 16px);
+		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	/* The same height whichever source is chosen; rows scroll inside it. */
 	.body {
@@ -803,11 +803,11 @@
 		border: var(--card-border);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
-		font-size: max(1rem, 16px);
+		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	.field textarea {
 		resize: vertical;
-		font-size: max(0.9rem, 16px);
+		font-size: max(0.9rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	/* Room for three lines is always reserved, so an error never moves the buttons. */
 	.error {

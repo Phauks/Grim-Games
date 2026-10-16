@@ -160,9 +160,9 @@
 	.icon {
 		display: grid;
 		place-items: center;
-		width: 56px;
-		height: 56px;
-		--icon-size: 36px;
+		width: calc(3.5 * var(--u));
+		height: calc(3.5 * var(--u));
+		--icon-size: calc(2.25 * var(--u));
 		color: var(--heading);
 	}
 	.who {

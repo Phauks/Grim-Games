@@ -98,7 +98,7 @@
 	}
 	ol {
 		display: grid;
-		gap: 2px;
+		gap: calc(0.125 * var(--u));
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -108,7 +108,7 @@
 	}
 	li {
 		display: grid;
-		grid-template-columns: 2ch 48px minmax(0, 1fr);
+		grid-template-columns: 2ch calc(3 * var(--u)) minmax(0, 1fr);
 		column-gap: var(--space-2);
 		align-items: start;
 	}
@@ -124,8 +124,8 @@
 		grid-row: span 2;
 		display: grid;
 		align-self: start;
-		width: 48px;
-		height: 48px;
+		width: calc(3 * var(--u));
+		height: calc(3 * var(--u));
 	}
 	.icon:has(:global(.token)) {
 		cursor: pointer;
@@ -139,7 +139,7 @@
 		/* Above any badge's tap area in the text below; the 48px icon opens it too. */
 		position: relative;
 		z-index: 1;
-		min-height: 32px;
+		min-height: calc(2 * var(--u));
 		padding: 0;
 		border: 0;
 		background: none;
@@ -157,7 +157,7 @@
 	.marker {
 		display: flex;
 		align-items: center;
-		min-height: 48px;
+		min-height: calc(3 * var(--u));
 		grid-row: 1 / span 2;
 		font-family: var(--font-control);
 		color: var(--on-surface-muted);

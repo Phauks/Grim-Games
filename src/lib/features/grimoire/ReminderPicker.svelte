@@ -171,7 +171,7 @@
 		grid-template-columns: minmax(calc(8 * var(--u)), 35%) 1fr;
 		align-items: center;
 		gap: var(--space-2);
-		padding: 2px 0;
+		padding: calc(0.125 * var(--u)) 0;
 		border-bottom: 1px solid var(--border);
 	}
 	.who {
@@ -197,9 +197,9 @@
 	.chip {
 		display: inline-grid;
 		place-items: center;
-		min-width: calc(52px * var(--reminder-scale, 1));
-		min-height: calc(52px * var(--reminder-scale, 1));
-		padding: 0 2px;
+		min-width: calc(3.25 * var(--u) * var(--reminder-scale, 1));
+		min-height: calc(3.25 * var(--u) * var(--reminder-scale, 1));
+		padding: 0 calc(0.125 * var(--u));
 		border: 0;
 		background: none;
 		cursor: pointer;
@@ -212,8 +212,8 @@
 		top: 0;
 		right: 0;
 		min-width: 1.4em;
-		padding: 0 3px;
-		border-radius: 999px;
+		padding: 0 calc(0.1875 * var(--u));
+		border-radius: var(--radius-full);
 		background: var(--accent);
 		color: var(--on-accent);
 		font: 700 0.75rem / 1.4 var(--font-control);
@@ -227,6 +227,6 @@
 		font-size: calc(1rem * var(--reminder-scale, 1));
 	}
 	.recent {
-		height: calc(52px * var(--reminder-scale, 1));
+		height: calc(3.25 * var(--u) * var(--reminder-scale, 1));
 	}
 </style>
