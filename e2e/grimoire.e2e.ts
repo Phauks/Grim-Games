@@ -47,13 +47,9 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
 	await page.getByRole('dialog').getByRole('button', { name: action }).last().tap();
 }
 
-test('New game and Resume game are screens of their own; home continues the latest', async ({
-	page
-}) => {
-	await page.goto('/');
-	await expect(page.getByRole('region', { name: 'Games' })).toContainText('None');
-	await page.getByRole('link', { name: 'New game' }).tap();
-	await expect(page).toHaveURL(/\/new$/);
+test('New game and Resume game are screens of their own', async ({ page }) => {
+	// Home is blank for now (Trevor, 2026-10-16); the sidebar leads to each screen.
+	await page.goto('/new');
 	// The setup table under the player count follows it.
 	const current = page.getByTestId('setup-table').locator('thead th[data-current]');
 	await expect(current).toHaveText('8');
@@ -65,22 +61,13 @@ test('New game and Resume game are screens of their own; home continues the late
 	await page.getByRole('banner').getByRole('link', { name: 'Grim-Games' }).tap();
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
-	await page.goto('/');
-	// The latest game is one tap from home.
+
+	// Resume game lists every saved game with where it is up to.
+	await page.goto('/games');
 	const saved = page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ });
 	await expect(saved).toBeVisible();
 	await saved.tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
-
-	// Resume game lists every saved game with where it is up to.
-	await page.goto('/');
-	await page.getByRole('link', { name: 'Resume game' }).tap();
-	await expect(page).toHaveURL(/\/games$/);
-	await expect(
-		page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ })
-	).toBeVisible();
-	await page.getByRole('banner').getByRole('link', { name: 'Grim-Games' }).tap();
-	await expect(page).toHaveURL(/\/$/);
 });
 
 test('the seat sheet names, assigns, shrouds and survives a reload', async ({ page }) => {
@@ -291,17 +278,20 @@ test('Demon bluffs open from the toolbar, and a seat shows its token to the play
 	await page.keyboard.press('Escape');
 
 	const sheet = await openSeat(page, 1);
+	// The eye beside ⋯ shows the token (Trevor, 2026-10-16); it is no longer in the ⋯ menu.
+	const show = sheet.getByRole('button', { name: 'Show to player' });
+	await expect(show).toBeDisabled();
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
 	await expect(
 		page.getByRole('dialog', { name: 'Seat 1' }).getByRole('button', { name: 'Show to player' })
-	).toBeDisabled();
+	).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Empath', exact: true })
 		.tap();
-	await seatMenu(page, sheet, 'Show to player');
+	await show.tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown).toBeVisible();
 	await shown.getByRole('button', { name: 'Close' }).tap();
@@ -353,7 +343,8 @@ test('reminders: add several from the picker, recent first, then move and remove
 
 	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	// Not in play: only the Drunk's global reminder, which marks who is secretly the Drunk.
+	// Not in play, but never in the bag: only the Drunk's global reminder, which marks who is
+	// secretly the Drunk.
 	await expect(picker.getByRole('group', { name: 'Drunk' })).toContainText('Is The Drunk');
 	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
 	const poisoner = picker.getByRole('group', { name: 'Poisoner' });
@@ -471,6 +462,26 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	const spread = await centre(1);
 	expect(Math.abs(spread.x - from.x)).toBeLessThan(4);
 	expect(Math.abs(spread.y - from.y)).toBeLessThan(4);
+
+	// A seat dragged past its neighbours stays there: seats renumber to match (Trevor,
+	// 2026-10-16), then spread evenly. Seat 2 goes just past seat 4, towards seat 5.
+	const at = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => centre(n));
+	const [c2, c4, c5] = [await at[1], await at[3], await at[4]];
+	// Inside the circle, clear of the seats, so it is a placement, not a drop on a seat.
+	const mid = { x: board.x + board.width / 2, y: board.y + board.height / 2 };
+	const edge = { x: c4.x * 0.7 + c5.x * 0.3, y: c4.y * 0.7 + c5.y * 0.3 };
+	const past = { x: edge.x * 0.6 + mid.x * 0.4, y: edge.y * 0.6 + mid.y * 0.4 };
+	await page.mouse.move(c2.x, c2.y);
+	await page.mouse.down();
+	await page.mouse.move((c2.x + past.x) / 2, (c2.y + past.y) / 2, { steps: 4 });
+	await page.mouse.move(past.x, past.y, { steps: 4 });
+	await page.mouse.up();
+	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
+	// Seats 3 and 4 move up one place; the dragged seat is now Seat 4, where seat 4 was.
+	const four = await centre(4);
+	expect(Math.abs(four.x - c4.x)).toBeLessThan(4);
+	expect(Math.abs(four.y - c4.y)).toBeLessThan(4);
+	expect(await centre(1)).toEqual(spread);
 });
 
 test('the name is edited in place; Done saves and closes the keyboard', async ({ page }) => {
@@ -1285,20 +1296,11 @@ test('End game moves the game to Previous games, where it can be reopened', asyn
 	const board = page.url();
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await expect(end).toContainText(
-		/Now\s*In Continue and Resume game\s*Becomes\s*In Previous games/
-	);
+	await expect(end).toContainText(/Now\s*In Resume game\s*Becomes\s*In Previous games/);
 	await end.getByRole('radio', { name: 'Evil' }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page).toHaveURL(/\/$/);
-	await expect(page.getByRole('region', { name: 'Games' })).toContainText('None');
-	await page.getByRole('link', { name: 'Resume game' }).tap();
-	await expect(
-		page.getByRole('region', { name: 'Resume game' }).getByRole('link', { name: /Trouble Brewing/ })
-	).toHaveCount(0);
 	// Ended games are on their own page (Trevor, 2026-10-16), not under Resume game.
-	await expect(page.getByRole('region', { name: 'Previous games' })).toHaveCount(0);
-	await page.goto('/previous-games');
+	await expect(page).toHaveURL(/\/previous-games$/);
 	const past = page.getByRole('region', { name: 'Previous games' });
 	await expect(past).toContainText(/Trouble Brewing\s*Evil won/);
 	await past.getByRole('button', { name: /^Trouble Brewing/ }).tap();
@@ -1307,9 +1309,15 @@ test('End game moves the game to Previous games, where it can be reopened', asyn
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(page).toHaveURL(board);
-	await page.goto('/');
+	await page.goto('/games');
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*Setting up/ })).toBeVisible();
 });
+
+/** Whether an element is fully inside the window. */
+const inView = (el: Element) => {
+	const r = el.getBoundingClientRect();
+	return r.top >= 0 && r.bottom <= window.innerHeight;
+};
 
 test("the Script button opens the players' copy of the script", async ({ page }) => {
 	await startGame(page);
@@ -1322,6 +1330,14 @@ test("the Script button opens the players' copy of the script", async ({ page })
 		'Each night, you learn how many of your 2 alive neighbors'
 	);
 	await expect(sheet.getByTestId('no-jinxes')).toHaveText('None');
+	// It scrolls to the end (Trevor, 2026-10-16: it couldn't be scrolled).
+	const scroller = sheet.getByTestId('script-scroll');
+	const box = (await scroller.boundingBox())!;
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	const last = sheet.locator('[data-character]').last();
+	for (let i = 0; i < 30 && !(await last.evaluate(inView)); i++) await page.mouse.wheel(0, 600);
+	await expect(last).toBeInViewport();
+	expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	// Arrange seats moved into More to make room.

@@ -32,11 +32,13 @@ import ph_copy_light from '~icons/ph/copy-light';
 import ph_copy_simple_light from '~icons/ph/copy-simple-light';
 import ph_cross_light from '~icons/ph/cross-light';
 import ph_database_light from '~icons/ph/database-light';
+import ph_device_mobile_light from '~icons/ph/device-mobile-light';
 import ph_dice_five_light from '~icons/ph/dice-five-light';
 import ph_dots_three_light from '~icons/ph/dots-three-light';
 import ph_dots_three_vertical_light from '~icons/ph/dots-three-vertical-light';
 import ph_drop_light from '~icons/ph/drop-light';
 import ph_eraser_light from '~icons/ph/eraser-light';
+import ph_eye_light from '~icons/ph/eye-light';
 import ph_feather_light from '~icons/ph/feather-light';
 import ph_fire_light from '~icons/ph/fire-light';
 import ph_flag_light from '~icons/ph/flag-light';
@@ -151,11 +153,13 @@ const icons: IconMap = {
 	'ph:copy-simple-light': ph_copy_simple_light,
 	'ph:cross-light': ph_cross_light,
 	'ph:database-light': ph_database_light,
+	'ph:device-mobile-light': ph_device_mobile_light,
 	'ph:dice-five-light': ph_dice_five_light,
 	'ph:dots-three-light': ph_dots_three_light,
 	'ph:dots-three-vertical-light': ph_dots_three_vertical_light,
 	'ph:drop-light': ph_drop_light,
 	'ph:eraser-light': ph_eraser_light,
+	'ph:eye-light': ph_eye_light,
 	'ph:feather-light': ph_feather_light,
 	'ph:fire-light': ph_fire_light,
 	'ph:flag-light': ph_flag_light,

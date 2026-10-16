@@ -79,7 +79,8 @@ export const ICON_SLOTS = {
 	copy: { label: 'Copy', choices: ['ph:copy', 'ph:copy-simple'] },
 	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] },
 	pen: { label: 'Pen', choices: ['ph:pen-nib', 'ph:pencil-simple-line'] },
-	eraser: { label: 'Eraser', choices: ['ph:eraser'] }
+	eraser: { label: 'Eraser', choices: ['ph:eraser'] },
+	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] }
 } as const satisfies Record<string, IconSlotInfo>;
 
 export type IconSlot = keyof typeof ICON_SLOTS;

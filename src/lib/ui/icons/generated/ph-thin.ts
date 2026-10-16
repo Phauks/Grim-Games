@@ -32,11 +32,13 @@ import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
 import ph_cross_thin from '~icons/ph/cross-thin';
 import ph_database_thin from '~icons/ph/database-thin';
+import ph_device_mobile_thin from '~icons/ph/device-mobile-thin';
 import ph_dice_five_thin from '~icons/ph/dice-five-thin';
 import ph_dots_three_thin from '~icons/ph/dots-three-thin';
 import ph_dots_three_vertical_thin from '~icons/ph/dots-three-vertical-thin';
 import ph_drop_thin from '~icons/ph/drop-thin';
 import ph_eraser_thin from '~icons/ph/eraser-thin';
+import ph_eye_thin from '~icons/ph/eye-thin';
 import ph_feather_thin from '~icons/ph/feather-thin';
 import ph_fire_thin from '~icons/ph/fire-thin';
 import ph_flag_thin from '~icons/ph/flag-thin';
@@ -151,11 +153,13 @@ const icons: IconMap = {
 	'ph:copy-simple-thin': ph_copy_simple_thin,
 	'ph:cross-thin': ph_cross_thin,
 	'ph:database-thin': ph_database_thin,
+	'ph:device-mobile-thin': ph_device_mobile_thin,
 	'ph:dice-five-thin': ph_dice_five_thin,
 	'ph:dots-three-thin': ph_dots_three_thin,
 	'ph:dots-three-vertical-thin': ph_dots_three_vertical_thin,
 	'ph:drop-thin': ph_drop_thin,
 	'ph:eraser-thin': ph_eraser_thin,
+	'ph:eye-thin': ph_eye_thin,
 	'ph:feather-thin': ph_feather_thin,
 	'ph:fire-thin': ph_fire_thin,
 	'ph:flag-thin': ph_flag_thin,

@@ -387,6 +387,19 @@
 		>
 	{/snippet}
 	{#snippet actions()}
+		<!-- Show to player sits beside ⋯ (Trevor, 2026-10-16); disabled until the seat has a character. -->
+		<span class="ink"
+			><IconButton
+				icon="showToPlayer"
+				label="Show to player"
+				disabled={!character}
+				onclick={() => {
+					// The sheet closes first: it is Storyteller-only, and the shown token covers the screen.
+					open = false;
+					showOpen = true;
+				}}
+			/></span
+		>
 		<span class="ink"
 			><IconButton icon="more" label="Seat actions" onclick={() => (menuOpen = true)} /></span
 		>
@@ -818,18 +831,6 @@
 		{/if}
 	{/snippet}
 	<div class="menu">
-		<Button
-			variant="quiet"
-			disabled={!character}
-			onclick={() =>
-				fromMenu(() => {
-					// The sheet closes first: it is Storyteller-only, and the shown token covers the screen.
-					open = false;
-					showOpen = true;
-				})}
-		>
-			Show to player
-		</Button>
 		<Button variant="quiet" icon="swap" onclick={() => fromMenu(() => (pickerOpen = true))}>
 			{character ? 'Change character' : 'Choose character'}
 		</Button>

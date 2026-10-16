@@ -32,11 +32,13 @@ import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
 import ph_database_bold from '~icons/ph/database-bold';
+import ph_device_mobile_bold from '~icons/ph/device-mobile-bold';
 import ph_dice_five_bold from '~icons/ph/dice-five-bold';
 import ph_dots_three_bold from '~icons/ph/dots-three-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
 import ph_eraser_bold from '~icons/ph/eraser-bold';
+import ph_eye_bold from '~icons/ph/eye-bold';
 import ph_feather_bold from '~icons/ph/feather-bold';
 import ph_fire_bold from '~icons/ph/fire-bold';
 import ph_flag_bold from '~icons/ph/flag-bold';
@@ -151,11 +153,13 @@ const icons: IconMap = {
 	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:cross-bold': ph_cross_bold,
 	'ph:database-bold': ph_database_bold,
+	'ph:device-mobile-bold': ph_device_mobile_bold,
 	'ph:dice-five-bold': ph_dice_five_bold,
 	'ph:dots-three-bold': ph_dots_three_bold,
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
 	'ph:drop-bold': ph_drop_bold,
 	'ph:eraser-bold': ph_eraser_bold,
+	'ph:eye-bold': ph_eye_bold,
 	'ph:feather-bold': ph_feather_bold,
 	'ph:fire-bold': ph_fire_bold,
 	'ph:flag-bold': ph_flag_bold,

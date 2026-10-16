@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	orderAround,
 	keepInside,
 	DEFAULT_SEAT_LAYOUT,
 	isDefaultLayout,
@@ -179,5 +180,32 @@ describe('rotating with a custom layout', () => {
 			'circle'
 		);
 		expect(spreadEvenly(layout)).toEqual({ shape: 'circle', gaps: {}, placed: {} });
+	});
+});
+
+describe('orderAround', () => {
+	const centre = { x: 100, y: 100 };
+	// Top, right, bottom, left: clockwise on screen.
+	const ring = [
+		{ x: 100, y: 0 },
+		{ x: 200, y: 100 },
+		{ x: 100, y: 200 },
+		{ x: 0, y: 100 }
+	];
+
+	it('keeps the order when everyone is where the order puts them', () => {
+		expect(orderAround(['a', 'b', 'c', 'd'], ring, centre)).toEqual(['a', 'b', 'c', 'd']);
+	});
+
+	it('follows seats dragged past each other', () => {
+		// b and d swapped places on the table.
+		const moved = [ring[0], ring[3], ring[2], ring[1]];
+		expect(orderAround(['a', 'b', 'c', 'd'], moved, centre)).toEqual(['a', 'd', 'c', 'b']);
+	});
+
+	it('starts where seats move least, not from whoever is first', () => {
+		// a was dragged from the top to between c and d: b and c keep their places.
+		const moved = [{ x: 30, y: 170 }, ring[1], ring[2], ring[3]];
+		expect(orderAround(['a', 'b', 'c', 'd'], moved, centre, ring)).toEqual(['d', 'b', 'c', 'a']);
 	});
 });

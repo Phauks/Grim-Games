@@ -32,11 +32,13 @@ import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
 import ph_database_fill from '~icons/ph/database-fill';
+import ph_device_mobile_fill from '~icons/ph/device-mobile-fill';
 import ph_dice_five_fill from '~icons/ph/dice-five-fill';
 import ph_dots_three_fill from '~icons/ph/dots-three-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
 import ph_drop_fill from '~icons/ph/drop-fill';
 import ph_eraser_fill from '~icons/ph/eraser-fill';
+import ph_eye_fill from '~icons/ph/eye-fill';
 import ph_feather_fill from '~icons/ph/feather-fill';
 import ph_fire_fill from '~icons/ph/fire-fill';
 import ph_flag_fill from '~icons/ph/flag-fill';
@@ -151,11 +153,13 @@ const icons: IconMap = {
 	'ph:copy-simple-fill': ph_copy_simple_fill,
 	'ph:cross-fill': ph_cross_fill,
 	'ph:database-fill': ph_database_fill,
+	'ph:device-mobile-fill': ph_device_mobile_fill,
 	'ph:dice-five-fill': ph_dice_five_fill,
 	'ph:dots-three-fill': ph_dots_three_fill,
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
 	'ph:drop-fill': ph_drop_fill,
 	'ph:eraser-fill': ph_eraser_fill,
+	'ph:eye-fill': ph_eye_fill,
 	'ph:feather-fill': ph_feather_fill,
 	'ph:fire-fill': ph_fire_fill,
 	'ph:flag-fill': ph_flag_fill,

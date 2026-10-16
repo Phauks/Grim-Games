@@ -45,6 +45,7 @@
 		seatPoints,
 		seatTokenSize,
 		spreadEvenly,
+		orderAround,
 		withPlaced,
 		withoutPlaced,
 		type SeatPoint
@@ -300,6 +301,25 @@
 			grimoire.setLayout(followSeating(grimoire.layout, lastSeating, seating));
 		lastSeating = seating;
 	});
+	/**
+	 * Spread evenly keeps hand moves (Trevor, 2026-10-16): the seating order is first read from
+	 * where seats sit around the circle, so seats renumber to match (each move is in History),
+	 * then they are spaced evenly in that order.
+	 */
+	function spreadSeats() {
+		const even = seatPoints(game.seating, spreadEvenly(layout), { width, height });
+		const target = orderAround(
+			game.seating,
+			shown.map(toPx),
+			{ x: width / 2, y: height / 2 },
+			even.map(toPx)
+		);
+		for (let i = 0; i < target.length; i++) {
+			if (game.seating[i] !== target[i])
+				grimoire.run({ type: 'MoveSeat', seatId: target[i], position: i });
+		}
+		grimoire.setLayout(spreadEvenly(grimoire.layout));
+	}
 	/** Pointer movement, in pixels, before a press counts as a drag. */
 	const DRAG_SLOP = 6;
 	let pressedAt = { x: 0, y: 0 };
@@ -496,7 +516,7 @@
 		releaseGuard?.();
 		endedGames.end(game.gameId, winner);
 		if (roomHost().code) roomHost().close();
-		void goto(resolve('/'));
+		void goto(resolve('/previous-games'));
 	}
 
 	// A Traveller's alignment by draw, kept here: setting it ends the step that opened it.
@@ -621,7 +641,7 @@
 			<Button
 				variant="quiet"
 				disabled={Object.keys(layout.placed).length === 0 && Object.keys(layout.gaps).length === 0}
-				onclick={() => grimoire.setLayout(spreadEvenly(layout))}>Spread evenly</Button
+				onclick={spreadSeats}>Spread evenly</Button
 			>
 			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
 		{:else if placing}
@@ -813,6 +833,7 @@
 				<div class="setup">
 					<!-- One setup flow (Trevor, 2026-10-16): Characters, Draw, then the reminders. -->
 					<Button
+						variant="accent"
 						icon="bag"
 						onclick={() =>
 							goto(
@@ -940,7 +961,7 @@
 <ConfirmDialog bind:open={endOpen} title="End game?" danger onConfirm={endGame}>
 	<dl class="change">
 		<dt>Now</dt>
-		<dd>In Continue and Resume game</dd>
+		<dd>In Resume game</dd>
 		<dt>Becomes</dt>
 		<dd>In Previous games, where it can be reopened</dd>
 	</dl>
@@ -963,9 +984,12 @@
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
 <Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">
-	{#if loadedScript}
-		<ScriptCopy script={loadedScript} players={game.seating.length} />
-	{/if}
+	<!-- A max-size dialog doesn't scroll itself: its content does. -->
+	<div class="script-scroll" data-testid="script-scroll">
+		{#if loadedScript}
+			<ScriptCopy script={loadedScript} players={game.seating.length} />
+		{/if}
+	</div>
 </Dialog>
 
 <Dialog bind:open={shareOpen} title="Share script">
@@ -1166,6 +1190,19 @@
 	.setup {
 		display: grid;
 		gap: var(--space-2);
+	}
+	.script-scroll {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	/* The main action on a board that isn't set up yet (Trevor, 2026-10-16): large. */
+	.setup :global(.button) {
+		min-height: calc(2 * var(--tap-target));
+		padding-inline: var(--space-5);
+		font-size: 1.35rem;
+		--icon-size: 1.6rem;
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.backdrop {

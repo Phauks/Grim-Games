@@ -32,11 +32,13 @@ import ph_copy from '~icons/ph/copy';
 import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_cross from '~icons/ph/cross';
 import ph_database from '~icons/ph/database';
+import ph_device_mobile from '~icons/ph/device-mobile';
 import ph_dice_five from '~icons/ph/dice-five';
 import ph_dots_three from '~icons/ph/dots-three';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_drop from '~icons/ph/drop';
 import ph_eraser from '~icons/ph/eraser';
+import ph_eye from '~icons/ph/eye';
 import ph_feather from '~icons/ph/feather';
 import ph_fire from '~icons/ph/fire';
 import ph_flag from '~icons/ph/flag';
@@ -151,11 +153,13 @@ const icons: IconMap = {
 	'ph:copy-simple': ph_copy_simple,
 	'ph:cross': ph_cross,
 	'ph:database': ph_database,
+	'ph:device-mobile': ph_device_mobile,
 	'ph:dice-five': ph_dice_five,
 	'ph:dots-three': ph_dots_three,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
 	'ph:drop': ph_drop,
 	'ph:eraser': ph_eraser,
+	'ph:eye': ph_eye,
 	'ph:feather': ph_feather,
 	'ph:fire': ph_fire,
 	'ph:flag': ph_flag,

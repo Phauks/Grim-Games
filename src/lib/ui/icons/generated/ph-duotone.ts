@@ -32,11 +32,13 @@ import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
 import ph_cross_duotone from '~icons/ph/cross-duotone';
 import ph_database_duotone from '~icons/ph/database-duotone';
+import ph_device_mobile_duotone from '~icons/ph/device-mobile-duotone';
 import ph_dice_five_duotone from '~icons/ph/dice-five-duotone';
 import ph_dots_three_duotone from '~icons/ph/dots-three-duotone';
 import ph_dots_three_vertical_duotone from '~icons/ph/dots-three-vertical-duotone';
 import ph_drop_duotone from '~icons/ph/drop-duotone';
 import ph_eraser_duotone from '~icons/ph/eraser-duotone';
+import ph_eye_duotone from '~icons/ph/eye-duotone';
 import ph_feather_duotone from '~icons/ph/feather-duotone';
 import ph_fire_duotone from '~icons/ph/fire-duotone';
 import ph_flag_duotone from '~icons/ph/flag-duotone';
@@ -151,11 +153,13 @@ const icons: IconMap = {
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
 	'ph:cross-duotone': ph_cross_duotone,
 	'ph:database-duotone': ph_database_duotone,
+	'ph:device-mobile-duotone': ph_device_mobile_duotone,
 	'ph:dice-five-duotone': ph_dice_five_duotone,
 	'ph:dots-three-duotone': ph_dots_three_duotone,
 	'ph:dots-three-vertical-duotone': ph_dots_three_vertical_duotone,
 	'ph:drop-duotone': ph_drop_duotone,
 	'ph:eraser-duotone': ph_eraser_duotone,
+	'ph:eye-duotone': ph_eye_duotone,
 	'ph:feather-duotone': ph_feather_duotone,
 	'ph:fire-duotone': ph_fire_duotone,
 	'ph:flag-duotone': ph_flag_duotone,

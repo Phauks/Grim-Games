@@ -1,10 +1,11 @@
 /**
  * What the reminders picker offers: reminders of characters in play, several at a time,
  * with recent reminders first. Reminder tokens come from TPI's data: a character's
- * `reminders` while it is in play, and its `remindersGlobal` whenever it is on the script.
+ * `reminders` and `remindersGlobal` while it is in play (`reminderGroups` has the exceptions).
  */
 import type { Character, CharacterId } from '#lib/core/data/index.ts';
 import { gainedAbilities, type Night } from '#lib/core/rules/index.ts';
+import { isBagDisabled } from '#lib/core/rules/bag-characters.ts';
 import { REMINDER_PLACEHOLDERS } from '#lib/core/rules/reminder-placeholders.data.ts';
 import {
 	charactersInPlay,
@@ -29,9 +30,11 @@ function unique(labels: readonly string[]): string[] {
  * Reminder groups for a game: only characters in play offer reminders. In play means a
  * token on a seat, a seat's true character (the Drunk, Marionette, Philosopher or Alchemist
  * marked by its "Is The …" reminder), the Fabled and Loric, and an ability a seat has
- * gained (the Pixie's Townsfolk). One exception: a script character's global reminders are
- * always offered, because "Is The Drunk" and the like are how the Storyteller marks a
- * character that is in play but hidden under another token.
+ * gained (the Pixie's Townsfolk). Characters never in the bag (TPI's `bag-disabled`: the
+ * Drunk, Marionette and Lil' Monsta) can be in play with no token of their own, so their
+ * global reminders ("Is The Drunk") are offered whenever they are on the script. Others only
+ * on the script offer nothing (Trevor, 2026-10-16: Catfishing offered "Is The Philosopher"
+ * with no Philosopher in play).
  */
 export function reminderGroups(game: Game, characters: CharacterLookup): ReminderGroup[] {
 	const inPlay = [
@@ -43,7 +46,10 @@ export function reminderGroups(game: Game, characters: CharacterLookup): Reminde
 		])
 	];
 	const script = scriptCharacterIds(game.script);
-	const onScript = script.filter((id) => !inPlay.includes(id));
+	const onScript = script.filter((id) => {
+		const character = characters.get(id);
+		return !inPlay.includes(id) && character !== undefined && isBagDisabled(character);
+	});
 	const groups: ReminderGroup[] = [];
 	for (const id of [...inPlay, ...onScript]) {
 		const character = characters.get(id);

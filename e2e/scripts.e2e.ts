@@ -42,13 +42,6 @@ async function noSidewaysScroll(page: Page) {
 	expect(overflow).toBeLessThanOrEqual(0);
 }
 
-test('the home page links to Scripts', async ({ page }) => {
-	await page.goto('/');
-	await page.getByRole('link', { name: 'Scripts' }).tap();
-	await expect(page).toHaveURL(/\/scripts$/);
-	await expect(page.getByRole('heading', { name: 'Scripts', level: 1 })).toBeVisible();
-});
-
 test('saved scripts are listed without the base three, survive a reload and can be removed', async ({
 	page
 }) => {

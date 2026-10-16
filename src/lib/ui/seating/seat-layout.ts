@@ -213,6 +213,34 @@ export function followSeating(
 	return { ...layout, placed, gaps };
 }
 
+/**
+ * The seating order read from where seats are drawn (Trevor, 2026-10-16): clockwise around
+ * `centre`, so Spread evenly keeps a seat dragged to a new place there instead of putting it
+ * back. Of the ways round the circle, the one that moves seats least onto `slots` (where seat
+ * 1, 2, … will be drawn once spread) wins. Points are in pixels (y down), one per seat.
+ */
+export function orderAround(
+	seating: readonly string[],
+	points: readonly { x: number; y: number }[],
+	centre: { x: number; y: number },
+	slots: readonly { x: number; y: number }[] = points
+): string[] {
+	const n = seating.length;
+	if (n === 0) return [];
+	const angle = (p: { x: number; y: number }) => Math.atan2(p.y - centre.y, p.x - centre.x);
+	const around = seating
+		.map((id, i) => ({ id, i, a: angle(points[i]) }))
+		.sort((p, q) => p.a - q.a || p.i - q.i);
+	const cost = (start: number) =>
+		around.reduce((sum, _, k) => {
+			const p = points[around[(start + k) % n].i];
+			return sum + (p.x - slots[k].x) ** 2 + (p.y - slots[k].y) ** 2;
+		}, 0);
+	let best = 0;
+	for (let start = 1; start < n; start++) if (cost(start) < cost(best)) best = start;
+	return around.map((_, k) => around[(best + k) % n].id);
+}
+
 /** Everyone back on the ring, evenly spaced in seating order: no gaps, nobody hand-placed. */
 export function spreadEvenly(layout: SeatLayout): SeatLayout {
 	return { ...layout, gaps: {}, placed: {} };

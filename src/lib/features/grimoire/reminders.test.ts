@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { editionScript, toScript } from '#lib/core/data/index.ts';
+import { editionScript, loadScript, toScript } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
@@ -34,15 +34,35 @@ function game() {
 
 describe('reminderGroups', () => {
 	// https://wiki.bloodontheclocktower.com/Drunk : "Is The Drunk" is a global reminder.
-	it('offers characters in play, and only global reminders of the rest, in script order', () => {
+	it('offers characters in play, and only global reminders of those never in the bag', () => {
 		const groups = reminderGroups(game(), characters);
 		const ids = groups.map((g) => g.character.id);
 		// Trouble Brewing lists the Drunk (an Outsider) before the Poisoner (a Minion).
 		expect(ids.indexOf('drunk')).toBeLessThan(ids.indexOf('poisoner'));
 		expect(groups.find((g) => g.character.id === 'poisoner')?.labels).toEqual(['Poisoned']);
-		const drunk = groups.find((g) => g.character.id === 'drunk');
-		expect(drunk?.labels).toEqual(['Is The Drunk']);
+		// The Drunk is never in the bag, so a player may secretly be it at any time.
+		expect(groups.find((g) => g.character.id === 'drunk')?.labels).toEqual(['Is The Drunk']);
 		expect(groups.some((g) => g.character.id === 'washerwoman')).toBe(false);
+	});
+	// Trevor (2026-10-16): Catfishing offered "Is The Philosopher" with no Philosopher in play.
+	// https://wiki.bloodontheclocktower.com/Philosopher : the reminder marks a Philosopher who
+	// has gained an ability, so it only matters once one is in play.
+	it('offers no "Is The Philosopher" for a Philosopher only on the script', () => {
+		const loaded = loadScript(
+			[{ id: '_meta', name: 'Catfishing' }, 'philosopher', 'lilmonsta', 'chef', 'imp'],
+			data
+		).script!;
+		const cat = toScript(loaded);
+		const created = createGame(
+			{ type: 'CreateGame', script: cat, playerCount: 5 },
+			{ ...ctx, characters: characterLookup(data, cat) }
+		);
+		if (!created.ok) throw new Error();
+		const groups = reminderGroups(created.session.game, characterLookup(data, cat));
+		expect(groups.some((g) => g.character.id === 'philosopher')).toBe(false);
+		// https://wiki.bloodontheclocktower.com/Lil%27_Monsta : never in the bag and no player is
+		// dealt it, so its "Is The Demon" babysitter reminder stays on offer.
+		expect(groups.find((g) => g.character.id === 'lilmonsta')?.labels).toContain('Is The Demon');
 	});
 	it('counts a true character under another token as in play', () => {
 		let g = game();
