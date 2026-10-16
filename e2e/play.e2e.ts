@@ -25,6 +25,22 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 	await page.keyboard.press('Escape');
 	await expect(page.getByTestId('no-jinxes')).toHaveText('None');
 
+	// Sections close from their header and stay closed after a reload (Trevor, 2026-10-16).
+	const jinxes = page.getByRole('button', { name: 'Jinxes' });
+	await expect(jinxes).toHaveAttribute('aria-expanded', 'true');
+	await jinxes.tap();
+	await expect(page.getByTestId('no-jinxes')).toBeHidden();
+	await page.getByRole('button', { name: 'Townsfolk', exact: true }).tap();
+	await expect(empath).toBeHidden();
+	await page.reload();
+	await expect(page.getByRole('button', { name: 'Jinxes' })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
+	await expect(empath).toBeHidden();
+	await page.getByRole('button', { name: 'Townsfolk', exact: true }).tap();
+	await expect(empath).toBeVisible();
+
 	const overflow = await page.evaluate(
 		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
 	);
@@ -210,8 +226,9 @@ test('shows the script chosen on the Scripts page, with its own notebook', async
 	await page.getByRole('button', { name: 'Add a seat' }).tap();
 	await expect(page.getByTestId('seat-count')).toHaveText('9');
 
-	await page.getByRole('link', { name: 'Change script' }).tap();
-	await expect(page).toHaveURL(/\/scripts$/);
+	// Players have no Change script button (Trevor): the script comes from /scripts or a link.
+	await expect(page.getByRole('link', { name: 'Change script' })).toHaveCount(0);
+	await page.goto('/scripts');
 	await page.getByRole('button', { name: 'Bad Moon Rising' }).tap();
 	await expect(page.getByRole('button', { name: 'Bad Moon Rising' })).toHaveAttribute(
 		'aria-pressed',

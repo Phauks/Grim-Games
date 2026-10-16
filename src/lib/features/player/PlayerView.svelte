@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
 	import {
 		editionScript,
 		loadScriptText,
@@ -22,6 +21,7 @@
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
+	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import { ScriptFetchError, type FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 	import ShareCodeEntry from '#lib/features/scripts/ShareCodeEntry.svelte';
@@ -202,9 +202,11 @@
 	<header>
 		<h1>{script?.name ?? 'Player view'}</h1>
 		<p class="author">{script?.meta.author ?? ' '}</p>
+		<!-- Players stay in their game: no Change script (Trevor, 2026-10-16). Another script
+		     loads only from a share link, QR code or code. A Room link will sit beside Share. -->
 		<div class="load">
-			<a class="change" href={resolve('/scripts')}>Change script</a>
 			<Button variant="quiet" onclick={openCode}>Code</Button>
+			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
 		</div>
 	</header>
 
@@ -228,7 +230,7 @@
 						{#if !script || !notebook}
 							<p class="muted">Loading…</p>
 						{:else if value === 'script'}
-							<ScriptSheet {script} characters={sheet} {jinxes} {players} {shareTarget} />
+							<ScriptSheet characters={sheet} {jinxes} {players} />
 						{:else if value === 'night'}
 							<PlayerNightOrder {nights} {players} />
 						{:else if value === 'circle'}
@@ -309,19 +311,12 @@
 	header {
 		margin-bottom: var(--space-2);
 	}
-	/* Ways to load another script, on their own row so a long script name never squeezes them. */
+	/* Code, Share and QR code, on their own row so a long script name never squeezes them. */
 	.load {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2) var(--space-3);
-	}
-	.change {
-		display: inline-flex;
-		align-items: center;
-		min-height: var(--tap-target);
-		font-family: var(--font-control);
-		color: var(--heading);
 	}
 	h1 {
 		margin: 0;
