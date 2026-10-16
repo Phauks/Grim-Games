@@ -370,6 +370,10 @@
 		font: inherit;
 		outline: none;
 	}
+	/* The field's border shows focus; the global input ring would draw a second one. */
+	.search input:focus-visible {
+		outline: none;
+	}
 	.search input::-webkit-search-cancel-button {
 		appearance: none;
 	}
