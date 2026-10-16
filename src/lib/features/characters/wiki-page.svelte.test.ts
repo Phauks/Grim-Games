@@ -32,6 +32,16 @@ describe('parseWikiPage', () => {
 		]);
 	});
 
+	it("drops the wiki's Related Jinxes box above the Summary", () => {
+		const html =
+			'<div class="mw-parser-output"><div id="jinxes"><p><span>Sample jinx label ' +
+			'<span id="jinx-toggle">(Open)</span></span></p><p>Sample jinx.</p></div>' +
+			'<h2>Summary</h2><p>Sample summary.</p></div>';
+		expect(parseWikiPage(html)).toEqual([
+			{ heading: 'Summary', blocks: [{ kind: 'p', text: 'Sample summary.' }] }
+		]);
+	});
+
 	it('keeps only the quote and artist from the details box, and each example whole', () => {
 		const page = `
 <div class="mw-parser-output"><div class="row"><div class="columns">

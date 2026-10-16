@@ -9,6 +9,7 @@
 	} from '#lib/core/data/index.ts';
 	import { iconUrl } from './icon-url.ts';
 	import CharacterDialog from './CharacterDialog.svelte';
+	import { prefetchWikiPage } from './wiki-page.svelte.ts';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 
 	interface Props {
@@ -75,6 +76,9 @@
 		data-team={team}
 		data-character-id={characterId}
 		aria-haspopup="dialog"
+		onpointerenter={() => character && prefetchWikiPage(character)}
+		onpointerdown={() => character && prefetchWikiPage(character)}
+		onfocus={() => character && prefetchWikiPage(character)}
 		onclick={() => {
 			used = true;
 			open = true;
