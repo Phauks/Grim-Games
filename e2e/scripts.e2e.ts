@@ -78,7 +78,11 @@ test('saved scripts are listed without the base three, survive a reload and can 
 	// Saving shows the script's details beside the list (over it on a phone), not in a modal.
 	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(details(page)).toBeVisible();
-	await expect(page.getByTestId('script-characters')).toContainText('Storm Warden');
+	// The details show the script as players see it: names and abilities by type (Trevor).
+	const sheet = page.getByTestId('script-sheet');
+	await expect(sheet).toContainText('Storm Warden');
+	await expect(sheet).toContainText('they are safe from the Demon tonight');
+	await expect(sheet.getByRole('button', { name: 'Townsfolk', exact: true })).toBeVisible();
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
 	await noSidewaysScroll(page);
 	await backToList(page);
@@ -326,7 +330,7 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	const first = table.locator('tbody tr').first();
 	await expect(first).toContainText('Most Voted One');
 	await expect(first.locator('[data-col="characters"]')).toHaveText('7');
-	// Phones keep Name, Author, Type and Chars; Likes gives way.
+	// Phones keep Name, Author and Type; Chars and Likes give way (Chars' filter moves to Name).
 	const phone = test.info().project.name === 'phone';
 	if (!phone) await expect(first.locator('[data-col="likes"]')).toHaveText('5');
 	await expect(page.getByRole('button', { name: 'More' })).toBeDisabled();
@@ -381,8 +385,8 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	await table.getByRole('button', { name: /^Storm Front/ }).tap();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await expect(detailsName(page)).toHaveText('Storm Front');
-	await expect(page.getByTestId('script-characters')).toContainText('Storm Warden');
-	await expect(page.getByTestId('script-characters')).toContainText('Imp');
+	await expect(details(page)).toContainText('Storm Warden');
+	await expect(details(page)).toContainText('Imp');
 	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.0.0' })).toHaveAttribute(
 		'href',
 		'https://botcscripts.com/script/1900/1.0.0'
@@ -466,6 +470,8 @@ test("the official site's custom scripts are listed, can be switched off, and sa
 	await pick(page, 'Little Hamlet');
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
 	await expect(details(page)).toContainText('Script Tool');
+	// Not saved, yet shown as the players' script, abilities and all.
+	await expect(page.getByTestId('script-sheet')).toContainText('pairs of evil players');
 	await noSidewaysScroll(page);
 });
 

@@ -4,6 +4,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		editionScript,
+		loadScript,
 		loadScriptText,
 		type CharacterId,
 		type CharacterType,
@@ -62,6 +63,7 @@
 	} from './picker-rows.ts';
 	import { RemoteSearch } from './remote-search.svelte.ts';
 	import { describeSource, reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
+	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import ScriptDetails, { type ScriptFact } from './ScriptDetails.svelte';
 	import {
 		botcProvider,
@@ -306,16 +308,45 @@
 
 	/** A BotC Scripts row is fetched when tapped, so Save doesn't wait on the site. */
 	const botcFetches = new SvelteMap<string, Promise<FetchedScript>>();
+	/** Fetched BotC Scripts text by ref, for the details' player sheet. */
+	const botcTexts = new SvelteMap<string, string>();
 	function fetchBotc(ref: BotcScriptsRef): Promise<FetchedScript> {
 		const key = JSON.stringify(ref);
 		let fetching = botcFetches.get(key);
 		if (!fetching) {
 			fetching = fetchLinkTarget({ kind: 'botcscripts', ref }, '');
 			botcFetches.set(key, fetching);
-			fetching.catch(() => botcFetches.delete(key));
+			fetching.then(
+				(fetched) => botcTexts.set(key, fetched.text),
+				() => botcFetches.delete(key)
+			);
 		}
 		return fetching;
 	}
+
+	/**
+	 * The shown script as players see it (Trevor, 2026-10-16): names and abilities by type,
+	 * with jinxes. A BotC Scripts row has it once its fetch arrives; until then (or if the
+	 * script doesn't load) the details list its characters as badges.
+	 */
+	const preview = $derived.by((): LoadedScript | undefined => {
+		const listing = shownListing;
+		if (!data || !listing) return undefined;
+		if (shownSaved) return reloadSavedScript(shownSaved, data);
+		const target = listing.target;
+		switch (target.kind) {
+			case 'edition':
+				return editionScript(target.edition, data);
+			case 'saved':
+				return reloadSavedScript(target.saved, data);
+			case 'json':
+				return loadScript(target.json, data).script;
+			case 'botcscripts': {
+				const text = botcTexts.get(JSON.stringify(target.ref));
+				return text === undefined ? undefined : loadScriptText(text, data).script;
+			}
+		}
+	});
 
 	async function toggleSaved() {
 		const listing = shownListing;
@@ -446,8 +477,8 @@
 	);
 	/**
 	 * The site's own columns (Name, Author, Type, Likes, No.), plus Source and a character count.
-	 * Author and Type are always columns of their own (Trevor); Source, Likes and No. give way
-	 * on phones.
+	 * Author and Type are always columns of their own (Trevor); Source, Chars, Likes and No.
+	 * give way on phones, where the Chars filter moves into the Name header.
 	 */
 	const columns = $derived<DataColumn<ColumnId>[]>([
 		{ id: 'name', label: t('scripts.column.name'), sortable: true, flush: true },
@@ -473,7 +504,8 @@
 			label: t('scripts.column.characters'),
 			sortable: true,
 			align: 'end',
-			width: '4.5rem',
+			wide: true,
+			width: '7rem',
 			filterable: true,
 			filtered: characterFilters > 0
 		},
@@ -635,6 +667,10 @@
 	}
 </script>
 
+{#snippet playerSheet()}
+	{#if preview}<ScriptCopy script={preview} />{/if}
+{/snippet}
+
 <!-- The list on the left, the shown script's details on the right; on a phone the details
      slide over the list and Back returns to it. -->
 <div class="panes" bind:clientWidth={width}>
@@ -739,6 +775,7 @@
 					facts={factsFor(shownListing)}
 					entries={shownListing?.row.entries ?? []}
 					{data}
+					sheet={preview ? playerSheet : undefined}
 				>
 					{#snippet actions()}
 						<ShareControl

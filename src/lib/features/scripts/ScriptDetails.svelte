@@ -30,9 +30,14 @@
 		entries: readonly BotcScriptsEntry[];
 		data: GameData | undefined;
 		actions?: Snippet;
+		/**
+		 * The script as players see it (names and abilities), once it has loaded. Until then
+		 * the characters are listed as badges by type.
+		 */
+		sheet?: Snippet;
 	}
 
-	let { heading, name, facts, entries, data, actions }: Props = $props();
+	let { heading, name, facts, entries, data, actions, sheet }: Props = $props();
 
 	const card = $derived(data ? botcCard(entries, data) : undefined);
 </script>
@@ -57,27 +62,31 @@
 	{#if actions}
 		<div class="actions">{@render actions()}</div>
 	{/if}
-	<div class="groups" data-testid="script-characters">
-		{#each card?.groups ?? [] as group (group.type ?? 'unknown')}
-			<section>
-				<h3>
-					{group.type ? TYPE_PLURALS[group.type] : t('scripts.botc.unknownType')}
-					<span class="count">{group.characters.length}</span>
-				</h3>
-				<p class="badges">
-					{#each group.characters as c (c.id)}
-						{#if c.official}
-							<CharacterBadge characterId={c.official.id} inline />
-						{:else}
-							<span class="homebrew">{c.name}</span>
-						{/if}
-					{/each}
-				</p>
-			</section>
-		{:else}
-			<p class="muted">{t('common.none')}</p>
-		{/each}
-	</div>
+	{#if sheet}
+		<div class="sheet" data-testid="script-sheet">{@render sheet()}</div>
+	{:else}
+		<div class="groups" data-testid="script-characters">
+			{#each card?.groups ?? [] as group (group.type ?? 'unknown')}
+				<section>
+					<h3>
+						{group.type ? TYPE_PLURALS[group.type] : t('scripts.botc.unknownType')}
+						<span class="count">{group.characters.length}</span>
+					</h3>
+					<p class="badges">
+						{#each group.characters as c (c.id)}
+							{#if c.official}
+								<CharacterBadge characterId={c.official.id} inline />
+							{:else}
+								<span class="homebrew">{c.name}</span>
+							{/if}
+						{/each}
+					</p>
+				</section>
+			{:else}
+				<p class="muted">{t('common.none')}</p>
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -120,6 +129,10 @@
 		justify-content: flex-end;
 		align-items: center;
 		gap: var(--space-2);
+	}
+	.sheet {
+		margin-top: var(--space-2);
+		min-width: 0;
 	}
 	.groups {
 		display: grid;
