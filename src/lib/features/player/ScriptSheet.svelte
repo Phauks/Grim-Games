@@ -119,6 +119,8 @@
 <style>
 	.sheet {
 		display: grid;
+		/* minmax(0, …) lets the wide Players table scroll inside its section on phones. */
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-4);
 	}
 	ul {
