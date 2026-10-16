@@ -12,7 +12,6 @@
 	<h1>Privacy policy</h1>
 	<p class="muted">Last updated 16 October 2026</p>
 
-	<!-- One readable column per section; wide screens lay sections side by side. -->
 	<div class="sections">
 		<section>
 			<h2>Summary</h2>
@@ -165,14 +164,8 @@
 		margin: 0 auto;
 		padding: var(--space-5) var(--page-gutter);
 	}
+	/* One column at a readable width (Trevor, 2026-10-16: not two). */
 	.sections {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(28 * var(--u))), 1fr));
-		gap: 0 var(--space-6);
-		align-items: start;
-	}
-	/* However wide a column gets, lines stay readable. */
-	section {
 		max-width: var(--measure);
 	}
 	h1 {

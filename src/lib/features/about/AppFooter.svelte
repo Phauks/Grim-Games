@@ -38,8 +38,6 @@
 		>
 		<!-- Separators are hidden on narrow screens, where the links wrap and a dot would start a line. -->
 		<span class="sep" aria-hidden="true">·</span>
-		<a class="page" href={resolve('/reference')}>{t('shell.reference')}</a>
-		<span class="sep" aria-hidden="true">·</span>
 		<a class="page" href={resolve('/changelog')}>{t('shell.changelog')}</a>
 		<span class="sep" aria-hidden="true">·</span>
 		<a class="page" href={resolve('/privacy')}>{t('shell.privacy')}</a>

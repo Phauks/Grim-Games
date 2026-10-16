@@ -1,8 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-test('the footer links to the character reference', async ({ page }) => {
+test('the menu opens the character reference; the footer no longer links it', async ({ page }) => {
 	await page.goto('/');
-	await page.getByRole('link', { name: 'Reference', exact: true }).tap();
+	await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Reference' })).toHaveCount(
+		0
+	);
+	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Menu' })
+		.getByRole('link', { name: 'Character reference' })
+		.tap();
 	await expect(page).toHaveURL(/\/reference$/);
 	await expect(page.getByRole('heading', { name: 'Character reference' })).toBeVisible();
 });
