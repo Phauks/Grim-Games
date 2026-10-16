@@ -282,7 +282,9 @@
 				>
 					<!-- Icon two lines tall, character name above, player name below (Trevor). -->
 					<span class="seat-icon" aria-hidden="true"
-						>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
+						>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}<span class="shroud"
+							><Icon name="dead" /></span
+						></span
 					>
 					<span class="seat-text">
 						<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
@@ -290,7 +292,6 @@
 						>
 						<span class="seat-player">{game.seatName(seat.seatId)}</span>
 					</span>
-					<span class="dead-mark" aria-hidden="true"><Icon name="dead" /></span>
 				</button>
 			{/each}
 		</div>
@@ -357,6 +358,7 @@
 									{/if}
 								{/each}
 							</span>
+							{@render ability(reminder.characterId)}
 							{@render actions(reminder.characterId, seatOf(reminder))}
 						</li>
 					{/each}
@@ -378,6 +380,7 @@
 									playerName={seat.playerName}
 								/>
 							</span>
+							{@render ability(seat.characterId)}
 							{@render actions(seat.characterId, seat.seatId)}
 						</li>
 					{/if}
@@ -386,6 +389,12 @@
 		</section>
 	{/if}
 </div>
+
+{#snippet ability(characterId: string | undefined)}
+	<!-- TPI's ability text, so the Storyteller sees what the reminder is about. -->
+	{@const text = characterId ? game.characters.get(characterId)?.ability : undefined}
+	{#if text}<p class="ability" data-testid="ability">{text}</p>{/if}
+{/snippet}
 
 <NoteSheet bind:open={noteOpen} {game} target={noteTarget} />
 
@@ -492,6 +501,7 @@
 		cursor: pointer;
 	}
 	.seat-icon {
+		position: relative;
 		display: inline-grid;
 		place-items: center;
 		width: calc(2.25 * var(--u) * var(--icon-scale, 1));
@@ -526,20 +536,23 @@
 		overflow-wrap: anywhere;
 		font-family: var(--font-player);
 	}
-	/* Always there, shown only when dead, so names never shift. */
-	/* Over the icon's corner, so it takes no width from the names. */
-	.dead-mark {
+	/* Dead: the board's shroud over the icon, never dimmed text (Trevor: dimming is harder
+	   to read). Always laid out, shown only when dead, so nothing shifts. */
+	.shroud {
 		position: absolute;
-		top: var(--space-1);
-		left: var(--space-1);
-		display: inline-grid;
+		inset: 0;
+		display: grid;
+		justify-items: center;
+		align-content: start;
+		padding-top: 6%;
+		border-radius: 50%;
+		background: linear-gradient(to bottom, rgb(0 0 0 / 0.85) 45%, transparent 45%);
+		color: var(--on-surface);
 		visibility: hidden;
+		--icon-size: calc(0.9 * var(--u));
 	}
-	.seat[data-dead='true'] .dead-mark {
+	.seat[data-dead='true'] .shroud {
 		visibility: visible;
-	}
-	.seat[data-dead='true'] {
-		color: var(--on-surface-muted);
 	}
 	.demon-voted {
 		min-width: calc(12 * var(--u));
@@ -567,6 +580,13 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1) var(--space-2);
+	}
+	.ability {
+		flex-basis: 100%;
+		order: 1;
+		margin: 0;
+		font-family: var(--font-ability);
+		font-size: 0.9rem;
 	}
 	.row-actions {
 		display: inline-flex;

@@ -62,6 +62,14 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
 	// Each player shows their character (none yet) and name; the death is listed to announce.
 	await expect(seat(page, 'Seat 2')).toContainText('No character');
+	// Death shows as the board's shroud, never as dimmed text (Trevor).
+	await expect(seat(page, 'Seat 2').locator('.shroud')).toBeVisible();
+	await expect(seat(page, 'Seat 1').locator('.shroud')).toBeHidden();
+	const colour = (name: string) =>
+		seat(page, name)
+			.locator('.seat-player')
+			.evaluate((el) => getComputedStyle(el).color);
+	expect(await colour('Seat 2')).toBe(await colour('Seat 1'));
 	await expect(page.getByTestId('died')).toContainText('Seat 2 died: Executed');
 
 	await page.reload();
