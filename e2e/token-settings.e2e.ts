@@ -100,9 +100,13 @@ test('character names on grimoire tokens are off by default and shown when switc
 		.tap();
 	const label = 'Show character names on grimoire tokens';
 	const toggle = dialog.getByRole('checkbox', { name: label, includeHidden: true });
+	const position = dialog.getByRole('radiogroup', { name: 'Name position on grimoire tokens' });
 	await expect(toggle).not.toBeChecked();
+	// Shown but unusable until names are on, so nothing moves when they are.
+	await expect(position.getByRole('radio', { name: 'Top', includeHidden: true })).toBeDisabled();
 	await dialog.getByText(label, { exact: true }).tap();
 	await expect(toggle).toBeChecked();
+	await expect(position.getByRole('radio', { name: 'Top', includeHidden: true })).toBeEnabled();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	// The name sits inside the token: the token keeps its size and nothing moves.
@@ -115,6 +119,30 @@ test('character names on grimoire tokens are off by default and shown when switc
 	expect(text.x + text.width).toBeLessThanOrEqual(box.x + box.width);
 	expect(text.y + text.height).toBeLessThanOrEqual(box.y + box.height);
 
+	// The icon stays in the middle of the token with a name.
+	const icon = (await token.locator('img').boundingBox())!;
+	expect(icon.x + icon.width / 2).toBeCloseTo(box.x + box.width / 2, 0);
+	expect(icon.y + icon.height / 2).toBeCloseTo(box.y + box.height / 2, 0);
+
 	await page.reload();
 	await expect(seat.getByTestId('token-name')).toHaveText('Fortune Teller');
+
+	// The name can sit at the top instead; the icon stays in the middle.
+	await page.getByRole('button', { name: 'More' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Tokens' })
+		.tap();
+	await position.getByText('Top', { exact: true }).tap();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(seat.getByTestId('token-name')).toHaveAttribute('data-position', 'top');
+	const top = (await seat.getByTestId('token-name').boundingBox())!;
+	const middle = (await token.boundingBox())!;
+	expect(top.y + top.height).toBeLessThan(middle.y + middle.height / 2);
+	const centred = (await token.locator('img').boundingBox())!;
+	expect(centred.y + centred.height / 2).toBeCloseTo(middle.y + middle.height / 2, 0);
 });

@@ -31,7 +31,10 @@ export const characters = {
 	'characters.reminderSizeHelp': 'Reminder tokens wherever they show.',
 	'characters.boardNames': 'Show character names on grimoire tokens',
 	'characters.boardNamesHelp':
-		'Storyteller: writes each character’s name along the bottom of its token on the grimoire board.',
+		'Storyteller: writes each character’s name on its token on the grimoire board.',
+	'characters.namePosition': 'Name position on grimoire tokens',
+	'characters.namePosition.top': 'Top',
+	'characters.namePosition.bottom': 'Bottom',
 	'characters.colour.face': 'Token face',
 	'characters.colour.faceHelp': 'The parchment of character tokens.',
 	'characters.colour.reminder': 'Reminder face',

@@ -25,16 +25,20 @@ describe('token appearance', () => {
 			colours: { face: PALE.toLowerCase() },
 			tokenScale: 1.5,
 			reminderScale: 2,
-			boardNames: false
+			boardNames: false,
+			namePosition: 'bottom'
 		});
 		expect(parseTokenAppearance(null)).toEqual({
 			colours: {},
 			tokenScale: 1,
 			reminderScale: 1,
-			boardNames: false
+			boardNames: false,
+			namePosition: 'bottom'
 		});
 		expect(parseTokenAppearance({ boardNames: true }).boardNames).toBe(true);
 		expect(parseTokenAppearance({ boardNames: 'yes' }).boardNames).toBe(false);
+		expect(parseTokenAppearance({ namePosition: 'top' }).namePosition).toBe('top');
+		expect(parseTokenAppearance({ namePosition: 'side' }).namePosition).toBe('bottom');
 	});
 
 	it('keeps sizes on the 50% to 200% range in 5% steps; old S/M/L/XL sizes keep', () => {
@@ -52,7 +56,8 @@ describe('token appearance', () => {
 				colours: { ink: DARK },
 				tokenScale: 1.25,
 				reminderScale: 0.75,
-				boardNames: true
+				boardNames: true,
+				namePosition: 'bottom'
 			})
 		).toEqual({
 			'--token-scale': '1.25',

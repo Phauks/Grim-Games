@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
+	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { Theme } from '#lib/ui/themes/types.ts';
@@ -46,7 +47,12 @@
 
 <!-- Space for the largest sizes is kept, so changing a size never moves the settings below. -->
 <div class="preview" aria-hidden="true" data-testid="token-preview">
-	{#if sample}<CharacterToken character={sample} size={56} showName={value.boardNames} />{/if}
+	{#if sample}<CharacterToken
+			character={sample}
+			size={56}
+			showName={value.boardNames}
+			namePosition={value.namePosition}
+		/>{/if}
 	<ReminderToken label={t('characters.previewReminder')} type="minion" />
 </div>
 
@@ -75,6 +81,17 @@
 		description={t('characters.boardNamesHelp')}
 		checked={value.boardNames}
 		onChange={(boardNames) => onChange({ ...value, boardNames })}
+	/>
+	<!-- Disabled, not hidden, while names are off: no reflow. -->
+	<SettingSegmented
+		label={t('characters.namePosition')}
+		value={value.namePosition}
+		options={[
+			{ value: 'top', label: t('characters.namePosition.top') },
+			{ value: 'bottom', label: t('characters.namePosition.bottom') }
+		]}
+		disabled={!value.boardNames}
+		onChange={(namePosition) => onChange({ ...value, namePosition })}
 	/>
 </div>
 

@@ -17,9 +17,11 @@
 		options: Option[];
 		onChange: (value: T) => void;
 		item?: Snippet<[Option]>;
+		/** Shown but not usable (a setting that depends on another one being on). */
+		disabled?: boolean;
 	}
 
-	let { label, hideLabel, labelledBy, value, options, onChange, item }: Props = $props();
+	let { label, hideLabel, labelledBy, value, options, onChange, item, disabled }: Props = $props();
 </script>
 
 <!-- A short row of mutually exclusive options with a sliding indicator. -->
@@ -27,6 +29,7 @@
 	{value}
 	onValueChange={(details) => details.value && onChange(details.value as T)}
 	aria-labelledby={labelledBy}
+	{disabled}
 >
 	{#if !labelledBy}
 		<SegmentGroup.Label class={hideLabel ? 'visually-hidden' : undefined}>
@@ -100,6 +103,13 @@
 		border-radius: var(--radius-sm);
 		background: var(--choice-selected-background);
 		box-shadow: inset 0 0 0 2px var(--choice-selected-border);
+	}
+	/* Shown in place but not usable, so nothing reflows when it becomes available. */
+	:global([data-scope='segment-group'][data-part='root'][data-disabled]) {
+		opacity: 0.5;
+	}
+	:global([data-scope='segment-group'][data-part='item'][data-disabled]) {
+		cursor: not-allowed;
 	}
 	:global([data-scope='segment-group'][data-part='item-control']) {
 		display: none;

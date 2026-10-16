@@ -57,13 +57,18 @@ export interface TokenAppearance {
 	reminderScale: number;
 	/** The character's name curved along the bottom of grimoire tokens (Trevor, 2026-10-16). */
 	boardNames: boolean;
+	/** Where that name sits; the icon stays in the middle either way (Trevor, 2026-10-16). */
+	namePosition: NamePosition;
 }
+
+export type NamePosition = 'top' | 'bottom';
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	colours: {},
 	tokenScale: 1,
 	reminderScale: 1,
-	boardNames: false
+	boardNames: false,
+	namePosition: 'bottom'
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -84,7 +89,8 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		colours,
 		tokenScale: parseScale(input.tokenScale),
 		reminderScale: parseScale(input.reminderScale),
-		boardNames: input.boardNames === true
+		boardNames: input.boardNames === true,
+		namePosition: input.namePosition === 'top' ? 'top' : 'bottom'
 	};
 }
 

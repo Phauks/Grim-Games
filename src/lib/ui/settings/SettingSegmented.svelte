@@ -8,6 +8,7 @@
 		value: T;
 		options: { value: T; label: string }[];
 		onChange: (value: T) => void;
+		disabled?: boolean;
 	}
 
 	let { label, description, ...segmented }: Props = $props();

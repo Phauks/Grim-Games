@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { FLOWER_ANGLE, leafLayout, type LeafMarks } from './leaves.ts';
+	import type { NamePosition } from './token-appearance.ts';
 
 	interface Props {
 		/** Icon image URL; the face stays (empty) when there is none. */
@@ -9,36 +10,47 @@
 		leaves: LeafMarks;
 		/** Fixed size in px, so the token never changes size when data or icons arrive. */
 		size?: number;
-		/** A name curved along the bottom, as on the printed tokens; the icon moves up for it. */
+		/** A name curved inside the rim, as on the printed tokens; the icon shrinks for it. */
 		name?: string;
+		/**
+		 * Where the name sits (Settings > Tokens). At the top, the reminder leaves and the setup
+		 * flower move to the bottom, mirrored, so nothing overlaps the name.
+		 */
+		namePosition?: NamePosition;
 	}
 
-	let { src, label, leaves, size = 56, name }: Props = $props();
-	const layout = $derived(leafLayout(leaves));
+	let { src, label, leaves, size = 56, name, namePosition = 'bottom' }: Props = $props();
+	const top = $derived(name !== undefined && namePosition === 'top');
+	const layout = $derived(
+		leafLayout(leaves).map((leaf) => (top ? { ...leaf, angle: -leaf.angle } : leaf))
+	);
 	// A leaf pointing up from (0,0) to (0,-19), with a midrib. Leaves hang from the rim of the
 	// face towards the middle, always inside the token (Trevor, 2026-10-15).
 	const LEAF = 'M0 0 C7 -5 7 -13 0 -19 C-7 -13 -7 -5 0 0 Z';
 	// The setup flower: five petals round a centre, inside the face at the bottom right.
 	const FLOWER_R = 36;
-	const flowerX = 50 + FLOWER_R * Math.cos((FLOWER_ANGLE * Math.PI) / 180);
-	const flowerY = 50 + FLOWER_R * Math.sin((FLOWER_ANGLE * Math.PI) / 180);
+	const flowerAngle = $derived(((top ? -FLOWER_ANGLE : FLOWER_ANGLE) * Math.PI) / 180);
+	const flowerX = $derived(50 + FLOWER_R * Math.cos(flowerAngle));
+	const flowerY = $derived(50 + FLOWER_R * Math.sin(flowerAngle));
 	const PETALS = [0, 72, 144, 216, 288];
-	// The name runs left to right along the bottom inside the rim, clear of the side leaves
-	// (at 180° and 0°). With the setup flower (at 45°) it stops short of the flower, so it sits
-	// a little left of centre.
-	const NAME_R = 37;
+	// The name runs left to right inside the rim, clear of the side leaves (at 180° and 0°).
+	// With the setup flower (at 45°, or -45° when the name is on top) it stops short of the
+	// flower, so it sits a little left of centre. Letters stand towards the middle at the
+	// bottom and away from it at the top, so the top baseline is further in: both fill the
+	// same band inside the rim.
 	const NAME_SIZE = 13;
+	const nameR = $derived(top ? 28 : 37);
 	const NAME_FROM = 150;
 	const nameTo = $derived(leaves.setup ? 68 : 30);
 	const namePath = $derived.by(() => {
 		const point = (degrees: number) => {
-			const a = (degrees * Math.PI) / 180;
-			return `${(50 + NAME_R * Math.cos(a)).toFixed(2)} ${(50 + NAME_R * Math.sin(a)).toFixed(2)}`;
+			const a = ((top ? -degrees : degrees) * Math.PI) / 180;
+			return `${(50 + nameR * Math.cos(a)).toFixed(2)} ${(50 + nameR * Math.sin(a)).toFixed(2)}`;
 		};
-		return `M ${point(NAME_FROM)} A ${NAME_R} ${NAME_R} 0 0 0 ${point(nameTo)}`;
+		return `M ${point(NAME_FROM)} A ${nameR} ${nameR} 0 0 ${top ? 1 : 0} ${point(nameTo)}`;
 	});
 	// Long names are squeezed to fit the arc; short ones keep their natural width.
-	const arcLength = $derived((NAME_R * (NAME_FROM - nameTo) * Math.PI) / 180);
+	const arcLength = $derived((nameR * (NAME_FROM - nameTo) * Math.PI) / 180);
 	const nameLength = $derived(
 		name && name.length * NAME_SIZE * 0.62 > arcLength ? arcLength : undefined
 	);
@@ -78,7 +90,12 @@
 		{/each}
 		{#if name}
 			<path id="name-{pathId}" d={namePath} fill="none" />
-			<text class="name" font-size={NAME_SIZE} text-anchor="middle" data-testid="token-name"
+			<text
+				class="name"
+				font-size={NAME_SIZE}
+				text-anchor="middle"
+				data-testid="token-name"
+				data-position={top ? 'top' : 'bottom'}
 				><textPath
 					href="#name-{pathId}"
 					startOffset="50%"
@@ -140,12 +157,12 @@
 		height: 74%;
 		object-fit: contain;
 	}
-	/* With a name, the icon sits higher and a little smaller, leaving the bottom to the name. */
+	/* With a name the icon is smaller but still in the middle, leaving the rim to the name. */
 	img[data-named] {
-		left: 19%;
-		top: 9%;
-		width: 62%;
-		height: 62%;
+		left: 22%;
+		top: 22%;
+		width: 56%;
+		height: 56%;
 	}
 	.name {
 		fill: var(--on-token);
