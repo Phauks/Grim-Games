@@ -1,7 +1,10 @@
 <script lang="ts">
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { StandIn } from '#lib/core/rules/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -16,7 +19,8 @@
 
 	let { open = $bindable(), standIn, lookup, onChoose }: Props = $props();
 
-	const name = $derived(standIn ? (lookup(standIn.characterId)?.name ?? '') : '');
+	const character = $derived(standIn ? lookup(standIn.characterId) : undefined);
+	const name = slot('character');
 	const options = $derived(
 		(standIn?.options ?? []).map((id) => lookup(id)).filter((c): c is Character => c !== undefined)
 	);
@@ -30,12 +34,20 @@
 	Which Demon token goes in the bag for the Lunatic, opened from the setup check. The
 	Demon in play is the default (https://wiki.bloodontheclocktower.com/Lunatic).
 -->
+{#snippet fill()}{#if character}<CharacterBadge
+			characterId={character.id}
+			{character}
+			inline
+		/>{/if}{/snippet}
+
 <Dialog
 	bind:open
 	title={t('setup.standIn.title', { name })}
 	description={t('setup.standIn.description', { name })}
 	size="full"
 >
+	{#snippet heading()}<Sentence text={t('setup.standIn.title', { name })} {fill} />{/snippet}
+	{#snippet subtitle()}<Sentence text={t('setup.standIn.description', { name })} {fill} />{/snippet}
 	<div class="list" data-testid="stand-in-picker">
 		<CharacterPicker
 			characters={options}
