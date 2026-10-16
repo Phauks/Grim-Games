@@ -25,7 +25,7 @@ test('"You are" asks for a character, then shows its token and ability', async (
 	await page.goto('/info-tokens');
 	await page.getByRole('button', { name: 'You are' }).tap();
 	await page.getByRole('searchbox', { name: 'Find a character' }).fill('Empath');
-	await page.getByRole('button', { name: /^Empath token/ }).tap();
+	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await page.getByRole('button', { name: 'Show' }).tap();
 
 	const shown = page.getByTestId('show-to-player');
@@ -52,39 +52,69 @@ test('a custom info token keeps its bold words and survives a reload', async ({ 
 	await expect(page.getByText('You are mad about something')).toHaveCount(0);
 });
 
-test('the Storyteller sets all 3 Demon bluffs at once and shows them', async ({ page }) => {
+const choice = (page: import('@playwright/test').Page, name: string) =>
+	page.getByRole('group', { name: 'Bluff characters' }).getByRole('button', {
+		name: new RegExp(`^${name}(, in play)?$`)
+	});
+
+test('the Storyteller sets the 3 Demon bluffs at once and shows them as a list', async ({
+	page
+}) => {
 	await page.goto('/spikes/bluffs');
-	await page.getByRole('button', { name: 'Demon bluffs' }).tap();
+	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
+	// One set only, without a Lunatic.
+	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
 	await page.getByRole('button', { name: 'Choose' }).tap();
 
-	for (const name of ['Investigator', 'Monk', 'Saint']) {
-		await page.getByRole('button', { name: new RegExp(`^${name} token`) }).tap();
-	}
-	// Full: a fourth character can't be added.
-	await expect(page.getByRole('button', { name: /^Librarian token/ })).toBeDisabled();
+	// Each choice shows its ability text, and the list can be searched.
+	await expect(choice(page, 'Monk')).toContainText('Each night*, choose a player');
+	await page.getByRole('searchbox', { name: 'Find a character' }).fill('inv');
+	await choice(page, 'Investigator').tap();
+	await page.getByRole('searchbox', { name: 'Find a character' }).fill('');
+	await choice(page, 'Monk').tap();
+	await choice(page, 'Saint').tap();
+	await expect(choice(page, 'Librarian')).toBeDisabled();
 	await page.getByRole('button', { name: 'Save' }).tap();
 
 	const set = page.getByTestId('bluff-set');
 	await expect(set).toContainText('Investigator');
-	await expect(set).toContainText('Saint');
-
 	await set.getByRole('button', { name: 'Show' }).tap();
-	const shown = page.getByTestId('show-to-player');
+	// The open one: the Lunatic sample on the same page has its own (closed) player view.
+	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('These characters are not in play');
-	await expect(shown.getByRole('img')).toHaveCount(3);
+	// A list with abilities, not tokens.
+	await expect(shown.getByRole('listitem')).toHaveCount(3);
+	await expect(shown).toContainText('Each night*, choose a player');
 	await shown.getByRole('button', { name: 'Close' }).tap();
-	await expect(shown).toBeHidden();
-	// Back to the sheet the Storyteller was in.
 	await expect(page.getByRole('dialog', { name: 'Demon bluffs' })).toBeVisible();
 });
 
-test('a bluff that is in play is marked and still allowed, with a note', async ({ page }) => {
+test("characters in play can't be Demon bluffs, but the Drunk's Townsfolk can", async ({
+	page
+}) => {
 	await page.goto('/spikes/bluffs');
-	await page.getByRole('button', { name: 'Demon bluffs' }).tap();
+	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
 	await page.getByRole('button', { name: 'Choose' }).tap();
-	const empath = page.getByRole('button', { name: /^Empath token/ });
-	await expect(empath).toContainText('In play');
-	await empath.tap();
+	await expect(choice(page, 'Empath')).toBeDisabled();
+	await expect(choice(page, 'Empath')).toContainText('In play');
+	// The Chef's seat is the Drunk (wiki: Drunk), so the Chef is not in play.
+	await expect(choice(page, 'Chef')).toBeEnabled();
+	await choice(page, 'Chef').tap();
 	await page.getByRole('button', { name: 'Save' }).tap();
-	await expect(page.getByText('Empath is in play')).toBeVisible();
+	await expect(page.getByTestId('bluff-set')).toContainText('Chef');
+});
+
+test('a Lunatic game adds an optional Lunatic set that may include characters in play', async ({
+	page
+}) => {
+	await page.goto('/spikes/bluffs');
+	await page.getByRole('button', { name: 'Demon bluffs (Lunatic game)' }).tap();
+	await expect(page.getByTestId('bluff-set')).toHaveCount(2);
+	const lunatic = page.locator('[data-testid="bluff-set"][data-set="Lunatic"]');
+	await lunatic.getByRole('button', { name: 'Choose' }).tap();
+	await expect(choice(page, 'Sailor')).toBeEnabled();
+	await choice(page, 'Sailor').tap();
+	await page.getByRole('button', { name: 'Save' }).tap();
+	await expect(lunatic).toContainText('Sailor');
+	await expect(lunatic).not.toContainText('In play: replace');
 });

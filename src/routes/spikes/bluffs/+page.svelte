@@ -8,8 +8,14 @@
 
 <main>
 	<h1>Demon bluffs (preview)</h1>
-	<p class="note">A sample Trouble Brewing game in memory, until the grimoire board is built.</p>
-	<BluffsDemo />
+	<p class="note">
+		Sample games in memory: Trouble Brewing with a Drunk who thinks they are the Chef, and Bad Moon
+		Rising with a Lunatic.
+	</p>
+	<div class="demos">
+		<BluffsDemo />
+		<BluffsDemo variant="bmr" />
+	</div>
 </main>
 
 <style>
@@ -20,6 +26,11 @@
 	}
 	h1 {
 		font-family: var(--font-heading);
+	}
+	.demos {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
 	}
 	.note {
 		color: var(--on-surface-muted);

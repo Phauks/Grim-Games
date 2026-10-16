@@ -6,6 +6,7 @@
 	import InfoTokenText from '#lib/features/info-tokens/InfoTokenText.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { fitTokens } from './fit.ts';
+	import CharacterLabel from './CharacterLabel.svelte';
 
 	export interface ShownCharacter {
 		character: Character;
@@ -35,7 +36,7 @@
 
 	const single = $derived(characters.length === 1 ? characters[0].character : undefined);
 	const fit = $derived(
-		fitTokens(characters.length, areaWidth, areaHeight, {
+		fitTokens(single ? 1 : 0, areaWidth, areaHeight, {
 			labelHeight: 48
 		})
 	);
@@ -88,22 +89,31 @@
 				{#if title}
 					<h2 class="title"><InfoTokenText text={title} /></h2>
 				{/if}
-				{#if characters.length > 0}
+				{#if single}
 					<div class="area" bind:clientWidth={areaWidth} bind:clientHeight={areaHeight}>
-						<ul class="tokens" style:--columns={fit.columns} style:--size="{fit.size}px">
-							{#each characters as shown (shown.character.id)}
-								<li>
-									<CharacterToken
-										character={shown.character}
-										alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
-										size={fit.size}
-									/>
-									<span class="name">{shown.character.name}</span>
-								</li>
-							{/each}
-						</ul>
+						<div class="single" style:--size="{fit.size}px">
+							<CharacterToken
+								character={single}
+								alignment={characters[0].alignment ?? defaultAlignment(single.type)}
+								size={fit.size}
+							/>
+							<span class="name">{single.name}</span>
+						</div>
 					</div>
-					{#if single}<p class="ability">{single.ability}</p>{/if}
+					<p class="ability">{single.ability}</p>
+				{:else if characters.length > 1}
+					<!-- Several characters (bluffs): a list with each ability, not tokens (Trevor). -->
+					<ul class="list">
+						{#each characters as shown (shown.character.id)}
+							<li>
+								<CharacterLabel
+									character={shown.character}
+									alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
+								/>
+								<p>{shown.character.ability}</p>
+							</li>
+						{/each}
+					</ul>
 				{/if}
 			</div>
 			{#snippet fallback()}
@@ -188,19 +198,32 @@
 		display: grid;
 		place-items: center;
 	}
-	.tokens {
-		display: grid;
-		grid-template-columns: repeat(var(--columns), var(--size));
-		gap: var(--space-4);
-		justify-content: center;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	li {
+	.single {
 		display: grid;
 		justify-items: center;
 		gap: var(--space-1);
+	}
+	.list {
+		display: grid;
+		gap: var(--space-4);
+		width: min(100%, 40rem);
+		margin: 0;
+		padding: 0;
+		overflow-y: auto;
+		list-style: none;
+		text-align: start;
+		font-size: 1.4rem;
+	}
+	.list li {
+		display: grid;
+		justify-items: start;
+		gap: var(--space-2);
+	}
+	.list p {
+		margin: 0;
+		font-family: var(--font-ability);
+		font-size: 1.2rem;
+		line-height: 1.35;
 	}
 	.name {
 		max-width: 100%;

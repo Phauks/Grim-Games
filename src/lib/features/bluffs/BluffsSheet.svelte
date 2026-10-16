@@ -11,20 +11,17 @@
 		type EngineError,
 		type EngineWarning
 	} from '#lib/core/engine/index.ts';
-	import {
-		charactersInPlay,
-		scriptCharacterIds,
-		type CharacterLookup,
-		type Game
-	} from '#lib/core/model/index.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import { scriptCharacterIds, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
+	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import { charactersReallyInPlay, DEMON_SET, LUNATIC_SET, lunaticInPlay } from './bluffs.ts';
 
 	export type BluffCommand = Extract<Command, { type: 'SetBluffs' | 'RemoveBluffSet' }>;
 	export type BluffDispatch = (
@@ -41,8 +38,13 @@
 
 	let { open = $bindable(false), game, characters, dispatch }: Props = $props();
 
-	/** The set being edited: an index into `game.bluffs`, or its length for a new set. */
-	let editing = $state<number>();
+	type SetIndex = typeof DEMON_SET | typeof LUNATIC_SET;
+	const SET_LABELS: Record<SetIndex, string> = {
+		[DEMON_SET]: 'Demon',
+		[LUNATIC_SET]: 'Lunatic'
+	};
+
+	let editing = $state<SetIndex>();
 	let picked = $state<CharacterId[]>([]);
 	let filter = $state<'good' | 'script'>('good');
 	let showOpen = $state(false);
@@ -60,9 +62,16 @@
 			? scriptList.filter((c) => defaultAlignment(c.type) === 'good' && c.type !== 'traveller')
 			: scriptList
 	);
-	const inPlay = $derived(new Set(charactersInPlay(game)));
-	// Always at least one set to fill in, so an empty game shows the slots, not a blank sheet.
-	const sets = $derived(game.bluffs.length > 0 ? game.bluffs : [[]]);
+	const inPlay = $derived(charactersReallyInPlay(game, characters));
+	// One set for the Demon; a second only in a game with a Lunatic (Trevor, 2026-10-16).
+	const sets = $derived<SetIndex[]>(
+		lunaticInPlay(game, characters) ? [DEMON_SET, LUNATIC_SET] : [DEMON_SET]
+	);
+	/** The Demon's bluffs must not be in play; the Lunatic's may be. */
+	const blocks = (set: SetIndex) => set === DEMON_SET;
+	const pickedBlocked = $derived(
+		editing !== undefined && blocks(editing) && picked.some((id) => inPlay.has(id))
+	);
 
 	function lookup(ids: readonly CharacterId[]): Character[] {
 		return ids.flatMap((id) => {
@@ -77,18 +86,30 @@
 			toast('Not done', result.error.message);
 			return false;
 		}
-		for (const warning of result.warnings) toast('Note', warning.message);
+		// "In play" is decided here from true characters (a Drunk's Townsfolk is not in play),
+		// and the Lunatic's set may include characters in play, so the engine's note is dropped.
+		for (const warning of result.warnings) {
+			if (warning.code !== 'bluff-in-play' && warning.code !== 'no-change')
+				toast('Note', warning.message);
+		}
 		return true;
 	}
 
-	function edit(set: number) {
-		editing = set;
-		picked = [...(game.bluffs[set] ?? [])];
+	function set(index: SetIndex, characterIds: CharacterId[]): boolean {
+		// The Lunatic's set is the second one, so the Demon's must exist first.
+		if (index > game.bluffs.length && !run({ type: 'SetBluffs', set: DEMON_SET, characterIds: [] }))
+			return false;
+		return run({ type: 'SetBluffs', set: index, characterIds });
+	}
+
+	function edit(index: SetIndex) {
+		editing = index;
+		picked = [...(game.bluffs[index] ?? [])];
 	}
 
 	function save() {
-		if (editing === undefined) return;
-		if (run({ type: 'SetBluffs', set: editing, characterIds: picked })) editing = undefined;
+		if (editing === undefined || pickedBlocked) return;
+		if (set(editing, picked)) editing = undefined;
 	}
 
 	/** Shown to the player with the sheet closed, then back to the sheet. */
@@ -101,47 +122,49 @@
 
 <BottomSheet
 	bind:open
-	title={editing === undefined ? 'Demon bluffs' : `Demon bluffs · Set ${editing + 1}`}
+	title={editing === undefined ? 'Demon bluffs' : `${SET_LABELS[editing]} bluffs`}
 	height="85dvh"
 >
 	<!-- The player view below sits outside this boundary, so a crash here never closes it. -->
 	<ErrorBoundary area="bluffs">
 		{#if editing === undefined}
 			<ul class="sets">
-				{#each sets as set, index (index)}
-					<li class="set" data-testid="bluff-set">
-						<span class="label">Set {index + 1}</span>
-						<ol class="tokens">
-							{#each Array.from({ length: BLUFFS_PER_SET }, (_, i) => set[i]) as id, i (i)}
+				{#each sets as index (index)}
+					{@const ids = game.bluffs[index] ?? []}
+					{@const stale = blocks(index) && ids.some((id) => inPlay.has(id))}
+					<li class="set" data-testid="bluff-set" data-set={SET_LABELS[index]}>
+						<span class="label">{SET_LABELS[index]}</span>
+						<ol class="rows">
+							{#each Array.from({ length: BLUFFS_PER_SET }, (_, i) => ids[i]) as id, i (i)}
 								{@const character = id ? characters.get(id) : undefined}
-								<li>
+								{@const playing =
+									character !== undefined && blocks(index) && inPlay.has(character.id)}
+								<li data-in-play={playing ? '' : undefined}>
 									{#if character}
-										<CharacterToken {character} alignment="good" size={48} />
-										<span class="name">{character.name}</span>
+										<CharacterLabel {character} alignment="good" />
+										<span class="flag"
+											>{#if playing}<Icon name="warning" /> In play: replace{/if}</span
+										>
 									{:else}
-										<span class="hole"></span>
-										<span class="name none">None</span>
+										<span class="none">None</span>
 									{/if}
 								</li>
 							{/each}
 						</ol>
 						<div class="actions">
-							<Button variant="quiet" onclick={() => edit(index)}>Choose</Button>
-							<Button icon="forward" disabled={set.length === 0} onclick={() => show(set)}
+							<Button variant={stale ? 'accent' : 'quiet'} onclick={() => edit(index)}
+								>{stale ? 'Replace' : 'Choose'}</Button
+							>
+							<Button icon="forward" disabled={ids.length === 0 || stale} onclick={() => show(ids)}
 								>Show</Button
 							>
-							<Button
-								variant="quiet"
-								disabled={index >= game.bluffs.length}
-								onclick={() => run({ type: 'RemoveBluffSet', set: index })}>Remove</Button
+							<Button variant="quiet" disabled={ids.length === 0} onclick={() => set(index, [])}
+								>Clear</Button
 							>
 						</div>
 					</li>
 				{/each}
 			</ul>
-			<Button icon="add" variant="quiet" onclick={() => edit(game.bluffs.length)}>
-				Add bluff set
-			</Button>
 		{:else}
 			<div class="filter">
 				<Segmented
@@ -161,10 +184,11 @@
 				max={BLUFFS_PER_SET}
 				label="Bluff characters"
 				{inPlay}
+				blockInPlay={blocks(editing)}
 			/>
 			<div class="sheet-actions">
 				<Button variant="quiet" onclick={() => (editing = undefined)}>Cancel</Button>
-				<Button variant="accent" onclick={save}>Save</Button>
+				<Button variant="accent" disabled={pickedBlocked} onclick={save}>Save</Button>
 			</div>
 		{/if}
 	</ErrorBoundary>
@@ -173,15 +197,15 @@
 <ShowToPlayer
 	bind:open={showOpen}
 	title={notInPlay}
-	onclose={() => (open = true)}
 	characters={lookup(showing).map((character) => ({ character, alignment: 'good' as const }))}
+	onclose={() => (open = true)}
 />
 
 <style>
 	.sets {
 		display: grid;
 		gap: var(--space-3);
-		margin: 0 0 var(--space-3);
+		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
@@ -195,36 +219,31 @@
 	.label {
 		font-family: var(--font-heading);
 	}
-	.tokens {
+	.rows {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--space-2);
+		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
-	.tokens li {
+	.rows li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 		min-width: 0;
-		display: grid;
-		justify-items: center;
+		min-height: calc(2.5 * var(--u));
+	}
+	.rows li[data-in-play] {
+		color: var(--accent);
+	}
+	.flag {
+		display: inline-flex;
+		align-items: center;
 		gap: var(--space-1);
-		text-align: center;
-	}
-	.hole {
-		width: 48px;
-		height: 48px;
-		border: 1px dashed color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: var(--radius-full);
-	}
-	.name {
-		max-width: 100%;
-		overflow: hidden;
-		font-family: var(--font-character);
 		font-size: 0.85rem;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	.none {
+		padding-left: var(--space-2);
 		color: var(--on-sheet-muted);
 	}
 	.actions {
