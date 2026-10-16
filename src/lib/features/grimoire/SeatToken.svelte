@@ -15,10 +15,21 @@
 		orphan: boolean;
 		/** Highlighted while a reminder is dragged over it. */
 		dropTarget?: boolean;
+		/** Marked as a seat a setup reminder fits, while one is dragged or open. */
+		hint?: boolean;
 		onTap: () => void;
 	}
 
-	let { seat, number, character, size, orphan, dropTarget = false, onTap }: Props = $props();
+	let {
+		seat,
+		number,
+		character,
+		size,
+		orphan,
+		dropTarget = false,
+		hint = false,
+		onTap
+	}: Props = $props();
 
 	// As in the physical grimoire, a token is upside down when the player's alignment is not
 	// the one their character type starts with (a good Minion, an evil Townsfolk).
@@ -64,6 +75,7 @@
 	class="seat"
 	data-dead={seat.dead || undefined}
 	data-drop={dropTarget || undefined}
+	data-hint={hint || undefined}
 	data-testid="seat"
 	aria-label={label}
 	style:--size="{size}px"
@@ -92,6 +104,11 @@
 </button>
 
 <style>
+	.seat[data-hint] .disc {
+		outline: 2px dashed var(--focus);
+		outline-offset: 4px;
+		border-radius: 50%;
+	}
 	.seat[data-drop] .disc {
 		outline: 3px solid var(--focus);
 		outline-offset: 4px;

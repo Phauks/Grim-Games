@@ -49,6 +49,13 @@ export class Grimoire {
 		this.nightDone = [];
 	}
 
+	/** Setup reminder suggestions the Storyteller dismissed from the tray (`setup-tray.ts`). */
+	trayDismissed = $state.raw<readonly string[]>([]);
+
+	dismissTray(key: string): void {
+		if (!this.trayDismissed.includes(key)) this.trayDismissed = [...this.trayDismissed, key];
+	}
+
 	/** Changes where seats are drawn on this device; the seating order is untouched. */
 	setLayout(layout: SeatLayout): void {
 		this.layout = layout;

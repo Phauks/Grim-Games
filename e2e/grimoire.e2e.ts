@@ -515,3 +515,46 @@ test('the cause of death offers only characters that could have killed the playe
 	await cause.getByRole('button', { name: 'Slayer' }).tap();
 	await expect(sheet.getByRole('button', { name: 'Slayer' })).toBeVisible();
 });
+
+test('setup reminders wait in a tray on the board and are placed by hand', async ({ page }) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await menu(page, 'Setup reminders');
+	const tray = page.getByRole('list', { name: 'Setup reminders' });
+	await expect(tray.getByRole('button', { name: 'Townsfolk reminder' })).toBeVisible();
+	await expect(seatLabelled(page, 'Seat 2: no name, Empath')).toHaveAttribute(
+		'aria-label',
+		'Seat 2: no name, Empath'
+	);
+
+	// Tap: why it is needed and which seats fit (https://wiki.bloodontheclocktower.com/Washerwoman).
+	await tray.getByRole('button', { name: 'Townsfolk reminder' }).tap();
+	const details = page.getByRole('dialog', { name: 'Townsfolk' });
+	await details.getByRole('button', { name: 'Place on Seat 2' }).tap();
+	await expect(seatLabelled(page, 'Seat 2: no name, Empath, 1 reminder')).toBeAttached();
+	await expect(tray.getByRole('button', { name: 'Townsfolk reminder' })).toBeHidden();
+
+	// Drag: any seat will do.
+	const wrong = tray.getByRole('button', { name: 'Wrong reminder' });
+	const from = (await wrong.boundingBox())!;
+	const to = (await page.getByRole('button', { name: /^Seat 4:/ }).boundingBox())!;
+	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+	await page.mouse.up();
+	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).toBeAttached();
+
+	await page.getByRole('button', { name: 'Done' }).tap();
+	await expect(tray).toBeHidden();
+});

@@ -37,6 +37,7 @@
 	import NightOrderSheet from './NightOrderSheet.svelte';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
+	import SetupTray from './SetupTray.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -227,6 +228,14 @@
 		traveller = undefined;
 	}
 
+	// ── Setup reminders: a tray of suggested tokens in the middle of the board ──
+	let traying = $state(false);
+	let trayHints = $state<{ seats: SeatId[]; target?: SeatId }>({ seats: [] });
+	function startTray() {
+		traying = true;
+		toast('Setup reminders', 'Drag a token onto a seat, or tap it to see where it fits.');
+	}
+
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
 	let nightOpen = $state(false);
@@ -274,6 +283,16 @@
 				onclick={() => grimoire.setLayout(DEFAULT_SEAT_LAYOUT)}>Reset</Button
 			>
 			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
+		{:else if traying}
+			<span class="title">Setup reminders</span>
+			<Button
+				variant="accent"
+				icon="check"
+				onclick={() => {
+					traying = false;
+					trayHints = { seats: [] };
+				}}>Done</Button
+			>
 		{:else}
 			<span class="title">{game.script.meta?.name ?? 'Custom script'}</span>
 			<IconButton icon="night" label="Night order" onclick={() => (nightOpen = true)} />
@@ -315,9 +334,11 @@
 					character={seat.characterId ? characters.get(seat.characterId) : undefined}
 					{size}
 					orphan={isOrphan(seat, game.script, characters)}
-					dropTarget={reminderDrag !== undefined &&
+					dropTarget={(reminderDrag !== undefined &&
 						reminderDrag.target === seat.seatId &&
-						reminderDrag.from !== seat.seatId}
+						reminderDrag.from !== seat.seatId) ||
+						trayHints.target === seat.seatId}
+					hint={trayHints.seats.includes(seat.seatId)}
 					onTap={() => !arranging && openSeat(seat.seatId)}
 				/>
 			</div>
@@ -363,8 +384,12 @@
 			>
 		{/each}
 
+		{#if traying}
+			<SetupTray {grimoire} {board} size={chip} {seatAt} onHints={(h) => (trayHints = h)} />
+		{/if}
+
 		<!-- Fabled and Loric are rules of the game, not seats: they sit in the middle. -->
-		<ul class="rules" aria-label="Fabled and Loric">
+		<ul class="rules" class:hidden={traying} aria-label="Fabled and Loric">
 			{#each game.ruleCharacters as id (id)}
 				{@const character = characters.get(id)}
 				{#if character}
@@ -401,6 +426,9 @@
 		</Button>
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
 			Demon bluffs
+		</Button>
+		<Button variant="quiet" icon="reminder" onclick={() => fromMenu(startTray)}>
+			Setup reminders
 		</Button>
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
@@ -592,6 +620,9 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
+	}
+	.rules.hidden {
+		visibility: hidden;
 	}
 	.rule {
 		padding: 0;
