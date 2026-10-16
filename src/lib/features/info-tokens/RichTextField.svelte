@@ -24,6 +24,7 @@
 	let field = $state<HTMLDivElement>();
 	let bold = $state(false);
 	let italic = $state(false);
+	let underline = $state(false);
 	/** The colour at the caret; undefined is the card's own text colour. */
 	let ink = $state<InkColor>();
 	/** The value this field last wrote, so its own edits never re-render it under the caret. */
@@ -39,6 +40,7 @@
 				let node: Node = document.createTextNode(run.text);
 				if (run.italic) node = wrap('em', node);
 				if (run.bold) node = wrap('strong', node);
+				if (run.underline) node = wrap('u', node);
 				if (run.color) {
 					const span = wrap('span', node);
 					span.dataset.ink = run.color;
@@ -97,12 +99,19 @@
 	function runsOf(root: Node): TextRun[] {
 		const runs: TextRun[] = [];
 		const inks = resolvedInks();
-		const walk = (node: Node, isBold: boolean, isItalic: boolean, color?: InkColor) => {
+		const walk = (
+			node: Node,
+			isBold: boolean,
+			isItalic: boolean,
+			isUnderline: boolean,
+			color?: InkColor
+		) => {
 			if (node.nodeType === Node.TEXT_NODE) {
 				runs.push({
 					text: node.textContent ?? '',
 					bold: isBold,
 					italic: isItalic,
+					...(isUnderline ? { underline: true } : {}),
 					...(color ? { color } : {})
 				});
 				return;
@@ -124,9 +133,13 @@
 						: isItalic;
 			const own = inkOf(node, inks);
 			const nextColor = own === null ? undefined : (own ?? color);
-			node.childNodes.forEach((child) => walk(child, nextBold, nextItalic, nextColor));
+			const nextUnderline =
+				tag === 'U' || node.style.textDecorationLine.includes('underline') || isUnderline;
+			node.childNodes.forEach((child) =>
+				walk(child, nextBold, nextItalic, nextUnderline, nextColor)
+			);
 		};
-		root.childNodes.forEach((child) => walk(child, false, false));
+		root.childNodes.forEach((child) => walk(child, false, false, false));
 		return runs;
 	}
 
@@ -148,6 +161,7 @@
 		if (!field || !field.contains(document.getSelection()?.anchorNode ?? null)) return;
 		bold = document.queryCommandState('bold');
 		italic = document.queryCommandState('italic');
+		underline = document.queryCommandState('underline');
 		ink = inkAtCaret();
 	}
 
@@ -164,7 +178,7 @@
 		return undefined;
 	}
 
-	function format(command: 'bold' | 'italic') {
+	function format(command: 'bold' | 'italic' | 'underline') {
 		field?.focus();
 		// execCommand is the only way to format a selection in an editable field everywhere.
 		document.execCommand(command);
@@ -207,6 +221,14 @@
 				aria-pressed={italic}
 				onpointerdown={(e) => e.preventDefault()}
 				onclick={() => format('italic')}><em>I</em></button
+			>
+			<button
+				type="button"
+				class="tool"
+				aria-label={t('info-tokens.underline')}
+				aria-pressed={underline}
+				onpointerdown={(e) => e.preventDefault()}
+				onclick={() => format('underline')}><u>U</u></button
 			>
 		</div>
 		<div class="group" role="group" aria-label={t('info-tokens.colour')}>

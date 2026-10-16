@@ -19,16 +19,20 @@ export interface TextRun {
 	text: string;
 	bold: boolean;
 	italic: boolean;
+	/** Underlined (Trevor, 2026-10-16), marked `[u]` … `[/u]`. */
+	underline?: boolean;
 	color?: InkColor;
 }
 
-type Piece = { text: string } | { stars: number } | { open: InkColor } | { close: InkColor };
+/** A tag's name: a colour, or `u` for underline. */
+type TagName = InkColor | 'u';
+type Piece = { text: string } | { stars: number } | { open: TagName } | { close: TagName };
 
-const TAG = new RegExp(`(\\*+|\\[\\/?(?:${INK_COLORS.join('|')})\\])`);
+const TAG = new RegExp(`(\\*+|\\[\\/?(?:${[...INK_COLORS, 'u'].join('|')})\\])`);
 
 /**
- * Text, runs of `*` (a run of 4 is two bold markers; 5 or more is plain text) and colour
- * tags (`[red]` … `[/red]`).
+ * Text, runs of `*` (a run of 4 is two bold markers; 5 or more is plain text), colour tags
+ * (`[red]` … `[/red]`) and underline tags (`[u]` … `[/u]`).
  */
 function lex(source: string): Piece[] {
 	const pieces: Piece[] = [];
@@ -36,8 +40,8 @@ function lex(source: string): Piece[] {
 	source.split(TAG).forEach((part, i) => {
 		if (!part) return;
 		if (i % 2 === 0) pieces.push({ text: part });
-		else if (part.startsWith('[/')) pieces.push({ close: part.slice(2, -1) as InkColor });
-		else if (part.startsWith('[')) pieces.push({ open: part.slice(1, -1) as InkColor });
+		else if (part.startsWith('[/')) pieces.push({ close: part.slice(2, -1) as TagName });
+		else if (part.startsWith('[')) pieces.push({ open: part.slice(1, -1) as TagName });
 		else if (part.length > 4) pieces.push({ text: part });
 		else if (part.length === 4) pieces.push({ stars: 2 }, { stars: 2 });
 		else pieces.push({ stars: part.length });
@@ -45,16 +49,21 @@ function lex(source: string): Piece[] {
 	return pieces;
 }
 
-/** Which colour tags have a partner: an open tag pairs with the next close of its colour. */
-function pairColors(pieces: readonly Piece[]): Set<number> {
+/**
+ * Which tags have a partner: an open tag pairs with the next close of its name. Colour and
+ * underline pair separately, so they can overlap.
+ */
+function pairTags(pieces: readonly Piece[]): Set<number> {
 	const paired = new Set<number>();
-	let open: number | undefined;
+	const open: { color?: number; u?: number } = {};
+	const slot = (name: TagName) => (name === 'u' ? 'u' : 'color');
 	pieces.forEach((piece, i) => {
-		if ('open' in piece) open = i;
-		else if ('close' in piece && open !== undefined) {
-			if ((pieces[open] as { open: InkColor }).open !== piece.close) return;
-			paired.add(open).add(i);
-			open = undefined;
+		if ('open' in piece) open[slot(piece.open)] = i;
+		else if ('close' in piece) {
+			const at = open[slot(piece.close)];
+			if (at === undefined || (pieces[at] as { open: TagName }).open !== piece.close) return;
+			paired.add(at).add(i);
+			open[slot(piece.close)] = undefined;
 		}
 	});
 	return paired;
@@ -68,7 +77,7 @@ function pairColors(pieces: readonly Piece[]): Set<number> {
  */
 export function parseRich(source: string): TextRun[] {
 	const pieces = lex(source);
-	const colorsPaired = pairColors(pieces);
+	const tagsPaired = pairTags(pieces);
 	// Which of each marker's roles (bold, italic) found a partner.
 	const roles = pieces.map((p) =>
 		'stars' in p
@@ -100,19 +109,35 @@ export function parseRich(source: string): TextRun[] {
 	const runs: TextRun[] = [];
 	let bold = false;
 	let italic = false;
+	let underline = false;
 	let color: InkColor | undefined;
 	const push = (text: string) => {
 		if (!text) return;
 		const last = runs.at(-1);
-		if (last && last.bold === bold && last.italic === italic && last.color === color)
+		if (
+			last &&
+			last.bold === bold &&
+			last.italic === italic &&
+			!!last.underline === underline &&
+			last.color === color
+		)
 			last.text += text;
-		else runs.push({ text, bold, italic, ...(color ? { color } : {}) });
+		else
+			runs.push({
+				text,
+				bold,
+				italic,
+				...(underline ? { underline } : {}),
+				...(color ? { color } : {})
+			});
 	};
 	pieces.forEach((piece, i) => {
 		if ('open' in piece || 'close' in piece) {
-			if (!colorsPaired.has(i))
+			if (!tagsPaired.has(i))
 				return push('open' in piece ? `[${piece.open}]` : `[/${piece.close}]`);
-			color = 'open' in piece ? piece.open : undefined;
+			const name = 'open' in piece ? piece.open : piece.close;
+			if (name === 'u') underline = 'open' in piece;
+			else color = 'open' in piece ? name : undefined;
 			return;
 		}
 		const role = roles[i];
@@ -128,13 +153,15 @@ export function parseRich(source: string): TextRun[] {
 /** Writes runs back as text with markers, the form custom info tokens are stored in. */
 export function toSource(runs: readonly TextRun[]): string {
 	return runs
-		.map(({ text, bold, italic, color }) => {
+		.map(({ text, bold, italic, underline, color }) => {
 			if (!text.trim()) return text;
 			const mark = (bold ? '**' : '') + (italic ? '*' : '');
 			// Markers hug the words; spaces at the edges stay outside them.
 			const [, lead, body, trail] = /^(\s*)(.*?)(\s*)$/s.exec(text)!;
-			const marked = `${mark}${body}${mark.split('').reverse().join('')}`;
-			return `${lead}${color ? `[${color}]${marked}[/${color}]` : marked}${trail}`;
+			let marked = `${mark}${body}${mark.split('').reverse().join('')}`;
+			if (underline) marked = `[u]${marked}[/u]`;
+			if (color) marked = `[${color}]${marked}[/${color}]`;
+			return `${lead}${marked}${trail}`;
 		})
 		.join('');
 }

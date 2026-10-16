@@ -22,7 +22,7 @@ async function newCard(page: Page, text: string) {
 	await page.getByRole('textbox', { name: 'Text' }).fill(text);
 }
 
-test('Bold, Italic and Colour each apply at once, in the editor, preview and tile', async ({
+test('Bold, Italic, Underline and Colour each apply at once, in the editor, preview and tile', async ({
 	page
 }) => {
 	await page.goto('/info-tokens');
@@ -45,6 +45,10 @@ test('Bold, Italic and Colour each apply at once, in the editor, preview and til
 	await page.getByRole('button', { name: 'Italic' }).tap();
 	await expect(preview.locator('em')).toHaveText('today');
 
+	await select(page, 'are');
+	await page.getByRole('button', { name: 'Underline' }).tap();
+	await expect(preview.locator('u')).toHaveText('are');
+
 	await select(page, 'You');
 	await page.getByRole('button', { name: 'Red' }).tap();
 	await expect(page.getByRole('button', { name: 'Red' })).toHaveAttribute('aria-pressed', 'true');
@@ -55,6 +59,7 @@ test('Bold, Italic and Colour each apply at once, in the editor, preview and til
 	await expect(tile.locator('strong')).toHaveText('cursed');
 	await expect(tile.locator('em')).toHaveText('today');
 	await expect(tile.locator('[data-ink="red"]')).toHaveText('You');
+	await expect(tile.locator('u')).toHaveText('are');
 });
 
 test('a card saved before colours keeps its red words as red, not bold', async ({ page }) => {

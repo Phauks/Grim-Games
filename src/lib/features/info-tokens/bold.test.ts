@@ -79,3 +79,23 @@ describe('colour', () => {
 		);
 	});
 });
+
+describe('underline', () => {
+	it('reads [u] tags, alongside colour and bold', () => {
+		expect(parseRich('a [u]b [red]**c**[/red][/u]')).toEqual([
+			plain('a '),
+			{ ...plain('b '), underline: true },
+			{ ...bold('c'), underline: true, color: 'red' }
+		]);
+	});
+
+	it('writes underline back so it reads the same', () => {
+		const runs = [plain('a '), { ...italic('b'), underline: true, color: 'blue' as const }];
+		expect(toSource(runs)).toBe('a [blue][u]*b*[/u][/blue]');
+		expect(parseRich(toSource(runs))).toEqual(runs);
+	});
+
+	it('keeps an unpartnered [u] as typed', () => {
+		expect(parseRich('[u]x')).toEqual([plain('[u]x')]);
+	});
+});

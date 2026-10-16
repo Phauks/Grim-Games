@@ -89,6 +89,19 @@
 		color: inherit;
 		border-radius: 0;
 	}
+	/* With a mouse, Edit and Delete show only on hover or keyboard focus (Trevor,
+	   2026-10-16); they keep their space, so nothing moves. Touch has no hover, so they
+	   stay visible there. */
+	@media (hover: hover) {
+		.actions {
+			opacity: 0;
+			transition: opacity 0.15s;
+		}
+		.tile:hover .actions,
+		.tile:focus-within .actions {
+			opacity: 1;
+		}
+	}
 	.card {
 		flex: 1;
 		min-width: 0;
