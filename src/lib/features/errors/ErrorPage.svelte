@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { errorLog } from './report.svelte.ts';
 
@@ -8,14 +9,14 @@
 </script>
 
 <main data-testid="error-page">
-	<h1>{notFound ? 'Page not found' : 'Something went wrong'}</h1>
+	<h1>{notFound ? t('errors.pageNotFound') : t('errors.somethingWentWrong')}</h1>
 	<p>
-		{notFound ? 'There is nothing at this address.' : 'This page could not open.'}
+		{notFound ? t('errors.pageNotFoundDetail') : t('errors.pageFailedDetail')}
 	</p>
 	<div class="actions">
-		<Button href={resolve('/')}>Home</Button>
+		<Button href={resolve('/')}>{t('errors.home')}</Button>
 		{#if !notFound}
-			<Button variant="quiet" onclick={() => errorLog.showDetails()}>Details</Button>
+			<Button variant="quiet" onclick={() => errorLog.showDetails()}>{t('errors.details')}</Button>
 		{/if}
 	</div>
 </main>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { reportError } from './report.svelte.ts';
 
@@ -26,8 +27,8 @@
 			{@render fallback(reset)}
 		{:else}
 			<div class="failed" role="status" data-testid="error-boundary">
-				<p>Couldn't show this part.</p>
-				<Button variant="quiet" onclick={reset}>Try again</Button>
+				<p>{t('errors.partFailed')}</p>
+				<Button variant="quiet" onclick={reset}>{t('errors.tryAgain')}</Button>
 			</div>
 		{/if}
 	{/snippet}

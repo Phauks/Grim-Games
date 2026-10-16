@@ -5,6 +5,6 @@
  *
  * `allow` lists text that is not interface text (brand names, symbols), per file.
  */
-export const MIGRATED_PATHS: readonly string[] = ['src/lib/i18n/'];
+export const MIGRATED_PATHS: readonly string[] = ['src/lib/i18n/', 'src/lib/features/errors/'];
 
 export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {};

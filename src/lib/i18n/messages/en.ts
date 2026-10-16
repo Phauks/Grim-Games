@@ -1,5 +1,6 @@
 import type { Catalog } from '#lib/i18n/catalog.ts';
 import { common } from '#lib/i18n/messages/en/common.ts';
+import { errors } from '#lib/i18n/messages/en/errors.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -11,5 +12,6 @@ import { common } from '#lib/i18n/messages/en/common.ts';
  * `Intl.PluralRules` category with a `{count}`.
  */
 export const en = {
-	...common
+	...common,
+	...errors
 } as const satisfies Catalog;

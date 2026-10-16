@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { buildInfo } from '#lib/build-info.ts';
+	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -11,14 +12,14 @@
 	// The corner card plus the details dialog; mounted once by install.ts, outside the layout.
 
 	const latest = $derived(errorLog.entries.find((e) => e.key === errorLog.unseen[0]));
-	const time = new Intl.DateTimeFormat(undefined, { timeStyle: 'short' });
+	const time = $derived(new Intl.DateTimeFormat(locale.current, { timeStyle: 'short' }));
 
 	async function copy(error: AppError) {
 		try {
 			await navigator.clipboard.writeText(errorDetails(error));
-			toast('Copied', 'Error details are on your clipboard.');
+			toast(t('errors.copied'), t('errors.copiedDetail'));
 		} catch {
-			toast('Could not copy', 'Your browser blocked the clipboard.');
+			toast(t('errors.copyFailed'), t('errors.copyFailedDetail'));
 		}
 	}
 </script>
@@ -29,30 +30,41 @@
 		<Icon name="warning" />
 		<p class="text">
 			<strong>
-				Something went wrong{errorLog.unseen.length > 1 ? ` (${errorLog.unseen.length})` : ''}
+				{errorLog.unseen.length > 1
+					? t('errors.somethingWentWrongCount', { count: errorLog.unseen.length })
+					: t('errors.somethingWentWrong')}
 			</strong>
 			<span>{latest.message}</span>
 		</p>
-		<Button variant="quiet" onclick={() => errorLog.showDetails()}>Details</Button>
-		<IconButton icon="close" label="Dismiss" onclick={() => errorLog.dismiss()} />
+		<Button variant="quiet" onclick={() => errorLog.showDetails()}>{t('errors.details')}</Button>
+		<IconButton icon="close" label={t('errors.dismiss')} onclick={() => errorLog.dismiss()} />
 	</div>
 {/if}
 
-<Dialog bind:open={errorLog.open} title="Problems on this device">
+<Dialog bind:open={errorLog.open} title={t('errors.dialogTitle')}>
 	{#if errorLog.entries.length === 0}
-		<p class="none">None</p>
+		<p class="none">{t('common.none')}</p>
 	{:else}
 		<ol class="log">
 			{#each errorLog.entries as error (error.key)}
 				<li>
 					<p class="message"><strong>{error.name}</strong>: {error.message}</p>
 					<p class="meta">
-						{error.area} · {error.page} · {time.format(error.lastAt)}{error.count > 1
-							? ` · ${error.count}×`
-							: ''}
+						{error.count > 1
+							? t('errors.metaRepeated', {
+									area: error.area,
+									page: error.page,
+									time: time.format(error.lastAt),
+									count: error.count
+								})
+							: t('errors.meta', {
+									area: error.area,
+									page: error.page,
+									time: time.format(error.lastAt)
+								})}
 					</p>
 					<div class="row-actions">
-						<Button variant="quiet" onclick={() => copy(error)}>Copy</Button>
+						<Button variant="quiet" onclick={() => copy(error)}>{t('errors.copy')}</Button>
 						<!-- External GitHub link, not an app route. -->
 						<!-- eslint-disable svelte/no-navigation-without-resolve -->
 						<a
@@ -62,7 +74,7 @@
 							rel="noopener"
 						>
 							<!-- eslint-enable svelte/no-navigation-without-resolve -->
-							<Icon name="report" /><span>Report</span>
+							<Icon name="report" /><span>{t('errors.report')}</span>
 						</a>
 					</div>
 				</li>
@@ -75,9 +87,9 @@
 			disabled={errorLog.entries.length === 0}
 			onclick={() => errorLog.clear()}
 		>
-			Clear
+			{t('errors.clear')}
 		</Button>
-		<Button onclick={() => (errorLog.open = false)}>Close</Button>
+		<Button onclick={() => (errorLog.open = false)}>{t('common.close')}</Button>
 	{/snippet}
 </Dialog>
 
