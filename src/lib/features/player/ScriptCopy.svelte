@@ -13,7 +13,7 @@
 	interface Props {
 		script: LoadedScript;
 		/** Seats at the table; highlights that column of the Players breakdown. */
-		players: number;
+		players?: number;
 	}
 
 	let { script, players }: Props = $props();

@@ -1,7 +1,7 @@
 /**
  * The player's notebook, kept in this browser's IndexedDB only (database
- * `grim-games-player`, one record per script). Nothing here is sent anywhere: notes and
- * claims are private to the player's device (09-player-script-view.md).
+ * `grim-games-player`, one record per script). Nothing here is sent anywhere: notes are
+ * private to the player's device (09-player-script-view.md).
  *
  * The database is separate from the Storyteller's saved games (`grim-games`) so the two
  * never share a schema upgrade, and so player mode never reads Storyteller state.
@@ -11,17 +11,9 @@ import {
 	deleteNote,
 	emptyNotebook,
 	migrateNotebook,
-	setLayout,
-	insertSeat,
-	removeSeat,
-	setSeatCount,
-	toggleClaim,
 	updateNote,
-	updateSeat,
-	type PlayerNotebook,
-	type SeatPatch
+	type PlayerNotebook
 } from './notebook.ts';
-import type { SeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 
 /** The player view's own database; Settings > Data clears it by this name. */
@@ -92,7 +84,7 @@ export class NotebookState {
 			if (saved && saved.scriptKey === this.key) this.book = saved;
 		} catch (e) {
 			// The panel says this browser cannot save, so only logged. IndexedDB errors carry
-			// no notebook content (names, notes and claims never go into an error).
+			// no notebook content (notes never go into an error).
 			reportError(e, { area: 'play', notify: false });
 			this.saveError = true;
 		}
@@ -113,24 +105,6 @@ export class NotebookState {
 		}, SAVE_DELAY_MS);
 	}
 
-	setSeatCount(count: number) {
-		this.#change(setSeatCount(this.book, count));
-	}
-	/** Adds a seat at that place in the seating order and returns its id. */
-	insertSeat(index: number, patch: SeatPatch = {}): string {
-		const { book, seatId } = insertSeat(this.book, index, patch);
-		this.#change(book);
-		return seatId;
-	}
-	removeSeat(seatId: string) {
-		this.#change(removeSeat(this.book, seatId));
-	}
-	updateSeat(seatId: string, patch: SeatPatch) {
-		this.#change(updateSeat(this.book, seatId, patch));
-	}
-	toggleClaim(seatId: string, id: string) {
-		this.#change(toggleClaim(this.book, seatId, id));
-	}
 	/** Adds an empty note and returns its id. */
 	addNote(): string {
 		const { book, noteId } = addNote(this.book);
@@ -142,8 +116,5 @@ export class NotebookState {
 	}
 	deleteNote(noteId: string) {
 		this.#change(deleteNote(this.book, noteId));
-	}
-	setLayout(layout: SeatLayout) {
-		this.#change(setLayout(this.book, layout));
 	}
 }

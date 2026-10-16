@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { NightMarker } from '#lib/core/data/index.ts';
 	import { MARKER_TEXT } from '#lib/core/rules/night-order.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
@@ -12,11 +11,9 @@
 
 	interface Props {
 		nights: readonly PlayerNight[];
-		players: number;
 	}
 
-	let { nights, players }: Props = $props();
-	const isEvilInfo = (id: NightMarker) => id === 'minioninfo' || id === 'demoninfo';
+	let { nights }: Props = $props();
 
 	// Tapping a character's icon or name shows its ability and wiki link, like a badge.
 	let shown = $state<Character>();
@@ -40,17 +37,8 @@
 					<li data-step={entry.kind === 'marker' ? entry.id : entry.character.id}>
 						<span class="num">{i + 1}</span>
 						{#if entry.kind === 'marker'}
-							{@const off = isEvilInfo(entry.id) && !n.evilInfo}
-							<span class="icon" data-off={off || undefined}
-								><MarkerToken marker={entry.id} size={48} label="" /></span
-							>
-							<span
-								class="name marker"
-								data-marker={entry.id}
-								aria-disabled={off || undefined}
-								title={off ? t('player.notWithPlayers', { count: players }) : undefined}
-								>{MARKER_TEXT[entry.id].name}</span
-							>
+							<span class="icon"><MarkerToken marker={entry.id} size={48} label="" /></span>
+							<span class="name marker" data-marker={entry.id}>{MARKER_TEXT[entry.id].name}</span>
 						{:else}
 							{@const c = entry.character}
 							<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -130,9 +118,6 @@
 	.icon:has(:global(.token)) {
 		cursor: pointer;
 	}
-	.icon[data-off] {
-		opacity: 0.45;
-	}
 	.name {
 		grid-column: 3;
 		justify-self: start;
@@ -161,10 +146,6 @@
 		grid-row: 1 / span 2;
 		font-family: var(--font-control);
 		color: var(--on-surface-muted);
-	}
-	.marker[aria-disabled] {
-		opacity: 0.45;
-		text-decoration: line-through;
 	}
 	.text {
 		grid-column: 3;

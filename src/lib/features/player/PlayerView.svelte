@@ -32,17 +32,15 @@
 	import ScratchPadDialog from '#lib/ui/scratch/ScratchPadDialog.svelte';
 	import { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import { NotebookState } from './notebook-store.svelte.ts';
-	import { MIN_SEATS, playerCount, scriptKey } from './notebook.ts';
+	import { scriptKey } from './notebook.ts';
 	import NoteEditor from './NoteEditor.svelte';
-	import AddSeatDialog from './AddSeatDialog.svelte';
 	import NotesPanel from './NotesPanel.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
-	import { playerNight, sheetCharacters } from './player-script.ts';
+	import { playerNight } from './player-script.ts';
 	import ScriptCopy from './ScriptCopy.svelte';
-	import SeatCircle from './SeatCircle.svelte';
-	import SeatEditor from './SeatEditor.svelte';
 
-	type Tab = 'script' | 'night' | 'circle' | 'notes';
+	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
+	type Tab = 'script' | 'night' | 'notes';
 
 	let data = $state<GameData>();
 	let numeric = $state<NumericNightOrder>();
@@ -50,8 +48,6 @@
 	let notebook = $state<NotebookState>();
 	let error = $state<string>();
 	let tab = $state<Tab>('script');
-	let editing = $state<string>();
-	let editorOpen = $state(false);
 
 	onMount(async () => {
 		try {
@@ -127,7 +123,6 @@
 	$effect(() => {
 		if (!key || notebook?.key === key) return;
 		const book = new NotebookState(key);
-		editorOpen = false;
 		noteOpen = false;
 		void book.load().then(() => {
 			if (book.key === key) notebook = book;
@@ -154,29 +149,17 @@
 		toast(t('player.cannotSave'), t('player.cannotSaveDetail'));
 	});
 
-	const players = $derived(notebook ? playerCount(notebook.book) : 0);
-	const sheet = $derived(script && data ? sheetCharacters(script, data) : []);
 	const nights = $derived(
 		script && data
-			? (['first', 'other'] as const).map((n) => playerNight(script!, data!, n, players, numeric))
+			? (['first', 'other'] as const).map((n) => playerNight(script!, data!, n, numeric))
 			: []
 	);
-	// The script's characters plus its recommended Travellers, so a Traveller can be claimed.
-	const byId = $derived(new Map(sheet.map((c) => [c.id, c])));
-	const travellers = $derived(sheet.filter((c) => c.type === 'traveller'));
-	let addingSeat = $state(false);
-	const seatIndex = $derived(notebook?.book.seats.findIndex((s) => s.seatId === editing) ?? -1);
 
 	let noteId = $state<string>();
 	let noteOpen = $state(false);
 	function openNote(id: string) {
 		noteId = id;
 		noteOpen = true;
-	}
-
-	function openSeat(seatId: string) {
-		editing = seatId;
-		editorOpen = true;
 	}
 </script>
 
@@ -203,7 +186,6 @@
 			tabs={[
 				{ value: 'script', label: t('player.tab.script') },
 				{ value: 'night', label: t('player.tab.night') },
-				{ value: 'circle', label: t('player.tab.circle') },
 				{ value: 'notes', label: t('player.tab.notes') }
 			]}
 		>
@@ -214,27 +196,15 @@
 						{#if !script || !notebook}
 							<p class="muted">{t('player.loading')}</p>
 						{:else if value === 'script'}
-							<ScriptCopy {script} {players} />
+							<ScriptCopy {script} />
 						{:else if value === 'night'}
-							<PlayerNightOrder {nights} {players} />
-						{:else if value === 'circle'}
-							<SeatCircle
-								seats={notebook.book.seats}
-								characters={byId}
-								layout={notebook.book.layout}
-								onAddSeat={() => (addingSeat = true)}
-								onOpenSeat={openSeat}
-								onLayout={(layout) => notebook!.setLayout(layout)}
-							/>
+							<PlayerNightOrder {nights} />
 						{:else}
 							<NotesPanel
 								notes={notebook.book.notes}
-								seats={notebook.book.seats}
-								characters={byId}
 								scratch={scratch?.strokes ?? []}
 								onAdd={() => openNote(notebook!.addNote())}
 								onOpenNote={openNote}
-								onOpenSeat={openSeat}
 								onOpenScratch={() => scratch && (scratchOpen = true)}
 							/>
 						{/if}
@@ -254,27 +224,6 @@
 	/>
 
 	{#if notebook && script}
-		<ErrorBoundary area="play">
-			<SeatEditor
-				bind:open={editorOpen}
-				seat={notebook.book.seats[seatIndex]}
-				number={seatIndex + 1}
-				characters={sheet}
-				onChange={(patch) => editing && notebook!.updateSeat(editing, patch)}
-				onToggleClaim={(id) => editing && notebook!.toggleClaim(editing, id)}
-				onRemove={notebook.book.seats.length > MIN_SEATS
-					? () => editing && notebook!.removeSeat(editing)
-					: undefined}
-			/>
-		</ErrorBoundary>
-		<ErrorBoundary area="play">
-			<AddSeatDialog
-				bind:open={addingSeat}
-				seats={notebook.book.seats}
-				{travellers}
-				onAdd={(index, claims) => notebook!.insertSeat(index, { claims })}
-			/>
-		</ErrorBoundary>
 		<ErrorBoundary area="play">
 			<NoteEditor
 				bind:open={noteOpen}

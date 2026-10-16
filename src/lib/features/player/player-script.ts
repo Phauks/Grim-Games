@@ -15,7 +15,6 @@ import {
 import { MAX_DEALT_PLAYERS } from '#lib/core/rules/distribution.ts';
 import { scriptJinxes, type ScriptJinx } from '#lib/core/rules/jinxes.ts';
 import { isNightMarker, nightOrder, type Night } from '#lib/core/rules/night-order.ts';
-import { hasEvilTeamInfo } from '#lib/core/rules/teensyville.ts';
 
 export interface TypeGroup {
 	type: CharacterType;
@@ -64,11 +63,6 @@ export type PlayerNightEntry =
 export interface PlayerNight {
 	night: Night;
 	entries: PlayerNightEntry[];
-	/**
-	 * False when Minion and Demon info do not happen at this player count. They stay in the
-	 * list (shown dimmed) so the list never changes length as seats are added.
-	 */
-	evilInfo: boolean;
 }
 
 /**
@@ -80,14 +74,13 @@ export function playerNight(
 	script: LoadedScript,
 	data: GameData,
 	night: Night,
-	players: number,
 	numeric?: NumericNightOrder
 ): PlayerNight {
 	const order = nightOrder({
 		night,
 		sheet: data.nightSheet,
 		inPlay: script.characters,
-		// Always lay out Minion and Demon info; `evilInfo` says whether they happen.
+		// Always lay out Minion and Demon info: the player view doesn't know the player count.
 		players: MAX_DEALT_PLAYERS,
 		customOrder: night === 'first' ? script.meta.firstNight : script.meta.otherNight,
 		numeric
@@ -99,14 +92,5 @@ export function playerNight(
 		else if (step.kind === 'character' && step.character)
 			entries.push({ kind: 'character', character: step.character, text: step.reminder });
 	}
-	return {
-		night,
-		entries,
-		evilInfo:
-			night === 'first' &&
-			hasEvilTeamInfo(
-				players,
-				script.characters.map((c) => c.id)
-			)
-	};
+	return { night, entries };
 }

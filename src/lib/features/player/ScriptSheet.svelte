@@ -18,8 +18,8 @@
 		/** What the sheet lists: the script's characters plus recommended Travellers. */
 		characters: readonly Character[];
 		jinxes: readonly ScriptJinx[];
-		/** Seats in the player's circle; highlights that column of the breakdown. */
-		players: number;
+		/** Players at the table, when known (the board); highlights that column of the breakdown. */
+		players?: number;
 	}
 
 	let { characters, jinxes, players }: Props = $props();
@@ -29,7 +29,10 @@
 		{ length: MAX_DEALT_PLAYERS - MIN_PLAYERS + 1 },
 		(_, i) => MIN_PLAYERS + i
 	);
-	const highlighted = $derived(Math.min(players, MAX_DEALT_PLAYERS));
+	// The board passes its seat count; /play doesn't know how many play, so nothing is marked.
+	const highlighted = $derived(
+		players === undefined ? undefined : Math.min(players, MAX_DEALT_PLAYERS)
+	);
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const nameOf = (id: string) => byId.get(id)?.name ?? id;
 	const TONES: Partial<Record<Character['type'], 'good' | 'evil'>> = {

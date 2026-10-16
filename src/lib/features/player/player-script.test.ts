@@ -29,25 +29,17 @@ describe('player script view', () => {
 	});
 
 	it('lists the night order as names only, with Minion and Demon info on the first night', () => {
-		const first = playerNight(tb, data, 'first', 8);
+		const first = playerNight(tb, data, 'first');
 		const ids = first.entries.map((e) => (e.kind === 'marker' ? e.id : e.character.id));
 		expect(ids[0]).toBe('dusk');
 		expect(ids.at(-1)).toBe('dawn');
 		expect(ids.indexOf('minioninfo')).toBeLessThan(ids.indexOf('demoninfo'));
 		expect(ids).toContain('poisoner');
 		expect(ids).not.toContain('imp');
-		expect(first.evilInfo).toBe(true);
-		const other = playerNight(tb, data, 'other', 8);
+		const other = playerNight(tb, data, 'other');
 		expect(other.entries.some((e) => e.kind === 'character' && e.character.id === 'imp')).toBe(
 			true
 		);
-		expect(other.evilInfo).toBe(false);
-	});
-
-	it('keeps Minion and Demon info listed but off below 7 players (wiki: Glossary)', () => {
-		const five = playerNight(tb, data, 'first', 5);
-		expect(five.entries.some((e) => e.kind === 'marker' && e.id === 'minioninfo')).toBe(true);
-		expect(five.evilInfo).toBe(false);
 	});
 
 	it('has no jinxes on Trouble Brewing, and finds them on a script that has a pair', () => {

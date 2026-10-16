@@ -3,142 +3,73 @@ import {
 	addNote,
 	deleteNote,
 	emptyNotebook,
-	insertSeat,
-	MAX_SEATS,
 	migrateNotebook,
-	MIN_SEATS,
-	removeSeat,
+	NOTEBOOK_VERSION,
 	scriptKey,
-	setLayout,
-	setSeatCount,
-	toggleClaim,
-	updateNote,
-	updateSeat
+	updateNote
 } from './notebook.ts';
-import {
-	DEFAULT_SEAT_LAYOUT,
-	withGap,
-	withPlaced,
-	withShape
-} from '#lib/ui/seating/seat-layout.ts';
 
 describe('player notebook', () => {
-	it('adds a seat between two players and removes one seat with its data', () => {
-		let book = emptyNotebook('edition:tb', 5, 0);
-		book = updateSeat(book, 's3', { name: 'Sam', note: 'quiet' });
-		const added = insertSeat(book, 2, { claims: ['beggar'] });
-		expect(added.book.seats.map((s) => s.seatId)).toEqual(['s1', 's2', 's6', 's3', 's4', 's5']);
-		expect(added.book.seats[2]).toMatchObject({ seatId: added.seatId, claims: ['beggar'] });
-		book = removeSeat(added.book, 's3');
-		expect(book.seats.map((s) => s.seatId)).toEqual(['s1', 's2', 's6', 's4', 's5']);
-		expect(book.seats.some((s) => s.name === 'Sam')).toBe(false);
-		let small = emptyNotebook('edition:tb', MIN_SEATS, 0);
-		small = removeSeat(small, 's1');
-		expect(small.seats).toHaveLength(MIN_SEATS);
-	});
-
 	it('keys official editions by id and custom scripts by name', () => {
 		expect(scriptKey({ edition: 'tb', name: 'Trouble Brewing' })).toBe('edition:tb');
 		expect(scriptKey({ name: ' My Script ' })).toBe('script:my script');
 	});
 
-	it('keeps seat data when seats are added or removed, and never reuses an id', () => {
-		let book = emptyNotebook('edition:tb', 6, 0);
-		book = updateSeat(book, 's2', { name: 'Alex', claims: ['empath'] });
-		book = setSeatCount(book, 5);
-		expect(book.seats).toHaveLength(5);
-		expect(book.seats[1]).toMatchObject({ name: 'Alex', claims: ['empath'] });
-		book = setSeatCount(book, 7);
-		expect(book.seats.map((s) => s.seatId)).toEqual(['s1', 's2', 's3', 's4', 's5', 's6', 's7']);
-		expect(setSeatCount(book, 99).seats).toHaveLength(MAX_SEATS);
-		expect(setSeatCount(book, 1).seats).toHaveLength(MIN_SEATS);
-	});
-
-	it('only dead players can have spent their vote', () => {
-		let book = emptyNotebook('edition:tb', 5, 0);
-		book = updateSeat(book, 's1', { dead: true, ghostVoteUsed: true });
-		expect(book.seats[0].ghostVoteUsed).toBe(true);
-		book = updateSeat(book, 's1', { dead: false });
-		expect(book.seats[0].ghostVoteUsed).toBe(false);
-	});
-
-	it('reads a saved notebook and refuses data it does not understand', () => {
-		const saved = JSON.parse(
-			JSON.stringify(toggleClaim(emptyNotebook('edition:tb', 5, 1), 's3', 'chef'))
-		);
-		expect(migrateNotebook(saved)).toEqual(saved);
-		expect(migrateNotebook({ ...saved, schemaVersion: 5 })).toBeUndefined();
-		expect(migrateNotebook('nonsense')).toBeUndefined();
-		const damaged = migrateNotebook({
-			schemaVersion: 2,
+	it('starts with one empty note', () => {
+		expect(emptyNotebook('edition:tb', 0)).toEqual({
+			schemaVersion: NOTEBOOK_VERSION,
 			scriptKey: 'edition:tb',
-			seats: [{ name: 3 }]
+			notes: [{ noteId: 'n1', title: '', text: '' }],
+			updatedAt: 0
 		});
-		expect(damaged?.seats).toHaveLength(MIN_SEATS);
-		expect(damaged?.seats[0].name).toBe('');
-	});
-
-	it('a seat can claim several characters, toggled one at a time', () => {
-		let book = emptyNotebook('edition:tb', 5, 0);
-		book = toggleClaim(book, 's1', 'chef');
-		book = toggleClaim(book, 's1', 'empath');
-		expect(book.seats[0].claims).toEqual(['chef', 'empath']);
-		book = toggleClaim(book, 's1', 'chef');
-		expect(book.seats[0].claims).toEqual(['empath']);
-	});
-
-	it("turns an older notebook's single guess into a claim and drops 'This is me'", () => {
-		const v3 = {
-			schemaVersion: 3,
-			scriptKey: 'edition:tb',
-			seats: [{ seatId: 's1', name: 'Sam', guess: 'chef' }, { seatId: 's2' }],
-			me: 's1',
-			notes: []
-		};
-		const book = migrateNotebook(v3)!;
-		expect(book.seats.map((s) => s.claims)).toEqual([['chef'], [], [], [], []]);
-		expect(book).not.toHaveProperty('me');
-	});
-
-	it('moves a v1 notes pad into one untitled note', () => {
-		const v1 = {
-			schemaVersion: 1,
-			scriptKey: 'edition:tb',
-			seats: [],
-			notes: 'Sam: Chef 1',
-			updatedAt: 5
-		};
-		expect(migrateNotebook(v1)?.notes).toEqual([{ noteId: 'n1', title: '', text: 'Sam: Chef 1' }]);
 	});
 
 	it('adds, edits and deletes titled notes with ids that never repeat', () => {
-		let book = emptyNotebook('edition:tb', 5, 0);
-		const added = addNote(book);
-		book = updateNote(added.book, added.noteId, { title: 'My bluff', text: 'Chef: 0' });
-		expect(book.notes.map((n) => [n.noteId, n.title])).toEqual([
-			['n1', ''],
-			['n2', 'My bluff']
-		]);
+		let book = emptyNotebook('edition:tb', 0);
+		const first = addNote(book);
+		book = updateNote(first.book, first.noteId, { title: 'Bluffs', text: 'Chef, Monk' });
+		expect(book.notes[1]).toEqual({ noteId: 'n2', title: 'Bluffs', text: 'Chef, Monk' });
 		book = deleteNote(book, 'n1');
-		expect(addNote(book).noteId).toBe('n3');
-		expect(migrateNotebook(JSON.parse(JSON.stringify(book)))?.notes).toEqual(book.notes);
+		const second = addNote(book);
+		expect(second.noteId).toBe('n3');
 	});
 
-	it('keeps the seat layout, forgetting seats that have left', () => {
-		let book = emptyNotebook('edition:tb', 6, 0);
-		book = setLayout(
-			book,
-			withPlaced(withGap(withShape(book.layout, 'circle'), 's2', 2), 's6', { x: 20, y: 80 })
-		);
-		expect(migrateNotebook(JSON.parse(JSON.stringify(book)))?.layout).toEqual(book.layout);
-		book = setSeatCount(book, 5);
-		expect(book.layout).toEqual({ shape: 'circle', gaps: { s2: 2 }, placed: {} });
+	it('reads a saved notebook and refuses data it does not understand', () => {
+		const book = updateNote(emptyNotebook('edition:tb', 5), 'n1', { title: 'Evil team' });
+		expect(migrateNotebook(JSON.parse(JSON.stringify(book)))).toEqual(book);
+		expect(migrateNotebook({ schemaVersion: 99, scriptKey: 'edition:tb' })).toBeUndefined();
+		expect(migrateNotebook('nope')).toBeUndefined();
+		expect(migrateNotebook({ schemaVersion: 4 })).toBeUndefined();
 	});
 
-	it('gives v2 notebooks the default ring and repairs a damaged layout', () => {
-		const v2 = { schemaVersion: 2, scriptKey: 'edition:tb', seats: [], notes: [] };
-		expect(migrateNotebook(v2)?.layout).toEqual(DEFAULT_SEAT_LAYOUT);
-		const damaged = migrateNotebook({ ...v2, schemaVersion: 3, layout: { shape: 7, gaps: 'x' } });
-		expect(damaged?.layout).toEqual(DEFAULT_SEAT_LAYOUT);
+	it('moves a v1 notes pad into one untitled note', () => {
+		expect(
+			migrateNotebook({ schemaVersion: 1, scriptKey: 'edition:tb', notes: 'hi' })?.notes
+		).toEqual([{ noteId: 'n1', title: '', text: 'hi' }]);
+	});
+
+	it('keeps notes written on seats in v1 to v4 as titled notes, dropping the circle', () => {
+		const book = migrateNotebook({
+			schemaVersion: 4,
+			scriptKey: 'edition:tb',
+			seats: [
+				{ seatId: 's1', name: 'Alex', claims: ['empath'], dead: true, note: 'Pinged me' },
+				{ seatId: 's2', name: '', claims: [], note: '   ' },
+				{ seatId: 's3', name: '', claims: [], note: 'Quiet' }
+			],
+			notes: [{ noteId: 'n1', title: 'Mine', text: 'x' }],
+			layout: { shape: 'oval', gaps: {}, placed: {} },
+			updatedAt: 7
+		});
+		expect(book).toEqual({
+			schemaVersion: NOTEBOOK_VERSION,
+			scriptKey: 'edition:tb',
+			notes: [
+				{ noteId: 'n1', title: 'Mine', text: 'x' },
+				{ noteId: 'n2', title: 'Seat 1 · Alex', text: 'Pinged me' },
+				{ noteId: 'n3', title: 'Seat 3', text: 'Quiet' }
+			],
+			updatedAt: 7
+		});
 	});
 });
