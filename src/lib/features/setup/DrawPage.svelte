@@ -13,6 +13,8 @@
 	import RevealDialog from './RevealDialog.svelte';
 	import { seatLabel } from './seat-label.ts';
 	import { tileSymbols } from './tile-face.ts';
+	import SetupSteps from './SetupSteps.svelte';
+	import { remindersHref } from './setup-steps.ts';
 
 	interface Props {
 		port: SetupGamePort;
@@ -92,14 +94,17 @@
 
 <main>
 	<header>
-		<h1>Draw</h1>
 		{#if game}
-			<Button
-				variant="quiet"
-				icon="back"
-				href={resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })}>Characters</Button
-			>
+			<div class="back">
+				<Button
+					variant="quiet"
+					icon="back"
+					href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>Grimoire</Button
+				>
+			</div>
+			<SetupSteps gameId={game.gameId} current="draw" hasBag={bag !== undefined} />
 		{/if}
+		<h1>Draw</h1>
 	</header>
 
 	<ErrorBoundary area="setup">
@@ -146,9 +151,9 @@
 
 	<div class="actions">
 		{#if game}
-			<Button
-				variant={done ? 'accent' : 'quiet'}
-				href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>Grimoire</Button
+			<!-- The next step: the board, with its setup reminders tray open. -->
+			<Button variant={done ? 'accent' : 'quiet'} icon="forward" href={remindersHref(game.gameId)}
+				>Setup reminders</Button
 			>
 		{/if}
 	</div>
@@ -176,14 +181,16 @@
 		padding: var(--space-4) var(--space-4) 0;
 	}
 	header {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-1);
+	}
+	.back {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
 	}
 	h1 {
-		margin: 0;
+		margin: var(--space-2) 0 0;
+		overflow-wrap: anywhere;
 	}
 	.next {
 		display: flex;

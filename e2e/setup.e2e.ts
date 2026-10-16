@@ -26,6 +26,28 @@ test('the setup table is shown and follows the player count', async ({ page }) =
 	await expect(table.locator('tbody [data-current]')).toHaveText(['5', '0', '1', '1']);
 });
 
+test('setup is one flow: Characters, Draw, then Setup reminders', async ({ page }) => {
+	await selectionFor(page, 5);
+	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
+	const steps = page.getByRole('navigation', { name: 'Setup steps' });
+	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Characters/);
+	// No bag yet, so the Draw step can't be opened.
+	await expect(steps.getByRole('link', { name: 'Draw' })).toHaveCount(0);
+
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
+	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await expect(page).toHaveURL(`${board}/setup`);
+	await steps.getByRole('link', { name: 'Draw' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+
+	// Back to the board from any step.
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await expect(page).toHaveURL(board);
+});
+
 const choice = (page: Page, name: string) =>
 	page.getByRole('button', { name, exact: true }).and(page.locator('[aria-pressed]'));
 
@@ -238,11 +260,11 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await expect(page.getByTestId('next-seat')).toHaveText('None');
 	await noSidewaysScroll(page);
 
-	// Setup reminders live on the board now, not in the draw.
-	await expect(page.getByRole('button', { name: 'Setup reminders' })).toHaveCount(0);
-
-	await page.getByRole('link', { name: 'Grimoire' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	// The last step is the board's setup reminders tray, not a list in the draw.
+	const steps = page.getByRole('navigation', { name: 'Setup steps' });
+	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
+	await page.getByRole('link', { name: 'Setup reminders', exact: true }).last().tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
 	await expect(page.getByRole('button', { name: /^Seat 1: Ana, / })).toBeVisible();
 	for (let n = 1; n <= 5; n++) {
 		await expect(page.getByRole('button', { name: new RegExp(`^Seat ${n}: .+`) })).toBeVisible();

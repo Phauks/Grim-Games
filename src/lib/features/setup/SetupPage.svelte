@@ -33,6 +33,8 @@
 	import type { SetupGamePort } from './game-port.ts';
 	import SetupCheckDialog from './SetupCheckDialog.svelte';
 	import SetupTable from './SetupTable.svelte';
+	import SetupSteps from './SetupSteps.svelte';
+	import { currentSetupStep } from './setup-steps.ts';
 	import { buildErrors } from './build-check.ts';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
 
@@ -175,6 +177,20 @@
 
 <main>
 	<header class="top">
+		{#if game}
+			<div class="back">
+				<Button
+					variant="quiet"
+					icon="back"
+					href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>Grimoire</Button
+				>
+			</div>
+			<SetupSteps
+				gameId={game.gameId}
+				current="characters"
+				hasBag={currentSetupStep(game) !== 'characters'}
+			/>
+		{/if}
 		<h1>Characters</h1>
 		<p class="script">
 			<span class="label">Script</span>
@@ -317,8 +333,11 @@
 		gap: var(--space-1);
 	}
 	h1 {
-		margin: 0;
+		margin: var(--space-2) 0 0;
 		overflow-wrap: anywhere;
+	}
+	.back {
+		display: flex;
 	}
 	.script {
 		display: flex;
@@ -405,8 +424,10 @@
 	.side {
 		display: contents;
 	}
+	/* Sits before the list in the page, so it is raised to stay over the cards it sticks above. */
 	.actions {
 		order: 1;
+		z-index: var(--z-raised);
 	}
 	/*
 	 * A computer window: players, setup sheet, counts, search and buttons in a column beside
