@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import favicon from '#lib/assets/favicon.svg';
 	import '#lib/ui/base.css';
@@ -8,7 +9,9 @@
 	import SettingsModal from '#lib/features/settings/SettingsModal.svelte';
 	import { startAccount } from '#lib/features/account/start.ts';
 	import AppHeader from '#lib/features/shell/AppHeader.svelte';
-	import { showsAppShell } from '#lib/features/shell/shell.ts';
+	import AppNav from '#lib/features/shell/AppNav.svelte';
+	import NavDrawer from '#lib/features/shell/NavDrawer.svelte';
+	import { leaveTo, mustAskBeforeLeaving, showsAppShell } from '#lib/features/shell/shell.ts';
 	import { locale } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Toaster from '#lib/ui/primitives/Toaster.svelte';
@@ -30,6 +33,16 @@
 		void startAccount();
 	});
 
+	// A game in progress or a bag draw asks before any navigation leaves it (shell.ts).
+	beforeNavigate((navigation) => {
+		const to = navigation.to?.url ?? null;
+		if (!to || !mustAskBeforeLeaving(new URL(to.href), navigation.type, new URL(page.url.href)))
+			return;
+		navigation.cancel();
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- an app URL SvelteKit resolved
+		leaveTo(() => void goto(to.href));
+	});
+
 	// A game in progress hides the header and footer (src/lib/features/shell/shell.ts).
 	const shell = $derived(showsAppShell(page.data));
 </script>
@@ -42,11 +55,13 @@
 {#if shell}<AppHeader />{/if}
 <!-- Grows to fill the screen so the footer sits at the bottom on short pages. -->
 <div class="app-body">
+	{#if shell}<AppNav />{/if}
 	<div class="app-main">{@render children()}</div>
 </div>
 {#if shell}<AppFooter />{/if}
 
 <SettingsModal />
+<NavDrawer />
 <GlossaryPopover />
 <Toaster />
 <UpdateBanner />

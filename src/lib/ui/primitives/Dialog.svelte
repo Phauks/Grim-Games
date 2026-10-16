@@ -12,9 +12,10 @@
 		role?: 'dialog' | 'alertdialog';
 		/**
 		 * `full` fills a phone screen and becomes a large panel on wider screens; `max` fills
-		 * a phone screen and nearly all of a wider one (the day sheet, Trevor 2026-10-16).
+		 * a phone screen and nearly all of a wider one (the day sheet, Trevor 2026-10-16);
+		 * `side` is a full-height panel sliding in from the left edge (the navigation drawer).
 		 */
-		size?: 'normal' | 'full' | 'max';
+		size?: 'normal' | 'full' | 'max' | 'side';
 		children: Snippet;
 		actions?: Snippet;
 		/** Shown before the title, e.g. a character badge for the seat a menu acts on. */
@@ -111,6 +112,26 @@
 			padding-top: calc(var(--space-4) + env(safe-area-inset-top));
 		}
 	}
+	:global([data-scope='dialog'][data-part='positioner']:has([data-size='side'])) {
+		place-items: stretch start;
+		padding: 0;
+	}
+	:global([data-scope='dialog'][data-part='content'][data-size='side']) {
+		width: min(85vw, calc(18 * var(--u)));
+		max-height: none;
+		height: 100%;
+		border: 0;
+		border-right: var(--card-border);
+		border-radius: 0;
+		padding-top: calc(var(--space-4) + env(safe-area-inset-top));
+		padding-left: calc(var(--space-4) + env(safe-area-inset-left));
+	}
+	:global([data-scope='dialog'][data-part='content'][data-size='side'][data-state='open']) {
+		animation: side-in var(--duration-normal) var(--ease-out);
+	}
+	:global([data-scope='dialog'][data-part='content'][data-size='side'][data-state='closed']) {
+		animation: side-out var(--duration-fast) var(--ease-in) forwards;
+	}
 	:global([data-scope='dialog'][data-state='open']) {
 		animation: dialog-in var(--duration-normal) var(--ease-out);
 	}
@@ -160,6 +181,16 @@
 	@keyframes -global-dialog-in {
 		from {
 			opacity: 0;
+		}
+	}
+	@keyframes -global-side-in {
+		from {
+			transform: translateX(-100%);
+		}
+	}
+	@keyframes -global-side-out {
+		to {
+			transform: translateX(-100%);
 		}
 	}
 	@keyframes -global-dialog-out {

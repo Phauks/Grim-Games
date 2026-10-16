@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NavMenuButton from './NavMenuButton.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import AccountButton from '#lib/features/account/AccountButton.svelte';
@@ -7,7 +8,10 @@
 </script>
 
 <header>
-	<a class="brand" href={resolve('/')}>Grim-Games</a>
+	<div class="start">
+		<span class="menu"><NavMenuButton /></span>
+		<a class="brand" href={resolve('/')}>Grim-Games</a>
+	</div>
 	<div class="actions">
 		<IconButton icon="settings" label={t('shell.settings')} onclick={() => settingsDialog.show()} />
 		<!-- Mounted on every page: it also starts the signed-in check. -->
@@ -24,9 +28,23 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
-		padding: env(safe-area-inset-top) var(--space-2) 0 var(--space-4);
+		padding: env(safe-area-inset-top) var(--space-2) 0;
 		background: var(--surface);
 		border-bottom: 1px solid var(--border);
+	}
+	.start {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+	/* Wide screens have the sidebar instead (AppNav). */
+	@media (min-width: 64rem) {
+		.menu {
+			display: none;
+		}
+		.start {
+			padding-left: var(--space-2);
+		}
 	}
 	.brand {
 		display: inline-flex;

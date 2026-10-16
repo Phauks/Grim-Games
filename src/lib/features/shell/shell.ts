@@ -16,25 +16,63 @@ export function showsAppShell(data: Record<string, unknown> | null | undefined):
 }
 
 /**
- * Asks before leaving a game. A game screen registers one while it is open; the navigation
- * menu calls `leaveTo` so leaving through it confirms exactly as Exit game does.
+ * Asks before leaving a screen where leaving would lose or interrupt something: a game in
+ * progress (board), a bag draw (Character selection). The screen registers a guard while it
+ * is open, which shows its own confirmation and calls `leave` on Confirm.
+ *
+ * The root layout checks every navigation against it (`beforeNavigate`): the navigation menu,
+ * in-page links and the browser's Back button all ask first. Navigations that stay inside the
+ * screen (`within`, e.g. the board and its day screen) and closing the tab don't ask.
  */
 export type LeaveGuard = (leave: () => void) => void;
 
-let leaveGuard: LeaveGuard | null = null;
+interface Registered {
+	guard: LeaveGuard;
+	within: (url: URL) => boolean;
+}
 
-/** Registers the guard; returns a function that removes it (use as an `$effect` cleanup). */
-export function setLeaveGuard(guard: LeaveGuard): () => void {
-	leaveGuard = guard;
+let registered: Registered | null = null;
+// Set while a confirmed leave navigates, so that navigation isn't asked about again.
+let confirmed = false;
+
+/**
+ * Registers the guard; returns a function that removes it (use as an `$effect` cleanup).
+ * `within` lists the URLs that are still this screen; by default any change of path asks.
+ */
+export function setLeaveGuard(
+	guard: LeaveGuard,
+	within: (url: URL) => boolean = () => false
+): () => void {
+	const entry = { guard, within };
+	registered = entry;
 	return () => {
-		if (leaveGuard === guard) leaveGuard = null;
+		if (registered === entry) registered = null;
 	};
 }
 
-/** Runs `leave` now, or after the open game's confirmation when one is registered. */
+/** Runs `leave` now, or after the screen's confirmation when a guard is registered. */
 export function leaveTo(leave: () => void): void {
-	if (leaveGuard) leaveGuard(leave);
-	else leave();
+	if (!registered) return leave();
+	registered.guard(() => {
+		confirmed = true;
+		try {
+			leave();
+		} finally {
+			// goto() checks navigation synchronously; clear the pass in case it didn't navigate.
+			queueMicrotask(() => (confirmed = false));
+		}
+	});
+}
+
+/**
+ * Whether a navigation must ask first. `type` is SvelteKit's navigation type; `leave` (closing
+ * the tab, typing an address) can only show the browser's own prompt, so it never asks here.
+ */
+export function mustAskBeforeLeaving(to: URL | null, type: string, from: URL): boolean {
+	if (!registered || confirmed || type === 'leave' || !to) return false;
+	if (to.origin !== from.origin) return false;
+	if (to.pathname === from.pathname) return false;
+	return !registered.within(to);
 }
 
 /** Opens the Settings modal over the current page, optionally at one section (e.g. `appearance`). */
