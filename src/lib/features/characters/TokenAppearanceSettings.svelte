@@ -45,7 +45,7 @@
 <!-- Space for the largest sizes is kept, so changing a size never moves the settings below. -->
 <div class="preview" aria-hidden="true" data-testid="token-preview">
 	{#if sample}<CharacterToken character={sample} size={56} />{/if}
-	<ReminderToken label="Red herring" type="townsfolk" />
+	<ReminderToken label="Poisoned" type="minion" />
 </div>
 
 <SettingSegmented
@@ -82,6 +82,7 @@
 				<!-- Disabled, not hidden, when nothing changed: no reflow. -->
 				<Button
 					variant="quiet"
+					aria-label="Reset {colour.label}"
 					disabled={!value.colours[colour.key]}
 					onclick={() => setColour(colour.key, undefined)}>Reset</Button
 				>
@@ -102,8 +103,10 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
-		/* The XL token (56px × 1.5) and the XL chip fit without the row growing. */
-		min-height: calc(56px * 1.5 + var(--space-2));
+		/* A fixed height that fits the XL token (56px × 1.5) and the XL chip at any Text size, so
+		   changing a size never moves the settings below. */
+		height: max(calc(56px * 1.5 + var(--space-2)), 3.3rem);
+		white-space: nowrap;
 		margin-bottom: var(--space-5);
 		overflow: hidden;
 	}
