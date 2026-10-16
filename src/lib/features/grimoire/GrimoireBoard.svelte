@@ -4,6 +4,8 @@
 	import NightStrip from './NightStrip.svelte';
 	import { boardNightSteps, stepHolders } from './night-steps.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
+	import { endedGames } from './device-notes.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
@@ -440,6 +442,16 @@
 	/** Who wakes for the current walk-through step, marked on the board. */
 	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
+	// ── End game (Trevor, 2026-10-16): the game moves to Past games; its live room closes ──
+	let endOpen = $state(false);
+	let winner = $state<'good' | 'evil' | undefined>();
+	function endGame() {
+		endOpen = false;
+		endedGames.end(game.gameId, winner);
+		if (roomHost().code) roomHost().close();
+		void goto(resolve('/'));
+	}
+
 	// A Traveller's alignment by draw, kept here: setting it ends the step that opened it.
 	let drawFor = $state<SeatId | undefined>();
 	let drawOpen = $state(false);
@@ -788,6 +800,10 @@
 		<Button variant="quiet" icon="back" onclick={() => fromMenu(() => (exitOpen = true))}>
 			Exit game
 		</Button>
+		<!-- Exit leaves the game to come back to; End moves it to Past games (Trevor, 2026-10-16). -->
+		<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
+			End game
+		</Button>
 	</div>
 </Dialog>
 
@@ -826,6 +842,31 @@
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (exitOpen = false)}>Cancel</Button>
 		<Button variant="accent" icon="back" onclick={() => goto(resolve('/'))}>Exit game</Button>
+	{/snippet}
+</Dialog>
+
+<Dialog bind:open={endOpen} title="End game?" role="alertdialog">
+	<dl class="change">
+		<dt>Now</dt>
+		<dd>In Continue and Resume game</dd>
+		<dt>Becomes</dt>
+		<dd>In Past games on Resume game, where it can be reopened</dd>
+	</dl>
+	<div class="winner" role="radiogroup" aria-label="Winning team">
+		<span class="winner-label">Winner</span>
+		{#each [['good', 'Good'], ['evil', 'Evil'], [undefined, 'Not recorded']] as const as [team, text] (text)}
+			<button
+				type="button"
+				role="radio"
+				aria-checked={winner === team}
+				data-team={team}
+				onclick={() => (winner = team)}>{text}</button
+			>
+		{/each}
+	</div>
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (endOpen = false)}>Cancel</Button>
+		<Button variant="danger" icon="check" onclick={endGame}>Confirm</Button>
 	{/snippet}
 </Dialog>
 
@@ -1083,6 +1124,40 @@
 	}
 	.change dd {
 		margin: 0;
+	}
+	.winner {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+		margin-top: var(--space-3);
+	}
+	.winner-label {
+		margin-inline-end: var(--space-2);
+		color: var(--on-surface-muted);
+		font-size: 0.85rem;
+	}
+	.winner button {
+		min-height: var(--tap-target);
+		padding: 0 var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: none;
+		color: inherit;
+		font: 600 0.9rem var(--font-control);
+		cursor: pointer;
+	}
+	.winner button[aria-checked='true'] {
+		border-color: var(--accent);
+		background: var(--surface-selected);
+	}
+	.winner button[aria-checked='true'][data-team='good'] {
+		background: var(--good);
+		color: var(--on-good);
+	}
+	.winner button[aria-checked='true'][data-team='evil'] {
+		background: var(--evil);
+		color: var(--on-evil);
 	}
 	/* On a phone the arranging controls need the whole bar. */
 	@media (max-width: 479.98px) {

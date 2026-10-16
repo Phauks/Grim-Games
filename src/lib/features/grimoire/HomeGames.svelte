@@ -5,6 +5,7 @@
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import { endedGames } from './device-notes.ts';
 
 	/**
 	 * The home page's way into games (Trevor, 2026-10-16): New game and Resume game are
@@ -14,7 +15,9 @@
 	onMount(async () => {
 		try {
 			const { games } = await gameStore().list();
-			latest = games[0];
+			// An ended game is in Past games, not Continue (Trevor, 2026-10-16).
+			const ended = endedGames.read();
+			latest = games.find((g) => !ended[g.gameId]);
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		}

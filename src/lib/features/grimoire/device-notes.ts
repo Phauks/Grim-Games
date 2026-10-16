@@ -183,3 +183,55 @@ export const nightViews = {
 		}
 	}
 };
+
+const ENDED_KEY = 'grim-games:ended-games:v1';
+
+/** A game the Storyteller ended (Trevor, 2026-10-16), and which team won if recorded. */
+export interface EndedGame {
+	endedAt: number;
+	winner?: 'good' | 'evil';
+}
+
+function readEnded(): Record<string, EndedGame> {
+	try {
+		const raw: unknown = JSON.parse(globalThis.localStorage?.getItem(ENDED_KEY) ?? '{}');
+		if (typeof raw !== 'object' || raw === null) return {};
+		const out: Record<string, EndedGame> = {};
+		for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+			const e = v as Record<string, unknown> | null;
+			if (!e || typeof e.endedAt !== 'number') continue;
+			out[id] = { endedAt: e.endedAt };
+			if (e.winner === 'good' || e.winner === 'evil') out[id].winner = e.winner;
+		}
+		return out;
+	} catch {
+		return {};
+	}
+}
+
+function writeEnded(all: Record<string, EndedGame>): void {
+	try {
+		globalThis.localStorage?.setItem(ENDED_KEY, JSON.stringify(all));
+	} catch {
+		// Storage blocked: the game stays in the active list.
+	}
+}
+
+/**
+ * Ended games: moved out of Continue and Resume into Past games on this device. The game
+ * itself stays saved, so reopening it puts it back.
+ */
+export const endedGames = {
+	read: readEnded,
+	end(gameId: GameId, winner?: 'good' | 'evil'): void {
+		writeEnded({
+			...readEnded(),
+			[gameId]: { endedAt: Date.now(), ...(winner ? { winner } : {}) }
+		});
+	},
+	reopen(gameId: GameId): void {
+		const all = readEnded();
+		delete all[gameId];
+		writeEnded(all);
+	}
+};

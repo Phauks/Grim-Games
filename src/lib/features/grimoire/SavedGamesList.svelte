@@ -9,16 +9,26 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import { seatLayouts } from './device-notes.ts';
+	import { endedGames, seatLayouts, type EndedGame } from './device-notes.ts';
+	import { goto } from '$app/navigation';
 
 	// ── Saved games ──
-	let games = $state<SavedGameSummary[]>([]);
+	let all = $state<SavedGameSummary[]>([]);
+	let ended = $state<Record<string, EndedGame>>({});
+	/** Games still being played; ended ones are listed under Past games (Trevor, 2026-10-16). */
+	const games = $derived(all.filter((g) => !ended[g.gameId]));
+	const past = $derived(
+		all
+			.filter((g) => ended[g.gameId])
+			.sort((a, b) => ended[b.gameId].endedAt - ended[a.gameId].endedAt)
+	);
 	let unreadable = $state<UnreadableGame[]>([]);
 	let loaded = $state(false);
 
 	async function refresh() {
 		try {
-			({ games, unreadable } = await gameStore().list());
+			({ games: all, unreadable } = await gameStore().list());
+			ended = endedGames.read();
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		}
@@ -36,12 +46,29 @@
 		try {
 			await gameStore().delete(deleting);
 			seatLayouts.forget(deleting);
+			endedGames.reopen(deleting);
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		}
 		deleting = undefined;
 		await refresh();
 	}
+
+	// ── Past games: reopening one puts it back in Resume game ──
+	let reopening = $state<SavedGameSummary | undefined>();
+	let reopenOpen = $state(false);
+	function reopen() {
+		reopenOpen = false;
+		if (!reopening) return;
+		endedGames.reopen(reopening.gameId);
+		void goto(resolve('/grimoire/[gameId]', { gameId: reopening.gameId }));
+	}
+	const winnerText = (id: GameId) =>
+		ended[id]?.winner === 'good'
+			? 'Good won'
+			: ended[id]?.winner === 'evil'
+				? 'Evil won'
+				: 'Winner not recorded';
 
 	/** Where a game is up to, for the list. */
 	const stageText = (game: SavedGameSummary) =>
@@ -95,11 +122,62 @@
 	</ul>
 </section>
 
+<section aria-labelledby="past-games">
+	<h2 id="past-games">Past games</h2>
+	{#if loaded && past.length === 0}
+		<p class="none">None</p>
+	{/if}
+	<ul class="games">
+		{#each past as game (game.gameId)}
+			<li>
+				<button
+					type="button"
+					class="open"
+					onclick={() => {
+						reopening = game;
+						reopenOpen = true;
+					}}
+				>
+					<span class="name">{game.scriptName ?? 'Custom script'}</span>
+					<span class="meta"
+						>{winnerText(game.gameId)} · {stageText(game)} · {when.format(
+							ended[game.gameId].endedAt
+						)}</span
+					>
+				</button>
+				<IconButton
+					icon="remove"
+					label={`Delete ${game.scriptName ?? 'game'} ended ${when.format(ended[game.gameId].endedAt)}`}
+					onclick={() => {
+						deleting = game.gameId;
+						deleteOpen = true;
+					}}
+				/>
+			</li>
+		{/each}
+	</ul>
+</section>
+
+<Dialog bind:open={reopenOpen} title="Reopen this game?" role="alertdialog">
+	{#if reopening}
+		<dl class="change">
+			<dt>Now</dt>
+			<dd>{reopening.scriptName ?? 'Custom script'} in Past games</dd>
+			<dt>Becomes</dt>
+			<dd>Back in Resume game, open in the grimoire</dd>
+		</dl>
+	{/if}
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (reopenOpen = false)}>Cancel</Button>
+		<Button variant="accent" icon="check" onclick={reopen}>Confirm</Button>
+	{/snippet}
+</Dialog>
+
 <Dialog bind:open={deleteOpen} title="Delete this game?" role="alertdialog">
 	<p>It is removed from this device and cannot be brought back.</p>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (deleteOpen = false)}>Cancel</Button>
-		<Button variant="accent" icon="remove" onclick={confirmDelete}>Delete</Button>
+		<Button variant="danger" icon="remove" onclick={confirmDelete}>Confirm</Button>
 	{/snippet}
 </Dialog>
 
@@ -130,6 +208,30 @@
 		gap: var(--space-1);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
+	}
+	.change {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--space-1) var(--space-3);
+		margin: 0;
+	}
+	.change dt {
+		color: var(--on-surface-muted);
+		font-size: 0.85rem;
+	}
+	.change dd {
+		margin: 0;
+	}
+	button.open {
+		border: 0;
+		background: none;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+	}
+	button.open:hover {
+		background: var(--surface-selected);
+		border-radius: var(--radius-md);
 	}
 	.open {
 		flex: 1;
