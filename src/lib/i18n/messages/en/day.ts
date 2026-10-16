@@ -22,7 +22,7 @@ export const day = {
 	'day.markUsedTitle': 'Mark {who} as used?',
 	'day.markUsedNow': '{who} has not used their ability.',
 	'day.markUsedAfter': '{who} has used their ability.',
-	'day.markUsedAfterToken': '{who} has used their ability and gets the No Ability reminder.',
+	'day.markUsedAfterToken': '{who} has used their ability and gets the {reminder} reminder.',
 	'day.markUsed': 'Mark used',
 	'day.now': 'Now',
 	'day.after': 'After',

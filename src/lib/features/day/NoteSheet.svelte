@@ -2,6 +2,9 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterGuess, DayEntry, SeatId } from '#lib/core/model/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { DayPort } from './day-port.ts';
@@ -64,20 +67,29 @@
 				});
 		if (ok) open = false;
 	}
+	/** "Note: [Gossip] · Dev", with the character as a badge. */
+	const noteTitle = $derived(
+		target
+			? target.seatId
+				? t('day.noteTitleSeat', {
+						character: slot('character'),
+						seat: game.seatName(target.seatId)
+					})
+				: t('day.noteTitle', { character: slot('character') })
+			: t('day.note')
+	);
 </script>
 
-<BottomSheet
-	bind:open
-	title={target
-		? target.seatId
-			? t('day.noteTitleSeat', {
-					character: game.characterName(target.characterId),
-					seat: game.seatName(target.seatId)
-				})
-			: t('day.noteTitle', { character: game.characterName(target.characterId) })
-		: t('day.note')}
-	height="85dvh"
->
+<BottomSheet bind:open title={t('day.note')} height="85dvh">
+	{#snippet heading()}
+		<Sentence text={noteTitle}
+			>{#snippet fill()}{#if target}<CharacterBadge
+						characterId={target.characterId}
+						character={game.characters.get(target.characterId)}
+						inline
+					/>{/if}{/snippet}</Sentence
+		>
+	{/snippet}
 	<form
 		class="note"
 		onsubmit={(event) => {

@@ -18,6 +18,9 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -77,11 +80,13 @@
 	const causeSeatDead = $derived(causeSeat ? g.seats[causeSeat]?.dead === true : false);
 
 	// ── Confirming a change: what it is now, and what it will be ──
+	// The texts hold slots (slots.ts): `character` and `reminder` show as badges.
 	interface Pending {
 		title: string;
 		now: string;
 		after: string;
 		label: string;
+		characterId: CharacterId;
 		run: () => void;
 	}
 	let pending = $state<Pending>();
@@ -98,16 +103,16 @@
 	}
 
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
-		const who = t('day.who', {
-			character: game.characterName(characterId),
-			seat: game.seatName(seatId)
-		});
+		const who = t('day.who', { character: slot('character'), seat: game.seatName(seatId) });
 		const token = game.characters.get(characterId)?.reminders.includes('No Ability');
 		ask({
 			title: t('day.markUsedTitle', { who }),
 			now: t('day.markUsedNow', { who }),
-			after: t(token ? 'day.markUsedAfterToken' : 'day.markUsedAfter', { who }),
+			after: token
+				? t('day.markUsedAfterToken', { who, reminder: slot('reminder') })
+				: t('day.markUsedAfter', { who }),
 			label: t('day.markUsed'),
+			characterId,
 			run: () => game.run({ type: 'UseAbility', seatId, characterId })
 		});
 	}
@@ -145,23 +150,28 @@
 			case 'other':
 				return t('day.causeOther');
 			default:
-				return game.characterName(cause);
+				// The killing character, as a badge (causeSlots).
+				return slot('cause');
 		}
 	}
 
 	/** Why a cause is offered with a caution, in a few words. */
-	function causeCaution(option: ValidDeathCause): string | undefined {
+	/** `text` may hold the `character` slot, for `characterId`. */
+	function causeCaution(
+		option: ValidDeathCause
+	): { text: string; characterId?: CharacterId } | undefined {
 		const flag = option.flags[0];
 		if (!flag) return undefined;
 		switch (flag.code) {
 			case 'registers':
-				return t('day.cautionRegisters', {
-					character: game.characterName(flag.source.characterId)
-				});
+				return {
+					text: t('day.cautionRegisters', { character: slot('character') }),
+					characterId: flag.source.characterId
+				};
 			case 'impaired':
-				return t('day.cautionImpaired');
+				return { text: t('day.cautionImpaired') };
 			case 'unknown':
-				return t('day.cautionUnknown');
+				return { text: t('day.cautionUnknown') };
 		}
 	}
 
@@ -257,9 +267,11 @@
 </script>
 
 {#snippet actions(characterId: CharacterId | undefined, seatId: SeatId | undefined)}
+	<!-- eslint-disable grim/names-as-badges -- accessible names (aria-label) only -->
 	{@const who = seatId
 		? t('day.who', { character: game.characterName(characterId), seat: game.seatName(seatId) })
 		: game.characterName(characterId)}
+	<!-- eslint-enable grim/names-as-badges -->
 	<span class="row-actions">
 		{#if characterId && seatId && isOnceOnlyDayAbility(characterId)}
 			{@const isUsed = used(seatId, characterId)}
@@ -322,7 +334,11 @@
 						{:else}
 							<span>{game.seatName(seat.seatId)}</span>
 						{/if}
-						<span>{diedText(death.cause)}</span>
+						<span
+							><Sentence text={diedText(death.cause)}
+								>{#snippet fill()}{@render badge(death.cause)}{/snippet}</Sentence
+							></span
+						>
 					</span>
 				</li>
 			{/each}
@@ -364,9 +380,11 @@
 						><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span></span
 					>
 					<span class="seat-text">
+						<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
 						<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
 							>{character?.name ?? t('day.noCharacter')}</span
 						>
+						<!-- eslint-enable grim/names-as-badges -->
 						<span class="seat-player">{game.seatName(seat.seatId)}</span>
 					</span>
 				</button>
@@ -464,7 +482,13 @@
 			{#each causes as option (option.cause)}
 				{@const caution = causeCaution(option)}
 				<Button onclick={() => markDead(option.cause)}>
-					{causeLabel(option.cause)}{#if caution}<span class="caution">({caution})</span>{/if}
+					<Sentence text={causeLabel(option.cause)}
+						>{#snippet fill()}{@render badge(option.cause, false)}{/snippet}</Sentence
+					>{#if caution}<span class="caution"
+							>(<Sentence text={caution.text}
+								>{#snippet fill()}{@render badge(caution.characterId, false)}{/snippet}</Sentence
+							>)</span
+						>{/if}
 				</Button>
 			{/each}
 		{/if}
@@ -475,10 +499,35 @@
 	</div>
 </BottomSheet>
 
-<Dialog bind:open={pendingOpen} role="alertdialog" title={pending?.title ?? ''}>
+<!-- A character as a badge; false inside a button, so it does not open the character. -->
+{#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge
+			characterId={id}
+			character={game.characters.get(id)}
+			inline
+			{interactive}
+		/>{/if}{/snippet}
+{#snippet pendingSlot(name: string)}{#if name === 'reminder'}<ReminderToken
+			label="No Ability"
+			type={pending ? game.characters.get(pending.characterId)?.type : undefined}
+		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
+
+<Dialog bind:open={pendingOpen} role="alertdialog" title={t('day.markUsed')}>
+	{#snippet heading()}
+		<Sentence text={pending?.title ?? ''} fill={pendingSlot} />
+	{/snippet}
 	{#if pending}
-		<p class="state"><span class="state-label">{t('day.now')}</span>{pending.now}</p>
-		<p class="state"><span class="state-label">{t('day.after')}</span>{pending.after}</p>
+		<p class="state">
+			<span class="state-label">{t('day.now')}</span><Sentence
+				text={pending.now}
+				fill={pendingSlot}
+			/>
+		</p>
+		<p class="state">
+			<span class="state-label">{t('day.after')}</span><Sentence
+				text={pending.after}
+				fill={pendingSlot}
+			/>
+		</p>
 	{/if}
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (pendingOpen = false)}>{t('common.cancel')}</Button>

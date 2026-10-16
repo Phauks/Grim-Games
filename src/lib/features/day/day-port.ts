@@ -1,4 +1,4 @@
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { CharacterId, CharacterName } from '#lib/core/data/index.ts';
 import type { Command, GameLog } from '#lib/core/engine/index.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import type { CharacterLookup, DayEntry, Game, SeatId } from '#lib/core/model/index.ts';
@@ -14,7 +14,7 @@ export interface DayPort {
 	readonly characters: CharacterLookup;
 	run(command: Command): boolean;
 	seatName(seatId: SeatId | undefined): string;
-	characterName(id: CharacterId | undefined): string;
+	characterName(id: CharacterId | undefined): CharacterName;
 }
 
 /** A short line for a day-log entry, in our words (the grimoire's History uses it). */

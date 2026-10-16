@@ -1,4 +1,4 @@
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { CharacterId, CharacterName } from '#lib/core/data/index.ts';
 import type { Command, GameLog } from '#lib/core/engine/index.ts';
 import { seatNumber, type CharacterLookup, type Game, type SeatId } from '#lib/core/model/index.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -46,7 +46,7 @@ export class LiveDay implements DayPort {
 		return name ?? (number === undefined ? t('day.unknownSeat') : t('common.seat', { number }));
 	}
 
-	characterName(id: CharacterId | undefined): string {
+	characterName(id: CharacterId | undefined): CharacterName {
 		return id === undefined ? '' : (this.characters.get(id)?.name ?? id);
 	}
 }
