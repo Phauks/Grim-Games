@@ -67,9 +67,7 @@ function describeEvent(
 	switch (event.type) {
 		case 'GameCreated':
 			return [
-				text(
-					`New game: ${event.script.meta?.name ?? 'Custom script'}, ${event.seatIds.length} seats`
-				)
+				text(`New game: ${event.script.meta?.name || 'None'}, ${event.seatIds.length} seats`)
 			];
 		case 'ScriptChanged':
 			return [text(`Script changed to ${event.script.meta?.name ?? 'a custom script'}`)];

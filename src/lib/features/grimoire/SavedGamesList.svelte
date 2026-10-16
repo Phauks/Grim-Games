@@ -84,7 +84,7 @@
 		{#each games as game (game.gameId)}
 			<li>
 				<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
-					<span class="name">{game.scriptName ?? 'Custom script'}</span>
+					<span class="name">{game.scriptName || 'None'}</span>
 					<span class="meta"
 						>{stageText(game)} · {game.seatCount} seats · {when.format(game.savedAt)}</span
 					>
@@ -138,7 +138,7 @@
 						reopenOpen = true;
 					}}
 				>
-					<span class="name">{game.scriptName ?? 'Custom script'}</span>
+					<span class="name">{game.scriptName || 'None'}</span>
 					<span class="meta"
 						>{winnerText(game.gameId)} · {stageText(game)} · {when.format(
 							ended[game.gameId].endedAt
@@ -162,7 +162,7 @@
 	{#if reopening}
 		<dl class="change">
 			<dt>Now</dt>
-			<dd>{reopening.scriptName ?? 'Custom script'} in Past games</dd>
+			<dd>{reopening.scriptName || 'None'} in Past games</dd>
 			<dt>Becomes</dt>
 			<dd>Back in Resume game, open in the grimoire</dd>
 		</dl>

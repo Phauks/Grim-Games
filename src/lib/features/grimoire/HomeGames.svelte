@@ -33,7 +33,7 @@
 		<span class="caption">Continue</span>
 		{#if latest}
 			<a class="game" href={resolve('/grimoire/[gameId]', { gameId: latest.gameId })}>
-				<span class="name">{latest.scriptName ?? 'Custom script'}</span>
+				<span class="name">{latest.scriptName || 'None'}</span>
 				<span class="meta"
 					>{stageText(latest)} · {latest.seatCount} seats · {when.format(latest.savedAt)}</span
 				>

@@ -674,7 +674,7 @@
 				class:on-image={backgroundUrl !== undefined || background.kind === 'preset'}
 				aria-hidden="true"
 			>
-				<span class="script-name">{game.script.meta?.name ?? 'Custom script'}</span>
+				{#if game.script.meta?.name}<span class="script-name">{game.script.meta.name}</span>{/if}
 				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
 			</p>
 		{/if}
@@ -937,7 +937,7 @@
 
 <Dialog bind:open={shareOpen} title="Share script">
 	{#if shareTarget}
-		<SharePanel title={game.script.meta?.name ?? 'Custom script'} target={shareTarget} />
+		<SharePanel title={game.script.meta?.name || 'None'} target={shareTarget} />
 	{/if}
 </Dialog>
 
