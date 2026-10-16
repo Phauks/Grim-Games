@@ -31,6 +31,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -907,18 +908,14 @@
 	onChange={() => (backgroundRead += 1)}
 />
 
-<Dialog bind:open={exitOpen} title="Leave the game?" role="alertdialog">
+<ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">
 		<dt>Now</dt>
 		<dd>In the grimoire for {game.script.meta?.name ?? 'this game'}</dd>
 		<dt>Becomes</dt>
 		<dd>The game stays saved and opens again from Resume game.</dd>
 	</dl>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (exitOpen = false)}>Cancel</Button>
-		<Button variant="accent" icon="check" onclick={confirmLeave}>Confirm</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <Dialog bind:open={endOpen} title="End game?" role="alertdialog">
 	<dl class="change">
