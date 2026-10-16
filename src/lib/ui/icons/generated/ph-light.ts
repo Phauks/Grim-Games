@@ -28,6 +28,8 @@ import ph_caret_up_light from '~icons/ph/caret-up-light';
 import ph_check_light from '~icons/ph/check-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
+import ph_copy_light from '~icons/ph/copy-light';
+import ph_copy_simple_light from '~icons/ph/copy-simple-light';
 import ph_cross_light from '~icons/ph/cross-light';
 import ph_dice_five_light from '~icons/ph/dice-five-light';
 import ph_dots_three_light from '~icons/ph/dots-three-light';
@@ -134,6 +136,8 @@ const icons: IconMap = {
 	'ph:check-light': ph_check_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
+	'ph:copy-light': ph_copy_light,
+	'ph:copy-simple-light': ph_copy_simple_light,
 	'ph:cross-light': ph_cross_light,
 	'ph:dice-five-light': ph_dice_five_light,
 	'ph:dots-three-light': ph_dots_three_light,

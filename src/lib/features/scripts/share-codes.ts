@@ -6,7 +6,6 @@
  */
 import { t } from '#lib/i18n/locale.svelte.ts';
 import {
-	DELETE_KEY_HEADER,
 	readCreatedShare,
 	SHARE_API,
 	shareCodePath,
@@ -30,8 +29,6 @@ export type Shareable = Pick<SavedScript, 'edition' | 'json' | 'source'>;
 export interface ShareTarget {
 	url: string;
 	code?: string;
-	/** This device made the code, so it can delete it. */
-	canDelete: boolean;
 }
 
 /** Fetches the script stored under a share code. */
@@ -82,8 +79,7 @@ async function createShareCode(json: unknown[]): Promise<CreatedShare> {
 	return created;
 }
 
-/* Codes this device made, so sharing the same script again reuses its code and the sharer
-   can delete it. Kept in localStorage (a convenience: losing it only means a new code). */
+/* Codes this device made, so sharing the same script again reuses its code. Kept in localStorage (a convenience: losing it only means a new code). */
 const STORE_KEY = 'grim-games.share-codes';
 const STORE_VERSION = 1;
 const MAX_STORED = 50;
@@ -127,24 +123,24 @@ async function scriptKey(json: unknown[]): Promise<string> {
 }
 
 /** A code for this script: the one it was opened with, one made earlier, or a new one. */
-async function codeFor(saved: Shareable): Promise<{ code: string; canDelete: boolean }> {
+async function codeFor(saved: Shareable): Promise<string> {
 	const key = await scriptKey(saved.json);
 	const store = readStore();
 	const mine = store.codes[key];
 	if (mine && (await codeExists(mine.code))) {
 		store.codes[key] = { ...mine, at: Date.now() };
 		writeStore(store);
-		return { code: mine.code, canDelete: true };
+		return mine.code;
 	}
 	delete store.codes[key];
 	if (saved.source.kind === 'share' && saved.source.code && (await codeExists(saved.source.code))) {
 		writeStore(store);
-		return { code: saved.source.code, canDelete: false };
+		return saved.source.code;
 	}
 	const created = await createShareCode(saved.json);
 	store.codes[key] = { ...created, at: Date.now() };
 	writeStore(store);
-	return { code: created.code, canDelete: true };
+	return created.code;
 }
 
 /**
@@ -158,39 +154,20 @@ export async function shareTargetFor(
 ): Promise<ShareTarget> {
 	const link = (ref: SharedRef) => `${origin}${path}${sharedRefHash(ref)}`;
 	if (saved.edition) {
-		return { url: link({ kind: 'edition', edition: saved.edition }), canDelete: false };
+		return { url: link({ kind: 'edition', edition: saved.edition }) };
 	}
 	if (saved.source.kind === 'botcscripts') {
 		const { scriptId, version } = saved.source;
-		return {
-			url: link({ kind: 'botcscripts', ref: { kind: 'script', scriptId, version } }),
-			canDelete: false
-		};
+		return { url: link({ kind: 'botcscripts', ref: { kind: 'script', scriptId, version } }) };
 	}
 	try {
-		const { code, canDelete } = await codeFor(saved);
-		return { url: link({ kind: 'code', code }), code, canDelete };
+		const code = await codeFor(saved);
+		return { url: link({ kind: 'code', code }), code };
 	} catch {
 		// Offline or refused: the long link needs no server.
 		const payload = await encodeSharedScript(saved.json);
-		return { url: link({ kind: 'inline', payload }), canDelete: false };
+		return { url: link({ kind: 'inline', payload }) };
 	}
-}
-
-/** Deletes a code this device made. Resolves false if it was already gone. */
-export async function deleteShareCode(code: string): Promise<boolean> {
-	const store = readStore();
-	const entry = Object.entries(store.codes).find(([, c]) => c.code === code);
-	if (!entry) return false;
-	const response = await fetch(shareCodePath(code), {
-		method: 'DELETE',
-		credentials: 'omit',
-		headers: { [DELETE_KEY_HEADER]: entry[1].deleteKey }
-	});
-	if (!response.ok && response.status !== 404) throw new Error(`HTTP ${response.status}`);
-	delete store.codes[entry[0]];
-	writeStore(store);
-	return response.ok;
 }
 
 /** The script a share link points at, as text for the loader (an edition id or JSON). */

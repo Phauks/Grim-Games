@@ -43,7 +43,7 @@
 
 <Dialog bind:open title={t('scripts.share.title', { title })}>
 	{#if target}
-		<SharePanel {title} {target} ondelete={() => (open = false)} />
+		<SharePanel {title} {target} />
 	{/if}
 </Dialog>
 

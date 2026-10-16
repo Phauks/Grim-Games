@@ -803,11 +803,7 @@
 	description="Players get the script only, never anything from this game."
 >
 	{#if shareTarget}
-		<SharePanel
-			title={game.script.meta?.name ?? 'Custom script'}
-			target={shareTarget}
-			ondelete={() => (shareOpen = false)}
-		/>
+		<SharePanel title={game.script.meta?.name ?? 'Custom script'} target={shareTarget} />
 	{/if}
 </Dialog>
 

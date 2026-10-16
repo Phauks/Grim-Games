@@ -28,6 +28,8 @@ import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_check_bold from '~icons/ph/check-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
+import ph_copy_bold from '~icons/ph/copy-bold';
+import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
 import ph_dice_five_bold from '~icons/ph/dice-five-bold';
 import ph_dots_three_bold from '~icons/ph/dots-three-bold';
@@ -134,6 +136,8 @@ const icons: IconMap = {
 	'ph:check-bold': ph_check_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
+	'ph:copy-bold': ph_copy_bold,
+	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:cross-bold': ph_cross_bold,
 	'ph:dice-five-bold': ph_dice_five_bold,
 	'ph:dots-three-bold': ph_dots_three_bold,

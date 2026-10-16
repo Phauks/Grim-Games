@@ -28,6 +28,8 @@ import ph_caret_up_duotone from '~icons/ph/caret-up-duotone';
 import ph_check_duotone from '~icons/ph/check-duotone';
 import ph_circle_dashed_duotone from '~icons/ph/circle-dashed-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
+import ph_copy_duotone from '~icons/ph/copy-duotone';
+import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
 import ph_cross_duotone from '~icons/ph/cross-duotone';
 import ph_dice_five_duotone from '~icons/ph/dice-five-duotone';
 import ph_dots_three_duotone from '~icons/ph/dots-three-duotone';
@@ -134,6 +136,8 @@ const icons: IconMap = {
 	'ph:check-duotone': ph_check_duotone,
 	'ph:circle-dashed-duotone': ph_circle_dashed_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
+	'ph:copy-duotone': ph_copy_duotone,
+	'ph:copy-simple-duotone': ph_copy_simple_duotone,
 	'ph:cross-duotone': ph_cross_duotone,
 	'ph:dice-five-duotone': ph_dice_five_duotone,
 	'ph:dots-three-duotone': ph_dots_three_duotone,

@@ -55,11 +55,7 @@
 			Anyone who has or guesses the code can open the script, so don't treat a shared script as
 			private.
 		</li>
-		<li>
-			It is deleted automatically 30 days after it was last opened, or straight away when you tap
-			Delete code on the device that shared it. That device keeps the delete key; our server keeps
-			only a scrambled (hashed) copy of it.
-		</li>
+		<li>It is deleted automatically 30 days after it was last opened.</li>
 		<li>
 			To stop people guessing codes, our server limits how many codes one IP address can look up or
 			create each minute, using Cloudflare's rate limiter. We do not store the address.

@@ -28,6 +28,8 @@ import ph_caret_up from '~icons/ph/caret-up';
 import ph_check from '~icons/ph/check';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
+import ph_copy from '~icons/ph/copy';
+import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_cross from '~icons/ph/cross';
 import ph_dice_five from '~icons/ph/dice-five';
 import ph_dots_three from '~icons/ph/dots-three';
@@ -134,6 +136,8 @@ const icons: IconMap = {
 	'ph:check': ph_check,
 	'ph:circle-dashed': ph_circle_dashed,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
+	'ph:copy': ph_copy,
+	'ph:copy-simple': ph_copy_simple,
 	'ph:cross': ph_cross,
 	'ph:dice-five': ph_dice_five,
 	'ph:dots-three': ph_dots_three,

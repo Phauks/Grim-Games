@@ -28,6 +28,8 @@ import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_check_thin from '~icons/ph/check-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
+import ph_copy_thin from '~icons/ph/copy-thin';
+import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
 import ph_cross_thin from '~icons/ph/cross-thin';
 import ph_dice_five_thin from '~icons/ph/dice-five-thin';
 import ph_dots_three_thin from '~icons/ph/dots-three-thin';
@@ -134,6 +136,8 @@ const icons: IconMap = {
 	'ph:check-thin': ph_check_thin,
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
+	'ph:copy-thin': ph_copy_thin,
+	'ph:copy-simple-thin': ph_copy_simple_thin,
 	'ph:cross-thin': ph_cross_thin,
 	'ph:dice-five-thin': ph_dice_five_thin,
 	'ph:dots-three-thin': ph_dots_three_thin,

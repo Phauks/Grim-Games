@@ -4,13 +4,14 @@
 	import { formatDigitCode } from '#lib/core/codes/digit-code.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import QrCode, { fitsQrCode } from '#lib/ui/primitives/QrCode.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import { deleteShareCode, type ShareTarget } from './share-codes.ts';
+	import type { ShareTarget } from './share-codes.ts';
 
 	/**
 	 * Everything for sharing one link on one screen (Trevor, 2026-10-16): the QR code,
-	 * the link, its six-digit code, then Copy link and the phone's own Share. The link is
+	 * the link with a copy button, its six-digit code, and the phone's own Share. The link is
 	 * made when this appears (it lives inside a dialog), so nothing is uploaded just by
 	 * opening a page.
 	 */
@@ -19,11 +20,10 @@
 		title: string;
 		/** Makes the link. */
 		target: () => Promise<ShareTarget>;
-		/** Called after the code is deleted (e.g. to close the dialog). */
-		ondelete?: () => void;
 	}
 
-	let { title, target, ondelete }: Props = $props();
+	let { title, target }: Props = $props();
+	const urlId = $props.id();
 	let made = $state.raw<ShareTarget | undefined>();
 	let failed = $state(false);
 
@@ -45,11 +45,19 @@
 		};
 	});
 
+	/** The copy icon shows a check for a moment instead of a success popup. */
+	const COPIED_MS = 1500;
+	let copied = $state(false);
+	let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => () => clearTimeout(copiedTimer));
+
 	async function copy() {
 		if (!made) return;
 		try {
 			await navigator.clipboard.writeText(made.url);
-			toast(t('scripts.share.copied'));
+			copied = true;
+			clearTimeout(copiedTimer);
+			copiedTimer = setTimeout(() => (copied = false), COPIED_MS);
 		} catch {
 			toast(t('scripts.share.copyFailed'), t('scripts.share.copyFailedHint'));
 		}
@@ -62,19 +70,6 @@
 		} catch (e) {
 			// Closing the share sheet is not a failure.
 			if (!(e instanceof DOMException && e.name === 'AbortError')) await copy();
-		}
-	}
-
-	async function deleteCode() {
-		const code = made?.code;
-		if (!code) return;
-		try {
-			await deleteShareCode(code);
-			toast(t('scripts.share.deleted'), t('scripts.share.deletedHint'));
-			made = undefined;
-			ondelete?.();
-		} catch (e) {
-			reportError(e, { area: 'scripts' });
 		}
 	}
 </script>
@@ -95,16 +90,25 @@
 		{/if}
 	</div>
 
-	<label class="link">
-		<span class="label">{t('scripts.share.link')}</span>
-		<input
-			type="text"
-			readonly
-			value={made?.url ?? ''}
-			placeholder={t('common.none')}
-			data-testid="share-url"
-		/>
-	</label>
+	<div class="link">
+		<label class="label" for={urlId}>{t('scripts.share.link')}</label>
+		<div class="link-row">
+			<input
+				id={urlId}
+				type="text"
+				readonly
+				value={made?.url ?? ''}
+				placeholder={t('common.none')}
+				data-testid="share-url"
+			/>
+			<IconButton
+				icon={copied ? 'check' : 'copy'}
+				label={t('scripts.share.copy')}
+				onclick={copy}
+				disabled={!made}
+			/>
+		</div>
+	</div>
 
 	<!-- One line either way, so nothing moves when the code arrives. -->
 	<p class="code-line" data-testid="share-code">
@@ -117,10 +121,8 @@
 	</p>
 
 	<div class="buttons">
-		<Button variant="accent" onclick={copy} disabled={!made}>{t('scripts.share.copy')}</Button>
-		<Button onclick={share} disabled={!made || !canShare}>{t('scripts.share.share')}</Button>
-		<Button variant="quiet" onclick={deleteCode} disabled={!made?.canDelete}
-			>{t('scripts.share.delete')}</Button
+		<Button variant="accent" onclick={share} disabled={!made || !canShare}
+			>{t('scripts.share.share')}</Button
 		>
 	</div>
 </div>
@@ -147,6 +149,12 @@
 	}
 	.link {
 		display: grid;
+		gap: var(--space-1);
+	}
+	.link-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
 		gap: var(--space-1);
 	}
 	.link input {
@@ -183,7 +191,7 @@
 	}
 	.buttons {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 	}
 </style>

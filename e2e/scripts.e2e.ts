@@ -159,15 +159,17 @@ test('an official script is shared on one screen: QR code, link and code', async
 	await expect(dialog.getByTestId('share-url')).toHaveValue(/\/play#e=tb$/);
 	// Official scripts need no stored code: the link names the edition.
 	await expect(dialog.getByTestId('share-code')).toHaveText(/^\s*Code\s*None\s*$/);
-	await expect(dialog.getByRole('button', { name: 'Delete code' })).toBeDisabled();
+	// One icon beside the link copies it; no success popup.
+	await expect(dialog.getByRole('button', { name: 'Delete code' })).toHaveCount(0);
 	await dialog.getByRole('button', { name: 'Copy link' }).tap();
+	await expect(page.getByText('Link copied')).toHaveCount(0);
 	const link = await page.evaluate(() => navigator.clipboard.readText());
 	// The link opens the player view, with the script in the hash (never the query string).
 	expect(link).toMatch(/^http:\/\/localhost:\d+\/play#e=tb$/);
 	await noSidewaysScroll(page);
 });
 
-test('a custom script gets a six-digit code that another phone can type in, until it is deleted', async ({
+test('a custom script gets a six-digit code that another phone can type in', async ({
 	page,
 	context
 }) => {
@@ -204,14 +206,6 @@ test('a custom script gets a six-digit code that another phone can type in, unti
 	await box.fill(code);
 	await load.tap();
 	await expect(other.getByTestId('current-script-name')).toHaveText('Storm Front');
-
-	// The sharer deletes the code; it no longer loads.
-	await dialog.getByRole('button', { name: 'Delete code' }).tap();
-	await expect(dialog).toBeHidden();
-	await other.getByRole('button', { name: 'Code', exact: true }).tap();
-	await entry.getByLabel('The 6-digit code').fill(code);
-	await entry.getByLabel('The 6-digit code').press('Enter');
-	await expect(entry.getByRole('status')).toHaveText(/No script has this code/);
 	await noSidewaysScroll(other);
 });
 

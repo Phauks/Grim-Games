@@ -28,6 +28,8 @@ import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_check_fill from '~icons/ph/check-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
+import ph_copy_fill from '~icons/ph/copy-fill';
+import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
 import ph_dice_five_fill from '~icons/ph/dice-five-fill';
 import ph_dots_three_fill from '~icons/ph/dots-three-fill';
@@ -134,6 +136,8 @@ const icons: IconMap = {
 	'ph:check-fill': ph_check_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
+	'ph:copy-fill': ph_copy_fill,
+	'ph:copy-simple-fill': ph_copy_simple_fill,
 	'ph:cross-fill': ph_cross_fill,
 	'ph:dice-five-fill': ph_dice_five_fill,
 	'ph:dots-three-fill': ph_dots_three_fill,
