@@ -10,7 +10,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
-	import CollapsibleSection from '#lib/ui/primitives/CollapsibleSection.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { groupByType } from './player-script.ts';
 
 	interface Props {
@@ -49,7 +49,7 @@
 <div class="sheet">
 	<!-- Each section opens and closes from its header, remembered on the device (Trevor). -->
 	{#each groups as group (group.type)}
-		<CollapsibleSection
+		<Collapsible
 			title={group.type === 'traveller' ? 'Recommended Travellers' : TYPE_PLURALS[group.type]}
 			storageKey="play:{group.type}"
 			tone={TONES[group.type]}
@@ -57,10 +57,10 @@
 			<ul>
 				{#each group.characters as c (c.id)}{@render row(c)}{/each}
 			</ul>
-		</CollapsibleSection>
+		</Collapsible>
 	{/each}
 
-	<CollapsibleSection title="Jinxes" storageKey="play:jinxes">
+	<Collapsible title="Jinxes" storageKey="play:jinxes">
 		{#if jinxes.length}
 			<ul>
 				{#each jinxes as jinx (jinx.characters.join('+'))}
@@ -87,9 +87,9 @@
 		{:else}
 			<p class="none" data-testid="no-jinxes">None</p>
 		{/if}
-	</CollapsibleSection>
+	</Collapsible>
 
-	<CollapsibleSection title="Players" storageKey="play:breakdown">
+	<Collapsible title="Players" storageKey="play:breakdown">
 		<div class="scroll">
 			<table>
 				<thead>
@@ -113,7 +113,7 @@
 			</table>
 		</div>
 		<p class="legend">* Not the first night</p>
-	</CollapsibleSection>
+	</Collapsible>
 </div>
 
 <style>
