@@ -331,3 +331,18 @@ test('on a phone the tables stack into labelled rows instead of scrolling sidewa
 	await expect(page.getByTestId('night-table-first')).toBeVisible();
 	expect(await sideways('.scroll')).toBe(false);
 });
+
+test('"/" jumps to the search field and Esc clears it', async ({ page }) => {
+	await page.goto('/reference');
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await expect(page.getByText(/^\d+ of \d+ characters$/)).toBeVisible();
+	await page.locator('h1').click();
+	await page.keyboard.press('/');
+	await expect(search).toBeFocused();
+	await expect(search).toHaveValue('');
+	await page.keyboard.type('witch');
+	await expect(search).toHaveValue('witch');
+	await page.keyboard.press('Escape');
+	await expect(search).toHaveValue('');
+	await expect(search).toBeFocused();
+});

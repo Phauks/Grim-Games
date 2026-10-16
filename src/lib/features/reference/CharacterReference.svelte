@@ -32,9 +32,27 @@
 
 	// Search is the one filter for cards; the table adds its own per-column filters.
 	let search = $state('');
+	let searchInput = $state<HTMLInputElement>();
+
+	// Keyboard comforts on a computer: "/" jumps to the search field, Esc clears it.
+	function onWindowKey(event: KeyboardEvent) {
+		if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+		const target = event.target as HTMLElement | null;
+		if (target?.closest('input, textarea, select, [contenteditable], [role="dialog"]')) return;
+		event.preventDefault();
+		searchInput?.focus();
+	}
+	function onSearchKey(event: KeyboardEvent) {
+		if (event.key === 'Escape' && search) {
+			event.preventDefault();
+			search = '';
+		}
+	}
 	const shown = $derived(entries.filter((e) => matchesReference(e, { search })));
 	const groups = $derived(groupByType(shown));
 </script>
+
+<svelte:window onkeydown={onWindowKey} />
 
 <div class="controls">
 	<label class="search">
@@ -44,7 +62,10 @@
 			type="search"
 			placeholder="Search name, ability or reminder"
 			autocomplete="off"
+			aria-keyshortcuts="/"
+			bind:this={searchInput}
 			bind:value={search}
+			onkeydown={onSearchKey}
 		/>
 	</label>
 	{#if view === 'cards'}
@@ -88,6 +109,13 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
 		margin-bottom: var(--space-5);
+	}
+	/* On a wider screen the search field stops at a readable width, with the count beside it. */
+	@media (min-width: 48rem) {
+		.controls {
+			grid-template-columns: minmax(0, calc(36 * var(--u))) auto;
+			align-items: center;
+		}
 	}
 	.search {
 		display: flex;

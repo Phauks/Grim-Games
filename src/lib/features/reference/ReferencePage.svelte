@@ -98,7 +98,8 @@
 
 <style>
 	main {
-		max-width: calc(90 * var(--u));
+		/* Centred on a computer, still wide enough for three columns of cards (App shell, 2026-10-16). */
+		max-width: calc(75 * var(--u));
 		margin: 0 auto;
 		padding: var(--space-5) var(--space-4);
 	}
@@ -113,7 +114,7 @@
 		margin-bottom: var(--space-3);
 	}
 	.switch {
-		flex: 0 1 calc(20 * var(--u));
+		flex: 0 1 calc(16 * var(--u));
 	}
 	.loading {
 		min-height: 100dvh;
