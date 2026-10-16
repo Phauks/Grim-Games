@@ -51,6 +51,11 @@ export type Command =
 	 * can skip it and set it later with `SetDeathCause`); on an already dead player it sets
 	 * the cause. Coming back to life clears the cause.
 	 */
+	/**
+	 * Marks a player dead or alive. A death should name its `cause` (Trevor, 2026-10-16:
+	 * every death has one); without it the engine warns `no-cause`. Executions and exiles
+	 * use `Execute` and `Exile`, which log the day entry too.
+	 */
 	| { type: 'SetDead'; seatId: SeatId; dead: boolean; cause?: DeathCause }
 	/** Records how a dead player died; an undefined `cause` clears it. */
 	| { type: 'SetDeathCause'; seatId: SeatId; cause?: DeathCause }

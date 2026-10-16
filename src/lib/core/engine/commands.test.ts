@@ -343,6 +343,16 @@ describe('death and ghost votes', () => {
 		]);
 	});
 
+	it('warns when a death has no cause, but still records it (Trevor, 2026-10-16)', () => {
+		const { session, ctx, seats } = newGame(names);
+		expect(warned(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true })).toEqual([
+			'no-cause'
+		]);
+		expect(
+			warned(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true, cause: 'demon' })
+		).toEqual([]);
+	});
+
 	it('warns when a living player spends a ghost vote, but lets the Storyteller do it', () => {
 		const { session, ctx, seats } = newGame(names);
 		const result = dispatch(session, { type: 'SpendGhostVote', seatId: seats[0] }, ctx);

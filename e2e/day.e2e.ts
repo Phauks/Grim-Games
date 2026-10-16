@@ -30,33 +30,11 @@ const place = (locator: Locator) =>
 		const r = el.getBoundingClientRect();
 		return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height };
 	});
-const top = async (locator: Locator) => (await place(locator)).y;
 
-test('a Witch nomination makes the Town Crier answer yes; Demon voted feeds the Flowergirl', async ({
-	page
-}) => {
+test('Demon voted feeds the Flowergirl, and New day asks first', async ({ page }) => {
 	await loaded(page);
-	const reminders = page.getByRole('heading', { name: 'Today', exact: true });
-	const before = await top(reminders);
-
-	// Eve is the Witch: tap the nominator, then the nominee.
-	await page.getByRole('button', { name: 'Seat: Eve' }).tap();
-	await expect(page.getByText('Eve nominates… tap the nominee.')).toBeVisible();
-	await page.getByRole('button', { name: 'Seat: Ana' }).tap();
-	const log = page.getByTestId('day-log');
-	await expect(log).toContainText('Eve nominated Ana');
-	// The log is last on the page: nothing above it moved.
-	expect(await top(reminders)).toBe(before);
-
-	await page.getByRole('button', { name: 'Night order' }).tap();
-	const crier = await walkTo(page, 'Town Crier');
-	await expect(crier.getByRole('group', { name: 'Town Crier answer' })).toContainText(
-		'Yes: Eve (Witch) nominated'
-	);
-
-	// Opening the night order never clears the log.
-	await page.getByRole('button', { name: 'Back to day' }).tap();
-	await expect(log).toContainText('Eve nominated Ana');
+	// Nominations happen off the grimoire, so there is nothing to tap for them.
+	await expect(page.getByRole('radiogroup', { name: 'Tapping a player' })).toHaveCount(0);
 
 	await page.getByText('Demon voted', { exact: true }).tap();
 	await expect(
@@ -68,13 +46,13 @@ test('a Witch nomination makes the Town Crier answer yes; Demon voted feeds the 
 		'Yes: the Demon Fay (Fang Gu) voted'
 	);
 
-	// New day asks first, then empties the log. There is no Undo (Trevor, 2026-10-16).
+	// New day states what changes, then clears today. There is no Undo (Trevor, 2026-10-16).
 	await page.getByRole('button', { name: 'Back to day' }).tap();
 	await page.getByRole('button', { name: 'New day' }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Start a new day?' });
+	await expect(confirm).toContainText('A new day starts with none');
 	await confirm.getByRole('button', { name: 'Start new day' }).tap();
 	await expect(confirm).toBeHidden();
-	await expect(page.getByTestId('log-empty')).toBeVisible();
 	await expect(
 		page.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })
 	).not.toBeChecked();
@@ -93,7 +71,6 @@ test('the Slayer is marked Used after a confirm, and the Washerwoman picks her i
 	await expect(confirm).toContainText('Slayer (Ben) has not used their ability.');
 	await confirm.getByRole('button', { name: 'Mark used' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
-	await expect(page.getByTestId('day-log')).toContainText('Slayer (Ben) used their ability');
 	// The reminder stays where it was, pressed, so the list does not jump.
 	expect(await place(used)).toEqual(before);
 
@@ -125,11 +102,6 @@ test('the Slayer is marked Used after a confirm, and the Washerwoman picks her i
 	await expect(step.getByTestId('info-shown')).toHaveText(
 		'Recorded: Shown Ben and Gus: one is the Slayer'
 	);
-
-	await page.getByRole('button', { name: 'Back to day' }).tap();
-	await expect(page.getByTestId('day-log')).toContainText(
-		'Washerwoman (Ana): Shown Ben and Gus: one is the Slayer'
-	);
 });
 
 test('any reminder takes an optional long note in a sheet', async ({ page }) => {
@@ -140,13 +112,11 @@ test('any reminder takes an optional long note in a sheet', async ({ page }) => 
 	await sheet.getByTestId('note-text').fill(text);
 	await sheet.getByRole('button', { name: 'Save note' }).tap();
 	await expect(sheet).toBeHidden();
-	await expect(page.getByTestId('day-log')).toContainText(
-		'Gossip (Dev): Said: “Eve is the Witch.”'
-	);
-	await expect(page.getByRole('button', { name: 'Note: Gossip (Dev)' })).toHaveAttribute(
-		'data-has-note',
-		'true'
-	);
+	const note = page.getByRole('button', { name: 'Note: Gossip (Dev)' });
+	await expect(note).toHaveAttribute('data-has-note', 'true');
+	// Reopening shows the whole note (there is no log on the day page).
+	await note.tap();
+	await expect(sheet.getByTestId('note-text')).toHaveValue(text);
 });
 
 test('with help switched off the night is a checklist with no worked-out answers', async ({
@@ -165,12 +135,10 @@ test('with help switched off the night is a checklist with no worked-out answers
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(settings).toBeHidden();
 
-	// Pre-day reminders are off, but Used, notes and nominations stay.
+	// Pre-day reminders are off, but Used, notes and the players stay.
 	await expect(page.getByRole('heading', { name: 'Abilities and notes' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Seat: Eve' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Seat: Eve' }).tap();
-	await page.getByRole('button', { name: 'Seat: Ana' }).tap();
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	const checklist = page.getByTestId('night-checklist');
 	await expect(checklist).toBeVisible();
@@ -234,5 +202,4 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 		'data-dead',
 		'true'
 	);
-	await expect(page.getByTestId('day-log')).toContainText('Gambler (Ana): Ben · Imp · Dead: Ana');
 });

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import { isTraveller, type DeathCause, type Game, type SeatId } from '#lib/core/model/index.ts';
+	import type { DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 	import {
 		blockThreshold,
 		dayReminders,
@@ -18,7 +18,6 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { DayPort } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
@@ -38,43 +37,31 @@
 	const seats = $derived(g.seating.map((id) => g.seats[id]));
 	const hasFlowergirl = $derived(seats.some((s) => s.characterId === 'flowergirl'));
 
-	// ── Seat strip: nominate, or mark dead ──
-	type Mode = 'nominate' | 'dead';
-	let mode = $state<Mode>('nominate');
-	let nominator = $state<SeatId | undefined>();
-
-	const prompt = $derived(
-		mode === 'dead'
-			? 'Tap a player to mark them dead or alive.'
-			: nominator
-				? `${game.seatName(nominator)} nominates… tap the nominee.`
-				: 'Tap the nominator, then the nominee.'
-	);
-
+	// ── Players: tap one to mark a death (with its cause) or bring them back ──
+	// Nominations happen off the grimoire, so they are not tracked here (Trevor, 2026-10-16).
 	let causeOpen = $state(false);
 	let causeSeat = $state<SeatId | undefined>();
 
 	function tapSeat(seatId: SeatId) {
-		if (mode === 'dead') {
-			// Says what the player is now and what they will be before anything changes
-			// (Trevor, 2026-10-16).
-			causeSeat = seatId;
-			causeOpen = true;
-			return;
-		}
-		if (!nominator) {
-			nominator = seatId;
-			return;
-		}
-		game.run({ type: 'Nominate', nominator, nominee: seatId });
-		nominator = undefined;
+		causeSeat = seatId;
+		causeOpen = true;
 	}
 
-	/** Marks the chosen player dead (with a cause, if given) or alive again. */
-	function setDead(dead: boolean, cause?: DeathCause) {
-		if (causeSeat) {
-			game.run({ type: 'SetDead', seatId: causeSeat, dead, ...(cause ? { cause } : {}) });
-		}
+	/**
+	 * Every death has a cause (Trevor, 2026-10-16). An execution or exile is logged as one,
+	 * so the Undertaker and the one-execution reminder see it.
+	 */
+	function markDead(cause: DeathCause) {
+		const seatId = causeSeat;
+		causeOpen = false;
+		if (!seatId) return;
+		if (cause === 'execution') game.run({ type: 'Execute', seatId });
+		else if (cause === 'exile') game.run({ type: 'Exile', seatId });
+		else game.run({ type: 'SetDead', seatId, dead: true, cause });
+	}
+
+	function markAlive() {
+		if (causeSeat) game.run({ type: 'SetDead', seatId: causeSeat, dead: false });
 		causeOpen = false;
 	}
 
@@ -99,22 +86,6 @@
 	function confirmPending() {
 		pending?.run();
 		pendingOpen = false;
-	}
-
-	function askRemove(seatId: SeatId) {
-		const exile = isTraveller(g, seatId, game.characters);
-		const name = game.seatName(seatId);
-		const dead = g.seats[seatId].dead;
-		const verb = exile ? 'exiled' : 'executed';
-		ask({
-			title: `${exile ? 'Exile' : 'Execute'} ${name}?`,
-			now: dead ? `${name} is dead.` : `${name} is alive.`,
-			after: dead
-				? `${name} stays dead; the ${exile ? 'exile' : 'execution'} is only logged.`
-				: `${name} is ${verb} and dead.`,
-			label: exile ? 'Exile' : 'Execute',
-			run: () => game.run({ type: exile ? 'Exile' : 'Execute', seatId })
-		});
 	}
 
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
@@ -223,7 +194,6 @@
 	let confirmNewDay = $state(false);
 	function newDay() {
 		game.run({ type: 'NewDay' });
-		nominator = undefined;
 		confirmNewDay = false;
 	}
 </script>
@@ -277,30 +247,14 @@
 	</div>
 
 	<section aria-labelledby="seats-heading">
-		<div class="section-head">
-			<h2 id="seats-heading">Nominations</h2>
-			<Segmented
-				label="Tapping a player"
-				hideLabel
-				value={mode}
-				options={[
-					{ value: 'nominate', label: 'Nominate' },
-					{ value: 'dead', label: 'Dead' }
-				]}
-				onChange={(value) => {
-					mode = value;
-					nominator = undefined;
-				}}
-			/>
-		</div>
-		<p class="prompt" aria-live="polite">{prompt}</p>
+		<h2 id="seats-heading">Players</h2>
+		<p class="prompt">Tap a player to mark them dead or alive.</p>
 		<div class="seats">
 			{#each seats as seat (seat.seatId)}
 				<button
 					type="button"
 					class="seat"
 					aria-label={`Seat: ${game.seatName(seat.seatId)}`}
-					aria-pressed={seat.seatId === nominator}
 					data-dead={seat.dead}
 					onclick={() => tapSeat(seat.seatId)}
 				>
@@ -309,20 +263,15 @@
 				</button>
 			{/each}
 		</div>
-		<div class="strip-foot">
-			<Button variant="quiet" disabled={!nominator} onclick={() => (nominator = undefined)}>
-				Cancel nomination
-			</Button>
-			{#if hasFlowergirl}
-				<div class="demon-voted">
-					<Toggle
-						label="Demon voted"
-						checked={g.today.demonVoted === true}
-						onChange={(checked) => game.run({ type: 'SetDemonVoted', voted: checked })}
-					/>
-				</div>
-			{/if}
-		</div>
+		{#if hasFlowergirl}
+			<div class="demon-voted">
+				<Toggle
+					label="Demon voted"
+					checked={g.today.demonVoted === true}
+					onChange={(checked) => game.run({ type: 'SetDemonVoted', voted: checked })}
+				/>
+			</div>
+		{/if}
 	</section>
 
 	{#if assistance.preDayReminders}
@@ -383,48 +332,6 @@
 			</ul>
 		</section>
 	{/if}
-
-	<!-- Last on the page, so a new entry never moves anything above it. -->
-	<section aria-labelledby="log-heading">
-		<h2 id="log-heading">Logged since the last new day</h2>
-		{#if g.today.entries.length === 0}
-			<p class="muted" data-testid="log-empty">Nothing logged yet.</p>
-		{:else}
-			<ol class="log" data-testid="day-log">
-				{#each g.today.entries as entry (entry.entryId)}
-					<li data-kind={entry.kind}>
-						<span class="entry-text">{game.describe(entry)}</span>
-						<span class="row-actions">
-							{#if entry.kind === 'nomination'}
-								<!-- Travellers are exiled, not executed. -->
-								{@const exile = isTraveller(g, entry.nominee, game.characters)}
-								<button type="button" class="chip" onclick={() => askRemove(entry.nominee)}>
-									{exile ? 'Exile' : 'Execute'}
-									{game.seatName(entry.nominee)}
-								</button>
-							{:else if entry.kind === 'note'}
-								<button
-									type="button"
-									class="chip"
-									onclick={() => openNote({ characterId: entry.characterId, seatId: entry.seatId })}
-								>
-									Edit
-								</button>
-							{/if}
-							<button
-								type="button"
-								class="chip"
-								aria-label={`Remove: ${game.describe(entry)}`}
-								onclick={() => game.run({ type: 'RemoveDayEntry', entryId: entry.entryId })}
-							>
-								<Icon name="close" />
-							</button>
-						</span>
-					</li>
-				{/each}
-			</ol>
-		{/if}
-	</section>
 </div>
 
 <NoteSheet bind:open={noteOpen} {game} target={noteTarget} />
@@ -433,26 +340,26 @@
 	bind:open={causeOpen}
 	title={causeSeatDead
 		? `Mark ${game.seatName(causeSeat)} alive?`
-		: `Mark ${game.seatName(causeSeat)} dead?`}
+		: `How did ${game.seatName(causeSeat)} die?`}
 	description={causeSeatDead
-		? `Now: dead. After: alive.`
-		: `Now: alive. After: dead${assistance.deathCause ? ', with the cause you choose (optional)' : ''}.`}
+		? 'Now: dead. After: alive.'
+		: 'Now: alive. After: dead, by the cause you tap.'}
 >
 	<div class="causes">
 		{#if causeSeatDead}
-			<Button onclick={() => setDead(false)}>Mark alive</Button>
+			<Button onclick={markAlive}>Mark alive</Button>
 		{:else}
-			{#if assistance.deathCause}
-				{#each causes as option (option.cause)}
-					{@const caution = causeCaution(option)}
-					<Button variant="quiet" onclick={() => setDead(true, option.cause)}>
-						{causeLabel(option.cause)}{#if caution}<span class="caution">({caution})</span>{/if}
-					</Button>
-				{/each}
-			{/if}
-			<Button variant="quiet" onclick={() => setDead(true)}>Dead, no cause</Button>
+			{#each causes as option (option.cause)}
+				{@const caution = causeCaution(option)}
+				<Button onclick={() => markDead(option.cause)}>
+					{causeLabel(option.cause)}{#if caution}<span class="caution">({caution})</span>{/if}
+				</Button>
+			{/each}
 		{/if}
-		<Button variant="quiet" onclick={() => (causeOpen = false)}>Cancel</Button>
+		<!-- Set apart and tinted, so it is never mistaken for a cause (Trevor, 2026-10-16). -->
+		<div class="cancel">
+			<Button variant="quiet" onclick={() => (causeOpen = false)}>Cancel</Button>
+		</div>
 	</div>
 </BottomSheet>
 
@@ -469,11 +376,12 @@
 
 <Dialog bind:open={confirmNewDay} role="alertdialog" title="Start a new day?">
 	<p class="state">
-		<span class="state-label">Now</span>Today’s log has {g.today.entries.length}
-		{g.today.entries.length === 1 ? 'entry' : 'entries'}.
+		<span class="state-label">Now</span>Today has {g.today.entries.length}
+		{g.today.entries.length === 1 ? 'entry' : 'entries'} (Used, notes, deaths).
 	</p>
 	<p class="state">
-		<span class="state-label">After</span>The log is empty; today’s entries move to History.
+		<span class="state-label">After</span>A new day starts with none; today’s entries stay in
+		History.
 	</p>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (confirmNewDay = false)}>Cancel</Button>
@@ -505,16 +413,8 @@
 		font-size: 0.95rem;
 		color: var(--on-surface-muted);
 	}
-	.section-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-	}
 	.prompt {
 		margin: 0;
-		min-height: 1.5em;
 		color: var(--on-surface-muted);
 	}
 	.seats {
@@ -539,10 +439,6 @@
 		font-weight: 600;
 		cursor: pointer;
 	}
-	.seat[aria-pressed='true'] {
-		background: var(--accent);
-		color: var(--on-accent);
-	}
 	/* Always there, shown only when dead, so names never shift. */
 	.dead-mark {
 		display: inline-grid;
@@ -554,26 +450,17 @@
 	.seat[data-dead='true'] {
 		color: var(--on-surface-muted);
 	}
-	.strip-foot {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-	}
 	.demon-voted {
 		min-width: calc(12 * var(--u));
 	}
-	.reminders,
-	.log {
+	.reminders {
 		display: grid;
 		gap: var(--space-2);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
-	.reminders li,
-	.log li {
+	.reminders li {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -629,21 +516,6 @@
 	.chip[data-has-note='true'] {
 		border-color: var(--heading);
 	}
-	/* Long notes show their start here; Edit opens the whole note in a sheet. */
-	.entry-text {
-		display: -webkit-box;
-		-webkit-box-orient: vertical;
-		-webkit-line-clamp: 3;
-		line-clamp: 3;
-		overflow: hidden;
-		flex: 1 1 calc(12 * var(--u));
-		white-space: pre-line;
-		overflow-wrap: anywhere;
-	}
-	.muted {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
 	.votes {
 		margin: 0;
 		font-family: var(--font-ability);
@@ -651,6 +523,17 @@
 	.causes {
 		display: grid;
 		gap: var(--space-2);
+	}
+	.cancel {
+		display: grid;
+		margin-top: var(--space-2);
+		padding-top: var(--space-3);
+		border-top: 1px solid var(--border);
+	}
+	.cancel :global(.button) {
+		/* A cool tint, unlike the parchment cause buttons. */
+		background: color-mix(in srgb, var(--good) 16%, transparent);
+		border: 1px solid var(--good);
 	}
 	.state {
 		margin: 0 0 var(--space-2);

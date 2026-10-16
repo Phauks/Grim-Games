@@ -106,7 +106,8 @@ export type WarningCode =
 	| 'not-seat-character'
 	| 'already-used'
 	| 'empty-day'
-	| 'reminder-fixed';
+	| 'reminder-fixed'
+	| 'no-cause';
 
 export interface Issue<C extends string> {
 	code: C;
@@ -586,6 +587,10 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			const cause = command.cause === undefined ? undefined : deathCause(ctx, command.cause);
 			if (!command.dead && cause !== undefined) {
 				warn('cause-ignored', 'a living player has no cause of death');
+			}
+			// Every death has a cause (Trevor, 2026-10-16): still allowed, as an override.
+			if (command.dead && cause === undefined && !seat.dead) {
+				warn('no-cause', 'every death has a cause; record one');
 			}
 			if (seat.dead === command.dead) {
 				// Marking a dead player dead again with a new cause records the cause.
