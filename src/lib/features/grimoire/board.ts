@@ -1,6 +1,6 @@
 /**
- * Board helpers that are UI only: where seats sit, how big tokens are, which characters
- * the pickers offer, and the text shown for engine warnings. Rules stay in `#lib/core`.
+ * Board helpers that are UI only: which characters the pickers offer and the text shown
+ * for engine warnings. Rules stay in `#lib/core`; where seats sit is `#lib/ui/seating`.
  */
 import type { Character, CharacterId, CharacterType, Script } from '#lib/core/data/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
@@ -13,34 +13,6 @@ import {
 	type DeathCause,
 	type Seat
 } from '#lib/core/model/index.ts';
-
-/**
- * A seat's centre on an ellipse filling the board, as percentages of its width and height.
- * Seat 1 is at the top and seating runs clockwise. Positions are not stored: they follow
- * the seating order, so rotation and other screen sizes just work.
- */
-export function seatPosition(index: number, count: number): { x: number; y: number } {
-	const angle = (index / Math.max(count, 1)) * 2 * Math.PI - Math.PI / 2;
-	return { x: 50 + 41 * Math.cos(angle), y: 50 + 41 * Math.sin(angle) };
-}
-
-/**
- * Token size in px for `count` seats on a board of `width` × `height`: as large as fits
- * round the ellipse without overlapping, between a 44px tap target and 96px.
- */
-export function tokenSize(width: number, height: number, count: number): number {
-	if (width <= 0 || height <= 0) return 56;
-	// Perimeter of the seat ellipse (Ramanujan), shared out between the seats, leaving room
-	// for the name under each token.
-	const a = 0.41 * width;
-	const b = 0.41 * height;
-	const h = ((a - b) / (a + b)) ** 2;
-	const perimeter = Math.PI * (a + b) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
-	const perSeat = perimeter / Math.max(count, 1);
-	const bySpacing = perSeat * 0.72;
-	const byBoard = Math.min(width, height) * 0.2;
-	return Math.round(Math.max(44, Math.min(96, bySpacing, byBoard)));
-}
 
 /** The types offered for a seat, in script-sheet order. */
 export const SEAT_TYPES: readonly CharacterType[] = [
@@ -125,12 +97,17 @@ export function deathCauseOptions(
 	return [execution, demon, ...ids, other];
 }
 
-export function causeLabel(cause: DeathCause | undefined, characters: CharacterLookup): string {
+/** A cause's words. Travellers are exiled rather than executed. */
+export function causeLabel(
+	cause: DeathCause | undefined,
+	characters: CharacterLookup,
+	traveller = false
+): string {
 	switch (cause) {
 		case undefined:
 			return 'None';
 		case 'execution':
-			return 'Executed';
+			return traveller ? 'Exiled' : 'Executed';
 		case 'demon':
 			return 'The Demon';
 		case 'other':

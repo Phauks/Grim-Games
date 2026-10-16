@@ -8,9 +8,9 @@ import ph_arrow_right_fill from '~icons/ph/arrow-right-fill';
 import ph_arrow_square_out_fill from '~icons/ph/arrow-square-out-fill';
 import ph_arrow_u_up_left_fill from '~icons/ph/arrow-u-up-left-fill';
 import ph_arrow_u_up_right_fill from '~icons/ph/arrow-u-up-right-fill';
-import ph_arrows_clockwise_fill from '~icons/ph/arrows-clockwise-fill';
 import ph_arrows_down_up_fill from '~icons/ph/arrows-down-up-fill';
 import ph_arrows_left_right_fill from '~icons/ph/arrows-left-right-fill';
+import ph_arrows_out_cardinal_fill from '~icons/ph/arrows-out-cardinal-fill';
 import ph_bag_simple_fill from '~icons/ph/bag-simple-fill';
 import ph_beer_bottle_fill from '~icons/ph/beer-bottle-fill';
 import ph_beer_stein_fill from '~icons/ph/beer-stein-fill';
@@ -26,19 +26,21 @@ import ph_caret_right_fill from '~icons/ph/caret-right-fill';
 import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_check_fill from '~icons/ph/check-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
+import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
+import ph_dots_three_fill from '~icons/ph/dots-three-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
 import ph_drop_fill from '~icons/ph/drop-fill';
 import ph_feather_fill from '~icons/ph/feather-fill';
 import ph_fire_fill from '~icons/ph/fire-fill';
 import ph_flag_fill from '~icons/ph/flag-fill';
 import ph_flask_fill from '~icons/ph/flask-fill';
-import ph_flip_vertical_fill from '~icons/ph/flip-vertical-fill';
 import ph_funnel_fill from '~icons/ph/funnel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
 import ph_hand_fist_fill from '~icons/ph/hand-fist-fill';
+import ph_hand_grabbing_fill from '~icons/ph/hand-grabbing-fill';
 import ph_hand_heart_fill from '~icons/ph/hand-heart-fill';
 import ph_hand_palm_fill from '~icons/ph/hand-palm-fill';
 import ph_hand_pointing_fill from '~icons/ph/hand-pointing-fill';
@@ -46,6 +48,7 @@ import ph_handbag_fill from '~icons/ph/handbag-fill';
 import ph_info_fill from '~icons/ph/info-fill';
 import ph_lifebuoy_fill from '~icons/ph/lifebuoy-fill';
 import ph_list_fill from '~icons/ph/list-fill';
+import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
 import ph_moon_fill from '~icons/ph/moon-fill';
@@ -103,9 +106,9 @@ const icons: IconMap = {
 	'ph:arrow-square-out-fill': ph_arrow_square_out_fill,
 	'ph:arrow-u-up-left-fill': ph_arrow_u_up_left_fill,
 	'ph:arrow-u-up-right-fill': ph_arrow_u_up_right_fill,
-	'ph:arrows-clockwise-fill': ph_arrows_clockwise_fill,
 	'ph:arrows-down-up-fill': ph_arrows_down_up_fill,
 	'ph:arrows-left-right-fill': ph_arrows_left_right_fill,
+	'ph:arrows-out-cardinal-fill': ph_arrows_out_cardinal_fill,
 	'ph:bag-simple-fill': ph_bag_simple_fill,
 	'ph:beer-bottle-fill': ph_beer_bottle_fill,
 	'ph:beer-stein-fill': ph_beer_stein_fill,
@@ -121,19 +124,21 @@ const icons: IconMap = {
 	'ph:caret-up-fill': ph_caret_up_fill,
 	'ph:check-fill': ph_check_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
+	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:cross-fill': ph_cross_fill,
+	'ph:dots-three-fill': ph_dots_three_fill,
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
 	'ph:drop-fill': ph_drop_fill,
 	'ph:feather-fill': ph_feather_fill,
 	'ph:fire-fill': ph_fire_fill,
 	'ph:flag-fill': ph_flag_fill,
 	'ph:flask-fill': ph_flask_fill,
-	'ph:flip-vertical-fill': ph_flip_vertical_fill,
 	'ph:funnel-fill': ph_funnel_fill,
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,
 	'ph:ghost-fill': ph_ghost_fill,
 	'ph:hand-fist-fill': ph_hand_fist_fill,
+	'ph:hand-grabbing-fill': ph_hand_grabbing_fill,
 	'ph:hand-heart-fill': ph_hand_heart_fill,
 	'ph:hand-palm-fill': ph_hand_palm_fill,
 	'ph:hand-pointing-fill': ph_hand_pointing_fill,
@@ -141,6 +146,7 @@ const icons: IconMap = {
 	'ph:info-fill': ph_info_fill,
 	'ph:lifebuoy-fill': ph_lifebuoy_fill,
 	'ph:list-fill': ph_list_fill,
+	'ph:list-bullets-fill': ph_list_bullets_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
 	'ph:moon-fill': ph_moon_fill,

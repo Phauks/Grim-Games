@@ -28,11 +28,33 @@ async function closeSheet(page: Page) {
 async function openSeat(page: Page, number: number) {
 	await page.getByRole('button', { name: new RegExp(`^Seat ${number}:`) }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
-	await expect(sheet.getByLabel('Player name')).toBeVisible();
+	await expect(sheet.getByRole('button', { name: 'Edit player name' })).toBeVisible();
 	return sheet;
 }
 
+type Sheet = Awaited<ReturnType<typeof openSeat>>;
+
+/** Names the open seat in place: pencil, type, then the keyboard's Done (Enter). */
+async function nameSeat(sheet: Sheet, name: string) {
+	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
+	await sheet.getByRole('textbox', { name: 'Player name' }).fill(name);
+	await sheet.getByRole('textbox', { name: 'Player name' }).press('Enter');
+}
+
+/** Runs an action from the open seat's … menu. */
+async function seatMenu(page: Page, sheet: Sheet, action: string) {
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: action }).last().tap();
+}
+
 test('a new game is saved and listed on the home page', async ({ page }) => {
+	await page.goto('/');
+	// The setup table under the player count follows it.
+	const current = page.getByTestId('setup-table').locator('thead th[data-current]');
+	await expect(current).toHaveText('8');
+	await page.getByRole('button', { name: 'More players' }).tap();
+	await expect(current).toHaveText('9');
+	await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await startGame(page);
 	await page.goto('/');
 	const saved = page.getByRole('link', { name: /Trouble Brewing.*8 seats/ }).first();
@@ -44,8 +66,7 @@ test('a new game is saved and listed on the home page', async ({ page }) => {
 test('the seat sheet names, assigns, shrouds and survives a reload', async ({ page }) => {
 	await startGame(page);
 	let sheet = await openSeat(page, 1);
-	await sheet.getByLabel('Player name').fill('Ana');
-	await sheet.getByLabel('Player name').press('Enter');
+	await nameSeat(sheet, 'Ana');
 	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
 
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
@@ -59,37 +80,57 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await cause.getByRole('button', { name: 'Executed' }).tap();
 	await expect(sheet.getByRole('button', { name: 'Executed' })).toBeVisible();
 	await sheet.getByRole('button', { name: 'Vote used' }).tap();
-	await sheet.getByRole('button', { name: 'Upside down' }).tap();
+	// A good Imp: as in the physical grimoire, the token turns upside down.
+	await seatMenu(page, sheet, 'Change alignment');
+	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
+	await expect(sheet).toContainText('Imp · Good · Seat 1');
 
 	await page.reload();
 	const seat = page.getByRole('button', { name: /^Seat 1:/ });
-	await expect(seat).toHaveAccessibleName('Seat 1: Ana, Imp, dead, ghost vote used, upside down');
+	await expect(seat).toHaveAccessibleName('Seat 1: Ana, Imp, dead, ghost vote used, good');
 	sheet = await openSeat(page, 1);
 	await expect(sheet.getByRole('button', { name: 'Executed' })).toBeVisible();
 });
 
-test('undo, add seat, swap and remove', async ({ page }) => {
+test('history, add seat, swap and remove', async ({ page }) => {
 	await startGame(page);
 	await menu(page, 'Add seat');
 	await expect(page.getByTestId('seat')).toHaveCount(9);
-	await page.getByRole('button', { name: 'Undo' }).tap();
+
+	// History lists the change; going back to before it asks first.
+	await page.getByRole('button', { name: 'History' }).tap();
+	const history = page.getByRole('dialog', { name: 'History' });
+	const added = history.getByRole('listitem').filter({ hasText: 'Added Seat 9' });
+	await added.getByRole('button', { name: 'Go back' }).tap();
+	const back = page.getByRole('alertdialog', { name: 'Go back?' });
+	await expect(back).toContainText('Undoes 1 change');
+	await back.getByRole('button', { name: 'Go back' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
-	await page.getByRole('button', { name: 'Redo' }).tap();
+	// The undone change stays, greyed out, and can be restored.
+	await added.getByRole('button', { name: 'Restore' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Restore changes?' })
+		.getByRole('button', { name: 'Restore' })
+		.tap();
 	await expect(page.getByTestId('seat')).toHaveCount(9);
+	await history.getByRole('button', { name: 'Close' }).tap();
 
 	let sheet = await openSeat(page, 2);
-	await sheet.getByLabel('Player name').fill('Ben');
-	await sheet.getByLabel('Player name').press('Enter');
-	await sheet.getByRole('button', { name: 'Swap seats' }).tap();
+	await nameSeat(sheet, 'Ben');
+	await seatMenu(page, sheet, 'Swap seats');
 	await page
 		.getByRole('dialog', { name: 'Swap Ben with' })
 		.getByRole('button', { name: /^5/ })
 		.tap();
+	// Swapping is confirmed on its own.
+	const confirm = page.getByRole('alertdialog', { name: 'Swap seats?' });
+	await expect(confirm).toContainText('Swap Ben and Seat 5?');
+	await confirm.getByRole('button', { name: 'Swap' }).tap();
 	await expect(seatLabelled(page, 'Seat 5: Ben')).toBeAttached();
 
 	await closeSheet(page);
 	sheet = await openSeat(page, 5);
-	await sheet.getByRole('button', { name: 'Remove seat' }).tap();
+	await seatMenu(page, sheet, 'Remove seat');
 	await page
 		.getByRole('alertdialog', { name: 'Remove Ben?' })
 		.getByRole('button', { name: 'Remove' })
@@ -100,8 +141,7 @@ test('undo, add seat, swap and remove', async ({ page }) => {
 test('an orphan character is flagged and names are suggested', async ({ page }) => {
 	await startGame(page);
 	let sheet = await openSeat(page, 1);
-	await sheet.getByLabel('Player name').fill('Zed');
-	await sheet.getByLabel('Player name').press('Enter');
+	await nameSeat(sheet, 'Zed');
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Character for Zed' });
 	await picker.getByText('Include characters not on the script').tap();
@@ -110,11 +150,11 @@ test('an orphan character is flagged and names are suggested', async ({ page }) 
 	await expect(seatLabelled(page, 'Seat 1: Zed, Zombuul, not on the script')).toBeAttached();
 
 	// A name used before on this device is offered on another seat, once nobody has it.
-	await sheet.getByLabel('Player name').fill('Amy');
-	await sheet.getByLabel('Player name').press('Enter');
+	await nameSeat(sheet, 'Amy');
 	await closeSheet(page);
 	sheet = await openSeat(page, 2);
-	await sheet.getByLabel('Player name').fill('Z');
+	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
+	await sheet.getByRole('textbox', { name: 'Player name' }).fill('Z');
 	await sheet
 		.getByRole('group', { name: 'Name suggestions' })
 		.getByRole('button', { name: 'Zed' })
@@ -158,13 +198,17 @@ test('Demon bluffs open from the toolbar, and a seat shows its token to the play
 	await page.keyboard.press('Escape');
 
 	const sheet = await openSeat(page, 1);
-	await expect(sheet.getByRole('button', { name: 'Show to player' })).toBeDisabled();
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	await expect(
+		page.getByRole('dialog', { name: 'Seat 1' }).getByRole('button', { name: 'Show to player' })
+	).toBeDisabled();
+	await page.keyboard.press('Escape');
 	await sheet.getByRole('button', { name: 'Choose' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Empath', exact: true })
 		.tap();
-	await sheet.getByRole('button', { name: 'Show to player' }).tap();
+	await seatMenu(page, sheet, 'Show to player');
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown).toBeVisible();
 	await shown.getByRole('button', { name: 'Close' }).tap();
@@ -208,7 +252,7 @@ test('reminders: add several from the picker, recent first, then move and remove
 
 	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
-	// Not in play: only the Drunk's global reminder; the Washerwoman's appear with "include".
+	// Not in play: only the Drunk's global reminder, which marks who is secretly the Drunk.
 	await expect(picker.getByRole('group', { name: 'Drunk' })).toContainText('Is The Drunk');
 	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
 	const poisoner = picker.getByRole('group', { name: 'Poisoner' });
@@ -221,17 +265,94 @@ test('reminders: add several from the picker, recent first, then move and remove
 	await expect(
 		picker.getByRole('group', { name: 'Recent reminders' }).getByRole('button')
 	).toHaveCount(2);
-	await picker.getByText('Include reminders of characters not in play').tap();
-	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toContainText('Wrong');
+	// Only characters in play: no way to add the Washerwoman's reminders here.
+	await expect(picker.getByRole('group', { name: 'Washerwoman' })).toHaveCount(0);
 	await picker.getByRole('button', { name: 'Close' }).tap();
 
 	await expect(seatLabelled(page, 'Seat 1: no name, Poisoner, 2 reminders')).toBeAttached();
-	await sheet.getByRole('button', { name: 'Move Poisoned to another seat' }).tap();
+	await sheet.getByRole('button', { name: 'Actions for Poisoned' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Poisoned' })
+		.getByRole('button', { name: 'Move to another seat' })
+		.tap();
 	await page
 		.getByRole('dialog', { name: 'Move reminder to' })
 		.getByRole('button', { name: /^3/ })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
-	await sheet.getByRole('button', { name: 'Remove Is The Drunk' }).tap();
+	await sheet.getByRole('button', { name: 'Actions for Is The Drunk' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Is The Drunk' })
+		.getByRole('button', { name: 'Remove' })
+		.tap();
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
+});
+
+test('seats can be arranged: dragged into groups, gaps left, oval or circle', async ({ page }) => {
+	await startGame(page);
+	const seat = (n: number) => page.getByRole('button', { name: new RegExp(`^Seat ${n}:`) });
+	const centre = async (n: number) => {
+		const box = (await seat(n).boundingBox())!;
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+	const board = (await page.locator('.board').boundingBox())!;
+	const seat2 = await centre(2);
+	const seat3 = await centre(3);
+
+	await menu(page, 'Arrange seats');
+	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(toolbar).toContainText('Arrange seats');
+	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
+
+	// Drag seat 1 to the middle of the board; the others stay where they were.
+	const from = await centre(1);
+	const to = { x: board.x + board.width / 2, y: board.y + board.height / 2 };
+	await page.mouse.move(from.x, from.y);
+	await page.mouse.down();
+	await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+	await page.mouse.move(to.x, to.y, { steps: 4 });
+	await page.mouse.up();
+	const moved = await centre(1);
+	expect(Math.abs(moved.x - to.x)).toBeLessThan(4);
+	expect(Math.abs(moved.y - to.y)).toBeLessThan(4);
+	expect(await centre(2)).toEqual(seat2);
+
+	// A gap after seat 2 moves the seats after it round the ring.
+	await page.getByRole('button', { name: 'Gap after seat 2: None' }).tap();
+	await expect(page.getByRole('button', { name: 'Gap after seat 2: 1' })).toBeVisible();
+	expect(await centre(3)).not.toEqual(seat3);
+
+	await toolbar.getByText('Circle', { exact: true }).tap();
+	await expect(toolbar.getByRole('checkbox', { name: 'Circle' })).toBeChecked();
+	await toolbar.getByRole('button', { name: 'Done' }).tap();
+	await expect(page.getByRole('button', { name: 'Gap after seat 2: 1' })).toHaveCount(0);
+
+	// The layout is kept on this device, and seats open their sheet again.
+	await page.reload();
+	await expect(page.getByTestId('seat')).toHaveCount(8);
+	const after = await centre(1);
+	expect(Math.abs(after.x - to.x)).toBeLessThan(4);
+	await openSeat(page, 1);
+});
+
+test('the name is edited in place; Done saves and closes the keyboard', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
+	const name = sheet.getByRole('textbox', { name: 'Player name' });
+	await expect(name).toBeFocused();
+	await name.fill('Ana');
+	await expect(name).toHaveAttribute('enterkeyhint', 'done');
+	await name.press('Enter');
+	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
+	// Focus leaving the field is what closes a phone's on-screen keyboard.
+	await expect(name).toBeHidden();
+	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
+
+	// Escape puts the name back as it was.
+	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
+	await name.fill('Bob');
+	await name.press('Escape');
+	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
+	await expect(sheet).toBeVisible();
 });

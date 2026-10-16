@@ -8,9 +8,9 @@ import ph_arrow_right from '~icons/ph/arrow-right';
 import ph_arrow_square_out from '~icons/ph/arrow-square-out';
 import ph_arrow_u_up_left from '~icons/ph/arrow-u-up-left';
 import ph_arrow_u_up_right from '~icons/ph/arrow-u-up-right';
-import ph_arrows_clockwise from '~icons/ph/arrows-clockwise';
 import ph_arrows_down_up from '~icons/ph/arrows-down-up';
 import ph_arrows_left_right from '~icons/ph/arrows-left-right';
+import ph_arrows_out_cardinal from '~icons/ph/arrows-out-cardinal';
 import ph_bag_simple from '~icons/ph/bag-simple';
 import ph_beer_bottle from '~icons/ph/beer-bottle';
 import ph_beer_stein from '~icons/ph/beer-stein';
@@ -26,19 +26,21 @@ import ph_caret_right from '~icons/ph/caret-right';
 import ph_caret_up from '~icons/ph/caret-up';
 import ph_check from '~icons/ph/check';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
+import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_cross from '~icons/ph/cross';
+import ph_dots_three from '~icons/ph/dots-three';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_drop from '~icons/ph/drop';
 import ph_feather from '~icons/ph/feather';
 import ph_fire from '~icons/ph/fire';
 import ph_flag from '~icons/ph/flag';
 import ph_flask from '~icons/ph/flask';
-import ph_flip_vertical from '~icons/ph/flip-vertical';
 import ph_funnel from '~icons/ph/funnel';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
 import ph_ghost from '~icons/ph/ghost';
 import ph_hand_fist from '~icons/ph/hand-fist';
+import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
 import ph_hand_palm from '~icons/ph/hand-palm';
 import ph_hand_pointing from '~icons/ph/hand-pointing';
@@ -46,6 +48,7 @@ import ph_handbag from '~icons/ph/handbag';
 import ph_info from '~icons/ph/info';
 import ph_lifebuoy from '~icons/ph/lifebuoy';
 import ph_list from '~icons/ph/list';
+import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_moon from '~icons/ph/moon';
@@ -103,9 +106,9 @@ const icons: IconMap = {
 	'ph:arrow-square-out': ph_arrow_square_out,
 	'ph:arrow-u-up-left': ph_arrow_u_up_left,
 	'ph:arrow-u-up-right': ph_arrow_u_up_right,
-	'ph:arrows-clockwise': ph_arrows_clockwise,
 	'ph:arrows-down-up': ph_arrows_down_up,
 	'ph:arrows-left-right': ph_arrows_left_right,
+	'ph:arrows-out-cardinal': ph_arrows_out_cardinal,
 	'ph:bag-simple': ph_bag_simple,
 	'ph:beer-bottle': ph_beer_bottle,
 	'ph:beer-stein': ph_beer_stein,
@@ -121,19 +124,21 @@ const icons: IconMap = {
 	'ph:caret-up': ph_caret_up,
 	'ph:check': ph_check,
 	'ph:circle-dashed': ph_circle_dashed,
+	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:cross': ph_cross,
+	'ph:dots-three': ph_dots_three,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
 	'ph:drop': ph_drop,
 	'ph:feather': ph_feather,
 	'ph:fire': ph_fire,
 	'ph:flag': ph_flag,
 	'ph:flask': ph_flask,
-	'ph:flip-vertical': ph_flip_vertical,
 	'ph:funnel': ph_funnel,
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,
 	'ph:ghost': ph_ghost,
 	'ph:hand-fist': ph_hand_fist,
+	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,
 	'ph:hand-palm': ph_hand_palm,
 	'ph:hand-pointing': ph_hand_pointing,
@@ -141,6 +146,7 @@ const icons: IconMap = {
 	'ph:info': ph_info,
 	'ph:lifebuoy': ph_lifebuoy,
 	'ph:list': ph_list,
+	'ph:list-bullets': ph_list_bullets,
 	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-sad': ph_mask_sad,
 	'ph:moon': ph_moon,

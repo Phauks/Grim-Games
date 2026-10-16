@@ -3,7 +3,6 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { recentReminders } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { parseReminderKey, reminderGroups, reminderKey } from './reminders.ts';
@@ -19,8 +18,15 @@
 	let { open = $bindable(), grimoire, seatId, title }: Props = $props();
 
 	const characters = $derived(grimoire.open.characters);
-	let showAll = $state(false);
-	const groups = $derived(reminderGroups(grimoire.game, characters, showAll));
+	const groups = $derived(reminderGroups(grimoire.game, characters));
+	/** Only reminders the picker offers now, so a recent one never brings back one not in play. */
+	const offered = $derived(
+		new Set(
+			groups.flatMap((g) =>
+				g.labels.map((label) => reminderKey({ characterId: g.character.id, label }))
+			)
+		)
+	);
 
 	let recent = $state<Reminder[]>([]);
 	$effect(() => {
@@ -28,7 +34,7 @@
 			recent = recentReminders
 				.read()
 				.flatMap((key) => parseReminderKey(key) ?? [])
-				.filter((r) => characters.has(r.characterId));
+				.filter((r) => offered.has(reminderKey(r)));
 	});
 
 	/** Adds a reminder and keeps the picker open, so several can be added in a row. */
@@ -44,11 +50,6 @@
 
 <Dialog bind:open title={`Reminders for ${title}`} size="full">
 	<div class="head">
-		<Toggle
-			label="Include reminders of characters not in play"
-			checked={showAll}
-			onChange={(v) => (showAll = v)}
-		/>
 		<p class="count" aria-live="polite">On this seat: {placed}</p>
 		<!-- A fixed-height row: recent reminders never move the list below. -->
 		<div class="recent" role="group" aria-label="Recent reminders">

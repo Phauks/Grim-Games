@@ -76,6 +76,8 @@ test('the commit is a link and About opens a dialog without moving the page', as
 	// Measure once web fonts have swapped in, so only the dialog could move the footer.
 	await page.evaluate(() => document.fonts.ready);
 	await page.waitForLoadState('load');
+	// The footer can be below the fold; tapping would scroll it, which is not the dialog's doing.
+	await build.scrollIntoViewIfNeeded();
 	const before = await build.boundingBox();
 	await build.getByRole('button', { name: 'About' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'About Grim-Games' });

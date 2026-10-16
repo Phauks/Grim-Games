@@ -8,9 +8,9 @@ import ph_arrow_right_thin from '~icons/ph/arrow-right-thin';
 import ph_arrow_square_out_thin from '~icons/ph/arrow-square-out-thin';
 import ph_arrow_u_up_left_thin from '~icons/ph/arrow-u-up-left-thin';
 import ph_arrow_u_up_right_thin from '~icons/ph/arrow-u-up-right-thin';
-import ph_arrows_clockwise_thin from '~icons/ph/arrows-clockwise-thin';
 import ph_arrows_down_up_thin from '~icons/ph/arrows-down-up-thin';
 import ph_arrows_left_right_thin from '~icons/ph/arrows-left-right-thin';
+import ph_arrows_out_cardinal_thin from '~icons/ph/arrows-out-cardinal-thin';
 import ph_bag_simple_thin from '~icons/ph/bag-simple-thin';
 import ph_beer_bottle_thin from '~icons/ph/beer-bottle-thin';
 import ph_beer_stein_thin from '~icons/ph/beer-stein-thin';
@@ -26,19 +26,21 @@ import ph_caret_right_thin from '~icons/ph/caret-right-thin';
 import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_check_thin from '~icons/ph/check-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
+import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_cross_thin from '~icons/ph/cross-thin';
+import ph_dots_three_thin from '~icons/ph/dots-three-thin';
 import ph_dots_three_vertical_thin from '~icons/ph/dots-three-vertical-thin';
 import ph_drop_thin from '~icons/ph/drop-thin';
 import ph_feather_thin from '~icons/ph/feather-thin';
 import ph_fire_thin from '~icons/ph/fire-thin';
 import ph_flag_thin from '~icons/ph/flag-thin';
 import ph_flask_thin from '~icons/ph/flask-thin';
-import ph_flip_vertical_thin from '~icons/ph/flip-vertical-thin';
 import ph_funnel_thin from '~icons/ph/funnel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
 import ph_hand_fist_thin from '~icons/ph/hand-fist-thin';
+import ph_hand_grabbing_thin from '~icons/ph/hand-grabbing-thin';
 import ph_hand_heart_thin from '~icons/ph/hand-heart-thin';
 import ph_hand_palm_thin from '~icons/ph/hand-palm-thin';
 import ph_hand_pointing_thin from '~icons/ph/hand-pointing-thin';
@@ -46,6 +48,7 @@ import ph_handbag_thin from '~icons/ph/handbag-thin';
 import ph_info_thin from '~icons/ph/info-thin';
 import ph_lifebuoy_thin from '~icons/ph/lifebuoy-thin';
 import ph_list_thin from '~icons/ph/list-thin';
+import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
 import ph_moon_thin from '~icons/ph/moon-thin';
@@ -103,9 +106,9 @@ const icons: IconMap = {
 	'ph:arrow-square-out-thin': ph_arrow_square_out_thin,
 	'ph:arrow-u-up-left-thin': ph_arrow_u_up_left_thin,
 	'ph:arrow-u-up-right-thin': ph_arrow_u_up_right_thin,
-	'ph:arrows-clockwise-thin': ph_arrows_clockwise_thin,
 	'ph:arrows-down-up-thin': ph_arrows_down_up_thin,
 	'ph:arrows-left-right-thin': ph_arrows_left_right_thin,
+	'ph:arrows-out-cardinal-thin': ph_arrows_out_cardinal_thin,
 	'ph:bag-simple-thin': ph_bag_simple_thin,
 	'ph:beer-bottle-thin': ph_beer_bottle_thin,
 	'ph:beer-stein-thin': ph_beer_stein_thin,
@@ -121,19 +124,21 @@ const icons: IconMap = {
 	'ph:caret-up-thin': ph_caret_up_thin,
 	'ph:check-thin': ph_check_thin,
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
+	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:cross-thin': ph_cross_thin,
+	'ph:dots-three-thin': ph_dots_three_thin,
 	'ph:dots-three-vertical-thin': ph_dots_three_vertical_thin,
 	'ph:drop-thin': ph_drop_thin,
 	'ph:feather-thin': ph_feather_thin,
 	'ph:fire-thin': ph_fire_thin,
 	'ph:flag-thin': ph_flag_thin,
 	'ph:flask-thin': ph_flask_thin,
-	'ph:flip-vertical-thin': ph_flip_vertical_thin,
 	'ph:funnel-thin': ph_funnel_thin,
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
 	'ph:ghost-thin': ph_ghost_thin,
 	'ph:hand-fist-thin': ph_hand_fist_thin,
+	'ph:hand-grabbing-thin': ph_hand_grabbing_thin,
 	'ph:hand-heart-thin': ph_hand_heart_thin,
 	'ph:hand-palm-thin': ph_hand_palm_thin,
 	'ph:hand-pointing-thin': ph_hand_pointing_thin,
@@ -141,6 +146,7 @@ const icons: IconMap = {
 	'ph:info-thin': ph_info_thin,
 	'ph:lifebuoy-thin': ph_lifebuoy_thin,
 	'ph:list-thin': ph_list_thin,
+	'ph:list-bullets-thin': ph_list_bullets_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
 	'ph:moon-thin': ph_moon_thin,

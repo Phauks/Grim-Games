@@ -18,6 +18,14 @@
 		onSnap?: (snapPoint: SnapPoint | null) => void;
 		/** Fixed height of the fully open sheet (e.g. `'85dvh'`); defaults to its content. */
 		height?: string;
+		/** Buttons at the end of the header, such as a "…" menu. */
+		actions?: Snippet;
+		/** Shown left of the title and description, spanning both lines (an icon). */
+		lead?: Snippet;
+		/** Replaces the title's text, for a title that can be edited in place. */
+		heading?: Snippet;
+		/** Right after the title on its line, such as an edit button. */
+		titleEnd?: Snippet;
 		children: Snippet;
 	}
 
@@ -29,6 +37,10 @@
 		initialSnapPoint,
 		onSnap,
 		height,
+		actions,
+		lead,
+		heading,
+		titleEnd,
 		children
 	}: Props = $props();
 </script>
@@ -53,8 +65,21 @@
 					<Drawer.GrabberIndicator />
 				</Drawer.Grabber>
 				<header>
-					<Drawer.Title>{title}</Drawer.Title>
-					{#if description}<Drawer.Description>{description}</Drawer.Description>{/if}
+					{#if lead}<div class="lead">{@render lead()}</div>{/if}
+					<div class="titles">
+						{#if heading || titleEnd}
+							<div class="title-line">
+								<Drawer.Title
+									>{#if heading}{@render heading()}{:else}{title}{/if}</Drawer.Title
+								>
+								{#if titleEnd}{@render titleEnd()}{/if}
+							</div>
+						{:else}
+							<Drawer.Title>{title}</Drawer.Title>
+						{/if}
+						{#if description}<Drawer.Description>{description}</Drawer.Description>{/if}
+					</div>
+					{#if actions}{@render actions()}{/if}
 				</header>
 				<div class="body">{@render children()}</div>
 			</Drawer.Content>
@@ -141,9 +166,33 @@
 	}
 
 	header {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2);
 		padding-bottom: var(--space-3);
 		/* Dragging the header moves the sheet instead of scrolling the page. */
 		touch-action: none;
+	}
+	.titles {
+		flex: 1;
+		min-width: 0;
+	}
+	.lead {
+		flex: none;
+		align-self: center;
+	}
+	/* A fixed height, so an input swapped in for the title moves nothing. */
+	.title-line {
+		display: flex;
+		align-items: center;
+		height: var(--tap-target);
+		min-width: 0;
+	}
+	.title-line > :global([data-part='title']) {
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 	.body {
 		min-height: 0;

@@ -1,12 +1,14 @@
 /**
- * What the reminders picker offers (Pocket Grimoire parity: script-filtered list, show all,
- * add several, recent reminders). Reminder tokens come from TPI's data: a character's
+ * What the reminders picker offers: reminders of characters in play, several at a time,
+ * with recent reminders first. Reminder tokens come from TPI's data: a character's
  * `reminders` while it is in play, and its `remindersGlobal` whenever it is on the script.
  */
 import type { Character } from '#lib/core/data/index.ts';
+import { gainedAbilities } from '#lib/core/rules/index.ts';
 import {
 	charactersInPlay,
 	scriptCharacterIds,
+	trueCharacter,
 	type CharacterLookup,
 	type Game,
 	type Reminder
@@ -23,26 +25,30 @@ function unique(labels: readonly string[]): string[] {
 }
 
 /**
- * Reminder groups for a game. By default: characters in play (seats, Fabled and Loric) with
- * all their reminders, then characters on the script that are not in play with only their
- * global reminders. With `all`, every character on the script or in play offers all of its
- * reminders. Characters with nothing to offer are left out.
+ * Reminder groups for a game: only characters in play offer reminders. In play means a
+ * token on a seat, a seat's true character (the Drunk, Marionette, Philosopher or Alchemist
+ * marked by its "Is The …" reminder), the Fabled and Loric, and an ability a seat has
+ * gained (the Pixie's Townsfolk). One exception: a script character's global reminders are
+ * always offered, because "Is The Drunk" and the like are how the Storyteller marks a
+ * character that is in play but hidden under another token.
  */
-export function reminderGroups(
-	game: Game,
-	characters: CharacterLookup,
-	all: boolean
-): ReminderGroup[] {
-	const inPlay = [...new Set([...charactersInPlay(game), ...game.ruleCharacters])];
+export function reminderGroups(game: Game, characters: CharacterLookup): ReminderGroup[] {
+	const inPlay = [
+		...new Set([
+			...charactersInPlay(game),
+			...game.seating.flatMap((seatId) => trueCharacter(game, seatId, characters) ?? []),
+			...game.ruleCharacters,
+			...gainedAbilities(game).map((gained) => gained.characterId)
+		])
+	];
 	const onScript = scriptCharacterIds(game.script).filter((id) => !inPlay.includes(id));
 	const groups: ReminderGroup[] = [];
 	for (const id of [...inPlay, ...onScript]) {
 		const character = characters.get(id);
 		if (!character) continue;
-		const labels =
-			all || inPlay.includes(id)
-				? unique([...character.reminders, ...character.remindersGlobal])
-				: unique(character.remindersGlobal);
+		const labels = inPlay.includes(id)
+			? unique([...character.reminders, ...character.remindersGlobal])
+			: unique(character.remindersGlobal);
 		if (labels.length > 0) groups.push({ character, labels });
 	}
 	return groups;

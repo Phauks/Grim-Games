@@ -129,6 +129,18 @@ export class OpenGame {
 		void this.save();
 	}
 
+	/**
+	 * Rolls the game back (or forward again) to just after `cursor` entries of its history,
+	 * in one step. Entries after it stay in the log as the redo stack until a new change
+	 * replaces them. The first entry (the new game) is always kept.
+	 */
+	goTo(cursor: number): void {
+		const target = Math.max(1, Math.min(cursor, this.session.log.entries.length));
+		if (target === this.session.log.cursor) return;
+		this.session = openSession({ ...this.session.log, cursor: target });
+		void this.save();
+	}
+
 	/** Queues a save of the current session; resolves once it (and earlier ones) landed. */
 	save(): Promise<void> {
 		const snapshot = toSavedGame(this.session, this.#ctx.now());

@@ -16,6 +16,8 @@
 		current?: CharacterId;
 		/** Hide the "not on the script" switch (Fabled and Loric are never on a script sheet). */
 		alwaysAll?: boolean;
+		/** One row per character with its ability, rather than a grid of tokens. */
+		list?: boolean;
 		onPick: (id: CharacterId) => void;
 	}
 
@@ -27,6 +29,7 @@
 		types,
 		current,
 		alwaysAll = false,
+		list = false,
 		onPick
 	}: Props = $props();
 
@@ -48,7 +51,7 @@
 		{#each groups as group (group.type)}
 			<section aria-label={TYPE_LABELS[group.type]}>
 				<h3>{TYPE_LABELS[group.type]}</h3>
-				<ul>
+				<ul class:rows={list}>
 					{#each group.characters as character (character.id)}
 						<li>
 							<button
@@ -58,8 +61,15 @@
 								aria-pressed={character.id === current}
 								onclick={() => onPick(character.id)}
 							>
-								<CharacterToken {character} size={48} />
-								<span class="name">{character.name}</span>
+								<CharacterToken {character} size={list ? 40 : 48} />
+								{#if list}
+									<span class="text">
+										<span class="name">{character.name}</span>
+										<span class="ability">{character.ability}</span>
+									</span>
+								{:else}
+									<span class="name">{character.name}</span>
+								{/if}
 							</button>
 						</li>
 					{/each}
@@ -111,6 +121,30 @@
 	}
 	.pick[aria-pressed='true'] {
 		border-color: var(--focus);
+	}
+	.rows {
+		grid-template-columns: 1fr;
+		gap: 2px;
+	}
+	.rows .pick {
+		grid-template-columns: auto 1fr;
+		justify-items: start;
+		align-items: center;
+		gap: var(--space-2);
+		text-align: start;
+	}
+	.text {
+		display: grid;
+		gap: 2px;
+	}
+	.rows .name {
+		font-size: 0.95rem;
+		text-align: start;
+	}
+	.ability {
+		font-family: var(--font-ability);
+		font-size: 0.85rem;
+		line-height: 1.3;
 	}
 	.name {
 		font-family: var(--font-character);

@@ -24,7 +24,8 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import { upsideDown } from './device-notes.ts';
+	import SetupTable from '#lib/features/setup/SetupTable.svelte';
+	import { seatLayouts } from './device-notes.ts';
 
 	// ── Saved games ──
 	let games = $state<SavedGameSummary[]>([]);
@@ -53,7 +54,7 @@
 		if (!deleting) return;
 		try {
 			await gameStore().delete(deleting);
-			upsideDown.forget(deleting);
+			seatLayouts.forget(deleting);
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		}
@@ -120,6 +121,7 @@
 			onclick={() => (players = Math.min(MAX_PLAYERS, players + 1))}
 		/>
 	</div>
+	<SetupTable {players} />
 	<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>Start game</Button>
 </section>
 

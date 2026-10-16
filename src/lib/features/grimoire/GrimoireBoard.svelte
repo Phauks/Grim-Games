@@ -8,9 +8,24 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { isOrphan, seatPosition, tokenSize } from './board.ts';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import {
+		DEFAULT_SEAT_LAYOUT,
+		gapPoints,
+		isDefaultLayout,
+		nextGap,
+		seatPoints,
+		seatTokenSize,
+		withGap,
+		withPlaced,
+		withShape,
+		type SeatPoint
+	} from '#lib/ui/seating/seat-layout.ts';
+	import { isOrphan } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import HistoryDialog from './HistoryDialog.svelte';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
 
@@ -45,7 +60,76 @@
 			observer.disconnect();
 		};
 	});
-	const size = $derived(tokenSize(width, height, seats.length));
+	const layout = $derived(grimoire.layout);
+	const points = $derived(seatPoints(game.seating, layout, { width, height }));
+	const size = $derived(seatTokenSize(game.seating, layout, { width, height }));
+
+	// ── Arranging seats ──
+	// Seats can be dragged anywhere (people on a couch, a gap by the door) and gaps left
+	// between neighbours. Only where seats are drawn changes; the seating order does not.
+	let arranging = $state(false);
+	const gapAt = $derived(arranging ? gapPoints(game.seating, layout, { width, height }, 0.3) : []);
+	function startArranging() {
+		arranging = true;
+		toast('Arrange seats', 'Drag a seat to move it. Tap + between seats to leave a gap.');
+	}
+
+	interface Drag {
+		seatId: SeatId;
+		pointerId: number;
+		/** From the pointer to the seat's centre, so the seat does not jump under a finger. */
+		offset: SeatPoint;
+		at: SeatPoint;
+		moved: boolean;
+	}
+	let drag = $state<Drag | undefined>();
+	/** Pointer movement, in pixels, before a press counts as a drag. */
+	const DRAG_SLOP = 6;
+	let pressedAt = { x: 0, y: 0 };
+
+	function boardPoint(event: PointerEvent): SeatPoint {
+		const rect = board!.getBoundingClientRect();
+		return {
+			x: ((event.clientX - rect.left) / rect.width) * 100,
+			y: ((event.clientY - rect.top) / rect.height) * 100
+		};
+	}
+	function dragStart(event: PointerEvent, seatId: SeatId, at: SeatPoint) {
+		if (!arranging || drag || !board) return;
+		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		const p = boardPoint(event);
+		pressedAt = { x: event.clientX, y: event.clientY };
+		drag = {
+			seatId,
+			pointerId: event.pointerId,
+			offset: { x: at.x - p.x, y: at.y - p.y },
+			at,
+			moved: false
+		};
+	}
+	function dragMove(event: PointerEvent) {
+		if (!drag || event.pointerId !== drag.pointerId) return;
+		const moved =
+			drag.moved ||
+			Math.hypot(event.clientX - pressedAt.x, event.clientY - pressedAt.y) >= DRAG_SLOP;
+		const p = boardPoint(event);
+		drag = { ...drag, moved, at: { x: p.x + drag.offset.x, y: p.y + drag.offset.y } };
+	}
+	function dragEnd(event: PointerEvent) {
+		if (!drag || event.pointerId !== drag.pointerId) return;
+		if (drag.moved) grimoire.setLayout(withPlaced(layout, drag.seatId, drag.at));
+		drag = undefined;
+	}
+	/** Arrow keys move a seat while arranging, for keyboards and switch access. */
+	function nudge(event: KeyboardEvent, seatId: SeatId, at: SeatPoint) {
+		if (!arranging) return;
+		const step = { ArrowLeft: [-2, 0], ArrowRight: [2, 0], ArrowUp: [0, -2], ArrowDown: [0, 2] }[
+			event.key
+		];
+		if (!step) return;
+		event.preventDefault();
+		grimoire.setLayout(withPlaced(layout, seatId, { x: at.x + step[0], y: at.y + step[1] }));
+	}
 
 	// ── Seat sheet ──
 	let sheetOpen = $state(false);
@@ -70,6 +154,7 @@
 	}
 
 	let bluffsOpen = $state(false);
+	let historyOpen = $state(false);
 	let menuOpen = $state(false);
 	function fromMenu(action: () => void) {
 		menuOpen = false;
@@ -85,46 +170,76 @@
 
 <div class="grimoire">
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
-		<span class="title">{game.script.meta?.name ?? 'Custom script'}</span>
-		<IconButton
-			icon="undo"
-			label="Undo"
-			disabled={!grimoire.open.canUndo}
-			onclick={() => grimoire.open.undo()}
-		/>
-		<IconButton
-			icon="redo"
-			label="Redo"
-			disabled={!grimoire.open.canRedo}
-			onclick={() => grimoire.open.redo()}
-		/>
-		<IconButton
-			icon="players"
-			label="Characters"
-			onclick={() => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))}
-		/>
-		<IconButton
-			icon="bag"
-			label="Bag draw"
-			onclick={() => goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }))}
-		/>
-		<IconButton icon="menu" label="More" onclick={() => (menuOpen = true)} />
+		{#if arranging}
+			<span class="title">Arrange seats</span>
+			<div class="shape">
+				<Toggle
+					label="Circle"
+					checked={layout.shape === 'circle'}
+					onChange={(circle) => grimoire.setLayout(withShape(layout, circle ? 'circle' : 'oval'))}
+				/>
+			</div>
+			<Button
+				variant="quiet"
+				disabled={isDefaultLayout(layout)}
+				onclick={() => grimoire.setLayout(DEFAULT_SEAT_LAYOUT)}>Reset</Button
+			>
+			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
+		{:else}
+			<span class="title">{game.script.meta?.name ?? 'Custom script'}</span>
+			<IconButton icon="history" label="History" onclick={() => (historyOpen = true)} />
+			<IconButton
+				icon="players"
+				label="Characters"
+				onclick={() => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))}
+			/>
+			<IconButton
+				icon="bag"
+				label="Bag draw"
+				onclick={() => goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }))}
+			/>
+			<IconButton icon="menu" label="More" onclick={() => (menuOpen = true)} />
+		{/if}
 	</div>
 
-	<div class="board" bind:this={board}>
+	<div class="board" class:arranging bind:this={board}>
 		{#each seats as seat, i (seat.seatId)}
-			{@const at = seatPosition(i, seats.length)}
-			<div class="slot" style:left="{at.x}%" style:top="{at.y}%">
+			{@const at = drag?.seatId === seat.seatId ? drag.at : points[i]}
+			<div
+				class="slot"
+				class:dragging={drag?.seatId === seat.seatId}
+				style:left="{at.x}%"
+				style:top="{at.y}%"
+				onpointerdown={(event) => dragStart(event, seat.seatId, at)}
+				onpointermove={dragMove}
+				onpointerup={dragEnd}
+				onpointercancel={() => (drag = undefined)}
+				onkeydown={(event) => nudge(event, seat.seatId, at)}
+				role="presentation"
+			>
 				<SeatToken
 					{seat}
 					number={i + 1}
 					character={seat.characterId ? characters.get(seat.characterId) : undefined}
 					{size}
-					upsideDown={grimoire.isFlipped(seat.seatId)}
 					orphan={isOrphan(seat, game.script, characters)}
-					onTap={() => openSeat(seat.seatId)}
+					onTap={() => !arranging && openSeat(seat.seatId)}
 				/>
 			</div>
+		{/each}
+
+		{#each gapAt as at, i (game.seating[i])}
+			{@const seatId = game.seating[i]}
+			{@const gap = layout.gaps[seatId] ?? 0}
+			<button
+				type="button"
+				class="gap"
+				style:left="{at.x}%"
+				style:top="{at.y}%"
+				aria-label={`Gap after seat ${i + 1}: ${gap === 0 ? 'None' : gap}`}
+				onclick={() => grimoire.setLayout(withGap(layout, seatId, nextGap(layout, seatId)))}
+				>{gap === 0 ? '+' : gap}</button
+			>
 		{/each}
 
 		<!-- Fabled and Loric are rules of the game, not seats: they sit in the middle. -->
@@ -166,10 +281,15 @@
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
 			Demon bluffs
 		</Button>
+		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
+			Arrange seats
+		</Button>
 	</div>
 </Dialog>
 
 <SeatSheet bind:open={sheetOpen} {grimoire} seatId={selected} />
+
+<HistoryDialog bind:open={historyOpen} {grimoire} />
 
 <BluffsSheet
 	bind:open={bluffsOpen}
@@ -185,6 +305,7 @@
 	script={game.script}
 	types={['traveller']}
 	alwaysAll
+	list
 	onPick={(id) => {
 		travellerOpen = false;
 		traveller = id;
@@ -210,6 +331,7 @@
 	script={game.script}
 	types={['fabled', 'loric']}
 	alwaysAll
+	list
 	onPick={(characterId) => {
 		ruleOpen = false;
 		grimoire.run({ type: 'AddRuleCharacter', characterId });
@@ -244,6 +366,10 @@
 		min-height: 320px;
 	}
 	.toolbar {
+		/* A fixed height, so swapping in the arranging controls never moves the board. */
+		flex: none;
+		box-sizing: border-box;
+		height: calc(var(--tap-target) + 1px);
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
@@ -259,6 +385,9 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
+	.shape {
+		flex: none;
+	}
 	.board {
 		position: relative;
 		flex: 1;
@@ -270,6 +399,36 @@
 	.slot {
 		position: absolute;
 		translate: -50% calc(-50% + 0.6em);
+	}
+	/* While arranging, a press drags a seat instead of scrolling or zooming. */
+	.arranging {
+		touch-action: none;
+		outline: 1px dashed var(--border);
+		outline-offset: var(--space-1);
+		border-radius: var(--radius-md);
+	}
+	.arranging .slot {
+		cursor: grab;
+	}
+	.slot.dragging {
+		z-index: 2;
+		cursor: grabbing;
+	}
+	.gap {
+		position: absolute;
+		translate: -50% -50%;
+		z-index: 1;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		border: 1px dashed var(--border);
+		border-radius: 50%;
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font: 600 1rem / 1 var(--font-control);
+		cursor: pointer;
+	}
+	.gap:hover {
+		background: var(--surface-selected);
 	}
 	.rules {
 		position: absolute;

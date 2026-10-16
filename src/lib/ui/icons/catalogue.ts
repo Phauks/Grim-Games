@@ -53,14 +53,16 @@ export const ICON_SLOTS = {
 	sortDescending: { label: 'Sorted descending', choices: ['ph:caret-down', 'ph:sort-descending'] },
 	filter: { label: 'Filter', choices: ['ph:funnel'] },
 	assistance: { label: 'Storyteller settings', choices: ['ph:lifebuoy', 'ph:hand-heart'] },
-	upsideDown: { label: 'Upside down', choices: ['ph:flip-vertical', 'ph:arrows-clockwise'] },
 	remove: { label: 'Remove', choices: ['ph:trash', 'ph:trash-simple'] },
 	swap: { label: 'Swap seats', choices: ['ph:arrows-left-right', 'ph:swap'] },
 	rename: { label: 'Rename', choices: ['ph:pencil-simple', 'ph:user-switch'] },
 	move: { label: 'Move', choices: ['ph:arrow-bend-up-right'] },
 	traveller: { label: 'Traveller', choices: ['ph:person-simple-walk', 'ph:user-plus'] },
 	fabled: { label: 'Fabled and Loric', choices: ['ph:sparkle'] },
-	grimoire: { label: 'Grimoire', choices: ['ph:users-four', 'ph:circle-dashed'] }
+	grimoire: { label: 'Grimoire', choices: ['ph:users-four', 'ph:circle-dashed'] },
+	arrange: { label: 'Arrange seats', choices: ['ph:arrows-out-cardinal', 'ph:hand-grabbing'] },
+	more: { label: 'More actions', choices: ['ph:dots-three', 'ph:dots-three-vertical'] },
+	history: { label: 'History', choices: ['ph:clock-counter-clockwise', 'ph:list-bullets'] }
 } as const satisfies Record<string, IconSlotInfo>;
 
 export type IconSlot = keyof typeof ICON_SLOTS;

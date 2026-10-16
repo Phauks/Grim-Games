@@ -3,7 +3,7 @@ import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { characterLookup, type Seat } from '#lib/core/model/index.ts';
 import { deathCauses } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { deathCauseOptions, isOrphan, pickerGroups, seatPosition, tokenSize } from './board.ts';
+import { causeLabel, deathCauseOptions, isOrphan, pickerGroups } from './board.ts';
 
 const data = committedGameData();
 const tb = toScript(editionScript('tb', data)!);
@@ -19,26 +19,6 @@ function seat(characterId?: string): Seat {
 		reminders: []
 	};
 }
-
-describe('seatPosition', () => {
-	it('puts seat 1 at the top and runs clockwise', () => {
-		expect(seatPosition(0, 4)).toEqual({ x: 50, y: 9 });
-		const second = seatPosition(1, 4);
-		expect(second.x).toBeCloseTo(91);
-		expect(second.y).toBeCloseTo(50);
-	});
-});
-
-describe('tokenSize', () => {
-	it('stays between a tap target and 96px', () => {
-		expect(tokenSize(320, 400, 30)).toBe(44);
-		expect(tokenSize(1200, 900, 5)).toBe(96);
-		expect(tokenSize(0, 0, 8)).toBe(56);
-	});
-	it('shrinks as seats are added', () => {
-		expect(tokenSize(390, 600, 8)).toBeGreaterThan(tokenSize(390, 600, 12));
-	});
-});
 
 describe('pickerGroups', () => {
 	it('offers the script by type, plus every Traveller', () => {
@@ -89,5 +69,13 @@ describe('deathCauseOptions', () => {
 	it('offers a character that can only kill its own player on that seat only', () => {
 		expect(deathCauseOptions(options, characters, 'gambler')).toContain('gambler');
 		expect(deathCauseOptions(options, characters, 'slayer')).not.toContain('gambler');
+	});
+});
+
+describe('causeLabel', () => {
+	// https://wiki.bloodontheclocktower.com/Travellers : Travellers are exiled, not executed.
+	it('says Exiled for a Traveller', () => {
+		expect(causeLabel('execution', characters)).toBe('Executed');
+		expect(causeLabel('execution', characters, true)).toBe('Exiled');
 	});
 });

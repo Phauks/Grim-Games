@@ -8,9 +8,9 @@ import ph_arrow_right_light from '~icons/ph/arrow-right-light';
 import ph_arrow_square_out_light from '~icons/ph/arrow-square-out-light';
 import ph_arrow_u_up_left_light from '~icons/ph/arrow-u-up-left-light';
 import ph_arrow_u_up_right_light from '~icons/ph/arrow-u-up-right-light';
-import ph_arrows_clockwise_light from '~icons/ph/arrows-clockwise-light';
 import ph_arrows_down_up_light from '~icons/ph/arrows-down-up-light';
 import ph_arrows_left_right_light from '~icons/ph/arrows-left-right-light';
+import ph_arrows_out_cardinal_light from '~icons/ph/arrows-out-cardinal-light';
 import ph_bag_simple_light from '~icons/ph/bag-simple-light';
 import ph_beer_bottle_light from '~icons/ph/beer-bottle-light';
 import ph_beer_stein_light from '~icons/ph/beer-stein-light';
@@ -26,19 +26,21 @@ import ph_caret_right_light from '~icons/ph/caret-right-light';
 import ph_caret_up_light from '~icons/ph/caret-up-light';
 import ph_check_light from '~icons/ph/check-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
+import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_cross_light from '~icons/ph/cross-light';
+import ph_dots_three_light from '~icons/ph/dots-three-light';
 import ph_dots_three_vertical_light from '~icons/ph/dots-three-vertical-light';
 import ph_drop_light from '~icons/ph/drop-light';
 import ph_feather_light from '~icons/ph/feather-light';
 import ph_fire_light from '~icons/ph/fire-light';
 import ph_flag_light from '~icons/ph/flag-light';
 import ph_flask_light from '~icons/ph/flask-light';
-import ph_flip_vertical_light from '~icons/ph/flip-vertical-light';
 import ph_funnel_light from '~icons/ph/funnel-light';
 import ph_gear_light from '~icons/ph/gear-light';
 import ph_gear_six_light from '~icons/ph/gear-six-light';
 import ph_ghost_light from '~icons/ph/ghost-light';
 import ph_hand_fist_light from '~icons/ph/hand-fist-light';
+import ph_hand_grabbing_light from '~icons/ph/hand-grabbing-light';
 import ph_hand_heart_light from '~icons/ph/hand-heart-light';
 import ph_hand_palm_light from '~icons/ph/hand-palm-light';
 import ph_hand_pointing_light from '~icons/ph/hand-pointing-light';
@@ -46,6 +48,7 @@ import ph_handbag_light from '~icons/ph/handbag-light';
 import ph_info_light from '~icons/ph/info-light';
 import ph_lifebuoy_light from '~icons/ph/lifebuoy-light';
 import ph_list_light from '~icons/ph/list-light';
+import ph_list_bullets_light from '~icons/ph/list-bullets-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
 import ph_moon_light from '~icons/ph/moon-light';
@@ -103,9 +106,9 @@ const icons: IconMap = {
 	'ph:arrow-square-out-light': ph_arrow_square_out_light,
 	'ph:arrow-u-up-left-light': ph_arrow_u_up_left_light,
 	'ph:arrow-u-up-right-light': ph_arrow_u_up_right_light,
-	'ph:arrows-clockwise-light': ph_arrows_clockwise_light,
 	'ph:arrows-down-up-light': ph_arrows_down_up_light,
 	'ph:arrows-left-right-light': ph_arrows_left_right_light,
+	'ph:arrows-out-cardinal-light': ph_arrows_out_cardinal_light,
 	'ph:bag-simple-light': ph_bag_simple_light,
 	'ph:beer-bottle-light': ph_beer_bottle_light,
 	'ph:beer-stein-light': ph_beer_stein_light,
@@ -121,19 +124,21 @@ const icons: IconMap = {
 	'ph:caret-up-light': ph_caret_up_light,
 	'ph:check-light': ph_check_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
+	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:cross-light': ph_cross_light,
+	'ph:dots-three-light': ph_dots_three_light,
 	'ph:dots-three-vertical-light': ph_dots_three_vertical_light,
 	'ph:drop-light': ph_drop_light,
 	'ph:feather-light': ph_feather_light,
 	'ph:fire-light': ph_fire_light,
 	'ph:flag-light': ph_flag_light,
 	'ph:flask-light': ph_flask_light,
-	'ph:flip-vertical-light': ph_flip_vertical_light,
 	'ph:funnel-light': ph_funnel_light,
 	'ph:gear-light': ph_gear_light,
 	'ph:gear-six-light': ph_gear_six_light,
 	'ph:ghost-light': ph_ghost_light,
 	'ph:hand-fist-light': ph_hand_fist_light,
+	'ph:hand-grabbing-light': ph_hand_grabbing_light,
 	'ph:hand-heart-light': ph_hand_heart_light,
 	'ph:hand-palm-light': ph_hand_palm_light,
 	'ph:hand-pointing-light': ph_hand_pointing_light,
@@ -141,6 +146,7 @@ const icons: IconMap = {
 	'ph:info-light': ph_info_light,
 	'ph:lifebuoy-light': ph_lifebuoy_light,
 	'ph:list-light': ph_list_light,
+	'ph:list-bullets-light': ph_list_bullets_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
 	'ph:mask-sad-light': ph_mask_sad_light,
 	'ph:moon-light': ph_moon_light,

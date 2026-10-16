@@ -1,15 +1,22 @@
 /**
  * Small things the grimoire keeps on this device, outside the game's event log:
  * - player names used before, offered as suggestions when naming a seat;
- * - which tokens the Storyteller turned upside down. In the physical grimoire that is only
- *   a reminder to the Storyteller with no rules meaning, so it is not game state.
+ * - where seats are drawn on this screen (oval or circle, gaps, seats placed by hand). The
+ *   seating order is game state; how it is laid out on one device is not.
  *
- * Both live in localStorage with a version in the key, and anything unreadable is ignored.
+ * All live in localStorage with a version in the key, and anything unreadable is ignored.
  */
-import type { GameId, SeatId } from '#lib/core/model/index.ts';
+import type { GameId } from '#lib/core/model/index.ts';
+import {
+	DEFAULT_SEAT_LAYOUT,
+	isDefaultLayout,
+	parseSeatLayout,
+	type SeatLayout
+} from '#lib/ui/seating/seat-layout.ts';
 
 const NAMES_KEY = 'grim-games:player-names:v1';
-const FLIPPED_KEY = (gameId: GameId) => `grim-games:upside-down:v1:${gameId}`;
+const FLIPPED_PREFIX = 'grim-games:upside-down:v1:';
+const LAYOUT_KEY = (gameId: GameId) => `grim-games:seat-layout:v1:${gameId}`;
 /** How many past names are remembered. */
 export const MAX_NAMES = 60;
 
@@ -68,12 +75,23 @@ export const pastNames = {
 	}
 };
 
-export const upsideDown = {
-	read: (gameId: GameId): SeatId[] => readList(FLIPPED_KEY(gameId)),
-	write: (gameId: GameId, seatIds: readonly SeatId[]): void =>
-		writeList(FLIPPED_KEY(gameId), seatIds),
-	forget: (gameId: GameId): void => writeList(FLIPPED_KEY(gameId), [])
-};
+/**
+ * Earlier builds kept a device-only "upside down" mark per seat. An upside-down token means
+ * the player's alignment changed, which the seat's alignment now shows, so the old marks are
+ * removed without touching any alignment.
+ */
+export function forgetUpsideDownMarks(): void {
+	try {
+		const storage = globalThis.localStorage;
+		if (!storage) return;
+		const old = Array.from({ length: storage.length }, (_, i) => storage.key(i)).filter(
+			(key): key is string => key?.startsWith(FLIPPED_PREFIX) ?? false
+		);
+		for (const key of old) storage.removeItem(key);
+	} catch {
+		// Storage blocked: the old marks are unused anyway.
+	}
+}
 
 const RECENT_REMINDERS_KEY = 'grim-games:recent-reminders:v1';
 /** How many recently placed reminders are offered first. */
@@ -85,5 +103,28 @@ export const recentReminders = {
 	remember(key: string): void {
 		const list = readList(RECENT_REMINDERS_KEY).filter((k) => k !== key);
 		writeList(RECENT_REMINDERS_KEY, [key, ...list].slice(0, MAX_RECENT_REMINDERS));
+	}
+};
+
+/** Where this device draws each game's seats. */
+export const seatLayouts = {
+	read(gameId: GameId): SeatLayout {
+		try {
+			const raw = globalThis.localStorage?.getItem(LAYOUT_KEY(gameId));
+			return raw ? parseSeatLayout(JSON.parse(raw)) : DEFAULT_SEAT_LAYOUT;
+		} catch {
+			return DEFAULT_SEAT_LAYOUT;
+		}
+	},
+	write(gameId: GameId, layout: SeatLayout): void {
+		try {
+			if (isDefaultLayout(layout)) globalThis.localStorage?.removeItem(LAYOUT_KEY(gameId));
+			else globalThis.localStorage?.setItem(LAYOUT_KEY(gameId), JSON.stringify(layout));
+		} catch {
+			// Storage full or blocked: the layout lasts until the page is closed.
+		}
+	},
+	forget(gameId: GameId): void {
+		this.write(gameId, DEFAULT_SEAT_LAYOUT);
 	}
 };

@@ -8,9 +8,9 @@ import ph_arrow_right_bold from '~icons/ph/arrow-right-bold';
 import ph_arrow_square_out_bold from '~icons/ph/arrow-square-out-bold';
 import ph_arrow_u_up_left_bold from '~icons/ph/arrow-u-up-left-bold';
 import ph_arrow_u_up_right_bold from '~icons/ph/arrow-u-up-right-bold';
-import ph_arrows_clockwise_bold from '~icons/ph/arrows-clockwise-bold';
 import ph_arrows_down_up_bold from '~icons/ph/arrows-down-up-bold';
 import ph_arrows_left_right_bold from '~icons/ph/arrows-left-right-bold';
+import ph_arrows_out_cardinal_bold from '~icons/ph/arrows-out-cardinal-bold';
 import ph_bag_simple_bold from '~icons/ph/bag-simple-bold';
 import ph_beer_bottle_bold from '~icons/ph/beer-bottle-bold';
 import ph_beer_stein_bold from '~icons/ph/beer-stein-bold';
@@ -26,19 +26,21 @@ import ph_caret_right_bold from '~icons/ph/caret-right-bold';
 import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_check_bold from '~icons/ph/check-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
+import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
+import ph_dots_three_bold from '~icons/ph/dots-three-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
 import ph_feather_bold from '~icons/ph/feather-bold';
 import ph_fire_bold from '~icons/ph/fire-bold';
 import ph_flag_bold from '~icons/ph/flag-bold';
 import ph_flask_bold from '~icons/ph/flask-bold';
-import ph_flip_vertical_bold from '~icons/ph/flip-vertical-bold';
 import ph_funnel_bold from '~icons/ph/funnel-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
+import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
 import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
 import ph_hand_palm_bold from '~icons/ph/hand-palm-bold';
 import ph_hand_pointing_bold from '~icons/ph/hand-pointing-bold';
@@ -46,6 +48,7 @@ import ph_handbag_bold from '~icons/ph/handbag-bold';
 import ph_info_bold from '~icons/ph/info-bold';
 import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_list_bold from '~icons/ph/list-bold';
+import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_moon_bold from '~icons/ph/moon-bold';
@@ -103,9 +106,9 @@ const icons: IconMap = {
 	'ph:arrow-square-out-bold': ph_arrow_square_out_bold,
 	'ph:arrow-u-up-left-bold': ph_arrow_u_up_left_bold,
 	'ph:arrow-u-up-right-bold': ph_arrow_u_up_right_bold,
-	'ph:arrows-clockwise-bold': ph_arrows_clockwise_bold,
 	'ph:arrows-down-up-bold': ph_arrows_down_up_bold,
 	'ph:arrows-left-right-bold': ph_arrows_left_right_bold,
+	'ph:arrows-out-cardinal-bold': ph_arrows_out_cardinal_bold,
 	'ph:bag-simple-bold': ph_bag_simple_bold,
 	'ph:beer-bottle-bold': ph_beer_bottle_bold,
 	'ph:beer-stein-bold': ph_beer_stein_bold,
@@ -121,19 +124,21 @@ const icons: IconMap = {
 	'ph:caret-up-bold': ph_caret_up_bold,
 	'ph:check-bold': ph_check_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
+	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:cross-bold': ph_cross_bold,
+	'ph:dots-three-bold': ph_dots_three_bold,
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
 	'ph:drop-bold': ph_drop_bold,
 	'ph:feather-bold': ph_feather_bold,
 	'ph:fire-bold': ph_fire_bold,
 	'ph:flag-bold': ph_flag_bold,
 	'ph:flask-bold': ph_flask_bold,
-	'ph:flip-vertical-bold': ph_flip_vertical_bold,
 	'ph:funnel-bold': ph_funnel_bold,
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,
 	'ph:ghost-bold': ph_ghost_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
+	'ph:hand-grabbing-bold': ph_hand_grabbing_bold,
 	'ph:hand-heart-bold': ph_hand_heart_bold,
 	'ph:hand-palm-bold': ph_hand_palm_bold,
 	'ph:hand-pointing-bold': ph_hand_pointing_bold,
@@ -141,6 +146,7 @@ const icons: IconMap = {
 	'ph:info-bold': ph_info_bold,
 	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:list-bold': ph_list_bold,
+	'ph:list-bullets-bold': ph_list_bullets_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:moon-bold': ph_moon_bold,

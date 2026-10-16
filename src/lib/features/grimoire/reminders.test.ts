@@ -27,16 +27,34 @@ function game() {
 describe('reminderGroups', () => {
 	// https://wiki.bloodontheclocktower.com/Drunk : "Is The Drunk" is a global reminder.
 	it('offers characters in play first, then only global reminders of the rest', () => {
-		const groups = reminderGroups(game(), characters, false);
+		const groups = reminderGroups(game(), characters);
 		expect(groups[0]).toMatchObject({ character: { id: 'poisoner' }, labels: ['Poisoned'] });
 		const drunk = groups.find((g) => g.character.id === 'drunk');
 		expect(drunk?.labels).toEqual(['Is The Drunk']);
 		expect(groups.some((g) => g.character.id === 'washerwoman')).toBe(false);
 	});
-	it('offers every reminder on the script when showing all', () => {
-		const groups = reminderGroups(game(), characters, true);
-		const washerwoman = groups.find((g) => g.character.id === 'washerwoman');
-		expect(washerwoman?.labels).toEqual(['Townsfolk', 'Wrong']);
+	it('counts a true character under another token as in play', () => {
+		let g = game();
+		const seat = g.seating[1];
+		for (const command of [
+			{ type: 'AssignCharacter', seatId: seat, characterId: 'washerwoman' },
+			{
+				type: 'AddReminder',
+				seatId: seat,
+				reminder: { characterId: 'drunk', label: 'Is The Drunk' }
+			}
+		] as const) {
+			const result = dispatch({ log: { entries: [], cursor: 0 }, game: g }, command, ctx);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		}
+		const groups = reminderGroups(g, characters);
+		expect(groups.find((x) => x.character.id === 'washerwoman')?.labels).toEqual([
+			'Townsfolk',
+			'Wrong'
+		]);
+		expect(groups.some((x) => x.character.id === 'drunk')).toBe(true);
+		expect(groups.some((x) => x.character.id === 'chef')).toBe(false);
 	});
 });
 

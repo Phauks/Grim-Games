@@ -4,18 +4,26 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { warningText } from './board.ts';
-import { pastNames, upsideDown } from './device-notes.ts';
+import { DEFAULT_SEAT_LAYOUT, type SeatLayout } from '#lib/ui/seating/seat-layout.ts';
+import { forgetUpsideDownMarks, pastNames, seatLayouts } from './device-notes.ts';
 
 /**
  * The grimoire board's controller: runs commands on the open game and shows warnings and
- * refusals as toasts (overlays, so the board never moves), plus the device-only
- * upside-down marks.
+ * refusals as toasts (overlays, so the board never moves), plus the device-only seat
+ * layout.
  */
 export class Grimoire {
-	flipped = $state<SeatId[]>([]);
+	layout = $state.raw<SeatLayout>(DEFAULT_SEAT_LAYOUT);
 
 	constructor(readonly open: OpenGame) {
-		this.flipped = upsideDown.read(open.game.gameId);
+		forgetUpsideDownMarks();
+		this.layout = seatLayouts.read(open.game.gameId);
+	}
+
+	/** Changes where seats are drawn on this device; the seating order is untouched. */
+	setLayout(layout: SeatLayout): void {
+		this.layout = layout;
+		seatLayouts.write(this.game.gameId, layout);
 	}
 
 	get game() {
@@ -40,17 +48,6 @@ export class Grimoire {
 		if (this.run({ type: 'RenameSeat', seatId, playerName: name })) pastNames.remember(name);
 	}
 
-	isFlipped(seatId: SeatId): boolean {
-		return this.flipped.includes(seatId);
-	}
-
-	toggleFlipped(seatId: SeatId): void {
-		this.flipped = this.isFlipped(seatId)
-			? this.flipped.filter((id) => id !== seatId)
-			: [...this.flipped, seatId];
-		upsideDown.write(this.game.gameId, this.flipped);
-	}
-
 	/** Adds a seat at the end of the seating order; returns its id. */
 	addSeat(): SeatId | undefined {
 		const before = this.game.seating;
@@ -69,7 +66,6 @@ export class Grimoire {
 		return seatId;
 	}
 
-	/** The seat's upside-down mark is kept, so undo brings the seat back as it was. */
 	removeSeat(seatId: SeatId): void {
 		this.run({ type: 'RemoveSeat', seatId });
 	}

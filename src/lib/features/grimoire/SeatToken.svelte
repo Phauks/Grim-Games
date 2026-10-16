@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Character } from '#lib/core/data/index.ts';
+	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
 	import type { Seat } from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -11,13 +11,19 @@
 		character?: Character;
 		/** Token size in px. */
 		size: number;
-		upsideDown: boolean;
 		/** The character is not on the script. */
 		orphan: boolean;
 		onTap: () => void;
 	}
 
-	let { seat, number, character, size, upsideDown, orphan, onTap }: Props = $props();
+	let { seat, number, character, size, orphan, onTap }: Props = $props();
+
+	// As in the physical grimoire, a token is upside down when the player's alignment is not
+	// the one their character type starts with (a good Minion, an evil Townsfolk).
+	const startsAs = $derived(character ? defaultAlignment(character.type) : undefined);
+	const shifted = $derived(
+		startsAs !== undefined && seat.alignment !== undefined && seat.alignment !== startsAs
+	);
 
 	const name = $derived(seat.playerName ?? `Seat ${number}`);
 	const label = $derived(
@@ -25,7 +31,7 @@
 			`Seat ${number}: ${seat.playerName ?? 'no name'}`,
 			character?.name ?? 'no character',
 			seat.dead ? (seat.ghostVoteUsed ? 'dead, ghost vote used' : 'dead, has ghost vote') : '',
-			upsideDown ? 'upside down' : '',
+			shifted ? `${seat.alignment}` : '',
 			orphan ? 'not on the script' : '',
 			seat.reminders.length
 				? `${seat.reminders.length} reminder${seat.reminders.length === 1 ? '' : 's'}`
@@ -59,7 +65,7 @@
 	onclick={(event) => event.detail === 0 && onTap()}
 >
 	<span class="disc">
-		<span class="face" class:flipped={upsideDown}>
+		<span class="face" class:flipped={shifted}>
 			{#if character}
 				<CharacterToken {character} alignment={seat.alignment} {size} />
 			{:else}
