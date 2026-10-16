@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		defaultAlignment,
 		STANDARD_INFO_TOKENS,
@@ -80,14 +81,14 @@
 	function run(command: BluffCommand): boolean {
 		const result = dispatch(command);
 		if (!result.ok) {
-			toast('Not done', result.error.message);
+			toast(t('bluffs.notDone'), result.error.message);
 			return false;
 		}
 		// "In play" is decided here from true characters (a Drunk's Townsfolk is not in play),
 		// and the Lunatic's set may include characters in play, so the engine's note is dropped.
 		for (const warning of result.warnings) {
 			if (warning.code !== 'bluff-in-play' && warning.code !== 'no-change')
-				toast('Note', warning.message);
+				toast(t('bluffs.note'), warning.message);
 		}
 		return true;
 	}
@@ -119,7 +120,7 @@
 
 <BottomSheet
 	bind:open
-	title={editing === undefined ? 'Demon bluffs' : `${label(editing)} bluffs`}
+	title={editing === undefined ? t('bluffs.title') : t('bluffs.setTitle', { set: label(editing) })}
 	height="85dvh"
 >
 	<!-- The player view below sits outside this boundary, so a crash here never closes it. -->
@@ -140,24 +141,24 @@
 									{#if character}
 										<CharacterLabel {character} alignment="good" />
 										<span class="flag"
-											>{#if playing}<Icon name="warning" /> In play: replace{/if}</span
+											>{#if playing}<Icon name="warning" /> {t('bluffs.inPlayReplace')}{/if}</span
 										>
 									{:else}
-										<span class="none">None</span>
+										<span class="none">{t('common.none')}</span>
 									{/if}
 								</li>
 							{/each}
 						</ol>
 						<div class="actions">
 							<Button variant={stale ? 'accent' : 'quiet'} onclick={() => edit(index)}
-								>{stale ? 'Replace' : 'Choose'}</Button
+								>{t(stale ? 'bluffs.replace' : 'bluffs.choose')}</Button
 							>
 							<Button icon="forward" disabled={ids.length === 0 || stale} onclick={() => show(ids)}
-								>Show</Button
+								>{t('bluffs.show')}</Button
 							>
 							{#if index === DEMON_SET}
 								<Button variant="quiet" disabled={ids.length === 0} onclick={() => set(index, [])}
-									>Clear</Button
+									>{t('bluffs.clear')}</Button
 								>
 							{:else}
 								<Button
@@ -165,7 +166,7 @@
 									onclick={() => {
 										deleting = index;
 										deleteOpen = true;
-									}}>Delete</Button
+									}}>{t('bluffs.delete')}</Button
 								>
 							{/if}
 						</div>
@@ -174,18 +175,18 @@
 			</ul>
 			<div class="add">
 				<Button icon="add" variant="quiet" onclick={() => edit(Math.max(1, game.bluffs.length))}
-					>Add a set</Button
+					>{t('bluffs.addSet')}</Button
 				>
 			</div>
 		{:else}
 			<div class="filter">
 				<Segmented
-					label="Characters"
+					label={t('bluffs.filter')}
 					hideLabel
 					value={filter}
 					options={[
-						{ value: 'good', label: 'Good' },
-						{ value: 'script', label: 'Whole script' }
+						{ value: 'good', label: t('bluffs.good') },
+						{ value: 'script', label: t('bluffs.wholeScript') }
 					]}
 					onChange={(value) => (filter = value)}
 				/>
@@ -194,33 +195,38 @@
 				characters={choices}
 				bind:selected={picked}
 				max={BLUFFS_PER_SET}
-				label="Bluff characters"
+				label={t('bluffs.characters')}
 				{inPlay}
 				blockInPlay={blocks(editing)}
 			/>
 			<div class="sheet-actions">
-				<Button variant="quiet" onclick={() => (editing = undefined)}>Cancel</Button>
-				<Button variant="accent" disabled={pickedBlocked} onclick={save}>Save</Button>
+				<Button variant="quiet" onclick={() => (editing = undefined)}>{t('common.cancel')}</Button>
+				<Button variant="accent" disabled={pickedBlocked} onclick={save}>{t('bluffs.save')}</Button>
 			</div>
 		{/if}
 	</ErrorBoundary>
 </BottomSheet>
 
-<Dialog bind:open={deleteOpen} title="Delete bluff set?" role="alertdialog">
+<Dialog bind:open={deleteOpen} title={t('bluffs.deleteConfirm')} role="alertdialog">
 	<p class="confirm">
-		{deleting === undefined ? '' : label(deleting)}: {lookup(game.bluffs[deleting ?? -1] ?? [])
-			.map((c) => c.name)
-			.join(', ') || 'None'}
+		{t('bluffs.deleteSummary', {
+			set: deleting === undefined ? '' : label(deleting),
+			names:
+				intl.list(
+					lookup(game.bluffs[deleting ?? -1] ?? []).map((c) => c.name),
+					{ type: 'unit', style: 'narrow' }
+				) || t('common.none')
+		})}
 	</p>
-	<p class="confirm hint">You can undo it from History.</p>
+	<p class="confirm hint">{t('bluffs.undoHint')}</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (deleteOpen = false)}>Cancel</Button>
+		<Button variant="quiet" onclick={() => (deleteOpen = false)}>{t('common.cancel')}</Button>
 		<Button
 			variant="accent"
 			onclick={() => {
 				if (deleting !== undefined) run({ type: 'RemoveBluffSet', set: deleting });
 				deleteOpen = false;
-			}}>Delete</Button
+			}}>{t('bluffs.delete')}</Button
 		>
 	{/snippet}
 </Dialog>

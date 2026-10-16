@@ -1,5 +1,8 @@
 import type { Catalog } from '#lib/i18n/catalog.ts';
 import { common } from '#lib/i18n/messages/en/common.ts';
+import { bluffs } from '#lib/i18n/messages/en/bluffs.ts';
+import { infoTokens } from '#lib/i18n/messages/en/info-tokens.ts';
+import { show } from '#lib/i18n/messages/en/show.ts';
 import { errors } from '#lib/i18n/messages/en/errors.ts';
 import { room } from '#lib/i18n/messages/en/room.ts';
 
@@ -15,5 +18,8 @@ import { room } from '#lib/i18n/messages/en/room.ts';
 export const en = {
 	...common,
 	...errors,
-	...room
+	...room,
+	...show,
+	...infoTokens,
+	...bluffs
 } as const satisfies Catalog;

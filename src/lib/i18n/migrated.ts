@@ -10,7 +10,10 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/errors/',
 	'src/lib/features/room/',
 	'src/routes/join/',
-	'src/routes/grimoire/[gameId]/room/'
+	'src/routes/grimoire/[gameId]/room/',
+	'src/lib/features/show/',
+	'src/lib/features/info-tokens/',
+	'src/lib/features/bluffs/'
 ];
 
 export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {};

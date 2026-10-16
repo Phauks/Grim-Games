@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
 	import type { ShowableBluffSet } from '#lib/features/bluffs/bluffs.ts';
@@ -74,7 +75,7 @@
 			})
 			.join('  ')
 	);
-	const title = $derived(view.kind === 'list' ? 'Info tokens' : plainText(view.token.text));
+	const title = $derived(view.kind === 'list' ? t('info-tokens.title') : plainText(view.token.text));
 
 	// Each time the sheet opens it starts at the list.
 	$effect(() => {
@@ -129,12 +130,12 @@
 		{#if view.kind === 'list'}
 			<div class="mode">
 				<Segmented
-					label="How cards are shown"
+					label={t('info-tokens.mode')}
 					hideLabel
 					value={mode}
 					options={[
-						{ value: 'now', label: 'Show now' },
-						{ value: 'chain', label: 'Chain' }
+						{ value: 'now', label: t('info-tokens.showNow') },
+						{ value: 'chain', label: t('info-tokens.chain') }
 					]}
 					onChange={(value) => (mode = value)}
 				/>
@@ -144,8 +145,8 @@
 				<input
 					bind:value={query}
 					type="search"
-					aria-label="Search info tokens"
-					placeholder="Search"
+					aria-label={t('info-tokens.search')}
+					placeholder={t('info-tokens.searchPlaceholder')}
 					autocomplete="off"
 					enterkeyhint="search"
 					onkeydown={(e) => {
@@ -158,35 +159,35 @@
 				<button
 					type="button"
 					class="clear"
-					aria-label="Clear search"
+					aria-label={t('info-tokens.clearSearch')}
 					disabled={query === ''}
 					onclick={() => (query = '')}><Icon name="close" /></button
 				>
 			</div>
 			<InfoTokenList onchoose={choose} {query} level={3} />
 			{#if mode === 'chain'}
-				<div class="chain" role="group" aria-label="Chain">
+				<div class="chain" role="group" aria-label={t('info-tokens.chain')}>
 					<p class="chain-summary" data-testid="chain-summary">
-						{chainCards.length === 0 ? 'Tap cards to add them in order.' : chainSummary}
+						{chainCards.length === 0 ? t('info-tokens.chainEmpty') : chainSummary}
 					</p>
 					<div class="chain-actions">
 						<IconButton
 							icon="undo"
-							label="Remove last card"
+							label={t('info-tokens.removeLast')}
 							disabled={chainCards.length === 0}
 							onclick={() => (chainCards = chainCards.slice(0, -1))}
 						/>
 						<Button
 							variant="quiet"
 							disabled={chainCards.length === 0}
-							onclick={() => (chainCards = [])}>Clear</Button
+							onclick={() => (chainCards = [])}>{t('info-tokens.clear')}</Button
 						>
 						<Button
 							variant="accent"
 							icon="forward"
 							disabled={chainCards.length === 0}
 							onclick={() => show(chainCards)}
-							>Show {chainCards.length} {chainCards.length === 1 ? 'card' : 'cards'}</Button
+							>{t('info-tokens.showCards', { count: chainCards.length })}</Button
 						>
 					</div>
 				</div>
@@ -197,19 +198,22 @@
 				{characters}
 				bind:selected={picked}
 				max={pickMax(token.id)}
-				label="Characters"
+				label={t('info-tokens.characters')}
 			/>
 			<div class="sheet-actions">
-				<Button variant="quiet" onclick={() => (view = { kind: 'list' })}>Cancel</Button>
+				<Button variant="quiet" onclick={() => (view = { kind: 'list' })}
+					>{t('common.cancel')}</Button
+				>
 				<Button
 					variant="accent"
 					icon={mode === 'chain' ? 'add' : 'forward'}
-					onclick={() => use(token.text, picked)}>{mode === 'chain' ? 'Add' : 'Show'}</Button
+					onclick={() => use(token.text, picked)}
+					>{t(mode === 'chain' ? 'info-tokens.addToChain' : 'info-tokens.show')}</Button
 				>
 			</div>
 		{:else}
 			{@const token = view.token}
-			<ul class="sets" aria-label="Bluff sets">
+			<ul class="sets" aria-label={t('info-tokens.bluffSets')}>
 				{#each bluffSets ?? [] as set (set.set)}
 					<li>
 						<button type="button" class="set" onclick={() => use(token.text, set.characterIds)}>
@@ -220,7 +224,9 @@
 				{/each}
 			</ul>
 			<div class="sheet-actions">
-				<Button variant="quiet" onclick={() => (view = { kind: 'list' })}>Cancel</Button>
+				<Button variant="quiet" onclick={() => (view = { kind: 'list' })}
+					>{t('common.cancel')}</Button
+				>
 			</div>
 		{/if}
 	</ErrorBoundary>

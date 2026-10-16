@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -54,17 +55,17 @@
 				{characters}
 				bind:selected={picked}
 				max={pickMax(picking.id)}
-				label="Characters"
+				label={t('info-tokens.characters')}
 			/>
 			<div class="sheet-actions">
-				<Button variant="quiet" onclick={() => (pickOpen = false)}>Cancel</Button>
+				<Button variant="quiet" onclick={() => (pickOpen = false)}>{t('common.cancel')}</Button>
 				<Button
 					variant="accent"
 					icon="forward"
 					onclick={() => {
 						pickOpen = false;
 						if (picking) show(picking.text, picked);
-					}}>Show</Button
+					}}>{t('info-tokens.show')}</Button
 				>
 			</div>
 		{/if}

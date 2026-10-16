@@ -1,4 +1,5 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
+import { t } from '#lib/i18n/locale.svelte.ts';
 import { trueCharacter, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
 
 /**
@@ -39,9 +40,9 @@ export function demonBluffsInPlay(game: Game, characters: CharacterLookup): Char
  * the second set is the Lunatic's while a Lunatic is in play.
  */
 export function bluffSetLabel(index: number, lunatic: boolean): string {
-	if (index === DEMON_SET) return 'Demon';
-	if (index === LUNATIC_SET && lunatic) return 'Lunatic';
-	return `Set ${index + 1}`;
+	if (index === DEMON_SET) return t('bluffs.set.demon');
+	if (index === LUNATIC_SET && lunatic) return t('bluffs.set.lunatic');
+	return t('bluffs.set.numbered', { number: index + 1 });
 }
 
 /** A bluff set the Storyteller can show with "These characters are not in play". */

@@ -1,0 +1,27 @@
+/** Demon bluffs: the bluffs sheet and its sets. */
+export const bluffs = {
+	'bluffs.title': 'Demon bluffs',
+	'bluffs.setTitle': '{set} bluffs',
+	'bluffs.set.demon': 'Demon',
+	'bluffs.set.lunatic': 'Lunatic',
+	'bluffs.set.numbered': 'Set {number}',
+	'bluffs.inPlayReplace': 'In play: replace',
+	'bluffs.choose': 'Choose',
+	'bluffs.replace': 'Replace',
+	'bluffs.show': 'Show',
+	'bluffs.clear': 'Clear',
+	'bluffs.delete': 'Delete',
+	'bluffs.addSet': 'Add a set',
+	'bluffs.filter': 'Characters',
+	'bluffs.good': 'Good',
+	'bluffs.wholeScript': 'Whole script',
+	'bluffs.characters': 'Bluff characters',
+	'bluffs.save': 'Save',
+	'bluffs.deleteConfirm': 'Delete bluff set?',
+	'bluffs.deleteSummary': '{set}: {names}',
+	'bluffs.undoHint': 'You can undo it from History.',
+	'bluffs.notDone': 'Not done',
+	'bluffs.note': 'Note',
+	'bluffs.demo': 'Demon bluffs',
+	'bluffs.demoLunatic': 'Demon bluffs (Lunatic game)'
+} as const;

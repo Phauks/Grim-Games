@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { editionScript, type GameData } from '#lib/core/data/index.ts';
 	import {
@@ -86,7 +87,7 @@
 </script>
 
 <Button icon="demon" disabled={!session} onclick={() => (open = true)}
-	>{variant === 'bmr' ? 'Demon bluffs (Lunatic game)' : 'Demon bluffs'}</Button
+	>{t(variant === 'bmr' ? 'bluffs.demoLunatic' : 'bluffs.demo')}</Button
 >
 {#if session && characters}
 	<BluffsSheet bind:open game={session.game} {characters} dispatch={run} />

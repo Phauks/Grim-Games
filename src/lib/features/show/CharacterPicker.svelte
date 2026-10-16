@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -37,13 +38,13 @@
 
 	function disabledReason(character: Character): string | undefined {
 		if (selected.includes(character.id)) return undefined;
-		if (blockInPlay && inPlay?.has(character.id)) return 'In play';
+		if (blockInPlay && inPlay?.has(character.id)) return t('show.inPlay');
 		return undefined;
 	}
 
 	/** Where in-play characters are allowed (the Lunatic's set), they are still marked. */
 	function marker(character: Character): string | undefined {
-		return !blockInPlay && inPlay?.has(character.id) ? 'In play' : undefined;
+		return !blockInPlay && inPlay?.has(character.id) ? t('show.inPlay') : undefined;
 	}
 </script>
 
@@ -52,7 +53,7 @@
 	searchable character list.
 -->
 <div class="picker">
-	<ol class="slots" aria-label="Chosen">
+	<ol class="slots" aria-label={t('show.chosen')}>
 		{#each Array.from({ length: max }, (_, i) => selected[i]) as id, i (i)}
 			{@const character = id ? byId.get(id) : undefined}
 			<li>
@@ -62,14 +63,14 @@
 						type="button"
 						class="slot"
 						data-blocked={blocked ? '' : undefined}
-						aria-label="Remove {character.name}{blocked ? ', in play' : ''}"
+						aria-label={t(blocked ? 'show.removeInPlay' : 'show.remove', { name: character.name })}
 						onclick={() => toggle(character.id)}
 					>
 						<CharacterLabel {character} />
 						<Icon name={blocked ? 'warning' : 'close'} />
 					</button>
 				{:else}
-					<span class="slot empty">None</span>
+					<span class="slot empty">{t('common.none')}</span>
 				{/if}
 			</li>
 		{/each}

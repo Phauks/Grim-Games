@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { plainText } from '#lib/features/info-tokens/bold.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -46,10 +47,10 @@
 					...(card?.characters ?? []).map((c) => c.character.name)
 				]
 					.filter(Boolean)
-					.join(': ') || 'Shown to player'
+					.join(': ') || t('show.shownToPlayer')
 			);
 		} catch {
-			return 'Shown to player';
+			return t('show.shownToPlayer');
 		}
 	});
 
@@ -94,7 +95,7 @@
 	}}
 >
 	{#if open}
-		<button type="button" class="close" aria-label="Close" onclick={close}>
+		<button type="button" class="close" aria-label={t('common.close')} onclick={close}>
 			<Icon name="close" />
 		</button>
 		<!--
@@ -108,7 +109,7 @@
 					{#each shownCards as card, i (i)}
 						<section
 							class="page"
-							aria-label="Card {i + 1} of {shownCards.length}"
+							aria-label={t('show.card', { number: i + 1, count: shownCards.length })}
 							inert={i !== current}
 						>
 							<ShownCard title={card.title} characters={card.characters} />
@@ -119,11 +120,11 @@
 					<button
 						type="button"
 						class="arrow"
-						aria-label="Previous card"
+						aria-label={t('show.previousCard')}
 						disabled={current === 0}
 						onclick={() => go(current - 1)}><Icon name="back" /></button
 					>
-					<ol class="dots" aria-label="Cards">
+					<ol class="dots" aria-label={t('show.cards')}>
 						{#each [...shownCards.keys()] as i (i)}
 							<li aria-current={i === current ? 'step' : undefined}></li>
 						{/each}
@@ -131,7 +132,7 @@
 					<button
 						type="button"
 						class="arrow"
-						aria-label="Next card"
+						aria-label={t('show.nextCard')}
 						disabled={current === shownCards.length - 1}
 						onclick={() => go(current + 1)}><Icon name="forward" /></button
 					>
@@ -141,7 +142,7 @@
 			{/if}
 			{#snippet fallback()}
 				<div class="fallback" data-testid="show-failed">
-					<p class="failed">Couldn't show this.</p>
+					<p class="failed">{t('show.failed')}</p>
 				</div>
 			{/snippet}
 		</ErrorBoundary>
