@@ -11,9 +11,11 @@
 		cite: string;
 		/** Follows a "see …" link to another Glossary entry, by `glossaryKey`, from `link`. */
 		onTerm: (key: string, link: HTMLElement) => void;
+		/** The term this entry defines, by id: never marked in its own wording (it would link to itself). */
+		term?: string;
 	}
 
-	let { entry, cite, onTerm }: Props = $props();
+	let { entry, cite, onTerm, term }: Props = $props();
 	const characters = $derived(officialData.current?.characters ?? []);
 	const names = $derived(characters.map((c) => c.name));
 	const idOf = (name: string) => characters.find((c) => c.name === name)?.id ?? name;
@@ -29,6 +31,7 @@
 <blockquote class="definition" {cite} data-testid="wiki-definition">
 	{#each entry.parts as part, i (i)}{#if !part.href}<GlossaryText
 				text={part.text}
+				skip={term}
 			/>{:else}{@const target = linkTarget(
 				part.href,
 				wikiGlossary.entries,

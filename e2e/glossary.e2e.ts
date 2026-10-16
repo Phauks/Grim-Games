@@ -42,6 +42,8 @@ test('tapping a rules term shows the wiki Glossary wording and button, without m
 	await expect(popover.getByTestId('wiki-definition')).toHaveText(
 		'Sample wiki wording for poisoned.'
 	);
+	// The entry's own word is not marked: it would only open itself (Trevor, 2026-10-16).
+	await expect(popover.locator('.glossary-term')).toHaveCount(0);
 	await expect(popover.getByRole('button', { name: 'Open Glossary' })).toBeVisible();
 	// An overlay: the card did not reflow.
 	expect(await card.boundingBox()).toEqual(before);
@@ -215,7 +217,9 @@ test('Open Glossary shows every entry beside the tapped one, searchable, with th
 			'page'
 		);
 
-	// Rules terms in an entry are marked as anywhere else and open their popup over it.
+	// Rules terms in an entry are marked as anywhere else, except the entry's own, and open
+	// their popup over it.
+	await expect(entry.getByRole('button', { name: 'alive: explain rules term' })).toHaveCount(0);
 	await entry.getByRole('button', { name: 'dead: explain rules term' }).tap();
 	await expect(
 		page.getByRole('dialog', { name: 'Dead' }).getByTestId('wiki-definition')

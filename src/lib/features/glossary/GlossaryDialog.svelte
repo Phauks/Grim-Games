@@ -79,6 +79,7 @@
 					<WikiEntryText
 						{entry}
 						cite={glossaryEntryUrl(entry.name)}
+						term={glossaryTermFor(key).id}
 						onTerm={(id, link) => glossaryPopover.show(glossaryTermFor(id), link)}
 					/>
 				{:else if loading}

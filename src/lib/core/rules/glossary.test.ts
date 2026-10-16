@@ -6,7 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { DAY_REMINDER_ENTRIES } from './day-reminders.data.ts';
 import fixture from './fixtures/wiki-glossary-entries.json' with { type: 'json' };
-import { GLOSSARY, GLOSSARY_URL, glossarySegments, type GlossarySegment } from './glossary.ts';
+import {
+	GLOSSARY,
+	GLOSSARY_URL,
+	glossaryBlock,
+	glossarySegments,
+	type GlossarySegment
+} from './glossary.ts';
 
 const data = committedGameData();
 const names = data.characters.map((c) => c.name);
@@ -79,6 +85,13 @@ describe('glossarySegments', () => {
 		const seen = new Set<string>();
 		expect(terms(glossarySegments('they are drunk', { seen }))).toEqual(['drunk']);
 		expect(terms(glossarySegments('still drunk', { seen }))).toEqual([]);
+	});
+
+	it('leaves the terms a block skips unmarked, e.g. the Glossary entry being read', () => {
+		const [segments] = glossaryBlock(['poisoned players stay poisoned while drunk'], {
+			skip: ['poisoned']
+		});
+		expect(terms(segments!)).toEqual(['player', 'drunk']);
 	});
 
 	it('prefers the longest term and never overlaps', () => {

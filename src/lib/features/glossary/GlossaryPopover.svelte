@@ -53,6 +53,7 @@
 			<WikiEntryText
 				{entry}
 				cite={glossaryPopover.term.url}
+				term={glossaryPopover.term.id}
 				onTerm={(key) => glossaryPopover.go(glossaryTermFor(key))}
 			/>
 		{/if}

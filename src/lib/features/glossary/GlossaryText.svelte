@@ -8,13 +8,21 @@
 
 	type Props =
 		/** One whole block of text; terms are marked at their first use. */
-		| { text: string; names?: readonly string[]; segments?: never }
+		| {
+				text: string;
+				names?: readonly string[];
+				/** A term id left unmarked: the Glossary entry this text defines. */
+				skip?: string;
+				segments?: never;
+		  }
 		/** A piece of a block already split with `explainBlock`. */
-		| { segments: readonly GlossarySegment[]; text?: never; names?: never };
+		| { segments: readonly GlossarySegment[]; text?: never; names?: never; skip?: never };
 
 	let props: Props = $props();
 	const parts = $derived(
-		props.segments ?? explainBlock([props.text ?? ''], props.names ?? [])[0] ?? []
+		props.segments ??
+			explainBlock([props.text ?? ''], props.names ?? [], props.skip ? [props.skip] : [])[0] ??
+			[]
 	);
 	// Character names in the plain text are drawn as badges (Trevor: always mark them).
 	const characters = $derived(officialData.current?.characters ?? []);

@@ -457,8 +457,15 @@ export function glossarySegments(text: string, options: GlossaryOptions = {}): G
  */
 export function glossaryBlock(
 	texts: readonly string[],
-	options: Omit<GlossaryOptions, 'seen'> = {}
+	options: Omit<GlossaryOptions, 'seen'> & {
+		/**
+		 * Term ids never marked in this block: the entry being read, whose own name would only
+		 * link back to itself (Trevor, 2026-10-16: "that is cyclical").
+		 */
+		skip?: readonly string[];
+	} = {}
 ): GlossarySegment[][] {
-	const seen = new Set<string>();
-	return texts.map((text) => glossarySegments(text, { ...options, seen }));
+	const { skip = [], ...rest } = options;
+	const seen = new Set<string>(skip);
+	return texts.map((text) => glossarySegments(text, { ...rest, seen }));
 }
