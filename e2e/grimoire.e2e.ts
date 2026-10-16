@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
 async function startGame(page: Page, script = 'Trouble Brewing') {
-	await page.goto('/');
+	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script, { exact: true }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
@@ -47,8 +47,13 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
 	await page.getByRole('dialog').getByRole('button', { name: action }).last().tap();
 }
 
-test('a new game is saved and listed on the home page', async ({ page }) => {
+test('New game and Resume game are screens of their own; home continues the latest', async ({
+	page
+}) => {
 	await page.goto('/');
+	await expect(page.getByRole('region', { name: 'Games' })).toContainText('None');
+	await page.getByRole('link', { name: 'New game' }).tap();
+	await expect(page).toHaveURL(/\/new$/);
 	// The setup table under the player count follows it.
 	const current = page.getByTestId('setup-table').locator('thead th[data-current]');
 	await expect(current).toHaveText('8');
@@ -57,10 +62,19 @@ test('a new game is saved and listed on the home page', async ({ page }) => {
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await startGame(page);
 	await page.goto('/');
-	const saved = page.getByRole('link', { name: /Trouble Brewing.*8 seats/ }).first();
+	// The latest game is one tap from home.
+	const saved = page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ });
 	await expect(saved).toBeVisible();
 	await saved.tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
+
+	// Resume game lists every saved game with where it is up to.
+	await page.goto('/');
+	await page.getByRole('link', { name: 'Resume game' }).tap();
+	await expect(page).toHaveURL(/\/games$/);
+	await expect(
+		page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ })
+	).toBeVisible();
 });
 
 test('the seat sheet names, assigns, shrouds and survives a reload', async ({ page }) => {
@@ -735,7 +749,7 @@ test('the grimoire menu has Settings, Account and Exit game, which asks first', 
 	const board = page.url();
 	await page.getByRole('button', { name: 'More' }).tap();
 	const grimoireMenu = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(grimoireMenu.getByRole('link', { name: 'Account' })).toBeVisible();
+	await expect(grimoireMenu.getByRole('button', { name: 'Account' })).toBeVisible();
 	// Settings open over the board, so the game is never left.
 	await grimoireMenu.getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });

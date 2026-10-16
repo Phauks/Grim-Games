@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 /** Starts a Trouble Brewing game with `players` seats and opens its character selection. */
 async function selectionFor(page: Page, players: number) {
-	await page.goto('/');
+	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();

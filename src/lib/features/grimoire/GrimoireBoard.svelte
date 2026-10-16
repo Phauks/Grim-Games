@@ -3,7 +3,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
 	import BackgroundDialog from './BackgroundDialog.svelte';
-	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
+	import { openAccount, openSettings } from '#lib/features/shell/shell.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
@@ -690,10 +690,12 @@
 			Background
 		</Button>
 		<!-- The site header is hidden in a game so nobody leaves by accident (Trevor, 2026-10-16). -->
-		<Button variant="quiet" icon="settings" onclick={() => fromMenu(() => settingsDialog.show())}>
+		<Button variant="quiet" icon="settings" onclick={() => fromMenu(() => openSettings())}>
 			Settings
 		</Button>
-		<Button variant="quiet" icon="account" href={resolve('/account')}>Account</Button>
+		<Button variant="quiet" icon="account" onclick={() => fromMenu(() => void openAccount())}>
+			Account
+		</Button>
 		<Button variant="quiet" icon="back" onclick={() => fromMenu(() => (exitOpen = true))}>
 			Exit game
 		</Button>
@@ -814,8 +816,8 @@
 	.grimoire {
 		display: flex;
 		flex-direction: column;
-		/* Fills the screen under the app header; the footer is below the fold. */
-		height: calc(100dvh - var(--tap-target) - 1px - env(safe-area-inset-top));
+		/* Fills the screen: a game hides the app header and footer (route data). */
+		height: calc(100dvh - env(safe-area-inset-top));
 		min-height: 320px;
 	}
 	.toolbar {
@@ -966,8 +968,8 @@
 		opacity: 0.5;
 		background: radial-gradient(ellipse 45% 22% at center, rgb(0 0 0 / 0.55), transparent 100%);
 		text-shadow:
-			0 0 2px #000,
-			0 0 6px #000;
+			0 0 2px var(--backdrop),
+			0 0 6px var(--backdrop);
 	}
 	.spacer {
 		flex: 1;

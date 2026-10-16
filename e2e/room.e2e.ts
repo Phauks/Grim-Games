@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 // seat and name, the Storyteller approves, and the seat is named in the grimoire.
 
 async function startGame(page: Page) {
-	await page.goto('/');
+	await page.goto('/new');
 	await page
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })

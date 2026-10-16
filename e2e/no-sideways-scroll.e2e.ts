@@ -11,6 +11,8 @@ const SIZES = [
 ];
 const STATIC_ROUTES = [
 	'/',
+	'/new',
+	'/games',
 	'/changelog',
 	'/privacy',
 	'/reference',
@@ -65,7 +67,7 @@ async function overflow(page: Page) {
 }
 
 async function startGame(page: Page): Promise<string> {
-	await page.goto('/');
+	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);

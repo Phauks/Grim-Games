@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
 
 async function startGame(page: Page) {
-	await page.goto('/');
+	await page.goto('/new');
 	await page
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })

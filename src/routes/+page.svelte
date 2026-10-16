@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import SavedGames from '#lib/features/grimoire/SavedGames.svelte';
+	import HomeGames from '#lib/features/grimoire/HomeGames.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 </script>
 
@@ -9,7 +9,7 @@
 	<!-- The page's name for screen readers; the header already shows it. -->
 	<h1 class="visually-hidden">Grim-Games</h1>
 	<ErrorBoundary area="grimoire">
-		<SavedGames />
+		<HomeGames />
 	</ErrorBoundary>
 
 	<nav aria-label="Other views">

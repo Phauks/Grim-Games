@@ -136,10 +136,10 @@ test('About reopens the problem log after its card was dismissed', async ({ page
 
 // Turned on by the board's +layout.ts ({ chrome: 'game' }) with its menu's Settings, Account
 // and Exit game (src/lib/features/shell/shell.ts).
-test.fixme('a game in progress hides the header and footer, so a stray tap cannot leave it', async ({
+test('a game in progress hides the header and footer, so a stray tap cannot leave it', async ({
 	page
 }) => {
-	await page.goto('/');
+	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
