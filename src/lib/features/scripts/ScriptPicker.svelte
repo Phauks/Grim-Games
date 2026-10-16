@@ -61,9 +61,11 @@
 		type RowSort,
 		type SortColumn
 	} from './picker-rows.ts';
+	import { relaxJson } from './relaxed-json.ts';
 	import { RemoteSearch } from './remote-search.svelte.ts';
 	import { describeSource, reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
 	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
+	import ScriptChecks from './ScriptChecks.svelte';
 	import ScriptDetails, { type ScriptFact } from './ScriptDetails.svelte';
 	import {
 		botcProvider,
@@ -554,7 +556,8 @@
 
 	/** Parses fetched text, then loads it or asks the Storyteller to check it first. */
 	async function settle(fetched: FetchedScript) {
-		const result = loadScriptText(fetched.text, await loadOfficialData());
+		// Hand-edited JSON (comments, trailing commas) loads too.
+		const result = loadScriptText(relaxJson(fetched.text), await loadOfficialData());
 		closeAll();
 		const needsCheck = !result.script || result.problems.some((p) => p.severity !== 'info');
 		if (needsCheck) {
@@ -668,7 +671,12 @@
 </script>
 
 {#snippet playerSheet()}
-	{#if preview}<ScriptCopy script={preview} />{/if}
+	{#if preview && data}
+		<div class="sheet-stack">
+			<ScriptChecks script={preview} {data} />
+			<ScriptCopy script={preview} />
+		</div>
+	{/if}
 {/snippet}
 
 <!-- The list on the left, the shown script's details on the right; on a phone the details
@@ -954,6 +962,11 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
+		min-width: 0;
+	}
+	.sheet-stack {
+		display: grid;
+		gap: var(--space-4);
 		min-width: 0;
 	}
 	/* The list sets the height; the details scroll inside it. */

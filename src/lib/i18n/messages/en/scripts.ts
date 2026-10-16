@@ -66,6 +66,13 @@ export const scripts = {
 	'scripts.details.removeConfirm': 'Remove from saved?',
 	'scripts.details.removeBody': '{name} is removed from your saved scripts on this device.',
 	'scripts.details.confirm': 'Confirm',
+	'scripts.checks.title': 'Script checks',
+	'scripts.checks.djinn': 'Djinn',
+	'scripts.checks.djinnNeeded': 'Needed: the script has jinxes',
+	'scripts.checks.djinnNotNeeded': 'Not needed',
+	'scripts.checks.setup': 'Setup changes',
+	'scripts.checks.needs': 'needs',
+	'scripts.checks.notOnScript': 'not on the script',
 
 	'scripts.paste.title': 'Paste a script',
 	'scripts.paste.label': 'Script JSON or link',

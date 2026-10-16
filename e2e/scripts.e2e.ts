@@ -144,6 +144,26 @@ test('a pasted script with a typo is checked, then saved anyway', async ({ page 
 	await expect(page.getByRole('button', { name: 'Storm Front Pasted' })).toBeVisible();
 });
 
+test('hand-edited script JSON with comments and trailing commas is saved', async ({ page }) => {
+	await page.goto('/scripts');
+	await addScript(page, 'Paste');
+	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
+	await dialog
+		.getByLabel('Script JSON or link')
+		.fill(
+			'[\n  // made by hand\n  { "id": "_meta", "name": "Hand Made", },\n  "chef", "choirboy", "baron", "imp", /* more */\n]'
+		);
+	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await expect(detailsName(page)).toHaveText('Hand Made');
+	await expect(page.getByTestId('script-sheet')).toContainText('Chef');
+	// Script checks: the Baron changes setup; the Choirboy needs the King, who isn't here.
+	await expect(page.getByTestId('script-checks')).toContainText('Baron');
+	await expect(page.getByTestId('script-warnings')).toContainText('Choirboy');
+	await expect(page.getByTestId('script-warnings')).toContainText('King');
+	await expect(page.getByTestId('script-warnings')).toContainText('not on the script');
+	await noSidewaysScroll(page);
+});
+
 test('a script file is saved straight away when nothing needs checking', async ({ page }) => {
 	await page.goto('/scripts');
 	await page.getByLabel('Script file').setInputFiles({
@@ -472,6 +492,11 @@ test("the official site's custom scripts are listed, can be switched off, and sa
 	await expect(details(page)).toContainText('Script Tool');
 	// Not saved, yet shown as the players' script, abilities and all.
 	await expect(page.getByTestId('script-sheet')).toContainText('pairs of evil players');
+	// Script checks: characters per type, no setup changes, nothing missing.
+	const checks = page.getByTestId('script-checks');
+	await expect(checks.locator('[data-type="townsfolk"]')).toHaveText('5');
+	await expect(checks.locator('[data-type="outsider"]')).toHaveText('2');
+	await expect(page.getByTestId('script-warnings')).toHaveCount(0);
 	await noSidewaysScroll(page);
 });
 
