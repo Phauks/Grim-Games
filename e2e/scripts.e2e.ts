@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
@@ -18,6 +19,12 @@ const homebrew = [
 
 const currentName = (page: Page) => page.getByTestId('current-script-name');
 
+/** Picks a source in the picker's Source dropdown. */
+async function chooseSource(page: Page, label: string) {
+	await page.getByRole('combobox', { name: 'Source' }).tap();
+	await page.getByRole('option', { name: label }).tap();
+}
+
 async function noSidewaysScroll(page: Page) {
 	const overflow = await page.evaluate(
 		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -35,7 +42,8 @@ test('the home page links to Scripts', async ({ page }) => {
 test('choosing an official edition makes it current and survives a reload', async ({ page }) => {
 	await page.goto('/scripts');
 	await expect(currentName(page)).toHaveText('None');
-	await expect(page.getByTestId('recent-none')).toHaveText('None');
+	// Nothing recent yet: the three editions are the whole table.
+	await expect(page.getByTestId('picker-status')).toHaveText('3 scripts');
 	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
 	await expect(currentName(page)).toHaveText('Trouble Brewing');
 	await expect(page.getByTestId('current-script-counts')).toHaveText(
@@ -96,13 +104,12 @@ test('a BotC Scripts number loads through our Worker', async ({ page }) => {
 		route.fulfill({ json: { page: 1, count: 0, hasMore: false, results: [] } })
 	);
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'BotC Scripts' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'BotC Scripts' });
-	await dialog.getByLabel('Search, link or script number').fill('42');
-	await expect(dialog.getByTestId('botc-status')).toHaveText(
+	await chooseSource(page, 'BotC Scripts');
+	await page.getByLabel('Search scripts').fill('42');
+	await expect(page.getByTestId('botc-status')).toHaveText(
 		'A BotC Scripts link or number: tap Load.'
 	);
-	await dialog.getByRole('button', { name: 'Load' }).tap();
+	await page.getByRole('button', { name: 'Load', exact: true }).tap();
 	await expect(currentName(page)).toHaveText('Storm Front');
 	await expect(page.getByRole('link', { name: 'BotC Scripts 1.2.0' })).toHaveAttribute(
 		'href',
@@ -278,9 +285,14 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 		})
 	);
 
+	await page.route('**/api/curated', (route) => route.fulfill({ json: { scripts: [] } }));
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'BotC Scripts' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'BotC Scripts' });
+	// Searching the table first, then taking the search to BotC Scripts.
+	await page.getByLabel('Search scripts').fill('storm');
+	await expect(page.getByTestId('picker-status')).toHaveText('None');
+	await page.getByLabel('Search scripts').fill('');
+	await page.getByRole('button', { name: 'Search BotC Scripts' }).tap();
+	const dialog = page.locator('main');
 	const status = dialog.getByTestId('botc-status');
 	await expect(status).toHaveText('2 scripts · most votes');
 	// Each card counts the script's characters and names its Demons.
@@ -288,7 +300,7 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	await expect(dialog.getByTestId('botc-makeup').first()).toContainText('Imp');
 	await expect(dialog.getByRole('button', { name: 'More' })).toBeDisabled();
 
-	await dialog.getByLabel('Search, link or script number').fill('storm');
+	await dialog.getByLabel('Search scripts').fill('storm');
 	await expect(status).toHaveText('1 script · most votes');
 	await expect(dialog.getByTestId('botc-makeup').first()).toContainText('Homebrew');
 
@@ -307,7 +319,7 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	await filters.getByRole('button', { name: 'Show scripts' }).tap();
 	await expect(dialog.getByRole('button', { name: 'Filters · 2' })).toBeVisible();
 	await expect.poll(() => searches.at(-1)).toBe('?page=1&q=storm&type=Teensyville&include=imp');
-	// One request when the dialog opened, one after typing paused, one for the filters.
+	// One request when BotC Scripts was chosen, one after typing paused, one for the filters.
 	expect(searches).toEqual([
 		'?page=1',
 		'?page=1&q=storm',
@@ -325,4 +337,93 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	await details.getByRole('button', { name: 'Load' }).tap();
 	await expect(currentName(page)).toHaveText('Storm Front');
 	await noSidewaysScroll(page);
+});
+
+/** A Script Tool link, built the way TPI's Script Tool builds them. */
+function scriptToolLink(script: unknown[]): string {
+	const payload = gzipSync(Buffer.from(JSON.stringify(script))).toString('base64');
+	return `https://script.bloodontheclocktower.com/?script=${encodeURIComponent(payload)}`;
+}
+
+const teensy = [
+	{ id: '_meta', name: 'Little Hamlet', author: 'Someone Small' },
+	'chef',
+	'empath',
+	'investigator',
+	'librarian',
+	'monk',
+	'saint',
+	'recluse',
+	'poisoner',
+	'spy',
+	'imp'
+];
+
+// Every Trouble Brewing character: a full-size script.
+const bigTown = [
+	{ id: '_meta', name: 'Big Town', author: 'Someone Big' },
+	...['washerwoman', 'librarian', 'investigator', 'chef', 'empath', 'fortuneteller'],
+	...['undertaker', 'monk', 'ravenkeeper', 'virgin', 'slayer', 'soldier', 'mayor'],
+	...['butler', 'drunk', 'recluse', 'saint', 'poisoner', 'spy', 'scarletwoman', 'baron', 'imp']
+];
+
+test("the official site's curated scripts are listed when asked for, and load", async ({
+	page
+}) => {
+	let asked = 0;
+	await page.route('**/api/curated', (route) => {
+		asked++;
+		return route.fulfill({
+			json: {
+				scripts: [
+					{ section: 'Teensyville', link: scriptToolLink(teensy), json: teensy },
+					{ section: 'Recommended', link: scriptToolLink(bigTown), json: bigTown }
+				]
+			}
+		});
+	});
+	await page.goto('/scripts');
+	await expect(page.getByTestId('picker-status')).toHaveText('3 scripts');
+	// Nothing is fetched from the official site until its scripts are wanted.
+	expect(asked).toBe(0);
+
+	await chooseSource(page, 'Curated (official site)');
+	await expect(page.getByTestId('picker-status')).toHaveText('2 scripts');
+	expect(asked).toBe(1);
+	const table = page.getByRole('table', { name: 'Scripts' });
+	await expect(table).toContainText('Little Hamlet');
+	await expect(table).toContainText('Teensyville');
+
+	// Sorting by name, then the other way round.
+	const name = table.getByRole('columnheader', { name: 'Name' });
+	await name.getByRole('button').tap();
+	await expect(name).toHaveAttribute('aria-sort', 'ascending');
+	await expect(table.locator('tbody tr').first()).toContainText('Big Town');
+	await name.getByRole('button').tap();
+	await expect(name).toHaveAttribute('aria-sort', 'descending');
+	await expect(table.locator('tbody tr').first()).toContainText('Little Hamlet');
+
+	// Teensyville only.
+	await page.getByRole('combobox', { name: 'Script type' }).tap();
+	await page.getByRole('option', { name: 'Teensyville' }).tap();
+	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
+
+	await page.getByRole('button', { name: /^Little Hamlet/ }).tap();
+	await expect(currentName(page)).toHaveText('Little Hamlet');
+	await expect(page.getByTestId('current-script')).toContainText('Script Tool');
+	await noSidewaysScroll(page);
+});
+
+test('a Script Tool link loads from the link itself, with no request', async ({ page }) => {
+	const requests: string[] = [];
+	page.on('request', (r) => {
+		if (r.url().includes('bloodontheclocktower.com')) requests.push(r.url());
+	});
+	await page.goto('/scripts');
+	await page.getByRole('button', { name: 'Link', exact: true }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Load from a link' });
+	await dialog.getByLabel('Link to the script JSON').fill(scriptToolLink(teensy));
+	await dialog.getByRole('button', { name: 'Load' }).tap();
+	await expect(currentName(page)).toHaveText('Little Hamlet');
+	expect(requests).toEqual([]);
 });

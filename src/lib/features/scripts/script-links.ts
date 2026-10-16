@@ -4,10 +4,13 @@
  * BotC Scripts lookup through our Worker. Design: 08-script-loading.md §5.2.
  */
 import { parseBotcScriptsRef, type BotcScriptsRef } from './botcscripts-api.ts';
+import { scriptToolPayload } from './script-tool-link.ts';
 
 export type LinkTarget =
 	| { kind: 'fetch'; url: string }
 	| { kind: 'botcscripts'; ref: BotcScriptsRef }
+	/** A Script Tool link holds the script itself: read without any request. */
+	| { kind: 'scripttool'; payload: string; url: string }
 	| { kind: 'invalid'; message: string };
 
 export function resolveLink(input: string): LinkTarget {
@@ -15,6 +18,8 @@ export function resolveLink(input: string): LinkTarget {
 	if (text === '') return { kind: 'invalid', message: 'Enter a link.' };
 	const botc = parseBotcScriptsRef(text);
 	if (botc) return { kind: 'botcscripts', ref: botc };
+	const payload = scriptToolPayload(text);
+	if (payload) return { kind: 'scripttool', payload, url: text };
 
 	let url: URL;
 	try {

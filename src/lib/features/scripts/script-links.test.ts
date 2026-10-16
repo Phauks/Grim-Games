@@ -36,3 +36,10 @@ describe('resolveLink', () => {
 		}
 	);
 });
+
+describe('resolveLink with Script Tool links', () => {
+	it('reads the script from the link itself', () => {
+		const link = 'https://script.bloodontheclocktower.com/?script=H4sIAAAA%2Bab';
+		expect(resolveLink(link)).toEqual({ kind: 'scripttool', payload: 'H4sIAAAA+ab', url: link });
+	});
+});

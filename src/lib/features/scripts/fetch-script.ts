@@ -14,6 +14,7 @@ import {
 } from './botcscripts-api.ts';
 import type { ScriptSource } from './saved-scripts.ts';
 import type { LinkTarget } from './script-links.ts';
+import { decodeScriptToolPayload, ScriptToolLinkError } from './script-tool-link.ts';
 
 /** Scripts are a few KB; a 201-character homebrew script is still far below this. */
 export const MAX_SCRIPT_BYTES = 1_000_000;
@@ -98,6 +99,13 @@ export function fetchLinkTarget(target: LinkTarget, typed: string): Promise<Fetc
 			return Promise.reject(new ScriptFetchError(target.message));
 		case 'botcscripts':
 			return fetchBotcScripts(target.ref);
+		case 'scripttool':
+			return decodeScriptToolPayload(target.payload).then(
+				(text) => ({ text, source: { kind: 'link', url: target.url } }),
+				(e: unknown) => {
+					throw e instanceof ScriptToolLinkError ? new ScriptFetchError(e.message) : e;
+				}
+			);
 		case 'fetch':
 			return fetchLink(target.url, /^https?:\/\//i.test(typed.trim()) ? typed.trim() : target.url);
 	}

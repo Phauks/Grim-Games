@@ -31,7 +31,7 @@
 
 	/**
 	 * Search and browse BotC Scripts through our Worker, with the site's own filters and
-	 * sorts. Polite to the site: one request per pause in typing, per change of filters or
+	 * sorts. Sits inside the script picker, which owns the search box (`query`). Polite to the site: one request per pause in typing, per change of filters or
 	 * sort, or per tap on More; never prefetched, and the Worker caches answers.
 	 */
 	interface Props {
@@ -185,11 +185,6 @@
 </script>
 
 <div class="browser">
-	<label class="field">
-		<span>Search, link or script number</span>
-		<input type="search" autocomplete="off" enterkeyhint="search" bind:value={query} {disabled} />
-	</label>
-
 	<div class="tools">
 		<Select
 			label="Sort"
@@ -241,11 +236,15 @@
 		{/if}
 	</ul>
 
+	<!-- Both always there: More pages a search, Load opens a typed link or number. -->
 	<div class="more">
 		<Button
 			variant="quiet"
 			disabled={disabled || loading || !hasMore || !!ref}
 			onclick={() => load($state.snapshot(current) as BotcScriptsQuery, page + 1)}>More</Button
+		>
+		<Button variant="accent" disabled={disabled || !ref} onclick={() => ref && onpick(ref)}
+			>Load</Button
 		>
 	</div>
 </div>
@@ -406,9 +405,6 @@
 		display: grid;
 		gap: var(--space-1);
 	}
-	.browser > .field {
-		margin-top: var(--space-3);
-	}
 	.field input {
 		width: 100%;
 		box-sizing: border-box;
@@ -433,8 +429,7 @@
 	}
 	.results {
 		flex: 1;
-		min-height: calc(5 * var(--tap-target));
-		max-height: 50dvh;
+		min-height: 0;
 		overflow-y: auto;
 		margin: 0;
 		padding: 0;
@@ -508,7 +503,8 @@
 	}
 	.more {
 		display: flex;
-		justify-content: center;
+		justify-content: space-between;
+		gap: var(--space-2);
 	}
 	.filters {
 		display: grid;

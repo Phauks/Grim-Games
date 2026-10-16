@@ -12,6 +12,7 @@ import {
 	type GameData,
 	type LoadedScript
 } from '#lib/core/data/index.ts';
+import { SCRIPT_TOOL_HOST } from './script-tool-link.ts';
 
 export const SAVED_SCRIPT_VERSION = 1;
 /** How many scripts the Recent list keeps. */
@@ -79,8 +80,10 @@ export function describeSource(source: ScriptSource): string {
 			return 'Pasted';
 		case 'file':
 			return source.fileName;
-		case 'link':
-			return new URL(source.url).hostname.replace(/^www\./, '');
+		case 'link': {
+			const host = new URL(source.url).hostname.replace(/^www\./, '');
+			return host === SCRIPT_TOOL_HOST ? 'Script Tool' : host;
+		}
 		case 'botcscripts':
 			return `BotC Scripts ${source.version}`;
 		case 'share':
