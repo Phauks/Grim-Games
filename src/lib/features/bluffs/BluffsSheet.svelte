@@ -19,10 +19,10 @@
 	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -217,7 +217,12 @@
 	</ErrorBoundary>
 </BottomSheet>
 
-<Dialog bind:open={deleteOpen} title={t('bluffs.deleteConfirm')} role="alertdialog">
+<ConfirmDialog
+	bind:open={deleteOpen}
+	title={t('bluffs.deleteConfirm')}
+	danger
+	onConfirm={() => deleting !== undefined && run({ type: 'RemoveBluffSet', set: deleting })}
+>
 	{@const doomed = lookup(game.bluffs[deleting ?? -1] ?? [])}
 	<p class="confirm">
 		<Sentence
@@ -237,17 +242,7 @@
 		>
 	</p>
 	<p class="confirm hint">{t('bluffs.undoHint')}</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (deleteOpen = false)}>{t('common.cancel')}</Button>
-		<Button
-			variant="accent"
-			onclick={() => {
-				if (deleting !== undefined) run({ type: 'RemoveBluffSet', set: deleting });
-				deleteOpen = false;
-			}}>{t('bluffs.delete')}</Button
-		>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <ShowToPlayer
 	bind:open={showOpen}
