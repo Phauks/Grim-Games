@@ -294,7 +294,7 @@ test.describe('in a computer window', () => {
 		await expect(page).toHaveURL(/\/draw$/);
 		await noSidewaysScroll(page);
 
-		// Enter draws the next tile; Enter again confirms it.
+		// Enter draws a tile; Enter again confirms it.
 		await page.keyboard.press('Enter');
 		const reveal = page.getByTestId('reveal');
 		await expect(reveal).toBeVisible();
@@ -303,6 +303,7 @@ test.describe('in a computer window', () => {
 		await expect(reveal.getByRole('textbox', { name: 'Name' })).not.toBeFocused();
 		await page.keyboard.press('Enter');
 		await expect(reveal).toBeHidden();
-		await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
+		// Enter takes a tile at random, so any one of them is now drawn.
+		await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
 	});
 });
