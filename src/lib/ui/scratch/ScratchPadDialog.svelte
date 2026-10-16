@@ -7,7 +7,7 @@
 		type ScratchTool
 	} from '#lib/core/scratch/scratch.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ScratchCanvas from './ScratchCanvas.svelte';
@@ -101,19 +101,14 @@
 	</div>
 </Dialog>
 
-<Dialog bind:open={confirming} role="alertdialog" title={t('scratch.clearConfirm')}>
+<ConfirmDialog
+	bind:open={confirming}
+	title={t('scratch.clearConfirm')}
+	danger
+	onConfirm={() => pad.clear()}
+>
 	<p>{t('scratch.clearBody')}</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirming = false)}>{t('scratch.cancel')}</Button>
-		<Button
-			variant="danger"
-			onclick={() => {
-				confirming = false;
-				pad.clear();
-			}}>{t('scratch.confirm')}</Button
-		>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	.pad {
