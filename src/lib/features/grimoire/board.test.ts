@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { characterLookup, type Seat } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { causeLabel, isOrphan, pickerGroups } from './board.ts';
+import { causeLabel, isOrphan, recommendedTravellers, pickerGroups } from './board.ts';
 
 const data = committedGameData();
 const tb = toScript(editionScript('tb', data)!);
@@ -54,5 +54,15 @@ describe('causeLabel', () => {
 		expect(causeLabel('execution', characters)).toBe('Executed');
 		expect(causeLabel('execution', characters, true)).toBe('Exiled');
 		expect(causeLabel('exile', characters)).toBe('Exiled');
+	});
+});
+
+describe('recommendedTravellers', () => {
+	// https://wiki.bloodontheclocktower.com/Trouble_Brewing : its Travellers are the Scapegoat,
+	// Gunslinger, Beggar, Bureaucrat and Thief.
+	it("recommends an official edition's own Travellers", () => {
+		expect(new Set(recommendedTravellers(tb, characters))).toEqual(
+			new Set(['scapegoat', 'gunslinger', 'beggar', 'bureaucrat', 'thief'])
+		);
 	});
 });

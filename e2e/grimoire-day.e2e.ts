@@ -23,7 +23,7 @@ async function addThief(page: Page) {
 		.tap();
 	await page
 		.getByRole('dialog', { name: 'Add a Traveller' })
-		.getByRole('button', { name: 'Thief', exact: true })
+		.getByRole('button', { name: 'Thief, Recommended', exact: true })
 		.tap();
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Evil' }).tap();
 	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toBeAttached();

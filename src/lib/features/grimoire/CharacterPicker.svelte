@@ -21,6 +21,8 @@
 		current?: CharacterId;
 		/** Hide the "not on the script" switch (Fabled and Loric are never on a script sheet). */
 		alwaysAll?: boolean;
+		/** Listed first and marked "Recommended" (the script's Travellers). */
+		recommended?: readonly CharacterId[];
 		onPick: (id: CharacterId) => void;
 	}
 
@@ -32,14 +34,19 @@
 		types,
 		current,
 		alwaysAll = false,
+		recommended = [],
 		onPick
 	}: Props = $props();
 
 	let showAll = $state(false);
 	let query = $state('');
-	const list = $derived(
-		pickerGroups(characters, script, types, alwaysAll || showAll).flatMap((g) => g.characters)
-	);
+	const list = $derived.by(() => {
+		const all = pickerGroups(characters, script, types, alwaysAll || showAll).flatMap(
+			(g) => g.characters
+		);
+		const first = all.filter((c) => recommended.includes(c.id));
+		return [...first, ...all.filter((c) => !recommended.includes(c.id))];
+	});
 	$effect(() => {
 		if (!open) query = '';
 	});
@@ -61,6 +68,9 @@
 			{types}
 			selected={current ? [current] : []}
 			bind:query
+			marker={recommended.length > 0
+				? (c) => (recommended.includes(c.id) ? 'Recommended' : undefined)
+				: undefined}
 			onSelect={onPick}
 		/>
 	</div>

@@ -8,25 +8,21 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
 		DEFAULT_SEAT_LAYOUT,
-		gapPoints,
 		isDefaultLayout,
-		nextGap,
 		keepInside,
 		seatPoints,
 		seatTokenSize,
 		towardsMiddle,
-		withGap,
 		withPlaced,
 		withoutPlaced,
 		withShape,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
-	import { isOrphan } from './board.ts';
+	import { isOrphan, recommendedTravellers } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -144,12 +140,11 @@
 	// Seats can be dragged anywhere (people on a couch, a gap by the door) and gaps left
 	// between neighbours. Only where seats are drawn changes; the seating order does not.
 	let arranging = $state(false);
-	const gapAt = $derived(arranging ? gapPoints(game.seating, layout, { width, height }, 0.3) : []);
 	function startArranging() {
 		arranging = true;
 		toast(
 			'Arrange seats',
-			'Drag a seat to move it, or onto another seat to change the seating order. Tap + between seats to leave a gap.'
+			'Drag a seat anywhere to space the table, or onto another seat to change the seating order.'
 		);
 	}
 
@@ -266,6 +261,10 @@
 		toast('Setup reminders', 'Drag a token onto a seat, or tap it to see where it fits.');
 	}
 
+	/** Characters and Bag draw show in the middle until the game is set up, then go. */
+	const showSetup = $derived(
+		!setUp && !arranging && game.seating.some((id) => game.seats[id].characterId === undefined)
+	);
 	let rotateOpen = $state(false);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
@@ -325,31 +324,33 @@
 				}}>Done</Button
 			>
 		{:else}
-			<span class="title">{game.script.meta?.name ?? 'Custom script'}</span>
-			<IconButton icon="night" label="Night order" onclick={() => (nightOpen = true)} />
-			<IconButton
+			<!-- Icons on phones; with their words on wider screens, where there is room. -->
+			<span class="spacer"></span>
+			<Button
+				variant="quiet"
+				icon="night"
+				aria-label="Night order"
+				onclick={() => (nightOpen = true)}><span class="tool-label">Night order</span></Button
+			>
+			<Button
+				variant="quiet"
 				icon="day"
-				label="Day"
+				aria-label="Day"
 				onclick={() => goto(resolve('/grimoire/[gameId]/day', { gameId: game.gameId }))}
-			/>
-			<IconButton icon="history" label="History" onclick={() => (historyOpen = true)} />
-			<IconButton
-				icon="players"
-				label="Characters"
-				disabled={setUp}
-				onclick={() => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))}
-			/>
-			<IconButton
-				icon="bag"
-				label="Bag draw"
-				disabled={setUp}
-				onclick={() => goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }))}
-			/>
-			<IconButton icon="menu" label="More" onclick={() => (menuOpen = true)} />
+				><span class="tool-label">Day</span></Button
+			>
+			<Button variant="quiet" icon="arrange" aria-label="Arrange seats" onclick={startArranging}
+				><span class="tool-label">Arrange seats</span></Button
+			>
+			<Button variant="quiet" icon="menu" aria-label="More" onclick={() => (menuOpen = true)}
+				><span class="tool-label">More</span></Button
+			>
 		{/if}
 	</div>
 
 	<div class="board" class:arranging bind:this={board}>
+		<!-- The script's name sits behind the circle, so the toolbar keeps its room. -->
+		<p class="watermark" aria-hidden="true">{game.script.meta?.name ?? 'Custom script'}</p>
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = drag?.seatId === seat.seatId ? drag.at : points[i]}
 			<div
@@ -407,51 +408,57 @@
 			{/if}
 		{/each}
 
-		{#each gapAt as at, i (game.seating[i])}
-			{@const seatId = game.seating[i]}
-			{@const gap = layout.gaps[seatId] ?? 0}
-			<button
-				type="button"
-				class="gap"
-				style:left="{at.x}%"
-				style:top="{at.y}%"
-				aria-label={`Gap after seat ${i + 1}: ${gap === 0 ? 'None' : gap}`}
-				onclick={() => grimoire.setLayout(withGap(layout, seatId, nextGap(layout, seatId)))}
-				>{gap === 0 ? '+' : gap}</button
-			>
-		{/each}
-
 		{#if traying}
 			<SetupTray {grimoire} {board} size={chip} {seatAt} onHints={(h) => (trayHints = h)} />
 		{/if}
 
-		<!-- Fabled and Loric are rules of the game, not seats: they sit in the middle. -->
-		<ul class="rules" class:hidden={traying} aria-label="Fabled and Loric">
-			{#each game.ruleCharacters as id (id)}
-				{@const character = characters.get(id)}
-				{#if character}
-					<li>
-						<button
-							type="button"
-							class="rule"
-							aria-label={character.name}
-							onclick={() => {
-								ruleShown = id;
-								ruleShownOpen = true;
-							}}
-						>
-							<CharacterToken {character} size={Math.round(size * 0.8)} />
-						</button>
-					</li>
-				{/if}
-			{/each}
-		</ul>
+		<div class="centre" class:hidden={traying}>
+			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
+			{#if showSetup}
+				<div class="setup">
+					<Button
+						icon="players"
+						onclick={() => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))}
+						>Characters</Button
+					>
+					<Button
+						icon="bag"
+						onclick={() => goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }))}
+						>Bag draw</Button
+					>
+				</div>
+			{/if}
+			<!-- Fabled and Loric are rules of the game, not seats: they sit in the middle. -->
+			<ul class="rules" aria-label="Fabled and Loric">
+				{#each game.ruleCharacters as id (id)}
+					{@const character = characters.get(id)}
+					{#if character}
+						<li>
+							<button
+								type="button"
+								class="rule"
+								aria-label={character.name}
+								onclick={() => {
+									ruleShown = id;
+									ruleShownOpen = true;
+								}}
+							>
+								<CharacterToken {character} size={Math.round(size * 0.8)} />
+							</button>
+						</li>
+					{/if}
+				{/each}
+			</ul>
+		</div>
 	</div>
 </div>
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <Dialog bind:open={menuOpen} title="Grimoire">
 	<div class="menu">
+		<Button variant="quiet" icon="history" onclick={() => fromMenu(() => (historyOpen = true))}>
+			History
+		</Button>
 		<Button variant="quiet" icon="add" onclick={() => fromMenu(() => grimoire.addSeat())}>
 			Add seat
 		</Button>
@@ -466,9 +473,6 @@
 		</Button>
 		<Button variant="quiet" icon="reminder" onclick={() => fromMenu(startTray)}>
 			Setup reminders
-		</Button>
-		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
-			Arrange seats
 		</Button>
 		<Button variant="quiet" icon="redo" onclick={() => fromMenu(() => (rotateOpen = true))}>
 			Rotate seats
@@ -533,6 +537,7 @@
 	script={game.script}
 	types={['traveller']}
 	alwaysAll
+	recommended={recommendedTravellers(game.script, characters)}
 	onPick={(id) => {
 		travellerOpen = false;
 		traveller = id;
@@ -651,38 +656,66 @@
 		z-index: 3;
 		scale: 1.15;
 	}
-	.gap {
-		position: absolute;
-		translate: -50% -50%;
-		z-index: 1;
-		width: var(--tap-target);
-		height: var(--tap-target);
-		border: 1px dashed var(--border);
-		border-radius: 50%;
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font: 600 1rem / 1 var(--font-control);
-		cursor: pointer;
-	}
-	.gap:hover {
-		background: var(--surface-selected);
-	}
-	.rules {
+	.centre {
 		position: absolute;
 		left: 50%;
 		top: 50%;
 		translate: -50% -50%;
+		display: grid;
+		justify-items: center;
+		gap: var(--space-2);
+		max-width: 50%;
+	}
+	.centre.hidden {
+		visibility: hidden;
+	}
+	.setup {
+		display: grid;
+		gap: var(--space-2);
+	}
+	.watermark {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		margin: 0;
+		padding: 0 15%;
+		font-family: var(--font-heading);
+		font-size: clamp(1.5rem, 7vmin, 4rem);
+		line-height: 1.1;
+		text-align: center;
+		color: var(--heading);
+		opacity: 0.12;
+		pointer-events: none;
+		user-select: none;
+	}
+	.spacer {
+		flex: 1;
+	}
+	/* Phones show the toolbar's icons only; wider screens add the words. */
+	.toolbar :global(.tool-label) {
+		display: none;
+	}
+	@media (max-width: 719.98px) {
+		.toolbar :global(.button:has(.tool-label)) {
+			min-width: var(--tap-target);
+			padding: 0;
+			gap: 0;
+		}
+	}
+	@media (min-width: 720px) {
+		.toolbar :global(.tool-label) {
+			display: inline;
+		}
+	}
+	.rules {
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: var(--space-1);
-		max-width: 50%;
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.rules.hidden {
-		visibility: hidden;
 	}
 	.rule {
 		padding: 0;

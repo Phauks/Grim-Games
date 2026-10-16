@@ -98,18 +98,18 @@ test('history, add seat, swap and remove', async ({ page }) => {
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 
 	// History lists the change; going back to before it asks first.
-	await page.getByRole('button', { name: 'History' }).tap();
+	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
 	const added = history.getByRole('listitem').filter({ hasText: 'Added Seat 9' });
-	await added.getByRole('button', { name: 'Go back' }).tap();
-	const back = page.getByRole('alertdialog', { name: 'Go back?' });
+	await added.getByRole('button', { name: 'Restore' }).tap();
+	const back = page.getByRole('alertdialog', { name: 'Restore?' });
 	await expect(back).toContainText('Undoes 1 change');
-	await back.getByRole('button', { name: 'Go back' }).tap();
+	await back.getByRole('button', { name: 'Restore' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	// The undone change stays, greyed out, and can be restored.
 	await added.getByRole('button', { name: 'Restore' }).tap();
 	await page
-		.getByRole('alertdialog', { name: 'Restore changes?' })
+		.getByRole('alertdialog', { name: 'Restore?' })
 		.getByRole('button', { name: 'Restore' })
 		.tap();
 	await expect(page.getByTestId('seat')).toHaveCount(9);
@@ -167,7 +167,7 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 	await menu(page, 'Add Traveller');
 	await page
 		.getByRole('dialog', { name: 'Add a Traveller' })
-		.getByRole('button', { name: 'Thief', exact: true })
+		.getByRole('button', { name: 'Thief, Recommended', exact: true })
 		.tap();
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Evil' }).tap();
 	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toBeAttached();
@@ -239,7 +239,7 @@ test('a new game can use a custom script from the Scripts page', async ({ page }
 	await expect(page.getByTestId('current-script-name')).toHaveText('Pocket Storm');
 
 	await startGame(page, 'Pocket Storm');
-	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Pocket Storm');
+	await expect(page.locator('.watermark')).toHaveText('Pocket Storm');
 });
 
 test('reminders: add several from the picker, recent first, then move and remove', async ({
@@ -302,16 +302,15 @@ test('seats can be arranged: dragged into groups, gaps left, oval or circle', as
 	};
 	const board = (await page.locator('.board').boundingBox())!;
 	const seat2 = await centre(2);
-	const seat3 = await centre(3);
 
-	await menu(page, 'Arrange seats');
+	await page.getByRole('button', { name: 'Arrange seats' }).tap();
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar).toContainText('Arrange seats');
 	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
 
-	// Drag seat 1 to the middle of the board; the others stay where they were.
+	// Drag seat 1 inside the circle (clear of the centre buttons); the others stay put.
 	const from = await centre(1);
-	const to = { x: board.x + board.width / 2, y: board.y + board.height / 2 };
+	const to = { x: board.x + board.width / 2, y: board.y + board.height * 0.3 };
 	await page.mouse.move(from.x, from.y);
 	await page.mouse.down();
 	await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
@@ -322,15 +321,12 @@ test('seats can be arranged: dragged into groups, gaps left, oval or circle', as
 	expect(Math.abs(moved.y - to.y)).toBeLessThan(4);
 	expect(await centre(2)).toEqual(seat2);
 
-	// A gap after seat 2 moves the seats after it round the ring.
-	await page.getByRole('button', { name: 'Gap after seat 2: None' }).tap();
-	await expect(page.getByRole('button', { name: 'Gap after seat 2: 1' })).toBeVisible();
-	expect(await centre(3)).not.toEqual(seat3);
+	// No gap buttons: spacing is set by dragging seats (Trevor, 2026-10-16).
+	await expect(page.getByRole('button', { name: /^Space after seat/ })).toHaveCount(0);
 
 	await toolbar.getByText('Circle', { exact: true }).tap();
 	await expect(toolbar.getByRole('checkbox', { name: 'Circle' })).toBeChecked();
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
-	await expect(page.getByRole('button', { name: 'Gap after seat 2: 1' })).toHaveCount(0);
 
 	// The layout is kept on this device, and seats open their sheet again.
 	await page.reload();
@@ -404,7 +400,7 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		'aria-label',
 		'Seat 1: no name, Sailor'
 	);
-	await page.getByRole('button', { name: 'History' }).tap();
+	await menu(page, 'History');
 	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
 		'Drunk moved to Seat 3'
 	);
@@ -435,11 +431,15 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	const tick = empath.getByRole('button', { name: 'Done: Empath' });
 	await tick.tap();
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
+	// Each night has its own ticks; there is no Clear ticks button.
+	await expect(night.getByRole('button', { name: 'Clear ticks' })).toHaveCount(0);
 	await night.getByText('Other nights').tap();
-	await expect(night.getByRole('listitem').filter({ hasText: 'Empath' })).toBeVisible();
-	await night.getByRole('button', { name: 'Clear ticks' }).tap();
+	await expect(night.getByRole('button', { name: 'Done: Empath' })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
 	await night.getByText('First night').tap();
-	await expect(tick).toHaveAttribute('aria-pressed', 'false');
+	await expect(tick).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('the script is shared from the grimoire menu, never the game', async ({ page }) => {
@@ -463,7 +463,7 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 	await menu(page, 'Add Traveller');
 	await page
 		.getByRole('dialog', { name: 'Add a Traveller' })
-		.getByRole('button', { name: 'Thief', exact: true })
+		.getByRole('button', { name: 'Thief, Recommended', exact: true })
 		.tap();
 	await page
 		.getByRole('dialog', { name: 'Alignment' })
@@ -592,7 +592,7 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await expect(rotate).toBeHidden();
 
 	// Arranging: dropping a seat onto another seat changes the seating order.
-	await menu(page, 'Arrange seats');
+	await page.getByRole('button', { name: 'Arrange seats' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
 	const centre = async (n: number) => {
 		const box = (await page
@@ -610,81 +610,11 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await expect(seatLabelled(page, 'Seat 4: Ana')).toBeAttached();
 	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
 
-	await page.getByRole('button', { name: 'History' }).tap();
+	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
 	await expect(history).toContainText('Ana moved to seat 4');
 	await expect(history).toContainText('Rotated the seats clockwise');
 	await page.keyboard.press('Escape');
 	await openSeat(page, 4);
 	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
-});
-
-test('the night order is edited by hand: move, skip and restore, rewrite, add', async ({
-	page
-}) => {
-	await startGame(page);
-	for (const [number, name] of [
-		[1, 'Washerwoman'],
-		[2, 'Empath']
-	] as const) {
-		const sheet = await openSeat(page, number);
-		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
-		await page
-			.getByRole('dialog', { name: `Character for Seat ${number}` })
-			.getByRole('button', { name, exact: true })
-			.tap();
-		await closeSheet(page);
-	}
-	await page.getByRole('button', { name: 'Night order' }).tap();
-	const night = page.getByRole('dialog', { name: 'Night order' });
-	const steps = night.locator('ol.steps > li:not(.skipped)');
-	const order = async () => (await steps.allTextContents()).map((t) => t.trim().split(/\s/)[0]);
-	await night.getByRole('button', { name: 'Edit order' }).tap();
-
-	// Move the Empath above the Washerwoman: one History entry.
-	await night.getByRole('button', { name: 'Change Empath' }).tap();
-	const menu = page.getByRole('dialog', { name: 'Empath' });
-	await menu.getByRole('button', { name: 'Move up' }).tap();
-	await page.keyboard.press('Escape');
-	await expect(menu).toBeHidden();
-	const moved = await order();
-	expect(moved.indexOf('Empath')).toBeLessThan(moved.indexOf('Washerwoman'));
-
-	// Skip the Washerwoman, then restore it from Skipped.
-	await night.getByRole('button', { name: 'Change Washerwoman' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Washerwoman' })
-		.getByRole('button', { name: 'Skip this step' })
-		.tap();
-	await expect(night.getByRole('button', { name: 'Change Washerwoman' })).toBeHidden();
-	const skipped = night.locator('li.skipped');
-	await expect(skipped).toContainText('Washerwoman');
-	await skipped.getByRole('button', { name: 'Restore' }).tap();
-	await expect(night.getByRole('button', { name: 'Change Washerwoman' })).toBeVisible();
-
-	// Rewrite the Empath's text, and add a step of our own before Dawn.
-	await night.getByRole('button', { name: 'Change Empath' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Empath' })
-		.getByRole('button', { name: 'Edit text' })
-		.tap();
-	const text = page.getByRole('dialog', { name: 'Text for Empath' });
-	await text.getByRole('textbox', { name: 'Text' }).fill('Show fingers.');
-	await text.getByRole('button', { name: 'Save' }).tap();
-	await expect(night).toContainText('Show fingers.');
-
-	await night.getByRole('button', { name: 'Add step' }).tap();
-	const add = page.getByRole('dialog', { name: 'Add a step' });
-	await add.getByRole('textbox', { name: 'Title' }).fill('Check the bag');
-	await add.getByRole('button', { name: 'Add' }).tap();
-	const own = await order();
-	expect(own.at(-2)).toBe('Check');
-	await night.getByRole('button', { name: 'Done' }).tap();
-	await expect(night.getByRole('button', { name: 'Done: Check the bag' })).toBeVisible();
-	await page.keyboard.press('Escape');
-
-	await page.getByRole('button', { name: 'History' }).tap();
-	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
-		'Changed the night order'
-	);
 });

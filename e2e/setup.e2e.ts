@@ -181,9 +181,9 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 		await expect(page.getByRole('button', { name: new RegExp(`^Seat ${n}: .+`) })).toBeVisible();
 	}
 
-	// Set up: the bag and the selection are closed, in place and by address.
-	await expect(page.getByRole('button', { name: 'Characters' })).toBeDisabled();
-	await expect(page.getByRole('button', { name: 'Bag draw' })).toBeDisabled();
+	// Set up: the bag and the selection are gone from the board, and closed by address.
+	await expect(page.getByRole('button', { name: 'Characters' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Bag draw' })).toHaveCount(0);
 	const board = new URL(page.url()).pathname;
 	await page.goto(`${board}/draw`);
 	await expect(page).toHaveURL(new RegExp(`${board}$`));

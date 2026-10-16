@@ -2,7 +2,13 @@
  * Board helpers that are UI only: which characters the pickers offer and the text shown
  * for engine warnings. Rules stay in `#lib/core`; where seats sit is `#lib/ui/seating`.
  */
-import type { Character, CharacterType, Script } from '#lib/core/data/index.ts';
+import {
+	findEdition,
+	type Character,
+	type CharacterId,
+	type CharacterType,
+	type Script
+} from '#lib/core/data/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
 import type { DeathCauseFlag } from '#lib/core/rules/index.ts';
 import {
@@ -54,6 +60,21 @@ export function pickerGroups(
 				.sort((x, y) => rank(x) - rank(y) || x.name.localeCompare(y.name))
 		}))
 		.filter((group) => group.characters.length > 0);
+}
+
+/**
+ * The Travellers a script recommends: those on the script itself, and for an official
+ * edition the edition's own Travellers (https://wiki.bloodontheclocktower.com/Travellers).
+ */
+export function recommendedTravellers(script: Script, characters: CharacterLookup): CharacterId[] {
+	const out = scriptCharacterIds(script).filter((id) => characters.get(id)?.type === 'traveller');
+	const edition = findEdition(script.meta?.name ?? '')?.id;
+	if (edition) {
+		for (const c of characters.values()) {
+			if (c.type === 'traveller' && c.edition === edition && !out.includes(c.id)) out.push(c.id);
+		}
+	}
+	return out;
 }
 
 /**
