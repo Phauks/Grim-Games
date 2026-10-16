@@ -203,6 +203,43 @@ export function withoutPlaced(layout: SeatLayout, seatId: string): SeatLayout {
 	return { ...layout, placed };
 }
 
+/**
+ * Whether `after` is `before` turned round the table (everyone moved the same number of
+ * places), and not the same order.
+ */
+export function isRotation(before: readonly string[], after: readonly string[]): boolean {
+	const n = before.length;
+	if (n !== after.length || n < 2) return false;
+	const shift = after.indexOf(before[0]);
+	if (shift <= 0) return false;
+	return before.every((id, i) => after[(i + shift) % n] === id);
+}
+
+/**
+ * After the players rotate round the table, the places stay where they were: whoever now
+ * sits in a hand-placed spot (or before a gap) takes that spot. Positions belong to the
+ * place in the seating order, not to the player.
+ */
+export function followSeating(
+	layout: SeatLayout,
+	before: readonly string[],
+	after: readonly string[]
+): SeatLayout {
+	if (before.length !== after.length) return layout;
+	const placed: Record<string, SeatPoint> = {};
+	const gaps: Record<string, number> = {};
+	before.forEach((id, i) => {
+		if (layout.placed[id]) placed[after[i]] = layout.placed[id];
+		if (layout.gaps[id]) gaps[after[i]] = layout.gaps[id];
+	});
+	return { ...layout, placed, gaps };
+}
+
+/** Everyone back on the ring, evenly spaced in seating order: no gaps, nobody hand-placed. */
+export function spreadEvenly(layout: SeatLayout): SeatLayout {
+	return { ...layout, gaps: {}, placed: {} };
+}
+
 /** Forgets gaps and placements of seats that are no longer at the table. */
 export function pruneLayout(layout: SeatLayout, seatIds: readonly string[]): SeatLayout {
 	const here = new Set(seatIds);

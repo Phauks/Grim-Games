@@ -13,7 +13,10 @@ import {
 	withoutPlaced,
 	withPlaced,
 	towardsMiddle,
-	withShape
+	withShape,
+	followSeating,
+	isRotation,
+	spreadEvenly
 } from './seat-layout.ts';
 
 const seats = ['a', 'b', 'c', 'd'];
@@ -148,5 +151,35 @@ describe('keepInside', () => {
 	});
 	it('centres when the board is smaller than the token', () => {
 		expect(keepInside([{ x: 0, y: 0 }], { width: 10, height: 10 }, 20)).toEqual([{ x: 50, y: 50 }]);
+	});
+});
+
+describe('rotating with a custom layout', () => {
+	const seats = ['a', 'b', 'c', 'd'];
+	it('knows a rotation from a reorder', () => {
+		expect(isRotation(seats, ['d', 'a', 'b', 'c'])).toBe(true);
+		expect(isRotation(seats, ['b', 'c', 'd', 'a'])).toBe(true);
+		expect(isRotation(seats, seats)).toBe(false);
+		expect(isRotation(seats, ['b', 'a', 'c', 'd'])).toBe(false);
+	});
+
+	it('keeps hand-placed spots and gaps in place while the players move', () => {
+		let layout = withPlaced(DEFAULT_SEAT_LAYOUT, 'a', { x: 20, y: 30 });
+		layout = withGap(layout, 'c', 2);
+		const after = ['d', 'a', 'b', 'c'];
+		const turned = followSeating(layout, seats, after);
+		// Place 1 was hand-placed (held by "a"); now "d" sits there.
+		expect(turned.placed).toEqual({ d: { x: 20, y: 30 } });
+		expect(turned.gaps).toEqual({ b: 2 });
+		const board = { width: 400, height: 400 };
+		expect(seatPoints(after, turned, board)).toEqual(seatPoints(seats, layout, board));
+	});
+
+	it('spreads everyone evenly, keeping the shape', () => {
+		const layout = withShape(
+			withPlaced(withGap(DEFAULT_SEAT_LAYOUT, 'a', 1), 'b', { x: 10, y: 10 }),
+			'circle'
+		);
+		expect(spreadEvenly(layout)).toEqual({ shape: 'circle', gaps: {}, placed: {} });
 	});
 });

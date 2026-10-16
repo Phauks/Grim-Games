@@ -3,6 +3,7 @@
 	import type { Seat } from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import type { NamePlace } from './name-placement.ts';
 
 	interface Props {
 		seat: Seat;
@@ -17,6 +18,8 @@
 		dropTarget?: boolean;
 		/** Marked as a seat a setup reminder fits, while one is dragged or open. */
 		hint?: boolean;
+		/** Which side of the token the name goes, so nothing covers it. */
+		namePlace?: NamePlace;
 		onTap: () => void;
 	}
 
@@ -28,6 +31,7 @@
 		orphan,
 		dropTarget = false,
 		hint = false,
+		namePlace = 'below',
 		onTap
 	}: Props = $props();
 
@@ -43,7 +47,7 @@
 		[
 			`Seat ${number}: ${seat.playerName ?? 'no name'}`,
 			character?.name ?? 'no character',
-			seat.dead ? (seat.ghostVoteUsed ? 'dead, ghost vote used' : 'dead, has ghost vote') : '',
+			seat.dead ? 'dead' : '',
 			// A Traveller has no starting alignment: always say it, or that it is not set yet.
 			character?.type === 'traveller'
 				? (seat.alignment ?? 'alignment not set')
@@ -94,13 +98,10 @@
 		</span>
 		{#if seat.dead}<span class="shroud"><Icon name="dead" /></span>{/if}
 		<!-- Corner marks sit in fixed places, so one appearing never moves anything. -->
-		{#if seat.dead && !seat.ghostVoteUsed}
-			<span class="mark ghost" title="Ghost vote"><Icon name="ghostVote" /></span>
-		{/if}
 		{#if orphan}<span class="mark orphan" title="Not on the script"><Icon name="warning" /></span
 			>{/if}
 	</span>
-	<span class="name">{name}</span>
+	<span class="name" data-place={namePlace}>{name}</span>
 </button>
 
 <style>
@@ -115,6 +116,7 @@
 		border-radius: 50%;
 	}
 	.seat {
+		position: relative;
 		display: grid;
 		justify-items: center;
 		gap: 2px;
@@ -179,19 +181,15 @@
 		box-shadow: var(--shadow);
 		--icon-size: calc(max(18px, calc(var(--size) * 0.3)) * 0.65);
 	}
-	.ghost {
-		left: -4%;
-		bottom: -4%;
-		background: var(--surface-raised);
-		color: var(--on-surface);
-	}
 	.orphan {
 		left: -4%;
 		top: -4%;
 		background: var(--accent);
 		color: var(--on-accent);
 	}
+	/* Laid beside the token, outside its box, on whichever side is clear. */
 	.name {
+		position: absolute;
 		max-width: 100%;
 		overflow: hidden;
 		font-family: var(--font-player);
@@ -200,5 +198,26 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 		text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+	}
+	.name[data-place='below'] {
+		top: calc(100% + 2px);
+		left: 50%;
+		translate: -50% 0;
+	}
+	.name[data-place='above'] {
+		bottom: calc(100% + 2px);
+		left: 50%;
+		translate: -50% 0;
+	}
+	.name[data-place='left'],
+	.name[data-place='right'] {
+		top: 50%;
+		translate: 0 -50%;
+	}
+	.name[data-place='left'] {
+		right: calc(50% + var(--size) / 2 + 2px);
+	}
+	.name[data-place='right'] {
+		left: calc(50% + var(--size) / 2 + 2px);
 	}
 </style>
