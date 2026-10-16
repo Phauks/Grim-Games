@@ -393,3 +393,24 @@ test('Enter in a name or note title closes the keyboard', async ({ page }) => {
 	await text.pressSequentially('two');
 	await expect(text).toHaveValue('one\ntwo');
 });
+
+test('a player note can be added from the Notes tab by choosing the player', async ({ page }) => {
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await page.getByRole('button', { name: 'Player note' }).tap();
+	const which = page.getByRole('dialog', { name: 'Which player?' });
+	await which.locator('[data-choose-seat]').nth(2).tap();
+	await expect(which).toBeHidden();
+	const sheet = page.getByRole('dialog', { name: 'Seat 3' });
+	await sheet.getByLabel('Notes').fill('Quiet on day one');
+	await page.keyboard.press('Escape');
+	await expect(page.locator('[data-player-note]')).toContainText('Seat 3');
+	await expect(page.locator('[data-player-note]')).toContainText('Quiet on day one');
+
+	// Players with a note are marked, and choosing them opens that note again.
+	await page.getByRole('button', { name: 'Player note' }).tap();
+	await expect(which.locator('[data-choose-seat]').nth(2)).toContainText('Has a note');
+	await which.locator('[data-choose-seat]').nth(2).tap();
+	await expect(page.getByRole('dialog', { name: 'Seat 3' }).getByLabel('Notes')).toHaveValue(
+		'Quiet on day one'
+	);
+});

@@ -1,18 +1,22 @@
 <script lang="ts">
-	import { t } from '#lib/i18n/locale.svelte.ts';
+	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { NotebookSeat, PlayerNote } from './notebook.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 
 	interface Props {
 		notes: readonly PlayerNote[];
 		seats: readonly NotebookSeat[];
+		/** The script's characters, to name each seat's claims in the player list. */
+		characters: ReadonlyMap<CharacterId, Character>;
 		onAdd: () => void;
 		onOpenNote: (noteId: string) => void;
 		onOpenSeat: (seatId: string) => void;
 	}
 
-	let { notes, seats, onAdd, onOpenNote, onOpenSeat }: Props = $props();
+	let { notes, seats, characters, onAdd, onOpenNote, onOpenSeat }: Props = $props();
 	// Notes written on a player in the circle, in seat order (Trevor, 2026-10-15).
 	const playerNotes = $derived(
 		seats.map((seat, i) => ({ seat, number: i + 1 })).filter((s) => s.seat.note.trim())
@@ -20,6 +24,18 @@
 	const preview = (text: string) => text.trim().split('\n')[0] || t('player.empty');
 	// "Hide note contents" setting: titles stay, the text is replaced, so nothing reflows.
 	const hidden = $derived(playerSettings.current.hideNoteContents);
+
+	// A player's note from here (Trevor, 2026-10-16): ask which player, then open their seat,
+	// where the Notes field is. Players with a note already are marked and open that note.
+	let choosing = $state(false);
+	function choose(seatId: string) {
+		choosing = false;
+		onOpenSeat(seatId);
+	}
+	const claimNames = (seat: NotebookSeat) =>
+		intl.list(
+			seat.claims.map((id) => characters.get(id)?.name).filter((n): n is string => Boolean(n))
+		);
 </script>
 
 <div class="notes">
@@ -55,7 +71,10 @@
 	</section>
 
 	<section aria-labelledby="player-notes">
-		<h2 id="player-notes">{t('player.players')}</h2>
+		<div class="head">
+			<h2 id="player-notes">{t('player.players')}</h2>
+			<Button icon="add" onclick={() => (choosing = true)}>{t('player.newPlayerNote')}</Button>
+		</div>
 		{#if playerNotes.length}
 			<ul>
 				{#each playerNotes as { seat, number } (seat.seatId)}
@@ -84,6 +103,29 @@
 	</section>
 </div>
 
+<Dialog bind:open={choosing} title={t('player.whichPlayer')}>
+	<ul class="choices">
+		{#each seats as seat, i (seat.seatId)}
+			<li>
+				<button
+					type="button"
+					class="row"
+					data-choose-seat={seat.seatId}
+					onclick={() => choose(seat.seatId)}
+				>
+					<span class="title"
+						>{t('common.seat', { number: i + 1 })}{seat.name ? ` · ${seat.name}` : ''}</span
+					>
+					<span class="preview">
+						{claimNames(seat) || t('player.noClaim')}{#if seat.note.trim()}
+							· <span class="has-note">{t('player.hasNote')}</span>{/if}
+					</span>
+				</button>
+			</li>
+		{/each}
+	</ul>
+</Dialog>
+
 <style>
 	.notes {
 		display: grid;
@@ -106,9 +148,12 @@
 		font-size: 1.1rem;
 		color: var(--heading);
 	}
-	#player-notes {
-		border-bottom: 1px solid var(--border);
-		padding-bottom: var(--space-1);
+	.choices {
+		grid-template-columns: 1fr;
+	}
+	.has-note {
+		color: var(--on-surface);
+		font-weight: 600;
 	}
 	ul {
 		display: grid;

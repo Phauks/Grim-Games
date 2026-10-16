@@ -213,6 +213,7 @@
 							<NotesPanel
 								notes={notebook.book.notes}
 								seats={notebook.book.seats}
+								characters={byId}
 								onAdd={() => openNote(notebook!.addNote())}
 								onOpenNote={openNote}
 								onOpenSeat={openSeat}
