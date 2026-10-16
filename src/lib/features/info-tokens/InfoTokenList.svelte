@@ -2,6 +2,9 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import { STANDARD_INFO_TOKENS, type InfoToken } from '#lib/core/data/info-tokens.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -182,12 +185,20 @@
 <Dialog
 	bind:open={fillOpen}
 	title={filling
-		? t('info-tokens.cardFor', {
-				card: t(filling.card.titleKey),
-				name: filling.character.name
-			})
+		? t('info-tokens.cardFor', { card: t(filling.card.titleKey), name: slot('character') })
 		: ''}
 >
+	{#snippet heading()}{#if filling}<Sentence
+				text={t('info-tokens.cardFor', {
+					card: t(filling.card.titleKey),
+					name: slot('character')
+				})}
+				>{#snippet fill()}<CharacterBadge
+						characterId={filling!.character.id}
+						character={filling!.character}
+						inline
+					/>{/snippet}</Sentence
+			>{/if}{/snippet}
 	{#if filling}
 		<label class="field">
 			<span
