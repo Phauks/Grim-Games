@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS, STORYTELLER_HELP_KEYS } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -16,14 +17,14 @@
 {/each}
 <!-- A switch like the rest of this section (no radio groups here). -->
 <SettingToggle
-	label="Symbols on bag tiles"
-	description="Face-down tiles on the bag draw show a random symbol. Off shows numbers."
+	label={t('settings.tileSymbols')}
+	description={t('settings.tileSymbolsHelp')}
 	checked={preferences.current.tileFace === 'symbols'}
 	onChange={(checked) => preferences.update({ tileFace: checked ? 'symbols' : 'numbers' })}
 />
 <SettingToggle
-	label="Require a name before drawing"
-	description="A player types their name before they can see the token they drew."
+	label={t('settings.requireName')}
+	description={t('settings.requireNameHelp')}
 	checked={preferences.current.requireName}
 	onChange={(requireName) => preferences.update({ requireName })}
 />

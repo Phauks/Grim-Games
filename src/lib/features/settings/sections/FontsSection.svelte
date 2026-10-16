@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import {
 		FONT_IDS,
@@ -34,7 +35,7 @@
 
 <!-- One line per role in the applied font. Each line has a fixed height, so nothing moves. -->
 <section class="preview" aria-labelledby="font-preview-title">
-	<h3 id="font-preview-title">Preview</h3>
+	<h3 id="font-preview-title">{t('settings.fontPreview')}</h3>
 	<dl>
 		{#each FONT_ROLES as role (role)}
 			<div class="line" data-role={role}>

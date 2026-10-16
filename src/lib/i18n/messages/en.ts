@@ -14,6 +14,8 @@ import { scripts } from '#lib/i18n/messages/en/scripts.ts';
 import { characters } from '#lib/i18n/messages/en/characters.ts';
 import { glossary } from '#lib/i18n/messages/en/glossary.ts';
 import { reference } from '#lib/i18n/messages/en/reference.ts';
+import { shell } from '#lib/i18n/messages/en/shell.ts';
+import { settings } from '#lib/i18n/messages/en/settings.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -25,6 +27,8 @@ import { reference } from '#lib/i18n/messages/en/reference.ts';
  * `Intl.PluralRules` category with a `{count}`.
  */
 export const en = {
+	...shell,
+	...settings,
 	...common,
 	...setup,
 	...picker,

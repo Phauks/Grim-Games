@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+	ICON_SCALE,
+	parseScale,
+	TEXT_SCALE,
 	DEFAULT_PREFERENCES,
 	parsePreferences,
 	resolveFonts,
@@ -22,8 +25,8 @@ describe('parsePreferences', () => {
 			parsePreferences({
 				themeId: 'no-such-theme',
 				displayFont: 'comic-sans',
-				textScale: 7,
-				iconScale: 9,
+				textScale: 'huge',
+				iconScale: Number.NaN,
 				textAlign: 'center',
 				iconSet: 'ph-heavy',
 				iconOverrides: { dead: 'ph:not-offered', nope: 'ph:skull' },
@@ -47,6 +50,19 @@ describe('parsePreferences', () => {
 			requireName: true
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
+	});
+});
+
+describe('size sliders', () => {
+	it('snap a saved size to the nearest 5% inside the range', () => {
+		expect(parseScale(1.25, TEXT_SCALE)).toBe(1.25);
+		// Sizes from the old S/M/L choices.
+		expect(parseScale(0.875, TEXT_SCALE)).toBe(0.9);
+		expect(parseScale(1.125, TEXT_SCALE)).toBe(1.15);
+		expect(parseScale(1.333, ICON_SCALE)).toBe(1.35);
+		expect(parseScale(7, TEXT_SCALE)).toBe(1.5);
+		expect(parseScale(0.1, ICON_SCALE)).toBe(0.75);
+		expect(parseScale('big', TEXT_SCALE)).toBe(1);
 	});
 });
 

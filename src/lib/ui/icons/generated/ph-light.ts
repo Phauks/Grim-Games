@@ -31,6 +31,7 @@ import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-
 import ph_copy_light from '~icons/ph/copy-light';
 import ph_copy_simple_light from '~icons/ph/copy-simple-light';
 import ph_cross_light from '~icons/ph/cross-light';
+import ph_database_light from '~icons/ph/database-light';
 import ph_dice_five_light from '~icons/ph/dice-five-light';
 import ph_dots_three_light from '~icons/ph/dots-three-light';
 import ph_dots_three_vertical_light from '~icons/ph/dots-three-vertical-light';
@@ -50,6 +51,7 @@ import ph_hand_heart_light from '~icons/ph/hand-heart-light';
 import ph_hand_palm_light from '~icons/ph/hand-palm-light';
 import ph_hand_pointing_light from '~icons/ph/hand-pointing-light';
 import ph_handbag_light from '~icons/ph/handbag-light';
+import ph_hard_drives_light from '~icons/ph/hard-drives-light';
 import ph_heart_light from '~icons/ph/heart-light';
 import ph_heartbeat_light from '~icons/ph/heartbeat-light';
 import ph_info_light from '~icons/ph/info-light';
@@ -141,6 +143,7 @@ const icons: IconMap = {
 	'ph:copy-light': ph_copy_light,
 	'ph:copy-simple-light': ph_copy_simple_light,
 	'ph:cross-light': ph_cross_light,
+	'ph:database-light': ph_database_light,
 	'ph:dice-five-light': ph_dice_five_light,
 	'ph:dots-three-light': ph_dots_three_light,
 	'ph:dots-three-vertical-light': ph_dots_three_vertical_light,
@@ -160,6 +163,7 @@ const icons: IconMap = {
 	'ph:hand-palm-light': ph_hand_palm_light,
 	'ph:hand-pointing-light': ph_hand_pointing_light,
 	'ph:handbag-light': ph_handbag_light,
+	'ph:hard-drives-light': ph_hard_drives_light,
 	'ph:heart-light': ph_heart_light,
 	'ph:heartbeat-light': ph_heartbeat_light,
 	'ph:info-light': ph_info_light,

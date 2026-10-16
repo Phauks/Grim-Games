@@ -31,6 +31,7 @@ import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-b
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
+import ph_database_bold from '~icons/ph/database-bold';
 import ph_dice_five_bold from '~icons/ph/dice-five-bold';
 import ph_dots_three_bold from '~icons/ph/dots-three-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
@@ -50,6 +51,7 @@ import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
 import ph_hand_palm_bold from '~icons/ph/hand-palm-bold';
 import ph_hand_pointing_bold from '~icons/ph/hand-pointing-bold';
 import ph_handbag_bold from '~icons/ph/handbag-bold';
+import ph_hard_drives_bold from '~icons/ph/hard-drives-bold';
 import ph_heart_bold from '~icons/ph/heart-bold';
 import ph_heartbeat_bold from '~icons/ph/heartbeat-bold';
 import ph_info_bold from '~icons/ph/info-bold';
@@ -141,6 +143,7 @@ const icons: IconMap = {
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:cross-bold': ph_cross_bold,
+	'ph:database-bold': ph_database_bold,
 	'ph:dice-five-bold': ph_dice_five_bold,
 	'ph:dots-three-bold': ph_dots_three_bold,
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
@@ -160,6 +163,7 @@ const icons: IconMap = {
 	'ph:hand-palm-bold': ph_hand_palm_bold,
 	'ph:hand-pointing-bold': ph_hand_pointing_bold,
 	'ph:handbag-bold': ph_handbag_bold,
+	'ph:hard-drives-bold': ph_hard_drives_bold,
 	'ph:heart-bold': ph_heart_bold,
 	'ph:heartbeat-bold': ph_heartbeat_bold,
 	'ph:info-bold': ph_info_bold,

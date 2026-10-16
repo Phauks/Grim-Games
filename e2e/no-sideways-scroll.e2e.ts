@@ -6,7 +6,7 @@ import { expect, test, type Page } from '@playwright/test';
 const PREFS_KEY = 'grim-games:preferences:v1';
 const WIDTHS = [320, 390];
 const SIZES = [
-	{ name: 'smallest text and icons', textScale: 0.875, iconScale: 0.875 },
+	{ name: 'smallest text and icons', textScale: 0.75, iconScale: 0.75 },
 	{ name: 'largest text and icons', textScale: 1.5, iconScale: 1.5 }
 ];
 const STATIC_ROUTES = [

@@ -3,7 +3,7 @@ import AssistanceSection from './AssistanceSection.svelte';
 import AppearanceSection from './AppearanceSection.svelte';
 import FontsSection from './FontsSection.svelte';
 import IconsSection from './IconsSection.svelte';
-import ResetSection from './ResetSection.svelte';
+import DataSection from './DataSection.svelte';
 import RulesTermsSection from './RulesTermsSection.svelte';
 import TokensSection from './TokensSection.svelte';
 // Feature-owned sections, registered by their own modules.
@@ -12,7 +12,7 @@ import '#lib/features/player/settings-section.ts';
 // Built-in sections. Other features register theirs the same way from their own modules.
 registerSettingsSection({
 	id: 'appearance',
-	label: 'Appearance',
+	label: { key: 'settings.appearance' },
 	icon: 'appearance',
 	component: AppearanceSection,
 	audience: 'everyone',
@@ -20,7 +20,7 @@ registerSettingsSection({
 });
 registerSettingsSection({
 	id: 'fonts',
-	label: 'Fonts',
+	label: { key: 'settings.fonts' },
 	icon: 'fonts',
 	component: FontsSection,
 	audience: 'everyone',
@@ -28,7 +28,7 @@ registerSettingsSection({
 });
 registerSettingsSection({
 	id: 'tokens',
-	label: 'Tokens',
+	label: { key: 'settings.tokens' },
 	icon: 'reminder',
 	component: TokensSection,
 	audience: 'everyone',
@@ -36,7 +36,7 @@ registerSettingsSection({
 });
 registerSettingsSection({
 	id: 'icons',
-	label: 'Icons',
+	label: { key: 'settings.icons' },
 	icon: 'icons',
 	component: IconsSection,
 	audience: 'everyone',
@@ -44,7 +44,7 @@ registerSettingsSection({
 });
 registerSettingsSection({
 	id: 'rules-terms',
-	label: 'Rules terms',
+	label: { key: 'settings.rulesTerms' },
 	icon: 'info',
 	component: RulesTermsSection,
 	audience: 'everyone',
@@ -52,17 +52,17 @@ registerSettingsSection({
 });
 registerSettingsSection({
 	id: 'assistance',
-	label: 'Storyteller settings',
+	label: { key: 'settings.storyteller' },
 	icon: 'assistance',
 	component: AssistanceSection,
 	audience: 'storyteller',
 	order: 40
 });
 registerSettingsSection({
-	id: 'reset',
-	label: 'Reset settings',
-	icon: 'undo',
-	component: ResetSection,
+	id: 'data',
+	label: { key: 'settings.data' },
+	icon: 'data',
+	component: DataSection,
 	audience: 'everyone',
 	order: 90
 });

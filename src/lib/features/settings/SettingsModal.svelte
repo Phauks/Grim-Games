@@ -1,7 +1,13 @@
 <script lang="ts">
+	import { say, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { AUDIENCE_LABELS, settingsSections, type SettingsAudience } from './registry.ts';
+	import {
+		AUDIENCE_LABELS,
+		sectionLabel,
+		settingsSections,
+		type SettingsAudience
+	} from './registry.ts';
 	import './sections/index.ts';
 	import { settingsDialog } from './settings-dialog.svelte.ts';
 
@@ -15,11 +21,11 @@
 	const active = $derived(sections.find((s) => s.id === settingsDialog.section) ?? sections[0]);
 </script>
 
-<Dialog bind:open={settingsDialog.open} title="Settings" size="full">
+<Dialog bind:open={settingsDialog.open} title={t('settings.title')} size="full">
 	<div class="layout" data-view={settingsDialog.section ? 'section' : 'list'}>
-		<nav aria-label="Settings sections">
+		<nav aria-label={t('settings.sections')}>
 			{#each groups as group (group.audience)}
-				<h3 id="settings-group-{group.audience}">{AUDIENCE_LABELS[group.audience]}</h3>
+				<h3 id="settings-group-{group.audience}">{t(AUDIENCE_LABELS[group.audience])}</h3>
 				<ul aria-labelledby="settings-group-{group.audience}">
 					{#each group.sections as section (section.id)}
 						<li>
@@ -28,7 +34,7 @@
 								onclick={() => (settingsDialog.section = section.id)}
 							>
 								<Icon name={section.icon} />
-								<span class="label">{section.label}</span>
+								<span class="label">{sectionLabel(section.label, say)}</span>
 								<span class="chevron"><Icon name="forward" /></span>
 							</button>
 						</li>
@@ -39,10 +45,13 @@
 		{#if active}
 			<section class="content" aria-labelledby="settings-section-title">
 				<button class="back" onclick={() => (settingsDialog.section = null)}>
-					<Icon name="back" /> All settings
+					<Icon name="back" />
+					{t('settings.allSettings')}
 				</button>
-				<h2 id="settings-section-title">{active.label}</h2>
-				<p class="audience">Applies to: {AUDIENCE_LABELS[active.audience]}</p>
+				<h2 id="settings-section-title">{sectionLabel(active.label, say)}</h2>
+				<p class="audience">
+					{t('settings.appliesTo', { audience: t(AUDIENCE_LABELS[active.audience]) })}
+				</p>
 				<active.component />
 			</section>
 		{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -10,11 +11,11 @@
 	function reset() {
 		preferences.reset();
 		confirmReset = false;
-		toast('Settings reset', 'Back to the defaults on this device.');
+		toast(t('settings.resetDone'), t('settings.resetDoneText'));
 	}
 </script>
 
-<SettingRow label="Reset all settings">
+<SettingRow label={t('settings.resetAll')}>
 	{#snippet control(labelId)}
 		<Button
 			variant="quiet"
@@ -22,18 +23,15 @@
 			aria-describedby={labelId}
 			onclick={() => (confirmReset = true)}
 		>
-			Reset all
+			{t('settings.resetAllButton')}
 		</Button>
 	{/snippet}
 </SettingRow>
 
-<Dialog bind:open={confirmReset} role="alertdialog" title="Reset settings?">
-	<p>
-		Theme, fonts, text size, text alignment, token sizes and colours, icon size, icons and
-		Storyteller settings go back to their defaults.
-	</p>
+<Dialog bind:open={confirmReset} role="alertdialog" title={t('settings.resetConfirmTitle')}>
+	<p>{t('settings.resetConfirmText')}</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirmReset = false)}>Cancel</Button>
-		<Button onclick={reset}>Reset</Button>
+		<Button variant="quiet" onclick={() => (confirmReset = false)}>{t('common.cancel')}</Button>
+		<Button onclick={reset}>{t('settings.resetConfirm')}</Button>
 	{/snippet}
 </Dialog>

@@ -28,6 +28,11 @@ async function chooseFont(page: Page, role: string, font: RegExp) {
 	await expect(page.getByRole('listbox')).toBeHidden();
 }
 
+/** Sets a size slider, as a finished drag (input then change). */
+async function slide(page: Page, name: string, value: number) {
+	await page.getByRole('slider', { name }).fill(String(value));
+}
+
 const rootStyle = (page: Page, name: string) =>
 	page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n), name);
 
@@ -103,7 +108,7 @@ test('heading font, text size and icon weight apply live', async ({ page }) => {
 	const back = dialog.getByRole('button', { name: 'All settings' });
 	if (await back.isVisible()) await back.tap();
 	await dialog.getByRole('button', { name: 'Appearance' }).tap();
-	await choose(page, 'Text size', 'XL');
+	await slide(page, 'Text size', 1.25);
 	expect(await rootStyle(page, '--text-scale')).toBe('1.25');
 	expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe(
 		'20px'
@@ -172,7 +177,7 @@ test('text size changes text only: icons, spacing and buttons keep their size', 
 	const before = await measure();
 
 	const dialog = await openSettings(page, 'Appearance');
-	await choose(page, 'Text size', 'XXL');
+	await slide(page, 'Text size', 1.5);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	const after = await measure();
 
@@ -191,7 +196,8 @@ test('there is one About: the footer dialog, not a settings section', async ({ p
 		.getByRole('navigation', { name: 'Settings sections' });
 	await expect(nav.getByRole('button', { name: 'Appearance' })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'About' })).toHaveCount(0);
-	await expect(nav.getByRole('button', { name: 'Reset settings' })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'Data' })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'Reset settings' })).toHaveCount(0);
 });
 
 test('icon size changes interface icons only, not text', async ({ page }) => {
@@ -204,7 +210,7 @@ test('icon size changes interface icons only, not text', async ({ page }) => {
 	const text = await page.evaluate(() => getComputedStyle(document.body).fontSize);
 
 	const dialog = await openSettings(page, 'Appearance');
-	await choose(page, 'Icon size', 'XL');
+	await slide(page, 'Icon size', 1.5);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	const after = await settingsIcon.boundingBox();
@@ -263,4 +269,31 @@ test('text alignment switches body text between left aligned and justified', asy
 	expect(await align()).toBe('justify');
 	const button = page.getByRole('banner').getByRole('button', { name: 'Settings' });
 	expect(await button.evaluate((el) => getComputedStyle(el).textAlign)).toBe('center');
+});
+
+test('text size is a percentage slider with a Reset to 100%', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Appearance');
+	const slider = dialog.getByRole('slider', { name: 'Text size' });
+	const reset = dialog.getByRole('button', { name: 'Reset to 100%' }).first();
+	await expect(slider).toHaveAttribute('aria-valuetext', '100%');
+	await expect(reset).toBeDisabled();
+
+	await slider.fill('1.15');
+	await expect(slider).toHaveAttribute('aria-valuetext', '115%');
+	expect(await rootStyle(page, '--text-scale')).toBe('1.15');
+	// Arrow keys move one 5% step.
+	await slider.focus();
+	await page.keyboard.press('ArrowRight');
+	await expect(slider).toHaveAttribute('aria-valuetext', '120%');
+	expect(await rootStyle(page, '--text-scale')).toBe('1.2');
+
+	await page.reload();
+	const again = await openSettings(page, 'Appearance');
+	await expect(again.getByRole('slider', { name: 'Text size' })).toHaveAttribute(
+		'aria-valuetext',
+		'120%'
+	);
+	await again.getByRole('button', { name: 'Reset to 100%' }).first().tap();
+	expect(await rootStyle(page, '--text-scale')).toBe('1');
 });

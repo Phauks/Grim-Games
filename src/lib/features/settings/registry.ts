@@ -1,4 +1,5 @@
 import type { Component } from 'svelte';
+import type { Message, MessageKey } from '#lib/i18n/catalog.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 
 /**
@@ -11,14 +12,19 @@ import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 /** Who a section's settings affect (Trevor: separate Storyteller-only settings). */
 export type SettingsAudience = 'everyone' | 'storyteller';
 
-export const AUDIENCE_LABELS: Record<SettingsAudience, string> = {
-	everyone: 'Storyteller and players',
-	storyteller: 'Storyteller only'
-};
+/** Catalog keys for each audience's name. */
+export const AUDIENCE_LABELS = {
+	everyone: 'settings.audienceEveryone',
+	storyteller: 'settings.audienceStoryteller'
+} as const satisfies Record<SettingsAudience, MessageKey>;
 
 export interface SettingsSection {
 	id: string;
-	label: string;
+	/**
+	 * The sidebar and heading text: a catalog message such as `{ key: 'player.settingsTitle' }`,
+	 * so it follows the interface language. A plain string is shown as it is (not translated).
+	 */
+	label: string | Message;
 	icon: IconSlot;
 	component: Component;
 	audience: SettingsAudience;
@@ -33,6 +39,14 @@ export function registerSettingsSection(section: SettingsSection): void {
 	sections = [...sections.filter((s) => s.id !== section.id), section].sort(
 		(a, b) => a.order - b.order
 	);
+}
+
+/** A section label as text, using `say` (from locale.svelte.ts) for catalog messages. */
+export function sectionLabel(
+	label: SettingsSection['label'],
+	say: (message: Message) => string
+): string {
+	return typeof label === 'string' ? label : say(label);
 }
 
 export function settingsSections(): readonly SettingsSection[] {

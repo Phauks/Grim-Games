@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
-import { registerSettingsSection, settingsSections } from './registry.ts';
+import { registerSettingsSection, sectionLabel, settingsSections } from './registry.ts';
 
 const component = (() => {}) as unknown as Component;
 
@@ -31,5 +31,11 @@ describe('settings section registry', () => {
 			order: 5
 		});
 		expect(settingsSections().map((s) => s.label)).toEqual(['B2', 'A']);
+	});
+
+	it('shows a plain label as it is and a catalog message through say', () => {
+		const say = (message: { key: string }) => `said ${message.key}`;
+		expect(sectionLabel('Fonts', say)).toBe('Fonts');
+		expect(sectionLabel({ key: 'common.close' }, say)).toBe('said common.close');
 	});
 });

@@ -1,52 +1,54 @@
 <script lang="ts">
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import {
-		ICON_SCALES,
+		DEFAULT_PREFERENCES,
+		ICON_SCALE,
 		TEXT_ALIGNS,
-		TEXT_SCALES,
-		type IconScale,
-		type TextAlign,
-		type TextScale
+		TEXT_SCALE,
+		type TextAlign
 	} from '#lib/ui/preferences.ts';
 	import SettingChoice from '#lib/ui/settings/SettingChoice.svelte';
 	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
+	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import { THEMES } from '#lib/ui/themes/registry.ts';
 
-	const scaleLabels: Record<TextScale, string> = {
-		0.875: 'S',
-		1: 'M',
-		1.125: 'L',
-		1.25: 'XL',
-		1.5: 'XXL'
-	};
-	const alignLabels: Record<TextAlign, string> = { left: 'Left aligned', justify: 'Justified' };
-	const iconScaleLabels: Record<IconScale, string> = { 0.875: 'S', 1: 'M', 1.25: 'L', 1.5: 'XL' };
+	const alignLabels = $derived<Record<TextAlign, string>>({
+		left: t('settings.alignLeft'),
+		justify: t('settings.alignJustify')
+	});
 </script>
 
 <SettingChoice
-	label="Theme"
+	label={t('settings.theme')}
 	value={preferences.theme.id}
 	options={THEMES.map((theme) => ({ value: theme.id, label: theme.name }))}
 	onChange={(themeId) => preferences.update({ themeId })}
 />
-<SettingSegmented
-	label="Text size"
-	description="Changes the size of text only; buttons, icons and spacing stay the same."
-	value={String(preferences.current.textScale)}
-	options={TEXT_SCALES.map((scale) => ({ value: String(scale), label: scaleLabels[scale] }))}
-	onChange={(scale) => preferences.update({ textScale: Number(scale) as TextScale })}
+<SettingSlider
+	label={t('settings.textSize')}
+	description={t('settings.textSizeHelp')}
+	value={preferences.current.textScale}
+	{...TEXT_SCALE}
+	defaultValue={DEFAULT_PREFERENCES.textScale}
+	resetLabel={t('settings.resetTo100')}
+	format={(scale) => intl.number(scale, { style: 'percent' })}
+	onChange={(textScale) => preferences.update({ textScale })}
 />
 <SettingSegmented
-	label="Text alignment"
-	description="How paragraphs line up: ability text, night steps, notes and help text. Justified spreads each line to both edges. Headings, labels and buttons stay as they are."
+	label={t('settings.textAlign')}
+	description={t('settings.textAlignHelp')}
 	value={preferences.current.textAlign}
 	options={TEXT_ALIGNS.map((align) => ({ value: align, label: alignLabels[align] }))}
 	onChange={(textAlign) => preferences.update({ textAlign: textAlign as TextAlign })}
 />
-<SettingSegmented
-	label="Icon size"
-	description="Changes the size of interface icons: header, settings, menus, buttons, status markers such as dead or poisoned, and character icons in badges. Text size and character token size stay the same."
-	value={String(preferences.current.iconScale)}
-	options={ICON_SCALES.map((scale) => ({ value: String(scale), label: iconScaleLabels[scale] }))}
-	onChange={(scale) => preferences.update({ iconScale: Number(scale) as IconScale })}
+<SettingSlider
+	label={t('settings.iconSize')}
+	description={t('settings.iconSizeHelp')}
+	value={preferences.current.iconScale}
+	{...ICON_SCALE}
+	defaultValue={DEFAULT_PREFERENCES.iconScale}
+	resetLabel={t('settings.resetTo100')}
+	format={(scale) => intl.number(scale, { style: 'percent' })}
+	onChange={(iconScale) => preferences.update({ iconScale })}
 />

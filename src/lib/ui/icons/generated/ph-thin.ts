@@ -31,6 +31,7 @@ import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-t
 import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
 import ph_cross_thin from '~icons/ph/cross-thin';
+import ph_database_thin from '~icons/ph/database-thin';
 import ph_dice_five_thin from '~icons/ph/dice-five-thin';
 import ph_dots_three_thin from '~icons/ph/dots-three-thin';
 import ph_dots_three_vertical_thin from '~icons/ph/dots-three-vertical-thin';
@@ -50,6 +51,7 @@ import ph_hand_heart_thin from '~icons/ph/hand-heart-thin';
 import ph_hand_palm_thin from '~icons/ph/hand-palm-thin';
 import ph_hand_pointing_thin from '~icons/ph/hand-pointing-thin';
 import ph_handbag_thin from '~icons/ph/handbag-thin';
+import ph_hard_drives_thin from '~icons/ph/hard-drives-thin';
 import ph_heart_thin from '~icons/ph/heart-thin';
 import ph_heartbeat_thin from '~icons/ph/heartbeat-thin';
 import ph_info_thin from '~icons/ph/info-thin';
@@ -141,6 +143,7 @@ const icons: IconMap = {
 	'ph:copy-thin': ph_copy_thin,
 	'ph:copy-simple-thin': ph_copy_simple_thin,
 	'ph:cross-thin': ph_cross_thin,
+	'ph:database-thin': ph_database_thin,
 	'ph:dice-five-thin': ph_dice_five_thin,
 	'ph:dots-three-thin': ph_dots_three_thin,
 	'ph:dots-three-vertical-thin': ph_dots_three_vertical_thin,
@@ -160,6 +163,7 @@ const icons: IconMap = {
 	'ph:hand-palm-thin': ph_hand_palm_thin,
 	'ph:hand-pointing-thin': ph_hand_pointing_thin,
 	'ph:handbag-thin': ph_handbag_thin,
+	'ph:hard-drives-thin': ph_hard_drives_thin,
 	'ph:heart-thin': ph_heart_thin,
 	'ph:heartbeat-thin': ph_heartbeat_thin,
 	'ph:info-thin': ph_info_thin,

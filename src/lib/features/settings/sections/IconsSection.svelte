@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		ICON_SETS,
 		ICON_SLOTS,
@@ -29,8 +30,8 @@
 </script>
 
 <SettingChoice
-	label="Icon style"
-	description="Phosphor icons in six weights."
+	label={t('settings.iconStyle')}
+	description={t('settings.iconStyleHelp')}
 	value={setId}
 	options={ICON_SETS.map((set) => ({ value: set.id, label: set.label }))}
 	onChange={chooseSet}

@@ -31,6 +31,7 @@ import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-f
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
+import ph_database_fill from '~icons/ph/database-fill';
 import ph_dice_five_fill from '~icons/ph/dice-five-fill';
 import ph_dots_three_fill from '~icons/ph/dots-three-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
@@ -50,6 +51,7 @@ import ph_hand_heart_fill from '~icons/ph/hand-heart-fill';
 import ph_hand_palm_fill from '~icons/ph/hand-palm-fill';
 import ph_hand_pointing_fill from '~icons/ph/hand-pointing-fill';
 import ph_handbag_fill from '~icons/ph/handbag-fill';
+import ph_hard_drives_fill from '~icons/ph/hard-drives-fill';
 import ph_heart_fill from '~icons/ph/heart-fill';
 import ph_heartbeat_fill from '~icons/ph/heartbeat-fill';
 import ph_info_fill from '~icons/ph/info-fill';
@@ -141,6 +143,7 @@ const icons: IconMap = {
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
 	'ph:cross-fill': ph_cross_fill,
+	'ph:database-fill': ph_database_fill,
 	'ph:dice-five-fill': ph_dice_five_fill,
 	'ph:dots-three-fill': ph_dots_three_fill,
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
@@ -160,6 +163,7 @@ const icons: IconMap = {
 	'ph:hand-palm-fill': ph_hand_palm_fill,
 	'ph:hand-pointing-fill': ph_hand_pointing_fill,
 	'ph:handbag-fill': ph_handbag_fill,
+	'ph:hard-drives-fill': ph_hard_drives_fill,
 	'ph:heart-fill': ph_heart_fill,
 	'ph:heartbeat-fill': ph_heartbeat_fill,
 	'ph:info-fill': ph_info_fill,

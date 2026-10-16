@@ -31,6 +31,7 @@ import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_copy from '~icons/ph/copy';
 import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_cross from '~icons/ph/cross';
+import ph_database from '~icons/ph/database';
 import ph_dice_five from '~icons/ph/dice-five';
 import ph_dots_three from '~icons/ph/dots-three';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
@@ -50,6 +51,7 @@ import ph_hand_heart from '~icons/ph/hand-heart';
 import ph_hand_palm from '~icons/ph/hand-palm';
 import ph_hand_pointing from '~icons/ph/hand-pointing';
 import ph_handbag from '~icons/ph/handbag';
+import ph_hard_drives from '~icons/ph/hard-drives';
 import ph_heart from '~icons/ph/heart';
 import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_info from '~icons/ph/info';
@@ -141,6 +143,7 @@ const icons: IconMap = {
 	'ph:copy': ph_copy,
 	'ph:copy-simple': ph_copy_simple,
 	'ph:cross': ph_cross,
+	'ph:database': ph_database,
 	'ph:dice-five': ph_dice_five,
 	'ph:dots-three': ph_dots_three,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
@@ -160,6 +163,7 @@ const icons: IconMap = {
 	'ph:hand-palm': ph_hand_palm,
 	'ph:hand-pointing': ph_hand_pointing,
 	'ph:handbag': ph_handbag,
+	'ph:hard-drives': ph_hard_drives,
 	'ph:heart': ph_heart,
 	'ph:heartbeat': ph_heartbeat,
 	'ph:info': ph_info,

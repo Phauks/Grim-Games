@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import { errorLog } from '#lib/features/errors/report.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -8,25 +9,25 @@
 </script>
 
 <!-- The one About view in the app, opened from the footer. -->
-<Dialog bind:open title="About Grim-Games">
-	<p>A touch-first grimoire for Blood on the Clocktower Storytellers.</p>
+<Dialog bind:open title={t('shell.aboutTitle')}>
+	<p>{t('shell.aboutIntro')}</p>
 	<dl>
-		<dt>Version</dt>
+		<dt>{t('shell.aboutVersion')}</dt>
 		<dd>{info.version}</dd>
-		<dt>Commit</dt>
+		<dt>{t('shell.aboutCommit')}</dt>
 		<dd>
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 			<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener"
 				>{shortCommit(info)}</a
 			>
 		</dd>
-		<dt>Branch</dt>
+		<dt>{t('shell.aboutBranch')}</dt>
 		<dd>{info.branch}</dd>
-		<dt>Channel</dt>
+		<dt>{t('shell.aboutChannel')}</dt>
 		<dd>{info.channel}</dd>
-		<dt>Built</dt>
+		<dt>{t('shell.aboutBuilt')}</dt>
 		<dd>{new Date(info.builtAt).toLocaleString()}</dd>
-		<dt>Problems</dt>
+		<dt>{t('shell.aboutProblems')}</dt>
 		<dd>
 			<!-- Reopens the device's error log after its corner card was dismissed. -->
 			<button
@@ -35,14 +36,12 @@
 				onclick={() => {
 					open = false;
 					errorLog.showDetails();
-				}}>Problems on this device ({errorLog.entries.length})</button
+				}}>{t('shell.aboutProblemsButton', { count: errorLog.entries.length })}</button
 			>
 		</dd>
 	</dl>
 	<p class="small">
-		Not affiliated with The Pandemonium Institute. Blood on the Clocktower is a trademark of Steven
-		Medway and The Pandemonium Institute. Character data and icons from TPI's toolmaker resources
-		under the Community Created Content policy.
+		{t('shell.aboutNotice')}
 	</p>
 </Dialog>
 

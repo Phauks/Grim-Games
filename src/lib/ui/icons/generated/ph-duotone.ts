@@ -31,6 +31,7 @@ import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwis
 import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
 import ph_cross_duotone from '~icons/ph/cross-duotone';
+import ph_database_duotone from '~icons/ph/database-duotone';
 import ph_dice_five_duotone from '~icons/ph/dice-five-duotone';
 import ph_dots_three_duotone from '~icons/ph/dots-three-duotone';
 import ph_dots_three_vertical_duotone from '~icons/ph/dots-three-vertical-duotone';
@@ -50,6 +51,7 @@ import ph_hand_heart_duotone from '~icons/ph/hand-heart-duotone';
 import ph_hand_palm_duotone from '~icons/ph/hand-palm-duotone';
 import ph_hand_pointing_duotone from '~icons/ph/hand-pointing-duotone';
 import ph_handbag_duotone from '~icons/ph/handbag-duotone';
+import ph_hard_drives_duotone from '~icons/ph/hard-drives-duotone';
 import ph_heart_duotone from '~icons/ph/heart-duotone';
 import ph_heartbeat_duotone from '~icons/ph/heartbeat-duotone';
 import ph_info_duotone from '~icons/ph/info-duotone';
@@ -141,6 +143,7 @@ const icons: IconMap = {
 	'ph:copy-duotone': ph_copy_duotone,
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
 	'ph:cross-duotone': ph_cross_duotone,
+	'ph:database-duotone': ph_database_duotone,
 	'ph:dice-five-duotone': ph_dice_five_duotone,
 	'ph:dots-three-duotone': ph_dots_three_duotone,
 	'ph:dots-three-vertical-duotone': ph_dots_three_vertical_duotone,
@@ -160,6 +163,7 @@ const icons: IconMap = {
 	'ph:hand-palm-duotone': ph_hand_palm_duotone,
 	'ph:hand-pointing-duotone': ph_hand_pointing_duotone,
 	'ph:handbag-duotone': ph_handbag_duotone,
+	'ph:hard-drives-duotone': ph_hard_drives_duotone,
 	'ph:heart-duotone': ph_heart_duotone,
 	'ph:heartbeat-duotone': ph_heartbeat_duotone,
 	'ph:info-duotone': ph_info_duotone,

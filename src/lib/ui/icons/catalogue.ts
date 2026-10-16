@@ -69,7 +69,8 @@ export const ICON_SLOTS = {
 	more: { label: 'More actions', choices: ['ph:dots-three', 'ph:dots-three-vertical'] },
 	history: { label: 'History', choices: ['ph:clock-counter-clockwise', 'ph:list-bullets'] },
 	share: { label: 'Share', choices: ['ph:share-network', 'ph:qr-code'] },
-	copy: { label: 'Copy', choices: ['ph:copy', 'ph:copy-simple'] }
+	copy: { label: 'Copy', choices: ['ph:copy', 'ph:copy-simple'] },
+	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] }
 } as const satisfies Record<string, IconSlotInfo>;
 
 export type IconSlot = keyof typeof ICON_SLOTS;

@@ -1,10 +1,18 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { buildInfo } from '#lib/build-info.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { REPOSITORY_URL } from './report-issue.ts';
-	import { BUILD_NOTES_PATH, changesSince, parseBuildNotes, type Changes } from './update-notes.ts';
+	import {
+		BUILD_NOTES_PATH,
+		changesSince,
+		compareUrl,
+		parseBuildNotes,
+		parseCompare,
+		type Changes
+	} from './update-notes.ts';
 
 	// How often an open app checks for a new build (a game can run for hours).
 	const CHECK_EVERY_MS = 30 * 60 * 1000;
@@ -17,15 +25,36 @@
 	let changes = $state<Changes | null>(null);
 	let changesOpen = $state(false);
 	const listId = $props.id();
+	const toggleLabel = $derived(
+		!changes
+			? t('shell.whatChanged')
+			: changes.complete
+				? t('shell.whatChangedCount', { count: changes.commits.length })
+				: t('shell.whatChanged')
+	);
 
 	async function loadChanges() {
 		try {
 			// Past every cache: the network has the newest build's notes, the one waiting.
 			const response = await fetch(BUILD_NOTES_PATH, { cache: 'no-store' });
 			const notes = response.ok ? parseBuildNotes(await response.json()) : null;
-			changes = notes && changesSince(notes, buildInfo.commit);
+			if (!notes) return void (changes = null);
+			const fromNotes = changesSince(notes, buildInfo.commit);
+			changes = fromNotes.complete
+				? fromNotes
+				: ((await compareOnGitHub(buildInfo.commit, notes.commit)) ?? fromNotes);
 		} catch {
 			changes = null;
+		}
+	}
+
+	/** The commits between two builds from GitHub, or null if it can't be reached. */
+	async function compareOnGitHub(running: string, next: string): Promise<Changes | null> {
+		try {
+			const response = await fetch(compareUrl(running, next));
+			return response.ok ? parseCompare(await response.json()) : null;
+		} catch {
+			return null;
 		}
 	}
 
@@ -83,12 +112,12 @@
 	<div class="update" role="status" data-testid="update-banner">
 		<div class="main">
 			<p class="text">
-				<strong>Update ready</strong>
-				<span>Your game is saved and reopens after refreshing.</span>
+				<strong>{t('shell.updateReady')}</strong>
+				<span>{t('shell.updateSaved')}</span>
 			</p>
 			<div class="actions">
-				<Button variant="quiet" onclick={() => (dismissed = true)}>Later</Button>
-				<Button variant="accent" onclick={refresh}>Refresh</Button>
+				<Button variant="quiet" onclick={() => (dismissed = true)}>{t('shell.updateLater')}</Button>
+				<Button variant="accent" onclick={refresh}>{t('shell.updateRefresh')}</Button>
 			</div>
 		</div>
 		<!-- The row is always there, disabled until the notes arrive, so the card never grows by itself. -->
@@ -101,7 +130,7 @@
 			onclick={() => (changesOpen = !changesOpen)}
 		>
 			<span class="caret" class:open={changesOpen} aria-hidden="true"><Icon name="expand" /></span>
-			What changed{changes ? ` (${changes.commits.length}${changes.complete ? '' : '+'})` : ''}
+			{toggleLabel}
 		</button>
 		<div id={listId} class="changes" hidden={!changesOpen || !changes}>
 			{#if changes && changes.commits.length > 0}
@@ -117,9 +146,9 @@
 						</li>
 					{/each}
 				</ul>
-				{#if !changes.complete}<p class="more">Older changes not listed.</p>{/if}
+				{#if !changes.complete}<p class="more">{t('shell.olderChanges')}</p>{/if}
 			{:else}
-				<p class="more">None</p>
+				<p class="more">{t('common.none')}</p>
 			{/if}
 		</div>
 	</div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import AccountButton from '#lib/features/account/AccountButton.svelte';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
@@ -8,7 +9,7 @@
 <header>
 	<a class="brand" href={resolve('/')}>Grim-Games</a>
 	<div class="actions">
-		<IconButton icon="settings" label="Settings" onclick={() => settingsDialog.show()} />
+		<IconButton icon="settings" label={t('shell.settings')} onclick={() => settingsDialog.show()} />
 		<!-- Mounted on every page: it also starts the signed-in check. -->
 		<AccountButton />
 	</div>

@@ -1,38 +1,73 @@
 <script lang="ts">
-	import { RELEASES, releaseSections } from '#lib/features/about/changelog.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import type { MessageKey } from '#lib/i18n/catalog.ts';
+	import { RELEASES, releaseSections, type ChangeCategory } from '#lib/features/about/changelog.ts';
+
+	const CATEGORY_KEYS = {
+		Added: 'shell.changeAdded',
+		Changed: 'shell.changeChanged',
+		Deprecated: 'shell.changeDeprecated',
+		Removed: 'shell.changeRemoved',
+		Fixed: 'shell.changeFixed',
+		Security: 'shell.changeSecurity'
+	} as const satisfies Record<ChangeCategory, MessageKey>;
 </script>
 
 <svelte:head>
-	<title>Changelog · Grim-Games</title>
+	<title>{t('shell.changelogTitle')}</title>
 </svelte:head>
 
 <main>
-	<h1>Changelog</h1>
+	<h1>{t('shell.changelog')}</h1>
 	{#each RELEASES as release (release.version)}
 		<section aria-labelledby="release-{release.version ?? 'unreleased'}">
 			<h2 id="release-{release.version ?? 'unreleased'}">
-				{release.version ? `v${release.version}` : 'Unreleased'}
+				{release.version ? `v${release.version}` : t('shell.unreleased')}
 				{#if release.date}<span class="date">{release.date}</span>{/if}
 			</h2>
-			{#each releaseSections(release) as { category, items } (category)}
-				<h3>{category}</h3>
-				{#if items.length}
-					<ul>
-						{#each items as item, i (i)}<li>{item}</li>{/each}
-					</ul>
-				{:else}
-					<p class="none">None</p>
-				{/if}
-			{/each}
+			<div class="categories">
+				{#each releaseSections(release) as { category, items } (category)}
+					<div>
+						<h3>{t(CATEGORY_KEYS[category])}</h3>
+						{#if items.length}
+							<ul>
+								{#each items as item, i (i)}<li>{item}</li>{/each}
+							</ul>
+						{:else}
+							<p class="none">{t('common.none')}</p>
+						{/if}
+					</div>
+				{/each}
+			</div>
 		</section>
 	{/each}
 </main>
 
 <style>
 	main {
-		max-width: calc(40 * var(--u));
+		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-5) var(--space-4);
+		padding: var(--space-5) var(--page-gutter);
+	}
+	/* The six categories sit side by side on wider screens, in rows that divide six evenly. */
+	.categories {
+		display: grid;
+		gap: 0 var(--space-6);
+	}
+	@media (min-width: 40rem) {
+		.categories {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+	@media (min-width: 64rem) {
+		.categories {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+	@media (min-width: 100rem) {
+		.categories {
+			grid-template-columns: repeat(6, 1fr);
+		}
 	}
 	h1 {
 		margin-top: 0;

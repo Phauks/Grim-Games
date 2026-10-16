@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { buildInfo as info } from '#lib/build-info.ts';
@@ -24,12 +25,7 @@
 		target="_blank"
 		rel="noopener"
 	>
-		<img
-			src="/brand/ccc-parchment.webp"
-			width="120"
-			height="45"
-			alt="Community Created Content: not an official Blood on the Clocktower product"
-		/>
+		<img src="/brand/ccc-parchment.webp" width="120" height="45" alt={t('shell.cccAlt')} />
 	</a>
 	<!-- Logo on the left, every text link on the right. Fixed-size line: more build detail lives in the About dialog, never inline (no reflow). -->
 	<p class="build" title={describeBuild(info)} data-testid="build-info">
@@ -42,17 +38,19 @@
 		>
 		<!-- Separators are hidden on narrow screens, where the links wrap and a dot would start a line. -->
 		<span class="sep" aria-hidden="true">·</span>
-		<a class="page" href={resolve('/reference')}>Reference</a>
+		<a class="page" href={resolve('/reference')}>{t('shell.reference')}</a>
 		<span class="sep" aria-hidden="true">·</span>
-		<a class="page" href={resolve('/changelog')}>Changelog</a>
+		<a class="page" href={resolve('/changelog')}>{t('shell.changelog')}</a>
 		<span class="sep" aria-hidden="true">·</span>
-		<a class="page" href={resolve('/privacy')}>Privacy</a>
+		<a class="page" href={resolve('/privacy')}>{t('shell.privacy')}</a>
 		<span class="sep" aria-hidden="true">·</span>
-		<button type="button" class="about" onclick={() => (aboutOpen = true)}>About</button>
+		<button type="button" class="about" onclick={() => (aboutOpen = true)}
+			>{t('shell.about')}</button
+		>
 		<span class="sep" aria-hidden="true">·</span>
 		<!-- External GitHub link, not an app route. -->
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-		<a class="page" href={reportUrl} target="_blank" rel="noopener">Report an issue</a>
+		<a class="page" href={reportUrl} target="_blank" rel="noopener">{t('shell.reportIssue')}</a>
 	</p>
 	<AboutDialog bind:open={aboutOpen} />
 </footer>

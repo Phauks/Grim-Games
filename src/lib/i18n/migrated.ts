@@ -6,6 +6,11 @@
  * `allow` lists text that is not interface text (brand names, symbols), per file.
  */
 export const MIGRATED_PATHS: readonly string[] = [
+	'src/lib/features/shell/',
+	'src/lib/features/about/',
+	'src/lib/features/settings/',
+	'src/routes/changelog/',
+	'src/routes/+layout.svelte',
 	'src/lib/i18n/',
 	'src/lib/features/errors/',
 	'src/lib/features/room/',
@@ -47,5 +52,8 @@ export const MIGRATED_PATHS: readonly string[] = [
 
 export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {
 	// The start of a web address, the same in every language.
-	'src/lib/features/scripts/ScriptPicker.svelte': ['https://']
+	'src/lib/features/scripts/ScriptPicker.svelte': ['https://'],
+	// The app's name, the same in every language.
+	'src/lib/features/shell/AppHeader.svelte': ['Grim-Games'],
+	'src/routes/+layout.svelte': ['Grim-Games']
 };

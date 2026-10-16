@@ -49,11 +49,31 @@ export interface Preferences {
 export const TILE_FACES = ['numbers', 'symbols'] as const;
 export type TileFace = (typeof TILE_FACES)[number];
 
-export const TEXT_SCALES = [0.875, 1, 1.125, 1.25, 1.5] as const;
-export type TextScale = (typeof TEXT_SCALES)[number];
+/** A size as a fraction of normal (1 = 100%), chosen on a slider (Trevor, 2026-10-16). */
+export interface ScaleRange {
+	min: number;
+	max: number;
+	step: number;
+}
 
-export const ICON_SCALES = [0.875, 1, 1.25, 1.5] as const;
-export type IconScale = (typeof ICON_SCALES)[number];
+/** Text size: 75% to 150% in 5% steps; 150% is the largest the layouts are tested at. */
+export const TEXT_SCALE: ScaleRange = { min: 0.75, max: 1.5, step: 0.05 };
+/** Icon size, same range as text. */
+export const ICON_SCALE: ScaleRange = { min: 0.75, max: 1.5, step: 0.05 };
+
+export type TextScale = number;
+export type IconScale = number;
+
+/**
+ * A stored size snapped to its slider: the nearest step, inside the range. Sizes saved by
+ * older builds (0.875, 1.125 from the S/M/L choices) become the nearest 5%.
+ */
+export function parseScale(input: unknown, range: ScaleRange, fallback = 1): number {
+	if (typeof input !== 'number' || !Number.isFinite(input)) return fallback;
+	const clamped = Math.min(range.max, Math.max(range.min, input));
+	const steps = Math.round((clamped - range.min) / range.step);
+	return Math.round((range.min + steps * range.step) * 1000) / 1000;
+}
 
 export const TEXT_ALIGNS = ['left', 'justify'] as const;
 export type TextAlign = (typeof TEXT_ALIGNS)[number];
@@ -86,12 +106,8 @@ export function parsePreferences(raw: unknown): Preferences {
 	return {
 		themeId: isThemeId(input.themeId) ? input.themeId : DEFAULT_PREFERENCES.themeId,
 		fonts: parseFonts(input),
-		textScale: (TEXT_SCALES as readonly unknown[]).includes(input.textScale)
-			? (input.textScale as TextScale)
-			: DEFAULT_PREFERENCES.textScale,
-		iconScale: (ICON_SCALES as readonly unknown[]).includes(input.iconScale)
-			? (input.iconScale as IconScale)
-			: DEFAULT_PREFERENCES.iconScale,
+		textScale: parseScale(input.textScale, TEXT_SCALE, DEFAULT_PREFERENCES.textScale),
+		iconScale: parseScale(input.iconScale, ICON_SCALE, DEFAULT_PREFERENCES.iconScale),
 		textAlign: (TEXT_ALIGNS as readonly unknown[]).includes(input.textAlign)
 			? (input.textAlign as TextAlign)
 			: DEFAULT_PREFERENCES.textAlign,
