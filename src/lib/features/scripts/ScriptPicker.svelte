@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		editionScript,
 		loadScript,
@@ -38,7 +39,6 @@
 		nextSort,
 		pickerRow,
 		sortRows,
-		SOURCE_LABELS,
 		type PickerRow,
 		type PickerSource,
 		type RowSort,
@@ -57,6 +57,7 @@
 	import { fetchSharedCode } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
+	import { CURATED_SECTIONS } from './script-tool-link.ts';
 
 	interface Props {
 		/** Called after a script is chosen (it is already the current script). */
@@ -146,7 +147,7 @@
 			const script = loadScript(curated.json, d).script;
 			if (!script) continue;
 			add({
-				row: pickerRow(script, `curated:${i}`, 'curated', curated.section),
+				row: pickerRow(script, `curated:${i}`, 'curated', curatedSectionLabel(curated.section)),
 				script: { json: curated.json },
 				load: fromJson(curated.json, { kind: 'link', url: curated.link })
 			});
@@ -196,34 +197,39 @@
 
 	const curatedNote = $derived(
 		(source === 'all' || source === 'curated') && curatedScripts.status === 'loading'
-			? ' · loading curated scripts…'
+			? t('scripts.picker.curatedLoading')
 			: source === 'curated' &&
 				  curatedScripts.status === 'error' &&
 				  curatedScripts.list.length === 0
-				? ' · the official site could not be reached'
+				? t('scripts.picker.curatedFailed')
 				: ''
 	);
 	const status = $derived(
 		!data
-			? 'Loading…'
+			? t('scripts.picker.loading')
 			: (shown.length === 0
-					? 'None'
-					: `${shown.length} ${shown.length === 1 ? 'script' : 'scripts'}`) + curatedNote
+					? t('common.none')
+					: t('scripts.picker.count', { count: shown.length })) + curatedNote
 	);
 
-	const SOURCE_OPTIONS: { value: PickerSource | 'all' | 'botc'; label: string }[] = [
-		{ value: 'all', label: 'All sources' },
-		{ value: 'official', label: SOURCE_LABELS.official },
-		{ value: 'curated', label: 'Curated (official site)' },
-		{ value: 'recent', label: SOURCE_LABELS.recent },
-		{ value: 'profile', label: 'Profile' },
-		{ value: 'botc', label: 'BotC Scripts' }
-	];
-	const KIND_OPTIONS: { value: ScriptKind | ''; label: string }[] = [
-		{ value: '', label: 'Any type' },
-		{ value: 'Full', label: 'Full' },
-		{ value: 'Teensyville', label: 'Teensyville' }
-	];
+	const SOURCE_OPTIONS = $derived<{ value: PickerSource | 'all' | 'botc'; label: string }[]>(
+		(['all', 'official', 'curated', 'recent', 'profile', 'botc'] as const).map((value) => ({
+			value,
+			label: t(`scripts.picker.source.${value}`)
+		}))
+	);
+	const KIND_OPTIONS = $derived<{ value: ScriptKind | ''; label: string }[]>([
+		{ value: '', label: t('scripts.picker.type.any') },
+		{ value: 'Full', label: t('scripts.kind.Full') },
+		{ value: 'Teensyville', label: t('scripts.kind.Teensyville') }
+	]);
+
+	/** The official site's known sections in the app's words; any other heading as written. */
+	function curatedSectionLabel(section: string): string {
+		return CURATED_SECTIONS.some((known) => known === section)
+			? t(`scripts.curated.${section as (typeof CURATED_SECTIONS)[number]}`)
+			: section;
+	}
 
 	const COLUMNS: { column: SortColumn; label: string; wide?: boolean; numeric?: boolean }[] = [
 		{ column: 'name', label: 'Name' },
@@ -307,7 +313,7 @@
 		try {
 			pasteText = await navigator.clipboard.readText();
 		} catch {
-			error = 'The clipboard could not be read. Long-press in the box and choose Paste.';
+			error = t('scripts.paste.clipboardFailed');
 		}
 	}
 
@@ -351,19 +357,19 @@
 <div class="picker">
 	<div class="search">
 		<label class="term">
-			<span class="visually-hidden">Search scripts</span>
+			<span class="visually-hidden">{t('scripts.picker.search')}</span>
 			<input
 				type="search"
 				autocomplete="off"
 				enterkeyhint="search"
 				placeholder={source === 'botc'
-					? 'Search, link or script number'
-					: 'Search names, authors, characters'}
+					? t('scripts.picker.searchBotc')
+					: t('scripts.picker.searchLocal')}
 				bind:value={term}
 			/>
 		</label>
 		<Select
-			label="Source"
+			label={t('scripts.picker.source')}
 			hideLabel
 			value={source}
 			options={SOURCE_OPTIONS}
@@ -382,7 +388,7 @@
 		{:else}
 			<div class="tools">
 				<Select
-					label="Script type"
+					label={t('scripts.picker.type')}
 					hideLabel
 					value={kind}
 					options={KIND_OPTIONS}
@@ -392,7 +398,7 @@
 			</div>
 
 			<div class="table">
-				<table aria-label="Scripts">
+				<table aria-label={t('scripts.picker.table')}>
 					<thead>
 						<tr>
 							{#each COLUMNS as col (col.column)}
@@ -413,7 +419,9 @@
 									>
 								</th>
 							{/each}
-							<th scope="col" class="remove"><span class="visually-hidden">Remove</span></th>
+							<th scope="col" class="remove"
+								><span class="visually-hidden">{t('scripts.picker.remove')}</span></th
+							>
 						</tr>
 					</thead>
 					<tbody>
@@ -424,28 +432,32 @@
 									<button
 										type="button"
 										aria-pressed={isCurrent(entry)}
-										aria-label="{row.name} {row.note || SOURCE_LABELS[row.source]}"
+										aria-label="{row.name} {row.note || t(`scripts.sourceLabel.${row.source}`)}"
 										disabled={busy}
 										onclick={() => void entry.load()}
 									>
 										<span class="title">{row.name}</span>
 										<span class="sub"
-											>{[row.note, row.author || 'No author', row.kind]
+											>{[
+												row.note,
+												row.author || t('scripts.picker.noAuthor'),
+												t(`scripts.kind.${row.kind}`)
+											]
 												.filter(Boolean)
 												.join(' · ')}</span
 										>
 									</button>
 								</td>
-								<td class="wide">{row.author || 'None'}</td>
-								<td>{SOURCE_LABELS[row.source]}</td>
-								<td class="wide">{row.kind}</td>
+								<td class="wide">{row.author || t('common.none')}</td>
+								<td>{t(`scripts.sourceLabel.${row.source}`)}</td>
+								<td class="wide">{t(`scripts.kind.${row.kind}`)}</td>
 								<td class="numeric">{row.characters}</td>
 								<td class="remove">
 									{#if entry.saved}
 										{@const saved = entry.saved}
 										<IconButton
 											icon="close"
-											label="Remove {saved.name} from Recent"
+											label={t('scripts.picker.removeRecent', { name: saved.name })}
 											onclick={() =>
 												forgetScript(saved.scriptId).catch((e) =>
 													reportError(e, { area: 'scripts' })
@@ -460,18 +472,20 @@
 			</div>
 
 			<div class="more">
-				<Button variant="quiet" onclick={() => (source = 'botc')}>Search BotC Scripts</Button>
+				<Button variant="quiet" onclick={() => (source = 'botc')}
+					>{t('scripts.picker.searchBotcButton')}</Button
+				>
 			</div>
 		{/if}
 	</div>
 
 	<section aria-labelledby="custom-heading">
-		<h2 id="custom-heading" class="visually-hidden">Add a script</h2>
+		<h2 id="custom-heading" class="visually-hidden">{t('scripts.picker.add')}</h2>
 		<div class="row custom">
-			<Button onclick={() => open('paste')}>Paste</Button>
-			<Button onclick={() => fileInput?.click()} disabled={busy}>File</Button>
-			<Button onclick={() => open('link')}>Link</Button>
-			<Button onclick={() => open('code')}>Code</Button>
+			<Button onclick={() => open('paste')}>{t('scripts.picker.paste')}</Button>
+			<Button onclick={() => fileInput?.click()} disabled={busy}>{t('scripts.picker.file')}</Button>
+			<Button onclick={() => open('link')}>{t('scripts.picker.link')}</Button>
+			<Button onclick={() => open('code')}>{t('scripts.picker.code')}</Button>
 		</div>
 		<!-- Not limited to application/json: some iPad and Android file providers don't label
 		     .json files with that type, which greyed them out in Pocket Grimoire (PG 126, PG 162). -->
@@ -480,7 +494,7 @@
 			class="file"
 			type="file"
 			accept=".json,application/json,text/plain"
-			aria-label="Script file"
+			aria-label={t('scripts.picker.fileLabel')}
 			onchange={onFile}
 		/>
 		<!-- Load errors outside a dialog; the line is always there, so no reflow. -->
@@ -494,25 +508,25 @@
 	<p class="error" role="status">{error}</p>
 {/snippet}
 
-<Dialog bind:open={pasteOpen} title="Paste a script">
+<Dialog bind:open={pasteOpen} title={t('scripts.paste.title')}>
 	<label class="field">
-		<span>Script JSON or link</span>
+		<span>{t('scripts.paste.label')}</span>
 		<textarea bind:value={pasteText} rows="8" spellcheck="false" autocomplete="off"></textarea>
 	</label>
 	{@render errorLine()}
 	{#snippet actions()}
 		<Button variant="quiet" onclick={pasteFromClipboard} disabled={!canReadClipboard}
-			>Paste from clipboard</Button
+			>{t('scripts.paste.fromClipboard')}</Button
 		>
 		<Button variant="accent" onclick={loadPaste} disabled={busy || pasteText.trim() === ''}
-			>Load</Button
+			>{t('scripts.picker.load')}</Button
 		>
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={linkOpen} title="Load from a link">
+<Dialog bind:open={linkOpen} title={t('scripts.link.title')}>
 	<label class="field">
-		<span>Link to the script JSON</span>
+		<span>{t('scripts.link.label')}</span>
 		<input
 			type="url"
 			inputmode="url"
@@ -528,17 +542,17 @@
 			variant="quiet"
 			disabled={!errorLink}
 			onclick={() => errorLink && window.open(errorLink, '_blank', 'noopener,noreferrer')}
-			>Open link</Button
+			>{t('scripts.link.open')}</Button
 		>
 		<Button
 			variant="accent"
 			onclick={() => run(() => fetchLinkTarget(resolveLink(linkText), linkText))}
-			disabled={busy || linkText.trim() === ''}>Load</Button
+			disabled={busy || linkText.trim() === ''}>{t('scripts.picker.load')}</Button
 		>
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={codeOpen} title="Have a code?">
+<Dialog bind:open={codeOpen} title={t('scripts.code.title')}>
 	{#if codeOpen}
 		<ShareCodeEntry
 			bind:value={codeText}
@@ -551,7 +565,7 @@
 		<Button
 			variant="accent"
 			onclick={() => run(() => fetchSharedCode(codeText))}
-			disabled={busy || codeText === ''}>Load</Button
+			disabled={busy || codeText === ''}>{t('scripts.picker.load')}</Button
 		>
 	{/snippet}
 </Dialog>

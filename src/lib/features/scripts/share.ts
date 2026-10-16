@@ -27,6 +27,27 @@ function fromBase64Url(text: string): Uint8Array {
 	return Uint8Array.from(binary, (c) => c.charCodeAt(0));
 }
 
+/**
+ * Why a share link can't be read. The message stays English (this module also runs in
+ * Node for tests); the app shows its own words for `reason`.
+ */
+export class SharedLinkError extends Error {
+	constructor(
+		readonly reason: 'tooLarge' | 'newer' | 'damaged',
+		options?: ErrorOptions
+	) {
+		super(
+			{
+				tooLarge: 'The shared script is too large.',
+				newer: 'This share link is from a newer version.',
+				damaged: 'This share link is damaged.'
+			}[reason],
+			options
+		);
+		this.name = 'SharedLinkError';
+	}
+}
+
 async function pipe(bytes: Uint8Array, stream: CompressionStream | DecompressionStream) {
 	const output = new Blob([bytes as BlobPart]).stream().pipeThrough(stream);
 	const reader = output.getReader();
@@ -38,7 +59,7 @@ async function pipe(bytes: Uint8Array, stream: CompressionStream | Decompression
 		total += value.length;
 		if (total > MAX_BYTES) {
 			await reader.cancel();
-			throw new Error('The shared script is too large.');
+			throw new SharedLinkError('tooLarge');
 		}
 		chunks.push(value);
 	}
@@ -59,19 +80,19 @@ export async function encodeSharedScript(json: unknown): Promise<string> {
 
 /** Reads a payload made by `encodeSharedScript`. Throws on anything else. */
 export async function decodeSharedScript(payload: string): Promise<unknown> {
-	if (!payload.startsWith(PREFIX)) throw new Error('This share link is from a newer version.');
+	if (!payload.startsWith(PREFIX)) throw new SharedLinkError('newer');
 	let bytes: Uint8Array;
 	try {
 		bytes = fromBase64Url(payload.slice(PREFIX.length));
 	} catch (error) {
-		throw new Error('This share link is damaged.', { cause: error });
+		throw new SharedLinkError('damaged', { cause: error });
 	}
 	let text: string;
 	try {
 		text = new TextDecoder().decode(await pipe(bytes, new DecompressionStream('deflate-raw')));
 	} catch (error) {
-		if (error instanceof Error && error.message.includes('too large')) throw error;
-		throw new Error('This share link is damaged.', { cause: error });
+		if (error instanceof SharedLinkError) throw error;
+		throw new SharedLinkError('damaged', { cause: error });
 	}
 	return JSON.parse(text);
 }

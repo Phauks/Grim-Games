@@ -10,7 +10,7 @@ export const CURATED_API = '/api/curated';
 export const CURATED_PAGE = 'https://bloodontheclocktower.com/pages/custom-scripts';
 
 export interface CuratedScript {
-	/** The page section, e.g. "Recommended". */
+	/** The page section: a `CuratedSection` id ("recommended"), or the heading as written. */
 	section: string;
 	/** The Script Tool link it was listed with (also how it is loaded again later). */
 	link: string;

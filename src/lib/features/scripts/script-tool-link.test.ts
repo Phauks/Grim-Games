@@ -63,9 +63,9 @@ describe('readCuratedPage', () => {
 
 	it('lists each Script Tool link once, under its section', () => {
 		expect(readCuratedPage(page)).toEqual([
-			{ section: 'Script of the Month', link: TOOL + TWICE },
-			{ section: 'Recommended', link: `${TOOL + ONCE}&lang=en` },
-			{ section: 'Teensyville', link: TOOL + ONCE }
+			{ section: 'month', link: TOOL + TWICE },
+			{ section: 'recommended', link: `${TOOL + ONCE}&lang=en` },
+			{ section: 'teensyville', link: TOOL + ONCE }
 		]);
 	});
 

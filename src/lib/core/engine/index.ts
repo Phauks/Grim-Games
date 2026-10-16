@@ -5,3 +5,4 @@ export * from './decide.ts';
 export * from './reducer.ts';
 export * from './log.ts';
 export * from './persistence.ts';
+export * from './recent-deaths.ts';

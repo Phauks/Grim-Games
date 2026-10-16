@@ -3,6 +3,7 @@
  * Pastebin, GitHub or Gist page (Pocket Grimoire issue 124 was a Pastebin page link), or a
  * BotC Scripts lookup through our Worker. Design: 08-script-loading.md §5.2.
  */
+import { t } from '#lib/i18n/locale.svelte.ts';
 import { parseBotcScriptsRef, type BotcScriptsRef } from './botcscripts-api.ts';
 import { scriptToolPayload } from './script-tool-link.ts';
 
@@ -15,7 +16,7 @@ export type LinkTarget =
 
 export function resolveLink(input: string): LinkTarget {
 	const text = input.trim();
-	if (text === '') return { kind: 'invalid', message: 'Enter a link.' };
+	if (text === '') return { kind: 'invalid', message: t('scripts.error.enterLink') };
 	const botc = parseBotcScriptsRef(text);
 	if (botc) return { kind: 'botcscripts', ref: botc };
 	const payload = scriptToolPayload(text);
@@ -25,13 +26,13 @@ export function resolveLink(input: string): LinkTarget {
 	try {
 		url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(text) ? text : `https://${text}`);
 	} catch {
-		return { kind: 'invalid', message: 'This is not a link.' };
+		return { kind: 'invalid', message: t('scripts.error.notLink') };
 	}
 	// The app is served over https, so the browser would block an http fetch anyway.
 	if (url.protocol === 'http:') url.protocol = 'https:';
-	if (url.protocol !== 'https:') return { kind: 'invalid', message: 'Use an https:// link.' };
+	if (url.protocol !== 'https:') return { kind: 'invalid', message: t('scripts.error.https') };
 	if (url.username || url.password) {
-		return { kind: 'invalid', message: 'Remove the user name or password from the link.' };
+		return { kind: 'invalid', message: t('scripts.error.credentials') };
 	}
 
 	const host = url.hostname.toLowerCase().replace(/^www\./, '');

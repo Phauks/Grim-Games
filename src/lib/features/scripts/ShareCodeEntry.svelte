@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { formatDigitCode } from '#lib/core/codes/digit-code.ts';
 	import { normaliseShareCode, SHARE_CODE_DIGITS } from './share-codes-api.ts';
 
@@ -35,7 +36,7 @@
 </script>
 
 <label class="field">
-	<span>The {SHARE_CODE_DIGITS}-digit code</span>
+	<span>{t('scripts.code.label', { digits: SHARE_CODE_DIGITS })}</span>
 	<input
 		type="text"
 		inputmode="numeric"

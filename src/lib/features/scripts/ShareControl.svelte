@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -11,13 +12,13 @@
 	 * link later without changing this one.
 	 */
 	interface Props {
-		/** What the link is, in a few words: "script", later "room". */
-		what: string;
+		/** What the link is: a script, later a room. */
+		what: 'script';
 		/** Shown in the share sheet and the dialog title, e.g. the script's name. */
 		title: string;
 		/** Makes the link; undefined disables the control (nothing to share yet). */
 		target: (() => Promise<ShareTarget>) | undefined;
-		/** A share icon (labelled "Share {what}") instead of a text button, e.g. on /play. */
+		/** A share icon (labelled like the button) instead of a text button, e.g. on /play. */
 		icon?: boolean;
 	}
 
@@ -29,16 +30,18 @@
 	{#if icon}
 		<IconButton
 			icon="share"
-			label="Share {what}"
+			label={t(`scripts.share.button.${what}`)}
 			onclick={() => (open = true)}
 			disabled={!target}
 		/>
 	{:else}
-		<Button onclick={() => (open = true)} disabled={!target}>Share {what}</Button>
+		<Button onclick={() => (open = true)} disabled={!target}
+			>{t(`scripts.share.button.${what}`)}</Button
+		>
 	{/if}
 </div>
 
-<Dialog bind:open title="Share {title}">
+<Dialog bind:open title={t('scripts.share.title', { title })}>
 	{#if target}
 		<SharePanel {title} {target} ondelete={() => (open = false)} />
 	{/if}

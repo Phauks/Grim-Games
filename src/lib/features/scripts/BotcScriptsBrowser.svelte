@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId, CharacterType, GameData } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
@@ -45,6 +46,8 @@
 	let { query = $bindable(''), onpick, disabled = false }: Props = $props();
 
 	const DEBOUNCE_MS = 400;
+	/** Catalog names for the site's edition filter values (0, 1, 2). */
+	const EDITION_NAMES = ['base', 'kickstarter', 'carousel'] as const;
 	const FILTER_TYPES: readonly CharacterType[] = [
 		'townsfolk',
 		'outsider',
@@ -127,36 +130,36 @@
 
 	$effect(() => () => controller?.abort());
 
-	const SORTS: { value: BotcScriptsSort; label: string }[] = [
-		{ value: 'votes', label: 'Most votes' },
-		{ value: 'newest', label: 'Newest' },
-		{ value: 'oldest', label: 'Oldest' },
-		{ value: 'match', label: 'Best match' }
-	];
+	const SORTS = $derived<{ value: BotcScriptsSort; label: string }[]>(
+		(['votes', 'newest', 'oldest', 'match'] as const).map((value) => ({
+			value,
+			label: t(`scripts.botc.sort.${value}`)
+		}))
+	);
 	const sortLabel = $derived(
 		SORTS.find(
 			(s) => s.value === (current.term || current.sort !== 'match' ? current.sort : 'votes')
-		)?.label ?? 'Most votes'
+		)?.label ?? t('scripts.botc.sort.votes')
 	);
 
 	const status = $derived(
 		ref
-			? 'A BotC Scripts link or number: tap Load.'
+			? t('scripts.botc.refHint')
 			: failure ||
 					(loading && results.length === 0
-						? 'Searching…'
+						? t('scripts.botc.searching')
 						: searched === undefined
 							? ''
 							: results.length === 0
-								? 'None'
-								: `${count} ${count === 1 ? 'script' : 'scripts'} · ${sortLabel.toLowerCase()}`)
+								? t('common.none')
+								: t('scripts.botc.count', { count, sort: sortLabel.toLowerCase() }))
 	);
 
 	function countsLabel(card: BotcCard): string {
 		return (['townsfolk', 'outsider', 'minion', 'demon'] as const)
-			.map((t) => {
-				const n = card.counts[t] ?? 0;
-				return `${n} ${n === 1 ? TYPE_LABELS[t] : TYPE_PLURALS[t]}`;
+			.map((type) => {
+				const n = card.counts[type] ?? 0;
+				return `${n} ${n === 1 ? TYPE_LABELS[type] : TYPE_PLURALS[type]}`;
 			})
 			.join(', ');
 	}
@@ -187,21 +190,23 @@
 <div class="browser">
 	<div class="tools">
 		<Select
-			label="Sort"
+			label={t('scripts.botc.sort')}
 			hideLabel
 			value={filters.sort}
 			options={SORTS}
 			onChange={(v) => (filters.sort = v)}
 		/>
 		<Button onclick={() => (filtersOpen = true)} disabled={disabled || !!ref}
-			>{activeFilters ? `Filters · ${activeFilters}` : 'Filters'}</Button
+			>{activeFilters
+				? t('scripts.botc.filtersCount', { count: activeFilters })
+				: t('scripts.botc.filters')}</Button
 		>
 	</div>
 
 	<p class="status" role="status" data-testid="botc-status">{status}</p>
 
 	<!-- Fixed height: results scroll inside it, so loading or paging never moves anything. -->
-	<ul class="results" aria-label="BotC Scripts results" aria-busy={loading}>
+	<ul class="results" aria-label={t('scripts.botc.results')} aria-busy={loading}>
 		{#if !ref}
 			{#each results as row (row.versionId)}
 				{@const card = cards?.get(row.versionId)}
@@ -212,10 +217,12 @@
 						{disabled}
 						onclick={() => onpick({ kind: 'version', versionId: row.versionId })}
 					>
-						<span class="name">{row.name || 'None'}</span>
-						<span class="score" aria-label="{row.score} votes">{row.score}</span>
+						<span class="name">{row.name || t('common.none')}</span>
+						<span class="score" aria-label={t('scripts.botc.votes', { count: row.score })}
+							>{row.score}</span
+						>
 						<span class="details"
-							>{row.author || 'None'} · {row.type || 'None'} · {row.version}</span
+							>{row.author || t('common.none')} · {row.type || t('common.none')} · {row.version}</span
 						>
 						<span class="makeup" data-testid="botc-makeup">
 							{#if card}
@@ -225,12 +232,18 @@
 									<span class="evil">{card.counts.minion ?? 0}</span> ·
 									<span class="evil">{card.counts.demon ?? 0}</span>
 								</span>
-								<span class="demons">{card.demons.map((d) => d.name).join(', ') || 'None'}</span>
-								{#if card.homebrew}<span class="tag">Homebrew</span>{/if}
+								<span class="demons"
+									>{card.demons.map((d) => d.name).join(', ') || t('common.none')}</span
+								>
+								{#if card.homebrew}<span class="tag">{t('scripts.botc.homebrew')}</span>{/if}
 							{/if}
 						</span>
 					</button>
-					<IconButton icon="info" label="Details of {row.name}" onclick={() => showDetails(row)} />
+					<IconButton
+						icon="info"
+						label={t('scripts.botc.details', { name: row.name })}
+						onclick={() => showDetails(row)}
+					/>
 				</li>
 			{/each}
 		{/if}
@@ -241,20 +254,21 @@
 		<Button
 			variant="quiet"
 			disabled={disabled || loading || !hasMore || !!ref}
-			onclick={() => load($state.snapshot(current) as BotcScriptsQuery, page + 1)}>More</Button
+			onclick={() => load($state.snapshot(current) as BotcScriptsQuery, page + 1)}
+			>{t('scripts.botc.more')}</Button
 		>
 		<Button variant="accent" disabled={disabled || !ref} onclick={() => ref && onpick(ref)}
-			>Load</Button
+			>{t('scripts.picker.load')}</Button
 		>
 	</div>
 </div>
 
-<Dialog bind:open={filtersOpen} title="Filters" size="full">
+<Dialog bind:open={filtersOpen} title={t('scripts.botc.filters')} size="full">
 	<div class="filters">
 		<fieldset>
-			<legend>Script type</legend>
+			<legend>{t('scripts.botc.scriptType')}</legend>
 			<div class="choices">
-				{#each [['', 'Any'], ['Full', 'Full'], ['Teensyville', 'Teensyville']] as [value, label] (value)}
+				{#each [['', t('scripts.botc.type.any')], ['Full', t('scripts.kind.Full')], ['Teensyville', t('scripts.kind.Teensyville')]] as [value, label] (value)}
 					<Button
 						variant={filters.type === value ? 'accent' : 'solid'}
 						aria-pressed={filters.type === value}
@@ -265,17 +279,20 @@
 		</fieldset>
 
 		<Select
-			label="Characters from"
+			label={t('scripts.botc.charactersFrom')}
 			value={filters.edition === undefined ? 'any' : String(filters.edition)}
 			options={[
-				{ value: 'any', label: 'Any edition' },
-				...BOTC_EDITIONS.map((e) => ({ value: String(e.value), label: e.label }))
+				{ value: 'any', label: t('scripts.botc.anyEdition') },
+				...BOTC_EDITIONS.map((e) => ({
+					value: String(e),
+					label: t(`scripts.botc.edition.${EDITION_NAMES[e]}`)
+				}))
 			]}
 			onChange={(v) => (filters.edition = v === 'any' ? undefined : Number(v))}
 		/>
 
-		{#each [['include', 'Includes'], ['exclude', 'Leaves out']] as const as [list, label] (list)}
-			<section class="chosen" aria-label="{label} characters">
+		{#each [['include', t('scripts.botc.includes')], ['exclude', t('scripts.botc.leavesOut')]] as const as [list, label] (list)}
+			<section class="chosen" aria-label={t('scripts.botc.listCharacters', { list: label })}>
 				<div class="chosen-head">
 					<h3>{label}</h3>
 					<Button
@@ -283,44 +300,46 @@
 							picking = list;
 							pickerOpen = true;
 						}}
-						disabled={!data}>Choose</Button
+						disabled={!data}>{t('scripts.botc.choose')}</Button
 					>
 				</div>
 				<p class="badges" data-testid="filter-{list}">
 					{#each filters[list] as id (id)}
 						<CharacterBadge characterId={id as CharacterId} inline />
 					{:else}
-						<span class="muted">None</span>
+						<span class="muted">{t('common.none')}</span>
 					{/each}
 				</p>
 			</section>
 		{/each}
 
 		<label class="field">
-			<span>Author</span>
+			<span>{t('scripts.botc.author')}</span>
 			<input type="text" autocomplete="off" bind:value={filters.author} />
 		</label>
 
 		<Toggle
-			label="Exactly one Demon"
+			label={t('scripts.botc.oneDemon')}
 			checked={filters.oneDemon}
 			onChange={(v) => (filters.oneDemon = v)}
 		/>
 		<Toggle
-			label="Official characters only"
+			label={t('scripts.botc.officialOnly')}
 			checked={filters.officialOnly}
 			onChange={(v) => (filters.officialOnly = v)}
 		/>
 	</div>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={clearFilters} disabled={activeFilters === 0}>Clear</Button>
-		<Button variant="accent" onclick={() => (filtersOpen = false)}>Show scripts</Button>
+		<Button variant="quiet" onclick={clearFilters} disabled={activeFilters === 0}
+			>{t('scripts.botc.clear')}</Button
+		>
+		<Button variant="accent" onclick={() => (filtersOpen = false)}>{t('scripts.botc.show')}</Button>
 	{/snippet}
 </Dialog>
 
 <Dialog
 	bind:open={pickerOpen}
-	title={picking === 'exclude' ? 'Leaves out' : 'Includes'}
+	title={picking === 'exclude' ? t('scripts.botc.leavesOut') : t('scripts.botc.includes')}
 	size="full"
 >
 	{#if picking}
@@ -335,26 +354,30 @@
 		/>
 	{/if}
 	{#snippet actions()}
-		<Button variant="accent" onclick={() => (pickerOpen = false)}>Done</Button>
+		<Button variant="accent" onclick={() => (pickerOpen = false)}>{t('scripts.botc.done')}</Button>
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={detailsOpen} title={details?.name || 'Script'} size="full">
+<Dialog
+	bind:open={detailsOpen}
+	title={details?.name || t('scripts.current.defaultName')}
+	size="full"
+>
 	{#if details}
 		<dl class="facts">
-			<dt>Author</dt>
-			<dd>{details.author || 'None'}</dd>
-			<dt>Type</dt>
-			<dd>{details.type || 'None'}</dd>
-			<dt>Version</dt>
+			<dt>{t('scripts.botc.author')}</dt>
+			<dd>{details.author || t('common.none')}</dd>
+			<dt>{t('scripts.botc.type')}</dt>
+			<dd>{details.type || t('common.none')}</dd>
+			<dt>{t('scripts.botc.version')}</dt>
 			<dd>{details.version}</dd>
-			<dt>Votes</dt>
+			<dt>{t('scripts.botc.votesLabel')}</dt>
 			<dd>{details.score}</dd>
 		</dl>
 		<div class="groups">
 			{#each detailsCard?.groups ?? [] as group (group.type ?? 'unknown')}
 				<section>
-					<h3>{group.type ? TYPE_PLURALS[group.type] : 'Unknown type'}</h3>
+					<h3>{group.type ? TYPE_PLURALS[group.type] : t('scripts.botc.unknownType')}</h3>
 					<p class="badges">
 						{#each group.characters as c (c.id)}
 							{#if c.official}
@@ -366,7 +389,7 @@
 					</p>
 				</section>
 			{:else}
-				<p class="muted">None</p>
+				<p class="muted">{t('common.none')}</p>
 			{/each}
 		</div>
 	{/if}
@@ -377,7 +400,7 @@
 				class="external"
 				href={scriptPageUrl(details.scriptId, details.version)}
 				target="_blank"
-				rel="noopener noreferrer">Open on BotC Scripts</a
+				rel="noopener noreferrer">{t('scripts.botc.open')}</a
 			>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{/if}
@@ -388,7 +411,7 @@
 				const chosen = details;
 				detailsOpen = false;
 				if (chosen) onpick({ kind: 'version', versionId: chosen.versionId });
-			}}>Load</Button
+			}}>{t('scripts.picker.load')}</Button
 		>
 	{/snippet}
 </Dialog>

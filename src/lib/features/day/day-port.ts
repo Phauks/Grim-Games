@@ -1,5 +1,5 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
-import type { Command } from '#lib/core/engine/index.ts';
+import type { Command, GameLog } from '#lib/core/engine/index.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import type { CharacterLookup, DayEntry, Game, SeatId } from '#lib/core/model/index.ts';
 
@@ -9,6 +9,8 @@ import type { CharacterLookup, DayEntry, Game, SeatId } from '#lib/core/model/in
  */
 export interface DayPort {
 	readonly game: Game;
+	/** The game's log, for who died since the previous day (`recentDeaths`). */
+	readonly log: GameLog;
 	readonly characters: CharacterLookup;
 	run(command: Command): boolean;
 	seatName(seatId: SeatId | undefined): string;

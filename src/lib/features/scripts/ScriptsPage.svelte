@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { CHARACTER_TYPES } from '#lib/core/data/index.ts';
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
@@ -23,7 +24,7 @@
 					const n = script.characters.filter((c) => c.type === type).length;
 					return n === 0 ? [] : [`${n} ${n === 1 ? TYPE_LABELS[type] : TYPE_PLURALS[type]}`];
 				}).join(' · ')
-			: 'None'
+			: t('common.none')
 	);
 
 	/** A share link (`/scripts#c=…` and the like) loads through the usual checks, then is cleared. */
@@ -34,7 +35,7 @@
 		try {
 			await picker?.loadFetched(await fetchSharedRef(ref));
 		} catch (e) {
-			toast('Could not open the shared script', errorMessage(e));
+			toast(t('scripts.openSharedFailed'), errorMessage(e));
 		}
 	}
 
@@ -101,21 +102,21 @@
 />
 
 <main>
-	<h1>Scripts</h1>
+	<h1>{t('scripts.heading')}</h1>
 
 	<!-- Side by side on wide windows: the current script beside the picker. -->
 	<div class="layout">
 		<!-- Same size with or without a script, so choosing one never moves the picker. -->
 		<ErrorBoundary area="scripts">
 			<section class="current" aria-labelledby="current-heading" data-testid="current-script">
-				<h2 id="current-heading">Current script</h2>
-				<p class="name" data-testid="current-script-name">{script?.name ?? 'None'}</p>
+				<h2 id="current-heading">{t('scripts.current.heading')}</h2>
+				<p class="name" data-testid="current-script-name">{script?.name ?? t('common.none')}</p>
 				<dl>
-					<dt>Author</dt>
-					<dd>{script?.meta.author || 'None'}</dd>
-					<dt>Characters</dt>
+					<dt>{t('scripts.current.author')}</dt>
+					<dd>{script?.meta.author || t('common.none')}</dd>
+					<dt>{t('scripts.current.characters')}</dt>
 					<dd class="counts" data-testid="current-script-counts">{counts}</dd>
-					<dt>Source</dt>
+					<dt>{t('scripts.current.source')}</dt>
 					<dd>
 						{#if saved?.source.kind === 'botcscripts'}
 							<!-- eslint-disable svelte/no-navigation-without-resolve -->
@@ -126,11 +127,15 @@
 							>
 							<!-- eslint-enable svelte/no-navigation-without-resolve -->
 						{:else}
-							{saved ? describeSource(saved.source) : 'None'}
+							{saved ? describeSource(saved.source) : t('common.none')}
 						{/if}
 					</dd>
 				</dl>
-				<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
+				<ShareControl
+					what="script"
+					title={script?.name ?? t('scripts.current.defaultName')}
+					target={shareTarget}
+				/>
 			</section>
 		</ErrorBoundary>
 
@@ -141,7 +146,7 @@
 
 	<!-- An overlay, so the page never moves while something is dragged over it. -->
 	<div class="drop" class:active={dragging} aria-hidden={!dragging} data-testid="drop-overlay">
-		<p>Drop the script file to load it</p>
+		<p>{t('scripts.dropHint')}</p>
 	</div>
 </main>
 

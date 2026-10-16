@@ -11,6 +11,7 @@
  * §2.1). Records carry `schemaVersion` because a newer build can read what an older one wrote.
  * Official editions are built into the app, so they aren't saved.
  */
+import { t } from '#lib/i18n/locale.svelte.ts';
 import type { SavedScript, ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 import { sameScript } from '#lib/features/scripts/saved-scripts.ts';
 
@@ -104,7 +105,7 @@ export function differs(current: ProfileScript, next: ProfileScript): boolean {
 /** "BotC Scripts 1.2.0", "pastebin.com", …: where an online script is followed from. */
 export function onlineSourceLabel(source: ScriptSource): string {
 	if (source.kind === 'botcscripts')
-		return `BotC Scripts #${source.scriptId}, version ${source.version}`;
+		return t('account.scripts.botcScripts', { id: source.scriptId, version: source.version });
 	if (source.kind === 'link') return new URL(source.url).hostname.replace(/^www\./, '');
-	return 'None';
+	return t('common.none');
 }

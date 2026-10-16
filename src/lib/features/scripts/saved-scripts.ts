@@ -6,6 +6,7 @@
  * its own loader. They carry `schemaVersion` because a newer build can open records an
  * older build wrote (CLAUDE.md); `scriptId` and `revision` are there for 0.99 cloud sync.
  */
+import { t } from '#lib/i18n/locale.svelte.ts';
 import {
 	editionScript,
 	loadScript,
@@ -75,18 +76,18 @@ export function reloadSavedScript(saved: SavedScript, data: GameData): LoadedScr
 export function describeSource(source: ScriptSource): string {
 	switch (source.kind) {
 		case 'edition':
-			return 'Official';
+			return t('scripts.from.official');
 		case 'paste':
-			return 'Pasted';
+			return t('scripts.from.paste');
 		case 'file':
 			return source.fileName;
 		case 'link': {
 			const host = new URL(source.url).hostname.replace(/^www\./, '');
-			return host === SCRIPT_TOOL_HOST ? 'Script Tool' : host;
+			return host === SCRIPT_TOOL_HOST ? t('scripts.from.scriptTool') : host;
 		}
 		case 'botcscripts':
-			return `BotC Scripts ${source.version}`;
+			return t('scripts.from.botcscripts', { version: source.version });
 		case 'share':
-			return 'Shared link';
+			return t('scripts.from.share');
 	}
 }

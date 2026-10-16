@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { ScriptLoadResult, ScriptProblemSeverity } from '#lib/core/data/index.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -11,29 +12,29 @@
 
 	let { open = $bindable(false), result, onconfirm }: Props = $props();
 
-	const GROUPS: { severity: ScriptProblemSeverity; title: string }[] = [
-		{ severity: 'error', title: 'Not loaded' },
-		{ severity: 'warning', title: 'Changed' },
-		{ severity: 'info', title: 'Notes' }
-	];
+	const GROUPS = [
+		{ severity: 'error', title: 'scripts.check.notLoaded' },
+		{ severity: 'warning', title: 'scripts.check.changed' },
+		{ severity: 'info', title: 'scripts.check.notes' }
+	] as const satisfies readonly { severity: ScriptProblemSeverity; title: string }[];
 
 	const script = $derived(result?.script);
 	const description = $derived(
 		script
-			? `${script.name}: ${script.characters.length} characters.`
-			: 'Nothing on this script could be loaded.'
+			? t('scripts.check.summary', { name: script.name, count: script.characters.length })
+			: t('scripts.check.nothing')
 	);
 </script>
 
 <!-- Shown only when loading found something to fix or skip (08-script-loading.md §5.3). -->
-<Dialog bind:open title="Script check" {description}>
+<Dialog bind:open title={t('scripts.check.title')} {description}>
 	{#if result}
 		<div class="problems" data-testid="script-problems">
 			{#each GROUPS as group (group.severity)}
 				{@const items = result.problems.filter((p) => p.severity === group.severity)}
 				{#if items.length > 0}
 					<section data-severity={group.severity}>
-						<h3>{group.title}</h3>
+						<h3>{t(group.title)}</h3>
 						<ul>
 							{#each items as problem, i (i)}
 								<li><span class="where">{problem.where}</span> {problem.message}</li>
@@ -45,14 +46,16 @@
 		</div>
 	{/if}
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (open = false)}>{script ? 'Cancel' : 'Back'}</Button>
+		<Button variant="quiet" onclick={() => (open = false)}
+			>{script ? t('common.cancel') : t('scripts.check.back')}</Button
+		>
 		{#if script}
 			<Button
 				variant="accent"
 				onclick={() => {
 					open = false;
 					onconfirm();
-				}}>Load anyway</Button
+				}}>{t('scripts.check.loadAnyway')}</Button
 			>
 		{/if}
 	{/snippet}

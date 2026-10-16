@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
+	import { recentDeaths } from '#lib/core/engine/index.ts';
 	import type { DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 	import {
 		blockThreshold,
@@ -12,6 +13,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
@@ -159,6 +161,15 @@
 		return { ...game, seats };
 	}
 
+	/** Everyone who died since the previous day ended, to announce (Trevor, 2026-10-16). */
+	const died = $derived(recentDeaths(game.log, g));
+
+	function diedText(cause: DeathCause | undefined): string {
+		return cause === undefined
+			? t('day.diedNoCause')
+			: t('day.diedCause', { cause: causeLabel(cause) });
+	}
+
 	const reminders = $derived(
 		dayReminders(
 			dayStateFromGame(atDayStart(g), (id) => game.characters.get(id), undefined, game.characters)
@@ -260,6 +271,8 @@
 		<p class="prompt">{t('day.tapPlayer')}</p>
 		<div class="seats">
 			{#each seats as seat (seat.seatId)}
+				{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
+				{@const icon = character && iconUrl(character, seat.alignment)}
 				<button
 					type="button"
 					class="seat"
@@ -267,8 +280,17 @@
 					data-dead={seat.dead}
 					onclick={() => tapSeat(seat.seatId)}
 				>
+					<!-- Icon two lines tall, character name above, player name below (Trevor). -->
+					<span class="seat-icon" aria-hidden="true"
+						>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
+					>
+					<span class="seat-text">
+						<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
+							>{character?.name ?? t('day.noCharacter')}</span
+						>
+						<span class="seat-player">{game.seatName(seat.seatId)}</span>
+					</span>
 					<span class="dead-mark" aria-hidden="true"><Icon name="dead" /></span>
-					<span>{game.seatName(seat.seatId)}</span>
 				</button>
 			{/each}
 		</div>
@@ -287,6 +309,28 @@
 		<section aria-labelledby="reminders-heading">
 			<h2 id="reminders-heading">{t('day.today')}</h2>
 			{@render votes()}
+			{#if died.length > 0}
+				<h3>{t('day.diedHeading')}</h3>
+				<ul class="reminders" data-testid="died">
+					{#each died as death (death.seatId)}
+						{@const seat = g.seats[death.seatId]}
+						<li>
+							<span class="sentence">
+								{#if seat.characterId}
+									<CharacterBadge
+										characterId={seat.characterId}
+										alignment={seat.alignment}
+										playerName={game.seatName(seat.seatId)}
+									/>
+								{:else}
+									<span>{game.seatName(seat.seatId)}</span>
+								{/if}
+								<span>{diedText(death.cause)}</span>
+							</span>
+						</li>
+					{/each}
+				</ul>
+			{/if}
 			{#each reminders.groups as group (group.group)}
 				<h3>{group.title}</h3>
 				<ul class="reminders">
@@ -426,28 +470,68 @@
 	}
 	.seats {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(10 * var(--u))), 1fr));
 		gap: var(--space-2);
 		touch-action: manipulation;
 	}
 	.seat {
-		display: flex;
+		display: grid;
+		position: relative;
+		grid-template-columns: auto minmax(0, 1fr);
+		min-width: 0;
 		align-items: center;
-		justify-content: center;
-		gap: var(--space-1);
+		gap: var(--space-2);
 		min-height: var(--tap-target);
-		padding: 0 var(--space-2);
+		padding: var(--space-1) var(--space-2);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font: inherit;
-		font-family: var(--font-player);
-		font-weight: 600;
+		text-align: start;
 		cursor: pointer;
 	}
+	.seat-icon {
+		display: inline-grid;
+		place-items: center;
+		width: calc(2.25 * var(--u) * var(--icon-scale, 1));
+		height: calc(2.25 * var(--u) * var(--icon-scale, 1));
+		border-radius: 50%;
+		background: var(--token-face, var(--on-surface));
+		overflow: hidden;
+	}
+	.seat-icon img {
+		width: 88%;
+		height: 88%;
+	}
+	.seat-text {
+		display: grid;
+		min-width: 0;
+	}
+	.seat-character {
+		/* Breaks mid-word only when the word is wider than the tile (largest text sizes). */
+		overflow-wrap: anywhere;
+		hyphens: auto;
+		font-family: var(--font-character);
+		font-weight: var(--font-character-weight, 600);
+	}
+	/* Alignment as the rim colour, so names keep full contrast. */
+	.seat:has(.seat-character[data-team='good']) {
+		border-left: 4px solid var(--good);
+	}
+	.seat:has(.seat-character[data-team='evil']) {
+		border-left: 4px solid var(--evil);
+	}
+	.seat-player {
+		overflow-wrap: anywhere;
+		font-family: var(--font-player);
+	}
 	/* Always there, shown only when dead, so names never shift. */
+	/* Over the icon's corner, so it takes no width from the names. */
 	.dead-mark {
+		position: absolute;
+		top: var(--space-1);
+		left: var(--space-1);
 		display: inline-grid;
 		visibility: hidden;
 	}

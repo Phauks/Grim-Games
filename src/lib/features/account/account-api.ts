@@ -2,6 +2,7 @@
  * Calls to the accounts API (`worker/account/routes.ts`). Every change is a JSON request,
  * which the Worker requires together with our own `Origin`.
  */
+import { t } from '#lib/i18n/locale.svelte.ts';
 import type {
 	ApiError,
 	DeviceSession,
@@ -36,9 +37,7 @@ async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T>
 		});
 	} catch {
 		throw new AccountApiError(
-			navigator.onLine === false
-				? 'You are offline. Your account will be back when you reconnect.'
-				: 'Could not reach the server. Try again.',
+			navigator.onLine === false ? t('account.api.offline') : t('account.api.unreachable'),
 			0
 		);
 	}
@@ -47,7 +46,7 @@ async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T>
 		const message =
 			typeof data === 'object' && data !== null && typeof (data as ApiError).error === 'string'
 				? (data as ApiError).error
-				: `The server answered with HTTP ${response.status}.`;
+				: t('account.api.httpStatus', { status: response.status });
 		throw new AccountApiError(message, response.status, data);
 	}
 	return data as T;

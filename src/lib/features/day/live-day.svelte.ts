@@ -1,5 +1,5 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
-import type { Command } from '#lib/core/engine/index.ts';
+import type { Command, GameLog } from '#lib/core/engine/index.ts';
 import { seatNumber, type CharacterLookup, type Game, type SeatId } from '#lib/core/model/index.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { warningText } from '#lib/features/grimoire/board.ts';
@@ -16,6 +16,10 @@ export class LiveDay implements DayPort {
 
 	get game(): Game {
 		return this.open.game;
+	}
+
+	get log(): GameLog {
+		return this.open.session.log;
 	}
 
 	get characters(): CharacterLookup {

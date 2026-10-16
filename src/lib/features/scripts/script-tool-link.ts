@@ -12,7 +12,14 @@ const MAX_PAYLOAD_CHARS = 200_000;
 /** The same limit as a script file (`MAX_SCRIPT_BYTES`). */
 const MAX_SCRIPT_CHARS = 1_000_000;
 
-export class ScriptToolLinkError extends Error {}
+/** `reason` lets the app show its own words; the message is English for logs and the Worker. */
+export class ScriptToolLinkError extends Error {
+	constructor(readonly reason: 'damaged' | 'tooLarge') {
+		super(
+			reason === 'tooLarge' ? 'That script is too large.' : 'This Script Tool link is damaged.'
+		);
+	}
+}
 
 /** The `script=` payload of a Script Tool link, or undefined for any other text. */
 export function scriptToolPayload(text: string): string | undefined {
@@ -52,7 +59,7 @@ export async function decodeScriptToolPayload(payload: string): Promise<string> 
 	try {
 		bytes = base64Bytes(payload);
 	} catch {
-		throw new ScriptToolLinkError('This Script Tool link is damaged.');
+		throw new ScriptToolLinkError('damaged');
 	}
 	let text: string;
 	try {
@@ -61,15 +68,15 @@ export async function decodeScriptToolPayload(payload: string): Promise<string> 
 			.pipeThrough(new DecompressionStream('gzip'));
 		text = await new Response(stream).text();
 	} catch {
-		throw new ScriptToolLinkError('This Script Tool link is damaged.');
+		throw new ScriptToolLinkError('damaged');
 	}
-	if (text.length > MAX_SCRIPT_CHARS) throw new ScriptToolLinkError('That script is too large.');
+	if (text.length > MAX_SCRIPT_CHARS) throw new ScriptToolLinkError('tooLarge');
 	return text;
 }
 
 /** One script listed on the official Scripts page. */
 export interface CuratedLink {
-	/** The page section it is listed under, e.g. "Recommended". */
+	/** The page section it is listed under: a `CuratedSection` id, or the heading as written. */
 	section: string;
 	/** The Script Tool link, entities decoded. */
 	link: string;
@@ -97,12 +104,16 @@ function decodeEntities(text: string): string {
 	});
 }
 
-/** Short labels for the page's section headings; others are shown as written, in title case. */
+/** The page's known sections, which the app names in its own words (`scripts.curated.*`). */
+export const CURATED_SECTIONS = ['month', 'recommended', 'teensyville'] as const;
+export type CuratedSection = (typeof CURATED_SECTIONS)[number];
+
+/** A known section's id; any other heading as written, in title case. */
 function sectionLabel(heading: string): string {
 	const upper = heading.toUpperCase();
-	if (upper.includes('MONTH')) return 'Script of the Month';
-	if (upper.includes('RECOMMENDED')) return 'Recommended';
-	if (upper.includes('TEENSYVILLE')) return 'Teensyville';
+	if (upper.includes('MONTH')) return 'month';
+	if (upper.includes('RECOMMENDED')) return 'recommended';
+	if (upper.includes('TEENSYVILLE')) return 'teensyville';
 	return heading.toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase());
 }
 

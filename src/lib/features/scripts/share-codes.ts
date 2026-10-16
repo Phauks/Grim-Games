@@ -4,6 +4,7 @@
  * If a code can't be made (offline, or the Worker refuses), the long `#s=` link still
  * works. Design: 08-script-loading.md §5.5 and §5.7.
  */
+import { t } from '#lib/i18n/locale.svelte.ts';
 import {
 	DELETE_KEY_HEADER,
 	readCreatedShare,
@@ -15,6 +16,7 @@ import { fetchLinkTarget, ScriptFetchError, type FetchedScript } from './fetch-s
 import type { SavedScript } from './saved-scripts.ts';
 import {
 	decodeSharedScript,
+	SharedLinkError,
 	encodeSharedScript,
 	sharedRefHash,
 	type SharePath,
@@ -33,25 +35,29 @@ export interface ShareTarget {
 }
 
 /** Fetches the script stored under a share code. */
+const SHARED_LINK_ERRORS = {
+	tooLarge: 'scripts.error.sharedTooLarge',
+	newer: 'scripts.error.shareNewer',
+	damaged: 'scripts.error.shareDamaged'
+} as const;
+
 export async function fetchSharedCode(code: string): Promise<FetchedScript> {
 	let response: Response;
 	try {
 		response = await fetch(shareCodePath(code), { credentials: 'omit' });
 	} catch {
-		throw new ScriptFetchError('Could not reach the app’s server. Check your connection.');
+		throw new ScriptFetchError(t('scripts.error.serverUnreachable'));
 	}
 	if (response.status === 404) {
-		throw new ScriptFetchError(
-			'No script has this code. Check the numbers, or ask for a new code: codes end 30 days after they were last used.'
-		);
+		throw new ScriptFetchError(t('scripts.error.noCode'));
 	}
 	if (response.status === 429) {
-		throw new ScriptFetchError('Too many codes tried. Wait a minute, then try again.');
+		throw new ScriptFetchError(t('scripts.error.tooManyCodes'));
 	}
 	const body: unknown = await response.json().catch(() => undefined);
 	const json = typeof body === 'object' && body !== null ? (body as { json?: unknown }).json : null;
 	if (!response.ok || !Array.isArray(json)) {
-		throw new ScriptFetchError(`The code could not be read (HTTP ${response.status}).`);
+		throw new ScriptFetchError(t('scripts.error.codeHttp', { status: response.status }));
 	}
 	return { text: JSON.stringify(json), source: { kind: 'share', code } };
 }
@@ -197,9 +203,14 @@ export async function fetchSharedRef(ref: SharedRef): Promise<FetchedScript> {
 		case 'code':
 			return fetchSharedCode(ref.code);
 		case 'inline':
-			return {
-				text: JSON.stringify(await decodeSharedScript(ref.payload)),
-				source: { kind: 'share' }
-			};
+			try {
+				return {
+					text: JSON.stringify(await decodeSharedScript(ref.payload)),
+					source: { kind: 'share' }
+				};
+			} catch (e) {
+				if (!(e instanceof SharedLinkError)) throw e;
+				throw new ScriptFetchError(t(SHARED_LINK_ERRORS[e.reason]));
+			}
 	}
 }

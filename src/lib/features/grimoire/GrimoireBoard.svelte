@@ -882,12 +882,15 @@
 		/* A fixed height, so swapping in the arranging controls never moves the board. */
 		flex: none;
 		box-sizing: border-box;
-		height: calc(var(--tap-target) + 1px);
+		height: calc(var(--tap-target) + var(--space-2));
 		display: flex;
 		align-items: center;
-		gap: var(--space-1);
-		padding: 0 var(--space-2);
-		border-bottom: 1px solid var(--border);
+		/* One spacing step everywhere (Trevor, 2026-10-16): the same inset from the screen's
+		   top and sides as the board's margin, and between buttons, narrowing only on the
+		   smallest phones so six buttons still fit at 320px. No dividing line: the dashed
+		   outline shows the board's edge while arranging. */
+		gap: min(var(--space-2), 1.5vw);
+		padding: var(--space-2) var(--space-2) 0;
 	}
 	.title {
 		flex: 1;
