@@ -19,10 +19,12 @@
 		/** Info-token text shown above the tokens; `**bold**` is supported. */
 		title?: string;
 		characters?: readonly ShownCharacter[];
+		/** Player names shown with the card, e.g. with "This is the Demon". */
+		players?: readonly string[];
 		onclose?: () => void;
 	}
 
-	let { open = $bindable(false), title, characters = [], onclose }: Props = $props();
+	let { open = $bindable(false), title, characters = [], players = [], onclose }: Props = $props();
 
 	let dialog = $state<HTMLDialogElement>();
 	let areaWidth = $state(0);
@@ -44,7 +46,11 @@
 		// Outside the error boundary, so it must not throw: the dialog has to stay up.
 		try {
 			return (
-				[title ? plainText(title) : undefined, ...characters.map((c) => c.character.name)]
+				[
+					title ? plainText(title) : undefined,
+					...characters.map((c) => c.character.name),
+					...players
+				]
 					.filter(Boolean)
 					.join(': ') || 'Shown to player'
 			);
@@ -112,6 +118,13 @@
 								/>
 								<p>{shown.character.ability}</p>
 							</li>
+						{/each}
+					</ul>
+				{/if}
+				{#if players.length > 0}
+					<ul class="players" aria-label="Players">
+						{#each players as name, i (i)}
+							<li>{name}</li>
 						{/each}
 					</ul>
 				{/if}
@@ -187,6 +200,23 @@
 	}
 	.content:not(:has(.area)) .title {
 		margin: auto 0;
+	}
+	.content:has(.players) {
+		justify-content: center;
+	}
+	.content:has(.players) .title {
+		margin: 0;
+	}
+	.players {
+		display: grid;
+		gap: var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		font-family: var(--font-heading);
+		font-size: clamp(1.5rem, 7vw, 3rem);
+		line-height: 1.2;
+		overflow-wrap: anywhere;
 	}
 	.title :global(strong) {
 		color: var(--accent);
