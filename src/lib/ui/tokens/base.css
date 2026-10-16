@@ -11,12 +11,12 @@
 	--space-6: calc(2 * var(--u));
 	--space-7: calc(3 * var(--u));
 
-	--radius-sm: 6px;
-	--radius-md: 12px;
-	--radius-lg: 18px;
-	--radius-full: 999px;
+	--radius-sm: calc(0.375 * var(--u));
+	--radius-md: calc(0.75 * var(--u));
+	--radius-lg: calc(1.125 * var(--u));
+	--radius-full: 999rem;
 
-	--tap-target: 44px;
+	--tap-target: 44px; /* px-ok: the 44px touch minimum is in CSS pixels */
 	--icon-size: calc(1.5 * var(--u));
 
 	--duration-fast: 120ms;
