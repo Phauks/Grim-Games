@@ -22,8 +22,7 @@ function table(...ids: string[]): PublicGameState {
 		seats: ids.map((id, i) => ({
 			seatId: s(id),
 			seatNumber: i + 1,
-			dead: false,
-			ghostVoteUsed: false
+			dead: false
 		})),
 		today: { nominations: [], executions: [] }
 	};

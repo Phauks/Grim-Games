@@ -23,7 +23,8 @@ export interface PublicSeat {
 	 * looks like a death to everyone. Storyteller overrides are private and ignored.
 	 */
 	dead: boolean;
-	ghostVoteUsed: boolean;
+	// No ghost votes: the Storyteller doesn't track them (Trevor, 2026-10-16); players keep
+	// their own on their phones.
 }
 
 /**
@@ -62,8 +63,7 @@ export function publicProjection(game: Game): PublicGameState {
 			const view: PublicSeat = {
 				seatId: seat.seatId,
 				seatNumber: i + 1,
-				dead: appearsDead(seat),
-				ghostVoteUsed: seat.ghostVoteUsed
+				dead: appearsDead(seat)
 			};
 			if (seat.playerName !== undefined) view.playerName = seat.playerName;
 			return view;

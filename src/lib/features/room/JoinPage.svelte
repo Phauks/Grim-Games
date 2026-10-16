@@ -151,7 +151,7 @@
 								<span class="number">{s.seatNumber}</span>
 								<span class="name">{s.playerName ?? 'None'}</span>
 								<span class="state">
-									{s.dead ? (s.ghostVoteUsed ? 'Dead, vote used' : 'Dead') : ''}
+									{s.dead ? 'Dead' : ''}
 								</span>
 							</li>
 						{/each}
