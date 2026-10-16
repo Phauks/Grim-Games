@@ -83,6 +83,8 @@ export class DayGame {
 				return `${this.seatName(entry.nominator)} nominated ${this.seatName(entry.nominee)}`;
 			case 'execution':
 				return `${this.seatName(entry.seatId)} executed${entry.died ? '' : ' (already dead)'}`;
+			case 'exile':
+				return `${this.seatName(entry.seatId)} exiled${entry.died ? '' : ' (already dead)'}`;
 			case 'ability':
 				return `${this.characterName(entry.characterId)} (${this.seatName(entry.seatId)}) used their ability`;
 			case 'note': {

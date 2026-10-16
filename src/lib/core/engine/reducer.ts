@@ -95,11 +95,11 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 					: { ...seat, playerName: event.playerName }
 			);
 		case 'CharacterAssigned':
-			return updateSeat(game, event.seatId, (seat) => ({
-				...seat,
-				characterId: event.characterId,
-				alignment: event.alignment
-			}));
+			return updateSeat(game, event.seatId, (seat) =>
+				event.alignment === undefined
+					? { ...omit(seat, 'alignment'), characterId: event.characterId }
+					: { ...seat, characterId: event.characterId, alignment: event.alignment }
+			);
 		case 'CharacterCleared':
 			return updateSeat(game, event.seatId, (seat) => omit(seat, 'characterId', 'alignment'));
 		case 'AlignmentSet':

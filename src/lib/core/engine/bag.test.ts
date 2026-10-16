@@ -194,7 +194,7 @@ describe('drawing', () => {
 		expect(confirmed.game.seats[seats[0]].alignment).toBe('evil');
 	});
 
-	it('needs an alignment to confirm a Traveller, and warns when replacing a character', () => {
+	it('confirms a Traveller with or without an alignment, and warns when replacing a character', () => {
 		const { session, ctx, seats } = newGame(names);
 		const s = run(
 			session,
@@ -208,8 +208,9 @@ describe('drawing', () => {
 			{ type: 'DrawTile', seatId: seats[0] }
 		);
 		const tileId = Object.keys(s.game.bag!.tiles)[0];
-		const missing = dispatch(s, { type: 'ConfirmDraw', tileId }, ctx);
-		expect(missing.ok ? 'ok' : missing.error.code).toBe('traveller-needs-alignment');
+		const unset = dispatch(s, { type: 'ConfirmDraw', tileId }, ctx);
+		if (!unset.ok) throw new Error();
+		expect(unset.session.game.seats[seats[0]]).not.toHaveProperty('alignment');
 		const confirmed = dispatch(s, { type: 'ConfirmDraw', tileId, alignment: 'evil' }, ctx);
 		if (!confirmed.ok) throw new Error();
 		expect(confirmed.warnings.map((w) => w.code)).toEqual(['replaces-character']);

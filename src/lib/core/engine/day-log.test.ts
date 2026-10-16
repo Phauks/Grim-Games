@@ -3,6 +3,8 @@
  * with "New day". Rules sources:
  * - https://wiki.bloodontheclocktower.com/Glossary ("Nomination", "Execution")
  * - https://wiki.bloodontheclocktower.com/Slayer and /Virgin ("No Ability" once used)
+ * - https://wiki.bloodontheclocktower.com/Exile (Travellers are exiled; exile is not an
+ *   execution)
  */
 import { describe, expect, it } from 'vitest';
 import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
@@ -191,6 +193,47 @@ describe('Execute', () => {
 		const entryId = s.game.today.entries[0].entryId;
 		const removed = run(s, ctx, { type: 'RemoveDayEntry', entryId });
 		expect(removed.game.seats[seats[3]]).toMatchObject({ dead: true, deathCause: 'other' });
+	});
+});
+
+describe('Exile', () => {
+	function withTraveller() {
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[4],
+			characterId: 'beggar',
+			alignment: 'good'
+		});
+		return { session: s, ctx, seats };
+	}
+
+	it('logs the exile and kills the Traveller by exile', () => {
+		const { session, ctx, seats } = withTraveller();
+		const s = run(session, ctx, { type: 'Exile', seatId: seats[4] });
+		expect(s.game.seats[seats[4]]).toMatchObject({ dead: true, deathCause: 'exile' });
+		expect(s.game.today.entries).toEqual([
+			{ kind: 'exile', entryId: expect.any(String), seatId: seats[4], died: true }
+		]);
+		const removed = run(s, ctx, {
+			type: 'RemoveDayEntry',
+			entryId: s.game.today.entries[0].entryId
+		});
+		expect(removed.game.seats[seats[4]].dead).toBe(false);
+	});
+
+	it('is not an execution: an execution the same day is not a second one', () => {
+		const { session, ctx, seats } = withTraveller();
+		const s = run(session, ctx, { type: 'Exile', seatId: seats[4] });
+		expect(warned(s, ctx, { type: 'Execute', seatId: seats[3] })).toEqual([]);
+	});
+
+	it('warns when exiling a player who is not a Traveller, or executing one who is', () => {
+		const { session, ctx, seats } = withTraveller();
+		expect(warned(session, ctx, { type: 'Exile', seatId: seats[3] })).toEqual(['not-traveller']);
+		expect(warned(session, ctx, { type: 'Execute', seatId: seats[4] })).toEqual([
+			'traveller-executed'
+		]);
 	});
 });
 

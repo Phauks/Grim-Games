@@ -103,6 +103,11 @@ export interface NightStep {
 	impaired?: AbilityState[];
 	/** Set on a step added for a gained ability (the Pixie's), by `withGainedSteps`. */
 	gained?: GainedAbility;
+	/**
+	 * On the first step, before Dusk, when Travellers have no alignment yet: their seats
+	 * (`withTravellerAlignmentStep`).
+	 */
+	travellers?: string[];
 }
 
 export interface OmittedStep {

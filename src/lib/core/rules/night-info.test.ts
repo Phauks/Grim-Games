@@ -190,6 +190,16 @@ describe('Undertaker', () => {
 		});
 		expect(undertakerAnswer(removed.game, seats[0], characters).kind).toBe('none');
 	});
+
+	// https://wiki.bloodontheclocktower.com/Exile: exile is not an execution.
+	it('learns nothing from an exiled Traveller', () => {
+		const { game: g, seats } = game(
+			[...tb, 'beggar'],
+			(s) => ({ type: 'SetAlignment', seatId: s[7], alignment: 'good' }),
+			(s) => ({ type: 'Exile', seatId: s[7] })
+		);
+		expect(undertakerAnswer(g, seats[0], characters).kind).toBe('none');
+	});
 });
 
 describe('Juggler', () => {

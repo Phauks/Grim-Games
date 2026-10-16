@@ -252,3 +252,40 @@ export const NO_DEATH: Readonly<Record<CharacterId, string>> = {
 	ventriloquist: 'executed players might survive',
 	zenomancer: 'info'
 };
+
+/**
+ * Who a character's ability can kill, when that is narrower than any player. Our reading of
+ * TPI's ability text and the character's wiki page (cited by its `DEATH_CAUSE_ENTRIES`
+ * entry). `own-death` entries need no rule: they only ever kill their own player.
+ * - `self`: only its own player (the Mutant and Scapegoat are the ones executed);
+ * - `not-self`: anyone but its own player (the Boomdandy is executed, the others die; the
+ *   Vizier cannot die during the day);
+ * - `alive-neighbour`: an alive neighbour of its player (the Gangster);
+ * - `registers`: the player must be, or register as, this. `notSelf` also rules out its
+ *   own player (the Moonchild is already dead when it chooses).
+ */
+export type VictimRule =
+	| { victim: 'self' }
+	| { victim: 'not-self' }
+	| { victim: 'alive-neighbour' }
+	| { victim: 'registers'; as: 'demon' | 'not-demon' | 'good' | 'townsfolk'; notSelf?: boolean };
+
+export const VICTIM_RULES: Readonly<Record<CharacterId, VictimRule>> = {
+	// "if they are the Demon, they die"
+	slayer: { victim: 'registers', as: 'demon' },
+	// "if the nominee is not the Demon, they die"
+	golem: { victim: 'registers', as: 'not-demon' },
+	// "If good, they die"
+	lycanthrope: { victim: 'registers', as: 'good' },
+	// "if it was a good player, they die"; the Moonchild has already died
+	moonchild: { victim: 'registers', as: 'good', notSelf: true },
+	// "if the nominator is a Townsfolk, they are executed"
+	virgin: { victim: 'registers', as: 'townsfolk' },
+	// Leviathan with the Banshee jinx: it chooses a good player
+	leviathan: { victim: 'registers', as: 'good' },
+	mutant: { victim: 'self' },
+	scapegoat: { victim: 'self' },
+	boomdandy: { victim: 'not-self' },
+	vizier: { victim: 'not-self' },
+	gangster: { victim: 'alive-neighbour' }
+};

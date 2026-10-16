@@ -20,6 +20,8 @@ export function describeCause(
 	switch (cause) {
 		case 'execution':
 			return 'executed';
+		case 'exile':
+			return 'exiled';
 		case 'demon':
 			return 'killed by the Demon';
 		case 'other':

@@ -162,12 +162,16 @@ describe('AssignCharacter and alignment', () => {
 	});
 
 	// https://wiki.bloodontheclocktower.com/Travellers: the Storyteller chooses a
-	// Traveller's alignment.
-	it('requires an alignment for a Traveller', () => {
+	// Traveller's alignment, often not straight away (Trevor, 2026-10-16).
+	it('lets a Traveller wait for its alignment', () => {
 		const { session, ctx, seats } = newGame(names);
-		expect(
-			refused(session, ctx, { type: 'AssignCharacter', seatId: seats[0], characterId: 'beggar' })
-		).toBe('traveller-needs-alignment');
+		const unset = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[0],
+			characterId: 'beggar'
+		});
+		expect(unset.game.seats[seats[0]].characterId).toBe('beggar');
+		expect(unset.game.seats[seats[0]]).not.toHaveProperty('alignment');
 		const s = run(session, ctx, {
 			type: 'AssignCharacter',
 			seatId: seats[0],

@@ -52,6 +52,7 @@ import {
 	type Registration,
 	type RegistrationWorld
 } from './ability.ts';
+import { withTravellerAlignmentStep } from './traveller-alignment.ts';
 import { withGainedSteps } from './gained-abilities.ts';
 import { causesOf, deathCheck, type DeathCheck } from './night-deaths.ts';
 import type { Night, NightStep } from './night-order.ts';
@@ -872,7 +873,8 @@ export function nightStepInfo(
  * Adds what the game says to the steps of a night order (see `nightOrder`): `info`
  * (answers, pickers, death checks), `impaired` (waking players whose ability does not
  * work, such as a Minion the Preacher chose), and, given `night`, a step for each gained
- * ability (the Pixie's, `withGainedSteps`). Steps get a copy; the order is not otherwise
+ * ability (the Pixie's, `withGainedSteps`) and a first step for Travellers without an
+ * alignment (`withTravellerAlignmentStep`). Steps get a copy; the order is not otherwise
  * changed.
  */
 export function withNightInfo<T extends NightStep>(
@@ -881,7 +883,11 @@ export function withNightInfo<T extends NightStep>(
 	characters: CharacterLookup,
 	night?: Night
 ): (T | NightStep)[] {
-	const all = night ? withGainedSteps(steps, game, characters, night) : steps;
+	const all = withTravellerAlignmentStep(
+		night ? withGainedSteps(steps, game, characters, night) : steps,
+		game,
+		characters
+	);
 	return all.map((step) => {
 		if (!step.character) return step;
 		const gained = step.gained;

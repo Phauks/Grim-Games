@@ -23,6 +23,7 @@ import {
 	getSeat,
 	isKnownReminder,
 	isOnScript,
+	isTraveller,
 	registersAsDead,
 	replacedBy,
 	trueCharacter,
@@ -56,7 +57,6 @@ export type ErrorCode =
 	| 'unknown-override'
 	| 'not-seatable'
 	| 'not-rule-character'
-	| 'traveller-needs-alignment'
 	| 'same-seat'
 	| 'invalid-bluff-set'
 	| 'no-bag'
@@ -98,6 +98,8 @@ export type WarningCode =
 	| 'already-nominated'
 	| 'already-nominee'
 	| 'already-executed'
+	| 'traveller-executed'
+	| 'not-traveller'
 	| 'already-dead'
 	| 'not-seat-character'
 	| 'already-used'
@@ -537,12 +539,15 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				}
 			}
 			alignment ??= typeDefault;
-			if (alignment === undefined) {
-				refuse('traveller-needs-alignment', `choose good or evil for the ${character.name}`);
-			}
-			return [
-				{ type: 'CharacterAssigned', seatId: seat.seatId, characterId: character.id, alignment }
-			];
+			// A Traveller's alignment may be chosen later: the first night step asks for it
+			// (Trevor, 2026-10-16).
+			const assigned: GameEvent = {
+				type: 'CharacterAssigned',
+				seatId: seat.seatId,
+				characterId: character.id
+			};
+			if (alignment !== undefined) assigned.alignment = alignment;
+			return [assigned];
 		}
 
 		case 'ClearCharacter': {
@@ -896,12 +901,14 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				warn('replaces-character', 'the seat already had a character');
 			}
 			const alignment = command.alignment ?? alignmentFromCharacters(grimoire, tile.reminders, ctx);
-			if (alignment === undefined) {
-				refuse('traveller-needs-alignment', `choose good or evil for the ${grimoire.name}`);
-			}
 			return [
 				{ type: 'DrawConfirmed', tileId: tile.tileId },
-				{ type: 'CharacterAssigned', seatId: seat.seatId, characterId: grimoire.id, alignment },
+				{
+					type: 'CharacterAssigned',
+					seatId: seat.seatId,
+					characterId: grimoire.id,
+					...(alignment !== undefined ? { alignment } : {})
+				},
 				...tile.reminders.map((r): GameEvent => ({
 					type: 'ReminderAdded',
 					seatId: seat.seatId,
@@ -961,6 +968,9 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			if (game.today.entries.some((e) => e.kind === 'execution')) {
 				warn('already-executed', 'there is usually one execution a day');
 			}
+			if (isTraveller(game, seat.seatId, ctx.characters)) {
+				warn('traveller-executed', 'Travellers are exiled, not executed');
+			}
 			const entry: DayEntry = {
 				kind: 'execution',
 				entryId: ctx.newId(),
@@ -974,6 +984,27 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [
 				{ type: 'DayEntryAdded', entry },
 				{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: 'execution' }
+			];
+		}
+
+		case 'Exile': {
+			const seat = seatOf(game, command.seatId);
+			if (!isTraveller(game, seat.seatId, ctx.characters)) {
+				warn('not-traveller', 'only Travellers are exiled');
+			}
+			const entry: DayEntry = {
+				kind: 'exile',
+				entryId: ctx.newId(),
+				seatId: seat.seatId,
+				died: !seat.dead
+			};
+			if (seat.dead) {
+				warn('already-dead', 'the player was already dead, so the exile is only logged');
+				return [{ type: 'DayEntryAdded', entry }];
+			}
+			return [
+				{ type: 'DayEntryAdded', entry },
+				{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: 'exile' }
 			];
 		}
 
@@ -1096,9 +1127,9 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 		case 'RemoveDayEntry': {
 			const entry = entryOf(game, command.entryId);
 			const events: GameEvent[] = [];
-			if (entry.kind === 'execution' && entry.died) {
+			if ((entry.kind === 'execution' || entry.kind === 'exile') && entry.died) {
 				const seat = getSeat(game, entry.seatId);
-				if (seat?.dead && seat.deathCause === 'execution') {
+				if (seat?.dead && seat.deathCause === entry.kind) {
 					events.push({ type: 'DeathSet', seatId: seat.seatId, dead: false });
 					if (seat.ghostVoteUsed) events.push({ type: 'GhostVoteRestored', seatId: seat.seatId });
 				}

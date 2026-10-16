@@ -79,7 +79,8 @@
 	const CAUSE_LABELS: Record<(typeof GENERAL_DEATH_CAUSES)[number], string> = {
 		execution: 'Executed',
 		demon: 'Killed by the Demon',
-		other: 'Something else'
+		other: 'Something else',
+		exile: 'Exiled'
 	};
 
 	// ── Pre-day reminders ──

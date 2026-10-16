@@ -112,6 +112,8 @@ export type Command =
 	| { type: 'SetPrepValue'; key: string; value?: string }
 	/** Logs an execution and marks the player dead by execution, if alive. */
 	| { type: 'Execute'; seatId: SeatId }
+	/** Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. */
+	| { type: 'Exile'; seatId: SeatId }
 	/**
 	 * Logs that a character used its ability. A character with a "No Ability" reminder
 	 * token gets it placed on the seat; otherwise only the use is logged.

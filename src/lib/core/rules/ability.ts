@@ -296,7 +296,10 @@ export function registrations(game: Game, characters: CharacterLookup): Registra
 export interface RegistrationWorld {
 	alignment: (seatId: SeatId) => Alignment | undefined;
 	type: (seatId: SeatId) => CharacterType | undefined;
-	/** Seats registering as something other than their true alignment or type here. */
+	/**
+	 * Seats registering as something other than their true alignment or type here, and
+	 * players whose alignment is not set yet (a Traveller's) when this world gives it one.
+	 */
 	misregistered: SeatId[];
 }
 
@@ -306,21 +309,46 @@ const MAX_WORLDS = 4096;
 /**
  * Every way the players may register. The first world is the default: everyone as they
  * truly are, apart from fixed registrations (Faux Paw), so it gives the true answer.
+ *
+ * A player with a character but no alignment yet (a Traveller whose alignment the
+ * Storyteller has not chosen, https://wiki.bloodontheclocktower.com/Travellers) is
+ * unknown: no alignment in the default world, then good and evil in the others, where they
+ * count as `misregistered` so answers that depend on them are marked.
  */
 export function registrationWorlds(
 	game: Game,
 	characters: CharacterLookup,
 	regs: readonly Registration[] = registrations(game, characters)
 ): RegistrationWorld[] {
-	type Choice = { seatId: SeatId; alignment: Alignment; type: CharacterType };
+	type Choice = { seatId: SeatId; alignment?: Alignment; type: CharacterType };
+	const unset: Registration[] = game.seating.flatMap((seatId) => {
+		const type = typeOf(game, seatId, characters);
+		const id = trueCharacter(game, seatId, characters);
+		if (alignmentOf(game, seatId) !== undefined || !type || !id) return [];
+		return [
+			{
+				seatId,
+				alignments: ['good', 'evil'],
+				types: [type],
+				source: { characterId: id, seatId },
+				wiki: `${W}Travellers`
+			}
+		];
+	});
 	let combos: Choice[][] = [[]];
-	for (const reg of regs) {
+	for (const reg of [...regs, ...unset]) {
+		const options: (Alignment | undefined)[] = unset.includes(reg)
+			? [undefined, ...reg.alignments]
+			: reg.alignments;
 		const next: Choice[][] = [];
 		for (const combo of combos) {
-			for (const alignment of reg.alignments) {
+			for (const alignment of options) {
 				for (const type of reg.types) {
 					if (next.length < MAX_WORLDS)
-						next.push([...combo, { seatId: reg.seatId, alignment, type }]);
+						next.push([
+							...combo,
+							{ seatId: reg.seatId, ...(alignment ? { alignment } : {}), type }
+						]);
 				}
 			}
 		}

@@ -28,7 +28,8 @@ export type GameEvent =
 	| { type: 'SeatAdded'; seatId: SeatId; position: number; playerName?: string }
 	| { type: 'SeatRemoved'; seatId: SeatId }
 	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: string }
-	| { type: 'CharacterAssigned'; seatId: SeatId; characterId: CharacterId; alignment: Alignment }
+	/** No `alignment`: not chosen yet (a Traveller's), so the seat has none. */
+	| { type: 'CharacterAssigned'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }
 	| { type: 'CharacterCleared'; seatId: SeatId }
 	| { type: 'AlignmentSet'; seatId: SeatId; alignment: Alignment }
 	/** `cause` only with `dead: true`; `dead: false` clears any cause. */

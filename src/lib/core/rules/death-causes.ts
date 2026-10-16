@@ -8,18 +8,39 @@
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
-import { charactersInPlay } from '#lib/core/model/selectors.ts';
-import type { Game } from '#lib/core/model/types.ts';
+import {
+	aliveNeighbours,
+	charactersInPlay,
+	getSeat,
+	isTraveller,
+	registersAsDead,
+	trueCharacter
+} from '#lib/core/model/selectors.ts';
+import {
+	GENERAL_DEATH_CAUSES,
+	type DeathCause,
+	type Game,
+	type SeatId
+} from '#lib/core/model/types.ts';
+import {
+	abilityState,
+	registrations,
+	registrationWorlds,
+	type AbilitySource,
+	type RegistrationWorld
+} from './ability.ts';
 import {
 	DEATH_CAUSE_ENTRIES,
 	DEATH_KINDS,
 	NO_DEATH,
+	VICTIM_RULES,
 	type DeathCauseEntry,
-	type DeathKind
+	type DeathKind,
+	type VictimRule
 } from './death-causes.data.ts';
 
-export { DEATH_CAUSE_ENTRIES, DEATH_KINDS, NO_DEATH };
-export type { DeathCauseEntry, DeathKind };
+export { DEATH_CAUSE_ENTRIES, DEATH_KINDS, NO_DEATH, VICTIM_RULES };
+export type { DeathCauseEntry, DeathKind, VictimRule };
 
 /**
  * One character the picker can offer. `kind` is `unknown` for a character not in our data
@@ -70,4 +91,145 @@ export function gameDeathCauses(game: Game, characters: CharacterLookup): DeathC
 		...charactersInPlay(game),
 		...game.ruleCharacters
 	]);
+}
+
+// ── Valid causes for one player ─────────────────────────────────────────────
+
+/**
+ * Why a cause is offered with a caution rather than plainly:
+ * - `registers`: only if the player registered falsely (a Recluse as the Demon for the
+ *   Slayer, a Spy as a Townsfolk for the Virgin), by `source`'s ability;
+ * - `impaired`: every player who has the character is drunk, poisoned or without ability
+ *   now, so it did nothing unless that was not so when the player died;
+ * - `unknown`: the player's alignment or character is not set, so the rule cannot be checked.
+ */
+export type DeathCauseFlag =
+	| { code: 'registers'; source: AbilitySource; wiki: string }
+	| { code: 'impaired'; seatIds: SeatId[] }
+	| { code: 'unknown' };
+
+export interface ValidDeathCause {
+	cause: DeathCause;
+	/** `general` for executed, exiled, the Demon and something else. */
+	kind: DeathKind | 'unknown' | 'general';
+	flags: DeathCauseFlag[];
+}
+
+/**
+ * The causes of death that are valid for this player given the grimoire, in picker order:
+ * executed (exiled for a Traveller), the Demon, the characters that could have killed them (script order), something
+ * else. "Something else" is always offered so the Storyteller can override.
+ *
+ * A character is left out when no player has it (true character, so a Drunk shown as the
+ * Slayer is not one) and it is not a Fabled or Loric in play; when it only kills its own
+ * player and this is someone else; and when its `VICTIM_RULES` rule fails however anyone
+ * registers. Demons are left out: "the Demon" covers them. A rule that holds only through
+ * a false registration, a character whose players are all impaired now, and a player
+ * whose alignment or character is unset give flagged entries instead.
+ */
+export function validDeathCauses(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): ValidDeathCause[] {
+	const [execution, demon, other, exile] = GENERAL_DEATH_CAUSES;
+	const general = (cause: DeathCause): ValidDeathCause => ({ cause, kind: 'general', flags: [] });
+	if (!getSeat(game, seatId)) return [general(other)];
+
+	const regs = registrations(game, characters);
+	let worlds: RegistrationWorld[] | undefined;
+	// Travellers are exiled, not executed (Trevor, 2026-10-16;
+	// https://wiki.bloodontheclocktower.com/Exile).
+	const removed = isTraveller(game, seatId, characters) ? exile : execution;
+	const out: ValidDeathCause[] = [general(removed), general(demon)];
+
+	for (const { characterId, kind } of gameDeathCauses(game, characters)) {
+		if (characters.get(characterId)?.type === 'demon') continue;
+		const holders = game.seating.filter((s) => trueCharacter(game, s, characters) === characterId);
+		if (holders.length === 0 && !game.ruleCharacters.includes(characterId)) continue;
+
+		const rule: VictimRule | undefined =
+			kind === 'own-death' ? { victim: 'self' } : VICTIM_RULES[characterId];
+		const acting = holders.filter((h) => holderFits(game, rule, h, seatId));
+		if (holders.length > 0 && acting.length === 0) continue;
+
+		const flags: DeathCauseFlag[] = [];
+		if (rule?.victim === 'registers') {
+			worlds ??= registrationWorlds(game, characters, regs);
+			const verdict = registersAs(game, seatId, rule.as, worlds);
+			if (verdict === 'never') continue;
+			if (verdict === 'unknown') flags.push({ code: 'unknown' });
+			if (verdict === 'falsely') {
+				const reg = regs.find((r) => r.seatId === seatId);
+				if (reg) flags.push({ code: 'registers', source: reg.source, wiki: reg.wiki });
+			}
+		}
+		if (
+			acting.length > 0 &&
+			acting.every((h) => abilityState(game, h, characters).impairments.length > 0)
+		) {
+			flags.push({ code: 'impaired', seatIds: acting });
+		}
+		out.push({ cause: characterId, kind, flags });
+	}
+	out.push(general(other));
+	return out;
+}
+
+/** Whether the player with the character at `holder` could have killed `victim`. */
+function holderFits(
+	game: Game,
+	rule: VictimRule | undefined,
+	holder: SeatId,
+	victim: SeatId
+): boolean {
+	switch (rule?.victim) {
+		case undefined:
+			return true;
+		case 'self':
+			return holder === victim;
+		case 'not-self':
+			return holder !== victim;
+		case 'registers':
+			return !rule.notSelf || holder !== victim;
+		case 'alive-neighbour':
+			// Neighbours as they were before the victim died.
+			return aliveNeighbours(
+				game,
+				holder,
+				(s) => s !== victim && registersAsDead(game, s)
+			).includes(victim);
+	}
+}
+
+/**
+ * Whether the player is (`truly`), could register as (`falsely`) or cannot be (`never`)
+ * what the rule needs, or `unknown` when their alignment or character is not set. A player
+ * babysitting Lil' Monsta ("Is The Demon") is the Demon
+ * (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
+ */
+function registersAs(
+	game: Game,
+	seatId: SeatId,
+	as: 'demon' | 'not-demon' | 'good' | 'townsfolk',
+	worlds: readonly RegistrationWorld[]
+): 'truly' | 'falsely' | 'never' | 'unknown' {
+	const babysitter = getSeat(game, seatId)?.reminders.some(
+		(r) => r.characterId === 'lilmonsta' && r.label === 'Is The Demon'
+	);
+	const test = (world: RegistrationWorld): boolean | undefined => {
+		if (as === 'good') {
+			const alignment = world.alignment(seatId);
+			return alignment === undefined ? undefined : alignment === 'good';
+		}
+		const type = world.type(seatId);
+		if (as === 'townsfolk') return type === undefined ? undefined : type === 'townsfolk';
+		const isDemon = babysitter || (type === undefined ? undefined : type === 'demon');
+		if (isDemon === undefined) return undefined;
+		return as === 'demon' ? isDemon : !isDemon;
+	};
+	const first = test(worlds[0]);
+	if (first === undefined) return 'unknown';
+	if (first) return 'truly';
+	return worlds.some((w) => test(w)) ? 'falsely' : 'never';
 }

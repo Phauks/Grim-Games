@@ -56,7 +56,7 @@ export type TemplateSegment =
 	{ self: true } | { target: true } | { text: string } | { value: string; placeholder: string };
 
 /** How a death is matched: a cause the app records, or a character id. */
-export type DeathCauseMatch = 'execution' | 'demon' | 'other' | CharacterId;
+export type DeathCauseMatch = 'execution' | 'exile' | 'demon' | 'other' | CharacterId;
 
 export interface DayCondition {
 	self?: 'alive' | 'dead' | 'any';

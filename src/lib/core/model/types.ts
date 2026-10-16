@@ -60,17 +60,19 @@ export const OVERRIDE_FIELDS = [
 ] as const satisfies readonly OverrideField[];
 
 /**
- * How a player died, when the Storyteller recorded it: executed, killed by the Demon, a
- * character's ability (its id), or something else. Undefined means not recorded. The app
- * does not track day or night, so the cause is never inferred.
+ * How a player died, when the Storyteller recorded it: executed, exiled (Travellers),
+ * killed by the Demon, a character's ability (its id), or something else. Undefined means
+ * not recorded. The app does not track day or night, so the cause is never inferred.
+ * Exile is not an execution (https://wiki.bloodontheclocktower.com/Exile).
  */
-export type DeathCause = 'execution' | 'demon' | 'other' | CharacterId;
+export type DeathCause = 'execution' | 'exile' | 'demon' | 'other' | CharacterId;
 
 /** The death causes that are not a character. */
 export const GENERAL_DEATH_CAUSES = [
 	'execution',
 	'demon',
-	'other'
+	'other',
+	'exile'
 ] as const satisfies readonly DeathCause[];
 
 /** A player, wherever they sit. */
@@ -117,7 +119,7 @@ export interface Bag {
 	tiles: Record<TileId, Tile>;
 	/** Tiles still in the bag, in draw order. */
 	order: TileId[];
-	/** Travellers drawn from the bag get their alignment set when the draw is confirmed. */
+	/** Travellers drawn from the bag get their alignment when the draw is confirmed, or later. */
 	includeTravellers: boolean;
 }
 
@@ -133,6 +135,9 @@ export interface CharacterGuess {
  * - `nomination`: who nominated whom. Votes are not tracked; a player-facing vote tracker
  *   comes later.
  * - `execution`: the player was executed (and marked dead by execution if they were alive).
+ * - `exile`: a Traveller was exiled (and marked dead by exile if alive). Exile is not an
+ *   execution: abilities about executions ignore it
+ *   (https://wiki.bloodontheclocktower.com/Exile).
  * - `ability`: a character used its ability; `reminderId` is the "No Ability" token placed.
  * - `note`: the Storyteller's free text about a character (a Gossip statement, the Artist's
  *   question, what the Savant was told), with structured `guesses` for the Juggler.
@@ -142,6 +147,7 @@ export interface CharacterGuess {
 export type DayEntry =
 	| { kind: 'nomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
 	| { kind: 'execution'; entryId: DayEntryId; seatId: SeatId; died: boolean }
+	| { kind: 'exile'; entryId: DayEntryId; seatId: SeatId; died: boolean }
 	| {
 			kind: 'ability';
 			entryId: DayEntryId;
