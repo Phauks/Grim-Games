@@ -13,6 +13,7 @@ import {
 import type { EngineWarning } from '#lib/core/engine/index.ts';
 import { analyseSetup, type DeathCauseFlag } from '#lib/core/rules/index.ts';
 import {
+	GENERAL_DEATH_CAUSES,
 	isOnScript,
 	scriptCharacterIds,
 	trueCharacter,
@@ -90,7 +91,20 @@ export function isOrphan(seat: Seat, script: Script, characters: CharacterLookup
 	return character.type !== 'traveller' && !isOnScript(script, seat.characterId);
 }
 
-/** A cause's words. Travellers are exiled rather than executed. */
+/**
+ * A death cause that is a character's ability (the Slayer, the Witch), or undefined for the
+ * causes with their own words. Screens show that character as a badge (CauseName).
+ */
+export function causeCharacter(cause: DeathCause | undefined): CharacterId | undefined {
+	return cause === undefined || (GENERAL_DEATH_CAUSES as readonly string[]).includes(cause)
+		? undefined
+		: cause;
+}
+
+/**
+ * A cause's words. Travellers are exiled rather than executed. A character's ability is
+ * its plain name, for accessible names; screens use CauseName, which shows its badge.
+ */
 export function causeLabel(
 	cause: DeathCause | undefined,
 	characters: CharacterLookup,
@@ -108,31 +122,35 @@ export function causeLabel(
 		case 'other':
 			return 'Something else';
 		default:
+			// eslint-disable-next-line grim/names-as-badges -- plain, for accessible names (above)
 			return characters.get(cause)?.name ?? cause;
 	}
 }
 
 /**
  * Why a death cause is offered with a caution, for the overlay behind its marker. Uses
- * player names (or "Seat N") and character names only; the rule itself is core's.
+ * player names (or "Seat N"), and the character (`by`) to show as a badge after the text;
+ * the rule itself is core's.
  */
 export function causeFlagText(
 	flag: DeathCauseFlag,
 	game: Game,
 	characters: CharacterLookup,
 	victim: string
-): string {
+): { text: string; by?: CharacterId } {
 	const name = (seatId: SeatId) =>
 		game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
 	switch (flag.code) {
 		case 'registers': {
-			const by = characters.get(flag.source.characterId)?.name ?? flag.source.characterId;
-			return `Only if ${victim} registered falsely (${by}).`;
+			// "Only if Ana registered falsely ([Recluse])": the character shows as a badge.
+			return { text: `Only if ${victim} registered falsely`, by: flag.source.characterId };
 		}
 		case 'impaired':
-			return `${flag.seatIds.map(name).join(', ')} ${flag.seatIds.length === 1 ? 'is' : 'are'} drunk, poisoned or without an ability now.`;
+			return {
+				text: `${flag.seatIds.map(name).join(', ')} ${flag.seatIds.length === 1 ? 'is' : 'are'} drunk, poisoned or without an ability now.`
+			};
 		case 'unknown':
-			return `${victim}'s alignment or character is not set, so this can't be checked.`;
+			return { text: `${victim}'s alignment or character is not set, so this can't be checked.` };
 	}
 }
 

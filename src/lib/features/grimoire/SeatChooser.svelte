@@ -1,11 +1,15 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
 	interface Props {
 		open: boolean;
 		title: string;
+		/** Replaces the title's text, e.g. "Put [reminder] on" with the reminder's token. */
+		heading?: Snippet;
 		game: Game;
 		characters: CharacterLookup;
 		/** Left out of the list (the seat the choice starts from). */
@@ -13,14 +17,14 @@
 		onChoose: (seatId: SeatId) => void;
 	}
 
-	let { open = $bindable(), title, game, characters, exclude, onChoose }: Props = $props();
+	let { open = $bindable(), title, heading, game, characters, exclude, onChoose }: Props = $props();
 
 	const seats = $derived(
 		game.seating.map((seatId, i) => ({ seat: game.seats[seatId], number: i + 1 }))
 	);
 </script>
 
-<Dialog bind:open {title}>
+<Dialog bind:open {title} {heading}>
 	<ul>
 		{#each seats as { seat, number } (seat.seatId)}
 			{#if seat.seatId !== exclude}
@@ -36,7 +40,15 @@
 						>
 						<span class="number">{number}</span>
 						<span class="name">{seat.playerName ?? `Seat ${number}`}</span>
-						<span class="role">{character?.name ?? 'None'}</span>
+						<span class="role"
+							>{#if character}<CharacterBadge
+									characterId={character.id}
+									{character}
+									alignment={seat.alignment}
+									inline
+									interactive={false}
+								/>{:else}None{/if}</span
+						>
 					</button>
 				</li>
 			{/if}
@@ -85,6 +97,5 @@
 	.role {
 		font-family: var(--font-character);
 		font-size: 0.85rem;
-		opacity: 0.85;
 	}
 </style>

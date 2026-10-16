@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import { prepTextSegments, setupReminders } from '#lib/core/rules/index.ts';
@@ -50,7 +50,7 @@
 	interface Item {
 		key: string;
 		characterId: CharacterId;
-		label: string;
+		label: ReminderLabel;
 		/** Shown once with ×count when "Stack duplicate reminders" is on. */
 		count: number;
 		setup?: TrayItem;
@@ -241,7 +241,7 @@
 
 <SeatChooser
 	bind:open={chooserOpen}
-	title={choosing ? `Put ${choosing.label} on` : 'Put on'}
+	title="Put on"
 	{game}
 	{characters}
 	onChoose={(seatId) => {
@@ -249,13 +249,29 @@
 		if (choosing) place(choosing, seatId);
 		choosing = undefined;
 	}}
-/>
-
-<Dialog
-	bind:open={shownOpen}
-	title={shown?.suggestion.label ?? ''}
-	description={shown ? (characters.get(shown.suggestion.characterId)?.name ?? '') : ''}
 >
+	{#snippet heading()}
+		Put {#if choosing}<ReminderToken
+				label={choosing.label}
+				type={characters.get(choosing.characterId)?.type}
+			/>{/if} on
+	{/snippet}
+</SeatChooser>
+
+<Dialog bind:open={shownOpen} title="Setup reminder">
+	{#snippet heading()}
+		{#if shown}<ReminderToken
+				label={shown.suggestion.label}
+				type={characters.get(shown.suggestion.characterId)?.type}
+			/>{/if}
+	{/snippet}
+	{#snippet subheading()}
+		{#if shown}<CharacterBadge
+				characterId={shown.suggestion.characterId}
+				character={characters.get(shown.suggestion.characterId)}
+				inline
+			/>{/if}
+	{/snippet}
 	{#if shown}
 		{@const s = shown.suggestion}
 		{@const type = characters.get(s.characterId)?.type}

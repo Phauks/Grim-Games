@@ -75,6 +75,7 @@ export const tonight = (game: Game): Night => (game.pastDays.length === 0 ? 'fir
 
 export function stepName(step: NightStep): string {
 	if (step.kind === 'marker') return MARKER_TEXT[step.id as NightMarker].name;
+	// eslint-disable-next-line grim/names-as-badges -- a caption beside the step's own icon (StepIcon)
 	return step.title ?? step.character?.name ?? step.id;
 }
 

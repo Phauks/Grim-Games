@@ -69,11 +69,13 @@
 					done: free === 0 && mine === 0,
 					on: mine > 0,
 					count: free,
+					// eslint-disable-next-line grim/names-as-badges -- accessible name (aria-label)
 					label: `${reminder.label}, ${free} left`
 				}
 			];
 		return Array.from({ length: all }, (_, i) => ({
 			...state(i),
+			// eslint-disable-next-line grim/names-as-badges -- accessible name (aria-label)
 			label: `${reminder.label}, copy ${i + 1} of ${all}`
 		}));
 	}
@@ -149,6 +151,7 @@
 			<li>
 				<span class="who">
 					<CharacterToken character={group.character} size={32} />
+					<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
 					<span class="name">{group.character.name}</span>
 				</span>
 				<span class="chips" role="group" aria-label={group.character.name}>

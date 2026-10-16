@@ -17,6 +17,7 @@ export interface TrayItem {
 export function trayItems(suggestions: readonly SetupReminder[]): TrayItem[] {
 	const seen = new Map<string, number>();
 	return suggestions.map((suggestion) => {
+		// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
 		const base = `${suggestion.characterId}:${suggestion.label}`;
 		const n = seen.get(base) ?? 0;
 		seen.set(base, n + 1);
@@ -33,12 +34,14 @@ export function pendingTray(
 	const placed = new Map<string, number>();
 	for (const seatId of game.seating) {
 		for (const r of game.seats[seatId].reminders) {
+			// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
 			const base = `${r.characterId}:${r.label}`;
 			placed.set(base, (placed.get(base) ?? 0) + 1);
 		}
 	}
 	return items.filter(({ key, suggestion }) => {
 		if (dismissed.includes(key)) return false;
+		// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
 		const base = `${suggestion.characterId}:${suggestion.label}`;
 		const left = placed.get(base) ?? 0;
 		if (left > 0) {

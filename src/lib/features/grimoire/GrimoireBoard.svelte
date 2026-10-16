@@ -28,7 +28,9 @@
 	import { setupComplete, setupReminders } from '#lib/core/rules/index.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -204,11 +206,11 @@
 			game.seats[s].playerName
 				? `Seat ${game.seating.indexOf(s) + 1} · ${game.seats[s].playerName}`
 				: `Seat ${game.seating.indexOf(s) + 1}`;
-		const character = characters.get(reminder.characterId)?.name ?? reminder.characterId;
 		return {
 			holders,
-			text:
-				`${reminder.label}, from ${character}` +
+			reminder,
+			// The words after the reminder and its character's badge.
+			seats:
 				(holders.length > 0 ? ` (${holders.map(name).join(', ')})` : '') +
 				` · on ${name(reminderDrag.from)}`
 		};
@@ -746,7 +748,19 @@
 			>
 		{/each}
 		{#if reminderDrag && dragOrigin}
-			<p class="origin" role="status">{dragOrigin.text}</p>
+			{@const r = dragOrigin.reminder}
+			<p class="origin" role="status">
+				<ReminderToken
+					label={r.label}
+					type={characters.get(r.characterId)?.type}
+					alignment={placingAlignment(game, r.characterId, characters)}
+				/>, from <CharacterBadge
+					characterId={r.characterId}
+					character={characters.get(r.characterId)}
+					inline
+					interactive={false}
+				/>{dragOrigin.seats}
+			</p>
 		{/if}
 		{#if walk}
 			<NightStrip
@@ -991,6 +1005,7 @@
 	}}
 />
 
+<!-- eslint-disable-next-line grim/names-as-badges -- the rule character's own details, under its token -->
 <Dialog bind:open={ruleShownOpen} title={ruleShownCharacter?.name ?? ''}>
 	{#if ruleShownCharacter}
 		<div class="rule-detail">

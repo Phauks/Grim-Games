@@ -3,18 +3,18 @@
  * badges, newest first, worked out from the events it recorded and the game just before
  * and after it. UI wording only; the log itself is the engine's.
  */
-import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
+import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { applyEvents, type GameEvent, type LogEntry } from '#lib/core/engine/index.ts';
 import type { CharacterLookup, DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 import { describeEntry as describeDayEntry } from '#lib/features/day/day-port.ts';
-import { causeLabel } from './board.ts';
+import { causeCharacter, causeLabel } from './board.ts';
 
 export type HistoryPart =
 	| { kind: 'text'; text: string }
 	/** A seat as it was at the time: its character as a badge, or its name. */
 	| { kind: 'seat'; name: string; characterId?: CharacterId; alignment?: Alignment }
 	| { kind: 'character'; characterId: CharacterId }
-	| { kind: 'reminder'; label: string; characterId: CharacterId };
+	| { kind: 'reminder'; label: ReminderLabel; characterId: CharacterId };
 
 export interface HistoryItem {
 	/** How many log entries are applied once this one is (the cursor just after it). */
@@ -45,7 +45,7 @@ function seatName(game: Game | undefined, seatId: SeatId): HistoryPart {
 function reminderOn(
 	game: Game | undefined,
 	reminderId: string
-): { seatId: SeatId; label: string; characterId: CharacterId } | undefined {
+): { seatId: SeatId; label: ReminderLabel; characterId: CharacterId } | undefined {
 	for (const seatId of game?.seating ?? []) {
 		const r = game!.seats[seatId].reminders.find((x) => x.reminderId === reminderId);
 		if (r) return { seatId, label: r.label, characterId: r.characterId };
@@ -53,8 +53,16 @@ function reminderOn(
 	return undefined;
 }
 
-function deathText(cause: DeathCause | undefined, characters: CharacterLookup, traveller: boolean) {
-	return cause === undefined ? '' : ` (${causeLabel(cause, characters, traveller)})`;
+/** A cause as words, or the killing character as a badge. */
+function causeParts(
+	cause: DeathCause,
+	characters: CharacterLookup,
+	traveller: boolean
+): HistoryPart[] {
+	const characterId = causeCharacter(cause);
+	return characterId
+		? [{ kind: 'character', characterId }]
+		: [text(causeLabel(cause, characters, traveller))];
 }
 
 /** One event as words and badges, using the game just before and just after it. */
@@ -95,7 +103,9 @@ function describeEvent(
 			return event.dead
 				? [
 						seatPart(before, event.seatId),
-						text(` died${deathText(event.cause, characters, traveller)}`)
+						...(event.cause === undefined
+							? [text(' died')]
+							: [text(' died ('), ...causeParts(event.cause, characters, traveller), text(')')])
 					]
 				: [seatPart(before, event.seatId), text(' is alive again')];
 		}
@@ -104,7 +114,10 @@ function describeEvent(
 				characters.get(before?.seats[event.seatId]?.characterId ?? '')?.type === 'traveller';
 			return [
 				seatPart(before, event.seatId),
-				text(`: cause of death ${causeLabel(event.cause, characters, traveller)}`)
+				text(': cause of death '),
+				...(event.cause === undefined
+					? [text(causeLabel(undefined, characters, traveller))]
+					: causeParts(event.cause, characters, traveller))
 			];
 		}
 		case 'GhostVoteSpent':

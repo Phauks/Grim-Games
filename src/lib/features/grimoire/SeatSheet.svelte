@@ -24,6 +24,7 @@
 		SEAT_TYPES,
 		tableCheck
 	} from './board.ts';
+	import CauseName from './CauseName.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import { pastNames, suggestNames } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -119,21 +120,26 @@
 		poisoned: 'Poisoned',
 		'no-ability': 'No ability'
 	};
-	const abilityLine = $derived.by(() => {
-		if (!seat || !character) return 'None';
-		const parts: string[] = [];
-		if (isOrphan(seat, game.script, characters)) parts.push('Not on the script');
-		if (really) parts.push(`Is the ${really.name}`);
+	/** Words, then a character as a badge, then more words ("Drunk (" [Vortox] ")"). */
+	type LinePart = { text: string; characterId?: CharacterId; after?: string };
+	const abilityLine = $derived.by((): LinePart[] => {
+		if (!seat || !character) return [{ text: 'None' }];
+		const parts: LinePart[] = [];
+		if (isOrphan(seat, game.script, characters)) parts.push({ text: 'Not on the script' });
+		if (really) parts.push({ text: 'Is the ', characterId: really.id });
 		for (const impairment of ability?.impairments ?? []) {
-			const by = characters.get(impairment.source.characterId)?.name;
-			parts.push(`${impairmentWords[impairment.reason]}${by ? ` (${by})` : ''}`);
+			const words = impairmentWords[impairment.reason];
+			const by = impairment.source.characterId;
+			parts.push(
+				characters.has(by) ? { text: `${words} (`, characterId: by, after: ')' } : { text: words }
+			);
 		}
-		if (ability?.dead) parts.push('Dead: no ability');
+		if (ability?.dead) parts.push({ text: 'Dead: no ability' });
 		// An ability works unless something says otherwise (Trevor, 2026-10-16): the line stays
 		// reserved but empty.
-		return parts.join(' · ');
+		return parts;
 	});
-	const stateWarn = $derived(abilityLine !== '' && abilityLine !== 'None');
+	const stateWarn = $derived(abilityLine.length > 0 && abilityLine[0].text !== 'None');
 
 	// ── Character ──
 	let pickerOpen = $state(false);
@@ -281,7 +287,6 @@
 	const movingOrigin = $derived.by(() => {
 		const r = movingReminder;
 		if (!r) return '';
-		const character = characters.get(r.characterId)?.name ?? r.characterId;
 		const holders = game.seating
 			.filter(
 				(s) =>
@@ -292,7 +297,8 @@
 				const n = game.seating.indexOf(s) + 1;
 				return game.seats[s].playerName ? `Seat ${n} · ${game.seats[s].playerName}` : `Seat ${n}`;
 			});
-		return `From the ${character}${holders.length ? ` (${holders.join(', ')})` : ''}, on ${title}`;
+		// After "From the [character]": who holds it and where the token is.
+		return `${holders.length ? ` (${holders.join(', ')})` : ''}, on ${title}`;
 	});
 	/** A setup reminder can go back to the Setup reminders tray (Trevor, 2026-10-16). */
 	const fromSetup = $derived.by(() => {
@@ -324,13 +330,12 @@
 <BottomSheet
 	bind:open
 	{title}
-	description={character
-		? `${character.name} · ${alignmentText} · Seat ${number}`
-		: `Seat ${number}`}
+	description={`Seat ${number}`}
 >
 	<!-- The character's name is the biggest thing here; alignment and seat are easy to see
 	     on the token already (Trevor, 2026-10-16). -->
 	{#snippet subtitle()}
+		<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token (lead) -->
 		{#if character}<span class="role">{character.name}</span>
 			<span class="meta">{alignmentText} · Seat {number}</span>{:else}<span class="meta"
 				>Seat {number}</span
@@ -417,7 +422,13 @@
 				<!-- One reserved line for what the rules say about this seat. -->
 				<p class="state" class:warn={stateWarn}>
 					{#if isOrphan(seat, game.script, characters)}<Icon name="warning" />{/if}
-					{abilityLine}
+					{#each abilityLine as part, i (i)}{#if i > 0}
+							·
+						{/if}{part.text}{#if part.characterId}<CharacterBadge
+								characterId={part.characterId}
+								character={characters.get(part.characterId)}
+								inline
+							/>{/if}{part.after ?? ''}{/each}
 				</p>
 			</div>
 
@@ -431,7 +442,14 @@
 					onclick={() => (causeOpen = true)}
 				>
 					<Icon name={seat.dead ? 'dead' : 'alive'} />
-					<span class="status-text">{statusText}</span>
+					<span class="status-text"
+						>{#if seat.dead}Dead: <CauseName
+								cause={seat.deathCause}
+								{characters}
+								{traveller}
+								interactive={false}
+							/>{:else}Alive{/if}</span
+					>
 				</button>
 			</div>
 
@@ -735,7 +753,15 @@
 <Dialog bind:open={reviveOpen} title={`Bring ${title} back to life?`} role="alertdialog">
 	<dl class="change">
 		<dt>Now</dt>
-		<dd><span class="state-pill" data-dead><Icon name="dead" />{statusText}</span></dd>
+		<dd>
+			<span class="state-pill" data-dead
+				><Icon name="dead" />Dead: <CauseName
+					cause={seat?.deathCause}
+					{characters}
+					{traveller}
+				/></span
+			>
+		</dd>
 		<dt>Becomes</dt>
 		<dd><span class="state-pill"><Icon name="alive" />Alive</span></dd>
 	</dl>
@@ -753,7 +779,15 @@
 	{#if flagged}
 		<ul class="flags">
 			{#each flagged.flags as flag, i (i)}
-				<li>{causeFlagText(flag, game, characters, title)}</li>
+				{@const why = causeFlagText(flag, game, characters, title)}
+				<li>
+					{why.text}{#if why.by}
+						(<CharacterBadge
+							characterId={why.by}
+							character={characters.get(why.by)}
+							inline
+						/>).{/if}
+				</li>
 			{/each}
 		</ul>
 	{/if}
@@ -851,11 +885,21 @@
 	</div>
 </Dialog>
 
-<Dialog
-	bind:open={reminderMenuOpen}
-	title={movingReminder?.label ?? 'Reminder'}
-	description={movingOrigin}
->
+<Dialog bind:open={reminderMenuOpen} title="Reminder">
+	{#snippet heading()}
+		{#if movingReminder}<ReminderToken
+				label={movingReminder.label}
+				type={characters.get(movingReminder.characterId)?.type}
+				alignment={placingAlignment(game, movingReminder.characterId, characters)}
+			/>{:else}Reminder{/if}
+	{/snippet}
+	{#snippet subheading()}
+		{#if movingReminder}From the <CharacterBadge
+				characterId={movingReminder.characterId}
+				character={characters.get(movingReminder.characterId)}
+				inline
+			/>{movingOrigin}{/if}
+	{/snippet}
 	<div class="menu">
 		<Button variant="quiet" icon="move" onclick={() => fromMenu(() => (moveOpen = true))}>
 			Move to another seat
