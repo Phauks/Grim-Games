@@ -7,7 +7,7 @@
 </script>
 
 <!-- The same destinations as the sidebar, sliding in from the left (phones and game screens). -->
-<Dialog bind:open={navDrawer.open} title={t('shell.navLabel')} size="side">
+<Dialog bind:open={navDrawer.open} title={t('shell.navLabel')} size="side" closeButton={false}>
 	{#snippet lead()}
 		<!-- Where the hamburger that opened it was, so the same spot closes it. -->
 		<IconButton
@@ -17,7 +17,13 @@
 			onclick={() => (navDrawer.open = false)}
 		/>
 	{/snippet}
-	<nav aria-label={t('shell.navLabel')}>
+	<nav class="drawer-nav" aria-label={t('shell.navLabel')}>
 		<NavList withAccount onChoose={() => (navDrawer.open = false)} />
 	</nav>
 </Dialog>
+
+<style>
+	.drawer-nav {
+		margin-top: var(--space-4);
+	}
+</style>

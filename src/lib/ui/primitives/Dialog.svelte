@@ -23,6 +23,8 @@
 		lead?: Snippet;
 		/** Extra icon buttons in the header, just before Close (e.g. "Open wiki"). */
 		headActions?: Snippet;
+		/** False hides the ✕, for a dialog whose `lead` already closes it (the menu drawer). */
+		closeButton?: boolean;
 	}
 
 	let {
@@ -34,7 +36,8 @@
 		children,
 		actions,
 		lead,
-		headActions
+		headActions,
+		closeButton = true
 	}: Props = $props();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
@@ -57,7 +60,9 @@
 					{#if lead}<span class="lead">{@render lead()}</span>{/if}
 					<Dialog.Title>{title}</Dialog.Title>
 					{#if headActions}<span class="head-actions">{@render headActions()}</span>{/if}
-					<Dialog.CloseTrigger aria-label="Close"><Icon name="close" /></Dialog.CloseTrigger>
+					{#if closeButton}
+						<Dialog.CloseTrigger aria-label="Close"><Icon name="close" /></Dialog.CloseTrigger>
+					{/if}
 				</div>
 				{#if description}<Dialog.Description>{description}</Dialog.Description>{/if}
 				{@render children()}

@@ -54,11 +54,11 @@
 		color: var(--heading);
 		letter-spacing: 0.03em;
 	}
-	/* A full tap target that doesn't make the label line taller than the label. */
+	/* A full tap target centred on the label's line without making the line taller. */
 	.reset {
-		display: grid;
-		height: 1lh;
+		display: flex;
 		align-items: center;
+		height: 0;
 		color: var(--on-surface-muted);
 	}
 	.reset :global(.icon-button) {
