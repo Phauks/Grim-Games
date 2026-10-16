@@ -38,6 +38,21 @@ test('the footer shows the Community Created Content logo', async ({ page }) => 
 		.toBeGreaterThan(0);
 });
 
+test('the footer has the logo on the left and every text link on the right', async ({ page }) => {
+	await page.goto('/');
+	const build = page.getByTestId('build-info');
+	await expect(build.getByRole('link', { name: 'Report an issue' })).toBeVisible();
+	const logo = await page.getByRole('img', { name: /Community Created Content/ }).boundingBox();
+	const links = await build.boundingBox();
+	const width = page.viewportSize()!.width;
+	expect(logo!.x).toBeLessThan(width / 4);
+	// The links end at the right edge, whether or not they wrap below the logo.
+	expect(links!.x + links!.width).toBeGreaterThan(width * 0.9);
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+		width
+	);
+});
+
 test('the commit is a link and About opens a dialog without moving the page', async ({ page }) => {
 	await page.goto('/');
 	const build = page.getByTestId('build-info');

@@ -31,20 +31,28 @@
 			alt="Community Created Content: not an official Blood on the Clocktower product"
 		/>
 	</a>
-	<!-- External GitHub links, not app routes. -->
-	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-	<a class="report" href={reportUrl} target="_blank" rel="noopener">Report an issue</a>
-	<!-- Fixed-size line: more build detail lives in the About dialog, never inline (no reflow). -->
+	<!-- Logo on the left, every text link on the right. Fixed-size line: more build detail lives in the About dialog, never inline (no reflow). -->
 	<p class="build" title={describeBuild(info)} data-testid="build-info">
-		<span>v{info.version}</span> ·
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-		<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener"
-			>{shortCommit(info)}</a
+		<span class="nowrap"
+			>v{info.version} ·
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+			<a href="{REPOSITORY_URL}/commit/{info.commit}" target="_blank" rel="noopener"
+				>{shortCommit(info)}</a
+			></span
 		>
-		· <a class="page" href={resolve('/reference')}>Reference</a>
-		· <a class="page" href={resolve('/changelog')}>Changelog</a>
-		· <a class="page" href={resolve('/privacy')}>Privacy</a>
-		· <button type="button" class="about" onclick={() => (aboutOpen = true)}>About</button>
+		<!-- Separators are hidden on narrow screens, where the links wrap and a dot would start a line. -->
+		<span class="sep" aria-hidden="true">·</span>
+		<a class="page" href={resolve('/reference')}>Reference</a>
+		<span class="sep" aria-hidden="true">·</span>
+		<a class="page" href={resolve('/changelog')}>Changelog</a>
+		<span class="sep" aria-hidden="true">·</span>
+		<a class="page" href={resolve('/privacy')}>Privacy</a>
+		<span class="sep" aria-hidden="true">·</span>
+		<button type="button" class="about" onclick={() => (aboutOpen = true)}>About</button>
+		<span class="sep" aria-hidden="true">·</span>
+		<!-- External GitHub link, not an app route. -->
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+		<a class="page" href={reportUrl} target="_blank" rel="noopener">Report an issue</a>
 	</p>
 	<AboutDialog bind:open={aboutOpen} />
 </footer>
@@ -76,10 +84,23 @@
 		/* Large text sizes wrap the links instead of widening the page past the screen. */
 		flex-wrap: wrap;
 		align-items: center;
+		justify-content: flex-end;
 		gap: calc(0.4 * var(--u));
+		margin-inline-start: auto;
 	}
 	.build a {
 		text-decoration: underline;
+	}
+	.nowrap {
+		white-space: nowrap;
+	}
+	@media (max-width: 47.99rem) {
+		.build {
+			column-gap: calc(0.75 * var(--u));
+		}
+		.sep {
+			display: none;
+		}
 	}
 	.page {
 		min-height: var(--tap-target);
