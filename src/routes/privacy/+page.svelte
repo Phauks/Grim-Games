@@ -32,7 +32,7 @@
 				<li>
 					A log of up to 20 recent problems the app ran into: the error message, the app area, the
 					page and when it happened. It never contains your games. You can view or clear it from
-					About, Problems on this device (localStorage).
+					Diagnostics, Problems (localStorage).
 				</li>
 				<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 				<li>
@@ -164,10 +164,7 @@
 		margin: 0 auto;
 		padding: var(--space-5) var(--page-gutter);
 	}
-	/* One column at a readable width (Trevor, 2026-10-16: not two). */
-	.sections {
-		max-width: var(--measure);
-	}
+	/* One column across the page width, like the other pages (Trevor, 2026-10-16). */
 	h1 {
 		margin-top: 0;
 		font-size: 1.6rem;
