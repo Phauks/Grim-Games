@@ -17,6 +17,7 @@ export const player = {
 	'player.chooseScript': 'Choose a script',
 	'player.findScript': 'Find a script',
 	'player.breakdown': 'Players',
+	'player.playerCount': '{n} players',
 	'player.characterType': 'Character type',
 
 	'player.firstNight': 'First night',

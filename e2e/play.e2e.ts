@@ -98,6 +98,21 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 	expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test('tapping a player count highlights its column, and it is remembered', async ({ page }) => {
+	const panel = page.getByRole('tabpanel', { name: 'Script' });
+	const seven = panel.getByRole('button', { name: '7 players' });
+	await expect(seven).toHaveAttribute('aria-pressed', 'false');
+	await seven.tap();
+	await expect(seven).toHaveAttribute('aria-pressed', 'true');
+	// 7 players: 5 Townsfolk, 0 Outsiders, 1 Minion, 1 Demon (wiki: Setup).
+	await expect(panel.locator('td[data-current]')).toHaveText(['5', '0', '1', '1']);
+	await page.reload();
+	await expect(seven).toHaveAttribute('aria-pressed', 'true');
+	await seven.tap();
+	await expect(seven).toHaveAttribute('aria-pressed', 'false');
+	await expect(panel.locator('td[data-current]')).toHaveCount(0);
+});
+
 test("the night order shows who wakes, with TPI's night text", async ({ page }) => {
 	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
 	const first = page.locator('section[data-night="first"]');

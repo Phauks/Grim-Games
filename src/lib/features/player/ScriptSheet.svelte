@@ -18,7 +18,10 @@
 		/** What the sheet lists: the script's characters plus recommended Travellers. */
 		characters: readonly Character[];
 		jinxes: readonly ScriptJinx[];
-		/** Players at the table, when known (the board); highlights that column of the breakdown. */
+		/**
+		 * Players at the table, when known (the board): that column of the breakdown starts
+		 * highlighted. Without it (/play) the reader's own choice is remembered on the device.
+		 */
 		players?: number;
 	}
 
@@ -29,10 +32,35 @@
 		{ length: MAX_DEALT_PLAYERS - MIN_PLAYERS + 1 },
 		(_, i) => MIN_PLAYERS + i
 	);
-	// The board passes its seat count; /play doesn't know how many play, so nothing is marked.
+	// Tapping a player count highlights its column; tapping it again clears it (Trevor,
+	// 2026-10-16). The board starts from its seat count and doesn't store a choice.
+	const COUNT_KEY = 'grim-games:play:player-count';
+	function storedCount(): number | undefined {
+		try {
+			const n = Number(globalThis.localStorage?.getItem(COUNT_KEY));
+			return counts.includes(n) ? n : undefined;
+		} catch {
+			return undefined;
+		}
+	}
+	let chosen = $state<number | null>();
 	const highlighted = $derived(
-		players === undefined ? undefined : Math.min(players, MAX_DEALT_PLAYERS)
+		chosen !== undefined
+			? (chosen ?? undefined)
+			: players === undefined
+				? storedCount()
+				: Math.min(players, MAX_DEALT_PLAYERS)
 	);
+	function choose(n: number) {
+		chosen = highlighted === n ? null : n;
+		if (players !== undefined) return;
+		try {
+			if (chosen === null) globalThis.localStorage?.removeItem(COUNT_KEY);
+			else globalThis.localStorage?.setItem(COUNT_KEY, String(chosen));
+		} catch {
+			// Private browsing or full storage: the choice lasts until the page closes.
+		}
+	}
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const nameOf = (id: string) => byId.get(id)?.name ?? id;
 	const TONES: Partial<Record<Character['type'], 'good' | 'evil'>> = {
@@ -104,7 +132,15 @@
 					<tr>
 						<th scope="col"><span class="visually-hidden">{t('player.characterType')}</span></th>
 						{#each counts as n (n)}
-							<th scope="col" data-current={n === highlighted || undefined}>{n}</th>
+							<th scope="col" data-current={n === highlighted || undefined}>
+								<button
+									type="button"
+									class="count"
+									aria-pressed={n === highlighted}
+									aria-label={t('player.playerCount', { n })}
+									onclick={() => choose(n)}>{n}</button
+								>
+							</th>
 						{/each}
 					</tr>
 				</thead>
@@ -174,6 +210,23 @@
 		padding: var(--space-1);
 		text-align: center;
 		min-width: 1.6em;
+	}
+	thead th:has(.count) {
+		padding: 0;
+	}
+	.count {
+		min-width: var(--tap-target);
+		min-height: var(--tap-target);
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	.count:hover {
+		text-decoration: underline;
 	}
 	tbody th {
 		text-align: left;
