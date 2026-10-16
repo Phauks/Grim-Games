@@ -141,14 +141,14 @@
 	.token {
 		display: grid;
 		place-items: center;
-		width: 160px;
-		height: 160px;
+		width: calc(10 * var(--u));
+		height: calc(10 * var(--u));
 	}
 	.hidden-token {
 		display: grid;
 		place-items: center;
-		width: 160px;
-		height: 160px;
+		width: calc(10 * var(--u));
+		height: calc(10 * var(--u));
 		padding: var(--space-3);
 		border-radius: 50%;
 		background: var(--token-face);

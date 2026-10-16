@@ -319,7 +319,7 @@
 		color: var(--on-surface);
 		font: inherit;
 		/* 16px or more stops iOS zooming into the field. */
-		font-size: max(0.9rem, 16px);
+		font-size: max(0.9rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	.pick {
 		display: flex;

@@ -76,7 +76,7 @@
 		min-height: var(--tap-target);
 		padding: 0 var(--space-3, calc(0.75 * var(--u))) 0 var(--space-1, calc(0.25 * var(--u)));
 		border: 0;
-		border-radius: 999px;
+		border-radius: var(--radius-full);
 		font: inherit;
 		font-weight: 600;
 		max-width: 100%;

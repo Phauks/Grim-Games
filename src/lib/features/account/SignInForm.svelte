@@ -149,7 +149,7 @@
 		border: var(--card-border);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
-		font-size: max(1rem, 16px);
+		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	/* Full width on a phone; on a computer, sized to what goes in them. */
 	.field input[type='email'] {

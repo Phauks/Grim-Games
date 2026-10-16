@@ -154,7 +154,7 @@
 		border: var(--card-border);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
-		font-size: max(0.9rem, 16px);
+		font-size: max(0.9rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 		text-overflow: ellipsis;
 	}
 	.label {

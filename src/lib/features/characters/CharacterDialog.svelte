@@ -171,7 +171,7 @@
 		min-height: var(--tap-target);
 		padding: 0 var(--space-3, calc(0.75 * var(--u)));
 		border: var(--card-border, 1px solid var(--border));
-		border-radius: var(--radius-full, 999px);
+		border-radius: var(--radius-full);
 		background: var(--surface-raised);
 		color: var(--on-surface);
 		font: inherit;
