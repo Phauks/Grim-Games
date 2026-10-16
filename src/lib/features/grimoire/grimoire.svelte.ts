@@ -20,6 +20,22 @@ export class Grimoire {
 		this.layout = seatLayouts.read(open.game.gameId);
 	}
 
+	/**
+	 * Night steps the Storyteller ticked off (`<night>:<step id>`). Kept while the game is
+	 * open; the night order never ticks anything by itself.
+	 */
+	nightDone = $state.raw<readonly string[]>([]);
+
+	toggleNightStep(key: string): void {
+		this.nightDone = this.nightDone.includes(key)
+			? this.nightDone.filter((k) => k !== key)
+			: [...this.nightDone, key];
+	}
+
+	clearNight(): void {
+		this.nightDone = [];
+	}
+
 	/** Changes where seats are drawn on this device; the seating order is untouched. */
 	setLayout(layout: SeatLayout): void {
 		this.layout = layout;
