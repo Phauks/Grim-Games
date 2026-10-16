@@ -5,8 +5,6 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CharacterTable from './CharacterTable.svelte';
-	import FieldValue from './FieldValue.svelte';
-	import { fieldById, type FieldId } from './fields.ts';
 	import { TYPE_PLURALS } from './labels.ts';
 	import ReferenceCard from './ReferenceCard.svelte';
 	import { referenceTable } from './table-state.svelte.ts';
@@ -20,16 +18,10 @@
 	let { entries, view }: Props = $props();
 
 	// One shared details overlay, so extra detail never expands a card or row inline.
-	let details = $state<
-		{ title: string; text: string } | { title: string; entry: ReferenceEntry; field: FieldId }
-	>();
+	let details = $state<{ title: string; text: string }>();
 	let detailsOpen = $state(false);
 	function explain(title: string, text: string) {
 		details = { title, text };
-		detailsOpen = true;
-	}
-	function showField(entry: ReferenceEntry, field: FieldId) {
-		details = { title: `${entry.character.name}: ${fieldById(field).label}`, entry, field };
 		detailsOpen = true;
 	}
 
@@ -95,7 +87,7 @@
 </div>
 
 {#if view === 'table'}
-	<CharacterTable {rows} onExplain={explain} onShowField={showField} />
+	<CharacterTable {rows} onExplain={explain} />
 {:else}
 	{#each groups as group (group.type)}
 		<section class="group" aria-labelledby="group-{group.type}">
@@ -114,13 +106,7 @@
 {/if}
 
 <Dialog bind:open={detailsOpen} title={details?.title ?? ''}>
-	{#if details && 'text' in details}
-		<p>{details.text}</p>
-	{:else if details}
-		<div class="details">
-			<FieldValue field={details.field} entry={details.entry} onExplain={explain} />
-		</div>
-	{/if}
+	{#if details}<p>{details.text}</p>{/if}
 </Dialog>
 
 <style>
@@ -183,9 +169,6 @@
 		margin: 0;
 		font-size: 0.9rem;
 		color: var(--on-surface-muted);
-	}
-	.details {
-		line-height: 1.5;
 	}
 	.group {
 		margin-bottom: var(--space-6);

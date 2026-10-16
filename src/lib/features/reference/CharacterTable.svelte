@@ -23,11 +23,9 @@
 		/** Already filtered and sorted (`tableRows`), so the page can show the count. */
 		rows: readonly ReferenceEntry[];
 		onExplain: (title: string, text: string) => void;
-		/** Shows one field's whole value in the shared details dialog. */
-		onShowField: (entry: ReferenceEntry, field: FieldId) => void;
 	}
 
-	let { rows, onExplain, onShowField }: Props = $props();
+	let { rows, onExplain }: Props = $props();
 
 	const table = $derived(referenceTable.current);
 
@@ -188,22 +186,10 @@
 
 {#snippet cell(entry: ReferenceEntry, column: DataColumn<FieldId>)}
 	{@const f = field(column.id)}
-	{#if f.long}
-		<!-- Clamped to a fixed height; the whole value opens in the details dialog. -->
-		<div class="cell clamp">
-			<FieldValue field={f.id} {entry} {onExplain} />
-		</div>
-		<button
-			type="button"
-			class="more"
-			onclick={() => onShowField(entry, f.id)}
-			aria-label="{f.label} for {entry.character.name}">More</button
-		>
-	{:else}
-		<div class="cell">
-			<FieldValue field={f.id} {entry} {onExplain} tokenSize={40} />
-		</div>
-	{/if}
+	<!-- Shown in full: rows are as tall as their longest field (Trevor, 2026-10-16). -->
+	<div class="cell">
+		<FieldValue field={f.id} {entry} {onExplain} tokenSize={f.long ? undefined : 40} />
+	</div>
 {/snippet}
 
 <!--
@@ -224,7 +210,7 @@
 		narrow="stack"
 		fit="content"
 		lazy
-		rowEstimate="calc(7 * var(--u))"
+		rowEstimate="calc(10 * var(--u))"
 		rowAttrs={(entry) => ({
 			'data-character': entry.character.id,
 			'data-type': entry.character.type
@@ -236,21 +222,6 @@
 <style>
 	.table-view {
 		font-size: 0.9rem;
-	}
-	.clamp {
-		max-height: calc(5.4 * var(--u));
-		overflow: hidden;
-	}
-	.more {
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		color: var(--heading);
-		font: inherit;
-		font-size: 0.85rem;
-		text-decoration: underline;
-		cursor: pointer;
 	}
 	fieldset {
 		display: grid;
@@ -294,16 +265,10 @@
 		clip-path: inset(50%);
 		white-space: nowrap;
 	}
-	/* Stacked rows are as tall as they need, so nothing is clipped and More isn't needed. */
+	/* Stacked rows: the value sits beside its label when there is room, else under it. */
 	@container data-table (max-width: 40rem) {
 		.cell {
 			flex: 1 1 calc(8 * var(--u));
-		}
-		.clamp {
-			max-height: none;
-		}
-		.more {
-			display: none;
 		}
 	}
 </style>
