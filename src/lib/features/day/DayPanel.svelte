@@ -26,10 +26,10 @@
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { DayPort } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
@@ -87,7 +87,6 @@
 		title: string;
 		now: string;
 		after: string;
-		label: string;
 		characterId: CharacterId;
 		run: () => void;
 	}
@@ -101,7 +100,6 @@
 
 	function confirmPending() {
 		pending?.run();
-		pendingOpen = false;
 	}
 
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
@@ -113,7 +111,6 @@
 			after: token
 				? t('day.markUsedAfterToken', { who, reminder: slot('reminder') })
 				: t('day.markUsedAfter', { who }),
-			label: t('day.markUsed'),
 			characterId,
 			run: () => game.run({ type: 'UseAbility', seatId, characterId })
 		});
@@ -513,7 +510,7 @@
 			type={pending ? game.characters.get(pending.characterId)?.type : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
 
-<Dialog bind:open={pendingOpen} role="alertdialog" title={t('day.markUsed')}>
+<ConfirmDialog bind:open={pendingOpen} title={t('day.markUsed')} onConfirm={confirmPending}>
 	{#snippet heading()}
 		<Sentence text={pending?.title ?? ''} fill={pendingSlot} />
 	{/snippet}
@@ -531,11 +528,7 @@
 			/>
 		</p>
 	{/if}
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (pendingOpen = false)}>{t('common.cancel')}</Button>
-		<Button onclick={confirmPending}>{pending?.label ?? ''}</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	.panel {

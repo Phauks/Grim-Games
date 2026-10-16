@@ -62,7 +62,7 @@ test('the Slayer is marked Used after a confirm and unmarked by a tap, and the W
 	await used.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Mark Slayer (Ben) as used?' });
 	await expect(confirm).toContainText('Slayer (Ben) has not used their ability.');
-	await confirm.getByRole('button', { name: 'Mark used' }).tap();
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 	// The reminder stays where it was, pressed, so the list does not jump.
 	expect(await place(used)).toEqual(before);
