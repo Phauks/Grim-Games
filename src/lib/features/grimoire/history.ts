@@ -154,6 +154,10 @@ function describeEvent(
 					]
 				: [text('Removed a reminder')];
 		}
+		case 'SeatNoteSet':
+			return event.note
+				? [text('Note on '), seatPart(before, event.seatId)]
+				: [text('Cleared the note on '), seatPart(before, event.seatId)];
 		case 'SeatsSwapped':
 			return [
 				text('Swapped '),

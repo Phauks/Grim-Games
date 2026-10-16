@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-	import type { SeatId } from '#lib/core/model/index.ts';
+	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import { prepTextSegments, setupReminders } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -37,7 +37,8 @@
 		/** The seat under a point (in % of the board), if any. */
 		seatAt: (at: SeatPoint) => SeatId | undefined;
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
-		onHints: (hints: { seats: SeatId[]; target?: SeatId }) => void;
+		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
+		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
 	}
 
 	let { grimoire, board, size, view, onView, focus, seatAt, onHints }: Props = $props();
@@ -148,7 +149,11 @@
 		const target = seatAt(at);
 		if (!end) {
 			drag = { item, at };
-			onHints({ seats: seatsFor(item), target });
+			onHints({
+				seats: seatsFor(item),
+				target,
+				reminder: { characterId: item.characterId, label: item.label }
+			});
 			return;
 		}
 		drag = undefined;

@@ -11,7 +11,13 @@ import {
 	type Script
 } from '#lib/core/data/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
-import { analyseSetup, type DeathCauseFlag } from '#lib/core/rules/index.ts';
+import {
+	analyseSetup,
+	reminderTargetMisses,
+	targetRule,
+	type DeathCauseFlag,
+	type TargetMiss
+} from '#lib/core/rules/index.ts';
 import {
 	GENERAL_DEATH_CAUSES,
 	isOnScript,
@@ -20,6 +26,7 @@ import {
 	type CharacterLookup,
 	type DeathCause,
 	type Game,
+	type Reminder,
 	type Seat,
 	type SeatId
 } from '#lib/core/model/index.ts';
@@ -261,4 +268,55 @@ export function tableCheck(
 		problems: next.problems,
 		wasOff: before.problems.length > 0
 	};
+}
+
+/** Why a seat doesn't fit a reminder, in words (codes from reminder-targets.ts). */
+const MISS_WORDS: Record<TargetMiss, string> = {
+	global: 'it marks the game, not a player',
+	'not-self': "it goes on its character's own player",
+	self: "it never goes on its character's own player",
+	type: 'the character type is not one it goes on',
+	alignment: 'the alignment is not one it goes on',
+	character: 'the character is not one it goes on',
+	life: 'it goes on a player who is alive or dead, not this one',
+	neighbour: 'this player is not a neighbour it can go on',
+	'with-label': 'it needs another reminder on the same player',
+	'not-with-label': 'another reminder on this player rules it out'
+};
+
+/** Checks that need to know who the player is. */
+const NEEDS_CHARACTER: readonly TargetMiss[] = ['type', 'alignment', 'character'];
+
+/**
+ * Why a seat doesn't fit a reminder. A seat with no character yet is not judged on its
+ * type, alignment or character: the Storyteller may still be setting up.
+ */
+export function seatMisses(
+	game: Game,
+	reminder: Reminder,
+	seatId: SeatId,
+	characters: CharacterLookup
+): TargetMiss[] {
+	const misses = reminderTargetMisses(game, reminder, seatId, characters);
+	return game.seats[seatId]?.characterId === undefined
+		? misses.filter((m) => !NEEDS_CHARACTER.includes(m))
+		: misses;
+}
+
+/**
+ * What the board says when a reminder goes on a seat that doesn't fit it (Trevor,
+ * 2026-10-16): the reasons, then the token's own one-line summary. Undefined when it fits or
+ * has no curated rule (homebrew). Warns only; the reminder is still placed.
+ */
+export function reminderFitWarning(
+	game: Game,
+	reminder: Reminder,
+	seatId: SeatId,
+	characters: CharacterLookup
+): string | undefined {
+	const misses = seatMisses(game, reminder, seatId, characters);
+	if (misses.length === 0) return undefined;
+	const why = misses.map((m) => MISS_WORDS[m]).join('; ');
+	const note = targetRule(reminder)?.note;
+	return `Not a usual place for it: ${why}.${note ? ` ${note}` : ''}`;
 }

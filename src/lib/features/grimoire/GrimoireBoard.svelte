@@ -22,6 +22,7 @@
 		charactersInPlay,
 		scriptCharacterIds,
 		trueCharacter,
+		type Reminder,
 		type ReminderId,
 		type SeatId
 	} from '#lib/core/model/index.ts';
@@ -51,8 +52,8 @@
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { nameBox, placeNames, type Box } from './name-placement.ts';
-	import { reminderFan } from './reminder-fan.ts';
-	import { isOrphan, placingAlignment } from './board.ts';
+	import { fitReminders } from './reminder-fan.ts';
+	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -163,7 +164,7 @@
 	const namePlaces = $derived(nameBoxes.map((n) => n.place));
 	/** The player name drawn on the token instead of under it (Settings > Tokens). */
 	const nameOnToken = $derived(preferences.current.tokenAppearance.playerNamePlacement);
-	/** What a seat's reminders keep off: its name, and the skull of a dead seat (SeatDisc). */
+	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
 	function avoidFor(i: number): Box[] {
 		const out: Box[] = [];
 		const c = toPx(shown[i]);
@@ -178,19 +179,36 @@
 		if (seats[i]?.dead) {
 			out.push({ x: c.x - 0.41 * size, y: c.y + 0.37 * size, w: 0.38 * size, h: 0.38 * size });
 		}
+		// The note mark, lower right (SeatToken).
+		if (seats[i]?.note) {
+			out.push({ x: c.x + 0.39 * size, y: c.y + 0.39 * size, w: 0.3 * size, h: 0.3 * size });
+		}
 		return out;
 	}
-	function chipPoints(i: number, count: number): SeatPoint[] {
-		if (width <= 0 || height <= 0) return Array.from({ length: count }, () => shown[i]);
-		return reminderFan({
-			seat: toPx(shown[i]),
-			middle: { x: width / 2, y: height / 2 },
-			count,
-			size,
-			chip,
-			avoid: avoidFor(i)
-		}).map(toPercent);
-	}
+	/**
+	 * Every seat's reminders, laid out together so one seat's never cover another's (Trevor,
+	 * 2026-10-16); on a very crowded board they are drawn smaller instead.
+	 */
+	let centreW = $state(0);
+	let centreH = $state(0);
+	const fan = $derived.by(() => {
+		if (width <= 0 || height <= 0)
+			return { at: seats.map((s, i) => s.reminders.map(() => shown[i])), chip };
+		const fitted = fitReminders(
+			seats.map((s, i) => ({
+				seat: toPx(shown[i]),
+				middle: { x: width / 2, y: height / 2 },
+				count: s.reminders.length,
+				size,
+				chip,
+				avoid: avoidFor(i)
+			})),
+			// The Set up button and the Fabled and Loric in the middle stay clear and tappable.
+			centreW > 0 ? [{ x: width / 2, y: height / 2, w: centreW + 12, h: centreH + 12 }] : [],
+			{ width, height }
+		);
+		return { at: fitted.at.map((points) => points.map(toPercent)), chip: fitted.chip };
+	});
 
 	interface ReminderDrag {
 		reminderId: ReminderId;
@@ -437,7 +455,20 @@
 	// ── The reminder bank under the board (Trevor, 2026-10-16): setup suggestions until
 	// they are all placed or dismissed (or the first day starts), then every reminder left.
 	// The Storyteller can switch at any time.
-	let trayHints = $state<{ seats: SeatId[]; target?: SeatId }>({ seats: [] });
+	let trayHints = $state<{ seats: SeatId[]; target?: SeatId; reminder?: Reminder }>({
+		seats: []
+	});
+	/**
+	 * While a reminder is dragged, the seats it doesn't fit are faded (Trevor, 2026-10-16:
+	 * reminder target rules). Warns only: it can still be dropped there.
+	 */
+	const misfits = $derived.by(() => {
+		const reminder = dragOrigin?.reminder ?? trayHints.reminder;
+		if (!reminder) return new Set<SeatId>();
+		return new Set(
+			game.seating.filter((id) => seatMisses(game, reminder, id, characters).length > 0)
+		);
+	});
 	const setupPending = $derived(
 		pendingTray(trayItems(setupReminders(game, characters)), game, grimoire.trayDismissed).length
 	);
@@ -742,6 +773,7 @@
 							reminderDrag.target === seat.seatId &&
 							reminderDrag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
+					misfit={misfits.has(seat.seatId)}
 					hint={trayHints.seats.includes(seat.seatId) ||
 						walkHolders.includes(seat.seatId) ||
 						(dragOrigin?.holders.includes(seat.seatId) ?? false)}
@@ -754,16 +786,22 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const count = seat.reminders.length}
 			{#if count > 0}
-				{@const at = chipPoints(i, count)}
+				{@const at = fan.at[i]}
 				{#each seat.reminders as reminder, k (reminder.reminderId)}
 					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
 					{@const p = dragged ? reminderDrag!.at : at[k]}
-					<div class="chip-slot" class:dragging={dragged} style:left="{p.x}%" style:top="{p.y}%">
+					<div
+						class="chip-slot"
+						data-seat={i + 1}
+						class:dragging={dragged}
+						style:left="{p.x}%"
+						style:top="{p.y}%"
+					>
 						<BoardReminder
 							label={reminder.label}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
-							size={chip}
+							size={fan.chip}
 							disabled={arranging}
 							onTap={() => openSeat(seat.seatId)}
 							onDrag={(x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
@@ -827,7 +865,7 @@
 			onHints={(h) => (trayHints = h)}
 		/>
 
-		<div class="centre">
+		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if showSetup}
 				<div class="setup">

@@ -5,7 +5,7 @@ import { scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
-import { warningText } from './board.ts';
+import { reminderFitWarning, warningText } from './board.ts';
 import { DEFAULT_SEAT_LAYOUT, type SeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import {
 	forgetUpsideDownMarks,
@@ -111,6 +111,7 @@ export class Grimoire {
 
 	/** Runs a command; returns whether it was accepted. */
 	run(command: Command): boolean {
+		const misfit = this.misfit(command);
 		const result = this.open.run(command);
 		if (!result.ok) {
 			toast('Not done', result.error.message);
@@ -120,7 +121,26 @@ export class Grimoire {
 			const text = warningText(warning);
 			if (text) toast('Note', text);
 		}
+		if (misfit) toast('Note', misfit);
 		return true;
+	}
+
+	/**
+	 * Reminder target rules (Trevor, 2026-10-16): a reminder put on a seat that doesn't fit it
+	 * is still placed, with a toast saying why, wherever it was placed from.
+	 */
+	private misfit(command: Command): string | undefined {
+		const game = this.open.game;
+		const characters = this.open.characters;
+		if (command.type === 'AddReminder')
+			return reminderFitWarning(game, command.reminder, command.seatId, characters);
+		if (command.type === 'MoveReminder') {
+			for (const seatId of game.seating) {
+				const r = game.seats[seatId].reminders.find((x) => x.reminderId === command.reminderId);
+				if (r) return reminderFitWarning(game, r, command.toSeatId, characters);
+			}
+		}
+		return undefined;
 	}
 
 	rename(seatId: SeatId, name: string): void {
