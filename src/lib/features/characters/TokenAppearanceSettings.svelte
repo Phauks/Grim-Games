@@ -3,19 +3,17 @@
 	import { onMount } from 'svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
-	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
+	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { Theme } from '#lib/ui/themes/types.ts';
 	import {
 		MIN_CONTRAST,
 		TOKEN_COLOURS,
-		TOKEN_SCALE_LABELS,
-		TOKEN_SCALES,
+		TOKEN_SCALE,
 		tokenColour,
 		tokenContrast,
 		type TokenAppearance,
-		type TokenColour,
-		type TokenScale
+		type TokenColour
 	} from '#lib/ui/token/token-appearance.ts';
 	import CharacterToken from './CharacterToken.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
@@ -52,25 +50,23 @@
 	<ReminderToken label={t('characters.previewReminder')} type="minion" />
 </div>
 
-<SettingSegmented
+<SettingSlider
 	label={t('characters.tokenSize')}
 	description={t('characters.tokenSizeHelp')}
-	value={String(value.tokenScale)}
-	options={TOKEN_SCALES.map((scale) => ({
-		value: String(scale),
-		label: t(TOKEN_SCALE_LABELS[scale])
-	}))}
-	onChange={(scale) => onChange({ ...value, tokenScale: Number(scale) as TokenScale })}
+	value={value.tokenScale}
+	{...TOKEN_SCALE}
+	defaultValue={1}
+	resetLabel={t('settings.resetTo100')}
+	onChange={(tokenScale) => onChange({ ...value, tokenScale })}
 />
-<SettingSegmented
+<SettingSlider
 	label={t('characters.reminderSize')}
 	description={t('characters.reminderSizeHelp')}
-	value={String(value.reminderScale)}
-	options={TOKEN_SCALES.map((scale) => ({
-		value: String(scale),
-		label: t(TOKEN_SCALE_LABELS[scale])
-	}))}
-	onChange={(scale) => onChange({ ...value, reminderScale: Number(scale) as TokenScale })}
+	value={value.reminderScale}
+	{...TOKEN_SCALE}
+	defaultValue={1}
+	resetLabel={t('settings.resetTo100')}
+	onChange={(reminderScale) => onChange({ ...value, reminderScale })}
 />
 
 <div class="names">
@@ -116,9 +112,9 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
-		/* A fixed height that fits the XL token (56px × 1.5) and the XL chip at any Text size, so
+		/* A fixed height that fits the largest token (56px × 2) and the largest chip at any Text size, so
 		   changing a size never moves the settings below. */
-		height: max(calc(56px * 1.5 + var(--space-2)), 3.3rem); /* px-ok: the sample token is 56px */
+		height: max(calc(56px * 2 + var(--space-2)), 4.4rem); /* px-ok: the sample token is 56px */
 		white-space: nowrap;
 		margin-bottom: var(--space-5);
 		overflow: hidden;

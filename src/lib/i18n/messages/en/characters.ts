@@ -32,11 +32,6 @@ export const characters = {
 	'characters.boardNames': 'Show character names on grimoire tokens',
 	'characters.boardNamesHelp':
 		'Storyteller: writes each character’s name along the bottom of its token on the grimoire board.',
-	'characters.sizePercent': '{percent}%',
-	'characters.size.small': 'S',
-	'characters.size.medium': 'M',
-	'characters.size.large': 'L',
-	'characters.size.extraLarge': 'XL',
 	'characters.colour.face': 'Token face',
 	'characters.colour.faceHelp': 'The parchment of character tokens.',
 	'characters.colour.reminder': 'Reminder face',

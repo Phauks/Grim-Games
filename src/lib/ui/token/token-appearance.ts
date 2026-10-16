@@ -36,21 +36,25 @@ export const TOKEN_COLOURS = [
 
 export type TokenColour = (typeof TOKEN_COLOURS)[number]['key'];
 
-/** Character token and reminder sizes, as multiples of the size each screen draws them at. */
-export const TOKEN_SCALES = [0.75, 1, 1.25, 1.5] as const;
-export type TokenScale = (typeof TOKEN_SCALES)[number];
-export const TOKEN_SCALE_LABELS: Record<TokenScale, PlainMessageKey> = {
-	0.75: 'characters.size.small',
-	1: 'characters.size.medium',
-	1.25: 'characters.size.large',
-	1.5: 'characters.size.extraLarge'
-};
+/**
+ * Character token and reminder sizes, as multiples of the size each screen draws them at:
+ * 50% to 200% in 5% steps (Trevor, 2026-10-16: "granular slider of percentage"). The old
+ * S/M/L/XL choices (0.75, 1, 1.25, 1.5) are steps on this range, so saved sizes keep.
+ */
+export const TOKEN_SCALE = { min: 0.5, max: 2, step: 0.05 } as const;
+
+/** A saved size, kept on the range and on a step; anything else is 100%. */
+export function parseScale(raw: unknown): number {
+	if (typeof raw !== 'number' || !Number.isFinite(raw)) return 1;
+	const clamped = Math.min(TOKEN_SCALE.max, Math.max(TOKEN_SCALE.min, raw));
+	return (Math.round(clamped / TOKEN_SCALE.step) * 5) / 100;
+}
 
 export interface TokenAppearance {
 	/** Only the colours the user changed; the rest follow the theme. */
 	colours: Partial<Record<TokenColour, string>>;
-	tokenScale: TokenScale;
-	reminderScale: TokenScale;
+	tokenScale: number;
+	reminderScale: number;
 	/** The character's name curved along the bottom of grimoire tokens (Trevor, 2026-10-16). */
 	boardNames: boolean;
 }
@@ -63,8 +67,6 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
-const isScale = (value: unknown): value is TokenScale =>
-	(TOKEN_SCALES as readonly unknown[]).includes(value);
 
 /** Valid settings from anything saved (older builds, hand edits). */
 export function parseTokenAppearance(raw: unknown): TokenAppearance {
@@ -80,8 +82,8 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 	}
 	return {
 		colours,
-		tokenScale: isScale(input.tokenScale) ? input.tokenScale : 1,
-		reminderScale: isScale(input.reminderScale) ? input.reminderScale : 1,
+		tokenScale: parseScale(input.tokenScale),
+		reminderScale: parseScale(input.reminderScale),
 		boardNames: input.boardNames === true
 	};
 }

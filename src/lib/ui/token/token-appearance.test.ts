@@ -24,7 +24,7 @@ describe('token appearance', () => {
 		).toEqual({
 			colours: { face: PALE.toLowerCase() },
 			tokenScale: 1.5,
-			reminderScale: 1,
+			reminderScale: 2,
 			boardNames: false
 		});
 		expect(parseTokenAppearance(null)).toEqual({
@@ -35,6 +35,15 @@ describe('token appearance', () => {
 		});
 		expect(parseTokenAppearance({ boardNames: true }).boardNames).toBe(true);
 		expect(parseTokenAppearance({ boardNames: 'yes' }).boardNames).toBe(false);
+	});
+
+	it('keeps sizes on the 50% to 200% range in 5% steps; old S/M/L/XL sizes keep', () => {
+		const scale = (raw: unknown) => parseTokenAppearance({ tokenScale: raw }).tokenScale;
+		expect([0.75, 1, 1.25, 1.5].map(scale)).toEqual([0.75, 1, 1.25, 1.5]);
+		expect(scale(0.77)).toBe(0.75);
+		expect(scale(1.33)).toBe(1.35);
+		expect(scale(0.1)).toBe(0.5);
+		expect(scale('big')).toBe(1);
 	});
 
 	it('writes the sizes and only the changed colours; text colours both kinds of token', () => {

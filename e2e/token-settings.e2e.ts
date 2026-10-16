@@ -26,14 +26,10 @@ test('token and reminder sizes apply to the tokens and stay after a reload', asy
 	const chipBefore = (await reminder.boundingBox())!.height;
 
 	const dialog = await openTokens(page);
-	await dialog
-		.getByRole('radiogroup', { name: 'Character token size' })
-		.getByText('XL', { exact: true })
-		.tap();
-	await dialog
-		.getByRole('radiogroup', { name: 'Reminder token size' })
-		.getByText('XL', { exact: true })
-		.tap();
+	// Sizes are percentages on a slider (50% to 200%).
+	await dialog.getByRole('slider', { name: 'Character token size' }).fill('1.5');
+	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('1.5');
+	await expect(dialog).toContainText('150%');
 	expect(await rootStyle(page, '--token-scale')).toBe('1.5');
 	expect(await rootStyle(page, '--reminder-scale')).toBe('1.5');
 	await dialog.getByRole('button', { name: 'Close' }).tap();
