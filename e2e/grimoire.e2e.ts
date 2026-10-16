@@ -614,3 +614,73 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await openSeat(page, 4);
 	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
 });
+
+test('the night order is edited by hand: move, skip and restore, rewrite, add', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	const night = page.getByRole('dialog', { name: 'Night order' });
+	const steps = night.locator('ol.steps > li:not(.skipped)');
+	const order = async () => (await steps.allTextContents()).map((t) => t.trim().split(/\s/)[0]);
+	await night.getByRole('button', { name: 'Edit order' }).tap();
+
+	// Move the Empath above the Washerwoman: one History entry.
+	await night.getByRole('button', { name: 'Change Empath' }).tap();
+	const menu = page.getByRole('dialog', { name: 'Empath' });
+	await menu.getByRole('button', { name: 'Move up' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(menu).toBeHidden();
+	const moved = await order();
+	expect(moved.indexOf('Empath')).toBeLessThan(moved.indexOf('Washerwoman'));
+
+	// Skip the Washerwoman, then restore it from Skipped.
+	await night.getByRole('button', { name: 'Change Washerwoman' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Washerwoman' })
+		.getByRole('button', { name: 'Skip this step' })
+		.tap();
+	await expect(night.getByRole('button', { name: 'Change Washerwoman' })).toBeHidden();
+	const skipped = night.locator('li.skipped');
+	await expect(skipped).toContainText('Washerwoman');
+	await skipped.getByRole('button', { name: 'Restore' }).tap();
+	await expect(night.getByRole('button', { name: 'Change Washerwoman' })).toBeVisible();
+
+	// Rewrite the Empath's text, and add a step of our own before Dawn.
+	await night.getByRole('button', { name: 'Change Empath' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Empath' })
+		.getByRole('button', { name: 'Edit text' })
+		.tap();
+	const text = page.getByRole('dialog', { name: 'Text for Empath' });
+	await text.getByRole('textbox', { name: 'Text' }).fill('Show fingers.');
+	await text.getByRole('button', { name: 'Save' }).tap();
+	await expect(night).toContainText('Show fingers.');
+
+	await night.getByRole('button', { name: 'Add step' }).tap();
+	const add = page.getByRole('dialog', { name: 'Add a step' });
+	await add.getByRole('textbox', { name: 'Title' }).fill('Check the bag');
+	await add.getByRole('button', { name: 'Add' }).tap();
+	const own = await order();
+	expect(own.at(-2)).toBe('Check');
+	await night.getByRole('button', { name: 'Done' }).tap();
+	await expect(night.getByRole('button', { name: 'Done: Check the bag' })).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('button', { name: 'History' }).tap();
+	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
+		'Changed the night order'
+	);
+});
