@@ -23,7 +23,13 @@
 	const PETALS = [0, 72, 144, 216, 288];
 </script>
 
-<span class="token" role="img" aria-label={label} style:--token-size="{size}px">
+<!-- The user's Character token size (--token-scale, Settings) scales every token. -->
+<span
+	class="token"
+	role="img"
+	aria-label={label}
+	style:--token-size="calc({size}px * var(--token-scale, 1))"
+>
 	<svg viewBox="0 0 100 100" aria-hidden="true">
 		<circle class="face" cx="50" cy="50" r="48" />
 	</svg>

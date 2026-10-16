@@ -51,11 +51,12 @@
 		box-shadow: inset 0 0 0 1.5px var(--rim);
 		color: var(--on-reminder);
 		/*
-		 * Easy to read (Trevor, 2026-10-16): the running-text font in normal case and bold, not
+		 * Easy to read (Trevor, 2026-10-16): the Reminder tokens font role (plain by default) in normal case and bold, not
 		 * the display font in small capitals. Never smaller than 0.8rem, which follows Text size.
 		 */
-		font-family: var(--font-body);
-		font-size: max(0.85em, 0.8rem);
+		font-family: var(--font-reminder);
+		/* The user's Reminder size (--reminder-scale, Settings) scales it. */
+		font-size: calc(max(0.85em, 0.8rem) * var(--reminder-scale, 1));
 		font-weight: 600;
 		line-height: 1.4;
 		/* One line, unless the chip alone is wider than its line (tiny screen, largest text). */
