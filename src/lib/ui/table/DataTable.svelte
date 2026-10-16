@@ -118,15 +118,18 @@
 	}
 </script>
 
-{#snippet filterButton(column: DataColumn<K>)}
+{#snippet filterButton(column: DataColumn<K>, labelled = false)}
 	<button
 		type="button"
 		class="filter"
+		class:labelled
 		class:on={column.filtered}
 		aria-haspopup="dialog"
 		aria-label="Filter {column.label}{column.filtered ? ' (set)' : ''}"
 		onclick={(e) => openFilter(column, e)}
 	>
+		<!-- Moved filters carry their column's name, so several in one header stay distinct. -->
+		{#if labelled}<span class="filter-label" aria-hidden="true">{column.label}</span>{/if}
 		<Icon name="filter" />
 	</button>
 {/snippet}
@@ -182,7 +185,7 @@
 								{/if}
 								{#if i === 0 && narrow === 'hide' && filter}
 									{#each movedFilters as moved (moved.id)}
-										<span class="narrow-only">{@render filterButton(moved)}</span>
+										<span class="narrow-only">{@render filterButton(moved, true)}</span>
 									{/each}
 								{/if}
 							</div>
@@ -364,6 +367,20 @@
 		opacity: 0.6;
 		--icon-size: calc(1 * var(--u));
 	}
+	.filter.labelled {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		width: auto;
+		min-width: var(--tap-target);
+		padding: 0 var(--space-2);
+		font: inherit;
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
 	.filter:hover {
 		opacity: 1;
 	}
@@ -402,6 +419,10 @@
 		}
 		.hide .narrow-only {
 			display: contents;
+		}
+		/* The first header wraps its moved filters onto a second line if they don't fit. */
+		.hide .head {
+			flex-wrap: wrap;
 		}
 
 		/* `stack`: the same fields as the table, each with its label, one block per row. */

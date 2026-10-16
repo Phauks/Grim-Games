@@ -427,9 +427,11 @@ test("the official site's curated scripts are listed when asked for, and load", 
 	await expect(name).toHaveAttribute('aria-sort', 'descending');
 	await expect(table.locator('tbody tr').first()).toContainText('Little Hamlet');
 
-	// Teensyville only, from the funnel in the header row (under the Name header on phones,
-	// where the Type column is hidden).
-	await table.getByRole('button', { name: 'Filter Type', exact: true }).tap();
+	// Teensyville only, from the funnel in the header row. On phones the Type column is
+	// hidden and its funnel sits beside Name, labelled so moved funnels can be told apart.
+	const typeFilter = table.getByRole('button', { name: 'Filter Type', exact: true });
+	if (test.info().project.name === 'phone') await expect(typeFilter).toHaveText('Type');
+	await typeFilter.tap();
 	await page.getByRole('dialog', { name: 'Filter Type' }).getByLabel('Teensyville').tap();
 	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
 
