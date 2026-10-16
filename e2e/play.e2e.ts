@@ -23,6 +23,8 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 		/wiki\.bloodontheclocktower\.com\/Empath/
 	);
 	await page.keyboard.press('Escape');
+	// Wait for the dialog to go: its wiki section list has a Jinxes button too.
+	await expect(page.getByRole('dialog', { name: 'Empath' })).toBeHidden();
 	await expect(page.getByTestId('no-jinxes')).toHaveText('None');
 
 	// Sections close from their header and stay closed after a reload (Trevor, 2026-10-16).
