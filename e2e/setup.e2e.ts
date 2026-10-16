@@ -92,7 +92,7 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	const replace = page.getByRole('alertdialog', { name: 'Replace the bag?' });
 	await expect(replace).toContainText('Now: 1 of 5 tiles drawn.');
-	await replace.getByRole('button', { name: 'Keep' }).tap();
+	await replace.getByRole('button', { name: 'Cancel' }).tap();
 	await steps.getByRole('link', { name: 'Draw' }).tap();
 	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
 
@@ -150,7 +150,7 @@ test('selection counts against the setup sheet and explains the Drunk', async ({
 	await page.getByRole('button', { name: 'Clear selection' }).tap();
 	const clear = page.getByRole('alertdialog', { name: 'Clear the selection?' });
 	await expect(clear).toContainText('Now: 7 characters chosen. After: none.');
-	await clear.getByRole('button', { name: 'Clear', exact: true }).tap();
+	await clear.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
 	await page.getByRole('button', { name: 'Random selection' }).tap();
 	await expect(page.getByTestId('warning-count')).toHaveText('0');
@@ -242,7 +242,7 @@ test('a character picked by Random looks the same as one picked by hand', async 
 	const randomName = await random.locator('.main').getAttribute('data-character-id');
 	// Pick one by hand: clear, then tap the same character.
 	await page.getByRole('button', { name: 'Clear selection' }).tap();
-	await page.getByRole('alertdialog').getByRole('button', { name: 'Clear', exact: true }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await page.locator(`[data-character-id="${randomName}"]`).tap();
 	const manual = page.locator('.choice[data-selected]').first();
 	const ring = (l: typeof manual) =>
@@ -268,11 +268,11 @@ test('building a bag with errors asks the Storyteller to confirm them', async ({
 	const errors = page.getByTestId('build-errors');
 	await expect(errors).toBeVisible();
 	await expect(errors).toContainText('4 characters chosen for 5 players');
-	await page.getByRole('button', { name: 'Go back' }).tap();
+	await page.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(errors).toBeHidden();
 	await expect(page).toHaveURL(/\/setup$/);
 	await page.getByRole('button', { name: 'Build bag' }).tap();
-	await page.getByRole('button', { name: 'Build anyway' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(/\/draw$/);
 	await expect(page.getByRole('list', { name: 'Bag' }).getByRole('listitem')).toHaveCount(4);
 });

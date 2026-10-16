@@ -23,9 +23,9 @@
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';
@@ -308,34 +308,25 @@
 	{lookup}
 	onChoose={(shows) => askingFor && setupSelection.setStandIn(askingFor, shows)}
 />
-<Dialog bind:open={clearOpen} role="alertdialog" title={t('setup.clear.title')}>
+<ConfirmDialog
+	bind:open={clearOpen}
+	title={t('setup.clear.title')}
+	danger
+	onConfirm={() => setupSelection.clear()}
+>
 	<p>{t('setup.clear.body', { count: ids.length })}</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (clearOpen = false)}>{t('setup.clear.keep')}</Button>
-		<Button
-			variant="accent"
-			onclick={() => {
-				setupSelection.clear();
-				clearOpen = false;
-			}}>{t('setup.clear.confirm')}</Button
-		>
-	{/snippet}
-</Dialog>
-<Dialog
+</ConfirmDialog>
+<ConfirmDialog
 	bind:open={errorsOpen}
-	role="alertdialog"
 	title={t('setup.errors.title')}
 	description={t('setup.errors.description', { players: s.players })}
+	onConfirm={() => requestBuild(true)}
 >
 	<ul class="errors" data-testid="build-errors">
 		{#each errors as error, i (i)}<li><GlossaryText text={error} /></li>{/each}
 	</ul>
-	{#snippet actions()}
-		<Button variant="accent" onclick={() => (errorsOpen = false)}>{t('setup.errors.back')}</Button>
-		<Button variant="quiet" onclick={() => requestBuild(true)}>{t('setup.errors.anyway')}</Button>
-	{/snippet}
-</Dialog>
-<Dialog bind:open={replaceOpen} role="alertdialog" title={t('setup.replace.title')}>
+</ConfirmDialog>
+<ConfirmDialog bind:open={replaceOpen} title={t('setup.replace.title')} danger onConfirm={buildBag}>
 	<p>
 		{t('setup.replace.body', {
 			count: drawnCount,
@@ -343,11 +334,7 @@
 			tiles: plan.tiles.length
 		})}
 	</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (replaceOpen = false)}>{t('setup.replace.keep')}</Button>
-		<Button variant="accent" onclick={buildBag}>{t('setup.replace.confirm')}</Button>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	main {
