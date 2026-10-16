@@ -130,9 +130,6 @@
 	.content:not(:has(.area)) .detail {
 		margin-bottom: auto;
 	}
-	.title :global(strong) {
-		color: var(--accent);
-	}
 	.area {
 		flex: 1;
 		width: 100%;

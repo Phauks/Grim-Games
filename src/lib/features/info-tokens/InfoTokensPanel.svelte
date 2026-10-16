@@ -48,10 +48,14 @@
 		showOpen = true;
 	}
 
-	function choose(token: InfoToken) {
+	/** What was filled into a fill-in custom card, kept while its characters are chosen. */
+	let pickingDetail = $state<string>();
+
+	function choose(token: InfoToken, detail?: string) {
 		// Player cards ("This is the Demon") are shown at once: the Storyteller points.
-		if (token.shows !== 'characters') return show(token.text);
+		if (token.shows !== 'characters') return show(token.text, [], detail);
 		picking = token;
+		pickingDetail = detail;
 		picked = [];
 		pickOpen = true;
 	}
@@ -62,6 +66,7 @@
 	<InfoTokenList
 		onchoose={choose}
 		{characterCards}
+		{characters}
 		onchooseCharacter={({ title, detail }) => show(title, [], detail)}
 	/>
 
@@ -80,7 +85,7 @@
 					icon="forward"
 					onclick={() => {
 						pickOpen = false;
-						if (picking) show(picking.text, picked);
+						if (picking) show(picking.text, picked, pickingDetail);
 					}}>{t('info-tokens.show')}</Button
 				>
 			</div>

@@ -17,6 +17,7 @@
 	];
 	let open = $state(false);
 	let openTwo = $state(false);
+	let openEmpath = $state(false);
 	let bluffPicker = $state(false);
 </script>
 
@@ -33,6 +34,9 @@
 		<Button icon="info" disabled={characters.length === 0} onclick={() => (openTwo = true)}
 			>Info tokens (two bluff sets)</Button
 		>
+		<Button icon="info" disabled={characters.length === 0} onclick={() => (openEmpath = true)}
+			>Info tokens (Empath in play)</Button
+		>
 	</div>
 	<p data-testid="bluff-picker">{bluffPicker ? 'Bluff picker opened' : 'None'}</p>
 	<InfoTokensSheet
@@ -42,6 +46,7 @@
 		onChooseBluffs={() => (bluffPicker = true)}
 	/>
 	<InfoTokensSheet bind:open={openTwo} {characters} bluffSets={twoSets} />
+	<InfoTokensSheet bind:open={openEmpath} {characters} inPlay={['empath']} />
 </main>
 
 <style>
