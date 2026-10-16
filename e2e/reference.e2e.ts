@@ -379,3 +379,17 @@ test('"/" jumps to the search field and Esc clears it', async ({ page }) => {
 	await expect(search).toHaveValue('');
 	await expect(search).toBeFocused();
 });
+
+test('on a wide screen a card is long, with its fields side by side', async ({ page }) => {
+	// Trevor (2026-10-16): "on desktop, my preference is longer".
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.goto('/reference');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Steward');
+	const card = page.locator('[data-testid="reference-card"][data-character="steward"]');
+	const setup = (await card.locator('[data-row="setup"]').boundingBox())!;
+	const alignment = (await card.locator('[data-row="alignment"]').boundingBox())!;
+	const ability = (await card.locator('[data-row="ability"]').boundingBox())!;
+	expect(Math.abs(setup.y - alignment.y)).toBeLessThan(2);
+	expect(setup.x).toBeGreaterThan(alignment.x + alignment.width - 1);
+	expect(ability.y).toBeLessThan(alignment.y);
+});

@@ -28,49 +28,54 @@
 	data-character={character.id}
 	{@attach near(() => (shown = true))}
 >
-	<header>
-		<FieldValue field="token" {entry} {onExplain} />
-		<div class="title">
-			<h3><FieldValue field="name" {entry} {onExplain} /></h3>
-			<p class="meta">
-				<FieldValue field="type" {entry} {onExplain} /> ·
-				<FieldValue field="edition" {entry} {onExplain} />
-			</p>
-		</div>
-		<FieldValue field="icons" {entry} {onExplain} />
-	</header>
+	<!-- The card is the size container; this grid inside it changes with the card's width. -->
+	<div class="fields">
+		<header>
+			<FieldValue field="token" {entry} {onExplain} />
+			<div class="title">
+				<h3><FieldValue field="name" {entry} {onExplain} /></h3>
+				<p class="meta">
+					<FieldValue field="type" {entry} {onExplain} /> ·
+					<FieldValue field="edition" {entry} {onExplain} />
+				</p>
+			</div>
+			<FieldValue field="icons" {entry} {onExplain} />
+		</header>
 
-	{#each shown ? body : [] as field (field.id)}
-		{#if field.card === 'block'}
-			<div class="block" data-row={field.id}>
-				<FieldValue field={field.id} {entry} {onExplain} />
-			</div>
-		{:else}
-			<div class="row" data-row={field.id}>
-				<b>{field.label}</b>
-				<FieldValue field={field.id} {entry} {onExplain} />
-			</div>
-		{/if}
-	{/each}
+		{#each shown ? body : [] as field (field.id)}
+			{#if field.card === 'block'}
+				<div class="block" data-row={field.id}>
+					<FieldValue field={field.id} {entry} {onExplain} />
+				</div>
+			{:else}
+				<div class="row" data-row={field.id}>
+					<b>{field.label}</b>
+					<FieldValue field={field.id} {entry} {onExplain} />
+				</div>
+			{/if}
+		{/each}
+	</div>
 </article>
 
 <style>
 	.card {
 		position: relative;
-		display: grid;
-		gap: var(--space-2);
 		padding: var(--space-3);
 		border: var(--card-border);
 		border-radius: var(--card-radius);
 		background: var(--card-background);
 		min-width: 0;
-		/* minmax(0, …): rows wrap to the card's width instead of widening it past the screen. */
-		grid-template-columns: minmax(0, 1fr);
 		container-type: inline-size;
 		/* Off-screen cards skip layout and paint; the size estimate keeps the scrollbar steady. */
 		content-visibility: auto;
 		contain-intrinsic-size: auto calc(34 * var(--u));
 		scroll-margin-top: calc(var(--tap-target) + var(--space-4));
+	}
+	.fields {
+		display: grid;
+		gap: var(--space-2);
+		/* minmax(0, …): rows wrap to the card's width instead of widening it past the screen. */
+		grid-template-columns: minmax(0, 1fr);
 	}
 	header {
 		display: flex;
@@ -93,6 +98,26 @@
 		}
 		header > :global(.value[data-field='icons']) {
 			margin-left: auto;
+		}
+	}
+	/* A long card (laptop, desktop): the ability under the header across the card, the other
+	   fields side by side in columns, so the card reads across rather than down (Trevor,
+	   2026-10-16). A narrow card keeps one stacked column. */
+	@container (min-width: 40rem) {
+		.fields {
+			grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+			gap: var(--space-2) var(--space-5);
+			align-items: start;
+		}
+		header,
+		.block {
+			grid-column: 1 / -1;
+		}
+		header {
+			order: -2;
+		}
+		.block[data-row='ability'] {
+			order: -1;
 		}
 	}
 	h3 {

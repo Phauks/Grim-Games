@@ -205,10 +205,11 @@
 		font-size: 0.9rem;
 		color: var(--on-surface-muted);
 	}
-	/* As many readable columns as the page width allows (one on a phone). */
+	/* Long cards: one per row on a laptop or desktop, so each lays its fields out side by side
+	   rather than in a tall stack (Trevor, 2026-10-16); two on the widest screens. */
 	.cards {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(36 * var(--u))), 1fr));
 		gap: var(--space-3);
 		align-items: start;
 	}
