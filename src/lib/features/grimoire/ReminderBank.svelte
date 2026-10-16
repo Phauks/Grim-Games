@@ -73,30 +73,54 @@
 	);
 	const items = $derived.by((): Item[] => {
 		const stack = preferences.current.assistance.stackReminders;
-		if (view === 'setup') {
-			const out: Item[] = [];
-			for (const item of setupItems) {
-				const { characterId, label } = item.suggestion;
-				const same = stack
-					? out.find((i) => i.characterId === characterId && i.label === label)
-					: undefined;
-				if (same) same.count += 1;
-				else out.push({ key: item.key, characterId, label, count: 1, setup: item });
-			}
-			return out;
+		const nowFor = (characterId: CharacterId, label: string) =>
+			focus?.characterId === characterId && focus.labels.includes(label);
+		const setup: Item[] = [];
+		for (const item of setupItems) {
+			const { characterId, label } = item.suggestion;
+			const same = stack
+				? setup.find((i) => i.characterId === characterId && i.label === label)
+				: undefined;
+			if (same) same.count += 1;
+			else
+				setup.push({
+					key: item.key,
+					characterId,
+					label,
+					count: 1,
+					setup: item,
+					now: view === 'all' && nowFor(characterId, label)
+				});
 		}
-		return bankReminders(game, characters, focus).flatMap(({ characterId, label, left, now }) => {
-			const key = `${characterId}:${label}`;
-			if (stack) return [{ key, characterId, label, count: left, now }];
-			return Array.from({ length: left }, (_, i) => ({
-				key: `${key}:${i}`,
-				characterId,
-				label,
-				count: 1,
-				now
-			}));
-		});
+		if (view === 'setup') return setup;
+		// All (Trevor, 2026-10-16): the setup reminders still to place come first, on the
+		// left of a dashed line, then every other copy still off the board.
+		const pending: Record<string, number> = {};
+		for (const item of setupItems) {
+			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
+			pending[k] = (pending[k] ?? 0) + 1;
+		}
+		const rest = bankReminders(game, characters, focus).flatMap(
+			({ characterId, label, left, now }) => {
+				const key = `${characterId}:${label}`;
+				const n = left - (pending[key] ?? 0);
+				if (n <= 0) return [];
+				if (stack) return [{ key, characterId, label, count: n, now }];
+				return Array.from({ length: n }, (_, i) => ({
+					key: `${key}:${i}`,
+					characterId,
+					label,
+					count: 1,
+					now
+				}));
+			}
+		);
+		return [...setup, ...rest];
 	});
+	/** In All, the last setup reminder: a dashed line follows it. */
+	const lastSetup = $derived(
+		view === 'all' && items.some((i) => !i.setup) ? items.findLast((i) => i.setup)?.key : undefined
+	);
 
 	// A new step's reminders are at the front: show them.
 	let list = $state<HTMLElement>();
@@ -195,6 +219,7 @@
 					onCancel={cancelDrag}
 				/>
 			</li>
+			{#if item.key === lastSetup}<li class="divider" aria-hidden="true"></li>{/if}
 		{:else}
 			<li class="none">None</li>
 		{/each}
@@ -367,6 +392,12 @@
 		font: 700 0.75rem / 1.4 var(--font-control);
 		text-align: center;
 		pointer-events: none;
+	}
+	/* Between the setup reminders and the rest, in All (Trevor, 2026-10-16). */
+	.tray > li.divider {
+		align-self: stretch;
+		padding: 0;
+		border-inline-start: 1px dashed var(--on-surface-muted);
 	}
 	.none {
 		color: var(--on-surface-muted);

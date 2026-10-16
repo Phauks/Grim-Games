@@ -797,11 +797,7 @@
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
-<Dialog
-	bind:open={shareOpen}
-	title="Share script"
-	description="Players get the script only, never anything from this game."
->
+<Dialog bind:open={shareOpen} title="Share script">
 	{#if shareTarget}
 		<SharePanel title={game.script.meta?.name ?? 'Custom script'} target={shareTarget} />
 	{/if}

@@ -568,7 +568,7 @@ test('the script is shared from the grimoire menu, never the game', async ({ pag
 	// Share sits in the toolbar, never hidden in the menu.
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const share = page.getByRole('dialog', { name: 'Share script' });
-	await expect(share).toContainText('never anything from this game');
+	await expect(share).not.toContainText('never anything from this game');
 	// The QR code and link show straight away; an official edition shares by its id,
 	// so nothing about seats or names is in the link.
 	await expect(share.getByRole('img', { name: /^QR code for / })).toBeVisible();
@@ -716,8 +716,11 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	// Every reminder still off the board, on demand (and by itself once setup is done).
 	await page.getByRole('button', { name: 'Showing setup reminders; show all reminders' }).tap();
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
-	await expect(bank.getByRole('button', { name: 'Wrong reminder' })).toBeVisible();
+	await expect(bank.getByRole('button', { name: 'Wrong reminder' })).toHaveCount(1);
 	await expect(bank.getByRole('button', { name: 'Townsfolk reminder' })).toHaveCount(0);
+	// The setup reminder still to place comes first, left of a dashed line.
+	await expect(bank.locator('li.divider')).toHaveCount(1);
+	await expect(bank.locator('li:has(+ li.divider)')).toContainText('Wrong');
 	await page.getByRole('button', { name: 'Showing all reminders; show setup reminders' }).tap();
 
 	// From the seat sheet too: Return to reminder bank.
