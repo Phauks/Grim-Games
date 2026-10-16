@@ -21,13 +21,30 @@ describe('token appearance', () => {
 				tokenScale: 1.5,
 				reminderScale: 3
 			})
-		).toEqual({ colours: { face: PALE.toLowerCase() }, tokenScale: 1.5, reminderScale: 1 });
-		expect(parseTokenAppearance(null)).toEqual({ colours: {}, tokenScale: 1, reminderScale: 1 });
+		).toEqual({
+			colours: { face: PALE.toLowerCase() },
+			tokenScale: 1.5,
+			reminderScale: 1,
+			boardNames: false
+		});
+		expect(parseTokenAppearance(null)).toEqual({
+			colours: {},
+			tokenScale: 1,
+			reminderScale: 1,
+			boardNames: false
+		});
+		expect(parseTokenAppearance({ boardNames: true }).boardNames).toBe(true);
+		expect(parseTokenAppearance({ boardNames: 'yes' }).boardNames).toBe(false);
 	});
 
 	it('writes the sizes and only the changed colours; text colours both kinds of token', () => {
 		expect(
-			tokenVariables({ colours: { ink: DARK }, tokenScale: 1.25, reminderScale: 0.75 })
+			tokenVariables({
+				colours: { ink: DARK },
+				tokenScale: 1.25,
+				reminderScale: 0.75,
+				boardNames: true
+			})
 		).toEqual({
 			'--token-scale': '1.25',
 			'--reminder-scale': '0.75',

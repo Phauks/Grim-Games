@@ -51,12 +51,15 @@ export interface TokenAppearance {
 	colours: Partial<Record<TokenColour, string>>;
 	tokenScale: TokenScale;
 	reminderScale: TokenScale;
+	/** The character's name curved along the bottom of grimoire tokens (Trevor, 2026-10-16). */
+	boardNames: boolean;
 }
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	colours: {},
 	tokenScale: 1,
-	reminderScale: 1
+	reminderScale: 1,
+	boardNames: false
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -78,7 +81,8 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 	return {
 		colours,
 		tokenScale: isScale(input.tokenScale) ? input.tokenScale : 1,
-		reminderScale: isScale(input.reminderScale) ? input.reminderScale : 1
+		reminderScale: isScale(input.reminderScale) ? input.reminderScale : 1,
+		boardNames: input.boardNames === true
 	};
 }
 

@@ -11,9 +11,11 @@
 		alignment?: Alignment;
 		/** Fixed size in px. */
 		size?: number;
+		/** Writes the character's name on the token (grimoire tokens, when the setting is on). */
+		showName?: boolean;
 	}
 
-	let { character, alignment, size = 56 }: Props = $props();
+	let { character, alignment, size = 56, showName = false }: Props = $props();
 
 	const leaves = $derived<LeafMarks>({
 		firstNight: character.firstNightReminder !== undefined || character.firstNight !== undefined,
@@ -30,4 +32,4 @@
 </script>
 
 <!-- The character token with its leaves (first night, other nights, reminders, setup). -->
-<TokenFace {src} {label} {leaves} {size} />
+<TokenFace {src} {label} {leaves} {size} name={showName ? character.name : undefined} />

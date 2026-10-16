@@ -4,6 +4,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { Theme } from '#lib/ui/themes/types.ts';
 	import {
 		MIN_CONTRAST,
@@ -47,7 +48,7 @@
 
 <!-- Space for the largest sizes is kept, so changing a size never moves the settings below. -->
 <div class="preview" aria-hidden="true" data-testid="token-preview">
-	{#if sample}<CharacterToken character={sample} size={56} />{/if}
+	{#if sample}<CharacterToken character={sample} size={56} showName={value.boardNames} />{/if}
 	<ReminderToken label={t('characters.previewReminder')} type="minion" />
 </div>
 
@@ -71,6 +72,15 @@
 	}))}
 	onChange={(scale) => onChange({ ...value, reminderScale: Number(scale) as TokenScale })}
 />
+
+<div class="names">
+	<SettingToggle
+		label={t('characters.boardNames')}
+		description={t('characters.boardNamesHelp')}
+		checked={value.boardNames}
+		onChange={(boardNames) => onChange({ ...value, boardNames })}
+	/>
+</div>
 
 {#each TOKEN_COLOURS as colour (colour.key)}
 	<SettingRow label={t(colour.label)} description={t(colour.description)}>
@@ -112,6 +122,9 @@
 		white-space: nowrap;
 		margin-bottom: var(--space-5);
 		overflow: hidden;
+	}
+	.names {
+		margin: var(--space-5) 0;
 	}
 	.colour {
 		display: flex;

@@ -3,6 +3,7 @@
 	import type { Seat } from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { NamePlace } from './name-placement.ts';
 
 	interface Props {
@@ -92,7 +93,12 @@
 	<span class="disc">
 		<span class="face" class:flipped={shifted}>
 			{#if character}
-				<CharacterToken {character} alignment={seat.alignment} {size} />
+				<CharacterToken
+					{character}
+					alignment={seat.alignment}
+					{size}
+					showName={preferences.current.tokenAppearance.boardNames}
+				/>
 			{:else}
 				<span class="empty">{number}</span>
 			{/if}

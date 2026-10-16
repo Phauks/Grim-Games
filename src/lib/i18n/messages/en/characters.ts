@@ -23,6 +23,9 @@ export const characters = {
 		'Character tokens on the board, reference cards and setup. Text size and Icon size stay the same.',
 	'characters.reminderSize': 'Reminder token size',
 	'characters.reminderSizeHelp': 'Reminder tokens wherever they show.',
+	'characters.boardNames': 'Show character names on grimoire tokens',
+	'characters.boardNamesHelp':
+		'Storyteller: writes each character’s name along the bottom of its token on the grimoire board.',
 	'characters.size.small': 'S',
 	'characters.size.medium': 'M',
 	'characters.size.large': 'L',

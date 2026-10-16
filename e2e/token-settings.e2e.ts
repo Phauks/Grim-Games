@@ -65,3 +65,60 @@ test('a token colour can be changed, warns when hard to read, and resets', async
 	await expect(contrast).not.toContainText('hard to read');
 	expect(await rootStyle(page, '--on-reminder')).not.toBe('#eeeeee');
 });
+
+test('character names on grimoire tokens are off by default and shown when switched on', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 1:"]');
+	const token = seat.locator('.token');
+	await expect(token).toBeVisible();
+	await expect(seat.getByTestId('token-name')).toHaveCount(0);
+	const size = (await token.boundingBox())!;
+
+	await page.getByRole('button', { name: 'More' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Tokens' })
+		.tap();
+	const label = 'Show character names on grimoire tokens';
+	const toggle = dialog.getByRole('checkbox', { name: label, includeHidden: true });
+	await expect(toggle).not.toBeChecked();
+	await dialog.getByText(label, { exact: true }).tap();
+	await expect(toggle).toBeChecked();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+
+	// The name sits inside the token: the token keeps its size and nothing moves.
+	const name = seat.getByTestId('token-name');
+	await expect(name).toHaveText('Fortune Teller');
+	const box = (await token.boundingBox())!;
+	expect(box.width).toBeCloseTo(size.width, 0);
+	const text = (await name.boundingBox())!;
+	expect(text.x).toBeGreaterThanOrEqual(box.x);
+	expect(text.x + text.width).toBeLessThanOrEqual(box.x + box.width);
+	expect(text.y + text.height).toBeLessThanOrEqual(box.y + box.height);
+
+	await page.reload();
+	await expect(seat.getByTestId('token-name')).toHaveText('Fortune Teller');
+});
