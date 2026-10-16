@@ -5,10 +5,11 @@ import type { CharacterId } from '#lib/core/data/index.ts';
  * 2026-10-16), e.g. the Mezepheles's secret word. The Reference page reads this list for its
  * card column.
  *
- * Only TPI's own wording is listed: TPI's night sheet says "Show the secret word" for the
- * Mezepheles and "secret phrase" for the Yaggababble (botc-release resources/data/roles.json).
- * Cards in our own wording (Amnesiac, Wizard, Djinn, announcements) wait for Trevor's
- * approval: /mnt/project-files/pocket-grimoire-rewrite/character-cards.md.
+ * TPI's night sheet says "Show the secret word" for the Mezepheles and "secret phrase" for
+ * the Yaggababble (botc-release resources/data/roles.json); the card text is Trevor's
+ * ("Your Secret Word is", 2026-10-16). Other cards in our own wording (Amnesiac, Wizard,
+ * Djinn, announcements) wait for his approval:
+ * /mnt/project-files/pocket-grimoire-rewrite/character-cards.md.
  */
 export interface CharacterCard {
 	/** Unique across all info tokens. */
@@ -19,7 +20,7 @@ export interface CharacterCard {
 	/** What the Storyteller fills in before showing it. */
 	fills: 'word' | 'phrase';
 	/** Whose wording the card uses; `own` cards stay behind the own-wording setting. */
-	source: 'tpi' | 'own';
+	source: 'own' | 'own';
 }
 
 export const CHARACTER_CARDS: readonly CharacterCard[] = [
@@ -28,14 +29,14 @@ export const CHARACTER_CARDS: readonly CharacterCard[] = [
 		characterId: 'mezepheles',
 		titleKey: 'info-tokens.card.secretWord',
 		fills: 'word',
-		source: 'tpi'
+		source: 'own'
 	},
 	{
 		id: 'character:yaggababble:secret-phrase',
 		characterId: 'yaggababble',
 		titleKey: 'info-tokens.card.secretPhrase',
 		fills: 'phrase',
-		source: 'tpi'
+		source: 'own'
 	}
 ];
 

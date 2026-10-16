@@ -45,7 +45,7 @@ test('the sheet shows a character card and edits and deletes a custom card', asy
 	await expect(shown(page).getByRole('img', { name: /Empath token/ })).toBeVisible();
 	await shown(page).getByRole('button', { name: 'Close' }).tap();
 
-	await page.getByRole('button', { name: 'Add info token' }).tap();
+	await page.getByRole('button', { name: 'New info token' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You are **cursed**');
 	await page.getByRole('button', { name: 'Save' }).tap();
 	await page.getByRole('button', { name: 'Edit You are cursed' }).tap();
@@ -65,7 +65,7 @@ test('the sheet shows a character card and edits and deletes a custom card', asy
 test('a chain of cards can be reordered and is shown together', async ({ page }) => {
 	await openSheet(page);
 	// A madness card of the Storyteller's own that asks for a character.
-	await page.getByRole('button', { name: 'Add info token' }).tap();
+	await page.getByRole('button', { name: 'New info token' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You are **mad** that you are');
 	await page.getByText('Show with characters').tap();
 	await page.getByRole('button', { name: 'Save' }).tap();
@@ -128,7 +128,7 @@ test('character cards load only for characters on the script', async ({ page }) 
 	await expect(
 		page
 			.getByRole('dialog', { name: 'Info tokens' })
-			.getByRole('button', { name: 'Characters', exact: true })
+			.getByRole('button', { name: 'Character Specific', exact: true })
 	).toBeVisible();
-	await expect(page.getByRole('button', { name: /^Secret word/ })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: /^Your Secret Word/ })).toHaveCount(0);
 });

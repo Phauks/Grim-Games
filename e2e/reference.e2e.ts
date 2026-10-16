@@ -199,7 +199,7 @@ test('Info cards lists the info cards a character brings, or None', async ({ pag
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
 	await search.fill('Mezepheles');
 	const card = page.locator('[data-testid="reference-card"][data-character="mezepheles"]');
-	await expect(card.locator('[data-field="cards"]')).toContainText('Secret word');
+	await expect(card.locator('[data-field="cards"]')).toContainText('Your Secret Word is');
 	await search.fill('Washerwoman');
 	const washerwoman = page.locator('[data-testid="reference-card"][data-character="washerwoman"]');
 	await expect(washerwoman.locator('[data-field="cards"]')).toContainText('None');
@@ -209,7 +209,7 @@ test('Info cards lists the info cards a character brings, or None', async ({ pag
 		page
 			.getByTestId('character-table')
 			.locator('tr[data-character="mezepheles"] [data-field="cards"]')
-	).toHaveText('Secret word');
+	).toHaveText('Your Secret Word is');
 });
 
 test('the night order runs from Dusk to Dawn', async ({ page }) => {

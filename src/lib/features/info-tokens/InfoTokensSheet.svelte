@@ -25,6 +25,11 @@
 		 * characters are not in play" shows them instead of asking for characters.
 		 */
 		bluffSets?: readonly ShowableBluffSet[];
+		/**
+		 * Characters on a seat. Character Specific cards load only for these (Trevor,
+		 * 2026-10-16); without it, for every character given.
+		 */
+		inPlay?: readonly CharacterId[];
 		/** No bluffs chosen yet: called (with this sheet closed) to open the bluff picker. */
 		onChooseBluffs?: () => void;
 		/**
@@ -34,7 +39,14 @@
 		onclose?: () => void;
 	}
 
-	let { open = $bindable(false), characters, bluffSets, onChooseBluffs, onclose }: Props = $props();
+	let {
+		open = $bindable(false),
+		characters,
+		inPlay,
+		bluffSets,
+		onChooseBluffs,
+		onclose
+	}: Props = $props();
 
 	type View =
 		| { kind: 'list' }
@@ -66,9 +78,9 @@
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const names = (ids: readonly CharacterId[]) =>
 		ids.map((id) => byId.get(id)?.name ?? id).join(', ');
-	// Cards of characters on the script (Trevor, 2026-10-16).
+	// Cards of characters in play (Trevor, 2026-10-16).
 	const characterCards = $derived(
-		characterCardsFor(characters.map((c) => c.id)).flatMap((card) => {
+		characterCardsFor(inPlay ?? characters.map((c) => c.id)).flatMap((card) => {
 			const character = byId.get(card.characterId);
 			return character ? [{ card, character }] : [];
 		})

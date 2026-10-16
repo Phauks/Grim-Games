@@ -36,7 +36,7 @@ test('"You are" asks for a character, then shows its token and ability', async (
 
 test('a custom info token keeps its bold words and survives a reload', async ({ page }) => {
 	await page.goto('/info-tokens');
-	await page.getByRole('button', { name: 'Add info token' }).tap();
+	await page.getByRole('button', { name: 'New info token' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You are **mad** about something');
 	await page.getByRole('button', { name: 'Save' }).tap();
 
@@ -175,15 +175,57 @@ test("a character's own card is filled in and shown, e.g. the Mezepheles's secre
 	page
 }) => {
 	await page.goto('/info-tokens');
-	await page.getByRole('button', { name: 'Secret word (Mezepheles)' }).tap();
-	const dialog = page.getByRole('dialog', { name: /^Secret word \(\s*Mezepheles\s*\)$/ });
+	// The section says, in a popover, that these cards are only used while the character is in play.
+	await page.getByRole('button', { name: 'About Character Specific cards' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Character Specific' })).toContainText(
+		'Only used while the character is in play.'
+	);
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Your Secret Word is (Mezepheles)' }).tap();
+	const dialog = page.getByRole('dialog', { name: /^Your Secret Word is \(\s*Mezepheles\s*\)$/ });
 	await dialog.getByRole('textbox', { name: 'Word' }).fill('lantern');
 	await dialog.getByRole('textbox', { name: 'Word' }).press('Enter');
 	const shown = page.locator('[data-testid="show-to-player"][open]');
-	await expect(shown.getByRole('heading')).toHaveText('Secret word');
+	await expect(shown.getByRole('heading')).toHaveText('Your Secret Word is');
 	await expect(shown).toContainText('lantern');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	// The word is kept for the next time.
-	await page.getByRole('button', { name: 'Secret word (Mezepheles)' }).tap();
+	await page.getByRole('button', { name: 'Your Secret Word is (Mezepheles)' }).tap();
 	await expect(dialog.getByRole('textbox', { name: 'Word' })).toHaveValue('lantern');
+});
+
+test('custom cards: bold and italic buttons, alphabetical order, and the New tile last', async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	for (const text of ['Zebra card', 'apple card']) {
+		await page.getByRole('button', { name: 'New info token' }).tap();
+		await page.getByRole('textbox', { name: 'Text' }).fill(text);
+		await page.getByRole('button', { name: 'Save' }).tap();
+	}
+	await page.getByRole('button', { name: 'New info token' }).tap();
+	const field = page.getByRole('textbox', { name: 'Text' });
+	await field.fill('You are cursed');
+	// Select "cursed", then make it bold with the button, no markers typed.
+	await field.evaluate((el) => {
+		const text = el.firstChild!;
+		const range = document.createRange();
+		range.setStart(text, 8);
+		range.setEnd(text, 14);
+		const selection = document.getSelection()!;
+		selection.removeAllRanges();
+		selection.addRange(range);
+	});
+	await page.getByRole('button', { name: 'Bold' }).tap();
+	await expect(page.getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'true');
+	await page.getByRole('button', { name: 'Save' }).tap();
+
+	await expect(
+		page.getByRole('button', { name: 'You are cursed', exact: true }).locator('strong')
+	).toHaveText('cursed');
+	// Alphabetical, whatever the case; the New tile stays last.
+	const names = await page
+		.getByRole('button', { name: /^(apple card|Zebra card|You are cursed|New info token)$/ })
+		.allTextContents();
+	expect(names.map((n) => n.trim())).toEqual(['apple card', 'You are cursed', 'Zebra card', 'New']);
 });

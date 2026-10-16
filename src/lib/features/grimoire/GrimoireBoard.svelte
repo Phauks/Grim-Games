@@ -19,6 +19,7 @@
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
+		charactersInPlay,
 		scriptCharacterIds,
 		trueCharacter,
 		type ReminderId,
@@ -906,6 +907,7 @@
 <InfoTokensSheet
 	bind:open={infoOpen}
 	characters={infoCharacters}
+	inPlay={charactersInPlay(game)}
 	bluffSets={infoBluffSets}
 	onChooseBluffs={() => {
 		infoReturn = undefined;

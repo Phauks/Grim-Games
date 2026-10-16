@@ -11,6 +11,9 @@
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import RichTextField from './RichTextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { plainText } from './bold.ts';
 	import type { CharacterCard } from './character-cards.ts';
@@ -50,7 +53,15 @@
 		needle === '' || plainText(token.text).toLowerCase().includes(needle);
 	const standard = $derived(STANDARD_INFO_TOKENS.filter(matches));
 
-	const custom = $derived(customInfoTokens.list.filter(matches));
+	// Alphabetical by their words, formatting ignored (Trevor, 2026-10-16).
+	const custom = $derived(
+		customInfoTokens.list.filter(matches).toSorted((a, b) =>
+			plainText(a.text).localeCompare(plainText(b.text), undefined, {
+				sensitivity: 'base',
+				numeric: true
+			})
+		)
+	);
 	const characterRows = $derived(
 		(characterCards ?? []).filter(
 			({ card, character }) =>
@@ -59,6 +70,9 @@
 				character.name.toLowerCase().includes(needle)
 		)
 	);
+
+	let aboutOpen = $state(false);
+	let aboutAnchor = $state<HTMLElement>();
 
 	/** The character card being filled in, and the last text typed for each card. */
 	let filling = $state<{ card: CharacterCard; character: Character }>();
@@ -98,6 +112,12 @@
 		editOpen = true;
 	}
 
+	function save() {
+		if (!plainText(editing.text).trim()) return;
+		customInfoTokens.save(editing.text, editing.id, editing.withCharacters);
+		editOpen = false;
+	}
+
 	function askDelete(token: InfoToken) {
 		confirming = token;
 		confirmOpen = true;
@@ -124,9 +144,6 @@
 	</Collapsible>
 
 	<Collapsible title={t('info-tokens.custom')} storageKey="info-tokens-custom" {level}>
-		{#snippet aside()}
-			<Button icon="add" variant="quiet" onclick={() => edit()}>{t('info-tokens.add')}</Button>
-		{/snippet}
 		<ul class="cards">
 			{#each custom as token (token.id)}
 				{@const name = plainText(token.text)}
@@ -148,9 +165,19 @@
 						/>
 					</span>
 				</li>
-			{:else}
-				<li class="none">{t('common.none')}</li>
 			{/each}
+			<!-- A new card starts from an empty tile, always last (Trevor, 2026-10-16). -->
+			<li class="tile new">
+				<button
+					type="button"
+					class="card"
+					aria-label={t('info-tokens.newLabel')}
+					onclick={() => edit()}
+				>
+					<Icon name="add" />
+					<span class="text">{t('info-tokens.new')}</span>
+				</button>
+			</li>
 		</ul>
 	</Collapsible>
 
@@ -160,6 +187,15 @@
 			storageKey="info-tokens-characters"
 			{level}
 		>
+			{#snippet aside()}
+				<span class="about" bind:this={aboutAnchor}>
+					<IconButton
+						icon="info"
+						label={t('info-tokens.characterCardsAbout')}
+						onclick={() => (aboutOpen = !aboutOpen)}
+					/>
+				</span>
+			{/snippet}
 			<ul class="cards">
 				{#each characterRows as row (row.card.id)}
 					{@const title = t(row.card.titleKey)}
@@ -181,6 +217,10 @@
 		</Collapsible>
 	{/if}
 </div>
+
+<Popover bind:open={aboutOpen} title={t('info-tokens.characterCards')} anchor={aboutAnchor}>
+	<p class="about-note">{t('info-tokens.characterCardsNote')}</p>
+</Popover>
 
 <Dialog
 	bind:open={fillOpen}
@@ -232,16 +272,13 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={editOpen} title={t(editing.id ? 'info-tokens.edit' : 'info-tokens.add')}>
-	<label class="field">
-		<span>{t('info-tokens.text')}</span>
-		<textarea
-			bind:value={editing.text}
-			maxlength={MAX_CUSTOM_TEXT}
-			rows="3"
-			aria-describedby="bold-hint"></textarea>
-	</label>
-	<p id="bold-hint" class="hint">{t('info-tokens.boldHint')}</p>
+<Dialog bind:open={editOpen} title={t(editing.id ? 'info-tokens.edit' : 'info-tokens.newLabel')}>
+	<RichTextField
+		bind:value={editing.text}
+		label={t('info-tokens.text')}
+		maxlength={MAX_CUSTOM_TEXT}
+		onsubmit={save}
+	/>
 	<Toggle
 		label={t('info-tokens.withCharacters')}
 		checked={editing.withCharacters}
@@ -249,13 +286,8 @@
 	/>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (editOpen = false)}>{t('common.cancel')}</Button>
-		<Button
-			variant="accent"
-			disabled={!editing.text.trim()}
-			onclick={() => {
-				customInfoTokens.save(editing.text, editing.id, editing.withCharacters);
-				editOpen = false;
-			}}>{t('info-tokens.save')}</Button
+		<Button variant="accent" disabled={!plainText(editing.text).trim()} onclick={save}
+			>{t('info-tokens.save')}</Button
 		>
 	{/snippet}
 </Dialog>
@@ -332,6 +364,13 @@
 		justify-content: center;
 		gap: var(--space-1);
 	}
+	/* The empty tile that starts a new card: dashed, like a space to fill. */
+	.tile.new {
+		border-style: dashed;
+	}
+	.tile.new .card {
+		gap: var(--space-2);
+	}
 	.card:hover {
 		background: color-mix(in srgb, currentColor 8%, transparent);
 	}
@@ -341,6 +380,12 @@
 		-webkit-line-clamp: 3;
 		line-clamp: 3;
 		overflow: hidden;
+	}
+	.about :global(.icon-button) {
+		color: inherit;
+	}
+	.about-note {
+		margin: 0;
 	}
 	.none {
 		opacity: 0.7;
@@ -352,8 +397,7 @@
 	input {
 		min-height: var(--tap-target);
 	}
-	input,
-	textarea {
+	input {
 		width: 100%;
 		padding: var(--space-2);
 		border: 1px solid var(--border);
@@ -362,11 +406,6 @@
 		color: inherit;
 		font: inherit;
 		resize: vertical;
-	}
-	.hint {
-		margin: var(--space-1) 0 0;
-		font-size: 0.85rem;
-		opacity: 0.8;
 	}
 	.confirm-text {
 		margin: 0;

@@ -14,7 +14,10 @@ describe('character cards', () => {
 		for (const id of ids) expect(id.startsWith('character:')).toBe(true);
 	});
 
-	it('use TPI wording only until Trevor approves our own', () => {
-		expect(CHARACTER_CARDS.every((c) => c.source === 'tpi')).toBe(true);
+	it("are only the secret word and phrase, in Trevor's wording, until he approves more", () => {
+		expect(CHARACTER_CARDS.map((c) => [c.characterId, c.source])).toEqual([
+			['mezepheles', 'own'],
+			['yaggababble', 'own']
+		]);
 	});
 });
