@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
 	interface Props {
@@ -57,22 +56,19 @@
 	{/if}
 </BottomSheet>
 
-<Dialog bind:open={confirming} role="alertdialog" title={t('player.deleteNoteConfirm')}>
+<ConfirmDialog
+	bind:open={confirming}
+	title={t('player.deleteNoteConfirm')}
+	danger
+	onConfirm={() => {
+		open = false;
+		onDelete();
+	}}
+>
 	<p>
 		{t('player.deleteNoteBody', { title: note?.title.trim() || t('player.untitled') })}
 	</p>
-	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirming = false)}>{t('player.keep')}</Button>
-		<Button
-			variant="accent"
-			onclick={() => {
-				confirming = false;
-				open = false;
-				onDelete();
-			}}>{t('player.delete')}</Button
-		>
-	{/snippet}
-</Dialog>
+</ConfirmDialog>
 
 <style>
 	.editor {
