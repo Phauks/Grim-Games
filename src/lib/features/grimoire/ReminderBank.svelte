@@ -94,7 +94,7 @@
 		}
 		if (view === 'setup') return setup;
 		// All (Trevor, 2026-10-16): the setup reminders still to place come first, on the
-		// left of a dashed line, then every other copy still off the board.
+		// left of a solid line, then every other copy still off the board.
 		const pending: Record<string, number> = {};
 		for (const item of setupItems) {
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
@@ -117,7 +117,7 @@
 		);
 		return [...setup, ...rest];
 	});
-	/** In All, the last setup reminder: a dashed line follows it. */
+	/** In All, the last setup reminder: a solid line follows it. */
 	const lastSetup = $derived(
 		view === 'all' && items.some((i) => !i.setup) ? items.findLast((i) => i.setup)?.key : undefined
 	);
@@ -331,7 +331,7 @@
 		align-items: center;
 		height: var(--tray-h);
 		box-sizing: border-box;
-		border: 1px dashed var(--border);
+		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: color-mix(in srgb, var(--surface) 85%, transparent);
 	}
@@ -407,11 +407,11 @@
 		text-align: center;
 		pointer-events: none;
 	}
-	/* Between the setup reminders and the rest, in All (Trevor, 2026-10-16). */
+	/* Between the setup reminders and the rest, in All: a solid line (Trevor, 2026-10-16). */
 	.tray > li.divider {
 		align-self: stretch;
 		padding: 0;
-		border-inline-start: 1px dashed var(--on-surface-muted);
+		border-inline-start: 1px solid var(--on-surface-muted);
 	}
 	.none {
 		color: var(--on-surface-muted);
