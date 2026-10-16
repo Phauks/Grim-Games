@@ -52,8 +52,6 @@ export const day = {
 	'day.startNewDay': 'Start new day',
 	'day.noteTitle': 'Note: {character}',
 	'day.noteTitleSeat': 'Note: {character} · {seat}',
-	'day.noteHint': 'Optional. Write as much as you like; it stays in today’s log.',
-	'day.notePlaceholder': 'What was asked, said or shown…',
 	'day.jugglerGuesses': 'Juggler’s guesses',
 	'day.guessFor': 'Guess for {name}',
 	'day.noGuess': 'No guess',

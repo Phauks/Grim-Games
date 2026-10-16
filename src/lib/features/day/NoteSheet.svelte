@@ -76,7 +76,6 @@
 				})
 			: t('day.noteTitle', { character: game.characterName(target.characterId) })
 		: t('day.note')}
-	description={t('day.noteHint')}
 	height="85dvh"
 >
 	<form
@@ -88,11 +87,7 @@
 	>
 		<label class="field">
 			<span>{t('day.note')}</span>
-			<textarea
-				bind:value={text}
-				rows="6"
-				placeholder={t('day.notePlaceholder')}
-				data-testid="note-text"></textarea>
+			<textarea bind:value={text} rows="6" data-testid="note-text"></textarea>
 		</label>
 
 		{#if juggler}
