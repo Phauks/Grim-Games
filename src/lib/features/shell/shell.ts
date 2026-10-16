@@ -46,11 +46,19 @@ export function setLeaveGuard(
 ): () => void {
 	const entry = { guard, within };
 	registered = entry;
+	markGuarded(true);
 	return () => {
 		if (registered !== entry) return;
 		registered = null;
 		confirmed = false;
+		markGuarded(false);
 	};
+}
+
+/** Pull-to-refresh is off while a guard is set (base.css), so a pull can't skip its question. */
+function markGuarded(on: boolean): void {
+	if (typeof document === 'undefined') return;
+	document.documentElement.toggleAttribute('data-leave-guard', on);
 }
 
 /** Runs `leave` now, or after the screen's confirmation when a guard is registered. */

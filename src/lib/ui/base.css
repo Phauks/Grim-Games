@@ -29,9 +29,17 @@ body {
 	/* Long words (names, script titles, web addresses) wrap instead of widening the page
 	   past a phone screen (Trevor: no sideways scrolling on mobile). */
 	overflow-wrap: break-word;
-	/* Stop pull-to-refresh and rubber-banding from wiping a drag. */
-	overscroll-behavior: none;
+	/* No sideways overscroll (history swipes, rubber-banding). Pulling down refreshes the page
+	   (Trevor, 2026-10-16), except on a screen that asks before leaving: see below. */
+	overscroll-behavior-x: none;
 	-webkit-tap-highlight-color: transparent;
+}
+
+/* A game in progress or a bag draw (a leave guard is set, shell.ts): pull-to-refresh would
+   reload past the guard's question and a drag on the board could trigger it. */
+html[data-leave-guard],
+html[data-leave-guard] body {
+	overscroll-behavior: none;
 }
 
 body {
