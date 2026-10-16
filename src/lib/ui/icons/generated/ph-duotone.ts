@@ -29,9 +29,11 @@ import ph_check_duotone from '~icons/ph/check-duotone';
 import ph_circle_dashed_duotone from '~icons/ph/circle-dashed-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
 import ph_cross_duotone from '~icons/ph/cross-duotone';
+import ph_dice_five_duotone from '~icons/ph/dice-five-duotone';
 import ph_dots_three_duotone from '~icons/ph/dots-three-duotone';
 import ph_dots_three_vertical_duotone from '~icons/ph/dots-three-vertical-duotone';
 import ph_drop_duotone from '~icons/ph/drop-duotone';
+import ph_eraser_duotone from '~icons/ph/eraser-duotone';
 import ph_feather_duotone from '~icons/ph/feather-duotone';
 import ph_fire_duotone from '~icons/ph/fire-duotone';
 import ph_flag_duotone from '~icons/ph/flag-duotone';
@@ -73,6 +75,7 @@ import ph_share_network_duotone from '~icons/ph/share-network-duotone';
 import ph_shield_duotone from '~icons/ph/shield-duotone';
 import ph_shield_check_duotone from '~icons/ph/shield-check-duotone';
 import ph_shield_star_duotone from '~icons/ph/shield-star-duotone';
+import ph_shuffle_duotone from '~icons/ph/shuffle-duotone';
 import ph_skull_duotone from '~icons/ph/skull-duotone';
 import ph_sliders_duotone from '~icons/ph/sliders-duotone';
 import ph_smiley_duotone from '~icons/ph/smiley-duotone';
@@ -132,9 +135,11 @@ const icons: IconMap = {
 	'ph:circle-dashed-duotone': ph_circle_dashed_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
 	'ph:cross-duotone': ph_cross_duotone,
+	'ph:dice-five-duotone': ph_dice_five_duotone,
 	'ph:dots-three-duotone': ph_dots_three_duotone,
 	'ph:dots-three-vertical-duotone': ph_dots_three_vertical_duotone,
 	'ph:drop-duotone': ph_drop_duotone,
+	'ph:eraser-duotone': ph_eraser_duotone,
 	'ph:feather-duotone': ph_feather_duotone,
 	'ph:fire-duotone': ph_fire_duotone,
 	'ph:flag-duotone': ph_flag_duotone,
@@ -176,6 +181,7 @@ const icons: IconMap = {
 	'ph:shield-duotone': ph_shield_duotone,
 	'ph:shield-check-duotone': ph_shield_check_duotone,
 	'ph:shield-star-duotone': ph_shield_star_duotone,
+	'ph:shuffle-duotone': ph_shuffle_duotone,
 	'ph:skull-duotone': ph_skull_duotone,
 	'ph:sliders-duotone': ph_sliders_duotone,
 	'ph:smiley-duotone': ph_smiley_duotone,

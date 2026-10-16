@@ -29,9 +29,11 @@ import ph_check_fill from '~icons/ph/check-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
+import ph_dice_five_fill from '~icons/ph/dice-five-fill';
 import ph_dots_three_fill from '~icons/ph/dots-three-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
 import ph_drop_fill from '~icons/ph/drop-fill';
+import ph_eraser_fill from '~icons/ph/eraser-fill';
 import ph_feather_fill from '~icons/ph/feather-fill';
 import ph_fire_fill from '~icons/ph/fire-fill';
 import ph_flag_fill from '~icons/ph/flag-fill';
@@ -73,6 +75,7 @@ import ph_share_network_fill from '~icons/ph/share-network-fill';
 import ph_shield_fill from '~icons/ph/shield-fill';
 import ph_shield_check_fill from '~icons/ph/shield-check-fill';
 import ph_shield_star_fill from '~icons/ph/shield-star-fill';
+import ph_shuffle_fill from '~icons/ph/shuffle-fill';
 import ph_skull_fill from '~icons/ph/skull-fill';
 import ph_sliders_fill from '~icons/ph/sliders-fill';
 import ph_smiley_fill from '~icons/ph/smiley-fill';
@@ -132,9 +135,11 @@ const icons: IconMap = {
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:cross-fill': ph_cross_fill,
+	'ph:dice-five-fill': ph_dice_five_fill,
 	'ph:dots-three-fill': ph_dots_three_fill,
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
 	'ph:drop-fill': ph_drop_fill,
+	'ph:eraser-fill': ph_eraser_fill,
 	'ph:feather-fill': ph_feather_fill,
 	'ph:fire-fill': ph_fire_fill,
 	'ph:flag-fill': ph_flag_fill,
@@ -176,6 +181,7 @@ const icons: IconMap = {
 	'ph:shield-fill': ph_shield_fill,
 	'ph:shield-check-fill': ph_shield_check_fill,
 	'ph:shield-star-fill': ph_shield_star_fill,
+	'ph:shuffle-fill': ph_shuffle_fill,
 	'ph:skull-fill': ph_skull_fill,
 	'ph:sliders-fill': ph_sliders_fill,
 	'ph:smiley-fill': ph_smiley_fill,

@@ -29,9 +29,11 @@ import ph_check_bold from '~icons/ph/check-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
+import ph_dice_five_bold from '~icons/ph/dice-five-bold';
 import ph_dots_three_bold from '~icons/ph/dots-three-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
+import ph_eraser_bold from '~icons/ph/eraser-bold';
 import ph_feather_bold from '~icons/ph/feather-bold';
 import ph_fire_bold from '~icons/ph/fire-bold';
 import ph_flag_bold from '~icons/ph/flag-bold';
@@ -73,6 +75,7 @@ import ph_share_network_bold from '~icons/ph/share-network-bold';
 import ph_shield_bold from '~icons/ph/shield-bold';
 import ph_shield_check_bold from '~icons/ph/shield-check-bold';
 import ph_shield_star_bold from '~icons/ph/shield-star-bold';
+import ph_shuffle_bold from '~icons/ph/shuffle-bold';
 import ph_skull_bold from '~icons/ph/skull-bold';
 import ph_sliders_bold from '~icons/ph/sliders-bold';
 import ph_smiley_bold from '~icons/ph/smiley-bold';
@@ -132,9 +135,11 @@ const icons: IconMap = {
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:cross-bold': ph_cross_bold,
+	'ph:dice-five-bold': ph_dice_five_bold,
 	'ph:dots-three-bold': ph_dots_three_bold,
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
 	'ph:drop-bold': ph_drop_bold,
+	'ph:eraser-bold': ph_eraser_bold,
 	'ph:feather-bold': ph_feather_bold,
 	'ph:fire-bold': ph_fire_bold,
 	'ph:flag-bold': ph_flag_bold,
@@ -176,6 +181,7 @@ const icons: IconMap = {
 	'ph:shield-bold': ph_shield_bold,
 	'ph:shield-check-bold': ph_shield_check_bold,
 	'ph:shield-star-bold': ph_shield_star_bold,
+	'ph:shuffle-bold': ph_shuffle_bold,
 	'ph:skull-bold': ph_skull_bold,
 	'ph:sliders-bold': ph_sliders_bold,
 	'ph:smiley-bold': ph_smiley_bold,

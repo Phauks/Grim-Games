@@ -29,9 +29,11 @@ import ph_check_thin from '~icons/ph/check-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_cross_thin from '~icons/ph/cross-thin';
+import ph_dice_five_thin from '~icons/ph/dice-five-thin';
 import ph_dots_three_thin from '~icons/ph/dots-three-thin';
 import ph_dots_three_vertical_thin from '~icons/ph/dots-three-vertical-thin';
 import ph_drop_thin from '~icons/ph/drop-thin';
+import ph_eraser_thin from '~icons/ph/eraser-thin';
 import ph_feather_thin from '~icons/ph/feather-thin';
 import ph_fire_thin from '~icons/ph/fire-thin';
 import ph_flag_thin from '~icons/ph/flag-thin';
@@ -73,6 +75,7 @@ import ph_share_network_thin from '~icons/ph/share-network-thin';
 import ph_shield_thin from '~icons/ph/shield-thin';
 import ph_shield_check_thin from '~icons/ph/shield-check-thin';
 import ph_shield_star_thin from '~icons/ph/shield-star-thin';
+import ph_shuffle_thin from '~icons/ph/shuffle-thin';
 import ph_skull_thin from '~icons/ph/skull-thin';
 import ph_sliders_thin from '~icons/ph/sliders-thin';
 import ph_smiley_thin from '~icons/ph/smiley-thin';
@@ -132,9 +135,11 @@ const icons: IconMap = {
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:cross-thin': ph_cross_thin,
+	'ph:dice-five-thin': ph_dice_five_thin,
 	'ph:dots-three-thin': ph_dots_three_thin,
 	'ph:dots-three-vertical-thin': ph_dots_three_vertical_thin,
 	'ph:drop-thin': ph_drop_thin,
+	'ph:eraser-thin': ph_eraser_thin,
 	'ph:feather-thin': ph_feather_thin,
 	'ph:fire-thin': ph_fire_thin,
 	'ph:flag-thin': ph_flag_thin,
@@ -176,6 +181,7 @@ const icons: IconMap = {
 	'ph:shield-thin': ph_shield_thin,
 	'ph:shield-check-thin': ph_shield_check_thin,
 	'ph:shield-star-thin': ph_shield_star_thin,
+	'ph:shuffle-thin': ph_shuffle_thin,
 	'ph:skull-thin': ph_skull_thin,
 	'ph:sliders-thin': ph_sliders_thin,
 	'ph:smiley-thin': ph_smiley_thin,

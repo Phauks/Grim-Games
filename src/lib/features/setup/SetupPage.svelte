@@ -31,7 +31,8 @@
 	import CharacterChoice from './CharacterChoice.svelte';
 	import CountsBar from './CountsBar.svelte';
 	import type { SetupGamePort } from './game-port.ts';
-	import SetupCheckDialog from './SetupCheckDialog.svelte';
+	import SetupCheckPanel from './SetupCheckPanel.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SetupTable from './SetupTable.svelte';
 	import SetupSteps from './SetupSteps.svelte';
 	import { currentSetupStep } from './setup-steps.ts';
@@ -44,7 +45,7 @@
 
 	let { port }: Props = $props();
 
-	let checkOpen = $state(false);
+	let clearOpen = $state(false);
 	let replaceOpen = $state(false);
 	let errorsOpen = $state(false);
 	let query = $state('');
@@ -125,9 +126,9 @@
 	}
 
 	/** True once any tile of the current bag was drawn: rebuilding would put them back. */
-	const drawStarted = $derived(
-		Object.values(game?.bag?.tiles ?? {}).some((t) => t.drawnBySeat !== undefined)
-	);
+	const bagTiles = $derived(Object.values(game?.bag?.tiles ?? {}));
+	const drawnCount = $derived(bagTiles.filter((t) => t.drawnBySeat !== undefined).length);
+	const drawStarted = $derived(drawnCount > 0);
 
 	function send(command: Command): boolean {
 		const result = port.dispatch(command);
@@ -226,23 +227,35 @@
 				</section>
 				<div class="counts">
 					<CountsBar {analysis} {travellers} />
-					<CharacterSearchBox bind:query shortcut />
+					<div class="find">
+						<CharacterSearchBox bind:query shortcut />
+						<div class="tools">
+							<IconButton
+								icon="random"
+								label="Random selection"
+								disabled={!ready}
+								onclick={random}
+							/>
+							<IconButton
+								icon="clearSelection"
+								label="Clear selection"
+								disabled={!ready || ids.length === 0}
+								onclick={() => (clearOpen = true)}
+							/>
+						</div>
+					</div>
 				</div>
+				{#if ready}
+					<SetupCheckPanel
+						{analysis}
+						{plan}
+						{jinxes}
+						{warnings}
+						{lookup}
+						onStandIn={(id, shows) => setupSelection.setStandIn(id, shows)}
+					/>
+				{/if}
 				<div class="actions">
-					<Button
-						variant="quiet"
-						disabled={!ready || ids.length === 0}
-						onclick={() => setupSelection.clear()}>Clear</Button
-					>
-					<Button variant="quiet" disabled={!ready} onclick={random}>Random</Button>
-					<Button
-						variant="quiet"
-						icon="warning"
-						disabled={!ready}
-						onclick={() => (checkOpen = true)}
-					>
-						Check <span class="badge" data-testid="warning-count">{warnings.length}</span>
-					</Button>
 					<Button
 						variant="accent"
 						icon="bag"
@@ -283,17 +296,22 @@
 	</ErrorBoundary>
 </main>
 
-{#if ready}
-	<SetupCheckDialog
-		bind:open={checkOpen}
-		{analysis}
-		{plan}
-		{jinxes}
-		{warnings}
-		{lookup}
-		onStandIn={(id, shows) => setupSelection.setStandIn(id, shows)}
-	/>
-{/if}
+<Dialog bind:open={clearOpen} role="alertdialog" title="Clear the selection?">
+	<p>
+		Now: {ids.length}
+		{ids.length === 1 ? 'character' : 'characters'} chosen. After: none.
+	</p>
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => (clearOpen = false)}>Keep</Button>
+		<Button
+			variant="accent"
+			onclick={() => {
+				setupSelection.clear();
+				clearOpen = false;
+			}}>Clear</Button
+		>
+	{/snippet}
+</Dialog>
 <Dialog
 	bind:open={errorsOpen}
 	role="alertdialog"
@@ -308,13 +326,12 @@
 		<Button variant="quiet" onclick={() => requestBuild(true)}>Build anyway</Button>
 	{/snippet}
 </Dialog>
-<Dialog
-	bind:open={replaceOpen}
-	role="alertdialog"
-	title="Replace the bag?"
-	description="Tiles have already been drawn from the current bag."
->
-	<p>A new bag starts the draw again. Characters already on seats stay.</p>
+<Dialog bind:open={replaceOpen} role="alertdialog" title="Replace the bag?">
+	<p>
+		Now: {drawnCount} of {bagTiles.length} tiles drawn. After: a new bag of {plan.tiles.length}
+		tiles and the draw starts again. The {drawnCount === 1 ? 'character' : 'characters'} already on seats
+		stay; History can restore the old bag.
+	</p>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (replaceOpen = false)}>Keep</Button>
 		<Button variant="accent" onclick={buildBag}>Replace</Button>
@@ -409,12 +426,32 @@
 		position: sticky;
 		bottom: 0;
 		display: grid;
-		grid-template-columns: repeat(4, auto);
+		grid-template-columns: auto;
 		justify-content: end;
 		gap: var(--space-2);
 		margin-top: var(--space-4);
 		padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
 		background: var(--page-background, var(--surface));
+	}
+	/* Search, then Random and Clear as icon buttons right beside it. */
+	.find {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.tools {
+		display: flex;
+		gap: var(--space-1);
+	}
+	.tools :global(.icon-button) {
+		background: var(--surface-raised);
+		box-shadow: inset 0 0 0 1px var(--border);
+	}
+	@media (hover: hover) {
+		.tools :global(.icon-button:hover:not(:disabled)) {
+			background: var(--surface-selected);
+		}
 	}
 	/* Phones and tablets: one column, the buttons stuck to the bottom after the list. */
 	.layout {
@@ -458,7 +495,7 @@
 		}
 		.actions {
 			position: static;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: minmax(0, 1fr);
 			justify-content: stretch;
 			margin-top: var(--space-2);
 			padding: 0;
@@ -469,16 +506,5 @@
 		gap: var(--space-1);
 		margin: 0;
 		padding-inline-start: 1.2em;
-	}
-	.badge {
-		display: inline-block;
-		min-width: 2ch;
-		text-align: center;
-		font-variant-numeric: tabular-nums;
-	}
-	@media (max-width: 30rem) {
-		.actions {
-			grid-template-columns: repeat(2, 1fr);
-		}
 	}
 </style>

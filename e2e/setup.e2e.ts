@@ -43,6 +43,22 @@ test('setup is one flow: Characters, Draw, then Setup reminders', async ({ page 
 	await steps.getByRole('link', { name: 'Draw' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
 
+	// Once the draw has started, the steps and the way back stay on screen.
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('reveal')).toBeHidden();
+	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
+	await expect(page.getByText(/\d+ left|Enter draws/)).toHaveCount(0);
+	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await expect(page).toHaveURL(`${board}/setup`);
+	// Going back changes nothing; building again says what happens to the drawn tile.
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	const replace = page.getByRole('alertdialog', { name: 'Replace the bag?' });
+	await expect(replace).toContainText('Now: 1 of 5 tiles drawn.');
+	await replace.getByRole('button', { name: 'Keep' }).tap();
+	await steps.getByRole('link', { name: 'Draw' }).tap();
+	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
+
 	// Back to the board from any step.
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
 	await expect(page).toHaveURL(board);
@@ -74,11 +90,12 @@ test('selection counts against the setup sheet and explains the Drunk', async ({
 	// A Baron needs two more Outsiders: the counts and the check say so, but nothing blocks.
 	await select(page, 'Baron');
 	await expect(page.getByTestId('warning-count')).not.toHaveText('0');
-	await page.getByRole('button', { name: /Check/ }).tap();
+	// The check is on the screen, not behind a button.
+	await expect(page.getByRole('button', { name: /Check/ })).toHaveCount(0);
 	const check = page.getByTestId('setup-check');
+	await expect(check).toBeVisible();
 	await expect(check).toContainText(/Baron\s*: \+2 Outsiders/);
 	await expect(check.getByTestId('stand-in-drunk')).toContainText('is shown');
-	await page.keyboard.press('Escape');
 	await select(page, 'Baron');
 
 	// The selection is kept on the device.
@@ -86,9 +103,13 @@ test('selection counts against the setup sheet and explains the Drunk', async ({
 	await expect(choice(page, 'Drunk')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByTestId('warning-count')).toHaveText('0');
 
-	await page.getByRole('button', { name: 'Clear', exact: true }).tap();
+	// Clear is an icon by the search and says what it discards before clearing.
+	await page.getByRole('button', { name: 'Clear selection' }).tap();
+	const clear = page.getByRole('alertdialog', { name: 'Clear the selection?' });
+	await expect(clear).toContainText('Now: 6 characters chosen. After: none.');
+	await clear.getByRole('button', { name: 'Clear', exact: true }).tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
-	await page.getByRole('button', { name: 'Random' }).tap();
+	await page.getByRole('button', { name: 'Random selection' }).tap();
 	await expect(page.getByTestId('warning-count')).toHaveText('0');
 });
 
@@ -171,13 +192,14 @@ test('type groups and the setup sheet close from their header and stay closed', 
 
 test('a character picked by Random looks the same as one picked by hand', async ({ page }) => {
 	await selectionFor(page, 5);
-	await page.getByRole('button', { name: 'Random' }).tap();
+	await page.getByRole('button', { name: 'Random selection' }).tap();
 	const picked = page.locator('.choice[data-selected]');
 	await expect(picked.first()).toBeVisible();
 	const random = picked.first();
 	const randomName = await random.locator('.main').getAttribute('data-character-id');
 	// Pick one by hand: clear, then tap the same character.
-	await page.getByRole('button', { name: 'Clear', exact: true }).tap();
+	await page.getByRole('button', { name: 'Clear selection' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Clear', exact: true }).tap();
 	await page.locator(`[data-character-id="${randomName}"]`).tap();
 	const manual = page.locator('.choice[data-selected]').first();
 	const ring = (l: typeof manual) =>
@@ -188,7 +210,7 @@ test('a character picked by Random looks the same as one picked by hand', async 
 	// Move the pointer away so a hover can't differ either.
 	await page.mouse.move(0, 0);
 	const byHand = await ring(manual);
-	await page.getByRole('button', { name: 'Random' }).tap();
+	await page.getByRole('button', { name: 'Random selection' }).tap();
 	await page.mouse.move(0, 0);
 	const byRandom = await ring(page.locator('.choice[data-selected]').first());
 	expect(byHand).toEqual(byRandom);

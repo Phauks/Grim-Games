@@ -29,9 +29,11 @@ import ph_check_light from '~icons/ph/check-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_cross_light from '~icons/ph/cross-light';
+import ph_dice_five_light from '~icons/ph/dice-five-light';
 import ph_dots_three_light from '~icons/ph/dots-three-light';
 import ph_dots_three_vertical_light from '~icons/ph/dots-three-vertical-light';
 import ph_drop_light from '~icons/ph/drop-light';
+import ph_eraser_light from '~icons/ph/eraser-light';
 import ph_feather_light from '~icons/ph/feather-light';
 import ph_fire_light from '~icons/ph/fire-light';
 import ph_flag_light from '~icons/ph/flag-light';
@@ -73,6 +75,7 @@ import ph_share_network_light from '~icons/ph/share-network-light';
 import ph_shield_light from '~icons/ph/shield-light';
 import ph_shield_check_light from '~icons/ph/shield-check-light';
 import ph_shield_star_light from '~icons/ph/shield-star-light';
+import ph_shuffle_light from '~icons/ph/shuffle-light';
 import ph_skull_light from '~icons/ph/skull-light';
 import ph_sliders_light from '~icons/ph/sliders-light';
 import ph_smiley_light from '~icons/ph/smiley-light';
@@ -132,9 +135,11 @@ const icons: IconMap = {
 	'ph:circle-dashed-light': ph_circle_dashed_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:cross-light': ph_cross_light,
+	'ph:dice-five-light': ph_dice_five_light,
 	'ph:dots-three-light': ph_dots_three_light,
 	'ph:dots-three-vertical-light': ph_dots_three_vertical_light,
 	'ph:drop-light': ph_drop_light,
+	'ph:eraser-light': ph_eraser_light,
 	'ph:feather-light': ph_feather_light,
 	'ph:fire-light': ph_fire_light,
 	'ph:flag-light': ph_flag_light,
@@ -176,6 +181,7 @@ const icons: IconMap = {
 	'ph:shield-light': ph_shield_light,
 	'ph:shield-check-light': ph_shield_check_light,
 	'ph:shield-star-light': ph_shield_star_light,
+	'ph:shuffle-light': ph_shuffle_light,
 	'ph:skull-light': ph_skull_light,
 	'ph:sliders-light': ph_sliders_light,
 	'ph:smiley-light': ph_smiley_light,

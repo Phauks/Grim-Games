@@ -27,7 +27,6 @@
 	const bag = $derived(game?.bag);
 	const slots = $derived(bag ? bagSlots(bag) : []);
 	const next = $derived(game ? nextDrawSeat(game) : undefined);
-	const remaining = $derived(slots.filter((s) => s.state === 'in-bag').length);
 	// Numbers or symbols on the face-down tiles (Storyteller settings).
 	const face = $derived(preferences.current.tileFace);
 	const symbols = $derived(tileSymbols(slots.map((s) => s.tileId)));
@@ -114,8 +113,6 @@
 			<p class="next">
 				<span class="label">Next</span>
 				<span data-testid="next-seat">{label(next)}</span>
-				<span class="left">{remaining} left</span>
-				<kbd class="hint">Enter draws</kbd>
 			</p>
 			<ol class="tiles" aria-label="Bag">
 				{#each slots as s (s.tileId)}
@@ -201,22 +198,6 @@
 	}
 	.next .label {
 		color: var(--on-surface-muted);
-	}
-	.next .left {
-		margin-inline-start: auto;
-		font-variant-numeric: tabular-nums;
-	}
-	/* Only with a mouse and keyboard; on touch screens the space isn't taken. */
-	.hint {
-		display: none;
-		font: inherit;
-		font-size: 0.8rem;
-		color: var(--on-surface-muted);
-	}
-	@media (hover: hover) and (pointer: fine) {
-		.hint {
-			display: inline;
-		}
 	}
 	.empty {
 		margin: var(--space-4) 0;

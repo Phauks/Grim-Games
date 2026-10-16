@@ -3,12 +3,10 @@
 	import type { BagPlan, ScriptJinx, SetupAnalysis } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 
 	interface Props {
-		open: boolean;
 		analysis: SetupAnalysis;
 		plan: BagPlan;
 		/** Jinxes between selected characters. */
@@ -19,17 +17,26 @@
 		onStandIn: (characterId: CharacterId, shows: CharacterId) => void;
 	}
 
-	let { open = $bindable(), analysis, plan, jinxes, warnings, lookup, onStandIn }: Props = $props();
+	let { analysis, plan, jinxes, warnings, lookup, onStandIn }: Props = $props();
 
 	const name = (id: CharacterId) => lookup(id)?.name ?? id;
 </script>
 
-<!-- Everything the counts bar can't show: warnings, setup changes, stand-ins and jinxes. -->
-<Dialog bind:open title="Setup check" size="full">
-	<div class="body" data-testid="setup-check">
+<!--
+	Everything the counts bar can't show, always on screen so the Storyteller sees it
+	(Trevor, 2026-10-16): warnings, stand-ins, setup changes and jinxes. Each section keeps
+	its header and shows None when empty. It warns; it never blocks.
+-->
+<section class="check" aria-label="Setup check" data-testid="setup-check">
+	<div class="body">
 		<Collapsible title="Warnings" level={3} storageKey="setup-check:warnings">
+			{#snippet aside()}<span
+					class="count"
+					data-warn={warnings.length ? '' : undefined}
+					data-testid="warning-count">{warnings.length}</span
+				>{/snippet}
 			{#if warnings.length}
-				<ul>
+				<ul class="warn">
 					{#each warnings as warning, i (i)}<li><GlossaryText text={warning} /></li>{/each}
 				</ul>
 			{:else}<p>None</p>{/if}
@@ -81,14 +88,21 @@
 			{:else}<p>None</p>{/if}
 		</Collapsible>
 	</div>
-</Dialog>
+</section>
 
 <style>
+	.check {
+		padding: var(--space-1) var(--space-3) var(--space-3);
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
+	}
+	.check:has(.warn) {
+		box-shadow: inset 0 0 0 2px var(--accent);
+	}
 	.body {
 		display: grid;
-		gap: var(--space-3);
-		overflow-y: auto;
-		padding-top: var(--space-2);
+		gap: var(--space-1);
+		font-size: 0.9rem;
 	}
 	p,
 	ul {
@@ -98,6 +112,21 @@
 		display: grid;
 		gap: var(--space-2);
 		padding-inline-start: 1.2em;
+	}
+	.count {
+		display: inline-grid;
+		place-items: center;
+		min-width: 1.6em;
+		height: 1.6em;
+		padding: 0 0.3em;
+		border-radius: var(--radius-full);
+		background: var(--surface);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.count[data-warn] {
+		background: var(--accent);
+		color: var(--on-accent, var(--on-surface));
 	}
 	.stand-ins {
 		padding: 0;

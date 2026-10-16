@@ -29,9 +29,11 @@ import ph_check from '~icons/ph/check';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_cross from '~icons/ph/cross';
+import ph_dice_five from '~icons/ph/dice-five';
 import ph_dots_three from '~icons/ph/dots-three';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_drop from '~icons/ph/drop';
+import ph_eraser from '~icons/ph/eraser';
 import ph_feather from '~icons/ph/feather';
 import ph_fire from '~icons/ph/fire';
 import ph_flag from '~icons/ph/flag';
@@ -73,6 +75,7 @@ import ph_share_network from '~icons/ph/share-network';
 import ph_shield from '~icons/ph/shield';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
+import ph_shuffle from '~icons/ph/shuffle';
 import ph_skull from '~icons/ph/skull';
 import ph_sliders from '~icons/ph/sliders';
 import ph_smiley from '~icons/ph/smiley';
@@ -132,9 +135,11 @@ const icons: IconMap = {
 	'ph:circle-dashed': ph_circle_dashed,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:cross': ph_cross,
+	'ph:dice-five': ph_dice_five,
 	'ph:dots-three': ph_dots_three,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
 	'ph:drop': ph_drop,
+	'ph:eraser': ph_eraser,
 	'ph:feather': ph_feather,
 	'ph:fire': ph_fire,
 	'ph:flag': ph_flag,
@@ -176,6 +181,7 @@ const icons: IconMap = {
 	'ph:shield': ph_shield,
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,
+	'ph:shuffle': ph_shuffle,
 	'ph:skull': ph_skull,
 	'ph:sliders': ph_sliders,
 	'ph:smiley': ph_smiley,
