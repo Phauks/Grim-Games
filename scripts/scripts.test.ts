@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { findHexColours } from './check-colors.ts';
+import { findPxSizes, svelteStyles } from './check-px.ts';
 import { generatedFiles, missingIcons } from './generate-icons.ts';
 
 describe('generate-icons', () => {
@@ -30,5 +31,39 @@ describe('check-colors', () => {
 		expect(findHexColours("import x from '#lib/ui';\n{#each a as b}{#if c}{/if}{/each}")).toEqual(
 			[]
 		);
+	});
+});
+
+describe('check-px', () => {
+	it('flags pixel sizes', () => {
+		expect(findPxSizes('a {\n\twidth: 48px;\n\tpadding: 2px var(--u);\n}')).toEqual([
+			{ line: 2, match: '48px', property: 'width' },
+			{ line: 3, match: '2px', property: 'padding' }
+		]);
+	});
+
+	it('allows hairlines, shadows, breakpoints, comments and px-ok lines', () => {
+		const css = [
+			'@media (max-width: 479.98px) {',
+			'\ta { border: 2px solid; outline-offset: -3px; width: 1px; margin: 0px; }',
+			'\tb { box-shadow: 0 6px 8px black; } /* a 44px hit area */',
+			'\tc { --tap-target: 44px; /* px-ok: CSS pixels */ }',
+			'}'
+		].join('\n');
+		expect(findPxSizes(css)).toEqual([]);
+	});
+
+	it('flags thick borders', () => {
+		expect(findPxSizes('a { border-left: 6px solid; }')).toEqual([
+			{ line: 1, match: '6px', property: 'border-left' }
+		]);
+	});
+
+	it('finds Svelte style blocks with their starting line', () => {
+		const blocks = svelteStyles('<p>40px</p>\n<style>\n\tp { width: 40px; }\n</style>');
+		expect(blocks).toHaveLength(1);
+		expect(findPxSizes(blocks[0].css, blocks[0].firstLine)).toEqual([
+			{ line: 3, match: '40px', property: 'width' }
+		]);
 	});
 });
