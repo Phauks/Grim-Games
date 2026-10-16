@@ -6,8 +6,10 @@
 		type FixedReminderMove
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**
@@ -88,7 +90,11 @@
 		<!-- Which token, from which character, and both seats (Trevor, 2026-10-16). -->
 		<p class="what">
 			<CharacterBadge characterId={move.reminder.characterId} character={owner} inline />'s
-			<strong>{move.reminder.label}</strong> reminder
+			<ReminderToken
+				label={move.reminder.label}
+				type={owner?.type}
+				alignment={placingAlignment(game, move.reminder.characterId, characters)}
+			/> reminder
 		</p>
 		<dl class="change">
 			<dt>Now</dt>
