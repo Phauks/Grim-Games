@@ -575,6 +575,65 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toContainText('Seat 3');
 });
 
+test('every reminder on a crowded seat is shown and can be dragged off', async ({ page }) => {
+	await startGame(page);
+	// Three characters in play, each with two reminders, plus the Drunk's: seven on one seat.
+	for (const [seat, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Librarian'],
+		[3, 'Investigator']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 4);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 4' });
+	for (const group of ['Washerwoman', 'Librarian', 'Investigator', 'Drunk']) {
+		const buttons = picker.getByRole('group', { name: group }).getByRole('button');
+		for (let i = 0; i < (await buttons.count()); i++) await buttons.nth(i).tap();
+	}
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 4: no name, no character, 7 reminders')).toBeAttached();
+
+	// Each one is on the board and on top where it sits, so a finger can take any of them.
+	const tokens = page.getByTestId('board-reminder');
+	await expect(tokens).toHaveCount(7);
+	for (let i = 0; i < 7; i++) {
+		const box = (await tokens.nth(i).boundingBox())!;
+		const hit = await tokens
+			.nth(i)
+			.evaluate(
+				(el, [x, y]) => el.contains(document.elementFromPoint(x, y)),
+				[box.x + box.width / 2, box.y + box.height / 2]
+			);
+		expect(hit).toBe(true);
+	}
+
+	// The last one drags onto Seat 6.
+	const last = tokens.last();
+	const from = (await last.boundingBox())!;
+	const to = (await page.getByRole('button', { name: /^Seat 6:/ }).boundingBox())!;
+	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 - 20, { steps: 6 });
+	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
+	await page.mouse.up();
+	// It is the Drunk's, which normally stays put, so the move asks first.
+	await page
+		.getByRole('alertdialog', { name: 'Confirm change?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(seatLabelled(page, 'Seat 6: no name, no character, 1 reminder')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 4: no name, no character, 6 reminders')).toBeAttached();
+});
+
 test('the night order opens from the board and steps are ticked by hand', async ({ page }) => {
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
@@ -840,33 +899,38 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
 });
 
-test('the grimoire menu has Settings, Account and Exit game, which asks first', async ({
+test('the game toolbar opens the app menu; leaving the game asks first and keeps it', async ({
 	page
 }) => {
 	await startGame(page);
 	const board = page.url();
+	// Exit game is gone from More: leaving is through the app's menu (Trevor, 2026-10-16).
 	await page.getByRole('button', { name: 'More' }).tap();
 	const grimoireMenu = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(grimoireMenu.getByRole('button', { name: 'Account' })).toBeVisible();
+	await expect(grimoireMenu.getByRole('button', { name: 'Exit game' })).toHaveCount(0);
+	await expect(grimoireMenu.getByRole('button', { name: 'End game' })).toBeVisible();
+	await page.keyboard.press('Escape');
+
 	// Settings open over the board, so the game is never left.
-	await grimoireMenu.getByRole('button', { name: 'Settings' }).tap();
+	await page.getByRole('button', { name: 'Open menu' }).tap();
+	const drawer = page.getByRole('dialog', { name: 'Menu' });
+	await drawer.getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await expect(settings).toBeVisible();
 	await settings.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(page).toHaveURL(board);
-	await page.getByRole('button', { name: 'More' }).tap();
-	await grimoireMenu.getByRole('button', { name: 'Exit game' }).tap();
-	const exit = page.getByRole('alertdialog', { name: 'Exit game?' });
-	await expect(exit).toContainText('Trouble Brewing');
-	await exit.getByRole('button', { name: 'Cancel' }).tap();
+
+	await page.getByRole('button', { name: 'Open menu' }).tap();
+	await drawer.getByRole('link', { name: 'Scripts' }).tap();
+	const leave = page.getByRole('alertdialog', { name: 'Leave the game?' });
+	await expect(leave).toContainText('Trouble Brewing');
+	await leave.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(page).toHaveURL(board);
 
-	await menu(page, 'Exit game');
-	await page
-		.getByRole('alertdialog', { name: 'Exit game?' })
-		.getByRole('button', { name: 'Exit game' })
-		.tap();
-	await expect(page).toHaveURL(/\/$/);
+	await page.getByRole('button', { name: 'Open menu' }).tap();
+	await drawer.getByRole('link', { name: 'Resume game' }).tap();
+	await leave.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page).toHaveURL(/\/games$/);
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*8 seats/ }).first()).toBeVisible();
 });
 
@@ -894,7 +958,8 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	await closeSheet(page);
 
 	// With "Stack duplicate reminders" on, they show as one token with what is left.
-	await menu(page, 'Settings');
+	await page.getByRole('button', { name: 'Open menu' }).tap();
+	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })

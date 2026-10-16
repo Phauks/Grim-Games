@@ -4,7 +4,7 @@ import { nameBox, placeNames } from './name-placement.ts';
 const board = { width: 400, height: 400 };
 
 describe('placeNames', () => {
-	it('puts names on the outside of the table', () => {
+	it('puts every name beneath its token when that is clear', () => {
 		const seats = [
 			{ x: 300, y: 80 },
 			{ x: 520, y: 300 },
@@ -19,7 +19,7 @@ describe('placeNames', () => {
 			obstacles: [],
 			board: { width: 600, height: 600 }
 		});
-		expect(places).toEqual(['above', 'right', 'below', 'left']);
+		expect(places).toEqual(['below', 'below', 'below', 'below']);
 	});
 
 	it('moves a name off a reminder that would cover it', () => {
@@ -37,16 +37,16 @@ describe('placeNames', () => {
 	});
 
 	it('keeps a name on the board at the edge', () => {
-		// Right at the top edge: "above" would be off the board.
+		// Right at the bottom edge: "below" would be off the board.
 		const places = placeNames({
-			seats: [{ x: 200, y: 26 }],
+			seats: [{ x: 200, y: 374 }],
 			size: 48,
 			widths: [60],
 			height: 18,
 			obstacles: [],
 			board
 		});
-		expect(places[0]).not.toBe('above');
+		expect(places[0]).toBe('above');
 	});
 
 	it('keeps names off neighbouring tokens and each other', () => {
@@ -67,5 +67,18 @@ describe('placeNames', () => {
 		const b = nameBox(seats[1], places[1], 48, 80, 18);
 		const apart = Math.abs(a.x - b.x) >= (a.w + b.w) / 2 || Math.abs(a.y - b.y) >= (a.h + b.h) / 2;
 		expect(apart).toBe(true);
+	});
+
+	it('keeps a name beneath when only rounding would say it overlaps', () => {
+		// A board whose centre is not a whole number of pixels (the tablet board, 696×984).
+		const places = placeNames({
+			seats: [{ x: 348, y: 88.56 }],
+			size: 96,
+			widths: [78.16],
+			height: 22,
+			obstacles: [],
+			board: { width: 696, height: 984 }
+		});
+		expect(places[0]).toBe('below');
 	});
 });

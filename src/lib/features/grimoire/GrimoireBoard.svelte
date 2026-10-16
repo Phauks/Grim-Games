@@ -10,7 +10,9 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
 	import BackgroundDialog from './BackgroundDialog.svelte';
-	import { openAccount, openSettings } from '#lib/features/shell/shell.ts';
+	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
+	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
+	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
@@ -39,12 +41,12 @@
 		seatPoints,
 		seatTokenSize,
 		spreadEvenly,
-		towardsMiddle,
 		withPlaced,
 		withoutPlaced,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
-	import { placeNames, type Box } from './name-placement.ts';
+	import { nameBox, placeNames } from './name-placement.ts';
+	import { reminderFan } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -114,45 +116,56 @@
 		)
 	);
 
-	// ── Reminder tokens on the board ──
-	// Each seat's reminders line up in front of it, towards the middle, as on a real
-	// grimoire. Up to three show; past that the third is a "+N" that opens the seat.
-	const MAX_SHOWN = 3;
+	// ── Player names, then reminders ──
+	// A name goes beneath its token unless that is covered (name-placement.ts); each seat's
+	// reminders then line up in front of it, towards the middle, clear of the name, and
+	// every one is shown so each can be dragged (reminder-fan.ts).
 	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5)) * reminderScale));
-	function chipPoints(i: number, count: number): SeatPoint[] {
-		const distances = Array.from(
-			{ length: Math.min(count, MAX_SHOWN) },
-			(_, k) => size / 2 + chip / 2 + 6 + k * (chip + 10)
-		);
-		return towardsMiddle(shown[i], { width, height }, distances);
-	}
-
-	// ── Player names: placed where nothing covers them (outside first) ──
 	let rootFont = $state(16);
 	$effect(() => {
 		void preferences.current;
 		rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 	});
-	const namePlaces = $derived.by(() => {
+	const toPx = (p: SeatPoint) => ({ x: (p.x / 100) * width, y: (p.y / 100) * height });
+	const toPercent = (p: { x: number; y: number }): SeatPoint => ({
+		x: (p.x / width) * 100,
+		y: (p.y / height) * 100
+	});
+	/** Each seat's name, its box in px (the badge: 0.8rem text, padding and border). */
+	const nameBoxes = $derived.by(() => {
 		if (width <= 0 || height <= 0) return [];
-		const px = (p: SeatPoint) => ({ x: (p.x / 100) * width, y: (p.y / 100) * height });
-		const lineHeight = Math.ceil(rootFont * 0.9 * 1.2);
+		const font = rootFont * 0.8;
+		const lineHeight = Math.ceil(font * 1.2 + font * 0.3 + 2);
 		const widths = seats.map((seat, i) => {
 			const name = seat.playerName ?? `Seat ${i + 1}`;
-			return Math.min(size + 2 * unit, name.length * rootFont * 0.9 * 0.55 + 6);
+			return Math.min(size + 2 * unit, name.length * font * 0.55 + font + 2);
 		});
-		const obstacles: Box[] = seats.flatMap((seat, i) =>
-			chipPoints(i, seat.reminders.length).map((p) => ({ ...px(p), w: chip, h: chip }))
-		);
-		return placeNames({
-			seats: shown.map(px),
+		const centres = shown.map(toPx);
+		const places = placeNames({
+			seats: centres,
 			size,
 			widths,
 			height: lineHeight,
-			obstacles,
+			obstacles: [],
 			board: { width, height }
 		});
+		return places.map((place, i) => ({
+			place,
+			box: nameBox(centres[i], place, size, widths[i], lineHeight)
+		}));
 	});
+	const namePlaces = $derived(nameBoxes.map((n) => n.place));
+	function chipPoints(i: number, count: number): SeatPoint[] {
+		if (width <= 0 || height <= 0) return Array.from({ length: count }, () => shown[i]);
+		return reminderFan({
+			seat: toPx(shown[i]),
+			middle: { x: width / 2, y: height / 2 },
+			count,
+			size,
+			chip,
+			name: nameBoxes[i]?.box
+		}).map(toPercent);
+	}
 
 	interface ReminderDrag {
 		reminderId: ReminderId;
@@ -456,6 +469,7 @@
 	let winner = $state<'good' | 'evil' | undefined>();
 	function endGame() {
 		endOpen = false;
+		releaseGuard?.();
 		endedGames.end(game.gameId, winner);
 		if (roomHost().code) roomHost().close();
 		void goto(resolve('/'));
@@ -492,7 +506,30 @@
 	);
 	// "These characters are not in play" shows a bluff set (Trevor, 2026-10-16).
 	const infoBluffSets = $derived(showableBluffSets(game, characters));
+	// ── Leaving: the navigation menu (or Back) asks first; the game stays saved ──
 	let exitOpen = $state(false);
+	let pendingLeave: (() => void) | undefined;
+	let releaseGuard: (() => void) | undefined;
+	$effect(() => {
+		const gameId = game.gameId;
+		const release = setLeaveGuard(
+			(leave) => {
+				pendingLeave = leave;
+				exitOpen = true;
+			},
+			(url) => url.pathname.startsWith(`/grimoire/${gameId}`)
+		);
+		releaseGuard = release;
+		return release;
+	});
+	function confirmLeave() {
+		exitOpen = false;
+		const leave = pendingLeave;
+		pendingLeave = undefined;
+		// Confirmed: nothing more to ask on the way out.
+		releaseGuard?.();
+		leave?.();
+	}
 
 	// ── Background: an image of the Storyteller's own, kept on this device ──
 	let backgroundOpen = $state(false);
@@ -562,6 +599,8 @@
 			<span class="title">Add a seat</span>
 			<Button variant="quiet" icon="close" onclick={() => (placing = undefined)}>Cancel</Button>
 		{:else}
+			<!-- The app's navigation; on the narrowest phones it is in More instead. -->
+			<span class="nav-menu"><NavMenuButton /></span>
 			<!-- Icons on phones; with their words on wider screens, where there is room. -->
 			<span class="spacer"></span>
 			<Button
@@ -586,7 +625,7 @@
 			<Button variant="quiet" icon="arrange" aria-label="Arrange seats" onclick={startArranging}
 				><span class="tool-label">Arrange seats</span></Button
 			>
-			<Button variant="quiet" icon="menu" aria-label="More" onclick={() => (menuOpen = true)}
+			<Button variant="quiet" icon="more" aria-label="More" onclick={() => (menuOpen = true)}
 				><span class="tool-label">More</span></Button
 			>
 		{/if}
@@ -663,8 +702,7 @@
 			{@const count = seat.reminders.length}
 			{#if count > 0}
 				{@const at = chipPoints(i, count)}
-				{#each seat.reminders.slice(0, MAX_SHOWN) as reminder, k (reminder.reminderId)}
-					{@const overflow = k === MAX_SHOWN - 1 && count > MAX_SHOWN ? count - k : undefined}
+				{#each seat.reminders as reminder, k (reminder.reminderId)}
 					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
 					{@const p = dragged ? reminderDrag!.at : at[k]}
 					<div class="chip-slot" class:dragging={dragged} style:left="{p.x}%" style:top="{p.y}%">
@@ -673,12 +711,9 @@
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 							size={chip}
-							more={overflow}
 							disabled={arranging}
 							onTap={() => openSeat(seat.seatId)}
-							onDrag={overflow
-								? undefined
-								: (x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
+							onDrag={(x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
 							onCancel={() => (reminderDrag = undefined)}
 						/>
 					</div>
@@ -806,17 +841,13 @@
 		>
 			Background
 		</Button>
-		<!-- The site header is hidden in a game so nobody leaves by accident (Trevor, 2026-10-16). -->
-		<Button variant="quiet" icon="settings" onclick={() => fromMenu(() => openSettings())}>
-			Settings
-		</Button>
-		<Button variant="quiet" icon="account" onclick={() => fromMenu(() => void openAccount())}>
-			Account
-		</Button>
-		<Button variant="quiet" icon="back" onclick={() => fromMenu(() => (exitOpen = true))}>
-			Exit game
-		</Button>
-		<!-- Exit leaves the game to come back to; End moves it to Past games (Trevor, 2026-10-16). -->
+		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
+		<span class="menu-nav">
+			<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
+				Navigation
+			</Button>
+		</span>
+		<!-- Leaving keeps the game to come back to; End moves it to Past games (Trevor, 2026-10-16). -->
 		<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
 			End game
 		</Button>
@@ -848,16 +879,16 @@
 	onChange={() => (backgroundRead += 1)}
 />
 
-<Dialog bind:open={exitOpen} title="Exit game?" role="alertdialog">
+<Dialog bind:open={exitOpen} title="Leave the game?" role="alertdialog">
 	<dl class="change">
 		<dt>Now</dt>
 		<dd>In the grimoire for {game.script.meta?.name ?? 'this game'}</dd>
 		<dt>Becomes</dt>
-		<dd>The home page. The game stays saved and opens again from there.</dd>
+		<dd>The game stays saved and opens again from Resume game.</dd>
 	</dl>
 	{#snippet actions()}
 		<Button variant="quiet" onclick={() => (exitOpen = false)}>Cancel</Button>
-		<Button variant="accent" icon="back" onclick={() => goto(resolve('/'))}>Exit game</Button>
+		<Button variant="accent" icon="check" onclick={confirmLeave}>Confirm</Button>
 	{/snippet}
 </Dialog>
 
@@ -1186,6 +1217,17 @@
 		color: var(--on-evil);
 	}
 	/* On a phone the arranging controls need the whole bar. */
+	.menu-nav {
+		display: none;
+	}
+	@media (max-width: 359.98px) {
+		.nav-menu {
+			display: none;
+		}
+		.menu-nav {
+			display: contents;
+		}
+	}
 	@media (max-width: 479.98px) {
 		.arranging-title {
 			display: none;

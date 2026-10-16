@@ -1,8 +1,9 @@
 /**
  * Where each player's name goes around their token, so a name is never hidden under a
- * neighbour, a reminder or the screen edge (Trevor, 2026-10-16). Names prefer the outside
- * of the table (reminders sit on the inside), then the sides, then the inside. Each seat
- * takes the first place that is clear, or the one that overlaps least. Pixels throughout.
+ * neighbour or the screen edge (Trevor, 2026-10-16). A name goes beneath its token whenever
+ * that is clear (Trevor, 2026-10-16), then on the outside of the table, then the sides. Each
+ * seat takes the first place that is clear, or the one that overlaps least; reminders are
+ * laid out after the names and keep clear of them (reminder-fan.ts). Pixels throughout.
  */
 
 export type NamePlace = 'below' | 'above' | 'left' | 'right';
@@ -68,16 +69,11 @@ function offBoard(box: Box, board: { width: number; height: number }): number {
 	return box.w * box.h - inside;
 }
 
-/** The places to try for a seat: outwards first, then the sides, then inwards. */
+/** The places to try for a seat: beneath, then outwards, then the sides. */
 function preference(seat: { x: number; y: number }, board: { width: number; height: number }) {
 	const dx = seat.x - board.width / 2;
-	const dy = seat.y - board.height / 2;
-	const vertical: NamePlace[] = dy >= 0 ? ['below', 'above'] : ['above', 'below'];
 	const sideways: NamePlace[] = dx >= 0 ? ['right', 'left'] : ['left', 'right'];
-	// A seat at the side of the table looks outwards sideways; otherwise up or down.
-	return Math.abs(dx) > Math.abs(dy) * 1.5
-		? [sideways[0], vertical[0], vertical[1], sideways[1]]
-		: [vertical[0], sideways[0], sideways[1], vertical[1]];
+	return ['below', 'above', ...sideways] as NamePlace[];
 }
 
 export function placeNames(input: NameInput): NamePlace[] {
@@ -95,11 +91,12 @@ export function placeNames(input: NameInput): NamePlace[] {
 			});
 			for (const o of obstacles) cost += overlap(box, o);
 			for (const t of taken) cost += overlap(box, t);
-			if (cost < bestCost) {
+			// Under half a square pixel is rounding, not an overlap: keep the earlier place.
+			if (cost < bestCost - 0.5) {
 				best = place;
 				bestCost = cost;
 			}
-			if (cost === 0) break;
+			if (cost < 0.5) break;
 		}
 		taken.push(nameBox(seat, best, size, widths[i] ?? size, height));
 		return best;

@@ -98,17 +98,27 @@
 		color: var(--on-surface);
 		--icon-size: calc(var(--size) * 0.26);
 	}
-	/* Laid beside the token, outside its box, on whichever side is clear. */
+	/*
+	 * The player's name in its own badge (Trevor, 2026-10-16), neutral so it never reads as
+	 * a team, and readable on any background. Beneath the token unless that is covered;
+	 * a long name is cut short rather than widening the seat.
+	 */
 	.name {
 		position: absolute;
+		box-sizing: border-box;
 		max-width: 100%;
 		overflow: hidden;
+		padding: 0.15em 0.5em;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		box-shadow: var(--shadow);
 		font-family: var(--font-player);
-		font-size: 0.9rem;
+		font-size: 0.8rem;
 		line-height: 1.2;
 		white-space: nowrap;
 		text-overflow: ellipsis;
-		text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
 	}
 	.name[data-place='below'] {
 		top: calc(100% + 0.125 * var(--u));
