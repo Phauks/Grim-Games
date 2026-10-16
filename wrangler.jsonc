@@ -36,9 +36,22 @@
 		"run_worker_first": ["/api/*"]
 	},
 	"durable_objects": {
-		"bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+		"bindings": [
+			{ "name": "ROOMS", "class_name": "Room" },
+			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" }
+		]
 	},
-	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+	"migrations": [
+		{ "tag": "v1", "new_sqlite_classes": ["Room"] },
+		{ "tag": "v2", "new_sqlite_classes": ["SharedScript"] }
+	],
+	// Script share codes (worker/share.ts): per-address limits so codes can't be guessed by
+	// trying many. namespace_id is our own number; nothing to create in the dashboard
+	// (developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
+	"ratelimits": [
+		{ "name": "SHARE_LOOKUPS", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
+		{ "name": "SHARE_CREATES", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } }
+	],
 	"vars": { "ENVIRONMENT": "production" },
 	// Worker Previews: Workers Builds runs `npx wrangler preview` for non-production branches,
 	// giving each branch/PR its own URL on this same Worker, with its own Durable Object
@@ -46,7 +59,14 @@
 	"previews": {
 		"vars": { "ENVIRONMENT": "preview" },
 		"durable_objects": {
-			"bindings": [{ "name": "ROOMS", "class_name": "Room" }]
-		}
+			"bindings": [
+				{ "name": "ROOMS", "class_name": "Room" },
+				{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" }
+			]
+		},
+		"ratelimits": [
+			{ "name": "SHARE_LOOKUPS", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
+			{ "name": "SHARE_CREATES", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } }
+		]
 	}
 }

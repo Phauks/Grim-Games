@@ -1,8 +1,11 @@
 import { DurableObject } from 'cloudflare:workers';
 import { normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import { handleBotcScripts } from './botcscripts.ts';
+import { handleShare, SharedScript, type ShareEnv } from './share.ts';
 
-export interface Env {
+export { SharedScript };
+
+export interface Env extends ShareEnv {
 	ASSETS: Fetcher;
 	ROOMS: DurableObjectNamespace<Room>;
 }
@@ -88,6 +91,9 @@ export default {
 		if (url.pathname.startsWith('/api/botcscripts/')) {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
 			return handleBotcScripts(url.pathname);
+		}
+		if (url.pathname === '/api/share' || url.pathname.startsWith('/api/share/')) {
+			return handleShare(request, env);
 		}
 		if (url.pathname.startsWith('/api/')) {
 			return new Response('Not found', { status: 404 });

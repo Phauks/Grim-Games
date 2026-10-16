@@ -3,7 +3,9 @@ import {
 	decodeSharedScript,
 	encodeSharedScript,
 	shareLink,
-	sharedPayloadFromHash
+	sharedRefFromHash,
+	sharedRefHash,
+	type SharedRef
 } from './share.ts';
 
 const script = [
@@ -30,7 +32,10 @@ describe('share links', () => {
 			'/scripts'
 		);
 		expect(url.search).toBe('');
-		expect(sharedPayloadFromHash(url.hash)).toBe(await encodeSharedScript(script));
+		expect(sharedRefFromHash(url.hash)).toEqual({
+			kind: 'inline',
+			payload: await encodeSharedScript(script)
+		});
 	});
 
 	it('refuses damaged or unknown payloads', async () => {
@@ -39,9 +44,21 @@ describe('share links', () => {
 		await expect(decodeSharedScript('2.AAAA')).rejects.toThrow(/newer version/);
 	});
 
-	it('reads only the s value of a hash', () => {
-		expect(sharedPayloadFromHash('#s=1.abc')).toBe('1.abc');
-		expect(sharedPayloadFromHash('#other=1')).toBeUndefined();
-		expect(sharedPayloadFromHash('')).toBeUndefined();
+	it('reads short links: an edition, a BotC Scripts script or a word code', () => {
+		const refs: SharedRef[] = [
+			{ kind: 'edition', edition: 'tb' },
+			{ kind: 'botcscripts', ref: { kind: 'script', scriptId: 1234 } },
+			{ kind: 'botcscripts', ref: { kind: 'script', scriptId: 1234, version: '1.0.0' } },
+			{ kind: 'code', code: 'poisoned-drunk-imp-bell' },
+			{ kind: 'inline', payload: '1.abc' }
+		];
+		for (const ref of refs) expect(sharedRefFromHash(sharedRefHash(ref))).toEqual(ref);
+		expect(sharedRefHash(refs[3])).toBe('#c=poisoned-drunk-imp-bell');
+	});
+
+	it('ignores hashes that are not share links, or are malformed', () => {
+		for (const hash of ['', '#other=1', '#e=TB!', '#bs=12x', '#c=poisoned-drunk', '#c=a-b-c-d']) {
+			expect(sharedRefFromHash(hash)).toBeUndefined();
+		}
 	});
 });

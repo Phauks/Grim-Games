@@ -33,7 +33,10 @@
 		type SavedScript,
 		type ScriptSource
 	} from './saved-scripts.ts';
+	import WordCodeEntry from '#lib/features/codes/WordCodeEntry.svelte';
 	import BotcScriptsBrowser from './BotcScriptsBrowser.svelte';
+	import { SHARE_CODE_WORDS } from './share-codes-api.ts';
+	import { fetchSharedCode } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
 
@@ -50,11 +53,13 @@
 	let pasteOpen = $state(false);
 	let linkOpen = $state(false);
 	let botcOpen = $state(false);
+	let codeOpen = $state(false);
 	let checkOpen = $state(false);
 
 	let pasteText = $state('');
 	let linkText = $state('');
 	let botcText = $state('');
+	let codeText = $state('');
 	let error = $state('');
 	let errorLink = $state<string | undefined>(undefined);
 	let busy = $state(false);
@@ -74,7 +79,7 @@
 	}
 
 	function closeAll() {
-		pasteOpen = linkOpen = botcOpen = false;
+		pasteOpen = linkOpen = botcOpen = codeOpen = false;
 	}
 
 	async function use(script: LoadedScript, source: ScriptSource) {
@@ -170,11 +175,12 @@
 		);
 	}
 
-	function open(which: 'paste' | 'link' | 'botc') {
+	function open(which: 'paste' | 'link' | 'botc' | 'code') {
 		clearError();
 		pasteOpen = which === 'paste';
 		linkOpen = which === 'link';
 		botcOpen = which === 'botc';
+		codeOpen = which === 'code';
 	}
 </script>
 
@@ -228,6 +234,7 @@
 			<Button onclick={() => fileInput?.click()} disabled={busy}>File</Button>
 			<Button onclick={() => open('link')}>Link</Button>
 			<Button onclick={() => open('botc')}>BotC Scripts</Button>
+			<Button onclick={() => open('code')}>Code</Button>
 		</div>
 		<!-- Not limited to application/json: some iPad and Android file providers don't label
 		     .json files with that type, which greyed them out in Pocket Grimoire (PG 126, PG 162). -->
@@ -241,7 +248,7 @@
 		/>
 		<!-- File errors have no dialog of their own; the line is always there, so no reflow. -->
 		<p class="error" role="status" data-testid="file-error">
-			{#if !pasteOpen && !linkOpen && !botcOpen}{error}{/if}
+			{#if !pasteOpen && !linkOpen && !botcOpen && !codeOpen}{error}{/if}
 		</p>
 	</section>
 </div>
@@ -321,6 +328,20 @@
 	{/snippet}
 </Dialog>
 
+<Dialog bind:open={codeOpen} title="Have a code?" size="full">
+	{#if codeOpen}
+		<WordCodeEntry count={SHARE_CODE_WORDS} bind:value={codeText} disabled={busy} />
+	{/if}
+	{@render errorLine()}
+	{#snippet actions()}
+		<Button
+			variant="accent"
+			onclick={() => run(() => fetchSharedCode(codeText))}
+			disabled={busy || codeText === ''}>Load</Button
+		>
+	{/snippet}
+</Dialog>
+
 <ScriptCheckDialog
 	bind:open={checkOpen}
 	result={checking?.result}
@@ -351,7 +372,7 @@
 		grid-template-columns: repeat(3, 1fr);
 	}
 	.custom {
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(5, 1fr);
 	}
 	@media (max-width: 30rem) {
 		.editions {
@@ -359,6 +380,10 @@
 		}
 		.custom {
 			grid-template-columns: repeat(2, 1fr);
+		}
+		/* The odd one out spans the row rather than leaving a gap. */
+		.custom > :global(:last-child) {
+			grid-column: 1 / -1;
 		}
 	}
 	.none {

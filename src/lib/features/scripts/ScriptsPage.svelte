@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { CHARACTER_TYPES, scriptToJson } from '#lib/core/data/index.ts';
+	import { CHARACTER_TYPES } from '#lib/core/data/index.ts';
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { scriptPageUrl } from './botcscripts-api.ts';
 	import { currentScript, restoreScripts } from './current-script.svelte.ts';
 	import { describeSource } from './saved-scripts.ts';
 	import ScriptPicker from './ScriptPicker.svelte';
 	import ShareControl from './ShareControl.svelte';
-	import { decodeSharedScript, shareLink, sharedPayloadFromHash } from './share.ts';
+	import { fetchSharedRef, shareTargetFor } from './share-codes.ts';
+	import { sharedRefFromHash } from './share.ts';
 
 	let picker: ScriptPicker | undefined = $state();
 
@@ -26,14 +26,13 @@
 			: 'None'
 	);
 
-	/** A share link (`/scripts#s=…`) loads its script through the usual checks, then is cleared. */
+	/** A share link (`/scripts#c=…` and the like) loads through the usual checks, then is cleared. */
 	async function openSharedLink() {
-		const payload = sharedPayloadFromHash(location.hash);
-		if (!payload) return;
+		const ref = sharedRefFromHash(location.hash);
+		if (!ref) return;
 		history.replaceState(history.state, '', location.pathname);
 		try {
-			const json = await decodeSharedScript(payload);
-			await picker?.loadFetched({ text: JSON.stringify(json), source: { kind: 'share' } });
+			await picker?.loadFetched(await fetchSharedRef(ref));
 		} catch (e) {
 			toast('Could not open the shared script', errorMessage(e));
 		}
@@ -85,22 +84,10 @@
 		if (text.trim()) void picker.loadText(text);
 	}
 
-	/** The player link for the current script (`/play#s=…`), rebuilt when the script changes. */
-	let shareUrl = $state<string>();
-	$effect(() => {
-		const current = script;
-		shareUrl = undefined;
-		if (!current) return;
-		let stale = false;
-		shareLink(location.origin, scriptToJson(current)).then(
-			(url) => {
-				if (!stale) shareUrl = url;
-			},
-			(e) => reportError(e, { area: 'scripts', notify: false })
-		);
-		return () => {
-			stale = true;
-		};
+	/** The player link for the current script, made only when Share or QR code is tapped. */
+	const shareTarget = $derived.by(() => {
+		const current = saved;
+		return current && script ? () => shareTargetFor(current, location.origin) : undefined;
 	});
 </script>
 
@@ -110,6 +97,7 @@
 	ondragover={onDragOver}
 	ondragleave={onDragLeave}
 	ondrop={onDrop}
+	onhashchange={() => void openSharedLink()}
 />
 
 <main>
@@ -140,7 +128,7 @@
 					{/if}
 				</dd>
 			</dl>
-			<ShareControl what="script" title={script?.name ?? 'Script'} url={shareUrl} />
+			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
 		</section>
 	</ErrorBoundary>
 

@@ -130,9 +130,15 @@ test('a share link opens its script and clears the hash', async ({ page }) => {
 	await page.goto(`/scripts#s=${await encodeSharedScript(homebrew)}`);
 	await expect(currentName(page)).toHaveText('Storm Front');
 	await expect(page).toHaveURL(/\/scripts$/);
+	await page.goto('/scripts#e=bmr');
+	await expect(currentName(page)).toHaveText('Bad Moon Rising');
+	await expect(page).toHaveURL(/\/scripts$/);
 });
 
-test('the script can be shared as a player link or a QR code', async ({ page, context }) => {
+test('an official script is shared as a short player link or a QR code', async ({
+	page,
+	context
+}) => {
 	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 	await page.goto('/scripts');
 	const share = page.getByRole('group', { name: 'Share script' });
@@ -143,11 +149,73 @@ test('the script can be shared as a player link or a QR code', async ({ page, co
 	await share.getByRole('button', { name: 'QR code' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Trouble Brewing QR code' });
 	await expect(dialog.getByRole('img', { name: 'QR code for Trouble Brewing' })).toBeVisible();
+	// Official scripts need no stored code: the link names the edition.
+	await expect(dialog.getByTestId('share-code')).toHaveText(/^\s*Code\s*None\s*$/);
+	await expect(dialog.getByRole('button', { name: 'Delete code' })).toBeDisabled();
 	await dialog.getByRole('button', { name: 'Copy link' }).tap();
 	const link = await page.evaluate(() => navigator.clipboard.readText());
 	// The link opens the player view, with the script in the hash (never the query string).
-	expect(link).toMatch(/^http:\/\/localhost:\d+\/play#s=1\.[\w-]+$/);
+	expect(link).toMatch(/^http:\/\/localhost:\d+\/play#e=tb$/);
 	await noSidewaysScroll(page);
+});
+
+test('a custom script gets a word code that another phone can tap in, until it is deleted', async ({
+	page,
+	context
+}) => {
+	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+	await page.goto('/scripts');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(JSON.stringify(homebrew))
+	});
+	await expect(currentName(page)).toHaveText('Storm Front');
+
+	await page
+		.getByRole('group', { name: 'Share script' })
+		.getByRole('button', { name: 'QR code' })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Storm Front QR code' });
+	await expect(dialog.getByRole('img', { name: 'QR code for Storm Front' })).toBeVisible();
+	const shownWords = dialog.getByTestId('share-word');
+	await expect(shownWords).toHaveCount(4);
+	const words = await shownWords.allTextContents();
+	await dialog.getByRole('button', { name: 'Copy link' }).tap();
+	expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
+		new RegExp(`/play#c=${words.join('-')}$`)
+	);
+
+	// Another phone: tap the first word, type the second, paste the rest.
+	const other = await context.newPage();
+	await other.goto('/scripts');
+	await other.getByRole('button', { name: 'Code', exact: true }).tap();
+	const entry = other.getByRole('dialog', { name: 'Have a code?' });
+	const load = entry.getByRole('button', { name: 'Load' });
+	await expect(load).toBeDisabled();
+	await entry
+		.getByRole('list', { name: 'Code words to tap' })
+		.getByRole('button', { name: words[0], exact: true })
+		.tap();
+	const box = entry.getByLabel('Type or tap the words');
+	await box.fill(`${words[1]} `);
+	await box.dispatchEvent('input');
+	await expect(entry.getByTestId('code-slot').nth(1)).toHaveText(words[1]);
+	await box.fill(`${words[2]}-${words[3]} `);
+	await box.dispatchEvent('input');
+	await expect(entry.getByTestId('code-slot').nth(3)).toHaveText(words[3]);
+	await load.tap();
+	await expect(other.getByTestId('current-script-name')).toHaveText('Storm Front');
+
+	// The sharer deletes the code; it no longer loads.
+	await dialog.getByRole('button', { name: 'Delete code' }).tap();
+	await expect(dialog).toBeHidden();
+	await other.getByRole('button', { name: 'Code', exact: true }).tap();
+	await other.getByLabel('Type or tap the words').fill(`${words.join(' ')} `);
+	await other.getByLabel('Type or tap the words').dispatchEvent('input');
+	await entry.getByRole('button', { name: 'Load' }).tap();
+	await expect(entry.getByRole('status')).toHaveText(/No script has this code/);
+	await noSidewaysScroll(other);
 });
 
 test('dropping a script file anywhere on the page loads it', async ({ page }) => {

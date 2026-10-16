@@ -24,7 +24,8 @@ export type ScriptSource =
 	| { kind: 'file'; fileName: string }
 	| { kind: 'link'; url: string }
 	| { kind: 'botcscripts'; scriptId: number; version: string }
-	| { kind: 'share' };
+	/** `code` is the word code it was opened with, so sharing it again reuses that code. */
+	| { kind: 'share'; code?: string };
 
 export interface SavedScript {
 	schemaVersion: typeof SAVED_SCRIPT_VERSION;

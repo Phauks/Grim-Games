@@ -1,8 +1,14 @@
 /**
- * Share links for scripts: the script's TPI JSON, deflated and base64url-encoded, in the
- * URL hash (`#s=1.<data>`). The hash never reaches the server, so no script lands in a
- * Worker log or a query string (CLAUDE.md). Design: 08-script-loading.md §5.5.
+ * Share links for scripts, all in the URL hash so nothing lands in a query string or a
+ * Worker log (CLAUDE.md). Shortest first (08-script-loading.md §5.5):
+ * - `#e=tb`: an official edition;
+ * - `#bs=1234/1.0.0`: a BotC Scripts script (version optional), loaded through our Worker;
+ * - `#c=poisoned-drunk-imp-bell`: a word code for a script stored on our Worker;
+ * - `#s=1.<data>`: the script's TPI JSON itself, deflated and base64url-encoded. Works
+ *   offline and with no server, so it is the fallback when a code can't be made.
  */
+import type { BotcScriptsRef } from './botcscripts-api.ts';
+import { normaliseShareCode } from './share-codes-api.ts';
 
 const PREFIX = '1.';
 /** Decoded scripts larger than this are refused; a 201-character script is far smaller. */
@@ -69,20 +75,60 @@ export async function decodeSharedScript(payload: string): Promise<unknown> {
 	return JSON.parse(text);
 }
 
-/** The `s` value of a location hash such as `#s=1.abc`, if there is one. */
-export function sharedPayloadFromHash(hash: string): string | undefined {
+/** What a share link points at. */
+export type SharedRef =
+	| { kind: 'edition'; edition: string }
+	| { kind: 'botcscripts'; ref: Extract<BotcScriptsRef, { kind: 'script' }> }
+	| { kind: 'code'; code: string }
+	| { kind: 'inline'; payload: string };
+
+const EDITION = /^[a-z]{1,16}$/;
+const BOTC = /^(\d{1,9})(?:\/([\w.-]{1,32}))?$/;
+
+/** The shared script a location hash points at, if any. Malformed values are ignored. */
+export function sharedRefFromHash(hash: string): SharedRef | undefined {
 	const params = new URLSearchParams(hash.replace(/^#/, ''));
-	return params.get('s') ?? undefined;
+	const edition = params.get('e');
+	if (edition !== null && EDITION.test(edition)) return { kind: 'edition', edition };
+	const botc = BOTC.exec(params.get('bs') ?? '');
+	if (botc) {
+		const scriptId = Number(botc[1]);
+		return {
+			kind: 'botcscripts',
+			ref: botc[2] ? { kind: 'script', scriptId, version: botc[2] } : { kind: 'script', scriptId }
+		};
+	}
+	const code = normaliseShareCode(params.get('c') ?? '');
+	if (code) return { kind: 'code', code };
+	const payload = params.get('s');
+	return payload ? { kind: 'inline', payload } : undefined;
+}
+
+/** The hash (with `#`) for a shared script. */
+export function sharedRefHash(ref: SharedRef): string {
+	switch (ref.kind) {
+		case 'edition':
+			return `#e=${ref.edition}`;
+		case 'botcscripts':
+			return `#bs=${ref.ref.scriptId}${ref.ref.version ? `/${ref.ref.version}` : ''}`;
+		case 'code':
+			return `#c=${ref.code}`;
+		case 'inline':
+			return `#s=${ref.payload}`;
+	}
 }
 
 /**
- * A full share link. It opens the player view (`/play`) by default, since players share
+ * Where share links open: the player view (`/play`) by default, since players share
  * scripts with each other; `/scripts` loads it as a Storyteller's script instead.
  */
+export type SharePath = '/play' | '/scripts';
+
+/** A full share link that carries the whole script (`#s=`). */
 export async function shareLink(
 	origin: string,
 	json: unknown,
-	path: '/play' | '/scripts' = '/play'
+	path: SharePath = '/play'
 ): Promise<string> {
-	return `${origin}${path}#s=${await encodeSharedScript(json)}`;
+	return `${origin}${path}${sharedRefHash({ kind: 'inline', payload: await encodeSharedScript(json) })}`;
 }

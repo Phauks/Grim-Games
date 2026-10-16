@@ -1,27 +1,54 @@
 <script lang="ts">
+	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import QrCode, { fitsQrCode } from '#lib/ui/primitives/QrCode.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import { deleteShareCode, type ShareTarget } from './share-codes.ts';
 
 	/**
-	 * Shares one link three ways: the phone's share sheet (or copying, where there is none)
-	 * and a QR code for passing a phone round the table. One control per link, so a Room
-	 * link can sit beside the script link later without changing this one.
+	 * Shares one link three ways: the phone's share sheet (or copying, where there is none),
+	 * a QR code, and its word code to read aloud. The link is made only when Share or QR
+	 * code is tapped, so nothing is uploaded just by opening a page. One control per link,
+	 * so a Room link can sit beside the script link later without changing this one.
 	 */
 	interface Props {
 		/** What the link is, in a few words: "script", later "room". */
 		what: string;
 		/** Shown in the share sheet and on the QR dialog, e.g. the script's name. */
 		title: string;
-		/** The link; undefined disables the control (nothing to share yet). */
-		url: string | undefined;
+		/** Makes the link; undefined disables the control (nothing to share yet). */
+		target: (() => Promise<ShareTarget>) | undefined;
 	}
 
-	let { what, title, url }: Props = $props();
+	let { what, title, target }: Props = $props();
 	let qrOpen = $state(false);
+	let made = $state.raw<ShareTarget | undefined>();
+	let making: Promise<ShareTarget> | undefined;
 
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+	// A different script (or none) means a different link.
+	$effect(() => {
+		void target;
+		made = undefined;
+		making = undefined;
+	});
+
+	function resolve(): Promise<ShareTarget> | undefined {
+		if (!target) return undefined;
+		const mine = (making ??= target());
+		mine.then(
+			(t) => {
+				if (making === mine) made = t;
+			},
+			(e) => {
+				if (making === mine) making = undefined;
+				reportError(e, { area: 'scripts' });
+			}
+		);
+		return mine;
+	}
 
 	async function copy(link: string) {
 		try {
@@ -33,38 +60,79 @@
 	}
 
 	async function share() {
-		if (!url) return;
+		const t = made ?? (await resolve()?.catch(() => undefined));
+		if (!t) return;
 		if (canShare) {
 			try {
-				await navigator.share({ title, url });
+				await navigator.share({ title, url: t.url });
 				return;
 			} catch (e) {
 				// Closing the share sheet is not a failure.
 				if (e instanceof DOMException && e.name === 'AbortError') return;
+				// Some browsers refuse a share that waited for the code; the dialog has it ready.
+				if (e instanceof DOMException && e.name === 'NotAllowedError') {
+					qrOpen = true;
+					return;
+				}
 			}
 		}
-		await copy(url);
+		await copy(t.url);
 	}
+
+	function openQr() {
+		qrOpen = true;
+		void resolve()?.catch(() => undefined);
+	}
+
+	async function deleteCode() {
+		const code = made?.code;
+		if (!code) return;
+		try {
+			await deleteShareCode(code);
+			toast('Code deleted', 'Sharing again makes a new code.');
+			qrOpen = false;
+			made = undefined;
+			making = undefined;
+		} catch (e) {
+			reportError(e, { area: 'scripts' });
+		}
+	}
+
+	const words = $derived(made?.code?.split('-'));
 </script>
 
 <div class="share" role="group" aria-label="Share {what}">
-	<Button onclick={share} disabled={!url}>{canShare ? `Share ${what}` : 'Copy link'}</Button>
-	<Button onclick={() => (qrOpen = true)} disabled={!url}>QR code</Button>
+	<Button onclick={share} disabled={!target}>{canShare ? `Share ${what}` : 'Copy link'}</Button>
+	<Button onclick={openQr} disabled={!target}>QR code</Button>
 </div>
 
 <Dialog bind:open={qrOpen} title="{title} QR code">
 	<div class="code">
-		{#if url && fitsQrCode(url)}
-			<QrCode value={url} label="QR code for {title}" />
+		{#if made && fitsQrCode(made.url)}
+			<QrCode value={made.url} label="QR code for {title}" />
 		{:else}
 			<!-- Same square as the code, so the dialog keeps its size. -->
-			<p class="too-long">
-				Too long for a QR code. Use {canShare ? `Share ${what}` : 'Copy link'}.
+			<p class="placeholder">
+				{made
+					? `Too long for a QR code. Use ${canShare ? `Share ${what}` : 'Copy link'}.`
+					: 'Making the link…'}
 			</p>
 		{/if}
 	</div>
+	<!-- Room for the words on two lines either way, so the dialog never changes size. -->
+	<p class="words" data-testid="share-code">
+		<span class="label">Code</span>
+		{#if words}
+			{#each words as word, i (i)}<span class="word" data-testid="share-word">{word}</span>{/each}
+		{:else}
+			<span class="none">None</span>
+		{/if}
+	</p>
 	{#snippet actions()}
-		<Button variant="accent" onclick={() => url && copy(url)} disabled={!url}>Copy link</Button>
+		<Button variant="quiet" onclick={deleteCode} disabled={!made?.canDelete}>Delete code</Button>
+		<Button variant="accent" onclick={() => made && copy(made.url)} disabled={!made}
+			>Copy link</Button
+		>
 	{/snippet}
 </Dialog>
 
@@ -79,7 +147,7 @@
 		width: min(100%, calc(18 * var(--u)));
 		margin: var(--space-3) auto 0;
 	}
-	.too-long {
+	.placeholder {
 		aspect-ratio: 1;
 		margin: 0;
 		display: grid;
@@ -88,5 +156,25 @@
 		text-align: center;
 		border: var(--card-border);
 		border-radius: var(--radius-md);
+	}
+	.words {
+		margin: var(--space-3) 0 0;
+		min-height: 2lh;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: baseline;
+		gap: var(--space-1) var(--space-2);
+		font-size: 1.15rem;
+	}
+	.label {
+		color: var(--on-surface-muted);
+		font-size: 0.9rem;
+	}
+	.word {
+		font-weight: 600;
+	}
+	.none {
+		color: var(--on-surface-muted);
 	}
 </style>
