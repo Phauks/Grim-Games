@@ -11,6 +11,7 @@ import {
 } from '#lib/core/data/index.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import { reloadSavedScript, type SavedScript, type ScriptSource } from './saved-scripts.ts';
 import { IdbScriptLibrary } from './script-library.ts';
 import { decodeSharedScript, sharedPayloadFromHash } from './share.ts';
@@ -49,6 +50,7 @@ async function refresh(data: GameData, lib: IdbScriptLibrary): Promise<void> {
 	const first = recent[0];
 	const script = first && reloadSavedScript(first, data);
 	current = first && script ? { saved: first, script } : undefined;
+	if (script) keepIconsOffline(script.characters);
 }
 
 /** Restores the current script and Recent list from the device. Safe to call repeatedly. */
@@ -97,11 +99,13 @@ export async function chooseScript(chosen: LoadedScript, source: ScriptSource): 
 		if (!lib) throw new Error('No storage');
 		const saved = await lib.use(record);
 		current = { saved, script };
+		keepIconsOffline(script.characters);
 		recent = await lib.list();
 	} catch (e) {
 		// Storage full, blocked or missing: still usable for this visit.
 		if (lib) reportError(e, { area: 'scripts', notify: false });
 		current = { saved: unsaved(record), script };
+		keepIconsOffline(script.characters);
 	}
 }
 
