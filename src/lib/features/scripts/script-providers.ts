@@ -231,5 +231,7 @@ export function findSaved(
 	saved: readonly SavedScript[],
 	listing: ScriptListing
 ): SavedScript | undefined {
-	return listing.saved ?? saved.find((s) => matchesSaved(s, listing));
+	const own = listing.saved;
+	if (own && saved.some((s) => s.scriptId === own.scriptId)) return own;
+	return saved.find((s) => matchesSaved(s, listing));
 }

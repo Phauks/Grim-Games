@@ -72,7 +72,11 @@ test('a sign-in link signs in and keeps its token out of the address', async ({
 
 test('scripts added on the device are saved to the profile as local copies', async ({ page }) => {
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Paste', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste', exact: true })
+		.tap();
 	const paste = page.getByRole('dialog', { name: 'Paste a script' });
 	await paste.getByLabel('Script JSON or link').fill(JSON.stringify(homebrew));
 	await paste.getByRole('button', { name: 'Save' }).tap();
@@ -106,7 +110,11 @@ test('scripts added on the device are saved to the profile as local copies', asy
 
 	// Adding a script while signed in saves it straight away.
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Paste', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste', exact: true })
+		.tap();
 	const again = page.getByRole('dialog', { name: 'Paste a script' });
 	await again
 		.getByLabel('Script JSON or link')

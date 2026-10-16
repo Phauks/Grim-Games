@@ -68,6 +68,7 @@ export const ICON_SLOTS = {
 	filter: { label: 'Filter', choices: ['ph:funnel'] },
 	assistance: { label: 'Storyteller settings', choices: ['ph:lifebuoy', 'ph:hand-heart'] },
 	remove: { label: 'Remove', choices: ['ph:trash', 'ph:trash-simple'] },
+	save: { label: 'Save', choices: ['ph:bookmark-simple', 'ph:floppy-disk'] },
 	swap: { label: 'Swap seats', choices: ['ph:arrows-left-right', 'ph:swap'] },
 	rename: { label: 'Rename', choices: ['ph:pencil-simple', 'ph:user-switch'] },
 	move: { label: 'Move', choices: ['ph:arrow-bend-up-right'] },

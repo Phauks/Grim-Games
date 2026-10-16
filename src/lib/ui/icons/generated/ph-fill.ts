@@ -43,6 +43,7 @@ import ph_feather_fill from '~icons/ph/feather-fill';
 import ph_fire_fill from '~icons/ph/fire-fill';
 import ph_flag_fill from '~icons/ph/flag-fill';
 import ph_flask_fill from '~icons/ph/flask-fill';
+import ph_floppy_disk_fill from '~icons/ph/floppy-disk-fill';
 import ph_funnel_fill from '~icons/ph/funnel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
@@ -167,6 +168,7 @@ const icons: IconMap = {
 	'ph:fire-fill': ph_fire_fill,
 	'ph:flag-fill': ph_flag_fill,
 	'ph:flask-fill': ph_flask_fill,
+	'ph:floppy-disk-fill': ph_floppy_disk_fill,
 	'ph:funnel-fill': ph_funnel_fill,
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,

@@ -43,6 +43,7 @@ import ph_feather_duotone from '~icons/ph/feather-duotone';
 import ph_fire_duotone from '~icons/ph/fire-duotone';
 import ph_flag_duotone from '~icons/ph/flag-duotone';
 import ph_flask_duotone from '~icons/ph/flask-duotone';
+import ph_floppy_disk_duotone from '~icons/ph/floppy-disk-duotone';
 import ph_funnel_duotone from '~icons/ph/funnel-duotone';
 import ph_gear_duotone from '~icons/ph/gear-duotone';
 import ph_gear_six_duotone from '~icons/ph/gear-six-duotone';
@@ -167,6 +168,7 @@ const icons: IconMap = {
 	'ph:fire-duotone': ph_fire_duotone,
 	'ph:flag-duotone': ph_flag_duotone,
 	'ph:flask-duotone': ph_flask_duotone,
+	'ph:floppy-disk-duotone': ph_floppy_disk_duotone,
 	'ph:funnel-duotone': ph_funnel_duotone,
 	'ph:gear-duotone': ph_gear_duotone,
 	'ph:gear-six-duotone': ph_gear_six_duotone,

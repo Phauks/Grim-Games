@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		editionScript,
@@ -31,6 +32,7 @@
 		parseBotcScriptsRef,
 		searchPath,
 		type BotcScriptsQuery,
+		type BotcScriptsRef,
 		type BotcScriptsSort
 	} from './botcscripts-api.ts';
 	import { botcCard } from './botcscripts-cards.ts';
@@ -74,8 +76,7 @@
 		type ScriptListing
 	} from './script-providers.ts';
 	import ShareControl from './ShareControl.svelte';
-	import ShareCodeEntry from './ShareCodeEntry.svelte';
-	import { fetchSharedCode, shareTargetFor } from './share-codes.ts';
+	import { shareTargetFor } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
 	import { CURATED_SECTIONS } from './script-tool-link.ts';
@@ -106,12 +107,10 @@
 
 	let pasteOpen = $state(false);
 	let linkOpen = $state(false);
-	let codeOpen = $state(false);
 	let checkOpen = $state(false);
 
 	let pasteText = $state('');
 	let linkText = $state('');
-	let codeText = $state('');
 
 	/** The one search box: local scripts, or the remote source when that is chosen. */
 	let term = $state('');
@@ -274,6 +273,46 @@
 	function select(listing: ScriptListing) {
 		selected = listing;
 		paneOpen = true;
+		if (listing.target.kind === 'botcscripts') void fetchBotc(listing.target.ref).catch(() => {});
+	}
+
+	/** Save and Remove from saved show at once; the write finishes behind it. */
+	const pendingSaved = new SvelteMap<string, boolean>();
+	function setPending(key: string, value: boolean | undefined) {
+		if (value === undefined) pendingSaved.delete(key);
+		else pendingSaved.set(key, value);
+	}
+	const shownIsSaved = $derived(
+		shownListing ? (pendingSaved.get(shownListing.row.key) ?? !!shownSaved) : false
+	);
+
+	/** A BotC Scripts row is fetched when tapped, so Save doesn't wait on the site. */
+	const botcFetches = new SvelteMap<string, Promise<FetchedScript>>();
+	function fetchBotc(ref: BotcScriptsRef): Promise<FetchedScript> {
+		const key = JSON.stringify(ref);
+		let fetching = botcFetches.get(key);
+		if (!fetching) {
+			fetching = fetchLinkTarget({ kind: 'botcscripts', ref }, '');
+			botcFetches.set(key, fetching);
+			fetching.catch(() => botcFetches.delete(key));
+		}
+		return fetching;
+	}
+
+	async function toggleSaved() {
+		const listing = shownListing;
+		if (!listing) return;
+		if (shownIsSaved) {
+			removing = true;
+			return;
+		}
+		selected = listing;
+		setPending(listing.row.key, true);
+		try {
+			await loadTarget(listing.target);
+		} finally {
+			setPending(listing.row.key, undefined);
+		}
 	}
 
 	/** The shown row, or (in another source's list) the same script there. */
@@ -321,12 +360,21 @@
 			: undefined;
 	});
 
+	/** Removing keeps the script shown (Trevor), so Save can bring it straight back. */
 	async function removeShown() {
+		const listing = shownListing;
 		const saved = shownSaved;
 		removing = false;
-		if (!saved) return;
-		selected = undefined;
-		await forgetScript(saved.scriptId).catch((e) => reportError(e, { area: 'scripts' }));
+		if (!listing || !saved) return;
+		selected = listing;
+		setPending(listing.row.key, false);
+		try {
+			await forgetScript(saved.scriptId);
+		} catch (e) {
+			reportError(e, { area: 'scripts' });
+		} finally {
+			setPending(listing.row.key, undefined);
+		}
 	}
 
 	const curatedNote = $derived(
@@ -472,7 +520,7 @@
 	}
 
 	function closeAll() {
-		pasteOpen = linkOpen = codeOpen = false;
+		pasteOpen = linkOpen = false;
 	}
 
 	/** Saves a script; the details then show it (the tapped row, if that is what was saved). */
@@ -530,7 +578,7 @@
 					Promise.resolve({ text: JSON.stringify(target.json), source: target.source })
 				);
 			case 'botcscripts':
-				return run(() => fetchLinkTarget({ kind: 'botcscripts', ref: target.ref }, ''));
+				return run(() => fetchBotc(target.ref));
 		}
 	}
 
@@ -584,12 +632,18 @@
 		);
 	}
 
-	function open(which: 'paste' | 'link' | 'code') {
+	function open(which: 'paste' | 'link') {
 		clearError();
 		pasteOpen = which === 'paste';
 		linkOpen = which === 'link';
-		codeOpen = which === 'code';
-		if (codeOpen) codeText = '';
+	}
+
+	/** The page's Add script button: paste, a file from the device, or a link. */
+	export function add(which: 'paste' | 'file' | 'link') {
+		if (which === 'file') {
+			clearError();
+			fileInput?.click();
+		} else open(which);
 	}
 </script>
 
@@ -669,16 +723,7 @@
 				</div>
 			</div>
 
-			<section aria-labelledby="custom-heading">
-				<h2 id="custom-heading" class="visually-hidden">{t('scripts.picker.add')}</h2>
-				<div class="row custom">
-					<Button onclick={() => open('paste')}>{t('scripts.picker.paste')}</Button>
-					<Button onclick={() => fileInput?.click()} disabled={busy}
-						>{t('scripts.picker.file')}</Button
-					>
-					<Button onclick={() => open('link')}>{t('scripts.picker.link')}</Button>
-					<Button onclick={() => open('code')}>{t('scripts.picker.code')}</Button>
-				</div>
+			<section>
 				<!-- Not limited to application/json: some iPad and Android file providers don't label
 		     .json files with that type, which greyed them out in Pocket Grimoire (PG 126, PG 162). -->
 				<input
@@ -691,7 +736,7 @@
 				/>
 				<!-- Load errors outside a dialog; the line is always there, so no reflow. -->
 				<p class="error" role="status" data-testid="file-error">
-					{#if !pasteOpen && !linkOpen && !codeOpen}{error}{/if}
+					{#if !pasteOpen && !linkOpen}{error}{/if}
 				</p>
 			</section>
 		</div>
@@ -714,24 +759,16 @@
 						<ShareControl
 							what="script"
 							title={shownListing?.row.name || t('scripts.current.defaultName')}
-							target={shareTarget}
+							target={shownIsSaved ? shareTarget : undefined}
 						/>
-						{#if shownSaved}
-							<Button disabled>{t('scripts.details.saved')}</Button>
-						{:else}
-							<Button
-								variant="accent"
-								disabled={busy || !shownListing}
-								onclick={() => shownListing && loadTarget(shownListing.target)}
-								>{t('scripts.picker.save')}</Button
-							>
-						{/if}
-						<span class="danger">
+						<!-- One button, the same size saved or not: pressed means saved. -->
+						<span class="toggle" class:on={shownIsSaved}>
 							<IconButton
-								icon="remove"
-								label={t('scripts.details.remove')}
-								disabled={!shownSaved}
-								onclick={() => (removing = true)}
+								icon="save"
+								label={t('scripts.picker.save')}
+								aria-pressed={shownIsSaved}
+								disabled={!shownListing}
+								onclick={() => void toggleSaved()}
 							/>
 						</span>
 					{/snippet}
@@ -892,24 +929,6 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={codeOpen} title={t('scripts.code.title')}>
-	{#if codeOpen}
-		<ShareCodeEntry
-			bind:value={codeText}
-			disabled={busy}
-			onsubmit={(code) => run(() => fetchSharedCode(code))}
-		/>
-	{/if}
-	{@render errorLine()}
-	{#snippet actions()}
-		<Button
-			variant="accent"
-			onclick={() => run(() => fetchSharedCode(codeText))}
-			disabled={busy || codeText === ''}>{t('scripts.picker.save')}</Button
-		>
-	{/snippet}
-</Dialog>
-
 <ScriptCheckDialog
 	bind:open={checkOpen}
 	action="save"
@@ -985,8 +1004,9 @@
 		font: inherit;
 		cursor: pointer;
 	}
-	.danger :global(.icon-button:not(:disabled)) {
-		color: var(--evil);
+	.toggle.on :global(.icon-button) {
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 	@container script-panes (min-width: 56rem) {
 		.grid {
@@ -1127,20 +1147,10 @@
 		display: grid;
 		gap: var(--space-2);
 	}
-	.row {
-		display: grid;
-		gap: var(--space-2);
-	}
-	.custom {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-	}
-	/* Narrow screens and large text: the search and source stack, the buttons go two by two. */
+	/* Narrow screens and large text: the search and source stack. */
 	@media (max-width: 30rem) {
 		.search {
 			grid-template-columns: minmax(0, 1fr);
-		}
-		.custom {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 	}
 	.file {

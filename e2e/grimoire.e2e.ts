@@ -318,7 +318,11 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 
 test('a new game can use a custom script from the Scripts page', async ({ page }) => {
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Paste', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste', exact: true })
+		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
 	await dialog
 		.getByLabel('Script JSON or link')

@@ -53,6 +53,15 @@ describe('IdbScriptLibrary', () => {
 		expect(names).not.toContain('S0');
 	});
 
+	it('saves a script once when it is saved twice at the same time, or saved, removed and saved', async () => {
+		const lib = library();
+		const [a, b] = await Promise.all([lib.use(script('One')), lib.use(script('One'))]);
+		expect(b.scriptId).toBe(a.scriptId);
+		expect(await lib.list()).toHaveLength(1);
+		await Promise.all([lib.delete(a.scriptId), lib.use(script('One'))]);
+		expect((await lib.list()).map((s) => s.name)).toEqual(['One']);
+	});
+
 	it('deletes a script', async () => {
 		const lib = library();
 		const saved = await lib.use(script('One'));

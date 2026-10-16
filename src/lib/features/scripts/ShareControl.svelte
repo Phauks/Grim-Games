@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { ShareTarget } from './share-codes.ts';
 	import SharePanel from './SharePanel.svelte';
 
 	/**
-	 * One button that opens one screen for sharing a link: QR code, link, code, Copy and
+	 * One share icon (always an icon, Trevor 2026-10-16) that opens one screen for sharing a
+	 * link: QR code, link, Copy and
 	 * Share (`SharePanel`). One control per link, so a Room link can sit beside the script
 	 * link later without changing this one.
 	 */
@@ -18,27 +18,19 @@
 		title: string;
 		/** Makes the link; undefined disables the control (nothing to share yet). */
 		target: (() => Promise<ShareTarget>) | undefined;
-		/** A share icon (labelled like the button) instead of a text button, e.g. on /play. */
-		icon?: boolean;
 	}
 
-	let { what, title, target, icon = false }: Props = $props();
+	let { what, title, target }: Props = $props();
 	let open = $state(false);
 </script>
 
 <div class="share">
-	{#if icon}
-		<IconButton
-			icon="share"
-			label={t(`scripts.share.button.${what}`)}
-			onclick={() => (open = true)}
-			disabled={!target}
-		/>
-	{:else}
-		<Button onclick={() => (open = true)} disabled={!target}
-			>{t(`scripts.share.button.${what}`)}</Button
-		>
-	{/if}
+	<IconButton
+		icon="share"
+		label={t(`scripts.share.button.${what}`)}
+		onclick={() => (open = true)}
+		disabled={!target}
+	/>
 </div>
 
 <Dialog bind:open title={t('scripts.share.title', { title })}>

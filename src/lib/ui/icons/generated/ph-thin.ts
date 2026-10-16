@@ -43,6 +43,7 @@ import ph_feather_thin from '~icons/ph/feather-thin';
 import ph_fire_thin from '~icons/ph/fire-thin';
 import ph_flag_thin from '~icons/ph/flag-thin';
 import ph_flask_thin from '~icons/ph/flask-thin';
+import ph_floppy_disk_thin from '~icons/ph/floppy-disk-thin';
 import ph_funnel_thin from '~icons/ph/funnel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
@@ -167,6 +168,7 @@ const icons: IconMap = {
 	'ph:fire-thin': ph_fire_thin,
 	'ph:flag-thin': ph_flag_thin,
 	'ph:flask-thin': ph_flask_thin,
+	'ph:floppy-disk-thin': ph_floppy_disk_thin,
 	'ph:funnel-thin': ph_funnel_thin,
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,

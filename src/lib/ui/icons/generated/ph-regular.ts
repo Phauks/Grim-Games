@@ -43,6 +43,7 @@ import ph_feather from '~icons/ph/feather';
 import ph_fire from '~icons/ph/fire';
 import ph_flag from '~icons/ph/flag';
 import ph_flask from '~icons/ph/flask';
+import ph_floppy_disk from '~icons/ph/floppy-disk';
 import ph_funnel from '~icons/ph/funnel';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
@@ -167,6 +168,7 @@ const icons: IconMap = {
 	'ph:fire': ph_fire,
 	'ph:flag': ph_flag,
 	'ph:flask': ph_flask,
+	'ph:floppy-disk': ph_floppy_disk,
 	'ph:funnel': ph_funnel,
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,

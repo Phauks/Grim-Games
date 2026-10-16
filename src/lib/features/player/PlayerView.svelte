@@ -176,7 +176,7 @@
 		<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 		     Another script loads only from a share link or QR code. -->
 		<div class="share">
-			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} icon />
+			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
 		</div>
 		<p class="author">{script?.meta.author ?? ' '}</p>
 	</header>

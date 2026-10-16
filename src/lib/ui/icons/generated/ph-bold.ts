@@ -43,6 +43,7 @@ import ph_feather_bold from '~icons/ph/feather-bold';
 import ph_fire_bold from '~icons/ph/fire-bold';
 import ph_flag_bold from '~icons/ph/flag-bold';
 import ph_flask_bold from '~icons/ph/flask-bold';
+import ph_floppy_disk_bold from '~icons/ph/floppy-disk-bold';
 import ph_funnel_bold from '~icons/ph/funnel-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
@@ -167,6 +168,7 @@ const icons: IconMap = {
 	'ph:fire-bold': ph_fire_bold,
 	'ph:flag-bold': ph_flag_bold,
 	'ph:flask-bold': ph_flask_bold,
+	'ph:floppy-disk-bold': ph_floppy_disk_bold,
 	'ph:funnel-bold': ph_funnel_bold,
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,

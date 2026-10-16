@@ -43,6 +43,7 @@ import ph_feather_light from '~icons/ph/feather-light';
 import ph_fire_light from '~icons/ph/fire-light';
 import ph_flag_light from '~icons/ph/flag-light';
 import ph_flask_light from '~icons/ph/flask-light';
+import ph_floppy_disk_light from '~icons/ph/floppy-disk-light';
 import ph_funnel_light from '~icons/ph/funnel-light';
 import ph_gear_light from '~icons/ph/gear-light';
 import ph_gear_six_light from '~icons/ph/gear-six-light';
@@ -167,6 +168,7 @@ const icons: IconMap = {
 	'ph:fire-light': ph_fire_light,
 	'ph:flag-light': ph_flag_light,
 	'ph:flask-light': ph_flask_light,
+	'ph:floppy-disk-light': ph_floppy_disk_light,
 	'ph:funnel-light': ph_funnel_light,
 	'ph:gear-light': ph_gear_light,
 	'ph:gear-six-light': ph_gear_six_light,

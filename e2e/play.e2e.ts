@@ -248,7 +248,8 @@ test('the header shares the script from an icon and has no Code button', async (
 	await expect(page.getByRole('button', { name: 'Code', exact: true })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
-	await expect(qr.getByTestId('share-digits')).toHaveText(/^\d{3} \d{3}$/);
+	await expect(qr.getByTestId('share-url')).toHaveValue(/\/play#c=\d{6}$/);
+	await expect(qr.getByTestId('share-digits')).toHaveCount(0);
 });
 
 test('a shared link with problems opens the Script check first', async ({ page }) => {
