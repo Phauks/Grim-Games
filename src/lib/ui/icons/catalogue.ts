@@ -52,6 +52,7 @@ export const ICON_SLOTS = {
 	search: { label: 'Search', choices: ['ph:magnifying-glass'] },
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
 	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },
+	glossary: { label: 'Glossary', choices: ['ph:book-open-text', 'ph:list-magnifying-glass'] },
 	warning: { label: 'Warning', choices: ['ph:warning', 'ph:warning-circle'] },
 	sort: { label: 'Sort', choices: ['ph:arrows-down-up'] },
 	sortAscending: { label: 'Sorted ascending', choices: ['ph:caret-up', 'ph:sort-ascending'] },

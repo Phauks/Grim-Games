@@ -4,12 +4,12 @@
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { fly } from 'svelte/transition';
 	import { iconUrl } from './icon-url.ts';
 	import { jinxesFor } from '#lib/core/data/jinxes.ts';
 	import CharacterBadge from './CharacterBadge.svelte';
 	import { officialData } from './game-data.svelte.ts';
 	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
+	import ContentsLayout, { type ContentsItem } from './ContentsLayout.svelte';
 	import WikiBox from './WikiBox.svelte';
 	import { wikiPageTitle, withoutRepeats, type WikiSection } from './wiki-page.ts';
 	import { wikiPages } from './wiki-page.svelte.ts';
@@ -72,15 +72,6 @@
 		void character.id;
 		if (!open) selected = undefined;
 	});
-	const reduceMotion =
-		typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-	let width = $state(0);
-	/** Two panes from 40rem of dialog width (the container query below), so nothing slides. */
-	const slides = $derived(
-		!reduceMotion &&
-			width > 0 &&
-			width < 40 * parseFloat(getComputedStyle(document.documentElement).fontSize)
-	);
 	const label = (section: WikiSection) => section.heading || t('characters.wikiIntroduction');
 	const isExamples = (section: WikiSection) => /^examples?$/i.test(section.heading.trim());
 	/** Sections whose bullet points are tips: each becomes a numbered box. */
@@ -90,10 +81,16 @@
 			: /tips/i.test(section.heading)
 				? 'characters.tip'
 				: undefined;
-	let direction = $state(1);
-	function go(index: number | 'jinxes' | undefined) {
-		direction = index === undefined ? -1 : 1;
-		selected = index;
+	const items = $derived<ContentsItem[]>([
+		{ id: 'summary', label: t('characters.summary'), wideOnly: true },
+		{ id: 'jinxes', label: t('characters.jinxes') },
+		...others.map((section, i) => ({ id: String(i), label: label(section) }))
+	]);
+	const current = $derived(
+		selected === undefined ? 'summary' : selected === 'jinxes' ? 'jinxes' : String(selected)
+	);
+	function go(id: string) {
+		selected = id === 'summary' ? undefined : id === 'jinxes' ? 'jinxes' : Number(id);
 	}
 </script>
 
@@ -142,106 +139,54 @@
 			<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
 		</div>
 	</header>
-	<div class="frame" bind:clientWidth={width}>
-		<div class="layout" data-section={selected !== undefined ? '' : undefined}>
-			{#if officialData.current}
-				<nav class="nav" aria-label={t('characters.moreFromWiki')}>
-					<ul>
-						<li class="home">
-							<button
-								type="button"
-								aria-current={selected === undefined ? 'page' : undefined}
-								onclick={() => go(undefined)}
-								><span>{t('characters.summary')}</span><span class="chevron"
-									><Icon name="forward" /></span
-								></button
-							>
-						</li>
-						<li>
-							<button
-								type="button"
-								aria-current={selected === 'jinxes' ? 'page' : undefined}
-								onclick={() => go('jinxes')}
-								><span>{t('characters.jinxes')}</span><span class="chevron"
-									><Icon name="forward" /></span
-								></button
-							>
-						</li>
-						{#each others as section, i (i)}
-							<li>
-								<button
-									type="button"
-									aria-current={selected === i ? 'page' : undefined}
-									onclick={() => go(i)}
-									><span>{label(section)}</span><span class="chevron"><Icon name="forward" /></span
-									></button
-								>
-							</li>
-						{/each}
-					</ul>
-				</nav>
-			{/if}
-			<div class="pane">
-				{#key selected}
-					<div class="view" in:fly={{ x: slides ? direction * 48 : 0, duration: slides ? 200 : 0 }}>
-						{#if selected === 'jinxes'}
-							<button type="button" class="back" onclick={() => go(undefined)}
-								><Icon name="back" /><span>{t('characters.summary')}</span></button
-							>
-							<section
-								class="wiki-page"
-								data-testid="jinx-section"
-								aria-label={t('characters.jinxes')}
-							>
-								<h3>{t('characters.jinxes')}</h3>
-								{#each jinxes as jinx (jinx.characters.join())}
-									<div class="jinx">
-										<span class="pair"
-											><CharacterBadge characterId={jinx.characters[0]} inline /><CharacterBadge
-												characterId={jinx.characters[1]}
-												inline
-											/></span
-										>
-										<p><GlossaryText text={jinx.reason} /></p>
-									</div>
-								{:else}
-									<p>{t('common.none')}</p>
-								{/each}
-							</section>
-						{:else if shown}
-							<button type="button" class="back" onclick={() => go(undefined)}
-								><Icon name="back" /><span>{t('characters.summary')}</span></button
-							>
-							<!-- The wiki's own page, word for word (never bundled; see wiki-page.svelte.ts). -->
-							<section class="wiki-page" data-testid="wiki-section" aria-label={label(shown)}>
-								<h3>{label(shown)}</h3>
-								{@render blocks(shown)}
-							</section>
-						{:else}
-							{#if page}
-								<section
-									class="wiki-page"
-									aria-label={t('characters.wikiPage')}
-									data-testid="wiki-page"
-								>
-									{#if page.status === 'ready'}
-										{#if summary}
-											{#if summary.heading}<h3>{summary.heading}</h3>{/if}
-											{@render blocks(summary)}
-										{/if}
-									{:else if page.status === 'loading'}
-										<p class="muted">{t('characters.wikiLoading')}</p>
-									{:else}
-										<p class="muted">{t('characters.wikiFailed')}</p>
-									{/if}
-								</section>
-							{/if}
-						{/if}
+	<ContentsLayout
+		label={t('characters.moreFromWiki')}
+		{items}
+		{current}
+		onSelect={go}
+		home={selected === undefined}
+		backLabel={t('characters.summary')}
+		onBack={() => go('summary')}
+		hideNav={!officialData.current}
+	>
+		{#if selected === 'jinxes'}
+			<section class="wiki-page" data-testid="jinx-section" aria-label={t('characters.jinxes')}>
+				<h3>{t('characters.jinxes')}</h3>
+				{#each jinxes as jinx (jinx.characters.join())}
+					<div class="jinx">
+						<span class="pair"
+							><CharacterBadge characterId={jinx.characters[0]} inline /><CharacterBadge
+								characterId={jinx.characters[1]}
+								inline
+							/></span
+						>
+						<p><GlossaryText text={jinx.reason} /></p>
 					</div>
-				{/key}
-			</div>
-		</div>
-	</div>
+				{:else}
+					<p>{t('common.none')}</p>
+				{/each}
+			</section>
+		{:else if shown}
+			<!-- The wiki's own page, word for word (never bundled; see wiki-page.svelte.ts). -->
+			<section class="wiki-page" data-testid="wiki-section" aria-label={label(shown)}>
+				<h3>{label(shown)}</h3>
+				{@render blocks(shown)}
+			</section>
+		{:else if page}
+			<section class="wiki-page" aria-label={t('characters.wikiPage')} data-testid="wiki-page">
+				{#if page.status === 'ready'}
+					{#if summary}
+						{#if summary.heading}<h3>{summary.heading}</h3>{/if}
+						{@render blocks(summary)}
+					{/if}
+				{:else if page.status === 'loading'}
+					<p class="muted">{t('characters.wikiLoading')}</p>
+				{:else}
+					<p class="muted">{t('characters.wikiFailed')}</p>
+				{/if}
+			</section>
+		{/if}
+	</ContentsLayout>
 	{#snippet headActions()}
 		{#if wiki}
 			<!-- External wiki page (the rules authority), not an app route. -->
@@ -312,114 +257,6 @@
 	.wiki-page ul {
 		margin: 0 0 var(--space-2);
 		padding-left: var(--space-4);
-	}
-	/* Phone: Summary, then the list of sections, scrolling together; a section replaces both,
-	   with a Back button. */
-	.frame {
-		flex: 1;
-		min-height: 0;
-		container-type: inline-size;
-	}
-	.layout {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		grid-template-areas: 'pane' 'nav';
-		align-content: start;
-		gap: var(--space-4);
-		height: 100%;
-		padding-top: var(--space-3);
-		overflow: hidden auto;
-		overscroll-behavior: contain;
-	}
-	.pane {
-		grid-area: pane;
-		min-width: 0;
-	}
-	.nav {
-		grid-area: nav;
-	}
-	.layout[data-section] .nav,
-	.nav .home {
-		display: none;
-	}
-	/* The sections read as navigation, like a document's contents, not as buttons. */
-	.nav ul {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		border-top: var(--card-border);
-	}
-	.nav button {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-2);
-		border: 0;
-		border-bottom: var(--card-border);
-		border-inline-start: calc(0.2 * var(--u)) solid transparent;
-		background: none;
-		color: var(--on-surface);
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-	}
-	.nav button:hover {
-		background: var(--surface-selected);
-	}
-	.nav button[aria-current] {
-		border-inline-start-color: var(--heading);
-		color: var(--heading);
-		font-weight: 700;
-	}
-	.chevron {
-		display: inline-flex;
-		color: var(--on-surface-muted);
-	}
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
-		margin-bottom: var(--space-1);
-		padding: 0;
-		border: 0;
-		background: none;
-		color: var(--on-surface-muted);
-		font: inherit;
-		cursor: pointer;
-	}
-	/* Wide enough for two readable columns: the contents on the left, the text on the right,
-	   each scrolling on its own. */
-	@container (min-width: 40rem) {
-		.layout:has(.nav) {
-			grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
-			grid-template-rows: 100%;
-			grid-template-areas: 'nav pane';
-			overflow: hidden;
-		}
-		.layout:has(.nav) .nav,
-		.layout:has(.nav) .pane {
-			overflow: hidden auto;
-			overscroll-behavior: contain;
-		}
-		.layout[data-section] .nav,
-		.nav .home {
-			display: block;
-		}
-		.nav ul {
-			border-top: 0;
-		}
-		.nav button {
-			border-bottom: 0;
-			border-radius: 0 var(--radius-md) var(--radius-md) 0;
-		}
-		.chevron,
-		.back {
-			display: none;
-		}
 	}
 	.jinx {
 		padding: var(--space-2) 0;

@@ -58,6 +58,7 @@ import ph_info_bold from '~icons/ph/info-bold';
 import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_list_bold from '~icons/ph/list-bold';
 import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
+import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_minus_bold from '~icons/ph/minus-bold';
@@ -170,6 +171,7 @@ const icons: IconMap = {
 	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:list-bold': ph_list_bold,
 	'ph:list-bullets-bold': ph_list_bullets_bold,
+	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:minus-bold': ph_minus_bold,

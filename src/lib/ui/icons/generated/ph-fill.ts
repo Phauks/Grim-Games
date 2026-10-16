@@ -58,6 +58,7 @@ import ph_info_fill from '~icons/ph/info-fill';
 import ph_lifebuoy_fill from '~icons/ph/lifebuoy-fill';
 import ph_list_fill from '~icons/ph/list-fill';
 import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
+import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
 import ph_minus_fill from '~icons/ph/minus-fill';
@@ -170,6 +171,7 @@ const icons: IconMap = {
 	'ph:lifebuoy-fill': ph_lifebuoy_fill,
 	'ph:list-fill': ph_list_fill,
 	'ph:list-bullets-fill': ph_list_bullets_fill,
+	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
 	'ph:minus-fill': ph_minus_fill,

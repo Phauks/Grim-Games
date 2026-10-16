@@ -58,6 +58,7 @@ import ph_info_thin from '~icons/ph/info-thin';
 import ph_lifebuoy_thin from '~icons/ph/lifebuoy-thin';
 import ph_list_thin from '~icons/ph/list-thin';
 import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
+import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
 import ph_minus_thin from '~icons/ph/minus-thin';
@@ -170,6 +171,7 @@ const icons: IconMap = {
 	'ph:lifebuoy-thin': ph_lifebuoy_thin,
 	'ph:list-thin': ph_list_thin,
 	'ph:list-bullets-thin': ph_list_bullets_thin,
+	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
 	'ph:minus-thin': ph_minus_thin,

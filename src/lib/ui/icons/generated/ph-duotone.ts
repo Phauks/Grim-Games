@@ -58,6 +58,7 @@ import ph_info_duotone from '~icons/ph/info-duotone';
 import ph_lifebuoy_duotone from '~icons/ph/lifebuoy-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
 import ph_list_bullets_duotone from '~icons/ph/list-bullets-duotone';
+import ph_list_magnifying_glass_duotone from '~icons/ph/list-magnifying-glass-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
 import ph_minus_duotone from '~icons/ph/minus-duotone';
@@ -170,6 +171,7 @@ const icons: IconMap = {
 	'ph:lifebuoy-duotone': ph_lifebuoy_duotone,
 	'ph:list-duotone': ph_list_duotone,
 	'ph:list-bullets-duotone': ph_list_bullets_duotone,
+	'ph:list-magnifying-glass-duotone': ph_list_magnifying_glass_duotone,
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,
 	'ph:minus-duotone': ph_minus_duotone,

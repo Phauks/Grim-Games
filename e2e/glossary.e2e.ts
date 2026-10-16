@@ -18,7 +18,7 @@ async function mockWiki(page: Page) {
 	);
 }
 
-test('tapping a rules term shows the wiki Glossary wording and link, without moving the page', async ({
+test('tapping a rules term shows the wiki Glossary wording and button, without moving the page', async ({
 	page
 }) => {
 	await mockWiki(page);
@@ -42,10 +42,7 @@ test('tapping a rules term shows the wiki Glossary wording and link, without mov
 	await expect(popover.getByTestId('wiki-definition')).toHaveText(
 		'Sample wiki wording for poisoned.'
 	);
-	await expect(popover.getByRole('link', { name: 'Open Glossary' })).toHaveAttribute(
-		'href',
-		/^https:\/\/wiki\.bloodontheclocktower\.com\/Glossary#/
-	);
+	await expect(popover.getByRole('button', { name: 'Open Glossary' })).toBeVisible();
 	// An overlay: the card did not reflow.
 	expect(await card.boundingBox()).toEqual(before);
 
@@ -90,19 +87,21 @@ test('terms in the character dialog open above it', async ({ page }) => {
 	await dialog.getByRole('button', { name: 'once per game: explain rules term' }).tap();
 	const popover = page.getByRole('dialog', { name: 'Once per game' });
 	await expect(popover).toBeVisible();
-	await expect(popover.getByRole('link', { name: 'Open Glossary' })).toBeVisible();
+	await expect(popover.getByRole('button', { name: 'Open Glossary' })).toBeVisible();
 	// Still usable above the modal dialog: closing it leaves the dialog open.
 	await popover.getByRole('button', { name: 'Close' }).tap();
 	await expect(popover).toBeHidden();
 	await expect(dialog).toBeVisible();
 });
 
-test('without the wiki the popover shows only the term and the Glossary link', async ({ page }) => {
+test('without the wiki the popover shows only the term and the Glossary button', async ({
+	page
+}) => {
 	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) => route.abort());
 	const card = await poisonerCard(page);
 	await card.getByRole('button', { name: 'poisoned: explain rules term' }).tap();
 	const popover = page.getByRole('dialog', { name: 'Poisoned' });
-	await expect(popover.getByRole('link', { name: 'Open Glossary' })).toBeVisible();
+	await expect(popover.getByRole('button', { name: 'Open Glossary' })).toBeVisible();
 	await expect(popover.getByTestId('wiki-definition')).toHaveCount(0);
 });
 
@@ -148,4 +147,64 @@ test('a "see …" link in the wiki wording opens that entry, with Back, and char
 		.poll(() => icon.evaluate((img: HTMLImageElement) => img.naturalWidth))
 		.toBeGreaterThan(0);
 	await expect(details.getByRole('link', { name: 'Open wiki' })).toBeVisible();
+});
+
+test('Open Glossary shows every entry beside the tapped one, searchable, with the wiki link', async ({
+	page
+}, testInfo) => {
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({
+			json: {
+				parse: {
+					text:
+						'<p><b>Poisoned:</b> Sample wording, see <a href="/Glossary#Healthy">Healthy</a>.</p>' +
+						'<p><b>Healthy:</b> Sample wording for healthy.</p>' +
+						'<p><b>Alive:</b> Sample wording for alive.</p>'
+				}
+			}
+		})
+	);
+	const card = await poisonerCard(page);
+	await card.getByRole('button', { name: 'poisoned: explain rules term' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Poisoned' })
+		.getByRole('button', { name: 'Open Glossary' })
+		.tap();
+	const glossary = page.getByRole('dialog', { name: 'Glossary' });
+	const entry = glossary.getByTestId('glossary-entry');
+	// Opens on the entry that was tapped, in the wiki's own (here made-up) wording.
+	await expect(entry.getByRole('heading', { name: 'Poisoned' })).toBeVisible();
+	await expect(entry.getByTestId('wiki-definition')).toHaveText('Sample wording, see Healthy.');
+	// The wiki button opens the Glossary page at this entry, in a new tab.
+	const wiki = glossary.getByRole('link', { name: 'Open the Glossary on the wiki' });
+	await expect(wiki).toHaveAttribute(
+		'href',
+		/^https:\/\/wiki\.bloodontheclocktower\.com\/Glossary#/
+	);
+	await expect(wiki).toHaveAttribute('target', '_blank');
+
+	// A "see …" link moves to that entry in the dialog.
+	await entry.getByRole('button', { name: 'Healthy' }).tap();
+	await expect(entry.getByRole('heading', { name: 'Healthy' })).toBeVisible();
+
+	const phone = testInfo.project.name === 'phone';
+	const list = glossary.getByRole('navigation', { name: 'Glossary entries' });
+	if (phone) {
+		// On a phone the entry covers the list; Back shows the list.
+		await expect(list).toBeHidden();
+		await glossary.getByRole('button', { name: 'Glossary', exact: true }).tap();
+	}
+	await expect(list).toBeVisible();
+	// Every entry, alphabetical.
+	await expect(list.getByRole('button')).toHaveText(['Alive', 'Healthy', 'Poisoned']);
+	await list.getByRole('searchbox', { name: 'Search the Glossary' }).fill('ali');
+	await expect(list.getByRole('button')).toHaveText(['Alive']);
+	await list.getByRole('button', { name: 'Alive' }).tap();
+	await expect(entry.getByTestId('wiki-definition')).toHaveText('Sample wording for alive.');
+	if (phone) await expect(list).toBeHidden();
+	else
+		await expect(list.getByRole('button', { name: 'Alive' })).toHaveAttribute(
+			'aria-current',
+			'page'
+		);
 });

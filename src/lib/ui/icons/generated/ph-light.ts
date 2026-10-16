@@ -58,6 +58,7 @@ import ph_info_light from '~icons/ph/info-light';
 import ph_lifebuoy_light from '~icons/ph/lifebuoy-light';
 import ph_list_light from '~icons/ph/list-light';
 import ph_list_bullets_light from '~icons/ph/list-bullets-light';
+import ph_list_magnifying_glass_light from '~icons/ph/list-magnifying-glass-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
 import ph_minus_light from '~icons/ph/minus-light';
@@ -170,6 +171,7 @@ const icons: IconMap = {
 	'ph:lifebuoy-light': ph_lifebuoy_light,
 	'ph:list-light': ph_list_light,
 	'ph:list-bullets-light': ph_list_bullets_light,
+	'ph:list-magnifying-glass-light': ph_list_magnifying_glass_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
 	'ph:mask-sad-light': ph_mask_sad_light,
 	'ph:minus-light': ph_minus_light,
