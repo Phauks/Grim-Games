@@ -156,6 +156,10 @@
 		font-size: 1.1rem;
 		color: var(--heading);
 	}
+	/* In sheets and dialogs the panel has its own colours; the page's gold heading is too faint. */
+	.picker[data-contained] h3 {
+		color: inherit;
+	}
 	section:first-child h3 {
 		margin-top: 0;
 	}
