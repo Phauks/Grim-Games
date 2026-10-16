@@ -56,7 +56,7 @@ export async function decodeScriptToolPayload(payload: string): Promise<string> 
 	}
 	let text: string;
 	try {
-		const stream = new Blob([bytes as BlobPart])
+		const stream = new Blob([bytes.buffer as ArrayBuffer])
 			.stream()
 			.pipeThrough(new DecompressionStream('gzip'));
 		text = await new Response(stream).text();
