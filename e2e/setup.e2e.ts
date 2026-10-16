@@ -262,7 +262,7 @@ test.describe('in a computer window', () => {
 	test('controls sit beside the list, and the keyboard reaches search and the draw', async ({
 		page
 	}) => {
-		await page.goto('/');
+		await page.goto('/new');
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
 		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
 		await page.getByRole('button', { name: 'Start game' }).click();
