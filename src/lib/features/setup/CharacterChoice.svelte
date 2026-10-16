@@ -83,11 +83,16 @@
 		box-shadow: inset 0 0 0 2px var(--focus);
 		pointer-events: none;
 	}
+	/*
+	 * Token | name | marks on the first line; the ability runs under the name and the marks,
+	 * so the marks' reserved slot doesn't narrow the ability text (Trevor: it broke early).
+	 */
 	.main {
-		display: flex;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
 		flex: 1;
-		align-items: flex-start;
-		gap: var(--space-2);
+		align-items: start;
+		column-gap: var(--space-2);
 		min-width: 0;
 		min-height: var(--tap-target);
 		padding: var(--space-1) var(--space-2);
@@ -105,23 +110,31 @@
 			border-radius: var(--radius-md);
 		}
 	}
+	.main > :global(:first-child) {
+		grid-column: 1;
+		grid-row: 1 / 3;
+	}
 	.text {
-		display: grid;
-		flex: 1;
-		min-width: 0;
+		display: contents;
 	}
 	.name {
+		grid-column: 2;
+		grid-row: 1;
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
 		overflow-wrap: anywhere;
 	}
 	.ability {
+		grid-column: 2 / 4;
+		grid-row: 2;
 		font-family: var(--font-ability);
 		font-size: 0.8rem;
 		line-height: 1.3;
 		opacity: 0.9;
 	}
 	.marks {
+		grid-column: 3;
+		grid-row: 1;
 		display: grid;
 		grid-template-columns: 1em 2em 1.25em;
 		align-items: center;
