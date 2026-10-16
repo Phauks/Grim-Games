@@ -177,8 +177,13 @@ export async function handleAccount(
 		return json(
 			{ user: auth?.user ?? null, delivery: emailSender(env, url).delivery } satisfies SessionInfo,
 			200,
-			// A cookie for a session that has ended is removed.
-			!auth && readCookie(request) ? { 'Set-Cookie': clearCookie } : {}
+			// A live session's cookie is renewed, so it ends after 180 days unused (not 180 days
+			// after signing in), matching the server; a cookie for an ended session is removed.
+			auth
+				? { 'Set-Cookie': sessionCookie(readCookie(request)!, Math.floor(SESSION_IDLE_MS / 1000)) }
+				: readCookie(request)
+					? { 'Set-Cookie': clearCookie }
+					: {}
 		);
 	}
 	if (path === '/api/auth/sign-out' && method === 'POST') {
