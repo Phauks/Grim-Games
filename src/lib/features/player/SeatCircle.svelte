@@ -14,6 +14,7 @@
 		DEFAULT_SEAT_LAYOUT,
 		gapPoints,
 		isDefaultLayout,
+		keepInside,
 		nextGap,
 		seatPoints,
 		seatTokenSize,
@@ -61,8 +62,11 @@
 			observer.disconnect();
 		};
 	});
-	const points = $derived(seatPoints(ids, layout, { width, height }));
 	const size = $derived(seatTokenSize(ids, layout, { width, height }));
+	// Pulled in so edge seats never stick out past a narrow phone screen.
+	const points = $derived(
+		keepInside(seatPoints(ids, layout, { width, height }), { width, height }, size / 2 + 8)
+	);
 
 	function iconFor(id: string | undefined) {
 		const c = id ? characters.get(id) : undefined;
