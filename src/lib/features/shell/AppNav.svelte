@@ -13,7 +13,7 @@
 <!-- The left sidebar on wide screens, opened and closed by the header's hamburger. -->
 {#if !navDrawer.hidden}
 	<nav class="app-nav" aria-label={t('shell.navLabel')}>
-		<NavList />
+		<div class="nav-scroll"><NavList /></div>
 	</nav>
 {/if}
 
@@ -22,21 +22,24 @@
 		display: none;
 	}
 	@media (min-width: 64rem) {
+		/* The column runs the page's whole length, so its dividing line meets the footer's
+		   wherever the page is scrolled (Trevor, 2026-10-16). */
 		.app-nav {
+			display: block;
+			flex: none;
+			width: calc(14 * var(--u));
+			border-right: 1px solid var(--border);
+		}
+		/* The links stay in view below the header while the page scrolls. */
+		.nav-scroll {
 			position: sticky;
 			top: calc(var(--tap-target) + env(safe-area-inset-top));
 			display: flex;
-			flex: none;
 			flex-direction: column;
 			gap: var(--space-2);
-			align-self: flex-start;
-			width: calc(14 * var(--u));
-			/* Always the full height below the header, so its dividing line reaches the bottom of
-			   the screen whatever the page's length (Trevor, 2026-10-16). */
-			height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top));
+			max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top));
 			overflow-y: auto;
 			padding: var(--space-4) var(--space-2);
-			border-right: 1px solid var(--border);
 		}
 	}
 </style>

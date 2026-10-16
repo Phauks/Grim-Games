@@ -63,6 +63,10 @@
 		padding: calc(0.5 * var(--u)) calc(1 * var(--u))
 			calc(0.5 * var(--u) + env(safe-area-inset-bottom, 0px));
 		font-size: 0.8rem;
+		/* Meets the sidebar's dividing line (Trevor, 2026-10-16). */
+		border-top: 1px solid var(--border);
+	}
+	footer > * {
 		opacity: 0.8;
 	}
 	a {
