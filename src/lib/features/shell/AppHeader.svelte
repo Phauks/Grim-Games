@@ -1,24 +1,18 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import AccountButton from '#lib/features/account/AccountButton.svelte';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-
-	let accountNote = $state(false);
 </script>
 
 <header>
 	<a class="brand" href={resolve('/')}>Grim-Games</a>
 	<div class="actions">
 		<IconButton icon="settings" label="Settings" onclick={() => settingsDialog.show()} />
-		<!-- Placeholder: accounts and sign-in are on the roadmap. -->
-		<IconButton icon="account" label="Account" onclick={() => (accountNote = true)} />
+		<!-- Mounted on every page: it also starts the signed-in check. -->
+		<AccountButton />
 	</div>
 </header>
-
-<Dialog bind:open={accountNote} title="Accounts">
-	<p>Accounts are coming later. Everything is saved on this device for now.</p>
-</Dialog>
 
 <style>
 	header {

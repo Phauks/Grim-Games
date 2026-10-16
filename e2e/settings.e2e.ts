@@ -40,7 +40,7 @@ test('the grimoire theme and the app header are on every page', async ({ page })
 	await expect(header.getByRole('button', { name: 'Settings' })).toBeVisible();
 
 	await header.getByRole('button', { name: 'Account' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Accounts' })).toContainText('coming later');
+	await expect(page).toHaveURL(/\/account$/);
 });
 
 test('/settings deep-links to the settings modal', async ({ page }) => {

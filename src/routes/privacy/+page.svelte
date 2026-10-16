@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Draft for Trevor's review (2026-10-15). Describes only what the app does today; update it
-	// whenever a feature sends or stores something new (accounts, live rooms).
+	// whenever a feature sends or stores something new (live rooms).
 	import { resolve } from '$app/paths';
 </script>
 
@@ -14,9 +14,9 @@
 
 	<h2>Summary</h2>
 	<p>
-		Grim-Games has no accounts, no analytics, no advertising and no tracking cookies. Your games and
-		settings stay on your device. The only thing our server stores is a custom script you choose to
-		share.
+		Grim-Games has no analytics, no advertising and no tracking cookies. Your games and settings
+		stay on your device. Our server stores only a custom script you choose to share, and, if you
+		choose to sign in, your account.
 	</p>
 
 	<h2>What stays on your device</h2>
@@ -70,6 +70,32 @@
 			carries the whole script in the part of the address browsers never send to a server.
 		</li>
 	</ul>
+
+	<h2>Accounts (optional)</h2>
+	<p>
+		Signing in is optional, and the app works fully without it. If you sign in, we store, in
+		Cloudflare Durable Object storage:
+	</p>
+	<ul>
+		<li>Your email address.</li>
+		<li>
+			Your sign-in sessions: a random token, stored only as a hash, with a short device description
+			such as "Chrome on Android" and when the session was created and last used. A session ends
+			when you sign out, or after 180 days unused.
+		</li>
+		<li>The scripts you save to your profile.</li>
+	</ul>
+	<p>
+		Your browser keeps the session in a cookie that only our sign-in requests use; it is not used
+		for tracking. Sign-in codes are kept as hashes and expire after 10 minutes. Sign-in requests are
+		limited per network address using Cloudflare's rate limiter; we do not store the address.
+		Nothing is shared with anyone. The <a href={resolve('/account')}>Account</a> page lets you download
+		everything, or delete your account and all its data immediately.
+	</p>
+	<p>
+		On the Preview (test) version no email is sent: the sign-in code is shown on screen and written
+		to our server log.
+	</p>
 
 	<h2>Hosting</h2>
 	<p>
