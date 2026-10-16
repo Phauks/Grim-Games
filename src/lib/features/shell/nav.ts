@@ -7,7 +7,15 @@ import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
  */
 export interface NavItem {
 	id: string;
-	path: '/new' | '/games' | '/scripts' | '/play' | '/reference' | '/info-tokens' | '/account';
+	path:
+		| '/new'
+		| '/games'
+		| '/previous-games'
+		| '/scripts'
+		| '/play'
+		| '/reference'
+		| '/info-tokens'
+		| '/account';
 	label: MessageKey;
 	icon: IconSlot;
 }
@@ -25,7 +33,13 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 		label: 'shell.navSectionGames',
 		items: [
 			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
-			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'history' }
+			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'history' },
+			{
+				id: 'previous',
+				path: '/previous-games',
+				label: 'shell.navPreviousGames',
+				icon: 'history'
+			}
 		]
 	},
 	{

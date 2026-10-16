@@ -18,6 +18,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	for (const name of [
 		'New game',
 		'Resume game',
+		'Previous games',
 		'Scripts',
 		'Player view',
 		'Character reference',
@@ -36,7 +37,8 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	]);
 	await expect(drawer.getByRole('list', { name: 'Games' }).getByRole('link')).toHaveText([
 		'New game',
-		'Resume game'
+		'Resume game',
+		'Previous games'
 	]);
 	await expect(drawer.getByRole('list', { name: 'Prepare' }).getByRole('link')).toHaveText([
 		'Scripts',
