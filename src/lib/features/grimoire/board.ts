@@ -139,10 +139,10 @@ export function causeFlagText(
 /** What a toast says for a warning the Storyteller went ahead with. */
 export function warningText(warning: EngineWarning): string | undefined {
 	switch (warning.code) {
-		// "reminder-fixed" was asked about before the move (ReminderMoveConfirm).
+		// "reminder-fixed" was asked about before the move (ReminderMoveConfirm); ticking Dawn
+		// starts the new day by itself, logged or not ("empty-day").
 		case 'no-change':
 		case 'reminder-fixed':
-		// Ticking Dawn starts the new day by itself, logged or not.
 		case 'empty-day':
 			return undefined;
 		case 'not-on-script':
