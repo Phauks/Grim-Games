@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import {
 		BASE_DISTRIBUTION,
@@ -50,7 +51,9 @@
 	<!-- Each section opens and closes from its header, remembered on the device (Trevor). -->
 	{#each groups as group (group.type)}
 		<Collapsible
-			title={group.type === 'traveller' ? 'Recommended Travellers' : TYPE_PLURALS[group.type]}
+			title={group.type === 'traveller'
+				? t('player.recommendedTravellers')
+				: TYPE_PLURALS[group.type]}
 			storageKey="play:{group.type}"
 			tone={TONES[group.type]}
 		>
@@ -60,9 +63,9 @@
 		</Collapsible>
 	{/each}
 	<!-- Explains the * in ability text, so it stays when any section is closed (Trevor). -->
-	<p class="legend">* Not the first night</p>
+	<p class="legend">{t('player.notFirstNight')}</p>
 
-	<Collapsible title="Jinxes" storageKey="play:jinxes">
+	<Collapsible title={t('player.jinxes')} storageKey="play:jinxes">
 		{#if jinxes.length}
 			<ul>
 				{#each jinxes as jinx (jinx.characters.join('+'))}
@@ -87,16 +90,16 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="none" data-testid="no-jinxes">None</p>
+			<p class="none" data-testid="no-jinxes">{t('common.none')}</p>
 		{/if}
 	</Collapsible>
 
-	<Collapsible title="Players" storageKey="play:breakdown">
+	<Collapsible title={t('player.breakdown')} storageKey="play:breakdown">
 		<div class="scroll">
 			<table>
 				<thead>
 					<tr>
-						<th scope="col"><span class="visually-hidden">Character type</span></th>
+						<th scope="col"><span class="visually-hidden">{t('player.characterType')}</span></th>
 						{#each counts as n (n)}
 							<th scope="col" data-current={n === highlighted || undefined}>{n}</th>
 						{/each}

@@ -5,6 +5,7 @@ import { bluffs } from '#lib/i18n/messages/en/bluffs.ts';
 import { infoTokens } from '#lib/i18n/messages/en/info-tokens.ts';
 import { show } from '#lib/i18n/messages/en/show.ts';
 import { errors } from '#lib/i18n/messages/en/errors.ts';
+import { player } from '#lib/i18n/messages/en/player.ts';
 import { room } from '#lib/i18n/messages/en/room.ts';
 import { day } from '#lib/i18n/messages/en/day.ts';
 import { scripts } from '#lib/i18n/messages/en/scripts.ts';
@@ -27,5 +28,6 @@ export const en = {
 	...bluffs,
 	...day,
 	...account,
-	...scripts
+	...scripts,
+	...player
 } as const satisfies Catalog;

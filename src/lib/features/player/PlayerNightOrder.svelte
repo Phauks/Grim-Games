@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { NightMarker } from '#lib/core/data/index.ts';
 	import { MARKER_TEXT } from '#lib/core/rules/night-order.ts';
 	import type { Character } from '#lib/core/data/index.ts';
@@ -30,7 +31,9 @@
 <div class="nights">
 	{#each nights as n (n.night)}
 		<section aria-labelledby="night-{n.night}" data-night={n.night}>
-			<h2 id="night-{n.night}">{n.night === 'first' ? 'First night' : 'Other nights'}</h2>
+			<h2 id="night-{n.night}">
+				{n.night === 'first' ? t('player.firstNight') : t('player.otherNights')}
+			</h2>
 			<ol>
 				{#each n.entries as entry, i (i)}
 					<!-- Icon two lines tall; name on the first line, TPI's text beneath (Trevor). -->
@@ -45,7 +48,7 @@
 								class="name marker"
 								data-marker={entry.id}
 								aria-disabled={off || undefined}
-								title={off ? `Not with ${players} players` : undefined}
+								title={off ? t('player.notWithPlayers', { count: players }) : undefined}
 								>{MARKER_TEXT[entry.id].name}</span
 							>
 						{:else}
@@ -65,7 +68,7 @@
 										text={entry.text}
 										character={c}
 										night={n.night}
-									/>{:else}None{/if}
+									/>{:else}{t('common.none')}{/if}
 							</p>
 						{/if}
 					</li>

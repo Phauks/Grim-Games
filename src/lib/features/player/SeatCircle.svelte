@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		characterIcons,
 		defaultAlignment,
@@ -80,7 +81,7 @@
 	let arranging = $state(false);
 	function startArranging() {
 		arranging = true;
-		toast('Arrange seats', 'Drag a seat to move it, leaving space where people sit apart.');
+		toast(t('player.arrangeSeats'), t('player.arrangeHint'));
 	}
 
 	interface Drag {
@@ -156,15 +157,17 @@
 			<Button
 				variant="quiet"
 				disabled={isDefaultLayout(layout)}
-				onclick={() => onLayout(DEFAULT_SEAT_LAYOUT)}>Spread evenly</Button
+				onclick={() => onLayout(DEFAULT_SEAT_LAYOUT)}>{t('player.spreadEvenly')}</Button
 			>
-			<Button variant="accent" icon="check" onclick={() => (arranging = false)}>Done</Button>
+			<Button variant="accent" icon="check" onclick={() => (arranging = false)}
+				>{t('player.done')}</Button
+			>
 		{:else}
-			<div class="stepper" role="group" aria-label="Seats">
+			<div class="stepper" role="group" aria-label={t('player.seats')}>
 				<button
 					type="button"
 					class="step"
-					aria-label="Remove a seat"
+					aria-label={t('player.removeSeat')}
 					disabled={seats.length <= MIN_SEATS}
 					onclick={() => onSeatCount(seats.length - 1)}>−</button
 				>
@@ -172,14 +175,14 @@
 				<button
 					type="button"
 					class="step"
-					aria-label="Add a seat"
+					aria-label={t('player.addSeat')}
 					disabled={seats.length >= MAX_SEATS}
 					onclick={() => onSeatCount(seats.length + 1)}>+</button
 				>
 			</div>
-			<span class="alive" data-testid="alive-count">{alive} alive</span>
+			<span class="alive" data-testid="alive-count">{t('player.alive', { count: alive })}</span>
 			<span class="spacer"></span>
-			<IconButton icon="arrange" label="Arrange seats" onclick={startArranging} />
+			<IconButton icon="arrange" label={t('player.arrangeSeats')} onclick={startArranging} />
 		{/if}
 	</div>
 
@@ -187,7 +190,9 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = drag?.seatId === seat.seatId && arranging ? drag.at : points[i]}
 			{@const icon = iconFor(seat.claims[0])}
-			{@const claims = seat.claims.map((id) => characters.get(id)?.name).filter(Boolean)}
+			{@const claims = seat.claims
+				.map((id) => characters.get(id)?.name)
+				.filter((name): name is string => Boolean(name))}
 			<button
 				type="button"
 				class="seat"
@@ -198,11 +203,11 @@
 				data-seat={seat.seatId}
 				data-dead={seat.dead || undefined}
 				aria-label={[
-					`Seat ${i + 1}`,
+					t('common.seat', { number: i + 1 }),
 					seat.name,
-					claims.length ? `claims ${claims.join(' and ')}` : '',
-					seat.note.trim() ? 'has notes' : '',
-					seat.dead ? (seat.ghostVoteUsed ? 'dead, vote used' : 'dead') : ''
+					claims.length ? t('player.seatClaims', { characters: intl.list(claims) }) : '',
+					seat.note.trim() ? t('player.seatHasNotes') : '',
+					seat.dead ? t(seat.ghostVoteUsed ? 'player.seatDeadVoteUsed' : 'player.seatDead') : ''
 				]
 					.filter(Boolean)
 					.join(', ')}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { NotebookSeat, PlayerNote } from './notebook.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
@@ -16,7 +17,7 @@
 	const playerNotes = $derived(
 		seats.map((seat, i) => ({ seat, number: i + 1 })).filter((s) => s.seat.note.trim())
 	);
-	const preview = (text: string) => text.trim().split('\n')[0] || 'Empty';
+	const preview = (text: string) => text.trim().split('\n')[0] || t('player.empty');
 	// "Hide note contents" setting: titles stay, the text is replaced, so nothing reflows.
 	const hidden = $derived(playerSettings.current.hideNoteContents);
 </script>
@@ -24,8 +25,8 @@
 <div class="notes">
 	<section aria-labelledby="my-notes">
 		<div class="head">
-			<h2 id="my-notes">My notes</h2>
-			<Button icon="add" onclick={onAdd}>New note</Button>
+			<h2 id="my-notes">{t('player.myNotes')}</h2>
+			<Button icon="add" onclick={onAdd}>{t('player.newNote')}</Button>
 		</div>
 		{#if notes.length}
 			<ul>
@@ -38,9 +39,9 @@
 							onclick={() => onOpenNote(note.noteId)}
 						>
 							<!-- Titles always show, so notes can be found (Trevor, 2026-10-16). -->
-							<span class="title">{note.title.trim() || 'Untitled'}</span>
+							<span class="title">{note.title.trim() || t('player.untitled')}</span>
 							{#if hidden}
-								<span class="preview" data-hidden>Hidden</span>
+								<span class="preview" data-hidden>{t('player.hidden')}</span>
 							{:else}
 								<span class="preview">{preview(note.text)}</span>
 							{/if}
@@ -49,12 +50,12 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="none">None</p>
+			<p class="none">{t('common.none')}</p>
 		{/if}
 	</section>
 
 	<section aria-labelledby="player-notes">
-		<h2 id="player-notes">Players</h2>
+		<h2 id="player-notes">{t('player.players')}</h2>
 		{#if playerNotes.length}
 			<ul>
 				{#each playerNotes as { seat, number } (seat.seatId)}
@@ -65,9 +66,11 @@
 							data-player-note={seat.seatId}
 							onclick={() => onOpenSeat(seat.seatId)}
 						>
-							<span class="title">Seat {number}{seat.name ? ` · ${seat.name}` : ''}</span>
+							<span class="title"
+								>{t('common.seat', { number })}{seat.name ? ` · ${seat.name}` : ''}</span
+							>
 							{#if hidden}
-								<span class="preview" data-hidden>Hidden</span>
+								<span class="preview" data-hidden>{t('player.hidden')}</span>
 							{:else}
 								<span class="preview">{preview(seat.note)}</span>
 							{/if}
@@ -76,7 +79,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="none" data-testid="no-player-notes">None</p>
+			<p class="none" data-testid="no-player-notes">{t('common.none')}</p>
 		{/if}
 	</section>
 </div>

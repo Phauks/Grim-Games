@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		characterIcons,
 		defaultAlignment,
@@ -58,11 +59,11 @@
 </script>
 
 <!-- A fixed height, so claiming or marking a death never resizes the sheet. -->
-<BottomSheet bind:open title="Seat {number}" height="85dvh" focusFirstField={false}>
+<BottomSheet bind:open title={t('common.seat', { number })} height="85dvh" focusFirstField={false}>
 	{#if seat}
 		<div class="editor">
 			<label class="field">
-				<span>Name</span>
+				<span>{t('player.name')}</span>
 				<input
 					type="text"
 					value={seat.name}
@@ -73,10 +74,14 @@
 				/>
 			</label>
 			<div class="toggles">
-				<Toggle label="Dead" checked={seat.dead} onChange={(dead) => onChange({ dead })} />
+				<Toggle
+					label={t('player.dead')}
+					checked={seat.dead}
+					onChange={(dead) => onChange({ dead })}
+				/>
 				<!-- Always shown, disabled while alive, so the sheet never reflows. -->
 				<Toggle
-					label="Ghost vote used"
+					label={t('player.ghostVoteUsed')}
 					checked={seat.ghostVoteUsed}
 					disabled={!seat.dead}
 					onChange={(ghostVoteUsed) => onChange({ ghostVoteUsed })}
@@ -85,7 +90,7 @@
 
 			<!-- One fixed-height row; the searchable list opens over the sheet (no reflow). -->
 			<div class="field">
-				<span id="claim-label">Claim</span>
+				<span id="claim-label">{t('player.claim')}</span>
 				<button
 					type="button"
 					class="claim"
@@ -103,14 +108,14 @@
 						{/each}
 					</span>
 					<span id="claim-value" class="value"
-						>{claimed.length ? claimed.map((c) => c.name).join(', ') : 'None'}</span
+						>{claimed.length ? claimed.map((c) => c.name).join(', ') : t('common.none')}</span
 					>
-					<span class="change" aria-hidden="true">Change</span>
+					<span class="change" aria-hidden="true">{t('player.change')}</span>
 				</button>
 			</div>
 
 			<label class="field">
-				<span>Notes</span>
+				<span>{t('player.notes')}</span>
 				<textarea
 					rows="4"
 					value={seat.note}
@@ -121,7 +126,7 @@
 </BottomSheet>
 
 <!-- Several characters can be claimed at once (Trevor, 2026-10-16): taps toggle. -->
-<Dialog bind:open={pickerOpen} title="Claim" size="full">
+<Dialog bind:open={pickerOpen} title={t('player.claim')} size="full">
 	<div class="picker">
 		<CharacterPicker
 			{characters}
@@ -132,8 +137,12 @@
 		/>
 	</div>
 	{#snippet actions()}
-		<Button onclick={() => onChange({ claims: [] })} disabled={!seat?.claims.length}>Clear</Button>
-		<Button variant="accent" icon="check" onclick={() => (pickerOpen = false)}>Done</Button>
+		<Button onclick={() => onChange({ claims: [] })} disabled={!seat?.claims.length}
+			>{t('player.clear')}</Button
+		>
+		<Button variant="accent" icon="check" onclick={() => (pickerOpen = false)}
+			>{t('player.done')}</Button
+		>
 	{/snippet}
 </Dialog>
 

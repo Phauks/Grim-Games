@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import {
 		editionScript,
@@ -95,7 +96,7 @@
 			await useFetched(await fetchSharedRef(ref));
 		} catch (e) {
 			reportError(e, { area: 'play', notify: false });
-			toast('Could not open the shared script', errorMessage(e));
+			toast(t('player.sharedLinkFailed'), errorMessage(e));
 		}
 	}
 
@@ -135,7 +136,7 @@
 	$effect(() => {
 		if (!notebook?.saveError || warnedSave) return;
 		warnedSave = true;
-		toast('This browser cannot save', 'Notes are lost when the page closes.');
+		toast(t('player.cannotSave'), t('player.cannotSaveDetail'));
 	});
 
 	const players = $derived(notebook ? playerCount(notebook.book) : 0);
@@ -167,7 +168,7 @@
 
 <main>
 	<header>
-		<h1>{script?.name ?? 'Player view'}</h1>
+		<h1>{script?.name ?? t('player.title')}</h1>
 		<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 		     Another script loads only from a share link or QR code. -->
 		<div class="share">
@@ -177,16 +178,16 @@
 	</header>
 
 	{#if error}
-		<p role="alert">Could not load the script: {error}</p>
+		<p role="alert">{t('player.loadFailed', { error })}</p>
 	{:else}
 		<Tabs
 			bind:value={tab}
-			label="Player view"
+			label={t('player.title')}
 			tabs={[
-				{ value: 'script', label: 'Script' },
-				{ value: 'night', label: 'Night' },
-				{ value: 'circle', label: 'Circle' },
-				{ value: 'notes', label: 'Notes' }
+				{ value: 'script', label: t('player.tab.script') },
+				{ value: 'night', label: t('player.tab.night') },
+				{ value: 'circle', label: t('player.tab.circle') },
+				{ value: 'notes', label: t('player.tab.notes') }
 			]}
 		>
 			{#snippet panel(value)}
@@ -194,7 +195,7 @@
 					<!-- A crash in one tab replaces only that tab. -->
 					<ErrorBoundary area="play">
 						{#if !script || !notebook}
-							<p class="muted">Loading…</p>
+							<p class="muted">{t('player.loading')}</p>
 						{:else if value === 'script'}
 							<ScriptSheet characters={sheet} {jinxes} {players} />
 						{:else if value === 'night'}

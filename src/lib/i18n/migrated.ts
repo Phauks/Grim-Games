@@ -18,7 +18,9 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/account/',
 	'src/routes/account/',
 	'src/lib/features/scripts/',
-	'src/routes/scripts/'
+	'src/routes/scripts/',
+	'src/lib/features/player/',
+	'src/routes/play/'
 ];
 
 export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {

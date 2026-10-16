@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -24,11 +25,11 @@
 
 <!-- A fixed height, so typing never resizes the sheet. -->
 <!-- The heading stays "Note" so it doesn't change while the title is typed. -->
-<BottomSheet bind:open title="Note" height="85dvh" focusFirstField={false}>
+<BottomSheet bind:open title={t('player.note')} height="85dvh" focusFirstField={false}>
 	{#if note}
 		<div class="editor">
 			<label class="field">
-				<span>Title</span>
+				<span>{t('player.noteTitle')}</span>
 				<input
 					type="text"
 					value={note.title}
@@ -39,30 +40,36 @@
 				/>
 			</label>
 			<label class="field grow">
-				<span>Text</span>
+				<span>{t('player.noteText')}</span>
 				<textarea
 					value={note.text}
 					oninput={(event) => onChange({ text: event.currentTarget.value })}></textarea>
 			</label>
 			<div class="actions">
 				<!-- A red trash can (Trevor, 2026-10-16); still confirms first. -->
-				<IconButton icon="remove" label="Delete note" onclick={() => (confirming = true)} />
+				<IconButton
+					icon="remove"
+					label={t('player.deleteNote')}
+					onclick={() => (confirming = true)}
+				/>
 			</div>
 		</div>
 	{/if}
 </BottomSheet>
 
-<Dialog bind:open={confirming} role="alertdialog" title="Delete this note?">
-	<p>“{note?.title.trim() || 'Untitled'}” will be deleted from this device.</p>
+<Dialog bind:open={confirming} role="alertdialog" title={t('player.deleteNoteConfirm')}>
+	<p>
+		{t('player.deleteNoteBody', { title: note?.title.trim() || t('player.untitled') })}
+	</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirming = false)}>Keep</Button>
+		<Button variant="quiet" onclick={() => (confirming = false)}>{t('player.keep')}</Button>
 		<Button
 			variant="accent"
 			onclick={() => {
 				confirming = false;
 				open = false;
 				onDelete();
-			}}>Delete</Button
+			}}>{t('player.delete')}</Button
 		>
 	{/snippet}
 </Dialog>
