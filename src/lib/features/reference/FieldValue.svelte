@@ -38,6 +38,8 @@
 	}
 
 	let { field, entry, onExplain, tokenSize = 56, plainName = false }: Props = $props();
+	// Jinxes start folded: they vary most in size (Trevor, 2026-10-16). Built only when opened.
+	let jinxesOpen = $state(false);
 
 	const character = $derived(entry.character);
 	// Prep steps with [Token] as reminder chips and names as badges (built only for this field).
@@ -94,12 +96,39 @@
 	</span>
 {/snippet}
 
+<!-- Wiki and Report as icon links: under the name in the table, at the top of a card
+     (Trevor, 2026-10-16). -->
+<!-- eslint-disable svelte/no-navigation-without-resolve -- external links, not app routes -->
+{#snippet links()}
+	<span class="links">
+		{#if entry.wiki}
+			<!-- External wiki page (the rules authority), not an app route. -->
+			<a
+				href={entry.wiki}
+				target="_blank"
+				rel="noopener"
+				aria-label={t('reference.wiki')}
+				title={t('reference.wiki')}><Icon name="wiki" /></a
+			>
+		{/if}
+		<!-- External GitHub issue form; only public build and character info in it. -->
+		<a
+			href={reportUrl}
+			target="_blank"
+			rel="noopener"
+			aria-label={t('reference.report')}
+			title={t('reference.report')}><Icon name="report" /></a
+		>
+	</span>
+{/snippet}
+<!-- eslint-enable svelte/no-navigation-without-resolve -->
+
 <span class="value" data-field={field}>
 	{#if field === 'token'}
 		<CharacterToken {character} size={tokenSize} />
 	{:else if field === 'name' && plainName}
 		<!-- eslint-disable-next-line grim/names-as-badges -- Reference table cells are plain information (Trevor, 2026-10-16) -->
-		{character.name}
+		<span class="block">{character.name}</span>{@render links()}
 	{:else if field === 'name'}
 		<!-- The same badge the game uses: icon, type colour and name (Trevor, 2026-10-15). -->
 		<CharacterBadge characterId={character.id} />
@@ -149,15 +178,26 @@
 		{@render nightValue('night-other', 'other', entry.otherNight)}
 	{:else if field === 'jinxes'}
 		{#if entry.jinxes.length}
-			<ul class="list">
-				{#each entry.jinxes as jinx (jinx.with)}
-					<!-- The text-size badge as a bar across, the jinx indented under it (Trevor, 2026-10-16). -->
-					<li class="jinx">
-						<span class="jinx-bar"><CharacterBadge characterId={jinx.with} inline /></span>
-						<span class="small jinx-reason"><GlossaryText text={jinx.reason} /></span>
-					</li>
-				{/each}
-			</ul>
+			<button
+				type="button"
+				class="fold"
+				aria-expanded={jinxesOpen}
+				data-testid="jinx-toggle"
+				onclick={() => (jinxesOpen = !jinxesOpen)}
+				><span class="caret" aria-hidden="true"><Icon name="expand" /></span>{t(
+					'reference.jinxCount',
+					{ count: entry.jinxes.length }
+				)}</button
+			>
+			{#if jinxesOpen}<ul class="list">
+					{#each entry.jinxes as jinx (jinx.with)}
+						<!-- The text-size badge as a bar across, the jinx indented under it (Trevor, 2026-10-16). -->
+						<li class="jinx">
+							<span class="jinx-bar"><CharacterBadge characterId={jinx.with} inline /></span>
+							<span class="small jinx-reason"><GlossaryText text={jinx.reason} /></span>
+						</li>
+					{/each}
+				</ul>{/if}
 		{:else}<span data-testid="no-jinxes">{t('common.none')}</span>{/if}
 	{:else if field === 'prep'}
 		{#if prep.length}
@@ -212,20 +252,7 @@
 			</ul>
 		{:else}{t('common.none')}{/if}
 	{:else if field === 'links'}
-		<span class="links">
-			{#if entry.wiki}
-				<!-- External wiki page (the rules authority), not an app route. -->
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-				<a href={entry.wiki} target="_blank" rel="noopener"
-					><Icon name="wiki" /> {t('reference.wiki')}</a
-				>
-			{/if}
-			<!-- External GitHub issue form; only public build and character info in it. -->
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a href={reportUrl} target="_blank" rel="noopener"
-				><Icon name="report" /> {t('reference.report')}</a
-			>
-		</span>
+		{@render links()}
 	{/if}
 </span>
 
@@ -324,14 +351,39 @@
 	.links {
 		display: inline-flex;
 		flex-wrap: wrap;
-		gap: 0 var(--space-4);
+		gap: 0 var(--space-1);
+		/* The icons' tap areas reach past them, so they line up with the text beside. */
+		margin-inline: calc((var(--tap-target) - 1.1 * var(--u)) / -2);
 	}
 	.links a {
+		display: inline-grid;
+		place-items: center;
+		min-width: var(--tap-target);
+		min-height: var(--tap-target);
+		--icon-size: calc(1.1 * var(--u));
+	}
+	.fold {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-1);
 		min-height: var(--tap-target);
-		white-space: nowrap;
-		--icon-size: calc(1.1 * var(--u));
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+	.fold .caret {
+		display: grid;
+		transition: transform 0.15s ease;
+	}
+	.fold[aria-expanded='false'] .caret {
+		transform: rotate(-90deg);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.fold .caret {
+			transition: none;
+		}
 	}
 </style>

@@ -427,3 +427,34 @@ test('each character type folds under its caret, a search opens it, and it stays
 	await page.reload();
 	await expect(townsfolk).toHaveAttribute('aria-expanded', 'false');
 });
+
+test('jinxes start folded on cards and in the table; Wiki and Report sit by the name', async ({
+	page
+}) => {
+	// Trevor (2026-10-16): "start jinxes collapsed for table and card view"; "move report and
+	// wiki to under the name in table, or the top of the card".
+	await page.goto('/reference');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Alchemist');
+	const card = page.locator('[data-testid="reference-card"][data-character="alchemist"]');
+	const toggle = card.getByTestId('jinx-toggle');
+	await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+	await expect(toggle).toHaveText(/^\d+ jinxes$/);
+	await expect(card.locator('.jinx')).toHaveCount(0);
+	await toggle.tap();
+	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+	await expect(card.locator('.jinx').first()).toBeVisible();
+	await expect(card.locator('header').getByRole('link', { name: 'Wiki' })).toBeVisible();
+	await expect(
+		card.locator('header').getByRole('link', { name: 'Report a problem' })
+	).toBeVisible();
+
+	await page.getByText('Table', { exact: true }).tap();
+	const row = page.getByTestId('character-table').locator('tr[data-character="alchemist"]');
+	await expect(row.getByTestId('jinx-toggle')).toHaveAttribute('aria-expanded', 'false');
+	const name = row.locator('[data-field="name"]');
+	await expect(name.getByRole('link', { name: 'Wiki' })).toBeVisible();
+	await expect(name.getByRole('link', { name: 'Report a problem' })).toBeVisible();
+	await expect(
+		page.getByTestId('character-table').getByRole('columnheader', { name: /Links/ })
+	).toHaveCount(0);
+});

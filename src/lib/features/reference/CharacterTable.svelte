@@ -49,7 +49,7 @@
 		jinxes: 18,
 		preDay: 19,
 		problems: 15,
-		links: 11
+		links: 0
 	};
 
 	type PresenceColumn = Exclude<TableColumn, 'name' | 'type' | 'edition' | 'alignment'>;

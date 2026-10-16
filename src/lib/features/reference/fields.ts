@@ -94,7 +94,8 @@ const FIELDS: readonly Omit<ReferenceField, 'label'>[] = [
 		filter: 'presence'
 	},
 	{ id: 'problems', card: 'inline', long: true },
-	{ id: 'links', card: 'block' }
+	// At the top of a card and under the name in the table (Trevor, 2026-10-16).
+	{ id: 'links', card: 'header', cardOnly: true }
 ];
 
 /** Each field with its label read from the catalog when used, so it follows the language. */

@@ -41,7 +41,10 @@
 			<header>
 				<FieldValue field="token" {entry} {onExplain} />
 				<div class="title">
-					<h3><FieldValue field="name" {entry} {onExplain} /></h3>
+					<div class="name-row">
+						<h3><FieldValue field="name" {entry} {onExplain} /></h3>
+						<FieldValue field="links" {entry} {onExplain} />
+					</div>
 					<p class="meta">
 						<FieldValue field="type" {entry} {onExplain} /> ·
 						<FieldValue field="edition" {entry} {onExplain} />
@@ -93,6 +96,12 @@
 	.title {
 		flex: 1;
 		min-width: 0;
+	}
+	.name-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0 var(--space-3);
 	}
 	/* A narrow card (a small phone, or large text) puts the name on its own line under the
 	   token, so a long name badge never runs past the screen. */
