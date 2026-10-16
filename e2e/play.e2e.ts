@@ -274,15 +274,15 @@ test('a shared /play link opens its script, and the script can be shared on', as
 	await expect(page.getByRole('heading', { name: 'Second Script', level: 1 })).toBeVisible();
 });
 
-test('a word code loads its script on /play', async ({ page }) => {
+test('a six-digit code loads its script on /play', async ({ page }) => {
 	const shared = [{ id: '_meta', name: 'Code Night' }, 'chef', 'empath', 'imp'];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await expect(page.getByRole('heading', { name: 'Code Night', level: 1 })).toBeVisible();
 	await page.getByRole('button', { name: 'QR code' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Code Night QR code' });
-	const shownWords = qr.getByTestId('share-word');
-	await expect(shownWords).toHaveCount(4);
-	const words = await shownWords.allTextContents();
+	const shown = qr.getByTestId('share-digits');
+	await expect(shown).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await shown.textContent())!;
 
 	// Switch away, then come back with the code, as a player at the table would.
 	await page.goto('/scripts');
@@ -291,9 +291,7 @@ test('a word code loads its script on /play', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 	await page.getByRole('button', { name: 'Code', exact: true }).tap();
 	const entry = page.getByRole('dialog', { name: 'Have a code?' });
-	const box = entry.getByLabel('Type or tap the words');
-	await box.fill(`${words.join(' ')} `);
-	await box.dispatchEvent('input');
+	await entry.getByLabel('The 6-digit code').fill(code);
 	await entry.getByRole('button', { name: 'Load' }).tap();
 	await expect(page.getByRole('heading', { name: 'Code Night', level: 1 })).toBeVisible();
 	await expect(entry).toBeHidden();

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDigitCode } from '#lib/core/codes/digit-code.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -8,7 +9,7 @@
 
 	/**
 	 * Shares one link three ways: the phone's share sheet (or copying, where there is none),
-	 * a QR code, and its word code to read aloud. The link is made only when Share or QR
+	 * a QR code, and its six-digit code to read aloud. The link is made only when Share or QR
 	 * code is tapped, so nothing is uploaded just by opening a page. One control per link,
 	 * so a Room link can sit beside the script link later without changing this one.
 	 */
@@ -97,8 +98,6 @@
 			reportError(e, { area: 'scripts' });
 		}
 	}
-
-	const words = $derived(made?.code?.split('-'));
 </script>
 
 <div class="share" role="group" aria-label="Share {what}">
@@ -119,11 +118,11 @@
 			</p>
 		{/if}
 	</div>
-	<!-- Room for the words on two lines either way, so the dialog never changes size. -->
-	<p class="words" data-testid="share-code">
+	<!-- One line either way, so the dialog never changes size when the code arrives. -->
+	<p class="code-line" data-testid="share-code">
 		<span class="label">Code</span>
-		{#if words}
-			{#each words as word, i (i)}<span class="word" data-testid="share-word">{word}</span>{/each}
+		{#if made?.code}
+			<span class="digits" data-testid="share-digits">{formatDigitCode(made.code)}</span>
 		{:else}
 			<span class="none">None</span>
 		{/if}
@@ -157,22 +156,23 @@
 		border: var(--card-border);
 		border-radius: var(--radius-md);
 	}
-	.words {
+	.code-line {
 		margin: var(--space-3) 0 0;
-		min-height: 2lh;
+		min-height: 1lh;
 		display: flex;
-		flex-wrap: wrap;
 		justify-content: center;
 		align-items: baseline;
-		gap: var(--space-1) var(--space-2);
-		font-size: 1.15rem;
+		gap: var(--space-2);
+		font-size: 1.6rem;
 	}
 	.label {
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
 	}
-	.word {
+	.digits {
 		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.1em;
 	}
 	.none {
 		color: var(--on-surface-muted);

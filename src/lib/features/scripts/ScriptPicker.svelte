@@ -33,9 +33,8 @@
 		type SavedScript,
 		type ScriptSource
 	} from './saved-scripts.ts';
-	import WordCodeEntry from '#lib/features/codes/WordCodeEntry.svelte';
 	import BotcScriptsBrowser from './BotcScriptsBrowser.svelte';
-	import { SHARE_CODE_WORDS } from './share-codes-api.ts';
+	import ShareCodeEntry from './ShareCodeEntry.svelte';
 	import { fetchSharedCode } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
@@ -181,6 +180,7 @@
 		linkOpen = which === 'link';
 		botcOpen = which === 'botc';
 		codeOpen = which === 'code';
+		if (codeOpen) codeText = '';
 	}
 </script>
 
@@ -328,9 +328,13 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={codeOpen} title="Have a code?" size="full">
+<Dialog bind:open={codeOpen} title="Have a code?">
 	{#if codeOpen}
-		<WordCodeEntry count={SHARE_CODE_WORDS} bind:value={codeText} disabled={busy} />
+		<ShareCodeEntry
+			bind:value={codeText}
+			disabled={busy}
+			onsubmit={(code) => run(() => fetchSharedCode(code))}
+		/>
 	{/if}
 	{@render errorLine()}
 	{#snippet actions()}

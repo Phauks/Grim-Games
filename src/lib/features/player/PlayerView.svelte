@@ -22,10 +22,9 @@
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
-	import WordCodeEntry from '#lib/features/codes/WordCodeEntry.svelte';
 	import { ScriptFetchError, type FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
-	import { SHARE_CODE_WORDS } from '#lib/features/scripts/share-codes-api.ts';
+	import ShareCodeEntry from '#lib/features/scripts/ShareCodeEntry.svelte';
 	import {
 		fetchSharedCode,
 		fetchSharedRef,
@@ -107,7 +106,7 @@
 		}
 	}
 
-	// "Have a code?": the four-word code from another phone's Share (08-script-loading.md §5.5).
+	// "Have a code?": the six-digit code from another phone's Share (08-script-loading.md §5.5).
 	let codeOpen = $state(false);
 	let codeText = $state('');
 	let codeBusy = $state(false);
@@ -265,9 +264,9 @@
 		}}
 	/>
 
-	<Dialog bind:open={codeOpen} title="Have a code?" size="full">
+	<Dialog bind:open={codeOpen} title="Have a code?">
 		{#if codeOpen}
-			<WordCodeEntry count={SHARE_CODE_WORDS} bind:value={codeText} disabled={codeBusy} />
+			<ShareCodeEntry bind:value={codeText} disabled={codeBusy} onsubmit={() => loadCode()} />
 		{/if}
 		<p class="code-error" role="status">{codeError}</p>
 		{#snippet actions()}

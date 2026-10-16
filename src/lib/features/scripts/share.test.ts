@@ -44,20 +44,30 @@ describe('share links', () => {
 		await expect(decodeSharedScript('2.AAAA')).rejects.toThrow(/newer version/);
 	});
 
-	it('reads short links: an edition, a BotC Scripts script or a word code', () => {
+	it('reads short links: an edition, a BotC Scripts script or a share code', () => {
 		const refs: SharedRef[] = [
 			{ kind: 'edition', edition: 'tb' },
 			{ kind: 'botcscripts', ref: { kind: 'script', scriptId: 1234 } },
 			{ kind: 'botcscripts', ref: { kind: 'script', scriptId: 1234, version: '1.0.0' } },
+			{ kind: 'code', code: '482913' },
 			{ kind: 'code', code: 'poisoned-drunk-imp-bell' },
 			{ kind: 'inline', payload: '1.abc' }
 		];
 		for (const ref of refs) expect(sharedRefFromHash(sharedRefHash(ref))).toEqual(ref);
-		expect(sharedRefHash(refs[3])).toBe('#c=poisoned-drunk-imp-bell');
+		expect(sharedRefHash(refs[3])).toBe('#c=482913');
 	});
 
 	it('ignores hashes that are not share links, or are malformed', () => {
-		for (const hash of ['', '#other=1', '#e=TB!', '#bs=12x', '#c=poisoned-drunk', '#c=a-b-c-d']) {
+		for (const hash of [
+			'',
+			'#other=1',
+			'#e=TB!',
+			'#bs=12x',
+			'#c=poisoned-drunk',
+			'#c=a-b-c-d',
+			'#c=48291',
+			'#c=4829130'
+		]) {
 			expect(sharedRefFromHash(hash)).toBeUndefined();
 		}
 	});

@@ -3,7 +3,8 @@
  * Worker log (CLAUDE.md). Shortest first (08-script-loading.md §5.5):
  * - `#e=tb`: an official edition;
  * - `#bs=1234/1.0.0`: a BotC Scripts script (version optional), loaded through our Worker;
- * - `#c=poisoned-drunk-imp-bell`: a word code for a script stored on our Worker;
+ * - `#c=482913`: a six-digit code for a script stored on our Worker (older links may
+ *   carry a four-word code, which still opens);
  * - `#s=1.<data>`: the script's TPI JSON itself, deflated and base64url-encoded. Works
  *   offline and with no server, so it is the fallback when a code can't be made.
  */

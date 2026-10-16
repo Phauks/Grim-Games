@@ -24,7 +24,7 @@ export type ScriptSource =
 	| { kind: 'file'; fileName: string }
 	| { kind: 'link'; url: string }
 	| { kind: 'botcscripts'; scriptId: number; version: string }
-	/** `code` is the word code it was opened with, so sharing it again reuses that code. */
+	/** `code` is the share code it was opened with, so sharing it again reuses that code. */
 	| { kind: 'share'; code?: string };
 
 export interface SavedScript {

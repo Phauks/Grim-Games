@@ -1,6 +1,6 @@
 /**
  * Short share links for scripts. Official editions and BotC Scripts scripts need no
- * storage (`#e=`, `#bs=`); anything else is stored on our Worker under a word code (`#c=`).
+ * storage (`#e=`, `#bs=`); anything else is stored on our Worker under a six-digit code (`#c=`).
  * If a code can't be made (offline, or the Worker refuses), the long `#s=` link still
  * works. Design: 08-script-loading.md §5.5 and §5.7.
  */
@@ -24,7 +24,7 @@ import {
 /** What a link is made from: a saved script, or an edition shown before one is chosen. */
 export type Shareable = Pick<SavedScript, 'edition' | 'json' | 'source'>;
 
-/** A link ready to share, and its word code when it has one. */
+/** A link ready to share, and its share code when it has one. */
 export interface ShareTarget {
 	url: string;
 	code?: string;
@@ -32,7 +32,7 @@ export interface ShareTarget {
 	canDelete: boolean;
 }
 
-/** Fetches the script stored under a word code. */
+/** Fetches the script stored under a share code. */
 export async function fetchSharedCode(code: string): Promise<FetchedScript> {
 	let response: Response;
 	try {
@@ -42,7 +42,7 @@ export async function fetchSharedCode(code: string): Promise<FetchedScript> {
 	}
 	if (response.status === 404) {
 		throw new ScriptFetchError(
-			'No script has this code. Codes end 90 days after they were last used, so ask for a new one.'
+			'No script has this code. Check the numbers, or ask for a new code: codes end 30 days after they were last used.'
 		);
 	}
 	if (response.status === 429) {
@@ -142,7 +142,7 @@ async function codeFor(saved: Shareable): Promise<{ code: string; canDelete: boo
 }
 
 /**
- * The shortest link for a saved script. Makes (or reuses) a word code for custom scripts;
+ * The shortest link for a saved script. Makes (or reuses) a six-digit code for custom scripts;
  * if that fails, falls back to the long link with the whole script in it.
  */
 export async function shareTargetFor(

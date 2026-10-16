@@ -1,11 +1,11 @@
 import { DurableObject } from 'cloudflare:workers';
-import { makeWordCode } from '../src/lib/core/codes/word-code.ts';
+import { makeDigitCode } from '../src/lib/core/codes/digit-code.ts';
 import {
 	DELETE_KEY_HEADER,
 	MAX_SHARED_BYTES,
 	parseShareCodePath,
 	SHARE_API,
-	SHARE_CODE_WORDS,
+	SHARE_CODE_DIGITS,
 	SHARE_TTL_MS,
 	type CreatedShare
 } from '../src/lib/features/scripts/share-codes-api.ts';
@@ -19,6 +19,7 @@ export interface ShareEnv {
 
 /** The most entries a stored script may have (the largest official one has about 30). */
 const MAX_ENTRIES = 400;
+/** A taken code is drawn again; with a million codes, five tries is plenty. */
 const CREATE_ATTEMPTS = 5;
 
 interface Stored {
@@ -109,7 +110,7 @@ export async function handleShare(request: Request, env: ShareEnv): Promise<Resp
 		const deleteKey = base64url(crypto.getRandomValues(new Uint8Array(16)));
 		const deleteKeyHash = await hashKey(deleteKey);
 		for (let i = 0; i < CREATE_ATTEMPTS; i++) {
-			const code = makeWordCode(SHARE_CODE_WORDS);
+			const code = makeDigitCode(SHARE_CODE_DIGITS);
 			const stub = env.SHARED_SCRIPTS.get(env.SHARED_SCRIPTS.idFromName(code));
 			if (await stub.create(json, deleteKeyHash)) {
 				return Response.json({ code, deleteKey } satisfies CreatedShare, {

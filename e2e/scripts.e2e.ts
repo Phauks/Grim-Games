@@ -159,7 +159,7 @@ test('an official script is shared as a short player link or a QR code', async (
 	await noSidewaysScroll(page);
 });
 
-test('a custom script gets a word code that another phone can tap in, until it is deleted', async ({
+test('a custom script gets a six-digit code that another phone can type in, until it is deleted', async ({
 	page,
 	context
 }) => {
@@ -178,32 +178,25 @@ test('a custom script gets a word code that another phone can tap in, until it i
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Storm Front QR code' });
 	await expect(dialog.getByRole('img', { name: 'QR code for Storm Front' })).toBeVisible();
-	const shownWords = dialog.getByTestId('share-word');
-	await expect(shownWords).toHaveCount(4);
-	const words = await shownWords.allTextContents();
+	const shown = dialog.getByTestId('share-digits');
+	await expect(shown).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await shown.textContent())!;
 	await dialog.getByRole('button', { name: 'Copy link' }).tap();
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
-		new RegExp(`/play#c=${words.join('-')}$`)
+		new RegExp(`/play#c=${code.replace(' ', '')}$`)
 	);
 
-	// Another phone: tap the first word, type the second, paste the rest.
+	// Another phone types it in on the number pad.
 	const other = await context.newPage();
 	await other.goto('/scripts');
 	await other.getByRole('button', { name: 'Code', exact: true }).tap();
 	const entry = other.getByRole('dialog', { name: 'Have a code?' });
+	const box = entry.getByLabel('The 6-digit code');
+	await expect(box).toHaveAttribute('inputmode', 'numeric');
 	const load = entry.getByRole('button', { name: 'Load' });
+	await box.fill(code.slice(0, 5));
 	await expect(load).toBeDisabled();
-	await entry
-		.getByRole('list', { name: 'Code words to tap' })
-		.getByRole('button', { name: words[0], exact: true })
-		.tap();
-	const box = entry.getByLabel('Type or tap the words');
-	await box.fill(`${words[1]} `);
-	await box.dispatchEvent('input');
-	await expect(entry.getByTestId('code-slot').nth(1)).toHaveText(words[1]);
-	await box.fill(`${words[2]}-${words[3]} `);
-	await box.dispatchEvent('input');
-	await expect(entry.getByTestId('code-slot').nth(3)).toHaveText(words[3]);
+	await box.fill(code);
 	await load.tap();
 	await expect(other.getByTestId('current-script-name')).toHaveText('Storm Front');
 
@@ -211,9 +204,8 @@ test('a custom script gets a word code that another phone can tap in, until it i
 	await dialog.getByRole('button', { name: 'Delete code' }).tap();
 	await expect(dialog).toBeHidden();
 	await other.getByRole('button', { name: 'Code', exact: true }).tap();
-	await other.getByLabel('Type or tap the words').fill(`${words.join(' ')} `);
-	await other.getByLabel('Type or tap the words').dispatchEvent('input');
-	await entry.getByRole('button', { name: 'Load' }).tap();
+	await entry.getByLabel('The 6-digit code').fill(code);
+	await entry.getByLabel('The 6-digit code').press('Enter');
 	await expect(entry.getByRole('status')).toHaveText(/No script has this code/);
 	await noSidewaysScroll(other);
 });
