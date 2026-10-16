@@ -16,6 +16,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	await expect(drawer).toBeHidden();
 	await menu.tap();
 	for (const name of [
+		'Home',
 		'New game',
 		'Resume game',
 		'Previous games',
@@ -36,6 +37,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'You'
 	]);
 	await expect(drawer.getByRole('list', { name: 'Games' }).getByRole('link')).toHaveText([
+		'Home',
 		'New game',
 		'Resume game',
 		'Previous games'

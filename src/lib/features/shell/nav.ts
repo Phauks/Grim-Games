@@ -8,6 +8,7 @@ import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 export interface NavItem {
 	id: string;
 	path:
+		| '/'
 		| '/new'
 		| '/games'
 		| '/previous-games'
@@ -32,6 +33,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 		id: 'games',
 		label: 'shell.navSectionGames',
 		items: [
+			// The landing page, reachable without Back (Trevor, 2026-10-16).
+			{ id: 'home', path: '/', label: 'shell.navHome', icon: 'home' },
 			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
 			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'history' },
 			{
@@ -70,5 +73,6 @@ export const ACCOUNT_ITEM: NavItem = {
 
 /** The item a page belongs to: its own path or anything under it. */
 export function isCurrent(item: NavItem, pathname: string): boolean {
+	if (item.path === '/') return pathname === '/';
 	return pathname === item.path || pathname.startsWith(`${item.path}/`);
 }

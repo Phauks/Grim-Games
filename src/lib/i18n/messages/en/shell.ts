@@ -7,6 +7,7 @@ export const shell = {
 	'shell.navSectionPrepare': 'Prepare',
 	'shell.navSectionPlayers': 'Players',
 	'shell.navSectionYou': 'You',
+	'shell.navHome': 'Home',
 	'shell.navNewGame': 'New game',
 	'shell.navResumeGame': 'Resume game',
 	'shell.navPreviousGames': 'Previous games',

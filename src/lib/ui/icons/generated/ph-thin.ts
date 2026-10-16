@@ -54,6 +54,8 @@ import ph_handbag_thin from '~icons/ph/handbag-thin';
 import ph_hard_drives_thin from '~icons/ph/hard-drives-thin';
 import ph_heart_thin from '~icons/ph/heart-thin';
 import ph_heartbeat_thin from '~icons/ph/heartbeat-thin';
+import ph_house_thin from '~icons/ph/house-thin';
+import ph_house_simple_thin from '~icons/ph/house-simple-thin';
 import ph_info_thin from '~icons/ph/info-thin';
 import ph_lifebuoy_thin from '~icons/ph/lifebuoy-thin';
 import ph_list_thin from '~icons/ph/list-thin';
@@ -169,6 +171,8 @@ const icons: IconMap = {
 	'ph:hard-drives-thin': ph_hard_drives_thin,
 	'ph:heart-thin': ph_heart_thin,
 	'ph:heartbeat-thin': ph_heartbeat_thin,
+	'ph:house-thin': ph_house_thin,
+	'ph:house-simple-thin': ph_house_simple_thin,
 	'ph:info-thin': ph_info_thin,
 	'ph:lifebuoy-thin': ph_lifebuoy_thin,
 	'ph:list-thin': ph_list_thin,

@@ -38,6 +38,7 @@ export const ICON_SLOTS = {
 	},
 	add: { label: 'Add', choices: ['ph:plus', 'ph:plus-circle'] },
 	minus: { label: 'Minus', choices: ['ph:minus', 'ph:minus-circle'] },
+	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
 	appearance: { label: 'Appearance', choices: ['ph:palette', 'ph:paint-brush'] },

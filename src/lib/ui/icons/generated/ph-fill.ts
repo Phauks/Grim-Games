@@ -54,6 +54,8 @@ import ph_handbag_fill from '~icons/ph/handbag-fill';
 import ph_hard_drives_fill from '~icons/ph/hard-drives-fill';
 import ph_heart_fill from '~icons/ph/heart-fill';
 import ph_heartbeat_fill from '~icons/ph/heartbeat-fill';
+import ph_house_fill from '~icons/ph/house-fill';
+import ph_house_simple_fill from '~icons/ph/house-simple-fill';
 import ph_info_fill from '~icons/ph/info-fill';
 import ph_lifebuoy_fill from '~icons/ph/lifebuoy-fill';
 import ph_list_fill from '~icons/ph/list-fill';
@@ -169,6 +171,8 @@ const icons: IconMap = {
 	'ph:hard-drives-fill': ph_hard_drives_fill,
 	'ph:heart-fill': ph_heart_fill,
 	'ph:heartbeat-fill': ph_heartbeat_fill,
+	'ph:house-fill': ph_house_fill,
+	'ph:house-simple-fill': ph_house_simple_fill,
 	'ph:info-fill': ph_info_fill,
 	'ph:lifebuoy-fill': ph_lifebuoy_fill,
 	'ph:list-fill': ph_list_fill,

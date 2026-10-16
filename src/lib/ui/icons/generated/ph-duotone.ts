@@ -54,6 +54,8 @@ import ph_handbag_duotone from '~icons/ph/handbag-duotone';
 import ph_hard_drives_duotone from '~icons/ph/hard-drives-duotone';
 import ph_heart_duotone from '~icons/ph/heart-duotone';
 import ph_heartbeat_duotone from '~icons/ph/heartbeat-duotone';
+import ph_house_duotone from '~icons/ph/house-duotone';
+import ph_house_simple_duotone from '~icons/ph/house-simple-duotone';
 import ph_info_duotone from '~icons/ph/info-duotone';
 import ph_lifebuoy_duotone from '~icons/ph/lifebuoy-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
@@ -169,6 +171,8 @@ const icons: IconMap = {
 	'ph:hard-drives-duotone': ph_hard_drives_duotone,
 	'ph:heart-duotone': ph_heart_duotone,
 	'ph:heartbeat-duotone': ph_heartbeat_duotone,
+	'ph:house-duotone': ph_house_duotone,
+	'ph:house-simple-duotone': ph_house_simple_duotone,
 	'ph:info-duotone': ph_info_duotone,
 	'ph:lifebuoy-duotone': ph_lifebuoy_duotone,
 	'ph:list-duotone': ph_list_duotone,

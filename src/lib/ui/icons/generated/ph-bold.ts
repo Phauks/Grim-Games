@@ -54,6 +54,8 @@ import ph_handbag_bold from '~icons/ph/handbag-bold';
 import ph_hard_drives_bold from '~icons/ph/hard-drives-bold';
 import ph_heart_bold from '~icons/ph/heart-bold';
 import ph_heartbeat_bold from '~icons/ph/heartbeat-bold';
+import ph_house_bold from '~icons/ph/house-bold';
+import ph_house_simple_bold from '~icons/ph/house-simple-bold';
 import ph_info_bold from '~icons/ph/info-bold';
 import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_list_bold from '~icons/ph/list-bold';
@@ -169,6 +171,8 @@ const icons: IconMap = {
 	'ph:hard-drives-bold': ph_hard_drives_bold,
 	'ph:heart-bold': ph_heart_bold,
 	'ph:heartbeat-bold': ph_heartbeat_bold,
+	'ph:house-bold': ph_house_bold,
+	'ph:house-simple-bold': ph_house_simple_bold,
 	'ph:info-bold': ph_info_bold,
 	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:list-bold': ph_list_bold,

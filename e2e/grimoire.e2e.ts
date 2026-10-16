@@ -60,8 +60,9 @@ test('New game and Resume game are screens of their own; home continues the late
 	await page.getByRole('button', { name: 'More players' }).tap();
 	await expect(current).toHaveText('9');
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
-	// Back returns home from either screen.
-	await page.getByRole('link', { name: 'Back' }).tap();
+	// No Back button (Trevor, 2026-10-16): the app name in the header, or Home in the menu, goes home.
+	await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0);
+	await page.getByRole('banner').getByRole('link', { name: 'Grim-Games' }).tap();
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
 	await page.goto('/');
@@ -78,7 +79,7 @@ test('New game and Resume game are screens of their own; home continues the late
 	await expect(
 		page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ })
 	).toBeVisible();
-	await page.getByRole('link', { name: 'Back' }).tap();
+	await page.getByRole('banner').getByRole('link', { name: 'Grim-Games' }).tap();
 	await expect(page).toHaveURL(/\/$/);
 });
 

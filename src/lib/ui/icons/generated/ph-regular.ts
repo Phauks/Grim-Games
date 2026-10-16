@@ -54,6 +54,8 @@ import ph_handbag from '~icons/ph/handbag';
 import ph_hard_drives from '~icons/ph/hard-drives';
 import ph_heart from '~icons/ph/heart';
 import ph_heartbeat from '~icons/ph/heartbeat';
+import ph_house from '~icons/ph/house';
+import ph_house_simple from '~icons/ph/house-simple';
 import ph_info from '~icons/ph/info';
 import ph_lifebuoy from '~icons/ph/lifebuoy';
 import ph_list from '~icons/ph/list';
@@ -169,6 +171,8 @@ const icons: IconMap = {
 	'ph:hard-drives': ph_hard_drives,
 	'ph:heart': ph_heart,
 	'ph:heartbeat': ph_heartbeat,
+	'ph:house': ph_house,
+	'ph:house-simple': ph_house_simple,
 	'ph:info': ph_info,
 	'ph:lifebuoy': ph_lifebuoy,
 	'ph:list': ph_list,
