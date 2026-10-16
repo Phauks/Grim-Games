@@ -1,5 +1,6 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
+import { t } from '#lib/i18n/locale.svelte.ts';
 import type { CharacterLookup, DayEntry, Game, SeatId } from '#lib/core/model/index.ts';
 
 /**
@@ -12,33 +13,50 @@ export interface DayPort {
 	run(command: Command): boolean;
 	seatName(seatId: SeatId | undefined): string;
 	characterName(id: CharacterId | undefined): string;
-	describe(entry: DayEntry): string;
 }
 
-/** A short line for a day-log entry, in our words. */
+/** A short line for a day-log entry, in our words (the grimoire's History uses it). */
 export function describeEntry(
 	entry: DayEntry,
 	seatName: (seatId: SeatId | undefined) => string,
 	characterName: (id: CharacterId | undefined) => string
 ): string {
-	const already = (died: boolean) => (died ? '' : ' (already dead)');
 	switch (entry.kind) {
 		case 'nomination':
-			return `${seatName(entry.nominator)} nominated ${seatName(entry.nominee)}`;
+			return t('day.logNomination', {
+				nominator: seatName(entry.nominator),
+				nominee: seatName(entry.nominee)
+			});
 		case 'execution':
-			return `${seatName(entry.seatId)} executed${already(entry.died)}`;
+			return t(entry.died ? 'day.logExecuted' : 'day.logExecutedDead', {
+				name: seatName(entry.seatId)
+			});
 		case 'exile':
-			return `${seatName(entry.seatId)} exiled${already(entry.died)}`;
+			return t(entry.died ? 'day.logExiled' : 'day.logExiledDead', {
+				name: seatName(entry.seatId)
+			});
 		case 'ability':
-			return `${characterName(entry.characterId)} (${seatName(entry.seatId)}) used their ability`;
+			return t('day.logAbility', {
+				character: characterName(entry.characterId),
+				seat: seatName(entry.seatId)
+			});
 		case 'note': {
-			const who = entry.seatId ? ` (${seatName(entry.seatId)})` : '';
-			const guesses = entry.guesses?.length
-				? ` · ${entry.guesses.length} guess${entry.guesses.length === 1 ? '' : 'es'}`
-				: '';
-			return `${characterName(entry.characterId)}${who}: ${entry.text}${guesses}`;
+			const who = entry.seatId
+				? t('day.who', {
+						character: characterName(entry.characterId),
+						seat: seatName(entry.seatId)
+					})
+				: characterName(entry.characterId);
+			const line = t('day.logNote', { who, text: entry.text });
+			return entry.guesses?.length
+				? t('day.logGuesses', { line, count: entry.guesses.length })
+				: line;
 		}
 		case 'info':
-			return `${characterName(entry.characterId)} (${seatName(entry.seatId)}): ${entry.text}`;
+			return t('day.logInfo', {
+				character: characterName(entry.characterId),
+				seat: seatName(entry.seatId),
+				text: entry.text
+			});
 	}
 }

@@ -5,6 +5,7 @@ import { infoTokens } from '#lib/i18n/messages/en/info-tokens.ts';
 import { show } from '#lib/i18n/messages/en/show.ts';
 import { errors } from '#lib/i18n/messages/en/errors.ts';
 import { room } from '#lib/i18n/messages/en/room.ts';
+import { day } from '#lib/i18n/messages/en/day.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -21,5 +22,6 @@ export const en = {
 	...room,
 	...show,
 	...infoTokens,
-	...bluffs
+	...bluffs,
+	...day
 } as const satisfies Catalog;

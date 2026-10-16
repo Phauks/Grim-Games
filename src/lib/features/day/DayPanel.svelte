@@ -10,6 +10,7 @@
 		type DayReminder,
 		type ValidDeathCause
 	} from '#lib/core/rules/index.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -89,13 +90,16 @@
 	}
 
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
-		const who = `${game.characterName(characterId)} (${game.seatName(seatId)})`;
+		const who = t('day.who', {
+			character: game.characterName(characterId),
+			seat: game.seatName(seatId)
+		});
 		const token = game.characters.get(characterId)?.reminders.includes('No Ability');
 		ask({
-			title: `Mark ${who} as used?`,
-			now: `${who} has not used their ability.`,
-			after: `${who} has used their ability${token ? ' and gets the No Ability reminder' : ''}.`,
-			label: 'Mark used',
+			title: t('day.markUsedTitle', { who }),
+			now: t('day.markUsedNow', { who }),
+			after: t(token ? 'day.markUsedAfterToken' : 'day.markUsedAfter', { who }),
+			label: t('day.markUsed'),
 			run: () => game.run({ type: 'UseAbility', seatId, characterId })
 		});
 	}
@@ -106,13 +110,13 @@
 	function causeLabel(cause: DeathCause): string {
 		switch (cause) {
 			case 'execution':
-				return 'Executed';
+				return t('day.causeExecuted');
 			case 'exile':
-				return 'Exiled';
+				return t('day.causeExiled');
 			case 'demon':
-				return 'Killed by the Demon';
+				return t('day.causeDemon');
 			case 'other':
-				return 'Something else';
+				return t('day.causeOther');
 			default:
 				return game.characterName(cause);
 		}
@@ -124,11 +128,13 @@
 		if (!flag) return undefined;
 		switch (flag.code) {
 			case 'registers':
-				return `only if ${game.characterName(flag.source.characterId)} registered falsely`;
+				return t('day.cautionRegisters', {
+					character: game.characterName(flag.source.characterId)
+				});
 			case 'impaired':
-				return 'drunk or poisoned now';
+				return t('day.cautionImpaired');
 			case 'unknown':
-				return 'alignment not set';
+				return t('day.cautionUnknown');
 		}
 	}
 
@@ -199,7 +205,9 @@
 </script>
 
 {#snippet actions(characterId: CharacterId | undefined, seatId: SeatId | undefined)}
-	{@const who = `${game.characterName(characterId)}${seatId ? ` (${game.seatName(seatId)})` : ''}`}
+	{@const who = seatId
+		? t('day.who', { character: game.characterName(characterId), seat: game.seatName(seatId) })
+		: game.characterName(characterId)}
 	<span class="row-actions">
 		{#if characterId && seatId && isOnceOnlyDayAbility(characterId)}
 			{@const isUsed = used(seatId, characterId)}
@@ -207,11 +215,11 @@
 				type="button"
 				class="chip"
 				aria-pressed={isUsed}
-				aria-label={`Used: ${who}`}
+				aria-label={t('day.usedLabel', { who })}
 				disabled={isUsed}
 				onclick={() => askUsed(seatId, characterId)}
 			>
-				<span class="tick"><Icon name="check" /></span>Used
+				<span class="tick"><Icon name="check" /></span>{t('day.used')}
 			</button>
 		{/if}
 		{#if characterId}
@@ -219,10 +227,10 @@
 				type="button"
 				class="chip"
 				data-has-note={hasNote({ characterId, seatId })}
-				aria-label={`Note: ${who}`}
+				aria-label={t('day.noteLabel', { who })}
 				onclick={() => openNote({ characterId, seatId })}
 			>
-				<Icon name="notes" />Note
+				<Icon name="notes" />{t('day.note')}
 			</button>
 		{/if}
 	</span>
@@ -233,28 +241,29 @@
 	<!-- Always shown, so the list below never moves when players die. -->
 	<p class="votes" data-testid="votes-needed">
 		<strong>{block.needed}</strong>
-		{block.needed === 1 ? 'vote' : 'votes'} to put a player on the block ({block.alive} alive), or more
-		than the player already on it.
+		{t('day.votesNeeded', { count: block.needed, alive: block.alive })}
 	</p>
 {/snippet}
 
 <div class="panel">
 	<div class="toolbar">
-		<Button icon="day" variant="quiet" onclick={() => (confirmNewDay = true)}>New day</Button>
+		<Button icon="day" variant="quiet" onclick={() => (confirmNewDay = true)}
+			>{t('day.newDay')}</Button
+		>
 		{#if onOpenNight}
-			<Button icon="night" onclick={onOpenNight}>Night order</Button>
+			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
 	</div>
 
 	<section aria-labelledby="seats-heading">
-		<h2 id="seats-heading">Players</h2>
-		<p class="prompt">Tap a player to mark them dead or alive.</p>
+		<h2 id="seats-heading">{t('day.players')}</h2>
+		<p class="prompt">{t('day.tapPlayer')}</p>
 		<div class="seats">
 			{#each seats as seat (seat.seatId)}
 				<button
 					type="button"
 					class="seat"
-					aria-label={`Seat: ${game.seatName(seat.seatId)}`}
+					aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
 					data-dead={seat.dead}
 					onclick={() => tapSeat(seat.seatId)}
 				>
@@ -266,7 +275,7 @@
 		{#if hasFlowergirl}
 			<div class="demon-voted">
 				<Toggle
-					label="Demon voted"
+					label={t('day.demonVoted')}
 					checked={g.today.demonVoted === true}
 					onChange={(checked) => game.run({ type: 'SetDemonVoted', voted: checked })}
 				/>
@@ -276,7 +285,7 @@
 
 	{#if assistance.preDayReminders}
 		<section aria-labelledby="reminders-heading">
-			<h2 id="reminders-heading">Today</h2>
+			<h2 id="reminders-heading">{t('day.today')}</h2>
 			{@render votes()}
 			{#each reminders.groups as group (group.group)}
 				<h3>{group.title}</h3>
@@ -312,7 +321,7 @@
 		</section>
 	{:else}
 		<section aria-labelledby="abilities-heading">
-			<h2 id="abilities-heading">Abilities and notes</h2>
+			<h2 id="abilities-heading">{t('day.abilitiesAndNotes')}</h2>
 			{@render votes()}
 			<ul class="reminders">
 				{#each seats as seat (seat.seatId)}
@@ -339,15 +348,13 @@
 <BottomSheet
 	bind:open={causeOpen}
 	title={causeSeatDead
-		? `Mark ${game.seatName(causeSeat)} alive?`
-		: `How did ${game.seatName(causeSeat)} die?`}
-	description={causeSeatDead
-		? 'Now: dead. After: alive.'
-		: 'Now: alive. After: dead, by the cause you tap.'}
+		? t('day.markAliveTitle', { name: game.seatName(causeSeat) })
+		: t('day.howDied', { name: game.seatName(causeSeat) })}
+	description={causeSeatDead ? t('day.markAliveState') : t('day.howDiedState')}
 >
 	<div class="causes">
 		{#if causeSeatDead}
-			<Button onclick={markAlive}>Mark alive</Button>
+			<Button onclick={markAlive}>{t('day.markAlive')}</Button>
 		{:else}
 			{#each causes as option (option.cause)}
 				{@const caution = causeCaution(option)}
@@ -358,34 +365,34 @@
 		{/if}
 		<!-- Set apart and tinted, so it is never mistaken for a cause (Trevor, 2026-10-16). -->
 		<div class="cancel">
-			<Button variant="quiet" onclick={() => (causeOpen = false)}>Cancel</Button>
+			<Button variant="quiet" onclick={() => (causeOpen = false)}>{t('common.cancel')}</Button>
 		</div>
 	</div>
 </BottomSheet>
 
 <Dialog bind:open={pendingOpen} role="alertdialog" title={pending?.title ?? ''}>
 	{#if pending}
-		<p class="state"><span class="state-label">Now</span>{pending.now}</p>
-		<p class="state"><span class="state-label">After</span>{pending.after}</p>
+		<p class="state"><span class="state-label">{t('day.now')}</span>{pending.now}</p>
+		<p class="state"><span class="state-label">{t('day.after')}</span>{pending.after}</p>
 	{/if}
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (pendingOpen = false)}>Cancel</Button>
+		<Button variant="quiet" onclick={() => (pendingOpen = false)}>{t('common.cancel')}</Button>
 		<Button onclick={confirmPending}>{pending?.label ?? ''}</Button>
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={confirmNewDay} role="alertdialog" title="Start a new day?">
+<Dialog bind:open={confirmNewDay} role="alertdialog" title={t('day.newDayTitle')}>
 	<p class="state">
-		<span class="state-label">Now</span>Today has {g.today.entries.length}
-		{g.today.entries.length === 1 ? 'entry' : 'entries'} (Used, notes, deaths).
+		<span class="state-label">{t('day.now')}</span>{t('day.newDayNow', {
+			count: g.today.entries.length
+		})}
 	</p>
 	<p class="state">
-		<span class="state-label">After</span>A new day starts with none; today’s entries stay in
-		History.
+		<span class="state-label">{t('day.after')}</span>{t('day.newDayAfter')}
 	</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (confirmNewDay = false)}>Cancel</Button>
-		<Button onclick={newDay}>Start new day</Button>
+		<Button variant="quiet" onclick={() => (confirmNewDay = false)}>{t('common.cancel')}</Button>
+		<Button onclick={newDay}>{t('day.startNewDay')}</Button>
 	{/snippet}
 </Dialog>
 

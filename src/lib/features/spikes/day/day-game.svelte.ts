@@ -11,12 +11,11 @@ import {
 import {
 	characterLookup,
 	type CharacterLookup,
-	type DayEntry,
 	type Game,
 	type SeatId
 } from '#lib/core/model/index.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
-import { describeEntry, type DayPort } from '#lib/features/day/day-port.ts';
+import type { DayPort } from '#lib/features/day/day-port.ts';
 import { sampleSession, type Variant } from './sample-games.ts';
 
 /**
@@ -75,14 +74,5 @@ export class DayGame implements DayPort {
 
 	characterName(id: CharacterId | undefined): string {
 		return id === undefined ? '' : (this.characters.get(id)?.name ?? id);
-	}
-
-	/** A short line for a day-log entry, in our words. */
-	describe(entry: DayEntry): string {
-		return describeEntry(
-			entry,
-			(s) => this.seatName(s),
-			(id) => this.characterName(id)
-		);
 	}
 }

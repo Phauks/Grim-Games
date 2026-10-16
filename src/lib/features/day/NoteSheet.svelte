@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterGuess, DayEntry, SeatId } from '#lib/core/model/index.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { DayPort } from './day-port.ts';
@@ -68,9 +69,14 @@
 <BottomSheet
 	bind:open
 	title={target
-		? `Note: ${game.characterName(target.characterId)}${target.seatId ? ` · ${game.seatName(target.seatId)}` : ''}`
-		: 'Note'}
-	description="Optional. Write as much as you like; it stays in today’s log."
+		? target.seatId
+			? t('day.noteTitleSeat', {
+					character: game.characterName(target.characterId),
+					seat: game.seatName(target.seatId)
+				})
+			: t('day.noteTitle', { character: game.characterName(target.characterId) })
+		: t('day.note')}
+	description={t('day.noteHint')}
 	height="85dvh"
 >
 	<form
@@ -81,22 +87,25 @@
 		}}
 	>
 		<label class="field">
-			<span>Note</span>
+			<span>{t('day.note')}</span>
 			<textarea
 				bind:value={text}
 				rows="6"
-				placeholder="What was asked, said or shown…"
+				placeholder={t('day.notePlaceholder')}
 				data-testid="note-text"></textarea>
 		</label>
 
 		{#if juggler}
 			<fieldset class="guesses">
-				<legend>Juggler’s guesses</legend>
+				<legend>{t('day.jugglerGuesses')}</legend>
 				{#each others as seatId (seatId)}
 					<label class="guess">
 						<span>{game.seatName(seatId)}</span>
-						<select bind:value={guesses[seatId]} aria-label={`Guess for ${game.seatName(seatId)}`}>
-							<option value="">No guess</option>
+						<select
+							bind:value={guesses[seatId]}
+							aria-label={t('day.guessFor', { name: game.seatName(seatId) })}
+						>
+							<option value="">{t('day.noGuess')}</option>
 							{#each scriptIds as id (id)}
 								<option value={id}>{game.characterName(id)}</option>
 							{/each}
@@ -107,8 +116,8 @@
 		{/if}
 
 		<div class="actions">
-			<Button variant="quiet" onclick={() => (open = false)}>Cancel</Button>
-			<Button type="submit">Save note</Button>
+			<Button variant="quiet" onclick={() => (open = false)}>{t('common.cancel')}</Button>
+			<Button type="submit">{t('day.saveNote')}</Button>
 		</div>
 	</form>
 </BottomSheet>

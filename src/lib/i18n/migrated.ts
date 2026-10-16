@@ -13,7 +13,8 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/routes/grimoire/[gameId]/room/',
 	'src/lib/features/show/',
 	'src/lib/features/info-tokens/',
-	'src/lib/features/bluffs/'
+	'src/lib/features/bluffs/',
+	'src/lib/features/day/'
 ];
 
 export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {};

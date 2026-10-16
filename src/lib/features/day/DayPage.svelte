@@ -7,6 +7,7 @@
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DayPanel from './DayPanel.svelte';
 	import { LiveDay } from './live-day.svelte.ts';
@@ -42,7 +43,7 @@
 					kind: 'error',
 					message:
 						e instanceof SavedGameError && e.problem === 'too-new'
-							? 'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.'
+							? t('day.tooNew')
 							: errorMessage(e)
 				};
 			}
@@ -59,17 +60,17 @@
 <main>
 	<header>
 		<Button href={resolve('/grimoire/[gameId]', { gameId })} icon="back" variant="quiet">
-			Grimoire
+			{t('day.backToGrimoire')}
 		</Button>
-		<h1>Day</h1>
+		<h1>{t('day.title')}</h1>
 	</header>
 	{#if view.kind === 'ready'}
 		<DayPanel game={view.day} {assistance} />
 	{:else if view.kind === 'loading'}
 		<!-- Reserved space while the game opens, so nothing below jumps. -->
-		<p class="message" aria-busy="true">Opening the game…</p>
+		<p class="message" aria-busy="true">{t('day.opening')}</p>
 	{:else if view.kind === 'missing'}
-		<p class="message">There is no saved game here on this device.</p>
+		<p class="message">{t('day.noSavedGame')}</p>
 	{:else}
 		<p class="message" role="alert">{view.message}</p>
 	{/if}
