@@ -1311,17 +1311,17 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('Imp');
 });
 
-test('End game moves the game to Previous games, where it can be reopened', async ({ page }) => {
+test('End game moves the game to History, where it can be reopened', async ({ page }) => {
 	await startGame(page);
 	const board = page.url();
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await expect(end).toContainText(/Now\s*In Resume game\s*Becomes\s*In Previous games/);
+	await expect(end).toContainText(/Now\s*In Resume game\s*Becomes\s*In History/);
 	await end.getByRole('radio', { name: 'Evil' }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// Ended games are on their own page (Trevor, 2026-10-16), not under Resume game.
-	await expect(page).toHaveURL(/\/previous-games$/);
-	const past = page.getByRole('region', { name: 'Previous games' });
+	await expect(page).toHaveURL(/\/history$/);
+	const past = page.getByRole('region', { name: 'Games' });
 	await expect(past).toContainText(/Trouble Brewing\s*Evil won/);
 	await past.getByRole('button', { name: /^Trouble Brewing/ }).tap();
 	await page
@@ -1331,6 +1331,27 @@ test('End game moves the game to Previous games, where it can be reopened', asyn
 	await expect(page).toHaveURL(board);
 	await page.goto('/games');
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*Setting up/ })).toBeVisible();
+});
+
+test('History shows stats from ended games', async ({ page }) => {
+	await startGame(page);
+	await menu(page, 'End game');
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('radio', { name: 'Good' }).tap();
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page).toHaveURL(/\/history$/);
+	const summary = page.getByRole('region', { name: 'Summary' });
+	await expect(summary).toContainText(/Games\s*1\s*Good won\s*1\s*Evil won\s*0/);
+	const scripts = page.getByTestId('history-scripts');
+	await expect(scripts).toContainText(/Trouble Brewing/);
+	// Header filters narrow a table (Trevor, 2026-10-16: filters live in the header row).
+	await scripts.getByRole('button', { name: /Filter Script/ }).tap();
+	await page.getByRole('searchbox', { name: 'Filter Script' }).fill('violets');
+	await page.keyboard.press('Enter');
+	await expect(scripts).toContainText('None match.');
+	// The old address still works.
+	await page.goto('/previous-games');
+	await expect(page).toHaveURL(/\/history$/);
 });
 
 /** Whether an element is fully inside the window. */

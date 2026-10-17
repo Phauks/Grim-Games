@@ -11,7 +11,7 @@ export interface NavItem {
 		| '/'
 		| '/new'
 		| '/games'
-		| '/previous-games'
+		| '/history'
 		| '/scripts'
 		| '/build-script'
 		| '/play'
@@ -40,8 +40,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 			{ id: 'new', path: '/new', label: 'shell.navNewGame', icon: 'add' },
 			{ id: 'games', path: '/games', label: 'shell.navResumeGame', icon: 'resume' },
 			{
-				id: 'previous',
-				path: '/previous-games',
+				id: 'history',
+				path: '/history',
 				label: 'shell.navHistory',
 				icon: 'history'
 			}

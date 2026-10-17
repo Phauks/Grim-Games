@@ -30,6 +30,8 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/routes/build-script/',
 	'src/lib/features/player/',
 	'src/routes/play/',
+	'src/lib/features/history/',
+	'src/routes/history/',
 	'src/lib/features/setup/',
 	'src/routes/grimoire/[gameId]/setup/',
 	'src/routes/grimoire/[gameId]/draw/',
