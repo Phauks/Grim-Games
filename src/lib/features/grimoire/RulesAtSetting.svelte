@@ -14,7 +14,7 @@
 	value={boardLooks.current.rulesAt}
 	options={[
 		{ value: 'middle', label: 'Middle' },
-		{ value: 'edge', label: 'Corner, smaller' }
+		{ value: 'edge', label: 'Corner' }
 	]}
 	onChange={(rulesAt) => boardLooks.update({ rulesAt })}
 />
@@ -22,7 +22,7 @@
 	label="Fabled and Loric grouping"
 	value={boardLooks.current.rulesGrouped ? 'grouped' : 'each'}
 	options={[
-		{ value: 'each', label: 'Each on its own' },
+		{ value: 'each', label: 'Individual' },
 		{ value: 'grouped', label: 'Grouped' }
 	]}
 	onChange={(v) => boardLooks.update({ rulesGrouped: v === 'grouped' })}
