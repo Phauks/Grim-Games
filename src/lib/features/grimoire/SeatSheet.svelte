@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { setupReminders, validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
@@ -371,18 +372,20 @@
 			<!-- A form, so a phone keyboard's Done or Enter key submits it even when the key
 				 press arrives without key events (Android keyboards). -->
 			<form class="name-form" onsubmit={submitName}>
-				<input
-					bind:this={nameInput}
-					class="name-input"
-					type="text"
-					aria-label="Player name"
-					autocomplete="off"
-					enterkeyhint="done"
-					placeholder={`Seat ${number}`}
-					bind:value={typed}
-					onkeydown={cancelName}
-					onblur={() => finishName()}
-				/>
+				<ClearableField bind:value={typed}>
+					<input
+						bind:this={nameInput}
+						class="name-input"
+						type="text"
+						aria-label="Player name"
+						autocomplete="off"
+						enterkeyhint="done"
+						placeholder={`Seat ${number}`}
+						bind:value={typed}
+						onkeydown={cancelName}
+						onblur={() => finishName()}
+					/>
+				</ClearableField>
 			</form>
 		{:else}
 			<span class="player-name" class:no-name={!seat?.playerName}
