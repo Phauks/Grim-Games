@@ -161,8 +161,13 @@ test('the token preview stays in view while the token settings scroll', async ({
 	await content.evaluate((el) => el.scrollTo(0, el.scrollHeight));
 	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	await expect(preview).toBeInViewport();
-	const top = (await content.boundingBox())!.y;
-	expect(Math.abs((await preview.boundingBox())!.y - top)).toBeLessThan(2);
+	// Just under the section's sticky heading row (Trevor, 2026-10-17).
+	const row = (await dialog
+		.getByRole('heading', { name: 'Board and tokens', level: 2 })
+		.locator('..')
+		.boundingBox())!;
+	expect(Math.abs(row.y - (await content.boundingBox())!.y)).toBeLessThan(2);
+	expect(Math.abs((await preview.boundingBox())!.y - (row.y + row.height))).toBeLessThan(2);
 });
 
 test('the preview draws the reminder as the board does, at the board size', async ({ page }) => {
