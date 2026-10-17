@@ -11,6 +11,7 @@
 	import CharacterDialog from './CharacterDialog.svelte';
 	import { prefetchWikiPage } from './wiki-page.svelte.ts';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
+	import { contextCharacters } from './character-context.ts';
 
 	interface Props {
 		characterId: CharacterId;
@@ -22,7 +23,10 @@
 		inline?: boolean;
 		/** The words as written ("Village Idiots"); defaults to the character's name. */
 		text?: CharacterName;
-		/** The character itself (homebrew from a loaded script); otherwise looked up by id. */
+		/**
+		 * The character itself (homebrew from a loaded script); otherwise looked up by id, in
+		 * the game's characters when a parent gave them (`provideCharacters`), then TPI's.
+		 */
 		character?: Character;
 		/**
 		 * False inside another button (a seat to choose, a claim to change): the badge is
@@ -46,7 +50,10 @@
 
 	onMount(() => void loadOfficialData());
 
-	const character = $derived(given ?? officialData.current?.byId.get(characterId));
+	const gameCharacters = contextCharacters();
+	const character = $derived(
+		given ?? gameCharacters?.()?.get(characterId) ?? officialData.current?.byId.get(characterId)
+	);
 	// A Traveller with no alignment yet is half good, half evil, like its token (blue on the
 	// left, red on the right, as in TPI's Traveller icons). Once set, it takes that colour.
 	const team = $derived(
