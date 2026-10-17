@@ -52,7 +52,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 		id: 'prepare',
 		label: 'shell.navSectionPrepare',
 		items: [
-			{ id: 'scripts', path: '/scripts', label: 'shell.navScripts', icon: 'script' },
+			{ id: 'scripts', path: '/scripts', label: 'shell.navScripts', icon: 'search' },
 			// Everything the user has saved or made (Trevor, 2026-10-16).
 			{ id: 'library', path: '/library', label: 'shell.navLibrary', icon: 'library' },
 			{

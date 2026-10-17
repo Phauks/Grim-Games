@@ -994,7 +994,7 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 	await expect(page).toHaveURL(board);
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await drawer.getByRole('link', { name: 'Scripts' }).tap();
+	await drawer.getByRole('link', { name: 'Search' }).tap();
 	const leave = page.getByRole('alertdialog', { name: 'Leave the game?' });
 	await expect(leave).toContainText('Trouble Brewing');
 	await leave.getByRole('button', { name: 'Cancel' }).tap();

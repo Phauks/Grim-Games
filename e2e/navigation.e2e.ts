@@ -20,7 +20,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'New game',
 		'Resume game',
 		'History',
-		'Scripts',
+		'Search',
 		'Library',
 		'Script builder',
 		'Player view',
@@ -46,18 +46,18 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'History'
 	]);
 	await expect(drawer.getByRole('list', { name: 'Prepare' }).getByRole('link')).toHaveText([
-		'Scripts',
+		'Search',
 		'Library',
 		'Script builder',
 		'Info tokens',
 		'Character reference'
 	]);
-	await drawer.getByRole('link', { name: 'Scripts' }).tap();
+	await drawer.getByRole('link', { name: 'Search' }).tap();
 	await expect(page).toHaveURL(/\/scripts$/);
 	await expect(drawer).toBeHidden();
 
 	await menu.tap();
-	await expect(drawer.getByRole('link', { name: 'Scripts' })).toHaveAttribute(
+	await expect(drawer.getByRole('link', { name: 'Search' })).toHaveAttribute(
 		'aria-current',
 		'page'
 	);
