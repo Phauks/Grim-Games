@@ -6,6 +6,8 @@ import {
 	type StorytellerRestrictions
 } from '#lib/core/modes/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
+import { resolve } from '$app/paths';
+import type { ResolvedPathname } from '$app/types';
 import { writeGameMode } from './game-mode-store.ts';
 
 interface StartInput<G> {
@@ -36,4 +38,15 @@ export async function startInMode<G extends { game: { gameId: GameId } }>(
 	const open = await input.create(script);
 	writeGameMode(open.game.gameId, { modeId: mode.id, restrictions: input.restrictions });
 	return open;
+}
+
+/**
+ * Where a new game opens: the draft or choose screen for a mode that doesn't use the bag
+ * (Sushi Buffet, Whale Buffet), otherwise the board.
+ */
+export function startHref(modeId: string, gameId: GameId): ResolvedPathname {
+	const kind = (gameModeById(modeId) ?? STANDARD).parts.assignment?.kind;
+	return kind === 'draft' || kind === 'choose-own'
+		? resolve('/grimoire/[gameId]/deal', { gameId })
+		: resolve('/grimoire/[gameId]', { gameId });
 }

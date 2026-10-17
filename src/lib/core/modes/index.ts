@@ -3,3 +3,4 @@ export * from './registry.ts';
 export * from './pool.ts';
 export * from './validate.ts';
 export * from './draft.ts';
+export * from './choose.ts';

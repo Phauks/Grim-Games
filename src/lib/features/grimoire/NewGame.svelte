@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import {
 		editionScript,
 		OFFICIAL_EDITIONS,
@@ -23,7 +22,7 @@
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
 	import GameModeField from '#lib/features/modes/GameModeField.svelte';
-	import { startInMode } from '#lib/features/modes/start.ts';
+	import { startHref, startInMode } from '#lib/features/modes/start.ts';
 	import { NO_RESTRICTIONS, STANDARD } from '#lib/core/modes/index.ts';
 
 	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
@@ -78,7 +77,7 @@
 				loaded,
 				create: (script) => OpenGame.create(data, script, players)
 			});
-			await goto(resolve('/grimoire/[gameId]', { gameId: open.game.gameId }));
+			await goto(startHref(modeId, open.game.gameId));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {

@@ -5,6 +5,8 @@
  */
 import type { Character, CharacterId, Script } from '#lib/core/data/types.ts';
 import type { GameMode, ModePart } from './types.ts';
+import { isBagDisabled, isNotDealt, isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
+import { standInKind } from '#lib/core/rules/bag-plan.ts';
 
 /**
  * The Storyteller's changes to a mode's restrictions for one game (Trevor, 2026-10-17: every
@@ -84,6 +86,24 @@ export function modeScript(
 export function choosableCharacters(mode: GameMode, characters: readonly Character[]): Character[] {
 	const not = new Set(mode.parts.restricted?.notChoosable ?? []);
 	return characters.filter((c) => !not.has(c.id));
+}
+
+/**
+ * Characters a player can be offered or choose and then simply hold: choosable, dealt as
+ * themselves, and not a secret stand-in. The Drunk, Marionette and Lunatic don't know what
+ * they are (https://wiki.bloodontheclocktower.com/Drunk,
+ * https://wiki.bloodontheclocktower.com/Marionette, https://wiki.bloodontheclocktower.com/Lunatic),
+ * so a player can't knowingly pick them; the Storyteller places them on the board instead.
+ */
+export function pickableCharacters(mode: GameMode, characters: readonly Character[]): Character[] {
+	return choosableCharacters(mode, characters).filter(
+		(c) =>
+			!isBagDisabled(c) &&
+			!isNotDealt(c) &&
+			!isReplacedAfterDraw(c) &&
+			standInKind(c) === undefined &&
+			['townsfolk', 'outsider', 'minion', 'demon'].includes(c.type)
+	);
 }
 
 /**
