@@ -37,16 +37,27 @@
 		sheet?: Snippet;
 		/** The Version field's value: a version picker, or "None" (always shown, no reflow). */
 		version?: Snippet;
+		/** More rows of the main info (`dt`/`dd`), e.g. the script's checks. */
+		extra?: Snippet;
+		/**
+		 * Above the heading, e.g. a Back button. Given, the heading and name stay pinned to the
+		 * top of the scrolling details (Trevor, 2026-10-17).
+		 */
+		lead?: Snippet;
 	}
 
-	let { heading, name, facts, entries, data, actions, sheet, version }: Props = $props();
+	let { heading, name, facts, entries, data, actions, sheet, version, extra, lead }: Props =
+		$props();
 
 	const card = $derived(data ? botcCard(entries, data) : undefined);
 </script>
 
 <div class="details" data-testid="script-details">
-	<h2>{heading}</h2>
-	<p class="name" data-testid="script-details-name">{name || t('common.none')}</p>
+	<div class="top" class:pinned={!!lead} data-testid="script-details-top">
+		{@render lead?.()}
+		<h2>{heading}</h2>
+		<p class="name" data-testid="script-details-name">{name || t('common.none')}</p>
+	</div>
 	<dl>
 		{#each facts as fact (fact.label)}
 			<dt>{fact.label}</dt>
@@ -64,6 +75,7 @@
 			<dt>{t('scripts.details.version')}</dt>
 			<dd class="version">{@render version()}</dd>
 		{/if}
+		{@render extra?.()}
 	</dl>
 	{#if actions}
 		<div class="actions">{@render actions()}</div>
@@ -101,6 +113,21 @@
 		gap: var(--space-2);
 		align-content: start;
 		min-width: 0;
+	}
+	.top {
+		display: grid;
+		gap: var(--space-2);
+	}
+	/* Pinned over the scrolling details; it covers their top padding, so nothing shows above it. */
+	.top.pinned {
+		position: sticky;
+		top: calc(-1 * var(--pinned-inset, 0));
+		z-index: 1;
+		margin-top: calc(-1 * var(--pinned-inset, 0));
+		padding-top: var(--pinned-inset, 0);
+		padding-bottom: var(--space-2);
+		border-bottom: var(--card-border);
+		background: var(--card-background);
 	}
 	h2 {
 		margin: 0;

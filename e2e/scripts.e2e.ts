@@ -715,19 +715,25 @@ test('a BotC Scripts result offers its other versions, and says when a newer one
 	await page.route('**/api/botcscripts/versions/1900', (route) =>
 		route.fulfill({ json: { scriptId: 1900, latest: '1.1.0', versions: ['1.1.0', '1.0.0'] } })
 	);
-	await page.route(/\/api\/botcscripts\/(version\/900|script\/1900\/1\.[01]\.0)$/, (route) => {
-		const version = route.request().url().endsWith('1.1.0') ? '1.1.0' : '1.0.0';
-		return route.fulfill({
-			json: {
-				scriptId: 1900,
-				versionId: version === '1.1.0' ? 901 : 900,
-				name: 'Storm Front',
-				version,
-				author: 'Trevor',
-				content: content(version)
-			}
-		});
-	});
+	let release: () => void = () => {};
+	const held = new Promise<void>((done) => (release = done));
+	await page.route(
+		/\/api\/botcscripts\/(version\/900|script\/1900\/1\.[01]\.0)$/,
+		async (route) => {
+			const version = route.request().url().endsWith('1.1.0') ? '1.1.0' : '1.0.0';
+			await held;
+			return route.fulfill({
+				json: {
+					scriptId: 1900,
+					versionId: version === '1.1.0' ? 901 : 900,
+					name: 'Storm Front',
+					version,
+					author: 'Trevor',
+					content: content(version)
+				}
+			});
+		}
+	);
 
 	await page.goto('/scripts');
 	await page
@@ -735,6 +741,25 @@ test('a BotC Scripts result offers its other versions, and says when a newer one
 		.getByRole('button', { name: /^Storm Front/ })
 		.tap();
 	await expect(detailsName(page)).toHaveText('Storm Front');
+	// While the script loads, its characters are not first shown in a line (Trevor, 2026-10-17):
+	// the space waits for the names and abilities.
+	await expect(page.getByTestId('script-sheet')).toBeAttached();
+	await expect(page.getByTestId('script-characters')).toHaveCount(0);
+	await expect(page.getByTestId('script-sheet')).not.toContainText('Washerwoman');
+	release();
+	await expect(page.getByTestId('script-sheet')).toContainText('Washerwoman');
+	// Scrolling the details keeps Back (phones) and the script's name pinned at the top.
+	const top = details(page).getByTestId('script-details-top');
+	const pinnedAt = (await top.boundingBox())!.y;
+	await page.locator('.pane-scroll').evaluate((el) => el.scrollTo(0, el.scrollHeight));
+	await expect.poll(async () => (await top.boundingBox())!.y).toBeLessThanOrEqual(pinnedAt);
+	await expect(detailsName(page)).toBeInViewport();
+	const paneTop = (await details(page).boundingBox())!.y;
+	expect((await top.boundingBox())!.y).toBeGreaterThanOrEqual(paneTop - 1);
+	await page.locator('.pane-scroll').evaluate((el) => el.scrollTo(0, 0));
+	// Checks are rows of the main info, the counts on one line.
+	await expect(details(page).getByTestId('script-checks')).toContainText('Townsfolk');
+	await expect(page.getByRole('button', { name: 'Script checks' })).toHaveCount(0);
 	// Where the details cover the list (phones), the table's sticky header never shows on top.
 	await expect
 		.poll(() =>

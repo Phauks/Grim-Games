@@ -2,7 +2,7 @@
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { createAttachmentKey } from 'svelte/attachments';
-	import { SvelteMap } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		editionScript,
@@ -414,15 +414,21 @@
 	const botcFetches = new SvelteMap<string, Promise<FetchedScript>>();
 	/** Fetched BotC Scripts text by ref, for the details' player sheet. */
 	const botcTexts = new SvelteMap<string, string>();
+	/** Refs whose fetch failed: their details fall back to the character badges. */
+	const botcFailed = new SvelteSet<string>();
 	function fetchBotc(ref: BotcScriptsRef): Promise<FetchedScript> {
 		const key = JSON.stringify(ref);
 		let fetching = botcFetches.get(key);
 		if (!fetching) {
+			botcFailed.delete(key);
 			fetching = fetchLinkTarget({ kind: 'botcscripts', ref }, '');
 			botcFetches.set(key, fetching);
 			fetching.then(
 				(fetched) => botcTexts.set(key, fetched.text),
-				() => botcFetches.delete(key)
+				() => {
+					botcFetches.delete(key);
+					botcFailed.add(key);
+				}
 			);
 		}
 		return fetching;
@@ -430,8 +436,9 @@
 
 	/**
 	 * The shown script as players see it (Trevor, 2026-10-16): names and abilities by type,
-	 * with jinxes. A BotC Scripts row has it once its fetch arrives; until then (or if the
-	 * script doesn't load) the details list its characters as badges.
+	 * with jinxes. A BotC Scripts row has it once its fetch arrives. Until then the space
+	 * stays empty (Trevor, 2026-10-17: only the abilities, never a line of characters that
+	 * then changes); only a script that can't be loaded lists its characters as badges.
 	 */
 	const preview = $derived.by((): LoadedScript | undefined => {
 		const listing = shownListing;
@@ -450,6 +457,14 @@
 				return text === undefined ? undefined : loadScriptText(text, data).script;
 			}
 		}
+	});
+
+	const previewPending = $derived.by(() => {
+		const listing = shownListing;
+		if (!listing || preview) return false;
+		if (!data) return true;
+		const target = listing.target;
+		return target.kind === 'botcscripts' && !botcFailed.has(JSON.stringify(target.ref));
 	});
 
 	async function toggleSaved() {
@@ -799,13 +814,22 @@
 	</span>
 {/snippet}
 
+{#snippet backButton()}
+	<button type="button" class="back" onclick={() => (paneOpen = false)}
+		><Icon name="back" /><span>{t('scripts.details.back')}</span></button
+	>
+{/snippet}
+
+{#snippet checks()}
+	{#if data && (preview || previewPending)}
+		<ScriptChecks script={preview} {data} />
+	{/if}
+{/snippet}
+
 {#snippet playerSheet()}
 	{#if preview && data}
-		<div class="sheet-stack">
-			<ScriptChecks script={preview} {data} />
-			<!-- Author and version are already in the details above. -->
-			<ScriptCopy script={preview} byline={false} />
-		</div>
+		<!-- Author and version are already in the details above. -->
+		<ScriptCopy script={preview} byline={false} />
 	{/if}
 {/snippet}
 
@@ -886,9 +910,6 @@
 
 		<aside class="pane" aria-label={t('scripts.details.label')} inert={narrow && !paneOpen}>
 			<div class="pane-scroll">
-				<button type="button" class="back" onclick={() => (paneOpen = false)}
-					><Icon name="back" /><span>{t('scripts.details.back')}</span></button
-				>
 				<ScriptDetails
 					heading={shownListing
 						? t(`scripts.sourceLabel.${shownListing.row.source}`)
@@ -897,7 +918,9 @@
 					facts={factsFor(shownListing)}
 					entries={shownListing?.row.entries ?? []}
 					{data}
-					sheet={preview ? playerSheet : undefined}
+					sheet={preview || previewPending ? playerSheet : undefined}
+					extra={checks}
+					lead={backButton}
 					{version}
 				>
 					{#snippet actions()}
@@ -1038,11 +1061,6 @@
 		gap: var(--space-3);
 		min-width: 0;
 	}
-	.sheet-stack {
-		display: grid;
-		gap: var(--space-4);
-		min-width: 0;
-	}
 	/* Its own stacking context, so the table's sticky header never shows through the pane. */
 	.picker {
 		isolation: isolate;
@@ -1066,6 +1084,7 @@
 		visibility: visible;
 	}
 	.pane-scroll {
+		--pinned-inset: var(--space-4);
 		position: absolute;
 		inset: 0;
 		overflow-y: auto;
