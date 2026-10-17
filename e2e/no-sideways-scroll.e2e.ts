@@ -26,6 +26,7 @@ const STATIC_ROUTES = [
 	'/spikes/bluffs',
 	'/spikes/day',
 	'/spikes/icons',
+	'/spikes/page',
 	'/spikes/seat-sheet'
 ];
 
