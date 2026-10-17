@@ -104,8 +104,19 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await expect(revive).toContainText(/Now\s*Dead: Executed\s*Becomes\s*Alive/);
 	await revive.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
-	// No ghost vote on the Storyteller's board (Trevor, 2026-10-16): players track it.
-	await expect(sheet.getByRole('button', { name: 'Vote used' })).toHaveCount(0);
+	// The ghost vote can be marked used and given back (Trevor, 2026-10-17); used, its mark
+	// leaves the token.
+	const ghostMark = page.locator(
+		'[data-testid="seat"][aria-label^="Seat 1:"] [data-testid="ghost-vote"]'
+	);
+	await expect(ghostMark).toBeAttached();
+	const ghost = sheet.getByRole('combobox', { name: 'Ghost vote' });
+	await ghost.tap();
+	await page.getByRole('option', { name: 'Used', exact: true }).tap();
+	await expect(ghostMark).toHaveCount(0);
+	await ghost.tap();
+	await page.getByRole('option', { name: 'Not used', exact: true }).tap();
+	await expect(ghostMark).toBeAttached();
 	// A good Imp: as in the physical grimoire, the token turns upside down.
 	await seatMenu(page, sheet, 'Change alignment');
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
@@ -1584,6 +1595,15 @@ test('the Storyteller keeps a note on a player, marked on the token', async ({ p
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
 	await expect(notes).toContainText('Secret word: lantern');
+	// The note looks as it does in the editor (Trevor, 2026-10-17).
+	const look = (el: Element) => {
+		const c = getComputedStyle(el);
+		return [c.fontFamily, c.fontWeight, c.fontStyle, c.textTransform, c.fontVariant].join('|');
+	};
+	const shown = await notes.evaluate(look);
+	await notes.tap();
+	expect(await field.evaluate(look)).toBe(shown);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
 	// Dismissed without a button (as a swipe down does), it keeps the edit too.
 	await notes.tap();
 	await field.tap();
