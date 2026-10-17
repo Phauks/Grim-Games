@@ -59,8 +59,9 @@ describe('parsePreferences', () => {
 		expect(parsePreferences(valid)).toEqual(valid);
 	});
 
-	it('reads the random symbols bag tiles once had as numbers', () => {
-		expect(parsePreferences({ tileFace: 'symbols' }).tileFace).toBe('numbers');
+	it('keeps any bag tile label, and reads an unknown one as numbers', () => {
+		expect(parsePreferences({ tileFace: 'random' }).tileFace).toBe('random');
+		expect(parsePreferences({ tileFace: 'shapes' }).tileFace).toBe('numbers');
 	});
 
 	it('gives character icons the one icon size saved before the split', () => {

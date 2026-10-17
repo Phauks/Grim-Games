@@ -52,7 +52,7 @@ export interface Preferences {
  * Numbers or letters (Trevor, 2026-10-16). The random symbols this replaced read back as
  * the default, numbers.
  */
-export const TILE_FACES = ['numbers', 'letters'] as const;
+export const TILE_FACES = ['numbers', 'letters', 'symbols', 'colours', 'random'] as const;
 export type TileFace = (typeof TILE_FACES)[number];
 
 /** A size as a fraction of normal (1 = 100%), chosen on a slider (Trevor, 2026-10-16). */

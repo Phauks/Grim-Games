@@ -22,7 +22,10 @@
 	value={preferences.current.tileFace}
 	options={[
 		{ value: 'numbers', label: t('settings.tileLabels.numbers') },
-		{ value: 'letters', label: t('settings.tileLabels.letters') }
+		{ value: 'letters', label: t('settings.tileLabels.letters') },
+		{ value: 'symbols', label: t('settings.tileLabels.symbols') },
+		{ value: 'colours', label: t('settings.tileLabels.colours') },
+		{ value: 'random', label: t('settings.tileLabels.random') }
 	]}
 	defaultValue="numbers"
 	onChange={(tileFace) => preferences.update({ tileFace })}

@@ -124,9 +124,41 @@ export function withWeight(id: string, weight: PhosphorWeight): string {
 	return `${id}-${weight}`;
 }
 
+/**
+ * Shapes for face-down bag tiles (Settings > Bag tile labels > Symbols). Not slots: each one
+ * is a mark, not a concept the user re-picks.
+ */
+export const TILE_SYMBOL_ICONS = [
+	'ph:star',
+	'ph:moon',
+	'ph:sun',
+	'ph:heart',
+	'ph:spade',
+	'ph:club',
+	'ph:diamond',
+	'ph:triangle',
+	'ph:square',
+	'ph:hexagon',
+	'ph:lightning',
+	'ph:flower',
+	'ph:leaf',
+	'ph:anchor',
+	'ph:crown',
+	'ph:key',
+	'ph:bell',
+	'ph:feather',
+	'ph:eye',
+	'ph:fish',
+	'ph:bird',
+	'ph:cat',
+	'ph:tree',
+	'ph:snowflake',
+	'ph:umbrella'
+] as const;
+
 /** Every base Iconify id offered by the catalogue, deduplicated and sorted. */
 export function catalogueIconIds(): string[] {
-	const ids = new Set<string>();
+	const ids = new Set<string>(TILE_SYMBOL_ICONS);
 	for (const slot of iconSlots) for (const id of ICON_SLOTS[slot].choices) ids.add(id);
 	return [...ids].sort();
 }

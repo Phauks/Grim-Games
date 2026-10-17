@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { tileLabel, tileLetters } from './tile-face.ts';
+import { TILE_COLOURS, TILE_SYMBOLS, tileLetters, tileMarks } from './tile-face.ts';
 
-describe('tile labels', () => {
+const names = (size: number, face: Parameters<typeof tileMarks>[1], seed = 'g') =>
+	tileMarks(size, face, seed).map((m) => m.name);
+
+describe('tile marks', () => {
 	it('letters run A to Z, then AA, AB', () => {
 		expect([1, 2, 26, 27, 28, 52, 53].map(tileLetters)).toEqual([
 			'A',
@@ -14,8 +17,24 @@ describe('tile labels', () => {
 		]);
 	});
 
-	it('numbers by default, letters when chosen', () => {
-		expect(tileLabel(3, 'numbers')).toBe('3');
-		expect(tileLabel(3, 'letters')).toBe('C');
+	it('numbers, letters, symbols and colours in order', () => {
+		expect(names(3, 'numbers')).toEqual(['1', '2', '3']);
+		expect(names(3, 'letters')).toEqual(['A', 'B', 'C']);
+		expect(names(2, 'symbols')).toEqual(['Star', 'Moon']);
+		expect(names(2, 'colours')).toEqual(['Red', 'Orange']);
+	});
+
+	it('symbols and colours number their second round, so every tile differs', () => {
+		const size = TILE_SYMBOLS.length + 1;
+		expect(names(size, 'symbols').at(-1)).toBe('Star 2');
+		expect(new Set(names(TILE_COLOURS.length * 2, 'colours')).size).toBe(TILE_COLOURS.length * 2);
+	});
+
+	it('Random mixes the kinds, never repeats, and is the same for the same seed', () => {
+		const marks = tileMarks(20, 'random', 'game-1');
+		expect(new Set(marks.map((m) => `${m.kind}:${m.name}`)).size).toBe(20);
+		expect(new Set(marks.map((m) => m.kind)).size).toBeGreaterThan(1);
+		expect(names(20, 'random', 'game-1')).toEqual(marks.map((m) => m.name));
+		expect(names(20, 'random', 'game-2')).not.toEqual(marks.map((m) => m.name));
 	});
 });

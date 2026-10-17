@@ -181,7 +181,9 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
-test('bag tiles show numbers, or letters when chosen, centred on the token', async ({ page }) => {
+test('bag tiles show numbers, letters, symbols, colours or a random mix, centred on the token', async ({
+	page
+}) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
@@ -201,6 +203,30 @@ test('bag tiles show numbers, or letters when chosen, centred on the token', asy
 	await page.keyboard.press('Escape');
 	await expect(page.getByRole('button', { name: 'Tile A', exact: true })).toHaveText('A');
 	await expect(page.getByRole('button', { name: 'Tile E', exact: true })).toHaveText('E');
+
+	// Symbols, colours, or Random mixing everything (Trevor, 2026-10-17), named in words.
+	async function choose(option: string) {
+		await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+		await page.getByRole('button', { name: 'Storyteller settings' }).tap();
+		await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+		await page.getByRole('option', { name: option }).tap();
+		await page.keyboard.press('Escape');
+	}
+	const bag = page.getByRole('list', { name: 'Bag' }).getByRole('button');
+	await choose('Symbols');
+	await expect(page.getByRole('button', { name: 'Tile Star', exact: true })).toBeVisible();
+	await expect(bag.first().locator('[data-kind="symbol"] svg')).toBeVisible();
+	await choose('Colours');
+	await expect(page.getByRole('button', { name: 'Tile Red', exact: true })).toBeVisible();
+	await choose('Random');
+	const labels = await bag.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
+	expect(new Set(labels).size).toBe(5);
+	await page.reload();
+	await expect
+		.poll(() => bag.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label'))))
+		.toEqual(labels);
+	await bag.first().tap();
+	await expect(page.getByRole('dialog', { name: labels[0]! })).toBeVisible();
 });
 
 test('with Require a name, the token stays hidden until a name is typed', async ({ page }) => {
