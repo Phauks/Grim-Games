@@ -1430,7 +1430,9 @@ test('History shows stats from ended games', async ({ page }) => {
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('radio', { name: 'Good' }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page).toHaveURL(/\/history$/);
+	// End game stays on the board (Trevor, 2026-10-17); History is in the sidebar.
+	await expect(page.getByTestId('game-over')).toBeVisible();
+	await page.goto('/history');
 	const summary = page.getByRole('region', { name: 'Summary' });
 	await expect(summary).toContainText(/Games\s*1\s*Good won\s*1\s*Evil won\s*0/);
 	const scripts = page.getByTestId('history-scripts');
@@ -1441,7 +1443,7 @@ test('History shows stats from ended games', async ({ page }) => {
 	await page.keyboard.press('Enter');
 	await expect(scripts).toContainText('None match.');
 	// The old address still works.
-	await page.goto('/history');
+	await page.goto('/previous-games');
 	await expect(page).toHaveURL(/\/history$/);
 });
 
