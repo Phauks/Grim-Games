@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import SavedGamesList from '#lib/features/grimoire/SavedGamesList.svelte';
 </script>
 
@@ -7,16 +8,8 @@
 	<title>Resume game · Grim-Games</title>
 </svelte:head>
 
-<main>
+<Page title="Resume game">
 	<ErrorBoundary area="grimoire">
 		<SavedGamesList />
 	</ErrorBoundary>
-</main>
-
-<style>
-	main {
-		max-width: calc(40 * var(--u));
-		margin: 0 auto;
-		padding: var(--space-5) var(--space-4);
-	}
-</style>
+</Page>

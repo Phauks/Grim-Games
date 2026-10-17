@@ -20,9 +20,8 @@
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import SetupTable from '#lib/features/setup/SetupTable.svelte';
+	import PlayerCountSheet from '#lib/features/setup/PlayerCountSheet.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import GameModesPanel from '#lib/features/modes/GameModesPanel.svelte';
 
@@ -74,8 +73,8 @@
 	}
 </script>
 
-<section aria-labelledby="new-game">
-	<h2 id="new-game">New game</h2>
+<!-- The page's title is the route's (Page); this is its content. -->
+<section>
 	<!-- Game modes are their own area: their scripts and setup differ too much (Trevor, 2026-10-17). -->
 	<Tabs
 		label="Kind of game"
@@ -95,23 +94,13 @@
 						options={scriptOptions}
 						onChange={(v) => (edition = v)}
 					/>
-					<div class="players">
-						<span class="label" id="players-label">Players</span>
-						<IconButton
-							icon="back"
-							label="Fewer players"
-							disabled={players <= MIN_PLAYERS}
-							onclick={() => (players = Math.max(MIN_PLAYERS, players - 1))}
-						/>
-						<output aria-labelledby="players-label">{players}</output>
-						<IconButton
-							icon="forward"
-							label="More players"
-							disabled={players >= MAX_PLAYERS}
-							onclick={() => (players = Math.min(MAX_PLAYERS, players + 1))}
-						/>
-					</div>
-					<SetupTable {players} />
+					<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
+					<PlayerCountSheet
+						{players}
+						min={MIN_PLAYERS}
+						max={MAX_PLAYERS}
+						onChange={(n) => (players = n)}
+					/>
 					<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}
 						>Start game</Button
 					>
@@ -125,30 +114,10 @@
 	section {
 		display: grid;
 		gap: var(--space-3);
-		margin-bottom: var(--space-6);
 	}
 	.panel {
 		display: grid;
 		gap: var(--space-3);
 		padding-top: var(--space-3);
-	}
-	h2 {
-		margin: 0;
-		font-size: 1.3rem;
-	}
-	.players {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.label {
-		flex: 1;
-		font-family: var(--font-control);
-	}
-	output {
-		min-width: 2ch;
-		font: 600 1.3rem / 1 var(--font-control);
-		text-align: center;
-		font-variant-numeric: tabular-nums;
 	}
 </style>

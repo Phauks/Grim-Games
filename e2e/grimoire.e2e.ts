@@ -59,6 +59,8 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
 test('New game and Resume game are screens of their own', async ({ page }) => {
 	// Home is blank for now (Trevor, 2026-10-16); the sidebar leads to each screen.
 	await page.goto('/new');
+	// The shared page frame: one title per page (Shared page structure).
+	await expect(page.getByRole('heading', { name: 'New game', level: 1 })).toBeVisible();
 	// The setup table under the player count follows it.
 	const current = page.getByTestId('setup-table').locator('thead th[data-current]');
 	await expect(current).toHaveText('8');
@@ -73,6 +75,7 @@ test('New game and Resume game are screens of their own', async ({ page }) => {
 
 	// Resume game lists every saved game with where it is up to.
 	await page.goto('/games');
+	await expect(page.getByRole('heading', { name: 'Resume game', level: 1 })).toBeVisible();
 	const saved = page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ });
 	await expect(saved).toBeVisible();
 	await saved.tap();

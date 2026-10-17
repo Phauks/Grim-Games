@@ -169,7 +169,15 @@ test('Two games at once: one name per player for both games, warnings start at N
 		await page.goto(href);
 		await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	}
-	await page.goto(towns);
+	// Each town's board leads back to the towns from its ⋯ menu.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Towns' }).tap();
+	// Leaving the board asks first, as the app's navigation does; the game stays saved.
+	await page
+		.getByRole('alertdialog', { name: 'Leave the game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(page).toHaveURL(towns);
 	await expect(page.getByLabel('Seat 1', { exact: true })).toHaveValue('Ana');
 	await noSidewaysScroll(page);
 });

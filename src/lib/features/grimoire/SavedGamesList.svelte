@@ -69,8 +69,8 @@
 		game.stage.kind === 'setup' ? 'Setting up' : `Day ${game.stage.day}`;
 </script>
 
-{#if view === 'active'}<section aria-labelledby="saved-games">
-		<h2 id="saved-games">Resume game</h2>
+<!-- Resume game's title is the page's (Page); History keeps its own "Games" heading. -->
+{#if view === 'active'}<section aria-label="Saved games">
 		{#if loaded && games.length === 0 && unreadable.length === 0}
 			<p class="none">None</p>
 		{/if}

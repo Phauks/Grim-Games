@@ -97,6 +97,7 @@
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
+	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
 	import { onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 
@@ -357,6 +358,8 @@
 			? reminder.characterId
 			: game.ruleCharacters[0];
 	}
+	/** The town group this game is a town of, if any (kept on this device). */
+	const towns = $derived(townGroupOf(game.gameId));
 	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
 	/** A Fabled or Loric's reminder being dragged off it. */
 	const heldDrag = $derived.by(() => {
@@ -1375,6 +1378,17 @@
 		>
 			Board and tokens
 		</Button>
+		<!-- A town of a mode game: back to all its towns (Alternative game modes). -->
+		{#if towns}
+			<Button
+				variant="quiet"
+				icon="grimoire"
+				onclick={() =>
+					fromMenu(() => goto(resolve('/towns/[groupId]', { groupId: towns.groupId })))}
+			>
+				Towns
+			</Button>
+		{/if}
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 		<span class="menu-nav">
 			<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
