@@ -14,7 +14,6 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import { bankReminders, byLabel, type StepReminders } from './reminders.ts';
 	import { scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
@@ -39,8 +38,10 @@
 		focus?: StepReminders;
 		/** How `focus` is shown (step-focus.svelte.ts). */
 		focusMode?: StepFocus['mode'];
-		/** The seat under a point (in % of the board), if any; with `nearest`, the closest. */
-		seatAt: (at: SeatPoint, nearest?: boolean) => SeatId | undefined;
+		/** The seat under a point (in % of the board), if any. */
+		seatAt: (at: SeatPoint) => SeatId | undefined;
+		/** Whether a reminder may stay at this client point (not over the bank or buttons). */
+		spotAllowed: (x: number, y: number) => boolean;
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
@@ -55,6 +56,7 @@
 		focus,
 		focusMode = 'front',
 		seatAt,
+		spotAllowed,
 		onHints
 	}: Props = $props();
 
@@ -183,16 +185,12 @@
 		drag = undefined;
 		onHints({ seats: [] });
 		// Any seat will do: the Storyteller can override the suggestion.
-		if (boardLooks.current.reminders === 'free') {
-			// Stays where dropped (Trevor, 2026-10-17: "just in the middle of the board"), held
-			// by the seat it is on or else the nearest one.
-			const holder = target ?? seatAt(at, true);
-			if (!holder || !place(item, holder)) return;
-			const added = grimoire.game.seats[holder]?.reminders.at(-1);
+		if (!target || !place(item, target)) return;
+		// Stays where dropped, inside the board's open area (Trevor, 2026-10-17).
+		if (boardLooks.current.reminders === 'free' && spotAllowed(x, y)) {
+			const added = grimoire.game.seats[target]?.reminders.at(-1);
 			if (added) grimoire.setReminderSpot(added.reminderId, at);
-			return;
 		}
-		if (target) place(item, target);
 	}
 	function cancelDrag() {
 		drag = undefined;
@@ -228,19 +226,18 @@
 </script>
 
 <div class="bank" data-tray>
-	<!-- A drop-down, not a two-way toggle (Trevor, 2026-10-17). -->
-	<div class="view">
-		<Select
-			label="Reminders shown"
-			hideLabel
-			value={view}
-			options={[
-				{ value: 'setup', label: 'Setup' },
-				{ value: 'all', label: 'All' }
-			]}
-			onChange={onView}
-		/>
-	</div>
+	<!-- One button that switches the view (Trevor kept it, 2026-10-17), rounded on the left
+	     like the box it sits in. -->
+	<button
+		type="button"
+		class="view"
+		aria-label={view === 'setup'
+			? 'Showing setup reminders; show all reminders'
+			: 'Showing all reminders; show setup reminders'}
+		onclick={() => onView(view === 'setup' ? 'all' : 'setup')}
+	>
+		{view === 'setup' ? 'Setup' : 'All'}
+	</button>
 	<ul
 		class="tray"
 		bind:this={list}
@@ -400,12 +397,22 @@
 	}
 	.view {
 		flex: none;
-		display: grid;
-		align-content: center;
+		align-self: stretch;
 		/* Fits "Setup" or "All", so switching never moves the tokens (Trevor, 2026-10-16). */
-		width: 6.5rem;
-		padding: 0 var(--space-1);
+		width: 4.5rem;
+		padding: 0 var(--space-2);
+		border: 0;
 		border-inline-end: 1px solid var(--border);
+		/* Follows the bank's rounded corners on the left (Trevor, 2026-10-17). */
+		border-start-start-radius: calc(var(--radius-md) - 1px);
+		border-end-start-radius: calc(var(--radius-md) - 1px);
+		background: none;
+		color: var(--on-surface);
+		font: 600 0.85rem var(--font-control);
+		cursor: pointer;
+	}
+	.view:hover {
+		background: var(--surface-selected);
 	}
 	.tray {
 		flex: 1;

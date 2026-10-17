@@ -283,10 +283,9 @@
 	});
 
 	/** The seat under a point (in % of the board), if it is within reach of a token. */
-	/** The seat under `at`, or with `nearest` the closest seat however far. */
-	function seatAt(at: SeatPoint, nearest = false): SeatId | undefined {
+	function seatAt(at: SeatPoint): SeatId | undefined {
 		let best: SeatId | undefined;
-		let bestDistance = nearest ? Infinity : size * 0.75;
+		let bestDistance = size * 0.75;
 		game.seating.forEach((id, i) => {
 			const d = Math.hypot(
 				((points[i].x - at.x) / 100) * width,
@@ -301,6 +300,20 @@
 	}
 
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
+	/**
+	 * Where a free reminder may stay: on the board, but not over the reminder bank, the night
+	 * walk-through, the middle's buttons, the timer or the Fabled and Loric (Trevor, 2026-10-17).
+	 */
+	function spotAllowed(x: number, y: number): boolean {
+		if (!board) return false;
+		const inside = (r: DOMRect | undefined) =>
+			!!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+		if (!inside(board.getBoundingClientRect())) return false;
+		const blocked = board.querySelectorAll(
+			'[data-tray], [data-testid="night-strip"], .centre > *, .board-timer, .rules-edge'
+		);
+		return ![...blocked].some((el) => inside(el.getBoundingClientRect()));
+	}
 	function dragReminder(reminderId: ReminderId, from: SeatId, x: number, y: number, end: boolean) {
 		if (!board) return;
 		const rect = board.getBoundingClientRect();
@@ -317,8 +330,10 @@
 			moveConfirm?.requestReturn(reminderId);
 			return;
 		}
-		// Reminders that stay where they are dropped keep this spot, whichever seat has them.
-		if (boardLooks.current.reminders === 'free') grimoire.setReminderSpot(reminderId, at);
+		// Reminders that stay where they are dropped keep this spot, whichever seat has them,
+		// if it is in the board's open area (Trevor, 2026-10-17).
+		if (boardLooks.current.reminders === 'free' && spotAllowed(x, y))
+			grimoire.setReminderSpot(reminderId, at);
 		// Dropped on another seat: moved (one History entry). Anywhere else: nothing changes.
 		if (target && target !== from) moveConfirm?.request(reminderId, target);
 	}
@@ -1026,6 +1041,7 @@
 				: undefined}
 			focusMode={stepFocus.current.mode}
 			{seatAt}
+			{spotAllowed}
 			onHints={(h) => (trayHints = h)}
 		/>
 
