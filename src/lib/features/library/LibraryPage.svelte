@@ -3,47 +3,64 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { isSeatable, type GameData } from '#lib/core/data/index.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
-	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import InfoTokensPanel from '#lib/features/info-tokens/InfoTokensPanel.svelte';
+	import { loadScriptText, type GameData } from '#lib/core/data/index.ts';
 	import {
+		chooseScript,
 		forgetScript,
 		recentScripts,
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
-	import { describeSource, sameScript, sourcePage } from '#lib/features/scripts/saved-scripts.ts';
+	import { fetchLinkTarget } from '#lib/features/scripts/fetch-script.ts';
+	import { relaxJson } from '#lib/features/scripts/relaxed-json.ts';
 	import {
+		describeSource,
+		sameScript,
+		type VariationOf
+	} from '#lib/features/scripts/saved-scripts.ts';
+	import {
+		findSaved,
 		localListings,
 		profileProvider,
 		recentProvider,
 		type ScriptListing
 	} from '#lib/features/scripts/script-providers.ts';
 	import AddScript from '#lib/features/scripts/AddScript.svelte';
-	import ScriptDetails from '#lib/features/scripts/ScriptDetails.svelte';
+	import ScriptView from '#lib/features/scripts/ScriptView.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
-	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
+	import FolderView from './FolderView.svelte';
+	import VariationChanges from './VariationChanges.svelte';
 	import LabelManager from './LabelManager.svelte';
 	import NewLabel from './NewLabel.svelte';
-	import { byName, filterLibrary, libraryKey, type FolderFilter } from './library-labels.ts';
+	import {
+		byName,
+		filterLibrary,
+		folderPath,
+		folderTree,
+		libraryKey,
+		type FolderFilter
+	} from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 
 	/**
 	 * Everything the user has kept (Trevor, 2026-10-16: "any scripts the user has built or
 	 * downloaded or saved, along with any tags or functionality they have created"): their saved
-	 * and profile scripts with their own folders and tags, and their own info tokens. It reads
-	 * the Scripts and Info tokens features' stores; nothing is copied.
+	 * and profile scripts with their own folders and tags. It reads the Scripts feature's
+	 * stores; nothing is copied. Custom info tokens live on the Info tokens page only (Trevor,
+	 * 2026-10-17).
 	 */
 
 	let data = $state.raw<GameData>();
@@ -95,6 +112,29 @@
 		});
 	});
 
+	// ---- View: folders like a file manager, or a table (Trevor, 2026-10-17) ----
+
+	type View = 'folders' | 'table';
+	const VIEW_KEY = 'grim-games:library-view';
+	function readView(): View {
+		try {
+			return globalThis.localStorage?.getItem(VIEW_KEY) === 'table' ? 'table' : 'folders';
+		} catch {
+			return 'folders';
+		}
+	}
+	let view = $state<View>(readView());
+	function setView(next: View) {
+		view = next;
+		try {
+			globalThis.localStorage?.setItem(VIEW_KEY, next);
+		} catch {
+			// A remembered view is only a convenience.
+		}
+	}
+	/** The folder open in the folder view; the top level when none. */
+	let currentFolder = $state<string>();
+
 	// ---- Search, filters and sort ----
 
 	let term = $state('');
@@ -103,10 +143,13 @@
 	type ColumnId = 'name' | 'folder' | 'tags' | 'source';
 	let sort = $state<DataSort<ColumnId> | undefined>();
 
-	const folders = $derived(byName(libraryLabels.state.folders));
+	const folders = $derived(folderTree(libraryLabels.state).map(({ folder }) => folder));
 	const tags = $derived(byName(libraryLabels.state.tags));
+	/** A folder's whole path, so folders of the same name in different places differ. */
 	const folderName = (id: string | undefined) =>
-		id ? (folders.find((f) => f.id === id)?.name ?? '') : '';
+		folderPath(libraryLabels.state, id)
+			.map((f) => f.name)
+			.join(' / ');
 	const tagNames = (ids: readonly string[]) =>
 		tags.filter((tag) => ids.includes(tag.id)).map((tag) => tag.name);
 	const sourceOf = (row: Row) =>
@@ -184,8 +227,15 @@
 	const folderOptions = $derived([
 		{ value: 'all', label: t('library.folderAll') },
 		{ value: 'none', label: t('library.folderNone') },
-		...folders.map((f) => ({ value: f.id, label: f.name }))
+		...folders.map((f) => ({ value: f.id, label: folderName(f.id) }))
 	]);
+
+	// The folder view searches every folder; the table's filters belong to the table.
+	const found = $derived(
+		filterLibrary(rows, libraryLabels.state, { term, folder: { kind: 'all' }, tags: [] }).map(
+			(row) => ({ key: row.key, name: row.listing.row.name, author: row.listing.row.author })
+		)
+	);
 
 	// ---- One script's dialog: its folder, tags, details, Share and Remove ----
 
@@ -201,14 +251,21 @@
 	const openRow = $derived(rows.find((row) => row.key === openKey));
 	const openLabels = $derived(openKey ? libraryLabels.for(openKey) : { tags: [] });
 
-	/** A script just added opens straight away, so its folder and tags can be set. */
+	/**
+	 * A script just added opens straight away, so its folder and tags can be set. Added while a
+	 * folder is open, it goes in that folder, as a file saved there would.
+	 */
 	function openAdded() {
 		let newest: Row | undefined;
 		for (const row of rows) {
 			const used = row.listing.saved?.lastUsedAt ?? -1;
 			if (used > (newest?.listing.saved?.lastUsedAt ?? -1)) newest = row;
 		}
-		if (newest) openScript(newest);
+		if (!newest) return;
+		if (view === 'folders' && currentFolder && !libraryLabels.for(newest.key).folder) {
+			libraryLabels.setFolder(newest.key, currentFolder);
+		}
+		openScript(newest);
 	}
 
 	function openScript(row: Row) {
@@ -216,10 +273,51 @@
 		scriptOpen = true;
 	}
 
+	/** No folder, as a Select value (an empty value would read as nothing chosen). */
+	const NO_FOLDER = 'none';
 	const scriptFolderOptions = $derived([
-		{ value: '', label: t('common.none') },
-		...folders.map((f) => ({ value: f.id, label: f.name }))
+		{ value: NO_FOLDER, label: t('common.none') },
+		...folders.map((f) => ({ value: f.id, label: folderName(f.id) }))
 	]);
+
+	/**
+	 * The version shown in the dialog: the saved one, or another BotC Scripts version picked
+	 * there (Trevor, 2026-10-17: a saved script still offers all its versions). Another
+	 * version stays a preview until Save; the saved one stays in the Library either way.
+	 */
+	let viewed = $state.raw<ScriptListing>();
+	const viewingUnsaved = $derived(
+		!!openRow &&
+			!!viewed &&
+			viewed.row.key !== openRow.listing.row.key &&
+			!findSaved(recentScripts.list, viewed)
+	);
+	let savingViewed = $state(false);
+	async function saveViewed() {
+		const listing = viewed;
+		if (!listing || listing.target.kind !== 'botcscripts') return;
+		savingViewed = true;
+		try {
+			const fetched = await fetchLinkTarget(listing.target, '');
+			const loaded = loadScriptText(relaxJson(fetched.text), await loadOfficialData()).script;
+			if (loaded) await chooseScript(loaded, fetched.source);
+		} catch (e) {
+			reportError(e, { area: 'library' });
+		} finally {
+			savingViewed = false;
+		}
+	}
+
+	/**
+	 * A script edited from another one says so (Trevor, 2026-10-17), with what changed. The
+	 * Script builder stores the original on the saved script's source as `variationOf`.
+	 */
+	const variation = $derived.by((): VariationOf | undefined => {
+		const source = openRow?.listing.saved?.source;
+		const of = source?.kind === 'built' ? source.variationOf : undefined;
+		return of && Array.isArray(of.json) ? of : undefined;
+	});
+	let changesOpen = $state(false);
 
 	async function removeOpen() {
 		const row = openRow;
@@ -241,17 +339,13 @@
 	}
 
 	let manageOpen = $state(false);
-
-	const characters = $derived(
-		officialData.current?.characters.filter((c) => isSeatable(c.type)) ?? []
-	);
 </script>
 
 <main>
 	<div class="head">
 		<h1>{t('library.heading')}</h1>
 		<div class="page-actions">
-			<Button icon="tag" onclick={() => (manageOpen = true)}>{t('library.manage')}</Button>
+			<Button icon="tag" onclick={() => (manageOpen = true)}>{t('library.tags')}</Button>
 			<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
 			<AddScript onsaved={openAdded} />
 		</div>
@@ -260,37 +354,58 @@
 	<ErrorBoundary area="library">
 		<section aria-labelledby="library-scripts">
 			<h2 id="library-scripts">{t('library.scripts')}</h2>
-			<label class="term">
-				<span class="visually-hidden">{t('library.search')}</span>
-				<ClearableField bind:value={term}>
-					<input
-						type="search"
-						autocomplete="off"
-						enterkeyhint="search"
-						placeholder={t('library.searchPlaceholder')}
-						bind:value={term}
+			<div class="find">
+				<label class="term">
+					<span class="visually-hidden">{t('library.search')}</span>
+					<ClearableField bind:value={term}>
+						<input
+							type="search"
+							autocomplete="off"
+							enterkeyhint="search"
+							placeholder={t('library.searchPlaceholder')}
+							bind:value={term}
+						/>
+					</ClearableField>
+				</label>
+				<span class="view">
+					<Segmented
+						label={t('library.view')}
+						hideLabel
+						value={view}
+						options={[
+							{ value: 'folders', label: t('library.viewFolders') },
+							{ value: 'table', label: t('library.viewTable') }
+						]}
+						onChange={setView}
 					/>
-				</ClearableField>
-			</label>
-			<div data-testid="library-table">
-				<DataTable
-					label={t('library.table')}
-					{columns}
-					rows={shown}
-					key={(row) => row.key}
-					{cell}
-					{sort}
-					{onSort}
-					{filter}
-					narrow="hide"
-					empty={t('common.none')}
-				/>
+				</span>
 			</div>
-		</section>
-
-		<section aria-labelledby="library-info-tokens">
-			<h2 id="library-info-tokens">{t('library.infoTokens')}</h2>
-			<InfoTokensPanel {characters} only="custom" level={3} />
+			{#if view === 'folders'}
+				<FolderView
+					items={found}
+					searching={term.trim() !== ''}
+					bind:current={currentFolder}
+					onopen={(key) => {
+						const row = rows.find((r) => r.key === key);
+						if (row) openScript(row);
+					}}
+				/>
+			{:else}
+				<div data-testid="library-table">
+					<DataTable
+						label={t('library.table')}
+						{columns}
+						rows={shown}
+						key={(row) => row.key}
+						{cell}
+						{sort}
+						{onSort}
+						{filter}
+						narrow="hide"
+						empty={t('common.none')}
+					/>
+				</div>
+			{/if}
 		</section>
 	</ErrorBoundary>
 </main>
@@ -372,73 +487,91 @@
 	</div>
 {/snippet}
 
+<!-- Search's own script view (Trevor, 2026-10-17: "exact same info and style"), with the
+     Library's folder and tags as rows of the main info, and Edit and Remove. -->
 <Dialog bind:open={scriptOpen} title={openRow?.listing.row.name || t('common.none')} size="full">
-	{#if openRow && openKey}
-		{@const key = openKey}
-		<div class="labels" data-testid="script-labels">
-			<Select
-				label={t('library.folder')}
-				value={openLabels.folder ?? ''}
-				options={scriptFolderOptions}
-				onChange={(value) => libraryLabels.setFolder(key, value || undefined)}
-			/>
-			<fieldset class="tag-toggles">
-				<legend>{t('library.tags')}</legend>
-				<div class="toggles">
-					{#each tags as tag (tag.id)}
-						<button
-							type="button"
-							class="tag-toggle"
-							aria-pressed={openLabels.tags.includes(tag.id)}
-							onclick={() => libraryLabels.toggleTag(key, tag.id)}>{tag.name}</button
-						>
-					{/each}
-				</div>
-				<NewLabel
-					kind="tags"
-					label={t('library.newTag')}
-					onadd={(id) => libraryLabels.toggleTag(key, id)}
-				/>
-			</fieldset>
-		</div>
-		<ScriptDetails
-			heading={t('library.details')}
-			name={openRow.listing.row.name}
-			facts={[
-				{
-					label: t('library.author'),
-					value: openRow.listing.row.author || t('common.none')
-				},
-				{
-					label: t('library.source'),
-					value: sourceOf(openRow),
-					href: sourcePage(openRow.shareable.source)
-				}
-			]}
-			entries={openRow.listing.row.entries}
+	{#if openRow}
+		{@const shareable = openRow.shareable}
+		<!-- Any saved script opens in the Script builder (Trevor, 2026-10-17); a profile-only
+		     script has no copy on this device yet, so Edit stays there but disabled. -->
+		{@const editable = openRow.listing.saved}
+		<ScriptView
+			listing={openRow.listing}
 			{data}
+			share={openRow.listing.saved ? undefined : () => shareTargetFor(shareable, location.origin)}
+			labels={labelRows}
+			busy={savingViewed}
+			onshown={(listing) => (viewed = listing)}
 		>
-			{#snippet actions()}
-				{@const shareable = openRow.shareable}
-				{@const built =
-					openRow.listing.saved?.source.kind === 'built' ? openRow.listing.saved : undefined}
-				{#if built}
+			{#snippet extraActions()}
+				<!-- Pressed for a saved version; another version picked above can be saved too. -->
+				<span class="toggle" class:on={!viewingUnsaved}>
 					<IconButton
-						icon="buildScript"
-						label={t('library.edit')}
-						onclick={() => editInBuilder(built.scriptId)}
+						icon="save"
+						label={t('scripts.picker.save')}
+						aria-pressed={!viewingUnsaved}
+						disabled={!viewingUnsaved || savingViewed}
+						onclick={() => void saveViewed()}
 					/>
-				{/if}
-				<ShareControl
-					what="script"
-					title={openRow.listing.row.name || t('common.none')}
-					target={() => shareTargetFor(shareable, location.origin)}
+				</span>
+				<IconButton
+					icon="buildScript"
+					label={t('library.edit')}
+					disabled={!editable || viewingUnsaved}
+					onclick={() => editable && editInBuilder(editable.scriptId)}
 				/>
-				<DeleteButton label={t('library.remove')} onclick={() => (removing = true)} />
+				<DeleteButton
+					label={t('library.remove')}
+					disabled={viewingUnsaved}
+					onclick={() => (removing = true)}
+				/>
 			{/snippet}
-		</ScriptDetails>
+		</ScriptView>
 	{/if}
 </Dialog>
+
+{#snippet labelRows()}
+	{#if openKey}
+		{@const key = openKey}
+		{#if variation}
+			<dt class="label-term">{t('library.variationOf')}</dt>
+			<dd class="label-value variation" data-testid="variation-of">
+				<span>{variation.name || t('common.none')}</span>
+				<Button icon="history" onclick={() => (changesOpen = true)}
+					>{t('library.whatChanged')}</Button
+				>
+			</dd>
+		{/if}
+		<dt class="label-term">{t('library.folder')}</dt>
+		<dd class="label-value" data-testid="script-labels">
+			<Select
+				label={t('library.folder')}
+				hideLabel
+				value={openLabels.folder ?? NO_FOLDER}
+				options={scriptFolderOptions}
+				onChange={(value) => libraryLabels.setFolder(key, value === NO_FOLDER ? undefined : value)}
+			/>
+		</dd>
+		<dt class="label-term">{t('library.tags')}</dt>
+		<dd class="label-value">
+			<div class="toggles" role="group" aria-label={t('library.tags')}>
+				{#each tags as tag (tag.id)}
+					<button
+						type="button"
+						class="tag-toggle"
+						aria-pressed={openLabels.tags.includes(tag.id)}
+						onclick={() => libraryLabels.toggleTag(key, tag.id)}>{tag.name}</button
+					>
+				{/each}
+			</div>
+			<NewLabel
+				kind="tags"
+				label={t('library.newTag')}
+				onadd={(id) => libraryLabels.toggleTag(key, id)}
+			/>
+		</dd>
+	{/if}
+{/snippet}
 
 <ConfirmDialog
 	bind:open={removing}
@@ -450,6 +583,15 @@
 </ConfirmDialog>
 
 <LabelManager bind:open={manageOpen} />
+
+{#if variation && openRow?.listing.saved}
+	<VariationChanges
+		bind:open={changesOpen}
+		original={variation.json}
+		variation={openRow.listing.saved.json}
+		{data}
+	/>
+{/if}
 
 <style>
 	main {
@@ -492,6 +634,16 @@
 		overflow: hidden;
 		clip-path: inset(50%);
 		white-space: nowrap;
+	}
+	.find {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.term {
+		flex: 1 1 calc(14 * var(--u));
+		min-width: 0;
 	}
 	.term input {
 		width: 100%;
@@ -593,15 +745,33 @@
 		width: calc(1.25 * var(--u));
 		height: calc(1.25 * var(--u));
 	}
-	.labels {
-		display: grid;
-		gap: var(--space-3);
-		margin-bottom: var(--space-4);
+	.toggle.on :global(.icon-button) {
+		background: var(--accent);
+		color: var(--on-accent);
+	}
+	/* Rows of ScriptDetails' main info, styled as its own rows are. */
+	.label-term {
+		color: var(--on-surface-muted);
+	}
+	.label-value {
+		margin: 0;
+		min-width: 0;
+	}
+	.variation {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.view {
+		flex: none;
+		white-space: nowrap;
 	}
 	.toggles {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2);
+		margin-bottom: var(--space-2);
 	}
 	.tag-toggle {
 		min-height: var(--tap-target);

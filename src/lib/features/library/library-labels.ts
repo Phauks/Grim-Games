@@ -1,7 +1,8 @@
 /**
  * The user's own folders and tags for their scripts (Trevor, 2026-10-16: "allow putting scripts
  * into folders, or tagging them as (favorite) or (wanna try) or (stupid fun)"). A script sits in
- * at most one folder and can carry any number of tags.
+ * at most one folder and can carry any number of tags. Folders nest like a file manager's
+ * (Trevor, 2026-10-17: "hold scripts like files in a file manager").
  *
  * Labels are kept apart from the scripts themselves and keyed by what the script is
  * (`libraryKey`), so the same script keeps its labels whether it is listed from this device or
@@ -9,7 +10,8 @@
  * open what an older one stored (CLAUDE.md).
  */
 
-export const LIBRARY_LABELS_VERSION = 1;
+/** 2: folders can sit inside other folders (`parent`). Version 1 data reads as top-level folders. */
+export const LIBRARY_LABELS_VERSION = 2;
 /** Longest folder or tag name. */
 export const MAX_LABEL_NAME = 40;
 
@@ -18,6 +20,8 @@ export type LabelKind = 'tags' | 'folders';
 export interface Label {
 	id: string;
 	name: string;
+	/** Folders only: the folder this one sits in; none for the top level. */
+	parent?: string;
 }
 
 export interface ScriptLabels {
@@ -45,9 +49,30 @@ function readLabels(raw: unknown): Label[] {
 	if (!Array.isArray(raw)) return [];
 	return raw.flatMap((l) =>
 		isObject(l) && typeof l.id === 'string' && typeof l.name === 'string'
-			? [{ id: l.id, name: l.name }]
+			? [
+					typeof l.parent === 'string'
+						? { id: l.id, name: l.name, parent: l.parent }
+						: { id: l.id, name: l.name }
+				]
 			: []
 	);
+}
+
+/** Drops parents that are missing or would make a loop, so every folder reaches the top level. */
+function rootedFolders(folders: Label[]): Label[] {
+	const ids = new Set(folders.map((f) => f.id));
+	const parentOf = new Map(folders.map((f) => [f.id, f.parent]));
+	return folders.map((f) => {
+		if (f.parent === undefined) return f;
+		const seen = new Set([f.id]);
+		let at: string | undefined = f.parent;
+		while (at !== undefined) {
+			if (!ids.has(at) || seen.has(at)) return { id: f.id, name: f.name };
+			seen.add(at);
+			at = parentOf.get(at);
+		}
+		return f;
+	});
 }
 
 /**
@@ -57,9 +82,9 @@ function readLabels(raw: unknown): Label[] {
 export function parseLabels(raw: unknown): LibraryLabels | undefined {
 	if (!isObject(raw)) return emptyLabels();
 	if (typeof raw.version === 'number' && raw.version > LIBRARY_LABELS_VERSION) return undefined;
-	if (raw.version !== LIBRARY_LABELS_VERSION) return emptyLabels();
-	const tags = readLabels(raw.tags);
-	const folders = readLabels(raw.folders);
+	if (raw.version !== 1 && raw.version !== LIBRARY_LABELS_VERSION) return emptyLabels();
+	const tags = readLabels(raw.tags).map(({ id, name }) => ({ id, name }));
+	const folders = rootedFolders(readLabels(raw.folders));
 	const tagIds = new Set(tags.map((t) => t.id));
 	const folderIds = new Set(folders.map((f) => f.id));
 	const scripts: Record<string, ScriptLabels> = {};
@@ -124,15 +149,30 @@ export function nameFree(labels: readonly Label[], name: string, except?: string
 	);
 }
 
-/** Adds a folder or tag. Blank or taken names change nothing. */
+/** The labels a new name must differ from: every tag, or a folder's siblings. */
+export function siblings(
+	state: LibraryLabels,
+	kind: LabelKind,
+	parent: string | undefined
+): Label[] {
+	return kind === 'tags' ? state.tags : state.folders.filter((f) => f.parent === parent);
+}
+
+/** Adds a tag, or a folder inside `parent` (top level when none). Blank or taken names change nothing. */
 export function addLabel(
 	state: LibraryLabels,
 	kind: LabelKind,
 	name: string,
-	id: string
+	id: string,
+	parent?: string
 ): LibraryLabels {
-	if (!nameFree(state[kind], name)) return state;
-	return { ...state, [kind]: [...state[kind], { id, name: cleanName(name) }] };
+	const inside =
+		kind === 'folders' && state.folders.some((f) => f.id === parent) ? parent : undefined;
+	if (!nameFree(siblings(state, kind, inside), name)) return state;
+	const label: Label = inside
+		? { id, name: cleanName(name), parent: inside }
+		: { id, name: cleanName(name) };
+	return { ...state, [kind]: [...state[kind], label] };
 }
 
 export function renameLabel(
@@ -141,25 +181,115 @@ export function renameLabel(
 	id: string,
 	name: string
 ): LibraryLabels {
-	if (!nameFree(state[kind], name, id)) return state;
+	const parent = state[kind].find((l) => l.id === id)?.parent;
+	if (!nameFree(siblings(state, kind, parent), name, id)) return state;
 	return {
 		...state,
 		[kind]: state[kind].map((l) => (l.id === id ? { ...l, name: cleanName(name) } : l))
 	};
 }
 
-/** Deletes a folder or tag; its scripts stay, without it. */
+/**
+ * Deletes a tag, taking it off its scripts; or a folder, moving what it held (scripts and
+ * folders) up into its own parent, so nothing is lost. A moved folder whose name is taken there
+ * keeps its name; names are only checked when the user types one.
+ */
 export function deleteLabel(state: LibraryLabels, kind: LabelKind, id: string): LibraryLabels {
-	let next: LibraryLabels = { ...state, [kind]: state[kind].filter((l) => l.id !== id) };
+	const up = kind === 'folders' ? state.folders.find((f) => f.id === id)?.parent : undefined;
+	let next: LibraryLabels = {
+		...state,
+		[kind]: state[kind]
+			.filter((l) => l.id !== id)
+			.map((l) =>
+				kind === 'folders' && l.parent === id
+					? up
+						? { ...l, parent: up }
+						: { id: l.id, name: l.name }
+					: l
+			)
+	};
 	for (const [key, entry] of Object.entries(state.scripts)) {
 		if (kind === 'tags' && entry.tags.includes(id)) {
 			next = withScript(next, key, { ...entry, tags: entry.tags.filter((t) => t !== id) });
 		}
 		if (kind === 'folders' && entry.folder === id) {
-			next = withScript(next, key, { tags: entry.tags });
+			next = withScript(next, key, { tags: entry.tags, folder: up });
 		}
 	}
 	return next;
+}
+
+/** A folder and every folder inside it, at any depth. */
+export function folderAndDescendants(state: LibraryLabels, id: string): Set<string> {
+	const found = new Set([id]);
+	let grew = true;
+	while (grew) {
+		grew = false;
+		for (const f of state.folders) {
+			if (f.parent && found.has(f.parent) && !found.has(f.id)) {
+				found.add(f.id);
+				grew = true;
+			}
+		}
+	}
+	return found;
+}
+
+/**
+ * Moves a folder into another (or to the top level). Refused when the target is the folder
+ * itself or inside it, or already holds a folder of that name.
+ */
+export function moveFolder(
+	state: LibraryLabels,
+	id: string,
+	parent: string | undefined
+): LibraryLabels {
+	const folder = state.folders.find((f) => f.id === id);
+	if (!folder || folder.parent === parent) return state;
+	if (parent !== undefined) {
+		if (!state.folders.some((f) => f.id === parent)) return state;
+		if (folderAndDescendants(state, id).has(parent)) return state;
+	}
+	if (!nameFree(siblings(state, 'folders', parent), folder.name, id)) return state;
+	return {
+		...state,
+		folders: state.folders.map((f) =>
+			f.id === id ? (parent ? { ...f, parent } : { id: f.id, name: f.name }) : f
+		)
+	};
+}
+
+/** The folders directly inside `parent` (the top level when none), by name. */
+export function childFolders(state: LibraryLabels, parent: string | undefined): Label[] {
+	return byName(state.folders.filter((f) => f.parent === parent));
+}
+
+/** The folders from the top level down to `id`, for a breadcrumb; empty when it is gone. */
+export function folderPath(state: LibraryLabels, id: string | undefined): Label[] {
+	const path: Label[] = [];
+	const seen = new Set<string>();
+	let at = id;
+	while (at !== undefined && !seen.has(at)) {
+		seen.add(at);
+		const folder = state.folders.find((f) => f.id === at);
+		if (!folder) return [];
+		path.unshift(folder);
+		at = folder.parent;
+	}
+	return path;
+}
+
+/** Every folder in file-manager order (each one followed by what it holds), with its depth. */
+export function folderTree(state: LibraryLabels): { folder: Label; depth: number }[] {
+	const out: { folder: Label; depth: number }[] = [];
+	const walk = (parent: string | undefined, depth: number) => {
+		for (const folder of childFolders(state, parent)) {
+			out.push({ folder, depth });
+			walk(folder.id, depth + 1);
+		}
+	};
+	walk(undefined, 0);
+	return out;
 }
 
 /** How many scripts use a folder or tag. */
@@ -211,11 +341,15 @@ export function filterLibrary<T extends { key: string; haystack: string }>(
 	filter: LibraryFilter
 ): T[] {
 	const term = filter.term.trim().toLocaleLowerCase();
+	// A folder's scripts include those in the folders inside it.
+	const inFolder =
+		filter.folder.kind === 'folder' ? folderAndDescendants(state, filter.folder.id) : new Set();
 	return rows.filter((row) => {
 		if (term && !row.haystack.includes(term)) return false;
 		const entry = labelsFor(state, row.key);
 		if (filter.folder.kind === 'none' && entry.folder) return false;
-		if (filter.folder.kind === 'folder' && entry.folder !== filter.folder.id) return false;
+		if (filter.folder.kind === 'folder' && !(entry.folder && inFolder.has(entry.folder)))
+			return false;
 		return filter.tags.every((tag) => entry.tags.includes(tag));
 	});
 }

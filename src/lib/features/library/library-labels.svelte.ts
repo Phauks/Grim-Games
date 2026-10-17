@@ -4,6 +4,7 @@ import {
 	deleteLabel,
 	emptyLabels,
 	labelsFor,
+	moveFolder,
 	parseLabels,
 	renameLabel,
 	setFolder,
@@ -53,10 +54,13 @@ class Labels {
 		}
 	}
 
-	/** Adds a folder or tag; returns its id, or undefined when the name is blank or taken. */
-	add(kind: LabelKind, name: string): string | undefined {
+	/**
+	 * Adds a tag, or a folder inside `parent`; returns its id, or undefined when the name is
+	 * blank or taken.
+	 */
+	add(kind: LabelKind, name: string, parent?: string): string | undefined {
 		const id = crypto.randomUUID();
-		const next = addLabel(this.#state, kind, name, id);
+		const next = addLabel(this.#state, kind, name, id, parent);
 		this.#save(next);
 		return next[kind].some((l) => l.id === id) ? id : undefined;
 	}
@@ -67,6 +71,10 @@ class Labels {
 
 	delete(kind: LabelKind, id: string): void {
 		this.#save(deleteLabel(this.#state, kind, id));
+	}
+
+	moveFolder(id: string, parent: string | undefined): void {
+		this.#save(moveFolder(this.#state, id, parent));
 	}
 
 	setFolder(key: string, folder: string | undefined): void {
