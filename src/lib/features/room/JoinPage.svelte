@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -90,15 +91,17 @@
 		{/if}
 		<form class="code-form" onsubmit={enterCode}>
 			<label for="room-code">{t('room.codeLabel')}</label>
-			<input
-				id="room-code"
-				bind:value={typed}
-				inputmode="numeric"
-				autocomplete="off"
-				enterkeyhint="go"
-				placeholder="482 913"
-				maxlength="7"
-			/>
+			<ClearableField bind:value={typed}>
+				<input
+					id="room-code"
+					bind:value={typed}
+					inputmode="numeric"
+					autocomplete="off"
+					enterkeyhint="go"
+					placeholder="482 913"
+					maxlength="7"
+				/>
+			</ClearableField>
 			<Button type="submit" variant="accent" disabled={!normaliseRoomCode(typed)}>
 				{t('room.join')}
 			</Button>
@@ -124,14 +127,16 @@
 				<p class="summary" role="status" data-testid="join-status">{summary}</p>
 				<form onsubmit={ask}>
 					<label for="player-name">{t('room.yourName')}</label>
-					<input
-						id="player-name"
-						bind:value={name}
-						maxlength="40"
-						autocomplete="nickname"
-						enterkeyhint="done"
-						onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-					/>
+					<ClearableField bind:value={name}>
+						<input
+							id="player-name"
+							bind:value={name}
+							maxlength="40"
+							autocomplete="nickname"
+							enterkeyhint="done"
+							onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+						/>
+					</ClearableField>
 					<fieldset>
 						<legend>{t('room.yourSeat')}</legend>
 						<div class="seats">
