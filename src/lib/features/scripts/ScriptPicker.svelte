@@ -27,9 +27,11 @@
 	import {
 		EMPTY_QUERY,
 		MAX_FILTER_CHARACTERS,
+		compareVersions,
 		filterCount,
 		normaliseSearch,
 		parseBotcScriptsRef,
+		scriptPageUrl,
 		searchPath,
 		type BotcScriptsQuery,
 		type BotcScriptsRef,
@@ -37,6 +39,7 @@
 	} from './botcscripts-api.ts';
 	import BotcFilter from './BotcFilter.svelte';
 	import { collectionScripts } from './collection.svelte.ts';
+	import { botcVersions } from './botc-versions.svelte.ts';
 	import { curatedScripts } from './curated.svelte.ts';
 	import { worldCupScripts } from './world-cup.svelte.ts';
 	import {
@@ -69,6 +72,7 @@
 		sourcePage,
 		type ScriptSource
 	} from './saved-scripts.ts';
+	import PrintScriptButton from '#lib/features/player/PrintScriptButton.svelte';
 	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import ScriptChecks from './ScriptChecks.svelte';
 	import ScriptDetails, { type ScriptFact } from './ScriptDetails.svelte';
@@ -323,13 +327,78 @@
 			.map((saved) => savedListings.find((l) => l.saved?.scriptId === saved.scriptId))
 			.find((l) => l !== undefined)
 	);
-	const shownListing = $derived(selected ?? latest);
+	/** The row tapped, or the latest saved script. */
+	const baseListing = $derived(selected ?? latest);
+
+	// ---- Versions: BotC Scripts publishes them (and the World Cups load from it) ----
+
+	/** The shown script's number and version on BotC Scripts, when it came from there. */
+	const baseBotc = $derived.by(() => {
+		const listing = baseListing;
+		if (!listing) return undefined;
+		if (listing.row.number !== undefined && listing.row.version !== undefined) {
+			return { scriptId: listing.row.number, version: listing.row.version };
+		}
+		const source = findSaved(recentScripts.list, listing)?.source;
+		return source?.kind === 'botcscripts'
+			? { scriptId: source.scriptId, version: source.version }
+			: undefined;
+	});
+	$effect(() => {
+		const id = baseBotc?.scriptId;
+		if (id !== undefined) untrack(() => void botcVersions.load(id));
+	});
+	const versionList = $derived(baseBotc ? botcVersions.get(baseBotc.scriptId) : undefined);
+	/** Another version chosen in the details, for the row it was chosen on. */
+	let picked = $state<{ key: string; version: string } | undefined>();
+	const pickedVersion = $derived(
+		baseListing && picked?.key === baseListing.row.key ? picked.version : undefined
+	);
+	/** The chosen version as a row of its own: previewed, saved and shared as that version. */
+	const versionListing = $derived.by((): ScriptListing | undefined => {
+		const base = baseListing;
+		const botcInfo = baseBotc;
+		if (!base || !botcInfo || !pickedVersion || pickedVersion === botcInfo.version) {
+			return undefined;
+		}
+		const { scriptId } = botcInfo;
+		return {
+			row: {
+				...base.row,
+				key: `botc-version:${scriptId}:${pickedVersion}`,
+				source: 'botc',
+				number: scriptId,
+				version: pickedVersion,
+				page: scriptPageUrl(scriptId, pickedVersion)
+			},
+			target: { kind: 'botcscripts', ref: { kind: 'script', scriptId, version: pickedVersion } }
+		};
+	});
+	$effect(() => {
+		const target = versionListing?.target;
+		if (target?.kind === 'botcscripts') untrack(() => void fetchBotc(target.ref).catch(() => {}));
+	});
+	const shownVersion = $derived(pickedVersion ?? baseBotc?.version);
+	const latestVersion = $derived(versionList?.latest);
+	/** A newer version than the one shown (e.g. a saved 1.2.0 when 1.3.0 is out). */
+	const newer = $derived(
+		latestVersion && shownVersion && compareVersions(latestVersion, shownVersion) > 0
+			? latestVersion
+			: undefined
+	);
+	function chooseVersion(version: string) {
+		if (!baseListing) return;
+		picked = { key: baseListing.row.key, version };
+	}
+
+	const shownListing = $derived(versionListing ?? baseListing);
 	const shownSaved = $derived(
 		shownListing ? findSaved(recentScripts.list, shownListing) : undefined
 	);
 
 	function select(listing: ScriptListing) {
 		selected = listing;
+		picked = undefined;
 		paneOpen = true;
 		if (listing.target.kind === 'botcscripts') void fetchBotc(listing.target.ref).catch(() => {});
 	}
@@ -404,8 +473,8 @@
 
 	/** The shown row, or (in another source's list) the same script there. */
 	function isSelected(listing: ScriptListing): boolean {
-		if (!shownListing) return false;
-		if (shownListing.row.key === listing.row.key) return true;
+		if (!shownListing || !baseListing) return false;
+		if (baseListing.row.key === listing.row.key) return true;
 		return !!shownSaved && matchesSaved(shownSaved, listing);
 	}
 
@@ -745,11 +814,41 @@
 	}
 </script>
 
+<!-- Every BotC Scripts version, newest first; "None" where the source publishes none. -->
+{#snippet version()}
+	{#if versionList && versionList.versions.length > 0 && shownVersion}
+		<Select
+			label={t('scripts.details.version')}
+			hideLabel
+			value={shownVersion}
+			options={versionList.versions.map((v) => ({
+				value: v,
+				label:
+					v === latestVersion
+						? t('scripts.details.latestVersion', { version: v })
+						: v === baseBotc?.version && shownSaved
+							? t('scripts.details.savedVersion', { version: v })
+							: v
+			}))}
+			onChange={chooseVersion}
+		/>
+	{:else}
+		<span data-testid="script-version">{shownVersion ?? t('common.none')}</span>
+	{/if}
+	<!-- Space kept whether or not there is a newer version, so nothing moves when it arrives. -->
+	<span class="newer" class:none={!newer} data-testid="newer-version">
+		<Button variant="quiet" disabled={!newer} onclick={() => newer && chooseVersion(newer)}
+			>{t('scripts.details.newerVersion', { version: newer ?? latestVersion ?? '' })}</Button
+		>
+	</span>
+{/snippet}
+
 {#snippet playerSheet()}
 	{#if preview && data}
 		<div class="sheet-stack">
 			<ScriptChecks script={preview} {data} />
-			<ScriptCopy script={preview} />
+			<!-- Author and version are already in the details above. -->
+			<ScriptCopy script={preview} byline={false} />
 		</div>
 	{/if}
 {/snippet}
@@ -853,8 +952,10 @@
 					entries={shownListing?.row.entries ?? []}
 					{data}
 					sheet={preview ? playerSheet : undefined}
+					{version}
 				>
 					{#snippet actions()}
+						<PrintScriptButton script={preview} version={shownVersion} />
 						<ShareControl
 							what="script"
 							title={shownListing?.row.name || t('scripts.current.defaultName')}
@@ -1163,6 +1264,9 @@
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
+	}
+	.newer.none {
+		visibility: hidden;
 	}
 	/* The whole row selects its script (`tapRow`). */
 	.picker :global(tbody tr:has(.pick:not(:disabled))) {

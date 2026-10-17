@@ -12,10 +12,12 @@ import {
 	BOTC_SCRIPTS_ORIGIN,
 	parseProxyPath,
 	parseSearchUrl,
+	parseVersionsPath,
 	pickVersionId,
 	readCharacterEditions,
 	readSearchPage,
 	readVersion,
+	readVersionList,
 	upstreamSearchPath,
 	type BotcScriptsQuery,
 	type CharacterEditions
@@ -96,10 +98,28 @@ async function handleSearch(query: BotcScriptsQuery, page: number): Promise<Resp
 	}
 }
 
+/** `/api/botcscripts/versions/<pk>`: every version the site publishes for one script. */
+async function handleVersions(scriptId: number): Promise<Response> {
+	try {
+		const list = readVersionList(scriptId, await getJson(`/api/script_ids/${scriptId}/`));
+		if (!list) throw new LookupError(502, 'BotC Scripts returned something unexpected.');
+		return Response.json(list, {
+			headers: { 'Cache-Control': `public, max-age=${CACHE_SECONDS}` }
+		});
+	} catch (error) {
+		if (error instanceof LookupError) {
+			return Response.json({ error: error.message }, { status: error.status });
+		}
+		return Response.json({ error: 'Could not reach BotC Scripts.' }, { status: 502 });
+	}
+}
+
 export async function handleBotcScripts(url: URL): Promise<Response> {
 	const { pathname } = url;
 	const search = parseSearchUrl(url);
 	if (search) return handleSearch(search.query, search.page);
+	const versionsOf = parseVersionsPath(pathname);
+	if (versionsOf !== undefined) return handleVersions(versionsOf);
 	const ref = parseProxyPath(pathname);
 	if (!ref) return Response.json({ error: 'Not a BotC Scripts script.' }, { status: 400 });
 	try {

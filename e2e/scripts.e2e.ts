@@ -604,3 +604,93 @@ test('a World Cup is a source: its finalists load from BotC Scripts and link the
 	await expect(page.getByTestId('script-sheet')).toContainText('Chef');
 	await noSidewaysScroll(page);
 });
+
+test('a BotC Scripts result offers its other versions, and says when a newer one is out', async ({
+	page
+}) => {
+	const content = (version: string) => [
+		{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
+		...homebrew.slice(1),
+		...(version === '1.1.0' ? ['mayor'] : [])
+	];
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name: 'Storm Front',
+						version: '1.0.0',
+						author: 'Trevor',
+						type: 'Full',
+						score: 5,
+						characters: [{ id: 'chef' }, { id: 'imp' }]
+					}
+				]
+			}
+		})
+	);
+	await page.route('**/api/botcscripts/versions/1900', (route) =>
+		route.fulfill({ json: { scriptId: 1900, latest: '1.1.0', versions: ['1.1.0', '1.0.0'] } })
+	);
+	await page.route(/\/api\/botcscripts\/(version\/900|script\/1900\/1\.[01]\.0)$/, (route) => {
+		const version = route.request().url().endsWith('1.1.0') ? '1.1.0' : '1.0.0';
+		return route.fulfill({
+			json: {
+				scriptId: 1900,
+				versionId: version === '1.1.0' ? 901 : 900,
+				name: 'Storm Front',
+				version,
+				author: 'Trevor',
+				content: content(version)
+			}
+		});
+	});
+
+	await page.goto('/scripts');
+	await page
+		.getByRole('table', { name: 'Scripts' })
+		.getByRole('button', { name: /^Storm Front/ })
+		.tap();
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	// The site has 1.1.0: the details say so, in space kept for it.
+	const newer = details(page).getByTestId('newer-version').getByRole('button');
+	await expect(newer).toHaveText('Newer: 1.1.0');
+	await expect(page.getByTestId('script-sheet')).not.toContainText('Mayor');
+	await newer.tap();
+	await expect(details(page).getByRole('combobox', { name: 'Version' })).toContainText('1.1.0');
+	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.1.0' })).toHaveAttribute(
+		'href',
+		'https://botcscripts.com/script/1900/1.1.0'
+	);
+	await expect(page.getByTestId('script-sheet')).toContainText('Mayor');
+	await expect(newer).toBeHidden();
+
+	// Previous versions are listed too, and can be viewed again.
+	await details(page).getByRole('combobox', { name: 'Version' }).tap();
+	await page.getByRole('option', { name: '1.0.0', exact: true }).tap();
+	await expect(page.getByTestId('script-sheet')).not.toContainText('Mayor');
+	// Print, beside Share, prints the version shown.
+	await page.evaluate(() => {
+		window.print = () => {
+			const sheet = document.querySelector('[data-testid="print-sheet"]');
+			(window as unknown as { printed: string }).printed = sheet?.textContent ?? '';
+		};
+	});
+	await details(page).getByRole('button', { name: 'Print script' }).tap();
+	await expect
+		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed))
+		.toContain('Storm Warden');
+	const printed = await page.evaluate(() => (window as unknown as { printed: string }).printed);
+	expect(printed).toContain('1.0.0');
+	expect(printed).not.toContain('Mayor');
+	// Saving keeps the version shown.
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
+	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.0.0' })).toBeVisible();
+	await noSidewaysScroll(page);
+});

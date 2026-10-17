@@ -35,9 +35,11 @@
 		 * the characters are listed as badges by type.
 		 */
 		sheet?: Snippet;
+		/** The Version field's value: a version picker, or "None" (always shown, no reflow). */
+		version?: Snippet;
 	}
 
-	let { heading, name, facts, entries, data, actions, sheet }: Props = $props();
+	let { heading, name, facts, entries, data, actions, sheet, version }: Props = $props();
 
 	const card = $derived(data ? botcCard(entries, data) : undefined);
 </script>
@@ -58,6 +60,10 @@
 				{/if}
 			</dd>
 		{/each}
+		{#if version}
+			<dt>{t('scripts.details.version')}</dt>
+			<dd class="version">{@render version()}</dd>
+		{/if}
 	</dl>
 	{#if actions}
 		<div class="actions">{@render actions()}</div>
@@ -118,6 +124,12 @@
 	dd {
 		margin: 0;
 		overflow-wrap: anywhere;
+	}
+	.version {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 	}
 	dd a {
 		min-height: auto;

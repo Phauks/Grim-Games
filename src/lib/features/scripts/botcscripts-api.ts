@@ -68,6 +68,17 @@ export function proxyPath(ref: BotcScriptsRef): string {
 	return `/api/botcscripts/script/${ref.scriptId}${version}`;
 }
 
+/** Our Worker's path for a script's version list (`readVersionList`). */
+export function versionsPath(scriptId: number): string {
+	return `/api/botcscripts/versions/${scriptId}`;
+}
+
+/** The script number in a `versionsPath`, for the Worker. Undefined for anything else. */
+export function parseVersionsPath(pathname: string): number | undefined {
+	const match = /^\/api\/botcscripts\/versions\/(\d{1,9})\/?$/.exec(pathname);
+	return match ? Number(match[1]) : undefined;
+}
+
 /** The reverse of `proxyPath`, for the Worker. Undefined for anything else. */
 export function parseProxyPath(pathname: string): BotcScriptsRef | undefined {
 	const match = /^\/api\/botcscripts\/(script|version)\/(\d{1,9})(?:\/([^/]+))?\/?$/.exec(pathname);
@@ -103,6 +114,58 @@ export function pickVersionId(json: unknown, version?: string): number | undefin
 	if (!isObject(json)) return undefined;
 	if (version === undefined) return versionIdFromUrl(json.latest_version);
 	return isObject(json.versions) ? versionIdFromUrl(json.versions[version]) : undefined;
+}
+
+/** Every version BotC Scripts publishes for one script, newest first. */
+export interface BotcScriptsVersionList {
+	scriptId: number;
+	/** The site's latest version; undefined when it names none. */
+	latest?: string;
+	versions: string[];
+}
+
+/** Orders version labels such as "1.10.0" after "1.9.2"; text parts compare as text. */
+export function compareVersions(a: string, b: string): number {
+	const pa = a.split(/[.-]/);
+	const pb = b.split(/[.-]/);
+	for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+		const x = pa[i] ?? '';
+		const y = pb[i] ?? '';
+		const nx = /^\d+$/.test(x) ? Number(x) : NaN;
+		const ny = /^\d+$/.test(y) ? Number(y) : NaN;
+		const order = Number.isNaN(nx) || Number.isNaN(ny) ? x.localeCompare(y) : nx - ny;
+		if (order !== 0) return order;
+	}
+	return 0;
+}
+
+/** Reads a `/api/script_ids/<pk>/` response as a version list. Undefined when it isn't one. */
+export function readVersionList(
+	scriptId: number,
+	json: unknown
+): BotcScriptsVersionList | undefined {
+	if (!isObject(json) || !isObject(json.versions)) return undefined;
+	const versions = Object.keys(json.versions)
+		.filter((v) => VERSION.test(v))
+		.sort((a, b) => compareVersions(b, a));
+	const latestId = versionIdFromUrl(json.latest_version);
+	const latest = versions.find(
+		(v) => versionIdFromUrl((json.versions as Record<string, unknown>)[v]) === latestId
+	);
+	return { scriptId, latest: latest ?? versions[0], versions };
+}
+
+/** Reads our Worker's version list. Undefined when it isn't one. */
+export function readProxiedVersionList(json: unknown): BotcScriptsVersionList | undefined {
+	if (!isObject(json) || typeof json.scriptId !== 'number' || !Array.isArray(json.versions)) {
+		return undefined;
+	}
+	const versions = json.versions.filter((v): v is string => typeof v === 'string');
+	return {
+		scriptId: json.scriptId,
+		latest: typeof json.latest === 'string' ? json.latest : versions[0],
+		versions
+	};
 }
 
 /** Reads a `/api/scripts/<version pk>/` response. Undefined when it isn't one. */
