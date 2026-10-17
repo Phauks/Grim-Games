@@ -73,4 +73,61 @@ test('opens a saved script to edit it', async ({ page }) => {
 	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Reopen me');
 	// Still the same saved script, so nothing new to save.
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+
+	// Another page (the Library) can open it here by its id in the address hash.
+	const id = await page.evaluate(
+		() => JSON.parse(localStorage.getItem('grim-games:script-builder') ?? '{}').editing as string
+	);
+	await page.getByRole('button', { name: 'Clear the script' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Clear the script?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await page.goto(`/build-script#edit=${id}`);
+	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Reopen me');
+	await expect(page).toHaveURL(/\/build-script$/);
+});
+
+test('adds a homebrew character from a Homebrew Wiki collection, credited', async ({ page }) => {
+	// The Worker fetches the wiki; here its answers are stood in for, so the test needs no network.
+	await page.route('**/api/homebrew-wiki/collections', (route) =>
+		route.fulfill({ json: [{ id: 'temple-fair', name: 'Temple Fair' }] })
+	);
+	await page.route('**/api/homebrew-wiki/collections/temple-fair', (route) =>
+		route.fulfill({
+			json: {
+				script: [
+					{ id: '_meta', name: 'Temple Fair' },
+					{
+						id: 'lantern',
+						name: 'Lantern',
+						team: 'outsider',
+						ability: 'You start knowing 1 good player.'
+					}
+				],
+				credits: [{ name: 'Lantern', creator: 'DJ', url: 'https://botchomebrew.wiki/c/lantern' }]
+			}
+		})
+	);
+	await page.goto('/build-script');
+	const collection = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
+	await expect(collection).toBeVisible();
+	await page.getByRole('radio', { name: 'Homebrew Wiki' }).tap();
+	await expect(collection).toContainText('Temple Fair');
+	await character(page, 'Lantern, By DJ').tap();
+	await expect(page.getByTestId('count-outsider')).toHaveText('1');
+	await expect(page.getByTestId('homebrew-count')).toHaveText('1');
+	const check = page.getByTestId('builder-check');
+	await expect(check.getByText('DJ', { exact: true })).toBeVisible();
+	await expect(check.getByRole('link', { name: 'Lantern on the Homebrew Wiki' })).toHaveAttribute(
+		'href',
+		'https://botchomebrew.wiki/c/lantern'
+	);
+
+	// Back to official characters: the homebrew one stays on the script.
+	await page.getByRole('radio', { name: 'Official' }).tap();
+	await character(page, 'Imp').tap();
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 });

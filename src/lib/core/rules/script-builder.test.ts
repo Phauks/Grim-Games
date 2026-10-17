@@ -47,4 +47,25 @@ describe('builtScriptJson', () => {
 			author: 'Trevor'
 		});
 	});
+
+	it('writes homebrew characters as their objects, sorted with the rest', () => {
+		const homebrew = {
+			lantern: {
+				id: 'lantern',
+				name: 'Lantern',
+				team: 'outsider',
+				ability: 'You start knowing 1 player.'
+			},
+			broken: { id: 'broken', name: 'Broken', team: 'nonsense', ability: '' }
+		};
+		const json = builtScriptJson(
+			['imp', 'lantern', 'broken', 'chef'],
+			{ name: 'Mixed', author: '' },
+			data,
+			homebrew
+		);
+		expect(json).toEqual([{ id: '_meta', name: 'Mixed' }, 'chef', homebrew.lantern, 'imp']);
+		const result = loadScript(json, data);
+		expect(result.script?.homebrew).toEqual(['lantern']);
+	});
 });

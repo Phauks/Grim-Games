@@ -1,8 +1,13 @@
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
-import { emptyDraft, parseDraft, type ScriptDraft } from './draft.ts';
+import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
+import { emptyDraft, parseDraft, type DraftCredit, type ScriptDraft } from './draft.ts';
 
 const STORAGE_KEY = 'grim-games:script-builder';
+
+function without<T>(record: Record<string, T>, key: string): Record<string, T> {
+	return Object.fromEntries(Object.entries(record).filter(([k]) => k !== key));
+}
 
 function read(): ScriptDraft {
 	try {
@@ -40,12 +45,26 @@ class ScriptBuilderDraft {
 		this.#set({ ...this.#draft, author });
 	}
 
-	/** Adds the character, or takes it off when it is already on. */
-	toggle(id: CharacterId): void {
-		const ids = this.#draft.ids;
+	/**
+	 * Adds the character, or takes it off when it is already on. A homebrew character comes
+	 * with its definition (and credit, when known), kept while it is on the script.
+	 */
+	toggle(id: CharacterId, homebrew?: { entry: HomebrewEntry; credit?: DraftCredit }): void {
+		const { ids, homebrew: entries, credits } = this.#draft;
+		if (ids.includes(id)) {
+			this.#set({
+				...this.#draft,
+				ids: ids.filter((x) => x !== id),
+				homebrew: without(entries, id),
+				credits: without(credits, id)
+			});
+			return;
+		}
 		this.#set({
 			...this.#draft,
-			ids: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]
+			ids: [...ids, id],
+			homebrew: homebrew ? { ...entries, [id]: homebrew.entry } : entries,
+			credits: homebrew?.credit ? { ...credits, [id]: homebrew.credit } : credits
 		});
 	}
 

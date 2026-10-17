@@ -13,10 +13,6 @@ export const scriptBuilder = {
 	'script-builder.openTitle': 'Open a saved script',
 	'script-builder.openReplace': 'Open {name}?',
 	'script-builder.openReplaceBody': 'The characters and details on the builder are replaced.',
-	'script-builder.openSkipped': {
-		one: '{count} homebrew character was left out: the builder has official characters only.',
-		other: '{count} homebrew characters were left out: the builder has official characters only.'
-	},
 	'script-builder.clear': 'Clear the script',
 	'script-builder.clearTitle': 'Clear the script?',
 	'script-builder.clearBody': 'Its characters, name and author are removed from the builder.',
@@ -29,5 +25,12 @@ export const scriptBuilder = {
 	'script-builder.needs': 'Needs another character',
 	'script-builder.needsChar': 'needs',
 	'script-builder.notOnScript': 'not on the script',
+	'script-builder.source': 'Characters from',
+	'script-builder.source.official': 'Official',
+	'script-builder.source.homebrew': 'Homebrew Wiki',
+	'script-builder.collection': 'Homebrew Wiki collection',
+	'script-builder.by': 'By {creator}',
+	'script-builder.homebrew': 'Homebrew',
+	'script-builder.wikiPage': '{name} on the Homebrew Wiki',
 	'script-builder.saveFailed': 'The script could not be saved'
 } as const;

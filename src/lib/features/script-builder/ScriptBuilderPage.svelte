@@ -5,6 +5,8 @@
 		loadScript,
 		scriptToJson,
 		sortByStandardOrder,
+		type Character,
+		type CharacterId,
 		type GameData,
 		type LoadedScript
 	} from '#lib/core/data/index.ts';
@@ -31,17 +33,29 @@
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
+	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { scriptBuilderDraft as draft } from './draft.svelte.ts';
-	import { isEmptyDraft } from './draft.ts';
+	import { chosenHomebrew, isEmptyDraft } from './draft.ts';
+	import type { HomebrewCollection } from './homebrew-wiki-api.ts';
+	import {
+		homebrewCollection,
+		homebrewCollections,
+		homebrewFromScript,
+		type HomebrewSet
+	} from './homebrew-wiki.ts';
 
 	/**
-	 * Build a script from official characters (Trevor, 2026-10-16): name and author, characters
-	 * by type with their ability text, and the script check as it grows. Save puts it in the
+	 * Build a script (Trevor, 2026-10-16): name and author, characters by type with their
+	 * ability text, and the script check as it grows. Characters come from TPI or from a BotC
+	 * Homebrew Wiki collection (2026-10-17), credited to their creators. Save puts it in the
 	 * same saved scripts the Scripts page and New game use.
 	 */
 
@@ -63,24 +77,92 @@
 	let replacing = $state.raw<SavedScript>();
 	let replaceOpen = $state(false);
 
+	type Source = 'official' | 'homebrew';
+	let source = $state<Source>('official');
+	let collections = $state.raw<HomebrewCollection[]>([]);
+	let collectionId = $state('');
+	let homebrewSet = $state.raw<HomebrewSet>();
+	let homebrewError = $state('');
+
+	async function showHomebrew() {
+		source = 'homebrew';
+		if (collections.length) return;
+		try {
+			collections = await homebrewCollections();
+			homebrewError = '';
+			if (!collectionId && collections[0]) await pickCollection(collections[0].id);
+		} catch (e) {
+			homebrewError = errorMessage(e);
+		}
+	}
+
+	async function pickCollection(id: string) {
+		collectionId = id;
+		homebrewSet = undefined;
+		if (!data) return;
+		try {
+			const set = await homebrewCollection(id, data);
+			if (collectionId === id) homebrewSet = set;
+			homebrewError = '';
+		} catch (e) {
+			if (collectionId === id) homebrewError = errorMessage(e);
+		}
+	}
+
+	/**
+	 * `/build-script#edit=<scriptId>` opens that saved script here (the hash never reaches the
+	 * server), e.g. from the Library. Cleared once read.
+	 */
+	function openFromHash() {
+		const id = new URLSearchParams(location.hash.slice(1)).get('edit');
+		if (!id) return;
+		history.replaceState(history.state, '', location.pathname);
+		const saved = recentScripts.list.find((s) => s.scriptId === id);
+		if (saved) chooseSaved(saved);
+	}
+
 	onMount(() => {
-		void loadOfficialData()
-			.then((d) => (data = d))
+		void Promise.all([loadOfficialData(), restoreScripts()])
+			.then(([d]) => {
+				data = d;
+				openFromHash();
+			})
 			.catch((e) => reportError(e, { area: 'script-builder' }));
-		void restoreScripts();
 	});
 
 	const d = $derived(draft.current);
 	/** Every official character, listed in TPI's Sort Order like the saved script. */
-	const characters = $derived(data ? sortByStandardOrder(data.characters) : []);
-	const json = $derived(data ? builtScriptJson(d.ids, d, data) : undefined);
+	const official = $derived(data ? sortByStandardOrder(data.characters) : []);
+	const characters = $derived(
+		source === 'homebrew' ? sortByStandardOrder(homebrewSet?.characters ?? []) : official
+	);
+	const json = $derived(data ? builtScriptJson(d.ids, d, data, chosenHomebrew(d)) : undefined);
 	/** The script as it would be saved; undefined until a character is chosen. */
 	const built = $derived.by((): LoadedScript | undefined => {
 		if (!data || !json || d.ids.length === 0) return undefined;
 		return loadScript(json, data).script;
 	});
 	const builtJson = $derived(built ? scriptToJson(built) : undefined);
-	const facts = $derived(data && built ? scriptFacts(built.characters, data.jinxes) : undefined);
+	const facts = $derived(
+		data && built ? scriptFacts(built.characters, data.jinxes, built.homebrewJinxes) : undefined
+	);
+	/** The script's own characters, so homebrew ones show as badges too. */
+	const onScript = $derived(new Map(built?.characters.map((c) => [c.id, c])));
+	const chosenHomebrewCharacters = $derived(
+		built?.characters.filter((c) => built.homebrew.includes(c.id)) ?? []
+	);
+
+	function choose(id: CharacterId) {
+		const entry = source === 'homebrew' ? homebrewSet?.entries[id] : undefined;
+		if (entry && !d.ids.includes(id)) {
+			draft.toggle(id, { entry, credit: homebrewSet?.credits[id] });
+		} else draft.toggle(id);
+	}
+
+	function creatorOf(character: Character): string | undefined {
+		const creator = homebrewSet?.credits[character.id]?.creator;
+		return creator ? t('script-builder.by', { creator }) : undefined;
+	}
 	const counts = $derived(facts?.counts);
 	const savedRecord = $derived(recentScripts.list.find((s) => s.scriptId === d.editing));
 	const isSaved = $derived(
@@ -143,24 +225,27 @@
 		}
 	}
 
-	/** Puts a saved script on the builder; homebrew characters can't come along. */
+	/** Puts a saved script on the builder, homebrew characters included. */
 	function openSaved(saved: SavedScript) {
 		if (!data) return;
 		const script = reloadSavedScript(saved, data);
 		if (!script) return;
-		const homebrew = new Set(script.homebrew);
+		const kept = draft.current.credits;
+		const { entries } = homebrewFromScript(scriptToJson(script), data);
 		draft.replace({
-			version: 1,
+			version: 2,
 			name: script.name,
 			author: script.meta.author ?? '',
-			ids: script.characters.filter((c) => !homebrew.has(c.id)).map((c) => c.id),
+			ids: script.characters.map((c) => c.id),
+			homebrew: entries,
+			// Credits aren't part of a script; keep the ones this device already knows.
+			credits: Object.fromEntries(Object.entries(kept).filter(([id]) => id in entries)),
 			...(saved.source.kind === 'built' ? { editing: saved.scriptId } : {})
 		});
-		if (homebrew.size > 0) {
-			toast(t('script-builder.openSkipped', { count: homebrew.size }));
-		}
 	}
 </script>
+
+<svelte:window onhashchange={openFromHash} />
 
 <main>
 	<header class="title">
@@ -227,6 +312,33 @@
 							</li>
 						{/each}
 					</ul>
+					<div class="source">
+						<Segmented
+							label={t('script-builder.source')}
+							hideLabel
+							value={source}
+							options={[
+								{ value: 'official', label: t('script-builder.source.official') },
+								{ value: 'homebrew', label: t('script-builder.source.homebrew') }
+							]}
+							onChange={(value) => (value === 'homebrew' ? void showHomebrew() : (source = value))}
+						/>
+						<!-- Always in place, so switching source never moves the page. -->
+						<div class="collection" data-disabled={source !== 'homebrew' ? '' : undefined}>
+							<Select
+								label={t('script-builder.collection')}
+								hideLabel
+								value={collectionId}
+								options={collections.length
+									? collections.map((c) => ({ value: c.id, label: c.name }))
+									: [{ value: '', label: t('common.none') }]}
+								onChange={(id) => id && void pickCollection(id)}
+							/>
+						</div>
+					</div>
+					<p class="source-error" role="status" data-testid="homebrew-error">
+						{source === 'homebrew' ? homebrewError : ''}
+					</p>
 					<CharacterSearchBox bind:query shortcut />
 				</div>
 
@@ -243,9 +355,17 @@
 							<ul>
 								{#each facts.jinxes as jinx (jinx.characters.join('+'))}
 									<li>
-										<CharacterBadge characterId={jinx.characters[0]} inline />
+										<CharacterBadge
+											characterId={jinx.characters[0]}
+											character={onScript.get(jinx.characters[0])}
+											inline
+										/>
 										{t('script-builder.and')}
-										<CharacterBadge characterId={jinx.characters[1]} inline />: {jinx.reason}
+										<CharacterBadge
+											characterId={jinx.characters[1]}
+											character={onScript.get(jinx.characters[1])}
+											inline
+										/>: {jinx.reason}
 									</li>
 								{/each}
 							</ul>
@@ -260,7 +380,14 @@
 						{#if facts?.modifiers.length}
 							<ul>
 								{#each facts.modifiers as modifier (modifier.id)}
-									<li><CharacterBadge characterId={modifier.id} inline /> {modifier.summary}</li>
+									<li>
+										<CharacterBadge
+											characterId={modifier.id}
+											character={onScript.get(modifier.id)}
+											inline
+										/>
+										{modifier.summary}
+									</li>
 								{/each}
 							</ul>
 						{:else}<p>{t('common.none')}</p>{/if}
@@ -277,12 +404,49 @@
 							<ul>
 								{#each missingNeeds as need (need.id)}
 									<li>
-										<CharacterBadge characterId={need.id} inline />
+										<CharacterBadge
+											characterId={need.id}
+											character={onScript.get(need.id)}
+											inline
+										/>
 										{t('script-builder.needsChar')}
 										<CharacterBadge characterId={need.requires} inline />
 										<Button variant="quiet" onclick={() => draft.toggle(need.requires)}
 											>{t('script-builder.add')}</Button
 										>
+									</li>
+								{/each}
+							</ul>
+						{:else}<p>{t('common.none')}</p>{/if}
+					</Collapsible>
+					<Collapsible
+						title={t('script-builder.homebrew')}
+						level={3}
+						storageKey="script-builder:homebrew"
+					>
+						{#snippet aside()}<span class="count" data-testid="homebrew-count"
+								>{chosenHomebrewCharacters.length}</span
+							>{/snippet}
+						{#if chosenHomebrewCharacters.length}
+							<ul class="credits">
+								{#each chosenHomebrewCharacters as character (character.id)}
+									{@const credit = d.credits[character.id]}
+									<li>
+										<CharacterBadge characterId={character.id} {character} inline />
+										<span class="creator">{credit?.creator || t('common.none')}</span>
+										{#if credit?.url}
+											<!-- eslint-disable svelte/no-navigation-without-resolve -->
+											<a
+												class="wiki"
+												href={credit.url}
+												target="_blank"
+												rel="noopener noreferrer"
+												aria-label={t('script-builder.wikiPage', { name: character.name })}
+												title={t('script-builder.wikiPage', { name: character.name })}
+												><Icon name="wiki" /></a
+											>
+											<!-- eslint-enable svelte/no-navigation-without-resolve -->
+										{/if}
 									</li>
 								{/each}
 							</ul>
@@ -301,7 +465,8 @@
 				surface="page"
 				contained={false}
 				types={TYPES}
-				onSelect={(id) => draft.toggle(id)}
+				marker={source === 'homebrew' ? creatorOf : undefined}
+				onSelect={choose}
 			/>
 		</div>
 	</ErrorBoundary>
@@ -435,6 +600,43 @@
 		font-size: 1.2rem;
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
+	}
+	.source {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.collection[data-disabled] {
+		opacity: 0.5;
+		pointer-events: none;
+	}
+	.source-error {
+		margin: 0;
+		min-height: 1.4em;
+		color: var(--evil);
+		font-size: 0.85rem;
+	}
+	.credits {
+		padding: 0;
+		list-style: none;
+	}
+	.credits li {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.creator {
+		color: var(--on-surface-muted);
+		overflow-wrap: anywhere;
+	}
+	.wiki {
+		display: grid;
+		place-items: center;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		color: inherit;
 	}
 	.check {
 		display: grid;
