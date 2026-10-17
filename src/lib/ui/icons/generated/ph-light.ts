@@ -26,7 +26,6 @@ import ph_bookmark_simple_light from '~icons/ph/bookmark-simple-light';
 import ph_bookmarks_simple_light from '~icons/ph/bookmarks-simple-light';
 import ph_books_light from '~icons/ph/books-light';
 import ph_bug_light from '~icons/ph/bug-light';
-import ph_cards_light from '~icons/ph/cards-light';
 import ph_caret_circle_down_light from '~icons/ph/caret-circle-down-light';
 import ph_caret_down_light from '~icons/ph/caret-down-light';
 import ph_caret_left_light from '~icons/ph/caret-left-light';
@@ -71,7 +70,6 @@ import ph_funnel_light from '~icons/ph/funnel-light';
 import ph_gear_light from '~icons/ph/gear-light';
 import ph_gear_six_light from '~icons/ph/gear-six-light';
 import ph_ghost_light from '~icons/ph/ghost-light';
-import ph_graduation_cap_light from '~icons/ph/graduation-cap-light';
 import ph_hammer_light from '~icons/ph/hammer-light';
 import ph_hand_fist_light from '~icons/ph/hand-fist-light';
 import ph_hand_grabbing_light from '~icons/ph/hand-grabbing-light';
@@ -200,7 +198,6 @@ const icons: IconMap = {
 	'ph:bookmarks-simple-light': ph_bookmarks_simple_light,
 	'ph:books-light': ph_books_light,
 	'ph:bug-light': ph_bug_light,
-	'ph:cards-light': ph_cards_light,
 	'ph:caret-circle-down-light': ph_caret_circle_down_light,
 	'ph:caret-down-light': ph_caret_down_light,
 	'ph:caret-left-light': ph_caret_left_light,
@@ -245,7 +242,6 @@ const icons: IconMap = {
 	'ph:gear-light': ph_gear_light,
 	'ph:gear-six-light': ph_gear_six_light,
 	'ph:ghost-light': ph_ghost_light,
-	'ph:graduation-cap-light': ph_graduation_cap_light,
 	'ph:hammer-light': ph_hammer_light,
 	'ph:hand-fist-light': ph_hand_fist_light,
 	'ph:hand-grabbing-light': ph_hand_grabbing_light,

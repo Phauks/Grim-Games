@@ -26,7 +26,6 @@ import ph_bookmark_simple_bold from '~icons/ph/bookmark-simple-bold';
 import ph_bookmarks_simple_bold from '~icons/ph/bookmarks-simple-bold';
 import ph_books_bold from '~icons/ph/books-bold';
 import ph_bug_bold from '~icons/ph/bug-bold';
-import ph_cards_bold from '~icons/ph/cards-bold';
 import ph_caret_circle_down_bold from '~icons/ph/caret-circle-down-bold';
 import ph_caret_down_bold from '~icons/ph/caret-down-bold';
 import ph_caret_left_bold from '~icons/ph/caret-left-bold';
@@ -71,7 +70,6 @@ import ph_funnel_bold from '~icons/ph/funnel-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
-import ph_graduation_cap_bold from '~icons/ph/graduation-cap-bold';
 import ph_hammer_bold from '~icons/ph/hammer-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
 import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
@@ -200,7 +198,6 @@ const icons: IconMap = {
 	'ph:bookmarks-simple-bold': ph_bookmarks_simple_bold,
 	'ph:books-bold': ph_books_bold,
 	'ph:bug-bold': ph_bug_bold,
-	'ph:cards-bold': ph_cards_bold,
 	'ph:caret-circle-down-bold': ph_caret_circle_down_bold,
 	'ph:caret-down-bold': ph_caret_down_bold,
 	'ph:caret-left-bold': ph_caret_left_bold,
@@ -245,7 +242,6 @@ const icons: IconMap = {
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,
 	'ph:ghost-bold': ph_ghost_bold,
-	'ph:graduation-cap-bold': ph_graduation_cap_bold,
 	'ph:hammer-bold': ph_hammer_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
 	'ph:hand-grabbing-bold': ph_hand_grabbing_bold,

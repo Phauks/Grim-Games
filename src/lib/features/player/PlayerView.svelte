@@ -39,13 +39,12 @@
 	import NotesPanel from './NotesPanel.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import PrintScriptButton from './PrintScriptButton.svelte';
-	import { playerNight, scriptVersion, sheetCharacters } from './player-script.ts';
+	import { playerNight, scriptVersion } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
-	import PracticePanel from './PracticePanel.svelte';
 	import ScriptCopy from './ScriptCopy.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
-	type Tab = 'script' | 'night' | 'notes' | 'practice';
+	type Tab = 'script' | 'night' | 'notes';
 
 	let data = $state<GameData>();
 	let numeric = $state<NumericNightOrder>();
@@ -165,8 +164,6 @@
 	const version = $derived(
 		currentScript.current === script ? scriptVersion(currentScript.saved) : undefined
 	);
-	const practiceCharacters = $derived(script && data ? sheetCharacters(script, data) : []);
-
 	let noteId = $state<string>();
 	let noteOpen = $state(false);
 	function openNote(id: string) {
@@ -219,8 +216,7 @@
 			tabs={[
 				{ value: 'script', label: t('player.tab.script') },
 				{ value: 'night', label: t('player.tab.night') },
-				{ value: 'notes', label: t('player.tab.notes') },
-				{ value: 'practice', label: t('player.tab.practice') }
+				{ value: 'notes', label: t('player.tab.notes') }
 			]}
 		>
 			{#snippet panel(value)}
@@ -233,8 +229,6 @@
 							<ScriptCopy {script} byline={false} />
 						{:else if value === 'night'}
 							<PlayerNightOrder {nights} />
-						{:else if value === 'practice'}
-							<PracticePanel characters={practiceCharacters} scriptKey={key ?? scriptKey(script)} />
 						{:else}
 							<NotesPanel
 								notes={notebook.book.notes}

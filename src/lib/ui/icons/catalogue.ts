@@ -74,7 +74,6 @@ export const ICON_SLOTS = {
 	uploadFile: { label: 'Upload file', choices: ['ph:upload-simple', 'ph:file-arrow-up'] },
 	pasteLink: { label: 'Paste link', choices: ['ph:link', 'ph:link-simple'] },
 	quickPlay: { label: 'Play script', choices: ['ph:play', 'ph:play-circle'] },
-	practice: { label: 'Practice', choices: ['ph:cards', 'ph:graduation-cap'] },
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
 	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },
 	glossary: { label: 'Glossary', choices: ['ph:book-open-text', 'ph:list-magnifying-glass'] },

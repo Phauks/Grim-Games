@@ -26,7 +26,6 @@ import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_bookmarks_simple from '~icons/ph/bookmarks-simple';
 import ph_books from '~icons/ph/books';
 import ph_bug from '~icons/ph/bug';
-import ph_cards from '~icons/ph/cards';
 import ph_caret_circle_down from '~icons/ph/caret-circle-down';
 import ph_caret_down from '~icons/ph/caret-down';
 import ph_caret_left from '~icons/ph/caret-left';
@@ -71,7 +70,6 @@ import ph_funnel from '~icons/ph/funnel';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
 import ph_ghost from '~icons/ph/ghost';
-import ph_graduation_cap from '~icons/ph/graduation-cap';
 import ph_hammer from '~icons/ph/hammer';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
@@ -200,7 +198,6 @@ const icons: IconMap = {
 	'ph:bookmarks-simple': ph_bookmarks_simple,
 	'ph:books': ph_books,
 	'ph:bug': ph_bug,
-	'ph:cards': ph_cards,
 	'ph:caret-circle-down': ph_caret_circle_down,
 	'ph:caret-down': ph_caret_down,
 	'ph:caret-left': ph_caret_left,
@@ -245,7 +242,6 @@ const icons: IconMap = {
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,
 	'ph:ghost': ph_ghost,
-	'ph:graduation-cap': ph_graduation_cap,
 	'ph:hammer': ph_hammer,
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,

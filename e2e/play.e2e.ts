@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 
 test('the player view is a reading page, with no Storyteller controls', async ({ page }) => {
 	// Script, night order and notes only (Trevor, 2026-10-16: "nothing close to ... controls").
-	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Notes', 'Practice']);
+	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Notes']);
 	await expect(page.getByTestId('seat-ring')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
@@ -386,29 +386,4 @@ test('Print script prints the sheet, then the night order and player counts', as
 	expect(printed).toContain('Other nights');
 	// The page itself is unchanged.
 	await expect(page.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
-});
-
-test('Practice shows a character, reveals its ability, and remembers what is known', async ({
-	page
-}) => {
-	await page.getByRole('tab', { name: 'Practice' }).tap();
-	await expect(page.getByTestId('practice-count')).toHaveText('Known: 0 of 27');
-	const card = page.getByTestId('practice-card');
-	const first = await card.getAttribute('data-character');
-	await page.getByRole('button', { name: 'Show ability' }).tap();
-	// TPI's ability text, nothing else.
-	await expect(page.getByTestId('practice-answer')).not.toBeEmpty();
-	await page.getByRole('button', { name: 'Knew it' }).tap();
-	await expect(page.getByTestId('practice-count')).toHaveText('Known: 1 of 27');
-	await expect(card).not.toHaveAttribute('data-character', first!);
-
-	await page.reload();
-	await page.getByRole('tab', { name: 'Practice' }).tap();
-	await expect(page.getByTestId('practice-count')).toHaveText('Known: 1 of 27');
-	await page.getByRole('button', { name: 'Start over' }).tap();
-	await page
-		.getByRole('alertdialog', { name: 'Start practice over?' })
-		.getByRole('button', { name: 'Confirm' })
-		.tap();
-	await expect(page.getByTestId('practice-count')).toHaveText('Known: 0 of 27');
 });
