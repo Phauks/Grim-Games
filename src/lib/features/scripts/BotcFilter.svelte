@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -54,13 +55,15 @@
 	{#if column === 'author'}
 		<label class="field">
 			<span>{t('scripts.botc.author')}</span>
-			<input
-				type="text"
-				autocomplete="off"
-				enterkeyhint="search"
-				bind:value={filters.author}
-				onkeydown={(e) => e.key === 'Enter' && close()}
-			/>
+			<ClearableField bind:value={filters.author}>
+				<input
+					type="text"
+					autocomplete="off"
+					enterkeyhint="search"
+					bind:value={filters.author}
+					onkeydown={(e) => e.key === 'Enter' && close()}
+				/>
+			</ClearableField>
 		</label>
 	{:else if column === 'kind'}
 		<fieldset>
