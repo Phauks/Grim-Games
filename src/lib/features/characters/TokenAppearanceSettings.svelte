@@ -8,6 +8,7 @@
 	import type { Theme } from '#lib/ui/themes/types.ts';
 	import {
 		MIN_CONTRAST,
+		REMINDER_LABEL_WIDTH,
 		TOKEN_COLOURS,
 		TOKEN_SCALE,
 		tokenColour,
@@ -22,6 +23,7 @@
 	import { sheetNumbersFor } from './sheet-night-numbers.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
+	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 
 	interface Props {
@@ -71,7 +73,7 @@
      kept, so changing a size never moves the settings below. -->
 <SettingPreview testid="token-preview">
 	<div class="preview" aria-hidden="true" style:--sample="{largest}px">
-		{#if sample}<span class="disc"
+		{#if sample}<span class="disc" style:--name-scale={boardLooks.current.nameSize}
 				><CharacterToken
 					character={sample}
 					size={tokenSize}
@@ -104,6 +106,20 @@
 	{...TOKEN_SCALE}
 	defaultValue={1}
 	onChange={(reminderScale) => onChange({ ...value, reminderScale })}
+/>
+<SettingSlider
+	label={t('characters.reminderLabelWidth')}
+	description={t('characters.reminderLabelWidthHelp')}
+	value={value.reminderLabelWidth}
+	{...REMINDER_LABEL_WIDTH}
+	defaultValue={1.5}
+	onChange={(reminderLabelWidth) => onChange({ ...value, reminderLabelWidth })}
+/>
+<SettingToggle
+	label={t('characters.reminderLabelWrap')}
+	description={t('characters.reminderLabelWrapHelp')}
+	checked={value.reminderLabelWrap}
+	onChange={(reminderLabelWrap) => onChange({ ...value, reminderLabelWrap })}
 />
 
 <div class="names">
