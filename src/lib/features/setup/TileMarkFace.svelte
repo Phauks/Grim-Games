@@ -38,7 +38,6 @@
 		display: block;
 	}
 	.emoji {
-		font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 		font-size: 1.2em;
 		line-height: 1;
 	}
