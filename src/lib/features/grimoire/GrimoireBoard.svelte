@@ -283,9 +283,10 @@
 	});
 
 	/** The seat under a point (in % of the board), if it is within reach of a token. */
-	function seatAt(at: SeatPoint): SeatId | undefined {
+	/** The seat under `at`, or with `nearest` the closest seat however far. */
+	function seatAt(at: SeatPoint, nearest = false): SeatId | undefined {
 		let best: SeatId | undefined;
-		let bestDistance = size * 0.75;
+		let bestDistance = nearest ? Infinity : size * 0.75;
 		game.seating.forEach((id, i) => {
 			const d = Math.hypot(
 				((points[i].x - at.x) / 100) * width,

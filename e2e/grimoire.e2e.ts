@@ -14,6 +14,12 @@ async function startGame(page: Page, script = 'Trouble Brewing') {
 const seatLabelled = (page: Page, start: string) =>
 	page.locator(`[data-testid="seat"][aria-label^="${start}"]`);
 
+/** Picks which reminders the reminder bank shows. */
+async function bankView(page: Page, view: 'All' | 'Setup') {
+	await page.getByRole('combobox', { name: 'Reminders shown' }).tap();
+	await page.getByRole('option', { name: view, exact: true }).tap();
+}
+
 /** Runs an action from the toolbar's More menu. */
 async function menu(page: Page, action: string) {
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -338,7 +344,7 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	// The last setup step opens the board with the setup reminders in the bank.
 	await page.goto(`${board}#setup-reminders`);
 	await expect(page).toHaveURL(board);
-	await expect(page.locator('[data-tray] .view')).toHaveText('Setup');
+	await expect(page.getByRole('combobox', { name: 'Reminders shown' })).toHaveText(/Setup/);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(page.getByRole('dialog', { name: 'Day' })).toBeVisible();
 	await expect(page).toHaveURL(board);
@@ -900,14 +906,14 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	await expect(tray.getByRole('button', { name: 'Wrong reminder' })).toBeVisible();
 
 	// Every reminder still off the board, on demand (and by itself once setup is done).
-	await page.getByRole('button', { name: 'Showing setup reminders; show all reminders' }).tap();
+	await bankView(page, 'All');
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
 	await expect(bank.getByRole('button', { name: 'Wrong reminder' })).toHaveCount(1);
 	await expect(bank.getByRole('button', { name: 'Townsfolk reminder' })).toHaveCount(0);
 	// The setup reminder still to place comes first, left of a dashed line.
 	await expect(bank.locator('li.divider')).toHaveCount(1);
 	await expect(bank.locator('li:has(+ li.divider)')).toContainText('Wrong');
-	await page.getByRole('button', { name: 'Showing all reminders; show setup reminders' }).tap();
+	await bankView(page, 'Setup');
 
 	// From the seat sheet too: Return to reminder bank.
 	const sheet = await openSeat(page, 2);
@@ -1887,7 +1893,7 @@ test('in the reminder bank a sideways swipe scrolls; an upward one picks the tok
 			.tap();
 		await closeSheet(page);
 	}
-	await page.getByRole('button', { name: 'Showing setup reminders; show all reminders' }).tap();
+	await bankView(page, 'All');
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
 	const tokens = bank.getByTestId('board-reminder');
 	const first = (await tokens.nth(1).boundingBox())!;
@@ -2063,6 +2069,35 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await page.reload();
 	await expect(token).toBeVisible();
 	await expect.poll(near).toBe(true);
+
+	// From the reminder bank too, right in the middle of the board (Trevor, 2026-10-17): the
+	// nearest seat holds it.
+	const seat = await openSeat(page, 2);
+	await seat.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 2' })
+		.getByRole('button', { name: 'Gossip', exact: true })
+		.tap();
+	await closeSheet(page);
+	const bank = page.getByRole('list', { name: /Reminder bank|Setup reminders/ });
+	if ((await bank.getAttribute('aria-label')) === 'Setup reminders') await bankView(page, 'All');
+	const fromBank = page
+		.getByRole('list', { name: 'Reminder bank' })
+		.getByRole('button', { name: 'Dead reminder' });
+	const middle = { x: board.x + board.width / 2, y: board.y + board.height / 2 };
+	const start = (await fromBank.boundingBox())!;
+	await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(start.x + start.width / 2, start.y - 40, { steps: 4 });
+	await page.mouse.move(middle.x, middle.y, { steps: 8 });
+	await page.mouse.up();
+	const placed = page.locator('.board').getByRole('button', { name: 'Dead reminder' });
+	await expect
+		.poll(async () => {
+			const b = await placed.boundingBox();
+			return b ? Math.hypot(b.x + b.width / 2 - middle.x, b.y + b.height / 2 - middle.y) : 999;
+		})
+		.toBeLessThan(board.width * 0.05);
 });
 
 /** Picks how the walked-through step's reminders are shown. */
@@ -2108,7 +2143,7 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 		await focusMode(page, 'Only these');
 		for (const li of await bank.locator('> li').all()) await expect(li).toHaveClass(/\bnow\b|none/);
 		await focusMode(page, 'Bring to front');
-		await page.getByRole('button', { name: /show all reminders/ }).tap();
+		await bankView(page, 'All');
 	}
 	const tokens = page.getByRole('list', { name: 'Reminder bank' }).locator('> li');
 	// Bring to front, as before: the Poisoner's token first, ringed.
@@ -2229,8 +2264,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await expect(strip).toContainText('Merch');
 
 	const bank = page.getByRole('list', { name: /Reminder bank|Setup reminders/ });
-	if ((await bank.getAttribute('aria-label')) === 'Setup reminders')
-		await page.getByRole('button', { name: /show all reminders/ }).tap();
+	if ((await bank.getAttribute('aria-label')) === 'Setup reminders') await bankView(page, 'All');
 	const tokens = page.getByRole('list', { name: 'Reminder bank' }).locator('> li');
 	await expect(tokens.first()).toHaveClass(/\bnow\b/);
 	await expect(tokens.first()).toContainText('Paid');
