@@ -35,6 +35,7 @@ export const library = {
 	'library.details': 'Script',
 	'library.author': 'Author',
 	'library.source': 'Source',
+	'library.edit': 'Edit in Script builder',
 	'library.remove': 'Remove script',
 	'library.removeConfirm': 'Remove script?',
 	'library.save': 'Save',

@@ -58,6 +58,8 @@ test('saved scripts get folders and tags, filter by them, and can be removed', a
 	const fun = script.getByRole('button', { name: 'Stupid fun' });
 	await fun.tap();
 	await expect(fun).toHaveAttribute('aria-pressed', 'true');
+	// Only scripts made in the Script builder open there to edit.
+	await expect(script.getByRole('button', { name: 'Edit in Script builder' })).toHaveCount(0);
 	await expect(script.getByTestId('script-characters')).toContainText('Washerwoman');
 	await script.getByRole('button', { name: 'Close' }).tap();
 	await expect(table(page)).toContainText('Club night');
@@ -108,4 +110,31 @@ test('the Library lists only the user’s own info tokens', async ({ page }) => 
 	await expect(section.getByRole('heading', { name: 'Standard' })).toHaveCount(0);
 	await section.getByRole('button', { name: 'New info token' }).tap();
 	await expect(page.getByRole('dialog')).toBeVisible();
+});
+
+test('a script made in the Script builder opens there from the Library', async ({ page }) => {
+	await page.goto('/build-script');
+	await page.getByRole('textbox', { name: 'Name' }).fill('Built here');
+	for (const name of ['Chef', 'Imp']) {
+		await page.getByTestId('character-picker').getByRole('button', { name, exact: true }).tap();
+	}
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Clear the script' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Clear the script?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+
+	await page.goto('/library');
+	await table(page)
+		.getByRole('button', { name: /^Built here/ })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Built here' })
+		.getByRole('button', { name: 'Edit in Script builder' })
+		.tap();
+	await expect(page).toHaveURL(/\/build-script$/);
+	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Built here');
+	await expect(page.getByTestId('count-demon')).toHaveText('1');
 });

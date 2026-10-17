@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { isSeatable, type GameData } from '#lib/core/data/index.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
@@ -188,6 +190,12 @@
 	let openKey = $state<string>();
 	let scriptOpen = $state(false);
 	let removing = $state(false);
+	/** The Script builder opens a saved script from its id in the hash (never sent to the server). */
+	function editInBuilder(scriptId: string) {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- the path is resolved; only the hash is added
+		void goto(`${resolve('/build-script')}#edit=${encodeURIComponent(scriptId)}`);
+	}
+
 	const openRow = $derived(rows.find((row) => row.key === openKey));
 	const openLabels = $derived(openKey ? libraryLabels.for(openKey) : { tags: [] });
 
@@ -396,6 +404,15 @@
 		>
 			{#snippet actions()}
 				{@const shareable = openRow.shareable}
+				{@const built =
+					openRow.listing.saved?.source.kind === 'built' ? openRow.listing.saved : undefined}
+				{#if built}
+					<IconButton
+						icon="buildScript"
+						label={t('library.edit')}
+						onclick={() => editInBuilder(built.scriptId)}
+					/>
+				{/if}
 				<ShareControl
 					what="script"
 					title={openRow.listing.row.name || t('common.none')}
