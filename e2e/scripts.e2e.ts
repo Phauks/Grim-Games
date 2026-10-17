@@ -215,7 +215,8 @@ test('a script file is saved straight away when nothing needs checking', async (
 	await expect(page.getByRole('dialog', { name: 'Script check' })).toHaveCount(0);
 	await expect(added(page, 'Storm Front')).toContainText('storm-front.json');
 	// A load that worked needs no message (Trevor).
-	await expect(page.getByText('Saved Storm Front', { exact: true })).toHaveCount(0);
+	// (A toast; the details' own "Saved" heading over the name is not one.)
+	await expect(page.getByRole('status').filter({ hasText: 'Saved Storm Front' })).toHaveCount(0);
 });
 
 test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
