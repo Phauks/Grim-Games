@@ -55,7 +55,7 @@ test('scripts sit in folders like files, and folders open, nest, move and delete
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Library');
 	await expect(page.getByRole('button', { name: 'Add script' })).toBeVisible();
 	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
-	await expect(page.getByRole('radio', { name: 'Folders' })).toBeChecked();
+	await expect(page.getByRole('combobox', { name: 'View' })).toHaveText(/Folders/);
 	await expect(tile(page, 'Storm Front')).toBeVisible();
 	// The folder actions are there but unusable at the top level, so nothing moves on opening one.
 	await expect(page.getByRole('button', { name: 'Delete folder' })).toBeDisabled();
@@ -96,13 +96,13 @@ test('scripts sit in folders like files, and folders open, nest, move and delete
 	await page.getByRole('button', { name: 'Rename Teensy' }).tap();
 	const rename = page.getByRole('dialog', { name: 'Rename' });
 	await rename.getByRole('textbox', { name: 'Name' }).fill('Small games');
-	await rename.getByRole('button', { name: 'Save' }).tap();
+	await rename.getByRole('button', { name: 'Confirm' }).tap();
 	await page.getByRole('button', { name: 'Move Small games' }).tap();
 	const move = page.getByRole('dialog', { name: 'Move Small games' });
 	await move.getByRole('combobox', { name: 'Move to' }).tap();
 	await expect(page.getByRole('option', { name: 'Club night / Small games' })).toHaveCount(0);
 	await page.getByRole('option', { name: 'Scripts', exact: true }).tap();
-	await move.getByRole('button', { name: 'Move', exact: true }).tap();
+	await move.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(crumbs(page)).toHaveText(/Scripts\s*\/\s*Small games$/);
 
 	// Deleting a folder asks, and what it held moves up a level.
@@ -119,7 +119,8 @@ test('the table view keeps tags, filters and removing', async ({ page }) => {
 	await page.goto('/library');
 	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
 	await newFolder(page, 'Club night');
-	await page.getByRole('radiogroup', { name: 'View' }).getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'View' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	await expect(row(page)).toBeVisible();
 	await noSidewaysScroll(page);
 
