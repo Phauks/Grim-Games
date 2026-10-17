@@ -46,6 +46,7 @@ export const settings = {
 	'settings.backgroundImageError': 'That file could not be read as an image.',
 	'settings.vignette': 'Vignette',
 	'settings.vignetteStrength': 'Vignette strength',
+	'settings.nameSize': 'Player name size',
 	'settings.rulesAt': 'Fabled and Loric',
 	'settings.rulesAt.middle': 'Middle',
 	'settings.rulesAt.edge': 'Edge, smaller',
