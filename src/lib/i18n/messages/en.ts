@@ -17,6 +17,7 @@ import { reference } from '#lib/i18n/messages/en/reference.ts';
 import { shell } from '#lib/i18n/messages/en/shell.ts';
 import { settings } from '#lib/i18n/messages/en/settings.ts';
 import { scratch } from '#lib/i18n/messages/en/scratch.ts';
+import { library } from '#lib/i18n/messages/en/library.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -45,5 +46,6 @@ export const en = {
 	...characters,
 	...glossary,
 	...reference,
-	...scratch
+	...scratch,
+	...library
 } as const satisfies Catalog;

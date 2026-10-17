@@ -48,7 +48,9 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/characters/TokenAppearanceSettings.svelte',
 	'src/lib/features/glossary/',
 	'src/lib/ui/token/',
-	'src/lib/ui/scratch/'
+	'src/lib/ui/scratch/',
+	'src/lib/features/library/',
+	'src/routes/library/'
 ];
 
 export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {

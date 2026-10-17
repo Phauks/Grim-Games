@@ -12,6 +12,7 @@ export const shell = {
 	'shell.navResumeGame': 'Resume game',
 	'shell.navHistory': 'History',
 	'shell.navScripts': 'Scripts',
+	'shell.navLibrary': 'Library',
 	'shell.navPlayerView': 'Player view',
 	'shell.navReference': 'Character reference',
 	'shell.navInfoTokens': 'Info tokens',
