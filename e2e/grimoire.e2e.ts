@@ -1866,10 +1866,24 @@ test('in the reminder bank a sideways swipe scrolls; an upward one picks the tok
 		'Seat 4: no name, no character'
 	);
 
-	// Up towards the board: the token is picked up and lands on the seat.
-	const token = (await tokens.nth(2).boundingBox())!;
+	// Up towards the board: the token is picked up and lands on the seat. Waits for the
+	// row to stop scrolling, then takes a token wholly in view (slow runners scroll on).
+	await expect
+		.poll(async () => {
+			const before = await scrolled();
+			await page.waitForTimeout(200);
+			return before === (await scrolled());
+		})
+		.toBe(true);
+	const lift = await bank.evaluate((el) => {
+		const row = el.getBoundingClientRect();
+		const inView = [...el.querySelectorAll('[data-testid="board-reminder"]')]
+			.map((t) => t.getBoundingClientRect())
+			.find((r) => r.left >= row.left && r.right <= row.right);
+		if (!inView) throw new Error('no reminder wholly in view');
+		return { x: inView.left + inView.width / 2, y: inView.top + inView.height / 2 };
+	});
 	const seat = (await page.getByRole('button', { name: /^Seat 4:/ }).boundingBox())!;
-	const lift = { x: token.x + token.width / 2, y: token.y + token.height / 2 };
 	await swipe(
 		page,
 		lift,
