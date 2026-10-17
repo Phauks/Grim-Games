@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { createAttachmentKey } from 'svelte/attachments';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
@@ -35,7 +36,6 @@
 		type BotcScriptsRef,
 		type BotcScriptsSort
 	} from './botcscripts-api.ts';
-	import { scriptPageUrl } from './botcscripts-api.ts';
 	import BotcFilter from './BotcFilter.svelte';
 	import { collectionScripts } from './collection.svelte.ts';
 	import { curatedScripts } from './curated.svelte.ts';
@@ -63,7 +63,12 @@
 	} from './picker-rows.ts';
 	import { relaxJson } from './relaxed-json.ts';
 	import { RemoteSearch } from './remote-search.svelte.ts';
-	import { describeSource, reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
+	import {
+		describeSource,
+		reloadSavedScript,
+		sourcePage,
+		type ScriptSource
+	} from './saved-scripts.ts';
 	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import ScriptChecks from './ScriptChecks.svelte';
 	import ScriptDetails, { type ScriptFact } from './ScriptDetails.svelte';
@@ -377,33 +382,28 @@
 		const row = listing?.row;
 		const saved = listing && findSaved(recentScripts.list, listing);
 		const none = t('common.none');
-		const botcSource =
-			row?.source === 'botc' && row.number !== undefined
-				? { kind: 'botcscripts' as const, scriptId: row.number, version: row.version ?? '' }
-				: saved?.source.kind === 'botcscripts'
-					? saved.source
-					: undefined;
+		const source: ScriptSource | undefined =
+			saved?.source ??
+			(row?.source === 'botc' && row.number !== undefined
+				? { kind: 'botcscripts', scriptId: row.number, version: row.version ?? '' }
+				: undefined);
+		// The Source opens the script's own page where it came from (Trevor, 2026-10-16).
+		const page = (source && sourcePage(source)) ?? row?.page;
 		return [
 			{ label: t('scripts.current.author'), value: row ? row.author || none : none },
 			{ label: t('scripts.column.type'), value: row ? t(`scripts.kind.${row.kind}`) : none },
-			botcSource
-				? {
-						label: t('scripts.current.source'),
-						value: describeSource(botcSource),
-						href: scriptPageUrl(botcSource.scriptId, botcSource.version)
-					}
-				: {
-						label: t('scripts.current.source'),
-						value: saved
-							? describeSource(saved.source)
-							: row
-								? row.note || t(`scripts.sourceLabel.${row.source}`)
-								: none
-					}
+			{
+				label: t('scripts.current.source'),
+				value: source
+					? describeSource(source)
+					: row
+						? row.note || t(`scripts.sourceLabel.${row.source}`)
+						: none,
+				href: page
+			}
 		];
 	}
 
-	/** The player link for a saved script, made only when Share is tapped. */
 	const shareTarget = $derived.by(() => {
 		const saved = shownSaved;
 		return saved && saved.scriptId !== 'unsaved'
@@ -531,6 +531,29 @@
 	const tableSort = $derived<DataSort<ColumnId> | undefined>(
 		sort && { column: sort.column, direction: sort.descending ? 'descending' : 'ascending' }
 	);
+
+	/**
+	 * More BotC Scripts results load by themselves when the list's end comes within about a
+	 * screen of view (Trevor, 2026-10-17: no More button). The last row carries the watcher;
+	 * after a page arrives the new last row starts watching, so it keeps going while the end
+	 * stays in view, until the site has no more.
+	 */
+	const NEAR_END = createAttachmentKey();
+	const lastKey = $derived(shown.at(-1)?.row.key);
+	function loadMore() {
+		if (busy || !searchingBotc || botc.loading || !botc.hasMore || botcRef || !data) return;
+		void botc.load($state.snapshot(botcQuery) as BotcScriptsQuery, botc.page + 1, data);
+	}
+	function nearEnd(row: Element) {
+		const watcher = new IntersectionObserver(
+			(seen) => {
+				if (seen.some((s) => s.isIntersecting)) loadMore();
+			},
+			{ rootMargin: '100% 0px' }
+		);
+		watcher.observe(row);
+		return () => watcher.disconnect();
+	}
 
 	function onSort(column: ColumnId) {
 		sort = nextSort(sort, column);
@@ -719,6 +742,7 @@
 						resizeKey="scripts"
 						fill
 						rowSelected={isSelected}
+						rowAttrs={(listing) => (listing.row.key === lastKey ? { [NEAR_END]: nearEnd } : {})}
 						empty={botcRef ? '' : t('common.none')}
 					/>
 				</div>
@@ -726,21 +750,8 @@
 				<!-- The count shares the line under the table with the next action; both always there. -->
 				<div class="more" data-testid="picker-more">
 					<p class="status" role="status" data-testid="picker-status">{status}</p>
-					<!-- Always there, enabled when BotC Scripts has more or a link was typed. -->
+					<!-- Always there, enabled when a BotC Scripts link was typed. -->
 					<div class="buttons">
-						<Button
-							variant="quiet"
-							disabled={busy ||
-								!searchingBotc ||
-								botc.loading ||
-								!botc.hasMore ||
-								!!botcRef ||
-								!data}
-							onclick={() =>
-								data &&
-								botc.load($state.snapshot(botcQuery) as BotcScriptsQuery, botc.page + 1, data)}
-							>{t('scripts.botc.more')}</Button
-						>
 						<Button
 							variant="accent"
 							disabled={busy || !botcRef}

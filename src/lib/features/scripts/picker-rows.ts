@@ -4,7 +4,11 @@
  * so its rows arrive ready (`botcRow`). Design: 08-script-loading.md §5.6.
  */
 import type { CharacterType, GameData, LoadedScript } from '#lib/core/data/index.ts';
-import type { BotcScriptsEntry, BotcScriptsSummary } from './botcscripts-api.ts';
+import {
+	scriptPageUrl,
+	type BotcScriptsEntry,
+	type BotcScriptsSummary
+} from './botcscripts-api.ts';
 import { botcCard, looseId } from './botcscripts-cards.ts';
 
 export type PickerSource = 'official' | 'curated' | 'collection' | 'recent' | 'profile' | 'botc';
@@ -30,6 +34,11 @@ export interface PickerRow {
 	/** The script's number on BotC Scripts, and the version listed. */
 	number?: number;
 	version?: string;
+	/**
+	 * The script's own page where it came from (`sourcePage`): never only a site's address.
+	 * Undefined for scripts with no page (pasted, from a file).
+	 */
+	page?: string;
 	/** Lower-cased name, author and character names, for search. */
 	haystack: string;
 }
@@ -94,6 +103,7 @@ export function botcRow(summary: BotcScriptsSummary, data: GameData): PickerRow 
 		likes: summary.score,
 		number: summary.scriptId,
 		version: summary.version,
+		page: scriptPageUrl(summary.scriptId, summary.version),
 		haystack: summary.name.toLowerCase()
 	};
 }

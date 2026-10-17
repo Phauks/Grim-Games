@@ -6,10 +6,13 @@
 import {
 	COLLECTIONS,
 	collectionExportUrl,
+	collectionHeadingUrl,
 	driveDownloadUrl,
 	driveViewUrl,
 	readCollectionDoc,
-	type CollectionScript
+	type CollectionDocLink,
+	type CollectionScript,
+	type ScriptCollectionInfo
 } from '../src/lib/features/scripts/collection-api.ts';
 
 const DOC_CACHE_SECONDS = 3600;
@@ -18,7 +21,10 @@ const MAX_DOC_BYTES = 3_000_000;
 /** Scripts are a few kilobytes; far bigger is not a script. */
 const MAX_SCRIPT_BYTES = 1_000_000;
 
-async function readScript(fileId: string): Promise<CollectionScript | undefined> {
+async function readScript(
+	collection: ScriptCollectionInfo,
+	{ fileId, heading }: CollectionDocLink
+): Promise<CollectionScript | undefined> {
 	try {
 		const response = await fetch(driveDownloadUrl(fileId), {
 			redirect: 'follow',
@@ -28,7 +34,9 @@ async function readScript(fileId: string): Promise<CollectionScript | undefined>
 		const text = await response.text();
 		if (text.length > MAX_SCRIPT_BYTES) return undefined;
 		const json: unknown = JSON.parse(text);
-		return Array.isArray(json) ? { link: driveViewUrl(fileId), json } : undefined;
+		return Array.isArray(json)
+			? { link: driveViewUrl(fileId), page: collectionHeadingUrl(collection, heading), json }
+			: undefined;
 	} catch {
 		return undefined;
 	}
@@ -56,7 +64,9 @@ export async function handleCollection(id: string): Promise<Response> {
 	if (html.length > MAX_DOC_BYTES) {
 		return Response.json({ error: 'The collection is too large.' }, { status: 502 });
 	}
-	const found = await Promise.all(readCollectionDoc(html).map(readScript));
+	const found = await Promise.all(
+		readCollectionDoc(html).map((link) => readScript(collection, link))
+	);
 	const scripts = found.filter((s) => s !== undefined);
 	return Response.json(
 		{ scripts },

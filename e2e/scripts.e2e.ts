@@ -360,7 +360,6 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	// Phones keep Name, Author and Type; Chars and Likes give way (Chars' filter moves to Name).
 	const phone = test.info().project.name === 'phone';
 	if (!phone) await expect(first.locator('[data-col="likes"]')).toHaveText('5');
-	await expect(page.getByRole('button', { name: 'More' })).toBeDisabled();
 
 	await page.getByLabel('Search scripts').fill('storm');
 	await expect(status).toHaveText('1 script · 1 on BotC Scripts · most votes');
@@ -507,7 +506,10 @@ test("the official site's custom scripts are listed, can be switched off, and sa
 
 	await pick(page, 'Little Hamlet');
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
-	await expect(details(page)).toContainText('Script Tool');
+	// Its Source opens the official page that lists it, not just a site.
+	await expect(
+		details(page).getByRole('link', { name: 'Official custom scripts' })
+	).toHaveAttribute('href', 'https://bloodontheclocktower.com/pages/custom-scripts');
 	// Not saved, yet shown as the players' script, abilities and all.
 	await expect(page.getByTestId('script-sheet')).toContainText('pairs of evil players');
 	// Script checks: characters per type, no setup changes, nothing missing.

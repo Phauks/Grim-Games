@@ -9,10 +9,10 @@
 
 	/**
 	 * Factual checks of a previewed script (Trevor, 2026-10-16, from the Ravenswood review,
-	 * ideas only): characters per type, whether the Djinn is needed, the characters that change
-	 * setup, and any character whose required partner isn't on the script. Facts from TPI's
-	 * data and our setup tables (`scriptFacts`), never a judgement of balance. The jinxes
-	 * themselves are listed in the players' sheet below.
+	 * ideas only): characters per type, the characters that change setup, and any character
+	 * whose required partner isn't on the script. Facts from TPI's data and our setup tables
+	 * (`scriptFacts`), never a judgement of balance. The jinxes are listed in the players'
+	 * sheet below; no Djinn line (Trevor, 2026-10-17: jinxes are enough).
 	 */
 	interface Props {
 		script: LoadedScript;
@@ -33,10 +33,6 @@
 			<dt>{TYPE_PLURALS[type]}</dt>
 			<dd data-type={type}>{facts.counts[type]}</dd>
 		{/each}
-		<dt>{t('scripts.checks.djinn')}</dt>
-		<dd data-testid="djinn">
-			{facts.djinn ? t('scripts.checks.djinnNeeded') : t('scripts.checks.djinnNotNeeded')}
-		</dd>
 		<dt>{t('scripts.checks.setup')}</dt>
 		<dd>
 			{#if facts.modifiers.length}

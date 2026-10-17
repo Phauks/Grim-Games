@@ -67,9 +67,6 @@ export const scripts = {
 	'scripts.details.removeBody': '{name} is removed from your saved scripts on this device.',
 	'scripts.details.confirm': 'Confirm',
 	'scripts.checks.title': 'Script checks',
-	'scripts.checks.djinn': 'Djinn',
-	'scripts.checks.djinnNeeded': 'Needed: the script has jinxes',
-	'scripts.checks.djinnNotNeeded': 'Not needed',
 	'scripts.checks.setup': 'Setup changes',
 	'scripts.checks.needs': 'needs',
 	'scripts.checks.notOnScript': 'not on the script',
@@ -105,7 +102,6 @@ export const scripts = {
 		one: '{count} on BotC Scripts · {sort}',
 		other: '{count} on BotC Scripts · {sort}'
 	},
-	'scripts.botc.more': 'More',
 	'scripts.botc.scriptType': 'Script type',
 	'scripts.botc.type.any': 'Any',
 	'scripts.botc.charactersFrom': 'Characters from',

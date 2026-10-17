@@ -61,22 +61,50 @@ export function driveFileId(href: string): string | undefined {
 /** At most this many scripts from one doc; a collection far bigger isn't this kind of doc. */
 export const MAX_COLLECTION_SCRIPTS = 60;
 
-/** The Drive files a doc links as a script's JSON ("Script JSON"), in the doc's order. */
-export function readCollectionDoc(html: string): string[] {
-	const ids: string[] = [];
-	for (const match of html.matchAll(/<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
-		const text = match[2].replace(/<[^>]+>/g, '').trim();
+/** The doc opened at one heading (`h.…` ids, as Google Docs writes them). */
+export function collectionHeadingUrl(collection: ScriptCollectionInfo, heading?: string): string {
+	return heading
+		? `${collectionDocUrl(collection)}#heading=${heading}`
+		: collectionDocUrl(collection);
+}
+
+export interface CollectionDocLink {
+	fileId: string;
+	/** The id of the heading the link sits under, so the script can link to its own section. */
+	heading?: string;
+}
+
+const HEADING_ID = /^h\.[\w-]+$/;
+
+/**
+ * The Drive files a doc links as a script's JSON ("Script JSON"), in the doc's order, each
+ * with the heading it sits under (Trevor, 2026-10-16: every script links to its source page).
+ */
+export function readCollectionDoc(html: string): CollectionDocLink[] {
+	const links: CollectionDocLink[] = [];
+	let heading: string | undefined;
+	const parts =
+		/<h[1-6]\b[^>]*\bid="([^"]+)"[^>]*>|<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+	for (const match of html.matchAll(parts)) {
+		if (match[1] !== undefined) {
+			heading = HEADING_ID.test(match[1]) ? match[1] : undefined;
+			continue;
+		}
+		const text = match[3].replace(/<[^>]+>/g, '').trim();
 		if (!/\bjson\b/i.test(text)) continue;
-		const id = driveFileId(match[1]);
-		if (id && !ids.includes(id)) ids.push(id);
-		if (ids.length >= MAX_COLLECTION_SCRIPTS) break;
+		const fileId = driveFileId(match[2]);
+		if (!fileId || links.some((l) => l.fileId === fileId)) continue;
+		links.push(heading ? { fileId, heading } : { fileId });
+		if (links.length >= MAX_COLLECTION_SCRIPTS) break;
 	}
-	return ids;
+	return links;
 }
 
 export interface CollectionScript {
 	/** The Drive file it came from, as people open it. */
 	link: string;
+	/** The collection doc at the script's own heading: its source page. */
+	page: string;
 	/** The script in TPI's format. */
 	json: unknown[];
 }
@@ -90,7 +118,14 @@ export function readCollectionList(body: unknown): CollectionScript[] | undefine
 	if (!isObject(body) || !Array.isArray(body.scripts)) return undefined;
 	return body.scripts.flatMap((raw: unknown) =>
 		isObject(raw) && typeof raw.link === 'string' && Array.isArray(raw.json)
-			? [{ link: raw.link, json: raw.json }]
+			? [
+					{
+						link: raw.link,
+						// A list cached before pages were sent links to the doc itself.
+						page: typeof raw.page === 'string' ? raw.page : collectionDocUrl(CAROUSEL_COLLECTION),
+						json: raw.json
+					}
+				]
 			: []
 	);
 }

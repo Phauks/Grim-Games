@@ -16,11 +16,12 @@ import {
 import type { ProfileScriptEntry } from '#lib/features/account/profile-scripts.ts';
 import type { BotcScriptsQuery, BotcScriptsRef, BotcScriptsSearchPage } from './botcscripts-api.ts';
 import type { CollectionScript } from './collection-api.ts';
-import type { CuratedScript } from './curated-api.ts';
+import { CURATED_PAGE, type CuratedScript } from './curated-api.ts';
 import { botcRow, pickerRow, type PickerRow, type PickerSource } from './picker-rows.ts';
 import {
 	reloadSavedScript,
 	sameScript,
+	sourcePage,
 	type SavedScript,
 	type ScriptSource
 } from './saved-scripts.ts';
@@ -103,11 +104,14 @@ export const curatedProvider: LocalProvider = {
 			return script
 				? [
 						{
-							row: pickerRow(script, `curated:${i}`, 'curated', curatedLabel(entry.section)),
+							row: {
+								...pickerRow(script, `curated:${i}`, 'curated', curatedLabel(entry.section)),
+								page: CURATED_PAGE
+							},
 							target: {
 								kind: 'json',
 								json: entry.json,
-								source: { kind: 'link', url: entry.link }
+								source: { kind: 'link', url: entry.link, page: CURATED_PAGE }
 							},
 							identity: { json: entry.json }
 						}
@@ -125,11 +129,14 @@ export const collectionProvider: LocalProvider = {
 			return script
 				? [
 						{
-							row: pickerRow(script, `collection:${entry.link}`, 'collection'),
+							row: {
+								...pickerRow(script, `collection:${entry.link}`, 'collection'),
+								page: entry.page
+							},
 							target: {
 								kind: 'json',
 								json: entry.json,
-								source: { kind: 'link', url: entry.link }
+								source: { kind: 'link', url: entry.link, page: entry.page }
 							},
 							identity: { json: entry.json }
 						}
@@ -148,7 +155,10 @@ export const recentProvider: LocalProvider = {
 			return script
 				? [
 						{
-							row: pickerRow(script, `recent:${saved.scriptId}`, 'recent', describe(saved.source)),
+							row: {
+								...pickerRow(script, `recent:${saved.scriptId}`, 'recent', describe(saved.source)),
+								page: sourcePage(saved.source)
+							},
 							target: { kind: 'saved', saved },
 							identity: saved,
 							saved
@@ -167,12 +177,15 @@ export const profileProvider: LocalProvider = {
 			return script
 				? [
 						{
-							row: pickerRow(
-								script,
-								`profile:${entry.id}`,
-								'profile',
-								describe(entry.script.source)
-							),
+							row: {
+								...pickerRow(
+									script,
+									`profile:${entry.id}`,
+									'profile',
+									describe(entry.script.source)
+								),
+								page: sourcePage(entry.script.source)
+							},
 							target: { kind: 'json', json: entry.script.json, source: entry.script.source },
 							identity: { json: entry.script.json }
 						}
