@@ -1216,10 +1216,17 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	await expect(sheet.getByRole('button', { name: 'Actions for Is The Apprentice' })).toBeVisible();
 });
 
-test("Players' phones opens from the grimoire menu", async ({ page }) => {
+test("Players' phones opens over the board from the grimoire menu", async ({ page }) => {
 	await startGame(page);
+	const url = page.url();
 	await menu(page, "Players' phones");
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/room$/);
+	// Over the board: the game stays open behind it.
+	const dialog = page.getByRole('dialog', { name: "Players' phones" });
+	await expect(dialog).toBeVisible();
+	expect(page.url()).toBe(url);
+	await dialog.getByRole('button', { name: 'Close', exact: true }).tap();
+	await expect(dialog).toBeHidden();
+	await expect(seatLabelled(page, 'Seat 1:')).toBeVisible();
 });
 
 test("a Traveller's alignment can be drawn from face-down tokens", async ({ page }) => {
@@ -1294,6 +1301,12 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	const suggested = page.getByRole('dialog', { name: 'Undertaker' }).getByTestId('night-suggested');
 	await expect(suggested.locator('[data-character-id="imp"]')).toBeVisible();
 	await page.screenshot({ path: `test-results/undertaker-${test.info().project.name}.png` });
+	// The logic behind it: the executed player and their true character.
+	await suggested.getByRole('button', { name: 'Why' }).tap();
+	const why = page.getByRole('dialog', { name: 'Why' });
+	await expect(why.getByTestId('why-facts')).toContainText('Seat 2');
+	await expect(why.getByTestId('why-facts').locator('[data-character-id="imp"]')).toBeVisible();
+	await why.getByRole('button', { name: 'Close' }).tap();
 	await suggested.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('Imp');
 });
@@ -1507,6 +1520,18 @@ test("on a crowded table one seat's reminders never cover another's", async ({ p
 			);
 	const four = await boxes(4);
 	const five = await boxes(5);
+	// Each sits nearer its own seat than the neighbour's (Trevor, 2026-10-17).
+	const centre = async (n: number) => {
+		const b = (await page.getByRole('button', { name: new RegExp(`^Seat ${n}:`) }).boundingBox())!;
+		return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+	};
+	const [s4, s5] = [await centre(4), await centre(5)];
+	const d = (b: { x: number; y: number; w: number; h: number }, s: { x: number; y: number }) =>
+		Math.hypot(b.x + b.w / 2 - s.x, b.y + b.h / 2 - s.y);
+	for (const b of four) expect(d(b, s4)).toBeLessThan(d(b, s5));
+	for (const b of five) expect(d(b, s5)).toBeLessThan(d(b, s4));
+	await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0, { timeout: 15000 });
+	await page.screenshot({ path: `test-results/crowded-${test.info().project.name}.png` });
 	expect(four).toHaveLength(4);
 	expect(five).toHaveLength(3);
 	for (const a of four)
@@ -1579,3 +1604,42 @@ for (const desktop of [false, true]) {
 		await expect(ability).toBeInViewport({ ratio: 1 });
 	});
 }
+
+test('marking a player as the Marionette asks to make them evil', async ({ page }) => {
+	// The Marionette is a Minion, so evil (https://wiki.bloodontheclocktower.com/Marionette).
+	await page.goto('/scripts');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste', exact: true })
+		.tap();
+	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	await paste
+		.getByLabel('Script JSON or link')
+		.fill(
+			JSON.stringify([{ id: '_meta', name: 'Strings' }, 'clockmaker', 'chef', 'marionette', 'imp'])
+		);
+	await paste.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText('Strings');
+	await startGame(page, 'Strings');
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 2' })
+		.getByRole('button', { name: 'Clockmaker', exact: true })
+		.tap();
+	await expect(sheet.getByText('Good · Seat 2')).toBeVisible();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 2' });
+	await picker
+		.getByRole('group', { name: 'Marionette' })
+		.getByRole('button', { name: 'Is The Marionette' })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Make this player evil?' });
+	await expect(ask).toContainText('Current alignment');
+	await expect(ask).toContainText('New alignment');
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await expect(sheet.getByText('Evil · Seat 2')).toBeVisible();
+});

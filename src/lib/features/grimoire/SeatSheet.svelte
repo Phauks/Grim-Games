@@ -762,7 +762,7 @@
 				Alive
 			</button>
 		</div>
-		{#each causes as { cause, flags }, i (cause)}
+		{#each causes as { cause, flags, gained }, i (cause)}
 			{@const killer = characters.get(cause)}
 			<div class="cause-row">
 				<button
@@ -777,6 +777,15 @@
 							/>{/if}</span
 					>
 					{causeLabel(cause, characters, traveller)}
+					<!-- The gained ability that kills, as on the day sheet: "Cannibal (Slayer)". -->
+					{#if gained}<span class="gained"
+							>(<CharacterBadge
+								characterId={gained}
+								character={characters.get(gained)}
+								inline
+								interactive={false}
+							/>)</span
+						>{/if}
 				</button>
 				{#if flags.length > 0}
 					<IconButton
@@ -1002,6 +1011,9 @@
 		display: contents;
 		--on-surface: var(--on-sheet);
 		--surface-selected: rgb(0 0 0 / 0.08);
+	}
+	.gained {
+		color: var(--on-surface-muted);
 	}
 	.change {
 		display: grid;

@@ -1,7 +1,8 @@
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
-import { scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
+import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
+import type { CharacterId } from '#lib/core/data/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -122,7 +123,29 @@ export class Grimoire {
 			if (text) toast('Note', text);
 		}
 		if (misfit) toast('Note', misfit);
+		this.askAlignment(command);
 		return true;
+	}
+
+	/**
+	 * A seat the Storyteller just marked as truly an evil character (Marionette, Trevor
+	 * 2026-10-17) whose alignment isn't evil yet: the board asks whether to make it evil.
+	 */
+	alignmentAsk = $state.raw<{ seatId: SeatId; characterId: CharacterId } | undefined>();
+
+	private askAlignment(command: Command): void {
+		if (command.type !== 'AddReminder' && command.type !== 'MoveReminder') return;
+		const game = this.open.game;
+		const seatId = command.type === 'AddReminder' ? command.seatId : command.toSeatId;
+		const reminder = game.seats[seatId]?.reminders.find((r) =>
+			command.type === 'AddReminder'
+				? r.characterId === command.reminder.characterId && r.label === command.reminder.label
+				: r.reminderId === command.reminderId
+		);
+		const source = reminder && replacedBy(reminder, this.open.characters);
+		if (!source || (source.type !== 'minion' && source.type !== 'demon')) return;
+		if (alignmentOf(game, seatId) === 'evil') return;
+		this.alignmentAsk = { seatId, characterId: source.id };
 	}
 
 	/**

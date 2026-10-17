@@ -5,7 +5,8 @@
 	import { boardNightSteps, stepHolders } from './night-steps.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
-	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
+	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
@@ -72,6 +73,7 @@
 	import { stepReminders } from './reminders.ts';
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
+	import AlignmentAsk from './AlignmentAsk.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -185,27 +187,28 @@
 	}
 	/**
 	 * Every seat's reminders, laid out together so one seat's never cover another's (Trevor,
-	 * 2026-10-16); on a very crowded board they are drawn smaller instead.
+	 * 2026-10-16) and each stays nearest its own seat (2026-10-17). They are laid out at the
+	 * height a finger needs (the tap target), which is what a reminder takes up on screen.
 	 */
 	let centreW = $state(0);
 	let centreH = $state(0);
+	let tapPx = $state(0);
 	const fan = $derived.by(() => {
-		if (width <= 0 || height <= 0)
-			return { at: seats.map((s, i) => s.reminders.map(() => shown[i])), chip };
+		if (width <= 0 || height <= 0) return seats.map((s, i) => s.reminders.map(() => shown[i]));
 		const fitted = fitReminders(
 			seats.map((s, i) => ({
 				seat: toPx(shown[i]),
 				middle: { x: width / 2, y: height / 2 },
 				count: s.reminders.length,
 				size,
-				chip,
+				chip: Math.max(chip, tapPx),
 				avoid: avoidFor(i)
 			})),
 			// The Set up button and the Fabled and Loric in the middle stay clear and tappable.
 			centreW > 0 ? [{ x: width / 2, y: height / 2, w: centreW + 12, h: centreH + 12 }] : [],
 			{ width, height }
 		);
-		return { at: fitted.at.map((points) => points.map(toPercent)), chip: fitted.chip };
+		return fitted.at.map((points) => points.map(toPercent));
 	});
 
 	interface ReminderDrag {
@@ -468,7 +471,7 @@
 		);
 	});
 	const setupPending = $derived(
-		pendingTray(trayItems(setupReminders(game, characters)), game, grimoire.trayDismissed).length
+		pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed).length
 	);
 	let bankChosen = $state<BankView | undefined>();
 	const bankView = $derived<BankView>(
@@ -558,6 +561,7 @@
 
 	// ── Share the script (never the game) ──
 	let shareOpen = $state(false);
+	let phonesOpen = $state(false);
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
 	const loadedScript = $derived(
@@ -784,7 +788,7 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const count = seat.reminders.length}
 			{#if count > 0}
-				{@const at = fan.at[i]}
+				{@const at = fan[i]}
 				{#each seat.reminders as reminder, k (reminder.reminderId)}
 					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
 					{@const p = dragged ? reminderDrag!.at : at[k]}
@@ -799,7 +803,7 @@
 							label={reminder.label}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
-							size={fan.chip}
+							size={chip}
 							disabled={arranging}
 							onTap={() => openSeat(seat.seatId)}
 							onDrag={(x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
@@ -863,6 +867,8 @@
 			onHints={(h) => (trayHints = h)}
 		/>
 
+		<!-- Measures the tap target, the height every reminder takes on the board. -->
+		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if showSetup}
@@ -931,11 +937,14 @@
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
+		<!-- Pointing at, focusing or pressing it starts opening the room, so the QR is ready. -->
 		<Button
 			variant="quiet"
 			icon="players"
-			onclick={() =>
-				fromMenu(() => goto(resolve('/grimoire/[gameId]/room', { gameId: game.gameId })))}
+			onpointerenter={prepareRoom}
+			onfocus={prepareRoom}
+			onpointerdown={prepareRoom}
+			onclick={() => fromMenu(() => (phonesOpen = true))}
 		>
 			Players' phones
 		</Button>
@@ -960,6 +969,7 @@
 </Dialog>
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
+<AlignmentAsk {grimoire} />
 
 <InfoTokensSheet
 	bind:open={infoOpen}
@@ -1026,6 +1036,11 @@
 			<ScriptCopy script={loadedScript} players={game.seating.length} />
 		{/if}
 	</div>
+</Dialog>
+
+<!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
+<Dialog bind:open={phonesOpen} title="Players' phones" size="full">
+	<RoomPanel game={grimoire.open} />
 </Dialog>
 
 <Dialog bind:open={shareOpen} title="Share script">
@@ -1212,6 +1227,12 @@
 	.chip-slot.dragging {
 		z-index: 3;
 		scale: 1.15;
+	}
+	.tap-probe {
+		position: absolute;
+		visibility: hidden;
+		height: var(--tap-target);
+		pointer-events: none;
 	}
 	.centre {
 		position: absolute;

@@ -66,7 +66,7 @@
 		return i < 0 ? scriptOrder.length : i;
 	};
 	const setupItems = $derived(
-		pendingTray(trayItems(setupReminders(game, characters)), game, grimoire.trayDismissed).sort(
+		pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed).sort(
 			(a, b) =>
 				at(a.suggestion.characterId) - at(b.suggestion.characterId) ||
 				byLabel(a.suggestion.label, b.suggestion.label)

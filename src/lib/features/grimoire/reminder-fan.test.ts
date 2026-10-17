@@ -40,25 +40,26 @@ describe('reminderFan', () => {
 });
 
 describe('reminderLayout', () => {
-	const box = (p: { x: number; y: number }) => ({ ...p, w: chip, h: chip });
-	const clash = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-		Math.abs(a.x - b.x) < chip && Math.abs(a.y - b.y) < chip;
+	const box = (p: { x: number; y: number }, w: number) => ({ ...p, w, h: w });
 
 	it("keeps one seat's reminders off a crowded neighbour's (Trevor, 2026-10-16)", () => {
-		// Fifteen seats round a phone-sized table, three reminders each.
+		// Fifteen seats round a phone-sized table, two reminders each.
 		const seats = Array.from({ length: 15 }, (_, i) => {
 			const a = (i / 15) * 2 * Math.PI - Math.PI / 2;
 			return {
 				seat: { x: 200 + 170 * Math.cos(a), y: 300 + 260 * Math.sin(a) },
 				middle: { x: 200, y: 300 },
-				count: 3,
+				count: 2,
 				size: 44,
 				chip: 30
 			};
 		});
-		const at = reminderLayout(seats);
+		const fitted = 30;
+		const { at } = fitReminders(seats);
+		const clash = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+			Math.abs(a.x - b.x) < fitted && Math.abs(a.y - b.y) < fitted;
 		for (let i = 0; i < at.length; i++) {
-			expect(at[i]).toHaveLength(3);
+			expect(at[i]).toHaveLength(2);
 			for (let j = i + 1; j < at.length; j++)
 				for (const p of at[i]) for (const q of at[j]) expect(clash(p, q)).toBe(false);
 		}
@@ -68,7 +69,7 @@ describe('reminderLayout', () => {
 				if (i !== j)
 					for (const p of at[i]) {
 						const t = { ...seats[j].seat, w: 44, h: 44 };
-						const b = box(p);
+						const b = box(p, fitted);
 						expect(
 							Math.abs(b.x - t.x) < (b.w + t.w) / 2 && Math.abs(b.y - t.y) < (b.h + t.h) / 2
 						).toBe(false);
@@ -80,24 +81,22 @@ describe('reminderLayout', () => {
 		expect(reminderLayout([one])[0]).toEqual(reminderFan(one));
 	});
 
-	it('makes reminders smaller rather than overlap on a very crowded board', () => {
+	it('says when a very crowded board has no clear room left', () => {
 		const seats = Array.from({ length: 15 }, (_, i) => {
 			const a = (i / 15) * 2 * Math.PI - Math.PI / 2;
 			return {
 				seat: { x: 200 + 170 * Math.cos(a), y: 300 + 260 * Math.sin(a) },
 				middle: { x: 200, y: 300 },
-				count: 5,
+				count: 10,
 				size: 44,
-				chip: 30
+				chip: 44
 			};
 		});
-		const { at, chip: fitted } = fitReminders(seats);
-		expect(fitted).toBeLessThan(30);
-		for (let i = 0; i < at.length; i++)
-			for (let j = i + 1; j < at.length; j++)
-				for (const p of at[i])
-					for (const q of at[j])
-						expect(Math.abs(p.x - q.x) < fitted && Math.abs(p.y - q.y) < fitted).toBe(false);
+		// 150 reminders of 44px need more room than the whole 400 by 600 board.
+		const { at, fits } = fitReminders(seats, [], { width: 400, height: 600 });
+		expect(fits).toBe(false);
+		// Every reminder is still shown.
+		for (const points of at) expect(points).toHaveLength(10);
 	});
 
 	it('keeps every reminder on the board, so the page never scrolls sideways', () => {
@@ -109,10 +108,33 @@ describe('reminderLayout', () => {
 			size: 44,
 			chip: 30
 		};
-		const { at, chip: fitted } = fitReminders([edge], [], { width: 390, height: 600 });
+		const fitted = edge.chip;
+		const { at } = fitReminders([edge], [], { width: 390, height: 600 });
 		for (const p of at[0]) {
 			expect(p.x + fitted / 2).toBeLessThanOrEqual(390);
 			expect(p.x - fitted / 2).toBeGreaterThanOrEqual(0);
 		}
+	});
+
+	it('puts each reminder nearer its own seat than any other (Trevor, 2026-10-17)', () => {
+		// Big tokens on a small table: twelve seats, two or three reminders each.
+		const seats = Array.from({ length: 12 }, (_, i) => {
+			const a = (i / 12) * 2 * Math.PI - Math.PI / 2;
+			return {
+				seat: { x: 200 + 150 * Math.cos(a), y: 260 + 200 * Math.sin(a) },
+				middle: { x: 200, y: 260 },
+				count: 2 + (i % 2),
+				size: 70,
+				chip: 34
+			};
+		});
+		const { at } = fitReminders(seats, [], { width: 400, height: 520 });
+		const d2 = (p: { x: number; y: number }, q: { x: number; y: number }) =>
+			(p.x - q.x) ** 2 + (p.y - q.y) ** 2;
+		at.forEach((points, i) => {
+			for (const p of points)
+				for (let j = 0; j < seats.length; j++)
+					if (j !== i) expect(d2(p, seats[i].seat)).toBeLessThan(d2(p, seats[j].seat));
+		});
 	});
 });
