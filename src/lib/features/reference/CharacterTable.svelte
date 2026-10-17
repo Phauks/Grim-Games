@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { CHARACTER_TYPES, type Character } from '#lib/core/data/types.ts';
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import {
@@ -134,16 +135,21 @@
 {#snippet filter(column: DataColumn<FieldId>, close: () => void)}
 	{@const f = field(column.id)}
 	{#if f.filter === 'text'}
-		<input
-			class="text"
-			type="search"
-			aria-label="Filter {f.label}"
-			placeholder="Filter"
-			enterkeyhint="done"
+		<ClearableField
 			value={table.filters.name ?? ''}
-			oninput={(e) => referenceTable.setFilter('name', e.currentTarget.value)}
-			onkeydown={(e) => e.key === 'Enter' && close()}
-		/>
+			onclear={() => referenceTable.setFilter('name', '')}
+		>
+			<input
+				class="text"
+				type="search"
+				aria-label="Filter {f.label}"
+				placeholder="Filter"
+				enterkeyhint="done"
+				value={table.filters.name ?? ''}
+				oninput={(e) => referenceTable.setFilter('name', e.currentTarget.value)}
+				onkeydown={(e) => e.key === 'Enter' && close()}
+			/>
+		</ClearableField>
 	{:else if f.filter === 'types'}
 		<fieldset>
 			<legend class="visually-hidden">Character types</legend>
