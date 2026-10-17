@@ -34,6 +34,7 @@ import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_cat_thin from '~icons/ph/cat-thin';
 import ph_check_thin from '~icons/ph/check-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
+import ph_circle_notch_thin from '~icons/ph/circle-notch-thin';
 import ph_clipboard_thin from '~icons/ph/clipboard-thin';
 import ph_clipboard_text_thin from '~icons/ph/clipboard-text-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
@@ -138,6 +139,7 @@ import ph_sort_descending_thin from '~icons/ph/sort-descending-thin';
 import ph_spade_thin from '~icons/ph/spade-thin';
 import ph_sparkle_thin from '~icons/ph/sparkle-thin';
 import ph_speaker_high_thin from '~icons/ph/speaker-high-thin';
+import ph_spinner_thin from '~icons/ph/spinner-thin';
 import ph_square_thin from '~icons/ph/square-thin';
 import ph_star_thin from '~icons/ph/star-thin';
 import ph_stethoscope_thin from '~icons/ph/stethoscope-thin';
@@ -206,6 +208,7 @@ const icons: IconMap = {
 	'ph:cat-thin': ph_cat_thin,
 	'ph:check-thin': ph_check_thin,
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
+	'ph:circle-notch-thin': ph_circle_notch_thin,
 	'ph:clipboard-thin': ph_clipboard_thin,
 	'ph:clipboard-text-thin': ph_clipboard_text_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
@@ -310,6 +313,7 @@ const icons: IconMap = {
 	'ph:spade-thin': ph_spade_thin,
 	'ph:sparkle-thin': ph_sparkle_thin,
 	'ph:speaker-high-thin': ph_speaker_high_thin,
+	'ph:spinner-thin': ph_spinner_thin,
 	'ph:square-thin': ph_square_thin,
 	'ph:star-thin': ph_star_thin,
 	'ph:stethoscope-thin': ph_stethoscope_thin,

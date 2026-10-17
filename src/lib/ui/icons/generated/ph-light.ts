@@ -34,6 +34,7 @@ import ph_caret_up_light from '~icons/ph/caret-up-light';
 import ph_cat_light from '~icons/ph/cat-light';
 import ph_check_light from '~icons/ph/check-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
+import ph_circle_notch_light from '~icons/ph/circle-notch-light';
 import ph_clipboard_light from '~icons/ph/clipboard-light';
 import ph_clipboard_text_light from '~icons/ph/clipboard-text-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
@@ -138,6 +139,7 @@ import ph_sort_descending_light from '~icons/ph/sort-descending-light';
 import ph_spade_light from '~icons/ph/spade-light';
 import ph_sparkle_light from '~icons/ph/sparkle-light';
 import ph_speaker_high_light from '~icons/ph/speaker-high-light';
+import ph_spinner_light from '~icons/ph/spinner-light';
 import ph_square_light from '~icons/ph/square-light';
 import ph_star_light from '~icons/ph/star-light';
 import ph_stethoscope_light from '~icons/ph/stethoscope-light';
@@ -206,6 +208,7 @@ const icons: IconMap = {
 	'ph:cat-light': ph_cat_light,
 	'ph:check-light': ph_check_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
+	'ph:circle-notch-light': ph_circle_notch_light,
 	'ph:clipboard-light': ph_clipboard_light,
 	'ph:clipboard-text-light': ph_clipboard_text_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
@@ -310,6 +313,7 @@ const icons: IconMap = {
 	'ph:spade-light': ph_spade_light,
 	'ph:sparkle-light': ph_sparkle_light,
 	'ph:speaker-high-light': ph_speaker_high_light,
+	'ph:spinner-light': ph_spinner_light,
 	'ph:square-light': ph_square_light,
 	'ph:star-light': ph_star_light,
 	'ph:stethoscope-light': ph_stethoscope_light,

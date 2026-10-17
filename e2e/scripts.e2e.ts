@@ -741,13 +741,14 @@ test('a BotC Scripts result offers its other versions, and says when a newer one
 		.getByRole('button', { name: /^Storm Front/ })
 		.tap();
 	await expect(detailsName(page)).toHaveText('Storm Front');
-	// While the script loads, its characters are not first shown in a line (Trevor, 2026-10-17):
-	// the space waits for the names and abilities.
-	await expect(page.getByTestId('script-sheet')).toBeAttached();
+	// While the script loads, its characters are not first shown in a line, and the space is
+	// never blank: it says the script is loading (Trevor, 2026-10-17).
+	await expect(page.getByTestId('script-loading')).toBeVisible();
 	await expect(page.getByTestId('script-characters')).toHaveCount(0);
 	await expect(page.getByTestId('script-sheet')).not.toContainText('Washerwoman');
 	release();
 	await expect(page.getByTestId('script-sheet')).toContainText('Washerwoman');
+	await expect(page.getByTestId('script-loading')).toHaveCount(0);
 	// Scrolling the details keeps Back (phones) and the script's name pinned at the top.
 	const top = details(page).getByTestId('script-details-top');
 	const pinnedAt = (await top.boundingBox())!.y;

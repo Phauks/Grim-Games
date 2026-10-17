@@ -34,6 +34,7 @@ import ph_caret_up from '~icons/ph/caret-up';
 import ph_cat from '~icons/ph/cat';
 import ph_check from '~icons/ph/check';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
+import ph_circle_notch from '~icons/ph/circle-notch';
 import ph_clipboard from '~icons/ph/clipboard';
 import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
@@ -138,6 +139,7 @@ import ph_sort_descending from '~icons/ph/sort-descending';
 import ph_spade from '~icons/ph/spade';
 import ph_sparkle from '~icons/ph/sparkle';
 import ph_speaker_high from '~icons/ph/speaker-high';
+import ph_spinner from '~icons/ph/spinner';
 import ph_square from '~icons/ph/square';
 import ph_star from '~icons/ph/star';
 import ph_stethoscope from '~icons/ph/stethoscope';
@@ -206,6 +208,7 @@ const icons: IconMap = {
 	'ph:cat': ph_cat,
 	'ph:check': ph_check,
 	'ph:circle-dashed': ph_circle_dashed,
+	'ph:circle-notch': ph_circle_notch,
 	'ph:clipboard': ph_clipboard,
 	'ph:clipboard-text': ph_clipboard_text,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
@@ -310,6 +313,7 @@ const icons: IconMap = {
 	'ph:spade': ph_spade,
 	'ph:sparkle': ph_sparkle,
 	'ph:speaker-high': ph_speaker_high,
+	'ph:spinner': ph_spinner,
 	'ph:square': ph_square,
 	'ph:star': ph_star,
 	'ph:stethoscope': ph_stethoscope,

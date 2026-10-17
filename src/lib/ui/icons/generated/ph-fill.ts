@@ -34,6 +34,7 @@ import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_cat_fill from '~icons/ph/cat-fill';
 import ph_check_fill from '~icons/ph/check-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
+import ph_circle_notch_fill from '~icons/ph/circle-notch-fill';
 import ph_clipboard_fill from '~icons/ph/clipboard-fill';
 import ph_clipboard_text_fill from '~icons/ph/clipboard-text-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
@@ -138,6 +139,7 @@ import ph_sort_descending_fill from '~icons/ph/sort-descending-fill';
 import ph_spade_fill from '~icons/ph/spade-fill';
 import ph_sparkle_fill from '~icons/ph/sparkle-fill';
 import ph_speaker_high_fill from '~icons/ph/speaker-high-fill';
+import ph_spinner_fill from '~icons/ph/spinner-fill';
 import ph_square_fill from '~icons/ph/square-fill';
 import ph_star_fill from '~icons/ph/star-fill';
 import ph_stethoscope_fill from '~icons/ph/stethoscope-fill';
@@ -206,6 +208,7 @@ const icons: IconMap = {
 	'ph:cat-fill': ph_cat_fill,
 	'ph:check-fill': ph_check_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
+	'ph:circle-notch-fill': ph_circle_notch_fill,
 	'ph:clipboard-fill': ph_clipboard_fill,
 	'ph:clipboard-text-fill': ph_clipboard_text_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
@@ -310,6 +313,7 @@ const icons: IconMap = {
 	'ph:spade-fill': ph_spade_fill,
 	'ph:sparkle-fill': ph_sparkle_fill,
 	'ph:speaker-high-fill': ph_speaker_high_fill,
+	'ph:spinner-fill': ph_spinner_fill,
 	'ph:square-fill': ph_square_fill,
 	'ph:star-fill': ph_star_fill,
 	'ph:stethoscope-fill': ph_stethoscope_fill,

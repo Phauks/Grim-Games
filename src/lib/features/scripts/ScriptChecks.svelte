@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { CHARACTER_TYPES, type GameData, type LoadedScript } from '#lib/core/data/index.ts';
+	import { type GameData, type LoadedScript } from '#lib/core/data/index.ts';
 	import { scriptFacts } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import TypeCounts from '#lib/features/setup/TypeCounts.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 
@@ -25,7 +25,6 @@
 	const facts = $derived(
 		script && scriptFacts(script.characters, data.jinxes, script.homebrewJinxes)
 	);
-	const types = $derived(facts ? CHARACTER_TYPES.filter((type) => facts.counts[type] > 0) : []);
 	const missing = $derived(facts?.requirements.filter((r) => !r.onScript) ?? []);
 	const byId = $derived(new Map(script?.characters.map((c) => [c.id, c]) ?? []));
 </script>
@@ -33,12 +32,7 @@
 <!-- Rows of the details' list: `display: contents` keeps them on its grid. -->
 <div class="checks" data-testid="script-checks">
 	<dt>{t('scripts.checks.characters')}</dt>
-	<dd class="counts">
-		{#each types as type, i (type)}
-			{#if i > 0}<span aria-hidden="true">·</span>{/if}
-			<span><span data-type={type}>{facts?.counts[type]}</span> {TYPE_PLURALS[type]}</span>
-		{/each}
-	</dd>
+	<dd><TypeCounts counts={facts?.counts ?? {}} /></dd>
 	<dt>{t('scripts.checks.setup')}</dt>
 	<dd>
 		{#if !facts}
@@ -89,14 +83,6 @@
 		margin: 0;
 		min-width: 0;
 		min-height: 1lh;
-	}
-	.counts {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0 var(--space-1);
-	}
-	.counts > span {
-		white-space: nowrap;
 	}
 	ul {
 		margin: 0;
