@@ -44,7 +44,7 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await page.goto('/new');
 	await chooseMode(page, 'Whale Buffet');
 	const restricted = page.getByRole('button', { name: /^Restricted characters/ });
-	await expect(restricted).toContainText('3 restricted');
+	await expect(restricted).toContainText('(3)');
 	await restricted.tap();
 	const dialog = page.getByRole('dialog', { name: 'Restricted characters' });
 	await dialog.getByRole('searchbox').fill('Pit-Hag');
@@ -52,7 +52,7 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await dialog.getByRole('searchbox').fill('Imp');
 	await dialog.getByRole('button', { name: /^Imp\b/ }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(restricted).toContainText('3 restricted');
+	await expect(restricted).toContainText('(3)');
 
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);

@@ -6,8 +6,7 @@
 export const modes = {
 	'modes.label': 'Game mode',
 	'modes.inspect': 'Inspect {name}',
-	'modes.restricted': 'Restricted characters',
-	'modes.restrictedCount': { one: '{count} restricted', other: '{count} restricted' },
+	'modes.restrictedButton': 'Restricted characters ({count})',
 	'modes.restrictedTitle': 'Restricted characters',
 	'modes.modeBan': 'Banned by the mode',
 	'modes.notChoosable': 'Can’t be chosen',

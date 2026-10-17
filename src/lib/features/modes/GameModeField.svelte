@@ -76,7 +76,7 @@
 	/>
 </div>
 <Button icon="filter" onclick={openRestricted}>
-	{t('modes.restricted')} · {t('modes.restrictedCount', { count: restrictedCount })}
+	{t('modes.restrictedButton', { count: restrictedCount })}
 </Button>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
