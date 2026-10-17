@@ -234,7 +234,10 @@ function tableProblems(
 		players: seats.length,
 		travellers,
 		inPlay,
-		findById: (id) => characters.get(id)
+		findById: (id) => characters.get(id),
+		// Homebrew brackets name characters: "[+ Spartacus]".
+		findByName: (name) =>
+			[...characters.values()].find((c) => c.name.toLowerCase() === name.trim().toLowerCase())?.id
 	});
 	return {
 		players: seats.length - travellers,

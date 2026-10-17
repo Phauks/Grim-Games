@@ -131,7 +131,12 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		};
 		modifiers.push(applied);
 		for (const note of modifier.notes) notes.push(`${character.name}: ${note}`);
-		if (modifier.source === 'ability-text' && modifier.ops.length === 0 && !modifier.requires) {
+		if (
+			modifier.source === 'ability-text' &&
+			modifier.ops.length === 0 &&
+			!modifier.requires &&
+			!modifier.copies
+		) {
 			warnings.push({
 				code: 'unread-setup-text',
 				message: `${character.name} has setup text this app could not read: “${modifier.summary}”. Adjust the counts by hand.`,
@@ -278,6 +283,16 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 			warnings.push({
 				code: 'duplicate',
 				message: `${character.name} is chosen ${n} times.`,
+				characters: [id]
+			});
+			continue;
+		}
+		// A homebrew bracket allows only so many copies ("+0 to +2 Legionary": 3 at most).
+		const allowed = modifiers.find((m) => m.id === id)?.copies;
+		if (allowed && n > 1 + Math.max(...allowed)) {
+			warnings.push({
+				code: 'duplicate',
+				message: `${character.name} is chosen ${n} times; its setup allows at most ${1 + Math.max(...allowed)}.`,
 				characters: [id]
 			});
 		}
