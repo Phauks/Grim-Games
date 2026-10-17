@@ -3,19 +3,32 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { isSeatable, type GameData } from '#lib/core/data/index.ts';
+	import {
+		isSeatable,
+		loadScript,
+		type GameData,
+		type LoadedScript
+	} from '#lib/core/data/index.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import InfoTokensPanel from '#lib/features/info-tokens/InfoTokensPanel.svelte';
+	import PrintScriptButton from '#lib/features/player/PrintScriptButton.svelte';
+	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import {
 		forgetScript,
+		playScript,
 		recentScripts,
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
-	import { describeSource, sameScript, sourcePage } from '#lib/features/scripts/saved-scripts.ts';
+	import {
+		describeSource,
+		reloadSavedScript,
+		sameScript,
+		sourcePage
+	} from '#lib/features/scripts/saved-scripts.ts';
 	import {
 		localListings,
 		profileProvider,
@@ -23,7 +36,8 @@
 		type ScriptListing
 	} from '#lib/features/scripts/script-providers.ts';
 	import AddScript from '#lib/features/scripts/AddScript.svelte';
-	import ScriptDetails from '#lib/features/scripts/ScriptDetails.svelte';
+	import ScriptChecks from '#lib/features/scripts/ScriptChecks.svelte';
+	import ScriptDetails, { type ScriptFact } from '#lib/features/scripts/ScriptDetails.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
@@ -265,10 +279,45 @@
 		scriptOpen = true;
 	}
 
+	/** No folder, as a Select value (an empty value would read as nothing chosen). */
+	const NO_FOLDER = 'none';
 	const scriptFolderOptions = $derived([
-		{ value: '', label: t('common.none') },
+		{ value: NO_FOLDER, label: t('common.none') },
 		...folders.map((f) => ({ value: f.id, label: folderName(f.id) }))
 	]);
+
+	/** The open script as players see it, for the player sheet, checks, Print and Play. */
+	const openScriptView = $derived.by((): LoadedScript | undefined => {
+		const listing = openRow?.listing;
+		if (!data || !listing) return undefined;
+		if (listing.saved) return reloadSavedScript(listing.saved, data);
+		return listing.target.kind === 'json'
+			? loadScript(listing.target.json, data).script
+			: undefined;
+	});
+
+	/** Author, Type and Source, as Search shows them. */
+	function factsFor(row: Row): ScriptFact[] {
+		const listing = row.listing.row;
+		const none = t('common.none');
+		return [
+			{ label: t('scripts.current.author'), value: listing.author || none },
+			{ label: t('scripts.column.type'), value: t(`scripts.kind.${listing.kind}`) },
+			{
+				label: t('scripts.current.source'),
+				value: row.listing.saved ? describeSource(row.listing.saved.source) : sourceOf(row),
+				href: sourcePage(row.shareable.source) ?? listing.page
+			}
+		];
+	}
+
+	/** Play: a new game with this script, as Search's Play starts one. */
+	function playOpen() {
+		const script = openScriptView;
+		if (!script || !openRow) return;
+		playScript(script, openRow.shareable.source);
+		void goto(resolve('/new'));
+	}
 
 	async function removeOpen() {
 		const row = openRow;
@@ -322,16 +371,18 @@
 						/>
 					</ClearableField>
 				</label>
-				<Segmented
-					label={t('library.view')}
-					hideLabel
-					value={view}
-					options={[
-						{ value: 'folders', label: t('library.viewFolders') },
-						{ value: 'table', label: t('library.viewTable') }
-					]}
-					onChange={setView}
-				/>
+				<span class="view">
+					<Segmented
+						label={t('library.view')}
+						hideLabel
+						value={view}
+						options={[
+							{ value: 'folders', label: t('library.viewFolders') },
+							{ value: 'table', label: t('library.viewTable') }
+						]}
+						onChange={setView}
+					/>
+				</span>
 			</div>
 			{#if view === 'folders'}
 				<FolderView
@@ -445,56 +496,36 @@
 	</div>
 {/snippet}
 
+<!-- The same details as Search (Trevor, 2026-10-17: "exact same info and style"), with the
+     Library's own folder and tags as rows of the main info, and Edit and Remove. -->
 <Dialog bind:open={scriptOpen} title={openRow?.listing.row.name || t('common.none')} size="full">
-	{#if openRow && openKey}
-		{@const key = openKey}
-		<div class="labels" data-testid="script-labels">
-			<Select
-				label={t('library.folder')}
-				value={openLabels.folder ?? ''}
-				options={scriptFolderOptions}
-				onChange={(value) => libraryLabels.setFolder(key, value || undefined)}
-			/>
-			<fieldset class="tag-toggles">
-				<legend>{t('library.tags')}</legend>
-				<div class="toggles">
-					{#each tags as tag (tag.id)}
-						<button
-							type="button"
-							class="tag-toggle"
-							aria-pressed={openLabels.tags.includes(tag.id)}
-							onclick={() => libraryLabels.toggleTag(key, tag.id)}>{tag.name}</button
-						>
-					{/each}
-				</div>
-				<NewLabel
-					kind="tags"
-					label={t('library.newTag')}
-					onadd={(id) => libraryLabels.toggleTag(key, id)}
-				/>
-			</fieldset>
-		</div>
+	{#if openRow}
+		{@const shareable = openRow.shareable}
+		{@const built =
+			openRow.listing.saved?.source.kind === 'built' ? openRow.listing.saved : undefined}
 		<ScriptDetails
-			heading={t('library.details')}
+			heading={t(`scripts.sourceLabel.${openRow.listing.row.source}`)}
 			name={openRow.listing.row.name}
-			facts={[
-				{
-					label: t('library.author'),
-					value: openRow.listing.row.author || t('common.none')
-				},
-				{
-					label: t('library.source'),
-					value: sourceOf(openRow),
-					href: sourcePage(openRow.shareable.source)
-				}
-			]}
+			facts={factsFor(openRow)}
 			entries={openRow.listing.row.entries}
 			{data}
+			sheet={openScriptView ? playerSheet : undefined}
+			extra={labelRows}
+			version={versionText}
 		>
 			{#snippet actions()}
-				{@const shareable = openRow.shareable}
-				{@const built =
-					openRow.listing.saved?.source.kind === 'built' ? openRow.listing.saved : undefined}
+				<IconButton
+					icon="quickPlay"
+					label={t('scripts.details.play')}
+					disabled={!openScriptView}
+					onclick={playOpen}
+				/>
+				<PrintScriptButton script={openScriptView} version={openRow.listing.row.version} />
+				<ShareControl
+					what="script"
+					title={openRow.listing.row.name || t('common.none')}
+					target={() => shareTargetFor(shareable, location.origin)}
+				/>
 				{#if built}
 					<IconButton
 						icon="buildScript"
@@ -502,16 +533,59 @@
 						onclick={() => editInBuilder(built.scriptId)}
 					/>
 				{/if}
-				<ShareControl
-					what="script"
-					title={openRow.listing.row.name || t('common.none')}
-					target={() => shareTargetFor(shareable, location.origin)}
-				/>
 				<DeleteButton label={t('library.remove')} onclick={() => (removing = true)} />
 			{/snippet}
 		</ScriptDetails>
 	{/if}
 </Dialog>
+
+{#snippet versionText()}
+	<span data-testid="script-version">{openRow?.listing.row.version || t('common.none')}</span>
+{/snippet}
+
+{#snippet playerSheet()}
+	{#if openScriptView}
+		<!-- Author and version are already in the details above. -->
+		<ScriptCopy script={openScriptView} byline={false} />
+	{/if}
+{/snippet}
+
+{#snippet labelRows()}
+	{#if openKey}
+		{@const key = openKey}
+		{#if data && openScriptView}
+			<ScriptChecks script={openScriptView} {data} />
+		{/if}
+		<dt class="label-term">{t('library.folder')}</dt>
+		<dd class="label-value" data-testid="script-labels">
+			<Select
+				label={t('library.folder')}
+				hideLabel
+				value={openLabels.folder ?? NO_FOLDER}
+				options={scriptFolderOptions}
+				onChange={(value) => libraryLabels.setFolder(key, value === NO_FOLDER ? undefined : value)}
+			/>
+		</dd>
+		<dt class="label-term">{t('library.tags')}</dt>
+		<dd class="label-value">
+			<div class="toggles" role="group" aria-label={t('library.tags')}>
+				{#each tags as tag (tag.id)}
+					<button
+						type="button"
+						class="tag-toggle"
+						aria-pressed={openLabels.tags.includes(tag.id)}
+						onclick={() => libraryLabels.toggleTag(key, tag.id)}>{tag.name}</button
+					>
+				{/each}
+			</div>
+			<NewLabel
+				kind="tags"
+				label={t('library.newTag')}
+				onadd={(id) => libraryLabels.toggleTag(key, id)}
+			/>
+		</dd>
+	{/if}
+{/snippet}
 
 <ConfirmDialog
 	bind:open={removing}
@@ -676,15 +750,23 @@
 		width: calc(1.25 * var(--u));
 		height: calc(1.25 * var(--u));
 	}
-	.labels {
-		display: grid;
-		gap: var(--space-3);
-		margin-bottom: var(--space-4);
+	/* Rows of ScriptDetails' main info, styled as its own rows are. */
+	.label-term {
+		color: var(--on-surface-muted);
+	}
+	.label-value {
+		margin: 0;
+		min-width: 0;
+	}
+	.view {
+		flex: none;
+		white-space: nowrap;
 	}
 	.toggles {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2);
+		margin-bottom: var(--space-2);
 	}
 	.tag-toggle {
 		min-height: var(--tap-target);

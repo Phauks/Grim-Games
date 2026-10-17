@@ -145,7 +145,7 @@ test('the table view keeps tags, filters and removing', async ({ page }) => {
 	await expect(fun).toHaveAttribute('aria-pressed', 'true');
 	// Only scripts made in the Script builder open there to edit.
 	await expect(script.getByRole('button', { name: 'Edit in Script builder' })).toHaveCount(0);
-	await expect(script.getByTestId('script-characters')).toContainText('Washerwoman');
+	await expect(script.getByTestId('script-sheet')).toContainText('Washerwoman');
 	await script.getByRole('button', { name: 'Close' }).tap();
 	await expect(table(page)).toContainText('Club night');
 	await expect(table(page)).toContainText('Stupid fun');
@@ -195,6 +195,22 @@ test('a script added inside an open folder goes in that folder', async ({ page }
 	await expect(tile(page, 'Storm Front')).toBeVisible();
 	await crumbs(page).getByRole('button', { name: 'Scripts' }).tap();
 	await expect(tile(page, 'Storm Front')).toHaveCount(0);
+});
+
+test('a script shows the same details as in Search, and plays from there', async ({ page }) => {
+	// Trevor (2026-10-17): "exact same info and style as in the search".
+	await page.goto('/library');
+	const script = await addStormFront(page);
+	const details = script.getByTestId('script-details');
+	for (const fact of ['Author', 'Type', 'Source', 'Version', 'Folder', 'Tags']) {
+		await expect(details.getByRole('term').filter({ hasText: fact }).first()).toBeVisible();
+	}
+	await expect(script.getByTestId('script-checks')).toBeVisible();
+	await expect(script.getByTestId('script-sheet')).toContainText('Washerwoman');
+	await expect(script.getByRole('button', { name: 'Print script' })).toBeVisible();
+	await expect(script.getByRole('button', { name: 'Share script' })).toBeVisible();
+	await script.getByRole('button', { name: 'Play', exact: true }).tap();
+	await expect(page).toHaveURL(/\/new$/);
 });
 
 test('the Library lists only the user’s own info tokens', async ({ page }) => {
