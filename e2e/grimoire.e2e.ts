@@ -618,9 +618,8 @@ test('every reminder on a crowded seat is shown and can be dragged off', async (
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 4: no name, no character, 7 reminders')).toBeAttached();
 
-	// Tokens put where they don't usually go say so in toasts; clear them off the board.
-	const dismiss = page.getByRole('button', { name: 'Dismiss' });
-	while ((await dismiss.count()) > 0) await dismiss.first().tap();
+	// Tokens put where they don't usually go say so in toasts; they leave by themselves.
+	await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0, { timeout: 15000 });
 
 	// Each one is on the board and on top where it sits, so a finger can take any of them.
 	const tokens = page.getByTestId('board-reminder');
