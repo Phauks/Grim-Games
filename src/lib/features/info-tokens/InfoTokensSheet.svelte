@@ -4,6 +4,7 @@
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
 	import type { ShowableBluffSet } from '#lib/features/bluffs/bluffs.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
@@ -76,6 +77,11 @@
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const names = (ids: readonly CharacterId[]) =>
 		ids.map((id) => byId.get(id)?.name ?? id).join(', ');
+	const known = (ids: readonly CharacterId[]) =>
+		ids.flatMap((id) => {
+			const character = byId.get(id);
+			return character ? [character] : [];
+		});
 	// Cards of characters in play (Trevor, 2026-10-16).
 	const characterCards = $derived(
 		characterCardsFor(inPlay ?? characters.map((c) => c.id)).flatMap((card) => {
@@ -201,7 +207,25 @@
 							{#each chainCards as card, i (card)}
 								{@const name = chainLabel(card)}
 								<li>
-									<span class="chain-text">{i + 1}. {name}</span>
+									<!-- The chosen characters wrap under the card's words, so the row keeps its width (Trevor, 2026-10-17). -->
+									<span class="chain-card">
+										<span class="chain-text"
+											>{i + 1}. {card.detail
+												? `${plainText(card.text)}: ${card.detail}`
+												: plainText(card.text)}</span
+										>
+										{#if card.characterIds.length > 0}
+											<span class="badges">
+												{#each known(card.characterIds) as character (character.id)}
+													<CharacterBadge
+														characterId={character.id}
+														{character}
+														interactive={false}
+													/>
+												{/each}
+											</span>
+										{/if}
+									</span>
 									<span class="chain-buttons">
 										<span class="up">
 											<IconButton
@@ -272,7 +296,11 @@
 					<li>
 						<button type="button" class="set" onclick={() => use(token.text, set.characterIds)}>
 							<span class="set-label">{set.label}</span>
-							<span class="set-names">{names(set.characterIds)}</span>
+							<span class="badges">
+								{#each known(set.characterIds) as character (character.id)}
+									<CharacterBadge characterId={character.id} {character} interactive={false} />
+								{/each}
+							</span>
 						</button>
 					</li>
 				{/each}
@@ -298,6 +326,7 @@
 		position: sticky;
 		bottom: 0;
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-1);
 		margin-top: var(--space-3);
 		padding: var(--space-2) 0;
@@ -306,6 +335,7 @@
 	}
 	.chain-list {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
@@ -316,12 +346,26 @@
 		align-items: center;
 		gap: var(--space-1);
 	}
-	.chain-text {
+	.chain-card {
+		display: grid;
 		flex: 1;
 		min-width: 0;
+		gap: var(--space-1);
+	}
+	.chain-text {
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
+	}
+	/* Chosen characters wrap onto new lines rather than widening the row. */
+	.badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		min-width: 0;
+	}
+	.badges > :global(*) {
+		max-width: 100%;
 	}
 	/* The bin and Show on one line, the bin set apart at the start. */
 	.chain-actions {
@@ -343,6 +387,7 @@
 	}
 	.sets {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		margin: 0;
 		padding: 0;
@@ -368,9 +413,6 @@
 	.set-label {
 		font-family: var(--font-heading);
 		font-size: 1.05rem;
-	}
-	.set-names {
-		opacity: 0.85;
 	}
 	.sheet-actions {
 		position: sticky;
