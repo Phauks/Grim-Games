@@ -24,6 +24,8 @@
 		/** Listed first and marked "Recommended" (the script's Travellers). */
 		recommended?: readonly CharacterId[];
 		onPick: (id: CharacterId) => void;
+		/** Offers "None" first, to take the character away (Trevor, 2026-10-17). */
+		onNone?: () => void;
 	}
 
 	let {
@@ -35,7 +37,8 @@
 		current,
 		alwaysAll = false,
 		recommended = [],
-		onPick
+		onPick,
+		onNone
 	}: Props = $props();
 
 	let showAll = $state(false);
@@ -72,6 +75,7 @@
 				? (c) => (recommended.includes(c.id) ? 'Recommended' : undefined)
 				: undefined}
 			onSelect={onPick}
+			{onNone}
 		/>
 	</div>
 </Dialog>

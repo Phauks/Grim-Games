@@ -707,6 +707,8 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	// Ticking Dawn ends the night and starts Day 1 (Trevor, 2026-10-16); the night's ticks
 	// stay on screen, and ticking Dawn again doesn't start another day.
 	const dawn = night.getByRole('button', { name: 'Done: Dawn' });
+	const boardTimer = page.locator('.board-timer').getByTestId('day-timer');
+	await expect(boardTimer).toHaveCount(0);
 	await dawn.tap();
 	await expect(dawn).toHaveAttribute('aria-pressed', 'true');
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
@@ -716,6 +718,9 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
 	await page.keyboard.press('Escape');
+	// From the first day the day timer is on the board too (Trevor, 2026-10-17).
+	await expect(boardTimer).toBeVisible();
+	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
 	// The next night order opens on the other nights, unticked.
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	await expect(night.getByRole('radio', { name: 'Other nights' })).toBeChecked();
@@ -1346,6 +1351,25 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	await why.getByRole('button', { name: 'Close' }).tap();
 	await suggested.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('Imp');
+});
+
+test('a character is taken away with None in Change character', async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Sailor', exact: true })
+		.tap();
+	// No separate Remove character (Trevor, 2026-10-17): None is the first choice.
+	await seatMenu(page, sheet, 'Change character');
+	await page.getByRole('dialog', { name: 'Character for Seat 1' }).getByTestId('picker-none').tap();
+	await page
+		.getByRole('alertdialog', { name: 'Remove character?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, no character')).toBeAttached();
 });
 
 test('End game keeps the Storyteller on the board, says it is over, and can be reopened', async ({

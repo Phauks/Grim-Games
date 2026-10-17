@@ -604,6 +604,12 @@
 	recommended={recommendedTravellers(game.script, characters)}
 	current={seat?.characterId}
 	onPick={pick}
+	onNone={seat?.characterId
+		? () => {
+				pickerOpen = false;
+				clearOpen = true;
+			}
+		: undefined}
 />
 
 {#if character}<CharacterDialog bind:open={detailsOpen} {character} />{/if}
@@ -924,24 +930,8 @@
 		>
 			Change alignment
 		</Button>
-		<!-- Destructive, so red (Trevor, 2026-10-16). -->
-		<!-- eslint-disable-next-line grim/delete-button -- two bare trash cans in one menu can't be told apart; the board thread is placing them -->
-		<Button
-			variant="danger-quiet"
-			icon="remove"
-			disabled={!character}
-			onclick={() => fromMenu(() => (clearOpen = true))}
-		>
-			Remove character
-		</Button>
-		<!-- eslint-disable-next-line grim/delete-button -- as above -->
-		<Button
-			variant="danger-quiet"
-			icon="remove"
-			onclick={() => fromMenu(() => (removeOpen = true))}
-		>
-			Remove seat
-		</Button>
+		<!-- Removing the character is "None" in Change character (Trevor, 2026-10-17). -->
+		<DeleteButton label="Remove seat" onclick={() => fromMenu(() => (removeOpen = true))} />
 	</div>
 </Dialog>
 

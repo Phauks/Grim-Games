@@ -30,7 +30,9 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
-	import { setupComplete, setupReminders } from '#lib/core/rules/index.ts';
+	import { livingByTeam, setupComplete, setupReminders } from '#lib/core/rules/index.ts';
+	import DayTimer from '#lib/features/day/DayTimer.svelte';
+	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import {
 		charactersReallyInPlay,
@@ -200,6 +202,8 @@
 	let centreW = $state(0);
 	let edgeW = $state(0);
 	let edgeH = $state(0);
+	let timerW = $state(0);
+	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
 	const fan = $derived.by(() => {
@@ -219,6 +223,10 @@
 				// Fabled and Loric along the edge, in the top left corner.
 				...(edgeW > 0 && boardLooks.current.rulesAt === 'edge'
 					? [{ x: edgeW / 2, y: edgeH / 2, w: edgeW + 12, h: edgeH + 12 }]
+					: []),
+				// The day timer, in the top right corner.
+				...(timerW > 0 && showTimer
+					? [{ x: width - timerW / 2, y: timerH / 2, w: timerW + 12, h: timerH + 12 }]
 					: [])
 			],
 			{ width, height }
@@ -588,6 +596,8 @@
 	 * setup help, and it can be dismissed.
 	 */
 	let bluffsPromptDismissed = $state(false);
+	/** The day timer shows from the first day, or once started, until the game ends. */
+	const showTimer = $derived(!ended && (game.pastDays.length > 0 || !liveDayTimer.fresh));
 	const showBluffsPrompt = $derived(
 		!bluffsPromptDismissed &&
 			!ended &&
@@ -986,6 +996,12 @@
 		{#if boardLooks.current.rulesAt === 'edge' && game.ruleCharacters.length > 0}
 			<div class="rules-edge" bind:clientWidth={edgeW} bind:clientHeight={edgeH}>
 				{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
+			</div>
+		{/if}
+		{#if showTimer}
+			<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. -->
+			<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
+				<DayTimer alive={livingByTeam(game).alive} variant="compact" />
 			</div>
 		{/if}
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
@@ -1580,6 +1596,13 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
+	}
+	/* The day timer in the board's top right corner, clear of the seats' ring. */
+	.board-timer {
+		position: absolute;
+		top: var(--space-1);
+		right: var(--space-1);
+		z-index: 2;
 	}
 	/* Small, in the board's top left corner, clear of the seats' ring. */
 	.rules-edge {
