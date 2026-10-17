@@ -118,6 +118,10 @@
 		place-items: center;
 		width: var(--d);
 		height: var(--d);
+		/* Always a circle at its own size, even below the tap target (Trevor, 2026-10-17: small
+		   reminders became ovals); the ::after below keeps the 44px target. */
+		min-width: 0;
+		min-height: 0;
 		padding: 0;
 		border: 2px solid var(--rim);
 		border-radius: 50%;
@@ -128,6 +132,17 @@
 		touch-action: none;
 		user-select: none;
 		-webkit-user-select: none;
+	}
+	/* An invisible tap area of at least the tap target, centred on the token. */
+	.reminder::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: max(100%, var(--tap-target));
+		height: max(100%, var(--tap-target));
+		translate: -50% -50%;
+		border-radius: 50%;
 	}
 	.reminder[data-pan='x'] {
 		touch-action: pan-x;
