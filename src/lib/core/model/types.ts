@@ -235,6 +235,11 @@ export interface Game {
 	seating: SeatId[];
 	/** Fabled and Loric in play. */
 	ruleCharacters: CharacterId[];
+	/**
+	 * Reminders held by a Fabled or Loric in play, by its id (Trevor, 2026-10-17). Optional,
+	 * so older saved games read as before; removing the character takes its reminders away.
+	 */
+	ruleReminders?: Record<CharacterId, ReminderInstance[]>;
 	/** Demon bluffs; more than one set when more than one player gets bluffs. */
 	bluffs: CharacterId[][];
 	/**

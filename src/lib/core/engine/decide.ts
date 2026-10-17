@@ -25,7 +25,9 @@ import {
 	isOnScript,
 	isTraveller,
 	registersAsDead,
+	reminderHolder,
 	replacedBy,
+	ruleReminders,
 	trueCharacter,
 	type AbnormalCause,
 	type CharacterGuess,
@@ -58,6 +60,7 @@ export type ErrorCode =
 	| 'unknown-override'
 	| 'not-seatable'
 	| 'not-rule-character'
+	| 'rule-character-not-in-play'
 	| 'same-seat'
 	| 'invalid-direction'
 	| 'invalid-bluff-set'
@@ -85,6 +88,7 @@ export type WarningCode =
 	| 'draw-cancelled'
 	| 'ghost-vote-while-alive'
 	| 'reminder-not-for-character'
+	| 'reminder-not-from-rule-character'
 	| 'reminder-character-not-in-play'
 	| 'bluff-in-play'
 	| 'bluff-not-good'
@@ -275,6 +279,26 @@ function checkReminder(game: Game, reminder: Reminder, ctx: EngineContext, warn:
 		inPlay(game, ctx).has(character.id) || (global && isOnScript(game.script, character.id));
 	if (!available) {
 		warn('reminder-character-not-in-play', `${character.name} is not in play`);
+	}
+}
+
+/** A Fabled or Loric in play, to hold reminders; refused for anything else. */
+function ruleHolderOf(game: Game, ctx: EngineContext, characterId: CharacterId): CharacterId {
+	const character = characterOf(ctx, characterId);
+	if (!game.ruleCharacters.includes(character.id)) {
+		refuse('rule-character-not-in-play', `${character.name} is not in play as a Fabled or Loric`);
+	}
+	return character.id;
+}
+
+/**
+ * Fabled and Loric hold their own reminders; anything else is allowed, with a caution
+ * (Trevor, 2026-10-17).
+ */
+function warnIfNotRuleReminder(reminder: Reminder, ctx: EngineContext, warn: Warn): void {
+	const type = ctx.characters.get(reminder.characterId)?.type;
+	if (type !== 'fabled' && type !== 'loric') {
+		warn('reminder-not-from-rule-character', `${reminder.label} is not a Fabled or Loric reminder`);
 	}
 }
 
@@ -764,6 +788,11 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 
 		case 'MoveReminder': {
 			const to = seatOf(game, command.toSeatId);
+			// Off a Fabled or Loric and onto a seat.
+			const holder = reminderHolder(game, command.reminderId);
+			if (holder && 'characterId' in holder) {
+				return [{ type: 'ReminderMoved', reminderId: command.reminderId, toSeatId: to.seatId }];
+			}
 			const from = game.seating
 				.map((id) => game.seats[id])
 				.find((s) => s.reminders.some((r) => r.reminderId === command.reminderId));
@@ -779,11 +808,48 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 		}
 
 		case 'RemoveReminder': {
-			const found = game.seating.some((id) =>
-				game.seats[id].reminders.some((r) => r.reminderId === command.reminderId)
-			);
+			const found = reminderHolder(game, command.reminderId) !== undefined;
 			if (!found) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
 			return [{ type: 'ReminderRemoved', reminderId: command.reminderId }];
+		}
+
+		case 'AddRuleReminder': {
+			const holder = ruleHolderOf(game, ctx, command.characterId);
+			const reminder: Reminder = {
+				characterId: command.reminder.characterId,
+				label: command.reminder.label
+			};
+			checkReminder(game, reminder, ctx, warn);
+			warnIfNotRuleReminder(reminder, ctx, warn);
+			return [
+				{
+					type: 'RuleReminderAdded',
+					characterId: holder,
+					reminder: { reminderId: ctx.newId(), ...reminder }
+				}
+			];
+		}
+
+		case 'MoveReminderToRuleCharacter': {
+			const holder = ruleHolderOf(game, ctx, command.characterId);
+			const from = reminderHolder(game, command.reminderId);
+			if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+			if ('characterId' in from && from.characterId === holder) {
+				warn('no-change', 'the reminder is already there');
+				return [];
+			}
+			const reminder =
+				'seatId' in from
+					? game.seats[from.seatId].reminders.find((r) => r.reminderId === command.reminderId)!
+					: ruleReminders(game, from.characterId).find((r) => r.reminderId === command.reminderId)!;
+			warnIfNotRuleReminder(reminder, ctx, warn);
+			return [
+				{
+					type: 'ReminderMovedToRuleCharacter',
+					reminderId: command.reminderId,
+					characterId: holder
+				}
+			];
 		}
 
 		case 'SwapSeats': {
