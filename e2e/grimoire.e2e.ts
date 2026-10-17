@@ -16,7 +16,7 @@ const seatLabelled = (page: Page, start: string) =>
 
 /** Runs an action from the toolbar's More menu. */
 async function menu(page: Page, action: string) {
-	await page.getByRole('button', { name: 'More' }).tap();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: action }).tap();
 }
 
@@ -261,10 +261,22 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		.getByRole('list', { name: 'Fabled and Loric' })
 		.getByRole('button', { name: 'Spirit of Ivory' });
 	await expect(fabled).toBeVisible();
+	// Or small along the edge (Trevor, 2026-10-17), set beside the background.
+	await menu(page, 'Background');
+	const looks = page.getByRole('dialog', { name: 'Background' });
+	await looks.getByText('Edge, smaller', { exact: true }).tap();
+	await looks.getByRole('button', { name: 'Close' }).tap();
+	await expect(
+		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
+	).toBeVisible();
 	await fabled.tap();
 	await page
 		.getByRole('dialog', { name: 'Spirit of Ivory' })
 		.getByRole('button', { name: 'Remove from the game' })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'Remove from the game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(fabled).toBeHidden();
 });
@@ -1053,7 +1065,9 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog
 		.getByLabel('Background image file')
 		.setInputFiles({ name: 'table.png', mimeType: 'image/png', buffer: png });
-	await expect(dialog).toBeHidden();
+	// It stays open, so several can be tried (Trevor, 2026-10-17).
+	await expect(dialog).toContainText('Your image, for this game');
+	await dialog.getByRole('button', { name: 'Close' }).tap();
 	const backdrop = page.getByTestId('board-background');
 	await expect(backdrop).toHaveAttribute('style', /blob:/);
 	await expect(page.locator('.watermark')).toHaveClass(/on-image/);
@@ -1065,6 +1079,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(dialog).not.toContainText('never uploaded');
 	await dialog.getByRole('button', { name: 'None', exact: true }).tap();
 	await expect(page.getByTestId('board-background')).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	// Built-in backgrounds, drawn in CSS (Trevor, 2026-10-16), kept after a reload.
 	await menu(page, 'Background');
@@ -1073,8 +1088,17 @@ test('the board background can be an image from the device, kept after a reload'
 		.getByRole('button', { name: 'Green felt' })
 		.tap();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+	// The board's looks are here too, the same values as in Settings (Trevor, 2026-10-17).
+	await expect(page.locator('.watermark')).toHaveClass(/vignette/);
+	await dialog.getByText('Vignette', { exact: true }).tap();
+	await expect(page.locator('.watermark')).not.toHaveClass(/vignette/);
+	await dialog.getByText('Script name on the board', { exact: true }).tap();
+	await expect(page.locator('.watermark')).toHaveCount(0);
+	await dialog.getByText('Script name on the board', { exact: true }).tap();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+	await expect(page.locator('.watermark')).not.toHaveClass(/vignette/);
 });
 
 test('info tokens open from the toolbar and show player cards at once', async ({ page }) => {
@@ -1324,24 +1348,54 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('Imp');
 });
 
-test('End game moves the game to History, where it can be reopened', async ({ page }) => {
+test('End game keeps the Storyteller on the board, says it is over, and can be reopened', async ({
+	page
+}) => {
 	await startGame(page);
 	const board = page.url();
+	const sheet = await openSeat(page, 1);
+	await nameSeat(sheet, 'Ana');
+	await closeSheet(page);
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await expect(end).toContainText(/Now\s*In Resume game\s*Becomes\s*In History/);
+	await expect(end).toContainText(/Now\s*In Resume game\s*Becomes\s*Ended, in History/);
 	await end.getByRole('radio', { name: 'Evil' }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	// Ended games are on their own page (Trevor, 2026-10-16), not under Resume game.
-	await expect(page).toHaveURL(/\/history$/);
-	const past = page.getByRole('region', { name: 'Games' });
-	await expect(past).toContainText(/Trouble Brewing\s*Evil won/);
-	await past.getByRole('button', { name: /^Trouble Brewing/ }).tap();
+	// Still on the board (Trevor, 2026-10-17), which says the game is over.
+	expect(page.url()).toBe(board);
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
+	// Ended games are listed apart from Resume game (Trevor, 2026-10-16), and open to look
+	// around in without being reopened (Trevor, 2026-10-17).
+	await page.goto('/history');
+	const listed = page
+		.getByRole('region', { name: 'Games' })
+		.getByRole('link', { name: /Trouble Brewing\s*Evil won/ });
+	await listed.tap();
+	await expect(page).toHaveURL(board);
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
+	// History only shows the board at an earlier point; the saved game stays as it ended.
+	await menu(page, 'History');
+	const history = page.getByRole('dialog', { name: 'History' });
+	await history.getByRole('button', { name: 'Show' }).last().tap();
+	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
+	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
+	await page.goto('/games');
+	await expect(page.getByRole('link', { name: /Trouble Brewing/ })).toHaveCount(0);
+	await page.goto(board);
+	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
+	// Changes are refused until the game is reopened.
+	await nameSeat(await openSeat(page, 1), 'Bo');
+	await expect(page.getByText('The game is over. Reopen it to change it.')).toBeVisible();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
+
+	// Reopening from the board puts it back in Resume game.
+	await page.getByTestId('game-over').tap();
 	await page
-		.getByRole('alertdialog', { name: 'Reopen this game?' })
+		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(page).toHaveURL(board);
+	await expect(page.getByTestId('game-over')).toHaveCount(0);
 	await page.goto('/games');
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*Setting up/ })).toBeVisible();
 });
@@ -1363,7 +1417,7 @@ test('History shows stats from ended games', async ({ page }) => {
 	await page.keyboard.press('Enter');
 	await expect(scripts).toContainText('None match.');
 	// The old address still works.
-	await page.goto('/previous-games');
+	await page.goto('/history');
 	await expect(page).toHaveURL(/\/history$/);
 });
 
@@ -1456,9 +1510,19 @@ test('the Storyteller keeps a note on a player, marked on the token', async ({ p
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('Amnesiac: learns a Minion');
 	await expect(dialog).toBeVisible();
-	await dialog.getByRole('button', { name: 'Save' }).tap();
+	// No Save or Cancel (Trevor, 2026-10-17): closing it any way keeps the note.
+	await expect(dialog.getByRole('button', { name: 'Save' })).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
 	await expect(notes).toContainText('Secret word: lantern');
+	// Dismissed without a button (as a swipe down does), it keeps the edit too.
+	await notes.tap();
+	await field.tap();
+	await page.keyboard.press('End');
+	await page.keyboard.type(' (kept)');
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(notes).toContainText('(kept)');
 	await closeSheet(page);
 
 	await expect(seatLabelled(page, 'Seat 1: no name, no character, has a note')).toBeAttached();
@@ -1810,4 +1874,27 @@ test('Back closes an open sheet first, then asks before leaving the game', async
 	await page.goBack();
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(/\/new$/);
+});
+
+test('once every token is placed, the middle offers the Demon bluffs', async ({ page }) => {
+	// Trevor, 2026-10-17: a prompt like the bag's Set up.
+	await startGame(page);
+	const names = ['Chef', 'Empath', 'Monk', 'Soldier', 'Mayor', 'Ravenkeeper', 'Undertaker', 'Imp'];
+	for (const [i, name] of names.entries()) {
+		const sheet = await openSeat(page, i + 1);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${i + 1}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const centre = page.locator('.centre');
+	await expect(centre.getByRole('button', { name: 'Demon bluffs' })).toBeVisible();
+	await centre.getByRole('button', { name: 'Demon bluffs' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Demon bluffs' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	// Not now: it goes.
+	await centre.getByRole('button', { name: 'Not now' }).tap();
+	await expect(centre.getByRole('button', { name: 'Demon bluffs' })).toHaveCount(0);
 });

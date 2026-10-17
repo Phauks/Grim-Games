@@ -2,7 +2,8 @@
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	/**
 	 * Resume game: the games still being played, newest first. With `view="previous"`, the
-	 * ended games on the History page (Trevor, 2026-10-16), which can be reopened.
+	 * History page (Trevor, 2026-10-16): ended games, opened read-only to look around
+	 * (Trevor, 2026-10-17); the board can reopen one.
 	 */
 	let { view = 'active' }: { view?: 'active' | 'previous' } = $props();
 	import { onMount } from 'svelte';
@@ -13,7 +14,6 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { endedGames, seatLayouts, type EndedGame } from './device-notes.ts';
-	import { goto } from '$app/navigation';
 
 	// ── Saved games ──
 	let all = $state<SavedGameSummary[]>([]);
@@ -57,15 +57,6 @@
 		await refresh();
 	}
 
-	// ── Ended games: reopening one puts it back in Resume game ──
-	let reopening = $state<SavedGameSummary | undefined>();
-	let reopenOpen = $state(false);
-	function reopen() {
-		reopenOpen = false;
-		if (!reopening) return;
-		endedGames.reopen(reopening.gameId);
-		void goto(resolve('/grimoire/[gameId]', { gameId: reopening.gameId }));
-	}
 	const winnerText = (id: GameId) =>
 		ended[id]?.winner === 'good'
 			? 'Good won'
@@ -130,21 +121,15 @@
 		<ul class="games">
 			{#each past as game (game.gameId)}
 				<li>
-					<button
-						type="button"
-						class="open"
-						onclick={() => {
-							reopening = game;
-							reopenOpen = true;
-						}}
-					>
+					<!-- Opens read-only, to look around; Reopen is on the board (Trevor, 2026-10-17). -->
+					<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
 						<span class="name">{game.scriptName || 'None'}</span>
 						<span class="meta"
 							>{winnerText(game.gameId)} · {stageText(game)} · {when.format(
 								ended[game.gameId].endedAt
 							)}</span
 						>
-					</button>
+					</a>
 					<DeleteButton
 						label={`Delete ${game.scriptName ?? 'game'} ended ${when.format(ended[game.gameId].endedAt)}`}
 						onclick={() => {
@@ -156,17 +141,6 @@
 			{/each}
 		</ul>
 	</section>{/if}
-
-<ConfirmDialog bind:open={reopenOpen} title="Reopen this game?" onConfirm={reopen}>
-	{#if reopening}
-		<dl class="change">
-			<dt>Now</dt>
-			<dd>{reopening.scriptName || 'None'} in History</dd>
-			<dt>Becomes</dt>
-			<dd>Back in Resume game, open in the grimoire</dd>
-		</dl>
-	{/if}
-</ConfirmDialog>
 
 <ConfirmDialog bind:open={deleteOpen} title="Delete this game?" danger onConfirm={confirmDelete}>
 	<p>It is removed from this device and cannot be brought back.</p>
@@ -199,30 +173,6 @@
 		gap: var(--space-1);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
-	}
-	.change {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-1) var(--space-3);
-		margin: 0;
-	}
-	.change dt {
-		color: var(--on-surface-muted);
-		font-size: 0.85rem;
-	}
-	.change dd {
-		margin: 0;
-	}
-	button.open {
-		border: 0;
-		background: none;
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-	}
-	button.open:hover {
-		background: var(--surface-selected);
-		border-radius: var(--radius-md);
 	}
 	.open {
 		flex: 1;

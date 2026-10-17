@@ -119,6 +119,7 @@ import ph_pulse from '~icons/ph/pulse';
 import ph_push_pin from '~icons/ph/push-pin';
 import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
+import ph_scales from '~icons/ph/scales';
 import ph_scroll from '~icons/ph/scroll';
 import ph_shapes from '~icons/ph/shapes';
 import ph_share_network from '~icons/ph/share-network';
@@ -166,6 +167,7 @@ import ph_wine from '~icons/ph/wine';
 import ph_wrench from '~icons/ph/wrench';
 import ph_x from '~icons/ph/x';
 import ph_x_circle from '~icons/ph/x-circle';
+import ph_yin_yang from '~icons/ph/yin-yang';
 
 const icons: IconMap = {
 	'ph:anchor': ph_anchor,
@@ -287,6 +289,7 @@ const icons: IconMap = {
 	'ph:push-pin': ph_push_pin,
 	'ph:qr-code': ph_qr_code,
 	'ph:question': ph_question,
+	'ph:scales': ph_scales,
 	'ph:scroll': ph_scroll,
 	'ph:shapes': ph_shapes,
 	'ph:share-network': ph_share_network,
@@ -333,7 +336,8 @@ const icons: IconMap = {
 	'ph:wine': ph_wine,
 	'ph:wrench': ph_wrench,
 	'ph:x': ph_x,
-	'ph:x-circle': ph_x_circle
+	'ph:x-circle': ph_x_circle,
+	'ph:yin-yang': ph_yin_yang
 };
 
 export default icons;

@@ -32,6 +32,7 @@ import {
 	type GameId
 } from '#lib/core/model/index.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { endedGames } from '#lib/features/grimoire/device-notes.ts';
 import { IdbGameStore } from './idb-store.ts';
 
 let defaultStore: GameStore | undefined;
@@ -91,7 +92,30 @@ export class OpenGame {
 		if (!saved) return undefined;
 		const session = openSession(saved.log);
 		const characters = characterLookup(data, session.game.script);
-		return new OpenGame(session, characters, store, ctx);
+		const game = new OpenGame(session, characters, store, ctx);
+		if (endedGames.read()[gameId]) game.setViewOnly(true);
+		return game;
+	}
+
+	/**
+	 * An ended game opens to look around in (Trevor, 2026-10-17): no command is accepted,
+	 * and stepping through History (`goTo`, undo, redo) only changes what is shown, never
+	 * the saved game. Reopening the game leaves this mode at the saved point.
+	 */
+	viewOnly = $state(false);
+	#savedCursor = 0;
+
+	/** Where the saved game is in its History, whatever an ended game is showing. */
+	get savedCursor(): number {
+		return this.viewOnly ? this.#savedCursor : this.session.log.cursor;
+	}
+
+	setViewOnly(on: boolean): void {
+		if (on === this.viewOnly) return;
+		if (on) this.#savedCursor = this.session.log.cursor;
+		else if (this.session.log.cursor !== this.#savedCursor)
+			this.session = openSession({ ...this.session.log, cursor: this.#savedCursor });
+		this.viewOnly = on;
 	}
 
 	get game(): Game {
@@ -100,6 +124,11 @@ export class OpenGame {
 
 	/** Runs a command and saves the result. */
 	run(command: Command): RunResult {
+		if (this.viewOnly)
+			return {
+				ok: false,
+				error: { code: 'no-game', message: 'The game is over. Reopen it to change it.' }
+			};
 		const result = dispatch(this.session, command, this.#ctx);
 		if (!result.ok) return result;
 		if (result.session !== this.session) {
@@ -141,8 +170,12 @@ export class OpenGame {
 		void this.save();
 	}
 
-	/** Queues a save of the current session; resolves once it (and earlier ones) landed. */
+	/**
+	 * Queues a save of the current session; resolves once it (and earlier ones) landed. An
+	 * ended game being looked at is never saved.
+	 */
 	save(): Promise<void> {
+		if (this.viewOnly) return this.#saving;
 		const snapshot = toSavedGame(this.session, this.#ctx.now());
 		this.#saving = this.#saving
 			.then(() => this.#store.save(snapshot))

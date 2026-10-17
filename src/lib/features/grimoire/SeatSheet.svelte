@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
@@ -202,15 +203,30 @@
 	// the Amnesiac's ability. Never shown to players. ──
 	let noteOpen = $state(false);
 	let noteDraft = $state('');
+	let noteFor: SeatId | undefined;
 	function editNote() {
 		noteDraft = seat?.note ?? '';
+		noteFor = seatId;
 		noteOpen = true;
 	}
+	/**
+	 * Saved as it closes, however it closes (Trevor, 2026-10-17: no Save or Cancel; a swipe down
+	 * keeps it), as one History entry per edit. Also if the app is put away mid-edit.
+	 */
 	function saveNote() {
-		noteOpen = false;
-		if (!seatId || noteDraft.trim() === (seat?.note ?? '')) return;
-		grimoire.run({ type: 'SetSeatNote', seatId, note: noteDraft });
+		const on = noteFor;
+		if (!on) return;
+		const before = grimoire.game.seats[on]?.note ?? '';
+		if (noteDraft.trim() === before.trim()) return;
+		grimoire.run({ type: 'SetSeatNote', seatId: on, note: noteDraft });
 	}
+	$effect(() => {
+		if (noteOpen) return;
+		untrack(() => {
+			saveNote();
+			noteFor = undefined;
+		});
+	});
 
 	function assign(id: CharacterId) {
 		if (!seatId) return;
@@ -642,21 +658,20 @@
 	{/if}
 </ConfirmDialog>
 
+<svelte:document
+	onvisibilitychange={() => {
+		if (document.visibilityState === 'hidden' && noteOpen) saveNote();
+	}}
+/>
+
 <Dialog bind:open={noteOpen} title={`Notes for ${seatLabel}`}>
-	<form
-		class="note-form"
-		onsubmit={(event) => {
-			event.preventDefault();
-			saveNote();
-		}}
-	>
-		<!-- Several lines: Enter starts a new line; Save keeps it. Never shown to players. -->
-		<textarea bind:value={noteDraft} rows="5" aria-label="Notes" data-testid="seat-note"></textarea>
-		<div class="note-actions">
-			<Button variant="quiet" onclick={() => (noteOpen = false)}>Cancel</Button>
-			<Button type="submit">Save</Button>
-		</div>
-	</form>
+	<!-- Several lines: Enter starts a new line. Kept on close. Never shown to players. -->
+	<textarea
+		bind:value={noteDraft}
+		readonly={grimoire.open.viewOnly}
+		rows="5"
+		aria-label="Notes"
+		data-testid="seat-note"></textarea>
 </Dialog>
 
 <Dialog bind:open={changesOpen} title={`Changes for ${seatLabel}`}>
@@ -899,6 +914,7 @@
 		{/if}
 		<Button
 			variant="quiet"
+			icon="alignment"
 			disabled={!character}
 			onclick={() =>
 				fromMenu(() => {
@@ -1276,11 +1292,7 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.note-form {
-		display: grid;
-		gap: var(--space-3);
-	}
-	.note-form textarea {
+	textarea[data-testid='seat-note'] {
 		width: 100%;
 		min-height: calc(7 * var(--u));
 		padding: var(--space-3);
@@ -1290,11 +1302,6 @@
 		color: inherit;
 		font: inherit;
 		resize: vertical;
-	}
-	.note-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: var(--space-2);
 	}
 	h3 {
 		margin: var(--space-2) 0 0;

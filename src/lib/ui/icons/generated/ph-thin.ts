@@ -119,6 +119,7 @@ import ph_pulse_thin from '~icons/ph/pulse-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
+import ph_scales_thin from '~icons/ph/scales-thin';
 import ph_scroll_thin from '~icons/ph/scroll-thin';
 import ph_shapes_thin from '~icons/ph/shapes-thin';
 import ph_share_network_thin from '~icons/ph/share-network-thin';
@@ -166,6 +167,7 @@ import ph_wine_thin from '~icons/ph/wine-thin';
 import ph_wrench_thin from '~icons/ph/wrench-thin';
 import ph_x_thin from '~icons/ph/x-thin';
 import ph_x_circle_thin from '~icons/ph/x-circle-thin';
+import ph_yin_yang_thin from '~icons/ph/yin-yang-thin';
 
 const icons: IconMap = {
 	'ph:anchor-thin': ph_anchor_thin,
@@ -287,6 +289,7 @@ const icons: IconMap = {
 	'ph:push-pin-thin': ph_push_pin_thin,
 	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
+	'ph:scales-thin': ph_scales_thin,
 	'ph:scroll-thin': ph_scroll_thin,
 	'ph:shapes-thin': ph_shapes_thin,
 	'ph:share-network-thin': ph_share_network_thin,
@@ -333,7 +336,8 @@ const icons: IconMap = {
 	'ph:wine-thin': ph_wine_thin,
 	'ph:wrench-thin': ph_wrench_thin,
 	'ph:x-thin': ph_x_thin,
-	'ph:x-circle-thin': ph_x_circle_thin
+	'ph:x-circle-thin': ph_x_circle_thin,
+	'ph:yin-yang-thin': ph_yin_yang_thin
 };
 
 export default icons;

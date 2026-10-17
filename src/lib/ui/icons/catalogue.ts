@@ -87,6 +87,7 @@ export const ICON_SLOTS = {
 	remove: { label: 'Remove', choices: ['ph:trash', 'ph:trash-simple'] },
 	save: { label: 'Save', choices: ['ph:bookmark-simple', 'ph:floppy-disk'] },
 	swap: { label: 'Swap seats', choices: ['ph:arrows-left-right', 'ph:swap'] },
+	alignment: { label: 'Change alignment', choices: ['ph:yin-yang', 'ph:scales'] },
 	rename: { label: 'Rename', choices: ['ph:pencil-simple', 'ph:user-switch'] },
 	move: { label: 'Move', choices: ['ph:arrow-bend-up-right'] },
 	traveller: { label: 'Traveller', choices: ['ph:person-simple-walk', 'ph:user-plus'] },

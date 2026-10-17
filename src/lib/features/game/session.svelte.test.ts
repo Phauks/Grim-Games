@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/index.ts';
 import { MemoryGameStore, type EngineContext } from '#lib/core/engine/index.ts';
+import { endedGames } from '#lib/features/grimoire/device-notes.ts';
 import { OpenGame } from './session.svelte.ts';
 
 const chef: Character = {
@@ -72,5 +73,29 @@ describe('OpenGame', () => {
 
 	it('is undefined for a game that is not saved', async () => {
 		expect(await OpenGame.open(data, 'missing', new MemoryGameStore())).toBeUndefined();
+	});
+
+	it('opens an ended game to look around in: History steps never change the saved game', async () => {
+		const store = new MemoryGameStore();
+		const game = await OpenGame.create(data, script, 5, store, context());
+		const seatId = game.game.seating[0];
+		game.run({ type: 'SetDead', seatId, dead: true });
+		await game.save();
+		endedGames.end(game.game.gameId);
+		try {
+			const ended = (await OpenGame.open(data, game.game.gameId, store, context()))!;
+			expect(ended.viewOnly).toBe(true);
+			expect(ended.run({ type: 'SetDead', seatId, dead: false }).ok).toBe(false);
+			ended.goTo(1);
+			expect(ended.game.seats[seatId].dead).toBe(false);
+			await ended.save();
+			const again = (await OpenGame.open(data, game.game.gameId, store, context()))!;
+			expect(again.game.seats[seatId].dead).toBe(true);
+			// Reopening returns to where the game was saved.
+			ended.setViewOnly(false);
+			expect(ended.game.seats[seatId].dead).toBe(true);
+		} finally {
+			endedGames.reopen(game.game.gameId);
+		}
 	});
 });

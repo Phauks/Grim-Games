@@ -119,6 +119,7 @@ import ph_pulse_bold from '~icons/ph/pulse-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
+import ph_scales_bold from '~icons/ph/scales-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
 import ph_share_network_bold from '~icons/ph/share-network-bold';
@@ -166,6 +167,7 @@ import ph_wine_bold from '~icons/ph/wine-bold';
 import ph_wrench_bold from '~icons/ph/wrench-bold';
 import ph_x_bold from '~icons/ph/x-bold';
 import ph_x_circle_bold from '~icons/ph/x-circle-bold';
+import ph_yin_yang_bold from '~icons/ph/yin-yang-bold';
 
 const icons: IconMap = {
 	'ph:anchor-bold': ph_anchor_bold,
@@ -287,6 +289,7 @@ const icons: IconMap = {
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
+	'ph:scales-bold': ph_scales_bold,
 	'ph:scroll-bold': ph_scroll_bold,
 	'ph:shapes-bold': ph_shapes_bold,
 	'ph:share-network-bold': ph_share_network_bold,
@@ -333,7 +336,8 @@ const icons: IconMap = {
 	'ph:wine-bold': ph_wine_bold,
 	'ph:wrench-bold': ph_wrench_bold,
 	'ph:x-bold': ph_x_bold,
-	'ph:x-circle-bold': ph_x_circle_bold
+	'ph:x-circle-bold': ph_x_circle_bold,
+	'ph:yin-yang-bold': ph_yin_yang_bold
 };
 
 export default icons;

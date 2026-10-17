@@ -11,6 +11,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
 	import BackgroundDialog from './BackgroundDialog.svelte';
+	import { boardLooks } from './board-looks.svelte.ts';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
@@ -31,7 +32,11 @@
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import { setupComplete, setupReminders } from '#lib/core/rules/index.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
-	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
+	import {
+		charactersReallyInPlay,
+		DEMON_SET,
+		showableBluffSets
+	} from '#lib/features/bluffs/bluffs.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -39,6 +44,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
 		followSeating,
@@ -192,6 +198,8 @@
 	 * height a finger needs (the tap target), which is what a reminder takes up on screen.
 	 */
 	let centreW = $state(0);
+	let edgeW = $state(0);
+	let edgeH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
 	const fan = $derived.by(() => {
@@ -206,7 +214,13 @@
 				avoid: avoidFor(i)
 			})),
 			// The Set up button and the Fabled and Loric in the middle stay clear and tappable.
-			centreW > 0 ? [{ x: width / 2, y: height / 2, w: centreW + 12, h: centreH + 12 }] : [],
+			[
+				...(centreW > 0 ? [{ x: width / 2, y: height / 2, w: centreW + 12, h: centreH + 12 }] : []),
+				// Fabled and Loric along the edge, in the top left corner.
+				...(edgeW > 0 && boardLooks.current.rulesAt === 'edge'
+					? [{ x: edgeW / 2, y: edgeH / 2, w: edgeW + 12, h: edgeH + 12 }]
+					: [])
+			],
 			{ width, height }
 		);
 		return fitted.at.map((points) => points.map(toPercent));
@@ -542,15 +556,52 @@
 	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
 	// ── End game (Trevor, 2026-10-16): the game moves to History; its live room closes ──
+	// The Storyteller stays on the board, which says the game is over (Trevor, 2026-10-17).
 	let endOpen = $state(false);
 	let winner = $state<'good' | 'evil' | undefined>();
+	let endedRead = $state(0);
+	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
 	function endGame() {
 		endOpen = false;
-		releaseGuard?.();
 		endedGames.end(game.gameId, winner);
+		grimoire.open.setViewOnly(true);
+		endedRead += 1;
 		if (roomHost().code) roomHost().close();
-		void goto(resolve('/history'));
 	}
+	// Reopening puts it back in Resume game.
+	let reopenOpen = $state(false);
+	function reopenGame() {
+		endedGames.reopen(game.gameId);
+		grimoire.open.setViewOnly(false);
+		endedRead += 1;
+	}
+	const endedText = $derived(
+		ended?.winner === 'good'
+			? 'Good won'
+			: ended?.winner === 'evil'
+				? 'Evil won'
+				: 'Winner not recorded'
+	);
+	/**
+	 * Once every token is placed, the middle offers the Demon's bluffs, as it offered Set up
+	 * (Trevor, 2026-10-17). Only with a Demon in play and its set still empty; part of the
+	 * setup help, and it can be dismissed.
+	 */
+	let bluffsPromptDismissed = $state(false);
+	const showBluffsPrompt = $derived(
+		!bluffsPromptDismissed &&
+			!ended &&
+			!arranging &&
+			!placing &&
+			preferences.current.assistance.setupReminders &&
+			game.pastDays.length === 0 &&
+			game.seating.every((id) => game.seats[id].characterId !== undefined) &&
+			setupPending === 0 &&
+			(game.bluffs[DEMON_SET] ?? []).length === 0 &&
+			[...charactersReallyInPlay(game, characters)].some(
+				(id) => characters.get(id)?.type === 'demon'
+			)
+	);
 
 	// A Traveller's alignment by draw, kept here: setting it ends the step that opened it.
 	let drawFor = $state<SeatId | undefined>();
@@ -688,8 +739,34 @@
 	let ruleOpen = $state(false);
 	let ruleShown = $state<CharacterId | undefined>();
 	let ruleShownOpen = $state(false);
+	let ruleRemoveOpen = $state(false);
 	const ruleShownCharacter = $derived(ruleShown ? characters.get(ruleShown) : undefined);
 </script>
+
+<!-- Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
+	(Trevor, 2026-10-17). -->
+{#snippet rulesList(tokenSize: number)}
+	<ul class="rules" class:edge={tokenSize < size * 0.8} aria-label="Fabled and Loric">
+		{#each game.ruleCharacters as id (id)}
+			{@const character = characters.get(id)}
+			{#if character}
+				<li>
+					<button
+						type="button"
+						class="rule"
+						aria-label={character.name}
+						onclick={() => {
+							ruleShown = id;
+							ruleShownOpen = true;
+						}}
+					>
+						<CharacterToken {character} size={tokenSize} />
+					</button>
+				</li>
+			{/if}
+		{/each}
+	</ul>
+{/snippet}
 
 <div class="grimoire">
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
@@ -779,6 +856,8 @@
 			<p
 				class="watermark"
 				class:on-image={backgroundUrl !== undefined || background.kind === 'preset'}
+				class:vignette={boardLooks.current.vignette}
+				style:--vignette={boardLooks.current.vignetteStrength}
 				aria-hidden="true"
 			>
 				{#if game.script.meta?.name}<span class="script-name">{game.script.meta.name}</span>{/if}
@@ -904,6 +983,11 @@
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>
+		{#if boardLooks.current.rulesAt === 'edge' && game.ruleCharacters.length > 0}
+			<div class="rules-edge" bind:clientWidth={edgeW} bind:clientHeight={edgeH}>
+				{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
+			</div>
+		{/if}
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if showSetup}
@@ -921,27 +1005,29 @@
 					>
 				</div>
 			{/if}
-			<!-- Fabled and Loric are rules of the game, not seats: they sit in the middle. -->
-			<ul class="rules" aria-label="Fabled and Loric">
-				{#each game.ruleCharacters as id (id)}
-					{@const character = characters.get(id)}
-					{#if character}
-						<li>
-							<button
-								type="button"
-								class="rule"
-								aria-label={character.name}
-								onclick={() => {
-									ruleShown = id;
-									ruleShownOpen = true;
-								}}
-							>
-								<CharacterToken {character} size={Math.round(size * 0.8)} />
-							</button>
-						</li>
-					{/if}
-				{/each}
-			</ul>
+			{#if showBluffsPrompt}
+				<div class="setup bluffs-prompt">
+					<Button variant="accent" icon="demon" onclick={() => (bluffsOpen = true)}
+						>Demon bluffs</Button
+					>
+					<IconButton icon="close" label="Not now" onclick={() => (bluffsPromptDismissed = true)} />
+				</div>
+			{/if}
+			{#if ended}
+				<!-- The game is over; the board stays open to look around in, read-only (Trevor, 2026-10-17). -->
+				<button
+					type="button"
+					class="game-over"
+					data-testid="game-over"
+					data-team={ended.winner}
+					onclick={() => (reopenOpen = true)}
+				>
+					Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
+						? ' · Shown from History'
+						: ''}
+				</button>
+			{/if}
+			{#if boardLooks.current.rulesAt === 'middle'}{@render rulesList(Math.round(size * 0.8))}{/if}
 		</div>
 	</div>
 </div>
@@ -997,9 +1083,15 @@
 			</Button>
 		</span>
 		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
-		<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
-			End game
-		</Button>
+		{#if ended}
+			<Button variant="quiet" icon="undo" onclick={() => fromMenu(() => (reopenOpen = true))}>
+				Reopen game
+			</Button>
+		{:else}
+			<Button variant="danger-quiet" icon="close" onclick={() => fromMenu(() => (endOpen = true))}>
+				End game
+			</Button>
+		{/if}
 	</div>
 </Dialog>
 
@@ -1039,12 +1131,21 @@
 	</dl>
 </ConfirmDialog>
 
+<ConfirmDialog bind:open={reopenOpen} title="Reopen game?" onConfirm={reopenGame}>
+	<dl class="change">
+		<dt>Now</dt>
+		<dd>Ended, in History: {endedText}</dd>
+		<dt>Becomes</dt>
+		<dd>In Resume game</dd>
+	</dl>
+</ConfirmDialog>
+
 <ConfirmDialog bind:open={endOpen} title="End game?" danger onConfirm={endGame}>
 	<dl class="change">
 		<dt>Now</dt>
 		<dd>In Resume game</dd>
 		<dt>Becomes</dt>
-		<dd>In History, where it can be reopened</dd>
+		<dd>Ended, in History</dd>
 	</dl>
 	<div class="winner" role="radiogroup" aria-label="Winning team">
 		<span class="winner-label">Winner</span>
@@ -1143,17 +1244,31 @@
 		</div>
 	{/if}
 	{#snippet actions()}
-		<!-- eslint-disable-next-line grim/delete-button -- the board thread is turning this into the trash can -->
-		<Button
-			variant="quiet"
-			icon="remove"
-			onclick={() => {
-				ruleShownOpen = false;
-				if (ruleShown) grimoire.run({ type: 'RemoveRuleCharacter', characterId: ruleShown });
-			}}>Remove from the game</Button
-		>
+		<!-- A delete is a red trash icon, named for screen readers (Trevor, 2026-10-17). -->
+		<DeleteButton label="Remove from the game" onclick={() => (ruleRemoveOpen = true)} />
 	{/snippet}
 </Dialog>
+
+<ConfirmDialog
+	bind:open={ruleRemoveOpen}
+	title="Remove from the game?"
+	danger
+	onConfirm={() => {
+		ruleShownOpen = false;
+		if (ruleShown) grimoire.run({ type: 'RemoveRuleCharacter', characterId: ruleShown });
+	}}
+>
+	{#if ruleShown}
+		<dl class="change">
+			<dt>Now</dt>
+			<dd>
+				<CharacterBadge characterId={ruleShown} character={ruleShownCharacter} inline /> in play
+			</dd>
+			<dt>Becomes</dt>
+			<dd>Not in play</dd>
+		</dl>
+	{/if}
+</ConfirmDialog>
 
 <style>
 	.grimoire {
@@ -1284,6 +1399,10 @@
 		display: grid;
 		gap: var(--space-2);
 	}
+	.bluffs-prompt {
+		grid-auto-flow: column;
+		align-items: center;
+	}
 	.script-scroll {
 		flex: 1;
 		min-height: 0;
@@ -1313,6 +1432,25 @@
 	.backdrop.preset[data-preset='parchment'] {
 		filter: brightness(0.5);
 	}
+	.game-over {
+		min-height: var(--tap-target);
+		padding: 0 var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font-family: var(--font-heading);
+		font-size: 1.1rem;
+		pointer-events: auto;
+	}
+	.game-over[data-team='good'] {
+		background: var(--good);
+		color: var(--on-good);
+	}
+	.game-over[data-team='evil'] {
+		background: var(--evil);
+		color: var(--on-evil);
+	}
 	.watermark {
 		position: absolute;
 		inset: 0;
@@ -1339,10 +1477,17 @@
 	/* Over an image: a soft scrim and an outline keep the words readable. */
 	.watermark.on-image {
 		opacity: 0.5;
-		background: radial-gradient(ellipse 45% 22% at center, rgb(0 0 0 / 0.55), transparent 100%);
 		text-shadow:
 			0 0 2px var(--backdrop),
 			0 0 6px var(--backdrop);
+	}
+	/* The vignette (Trevor, 2026-10-17: its own switch and strength). */
+	.watermark.on-image.vignette {
+		background: radial-gradient(
+			ellipse 45% 22% at center,
+			rgb(0 0 0 / var(--vignette)),
+			transparent 100%
+		);
 	}
 	.spacer {
 		flex: 1;
@@ -1435,6 +1580,17 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
+	}
+	/* Small, in the board's top left corner, clear of the seats' ring. */
+	.rules-edge {
+		position: absolute;
+		top: var(--space-1);
+		left: var(--space-1);
+		max-width: 30%;
+		z-index: 2;
+	}
+	.rules.edge {
+		justify-content: flex-start;
 	}
 	.rule {
 		/* Sized from the seats, which already follow the token size setting. */

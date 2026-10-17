@@ -119,6 +119,7 @@ import ph_pulse_duotone from '~icons/ph/pulse-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
+import ph_scales_duotone from '~icons/ph/scales-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
 import ph_shapes_duotone from '~icons/ph/shapes-duotone';
 import ph_share_network_duotone from '~icons/ph/share-network-duotone';
@@ -166,6 +167,7 @@ import ph_wine_duotone from '~icons/ph/wine-duotone';
 import ph_wrench_duotone from '~icons/ph/wrench-duotone';
 import ph_x_duotone from '~icons/ph/x-duotone';
 import ph_x_circle_duotone from '~icons/ph/x-circle-duotone';
+import ph_yin_yang_duotone from '~icons/ph/yin-yang-duotone';
 
 const icons: IconMap = {
 	'ph:anchor-duotone': ph_anchor_duotone,
@@ -287,6 +289,7 @@ const icons: IconMap = {
 	'ph:push-pin-duotone': ph_push_pin_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
+	'ph:scales-duotone': ph_scales_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,
 	'ph:shapes-duotone': ph_shapes_duotone,
 	'ph:share-network-duotone': ph_share_network_duotone,
@@ -333,7 +336,8 @@ const icons: IconMap = {
 	'ph:wine-duotone': ph_wine_duotone,
 	'ph:wrench-duotone': ph_wrench_duotone,
 	'ph:x-duotone': ph_x_duotone,
-	'ph:x-circle-duotone': ph_x_circle_duotone
+	'ph:x-circle-duotone': ph_x_circle_duotone,
+	'ph:yin-yang-duotone': ph_yin_yang_duotone
 };
 
 export default icons;

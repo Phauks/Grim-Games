@@ -18,6 +18,8 @@
 
 	const characters = $derived(grimoire.open.characters);
 	const cursor = $derived(grimoire.open.session.log.cursor);
+	const viewOnly = $derived(grimoire.open.viewOnly);
+	const savedCursor = $derived(grimoire.open.savedCursor);
 	// Only built while open: it replays the whole log.
 	const items = $derived(
 		open ? historyItems(grimoire.open.session.log.entries, cursor, characters) : []
@@ -46,6 +48,8 @@
 
 	function choose(item: HistoryItem) {
 		// An applied entry rolls back to just before it; an undone one restores up to it.
+		// An ended game only shows the board just after that entry: nothing to confirm.
+		if (viewOnly) return grimoire.open.goTo(item.cursor);
 		chosen = { item, to: item.undone ? item.cursor : item.cursor - 1 };
 		confirmOpen = true;
 	}
@@ -102,9 +106,23 @@
 			<li class:undone={item.undone} class:now={item.cursor === cursor}>
 				<span class="text">{@render line(item.parts)}</span>
 				<span class="when">
-					{item.cursor === cursor ? 'Now · ' : item.undone ? 'Undone · ' : ''}{time.format(item.at)}
+					{item.cursor === cursor
+						? viewOnly
+							? 'Shown · '
+							: 'Now · '
+						: item.cursor > savedCursor
+							? 'Undone · '
+							: item.undone
+								? 'Later · '
+								: ''}{time.format(item.at)}
 				</span>
-				{#if item.cursor > 1}
+				{#if viewOnly}
+					<Button
+						variant="quiet"
+						disabled={item.cursor === cursor || item.cursor > savedCursor}
+						onclick={() => choose(item)}>Show</Button
+					>
+				{:else if item.cursor > 1}
 					<Button variant="quiet" onclick={() => choose(item)}>Restore</Button>
 				{/if}
 			</li>

@@ -2,6 +2,11 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { boardLooks, DEFAULT_BOARD_LOOKS } from './board-looks.svelte.ts';
 	import {
 		clearBackground,
 		readBackground,
@@ -14,7 +19,9 @@
 
 	/**
 	 * Board background (Trevor, 2026-10-16): an image from this device, the script's own
-	 * background when it names one, or none. Applies to this game or to every game.
+	 * background when it names one, or none. Applies to this game or to every game. It stays
+	 * open after a choice, so several can be tried (Trevor, 2026-10-17), and holds the board's
+	 * other looks too, the same values as in Settings.
 	 */
 	interface Props {
 		open: boolean;
@@ -55,8 +62,9 @@
 			await saveBackground(where, choice);
 			// A new default reaches this game only if it has no choice of its own.
 			if (scope === 'default') await clearBackground({ gameId });
+			// The dialog stays open, so "Now" follows the choice.
+			ownChoice = scope === 'game';
 			onChange();
-			open = false;
 		} catch {
 			error = 'The background could not be saved on this device.';
 		}
@@ -75,8 +83,8 @@
 
 	async function useDefault() {
 		await clearBackground({ gameId });
+		ownChoice = false;
 		onChange();
-		open = false;
 	}
 </script>
 
@@ -118,6 +126,40 @@
 		</Button>
 	</div>
 	<p class="error" role="status">{error}</p>
+	<div class="looks" data-testid="board-looks">
+		<SettingToggle
+			label={ASSIST_LABELS.scriptTitle.label}
+			description={ASSIST_LABELS.scriptTitle.description}
+			checked={preferences.current.assistance.scriptTitle}
+			onChange={(checked) =>
+				preferences.update({
+					assistance: { ...preferences.current.assistance, scriptTitle: checked }
+				})}
+		/>
+		<SettingToggle
+			label="Vignette"
+			checked={boardLooks.current.vignette}
+			onChange={(vignette) => boardLooks.update({ vignette })}
+		/>
+		<SettingSlider
+			label="Vignette strength"
+			value={boardLooks.current.vignetteStrength}
+			min={0}
+			max={1}
+			step={0.05}
+			defaultValue={DEFAULT_BOARD_LOOKS.vignetteStrength}
+			onChange={(vignetteStrength) => boardLooks.update({ vignetteStrength })}
+		/>
+		<Segmented
+			label="Fabled and Loric"
+			value={boardLooks.current.rulesAt}
+			options={[
+				{ value: 'middle', label: 'Middle' },
+				{ value: 'edge', label: 'Edge, smaller' }
+			]}
+			onChange={(rulesAt) => boardLooks.update({ rulesAt })}
+		/>
+	</div>
 	<input
 		bind:this={input}
 		class="file"
@@ -184,5 +226,9 @@
 	}
 	.file {
 		display: none;
+	}
+	.looks {
+		display: grid;
+		gap: var(--space-2);
 	}
 </style>

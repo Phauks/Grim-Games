@@ -119,6 +119,7 @@ import ph_pulse_fill from '~icons/ph/pulse-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
+import ph_scales_fill from '~icons/ph/scales-fill';
 import ph_scroll_fill from '~icons/ph/scroll-fill';
 import ph_shapes_fill from '~icons/ph/shapes-fill';
 import ph_share_network_fill from '~icons/ph/share-network-fill';
@@ -166,6 +167,7 @@ import ph_wine_fill from '~icons/ph/wine-fill';
 import ph_wrench_fill from '~icons/ph/wrench-fill';
 import ph_x_fill from '~icons/ph/x-fill';
 import ph_x_circle_fill from '~icons/ph/x-circle-fill';
+import ph_yin_yang_fill from '~icons/ph/yin-yang-fill';
 
 const icons: IconMap = {
 	'ph:anchor-fill': ph_anchor_fill,
@@ -287,6 +289,7 @@ const icons: IconMap = {
 	'ph:push-pin-fill': ph_push_pin_fill,
 	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
+	'ph:scales-fill': ph_scales_fill,
 	'ph:scroll-fill': ph_scroll_fill,
 	'ph:shapes-fill': ph_shapes_fill,
 	'ph:share-network-fill': ph_share_network_fill,
@@ -333,7 +336,8 @@ const icons: IconMap = {
 	'ph:wine-fill': ph_wine_fill,
 	'ph:wrench-fill': ph_wrench_fill,
 	'ph:x-fill': ph_x_fill,
-	'ph:x-circle-fill': ph_x_circle_fill
+	'ph:x-circle-fill': ph_x_circle_fill,
+	'ph:yin-yang-fill': ph_yin_yang_fill
 };
 
 export default icons;

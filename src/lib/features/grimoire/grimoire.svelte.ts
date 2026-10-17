@@ -81,6 +81,10 @@ export class Grimoire {
 	 * (Trevor, 2026-10-16), once a night; History's Restore undoes it.
 	 */
 	toggleNightStep(night: Night, step: { id: string }): void {
+		if (this.open.viewOnly) {
+			toast('Not done', 'The game is over. Reopen it to change it.');
+			return;
+		}
 		const key = doneKey(this.nightDay, night, step);
 		const ticking = !this.nightDone.includes(key);
 		this.nightDone = ticking ? [...this.nightDone, key] : this.nightDone.filter((k) => k !== key);

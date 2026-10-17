@@ -119,6 +119,7 @@ import ph_pulse_light from '~icons/ph/pulse-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
 import ph_qr_code_light from '~icons/ph/qr-code-light';
 import ph_question_light from '~icons/ph/question-light';
+import ph_scales_light from '~icons/ph/scales-light';
 import ph_scroll_light from '~icons/ph/scroll-light';
 import ph_shapes_light from '~icons/ph/shapes-light';
 import ph_share_network_light from '~icons/ph/share-network-light';
@@ -166,6 +167,7 @@ import ph_wine_light from '~icons/ph/wine-light';
 import ph_wrench_light from '~icons/ph/wrench-light';
 import ph_x_light from '~icons/ph/x-light';
 import ph_x_circle_light from '~icons/ph/x-circle-light';
+import ph_yin_yang_light from '~icons/ph/yin-yang-light';
 
 const icons: IconMap = {
 	'ph:anchor-light': ph_anchor_light,
@@ -287,6 +289,7 @@ const icons: IconMap = {
 	'ph:push-pin-light': ph_push_pin_light,
 	'ph:qr-code-light': ph_qr_code_light,
 	'ph:question-light': ph_question_light,
+	'ph:scales-light': ph_scales_light,
 	'ph:scroll-light': ph_scroll_light,
 	'ph:shapes-light': ph_shapes_light,
 	'ph:share-network-light': ph_share_network_light,
@@ -333,7 +336,8 @@ const icons: IconMap = {
 	'ph:wine-light': ph_wine_light,
 	'ph:wrench-light': ph_wrench_light,
 	'ph:x-light': ph_x_light,
-	'ph:x-circle-light': ph_x_circle_light
+	'ph:x-circle-light': ph_x_circle_light,
+	'ph:yin-yang-light': ph_yin_yang_light
 };
 
 export default icons;
