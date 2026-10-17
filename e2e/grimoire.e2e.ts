@@ -356,7 +356,7 @@ test('a new game can use a custom script from the Library', async ({ page }) => 
 	await expect(page.locator('.watermark')).toHaveText('Pocket Storm');
 });
 
-test('reminders: add several from the picker, recent first, then move and remove', async ({
+test("reminders: add several from the picker, this seat's first, then move and remove", async ({
 	page
 }) => {
 	await startGame(page);
@@ -377,12 +377,9 @@ test('reminders: add several from the picker, recent first, then move and remove
 	await poisoner.getByRole('button', { name: 'Poisoned' }).tap();
 	await picker.getByRole('group', { name: 'Drunk' }).getByRole('button').first().tap();
 	await expect(picker.getByText('On this seat: 2')).toBeVisible();
-	// Recent reminders are read when the picker opens, so nothing moves under a finger.
-	await picker.getByRole('button', { name: 'Close' }).tap();
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	await expect(
-		picker.getByRole('group', { name: 'Recent reminders' }).getByRole('button')
-	).toHaveCount(2);
+	// The top row is what is on this seat now (Trevor, 2026-10-17).
+	const top = picker.getByRole('group', { name: 'On this seat' }).getByRole('button');
+	await expect(top).toHaveCount(2);
 	// Each token is placed once: the Poisoner has one "Poisoned", shown as on this seat.
 	await expect(poisoner.getByRole('button', { name: /Poisoned/ })).toHaveAttribute(
 		'aria-pressed',
@@ -398,6 +395,8 @@ test('reminders: add several from the picker, recent first, then move and remove
 		.tap();
 	await expect(picker.getByText('On this seat: 1')).toBeVisible();
 	await expect(drunk).toHaveAttribute('aria-pressed', 'false');
+	// Taken off, it leaves the top row.
+	await expect(top).toHaveCount(1);
 	await drunk.tap();
 	await expect(picker.getByText('On this seat: 2')).toBeVisible();
 	// Only characters in play: no way to add the Washerwoman's reminders here.
@@ -1121,6 +1120,14 @@ test('the board background can be an image from the device, kept after a reload'
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	await expect(page.locator('.watermark')).not.toHaveClass(/vignette/);
+
+	// The board and token settings open over the board from its menu (Trevor, 2026-10-17).
+	await menu(page, 'Board and tokens');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await expect(settings.getByRole('heading', { name: 'Board and tokens', level: 2 })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
+	await expect(page.getByTestId('board-background')).toBeVisible();
 });
 
 test('info tokens open from the toolbar and show player cards at once', async ({ page }) => {
@@ -2032,4 +2039,178 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await page.reload();
 	await expect(token).toBeVisible();
 	await expect.poll(near).toBe(true);
+});
+
+/** Picks how the walked-through step's reminders are shown. */
+async function focusMode(page: Page, mode: string) {
+	await page.getByTestId('night-strip').getByRole('button', { name: 'Step reminders' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Step reminders' })
+		.getByRole('combobox', { name: "Show the step's reminders" })
+		.tap();
+	await page.getByRole('option', { name: mode }).tap();
+	await page.keyboard.press('Escape');
+}
+
+test("the walk-through points out the step's reminders: ringed, alone or first", async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Monk']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Night order' })
+		.getByRole('button', { name: 'Walk through' })
+		.tap();
+	const strip = page.getByTestId('night-strip');
+	for (let i = 0; i < 6 && !(await strip.textContent())?.includes('Poisoner'); i++)
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip).toContainText('Poisoner');
+
+	// The first night opens on the Setup view; Only these works there too (Trevor, 2026-10-17).
+	const bank = page.getByRole('list', { name: /Reminder bank|Setup reminders/ });
+	if ((await bank.getAttribute('aria-label')) === 'Setup reminders') {
+		await focusMode(page, 'Only these');
+		for (const li of await bank.locator('> li').all()) await expect(li).toHaveClass(/\bnow\b|none/);
+		await focusMode(page, 'Bring to front');
+		await page.getByRole('button', { name: /show all reminders/ }).tap();
+	}
+	const tokens = page.getByRole('list', { name: 'Reminder bank' }).locator('> li');
+	// Bring to front, as before: the Poisoner's token first, ringed.
+	await expect(tokens.first()).toHaveClass(/\bnow\b/);
+	await expect(tokens.first()).toContainText('Poisoned');
+
+	// One choice, as a drop-down (Trevor, 2026-10-17): always on, only how.
+	await focusMode(page, 'Only these');
+	await expect(tokens).toHaveCount(1);
+	await focusMode(page, 'Highlight');
+	await expect(page.locator('li.dim').first()).toBeAttached();
+	await expect(tokens.first()).not.toHaveClass(/\bnow\b/);
+	await expect(page.locator('li.now')).toHaveCount(1);
+});
+
+test("a script's own character can have another copy of a reminder (Cleopatra)", async ({
+	page
+}) => {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
+		.tap();
+	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	await paste.getByLabel('Script JSON or link').fill(
+		JSON.stringify([
+			{ id: '_meta', name: 'Little Rome' },
+			{
+				id: 'cleo',
+				name: 'Cleo',
+				team: 'townsfolk',
+				ability: 'Each night, choose two players.',
+				reminders: ['Chosen']
+			},
+			'chef',
+			'imp'
+		])
+	);
+	await paste.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText('Little Rome');
+	await startGame(page, 'Little Rome');
+
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Cleo', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	const cleo = picker.getByRole('group', { name: 'Cleo' });
+	const another = cleo.getByRole('button', { name: 'Add another Chosen' });
+	// There from the start, usable once the listed copy is placed; official characters never.
+	await expect(another).toBeDisabled();
+	await expect(picker.getByRole('button', { name: /^Add another/ })).toHaveCount(1);
+	await cleo.getByRole('button', { name: 'Chosen' }).first().tap();
+	await expect(another).toBeEnabled();
+	await another.tap();
+	await expect(picker).toContainText('On this seat: 2');
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Cleo, 2 reminders')).toBeAttached();
+});
+
+test("the step focus works for a script's own character too (Fall of Rome's Merchant)", async ({
+	page
+}) => {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
+		.tap();
+	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	await paste.getByLabel('Script JSON or link').fill(
+		JSON.stringify([
+			{ id: '_meta', name: 'Little Market' },
+			{
+				id: 'merch',
+				name: 'Merch',
+				team: 'townsfolk',
+				ability: 'Each night, choose a player.',
+				reminders: ['Paid'],
+				firstNight: 30,
+				firstNightReminder: 'The Merch chooses a player.',
+				otherNight: 30,
+				otherNightReminder: 'The Merch chooses a player.'
+			},
+			'chef',
+			'poisoner',
+			'imp'
+		])
+	);
+	await paste.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText('Little Market');
+	await startGame(page, 'Little Market');
+	for (const [number, name] of [
+		[1, 'Merch'],
+		[2, 'Poisoner']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Night order' })
+		.getByRole('button', { name: 'Walk through' })
+		.tap();
+	const strip = page.getByTestId('night-strip');
+	for (let i = 0; i < 8 && !(await strip.textContent())?.includes('Merch'); i++)
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip).toContainText('Merch');
+
+	const bank = page.getByRole('list', { name: /Reminder bank|Setup reminders/ });
+	if ((await bank.getAttribute('aria-label')) === 'Setup reminders')
+		await page.getByRole('button', { name: /show all reminders/ }).tap();
+	const tokens = page.getByRole('list', { name: 'Reminder bank' }).locator('> li');
+	await expect(tokens.first()).toHaveClass(/\bnow\b/);
+	await expect(tokens.first()).toContainText('Paid');
+	await focusMode(page, 'Only these');
+	await expect(tokens).toHaveCount(1);
+	await expect(tokens.first()).toContainText('Paid');
 });

@@ -47,7 +47,5 @@ export const player = {
 	'player.version': 'v{version}',
 	'player.print': 'Print script',
 	'player.jinxedWith': 'Jinxed with {names}',
-	'player.hideNoteContents': 'Hide note contents',
-	'player.hideNoteContentsDetail':
-		"In the player view, the Notes tab shows each note's title but hides its text until you open it, so nobody glancing at your phone can read it."
+	'player.hideContents': 'Hide contents'
 } as const;

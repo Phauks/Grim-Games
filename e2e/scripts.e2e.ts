@@ -36,6 +36,7 @@ test.beforeEach(async ({ page }) => {
 	);
 	await page.route('**/api/curated', (route) => route.fulfill({ json: { scripts: [] } }));
 	await page.route('**/api/collections/*', (route) => route.fulfill({ json: { scripts: [] } }));
+	await page.route('**/api/homebrew-scripts', (route) => route.fulfill({ json: { scripts: [] } }));
 });
 
 /**
@@ -824,5 +825,76 @@ test('a BotC Scripts result offers its other versions, and says when a newer one
 	await saveToggle(page).tap();
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
 	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.0.0' })).toBeVisible();
+	await noSidewaysScroll(page);
+});
+
+test('the BOTC HomeBrew Wiki is a source: each script loads when opened and links to its page', async ({
+	page
+}) => {
+	const asked: string[] = [];
+	await page.route('**/api/homebrew-scripts', (route) =>
+		route.fulfill({
+			json: {
+				scripts: [
+					{
+						slug: 'stone-and-salt',
+						name: 'Stone and Salt',
+						author: 'Someone',
+						characters: [
+							{ id: 'quarry-warden', name: 'Quarry Warden', team: 'townsfolk' },
+							{ id: 'chef' },
+							{ id: 'imp' }
+						]
+					}
+				]
+			}
+		})
+	);
+	let release = () => {};
+	const held = new Promise<void>((resolve) => (release = resolve));
+	await page.route('**/api/homebrew-scripts/*', async (route) => {
+		asked.push(route.request().url().split('/').at(-1)!);
+		await held;
+		return route.fulfill({
+			json: [
+				{ id: '_meta', name: 'Stone and Salt', author: 'Someone' },
+				{
+					id: 'quarry-warden',
+					name: 'Quarry Warden',
+					team: 'townsfolk',
+					ability: 'You start knowing how many steps from the Demon to its nearest Minion.'
+				},
+				'chef',
+				'imp'
+			]
+		});
+	});
+	await page.goto('/scripts');
+	await chooseSource(page, 'BOTC HomeBrew Wiki');
+	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
+	expect(asked).toEqual([]);
+	await page
+		.getByRole('table', { name: 'Scripts' })
+		.getByRole('button', { name: /^Stone and Salt/ })
+		.tap();
+	await expect(detailsName(page)).toHaveText('Stone and Salt');
+	await expect(details(page).getByRole('link', { name: 'HomeBrew Wiki' })).toHaveAttribute(
+		'href',
+		'https://botchomebrew.wiki/s/stone-and-salt'
+	);
+	// Never blank while it loads; then its own characters' abilities.
+	await expect(page.getByTestId('script-loading')).toBeVisible();
+	release();
+	await expect(page.getByTestId('script-sheet')).toContainText('Quarry Warden');
+	await expect(page.getByTestId('script-sheet')).toContainText('nearest Minion');
+	expect(asked).toEqual(['stone-and-salt']);
+	// Saved, it is credited to the wiki and still links to its page; nothing is fetched again.
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
+	await expect(details(page).getByRole('link', { name: 'BOTC HomeBrew Wiki' })).toHaveAttribute(
+		'href',
+		'https://botchomebrew.wiki/s/stone-and-salt'
+	);
+	expect(asked).toEqual(['stone-and-salt']);
 	await noSidewaysScroll(page);
 });

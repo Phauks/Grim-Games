@@ -24,6 +24,8 @@
 		misfit?: boolean;
 		/** Which side of the token the name goes, so nothing covers it. */
 		namePlace?: NamePlace;
+		/** Night order numbers for the leaf badges, when that setting is on. */
+		nightNumbers?: { first?: number; other?: number };
 		onTap: () => void;
 	}
 
@@ -37,6 +39,7 @@
 		hint = false,
 		misfit = false,
 		namePlace = 'below',
+		nightNumbers,
 		onTap
 	}: Props = $props();
 
@@ -87,6 +90,7 @@
 			alignment={seat.alignment}
 			{size}
 			showName={preferences.current.tokenAppearance.boardNames}
+			{nightNumbers}
 		/>
 	{/if}
 {/snippet}

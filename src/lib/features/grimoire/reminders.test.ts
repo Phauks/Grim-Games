@@ -6,6 +6,8 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	bankReminders,
 	byLabel,
+	canAddCopy,
+	reminderCopies,
 	stepReminders,
 	parseReminderKey,
 	reminderCopiesLeft,
@@ -109,6 +111,29 @@ describe('reminderCopiesLeft', () => {
 		run({ type: 'AssignCharacter', seatId: g.seating[3], characterId: 'poisoner' });
 		expect(reminderCopiesLeft(g, characters).get(key)).toBe(1);
 	});
+	it('counts an extra copy while it is on the board, and never goes below none left', () => {
+		let g = game();
+		const key = reminderKey({ characterId: 'poisoner', label: 'Poisoned' });
+		for (const seatId of [g.seating[2], g.seating[3]]) {
+			const result = dispatch(
+				{ log: { entries: [], cursor: 0 }, game: g },
+				{ type: 'AddReminder', seatId, reminder: { characterId: 'poisoner', label: 'Poisoned' } },
+				ctx
+			);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		}
+		expect(reminderCopies(g, characters).get(key)).toBe(2);
+		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
+	});
+});
+
+describe('canAddCopy', () => {
+	it("offers extra copies for a script's own characters only", () => {
+		expect(canAddCopy(characters.get('poisoner'))).toBe(false);
+		expect(canAddCopy({ ...characters.get('poisoner')!, edition: undefined })).toBe(true);
+		expect(canAddCopy(undefined)).toBe(false);
+	});
 });
 
 describe('bankReminders', () => {
@@ -140,8 +165,30 @@ describe('bankReminders', () => {
 			now: true
 		});
 	});
+	it("can mark the step's reminders in their usual place instead (Trevor, 2026-10-17)", () => {
+		let g = game();
+		g = run(g, { type: 'AssignCharacter', seatId: g.seating[1], characterId: 'monk' });
+		g = run(g, { type: 'AssignCharacter', seatId: g.seating[2], characterId: 'poisoner' });
+		const focus = stepReminders('poisoner', 'other');
+		expect(bankReminders(g, characters, focus)[0].characterId).toBe('poisoner');
+		const kept = bankReminders(g, characters, focus, false);
+		expect(kept[0]).toMatchObject({ characterId: 'monk', now: false });
+		expect(kept.find((r) => r.characterId === 'poisoner')?.now).toBe(true);
+	});
 	// https://wiki.bloodontheclocktower.com/Grandmother : her grandchild's death kills her,
 	// which can only happen after the first night.
+	it("marks every reminder of a script's own character, which has no night data", () => {
+		const merchant = {
+			...characters.get('poisoner')!,
+			id: 'merchant',
+			edition: undefined,
+			reminders: ['Chosen', 'Paid'],
+			remindersGlobal: []
+		};
+		expect(stepReminders('merchant', 'other', merchant).labels).toEqual(['Chosen', 'Paid']);
+		// An official character keeps its night data even when given.
+		expect(stepReminders('monk', 'first', characters.get('monk')).labels).toEqual([]);
+	});
 	it('marks only the reminders the step can use that night', () => {
 		expect(stepReminders('grandmother', 'first').labels).toEqual([]);
 		expect(stepReminders('grandmother', 'other').labels).toEqual(['Dead']);

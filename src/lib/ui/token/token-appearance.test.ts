@@ -25,16 +25,24 @@ describe('token appearance', () => {
 			colours: { face: PALE.toLowerCase() },
 			tokenScale: 1.5,
 			reminderScale: 2,
-			boardNames: false
+			boardNames: false,
+			nightNumbers: false,
+			nightBadgeScale: 1
 		});
 		expect(parseTokenAppearance(null)).toEqual({
 			colours: {},
 			tokenScale: 1,
 			reminderScale: 1,
-			boardNames: false
+			boardNames: false,
+			nightNumbers: false,
+			nightBadgeScale: 1
 		});
 		expect(parseTokenAppearance({ boardNames: true }).boardNames).toBe(true);
 		expect(parseTokenAppearance({ boardNames: 'yes' }).boardNames).toBe(false);
+		expect(parseTokenAppearance({ nightNumbers: true, nightBadgeScale: 1.33 })).toMatchObject({
+			nightNumbers: true,
+			nightBadgeScale: 1.35
+		});
 		// Earlier builds' name placements are dropped: the player name is always a badge now.
 		expect(
 			parseTokenAppearance({ playerNamePlacement: 'below', namePlacement: 'icon-top' })
@@ -56,11 +64,14 @@ describe('token appearance', () => {
 				colours: { ink: DARK },
 				tokenScale: 1.25,
 				reminderScale: 0.75,
-				boardNames: true
+				boardNames: true,
+				nightNumbers: true,
+				nightBadgeScale: 1.5
 			})
 		).toEqual({
 			'--token-scale': '1.25',
 			'--reminder-scale': '0.75',
+			'--night-badge-scale': '1.5',
 			'--on-token': DARK,
 			'--on-reminder': DARK
 		});

@@ -30,7 +30,12 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
-	import { livingByTeam, setupComplete, setupReminders } from '#lib/core/rules/index.ts';
+	import {
+		livingByTeam,
+		setupComplete,
+		setupReminders,
+		stepNightNumbers
+	} from '#lib/core/rules/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
@@ -62,6 +67,7 @@
 		withoutPlaced,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
+	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import { nameBox, placeNames, type Box } from './name-placement.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
@@ -81,6 +87,8 @@
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
+	import { stepFocus } from './step-focus.svelte.ts';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import AlignmentAsk from './AlignmentAsk.svelte';
@@ -124,6 +132,8 @@
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
+	// The Token size preview in Settings draws at this board's size.
+	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
@@ -174,6 +184,18 @@
 		}));
 	});
 	const namePlaces = $derived(nameBoxes.map((n) => n.place));
+	/**
+	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
+	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
+	 */
+	const nightNumbers = $derived.by(() => {
+		const data = officialData.current;
+		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
+		return {
+			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data)),
+			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data))
+		};
+	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
 	function avoidFor(i: number): Box[] {
 		const out: Box[] = [];
@@ -886,6 +908,12 @@
 					number={i + 1}
 					character={seat.characterId ? characters.get(seat.characterId) : undefined}
 					{size}
+					nightNumbers={nightNumbers && seat.characterId
+						? {
+								first: nightNumbers.first.get(seat.characterId),
+								other: nightNumbers.other.get(seat.characterId)
+							}
+						: undefined}
 					orphan={isOrphan(seat, game.script, characters)}
 					dropTarget={reorderTarget === seat.seatId ||
 						(reminderDrag !== undefined &&
@@ -983,8 +1011,9 @@
 			view={bankView}
 			onView={(v) => (bankChosen = v)}
 			focus={walk && walkStep?.character
-				? stepReminders(walkStep.character.id, walk.night)
+				? stepReminders(walkStep.character.id, walk.night, walkStep.character)
 				: undefined}
+			focusMode={stepFocus.current.mode}
 			{seatAt}
 			onHints={(h) => (trayHints = h)}
 		/>
@@ -1089,6 +1118,14 @@
 			onclick={() => fromMenu(() => (backgroundOpen = true))}
 		>
 			Background
+		</Button>
+		<!-- Token and board settings over the board (Trevor, 2026-10-17). -->
+		<Button
+			variant="quiet"
+			icon="settings"
+			onclick={() => fromMenu(() => settingsDialog.show('board'))}
+		>
+			Board and tokens
 		</Button>
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 		<span class="menu-nav">

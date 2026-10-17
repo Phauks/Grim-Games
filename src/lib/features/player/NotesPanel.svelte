@@ -6,7 +6,6 @@
 	import ScratchPad from '#lib/ui/scratch/ScratchPad.svelte';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import type { PlayerNote } from './notebook.ts';
-	import { playerSettings } from './player-settings.svelte.ts';
 
 	interface Props {
 		notes: readonly PlayerNote[];
@@ -19,8 +18,6 @@
 
 	let { notes, scratch, onAdd, onOpenNote, onOpenScratch }: Props = $props();
 	const preview = (text: string) => text.trim().split('\n')[0] || t('player.empty');
-	// "Hide note contents" setting: titles stay, the text is replaced, so nothing reflows.
-	const hidden = $derived(playerSettings.current.hideNoteContents);
 </script>
 
 <div class="notes">
@@ -41,7 +38,8 @@
 						>
 							<!-- Titles always show, so notes can be found (Trevor, 2026-10-16). -->
 							<span class="title">{note.title.trim() || t('player.untitled')}</span>
-							{#if hidden}
+							<!-- A hidden note keeps its title; the text line says Hidden, so nothing moves. -->
+							{#if note.hidden}
 								<span class="preview" data-hidden>{t('player.hidden')}</span>
 							{:else}
 								<span class="preview">{preview(note.text)}</span>
@@ -61,7 +59,7 @@
 		<div class="head">
 			<h2 id="scratch-pad">{t('scratch.title')}</h2>
 			<span class="actions">
-				{#if scratch && !hidden}<ScratchActions pad={scratch} />{/if}
+				{#if scratch}<ScratchActions pad={scratch} />{/if}
 				<IconButton
 					icon="fullScreen"
 					label={t('scratch.open')}
@@ -71,13 +69,9 @@
 				/>
 			</span>
 		</div>
-		<!-- The same space whether loading, hidden or drawn on, so nothing below moves. -->
+		<!-- The same space whether loading or drawn on, so nothing below moves. -->
 		<div class="scratch">
-			{#if hidden}
-				<button type="button" class="hidden" onclick={onOpenScratch}>
-					<span class="preview" data-hidden>{t('player.hidden')}</span>
-				</button>
-			{:else if scratch}
+			{#if scratch}
 				<ScratchPad pad={scratch} />
 			{/if}
 		</div>
@@ -158,18 +152,6 @@
 		display: flex;
 		flex-direction: column;
 		height: 80dvh;
-	}
-	.hidden {
-		flex: 1;
-		display: grid;
-		place-items: center;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font: inherit;
-		cursor: pointer;
-		touch-action: manipulation;
 	}
 	.none {
 		margin: 0;

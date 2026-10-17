@@ -13,9 +13,11 @@
 		size?: number;
 		/** Writes the character's name on the token (grimoire tokens, when the setting is on). */
 		showName?: boolean;
+		/** Night order numbers for the side leaves' badges (Settings > Board and tokens). */
+		nightNumbers?: { first?: number; other?: number };
 	}
 
-	let { character, alignment, size = 56, showName = false }: Props = $props();
+	let { character, alignment, size = 56, showName = false, nightNumbers }: Props = $props();
 
 	const leaves = $derived<LeafMarks>({
 		firstNight: character.firstNightReminder !== undefined || character.firstNight !== undefined,
@@ -25,9 +27,22 @@
 	});
 	const src = $derived(iconUrl(character, alignment));
 	/* eslint-disable grim/names-as-badges -- the token's accessible name */
+	const marks = $derived(
+		[
+			describeLeaves(leaves),
+			leaves.firstNight && nightNumbers?.first !== undefined
+				? t('characters.marks.firstNumber', { number: nightNumbers.first })
+				: '',
+			leaves.otherNight && nightNumbers?.other !== undefined
+				? t('characters.marks.otherNumber', { number: nightNumbers.other })
+				: ''
+		]
+			.filter(Boolean)
+			.join(', ')
+	);
 	const label = $derived(
-		describeLeaves(leaves)
-			? t('characters.tokenMarks', { name: character.name, marks: describeLeaves(leaves) })
+		marks
+			? t('characters.tokenMarks', { name: character.name, marks })
 			: t('characters.token', { name: character.name })
 	);
 	/* eslint-enable grim/names-as-badges */
@@ -35,5 +50,12 @@
 
 <!-- The character token with its leaves (first night, other nights, reminders, setup). -->
 <!-- eslint-disable grim/names-as-badges -- the name printed on its own token (Settings > Tokens) -->
-<TokenFace {src} {label} {leaves} {size} name={showName ? character.name : undefined} />
+<TokenFace
+	{src}
+	{label}
+	{leaves}
+	{size}
+	{nightNumbers}
+	name={showName ? character.name : undefined}
+/>
 <!-- eslint-enable grim/names-as-badges -->

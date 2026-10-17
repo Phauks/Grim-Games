@@ -57,13 +57,22 @@ export interface TokenAppearance {
 	reminderScale: number;
 	/** The character's name curved along the bottom of grimoire tokens (Trevor, 2026-10-16). */
 	boardNames: boolean;
+	/**
+	 * Night order numbers in badges on the token's side leaves: first night on the left,
+	 * other nights on the right (Trevor, 2026-10-17).
+	 */
+	nightNumbers: boolean;
+	/** Size of those badges, on the same 50% to 200% range. */
+	nightBadgeScale: number;
 }
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	colours: {},
 	tokenScale: 1,
 	reminderScale: 1,
-	boardNames: false
+	boardNames: false,
+	nightNumbers: false,
+	nightBadgeScale: 1
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -86,18 +95,22 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		reminderScale: parseScale(input.reminderScale),
 		// Earlier builds' `namePlacement` and `playerNamePlacement` are dropped: the character
 		// name always curves along the edge and the player name is always a badge.
-		boardNames: input.boardNames === true
+		boardNames: input.boardNames === true,
+		nightNumbers: input.nightNumbers === true,
+		nightBadgeScale: parseScale(input.nightBadgeScale)
 	};
 }
 
 /**
- * The CSS variables to write after the theme's: `--token-scale` and `--reminder-scale`
+ * The CSS variables to write after the theme's: `--token-scale`, `--reminder-scale` and
+ * `--night-badge-scale`
  * always, and each changed colour.
  */
 export function tokenVariables(appearance: TokenAppearance): Record<CssVariable, string> {
 	const variables: Record<CssVariable, string> = {
 		'--token-scale': String(appearance.tokenScale),
-		'--reminder-scale': String(appearance.reminderScale)
+		'--reminder-scale': String(appearance.reminderScale),
+		'--night-badge-scale': String(appearance.nightBadgeScale)
 	};
 	for (const { key, variables: names } of TOKEN_COLOURS) {
 		const value = appearance.colours[key];

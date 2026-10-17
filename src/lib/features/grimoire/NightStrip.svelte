@@ -5,6 +5,8 @@
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import StepFocusSetting from './StepFocusSetting.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName, stepHolders, stepName } from './night-steps.ts';
 
@@ -29,6 +31,10 @@
 	const step = $derived(steps[index]);
 	const holders = $derived(step ? stepHolders(game, step, grimoire.open.characters) : []);
 	const ticked = $derived(step ? grimoire.isNightStepDone(night, step) : false);
+
+	// The step's reminders in the bank: ringed, alone or first (Trevor, 2026-10-17).
+	let focusOpen = $state(false);
+	let focusButton = $state<HTMLElement>();
 
 	function next() {
 		if (step && !ticked) grimoire.toggleNightStep(night, step);
@@ -79,10 +85,21 @@
 		onclick={next}
 	/>
 	<!-- In the top corner (Trevor, 2026-10-16), so Previous and Next own the sides. -->
-	<span class="stop"
-		><IconButton icon="close" label="Stop the walk-through" onclick={onClose} /></span
-	>
+	<span class="corner">
+		<span bind:this={focusButton}
+			><IconButton
+				icon="filter"
+				label="Step reminders"
+				onclick={() => (focusOpen = !focusOpen)}
+			/></span
+		>
+		<IconButton icon="close" label="Stop the walk-through" onclick={onClose} />
+	</span>
 </section>
+
+<Popover bind:open={focusOpen} title="Step reminders" anchor={focusButton}>
+	<StepFocusSetting />
+</Popover>
 
 <style>
 	.strip {
@@ -108,15 +125,16 @@
 		height: auto;
 		margin-top: var(--tap-target);
 	}
-	.stop {
+	.corner {
 		position: absolute;
 		top: 0;
 		right: 0;
 		z-index: 1;
+		display: flex;
 	}
-	/* Clear of the Stop button in the corner. */
+	/* Clear of the buttons in the corner. */
 	.name {
-		padding-inline-end: var(--tap-target);
+		padding-inline-end: calc(2 * var(--tap-target));
 	}
 	.step {
 		flex: 1;

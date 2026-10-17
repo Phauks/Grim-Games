@@ -17,33 +17,45 @@
 			<h2>Summary</h2>
 			<p>
 				Grim-Games has no analytics, no advertising and no tracking cookies. Your games and settings
-				stay on your device. Our server stores only a custom script you choose to share, a report
-				you choose to send, and, if you choose to sign in, your account.
+				stay on your device. Our server stores a custom script only when you share it, a live room's
+				public table only while it is open, a report only when you send one, and your account only
+				if you sign in.
 			</p>
 		</section>
 		<section>
 			<h2>What stays on your device</h2>
 			<ul>
-				<li>Your games, saved in your browser's storage (IndexedDB).</li>
 				<li>
-					Your settings, such as theme, fonts, text size, icons and Storyteller settings, and how
-					you last viewed the <a href={resolve('/reference')}>Reference</a> page (localStorage).
-				</li>
-				<li>
-					A log of up to 20 recent problems the app ran into: the error message, the app area, the
-					page and when it happened. It never contains your games. You can view or clear it from
-					Diagnostics, Problems (localStorage).
+					Your games, ended games, player notes, scratch-pad drawings and grimoire backgrounds,
+					including pictures you add (IndexedDB).
 				</li>
 				<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 				<li>
-					For each script you shared with a code, a random key that lets you delete it
+					Your settings and screen choices, such as theme, fonts, text size, language, column widths
+					and how you last viewed the <a href={resolve('/reference')}>Reference</a> page; your Library
+					tags and folders; a script you are building; your custom info tokens; the player names you have
+					used; and setup in progress (localStorage).
+				</li>
+				<li>
+					A log of up to 20 recent problems the app ran into: the error, where in the app and on
+					which page it happened, and when. It never contains your games. You can view or clear it
+					from Diagnostics, Problems (localStorage).
+				</li>
+				<li>
+					For each script you shared with a code, a random key kept for deleting it (localStorage).
+				</li>
+				<li>
+					For a live room, its code, your device's key for it and the name you joined with
 					(localStorage).
 				</li>
-				<li>A copy of the app itself, so it works offline.</li>
+				<li>Copies of wiki pages you have opened, and of script lists you have browsed.</li>
+				<li>A copy of the app itself, so it works offline, plus images from homebrew scripts.</li>
 			</ul>
 			<p>
-				None of this is sent to us, apart from a script you share (below). Clearing this site's data
-				in your browser deletes it, as does Reset settings for your settings.
+				None of this is sent to us, apart from a script you share, a live room's public table, a
+				report you send, and your scripts if you sign in (below). Clearing this site's data in your
+				browser deletes it all. Settings, Data lets you clear parts of it, and Reset settings resets
+				your settings.
 			</p>
 		</section>
 		<section>
@@ -66,8 +78,8 @@
 					or create each minute, using Cloudflare's rate limiter. We do not store the address.
 				</li>
 				<li>
-					The code appears in our request logs as part of the page address; the script itself never
-					does.
+					The code appears in our request logs as part of the address the app asks our server for;
+					the script itself never does.
 				</li>
 				<li>
 					If a code can't be made, for example while you are offline, the app shares a longer link
@@ -76,10 +88,33 @@
 			</ul>
 		</section>
 		<section>
+			<h2>Live rooms (Players' phones)</h2>
+			<p>
+				When the Storyteller opens Players' phones, the app opens a room on our server under a
+				six-digit code. The room holds what everyone at the table can already see: each seat's
+				number and player name, who looks dead, today's nominations and executions, and the script.
+				It never holds characters, reminders, notes or anything else in the grimoire.
+			</p>
+			<ul>
+				<li>Phones ask to join with a name, and the Storyteller approves each one.</li>
+				<li>
+					Each device proves who it is with a random key, which the room keeps only as a hash.
+				</li>
+				<li>
+					A room is deleted when the Storyteller closes it, or 24 hours after it was last used.
+				</li>
+				<li>The room code appears in our request logs; the room's contents don't.</li>
+				<li>
+					Our server limits how many rooms one IP address can open or join each minute, using
+					Cloudflare's rate limiter. We do not store the address.
+				</li>
+			</ul>
+		</section>
+		<section>
 			<h2>Accounts (optional)</h2>
 			<p>
-				Signing in is optional, and the app works fully without it. If you sign in, we store, in
-				Cloudflare Durable Object storage:
+				Signing in is optional, and the app works fully without it. It isn't available on this site
+				yet. When it is, and you sign in, we store, in Cloudflare Durable Object storage:
 			</p>
 			<ul>
 				<li>Your email address.</li>
@@ -88,18 +123,23 @@
 					description such as "Chrome on Android" and when the session was created and last used. A
 					session ends when you sign out, or after 180 days unused.
 				</li>
-				<li>The scripts you save to your profile.</li>
+				<li>
+					Your scripts: every script you add while signed in, and, the first time you sign in on a
+					device, the scripts already in its Recent list. You can remove them on the Account page.
+				</li>
 			</ul>
 			<p>
-				Your browser keeps the session in a cookie that only our sign-in requests use; it is not
-				used for tracking. Sign-in codes are kept as hashes and expire after 10 minutes. Sign-in
-				requests are limited per network address using Cloudflare's rate limiter; we do not store
-				the address. Nothing is shared with anyone. The <a href={resolve('/account')}>Account</a> page
-				lets you download everything, or delete your account and all its data immediately.
+				Your browser keeps the session in a cookie that is sent only to our server and read only
+				when you sign in or use your account; it is not used for tracking. Sign-in codes are kept as
+				hashes and expire after 10 minutes, and one email address can be sent at most 5 codes an
+				hour. Sign-in requests are limited per network address using Cloudflare's rate limiter; we
+				do not store the address. Nothing is shared with anyone. The
+				<a href={resolve('/account')}>Account</a> page lets you download everything, or delete your account
+				and all its data immediately.
 			</p>
 			<p>
 				On the Preview (test) version no email is sent: the sign-in code is shown on screen, and the
-				code and your email address are written to our server log.
+				code, the sign-in link and your email address are written to our server log.
 			</p>
 		</section>
 		<section>
@@ -135,8 +175,9 @@
 			<p>
 				The app is served by Cloudflare. Like any website, each request your browser makes reaches
 				Cloudflare's servers with your IP address, browser details and the page address. We keep
-				Cloudflare's request logs to find and fix errors; Cloudflare keeps them for a limited time
-				and we do not use them to identify or follow anyone. See
+				Cloudflare's request logs, including the full address of each request to our server, to find
+				and fix errors. Cloudflare deletes them after 7 days, and we do not use them to identify or
+				follow anyone. See
 				<a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener"
 					>Cloudflare's privacy policy</a
 				>.
@@ -146,10 +187,10 @@
 			<h2>Other sites the app contacts</h2>
 			<ul>
 				<li>
-					<strong>Blood on the Clocktower wiki.</strong> To show rules definitions, the app downloads
-					the wiki's Glossary page from wiki.bloodontheclocktower.com about once a week and keeps a copy
-					on your device. The request contains nothing about you or your games beyond what any web request
-					carries.
+					<strong>Blood on the Clocktower wiki.</strong> To show rules definitions and character pages,
+					the app downloads the wiki's Glossary page and the page of each character you open from wiki.bloodontheclocktower.com,
+					again after a week, and keeps copies on your device. The wiki sees which character pages you
+					open, but nothing else about you or your games.
 				</li>
 				<li>
 					<strong>BotC Scripts.</strong> When you search or browse botcscripts.com, or load a script from
@@ -159,9 +200,19 @@
 					sees our server, not you.
 				</li>
 				<li>
+					<strong>Other script and character lists.</strong> For the Official custom scripts, the Carousel
+					Script Collection and the BotC Homebrew Wiki, our server reads bloodontheclocktower.com, the
+					collection's Google Doc and the files it links on Google Drive, and botchomebrew.wiki, and keeps
+					the answers for up to a day. Those sites see our server, not you, and nothing about you is sent.
+				</li>
+				<li>
 					<strong>A link you load a script from.</strong> "Load from a link" downloads the script straight
 					from the site you name (without cookies), so that site sees your request like any page visit.
 					Pasted and uploaded scripts never leave your device unless you share them.
+				</li>
+				<li>
+					<strong>Homebrew images.</strong> A homebrew script's character images load from the sites the
+					script names, which see your request like any page visit.
 				</li>
 				<li>
 					<strong>GitHub.</strong> If the app fails to start, its error screen links to GitHub's list
