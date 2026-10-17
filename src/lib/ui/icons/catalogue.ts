@@ -27,6 +27,8 @@ export const ICON_SLOTS = {
 	demon: { label: 'Demon', choices: ['ph:mask-sad', 'ph:smiley-angry', 'ph:fire'] },
 	bag: { label: 'Bag', choices: ['ph:handbag', 'ph:tote', 'ph:bag-simple'] },
 	reminder: { label: 'Reminder', choices: ['ph:push-pin', 'ph:bookmark-simple', 'ph:tag'] },
+	/** A reminder token placed at setup (Reference); the flower echoes the tokens' setup flower. */
+	setup: { label: 'Setup', choices: ['ph:flower', 'ph:flower-lotus'] },
 	players: { label: 'Players', choices: ['ph:users-three', 'ph:users'] },
 	script: { label: 'Script', choices: ['ph:scroll', 'ph:book-open'] },
 	notes: { label: 'Notes', choices: ['ph:note-pencil', 'ph:notepad', 'ph:feather'] },

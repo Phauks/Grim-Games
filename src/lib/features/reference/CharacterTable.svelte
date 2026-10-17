@@ -5,9 +5,10 @@
 	import {
 		ALIGNMENT_CHOICES,
 		nextSort,
-		type Presence,
+		type TokensFilter,
 		type TableColumn
 	} from '#lib/core/rules/reference-table.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import FieldValue from './FieldValue.svelte';
@@ -184,10 +185,17 @@
 			[
 				{ value: '', label: 'All' },
 				{ value: 'yes', label: labels.yes },
-				{ value: 'no', label: labels.no }
+				{ value: 'no', label: labels.no },
+				// Tokens also split by setup (Trevor, 2026-10-17: "for diagnostic purposes").
+				...(key === 'tokens'
+					? [
+							{ value: 'setup', label: t('reference.presence.setupTokens') },
+							{ value: 'not-setup', label: t('reference.presence.noSetupTokens') }
+						]
+					: [])
 			],
 			table.filters[key] ?? '',
-			(v) => referenceTable.setFilter(key, (v || undefined) as Presence | undefined)
+			(v) => referenceTable.setFilter(key, (v || undefined) as TokensFilter | undefined)
 		)}
 	{/if}
 {/snippet}

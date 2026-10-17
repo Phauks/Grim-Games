@@ -458,3 +458,37 @@ test('jinxes start folded on cards and in the table; Wiki and Report sit by the 
 		page.getByTestId('character-table').getByRole('columnheader', { name: /Links/ })
 	).toHaveCount(0);
 });
+
+test('reminder tokens show their copies and whether setup places them; the table filters by it', async ({
+	page
+}) => {
+	// Trevor (2026-10-17): "Designate tokens as setup tokens or not setup on the reference".
+	await page.goto('/reference');
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('No Dashii');
+	const tokens = page
+		.locator('[data-testid="reference-card"][data-character="nodashii"]')
+		.locator('[data-row="tokens"]')
+		.getByTestId('reminder-token');
+	// TPI lists Poisoned twice; setup poisons both of its Townsfolk neighbours.
+	await expect(tokens).toHaveText(['Dead', 'Poisoned×2']);
+	await expect(tokens.nth(0).getByRole('img', { name: /setup/i })).toHaveCount(0);
+	await expect(tokens.nth(1).getByRole('img', { name: 'Placed at setup' })).toHaveCount(1);
+
+	await search.fill('Washerwoman');
+	const washer = page
+		.locator('[data-testid="reference-card"][data-character="washerwoman"]')
+		.locator('[data-row="tokens"]');
+	await expect(washer.getByRole('img', { name: 'Placed at setup' })).toHaveCount(2);
+
+	await search.fill('');
+	await page.getByText('Table', { exact: true }).tap();
+	const table = page.getByTestId('character-table');
+	await table.getByRole('button', { name: 'Filter Tokens', exact: true }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Filter Tokens' });
+	await dialog.getByLabel('No setup tokens').check();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(table.locator('tr[data-character="imp"]')).toHaveCount(1);
+	await expect(table.locator('tr[data-character="nodashii"]')).toHaveCount(0);
+	await page.getByRole('button', { name: 'Clear filters' }).tap();
+});

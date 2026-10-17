@@ -139,3 +139,25 @@ describe('fullNightOrder', () => {
 		expect(first).toContain('demoninfo');
 	});
 });
+
+describe('reference tokens', () => {
+	it('groups TPI copies of a token and counts those the setup reminders place', () => {
+		// The No Dashii lists Poisoned twice and setup poisons both its Townsfolk neighbours.
+		expect(entry('nodashii').tokens).toEqual([
+			{ label: 'Dead', global: false, copies: 1, setup: 0, firstDay: 0 },
+			{ label: 'Poisoned', global: false, copies: 2, setup: 2, firstDay: 0 }
+		]);
+		// The Washerwoman's two tokens both go down before the first night.
+		expect(entry('washerwoman').tokens.map((t) => [t.label, t.setup])).toEqual([
+			['Townsfolk', 1],
+			['Wrong', 1]
+		]);
+	});
+
+	it('never places more of a token at setup than TPI lists', () => {
+		const over = entries.flatMap((e) =>
+			e.problems.filter((p) => p.startsWith('Setup places')).map((p) => `${e.character.id}: ${p}`)
+		);
+		expect(over).toEqual([]);
+	});
+});

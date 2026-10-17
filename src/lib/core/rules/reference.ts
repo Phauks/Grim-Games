@@ -15,7 +15,8 @@ import {
 	type CharacterId,
 	type CharacterType,
 	type NightMarker,
-	type NightSheet
+	type NightSheet,
+	type ReminderLabel
 } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import {
@@ -31,6 +32,7 @@ import { isExclusiveJinx } from './jinxes.ts';
 import { nightOrder, type Night, type NightOrder } from './night-order.ts';
 import { nightTextOverride, type NightTextOverride } from './night-text.ts';
 import { setupModifierFor, type SetupModifier } from './setup-modifiers.ts';
+import { SETUP_REMINDER_ENTRIES } from './setup-reminders.data.ts';
 
 /**
  * A piece of a reminder sentence: a character badge, the player carrying a token, a value
@@ -108,12 +110,56 @@ export const REFERENCE_FILTER_LABELS: Record<ReferenceFilter, string> = {
 	problems: 'Possible problems'
 };
 
+/**
+ * One of a character's reminder tokens, as TPI lists them (`copies` of the same label are
+ * one entry), and how many the setup reminders (`SETUP_REMINDER_ENTRIES`, the list the board's
+ * setup tray uses) place for one copy of the character: before the first night (`setup`) or
+ * at the start of the first day (`firstDay`). Shown on Reference so the classification can be
+ * checked (Trevor, 2026-10-17).
+ */
+export interface ReferenceToken {
+	label: ReminderLabel;
+	global: boolean;
+	copies: number;
+	setup: number;
+	firstDay: number;
+}
+
+const SETUP_SPECS = new Map(SETUP_REMINDER_ENTRIES.map((e) => [e.id, e.reminders]));
+
+/** A character's reminder tokens with their setup counts, in TPI's order. */
+export function referenceTokens(character: Character): ReferenceToken[] {
+	const out: ReferenceToken[] = [];
+	for (const [labels, global] of [
+		[character.reminders, false],
+		[character.remindersGlobal, true]
+	] as const) {
+		for (const label of labels) {
+			const same = out.find((t) => t.label === label && t.global === global);
+			if (same) same.copies += 1;
+			else out.push({ label, global, copies: 1, setup: 0, firstDay: 0 });
+		}
+	}
+	for (const spec of SETUP_SPECS.get(character.id) ?? []) {
+		const token = out.find((t) => t.label === spec.label);
+		if (!token) continue;
+		if ((spec.timing ?? 'setup') === 'setup') token.setup += 1;
+		else token.firstDay += 1;
+	}
+	return out;
+}
+
+/** Placed at setup or at the start of the first day. */
+export const atSetup = (token: ReferenceToken) => token.setup + token.firstDay > 0;
+
 export interface ReferenceEntry {
 	character: Character;
 	/** From the character type; Travellers get theirs when assigned. */
 	alignment?: Alignment;
 	alignmentNote: string;
 	setup?: SetupModifier;
+	/** TPI's reminder tokens, one per label, with how many of them setup places. */
+	tokens: ReferenceToken[];
 	jinxes: ReferenceJinx[];
 	firstNight: ReferenceNight;
 	otherNight: ReferenceNight;
@@ -292,6 +338,17 @@ export function characterReference(data: GameData, numeric?: NumericNightOrder):
 			reason: j.reason,
 			exclusive: isExclusiveJinx(j.reason)
 		}));
+		const tokens = referenceTokens(character);
+		for (const spec of SETUP_SPECS.get(character.id) ?? []) {
+			if (!tokens.some((t) => t.label === spec.label))
+				problems.push(`Setup places [${spec.label}], which is not one of TPI’s reminder tokens.`);
+		}
+		for (const t of tokens) {
+			if (t.setup + t.firstDay > t.copies)
+				problems.push(
+					`Setup places ${t.setup + t.firstDay} [${t.label}] but TPI lists ${t.copies}.`
+				);
+		}
 		const firstNight = nightFor(character, 'first', first);
 		const otherNight = nightFor(character, 'other', other);
 		problems.push(...firstNight.issues.map((i) => `First night: ${i}`));
@@ -327,6 +384,7 @@ export function characterReference(data: GameData, numeric?: NumericNightOrder):
 			...(alignment ? { alignment } : {}),
 			alignmentNote: alignmentNote(character.type),
 			...(setup ? { setup } : {}),
+			tokens,
 			jinxes,
 			firstNight,
 			otherNight,

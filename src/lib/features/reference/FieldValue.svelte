@@ -7,7 +7,11 @@
 		type Special
 	} from '#lib/core/data/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
-	import type { ReferenceEntry, ReferenceNight } from '#lib/core/rules/reference.ts';
+	import type {
+		ReferenceEntry,
+		ReferenceNight,
+		ReferenceToken
+	} from '#lib/core/rules/reference.ts';
 	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup-reminders.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { ISSUE_CHOOSER_URL } from '#lib/features/about/report-issue.ts';
@@ -62,10 +66,15 @@
 			.filter(([, file]) => file !== undefined)
 			.map(([label, file]) => ({ label, src: `${ICONS_PATH}/${file}` }));
 	});
-	const tokens = $derived([
-		...character.reminders.map((label) => ({ label, global: false })),
-		...character.remindersGlobal.map((label) => ({ label, global: true }))
-	]);
+	/** "Setup", or "Setup: 1 of 2" when only some copies go down at setup. */
+	function setupLabel(token: ReferenceToken): string | undefined {
+		const placed = token.setup + token.firstDay;
+		if (placed === 0) return undefined;
+		const key = token.firstDay > 0 && token.setup === 0 ? 'reference.firstDay' : 'reference.setup';
+		return placed === token.copies
+			? t(key)
+			: t('reference.setupSome', { label: t(key), placed, copies: token.copies });
+	}
 
 	function special(s: Special): string {
 		return [
@@ -154,9 +163,11 @@
 		<span class="ability"><GlossaryText text={character.ability} names={[character.name]} /></span>
 	{:else if field === 'tokens'}
 		<span class="spaced"
-			>{#each tokens as token, i (i)}<ReminderToken
+			>{#each entry.tokens as token, i (i)}<ReminderToken
 					label={token.global ? t('reference.globalReminder', { label: token.label }) : token.label}
 					type={character.type}
+					count={token.copies}
+					setup={setupLabel(token)}
 				/>{:else}{t('common.none')}{/each}</span
 		>
 	{:else if field === 'special'}

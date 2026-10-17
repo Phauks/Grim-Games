@@ -54,6 +54,7 @@ import ph_flag from '~icons/ph/flag';
 import ph_flask from '~icons/ph/flask';
 import ph_floppy_disk from '~icons/ph/floppy-disk';
 import ph_flower from '~icons/ph/flower';
+import ph_flower_lotus from '~icons/ph/flower-lotus';
 import ph_funnel from '~icons/ph/funnel';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
@@ -202,6 +203,7 @@ const icons: IconMap = {
 	'ph:flask': ph_flask,
 	'ph:floppy-disk': ph_floppy_disk,
 	'ph:flower': ph_flower,
+	'ph:flower-lotus': ph_flower_lotus,
 	'ph:funnel': ph_funnel,
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,

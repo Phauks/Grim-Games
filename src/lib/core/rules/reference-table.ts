@@ -4,7 +4,7 @@
  * remembers on the device (`parseTableState` accepts anything stored by an older build).
  */
 import { CHARACTER_TYPES, type CharacterType } from '#lib/core/data/types.ts';
-import type { ReferenceEntry } from './reference.ts';
+import { atSetup, type ReferenceEntry } from './reference.ts';
 
 export const TABLE_COLUMNS = [
 	'name',
@@ -41,6 +41,12 @@ export interface TableSort {
 
 /** `yes`: has one (wakes, has tokens, ...); `no`: has none. */
 export type Presence = 'yes' | 'no';
+/**
+ * The Tokens filter also splits characters with tokens into those with a token placed at
+ * setup and those with none (Trevor, 2026-10-17).
+ */
+export type TokensFilter = Presence | 'setup' | 'not-setup';
+export const TOKENS_FILTERS: readonly TokensFilter[] = ['yes', 'no', 'setup', 'not-setup'];
 
 export interface TableFilters {
 	name?: string;
@@ -49,7 +55,7 @@ export interface TableFilters {
 	alignment?: string;
 	firstNight?: Presence;
 	otherNight?: Presence;
-	tokens?: Presence;
+	tokens?: TokensFilter;
 	setup?: Presence;
 	jinxes?: Presence;
 	preDay?: Presence;
@@ -119,7 +125,10 @@ export function matchesFilters(entry: ReferenceEntry, filters: TableFilters): bo
 	if (filters.alignment && entry.alignmentNote !== filters.alignment) return false;
 	for (const column of PRESENCE_COLUMNS) {
 		const wanted = filters[column];
-		if (wanted && present(entry, column) !== (wanted === 'yes')) return false;
+		if (wanted === 'setup' || wanted === 'not-setup') {
+			const has = entry.tokens.length > 0 && entry.tokens.some(atSetup) === (wanted === 'setup');
+			if (!has) return false;
+		} else if (wanted && present(entry, column) !== (wanted === 'yes')) return false;
 	}
 	return true;
 }
@@ -183,6 +192,8 @@ export function parseTableState(raw: unknown): TableState {
 		filters.alignment = f.alignment as string;
 	for (const column of PRESENCE_COLUMNS) {
 		if (f[column] === 'yes' || f[column] === 'no') filters[column] = f[column];
+		else if (column === 'tokens' && TOKENS_FILTERS.includes(f[column] as TokensFilter))
+			filters.tokens = f[column] as TokensFilter;
 	}
 	return { ...(sort ? { sort } : {}), filters };
 }
