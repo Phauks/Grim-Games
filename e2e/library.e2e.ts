@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // Trevor (2026-10-16): a Library tab with every script the user has saved or made, folders and
-// tags for them ("favorite", "wanna try", "stupid fun"), and their own info tokens.
+// tags for them ("favorite", "wanna try", "stupid fun").
 
 const homebrew = [
 	{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
