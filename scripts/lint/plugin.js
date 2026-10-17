@@ -2,6 +2,7 @@
 import { clearableField } from './clearable-field.js';
 import { confirmDialog } from './confirm-dialog.js';
 import { deleteButton } from './delete-button.js';
+import { modalActions } from './modal-actions.js';
 import { namesAsBadges } from './names-as-badges.js';
 
 export default {
@@ -9,6 +10,7 @@ export default {
 		'names-as-badges': namesAsBadges,
 		'confirm-dialog': confirmDialog,
 		'clearable-field': clearableField,
-		'delete-button': deleteButton
+		'delete-button': deleteButton,
+		'modal-actions': modalActions
 	}
 };

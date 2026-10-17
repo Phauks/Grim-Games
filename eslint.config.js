@@ -137,6 +137,13 @@ export default defineConfig(
 		rules: { 'grim/delete-button': 'error' }
 	},
 	{
+		// Decision modals end in Cancel and Confirm, bottom right (Trevor, 2026-10-17).
+		files: ['src/**/*.svelte'],
+		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: { 'grim/modal-actions': 'error' }
+	},
+	{
 		// Core builds no screen text, but its fields must keep the name marks for the UI.
 		files: ['src/lib/core/**/*.ts'],
 		ignores: ['src/lib/core/**/*.test.ts'],
