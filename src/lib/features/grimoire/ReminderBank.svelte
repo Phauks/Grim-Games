@@ -42,6 +42,10 @@
 		seatAt: (at: SeatPoint) => SeatId | undefined;
 		/** Whether a reminder may stay at this client point (not over the bank or buttons). */
 		spotAllowed: (x: number, y: number) => boolean;
+		/** The Fabled or Loric under a client point, if any. */
+		ruleAt: (x: number, y: number, reminder: Reminder) => CharacterId | undefined;
+		/** Gives a Fabled or Loric a new reminder (asking first when it isn't theirs). */
+		onRule: (reminder: Reminder, characterId: CharacterId) => void;
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
@@ -57,6 +61,8 @@
 		focusMode = 'front',
 		seatAt,
 		spotAllowed,
+		ruleAt,
+		onRule,
 		onHints
 	}: Props = $props();
 
@@ -126,9 +132,10 @@
 				const key = `${characterId}:${label}`;
 				const n = left - (pending[key] ?? 0);
 				if (n <= 0) return [];
-				if (stack) return [{ key, characterId, label, count: n, now }];
+				// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
+				if (stack) return [{ key: `bank:${key}`, characterId, label, count: n, now }];
 				return Array.from({ length: n }, (_, i) => ({
-					key: `${key}:${i}`,
+					key: `bank:${key}:${i}`,
 					characterId,
 					label,
 					count: 1,
@@ -184,10 +191,23 @@
 		}
 		drag = undefined;
 		onHints({ seats: [] });
+		const reminder = { characterId: item.characterId, label: item.label };
+		// On a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
+		const rule = ruleAt(x, y, reminder);
+		if (rule) return onRule(reminder, rule);
+		const free = boardLooks.current.reminders === 'free' && spotAllowed(x, y);
+		// Anywhere in the board's open area: it stays there, belonging to no one.
+		if (!target) {
+			if (free && grimoire.run({ type: 'PlaceLooseReminder', reminder })) {
+				const added = grimoire.game.looseReminders?.at(-1);
+				if (added) grimoire.setReminderSpot(added.reminderId, at);
+			}
+			return;
+		}
 		// Any seat will do: the Storyteller can override the suggestion.
-		if (!target || !place(item, target)) return;
+		if (!place(item, target)) return;
 		// Stays where dropped, inside the board's open area (Trevor, 2026-10-17).
-		if (boardLooks.current.reminders === 'free' && spotAllowed(x, y)) {
+		if (free) {
 			const added = grimoire.game.seats[target]?.reminders.at(-1);
 			if (added) grimoire.setReminderSpot(added.reminderId, at);
 		}

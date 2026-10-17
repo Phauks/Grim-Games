@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -2123,13 +2123,19 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await page.mouse.move(to.x, to.y, { steps: 8 });
 	await page.mouse.up();
 
-	// Still the Sailor's seat's reminder, drawn where it was dropped, also after a reload.
+	// Drawn where it was dropped, also after a reload, and no longer the Sailor's seat's:
+	// a reminder put down anywhere belongs to no one (Trevor, 2026-10-17).
 	const near = async () => {
 		const b = (await token.boundingBox())!;
 		return Math.hypot(b.x + b.width / 2 - to.x, b.y + b.height / 2 - to.y) < board.width * 0.05;
 	};
 	await expect.poll(near).toBe(true);
-	await expect(seatLabelled(page, 'Seat 1: no name, Sailor, 1 reminder')).toBeAttached();
+	await expect(
+		page.locator('[data-loose]').getByRole('button', { name: 'Drunk reminder' })
+	).toBeVisible();
+	await expect(
+		page.locator('[data-testid="seat"][aria-label="Seat 1: no name, Sailor"]')
+	).toBeAttached();
 	await page.reload();
 	await expect(token).toBeVisible();
 	await expect.poll(near).toBe(true);
@@ -2144,6 +2150,113 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await page.mouse.move(m.x + m.width / 2, m.y + m.height / 2, { steps: 8 });
 	await page.mouse.up();
 	await expect.poll(near).toBe(true);
+});
+
+/** Drags a token by mouse from its centre to a point, lifting it straight up first. */
+async function dragTo(page: Page, token: Locator, to: { x: number; y: number }) {
+	await token.scrollIntoViewIfNeeded();
+	const box = (await token.boundingBox())!;
+	const x = box.x + box.width / 2;
+	const y = box.y + box.height / 2;
+	await page.mouse.move(x, y);
+	await page.mouse.down();
+	await page.mouse.move(x, y - box.height, { steps: 4 });
+	await page.mouse.move(to.x, to.y, { steps: 8 });
+	await page.mouse.up();
+}
+const centreOf = async (locator: Locator) => {
+	const b = (await locator.boundingBox())!;
+	return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+};
+
+test('a Fabled or Loric holds reminders, asking first for one not its own', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	await menu(page, 'Add Fabled or Loric');
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Angel', exact: true })
+		.tap();
+	const bank = page.getByRole('list', { name: /Reminder bank|Setup reminders/ });
+	if ((await bank.getAttribute('aria-label')) === 'Setup reminders') await bankView(page, 'All');
+	const all = page.getByRole('list', { name: 'Reminder bank' });
+	const angel = page.getByRole('list', { name: 'Fabled and Loric' }).getByRole('button', {
+		name: 'Angel'
+	});
+	const held = page.getByRole('group', { name: "Angel's reminders" });
+
+	// The Angel's own reminder goes straight on (https://wiki.bloodontheclocktower.com/Angel).
+	await dragTo(
+		page,
+		all.getByRole('button', { name: 'Something Bad reminder' }),
+		await centreOf(angel)
+	);
+	await expect(held.getByRole('button', { name: 'Something Bad reminder' })).toBeVisible();
+
+	// Another character's asks first, saying why (Trevor, 2026-10-17).
+	await dragTo(page, all.getByRole('button', { name: 'Poisoned reminder' }), await centreOf(angel));
+	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
+	await expect(confirm).toContainText('Not a Fabled or Loric reminder.');
+	await expect(confirm).toContainText(/Now\s*In the reminder bank/);
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(held.getByRole('button')).toHaveCount(2);
+
+	// Its dialog lists them; one opens on its own, with whose it is, and can be removed.
+	await held.getByRole('button', { name: 'Poisoned reminder' }).tap();
+	const reminder = page.getByRole('dialog', { name: 'Poisoned' });
+	await expect(reminder.locator('.source')).toContainText('Poisoner');
+	await reminder.getByRole('button', { name: 'Remove reminder' }).tap();
+	await expect(held.getByRole('button')).toHaveCount(1);
+	await expect(all.getByRole('button', { name: 'Poisoned reminder' })).toBeVisible();
+});
+
+test('a reminder put down in the open belongs to no one, and can go back on a seat', async ({
+	page
+}) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	await page.evaluate(() =>
+		localStorage.setItem('grim.boardLooks', JSON.stringify({ reminders: 'free' }))
+	);
+	await page.reload();
+	const bank = page.getByRole('list', { name: /Reminder bank|Setup reminders/ });
+	if ((await bank.getAttribute('aria-label')) === 'Setup reminders') await bankView(page, 'All');
+	const board = (await page.locator('.board').boundingBox())!;
+	const open = { x: board.x + board.width * 0.35, y: board.y + board.height * 0.3 };
+	await dragTo(
+		page,
+		page
+			.getByRole('list', { name: 'Reminder bank' })
+			.getByRole('button', { name: 'Poisoned reminder' }),
+		open
+	);
+	const loose = page.locator('[data-loose]').getByRole('button', { name: 'Poisoned reminder' });
+	await expect(loose).toBeVisible();
+	await expect(page.locator('[data-testid="seat"][aria-label$=" reminder"]')).toHaveCount(0);
+
+	// Tapped: it is on no seat, and can be put on one.
+	await loose.tap();
+	const dialog = page.getByRole('dialog', { name: 'Poisoned' });
+	await expect(dialog).toContainText('Loose on the board');
+	await dialog.getByRole('button', { name: 'Move to a seat' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Move reminder to' })
+		.getByRole('button', { name: /Seat 3/ })
+		.tap();
+	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
+	await expect(page.locator('[data-loose]')).toHaveCount(0);
 });
 
 /** Picks how the walked-through step's reminders are shown. */

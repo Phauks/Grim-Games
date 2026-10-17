@@ -24,6 +24,8 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		charactersInPlay,
+		looseReminders,
+		ruleReminders,
 		scriptCharacterIds,
 		trueCharacter,
 		type Reminder,
@@ -94,6 +96,8 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
+	import HeldReminderDialog from './HeldReminderDialog.svelte';
+	import { onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 
 	interface Props {
@@ -282,7 +286,8 @@
 
 	interface ReminderDrag {
 		reminderId: ReminderId;
-		from: SeatId;
+		/** The seat it is on; none for a loose reminder or one a Fabled or Loric holds. */
+		from: SeatId | undefined;
 		/** Where the token is, in % of the board. */
 		at: SeatPoint;
 		target?: SeatId;
@@ -295,7 +300,7 @@
 	const dragOrigin = $derived.by(() => {
 		if (!reminderDrag) return undefined;
 		const id = reminderDrag.reminderId;
-		const reminder = game.seats[reminderDrag.from]?.reminders.find((r) => r.reminderId === id);
+		const reminder = onBoard(game).find((r) => r.reminderId === id);
 		if (!reminder) return undefined;
 		const holders = game.seating.filter(
 			(s) =>
@@ -337,7 +342,42 @@
 		);
 		return ![...blocked].some((el) => inside(el.getBoundingClientRect()));
 	}
-	function dragReminder(reminderId: ReminderId, from: SeatId, x: number, y: number, end: boolean) {
+	/**
+	 * The Fabled or Loric under a client point, if any: its own token, or the grouped stack
+	 * (then the one whose reminder it is, else the first) (Trevor, 2026-10-17).
+	 */
+	function ruleAt(x: number, y: number, reminder: Reminder): CharacterId | undefined {
+		const hit = document
+			.elementsFromPoint(x, y)
+			.map((el) => el.closest<HTMLElement>('[data-rule], [data-rule-stack]'))
+			.find((el) => el !== null);
+		if (!hit) return undefined;
+		if (hit.dataset.rule) return hit.dataset.rule;
+		return game.ruleCharacters.includes(reminder.characterId)
+			? reminder.characterId
+			: game.ruleCharacters[0];
+	}
+	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
+	/** A Fabled or Loric's reminder being dragged off it. */
+	const heldDrag = $derived.by(() => {
+		const id = reminderDrag?.reminderId;
+		if (!id) return undefined;
+		return Object.values(game.ruleReminders ?? {})
+			.flat()
+			.find((r) => r.reminderId === id);
+	});
+	const heldLabel = (name: string) => `${name}'s reminders`;
+	/** Gives a dropped spot to a reminder now loose on the board. */
+	function looseAt(reminderId: ReminderId, at: SeatPoint) {
+		grimoire.setReminderSpot(reminderId, at);
+	}
+	function dragReminder(
+		reminderId: ReminderId,
+		from: SeatId | undefined,
+		x: number,
+		y: number,
+		end: boolean
+	) {
 		if (!board) return;
 		const rect = board.getBoundingClientRect();
 		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
@@ -353,12 +393,30 @@
 			moveConfirm?.requestReturn(reminderId);
 			return;
 		}
-		// Reminders that stay where they are dropped keep this spot, whichever seat has them,
-		// if it is in the board's open area (Trevor, 2026-10-17).
-		if (boardLooks.current.reminders === 'free' && spotAllowed(x, y))
+		const reminder = onBoard(game).find((r) => r.reminderId === reminderId);
+		if (!reminder) return;
+		// Dropped on a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
+		const rule = ruleAt(x, y, reminder);
+		if (rule) {
+			if (!ruleReminders(game, rule).some((r) => r.reminderId === reminderId))
+				moveConfirm?.requestRule(reminderId, rule);
+			return;
+		}
+		const free = boardLooks.current.reminders === 'free' && spotAllowed(x, y);
+		// Dropped on another seat: moved (one History entry), keeping the spot when free.
+		if (target && target !== from) {
+			if (free) grimoire.setReminderSpot(reminderId, at);
+			moveConfirm?.request(reminderId, target);
+			return;
+		}
+		if (!free) return;
+		// Moved about near its own seat, or already loose: only its spot changes.
+		if (target || looseReminders(game).some((r) => r.reminderId === reminderId)) {
 			grimoire.setReminderSpot(reminderId, at);
-		// Dropped on another seat: moved (one History entry). Anywhere else: nothing changes.
-		if (target && target !== from) moveConfirm?.request(reminderId, target);
+			return;
+		}
+		// Put down anywhere else in the open area: it belongs to no one (Trevor, 2026-10-17).
+		moveConfirm?.requestLoose(reminderId, () => looseAt(reminderId, at));
 	}
 
 	// ── Arranging seats ──
@@ -828,6 +886,7 @@
 	<button
 		type="button"
 		class="rules-stack"
+		data-rule-stack
 		aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
 		onclick={() => (rulesGroupOpen = true)}
 	>
@@ -841,6 +900,28 @@
 	</button>
 {/snippet}
 
+<!-- A Fabled or Loric's reminders in its dialog; a tap opens one. -->
+{#snippet heldList(id: CharacterId)}
+	<div class="held-list" role="group" aria-label="Reminders">
+		{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
+			<button
+				type="button"
+				class="held-chip"
+				aria-label={reminder.label}
+				onclick={() => heldDialog?.show(reminder.reminderId)}
+			>
+				<ReminderToken
+					label={reminder.label}
+					character={characters.get(reminder.characterId)}
+					alignment={placingAlignment(game, reminder.characterId, characters)}
+				/>
+			</button>
+		{:else}
+			<span class="none">None</span>
+		{/each}
+	</div>
+{/snippet}
+
 {#snippet rulesList(tokenSize: number)}
 	<ul class="rules" class:edge={tokenSize < size * 0.8} aria-label="Fabled and Loric">
 		{#each game.ruleCharacters as id (id)}
@@ -850,6 +931,7 @@
 					<button
 						type="button"
 						class="rule"
+						data-rule={id}
 						aria-label={character.name}
 						onclick={() => {
 							ruleShown = id;
@@ -858,6 +940,25 @@
 					>
 						<CharacterToken {character} size={tokenSize} />
 					</button>
+					<!-- Its reminders, under it (Trevor, 2026-10-17). -->
+					{#if ruleReminders(game, id).length > 0}
+						<span class="held" role="group" aria-label={heldLabel(character.name)}>
+							{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
+								<span class:lifted={reminderDrag?.reminderId === reminder.reminderId}>
+									<BoardReminder
+										label={reminder.label}
+										character={characters.get(reminder.characterId)}
+										alignment={placingAlignment(game, reminder.characterId, characters)}
+										size={Math.round(chip * 0.8)}
+										disabled={arranging}
+										onTap={() => heldDialog?.show(reminder.reminderId)}
+										onDrag={(x, y, end) => dragReminder(reminder.reminderId, undefined, x, y, end)}
+										onCancel={() => (reminderDrag = undefined)}
+									/>
+								</span>
+							{/each}
+						</span>
+					{/if}
 				</li>
 			{/if}
 		{/each}
@@ -1042,6 +1143,49 @@
 			{/if}
 		{/each}
 
+		<!-- Reminders that belong to no one, where they were put down (Trevor, 2026-10-17). -->
+		{#each looseReminders(game) as reminder, k (reminder.reminderId)}
+			{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
+			{@const p = dragged
+				? reminderDrag!.at
+				: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
+			<div
+				class="chip-slot"
+				data-loose
+				class:dragging={dragged}
+				style:left="{p.x}%"
+				style:top="{p.y}%"
+			>
+				<BoardReminder
+					label={reminder.label}
+					character={characters.get(reminder.characterId)}
+					alignment={placingAlignment(game, reminder.characterId, characters)}
+					size={chip}
+					disabled={arranging}
+					onTap={() => heldDialog?.show(reminder.reminderId)}
+					onDrag={(x, y, end) => dragReminder(reminder.reminderId, undefined, x, y, end)}
+					onCancel={() => (reminderDrag = undefined)}
+				/>
+			</div>
+		{/each}
+		<!-- A Fabled or Loric's reminder follows the finger while it is dragged. -->
+		{#if heldDrag}
+			<div
+				class="chip-slot dragging"
+				style:left="{reminderDrag!.at.x}%"
+				style:top="{reminderDrag!.at.y}%"
+				aria-hidden="true"
+			>
+				<BoardReminder
+					label={heldDrag.label}
+					character={characters.get(heldDrag.characterId)}
+					size={chip}
+					disabled
+					onTap={() => {}}
+				/>
+			</div>
+		{/if}
+
 		{#each placeSpots as spot (spot.position)}
 			<button
 				type="button"
@@ -1095,6 +1239,8 @@
 			focusMode={stepFocus.current.mode}
 			{seatAt}
 			{spotAllowed}
+			{ruleAt}
+			onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
 			onHints={(h) => (trayHints = h)}
 		/>
 
@@ -1249,6 +1395,12 @@
 </Dialog>
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
+<HeldReminderDialog
+	bind:this={heldDialog}
+	{grimoire}
+	onRemove={(id) => moveConfirm?.requestReturn(id)}
+	onMove={(id, to) => moveConfirm?.request(id, to)}
+/>
 <AlignmentAsk {grimoire} />
 
 <InfoTokensSheet
@@ -1405,6 +1557,7 @@
 			<CharacterToken character={ruleShownCharacter} size={64} />
 			<p>{ruleShownCharacter.ability}</p>
 		</div>
+		{@render heldList(ruleShownCharacter.id)}
 	{/if}
 	<RulesAtSetting />
 	{#snippet headActions()}
@@ -1423,6 +1576,7 @@
 					<div>
 						<CharacterBadge characterId={id} {character} inline />
 						<p>{character.ability}</p>
+						{@render heldList(id)}
 					</div>
 					<DeleteButton
 						label={removeRuleLabel(character.name)}
@@ -1786,6 +1940,38 @@
 	}
 	.rules.edge {
 		justify-content: flex-start;
+	}
+	.rules li {
+		display: grid;
+		justify-items: center;
+	}
+	.held {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		max-width: calc(12 * var(--u));
+	}
+	/* Room for each token's name, which is wider than the token. */
+	.held > span {
+		padding-inline: calc(0.75 * var(--u));
+	}
+	/* Its stand-in follows the finger; the place stays, so nothing moves. */
+	.held .lifted {
+		opacity: 0.3;
+	}
+	.held-list {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+		margin-top: var(--space-2);
+	}
+	.held-chip {
+		min-height: var(--tap-target);
+		padding: 0;
+		border: 0;
+		background: none;
+		cursor: pointer;
 	}
 	.rule {
 		/* Sized from the seats, which already follow the token size setting. */

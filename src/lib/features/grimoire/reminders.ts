@@ -13,7 +13,8 @@ import {
 	trueCharacter,
 	type CharacterLookup,
 	type Game,
-	type Reminder
+	type Reminder,
+	type ReminderInstance
 } from '#lib/core/model/index.ts';
 
 export interface ReminderGroup {
@@ -106,9 +107,7 @@ export function reminderCopies(game: Game, characters: CharacterLookup): Map<str
 		}
 	}
 	const placed = new Map<string, number>();
-	for (const seatId of game.seating)
-		for (const r of game.seats[seatId].reminders)
-			placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
+	for (const r of onBoard(game)) placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
 	for (const [key, n] of placed) if (n > (total.get(key) ?? 1)) total.set(key, n);
 	return total;
 }
@@ -125,13 +124,20 @@ export function canAddCopy(character: Character | undefined): boolean {
 /** How many of each reminder token are left to place (`reminderCopies` less those placed). */
 export function reminderCopiesLeft(game: Game, characters: CharacterLookup): Map<string, number> {
 	const left = reminderCopies(game, characters);
-	for (const seatId of game.seating) {
-		for (const r of game.seats[seatId].reminders) {
-			const key = reminderKey(r);
-			left.set(key, (left.get(key) ?? 1) - 1);
-		}
+	for (const r of onBoard(game)) {
+		const key = reminderKey(r);
+		left.set(key, (left.get(key) ?? 1) - 1);
 	}
 	return left;
+}
+
+/** Every reminder on the board: on seats, on Fabled and Loric, and loose. */
+export function onBoard(game: Game): ReminderInstance[] {
+	return [
+		...game.seating.flatMap((seatId) => game.seats[seatId].reminders),
+		...Object.values(game.ruleReminders ?? {}).flat(),
+		...(game.looseReminders ?? [])
+	];
 }
 
 /** A reminder as a stable key, for the recent list. */
