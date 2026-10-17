@@ -38,9 +38,8 @@ test('the setup table is shown and follows the player count', async ({ page }) =
 test('setup is one flow of two steps with the same bar on each', async ({ page }) => {
 	await selectionFor(page, 5);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
-	const steps = page.getByRole('navigation', { name: 'Setup steps' });
-	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Characters/);
-	await expect(steps.getByRole('listitem')).toHaveCount(2);
+	// No step header: the bar at the bottom moves between the steps (Trevor, 2026-10-17).
+	await expect(page.getByRole('navigation', { name: 'Setup steps' })).toHaveCount(0);
 	// The bar: Back on the left, the step's main action on the right.
 	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
 	const barButtons = async () => {
@@ -54,13 +53,10 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	await expect(bar.getByRole('link', { name: 'Grimoire' })).toBeVisible();
 	await expect(bar.getByRole('button', { name: 'Build bag' })).toBeVisible();
 	const onCharacters = await barButtons();
-	// No bag yet, so the Draw step can't be opened.
-	await expect(steps.getByRole('link', { name: 'Draw' })).toHaveCount(0);
 
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
-	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
 	await expect(bar.getByRole('link', { name: 'Characters' })).toBeVisible();
 	await expect(bar.getByRole('link', { name: 'Grimoire' })).toBeVisible();
 	// Same place on both steps.
@@ -73,20 +69,19 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	).toBeLessThan(2);
 	// Leaving the draw before every tile is drawn asks first (Trevor, 2026-10-16).
 	const leave = page.getByRole('alertdialog', { name: 'Leave the draw?' });
-	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await bar.getByRole('link', { name: 'Characters' }).tap();
 	await expect(leave).toContainText('Now: 5 of 5 tiles not yet drawn.');
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
-	await steps.getByRole('link', { name: 'Draw' }).tap();
+	await bar.getByRole('button', { name: 'Continue draw' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
 
-	// Once the draw has started, the steps and the way back stay on screen.
+	// Once the draw has started, the way back stays on screen.
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('reveal')).toBeHidden();
-	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
 	await expect(page.getByText(/\d+ left|Enter draws/)).toHaveCount(0);
-	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await bar.getByRole('link', { name: 'Characters' }).tap();
 	await expect(leave).toContainText('Now: 4 of 5 tiles not yet drawn.');
 	await leave.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
@@ -94,7 +89,7 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	await expect(leave).toBeVisible();
 	await leave.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
-	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await bar.getByRole('link', { name: 'Characters' }).tap();
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// Going back changes nothing: with the same characters, the button goes back to the same
@@ -102,7 +97,7 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	await bar.getByRole('button', { name: 'Continue draw' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
 	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
-	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await bar.getByRole('link', { name: 'Characters' }).tap();
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	// Other characters make a new bag: it asks first, and the old draw leaves the grimoire.
 	await select(page, 'Monk', 'Chef');
@@ -415,8 +410,6 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await noSidewaysScroll(page);
 
 	// The last step is the board's setup reminders tray, not a list in the draw.
-	const steps = page.getByRole('navigation', { name: 'Setup steps' });
-	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
 	await page
 		.getByRole('navigation', { name: 'Setup', exact: true })
 		.getByRole('link', { name: 'Grimoire' })

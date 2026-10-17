@@ -36,11 +36,9 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SetupTable from './SetupTable.svelte';
-	import SetupSteps from './SetupSteps.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import JoinButton from './JoinButton.svelte';
 	import BagSettings from './BagSettings.svelte';
-	import { currentSetupStep } from './setup-steps.ts';
 	import { buildErrors, setupWarningMessages } from './build-check.ts';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
 
@@ -212,13 +210,6 @@
 
 <main>
 	<header class="top">
-		{#if game}
-			<SetupSteps
-				gameId={game.gameId}
-				current="characters"
-				hasBag={currentSetupStep(game) !== 'characters'}
-			/>
-		{/if}
 		<div class="title">
 			<h1>{t('setup.characters')}</h1>
 			<span class="actions"

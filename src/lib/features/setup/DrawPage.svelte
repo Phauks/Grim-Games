@@ -15,7 +15,6 @@
 	import { seatLabel } from './seat-label.ts';
 	import { tileMarks } from './tile-face.ts';
 	import TileMarkFace from './TileMarkFace.svelte';
-	import SetupSteps from './SetupSteps.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import JoinButton from './JoinButton.svelte';
@@ -109,9 +108,6 @@
 
 <main>
 	<header>
-		{#if game}
-			<SetupSteps gameId={game.gameId} current="draw" hasBag={bag !== undefined} />
-		{/if}
 		<div class="title">
 			<h1>{t('setup.draw')}</h1>
 			<span class="actions"
