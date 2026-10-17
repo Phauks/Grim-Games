@@ -301,6 +301,10 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	const reveal = page.getByTestId('reveal');
 	await expect(reveal).toBeVisible();
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	// The token never covers the name or the ability (Trevor, 2026-10-17).
+	const token = (await reveal.getByRole('img').first().boundingBox())!;
+	const caption = (await reveal.getByTestId('reveal-name').boundingBox())!;
+	expect(token.y + token.height).toBeLessThanOrEqual(caption.y + 1);
 	await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
