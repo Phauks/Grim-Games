@@ -9,9 +9,12 @@
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 
 	interface Props {
-		/** Everyone at the table, Travellers included; the dealt players' column is highlighted. */
-		players: number;
-		/** Tapping a column sets the player count to it (Trevor, 2026-10-16). */
+		/**
+		 * Everyone at the table, Travellers included; the dealt players' column is highlighted.
+		 * None highlighted when unknown (a printed script sheet).
+		 */
+		players?: number;
+		/** Tapping anywhere in a column picks its count (Trevor, 2026-10-16 and 2026-10-17). */
 		onPick?: (players: number) => void;
 	}
 
@@ -19,13 +22,16 @@
 
 	const columns = Object.keys(BASE_DISTRIBUTION).map(Number);
 	// Beyond 15 the extra players are Travellers, so the 15 column still applies.
-	const current = $derived(Math.min(splitPlayers(players).dealt, MAX_DEALT_PLAYERS));
+	const current = $derived(
+		players === undefined ? undefined : Math.min(splitPlayers(players).dealt, MAX_DEALT_PLAYERS)
+	);
 </script>
 
 <!--
 	The setup sheet's counts for 5 to 15 players, laid out like the printed sheet (players
-	across, character types down), always shown wherever the player count is set
-	(https://wiki.bloodontheclocktower.com/Setup). Fixed size whatever the count.
+	across, character types down), and the one player count table everywhere: setup, New game
+	and the script sheet (Trevor, 2026-10-17; https://wiki.bloodontheclocktower.com/Setup).
+	Fixed size whatever the count.
 -->
 <table class="setup-table" data-testid="setup-table">
 	<thead>

@@ -25,7 +25,6 @@
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';
@@ -35,12 +34,12 @@
 	import SetupCheckPanel from './SetupCheckPanel.svelte';
 	import StandInDialog from './StandInDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import SetupTable from './SetupTable.svelte';
+	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import JoinButton from './JoinButton.svelte';
 	import BagSettings from './BagSettings.svelte';
 	import { buildErrors, setupWarningMessages } from './build-check.ts';
-	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
+	import { setupSelection } from './selection.svelte.ts';
 
 	interface Props {
 		port: SetupGamePort;
@@ -225,29 +224,7 @@
 	<ErrorBoundary area="setup">
 		<div class="layout">
 			<div class="side">
-				<section class="controls" aria-label={t('setup.players')}>
-					<div class="players">
-						<span id="players-label">{t('setup.players')}</span>
-						<button
-							type="button"
-							class="step"
-							aria-label={t('setup.fewerPlayers')}
-							disabled={s.players <= MIN_SELECT_PLAYERS}
-							onclick={() => setupSelection.setPlayers(s.players - 1)}>−</button
-						>
-						<output aria-labelledby="players-label" data-testid="player-count">{s.players}</output>
-						<button
-							type="button"
-							class="step"
-							aria-label={t('setup.morePlayers')}
-							disabled={s.players >= MAX_SELECT_PLAYERS}
-							onclick={() => setupSelection.setPlayers(s.players + 1)}>+</button
-						>
-					</div>
-					<Collapsible title={t('setup.sheet')} storageKey="setup:sheet">
-						<SetupTable players={s.players} onPick={(n) => setupSelection.setPlayers(n)} />
-					</Collapsible>
-				</section>
+				<PlayerCountSheet players={s.players} onChange={(n) => setupSelection.setPlayers(n)} />
 				<div class="counts">
 					<CountsBar {analysis} {travellers} />
 					<div class="find">
@@ -407,12 +384,6 @@
 		white-space: nowrap;
 		font-weight: 600;
 	}
-	.controls {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-2);
-		padding-top: var(--space-2);
-	}
 	/* Only the chosen counts stay in view while scrolling; the setup table scrolls away. */
 	.counts {
 		display: grid;
@@ -424,38 +395,6 @@
 		z-index: var(--z-raised);
 		padding: var(--space-2) 0;
 		background: var(--page-background, var(--surface));
-	}
-	.players {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.players > span {
-		flex: 1;
-	}
-	.step {
-		width: var(--tap-target);
-		height: var(--tap-target);
-		border: 0;
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font-size: 1.4rem;
-		cursor: pointer;
-	}
-	.step:hover {
-		background: var(--surface-selected);
-	}
-	.step:disabled {
-		opacity: 0.5;
-		cursor: default;
-	}
-	output {
-		min-width: 2ch;
-		font-size: 1.4rem;
-		font-weight: 700;
-		text-align: center;
-		font-variant-numeric: tabular-nums;
 	}
 	/* Search, then Random and Clear as icon buttons right beside it. */
 	.find {
