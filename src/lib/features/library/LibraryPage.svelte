@@ -23,6 +23,7 @@
 	import ScriptDetails from '#lib/features/scripts/ScriptDetails.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -237,13 +238,15 @@
 			<h2 id="library-scripts">{t('library.scripts')}</h2>
 			<label class="term">
 				<span class="visually-hidden">{t('library.search')}</span>
-				<input
-					type="search"
-					autocomplete="off"
-					enterkeyhint="search"
-					placeholder={t('library.searchPlaceholder')}
-					bind:value={term}
-				/>
+				<ClearableField bind:value={term}>
+					<input
+						type="search"
+						autocomplete="off"
+						enterkeyhint="search"
+						placeholder={t('library.searchPlaceholder')}
+						bind:value={term}
+					/>
+				</ClearableField>
 			</label>
 			<div data-testid="library-table">
 				<DataTable

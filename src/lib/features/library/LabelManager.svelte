@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -86,19 +87,21 @@
 <Dialog bind:open={renameOpen} title={t('library.renameTitle')}>
 	<label class="field">
 		<span>{t('library.name')}</span>
-		<input
-			type="text"
-			autocomplete="off"
-			enterkeyhint="done"
-			maxlength={MAX_LABEL_NAME}
-			bind:value={renameText}
-			onkeydown={(e) => {
-				if (e.key === 'Enter') {
-					e.preventDefault();
-					rename();
-				}
-			}}
-		/>
+		<ClearableField bind:value={renameText}>
+			<input
+				type="text"
+				autocomplete="off"
+				enterkeyhint="done"
+				maxlength={MAX_LABEL_NAME}
+				bind:value={renameText}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') {
+						e.preventDefault();
+						rename();
+					}
+				}}
+			/>
+		</ClearableField>
 	</label>
 	<p class="error" role="status">
 		{renameText.trim() !== '' && !renameOk ? t('library.nameTaken') : ''}

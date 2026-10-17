@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { MAX_LABEL_NAME, nameFree, type LabelKind } from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
@@ -27,21 +28,23 @@
 <div class="new">
 	<label class="field">
 		<span class="visually-hidden">{label}</span>
-		<input
-			type="text"
-			autocomplete="off"
-			enterkeyhint="done"
-			maxlength={MAX_LABEL_NAME}
-			placeholder={label}
-			aria-invalid={taken}
-			bind:value={name}
-			onkeydown={(e) => {
-				if (e.key === 'Enter') {
-					e.preventDefault();
-					add();
-				}
-			}}
-		/>
+		<ClearableField bind:value={name}>
+			<input
+				type="text"
+				autocomplete="off"
+				enterkeyhint="done"
+				maxlength={MAX_LABEL_NAME}
+				placeholder={label}
+				aria-invalid={taken}
+				bind:value={name}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') {
+						e.preventDefault();
+						add();
+					}
+				}}
+			/>
+		</ClearableField>
 	</label>
 	<Button icon="add" disabled={name.trim() === '' || taken} onclick={add}>{t('library.add')}</Button
 	>
