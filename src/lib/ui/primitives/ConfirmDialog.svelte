@@ -1,12 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from './Button.svelte';
 	import Dialog from './Dialog.svelte';
+	import ModalActions from './ModalActions.svelte';
 
 	/**
 	 * Every confirmation (Trevor, 2026-10-16): the question, what changes, then Cancel and
-	 * Confirm. The action button always says Confirm; destructive ones are red. The lint
+	 * Confirm (ModalActions). The action button always says Confirm; destructive ones are red. The lint
 	 * `grim/confirm-dialog` sends every `role="alertdialog"` here.
 	 */
 	interface Props {
@@ -43,21 +42,17 @@
 <Dialog bind:open {title} {heading} {description} role="alertdialog">
 	{@render children?.()}
 	{#snippet actions()}
-		<Button
-			variant="quiet"
-			onclick={() => {
+		<ModalActions
+			{danger}
+			{disabled}
+			onCancel={() => {
 				open = false;
 				onCancel?.();
-			}}>{t('common.cancel')}</Button
-		>
-		<Button
-			variant={danger ? 'danger' : 'accent'}
-			icon="check"
-			{disabled}
-			onclick={() => {
+			}}
+			onConfirm={() => {
 				open = false;
 				onConfirm();
-			}}>{t('common.confirm')}</Button
-		>
+			}}
+		/>
 	{/snippet}
 </Dialog>
