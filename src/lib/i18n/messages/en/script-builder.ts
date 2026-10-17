@@ -8,6 +8,7 @@ export const scriptBuilder = {
 	'script-builder.editing': 'Editing',
 	'script-builder.save': 'Save',
 	'script-builder.saved': 'Saved',
+	'script-builder.saveNew': 'Save as new',
 	'script-builder.download': 'Download script JSON',
 	'script-builder.open': 'Open a saved script',
 	'script-builder.openTitle': 'Open a saved script',
