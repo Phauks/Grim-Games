@@ -205,3 +205,9 @@ test('Clear problems is a trash can beside the X and asks first', async ({ page 
 	await expect(dialog).toContainText('None');
 	await expect(clear).toBeDisabled();
 });
+
+test('a missing saved game keeps the setup title, with the reason under it', async ({ page }) => {
+	await page.goto('/grimoire/no-such-game/setup');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Characters');
+	await expect(page.getByText('There is no saved game here on this device.')).toBeVisible();
+});
