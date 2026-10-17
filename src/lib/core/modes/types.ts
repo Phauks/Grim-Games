@@ -175,6 +175,10 @@ export type WinRule = Cited &
 export interface TownsRule extends Cited {
 	count: number;
 	storytellers: number;
+	/** Every player plays in every town at once, with a character in each. */
+	samePlayers?: boolean;
+	/** A player can't have a character of these types in more than one town. */
+	notInEveryTown?: SeatedType[];
 }
 
 /** 13. People taking part without a seat. */

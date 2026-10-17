@@ -137,3 +137,15 @@ describe('Two Towns and a Boomdandy (https://ekins.blog/2026/04/29/two-towns-and
 		expect(runsPart(two, 'towns')).toBe(false);
 	});
 });
+
+describe('Two games at once (Trevor, 2026-10-17)', () => {
+	it('plays every player in both towns, never the Demon in both, and the app does not run it yet', () => {
+		const two = mode('two-games-at-once');
+		expect(two.parts.towns).toMatchObject({
+			count: 2,
+			samePlayers: true,
+			notInEveryTown: ['demon']
+		});
+		expect(runsPart(two, 'towns')).toBe(false);
+	});
+});

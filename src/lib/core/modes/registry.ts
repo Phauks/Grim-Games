@@ -6,6 +6,7 @@ import { INFINITE_POSSIBILITIES } from './library/infinite-possibilities.ts';
 import { SPECTERS } from './library/specters.ts';
 import { SUSHI_BUFFET } from './library/sushi-buffet.ts';
 import { TWO_TOWNS } from './library/two-towns.ts';
+import { TWO_GAMES_AT_ONCE } from './library/two-games-at-once.ts';
 import { WHALE_BUFFET } from './library/whale-buffet.ts';
 
 export { STANDARD };
@@ -16,6 +17,7 @@ export const GAME_MODES: readonly GameMode[] = [
 	FLESH_AND_BONE,
 	SPECTERS,
 	SUSHI_BUFFET,
+	TWO_GAMES_AT_ONCE,
 	TWO_TOWNS,
 	WHALE_BUFFET
 ];

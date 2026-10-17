@@ -87,6 +87,8 @@ export const modes = {
 	'modes.field.winner': 'Winner',
 	'modes.field.count': 'Towns',
 	'modes.field.storytellers': 'Storytellers',
+	'modes.field.samePlayers': 'Same players in every town',
+	'modes.field.notInEveryTown': 'No one is this in every town',
 	'modes.field.spectators': 'Spectators',
 	'modes.field.eliminate': 'Eliminated',
 	'modes.field.replaceSameType': 'Replaced by the same type',
