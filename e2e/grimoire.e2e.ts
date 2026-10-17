@@ -1955,3 +1955,37 @@ test('once every token is placed, the middle offers the Demon bluffs', async ({ 
 	await centre.getByRole('button', { name: 'Not now' }).tap();
 	await expect(centre.getByRole('button', { name: 'Demon bluffs' })).toHaveCount(0);
 });
+
+test('a new Demon bluff set is named on the screen where its characters are chosen', async ({
+	page
+}) => {
+	await startGame(page);
+	await menu(page, 'Demon bluffs');
+	// The Demon's set keeps its name, so its picker has no name field.
+	await page.getByRole('button', { name: 'Choose' }).first().tap();
+	// The heading is the set's name and the count, never "Set 2 bluffs" (read as "choose 2").
+	await expect(page.getByRole('heading', { name: 'Demon bluffs · 0/3' })).toBeVisible();
+	await expect(page.getByRole('textbox', { name: 'Set name' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+
+	await page.getByRole('button', { name: 'Add a set' }).tap();
+	const name = page.getByRole('textbox', { name: 'Set name' });
+	await expect(name).toHaveAttribute('placeholder', 'Set 2');
+	await expect(page.getByRole('heading', { name: 'Set 2 · 0/3' })).toBeVisible();
+	await name.fill('Spares');
+	await page
+		.getByRole('group', { name: 'Bluff characters' })
+		.getByRole('button', { name: /^Monk(, .*)?$/ })
+		.tap();
+	await expect(page.getByRole('heading', { name: 'Spares · 1/3' })).toBeVisible();
+	await page.getByRole('button', { name: 'Save' }).tap();
+	const set = page.getByTestId('bluff-set').nth(1);
+	await expect(set).toHaveAttribute('data-set', 'Spares');
+
+	// Choosing again shows the name, and Cancel keeps it.
+	await set.getByRole('button', { name: 'Choose' }).tap();
+	await expect(name).toHaveValue('Spares');
+	await name.fill('Other');
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(set).toHaveAttribute('data-set', 'Spares');
+});
