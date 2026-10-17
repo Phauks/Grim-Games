@@ -119,6 +119,10 @@
 		font-weight: 700;
 		text-align: center;
 	}
+	/* On the board the clock comes first, so it keeps clear of the rounded edge (Trevor). */
+	.timer[data-variant='compact'] .clock {
+		padding-inline-start: var(--space-3);
+	}
 	.timer[data-variant='full'] {
 		container-type: inline-size;
 		justify-content: space-between;
