@@ -1010,8 +1010,8 @@
 			size={chip}
 			view={bankView}
 			onView={(v) => (bankChosen = v)}
-			focus={walk && walkStep?.character && stepFocus.current.on
-				? stepReminders(walkStep.character.id, walk.night)
+			focus={walk && walkStep?.character
+				? stepReminders(walkStep.character.id, walk.night, walkStep.character)
 				: undefined}
 			focusMode={stepFocus.current.mode}
 			{seatAt}

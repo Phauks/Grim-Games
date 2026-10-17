@@ -169,9 +169,23 @@ export interface StepReminders {
  * The reminders a character places at its step on `night` (Trevor, 2026-10-16: "only
  * highlight a token if it could be used that night"), from what each `:reminder:` in TPI's
  * night text means (`REMINDER_PLACEHOLDERS`). A step whose text handles no token places none:
- * the Grandmother's Dead token is never used on the first night.
+ * the Grandmother's Dead token is never used on the first night. A script's own character
+ * has no such data, so all of its reminders count (`character`; Trevor, 2026-10-17, Fall of
+ * Rome's Merchant).
  */
-export function stepReminders(characterId: CharacterId, night: Night): StepReminders {
+export function stepReminders(
+	characterId: CharacterId,
+	night: Night,
+	character?: Character
+): StepReminders {
+	const known =
+		`${characterId}:first` in REMINDER_PLACEHOLDERS ||
+		`${characterId}:other` in REMINDER_PLACEHOLDERS;
+	if (!known && character)
+		return {
+			characterId,
+			labels: [...new Set([...character.reminders, ...character.remindersGlobal])]
+		};
 	const entries = REMINDER_PLACEHOLDERS[`${characterId}:${night}`] ?? [];
 	const labels = entries.flatMap((e) =>
 		e.tokens.filter((t) => t.action === 'place').map((t) => t.label)

@@ -177,6 +177,18 @@ describe('bankReminders', () => {
 	});
 	// https://wiki.bloodontheclocktower.com/Grandmother : her grandchild's death kills her,
 	// which can only happen after the first night.
+	it("marks every reminder of a script's own character, which has no night data", () => {
+		const merchant = {
+			...characters.get('poisoner')!,
+			id: 'merchant',
+			edition: undefined,
+			reminders: ['Chosen', 'Paid'],
+			remindersGlobal: []
+		};
+		expect(stepReminders('merchant', 'other', merchant).labels).toEqual(['Chosen', 'Paid']);
+		// An official character keeps its night data even when given.
+		expect(stepReminders('monk', 'first', characters.get('monk')).labels).toEqual([]);
+	});
 	it('marks only the reminders the step can use that night', () => {
 		expect(stepReminders('grandmother', 'first').labels).toEqual([]);
 		expect(stepReminders('grandmother', 'other').labels).toEqual(['Dead']);

@@ -5,11 +5,9 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { recentReminders } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import {
 		canAddCopy,
-		parseReminderKey,
 		reminderCopies,
 		reminderCopiesLeft,
 		reminderGroups,
@@ -109,28 +107,11 @@
 			};
 		});
 	}
-	/** Recent chips: on this seat, free, or used up elsewhere. */
-	const recentCopy = (reminder: Reminder): Copy => ({
-		done: usedUp(reminder) && onSeat(reminder) === 0,
-		on: onSeat(reminder) > 0
-	});
-	/** Only reminders the picker offers now, so a recent one never brings back one not in play. */
-	const offered = $derived(
-		new Set(
-			groups.flatMap((g) =>
-				g.labels.map((label) => reminderKey({ characterId: g.character.id, label }))
-			)
-		)
-	);
-
-	let recent = $state<Reminder[]>([]);
-	$effect(() => {
-		if (open)
-			recent = recentReminders
-				.read()
-				.flatMap((key) => parseReminderKey(key) ?? [])
-				.filter((r) => offered.has(reminderKey(r)));
-	});
+	/**
+	 * The top row: the reminders on this seat now, in the order placed (Trevor, 2026-10-17:
+	 * "should show active reminders"); one taken off leaves the row. A tap takes it off.
+	 */
+	const onThisSeat = $derived(seatId ? (grimoire.game.seats[seatId]?.reminders ?? []) : []);
 
 	/**
 	 * Adds a reminder, or takes it off when it is on this seat, keeping the picker open so
@@ -147,9 +128,7 @@
 			if (ids.length > 0) onRemove(ids[ids.length - 1]);
 			return;
 		}
-		if (grimoire.run({ type: 'AddReminder', seatId, reminder })) {
-			recentReminders.remember(reminderKey(reminder));
-		}
+		grimoire.run({ type: 'AddReminder', seatId, reminder });
 	}
 
 	/**
@@ -157,8 +136,7 @@
 	 * 2026-10-17: Cleopatra chooses two players but her JSON lists one "Chosen").
 	 */
 	function addCopy(reminder: Reminder) {
-		if (seatId && grimoire.run({ type: 'AddReminder', seatId, reminder }))
-			recentReminders.remember(reminderKey(reminder));
+		if (seatId) grimoire.run({ type: 'AddReminder', seatId, reminder });
 	}
 
 	const placed = $derived(seatId ? (grimoire.game.seats[seatId]?.reminders.length ?? 0) : 0);
@@ -167,25 +145,20 @@
 <Dialog bind:open title={`Reminders for ${title}`} size="full">
 	<div class="head">
 		<p class="count" aria-live="polite">On this seat: {placed}</p>
-		<!-- A fixed-height row: recent reminders never move the list below. -->
-		<div class="recent" role="group" aria-label="Recent reminders">
-			{#each recent as reminder (reminderKey(reminder))}
-				{@const copy = recentCopy(reminder)}
+		<!-- A fixed-height row, so the list below never moves. -->
+		<div class="recent" role="group" aria-label="On this seat">
+			{#each onThisSeat as reminder (reminder.reminderId)}
 				<button
 					type="button"
 					class="chip"
-					aria-pressed={copy.on}
-					disabled={copy.done}
-					onclick={() => toggle(reminder, copy)}
+					aria-label={`${reminder.label}: take off`}
+					aria-pressed="true"
+					onclick={() => onRemove(reminder.reminderId)}
 				>
-					<ReminderToken
-						label={reminder.label}
-						type={characters.get(reminder.characterId)?.type}
-						done={copy.done}
-					/>
+					<ReminderToken label={reminder.label} type={characters.get(reminder.characterId)?.type} />
 				</button>
 			{:else}
-				<span class="none">Recent: None</span>
+				<span class="none">None</span>
 			{/each}
 		</div>
 	</div>

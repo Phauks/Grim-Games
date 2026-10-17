@@ -103,9 +103,11 @@
 					label,
 					count: 1,
 					setup: item,
-					now: view === 'all' && nowFor(characterId, label)
+					now: nowFor(characterId, label)
 				});
 		}
+		// The setup reminders too (Trevor, 2026-10-17: the first night opens on Setup).
+		if (focusMode === 'front') setup.sort((a, b) => Number(!!b.now) - Number(!!a.now));
 		if (view === 'setup') return only(setup);
 		// All (Trevor, 2026-10-16): the setup reminders still to place come first, on the
 		// left of a solid line, then every other copy still off the board.
