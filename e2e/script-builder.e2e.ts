@@ -132,3 +132,57 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 });
+
+// Trevor (2026-10-17): "Need better ability to edit a script created in the builder".
+test('editing a built script keeps its Library folder, and Save as new keeps the original', async ({
+	page
+}) => {
+	const libraryRows = () =>
+		page.getByTestId('library-table').getByRole('button', { name: /^Edited here/ });
+	await page.goto('/build-script');
+	await page.getByRole('textbox', { name: 'Name' }).fill('Edited here');
+	for (const name of ['Chef', 'Imp']) await character(page, name).tap();
+	const saveNew = page.getByRole('button', { name: 'Save as new' });
+	// Nothing saved yet, so there is nothing to copy.
+	await expect(saveNew).toBeDisabled();
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+
+	// File it in a folder in the Library.
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Folders and tags' }).tap();
+	const manage = page.getByRole('dialog', { name: 'Folders and tags' });
+	await manage.getByPlaceholder('New folder').fill('Club night');
+	await manage.getByPlaceholder('New folder').press('Enter');
+	await manage.getByRole('button', { name: 'Close' }).tap();
+	await libraryRows().tap();
+	const details = page.getByRole('dialog', { name: 'Edited here' });
+	await details.getByRole('combobox', { name: 'Folder' }).tap();
+	await page.getByRole('option', { name: 'Club night' }).tap();
+
+	// Edit it: the change replaces the script, and the folder stays with it.
+	await details.getByRole('button', { name: 'Edit in Script builder' }).tap();
+	await expect(page).toHaveURL(/\/build-script$/);
+	await character(page, 'Saint').tap();
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+	await page.goto('/library');
+	await expect(libraryRows()).toHaveCount(1);
+	await expect(libraryRows()).toContainText('Club night');
+
+	// Back in the builder, the edit carries on without asking to replace it.
+	await libraryRows().tap();
+	await page
+		.getByRole('dialog', { name: 'Edited here' })
+		.getByRole('button', { name: 'Edit in Script builder' })
+		.tap();
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+	await expect(page.getByTestId('count-outsider')).toHaveText('1');
+
+	// Save as new keeps the saved one as it was.
+	await page.getByRole('textbox', { name: 'Name' }).fill('Edited here too');
+	await saveNew.tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+	await page.goto('/library');
+	await expect(libraryRows()).toHaveCount(2);
+});
