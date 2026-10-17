@@ -30,6 +30,7 @@ export const scriptBuilder = {
 	'script-builder.source': 'Characters from',
 	'script-builder.source.official': 'Official',
 	'script-builder.source.homebrew': 'Homebrew Wiki',
+	'script-builder.source.script': 'On script',
 	'script-builder.collection': 'Homebrew Wiki collection',
 	'script-builder.by': 'By {creator}',
 	'script-builder.homebrew': 'Homebrew',
