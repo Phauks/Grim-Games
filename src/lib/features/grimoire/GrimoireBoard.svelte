@@ -162,17 +162,15 @@
 		}));
 	});
 	const namePlaces = $derived(nameBoxes.map((n) => n.place));
-	/** The player name drawn on the token instead of under it (Settings > Tokens). */
-	const nameOnToken = $derived(preferences.current.tokenAppearance.playerNamePlacement);
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
 	function avoidFor(i: number): Box[] {
 		const out: Box[] = [];
 		const c = toPx(shown[i]);
 		const hasFace = seats[i]?.characterId !== undefined;
-		if (!hasFace || nameOnToken === 'below') {
+		if (!hasFace) {
 			const name = nameBoxes[i]?.box;
 			if (name) out.push(name);
-		} else if (nameOnToken === 'badge') {
+		} else {
 			// The badge pill straddles the token's lower rim (PlayerNameMark).
 			out.push({ x: c.x, y: c.y + 0.5 * size, w: 0.9 * size, h: 0.18 * size });
 		}

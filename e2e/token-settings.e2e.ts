@@ -133,47 +133,15 @@ test('character names on grimoire tokens are off by default and shown when switc
 	await page.reload();
 	await expect(name).toHaveText('Fortune Teller');
 
-	// The player name's placement (Trevor, 2026-10-16) shows on the preview; the sample
-	// token's leaves and icon never move for it.
+	// The player name is always a badge on the token (Trevor, 2026-10-17); no setting.
 	await openTokens();
-	const preview = dialog.getByTestId('token-preview');
-	const placement = dialog.getByRole('radiogroup', {
-		name: 'Player name placement on the grimoire'
-	});
-	const sample = preview.locator('.token');
-	// Measured from the token's corner: tapping a choice may scroll the dialog.
-	const sampleMarks = () =>
-		sample.evaluate((el) => {
-			const t = el.getBoundingClientRect();
-			return [t.width, t.height]
-				.concat(
-					[...el.querySelectorAll('.leaf, img')].flatMap((m) => {
-						const r = m.getBoundingClientRect();
-						return [r.x - t.x, r.y - t.y, r.width, r.height];
-					})
-				)
-				.map(Math.round)
-				.join(',');
-		});
-	const sampleBefore = await sampleMarks();
-	await expect(preview.getByTestId('token-player-name')).toHaveCount(0);
-	for (const [choice, value] of [
-		['Icon top', 'icon-top'],
-		['Icon bottom', 'icon-bottom'],
-		['Badge', 'badge']
-	]) {
-		await placement.getByText(choice, { exact: true }).tap();
-		await expect(preview.getByTestId('token-player-name')).toHaveAttribute('data-placement', value);
-		expect(await sampleMarks(), choice).toEqual(sampleBefore);
-	}
-	await placement.getByText('Below', { exact: true }).tap();
-	await expect(preview.getByTestId('token-player-name')).toHaveCount(0);
+	await expect(dialog.getByTestId('token-preview').getByTestId('token-player-name')).toHaveCount(1);
+	await expect(dialog.getByText('Player name placement', { exact: false })).toHaveCount(0);
+	await page.keyboard.press('Escape');
 
 	// On the board, a seat with a character draws its name on the token instead of the pill
 	// under it; an empty seat keeps the pill.
-	await placement.getByText('Badge', { exact: true }).tap();
-	await page.keyboard.press('Escape');
-	await expect(seat.getByTestId('token-player-name')).toHaveAttribute('data-placement', 'badge');
+	await expect(seat.getByTestId('token-player-name')).toHaveText('Seat 1');
 	await expect(seat.locator('.seat-disc > .name')).toHaveCount(0);
 	const empty = page.locator('[data-testid="seat"][aria-label^="Seat 2:"]');
 	await expect(empty.getByTestId('token-player-name')).toHaveCount(0);

@@ -49,8 +49,7 @@ describe('parsePreferences', () => {
 				colours: {},
 				tokenScale: 1.25,
 				reminderScale: 0.75,
-				boardNames: true,
-				playerNamePlacement: 'below'
+				boardNames: true
 			},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',
