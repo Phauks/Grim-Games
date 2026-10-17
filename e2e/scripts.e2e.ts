@@ -21,14 +21,15 @@ const homebrew = [
 const details = (page: Page) => page.getByRole('complementary', { name: 'Script details' });
 const detailsName = (page: Page) => page.getByTestId('script-details-name');
 
-/** Switches one source on or off under the search box. */
-async function toggleSource(page: Page, label: string) {
-	await page.getByTestId('search-sources').tap();
-	await page.getByRole('dialog', { name: 'Search in' }).getByText(label, { exact: true }).tap();
-	await page.keyboard.press('Escape');
+/** The one source listed, chosen beside the search box (Trevor, 2026-10-17). */
+const sourcePicker = (page: Page) => page.getByRole('combobox', { name: 'Source' });
+async function chooseSource(page: Page, label: string) {
+	await sourcePicker(page).tap();
+	await page.getByRole('option', { name: label, exact: true }).tap();
+	await expect(sourcePicker(page)).toContainText(label);
 }
 
-// Every source is searched from the start; tests that need results route these again.
+// Every source answers empty; tests that need results route these again.
 test.beforeEach(async ({ page }) => {
 	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
 		route.fulfill({ json: { page: 1, count: 0, hasMore: false, results: [] } })
@@ -61,12 +62,11 @@ async function noSidewaysScroll(page: Page) {
 	expect(overflow).toBeLessThanOrEqual(0);
 }
 
-test('saved scripts are listed without the base three, survive a reload and can be removed', async ({
-	page
-}) => {
+test('saved scripts stay off the list, survive a reload and can be removed', async ({ page }) => {
 	await page.goto('/scripts');
 	await expect(detailsName(page)).toHaveText('None');
-	// The base three are always in New game, so the Scripts page leaves them out.
+	// BotC Scripts is listed first; the base three are always in New game, so never here.
+	await expect(sourcePicker(page)).toContainText('BotC Scripts');
 	await expect(page.getByTestId('picker-status')).toHaveText('None');
 	await expect(page.getByRole('button', { name: /^Trouble Brewing/ })).toHaveCount(0);
 
@@ -85,15 +85,8 @@ test('saved scripts are listed without the base three, survive a reload and can 
 	await expect(sheet.getByRole('button', { name: 'Townsfolk', exact: true })).toBeVisible();
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
 	await noSidewaysScroll(page);
-	await backToList(page);
-	await expect(details(page)).toBeVisible({ visible: test.info().project.name !== 'phone' });
-
-	await page.reload();
-	await expect(detailsName(page)).toHaveText('Storm Front');
-	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
 
 	// Save is one toggle: un-saving asks first, and the script stays shown.
-	await page.getByRole('button', { name: /^Storm Front/ }).tap();
 	const size = async () => {
 		const box = await saveToggle(page).boundingBox();
 		return box && { width: box.width, height: box.height };
@@ -104,16 +97,20 @@ test('saved scripts are listed without the base three, survive a reload and can 
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'false');
 	expect(await size()).toEqual(before);
-	await expect(page.getByTestId('picker-status')).toHaveText('None');
 	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(details(page).getByRole('button', { name: 'Share script' })).toBeDisabled();
 
-	// Saved again from the same details; saving twice never lists it twice.
+	// Saved again from the same details.
 	await saveToggle(page).tap();
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
-	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
+	await backToList(page);
+	await expect(details(page)).toBeVisible({ visible: test.info().project.name !== 'phone' });
+
+	// After a reload the latest saved script is shown; saved scripts are listed in the
+	// Library, not here.
 	await page.reload();
-	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	await expect(page.getByTestId('picker-status')).toHaveText('None');
 });
 
 /** Save in the details: pressed when the script is saved. */
@@ -148,7 +145,7 @@ test('a pasted script with a typo is checked, then saved anyway', async ({ page 
 
 	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(details(page)).toContainText('Trevor');
-	await expect(page.getByRole('button', { name: 'Storm Front Pasted' })).toBeVisible();
+	await expect(details(page)).toContainText('Pasted');
 });
 
 test('hand-edited script JSON with comments and trailing commas is saved', async ({ page }) => {
@@ -180,7 +177,7 @@ test('a script file is saved straight away when nothing needs checking', async (
 	});
 	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(page.getByRole('dialog', { name: 'Script check' })).toHaveCount(0);
-	await expect(page.getByRole('button', { name: /Storm Front.*storm-front\.json/ })).toBeVisible();
+	await expect(details(page)).toContainText('storm-front.json');
 	// A load that worked needs no message (Trevor).
 	await expect(page.getByText('Saved Storm Front', { exact: true })).toHaveCount(0);
 });
@@ -345,13 +342,10 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	);
 
 	await page.goto('/scripts');
-	// One search box looks in every source, named under it (Trevor, 2026-10-16).
-	await expect(page.getByTestId('search-sources')).toContainText(
-		'Official custom scripts, Carousel Script Collection, Saved, BotC Scripts'
-	);
-	await expect(page.getByRole('button', { name: 'Search BotC Scripts' })).toHaveCount(0);
+	// One source at a time, BotC Scripts first (Trevor, 2026-10-17).
+	await expect(sourcePicker(page)).toContainText('BotC Scripts');
 	const status = page.getByTestId('picker-status');
-	await expect(status).toHaveText('2 scripts · 2 on BotC Scripts · most votes');
+	await expect(status).toHaveText('2 on BotC Scripts · most votes');
 	const table = page.getByRole('table', { name: 'Scripts' });
 	// The site's columns, with the characters counted from the script.
 	const first = table.locator('tbody tr').first();
@@ -362,7 +356,7 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 	if (!phone) await expect(first.locator('[data-col="likes"]')).toHaveText('5');
 
 	await page.getByLabel('Search scripts').fill('storm');
-	await expect(status).toHaveText('1 script · 1 on BotC Scripts · most votes');
+	await expect(status).toHaveText('1 on BotC Scripts · most votes');
 
 	// Filters sit in the header row: Teensyville scripts with the Imp.
 	await table.getByRole('button', { name: 'Filter Type', exact: true }).tap();
@@ -451,7 +445,7 @@ const bigTown = [
 	...['butler', 'drunk', 'recluse', 'saint', 'poisoner', 'spy', 'scarletwoman', 'baron', 'imp']
 ];
 
-test("the official site's custom scripts are listed, can be switched off, and saved", async ({
+test("the official site's custom scripts are a source of their own, and saved", async ({
 	page
 }) => {
 	let asked = 0;
@@ -467,14 +461,18 @@ test("the official site's custom scripts are listed, can be switched off, and sa
 		});
 	});
 	await page.goto('/scripts');
+	// Only fetched once chosen; then the choice is remembered on the device.
+	await expect(page.getByTestId('picker-status')).toHaveText('None');
+	expect(asked).toBe(0);
+	await chooseSource(page, 'Official custom scripts');
 	await expect(page.getByTestId('picker-status')).toHaveText('2 scripts');
 	expect(asked).toBe(1);
-	// Switched off, the official site's scripts leave the table.
-	await toggleSource(page, 'Official custom scripts');
-	await expect(page.getByTestId('picker-status')).toHaveText('None');
-	await toggleSource(page, 'Official custom scripts');
+	await page.reload();
+	await expect(sourcePicker(page)).toContainText('Official custom scripts');
 	await expect(page.getByTestId('picker-status')).toHaveText('2 scripts');
 	const table = page.getByRole('table', { name: 'Scripts' });
+	// No Likes or No. columns: only BotC Scripts has them.
+	await expect(table.getByRole('columnheader', { name: /^Likes/ })).toHaveCount(0);
 	await expect(table).toContainText('Little Hamlet');
 	await expect(table).toContainText('Teensyville');
 
@@ -532,4 +530,36 @@ test('a Script Tool link is read from the link itself, with no request', async (
 	await dialog.getByRole('button', { name: 'Save' }).tap();
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
 	expect(requests).toEqual([]);
+});
+
+test('more BotC Scripts results load by themselves when the list end comes near', async ({
+	page
+}) => {
+	const pages: number[] = [];
+	await page.route(/\/api\/botcscripts\/search\?/, (route) => {
+		const n = Number(new URL(route.request().url()).searchParams.get('page') ?? '1');
+		pages.push(n);
+		const results = Array.from({ length: 30 }, (_, i) => ({
+			scriptId: n * 100 + i,
+			versionId: n * 100 + i,
+			name: `Page ${n} Script ${i + 1}`,
+			version: '1.0.0',
+			author: 'Someone',
+			type: 'Full',
+			score: 60 - i,
+			characters: [{ id: 'chef' }, { id: 'imp' }]
+		}));
+		return route.fulfill({ json: { page: n, count: 60, hasMore: n < 2, results } });
+	});
+	await page.goto('/scripts');
+	const table = page.getByRole('table', { name: 'Scripts' });
+	await expect(table).toContainText('Page 1 Script 30');
+	// No More button (Trevor, 2026-10-17): scrolling to the end loads the next page.
+	await expect(page.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
+	await table.locator('tbody tr').last().scrollIntoViewIfNeeded();
+	await expect(table).toContainText('Page 2 Script 30');
+	await table.locator('tbody tr').last().scrollIntoViewIfNeeded();
+	// The site has no more, so nothing else is asked for.
+	await expect.poll(() => pages).toEqual([1, 2]);
+	await noSidewaysScroll(page);
 });

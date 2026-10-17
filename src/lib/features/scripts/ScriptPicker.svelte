@@ -13,8 +13,6 @@
 		type LoadedScript,
 		type ScriptLoadResult
 	} from '#lib/core/data/index.ts';
-	import { account } from '#lib/features/account/account.svelte.ts';
-	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
@@ -78,10 +76,12 @@
 		localListings,
 		matchesSaved,
 		SCRIPTS_PAGE_PROVIDERS,
+		recentProvider,
+		type LocalContext,
 		type LoadTarget,
 		type ScriptListing
 	} from './script-providers.ts';
-	import SearchSources, { type SearchSourceOption } from './SearchSources.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import ShareControl from './ShareControl.svelte';
 	import { shareTargetFor } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
@@ -119,17 +119,34 @@
 	let pasteText = $state('');
 	let linkText = $state('');
 
-	/** The one search box, looking in every source switched on under it (`SearchSources`). */
 	let term = $state('');
-	const SEARCHABLE = [
-		'curated',
-		'collection',
-		'recent',
-		'profile',
-		'botc'
-	] as const satisfies readonly PickerSource[];
-	let sources = $state<PickerSource[]>([...SEARCHABLE]);
-	const searchingBotc = $derived(sources.includes('botc'));
+	/**
+	 * One source at a time (Trevor, 2026-10-17): mixing them was unfair, since only BotC
+	 * Scripts has likes and numbers. In his order; saved scripts live in the Library.
+	 */
+	const PAGE_SOURCES = ['botc', 'curated', 'collection'] as const satisfies readonly PickerSource[];
+	type PageSource = (typeof PAGE_SOURCES)[number];
+	const SOURCE_KEY = 'grim-games:scripts:source';
+	function storedSource(): PageSource {
+		try {
+			const stored = globalThis.localStorage?.getItem(SOURCE_KEY);
+			return PAGE_SOURCES.find((s) => s === stored) ?? 'botc';
+		} catch {
+			return 'botc';
+		}
+	}
+	let source = $state<PageSource>(storedSource());
+	function chooseSource(next: PageSource) {
+		if (next === source) return;
+		source = next;
+		sort = undefined;
+		try {
+			globalThis.localStorage?.setItem(SOURCE_KEY, next);
+		} catch {
+			// Storage blocked: the choice lasts for this visit.
+		}
+	}
+	const searchingBotc = $derived(source === 'botc');
 	let sort = $state<RowSort | undefined>();
 	let data = $state.raw<GameData>();
 	let error = $state('');
@@ -149,17 +166,9 @@
 		);
 	});
 
-	// Profile scripts are listed for a signed-in user (fetched once; the Account page refreshes).
+	// A collection is only fetched while it is the chosen source.
 	$effect(() => {
-		if (account.user && profileScripts.status === 'idle') void profileScripts.refresh();
-	});
-
-	// The official site is only asked while its scripts are being searched.
-	$effect(() => {
-		const wanted = {
-			curated: sources.includes('curated'),
-			collection: sources.includes('collection')
-		};
+		const wanted = { curated: source === 'curated', collection: source === 'collection' };
 		// Untracked: a failed load must not re-run this and try again in a loop.
 		untrack(() => {
 			if (wanted.curated) void curatedScripts.load();
@@ -174,22 +183,28 @@
 			: section;
 	}
 
+	const localContext = $derived<LocalContext | undefined>(
+		data && {
+			data,
+			curated: curatedScripts.list,
+			collection: collectionScripts.list,
+			recent: recentScripts.list,
+			profile: [],
+			curatedLabel: curatedSectionLabel,
+			describe: describeSource
+		}
+	);
+	/** The chosen source's rows, when it is listed on the device (all but BotC Scripts). */
 	const local = $derived(
-		data
+		localContext
 			? localListings(
-					{
-						data,
-						curated: curatedScripts.list,
-						collection: collectionScripts.list,
-						recent: recentScripts.list,
-						profile: account.user ? profileScripts.list : [],
-						curatedLabel: curatedSectionLabel,
-						describe: describeSource
-					},
-					SCRIPTS_PAGE_PROVIDERS
+					localContext,
+					SCRIPTS_PAGE_PROVIDERS.filter((p) => p.id === source)
 				)
 			: []
 	);
+	/** Saved scripts: not listed here (the Library lists them), but the details show the latest. */
+	const savedListings = $derived(localContext ? localListings(localContext, [recentProvider]) : []);
 
 	/** Local rows, filtered on the device by the same header filters the site uses. */
 	const shownLocal = $derived.by(() => {
@@ -198,7 +213,7 @@
 			local.map((l) => l.row),
 			{
 				term,
-				sources,
+				sources: [source],
 				kind: f.type,
 				author: f.author,
 				include: f.include,
@@ -275,9 +290,12 @@
 
 	// ---- The table ----
 
-	/** Every source's rows in one table; a header sort orders everything loaded so far. */
+	/**
+	 * The chosen source's rows; a header tap sorts what is loaded (BotC Scripts also asks the
+	 * site for its order by likes or number).
+	 */
 	const shown = $derived.by<ScriptListing[]>(() => {
-		const all = [...shownLocal, ...(searchingBotc && !botcRef ? botc.listings : [])];
+		const all = searchingBotc ? (botcRef ? [] : botc.listings) : shownLocal;
 		if (!sort) return all;
 		const byKey = new Map(all.map((l) => [l.row.key, l]));
 		return sortRows(
@@ -289,7 +307,7 @@
 	/** The most recently saved script that is listed (base three are not). */
 	const latest = $derived(
 		recentScripts.list
-			.map((saved) => local.find((l) => l.saved?.scriptId === saved.scriptId))
+			.map((saved) => savedListings.find((l) => l.saved?.scriptId === saved.scriptId))
 			.find((l) => l !== undefined)
 	);
 	const shownListing = $derived(selected ?? latest);
@@ -429,7 +447,7 @@
 	}
 
 	const curatedNote = $derived(
-		!sources.includes('curated')
+		source !== 'curated'
 			? ''
 			: curatedScripts.status === 'loading'
 				? t('scripts.picker.curatedLoading')
@@ -455,22 +473,15 @@
 			? t('scripts.picker.loading')
 			: botcRef
 				? t('scripts.botc.refHint')
-				: [
-						shown.length === 0
+				: searchingBotc
+					? botcStatus || t('common.none')
+					: (shown.length === 0
 							? t('common.none')
-							: t('scripts.picker.count', { count: shown.length }),
-						botcStatus
-					]
-						.filter(Boolean)
-						.join(' · ') + curatedNote
+							: t('scripts.picker.count', { count: shown.length })) + curatedNote
 	);
 
-	const SOURCE_OPTIONS = $derived<SearchSourceOption<PickerSource>[]>(
-		SEARCHABLE.map((id) => ({
-			id,
-			label: t(`scripts.picker.source.${id}`),
-			available: id !== 'profile' || !!account.user
-		}))
+	const SOURCE_OPTIONS = $derived(
+		PAGE_SOURCES.map((value) => ({ value, label: t(`scripts.picker.source.${value}`) }))
 	);
 
 	type ColumnId = SortColumn;
@@ -478,9 +489,10 @@
 		filterCount({ ...botcFilters, term: '', type: '', author: '' })
 	);
 	/**
-	 * The site's own columns (Name, Author, Type, Likes, No.), plus Source and a character count.
-	 * Author and Type are always columns of their own (Trevor); Source, Chars, Likes and No.
-	 * give way on phones, where the Chars filter moves into the Name header.
+	 * Name, Author, Type and a character count for every source; Likes and No. only for BotC
+	 * Scripts, the one source that has them (Trevor, 2026-10-17). Author and Type are always
+	 * columns of their own; Chars, Likes and No. give way on phones, where the Chars filter
+	 * moves into the Name header.
 	 */
 	const columns = $derived<DataColumn<ColumnId>[]>([
 		{ id: 'name', label: t('scripts.column.name'), sortable: true, flush: true },
@@ -500,7 +512,6 @@
 			filterable: true,
 			filtered: botcFilters.type !== ''
 		},
-		{ id: 'source', label: t('scripts.column.source'), sortable: true, wide: true, width: '6rem' },
 		{
 			id: 'characters',
 			label: t('scripts.column.characters'),
@@ -511,22 +522,26 @@
 			filterable: true,
 			filtered: characterFilters > 0
 		},
-		{
-			id: 'likes',
-			label: t('scripts.column.likes'),
-			sortable: true,
-			wide: true,
-			align: 'end',
-			width: '5rem'
-		},
-		{
-			id: 'number',
-			label: t('scripts.column.number'),
-			sortable: true,
-			wide: true,
-			align: 'end',
-			width: '5rem'
-		}
+		...(searchingBotc
+			? ([
+					{
+						id: 'likes',
+						label: t('scripts.column.likes'),
+						sortable: true,
+						wide: true,
+						align: 'end',
+						width: '5rem'
+					},
+					{
+						id: 'number',
+						label: t('scripts.column.number'),
+						sortable: true,
+						wide: true,
+						align: 'end',
+						width: '5rem'
+					}
+				] satisfies DataColumn<ColumnId>[])
+			: [])
 	]);
 	const tableSort = $derived<DataSort<ColumnId> | undefined>(
 		sort && { column: sort.column, direction: sort.descending ? 'descending' : 'ascending' }
@@ -719,10 +734,11 @@
 						bind:value={term}
 					/>
 				</label>
-				<SearchSources
+				<Select
+					label={t('scripts.sources.label')}
+					value={source}
 					options={SOURCE_OPTIONS}
-					selected={sources}
-					onChange={(next) => (sources = next)}
+					onChange={chooseSource}
 				/>
 			</div>
 
