@@ -204,6 +204,20 @@ test('the board looks and background are in Board and tokens, saved with the boa
 	);
 });
 
+// Trevor (2026-10-17): every setting is in Settings too, including the day timer's.
+test('the day timer sound and mode are in Storyteller settings', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Storyteller settings');
+	await dialog.getByRole('combobox', { name: 'Timer sound' }).tap();
+	await page.getByRole('option', { name: 'Chime' }).tap();
+	await dialog.getByRole('combobox', { name: 'Day timer' }).tap();
+	await page.getByRole('option', { name: 'Stopwatch' }).tap();
+	await page.reload();
+	const again = await openSettings(page, 'Storyteller settings');
+	await expect(again.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
+	await expect(again.getByRole('combobox', { name: 'Day timer' })).toContainText('Stopwatch');
+});
+
 test('text size changes text only: icons, spacing and buttons keep their size', async ({
 	page
 }) => {
