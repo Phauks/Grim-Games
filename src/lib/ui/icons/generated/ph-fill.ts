@@ -54,6 +54,8 @@ import ph_download_simple_fill from '~icons/ph/download-simple-fill';
 import ph_drop_fill from '~icons/ph/drop-fill';
 import ph_eraser_fill from '~icons/ph/eraser-fill';
 import ph_eye_fill from '~icons/ph/eye-fill';
+import ph_eye_closed_fill from '~icons/ph/eye-closed-fill';
+import ph_eye_slash_fill from '~icons/ph/eye-slash-fill';
 import ph_feather_fill from '~icons/ph/feather-fill';
 import ph_file_arrow_down_fill from '~icons/ph/file-arrow-down-fill';
 import ph_file_arrow_up_fill from '~icons/ph/file-arrow-up-fill';
@@ -96,6 +98,8 @@ import ph_link_simple_fill from '~icons/ph/link-simple-fill';
 import ph_list_fill from '~icons/ph/list-fill';
 import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
+import ph_lock_fill from '~icons/ph/lock-fill';
+import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
 import ph_minus_fill from '~icons/ph/minus-fill';
@@ -228,6 +232,8 @@ const icons: IconMap = {
 	'ph:drop-fill': ph_drop_fill,
 	'ph:eraser-fill': ph_eraser_fill,
 	'ph:eye-fill': ph_eye_fill,
+	'ph:eye-closed-fill': ph_eye_closed_fill,
+	'ph:eye-slash-fill': ph_eye_slash_fill,
 	'ph:feather-fill': ph_feather_fill,
 	'ph:file-arrow-down-fill': ph_file_arrow_down_fill,
 	'ph:file-arrow-up-fill': ph_file_arrow_up_fill,
@@ -270,6 +276,8 @@ const icons: IconMap = {
 	'ph:list-fill': ph_list_fill,
 	'ph:list-bullets-fill': ph_list_bullets_fill,
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
+	'ph:lock-fill': ph_lock_fill,
+	'ph:lock-simple-fill': ph_lock_simple_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
 	'ph:minus-fill': ph_minus_fill,

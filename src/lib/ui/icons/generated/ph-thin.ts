@@ -54,6 +54,8 @@ import ph_download_simple_thin from '~icons/ph/download-simple-thin';
 import ph_drop_thin from '~icons/ph/drop-thin';
 import ph_eraser_thin from '~icons/ph/eraser-thin';
 import ph_eye_thin from '~icons/ph/eye-thin';
+import ph_eye_closed_thin from '~icons/ph/eye-closed-thin';
+import ph_eye_slash_thin from '~icons/ph/eye-slash-thin';
 import ph_feather_thin from '~icons/ph/feather-thin';
 import ph_file_arrow_down_thin from '~icons/ph/file-arrow-down-thin';
 import ph_file_arrow_up_thin from '~icons/ph/file-arrow-up-thin';
@@ -96,6 +98,8 @@ import ph_link_simple_thin from '~icons/ph/link-simple-thin';
 import ph_list_thin from '~icons/ph/list-thin';
 import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
+import ph_lock_thin from '~icons/ph/lock-thin';
+import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
 import ph_minus_thin from '~icons/ph/minus-thin';
@@ -228,6 +232,8 @@ const icons: IconMap = {
 	'ph:drop-thin': ph_drop_thin,
 	'ph:eraser-thin': ph_eraser_thin,
 	'ph:eye-thin': ph_eye_thin,
+	'ph:eye-closed-thin': ph_eye_closed_thin,
+	'ph:eye-slash-thin': ph_eye_slash_thin,
 	'ph:feather-thin': ph_feather_thin,
 	'ph:file-arrow-down-thin': ph_file_arrow_down_thin,
 	'ph:file-arrow-up-thin': ph_file_arrow_up_thin,
@@ -270,6 +276,8 @@ const icons: IconMap = {
 	'ph:list-thin': ph_list_thin,
 	'ph:list-bullets-thin': ph_list_bullets_thin,
 	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
+	'ph:lock-thin': ph_lock_thin,
+	'ph:lock-simple-thin': ph_lock_simple_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
 	'ph:minus-thin': ph_minus_thin,

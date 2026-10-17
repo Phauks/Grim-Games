@@ -7,8 +7,11 @@
  * through the theme, so ink stays readable in light and dark themes.
  */
 
-/** v2 (2026-10-16): each stroke carries its own size. */
-export const SCRATCH_SCHEMA_VERSION = 2;
+/**
+ * v2 (2026-10-16): each stroke carries its own size. v3 (2026-10-17): a player keeps several
+ * pads, each with a title, a paper colour, a lock and a hide switch.
+ */
+export const SCRATCH_SCHEMA_VERSION = 3;
 
 /** How far a point can sit from the pad's corner, in pad units (a guard on saved data). */
 export const MAX_EXTENT = 8;
@@ -17,6 +20,10 @@ export const SCRATCH_COLOURS = ['ink', 'good', 'evil', 'highlight'] as const;
 export type ScratchColour = (typeof SCRATCH_COLOURS)[number];
 
 export type ScratchTool = 'pen' | 'eraser';
+
+/** Paper colours; the UI maps each to a page colour and inks that read on it. */
+export const SCRATCH_PAPERS = ['leather', 'parchment', 'white'] as const;
+export type ScratchPaper = (typeof SCRATCH_PAPERS)[number];
 
 /**
  * Sizes are steps on a slider (1 to SIZE_STEPS); each step widens the pen or eraser by a fixed
@@ -65,10 +72,27 @@ export interface ScratchStroke {
 export interface ScratchPad {
 	schemaVersion: typeof SCRATCH_SCHEMA_VERSION;
 	strokes: ScratchStroke[];
+	/** Empty until the player names it. */
+	title: string;
+	paper: ScratchPaper;
+	/** Locked pads can be looked at but not drawn on. */
+	locked: boolean;
+	/** Hidden pads show no drawing in the list of pads. */
+	hidden: boolean;
+	/** Orders the list of pads, oldest first. */
+	createdAt: number;
 }
 
-export function emptyPad(): ScratchPad {
-	return { schemaVersion: SCRATCH_SCHEMA_VERSION, strokes: [] };
+export function emptyPad(createdAt = 0): ScratchPad {
+	return {
+		schemaVersion: SCRATCH_SCHEMA_VERSION,
+		strokes: [],
+		title: '',
+		paper: 'leather',
+		locked: false,
+		hidden: false,
+		createdAt
+	};
 }
 
 /** Width of a stroke at one point, as a fraction of the pad's width. */
@@ -179,13 +203,27 @@ export function migratePad(raw: unknown): ScratchPad | undefined {
 					: s
 			);
 			break;
+		// v2 -> v3 changes no strokes; the pad's new fields take their defaults below.
+		case 2:
 		case SCRATCH_SCHEMA_VERSION:
 			break;
 		default:
 			return undefined;
 	}
+	const fallback = emptyPad();
+	const paper = (SCRATCH_PAPERS as readonly unknown[]).includes(record.paper)
+		? (record.paper as ScratchPaper)
+		: fallback.paper;
+	const createdAt = [record.createdAt, record.updatedAt].find(
+		(n): n is number => typeof n === 'number' && Number.isFinite(n)
+	);
 	return {
 		schemaVersion: SCRATCH_SCHEMA_VERSION,
-		strokes: strokes.filter(isStroke).map((s) => ({ ...s, points: [...s.points] }))
+		strokes: strokes.filter(isStroke).map((s) => ({ ...s, points: [...s.points] })),
+		title: typeof record.title === 'string' ? record.title : fallback.title,
+		paper,
+		locked: record.locked === true,
+		hidden: record.hidden === true,
+		createdAt: createdAt ?? fallback.createdAt
 	};
 }

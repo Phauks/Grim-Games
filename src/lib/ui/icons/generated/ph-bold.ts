@@ -54,6 +54,8 @@ import ph_download_simple_bold from '~icons/ph/download-simple-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
 import ph_eraser_bold from '~icons/ph/eraser-bold';
 import ph_eye_bold from '~icons/ph/eye-bold';
+import ph_eye_closed_bold from '~icons/ph/eye-closed-bold';
+import ph_eye_slash_bold from '~icons/ph/eye-slash-bold';
 import ph_feather_bold from '~icons/ph/feather-bold';
 import ph_file_arrow_down_bold from '~icons/ph/file-arrow-down-bold';
 import ph_file_arrow_up_bold from '~icons/ph/file-arrow-up-bold';
@@ -96,6 +98,8 @@ import ph_link_simple_bold from '~icons/ph/link-simple-bold';
 import ph_list_bold from '~icons/ph/list-bold';
 import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
+import ph_lock_bold from '~icons/ph/lock-bold';
+import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_minus_bold from '~icons/ph/minus-bold';
@@ -228,6 +232,8 @@ const icons: IconMap = {
 	'ph:drop-bold': ph_drop_bold,
 	'ph:eraser-bold': ph_eraser_bold,
 	'ph:eye-bold': ph_eye_bold,
+	'ph:eye-closed-bold': ph_eye_closed_bold,
+	'ph:eye-slash-bold': ph_eye_slash_bold,
 	'ph:feather-bold': ph_feather_bold,
 	'ph:file-arrow-down-bold': ph_file_arrow_down_bold,
 	'ph:file-arrow-up-bold': ph_file_arrow_up_bold,
@@ -270,6 +276,8 @@ const icons: IconMap = {
 	'ph:list-bold': ph_list_bold,
 	'ph:list-bullets-bold': ph_list_bullets_bold,
 	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
+	'ph:lock-bold': ph_lock_bold,
+	'ph:lock-simple-bold': ph_lock_simple_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:minus-bold': ph_minus_bold,
