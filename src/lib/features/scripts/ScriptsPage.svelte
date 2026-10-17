@@ -12,7 +12,7 @@
 
 	/**
 	 * Search (Trevor, 2026-10-17: "Rename scripts to search"): finding published scripts.
-	 * Add script is here until the Library, where the user's own scripts live, has it.
+	 * Add script is in the Library, where the user's own scripts live.
 	 */
 	let picker: ScriptPicker | undefined = $state();
 	let adder: AddScript | undefined = $state();
@@ -39,7 +39,8 @@
 <main>
 	<header>
 		<h1>{t('scripts.heading')}</h1>
-		<AddScript bind:this={adder} onsaved={() => picker?.showSaved()} />
+		<!-- Share links only: adding scripts is the Library's (Trevor, 2026-10-17). -->
+		<AddScript bind:this={adder} button={false} onsaved={() => picker?.showSaved()} />
 	</header>
 
 	<ErrorBoundary area="scripts">

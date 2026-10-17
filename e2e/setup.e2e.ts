@@ -542,7 +542,7 @@ test("setup opens the players' join code and QR", async ({ page }) => {
 test('the setup check lists jinxed pairs in play and says when a required character is off the script', async ({
 	page
 }) => {
-	await page.goto('/scripts');
+	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })

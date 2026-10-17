@@ -338,8 +338,8 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	await expect(page).toHaveURL(board);
 });
 
-test('a new game can use a custom script from the Scripts page', async ({ page }) => {
-	await page.goto('/scripts');
+test('a new game can use a custom script from the Library', async ({ page }) => {
+	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })
@@ -1735,7 +1735,7 @@ for (const desktop of [false, true]) {
 
 test('marking a player as the Marionette asks to make them evil', async ({ page }) => {
 	// The Marionette is a Minion, so evil (https://wiki.bloodontheclocktower.com/Marionette).
-	await page.goto('/scripts');
+	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })

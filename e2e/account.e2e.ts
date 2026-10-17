@@ -71,7 +71,7 @@ test('a sign-in link signs in and keeps its token out of the address', async ({
 });
 
 test('scripts added on the device are saved to the profile as local copies', async ({ page }) => {
-	await page.goto('/scripts');
+	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })
@@ -109,7 +109,7 @@ test('scripts added on the device are saved to the profile as local copies', asy
 	).toBeVisible();
 
 	// Adding a script while signed in saves it straight away.
-	await page.goto('/scripts');
+	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })

@@ -209,7 +209,7 @@ test('each script keeps its own notebook', async ({ page }) => {
 test('a homebrew character from a loaded script shows as a badge with its ability', async ({
 	page
 }) => {
-	await page.goto('/scripts');
+	await page.goto('/library');
 	await page.getByLabel('Script file').setInputFiles({
 		name: 'storm-front.json',
 		mimeType: 'application/json',
