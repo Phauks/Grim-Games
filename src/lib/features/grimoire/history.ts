@@ -54,6 +54,15 @@ function reminderOn(
 	return undefined;
 }
 
+/** A reminder loose on the board, held by no seat. */
+function looseReminderOn(
+	game: Game | undefined,
+	reminderId: string
+): { label: ReminderLabel; characterId: CharacterId } | undefined {
+	const r = game?.looseReminders?.find((x) => x.reminderId === reminderId);
+	return r && { label: r.label, characterId: r.characterId };
+}
+
 /** A reminder a Fabled or Loric holds, and which one. */
 function ruleReminderOn(
 	game: Game | undefined,
@@ -144,6 +153,14 @@ function describeEvent(
 				seatPart(before, event.seatId)
 			];
 		case 'ReminderMoved': {
+			const loose = looseReminderOn(before, event.reminderId);
+			if (loose) {
+				return [
+					{ kind: 'reminder', label: loose.label, characterId: loose.characterId },
+					text(' put on '),
+					seatPart(before, event.toSeatId)
+				];
+			}
 			const held = ruleReminderOn(before, event.reminderId);
 			if (held) {
 				return [
@@ -166,6 +183,14 @@ function describeEvent(
 				: [text('Moved a reminder')];
 		}
 		case 'ReminderRemoved': {
+			const loose = looseReminderOn(before, event.reminderId);
+			if (loose) {
+				return [
+					text('Removed '),
+					{ kind: 'reminder', label: loose.label, characterId: loose.characterId },
+					text(' from the board')
+				];
+			}
 			const held = ruleReminderOn(before, event.reminderId);
 			if (held) {
 				return [
@@ -214,6 +239,14 @@ function describeEvent(
 		case 'ReminderMovedToRuleCharacter': {
 			const r = reminderOn(before, event.reminderId) ?? ruleReminderOn(before, event.reminderId);
 			const to = { kind: 'character' as const, characterId: event.characterId };
+			const loose = looseReminderOn(before, event.reminderId);
+			if (loose) {
+				return [
+					{ kind: 'reminder', label: loose.label, characterId: loose.characterId },
+					text(' put on '),
+					to
+				];
+			}
 			if (!r) return [text('Moved a reminder to '), to];
 			const from: HistoryPart =
 				'seatId' in r ? seatPart(before, r.seatId) : { kind: 'character', characterId: r.holder };
@@ -223,6 +256,23 @@ function describeEvent(
 				from,
 				text(' to '),
 				to
+			];
+		}
+		case 'LooseReminderPlaced':
+			return [
+				{ kind: 'reminder', label: event.reminder.label, characterId: event.reminder.characterId },
+				text(' put on the board, not on a player')
+			];
+		case 'ReminderLoosened': {
+			const r = reminderOn(before, event.reminderId) ?? ruleReminderOn(before, event.reminderId);
+			if (!r) return [text('Took a reminder off its holder')];
+			const from: HistoryPart =
+				'seatId' in r ? seatPart(before, r.seatId) : { kind: 'character', characterId: r.holder };
+			return [
+				{ kind: 'reminder', label: r.label, characterId: r.characterId },
+				text(' taken off '),
+				from,
+				text(', left on the board')
 			];
 		}
 		case 'BluffsSet':

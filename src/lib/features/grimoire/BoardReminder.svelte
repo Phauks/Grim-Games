@@ -175,14 +175,16 @@
 		pointer-events: none;
 	}
 	/* The words sit across the bottom of the token, on a band so they stay legible. How wide
-	   they may run and whether they wrap are settings (Board and tokens); wrapped words grow
-	   upwards over the icon, up to three lines, and a word wider than the limit widens the
-	   band rather than being cut. */
+	   they may run and whether they wrap are settings (Board and tokens). The first line sits
+	   where a single line does and wrapped lines grow downwards, below the token, so they never
+	   cover the icon (Trevor, 2026-10-17); up to three lines, and a word wider than the limit
+	   widens the band rather than being cut. */
 	.label {
 		position: absolute;
 		left: 50%;
-		bottom: calc(-0.125 * var(--u));
-		translate: -50% 0;
+		/* The top of the first line: one line height above where a single line ends. */
+		top: calc(100% + 0.125 * var(--u));
+		translate: -50% -1.35em;
 		width: max-content;
 		max-width: calc(var(--d) * var(--reminder-label-width, 1.5));
 		/* min-content when wrapping (the longest word), else 0: min-width beats max-width. */

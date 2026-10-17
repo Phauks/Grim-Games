@@ -1,5 +1,6 @@
 /** History: ended games and the stats worked out from them (Trevor, 2026-10-16). */
 export const history = {
+	'history.title': 'History',
 	'history.pageTitle': 'History · Grim-Games',
 	'history.summary': 'Summary',
 	'history.games': 'Games',

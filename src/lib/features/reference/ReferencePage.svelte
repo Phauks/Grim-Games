@@ -11,6 +11,7 @@
 		loadOfficialData
 	} from '#lib/features/characters/game-data.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import CharacterReference from './CharacterReference.svelte';
@@ -53,9 +54,8 @@
 	});
 </script>
 
-<main>
-	<h1>{t('reference.title')}</h1>
-	<div class="view">
+<Page title={t('reference.title')}>
+	{#snippet toolbar()}
 		<div class="switch">
 			<Segmented
 				label={t('reference.showAs')}
@@ -69,8 +69,7 @@
 			/>
 		</div>
 		<IconButton icon="info" label={t('reference.tokenKey')} onclick={() => (keyOpen = true)} />
-	</div>
-	<TokenKey bind:open={keyOpen} />
+	{/snippet}
 
 	<Tabs
 		bind:value={view}
@@ -95,25 +94,10 @@
 			</ErrorBoundary>
 		{/snippet}
 	</Tabs>
-</main>
+</Page>
+<TokenKey bind:open={keyOpen} />
 
 <style>
-	main {
-		/* The app's page width (App shell's --page-max): wide screens get more card columns. */
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-5) var(--page-gutter);
-	}
-	h1 {
-		margin-top: 0;
-		font-size: 1.8rem;
-	}
-	.view {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		margin-bottom: var(--space-3);
-	}
 	.switch {
 		flex: 0 1 calc(16 * var(--u));
 	}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
@@ -317,6 +318,11 @@
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let menuOpen = $state(false);
 	let reminderMenuOpen = $state(false);
+	/** Opens one reminder's own dialog over the sheet: a reminder tapped on the board. */
+	export function showReminder(reminderId: ReminderId) {
+		moving = reminderId;
+		reminderMenuOpen = true;
+	}
 	const movingReminder = $derived(seat?.reminders.find((r) => r.reminderId === moving));
 	/** A setup reminder can go back to the Setup reminders tray (Trevor, 2026-10-16). */
 	const fromSetup = $derived.by(() => {
@@ -965,6 +971,17 @@
 				on={seatId}
 			/>{/if}
 	{/snippet}
+	<!-- Whose ability it comes from, first, so an unfamiliar reminder makes sense (Trevor,
+	     2026-10-17). -->
+	{#if movingReminder}
+		{@const source = characters.get(movingReminder.characterId)}
+		{#if source}
+			<p class="source">
+				<CharacterBadge characterId={source.id} character={source} inline />
+			</p>
+			<CharacterSummary character={source} reminders={false} />
+		{/if}
+	{/if}
 	<div class="menu">
 		<Button variant="quiet" icon="move" onclick={() => fromMenu(() => (moveOpen = true))}>
 			Move to another seat
@@ -1292,11 +1309,26 @@
 	/* One line in the sheet, so a long note never moves anything; the dialog shows it all. */
 	/* The note looks as it does in its editor (Trevor, 2026-10-17): the sheet's own text,
 	   not the buttons' font. */
+	.source {
+		margin: 0 0 var(--space-1);
+	}
 	.value.ghost {
 		display: grid;
 		padding: 0;
 		border: 0;
 		cursor: default;
+	}
+	/* The same size and text as the other values in these rows (Trevor, 2026-10-17). */
+	.value.ghost :global([data-scope='select'][data-part='trigger']) {
+		width: 100%;
+		min-height: var(--tap-target);
+		padding-block: 0;
+		border: 1px solid var(--on-sheet-muted);
+		border-radius: var(--button-radius);
+		background: transparent;
+		color: inherit;
+		font: var(--button-font);
+		font-size: 0.8rem;
 	}
 	.ghost-none {
 		align-self: center;

@@ -7,6 +7,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -110,15 +111,23 @@
 	}
 </script>
 
-<main>
-	<div class="head">
-		<h1>{t('reports.inbox')}</h1>
-		{#if key}
-			<IconButton icon="refresh" label={t('errors.diag.refresh')} onclick={load} />
-			<Button variant="quiet" onclick={forget}>{t('reports.forgetKey')}</Button>
-		{/if}
-	</div>
-
+<!-- Refresh, Forget key and the status filter are always there, disabled until a key is in,
+     so nothing moves when the list appears. -->
+<Page title={t('reports.inbox')}>
+	{#snippet actions()}
+		<IconButton icon="refresh" label={t('errors.diag.refresh')} disabled={!key} onclick={load} />
+		<Button variant="quiet" disabled={!key} onclick={forget}>{t('reports.forgetKey')}</Button>
+	{/snippet}
+	{#snippet toolbar()}
+		<Segmented
+			label={t('reports.status')}
+			hideLabel
+			disabled={!key}
+			value={filter}
+			options={filters}
+			onChange={(v) => (filter = v)}
+		/>
+	{/snippet}
 	{#if !key}
 		<form class="key" onsubmit={useKey}>
 			<label>
@@ -129,13 +138,6 @@
 			</label>
 		</form>
 	{:else}
-		<Segmented
-			label={t('reports.status')}
-			hideLabel
-			value={filter}
-			options={filters}
-			onChange={(v) => (filter = v)}
-		/>
 		<ul class="list" aria-busy={reports === undefined} data-testid="reports">
 			{#each shown as report (report.id)}
 				<li>
@@ -157,7 +159,7 @@
 			{/each}
 		</ul>
 	{/if}
-</main>
+</Page>
 
 <Dialog
 	bind:open={dialogOpen}
@@ -193,9 +195,7 @@
 		</div>
 	{/if}
 	{#snippet headActions()}
-		<span class="danger">
-			<DeleteButton label={t('reports.delete')} onclick={() => (confirmDelete = true)} />
-		</span>
+		<DeleteButton label={t('reports.delete')} onclick={() => (confirmDelete = true)} />
 	{/snippet}
 </Dialog>
 
@@ -208,25 +208,6 @@
 />
 
 <style>
-	.danger :global(.icon-button) {
-		color: var(--evil);
-	}
-	main {
-		display: grid;
-		gap: var(--space-3);
-		max-width: calc(48 * var(--u));
-		margin: 0 auto;
-		padding: var(--space-4);
-	}
-	.head {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	h1 {
-		flex: 1;
-		margin: 0;
-	}
 	.key label {
 		display: grid;
 		gap: var(--space-1);

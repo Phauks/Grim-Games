@@ -44,9 +44,18 @@
 	value={boardLooks.current.rulesAt}
 	options={[
 		{ value: 'middle', label: t('settings.rulesAt.middle') },
-		{ value: 'edge', label: t('settings.rulesAt.edge') },
-		{ value: 'corner', label: t('settings.rulesAt.corner') }
+		{ value: 'edge', label: t('settings.rulesAt.edge') }
 	]}
 	defaultValue={DEFAULT_BOARD_LOOKS.rulesAt}
 	onChange={(rulesAt) => boardLooks.update({ rulesAt })}
+/>
+<SettingSelect
+	label={t('settings.rulesGrouped')}
+	value={boardLooks.current.rulesGrouped ? 'grouped' : 'each'}
+	options={[
+		{ value: 'each', label: t('settings.rulesGrouped.each') },
+		{ value: 'grouped', label: t('settings.rulesGrouped.grouped') }
+	]}
+	defaultValue={DEFAULT_BOARD_LOOKS.rulesGrouped ? 'grouped' : 'each'}
+	onChange={(v) => boardLooks.update({ rulesGrouped: v === 'grouped' })}
 />

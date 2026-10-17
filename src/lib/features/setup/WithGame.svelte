@@ -11,16 +11,18 @@
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { attachRoom } from '#lib/features/room/host.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import type { SetupGamePort } from './game-port.ts';
 	import { openGamePort } from './open-game-port.ts';
 
 	interface Props {
 		gameId: GameId;
+		/** The screen's title, shown while the game opens or if it can't, so nothing moves. */
+		title: string;
 		children: Snippet<[SetupGamePort]>;
 	}
 
-	let { gameId, children }: Props = $props();
+	let { gameId, title, children }: Props = $props();
 
 	type View =
 		| { kind: 'loading' }
@@ -67,23 +69,13 @@
 {#if view.kind === 'ready'}
 	{@render children(view.port)}
 {:else}
-	<main class="message">
+	<Page {title}>
 		{#if view.kind === 'loading'}
-			<p>{t('setup.open.loading')}</p>
+			<p aria-busy="true">{t('setup.open.loading')}</p>
 		{:else if view.kind === 'missing'}
 			<p>{t('setup.open.missing')}</p>
-			<Button href={resolve('/')} icon="back">{t('setup.open.savedGames')}</Button>
 		{:else}
 			<p role="alert">{view.message}</p>
-			<Button href={resolve('/')} icon="back">{t('setup.open.savedGames')}</Button>
 		{/if}
-	</main>
+	</Page>
 {/if}
-
-<style>
-	.message {
-		max-width: calc(40 * var(--u));
-		margin: 0 auto;
-		padding: var(--space-5) var(--space-4);
-	}
-</style>

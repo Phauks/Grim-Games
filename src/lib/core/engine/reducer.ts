@@ -48,6 +48,39 @@ function withoutRuleReminder(game: Game, reminderId: string): Game {
 	return { ...game, ruleReminders };
 }
 
+function looseReminder(game: Game, reminderId: string): ReminderInstance | undefined {
+	return game.looseReminders?.find((r) => r.reminderId === reminderId);
+}
+
+function withoutLooseReminder(game: Game, reminderId: string): Game {
+	return {
+		...game,
+		looseReminders: (game.looseReminders ?? []).filter((r) => r.reminderId !== reminderId)
+	};
+}
+
+/** Takes a reminder from its seat or Fabled or Loric; undefined when it is not on either. */
+function liftHeldReminder(
+	game: Game,
+	reminderId: string
+): { game: Game; reminder: ReminderInstance } | undefined {
+	const held = ruleHoldingReminder(game, reminderId);
+	if (held) {
+		const reminder = held.reminders.find((r) => r.reminderId === reminderId)!;
+		return { game: withoutRuleReminder(game, reminderId), reminder };
+	}
+	const seat = seatHoldingReminder(game, reminderId);
+	if (!seat) return undefined;
+	const reminder = seat.reminders.find((r) => r.reminderId === reminderId)!;
+	return {
+		game: updateSeat(game, seat.seatId, (s) => ({
+			...s,
+			reminders: s.reminders.filter((r) => r.reminderId !== reminderId)
+		})),
+		reminder
+	};
+}
+
 /** A shallow copy without the given keys. */
 function omit<T extends object, K extends keyof T>(value: T, ...keys: K[]): Omit<T, K> {
 	const copy = { ...value };
@@ -202,6 +235,15 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				reminders: [...seat.reminders, { ...event.reminder }]
 			}));
 		case 'ReminderMoved': {
+			const loose = looseReminder(game, event.reminderId);
+			if (loose) {
+				// From loose on the board onto a seat.
+				if (!Object.hasOwn(game.seats, event.toSeatId)) return game;
+				return updateSeat(withoutLooseReminder(game, event.reminderId), event.toSeatId, (seat) => ({
+					...seat,
+					reminders: [...seat.reminders, loose]
+				}));
+			}
 			const held = ruleHoldingReminder(game, event.reminderId);
 			if (held) {
 				// From a Fabled or Loric back onto a seat.
@@ -226,6 +268,9 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			}));
 		}
 		case 'ReminderRemoved': {
+			if (looseReminder(game, event.reminderId)) {
+				return withoutLooseReminder(game, event.reminderId);
+			}
 			if (ruleHoldingReminder(game, event.reminderId)) {
 				return withoutRuleReminder(game, event.reminderId);
 			}
@@ -289,6 +334,14 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			if (!game.ruleCharacters.includes(event.characterId)) return game;
 			const held = ruleHoldingReminder(game, event.reminderId);
 			if (held?.characterId === event.characterId) return game;
+			const loose = looseReminder(game, event.reminderId);
+			if (loose) {
+				return withRuleReminder(
+					withoutLooseReminder(game, event.reminderId),
+					event.characterId,
+					loose
+				);
+			}
 			const seat = seatHoldingReminder(game, event.reminderId);
 			const reminder =
 				held?.reminders.find((r) => r.reminderId === event.reminderId) ??
@@ -301,6 +354,19 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 						reminders: s.reminders.filter((r) => r.reminderId !== event.reminderId)
 					}));
 			return withRuleReminder(lifted, event.characterId, reminder);
+		}
+		case 'LooseReminderPlaced':
+			return {
+				...game,
+				looseReminders: [...(game.looseReminders ?? []), { ...event.reminder }]
+			};
+		case 'ReminderLoosened': {
+			const lifted = liftHeldReminder(game, event.reminderId);
+			if (!lifted) return game;
+			return {
+				...lifted.game,
+				looseReminders: [...(lifted.game.looseReminders ?? []), lifted.reminder]
+			};
 		}
 		case 'BluffsSet': {
 			const bluffs = game.bluffs.map((set) => [...set]);

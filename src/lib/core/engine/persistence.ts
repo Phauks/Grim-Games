@@ -13,7 +13,7 @@
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 7;
+export const SAVED_GAME_VERSION = 8;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -121,6 +121,13 @@ const migrateV5toV6: Migration = (doc) => ({ ...doc, schemaVersion: 6 });
  */
 const migrateV6toV7: Migration = (doc) => ({ ...doc, schemaVersion: 7 });
 
+/**
+ * Version 8 (2026-10-17) added reminders loose on the board, held by no seat
+ * (`Game.looseReminders`, the `LooseReminderPlaced` and `ReminderLoosened` events). The log
+ * needs no change; the bump makes older builds refuse a version 8 save.
+ */
+const migrateV7toV8: Migration = (doc) => ({ ...doc, schemaVersion: 8 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -128,7 +135,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	3: migrateV3toV4,
 	4: migrateV4toV5,
 	5: migrateV5toV6,
-	6: migrateV6toV7
+	6: migrateV6toV7,
+	7: migrateV7toV8
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {

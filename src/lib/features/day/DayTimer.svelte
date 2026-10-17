@@ -3,8 +3,8 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import DayTimer from './DayTimer.svelte';
 	import { liveDayTimer as timer } from './day-timer.svelte.ts';
 	import { playTimerSound } from './timer-sound.ts';
@@ -110,7 +110,8 @@
 
 {#if variant === 'full'}
 	<BottomSheet bind:open={soundOpen} title={t('day.timerSoundTitle')}>
-		<ChoiceGroup
+		<!-- A drop-down; each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
+		<Select
 			label={t('day.timerSoundTitle')}
 			hideLabel
 			value={preferences.current.timerSound}
@@ -123,13 +124,13 @@
 	<BottomSheet bind:open={controlsOpen} title={t('day.timer')}>
 		<div class="controls" data-testid="timer-sheet">
 			<DayTimer {alive} soundButton={false} />
-			<ChoiceGroup
+			<Select
 				label={t('day.timerModeTitle')}
 				value={timer.mode}
 				options={MODES.map((value) => ({ value, label: modeLabel(value) }))}
 				onChange={(mode) => preferences.update({ timerMode: mode })}
 			/>
-			<ChoiceGroup
+			<Select
 				label={t('day.timerSoundTitle')}
 				value={preferences.current.timerSound}
 				options={TIMER_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}

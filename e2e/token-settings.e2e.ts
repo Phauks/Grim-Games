@@ -223,7 +223,9 @@ test('night order badges sit on the side leaves, counting this game’s characte
 		.tap();
 	const label = 'Show night order numbers on tokens';
 	await dialog.getByText(label, { exact: true }).tap();
-	await expect(dialog.getByTestId('token-preview').getByTestId('night-badge')).toHaveCount(2);
+	// The preview's one character is 1 on each night (Trevor, 2026-10-17: not absolute).
+	const previewBadges = dialog.getByTestId('token-preview').getByTestId('night-badge');
+	await expect(previewBadges).toHaveText(['1', '1']);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	// First night: Poisoner, Washerwoman, then Empath; other nights: Poisoner, then Empath.
@@ -235,6 +237,20 @@ test('night order badges sit on the side leaves, counting this game’s characte
 	await expect(badge(3, 'other')).toHaveText('1');
 	await expect(badge(1, 'other')).toHaveText('2');
 	await expect(badge(2, 'other')).toHaveCount(0);
+
+	// A dead player's character drops out and the rest renumber (Trevor, 2026-10-17).
+	await page.getByRole('button', { name: /^Seat 2:/ }).tap();
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 2' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await expect(badge(2, 'first')).toHaveCount(0);
+	await expect(badge(3, 'first')).toHaveText('1');
+	await expect(badge(1, 'first')).toHaveText('2');
 });
 
 test('the token preview draws at the size the board gives its tokens', async ({ page }) => {
@@ -290,10 +306,15 @@ test('reminder words can run wider or wrap instead of ending in "…"', async ({
 	await width.fill('1');
 	await expect.poll(cut).toBe(true);
 	expect(await lines()).toBe(1);
+	const top = async () => (await label.boundingBox())!.y;
+	const firstLine = await top();
 
+	// Wrapped lines go below the token, never over its icon (Trevor, 2026-10-17): the first
+	// line stays put.
 	await dialog.getByText('Wrap long reminder words', { exact: true }).tap();
 	await expect.poll(lines).toBe(2);
 	expect(await cut()).toBe(false);
+	expect(Math.abs((await top()) - firstLine)).toBeLessThan(1);
 	await dialog.getByText('Wrap long reminder words', { exact: true }).tap();
 	await expect.poll(lines).toBe(1);
 

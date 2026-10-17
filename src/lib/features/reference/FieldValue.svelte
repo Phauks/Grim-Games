@@ -18,6 +18,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -212,8 +213,9 @@
 					{#each entry.jinxes as jinx (jinx.with)}
 						<!-- The text-size badge as a bar across, the jinx indented under it (Trevor, 2026-10-16). -->
 						<li class="jinx">
-							<span class="jinx-bar"><CharacterBadge characterId={jinx.with} inline /></span>
-							<span class="small jinx-reason"><GlossaryText text={jinx.reason} /></span>
+							<CharacterEntry characterId={jinx.with}
+								><span class="small"><GlossaryText text={jinx.reason} /></span></CharacterEntry
+							>
 						</li>
 					{/each}
 				</ul>{/if}
@@ -344,14 +346,6 @@
 	}
 	.list li.jinx {
 		justify-items: stretch;
-		gap: var(--space-1);
-	}
-	.jinx-bar :global(.badge) {
-		display: flex;
-		width: 100%;
-	}
-	.jinx-reason {
-		padding-inline-start: var(--space-3);
 	}
 	.none-row {
 		display: inline-flex;

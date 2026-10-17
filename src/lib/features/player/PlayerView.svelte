@@ -41,6 +41,8 @@
 	import PrintScriptButton from './PrintScriptButton.svelte';
 	import { playerNight, scriptVersion } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
+	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import ScriptCopy from './ScriptCopy.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
@@ -181,28 +183,24 @@
 <!-- A shared link opened while /play is already showing changes only the hash. -->
 <svelte:window onhashchange={() => data && void openSharedLink()} />
 
-<main>
-	<header>
-		<h1>{script?.name ?? t('player.title')}</h1>
-		<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
-		     Another script loads only from a share link or QR code. -->
-		<div class="share">
-			<PrintScriptButton {script} {version} />
-			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
-		</div>
-		<!-- Author and version under the title, or an empty line so nothing moves (Trevor). -->
-		<div class="author">
-			<ScriptByline author={script?.meta.author} {version} />
-		</div>
-	</header>
+<Page title={script?.name ?? t('player.title')}>
+	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
+	     Another script loads only from a share link or QR code. -->
+	{#snippet actions()}
+		<PrintScriptButton {script} {version} />
+		<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
+	{/snippet}
+	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). -->
+	{#snippet subtitle()}
+		<ScriptByline author={script?.meta.author} {version} inline />&nbsp;
+	{/snippet}
 
 	{#if error}
 		<p role="alert">{t('player.loadFailed', { error })}</p>
 	{:else if choosing}
 		<!-- Only when no script is loaded; no Change script once there is one (Trevor). -->
-		<section class="choose" aria-labelledby="choose-script">
-			<h2 id="choose-script">{t('player.chooseScript')}</h2>
-			<ul>
+		<PageSection title={t('player.chooseScript')}>
+			<ul class="choose">
 				{#each OFFICIAL_EDITIONS as edition (edition.id)}
 					<li>
 						<Button onclick={() => chooseEdition(edition.id)}>{edition.name}</Button>
@@ -214,7 +212,7 @@
 					>
 				</li>
 			</ul>
-		</section>
+		</PageSection>
 	{:else}
 		<Tabs
 			bind:value={tab}
@@ -250,65 +248,40 @@
 			{/snippet}
 		</Tabs>
 	{/if}
+</Page>
 
-	<ScriptCheckDialog
-		bind:open={checkOpen}
-		result={checking}
-		onconfirm={() => {
-			const loaded = checking?.script;
-			if (loaded) void chooseScript(loaded, checkingSource);
-		}}
-	/>
+<!-- Overlays go beside the Page, not inside it. -->
+<ScriptCheckDialog
+	bind:open={checkOpen}
+	result={checking}
+	onconfirm={() => {
+		const loaded = checking?.script;
+		if (loaded) void chooseScript(loaded, checkingSource);
+	}}
+/>
 
-	{#if notebook && script}
-		<ErrorBoundary area="play">
-			<NoteEditor
-				bind:open={noteOpen}
-				note={notebook.book.notes.find((n) => n.noteId === noteId)}
-				onChange={(patch) => noteId && notebook!.updateNote(noteId, patch)}
-				onDelete={() => noteId && notebook!.deleteNote(noteId)}
-			/>
-		</ErrorBoundary>
-	{/if}
-	{#if scratch && scratchPad}
-		<ErrorBoundary area="play">
-			<ScratchPadDialog
-				bind:open={scratchOpen}
-				pad={scratchPad}
-				onDelete={() => scratchPad && void scratch!.remove(scratchPad)}
-			/>
-		</ErrorBoundary>
-	{/if}
-</main>
+{#if notebook && script}
+	<ErrorBoundary area="play">
+		<NoteEditor
+			bind:open={noteOpen}
+			note={notebook.book.notes.find((n) => n.noteId === noteId)}
+			onChange={(patch) => noteId && notebook!.updateNote(noteId, patch)}
+			onDelete={() => noteId && notebook!.deleteNote(noteId)}
+		/>
+	</ErrorBoundary>
+{/if}
+{#if scratch && scratchPad}
+	<ErrorBoundary area="play">
+		<ScratchPadDialog
+			bind:open={scratchOpen}
+			pad={scratchPad}
+			onDelete={() => scratchPad && void scratch!.remove(scratchPad)}
+		/>
+	</ErrorBoundary>
+{/if}
 
 <style>
-	/* Wide windows get a wide page; the sheets inside keep text to --measure per column. */
-	main {
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-3) var(--page-gutter) var(--space-6);
-	}
-	/* Title and the share icon on one row, the author beneath. */
-	header {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: center;
-		column-gap: var(--space-2);
-		margin-bottom: var(--space-2);
-	}
-	.author {
-		grid-column: 1 / -1;
-	}
-	.share {
-		display: flex;
-		gap: var(--space-1);
-	}
-	.choose h2 {
-		margin: 0 0 var(--space-2);
-		font-size: 1.1rem;
-		color: var(--heading);
-	}
-	.choose ul {
+	.choose {
 		display: grid;
 		gap: var(--space-2);
 		max-width: var(--measure);
@@ -319,18 +292,6 @@
 	.choose :global(a),
 	.choose :global(button) {
 		width: 100%;
-	}
-	h1 {
-		margin: 0;
-		overflow-wrap: anywhere;
-		font-size: 1.6rem;
-		color: var(--heading);
-	}
-	.author {
-		min-height: 1.4em;
-	}
-	.author :global(.byline) {
-		margin: 0;
 	}
 	.panel {
 		padding-top: var(--space-3);

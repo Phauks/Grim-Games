@@ -15,14 +15,18 @@
 		grimoire: Grimoire;
 		step: NightStep | undefined;
 		compact?: boolean;
+		/** Leaves out who is drunk or poisoned, shown in the step's own Afflictions section. */
+		withoutImpaired?: boolean;
 	}
 
-	let { grimoire, step, compact = false }: Props = $props();
+	let { grimoire, step, compact = false, withoutImpaired = false }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const alerts = $derived(
-		step?.character ? nightStepAlerts(game, step.character.id, characters) : []
+		(step?.character ? nightStepAlerts(game, step.character.id, characters) : []).filter(
+			(a) => !withoutImpaired || a.kind !== 'impaired'
+		)
 	);
 
 	/** "Seat 4 (Sam)", or "Seat 4". */
