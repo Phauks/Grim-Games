@@ -1,7 +1,7 @@
 /** The handwriting scratch pad (src/lib/ui/scratch), used in the player view. */
 export const scratch = {
 	'scratch.title': 'Scratch pad',
-	'scratch.open': 'Open the scratch pad',
+	'scratch.open': 'Full screen',
 	'scratch.drawing': 'Scratch pad drawing',
 	'scratch.tools': 'Scratch pad tools',
 	'scratch.pen': 'Pen',

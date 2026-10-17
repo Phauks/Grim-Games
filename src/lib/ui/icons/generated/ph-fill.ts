@@ -11,6 +11,7 @@ import ph_arrow_u_up_left_fill from '~icons/ph/arrow-u-up-left-fill';
 import ph_arrow_u_up_right_fill from '~icons/ph/arrow-u-up-right-fill';
 import ph_arrows_down_up_fill from '~icons/ph/arrows-down-up-fill';
 import ph_arrows_left_right_fill from '~icons/ph/arrows-left-right-fill';
+import ph_arrows_out_fill from '~icons/ph/arrows-out-fill';
 import ph_arrows_out_cardinal_fill from '~icons/ph/arrows-out-cardinal-fill';
 import ph_bag_simple_fill from '~icons/ph/bag-simple-fill';
 import ph_beer_bottle_fill from '~icons/ph/beer-bottle-fill';
@@ -36,6 +37,7 @@ import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-f
 import ph_club_fill from '~icons/ph/club-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
+import ph_corners_out_fill from '~icons/ph/corners-out-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
 import ph_crown_fill from '~icons/ph/crown-fill';
 import ph_database_fill from '~icons/ph/database-fill';
@@ -160,6 +162,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-right-fill': ph_arrow_u_up_right_fill,
 	'ph:arrows-down-up-fill': ph_arrows_down_up_fill,
 	'ph:arrows-left-right-fill': ph_arrows_left_right_fill,
+	'ph:arrows-out-fill': ph_arrows_out_fill,
 	'ph:arrows-out-cardinal-fill': ph_arrows_out_cardinal_fill,
 	'ph:bag-simple-fill': ph_bag_simple_fill,
 	'ph:beer-bottle-fill': ph_beer_bottle_fill,
@@ -185,6 +188,7 @@ const icons: IconMap = {
 	'ph:club-fill': ph_club_fill,
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
+	'ph:corners-out-fill': ph_corners_out_fill,
 	'ph:cross-fill': ph_cross_fill,
 	'ph:crown-fill': ph_crown_fill,
 	'ph:database-fill': ph_database_fill,

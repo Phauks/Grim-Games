@@ -11,6 +11,7 @@ import ph_arrow_u_up_left_bold from '~icons/ph/arrow-u-up-left-bold';
 import ph_arrow_u_up_right_bold from '~icons/ph/arrow-u-up-right-bold';
 import ph_arrows_down_up_bold from '~icons/ph/arrows-down-up-bold';
 import ph_arrows_left_right_bold from '~icons/ph/arrows-left-right-bold';
+import ph_arrows_out_bold from '~icons/ph/arrows-out-bold';
 import ph_arrows_out_cardinal_bold from '~icons/ph/arrows-out-cardinal-bold';
 import ph_bag_simple_bold from '~icons/ph/bag-simple-bold';
 import ph_beer_bottle_bold from '~icons/ph/beer-bottle-bold';
@@ -36,6 +37,7 @@ import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-b
 import ph_club_bold from '~icons/ph/club-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
+import ph_corners_out_bold from '~icons/ph/corners-out-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
 import ph_crown_bold from '~icons/ph/crown-bold';
 import ph_database_bold from '~icons/ph/database-bold';
@@ -160,6 +162,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-right-bold': ph_arrow_u_up_right_bold,
 	'ph:arrows-down-up-bold': ph_arrows_down_up_bold,
 	'ph:arrows-left-right-bold': ph_arrows_left_right_bold,
+	'ph:arrows-out-bold': ph_arrows_out_bold,
 	'ph:arrows-out-cardinal-bold': ph_arrows_out_cardinal_bold,
 	'ph:bag-simple-bold': ph_bag_simple_bold,
 	'ph:beer-bottle-bold': ph_beer_bottle_bold,
@@ -185,6 +188,7 @@ const icons: IconMap = {
 	'ph:club-bold': ph_club_bold,
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
+	'ph:corners-out-bold': ph_corners_out_bold,
 	'ph:cross-bold': ph_cross_bold,
 	'ph:crown-bold': ph_crown_bold,
 	'ph:database-bold': ph_database_bold,

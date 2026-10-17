@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	addPoint,
 	commitStroke,
+	fitScale,
 	emptyPad,
 	isBlank,
 	migratePad,
@@ -31,8 +32,8 @@ describe('addPoint', () => {
 
 	it('keeps points on the pad and rounds them', () => {
 		const points: number[] = [];
-		addPoint(points, -1, 9, 2);
-		expect(points).toEqual([0, 1.3333, 1]);
+		addPoint(points, -1, 99, 2);
+		expect(points).toEqual([0, 8, 1]);
 		addPoint(points, 0.123456789, 0.5, 0.5);
 		expect(points[3]).toBe(0.1235);
 	});
@@ -61,6 +62,26 @@ describe('sizeWidth', () => {
 		const thin = strokeWidth({ tool: 'pen', size: sizeWidth('pen', 2) }, 0.5);
 		const thick = strokeWidth({ tool: 'pen', size: sizeWidth('pen', 12) }, 0.5);
 		expect(thick).toBeCloseTo(thin * 6);
+	});
+});
+
+describe('fitScale', () => {
+	it('uses the full width when the drawing fits', () => {
+		expect(fitScale([], 400, 300)).toBe(400);
+		expect(fitScale([pen([0.5, 0.5, 0.5])], 400, 600)).toBe(400);
+	});
+
+	it('shrinks a drawing from a taller or wider pad until it all shows', () => {
+		// Drawn on a portrait phone, opened on a landscape tablet.
+		const tall = pen([0.5, 1.5, 0.5]);
+		expect(fitScale([tall], 1000, 750)).toBeCloseTo(750 / (1.5 + 0.008));
+		const wide = pen([1.9, 0.2, 0.5]);
+		expect(fitScale([wide], 400, 800)).toBeCloseTo(400 / (1.9 + 0.008));
+	});
+
+	it('ignores eraser strokes', () => {
+		const eraser: ScratchStroke = { ...pen([0.5, 3, 0.5]), tool: 'eraser' };
+		expect(fitScale([eraser], 400, 300)).toBe(400);
 	});
 });
 

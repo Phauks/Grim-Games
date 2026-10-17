@@ -1,16 +1,17 @@
 /**
  * A handwriting scratch pad, kept as vector strokes so it redraws sharply at any size.
  *
- * Coordinates are fractions of the pad's width (x 0-1, y 0-PAD_ASPECT), so a drawing made on
- * a phone looks the same on a tablet or after rotating. Colours are names the UI resolves
+ * Coordinates are in pad units: 1 is the width of the pad the drawing started on, so a drawing
+ * made on a phone keeps its shape on a tablet or after rotating. The pad fills whatever space
+ * it has; `fitScale` shrinks a drawing that came from a taller or wider pad until it all shows. Colours are names the UI resolves
  * through the theme, so ink stays readable in light and dark themes.
  */
 
 /** v2 (2026-10-16): each stroke carries its own size. */
 export const SCRATCH_SCHEMA_VERSION = 2;
 
-/** The pad's height as a multiple of its width: a portrait page. */
-export const PAD_ASPECT = 4 / 3;
+/** How far a point can sit from the pad's corner, in pad units (a guard on saved data). */
+export const MAX_EXTENT = 8;
 
 export const SCRATCH_COLOURS = ['ink', 'good', 'evil', 'highlight'] as const;
 export type ScratchColour = (typeof SCRATCH_COLOURS)[number];
@@ -92,11 +93,29 @@ export function addPoint(points: number[], x: number, y: number, pressure: numbe
 		if (dx * dx + dy * dy < MIN_POINT_DISTANCE * MIN_POINT_DISTANCE) return false;
 	}
 	points.push(
-		round(Math.min(1, Math.max(0, x))),
-		round(Math.min(PAD_ASPECT, Math.max(0, y))),
+		round(Math.min(MAX_EXTENT, Math.max(0, x))),
+		round(Math.min(MAX_EXTENT, Math.max(0, y))),
 		round(Math.min(1, Math.max(0, pressure)))
 	);
 	return true;
+}
+
+/**
+ * Pixels per pad unit for a pad `width` x `height` pixels: the full width, unless the
+ * drawing reaches further right or lower than that shows, then small enough to show it all.
+ */
+export function fitScale(strokes: readonly ScratchStroke[], width: number, height: number) {
+	let right = 1;
+	let bottom = 0;
+	for (const stroke of strokes) {
+		if (stroke.tool !== 'pen') continue;
+		const edge = stroke.size;
+		for (let i = 0; i < stroke.points.length; i += 3) {
+			right = Math.max(right, stroke.points[i] + edge);
+			bottom = Math.max(bottom, stroke.points[i + 1] + edge);
+		}
+	}
+	return Math.min(width / right, bottom > 0 ? height / bottom : Infinity);
 }
 
 /** The strokes on the pad plus the ones undone, which Redo brings back. */

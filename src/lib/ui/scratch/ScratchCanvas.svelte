@@ -3,7 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		addPoint,
-		PAD_ASPECT,
+		fitScale,
 		type ScratchColour,
 		type ScratchStroke,
 		type ScratchTool
@@ -25,12 +25,15 @@
 
 	let frame: HTMLDivElement;
 	let canvas: HTMLCanvasElement;
-	/** The page's size in CSS pixels: the largest portrait page that fits the frame. */
+	/** The pad's size in CSS pixels: all of the frame, whatever its shape. */
 	let width = $state(0);
+	let height = $state(0);
 	let ctx: CanvasRenderingContext2D | null = null;
 	let colours: InkColours;
-	/** Canvas pixels per pad width (CSS width x device pixel ratio). */
+	/** Canvas pixels per pad unit; set on each full redraw so the drawing always fits. */
 	let scale = 0;
+	/** CSS pixels per pad unit, for pointer positions and the size ring. */
+	let cssScale = $state(0);
 	/** The strokes already on the canvas, so a finished live stroke needs no redraw. */
 	let drawn: readonly ScratchStroke[] = [];
 	let live: { stroke: ScratchStroke; pointerId: number; pointerType: string } | undefined;
@@ -41,14 +44,13 @@
 	 * pen, or under the finger while it draws, so the size shows where the ink goes down.
 	 */
 	let pointer = $state<{ x: number; y: number }>();
-	const ring = $derived(
-		pointer ?? (preview ? { x: width / 2, y: (width * PAD_ASPECT) / 2 } : undefined)
-	);
+	const ring = $derived(pointer ?? (preview ? { x: width / 2, y: height / 2 } : undefined));
 
 	$effect(() => {
 		const observer = new ResizeObserver(([entry]) => {
 			const { width: w, height: h } = entry.contentRect;
-			width = Math.max(0, Math.floor(Math.min(w, h / PAD_ASPECT)));
+			width = Math.max(0, Math.floor(w));
+			height = Math.max(0, Math.floor(h));
 		});
 		observer.observe(frame);
 		return () => observer.disconnect();
@@ -66,17 +68,19 @@
 	function redraw() {
 		if (!ctx) return;
 		colours = inkColours(canvas);
+		// Rescaled only here, never mid-stroke, so the ink stays under the pen.
+		scale = fitScale(pad.strokes, canvas.width, canvas.height);
+		cssScale = scale / (window.devicePixelRatio || 1);
 		drawAll(ctx, pad.strokes, scale, colours);
 		drawn = pad.strokes;
 	}
 
 	// Size the backing store for sharp lines, then draw everything.
 	$effect(() => {
-		if (!width) return;
+		if (!width || !height) return;
 		const ratio = window.devicePixelRatio || 1;
 		canvas.width = Math.round(width * ratio);
-		canvas.height = Math.round(width * PAD_ASPECT * ratio);
-		scale = canvas.width;
+		canvas.height = Math.round(height * ratio);
 		ctx = canvas.getContext('2d');
 		untrack(redraw);
 	});
@@ -109,8 +113,8 @@
 		const rect = canvas.getBoundingClientRect();
 		const pressure = event.pointerType === 'pen' ? event.pressure : 0.5;
 		return [
-			(event.clientX - rect.left) / rect.width,
-			(event.clientY - rect.top) / rect.width,
+			(event.clientX - rect.left) / cssScale,
+			(event.clientY - rect.top) / cssScale,
 			pressure
 		];
 	}
@@ -186,7 +190,7 @@
 			aria-label={t('scratch.drawing')}
 			data-testid="scratch-canvas"
 			style:width="{width}px"
-			style:height="{width * PAD_ASPECT}px"
+			style:height="{height}px"
 			onpointerdown={down}
 			onpointermove={move}
 			onpointerup={up}
@@ -204,25 +208,27 @@
 				aria-hidden="true"
 				style:left="{ring.x}px"
 				style:top="{ring.y}px"
-				style:width="{size * width}px"
-				style:height="{size * width}px"
+				style:width="{size * cssScale}px"
+				style:height="{size * cssScale}px"
 			></span>
 		{/if}
 	</div>
 </div>
 
 <style>
+	/* The paper: it takes all the room its parent gives it, and the pad fills it exactly. */
 	.frame {
-		display: grid;
-		place-items: center;
+		position: relative;
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface);
 	}
 	.page {
-		position: relative;
-		overflow: hidden;
-		border-radius: var(--radius-md);
+		position: absolute;
+		inset: 0;
 	}
 	.ring {
 		position: absolute;
@@ -242,9 +248,6 @@
 	}
 	canvas {
 		display: block;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface);
 		/* The pad owns every touch: no scrolling, zooming or text selection while writing. */
 		touch-action: none;
 		user-select: none;

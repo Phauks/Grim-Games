@@ -11,6 +11,7 @@ import ph_arrow_u_up_left from '~icons/ph/arrow-u-up-left';
 import ph_arrow_u_up_right from '~icons/ph/arrow-u-up-right';
 import ph_arrows_down_up from '~icons/ph/arrows-down-up';
 import ph_arrows_left_right from '~icons/ph/arrows-left-right';
+import ph_arrows_out from '~icons/ph/arrows-out';
 import ph_arrows_out_cardinal from '~icons/ph/arrows-out-cardinal';
 import ph_bag_simple from '~icons/ph/bag-simple';
 import ph_beer_bottle from '~icons/ph/beer-bottle';
@@ -36,6 +37,7 @@ import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_club from '~icons/ph/club';
 import ph_copy from '~icons/ph/copy';
 import ph_copy_simple from '~icons/ph/copy-simple';
+import ph_corners_out from '~icons/ph/corners-out';
 import ph_cross from '~icons/ph/cross';
 import ph_crown from '~icons/ph/crown';
 import ph_database from '~icons/ph/database';
@@ -160,6 +162,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-right': ph_arrow_u_up_right,
 	'ph:arrows-down-up': ph_arrows_down_up,
 	'ph:arrows-left-right': ph_arrows_left_right,
+	'ph:arrows-out': ph_arrows_out,
 	'ph:arrows-out-cardinal': ph_arrows_out_cardinal,
 	'ph:bag-simple': ph_bag_simple,
 	'ph:beer-bottle': ph_beer_bottle,
@@ -185,6 +188,7 @@ const icons: IconMap = {
 	'ph:club': ph_club,
 	'ph:copy': ph_copy,
 	'ph:copy-simple': ph_copy_simple,
+	'ph:corners-out': ph_corners_out,
 	'ph:cross': ph_cross,
 	'ph:crown': ph_crown,
 	'ph:database': ph_database,

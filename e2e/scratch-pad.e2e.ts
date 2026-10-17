@@ -2,7 +2,8 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { touchDrag } from './touch.ts';
 
 // The player's handwriting scratch pad (Notes tab): draw with a finger or pen, undo, redo,
-// clear with a confirm, saved on the device (Trevor, 2026-10-16).
+// clear with a confirm, saved on the device (Trevor, 2026-10-16). It is a big page on the
+// tab and opens full screen (Trevor, 2026-10-17).
 
 /** How many pixels of the canvas carry ink. */
 const inked = (canvas: Locator) =>
@@ -14,13 +15,13 @@ const inked = (canvas: Locator) =>
 		return count;
 	});
 
+/** The pad on the Notes tab, drawn on in place. */
 async function openPad(page: Page) {
 	await page.getByRole('tab', { name: 'Notes', exact: true }).tap();
-	await page.getByTestId('open-scratch-pad').tap();
-	const dialog = page.getByRole('dialog', { name: 'Scratch pad' });
-	await expect(dialog).toBeVisible();
+	const dialog = page.getByRole('region', { name: 'Scratch pad' });
 	const canvas = dialog.getByTestId('scratch-canvas');
 	await expect.poll(async () => (await canvas.boundingBox())?.width ?? 0).toBeGreaterThan(100);
+	await canvas.scrollIntoViewIfNeeded();
 	return { dialog, canvas };
 }
 
@@ -64,7 +65,7 @@ test('a finger draws on the scratch pad, with undo, redo and a confirmed clear',
 	await scribble(page, canvas);
 	await expect.poll(() => inked(canvas)).toBeLessThan(before);
 
-	// Saved on the device: still there after a reload, shown small on the Notes tab.
+	// Saved on the device: still there after a reload.
 	// Straight after a stroke, a tap still picks a colour (a stroke never becomes a fling).
 	await dialog.getByRole('button', { name: 'Red', exact: true }).tap();
 	await expect(dialog.getByRole('button', { name: 'Red', exact: true })).toHaveAttribute(
@@ -211,4 +212,32 @@ test('the size ring follows a finger while it draws and a hovering pen', async (
 	expect((await centre()).y).toBeCloseTo(0.6, 1);
 	await send('pointerleave', 'pen', 1.1, 0.6);
 	await expect(ring).toBeHidden();
+});
+
+test('the pad is a big page on the Notes tab and opens full screen with the same drawing', async ({
+	page
+}) => {
+	const { dialog: section, canvas } = await openPad(page);
+	const viewport = page.viewportSize()!;
+	const box = (await canvas.boundingBox())!;
+	expect(box.height).toBeGreaterThan(viewport.height * 0.6);
+	expect(box.width).toBeGreaterThan(viewport.width * 0.8);
+	await scribble(page, canvas);
+	await expect.poll(() => inked(canvas)).toBeGreaterThan(0);
+
+	await section.getByTestId('open-scratch-pad').tap();
+	const full = page.getByRole('dialog', { name: 'Scratch pad' });
+	await expect(full).toBeVisible();
+	const big = full.getByTestId('scratch-canvas');
+	await expect.poll(() => inked(big)).toBeGreaterThan(0);
+	const fullBox = (await big.boundingBox())!;
+	expect(fullBox.width).toBeGreaterThan(viewport.width * 0.85);
+	expect(fullBox.height).toBeGreaterThan(viewport.height * 0.6);
+
+	// Drawn full screen, it shows on the Notes tab too.
+	await full.getByRole('button', { name: 'Undo' }).tap();
+	await expect.poll(() => inked(big)).toBe(0);
+	await page.keyboard.press('Escape');
+	await expect(full).toBeHidden();
+	await expect.poll(() => inked(canvas)).toBe(0);
 });
