@@ -53,6 +53,8 @@ export const player = {
 	'player.practiceAgain': 'Again',
 	'player.practiceKnew': 'Knew it',
 	'player.practiceDone': 'You know every character on this script.',
+	'player.byAuthor': 'by {author}',
+	'player.version': 'v{version}',
 	'player.print': 'Print script',
 	'player.jinxedWith': 'Jinxed with {names}',
 	'player.hideNoteContents': 'Hide note contents',

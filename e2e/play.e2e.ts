@@ -228,6 +228,7 @@ test('a shared /play link opens its script, and the script can be shared on', as
 	];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await expect(page.getByRole('heading', { name: 'Pass The Phone', level: 1 })).toBeVisible();
+	await expect(page.getByTestId('script-byline')).toHaveText('by Trevor');
 	await expect(page.locator('[data-character]')).toHaveCount(3);
 	// The hash is cleared once the script is loaded.
 	await expect(page).toHaveURL(/\/play$/);
@@ -244,6 +245,8 @@ test('the header shares the script from an icon and has no Code button', async (
 	const shared = [{ id: '_meta', name: 'Code Night' }, 'chef', 'empath', 'imp'];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await expect(page.getByRole('heading', { name: 'Code Night', level: 1 })).toBeVisible();
+	// No author in the script: the byline is left out, not "None" (Trevor, 2026-10-17).
+	await expect(page.getByTestId('script-byline')).toHaveCount(0);
 	// Players are already in a script, so there is no code to enter here (Trevor, 2026-10-16).
 	await expect(page.getByRole('button', { name: 'Code', exact: true })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Share script' }).tap();

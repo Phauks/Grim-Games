@@ -9,6 +9,7 @@
 	import PlayerCounts from './PlayerCounts.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import { playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
+	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
 
 	/**
@@ -17,9 +18,10 @@
 	 */
 	interface Props {
 		script: LoadedScript;
+		version?: string;
 	}
 
-	let { script }: Props = $props();
+	let { script, version }: Props = $props();
 
 	let numeric = $state<NumericNightOrder>();
 	$effect(() => {
@@ -39,7 +41,7 @@
 		<section class="page">
 			<header>
 				<h1>{script.name}</h1>
-				{#if script.meta.author}<p class="author">{script.meta.author}</p>{/if}
+				<ScriptByline author={script.meta.author} {version} />
 			</header>
 			<ScriptSheet
 				characters={sheetCharacters(script, data)}
@@ -139,9 +141,5 @@
 	.counts h2 {
 		margin: 0;
 		font-size: 0.8rem;
-	}
-	.author {
-		margin: 0;
-		color: dimgray;
 	}
 </style>

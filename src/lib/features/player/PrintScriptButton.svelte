@@ -12,11 +12,13 @@
 	 */
 	interface Props {
 		script: LoadedScript | undefined;
+		/** The script's version, when its source has one; printed beside the author. */
+		version?: string;
 		/** A labelled button rather than an icon. */
 		labelled?: boolean;
 	}
 
-	let { script, labelled = false }: Props = $props();
+	let { script, version, labelled = false }: Props = $props();
 	let printing = $state(false);
 	let root = $state<HTMLElement>();
 
@@ -53,7 +55,7 @@
 
 {#if printing && script}
 	<div class="print-root" bind:this={root} use:toBody>
-		<ScriptPrintSheet {script} />
+		<ScriptPrintSheet {script} {version} />
 	</div>
 {/if}
 
