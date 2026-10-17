@@ -1,9 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { touchDrag } from './touch.ts';
 
-// The player's handwriting scratch pad (Notes tab): draw with a finger or pen, undo, redo,
-// clear with a confirm, saved on the device (Trevor, 2026-10-16). It is a big page on the
-// tab and opens full screen (Trevor, 2026-10-17).
+// The player's handwriting scratch pads (Notes tab): draw with a finger or pen, undo, redo,
+// saved on the device (Trevor, 2026-10-16). Each pad opens full screen (Trevor, 2026-10-17),
+// only when chosen; several pads are kept like notes, each with its own title, paper, lock
+// and hide (Trevor, 2026-10-17).
 
 /** How many pixels of the canvas carry ink. */
 const inked = (canvas: Locator) =>
@@ -15,14 +16,33 @@ const inked = (canvas: Locator) =>
 		return count;
 	});
 
-/** The pad on the Notes tab, drawn on in place. */
-async function openPad(page: Page) {
-	await page.getByRole('tab', { name: 'Notes', exact: true }).tap();
-	const dialog = page.getByRole('region', { name: 'Scratch pad' });
+const padRows = (page: Page) => page.locator('[data-pad]');
+
+async function ready(page: Page) {
+	const dialog = page.getByRole('dialog', { name: 'Scratch pad' });
+	await expect(dialog).toBeVisible();
 	const canvas = dialog.getByTestId('scratch-canvas');
 	await expect.poll(async () => (await canvas.boundingBox())?.width ?? 0).toBeGreaterThan(100);
-	await canvas.scrollIntoViewIfNeeded();
 	return { dialog, canvas };
+}
+
+async function notesTab(page: Page) {
+	await page.getByRole('tab', { name: 'Notes', exact: true }).tap();
+	await expect(page.getByRole('heading', { name: 'Scratch pads' })).toBeVisible();
+}
+
+/** A new pad, from the Notes tab: it opens full screen. */
+async function newPad(page: Page) {
+	await notesTab(page);
+	await page.getByRole('button', { name: 'New pad' }).tap();
+	return ready(page);
+}
+
+/** Opens the `index`th pad in the list. */
+async function openPad(page: Page, index = 0) {
+	await notesTab(page);
+	await padRows(page).nth(index).tap();
+	return ready(page);
 }
 
 async function scribble(page: Page, canvas: Locator, row = 0.3) {
@@ -39,15 +59,18 @@ test.beforeEach(async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 });
 
-test('a finger draws on the scratch pad, with undo, redo and a confirmed clear', async ({
+test('pads open only when chosen; a finger draws, with undo, redo and a confirmed delete', async ({
 	page
 }) => {
-	const { dialog, canvas } = await openPad(page);
+	// Nothing opens by itself: the Notes tab lists pads, and there are none yet.
+	await notesTab(page);
+	await expect(page.getByTestId('scratch-canvas')).toHaveCount(0);
+	await expect(padRows(page)).toHaveCount(0);
+
+	const { dialog, canvas } = await newPad(page);
 	const undo = dialog.getByRole('button', { name: 'Undo' });
 	const redo = dialog.getByRole('button', { name: 'Redo' });
-	const clear = dialog.getByRole('button', { name: 'Clear the scratch pad' });
 	await expect(undo).toBeDisabled();
-	await expect(clear).toBeDisabled();
 	expect(await inked(canvas)).toBe(0);
 
 	await scribble(page, canvas);
@@ -65,7 +88,6 @@ test('a finger draws on the scratch pad, with undo, redo and a confirmed clear',
 	await scribble(page, canvas);
 	await expect.poll(() => inked(canvas)).toBeLessThan(before);
 
-	// Saved on the device: still there after a reload.
 	// Straight after a stroke, a tap still picks a colour (a stroke never becomes a fling).
 	await dialog.getByRole('button', { name: 'Red', exact: true }).tap();
 	await expect(dialog.getByRole('button', { name: 'Red', exact: true })).toHaveAttribute(
@@ -73,20 +95,126 @@ test('a finger draws on the scratch pad, with undo, redo and a confirmed clear',
 		'true'
 	);
 	await scribble(page, canvas, 0.6);
+
+	// Saved on the device: still there after a reload, and nothing opens until it's tapped.
 	await page.waitForTimeout(500);
 	await page.reload();
+	await notesTab(page);
+	await expect(page.getByRole('dialog', { name: 'Scratch pad' })).toBeHidden();
+	await expect(padRows(page)).toHaveCount(1);
+	await expect.poll(() => inked(padRows(page).first().locator('canvas'))).toBeGreaterThan(0);
 	const { dialog: again, canvas: reopened } = await openPad(page);
 	await expect.poll(() => inked(reopened)).toBeGreaterThan(0);
 
-	await again.getByRole('button', { name: 'Clear the scratch pad' }).tap();
-	const confirm = page.getByRole('alertdialog', { name: 'Clear the scratch pad?' });
+	await again.getByRole('button', { name: 'Delete pad' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Delete this pad?' });
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
-	await expect.poll(() => inked(reopened)).toBe(0);
-	await expect(again.getByRole('button', { name: 'Clear the scratch pad' })).toBeDisabled();
+	await expect(again).toBeHidden();
+	await expect(padRows(page)).toHaveCount(0);
+	await page.waitForTimeout(500);
+	await page.reload();
+	await notesTab(page);
+	await expect(padRows(page)).toHaveCount(0);
+});
+
+test('several pads, each with its own title and paper', async ({ page }) => {
+	const viewport = page.viewportSize()!;
+	const first = await newPad(page);
+	// As much paper as the screen has.
+	const box = (await first.canvas.boundingBox())!;
+	expect(box.width).toBeGreaterThan(viewport.width * 0.85);
+	expect(box.height).toBeGreaterThan(viewport.height * 0.6);
+
+	const title = first.dialog.getByRole('textbox', { name: 'Title' });
+	await expect(title).not.toBeFocused();
+	await title.fill('Day 1');
+	await title.press('Enter');
+	const paperOf = (dialog: Locator) =>
+		dialog
+			.getByTestId('scratch-canvas')
+			.evaluate((c) => getComputedStyle(c.parentElement!.parentElement!).backgroundColor);
+	const leather = await paperOf(first.dialog);
+	await first.dialog.getByRole('button', { name: 'Paper' }).tap();
+	const papers = page.getByRole('dialog', { name: 'Paper' });
+	await papers.getByRole('button', { name: 'Parchment' }).tap();
+	await expect(papers.getByRole('button', { name: 'Parchment' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect.poll(() => paperOf(first.dialog)).not.toBe(leather);
+	const parchment = await paperOf(first.dialog);
+	await page.keyboard.press('Escape');
+	await expect(papers).toBeHidden();
+	await scribble(page, first.canvas);
+	await expect.poll(() => inked(first.canvas)).toBeGreaterThan(0);
+	await page.keyboard.press('Escape');
+	await expect(first.dialog).toBeHidden();
+
+	// A second pad starts blank, on the usual paper.
+	const second = await newPad(page);
+	expect(await inked(second.canvas)).toBe(0);
+	expect(await paperOf(second.dialog)).toBe(leather);
+	await page.keyboard.press('Escape');
+	await expect(second.dialog).toBeHidden();
+	await expect(padRows(page)).toHaveCount(2);
+	await expect(padRows(page).first()).toContainText('Day 1');
+	await expect(padRows(page).nth(1)).toContainText('Untitled');
+
+	// Each keeps its own, across a reload too.
+	await page.waitForTimeout(500);
+	await page.reload();
+	const again = await openPad(page, 0);
+	await expect(again.dialog.getByRole('textbox', { name: 'Title' })).toHaveValue('Day 1');
+	await expect.poll(() => paperOf(again.dialog)).toBe(parchment);
+	await expect.poll(() => inked(again.canvas)).toBeGreaterThan(0);
+});
+
+test('a locked pad stays open without a stray touch drawing on it', async ({ page }) => {
+	const { dialog, canvas } = await newPad(page);
+	const lock = dialog.getByTestId('scratch-lock');
+	await lock.tap();
+	await expect(lock).toHaveAttribute('aria-pressed', 'true');
+	await expect(dialog.getByRole('button', { name: 'Pen' })).toBeDisabled();
+	await expect(dialog.getByRole('slider', { name: 'Pen size' })).toBeDisabled();
+	await scribble(page, canvas);
+	await page.waitForTimeout(200);
+	expect(await inked(canvas)).toBe(0);
+	await expect(dialog.getByTestId('scratch-ring')).toBeHidden();
+
+	// Still locked after a reload; unlocked, it draws again.
+	await page.waitForTimeout(500);
+	await page.reload();
+	const again = await openPad(page);
+	await expect(again.dialog.getByTestId('scratch-lock')).toHaveAttribute('aria-pressed', 'true');
+	await again.dialog.getByTestId('scratch-lock').tap();
+	await scribble(page, again.canvas);
+	await expect.poll(() => inked(again.canvas)).toBeGreaterThan(0);
+});
+
+test('a hidden pad shows only its title in the list', async ({ page }) => {
+	const { dialog, canvas } = await newPad(page);
+	await scribble(page, canvas);
+	await expect.poll(() => inked(canvas)).toBeGreaterThan(0);
+	const row = padRows(page).first();
+	const before = (await row.boundingBox())!;
+	await dialog.getByTestId('scratch-hide').tap();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(row).toContainText('Hidden');
+	await expect(row.locator('canvas')).toHaveCount(0);
+	// The row keeps its size, so nothing below it moves.
+	expect((await row.boundingBox())!.height).toBeCloseTo(before.height, 0);
+
+	await row.tap();
+	const again = await ready(page);
+	await expect.poll(() => inked(again.canvas)).toBeGreaterThan(0);
+	await again.dialog.getByTestId('scratch-hide').tap();
+	await page.keyboard.press('Escape');
+	await expect(row.locator('canvas')).toHaveCount(1);
 });
 
 test('once a pen is used, a resting palm does not draw', async ({ page }) => {
-	const { canvas } = await openPad(page);
+	const { canvas } = await newPad(page);
 	const send = (type: string, pointerType: string, pointerId: number, x: number, y: number) =>
 		canvas.evaluate(
 			(element, e) => {
@@ -136,7 +264,7 @@ test('once a pen is used, a resting palm does not draw', async ({ page }) => {
 test('pen and eraser keep their own sizes, shown as a ring where they touch the pad', async ({
 	page
 }) => {
-	const { dialog, canvas } = await openPad(page);
+	const { dialog, canvas } = await newPad(page);
 	const penSize = dialog.getByRole('slider', { name: 'Pen size' });
 	const ring = dialog.getByTestId('scratch-ring');
 	await expect(ring).toBeHidden();
@@ -170,7 +298,7 @@ test('pen and eraser keep their own sizes, shown as a ring where they touch the 
 });
 
 test('the size ring follows a finger while it draws and a hovering pen', async ({ page }) => {
-	const { dialog, canvas } = await openPad(page);
+	const { dialog, canvas } = await newPad(page);
 	const ring = dialog.getByTestId('scratch-ring');
 	const send = (type: string, pointerType: string, x: number, y: number) =>
 		canvas.evaluate(
@@ -212,32 +340,4 @@ test('the size ring follows a finger while it draws and a hovering pen', async (
 	expect((await centre()).y).toBeCloseTo(0.6, 1);
 	await send('pointerleave', 'pen', 1.1, 0.6);
 	await expect(ring).toBeHidden();
-});
-
-test('the pad is a big page on the Notes tab and opens full screen with the same drawing', async ({
-	page
-}) => {
-	const { dialog: section, canvas } = await openPad(page);
-	const viewport = page.viewportSize()!;
-	const box = (await canvas.boundingBox())!;
-	expect(box.height).toBeGreaterThan(viewport.height * 0.6);
-	expect(box.width).toBeGreaterThan(viewport.width * 0.8);
-	await scribble(page, canvas);
-	await expect.poll(() => inked(canvas)).toBeGreaterThan(0);
-
-	await section.getByTestId('open-scratch-pad').tap();
-	const full = page.getByRole('dialog', { name: 'Scratch pad' });
-	await expect(full).toBeVisible();
-	const big = full.getByTestId('scratch-canvas');
-	await expect.poll(() => inked(big)).toBeGreaterThan(0);
-	const fullBox = (await big.boundingBox())!;
-	expect(fullBox.width).toBeGreaterThan(viewport.width * 0.85);
-	expect(fullBox.height).toBeGreaterThan(viewport.height * 0.6);
-
-	// Drawn full screen, it shows on the Notes tab too.
-	await full.getByRole('button', { name: 'Undo' }).tap();
-	await expect.poll(() => inked(big)).toBe(0);
-	await page.keyboard.press('Escape');
-	await expect(full).toBeHidden();
-	await expect.poll(() => inked(canvas)).toBe(0);
 });

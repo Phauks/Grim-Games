@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -357,13 +358,11 @@
 		</label>
 	{/if}
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (fillOpen = false)}>{t('common.cancel')}</Button>
-		<Button
-			variant="accent"
-			icon={fillAdds ? 'add' : 'forward'}
+		<ModalActions
+			onCancel={() => (fillOpen = false)}
+			onConfirm={useFilled}
 			disabled={!fillText.trim()}
-			onclick={useFilled}>{t(fillAdds ? 'info-tokens.addToChain' : 'info-tokens.show')}</Button
-		>
+		/>
 	{/snippet}
 </Dialog>
 
@@ -432,10 +431,11 @@
 		{#if editView === 'characters'}
 			<Button variant="accent" onclick={() => (editView = 'text')}>{t('info-tokens.done')}</Button>
 		{:else}
-			<Button variant="quiet" onclick={() => (editOpen = false)}>{t('common.cancel')}</Button>
-			<Button variant="accent" disabled={!plainText(editing.text).trim()} onclick={save}
-				>{t('info-tokens.save')}</Button
-			>
+			<ModalActions
+				onCancel={() => (editOpen = false)}
+				onConfirm={save}
+				disabled={!plainText(editing.text).trim()}
+			/>
 		{/if}
 	{/snippet}
 </Dialog>

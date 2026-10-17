@@ -142,12 +142,23 @@ describe('migratePad', () => {
 			]
 		};
 		expect(migratePad(v1)?.strokes.map((s) => s.size)).toEqual([0.008, 0.05]);
-		expect(migratePad(v1)?.schemaVersion).toBe(2);
+		expect(migratePad(v1)?.schemaVersion).toBe(3);
 	});
 
 	it('rejects anything that is not a pad', () => {
 		expect(migratePad(undefined)).toBeUndefined();
 		expect(migratePad({ schemaVersion: 99, strokes: [] })).toBeUndefined();
 		expect(migratePad(emptyPad())).toEqual(emptyPad());
+	});
+
+	it('gives a v2 pad a title, paper, lock and hide switch, dating it by its last save', () => {
+		const v2 = { schemaVersion: 2, strokes: [pen()], updatedAt: 1234 };
+		expect(migratePad(v2)).toEqual({ ...emptyPad(1234), strokes: [pen()] });
+	});
+
+	it('keeps a v3 pad and drops unknown papers', () => {
+		const v3 = { ...emptyPad(5), title: 'Day 2', paper: 'white', locked: true, hidden: true };
+		expect(migratePad(v3)).toEqual(v3);
+		expect(migratePad({ ...v3, paper: 'neon' })?.paper).toBe('leather');
 	});
 });

@@ -195,12 +195,23 @@
 		flex: 1;
 		min-width: 0;
 	}
+	/* Bottom right, and in view at the bottom of a long dialog (Trevor, 2026-10-17). */
 	.actions {
+		--modal-actions-background: var(--dialog-background);
+		position: sticky;
+		bottom: calc(-1 * var(--space-4));
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: flex-end;
 		gap: var(--space-2);
 		margin-top: var(--space-4);
+		padding-bottom: var(--space-4);
+		margin-bottom: calc(-1 * var(--space-4));
+		background: var(--dialog-background);
+	}
+	.actions :global(.modal-actions) {
+		position: static;
+		padding-top: 0;
 	}
 
 	@keyframes -global-dialog-in {

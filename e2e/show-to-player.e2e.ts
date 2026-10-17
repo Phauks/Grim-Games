@@ -26,7 +26,7 @@ test('"You are" asks for a character, then shows its token and ability', async (
 	await page.getByRole('button', { name: 'You are' }).tap();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
 	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
-	await page.getByRole('button', { name: 'Show' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	const shown = page.getByTestId('show-to-player');
 	await expect(shown.getByRole('heading')).toHaveText('You are');
@@ -38,7 +38,7 @@ test('a custom info token keeps its bold words and survives a reload', async ({ 
 	await page.goto('/info-tokens');
 	await page.getByRole('button', { name: 'New info token' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You are **mad** about something');
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	await page.reload();
 	const card = page.getByRole('button', { name: 'You are mad about something', exact: true });
@@ -80,7 +80,7 @@ test('"This player is" shows several characters, e.g. for the Dreamer', async ({
 	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await search.fill('Imp');
 	await page.getByRole('button', { name: 'Imp', exact: true }).tap();
-	await page.getByRole('button', { name: 'Show' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const shown = page.getByTestId('show-to-player');
 	await expect(shown).toContainText('Empath');
 	await expect(shown).toContainText('Imp');
@@ -108,7 +108,7 @@ test('the Storyteller sets the 3 Demon bluffs at once and shows them as a list',
 	await choice(page, 'Monk').tap();
 	await choice(page, 'Saint').tap();
 	await expect(choice(page, 'Librarian')).toBeDisabled();
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	const set = page.getByTestId('bluff-set');
 	await expect(set).toContainText('Investigator');
@@ -134,7 +134,7 @@ test("characters in play can't be Demon bluffs, but the Drunk's Townsfolk can", 
 	// The Chef's seat is the Drunk (wiki: Drunk), so the Chef is not in play.
 	await expect(choice(page, 'Chef')).toBeEnabled();
 	await choice(page, 'Chef').tap();
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('bluff-set')).toContainText('Chef');
 });
 
@@ -148,7 +148,7 @@ test("in a Lunatic game the second set is the Lunatic's and may include characte
 	await expect(choice(page, 'Sailor')).toBeEnabled();
 	await expect(choice(page, 'Sailor')).toContainText('In play');
 	await choice(page, 'Sailor').tap();
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const lunatic = page.locator('[data-testid="bluff-set"][data-set="Lunatic"]');
 	await expect(lunatic).toContainText('Sailor');
 	await expect(lunatic).not.toContainText('In play: replace');
@@ -160,7 +160,7 @@ test('the Storyteller adds more bluff sets and deletes one after confirming', as
 	for (const name of ['Monk', 'Mayor']) {
 		await page.getByRole('button', { name: 'Add a set' }).tap();
 		await choice(page, name).tap();
-		await page.getByRole('button', { name: 'Save' }).tap();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
 	}
 	await expect(page.getByTestId('bluff-set')).toHaveCount(3);
 	const second = page.locator('[data-testid="bluff-set"][data-set="Set 2"]');
@@ -201,7 +201,7 @@ test('custom cards: bold and italic buttons, alphabetical order, and the New til
 	for (const text of ['Zebra card', 'apple card']) {
 		await page.getByRole('button', { name: 'New info token' }).tap();
 		await page.getByRole('textbox', { name: 'Text' }).fill(text);
-		await page.getByRole('button', { name: 'Save' }).tap();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
 	}
 	await page.getByRole('button', { name: 'New info token' }).tap();
 	const field = page.getByRole('textbox', { name: 'Text' });
@@ -218,7 +218,7 @@ test('custom cards: bold and italic buttons, alphabetical order, and the New til
 	});
 	await page.getByRole('button', { name: 'Bold' }).tap();
 	await expect(page.getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'true');
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	await expect(
 		page.getByRole('button', { name: 'You are cursed', exact: true }).locator('strong')

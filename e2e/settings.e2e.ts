@@ -184,6 +184,8 @@ test('the board looks and background are in Board and tokens, saved with the boa
 	await slide(page, 'Vignette strength', 0.3);
 	await dialog.getByRole('combobox', { name: 'Fabled and Loric', exact: true }).tap();
 	await page.getByRole('option', { name: 'Corner, smaller' }).tap();
+	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
+	await page.getByRole('option', { name: 'Lower left corner' }).tap();
 
 	const saved = await page.evaluate(() =>
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
@@ -193,6 +195,7 @@ test('the board looks and background are in Board and tokens, saved with the boa
 		vignetteStrength: 0.3,
 		rulesAt: 'edge',
 		rulesGrouped: false,
+		titleAt: 'corner',
 		nameSize: 1,
 		reminders: 'seat'
 	});
@@ -357,7 +360,8 @@ test('text alignment switches body text between left aligned and justified', asy
 	expect(await align()).toBe('start');
 
 	const dialog = await openSettings(page, 'Theme and text');
-	await choose(page, 'Text alignment', 'Justified');
+	await dialog.getByRole('combobox', { name: 'Text alignment' }).tap();
+	await page.getByRole('option', { name: 'Justified', exact: true }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	expect(await align()).toBe('justify');
 
@@ -471,7 +475,7 @@ test('settings scroll under the text preview, never over it', async ({ page }) =
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Theme and text');
 	const preview = dialog.getByTestId('font-preview');
-	const choice = dialog.getByText('Justified', { exact: true });
+	const choice = dialog.getByRole('combobox', { name: 'Text alignment' });
 	const content = dialog.locator('section.content');
 	// Scroll the choice up until it sits behind the middle of the preview.
 	const previewBox = (await preview.boundingBox())!;

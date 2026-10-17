@@ -95,7 +95,7 @@
 			<CharacterBadge characterId={move.reminder.characterId} character={owner} inline />'s
 			<ReminderToken
 				label={move.reminder.label}
-				type={owner?.type}
+				character={owner}
 				alignment={placingAlignment(game, move.reminder.characterId, characters)}
 			/> reminder
 		</p>

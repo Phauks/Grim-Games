@@ -1,13 +1,14 @@
 <script lang="ts">
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { boardLooks, DEFAULT_BOARD_LOOKS, NAME_SIZE } from './board-looks.svelte.ts';
 	import RulesAtSetting from './RulesAtSetting.svelte';
+	import TitleAtSetting from './TitleAtSetting.svelte';
 	import ReminderModeSetting from './ReminderModeSetting.svelte';
 	import {
 		clearBackground,
@@ -95,7 +96,7 @@
 		<dt>Now</dt>
 		<dd>{nowText}{ownChoice ? ', for this game' : ''}</dd>
 	</dl>
-	<Segmented
+	<Select
 		label="Use for"
 		value={scope}
 		options={[
@@ -161,6 +162,7 @@
 			defaultValue={DEFAULT_BOARD_LOOKS.nameSize}
 			onChange={(nameSize) => boardLooks.update({ nameSize })}
 		/>
+		<TitleAtSetting />
 		<RulesAtSetting />
 		<ReminderModeSetting />
 	</div>

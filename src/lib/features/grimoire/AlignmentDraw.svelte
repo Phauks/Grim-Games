@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -158,10 +159,7 @@
 	{/if}
 	{#snippet actions()}
 		{#if phase === 'setup'}
-			<Button variant="quiet" onclick={() => (open = false)}>Cancel</Button>
-			<Button variant="accent" icon="forward" disabled={count < 1} onclick={start}
-				>Hand to player</Button
-			>
+			<ModalActions onCancel={() => (open = false)} onConfirm={start} disabled={count < 1} />
 		{:else if phase === 'shown'}
 			<Button variant="accent" icon="check" onclick={() => (open = false)}>Done</Button>
 		{/if}

@@ -117,8 +117,8 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 	await page.goto('/build-script');
 	const collection = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
 	await expect(collection).toBeVisible();
-	const sources = page.getByRole('radiogroup', { name: 'Characters from' });
-	await sources.getByText('Homebrew Wiki', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Characters from' }).tap();
+	await page.getByRole('option', { name: 'Homebrew Wiki', exact: true }).tap();
 	await expect(collection).toContainText('Temple Fair');
 	await character(page, 'Lantern, By DJ').tap();
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
@@ -131,7 +131,8 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 	);
 
 	// Back to official characters: the homebrew one stays on the script.
-	await sources.getByText('Official', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Characters from' }).tap();
+	await page.getByRole('option', { name: 'Official', exact: true }).tap();
 	await character(page, 'Imp').tap();
 	await page.getByRole('button', { name: 'Save', exact: true }).tap();
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
@@ -163,9 +164,9 @@ test('On script lists the chosen characters from every source together', async (
 		route.fulfill({ json: collection('peddler', 'Night Market', 'Peddler', 'Ana') })
 	);
 	await page.goto('/build-script');
-	const sources = page.getByRole('radiogroup', { name: 'Characters from' });
 	await character(page, 'Chef').tap();
-	await sources.getByText('Homebrew Wiki', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Characters from' }).tap();
+	await page.getByRole('option', { name: 'Homebrew Wiki', exact: true }).tap();
 	const picked = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
 	await expect(picked).toContainText('Temple Fair');
 	await character(page, 'Lantern, By DJ').tap();
@@ -174,8 +175,10 @@ test('On script lists the chosen characters from every source together', async (
 	await character(page, 'Peddler, By Ana').tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('3');
 
-	await sources.getByText('On script', { exact: true }).tap();
-	// Three sources still fit a phone without scrolling sideways.
+	await page.getByRole('combobox', { name: 'Characters from' }).tap();
+	await page.getByRole('option', { name: 'On script', exact: true }).tap();
+	await expect(page.getByRole('listbox')).toBeHidden();
+	// The page still fits a phone without scrolling sideways.
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
 		true
 	);
@@ -214,7 +217,8 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	await folder.getByRole('textbox', { name: 'Name' }).fill('Club night');
 	await folder.getByRole('textbox', { name: 'Name' }).press('Enter');
 	// The table view (remembered) lists every script with its folder.
-	await page.getByRole('radiogroup', { name: 'View' }).getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'View' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	await libraryRows().tap();
 	const details = page.getByRole('dialog', { name: 'Edited here' });
 	await details.getByRole('combobox', { name: 'Folder' }).tap();

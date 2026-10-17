@@ -19,6 +19,7 @@
 		defaultValue?: T;
 		item?: Snippet<[Option]>;
 		selected?: Snippet<[Option]>;
+		disabled?: boolean;
 	}
 
 	let { label, description, defaultValue, ...select }: Props = $props();

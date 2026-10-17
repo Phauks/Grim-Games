@@ -1,7 +1,7 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { MAX_LABEL_NAME, nameFree, siblings } from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
@@ -65,8 +65,7 @@
 	</label>
 	<p class="error" role="status">{name.trim() !== '' && !ok ? t('library.nameTaken') : ''}</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (open = false)}>{t('common.cancel')}</Button>
-		<Button variant="accent" icon="check" disabled={!ok} onclick={save}>{t('library.save')}</Button>
+		<ModalActions onCancel={() => (open = false)} onConfirm={save} disabled={!ok} />
 	{/snippet}
 </Dialog>
 

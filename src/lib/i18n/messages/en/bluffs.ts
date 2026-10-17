@@ -19,7 +19,6 @@ export const bluffs = {
 	'bluffs.good': 'Good',
 	'bluffs.wholeScript': 'Whole script',
 	'bluffs.characters': 'Bluff characters',
-	'bluffs.save': 'Save',
 	'bluffs.deleteConfirm': 'Delete bluff set?',
 	'bluffs.deleteSummary': '{set}: {names}',
 	'bluffs.undoHint': 'You can undo it from History.',

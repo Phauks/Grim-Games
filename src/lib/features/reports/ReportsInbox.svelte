@@ -8,7 +8,6 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { deleteReport, listReports, setReportStatus } from './reports-api.ts';
@@ -119,7 +118,7 @@
 		<Button variant="quiet" disabled={!key} onclick={forget}>{t('reports.forgetKey')}</Button>
 	{/snippet}
 	{#snippet toolbar()}
-		<Segmented
+		<Select
 			label={t('reports.status')}
 			hideLabel
 			disabled={!key}

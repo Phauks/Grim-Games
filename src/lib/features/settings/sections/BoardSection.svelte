@@ -8,6 +8,7 @@
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ReminderModeSetting from '#lib/features/grimoire/ReminderModeSetting.svelte';
 	import StepFocusSetting from '#lib/features/grimoire/StepFocusSetting.svelte';
+	import TitleAtSetting from '#lib/features/grimoire/TitleAtSetting.svelte';
 	import BoardLooksRows from './BoardLooksRows.svelte';
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
@@ -44,6 +45,8 @@
 		checked={assistance[key]}
 		onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
 	/>
+	<!-- The board thread's placement choice, beside its switch (Trevor, 2026-10-17). -->
+	{#if key === 'scriptTitle'}<TitleAtSetting />{/if}
 {/each}
 <BoardLooksRows />
 <!-- The board thread's own control, with its Confirm (Trevor, 2026-10-17). -->

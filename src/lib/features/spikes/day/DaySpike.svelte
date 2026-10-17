@@ -4,7 +4,7 @@
 	import type { Night } from '#lib/core/rules/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { DayGame } from './day-game.svelte.ts';
 	import DayPanel from '#lib/features/day/DayPanel.svelte';
 	import NightPanel from './NightPanel.svelte';
@@ -40,7 +40,7 @@
 	<p class="hint">
 		A sample 8-player game. Log the day, then open the night order: answers come from the log.
 	</p>
-	<Segmented
+	<Select
 		label="Sample game"
 		value={variant}
 		options={[

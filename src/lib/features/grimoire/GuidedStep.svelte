@@ -157,6 +157,8 @@
 	<!-- The step scrolls on its own, so Done and the other actions always stay in reach. -->
 	<div
 		class="scroll"
+		role="group"
+		aria-label="Night step"
 		onpointerdown={swipeStart}
 		onpointerup={swipeEnd}
 		onpointercancel={() => (swipeFrom = undefined)}
@@ -218,7 +220,7 @@
 						<li>
 							<ReminderToken
 								{label}
-								type={step.character?.type}
+								character={step.character}
 								alignment={step.character
 									? placingAlignment(game, step.character.id, characters)
 									: undefined}

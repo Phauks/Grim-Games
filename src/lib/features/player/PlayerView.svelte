@@ -32,7 +32,7 @@
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import ScratchPadDialog from '#lib/ui/scratch/ScratchPadDialog.svelte';
-	import { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
+	import { ScratchPads, type ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import { NotebookState } from './notebook-store.svelte.ts';
 	import { scriptKey } from './notebook.ts';
 	import NoteEditor from './NoteEditor.svelte';
@@ -137,22 +137,28 @@
 		});
 	});
 
-	// One scratch pad per script, like the notebook, in its own database on the device.
-	let scratch = $state<ScratchPadState>();
+	// Scratch pads per script, like the notebook's notes, in their own database on the device.
+	let scratch = $state<ScratchPads>();
+	let scratchPad = $state<ScratchPadState>();
 	let scratchOpen = $state(false);
 	$effect(() => {
-		if (!key || scratch?.key === `player:${key}`) return;
-		const pad = new ScratchPadState(`player:${key}`);
+		if (!key || scratch?.base === `player:${key}`) return;
+		const pads = new ScratchPads(`player:${key}`);
 		scratchOpen = false;
-		void pad.load().then(() => {
-			if (pad.key === `player:${key}`) scratch = pad;
+		void pads.load().then(() => {
+			if (pads.base === `player:${key}`) scratch = pads;
 		});
 	});
+	function openScratch(pad: ScratchPadState) {
+		scratchPad = pad;
+		scratchOpen = true;
+	}
 
 	// Saving can fail (private browsing, full storage): say so once, as a toast (no reflow).
 	let warnedSave = false;
 	$effect(() => {
-		if (!(notebook?.saveError || scratch?.saveError) || warnedSave) return;
+		const scratchError = scratch?.saveError || scratch?.pads.some((pad) => pad.saveError);
+		if (!(notebook?.saveError || scratchError) || warnedSave) return;
 		warnedSave = true;
 		toast(t('player.cannotSave'), t('player.cannotSaveDetail'));
 	});
@@ -230,10 +236,11 @@
 						{:else}
 							<NotesPanel
 								notes={notebook.book.notes}
-								{scratch}
+								pads={scratch?.pads}
 								onAdd={() => openNote(notebook!.addNote())}
 								onOpenNote={openNote}
-								onOpenScratch={() => scratch && (scratchOpen = true)}
+								onAddScratch={() => scratch && openScratch(scratch.add())}
+								onOpenScratch={openScratch}
 							/>
 						{/if}
 					</ErrorBoundary>
@@ -263,9 +270,13 @@
 		/>
 	</ErrorBoundary>
 {/if}
-{#if scratch}
+{#if scratch && scratchPad}
 	<ErrorBoundary area="play">
-		<ScratchPadDialog bind:open={scratchOpen} pad={scratch} />
+		<ScratchPadDialog
+			bind:open={scratchOpen}
+			pad={scratchPad}
+			onDelete={() => scratchPad && void scratch!.remove(scratchPad)}
+		/>
 	</ErrorBoundary>
 {/if}
 

@@ -23,9 +23,12 @@
 		item?: Snippet<[Option]>;
 		/** Custom content for the closed control; defaults to the chosen option's label. */
 		selected?: Snippet<[Option]>;
+		/** Shown but not usable (a setting that depends on another one being on). */
+		disabled?: boolean;
 	}
 
-	let { label, hideLabel, labelledBy, value, options, onChange, item, selected }: Props = $props();
+	let { label, hideLabel, labelledBy, value, options, onChange, item, selected, disabled }: Props =
+		$props();
 
 	const collection = $derived(
 		createListCollection({
@@ -46,6 +49,7 @@
 	value={[value]}
 	onValueChange={(details) => details.value[0] && onChange(details.value[0] as T)}
 	ids={labelledBy ? { label: labelledBy } : undefined}
+	{disabled}
 	positioning={{ strategy: 'fixed', sameWidth: true, fitViewport: true, gutter: 4 }}
 	lazyMount
 	unmountOnExit

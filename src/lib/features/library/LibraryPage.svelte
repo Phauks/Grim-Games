@@ -38,7 +38,6 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
@@ -366,7 +365,7 @@
 					</ClearableField>
 				</label>
 				<span class="view">
-					<Segmented
+					<Select
 						label={t('library.view')}
 						hideLabel
 						value={view}

@@ -10,10 +10,8 @@ test('the Glossary opened from character details shows above them, and closes ba
 		route.fulfill({ json: { parse: { text: '<p><b>Once per game:</b> Sample wording.</p>' } } })
 	);
 	await page.goto('/spikes/day');
-	await page
-		.getByRole('radiogroup', { name: 'Sample game' })
-		.getByText('Trouble Brewing', { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Sample game' }).tap();
+	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
 	await page
 		.locator('li[data-character="slayer"]')
 		.getByRole('button', { name: /^Slayer/ })

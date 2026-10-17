@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -204,10 +205,7 @@
 		{here && target !== here.parent && !moveOk ? t('library.nameTaken') : ''}
 	</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (moveOpen = false)}>{t('common.cancel')}</Button>
-		<Button variant="accent" icon="move" disabled={!moveOk} onclick={move}
-			>{t('library.move')}</Button
-		>
+		<ModalActions onCancel={() => (moveOpen = false)} onConfirm={move} disabled={!moveOk} />
 	{/snippet}
 </Dialog>
 

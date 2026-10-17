@@ -8,10 +8,8 @@ async function loaded(page: Page) {
 }
 
 async function sampleGame(page: Page, name: 'Sects & Violets' | 'Trouble Brewing' | 'Assorted') {
-	await page
-		.getByRole('radiogroup', { name: 'Sample game' })
-		.getByText(name, { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Sample game' }).tap();
+	await page.getByRole('option', { name, exact: true }).tap();
 }
 
 /** Walks the night one step at a time until the step for `title` is showing. */
@@ -78,10 +76,8 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
-	await page
-		.getByRole('radiogroup', { name: 'Which night' })
-		.getByText('First', { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Which night' }).tap();
+	await page.getByRole('option', { name: 'First', exact: true }).tap();
 	const step = await walkTo(page, 'Washerwoman');
 	await step.getByRole('button', { name: 'Pick info for Ana' }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Washerwoman · Ana' });
@@ -113,7 +109,7 @@ test('any reminder takes an optional long note in a sheet', async ({ page }) => 
 	const sheet = page.getByRole('dialog', { name: 'Note: Gossip · Dev' });
 	const text = `Said: “Eve is the Witch.”\n\n${'They were very sure of it. '.repeat(40)}`;
 	await sheet.getByTestId('note-text').fill(text);
-	await sheet.getByRole('button', { name: 'Save note' }).tap();
+	await sheet.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(sheet).toBeHidden();
 	const note = page.getByRole('button', { name: 'Note: Gossip (Dev)' });
 	await expect(note).toHaveAttribute('data-has-note', 'true');
@@ -162,10 +158,8 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 	await expect(poisoner).toContainText('Preacher · Gus');
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
-	await page
-		.getByRole('radiogroup', { name: 'Which night' })
-		.getByText('First', { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Which night' }).tap();
+	await page.getByRole('option', { name: 'First', exact: true }).tap();
 	const dev = await walkTo(page, 'Poisoner');
 	await expect(dev.getByTestId('step-impaired')).toHaveText('Dev · No Ability · Gus (Preacher)');
 
@@ -184,10 +178,8 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 		'Show 1: Ben (Chef)'
 	);
 
-	await page
-		.getByRole('radiogroup', { name: 'Which night' })
-		.getByText('Others', { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Which night' }).tap();
+	await page.getByRole('option', { name: 'Others', exact: true }).tap();
 	const gambler = await walkTo(page, 'Gambler');
 	await gambler.getByRole('button', { name: 'Pick for Ana' }).tap();
 	const choice = page.getByRole('dialog', { name: 'Gambler · Ana' });

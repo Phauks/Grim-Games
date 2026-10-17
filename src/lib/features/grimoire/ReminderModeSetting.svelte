@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { boardLooks } from './board-looks.svelte.ts';
 
 	/**
@@ -16,7 +16,7 @@
 	}
 </script>
 
-<Segmented
+<Select
 	label="Reminders"
 	value={boardLooks.current.reminders}
 	options={[

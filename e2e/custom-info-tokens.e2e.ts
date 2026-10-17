@@ -54,7 +54,7 @@ test('Bold, Italic, Underline and Colour each apply at once, in the editor, prev
 	await expect(page.getByRole('button', { name: 'Red' })).toHaveAttribute('aria-pressed', 'true');
 	await expect(preview.locator('[data-ink="red"]')).toHaveText('You');
 
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const tile = page.getByRole('button', { name: 'You are cursed today', exact: true });
 	await expect(tile.locator('strong')).toHaveText('cursed');
 	await expect(tile.locator('em')).toHaveText('today');
@@ -88,7 +88,7 @@ test('a card that belongs to a character sits under Character Specific', async (
 		.tap();
 	await dialog.getByRole('button', { name: 'Done' }).tap();
 	await expect(dialog.getByText('Empath')).toBeVisible();
-	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 
 	const tile = page.getByRole('button', { name: /^You feel uneasy/ });
 	await expect(tile).toContainText('Empath');
@@ -127,11 +127,11 @@ test('a fill-in card asks for its word each time and shows it', async ({ page })
 	await newCard(page, 'Your number is');
 	await page.getByText('Fill in when shown').tap();
 	await expect(page.getByRole('figure', { name: 'Preview' })).toContainText('…');
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	await page.getByRole('button', { name: 'Your number is', exact: true }).tap();
 	await page.getByRole('textbox', { name: 'Fill in' }).fill('42');
-	await page.getByRole('button', { name: 'Show' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const shown = page.getByTestId('show-to-player');
 	await expect(shown.getByRole('heading')).toHaveText('Your number is');
 	await expect(shown).toContainText('42');
@@ -169,7 +169,7 @@ test('a saved colour can be changed and cleared, with bold kept', async ({ page 
 	await expect(preview.locator('[data-ink="red"]')).toHaveCount(0);
 	await expect(preview.locator('strong')).toHaveText('very');
 
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const tile = page.getByRole('button', { name: 'You are very mad today', exact: true });
 	await expect(tile.locator('[data-ink="blue"]')).toHaveText('mad');
 	await expect(tile.locator('[data-ink="red"]')).toHaveCount(0);

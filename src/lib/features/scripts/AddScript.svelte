@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		loadScriptText,
@@ -230,14 +231,17 @@
 	</label>
 	{@render errorLine()}
 	{#snippet actions()}
-		<Button variant="quiet" onclick={pasteFromClipboard} disabled={!canReadClipboard}
-			>{t('scripts.paste.fromClipboard')}</Button
+		<ModalActions
+			onCancel={() => (pasteOpen = false)}
+			onConfirm={() => run(() => fromText(pasteText))}
+			disabled={busy || pasteText.trim() === ''}
 		>
-		<Button
-			variant="accent"
-			onclick={() => run(() => fromText(pasteText))}
-			disabled={busy || pasteText.trim() === ''}>{t('scripts.picker.save')}</Button
-		>
+			{#snippet start()}
+				<Button variant="quiet" onclick={pasteFromClipboard} disabled={!canReadClipboard}
+					>{t('scripts.paste.fromClipboard')}</Button
+				>
+			{/snippet}
+		</ModalActions>
 	{/snippet}
 </Dialog>
 
@@ -256,24 +260,26 @@
 	</label>
 	{@render errorLine()}
 	{#snippet actions()}
-		<!-- Always there, enabled once a site refuses to share its file (no reflow). -->
-		<Button
-			variant="quiet"
-			disabled={!errorLink}
-			onclick={() => errorLink && window.open(errorLink, '_blank', 'noopener,noreferrer')}
-			>{t('scripts.link.open')}</Button
+		<!-- Open site is always there, enabled once a site refuses to share its file (no reflow). -->
+		<ModalActions
+			onCancel={() => (linkOpen = false)}
+			onConfirm={() => run(() => fetchLinkTarget(resolveLink(linkText), linkText))}
+			disabled={busy || linkText.trim() === ''}
 		>
-		<Button
-			variant="accent"
-			onclick={() => run(() => fetchLinkTarget(resolveLink(linkText), linkText))}
-			disabled={busy || linkText.trim() === ''}>{t('scripts.picker.save')}</Button
-		>
+			{#snippet start()}
+				<Button
+					variant="quiet"
+					disabled={!errorLink}
+					onclick={() => errorLink && window.open(errorLink, '_blank', 'noopener,noreferrer')}
+					>{t('scripts.link.open')}</Button
+				>
+			{/snippet}
+		</ModalActions>
 	{/snippet}
 </Dialog>
 
 <ScriptCheckDialog
 	bind:open={checkOpen}
-	action="save"
 	result={checking?.result}
 	onconfirm={() => {
 		const script = checking?.result.script;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -569,7 +570,7 @@
 							></button>
 							<ReminderToken
 								label={reminder.label}
-								type={characters.get(reminder.characterId)?.type}
+								character={characters.get(reminder.characterId)}
 								alignment={placingAlignment(game, reminder.characterId, characters)}
 							/>
 							<!-- Whose it is (Trevor, 2026-10-17). -->
@@ -670,7 +671,7 @@
 					<li>
 						<ReminderToken
 							label={reminder.label}
-							type={characters.get(reminder.characterId)?.type}
+							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 						/>
 						<span>on {@render seatBadge(on)}</span>
@@ -785,10 +786,10 @@
 				<Button onclick={() => pickAlignment('good')}>Good</Button>
 				<Button onclick={() => pickAlignment('evil')}>Evil</Button>
 			{:else}
-				<Button variant="quiet" onclick={() => (alignmentOpen = false)}>Cancel</Button>
-				<Button variant="accent" onclick={() => pickAlignment(next)}
-					>{next === 'good' ? 'Good' : 'Evil'}</Button
-				>
+				<ModalActions
+					onCancel={() => (alignmentOpen = false)}
+					onConfirm={() => pickAlignment(next)}
+				/>
 			{/if}
 		</div>
 	{/if}
@@ -841,8 +842,7 @@
 		{/each}
 	</div>
 	{#snippet actions()}
-		<!-- Solid, unlike the causes above, so it never reads as one of them. -->
-		<Button variant="solid" icon="close" onclick={() => (causeOpen = false)}>Cancel</Button>
+		<ModalActions onCancel={() => (causeOpen = false)} />
 	{/snippet}
 </Dialog>
 
@@ -959,7 +959,7 @@
 	{#snippet heading()}
 		{#if movingReminder}<ReminderToken
 				label={movingReminder.label}
-				type={characters.get(movingReminder.characterId)?.type}
+				character={characters.get(movingReminder.characterId)}
 				alignment={placingAlignment(game, movingReminder.characterId, characters)}
 			/>{:else}Reminder{/if}
 	{/snippet}

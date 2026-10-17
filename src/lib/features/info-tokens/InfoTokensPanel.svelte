@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
@@ -6,7 +7,6 @@
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import { characterCardsFor } from './character-cards.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
 	import { pickMax } from './pick.ts';
@@ -84,17 +84,13 @@
 				max={pickMax(picking.id)}
 				label={t('info-tokens.characters')}
 			/>
-			<div class="sheet-actions">
-				<Button variant="quiet" onclick={() => (pickOpen = false)}>{t('common.cancel')}</Button>
-				<Button
-					variant="accent"
-					icon="forward"
-					onclick={() => {
-						pickOpen = false;
-						if (picking) show(picking.text, picked, pickingDetail);
-					}}>{t('info-tokens.show')}</Button
-				>
-			</div>
+			<ModalActions
+				onCancel={() => (pickOpen = false)}
+				onConfirm={() => {
+					pickOpen = false;
+					if (picking) show(picking.text, picked, pickingDetail);
+				}}
+			/>
 		{/if}
 	</BottomSheet>
 </ErrorBoundary>
@@ -105,13 +101,4 @@
 />
 
 <style>
-	.sheet-actions {
-		position: sticky;
-		bottom: 0;
-		display: flex;
-		justify-content: flex-end;
-		gap: var(--space-2);
-		padding-top: var(--space-3);
-		background: var(--sheet-background);
-	}
 </style>

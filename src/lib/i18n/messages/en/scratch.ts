@@ -1,7 +1,11 @@
-/** The handwriting scratch pad (src/lib/ui/scratch), used in the player view. */
+/** The handwriting scratch pads (src/lib/ui/scratch), used in the player view. */
 export const scratch = {
 	'scratch.title': 'Scratch pad',
-	'scratch.open': 'Full screen',
+	'scratch.pads': 'Scratch pads',
+	'scratch.newPad': 'New pad',
+	'scratch.padTitle': 'Title',
+	'scratch.untitled': 'Untitled',
+	'scratch.hidden': 'Hidden',
 	'scratch.drawing': 'Scratch pad drawing',
 	'scratch.tools': 'Scratch pad tools',
 	'scratch.pen': 'Pen',
@@ -13,11 +17,15 @@ export const scratch = {
 	'scratch.colour.good': 'Blue',
 	'scratch.colour.evil': 'Red',
 	'scratch.colour.highlight': 'Highlight',
+	'scratch.paper': 'Paper',
+	'scratch.paper.leather': 'Leather',
+	'scratch.paper.parchment': 'Parchment',
+	'scratch.paper.white': 'White',
+	'scratch.lock': 'Lock, so nothing draws on it',
+	'scratch.hide': 'Hide contents',
 	'scratch.undo': 'Undo',
 	'scratch.redo': 'Redo',
-	'scratch.clear': 'Clear the scratch pad',
-	'scratch.clearConfirm': 'Clear the scratch pad?',
-	'scratch.clearBody': 'Everything drawn on it is deleted from this device.',
-	'scratch.cancel': 'Cancel',
-	'scratch.confirm': 'Confirm'
+	'scratch.delete': 'Delete pad',
+	'scratch.deleteConfirm': 'Delete this pad?',
+	'scratch.deleteBody': '“{title}” and everything drawn on it will be deleted from this device.'
 } as const;

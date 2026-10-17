@@ -7,12 +7,21 @@
 		icon: IconSlot;
 		/** Accessible name; also shown as a tooltip on hover. */
 		label: string;
+		/** The button element, e.g. to anchor a popover. */
+		ref?: HTMLButtonElement;
 	}
 
-	let { icon, label, ...rest }: Props = $props();
+	let { icon, label, ref = $bindable(), ...rest }: Props = $props();
 </script>
 
-<button class="icon-button" type="button" aria-label={label} title={label} {...rest}>
+<button
+	bind:this={ref}
+	class="icon-button"
+	type="button"
+	aria-label={label}
+	title={label}
+	{...rest}
+>
 	<Icon name={icon} />
 </button>
 
@@ -31,6 +40,11 @@
 	}
 	.icon-button:active {
 		background: var(--surface-selected);
+	}
+	/* A switch (aria-pressed), when on. */
+	.icon-button[aria-pressed='true'] {
+		background: var(--surface-selected);
+		box-shadow: inset 0 0 0 2px var(--accent);
 	}
 	.icon-button:disabled {
 		opacity: 0.5;

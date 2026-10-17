@@ -54,6 +54,8 @@ import ph_download_simple_duotone from '~icons/ph/download-simple-duotone';
 import ph_drop_duotone from '~icons/ph/drop-duotone';
 import ph_eraser_duotone from '~icons/ph/eraser-duotone';
 import ph_eye_duotone from '~icons/ph/eye-duotone';
+import ph_eye_closed_duotone from '~icons/ph/eye-closed-duotone';
+import ph_eye_slash_duotone from '~icons/ph/eye-slash-duotone';
 import ph_feather_duotone from '~icons/ph/feather-duotone';
 import ph_file_arrow_down_duotone from '~icons/ph/file-arrow-down-duotone';
 import ph_file_arrow_up_duotone from '~icons/ph/file-arrow-up-duotone';
@@ -96,6 +98,8 @@ import ph_link_simple_duotone from '~icons/ph/link-simple-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
 import ph_list_bullets_duotone from '~icons/ph/list-bullets-duotone';
 import ph_list_magnifying_glass_duotone from '~icons/ph/list-magnifying-glass-duotone';
+import ph_lock_duotone from '~icons/ph/lock-duotone';
+import ph_lock_simple_duotone from '~icons/ph/lock-simple-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
 import ph_minus_duotone from '~icons/ph/minus-duotone';
@@ -228,6 +232,8 @@ const icons: IconMap = {
 	'ph:drop-duotone': ph_drop_duotone,
 	'ph:eraser-duotone': ph_eraser_duotone,
 	'ph:eye-duotone': ph_eye_duotone,
+	'ph:eye-closed-duotone': ph_eye_closed_duotone,
+	'ph:eye-slash-duotone': ph_eye_slash_duotone,
 	'ph:feather-duotone': ph_feather_duotone,
 	'ph:file-arrow-down-duotone': ph_file_arrow_down_duotone,
 	'ph:file-arrow-up-duotone': ph_file_arrow_up_duotone,
@@ -270,6 +276,8 @@ const icons: IconMap = {
 	'ph:list-duotone': ph_list_duotone,
 	'ph:list-bullets-duotone': ph_list_bullets_duotone,
 	'ph:list-magnifying-glass-duotone': ph_list_magnifying_glass_duotone,
+	'ph:lock-duotone': ph_lock_duotone,
+	'ph:lock-simple-duotone': ph_lock_simple_duotone,
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,
 	'ph:minus-duotone': ph_minus_duotone,

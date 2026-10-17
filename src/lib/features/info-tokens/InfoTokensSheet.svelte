@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -278,17 +279,10 @@
 				max={pickMax(token.id)}
 				label={t('info-tokens.characters')}
 			/>
-			<div class="sheet-actions">
-				<Button variant="quiet" onclick={() => (view = { kind: 'list' })}
-					>{t('common.cancel')}</Button
-				>
-				<Button
-					variant="accent"
-					icon={adding ? 'add' : 'forward'}
-					onclick={() => use(token.text, picked)}
-					>{t(adding ? 'info-tokens.addToChain' : 'info-tokens.show')}</Button
-				>
-			</div>
+			<ModalActions
+				onCancel={() => (view = { kind: 'list' })}
+				onConfirm={() => use(token.text, picked)}
+			/>
 		{:else}
 			{@const token = view.token}
 			<ul class="sets" aria-label={t('info-tokens.bluffSets')}>
@@ -305,11 +299,7 @@
 					</li>
 				{/each}
 			</ul>
-			<div class="sheet-actions">
-				<Button variant="quiet" onclick={() => (view = { kind: 'list' })}
-					>{t('common.cancel')}</Button
-				>
-			</div>
+			<ModalActions onCancel={() => (view = { kind: 'list' })} />
 		{/if}
 	</ErrorBoundary>
 	<!--
@@ -413,14 +403,5 @@
 	.set-label {
 		font-family: var(--font-heading);
 		font-size: 1.05rem;
-	}
-	.sheet-actions {
-		position: sticky;
-		bottom: 0;
-		display: flex;
-		justify-content: flex-end;
-		gap: var(--space-2);
-		padding-top: var(--space-3);
-		background: var(--sheet-background);
 	}
 </style>

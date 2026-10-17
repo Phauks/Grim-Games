@@ -42,7 +42,6 @@ export const day = {
 	'day.jugglerGuesses': 'Juggler’s guesses',
 	'day.guessFor': 'Guess for {name}',
 	'day.noGuess': 'No guess',
-	'day.saveNote': 'Save note',
 	'day.notDone': 'Not done',
 	'day.toastNote': 'Note',
 	'day.unknownSeat': 'Seat ?',

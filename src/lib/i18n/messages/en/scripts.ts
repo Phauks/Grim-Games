@@ -113,8 +113,6 @@ export const scripts = {
 	'scripts.check.changed': 'Changed',
 	'scripts.check.notes': 'Notes',
 	'scripts.check.back': 'Back',
-	'scripts.check.loadAnyway': 'Load anyway',
-	'scripts.check.saveAnyway': 'Save anyway',
 
 	// BotC Scripts search
 	'scripts.botc.sort.votes': 'Most votes',

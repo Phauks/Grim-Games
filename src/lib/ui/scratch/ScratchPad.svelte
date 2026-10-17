@@ -2,12 +2,16 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		SCRATCH_COLOURS,
+		SCRATCH_PAPERS,
 		SIZE_STEPS,
 		sizeWidth,
 		type ScratchColour,
 		type ScratchTool
 	} from '#lib/core/scratch/scratch.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import ScratchCanvas from './ScratchCanvas.svelte';
 	import { scratchSizes, setScratchSize } from './scratch-sizes.svelte.ts';
 	import type { ScratchPadState } from './scratch-store.svelte.ts';
@@ -24,6 +28,15 @@
 	let sizingTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const step = $derived(scratchSizes[tool]);
+	let paperButton = $state<HTMLButtonElement>();
+	let choosingPaper = $state(false);
+
+	// Phones don't close the keyboard on Enter in a single-line field; Done should (Trevor).
+	function doneOnEnter(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+		if (event.key !== 'Enter' || event.isComposing) return;
+		event.preventDefault();
+		event.currentTarget.blur();
+	}
 
 	function resize(value: number) {
 		setScratchSize(tool, value);
@@ -33,19 +46,63 @@
 	}
 </script>
 
-<div class="pad">
+<div class="pad" data-scratch-paper={pad.paper}>
+	<div class="details">
+		<ClearableField value={pad.title} label={t('scratch.padTitle')} onclear={() => pad.rename('')}>
+			<input
+				type="text"
+				aria-label={t('scratch.padTitle')}
+				placeholder={t('scratch.untitled')}
+				value={pad.title}
+				autocomplete="off"
+				enterkeyhint="done"
+				oninput={(event) => pad.rename(event.currentTarget.value)}
+				onkeydown={doneOnEnter}
+			/>
+		</ClearableField>
+		<span class="switches">
+			<IconButton
+				bind:ref={paperButton}
+				icon="appearance"
+				label={t('scratch.paper')}
+				aria-haspopup="dialog"
+				aria-expanded={choosingPaper}
+				onclick={() => (choosingPaper = !choosingPaper)}
+			/>
+			<!-- Locked, a pad can stay open on the table without a stray hand marking it. -->
+			<IconButton
+				icon="lock"
+				label={t('scratch.lock')}
+				aria-pressed={pad.locked}
+				data-testid="scratch-lock"
+				onclick={() => pad.setLocked(!pad.locked)}
+			/>
+			<!-- Per pad, like each note's own Hide (Trevor, 2026-10-17). -->
+			<IconButton
+				icon="hide"
+				label={t('scratch.hide')}
+				aria-pressed={pad.hidden}
+				data-testid="scratch-hide"
+				onclick={() => pad.setHidden(!pad.hidden)}
+			/>
+		</span>
+	</div>
+	<!-- Locked, every tool stays in place but greyed out, so nothing moves. -->
 	<div class="tools" role="toolbar" aria-label={t('scratch.tools')}>
 		<button
 			type="button"
 			class="tool"
+			disabled={pad.locked}
 			aria-pressed={tool === 'pen'}
 			aria-label={t('scratch.pen')}
 			title={t('scratch.pen')}
 			onclick={() => (tool = 'pen')}><Icon name="pen" /></button
 		>
+		<!-- eslint-disable-next-line grim/dropdown-choice -- drawing tools switch mid-stroke; a dropdown would cost a tap each time (asked Trevor) -->
 		<button
 			type="button"
 			class="tool"
+			disabled={pad.locked}
 			aria-pressed={tool === 'eraser'}
 			aria-label={t('scratch.eraser')}
 			title={t('scratch.eraser')}
@@ -58,6 +115,7 @@
 				type="button"
 				class="tool swatch"
 				data-colour={c}
+				disabled={pad.locked}
 				aria-pressed={tool === 'pen' && colour === c}
 				aria-label={t(`scratch.colour.${c}`)}
 				title={t(`scratch.colour.${c}`)}
@@ -75,6 +133,7 @@
 				min="1"
 				max={SIZE_STEPS}
 				step="1"
+				disabled={pad.locked}
 				value={step}
 				oninput={(event) => resize(Number(event.currentTarget.value))}
 			/>
@@ -85,6 +144,23 @@
 	<ScratchCanvas {pad} {tool} {colour} size={sizeWidth(tool, step)} preview={sizing} />
 </div>
 
+<Popover bind:open={choosingPaper} title={t('scratch.paper')} anchor={paperButton}>
+	<div class="papers">
+		{#each SCRATCH_PAPERS as p (p)}
+			<button
+				type="button"
+				class="paper"
+				data-scratch-paper={p}
+				aria-pressed={pad.paper === p}
+				onclick={() => pad.setPaper(p)}
+			>
+				<span class="sheet" aria-hidden="true"><span class="ink"></span></span>
+				{t(`scratch.paper.${p}`)}
+			</button>
+		{/each}
+	</div>
+</Popover>
+
 <style>
 	.pad {
 		display: flex;
@@ -92,6 +168,69 @@
 		flex: 1;
 		min-height: 0;
 		gap: var(--space-2);
+	}
+	.details {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.details :global(.clearable) {
+		flex: 1;
+		min-width: 0;
+	}
+	.details input {
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		background: color-mix(in srgb, currentColor 6%, transparent);
+		color: inherit;
+		font-family: var(--font-body);
+		font-size: 1rem;
+	}
+	.switches {
+		display: flex;
+		flex: none;
+	}
+	.papers {
+		display: grid;
+		gap: var(--space-1);
+		margin-top: var(--space-2);
+	}
+	.paper {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		min-height: var(--tap-target);
+		padding: var(--space-1) var(--space-2);
+		border: 0;
+		border-radius: var(--radius-md);
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	.paper[aria-pressed='true'] {
+		background: var(--surface-selected);
+		box-shadow: inset 0 0 0 2px var(--accent);
+	}
+	.sheet {
+		display: grid;
+		place-items: center;
+		width: calc(2 * var(--u));
+		height: calc(2 * var(--u));
+		border-radius: var(--radius-sm);
+		background: var(--scratch-paper);
+		box-shadow: 0 0 0 1px var(--border);
+	}
+	.sheet .ink {
+		width: 40%;
+		height: 40%;
+		border-radius: var(--radius-full);
+		background: var(--scratch-ink);
 	}
 	.tools {
 		display: flex;
@@ -145,6 +284,11 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
+	.tool:disabled,
+	.size input:disabled {
+		opacity: 0.4;
+		cursor: default;
+	}
 	.tool[aria-pressed='true'] {
 		background: var(--surface-selected);
 		box-shadow: inset 0 0 0 2px var(--accent);
@@ -156,15 +300,15 @@
 		box-shadow: 0 0 0 1px var(--border);
 	}
 	.swatch[data-colour='ink'] .dot {
-		background: var(--on-surface);
+		background: var(--scratch-ink);
 	}
 	.swatch[data-colour='good'] .dot {
-		background: var(--good);
+		background: var(--scratch-good);
 	}
 	.swatch[data-colour='evil'] .dot {
-		background: var(--evil);
+		background: var(--scratch-evil);
 	}
 	.swatch[data-colour='highlight'] .dot {
-		background: var(--heading);
+		background: var(--scratch-highlight);
 	}
 </style>

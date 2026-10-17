@@ -562,7 +562,7 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 				'imp'
 			])
 		);
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Jinx Check');
 
 	await page.goto('/new');
@@ -615,7 +615,7 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 			'imp'
 		])
 	);
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Custom Check');
 
 	await page.goto('/new');

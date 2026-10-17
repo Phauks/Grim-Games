@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -36,7 +37,6 @@
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
@@ -355,7 +355,7 @@
 			</section>
 
 			<div class="source">
-				<Segmented
+				<Select
 					label={t('script-builder.source')}
 					hideLabel
 					value={source}
@@ -532,7 +532,7 @@
 		{/each}
 	</ul>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (openOpen = false)}>{t('common.cancel')}</Button>
+		<ModalActions onCancel={() => (openOpen = false)} />
 	{/snippet}
 </Dialog>
 

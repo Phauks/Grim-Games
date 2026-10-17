@@ -122,7 +122,10 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await expect(ghostMark).toBeAttached();
 	// A good Imp: as in the physical grimoire, the token turns upside down.
 	await seatMenu(page, sheet, 'Change alignment');
-	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
 	await expect(sheet).toContainText(/Imp\s*Good · Seat 1/);
 
 	await page.reload();
@@ -182,7 +185,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(alignment).toContainText('Now');
 	await expect(alignment).toContainText('Evil');
 	await expect(alignment).toContainText('Becomes');
-	await alignment.getByRole('button', { name: 'Good', exact: true }).tap();
+	await alignment.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(sheet).toContainText(/Baron\s*Good · Seat 1/);
 });
 
@@ -375,7 +378,7 @@ test('a new game can use a custom script from the Library', async ({ page }) => 
 	await dialog
 		.getByLabel('Script JSON or link')
 		.fill(JSON.stringify([{ id: '_meta', name: 'Pocket Storm' }, 'chef', 'saint', 'imp']));
-	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Pocket Storm');
 
 	await startGame(page, 'Pocket Storm');
@@ -727,12 +730,14 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
 	// Each night has its own ticks; there is no Clear ticks button.
 	await expect(night.getByRole('button', { name: 'Clear ticks' })).toHaveCount(0);
-	await night.getByText('Other nights').tap();
+	await night.getByRole('combobox', { name: 'Night' }).tap();
+	await page.getByRole('option', { name: 'Other nights', exact: true }).tap();
 	await expect(night.getByRole('button', { name: 'Done: Empath' })).toHaveAttribute(
 		'aria-pressed',
 		'false'
 	);
-	await night.getByText('First night').tap();
+	await night.getByRole('combobox', { name: 'Night' }).tap();
+	await page.getByRole('option', { name: 'First night', exact: true }).tap();
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
 
 	// Ticking Dawn ends the night and starts Day 1 (Trevor, 2026-10-16); the night's ticks
@@ -754,7 +759,7 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
 	// The next night order opens on the other nights, unticked.
 	await page.getByRole('button', { name: 'Night order' }).tap();
-	await expect(night.getByRole('radio', { name: 'Other nights' })).toBeChecked();
+	await expect(night.getByRole('combobox', { name: 'Night' })).toHaveText(/Other nights/);
 	await expect(night.getByRole('button', { name: 'Done: Dawn' })).toHaveAttribute(
 		'aria-pressed',
 		'false'
@@ -1135,6 +1140,18 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByText('Script name on the board', { exact: true }).tap();
 	await expect(page.locator('.watermark')).toHaveCount(0);
 	await dialog.getByText('Script name on the board', { exact: true }).tap();
+	// The name can sit elsewhere, clear of the circle (Trevor, 2026-10-17).
+	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
+	await page.getByRole('option', { name: 'Lower left corner' }).tap();
+	await expect(page.locator('.watermark')).toHaveCount(0);
+	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
+	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
+	await page.getByRole('option', { name: 'In the toolbar' }).tap();
+	await expect(page.locator('.toolbar-title')).toHaveText('Trouble Brewing');
+	await expect(page.locator('.corner-title')).toHaveCount(0);
+	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
+	await page.getByRole('option', { name: 'Behind the circle' }).tap();
+	await expect(page.locator('.watermark')).toContainText('Trouble Brewing');
 	// The player name badge size is an option (Trevor, 2026-10-17), live on the board.
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
@@ -1372,7 +1389,7 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 	await expect(draw.getByLabel('Tokens', { exact: true })).toHaveText('4');
 	await draw.getByRole('button', { name: 'Fewer evil' }).tap();
 	await expect(draw.getByLabel('Evil tokens')).toHaveText('0');
-	await draw.getByRole('button', { name: 'Hand to player' }).tap();
+	await draw.getByRole('button', { name: 'Confirm' }).tap();
 	const pick = page.getByRole('dialog', { name: 'Choose a token' });
 	// The counts are not shown to the player.
 	await expect(pick).not.toContainText('Evil');
@@ -1412,7 +1429,8 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	const order = page.getByRole('dialog', { name: 'Night order' });
-	await order.getByText('Other nights').tap();
+	await order.getByRole('combobox', { name: 'Night' }).tap();
+	await page.getByRole('option', { name: 'Other nights', exact: true }).tap();
 	await order.getByRole('button', { name: 'Guide: Undertaker' }).tap();
 	const suggested = page.getByRole('dialog', { name: 'Undertaker' }).getByTestId('night-suggested');
 	await expect(suggested.locator('[data-character-id="imp"]').first()).toBeVisible();
@@ -1460,7 +1478,8 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(end).toContainText(/Now\s*In Resume game\s*Becomes\s*Ended, in History/);
-	await end.getByRole('radio', { name: 'Evil' }).tap();
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// Still on the board (Trevor, 2026-10-17), which says the game is over.
 	expect(page.url()).toBe(board);
@@ -1505,7 +1524,8 @@ test('History shows stats from ended games', async ({ page }) => {
 	await startGame(page);
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await end.getByRole('radio', { name: 'Good' }).tap();
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// End game stays on the board (Trevor, 2026-10-17); History is in the sidebar.
 	await expect(page.getByTestId('game-over')).toBeVisible();
@@ -1833,7 +1853,7 @@ test('marking a player as the Marionette asks to make them evil', async ({ page 
 		.fill(
 			JSON.stringify([{ id: '_meta', name: 'Strings' }, 'clockmaker', 'chef', 'marionette', 'imp'])
 		);
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Strings');
 	await startGame(page, 'Strings');
 	const sheet = await openSeat(page, 2);
@@ -1868,7 +1888,7 @@ test('an extra Demon bluff set can be renamed, and the name is kept with the gam
 		.getByRole('group', { name: 'Bluff characters' })
 		.getByRole('button', { name: /^Monk(, .*)?$/ })
 		.tap();
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	// The Demon's set keeps its name (Trevor, 2026-10-17).
 	await expect(page.getByRole('button', { name: 'Rename the Demon bluffs' })).toHaveCount(0);
 
@@ -2047,7 +2067,7 @@ test('a new Demon bluff set is named on the screen where its characters are chos
 		.getByRole('button', { name: /^Monk(, .*)?$/ })
 		.tap();
 	await expect(page.getByRole('heading', { name: 'Spares · 1/3' })).toBeVisible();
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const set = page.getByTestId('bluff-set').nth(1);
 	await expect(set).toHaveAttribute('data-set', 'Spares');
 
@@ -2076,7 +2096,8 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	// Turning it on says what it changes first (Trevor, 2026-10-17).
 	await menu(page, 'Background');
 	const dialog = page.getByRole('dialog', { name: 'Background' });
-	await dialog.getByText('Stay where dropped', { exact: true }).tap();
+	await dialog.getByRole('combobox', { name: 'Reminders' }).tap();
+	await page.getByRole('option', { name: 'Stay where dropped', exact: true }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Reminders stay where dropped?' });
 	await expect(confirm.getByTestId('reminder-mode-effects').locator('li')).toHaveCount(4);
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
@@ -2208,7 +2229,7 @@ test("a script's own character can have another copy of a reminder (Cleopatra)",
 			'imp'
 		])
 	);
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Little Rome');
 	await startGame(page, 'Little Rome');
 
@@ -2263,7 +2284,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 			'imp'
 		])
 	);
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Little Market');
 	await startGame(page, 'Little Market');
 	for (const [number, name] of [

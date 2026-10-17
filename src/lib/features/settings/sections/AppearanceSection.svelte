@@ -3,7 +3,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { TEXT_ALIGNS, TEXT_SCALE, type TextAlign } from '#lib/ui/preferences.ts';
 	import SettingChoice from '#lib/ui/settings/SettingChoice.svelte';
-	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
+	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import { DEFAULT_PREFERENCES } from '#lib/ui/preferences.ts';
 	import { THEMES } from '#lib/ui/themes/registry.ts';
@@ -36,7 +36,7 @@
 	format={(scale) => intl.number(scale, { style: 'percent' })}
 	onChange={(textScale) => preferences.update({ textScale })}
 />
-<SettingSegmented
+<SettingSelect
 	label={t('settings.textAlign')}
 	description={t('settings.textAlignHelp')}
 	value={preferences.current.textAlign}

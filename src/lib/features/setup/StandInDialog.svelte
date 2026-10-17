@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { StandIn } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -6,7 +7,6 @@
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
 	interface Props {
@@ -61,7 +61,7 @@
 		/>
 	</div>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (open = false)}>{t('common.cancel')}</Button>
+		<ModalActions onCancel={() => (open = false)} />
 	{/snippet}
 </Dialog>
 
