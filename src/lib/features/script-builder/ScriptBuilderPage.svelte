@@ -303,6 +303,33 @@
 					>
 				</section>
 
+				<div class="source">
+					<Segmented
+						label={t('script-builder.source')}
+						hideLabel
+						value={source}
+						options={[
+							{ value: 'official', label: t('script-builder.source.official') },
+							{ value: 'homebrew', label: t('script-builder.source.homebrew') }
+						]}
+						onChange={(value) => (value === 'homebrew' ? void showHomebrew() : (source = value))}
+					/>
+					<!-- Always in place, so switching source never moves the page. -->
+					<div class="collection" data-disabled={source !== 'homebrew' ? '' : undefined}>
+						<Select
+							label={t('script-builder.collection')}
+							hideLabel
+							value={collectionId}
+							options={collections.length
+								? collections.map((c) => ({ value: c.id, label: c.name }))
+								: [{ value: '', label: t('common.none') }]}
+							onChange={(id) => id && void pickCollection(id)}
+						/>
+					</div>
+				</div>
+				<p class="source-error" role="status" data-testid="homebrew-error">
+					{source === 'homebrew' ? homebrewError : ''}
+				</p>
 				<div class="counts">
 					<ul class="types" aria-label={t('script-builder.counts')} data-testid="builder-counts">
 						{#each TYPES as type (type)}
@@ -312,33 +339,6 @@
 							</li>
 						{/each}
 					</ul>
-					<div class="source">
-						<Segmented
-							label={t('script-builder.source')}
-							hideLabel
-							value={source}
-							options={[
-								{ value: 'official', label: t('script-builder.source.official') },
-								{ value: 'homebrew', label: t('script-builder.source.homebrew') }
-							]}
-							onChange={(value) => (value === 'homebrew' ? void showHomebrew() : (source = value))}
-						/>
-						<!-- Always in place, so switching source never moves the page. -->
-						<div class="collection" data-disabled={source !== 'homebrew' ? '' : undefined}>
-							<Select
-								label={t('script-builder.collection')}
-								hideLabel
-								value={collectionId}
-								options={collections.length
-									? collections.map((c) => ({ value: c.id, label: c.name }))
-									: [{ value: '', label: t('common.none') }]}
-								onChange={(id) => id && void pickCollection(id)}
-							/>
-						</div>
-					</div>
-					<p class="source-error" role="status" data-testid="homebrew-error">
-						{source === 'homebrew' ? homebrewError : ''}
-					</p>
 					<CharacterSearchBox bind:query shortcut />
 				</div>
 
@@ -577,9 +577,10 @@
 		padding: var(--space-2) 0;
 		background: var(--page-background, var(--surface));
 	}
+	/* Compact, so the counts and search stay a short bar while the list scrolls under. */
 	.types {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(calc(7 * var(--u)), 1fr));
+		display: flex;
+		flex-wrap: wrap;
 		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
@@ -587,17 +588,17 @@
 		font-size: 0.85rem;
 	}
 	.types li {
-		display: grid;
-		justify-items: center;
-		padding: var(--space-1);
-		border-radius: var(--radius-sm);
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-1);
+		padding: 0 var(--space-2);
+		border-radius: var(--radius-full);
 		background: var(--surface-raised);
 	}
 	.types .label {
 		color: var(--on-surface-muted);
 	}
 	.types .n {
-		font-size: 1.2rem;
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 	}
@@ -606,6 +607,7 @@
 		grid-template-columns: auto minmax(0, 1fr);
 		align-items: center;
 		gap: var(--space-2);
+		padding-top: var(--space-3);
 	}
 	.collection[data-disabled] {
 		opacity: 0.5;
