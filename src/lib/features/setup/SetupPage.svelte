@@ -412,7 +412,8 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		position: sticky;
-		top: 0;
+		/* Just below the app header, which is sticky too (as the sidebar does). */
+		top: calc(var(--tap-target) + env(safe-area-inset-top));
 		z-index: var(--z-raised);
 		padding: var(--space-2) 0;
 		background: var(--page-background, var(--surface));
@@ -493,7 +494,7 @@
 			grid-template-columns: minmax(0, 1fr);
 			gap: var(--space-2);
 			position: sticky;
-			top: 0;
+			top: calc(var(--tap-target) + env(safe-area-inset-top));
 			max-height: calc(100dvh - 6 * var(--u));
 			overflow-y: auto;
 			padding-bottom: var(--space-4);

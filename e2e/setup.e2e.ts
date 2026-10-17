@@ -125,6 +125,25 @@ async function noSidewaysScroll(page: Page) {
 	expect(overflow).toBeLessThanOrEqual(0);
 }
 
+// Trevor, 2026-10-17: the counts and search stay in view below the app header, never over it.
+test('the counts and search stick just below the header while the list scrolls', async ({
+	page
+}) => {
+	await selectionFor(page, 5);
+	await page.mouse.wheel(0, 3000);
+	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+	const header = (await page.getByRole('banner').boundingBox())!;
+	const counts = page.getByTestId('setup-counts');
+	await expect(counts).toBeInViewport();
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await expect(search).toBeInViewport();
+	for (const box of [await counts.boundingBox(), await search.boundingBox()]) {
+		expect(box!.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+	}
+	// It really did scroll: the page heading is gone.
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).not.toBeInViewport();
+});
+
 test('selection counts against the setup sheet and explains the Drunk', async ({ page }) => {
 	await selectionFor(page, 6);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Drunk', 'Poisoner', 'Imp');
