@@ -317,3 +317,38 @@ test('the day view names a homebrew character by its script name', async ({ page
 	await expect(announcements.locator('img')).toHaveCount(1);
 	await expect(day).not.toContainText('spartacusfallofrome');
 });
+
+// Tapping the board's timer opens its controls and settings over the board, without the
+// day view, and nothing there leads into Settings (Trevor, 2026-10-17).
+test('the board timer opens its own controls and settings', async ({ page }) => {
+	await page.clock.install();
+	await startGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await page.getByTestId('day-toolbar').getByRole('button', { name: 'Start timer' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog', { name: 'Day' })).toBeHidden();
+
+	const board = page.locator('.board-timer').getByTestId('day-timer');
+	await board.getByRole('button', { name: /^Day timer, \d+:\d\d; open its controls$/ }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Day timer' });
+	await expect(sheet).toBeVisible();
+	await expect(page.getByRole('dialog', { name: 'Day', exact: true })).toHaveCount(0);
+	const timer = sheet.getByTestId('day-timer');
+	await expect(timer.getByRole('button', { name: 'Pause timer' })).toBeVisible();
+	await expect(timer.getByRole('button', { name: '30 seconds more' })).toBeVisible();
+	// The sound is chosen right here, so the timer's own sound button is left out.
+	await expect(timer.getByRole('button', { name: /^Timer sound/ })).toHaveCount(0);
+
+	await sheet.getByText('Stopwatch', { exact: true }).last().tap();
+	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
+	await sheet.getByText('Chime', { exact: true }).tap();
+	await expect(sheet.getByRole('radio', { name: 'Chime' })).toBeChecked();
+	await expect(sheet.getByRole('link')).toHaveCount(0);
+
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await expect(board).toBeVisible();
+	// The choices are the same settings the day view uses.
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await expect(page.getByTestId('day-toolbar').getByTestId('timer-mode')).toHaveText('Stopwatch');
+});
