@@ -10,8 +10,8 @@
 	 *     <ClearableField bind:value={query}><input type="search" bind:value={query} /></ClearableField>
 	 *
 	 * The X keeps its place and is disabled while the field is empty, so nothing moves as
-	 * you type. Esc also clears (a second Esc reaches the dialog or sheet); focus stays in the
-	 * field. The lint `grim/clearable-field` sends every text, search, email, URL and phone
+	 * you type. In a search or filter (`type="search"`) Esc also clears, and a second Esc
+	 * reaches the dialog or sheet; focus stays in the field. The lint `grim/clearable-field` sends every text, search, email, URL and phone
 	 * input here; multi-line notes (textarea) are left alone.
 	 */
 	interface Props {
@@ -46,7 +46,9 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (event.key !== 'Escape' || empty || disabled) return;
-		if (!(event.target instanceof HTMLInputElement)) return;
+		// Only a search or filter: elsewhere Esc keeps closing the dialog, so it never wipes a
+		// note's title or a name by surprise.
+		if (!(event.target instanceof HTMLInputElement) || event.target.type !== 'search') return;
 		// The first Esc clears; the next one reaches the dialog or sheet and closes it.
 		event.preventDefault();
 		event.stopPropagation();
