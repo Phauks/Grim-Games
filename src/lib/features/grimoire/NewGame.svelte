@@ -9,7 +9,12 @@
 		type OfficialEditionId
 	} from '#lib/core/data/index.ts';
 	import { MAX_PLAYERS, MIN_PLAYERS } from '#lib/core/engine/index.ts';
-	import { recentScripts, restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
+	import {
+		QUICK_PLAY_ID,
+		quickPlayScript,
+		recentScripts,
+		restoreScripts
+	} from '#lib/features/scripts/current-script.svelte.ts';
 	import { reloadSavedScript } from '#lib/features/scripts/saved-scripts.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -20,14 +25,23 @@
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
 
 	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
-	onMount(() => void restoreScripts());
+	onMount(() => {
+		void restoreScripts();
+		// Play on the Search page opens New game with that script chosen.
+		if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
+	});
 	// ── New game ──
 	/** An official edition, or `recent:<scriptId>` for a script from the Scripts page. */
 	type ScriptChoice = OfficialEditionId | `recent:${string}`;
 	let edition = $state<ScriptChoice>('tb');
-	/** The editions, then up to three recent custom scripts, most recently used first. */
+	/**
+	 * The editions, the script last played from the Scripts page without saving it, then up
+	 * to three recent custom scripts, most recently used first.
+	 */
+	const quick = $derived(quickPlayScript.saved);
 	const scriptOptions = $derived([
 		...OFFICIAL_EDITIONS.map((e) => ({ value: e.id as ScriptChoice, label: e.name })),
+		...(quick ? [{ value: `recent:${QUICK_PLAY_ID}` as ScriptChoice, label: quick.name }] : []),
 		...recentScripts.list
 			.filter((s) => !s.edition)
 			.slice(0, 3)
@@ -42,7 +56,9 @@
 			const data = await loadOfficialData();
 			const choice = edition;
 			const recent = choice.startsWith('recent:')
-				? recentScripts.list.find((s) => `recent:${s.scriptId}` === choice)
+				? [...(quick ? [quick] : []), ...recentScripts.list].find(
+						(s) => `recent:${s.scriptId}` === choice
+					)
 				: undefined;
 			const loaded = recent ? reloadSavedScript(recent, data) : editionScript(choice, data);
 			if (!loaded) throw new Error('the chosen script could not be loaded');

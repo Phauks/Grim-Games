@@ -75,7 +75,7 @@ test('scripts added on the device are saved to the profile as local copies', asy
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste', exact: true })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
 		.tap();
 	const paste = page.getByRole('dialog', { name: 'Paste a script' });
 	await paste.getByLabel('Script JSON or link').fill(JSON.stringify(homebrew));
@@ -113,7 +113,7 @@ test('scripts added on the device are saved to the profile as local copies', asy
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste', exact: true })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
 		.tap();
 	const again = page.getByRole('dialog', { name: 'Paste a script' });
 	await again

@@ -546,7 +546,7 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste', exact: true })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
 		.tap();
 	const paste = page.getByRole('dialog', { name: 'Paste a script' });
 	await paste

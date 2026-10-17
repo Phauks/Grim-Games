@@ -125,11 +125,12 @@
 		margin: 0;
 		overflow-wrap: anywhere;
 	}
+	/* The picker on its own line and "Newer" under it, so neither squeezes the other. */
 	.version {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: start;
+		gap: var(--space-1);
 	}
 	dd a {
 		min-height: auto;

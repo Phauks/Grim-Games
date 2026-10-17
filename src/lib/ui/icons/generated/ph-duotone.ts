@@ -33,6 +33,8 @@ import ph_caret_up_duotone from '~icons/ph/caret-up-duotone';
 import ph_cat_duotone from '~icons/ph/cat-duotone';
 import ph_check_duotone from '~icons/ph/check-duotone';
 import ph_circle_dashed_duotone from '~icons/ph/circle-dashed-duotone';
+import ph_clipboard_duotone from '~icons/ph/clipboard-duotone';
+import ph_clipboard_text_duotone from '~icons/ph/clipboard-text-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
 import ph_club_duotone from '~icons/ph/club-duotone';
 import ph_copy_duotone from '~icons/ph/copy-duotone';
@@ -52,6 +54,7 @@ import ph_eraser_duotone from '~icons/ph/eraser-duotone';
 import ph_eye_duotone from '~icons/ph/eye-duotone';
 import ph_feather_duotone from '~icons/ph/feather-duotone';
 import ph_file_arrow_down_duotone from '~icons/ph/file-arrow-down-duotone';
+import ph_file_arrow_up_duotone from '~icons/ph/file-arrow-up-duotone';
 import ph_fire_duotone from '~icons/ph/fire-duotone';
 import ph_fish_duotone from '~icons/ph/fish-duotone';
 import ph_flag_duotone from '~icons/ph/flag-duotone';
@@ -86,6 +89,8 @@ import ph_key_duotone from '~icons/ph/key-duotone';
 import ph_leaf_duotone from '~icons/ph/leaf-duotone';
 import ph_lifebuoy_duotone from '~icons/ph/lifebuoy-duotone';
 import ph_lightning_duotone from '~icons/ph/lightning-duotone';
+import ph_link_duotone from '~icons/ph/link-duotone';
+import ph_link_simple_duotone from '~icons/ph/link-simple-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
 import ph_list_bullets_duotone from '~icons/ph/list-bullets-duotone';
 import ph_list_magnifying_glass_duotone from '~icons/ph/list-magnifying-glass-duotone';
@@ -147,6 +152,7 @@ import ph_trash_simple_duotone from '~icons/ph/trash-simple-duotone';
 import ph_tree_duotone from '~icons/ph/tree-duotone';
 import ph_triangle_duotone from '~icons/ph/triangle-duotone';
 import ph_umbrella_duotone from '~icons/ph/umbrella-duotone';
+import ph_upload_simple_duotone from '~icons/ph/upload-simple-duotone';
 import ph_user_duotone from '~icons/ph/user-duotone';
 import ph_user_circle_duotone from '~icons/ph/user-circle-duotone';
 import ph_user_plus_duotone from '~icons/ph/user-plus-duotone';
@@ -195,6 +201,8 @@ const icons: IconMap = {
 	'ph:cat-duotone': ph_cat_duotone,
 	'ph:check-duotone': ph_check_duotone,
 	'ph:circle-dashed-duotone': ph_circle_dashed_duotone,
+	'ph:clipboard-duotone': ph_clipboard_duotone,
+	'ph:clipboard-text-duotone': ph_clipboard_text_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
 	'ph:club-duotone': ph_club_duotone,
 	'ph:copy-duotone': ph_copy_duotone,
@@ -214,6 +222,7 @@ const icons: IconMap = {
 	'ph:eye-duotone': ph_eye_duotone,
 	'ph:feather-duotone': ph_feather_duotone,
 	'ph:file-arrow-down-duotone': ph_file_arrow_down_duotone,
+	'ph:file-arrow-up-duotone': ph_file_arrow_up_duotone,
 	'ph:fire-duotone': ph_fire_duotone,
 	'ph:fish-duotone': ph_fish_duotone,
 	'ph:flag-duotone': ph_flag_duotone,
@@ -248,6 +257,8 @@ const icons: IconMap = {
 	'ph:leaf-duotone': ph_leaf_duotone,
 	'ph:lifebuoy-duotone': ph_lifebuoy_duotone,
 	'ph:lightning-duotone': ph_lightning_duotone,
+	'ph:link-duotone': ph_link_duotone,
+	'ph:link-simple-duotone': ph_link_simple_duotone,
 	'ph:list-duotone': ph_list_duotone,
 	'ph:list-bullets-duotone': ph_list_bullets_duotone,
 	'ph:list-magnifying-glass-duotone': ph_list_magnifying_glass_duotone,
@@ -309,6 +320,7 @@ const icons: IconMap = {
 	'ph:tree-duotone': ph_tree_duotone,
 	'ph:triangle-duotone': ph_triangle_duotone,
 	'ph:umbrella-duotone': ph_umbrella_duotone,
+	'ph:upload-simple-duotone': ph_upload_simple_duotone,
 	'ph:user-duotone': ph_user_duotone,
 	'ph:user-circle-duotone': ph_user_circle_duotone,
 	'ph:user-plus-duotone': ph_user_plus_duotone,

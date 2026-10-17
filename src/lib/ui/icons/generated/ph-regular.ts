@@ -33,6 +33,8 @@ import ph_caret_up from '~icons/ph/caret-up';
 import ph_cat from '~icons/ph/cat';
 import ph_check from '~icons/ph/check';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
+import ph_clipboard from '~icons/ph/clipboard';
+import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_club from '~icons/ph/club';
 import ph_copy from '~icons/ph/copy';
@@ -52,6 +54,7 @@ import ph_eraser from '~icons/ph/eraser';
 import ph_eye from '~icons/ph/eye';
 import ph_feather from '~icons/ph/feather';
 import ph_file_arrow_down from '~icons/ph/file-arrow-down';
+import ph_file_arrow_up from '~icons/ph/file-arrow-up';
 import ph_fire from '~icons/ph/fire';
 import ph_fish from '~icons/ph/fish';
 import ph_flag from '~icons/ph/flag';
@@ -86,6 +89,8 @@ import ph_key from '~icons/ph/key';
 import ph_leaf from '~icons/ph/leaf';
 import ph_lifebuoy from '~icons/ph/lifebuoy';
 import ph_lightning from '~icons/ph/lightning';
+import ph_link from '~icons/ph/link';
+import ph_link_simple from '~icons/ph/link-simple';
 import ph_list from '~icons/ph/list';
 import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
@@ -147,6 +152,7 @@ import ph_trash_simple from '~icons/ph/trash-simple';
 import ph_tree from '~icons/ph/tree';
 import ph_triangle from '~icons/ph/triangle';
 import ph_umbrella from '~icons/ph/umbrella';
+import ph_upload_simple from '~icons/ph/upload-simple';
 import ph_user from '~icons/ph/user';
 import ph_user_circle from '~icons/ph/user-circle';
 import ph_user_plus from '~icons/ph/user-plus';
@@ -195,6 +201,8 @@ const icons: IconMap = {
 	'ph:cat': ph_cat,
 	'ph:check': ph_check,
 	'ph:circle-dashed': ph_circle_dashed,
+	'ph:clipboard': ph_clipboard,
+	'ph:clipboard-text': ph_clipboard_text,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:club': ph_club,
 	'ph:copy': ph_copy,
@@ -214,6 +222,7 @@ const icons: IconMap = {
 	'ph:eye': ph_eye,
 	'ph:feather': ph_feather,
 	'ph:file-arrow-down': ph_file_arrow_down,
+	'ph:file-arrow-up': ph_file_arrow_up,
 	'ph:fire': ph_fire,
 	'ph:fish': ph_fish,
 	'ph:flag': ph_flag,
@@ -248,6 +257,8 @@ const icons: IconMap = {
 	'ph:leaf': ph_leaf,
 	'ph:lifebuoy': ph_lifebuoy,
 	'ph:lightning': ph_lightning,
+	'ph:link': ph_link,
+	'ph:link-simple': ph_link_simple,
 	'ph:list': ph_list,
 	'ph:list-bullets': ph_list_bullets,
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
@@ -309,6 +320,7 @@ const icons: IconMap = {
 	'ph:tree': ph_tree,
 	'ph:triangle': ph_triangle,
 	'ph:umbrella': ph_umbrella,
+	'ph:upload-simple': ph_upload_simple,
 	'ph:user': ph_user,
 	'ph:user-circle': ph_user_circle,
 	'ph:user-plus': ph_user_plus,

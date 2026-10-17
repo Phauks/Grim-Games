@@ -33,6 +33,8 @@ import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_cat_thin from '~icons/ph/cat-thin';
 import ph_check_thin from '~icons/ph/check-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
+import ph_clipboard_thin from '~icons/ph/clipboard-thin';
+import ph_clipboard_text_thin from '~icons/ph/clipboard-text-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_club_thin from '~icons/ph/club-thin';
 import ph_copy_thin from '~icons/ph/copy-thin';
@@ -52,6 +54,7 @@ import ph_eraser_thin from '~icons/ph/eraser-thin';
 import ph_eye_thin from '~icons/ph/eye-thin';
 import ph_feather_thin from '~icons/ph/feather-thin';
 import ph_file_arrow_down_thin from '~icons/ph/file-arrow-down-thin';
+import ph_file_arrow_up_thin from '~icons/ph/file-arrow-up-thin';
 import ph_fire_thin from '~icons/ph/fire-thin';
 import ph_fish_thin from '~icons/ph/fish-thin';
 import ph_flag_thin from '~icons/ph/flag-thin';
@@ -86,6 +89,8 @@ import ph_key_thin from '~icons/ph/key-thin';
 import ph_leaf_thin from '~icons/ph/leaf-thin';
 import ph_lifebuoy_thin from '~icons/ph/lifebuoy-thin';
 import ph_lightning_thin from '~icons/ph/lightning-thin';
+import ph_link_thin from '~icons/ph/link-thin';
+import ph_link_simple_thin from '~icons/ph/link-simple-thin';
 import ph_list_thin from '~icons/ph/list-thin';
 import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
@@ -147,6 +152,7 @@ import ph_trash_simple_thin from '~icons/ph/trash-simple-thin';
 import ph_tree_thin from '~icons/ph/tree-thin';
 import ph_triangle_thin from '~icons/ph/triangle-thin';
 import ph_umbrella_thin from '~icons/ph/umbrella-thin';
+import ph_upload_simple_thin from '~icons/ph/upload-simple-thin';
 import ph_user_thin from '~icons/ph/user-thin';
 import ph_user_circle_thin from '~icons/ph/user-circle-thin';
 import ph_user_plus_thin from '~icons/ph/user-plus-thin';
@@ -195,6 +201,8 @@ const icons: IconMap = {
 	'ph:cat-thin': ph_cat_thin,
 	'ph:check-thin': ph_check_thin,
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
+	'ph:clipboard-thin': ph_clipboard_thin,
+	'ph:clipboard-text-thin': ph_clipboard_text_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:club-thin': ph_club_thin,
 	'ph:copy-thin': ph_copy_thin,
@@ -214,6 +222,7 @@ const icons: IconMap = {
 	'ph:eye-thin': ph_eye_thin,
 	'ph:feather-thin': ph_feather_thin,
 	'ph:file-arrow-down-thin': ph_file_arrow_down_thin,
+	'ph:file-arrow-up-thin': ph_file_arrow_up_thin,
 	'ph:fire-thin': ph_fire_thin,
 	'ph:fish-thin': ph_fish_thin,
 	'ph:flag-thin': ph_flag_thin,
@@ -248,6 +257,8 @@ const icons: IconMap = {
 	'ph:leaf-thin': ph_leaf_thin,
 	'ph:lifebuoy-thin': ph_lifebuoy_thin,
 	'ph:lightning-thin': ph_lightning_thin,
+	'ph:link-thin': ph_link_thin,
+	'ph:link-simple-thin': ph_link_simple_thin,
 	'ph:list-thin': ph_list_thin,
 	'ph:list-bullets-thin': ph_list_bullets_thin,
 	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
@@ -309,6 +320,7 @@ const icons: IconMap = {
 	'ph:tree-thin': ph_tree_thin,
 	'ph:triangle-thin': ph_triangle_thin,
 	'ph:umbrella-thin': ph_umbrella_thin,
+	'ph:upload-simple-thin': ph_upload_simple_thin,
 	'ph:user-thin': ph_user_thin,
 	'ph:user-circle-thin': ph_user_circle_thin,
 	'ph:user-plus-thin': ph_user_plus_thin,

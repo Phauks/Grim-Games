@@ -59,7 +59,7 @@ export const MIGRATED_PATHS: readonly string[] = [
 
 export const ALLOWED_TEXT: Readonly<Record<string, readonly string[]>> = {
 	// The start of a web address, the same in every language.
-	'src/lib/features/scripts/ScriptPicker.svelte': ['https://'],
+	'src/lib/features/scripts/AddScript.svelte': ['https://'],
 	// The app's name, the same in every language.
 	'src/lib/features/shell/AppHeader.svelte': ['Grim-Games'],
 	'src/routes/+layout.svelte': ['Grim-Games']

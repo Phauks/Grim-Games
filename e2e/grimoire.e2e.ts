@@ -331,7 +331,7 @@ test('a new game can use a custom script from the Scripts page', async ({ page }
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste', exact: true })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
 	await dialog
@@ -1642,7 +1642,7 @@ test('marking a player as the Marionette asks to make them evil', async ({ page 
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste', exact: true })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
 		.tap();
 	const paste = page.getByRole('dialog', { name: 'Paste a script' });
 	await paste

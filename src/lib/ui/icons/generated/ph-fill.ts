@@ -33,6 +33,8 @@ import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_cat_fill from '~icons/ph/cat-fill';
 import ph_check_fill from '~icons/ph/check-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
+import ph_clipboard_fill from '~icons/ph/clipboard-fill';
+import ph_clipboard_text_fill from '~icons/ph/clipboard-text-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
@@ -52,6 +54,7 @@ import ph_eraser_fill from '~icons/ph/eraser-fill';
 import ph_eye_fill from '~icons/ph/eye-fill';
 import ph_feather_fill from '~icons/ph/feather-fill';
 import ph_file_arrow_down_fill from '~icons/ph/file-arrow-down-fill';
+import ph_file_arrow_up_fill from '~icons/ph/file-arrow-up-fill';
 import ph_fire_fill from '~icons/ph/fire-fill';
 import ph_fish_fill from '~icons/ph/fish-fill';
 import ph_flag_fill from '~icons/ph/flag-fill';
@@ -86,6 +89,8 @@ import ph_key_fill from '~icons/ph/key-fill';
 import ph_leaf_fill from '~icons/ph/leaf-fill';
 import ph_lifebuoy_fill from '~icons/ph/lifebuoy-fill';
 import ph_lightning_fill from '~icons/ph/lightning-fill';
+import ph_link_fill from '~icons/ph/link-fill';
+import ph_link_simple_fill from '~icons/ph/link-simple-fill';
 import ph_list_fill from '~icons/ph/list-fill';
 import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
@@ -147,6 +152,7 @@ import ph_trash_simple_fill from '~icons/ph/trash-simple-fill';
 import ph_tree_fill from '~icons/ph/tree-fill';
 import ph_triangle_fill from '~icons/ph/triangle-fill';
 import ph_umbrella_fill from '~icons/ph/umbrella-fill';
+import ph_upload_simple_fill from '~icons/ph/upload-simple-fill';
 import ph_user_fill from '~icons/ph/user-fill';
 import ph_user_circle_fill from '~icons/ph/user-circle-fill';
 import ph_user_plus_fill from '~icons/ph/user-plus-fill';
@@ -195,6 +201,8 @@ const icons: IconMap = {
 	'ph:cat-fill': ph_cat_fill,
 	'ph:check-fill': ph_check_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
+	'ph:clipboard-fill': ph_clipboard_fill,
+	'ph:clipboard-text-fill': ph_clipboard_text_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
 	'ph:copy-fill': ph_copy_fill,
@@ -214,6 +222,7 @@ const icons: IconMap = {
 	'ph:eye-fill': ph_eye_fill,
 	'ph:feather-fill': ph_feather_fill,
 	'ph:file-arrow-down-fill': ph_file_arrow_down_fill,
+	'ph:file-arrow-up-fill': ph_file_arrow_up_fill,
 	'ph:fire-fill': ph_fire_fill,
 	'ph:fish-fill': ph_fish_fill,
 	'ph:flag-fill': ph_flag_fill,
@@ -248,6 +257,8 @@ const icons: IconMap = {
 	'ph:leaf-fill': ph_leaf_fill,
 	'ph:lifebuoy-fill': ph_lifebuoy_fill,
 	'ph:lightning-fill': ph_lightning_fill,
+	'ph:link-fill': ph_link_fill,
+	'ph:link-simple-fill': ph_link_simple_fill,
 	'ph:list-fill': ph_list_fill,
 	'ph:list-bullets-fill': ph_list_bullets_fill,
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
@@ -309,6 +320,7 @@ const icons: IconMap = {
 	'ph:tree-fill': ph_tree_fill,
 	'ph:triangle-fill': ph_triangle_fill,
 	'ph:umbrella-fill': ph_umbrella_fill,
+	'ph:upload-simple-fill': ph_upload_simple_fill,
 	'ph:user-fill': ph_user_fill,
 	'ph:user-circle-fill': ph_user_circle_fill,
 	'ph:user-plus-fill': ph_user_plus_fill,

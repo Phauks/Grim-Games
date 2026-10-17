@@ -39,7 +39,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 /** Add script, top right, then one of its choices. */
-async function addScript(page: Page, choice: 'Paste' | 'Link') {
+async function addScript(page: Page, choice: 'Paste JSON' | 'Paste Link') {
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Add script' })
@@ -124,7 +124,7 @@ async function backToList(page: Page) {
 
 test('a pasted script with a typo is checked, then saved anyway', async ({ page }) => {
 	await page.goto('/scripts');
-	await addScript(page, 'Paste');
+	await addScript(page, 'Paste JSON');
 	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
 	await dialog
 		.getByLabel('Script JSON or link')
@@ -143,7 +143,7 @@ test('a pasted script with a typo is checked, then saved anyway', async ({ page 
 
 test('hand-edited script JSON with comments and trailing commas is saved', async ({ page }) => {
 	await page.goto('/scripts');
-	await addScript(page, 'Paste');
+	await addScript(page, 'Paste JSON');
 	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
 	await dialog
 		.getByLabel('Script JSON or link')
@@ -204,7 +204,7 @@ test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 test('a link the browser may not read explains how to paste instead', async ({ page }) => {
 	await page.route('https://scripts.example/blocked.json', (route) => route.abort('failed'));
 	await page.goto('/scripts');
-	await addScript(page, 'Link');
+	await addScript(page, 'Paste Link');
 	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
 	const load = dialog.getByRole('button', { name: 'Save' });
 	await dialog.getByLabel('Link to the script JSON').fill('https://scripts.example/blocked.json');
@@ -232,7 +232,7 @@ test('a saved script is shared by QR code and link, with no code to type', async
 	// Codes are only for joining a game (Trevor, 2026-10-16).
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	const add = page.getByRole('dialog', { name: 'Add script' });
-	for (const choice of ['Paste', 'File', 'Link']) {
+	for (const choice of ['Paste JSON', 'Upload File', 'Paste Link']) {
 		await expect(add.getByRole('button', { name: choice, exact: true })).toBeVisible();
 	}
 	await expect(add.getByRole('button', { name: 'Code' })).toHaveCount(0);
@@ -291,9 +291,12 @@ test('dropping a script file anywhere on the page saves it', async ({ page }) =>
 	};
 
 	await drop('photo.png', 'image/png', 'not a script');
-	await expect(page.getByTestId('file-error')).toHaveText(
-		'photo.png is not a script. Scripts are .json files.'
-	);
+	// Said in a toast, so nothing on the page moves.
+	await expect(
+		page
+			.getByRole('status')
+			.filter({ hasText: 'photo.png is not a script. Scripts are .json files.' })
+	).toBeVisible();
 	await expect(detailsName(page)).toHaveText('None');
 
 	await drop('storm-front.json', 'application/json', JSON.stringify(homebrew));
@@ -522,13 +525,41 @@ test("the official site's custom scripts are a source of their own, and saved", 
 	await noSidewaysScroll(page);
 });
 
+test('Play starts a new game with a found script, without saving it', async ({ page }) => {
+	await page.route('**/api/curated', (route) =>
+		route.fulfill({
+			json: { scripts: [{ section: 'recommended', link: scriptToolLink(bigTown), json: bigTown }] }
+		})
+	);
+	await page.goto('/scripts');
+	await chooseSource(page, 'Official custom scripts');
+	await page.getByRole('button', { name: /^Big Town/ }).tap();
+	await expect(detailsName(page)).toHaveText('Big Town');
+	await details(page).getByRole('button', { name: 'Play', exact: true }).tap();
+
+	// New game opens with it chosen (Trevor, 2026-10-17: the Library stays what was saved).
+	await expect(page).toHaveURL(/\/new$/);
+	const script = page.getByRole('radiogroup', { name: 'Script' });
+	await expect(script.getByRole('radio', { name: 'Big Town' })).toBeChecked();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+
+	// Still offered after a reload, and never saved.
+	await page.goto('/new');
+	await expect(script.getByRole('radio', { name: 'Big Town' })).toHaveCount(1);
+	await expect(script.getByRole('radio', { name: 'Trouble Brewing' })).toBeChecked();
+	await page.goto('/scripts');
+	await page.getByRole('button', { name: /^Big Town/ }).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'false');
+});
+
 test('a Script Tool link is read from the link itself, with no request', async ({ page }) => {
 	const requests: string[] = [];
 	page.on('request', (r) => {
 		if (r.url().includes('bloodontheclocktower.com')) requests.push(r.url());
 	});
 	await page.goto('/scripts');
-	await addScript(page, 'Link');
+	await addScript(page, 'Paste Link');
 	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
 	await dialog.getByLabel('Link to the script JSON').fill(scriptToolLink(teensy));
 	await dialog.getByRole('button', { name: 'Save' }).tap();
@@ -657,9 +688,36 @@ test('a BotC Scripts result offers its other versions, and says when a newer one
 		.getByRole('button', { name: /^Storm Front/ })
 		.tap();
 	await expect(detailsName(page)).toHaveText('Storm Front');
+	// Where the details cover the list (phones), the table's sticky header never shows on top.
+	await expect
+		.poll(() =>
+			page.evaluate(() => {
+				const head = document.querySelector('[data-testid="picker-table"] thead');
+				const pane = document.querySelector('aside.pane');
+				if (!head || !pane) return 'missing';
+				const h = head.getBoundingClientRect();
+				const p = pane.getBoundingClientRect();
+				const [x, y] = [h.left + h.width / 2, h.top + h.height / 2];
+				// Beside the list (wide screens), or still sliding in over it (phones).
+				if (p.left > h.left + 1) return p.left >= h.right ? 'not covered' : 'sliding';
+				if (y < p.top || y > p.bottom) return 'not covered';
+				// The covered list is inert, which hides it from hit tests: lift that to look.
+				const list = head.closest<HTMLElement>('[inert]');
+				if (list) list.inert = false;
+				const top = document.elementFromPoint(x, y);
+				if (list) list.inert = true;
+				return pane.contains(top) ? 'not covered' : 'header on top';
+			})
+		)
+		.toBe('not covered');
 	// The site has 1.1.0: the details say so, in space kept for it.
 	const newer = details(page).getByTestId('newer-version').getByRole('button');
 	await expect(newer).toHaveText('Newer: 1.1.0');
+	// "Newer" sits under the version picker, which keeps a readable width (Trevor, 2026-10-17).
+	const picker = details(page).getByRole('combobox', { name: 'Version' });
+	const [pickBox, newerBox] = [await picker.boundingBox(), await newer.boundingBox()];
+	expect(pickBox && newerBox && newerBox.y >= pickBox.y + pickBox.height - 1).toBe(true);
+	expect(pickBox && pickBox.width >= newerBox!.width).toBe(true);
 	await expect(page.getByTestId('script-sheet')).not.toContainText('Mayor');
 	await newer.tap();
 	await expect(details(page).getByRole('combobox', { name: 'Version' })).toContainText('1.1.0');

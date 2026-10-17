@@ -33,6 +33,8 @@ import ph_caret_up_light from '~icons/ph/caret-up-light';
 import ph_cat_light from '~icons/ph/cat-light';
 import ph_check_light from '~icons/ph/check-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
+import ph_clipboard_light from '~icons/ph/clipboard-light';
+import ph_clipboard_text_light from '~icons/ph/clipboard-text-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_club_light from '~icons/ph/club-light';
 import ph_copy_light from '~icons/ph/copy-light';
@@ -52,6 +54,7 @@ import ph_eraser_light from '~icons/ph/eraser-light';
 import ph_eye_light from '~icons/ph/eye-light';
 import ph_feather_light from '~icons/ph/feather-light';
 import ph_file_arrow_down_light from '~icons/ph/file-arrow-down-light';
+import ph_file_arrow_up_light from '~icons/ph/file-arrow-up-light';
 import ph_fire_light from '~icons/ph/fire-light';
 import ph_fish_light from '~icons/ph/fish-light';
 import ph_flag_light from '~icons/ph/flag-light';
@@ -86,6 +89,8 @@ import ph_key_light from '~icons/ph/key-light';
 import ph_leaf_light from '~icons/ph/leaf-light';
 import ph_lifebuoy_light from '~icons/ph/lifebuoy-light';
 import ph_lightning_light from '~icons/ph/lightning-light';
+import ph_link_light from '~icons/ph/link-light';
+import ph_link_simple_light from '~icons/ph/link-simple-light';
 import ph_list_light from '~icons/ph/list-light';
 import ph_list_bullets_light from '~icons/ph/list-bullets-light';
 import ph_list_magnifying_glass_light from '~icons/ph/list-magnifying-glass-light';
@@ -147,6 +152,7 @@ import ph_trash_simple_light from '~icons/ph/trash-simple-light';
 import ph_tree_light from '~icons/ph/tree-light';
 import ph_triangle_light from '~icons/ph/triangle-light';
 import ph_umbrella_light from '~icons/ph/umbrella-light';
+import ph_upload_simple_light from '~icons/ph/upload-simple-light';
 import ph_user_light from '~icons/ph/user-light';
 import ph_user_circle_light from '~icons/ph/user-circle-light';
 import ph_user_plus_light from '~icons/ph/user-plus-light';
@@ -195,6 +201,8 @@ const icons: IconMap = {
 	'ph:cat-light': ph_cat_light,
 	'ph:check-light': ph_check_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
+	'ph:clipboard-light': ph_clipboard_light,
+	'ph:clipboard-text-light': ph_clipboard_text_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:club-light': ph_club_light,
 	'ph:copy-light': ph_copy_light,
@@ -214,6 +222,7 @@ const icons: IconMap = {
 	'ph:eye-light': ph_eye_light,
 	'ph:feather-light': ph_feather_light,
 	'ph:file-arrow-down-light': ph_file_arrow_down_light,
+	'ph:file-arrow-up-light': ph_file_arrow_up_light,
 	'ph:fire-light': ph_fire_light,
 	'ph:fish-light': ph_fish_light,
 	'ph:flag-light': ph_flag_light,
@@ -248,6 +257,8 @@ const icons: IconMap = {
 	'ph:leaf-light': ph_leaf_light,
 	'ph:lifebuoy-light': ph_lifebuoy_light,
 	'ph:lightning-light': ph_lightning_light,
+	'ph:link-light': ph_link_light,
+	'ph:link-simple-light': ph_link_simple_light,
 	'ph:list-light': ph_list_light,
 	'ph:list-bullets-light': ph_list_bullets_light,
 	'ph:list-magnifying-glass-light': ph_list_magnifying_glass_light,
@@ -309,6 +320,7 @@ const icons: IconMap = {
 	'ph:tree-light': ph_tree_light,
 	'ph:triangle-light': ph_triangle_light,
 	'ph:umbrella-light': ph_umbrella_light,
+	'ph:upload-simple-light': ph_upload_simple_light,
 	'ph:user-light': ph_user_light,
 	'ph:user-circle-light': ph_user_circle_light,
 	'ph:user-plus-light': ph_user_plus_light,

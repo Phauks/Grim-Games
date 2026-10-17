@@ -1,7 +1,7 @@
 /** Scripts: the /scripts page, the script picker, BotC Scripts search, share codes and the share screen. */
 export const scripts = {
-	'scripts.pageTitle': 'Scripts · Grim-Games',
-	'scripts.heading': 'Scripts',
+	'scripts.pageTitle': 'Search · Grim-Games',
+	'scripts.heading': 'Search',
 
 	// Current script card
 	'scripts.current.heading': 'Current script',
@@ -10,6 +10,7 @@ export const scripts = {
 	'scripts.current.source': 'Source',
 	'scripts.current.defaultName': 'Script',
 	'scripts.dropHint': 'Drop the script file to save it',
+	'scripts.add.failed': 'Could not add the script',
 	'scripts.openSharedFailed': 'Could not open the shared script',
 
 	// Where a script came from
@@ -67,9 +68,9 @@ export const scripts = {
 	'scripts.column.number': 'No.',
 	'scripts.picker.noAuthor': 'No author',
 	'scripts.picker.add': 'Add script',
-	'scripts.picker.paste': 'Paste',
-	'scripts.picker.file': 'File',
-	'scripts.picker.link': 'Link',
+	'scripts.picker.paste': 'Paste JSON',
+	'scripts.picker.file': 'Upload File',
+	'scripts.picker.link': 'Paste Link',
 	'scripts.picker.fileLabel': 'Script file',
 	'scripts.picker.save': 'Save',
 
@@ -83,6 +84,7 @@ export const scripts = {
 	'scripts.details.latestVersion': '{version} (latest)',
 	'scripts.details.savedVersion': '{version} (saved)',
 	'scripts.details.newerVersion': 'Newer: {version}',
+	'scripts.details.play': 'Play',
 	'scripts.checks.title': 'Script checks',
 	'scripts.checks.setup': 'Setup changes',
 	'scripts.checks.needs': 'needs',

@@ -33,6 +33,8 @@ import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_cat_bold from '~icons/ph/cat-bold';
 import ph_check_bold from '~icons/ph/check-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
+import ph_clipboard_bold from '~icons/ph/clipboard-bold';
+import ph_clipboard_text_bold from '~icons/ph/clipboard-text-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
@@ -52,6 +54,7 @@ import ph_eraser_bold from '~icons/ph/eraser-bold';
 import ph_eye_bold from '~icons/ph/eye-bold';
 import ph_feather_bold from '~icons/ph/feather-bold';
 import ph_file_arrow_down_bold from '~icons/ph/file-arrow-down-bold';
+import ph_file_arrow_up_bold from '~icons/ph/file-arrow-up-bold';
 import ph_fire_bold from '~icons/ph/fire-bold';
 import ph_fish_bold from '~icons/ph/fish-bold';
 import ph_flag_bold from '~icons/ph/flag-bold';
@@ -86,6 +89,8 @@ import ph_key_bold from '~icons/ph/key-bold';
 import ph_leaf_bold from '~icons/ph/leaf-bold';
 import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_lightning_bold from '~icons/ph/lightning-bold';
+import ph_link_bold from '~icons/ph/link-bold';
+import ph_link_simple_bold from '~icons/ph/link-simple-bold';
 import ph_list_bold from '~icons/ph/list-bold';
 import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
@@ -147,6 +152,7 @@ import ph_trash_simple_bold from '~icons/ph/trash-simple-bold';
 import ph_tree_bold from '~icons/ph/tree-bold';
 import ph_triangle_bold from '~icons/ph/triangle-bold';
 import ph_umbrella_bold from '~icons/ph/umbrella-bold';
+import ph_upload_simple_bold from '~icons/ph/upload-simple-bold';
 import ph_user_bold from '~icons/ph/user-bold';
 import ph_user_circle_bold from '~icons/ph/user-circle-bold';
 import ph_user_plus_bold from '~icons/ph/user-plus-bold';
@@ -195,6 +201,8 @@ const icons: IconMap = {
 	'ph:cat-bold': ph_cat_bold,
 	'ph:check-bold': ph_check_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
+	'ph:clipboard-bold': ph_clipboard_bold,
+	'ph:clipboard-text-bold': ph_clipboard_text_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
 	'ph:copy-bold': ph_copy_bold,
@@ -214,6 +222,7 @@ const icons: IconMap = {
 	'ph:eye-bold': ph_eye_bold,
 	'ph:feather-bold': ph_feather_bold,
 	'ph:file-arrow-down-bold': ph_file_arrow_down_bold,
+	'ph:file-arrow-up-bold': ph_file_arrow_up_bold,
 	'ph:fire-bold': ph_fire_bold,
 	'ph:fish-bold': ph_fish_bold,
 	'ph:flag-bold': ph_flag_bold,
@@ -248,6 +257,8 @@ const icons: IconMap = {
 	'ph:leaf-bold': ph_leaf_bold,
 	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:lightning-bold': ph_lightning_bold,
+	'ph:link-bold': ph_link_bold,
+	'ph:link-simple-bold': ph_link_simple_bold,
 	'ph:list-bold': ph_list_bold,
 	'ph:list-bullets-bold': ph_list_bullets_bold,
 	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
@@ -309,6 +320,7 @@ const icons: IconMap = {
 	'ph:tree-bold': ph_tree_bold,
 	'ph:triangle-bold': ph_triangle_bold,
 	'ph:umbrella-bold': ph_umbrella_bold,
+	'ph:upload-simple-bold': ph_upload_simple_bold,
 	'ph:user-bold': ph_user_bold,
 	'ph:user-circle-bold': ph_user_circle_bold,
 	'ph:user-plus-bold': ph_user_plus_bold,

@@ -46,12 +46,14 @@
 		chooseScript,
 		currentScript,
 		forgetScript,
+		playScript,
 		recentScripts,
 		restoreScripts
 	} from './current-script.svelte.ts';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import {
 		fetchLinkTarget,
-		readScriptFile,
 		ScriptFetchError,
 		searchBotcScripts,
 		type FetchedScript
@@ -91,7 +93,6 @@
 	import ShareControl from './ShareControl.svelte';
 	import { shareTargetFor } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
-	import { resolveLink } from './script-links.ts';
 	import { CURATED_SECTIONS } from './script-tool-link.ts';
 
 	/**
@@ -118,12 +119,13 @@
 		width > 0 && width < 56 * parseFloat(getComputedStyle(document.documentElement).fontSize)
 	);
 
-	let pasteOpen = $state(false);
-	let linkOpen = $state(false);
 	let checkOpen = $state(false);
-
-	let pasteText = $state('');
-	let linkText = $state('');
+	/** What loading the shown script is for: saving it, or playing it without saving (Play). */
+	let intent: 'save' | 'play' = 'save';
+	$effect(() => {
+		// A check closed without Confirm doesn't leave the next load playing.
+		if (!checkOpen) intent = 'save';
+	});
 
 	let term = $state('');
 	/**
@@ -162,13 +164,8 @@
 	let sort = $state<RowSort | undefined>();
 	let data = $state.raw<GameData>();
 	let error = $state('');
-	let errorLink = $state<string | undefined>(undefined);
 
 	let checking = $state.raw<{ result: ScriptLoadResult; source: ScriptSource } | undefined>();
-	let fileInput: HTMLInputElement | undefined = $state();
-
-	const canReadClipboard =
-		typeof navigator !== 'undefined' && typeof navigator.clipboard?.readText === 'function';
 
 	onMount(() => {
 		void restoreScripts();
@@ -471,6 +468,21 @@
 		}
 	}
 
+	/**
+	 * Play: a new game with the shown script, without saving it to the Library (Trevor,
+	 * 2026-10-17). It goes through the same Script check as saving.
+	 */
+	async function quickPlay() {
+		const listing = shownListing;
+		if (!listing) return;
+		intent = 'play';
+		try {
+			await loadTarget(listing.target);
+		} finally {
+			if (!checkOpen) intent = 'save';
+		}
+	}
+
 	/** The shown row, or (in another source's list) the same script there. */
 	function isSelected(listing: ScriptListing): boolean {
 		if (!shownListing || !baseListing) return false;
@@ -682,15 +694,16 @@
 
 	function clearError() {
 		error = '';
-		errorLink = undefined;
-	}
-
-	function closeAll() {
-		pasteOpen = linkOpen = false;
 	}
 
 	/** Saves a script; the details then show it (the tapped row, if that is what was saved). */
 	async function use(script: LoadedScript, source: ScriptSource) {
+		if (intent === 'play') {
+			intent = 'save';
+			playScript(script, source);
+			await goto(resolve('/new'));
+			return;
+		}
 		await chooseScript(script, source);
 		const saved = currentScript.saved;
 		if (!selected || !saved || !matchesSaved(saved, selected)) selected = undefined;
@@ -702,7 +715,6 @@
 	async function settle(fetched: FetchedScript) {
 		// Hand-edited JSON (comments, trailing commas) loads too.
 		const result = loadScriptText(relaxJson(fetched.text), await loadOfficialData());
-		closeAll();
 		const needsCheck = !result.script || result.problems.some((p) => p.severity !== 'info');
 		if (needsCheck) {
 			checking = { result, source: fetched.source };
@@ -721,7 +733,6 @@
 			// A refused link or a missing script is expected; anything else is a bug worth logging.
 			if (!(e instanceof ScriptFetchError)) reportError(e, { area: 'scripts', notify: false });
 			error = errorMessage(e);
-			errorLink = e instanceof ScriptFetchError ? e.openUrl : undefined;
 		} finally {
 			busy = false;
 		}
@@ -749,89 +760,34 @@
 		}
 	}
 
-	function isLink(text: string): boolean {
-		return /^https?:\/\//i.test(text.trim()) || parseBotcScriptsRef(text) !== undefined;
-	}
-
-	function loadPaste() {
-		const text = pasteText;
-		void run(() =>
-			isLink(text)
-				? fetchLinkTarget(resolveLink(text), text)
-				: Promise.resolve({ text, source: { kind: 'paste' } })
-		);
-	}
-
-	async function pasteFromClipboard() {
-		clearError();
-		try {
-			pasteText = await navigator.clipboard.readText();
-		} catch {
-			error = t('scripts.paste.clipboardFailed');
-		}
-	}
-
-	function onFile(event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
-		input.value = '';
-		if (file) void run(() => readScriptFile(file));
-	}
-
-	/** Loads script text that arrived another way (a share link), through the same checks. */
-	export function loadFetched(fetched: FetchedScript): Promise<void> {
-		return run(() => Promise.resolve(fetched));
-	}
-
-	/** A file dropped on the page: loaded like the File button. */
-	export function loadFile(file: File): Promise<void> {
-		closeAll();
-		return run(() => readScriptFile(file));
-	}
-
-	/** Text dropped on the page (a link or script JSON): loaded like Paste. */
-	export function loadText(text: string): Promise<void> {
-		closeAll();
-		return run(() =>
-			isLink(text)
-				? fetchLinkTarget(resolveLink(text), text)
-				: Promise.resolve({ text, source: { kind: 'paste' } })
-		);
-	}
-
-	function open(which: 'paste' | 'link') {
-		clearError();
-		pasteOpen = which === 'paste';
-		linkOpen = which === 'link';
-	}
-
-	/** The page's Add script button: paste, a file from the device, or a link. */
-	export function add(which: 'paste' | 'file' | 'link') {
-		if (which === 'file') {
-			clearError();
-			fileInput?.click();
-		} else open(which);
+	/** After Add script saves a script: the details show it (Trevor: saved scripts are shown). */
+	export function showSaved() {
+		selected = undefined;
+		paneOpen = true;
 	}
 </script>
 
 <!-- Every BotC Scripts version, newest first; "None" where the source publishes none. -->
 {#snippet version()}
 	{#if versionList && versionList.versions.length > 0 && shownVersion}
-		<Select
-			label={t('scripts.details.version')}
-			hideLabel
-			value={shownVersion}
-			options={versionList.versions.map((v) => ({
-				value: v,
-				label:
-					v === latestVersion
-						? t('scripts.details.latestVersion', { version: v })
-						: v === baseBotc?.version && shownSaved
-							? t('scripts.details.savedVersion', { version: v })
-							: v
-			}))}
-			onChange={chooseVersion}
-		/>
+		<!-- Its own line, the full width: "Newer" sits under it, never squeezing it. -->
+		<span class="version-pick">
+			<Select
+				label={t('scripts.details.version')}
+				hideLabel
+				value={shownVersion}
+				options={versionList.versions.map((v) => ({
+					value: v,
+					label:
+						v === latestVersion
+							? t('scripts.details.latestVersion', { version: v })
+							: v === baseBotc?.version && shownSaved
+								? t('scripts.details.savedVersion', { version: v })
+								: v
+				}))}
+				onChange={chooseVersion}
+			/>
+		</span>
 	{:else}
 		<span data-testid="script-version">{shownVersion ?? t('common.none')}</span>
 	{/if}
@@ -921,19 +877,9 @@
 			</div>
 
 			<section>
-				<!-- Not limited to application/json: some iPad and Android file providers don't label
-		     .json files with that type, which greyed them out in Pocket Grimoire (PG 126, PG 162). -->
-				<input
-					bind:this={fileInput}
-					class="file"
-					type="file"
-					accept=".json,application/json,text/plain"
-					aria-label={t('scripts.picker.fileLabel')}
-					onchange={onFile}
-				/>
 				<!-- Load errors outside a dialog; the line is always there, so no reflow. -->
 				<p class="error" role="status" data-testid="file-error">
-					{#if !pasteOpen && !linkOpen}{error}{/if}
+					{error}
 				</p>
 			</section>
 		</div>
@@ -955,6 +901,12 @@
 					{version}
 				>
 					{#snippet actions()}
+						<IconButton
+							icon="quickPlay"
+							label={t('scripts.details.play')}
+							disabled={!shownListing || busy}
+							onclick={() => void quickPlay()}
+						/>
 						<PrintScriptButton script={preview} version={shownVersion} />
 						<ShareControl
 							what="script"
@@ -1050,56 +1002,6 @@
 	{/snippet}
 </Dialog>
 
-{#snippet errorLine()}
-	<p class="error" role="status">{error}</p>
-{/snippet}
-
-<Dialog bind:open={pasteOpen} title={t('scripts.paste.title')}>
-	<label class="field">
-		<span>{t('scripts.paste.label')}</span>
-		<textarea bind:value={pasteText} rows="8" spellcheck="false" autocomplete="off"></textarea>
-	</label>
-	{@render errorLine()}
-	{#snippet actions()}
-		<Button variant="quiet" onclick={pasteFromClipboard} disabled={!canReadClipboard}
-			>{t('scripts.paste.fromClipboard')}</Button
-		>
-		<Button variant="accent" onclick={loadPaste} disabled={busy || pasteText.trim() === ''}
-			>{t('scripts.picker.save')}</Button
-		>
-	{/snippet}
-</Dialog>
-
-<Dialog bind:open={linkOpen} title={t('scripts.link.title')}>
-	<label class="field">
-		<span>{t('scripts.link.label')}</span>
-		<ClearableField bind:value={linkText}>
-			<input
-				type="url"
-				inputmode="url"
-				autocomplete="off"
-				placeholder="https://"
-				bind:value={linkText}
-			/>
-		</ClearableField>
-	</label>
-	{@render errorLine()}
-	{#snippet actions()}
-		<!-- Always there, enabled once a site refuses to share its file (no reflow). -->
-		<Button
-			variant="quiet"
-			disabled={!errorLink}
-			onclick={() => errorLink && window.open(errorLink, '_blank', 'noopener,noreferrer')}
-			>{t('scripts.link.open')}</Button
-		>
-		<Button
-			variant="accent"
-			onclick={() => run(() => fetchLinkTarget(resolveLink(linkText), linkText))}
-			disabled={busy || linkText.trim() === ''}>{t('scripts.picker.save')}</Button
-		>
-	{/snippet}
-</Dialog>
-
 <ScriptCheckDialog
 	bind:open={checkOpen}
 	action="save"
@@ -1141,8 +1043,13 @@
 		gap: var(--space-4);
 		min-width: 0;
 	}
+	/* Its own stacking context, so the table's sticky header never shows through the pane. */
+	.picker {
+		isolation: isolate;
+	}
 	/* The list sets the height; the details scroll inside it. */
 	.pane {
+		z-index: 1;
 		position: absolute;
 		inset: 0;
 		border: var(--card-border);
@@ -1265,6 +1172,11 @@
 		text-align: left;
 		cursor: pointer;
 	}
+	.version-pick {
+		display: block;
+		width: 100%;
+		max-width: 22rem;
+	}
 	.newer.none {
 		visibility: hidden;
 	}
@@ -1310,33 +1222,6 @@
 	section {
 		display: grid;
 		gap: var(--space-2);
-	}
-	.file {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		opacity: 0;
-		pointer-events: none;
-	}
-	.field {
-		display: grid;
-		gap: var(--space-1);
-		margin: var(--space-3) 0 0;
-	}
-	.field input,
-	.field textarea {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
-	}
-	.field textarea {
-		resize: vertical;
-		font-size: max(0.9rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	/* Room for three lines is always reserved, so an error never moves the buttons. */
 	.error {

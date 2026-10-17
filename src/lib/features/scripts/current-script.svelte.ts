@@ -14,7 +14,12 @@ import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { saveScriptToProfile } from '#lib/features/account/profile-scripts.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
-import { reloadSavedScript, type SavedScript, type ScriptSource } from './saved-scripts.ts';
+import {
+	migrateSavedScript,
+	reloadSavedScript,
+	type SavedScript,
+	type ScriptSource
+} from './saved-scripts.ts';
 import { IdbScriptLibrary } from './script-library.ts';
 import { fetchSharedRef } from './share-codes.ts';
 import { sharedRefFromHash } from './share.ts';
@@ -96,11 +101,8 @@ function unsaved(record: NewRecord): SavedScript {
 	};
 }
 
-/** Makes `script` the current script and saves it to Recent. */
-export async function chooseScript(chosen: LoadedScript, source: ScriptSource): Promise<void> {
-	// Callers may pass reactive state; IndexedDB can only store plain objects.
-	const script = $state.snapshot(chosen) as LoadedScript;
-	const record: NewRecord = script.edition
+function recordFor(script: LoadedScript, source: ScriptSource): NewRecord {
+	return script.edition
 		? {
 				name: script.name,
 				edition: script.edition,
@@ -108,6 +110,13 @@ export async function chooseScript(chosen: LoadedScript, source: ScriptSource): 
 				source: { kind: 'edition' }
 			}
 		: { name: script.name, json: scriptToJson(script), source };
+}
+
+/** Makes `script` the current script and saves it to Recent. */
+export async function chooseScript(chosen: LoadedScript, source: ScriptSource): Promise<void> {
+	// Callers may pass reactive state; IndexedDB can only store plain objects.
+	const script = $state.snapshot(chosen) as LoadedScript;
+	const record = recordFor(script, source);
 	const lib = getLibrary();
 	try {
 		if (!lib) throw new Error('No storage');
@@ -120,6 +129,58 @@ export async function chooseScript(chosen: LoadedScript, source: ScriptSource): 
 		// Storage full, blocked or missing: still usable for this visit.
 		if (lib) reportError(e, { area: 'scripts', notify: false });
 		current = { saved: unsaved(record), script };
+	}
+	void loadOfficialData()
+		.then((data) => keepScriptOffline(script, data))
+		.catch(() => {});
+}
+
+/**
+ * A script played straight from the Scripts page without saving it (Trevor, 2026-10-17:
+ * the Library stays the scripts the user knows). One at a time, kept on this device apart
+ * from the saved scripts so the Library never lists it; New game offers it until another
+ * script is played this way. The game itself keeps its own copy of the script.
+ */
+const QUICK_PLAY_KEY = 'grim-games:scripts:quick-play';
+export const QUICK_PLAY_ID = 'quick-play';
+
+/** Read once when this module loads in the browser (never inside a derived value). */
+function storedQuick(): SavedScript | undefined {
+	try {
+		return migrateSavedScript(
+			JSON.parse(globalThis.localStorage?.getItem(QUICK_PLAY_KEY) ?? 'null')
+		);
+	} catch {
+		// No storage, or an unreadable copy: nothing to offer.
+		return undefined;
+	}
+}
+
+let quick = $state.raw<SavedScript | undefined>(storedQuick());
+/** Set by Play until New game opens with it chosen. */
+let quickRequested = false;
+
+export const quickPlayScript = {
+	get saved(): SavedScript | undefined {
+		return quick;
+	},
+	/** True once after Play: New game then opens with this script chosen. */
+	takeRequest(): boolean {
+		const asked = quickRequested;
+		quickRequested = false;
+		return asked && quick !== undefined;
+	}
+};
+
+/** Keeps `script` as the one to play next, without saving it to the Library. */
+export function playScript(chosen: LoadedScript, source: ScriptSource): void {
+	const script = $state.snapshot(chosen) as LoadedScript;
+	quick = { ...unsaved(recordFor(script, source)), scriptId: QUICK_PLAY_ID };
+	quickRequested = true;
+	try {
+		localStorage.setItem(QUICK_PLAY_KEY, JSON.stringify(quick));
+	} catch {
+		// No storage: still offered for this visit.
 	}
 	void loadOfficialData()
 		.then((data) => keepScriptOffline(script, data))
