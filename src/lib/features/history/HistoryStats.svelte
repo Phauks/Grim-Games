@@ -18,6 +18,7 @@
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import { loadGameRecords } from './records.ts';
@@ -176,16 +177,18 @@
 </script>
 
 {#snippet textFilter(column: string, value: string, set: (v: string) => void, close: () => void)}
-	<input
-		class="text"
-		type="search"
-		aria-label={t('history.filterLabel', { column })}
-		placeholder={t('history.filter')}
-		enterkeyhint="done"
-		{value}
-		oninput={(e) => set(e.currentTarget.value)}
-		onkeydown={(e) => e.key === 'Enter' && close()}
-	/>
+	<ClearableField {value} onclear={() => set('')}>
+		<input
+			class="text"
+			type="search"
+			aria-label={t('history.filterLabel', { column })}
+			placeholder={t('history.filter')}
+			enterkeyhint="done"
+			{value}
+			oninput={(e) => set(e.currentTarget.value)}
+			onkeydown={(e) => e.key === 'Enter' && close()}
+		/>
+	</ClearableField>
 {/snippet}
 
 <section class="summary" aria-labelledby="history-summary">
