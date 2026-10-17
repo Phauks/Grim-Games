@@ -5,6 +5,7 @@
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { accountApi, EXPORT_PATH } from './account-api.ts';
 	import { account } from './account.svelte.ts';
@@ -103,8 +104,8 @@
 		});
 </script>
 
-<main>
-	<h1>{t('account.title')}</h1>
+<!-- Sections side by side on a computer, each at most a reading width (Page `columns`). -->
+<Page title={t('account.title')} columns>
 	<ErrorBoundary area="account">
 		{#if account.status === 'signed-in' && account.user}
 			<section class="card" aria-labelledby="you">
@@ -181,7 +182,7 @@
 			</section>
 		{/if}
 	</ErrorBoundary>
-</main>
+</Page>
 
 <ConfirmDialog
 	bind:open={confirmDelete}
@@ -194,25 +195,9 @@
 </ConfirmDialog>
 
 <style>
-	/* One column on a phone; on a computer the sections sit side by side, each at most a
-	   reading width, instead of one narrow strip down the middle. */
-	main {
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-5) var(--page-gutter);
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--measure)), 1fr));
-		align-items: start;
-		gap: var(--space-5);
-	}
-	h1 {
-		grid-column: 1 / -1;
-		margin: 0;
-		font-size: 2rem;
-	}
 	h2 {
 		margin: 0 0 var(--space-2);
-		font-size: 1.1rem;
+		font-size: var(--section-title-size);
 	}
 	.card {
 		display: grid;
