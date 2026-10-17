@@ -200,7 +200,7 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
-test('bag tiles show numbers, letters, symbols, colours or a random mix, centred on the token', async ({
+test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, centred on the token', async ({
 	page
 }) => {
 	await selectionFor(page, 5);
@@ -239,8 +239,20 @@ test('bag tiles show numbers, letters, symbols, colours or a random mix, centred
 	await choose('Symbols');
 	await expect(page.getByRole('button', { name: 'Tile Star', exact: true })).toBeVisible();
 	await expect(bag.first().locator('[data-kind="symbol"] svg')).toBeVisible();
+	// The symbol sits in the middle of the token (Trevor, 2026-10-17).
+	for (const button of await bag.all()) {
+		const [b, g] = await Promise.all([button.boundingBox(), button.locator('svg').boundingBox()]);
+		expect(Math.abs(b!.x + b!.width / 2 - (g!.x + g!.width / 2))).toBeLessThan(1);
+		expect(Math.abs(b!.y + b!.height / 2 - (g!.y + g!.height / 2))).toBeLessThan(1);
+	}
 	await choose('Colours');
-	await expect(page.getByRole('button', { name: 'Tile Red', exact: true })).toBeVisible();
+	// The colour fills the whole token (Trevor, 2026-10-17).
+	await expect(page.getByRole('button', { name: 'Tile Red', exact: true })).toHaveCSS(
+		'background-color',
+		'rgb(255, 0, 0)'
+	);
+	await choose('Emoji');
+	await expect(page.getByRole('button', { name: 'Tile Apple', exact: true })).toContainText('🍎');
 	await choose('Random');
 	const labels = await bag.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
 	expect(new Set(labels).size).toBe(5);

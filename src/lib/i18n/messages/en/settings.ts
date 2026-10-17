@@ -35,6 +35,7 @@ export const settings = {
 	'settings.tileLabels.letters': 'Letters',
 	'settings.tileLabels.symbols': 'Symbols',
 	'settings.tileLabels.colours': 'Colours',
+	'settings.tileLabels.emoji': 'Emoji',
 	'settings.tileLabels.random': 'Random',
 	'settings.requireName': 'Require a name before drawing',
 	'settings.requireNameHelp': 'A player types their name before they can see the token they drew.',

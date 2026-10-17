@@ -36,6 +36,7 @@
 				{ value: 'letters', label: t('settings.tileLabels.letters') },
 				{ value: 'symbols', label: t('settings.tileLabels.symbols') },
 				{ value: 'colours', label: t('settings.tileLabels.colours') },
+				{ value: 'emoji', label: t('settings.tileLabels.emoji') },
 				{ value: 'random', label: t('settings.tileLabels.random') }
 			]}
 			defaultValue="numbers"

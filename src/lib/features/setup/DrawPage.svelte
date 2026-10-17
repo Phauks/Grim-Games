@@ -42,6 +42,11 @@
 		tileMarks(slots.length, face, `${game?.gameId ?? ''}:${slots[0]?.tileId ?? ''}`)
 	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
+	// A colour fills the whole token, with ink that reads on it (Trevor, 2026-10-17).
+	function colourOf(number: number) {
+		const mark = marks[number - 1];
+		return mark?.kind === 'colour' ? mark : undefined;
+	}
 
 	let revealing = $state<TileId | undefined>(undefined);
 	let revealOpen = $state(false);
@@ -140,6 +145,8 @@
 									? t('setup.draw.tileDrawn', { number: markName(s.number) })
 									: t('setup.draw.tile', { number: markName(s.number) })}
 							onclick={() => draw(s.tileId, s.state)}
+							style:background={colourOf(s.number)?.colour}
+							style:color={colourOf(s.number)?.ink}
 						>
 							<span class="face"
 								>{#if marks[s.number - 1]}<TileMarkFace mark={marks[s.number - 1]} />{/if}</span
@@ -275,10 +282,6 @@
 		font-size: 2.25rem;
 		font-weight: 700;
 		line-height: 1;
-	}
-	.face :global(svg) {
-		width: 1.6em;
-		height: 1.6em;
 	}
 	.mark {
 		grid-area: tile;
