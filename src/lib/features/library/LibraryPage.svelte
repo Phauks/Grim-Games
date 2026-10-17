@@ -38,6 +38,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import FolderView from './FolderView.svelte';
+	import VariationChanges from './VariationChanges.svelte';
 	import LabelManager from './LabelManager.svelte';
 	import NewLabel from './NewLabel.svelte';
 	import {
@@ -303,6 +304,22 @@
 		}
 	}
 
+	/**
+	 * A script edited from another one says so (Trevor, 2026-10-17), with what changed. The
+	 * Script builder stores the original on the saved script's source as `variationOf`.
+	 */
+	interface Variation {
+		name: string;
+		json: unknown[];
+	}
+	const variation = $derived.by((): Variation | undefined => {
+		const source = openRow?.listing.saved?.source;
+		if (source?.kind !== 'built') return undefined;
+		const of = (source as { variationOf?: Variation }).variationOf;
+		return of && Array.isArray(of.json) ? of : undefined;
+	});
+	let changesOpen = $state(false);
+
 	async function removeOpen() {
 		const row = openRow;
 		if (!row) return;
@@ -517,6 +534,15 @@
 {#snippet labelRows()}
 	{#if openKey}
 		{@const key = openKey}
+		{#if variation}
+			<dt class="label-term">{t('library.variationOf')}</dt>
+			<dd class="label-value variation" data-testid="variation-of">
+				<span>{variation.name || t('common.none')}</span>
+				<Button icon="history" onclick={() => (changesOpen = true)}
+					>{t('library.whatChanged')}</Button
+				>
+			</dd>
+		{/if}
 		<dt class="label-term">{t('library.folder')}</dt>
 		<dd class="label-value" data-testid="script-labels">
 			<Select
@@ -558,6 +584,15 @@
 </ConfirmDialog>
 
 <LabelManager bind:open={manageOpen} />
+
+{#if variation && openRow?.listing.saved}
+	<VariationChanges
+		bind:open={changesOpen}
+		original={variation.json}
+		variation={openRow.listing.saved.json}
+		{data}
+	/>
+{/if}
 
 <style>
 	main {
@@ -722,6 +757,12 @@
 	.label-value {
 		margin: 0;
 		min-width: 0;
+	}
+	.variation {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 	}
 	.view {
 		flex: none;
