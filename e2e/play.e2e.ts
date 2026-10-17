@@ -111,6 +111,9 @@ test('tapping a player count highlights its column, and it is remembered', async
 	await seven.tap();
 	await expect(seven).toHaveAttribute('aria-pressed', 'false');
 	await expect(panel.locator('td[data-current]')).toHaveCount(0);
+	// Anywhere in a column picks it, not just its number (Trevor, 2026-10-17).
+	await panel.locator('tbody tr[data-type="minion"] td').nth(2).tap();
+	await expect(seven).toHaveAttribute('aria-pressed', 'true');
 });
 
 test("the night order shows who wakes, with TPI's night text", async ({ page }) => {

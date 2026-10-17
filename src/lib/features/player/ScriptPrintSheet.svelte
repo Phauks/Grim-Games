@@ -6,7 +6,7 @@
 		loadOfficialData,
 		officialData
 	} from '#lib/features/characters/game-data.svelte.ts';
-	import PlayerCounts from './PlayerCounts.svelte';
+	import SetupTable from '#lib/features/setup/SetupTable.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import { playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
@@ -55,7 +55,7 @@
 				<h1>{script.name}</h1>
 				<div class="counts">
 					<h2>{t('player.breakdown')}</h2>
-					<PlayerCounts />
+					<SetupTable />
 				</div>
 			</header>
 			<PlayerNightOrder {nights} />
