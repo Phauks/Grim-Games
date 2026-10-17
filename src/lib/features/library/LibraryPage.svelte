@@ -32,11 +32,20 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
+	import FolderView from './FolderView.svelte';
 	import LabelManager from './LabelManager.svelte';
 	import NewLabel from './NewLabel.svelte';
-	import { byName, filterLibrary, libraryKey, type FolderFilter } from './library-labels.ts';
+	import {
+		byName,
+		filterLibrary,
+		folderPath,
+		folderTree,
+		libraryKey,
+		type FolderFilter
+	} from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 
 	/**
@@ -95,6 +104,29 @@
 		});
 	});
 
+	// ---- View: folders like a file manager, or a table (Trevor, 2026-10-17) ----
+
+	type View = 'folders' | 'table';
+	const VIEW_KEY = 'grim-games:library-view';
+	function readView(): View {
+		try {
+			return globalThis.localStorage?.getItem(VIEW_KEY) === 'table' ? 'table' : 'folders';
+		} catch {
+			return 'folders';
+		}
+	}
+	let view = $state<View>(readView());
+	function setView(next: View) {
+		view = next;
+		try {
+			globalThis.localStorage?.setItem(VIEW_KEY, next);
+		} catch {
+			// A remembered view is only a convenience.
+		}
+	}
+	/** The folder open in the folder view; the top level when none. */
+	let currentFolder = $state<string>();
+
 	// ---- Search, filters and sort ----
 
 	let term = $state('');
@@ -103,10 +135,13 @@
 	type ColumnId = 'name' | 'folder' | 'tags' | 'source';
 	let sort = $state<DataSort<ColumnId> | undefined>();
 
-	const folders = $derived(byName(libraryLabels.state.folders));
+	const folders = $derived(folderTree(libraryLabels.state).map(({ folder }) => folder));
 	const tags = $derived(byName(libraryLabels.state.tags));
+	/** A folder's whole path, so folders of the same name in different places differ. */
 	const folderName = (id: string | undefined) =>
-		id ? (folders.find((f) => f.id === id)?.name ?? '') : '';
+		folderPath(libraryLabels.state, id)
+			.map((f) => f.name)
+			.join(' / ');
 	const tagNames = (ids: readonly string[]) =>
 		tags.filter((tag) => ids.includes(tag.id)).map((tag) => tag.name);
 	const sourceOf = (row: Row) =>
@@ -184,8 +219,15 @@
 	const folderOptions = $derived([
 		{ value: 'all', label: t('library.folderAll') },
 		{ value: 'none', label: t('library.folderNone') },
-		...folders.map((f) => ({ value: f.id, label: f.name }))
+		...folders.map((f) => ({ value: f.id, label: folderName(f.id) }))
 	]);
+
+	// The folder view searches every folder; the table's filters belong to the table.
+	const found = $derived(
+		filterLibrary(rows, libraryLabels.state, { term, folder: { kind: 'all' }, tags: [] }).map(
+			(row) => ({ key: row.key, name: row.listing.row.name, author: row.listing.row.author })
+		)
+	);
 
 	// ---- One script's dialog: its folder, tags, details, Share and Remove ----
 
@@ -201,14 +243,21 @@
 	const openRow = $derived(rows.find((row) => row.key === openKey));
 	const openLabels = $derived(openKey ? libraryLabels.for(openKey) : { tags: [] });
 
-	/** A script just added opens straight away, so its folder and tags can be set. */
+	/**
+	 * A script just added opens straight away, so its folder and tags can be set. Added while a
+	 * folder is open, it goes in that folder, as a file saved there would.
+	 */
 	function openAdded() {
 		let newest: Row | undefined;
 		for (const row of rows) {
 			const used = row.listing.saved?.lastUsedAt ?? -1;
 			if (used > (newest?.listing.saved?.lastUsedAt ?? -1)) newest = row;
 		}
-		if (newest) openScript(newest);
+		if (!newest) return;
+		if (view === 'folders' && currentFolder && !libraryLabels.for(newest.key).folder) {
+			libraryLabels.setFolder(newest.key, currentFolder);
+		}
+		openScript(newest);
 	}
 
 	function openScript(row: Row) {
@@ -218,7 +267,7 @@
 
 	const scriptFolderOptions = $derived([
 		{ value: '', label: t('common.none') },
-		...folders.map((f) => ({ value: f.id, label: f.name }))
+		...folders.map((f) => ({ value: f.id, label: folderName(f.id) }))
 	]);
 
 	async function removeOpen() {
@@ -251,7 +300,7 @@
 	<div class="head">
 		<h1>{t('library.heading')}</h1>
 		<div class="page-actions">
-			<Button icon="tag" onclick={() => (manageOpen = true)}>{t('library.manage')}</Button>
+			<Button icon="tag" onclick={() => (manageOpen = true)}>{t('library.tags')}</Button>
 			<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
 			<AddScript onsaved={openAdded} />
 		</div>
@@ -260,32 +309,56 @@
 	<ErrorBoundary area="library">
 		<section aria-labelledby="library-scripts">
 			<h2 id="library-scripts">{t('library.scripts')}</h2>
-			<label class="term">
-				<span class="visually-hidden">{t('library.search')}</span>
-				<ClearableField bind:value={term}>
-					<input
-						type="search"
-						autocomplete="off"
-						enterkeyhint="search"
-						placeholder={t('library.searchPlaceholder')}
-						bind:value={term}
-					/>
-				</ClearableField>
-			</label>
-			<div data-testid="library-table">
-				<DataTable
-					label={t('library.table')}
-					{columns}
-					rows={shown}
-					key={(row) => row.key}
-					{cell}
-					{sort}
-					{onSort}
-					{filter}
-					narrow="hide"
-					empty={t('common.none')}
+			<div class="find">
+				<label class="term">
+					<span class="visually-hidden">{t('library.search')}</span>
+					<ClearableField bind:value={term}>
+						<input
+							type="search"
+							autocomplete="off"
+							enterkeyhint="search"
+							placeholder={t('library.searchPlaceholder')}
+							bind:value={term}
+						/>
+					</ClearableField>
+				</label>
+				<Segmented
+					label={t('library.view')}
+					hideLabel
+					value={view}
+					options={[
+						{ value: 'folders', label: t('library.viewFolders') },
+						{ value: 'table', label: t('library.viewTable') }
+					]}
+					onChange={setView}
 				/>
 			</div>
+			{#if view === 'folders'}
+				<FolderView
+					items={found}
+					searching={term.trim() !== ''}
+					bind:current={currentFolder}
+					onopen={(key) => {
+						const row = rows.find((r) => r.key === key);
+						if (row) openScript(row);
+					}}
+				/>
+			{:else}
+				<div data-testid="library-table">
+					<DataTable
+						label={t('library.table')}
+						{columns}
+						rows={shown}
+						key={(row) => row.key}
+						{cell}
+						{sort}
+						{onSort}
+						{filter}
+						narrow="hide"
+						empty={t('common.none')}
+					/>
+				</div>
+			{/if}
 		</section>
 
 		<section aria-labelledby="library-info-tokens">
@@ -492,6 +565,16 @@
 		overflow: hidden;
 		clip-path: inset(50%);
 		white-space: nowrap;
+	}
+	.find {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.term {
+		flex: 1 1 calc(14 * var(--u));
+		min-width: 0;
 	}
 	.term input {
 		width: 100%;
