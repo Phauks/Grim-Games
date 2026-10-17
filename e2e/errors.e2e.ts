@@ -183,3 +183,25 @@ test('Diagnostics gathers build, device and problems on the device, without game
 		/^grim-games-diagnostics-\d{4}-\d{2}-\d{2}-\d{6}\.txt$/
 	);
 });
+
+test('Clear problems is a trash can beside the X and asks first', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	await page.evaluate(() =>
+		setTimeout(() => {
+			throw new Error('clear me');
+		})
+	);
+	await page.getByTestId('error-notice').getByRole('button', { name: 'Details' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Problems on this device' });
+	const clear = dialog.getByRole('button', { name: 'Clear problems' });
+	const close = dialog.getByRole('button', { name: 'Close' }).first();
+	const [c, x] = [(await clear.boundingBox())!, (await close.boundingBox())!];
+	// Same header row, right beside the X.
+	expect(Math.abs(c.y - x.y)).toBeLessThan(4);
+	expect(x.x - (c.x + c.width)).toBeLessThan(c.width);
+	await clear.tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	await expect(dialog).toContainText('None');
+	await expect(clear).toBeDisabled();
+});
