@@ -47,6 +47,8 @@ export const ICON_SLOTS = {
 	timerPause: { label: 'Pause timer', choices: ['ph:pause', 'ph:pause-circle'] },
 	timer: { label: 'Timer', choices: ['ph:timer', 'ph:hourglass'] },
 	sound: { label: 'Sound', choices: ['ph:speaker-high', 'ph:bell'] },
+	countDown: { label: 'Count down', choices: ['ph:clock-countdown', 'ph:hourglass-low'] },
+	countUp: { label: 'Count up', choices: ['ph:clock-clockwise', 'ph:timer'] },
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },

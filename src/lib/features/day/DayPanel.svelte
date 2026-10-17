@@ -344,7 +344,7 @@
 
 <div class="panel">
 	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
-	<div class="toolbar">
+	<div class="toolbar" data-testid="day-toolbar">
 		<DayTimer alive={block.alive} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
@@ -472,41 +472,40 @@
 	</Collapsible>
 
 	{#if assistance.preDayReminders}
-		<Collapsible title={t('day.today')} storageKey="day.today">
-			{#each reminders.groups as group (group.group)}
-				<Collapsible title={group.title} level={3} storageKey={`day.group.${group.group}`}>
-					<ul class="reminders">
-						{#each group.reminders as reminder (reminder.key)}
-							{@const explained = explainBlock(
-								reminder.segments.map((s) => (s.kind === 'text' ? s.text : ''))
-							)}
-							<li data-character={reminder.characterId}>
-								<span class="sentence">
-									{#each reminder.segments as segment, i (i)}
-										{#if segment.kind === 'character'}
-											<CharacterBadge
-												characterId={segment.ref.characterId}
-												alignment={segment.ref.seatId
-													? g.seats[segment.ref.seatId]?.alignment
-													: undefined}
-												playerName={segment.ref.playerName}
-											/>
-										{:else if segment.kind === 'value'}
-											<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
-											<span>({segment.value ?? segment.placeholder})</span>
-										{:else}
-											<span><GlossaryText segments={explained[i] ?? []} /></span>
-										{/if}
-									{/each}
-								</span>
-								{@render ability(reminder.characterId)}
-								{@render actions(reminder.characterId, seatOf(reminder))}
-							</li>
-						{/each}
-					</ul>
-				</Collapsible>
-			{/each}
-		</Collapsible>
+		<!-- Each group is its own section; no "Today" wrapper (Trevor, 2026-10-17). -->
+		{#each reminders.groups as group (group.group)}
+			<Collapsible title={group.title} storageKey={`day.group.${group.group}`}>
+				<ul class="reminders">
+					{#each group.reminders as reminder (reminder.key)}
+						{@const explained = explainBlock(
+							reminder.segments.map((s) => (s.kind === 'text' ? s.text : ''))
+						)}
+						<li data-character={reminder.characterId}>
+							<span class="sentence">
+								{#each reminder.segments as segment, i (i)}
+									{#if segment.kind === 'character'}
+										<CharacterBadge
+											characterId={segment.ref.characterId}
+											alignment={segment.ref.seatId
+												? g.seats[segment.ref.seatId]?.alignment
+												: undefined}
+											playerName={segment.ref.playerName}
+										/>
+									{:else if segment.kind === 'value'}
+										<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
+										<span>({segment.value ?? segment.placeholder})</span>
+									{:else}
+										<span><GlossaryText segments={explained[i] ?? []} /></span>
+									{/if}
+								{/each}
+							</span>
+							{@render ability(reminder.characterId)}
+							{@render actions(reminder.characterId, seatOf(reminder))}
+						</li>
+					{/each}
+				</ul>
+			</Collapsible>
+		{/each}
 	{:else}
 		<Collapsible title={t('day.abilitiesAndNotes')} storageKey="day.abilities">
 			<ul class="reminders">

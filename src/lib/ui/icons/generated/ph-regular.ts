@@ -32,6 +32,8 @@ import ph_caret_up from '~icons/ph/caret-up';
 import ph_cat from '~icons/ph/cat';
 import ph_check from '~icons/ph/check';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
+import ph_clock_clockwise from '~icons/ph/clock-clockwise';
+import ph_clock_countdown from '~icons/ph/clock-countdown';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_club from '~icons/ph/club';
 import ph_copy from '~icons/ph/copy';
@@ -71,6 +73,7 @@ import ph_heart from '~icons/ph/heart';
 import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_hexagon from '~icons/ph/hexagon';
 import ph_hourglass from '~icons/ph/hourglass';
+import ph_hourglass_low from '~icons/ph/hourglass-low';
 import ph_house from '~icons/ph/house';
 import ph_house_simple from '~icons/ph/house-simple';
 import ph_identification_card from '~icons/ph/identification-card';
@@ -186,6 +189,8 @@ const icons: IconMap = {
 	'ph:cat': ph_cat,
 	'ph:check': ph_check,
 	'ph:circle-dashed': ph_circle_dashed,
+	'ph:clock-clockwise': ph_clock_clockwise,
+	'ph:clock-countdown': ph_clock_countdown,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:club': ph_club,
 	'ph:copy': ph_copy,
@@ -225,6 +230,7 @@ const icons: IconMap = {
 	'ph:heartbeat': ph_heartbeat,
 	'ph:hexagon': ph_hexagon,
 	'ph:hourglass': ph_hourglass,
+	'ph:hourglass-low': ph_hourglass_low,
 	'ph:house': ph_house,
 	'ph:house-simple': ph_house_simple,
 	'ph:identification-card': ph_identification_card,

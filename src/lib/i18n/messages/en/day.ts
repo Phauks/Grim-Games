@@ -7,7 +7,6 @@ export const day = {
 	'day.tapPlayer': 'Tap a player to mark them dead or alive.',
 	'day.seatButton': 'Seat: {name}',
 	'day.demonVoted': 'Demon voted',
-	'day.today': 'Today',
 	'day.abilitiesAndNotes': 'Abilities and notes',
 	'day.votesBadge': { one: '{count} vote', other: '{count} votes' },
 	'day.votesBadgeLabel': {
@@ -58,6 +57,8 @@ export const day = {
 	'day.timerMore': '30 seconds more',
 	'day.timerSoundButton': 'Timer sound: {sound}',
 	'day.timerSoundTitle': 'Timer sound',
+	'day.timerCountingDown': 'Counting down; switch to counting up',
+	'day.timerCountingUp': 'Counting up; switch to counting down',
 	'day.timerSound.bell': 'Bell',
 	'day.timerSound.chime': 'Chime',
 	'day.timerSound.buzzer': 'Buzzer',

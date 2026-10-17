@@ -54,7 +54,8 @@ describe('parsePreferences', () => {
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',
 			requireName: true,
-			timerSound: 'buzzer'
+			timerSound: 'buzzer',
+			timerMode: 'up'
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
 	});
@@ -64,6 +65,7 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({ tileFace: 'shapes' }).tileFace).toBe('numbers');
 		expect(parsePreferences({ timerSound: 'chime' }).timerSound).toBe('chime');
 		expect(parsePreferences({ timerSound: 'gong' }).timerSound).toBe('bell');
+		expect(parsePreferences({ timerMode: 'sideways' }).timerMode).toBe('down');
 	});
 
 	it('gives character icons the one icon size saved before the split', () => {

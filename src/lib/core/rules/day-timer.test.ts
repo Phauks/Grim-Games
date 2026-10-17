@@ -7,10 +7,12 @@ import {
 	dayTimer,
 	formatClock,
 	isFresh,
+	isOver,
 	isRunning,
 	pause,
 	remaining,
 	reset,
+	shown,
 	start
 } from './day-timer.ts';
 
@@ -53,5 +55,19 @@ describe('day timer', () => {
 		expect(formatClock(1)).toBe('0:01');
 		expect(formatClock(59_001)).toBe('1:00');
 		expect(formatClock(605_000)).toBe('10:05');
+	});
+
+	// Trevor, 2026-10-17: the timer can count up instead.
+	it('counts up from 0:00 past the target, which it still marks', () => {
+		let t = start(dayTimer(1), 0, 'up');
+		expect(shown(t, 10_400, 'up')).toBe('0:10');
+		expect(shown(t, 10_400, 'down')).toBe('0:20');
+		expect(isOver(t, 29_000)).toBe(false);
+		expect(isOver(t, 30_000)).toBe(true);
+		expect(shown(t, 95_000, 'up')).toBe('1:35');
+		t = pause(t, 95_000);
+		// Counting up resumes past the target; counting down does not.
+		expect(start(t, 100_000, 'up').startedAt).toBe(100_000);
+		expect(start(t, 100_000, 'down')).toBe(t);
 	});
 });

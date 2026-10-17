@@ -2,36 +2,53 @@ import { dayTimers } from '#lib/core/rules/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { playTimerSound, unlockTimerSound } from './timer-sound.ts';
 
-const { adjust, dayTimer, isFresh, isRunning, pause, remaining, start } = dayTimers;
+const { adjust, dayTimer, elapsed, isFresh, isOver, isRunning, pause, remaining, shown, start } =
+	dayTimers;
 type DayTimer = dayTimers.DayTimer;
 
 /**
  * The day timer's live state (Trevor, 2026-10-17). One timer for the app, kept outside the
- * day sheet so closing and reopening it doesn't stop the countdown, and so the board can
- * show it too (`DayTimer.svelte`, or read `running`, `remaining` and `done`). Until it is
- * started or changed by hand its length follows the living players (`follow`). When time
- * is up the device vibrates where it can, plays the chosen sound (`timerSound`), and `done`
- * turns on.
+ * day sheet so closing and reopening it doesn't stop it, and so the board can show it too
+ * (`DayTimer.svelte`, or read `clock`, `running`, `done`). Until it is started or changed by
+ * hand its length follows the living players (`follow`). It counts down, stopping at 0:00,
+ * or up past the target, by the `timerMode` setting. When the target is reached the device
+ * vibrates where it can, plays the chosen sound (`timerSound`), and `done` turns on.
  */
 class LiveDayTimer {
 	#timer = $state<DayTimer>(dayTimer(0));
 	now = $state(Date.now());
 	#ticker: ReturnType<typeof setInterval> | undefined;
+	/** The target was signalled; set again only once it is moved past the time used. */
 	#signalled = false;
 	/** The length was changed by hand, so it no longer follows the living players. */
 	#adjusted = false;
 
+	get mode(): dayTimers.DayTimerMode {
+		return preferences.current.timerMode;
+	}
+	/** What the clock shows, "m:ss", in the current mode. */
+	get clock(): string {
+		return shown(this.#timer, this.now, this.mode);
+	}
 	get remaining(): number {
 		return remaining(this.#timer, this.now);
+	}
+	get elapsed(): number {
+		return elapsed(this.#timer, this.now);
 	}
 	get running(): boolean {
 		return isRunning(this.#timer);
 	}
+	/** The target is reached (0:00 counting down; past it counting up). */
 	get done(): boolean {
-		return this.remaining === 0;
+		return isOver(this.#timer, this.now);
 	}
 	get fresh(): boolean {
 		return isFresh(this.#timer);
+	}
+	/** Start is possible: not running, and counting up or with time left. */
+	get startable(): boolean {
+		return !this.running && (this.mode === 'up' || !this.done);
 	}
 
 	/** Matches the length to the living players while the timer is untouched. */
@@ -49,10 +66,10 @@ class LiveDayTimer {
 			this.#stop();
 			return;
 		}
-		this.#timer = start(this.#timer, this.now);
+		this.#timer = start(this.#timer, this.now, this.mode);
 		if (!this.running) return;
 		unlockTimerSound();
-		this.#signalled = false;
+		this.#signalled = this.done;
 		this.#ticker = setInterval(() => this.#tick(), 250);
 	}
 
@@ -60,6 +77,7 @@ class LiveDayTimer {
 	reset(alive: number): void {
 		this.#stop();
 		this.#adjusted = false;
+		this.#signalled = false;
 		this.#timer = dayTimer(alive);
 		this.now = Date.now();
 	}
@@ -68,13 +86,17 @@ class LiveDayTimer {
 		this.now = Date.now();
 		this.#adjusted = true;
 		this.#timer = adjust(this.#timer, steps, this.now);
+		this.#signalled = this.done;
 	}
 
 	#tick(): void {
 		this.now = Date.now();
-		if (this.remaining > 0) return;
-		this.#timer = pause(this.#timer, this.now);
-		this.#stop();
+		if (!this.done) return;
+		// Counting down stops at 0:00; counting up keeps going.
+		if (this.mode === 'down') {
+			this.#timer = pause(this.#timer, this.now);
+			this.#stop();
+		}
 		if (!this.#signalled) {
 			this.#signalled = true;
 			navigator.vibrate?.([300, 150, 300, 150, 300]);

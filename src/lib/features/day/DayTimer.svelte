@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { dayTimers } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
@@ -10,9 +9,10 @@
 	import { playTimerSound } from './timer-sound.ts';
 
 	/**
-	 * The day timer (Trevor, 2026-10-17): 30 seconds per living player, started by hand. At
-	 * 0:00 the device vibrates, plays the chosen sound and the clock flashes. `full` has every
-	 * control (the day view); `compact` is the clock with Start/Pause, for the board.
+	 * The day timer (Trevor, 2026-10-17): 30 seconds per living player, started by hand,
+	 * counting down or up (a setting). At the target the device vibrates, plays the chosen
+	 * sound and the clock flashes. `full` has every control (the day view); `compact` is the
+	 * clock with Start/Pause, for the board.
 	 */
 	interface Props {
 		/** Living players, for the starting length and Reset. */
@@ -44,16 +44,14 @@
 	{#if variant === 'full'}
 		<IconButton icon="minus" label={t('day.timerLess')} onclick={() => timer.adjust(-1)} />
 	{/if}
-	<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
-		>{dayTimers.formatClock(timer.remaining)}</span
-	>
+	<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}>{timer.clock}</span>
 	{#if variant === 'full'}
 		<IconButton icon="add" label={t('day.timerMore')} onclick={() => timer.adjust(1)} />
 	{/if}
 	<IconButton
 		icon={timer.running ? 'timerPause' : 'timerStart'}
 		label={timer.running ? t('day.timerPause') : t('day.timerStart')}
-		disabled={timer.done}
+		disabled={!timer.running && !timer.startable}
 		onclick={() => timer.toggle()}
 	/>
 	{#if variant === 'full'}
@@ -62,6 +60,11 @@
 			label={t('day.timerReset')}
 			disabled={timer.fresh}
 			onclick={() => timer.reset(alive)}
+		/>
+		<IconButton
+			icon={timer.mode === 'down' ? 'countDown' : 'countUp'}
+			label={timer.mode === 'down' ? t('day.timerCountingDown') : t('day.timerCountingUp')}
+			onclick={() => preferences.update({ timerMode: timer.mode === 'down' ? 'up' : 'down' })}
 		/>
 		<IconButton
 			icon="sound"

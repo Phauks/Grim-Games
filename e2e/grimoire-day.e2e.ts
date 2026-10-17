@@ -203,9 +203,53 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	// It stays in view while the day scrolls.
 	await page.getByRole('button', { name: 'Seat: Seat 8' }).scrollIntoViewIfNeeded();
 	await expect(timer).toBeInViewport();
+	// Pinned right under the header: nothing scrolled shows above it (Trevor, 2026-10-17).
+	const above = await page.getByTestId('day-toolbar').evaluate((toolbar) => {
+		const box = toolbar.getBoundingClientRect();
+		const el = document.elementFromPoint(box.left + box.width / 2, box.top - 1);
+		return el?.closest('[data-testid="day-toolbar"]')
+			? 'toolbar'
+			: el?.closest('.panel')
+				? 'content'
+				: 'outside';
+	});
+	expect(above).toBe('outside');
+	const scroller = page.getByTestId('day-toolbar').locator('xpath=../..');
+	expect((await page.getByTestId('day-toolbar').boundingBox())!.y).toBeCloseTo(
+		(await scroller.boundingBox())!.y,
+		0
+	);
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(
 		page.getByTestId('day-timer').getByRole('button', { name: 'Timer sound: Chime' })
+	).toBeVisible();
+});
+
+// Trevor, 2026-10-17: the timer can count up instead, past its target.
+test('the day timer counts up past its target when set to', async ({ page }) => {
+	await page.clock.install();
+	await startGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const timer = page.getByTestId('day-timer');
+	const clock = timer.getByRole('timer');
+	await expect(clock).toHaveText('4:00');
+	await timer.getByRole('button', { name: 'Counting down; switch to counting up' }).tap();
+	await expect(clock).toHaveText('0:00');
+	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await page.clock.runFor(61_000);
+	await expect(clock).toHaveText('1:01');
+	await page.clock.runFor(190_000);
+	// Past 4:00 it turns red and keeps counting.
+	await expect(timer).toHaveAttribute('data-done', '');
+	await expect(clock).toHaveText('4:11');
+	await expect(timer.getByRole('button', { name: 'Pause timer' })).toBeEnabled();
+	// The choice is kept.
+	await page.reload();
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await expect(
+		page
+			.getByTestId('day-timer')
+			.getByRole('button', { name: 'Counting up; switch to counting down' })
 	).toBeVisible();
 });

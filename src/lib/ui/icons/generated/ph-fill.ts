@@ -32,6 +32,8 @@ import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_cat_fill from '~icons/ph/cat-fill';
 import ph_check_fill from '~icons/ph/check-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
+import ph_clock_clockwise_fill from '~icons/ph/clock-clockwise-fill';
+import ph_clock_countdown_fill from '~icons/ph/clock-countdown-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
@@ -71,6 +73,7 @@ import ph_heart_fill from '~icons/ph/heart-fill';
 import ph_heartbeat_fill from '~icons/ph/heartbeat-fill';
 import ph_hexagon_fill from '~icons/ph/hexagon-fill';
 import ph_hourglass_fill from '~icons/ph/hourglass-fill';
+import ph_hourglass_low_fill from '~icons/ph/hourglass-low-fill';
 import ph_house_fill from '~icons/ph/house-fill';
 import ph_house_simple_fill from '~icons/ph/house-simple-fill';
 import ph_identification_card_fill from '~icons/ph/identification-card-fill';
@@ -186,6 +189,8 @@ const icons: IconMap = {
 	'ph:cat-fill': ph_cat_fill,
 	'ph:check-fill': ph_check_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
+	'ph:clock-clockwise-fill': ph_clock_clockwise_fill,
+	'ph:clock-countdown-fill': ph_clock_countdown_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
 	'ph:copy-fill': ph_copy_fill,
@@ -225,6 +230,7 @@ const icons: IconMap = {
 	'ph:heartbeat-fill': ph_heartbeat_fill,
 	'ph:hexagon-fill': ph_hexagon_fill,
 	'ph:hourglass-fill': ph_hourglass_fill,
+	'ph:hourglass-low-fill': ph_hourglass_low_fill,
 	'ph:house-fill': ph_house_fill,
 	'ph:house-simple-fill': ph_house_simple_fill,
 	'ph:identification-card-fill': ph_identification_card_fill,

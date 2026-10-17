@@ -7,6 +7,13 @@
 
 /** Trevor's rule of thumb: 30 seconds of discussion per living player. */
 export const DAY_SECONDS_PER_ALIVE = 30;
+/**
+ * Counting down shows the time left and stops at 0:00; counting up shows the time used
+ * from 0:00 and keeps going past the target (Trevor, 2026-10-17: "count up or down").
+ */
+export const DAY_TIMER_MODES = ['down', 'up'] as const;
+export type DayTimerMode = (typeof DAY_TIMER_MODES)[number];
+
 /** What one tap on "more" or "less" changes, and the shortest timer. */
 export const DAY_TIMER_STEP_MS = 30_000;
 
@@ -42,8 +49,9 @@ export function remaining(t: DayTimer, now: number): number {
 /** Untouched: never started and its length not changed by hand. */
 export const isFresh = (t: DayTimer): boolean => t.elapsedMs === 0 && !isRunning(t);
 
-export function start(t: DayTimer, now: number): DayTimer {
-	if (isRunning(t) || remaining(t, now) === 0) return t;
+/** Starts or resumes; counting down, not once time is up. */
+export function start(t: DayTimer, now: number, mode: DayTimerMode = 'down'): DayTimer {
+	if (isRunning(t) || (mode === 'down' && remaining(t, now) === 0)) return t;
 	return { ...t, startedAt: now };
 }
 
@@ -67,9 +75,22 @@ export function adjust(t: DayTimer, steps: number, now: number): DayTimer {
 	return { ...t, durationMs };
 }
 
-/** "m:ss", rounding up so the display reads 0:00 only when time is up. */
-export function formatClock(ms: number): string {
-	const total = Math.ceil(ms / 1000);
+/** The target has been reached. */
+export function isOver(t: DayTimer, now: number): boolean {
+	return elapsed(t, now) >= t.durationMs;
+}
+
+/** What the clock shows: time left counting down, time used counting up. */
+export function shown(t: DayTimer, now: number, mode: DayTimerMode): string {
+	return mode === 'down' ? formatClock(remaining(t, now)) : formatClock(elapsed(t, now), 'down');
+}
+
+/**
+ * "m:ss". Time left rounds up, so it reads 0:00 only when time is up; time used rounds
+ * down, like a stopwatch.
+ */
+export function formatClock(ms: number, round: 'up' | 'down' = 'up'): string {
+	const total = round === 'up' ? Math.ceil(ms / 1000) : Math.floor(ms / 1000);
 	const minutes = Math.floor(total / 60);
 	const seconds = total % 60;
 	return `${minutes}:${String(seconds).padStart(2, '0')}`;

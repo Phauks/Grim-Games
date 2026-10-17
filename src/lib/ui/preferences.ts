@@ -48,7 +48,12 @@ export interface Preferences {
 	requireName: boolean;
 	/** The sound when the day timer runs out (Trevor, 2026-10-17). */
 	timerSound: TimerSound;
+	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
+	timerMode: TimerMode;
 }
+
+export const TIMER_MODES = ['down', 'up'] as const;
+export type TimerMode = (typeof TIMER_MODES)[number];
 
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */
 export const TIMER_SOUNDS = ['bell', 'chime', 'buzzer', 'none'] as const;
@@ -103,7 +108,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	assistance: DEFAULT_ASSISTANCE,
 	tileFace: 'numbers',
 	requireName: false,
-	timerSound: 'bell'
+	timerSound: 'bell',
+	timerMode: 'down'
 };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
@@ -139,7 +145,10 @@ export function parsePreferences(raw: unknown): Preferences {
 			typeof input.requireName === 'boolean' ? input.requireName : DEFAULT_PREFERENCES.requireName,
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
-			: DEFAULT_PREFERENCES.timerSound
+			: DEFAULT_PREFERENCES.timerSound,
+		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
+			? (input.timerMode as TimerMode)
+			: DEFAULT_PREFERENCES.timerMode
 	};
 }
 
