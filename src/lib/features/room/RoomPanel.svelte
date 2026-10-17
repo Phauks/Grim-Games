@@ -76,12 +76,28 @@
 	// pressing the button that opened it hasn't already). After Close room it stays closed.
 	host.prepare();
 
+	// Shared and copied text carries the code as well as the link, so it can be typed at /join
+	// if the link won't open. The link holds the code too, for apps that keep only the link.
+	const message = $derived(
+		host.code ? t('room.shareText', { code: formatRoomCode(host.code) }) : ''
+	);
+	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
 	async function copy() {
 		try {
-			await navigator.clipboard.writeText(link);
+			await navigator.clipboard.writeText(`${message}\n${link}`);
 			toast(t('room.linkCopied'));
 		} catch {
 			toast(t('room.copyFailed'), t('room.copyFailedHint'));
+		}
+	}
+
+	async function share() {
+		try {
+			await navigator.share({ title: t('room.title'), text: message, url: link });
+		} catch (e) {
+			// Closing the share sheet is not a failure.
+			if (!(e instanceof DOMException && e.name === 'AbortError')) await copy();
 		}
 	}
 
@@ -112,6 +128,9 @@
 		<p class="link">{link}</p>
 		<div class="row">
 			{#if host.code}
+				{#if canShare}
+					<IconButton icon="share" label={t('room.share')} onclick={share} />
+				{/if}
 				<IconButton icon="copy" label={t('room.copyLink')} onclick={copy} />
 				<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
 					{t('room.close')}
