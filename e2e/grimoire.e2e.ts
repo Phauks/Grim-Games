@@ -2223,3 +2223,39 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await expect(tokens).toHaveCount(1);
 	await expect(tokens.first()).toContainText('Paid');
 });
+
+test('the Fabled and Loric can sit grouped in a corner, listed together when tapped', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const name of ['Spirit of Ivory', 'Angel']) {
+		await menu(page, 'Add Fabled or Loric');
+		await page
+			.getByRole('dialog', { name: 'Add Fabled or Loric' })
+			.getByRole('button', { name, exact: true })
+			.tap();
+	}
+	// The choice is on the Fabled's own sheet (Trevor, 2026-10-17).
+	await page
+		.getByRole('list', { name: 'Fabled and Loric' })
+		.getByRole('button', { name: 'Angel' })
+		.tap();
+	const angel = page.getByRole('dialog', { name: 'Angel' });
+	await angel.getByText('Corner, grouped', { exact: true }).tap();
+	await angel.getByRole('button', { name: 'Close' }).tap();
+
+	const stack = page.getByRole('button', { name: 'Fabled and Loric: 2' });
+	await expect(stack).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Fabled and Loric' })).toHaveCount(0);
+	await stack.tap();
+	const group = page.getByRole('dialog', { name: 'Fabled and Loric' });
+	await expect(group.locator('.rules-group > li')).toHaveCount(2);
+	await group.getByRole('button', { name: 'Remove Angel from the game' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Remove from the game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(group.locator('.rules-group > li')).toHaveCount(1);
+	await group.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByRole('button', { name: 'Fabled and Loric: 1' })).toBeVisible();
+});

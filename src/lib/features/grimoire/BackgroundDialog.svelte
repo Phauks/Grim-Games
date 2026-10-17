@@ -7,6 +7,7 @@
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { boardLooks, DEFAULT_BOARD_LOOKS, NAME_SIZE } from './board-looks.svelte.ts';
+	import RulesAtSetting from './RulesAtSetting.svelte';
 	import ReminderModeSetting from './ReminderModeSetting.svelte';
 	import {
 		clearBackground,
@@ -160,15 +161,7 @@
 			defaultValue={DEFAULT_BOARD_LOOKS.nameSize}
 			onChange={(nameSize) => boardLooks.update({ nameSize })}
 		/>
-		<Segmented
-			label="Fabled and Loric"
-			value={boardLooks.current.rulesAt}
-			options={[
-				{ value: 'middle', label: 'Middle' },
-				{ value: 'edge', label: 'Edge, smaller' }
-			]}
-			onChange={(rulesAt) => boardLooks.update({ rulesAt })}
-		/>
+		<RulesAtSetting />
 		<ReminderModeSetting />
 	</div>
 	<input
