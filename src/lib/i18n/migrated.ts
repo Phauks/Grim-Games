@@ -7,6 +7,7 @@
  */
 export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/shell/',
+	'src/lib/features/modes/',
 	'src/lib/features/about/',
 	'src/lib/features/settings/',
 	'src/routes/changelog/',
