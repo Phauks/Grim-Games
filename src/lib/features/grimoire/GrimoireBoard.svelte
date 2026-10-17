@@ -592,6 +592,11 @@
 		const data = officialData.current;
 		return walk && data ? boardNightSteps(game, characters, walk.night, data) : [];
 	});
+	/** The open step's night, for Previous and Next inside it. */
+	const guidedSteps = $derived.by(() => {
+		const data = officialData.current;
+		return guided && data ? boardNightSteps(game, characters, guided.night, data) : [];
+	});
 	// The saved step dialog opens once the night order can be worked out.
 	let guidedPending = $state(saved.guided);
 	$effect(() => {
@@ -1327,6 +1332,16 @@
 	{grimoire}
 	step={guided?.step}
 	night={guided?.night ?? 'first'}
+	steps={guidedSteps}
+	onStep={(step) => {
+		if (!guided) return;
+		guided = { step, night: guided.night };
+		// The walk-through under the board follows.
+		if (walk && walk.night === guided.night) {
+			const i = walkSteps.findIndex((s) => s.id === step.id);
+			if (i >= 0) walk = { ...walk, index: i };
+		}
+	}}
 	onInfoTokens={() => {
 		// Closing the info sheet returns to this night step (Trevor, 2026-10-16).
 		infoReturn = () => (guideOpen = true);

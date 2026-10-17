@@ -1210,6 +1210,18 @@ test('a night step is filled in with help, and the night can be walked through',
 		.getByRole('button', { name: /Seat 2 Empath/ })
 		.tap();
 	await expect(guide).toContainText('On Seat 2');
+	// It can go back to the reminder bank from here (Trevor, 2026-10-17), then be placed again.
+	await guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' }).tap();
+	await expect(guide).toContainText('Not placed');
+	await expect(
+		guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' })
+	).toBeDisabled();
+	await guide.getByRole('button', { name: 'Place' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Put Poisoned on' })
+		.getByRole('button', { name: /Seat 2 Empath/ })
+		.tap();
+	await expect(guide).toContainText('On Seat 2');
 
 	// Show to player and Info tokens come back to the step (Trevor, 2026-10-16).
 	await guide.getByRole('button', { name: 'Show to player' }).tap();
@@ -2322,4 +2334,40 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 	await expect(group.locator('.rules-group > li')).toHaveCount(1);
 	await group.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.getByRole('button', { name: 'Fabled and Loric: 1' })).toBeVisible();
+});
+
+test('an open night step moves to the step before or after without ticking it', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Guide: Poisoner' }).tap();
+	const poisoner = page.getByRole('dialog', { name: 'Poisoner' });
+	// Trevor, 2026-10-17: Previous and Next inside the step.
+	await poisoner.getByRole('button', { name: 'Next step' }).tap();
+	const next = page
+		.getByRole('dialog')
+		.filter({ has: page.getByRole('button', { name: 'Previous step' }) });
+	await expect(next).not.toHaveAccessibleName('Poisoner');
+	await next.getByRole('button', { name: 'Previous step' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Poisoner' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Night order' })
+			.getByRole('button', { name: 'Done: Poisoner' })
+	).toHaveAttribute('aria-pressed', 'false');
 });
