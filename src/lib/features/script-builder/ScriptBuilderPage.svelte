@@ -32,6 +32,7 @@
 	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
@@ -280,23 +281,27 @@
 				<section class="details" aria-label={t('script-builder.details')}>
 					<label>
 						<span>{t('script-builder.name')}</span>
-						<input
-							value={d.name}
-							autocomplete="off"
-							enterkeyhint="done"
-							oninput={(e) => draft.setName(e.currentTarget.value)}
-							onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-						/>
+						<ClearableField bind:value={() => d.name, (v) => draft.setName(v ?? '')}>
+							<input
+								value={d.name}
+								autocomplete="off"
+								enterkeyhint="done"
+								oninput={(e) => draft.setName(e.currentTarget.value)}
+								onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+							/>
+						</ClearableField>
 					</label>
 					<label>
 						<span>{t('script-builder.author')}</span>
-						<input
-							value={d.author}
-							autocomplete="off"
-							enterkeyhint="done"
-							oninput={(e) => draft.setAuthor(e.currentTarget.value)}
-							onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-						/>
+						<ClearableField bind:value={() => d.author, (v) => draft.setAuthor(v ?? '')}>
+							<input
+								value={d.author}
+								autocomplete="off"
+								enterkeyhint="done"
+								oninput={(e) => draft.setAuthor(e.currentTarget.value)}
+								onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+							/>
+						</ClearableField>
 					</label>
 					<Button variant="accent" disabled={!built || isSaved || saving} onclick={save}
 						>{isSaved ? t('script-builder.saved') : t('script-builder.save')}</Button
