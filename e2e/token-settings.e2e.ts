@@ -147,3 +147,22 @@ test('character names on grimoire tokens are off by default and shown when switc
 	await expect(empty.getByTestId('token-player-name')).toHaveCount(0);
 	await expect(empty.locator('.seat-disc > .name')).toHaveText('Seat 2');
 });
+
+test('the token preview stays in view while the token settings scroll', async ({ page }) => {
+	// Trevor (2026-10-17): previews stick to the top so changes stay in view.
+	await page.goto('/');
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Characters and tokens' })
+		.tap();
+	const preview = dialog.getByTestId('token-preview');
+	await expect(preview.getByTestId('token-player-name')).toBeVisible();
+	const content = dialog.locator('section.content');
+	await content.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+	await expect(preview).toBeInViewport();
+	const top = (await content.boundingBox())!.y;
+	expect(Math.abs((await preview.boundingBox())!.y - top)).toBeLessThan(2);
+});

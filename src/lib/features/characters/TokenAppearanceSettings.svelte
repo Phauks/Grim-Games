@@ -15,6 +15,7 @@
 		type TokenAppearance,
 		type TokenColour
 	} from '#lib/ui/token/token-appearance.ts';
+	import SettingPreview from '#lib/ui/settings/SettingPreview.svelte';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 	import CharacterToken from './CharacterToken.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
@@ -45,15 +46,18 @@
 		});
 </script>
 
-<!-- Space for the largest sizes is kept, so changing a size never moves the settings below. -->
-<div class="preview" aria-hidden="true" data-testid="token-preview">
-	{#if sample}<span class="disc"
-			><CharacterToken character={sample} size={56} showName={value.boardNames} /><PlayerNameMark
-				name={t('characters.previewPlayer')}
-			/></span
-		>{/if}
-	<ReminderToken label={t('characters.previewReminder')} type="minion" />
-</div>
+<!-- The section's shared sticky preview (Trevor, 2026-10-17). Space for the largest sizes is
+     kept, so changing a size never moves the settings below. -->
+<SettingPreview testid="token-preview">
+	<div class="preview" aria-hidden="true">
+		{#if sample}<span class="disc"
+				><CharacterToken character={sample} size={56} showName={value.boardNames} /><PlayerNameMark
+					name={t('characters.previewPlayer')}
+				/></span
+			>{/if}
+		<ReminderToken label={t('characters.previewReminder')} type="minion" />
+	</div>
+</SettingPreview>
 
 <SettingSlider
 	label={t('characters.tokenSize')}
@@ -121,7 +125,6 @@
 		--sample: 112px; /* px-ok: the sample token is 56px, at up to 200% */
 		height: max(calc(1.1 * var(--sample)), 4.4rem);
 		white-space: nowrap;
-		margin-bottom: var(--space-5);
 		overflow: hidden;
 	}
 	.disc {
