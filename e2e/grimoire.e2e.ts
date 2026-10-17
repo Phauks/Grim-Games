@@ -568,8 +568,9 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		await page.mouse.move(from.x, from.y);
 		await page.mouse.down();
 		await page.mouse.move(from.x + 30, from.y + 30, { steps: 4 });
+		// Whose it is: the character with its player, and the seat it is on (Trevor, 2026-10-17).
 		await expect(page.getByRole('status').filter({ hasText: 'Drunk, from Sailor' })).toContainText(
-			'on Seat 1'
+			/Sailor\s*· Seat 1\s*on\s*Sailor\s*· Seat 1/
 		);
 		await page.mouse.move(from.x, from.y, { steps: 2 });
 		await page.mouse.up();
@@ -907,7 +908,11 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	const sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
 	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
-	await expect(actions).toContainText('From the Washerwoman (Seat 1)');
+	await expect(actions).toContainText(/From\s*Washerwoman\s*· Seat 1\s*on\s*\S+\s*· Seat 2/);
+	// The list in the seat sheet says whose each reminder is too.
+	await expect(sheet.getByTestId('reminder-origin').first()).toContainText(
+		/Washerwoman\s*· Seat 1/
+	);
 	await actions.getByRole('button', { name: 'Return to reminder bank' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Confirm change?' })

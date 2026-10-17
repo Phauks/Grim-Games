@@ -47,6 +47,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import ReminderOrigin from './ReminderOrigin.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
 		followSeating,
@@ -256,18 +257,7 @@
 				game.seats[s].characterId === reminder.characterId ||
 				trueCharacter(game, s, characters) === reminder.characterId
 		);
-		const name = (s: SeatId) =>
-			game.seats[s].playerName
-				? `Seat ${game.seating.indexOf(s) + 1} · ${game.seats[s].playerName}`
-				: `Seat ${game.seating.indexOf(s) + 1}`;
-		return {
-			holders,
-			reminder,
-			// The words after the reminder and its character's badge.
-			seats:
-				(holders.length > 0 ? ` (${holders.map(name).join(', ')})` : '') +
-				` · on ${name(reminderDrag.from)}`
-		};
+		return { holders, reminder };
 	});
 
 	/** The seat under a point (in % of the board), if it is within reach of a token. */
@@ -956,12 +946,13 @@
 					label={r.label}
 					type={characters.get(r.characterId)?.type}
 					alignment={placingAlignment(game, r.characterId, characters)}
-				/>, from <CharacterBadge
+				/>, from <ReminderOrigin
+					{game}
+					{characters}
 					characterId={r.characterId}
-					character={characters.get(r.characterId)}
-					inline
+					on={reminderDrag.from}
 					interactive={false}
-				/>{dragOrigin.seats}
+				/>
 			</p>
 		{/if}
 		{#if walk}
