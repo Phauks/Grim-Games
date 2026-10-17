@@ -195,6 +195,20 @@ describe('tokens on a player the Storyteller picks', () => {
 		]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/No_Dashii: while preparing the first night, the
+	// nearest Townsfolk each way (skipping other types) are poisoned.
+	it('poisons the No Dashii’s nearest Townsfolk each way', () => {
+		expect(brief(['nodashii', 'saint', 'chef', 'empath', 'baron', 'monk'])).toEqual([
+			'nodashii: Poisoned → 5',
+			'nodashii: Poisoned → 2'
+		]);
+		// One Townsfolk nearest both ways gets one token; the other is left to the Storyteller.
+		expect(brief(['nodashii', 'chef', 'saint'])).toEqual([
+			'nodashii: Poisoned → 1',
+			'nodashii: Poisoned ?'
+		]);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Librarian: with no Outsiders in play the
 	// Librarian learns 0, so there are no tokens; the Drunk is an Outsider.
 	it('gives the Librarian tokens only when an Outsider is in play', () => {

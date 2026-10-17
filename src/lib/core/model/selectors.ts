@@ -168,6 +168,34 @@ export function aliveNeighbours(
 	return result;
 }
 
+/**
+ * The nearest player each way round from a seat whose true character has this type,
+ * skipping everyone else, alive or dead: the No Dashii poisons its nearest Townsfolk
+ * (https://wiki.bloodontheclocktower.com/No_Dashii). Anticlockwise first; one id when the
+ * same player is nearest both ways, none when there is nobody of that type.
+ */
+export function nearestOfType(
+	game: Game,
+	seatId: SeatId,
+	type: CharacterType,
+	characters: CharacterLookup
+): { anticlockwise?: SeatId; clockwise?: SeatId } {
+	const [a, c] = [-1, 1].map((step) => {
+		const n = game.seating.length;
+		const start = game.seating.indexOf(seatId);
+		if (start === -1) return undefined;
+		for (let i = 1; i < n; i++) {
+			const id = game.seating[(((start + step * i) % n) + n) % n];
+			if (typeOf(game, id, characters) === type) return id;
+		}
+		return undefined;
+	});
+	return {
+		...(a !== undefined ? { anticlockwise: a } : {}),
+		...(c !== undefined ? { clockwise: c } : {})
+	};
+}
+
 /** Ids of every character token on a seat, in seating order. */
 export function charactersInPlay(game: Game): CharacterId[] {
 	return seatsInOrder(game).flatMap((s) => (s.characterId === undefined ? [] : [s.characterId]));

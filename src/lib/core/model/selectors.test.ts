@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { characterLookup, isKnownReminder, isOnScript, scriptCharacterIds } from './characters.ts';
+import type { Command } from '#lib/core/engine/commands.ts';
 import { newGame, run, testCharacters, testScript, gameData } from './fixtures.test-support.ts';
 import {
 	aliveNeighbours,
+	nearestOfType,
 	alignmentOf,
 	charactersInPlay,
 	getSeat,
@@ -346,5 +348,32 @@ describe('character lookup', () => {
 			{ type: 'AssignCharacter', seatId: seats[1], characterId: 'chef' }
 		).game;
 		expect(charactersInPlay(game)).toEqual(['chef', 'imp']);
+	});
+});
+
+describe('nearestOfType', () => {
+	// https://wiki.bloodontheclocktower.com/No_Dashii: the poisoned neighbours are the nearest
+	// Townsfolk each way, skipping other types, alive or dead.
+	it('skips other types and counts dead Townsfolk', () => {
+		const { session, ctx, seats } = newGame(6);
+		const [nd, saint, chef, empath, baron, monk] = seats;
+		const game = run(
+			session,
+			ctx,
+			...['nodashii', 'saint', 'chef', 'empath', 'baron', 'monk'].map(
+				(characterId, i): Command => ({ type: 'AssignCharacter', seatId: seats[i], characterId })
+			),
+			{ type: 'SetDead', seatId: monk, dead: true }
+		).game;
+		expect(nearestOfType(game, nd, 'townsfolk', testCharacters)).toEqual({
+			anticlockwise: monk,
+			clockwise: chef
+		});
+		expect(nearestOfType(game, chef, 'demon', testCharacters)).toEqual({
+			anticlockwise: nd,
+			clockwise: nd
+		});
+		expect(nearestOfType(game, saint, 'minion', testCharacters).clockwise).toBe(baron);
+		expect(nearestOfType(game, empath, 'traveller', testCharacters)).toEqual({});
 	});
 });

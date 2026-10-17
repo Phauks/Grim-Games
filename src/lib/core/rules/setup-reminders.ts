@@ -13,7 +13,12 @@
  */
 import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { alignmentOf, seatsInOrder, trueCharacter } from '#lib/core/model/selectors.ts';
+import {
+	alignmentOf,
+	nearestOfType,
+	seatsInOrder,
+	trueCharacter
+} from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, Seat, SeatId } from '#lib/core/model/types.ts';
 import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
 import {
@@ -84,7 +89,12 @@ function facts(game: Game, lookup: CharacterLookup): SeatFacts[] {
 	});
 }
 
-function fits(filter: SeatFilter, f: SeatFacts, selfSeats: readonly SeatFacts[]): boolean {
+function fits(
+	filter: SeatFilter,
+	f: SeatFacts,
+	selfSeats: readonly SeatFacts[],
+	nearest: (way: 'anticlockwise' | 'clockwise') => SeatId[]
+): boolean {
 	switch (filter) {
 		case 'any':
 			return true;
@@ -101,6 +111,10 @@ function fits(filter: SeatFilter, f: SeatFacts, selfSeats: readonly SeatFacts[])
 			return selfSeats.some((s) => s.alignment !== undefined && s.alignment === f.alignment);
 		case 'copies':
 			return selfSeats.includes(f);
+		case 'nearest-townsfolk-anticlockwise':
+			return nearest('anticlockwise').includes(f.seat.seatId);
+		case 'nearest-townsfolk-clockwise':
+			return nearest('clockwise').includes(f.seat.seatId);
 	}
 }
 
@@ -117,12 +131,19 @@ const has = (seat: Seat, characterId: CharacterId, label: string) =>
 	seat.reminders.some((r) => r.characterId === characterId && r.label === label);
 
 function suggest(
+	game: Game,
+	lookup: CharacterLookup,
 	entry: SetupReminderEntry,
 	seats: SeatFacts[],
 	selfSeats: SeatFacts[],
 	timings: ReadonlySet<SetupTiming>
 ): SetupReminder[] {
 	const out: SetupReminder[] = [];
+	const nearest = (way: 'anticlockwise' | 'clockwise') =>
+		selfSeats.flatMap((s) => {
+			const id = nearestOfType(game, s.seat.seatId, 'townsfolk', lookup)[way];
+			return id === undefined ? [] : [id];
+		});
 	// Tokens of this character already in the grimoire, by label: each covers one spec.
 	const placed = new Map<string, number>();
 	for (const { seat } of seats) {
@@ -159,7 +180,7 @@ function suggest(
 		const candidates = seats
 			.filter((f) => !(target.notSelf && selfSeats.includes(f)))
 			.filter((f) => !taken.has(f.seat.seatId))
-			.filter((f) => fits(target.choose, f, selfSeats))
+			.filter((f) => fits(target.choose, f, selfSeats, nearest))
 			.map((f) => f.seat.seatId);
 		const only = candidates.length === 1 ? candidates[0] : undefined;
 		if (only !== undefined) taken.add(only);
@@ -200,7 +221,7 @@ export function setupReminders(
 		// Homebrew characters share no rules with an official id.
 		if (!entry || (character && character.edition === undefined)) continue;
 		const selfSeats = seats.filter((f) => f.truly === id || f.seat.characterId === id);
-		out.push(...suggest(entry, seats, selfSeats, timings));
+		out.push(...suggest(game, lookup, entry, seats, selfSeats, timings));
 	}
 	return out;
 }
