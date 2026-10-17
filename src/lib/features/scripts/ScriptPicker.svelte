@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { createAttachmentKey } from 'svelte/attachments';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -762,13 +763,15 @@
 				<label class="term">
 					<span class="visually-hidden">{t('scripts.picker.search')}</span>
 					<span class="magnifier" aria-hidden="true"><Icon name="search" /></span>
-					<input
-						type="search"
-						autocomplete="off"
-						enterkeyhint="search"
-						placeholder={t('scripts.picker.searchPlaceholder')}
-						bind:value={term}
-					/>
+					<ClearableField bind:value={term}>
+						<input
+							type="search"
+							autocomplete="off"
+							enterkeyhint="search"
+							placeholder={t('scripts.picker.searchPlaceholder')}
+							bind:value={term}
+						/>
+					</ClearableField>
 				</label>
 				<Select
 					label={t('scripts.sources.label')}
@@ -969,13 +972,15 @@
 <Dialog bind:open={linkOpen} title={t('scripts.link.title')}>
 	<label class="field">
 		<span>{t('scripts.link.label')}</span>
-		<input
-			type="url"
-			inputmode="url"
-			autocomplete="off"
-			placeholder="https://"
-			bind:value={linkText}
-		/>
+		<ClearableField bind:value={linkText}>
+			<input
+				type="url"
+				inputmode="url"
+				autocomplete="off"
+				placeholder="https://"
+				bind:value={linkText}
+			/>
+		</ClearableField>
 	</label>
 	{@render errorLine()}
 	{#snippet actions()}
