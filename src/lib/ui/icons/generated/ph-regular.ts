@@ -54,6 +54,8 @@ import ph_download_simple from '~icons/ph/download-simple';
 import ph_drop from '~icons/ph/drop';
 import ph_eraser from '~icons/ph/eraser';
 import ph_eye from '~icons/ph/eye';
+import ph_eye_closed from '~icons/ph/eye-closed';
+import ph_eye_slash from '~icons/ph/eye-slash';
 import ph_feather from '~icons/ph/feather';
 import ph_file_arrow_down from '~icons/ph/file-arrow-down';
 import ph_file_arrow_up from '~icons/ph/file-arrow-up';
@@ -96,6 +98,8 @@ import ph_link_simple from '~icons/ph/link-simple';
 import ph_list from '~icons/ph/list';
 import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
+import ph_lock from '~icons/ph/lock';
+import ph_lock_simple from '~icons/ph/lock-simple';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_minus from '~icons/ph/minus';
@@ -228,6 +232,8 @@ const icons: IconMap = {
 	'ph:drop': ph_drop,
 	'ph:eraser': ph_eraser,
 	'ph:eye': ph_eye,
+	'ph:eye-closed': ph_eye_closed,
+	'ph:eye-slash': ph_eye_slash,
 	'ph:feather': ph_feather,
 	'ph:file-arrow-down': ph_file_arrow_down,
 	'ph:file-arrow-up': ph_file_arrow_up,
@@ -270,6 +276,8 @@ const icons: IconMap = {
 	'ph:list': ph_list,
 	'ph:list-bullets': ph_list_bullets,
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
+	'ph:lock': ph_lock,
+	'ph:lock-simple': ph_lock_simple,
 	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-sad': ph_mask_sad,
 	'ph:minus': ph_minus,

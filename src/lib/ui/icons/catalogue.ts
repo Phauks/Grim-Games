@@ -101,6 +101,10 @@ export const ICON_SLOTS = {
 	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] },
 	pen: { label: 'Pen', choices: ['ph:pen-nib', 'ph:pencil-simple-line'] },
 	eraser: { label: 'Eraser', choices: ['ph:eraser'] },
+	/** Locks a scratch pad so a stray touch can't draw on it. */
+	lock: { label: 'Lock', choices: ['ph:lock-simple', 'ph:lock'] },
+	/** Hides what is written, e.g. a scratch pad's preview in the notes list. */
+	hide: { label: 'Hide', choices: ['ph:eye-slash', 'ph:eye-closed'] },
 	library: { label: 'Library', choices: ['ph:bookmarks-simple', 'ph:archive'] },
 	folder: { label: 'Folder', choices: ['ph:folder', 'ph:folder-simple'] },
 	tag: { label: 'Tag', choices: ['ph:tag', 'ph:tag-simple'] },

@@ -1,23 +1,22 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import ScratchActions from '#lib/ui/scratch/ScratchActions.svelte';
-	import ScratchPad from '#lib/ui/scratch/ScratchPad.svelte';
+	import ScratchThumb from '#lib/ui/scratch/ScratchThumb.svelte';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import type { PlayerNote } from './notebook.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 
 	interface Props {
 		notes: readonly PlayerNote[];
-		/** The handwriting scratch pad, drawn on right here; undefined while it loads. */
-		scratch: ScratchPadState | undefined;
+		/** Handwriting scratch pads, oldest first; undefined while they load. */
+		pads: readonly ScratchPadState[] | undefined;
 		onAdd: () => void;
 		onOpenNote: (noteId: string) => void;
-		onOpenScratch: () => void;
+		onAddScratch: () => void;
+		onOpenScratch: (pad: ScratchPadState) => void;
 	}
 
-	let { notes, scratch, onAdd, onOpenNote, onOpenScratch }: Props = $props();
+	let { notes, pads, onAdd, onOpenNote, onAddScratch, onOpenScratch }: Props = $props();
 	const preview = (text: string) => text.trim().split('\n')[0] || t('player.empty');
 	// "Hide note contents" setting: titles stay, the text is replaced, so nothing reflows.
 	const hidden = $derived(playerSettings.current.hideNoteContents);
@@ -55,32 +54,34 @@
 		{/if}
 	</section>
 
-	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16): a big page to write on
-	     here, or the whole screen (Trevor, 2026-10-17). -->
-	<section aria-labelledby="scratch-pad">
+	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16). Several pads, kept like
+	     notes; one opens full screen only when tapped, never by itself (Trevor, 2026-10-17). -->
+	<section aria-labelledby="scratch-pads">
 		<div class="head">
-			<h2 id="scratch-pad">{t('scratch.title')}</h2>
-			<span class="actions">
-				{#if scratch && !hidden}<ScratchActions pad={scratch} />{/if}
-				<IconButton
-					icon="fullScreen"
-					label={t('scratch.open')}
-					data-testid="open-scratch-pad"
-					disabled={!scratch}
-					onclick={onOpenScratch}
-				/>
-			</span>
+			<h2 id="scratch-pads">{t('scratch.pads')}</h2>
+			<Button icon="add" disabled={!pads} onclick={onAddScratch}>{t('scratch.newPad')}</Button>
 		</div>
-		<!-- The same space whether loading, hidden or drawn on, so nothing below moves. -->
-		<div class="scratch">
-			{#if hidden}
-				<button type="button" class="hidden" onclick={onOpenScratch}>
-					<span class="preview" data-hidden>{t('player.hidden')}</span>
-				</button>
-			{:else if scratch}
-				<ScratchPad pad={scratch} />
-			{/if}
-		</div>
+		{#if pads?.length}
+			<ul>
+				{#each pads as pad (pad.key)}
+					<li>
+						<button type="button" class="row" data-pad={pad.key} onclick={() => onOpenScratch(pad)}>
+							<span class="title">{pad.title.trim() || t('scratch.untitled')}</span>
+							<!-- The same box whether drawn on or hidden, so nothing moves. -->
+							<span class="thumb">
+								{#if pad.hidden}
+									<span class="preview" data-hidden>{t('scratch.hidden')}</span>
+								{:else}
+									<ScratchThumb {pad} />
+								{/if}
+							</span>
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="none">{t('common.none')}</p>
+		{/if}
 	</section>
 </div>
 
@@ -105,10 +106,6 @@
 		margin: 0;
 		font-size: 1.1rem;
 		color: var(--heading);
-	}
-	.actions {
-		display: flex;
-		align-items: center;
 	}
 	ul {
 		display: grid;
@@ -153,23 +150,16 @@
 	.preview[data-hidden] {
 		font-style: italic;
 	}
-	/* Most of the screen, so it writes like a pad of paper (Trevor, 2026-10-17). */
-	.scratch {
-		display: flex;
-		flex-direction: column;
-		height: 80dvh;
-	}
-	.hidden {
-		flex: 1;
+	.thumb {
+		position: relative;
 		display: grid;
 		place-items: center;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font: inherit;
-		cursor: pointer;
-		touch-action: manipulation;
+		height: calc(6 * var(--u));
+	}
+	/* Out of the flow, so the canvas's own size never stretches the row. */
+	.thumb :global(canvas) {
+		position: absolute;
+		inset: 0;
 	}
 	.none {
 		margin: 0;

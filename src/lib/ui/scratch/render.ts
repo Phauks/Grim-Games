@@ -6,12 +6,15 @@
  */
 import { strokeWidth, type ScratchColour, type ScratchStroke } from '#lib/core/scratch/scratch.ts';
 
-/** Theme tokens for each ink colour, read when drawing so a theme change recolours ink. */
+/**
+ * Tokens for each ink colour, read when drawing so a theme or paper change recolours ink.
+ * Each paper sets them (scratch.css) to colours that read on it.
+ */
 const COLOUR_TOKENS: Record<ScratchColour, string> = {
-	ink: '--on-surface',
-	good: '--good',
-	evil: '--evil',
-	highlight: '--heading'
+	ink: '--scratch-ink',
+	good: '--scratch-good',
+	evil: '--scratch-evil',
+	highlight: '--scratch-highlight'
 };
 
 export type InkColours = Record<ScratchColour, string>;

@@ -37,4 +37,44 @@
 
 	--toast-background: var(--sheet);
 	--toast-color: var(--on-sheet);
+
+	/* Scratch pad papers, each with inks that read on it. */
+	--scratch-leather-paper: var(--surface);
+	--scratch-leather-ink: var(--on-surface);
+	--scratch-leather-good: var(--good);
+	--scratch-leather-evil: var(--evil);
+	--scratch-leather-highlight: var(--heading);
+	--scratch-parchment-paper: var(--sheet);
+	--scratch-parchment-ink: var(--on-sheet);
+	--scratch-parchment-good: var(--good);
+	--scratch-parchment-evil: var(--evil);
+	--scratch-parchment-highlight: var(--token-flower);
+	--scratch-white-paper: var(--reminder-face);
+	--scratch-white-ink: var(--on-reminder);
+	--scratch-white-good: var(--good);
+	--scratch-white-evil: var(--evil);
+	--scratch-white-highlight: var(--token-flower);
+}
+
+/* The paper a scratch pad (or a paper swatch) shows; render.ts reads the inks. */
+[data-scratch-paper='leather'] {
+	--scratch-paper: var(--scratch-leather-paper);
+	--scratch-ink: var(--scratch-leather-ink);
+	--scratch-good: var(--scratch-leather-good);
+	--scratch-evil: var(--scratch-leather-evil);
+	--scratch-highlight: var(--scratch-leather-highlight);
+}
+[data-scratch-paper='parchment'] {
+	--scratch-paper: var(--scratch-parchment-paper);
+	--scratch-ink: var(--scratch-parchment-ink);
+	--scratch-good: var(--scratch-parchment-good);
+	--scratch-evil: var(--scratch-parchment-evil);
+	--scratch-highlight: var(--scratch-parchment-highlight);
+}
+[data-scratch-paper='white'] {
+	--scratch-paper: var(--scratch-white-paper);
+	--scratch-ink: var(--scratch-white-ink);
+	--scratch-good: var(--scratch-white-good);
+	--scratch-evil: var(--scratch-white-evil);
+	--scratch-highlight: var(--scratch-white-highlight);
 }

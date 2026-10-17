@@ -44,7 +44,9 @@
 	 * pen, or under the finger while it draws, so the size shows where the ink goes down.
 	 */
 	let pointer = $state<{ x: number; y: number }>();
-	const ring = $derived(pointer ?? (preview ? { x: width / 2, y: height / 2 } : undefined));
+	const ring = $derived(
+		pad.locked ? undefined : (pointer ?? (preview ? { x: width / 2, y: height / 2 } : undefined))
+	);
 
 	$effect(() => {
 		const observer = new ResizeObserver(([entry]) => {
@@ -85,7 +87,13 @@
 		untrack(redraw);
 	});
 
-	// Undo, redo, clear or a stroke from elsewhere: redraw, unless the only change is the
+	// A new paper has its own inks (read from its tokens in `redraw`).
+	$effect(() => {
+		void pad.paper;
+		untrack(redraw);
+	});
+
+	// Undo, redo or a stroke from elsewhere: redraw, unless the only change is the
 	// stroke just drawn live (already on the canvas).
 	$effect(() => {
 		const strokes = pad.strokes;
@@ -125,7 +133,8 @@
 	}
 
 	function down(event: PointerEvent) {
-		if (!ctx) return;
+		// A locked pad is for reading: nothing a hand or pen does marks it.
+		if (!ctx || pad.locked) return;
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
 		if (event.pointerType === 'pen') {
 			penSeen = true;
@@ -150,7 +159,7 @@
 
 	function move(event: PointerEvent) {
 		// A hovering mouse or pen shows the ring before anything is drawn; fingers can't hover.
-		if (!live && event.pointerType !== 'touch') place(event);
+		if (!live && event.pointerType !== 'touch' && !pad.locked) place(event);
 		if (!ctx || !live || event.pointerId !== live.pointerId) return;
 		place(event);
 		const { stroke } = live;
@@ -183,7 +192,7 @@
 	}
 </script>
 
-<div class="frame" bind:this={frame}>
+<div class="frame" bind:this={frame} data-locked={pad.locked}>
 	<div class="page">
 		<canvas
 			bind:this={canvas}
@@ -224,7 +233,7 @@
 		overflow: hidden;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
-		background: var(--surface);
+		background: var(--scratch-paper);
 	}
 	.page {
 		position: absolute;
@@ -239,12 +248,12 @@
 		border-radius: var(--radius-full);
 		/* Two edges, so the ring shows on dark ink and on bare paper alike. */
 		box-shadow:
-			0 0 0 1px var(--on-surface),
-			0 0 0 2px var(--surface);
+			0 0 0 1px var(--scratch-ink),
+			0 0 0 2px var(--scratch-paper);
 		pointer-events: none;
 	}
 	.ring[data-tool='eraser'] {
-		background: color-mix(in srgb, var(--surface) 40%, transparent);
+		background: color-mix(in srgb, var(--scratch-paper) 40%, transparent);
 	}
 	canvas {
 		display: block;
@@ -254,5 +263,8 @@
 		-webkit-user-select: none;
 		-webkit-touch-callout: none;
 		cursor: crosshair;
+	}
+	[data-locked='true'] canvas {
+		cursor: default;
 	}
 </style>

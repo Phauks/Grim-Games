@@ -54,6 +54,8 @@ import ph_download_simple_light from '~icons/ph/download-simple-light';
 import ph_drop_light from '~icons/ph/drop-light';
 import ph_eraser_light from '~icons/ph/eraser-light';
 import ph_eye_light from '~icons/ph/eye-light';
+import ph_eye_closed_light from '~icons/ph/eye-closed-light';
+import ph_eye_slash_light from '~icons/ph/eye-slash-light';
 import ph_feather_light from '~icons/ph/feather-light';
 import ph_file_arrow_down_light from '~icons/ph/file-arrow-down-light';
 import ph_file_arrow_up_light from '~icons/ph/file-arrow-up-light';
@@ -96,6 +98,8 @@ import ph_link_simple_light from '~icons/ph/link-simple-light';
 import ph_list_light from '~icons/ph/list-light';
 import ph_list_bullets_light from '~icons/ph/list-bullets-light';
 import ph_list_magnifying_glass_light from '~icons/ph/list-magnifying-glass-light';
+import ph_lock_light from '~icons/ph/lock-light';
+import ph_lock_simple_light from '~icons/ph/lock-simple-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
 import ph_minus_light from '~icons/ph/minus-light';
@@ -228,6 +232,8 @@ const icons: IconMap = {
 	'ph:drop-light': ph_drop_light,
 	'ph:eraser-light': ph_eraser_light,
 	'ph:eye-light': ph_eye_light,
+	'ph:eye-closed-light': ph_eye_closed_light,
+	'ph:eye-slash-light': ph_eye_slash_light,
 	'ph:feather-light': ph_feather_light,
 	'ph:file-arrow-down-light': ph_file_arrow_down_light,
 	'ph:file-arrow-up-light': ph_file_arrow_up_light,
@@ -270,6 +276,8 @@ const icons: IconMap = {
 	'ph:list-light': ph_list_light,
 	'ph:list-bullets-light': ph_list_bullets_light,
 	'ph:list-magnifying-glass-light': ph_list_magnifying_glass_light,
+	'ph:lock-light': ph_lock_light,
+	'ph:lock-simple-light': ph_lock_simple_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
 	'ph:mask-sad-light': ph_mask_sad_light,
 	'ph:minus-light': ph_minus_light,
