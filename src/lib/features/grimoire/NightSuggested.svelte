@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import type { SeatId } from '#lib/core/model/index.ts';
+	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import type {
 		AnswerValue,
 		Impairment,
@@ -66,6 +66,8 @@
 	 */
 	interface Flag {
 		text: string;
+		/** Players named after the text, each with their character. */
+		seats?: readonly SeatId[];
 		impairments?: readonly Impairment[];
 		allowed?: readonly AnswerValue[];
 	}
@@ -74,7 +76,7 @@
 		if (r.unreliable) out.push({ text: 'Not reliable:', impairments: r.impairments });
 		if (r.mustBeFalse) out.push({ text: 'Vortox: must be false' });
 		if (r.misregister.length > 0)
-			out.push({ text: `Might register falsely: ${names(r.misregister)}` });
+			out.push({ text: 'Might register falsely:', seats: r.misregister });
 		if (r.possible && r.possible.length > 1) out.push({ text: 'Allowed:', allowed: r.possible });
 		return out;
 	}
@@ -147,19 +149,36 @@
 	});
 </script>
 
+<!-- A player as their name pill and their character's badge (Trevor, 2026-10-17). -->
+{#snippet player(
+	seatId: SeatId,
+	characterId: CharacterId | undefined = trueCharacter(game, seatId, characters)
+)}<span class="player"
+		><span class="pill">{name(seatId)}</span>{#if characterId}<CharacterBadge
+				{characterId}
+				character={characters.get(characterId)}
+				inline
+			/>{/if}</span
+	>{/snippet}
+
+{#snippet players(seats: readonly SeatId[])}{#each seats as seatId, n (seatId)}{n
+			? ', '
+			: ''}{@render player(seatId)}{/each}{/snippet}
+
 {#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
 			characterId={v.value}
 			character={characters.get(v.value)}
 			inline
 		/>{:else}{valueText(v)}{/if}{/snippet}
 
-{#snippet flagBody(flag: Flag)}{flag.text}{#each flag.impairments ?? [] as i, n (n)}{n
+{#snippet flagBody(flag: Flag)}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n
+			? ', '
+			: ' '}{@render player(seatId)}{/each}{#each flag.impairments ?? [] as i, n (n)}{n
 			? '; '
-			: ' '}{reason(i)} · {#if i.source.seatId}{name(i.source.seatId)} (<CharacterBadge
-				characterId={i.source.characterId}
-				character={characters.get(i.source.characterId)}
-				inline
-			/>){:else}<CharacterBadge
+			: ' '}{reason(i)} · {#if i.source.seatId}{@render player(
+				i.source.seatId,
+				i.source.characterId
+			)}{:else}<CharacterBadge
 				characterId={i.source.characterId}
 				character={characters.get(i.source.characterId)}
 				inline
@@ -171,14 +190,14 @@
 	<li data-unreliable={a.unreliable ? '' : undefined}>
 		<span class="main">
 			{#if info && info.kind === 'answer' && info.answers.length > 1}<span class="whose"
-					>{name(a.seatId)}:</span
+					>{@render player(a.seatId)}:</span
 				>{/if}
 			{#if a.kind === 'character'}
 				<CharacterBadge characterId={a.value} character={characters.get(a.value)} inline />
 			{:else}
 				<strong>{valueText(a)}</strong>
 			{/if}
-			{#if a.because.length > 0}<span class="because">({names(a.because)})</span>{/if}
+			{#if a.because.length > 0}<span class="because">({@render players(a.because)})</span>{/if}
 		</span>
 		{#each flags(a) as flag (flag.text)}
 			<span class="flag" class:warn={a.unreliable || a.mustBeFalse}>
@@ -213,7 +232,7 @@
 			{:else if info.kind === 'picker'}
 				{#each info.pickers as p (p.seatId)}
 					<li data-unreliable={p.unreliable ? '' : undefined}>
-						{#if info.pickers.length > 1}<span class="whose">{name(p.seatId)}:</span>{/if}
+						{#if info.pickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span>{/if}
 						{#if p.range}
 							<span class="main"><strong>{rangeText(p)}</strong></span>
 						{:else}
@@ -227,7 +246,7 @@
 									{#if o.none}<strong>None</strong>{:else if o.yes !== undefined}<strong
 											>{o.yes ? 'Yes' : 'No'}</strong
 										>{/if}
-									{names(o.seats)}
+									{@render players(o.seats)}
 								</span>
 							{/each}
 						{/if}
@@ -247,13 +266,9 @@
 					{#if v && v.kind !== 'choose'}
 						<li>
 							<span class="main"
-								><strong
-									>{v.kind === 'dies'
-										? `Dead: ${names(v.seatIds)}`
-										: v.kind === 'ask'
-											? `Dead? ${names(v.ifYes)}`
-											: 'No death'}</strong
-								></span
+								>{#if v.kind === 'dies'}<strong>Dead:</strong>
+									{@render players(v.seatIds)}{:else if v.kind === 'ask'}<strong>Dead?</strong>
+									{@render players(v.ifYes)}{:else}<strong>No death</strong>{/if}</span
 							>
 						</li>
 					{/if}
@@ -272,13 +287,7 @@
 			<ul class="why" data-testid="why-facts">
 				{#each whyShown.why.facts as f (f.seatId)}
 					<li>
-						<span class="who">{name(f.seatId)}</span>
-						{#if f.characterId}<CharacterBadge
-								characterId={f.characterId}
-								character={characters.get(f.characterId)}
-								alignment={f.alignment}
-								inline
-							/>{/if}
+						{@render player(f.seatId, f.characterId)}
 						{#if f.type}<span class="fact">{TYPE[f.type] ?? f.type}</span>{/if}
 						{#if f.alignment}<span class="fact">{ALIGNMENT[f.alignment]}</span>{/if}
 						{#if f.dead}<span class="fact">Dead</span>{/if}
@@ -303,12 +312,7 @@
 				{#each whyShown.why.alternatives as alt (alt.seatId)}
 					{#each alt.as as way, n (n)}
 						<li>
-							<span class="who">{name(alt.seatId)}</span>
-							<CharacterBadge
-								characterId={alt.source}
-								character={characters.get(alt.source)}
-								inline
-							/>
+							{@render player(alt.seatId, alt.source)}
 							<span class="fact"
 								>as {[way.alignment && ALIGNMENT[way.alignment], way.type && TYPE[way.type]]
 									.filter(Boolean)
@@ -337,7 +341,20 @@
 	.why-head {
 		margin-top: var(--space-2);
 	}
-	.who {
+	.player {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+	}
+	/* The same neutral pill as the name under a seat. */
+	.pill {
+		padding: 0 var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font-family: var(--font-player);
 		font-weight: 600;
 	}
 	.fact {

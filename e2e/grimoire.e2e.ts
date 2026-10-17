@@ -1309,8 +1309,11 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	await order.getByText('Other nights').tap();
 	await order.getByRole('button', { name: 'Guide: Undertaker' }).tap();
 	const suggested = page.getByRole('dialog', { name: 'Undertaker' }).getByTestId('night-suggested');
-	await expect(suggested.locator('[data-character-id="imp"]')).toBeVisible();
+	await expect(suggested.locator('[data-character-id="imp"]').first()).toBeVisible();
 	await page.screenshot({ path: `test-results/undertaker-${test.info().project.name}.png` });
+	// Whoever it names shows with their character (Trevor, 2026-10-17).
+	await expect(suggested.locator('.because')).toContainText('Seat 2');
+	await expect(suggested.locator('.because [data-character-id="imp"]').first()).toBeVisible();
 	// The logic behind it: the executed player and their true character.
 	await suggested.getByRole('button', { name: 'Why' }).tap();
 	const why = page.getByRole('dialog', { name: 'Why' });
@@ -1587,6 +1590,10 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	await page.getByRole('button', { name: 'Guide: Mathematician' }).tap();
 	const guide = page.getByRole('dialog', { name: 'Mathematician' });
+	// The whole ability sits at the top, beside the icon and name.
+	await expect(guide.getByTestId('step-ability')).toContainText('abnormally');
+	await expect(guide.getByTestId('step-ability')).toBeInViewport();
+	await page.screenshot({ path: `test-results/step-ability-${test.info().project.name}.png` });
 	// https://wiki.bloodontheclocktower.com/Mathematician : five "Abnormal" tokens in TPI's data.
 	const place = guide.getByRole('button', { name: 'Place' });
 	await expect(place).toHaveCount(5);

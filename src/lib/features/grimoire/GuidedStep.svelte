@@ -8,6 +8,7 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -110,9 +111,17 @@
 				<span class="icon">
 					<StepIcon {step} size={56} />
 				</span>
-				<p class="who">
-					{holders.length > 0 ? holders.map((s) => seatName(game, s)).join(', ') : 'None'}
-				</p>
+				<div class="head-text">
+					<p class="who">
+						{holders.length > 0 ? holders.map((s) => seatName(game, s)).join(', ') : 'None'}
+					</p>
+					<!-- The whole ability up top, beside the icon and name (Trevor, 2026-10-17). -->
+					{#if step.character?.ability}
+						<p class="ability" data-testid="step-ability">
+							<GlossaryText text={step.character.ability} names={[step.character.name]} />
+						</p>
+					{/if}
+				</div>
 			</div>
 			<NightAlerts {grimoire} {step} />
 			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
@@ -231,9 +240,18 @@
 		--icon-size: calc(2.25 * var(--u));
 		color: var(--heading);
 	}
+	.head-text {
+		flex: 1;
+		min-width: 0;
+	}
 	.who {
 		margin: 0;
 		color: var(--on-surface-muted);
+	}
+	.ability {
+		margin: var(--space-1) 0 0;
+		font-family: var(--font-ability);
+		line-height: 1.4;
 	}
 	.text {
 		font-family: var(--font-ability);
