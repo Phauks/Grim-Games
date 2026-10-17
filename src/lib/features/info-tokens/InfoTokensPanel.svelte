@@ -14,9 +14,13 @@
 	interface Props {
 		/** Characters the Storyteller can show with a card, in script order. */
 		characters: readonly Character[];
+		/** `custom`: only the user's own cards (the Library). */
+		only?: 'custom';
+		/** Heading level of the card sections. */
+		level?: 2 | 3;
 	}
 
-	let { characters }: Props = $props();
+	let { characters, only, level = 2 }: Props = $props();
 
 	let showOpen = $state(false);
 	let shown = $state<{ text: string; characterIds: CharacterId[]; detail?: string }>({
@@ -65,6 +69,8 @@
 <ErrorBoundary area="info-tokens">
 	<InfoTokenList
 		onchoose={choose}
+		{only}
+		{level}
 		{characterCards}
 		{characters}
 		onchooseCharacter={({ title, detail }) => show(title, [], detail)}
