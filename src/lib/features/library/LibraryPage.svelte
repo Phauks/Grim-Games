@@ -391,7 +391,6 @@
 				{@const shareable = openRow.shareable}
 				<ShareControl
 					what="script"
-					icon
 					title={openRow.listing.row.name || t('common.none')}
 					target={() => shareTargetFor(shareable, location.origin)}
 				/>
