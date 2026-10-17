@@ -1721,3 +1721,93 @@ test('an extra Demon bluff set can be renamed, and the name is kept with the gam
 	await field.press('Enter');
 	await expect(set).toHaveAttribute('data-set', 'Set 2');
 });
+
+/** A real finger swipe (touch events through the browser's input pipeline). */
+async function swipe(page: Page, ...points: { x: number; y: number }[]) {
+	const [from] = points;
+	const cdp = await page.context().newCDPSession(page);
+	const point = (p: { x: number; y: number }) => [{ x: p.x, y: p.y, id: 1 }];
+	await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point(from) });
+	for (let leg = 1; leg < points.length; leg++) {
+		const [a, b] = [points[leg - 1], points[leg]];
+		for (let i = 1; i <= 10; i++) {
+			const at = { x: a.x + ((b.x - a.x) * i) / 10, y: a.y + ((b.y - a.y) * i) / 10 };
+			await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: point(at) });
+		}
+	}
+	await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+	await cdp.detach();
+}
+
+test('in the reminder bank a sideways swipe scrolls; an upward one picks the token up', async ({
+	page
+}) => {
+	// Trevor, 2026-10-17: swiping to scroll sometimes dragged a reminder instead.
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Librarian'],
+		[3, 'Investigator'],
+		[5, 'Fortune Teller'],
+		[6, 'Poisoner'],
+		[7, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Showing setup reminders; show all reminders' }).tap();
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	const tokens = bank.getByTestId('board-reminder');
+	const first = (await tokens.nth(1).boundingBox())!;
+	const start = { x: first.x + first.width / 2, y: first.y + first.height / 2 };
+	const scrolled = () => bank.evaluate((el) => el.scrollLeft);
+	expect(await bank.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+
+	// Sideways, starting on a token: the row scrolls and nothing is placed.
+	await swipe(page, start, { x: start.x - 150, y: start.y + 4 });
+	await expect.poll(scrolled).toBeGreaterThan(20);
+	await expect(seatLabelled(page, 'Seat 4: no name, no character')).toHaveAttribute(
+		'aria-label',
+		'Seat 4: no name, no character'
+	);
+
+	// Up towards the board: the token is picked up and lands on the seat.
+	const token = (await tokens.nth(2).boundingBox())!;
+	const seat = (await page.getByRole('button', { name: /^Seat 4:/ }).boundingBox())!;
+	const lift = { x: token.x + token.width / 2, y: token.y + token.height / 2 };
+	await swipe(
+		page,
+		lift,
+		{ x: lift.x, y: lift.y - 80 },
+		{ x: seat.x + seat.width / 2, y: seat.y + seat.height / 2 }
+	);
+	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).toBeAttached();
+});
+
+test('Back closes an open sheet first, then asks before leaving the game', async ({ page }) => {
+	// Trevor, 2026-10-17: the browser's Back, a back swipe or Android's Back button.
+	await startGame(page);
+	const board = page.url();
+	const leave = page.getByRole('alertdialog', { name: 'Leave the game?' });
+
+	await openSeat(page, 1);
+	await page.goBack();
+	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
+	await expect(leave).toBeHidden();
+	expect(page.url()).toBe(board);
+
+	await page.goBack();
+	await expect(leave).toBeVisible();
+	await leave.getByRole('button', { name: 'Cancel' }).tap();
+	expect(page.url()).toBe(board);
+
+	// Asks again on the next Back, and Confirm leaves for where the game was opened from.
+	await page.goBack();
+	await leave.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page).toHaveURL(/\/new$/);
+});

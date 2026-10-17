@@ -223,6 +223,7 @@
 					onTap={() => tap(item)}
 					onDrag={(x, y, end) => dragItem(item, x, y, end)}
 					onCancel={cancelDrag}
+					panX
 				/>
 			</li>
 			{#if item.key === lastSetup}<li class="divider" aria-hidden="true"></li>{/if}

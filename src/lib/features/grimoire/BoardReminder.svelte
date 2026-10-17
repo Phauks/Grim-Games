@@ -24,6 +24,11 @@
 		/** Pointer position in client px while dragging; `end` true when released. */
 		onDrag?: (x: number, y: number, end: boolean) => void;
 		onCancel?: () => void;
+		/**
+		 * In a row that scrolls sideways (the reminder bank): a finger moving mostly sideways
+		 * scrolls the row; one moving up or down picks the token up (Trevor, 2026-10-17).
+		 */
+		panX?: boolean;
 	}
 
 	let {
@@ -35,7 +40,8 @@
 		disabled = false,
 		onTap,
 		onDrag,
-		onCancel
+		onCancel,
+		panX = false
 	}: Props = $props();
 
 	const src = $derived(character ? iconUrl(character, alignment) : undefined);
@@ -53,7 +59,16 @@
 	}
 	function pointermove(event: PointerEvent) {
 		if (!down || event.pointerId !== down.id || !onDrag) return;
-		if (!dragging && Math.hypot(event.clientX - down.x, event.clientY - down.y) < SLOP) return;
+		const dx = event.clientX - down.x;
+		const dy = event.clientY - down.y;
+		if (!dragging && Math.hypot(dx, dy) < SLOP) return;
+		// The browser scrolls a sideways start itself (touch-action: pan-x) and cancels the
+		// press; this lets go too, for browsers that keep sending moves.
+		if (!dragging && panX && event.pointerType !== 'mouse' && Math.abs(dx) > Math.abs(dy)) {
+			(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
+			down = null;
+			return;
+		}
 		dragging = true;
 		onDrag(event.clientX, event.clientY, false);
 	}
@@ -76,6 +91,7 @@
 	class="reminder"
 	data-type={character?.type}
 	data-testid="board-reminder"
+	data-pan={panX ? 'x' : undefined}
 	style:--d="{size}px"
 	aria-label={more ? `${more} more reminders` : `${label} reminder`}
 	{disabled}
@@ -112,6 +128,9 @@
 		touch-action: none;
 		user-select: none;
 		-webkit-user-select: none;
+	}
+	.reminder[data-pan='x'] {
+		touch-action: pan-x;
 	}
 	.reminder:disabled {
 		cursor: default;

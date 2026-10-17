@@ -9,7 +9,10 @@ declare global {
 		// interface Error {}
 		// interface Locals {}
 		// interface PageData {}
-		// interface PageState {}
+		interface PageState {
+			/** The board's extra history entry, so Back asks before leaving a game. */
+			inGame?: boolean;
+		}
 		// interface Platform {}
 	}
 }

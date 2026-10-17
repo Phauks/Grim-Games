@@ -14,7 +14,8 @@
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
-	import { goto, replaceState } from '$app/navigation';
+	import { goto, pushState, replaceState } from '$app/navigation';
+	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
@@ -603,6 +604,40 @@
 		);
 		releaseGuard = release;
 		return release;
+	});
+	// ── Back (Trevor, 2026-10-17): the browser's Back, a back swipe or Android's Back button ──
+	// The board adds one history entry of its own. Back first lands on the entry under it,
+	// still this page: an open sheet or dialog closes, or else the board asks as for any other
+	// way out. The browser runs no code for a Back that leaves the app, so the extra entry is
+	// what lets it ask.
+	let trapped = false;
+	// After the setup and day hash handling below, which replaces the entry's state.
+	onMount(() => {
+		setTimeout(() => {
+			if (!page.state.inGame) pushState('', { inGame: true });
+			trapped = true;
+		});
+	});
+	$effect(() => {
+		const inGame = page.state.inGame;
+		// Only the entry's state is watched: closing an overlay below reads other state.
+		untrack(() => {
+			if (inGame || !trapped) return;
+			trapped = false;
+			const overlay = document.querySelector(
+				'[data-part="content"][data-state="open"]:is([data-scope="dialog"], [data-scope="drawer"])'
+			);
+			pushState('', { inGame: true });
+			trapped = true;
+			if (overlay) {
+				// Escape closes the newest overlay (Ark's layer stack), as Back should.
+				overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+				return;
+			}
+			// Past the board's own entry and the page under it, to wherever the game was opened from.
+			pendingLeave = () => history.go(-2);
+			exitOpen = true;
+		});
 	});
 	function confirmLeave() {
 		exitOpen = false;
