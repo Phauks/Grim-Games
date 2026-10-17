@@ -264,7 +264,9 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 	// Or small along the edge (Trevor, 2026-10-17), set beside the background.
 	await menu(page, 'Background');
 	const looks = page.getByRole('dialog', { name: 'Background' });
-	await looks.getByText('Edge, smaller', { exact: true }).tap();
+	// A drop-down (Trevor, 2026-10-17).
+	await looks.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
+	await page.getByRole('option', { name: 'Edge, smaller' }).tap();
 	await looks.getByRole('button', { name: 'Close' }).tap();
 	await expect(
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
@@ -2241,7 +2243,8 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 		.getByRole('button', { name: 'Angel' })
 		.tap();
 	const angel = page.getByRole('dialog', { name: 'Angel' });
-	await angel.getByText('Corner, grouped', { exact: true }).tap();
+	await angel.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
+	await page.getByRole('option', { name: 'Corner, grouped' }).tap();
 	await angel.getByRole('button', { name: 'Close' }).tap();
 
 	const stack = page.getByRole('button', { name: 'Fabled and Loric: 2' });

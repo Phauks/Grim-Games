@@ -58,17 +58,49 @@ function ringSlots(seatIds: readonly string[], layout: SeatLayout): number[] {
 	return starts;
 }
 
-/** The point at `slot` of `total` places round the ring. Place 0 is at the top, clockwise. */
-function ringPoint(slot: number, total: number, shape: SeatShape, board: BoardSize): SeatPoint {
-	const angle = (slot / Math.max(total, 1)) * 2 * Math.PI - Math.PI / 2;
-	let rx = RING * 100;
-	let ry = RING * 100;
+/** Steps used to measure the ring's length. */
+const RING_STEPS = 720;
+
+/**
+ * The ring's angle (0 at the top, clockwise, in radians) for each share of the way round,
+ * measured on screen: places an equal distance apart along the ring, so an oval's gaps look
+ * the same all round (Trevor, 2026-10-17). Equal angles would bunch seats at the long ends.
+ */
+function ringAngles(rx: number, ry: number, board: BoardSize): (share: number) => number {
+	const a = (rx / 100) * board.width;
+	const b = (ry / 100) * board.height;
+	if (!(a > 0 && b > 0) || Math.abs(a - b) < 0.5) return (share) => share * 2 * Math.PI;
+	// Cumulative length at each step, from the top going clockwise.
+	const length = [0];
+	for (let i = 1; i <= RING_STEPS; i++) {
+		const t0 = ((i - 1) / RING_STEPS) * 2 * Math.PI;
+		const t1 = (i / RING_STEPS) * 2 * Math.PI;
+		const dx = a * (Math.sin(t1) - Math.sin(t0));
+		const dy = b * (Math.cos(t0) - Math.cos(t1));
+		length.push(length[i - 1] + Math.hypot(dx, dy));
+	}
+	const total = length[RING_STEPS];
+	return (share) => {
+		const want = (((share % 1) + 1) % 1) * total;
+		let low = 0;
+		let high = RING_STEPS;
+		while (high - low > 1) {
+			const mid = (low + high) >> 1;
+			if (length[mid] <= want) low = mid;
+			else high = mid;
+		}
+		const part = (want - length[low]) / (length[high] - length[low] || 1);
+		return ((low + part) / RING_STEPS) * 2 * Math.PI;
+	};
+}
+
+/** The ring's radii, as % of the board's width and height. */
+function ringRadii(shape: SeatShape, board: BoardSize): { rx: number; ry: number } {
 	if (shape === 'circle' && board.width > 0 && board.height > 0) {
 		const radius = RING * Math.min(board.width, board.height);
-		rx = (radius / board.width) * 100;
-		ry = (radius / board.height) * 100;
+		return { rx: (radius / board.width) * 100, ry: (radius / board.height) * 100 };
 	}
-	return { x: 50 + rx * Math.cos(angle), y: 50 + ry * Math.sin(angle) };
+	return { rx: RING * 100, ry: RING * 100 };
 }
 
 /** Where each seat is drawn, in seating order. */
@@ -78,10 +110,15 @@ export function seatPoints(
 	board: BoardSize
 ): SeatPoint[] {
 	const starts = ringSlots(seatIds, layout);
-	const total = starts[seatIds.length];
-	return seatIds.map(
-		(id, i) => layout.placed[id] ?? ringPoint(starts[i], total, layout.shape, board)
-	);
+	const total = Math.max(starts[seatIds.length], 1);
+	const { rx, ry } = ringRadii(layout.shape, board);
+	const angleAt = ringAngles(rx, ry, board);
+	// Place 0 at the top, clockwise.
+	return seatIds.map((id, i) => {
+		if (layout.placed[id]) return layout.placed[id];
+		const t = angleAt(starts[i] / total);
+		return { x: 50 + rx * Math.sin(t), y: 50 - ry * Math.cos(t) };
+	});
 }
 
 /**
