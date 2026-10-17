@@ -49,7 +49,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(day).toBeVisible();
 	await expect(page).toHaveURL(board);
 	// Announcements come first; before anything happens there is none (Trevor).
-	await expect(page.getByTestId('announcements')).toHaveText('None');
+	// The living-player count is always first (Trevor, 2026-10-17).
+	await expect(page.getByTestId('announcements')).toHaveText('8 players alive');
 	// Every section folds away with its caret.
 	const players = day.getByRole('button', { name: 'Players' });
 	await players.tap();
@@ -82,6 +83,7 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 			.evaluate((el) => getComputedStyle(el).color);
 	expect(await colour('Seat 2')).toBe(await colour('Seat 1'));
 	await expect(page.getByTestId('announcements')).toContainText('Seat 2 died: Executed');
+	await expect(page.getByTestId('alive-count')).toHaveText('7 players alive');
 
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();

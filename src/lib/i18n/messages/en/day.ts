@@ -50,6 +50,10 @@ export const day = {
 	'day.unknownSeat': 'Seat ?',
 	'day.noCharacter': 'No character',
 	'day.announcements': 'Announcements',
+	'day.aliveCount': {
+		one: '{count} player alive',
+		other: '{count} players alive'
+	},
 	'day.prevented': 'What didn’t happen',
 	'day.preventedButton': 'What didn’t happen ({count})',
 	'day.preventedChose': 'chose',

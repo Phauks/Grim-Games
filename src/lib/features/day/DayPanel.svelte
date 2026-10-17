@@ -371,6 +371,8 @@
 			>
 		{/snippet}
 		<ul class="reminders" data-testid="announcements">
+			<!-- How many are alive, always first (Trevor, 2026-10-17); dead players excluded. -->
+			<li data-testid="alive-count">{t('day.aliveCount', { count: block.alive })}</li>
 			{#each died as death (death.seatId)}
 				{@const seat = g.seats[death.seatId]}
 				<li>
@@ -404,9 +406,6 @@
 					</span>
 				</li>
 			{/each}
-			{#if died.length === 0 && announcers.length === 0}
-				<li>{t('common.none')}</li>
-			{/if}
 		</ul>
 	</Collapsible>
 
