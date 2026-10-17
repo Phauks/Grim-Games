@@ -6,13 +6,24 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import { errorDetails, errorReportUrl, type AppError } from './app-error.ts';
+	import { ISSUE_CHOOSER_URL, reportDetails } from '#lib/features/about/report-issue.ts';
+	import { errorDetails, type AppError } from './app-error.ts';
 	import { errorLog } from './report.svelte.ts';
 
 	// The corner card plus the details dialog; mounted once by install.ts, outside the layout.
 
 	const latest = $derived(errorLog.entries.find((e) => e.key === errorLog.unseen[0]));
 	const time = $derived(new Intl.DateTimeFormat(locale.current, { timeStyle: 'short' }));
+
+	/** The chooser can't be prefilled, so Report copies the details to paste into the form. */
+	function copyForReport(error: AppError) {
+		navigator.clipboard
+			.writeText(reportDetails(errorDetails(error), buildInfo, navigator.userAgent))
+			.then(
+				() => toast(t('errors.reportCopied'), t('errors.reportCopiedDetail')),
+				() => {}
+			);
+	}
 
 	async function copy(error: AppError) {
 		try {
@@ -69,9 +80,10 @@
 						<!-- eslint-disable svelte/no-navigation-without-resolve -->
 						<a
 							class="link-button"
-							href={errorReportUrl(error, buildInfo, navigator.userAgent)}
+							href={ISSUE_CHOOSER_URL}
 							target="_blank"
 							rel="noopener"
+							onclick={() => copyForReport(error)}
 						>
 							<!-- eslint-enable svelte/no-navigation-without-resolve -->
 							<Icon name="report" /><span>{t('errors.report')}</span>

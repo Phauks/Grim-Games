@@ -18,15 +18,11 @@ test('the Worker answers its health check and rejects bad room codes', async ({ 
 	expect((await request.get('/api/nope')).status()).toBe(404);
 });
 
-test('every page shows build info and a prefilled report link', async ({ page }) => {
+test('every page shows build info and a report link to the issue chooser', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByTestId('build-info')).toContainText(/v\d+\.\d+\.\d+ · [0-9a-f]{7}/);
 	const href = await page.getByRole('link', { name: 'Report an issue' }).getAttribute('href');
-	const url = new URL(href!);
-	expect(url.pathname).toBe('/Phauks/Grim-Games/issues/new');
-	expect(url.searchParams.get('template')).toBe('bug_report.yml');
-	expect(url.searchParams.get('page')).toBe('/');
-	expect(url.searchParams.get('build')).toMatch(/^v\d/);
+	expect(href).toBe('https://github.com/Phauks/Grim-Games/issues/new/choose');
 });
 
 test('the footer shows the Community Created Content logo', async ({ page }) => {

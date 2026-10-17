@@ -1,4 +1,16 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+const CHOOSER = 'https://github.com/Phauks/Grim-Games/issues/new/choose';
+
+/** Report links open GitHub in a new tab; answer it locally and read what Report copied. */
+async function tapReport(page: Page, link: ReturnType<Page['getByRole']>): Promise<string> {
+	await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+	await page.context().route('https://github.com/**', (route) => route.fulfill({ body: 'ok' }));
+	const [popup] = await Promise.all([page.waitForEvent('popup'), link.tap()]);
+	await popup.close();
+	await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).not.toBe('');
+	return page.evaluate(() => navigator.clipboard.readText());
+}
 
 test('an uncaught error shows the corner card, and Details offers a scrubbed GitHub report', async ({
 	page
@@ -28,11 +40,13 @@ test('an uncaught error shows the corner card, and Details offers a scrubbed Git
 	await expect(dialog).toContainText('test failure at example.com/room');
 	const report = dialog.getByRole('link', { name: 'Report' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-	const href = new URL((await report.getAttribute('href'))!);
-	expect(href.searchParams.get('template')).toBe('bug_report.yml');
-	expect(href.searchParams.get('error')).toContain('uncaught');
-	expect(href.toString()).not.toContain('SECRET');
-	expect(href.toString()).not.toContain('script%3Dabc');
+	// Every report opens GitHub's issue chooser, with the details copied to paste in.
+	await expect(report).toHaveAttribute('href', CHOOSER);
+	const copied = await tapReport(page, report);
+	expect(copied).toContain('uncaught');
+	expect(copied).toContain('Build: v');
+	expect(copied).not.toContain('SECRET');
+	expect(copied).not.toContain('script=abc');
 
 	// The log survives a reload (so a crash can be reported after reopening), until cleared.
 	await page.reload();
@@ -78,11 +92,10 @@ test('if the app cannot start, a plain screen shows the error with Reload and Re
 		const button = screen.getByRole('button', { name });
 		expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	}
-	const href = new URL(
-		(await screen.getByRole('link', { name: 'Report on GitHub' }).getAttribute('href'))!
+	await expect(screen.getByRole('link', { name: 'Report on GitHub' })).toHaveAttribute(
+		'href',
+		CHOOSER
 	);
-	expect(href.searchParams.get('template')).toBe('bug_report.yml');
-	expect(href.searchParams.get('error')).toBeTruthy();
 });
 
 test('a working app never shows the boot-failure screen', async ({ page }) => {
@@ -127,12 +140,11 @@ test('Diagnostics gathers build, device and problems on the device, without game
 
 	const report = panel.getByRole('link', { name: 'Report an issue' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-	const href = (await report.getAttribute('href'))!;
-	expect(href.length).toBeLessThanOrEqual(7000);
-	const error = new URL(href).searchParams.get('error')!;
-	expect(error).toContain('diagnostics test at example.com/room');
-	expect(href).not.toContain('SECRET');
-	expect(error).not.toContain('Sam the Storyteller');
+	await expect(report).toHaveAttribute('href', CHOOSER);
+	const copied = await tapReport(page, report);
+	expect(copied).toContain('diagnostics test at example.com/room');
+	expect(copied).not.toContain('SECRET');
+	expect(copied).not.toContain('Sam the Storyteller');
 
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),

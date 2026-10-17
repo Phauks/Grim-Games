@@ -11,6 +11,8 @@ export const errors = {
 	'errors.meta': '{area} · {page} · {time}',
 	'errors.metaRepeated': '{area} · {page} · {time} · {count}×',
 	'errors.copied': 'Copied',
+	'errors.reportCopied': 'Details copied',
+	'errors.reportCopiedDetail': 'Paste them into the issue form on GitHub.',
 	'errors.copiedDetail': 'Error details are on your clipboard.',
 	'errors.copyFailed': 'Could not copy',
 	'errors.copyFailedDetail': 'Your browser blocked the clipboard.',

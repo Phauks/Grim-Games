@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { buildInfo } from '#lib/build-info.ts';
 	import {
 		characterIcons,
 		ICONS_PATH,
@@ -11,7 +10,7 @@
 	import type { ReferenceEntry, ReferenceNight } from '#lib/core/rules/reference.ts';
 	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup-reminders.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { characterReportUrl } from '#lib/features/about/report-issue.ts';
+	import { ISSUE_CHOOSER_URL } from '#lib/features/about/report-issue.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -63,7 +62,6 @@
 			.filter(([, file]) => file !== undefined)
 			.map(([label, file]) => ({ label, src: `${ICONS_PATH}/${file}` }));
 	});
-	const reportUrl = $derived(characterReportUrl(buildInfo, character, navigator.userAgent));
 	const tokens = $derived([
 		...character.reminders.map((label) => ({ label, global: false })),
 		...character.remindersGlobal.map((label) => ({ label, global: true }))
@@ -113,7 +111,7 @@
 		{/if}
 		<!-- External GitHub issue form; only public build and character info in it. -->
 		<a
-			href={reportUrl}
+			href={ISSUE_CHOOSER_URL}
 			target="_blank"
 			rel="noopener"
 			aria-label={t('reference.report')}

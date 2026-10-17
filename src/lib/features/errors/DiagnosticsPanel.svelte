@@ -2,18 +2,14 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { buildInfo } from '#lib/build-info.ts';
+	import { ISSUE_CHOOSER_URL, reportDetails } from '#lib/features/about/report-issue.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { collectDiagnostics } from './collect-diagnostics.svelte.ts';
-	import {
-		diagnosticsFileName,
-		diagnosticsReportUrl,
-		diagnosticsText,
-		type Diagnostics
-	} from './diagnostics.ts';
+	import { diagnosticsFileName, diagnosticsText, type Diagnostics } from './diagnostics.ts';
 	import { errorLog } from './report.svelte.ts';
 
 	// Gathered on this device when the page opens; nothing is sent unless the person taps Report.
@@ -21,7 +17,14 @@
 	let diagnostics = $state<Diagnostics>();
 	const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
 	const text = $derived(diagnostics ? diagnosticsText(diagnostics, label) : '');
-	const reportUrl = $derived(diagnosticsReportUrl(text, buildInfo, navigator.userAgent));
+
+	/** The chooser can't be prefilled, so Report copies the diagnostics to paste in. */
+	function copyForReport() {
+		navigator.clipboard.writeText(reportDetails(text, buildInfo, navigator.userAgent)).then(
+			() => toast(t('errors.reportCopied'), t('errors.reportCopiedDetail')),
+			() => {}
+		);
+	}
 
 	async function gather() {
 		diagnostics = await collectDiagnostics();
@@ -56,10 +59,11 @@
 		<!-- eslint-disable svelte/no-navigation-without-resolve -->
 		<a
 			class="link-button"
-			href={reportUrl}
+			href={ISSUE_CHOOSER_URL}
 			target="_blank"
 			rel="noopener"
 			aria-disabled={!diagnostics}
+			onclick={copyForReport}
 		>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			<Icon name="report" /><span>{t('errors.diag.report')}</span>

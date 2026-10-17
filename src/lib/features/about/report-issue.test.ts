@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bugReportUrl, characterReportUrl, describeBuild } from './report-issue.ts';
+import { describeBuild, ISSUE_CHOOSER_URL, reportDetails } from './report-issue.ts';
 
 const info = {
 	version: '0.0.1',
@@ -16,34 +16,13 @@ describe('report issue link', () => {
 		);
 	});
 
-	it('prefills the bug report form with build, page and device', () => {
-		const url = new URL(bugReportUrl(info, '/settings', 'Phone UA'));
-		expect(url.origin + url.pathname).toBe('https://github.com/Phauks/Grim-Games/issues/new');
-		expect(url.searchParams.get('template')).toBe('bug_report.yml');
-		expect(url.searchParams.get('build')).toBe(describeBuild(info));
-		expect(url.searchParams.get('page')).toBe('/settings');
-		expect(url.searchParams.get('device')).toBe('Phone UA');
-	});
-});
-
-describe('character report link', () => {
-	it('names the character and its reference anchor', () => {
-		const url = new URL(characterReportUrl(info, { id: 'witch', name: 'Witch' }, 'Phone UA'));
-		expect(url.searchParams.get('template')).toBe('rules_error.yml');
-		expect(url.searchParams.get('title')).toBe('[Rules] Witch: ');
-		expect(url.searchParams.get('character')).toBe('Witch (witch)');
-		expect(url.searchParams.get('wiki')).toBe('https://wiki.bloodontheclocktower.com/Witch');
-		expect(url.searchParams.get('page')).toBe('/reference#witch');
-		expect(url.searchParams.get('build')).toBe(describeBuild(info));
-		expect(url.searchParams.get('device')).toBe('Phone UA');
+	it('opens the GitHub issue chooser', () => {
+		expect(ISSUE_CHOOSER_URL).toBe('https://github.com/Phauks/Grim-Games/issues/new/choose');
 	});
 
-	it('links two-word characters to their wiki page', () => {
-		const url = new URL(
-			characterReportUrl(info, { id: 'fortuneteller', name: 'Fortune Teller' }, 'UA')
-		);
-		expect(url.searchParams.get('wiki')).toBe(
-			'https://wiki.bloodontheclocktower.com/Fortune_Teller'
+	it('adds build and device under copied details', () => {
+		expect(reportDetails('Error: x', info, 'Phone UA')).toBe(
+			`Error: x\n\nBuild: ${describeBuild(info)}\nDevice: Phone UA`
 		);
 	});
 });

@@ -39,7 +39,7 @@ test('searching shows everything the app uses for the Witch', async ({ page }) =
 	await expect(card).toContainText('Starting alignment Evil');
 	await expect(card.getByRole('link', { name: 'Report a problem' })).toHaveAttribute(
 		'href',
-		/issues\/new\?.*witch/
+		'https://github.com/Phauks/Grim-Games/issues/new/choose'
 	);
 
 	// Touch-first: no sideways scrolling at this width.

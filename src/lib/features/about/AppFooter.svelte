@@ -1,12 +1,9 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
-	import { bugReportUrl, describeBuild, REPOSITORY_URL, shortCommit } from './report-issue.ts';
-
-	const reportUrl = $derived(bugReportUrl(info, page.url.pathname, navigator.userAgent));
+	import { describeBuild, ISSUE_CHOOSER_URL, REPOSITORY_URL, shortCommit } from './report-issue.ts';
 </script>
 
 <footer>
@@ -46,7 +43,9 @@
 		<span class="sep" aria-hidden="true">·</span>
 		<!-- External GitHub link, not an app route. -->
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-		<a class="page" href={reportUrl} target="_blank" rel="noopener">{t('shell.reportIssue')}</a>
+		<a class="page" href={ISSUE_CHOOSER_URL} target="_blank" rel="noopener"
+			>{t('shell.reportIssue')}</a
+		>
 	</p>
 </footer>
 

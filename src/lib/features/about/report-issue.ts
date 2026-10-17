@@ -12,21 +12,21 @@ export function describeBuild(info: BuildInfo): string {
 }
 
 /**
- * Link to the bug-report issue form with the build and page filled in. GitHub issue forms
- * accept query parameters named after field ids to prefill them
- * (docs.github.com, "Creating an issue from a URL query").
+ * GitHub's page for choosing which kind of issue to open (Trevor, 2026-10-16): every general
+ * "Report an issue" link goes here. It can't be prefilled, so the app copies details to the
+ * clipboard first where it has any (`reportDetails`).
  */
-export function bugReportUrl(info: BuildInfo, page: string, userAgent: string): string {
-	const params = new URLSearchParams({
-		template: 'bug_report.yml',
-		build: describeBuild(info),
-		page,
-		device: userAgent
-	});
-	return `${REPOSITORY_URL}/issues/new?${params}`;
+export const ISSUE_CHOOSER_URL = `${REPOSITORY_URL}/issues/new/choose`;
+
+/** Build and device lines added under copied error details or diagnostics. */
+export function reportDetails(details: string, info: BuildInfo, userAgent: string): string {
+	return `${details}
+
+Build: ${describeBuild(info)}
+Device: ${userAgent}`;
 }
 
-/** The issue forms in `.github/ISSUE_TEMPLATE/`, one per kind of report. */
+/** The issue forms in `.github/ISSUE_TEMPLATE/`, one per kind of report (listed on the chooser). */
 export const ISSUE_FORMS = {
 	bug: 'bug_report.yml',
 	enhancement: 'feature_request.yml',
@@ -34,33 +34,3 @@ export const ISSUE_FORMS = {
 	data: 'data_problem.yml',
 	question: 'question.yml'
 } as const;
-export type IssueForm = keyof typeof ISSUE_FORMS;
-
-/**
- * Link to one issue form with some fields filled in (keys are the form's field ids, plus
- * `title`). Only put public information in `fields`: it travels in the link.
- */
-export function issueFormUrl(form: IssueForm, fields: Record<string, string>): string {
-	const params = new URLSearchParams({ template: ISSUE_FORMS[form], ...fields });
-	return `${REPOSITORY_URL}/issues/new?${params}`;
-}
-
-/**
- * Link to the Rules or character error form about one character (Character reference
- * page). Only public information goes in the query string: the character, its page
- * anchor, the build and the device.
- */
-export function characterReportUrl(
-	info: BuildInfo,
-	character: { id: string; name: string },
-	userAgent: string
-): string {
-	return issueFormUrl('rules', {
-		title: `[Rules] ${character.name}: `,
-		character: `${character.name} (${character.id})`,
-		wiki: `https://wiki.bloodontheclocktower.com/${encodeURIComponent(character.name.replaceAll(' ', '_'))}`,
-		build: describeBuild(info),
-		page: `/reference#${character.id}`,
-		device: userAgent
-	});
-}

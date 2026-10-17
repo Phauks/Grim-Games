@@ -1,6 +1,3 @@
-import type { BuildInfo } from '#lib/build-info.ts';
-import { describeBuild, REPOSITORY_URL } from '#lib/features/about/report-issue.ts';
-
 /**
  * One problem the app recorded on this device. Everything here may end up in a GitHub issue
  * the user chooses to open, so it holds only the error itself and where in the app it
@@ -121,7 +118,7 @@ export function recordError(
 	};
 }
 
-/** Plain-text details, as copied to the clipboard and put in the issue's Error field. */
+/** Plain-text details, as copied to the clipboard for a report. */
 export function errorDetails(error: AppError): string {
 	return [
 		`${error.name}: ${error.message}`,
@@ -130,19 +127,6 @@ export function errorDetails(error: AppError): string {
 		`Seen: ${error.count}× · first ${new Date(error.firstAt).toISOString()}`,
 		...(error.stack ? ['', error.stack] : [])
 	].join('\n');
-}
-
-/** Link to the bug-report form with the build, page, device and error prefilled. */
-export function errorReportUrl(error: AppError, info: BuildInfo, userAgent: string): string {
-	const params = new URLSearchParams({
-		template: 'bug_report.yml',
-		title: `[Bug] ${error.name} in ${error.area}: ${clip(error.message, 80)}`,
-		build: describeBuild(info),
-		page: error.page,
-		device: userAgent,
-		error: errorDetails(error)
-	});
-	return `${REPOSITORY_URL}/issues/new?${params}`;
 }
 
 /** Reads a stored log, dropping anything that isn't a well-formed record. */
