@@ -86,6 +86,8 @@
 	const NO_ABILITY = 'No Ability';
 	// The texts hold slots (slots.ts): `character` and `reminder` show as badges.
 	interface Pending {
+		/** The dialog's own title (its action). */
+		action: string;
 		title: string;
 		now: string;
 		after: string;
@@ -108,6 +110,7 @@
 		const who = t('day.who', { character: slot('character'), seat: game.seatName(seatId) });
 		const token = game.characters.get(characterId)?.reminders.includes(NO_ABILITY);
 		ask({
+			action: t('day.markUsed'),
 			title: t('day.markUsedTitle', { who }),
 			now: t('day.markUsedNow', { who }),
 			after: token
@@ -121,8 +124,26 @@
 	/**
 	 * Unmarks a used ability (Trevor: "need to be able to undo something being marked as
 	 * used"): removes today's use, which also takes back the No Ability reminder it placed,
-	 * or else the No Ability reminder itself. No confirm: nothing is lost, and History has it.
+	 * or else the No Ability reminder itself. Confirmed like marking it (Trevor, 2026-10-17:
+	 * "require confirmation on the undoing").
 	 */
+	function askUnmarkUsed(seatId: SeatId, characterId: CharacterId) {
+		const who = t('day.who', { character: slot('character'), seat: game.seatName(seatId) });
+		const token = g.seats[seatId].reminders.find(
+			(r) => r.characterId === characterId && r.label === NO_ABILITY
+		);
+		ask({
+			action: t('day.unmarkUsed'),
+			title: t('day.unmarkUsedTitle', { who }),
+			now: token
+				? t('day.unmarkUsedNowToken', { who, reminder: slot('reminder') })
+				: t('day.markUsedAfter', { who }),
+			after: t('day.markUsedNow', { who }),
+			characterId,
+			run: () => unmarkUsed(seatId, characterId)
+		});
+	}
+
 	function unmarkUsed(seatId: SeatId, characterId: CharacterId) {
 		const entry = g.today.entries.findLast(
 			(e) => e.kind === 'ability' && e.seatId === seatId && e.characterId === characterId
@@ -132,7 +153,7 @@
 			return;
 		}
 		const token = g.seats[seatId].reminders.find(
-			(r) => r.characterId === characterId && r.label === 'No Ability'
+			(r) => r.characterId === characterId && r.label === NO_ABILITY
 		);
 		if (token) game.run({ type: 'RemoveReminder', reminderId: token.reminderId });
 	}
@@ -298,7 +319,7 @@
 				class="chip"
 				aria-pressed={isUsed}
 				aria-label={t('day.usedLabel', { who })}
-				onclick={() => (isUsed ? unmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
+				onclick={() => (isUsed ? askUnmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
 			>
 				<span class="tick"><Icon name="check" /></span>{t('day.used')}
 			</button>
@@ -586,7 +607,7 @@
 			type={pending ? game.characters.get(pending.characterId)?.type : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
 
-<ConfirmDialog bind:open={pendingOpen} title={t('day.markUsed')} onConfirm={confirmPending}>
+<ConfirmDialog bind:open={pendingOpen} title={pending?.action ?? ''} onConfirm={confirmPending}>
 	{#snippet heading()}
 		<Sentence text={pending?.title ?? ''} fill={pendingSlot} />
 	{/snippet}
