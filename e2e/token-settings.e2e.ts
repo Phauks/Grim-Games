@@ -164,3 +164,18 @@ test('the token preview stays in view while the token settings scroll', async ({
 	const top = (await content.boundingBox())!.y;
 	expect(Math.abs((await preview.boundingBox())!.y - top)).toBeLessThan(2);
 });
+
+test('the preview draws the reminder as the board does, at the board size', async ({ page }) => {
+	// Trevor (2026-10-17): the preview showed the inline chip, not the reminder token.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const preview = dialog.getByTestId('token-preview');
+	const reminder = preview.getByTestId('board-reminder');
+	await expect(reminder).toHaveAttribute('aria-label', 'Red Herring reminder');
+	await expect(preview.getByTestId('reminder-token')).toHaveCount(0);
+	const before = (await reminder.boundingBox())!.width;
+	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('1.5');
+	await expect
+		.poll(async () => (await reminder.boundingBox())!.width)
+		.toBeGreaterThan(before * 1.4);
+});

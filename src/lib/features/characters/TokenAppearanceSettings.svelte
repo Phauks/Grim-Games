@@ -19,7 +19,7 @@
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 	import CharacterToken from './CharacterToken.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
-	import ReminderToken from './ReminderToken.svelte';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 
 	interface Props {
 		value: TokenAppearance;
@@ -32,6 +32,12 @@
 	onMount(() => void loadOfficialData());
 	const sample = $derived(officialData.current?.byId.get('fortuneteller'));
 	const contrast = $derived(tokenContrast(value, theme));
+	// The reminder as the board draws it, at the board's size for this token (GrimoireBoard:
+	// half the token, kept between 30 and 48px, times Reminder size). Trevor, 2026-10-17: the
+	// preview showed the inline chip, not the reminder token.
+	const reminderSize = $derived(
+		Math.round(Math.max(30, Math.min(48, 56 * value.tokenScale * 0.5)) * value.reminderScale)
+	);
 
 	function setColour(key: TokenColour, colour: string | undefined) {
 		const colours = { ...value.colours };
@@ -55,7 +61,13 @@
 					name={t('characters.previewPlayer')}
 				/></span
 			>{/if}
-		<ReminderToken label={t('characters.previewReminder')} type="minion" />
+		{#if sample}<BoardReminder
+				label={sample.reminders[0] ?? t('characters.previewReminder')}
+				character={sample}
+				size={reminderSize}
+				disabled
+				onTap={() => {}}
+			/>{/if}
 	</div>
 </SettingPreview>
 
