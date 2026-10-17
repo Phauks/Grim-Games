@@ -144,18 +144,45 @@ function suggest(
 			const id = nearestOfType(game, s.seat.seatId, 'townsfolk', lookup)[way];
 			return id === undefined ? [] : [id];
 		});
-	// Tokens of this character already in the grimoire, by label: each covers one spec.
-	const placed = new Map<string, number>();
-	for (const { seat } of seats) {
-		for (const r of seat.reminders) {
-			if (r.characterId === entry.id) placed.set(r.label, (placed.get(r.label) ?? 0) + 1);
-		}
-	}
+	const fitting = (target: Exclude<SetupTarget, { self: true }>) =>
+		seats
+			.filter((f) => !(target.notSelf && selfSeats.includes(f)))
+			.filter((f) => fits(target.choose, f, selfSeats, nearest))
+			.map((f) => f.seat.seatId);
+	const specs = entry.reminders.filter(
+		(spec) => timings.has(spec.timing ?? 'setup') && holds(spec.when, seats, selfSeats.length)
+	);
+	// Tokens of this character already in the grimoire each cover one spec with their label:
+	// the one whose players include the token's seat (the No Dashii's clockwise Poisoned),
+	// else the first one left.
+	const placed = seats.flatMap(({ seat }) =>
+		seat.reminders
+			.filter((r) => r.characterId === entry.id)
+			.map((r) => ({ label: r.label, seatId: seat.seatId }))
+	);
+	const covered = new Set<SetupReminderSpec>();
 	const taken = new Set<SeatId>();
-	for (const spec of entry.reminders) {
+	const open = (spec: SetupReminderSpec, label: string) =>
+		!('self' in spec.target) && spec.label === label && !covered.has(spec);
+	const left = placed.filter((token) => {
+		const spec = specs.find(
+			(s) =>
+				open(s, token.label) &&
+				fitting(s.target as Exclude<SetupTarget, { self: true }>).includes(token.seatId)
+		);
+		if (!spec) return true;
+		covered.add(spec);
+		taken.add(token.seatId);
+		return false;
+	});
+	for (const token of left) {
+		const spec = specs.find((s) => open(s, token.label));
+		if (!spec) continue;
+		covered.add(spec);
+		taken.add(token.seatId);
+	}
+	for (const spec of specs) {
 		const timing = spec.timing ?? 'setup';
-		if (!timings.has(timing)) continue;
-		if (!holds(spec.when, seats, selfSeats.length)) continue;
 		const base = {
 			characterId: entry.id,
 			label: spec.label,
@@ -172,16 +199,8 @@ function suggest(
 			}
 			continue;
 		}
-		const already = placed.get(spec.label) ?? 0;
-		if (already > 0) {
-			placed.set(spec.label, already - 1);
-			continue;
-		}
-		const candidates = seats
-			.filter((f) => !(target.notSelf && selfSeats.includes(f)))
-			.filter((f) => !taken.has(f.seat.seatId))
-			.filter((f) => fits(target.choose, f, selfSeats, nearest))
-			.map((f) => f.seat.seatId);
+		if (covered.has(spec)) continue;
+		const candidates = fitting(target).filter((s) => !taken.has(s));
 		const only = candidates.length === 1 ? candidates[0] : undefined;
 		if (only !== undefined) taken.add(only);
 		out.push({
