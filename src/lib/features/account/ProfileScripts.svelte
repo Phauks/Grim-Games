@@ -140,8 +140,11 @@
 		</dl>
 		<p class="message" role="status">{message}</p>
 	{/if}
-	{#snippet actions()}
+	<!-- Delete sits next to the X (Trevor, 2026-10-17). -->
+	{#snippet headActions()}
 		<DeleteButton label={t('account.scripts.remove')} onclick={remove} disabled={busy} />
+	{/snippet}
+	{#snippet actions()}
 		<Button
 			variant="quiet"
 			onclick={unlink}
