@@ -123,6 +123,7 @@ import ph_sort_ascending_duotone from '~icons/ph/sort-ascending-duotone';
 import ph_sort_descending_duotone from '~icons/ph/sort-descending-duotone';
 import ph_spade_duotone from '~icons/ph/spade-duotone';
 import ph_sparkle_duotone from '~icons/ph/sparkle-duotone';
+import ph_speaker_high_duotone from '~icons/ph/speaker-high-duotone';
 import ph_square_duotone from '~icons/ph/square-duotone';
 import ph_star_duotone from '~icons/ph/star-duotone';
 import ph_stethoscope_duotone from '~icons/ph/stethoscope-duotone';
@@ -276,6 +277,7 @@ const icons: IconMap = {
 	'ph:sort-descending-duotone': ph_sort_descending_duotone,
 	'ph:spade-duotone': ph_spade_duotone,
 	'ph:sparkle-duotone': ph_sparkle_duotone,
+	'ph:speaker-high-duotone': ph_speaker_high_duotone,
 	'ph:square-duotone': ph_square_duotone,
 	'ph:star-duotone': ph_star_duotone,
 	'ph:stethoscope-duotone': ph_stethoscope_duotone,

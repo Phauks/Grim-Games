@@ -123,6 +123,7 @@ import ph_sort_ascending_fill from '~icons/ph/sort-ascending-fill';
 import ph_sort_descending_fill from '~icons/ph/sort-descending-fill';
 import ph_spade_fill from '~icons/ph/spade-fill';
 import ph_sparkle_fill from '~icons/ph/sparkle-fill';
+import ph_speaker_high_fill from '~icons/ph/speaker-high-fill';
 import ph_square_fill from '~icons/ph/square-fill';
 import ph_star_fill from '~icons/ph/star-fill';
 import ph_stethoscope_fill from '~icons/ph/stethoscope-fill';
@@ -276,6 +277,7 @@ const icons: IconMap = {
 	'ph:sort-descending-fill': ph_sort_descending_fill,
 	'ph:spade-fill': ph_spade_fill,
 	'ph:sparkle-fill': ph_sparkle_fill,
+	'ph:speaker-high-fill': ph_speaker_high_fill,
 	'ph:square-fill': ph_square_fill,
 	'ph:star-fill': ph_star_fill,
 	'ph:stethoscope-fill': ph_stethoscope_fill,

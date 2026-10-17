@@ -123,6 +123,7 @@ import ph_sort_ascending_bold from '~icons/ph/sort-ascending-bold';
 import ph_sort_descending_bold from '~icons/ph/sort-descending-bold';
 import ph_spade_bold from '~icons/ph/spade-bold';
 import ph_sparkle_bold from '~icons/ph/sparkle-bold';
+import ph_speaker_high_bold from '~icons/ph/speaker-high-bold';
 import ph_square_bold from '~icons/ph/square-bold';
 import ph_star_bold from '~icons/ph/star-bold';
 import ph_stethoscope_bold from '~icons/ph/stethoscope-bold';
@@ -276,6 +277,7 @@ const icons: IconMap = {
 	'ph:sort-descending-bold': ph_sort_descending_bold,
 	'ph:spade-bold': ph_spade_bold,
 	'ph:sparkle-bold': ph_sparkle_bold,
+	'ph:speaker-high-bold': ph_speaker_high_bold,
 	'ph:square-bold': ph_square_bold,
 	'ph:star-bold': ph_star_bold,
 	'ph:stethoscope-bold': ph_stethoscope_bold,

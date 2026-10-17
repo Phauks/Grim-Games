@@ -1,13 +1,17 @@
 import { dayTimers } from '#lib/core/rules/index.ts';
+import { preferences } from '#lib/ui/preferences.svelte.ts';
+import { playTimerSound, unlockTimerSound } from './timer-sound.ts';
 
 const { adjust, dayTimer, isFresh, isRunning, pause, remaining, start } = dayTimers;
 type DayTimer = dayTimers.DayTimer;
 
 /**
  * The day timer's live state (Trevor, 2026-10-17). One timer for the app, kept outside the
- * day sheet so closing and reopening it doesn't stop the countdown. Until it is started or
- * changed by hand its length follows the living players (`follow`). When time is up the
- * device vibrates where it can and `done` turns on; the display shows it.
+ * day sheet so closing and reopening it doesn't stop the countdown, and so the board can
+ * show it too (`DayTimer.svelte`, or read `running`, `remaining` and `done`). Until it is
+ * started or changed by hand its length follows the living players (`follow`). When time
+ * is up the device vibrates where it can, plays the chosen sound (`timerSound`), and `done`
+ * turns on.
  */
 class LiveDayTimer {
 	#timer = $state<DayTimer>(dayTimer(0));
@@ -47,6 +51,7 @@ class LiveDayTimer {
 		}
 		this.#timer = start(this.#timer, this.now);
 		if (!this.running) return;
+		unlockTimerSound();
 		this.#signalled = false;
 		this.#ticker = setInterval(() => this.#tick(), 250);
 	}
@@ -73,6 +78,7 @@ class LiveDayTimer {
 		if (!this.#signalled) {
 			this.#signalled = true;
 			navigator.vibrate?.([300, 150, 300, 150, 300]);
+			playTimerSound(preferences.current.timerSound);
 		}
 	}
 

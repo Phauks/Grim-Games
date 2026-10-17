@@ -123,6 +123,7 @@ import ph_sort_ascending from '~icons/ph/sort-ascending';
 import ph_sort_descending from '~icons/ph/sort-descending';
 import ph_spade from '~icons/ph/spade';
 import ph_sparkle from '~icons/ph/sparkle';
+import ph_speaker_high from '~icons/ph/speaker-high';
 import ph_square from '~icons/ph/square';
 import ph_star from '~icons/ph/star';
 import ph_stethoscope from '~icons/ph/stethoscope';
@@ -276,6 +277,7 @@ const icons: IconMap = {
 	'ph:sort-descending': ph_sort_descending,
 	'ph:spade': ph_spade,
 	'ph:sparkle': ph_sparkle,
+	'ph:speaker-high': ph_speaker_high,
 	'ph:square': ph_square,
 	'ph:star': ph_star,
 	'ph:stethoscope': ph_stethoscope,

@@ -9,6 +9,7 @@
 		dayReminders,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
+		livingByTeam,
 		preventedDeaths,
 		type PreventedBecause,
 		type Night,
@@ -31,11 +32,9 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import { dayTimers } from '#lib/core/rules/index.ts';
-	import { liveDayTimer as timer } from './day-timer.svelte.ts';
+	import DayTimer from './DayTimer.svelte';
 	import type { DayPort } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
 
@@ -287,9 +286,8 @@
 
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g));
-
-	// The day timer: 30 seconds per living player until started or changed (Trevor, 2026-10-17).
-	$effect(() => timer.follow(block.alive));
+	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
+	const teams = $derived(livingByTeam(g));
 
 	/**
 	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
@@ -345,7 +343,9 @@
 {/snippet}
 
 <div class="panel">
+	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
 	<div class="toolbar">
+		<DayTimer alive={block.alive} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
@@ -354,33 +354,20 @@
 			from who is alive now, so a death mid-day updates it. Nominations and votes are not
 			tracked, so "more than the player on the block" is left to the Storyteller.
 		-->
-		<!-- The day timer (Trevor, 2026-10-17): started by hand; vibrates and flashes at 0:00. -->
-		<div
-			class="timer"
-			role="group"
-			aria-label={t('day.timer')}
-			data-testid="day-timer"
-			data-running={timer.running ? '' : undefined}
-			data-done={timer.done ? '' : undefined}
+		<span
+			class="badge alive"
+			role="note"
+			data-testid="alive-count"
+			aria-label={t('day.aliveLabel', { count: teams.alive, good: teams.good, evil: teams.evil })}
+			title={t('day.aliveLabel', { count: teams.alive, good: teams.good, evil: teams.evil })}
+			>{t('day.aliveBadge', { count: teams.alive })}</span
 		>
-			<IconButton icon="minus" label={t('day.timerLess')} onclick={() => timer.adjust(-1)} />
-			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
-				>{dayTimers.formatClock(timer.remaining)}</span
-			>
-			<IconButton icon="add" label={t('day.timerMore')} onclick={() => timer.adjust(1)} />
-			<IconButton
-				icon={timer.running ? 'timerPause' : 'timerStart'}
-				label={timer.running ? t('day.timerPause') : t('day.timerStart')}
-				disabled={timer.done}
-				onclick={() => timer.toggle()}
-			/>
-			<IconButton
-				icon="reset"
-				label={t('day.timerReset')}
-				disabled={timer.fresh}
-				onclick={() => timer.reset(block.alive)}
-			/>
-		</div>
+		<span class="badge good" data-testid="alive-good" aria-hidden="true"
+			>{t('day.goodBadge', { count: teams.good })}</span
+		>
+		<span class="badge evil" data-testid="alive-evil" aria-hidden="true"
+			>{t('day.evilBadge', { count: teams.evil })}</span
+		>
 		<span
 			class="votes"
 			role="note"
@@ -404,8 +391,6 @@
 			>
 		{/snippet}
 		<ul class="reminders" data-testid="announcements">
-			<!-- How many are alive, always first (Trevor, 2026-10-17); dead players excluded. -->
-			<li data-testid="alive-count">{t('day.aliveCount', { count: block.alive })}</li>
 			{#each died as death (death.seatId)}
 				{@const seat = g.seats[death.seatId]}
 				<li>
@@ -439,6 +424,9 @@
 					</span>
 				</li>
 			{/each}
+			{#if died.length === 0 && announcers.length === 0}
+				<li>{t('common.none')}</li>
+			{/if}
 		</ul>
 	</Collapsible>
 
@@ -665,9 +653,15 @@
 		gap: var(--space-5);
 	}
 	.toolbar {
+		position: sticky;
+		top: 0;
+		z-index: 1;
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		gap: var(--space-2);
+		padding-block: var(--space-1);
+		background: var(--dialog-background, var(--surface));
 	}
 	.prompt {
 		margin: 0;
@@ -835,35 +829,22 @@
 		border-color: var(--heading);
 	}
 	/* Fixed width (room for "10 votes"), so the number changing never moves anything. */
-	.timer {
+	.badge {
 		display: inline-flex;
 		align-items: center;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-3);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-full);
-	}
-	/* Fixed width in digits, so ticking never moves the buttons. */
-	.clock {
-		min-width: 5ch;
 		font-variant-numeric: tabular-nums;
-		font-weight: 700;
-		text-align: center;
+		white-space: nowrap;
 	}
-	.timer[data-done] {
+	/* Team colour on the border only: the text stays readable on a phone (Trevor). */
+	.badge.good {
+		border-color: var(--good);
+	}
+	.badge.evil {
 		border-color: var(--evil);
-	}
-	.timer[data-done] .clock {
-		color: var(--evil);
-		animation: time-up 1s steps(2, jump-none) infinite;
-	}
-	@keyframes time-up {
-		to {
-			opacity: 0.3;
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.timer[data-done] .clock {
-			animation: none;
-		}
 	}
 	.votes {
 		display: inline-flex;

@@ -48,8 +48,13 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	const day = page.getByRole('dialog', { name: 'Day' });
 	await expect(day).toBeVisible();
 	await expect(page).toHaveURL(board);
-	// The living-player count is always first (Trevor, 2026-10-17).
-	await expect(page.getByTestId('announcements')).toHaveText('8 players alive');
+	// Before anything happens there is nothing to announce (Trevor).
+	await expect(page.getByTestId('announcements')).toHaveText('None');
+	// Living players and each team's, beside the votes (Trevor, 2026-10-17).
+	await expect(page.getByTestId('alive-count')).toHaveText('8 alive');
+	// No characters yet, so no team has anyone.
+	await expect(page.getByTestId('alive-good')).toHaveText('0 good');
+	await expect(page.getByTestId('alive-evil')).toHaveText('0 evil');
 	// Every section folds away with its caret.
 	const players = day.getByRole('button', { name: 'Players' });
 	await players.tap();
@@ -82,7 +87,7 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 			.evaluate((el) => getComputedStyle(el).color);
 	expect(await colour('Seat 2')).toBe(await colour('Seat 1'));
 	await expect(page.getByTestId('announcements')).toContainText('Seat 2 died: Executed');
-	await expect(page.getByTestId('alive-count')).toHaveText('7 players alive');
+	await expect(page.getByTestId('alive-count')).toHaveText('7 alive');
 
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
@@ -185,8 +190,22 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	await expect(timer).toHaveAttribute('data-done', '');
 	await expect(timer.getByRole('button', { name: 'Start timer' })).toBeDisabled();
 	expect(await page.evaluate(() => (window as unknown as { vibrated: number }).vibrated)).toBe(1);
+	// The finishing sound is the Storyteller's choice, kept as a setting.
+	await timer.getByRole('button', { name: 'Timer sound: Bell' }).tap();
+	const sounds = page.getByRole('dialog', { name: 'Timer sound' });
+	await sounds.getByText('Chime', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(timer.getByRole('button', { name: 'Timer sound: Chime' })).toBeVisible();
 	// Reset: back to 30 seconds per living player (7 alive).
 	await timer.getByRole('button', { name: 'Reset timer' }).tap();
 	await expect(clock).toHaveText('3:30');
 	await expect(timer).not.toHaveAttribute('data-done', '');
+	// It stays in view while the day scrolls.
+	await page.getByRole('button', { name: 'Seat: Seat 8' }).scrollIntoViewIfNeeded();
+	await expect(timer).toBeInViewport();
+	await page.reload();
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await expect(
+		page.getByTestId('day-timer').getByRole('button', { name: 'Timer sound: Chime' })
+	).toBeVisible();
 });

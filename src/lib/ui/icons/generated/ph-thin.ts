@@ -123,6 +123,7 @@ import ph_sort_ascending_thin from '~icons/ph/sort-ascending-thin';
 import ph_sort_descending_thin from '~icons/ph/sort-descending-thin';
 import ph_spade_thin from '~icons/ph/spade-thin';
 import ph_sparkle_thin from '~icons/ph/sparkle-thin';
+import ph_speaker_high_thin from '~icons/ph/speaker-high-thin';
 import ph_square_thin from '~icons/ph/square-thin';
 import ph_star_thin from '~icons/ph/star-thin';
 import ph_stethoscope_thin from '~icons/ph/stethoscope-thin';
@@ -276,6 +277,7 @@ const icons: IconMap = {
 	'ph:sort-descending-thin': ph_sort_descending_thin,
 	'ph:spade-thin': ph_spade_thin,
 	'ph:sparkle-thin': ph_sparkle_thin,
+	'ph:speaker-high-thin': ph_speaker_high_thin,
 	'ph:square-thin': ph_square_thin,
 	'ph:star-thin': ph_star_thin,
 	'ph:stethoscope-thin': ph_stethoscope_thin,
