@@ -23,6 +23,7 @@
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import { townGroup } from './town-groups.ts';
 
@@ -148,13 +149,12 @@
 	}
 </script>
 
-<main>
-	<header>
-		<h1>{mode.name}</h1>
+<Page title={mode.name}>
+	{#snippet actions()}
 		<Button icon="info" onclick={() => (inspecting = true)}>
 			{t('modes.inspect', { name: mode.name })}
 		</Button>
-	</header>
+	{/snippet}
 
 	{#if !group || missing}
 		<p role="alert">{t('modes.towns.missing')}</p>
@@ -228,7 +228,7 @@
 			</section>
 		{/if}
 	{/if}
-</main>
+</Page>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
 
@@ -277,24 +277,6 @@
 />
 
 <style>
-	main {
-		display: grid;
-		gap: var(--space-4);
-		max-width: calc(64 * var(--u));
-		margin: 0 auto;
-		padding: var(--space-5) var(--space-4);
-	}
-	header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2) var(--space-3);
-	}
-	h1 {
-		flex: 1;
-		margin: 0;
-		font-size: 1.4rem;
-	}
 	h2,
 	h3,
 	p {

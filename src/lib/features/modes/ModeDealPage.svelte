@@ -27,6 +27,8 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
+	import { dealTitle } from './deal-title.ts';
 	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
 	import { readGameMode } from './game-mode-store.ts';
 
@@ -164,18 +166,17 @@
 	}
 </script>
 
-<section aria-labelledby="deal-heading">
-	<header>
-		<h1 id="deal-heading">
-			{assignment?.kind === 'draft' ? t('modes.deal.draftHeading') : t('modes.deal.chooseHeading')}
-		</h1>
-		<span class="left" data-testid="seats-left">
-			{t('modes.deal.seatsLeft', { count: Math.max(0, seats.length - picks.length) })}
-		</span>
+<Page title={dealTitle(gameId)} width="text">
+	{#snippet actions()}
 		<Button variant="danger-quiet" icon="reset" onclick={() => (restarting = true)}>
 			{t('modes.deal.restart')}
 		</Button>
-	</header>
+	{/snippet}
+	{#snippet subtitle()}
+		<span data-testid="seats-left">
+			{t('modes.deal.seatsLeft', { count: Math.max(0, seats.length - picks.length) })}
+		</span>
+	{/snippet}
 
 	<div class="stage">
 		{#if done}
@@ -251,7 +252,7 @@
 			{t('modes.deal.chooseAgain')}
 		</Button>
 	{/if}
-</section>
+</Page>
 
 <ConfirmDialog
 	bind:open={restarting}
@@ -265,25 +266,6 @@
 />
 
 <style>
-	section {
-		display: grid;
-		gap: var(--space-3);
-		max-width: calc(48 * var(--u));
-		margin: 0 auto;
-		padding: var(--space-4);
-	}
-	header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2) var(--space-3);
-	}
-	h1 {
-		flex: 1;
-		margin: 0;
-		font-size: 1.4rem;
-	}
-	.left,
 	.muted {
 		color: var(--on-surface-muted);
 	}
