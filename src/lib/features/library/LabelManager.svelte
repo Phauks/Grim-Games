@@ -4,6 +4,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import NewLabel from './NewLabel.svelte';
 	import {
@@ -64,16 +65,13 @@
 							label={t('library.renameNamed', { name: label.name })}
 							onclick={() => startRename(kind, label)}
 						/>
-						<span class="danger">
-							<IconButton
-								icon="remove"
-								label={t('library.deleteNamed', { name: label.name })}
-								onclick={() => {
-									deleting = { kind, label };
-									deleteOpen = true;
-								}}
-							/>
-						</span>
+						<DeleteButton
+							label={t('library.deleteNamed', { name: label.name })}
+							onclick={() => {
+								deleting = { kind, label };
+								deleteOpen = true;
+							}}
+						/>
 					</li>
 				{:else}
 					<li class="none">{t('common.none')}</li>
@@ -162,9 +160,6 @@
 		display: block;
 		padding-block: var(--space-2);
 		color: var(--on-surface-muted);
-	}
-	.danger :global(.icon-button:not(:disabled)) {
-		color: var(--evil);
 	}
 	.field {
 		display: grid;

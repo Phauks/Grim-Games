@@ -29,6 +29,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
@@ -418,9 +419,7 @@
 					title={openRow.listing.row.name || t('common.none')}
 					target={() => shareTargetFor(shareable, location.origin)}
 				/>
-				<span class="danger">
-					<IconButton icon="remove" label={t('library.remove')} onclick={() => (removing = true)} />
-				</span>
+				<DeleteButton label={t('library.remove')} onclick={() => (removing = true)} />
 			{/snippet}
 		</ScriptDetails>
 	{/if}
@@ -598,8 +597,5 @@
 		border-color: var(--accent);
 		background: var(--accent);
 		color: var(--on-accent);
-	}
-	.danger :global(.icon-button:not(:disabled)) {
-		color: var(--evil);
 	}
 </style>
