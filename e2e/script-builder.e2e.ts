@@ -109,6 +109,11 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 			}
 		})
 	);
+	// Homebrew chosen before the official characters arrive still lists the collection.
+	await page.route('**/data/roles.json', async (route) => {
+		await new Promise((done) => setTimeout(done, 1500));
+		await route.continue();
+	});
 	await page.goto('/build-script');
 	const collection = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
 	await expect(collection).toBeVisible();

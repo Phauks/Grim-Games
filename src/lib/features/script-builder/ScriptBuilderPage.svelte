@@ -107,9 +107,10 @@
 	async function pickCollection(id: string) {
 		collectionId = id;
 		homebrewSet = undefined;
-		if (!data) return;
 		try {
-			const set = await homebrewCollection(id, data);
+			// Homebrew can be chosen before the official characters have loaded; wait for them
+			// rather than leave the collection empty.
+			const set = await homebrewCollection(id, data ?? (await loadOfficialData()));
 			if (collectionId === id) homebrewSet = set;
 			homebrewError = '';
 		} catch (e) {
