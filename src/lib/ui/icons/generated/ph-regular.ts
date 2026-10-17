@@ -44,10 +44,12 @@ import ph_diamond from '~icons/ph/diamond';
 import ph_dice_five from '~icons/ph/dice-five';
 import ph_dots_three from '~icons/ph/dots-three';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
+import ph_download_simple from '~icons/ph/download-simple';
 import ph_drop from '~icons/ph/drop';
 import ph_eraser from '~icons/ph/eraser';
 import ph_eye from '~icons/ph/eye';
 import ph_feather from '~icons/ph/feather';
+import ph_file_arrow_down from '~icons/ph/file-arrow-down';
 import ph_fire from '~icons/ph/fire';
 import ph_fish from '~icons/ph/fish';
 import ph_flag from '~icons/ph/flag';
@@ -55,11 +57,14 @@ import ph_flask from '~icons/ph/flask';
 import ph_floppy_disk from '~icons/ph/floppy-disk';
 import ph_flower from '~icons/ph/flower';
 import ph_flower_lotus from '~icons/ph/flower-lotus';
+import ph_folder from '~icons/ph/folder';
+import ph_folder_open from '~icons/ph/folder-open';
 import ph_funnel from '~icons/ph/funnel';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
 import ph_ghost from '~icons/ph/ghost';
 import ph_graduation_cap from '~icons/ph/graduation-cap';
+import ph_hammer from '~icons/ph/hammer';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
@@ -145,6 +150,7 @@ import ph_users_three from '~icons/ph/users-three';
 import ph_warning from '~icons/ph/warning';
 import ph_warning_circle from '~icons/ph/warning-circle';
 import ph_wine from '~icons/ph/wine';
+import ph_wrench from '~icons/ph/wrench';
 import ph_x from '~icons/ph/x';
 import ph_x_circle from '~icons/ph/x-circle';
 
@@ -193,10 +199,12 @@ const icons: IconMap = {
 	'ph:dice-five': ph_dice_five,
 	'ph:dots-three': ph_dots_three,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
+	'ph:download-simple': ph_download_simple,
 	'ph:drop': ph_drop,
 	'ph:eraser': ph_eraser,
 	'ph:eye': ph_eye,
 	'ph:feather': ph_feather,
+	'ph:file-arrow-down': ph_file_arrow_down,
 	'ph:fire': ph_fire,
 	'ph:fish': ph_fish,
 	'ph:flag': ph_flag,
@@ -204,11 +212,14 @@ const icons: IconMap = {
 	'ph:floppy-disk': ph_floppy_disk,
 	'ph:flower': ph_flower,
 	'ph:flower-lotus': ph_flower_lotus,
+	'ph:folder': ph_folder,
+	'ph:folder-open': ph_folder_open,
 	'ph:funnel': ph_funnel,
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,
 	'ph:ghost': ph_ghost,
 	'ph:graduation-cap': ph_graduation_cap,
+	'ph:hammer': ph_hammer,
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,
@@ -294,6 +305,7 @@ const icons: IconMap = {
 	'ph:warning': ph_warning,
 	'ph:warning-circle': ph_warning_circle,
 	'ph:wine': ph_wine,
+	'ph:wrench': ph_wrench,
 	'ph:x': ph_x,
 	'ph:x-circle': ph_x_circle
 };

@@ -44,10 +44,12 @@ import ph_diamond_light from '~icons/ph/diamond-light';
 import ph_dice_five_light from '~icons/ph/dice-five-light';
 import ph_dots_three_light from '~icons/ph/dots-three-light';
 import ph_dots_three_vertical_light from '~icons/ph/dots-three-vertical-light';
+import ph_download_simple_light from '~icons/ph/download-simple-light';
 import ph_drop_light from '~icons/ph/drop-light';
 import ph_eraser_light from '~icons/ph/eraser-light';
 import ph_eye_light from '~icons/ph/eye-light';
 import ph_feather_light from '~icons/ph/feather-light';
+import ph_file_arrow_down_light from '~icons/ph/file-arrow-down-light';
 import ph_fire_light from '~icons/ph/fire-light';
 import ph_fish_light from '~icons/ph/fish-light';
 import ph_flag_light from '~icons/ph/flag-light';
@@ -55,11 +57,14 @@ import ph_flask_light from '~icons/ph/flask-light';
 import ph_floppy_disk_light from '~icons/ph/floppy-disk-light';
 import ph_flower_light from '~icons/ph/flower-light';
 import ph_flower_lotus_light from '~icons/ph/flower-lotus-light';
+import ph_folder_light from '~icons/ph/folder-light';
+import ph_folder_open_light from '~icons/ph/folder-open-light';
 import ph_funnel_light from '~icons/ph/funnel-light';
 import ph_gear_light from '~icons/ph/gear-light';
 import ph_gear_six_light from '~icons/ph/gear-six-light';
 import ph_ghost_light from '~icons/ph/ghost-light';
 import ph_graduation_cap_light from '~icons/ph/graduation-cap-light';
+import ph_hammer_light from '~icons/ph/hammer-light';
 import ph_hand_fist_light from '~icons/ph/hand-fist-light';
 import ph_hand_grabbing_light from '~icons/ph/hand-grabbing-light';
 import ph_hand_heart_light from '~icons/ph/hand-heart-light';
@@ -145,6 +150,7 @@ import ph_users_three_light from '~icons/ph/users-three-light';
 import ph_warning_light from '~icons/ph/warning-light';
 import ph_warning_circle_light from '~icons/ph/warning-circle-light';
 import ph_wine_light from '~icons/ph/wine-light';
+import ph_wrench_light from '~icons/ph/wrench-light';
 import ph_x_light from '~icons/ph/x-light';
 import ph_x_circle_light from '~icons/ph/x-circle-light';
 
@@ -193,10 +199,12 @@ const icons: IconMap = {
 	'ph:dice-five-light': ph_dice_five_light,
 	'ph:dots-three-light': ph_dots_three_light,
 	'ph:dots-three-vertical-light': ph_dots_three_vertical_light,
+	'ph:download-simple-light': ph_download_simple_light,
 	'ph:drop-light': ph_drop_light,
 	'ph:eraser-light': ph_eraser_light,
 	'ph:eye-light': ph_eye_light,
 	'ph:feather-light': ph_feather_light,
+	'ph:file-arrow-down-light': ph_file_arrow_down_light,
 	'ph:fire-light': ph_fire_light,
 	'ph:fish-light': ph_fish_light,
 	'ph:flag-light': ph_flag_light,
@@ -204,11 +212,14 @@ const icons: IconMap = {
 	'ph:floppy-disk-light': ph_floppy_disk_light,
 	'ph:flower-light': ph_flower_light,
 	'ph:flower-lotus-light': ph_flower_lotus_light,
+	'ph:folder-light': ph_folder_light,
+	'ph:folder-open-light': ph_folder_open_light,
 	'ph:funnel-light': ph_funnel_light,
 	'ph:gear-light': ph_gear_light,
 	'ph:gear-six-light': ph_gear_six_light,
 	'ph:ghost-light': ph_ghost_light,
 	'ph:graduation-cap-light': ph_graduation_cap_light,
+	'ph:hammer-light': ph_hammer_light,
 	'ph:hand-fist-light': ph_hand_fist_light,
 	'ph:hand-grabbing-light': ph_hand_grabbing_light,
 	'ph:hand-heart-light': ph_hand_heart_light,
@@ -294,6 +305,7 @@ const icons: IconMap = {
 	'ph:warning-light': ph_warning_light,
 	'ph:warning-circle-light': ph_warning_circle_light,
 	'ph:wine-light': ph_wine_light,
+	'ph:wrench-light': ph_wrench_light,
 	'ph:x-light': ph_x_light,
 	'ph:x-circle-light': ph_x_circle_light
 };

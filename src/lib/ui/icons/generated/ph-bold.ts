@@ -44,10 +44,12 @@ import ph_diamond_bold from '~icons/ph/diamond-bold';
 import ph_dice_five_bold from '~icons/ph/dice-five-bold';
 import ph_dots_three_bold from '~icons/ph/dots-three-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
+import ph_download_simple_bold from '~icons/ph/download-simple-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
 import ph_eraser_bold from '~icons/ph/eraser-bold';
 import ph_eye_bold from '~icons/ph/eye-bold';
 import ph_feather_bold from '~icons/ph/feather-bold';
+import ph_file_arrow_down_bold from '~icons/ph/file-arrow-down-bold';
 import ph_fire_bold from '~icons/ph/fire-bold';
 import ph_fish_bold from '~icons/ph/fish-bold';
 import ph_flag_bold from '~icons/ph/flag-bold';
@@ -55,11 +57,14 @@ import ph_flask_bold from '~icons/ph/flask-bold';
 import ph_floppy_disk_bold from '~icons/ph/floppy-disk-bold';
 import ph_flower_bold from '~icons/ph/flower-bold';
 import ph_flower_lotus_bold from '~icons/ph/flower-lotus-bold';
+import ph_folder_bold from '~icons/ph/folder-bold';
+import ph_folder_open_bold from '~icons/ph/folder-open-bold';
 import ph_funnel_bold from '~icons/ph/funnel-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
 import ph_graduation_cap_bold from '~icons/ph/graduation-cap-bold';
+import ph_hammer_bold from '~icons/ph/hammer-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
 import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
 import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
@@ -145,6 +150,7 @@ import ph_users_three_bold from '~icons/ph/users-three-bold';
 import ph_warning_bold from '~icons/ph/warning-bold';
 import ph_warning_circle_bold from '~icons/ph/warning-circle-bold';
 import ph_wine_bold from '~icons/ph/wine-bold';
+import ph_wrench_bold from '~icons/ph/wrench-bold';
 import ph_x_bold from '~icons/ph/x-bold';
 import ph_x_circle_bold from '~icons/ph/x-circle-bold';
 
@@ -193,10 +199,12 @@ const icons: IconMap = {
 	'ph:dice-five-bold': ph_dice_five_bold,
 	'ph:dots-three-bold': ph_dots_three_bold,
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
+	'ph:download-simple-bold': ph_download_simple_bold,
 	'ph:drop-bold': ph_drop_bold,
 	'ph:eraser-bold': ph_eraser_bold,
 	'ph:eye-bold': ph_eye_bold,
 	'ph:feather-bold': ph_feather_bold,
+	'ph:file-arrow-down-bold': ph_file_arrow_down_bold,
 	'ph:fire-bold': ph_fire_bold,
 	'ph:fish-bold': ph_fish_bold,
 	'ph:flag-bold': ph_flag_bold,
@@ -204,11 +212,14 @@ const icons: IconMap = {
 	'ph:floppy-disk-bold': ph_floppy_disk_bold,
 	'ph:flower-bold': ph_flower_bold,
 	'ph:flower-lotus-bold': ph_flower_lotus_bold,
+	'ph:folder-bold': ph_folder_bold,
+	'ph:folder-open-bold': ph_folder_open_bold,
 	'ph:funnel-bold': ph_funnel_bold,
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,
 	'ph:ghost-bold': ph_ghost_bold,
 	'ph:graduation-cap-bold': ph_graduation_cap_bold,
+	'ph:hammer-bold': ph_hammer_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
 	'ph:hand-grabbing-bold': ph_hand_grabbing_bold,
 	'ph:hand-heart-bold': ph_hand_heart_bold,
@@ -294,6 +305,7 @@ const icons: IconMap = {
 	'ph:warning-bold': ph_warning_bold,
 	'ph:warning-circle-bold': ph_warning_circle_bold,
 	'ph:wine-bold': ph_wine_bold,
+	'ph:wrench-bold': ph_wrench_bold,
 	'ph:x-bold': ph_x_bold,
 	'ph:x-circle-bold': ph_x_circle_bold
 };

@@ -24,6 +24,8 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/routes/account/',
 	'src/lib/features/scripts/',
 	'src/routes/scripts/',
+	'src/lib/features/script-builder/',
+	'src/routes/build-script/',
 	'src/lib/features/player/',
 	'src/routes/play/',
 	'src/lib/features/setup/',
