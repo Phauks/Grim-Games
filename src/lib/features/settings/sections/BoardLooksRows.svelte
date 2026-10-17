@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { boardLooks, DEFAULT_BOARD_LOOKS } from '#lib/features/grimoire/board-looks.svelte.ts';
-	import { intl } from '#lib/i18n/locale.svelte.ts';
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -12,12 +12,12 @@
 </script>
 
 <SettingToggle
-	label="Vignette"
+	label={t('settings.vignette')}
 	checked={boardLooks.current.vignette}
 	onChange={(vignette) => boardLooks.update({ vignette })}
 />
 <SettingSlider
-	label="Vignette strength"
+	label={t('settings.vignetteStrength')}
 	value={boardLooks.current.vignetteStrength}
 	min={0}
 	max={1}
@@ -28,11 +28,11 @@
 />
 <!-- A dropdown like the other choices in Settings; the Background dialog shows the same choice. -->
 <SettingSelect
-	label="Fabled and Loric"
+	label={t('settings.rulesAt')}
 	value={boardLooks.current.rulesAt}
 	options={[
-		{ value: 'middle', label: 'Middle' },
-		{ value: 'edge', label: 'Edge, smaller' }
+		{ value: 'middle', label: t('settings.rulesAt.middle') },
+		{ value: 'edge', label: t('settings.rulesAt.edge') }
 	]}
 	defaultValue={DEFAULT_BOARD_LOOKS.rulesAt}
 	onChange={(rulesAt) => boardLooks.update({ rulesAt })}
