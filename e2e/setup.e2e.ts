@@ -2,10 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
 
-/** Starts a Trouble Brewing game with `players` seats and opens its character selection. */
-async function selectionFor(page: Page, players: number) {
+/** Starts a game of `script` with `players` seats and opens its character selection. */
+async function selectionFor(page: Page, players: number, script = 'Trouble Brewing') {
 	await page.goto('/new');
-	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script).tap();
 	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
@@ -461,6 +461,29 @@ test('a Drunk game draws only Townsfolk tokens and offers Is The Drunk on the bo
 		.getByRole('link', { name: 'Grimoire' })
 		.tap();
 	await expect(page.getByText('Is The Drunk')).toBeVisible();
+});
+
+// The No Dashii's Townsfolk neighbours are poisoned from setup (Trevor, 2026-10-17;
+// https://wiki.bloodontheclocktower.com/No_Dashii): the board offers both tokens after the draw.
+test('a No Dashii game offers its two Poisoned tokens on the board after the draw', async ({
+	page
+}) => {
+	await selectionFor(page, 5, 'Sects & Violets');
+	await select(page, 'Clockmaker', 'Dreamer', 'Mathematician', 'Witch', 'No Dashii');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	for (let n = 1; n <= 5; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	await page
+		.getByRole('navigation', { name: 'Setup', exact: true })
+		.getByRole('link', { name: 'Grimoire' })
+		.tap();
+	await expect(
+		page
+			.getByRole('list', { name: 'Setup reminders' })
+			.getByRole('button', { name: 'Poisoned reminder' })
+	).toHaveCount(2);
 });
 
 // Trevor, 2026-10-16: share the join code from setup, before the draw.
