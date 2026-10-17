@@ -242,6 +242,8 @@
 	let edgeW = $state(0);
 	let edgeH = $state(0);
 	let timerW = $state(0);
+	let titleW = $state(0);
+	let titleH = $state(0);
 	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
@@ -266,6 +268,10 @@
 				// The day timer, in the top right corner.
 				...(timerW > 0 && showTimer
 					? [{ x: width - timerW / 2, y: timerH / 2, w: timerW + 12, h: timerH + 12 }]
+					: []),
+				// The script's name in the lower left corner.
+				...(titleW > 0 && boardLooks.current.titleAt === 'corner'
+					? [{ x: titleW / 2, y: height - titleH / 2, w: titleW + 12, h: titleH + 12 }]
 					: [])
 			],
 			{ width, height }
@@ -884,8 +890,15 @@
 		{:else}
 			<!-- The app's navigation; on the narrowest phones it is in More instead. -->
 			<span class="nav-menu"><NavMenuButton /></span>
-			<!-- Icons on phones; with their words on wider screens, where there is room. -->
-			<span class="spacer"></span>
+			<!-- Icons on phones; with their words on wider screens, where there is room. The
+			     script's name can sit in the room before them (Trevor, 2026-10-17). -->
+			{#if showTitle && boardLooks.current.titleAt === 'toolbar'}
+				<span class="title toolbar-title" data-testid="script-title"
+					>{game.script.meta?.name ?? ''}</span
+				>
+			{:else}
+				<span class="spacer"></span>
+			{/if}
 			<Button
 				variant="quiet"
 				icon="night"
@@ -941,8 +954,8 @@
 				style:background={PRESETS[background.id].css}
 			></div>
 		{/if}
-		<!-- The script's name and author sit behind the circle, so the toolbar keeps its room. -->
-		{#if showTitle}
+		<!-- The script's name and author sit behind the circle, or elsewhere (titleAt). -->
+		{#if showTitle && boardLooks.current.titleAt === 'middle'}
 			<p
 				class="watermark"
 				class:on-image={backgroundUrl !== undefined || background.kind === 'preset'}
@@ -1094,6 +1107,18 @@
 					{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
 				{/if}
 			</div>
+		{/if}
+		{#if showTitle && boardLooks.current.titleAt === 'corner' && game.script.meta?.name}
+			<!-- Small in the lower left corner, clear of the seats (Trevor, 2026-10-17). -->
+			<p
+				class="corner-title"
+				data-testid="script-title"
+				bind:clientWidth={titleW}
+				bind:clientHeight={titleH}
+			>
+				<span class="script-name">{game.script.meta.name}</span>
+				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
+			</p>
 		{/if}
 		{#if showTimer}
 			<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. -->
@@ -1656,6 +1681,34 @@
 	}
 	.spacer {
 		flex: 1;
+	}
+	.toolbar-title {
+		padding-inline: var(--space-2);
+		font-size: 1.05rem;
+	}
+	.corner-title {
+		position: absolute;
+		left: var(--space-1);
+		bottom: var(--space-1);
+		z-index: 1;
+		display: grid;
+		/* Inside the oval's empty corner, short of the bottom seat. */
+		max-width: 32%;
+		margin: 0;
+		font-family: var(--font-heading);
+		line-height: 1.15;
+		color: var(--heading);
+		pointer-events: none;
+	}
+	.corner-title .script-name {
+		font-size: 0.9rem;
+	}
+	.corner-title .author {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.7rem;
+		color: var(--on-surface-muted);
 	}
 	.change {
 		display: grid;

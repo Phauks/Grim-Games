@@ -8,6 +8,7 @@
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { boardLooks, DEFAULT_BOARD_LOOKS, NAME_SIZE } from './board-looks.svelte.ts';
 	import RulesAtSetting from './RulesAtSetting.svelte';
+	import TitleAtSetting from './TitleAtSetting.svelte';
 	import ReminderModeSetting from './ReminderModeSetting.svelte';
 	import {
 		clearBackground,
@@ -161,6 +162,7 @@
 			defaultValue={DEFAULT_BOARD_LOOKS.nameSize}
 			onChange={(nameSize) => boardLooks.update({ nameSize })}
 		/>
+		<TitleAtSetting />
 		<RulesAtSetting />
 		<ReminderModeSetting />
 	</div>

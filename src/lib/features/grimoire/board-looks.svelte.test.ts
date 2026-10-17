@@ -11,7 +11,8 @@ describe('board looks', () => {
 				rulesAt: 'edge',
 				rulesGrouped: true,
 				nameSize: 9,
-				reminders: 'free'
+				reminders: 'free',
+				titleAt: 'corner'
 			})
 		).toEqual({
 			vignette: false,
@@ -19,10 +20,17 @@ describe('board looks', () => {
 			rulesAt: 'edge',
 			rulesGrouped: true,
 			nameSize: 1.6,
-			reminders: 'free'
+			reminders: 'free',
+			titleAt: 'corner'
 		});
 		expect(
-			parseBoardLooks({ vignetteStrength: 'x', rulesAt: 'top', nameSize: 'big', reminders: 'x' })
+			parseBoardLooks({
+				vignetteStrength: 'x',
+				rulesAt: 'top',
+				nameSize: 'big',
+				reminders: 'x',
+				titleAt: 'x'
+			})
 		).toEqual(DEFAULT_BOARD_LOOKS);
 		// Saved before grouping was its own choice.
 		expect(parseBoardLooks({ rulesAt: 'corner' })).toMatchObject({

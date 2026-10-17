@@ -193,6 +193,7 @@ test('the board looks and background are in Board and tokens, saved with the boa
 		vignetteStrength: 0.3,
 		rulesAt: 'edge',
 		rulesGrouped: false,
+		titleAt: 'middle',
 		nameSize: 1,
 		reminders: 'seat'
 	});

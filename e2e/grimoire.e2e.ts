@@ -1135,6 +1135,18 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByText('Script name on the board', { exact: true }).tap();
 	await expect(page.locator('.watermark')).toHaveCount(0);
 	await dialog.getByText('Script name on the board', { exact: true }).tap();
+	// The name can sit elsewhere, clear of the circle (Trevor, 2026-10-17).
+	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
+	await page.getByRole('option', { name: 'Lower left corner' }).tap();
+	await expect(page.locator('.watermark')).toHaveCount(0);
+	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
+	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
+	await page.getByRole('option', { name: 'In the toolbar' }).tap();
+	await expect(page.locator('.toolbar-title')).toHaveText('Trouble Brewing');
+	await expect(page.locator('.corner-title')).toHaveCount(0);
+	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
+	await page.getByRole('option', { name: 'Behind the circle' }).tap();
+	await expect(page.locator('.watermark')).toContainText('Trouble Brewing');
 	// The player name badge size is an option (Trevor, 2026-10-17), live on the board.
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
