@@ -166,6 +166,25 @@ test('Storyteller settings is a list of switches, saved on the device', async ({
 	).toBeChecked();
 });
 
+// Trevor (2026-10-17): settings appear where they act and in Settings; these are the same
+// values as the board's Background dialog.
+test('the board looks are in Storyteller settings, saved with the board', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Storyteller settings');
+	const vignette = dialog.getByRole('checkbox', { name: 'Vignette', includeHidden: true });
+	await expect(vignette).toBeChecked();
+	await dialog.getByText('Vignette', { exact: true }).tap();
+	await expect(vignette).not.toBeChecked();
+	await slide(page, 'Vignette strength', 0.3);
+	await dialog.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
+	await page.getByRole('option', { name: 'Edge, smaller' }).tap();
+
+	const saved = await page.evaluate(() =>
+		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
+	);
+	expect(saved).toEqual({ vignette: false, vignetteStrength: 0.3, rulesAt: 'edge' });
+});
+
 test('text size changes text only: icons, spacing and buttons keep their size', async ({
 	page
 }) => {
