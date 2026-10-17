@@ -59,9 +59,10 @@ export const collectionScripts = {
 			const found = response.ok
 				? readCollectionList(await response.json().catch(() => undefined))
 				: undefined;
-			if (!found) {
+			// An empty list is a broken source, not an empty collection: keep the last one.
+			if (!found?.length) {
 				status = 'error';
-				if (response.ok)
+				if (response.ok && !found)
 					reportError(new Error('Script collection: unreadable answer'), {
 						area: 'scripts',
 						notify: false

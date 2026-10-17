@@ -6,6 +6,8 @@
  * Shared by the app and the Worker (`worker/collections.ts`).
  */
 
+import { relaxJson } from './relaxed-json.ts';
+
 export const COLLECTIONS_API = '/api/collections';
 
 export interface ScriptCollectionInfo {
@@ -31,12 +33,43 @@ export function collectionExportUrl(collection: ScriptCollectionInfo): string {
 	return `https://docs.google.com/document/d/${collection.docId}/export?format=html`;
 }
 
+/**
+ * The doc's plain mobile view, read when the export has no script links (seen 2026-10-17:
+ * the export answered with only an image while this view still listed every "Script JSON").
+ */
+export function collectionMobileUrl(collection: ScriptCollectionInfo): string {
+	return `https://docs.google.com/document/d/${collection.docId}/mobilebasic`;
+}
+
 export function driveViewUrl(fileId: string): string {
 	return `https://drive.google.com/file/d/${fileId}/view`;
 }
 
-export function driveDownloadUrl(fileId: string): string {
-	return `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`;
+/**
+ * Where a Drive file's bytes are served. Drive's old `uc?export=download` address now
+ * redirects here; `confirm=t` skips the "can't scan for viruses" page.
+ */
+export function driveDownloadUrls(fileId: string): string[] {
+	const id = encodeURIComponent(fileId);
+	return [
+		`https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`,
+		`https://drive.google.com/uc?export=download&id=${id}`
+	];
+}
+
+/**
+ * A downloaded Drive file as a script, or undefined when it isn't one (an HTML sign-in or
+ * warning page, or not a list). Tolerates a byte-order mark and hand-edited JSON.
+ */
+export function readScriptFile(text: string): unknown[] | undefined {
+	const body = text.replace(/^\uFEFF/, '').trim();
+	if (!body.startsWith('[') && !body.startsWith('{')) return undefined;
+	try {
+		const json: unknown = JSON.parse(relaxJson(body));
+		return Array.isArray(json) ? json : undefined;
+	} catch {
+		return undefined;
+	}
 }
 
 const DRIVE_ID = /^[\w-]{10,}$/;

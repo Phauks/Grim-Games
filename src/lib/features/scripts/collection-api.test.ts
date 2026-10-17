@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
 	CAROUSEL_COLLECTION,
 	collectionHeadingUrl,
+	driveDownloadUrls,
 	driveFileId,
 	readCollectionDoc,
-	readCollectionList
+	readCollectionList,
+	readScriptFile
 } from './collection-api.ts';
 
 const ID = '1AVrIxWsrBMlATsoU-2M5X03jGeBaJYJb';
@@ -48,5 +50,29 @@ describe('script collections', () => {
 			{ link: 'y', page: collectionHeadingUrl(CAROUSEL_COLLECTION), json: [] }
 		]);
 		expect(readCollectionList({})).toBeUndefined();
+	});
+
+	it('downloads from Drive’s current file host first, skipping the virus-scan page', () => {
+		expect(driveDownloadUrls(ID)[0]).toBe(
+			`https://drive.usercontent.google.com/download?id=${ID}&export=download&confirm=t`
+		);
+	});
+
+	it('reads a downloaded script, and refuses Drive’s HTML pages', () => {
+		expect(readScriptFile('\uFEFF[{"id":"_meta","name":"Contempt"},"imp"]')).toEqual([
+			{ id: '_meta', name: 'Contempt' },
+			'imp'
+		]);
+		// Hand-edited files with a trailing comma still load.
+		expect(readScriptFile('["imp", "washerwoman",]\n')).toEqual(['imp', 'washerwoman']);
+		expect(
+			readScriptFile('<!DOCTYPE html><html><title>Google Drive - Virus scan warning')
+		).toBeUndefined();
+		expect(readScriptFile('{"id":"imp"}')).toBeUndefined();
+	});
+
+	it('reads the links from the doc’s mobile view, where hrefs are escaped', () => {
+		const html = `<p><a href="https://www.google.com/url?q=https://drive.google.com/file/d/${ID}/view?usp%3Dsharing&amp;sa=D&amp;source=editors&amp;ust=1&amp;usg=x" class="c3">Script JSON</a></p>`;
+		expect(readCollectionDoc(html)).toEqual([{ fileId: ID }]);
 	});
 });
