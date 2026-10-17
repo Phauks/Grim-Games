@@ -125,7 +125,7 @@
 		color: var(--on-surface);
 		box-shadow: var(--shadow);
 		font-family: var(--font-player);
-		font-size: 0.8rem;
+		font-size: calc(0.8rem * var(--name-scale, 1));
 		line-height: 1.2;
 		white-space: nowrap;
 		text-overflow: ellipsis;

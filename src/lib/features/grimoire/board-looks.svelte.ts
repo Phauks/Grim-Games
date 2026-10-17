@@ -3,19 +3,26 @@
  * background where it takes effect and in Settings:
  * - the vignette, the soft dark oval behind the script's name over a background, which keeps
  *   the words readable, and how dark it is;
- * - where the Fabled and Loric sit: large in the middle, or small along the board's edge.
+ * - where the Fabled and Loric sit: large in the middle, or small along the board's edge;
+ * - how big each seat's player name badge is.
  */
 export interface BoardLooks {
 	vignette: boolean;
 	/** How dark the vignette's middle is, 0 to 1. */
 	vignetteStrength: number;
 	rulesAt: 'middle' | 'edge';
+	/** The player name badge's size, as a multiple of its usual size. */
+	nameSize: number;
 }
+
+/** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
+export const NAME_SIZE = { min: 0.6, max: 1.6, step: 0.1 } as const;
 
 export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	vignette: true,
 	vignetteStrength: 0.55,
-	rulesAt: 'middle'
+	rulesAt: 'middle',
+	nameSize: 1
 };
 const KEY = 'grim.boardLooks';
 
@@ -23,12 +30,16 @@ const KEY = 'grim.boardLooks';
 export function parseBoardLooks(raw: unknown): BoardLooks {
 	const value = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
 	const strength = Number(value.vignetteStrength);
+	const nameSize = Number(value.nameSize);
 	return {
 		vignette: value.vignette !== false,
 		vignetteStrength: Number.isFinite(strength)
 			? Math.min(1, Math.max(0, strength))
 			: DEFAULT_BOARD_LOOKS.vignetteStrength,
-		rulesAt: value.rulesAt === 'edge' ? 'edge' : 'middle'
+		rulesAt: value.rulesAt === 'edge' ? 'edge' : 'middle',
+		nameSize: Number.isFinite(nameSize)
+			? Math.min(NAME_SIZE.max, Math.max(NAME_SIZE.min, nameSize))
+			: DEFAULT_BOARD_LOOKS.nameSize
 	};
 }
 

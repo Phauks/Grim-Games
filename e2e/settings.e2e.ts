@@ -182,7 +182,7 @@ test('the board looks are in Storyteller settings, saved with the board', async 
 	const saved = await page.evaluate(() =>
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
 	);
-	expect(saved).toEqual({ vignette: false, vignetteStrength: 0.3, rulesAt: 'edge' });
+	expect(saved).toEqual({ vignette: false, vignetteStrength: 0.3, rulesAt: 'edge', nameSize: 1 });
 });
 
 test('text size changes text only: icons, spacing and buttons keep their size', async ({

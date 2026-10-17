@@ -6,7 +6,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import { boardLooks, DEFAULT_BOARD_LOOKS } from './board-looks.svelte.ts';
+	import { boardLooks, DEFAULT_BOARD_LOOKS, NAME_SIZE } from './board-looks.svelte.ts';
 	import {
 		clearBackground,
 		readBackground,
@@ -149,6 +149,15 @@
 			step={0.05}
 			defaultValue={DEFAULT_BOARD_LOOKS.vignetteStrength}
 			onChange={(vignetteStrength) => boardLooks.update({ vignetteStrength })}
+		/>
+		<SettingSlider
+			label="Player name size"
+			value={boardLooks.current.nameSize}
+			min={NAME_SIZE.min}
+			max={NAME_SIZE.max}
+			step={NAME_SIZE.step}
+			defaultValue={DEFAULT_BOARD_LOOKS.nameSize}
+			onChange={(nameSize) => boardLooks.update({ nameSize })}
 		/>
 		<Segmented
 			label="Fabled and Loric"

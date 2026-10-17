@@ -38,6 +38,9 @@
 		height: 100%;
 		overflow: visible;
 		pointer-events: none;
+		/* The badge size setting (--name-scale, Trevor 2026-10-17) grows it from its middle. */
+		transform: scale(var(--name-scale, 1));
+		transform-origin: 50% 97%;
 	}
 	text {
 		font-family: var(--font-player);

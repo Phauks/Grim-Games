@@ -1100,6 +1100,18 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByText('Script name on the board', { exact: true }).tap();
 	await expect(page.locator('.watermark')).toHaveCount(0);
 	await dialog.getByText('Script name on the board', { exact: true }).tap();
+	// The player name badge size is an option (Trevor, 2026-10-17), live on the board.
+	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
+	await nameSize.fill('1.4');
+	await expect(nameSize).toHaveAttribute('aria-valuetext', '140%');
+	const nameWidth = () =>
+		page
+			.getByTestId('seat')
+			.first()
+			.evaluate((el) => el.querySelector('.name')?.getBoundingClientRect().width ?? 0);
+	const bigger = await nameWidth();
+	await nameSize.fill('0.6');
+	await expect.poll(nameWidth).toBeLessThan(bigger);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');

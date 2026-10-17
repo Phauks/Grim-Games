@@ -845,6 +845,7 @@
 		class:walking={walk !== undefined}
 		style:--tray-h="{chip + 30}px"
 		style:--strip-h={walk ? '7.5rem' : undefined}
+		style:--name-scale={boardLooks.current.nameSize}
 		bind:this={board}
 	>
 		{#if backgroundUrl}
