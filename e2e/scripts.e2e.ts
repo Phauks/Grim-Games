@@ -1,5 +1,5 @@
 import { gzipSync } from 'node:zlib';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 const homebrew = [
@@ -117,13 +117,6 @@ test('saved scripts stay off the list, survive a reload and can be removed', asy
 const saveToggle = (page: Page) => details(page).getByRole('button', { name: 'Save', exact: true });
 
 /** Phones: the details cover the list until Back. */
-/** Taps where an element is on screen, whatever covers it (a row's stretched tap area). */
-async function tapOver(page: Page, target: Locator) {
-	const box = await target.boundingBox();
-	if (!box) throw new Error('not on screen');
-	await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-}
-
 async function backToList(page: Page) {
 	const back = details(page).getByRole('button', { name: 'Back' });
 	if (await back.isVisible()) await back.tap();
@@ -486,13 +479,14 @@ test("the official site's custom scripts are a source of their own, and saved", 
 	await expect(table.locator('tbody tr').first()).toContainText('Little Hamlet');
 
 	// Anywhere in a row selects its script, not just the name (Trevor).
-	await tapOver(page, table.getByRole('cell', { name: 'Someone Big' }));
+	await table.getByRole('cell', { name: 'Someone Big' }).tap();
 	await expect(detailsName(page)).toHaveText('Big Town');
 	await backToList(page);
-	await tapOver(
-		page,
-		table.locator('tbody tr').filter({ hasText: 'Little Hamlet' }).locator('[data-col="kind"]')
-	);
+	await table
+		.locator('tbody tr')
+		.filter({ hasText: 'Little Hamlet' })
+		.locator('[data-col="kind"]')
+		.tap();
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
 	await backToList(page);
 
@@ -561,5 +555,42 @@ test('more BotC Scripts results load by themselves when the list end comes near'
 	await table.locator('tbody tr').last().scrollIntoViewIfNeeded();
 	// The site has no more, so nothing else is asked for.
 	await expect.poll(() => pages).toEqual([1, 2]);
+	await noSidewaysScroll(page);
+});
+
+test('a World Cup is a source: its finalists load from BotC Scripts and link there', async ({
+	page
+}) => {
+	const asked: string[] = [];
+	await page.route(/\/api\/botcscripts\/script\/\d+$/, (route) => {
+		const id = Number(route.request().url().split('/').at(-1));
+		asked.push(String(id));
+		return route.fulfill({
+			json: {
+				scriptId: id,
+				versionId: id + 10000,
+				name: id === 6687 ? 'The Ballad of Seat 7' : `Script ${id}`,
+				version: '1.0.0',
+				author: 'Someone',
+				content: [
+					{ id: '_meta', name: id === 6687 ? 'The Ballad of Seat 7' : `Script ${id}` },
+					...teensy.slice(1)
+				]
+			}
+		});
+	});
+	await page.goto('/scripts');
+	expect(asked).toEqual([]);
+	await chooseSource(page, 'World Cup 2025');
+	await expect(page.getByTestId('picker-status')).toHaveText('16 scripts');
+	const table = page.getByRole('table', { name: 'Scripts' });
+	// In the World Cup's order, winner first.
+	await expect(table.locator('tbody tr').first()).toContainText('The Ballad of Seat 7');
+	await table.getByRole('button', { name: /^The Ballad of Seat 7/ }).tap();
+	await expect(detailsName(page)).toHaveText('The Ballad of Seat 7');
+	await expect(
+		details(page).getByRole('link', { name: 'World Cup 2025 · Winner' })
+	).toHaveAttribute('href', 'https://botcscripts.com/script/6687/1.0.0');
+	await expect(page.getByTestId('script-sheet')).toContainText('Chef');
 	await noSidewaysScroll(page);
 });

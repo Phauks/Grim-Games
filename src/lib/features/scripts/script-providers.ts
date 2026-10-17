@@ -15,7 +15,10 @@ import {
 } from '#lib/core/data/index.ts';
 import type { ProfileScriptEntry } from '#lib/features/account/profile-scripts.ts';
 import type { BotcScriptsQuery, BotcScriptsRef, BotcScriptsSearchPage } from './botcscripts-api.ts';
+import { scriptPageUrl } from './botcscripts-api.ts';
 import type { CollectionScript } from './collection-api.ts';
+import type { WorldCupStage, WorldCupYear } from './world-cup.ts';
+import type { WorldCupScript } from './world-cup.svelte.ts';
 import { CURATED_PAGE, type CuratedScript } from './curated-api.ts';
 import { botcRow, pickerRow, type PickerRow, type PickerSource } from './picker-rows.ts';
 import {
@@ -55,6 +58,10 @@ export interface LocalContext {
 	curatedLabel: (section: string) => string;
 	/** Says where a saved script came from. */
 	describe: (source: ScriptSource) => string;
+	/** The World Cups' scripts loaded so far (`world-cup.svelte.ts`). */
+	worldCups?: Partial<Record<WorldCupYear, readonly WorldCupScript[]>>;
+	/** Says which World Cup and how far a script got, e.g. "World Cup 2025 · Winner". */
+	worldCupLabel?: (year: WorldCupYear, stage: WorldCupStage) => string;
 }
 
 export interface LocalProvider {
@@ -145,6 +152,42 @@ export const collectionProvider: LocalProvider = {
 		})
 };
 
+/** A Script World Cup's finalists, each loaded from BotC Scripts (`world-cup.ts`). */
+function worldCupProvider(year: WorldCupYear): LocalProvider {
+	return {
+		kind: 'local',
+		id: `worldcup${year}`,
+		listings: ({ data, worldCups, worldCupLabel }) =>
+			(worldCups?.[year] ?? []).flatMap(({ entry, version, json }) => {
+				const script = loadScript(json, data).script;
+				if (!script) return [];
+				const row = pickerRow(
+					script,
+					`worldcup${year}:${entry.scriptId}`,
+					`worldcup${year}`,
+					worldCupLabel?.(year, entry.stage) ?? ''
+				);
+				return [
+					{
+						row: {
+							...row,
+							// The World Cup's own names, as BotC Scripts lists them.
+							name: row.name || entry.name,
+							author: row.author || entry.author,
+							number: entry.scriptId,
+							version,
+							page: scriptPageUrl(entry.scriptId, version || undefined)
+						},
+						target: { kind: 'botcscripts', ref: { kind: 'script', scriptId: entry.scriptId } },
+						identity: { json }
+					}
+				];
+			})
+	};
+}
+export const worldCup2023Provider = worldCupProvider('2023');
+export const worldCup2025Provider = worldCupProvider('2025');
+
 export const recentProvider: LocalProvider = {
 	kind: 'local',
 	id: 'recent',
@@ -206,6 +249,8 @@ export const LOCAL_PROVIDERS: readonly LocalProvider[] = [
 export const SCRIPTS_PAGE_PROVIDERS: readonly LocalProvider[] = [
 	curatedProvider,
 	collectionProvider,
+	worldCup2023Provider,
+	worldCup2025Provider,
 	recentProvider,
 	profileProvider
 ];

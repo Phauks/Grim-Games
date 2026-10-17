@@ -11,7 +11,15 @@ import {
 } from './botcscripts-api.ts';
 import { botcCard, looseId } from './botcscripts-cards.ts';
 
-export type PickerSource = 'official' | 'curated' | 'collection' | 'recent' | 'profile' | 'botc';
+export type PickerSource =
+	| 'official'
+	| 'curated'
+	| 'collection'
+	| 'worldcup2023'
+	| 'worldcup2025'
+	| 'recent'
+	| 'profile'
+	| 'botc';
 
 export type ScriptKind = 'Full' | 'Teensyville';
 
@@ -159,6 +167,8 @@ const SOURCE_ORDER: readonly PickerSource[] = [
 	'official',
 	'curated',
 	'collection',
+	'worldcup2023',
+	'worldcup2025',
 	'recent',
 	'profile',
 	'botc'

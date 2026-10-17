@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { CAROUSEL_COLLECTION, collectionHeadingUrl, driveViewUrl } from './collection-api.ts';
 import { CURATED_PAGE } from './curated-api.ts';
+import { WORLD_CUPS } from './world-cup.ts';
 import {
 	isSpecificPage,
 	SAVED_SCRIPT_VERSION,
@@ -108,7 +109,13 @@ describe('source pages (Trevor, 2026-10-16: every script links to its own source
 						page: doc,
 						json: [...json, 'monk']
 					}
-				]
+				],
+				worldCups: {
+					'2025': [
+						{ entry: WORLD_CUPS['2025'].entries[0], version: '1.0.1', json: [...json, 'mayor'] }
+					]
+				},
+				worldCupLabel: (year, stage) => `World Cup ${year} · ${stage}`
 			},
 			SCRIPTS_PAGE_PROVIDERS
 		);
@@ -118,7 +125,14 @@ describe('source pages (Trevor, 2026-10-16: every script links to its own source
 		expect(pages).toEqual({
 			'curated:curated': CURATED_PAGE,
 			'collection:collection': doc,
+			'worldcup2025:worldcup2025': 'https://botcscripts.com/script/6687/1.0.1',
 			'recent:recent': expect.any(String)
+		});
+		const worldCup = listed.find((l) => l.row.source === 'worldcup2025');
+		expect(worldCup?.row).toMatchObject({ note: 'World Cup 2025 · winner', number: 6687 });
+		expect(worldCup?.target).toEqual({
+			kind: 'botcscripts',
+			ref: { kind: 'script', scriptId: 6687 }
 		});
 		for (const l of listed) {
 			expect(l.row.page, l.row.key).toBeDefined();
@@ -147,5 +161,17 @@ describe('source pages (Trevor, 2026-10-16: every script links to its own source
 		expect(sourcePage({ kind: 'link', url: 'https://drive.google.com/' })).toBeUndefined();
 		expect(isSpecificPage('https://drive.google.com')).toBe(false);
 		expect(isSpecificPage('https://docs.google.com/document/d/x/edit')).toBe(true);
+	});
+});
+
+describe('World Cups (Trevor, 2026-10-17)', () => {
+	it('lists each year in its own order, with BotC Scripts numbers and no repeats', () => {
+		for (const cup of Object.values(WORLD_CUPS)) {
+			const ids = cup.entries.map((e) => e.scriptId);
+			expect(new Set(ids).size, cup.year).toBe(ids.length);
+			expect(cup.entries[0].stage, cup.year).toBe('winner');
+			expect(isSpecificPage(cup.page), cup.page).toBe(true);
+		}
+		expect(WORLD_CUPS['2025'].entries).toHaveLength(16);
 	});
 });

@@ -37,6 +37,7 @@
 	import BotcFilter from './BotcFilter.svelte';
 	import { collectionScripts } from './collection.svelte.ts';
 	import { curatedScripts } from './curated.svelte.ts';
+	import { worldCupScripts } from './world-cup.svelte.ts';
 	import {
 		chooseScript,
 		currentScript,
@@ -124,7 +125,13 @@
 	 * One source at a time (Trevor, 2026-10-17): mixing them was unfair, since only BotC
 	 * Scripts has likes and numbers. In his order; saved scripts live in the Library.
 	 */
-	const PAGE_SOURCES = ['botc', 'curated', 'collection'] as const satisfies readonly PickerSource[];
+	const PAGE_SOURCES = [
+		'botc',
+		'curated',
+		'collection',
+		'worldcup2023',
+		'worldcup2025'
+	] as const satisfies readonly PickerSource[];
 	type PageSource = (typeof PAGE_SOURCES)[number];
 	const SOURCE_KEY = 'grim-games:scripts:source';
 	function storedSource(): PageSource {
@@ -168,11 +175,13 @@
 
 	// A collection is only fetched while it is the chosen source.
 	$effect(() => {
-		const wanted = { curated: source === 'curated', collection: source === 'collection' };
+		const wanted = source;
 		// Untracked: a failed load must not re-run this and try again in a loop.
 		untrack(() => {
-			if (wanted.curated) void curatedScripts.load();
-			if (wanted.collection) void collectionScripts.load();
+			if (wanted === 'curated') void curatedScripts.load();
+			if (wanted === 'collection') void collectionScripts.load();
+			if (wanted === 'worldcup2023') void worldCupScripts.load('2023');
+			if (wanted === 'worldcup2025') void worldCupScripts.load('2025');
 		});
 	});
 
@@ -191,7 +200,10 @@
 			recent: recentScripts.list,
 			profile: [],
 			curatedLabel: curatedSectionLabel,
-			describe: describeSource
+			describe: describeSource,
+			worldCups: { '2023': worldCupScripts.list('2023'), '2025': worldCupScripts.list('2025') },
+			worldCupLabel: (year, stage) =>
+				`${t(`scripts.picker.source.worldcup${year}`)} · ${t(`scripts.worldCup.${stage}`)}`
 		}
 	);
 	/** The chosen source's rows, when it is listed on the device (all but BotC Scripts). */
@@ -446,15 +458,23 @@
 		}
 	}
 
-	const curatedNote = $derived(
-		source !== 'curated'
-			? ''
-			: curatedScripts.status === 'loading'
-				? t('scripts.picker.curatedLoading')
-				: curatedScripts.status === 'error' && curatedScripts.list.length === 0
-					? t('scripts.picker.curatedFailed')
-					: ''
-	);
+	const curatedNote = $derived.by(() => {
+		const year =
+			source === 'worldcup2023' ? '2023' : source === 'worldcup2025' ? '2025' : undefined;
+		const loading = year
+			? worldCupScripts.status(year) === 'loading'
+			: source === 'curated' && curatedScripts.status === 'loading';
+		const failed = year
+			? worldCupScripts.status(year) === 'error'
+			: source === 'curated' &&
+				curatedScripts.status === 'error' &&
+				curatedScripts.list.length === 0;
+		return loading
+			? t('scripts.picker.curatedLoading')
+			: failed
+				? t('scripts.picker.curatedFailed')
+				: '';
+	});
 	const botcStatus = $derived(
 		!searchingBotc
 			? ''
@@ -554,6 +574,22 @@
 	 * stays in view, until the site has no more.
 	 */
 	const NEAR_END = createAttachmentKey();
+
+	/**
+	 * Tapping anywhere in a row selects its script (Trevor, 2026-10-16), as its name button
+	 * does; the button stays the row's one focus stop, so Enter still selects.
+	 */
+	const TAP_ROW = createAttachmentKey();
+	function tapRow(row: Element) {
+		const tap = (event: Event) => {
+			const button = row.querySelector<HTMLButtonElement>('button.pick');
+			if (!button || button.disabled) return;
+			if (event.target instanceof Element && event.target.closest('button, a, input')) return;
+			button.click();
+		};
+		row.addEventListener('click', tap);
+		return () => row.removeEventListener('click', tap);
+	}
 	const lastKey = $derived(shown.at(-1)?.row.key);
 	function loadMore() {
 		if (busy || !searchingBotc || botc.loading || !botc.hasMore || botcRef || !data) return;
@@ -758,7 +794,10 @@
 						resizeKey="scripts"
 						fill
 						rowSelected={isSelected}
-						rowAttrs={(listing) => (listing.row.key === lastKey ? { [NEAR_END]: nearEnd } : {})}
+						rowAttrs={(listing) => ({
+							[TAP_ROW]: tapRow,
+							...(listing.row.key === lastKey ? { [NEAR_END]: nearEnd } : {})
+						})}
 						empty={botcRef ? '' : t('common.none')}
 					/>
 				</div>
@@ -1120,17 +1159,11 @@
 		text-align: left;
 		cursor: pointer;
 	}
-	/*
-	 * The whole row selects its script (Trevor, 2026-10-16): the name button's tap area is
-	 * stretched over the row (the row contains layout, so it holds the overlay). It stays one
-	 * button, so the row is still one focus stop and Enter selects it.
-	 */
-	.pick::after {
-		content: '';
-		position: absolute;
-		inset: 0;
+	/* The whole row selects its script (`tapRow`). */
+	.picker :global(tbody tr:has(.pick:not(:disabled))) {
+		cursor: pointer;
 	}
-	.picker :global(tbody tr:has(.pick:hover:not(:disabled))) {
+	.picker :global(tbody tr:has(.pick:not(:disabled)):hover) {
 		background: var(--surface-selected);
 	}
 	.title {
