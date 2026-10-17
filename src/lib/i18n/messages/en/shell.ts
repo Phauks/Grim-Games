@@ -11,6 +11,7 @@ export const shell = {
 	'shell.navNewGame': 'New game',
 	'shell.navResumeGame': 'Resume game',
 	'shell.navHistory': 'History',
+	'shell.homeBlank': 'This page is intentionally blank',
 	'shell.navScripts': 'Search',
 	'shell.navLibrary': 'Library',
 	'shell.navBuildScript': 'Script builder',

@@ -3,6 +3,10 @@ import { expect, test } from '@playwright/test';
 test('home page renders on a touch device', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	// Blank until near 1.0, and it says so (Trevor, 2026-10-17).
+	await expect(
+		page.getByRole('main').getByText('This page is intentionally blank', { exact: true })
+	).toBeVisible();
 	expect(await page.evaluate(() => navigator.maxTouchPoints)).toBeGreaterThan(0);
 });
 
