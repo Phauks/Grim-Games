@@ -14,6 +14,8 @@
 	} from '#lib/core/rules/reference.ts';
 	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup-reminders.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { sheetNumbersFor } from '#lib/features/characters/sheet-night-numbers.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
@@ -134,7 +136,13 @@
 
 <span class="value" data-field={field}>
 	{#if field === 'token'}
-		<CharacterToken {character} size={tokenSize} />
+		<CharacterToken
+			{character}
+			size={tokenSize}
+			nightNumbers={preferences.current.tokenAppearance.nightNumbers && officialData.current
+				? sheetNumbersFor(officialData.current.nightSheet, character.id)
+				: undefined}
+		/>
 	{:else if field === 'name' && plainName}
 		<!-- eslint-disable-next-line grim/names-as-badges -- Reference table cells are plain information (Trevor, 2026-10-16) -->
 		<span class="block">{character.name}</span>{@render links()}

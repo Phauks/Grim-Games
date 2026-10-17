@@ -30,7 +30,12 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
-	import { livingByTeam, setupComplete, setupReminders } from '#lib/core/rules/index.ts';
+	import {
+		livingByTeam,
+		setupComplete,
+		setupReminders,
+		stepNightNumbers
+	} from '#lib/core/rules/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
@@ -176,6 +181,18 @@
 		}));
 	});
 	const namePlaces = $derived(nameBoxes.map((n) => n.place));
+	/**
+	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
+	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
+	 */
+	const nightNumbers = $derived.by(() => {
+		const data = officialData.current;
+		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
+		return {
+			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data)),
+			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data))
+		};
+	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
 	function avoidFor(i: number): Box[] {
 		const out: Box[] = [];
@@ -888,6 +905,12 @@
 					number={i + 1}
 					character={seat.characterId ? characters.get(seat.characterId) : undefined}
 					{size}
+					nightNumbers={nightNumbers && seat.characterId
+						? {
+								first: nightNumbers.first.get(seat.characterId),
+								other: nightNumbers.other.get(seat.characterId)
+							}
+						: undefined}
 					orphan={isOrphan(seat, game.script, characters)}
 					dropTarget={reorderTarget === seat.seatId ||
 						(reminderDrag !== undefined &&
