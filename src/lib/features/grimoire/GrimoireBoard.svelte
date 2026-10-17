@@ -1294,8 +1294,8 @@
 			<p>{ruleShownCharacter.ability}</p>
 		</div>
 	{/if}
-	{#snippet actions()}
-		<!-- A delete is a red trash icon, named for screen readers (Trevor, 2026-10-17). -->
+	{#snippet headActions()}
+		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
 		<DeleteButton label="Remove from the game" onclick={() => (ruleRemoveOpen = true)} />
 	{/snippet}
 </Dialog>

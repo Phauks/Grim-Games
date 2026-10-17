@@ -270,8 +270,10 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
 	).toBeVisible();
 	await fabled.tap();
+	// The trash sits beside the close X (Trevor, 2026-10-17).
 	await page
 		.getByRole('dialog', { name: 'Spirit of Ivory' })
+		.locator('.head-actions')
 		.getByRole('button', { name: 'Remove from the game' })
 		.tap();
 	await page
