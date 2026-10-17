@@ -741,7 +741,6 @@
 
 <ScriptCheckDialog
 	bind:open={checkOpen}
-	action="save"
 	result={checking?.result}
 	onconfirm={() => {
 		const script = checking?.result.script;

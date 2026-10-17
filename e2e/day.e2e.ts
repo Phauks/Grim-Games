@@ -113,7 +113,7 @@ test('any reminder takes an optional long note in a sheet', async ({ page }) => 
 	const sheet = page.getByRole('dialog', { name: 'Note: Gossip · Dev' });
 	const text = `Said: “Eve is the Witch.”\n\n${'They were very sure of it. '.repeat(40)}`;
 	await sheet.getByTestId('note-text').fill(text);
-	await sheet.getByRole('button', { name: 'Save note' }).tap();
+	await sheet.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(sheet).toBeHidden();
 	const note = page.getByRole('button', { name: 'Note: Gossip (Dev)' });
 	await expect(note).toHaveAttribute('data-has-note', 'true');

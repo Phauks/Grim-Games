@@ -56,7 +56,6 @@ export const library = {
 	'library.change.otherChanged': 'Changed',
 	'library.remove': 'Remove script',
 	'library.removeConfirm': 'Remove script?',
-	'library.save': 'Save',
 	'library.removeBody':
 		'{name} is removed from your saved scripts on this device and from your account.'
 } as const;

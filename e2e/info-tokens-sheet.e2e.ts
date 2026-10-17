@@ -41,16 +41,16 @@ test('the sheet shows a character card and edits and deletes a custom card', asy
 	await page.getByRole('button', { name: 'You are', exact: true }).tap();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
 	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
-	await page.getByRole('button', { name: 'Show' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(shown(page).getByRole('img', { name: /Empath token/ })).toBeVisible();
 	await shown(page).getByRole('button', { name: 'Close' }).tap();
 
 	await page.getByRole('button', { name: 'New info token' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You are **cursed**');
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await page.getByRole('button', { name: 'Edit You are cursed' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You are **hexed**');
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await page.getByRole('button', { name: 'You are hexed', exact: true }).tap();
 	await expect(shown(page).locator('strong')).toHaveText('hexed');
 	await shown(page).getByRole('button', { name: 'Close' }).tap();
@@ -68,7 +68,7 @@ test("each card's + adds it to cards shown together, which can be reordered", as
 	await page.getByRole('button', { name: 'New info token' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You are **mad** that you are');
 	await page.getByText('Show with characters').tap();
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	// No mode switch: a tap shows a card, its + adds it (Trevor, 2026-10-16).
 	await expect(page.getByRole('radiogroup', { name: 'How cards are shown' })).toHaveCount(0);
@@ -77,13 +77,13 @@ test("each card's + adds it to cards shown together, which can be reordered", as
 		.tap();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
 	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
-	await page.getByRole('button', { name: 'Add', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await page
 		.getByRole('button', { name: 'Add This character selected you to the cards to show' })
 		.tap();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Chef');
 	await page.getByRole('button', { name: 'Chef', exact: true }).tap();
-	await page.getByRole('button', { name: 'Add', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	// Added in the wrong order, then moved up.
 	const list = page.getByTestId('chain-list');

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import {
@@ -322,10 +323,11 @@
 				{inPlay}
 				blockInPlay={blocks(editing)}
 			/>
-			<div class="sheet-actions">
-				<Button variant="quiet" onclick={() => (editing = undefined)}>{t('common.cancel')}</Button>
-				<Button variant="accent" disabled={pickedBlocked} onclick={save}>{t('bluffs.save')}</Button>
-			</div>
+			<ModalActions
+				onCancel={() => (editing = undefined)}
+				onConfirm={save}
+				disabled={pickedBlocked}
+			/>
 		{/if}
 	</ErrorBoundary>
 	<!--
@@ -462,14 +464,5 @@
 	}
 	.filter {
 		margin-bottom: var(--space-3);
-	}
-	.sheet-actions {
-		position: sticky;
-		bottom: 0;
-		display: flex;
-		justify-content: flex-end;
-		gap: var(--space-2);
-		padding-top: var(--space-3);
-		background: var(--sheet-background);
 	}
 </style>

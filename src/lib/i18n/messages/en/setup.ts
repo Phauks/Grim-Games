@@ -158,7 +158,6 @@ export const setup = {
 	'setup.reveal.alignment': 'Alignment',
 	'setup.reveal.good': 'Good',
 	'setup.reveal.evil': 'Evil',
-	'setup.reveal.confirm': 'Confirm',
 	'setup.reveal.reveal': 'Reveal',
 
 	'setup.open.loading': 'Opening the game…',

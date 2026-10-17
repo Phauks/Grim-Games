@@ -321,7 +321,7 @@ test('the day view names a homebrew character by its script name', async ({ page
 			'imp'
 		])
 	);
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Homebrew Day');
 
 	await page.goto('/new');

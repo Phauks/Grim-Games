@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -532,7 +533,7 @@
 		{/each}
 	</ul>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (openOpen = false)}>{t('common.cancel')}</Button>
+		<ModalActions onCancel={() => (openOpen = false)} />
 	{/snippet}
 </Dialog>
 

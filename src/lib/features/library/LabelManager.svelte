@@ -1,7 +1,7 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -96,10 +96,7 @@
 		{renameText.trim() !== '' && !renameOk ? t('library.nameTaken') : ''}
 	</p>
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (renameOpen = false)}>{t('common.cancel')}</Button>
-		<Button variant="accent" icon="check" disabled={!renameOk} onclick={rename}
-			>{t('library.save')}</Button
-		>
+		<ModalActions onCancel={() => (renameOpen = false)} onConfirm={rename} disabled={!renameOk} />
 	{/snippet}
 </Dialog>
 

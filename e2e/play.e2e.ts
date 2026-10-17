@@ -282,7 +282,7 @@ test('a shared link with problems opens the Script check first', async ({ page }
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	const check = page.getByRole('dialog', { name: 'Script check' });
 	await expect(check).toContainText('Did you mean Fortune Teller');
-	await check.getByRole('button', { name: 'Load anyway' }).tap();
+	await check.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('heading', { name: 'Typo Script', level: 1 })).toBeVisible();
 	await expect(page.locator('[data-character]')).toHaveCount(2);
 });

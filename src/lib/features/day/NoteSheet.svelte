@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterGuess, DayEntry, SeatId } from '#lib/core/model/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -6,7 +7,6 @@
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { DayPort } from './day-port.ts';
 
 	export interface NoteTarget {
@@ -122,10 +122,7 @@
 			</fieldset>
 		{/if}
 
-		<div class="actions">
-			<Button variant="quiet" onclick={() => (open = false)}>{t('common.cancel')}</Button>
-			<Button type="submit">{t('day.saveNote')}</Button>
-		</div>
+		<ModalActions onCancel={() => (open = false)} submit />
 	</form>
 </BottomSheet>
 
@@ -180,10 +177,5 @@
 		background: transparent;
 		color: inherit;
 		font: inherit;
-	}
-	.actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: var(--space-2);
 	}
 </style>

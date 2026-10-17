@@ -122,7 +122,10 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await expect(ghostMark).toBeAttached();
 	// A good Imp: as in the physical grimoire, the token turns upside down.
 	await seatMenu(page, sheet, 'Change alignment');
-	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
 	await expect(sheet).toContainText(/Imp\s*Good · Seat 1/);
 
 	await page.reload();
@@ -182,7 +185,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(alignment).toContainText('Now');
 	await expect(alignment).toContainText('Evil');
 	await expect(alignment).toContainText('Becomes');
-	await alignment.getByRole('button', { name: 'Good', exact: true }).tap();
+	await alignment.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(sheet).toContainText(/Baron\s*Good · Seat 1/);
 });
 
@@ -375,7 +378,7 @@ test('a new game can use a custom script from the Library', async ({ page }) => 
 	await dialog
 		.getByLabel('Script JSON or link')
 		.fill(JSON.stringify([{ id: '_meta', name: 'Pocket Storm' }, 'chef', 'saint', 'imp']));
-	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Pocket Storm');
 
 	await startGame(page, 'Pocket Storm');
@@ -1384,7 +1387,7 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 	await expect(draw.getByLabel('Tokens', { exact: true })).toHaveText('4');
 	await draw.getByRole('button', { name: 'Fewer evil' }).tap();
 	await expect(draw.getByLabel('Evil tokens')).toHaveText('0');
-	await draw.getByRole('button', { name: 'Hand to player' }).tap();
+	await draw.getByRole('button', { name: 'Confirm' }).tap();
 	const pick = page.getByRole('dialog', { name: 'Choose a token' });
 	// The counts are not shown to the player.
 	await expect(pick).not.toContainText('Evil');
@@ -1845,7 +1848,7 @@ test('marking a player as the Marionette asks to make them evil', async ({ page 
 		.fill(
 			JSON.stringify([{ id: '_meta', name: 'Strings' }, 'clockmaker', 'chef', 'marionette', 'imp'])
 		);
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Strings');
 	await startGame(page, 'Strings');
 	const sheet = await openSeat(page, 2);
@@ -1880,7 +1883,7 @@ test('an extra Demon bluff set can be renamed, and the name is kept with the gam
 		.getByRole('group', { name: 'Bluff characters' })
 		.getByRole('button', { name: /^Monk(, .*)?$/ })
 		.tap();
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	// The Demon's set keeps its name (Trevor, 2026-10-17).
 	await expect(page.getByRole('button', { name: 'Rename the Demon bluffs' })).toHaveCount(0);
 
@@ -2059,7 +2062,7 @@ test('a new Demon bluff set is named on the screen where its characters are chos
 		.getByRole('button', { name: /^Monk(, .*)?$/ })
 		.tap();
 	await expect(page.getByRole('heading', { name: 'Spares · 1/3' })).toBeVisible();
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const set = page.getByTestId('bluff-set').nth(1);
 	await expect(set).toHaveAttribute('data-set', 'Spares');
 
@@ -2220,7 +2223,7 @@ test("a script's own character can have another copy of a reminder (Cleopatra)",
 			'imp'
 		])
 	);
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Little Rome');
 	await startGame(page, 'Little Rome');
 
@@ -2275,7 +2278,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 			'imp'
 		])
 	);
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Little Market');
 	await startGame(page, 'Little Market');
 	for (const [number, name] of [

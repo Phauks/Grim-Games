@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
@@ -125,7 +126,7 @@
 	</div>
 	{#snippet actions()}
 		{#if revealed}
-			<Button variant="accent" onclick={confirm}>{t('setup.reveal.confirm')}</Button>
+			<ModalActions onConfirm={confirm} />
 		{:else}
 			<Button variant="accent" disabled={name.trim() === ''} onclick={() => (revealed = true)}
 				>{t('setup.reveal.reveal')}</Button

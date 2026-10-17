@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { ScriptLoadResult, ScriptProblemSeverity } from '#lib/core/data/index.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -8,11 +9,9 @@
 		open?: boolean;
 		result: ScriptLoadResult | undefined;
 		onconfirm: () => void;
-		/** The Scripts page saves; /play loads. */
-		action?: 'load' | 'save';
 	}
 
-	let { open = $bindable(false), result, onconfirm, action = 'load' }: Props = $props();
+	let { open = $bindable(false), result, onconfirm }: Props = $props();
 
 	const GROUPS = [
 		{ severity: 'error', title: 'scripts.check.notLoaded' },
@@ -48,18 +47,16 @@
 		</div>
 	{/if}
 	{#snippet actions()}
-		<Button variant="quiet" onclick={() => (open = false)}
-			>{script ? t('common.cancel') : t('scripts.check.back')}</Button
-		>
 		{#if script}
-			<Button
-				variant="accent"
-				onclick={() => {
+			<ModalActions
+				onCancel={() => (open = false)}
+				onConfirm={() => {
 					open = false;
 					onconfirm();
 				}}
-				>{action === 'save' ? t('scripts.check.saveAnyway') : t('scripts.check.loadAnyway')}</Button
-			>
+			/>
+		{:else}
+			<Button variant="quiet" onclick={() => (open = false)}>{t('scripts.check.back')}</Button>
 		{/if}
 	{/snippet}
 </Dialog>

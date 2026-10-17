@@ -160,12 +160,12 @@ test('a pasted script with a typo is checked, then saved anyway', async ({ page 
 	await dialog
 		.getByLabel('Script JSON or link')
 		.fill(JSON.stringify([...homebrew, 'fortune_teler']));
-	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 
 	const check = page.getByRole('dialog', { name: 'Script check' });
 	await expect(check).toContainText('Not loaded');
 	await expect(check).toContainText('Did you mean Fortune Teller');
-	await check.getByRole('button', { name: 'Save anyway' }).tap();
+	await check.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(added(page, 'Storm Front')).toContainText('Trevor');
 	await expect(added(page, 'Storm Front')).toContainText('Pasted');
 });
@@ -178,7 +178,7 @@ test('hand-edited script JSON with comments and trailing commas is saved', async
 		.fill(
 			'[\n  // made by hand\n  { "id": "_meta", "name": "Hand Made", },\n  "chef", "choirboy", "baron", "imp", /* more */\n]'
 		);
-	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(added(page, 'Hand Made')).toContainText('Chef');
 	await expect(added(page, 'Hand Made')).toContainText('Choirboy');
 	await noSidewaysScroll(page);
@@ -249,7 +249,7 @@ test('a link the browser may not read explains how to paste instead', async ({ p
 	await page.route('https://scripts.example/blocked.json', (route) => route.abort('failed'));
 	await addScript(page, 'Paste Link');
 	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
-	const load = dialog.getByRole('button', { name: 'Save' });
+	const load = dialog.getByRole('button', { name: 'Confirm' });
 	await dialog.getByLabel('Link to the script JSON').fill('https://scripts.example/blocked.json');
 	await expect(dialog.getByRole('button', { name: 'Open link' })).toBeDisabled();
 	const before = await load.boundingBox();
@@ -641,7 +641,7 @@ test('a Script Tool link is read from the link itself, with no request', async (
 	await addScript(page, 'Paste Link');
 	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
 	await dialog.getByLabel('Link to the script JSON').fill(scriptToolLink(teensy));
-	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
 	expect(requests).toEqual([]);
 });

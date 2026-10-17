@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { buildInfo } from '#lib/build-info.ts';
 	import { describeBuild } from '#lib/features/about/report-issue.ts';
 	import { scrubUrls } from '#lib/features/errors/app-error.ts';
@@ -127,10 +128,11 @@
 		{#if sentId !== undefined}
 			<Button onclick={() => (reportDialog.open = false)}>{t('common.close')}</Button>
 		{:else}
-			<Button variant="quiet" onclick={() => (reportDialog.open = false)}
-				>{t('common.cancel')}</Button
-			>
-			<Button variant="accent" disabled={!ready} onclick={() => send()}>{t('reports.send')}</Button>
+			<ModalActions
+				onCancel={() => (reportDialog.open = false)}
+				onConfirm={() => send()}
+				disabled={!ready}
+			/>
 		{/if}
 	{/snippet}
 </Dialog>

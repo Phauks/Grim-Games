@@ -79,7 +79,7 @@ test('scripts added on the device are saved to the profile as local copies', asy
 		.tap();
 	const paste = page.getByRole('dialog', { name: 'Paste a script' });
 	await paste.getByLabel('Script JSON or link').fill(JSON.stringify(homebrew));
-	await paste.getByRole('button', { name: 'Save' }).tap();
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Storm Front');
 
 	await signInWithCode(page, uniqueEmail('scripts'));
@@ -122,7 +122,7 @@ test('scripts added on the device are saved to the profile as local copies', asy
 	const saving = page.waitForResponse(
 		(r) => r.url().includes('/api/account/docs/script/') && r.request().method() === 'PUT'
 	);
-	await again.getByRole('button', { name: 'Save' }).tap();
+	await again.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Second Wind');
 	expect((await saving).status()).toBe(200);
 	await page.goto('/account');

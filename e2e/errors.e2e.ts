@@ -11,7 +11,7 @@ async function sendReport(page: Page): Promise<Record<string, string>> {
 	await form.getByRole('textbox', { name: 'Description' }).fill('It broke while testing.');
 	const [request] = await Promise.all([
 		page.waitForRequest((r) => r.url().endsWith('/api/reports') && r.method() === 'POST'),
-		form.getByRole('button', { name: 'Send' }).tap()
+		form.getByRole('button', { name: 'Confirm' }).tap()
 	]);
 	await expect(form.getByTestId('report-sent')).toHaveText(/^Sent as report #\d+\.$/);
 	const sent = request.postDataJSON();

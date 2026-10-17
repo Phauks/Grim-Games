@@ -9,7 +9,7 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	const form = page.getByRole('dialog', { name: 'Report' });
 
 	// Nothing is sent until Send, which waits for a title and a description.
-	const send = form.getByRole('button', { name: 'Send' });
+	const send = form.getByRole('button', { name: 'Confirm' });
 	await expect(send).toBeDisabled();
 	await form.getByRole('combobox', { name: 'Kind' }).tap();
 	await page.getByRole('option', { name: 'Enhancement request' }).tap();

@@ -15,7 +15,6 @@ export const reports = {
 	'reports.build': 'Build',
 	'reports.device': 'Device',
 	'reports.page': 'Page',
-	'reports.send': 'Send',
 	'reports.sent': 'Sent as report #{id}.',
 	'reports.sendFailed': 'Could not send',
 	'reports.sendFailedDetail': 'Check the connection and try again.',

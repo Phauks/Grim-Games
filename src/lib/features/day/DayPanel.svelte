@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { recentDeaths } from '#lib/core/engine/index.ts';
 	import {
@@ -686,7 +687,7 @@
 		{/if}
 		<!-- Set apart and tinted, so it is never mistaken for a cause (Trevor, 2026-10-16). -->
 		<div class="cancel">
-			<Button variant="quiet" onclick={() => (causeOpen = false)}>{t('common.cancel')}</Button>
+			<ModalActions onCancel={() => (causeOpen = false)} />
 		</div>
 	</div>
 </BottomSheet>
