@@ -1989,3 +1989,47 @@ test('a new Demon bluff set is named on the screen where its characters are chos
 	await page.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(set).toHaveAttribute('data-set', 'Spares');
 });
+
+test('reminders can stay where dropped, after a warning listing what changes', async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Sailor', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await picker.getByRole('group', { name: 'Sailor' }).getByRole('button', { name: 'Drunk' }).tap();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	// Turning it on says what it changes first (Trevor, 2026-10-17).
+	await menu(page, 'Background');
+	const dialog = page.getByRole('dialog', { name: 'Background' });
+	await dialog.getByText('Stay where dropped', { exact: true }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Reminders stay where dropped?' });
+	await expect(confirm.getByTestId('reminder-mode-effects').locator('li')).toHaveCount(4);
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+
+	const token = page.getByRole('button', { name: 'Drunk reminder' });
+	const board = (await page.locator('.board').boundingBox())!;
+	const to = { x: board.x + board.width * 0.35, y: board.y + board.height * 0.35 };
+	const box = (await token.boundingBox())!;
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(to.x, to.y, { steps: 8 });
+	await page.mouse.up();
+
+	// Still the Sailor's seat's reminder, drawn where it was dropped, also after a reload.
+	const near = async () => {
+		const b = (await token.boundingBox())!;
+		return Math.hypot(b.x + b.width / 2 - to.x, b.y + b.height / 2 - to.y) < board.width * 0.05;
+	};
+	await expect.poll(near).toBe(true);
+	await expect(seatLabelled(page, 'Seat 1: no name, Sailor, 1 reminder')).toBeAttached();
+	await page.reload();
+	await expect(token).toBeVisible();
+	await expect.poll(near).toBe(true);
+});

@@ -294,6 +294,8 @@
 			moveConfirm?.requestReturn(reminderId);
 			return;
 		}
+		// Reminders that stay where they are dropped keep this spot, whichever seat has them.
+		if (boardLooks.current.reminders === 'free') grimoire.setReminderSpot(reminderId, at);
 		// Dropped on another seat: moved (one History entry). Anywhere else: nothing changes.
 		if (target && target !== from) moveConfirm?.request(reminderId, target);
 	}
@@ -906,7 +908,11 @@
 				{@const at = fan[i]}
 				{#each seat.reminders as reminder, k (reminder.reminderId)}
 					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
-					{@const p = dragged ? reminderDrag!.at : at[k]}
+					{@const spot =
+						boardLooks.current.reminders === 'free'
+							? grimoire.reminderSpots[reminder.reminderId]
+							: undefined}
+					{@const p = dragged ? reminderDrag!.at : (spot ?? at[k])}
 					<div
 						class="chip-slot"
 						data-seat={i + 1}

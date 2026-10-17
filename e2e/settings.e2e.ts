@@ -188,7 +188,13 @@ test('the board looks and background are in Board and tokens, saved with the boa
 	const saved = await page.evaluate(() =>
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
 	);
-	expect(saved).toEqual({ vignette: false, vignetteStrength: 0.3, rulesAt: 'edge', nameSize: 1 });
+	expect(saved).toEqual({
+		vignette: false,
+		vignetteStrength: 0.3,
+		rulesAt: 'edge',
+		nameSize: 1,
+		reminders: 'seat'
+	});
 
 	await page.reload();
 	const again = await openSettings(page, 'Board and tokens');
