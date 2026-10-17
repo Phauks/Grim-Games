@@ -22,6 +22,7 @@
 		recentProvider,
 		type ScriptListing
 	} from '#lib/features/scripts/script-providers.ts';
+	import AddScript from '#lib/features/scripts/AddScript.svelte';
 	import ScriptDetails from '#lib/features/scripts/ScriptDetails.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
@@ -200,6 +201,16 @@
 	const openRow = $derived(rows.find((row) => row.key === openKey));
 	const openLabels = $derived(openKey ? libraryLabels.for(openKey) : { tags: [] });
 
+	/** A script just added opens straight away, so its folder and tags can be set. */
+	function openAdded() {
+		let newest: Row | undefined;
+		for (const row of rows) {
+			const used = row.listing.saved?.lastUsedAt ?? -1;
+			if (used > (newest?.listing.saved?.lastUsedAt ?? -1)) newest = row;
+		}
+		if (newest) openScript(newest);
+	}
+
 	function openScript(row: Row) {
 		openKey = row.key;
 		scriptOpen = true;
@@ -239,7 +250,11 @@
 <main>
 	<div class="head">
 		<h1>{t('library.heading')}</h1>
-		<Button icon="tag" onclick={() => (manageOpen = true)}>{t('library.manage')}</Button>
+		<div class="page-actions">
+			<Button icon="tag" onclick={() => (manageOpen = true)}>{t('library.manage')}</Button>
+			<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
+			<AddScript onsaved={openAdded} />
+		</div>
 	</div>
 
 	<ErrorBoundary area="library">
@@ -451,6 +466,11 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
+	}
+	.page-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 	}
 	h1 {
 		margin: 0;
