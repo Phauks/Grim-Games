@@ -33,6 +33,8 @@
 	import {
 		livingByTeam,
 		setupComplete,
+		diedSinceNewDay,
+		ON_DEATH,
 		setupReminders,
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
@@ -187,13 +189,27 @@
 	/**
 	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
 	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
+	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
+	 * an ability set off by dying on the night of the death (the Ravenkeeper's).
 	 */
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
+		const { entries, cursor } = grimoire.open.session.log;
+		const died = diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
+		const counts = (step: NightStep) => {
+			const holders = stepHolders(game, step, characters);
+			const id = step.character?.id;
+			return (
+				holders.length === 0 ||
+				holders.some(
+					(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && died.has(s))
+				)
+			);
+		};
 		return {
-			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data)),
-			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data))
+			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data), counts),
+			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data), counts)
 		};
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
