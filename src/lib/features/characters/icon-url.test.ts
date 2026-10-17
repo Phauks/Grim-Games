@@ -16,4 +16,24 @@ describe('iconUrl (a reminder or token icon shows its player’s alignment)', ()
 	it('draws a Minion whose player turned good blue', () => {
 		expect(iconUrl(get('poisoner'), 'good')).toMatch(/poisoner_g\.webp$/);
 	});
+	it('draws a homebrew character’s second image once its player flips alignment', () => {
+		const homebrew = {
+			...get('poisoner'),
+			id: 'sample-homebrew',
+			edition: undefined,
+			image: ['https://example.test/regular.png', 'https://example.test/flipped.png']
+		};
+		expect(iconUrl(homebrew)).toBe('https://example.test/regular.png');
+		expect(iconUrl(homebrew, 'good')).toBe('https://example.test/flipped.png');
+	});
+	it('gives a homebrew character without an image TPI’s generic icon for its type', () => {
+		const homebrew = {
+			...get('poisoner'),
+			id: 'sample-homebrew',
+			edition: undefined,
+			image: undefined
+		};
+		expect(iconUrl(homebrew)).toBe('/data/icons/generic/minion_e.webp');
+		expect(iconUrl(homebrew, 'good')).toBe('/data/icons/generic/minion_g.webp');
+	});
 });
