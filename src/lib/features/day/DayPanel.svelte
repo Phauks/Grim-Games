@@ -580,7 +580,8 @@
 				<Button onclick={() => markDead(option.cause)}>
 					<Sentence text={causeLabel(option.cause)}
 						>{#snippet fill()}{@render badge(option.cause, false)}{/snippet}</Sentence
-					>{#if caution}<span class="caution"
+					>{#if option.gained}<span class="gained">({@render badge(option.gained, false)})</span
+						>{/if}{#if caution}<span class="caution"
 							>(<Sentence text={caution.text}
 								>{#snippet fill()}{@render badge(caution.characterId, false)}{/snippet}</Sentence
 							>)</span
@@ -842,6 +843,7 @@
 		margin-right: var(--space-2);
 		font-weight: 700;
 	}
+	.gained,
 	.caution {
 		margin-left: var(--space-1);
 		color: var(--on-surface-muted);

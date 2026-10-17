@@ -29,6 +29,7 @@ import {
 	type AbilitySource,
 	type RegistrationWorld
 } from './ability.ts';
+import { gainedAbilities } from './gained-abilities.ts';
 import {
 	DEATH_CAUSE_ENTRIES,
 	DEATH_KINDS,
@@ -112,8 +113,50 @@ export interface ValidDeathCause {
 	cause: DeathCause;
 	/** `general` for executed, exiled and the Demon. */
 	kind: DeathKind | 'unknown' | 'general';
+	/**
+	 * For a character that kills only through an ability it gained (Cannibal, Pixie,
+	 * Philosopher): the character whose ability it has, shown beside it.
+	 */
+	gained?: CharacterId;
 	flags: DeathCauseFlag[];
 }
+
+/**
+ * Characters whose deaths come only from the ability they gained, which the grimoire shows:
+ * - Cannibal: the executee carrying its Lunch reminder
+ *   (https://wiki.bloodontheclocktower.com/Cannibal: the ability of the player who last died
+ *   by execution);
+ * - Pixie: the Townsfolk whose ability it has once "Has Ability" is placed
+ *   (https://wiki.bloodontheclocktower.com/Pixie, `gainedAbilities`);
+ * - Philosopher: the token it was swapped for ("Is The Philosopher"), or the player its
+ *   Drunk reminder is on (https://wiki.bloodontheclocktower.com/Philosopher).
+ * Without that, they are not offered (Trevor, 2026-10-17: the Cannibal can't kill unless
+ * the ability it gained can).
+ */
+const GAINED_FROM: Readonly<
+	Record<
+		CharacterId,
+		(game: Game, holder: SeatId, characters: CharacterLookup) => CharacterId | undefined
+	>
+> = {
+	cannibal: (game, _holder, characters) => {
+		const lunch = game.seating.find((s) =>
+			game.seats[s].reminders.some((r) => r.characterId === 'cannibal' && r.label === 'Lunch')
+		);
+		return lunch === undefined ? undefined : trueCharacter(game, lunch, characters);
+	},
+	pixie: (game, holder) =>
+		gainedAbilities(game).find((g) => g.seatId === holder && g.status === 'has-ability')
+			?.characterId,
+	philosopher: (game, holder, characters) => {
+		const token = game.seats[holder].characterId;
+		if (token !== undefined && token !== 'philosopher') return token;
+		const drunk = game.seating.find((s) =>
+			game.seats[s].reminders.some((r) => r.characterId === 'philosopher' && r.label === 'Drunk')
+		);
+		return drunk === undefined ? undefined : trueCharacter(game, drunk, characters);
+	}
+};
 
 /**
  * The causes of death that are valid for this player given the grimoire, in picker order:
@@ -149,10 +192,26 @@ export function validDeathCauses(
 		const holders = game.seating.filter((s) => trueCharacter(game, s, characters) === characterId);
 		if (holders.length === 0 && !game.ruleCharacters.includes(characterId)) continue;
 
-		const rule: VictimRule | undefined =
-			kind === 'own-death' ? { victim: 'self' } : VICTIM_RULES[characterId];
-		const acting = holders.filter((h) => holderFits(game, rule, h, seatId));
+		// A gained ability: the rules of the character it came from.
+		const from = Object.hasOwn(GAINED_FROM, characterId) ? GAINED_FROM[characterId] : undefined;
+		const gainedBy = new Map<SeatId, CharacterId>();
+		for (const h of from ? holders : []) {
+			const id = from!(game, h, characters);
+			const entry = id === undefined ? undefined : deathCauseEntry(id);
+			if (id !== undefined && entry && entry.kind !== 'gained-ability') gainedBy.set(h, id);
+		}
+		if (from && gainedBy.size === 0) continue;
+		const ruleFor = (h: SeatId): VictimRule | undefined => {
+			const id = gainedBy.get(h) ?? characterId;
+			const k = gainedBy.has(h) ? deathCauseEntry(id)!.kind : kind;
+			return k === 'own-death' ? { victim: 'self' } : VICTIM_RULES[id];
+		};
+		const acting = holders.filter(
+			(h) => (!from || gainedBy.has(h)) && holderFits(game, ruleFor(h), h, seatId)
+		);
 		if (holders.length > 0 && acting.length === 0) continue;
+		const gained = acting.length > 0 ? gainedBy.get(acting[0]) : undefined;
+		const rule = acting.length > 0 ? ruleFor(acting[0]) : ruleFor(holders[0]);
 
 		const flags: DeathCauseFlag[] = [];
 		if (rule?.victim === 'registers') {
@@ -171,7 +230,7 @@ export function validDeathCauses(
 		) {
 			flags.push({ code: 'impaired', seatIds: acting });
 		}
-		out.push({ cause: characterId, kind, flags });
+		out.push({ cause: characterId, kind, ...(gained ? { gained } : {}), flags });
 	}
 	return out;
 }
