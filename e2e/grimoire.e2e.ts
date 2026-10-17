@@ -1515,3 +1515,36 @@ test("on a crowded table one seat's reminders never cover another's", async ({ p
 				a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1
 			).toBe(false);
 });
+
+test("a night step lists every copy of a character's reminder (the Mathematician's five)", async ({
+	page
+}) => {
+	await startGame(page, 'Sects & Violets');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Mathematician', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Guide: Mathematician' }).tap();
+	const guide = page.getByRole('dialog', { name: 'Mathematician' });
+	// https://wiki.bloodontheclocktower.com/Mathematician : five "Abnormal" tokens in TPI's data.
+	const place = guide.getByRole('button', { name: 'Place' });
+	await expect(place).toHaveCount(5);
+	for (const seat of [2, 3]) {
+		await place.first().tap();
+		await page
+			.getByRole('dialog', { name: 'Put Abnormal on' })
+			.getByRole('button', { name: new RegExp(`^${seat} Seat ${seat} `) })
+			.tap();
+	}
+	await expect(place).toHaveCount(3);
+	await expect(guide).toContainText('On Seat 2');
+	await expect(guide).toContainText('On Seat 3');
+	// Done stays in reach however long the step is.
+	await guide.getByRole('button', { name: 'Done' }).tap();
+	await expect(guide).toBeHidden();
+});

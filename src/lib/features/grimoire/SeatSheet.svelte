@@ -506,7 +506,7 @@
 				</button>
 			</div>
 
-			<div class="row">
+			<div class="row reminders-head">
 				<h3>Reminders</h3>
 				<Button variant="quiet" icon="add" onclick={() => (remindersOpen = true)}>
 					Add reminder
@@ -1153,9 +1153,16 @@
 		font-family: var(--font-player);
 		cursor: pointer;
 	}
+	/* Lines between the ability, the controls and the reminders (Trevor, 2026-10-17). */
 	.ability {
 		display: grid;
 		gap: calc(0.125 * var(--u));
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--on-sheet-muted);
+	}
+	.reminders-head {
+		padding-top: var(--space-2);
+		border-top: 1px solid var(--on-sheet-muted);
 	}
 	.ability p {
 		margin: 0;
