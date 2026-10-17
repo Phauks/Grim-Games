@@ -13,7 +13,7 @@
 		recentScripts,
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
-	import { describeSource, sameScript } from '#lib/features/scripts/saved-scripts.ts';
+	import { describeSource, sameScript, sourcePage } from '#lib/features/scripts/saved-scripts.ts';
 	import {
 		localListings,
 		profileProvider,
@@ -382,7 +382,11 @@
 					label: t('library.author'),
 					value: openRow.listing.row.author || t('common.none')
 				},
-				{ label: t('library.source'), value: sourceOf(openRow) }
+				{
+					label: t('library.source'),
+					value: sourceOf(openRow),
+					href: sourcePage(openRow.shareable.source)
+				}
 			]}
 			entries={openRow.listing.row.entries}
 			{data}
