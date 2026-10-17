@@ -4,9 +4,10 @@
  */
 import type { HomebrewEntries, HomebrewEntry } from '#lib/core/rules/script-builder.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
+import type { ScriptSource, VariationOf } from '#lib/features/scripts/saved-scripts.ts';
 
-/** 2: homebrew characters and their credits (2026-10-17). */
-export const DRAFT_VERSION = 2;
+/** 2: homebrew characters and their credits; 3: the script it is a variation of (2026-10-17). */
+export const DRAFT_VERSION = 3;
 
 /** Who made a homebrew character, and its page on the site it came from. */
 export interface DraftCredit {
@@ -25,6 +26,8 @@ export interface ScriptDraft {
 	credits: Record<CharacterId, DraftCredit>;
 	/** The saved script this draft edits; saving replaces it. */
 	editing?: string;
+	/** The script this one was edited from; saved with it. */
+	variationOf?: VariationOf;
 }
 
 export function emptyDraft(): ScriptDraft {
@@ -36,6 +39,12 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 const text = (value: unknown) => (typeof value === 'string' ? value : '');
+
+function readVariationOf(raw: unknown): VariationOf | undefined {
+	if (!isObject(raw) || typeof raw.name !== 'string' || !Array.isArray(raw.json)) return undefined;
+	if (!isObject(raw.source) || typeof raw.source.kind !== 'string') return undefined;
+	return { name: raw.name, source: raw.source as unknown as ScriptSource, json: raw.json };
+}
 
 function readHomebrew(raw: unknown): Record<CharacterId, HomebrewEntry> {
 	if (!isObject(raw)) return {};
@@ -54,12 +63,14 @@ function readCredits(raw: unknown): Record<CharacterId, DraftCredit> {
 }
 
 /**
- * A stored draft brought up to this version (1 had official characters only), or an empty
+ * A stored draft brought up to this version (1 had official characters only, 2 no
+ * variation), or an empty
  * one when it is missing, damaged or from a newer build.
  */
 export function parseDraft(raw: unknown): ScriptDraft {
 	if (!isObject(raw)) return emptyDraft();
-	if (raw.version !== 1 && raw.version !== DRAFT_VERSION) return emptyDraft();
+	if (raw.version !== 1 && raw.version !== 2 && raw.version !== DRAFT_VERSION) return emptyDraft();
+	const variationOf = readVariationOf(raw.variationOf);
 	const ids = Array.isArray(raw.ids) ? raw.ids.filter((id) => typeof id === 'string') : [];
 	return {
 		version: DRAFT_VERSION,
@@ -68,7 +79,8 @@ export function parseDraft(raw: unknown): ScriptDraft {
 		ids: [...new Set(ids)],
 		homebrew: readHomebrew(raw.homebrew),
 		credits: readCredits(raw.credits),
-		...(typeof raw.editing === 'string' ? { editing: raw.editing } : {})
+		...(typeof raw.editing === 'string' ? { editing: raw.editing } : {}),
+		...(variationOf ? { variationOf } : {})
 	};
 }
 

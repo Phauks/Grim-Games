@@ -27,7 +27,8 @@
 	import {
 		reloadSavedScript,
 		sameScript,
-		type SavedScript
+		type SavedScript,
+		type VariationOf
 	} from '#lib/features/scripts/saved-scripts.ts';
 	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
@@ -180,7 +181,14 @@
 		saving = true;
 		try {
 			const editing = asNew ? undefined : savedRecord;
-			await chooseScript(built, { kind: 'built' });
+			// A copy of a saved built script is a variation of it as it was saved. Snapshots, as
+			// storage takes plain objects and these are reactive state.
+			const variationOf: VariationOf | undefined = $state.snapshot(
+				asNew && savedRecord
+					? { name: savedRecord.name, source: { kind: 'built' }, json: savedRecord.json }
+					: d.variationOf
+			);
+			await chooseScript(built, { kind: 'built', ...(variationOf ? { variationOf } : {}) });
 			const saved = currentScript.saved;
 			if (!saved || saved.scriptId === 'unsaved') {
 				toast(t('script-builder.saveFailed'));
@@ -190,7 +198,7 @@
 			if (editing && editing.scriptId !== saved.scriptId && editing.source.kind === 'built') {
 				await replaceBuilt(editing, saved);
 			}
-			draft.setEditing(saved.scriptId);
+			draft.setEditing(saved.scriptId, variationOf);
 		} catch (e) {
 			reportError(e, { area: 'script-builder' });
 		} finally {
@@ -236,16 +244,23 @@
 		const script = reloadSavedScript(saved, data);
 		if (!script) return;
 		const kept = draft.current.credits;
-		const { entries } = homebrewFromScript(scriptToJson(script), data);
+		const json = scriptToJson(script);
+		const { entries } = homebrewFromScript(json, data);
+		// Editing a script made elsewhere makes a variation of it; a built one keeps its own.
+		const variationOf: VariationOf | undefined =
+			saved.source.kind === 'built'
+				? saved.source.variationOf
+				: { name: script.name, source: $state.snapshot(saved.source), json };
 		draft.replace({
-			version: 2,
+			version: 3,
 			name: script.name,
 			author: script.meta.author ?? '',
 			ids: script.characters.map((c) => c.id),
 			homebrew: entries,
 			// Credits aren't part of a script; keep the ones this device already knows.
 			credits: Object.fromEntries(Object.entries(kept).filter(([id]) => id in entries)),
-			...(saved.source.kind === 'built' ? { editing: saved.scriptId } : {})
+			...(saved.source.kind === 'built' ? { editing: saved.scriptId } : {}),
+			...(variationOf ? { variationOf } : {})
 		});
 	}
 </script>
@@ -306,6 +321,11 @@
 							/>
 						</ClearableField>
 					</label>
+					<!-- Always shown, so opening a script never moves the page. -->
+					<p class="variation" data-testid="variation-of">
+						<span>{t('script-builder.variationOf')}</span>
+						{d.variationOf?.name || t('common.none')}
+					</p>
 					<div class="save">
 						<Button variant="accent" disabled={!built || isSaved || saving} onclick={() => save()}
 							>{isSaved ? t('script-builder.saved') : t('script-builder.save')}</Button
@@ -562,6 +582,16 @@
 	label {
 		display: grid;
 		gap: var(--space-1);
+	}
+	.variation {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+	.variation span {
+		color: var(--on-surface-muted);
 	}
 	.save {
 		display: grid;

@@ -26,8 +26,12 @@ export const MAX_SAVED_SCRIPTS = 20;
 export type ScriptSource =
 	| { kind: 'edition' }
 	| { kind: 'paste' }
-	/** Made on the Script builder page. */
-	| { kind: 'built' }
+	/**
+	 * Made on the Script builder page. `variationOf`: the script it was edited from, when that
+	 * wasn't made from scratch here (Trevor, 2026-10-17: edits are marked as variations, and
+	 * what changed can be seen). Added later, so older records lack it.
+	 */
+	| { kind: 'built'; variationOf?: VariationOf }
 	| { kind: 'file'; fileName: string }
 	/**
 	 * `page`: the script's source page when the link is a file behind one (a Carousel script's
@@ -37,6 +41,16 @@ export type ScriptSource =
 	| { kind: 'botcscripts'; scriptId: number; version: string }
 	/** `code` is the share code it was opened with, so sharing it again reuses that code. */
 	| { kind: 'share'; code?: string };
+
+/**
+ * The script a variation was made from, kept whole so what changed can still be shown after
+ * the original is removed. `json` is the original in TPI's format, official editions included.
+ */
+export interface VariationOf {
+	name: string;
+	source: ScriptSource;
+	json: unknown[];
+}
 
 export interface SavedScript {
 	schemaVersion: typeof SAVED_SCRIPT_VERSION;
