@@ -584,3 +584,57 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	// The Warnings list says it once, without the swap advice it gives when the King is there.
 	await expect(check.locator('.warn li').filter({ hasText: 'swap a Townsfolk' })).toHaveCount(0);
 });
+
+// Setup reminders come from our list of official characters, and script JSON doesn't say
+// which reminders go out before the game, so a chosen custom character with reminders is
+// named in the Warnings (Trevor, 2026-10-17). One without reminders has nothing to place.
+test('the setup check names chosen custom characters whose setup reminders it cannot work out', async ({
+	page
+}) => {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
+		.tap();
+	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	await paste.getByLabel('Script JSON or link').fill(
+		JSON.stringify([
+			{ id: '_meta', name: 'Custom Check' },
+			{
+				id: 'lamplighter',
+				name: 'Lamplighter',
+				team: 'townsfolk',
+				ability: 'Each night, learn something.',
+				reminders: ['Lit']
+			},
+			{ id: 'quietone', name: 'Quiet One', team: 'townsfolk', ability: 'You do nothing.' },
+			'chef',
+			'empath',
+			'spy',
+			'imp'
+		])
+	);
+	await paste.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText('Custom Check');
+
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Custom Check').tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.goto(`${new URL(page.url()).pathname}/setup`);
+
+	const check = page.getByTestId('setup-check');
+	const custom = check.getByTestId('custom-reminders');
+	await page.getByRole('button', { name: 'Quiet One', exact: true }).tap();
+	await expect(custom).toHaveCount(0);
+	await page.getByRole('button', { name: 'Lamplighter', exact: true }).tap();
+	await expect(custom).toContainText('Lamplighter');
+	await expect(custom).not.toContainText('Quiet One');
+	// The badge in the warning is a button too: deselect from the character list.
+	await page
+		.getByRole('button', { name: 'Lamplighter', exact: true })
+		.and(page.locator(':not([data-testid="setup-check"] *)'))
+		.tap();
+	await expect(custom).toHaveCount(0);
+});
