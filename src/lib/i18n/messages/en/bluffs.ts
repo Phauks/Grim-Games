@@ -11,6 +11,8 @@ export const bluffs = {
 	'bluffs.show': 'Show',
 	'bluffs.clearNamed': 'Clear the {set} bluffs',
 	'bluffs.deleteNamed': 'Delete the {set} bluffs',
+	'bluffs.renameNamed': 'Rename the {set} bluffs',
+	'bluffs.setName': 'Set name',
 	'bluffs.delete': 'Delete',
 	'bluffs.addSet': 'Add a set',
 	'bluffs.filter': 'Characters',

@@ -122,6 +122,8 @@ export type Decision =
 
 /** Bluffs are 3 good characters (https://wiki.bloodontheclocktower.com/Glossary). */
 export const BLUFFS_PER_SET = 3;
+/** Longest name a bluff set can have. */
+export const MAX_BLUFF_SET_NAME = 40;
 
 /** Base setup covers 5 to 15 players; more join as Travellers (https://wiki.bloodontheclocktower.com/Setup). */
 export const MIN_PLAYERS = 5;
@@ -903,6 +905,20 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				refuse('invalid-bluff-set', `no bluff set ${set}`);
 			}
 			return [{ type: 'BluffSetRemoved', set }];
+		}
+
+		case 'RenameBluffSet': {
+			const { set } = command;
+			// The Demon's set keeps its name; the others are the Storyteller's to name.
+			if (!Number.isInteger(set) || set < 1 || set >= game.bluffs.length) {
+				refuse('invalid-bluff-set', `no bluff set ${set} to rename`);
+			}
+			const name = command.name.trim().slice(0, MAX_BLUFF_SET_NAME);
+			if (name === (game.bluffNames?.[set] ?? '')) {
+				warn('no-change', 'the set already has that name');
+				return [];
+			}
+			return [{ type: 'BluffSetRenamed', set, name }];
 		}
 
 		case 'BuildBag': {

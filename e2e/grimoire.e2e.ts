@@ -1664,3 +1664,43 @@ test('marking a player as the Marionette asks to make them evil', async ({ page 
 	await picker.getByRole('button', { name: 'Close' }).tap();
 	await expect(sheet.getByText('Evil · Seat 2')).toBeVisible();
 });
+
+test('an extra Demon bluff set can be renamed, and the name is kept with the game', async ({
+	page
+}) => {
+	await startGame(page);
+	await menu(page, 'Demon bluffs');
+	await page.getByRole('button', { name: 'Add a set' }).tap();
+	await page
+		.getByRole('group', { name: 'Bluff characters' })
+		.getByRole('button', { name: /^Monk(, .*)?$/ })
+		.tap();
+	await page.getByRole('button', { name: 'Save' }).tap();
+	// The Demon's set keeps its name (Trevor, 2026-10-17).
+	await expect(page.getByRole('button', { name: 'Rename the Demon bluffs' })).toHaveCount(0);
+
+	const set = page.getByTestId('bluff-set').nth(1);
+	const rename = () => set.getByRole('button', { name: /^Rename the .* bluffs$/ }).tap();
+	const field = set.getByRole('textbox', { name: 'Set name' });
+	await rename();
+	await field.fill('Legion');
+	await field.press('Enter');
+	await expect(set).toHaveAttribute('data-set', 'Legion');
+
+	// Esc leaves the name as it was.
+	await rename();
+	await field.fill('Something else');
+	await field.press('Escape');
+	await expect(set).toHaveAttribute('data-set', 'Legion');
+
+	// Saved with the game.
+	await page.reload();
+	await menu(page, 'Demon bluffs');
+	await expect(page.getByTestId('bluff-set').nth(1)).toHaveAttribute('data-set', 'Legion');
+
+	// Clearing the name brings back the default.
+	await rename();
+	await set.getByRole('button', { name: 'Clear' }).tap();
+	await field.press('Enter');
+	await expect(set).toHaveAttribute('data-set', 'Set 2');
+});

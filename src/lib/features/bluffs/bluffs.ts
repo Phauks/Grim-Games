@@ -36,11 +36,13 @@ export function demonBluffsInPlay(game: Game, characters: CharacterLookup): Char
 }
 
 /**
- * The name of a bluff set, by position: the Demon's first, then "Set 2" and on, except that
- * the second set is the Lunatic's while a Lunatic is in play.
+ * The name of a bluff set: the one the Storyteller gave it (not the Demon's set, Trevor
+ * 2026-10-17), else by position: the Demon's first, then "Set 2" and on, except that the
+ * second set is the Lunatic's while a Lunatic is in play.
  */
-export function bluffSetLabel(index: number, lunatic: boolean): string {
+export function bluffSetLabel(index: number, lunatic: boolean, name?: string): string {
 	if (index === DEMON_SET) return t('bluffs.set.demon');
+	if (name?.trim()) return name.trim();
 	if (index === LUNATIC_SET && lunatic) return t('bluffs.set.lunatic');
 	return t('bluffs.set.numbered', { number: index + 1 });
 }
@@ -59,6 +61,14 @@ export interface ShowableBluffSet {
 export function showableBluffSets(game: Game, characters: CharacterLookup): ShowableBluffSet[] {
 	const lunatic = lunaticInPlay(game, characters);
 	return game.bluffs.flatMap((ids, set) =>
-		ids.length > 0 ? [{ set, label: bluffSetLabel(set, lunatic), characterIds: [...ids] }] : []
+		ids.length > 0
+			? [
+					{
+						set,
+						label: bluffSetLabel(set, lunatic, game.bluffNames?.[set]),
+						characterIds: [...ids]
+					}
+				]
+			: []
 	);
 }

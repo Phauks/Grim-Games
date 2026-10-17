@@ -59,6 +59,7 @@ export type GameEvent =
 	| { type: 'RuleCharacterRemoved'; characterId: CharacterId }
 	| { type: 'BluffsSet'; set: number; characterIds: CharacterId[] }
 	| { type: 'BluffSetRemoved'; set: number }
+	| { type: 'BluffSetRenamed'; set: number; name: string }
 	| {
 			type: 'BagBuilt';
 			tiles: Tile[];

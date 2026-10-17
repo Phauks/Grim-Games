@@ -242,8 +242,21 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			bluffs[event.set] = [...event.characterIds];
 			return { ...game, bluffs };
 		}
-		case 'BluffSetRemoved':
-			return { ...game, bluffs: game.bluffs.filter((_, i) => i !== event.set) };
+		case 'BluffSetRemoved': {
+			const bluffs = game.bluffs.filter((_, i) => i !== event.set);
+			// Names stay with their sets as the later ones move up.
+			if (!game.bluffNames) return { ...game, bluffs };
+			return { ...game, bluffs, bluffNames: game.bluffNames.filter((_, i) => i !== event.set) };
+		}
+		case 'BluffSetRenamed': {
+			if (event.set < 0 || event.set >= game.bluffs.length) return game;
+			const bluffNames = Array.from(
+				{ length: Math.max(game.bluffNames?.length ?? 0, event.set + 1) },
+				(_, i) => game.bluffNames?.[i] ?? ''
+			);
+			bluffNames[event.set] = event.name;
+			return { ...game, bluffNames };
+		}
 		case 'BagBuilt':
 			return {
 				...game,

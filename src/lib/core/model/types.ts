@@ -237,6 +237,11 @@ export interface Game {
 	ruleCharacters: CharacterId[];
 	/** Demon bluffs; more than one set when more than one player gets bluffs. */
 	bluffs: CharacterId[][];
+	/**
+	 * Names the Storyteller gave bluff sets, by position (Trevor, 2026-10-17); an empty or
+	 * missing name means the set's default. Optional, so older saved games read as before.
+	 */
+	bluffNames?: string[];
 	bag?: Bag;
 	/** The Storyteller's changes to the night order, applied in this order. */
 	nightOrderOverrides: NightStepOverride[];

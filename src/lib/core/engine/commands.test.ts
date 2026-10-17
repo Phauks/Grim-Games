@@ -601,6 +601,33 @@ describe('bluffs', () => {
 		expect(refused(removed, ctx, { type: 'RemoveBluffSet', set: 1 })).toBe('invalid-bluff-set');
 	});
 
+	it("names sets after the Demon's, and names move with their sets", () => {
+		const { session, ctx } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'SetBluffs', set: 0, characterIds: ['chef'] },
+			{ type: 'SetBluffs', set: 1, characterIds: ['mayor'] },
+			{ type: 'SetBluffs', set: 2, characterIds: ['monk'] },
+			{ type: 'RenameBluffSet', set: 2, name: '  Legion  ' }
+		);
+		expect(s.game.bluffNames).toEqual(['', '', 'Legion']);
+		// The Demon's set keeps its name; a set that doesn't exist can't be named.
+		expect(refused(s, ctx, { type: 'RenameBluffSet', set: 0, name: 'x' })).toBe(
+			'invalid-bluff-set'
+		);
+		expect(refused(s, ctx, { type: 'RenameBluffSet', set: 3, name: 'x' })).toBe(
+			'invalid-bluff-set'
+		);
+		expect(warned(s, ctx, { type: 'RenameBluffSet', set: 2, name: 'Legion' })).toEqual([
+			'no-change'
+		]);
+		const moved = run(s, ctx, { type: 'RemoveBluffSet', set: 1 });
+		expect(moved.game.bluffNames).toEqual(['', 'Legion']);
+		const cleared = run(moved, ctx, { type: 'RenameBluffSet', set: 1, name: '' });
+		expect(cleared.game.bluffNames).toEqual(['', '']);
+	});
+
 	it('warns about bluffs in play, evil, repeated, off the script or too many', () => {
 		const { session, ctx, seats } = newGame(names);
 		const s = run(session, ctx, { type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' });

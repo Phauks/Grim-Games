@@ -9,6 +9,7 @@
 	} from '#lib/core/data/index.ts';
 	import {
 		BLUFFS_PER_SET,
+		MAX_BLUFF_SET_NAME,
 		type Command,
 		type EngineError,
 		type EngineWarning
@@ -23,12 +24,17 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { bluffSetLabel, charactersReallyInPlay, DEMON_SET, lunaticInPlay } from './bluffs.ts';
 
-	export type BluffCommand = Extract<Command, { type: 'SetBluffs' | 'RemoveBluffSet' }>;
+	export type BluffCommand = Extract<
+		Command,
+		{ type: 'SetBluffs' | 'RemoveBluffSet' | 'RenameBluffSet' }
+	>;
 	export type BluffDispatch = (
 		command: BluffCommand
 	) => { ok: true; warnings: EngineWarning[] } | { ok: false; error: EngineError };
@@ -67,7 +73,26 @@
 	const lunatic = $derived(lunaticInPlay(game, characters));
 	// The Demon's set always, then any others the Storyteller added (Trevor, 2026-10-16).
 	const sets = $derived(Array.from({ length: Math.max(1, game.bluffs.length) }, (_, i) => i));
-	const label = (set: number) => bluffSetLabel(set, lunatic);
+	const label = (set: number) => bluffSetLabel(set, lunatic, game.bluffNames?.[set]);
+	const defaultLabel = (set: number) => bluffSetLabel(set, lunatic);
+
+	/** The set being renamed in place, and what has been typed (Trevor, 2026-10-17). */
+	let renaming = $state<number>();
+	let typedName = $state('');
+
+	function rename(index: number) {
+		renaming = index;
+		typedName = game.bluffNames?.[index] ?? '';
+	}
+
+	/** Enter or leaving the field saves; an empty name brings back the default. */
+	function finishRename() {
+		if (renaming === undefined) return;
+		const index = renaming;
+		renaming = undefined;
+		if (typedName.trim() !== (game.bluffNames?.[index] ?? ''))
+			run({ type: 'RenameBluffSet', set: index, name: typedName });
+	}
 	/** The Demon's bluffs must not be in play; other sets (the Lunatic's) may be. */
 	const blocks = (set: number) => set === DEMON_SET;
 	const pickedBlocked = $derived(
@@ -134,7 +159,51 @@
 					{@const ids = game.bluffs[index] ?? []}
 					{@const stale = blocks(index) && ids.some((id) => inPlay.has(id))}
 					<li class="set" data-testid="bluff-set" data-set={label(index)}>
-						<span class="label">{label(index)}</span>
+						<div class="label-row">
+							{#if renaming === index}
+								<form
+									class="rename"
+									onsubmit={(event) => {
+										event.preventDefault();
+										finishRename();
+									}}
+								>
+									<ClearableField bind:value={typedName}>
+										<input
+											type="text"
+											aria-label={t('bluffs.setName')}
+											placeholder={defaultLabel(index)}
+											maxlength={MAX_BLUFF_SET_NAME}
+											autocomplete="off"
+											enterkeyhint="done"
+											autofocus
+											bind:value={typedName}
+											onkeydown={(event) => {
+												if (event.key === 'Escape') {
+													event.preventDefault();
+													event.stopPropagation();
+													renaming = undefined;
+												}
+											}}
+											onblur={finishRename}
+										/>
+									</ClearableField>
+								</form>
+							{:else}
+								<span class="label">{label(index)}</span>
+							{/if}
+							<!-- The Demon's set keeps its name; the others can be renamed. -->
+							{#if index !== DEMON_SET}
+								<span class="ink"
+									><IconButton
+										icon="rename"
+										label={t('bluffs.renameNamed', { set: label(index) })}
+										disabled={index >= game.bluffs.length || renaming === index}
+										onclick={() => rename(index)}
+									/></span
+								>
+							{/if}
+						</div>
 						<ol class="rows">
 							{#each Array.from({ length: BLUFFS_PER_SET }, (_, i) => ids[i]) as id, i (i)}
 								{@const character = id ? characters.get(id) : undefined}
@@ -280,7 +349,35 @@
 		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 		border-radius: var(--card-radius);
 	}
+	/* One row high whether showing the name or the field, so nothing moves. */
+	.label-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: var(--tap-target);
+	}
 	.label {
+		flex: 1;
+		font-family: var(--font-heading);
+	}
+	/* The sheet is parchment: the pencil takes its ink colour. */
+	.ink :global(.icon-button) {
+		color: inherit;
+	}
+	.rename {
+		flex: 1;
+		min-width: 0;
+	}
+	.rename input {
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-2);
+		/* The sheet's own ink and paper, so the name reads on parchment. */
+		border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+		border-radius: var(--radius-md);
+		background: color-mix(in srgb, currentColor 6%, transparent);
+		color: inherit;
+		font: inherit;
 		font-family: var(--font-heading);
 	}
 	.rows {

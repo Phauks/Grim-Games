@@ -101,6 +101,8 @@ export type Command =
 	/** Replaces bluff set `set` (0-based); `set` equal to the number of sets adds one. */
 	| { type: 'SetBluffs'; set: number; characterIds: CharacterId[] }
 	| { type: 'RemoveBluffSet'; set: number }
+	/** Names a bluff set after the Demon's; an empty name brings back its default. */
+	| { type: 'RenameBluffSet'; set: number; name: string }
 	/** Replaces the bag. Tiles are shuffled unless `shuffle` is false. */
 	| {
 			type: 'BuildBag';

@@ -176,6 +176,7 @@ function describeEvent(
 			return [text('Removed '), { kind: 'character', characterId: event.characterId }];
 		case 'BluffsSet':
 		case 'BluffSetRemoved':
+		case 'BluffSetRenamed':
 			return [text('Changed the Demon bluffs')];
 		case 'BagBuilt':
 			return [text('Filled the bag')];
