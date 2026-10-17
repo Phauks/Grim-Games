@@ -182,8 +182,8 @@ test('the board looks and background are in Board and tokens, saved with the boa
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	await expect(vignette).not.toBeChecked();
 	await slide(page, 'Vignette strength', 0.3);
-	await dialog.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
-	await page.getByRole('option', { name: 'Edge, smaller' }).tap();
+	await dialog.getByRole('combobox', { name: 'Fabled and Loric', exact: true }).tap();
+	await page.getByRole('option', { name: 'Corner, smaller' }).tap();
 
 	const saved = await page.evaluate(() =>
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
@@ -192,6 +192,7 @@ test('the board looks and background are in Board and tokens, saved with the boa
 		vignette: false,
 		vignetteStrength: 0.3,
 		rulesAt: 'edge',
+		rulesGrouped: false,
 		nameSize: 1,
 		reminders: 'seat'
 	});
@@ -209,7 +210,7 @@ test('the day timer sound and mode are in Storyteller settings', async ({ page }
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Storyteller settings');
 	await dialog.getByRole('combobox', { name: 'Timer sound' }).tap();
-	await page.getByRole('option', { name: 'Chime' }).tap();
+	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
 	await dialog.getByRole('combobox', { name: 'Day timer' }).tap();
 	await page.getByRole('option', { name: 'Stopwatch' }).tap();
 	await page.reload();

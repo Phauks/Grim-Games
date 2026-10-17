@@ -164,6 +164,5 @@ export const setup = {
 	'setup.open.loading': 'Opening the game…',
 	'setup.open.missing': 'There is no saved game here on this device.',
 	'setup.open.tooNew':
-		'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.',
-	'setup.open.savedGames': 'Saved games'
+		'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.'
 } as const;

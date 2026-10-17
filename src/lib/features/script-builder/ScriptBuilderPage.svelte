@@ -37,6 +37,7 @@
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -285,9 +286,8 @@
 
 <svelte:window onhashchange={openFromHash} />
 
-<main>
-	<header class="title">
-		<h1>{t('script-builder.heading')}</h1>
+<Page title={t('script-builder.heading')}>
+	{#snippet actions()}
 		<div class="tools">
 			<IconButton
 				icon="open"
@@ -309,206 +309,199 @@
 				onclick={() => (clearOpen = true)}
 			/>
 		</div>
-	</header>
+	{/snippet}
+
+	{#snippet side()}
+		<ErrorBoundary area="script-builder">
+			<section class="details" aria-label={t('script-builder.details')}>
+				<label>
+					<span>{t('script-builder.name')}</span>
+					<ClearableField bind:value={() => d.name, (v) => draft.setName(v ?? '')}>
+						<input
+							value={d.name}
+							autocomplete="off"
+							enterkeyhint="done"
+							oninput={(e) => draft.setName(e.currentTarget.value)}
+							onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+						/>
+					</ClearableField>
+				</label>
+				<label>
+					<span>{t('script-builder.author')}</span>
+					<ClearableField bind:value={() => d.author, (v) => draft.setAuthor(v ?? '')}>
+						<input
+							value={d.author}
+							autocomplete="off"
+							enterkeyhint="done"
+							oninput={(e) => draft.setAuthor(e.currentTarget.value)}
+							onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+						/>
+					</ClearableField>
+				</label>
+				<!-- Always shown, so opening a script never moves the page. -->
+				<p class="variation" data-testid="variation-of">
+					<span>{t('script-builder.variationOf')}</span>
+					{d.variationOf?.name || t('common.none')}
+				</p>
+				<div class="save">
+					<Button variant="accent" disabled={!built || isSaved || saving} onclick={() => save()}
+						>{isSaved ? t('script-builder.saved') : t('script-builder.save')}</Button
+					>
+					<!-- Always there, so nothing moves; only a changed saved script can be copied. -->
+					<Button disabled={!built || !savedRecord || isSaved || saving} onclick={() => save(true)}
+						>{t('script-builder.saveNew')}</Button
+					>
+				</div>
+			</section>
+
+			<div class="source">
+				<Segmented
+					label={t('script-builder.source')}
+					hideLabel
+					value={source}
+					options={[
+						{ value: 'official', label: t('script-builder.source.official') },
+						{ value: 'homebrew', label: t('script-builder.source.homebrew') },
+						{ value: 'script', label: t('script-builder.source.script') }
+					]}
+					onChange={(value) => (value === 'homebrew' ? void showHomebrew() : (source = value))}
+				/>
+				<!-- Always in place, so switching source never moves the page. -->
+				<div class="collection" data-disabled={source !== 'homebrew' ? '' : undefined}>
+					<Select
+						label={t('script-builder.collection')}
+						hideLabel
+						value={collectionId}
+						options={collections.length
+							? collections.map((c) => ({ value: c.id, label: c.name }))
+							: [{ value: '', label: t('common.none') }]}
+						onChange={(id) => id && void pickCollection(id)}
+					/>
+				</div>
+			</div>
+			<p class="source-error" role="status" data-testid="homebrew-error">
+				{source === 'homebrew' ? homebrewError : ''}
+			</p>
+			<section class="check" aria-label={t('script-builder.check')} data-testid="builder-check">
+				<Collapsible
+					title={t('script-builder.jinxes')}
+					level={3}
+					storageKey="script-builder:jinxes"
+				>
+					{#snippet aside()}<span class="count" data-testid="jinx-count"
+							>{facts?.jinxes.length ?? 0}</span
+						>{/snippet}
+					{#if facts?.jinxes.length}
+						<ul>
+							{#each facts.jinxes as jinx (jinx.characters.join('+'))}
+								<li>
+									<CharacterBadge
+										characterId={jinx.characters[0]}
+										character={onScript.get(jinx.characters[0])}
+										inline
+									/>
+									{t('script-builder.and')}
+									<CharacterBadge
+										characterId={jinx.characters[1]}
+										character={onScript.get(jinx.characters[1])}
+										inline
+									/>: {jinx.reason}
+								</li>
+							{/each}
+						</ul>
+					{:else}<p>{t('common.none')}</p>{/if}
+				</Collapsible>
+				<Collapsible
+					title={t('script-builder.setupChanges')}
+					level={3}
+					storageKey="script-builder:setup"
+				>
+					{#snippet aside()}<span class="count">{facts?.modifiers.length ?? 0}</span>{/snippet}
+					{#if facts?.modifiers.length}
+						<ul>
+							{#each facts.modifiers as modifier (modifier.id)}
+								<li>
+									<CharacterBadge
+										characterId={modifier.id}
+										character={onScript.get(modifier.id)}
+										inline
+									/>
+									{modifier.summary}
+								</li>
+							{/each}
+						</ul>
+					{:else}<p>{t('common.none')}</p>{/if}
+				</Collapsible>
+				<Collapsible title={t('script-builder.needs')} level={3} storageKey="script-builder:needs">
+					{#snippet aside()}<span class="count" data-warn={missingNeeds.length ? '' : undefined}
+							>{missingNeeds.length}</span
+						>{/snippet}
+					{#if missingNeeds.length}
+						<ul>
+							{#each missingNeeds as need (need.id)}
+								<li>
+									<CharacterBadge characterId={need.id} character={onScript.get(need.id)} inline />
+									{t('script-builder.needsChar')}
+									<CharacterBadge characterId={need.requires} inline />
+									<Button variant="quiet" onclick={() => draft.toggle(need.requires)}
+										>{t('script-builder.add')}</Button
+									>
+								</li>
+							{/each}
+						</ul>
+					{:else}<p>{t('common.none')}</p>{/if}
+				</Collapsible>
+				<Collapsible
+					title={t('script-builder.homebrew')}
+					level={3}
+					storageKey="script-builder:homebrew"
+				>
+					{#snippet aside()}<span class="count" data-testid="homebrew-count"
+							>{chosenHomebrewCharacters.length}</span
+						>{/snippet}
+					{#if chosenHomebrewCharacters.length}
+						<ul class="credits">
+							{#each chosenHomebrewCharacters as character (character.id)}
+								{@const credit = d.credits[character.id]}
+								<li>
+									<CharacterBadge characterId={character.id} {character} inline />
+									<span class="creator">{credit?.creator || t('common.none')}</span>
+									{#if credit?.url}
+										<!-- eslint-disable svelte/no-navigation-without-resolve -->
+										<a
+											class="wiki"
+											href={credit.url}
+											target="_blank"
+											rel="noopener noreferrer"
+											aria-label={t('script-builder.wikiPage', { name: character.name })}
+											title={t('script-builder.wikiPage', { name: character.name })}
+											><Icon name="wiki" /></a
+										>
+										<!-- eslint-enable svelte/no-navigation-without-resolve -->
+									{/if}
+								</li>
+							{/each}
+						</ul>
+					{:else}<p>{t('common.none')}</p>{/if}
+				</Collapsible>
+			</section>
+		</ErrorBoundary>
+	{/snippet}
 
 	<ErrorBoundary area="script-builder">
-		<div class="layout">
-			<div class="side">
-				<section class="details" aria-label={t('script-builder.details')}>
-					<label>
-						<span>{t('script-builder.name')}</span>
-						<ClearableField bind:value={() => d.name, (v) => draft.setName(v ?? '')}>
-							<input
-								value={d.name}
-								autocomplete="off"
-								enterkeyhint="done"
-								oninput={(e) => draft.setName(e.currentTarget.value)}
-								onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-							/>
-						</ClearableField>
-					</label>
-					<label>
-						<span>{t('script-builder.author')}</span>
-						<ClearableField bind:value={() => d.author, (v) => draft.setAuthor(v ?? '')}>
-							<input
-								value={d.author}
-								autocomplete="off"
-								enterkeyhint="done"
-								oninput={(e) => draft.setAuthor(e.currentTarget.value)}
-								onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-							/>
-						</ClearableField>
-					</label>
-					<!-- Always shown, so opening a script never moves the page. -->
-					<p class="variation" data-testid="variation-of">
-						<span>{t('script-builder.variationOf')}</span>
-						{d.variationOf?.name || t('common.none')}
-					</p>
-					<div class="save">
-						<Button variant="accent" disabled={!built || isSaved || saving} onclick={() => save()}
-							>{isSaved ? t('script-builder.saved') : t('script-builder.save')}</Button
-						>
-						<!-- Always there, so nothing moves; only a changed saved script can be copied. -->
-						<Button
-							disabled={!built || !savedRecord || isSaved || saving}
-							onclick={() => save(true)}>{t('script-builder.saveNew')}</Button
-						>
-					</div>
-				</section>
-
-				<div class="source">
-					<Segmented
-						label={t('script-builder.source')}
-						hideLabel
-						value={source}
-						options={[
-							{ value: 'official', label: t('script-builder.source.official') },
-							{ value: 'homebrew', label: t('script-builder.source.homebrew') },
-							{ value: 'script', label: t('script-builder.source.script') }
-						]}
-						onChange={(value) => (value === 'homebrew' ? void showHomebrew() : (source = value))}
-					/>
-					<!-- Always in place, so switching source never moves the page. -->
-					<div class="collection" data-disabled={source !== 'homebrew' ? '' : undefined}>
-						<Select
-							label={t('script-builder.collection')}
-							hideLabel
-							value={collectionId}
-							options={collections.length
-								? collections.map((c) => ({ value: c.id, label: c.name }))
-								: [{ value: '', label: t('common.none') }]}
-							onChange={(id) => id && void pickCollection(id)}
-						/>
-					</div>
-				</div>
-				<p class="source-error" role="status" data-testid="homebrew-error">
-					{source === 'homebrew' ? homebrewError : ''}
-				</p>
-				<div class="counts">
-					<ul class="types" aria-label={t('script-builder.counts')} data-testid="builder-counts">
-						{#each TYPES as type (type)}
-							<li data-type={type}>
-								<span class="label">{TYPE_PLURALS[type]}</span>
-								<span class="n" data-testid="count-{type}">{counts?.[type] ?? 0}</span>
-							</li>
-						{/each}
-					</ul>
-					<CharacterSearchBox bind:query shortcut />
-				</div>
-
-				<section class="check" aria-label={t('script-builder.check')} data-testid="builder-check">
-					<Collapsible
-						title={t('script-builder.jinxes')}
-						level={3}
-						storageKey="script-builder:jinxes"
-					>
-						{#snippet aside()}<span class="count" data-testid="jinx-count"
-								>{facts?.jinxes.length ?? 0}</span
-							>{/snippet}
-						{#if facts?.jinxes.length}
-							<ul>
-								{#each facts.jinxes as jinx (jinx.characters.join('+'))}
-									<li>
-										<CharacterBadge
-											characterId={jinx.characters[0]}
-											character={onScript.get(jinx.characters[0])}
-											inline
-										/>
-										{t('script-builder.and')}
-										<CharacterBadge
-											characterId={jinx.characters[1]}
-											character={onScript.get(jinx.characters[1])}
-											inline
-										/>: {jinx.reason}
-									</li>
-								{/each}
-							</ul>
-						{:else}<p>{t('common.none')}</p>{/if}
-					</Collapsible>
-					<Collapsible
-						title={t('script-builder.setupChanges')}
-						level={3}
-						storageKey="script-builder:setup"
-					>
-						{#snippet aside()}<span class="count">{facts?.modifiers.length ?? 0}</span>{/snippet}
-						{#if facts?.modifiers.length}
-							<ul>
-								{#each facts.modifiers as modifier (modifier.id)}
-									<li>
-										<CharacterBadge
-											characterId={modifier.id}
-											character={onScript.get(modifier.id)}
-											inline
-										/>
-										{modifier.summary}
-									</li>
-								{/each}
-							</ul>
-						{:else}<p>{t('common.none')}</p>{/if}
-					</Collapsible>
-					<Collapsible
-						title={t('script-builder.needs')}
-						level={3}
-						storageKey="script-builder:needs"
-					>
-						{#snippet aside()}<span class="count" data-warn={missingNeeds.length ? '' : undefined}
-								>{missingNeeds.length}</span
-							>{/snippet}
-						{#if missingNeeds.length}
-							<ul>
-								{#each missingNeeds as need (need.id)}
-									<li>
-										<CharacterBadge
-											characterId={need.id}
-											character={onScript.get(need.id)}
-											inline
-										/>
-										{t('script-builder.needsChar')}
-										<CharacterBadge characterId={need.requires} inline />
-										<Button variant="quiet" onclick={() => draft.toggle(need.requires)}
-											>{t('script-builder.add')}</Button
-										>
-									</li>
-								{/each}
-							</ul>
-						{:else}<p>{t('common.none')}</p>{/if}
-					</Collapsible>
-					<Collapsible
-						title={t('script-builder.homebrew')}
-						level={3}
-						storageKey="script-builder:homebrew"
-					>
-						{#snippet aside()}<span class="count" data-testid="homebrew-count"
-								>{chosenHomebrewCharacters.length}</span
-							>{/snippet}
-						{#if chosenHomebrewCharacters.length}
-							<ul class="credits">
-								{#each chosenHomebrewCharacters as character (character.id)}
-									{@const credit = d.credits[character.id]}
-									<li>
-										<CharacterBadge characterId={character.id} {character} inline />
-										<span class="creator">{credit?.creator || t('common.none')}</span>
-										{#if credit?.url}
-											<!-- eslint-disable svelte/no-navigation-without-resolve -->
-											<a
-												class="wiki"
-												href={credit.url}
-												target="_blank"
-												rel="noopener noreferrer"
-												aria-label={t('script-builder.wikiPage', { name: character.name })}
-												title={t('script-builder.wikiPage', { name: character.name })}
-												><Icon name="wiki" /></a
-											>
-											<!-- eslint-enable svelte/no-navigation-without-resolve -->
-										{/if}
-									</li>
-								{/each}
-							</ul>
-						{:else}<p>{t('common.none')}</p>{/if}
-					</Collapsible>
-				</section>
+		<!-- The counts and search stay in view while the list scrolls. -->
+		<div class="list">
+			<div class="counts">
+				<ul class="types" aria-label={t('script-builder.counts')} data-testid="builder-counts">
+					{#each TYPES as type (type)}
+						<li data-type={type}>
+							<span class="label">{TYPE_PLURALS[type]}</span>
+							<span class="n" data-testid="count-{type}">{counts?.[type] ?? 0}</span>
+						</li>
+					{/each}
+				</ul>
+				<CharacterSearchBox bind:query shortcut />
 			</div>
-
 			<CharacterPicker
 				{characters}
 				mode="multi"
@@ -524,7 +517,7 @@
 			/>
 		</div>
 	</ErrorBoundary>
-</main>
+</Page>
 
 <Dialog bind:open={openOpen} title={t('script-builder.openTitle')}>
 	<ul class="saved" data-testid="builder-saved-list">
@@ -562,22 +555,6 @@
 </ConfirmDialog>
 
 <style>
-	main {
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-5) var(--page-gutter) var(--space-5);
-	}
-	.title {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-	}
-	h1 {
-		margin: 0;
-		font-size: 2rem;
-	}
 	.tools {
 		display: flex;
 		align-items: center;
@@ -596,7 +573,6 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
-		padding-top: var(--space-3);
 	}
 	label {
 		display: grid;
@@ -632,13 +608,17 @@
 		color: var(--on-surface);
 		font: var(--font-control);
 	}
-	/* The counts and search stay in view while the list scrolls. */
+	.list {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+	/* The counts and search stay in view, just below the sticky app header, while the list scrolls. */
 	.counts {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		position: sticky;
-		top: 0;
+		top: calc(var(--tap-target) + env(safe-area-inset-top));
 		z-index: var(--z-raised);
 		padding: var(--space-2) 0;
 		background: var(--page-background, var(--surface));
@@ -673,7 +653,6 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
-		padding-top: var(--space-3);
 	}
 	.collection[data-disabled] {
 		opacity: 0.5;
@@ -709,7 +688,6 @@
 	.check {
 		display: grid;
 		gap: var(--space-1);
-		margin-bottom: var(--space-3);
 		padding: var(--space-1) var(--space-3) var(--space-3);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
@@ -761,39 +739,6 @@
 	@media (hover: hover) {
 		.saved button:hover {
 			background: var(--surface-selected);
-		}
-	}
-	/* Phones and tablets: one column. */
-	.layout {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-	}
-	.side {
-		display: contents;
-	}
-	/* A computer window: details, counts and the check beside the list. */
-	@media (min-width: 75rem) {
-		.layout {
-			grid-template-columns: calc(28 * var(--u)) minmax(0, 1fr);
-			align-items: start;
-			gap: var(--space-5);
-			padding-top: var(--space-2);
-		}
-		.side {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-2);
-			position: sticky;
-			top: 0;
-			max-height: calc(100dvh - 6 * var(--u));
-			overflow-y: auto;
-			padding-bottom: var(--space-4);
-		}
-		.counts {
-			position: static;
-		}
-		.check {
-			margin-bottom: 0;
 		}
 	}
 </style>

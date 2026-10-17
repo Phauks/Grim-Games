@@ -6,7 +6,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { jinxesFor } from '#lib/core/data/jinxes.ts';
-	import CharacterBadge from './CharacterBadge.svelte';
+	import CharacterEntry from './CharacterEntry.svelte';
 	import { officialData } from './game-data.svelte.ts';
 	import ContentsLayout, { type ContentsItem } from './ContentsLayout.svelte';
 	import CharacterSummary from './CharacterSummary.svelte';
@@ -140,16 +140,11 @@
 				{#each jinxes as jinx (jinx.characters.join())}
 					<!-- The other character as a text-size badge across the section, the jinx indented
 					     under it, as on the Reference card (Trevor, 2026-10-16). -->
-					<div class="jinx">
-						<span class="jinx-bar"
-							><CharacterBadge
-								characterId={jinx.characters.find((id) => id !== character.id) ??
-									jinx.characters[1]}
-								inline
-							/></span
-						>
-						<p><GlossaryText text={jinx.reason} /></p>
-					</div>
+					<CharacterEntry
+						characterId={jinx.characters.find((id) => id !== character.id) ?? jinx.characters[1]}
+					>
+						<p class="jinx-text"><GlossaryText text={jinx.reason} /></p>
+					</CharacterEntry>
 				{:else}
 					<p>{t('common.none')}</p>
 				{/each}
@@ -218,22 +213,7 @@
 		margin: 0 0 var(--space-2);
 		padding-left: var(--space-4);
 	}
-	.jinx {
-		padding: var(--space-2) 0;
-		border-bottom: var(--card-border);
-	}
-	.jinx-bar :global(.badge) {
-		display: flex;
-		width: 100%;
-	}
-	.jinx p {
-		padding-inline-start: var(--space-3);
-	}
-	.jinx-bar {
-		display: block;
-		margin-bottom: var(--space-1);
-	}
-	.jinx p {
+	.wiki-page .jinx-text {
 		margin: 0;
 	}
 	.wiki-page .quote {

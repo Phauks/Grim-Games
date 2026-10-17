@@ -68,7 +68,7 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('room-script')).toHaveText('Trouble Brewing');
+	await expect(phone.getByTestId('room-script')).toHaveText('Script: Trouble Brewing');
 	await expect(phone.getByTestId('join-status')).toHaveText(
 		'Choose your seat and type your name, then ask the Storyteller.'
 	);

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
+	import StepAfflictions from './StepAfflictions.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
@@ -12,6 +13,8 @@
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -34,9 +37,45 @@
 		onInfoTokens: () => void;
 		/** A Traveller's alignment by draw. */
 		onDraw: (seatId: string) => void;
+		/** Tonight's steps, to move to the one before or after without ticking anything. */
+		steps?: readonly NightStep[];
+		onStep?: (step: NightStep) => void;
 	}
 
-	let { open = $bindable(), grimoire, step, night, onInfoTokens, onDraw }: Props = $props();
+	let {
+		open = $bindable(),
+		grimoire,
+		step,
+		night,
+		onInfoTokens,
+		onDraw,
+		steps = [],
+		onStep
+	}: Props = $props();
+
+	const returnLabel = (label: string) => `Return ${label} to the reminder bank`;
+
+	// Previous and Next inside the step, by icon or a sideways swipe (Trevor, 2026-10-17).
+	const index = $derived(step ? steps.findIndex((s) => s.id === step.id) : -1);
+	function go(by: number) {
+		const next = steps[index + by];
+		if (index >= 0 && next) onStep?.(next);
+	}
+	let swipeFrom: { x: number; y: number; id: number } | undefined;
+	function swipeStart(event: PointerEvent) {
+		if (event.pointerType !== 'mouse')
+			swipeFrom = { x: event.clientX, y: event.clientY, id: event.pointerId };
+	}
+	function swipeEnd(event: PointerEvent) {
+		const from = swipeFrom;
+		swipeFrom = undefined;
+		if (!from || from.id !== event.pointerId) return;
+		const dx = event.clientX - from.x;
+		const dy = event.clientY - from.y;
+		// A clear sideways swipe: a fifth of the screen, mostly across.
+		if (Math.abs(dx) > window.innerWidth / 5 && Math.abs(dx) > 2 * Math.abs(dy))
+			go(dx < 0 ? 1 : -1);
+	}
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -104,8 +143,24 @@
 </script>
 
 <Dialog bind:open title={step ? stepName(step) : 'Night step'} size="full">
+	{#snippet headActions()}
+		{#if steps.length > 0}
+			<IconButton icon="back" label="Previous step" disabled={index <= 0} onclick={() => go(-1)} />
+			<IconButton
+				icon="forward"
+				label="Next step"
+				disabled={index < 0 || index >= steps.length - 1}
+				onclick={() => go(1)}
+			/>
+		{/if}
+	{/snippet}
 	<!-- The step scrolls on its own, so Done and the other actions always stay in reach. -->
-	<div class="scroll">
+	<div
+		class="scroll"
+		onpointerdown={swipeStart}
+		onpointerup={swipeEnd}
+		onpointercancel={() => (swipeFrom = undefined)}
+	>
 		{#if step}
 			<div class="head">
 				<span class="icon">
@@ -123,7 +178,7 @@
 					{/if}
 				</div>
 			</div>
-			<NightAlerts {grimoire} {step} />
+			<NightAlerts {grimoire} {step} withoutImpaired />
 			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
 				<TravellerAlignment
 					{grimoire}
@@ -152,6 +207,10 @@
 					{/if}
 				</p>
 			{/if}
+			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
+			{#if step.character}
+				<StepAfflictions {grimoire} {step} />
+			{/if}
 			{#if rows.length > 0}
 				<h3>Reminders</h3>
 				<ul class="reminders">
@@ -168,6 +227,13 @@
 							<Button variant="quiet" onclick={() => choose(label, at)}
 								>{at ? 'Move' : 'Place'}</Button
 							>
+							<!-- Off the board and back to the reminder bank, from the step (Trevor,
+							     2026-10-17); there but unusable while not placed. -->
+							<DeleteButton
+								label={returnLabel(label)}
+								disabled={!at}
+								onclick={() => at && moveConfirm?.requestReturn(at.reminderId)}
+							/>
 						</li>
 					{/each}
 				</ul>

@@ -92,9 +92,9 @@ test("each card's + adds it to cards shown together, which can be reordered", as
 		list.getByRole('button', { name: /^Move You are mad that you are .* up$/ })
 	).toBeDisabled();
 	await list.getByRole('button', { name: /^Move This character selected you .* up$/ }).tap();
-	await expect(list.getByRole('listitem').first()).toContainText(
-		'1. This character selected you (Chef)'
-	);
+	await expect(list.getByRole('listitem').first()).toContainText('1. This character selected you');
+	// The chosen character as a badge under the card's words.
+	await expect(list.getByRole('listitem').first().getByText('Chef', { exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'Show 2 cards' }).tap();
 
 	// Two cards: both on screen at once, no swiping.
@@ -133,4 +133,50 @@ test('character cards load only for characters on the script', async ({ page }) 
 			.getByRole('button', { name: 'Character Specific', exact: true })
 	).toBeVisible();
 	await expect(page.getByRole('button', { name: /^Your Secret Word/ })).toHaveCount(0);
+});
+
+test('a card to show with long character names keeps the sheet its width', async ({ page }) => {
+	// A game's Demon bluffs with long names, then "not in play" added to the cards to show.
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page.getByTestId('seat')).toHaveCount(8);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Demon bluffs' })
+		.tap();
+	await page.getByRole('button', { name: 'Choose' }).first().tap();
+	const names = ['Fortune Teller', 'Washerwoman', 'Investigator'];
+	for (const name of names)
+		await page
+			.getByRole('group', { name: 'Bluff characters' })
+			.getByRole('button', { name: new RegExp(`^${name}`) })
+			.tap();
+	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Info tokens' }).tap();
+	await page
+		.getByRole('button', { name: 'Add These characters are not in play to the cards to show' })
+		.tap();
+
+	// The characters wrap as badges under the card; nothing goes off the side.
+	const chain = page.getByTestId('chain-list');
+	for (const name of names) await expect(chain.getByText(name, { exact: true })).toBeVisible();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	const overflow = await sheet.evaluate((el) =>
+		[el, ...el.querySelectorAll('*')].some(
+			(e) =>
+				e.scrollWidth > e.clientWidth + 1 &&
+				getComputedStyle(e).overflowX !== 'visible' &&
+				!e.classList.contains('chain-text')
+		)
+	);
+	expect(overflow).toBe(false);
+	const box = await sheet.boundingBox();
+	const show = await page.getByRole('button', { name: /^Show 1/ }).boundingBox();
+	expect(show!.x + show!.width).toBeLessThanOrEqual(box!.x + box!.width + 1);
 });

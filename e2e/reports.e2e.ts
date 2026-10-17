@@ -25,6 +25,9 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 
 	// The inbox needs the admin key, kept on this device.
 	await page.goto('/reports');
+	// The title row's buttons and the filter are there before the key, disabled, so nothing moves.
+	await expect(page.getByRole('button', { name: 'Refresh' })).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Forget key' })).toBeDisabled();
 	const key = page.getByLabel('Admin key');
 	await key.fill('wrong');
 	await key.press('Enter');

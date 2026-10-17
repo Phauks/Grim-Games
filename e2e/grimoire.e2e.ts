@@ -14,10 +14,13 @@ async function startGame(page: Page, script = 'Trouble Brewing') {
 const seatLabelled = (page: Page, start: string) =>
 	page.locator(`[data-testid="seat"][aria-label^="${start}"]`);
 
-/** Picks which reminders the reminder bank shows. */
+/** Switches the reminder bank to show these reminders. */
 async function bankView(page: Page, view: 'All' | 'Setup') {
-	await page.getByRole('combobox', { name: 'Reminders shown' }).tap();
-	await page.getByRole('option', { name: view, exact: true }).tap();
+	await page
+		.getByRole('button', {
+			name: view === 'All' ? /; show all reminders$/ : /; show setup reminders$/
+		})
+		.tap();
 }
 
 /** Runs an action from the toolbar's More menu. */
@@ -284,8 +287,8 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 	await menu(page, 'Background');
 	const looks = page.getByRole('dialog', { name: 'Background' });
 	// A drop-down (Trevor, 2026-10-17).
-	await looks.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
-	await page.getByRole('option', { name: 'Edge, smaller' }).tap();
+	await looks.getByRole('combobox', { name: 'Fabled and Loric', exact: true }).tap();
+	await page.getByRole('option', { name: 'Corner, smaller' }).tap();
 	await looks.getByRole('button', { name: 'Close' }).tap();
 	await expect(
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
@@ -355,7 +358,7 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	// The last setup step opens the board with the setup reminders in the bank.
 	await page.goto(`${board}#setup-reminders`);
 	await expect(page).toHaveURL(board);
-	await expect(page.getByRole('combobox', { name: 'Reminders shown' })).toHaveText(/Setup/);
+	await expect(page.locator('[data-tray] .view')).toHaveText('Setup');
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(page.getByRole('dialog', { name: 'Day' })).toBeVisible();
 	await expect(page).toHaveURL(board);
@@ -630,8 +633,13 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	await expect(history).toContainText('New game:');
 	await page.keyboard.press('Escape');
 
-	// A tap opens the seat it is on.
+	// A tap opens the reminder over the seat it is on, its character's ability first (Trevor,
+	// 2026-10-17).
 	await token.tap();
+	const reminder = page.getByRole('dialog', { name: 'Drunk' });
+	await expect(reminder.locator('.source')).toContainText('Sailor');
+	await expect(reminder.locator('header.character')).toContainText(/choose an alive player/i);
+	await reminder.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.getByRole('heading', { name: 'No name' })).toBeVisible();
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toContainText('Seat 3');
 });
@@ -1202,6 +1210,18 @@ test('a night step is filled in with help, and the night can be walked through',
 		.getByRole('button', { name: /Seat 2 Empath/ })
 		.tap();
 	await expect(guide).toContainText('On Seat 2');
+	// It can go back to the reminder bank from here (Trevor, 2026-10-17), then be placed again.
+	await guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' }).tap();
+	await expect(guide).toContainText('Not placed');
+	await expect(
+		guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' })
+	).toBeDisabled();
+	await guide.getByRole('button', { name: 'Place' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Put Poisoned on' })
+		.getByRole('button', { name: /Seat 2 Empath/ })
+		.tap();
+	await expect(guide).toContainText('On Seat 2');
 
 	// Show to player and Info tokens come back to the step (Trevor, 2026-10-16).
 	await guide.getByRole('button', { name: 'Show to player' }).tap();
@@ -1243,9 +1263,12 @@ test('a night step is filled in with help, and the night can be walked through',
 	// A step shows the game state that matters: the Empath is poisoned (core nightStepAlerts).
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	await page.getByRole('button', { name: 'Guide: Empath' }).tap();
-	await expect(
-		page.getByRole('dialog', { name: 'Empath' }).getByTestId('night-alerts')
-	).toContainText(/Empath.*Seat 2.*poisoned.*Poisoner/);
+	// In its own Afflictions section, not at the top (Trevor, 2026-10-17).
+	const empath = page.getByRole('dialog', { name: 'Empath' });
+	await expect(empath.getByTestId('step-afflictions')).toContainText(
+		/Poisoned\s*Empath\s*· Seat 2\s*by\s*Poisoner\s*· Seat 1/
+	);
+	await expect(empath.getByTestId('night-alerts')).toHaveCount(0);
 });
 
 test('moving a reminder that normally stays put asks first, saying why', async ({ page }) => {
@@ -2090,34 +2113,16 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await expect(token).toBeVisible();
 	await expect.poll(near).toBe(true);
 
-	// From the reminder bank too, right in the middle of the board (Trevor, 2026-10-17): the
-	// nearest seat holds it.
-	const seat = await openSeat(page, 2);
-	await seat.getByRole('button', { name: 'Choose character' }).first().tap();
-	await page
-		.getByRole('dialog', { name: 'Character for Seat 2' })
-		.getByRole('button', { name: 'Gossip', exact: true })
-		.tap();
-	await closeSheet(page);
-	const bank = page.getByRole('list', { name: /Reminder bank|Setup reminders/ });
-	if ((await bank.getAttribute('aria-label')) === 'Setup reminders') await bankView(page, 'All');
-	const fromBank = page
-		.getByRole('list', { name: 'Reminder bank' })
-		.getByRole('button', { name: 'Dead reminder' });
-	const middle = { x: board.x + board.width / 2, y: board.y + board.height / 2 };
-	const start = (await fromBank.boundingBox())!;
-	await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+	// Only in the board's open area (Trevor, 2026-10-17): dropped on the middle's buttons it
+	// stays where it was.
+	const middle = page.locator('.centre > *').first();
+	const m = (await middle.boundingBox())!;
+	const from = (await token.boundingBox())!;
+	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
 	await page.mouse.down();
-	await page.mouse.move(start.x + start.width / 2, start.y - 40, { steps: 4 });
-	await page.mouse.move(middle.x, middle.y, { steps: 8 });
+	await page.mouse.move(m.x + m.width / 2, m.y + m.height / 2, { steps: 8 });
 	await page.mouse.up();
-	const placed = page.locator('.board').getByRole('button', { name: 'Dead reminder' });
-	await expect
-		.poll(async () => {
-			const b = await placed.boundingBox();
-			return b ? Math.hypot(b.x + b.width / 2 - middle.x, b.y + b.height / 2 - middle.y) : 999;
-		})
-		.toBeLessThan(board.width * 0.05);
+	await expect.poll(near).toBe(true);
 });
 
 /** Picks how the walked-through step's reminders are shown. */
@@ -2309,9 +2314,13 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 		.getByRole('list', { name: 'Fabled and Loric' })
 		.getByRole('button', { name: 'Angel' })
 		.tap();
+	// Where they sit and whether they are grouped are two choices (Trevor, 2026-10-17).
 	const angel = page.getByRole('dialog', { name: 'Angel' });
-	await angel.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
-	await page.getByRole('option', { name: 'Corner, grouped' }).tap();
+	await angel.getByRole('combobox', { name: 'Fabled and Loric', exact: true }).tap();
+	await page.getByRole('option', { name: 'Corner, smaller' }).tap();
+	await angel.getByRole('combobox', { name: 'Fabled and Loric grouping' }).tap();
+	await page.getByRole('option', { name: 'Grouped' }).tap();
+	await expect(page.locator('.rules-edge .rules-stack')).toBeVisible();
 	await angel.getByRole('button', { name: 'Close' }).tap();
 
 	const stack = page.getByRole('button', { name: 'Fabled and Loric: 2' });
@@ -2328,4 +2337,40 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 	await expect(group.locator('.rules-group > li')).toHaveCount(1);
 	await group.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.getByRole('button', { name: 'Fabled and Loric: 1' })).toBeVisible();
+});
+
+test('an open night step moves to the step before or after without ticking it', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Guide: Poisoner' }).tap();
+	const poisoner = page.getByRole('dialog', { name: 'Poisoner' });
+	// Trevor, 2026-10-17: Previous and Next inside the step.
+	await poisoner.getByRole('button', { name: 'Next step' }).tap();
+	const next = page
+		.getByRole('dialog')
+		.filter({ has: page.getByRole('button', { name: 'Previous step' }) });
+	await expect(next).not.toHaveAccessibleName('Poisoner');
+	await next.getByRole('button', { name: 'Previous step' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Poisoner' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Night order' })
+			.getByRole('button', { name: 'Done: Poisoner' })
+	).toHaveAttribute('aria-pressed', 'false');
 });

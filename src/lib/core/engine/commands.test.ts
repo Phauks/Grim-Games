@@ -700,6 +700,64 @@ describe('reminders on Fabled and Loric', () => {
 	});
 });
 
+describe('loose reminders', () => {
+	// Trevor (2026-10-17): a reminder put down anywhere on the board belongs to no seat.
+	it('places a loose reminder, puts it on a seat or a Fabled, loosens it and removes it', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AddRuleCharacter', characterId: 'angel' },
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'imp' }
+		);
+		const placed = run(s, ctx, {
+			type: 'PlaceLooseReminder',
+			reminder: { characterId: 'imp', label: 'Dead' }
+		});
+		const [loose] = placed.game.looseReminders!;
+		expect(loose).toMatchObject({ characterId: 'imp', label: 'Dead' });
+		expect(placed.game.seats[seats[1]].reminders).toEqual([]);
+
+		const onSeat = run(placed, ctx, {
+			type: 'MoveReminder',
+			reminderId: loose.reminderId,
+			toSeatId: seats[1]
+		});
+		expect(onSeat.game.looseReminders).toEqual([]);
+		expect(onSeat.game.seats[seats[1]].reminders).toEqual([loose]);
+
+		const loosened = run(onSeat, ctx, { type: 'LoosenReminder', reminderId: loose.reminderId });
+		expect(loosened.game.seats[seats[1]].reminders).toEqual([]);
+		expect(loosened.game.looseReminders).toEqual([loose]);
+		expect(
+			warned(loosened, ctx, { type: 'LoosenReminder', reminderId: loose.reminderId })
+		).toContain('no-change');
+
+		const onAngel = run(loosened, ctx, {
+			type: 'MoveReminderToRuleCharacter',
+			reminderId: loose.reminderId,
+			characterId: 'angel'
+		});
+		expect(onAngel.game.looseReminders).toEqual([]);
+		expect(onAngel.game.ruleReminders!.angel).toEqual([loose]);
+		const offAngel = run(onAngel, ctx, { type: 'LoosenReminder', reminderId: loose.reminderId });
+		expect(offAngel.game.ruleReminders!.angel).toEqual([]);
+		expect(offAngel.game.looseReminders).toEqual([loose]);
+
+		const removed = run(offAngel, ctx, { type: 'RemoveReminder', reminderId: loose.reminderId });
+		expect(removed.game.looseReminders).toEqual([]);
+		expect(undo(removed).game.looseReminders).toEqual([loose]);
+	});
+
+	it('refuses to loosen a reminder that is nowhere, and reads older games', () => {
+		const { session, ctx } = newGame(names);
+		expect(session.game.looseReminders).toBeUndefined();
+		expect(refused(session, ctx, { type: 'LoosenReminder', reminderId: 'nope' })).toBe(
+			'unknown-reminder'
+		);
+	});
+});
+
 describe('bluffs', () => {
 	it('sets, replaces and removes bluff sets', () => {
 		const { session, ctx } = newGame(names);
