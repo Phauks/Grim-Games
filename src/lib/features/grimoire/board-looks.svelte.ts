@@ -4,7 +4,8 @@
  * - the vignette, the soft dark oval behind the script's name over a background, which keeps
  *   the words readable, and how dark it is;
  * - where the Fabled and Loric sit: large in the middle, or small along the board's edge;
- * - how big each seat's player name badge is.
+ * - how big each seat's player name badge is;
+ * - whether reminders are held by their seat or stay where they are dropped.
  */
 export interface BoardLooks {
 	vignette: boolean;
@@ -13,6 +14,11 @@ export interface BoardLooks {
 	rulesAt: 'middle' | 'edge';
 	/** The player name badge's size, as a multiple of its usual size. */
 	nameSize: number;
+	/**
+	 * 'seat': reminders sit around their seat, laid out so none overlap. 'free' (Trevor,
+	 * 2026-10-17, "nonsticky"): a reminder stays where it is dropped; it still belongs to a seat.
+	 */
+	reminders: 'seat' | 'free';
 }
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
@@ -22,7 +28,8 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	vignette: true,
 	vignetteStrength: 0.55,
 	rulesAt: 'middle',
-	nameSize: 1
+	nameSize: 1,
+	reminders: 'seat'
 };
 const KEY = 'grim.boardLooks';
 
@@ -39,7 +46,8 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		rulesAt: value.rulesAt === 'edge' ? 'edge' : 'middle',
 		nameSize: Number.isFinite(nameSize)
 			? Math.min(NAME_SIZE.max, Math.max(NAME_SIZE.min, nameSize))
-			: DEFAULT_BOARD_LOOKS.nameSize
+			: DEFAULT_BOARD_LOOKS.nameSize,
+		reminders: value.reminders === 'free' ? 'free' : 'seat'
 	};
 }
 

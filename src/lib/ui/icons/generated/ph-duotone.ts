@@ -34,6 +34,7 @@ import ph_caret_up_duotone from '~icons/ph/caret-up-duotone';
 import ph_cat_duotone from '~icons/ph/cat-duotone';
 import ph_check_duotone from '~icons/ph/check-duotone';
 import ph_circle_dashed_duotone from '~icons/ph/circle-dashed-duotone';
+import ph_circle_notch_duotone from '~icons/ph/circle-notch-duotone';
 import ph_clipboard_duotone from '~icons/ph/clipboard-duotone';
 import ph_clipboard_text_duotone from '~icons/ph/clipboard-text-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
@@ -138,6 +139,7 @@ import ph_sort_descending_duotone from '~icons/ph/sort-descending-duotone';
 import ph_spade_duotone from '~icons/ph/spade-duotone';
 import ph_sparkle_duotone from '~icons/ph/sparkle-duotone';
 import ph_speaker_high_duotone from '~icons/ph/speaker-high-duotone';
+import ph_spinner_duotone from '~icons/ph/spinner-duotone';
 import ph_square_duotone from '~icons/ph/square-duotone';
 import ph_star_duotone from '~icons/ph/star-duotone';
 import ph_stethoscope_duotone from '~icons/ph/stethoscope-duotone';
@@ -206,6 +208,7 @@ const icons: IconMap = {
 	'ph:cat-duotone': ph_cat_duotone,
 	'ph:check-duotone': ph_check_duotone,
 	'ph:circle-dashed-duotone': ph_circle_dashed_duotone,
+	'ph:circle-notch-duotone': ph_circle_notch_duotone,
 	'ph:clipboard-duotone': ph_clipboard_duotone,
 	'ph:clipboard-text-duotone': ph_clipboard_text_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
@@ -310,6 +313,7 @@ const icons: IconMap = {
 	'ph:spade-duotone': ph_spade_duotone,
 	'ph:sparkle-duotone': ph_sparkle_duotone,
 	'ph:speaker-high-duotone': ph_speaker_high_duotone,
+	'ph:spinner-duotone': ph_spinner_duotone,
 	'ph:square-duotone': ph_square_duotone,
 	'ph:star-duotone': ph_star_duotone,
 	'ph:stethoscope-duotone': ph_stethoscope_duotone,

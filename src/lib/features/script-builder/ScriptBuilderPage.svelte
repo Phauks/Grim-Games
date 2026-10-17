@@ -21,7 +21,6 @@
 	import {
 		chooseScript,
 		currentScript,
-		forgetScript,
 		recentScripts,
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
@@ -46,6 +45,7 @@
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { scriptBuilderDraft as draft } from './draft.svelte.ts';
 	import { chosenHomebrew, isEmptyDraft } from './draft.ts';
+	import { replaceBuilt } from './replace-saved.svelte.ts';
 	import type { HomebrewCollection } from './homebrew-wiki-api.ts';
 	import {
 		homebrewCollection,
@@ -119,6 +119,8 @@
 		const id = new URLSearchParams(location.hash.slice(1)).get('edit');
 		if (!id) return;
 		history.replaceState(history.state, '', location.pathname);
+		// Already on the builder (perhaps with changes not saved yet): carry on with it.
+		if (id === draft.current.editing) return;
 		const saved = recentScripts.list.find((s) => s.scriptId === id);
 		if (saved) chooseSaved(saved);
 	}
@@ -172,11 +174,12 @@
 	);
 	const missingNeeds = $derived(facts?.requirements.filter((r) => !r.onScript) ?? []);
 
-	async function save() {
+	/** Saves over the script being edited, or as a new script when `asNew` (the old one stays). */
+	async function save(asNew = false) {
 		if (!built || saving) return;
 		saving = true;
 		try {
-			const editing = savedRecord;
+			const editing = asNew ? undefined : savedRecord;
 			await chooseScript(built, { kind: 'built' });
 			const saved = currentScript.saved;
 			if (!saved || saved.scriptId === 'unsaved') {
@@ -185,7 +188,7 @@
 			}
 			// A script made here is replaced by its new version; one opened from elsewhere is kept.
 			if (editing && editing.scriptId !== saved.scriptId && editing.source.kind === 'built') {
-				await forgetScript(editing.scriptId);
+				await replaceBuilt(editing, saved);
 			}
 			draft.setEditing(saved.scriptId);
 		} catch (e) {
@@ -303,9 +306,16 @@
 							/>
 						</ClearableField>
 					</label>
-					<Button variant="accent" disabled={!built || isSaved || saving} onclick={save}
-						>{isSaved ? t('script-builder.saved') : t('script-builder.save')}</Button
-					>
+					<div class="save">
+						<Button variant="accent" disabled={!built || isSaved || saving} onclick={() => save()}
+							>{isSaved ? t('script-builder.saved') : t('script-builder.save')}</Button
+						>
+						<!-- Always there, so nothing moves; only a changed saved script can be copied. -->
+						<Button
+							disabled={!built || !savedRecord || isSaved || saving}
+							onclick={() => save(true)}>{t('script-builder.saveNew')}</Button
+						>
+					</div>
 				</section>
 
 				<div class="source">
@@ -552,6 +562,11 @@
 	label {
 		display: grid;
 		gap: var(--space-1);
+	}
+	.save {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-2);
 	}
 	label span {
 		color: var(--on-surface-muted);

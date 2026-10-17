@@ -568,8 +568,9 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		await page.mouse.move(from.x, from.y);
 		await page.mouse.down();
 		await page.mouse.move(from.x + 30, from.y + 30, { steps: 4 });
+		// Whose it is: the character with its player, and the seat it is on (Trevor, 2026-10-17).
 		await expect(page.getByRole('status').filter({ hasText: 'Drunk, from Sailor' })).toContainText(
-			'on Seat 1'
+			/Sailor\s*· Seat 1\s*on\s*Sailor\s*· Seat 1/
 		);
 		await page.mouse.move(from.x, from.y, { steps: 2 });
 		await page.mouse.up();
@@ -907,7 +908,11 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	const sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
 	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
-	await expect(actions).toContainText('From the Washerwoman (Seat 1)');
+	await expect(actions).toContainText(/From\s*Washerwoman\s*· Seat 1\s*on\s*\S+\s*· Seat 2/);
+	// The list in the seat sheet says whose each reminder is too.
+	await expect(sheet.getByTestId('reminder-origin').first()).toContainText(
+		/Washerwoman\s*· Seat 1/
+	);
 	await actions.getByRole('button', { name: 'Return to reminder bank' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Confirm change?' })
@@ -1036,7 +1041,7 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Storyteller settings' })
+		.getByRole('button', { name: 'Board and tokens' })
 		.tap();
 	await settings.getByText('Stack duplicate reminders', { exact: true }).tap();
 	await expect(
@@ -1949,4 +1954,82 @@ test('once every token is placed, the middle offers the Demon bluffs', async ({ 
 	// Not now: it goes.
 	await centre.getByRole('button', { name: 'Not now' }).tap();
 	await expect(centre.getByRole('button', { name: 'Demon bluffs' })).toHaveCount(0);
+});
+
+test('a new Demon bluff set is named on the screen where its characters are chosen', async ({
+	page
+}) => {
+	await startGame(page);
+	await menu(page, 'Demon bluffs');
+	// The Demon's set keeps its name, so its picker has no name field.
+	await page.getByRole('button', { name: 'Choose' }).first().tap();
+	// The heading is the set's name and the count, never "Set 2 bluffs" (read as "choose 2").
+	await expect(page.getByRole('heading', { name: 'Demon bluffs · 0/3' })).toBeVisible();
+	await expect(page.getByRole('textbox', { name: 'Set name' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+
+	await page.getByRole('button', { name: 'Add a set' }).tap();
+	const name = page.getByRole('textbox', { name: 'Set name' });
+	await expect(name).toHaveAttribute('placeholder', 'Set 2');
+	await expect(page.getByRole('heading', { name: 'Set 2 · 0/3' })).toBeVisible();
+	await name.fill('Spares');
+	await page
+		.getByRole('group', { name: 'Bluff characters' })
+		.getByRole('button', { name: /^Monk(, .*)?$/ })
+		.tap();
+	await expect(page.getByRole('heading', { name: 'Spares · 1/3' })).toBeVisible();
+	await page.getByRole('button', { name: 'Save' }).tap();
+	const set = page.getByTestId('bluff-set').nth(1);
+	await expect(set).toHaveAttribute('data-set', 'Spares');
+
+	// Choosing again shows the name, and Cancel keeps it.
+	await set.getByRole('button', { name: 'Choose' }).tap();
+	await expect(name).toHaveValue('Spares');
+	await name.fill('Other');
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(set).toHaveAttribute('data-set', 'Spares');
+});
+
+test('reminders can stay where dropped, after a warning listing what changes', async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Sailor', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await picker.getByRole('group', { name: 'Sailor' }).getByRole('button', { name: 'Drunk' }).tap();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	// Turning it on says what it changes first (Trevor, 2026-10-17).
+	await menu(page, 'Background');
+	const dialog = page.getByRole('dialog', { name: 'Background' });
+	await dialog.getByText('Stay where dropped', { exact: true }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Reminders stay where dropped?' });
+	await expect(confirm.getByTestId('reminder-mode-effects').locator('li')).toHaveCount(4);
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+
+	const token = page.getByRole('button', { name: 'Drunk reminder' });
+	const board = (await page.locator('.board').boundingBox())!;
+	const to = { x: board.x + board.width * 0.35, y: board.y + board.height * 0.35 };
+	const box = (await token.boundingBox())!;
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(to.x, to.y, { steps: 8 });
+	await page.mouse.up();
+
+	// Still the Sailor's seat's reminder, drawn where it was dropped, also after a reload.
+	const near = async () => {
+		const b = (await token.boundingBox())!;
+		return Math.hypot(b.x + b.width / 2 - to.x, b.y + b.height / 2 - to.y) < board.width * 0.05;
+	};
+	await expect.poll(near).toBe(true);
+	await expect(seatLabelled(page, 'Seat 1: no name, Sailor, 1 reminder')).toBeAttached();
+	await page.reload();
+	await expect(token).toBeVisible();
+	await expect.poll(near).toBe(true);
 });

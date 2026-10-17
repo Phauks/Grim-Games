@@ -9,6 +9,7 @@
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import { abilityState, type ImpairmentReason } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import ReminderOrigin from './ReminderOrigin.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -316,23 +317,6 @@
 	let menuOpen = $state(false);
 	let reminderMenuOpen = $state(false);
 	const movingReminder = $derived(seat?.reminders.find((r) => r.reminderId === moving));
-	/** Where a reminder came from: its character and who holds that character. */
-	const movingOrigin = $derived.by(() => {
-		const r = movingReminder;
-		if (!r) return '';
-		const holders = game.seating
-			.filter(
-				(s) =>
-					game.seats[s].characterId === r.characterId ||
-					trueCharacter(game, s, characters) === r.characterId
-			)
-			.map((s) => {
-				const n = game.seating.indexOf(s) + 1;
-				return game.seats[s].playerName ? `Seat ${n} · ${game.seats[s].playerName}` : `Seat ${n}`;
-			});
-		// After "From the [character]": who holds it and where the token is.
-		return `${holders.length ? ` (${holders.join(', ')})` : ''}, on ${title}`;
-	});
 	/** A setup reminder can go back to the Setup reminders tray (Trevor, 2026-10-16). */
 	const fromSetup = $derived.by(() => {
 		const r = movingReminder;
@@ -558,7 +542,10 @@
 								type={characters.get(reminder.characterId)?.type}
 								alignment={placingAlignment(game, reminder.characterId, characters)}
 							/>
-							<span class="spacer"></span>
+							<!-- Whose it is (Trevor, 2026-10-17). -->
+							<span class="spacer"
+								><ReminderOrigin {game} {characters} characterId={reminder.characterId} /></span
+							>
 							<IconButton
 								icon="more"
 								label={`Actions for ${reminder.label}`}
@@ -944,11 +931,12 @@
 			/>{:else}Reminder{/if}
 	{/snippet}
 	{#snippet subtitle()}
-		{#if movingReminder}From the <CharacterBadge
+		{#if movingReminder && seatId}From <ReminderOrigin
+				{game}
+				{characters}
 				characterId={movingReminder.characterId}
-				character={characters.get(movingReminder.characterId)}
-				inline
-			/>{movingOrigin}{/if}
+				on={seatId}
+			/>{/if}
 	{/snippet}
 	<div class="menu">
 		<Button variant="quiet" icon="move" onclick={() => fromMenu(() => (moveOpen = true))}>
@@ -1315,6 +1303,7 @@
 	}
 	.spacer {
 		flex: 1;
+		min-width: 0;
 	}
 	.choices {
 		display: flex;

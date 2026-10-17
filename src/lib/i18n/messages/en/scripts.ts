@@ -77,6 +77,7 @@ export const scripts = {
 	// Details beside the list
 	'scripts.details.label': 'Script details',
 	'scripts.details.back': 'Back',
+	'scripts.details.loading': 'Loading script…',
 	'scripts.details.removeConfirm': 'Remove from saved?',
 	'scripts.details.removeBody': '{name} is removed from your saved scripts on this device.',
 	'scripts.details.confirm': 'Confirm',

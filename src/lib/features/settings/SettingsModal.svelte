@@ -40,11 +40,16 @@
 		</nav>
 		{#if active}
 			<section class="content" bind:this={content} aria-labelledby="settings-section-title">
-				<button class="back" onclick={() => (settingsDialog.section = null)}>
-					<Icon name="back" />
-					{t('settings.allSettings')}
-				</button>
+				<!-- One sticky row: back icon, then the section's name (Trevor, 2026-10-17). -->
 				<div class="heading">
+					<button
+						class="back"
+						aria-label={t('settings.allSettings')}
+						title={t('settings.allSettings')}
+						onclick={() => (settingsDialog.section = null)}
+					>
+						<Icon name="back" />
+					</button>
 					<h2 id="settings-section-title">{sectionLabel(active.label, say)}</h2>
 					{#if active.headingAction}<active.headingAction />{/if}
 				</div>
@@ -117,13 +122,22 @@
 		overscroll-behavior: contain;
 		padding-bottom: var(--space-6);
 	}
-	/* Same height with or without a heading action, so sections line up. */
+	/* Same height with or without a heading action, so sections line up. It stays at the top
+	   while the section scrolls, with a sticky preview held just below it. */
+	.content {
+		--settings-heading-height: calc(var(--tap-target) + var(--space-3));
+	}
 	.heading {
+		position: sticky;
+		top: 0;
+		z-index: 2;
 		display: flex;
-		min-height: var(--tap-target);
+		box-sizing: border-box;
+		height: var(--settings-heading-height);
 		align-items: center;
 		gap: var(--space-2);
-		margin-bottom: var(--space-3);
+		padding-bottom: var(--space-3);
+		background: var(--dialog-background);
 	}
 	h2 {
 		margin: 0;
@@ -167,16 +181,17 @@
 			display: none;
 		}
 		.back {
-			display: inline-flex;
-			align-items: center;
-			gap: var(--space-2);
-			min-height: var(--tap-target);
-			margin-bottom: var(--space-2);
+			display: inline-grid;
+			place-items: center;
+			flex: none;
+			width: var(--tap-target);
+			height: var(--tap-target);
+			margin-left: calc(-1 * var(--space-2));
 			padding: 0;
 			border: 0;
 			background: none;
 			color: var(--heading);
-			font-family: var(--font-control);
+			cursor: pointer;
 		}
 	}
 </style>

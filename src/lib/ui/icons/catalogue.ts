@@ -49,6 +49,7 @@ export const ICON_SLOTS = {
 	timerStart: { label: 'Start timer', choices: ['ph:play', 'ph:play-circle'] },
 	timerPause: { label: 'Pause timer', choices: ['ph:pause', 'ph:pause-circle'] },
 	timer: { label: 'Timer', choices: ['ph:timer', 'ph:hourglass'] },
+	loading: { label: 'Loading', choices: ['ph:circle-notch', 'ph:spinner'] },
 	sound: { label: 'Sound', choices: ['ph:speaker-high', 'ph:bell'] },
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },

@@ -6,7 +6,7 @@ import IconsSection from './IconsSection.svelte';
 import DataSection from './DataSection.svelte';
 import DiagnosticsSection from './DiagnosticsSection.svelte';
 import RefreshDiagnostics from '#lib/features/errors/RefreshDiagnostics.svelte';
-import TokensSection from './TokensSection.svelte';
+import BoardSection from './BoardSection.svelte';
 // Feature-owned sections, registered by their own modules.
 import '#lib/features/player/settings-section.ts';
 
@@ -28,10 +28,11 @@ registerSettingsSection({
 	order: 20
 });
 registerSettingsSection({
-	id: 'tokens',
-	label: { key: 'settings.charactersTokens' },
+	// Also opened on its own from the board's menu (Trevor, 2026-10-17).
+	id: 'board',
+	label: { key: 'settings.boardTokens' },
 	icon: 'reminder',
-	component: TokensSection,
+	component: BoardSection,
 	order: 30
 });
 registerSettingsSection({

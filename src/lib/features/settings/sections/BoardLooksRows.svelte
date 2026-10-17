@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { boardLooks, DEFAULT_BOARD_LOOKS } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import {
+		boardLooks,
+		DEFAULT_BOARD_LOOKS,
+		NAME_SIZE
+	} from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
@@ -25,6 +29,14 @@
 	defaultValue={DEFAULT_BOARD_LOOKS.vignetteStrength}
 	format={(strength) => intl.number(strength, { style: 'percent' })}
 	onChange={(vignetteStrength) => boardLooks.update({ vignetteStrength })}
+/>
+<SettingSlider
+	label={t('settings.nameSize')}
+	value={boardLooks.current.nameSize}
+	{...NAME_SIZE}
+	defaultValue={DEFAULT_BOARD_LOOKS.nameSize}
+	format={(size) => intl.number(size, { style: 'percent' })}
+	onChange={(nameSize) => boardLooks.update({ nameSize })}
 />
 <!-- A dropdown like the other choices in Settings; the Background dialog shows the same choice. -->
 <SettingSelect

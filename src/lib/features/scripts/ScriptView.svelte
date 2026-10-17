@@ -13,6 +13,7 @@
 	} from '#lib/core/data/index.ts';
 	import PrintScriptButton from '#lib/features/player/PrintScriptButton.svelte';
 	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -274,6 +275,13 @@
 	{#if preview && data}
 		<!-- Author and version are already in the details above. -->
 		<ScriptCopy script={preview} byline={false} />
+	{:else}
+		<!-- Never blank while a script or version loads (Trevor, 2026-10-17); it holds the
+		     sheet's place, which only grows downward when the abilities arrive. -->
+		<p class="loading" role="status" aria-busy="true" data-testid="script-loading">
+			<span class="spin"><Icon name="loading" /></span>
+			<span>{t('scripts.details.loading')}</span>
+		</p>
 	{/if}
 {/snippet}
 
@@ -315,5 +323,29 @@
 	}
 	.newer.none {
 		visibility: hidden;
+	}
+	.loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		min-height: 12rem;
+		margin: 0;
+		color: var(--on-surface-muted);
+	}
+	.spin {
+		display: inline-grid;
+		font-size: 1.5rem;
+		animation: spin 1s linear infinite;
+	}
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.spin {
+			animation-duration: 3s;
+		}
 	}
 </style>

@@ -4,7 +4,6 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import BoardLooksRows from './BoardLooksRows.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 	const assistance = $derived(preferences.current.assistance);
@@ -49,10 +48,6 @@
 
 <h3>{t('settings.groupDay')}</h3>
 {#each STORYTELLER_GROUPS.day as key (key)}{@render toggle(key)}{/each}
-
-<h3>{t('settings.groupBoard')}</h3>
-{#each STORYTELLER_GROUPS.board as key (key)}{@render toggle(key)}{/each}
-<BoardLooksRows />
 
 <style>
 	h3 {

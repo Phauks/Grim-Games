@@ -168,9 +168,15 @@ test('Storyteller settings is a list of switches, saved on the device', async ({
 
 // Trevor (2026-10-17): settings appear where they act and in Settings; these are the same
 // values as the board's Background dialog.
-test('the board looks are in Storyteller settings, saved with the board', async ({ page }) => {
+test('the board looks and background are in Board and tokens, saved with the board', async ({
+	page
+}) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Storyteller settings');
+	const dialog = await openSettings(page, 'Board and tokens');
+	const felt = dialog.getByRole('button', { name: 'Green felt' });
+	await expect(felt).toHaveAttribute('aria-pressed', 'false');
+	await felt.tap();
+	await expect(felt).toHaveAttribute('aria-pressed', 'true');
 	const vignette = dialog.getByRole('checkbox', { name: 'Vignette', includeHidden: true });
 	await expect(vignette).toBeChecked();
 	await dialog.getByText('Vignette', { exact: true }).tap();
@@ -182,7 +188,20 @@ test('the board looks are in Storyteller settings, saved with the board', async 
 	const saved = await page.evaluate(() =>
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
 	);
-	expect(saved).toEqual({ vignette: false, vignetteStrength: 0.3, rulesAt: 'edge', nameSize: 1 });
+	expect(saved).toEqual({
+		vignette: false,
+		vignetteStrength: 0.3,
+		rulesAt: 'edge',
+		nameSize: 1,
+		reminders: 'seat'
+	});
+
+	await page.reload();
+	const again = await openSettings(page, 'Board and tokens');
+	await expect(again.getByRole('button', { name: 'Green felt' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 });
 
 test('text size changes text only: icons, spacing and buttons keep their size', async ({
@@ -262,7 +281,7 @@ test('character icon size is its own slider and leaves interface icons alone', a
 		.locator('.icon');
 	const before = await settingsIcon.boundingBox();
 
-	const dialog = await openSettings(page, 'Characters and tokens');
+	const dialog = await openSettings(page, 'Board and tokens');
 	await slide(page, 'Character icon size', 1.25);
 	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
 	expect(await rootStyle(page, '--icon-scale')).toBe('1');
@@ -299,7 +318,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	await expect(nav.getByRole('button')).toHaveText([
 		'Theme and text',
 		'Icons',
-		'Characters and tokens',
+		'Board and tokens',
 		'Storyteller settings',
 		'Player view',
 		'Data',
@@ -312,8 +331,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	await expect(dialog.getByRole('heading', { level: 3 })).toHaveText([
 		'Night',
 		'Setup and bag draw',
-		'Day',
-		'Board'
+		'Day'
 	]);
 });
 
@@ -418,8 +436,19 @@ test('the text preview stays in view while the settings below it scroll', async 
 	await content.evaluate((el) => el.scrollTo(0, el.scrollHeight));
 	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	await expect(preview).toBeInViewport();
+	// The section's name stays at the top, with the back icon beside it on phones (Trevor,
+	// 2026-10-17), and the preview sits just under it.
 	const top = (await content.boundingBox())!.y;
-	expect(Math.abs((await preview.boundingBox())!.y - top)).toBeLessThan(2);
+	const heading = dialog.getByRole('heading', { name: 'Theme and text', level: 2 });
+	await expect(heading).toBeInViewport();
+	const row = (await heading.locator('..').boundingBox())!;
+	expect(Math.abs(row.y - top)).toBeLessThan(2);
+	expect(Math.abs((await preview.boundingBox())!.y - (row.y + row.height))).toBeLessThan(2);
+	const back = dialog.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) {
+		await expect(back).toHaveText('');
+		expect(Math.abs((await back.boundingBox())!.y - row.y)).toBeLessThan(2);
+	}
 });
 
 // Trevor (2026-10-17): the Left aligned and Justified choices scrolled over the preview.

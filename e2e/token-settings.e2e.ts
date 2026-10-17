@@ -8,11 +8,9 @@ async function openTokens(page: Page) {
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Characters and tokens' })
+		.getByRole('button', { name: 'Board and tokens' })
 		.tap();
-	await expect(
-		dialog.getByRole('heading', { name: 'Characters and tokens', level: 2 })
-	).toBeVisible();
+	await expect(dialog.getByRole('heading', { name: 'Board and tokens', level: 2 })).toBeVisible();
 	return dialog;
 }
 
@@ -109,7 +107,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 			.tap();
 		await dialog
 			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: 'Characters and tokens' })
+			.getByRole('button', { name: 'Board and tokens' })
 			.tap();
 	}
 	await openTokens();
@@ -155,7 +153,7 @@ test('the token preview stays in view while the token settings scroll', async ({
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Characters and tokens' })
+		.getByRole('button', { name: 'Board and tokens' })
 		.tap();
 	const preview = dialog.getByTestId('token-preview');
 	await expect(preview.getByTestId('token-player-name')).toBeVisible();
@@ -163,6 +161,26 @@ test('the token preview stays in view while the token settings scroll', async ({
 	await content.evaluate((el) => el.scrollTo(0, el.scrollHeight));
 	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	await expect(preview).toBeInViewport();
-	const top = (await content.boundingBox())!.y;
-	expect(Math.abs((await preview.boundingBox())!.y - top)).toBeLessThan(2);
+	// Just under the section's sticky heading row (Trevor, 2026-10-17).
+	const row = (await dialog
+		.getByRole('heading', { name: 'Board and tokens', level: 2 })
+		.locator('..')
+		.boundingBox())!;
+	expect(Math.abs(row.y - (await content.boundingBox())!.y)).toBeLessThan(2);
+	expect(Math.abs((await preview.boundingBox())!.y - (row.y + row.height))).toBeLessThan(2);
+});
+
+test('the preview draws the reminder as the board does, at the board size', async ({ page }) => {
+	// Trevor (2026-10-17): the preview showed the inline chip, not the reminder token.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const preview = dialog.getByTestId('token-preview');
+	const reminder = preview.getByTestId('board-reminder');
+	await expect(reminder).toHaveAttribute('aria-label', 'Red Herring reminder');
+	await expect(preview.getByTestId('reminder-token')).toHaveCount(0);
+	const before = (await reminder.boundingBox())!.width;
+	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('1.5');
+	await expect
+		.poll(async () => (await reminder.boundingBox())!.width)
+		.toBeGreaterThan(before * 1.4);
 });

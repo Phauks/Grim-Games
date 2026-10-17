@@ -34,6 +34,7 @@ import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_cat_bold from '~icons/ph/cat-bold';
 import ph_check_bold from '~icons/ph/check-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
+import ph_circle_notch_bold from '~icons/ph/circle-notch-bold';
 import ph_clipboard_bold from '~icons/ph/clipboard-bold';
 import ph_clipboard_text_bold from '~icons/ph/clipboard-text-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
@@ -138,6 +139,7 @@ import ph_sort_descending_bold from '~icons/ph/sort-descending-bold';
 import ph_spade_bold from '~icons/ph/spade-bold';
 import ph_sparkle_bold from '~icons/ph/sparkle-bold';
 import ph_speaker_high_bold from '~icons/ph/speaker-high-bold';
+import ph_spinner_bold from '~icons/ph/spinner-bold';
 import ph_square_bold from '~icons/ph/square-bold';
 import ph_star_bold from '~icons/ph/star-bold';
 import ph_stethoscope_bold from '~icons/ph/stethoscope-bold';
@@ -206,6 +208,7 @@ const icons: IconMap = {
 	'ph:cat-bold': ph_cat_bold,
 	'ph:check-bold': ph_check_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
+	'ph:circle-notch-bold': ph_circle_notch_bold,
 	'ph:clipboard-bold': ph_clipboard_bold,
 	'ph:clipboard-text-bold': ph_clipboard_text_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
@@ -310,6 +313,7 @@ const icons: IconMap = {
 	'ph:spade-bold': ph_spade_bold,
 	'ph:sparkle-bold': ph_sparkle_bold,
 	'ph:speaker-high-bold': ph_speaker_high_bold,
+	'ph:spinner-bold': ph_spinner_bold,
 	'ph:square-bold': ph_square_bold,
 	'ph:star-bold': ph_star_bold,
 	'ph:stethoscope-bold': ph_stethoscope_bold,

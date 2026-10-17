@@ -25,7 +25,8 @@
 <style>
 	.setting-preview {
 		position: sticky;
-		top: 0;
+		/* Just under the Settings section's sticky heading row. */
+		top: var(--settings-heading-height, 0);
 		z-index: 1;
 		margin: 0 0 var(--space-4);
 		padding: var(--space-2) 0 var(--space-3);
