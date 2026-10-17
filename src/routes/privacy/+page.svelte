@@ -118,8 +118,9 @@
 					with it" before you send.
 				</li>
 				<li>
-					A problem's details, only if you leave them in; web addresses are shortened so no game
-					data goes in.
+					A problem's details, or from the Diagnostics page its summary of this device and the app,
+					only if you leave them in. It never holds player names, notes, scripts, games or room
+					codes, and web addresses are shortened.
 				</li>
 			</ul>
 			<p>
