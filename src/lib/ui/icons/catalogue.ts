@@ -31,6 +31,7 @@ export const ICON_SLOTS = {
 	script: { label: 'Script', choices: ['ph:scroll', 'ph:book-open'] },
 	notes: { label: 'Notes', choices: ['ph:note-pencil', 'ph:notepad', 'ph:feather'] },
 	undo: { label: 'Undo', choices: ['ph:arrow-counter-clockwise', 'ph:arrow-u-up-left'] },
+	refresh: { label: 'Refresh', choices: ['ph:arrow-clockwise'] },
 	redo: { label: 'Redo', choices: ['ph:arrow-clockwise', 'ph:arrow-u-up-right'] },
 	reset: {
 		label: 'Reset to default',

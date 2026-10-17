@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
 	import { buildInfo } from '#lib/build-info.ts';
 	import { ISSUE_CHOOSER_URL, reportDetails } from '#lib/features/about/report-issue.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
@@ -8,13 +7,13 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import { collectDiagnostics } from './collect-diagnostics.svelte.ts';
-	import { diagnosticsFileName, diagnosticsText, type Diagnostics } from './diagnostics.ts';
+	import { diagnosticsFileName, diagnosticsText } from './diagnostics.ts';
+	import { diagnosticsView, refreshDiagnostics } from './diagnostics-view.svelte.ts';
 	import { errorLog } from './report.svelte.ts';
 
 	// Gathered on this device when the page opens; nothing is sent unless the person taps Report.
 
-	let diagnostics = $state<Diagnostics>();
+	const diagnostics = $derived(diagnosticsView.current);
 	const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
 	const text = $derived(diagnostics ? diagnosticsText(diagnostics, label) : '');
 
@@ -25,10 +24,7 @@
 			.catch(() => toast(t('errors.copyFailed'), t('errors.copyFailedDetail')));
 	}
 
-	async function gather() {
-		diagnostics = await collectDiagnostics();
-	}
-	onMount(gather);
+	onMount(refreshDiagnostics);
 
 	async function copy() {
 		try {
@@ -67,7 +63,6 @@
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			<Icon name="report" /><span>{t('errors.diag.report')}</span>
 		</a>
-		<Button variant="quiet" onclick={gather}>{t('errors.diag.refresh')}</Button>
 	</div>
 
 	<section>
@@ -92,12 +87,16 @@
 			<dl>
 				{#each section.rows as row (row.label)}
 					<dt>{label(row.label)}</dt>
-					<dd>{row.value}</dd>
+					<dd>
+						{#if row.href}
+							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external GitHub link -->
+							<a href={row.href} target="_blank" rel="noopener">{row.value}</a>
+						{:else}
+							{row.value}
+						{/if}
+					</dd>
 				{/each}
 			</dl>
-			{#if section.id === 'storage'}
-				<Button variant="quiet" href={resolve('/settings')}>{t('errors.diag.manageData')}</Button>
-			{/if}
 		</section>
 	{/each}
 </div>
@@ -138,6 +137,9 @@
 	dd {
 		margin: 0;
 		overflow-wrap: anywhere;
+	}
+	dd a {
+		color: inherit;
 	}
 	.link-button {
 		display: inline-flex;

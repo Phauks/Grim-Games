@@ -61,7 +61,9 @@ describe('setDiagnostic', () => {
 
 describe('formatting', () => {
 	it('names the download by date and formats sizes', () => {
-		expect(diagnosticsFileName(sample.gatheredAt)).toBe('grim-games-diagnostics-2026-10-16.txt');
+		expect(diagnosticsFileName(sample.gatheredAt)).toBe(
+			'grim-games-diagnostics-2026-10-16-200000.txt'
+		);
 		expect(formatBytes(2_500_000)).toBe('2.5 MB');
 		expect(formatBytes(12_400)).toBe('12 KB');
 		expect(formatBytes(null)).toBe('?');

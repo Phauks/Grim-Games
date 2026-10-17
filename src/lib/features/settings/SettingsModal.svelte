@@ -56,7 +56,10 @@
 					<Icon name="back" />
 					{t('settings.allSettings')}
 				</button>
-				<h2 id="settings-section-title">{sectionLabel(active.label, say)}</h2>
+				<div class="heading">
+					<h2 id="settings-section-title">{sectionLabel(active.label, say)}</h2>
+					{#if active.headingAction}<active.headingAction />{/if}
+				</div>
 				<p class="audience">
 					{t('settings.appliesTo', { audience: t(AUDIENCE_LABELS[active.audience]) })}
 				</p>
@@ -128,6 +131,13 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		padding-bottom: var(--space-6);
+	}
+	/* Same height with or without a heading action, so sections line up. */
+	.heading {
+		display: flex;
+		min-height: var(--tap-target);
+		align-items: center;
+		gap: var(--space-2);
 	}
 	h2 {
 		margin: 0;

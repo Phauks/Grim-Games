@@ -6,6 +6,7 @@ import FontsSection from './FontsSection.svelte';
 import IconsSection from './IconsSection.svelte';
 import DataSection from './DataSection.svelte';
 import DiagnosticsSection from './DiagnosticsSection.svelte';
+import RefreshDiagnostics from '#lib/features/errors/RefreshDiagnostics.svelte';
 import RulesTermsSection from './RulesTermsSection.svelte';
 import TokensSection from './TokensSection.svelte';
 // Feature-owned sections, registered by their own modules.
@@ -81,6 +82,7 @@ registerSettingsSection({
 	label: { key: 'shell.navDiagnostics' },
 	icon: 'diagnostics',
 	component: DiagnosticsSection,
+	headingAction: RefreshDiagnostics,
 	audience: 'everyone',
 	order: 96
 });

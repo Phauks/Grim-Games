@@ -27,6 +27,8 @@ export interface SettingsSection {
 	label: string | Message;
 	icon: IconSlot;
 	component: Component;
+	/** Optional control shown beside the section heading, such as Diagnostics' Refresh icon. */
+	headingAction?: Component;
 	audience: SettingsAudience;
 	/** Position in the sidebar, low first. Built-ins use 10, 20, 30 ... and 90 for Reset settings. */
 	order: number;

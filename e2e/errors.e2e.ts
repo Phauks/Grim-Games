@@ -137,6 +137,26 @@ test('Diagnostics gathers build, device and problems on the device, without game
 		await expect(panel.getByRole('heading', { level: 2, name })).toBeVisible();
 	}
 	await expect(panel).toContainText('1 problem');
+	// Build values link to GitHub; times carry the time of day, not just the date.
+	await expect(panel.getByRole('link', { name: /^[0-9a-f]{7,}$/ })).toHaveAttribute(
+		'href',
+		/^https:\/\/github\.com\/Phauks\/Grim-Games\/commit\//
+	);
+	await expect(panel.locator('dt:text-is("Gathered") + dd')).toHaveText(/\d{1,2}:\d{2}:\d{2}/);
+	await expect(panel.getByRole('link', { name: 'Manage data' })).toHaveCount(0);
+
+	// Refresh is an icon beside the section heading.
+	const heading = page
+		.getByRole('dialog', { name: 'Settings' })
+		.getByRole('heading', { name: 'Diagnostics' });
+	const refresh = page
+		.getByRole('dialog', { name: 'Settings' })
+		.getByRole('button', { name: 'Refresh' });
+	const [h, r] = [(await heading.boundingBox())!, (await refresh.boundingBox())!];
+	expect(r.height).toBeGreaterThanOrEqual(44);
+	expect(Math.abs(r.y + r.height / 2 - (h.y + h.height / 2))).toBeLessThan(12);
+	await refresh.tap();
+	await expect(panel).toHaveAttribute('aria-busy', 'false');
 
 	const report = panel.getByRole('link', { name: 'Copy and report' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
@@ -150,5 +170,7 @@ test('Diagnostics gathers build, device and problems on the device, without game
 		page.waitForEvent('download'),
 		panel.getByRole('button', { name: 'Download' }).tap()
 	]);
-	expect(download.suggestedFilename()).toMatch(/^grim-games-diagnostics-\d{4}-\d{2}-\d{2}\.txt$/);
+	expect(download.suggestedFilename()).toMatch(
+		/^grim-games-diagnostics-\d{4}-\d{2}-\d{2}-\d{6}\.txt$/
+	);
 });

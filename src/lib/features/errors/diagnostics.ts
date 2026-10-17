@@ -9,6 +9,8 @@ import { errorDetails, scrubUrls, type AppError } from './app-error.ts';
 export interface DiagnosticRow {
 	label: MessageKey;
 	value: string;
+	/** External page the value links to, e.g. the commit on GitHub. */
+	href?: string;
 }
 
 export interface DiagnosticSection {
@@ -66,9 +68,10 @@ export function diagnosticsText(
 	return lines.join('\n');
 }
 
-/** File name for the download, e.g. `grim-games-diagnostics-2026-10-16.txt`. */
+/** File name for the download, in UTC, e.g. `grim-games-diagnostics-2026-10-16-231502.txt`. */
 export function diagnosticsFileName(gatheredAt: number): string {
-	return `grim-games-diagnostics-${new Date(gatheredAt).toISOString().slice(0, 10)}.txt`;
+	const iso = new Date(gatheredAt).toISOString();
+	return `grim-games-diagnostics-${iso.slice(0, 10)}-${iso.slice(11, 19).replaceAll(':', '')}.txt`;
 }
 
 /** Bytes as MB with one decimal (or KB below 1 MB), for the Storage section. */
