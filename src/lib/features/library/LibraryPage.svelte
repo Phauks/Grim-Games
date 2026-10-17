@@ -490,6 +490,14 @@
 <!-- Search's own script view (Trevor, 2026-10-17: "exact same info and style"), with the
      Library's folder and tags as rows of the main info, and Edit and Remove. -->
 <Dialog bind:open={scriptOpen} title={openRow?.listing.row.name || t('common.none')} size="full">
+	<!-- Delete sits beside Close in every dialog's header (Trevor, 2026-10-17). -->
+	{#snippet headActions()}
+		<DeleteButton
+			label={t('library.remove')}
+			disabled={!openRow || viewingUnsaved}
+			onclick={() => (removing = true)}
+		/>
+	{/snippet}
 	{#if openRow}
 		{@const shareable = openRow.shareable}
 		<!-- Any saved script opens in the Script builder (Trevor, 2026-10-17); a profile-only
@@ -519,11 +527,6 @@
 					label={t('library.edit')}
 					disabled={!editable || viewingUnsaved}
 					onclick={() => editable && editInBuilder(editable.scriptId)}
-				/>
-				<DeleteButton
-					label={t('library.remove')}
-					disabled={viewingUnsaved}
-					onclick={() => (removing = true)}
 				/>
 			{/snippet}
 		</ScriptView>
