@@ -168,9 +168,15 @@ test('Storyteller settings is a list of switches, saved on the device', async ({
 
 // Trevor (2026-10-17): settings appear where they act and in Settings; these are the same
 // values as the board's Background dialog.
-test('the board looks are in Storyteller settings, saved with the board', async ({ page }) => {
+test('the board looks and background are in Board and tokens, saved with the board', async ({
+	page
+}) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Storyteller settings');
+	const dialog = await openSettings(page, 'Board and tokens');
+	const felt = dialog.getByRole('button', { name: 'Green felt' });
+	await expect(felt).toHaveAttribute('aria-pressed', 'false');
+	await felt.tap();
+	await expect(felt).toHaveAttribute('aria-pressed', 'true');
 	const vignette = dialog.getByRole('checkbox', { name: 'Vignette', includeHidden: true });
 	await expect(vignette).toBeChecked();
 	await dialog.getByText('Vignette', { exact: true }).tap();
@@ -183,6 +189,13 @@ test('the board looks are in Storyteller settings, saved with the board', async 
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
 	);
 	expect(saved).toEqual({ vignette: false, vignetteStrength: 0.3, rulesAt: 'edge', nameSize: 1 });
+
+	await page.reload();
+	const again = await openSettings(page, 'Board and tokens');
+	await expect(again.getByRole('button', { name: 'Green felt' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 });
 
 test('text size changes text only: icons, spacing and buttons keep their size', async ({
@@ -262,7 +275,7 @@ test('character icon size is its own slider and leaves interface icons alone', a
 		.locator('.icon');
 	const before = await settingsIcon.boundingBox();
 
-	const dialog = await openSettings(page, 'Characters and tokens');
+	const dialog = await openSettings(page, 'Board and tokens');
 	await slide(page, 'Character icon size', 1.25);
 	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
 	expect(await rootStyle(page, '--icon-scale')).toBe('1');
@@ -299,7 +312,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	await expect(nav.getByRole('button')).toHaveText([
 		'Theme and text',
 		'Icons',
-		'Characters and tokens',
+		'Board and tokens',
 		'Storyteller settings',
 		'Player view',
 		'Data',
@@ -312,8 +325,7 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	await expect(dialog.getByRole('heading', { level: 3 })).toHaveText([
 		'Night',
 		'Setup and bag draw',
-		'Day',
-		'Board'
+		'Day'
 	]);
 });
 

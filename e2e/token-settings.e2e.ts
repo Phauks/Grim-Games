@@ -8,11 +8,9 @@ async function openTokens(page: Page) {
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Characters and tokens' })
+		.getByRole('button', { name: 'Board and tokens' })
 		.tap();
-	await expect(
-		dialog.getByRole('heading', { name: 'Characters and tokens', level: 2 })
-	).toBeVisible();
+	await expect(dialog.getByRole('heading', { name: 'Board and tokens', level: 2 })).toBeVisible();
 	return dialog;
 }
 
@@ -109,7 +107,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 			.tap();
 		await dialog
 			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: 'Characters and tokens' })
+			.getByRole('button', { name: 'Board and tokens' })
 			.tap();
 	}
 	await openTokens();
@@ -155,7 +153,7 @@ test('the token preview stays in view while the token settings scroll', async ({
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Characters and tokens' })
+		.getByRole('button', { name: 'Board and tokens' })
 		.tap();
 	const preview = dialog.getByTestId('token-preview');
 	await expect(preview.getByTestId('token-player-name')).toBeVisible();
