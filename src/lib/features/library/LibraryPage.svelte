@@ -41,6 +41,8 @@
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
+	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import FolderView from './FolderView.svelte';
 	import VariationChanges from './VariationChanges.svelte';
 	import LabelManager from './LabelManager.svelte';
@@ -341,19 +343,15 @@
 	let manageOpen = $state(false);
 </script>
 
-<main>
-	<div class="head">
-		<h1>{t('library.heading')}</h1>
-		<div class="page-actions">
-			<Button icon="tag" onclick={() => (manageOpen = true)}>{t('library.tags')}</Button>
-			<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
-			<AddScript onsaved={openAdded} />
-		</div>
-	</div>
+<Page title={t('library.heading')}>
+	{#snippet actions()}
+		<Button icon="tag" onclick={() => (manageOpen = true)}>{t('library.tags')}</Button>
+		<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
+		<AddScript onsaved={openAdded} />
+	{/snippet}
 
 	<ErrorBoundary area="library">
-		<section aria-labelledby="library-scripts">
-			<h2 id="library-scripts">{t('library.scripts')}</h2>
+		<PageSection title={t('library.scripts')}>
 			<div class="find">
 				<label class="term">
 					<span class="visually-hidden">{t('library.search')}</span>
@@ -406,9 +404,9 @@
 					/>
 				</div>
 			{/if}
-		</section>
+		</PageSection>
 	</ErrorBoundary>
-</main>
+</Page>
 
 {#snippet labelList(labels: readonly string[])}
 	{#each labels as name (name)}<span class="chip">{name}</span>{:else}<span class="muted"
@@ -597,39 +595,6 @@
 {/if}
 
 <style>
-	main {
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-5) var(--page-gutter);
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-5);
-	}
-	.head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-	}
-	.page-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-	}
-	h1 {
-		margin: 0;
-		font-size: 2rem;
-	}
-	h2 {
-		margin: 0;
-		font-family: var(--font-heading);
-	}
-	section {
-		display: grid;
-		gap: var(--space-3);
-		min-width: 0;
-	}
 	.visually-hidden {
 		position: absolute;
 		width: 1px; /* px-ok: visually hidden, still read aloud */
