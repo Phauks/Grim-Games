@@ -167,12 +167,13 @@ export function stepReminders(characterId: CharacterId, night: Night): StepRemin
 /**
  * The reminder bank once setup is over (Trevor, 2026-10-16): every reminder of a character
  * in play that still has a copy off the board, in the picker's order, with the reminders the
- * walked-through step uses tonight (`focus`) first.
+ * walked-through step uses tonight (`focus`) first, unless `front` is false.
  */
 export function bankReminders(
 	game: Game,
 	characters: CharacterLookup,
-	focus?: StepReminders
+	focus?: StepReminders,
+	front = true
 ): BankReminder[] {
 	const left = reminderCopiesLeft(game, characters);
 	const out: BankReminder[] = [];
@@ -183,5 +184,5 @@ export function bankReminders(
 			if (n > 0) out.push({ characterId: character.id, label, left: n, now });
 		}
 	}
-	return [...out.filter((r) => r.now), ...out.filter((r) => !r.now)];
+	return front ? [...out.filter((r) => r.now), ...out.filter((r) => !r.now)] : out;
 }

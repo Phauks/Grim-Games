@@ -81,6 +81,7 @@
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
+	import { stepFocus } from './step-focus.svelte.ts';
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import AlignmentAsk from './AlignmentAsk.svelte';
@@ -982,9 +983,10 @@
 			size={chip}
 			view={bankView}
 			onView={(v) => (bankChosen = v)}
-			focus={walk && walkStep?.character
+			focus={walk && walkStep?.character && stepFocus.current.on
 				? stepReminders(walkStep.character.id, walk.night)
 				: undefined}
+			focusMode={stepFocus.current.mode}
 			{seatAt}
 			onHints={(h) => (trayHints = h)}
 		/>

@@ -2033,3 +2033,49 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await expect(token).toBeVisible();
 	await expect.poll(near).toBe(true);
 });
+
+test("the walk-through points out the step's reminders: ringed, alone or first", async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Monk']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Night order' })
+		.getByRole('button', { name: 'Walk through' })
+		.tap();
+	const strip = page.getByTestId('night-strip');
+	for (let i = 0; i < 6 && !(await strip.textContent())?.includes('Poisoner'); i++)
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip).toContainText('Poisoner');
+
+	const bank = page.getByRole('list', { name: /Reminder bank|Setup reminders/ });
+	if ((await bank.getAttribute('aria-label')) === 'Setup reminders')
+		await page.getByRole('button', { name: /show all reminders/ }).tap();
+	const tokens = page.getByRole('list', { name: 'Reminder bank' }).locator('> li');
+	// Bring to front, as before: the Poisoner's token first, ringed.
+	await expect(tokens.first()).toHaveClass(/\bnow\b/);
+	await expect(tokens.first()).toContainText('Poisoned');
+
+	await strip.getByRole('button', { name: 'Step reminders' }).tap();
+	const options = page.getByRole('dialog', { name: 'Step reminders' });
+	await options.getByText('Only these', { exact: true }).tap();
+	await expect(tokens).toHaveCount(1);
+	await options.getByText('Highlight', { exact: true }).tap();
+	await expect(page.locator('li.dim').first()).toBeAttached();
+	await expect(tokens.first()).not.toHaveClass(/\bnow\b/);
+	await options.getByText("Point out this step's reminders").tap();
+	await expect(page.locator('li.now')).toHaveCount(0);
+	await expect(page.locator('li.dim')).toHaveCount(0);
+});

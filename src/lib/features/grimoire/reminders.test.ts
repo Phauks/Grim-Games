@@ -140,6 +140,16 @@ describe('bankReminders', () => {
 			now: true
 		});
 	});
+	it("can mark the step's reminders in their usual place instead (Trevor, 2026-10-17)", () => {
+		let g = game();
+		g = run(g, { type: 'AssignCharacter', seatId: g.seating[1], characterId: 'monk' });
+		g = run(g, { type: 'AssignCharacter', seatId: g.seating[2], characterId: 'poisoner' });
+		const focus = stepReminders('poisoner', 'other');
+		expect(bankReminders(g, characters, focus)[0].characterId).toBe('poisoner');
+		const kept = bankReminders(g, characters, focus, false);
+		expect(kept[0]).toMatchObject({ characterId: 'monk', now: false });
+		expect(kept.find((r) => r.characterId === 'poisoner')?.now).toBe(true);
+	});
 	// https://wiki.bloodontheclocktower.com/Grandmother : her grandchild's death kills her,
 	// which can only happen after the first night.
 	it('marks only the reminders the step can use that night', () => {
