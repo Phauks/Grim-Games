@@ -2,11 +2,10 @@
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { createAttachmentKey } from 'svelte/attachments';
-	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		editionScript,
-		loadScript,
 		loadScriptText,
 		type CharacterId,
 		type CharacterType,
@@ -27,31 +26,25 @@
 	import {
 		EMPTY_QUERY,
 		MAX_FILTER_CHARACTERS,
-		compareVersions,
 		filterCount,
 		normaliseSearch,
 		parseBotcScriptsRef,
-		scriptPageUrl,
 		searchPath,
 		type BotcScriptsQuery,
-		type BotcScriptsRef,
 		type BotcScriptsSort
 	} from './botcscripts-api.ts';
 	import BotcFilter from './BotcFilter.svelte';
 	import { collectionScripts } from './collection.svelte.ts';
-	import { botcVersions } from './botc-versions.svelte.ts';
+	import { fetchBotc } from './botc-previews.svelte.ts';
 	import { curatedScripts } from './curated.svelte.ts';
 	import { worldCupScripts } from './world-cup.svelte.ts';
 	import {
 		chooseScript,
 		currentScript,
 		forgetScript,
-		playScript,
 		recentScripts,
 		restoreScripts
 	} from './current-script.svelte.ts';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import {
 		fetchLinkTarget,
 		ScriptFetchError,
@@ -68,16 +61,8 @@
 	} from './picker-rows.ts';
 	import { relaxJson } from './relaxed-json.ts';
 	import { RemoteSearch } from './remote-search.svelte.ts';
-	import {
-		describeSource,
-		reloadSavedScript,
-		sourcePage,
-		type ScriptSource
-	} from './saved-scripts.ts';
-	import PrintScriptButton from '#lib/features/player/PrintScriptButton.svelte';
-	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
-	import ScriptChecks from './ScriptChecks.svelte';
-	import ScriptDetails, { type ScriptFact } from './ScriptDetails.svelte';
+	import { describeSource, reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
+	import ScriptView from './ScriptView.svelte';
 	import {
 		botcProvider,
 		findSaved,
@@ -90,8 +75,6 @@
 		type ScriptListing
 	} from './script-providers.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import ShareControl from './ShareControl.svelte';
-	import { shareTargetFor } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { CURATED_SECTIONS } from './script-tool-link.ts';
 
@@ -120,12 +103,6 @@
 	);
 
 	let checkOpen = $state(false);
-	/** What loading the shown script is for: saving it, or playing it without saving (Play). */
-	let intent: 'save' | 'play' = 'save';
-	$effect(() => {
-		// A check closed without Confirm doesn't leave the next load playing.
-		if (!checkOpen) intent = 'save';
-	});
 
 	let term = $state('');
 	/**
@@ -327,77 +304,15 @@
 	/** The row tapped, or the latest saved script. */
 	const baseListing = $derived(selected ?? latest);
 
-	// ---- Versions: BotC Scripts publishes them (and the World Cups load from it) ----
-
-	/** The shown script's number and version on BotC Scripts, when it came from there. */
-	const baseBotc = $derived.by(() => {
-		const listing = baseListing;
-		if (!listing) return undefined;
-		if (listing.row.number !== undefined && listing.row.version !== undefined) {
-			return { scriptId: listing.row.number, version: listing.row.version };
-		}
-		const source = findSaved(recentScripts.list, listing)?.source;
-		return source?.kind === 'botcscripts'
-			? { scriptId: source.scriptId, version: source.version }
-			: undefined;
-	});
-	$effect(() => {
-		const id = baseBotc?.scriptId;
-		if (id !== undefined) untrack(() => void botcVersions.load(id));
-	});
-	const versionList = $derived(baseBotc ? botcVersions.get(baseBotc.scriptId) : undefined);
-	/** Another version chosen in the details, for the row it was chosen on. */
-	let picked = $state<{ key: string; version: string } | undefined>();
-	const pickedVersion = $derived(
-		baseListing && picked?.key === baseListing.row.key ? picked.version : undefined
-	);
-	/** The chosen version as a row of its own: previewed, saved and shared as that version. */
-	const versionListing = $derived.by((): ScriptListing | undefined => {
-		const base = baseListing;
-		const botcInfo = baseBotc;
-		if (!base || !botcInfo || !pickedVersion || pickedVersion === botcInfo.version) {
-			return undefined;
-		}
-		const { scriptId } = botcInfo;
-		return {
-			row: {
-				...base.row,
-				key: `botc-version:${scriptId}:${pickedVersion}`,
-				source: 'botc',
-				number: scriptId,
-				version: pickedVersion,
-				page: scriptPageUrl(scriptId, pickedVersion)
-			},
-			target: { kind: 'botcscripts', ref: { kind: 'script', scriptId, version: pickedVersion } }
-		};
-	});
-	$effect(() => {
-		const target = versionListing?.target;
-		if (target?.kind === 'botcscripts') untrack(() => void fetchBotc(target.ref).catch(() => {}));
-	});
-	const shownVersion = $derived(pickedVersion ?? baseBotc?.version);
-	const latestVersion = $derived(versionList?.latest);
-	/** A newer version than the one shown (e.g. a saved 1.2.0 when 1.3.0 is out). */
-	const newer = $derived(
-		latestVersion && shownVersion && compareVersions(latestVersion, shownVersion) > 0
-			? latestVersion
-			: undefined
-	);
-	function chooseVersion(version: string) {
-		if (!baseListing) return;
-		picked = { key: baseListing.row.key, version };
-	}
-
-	const shownListing = $derived(versionListing ?? baseListing);
+	/** The listing the details show: the base one, or a version chosen there. */
+	let shownListing = $state.raw<ScriptListing | undefined>();
 	const shownSaved = $derived(
 		shownListing ? findSaved(recentScripts.list, shownListing) : undefined
 	);
 
 	function select(listing: ScriptListing) {
 		selected = listing;
-		picked = undefined;
 		paneOpen = true;
-		if (listing.target.kind === 'botcscripts') void fetchBotc(listing.target.ref).catch(() => {});
 	}
 
 	/** Save and Remove from saved show at once; the write finishes behind it. */
@@ -409,63 +324,6 @@
 	const shownIsSaved = $derived(
 		shownListing ? (pendingSaved.get(shownListing.row.key) ?? !!shownSaved) : false
 	);
-
-	/** A BotC Scripts row is fetched when tapped, so Save doesn't wait on the site. */
-	const botcFetches = new SvelteMap<string, Promise<FetchedScript>>();
-	/** Fetched BotC Scripts text by ref, for the details' player sheet. */
-	const botcTexts = new SvelteMap<string, string>();
-	/** Refs whose fetch failed: their details fall back to the character badges. */
-	const botcFailed = new SvelteSet<string>();
-	function fetchBotc(ref: BotcScriptsRef): Promise<FetchedScript> {
-		const key = JSON.stringify(ref);
-		let fetching = botcFetches.get(key);
-		if (!fetching) {
-			botcFailed.delete(key);
-			fetching = fetchLinkTarget({ kind: 'botcscripts', ref }, '');
-			botcFetches.set(key, fetching);
-			fetching.then(
-				(fetched) => botcTexts.set(key, fetched.text),
-				() => {
-					botcFetches.delete(key);
-					botcFailed.add(key);
-				}
-			);
-		}
-		return fetching;
-	}
-
-	/**
-	 * The shown script as players see it (Trevor, 2026-10-16): names and abilities by type,
-	 * with jinxes. A BotC Scripts row has it once its fetch arrives. Until then the space
-	 * stays empty (Trevor, 2026-10-17: only the abilities, never a line of characters that
-	 * then changes); only a script that can't be loaded lists its characters as badges.
-	 */
-	const preview = $derived.by((): LoadedScript | undefined => {
-		const listing = shownListing;
-		if (!data || !listing) return undefined;
-		if (shownSaved) return reloadSavedScript(shownSaved, data);
-		const target = listing.target;
-		switch (target.kind) {
-			case 'edition':
-				return editionScript(target.edition, data);
-			case 'saved':
-				return reloadSavedScript(target.saved, data);
-			case 'json':
-				return loadScript(target.json, data).script;
-			case 'botcscripts': {
-				const text = botcTexts.get(JSON.stringify(target.ref));
-				return text === undefined ? undefined : loadScriptText(text, data).script;
-			}
-		}
-	});
-
-	const previewPending = $derived.by(() => {
-		const listing = shownListing;
-		if (!listing || preview) return false;
-		if (!data) return true;
-		const target = listing.target;
-		return target.kind === 'botcscripts' && !botcFailed.has(JSON.stringify(target.ref));
-	});
 
 	async function toggleSaved() {
 		const listing = shownListing;
@@ -483,60 +341,12 @@
 		}
 	}
 
-	/**
-	 * Play: a new game with the shown script, without saving it to the Library (Trevor,
-	 * 2026-10-17). It goes through the same Script check as saving.
-	 */
-	async function quickPlay() {
-		const listing = shownListing;
-		if (!listing) return;
-		intent = 'play';
-		try {
-			await loadTarget(listing.target);
-		} finally {
-			if (!checkOpen) intent = 'save';
-		}
-	}
-
 	/** The shown row, or (in another source's list) the same script there. */
 	function isSelected(listing: ScriptListing): boolean {
 		if (!shownListing || !baseListing) return false;
 		if (baseListing.row.key === listing.row.key) return true;
 		return !!shownSaved && matchesSaved(shownSaved, listing);
 	}
-
-	function factsFor(listing: ScriptListing | undefined): ScriptFact[] {
-		const row = listing?.row;
-		const saved = listing && findSaved(recentScripts.list, listing);
-		const none = t('common.none');
-		const source: ScriptSource | undefined =
-			saved?.source ??
-			(row?.source === 'botc' && row.number !== undefined
-				? { kind: 'botcscripts', scriptId: row.number, version: row.version ?? '' }
-				: undefined);
-		// The Source opens the script's own page where it came from (Trevor, 2026-10-16).
-		const page = (source && sourcePage(source)) ?? row?.page;
-		return [
-			{ label: t('scripts.current.author'), value: row ? row.author || none : none },
-			{ label: t('scripts.column.type'), value: row ? t(`scripts.kind.${row.kind}`) : none },
-			{
-				label: t('scripts.current.source'),
-				value: source
-					? describeSource(source)
-					: row
-						? row.note || t(`scripts.sourceLabel.${row.source}`)
-						: none,
-				href: page
-			}
-		];
-	}
-
-	const shareTarget = $derived.by(() => {
-		const saved = shownSaved;
-		return saved && saved.scriptId !== 'unsaved'
-			? () => shareTargetFor(saved, location.origin)
-			: undefined;
-	});
 
 	/** Removing keeps the script shown (Trevor), so Save can bring it straight back. */
 	async function removeShown() {
@@ -713,12 +523,6 @@
 
 	/** Saves a script; the details then show it (the tapped row, if that is what was saved). */
 	async function use(script: LoadedScript, source: ScriptSource) {
-		if (intent === 'play') {
-			intent = 'save';
-			playScript(script, source);
-			await goto(resolve('/new'));
-			return;
-		}
 		await chooseScript(script, source);
 		const saved = currentScript.saved;
 		if (!selected || !saved || !matchesSaved(saved, selected)) selected = undefined;
@@ -782,55 +586,10 @@
 	}
 </script>
 
-<!-- Every BotC Scripts version, newest first; "None" where the source publishes none. -->
-{#snippet version()}
-	{#if versionList && versionList.versions.length > 0 && shownVersion}
-		<!-- Its own line, the full width: "Newer" sits under it, never squeezing it. -->
-		<span class="version-pick">
-			<Select
-				label={t('scripts.details.version')}
-				hideLabel
-				value={shownVersion}
-				options={versionList.versions.map((v) => ({
-					value: v,
-					label:
-						v === latestVersion
-							? t('scripts.details.latestVersion', { version: v })
-							: v === baseBotc?.version && shownSaved
-								? t('scripts.details.savedVersion', { version: v })
-								: v
-				}))}
-				onChange={chooseVersion}
-			/>
-		</span>
-	{:else}
-		<span data-testid="script-version">{shownVersion ?? t('common.none')}</span>
-	{/if}
-	<!-- Space kept whether or not there is a newer version, so nothing moves when it arrives. -->
-	<span class="newer" class:none={!newer} data-testid="newer-version">
-		<Button variant="quiet" disabled={!newer} onclick={() => newer && chooseVersion(newer)}
-			>{t('scripts.details.newerVersion', { version: newer ?? latestVersion ?? '' })}</Button
-		>
-	</span>
-{/snippet}
-
 {#snippet backButton()}
 	<button type="button" class="back" onclick={() => (paneOpen = false)}
 		><Icon name="back" /><span>{t('scripts.details.back')}</span></button
 	>
-{/snippet}
-
-{#snippet checks()}
-	{#if data && (preview || previewPending)}
-		<ScriptChecks script={preview} {data} />
-	{/if}
-{/snippet}
-
-{#snippet playerSheet()}
-	{#if preview && data}
-		<!-- Author and version are already in the details above. -->
-		<ScriptCopy script={preview} byline={false} />
-	{/if}
 {/snippet}
 
 <!-- The list on the left, the shown script's details on the right; on a phone the details
@@ -910,32 +669,15 @@
 
 		<aside class="pane" aria-label={t('scripts.details.label')} inert={narrow && !paneOpen}>
 			<div class="pane-scroll">
-				<ScriptDetails
-					heading={shownListing
-						? t(`scripts.sourceLabel.${shownListing.row.source}`)
-						: t('scripts.current.defaultName')}
-					name={shownListing?.row.name ?? ''}
-					facts={factsFor(shownListing)}
-					entries={shownListing?.row.entries ?? []}
+				<ScriptView
+					listing={baseListing}
 					{data}
-					sheet={preview || previewPending ? playerSheet : undefined}
-					extra={checks}
+					onshown={(l) => (shownListing = l)}
+					saved={shownIsSaved}
+					{busy}
 					lead={backButton}
-					{version}
 				>
-					{#snippet actions()}
-						<IconButton
-							icon="quickPlay"
-							label={t('scripts.details.play')}
-							disabled={!shownListing || busy}
-							onclick={() => void quickPlay()}
-						/>
-						<PrintScriptButton script={preview} version={shownVersion} />
-						<ShareControl
-							what="script"
-							title={shownListing?.row.name || t('scripts.current.defaultName')}
-							target={shownIsSaved ? shareTarget : undefined}
-						/>
+					{#snippet extraActions()}
 						<!-- One button, the same size saved or not: pressed means saved. -->
 						<span class="toggle" class:on={shownIsSaved}>
 							<IconButton
@@ -947,7 +689,7 @@
 							/>
 						</span>
 					{/snippet}
-				</ScriptDetails>
+				</ScriptView>
 			</div>
 		</aside>
 	</div>
@@ -1190,14 +932,6 @@
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
-	}
-	.version-pick {
-		display: block;
-		width: 100%;
-		max-width: 22rem;
-	}
-	.newer.none {
-		visibility: hidden;
 	}
 	/* The whole row selects its script (`tapRow`). */
 	.picker :global(tbody tr:has(.pick:not(:disabled))) {
