@@ -19,7 +19,7 @@
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
-	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import { loadGameRecords } from './records.ts';
 	import { matchesText, nextSort, sortRows } from './stat-rows.ts';
@@ -191,8 +191,7 @@
 	</ClearableField>
 {/snippet}
 
-<section class="summary" aria-labelledby="history-summary">
-	<h2 id="history-summary">{t('history.summary')}</h2>
+<PageSection title={t('history.summary')}>
 	<dl>
 		<div>
 			<dt>{t('history.games')}</dt>
@@ -215,9 +214,9 @@
 			<dd>{decimal(stats.summary.averagePlayers)}</dd>
 		</div>
 	</dl>
-</section>
+</PageSection>
 
-<Collapsible title={t('history.scripts')} storageKey="history.scripts">
+<PageSection title={t('history.scripts')} collapsible storageKey="history.scripts">
 	<DataTable
 		label={t('history.scripts')}
 		testid="history-scripts"
@@ -241,9 +240,9 @@
 			{@render textFilter(column.label, scriptFilter, (v) => (scriptFilter = v), close)}
 		{/snippet}
 	</DataTable>
-</Collapsible>
+</PageSection>
 
-<Collapsible title={t('history.characters')} storageKey="history.characters">
+<PageSection title={t('history.characters')} collapsible storageKey="history.characters">
 	<DataTable
 		label={t('history.characters')}
 		testid="history-characters"
@@ -287,9 +286,9 @@
 			{/if}
 		{/snippet}
 	</DataTable>
-</Collapsible>
+</PageSection>
 
-<Collapsible title={t('history.players')} storageKey="history.players">
+<PageSection title={t('history.players')} collapsible storageKey="history.players">
 	<DataTable
 		label={t('history.players')}
 		testid="history-players"
@@ -314,17 +313,9 @@
 			{@render textFilter(column.label, playerFilter, (v) => (playerFilter = v), close)}
 		{/snippet}
 	</DataTable>
-</Collapsible>
+</PageSection>
 
 <style>
-	section {
-		display: grid;
-		gap: var(--space-2);
-	}
-	h2 {
-		margin: 0;
-		font-size: 1.3rem;
-	}
 	dl {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(calc(7 * var(--u)), 1fr));
