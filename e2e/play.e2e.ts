@@ -285,7 +285,7 @@ test('a shared link with problems opens the Script check first', async ({ page }
 	await expect(page.locator('[data-character]')).toHaveCount(2);
 });
 
-test('note contents can be hidden until a note is opened', async ({ page }) => {
+test('each note can hide its contents until it is opened', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await page.getByRole('button', { name: /^Untitled/ }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Note' });
@@ -295,17 +295,13 @@ test('note contents can be hidden until a note is opened', async ({ page }) => {
 	const row = page.locator('[data-note]');
 	await expect(row).toContainText('Sam is the Imp');
 
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Player view' })
-		.tap();
-	const hide = settings.getByRole('checkbox', { name: 'Hide note contents', includeHidden: true });
+	// Each note has its own switch (Trevor, 2026-10-17), not a setting.
+	await row.tap();
+	const hide = sheet.getByRole('checkbox', { name: 'Hide contents', includeHidden: true });
 	await expect(hide).not.toBeChecked();
-	await settings.getByText('Hide note contents', { exact: true }).tap();
+	await sheet.getByText('Hide contents', { exact: true }).tap();
 	await expect(hide).toBeChecked();
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await page.keyboard.press('Escape');
 
 	// The title stays so notes can be found; the text is hidden (Trevor, 2026-10-16).
 	await expect(row).toHaveText(/^\s*Evil team\s*Hidden\s*$/);
@@ -318,6 +314,14 @@ test('note contents can be hidden until a note is opened', async ({ page }) => {
 	await page.reload();
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(page.locator('[data-note]')).toHaveText(/^\s*Evil team\s*Hidden\s*$/);
+	// The old Settings switch is gone.
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Player view' })
+		.tap();
+	await expect(settings.getByText('Hide note contents')).toHaveCount(0);
 });
 
 test('Enter in a note title closes the keyboard', async ({ page }) => {
