@@ -164,9 +164,9 @@ test('On script lists the chosen characters from every source together', async (
 		route.fulfill({ json: collection('peddler', 'Night Market', 'Peddler', 'Ana') })
 	);
 	await page.goto('/build-script');
-	const sources = page.getByRole('radiogroup', { name: 'Characters from' });
 	await character(page, 'Chef').tap();
-	await sources.getByText('Homebrew Wiki', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Characters from' }).tap();
+	await page.getByRole('option', { name: 'Homebrew Wiki', exact: true }).tap();
 	const picked = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
 	await expect(picked).toContainText('Temple Fair');
 	await character(page, 'Lantern, By DJ').tap();
@@ -175,8 +175,10 @@ test('On script lists the chosen characters from every source together', async (
 	await character(page, 'Peddler, By Ana').tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('3');
 
-	await sources.getByText('On script', { exact: true }).tap();
-	// Three sources still fit a phone without scrolling sideways.
+	await page.getByRole('combobox', { name: 'Characters from' }).tap();
+	await page.getByRole('option', { name: 'On script', exact: true }).tap();
+	await expect(page.getByRole('listbox')).toBeHidden();
+	// The page still fits a phone without scrolling sideways.
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
 		true
 	);

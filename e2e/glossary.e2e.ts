@@ -75,10 +75,8 @@ test('with rules term underlines off the terms are plain text', async ({ page })
 
 test('terms in the character dialog open above it', async ({ page }) => {
 	await page.goto('/spikes/day');
-	await page
-		.getByRole('radiogroup', { name: 'Sample game' })
-		.getByText('Trouble Brewing', { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Sample game' }).tap();
+	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
 	await page
 		.locator('li[data-character="slayer"]')
 		.getByRole('button', { name: /^Slayer/ })

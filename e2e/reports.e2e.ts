@@ -45,6 +45,7 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await report.getByRole('button', { name: 'Close' }).first().tap();
 	// Filtered to New by default, so an accepted report leaves the list.
 	await expect(row).toBeHidden();
+	await expect(report).toBeHidden();
 	await page.getByRole('combobox', { name: 'Status' }).tap();
 	await page.getByRole('option', { name: 'Accepted', exact: true }).tap();
 	await expect(row).toBeVisible();

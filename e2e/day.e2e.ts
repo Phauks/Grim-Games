@@ -8,10 +8,8 @@ async function loaded(page: Page) {
 }
 
 async function sampleGame(page: Page, name: 'Sects & Violets' | 'Trouble Brewing' | 'Assorted') {
-	await page
-		.getByRole('radiogroup', { name: 'Sample game' })
-		.getByText(name, { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Sample game' }).tap();
+	await page.getByRole('option', { name, exact: true }).tap();
 }
 
 /** Walks the night one step at a time until the step for `title` is showing. */
