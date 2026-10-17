@@ -458,6 +458,13 @@
 		selected = seatId;
 		sheetOpen = true;
 	}
+	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
+	/** A tapped reminder opens its own dialog over its seat's sheet (Trevor, 2026-10-17). */
+	function openReminder(seatId: SeatId, reminderId: ReminderId) {
+		openSeat(seatId);
+		// After the tap's click, so it doesn't land on what opens under the finger.
+		setTimeout(() => seatSheet?.showReminder(reminderId));
+	}
 	// A removed (or undone) seat closes its sheet.
 	$effect(() => {
 		if (selected !== undefined && !game.seats[selected]) sheetOpen = false;
@@ -958,7 +965,7 @@
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 							size={chip}
 							disabled={arranging}
-							onTap={() => openSeat(seat.seatId)}
+							onTap={() => openReminder(seat.seatId, reminder.reminderId)}
 							onDrag={(x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
 							onCancel={() => (reminderDrag = undefined)}
 						/>
@@ -1235,7 +1242,7 @@
 	</div>
 </ConfirmDialog>
 
-<SeatSheet bind:open={sheetOpen} {grimoire} seatId={selected} />
+<SeatSheet bind:this={seatSheet} bind:open={sheetOpen} {grimoire} seatId={selected} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
