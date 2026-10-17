@@ -31,6 +31,22 @@ export const MAX_STACK_LINES = 8;
  * private state only ever lives in the path or the hash).
  */
 export function scrubUrls(text: string): string {
+	return maskPathCodes(scrubFullUrls(text));
+}
+
+/**
+ * Room codes, share codes and account ids live in the path (/join/<code>, /api/room/<code>,
+ * /api/share/<code>, /api/account/sessions/<id>, /api/account/docs/<kind>/<id>), so they
+ * are masked wherever a path appears, including the page a problem happened on.
+ */
+const PATH_CODES =
+	/(\/(?:join|api\/room|api\/share|api\/account\/sessions|api\/account\/docs\/[\w-]+)\/)[^/\s?#)'"]+/g;
+
+export function maskPathCodes(text: string): string {
+	return text.replace(PATH_CODES, '$1••••');
+}
+
+function scrubFullUrls(text: string): string {
 	return text.replace(/\b(?:https?|wss?|blob):\/\/[^\s)'"]+/g, (url) => {
 		const clean = url.replace(/[?#].*$/, '');
 		try {
@@ -110,7 +126,7 @@ export function recordError(
 		name,
 		message,
 		...(stack ? { stack } : {}),
-		page: options.page.replace(/[?#].*$/, ''),
+		page: maskPathCodes(options.page.replace(/[?#].*$/, '')),
 		firstAt: options.now,
 		lastAt: options.now,
 		count: 1,
@@ -132,21 +148,30 @@ export function errorDetails(error: AppError): string {
 /** Reads a stored log, dropping anything that isn't a well-formed record. */
 export function parseErrorLog(raw: unknown, max: number): AppError[] {
 	if (!Array.isArray(raw)) return [];
-	return raw
-		.filter(
-			(e): e is AppError =>
-				typeof e === 'object' &&
-				e !== null &&
-				typeof e.key === 'string' &&
-				typeof e.area === 'string' &&
-				typeof e.name === 'string' &&
-				typeof e.message === 'string' &&
-				typeof e.page === 'string' &&
-				typeof e.firstAt === 'number' &&
-				typeof e.lastAt === 'number' &&
-				typeof e.count === 'number' &&
-				typeof e.handled === 'boolean' &&
-				(e.stack === undefined || typeof e.stack === 'string')
-		)
-		.slice(0, max);
+	return (
+		raw
+			.filter(
+				(e): e is AppError =>
+					typeof e === 'object' &&
+					e !== null &&
+					typeof e.key === 'string' &&
+					typeof e.area === 'string' &&
+					typeof e.name === 'string' &&
+					typeof e.message === 'string' &&
+					typeof e.page === 'string' &&
+					typeof e.firstAt === 'number' &&
+					typeof e.lastAt === 'number' &&
+					typeof e.count === 'number' &&
+					typeof e.handled === 'boolean' &&
+					(e.stack === undefined || typeof e.stack === 'string')
+			)
+			.slice(0, max)
+			// Logs saved by older builds get today's scrubbing too.
+			.map((e) => ({
+				...e,
+				message: scrubUrls(e.message),
+				page: maskPathCodes(e.page),
+				...(e.stack === undefined ? {} : { stack: scrubUrls(e.stack) })
+			}))
+	);
 }

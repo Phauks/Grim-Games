@@ -13,6 +13,16 @@ import {
 const at = { area: 'scripts', page: '/scripts', handled: true, now: 1_000 };
 
 describe('scrubUrls', () => {
+	it('masks room, share and account codes kept in the path', () => {
+		expect(scrubUrls('socket wss://x.dev/api/room/482913 closed at /join/482913')).toBe(
+			'socket x.dev/api/room/•••• closed at /join/••••'
+		);
+		expect(scrubUrls('GET /api/share/abc123 and /api/account/docs/scripts/d-9 failed')).toBe(
+			'GET /api/share/•••• and /api/account/docs/scripts/•••• failed'
+		);
+		expect(scrubUrls('/api/share POST /api/rooms ok')).toBe('/api/share POST /api/rooms ok');
+	});
+
 	it('drops query strings and hashes, which can carry scripts or room secrets', () => {
 		expect(scrubUrls('GET https://example.com/a/b?room=SECRET#script=xyz failed')).toBe(
 			'GET example.com/a/b failed'
@@ -63,6 +73,10 @@ describe('recordError', () => {
 		expect(recordError(new Error('other'), at, first).count).toBe(1);
 	});
 
+	it('stores the page with its room code masked', () => {
+		expect(recordError(new Error('y'), { ...at, page: '/join/482913' }).page).toBe('/join/••••');
+	});
+
 	it('stores the page without its query string or hash', () => {
 		expect(recordError(new Error('x'), { ...at, page: '/play#secret' }).page).toBe('/play');
 	});
@@ -73,6 +87,11 @@ describe('parseErrorLog', () => {
 		const good = recordError(new Error('x'), at);
 		expect(parseErrorLog([good, { key: 1 }, null, good], 1)).toEqual([good]);
 		expect(parseErrorLog('nope', 5)).toEqual([]);
+		const old = { ...good, page: '/join/482913', message: 'at wss://x.dev/api/room/482913' };
+		expect(parseErrorLog([old], 1)[0]).toMatchObject({
+			page: '/join/••••',
+			message: 'at x.dev/api/room/••••'
+		});
 	});
 });
 
