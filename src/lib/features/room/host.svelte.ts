@@ -32,6 +32,9 @@ export class RoomHost {
 	requests = $state.raw<RoomRequest[]>([]);
 	/** True when opening a room failed, e.g. offline. */
 	problem = $state(false);
+	/** True while a room is being opened. */
+	opening = $state(false);
+	#openingRoom: Promise<void> | undefined;
 	#socket = $state.raw<RoomSocket>();
 	#game: OpenGame | undefined;
 	#stopWatching: (() => void) | undefined;
@@ -52,7 +55,25 @@ export class RoomHost {
 	}
 
 	/** Opens a new room for this device. */
-	async open(): Promise<void> {
+	open(): Promise<void> {
+		this.#openingRoom ??= this.#open().finally(() => {
+			this.#openingRoom = undefined;
+			this.opening = false;
+		});
+		return this.#openingRoom;
+	}
+
+	/**
+	 * Opens a room unless this device already has one or is opening one. Called as soon as the
+	 * Storyteller points at, focuses or presses "Players' phones", so the code and QR are ready
+	 * by the time the panel shows.
+	 */
+	prepare(): void {
+		if (!this.code && !this.#openingRoom) void this.open();
+	}
+
+	async #open(): Promise<void> {
+		this.opening = true;
 		this.problem = false;
 		const key = randomKey();
 		try {
@@ -165,6 +186,11 @@ let host: RoomHost | undefined;
 export function roomHost(): RoomHost {
 	host ??= new RoomHost();
 	return host;
+}
+
+/** Starts opening this device's room early; see `RoomHost.prepare`. */
+export function prepareRoom(): void {
+	roomHost().prepare();
 }
 
 /** Called wherever a game is open on the Storyteller's device, so phones follow it live. */

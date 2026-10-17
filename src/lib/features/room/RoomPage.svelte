@@ -8,6 +8,7 @@
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import { prepareRoom } from './host.svelte.ts';
 	import RoomPanel from './RoomPanel.svelte';
 
 	interface Props {
@@ -23,6 +24,8 @@
 		| { kind: 'error'; message: string };
 
 	let view = $state<View>({ kind: 'loading' });
+	// The room opens while the game loads, not after.
+	prepareRoom();
 
 	$effect(() => {
 		const id = gameId;

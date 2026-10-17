@@ -7,9 +7,8 @@ export const room = {
 	'room.missing': 'There is no saved game here on this device.',
 	'room.tooNew':
 		'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.',
-	'room.intro':
-		'Players open the room on their own phones, ask for their seat and name, and see names and deaths as you change them. Nothing changes in the grimoire until you approve it, and phones never see characters or reminders.',
 	'room.open': 'Open a room',
+	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',
 	'room.joinCode': 'Join code',
 	'room.qrLabel': 'QR code to join the room',
