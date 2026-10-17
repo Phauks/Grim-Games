@@ -18,7 +18,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { compareVersions, scriptPageUrl } from './botcscripts-api.ts';
-	import { botcPreviews, fetchBotc } from './botc-previews.svelte.ts';
+	import { fetchRemote, isRemote, remotePreviews } from './remote-previews.svelte.ts';
 	import { botcVersions } from './botc-versions.svelte.ts';
 	import { playScript, recentScripts } from './current-script.svelte.ts';
 	import {
@@ -136,10 +136,10 @@
 	);
 	const isSaved = $derived(saved ?? !!shownSaved);
 
-	// A BotC Scripts script is fetched when shown, so its abilities (and Save) don't wait on the site.
+	// A script from a site is fetched when shown, so its abilities (and Save) don't wait on it.
 	$effect(() => {
 		const target = shownListing?.target;
-		if (target?.kind === 'botcscripts') untrack(() => void fetchBotc(target.ref).catch(() => {}));
+		if (isRemote(target)) untrack(() => void fetchRemote(target).catch(() => {}));
 	});
 
 	/**
@@ -160,8 +160,9 @@
 				return reloadSavedScript(target.saved, data);
 			case 'json':
 				return loadScript(target.json, data).script;
-			case 'botcscripts': {
-				const fetched = botcPreviews.get(target.ref);
+			case 'botcscripts':
+			case 'homebrew': {
+				const fetched = remotePreviews.get(target);
 				return fetched && loadScriptText(fetched.text, data).script;
 			}
 		}
@@ -171,7 +172,7 @@
 		const l = shownListing;
 		if (!l || preview) return false;
 		if (!data) return true;
-		return l.target.kind === 'botcscripts' && !botcPreviews.failed(l.target.ref);
+		return isRemote(l.target) && !remotePreviews.failed(l.target);
 	});
 
 	/** Where the shown script came from, as it is recorded when played or saved. */
@@ -186,7 +187,8 @@
 			case 'json':
 				return target.source;
 			case 'botcscripts':
-				return botcPreviews.get(target.ref)?.source;
+			case 'homebrew':
+				return remotePreviews.get(target)?.source;
 		}
 		return undefined;
 	});
