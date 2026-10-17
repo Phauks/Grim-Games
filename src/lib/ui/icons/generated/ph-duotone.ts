@@ -33,8 +33,6 @@ import ph_caret_up_duotone from '~icons/ph/caret-up-duotone';
 import ph_cat_duotone from '~icons/ph/cat-duotone';
 import ph_check_duotone from '~icons/ph/check-duotone';
 import ph_circle_dashed_duotone from '~icons/ph/circle-dashed-duotone';
-import ph_clock_clockwise_duotone from '~icons/ph/clock-clockwise-duotone';
-import ph_clock_countdown_duotone from '~icons/ph/clock-countdown-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
 import ph_club_duotone from '~icons/ph/club-duotone';
 import ph_copy_duotone from '~icons/ph/copy-duotone';
@@ -80,7 +78,6 @@ import ph_heart_duotone from '~icons/ph/heart-duotone';
 import ph_heartbeat_duotone from '~icons/ph/heartbeat-duotone';
 import ph_hexagon_duotone from '~icons/ph/hexagon-duotone';
 import ph_hourglass_duotone from '~icons/ph/hourglass-duotone';
-import ph_hourglass_low_duotone from '~icons/ph/hourglass-low-duotone';
 import ph_house_duotone from '~icons/ph/house-duotone';
 import ph_house_simple_duotone from '~icons/ph/house-simple-duotone';
 import ph_identification_card_duotone from '~icons/ph/identification-card-duotone';
@@ -198,8 +195,6 @@ const icons: IconMap = {
 	'ph:cat-duotone': ph_cat_duotone,
 	'ph:check-duotone': ph_check_duotone,
 	'ph:circle-dashed-duotone': ph_circle_dashed_duotone,
-	'ph:clock-clockwise-duotone': ph_clock_clockwise_duotone,
-	'ph:clock-countdown-duotone': ph_clock_countdown_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
 	'ph:club-duotone': ph_club_duotone,
 	'ph:copy-duotone': ph_copy_duotone,
@@ -245,7 +240,6 @@ const icons: IconMap = {
 	'ph:heartbeat-duotone': ph_heartbeat_duotone,
 	'ph:hexagon-duotone': ph_hexagon_duotone,
 	'ph:hourglass-duotone': ph_hourglass_duotone,
-	'ph:hourglass-low-duotone': ph_hourglass_low_duotone,
 	'ph:house-duotone': ph_house_duotone,
 	'ph:house-simple-duotone': ph_house_simple_duotone,
 	'ph:identification-card-duotone': ph_identification_card_duotone,

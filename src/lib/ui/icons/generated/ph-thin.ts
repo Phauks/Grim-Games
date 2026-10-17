@@ -33,8 +33,6 @@ import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_cat_thin from '~icons/ph/cat-thin';
 import ph_check_thin from '~icons/ph/check-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
-import ph_clock_clockwise_thin from '~icons/ph/clock-clockwise-thin';
-import ph_clock_countdown_thin from '~icons/ph/clock-countdown-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_club_thin from '~icons/ph/club-thin';
 import ph_copy_thin from '~icons/ph/copy-thin';
@@ -80,7 +78,6 @@ import ph_heart_thin from '~icons/ph/heart-thin';
 import ph_heartbeat_thin from '~icons/ph/heartbeat-thin';
 import ph_hexagon_thin from '~icons/ph/hexagon-thin';
 import ph_hourglass_thin from '~icons/ph/hourglass-thin';
-import ph_hourglass_low_thin from '~icons/ph/hourglass-low-thin';
 import ph_house_thin from '~icons/ph/house-thin';
 import ph_house_simple_thin from '~icons/ph/house-simple-thin';
 import ph_identification_card_thin from '~icons/ph/identification-card-thin';
@@ -198,8 +195,6 @@ const icons: IconMap = {
 	'ph:cat-thin': ph_cat_thin,
 	'ph:check-thin': ph_check_thin,
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
-	'ph:clock-clockwise-thin': ph_clock_clockwise_thin,
-	'ph:clock-countdown-thin': ph_clock_countdown_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:club-thin': ph_club_thin,
 	'ph:copy-thin': ph_copy_thin,
@@ -245,7 +240,6 @@ const icons: IconMap = {
 	'ph:heartbeat-thin': ph_heartbeat_thin,
 	'ph:hexagon-thin': ph_hexagon_thin,
 	'ph:hourglass-thin': ph_hourglass_thin,
-	'ph:hourglass-low-thin': ph_hourglass_low_thin,
 	'ph:house-thin': ph_house_thin,
 	'ph:house-simple-thin': ph_house_simple_thin,
 	'ph:identification-card-thin': ph_identification_card_thin,
