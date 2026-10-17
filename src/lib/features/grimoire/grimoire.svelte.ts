@@ -1,11 +1,12 @@
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
-import { scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
+import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
+import type { CharacterId } from '#lib/core/data/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
-import { warningText } from './board.ts';
+import { reminderFitWarning, warningText } from './board.ts';
 import { DEFAULT_SEAT_LAYOUT, type SeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import {
 	forgetUpsideDownMarks,
@@ -111,6 +112,7 @@ export class Grimoire {
 
 	/** Runs a command; returns whether it was accepted. */
 	run(command: Command): boolean {
+		const misfit = this.misfit(command);
 		const result = this.open.run(command);
 		if (!result.ok) {
 			toast('Not done', result.error.message);
@@ -120,7 +122,48 @@ export class Grimoire {
 			const text = warningText(warning);
 			if (text) toast('Note', text);
 		}
+		if (misfit) toast('Note', misfit);
+		this.askAlignment(command);
 		return true;
+	}
+
+	/**
+	 * A seat the Storyteller just marked as truly an evil character (Marionette, Trevor
+	 * 2026-10-17) whose alignment isn't evil yet: the board asks whether to make it evil.
+	 */
+	alignmentAsk = $state.raw<{ seatId: SeatId; characterId: CharacterId } | undefined>();
+
+	private askAlignment(command: Command): void {
+		if (command.type !== 'AddReminder' && command.type !== 'MoveReminder') return;
+		const game = this.open.game;
+		const seatId = command.type === 'AddReminder' ? command.seatId : command.toSeatId;
+		const reminder = game.seats[seatId]?.reminders.find((r) =>
+			command.type === 'AddReminder'
+				? r.characterId === command.reminder.characterId && r.label === command.reminder.label
+				: r.reminderId === command.reminderId
+		);
+		const source = reminder && replacedBy(reminder, this.open.characters);
+		if (!source || (source.type !== 'minion' && source.type !== 'demon')) return;
+		if (alignmentOf(game, seatId) === 'evil') return;
+		this.alignmentAsk = { seatId, characterId: source.id };
+	}
+
+	/**
+	 * Reminder target rules (Trevor, 2026-10-16): a reminder put on a seat that doesn't fit it
+	 * is still placed, with a toast saying why, wherever it was placed from.
+	 */
+	private misfit(command: Command): string | undefined {
+		const game = this.open.game;
+		const characters = this.open.characters;
+		if (command.type === 'AddReminder')
+			return reminderFitWarning(game, command.reminder, command.seatId, characters);
+		if (command.type === 'MoveReminder') {
+			for (const seatId of game.seating) {
+				const r = game.seats[seatId].reminders.find((x) => x.reminderId === command.reminderId);
+				if (r) return reminderFitWarning(game, r, command.toSeatId, characters);
+			}
+		}
+		return undefined;
 	}
 
 	rename(seatId: SeatId, name: string): void {

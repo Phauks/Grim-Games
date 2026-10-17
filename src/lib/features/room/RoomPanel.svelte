@@ -23,7 +23,6 @@
 	$effect(() => host.attach(game));
 
 	let closeOpen = $state(false);
-	let opening = $state(false);
 	/** The seat chosen for each request, when the Storyteller picks a different one. */
 	let chosen = $state<Record<string, SeatId | ''>>({});
 
@@ -50,13 +49,19 @@
 	const connected = $derived(host.status === 'open');
 	const seated = $derived(host.members.filter((m) => m.name !== undefined));
 	const statusText = $derived(
-		host.refusedReason === 'too-old'
-			? t('room.tooOld')
-			: host.status === 'open'
-				? t('room.connected')
-				: host.status === 'connecting'
-					? t('room.connecting')
-					: t('room.offline')
+		!host.code
+			? host.problem
+				? t('room.openFailed')
+				: host.opening
+					? t('room.openingRoom')
+					: ''
+			: host.refusedReason === 'too-old'
+				? t('room.tooOld')
+				: host.status === 'open'
+					? t('room.connected')
+					: host.status === 'connecting'
+						? t('room.connecting')
+						: t('room.offline')
 	);
 
 	function seatFor(request: RoomRequest): SeatId | '' {
@@ -67,18 +72,32 @@
 		return seatId ? host.members.find((m) => m.seatId === seatId) : undefined;
 	}
 
-	async function openRoom() {
-		opening = true;
-		await host.open();
-		opening = false;
-	}
+	// The panel exists to show the code, so it opens a room straight away (if hovering or
+	// pressing the button that opened it hasn't already). After Close room it stays closed.
+	host.prepare();
+
+	// Shared and copied text carries the code as well as the link, so it can be typed at /join
+	// if the link won't open. The link holds the code too, for apps that keep only the link.
+	const message = $derived(
+		host.code ? t('room.shareText', { code: formatRoomCode(host.code) }) : ''
+	);
+	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
 	async function copy() {
 		try {
-			await navigator.clipboard.writeText(link);
+			await navigator.clipboard.writeText(`${message}\n${link}`);
 			toast(t('room.linkCopied'));
 		} catch {
 			toast(t('room.copyFailed'), t('room.copyFailedHint'));
+		}
+	}
+
+	async function share() {
+		try {
+			await navigator.share({ title: t('room.title'), text: message, url: link });
+		} catch (e) {
+			// Closing the share sheet is not a failure.
+			if (!(e instanceof DOMException && e.name === 'AbortError')) await copy();
 		}
 	}
 
@@ -92,108 +111,116 @@
 	Players' phones: the room code and QR, requests from phones to approve, and who is in
 	the room. Approving a seat names it on the board (a normal, undoable change).
 -->
-{#if !host.code}
-	<section class="empty">
-		<p>{t('room.intro')}</p>
-		<Button variant="accent" icon="players" onclick={openRoom} disabled={opening}>
-			{t('room.open')}
-		</Button>
-		<p class="problem" role="status">{host.problem ? t('room.openFailed') : ''}</p>
-	</section>
-{:else}
-	<div class="layout">
-		<section class="join" aria-labelledby="room-code-label">
-			<h2 id="room-code-label">{t('room.joinCode')}</h2>
-			<p class="code" data-testid="room-code">{formatRoomCode(host.code)}</p>
-			<div class="qr"><QrCode value={link} label={t('room.qrLabel')} /></div>
-			<p class="link">{link}</p>
-			<div class="row">
+<!-- Laid out the same before the room opens, so the code and QR arrive without a reflow. -->
+<div class="layout">
+	<section class="join" aria-labelledby="room-code-label">
+		<h2 id="room-code-label">{t('room.joinCode')}</h2>
+		<p class="code" data-testid="room-code">
+			{host.code ? formatRoomCode(host.code) : '··· ···'}
+		</p>
+		<div class="qr">
+			{#if host.code}
+				<QrCode value={link} label={t('room.qrLabel')} />
+			{:else}
+				<div class="qr-space" aria-busy={host.opening}></div>
+			{/if}
+		</div>
+		<p class="link">{link}</p>
+		<div class="row">
+			{#if host.code}
+				{#if canShare}
+					<IconButton icon="share" label={t('room.share')} onclick={share} />
+				{/if}
 				<IconButton icon="copy" label={t('room.copyLink')} onclick={copy} />
 				<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
 					{t('room.close')}
 				</Button>
-			</div>
-			<p class="status" role="status" data-status={host.status}>{statusText}</p>
-		</section>
-
-		<section aria-labelledby="requests-label">
-			<h2 id="requests-label">{t('room.requests')}</h2>
-			{#if host.requests.length === 0}
-				<p class="none">{t('common.none')}</p>
 			{:else}
-				<ul class="list">
-					{#each host.requests as request (request.requestId)}
-						{@const seatId = seatFor(request)}
-						{@const taken = holder(seatId)}
-						<li
-							class="request"
-							aria-label={t('room.asksFor', {
-								name: request.name,
-								seat: seatLabel(request.seatId)
-							})}
-						>
-							<p class="who">
-								<strong>{request.name}</strong>
-								<span>
-									{request.seatId
-										? t('room.asksForSeat', { seat: seatLabel(request.seatId) })
-										: t('room.asksForAnySeat')}
-								</span>
-							</p>
-							<Select
-								label={t('room.seatFor', { name: request.name })}
-								hideLabel
-								value={seatId}
-								options={seatOptions}
-								onChange={(v) => (chosen[request.requestId] = v)}
-							/>
-							<p class="note">
-								{taken
-									? taken.name
-										? t('room.movesOut', { name: taken.name })
-										: t('room.movesOutAnother')
-									: ''}
-							</p>
-							<div class="row">
-								<Button
-									variant="accent"
-									icon="check"
-									disabled={!connected}
-									onclick={() => approve(request)}
-								>
-									{t('room.approve')}
-								</Button>
-								<Button variant="quiet" disabled={!connected} onclick={() => host.decline(request)}>
-									{t('room.decline')}
-								</Button>
-							</div>
-						</li>
-					{/each}
-				</ul>
+				<Button variant="accent" icon="players" onclick={() => host.open()} disabled={host.opening}>
+					{t('room.open')}
+				</Button>
 			{/if}
+		</div>
+		<p class="status" role="status" data-status={host.status}>{statusText}</p>
+	</section>
 
-			<h2 id="players-label">{t('room.playersInRoom')}</h2>
-			{#if seated.length === 0}
-				<p class="none">{t('common.none')}</p>
-			{:else}
-				<ul class="list" aria-labelledby="players-label">
-					{#each seated as member (member.memberId)}
-						<li class="member">
-							<span><strong>{member.name}</strong> · {seatNumberLabel(member.seatId)}</span>
+	<section aria-labelledby="requests-label">
+		<h2 id="requests-label">{t('room.requests')}</h2>
+		{#if host.requests.length === 0}
+			<p class="none">{t('common.none')}</p>
+		{:else}
+			<ul class="list">
+				{#each host.requests as request (request.requestId)}
+					{@const seatId = seatFor(request)}
+					{@const taken = holder(seatId)}
+					<li
+						class="request"
+						aria-label={t('room.asksFor', {
+							name: request.name,
+							seat: seatLabel(request.seatId)
+						})}
+					>
+						<p class="who">
+							<strong>{request.name}</strong>
+							<span>
+								{request.seatId
+									? t('room.asksForSeat', { seat: seatLabel(request.seatId) })
+									: t('room.asksForAnySeat')}
+							</span>
+						</p>
+						<Select
+							label={t('room.seatFor', { name: request.name })}
+							hideLabel
+							value={seatId}
+							options={seatOptions}
+							onChange={(v) => (chosen[request.requestId] = v)}
+						/>
+						<p class="note">
+							{taken
+								? taken.name
+									? t('room.movesOut', { name: taken.name })
+									: t('room.movesOutAnother')
+								: ''}
+						</p>
+						<div class="row">
 							<Button
-								variant="quiet"
-								disabled={!connected || !member.seatId}
-								onclick={() => host.unseat(member)}
+								variant="accent"
+								icon="check"
+								disabled={!connected}
+								onclick={() => approve(request)}
 							>
-								{t('room.unseat')}
+								{t('room.approve')}
 							</Button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
-	</div>
-{/if}
+							<Button variant="quiet" disabled={!connected} onclick={() => host.decline(request)}>
+								{t('room.decline')}
+							</Button>
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+
+		<h2 id="players-label">{t('room.playersInRoom')}</h2>
+		{#if seated.length === 0}
+			<p class="none">{t('common.none')}</p>
+		{:else}
+			<ul class="list" aria-labelledby="players-label">
+				{#each seated as member (member.memberId)}
+					<li class="member">
+						<span><strong>{member.name}</strong> · {seatNumberLabel(member.seatId)}</span>
+						<Button
+							variant="quiet"
+							disabled={!connected || !member.seatId}
+							onclick={() => host.unseat(member)}
+						>
+							{t('room.unseat')}
+						</Button>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</section>
+</div>
 
 <ConfirmDialog
 	bind:open={closeOpen}
@@ -223,13 +250,6 @@
 		align-content: start;
 		min-width: 0;
 	}
-	.empty {
-		max-width: var(--measure);
-	}
-	.empty p {
-		margin: 0;
-	}
-	.problem,
 	.note {
 		min-height: 1.4em;
 		margin: 0;
@@ -254,6 +274,17 @@
 	}
 	.qr {
 		width: min(100%, 16rem);
+	}
+	/* The QR's own size and face, held while the room opens. */
+	.qr-space {
+		width: 100%;
+		aspect-ratio: 1;
+		border-radius: var(--radius-md);
+		background: var(--token-face);
+	}
+	.link,
+	.status {
+		min-height: 1.4em;
 	}
 	.link {
 		margin: 0;

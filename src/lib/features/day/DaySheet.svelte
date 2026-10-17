@@ -37,7 +37,10 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		/* Room for the focus ring and the scrollbar beside the tiles. */
-		padding: var(--space-1);
+		/*
+		 * Room for the focus ring and the scrollbar beside the tiles. None on top: the day's
+		 * pinned timer sits right under the header, so nothing shows above it (Trevor).
+		 */
+		padding: 0 var(--space-1) var(--space-1);
 	}
 </style>

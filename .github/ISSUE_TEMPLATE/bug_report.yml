@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting. If you used **Report an issue** in the app, the build, page and device fields are already filled in.
+        Thanks for reporting. If you came from **Report** in the app, it copied the error details, build and device: paste them below.
         If the app disagrees with the wiki about a character or rule, use **Rules or character error** instead.
   - type: textarea
     id: what-happened
@@ -43,7 +43,7 @@ body:
     id: device
     attributes:
       label: Browser and device details
-      description: Filled in automatically from the app; otherwise e.g. "Safari on iPhone 13, iOS 19".
+      description: e.g. "Safari on iPhone 13, iOS 19" (the app copies this when you tap Report).
   - type: input
     id: page
     attributes:
@@ -60,7 +60,7 @@ body:
     id: error
     attributes:
       label: Error details
-      description: Filled in automatically when you report from the app's "Something went wrong" card. It holds the error and where it happened, never your game.
+      description: Paste what the app copied when you tapped Report (on a problem or on Diagnostics). It holds the error and where it happened, never your game.
       render: text
   - type: textarea
     id: extra

@@ -3,12 +3,10 @@
 	import { onMount } from 'svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
-	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { Theme } from '#lib/ui/themes/types.ts';
 	import {
-		DEFAULT_TOKEN_APPEARANCE,
 		MIN_CONTRAST,
 		TOKEN_COLOURS,
 		TOKEN_SCALE,
@@ -17,6 +15,7 @@
 		type TokenAppearance,
 		type TokenColour
 	} from '#lib/ui/token/token-appearance.ts';
+	import SettingPreview from '#lib/ui/settings/SettingPreview.svelte';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 	import CharacterToken from './CharacterToken.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
@@ -47,26 +46,18 @@
 		});
 </script>
 
-<!-- Space for the largest sizes is kept, so changing a size never moves the settings below. -->
-<div class="preview" aria-hidden="true" data-testid="token-preview">
-	{#if sample}<span class="seat">
-			<span class="disc"
-				><CharacterToken
-					character={sample}
-					size={56}
-					showName={value.boardNames}
-				/>{#if value.playerNamePlacement !== 'below'}<PlayerNameMark
-						name={t('characters.previewPlayer')}
-						placement={value.playerNamePlacement}
-					/>{/if}</span
-			>
-			<!-- Kept in place (hidden) when the name is on the token: no reflow. -->
-			<span class="player" class:hidden={value.playerNamePlacement !== 'below'}
-				>{t('characters.previewPlayer')}</span
-			>
-		</span>{/if}
-	<ReminderToken label={t('characters.previewReminder')} type="minion" />
-</div>
+<!-- The section's shared sticky preview (Trevor, 2026-10-17). Space for the largest sizes is
+     kept, so changing a size never moves the settings below. -->
+<SettingPreview testid="token-preview">
+	<div class="preview" aria-hidden="true">
+		{#if sample}<span class="disc"
+				><CharacterToken character={sample} size={56} showName={value.boardNames} /><PlayerNameMark
+					name={t('characters.previewPlayer')}
+				/></span
+			>{/if}
+		<ReminderToken label={t('characters.previewReminder')} type="minion" />
+	</div>
+</SettingPreview>
 
 <SettingSlider
 	label={t('characters.tokenSize')}
@@ -91,19 +82,6 @@
 		description={t('characters.boardNamesHelp')}
 		checked={value.boardNames}
 		onChange={(boardNames) => onChange({ ...value, boardNames })}
-	/>
-	<SettingSegmented
-		label={t('characters.playerNamePlacement')}
-		description={t('characters.playerNamePlacementHelp')}
-		value={value.playerNamePlacement}
-		defaultValue={DEFAULT_TOKEN_APPEARANCE.playerNamePlacement}
-		options={[
-			{ value: 'below', label: t('characters.playerNamePlacement.below') },
-			{ value: 'icon-top', label: t('characters.playerNamePlacement.iconTop') },
-			{ value: 'icon-bottom', label: t('characters.playerNamePlacement.iconBottom') },
-			{ value: 'badge', label: t('characters.playerNamePlacement.badge') }
-		]}
-		onChange={(playerNamePlacement) => onChange({ ...value, playerNamePlacement })}
 	/>
 </div>
 
@@ -141,37 +119,18 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
-		/* A fixed height that fits the largest token (56px × 2), the player name under it and the
-		   largest chip at any Text size, so changing a size never moves the settings below. */
+		/* A fixed height that fits the largest token (56px × 2) with the player name badge on its
+		   rim, and the largest chip at any Text size, so changing a size never moves the settings
+		   below. */
 		--sample: 112px; /* px-ok: the sample token is 56px, at up to 200% */
-		height: max(calc(var(--sample) + var(--space-2) + 1.6rem), 4.4rem);
+		height: max(calc(1.1 * var(--sample)), 4.4rem);
 		white-space: nowrap;
-		margin-bottom: var(--space-5);
 		overflow: hidden;
-	}
-	.seat {
-		display: inline-grid;
-		justify-items: center;
-		gap: calc(0.125 * var(--u));
 	}
 	.disc {
 		position: relative;
 		display: inline-block;
 		line-height: 0;
-	}
-	/* As the name under a seat on the board (SeatDisc). */
-	.player {
-		padding: 0.15em 0.5em;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font-family: var(--font-player);
-		font-size: 0.8rem;
-		line-height: 1.2;
-	}
-	.player.hidden {
-		visibility: hidden;
 	}
 	.names {
 		margin: var(--space-5) 0;

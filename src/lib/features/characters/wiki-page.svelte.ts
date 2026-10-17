@@ -1,5 +1,6 @@
 import { SvelteMap } from 'svelte/reactivity';
-import { parseWikiPage, type WikiSection } from './wiki-page.ts';
+import { wikiUrl, type Character } from '#lib/core/data/index.ts';
+import { parseWikiPage, wikiPageTitle, type WikiSection } from './wiki-page.ts';
 
 /**
  * A character's whole wiki page, shown when the character is opened (Trevor, 2026-10-16).
@@ -8,8 +9,8 @@ import { parseWikiPage, type WikiSection } from './wiki-page.ts';
  * it still works offline. Without either, the dialog shows only the "Open wiki" link.
  */
 const WIKI_API = 'https://wiki.bloodontheclocktower.com/api.php';
-// v2: pages parsed with quote, artist and example blocks (older entries are dropped).
-const KEY = 'grim-games:wiki-pages:v2';
+// v3: the wiki's "Related Jinxes (Open)" box dropped (older entries are fetched again).
+const KEY = 'grim-games:wiki-pages:v3';
 /** Fetched again after this long, when online. */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Pages kept on the device; the least recently fetched go first. */
@@ -38,7 +39,15 @@ function apiUrl(title: string): string {
 	return `${WIKI_API}?${params}`;
 }
 
+// Read from storage once per session; parsing every page on each open was wasted work.
+let memory: Record<string, Cached> | undefined;
+
 function readCache(): Record<string, Cached> {
+	memory ??= readStored();
+	return memory;
+}
+
+function readStored(): Record<string, Cached> {
 	try {
 		const raw = globalThis.localStorage?.getItem(KEY);
 		const parsed = raw ? (JSON.parse(raw) as Record<string, Cached>) : {};
@@ -51,10 +60,12 @@ function readCache(): Record<string, Cached> {
 function writeCache(title: string, entry: Cached) {
 	try {
 		const all = { ...readCache(), [title]: entry };
-		const kept = Object.entries(all)
-			.sort(([, a], [, b]) => b.fetchedAt - a.fetchedAt)
-			.slice(0, KEEP);
-		globalThis.localStorage?.setItem(KEY, JSON.stringify(Object.fromEntries(kept)));
+		memory = Object.fromEntries(
+			Object.entries(all)
+				.sort(([, a], [, b]) => b.fetchedAt - a.fetchedAt)
+				.slice(0, KEEP)
+		);
+		globalThis.localStorage?.setItem(KEY, JSON.stringify(memory));
 	} catch {
 		// Not kept; it is fetched again next time.
 	}
@@ -100,3 +111,16 @@ class WikiPages {
 }
 
 export const wikiPages = new WikiPages();
+
+/**
+ * Starts fetching a character's page before its details open: on hover, focus or the start of
+ * a tap, so the page is usually there by the time the dialog is (Trevor, 2026-10-16: "it
+ * always takes a second to load in the info"). Does nothing when the page is already shown.
+ */
+export function prefetchWikiPage(character: Character): void {
+	const url = wikiUrl(character);
+	if (!url) return;
+	const title = wikiPageTitle(url);
+	if (wikiPages.get(title).status === 'ready') return;
+	void wikiPages.load(title);
+}

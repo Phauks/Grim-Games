@@ -27,10 +27,16 @@ export const ICON_SLOTS = {
 	demon: { label: 'Demon', choices: ['ph:mask-sad', 'ph:smiley-angry', 'ph:fire'] },
 	bag: { label: 'Bag', choices: ['ph:handbag', 'ph:tote', 'ph:bag-simple'] },
 	reminder: { label: 'Reminder', choices: ['ph:push-pin', 'ph:bookmark-simple', 'ph:tag'] },
+	/** A reminder token placed at setup (Reference); the flower echoes the tokens' setup flower. */
+	setup: { label: 'Setup', choices: ['ph:flower', 'ph:flower-lotus'] },
 	players: { label: 'Players', choices: ['ph:users-three', 'ph:users'] },
 	script: { label: 'Script', choices: ['ph:scroll', 'ph:book-open'] },
+	buildScript: { label: 'Script builder', choices: ['ph:hammer', 'ph:wrench'] },
+	download: { label: 'Download', choices: ['ph:download-simple', 'ph:file-arrow-down'] },
+	open: { label: 'Open', choices: ['ph:folder-open', 'ph:folder'] },
 	notes: { label: 'Notes', choices: ['ph:note-pencil', 'ph:notepad', 'ph:feather'] },
 	undo: { label: 'Undo', choices: ['ph:arrow-counter-clockwise', 'ph:arrow-u-up-left'] },
+	refresh: { label: 'Refresh', choices: ['ph:arrow-clockwise'] },
 	redo: { label: 'Redo', choices: ['ph:arrow-clockwise', 'ph:arrow-u-up-right'] },
 	reset: {
 		label: 'Reset to default',
@@ -39,6 +45,13 @@ export const ICON_SLOTS = {
 	add: { label: 'Add', choices: ['ph:plus', 'ph:plus-circle'] },
 	minus: { label: 'Minus', choices: ['ph:minus', 'ph:minus-circle'] },
 	resume: { label: 'Resume game', choices: ['ph:play-circle', 'ph:play'] },
+	/** The day timer (Trevor, 2026-10-17). */
+	timerStart: { label: 'Start timer', choices: ['ph:play', 'ph:play-circle'] },
+	timerPause: { label: 'Pause timer', choices: ['ph:pause', 'ph:pause-circle'] },
+	timer: { label: 'Timer', choices: ['ph:timer', 'ph:hourglass'] },
+	sound: { label: 'Sound', choices: ['ph:speaker-high', 'ph:bell'] },
+	countDown: { label: 'Count down', choices: ['ph:clock-countdown', 'ph:hourglass-low'] },
+	countUp: { label: 'Count up', choices: ['ph:clock-clockwise', 'ph:timer'] },
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
@@ -48,7 +61,9 @@ export const ICON_SLOTS = {
 	close: { label: 'Close', choices: ['ph:x', 'ph:x-circle'] },
 	menu: { label: 'Menu', choices: ['ph:list', 'ph:dots-three-vertical'] },
 	info: { label: 'Info', choices: ['ph:info', 'ph:question'] },
-	back: { label: 'Back', choices: ['ph:arrow-left', 'ph:caret-left'] },
+	about: { label: 'About', choices: ['ph:identification-card', 'ph:info'] },
+	diagnostics: { label: 'Diagnostics', choices: ['ph:stethoscope', 'ph:pulse'] },
+	back: { label: 'Back', choices: ['ph:caret-left', 'ph:arrow-left'] },
 	forward: { label: 'Forward', choices: ['ph:caret-right', 'ph:arrow-right'] },
 	check: { label: 'Selected', choices: ['ph:check'] },
 	random: { label: 'Random selection', choices: ['ph:shuffle', 'ph:dice-five'] },
@@ -56,6 +71,8 @@ export const ICON_SLOTS = {
 	expand: { label: 'Show or hide a section', choices: ['ph:caret-down', 'ph:caret-circle-down'] },
 	wiki: { label: 'Wiki link', choices: ['ph:arrow-square-out', 'ph:book-open-text'] },
 	search: { label: 'Search', choices: ['ph:magnifying-glass'] },
+	print: { label: 'Print', choices: ['ph:printer'] },
+	practice: { label: 'Practice', choices: ['ph:cards', 'ph:graduation-cap'] },
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
 	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },
 	glossary: { label: 'Glossary', choices: ['ph:book-open-text', 'ph:list-magnifying-glass'] },
@@ -66,6 +83,7 @@ export const ICON_SLOTS = {
 	filter: { label: 'Filter', choices: ['ph:funnel'] },
 	assistance: { label: 'Storyteller settings', choices: ['ph:lifebuoy', 'ph:hand-heart'] },
 	remove: { label: 'Remove', choices: ['ph:trash', 'ph:trash-simple'] },
+	save: { label: 'Save', choices: ['ph:bookmark-simple', 'ph:floppy-disk'] },
 	swap: { label: 'Swap seats', choices: ['ph:arrows-left-right', 'ph:swap'] },
 	rename: { label: 'Rename', choices: ['ph:pencil-simple', 'ph:user-switch'] },
 	move: { label: 'Move', choices: ['ph:arrow-bend-up-right'] },
@@ -80,6 +98,7 @@ export const ICON_SLOTS = {
 	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] },
 	pen: { label: 'Pen', choices: ['ph:pen-nib', 'ph:pencil-simple-line'] },
 	eraser: { label: 'Eraser', choices: ['ph:eraser'] },
+	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] }
 } as const satisfies Record<string, IconSlotInfo>;
 
@@ -118,9 +137,41 @@ export function withWeight(id: string, weight: PhosphorWeight): string {
 	return `${id}-${weight}`;
 }
 
+/**
+ * Shapes for face-down bag tiles (Settings > Bag tile labels > Symbols). Not slots: each one
+ * is a mark, not a concept the user re-picks.
+ */
+export const TILE_SYMBOL_ICONS = [
+	'ph:star',
+	'ph:moon',
+	'ph:sun',
+	'ph:heart',
+	'ph:spade',
+	'ph:club',
+	'ph:diamond',
+	'ph:triangle',
+	'ph:square',
+	'ph:hexagon',
+	'ph:lightning',
+	'ph:flower',
+	'ph:leaf',
+	'ph:anchor',
+	'ph:crown',
+	'ph:key',
+	'ph:bell',
+	'ph:feather',
+	'ph:eye',
+	'ph:fish',
+	'ph:bird',
+	'ph:cat',
+	'ph:tree',
+	'ph:snowflake',
+	'ph:umbrella'
+] as const;
+
 /** Every base Iconify id offered by the catalogue, deduplicated and sorted. */
 export function catalogueIconIds(): string[] {
-	const ids = new Set<string>();
+	const ids = new Set<string>(TILE_SYMBOL_ICONS);
 	for (const slot of iconSlots) for (const id of ICON_SLOTS[slot].choices) ids.add(id);
 	return [...ids].sort();
 }

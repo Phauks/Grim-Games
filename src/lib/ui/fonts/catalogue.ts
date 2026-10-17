@@ -45,7 +45,9 @@ export const FONTS: Record<FontId, FontInfo> = {
 		fallback: serif,
 		use: 'display',
 		displayWeight: 600,
-		load: () => import('@fontsource/cinzel/600.css')
+		// 900 too, so bold words on info cards are visibly heavier than the 600 text.
+		load: () =>
+			Promise.all([import('@fontsource/cinzel/600.css'), import('@fontsource/cinzel/900.css')])
 	},
 	'im-fell-english-sc': {
 		id: 'im-fell-english-sc',

@@ -52,7 +52,7 @@ test('Demon voted feeds the Flowergirl, and there is no New day button', async (
 	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 });
 
-test('the Slayer is marked Used after a confirm and unmarked by a tap, and the Washerwoman picks her info', async ({
+test('the Slayer is marked Used and unmarked after a confirm each, and the Washerwoman picks her info', async ({
 	page
 }) => {
 	await loaded(page);
@@ -66,10 +66,13 @@ test('the Slayer is marked Used after a confirm and unmarked by a tap, and the W
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 	// The reminder stays where it was, pressed, so the list does not jump.
 	expect(await place(used)).toEqual(before);
-	// Tapping it again unmarks it, with no confirm (Trevor: a mistaken Used must be undoable).
+	// Tapping it again unmarks it, after its own confirm (Trevor, 2026-10-17).
 	await used.tap();
+	const undo = page.getByRole('alertdialog', { name: 'Mark Slayer (Ben) as not used?' });
+	await expect(undo).toContainText('has used their ability and has the No Ability reminder.');
+	await undo.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'false');
-	await expect(confirm).toBeHidden();
+	await expect(undo).toBeHidden();
 	await used.tap();
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');

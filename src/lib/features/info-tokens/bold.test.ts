@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseRich, plainText, toSource } from './bold.ts';
+import { boldToRed, parseRich, plainText, toSource } from './bold.ts';
 
 const plain = (text: string) => ({ text, bold: false, italic: false });
 const bold = (text: string) => ({ text, bold: true, italic: false });
@@ -49,5 +49,53 @@ describe('toSource', () => {
 
 	it('keeps spaces outside the markers', () => {
 		expect(toSource([plain('a'), bold(' b '), plain('c')])).toBe('a **b** c');
+	});
+});
+
+describe('colour', () => {
+	it('reads [red] tags as coloured runs, separate from bold', () => {
+		expect(parseRich('You are [red]mad[/red] and **[blue]sad[/blue]**')).toEqual([
+			plain('You are '),
+			{ ...plain('mad'), color: 'red' },
+			plain(' and '),
+			{ ...bold('sad'), color: 'blue' }
+		]);
+	});
+
+	it('keeps unknown or unpartnered tags as typed', () => {
+		expect(parseRich('[pink]x[/pink] [red]y')).toEqual([plain('[pink]x[/pink] [red]y')]);
+		expect(parseRich('[red]x[/blue]')).toEqual([plain('[red]x[/blue]')]);
+	});
+
+	it('writes colour back so it reads the same', () => {
+		const runs = [plain('a '), { ...bold('b'), color: 'gold' as const }, plain(' c')];
+		expect(toSource(runs)).toBe('a [gold]**b**[/gold] c');
+		expect(parseRich(toSource(runs))).toEqual(runs);
+	});
+
+	it('turns old bold, which was drawn red, into red text', () => {
+		expect(boldToRed('You are **mad** and ***sad***')).toBe(
+			'You are [red]mad[/red] and [red]*sad*[/red]'
+		);
+	});
+});
+
+describe('underline', () => {
+	it('reads [u] tags, alongside colour and bold', () => {
+		expect(parseRich('a [u]b [red]**c**[/red][/u]')).toEqual([
+			plain('a '),
+			{ ...plain('b '), underline: true },
+			{ ...bold('c'), underline: true, color: 'red' }
+		]);
+	});
+
+	it('writes underline back so it reads the same', () => {
+		const runs = [plain('a '), { ...italic('b'), underline: true, color: 'blue' as const }];
+		expect(toSource(runs)).toBe('a [blue][u]*b*[/u][/blue]');
+		expect(parseRich(toSource(runs))).toEqual(runs);
+	});
+
+	it('keeps an unpartnered [u] as typed', () => {
+		expect(parseRich('[u]x')).toEqual([plain('[u]x')]);
 	});
 });

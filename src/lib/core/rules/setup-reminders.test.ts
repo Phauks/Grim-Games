@@ -195,6 +195,40 @@ describe('tokens on a player the Storyteller picks', () => {
 		]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/No_Dashii: while preparing the first night, the
+	// nearest Townsfolk each way (skipping other types) are poisoned.
+	it('poisons the No Dashii’s nearest Townsfolk each way', () => {
+		expect(brief(['nodashii', 'saint', 'chef', 'empath', 'baron', 'monk'])).toEqual([
+			'nodashii: Poisoned → 5',
+			'nodashii: Poisoned → 2'
+		]);
+		// One Townsfolk nearest both ways gets one token; the other is left to the Storyteller.
+		expect(brief(['nodashii', 'chef', 'saint'])).toEqual([
+			'nodashii: Poisoned → 1',
+			'nodashii: Poisoned ?'
+		]);
+	});
+
+	// A placed Poisoned covers the suggestion for its own side, in either order.
+	it('a placed No Dashii Poisoned leaves the other side’s suggestion', () => {
+		const cast = ['nodashii', 'saint', 'chef', 'empath', 'baron', 'monk'];
+		const poison =
+			(i: number) =>
+			(s: string[]): Command => ({
+				type: 'AddReminder',
+				seatId: s[i],
+				reminder: { characterId: 'nodashii', label: 'Poisoned' }
+			});
+		const after = (i: number) => {
+			const { seats } = grimoire(cast);
+			return brief(cast, undefined, [poison(i)(seats)]);
+		};
+		// Clockwise (the Chef, seat 2) first: the anticlockwise Monk is left.
+		expect(after(2)).toEqual(['nodashii: Poisoned → 5']);
+		// Anticlockwise (the Monk, seat 5) first: the clockwise Chef is left.
+		expect(after(5)).toEqual(['nodashii: Poisoned → 2']);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Librarian: with no Outsiders in play the
 	// Librarian learns 0, so there are no tokens; the Drunk is an Outsider.
 	it('gives the Librarian tokens only when an Outsider is in play', () => {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -29,14 +30,16 @@
 		<div class="editor">
 			<label class="field">
 				<span>{t('player.noteTitle')}</span>
-				<input
-					type="text"
-					value={note.title}
-					autocomplete="off"
-					enterkeyhint="done"
-					oninput={(event) => onChange({ title: event.currentTarget.value })}
-					onkeydown={doneOnEnter}
-				/>
+				<ClearableField value={note.title} onclear={() => onChange({ title: '' })}>
+					<input
+						type="text"
+						value={note.title}
+						autocomplete="off"
+						enterkeyhint="done"
+						oninput={(event) => onChange({ title: event.currentTarget.value })}
+						onkeydown={doneOnEnter}
+					/>
+				</ClearableField>
 			</label>
 			<label class="field grow">
 				<span>{t('player.noteText')}</span>

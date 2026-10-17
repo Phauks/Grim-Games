@@ -46,13 +46,24 @@ export interface Preferences {
 	 * pass-the-phone draw and when drawing on their own phone (Trevor, 2026-10-16).
 	 */
 	requireName: boolean;
+	/** The sound when the day timer runs out (Trevor, 2026-10-17). */
+	timerSound: TimerSound;
+	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
+	timerMode: TimerMode;
 }
+
+export const TIMER_MODES = ['down', 'up'] as const;
+export type TimerMode = (typeof TIMER_MODES)[number];
+
+/** The day timer's finishing sounds, made on the device (no audio files); or none. */
+export const TIMER_SOUNDS = ['bell', 'chime', 'buzzer', 'none'] as const;
+export type TimerSound = (typeof TIMER_SOUNDS)[number];
 
 /**
  * Numbers or letters (Trevor, 2026-10-16). The random symbols this replaced read back as
  * the default, numbers.
  */
-export const TILE_FACES = ['numbers', 'letters'] as const;
+export const TILE_FACES = ['numbers', 'letters', 'symbols', 'colours', 'emoji', 'random'] as const;
 export type TileFace = (typeof TILE_FACES)[number];
 
 /** A size as a fraction of normal (1 = 100%), chosen on a slider (Trevor, 2026-10-16). */
@@ -96,7 +107,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	tokenAppearance: DEFAULT_TOKEN_APPEARANCE,
 	assistance: DEFAULT_ASSISTANCE,
 	tileFace: 'numbers',
-	requireName: false
+	requireName: false,
+	timerSound: 'bell',
+	timerMode: 'down'
 };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
@@ -129,7 +142,13 @@ export function parsePreferences(raw: unknown): Preferences {
 			? (input.tileFace as TileFace)
 			: DEFAULT_PREFERENCES.tileFace,
 		requireName:
-			typeof input.requireName === 'boolean' ? input.requireName : DEFAULT_PREFERENCES.requireName
+			typeof input.requireName === 'boolean' ? input.requireName : DEFAULT_PREFERENCES.requireName,
+		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
+			? (input.timerSound as TimerSound)
+			: DEFAULT_PREFERENCES.timerSound,
+		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
+			? (input.timerMode as TimerMode)
+			: DEFAULT_PREFERENCES.timerMode
 	};
 }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { setupReminders, validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
@@ -196,6 +197,20 @@
 	);
 	let changesOpen = $state(false);
 
+	// ── The Storyteller's note on this player (Trevor, 2026-10-16): a Mezepheles' secret word,
+	// the Amnesiac's ability. Never shown to players. ──
+	let noteOpen = $state(false);
+	let noteDraft = $state('');
+	function editNote() {
+		noteDraft = seat?.note ?? '';
+		noteOpen = true;
+	}
+	function saveNote() {
+		noteOpen = false;
+		if (!seatId || noteDraft.trim() === (seat?.note ?? '')) return;
+		grimoire.run({ type: 'SetSeatNote', seatId, note: noteDraft });
+	}
+
 	function assign(id: CharacterId) {
 		if (!seatId) return;
 		const chosen = characters.get(id);
@@ -357,18 +372,20 @@
 			<!-- A form, so a phone keyboard's Done or Enter key submits it even when the key
 				 press arrives without key events (Android keyboards). -->
 			<form class="name-form" onsubmit={submitName}>
-				<input
-					bind:this={nameInput}
-					class="name-input"
-					type="text"
-					aria-label="Player name"
-					autocomplete="off"
-					enterkeyhint="done"
-					placeholder={`Seat ${number}`}
-					bind:value={typed}
-					onkeydown={cancelName}
-					onblur={() => finishName()}
-				/>
+				<ClearableField bind:value={typed}>
+					<input
+						bind:this={nameInput}
+						class="name-input"
+						type="text"
+						aria-label="Player name"
+						autocomplete="off"
+						enterkeyhint="done"
+						placeholder={`Seat ${number}`}
+						bind:value={typed}
+						onkeydown={cancelName}
+						onblur={() => finishName()}
+					/>
+				</ClearableField>
 			</form>
 		{:else}
 			<span class="player-name" class:no-name={!seat?.playerName}
@@ -481,6 +498,18 @@
 			</div>
 
 			<div class="row">
+				<span class="label">Notes</span>
+				<button
+					type="button"
+					class="value note-value"
+					aria-label={seat.note ? `Notes: ${seat.note}` : 'Notes: None'}
+					onclick={editNote}
+				>
+					<span class="note-text">{seat.note ?? 'None'}</span>
+				</button>
+			</div>
+
+			<div class="row reminders-head">
 				<h3>Reminders</h3>
 				<Button variant="quiet" icon="add" onclick={() => (remindersOpen = true)}>
 					Add reminder
@@ -529,6 +558,7 @@
 	{seatId}
 	{title}
 	onRemove={(id) => moveConfirm?.requestReturn(id)}
+	onMove={(id, to) => moveConfirm?.request(id, to)}
 />
 
 <!-- Closing the player view returns to this seat's sheet (Trevor, 2026-10-16). -->
@@ -609,6 +639,23 @@
 		{/if}
 	{/if}
 </ConfirmDialog>
+
+<Dialog bind:open={noteOpen} title={`Notes for ${seatLabel}`}>
+	<form
+		class="note-form"
+		onsubmit={(event) => {
+			event.preventDefault();
+			saveNote();
+		}}
+	>
+		<!-- Several lines: Enter starts a new line; Save keeps it. Never shown to players. -->
+		<textarea bind:value={noteDraft} rows="5" aria-label="Notes" data-testid="seat-note"></textarea>
+		<div class="note-actions">
+			<Button variant="quiet" onclick={() => (noteOpen = false)}>Cancel</Button>
+			<Button type="submit">Save</Button>
+		</div>
+	</form>
+</Dialog>
 
 <Dialog bind:open={changesOpen} title={`Changes for ${seatLabel}`}>
 	<ol class="changes" data-testid="seat-changes">
@@ -715,7 +762,7 @@
 				Alive
 			</button>
 		</div>
-		{#each causes as { cause, flags }, i (cause)}
+		{#each causes as { cause, flags, gained }, i (cause)}
 			{@const killer = characters.get(cause)}
 			<div class="cause-row">
 				<button
@@ -730,6 +777,15 @@
 							/>{/if}</span
 					>
 					{causeLabel(cause, characters, traveller)}
+					<!-- The gained ability that kills, as on the day sheet: "Cannibal (Slayer)". -->
+					{#if gained}<span class="gained"
+							>(<CharacterBadge
+								characterId={gained}
+								character={characters.get(gained)}
+								inline
+								interactive={false}
+							/>)</span
+						>{/if}
 				</button>
 				{#if flags.length > 0}
 					<IconButton
@@ -956,6 +1012,9 @@
 		--on-surface: var(--on-sheet);
 		--surface-selected: rgb(0 0 0 / 0.08);
 	}
+	.gained {
+		color: var(--on-surface-muted);
+	}
 	.change {
 		display: grid;
 		grid-template-columns: auto 1fr;
@@ -1109,9 +1168,16 @@
 		font-family: var(--font-player);
 		cursor: pointer;
 	}
+	/* Lines between the ability, the controls and the reminders (Trevor, 2026-10-17). */
 	.ability {
 		display: grid;
 		gap: calc(0.125 * var(--u));
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--on-sheet-muted);
+	}
+	.reminders-head {
+		padding-top: var(--space-2);
+		border-top: 1px solid var(--on-sheet-muted);
 	}
 	.ability p {
 		margin: 0;
@@ -1198,6 +1264,36 @@
 	/* One width whatever they say (Trevor, 2026-10-16): Alive or the longest cause alike. */
 	.value {
 		width: min(70%, 16rem);
+	}
+	/* One line in the sheet, so a long note never moves anything; the dialog shows it all. */
+	.note-value {
+		justify-content: flex-start;
+	}
+	.note-text {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.note-form {
+		display: grid;
+		gap: var(--space-3);
+	}
+	.note-form textarea {
+		width: 100%;
+		min-height: calc(7 * var(--u));
+		padding: var(--space-3);
+		border: 1px solid var(--on-surface-muted);
+		border-radius: var(--radius-md);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		resize: vertical;
+	}
+	.note-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--space-2);
 	}
 	h3 {
 		margin: var(--space-2) 0 0;

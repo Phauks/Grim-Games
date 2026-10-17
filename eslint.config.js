@@ -123,6 +123,13 @@ export default defineConfig(
 		rules: { 'grim/confirm-dialog': 'error' }
 	},
 	{
+		// Every single-line text field has an X that clears it (Trevor, 2026-10-16).
+		files: ['src/**/*.svelte'],
+		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: { 'grim/clearable-field': 'error' }
+	},
+	{
 		// Core builds no screen text, but its fields must keep the name marks for the UI.
 		files: ['src/lib/core/**/*.ts'],
 		ignores: ['src/lib/core/**/*.test.ts'],

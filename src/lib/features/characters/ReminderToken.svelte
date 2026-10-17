@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Alignment, CharacterType, ReminderLabel } from '#lib/core/data/index.ts';
 
 	interface Props {
@@ -19,9 +20,22 @@
 		variant?: 'reminder' | 'info';
 		/** Already placed (during pre-game prep): drawn ticked, in place. */
 		done?: boolean;
+		/** How many of this token the character has, shown as ×count when more than one. */
+		count?: number;
+		/** Placed at setup: a flower mark, with this as its accessible label (Reference). */
+		setup?: string;
 	}
 
-	let { label, type, alignment, title, variant = 'reminder', done = false }: Props = $props();
+	let {
+		label,
+		type,
+		alignment,
+		title,
+		variant = 'reminder',
+		done = false,
+		count = 1,
+		setup
+	}: Props = $props();
 </script>
 
 <!-- A reminder token as a small chip, coloured by its character's type. -->
@@ -34,9 +48,10 @@
 	data-testid="reminder-token"
 	data-done={done || undefined}
 	{title}
-	>{label ?? t('characters.reminder')}{#if done}<span
-			class="tick"
-			aria-label={t('characters.reminderPlaced')}>✓</span
+	>{label ?? t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span
+		>{/if}{#if setup}<span class="setup" role="img" aria-label={setup} title={setup}
+			><Icon name="setup" /></span
+		>{/if}{#if done}<span class="tick" aria-label={t('characters.reminderPlaced')}>✓</span
 		>{/if}</span
 >
 
@@ -116,6 +131,13 @@
 	/* Already placed during prep: muted, with a tick. */
 	.reminder[data-done] {
 		opacity: 0.7;
+	}
+	.count {
+		font-variant-numeric: tabular-nums;
+	}
+	.setup {
+		display: inline-flex;
+		color: var(--on-reminder);
 	}
 	.tick {
 		margin-left: 0.15em;

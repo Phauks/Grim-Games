@@ -21,18 +21,38 @@ const homebrew = [
 const details = (page: Page) => page.getByRole('complementary', { name: 'Script details' });
 const detailsName = (page: Page) => page.getByTestId('script-details-name');
 
-/** Picks a source in the picker's Source dropdown. */
+/** The one source listed, chosen beside the search box (Trevor, 2026-10-17). */
+const sourcePicker = (page: Page) => page.getByRole('combobox', { name: 'Source' });
 async function chooseSource(page: Page, label: string) {
-	await page.getByRole('combobox', { name: 'Source' }).tap();
-	await page.getByRole('option', { name: label }).tap();
+	await sourcePicker(page).tap();
+	await page.getByRole('option', { name: label, exact: true }).tap();
+	await expect(sourcePicker(page)).toContainText(label);
+}
+
+// Every source answers empty; tests that need results route these again.
+test.beforeEach(async ({ page }) => {
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({ json: { page: 1, count: 0, hasMore: false, results: [] } })
+	);
+	await page.route('**/api/curated', (route) => route.fulfill({ json: { scripts: [] } }));
+	await page.route('**/api/collections/*', (route) => route.fulfill({ json: { scripts: [] } }));
+});
+
+/** Add script, top right, then one of its choices. */
+async function addScript(page: Page, choice: 'Paste' | 'Link') {
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: choice, exact: true })
+		.tap();
 }
 
 /** Taps a row of the list, then Save in its details. */
 async function pick(page: Page, name: string) {
 	await page.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
 	await expect(detailsName(page)).toHaveText(name);
-	await details(page).getByRole('button', { name: 'Save', exact: true }).tap();
-	await expect(details(page).getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
 }
 
 async function noSidewaysScroll(page: Page) {
@@ -42,15 +62,13 @@ async function noSidewaysScroll(page: Page) {
 	expect(overflow).toBeLessThanOrEqual(0);
 }
 
-test('saved scripts are listed without the base three, survive a reload and can be removed', async ({
-	page
-}) => {
+test('saved scripts stay off the list, survive a reload and can be removed', async ({ page }) => {
 	await page.goto('/scripts');
 	await expect(detailsName(page)).toHaveText('None');
-	// The base three are always in New game, so the Scripts page leaves them out.
+	// BotC Scripts is listed first; the base three are always in New game, so never here.
+	await expect(sourcePicker(page)).toContainText('BotC Scripts');
 	await expect(page.getByTestId('picker-status')).toHaveText('None');
 	await expect(page.getByRole('button', { name: /^Trouble Brewing/ })).toHaveCount(0);
-	await expect(page.getByRole('combobox', { name: 'Source' })).not.toContainText('Official');
 
 	await page.getByLabel('Script file').setInputFiles({
 		name: 'storm-front.json',
@@ -60,25 +78,43 @@ test('saved scripts are listed without the base three, survive a reload and can 
 	// Saving shows the script's details beside the list (over it on a phone), not in a modal.
 	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(details(page)).toBeVisible();
-	await expect(page.getByTestId('script-characters')).toContainText('Storm Warden');
-	await expect(details(page).getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+	// The details show the script as players see it: names and abilities by type (Trevor).
+	const sheet = page.getByTestId('script-sheet');
+	await expect(sheet).toContainText('Storm Warden');
+	await expect(sheet).toContainText('they are safe from the Demon tonight');
+	await expect(sheet.getByRole('button', { name: 'Townsfolk', exact: true })).toBeVisible();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
 	await noSidewaysScroll(page);
+
+	// Save is one toggle: un-saving asks first, and the script stays shown.
+	const size = async () => {
+		const box = await saveToggle(page).boundingBox();
+		return box && { width: box.width, height: box.height };
+	};
+	const before = await size();
+	await saveToggle(page).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Remove from saved?' });
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'false');
+	expect(await size()).toEqual(before);
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	await expect(details(page).getByRole('button', { name: 'Share script' })).toBeDisabled();
+
+	// Saved again from the same details.
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
 	await backToList(page);
 	await expect(details(page)).toBeVisible({ visible: test.info().project.name !== 'phone' });
 
+	// After a reload the latest saved script is shown; saved scripts are listed in the
+	// Library, not here.
 	await page.reload();
 	await expect(detailsName(page)).toHaveText('Storm Front');
-	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
-
-	// Remove from saved asks first.
-	await page.getByRole('button', { name: /^Storm Front/ }).tap();
-	await details(page).getByRole('button', { name: 'Remove from saved' }).tap();
-	const confirm = page.getByRole('alertdialog', { name: 'Remove from saved?' });
-	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('picker-status')).toHaveText('None');
-	await expect(detailsName(page)).toHaveText('None');
-	await expect(details(page).getByRole('button', { name: 'Remove from saved' })).toBeDisabled();
 });
+
+/** Save in the details: pressed when the script is saved. */
+const saveToggle = (page: Page) => details(page).getByRole('button', { name: 'Save', exact: true });
 
 /** Phones: the details cover the list until Back. */
 async function backToList(page: Page) {
@@ -88,7 +124,7 @@ async function backToList(page: Page) {
 
 test('a pasted script with a typo is checked, then saved anyway', async ({ page }) => {
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Paste', exact: true }).tap();
+	await addScript(page, 'Paste');
 	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
 	await dialog
 		.getByLabel('Script JSON or link')
@@ -102,7 +138,27 @@ test('a pasted script with a typo is checked, then saved anyway', async ({ page 
 
 	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(details(page)).toContainText('Trevor');
-	await expect(page.getByRole('button', { name: 'Storm Front Pasted' })).toBeVisible();
+	await expect(details(page)).toContainText('Pasted');
+});
+
+test('hand-edited script JSON with comments and trailing commas is saved', async ({ page }) => {
+	await page.goto('/scripts');
+	await addScript(page, 'Paste');
+	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
+	await dialog
+		.getByLabel('Script JSON or link')
+		.fill(
+			'[\n  // made by hand\n  { "id": "_meta", "name": "Hand Made", },\n  "chef", "choirboy", "baron", "imp", /* more */\n]'
+		);
+	await dialog.getByRole('button', { name: 'Save' }).tap();
+	await expect(detailsName(page)).toHaveText('Hand Made');
+	await expect(page.getByTestId('script-sheet')).toContainText('Chef');
+	// Script checks: the Baron changes setup; the Choirboy needs the King, who isn't here.
+	await expect(page.getByTestId('script-checks')).toContainText('Baron');
+	await expect(page.getByTestId('script-warnings')).toContainText('Choirboy');
+	await expect(page.getByTestId('script-warnings')).toContainText('King');
+	await expect(page.getByTestId('script-warnings')).toContainText('not on the script');
+	await noSidewaysScroll(page);
 });
 
 test('a script file is saved straight away when nothing needs checking', async ({ page }) => {
@@ -114,7 +170,7 @@ test('a script file is saved straight away when nothing needs checking', async (
 	});
 	await expect(detailsName(page)).toHaveText('Storm Front');
 	await expect(page.getByRole('dialog', { name: 'Script check' })).toHaveCount(0);
-	await expect(page.getByRole('button', { name: /Storm Front.*storm-front\.json/ })).toBeVisible();
+	await expect(details(page)).toContainText('storm-front.json');
 	// A load that worked needs no message (Trevor).
 	await expect(page.getByText('Saved Storm Front', { exact: true })).toHaveCount(0);
 });
@@ -132,11 +188,7 @@ test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 			}
 		})
 	);
-	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
-		route.fulfill({ json: { page: 1, count: 0, hasMore: false, results: [] } })
-	);
 	await page.goto('/scripts');
-	await chooseSource(page, 'BotC Scripts');
 	await page.getByLabel('Search scripts').fill('42');
 	await expect(page.getByTestId('picker-status')).toHaveText(
 		'A BotC Scripts link or number: tap Save.'
@@ -152,7 +204,7 @@ test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 test('a link the browser may not read explains how to paste instead', async ({ page }) => {
 	await page.route('https://scripts.example/blocked.json', (route) => route.abort('failed'));
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Link', exact: true }).tap();
+	await addScript(page, 'Link');
 	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
 	const load = dialog.getByRole('button', { name: 'Save' });
 	await dialog.getByLabel('Link to the script JSON').fill('https://scripts.example/blocked.json');
@@ -171,12 +223,20 @@ test('a share link saves its script and clears the hash', async ({ page }) => {
 	await expect(page).toHaveURL(/\/scripts$/);
 });
 
-test('a custom script gets a six-digit code that another phone can type in', async ({
+test('a saved script is shared by QR code and link, with no code to type', async ({
 	page,
 	context
 }) => {
 	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 	await page.goto('/scripts');
+	// Codes are only for joining a game (Trevor, 2026-10-16).
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const add = page.getByRole('dialog', { name: 'Add script' });
+	for (const choice of ['Paste', 'File', 'Link']) {
+		await expect(add.getByRole('button', { name: choice, exact: true })).toBeVisible();
+	}
+	await expect(add.getByRole('button', { name: 'Code' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await page.getByLabel('Script file').setInputFiles({
 		name: 'storm-front.json',
 		mimeType: 'application/json',
@@ -184,37 +244,34 @@ test('a custom script gets a six-digit code that another phone can type in', asy
 	});
 	await expect(detailsName(page)).toHaveText('Storm Front');
 
-	// One screen: QR code, link and code.
+	// One screen: QR code and link.
 	await details(page).getByRole('button', { name: 'Share script' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Share Storm Front' });
 	await expect(dialog.getByRole('img', { name: 'QR code for Storm Front' })).toBeVisible();
-	const shown = dialog.getByTestId('share-digits');
-	await expect(shown).toHaveText(/^\d{3} \d{3}$/);
-	const code = (await shown.textContent())!;
+	await expect(dialog.getByTestId('share-url')).toHaveValue(/\/play#c=\d{6}$/);
+	await expect(dialog.getByTestId('share-digits')).toHaveCount(0);
 	// One icon beside the link copies it; no success popup.
-	await expect(dialog.getByRole('button', { name: 'Delete code' })).toHaveCount(0);
 	await dialog.getByRole('button', { name: 'Copy link' }).tap();
 	await expect(page.getByText('Link copied')).toHaveCount(0);
 	// The link opens the player view, with the script in the hash (never the query string).
-	expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
-		new RegExp(`^http://localhost:\\d+/play#c=${code.replace(' ', '')}$`)
-	);
+	const link = await page.evaluate(() => navigator.clipboard.readText());
+	expect(link).toMatch(/^http:\/\/localhost:\d+\/play#c=\d{6}$/);
 	await noSidewaysScroll(page);
 
-	// Another phone types it in on the number pad.
+	// The link is kept while the script is unchanged: opening Share again asks nothing new.
+	const asked: string[] = [];
+	page.on('request', (r) => {
+		if (r.url().includes('/api/share')) asked.push(r.url());
+	});
+	await page.keyboard.press('Escape');
+	await details(page).getByRole('button', { name: 'Share script' }).tap();
+	await expect(dialog.getByTestId('share-url')).toHaveValue(link);
+	expect(asked).toEqual([]);
+
+	// Another phone opens the link, as from the QR code.
 	const other = await context.newPage();
-	await other.goto('/scripts');
-	await other.getByRole('button', { name: 'Code', exact: true }).tap();
-	const entry = other.getByRole('dialog', { name: 'Have a code?' });
-	const box = entry.getByLabel('The 6-digit code');
-	await expect(box).toHaveAttribute('inputmode', 'numeric');
-	const load = entry.getByRole('button', { name: 'Save' });
-	await box.fill(code.slice(0, 5));
-	await expect(load).toBeDisabled();
-	await box.fill(code);
-	await load.tap();
-	await expect(other.getByTestId('script-details-name')).toHaveText('Storm Front');
-	await noSidewaysScroll(other);
+	await other.goto(new URL(link).pathname + new URL(link).hash);
+	await expect(other.getByRole('heading', { name: 'Storm Front', level: 1 })).toBeVisible();
 });
 
 test('dropping a script file anywhere on the page saves it', async ({ page }) => {
@@ -287,29 +344,22 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 		})
 	);
 
-	await page.route('**/api/curated', (route) => route.fulfill({ json: { scripts: [] } }));
 	await page.goto('/scripts');
-	// Searching the table first, then taking the search to BotC Scripts.
-	await page.getByLabel('Search scripts').fill('storm');
-	await expect(page.getByTestId('picker-status')).toHaveText('None');
-	await page.getByLabel('Search scripts').fill('');
-	await page.getByRole('button', { name: 'Search BotC Scripts' }).tap();
+	// One source at a time, BotC Scripts first (Trevor, 2026-10-17).
+	await expect(sourcePicker(page)).toContainText('BotC Scripts');
 	const status = page.getByTestId('picker-status');
-	await expect(status).toHaveText('2 scripts · most votes');
-	const table = page.getByRole('table', { name: 'BotC Scripts results' });
+	await expect(status).toHaveText('2 on BotC Scripts · most votes');
+	const table = page.getByRole('table', { name: 'Scripts' });
 	// The site's columns, with the characters counted from the script.
 	const first = table.locator('tbody tr').first();
 	await expect(first).toContainText('Most Voted One');
 	await expect(first.locator('[data-col="characters"]')).toHaveText('7');
-	await expect(first.locator('[data-col="likes"]')).toHaveText('5');
-	await expect(table.getByRole('columnheader', { name: 'Likes' })).toHaveAttribute(
-		'aria-sort',
-		'descending'
-	);
-	await expect(page.getByRole('button', { name: 'More' })).toBeDisabled();
+	// Phones keep Name, Author and Type; Chars and Likes give way (Chars' filter moves to Name).
+	const phone = test.info().project.name === 'phone';
+	if (!phone) await expect(first.locator('[data-col="likes"]')).toHaveText('5');
 
 	await page.getByLabel('Search scripts').fill('storm');
-	await expect(status).toHaveText('1 script · most votes');
+	await expect(status).toHaveText('1 on BotC Scripts · most votes');
 
 	// Filters sit in the header row: Teensyville scripts with the Imp.
 	await table.getByRole('button', { name: 'Filter Type', exact: true }).tap();
@@ -336,7 +386,7 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 		.poll(() => searches.at(-1))
 		.toBe('?page=1&q=storm&type=Teensyville&include=imp&editions=base,carousel');
 	await page.keyboard.press('Escape');
-	// One request when BotC Scripts was chosen, one after typing paused, one per filter.
+	// One request on opening, one after typing paused, one per filter.
 	expect(searches).toEqual([
 		'?page=1',
 		'?page=1&q=storm',
@@ -345,24 +395,27 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 		'?page=1&q=storm&type=Teensyville&include=imp&editions=base,carousel'
 	]);
 
-	// Likes, then (with a search) the closest names.
-	await table.getByRole('columnheader', { name: 'Likes' }).getByRole('button').tap();
-	await expect.poll(() => searches.at(-1)).toContain('&sort=match');
-	await expect(status).toHaveText('1 script · best match');
+	// Likes sorts what is loaded; the site already sends the most liked first.
+	if (!phone) {
+		const likes = table.getByRole('columnheader', { name: 'Likes' });
+		await likes.getByRole('button').tap();
+		await expect(likes).toHaveAttribute('aria-sort', 'ascending');
+		expect(searches).toHaveLength(5);
+	}
 
 	// Tapping a result shows its characters beside the list, no modal; nothing saves until Save.
 	await expect(detailsName(page)).toHaveText('None');
 	await table.getByRole('button', { name: /^Storm Front/ }).tap();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await expect(detailsName(page)).toHaveText('Storm Front');
-	await expect(page.getByTestId('script-characters')).toContainText('Storm Warden');
-	await expect(page.getByTestId('script-characters')).toContainText('Imp');
+	await expect(details(page)).toContainText('Storm Warden');
+	await expect(details(page)).toContainText('Imp');
 	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.0.0' })).toHaveAttribute(
 		'href',
 		'https://botcscripts.com/script/1900/1.0.0'
 	);
-	await details(page).getByRole('button', { name: 'Save', exact: true }).tap();
-	await expect(details(page).getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
 	await expect(detailsName(page)).toHaveText('Storm Front');
 	await noSidewaysScroll(page);
 });
@@ -395,7 +448,7 @@ const bigTown = [
 	...['butler', 'drunk', 'recluse', 'saint', 'poisoner', 'spy', 'scarletwoman', 'baron', 'imp']
 ];
 
-test("the official site's curated scripts are listed when asked for, and saved", async ({
+test("the official site's custom scripts are a source of their own, and saved", async ({
 	page
 }) => {
 	let asked = 0;
@@ -411,14 +464,18 @@ test("the official site's curated scripts are listed when asked for, and saved",
 		});
 	});
 	await page.goto('/scripts');
+	// Only fetched once chosen; then the choice is remembered on the device.
 	await expect(page.getByTestId('picker-status')).toHaveText('None');
-	// Nothing is fetched from the official site until its scripts are wanted.
 	expect(asked).toBe(0);
-
-	await chooseSource(page, 'Curated (official site)');
+	await chooseSource(page, 'Official custom scripts');
 	await expect(page.getByTestId('picker-status')).toHaveText('2 scripts');
 	expect(asked).toBe(1);
+	await page.reload();
+	await expect(sourcePicker(page)).toContainText('Official custom scripts');
+	await expect(page.getByTestId('picker-status')).toHaveText('2 scripts');
 	const table = page.getByRole('table', { name: 'Scripts' });
+	// No Likes or No. columns: only BotC Scripts has them.
+	await expect(table.getByRole('columnheader', { name: /^Likes/ })).toHaveCount(0);
 	await expect(table).toContainText('Little Hamlet');
 	await expect(table).toContainText('Teensyville');
 
@@ -431,17 +488,37 @@ test("the official site's curated scripts are listed when asked for, and saved",
 	await expect(name).toHaveAttribute('aria-sort', 'descending');
 	await expect(table.locator('tbody tr').first()).toContainText('Little Hamlet');
 
-	// Teensyville only, from the funnel in the header row. On phones the Type column is
-	// hidden and its funnel sits beside Name, labelled so moved funnels can be told apart.
+	// Anywhere in a row selects its script, not just the name (Trevor).
+	await table.getByRole('cell', { name: 'Someone Big' }).tap();
+	await expect(detailsName(page)).toHaveText('Big Town');
+	await backToList(page);
+	await table
+		.locator('tbody tr')
+		.filter({ hasText: 'Little Hamlet' })
+		.locator('[data-col="kind"]')
+		.tap();
+	await expect(detailsName(page)).toHaveText('Little Hamlet');
+	await backToList(page);
+
+	// Teensyville only, from the funnel in the Type column's header (its own column on phones too).
 	const typeFilter = table.getByRole('button', { name: 'Filter Type', exact: true });
-	if (test.info().project.name === 'phone') await expect(typeFilter).toHaveText('Type');
 	await typeFilter.tap();
 	await page.getByRole('dialog', { name: 'Filter Type' }).getByLabel('Teensyville').tap();
 	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
 
 	await pick(page, 'Little Hamlet');
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
-	await expect(details(page)).toContainText('Script Tool');
+	// Its Source opens the official page that lists it, not just a site.
+	await expect(
+		details(page).getByRole('link', { name: 'Official custom scripts' })
+	).toHaveAttribute('href', 'https://bloodontheclocktower.com/pages/custom-scripts');
+	// Not saved, yet shown as the players' script, abilities and all.
+	await expect(page.getByTestId('script-sheet')).toContainText('pairs of evil players');
+	// Script checks: characters per type, no setup changes, nothing missing.
+	const checks = page.getByTestId('script-checks');
+	await expect(checks.locator('[data-type="townsfolk"]')).toHaveText('5');
+	await expect(checks.locator('[data-type="outsider"]')).toHaveText('2');
+	await expect(page.getByTestId('script-warnings')).toHaveCount(0);
 	await noSidewaysScroll(page);
 });
 
@@ -451,10 +528,169 @@ test('a Script Tool link is read from the link itself, with no request', async (
 		if (r.url().includes('bloodontheclocktower.com')) requests.push(r.url());
 	});
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Link', exact: true }).tap();
+	await addScript(page, 'Link');
 	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
 	await dialog.getByLabel('Link to the script JSON').fill(scriptToolLink(teensy));
 	await dialog.getByRole('button', { name: 'Save' }).tap();
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
 	expect(requests).toEqual([]);
+});
+
+test('more BotC Scripts results load by themselves when the list end comes near', async ({
+	page
+}) => {
+	const pages: number[] = [];
+	await page.route(/\/api\/botcscripts\/search\?/, (route) => {
+		const n = Number(new URL(route.request().url()).searchParams.get('page') ?? '1');
+		pages.push(n);
+		const results = Array.from({ length: 30 }, (_, i) => ({
+			scriptId: n * 100 + i,
+			versionId: n * 100 + i,
+			name: `Page ${n} Script ${i + 1}`,
+			version: '1.0.0',
+			author: 'Someone',
+			type: 'Full',
+			score: 60 - i,
+			characters: [{ id: 'chef' }, { id: 'imp' }]
+		}));
+		return route.fulfill({ json: { page: n, count: 60, hasMore: n < 2, results } });
+	});
+	await page.goto('/scripts');
+	const table = page.getByRole('table', { name: 'Scripts' });
+	await expect(table).toContainText('Page 1 Script 30');
+	// No More button (Trevor, 2026-10-17): scrolling to the end loads the next page.
+	await expect(page.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
+	await table.locator('tbody tr').last().scrollIntoViewIfNeeded();
+	await expect(table).toContainText('Page 2 Script 30');
+	await table.locator('tbody tr').last().scrollIntoViewIfNeeded();
+	// The site has no more, so nothing else is asked for.
+	await expect.poll(() => pages).toEqual([1, 2]);
+	await noSidewaysScroll(page);
+});
+
+test('a World Cup is a source: its finalists load from BotC Scripts and link there', async ({
+	page
+}) => {
+	const asked: string[] = [];
+	await page.route(/\/api\/botcscripts\/script\/\d+$/, (route) => {
+		const id = Number(route.request().url().split('/').at(-1));
+		asked.push(String(id));
+		return route.fulfill({
+			json: {
+				scriptId: id,
+				versionId: id + 10000,
+				name: id === 6687 ? 'The Ballad of Seat 7' : `Script ${id}`,
+				version: '1.0.0',
+				author: 'Someone',
+				content: [
+					{ id: '_meta', name: id === 6687 ? 'The Ballad of Seat 7' : `Script ${id}` },
+					...teensy.slice(1)
+				]
+			}
+		});
+	});
+	await page.goto('/scripts');
+	expect(asked).toEqual([]);
+	await chooseSource(page, 'World Cup 2025');
+	await expect(page.getByTestId('picker-status')).toHaveText('16 scripts');
+	const table = page.getByRole('table', { name: 'Scripts' });
+	// In the World Cup's order, winner first.
+	await expect(table.locator('tbody tr').first()).toContainText('The Ballad of Seat 7');
+	await table.getByRole('button', { name: /^The Ballad of Seat 7/ }).tap();
+	await expect(detailsName(page)).toHaveText('The Ballad of Seat 7');
+	await expect(
+		details(page).getByRole('link', { name: 'World Cup 2025 · Winner' })
+	).toHaveAttribute('href', 'https://botcscripts.com/script/6687/1.0.0');
+	await expect(page.getByTestId('script-sheet')).toContainText('Chef');
+	await noSidewaysScroll(page);
+});
+
+test('a BotC Scripts result offers its other versions, and says when a newer one is out', async ({
+	page
+}) => {
+	const content = (version: string) => [
+		{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
+		...homebrew.slice(1),
+		...(version === '1.1.0' ? ['mayor'] : [])
+	];
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name: 'Storm Front',
+						version: '1.0.0',
+						author: 'Trevor',
+						type: 'Full',
+						score: 5,
+						characters: [{ id: 'chef' }, { id: 'imp' }]
+					}
+				]
+			}
+		})
+	);
+	await page.route('**/api/botcscripts/versions/1900', (route) =>
+		route.fulfill({ json: { scriptId: 1900, latest: '1.1.0', versions: ['1.1.0', '1.0.0'] } })
+	);
+	await page.route(/\/api\/botcscripts\/(version\/900|script\/1900\/1\.[01]\.0)$/, (route) => {
+		const version = route.request().url().endsWith('1.1.0') ? '1.1.0' : '1.0.0';
+		return route.fulfill({
+			json: {
+				scriptId: 1900,
+				versionId: version === '1.1.0' ? 901 : 900,
+				name: 'Storm Front',
+				version,
+				author: 'Trevor',
+				content: content(version)
+			}
+		});
+	});
+
+	await page.goto('/scripts');
+	await page
+		.getByRole('table', { name: 'Scripts' })
+		.getByRole('button', { name: /^Storm Front/ })
+		.tap();
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	// The site has 1.1.0: the details say so, in space kept for it.
+	const newer = details(page).getByTestId('newer-version').getByRole('button');
+	await expect(newer).toHaveText('Newer: 1.1.0');
+	await expect(page.getByTestId('script-sheet')).not.toContainText('Mayor');
+	await newer.tap();
+	await expect(details(page).getByRole('combobox', { name: 'Version' })).toContainText('1.1.0');
+	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.1.0' })).toHaveAttribute(
+		'href',
+		'https://botcscripts.com/script/1900/1.1.0'
+	);
+	await expect(page.getByTestId('script-sheet')).toContainText('Mayor');
+	await expect(newer).toBeHidden();
+
+	// Previous versions are listed too, and can be viewed again.
+	await details(page).getByRole('combobox', { name: 'Version' }).tap();
+	await page.getByRole('option', { name: '1.0.0', exact: true }).tap();
+	await expect(page.getByTestId('script-sheet')).not.toContainText('Mayor');
+	// Print, beside Share, prints the version shown.
+	await page.evaluate(() => {
+		window.print = () => {
+			const sheet = document.querySelector('[data-testid="print-sheet"]');
+			(window as unknown as { printed: string }).printed = sheet?.textContent ?? '';
+		};
+	});
+	await details(page).getByRole('button', { name: 'Print script' }).tap();
+	await expect
+		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed))
+		.toContain('Storm Warden');
+	const printed = await page.evaluate(() => (window as unknown as { printed: string }).printed);
+	expect(printed).toContain('1.0.0');
+	expect(printed).not.toContain('Mayor');
+	// Saving keeps the version shown.
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
+	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.0.0' })).toBeVisible();
+	await noSidewaysScroll(page);
 });

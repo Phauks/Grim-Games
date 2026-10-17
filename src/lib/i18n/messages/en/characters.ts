@@ -32,13 +32,6 @@ export const characters = {
 	'characters.boardNames': 'Show character names on grimoire tokens',
 	'characters.boardNamesHelp':
 		'Storyteller: writes each character’s name on its token on the grimoire board.',
-	'characters.playerNamePlacement': 'Player name placement on the grimoire',
-	'characters.playerNamePlacementHelp':
-		'Storyteller: where each player’s name sits on the grimoire board.',
-	'characters.playerNamePlacement.below': 'Below',
-	'characters.playerNamePlacement.iconTop': 'Icon top',
-	'characters.playerNamePlacement.iconBottom': 'Icon bottom',
-	'characters.playerNamePlacement.badge': 'Badge',
 	'characters.previewPlayer': 'Sam',
 	'characters.colour.face': 'Token face',
 	'characters.colour.faceHelp': 'The parchment of character tokens.',

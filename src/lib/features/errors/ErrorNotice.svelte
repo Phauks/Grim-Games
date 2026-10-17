@@ -1,18 +1,26 @@
 <script lang="ts">
-	import { buildInfo } from '#lib/build-info.ts';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import { errorDetails, errorReportUrl, type AppError } from './app-error.ts';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
+	import { errorDetails, type AppError } from './app-error.ts';
 	import { errorLog } from './report.svelte.ts';
 
 	// The corner card plus the details dialog; mounted once by install.ts, outside the layout.
 
 	const latest = $derived(errorLog.entries.find((e) => e.key === errorLog.unseen[0]));
 	const time = $derived(new Intl.DateTimeFormat(locale.current, { timeStyle: 'short' }));
+
+	function report(error: AppError) {
+		reportDialog.show({
+			kind: 'bug',
+			title: `${error.name}: ${error.message}`.slice(0, 120),
+			details: errorDetails(error)
+		});
+	}
 
 	async function copy(error: AppError) {
 		try {
@@ -65,17 +73,9 @@
 					</p>
 					<div class="row-actions">
 						<Button variant="quiet" onclick={() => copy(error)}>{t('errors.copy')}</Button>
-						<!-- External GitHub link, not an app route. -->
-						<!-- eslint-disable svelte/no-navigation-without-resolve -->
-						<a
-							class="link-button"
-							href={errorReportUrl(error, buildInfo, navigator.userAgent)}
-							target="_blank"
-							rel="noopener"
+						<Button variant="quiet" onclick={() => report(error)}
+							><Icon name="report" />{t('errors.report')}</Button
 						>
-							<!-- eslint-enable svelte/no-navigation-without-resolve -->
-							<Icon name="report" /><span>{t('errors.report')}</span>
-						</a>
 					</div>
 				</li>
 			{/each}
@@ -163,22 +163,5 @@
 	.row-actions {
 		display: flex;
 		gap: var(--space-2);
-	}
-	.link-button {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-4);
-		border-radius: var(--button-radius);
-		background: var(--button-background);
-		color: var(--button-color);
-		font: var(--button-font);
-		letter-spacing: 0.04em;
-		text-decoration: none;
-	}
-	.link-button:hover {
-		filter: brightness(1.15);
 	}
 </style>

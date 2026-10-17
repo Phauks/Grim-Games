@@ -34,7 +34,9 @@ export type SetupTiming = 'setup' | 'first-day';
  * - `townsfolk` / `outsider` / `minion`: by the true character's type;
  * - `not-demon`: any player whose true character isn't a Demon;
  * - `same-alignment`: a player of this character's alignment;
- * - `copies`: one of the players who have this character (Village Idiots).
+ * - `copies`: one of the players who have this character (Village Idiots);
+ * - `nearest-townsfolk-anticlockwise` / `-clockwise`: the nearest Townsfolk that way round
+ *   from this character, alive or dead (No Dashii, `nearestOfType`).
  */
 export type SeatFilter =
 	| 'any'
@@ -45,7 +47,9 @@ export type SeatFilter =
 	| 'minion'
 	| 'not-demon'
 	| 'same-alignment'
-	| 'copies';
+	| 'copies'
+	| 'nearest-townsfolk-anticlockwise'
+	| 'nearest-townsfolk-clockwise';
 
 export type SetupTarget =
 	{ self: true } | { choose: SeatFilter; choice: string; notSelf?: boolean };
@@ -251,6 +255,30 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 				text: 'Choose any player to show the Balloonist: put [Know] on them',
 				target: { choose: 'any', choice: 'any player' },
 				reason: 'The player the Balloonist is shown on the first night'
+			}
+		]
+	},
+	{
+		id: 'nodashii',
+		wiki: `${W}No_Dashii`,
+		reminders: [
+			{
+				label: 'Poisoned',
+				text: 'Put [Poisoned] on the nearest Townsfolk anticlockwise from the No Dashii',
+				target: {
+					choose: 'nearest-townsfolk-anticlockwise',
+					choice: 'the nearest Townsfolk anticlockwise'
+				},
+				reason: 'The No Dashii’s Townsfolk neighbour is poisoned'
+			},
+			{
+				label: 'Poisoned',
+				text: 'Put [Poisoned] on the nearest Townsfolk clockwise from the No Dashii',
+				target: {
+					choose: 'nearest-townsfolk-clockwise',
+					choice: 'the nearest Townsfolk clockwise'
+				},
+				reason: 'The No Dashii’s Townsfolk neighbour is poisoned'
 			}
 		]
 	},
@@ -626,7 +654,6 @@ export const NO_SETUP_REMINDERS: Record<CharacterId, string> = {
 			'goblin',
 			'scarletwoman',
 			'yaggababble',
-			'nodashii',
 			'imp',
 			'shabaloth',
 			'ojo',

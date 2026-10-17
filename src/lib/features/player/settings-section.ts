@@ -7,6 +7,5 @@ registerSettingsSection({
 	label: 'Player view',
 	icon: 'notes',
 	component: PlayerSettingsSection,
-	audience: 'everyone',
 	order: 37
 });

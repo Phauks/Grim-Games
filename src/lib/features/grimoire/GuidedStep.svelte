@@ -15,6 +15,7 @@
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName, stepHolders, stepName } from './night-steps.ts';
+	import { reminderCopies, reminderKey } from './reminders.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 
@@ -39,35 +40,57 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const holders = $derived(step ? stepHolders(game, step, characters) : []);
-	/** The character's own reminder tokens, each once (copies are placed one at a time). */
-	const labels = $derived(step?.character ? [...new Set(step.character.reminders)] : []);
-	/** Where each label already is on the board, if anywhere. */
-	function placed(label: string) {
-		for (const seatId of game.seating) {
-			const r = game.seats[seatId].reminders.find(
-				(x) => x.characterId === step?.character?.id && x.label === label
+	/**
+	 * The character's own reminder tokens, one row per copy the game has (the Mathematician's
+	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
+	 */
+	const total = $derived(reminderCopies(game, characters));
+	const rows = $derived.by(() => {
+		const character = step?.character;
+		if (!character) return [];
+		return [...new Set(character.reminders)].flatMap((label) => {
+			const on = placedAll(label);
+			const n = Math.max(
+				total.get(reminderKey({ characterId: character.id, label })) ?? 1,
+				on.length
 			);
-			if (r) return { seatId, reminderId: r.reminderId };
-		}
-		return undefined;
+			return Array.from({ length: n }, (_, i) => ({
+				label,
+				at: on[i],
+				// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
+				key: `${label}:${i}`
+			}));
+		});
+	});
+	/** Where each copy of a label is on the board, in seating order. */
+	function placedAll(label: string) {
+		return game.seating.flatMap((seatId) =>
+			game.seats[seatId].reminders
+				.filter((x) => x.characterId === step?.character?.id && x.label === label)
+				.map((r) => ({ seatId, reminderId: r.reminderId }))
+		);
 	}
 
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
-	let choosing = $state<string | undefined>();
+	let choosing = $state<{ label: string; at?: { reminderId: string } } | undefined>();
 	let chooserOpen = $state(false);
-	function choose(label: string) {
-		choosing = label;
+	function choose(label: string, at?: { reminderId: string }) {
+		choosing = { label, at };
 		chooserOpen = true;
 	}
 	function put(seatId: SeatId) {
 		chooserOpen = false;
-		const label = choosing;
+		const picked = choosing;
 		choosing = undefined;
 		const id = step?.character?.id;
-		if (!label || !id) return;
-		const at = placed(label);
-		if (at) moveConfirm?.request(at.reminderId, seatId);
-		else grimoire.run({ type: 'AddReminder', seatId, reminder: { characterId: id, label } });
+		if (!picked || !id) return;
+		if (picked.at) moveConfirm?.request(picked.at.reminderId, seatId);
+		else
+			grimoire.run({
+				type: 'AddReminder',
+				seatId,
+				reminder: { characterId: id, label: picked.label }
+			});
 	}
 
 	let showOpen = $state(false);
@@ -80,64 +103,68 @@
 </script>
 
 <Dialog bind:open title={step ? stepName(step) : 'Night step'} size="full">
-	{#if step}
-		<div class="head">
-			<span class="icon">
-				<StepIcon {step} size={56} />
-			</span>
-			<p class="who">
-				{holders.length > 0 ? holders.map((s) => seatName(game, s)).join(', ') : 'None'}
-			</p>
-		</div>
-		<NightAlerts {grimoire} {step} />
-		{#if step.id === TRAVELLER_ALIGNMENT_STEP}
-			<TravellerAlignment
+	<!-- The step scrolls on its own, so Done and the other actions always stay in reach. -->
+	<div class="scroll">
+		{#if step}
+			<div class="head">
+				<span class="icon">
+					<StepIcon {step} size={56} />
+				</span>
+				<p class="who">
+					{holders.length > 0 ? holders.map((s) => seatName(game, s)).join(', ') : 'None'}
+				</p>
+			</div>
+			<NightAlerts {grimoire} {step} />
+			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
+				<TravellerAlignment
+					{grimoire}
+					travellers={step.travellers ?? []}
+					onDraw={(seatId) => {
+						open = false;
+						onDraw(seatId);
+					}}
+				/>
+			{/if}
+			<NightSuggested
 				{grimoire}
-				travellers={step.travellers ?? []}
-				onDraw={(seatId) => {
+				{step}
+				onShow={(id) => {
 					open = false;
-					onDraw(seatId);
+					shownId = id;
+					showOpen = true;
 				}}
 			/>
+			{#if step.reminder}
+				<p class="text">
+					{#if step.character}
+						<NightText text={step.reminder} character={step.character} {night} />
+					{:else}
+						{step.reminder}
+					{/if}
+				</p>
+			{/if}
+			{#if rows.length > 0}
+				<h3>Reminders</h3>
+				<ul class="reminders">
+					{#each rows as { label, at, key } (key)}
+						<li>
+							<ReminderToken
+								{label}
+								type={step.character?.type}
+								alignment={step.character
+									? placingAlignment(game, step.character.id, characters)
+									: undefined}
+							/>
+							<span class="where">{at ? `On ${seatName(game, at.seatId)}` : 'Not placed'}</span>
+							<Button variant="quiet" onclick={() => choose(label, at)}
+								>{at ? 'Move' : 'Place'}</Button
+							>
+						</li>
+					{/each}
+				</ul>
+			{/if}
 		{/if}
-		<NightSuggested
-			{grimoire}
-			{step}
-			onShow={(id) => {
-				open = false;
-				shownId = id;
-				showOpen = true;
-			}}
-		/>
-		{#if step.reminder}
-			<p class="text">
-				{#if step.character}
-					<NightText text={step.reminder} character={step.character} {night} />
-				{:else}
-					{step.reminder}
-				{/if}
-			</p>
-		{/if}
-		{#if labels.length > 0}
-			<h3>Reminders</h3>
-			<ul class="reminders">
-				{#each labels as label (label)}
-					{@const at = placed(label)}
-					<li>
-						<ReminderToken
-							{label}
-							type={step.character?.type}
-							alignment={step.character
-								? placingAlignment(game, step.character.id, characters)
-								: undefined}
-						/>
-						<span class="where">{at ? `On ${seatName(game, at.seatId)}` : 'Not placed'}</span>
-						<Button variant="quiet" onclick={() => choose(label)}>{at ? 'Move' : 'Place'}</Button>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	{/if}
+	</div>
 	{#snippet actions()}
 		<Button
 			variant="quiet"
@@ -169,7 +196,7 @@
 
 <SeatChooser
 	bind:open={chooserOpen}
-	title={choosing ? `Put ${choosing} on` : 'Put on'}
+	title={choosing ? `Put ${choosing.label} on` : 'Put on'}
 	{game}
 	{characters}
 	onChoose={put}
@@ -185,6 +212,12 @@
 />
 
 <style>
+	.scroll {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
 	.head {
 		display: flex;
 		align-items: center;

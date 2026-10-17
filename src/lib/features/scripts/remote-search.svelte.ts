@@ -33,7 +33,14 @@ export class RemoteSearch<Query> {
 		try {
 			const found = await this.provider.search(query, page, data, mine.signal);
 			if (this.#controller !== mine) return;
-			this.listings = page === 1 ? found.listings : [...this.listings, ...found.listings];
+			// Results shift between pages as likes change, so a later page can repeat a row.
+			const have = page === 1 ? [] : this.listings.map((l) => l.row.key);
+			const fresh = found.listings.filter((l) => {
+				if (have.includes(l.row.key)) return false;
+				have.push(l.row.key);
+				return true;
+			});
+			this.listings = page === 1 ? fresh : [...this.listings, ...fresh];
 			this.count = found.count;
 			this.page = found.page;
 			this.hasMore = found.hasMore;

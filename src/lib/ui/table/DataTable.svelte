@@ -123,9 +123,20 @@
 	}
 	// Dragged widths apply to the full table only; narrow tables keep their own tracks.
 	// A resizable column also gets room for its handle, so its header keeps its width.
-	const template = $derived(
-		columns.map((c, i) => columnTrack(dragged(c), track(c), room(i))).join(' ')
-	);
+	const tracks = $derived(columns.map((c, i) => columnTrack(dragged(c), track(c), room(i))));
+	const template = $derived(tracks.join(' '));
+	const flexible = (track: string) => /fr|%|minmax|auto|content/.test(track);
+	/**
+	 * Where each column that stays in view sideways starts: the columns up to and including
+	 * the row header (Reference: icon and name), else just the first. Offsets need fixed widths.
+	 */
+	const stickyStarts = $derived.by(() => {
+		const header = columns.findIndex((c) => c.rowHeader);
+		const last = header > 0 && !tracks.slice(0, header).some(flexible) ? header : 0;
+		return tracks
+			.slice(0, last + 1)
+			.map((_, i) => (i === 0 ? '0rem' : `calc(${tracks.slice(0, i).join(' + ')})`));
+	});
 	const narrowTemplate = $derived(
 		columns
 			.filter((c) => !c.wide)
@@ -136,6 +147,59 @@
 	const movedFilters = $derived(columns.filter((c) => c.wide && c.filterable));
 
 	const built = new SvelteSet<string>();
+	let body = $state<HTMLElement>();
+
+	/**
+	 * Rows on or near the screen are built before the browser paints, whenever the rows
+	 * change (first show, sort, filter): the observer in near.ts only reports after a paint,
+	 * which showed each visible row's name a frame before the rest of it. The observer still
+	 * builds rows as they come near while scrolling.
+	 */
+	// `fit="content"`: a wide table scrolls inside its own box, no taller than the screen, so
+	// its sideways scrollbar is always in reach (Trevor, 2026-10-16). Narrow tables (stacked
+	// rows on phones) are not boxed: they scroll with the page and never sideways.
+	let scroller = $state<HTMLElement>();
+	let narrowNow = $state(false);
+	const boxed = $derived(fit === 'content' && !narrowNow);
+	/** Rows are "near" relative to the box they scroll in: the table's own, or the page. */
+	const root = $derived(boxed ? (scroller ?? null) : null);
+
+	/** Tracks the same 40rem limit as the container query below. */
+	function watchWidth(element: HTMLElement) {
+		const check = () => {
+			const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+			narrowNow = element.getBoundingClientRect().width <= 40 * rem;
+		};
+		// Now, so the first rows are measured against the right box.
+		check();
+		if (typeof ResizeObserver === 'undefined') return;
+		const observer = new ResizeObserver(check);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}
+
+	/**
+	 * Rows on or near the screen are built before the browser paints, whenever the rows
+	 * change (first show, sort, filter): the observer in near.ts only reports after a paint,
+	 * which showed each visible row's name a frame before the rest of it. The observer still
+	 * builds rows as they come near while scrolling.
+	 */
+	$effect(() => {
+		void rows;
+		if (!lazy || !body) return;
+		// Only what is on screen (and a little more) before the paint; near.ts builds further
+		// ahead after it, so a sort or the first show costs no more than the visible rows.
+		const scrolls = root && root.scrollHeight > root.clientHeight;
+		const view = scrolls ? root.getBoundingClientRect() : { top: 0, bottom: innerHeight };
+		const reach = (view.bottom - view.top) / 4;
+		for (const tr of body.children as HTMLCollectionOf<HTMLElement>) {
+			const key = tr.dataset.rowKey;
+			if (key === undefined || built.has(key)) continue;
+			const box = tr.getBoundingClientRect();
+			if (box.top > view.bottom + reach) break;
+			if (box.bottom > view.top - reach) built.add(key);
+		}
+	});
 
 	let filterOpen = $state(false);
 	let filterColumn = $state<DataColumn<K>>();
@@ -281,15 +345,18 @@
 <div
 	class="data-table {narrow}"
 	class:fit-content={fit === 'content'}
+	class:boxed
 	class:fill
 	style:--columns={template}
 	style:--columns-narrow={narrowTemplate}
 	style:--row-estimate={rowEstimate}
+	{@attach fit === 'content' && watchWidth}
 >
 	<div
 		class="scroll"
 		role={fit === 'content' ? 'region' : undefined}
 		aria-label={fit === 'content' ? `${label} table` : undefined}
+		bind:this={scroller}
 	>
 		<table aria-label={label} data-testid={testid}>
 			<thead>
@@ -304,6 +371,9 @@
 							class:resizable={resizable(column)}
 							class:after-resizable={i > 0 && resizable(columns[i - 1])}
 							class:last={i === columns.length - 1}
+							class:sticky={i < stickyStarts.length}
+							class:sticky-end={i === stickyStarts.length - 1}
+							style:--sticky-start={stickyStarts[i]}
 							aria-sort={ariaSort(column)}
 						>
 							<div class="head">
@@ -356,7 +426,7 @@
 					{/each}
 				</tr>
 			</thead>
-			<tbody>
+			<tbody bind:this={body}>
 				{#each rows as row (key(row))}
 					{@const id = key(row)}
 					{@const ready = !lazy || built.has(id)}
@@ -366,13 +436,20 @@
 					-->
 					<tr
 						{...rowAttrs?.(row)}
+						data-row-key={lazy ? id : undefined}
 						class:selected={rowSelected?.(row)}
 						class:pending={!ready}
-						{@attach lazy && near(() => built.add(id))}
+						{@attach lazy && near(() => built.add(id), undefined, root)}
 					>
 						{#each columns as column, c (column.id)}
 							{#if column.rowHeader}
-								<th scope="row" data-col={column.id} style:--col={ready ? undefined : c + 1}
+								<th
+									scope="row"
+									data-col={column.id}
+									class:sticky={c < stickyStarts.length}
+									class:sticky-end={c === stickyStarts.length - 1}
+									style:--sticky-start={stickyStarts[c]}
+									style:--col={ready ? undefined : c + 1}
 									>{#if ready || !rowLabel}{@render cell(row, column)}{:else}{rowLabel(
 											row
 										)}{/if}</th
@@ -385,6 +462,9 @@
 									class:end={column.align === 'end'}
 									class:stack-head={column.stackHead}
 									class:flush={column.flush}
+									class:sticky={c < stickyStarts.length}
+									class:sticky-end={c === stickyStarts.length - 1}
+									style:--sticky-start={stickyStarts[c]}
 								>
 									{@render cell(row, column)}
 								</td>
@@ -425,7 +505,8 @@
 	}
 	.fill .scroll {
 		height: 100%;
-		overflow: hidden auto;
+		/* Both ways: resized columns can make the table wider than its box. */
+		overflow: auto;
 		overscroll-behavior: contain;
 	}
 	.fill thead {
@@ -444,6 +525,34 @@
 	.fit-content table {
 		width: max-content;
 		min-width: 100%;
+	}
+	.boxed .scroll {
+		/* The screen below the app header: the sideways scrollbar is always on screen. */
+		max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+		overflow: auto;
+		/* Sideways stays in the box; at the top or bottom, the page carries on scrolling. */
+		overscroll-behavior: contain auto;
+	}
+	.boxed thead {
+		position: sticky;
+		top: 0;
+		z-index: 3;
+	}
+	/* The row's name (and anything before it) stays in view while the rest scrolls sideways. */
+	.sticky {
+		position: sticky;
+		inset-inline-start: var(--sticky-start);
+		z-index: 1;
+		background: var(--card-background);
+	}
+	/* A line where the scrolling columns slide under. */
+	.sticky-end {
+		box-shadow: inset -1px 0 var(--border);
+	}
+	thead .sticky,
+	tr.selected > .sticky {
+		background:
+			linear-gradient(var(--surface-selected), var(--surface-selected)), var(--card-background);
 	}
 	tr {
 		display: grid;
@@ -653,6 +762,15 @@
 		/* Narrow tables fit the screen as they are: nothing to resize. */
 		.resize {
 			display: none;
+		}
+		.boxed .scroll {
+			max-height: none;
+			overflow-y: visible;
+		}
+		.sticky {
+			position: static;
+			background: none;
+			box-shadow: none;
 		}
 		thead th.resizable,
 		thead th.resizable.last,

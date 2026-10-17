@@ -1,19 +1,14 @@
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
-import type { MessageKey } from '#lib/i18n/catalog.ts';
 import type { Game } from '#lib/core/model/index.ts';
 import { setupComplete } from '#lib/core/rules/index.ts';
 
 /**
- * The one setup flow (Trevor, 2026-10-16): 1 Characters, 2 Draw. Finishing the draw opens
- * the board with its setup reminders tray, which is not a step of its own.
+ * The one setup flow (Trevor, 2026-10-16): Characters, then Draw, moved between by the bar
+ * at the bottom (no step header, Trevor 2026-10-17). Finishing the draw opens the board with
+ * its setup reminders tray, which is not a step of its own.
  */
 export type SetupStep = 'characters' | 'draw' | 'reminders';
-
-export const SETUP_STEPS = [
-	{ step: 'characters', label: 'setup.step.characters' },
-	{ step: 'draw', label: 'setup.step.draw' }
-] as const satisfies readonly { step: SetupStep; label: MessageKey }[];
 
 /** The URL hash that opens the board with its setup reminders tray. */
 export const REMINDERS_HASH = '#setup-reminders';

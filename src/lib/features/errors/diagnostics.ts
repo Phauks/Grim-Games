@@ -1,5 +1,3 @@
-import type { BuildInfo } from '#lib/build-info.ts';
-import { describeBuild, REPOSITORY_URL } from '#lib/features/about/report-issue.ts';
 import type { MessageKey } from '#lib/i18n/catalog.ts';
 import { errorDetails, scrubUrls, type AppError } from './app-error.ts';
 
@@ -11,6 +9,8 @@ import { errorDetails, scrubUrls, type AppError } from './app-error.ts';
 export interface DiagnosticRow {
 	label: MessageKey;
 	value: string;
+	/** External page the value links to, e.g. the commit on GitHub. */
+	href?: string;
 }
 
 export interface DiagnosticSection {
@@ -68,34 +68,10 @@ export function diagnosticsText(
 	return lines.join('\n');
 }
 
-/** GitHub stops accepting issue links much past 8 KB; stay well under. */
-export const MAX_REPORT_URL = 7000;
-const CUT_NOTE = '\n\n[Cut short: please attach the downloaded diagnostics file.]';
-
-/** The bug form prefilled with the diagnostics, cut to fit in a link when needed. */
-export function diagnosticsReportUrl(text: string, info: BuildInfo, userAgent: string): string {
-	const url = (error: string) =>
-		`${REPOSITORY_URL}/issues/new?${new URLSearchParams({
-			template: 'bug_report.yml',
-			build: describeBuild(info),
-			page: '/diagnostics',
-			device: userAgent,
-			error
-		})}`;
-	let full = url(text);
-	if (full.length <= MAX_REPORT_URL) return full;
-	// Shrink by the overshoot (encoded text is longer than the text), then check again.
-	let keep = text.length;
-	while (full.length > MAX_REPORT_URL && keep > 0) {
-		keep = Math.max(0, keep - Math.ceil((full.length - MAX_REPORT_URL) / 2) - 50);
-		full = url(text.slice(0, keep) + CUT_NOTE);
-	}
-	return full;
-}
-
-/** File name for the download, e.g. `grim-games-diagnostics-2026-10-16.txt`. */
+/** File name for the download, in UTC, e.g. `grim-games-diagnostics-2026-10-16-231502.txt`. */
 export function diagnosticsFileName(gatheredAt: number): string {
-	return `grim-games-diagnostics-${new Date(gatheredAt).toISOString().slice(0, 10)}.txt`;
+	const iso = new Date(gatheredAt).toISOString();
+	return `grim-games-diagnostics-${iso.slice(0, 10)}-${iso.slice(11, 19).replaceAll(':', '')}.txt`;
 }
 
 /** Bytes as MB with one decimal (or KB below 1 MB), for the Storage section. */

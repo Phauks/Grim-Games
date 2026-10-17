@@ -54,11 +54,16 @@ function index(data: GameData): Map<string, Character> {
 
 export function botcCard(entries: readonly BotcScriptsEntry[], data: GameData): BotcCard {
 	const known = index(data);
-	const characters: BotcCharacter[] = entries.map((entry) => {
+	const seen = new Set<string>();
+	const characters: BotcCharacter[] = entries.flatMap((entry) => {
 		const official = known.get(looseId(entry.id));
-		return official
+		const character = official
 			? { id: official.id, name: official.name, type: official.type, official }
 			: { id: entry.id, name: entry.name ?? entry.id, type: teamType(entry.team) };
+		// Scripts on the site can list a character twice, or under two spellings of one id.
+		if (seen.has(character.id)) return [];
+		seen.add(character.id);
+		return [character];
 	});
 	const order = [...CHARACTER_TYPES, undefined];
 	const groups = order

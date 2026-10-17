@@ -13,11 +13,12 @@
 	import type { SetupGamePort } from './game-port.ts';
 	import RevealDialog from './RevealDialog.svelte';
 	import { seatLabel } from './seat-label.ts';
-	import { tileLabel } from './tile-face.ts';
-	import SetupSteps from './SetupSteps.svelte';
+	import { tileMarks } from './tile-face.ts';
+	import TileMarkFace from './TileMarkFace.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import JoinButton from './JoinButton.svelte';
+	import BagSettings from './BagSettings.svelte';
 	import { remindersHref } from './setup-steps.ts';
 
 	interface Props {
@@ -33,8 +34,18 @@
 	const next = $derived(game ? nextDrawSeat(game) : undefined);
 	// A stray tap mid-draw must not leave the draw (Trevor, 2026-10-16).
 	const inBag = $derived(slots.filter((s) => s.state !== 'drawn').length);
-	// Numbers or letters on the face-down tiles (Storyteller settings).
+	// Numbers, letters, symbols, colours or Random on the face-down tiles (Storyteller
+	// settings). Random is seeded by the game and bag, so it stays put across reloads.
 	const face = $derived(preferences.current.tileFace);
+	const marks = $derived(
+		tileMarks(slots.length, face, `${game?.gameId ?? ''}:${slots[0]?.tileId ?? ''}`)
+	);
+	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
+	// A colour fills the whole token, with ink that reads on it (Trevor, 2026-10-17).
+	function colourOf(number: number) {
+		const mark = marks[number - 1];
+		return mark?.kind === 'colour' ? mark : undefined;
+	}
 
 	let revealing = $state<TileId | undefined>(undefined);
 	let revealOpen = $state(false);
@@ -97,12 +108,11 @@
 
 <main>
 	<header>
-		{#if game}
-			<SetupSteps gameId={game.gameId} current="draw" hasBag={bag !== undefined} />
-		{/if}
 		<div class="title">
 			<h1>{t('setup.draw')}</h1>
-			{#if port.openGame}<JoinButton game={port.openGame} />{/if}
+			<span class="actions"
+				><BagSettings />{#if port.openGame}<JoinButton game={port.openGame} />{/if}</span
+			>
 		</div>
 	</header>
 
@@ -124,15 +134,19 @@
 							disabled={s.state === 'drawn'}
 							aria-label={s.state === 'held'
 								? t('setup.draw.tileHeld', {
-										number: tileLabel(s.number, face),
+										number: markName(s.number),
 										seat: label(s.seatId)
 									})
 								: s.state === 'drawn'
-									? t('setup.draw.tileDrawn', { number: tileLabel(s.number, face) })
-									: t('setup.draw.tile', { number: tileLabel(s.number, face) })}
+									? t('setup.draw.tileDrawn', { number: markName(s.number) })
+									: t('setup.draw.tile', { number: markName(s.number) })}
 							onclick={() => draw(s.tileId, s.state)}
+							style:background={colourOf(s.number)?.colour}
+							style:color={colourOf(s.number)?.ink}
 						>
-							<span class="face" aria-hidden="true">{tileLabel(s.number, face)}</span>
+							<span class="face"
+								>{#if marks[s.number - 1]}<TileMarkFace mark={marks[s.number - 1]} />{/if}</span
+							>
 							<span class="mark"
 								>{#if s.state === 'drawn'}<Icon name="check" />{:else if s.state === 'held'}{t(
 										'setup.draw.held'
@@ -170,7 +184,7 @@
 	{#if shows}
 		<RevealDialog
 			bind:open={revealOpen}
-			number={tileLabel(slot.number, face)}
+			number={markName(slot.number)}
 			{shows}
 			needsAlignment={lookup.get(tile.grimoire)?.type === 'traveller'}
 			seatLabel={label(tile.drawnBySeat)}
@@ -194,6 +208,10 @@
 	h1 {
 		margin: var(--space-2) 0 0;
 		overflow-wrap: anywhere;
+	}
+	.actions {
+		display: flex;
+		gap: var(--space-1);
 	}
 	.title {
 		display: flex;
@@ -260,10 +278,6 @@
 		font-size: 2.25rem;
 		font-weight: 700;
 		line-height: 1;
-	}
-	.face :global(svg) {
-		width: 1.6em;
-		height: 1.6em;
 	}
 	.mark {
 		grid-area: tile;

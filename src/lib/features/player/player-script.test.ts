@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { editionScript } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { groupByType, playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
+import {
+	groupByType,
+	playerJinxes,
+	playerNight,
+	scriptVersion,
+	sheetCharacters
+} from './player-script.ts';
 
 const data = committedGameData();
 const tb = editionScript('tb', data)!;
@@ -46,5 +52,14 @@ describe('player script view', () => {
 		expect(playerJinxes(tb, data)).toEqual([]);
 		const pair = { ...tb, characters: [data.byId.get('spy')!, data.byId.get('heretic')!] };
 		expect(playerJinxes(pair, data)).toHaveLength(1);
+	});
+});
+
+describe('scriptVersion', () => {
+	it('is the BotC Scripts version, and nothing for other sources or a blank version', () => {
+		expect(scriptVersion({ source: { kind: 'botcscripts', version: '1.2' } })).toBe('1.2');
+		expect(scriptVersion({ source: { kind: 'botcscripts', version: '' } })).toBeUndefined();
+		expect(scriptVersion({ source: { kind: 'edition' } })).toBeUndefined();
+		expect(scriptVersion(undefined)).toBeUndefined();
 	});
 });

@@ -1,31 +1,83 @@
+/**
+ * Text colours a Storyteller can give words on a card, separate from bold and italic
+ * (Trevor, 2026-10-16). Each maps to a theme token, so every theme colours it.
+ */
+export const INK_COLORS = ['red', 'blue', 'purple', 'gold', 'green'] as const;
+export type InkColor = (typeof INK_COLORS)[number];
+
+/** The theme token each colour is drawn with. */
+export const INK_TOKENS: Record<InkColor, string> = {
+	red: 'var(--evil)',
+	blue: 'var(--good)',
+	purple: 'var(--traveller)',
+	gold: 'var(--heading)',
+	green: 'var(--leaf)'
+};
+
 /** A run of info-token text with its formatting. */
 export interface TextRun {
 	text: string;
 	bold: boolean;
 	italic: boolean;
+	/** Underlined (Trevor, 2026-10-16), marked `[u]` … `[/u]`. */
+	underline?: boolean;
+	color?: InkColor;
 }
 
-type Piece = { text: string } | { stars: number };
+/** A tag's name: a colour, or `u` for underline. */
+type TagName = InkColor | 'u';
+type Piece = { text: string } | { stars: number } | { open: TagName } | { close: TagName };
 
-/** Text and runs of `*` (a run of 4 is two bold markers; 5 or more is plain text). */
+const TAG = new RegExp(`(\\*+|\\[\\/?(?:${[...INK_COLORS, 'u'].join('|')})\\])`);
+
+/**
+ * Text, runs of `*` (a run of 4 is two bold markers; 5 or more is plain text), colour tags
+ * (`[red]` … `[/red]`) and underline tags (`[u]` … `[/u]`).
+ */
 function lex(source: string): Piece[] {
 	const pieces: Piece[] = [];
-	for (const part of source.split(/(\*+)/)) {
-		if (!part) continue;
-		if (!part.startsWith('*') || part.length > 4) pieces.push({ text: part });
+	// Splitting on one capture group puts the markers and tags at the odd places.
+	source.split(TAG).forEach((part, i) => {
+		if (!part) return;
+		if (i % 2 === 0) pieces.push({ text: part });
+		else if (part.startsWith('[/')) pieces.push({ close: part.slice(2, -1) as TagName });
+		else if (part.startsWith('[')) pieces.push({ open: part.slice(1, -1) as TagName });
+		else if (part.length > 4) pieces.push({ text: part });
 		else if (part.length === 4) pieces.push({ stars: 2 }, { stars: 2 });
 		else pieces.push({ stars: part.length });
-	}
+	});
 	return pieces;
 }
 
 /**
- * Splits custom info-token text on `**bold**` and `*italic*` markers (`***both***`), which
- * the editor writes for the Storyteller (Trevor, 2026-10-16: no typing markers by hand).
- * Rendered as text nodes, never as HTML. A marker without its partner is kept as typed.
+ * Which tags have a partner: an open tag pairs with the next close of its name. Colour and
+ * underline pair separately, so they can overlap.
+ */
+function pairTags(pieces: readonly Piece[]): Set<number> {
+	const paired = new Set<number>();
+	const open: { color?: number; u?: number } = {};
+	const slot = (name: TagName) => (name === 'u' ? 'u' : 'color');
+	pieces.forEach((piece, i) => {
+		if ('open' in piece) open[slot(piece.open)] = i;
+		else if ('close' in piece) {
+			const at = open[slot(piece.close)];
+			if (at === undefined || (pieces[at] as { open: TagName }).open !== piece.close) return;
+			paired.add(at).add(i);
+			open[slot(piece.close)] = undefined;
+		}
+	});
+	return paired;
+}
+
+/**
+ * Splits custom info-token text on `**bold**` and `*italic*` markers (`***both***`) and
+ * `[red]colour[/red]` tags, which the editor writes for the Storyteller (Trevor, 2026-10-16:
+ * no typing markers by hand). Rendered as text nodes, never as HTML. A marker or tag
+ * without its partner is kept as typed.
  */
 export function parseRich(source: string): TextRun[] {
 	const pieces = lex(source);
+	const tagsPaired = pairTags(pieces);
 	// Which of each marker's roles (bold, italic) found a partner.
 	const roles = pieces.map((p) =>
 		'stars' in p
@@ -57,13 +109,37 @@ export function parseRich(source: string): TextRun[] {
 	const runs: TextRun[] = [];
 	let bold = false;
 	let italic = false;
+	let underline = false;
+	let color: InkColor | undefined;
 	const push = (text: string) => {
 		if (!text) return;
 		const last = runs.at(-1);
-		if (last && last.bold === bold && last.italic === italic) last.text += text;
-		else runs.push({ text, bold, italic });
+		if (
+			last &&
+			last.bold === bold &&
+			last.italic === italic &&
+			!!last.underline === underline &&
+			last.color === color
+		)
+			last.text += text;
+		else
+			runs.push({
+				text,
+				bold,
+				italic,
+				...(underline ? { underline } : {}),
+				...(color ? { color } : {})
+			});
 	};
 	pieces.forEach((piece, i) => {
+		if ('open' in piece || 'close' in piece) {
+			if (!tagsPaired.has(i))
+				return push('open' in piece ? `[${piece.open}]` : `[/${piece.close}]`);
+			const name = 'open' in piece ? piece.open : piece.close;
+			if (name === 'u') underline = 'open' in piece;
+			else color = 'open' in piece ? name : undefined;
+			return;
+		}
 		const role = roles[i];
 		if (!role) return push((piece as { text: string }).text);
 		// Unpartnered markers stay as typed, as plain characters of the current style.
@@ -77,12 +153,15 @@ export function parseRich(source: string): TextRun[] {
 /** Writes runs back as text with markers, the form custom info tokens are stored in. */
 export function toSource(runs: readonly TextRun[]): string {
 	return runs
-		.map(({ text, bold, italic }) => {
+		.map(({ text, bold, italic, underline, color }) => {
 			if (!text.trim()) return text;
 			const mark = (bold ? '**' : '') + (italic ? '*' : '');
 			// Markers hug the words; spaces at the edges stay outside them.
 			const [, lead, body, trail] = /^(\s*)(.*?)(\s*)$/s.exec(text)!;
-			return `${lead}${mark}${body}${mark.split('').reverse().join('')}${trail}`;
+			let marked = `${mark}${body}${mark.split('').reverse().join('')}`;
+			if (underline) marked = `[u]${marked}[/u]`;
+			if (color) marked = `[${color}]${marked}[/${color}]`;
+			return `${lead}${marked}${trail}`;
 		})
 		.join('');
 }
@@ -92,4 +171,16 @@ export function plainText(source: string): string {
 	return parseRich(source)
 		.map((run) => run.text)
 		.join('');
+}
+
+/**
+ * Version 1 cards drew `**bold**` as red text, not heavier type (Trevor, 2026-10-16), so
+ * they become red text and keep their look; italic stays italic.
+ */
+export function boldToRed(source: string): string {
+	return toSource(
+		parseRich(source).map((run) =>
+			run.bold ? { ...run, bold: false, color: run.color ?? 'red' } : run
+		)
+	);
 }

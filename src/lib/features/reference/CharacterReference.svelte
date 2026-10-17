@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Character } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -62,15 +63,17 @@
 	<label class="search">
 		<span class="visually-hidden">{t('reference.searchLabel')}</span>
 		<Icon name="search" />
-		<input
-			type="search"
-			placeholder={t('reference.searchPlaceholder')}
-			autocomplete="off"
-			aria-keyshortcuts="/"
-			bind:this={searchInput}
-			bind:value={search}
-			onkeydown={onSearchKey}
-		/>
+		<ClearableField bind:value={search}>
+			<input
+				type="search"
+				placeholder={t('reference.searchPlaceholder')}
+				autocomplete="off"
+				aria-keyshortcuts="/"
+				bind:this={searchInput}
+				bind:value={search}
+				onkeydown={onSearchKey}
+			/>
+		</ClearableField>
 	</label>
 	{#if view === 'cards'}
 		<p class="count" aria-live="polite">

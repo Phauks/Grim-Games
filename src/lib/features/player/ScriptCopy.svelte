@@ -3,6 +3,7 @@
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { playerJinxes, sheetCharacters } from './player-script.ts';
+	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
 
 	/**
@@ -14,9 +15,13 @@
 		script: LoadedScript;
 		/** Seats at the table; highlights that column of the Players breakdown. */
 		players?: number;
+		/** The script's version, when its source has one (BotC Scripts). */
+		version?: string;
+		/** False where the page already shows the author and version (the /play header). */
+		byline?: boolean;
 	}
 
-	let { script, players }: Props = $props();
+	let { script, players, version, byline = true }: Props = $props();
 
 	$effect(() => {
 		if (!officialData.current) void loadOfficialData();
@@ -27,6 +32,7 @@
 </script>
 
 {#if data}
+	{#if byline}<ScriptByline author={script.meta.author} {version} />{/if}
 	<ScriptSheet {characters} {jinxes} {players} />
 {:else}
 	<p class="muted">{t('player.loading')}</p>

@@ -58,7 +58,7 @@ test('with rules term underlines off the terms are plain text', async ({ page })
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Rules terms' })
+		.getByRole('button', { name: 'Theme and text' })
 		.tap();
 	const label = 'Underline rules terms with glossary definitions';
 	const explain = settings.getByRole('checkbox', { name: label, includeHidden: true });
@@ -196,6 +196,8 @@ test('Open Glossary shows every entry beside the tapped one, searchable, with th
 
 	const phone = testInfo.project.name === 'phone';
 	const list = glossary.getByRole('navigation', { name: 'Glossary entries' });
+	// The entries, not the search field's Clear.
+	const entries = list.getByRole('button', { name: /^(?!Clear$)/ });
 	if (phone) {
 		// On a phone the entry covers the list; Back shows the list.
 		await expect(list).toBeHidden();
@@ -203,9 +205,9 @@ test('Open Glossary shows every entry beside the tapped one, searchable, with th
 	}
 	await expect(list).toBeVisible();
 	// Every entry, alphabetical.
-	await expect(list.getByRole('button')).toHaveText(['Alive', 'Dead', 'Healthy', 'Poisoned']);
+	await expect(entries).toHaveText(['Alive', 'Dead', 'Healthy', 'Poisoned']);
 	await list.getByRole('searchbox', { name: 'Search the Glossary' }).fill('ali');
-	await expect(list.getByRole('button')).toHaveText(['Alive']);
+	await expect(entries).toHaveText(['Alive']);
 	await list.getByRole('button', { name: 'Alive' }).tap();
 	await expect(entry.getByTestId('wiki-definition')).toHaveText(
 		'Sample wording for alive, unlike a dead player.'

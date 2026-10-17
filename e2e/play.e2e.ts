@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 
 test('the player view is a reading page, with no Storyteller controls', async ({ page }) => {
 	// Script, night order and notes only (Trevor, 2026-10-16: "nothing close to ... controls").
-	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Notes']);
+	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Notes', 'Practice']);
 	await expect(page.getByTestId('seat-ring')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
@@ -228,6 +228,7 @@ test('a shared /play link opens its script, and the script can be shared on', as
 	];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await expect(page.getByRole('heading', { name: 'Pass The Phone', level: 1 })).toBeVisible();
+	await expect(page.getByTestId('script-byline')).toHaveText('by Trevor');
 	await expect(page.locator('[data-character]')).toHaveCount(3);
 	// The hash is cleared once the script is loaded.
 	await expect(page).toHaveURL(/\/play$/);
@@ -244,11 +245,14 @@ test('the header shares the script from an icon and has no Code button', async (
 	const shared = [{ id: '_meta', name: 'Code Night' }, 'chef', 'empath', 'imp'];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await expect(page.getByRole('heading', { name: 'Code Night', level: 1 })).toBeVisible();
+	// No author in the script: the byline is left out, not "None" (Trevor, 2026-10-17).
+	await expect(page.getByTestId('script-byline')).toHaveCount(0);
 	// Players are already in a script, so there is no code to enter here (Trevor, 2026-10-16).
 	await expect(page.getByRole('button', { name: 'Code', exact: true })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
-	await expect(qr.getByTestId('share-digits')).toHaveText(/^\d{3} \d{3}$/);
+	await expect(qr.getByTestId('share-url')).toHaveValue(/\/play#c=\d{6}$/);
+	await expect(qr.getByTestId('share-digits')).toHaveCount(0);
 });
 
 test('a shared link with problems opens the Script check first', async ({ page }) => {
@@ -311,4 +315,81 @@ test('Enter in a note title closes the keyboard', async ({ page }) => {
 	await text.press('Enter');
 	await text.pressSequentially('two');
 	await expect(text).toHaveValue('one\ntwo');
+});
+
+test('a jinxed character shows its partners beside its name, and tapping shows the jinx', async ({
+	page
+}) => {
+	const shared = [{ id: '_meta', name: 'Jinx Night' }, 'alchemist', 'chef', 'marionette', 'imp'];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	await expect(page.getByRole('heading', { name: 'Jinx Night', level: 1 })).toBeVisible();
+	// TPI jinx: Alchemist and Marionette (wiki: Djinn's Jinxes list).
+	const mark = page.locator('[data-character="alchemist"] [data-testid="jinx-mark"]');
+	await expect(mark).toHaveAccessibleName('Jinxed with Marionette');
+	await expect(page.locator('[data-character="chef"] [data-testid="jinx-mark"]')).toHaveCount(0);
+	await mark.tap();
+	const dialog = page.getByRole('dialog', { name: 'Jinxes' });
+	await expect(dialog).toContainText('Marionette ability');
+});
+
+test('the Script sheet can be made compact from Settings', async ({ page }) => {
+	await expect(page.locator('[data-density="normal"]')).toBeVisible();
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Player view' })
+		.tap();
+	await settings.getByText('Super-compact', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.locator('[data-density="super"]')).toBeVisible();
+	await page.reload();
+	await expect(page.locator('[data-density="super"]')).toBeVisible();
+	const overflow = await page.evaluate(
+		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+	);
+	expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('Print script prints the sheet, then the night order and player counts', async ({ page }) => {
+	await page.evaluate(() => {
+		window.print = () => {
+			const sheet = document.querySelector('[data-testid="print-sheet"]');
+			(window as unknown as { printed: string }).printed = sheet?.textContent ?? '';
+		};
+	});
+	await page.getByRole('button', { name: 'Print script' }).tap();
+	await expect
+		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed))
+		.toContain('First night');
+	const printed = await page.evaluate(() => (window as unknown as { printed: string }).printed);
+	expect(printed).toContain('Washerwoman');
+	expect(printed).toContain('Other nights');
+	// The page itself is unchanged.
+	await expect(page.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
+});
+
+test('Practice shows a character, reveals its ability, and remembers what is known', async ({
+	page
+}) => {
+	await page.getByRole('tab', { name: 'Practice' }).tap();
+	await expect(page.getByTestId('practice-count')).toHaveText('Known: 0 of 27');
+	const card = page.getByTestId('practice-card');
+	const first = await card.getAttribute('data-character');
+	await page.getByRole('button', { name: 'Show ability' }).tap();
+	// TPI's ability text, nothing else.
+	await expect(page.getByTestId('practice-answer')).not.toBeEmpty();
+	await page.getByRole('button', { name: 'Knew it' }).tap();
+	await expect(page.getByTestId('practice-count')).toHaveText('Known: 1 of 27');
+	await expect(card).not.toHaveAttribute('data-character', first!);
+
+	await page.reload();
+	await page.getByRole('tab', { name: 'Practice' }).tap();
+	await expect(page.getByTestId('practice-count')).toHaveText('Known: 1 of 27');
+	await page.getByRole('button', { name: 'Start over' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Start practice over?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(page.getByTestId('practice-count')).toHaveText('Known: 0 of 27');
 });

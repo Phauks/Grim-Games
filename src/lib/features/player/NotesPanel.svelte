@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import type { ScratchStroke } from '#lib/core/scratch/scratch.ts';
-	import ScratchPreview from '#lib/ui/scratch/ScratchPreview.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import ScratchActions from '#lib/ui/scratch/ScratchActions.svelte';
+	import ScratchPad from '#lib/ui/scratch/ScratchPad.svelte';
+	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import type { PlayerNote } from './notebook.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 
 	interface Props {
 		notes: readonly PlayerNote[];
-		/** The handwriting scratch pad, shown small; tapping it opens the pad. */
-		scratch: readonly ScratchStroke[];
+		/** The handwriting scratch pad, drawn on right here; undefined while it loads. */
+		scratch: ScratchPadState | undefined;
 		onAdd: () => void;
 		onOpenNote: (noteId: string) => void;
 		onOpenScratch: () => void;
@@ -53,22 +55,32 @@
 		{/if}
 	</section>
 
-	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16). -->
+	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16): a big page to write on
+	     here, or the whole screen (Trevor, 2026-10-17). -->
 	<section aria-labelledby="scratch-pad">
-		<h2 id="scratch-pad">{t('scratch.title')}</h2>
-		<button
-			type="button"
-			class="scratch"
-			data-testid="open-scratch-pad"
-			aria-label={t('scratch.open')}
-			onclick={onOpenScratch}
-		>
+		<div class="head">
+			<h2 id="scratch-pad">{t('scratch.title')}</h2>
+			<span class="actions">
+				{#if scratch && !hidden}<ScratchActions pad={scratch} />{/if}
+				<IconButton
+					icon="fullScreen"
+					label={t('scratch.open')}
+					data-testid="open-scratch-pad"
+					disabled={!scratch}
+					onclick={onOpenScratch}
+				/>
+			</span>
+		</div>
+		<!-- The same space whether loading, hidden or drawn on, so nothing below moves. -->
+		<div class="scratch">
 			{#if hidden}
-				<span class="preview" data-hidden>{t('player.hidden')}</span>
-			{:else}
-				<ScratchPreview strokes={scratch} />
+				<button type="button" class="hidden" onclick={onOpenScratch}>
+					<span class="preview" data-hidden>{t('player.hidden')}</span>
+				</button>
+			{:else if scratch}
+				<ScratchPad pad={scratch} />
 			{/if}
-		</button>
+		</div>
 	</section>
 </div>
 
@@ -94,9 +106,9 @@
 		font-size: 1.1rem;
 		color: var(--heading);
 	}
-	#scratch-pad {
-		border-bottom: 1px solid var(--border);
-		padding-bottom: var(--space-1);
+	.actions {
+		display: flex;
+		align-items: center;
 	}
 	ul {
 		display: grid;
@@ -141,22 +153,23 @@
 	.preview[data-hidden] {
 		font-style: italic;
 	}
-	/* A fixed-size page, so drawing on it never moves anything below. */
+	/* Most of the screen, so it writes like a pad of paper (Trevor, 2026-10-17). */
 	.scratch {
+		display: flex;
+		flex-direction: column;
+		height: 80dvh;
+	}
+	.hidden {
+		flex: 1;
 		display: grid;
 		place-items: center;
-		width: calc(9 * var(--u));
-		aspect-ratio: 3 / 4;
-		padding: 0;
-		border: 0;
-		border-radius: var(--radius-sm);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
 		background: var(--surface-raised);
 		color: var(--on-surface);
+		font: inherit;
 		cursor: pointer;
 		touch-action: manipulation;
-	}
-	.scratch :global(canvas) {
-		width: 100%;
 	}
 	.none {
 		margin: 0;

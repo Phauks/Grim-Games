@@ -20,7 +20,6 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 }, testInfo) => {
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	await page.getByRole('button', { name: 'Open a room' }).tap();
 	const code = (await page.getByTestId('room-code').textContent())!.replace(/\s/g, '');
 	expect(code).toMatch(/^\d{6}$/);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -64,7 +63,6 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	// A game with no characters assigned yet: the room can open while the game is in setup.
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	await page.getByRole('button', { name: 'Open a room' }).tap();
 	const code = (await page.getByTestId('room-code').textContent())!.replace(/\s/g, '');
 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
@@ -78,6 +76,33 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	await expect(phone).toHaveURL(/\/play$/);
 	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 	await phoneContext.close();
+});
+
+test('Share and Copy link carry the room code as well as the link', async ({ page, context }) => {
+	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+	await page.addInitScript(() => {
+		const w = window as unknown as { shared?: ShareData };
+		Object.defineProperty(navigator, 'share', {
+			configurable: true,
+			value: async (data: ShareData) => void (w.shared = data)
+		});
+	});
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	const code = (await page.getByTestId('room-code').textContent())!.replace(/\D/g, '');
+	expect(code).toMatch(/^\d{6}$/);
+	const spaced = `${code.slice(0, 3)} ${code.slice(3)}`;
+	const link = new RegExp(`/join/${code}$`);
+
+	await page.getByRole('button', { name: 'Share' }).tap();
+	const shared = await page.evaluate(() => (window as unknown as { shared: ShareData }).shared);
+	expect(shared.text).toContain(spaced);
+	expect(shared.url).toMatch(link);
+
+	await page.getByRole('button', { name: 'Copy link' }).tap();
+	const copied = await page.evaluate(() => navigator.clipboard.readText());
+	expect(copied).toContain(spaced);
+	expect(copied.split('\n').at(-1)).toMatch(link);
 });
 
 test('a phone can type a code, and wrong codes say so', async ({ page }) => {
@@ -102,7 +127,6 @@ test('the Worker refuses bad room requests', async ({ request }) => {
 test('a room tells an app too old for it to update', async ({ page, browser }, testInfo) => {
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	await page.getByRole('button', { name: 'Open a room' }).tap();
 	const code = (await page.getByTestId('room-code').textContent())!.replace(/\D/g, '');
 
 	// The real Worker turns away a hello in a protocol older than it accepts.

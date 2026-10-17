@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { characterLookup, type Game, type Seat } from '#lib/core/model/index.ts';
+import { createGame, dispatch } from '#lib/core/engine/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	causeLabel,
 	isOrphan,
 	placingAlignment,
 	recommendedTravellers,
+	reminderFitWarning,
+	seatMisses,
 	pickerGroups,
 	tableCheck
 } from './board.ts';
@@ -121,5 +124,40 @@ describe('tableCheck', () => {
 		const check = tableCheck(table(five), characters, { kind: 'remove-character', seatId: 's0' });
 		expect(check.players).toEqual({ before: 5, after: 5 });
 		expect(check.problems.length).toBeGreaterThan(0);
+	});
+});
+
+describe('reminderFitWarning', () => {
+	// https://wiki.bloodontheclocktower.com/Washerwoman : the "Townsfolk" token marks a
+	// Townsfolk; on the Poisoner it is placed anyway, with a warning.
+	it('warns when a reminder goes on a seat it does not fit, and is quiet when it fits', () => {
+		let n = 0;
+		const ctx = { characters, newId: () => `id${++n}`, now: () => 0, random: () => 0 };
+		let session = createGame({ type: 'CreateGame', script: tb, playerCount: 5 }, ctx);
+		if (!session.ok) throw new Error();
+		const [a, b] = session.session.game.seating;
+		for (const [seatId, characterId] of [
+			[a, 'poisoner'],
+			[b, 'chef']
+		] as const) {
+			session = dispatch(session.session, { type: 'AssignCharacter', seatId, characterId }, ctx);
+			if (!session.ok) throw new Error();
+		}
+		const g = session.session.game;
+		const townsfolk = { characterId: 'washerwoman', label: 'Townsfolk' };
+		expect(reminderFitWarning(g, townsfolk, a, characters)).toMatch(/character type/);
+		expect(reminderFitWarning(g, townsfolk, b, characters)).toBeUndefined();
+	});
+});
+
+describe('seatMisses', () => {
+	it('does not judge a seat with no character on its character type', () => {
+		let n = 0;
+		const ctx = { characters, newId: () => `id${++n}`, now: () => 0, random: () => 0 };
+		const created = createGame({ type: 'CreateGame', script: tb, playerCount: 5 }, ctx);
+		if (!created.ok) throw new Error();
+		const g = created.session.game;
+		const townsfolk = { characterId: 'washerwoman', label: 'Townsfolk' };
+		expect(seatMisses(g, townsfolk, g.seating[0], characters)).toEqual([]);
 	});
 });

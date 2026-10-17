@@ -19,7 +19,12 @@ import {
 	scriptPageUrl,
 	editionFilter,
 	readCharacterEditions,
-	type BotcEditionGroup
+	type BotcEditionGroup,
+	compareVersions,
+	parseVersionsPath,
+	readProxiedVersionList,
+	readVersionList,
+	versionsPath
 } from './botcscripts-api.ts';
 
 /** A small stand-in for the site's `/api/characters`: two base, two Kickstarter, one Carousel. */
@@ -336,5 +341,49 @@ describe('search', () => {
 		expect(readProxiedSearchPage(page)).toEqual(page);
 		expect(readSearchPage({ results: [], next: null }, 4)?.hasMore).toBe(false);
 		expect(readSearchPage({ detail: 'Invalid page.' }, 9)).toBeUndefined();
+	});
+});
+
+describe('BotC Scripts versions', () => {
+	it('orders version labels by number, newest first', () => {
+		expect(['1.9.2', '1.10.0', '1.2', '2.0.0'].sort((a, b) => compareVersions(b, a))).toEqual([
+			'2.0.0',
+			'1.10.0',
+			'1.9.2',
+			'1.2'
+		]);
+		expect(compareVersions('1.0.0', '1.0.0')).toBe(0);
+	});
+
+	it('reads every version the site lists, and which is latest', () => {
+		const json = {
+			pk: 42,
+			versions: {
+				'1.0.0': 'http://botcscripts.com/api/scripts/100/',
+				'1.10.0': 'http://botcscripts.com/api/scripts/300/',
+				'1.2.0': 'http://botcscripts.com/api/scripts/200/',
+				'bad/one': 'http://botcscripts.com/api/scripts/400/'
+			},
+			latest_version: 'http://botcscripts.com/api/scripts/300/'
+		};
+		expect(readVersionList(42, json)).toEqual({
+			scriptId: 42,
+			latest: '1.10.0',
+			versions: ['1.10.0', '1.2.0', '1.0.0']
+		});
+		expect(readVersionList(42, { pk: 42 })).toBeUndefined();
+		expect(
+			readProxiedVersionList({ scriptId: 42, latest: '1.10.0', versions: ['1.10.0', 3] })
+		).toEqual({
+			scriptId: 42,
+			latest: '1.10.0',
+			versions: ['1.10.0']
+		});
+	});
+
+	it('routes a version list by path only', () => {
+		expect(versionsPath(42)).toBe('/api/botcscripts/versions/42');
+		expect(parseVersionsPath('/api/botcscripts/versions/42')).toBe(42);
+		expect(parseVersionsPath('/api/botcscripts/versions/x')).toBeUndefined();
 	});
 });

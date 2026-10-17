@@ -94,3 +94,8 @@ export function playerNight(
 	}
 	return { night, entries };
 }
+
+/** The version of a saved script, when its source records one (a BotC Scripts page). */
+export function scriptVersion(saved: { source: { kind: string; version?: string } } | undefined) {
+	return saved?.source.kind === 'botcscripts' ? saved.source.version || undefined : undefined;
+}

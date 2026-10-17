@@ -1,0 +1,84 @@
+/**
+ * The script being built, kept on this device so leaving the page loses nothing. Versioned,
+ * because a newer build can read a draft an older one wrote (CLAUDE.md).
+ */
+import type { HomebrewEntries, HomebrewEntry } from '#lib/core/rules/script-builder.ts';
+import type { CharacterId } from '#lib/core/data/types.ts';
+
+/** 2: homebrew characters and their credits (2026-10-17). */
+export const DRAFT_VERSION = 2;
+
+/** Who made a homebrew character, and its page on the site it came from. */
+export interface DraftCredit {
+	creator: string;
+	url: string;
+}
+
+export interface ScriptDraft {
+	version: typeof DRAFT_VERSION;
+	name: string;
+	author: string;
+	/** Chosen characters, in the order they were chosen (saving sorts them). */
+	ids: CharacterId[];
+	/** Definitions of the chosen homebrew characters, by id, as their source wrote them. */
+	homebrew: Record<CharacterId, HomebrewEntry>;
+	credits: Record<CharacterId, DraftCredit>;
+	/** The saved script this draft edits; saving replaces it. */
+	editing?: string;
+}
+
+export function emptyDraft(): ScriptDraft {
+	return { version: DRAFT_VERSION, name: '', author: '', ids: [], homebrew: {}, credits: {} };
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+const text = (value: unknown) => (typeof value === 'string' ? value : '');
+
+function readHomebrew(raw: unknown): Record<CharacterId, HomebrewEntry> {
+	if (!isObject(raw)) return {};
+	return Object.fromEntries(
+		Object.entries(raw).flatMap(([id, entry]) => (isObject(entry) ? [[id, entry]] : []))
+	);
+}
+
+function readCredits(raw: unknown): Record<CharacterId, DraftCredit> {
+	if (!isObject(raw)) return {};
+	return Object.fromEntries(
+		Object.entries(raw).flatMap(([id, c]) =>
+			isObject(c) ? [[id, { creator: text(c.creator), url: text(c.url) }]] : []
+		)
+	);
+}
+
+/**
+ * A stored draft brought up to this version (1 had official characters only), or an empty
+ * one when it is missing, damaged or from a newer build.
+ */
+export function parseDraft(raw: unknown): ScriptDraft {
+	if (!isObject(raw)) return emptyDraft();
+	if (raw.version !== 1 && raw.version !== DRAFT_VERSION) return emptyDraft();
+	const ids = Array.isArray(raw.ids) ? raw.ids.filter((id) => typeof id === 'string') : [];
+	return {
+		version: DRAFT_VERSION,
+		name: text(raw.name),
+		author: text(raw.author),
+		ids: [...new Set(ids)],
+		homebrew: readHomebrew(raw.homebrew),
+		credits: readCredits(raw.credits),
+		...(typeof raw.editing === 'string' ? { editing: raw.editing } : {})
+	};
+}
+
+export function isEmptyDraft(draft: ScriptDraft): boolean {
+	return draft.ids.length === 0 && !draft.name.trim() && !draft.author.trim();
+}
+
+/** The homebrew definitions of the chosen characters only. */
+export function chosenHomebrew(draft: ScriptDraft): HomebrewEntries {
+	return Object.fromEntries(
+		draft.ids.flatMap((id) => (Object.hasOwn(draft.homebrew, id) ? [[id, draft.homebrew[id]]] : []))
+	);
+}

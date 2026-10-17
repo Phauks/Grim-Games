@@ -9,6 +9,7 @@
 		dayReminders,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
+		livingByTeam,
 		preventedDeaths,
 		type PreventedBecause,
 		type Night,
@@ -33,6 +34,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import DayTimer from './DayTimer.svelte';
 	import type { DayPort } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
 
@@ -86,6 +88,8 @@
 	const NO_ABILITY = 'No Ability';
 	// The texts hold slots (slots.ts): `character` and `reminder` show as badges.
 	interface Pending {
+		/** The dialog's own title (its action). */
+		action: string;
 		title: string;
 		now: string;
 		after: string;
@@ -108,6 +112,7 @@
 		const who = t('day.who', { character: slot('character'), seat: game.seatName(seatId) });
 		const token = game.characters.get(characterId)?.reminders.includes(NO_ABILITY);
 		ask({
+			action: t('day.markUsed'),
 			title: t('day.markUsedTitle', { who }),
 			now: t('day.markUsedNow', { who }),
 			after: token
@@ -121,8 +126,26 @@
 	/**
 	 * Unmarks a used ability (Trevor: "need to be able to undo something being marked as
 	 * used"): removes today's use, which also takes back the No Ability reminder it placed,
-	 * or else the No Ability reminder itself. No confirm: nothing is lost, and History has it.
+	 * or else the No Ability reminder itself. Confirmed like marking it (Trevor, 2026-10-17:
+	 * "require confirmation on the undoing").
 	 */
+	function askUnmarkUsed(seatId: SeatId, characterId: CharacterId) {
+		const who = t('day.who', { character: slot('character'), seat: game.seatName(seatId) });
+		const token = g.seats[seatId].reminders.find(
+			(r) => r.characterId === characterId && r.label === NO_ABILITY
+		);
+		ask({
+			action: t('day.unmarkUsed'),
+			title: t('day.unmarkUsedTitle', { who }),
+			now: token
+				? t('day.unmarkUsedNowToken', { who, reminder: slot('reminder') })
+				: t('day.markUsedAfter', { who }),
+			after: t('day.markUsedNow', { who }),
+			characterId,
+			run: () => unmarkUsed(seatId, characterId)
+		});
+	}
+
 	function unmarkUsed(seatId: SeatId, characterId: CharacterId) {
 		const entry = g.today.entries.findLast(
 			(e) => e.kind === 'ability' && e.seatId === seatId && e.characterId === characterId
@@ -132,7 +155,7 @@
 			return;
 		}
 		const token = g.seats[seatId].reminders.find(
-			(r) => r.characterId === characterId && r.label === 'No Ability'
+			(r) => r.characterId === characterId && r.label === NO_ABILITY
 		);
 		if (token) game.run({ type: 'RemoveReminder', reminderId: token.reminderId });
 	}
@@ -263,6 +286,8 @@
 
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g));
+	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
+	const teams = $derived(livingByTeam(g));
 
 	/**
 	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
@@ -298,7 +323,7 @@
 				class="chip"
 				aria-pressed={isUsed}
 				aria-label={t('day.usedLabel', { who })}
-				onclick={() => (isUsed ? unmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
+				onclick={() => (isUsed ? askUnmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
 			>
 				<span class="tick"><Icon name="check" /></span>{t('day.used')}
 			</button>
@@ -318,7 +343,9 @@
 {/snippet}
 
 <div class="panel">
-	<div class="toolbar">
+	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
+	<div class="toolbar" data-testid="day-toolbar">
+		<DayTimer alive={block.alive} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
@@ -327,6 +354,20 @@
 			from who is alive now, so a death mid-day updates it. Nominations and votes are not
 			tracked, so "more than the player on the block" is left to the Storyteller.
 		-->
+		<span
+			class="badge alive"
+			role="note"
+			data-testid="alive-count"
+			aria-label={t('day.aliveLabel', { count: teams.alive, good: teams.good, evil: teams.evil })}
+			title={t('day.aliveLabel', { count: teams.alive, good: teams.good, evil: teams.evil })}
+			>{t('day.aliveBadge', { count: teams.alive })}</span
+		>
+		<span class="badge good" data-testid="alive-good" aria-hidden="true"
+			>{t('day.goodBadge', { count: teams.good })}</span
+		>
+		<span class="badge evil" data-testid="alive-evil" aria-hidden="true"
+			>{t('day.evilBadge', { count: teams.evil })}</span
+		>
 		<span
 			class="votes"
 			role="note"
@@ -431,41 +472,40 @@
 	</Collapsible>
 
 	{#if assistance.preDayReminders}
-		<Collapsible title={t('day.today')} storageKey="day.today">
-			{#each reminders.groups as group (group.group)}
-				<Collapsible title={group.title} level={3} storageKey={`day.group.${group.group}`}>
-					<ul class="reminders">
-						{#each group.reminders as reminder (reminder.key)}
-							{@const explained = explainBlock(
-								reminder.segments.map((s) => (s.kind === 'text' ? s.text : ''))
-							)}
-							<li data-character={reminder.characterId}>
-								<span class="sentence">
-									{#each reminder.segments as segment, i (i)}
-										{#if segment.kind === 'character'}
-											<CharacterBadge
-												characterId={segment.ref.characterId}
-												alignment={segment.ref.seatId
-													? g.seats[segment.ref.seatId]?.alignment
-													: undefined}
-												playerName={segment.ref.playerName}
-											/>
-										{:else if segment.kind === 'value'}
-											<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
-											<span>({segment.value ?? segment.placeholder})</span>
-										{:else}
-											<span><GlossaryText segments={explained[i] ?? []} /></span>
-										{/if}
-									{/each}
-								</span>
-								{@render ability(reminder.characterId)}
-								{@render actions(reminder.characterId, seatOf(reminder))}
-							</li>
-						{/each}
-					</ul>
-				</Collapsible>
-			{/each}
-		</Collapsible>
+		<!-- Each group is its own section; no "Today" wrapper (Trevor, 2026-10-17). -->
+		{#each reminders.groups as group (group.group)}
+			<Collapsible title={group.title} storageKey={`day.group.${group.group}`}>
+				<ul class="reminders">
+					{#each group.reminders as reminder (reminder.key)}
+						{@const explained = explainBlock(
+							reminder.segments.map((s) => (s.kind === 'text' ? s.text : ''))
+						)}
+						<li data-character={reminder.characterId}>
+							<span class="sentence">
+								{#each reminder.segments as segment, i (i)}
+									{#if segment.kind === 'character'}
+										<CharacterBadge
+											characterId={segment.ref.characterId}
+											alignment={segment.ref.seatId
+												? g.seats[segment.ref.seatId]?.alignment
+												: undefined}
+											playerName={segment.ref.playerName}
+										/>
+									{:else if segment.kind === 'value'}
+										<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
+										<span>({segment.value ?? segment.placeholder})</span>
+									{:else}
+										<span><GlossaryText segments={explained[i] ?? []} /></span>
+									{/if}
+								{/each}
+							</span>
+							{@render ability(reminder.characterId)}
+							{@render actions(reminder.characterId, seatOf(reminder))}
+						</li>
+					{/each}
+				</ul>
+			</Collapsible>
+		{/each}
 	{:else}
 		<Collapsible title={t('day.abilitiesAndNotes')} storageKey="day.abilities">
 			<ul class="reminders">
@@ -548,7 +588,6 @@
 	title={causeSeatDead
 		? t('day.markAliveTitle', { name: game.seatName(causeSeat) })
 		: t('day.howDied', { name: game.seatName(causeSeat) })}
-	description={causeSeatDead ? t('day.markAliveState') : t('day.howDiedState')}
 >
 	<div class="causes">
 		{#if causeSeatDead}
@@ -559,7 +598,8 @@
 				<Button onclick={() => markDead(option.cause)}>
 					<Sentence text={causeLabel(option.cause)}
 						>{#snippet fill()}{@render badge(option.cause, false)}{/snippet}</Sentence
-					>{#if caution}<span class="caution"
+					>{#if option.gained}<span class="gained">({@render badge(option.gained, false)})</span
+						>{/if}{#if caution}<span class="caution"
 							>(<Sentence text={caution.text}
 								>{#snippet fill()}{@render badge(caution.characterId, false)}{/snippet}</Sentence
 							>)</span
@@ -586,7 +626,7 @@
 			type={pending ? game.characters.get(pending.characterId)?.type : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
 
-<ConfirmDialog bind:open={pendingOpen} title={t('day.markUsed')} onConfirm={confirmPending}>
+<ConfirmDialog bind:open={pendingOpen} title={pending?.action ?? ''} onConfirm={confirmPending}>
 	{#snippet heading()}
 		<Sentence text={pending?.title ?? ''} fill={pendingSlot} />
 	{/snippet}
@@ -612,9 +652,15 @@
 		gap: var(--space-5);
 	}
 	.toolbar {
+		position: sticky;
+		top: 0;
+		z-index: 1;
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		gap: var(--space-2);
+		padding-block: var(--space-1);
+		background: var(--dialog-background, var(--surface));
 	}
 	.prompt {
 		margin: 0;
@@ -782,6 +828,23 @@
 		border-color: var(--heading);
 	}
 	/* Fixed width (room for "10 votes"), so the number changing never moves anything. */
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+	/* Team colour on the border only: the text stays readable on a phone (Trevor). */
+	.badge.good {
+		border-color: var(--good);
+	}
+	.badge.evil {
+		border-color: var(--evil);
+	}
 	.votes {
 		display: inline-flex;
 		align-items: center;
@@ -821,6 +884,7 @@
 		margin-right: var(--space-2);
 		font-weight: 700;
 	}
+	.gained,
 	.caution {
 		margin-left: var(--space-1);
 		color: var(--on-surface-muted);

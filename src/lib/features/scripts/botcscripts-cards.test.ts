@@ -31,6 +31,14 @@ describe('BotC Scripts cards', () => {
 		expect(card.homebrew).toBe(false);
 	});
 
+	it('lists a character once when the script repeats it or spells its id two ways', () => {
+		const card = botcCard([{ id: 'fortuneteller' }, { id: 'fortune_teller' }, { id: 'imp' }], data);
+		expect(card.groups.flatMap((g) => g.characters.map((c) => c.id))).toEqual([
+			'fortuneteller',
+			'imp'
+		]);
+	});
+
 	it('uses a homebrew character’s own name and team, and marks the script', () => {
 		const card = botcCard(
 			[{ id: 'stormwarden', name: 'Storm Warden', team: 'townsfolk' }, { id: 'mystery' }],

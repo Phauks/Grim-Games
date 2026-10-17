@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/index.ts';
-import type { SetupReminder } from '#lib/core/rules/index.ts';
+import { setupReminders, type SetupReminder } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { pendingTray, trayItems, traySeats } from './setup-tray.ts';
 
@@ -25,20 +25,6 @@ function suggestion(characterId: string, label: string, extra: Partial<SetupRemi
 	} as SetupReminder;
 }
 
-function game(placed: { characterId: string; label: string }[] = []) {
-	let result = createGame({ type: 'CreateGame', script, playerCount: 5 }, ctx);
-	if (!result.ok) throw new Error();
-	for (const reminder of placed) {
-		result = dispatch(
-			result.session,
-			{ type: 'AddReminder', seatId: result.session.game.seating[0], reminder },
-			ctx
-		);
-		if (!result.ok) throw new Error();
-	}
-	return result.session.game;
-}
-
 // The Washerwoman's setup tokens (https://wiki.bloodontheclocktower.com/Washerwoman):
 // one Townsfolk and one Wrong on two players.
 const washer = [suggestion('washerwoman', 'Townsfolk'), suggestion('washerwoman', 'Wrong')];
@@ -48,14 +34,46 @@ describe('setup tray', () => {
 		const items = trayItems([suggestion('x', 'A'), suggestion('x', 'A')]);
 		expect(items.map((i) => i.key)).toEqual(['x:A:0', 'x:A:1']);
 	});
-	it('drops suggestions already placed on the board, however they got there', () => {
-		const items = trayItems(washer);
-		const pending = pendingTray(items, game([{ characterId: 'washerwoman', label: 'Wrong' }]), []);
-		expect(pending.map((i) => i.suggestion.label)).toEqual(['Townsfolk']);
+	it('keeps the second copy of a token once the first is placed', () => {
+		// The No Dashii poisons both Townsfolk neighbours, so it has two Poisoned tokens
+		// (https://wiki.bloodontheclocktower.com/No_Dashii).
+		const snv = toScript(editionScript('snv', data)!);
+		const lookup = characterLookup(data, snv);
+		const local: EngineContext = { ...ctx, characters: lookup };
+		const created = createGame({ type: 'CreateGame', script: snv, playerCount: 5 }, local);
+		if (!created.ok) throw new Error();
+		let session = created.session;
+		const seats = session.game.seating;
+		['nodashii', 'clockmaker', 'mutant', 'dreamer', 'savant'].forEach((characterId, i) => {
+			const result = dispatch(
+				session,
+				{ type: 'AssignCharacter', seatId: seats[i], characterId },
+				local
+			);
+			if (!result.ok) throw new Error();
+			session = result.session;
+		});
+		const pending = () =>
+			pendingTray(trayItems(setupReminders(session.game, lookup)), []).filter(
+				(i) => i.suggestion.characterId === 'nodashii'
+			);
+		expect(pending()).toHaveLength(2);
+		const placed = dispatch(
+			session,
+			{
+				type: 'AddReminder',
+				seatId: seats[1],
+				reminder: { characterId: 'nodashii', label: 'Poisoned' }
+			},
+			local
+		);
+		if (!placed.ok) throw new Error();
+		session = placed.session;
+		expect(pending()).toHaveLength(1);
 	});
 	it('drops dismissed suggestions', () => {
 		const items = trayItems(washer);
-		expect(pendingTray(items, game(), ['washerwoman:Townsfolk:0']).length).toBe(1);
+		expect(pendingTray(items, ['washerwoman:Townsfolk:0']).length).toBe(1);
 	});
 	it('lists the pre-filled seat first, then the other candidates', () => {
 		expect(traySeats(suggestion('x', 'A', { seatId: 'b', candidates: ['a', 'b', 'c'] }))).toEqual([

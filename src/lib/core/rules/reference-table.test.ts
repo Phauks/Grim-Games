@@ -59,6 +59,22 @@ describe('tableRows', () => {
 	});
 });
 
+describe('tokens filter', () => {
+	it('splits characters with tokens by whether any is placed at setup', () => {
+		const setup = ids({ filters: { tokens: 'setup' } });
+		const notSetup = ids({ filters: { tokens: 'not-setup' } });
+		expect(setup).toContain('washerwoman');
+		expect(setup).toContain('nodashii');
+		expect(notSetup).toContain('imp');
+		expect(setup).not.toContain('chef');
+		expect(notSetup).not.toContain('chef');
+		expect(setup.filter((id) => notSetup.includes(id))).toEqual([]);
+		expect(setup.length + notSetup.length).toBe(ids({ filters: { tokens: 'yes' } }).length);
+		expect(parseTableState({ filters: { tokens: 'not-setup' } }).filters.tokens).toBe('not-setup');
+		expect(parseTableState({ filters: { setup: 'not-setup' } }).filters.setup).toBeUndefined();
+	});
+});
+
 describe('table state', () => {
 	it('cycles a header between ascending and descending', () => {
 		const a = nextSort(undefined, 'type');

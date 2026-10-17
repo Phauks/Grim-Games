@@ -6,6 +6,7 @@ export * from './jinxes.ts';
 export * from './wiki.ts';
 export * from './night-order-numeric.ts';
 export * from './script.ts';
+export * from './sort-order.ts';
 export {
 	CHARACTER_ID_PATTERN,
 	normaliseCharacterId,

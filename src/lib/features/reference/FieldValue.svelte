@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { buildInfo } from '#lib/build-info.ts';
 	import {
 		characterIcons,
 		ICONS_PATH,
@@ -8,10 +7,14 @@
 		type Special
 	} from '#lib/core/data/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
-	import type { ReferenceEntry, ReferenceNight } from '#lib/core/rules/reference.ts';
+	import type {
+		ReferenceEntry,
+		ReferenceNight,
+		ReferenceToken
+	} from '#lib/core/rules/reference.ts';
 	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup-reminders.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { characterReportUrl } from '#lib/features/about/report-issue.ts';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -42,6 +45,9 @@
 	let jinxesOpen = $state(false);
 
 	const character = $derived(entry.character);
+	/** The Report form as a rules report, its title started with this character's name. */
+	// eslint-disable-next-line grim/names-as-badges -- prefilled text in a form field, not shown as a name
+	const reportCharacter = () => reportDialog.show({ kind: 'rules', title: `${character.name}: ` });
 	// Prep steps with [Token] as reminder chips and names as badges (built only for this field).
 	const prep = $derived.by(() => {
 		if (field !== 'prep') return [];
@@ -63,11 +69,15 @@
 			.filter(([, file]) => file !== undefined)
 			.map(([label, file]) => ({ label, src: `${ICONS_PATH}/${file}` }));
 	});
-	const reportUrl = $derived(characterReportUrl(buildInfo, character, navigator.userAgent));
-	const tokens = $derived([
-		...character.reminders.map((label) => ({ label, global: false })),
-		...character.remindersGlobal.map((label) => ({ label, global: true }))
-	]);
+	/** "Setup", or "Setup: 1 of 2" when only some copies go down at setup. */
+	function setupLabel(token: ReferenceToken): string | undefined {
+		const placed = token.setup + token.firstDay;
+		if (placed === 0) return undefined;
+		const key = token.firstDay > 0 && token.setup === 0 ? 'reference.firstDay' : 'reference.setup';
+		return placed === token.copies
+			? t(key)
+			: t('reference.setupSome', { label: t(key), placed, copies: token.copies });
+	}
 
 	function special(s: Special): string {
 		return [
@@ -111,13 +121,12 @@
 				title={t('reference.wiki')}><Icon name="wiki" /></a
 			>
 		{/if}
-		<!-- External GitHub issue form; only public build and character info in it. -->
-		<a
-			href={reportUrl}
-			target="_blank"
-			rel="noopener"
+		<!-- The in-app Report form, as a rules report about this character. -->
+		<button
+			type="button"
 			aria-label={t('reference.report')}
-			title={t('reference.report')}><Icon name="report" /></a
+			title={t('reference.report')}
+			onclick={reportCharacter}><Icon name="report" /></button
 		>
 	</span>
 {/snippet}
@@ -156,9 +165,11 @@
 		<span class="ability"><GlossaryText text={character.ability} names={[character.name]} /></span>
 	{:else if field === 'tokens'}
 		<span class="spaced"
-			>{#each tokens as token, i (i)}<ReminderToken
+			>{#each entry.tokens as token, i (i)}<ReminderToken
 					label={token.global ? t('reference.globalReminder', { label: token.label }) : token.label}
 					type={character.type}
+					count={token.copies}
+					setup={setupLabel(token)}
 				/>{:else}{t('common.none')}{/each}</span
 		>
 	{:else if field === 'special'}
@@ -355,12 +366,20 @@
 		/* The icons' tap areas reach past them, so they line up with the text beside. */
 		margin-inline: calc((var(--tap-target) - 1.1 * var(--u)) / -2);
 	}
-	.links a {
+	.links a,
+	.links button {
 		display: inline-grid;
 		place-items: center;
 		min-width: var(--tap-target);
 		min-height: var(--tap-target);
 		--icon-size: calc(1.1 * var(--u));
+	}
+	.links button {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		cursor: pointer;
 	}
 	.fold {
 		display: inline-flex;

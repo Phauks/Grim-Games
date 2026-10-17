@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { ShareTarget } from './share-codes.ts';
 	import SharePanel from './SharePanel.svelte';
 
 	/**
-	 * One button that opens one screen for sharing a link: QR code, link, code, Copy and
+	 * One share icon (always an icon, Trevor 2026-10-16) that opens one screen for sharing a
+	 * link: QR code, link, Copy and
 	 * Share (`SharePanel`). One control per link, so a Room link can sit beside the script
 	 * link later without changing this one.
 	 */
@@ -18,32 +18,50 @@
 		title: string;
 		/** Makes the link; undefined disables the control (nothing to share yet). */
 		target: (() => Promise<ShareTarget>) | undefined;
-		/** A share icon (labelled like the button) instead of a text button, e.g. on /play. */
-		icon?: boolean;
 	}
 
-	let { what, title, target, icon = false }: Props = $props();
+	let { what, title, target }: Props = $props();
 	let open = $state(false);
+
+	/**
+	 * The link is made (a share code fetched or created) as soon as the icon is pointed at,
+	 * focused or pressed, and kept while the script is unchanged, so the QR code shows at
+	 * once when the screen opens: the wait was the network, not drawing the QR.
+	 */
+	let made: { for: () => Promise<ShareTarget>; link: Promise<ShareTarget> } | undefined;
+	function warm(): Promise<ShareTarget> | undefined {
+		if (!target) return undefined;
+		if (made?.for !== target) {
+			const link = target();
+			made = { for: target, link };
+			// A failure is shown (and reported) by the share screen; try again next time.
+			link.catch(() => {
+				if (made?.link === link) made = undefined;
+			});
+		}
+		return made.link;
+	}
+	const madeTarget = () => warm() ?? Promise.reject(new Error('Nothing to share'));
 </script>
 
 <div class="share">
-	{#if icon}
-		<IconButton
-			icon="share"
-			label={t(`scripts.share.button.${what}`)}
-			onclick={() => (open = true)}
-			disabled={!target}
-		/>
-	{:else}
-		<Button onclick={() => (open = true)} disabled={!target}
-			>{t(`scripts.share.button.${what}`)}</Button
-		>
-	{/if}
+	<IconButton
+		icon="share"
+		label={t(`scripts.share.button.${what}`)}
+		onpointerenter={() => void warm()}
+		onfocus={() => void warm()}
+		onpointerdown={() => void warm()}
+		onclick={() => {
+			void warm();
+			open = true;
+		}}
+		disabled={!target}
+	/>
 </div>
 
 <Dialog bind:open title={t('scripts.share.title', { title })}>
 	{#if target}
-		<SharePanel {title} {target} />
+		<SharePanel {title} target={madeTarget} />
 	{/if}
 </Dialog>
 

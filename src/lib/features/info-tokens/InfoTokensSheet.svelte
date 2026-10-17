@@ -127,8 +127,12 @@
 		}
 	});
 
-	function choose(token: InfoToken, add = false) {
+	/** What was filled into a fill-in custom card, kept while its characters are chosen. */
+	let pendingDetail: string | undefined;
+
+	function choose(token: InfoToken, add = false, detail?: string) {
 		adding = add;
+		pendingDetail = detail;
 		if (token.id === 'not-in-play' && bluffSets) {
 			if (bluffSets.length === 1) return use(token.text, bluffSets[0].characterIds);
 			if (bluffSets.length > 1) {
@@ -148,11 +152,16 @@
 			return;
 		}
 		// "This is the Demon", "These are your Minions" and the rest: the Storyteller points.
-		use(token.text);
+		use(token.text, [], detail);
 	}
 
 	/** Shows the card now, or adds it to the cards to show together. */
-	function use(text: string, characterIds: readonly CharacterId[] = [], detail?: string) {
+	function use(
+		text: string,
+		characterIds: readonly CharacterId[] = [],
+		detail: string | undefined = pendingDetail
+	) {
+		pendingDetail = undefined;
 		const card = { text, characterIds: [...characterIds], detail };
 		view = { kind: 'list' };
 		if (adding) chainCards = [...chainCards, card];
@@ -177,10 +186,12 @@
 	<ErrorBoundary area="info-tokens">
 		{#if view.kind === 'list'}
 			<InfoTokenList
-				onchoose={choose}
+				onchoose={(token, detail) => choose(token, false, detail)}
 				level={3}
 				{characterCards}
-				onadd={(token) => choose(token, true)}
+				{characters}
+				activeCharacters={inPlay && new Set(inPlay)}
+				onadd={(token, detail) => choose(token, true, detail)}
 				onchooseCharacter={({ title, detail, add }) => {
 					adding = add;
 					use(title, [], detail);

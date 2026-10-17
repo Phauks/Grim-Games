@@ -8,9 +8,11 @@ async function openTokens(page: Page) {
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Tokens' })
+		.getByRole('button', { name: 'Characters and tokens' })
 		.tap();
-	await expect(dialog.getByRole('heading', { name: 'Tokens', level: 2 })).toBeVisible();
+	await expect(
+		dialog.getByRole('heading', { name: 'Characters and tokens', level: 2 })
+	).toBeVisible();
 	return dialog;
 }
 
@@ -107,7 +109,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 			.tap();
 		await dialog
 			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: 'Tokens' })
+			.getByRole('button', { name: 'Characters and tokens' })
 			.tap();
 	}
 	await openTokens();
@@ -131,49 +133,36 @@ test('character names on grimoire tokens are off by default and shown when switc
 	await page.reload();
 	await expect(name).toHaveText('Fortune Teller');
 
-	// The player name's placement (Trevor, 2026-10-16) shows on the preview; the sample
-	// token's leaves and icon never move for it.
+	// The player name is always a badge on the token (Trevor, 2026-10-17); no setting.
 	await openTokens();
-	const preview = dialog.getByTestId('token-preview');
-	const placement = dialog.getByRole('radiogroup', {
-		name: 'Player name placement on the grimoire'
-	});
-	const sample = preview.locator('.token');
-	// Measured from the token's corner: tapping a choice may scroll the dialog.
-	const sampleMarks = () =>
-		sample.evaluate((el) => {
-			const t = el.getBoundingClientRect();
-			return [t.width, t.height]
-				.concat(
-					[...el.querySelectorAll('.leaf, img')].flatMap((m) => {
-						const r = m.getBoundingClientRect();
-						return [r.x - t.x, r.y - t.y, r.width, r.height];
-					})
-				)
-				.map(Math.round)
-				.join(',');
-		});
-	const sampleBefore = await sampleMarks();
-	await expect(preview.getByTestId('token-player-name')).toHaveCount(0);
-	for (const [choice, value] of [
-		['Icon top', 'icon-top'],
-		['Icon bottom', 'icon-bottom'],
-		['Badge', 'badge']
-	]) {
-		await placement.getByText(choice, { exact: true }).tap();
-		await expect(preview.getByTestId('token-player-name')).toHaveAttribute('data-placement', value);
-		expect(await sampleMarks(), choice).toEqual(sampleBefore);
-	}
-	await placement.getByText('Below', { exact: true }).tap();
-	await expect(preview.getByTestId('token-player-name')).toHaveCount(0);
+	await expect(dialog.getByTestId('token-preview').getByTestId('token-player-name')).toHaveCount(1);
+	await expect(dialog.getByText('Player name placement', { exact: false })).toHaveCount(0);
+	await page.keyboard.press('Escape');
 
 	// On the board, a seat with a character draws its name on the token instead of the pill
 	// under it; an empty seat keeps the pill.
-	await placement.getByText('Badge', { exact: true }).tap();
-	await page.keyboard.press('Escape');
-	await expect(seat.getByTestId('token-player-name')).toHaveAttribute('data-placement', 'badge');
+	await expect(seat.getByTestId('token-player-name')).toHaveText('Seat 1');
 	await expect(seat.locator('.seat-disc > .name')).toHaveCount(0);
 	const empty = page.locator('[data-testid="seat"][aria-label^="Seat 2:"]');
 	await expect(empty.getByTestId('token-player-name')).toHaveCount(0);
 	await expect(empty.locator('.seat-disc > .name')).toHaveText('Seat 2');
+});
+
+test('the token preview stays in view while the token settings scroll', async ({ page }) => {
+	// Trevor (2026-10-17): previews stick to the top so changes stay in view.
+	await page.goto('/');
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Characters and tokens' })
+		.tap();
+	const preview = dialog.getByTestId('token-preview');
+	await expect(preview.getByTestId('token-player-name')).toBeVisible();
+	const content = dialog.locator('section.content');
+	await content.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+	await expect(preview).toBeInViewport();
+	const top = (await content.boundingBox())!.y;
+	expect(Math.abs((await preview.boundingBox())!.y - top)).toBeLessThan(2);
 });

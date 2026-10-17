@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { accountApi } from './account-api.ts';
@@ -81,15 +82,17 @@
 		<form onsubmit={send}>
 			<label class="field">
 				<span>{t('account.signIn.email')}</span>
-				<input
-					type="email"
-					inputmode="email"
-					autocomplete="email"
-					enterkeyhint="send"
-					required
-					disabled={unavailable || busy}
-					bind:value={email}
-				/>
+				<ClearableField bind:value={email} disabled={unavailable || busy} class="email">
+					<input
+						type="email"
+						inputmode="email"
+						autocomplete="email"
+						enterkeyhint="send"
+						required
+						disabled={unavailable || busy}
+						bind:value={email}
+					/>
+				</ClearableField>
 			</label>
 			<p class="note">
 				{unavailable
@@ -106,16 +109,18 @@
 		<form onsubmit={verify}>
 			<label class="field">
 				<span>{t('account.signIn.codeSentTo', { email: sentTo })}</span>
-				<input
-					type="text"
-					inputmode="numeric"
-					autocomplete="one-time-code"
-					enterkeyhint="done"
-					maxlength={CODE_LENGTH + 2}
-					required
-					disabled={busy}
-					bind:value={code}
-				/>
+				<ClearableField bind:value={code} disabled={busy} class="code">
+					<input
+						type="text"
+						inputmode="numeric"
+						autocomplete="one-time-code"
+						enterkeyhint="done"
+						maxlength={CODE_LENGTH + 2}
+						required
+						disabled={busy}
+						bind:value={code}
+					/>
+				</ClearableField>
 			</label>
 			<p class="note" data-testid="preview-code">
 				{#if previewLine}
@@ -166,11 +171,13 @@
 		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	/* Full width on a phone; on a computer, sized to what goes in them. */
-	.field input[type='email'] {
+	.field :global(.clearable.email) {
 		max-width: 28rem;
 	}
-	.field input[inputmode='numeric'] {
+	.field :global(.clearable.code) {
 		max-width: 12rem;
+	}
+	.field input[inputmode='numeric'] {
 		letter-spacing: 0.3em;
 		font-variant-numeric: tabular-nums;
 	}

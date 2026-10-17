@@ -5,7 +5,8 @@
 	import { boardNightSteps, stepHolders } from './night-steps.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
-	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
+	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
@@ -22,6 +23,7 @@
 		charactersInPlay,
 		scriptCharacterIds,
 		trueCharacter,
+		type Reminder,
 		type ReminderId,
 		type SeatId
 	} from '#lib/core/model/index.ts';
@@ -51,8 +53,8 @@
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { nameBox, placeNames, type Box } from './name-placement.ts';
-	import { reminderFan } from './reminder-fan.ts';
-	import { isOrphan, placingAlignment } from './board.ts';
+	import { fitReminders } from './reminder-fan.ts';
+	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -71,6 +73,7 @@
 	import { stepReminders } from './reminders.ts';
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
+	import AlignmentAsk from './AlignmentAsk.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -161,36 +164,52 @@
 		}));
 	});
 	const namePlaces = $derived(nameBoxes.map((n) => n.place));
-	/** The player name drawn on the token instead of under it (Settings > Tokens). */
-	const nameOnToken = $derived(preferences.current.tokenAppearance.playerNamePlacement);
-	/** What a seat's reminders keep off: its name, and the skull of a dead seat (SeatDisc). */
+	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
 	function avoidFor(i: number): Box[] {
 		const out: Box[] = [];
 		const c = toPx(shown[i]);
 		const hasFace = seats[i]?.characterId !== undefined;
-		if (!hasFace || nameOnToken === 'below') {
+		if (!hasFace) {
 			const name = nameBoxes[i]?.box;
 			if (name) out.push(name);
-		} else if (nameOnToken === 'badge') {
+		} else {
 			// The badge pill straddles the token's lower rim (PlayerNameMark).
 			out.push({ x: c.x, y: c.y + 0.5 * size, w: 0.9 * size, h: 0.18 * size });
 		}
 		if (seats[i]?.dead) {
 			out.push({ x: c.x - 0.41 * size, y: c.y + 0.37 * size, w: 0.38 * size, h: 0.38 * size });
 		}
+		// The note mark, lower right (SeatToken).
+		if (seats[i]?.note) {
+			out.push({ x: c.x + 0.39 * size, y: c.y + 0.39 * size, w: 0.3 * size, h: 0.3 * size });
+		}
 		return out;
 	}
-	function chipPoints(i: number, count: number): SeatPoint[] {
-		if (width <= 0 || height <= 0) return Array.from({ length: count }, () => shown[i]);
-		return reminderFan({
-			seat: toPx(shown[i]),
-			middle: { x: width / 2, y: height / 2 },
-			count,
-			size,
-			chip,
-			avoid: avoidFor(i)
-		}).map(toPercent);
-	}
+	/**
+	 * Every seat's reminders, laid out together so one seat's never cover another's (Trevor,
+	 * 2026-10-16) and each stays nearest its own seat (2026-10-17). They are laid out at the
+	 * height a finger needs (the tap target), which is what a reminder takes up on screen.
+	 */
+	let centreW = $state(0);
+	let centreH = $state(0);
+	let tapPx = $state(0);
+	const fan = $derived.by(() => {
+		if (width <= 0 || height <= 0) return seats.map((s, i) => s.reminders.map(() => shown[i]));
+		const fitted = fitReminders(
+			seats.map((s, i) => ({
+				seat: toPx(shown[i]),
+				middle: { x: width / 2, y: height / 2 },
+				count: s.reminders.length,
+				size,
+				chip: Math.max(chip, tapPx),
+				avoid: avoidFor(i)
+			})),
+			// The Set up button and the Fabled and Loric in the middle stay clear and tappable.
+			centreW > 0 ? [{ x: width / 2, y: height / 2, w: centreW + 12, h: centreH + 12 }] : [],
+			{ width, height }
+		);
+		return fitted.at.map((points) => points.map(toPercent));
+	});
 
 	interface ReminderDrag {
 		reminderId: ReminderId;
@@ -437,9 +456,22 @@
 	// ── The reminder bank under the board (Trevor, 2026-10-16): setup suggestions until
 	// they are all placed or dismissed (or the first day starts), then every reminder left.
 	// The Storyteller can switch at any time.
-	let trayHints = $state<{ seats: SeatId[]; target?: SeatId }>({ seats: [] });
+	let trayHints = $state<{ seats: SeatId[]; target?: SeatId; reminder?: Reminder }>({
+		seats: []
+	});
+	/**
+	 * While a reminder is dragged, the seats it doesn't fit are faded (Trevor, 2026-10-16:
+	 * reminder target rules). Warns only: it can still be dropped there.
+	 */
+	const misfits = $derived.by(() => {
+		const reminder = dragOrigin?.reminder ?? trayHints.reminder;
+		if (!reminder) return new Set<SeatId>();
+		return new Set(
+			game.seating.filter((id) => seatMisses(game, reminder, id, characters).length > 0)
+		);
+	});
 	const setupPending = $derived(
-		pendingTray(trayItems(setupReminders(game, characters)), game, grimoire.trayDismissed).length
+		pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed).length
 	);
 	let bankChosen = $state<BankView | undefined>();
 	const bankView = $derived<BankView>(
@@ -529,6 +561,7 @@
 
 	// ── Share the script (never the game) ──
 	let shareOpen = $state(false);
+	let phonesOpen = $state(false);
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
 	const loadedScript = $derived(
@@ -742,6 +775,7 @@
 							reminderDrag.target === seat.seatId &&
 							reminderDrag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
+					misfit={misfits.has(seat.seatId)}
 					hint={trayHints.seats.includes(seat.seatId) ||
 						walkHolders.includes(seat.seatId) ||
 						(dragOrigin?.holders.includes(seat.seatId) ?? false)}
@@ -754,11 +788,17 @@
 		{#each seats as seat, i (seat.seatId)}
 			{@const count = seat.reminders.length}
 			{#if count > 0}
-				{@const at = chipPoints(i, count)}
+				{@const at = fan[i]}
 				{#each seat.reminders as reminder, k (reminder.reminderId)}
 					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
 					{@const p = dragged ? reminderDrag!.at : at[k]}
-					<div class="chip-slot" class:dragging={dragged} style:left="{p.x}%" style:top="{p.y}%">
+					<div
+						class="chip-slot"
+						data-seat={i + 1}
+						class:dragging={dragged}
+						style:left="{p.x}%"
+						style:top="{p.y}%"
+					>
 						<BoardReminder
 							label={reminder.label}
 							character={characters.get(reminder.characterId)}
@@ -827,7 +867,9 @@
 			onHints={(h) => (trayHints = h)}
 		/>
 
-		<div class="centre">
+		<!-- Measures the tap target, the height every reminder takes on the board. -->
+		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>
+		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if showSetup}
 				<div class="setup">
@@ -895,11 +937,14 @@
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
+		<!-- Pointing at, focusing or pressing it starts opening the room, so the QR is ready. -->
 		<Button
 			variant="quiet"
 			icon="players"
-			onclick={() =>
-				fromMenu(() => goto(resolve('/grimoire/[gameId]/room', { gameId: game.gameId })))}
+			onpointerenter={prepareRoom}
+			onfocus={prepareRoom}
+			onpointerdown={prepareRoom}
+			onclick={() => fromMenu(() => (phonesOpen = true))}
 		>
 			Players' phones
 		</Button>
@@ -924,6 +969,7 @@
 </Dialog>
 
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
+<AlignmentAsk {grimoire} />
 
 <InfoTokensSheet
 	bind:open={infoOpen}
@@ -990,6 +1036,11 @@
 			<ScriptCopy script={loadedScript} players={game.seating.length} />
 		{/if}
 	</div>
+</Dialog>
+
+<!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
+<Dialog bind:open={phonesOpen} title="Players' phones" size="full">
+	<RoomPanel game={grimoire.open} />
 </Dialog>
 
 <Dialog bind:open={shareOpen} title="Share script">
@@ -1176,6 +1227,12 @@
 	.chip-slot.dragging {
 		z-index: 3;
 		scale: 1.15;
+	}
+	.tap-probe {
+		position: absolute;
+		visibility: hidden;
+		height: var(--tap-target);
+		pointer-events: none;
 	}
 	.centre {
 		position: absolute;

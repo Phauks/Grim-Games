@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { GLOSSARY, glossaryEntryUrl, GLOSSARY_URL } from '#lib/core/rules/glossary.ts';
 	import ContentsLayout, {
@@ -64,12 +65,14 @@
 			<label class="search">
 				<span class="visually-hidden">{t('glossary.search')}</span>
 				<Icon name="search" />
-				<input
-					type="search"
-					placeholder={t('glossary.searchPlaceholder')}
-					autocomplete="off"
-					bind:value={search}
-				/>
+				<ClearableField bind:value={search}>
+					<input
+						type="search"
+						placeholder={t('glossary.searchPlaceholder')}
+						autocomplete="off"
+						bind:value={search}
+					/>
+				</ClearableField>
 			</label>
 		{/snippet}
 		{#if name}

@@ -4,7 +4,7 @@
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { ACCOUNT_ITEM, isCurrent, NAV_SECTIONS, type NavItem } from './nav.ts';
+	import { ACCOUNT_ITEM, HOME_ITEM, isCurrent, NAV_SECTIONS, type NavItem } from './nav.ts';
 	import { openSettings } from './shell.ts';
 
 	interface Props {
@@ -35,6 +35,7 @@
 
 <!-- Plain links in labelled sections: a screen that must confirm leaving catches them in the root layout. -->
 <div class="nav-list">
+	<ul class="top">{@render link(HOME_ITEM)}</ul>
 	{#each NAV_SECTIONS as section (section.id)}
 		<h3 id="{listId}-{section.id}">{label(section.label)}</h3>
 		<ul aria-labelledby="{listId}-{section.id}">

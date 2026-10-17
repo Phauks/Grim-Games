@@ -4,10 +4,22 @@
  * so its rows arrive ready (`botcRow`). Design: 08-script-loading.md §5.6.
  */
 import type { CharacterType, GameData, LoadedScript } from '#lib/core/data/index.ts';
-import type { BotcScriptsEntry, BotcScriptsSummary } from './botcscripts-api.ts';
-import { botcCard } from './botcscripts-cards.ts';
+import {
+	scriptPageUrl,
+	type BotcScriptsEntry,
+	type BotcScriptsSummary
+} from './botcscripts-api.ts';
+import { botcCard, looseId } from './botcscripts-cards.ts';
 
-export type PickerSource = 'official' | 'curated' | 'recent' | 'profile' | 'botc';
+export type PickerSource =
+	| 'official'
+	| 'curated'
+	| 'collection'
+	| 'worldcup2023'
+	| 'worldcup2025'
+	| 'recent'
+	| 'profile'
+	| 'botc';
 
 export type ScriptKind = 'Full' | 'Teensyville';
 
@@ -30,6 +42,11 @@ export interface PickerRow {
 	/** The script's number on BotC Scripts, and the version listed. */
 	number?: number;
 	version?: string;
+	/**
+	 * The script's own page where it came from (`sourcePage`): never only a site's address.
+	 * Undefined for scripts with no page (pasted, from a file).
+	 */
+	page?: string;
 	/** Lower-cased name, author and character names, for search. */
 	haystack: string;
 }
@@ -94,24 +111,50 @@ export function botcRow(summary: BotcScriptsSummary, data: GameData): PickerRow 
 		likes: summary.score,
 		number: summary.scriptId,
 		version: summary.version,
+		page: scriptPageUrl(summary.scriptId, summary.version),
 		haystack: summary.name.toLowerCase()
 	};
 }
 
+/** The search and header filters, applied to rows on the device the way the site applies them. */
 export interface RowFilter {
 	term: string;
-	source: PickerSource | 'all';
+	/** The sources being searched. */
+	sources: readonly PickerSource[];
 	kind: ScriptKind | '';
+	author?: string;
+	/** Character ids every row must have / must not have. */
+	include?: readonly string[];
+	exclude?: readonly string[];
+	oneDemon?: boolean;
+	officialOnly?: boolean;
 }
 
-export function filterRows(rows: readonly PickerRow[], filter: RowFilter): PickerRow[] {
+export function filterRows(
+	rows: readonly PickerRow[],
+	filter: RowFilter,
+	data?: GameData
+): PickerRow[] {
 	const words = filter.term.toLowerCase().split(/\s+/).filter(Boolean);
-	return rows.filter(
-		(row) =>
-			(filter.source === 'all' || row.source === filter.source) &&
-			(filter.kind === '' || row.kind === filter.kind) &&
-			words.every((word) => row.haystack.includes(word))
-	);
+	const author = filter.author?.trim().toLowerCase() ?? '';
+	const include = (filter.include ?? []).map(looseId);
+	const exclude = (filter.exclude ?? []).map(looseId);
+	return rows.filter((row) => {
+		if (!filter.sources.includes(row.source)) return false;
+		if (filter.kind !== '' && row.kind !== filter.kind) return false;
+		if (!words.every((word) => row.haystack.includes(word))) return false;
+		if (author && !row.author.toLowerCase().includes(author)) return false;
+		if (include.length > 0 || exclude.length > 0) {
+			const ids = new Set(row.entries.map((e) => looseId(e.id)));
+			if (!include.every((id) => ids.has(id)) || exclude.some((id) => ids.has(id))) return false;
+		}
+		if (data && (filter.oneDemon || filter.officialOnly)) {
+			const card = botcCard(row.entries, data);
+			if (filter.oneDemon && card.demons.length !== 1) return false;
+			if (filter.officialOnly && card.homebrew) return false;
+		}
+		return true;
+	});
 }
 
 export type SortColumn = 'name' | 'author' | 'source' | 'kind' | 'characters' | 'likes' | 'number';
@@ -120,7 +163,16 @@ export interface RowSort {
 	descending: boolean;
 }
 
-const SOURCE_ORDER: readonly PickerSource[] = ['official', 'curated', 'recent', 'profile', 'botc'];
+const SOURCE_ORDER: readonly PickerSource[] = [
+	'official',
+	'curated',
+	'collection',
+	'worldcup2023',
+	'worldcup2025',
+	'recent',
+	'profile',
+	'botc'
+];
 
 function compare(a: PickerRow, b: PickerRow, column: SortColumn): number {
 	switch (column) {

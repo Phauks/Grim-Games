@@ -3,7 +3,8 @@ import { expect, test } from '@playwright/test';
 test('tapping a character badge shows its ability and a wiki link', async ({ page }) => {
 	await page.goto('/spikes/badges');
 	// CSS locator: the page behind an open dialog is aria-hidden, so role queries can't see it.
-	const badge = page.locator('button.badge', { hasText: 'Witch' });
+	// Not `.inline`: the dialog's live wiki page has inline Witch badges of its own.
+	const badge = page.locator('button.badge:not(.inline)', { hasText: 'Witch' });
 	await expect(badge).toContainText('Sam');
 	await expect(badge.locator('img')).toBeVisible();
 	// Measure only once the icon and fonts have loaded: a late font swap or image resizes the

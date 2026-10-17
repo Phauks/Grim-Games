@@ -3,8 +3,8 @@
  * 2026-10-16: approved from the Ravenswood Studio review, ideas only). Everything comes from
  * TPI's data and our setup tables, never our own judgement of balance:
  * - how many characters of each type the script has;
- * - the jinxed pairs on it (TPI's jinxes plus any the script's homebrew characters declare),
- *   and whether the Djinn therefore applies (https://wiki.bloodontheclocktower.com/Djinn);
+ * - the jinxed pairs on it (TPI's jinxes plus any the script's homebrew characters declare);
+ *   no separate Djinn fact (Trevor, 2026-10-17: the pairs are enough);
  * - the characters that change setup (`setupModifierFor`), such as the Baron;
  * - characters that need another character in play ("requires": the Choirboy needs the King,
  *   https://wiki.bloodontheclocktower.com/Choirboy), and whether that one is on the script.
@@ -17,7 +17,7 @@ import {
 	type CharacterType,
 	type Jinx
 } from '#lib/core/data/types.ts';
-import { needsDjinn, scriptJinxes, type ScriptJinx } from './jinxes.ts';
+import { scriptJinxes, type ScriptJinx } from './jinxes.ts';
 import { setupModifierFor, type SetupModifier } from './setup-modifiers.ts';
 
 export interface ScriptRequirement {
@@ -31,8 +31,6 @@ export interface ScriptRequirement {
 export interface ScriptFacts {
 	counts: Record<CharacterType, number>;
 	jinxes: ScriptJinx[];
-	/** The script holds at least one jinxed pair. */
-	djinn: boolean;
 	/** Characters on the script that change setup, in script order. */
 	modifiers: SetupModifier[];
 	requirements: ScriptRequirement[];
@@ -59,7 +57,6 @@ export function scriptFacts(
 	return {
 		counts,
 		jinxes,
-		djinn: needsDjinn(jinxes),
 		modifiers,
 		requirements: modifiers.flatMap((m) =>
 			m.requires ? [{ id: m.id, requires: m.requires, onScript: ids.has(m.requires) }] : []

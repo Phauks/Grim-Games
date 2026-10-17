@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
-	import { formatDigitCode } from '#lib/core/codes/digit-code.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -11,7 +10,8 @@
 
 	/**
 	 * Everything for sharing one link on one screen (Trevor, 2026-10-16): the QR code,
-	 * the link with a copy button, its six-digit code, and the phone's own Share. The link is
+	 * the link with a copy button, and the phone's own Share. No code to type: codes are
+	 * only for joining a game (Trevor, 2026-10-16). The link is
 	 * made when this appears (it lives inside a dialog), so nothing is uploaded just by
 	 * opening a page.
 	 */
@@ -110,16 +110,6 @@
 		</div>
 	</div>
 
-	<!-- One line either way, so nothing moves when the code arrives. -->
-	<p class="code-line" data-testid="share-code">
-		<span class="label">{t('scripts.share.code')}</span>
-		{#if made?.code}
-			<span class="digits" data-testid="share-digits">{formatDigitCode(made.code)}</span>
-		{:else}
-			<span class="none">{t('common.none')}</span>
-		{/if}
-	</p>
-
 	<div class="buttons">
 		<Button variant="accent" onclick={share} disabled={!made || !canShare}
 			>{t('scripts.share.share')}</Button
@@ -171,23 +161,6 @@
 	.label {
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
-	}
-	.code-line {
-		margin: 0;
-		min-height: 1lh;
-		display: flex;
-		justify-content: center;
-		align-items: baseline;
-		gap: var(--space-2);
-		font-size: 1.6rem;
-	}
-	.digits {
-		font-weight: 600;
-		font-variant-numeric: tabular-nums;
-		letter-spacing: 0.1em;
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 	.buttons {
 		display: grid;

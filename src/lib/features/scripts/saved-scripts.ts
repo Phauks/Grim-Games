@@ -13,6 +13,9 @@ import {
 	type GameData,
 	type LoadedScript
 } from '#lib/core/data/index.ts';
+import { scriptPageUrl } from './botcscripts-api.ts';
+import { CAROUSEL_COLLECTION, collectionDocUrl } from './collection-api.ts';
+import { CURATED_PAGE } from './curated-api.ts';
 import { SCRIPT_TOOL_HOST } from './script-tool-link.ts';
 
 export const SAVED_SCRIPT_VERSION = 1;
@@ -23,8 +26,14 @@ export const MAX_SAVED_SCRIPTS = 20;
 export type ScriptSource =
 	| { kind: 'edition' }
 	| { kind: 'paste' }
+	/** Made on the Script builder page. */
+	| { kind: 'built' }
 	| { kind: 'file'; fileName: string }
-	| { kind: 'link'; url: string }
+	/**
+	 * `page`: the script's source page when the link is a file behind one (a Carousel script's
+	 * Drive file lives in the collection doc). Added later, so older records lack it.
+	 */
+	| { kind: 'link'; url: string; page?: string }
 	| { kind: 'botcscripts'; scriptId: number; version: string }
 	/** `code` is the share code it was opened with, so sharing it again reuses that code. */
 	| { kind: 'share'; code?: string };
@@ -79,9 +88,15 @@ export function describeSource(source: ScriptSource): string {
 			return t('scripts.from.official');
 		case 'paste':
 			return t('scripts.from.paste');
+		case 'built':
+			return t('scripts.from.built');
 		case 'file':
 			return source.fileName;
 		case 'link': {
+			if (source.page?.startsWith(collectionDocUrl(CAROUSEL_COLLECTION))) {
+				return t('scripts.picker.source.collection');
+			}
+			if (source.page === CURATED_PAGE) return t('scripts.picker.source.curated');
 			const host = new URL(source.url).hostname.replace(/^www\./, '');
 			return host === SCRIPT_TOOL_HOST ? t('scripts.from.scriptTool') : host;
 		}
@@ -90,4 +105,33 @@ export function describeSource(source: ScriptSource): string {
 		case 'share':
 			return t('scripts.from.share');
 	}
+}
+
+/**
+ * The script's own page where it came from (Trevor, 2026-10-16: every script links to its
+ * source page, never just a site): its BotC Scripts page, its section of a collection doc,
+ * the official page that lists it, or the link it was loaded from. Undefined for pasted,
+ * file, shared and built-in scripts, which have no page.
+ */
+export function sourcePage(source: ScriptSource): string | undefined {
+	switch (source.kind) {
+		case 'link':
+			return source.page ?? (isSpecificPage(source.url) ? source.url : undefined);
+		case 'botcscripts':
+			return scriptPageUrl(source.scriptId, source.version || undefined);
+		default:
+			return undefined;
+	}
+}
+
+/** An http(s) address that points somewhere on a site, not only at the site itself. */
+export function isSpecificPage(url: string): boolean {
+	let parsed: URL;
+	try {
+		parsed = new URL(url);
+	} catch {
+		return false;
+	}
+	if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+	return parsed.pathname.replace(/\/+$/, '') !== '' || parsed.search !== '' || parsed.hash !== '';
 }

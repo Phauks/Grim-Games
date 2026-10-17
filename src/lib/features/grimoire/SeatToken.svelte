@@ -20,6 +20,8 @@
 		dropTarget?: boolean;
 		/** Marked as a seat a setup reminder fits, while one is dragged or open. */
 		hint?: boolean;
+		/** Faded while a reminder that doesn't fit this seat is dragged (it can still go here). */
+		misfit?: boolean;
 		/** Which side of the token the name goes, so nothing covers it. */
 		namePlace?: NamePlace;
 		onTap: () => void;
@@ -33,6 +35,7 @@
 		orphan,
 		dropTarget = false,
 		hint = false,
+		misfit = false,
 		namePlace = 'below',
 		onTap
 	}: Props = $props();
@@ -57,6 +60,7 @@
 					? `${seat.alignment}`
 					: '',
 			orphan ? 'not on the script' : '',
+			seat.note ? 'has a note' : '',
 			seat.reminders.length
 				? `${seat.reminders.length} reminder${seat.reminders.length === 1 ? '' : 's'}`
 				: ''
@@ -91,6 +95,10 @@
 	<!-- Corner marks sit in fixed places, so one appearing never moves anything. -->
 	{#if orphan}<span class="mark orphan" title="Not on the script"><Icon name="warning" /></span
 		>{/if}
+	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
+	{#if seat.note}<span class="mark note" data-testid="note-mark" title="Note"
+			><Icon name="pen" /></span
+		>{/if}
 	<!-- A dead player's ghost vote, upper left, until it is used. -->
 	{#if seat.dead && !seat.ghostVoteUsed}<span
 			class="vote"
@@ -105,6 +113,7 @@
 	data-dead={seat.dead || undefined}
 	data-drop={dropTarget || undefined}
 	data-hint={hint || undefined}
+	data-misfit={misfit || undefined}
 	data-testid="seat"
 	aria-label={label}
 	style:--size="{size}px"
@@ -131,6 +140,9 @@
 		outline: 2px dashed var(--focus);
 		outline-offset: 4px;
 		border-radius: 50%;
+	}
+	.seat[data-misfit] :global(.disc) {
+		opacity: 0.4;
 	}
 	.seat[data-drop] :global(.disc) {
 		outline: 3px solid var(--focus);
@@ -178,5 +190,12 @@
 		top: -4%;
 		background: var(--accent);
 		color: var(--on-accent);
+	}
+	/* Lower right: the dead skull keeps the lower left. */
+	.note {
+		right: -4%;
+		bottom: -4%;
+		background: var(--surface-raised);
+		color: var(--on-surface);
 	}
 </style>

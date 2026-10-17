@@ -10,15 +10,15 @@
 
 <main>
 	<h1>Privacy policy</h1>
-	<p class="muted">Last updated 16 October 2026</p>
+	<p class="muted">Last updated 17 October 2026</p>
 
 	<div class="sections">
 		<section>
 			<h2>Summary</h2>
 			<p>
 				Grim-Games has no analytics, no advertising and no tracking cookies. Your games and settings
-				stay on your device. Our server stores only a custom script you choose to share, and, if you
-				choose to sign in, your account.
+				stay on your device. Our server stores only a custom script you choose to share, a report
+				you choose to send, and, if you choose to sign in, your account.
 			</p>
 		</section>
 		<section>
@@ -32,7 +32,7 @@
 				<li>
 					A log of up to 20 recent problems the app ran into: the error message, the app area, the
 					page and when it happened. It never contains your games. You can view or clear it from
-					About, Problems on this device (localStorage).
+					Diagnostics, Problems (localStorage).
 				</li>
 				<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 				<li>
@@ -103,6 +103,34 @@
 			</p>
 		</section>
 		<section>
+			<h2>Reports</h2>
+			<p>
+				"Report an issue", "Report a problem" and the problem log open a report form in the app.
+				Nothing is sent until you tap Send. A report holds:
+			</p>
+			<ul>
+				<li>
+					What you write: the kind of report, a title, a description and, if you add one, a way to
+					contact you.
+				</li>
+				<li>
+					The page you were on, the app version and your browser's description, listed under "Sent
+					with it" before you send.
+				</li>
+				<li>
+					A problem's details, or from the Diagnostics page its summary of this device and the app,
+					only if you leave them in. It never holds player names, notes, scripts, games or room
+					codes, and web addresses are shortened.
+				</li>
+			</ul>
+			<p>
+				Reports are stored on our server (Cloudflare Durable Object storage) for the app's
+				maintainer to read. Your IP address is used to limit how many reports can be sent each
+				minute and is not stored with the report. Older finished reports are deleted when storage
+				fills.
+			</p>
+		</section>
+		<section>
 			<h2>Hosting</h2>
 			<p>
 				The app is served by Cloudflare. Like any website, each request your browser makes reaches
@@ -136,10 +164,9 @@
 					Pasted and uploaded scripts never leave your device unless you share them.
 				</li>
 				<li>
-					<strong>GitHub.</strong> "Report an issue" and "Report a problem" open a form on github.com,
-					filled in with the app version, the page you were on and your browser's description. Reporting
-					a problem from the problem log also adds that problem's details, with web addresses shortened
-					so no game data goes in. Nothing is sent until you submit it there, under your GitHub account.
+					<strong>GitHub.</strong> If the app fails to start, its error screen links to GitHub's list
+					of issue forms on github.com instead of the report form. Nothing is sent until you submit a
+					form there, under your GitHub account.
 				</li>
 				<li>
 					<strong>GitHub's public API.</strong> When an update is ready, the update card may ask api.github.com
@@ -164,10 +191,7 @@
 		margin: 0 auto;
 		padding: var(--space-5) var(--page-gutter);
 	}
-	/* One column at a readable width (Trevor, 2026-10-16: not two). */
-	.sections {
-		max-width: var(--measure);
-	}
+	/* One column across the page width, like the other pages (Trevor, 2026-10-16). */
 	h1 {
 		margin-top: 0;
 		font-size: 1.6rem;

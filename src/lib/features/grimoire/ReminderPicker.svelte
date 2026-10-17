@@ -22,9 +22,11 @@
 		title: string;
 		/** Takes a reminder off this seat (asking first when it normally stays put). */
 		onRemove: (reminderId: ReminderId) => void;
+		/** Moves a reminder from another seat onto this one (asking first when it stays put). */
+		onMove: (reminderId: ReminderId, toSeatId: SeatId) => void;
 	}
 
-	let { open = $bindable(), grimoire, seatId, title, onRemove }: Props = $props();
+	let { open = $bindable(), grimoire, seatId, title, onRemove, onMove }: Props = $props();
 
 	const characters = $derived(grimoire.open.characters);
 	const groups = $derived(reminderGroups(grimoire.game, characters));
@@ -44,9 +46,26 @@
 		return out;
 	});
 	const onSeat = (reminder: Reminder) => here[reminderKey(reminder)]?.length ?? 0;
+	/**
+	 * Copies on other seats, by key, in seating order: each shows who has it, and a tap moves
+	 * it here (Trevor, 2026-10-16).
+	 */
+	const elsewhere = $derived.by(() => {
+		const out: Record<string, { reminderId: ReminderId; seatId: SeatId }[]> = {};
+		for (const id of grimoire.game.seating) {
+			if (id === seatId) continue;
+			for (const r of grimoire.game.seats[id].reminders)
+				(out[reminderKey(r)] ??= []).push({ reminderId: r.reminderId, seatId: id });
+		}
+		return out;
+	});
+	const holderName = (id: SeatId) =>
+		grimoire.game.seats[id]?.playerName ?? `Seat ${grimoire.game.seating.indexOf(id) + 1}`;
 	interface Copy {
-		/** Placed on another seat: disabled. */
+		/** Placed on another seat, or none left: shown faded. */
 		done: boolean;
+		/** The seat a placed copy is on: a tap moves it here. */
+		holder?: { reminderId: ReminderId; seatId: SeatId };
 		/** On this seat: shown selected, and a tap takes it off. */
 		on: boolean;
 		count?: number;
@@ -62,8 +81,7 @@
 		const free = Math.max(0, left.get(key) ?? 1);
 		const mine = onSeat(reminder);
 		const state = (i: number) => ({ done: i >= free + mine, on: i >= free && i < free + mine });
-		if (all <= 1) return [state(0)];
-		if (stack)
+		if (stack && all > 1)
 			return [
 				{
 					done: free === 0 && mine === 0,
@@ -73,11 +91,21 @@
 					label: `${reminder.label}, ${free} left`
 				}
 			];
-		return Array.from({ length: all }, (_, i) => ({
-			...state(i),
-			// eslint-disable-next-line grim/names-as-badges -- accessible name (aria-label)
-			label: `${reminder.label}, copy ${i + 1} of ${all}`
-		}));
+		const held = elsewhere[key] ?? [];
+		return Array.from({ length: all }, (_, i) => {
+			const holder = held[i - free - mine];
+			return {
+				...state(i),
+				holder,
+				label: holder
+					? // eslint-disable-next-line grim/names-as-badges -- accessible name (aria-label)
+						`${reminder.label}, on ${holderName(holder.seatId)}: move here`
+					: all > 1
+						? // eslint-disable-next-line grim/names-as-badges -- accessible name (aria-label)
+							`${reminder.label}, copy ${i + 1} of ${all}`
+						: undefined
+			};
+		});
 	}
 	/** Recent chips: on this seat, free, or used up elsewhere. */
 	const recentCopy = (reminder: Reminder): Copy => ({
@@ -108,6 +136,10 @@
 	 */
 	function toggle(reminder: Reminder, copy: Copy) {
 		if (!seatId) return;
+		if (copy.holder) {
+			onMove(copy.holder.reminderId, seatId);
+			return;
+		}
 		if (copy.on) {
 			const ids = here[reminderKey(reminder)] ?? [];
 			if (ids.length > 0) onRemove(ids[ids.length - 1]);
@@ -163,13 +195,17 @@
 								class="chip"
 								aria-label={copy.label}
 								aria-pressed={copy.on}
-								disabled={copy.done}
+								disabled={copy.done && !copy.holder}
 								onclick={() => toggle(reminder, copy)}
 							>
 								<ReminderToken {label} type={group.character.type} done={copy.done} />
 								{#if copy.count !== undefined}<span class="count-badge" aria-hidden="true"
 										>×{copy.count}</span
 									>{/if}
+								<!-- Who has it; the line is kept when empty, so nothing moves. -->
+								<span class="holder" aria-hidden="true" data-testid="reminder-holder"
+									>{copy.holder ? holderName(copy.holder.seatId) : ''}</span
+								>
 							</button>
 						{/each}
 					{/each}
@@ -218,7 +254,8 @@
 	}
 	.list li {
 		display: grid;
-		grid-template-columns: minmax(calc(8 * var(--u)), 35%) 1fr;
+		/* The chips column may shrink, so its chips wrap instead of widening the dialog. */
+		grid-template-columns: minmax(calc(8 * var(--u)), 35%) minmax(0, 1fr);
 		align-items: center;
 		gap: var(--space-2);
 		padding: calc(0.125 * var(--u)) 0;
@@ -256,6 +293,22 @@
 	}
 	.chip {
 		position: relative;
+	}
+	.holder {
+		max-width: calc(5 * var(--u) * var(--reminder-scale, 1));
+		min-height: 1.5em;
+		padding: 0 0.5em;
+		overflow: hidden;
+		border-radius: var(--radius-full);
+		font-size: 0.75rem;
+		line-height: 1.5;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.holder:not(:empty) {
+		border: 1px solid var(--border);
+		background: var(--surface-raised);
+		color: var(--on-surface);
 	}
 	.count-badge {
 		position: absolute;

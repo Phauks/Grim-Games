@@ -10,6 +10,8 @@
  * - https://wiki.bloodontheclocktower.com/Tinker (only its own death)
  * - https://wiki.bloodontheclocktower.com/Lil%27_Monsta (the babysitter is the Demon)
  * - https://wiki.bloodontheclocktower.com/Poisoner (a poisoned player's ability does nothing)
+ * - https://wiki.bloodontheclocktower.com/Cannibal, /Pixie, /Philosopher (a gained ability
+ *   kills only as the character it came from)
  * - https://wiki.bloodontheclocktower.com/Exile, /Travellers (Travellers are exiled, not
  *   executed; the Storyteller chooses their alignment, maybe later)
  */
@@ -33,7 +35,10 @@ const ids: CharacterId[] = [
 	'imp',
 	'lilmonsta',
 	'gangster',
-	'beggar'
+	'beggar',
+	'cannibal',
+	'pixie',
+	'philosopher'
 ];
 const script: Script = { entries: ids.map((id) => ({ kind: 'official', id })) };
 const characters = characterLookup(gameData, script);
@@ -181,5 +186,54 @@ describe('validDeathCauses', () => {
 		const { game: g, seats } = game(['chef', 'lycanthrope', 'imp', 'beggar']);
 		expect(g.seats[seats[3]]).not.toHaveProperty('alignment');
 		expect(entry(g, seats[3], 'lycanthrope')?.flags).toEqual([{ code: 'unknown' }]);
+	});
+});
+
+// Trevor, 2026-10-17: the Cannibal can't cause a death unless the ability it gained can.
+describe('gained abilities', () => {
+	// https://wiki.bloodontheclocktower.com/Cannibal: the ability of the executee marked Lunch.
+	it('offers the Cannibal only with a killing ability from its Lunch', () => {
+		const none = game(['cannibal', 'chef', 'imp']);
+		expect(causes(none.game, none.seats[2])).not.toContain('cannibal');
+		const chef = game(['cannibal', 'chef', 'imp'], add(1, 'cannibal', 'Lunch'));
+		expect(causes(chef.game, chef.seats[2])).not.toContain('cannibal');
+		const slayer = game(['cannibal', 'slayer', 'imp', 'chef'], add(1, 'cannibal', 'Lunch'));
+		expect(entry(slayer.game, slayer.seats[2], 'cannibal')).toEqual({
+			cause: 'cannibal',
+			kind: 'gained-ability',
+			gained: 'slayer',
+			flags: []
+		});
+		// With the Slayer's ability only the Demon dies.
+		expect(causes(slayer.game, slayer.seats[3])).not.toContain('cannibal');
+	});
+
+	// https://wiki.bloodontheclocktower.com/Cannibal: an evil executee poisons the Cannibal.
+	it('flags a poisoned Cannibal', () => {
+		const { game: g, seats } = game(
+			['cannibal', 'slayer', 'imp'],
+			add(1, 'cannibal', 'Lunch'),
+			add(0, 'cannibal', 'Poisoned')
+		);
+		expect(entry(g, seats[2], 'cannibal')?.flags).toEqual([
+			{ code: 'impaired', seatIds: [seats[0]] }
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Pixie: only once it has the ability.
+	it('offers the Pixie once it has a killing Townsfolk’s ability', () => {
+		const mad = game(['pixie', 'slayer', 'imp'], add(1, 'pixie', 'Mad'));
+		expect(causes(mad.game, mad.seats[2])).not.toContain('pixie');
+		const has = game(['pixie', 'slayer', 'imp'], add(1, 'pixie', 'Has Ability'));
+		expect(entry(has.game, has.seats[2], 'pixie')?.gained).toBe('slayer');
+	});
+
+	// https://wiki.bloodontheclocktower.com/Philosopher: the chosen character's ability,
+	// marked by its Drunk reminder or by swapping the Philosopher's token.
+	it('offers the Philosopher with the ability it chose', () => {
+		const idle = game(['philosopher', 'slayer', 'imp']);
+		expect(causes(idle.game, idle.seats[2])).not.toContain('philosopher');
+		const drunk = game(['philosopher', 'slayer', 'imp'], add(1, 'philosopher', 'Drunk'));
+		expect(entry(drunk.game, drunk.seats[2], 'philosopher')?.gained).toBe('slayer');
 	});
 });

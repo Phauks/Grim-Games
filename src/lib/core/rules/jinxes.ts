@@ -52,11 +52,6 @@ export function scriptJinxes(
 	return out;
 }
 
-/** True when the Djinn should be announced: the script holds at least one jinxed pair. */
-export function needsDjinn(jinxes: readonly ScriptJinx[]): boolean {
-	return jinxes.length > 0;
-}
-
 export interface JinxSetupWarning {
 	characters: readonly [CharacterId, CharacterId];
 	message: string;

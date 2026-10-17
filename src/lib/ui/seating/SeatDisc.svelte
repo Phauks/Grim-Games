@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 
 	/**
@@ -37,12 +36,8 @@
 		marks
 	}: Props = $props();
 
-	/**
-	 * Where the player's name goes (Settings > Tokens): the pill under the token, or on the
-	 * token itself. A seat with no character always uses the pill.
-	 */
-	const placement = $derived(preferences.current.tokenAppearance.playerNamePlacement);
-	const onToken = $derived(face !== undefined && placement !== 'below');
+	/** The player's name is a badge on the token (Trevor, 2026-10-17); a seat with no character keeps the pill under it. */
+	const onToken = $derived(face !== undefined);
 </script>
 
 <span class="seat-disc" data-dead={dead || undefined} style:--size="{size}px">
@@ -51,7 +46,7 @@
 			>{#if face}{@render face()}{:else}<span class="empty">{number}</span>{/if}</span
 		>
 		<!-- Over the face, not in it, so a token turned upside down leaves the name upright. -->
-		{#if onToken && placement !== 'below'}<PlayerNameMark {name} {placement} />{/if}
+		{#if onToken}<PlayerNameMark {name} />{/if}
 		{#if dead}<span class="skull" data-testid="dead-mark"><Icon name="dead" /></span>{/if}
 		{#if marks}{@render marks()}{/if}
 	</span>

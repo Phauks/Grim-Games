@@ -1,4 +1,5 @@
 import { buildInfo } from '#lib/build-info.ts';
+import { REPOSITORY_URL } from '#lib/features/about/report-issue.ts';
 import { BUILD_CACHE_PREFIX, RUNTIME_CACHE } from '#lib/features/offline/cache-rules.ts';
 import { locale, t } from '#lib/i18n/locale.svelte.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -10,6 +11,12 @@ import {
 	type DiagnosticSection
 } from './diagnostics.ts';
 import { errorLog } from './report.svelte.ts';
+
+/** Local date and time to the second, in the interface language. */
+const dateTime = (at: number | string): string =>
+	new Intl.DateTimeFormat(locale.current, { dateStyle: 'medium', timeStyle: 'medium' }).format(
+		new Date(at)
+	);
 
 const yesNo = (value: boolean | undefined): string =>
 	value === undefined
@@ -119,11 +126,20 @@ export async function collectDiagnostics(now = Date.now()): Promise<Diagnostics>
 			id: 'build',
 			title: 'errors.diag.build',
 			rows: [
+				{ label: 'errors.diag.gatheredAt', value: dateTime(now) },
 				{ label: 'errors.diag.version', value: buildInfo.version },
-				{ label: 'errors.diag.commit', value: buildInfo.commit },
-				{ label: 'errors.diag.branch', value: buildInfo.branch },
+				{
+					label: 'errors.diag.commit',
+					value: buildInfo.commit,
+					href: `${REPOSITORY_URL}/commit/${buildInfo.commit}`
+				},
+				{
+					label: 'errors.diag.branch',
+					value: buildInfo.branch,
+					href: `${REPOSITORY_URL}/tree/${buildInfo.branch}`
+				},
 				{ label: 'errors.diag.channel', value: buildInfo.channel },
-				{ label: 'errors.diag.builtAt', value: buildInfo.builtAt }
+				{ label: 'errors.diag.builtAt', value: dateTime(buildInfo.builtAt) }
 			]
 		},
 		app,

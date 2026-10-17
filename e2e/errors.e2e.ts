@@ -1,6 +1,25 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-test('an uncaught error shows the corner card, and Details offers a scrubbed GitHub report', async ({
+const CHOOSER = 'https://github.com/Phauks/Grim-Games/issues/new/choose';
+
+/** Fills the in-app Report form, sends it, and returns what reached the Worker. */
+async function sendReport(page: Page): Promise<Record<string, string>> {
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await expect(form).toBeVisible();
+	const title = form.getByRole('textbox', { name: 'Title' });
+	if (!(await title.inputValue())) await title.fill('Testing a report');
+	await form.getByRole('textbox', { name: 'Description' }).fill('It broke while testing.');
+	const [request] = await Promise.all([
+		page.waitForRequest((r) => r.url().endsWith('/api/reports') && r.method() === 'POST'),
+		form.getByRole('button', { name: 'Send' }).tap()
+	]);
+	await expect(form.getByTestId('report-sent')).toHaveText(/^Sent as report #\d+\.$/);
+	const sent = request.postDataJSON();
+	await form.getByRole('button', { name: 'Close' }).last().tap();
+	return sent;
+}
+
+test('an uncaught error shows the corner card, and Details offers a scrubbed report', async ({
 	page
 }) => {
 	await page.goto('/');
@@ -26,13 +45,17 @@ test('an uncaught error shows the corner card, and Details offers a scrubbed Git
 	const dialog = page.getByRole('dialog', { name: 'Problems on this device' });
 	await expect(dialog).toBeVisible();
 	await expect(dialog).toContainText('test failure at example.com/room');
-	const report = dialog.getByRole('link', { name: 'Report' });
+	const report = dialog.getByRole('button', { name: 'Report' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-	const href = new URL((await report.getAttribute('href'))!);
-	expect(href.searchParams.get('template')).toBe('bug_report.yml');
-	expect(href.searchParams.get('error')).toContain('uncaught');
-	expect(href.toString()).not.toContain('SECRET');
-	expect(href.toString()).not.toContain('script%3Dabc');
+	// Report opens the in-app form as a bug, with the problem's details to send along.
+	await report.tap();
+	const sent = await sendReport(page);
+	expect(sent.kind).toBe('bug');
+	expect(sent.title).toContain('test failure');
+	expect(sent.details).toContain('uncaught');
+	expect(sent.build).toMatch(/^v/);
+	expect(JSON.stringify(sent)).not.toContain('SECRET');
+	expect(JSON.stringify(sent)).not.toContain('script=abc');
 
 	// The log survives a reload (so a crash can be reported after reopening), until cleared.
 	await page.reload();
@@ -78,11 +101,10 @@ test('if the app cannot start, a plain screen shows the error with Reload and Re
 		const button = screen.getByRole('button', { name });
 		expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	}
-	const href = new URL(
-		(await screen.getByRole('link', { name: 'Report on GitHub' }).getAttribute('href'))!
+	await expect(screen.getByRole('link', { name: 'Copy and report on GitHub' })).toHaveAttribute(
+		'href',
+		CHOOSER
 	);
-	expect(href.searchParams.get('template')).toBe('bug_report.yml');
-	expect(href.searchParams.get('error')).toBeTruthy();
 });
 
 test('a working app never shows the boot-failure screen', async ({ page }) => {
@@ -107,7 +129,10 @@ test('Diagnostics gathers build, device and problems on the device, without game
 
 	await page.goto('/diagnostics');
 	const panel = page.getByTestId('diagnostics');
-	await expect(page.getByRole('heading', { level: 1, name: 'Diagnostics' })).toBeVisible();
+	// A Settings section, which /diagnostics opens (Trevor, 2026-10-16).
+	await expect(
+		page.getByRole('dialog', { name: 'Settings' }).getByRole('heading', { name: 'Diagnostics' })
+	).toBeVisible();
 	await expect(panel).toHaveAttribute('aria-busy', 'false');
 	for (const name of [
 		'Build',
@@ -121,19 +146,40 @@ test('Diagnostics gathers build, device and problems on the device, without game
 		await expect(panel.getByRole('heading', { level: 2, name })).toBeVisible();
 	}
 	await expect(panel).toContainText('1 problem');
+	// Build values link to GitHub; times carry the time of day, not just the date.
+	await expect(panel.getByRole('link', { name: /^[0-9a-f]{7,}$/ })).toHaveAttribute(
+		'href',
+		/^https:\/\/github\.com\/Phauks\/Grim-Games\/commit\//
+	);
+	await expect(panel.locator('dt:text-is("Gathered") + dd')).toHaveText(/\d{1,2}:\d{2}:\d{2}/);
+	await expect(panel.getByRole('link', { name: 'Manage data' })).toHaveCount(0);
 
-	const report = panel.getByRole('link', { name: 'Report an issue' });
+	// Refresh is an icon beside the section heading.
+	const heading = page
+		.getByRole('dialog', { name: 'Settings' })
+		.getByRole('heading', { name: 'Diagnostics' });
+	const refresh = page
+		.getByRole('dialog', { name: 'Settings' })
+		.getByRole('button', { name: 'Refresh' });
+	const [h, r] = [(await heading.boundingBox())!, (await refresh.boundingBox())!];
+	expect(r.height).toBeGreaterThanOrEqual(44);
+	expect(Math.abs(r.y + r.height / 2 - (h.y + h.height / 2))).toBeLessThan(12);
+	await refresh.tap();
+	await expect(panel).toHaveAttribute('aria-busy', 'false');
+
+	const report = panel.getByRole('button', { name: 'Report an issue' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-	const href = (await report.getAttribute('href'))!;
-	expect(href.length).toBeLessThanOrEqual(7000);
-	const error = new URL(href).searchParams.get('error')!;
-	expect(error).toContain('diagnostics test at example.com/room');
-	expect(href).not.toContain('SECRET');
-	expect(error).not.toContain('Sam the Storyteller');
+	await report.tap();
+	const sent = await sendReport(page);
+	expect(sent.details).toContain('diagnostics test at example.com/room');
+	expect(JSON.stringify(sent)).not.toContain('SECRET');
+	expect(JSON.stringify(sent)).not.toContain('Sam the Storyteller');
 
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),
 		panel.getByRole('button', { name: 'Download' }).tap()
 	]);
-	expect(download.suggestedFilename()).toMatch(/^grim-games-diagnostics-\d{4}-\d{2}-\d{2}\.txt$/);
+	expect(download.suggestedFilename()).toMatch(
+		/^grim-games-diagnostics-\d{4}-\d{2}-\d{2}-\d{6}\.txt$/
+	);
 });

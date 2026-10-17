@@ -21,9 +21,11 @@ export interface WikiSection {
 	blocks: WikiBlock[];
 }
 
+// #jinxes: the wiki's "Related Jinxes (Open)" box above the Summary; the Jinxes section shows
+// TPI's jinxes instead (Trevor, 2026-10-16: remove that text).
 const SKIP =
 	'table, style, script, figure, img, .toc, #toc, .infobox, .thumb, .navbox, .gallery, ' +
-	'.mw-references-wrap, .reflist, .references, .noprint, .mw-empty-elt';
+	'.mw-references-wrap, .reflist, .references, .noprint, .mw-empty-elt, #jinxes';
 const NOISE = 'sup.reference, .mw-editsection, style, script';
 const HEADING = /^H[2-6]$/;
 /** Lines from the details box that are not shown: its own labels and the episode credit. */

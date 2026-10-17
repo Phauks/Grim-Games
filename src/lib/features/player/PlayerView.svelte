@@ -38,11 +38,14 @@
 	import NoteEditor from './NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
-	import { playerNight } from './player-script.ts';
+	import PrintScriptButton from './PrintScriptButton.svelte';
+	import { playerNight, scriptVersion, sheetCharacters } from './player-script.ts';
+	import ScriptByline from './ScriptByline.svelte';
+	import PracticePanel from './PracticePanel.svelte';
 	import ScriptCopy from './ScriptCopy.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
-	type Tab = 'script' | 'night' | 'notes';
+	type Tab = 'script' | 'night' | 'notes' | 'practice';
 
 	let data = $state<GameData>();
 	let numeric = $state<NumericNightOrder>();
@@ -159,6 +162,11 @@
 			: []
 	);
 
+	const version = $derived(
+		currentScript.current === script ? scriptVersion(currentScript.saved) : undefined
+	);
+	const practiceCharacters = $derived(script && data ? sheetCharacters(script, data) : []);
+
 	let noteId = $state<string>();
 	let noteOpen = $state(false);
 	function openNote(id: string) {
@@ -176,9 +184,13 @@
 		<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 		     Another script loads only from a share link or QR code. -->
 		<div class="share">
-			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} icon />
+			<PrintScriptButton {script} {version} />
+			<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
 		</div>
-		<p class="author">{script?.meta.author ?? ' '}</p>
+		<!-- Author and version under the title, or an empty line so nothing moves (Trevor). -->
+		<div class="author">
+			<ScriptByline author={script?.meta.author} {version} />
+		</div>
 	</header>
 
 	{#if error}
@@ -207,7 +219,8 @@
 			tabs={[
 				{ value: 'script', label: t('player.tab.script') },
 				{ value: 'night', label: t('player.tab.night') },
-				{ value: 'notes', label: t('player.tab.notes') }
+				{ value: 'notes', label: t('player.tab.notes') },
+				{ value: 'practice', label: t('player.tab.practice') }
 			]}
 		>
 			{#snippet panel(value)}
@@ -217,13 +230,15 @@
 						{#if !script || !notebook}
 							<p class="muted">{t('player.loading')}</p>
 						{:else if value === 'script'}
-							<ScriptCopy {script} />
+							<ScriptCopy {script} byline={false} />
 						{:else if value === 'night'}
 							<PlayerNightOrder {nights} />
+						{:else if value === 'practice'}
+							<PracticePanel characters={practiceCharacters} scriptKey={key ?? scriptKey(script)} />
 						{:else}
 							<NotesPanel
 								notes={notebook.book.notes}
-								scratch={scratch?.strokes ?? []}
+								{scratch}
 								onAdd={() => openNote(notebook!.addNote())}
 								onOpenNote={openNote}
 								onOpenScratch={() => scratch && (scratchOpen = true)}
@@ -279,6 +294,10 @@
 	.author {
 		grid-column: 1 / -1;
 	}
+	.share {
+		display: flex;
+		gap: var(--space-1);
+	}
 	.choose h2 {
 		margin: 0 0 var(--space-2);
 		font-size: 1.1rem;
@@ -303,9 +322,10 @@
 		color: var(--heading);
 	}
 	.author {
-		margin: 0;
 		min-height: 1.4em;
-		color: var(--on-surface-muted);
+	}
+	.author :global(.byline) {
+		margin: 0;
 	}
 	.panel {
 		padding-top: var(--space-3);

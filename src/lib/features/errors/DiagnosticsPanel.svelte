@@ -1,32 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
-	import { buildInfo } from '#lib/build-info.ts';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import { collectDiagnostics } from './collect-diagnostics.svelte.ts';
-	import {
-		diagnosticsFileName,
-		diagnosticsReportUrl,
-		diagnosticsText,
-		type Diagnostics
-	} from './diagnostics.ts';
+	import { diagnosticsFileName, diagnosticsText } from './diagnostics.ts';
+	import { diagnosticsView, refreshDiagnostics } from './diagnostics-view.svelte.ts';
 	import { errorLog } from './report.svelte.ts';
 
 	// Gathered on this device when the page opens; nothing is sent unless the person taps Report.
 
-	let diagnostics = $state<Diagnostics>();
+	const diagnostics = $derived(diagnosticsView.current);
 	const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
 	const text = $derived(diagnostics ? diagnosticsText(diagnostics, label) : '');
-	const reportUrl = $derived(diagnosticsReportUrl(text, buildInfo, navigator.userAgent));
 
-	async function gather() {
-		diagnostics = await collectDiagnostics();
-	}
-	onMount(gather);
+	onMount(refreshDiagnostics);
 
 	async function copy() {
 		try {
@@ -52,19 +42,12 @@
 	<div class="actions">
 		<Button variant="accent" disabled={!diagnostics} onclick={copy}>{t('errors.diag.copy')}</Button>
 		<Button disabled={!diagnostics} onclick={download}>{t('errors.diag.download')}</Button>
-		<!-- External GitHub link, not an app route. -->
-		<!-- eslint-disable svelte/no-navigation-without-resolve -->
-		<a
-			class="link-button"
-			href={reportUrl}
-			target="_blank"
-			rel="noopener"
-			aria-disabled={!diagnostics}
+		<Button
+			disabled={!diagnostics}
+			onclick={() => reportDialog.show({ kind: 'bug', details: text })}
 		>
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			<Icon name="report" /><span>{t('errors.diag.report')}</span>
-		</a>
-		<Button variant="quiet" onclick={gather}>{t('errors.diag.refresh')}</Button>
+			<Icon name="report" />{t('errors.diag.report')}
+		</Button>
 	</div>
 
 	<section>
@@ -89,12 +72,16 @@
 			<dl>
 				{#each section.rows as row (row.label)}
 					<dt>{label(row.label)}</dt>
-					<dd>{row.value}</dd>
+					<dd>
+						{#if row.href}
+							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external GitHub link -->
+							<a href={row.href} target="_blank" rel="noopener">{row.value}</a>
+						{:else}
+							{row.value}
+						{/if}
+					</dd>
 				{/each}
 			</dl>
-			{#if section.id === 'storage'}
-				<Button variant="quiet" href={resolve('/settings')}>{t('errors.diag.manageData')}</Button>
-			{/if}
 		</section>
 	{/each}
 </div>
@@ -136,25 +123,7 @@
 		margin: 0;
 		overflow-wrap: anywhere;
 	}
-	.link-button {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-4);
-		border-radius: var(--button-radius);
-		background: var(--button-background);
-		color: var(--button-color);
-		font: var(--button-font);
-		letter-spacing: 0.04em;
-		text-decoration: none;
-	}
-	.link-button[aria-disabled='true'] {
-		pointer-events: none;
-		opacity: 0.5;
-	}
-	.link-button:hover {
-		filter: brightness(1.15);
+	dd a {
+		color: inherit;
 	}
 </style>

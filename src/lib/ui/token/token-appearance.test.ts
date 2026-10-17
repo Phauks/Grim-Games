@@ -25,24 +25,20 @@ describe('token appearance', () => {
 			colours: { face: PALE.toLowerCase() },
 			tokenScale: 1.5,
 			reminderScale: 2,
-			boardNames: false,
-			playerNamePlacement: 'below'
+			boardNames: false
 		});
 		expect(parseTokenAppearance(null)).toEqual({
 			colours: {},
 			tokenScale: 1,
 			reminderScale: 1,
-			boardNames: false,
-			playerNamePlacement: 'below'
+			boardNames: false
 		});
 		expect(parseTokenAppearance({ boardNames: true }).boardNames).toBe(true);
 		expect(parseTokenAppearance({ boardNames: 'yes' }).boardNames).toBe(false);
-		expect(parseTokenAppearance({ playerNamePlacement: 'badge' }).playerNamePlacement).toBe(
-			'badge'
-		);
-		expect(parseTokenAppearance({ playerNamePlacement: 'side' }).playerNamePlacement).toBe('below');
-		// An earlier build's character name placement says nothing about the player name.
-		expect(parseTokenAppearance({ namePlacement: 'icon-top' }).playerNamePlacement).toBe('below');
+		// Earlier builds' name placements are dropped: the player name is always a badge now.
+		expect(
+			parseTokenAppearance({ playerNamePlacement: 'below', namePlacement: 'icon-top' })
+		).toEqual(parseTokenAppearance({}));
 	});
 
 	it('keeps sizes on the 50% to 200% range in 5% steps; old S/M/L/XL sizes keep', () => {
@@ -60,8 +56,7 @@ describe('token appearance', () => {
 				colours: { ink: DARK },
 				tokenScale: 1.25,
 				reminderScale: 0.75,
-				boardNames: true,
-				playerNamePlacement: 'below'
+				boardNames: true
 			})
 		).toEqual({
 			'--token-scale': '1.25',

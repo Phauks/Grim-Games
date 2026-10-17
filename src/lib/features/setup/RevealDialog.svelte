@@ -1,6 +1,8 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { Alignment, Character } from '#lib/core/data/index.ts';
+	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -72,20 +74,22 @@
 		<p class="seat">{seatLabel}</p>
 		<label class="player">
 			<span>{t('setup.reveal.name')}</span>
-			<input
-				type="text"
-				autocomplete="off"
-				enterkeyhint="done"
-				placeholder={t('common.none')}
-				bind:value={name}
-				onkeydown={(e) => {
-					// Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap.
-					if (e.key === 'Enter') {
-						e.preventDefault();
-						e.currentTarget.blur();
-					}
-				}}
-			/>
+			<ClearableField bind:value={name}>
+				<input
+					type="text"
+					autocomplete="off"
+					enterkeyhint="done"
+					placeholder={t('common.none')}
+					bind:value={name}
+					onkeydown={(e) => {
+						// Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap.
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							e.currentTarget.blur();
+						}
+					}}
+				/>
+			</ClearableField>
 		</label>
 		<!-- Hidden until a name is entered when that's required; the space stays reserved. -->
 		<div class="token">
@@ -94,9 +98,13 @@
 					data-testid="reveal-locked">{t('setup.reveal.locked')}</span
 				>{/if}
 		</div>
-		<p class="name" data-testid="reveal-name" class:concealed={!revealed}>
-			<!-- eslint-disable-next-line grim/names-as-badges -- caption under the revealed token -->
-			{revealed ? shows.name : ''}
+		<p class="name" data-testid="reveal-name">
+			{#if revealed}<CharacterBadge
+					characterId={shows.id}
+					character={shows}
+					alignment={defaultAlignment(shows.type)}
+					interactive={false}
+				/>{/if}
 		</p>
 		<p class="ability" class:concealed={!revealed}>{revealed ? shows.ability : ''}</p>
 		<div class="alignment" aria-hidden={!needsAlignment}>
@@ -140,17 +148,21 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
+	/*
+	 * The token takes the user's Character token size, so its box grows with it: nothing below
+	 * is ever covered. The locked face is the same size, so revealing moves nothing.
+	 */
 	.token {
 		display: grid;
 		place-items: center;
-		width: calc(10 * var(--u));
-		height: calc(10 * var(--u));
+		min-width: calc(10 * var(--u) * var(--token-scale, 1));
+		min-height: calc(10 * var(--u) * var(--token-scale, 1));
 	}
 	.hidden-token {
 		display: grid;
 		place-items: center;
-		width: calc(10 * var(--u));
-		height: calc(10 * var(--u));
+		width: calc(10 * var(--u) * var(--token-scale, 1));
+		height: calc(10 * var(--u) * var(--token-scale, 1));
 		padding: var(--space-3);
 		border-radius: 50%;
 		background: var(--token-face);
@@ -161,12 +173,13 @@
 	.concealed {
 		min-height: 1.3em;
 	}
+	/* The badge's height is reserved while the token is locked. */
 	.name {
+		display: grid;
+		place-items: center;
+		min-height: var(--tap-target);
 		margin: 0;
-		font-family: var(--font-character);
-		font-weight: var(--font-character-weight);
-		font-size: 1.6rem;
-		color: var(--heading);
+		font-size: 1.3rem;
 	}
 	.ability {
 		max-width: 28rem;

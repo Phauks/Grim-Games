@@ -11,7 +11,6 @@ describe('settings section registry', () => {
 			label: 'B',
 			icon: 'info',
 			component,
-			audience: 'everyone',
 			order: 20
 		});
 		registerSettingsSection({
@@ -19,7 +18,6 @@ describe('settings section registry', () => {
 			label: 'A',
 			icon: 'info',
 			component,
-			audience: 'everyone',
 			order: 10
 		});
 		registerSettingsSection({
@@ -27,7 +25,6 @@ describe('settings section registry', () => {
 			label: 'B2',
 			icon: 'info',
 			component,
-			audience: 'everyone',
 			order: 5
 		});
 		expect(settingsSections().map((s) => s.label)).toEqual(['B2', 'A']);

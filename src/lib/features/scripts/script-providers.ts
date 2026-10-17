@@ -15,11 +15,16 @@ import {
 } from '#lib/core/data/index.ts';
 import type { ProfileScriptEntry } from '#lib/features/account/profile-scripts.ts';
 import type { BotcScriptsQuery, BotcScriptsRef, BotcScriptsSearchPage } from './botcscripts-api.ts';
-import type { CuratedScript } from './curated-api.ts';
+import { scriptPageUrl } from './botcscripts-api.ts';
+import type { CollectionScript } from './collection-api.ts';
+import type { WorldCupStage, WorldCupYear } from './world-cup.ts';
+import type { WorldCupScript } from './world-cup.svelte.ts';
+import { CURATED_PAGE, type CuratedScript } from './curated-api.ts';
 import { botcRow, pickerRow, type PickerRow, type PickerSource } from './picker-rows.ts';
 import {
 	reloadSavedScript,
 	sameScript,
+	sourcePage,
 	type SavedScript,
 	type ScriptSource
 } from './saved-scripts.ts';
@@ -45,12 +50,18 @@ export interface ScriptListing {
 export interface LocalContext {
 	data: GameData;
 	curated: readonly CuratedScript[];
+	/** The Carousel Script Collection (`collection-api.ts`). */
+	collection?: readonly CollectionScript[];
 	recent: readonly SavedScript[];
 	profile: readonly ProfileScriptEntry[];
 	/** Names a curated section in the app's words. */
 	curatedLabel: (section: string) => string;
 	/** Says where a saved script came from. */
 	describe: (source: ScriptSource) => string;
+	/** The World Cups' scripts loaded so far (`world-cup.svelte.ts`). */
+	worldCups?: Partial<Record<WorldCupYear, readonly WorldCupScript[]>>;
+	/** Says which World Cup and how far a script got, e.g. "World Cup 2025 · Winner". */
+	worldCupLabel?: (year: WorldCupYear, stage: WorldCupStage) => string;
 }
 
 export interface LocalProvider {
@@ -100,11 +111,14 @@ export const curatedProvider: LocalProvider = {
 			return script
 				? [
 						{
-							row: pickerRow(script, `curated:${i}`, 'curated', curatedLabel(entry.section)),
+							row: {
+								...pickerRow(script, `curated:${i}`, 'curated', curatedLabel(entry.section)),
+								page: CURATED_PAGE
+							},
 							target: {
 								kind: 'json',
 								json: entry.json,
-								source: { kind: 'link', url: entry.link }
+								source: { kind: 'link', url: entry.link, page: CURATED_PAGE }
 							},
 							identity: { json: entry.json }
 						}
@@ -112,6 +126,67 @@ export const curatedProvider: LocalProvider = {
 				: [];
 		})
 };
+
+export const collectionProvider: LocalProvider = {
+	kind: 'local',
+	id: 'collection',
+	listings: ({ data, collection = [] }) =>
+		collection.flatMap((entry) => {
+			const script = loadScript(entry.json, data).script;
+			return script
+				? [
+						{
+							row: {
+								...pickerRow(script, `collection:${entry.link}`, 'collection'),
+								page: entry.page
+							},
+							target: {
+								kind: 'json',
+								json: entry.json,
+								source: { kind: 'link', url: entry.link, page: entry.page }
+							},
+							identity: { json: entry.json }
+						}
+					]
+				: [];
+		})
+};
+
+/** A Script World Cup's finalists, each loaded from BotC Scripts (`world-cup.ts`). */
+function worldCupProvider(year: WorldCupYear): LocalProvider {
+	return {
+		kind: 'local',
+		id: `worldcup${year}`,
+		listings: ({ data, worldCups, worldCupLabel }) =>
+			(worldCups?.[year] ?? []).flatMap(({ entry, version, json }) => {
+				const script = loadScript(json, data).script;
+				if (!script) return [];
+				const row = pickerRow(
+					script,
+					`worldcup${year}:${entry.scriptId}`,
+					`worldcup${year}`,
+					worldCupLabel?.(year, entry.stage) ?? ''
+				);
+				return [
+					{
+						row: {
+							...row,
+							// The World Cup's own names, as BotC Scripts lists them.
+							name: row.name || entry.name,
+							author: row.author || entry.author,
+							number: entry.scriptId,
+							version,
+							page: scriptPageUrl(entry.scriptId, version || undefined)
+						},
+						target: { kind: 'botcscripts', ref: { kind: 'script', scriptId: entry.scriptId } },
+						identity: { json }
+					}
+				];
+			})
+	};
+}
+export const worldCup2023Provider = worldCupProvider('2023');
+export const worldCup2025Provider = worldCupProvider('2025');
 
 export const recentProvider: LocalProvider = {
 	kind: 'local',
@@ -123,7 +198,10 @@ export const recentProvider: LocalProvider = {
 			return script
 				? [
 						{
-							row: pickerRow(script, `recent:${saved.scriptId}`, 'recent', describe(saved.source)),
+							row: {
+								...pickerRow(script, `recent:${saved.scriptId}`, 'recent', describe(saved.source)),
+								page: sourcePage(saved.source)
+							},
 							target: { kind: 'saved', saved },
 							identity: saved,
 							saved
@@ -142,12 +220,15 @@ export const profileProvider: LocalProvider = {
 			return script
 				? [
 						{
-							row: pickerRow(
-								script,
-								`profile:${entry.id}`,
-								'profile',
-								describe(entry.script.source)
-							),
+							row: {
+								...pickerRow(
+									script,
+									`profile:${entry.id}`,
+									'profile',
+									describe(entry.script.source)
+								),
+								page: sourcePage(entry.script.source)
+							},
 							target: { kind: 'json', json: entry.script.json, source: entry.script.source },
 							identity: { json: entry.script.json }
 						}
@@ -167,6 +248,9 @@ export const LOCAL_PROVIDERS: readonly LocalProvider[] = [
 /** The Scripts page leaves out the base three: they are always in New game (Trevor, 2026-10-16). */
 export const SCRIPTS_PAGE_PROVIDERS: readonly LocalProvider[] = [
 	curatedProvider,
+	collectionProvider,
+	worldCup2023Provider,
+	worldCup2025Provider,
 	recentProvider,
 	profileProvider
 ];
@@ -231,5 +315,7 @@ export function findSaved(
 	saved: readonly SavedScript[],
 	listing: ScriptListing
 ): SavedScript | undefined {
-	return listing.saved ?? saved.find((s) => matchesSaved(s, listing));
+	const own = listing.saved;
+	if (own && saved.some((s) => s.scriptId === own.scriptId)) return own;
+	return saved.find((s) => matchesSaved(s, listing));
 }

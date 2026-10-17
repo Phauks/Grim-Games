@@ -13,7 +13,12 @@
  */
 import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { alignmentOf, seatsInOrder, trueCharacter } from '#lib/core/model/selectors.ts';
+import {
+	alignmentOf,
+	nearestOfType,
+	seatsInOrder,
+	trueCharacter
+} from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, Seat, SeatId } from '#lib/core/model/types.ts';
 import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
 import {
@@ -84,7 +89,12 @@ function facts(game: Game, lookup: CharacterLookup): SeatFacts[] {
 	});
 }
 
-function fits(filter: SeatFilter, f: SeatFacts, selfSeats: readonly SeatFacts[]): boolean {
+function fits(
+	filter: SeatFilter,
+	f: SeatFacts,
+	selfSeats: readonly SeatFacts[],
+	nearest: (way: 'anticlockwise' | 'clockwise') => SeatId[]
+): boolean {
 	switch (filter) {
 		case 'any':
 			return true;
@@ -101,6 +111,10 @@ function fits(filter: SeatFilter, f: SeatFacts, selfSeats: readonly SeatFacts[])
 			return selfSeats.some((s) => s.alignment !== undefined && s.alignment === f.alignment);
 		case 'copies':
 			return selfSeats.includes(f);
+		case 'nearest-townsfolk-anticlockwise':
+			return nearest('anticlockwise').includes(f.seat.seatId);
+		case 'nearest-townsfolk-clockwise':
+			return nearest('clockwise').includes(f.seat.seatId);
 	}
 }
 
@@ -117,24 +131,58 @@ const has = (seat: Seat, characterId: CharacterId, label: string) =>
 	seat.reminders.some((r) => r.characterId === characterId && r.label === label);
 
 function suggest(
+	game: Game,
+	lookup: CharacterLookup,
 	entry: SetupReminderEntry,
 	seats: SeatFacts[],
 	selfSeats: SeatFacts[],
 	timings: ReadonlySet<SetupTiming>
 ): SetupReminder[] {
 	const out: SetupReminder[] = [];
-	// Tokens of this character already in the grimoire, by label: each covers one spec.
-	const placed = new Map<string, number>();
-	for (const { seat } of seats) {
-		for (const r of seat.reminders) {
-			if (r.characterId === entry.id) placed.set(r.label, (placed.get(r.label) ?? 0) + 1);
-		}
-	}
+	const nearest = (way: 'anticlockwise' | 'clockwise') =>
+		selfSeats.flatMap((s) => {
+			const id = nearestOfType(game, s.seat.seatId, 'townsfolk', lookup)[way];
+			return id === undefined ? [] : [id];
+		});
+	const fitting = (target: Exclude<SetupTarget, { self: true }>) =>
+		seats
+			.filter((f) => !(target.notSelf && selfSeats.includes(f)))
+			.filter((f) => fits(target.choose, f, selfSeats, nearest))
+			.map((f) => f.seat.seatId);
+	const specs = entry.reminders.filter(
+		(spec) => timings.has(spec.timing ?? 'setup') && holds(spec.when, seats, selfSeats.length)
+	);
+	// Tokens of this character already in the grimoire each cover one spec with their label:
+	// the one whose players include the token's seat (the No Dashii's clockwise Poisoned),
+	// else the first one left.
+	const placed = seats.flatMap(({ seat }) =>
+		seat.reminders
+			.filter((r) => r.characterId === entry.id)
+			.map((r) => ({ label: r.label, seatId: seat.seatId }))
+	);
+	const covered = new Set<SetupReminderSpec>();
 	const taken = new Set<SeatId>();
-	for (const spec of entry.reminders) {
+	const open = (spec: SetupReminderSpec, label: string) =>
+		!('self' in spec.target) && spec.label === label && !covered.has(spec);
+	const left = placed.filter((token) => {
+		const spec = specs.find(
+			(s) =>
+				open(s, token.label) &&
+				fitting(s.target as Exclude<SetupTarget, { self: true }>).includes(token.seatId)
+		);
+		if (!spec) return true;
+		covered.add(spec);
+		taken.add(token.seatId);
+		return false;
+	});
+	for (const token of left) {
+		const spec = specs.find((s) => open(s, token.label));
+		if (!spec) continue;
+		covered.add(spec);
+		taken.add(token.seatId);
+	}
+	for (const spec of specs) {
 		const timing = spec.timing ?? 'setup';
-		if (!timings.has(timing)) continue;
-		if (!holds(spec.when, seats, selfSeats.length)) continue;
 		const base = {
 			characterId: entry.id,
 			label: spec.label,
@@ -151,16 +199,8 @@ function suggest(
 			}
 			continue;
 		}
-		const already = placed.get(spec.label) ?? 0;
-		if (already > 0) {
-			placed.set(spec.label, already - 1);
-			continue;
-		}
-		const candidates = seats
-			.filter((f) => !(target.notSelf && selfSeats.includes(f)))
-			.filter((f) => !taken.has(f.seat.seatId))
-			.filter((f) => fits(target.choose, f, selfSeats))
-			.map((f) => f.seat.seatId);
+		if (covered.has(spec)) continue;
+		const candidates = fitting(target).filter((s) => !taken.has(s));
 		const only = candidates.length === 1 ? candidates[0] : undefined;
 		if (only !== undefined) taken.add(only);
 		out.push({
@@ -200,7 +240,7 @@ export function setupReminders(
 		// Homebrew characters share no rules with an official id.
 		if (!entry || (character && character.edition === undefined)) continue;
 		const selfSeats = seats.filter((f) => f.truly === id || f.seat.characterId === id);
-		out.push(...suggest(entry, seats, selfSeats, timings));
+		out.push(...suggest(game, lookup, entry, seats, selfSeats, timings));
 	}
 	return out;
 }

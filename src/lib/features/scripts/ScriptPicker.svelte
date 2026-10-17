@@ -1,8 +1,12 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import { onMount, untrack } from 'svelte';
+	import { createAttachmentKey } from 'svelte/attachments';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		editionScript,
+		loadScript,
 		loadScriptText,
 		type CharacterId,
 		type CharacterType,
@@ -10,8 +14,6 @@
 		type LoadedScript,
 		type ScriptLoadResult
 	} from '#lib/core/data/index.ts';
-	import { account } from '#lib/features/account/account.svelte.ts';
-	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
@@ -21,22 +23,25 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import {
 		EMPTY_QUERY,
 		MAX_FILTER_CHARACTERS,
+		compareVersions,
 		filterCount,
 		normaliseSearch,
 		parseBotcScriptsRef,
+		scriptPageUrl,
 		searchPath,
 		type BotcScriptsQuery,
+		type BotcScriptsRef,
 		type BotcScriptsSort
 	} from './botcscripts-api.ts';
-	import { botcCard } from './botcscripts-cards.ts';
-	import { scriptPageUrl } from './botcscripts-api.ts';
 	import BotcFilter from './BotcFilter.svelte';
+	import { collectionScripts } from './collection.svelte.ts';
+	import { botcVersions } from './botc-versions.svelte.ts';
 	import { curatedScripts } from './curated.svelte.ts';
+	import { worldCupScripts } from './world-cup.svelte.ts';
 	import {
 		chooseScript,
 		currentScript,
@@ -55,14 +60,21 @@
 		filterRows,
 		nextSort,
 		sortRows,
-		type PickerRow,
 		type PickerSource,
 		type RowSort,
-		type ScriptKind,
 		type SortColumn
 	} from './picker-rows.ts';
+	import { relaxJson } from './relaxed-json.ts';
 	import { RemoteSearch } from './remote-search.svelte.ts';
-	import { describeSource, reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
+	import {
+		describeSource,
+		reloadSavedScript,
+		sourcePage,
+		type ScriptSource
+	} from './saved-scripts.ts';
+	import PrintScriptButton from '#lib/features/player/PrintScriptButton.svelte';
+	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
+	import ScriptChecks from './ScriptChecks.svelte';
 	import ScriptDetails, { type ScriptFact } from './ScriptDetails.svelte';
 	import {
 		botcProvider,
@@ -70,12 +82,14 @@
 		localListings,
 		matchesSaved,
 		SCRIPTS_PAGE_PROVIDERS,
+		recentProvider,
+		type LocalContext,
 		type LoadTarget,
 		type ScriptListing
 	} from './script-providers.ts';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import ShareControl from './ShareControl.svelte';
-	import ShareCodeEntry from './ShareCodeEntry.svelte';
-	import { fetchSharedCode, shareTargetFor } from './share-codes.ts';
+	import { shareTargetFor } from './share-codes.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
 	import { CURATED_SECTIONS } from './script-tool-link.ts';
@@ -106,17 +120,45 @@
 
 	let pasteOpen = $state(false);
 	let linkOpen = $state(false);
-	let codeOpen = $state(false);
 	let checkOpen = $state(false);
 
 	let pasteText = $state('');
 	let linkText = $state('');
-	let codeText = $state('');
 
-	/** The one search box: local scripts, or the remote source when that is chosen. */
 	let term = $state('');
-	let source = $state<PickerSource | 'all'>('all');
-	let kind = $state<ScriptKind | ''>('');
+	/**
+	 * One source at a time (Trevor, 2026-10-17): mixing them was unfair, since only BotC
+	 * Scripts has likes and numbers. In his order; saved scripts live in the Library.
+	 */
+	const PAGE_SOURCES = [
+		'botc',
+		'curated',
+		'collection',
+		'worldcup2023',
+		'worldcup2025'
+	] as const satisfies readonly PickerSource[];
+	type PageSource = (typeof PAGE_SOURCES)[number];
+	const SOURCE_KEY = 'grim-games:scripts:source';
+	function storedSource(): PageSource {
+		try {
+			const stored = globalThis.localStorage?.getItem(SOURCE_KEY);
+			return PAGE_SOURCES.find((s) => s === stored) ?? 'botc';
+		} catch {
+			return 'botc';
+		}
+	}
+	let source = $state<PageSource>(storedSource());
+	function chooseSource(next: PageSource) {
+		if (next === source) return;
+		source = next;
+		sort = undefined;
+		try {
+			globalThis.localStorage?.setItem(SOURCE_KEY, next);
+		} catch {
+			// Storage blocked: the choice lasts for this visit.
+		}
+	}
+	const searchingBotc = $derived(source === 'botc');
 	let sort = $state<RowSort | undefined>();
 	let data = $state.raw<GameData>();
 	let error = $state('');
@@ -136,16 +178,16 @@
 		);
 	});
 
-	// Profile scripts are listed for a signed-in user (fetched once; the Account page refreshes).
+	// A collection is only fetched while it is the chosen source.
 	$effect(() => {
-		if (account.user && profileScripts.status === 'idle') void profileScripts.refresh();
-	});
-
-	// The official site is only asked when its scripts are wanted: chosen, or searched for.
-	$effect(() => {
-		if (source === 'curated' || (source === 'all' && term.trim() !== '')) {
-			void curatedScripts.load();
-		}
+		const wanted = source;
+		// Untracked: a failed load must not re-run this and try again in a loop.
+		untrack(() => {
+			if (wanted === 'curated') void curatedScripts.load();
+			if (wanted === 'collection') void collectionScripts.load();
+			if (wanted === 'worldcup2023') void worldCupScripts.load('2023');
+			if (wanted === 'worldcup2025') void worldCupScripts.load('2025');
+		});
 	});
 
 	/** The official site's known sections in the app's words; any other heading as written. */
@@ -155,30 +197,51 @@
 			: section;
 	}
 
+	const localContext = $derived<LocalContext | undefined>(
+		data && {
+			data,
+			curated: curatedScripts.list,
+			collection: collectionScripts.list,
+			recent: recentScripts.list,
+			profile: [],
+			curatedLabel: curatedSectionLabel,
+			describe: describeSource,
+			worldCups: { '2023': worldCupScripts.list('2023'), '2025': worldCupScripts.list('2025') },
+			worldCupLabel: (year, stage) =>
+				`${t(`scripts.picker.source.worldcup${year}`)} · ${t(`scripts.worldCup.${stage}`)}`
+		}
+	);
+	/** The chosen source's rows, when it is listed on the device (all but BotC Scripts). */
 	const local = $derived(
-		data
+		localContext
 			? localListings(
-					{
-						data,
-						curated: curatedScripts.list,
-						recent: recentScripts.list,
-						profile: account.user ? profileScripts.list : [],
-						curatedLabel: curatedSectionLabel,
-						describe: describeSource
-					},
-					SCRIPTS_PAGE_PROVIDERS
+					localContext,
+					SCRIPTS_PAGE_PROVIDERS.filter((p) => p.id === source)
 				)
 			: []
 	);
+	/** Saved scripts: not listed here (the Library lists them), but the details show the latest. */
+	const savedListings = $derived(localContext ? localListings(localContext, [recentProvider]) : []);
 
+	/** Local rows, filtered on the device by the same header filters the site uses. */
 	const shownLocal = $derived.by(() => {
-		if (source === 'botc') return [];
-		const byKey = new Map(local.map((l) => [l.row.key, l]));
+		const f = botcFilters;
 		const rows = filterRows(
 			local.map((l) => l.row),
-			{ term, source, kind }
+			{
+				term,
+				sources: [source],
+				kind: f.type,
+				author: f.author,
+				include: f.include,
+				exclude: f.exclude,
+				oneDemon: f.oneDemon,
+				officialOnly: f.officialOnly
+			},
+			data
 		);
-		return sortRows(rows, sort).map((row) => byKey.get(row.key)!);
+		const keys = new Set(rows.map((r) => r.key));
+		return local.filter((l) => keys.has(l.row.key));
 	});
 
 	// ---- BotC Scripts: searched on the site, page by page ----
@@ -193,13 +256,21 @@
 	const botc = new RemoteSearch(botcProvider(searchBotcScripts), (q) => searchPath(q));
 	const DEBOUNCE_MS = 400;
 
-	const botcRef = $derived(source === 'botc' ? parseBotcScriptsRef(term) : undefined);
-	const botcQuery = $derived<BotcScriptsQuery>({ ...botcFilters, term: normaliseSearch(term) });
+	const botcRef = $derived(searchingBotc ? parseBotcScriptsRef(term) : undefined);
+	/** The site picks which results come first: most likes, or by upload order for No. */
+	const siteSort = $derived<BotcScriptsSort>(
+		sort?.column === 'number' ? (sort.descending ? 'newest' : 'oldest') : 'votes'
+	);
+	const botcQuery = $derived<BotcScriptsQuery>({
+		...botcFilters,
+		sort: siteSort,
+		term: normaliseSearch(term)
+	});
 	const botcKey = $derived(searchPath(botcQuery));
 
 	// A search runs after a pause in typing or a change of filters; links and numbers don't search.
 	$effect(() => {
-		if (source !== 'botc' || !data || botcRef || botcKey === botc.searched) return;
+		if (!searchingBotc || !data || botcRef || botcKey === botc.searched) return;
 		const q = $state.snapshot(botcQuery) as BotcScriptsQuery;
 		const d = data;
 		const timer = setTimeout(
@@ -234,52 +305,176 @@
 		if (!has) botcFilters[other] = botcFilters[other].filter((c) => c !== id);
 	}
 
-	/** Header sorts the site supports: Likes (most first) and No. (upload order, both ways). */
-	const BOTC_SORT_OF: Record<BotcScriptsSort, DataSort<ColumnId> | undefined> = {
-		votes: { column: 'likes', direction: 'descending' },
-		newest: { column: 'number', direction: 'descending' },
-		oldest: { column: 'number', direction: 'ascending' },
-		match: undefined
-	};
-	const effectiveBotcSort = $derived<BotcScriptsSort>(
-		botcFilters.sort === 'match' && !botcQuery.term ? 'votes' : botcFilters.sort
-	);
-
-	function sortBotc(column: ColumnId) {
-		const current = effectiveBotcSort;
-		if (column === 'likes') {
-			// Most likes, then (with a search) the closest names.
-			botcFilters.sort = current === 'votes' && botcQuery.term ? 'match' : 'votes';
-		} else if (column === 'number') {
-			botcFilters.sort =
-				current === 'newest' ? 'oldest' : current === 'oldest' ? 'votes' : 'newest';
-		}
-	}
-
 	// ---- The table ----
 
-	const shown = $derived<ScriptListing[]>(source === 'botc' ? botc.listings : shownLocal);
+	/**
+	 * The chosen source's rows; a header tap sorts what is loaded (BotC Scripts also asks the
+	 * site for its order by likes or number).
+	 */
+	const shown = $derived.by<ScriptListing[]>(() => {
+		const all = searchingBotc ? (botcRef ? [] : botc.listings) : shownLocal;
+		if (!sort) return all;
+		const byKey = new Map(all.map((l) => [l.row.key, l]));
+		return sortRows(
+			all.map((l) => l.row),
+			sort
+		).map((row) => byKey.get(row.key)!);
+	});
 
 	/** The most recently saved script that is listed (base three are not). */
 	const latest = $derived(
 		recentScripts.list
-			.map((saved) => local.find((l) => l.saved?.scriptId === saved.scriptId))
+			.map((saved) => savedListings.find((l) => l.saved?.scriptId === saved.scriptId))
 			.find((l) => l !== undefined)
 	);
-	const shownListing = $derived(selected ?? latest);
+	/** The row tapped, or the latest saved script. */
+	const baseListing = $derived(selected ?? latest);
+
+	// ---- Versions: BotC Scripts publishes them (and the World Cups load from it) ----
+
+	/** The shown script's number and version on BotC Scripts, when it came from there. */
+	const baseBotc = $derived.by(() => {
+		const listing = baseListing;
+		if (!listing) return undefined;
+		if (listing.row.number !== undefined && listing.row.version !== undefined) {
+			return { scriptId: listing.row.number, version: listing.row.version };
+		}
+		const source = findSaved(recentScripts.list, listing)?.source;
+		return source?.kind === 'botcscripts'
+			? { scriptId: source.scriptId, version: source.version }
+			: undefined;
+	});
+	$effect(() => {
+		const id = baseBotc?.scriptId;
+		if (id !== undefined) untrack(() => void botcVersions.load(id));
+	});
+	const versionList = $derived(baseBotc ? botcVersions.get(baseBotc.scriptId) : undefined);
+	/** Another version chosen in the details, for the row it was chosen on. */
+	let picked = $state<{ key: string; version: string } | undefined>();
+	const pickedVersion = $derived(
+		baseListing && picked?.key === baseListing.row.key ? picked.version : undefined
+	);
+	/** The chosen version as a row of its own: previewed, saved and shared as that version. */
+	const versionListing = $derived.by((): ScriptListing | undefined => {
+		const base = baseListing;
+		const botcInfo = baseBotc;
+		if (!base || !botcInfo || !pickedVersion || pickedVersion === botcInfo.version) {
+			return undefined;
+		}
+		const { scriptId } = botcInfo;
+		return {
+			row: {
+				...base.row,
+				key: `botc-version:${scriptId}:${pickedVersion}`,
+				source: 'botc',
+				number: scriptId,
+				version: pickedVersion,
+				page: scriptPageUrl(scriptId, pickedVersion)
+			},
+			target: { kind: 'botcscripts', ref: { kind: 'script', scriptId, version: pickedVersion } }
+		};
+	});
+	$effect(() => {
+		const target = versionListing?.target;
+		if (target?.kind === 'botcscripts') untrack(() => void fetchBotc(target.ref).catch(() => {}));
+	});
+	const shownVersion = $derived(pickedVersion ?? baseBotc?.version);
+	const latestVersion = $derived(versionList?.latest);
+	/** A newer version than the one shown (e.g. a saved 1.2.0 when 1.3.0 is out). */
+	const newer = $derived(
+		latestVersion && shownVersion && compareVersions(latestVersion, shownVersion) > 0
+			? latestVersion
+			: undefined
+	);
+	function chooseVersion(version: string) {
+		if (!baseListing) return;
+		picked = { key: baseListing.row.key, version };
+	}
+
+	const shownListing = $derived(versionListing ?? baseListing);
 	const shownSaved = $derived(
 		shownListing ? findSaved(recentScripts.list, shownListing) : undefined
 	);
 
 	function select(listing: ScriptListing) {
 		selected = listing;
+		picked = undefined;
 		paneOpen = true;
+		if (listing.target.kind === 'botcscripts') void fetchBotc(listing.target.ref).catch(() => {});
+	}
+
+	/** Save and Remove from saved show at once; the write finishes behind it. */
+	const pendingSaved = new SvelteMap<string, boolean>();
+	function setPending(key: string, value: boolean | undefined) {
+		if (value === undefined) pendingSaved.delete(key);
+		else pendingSaved.set(key, value);
+	}
+	const shownIsSaved = $derived(
+		shownListing ? (pendingSaved.get(shownListing.row.key) ?? !!shownSaved) : false
+	);
+
+	/** A BotC Scripts row is fetched when tapped, so Save doesn't wait on the site. */
+	const botcFetches = new SvelteMap<string, Promise<FetchedScript>>();
+	/** Fetched BotC Scripts text by ref, for the details' player sheet. */
+	const botcTexts = new SvelteMap<string, string>();
+	function fetchBotc(ref: BotcScriptsRef): Promise<FetchedScript> {
+		const key = JSON.stringify(ref);
+		let fetching = botcFetches.get(key);
+		if (!fetching) {
+			fetching = fetchLinkTarget({ kind: 'botcscripts', ref }, '');
+			botcFetches.set(key, fetching);
+			fetching.then(
+				(fetched) => botcTexts.set(key, fetched.text),
+				() => botcFetches.delete(key)
+			);
+		}
+		return fetching;
+	}
+
+	/**
+	 * The shown script as players see it (Trevor, 2026-10-16): names and abilities by type,
+	 * with jinxes. A BotC Scripts row has it once its fetch arrives; until then (or if the
+	 * script doesn't load) the details list its characters as badges.
+	 */
+	const preview = $derived.by((): LoadedScript | undefined => {
+		const listing = shownListing;
+		if (!data || !listing) return undefined;
+		if (shownSaved) return reloadSavedScript(shownSaved, data);
+		const target = listing.target;
+		switch (target.kind) {
+			case 'edition':
+				return editionScript(target.edition, data);
+			case 'saved':
+				return reloadSavedScript(target.saved, data);
+			case 'json':
+				return loadScript(target.json, data).script;
+			case 'botcscripts': {
+				const text = botcTexts.get(JSON.stringify(target.ref));
+				return text === undefined ? undefined : loadScriptText(text, data).script;
+			}
+		}
+	});
+
+	async function toggleSaved() {
+		const listing = shownListing;
+		if (!listing) return;
+		if (shownIsSaved) {
+			removing = true;
+			return;
+		}
+		selected = listing;
+		setPending(listing.row.key, true);
+		try {
+			await loadTarget(listing.target);
+		} finally {
+			setPending(listing.row.key, undefined);
+		}
 	}
 
 	/** The shown row, or (in another source's list) the same script there. */
 	function isSelected(listing: ScriptListing): boolean {
-		if (!shownListing) return false;
-		if (shownListing.row.key === listing.row.key) return true;
+		if (!shownListing || !baseListing) return false;
+		if (baseListing.row.key === listing.row.key) return true;
 		return !!shownSaved && matchesSaved(shownSaved, listing);
 	}
 
@@ -287,33 +482,28 @@
 		const row = listing?.row;
 		const saved = listing && findSaved(recentScripts.list, listing);
 		const none = t('common.none');
-		const botcSource =
-			row?.source === 'botc' && row.number !== undefined
-				? { kind: 'botcscripts' as const, scriptId: row.number, version: row.version ?? '' }
-				: saved?.source.kind === 'botcscripts'
-					? saved.source
-					: undefined;
+		const source: ScriptSource | undefined =
+			saved?.source ??
+			(row?.source === 'botc' && row.number !== undefined
+				? { kind: 'botcscripts', scriptId: row.number, version: row.version ?? '' }
+				: undefined);
+		// The Source opens the script's own page where it came from (Trevor, 2026-10-16).
+		const page = (source && sourcePage(source)) ?? row?.page;
 		return [
 			{ label: t('scripts.current.author'), value: row ? row.author || none : none },
 			{ label: t('scripts.column.type'), value: row ? t(`scripts.kind.${row.kind}`) : none },
-			botcSource
-				? {
-						label: t('scripts.current.source'),
-						value: describeSource(botcSource),
-						href: scriptPageUrl(botcSource.scriptId, botcSource.version)
-					}
-				: {
-						label: t('scripts.current.source'),
-						value: saved
-							? describeSource(saved.source)
-							: row
-								? row.note || t(`scripts.sourceLabel.${row.source}`)
-								: none
-					}
+			{
+				label: t('scripts.current.source'),
+				value: source
+					? describeSource(source)
+					: row
+						? row.note || t(`scripts.sourceLabel.${row.source}`)
+						: none,
+				href: page
+			}
 		];
 	}
 
-	/** The player link for a saved script, made only when Share is tapped. */
 	const shareTarget = $derived.by(() => {
 		const saved = shownSaved;
 		return saved && saved.scriptId !== 'unsaved'
@@ -321,149 +511,173 @@
 			: undefined;
 	});
 
+	/** Removing keeps the script shown (Trevor), so Save can bring it straight back. */
 	async function removeShown() {
+		const listing = shownListing;
 		const saved = shownSaved;
 		removing = false;
-		if (!saved) return;
-		selected = undefined;
-		await forgetScript(saved.scriptId).catch((e) => reportError(e, { area: 'scripts' }));
+		if (!listing || !saved) return;
+		selected = listing;
+		setPending(listing.row.key, false);
+		try {
+			await forgetScript(saved.scriptId);
+		} catch (e) {
+			reportError(e, { area: 'scripts' });
+		} finally {
+			setPending(listing.row.key, undefined);
+		}
 	}
 
-	const curatedNote = $derived(
-		(source === 'all' || source === 'curated') && curatedScripts.status === 'loading'
-			? t('scripts.picker.curatedLoading')
+	const curatedNote = $derived.by(() => {
+		const year =
+			source === 'worldcup2023' ? '2023' : source === 'worldcup2025' ? '2025' : undefined;
+		const loading = year
+			? worldCupScripts.status(year) === 'loading'
+			: source === 'curated' && curatedScripts.status === 'loading';
+		const failed = year
+			? worldCupScripts.status(year) === 'error'
 			: source === 'curated' &&
-				  curatedScripts.status === 'error' &&
-				  curatedScripts.list.length === 0
+				curatedScripts.status === 'error' &&
+				curatedScripts.list.length === 0;
+		return loading
+			? t('scripts.picker.curatedLoading')
+			: failed
 				? t('scripts.picker.curatedFailed')
-				: ''
+				: '';
+	});
+	const botcStatus = $derived(
+		!searchingBotc
+			? ''
+			: botc.failure ||
+					(botc.loading && botc.listings.length === 0
+						? t('scripts.botc.searching')
+						: botc.searched === undefined || botc.count === 0
+							? ''
+							: t('scripts.botc.count', {
+									count: botc.count,
+									sort: t(`scripts.botc.sort.${siteSort}`).toLowerCase()
+								}))
 	);
-	const botcSortLabel = $derived(t(`scripts.botc.sort.${effectiveBotcSort}`).toLowerCase());
 	const status = $derived(
 		!data
 			? t('scripts.picker.loading')
-			: source === 'botc'
-				? botcRef
-					? t('scripts.botc.refHint')
-					: botc.failure ||
-						(botc.loading && botc.listings.length === 0
-							? t('scripts.botc.searching')
-							: botc.searched === undefined
-								? ''
-								: botc.listings.length === 0
-									? t('common.none')
-									: t('scripts.botc.count', { count: botc.count, sort: botcSortLabel }))
-				: (shown.length === 0
-						? t('common.none')
-						: t('scripts.picker.count', { count: shown.length })) + curatedNote
+			: botcRef
+				? t('scripts.botc.refHint')
+				: searchingBotc
+					? botcStatus || t('common.none')
+					: (shown.length === 0
+							? t('common.none')
+							: t('scripts.picker.count', { count: shown.length })) + curatedNote
 	);
 
-	const SOURCE_OPTIONS = $derived<{ value: PickerSource | 'all'; label: string }[]>(
-		(['all', 'curated', 'recent', 'profile', 'botc'] as const).map((value) => ({
-			value,
-			label: t(`scripts.picker.source.${value}`)
-		}))
+	const SOURCE_OPTIONS = $derived(
+		PAGE_SOURCES.map((value) => ({ value, label: t(`scripts.picker.source.${value}`) }))
 	);
-	const KIND_OPTIONS = $derived<{ value: ScriptKind | ''; label: string }[]>([
-		{ value: '', label: t('scripts.picker.type.any') },
-		{ value: 'Full', label: t('scripts.kind.Full') },
-		{ value: 'Teensyville', label: t('scripts.kind.Teensyville') }
-	]);
 
 	type ColumnId = SortColumn;
-	const LOCAL_COLUMNS = $derived<DataColumn<ColumnId>[]>([
+	const characterFilters = $derived(
+		filterCount({ ...botcFilters, term: '', type: '', author: '' })
+	);
+	/**
+	 * Name, Author, Type and a character count for every source; Likes and No. only for BotC
+	 * Scripts, the one source that has them (Trevor, 2026-10-17). Author and Type are always
+	 * columns of their own; Chars, Likes and No. give way on phones, where the Chars filter
+	 * moves into the Name header.
+	 */
+	const columns = $derived<DataColumn<ColumnId>[]>([
 		{ id: 'name', label: t('scripts.column.name'), sortable: true, flush: true },
 		{
 			id: 'author',
 			label: t('scripts.column.author'),
 			sortable: true,
-			wide: true,
-			width: '20%'
+			width: '22%',
+			filterable: true,
+			filtered: botcFilters.author !== ''
 		},
-		{ id: 'source', label: t('scripts.column.source'), sortable: true, width: '6rem' },
 		{
 			id: 'kind',
 			label: t('scripts.column.type'),
 			sortable: true,
-			wide: true,
-			width: '8.5rem',
-			filterable: true,
-			filtered: kind !== ''
-		},
-		{
-			id: 'characters',
-			label: t('scripts.column.characters'),
-			sortable: true,
-			align: 'end',
-			width: '6rem'
-		}
-	]);
-	/** BotC Scripts: the site's own columns (Name, Author, Type, Likes) plus character counts. */
-	const characterFilters = $derived(
-		filterCount({ ...botcFilters, term: '', type: '', author: '' })
-	);
-	const BOTC_COLUMNS = $derived<DataColumn<ColumnId>[]>([
-		{ id: 'name', label: t('scripts.column.name'), flush: true },
-		{
-			id: 'author',
-			label: t('scripts.column.author'),
-			wide: true,
-			width: '20%',
-			filterable: true,
-			filtered: botcQuery.author !== ''
-		},
-		{
-			id: 'kind',
-			label: t('scripts.column.type'),
-			wide: true,
-			width: '8.5rem',
+			width: '6.5rem',
 			filterable: true,
 			filtered: botcFilters.type !== ''
 		},
 		{
 			id: 'characters',
 			label: t('scripts.column.characters'),
+			sortable: true,
 			align: 'end',
-			width: '6rem',
+			wide: true,
+			width: '7rem',
 			filterable: true,
 			filtered: characterFilters > 0
 		},
-		{
-			id: 'likes',
-			label: t('scripts.column.likes'),
-			sortable: true,
-			align: 'end',
-			width: '6rem'
-		},
-		{
-			id: 'number',
-			label: t('scripts.column.number'),
-			sortable: true,
-			wide: true,
-			align: 'end',
-			width: '6rem'
-		}
+		...(searchingBotc
+			? ([
+					{
+						id: 'likes',
+						label: t('scripts.column.likes'),
+						sortable: true,
+						wide: true,
+						align: 'end',
+						width: '5rem'
+					},
+					{
+						id: 'number',
+						label: t('scripts.column.number'),
+						sortable: true,
+						wide: true,
+						align: 'end',
+						width: '5rem'
+					}
+				] satisfies DataColumn<ColumnId>[])
+			: [])
 	]);
-	const columns = $derived(source === 'botc' ? BOTC_COLUMNS : LOCAL_COLUMNS);
 	const tableSort = $derived<DataSort<ColumnId> | undefined>(
-		source === 'botc'
-			? BOTC_SORT_OF[effectiveBotcSort]
-			: sort && {
-					column: sort.column,
-					direction: sort.descending ? 'descending' : 'ascending'
-				}
+		sort && { column: sort.column, direction: sort.descending ? 'descending' : 'ascending' }
 	);
 
-	function onSort(column: ColumnId) {
-		if (source === 'botc') sortBotc(column);
-		else sort = nextSort(sort, column);
+	/**
+	 * More BotC Scripts results load by themselves when the list's end comes within about a
+	 * screen of view (Trevor, 2026-10-17: no More button). The last row carries the watcher;
+	 * after a page arrives the new last row starts watching, so it keeps going while the end
+	 * stays in view, until the site has no more.
+	 */
+	const NEAR_END = createAttachmentKey();
+
+	/**
+	 * Tapping anywhere in a row selects its script (Trevor, 2026-10-16), as its name button
+	 * does; the button stays the row's one focus stop, so Enter still selects.
+	 */
+	const TAP_ROW = createAttachmentKey();
+	function tapRow(row: Element) {
+		const tap = (event: Event) => {
+			const button = row.querySelector<HTMLButtonElement>('button.pick');
+			if (!button || button.disabled) return;
+			if (event.target instanceof Element && event.target.closest('button, a, input')) return;
+			button.click();
+		};
+		row.addEventListener('click', tap);
+		return () => row.removeEventListener('click', tap);
+	}
+	const lastKey = $derived(shown.at(-1)?.row.key);
+	function loadMore() {
+		if (busy || !searchingBotc || botc.loading || !botc.hasMore || botcRef || !data) return;
+		void botc.load($state.snapshot(botcQuery) as BotcScriptsQuery, botc.page + 1, data);
+	}
+	function nearEnd(row: Element) {
+		const watcher = new IntersectionObserver(
+			(seen) => {
+				if (seen.some((s) => s.isIntersecting)) loadMore();
+			},
+			{ rootMargin: '100% 0px' }
+		);
+		watcher.observe(row);
+		return () => watcher.disconnect();
 	}
 
-	/** Counts under the name on narrow tables: good and evil characters. */
-	function makeup(row: PickerRow): string {
-		if (!data || row.source !== 'botc') return '';
-		const c = botcCard(row.entries, data).counts;
-		return [c.townsfolk, c.outsider, c.minion, c.demon].map((n) => n ?? 0).join('/');
+	function onSort(column: ColumnId) {
+		sort = nextSort(sort, column);
 	}
 
 	function clearError() {
@@ -472,7 +686,7 @@
 	}
 
 	function closeAll() {
-		pasteOpen = linkOpen = codeOpen = false;
+		pasteOpen = linkOpen = false;
 	}
 
 	/** Saves a script; the details then show it (the tapped row, if that is what was saved). */
@@ -486,7 +700,8 @@
 
 	/** Parses fetched text, then loads it or asks the Storyteller to check it first. */
 	async function settle(fetched: FetchedScript) {
-		const result = loadScriptText(fetched.text, await loadOfficialData());
+		// Hand-edited JSON (comments, trailing commas) loads too.
+		const result = loadScriptText(relaxJson(fetched.text), await loadOfficialData());
 		closeAll();
 		const needsCheck = !result.script || result.problems.some((p) => p.severity !== 'info');
 		if (needsCheck) {
@@ -530,7 +745,7 @@
 					Promise.resolve({ text: JSON.stringify(target.json), source: target.source })
 				);
 			case 'botcscripts':
-				return run(() => fetchLinkTarget({ kind: 'botcscripts', ref: target.ref }, ''));
+				return run(() => fetchBotc(target.ref));
 		}
 	}
 
@@ -584,14 +799,59 @@
 		);
 	}
 
-	function open(which: 'paste' | 'link' | 'code') {
+	function open(which: 'paste' | 'link') {
 		clearError();
 		pasteOpen = which === 'paste';
 		linkOpen = which === 'link';
-		codeOpen = which === 'code';
-		if (codeOpen) codeText = '';
+	}
+
+	/** The page's Add script button: paste, a file from the device, or a link. */
+	export function add(which: 'paste' | 'file' | 'link') {
+		if (which === 'file') {
+			clearError();
+			fileInput?.click();
+		} else open(which);
 	}
 </script>
+
+<!-- Every BotC Scripts version, newest first; "None" where the source publishes none. -->
+{#snippet version()}
+	{#if versionList && versionList.versions.length > 0 && shownVersion}
+		<Select
+			label={t('scripts.details.version')}
+			hideLabel
+			value={shownVersion}
+			options={versionList.versions.map((v) => ({
+				value: v,
+				label:
+					v === latestVersion
+						? t('scripts.details.latestVersion', { version: v })
+						: v === baseBotc?.version && shownSaved
+							? t('scripts.details.savedVersion', { version: v })
+							: v
+			}))}
+			onChange={chooseVersion}
+		/>
+	{:else}
+		<span data-testid="script-version">{shownVersion ?? t('common.none')}</span>
+	{/if}
+	<!-- Space kept whether or not there is a newer version, so nothing moves when it arrives. -->
+	<span class="newer" class:none={!newer} data-testid="newer-version">
+		<Button variant="quiet" disabled={!newer} onclick={() => newer && chooseVersion(newer)}
+			>{t('scripts.details.newerVersion', { version: newer ?? latestVersion ?? '' })}</Button
+		>
+	</span>
+{/snippet}
+
+{#snippet playerSheet()}
+	{#if preview && data}
+		<div class="sheet-stack">
+			<ScriptChecks script={preview} {data} />
+			<!-- Author and version are already in the details above. -->
+			<ScriptCopy script={preview} byline={false} />
+		</div>
+	{/if}
+{/snippet}
 
 <!-- The list on the left, the shown script's details on the right; on a phone the details
      slide over the list and Back returns to it. -->
@@ -601,30 +861,30 @@
 			<div class="search">
 				<label class="term">
 					<span class="visually-hidden">{t('scripts.picker.search')}</span>
-					<input
-						type="search"
-						autocomplete="off"
-						enterkeyhint="search"
-						placeholder={source === 'botc'
-							? t('scripts.picker.searchBotc')
-							: t('scripts.picker.searchLocal')}
-						bind:value={term}
-					/>
+					<span class="magnifier" aria-hidden="true"><Icon name="search" /></span>
+					<ClearableField bind:value={term}>
+						<input
+							type="search"
+							autocomplete="off"
+							enterkeyhint="search"
+							placeholder={t('scripts.picker.searchPlaceholder')}
+							bind:value={term}
+						/>
+					</ClearableField>
 				</label>
 				<Select
-					label={t('scripts.picker.source')}
-					hideLabel
+					label={t('scripts.sources.label')}
 					value={source}
 					options={SOURCE_OPTIONS}
-					onChange={(v) => (source = v)}
+					onChange={chooseSource}
 				/>
 			</div>
 
 			<!-- One fixed height for every source, so switching moves nothing below. -->
 			<div class="body">
-				<div class="table" data-testid="picker-table" data-source={source}>
+				<div class="table" data-testid="picker-table">
 					<DataTable
-						label={source === 'botc' ? t('scripts.botc.results') : t('scripts.picker.table')}
+						label={t('scripts.picker.table')}
 						{columns}
 						rows={botcRef ? [] : shown}
 						key={(listing) => listing.row.key}
@@ -636,6 +896,10 @@
 						resizeKey="scripts"
 						fill
 						rowSelected={isSelected}
+						rowAttrs={(listing) => ({
+							[TAP_ROW]: tapRow,
+							...(listing.row.key === lastKey ? { [NEAR_END]: nearEnd } : {})
+						})}
 						empty={botcRef ? '' : t('common.none')}
 					/>
 				</div>
@@ -643,42 +907,20 @@
 				<!-- The count shares the line under the table with the next action; both always there. -->
 				<div class="more" data-testid="picker-more">
 					<p class="status" role="status" data-testid="picker-status">{status}</p>
-					{#if source === 'botc'}
-						<div class="buttons">
-							<Button
-								variant="quiet"
-								disabled={busy || botc.loading || !botc.hasMore || !!botcRef || !data}
-								onclick={() =>
-									data &&
-									botc.load($state.snapshot(botcQuery) as BotcScriptsQuery, botc.page + 1, data)}
-								>{t('scripts.botc.more')}</Button
-							>
-							<Button
-								variant="accent"
-								disabled={busy || !botcRef}
-								onclick={() =>
-									botcRef && run(() => fetchLinkTarget({ kind: 'botcscripts', ref: botcRef }, ''))}
-								>{t('scripts.picker.save')}</Button
-							>
-						</div>
-					{:else}
-						<Button variant="quiet" onclick={() => (source = 'botc')}
-							>{t('scripts.picker.searchBotcButton')}</Button
+					<!-- Always there, enabled when a BotC Scripts link was typed. -->
+					<div class="buttons">
+						<Button
+							variant="accent"
+							disabled={busy || !botcRef}
+							onclick={() =>
+								botcRef && run(() => fetchLinkTarget({ kind: 'botcscripts', ref: botcRef }, ''))}
+							>{t('scripts.picker.save')}</Button
 						>
-					{/if}
+					</div>
 				</div>
 			</div>
 
-			<section aria-labelledby="custom-heading">
-				<h2 id="custom-heading" class="visually-hidden">{t('scripts.picker.add')}</h2>
-				<div class="row custom">
-					<Button onclick={() => open('paste')}>{t('scripts.picker.paste')}</Button>
-					<Button onclick={() => fileInput?.click()} disabled={busy}
-						>{t('scripts.picker.file')}</Button
-					>
-					<Button onclick={() => open('link')}>{t('scripts.picker.link')}</Button>
-					<Button onclick={() => open('code')}>{t('scripts.picker.code')}</Button>
-				</div>
+			<section>
 				<!-- Not limited to application/json: some iPad and Android file providers don't label
 		     .json files with that type, which greyed them out in Pocket Grimoire (PG 126, PG 162). -->
 				<input
@@ -691,7 +933,7 @@
 				/>
 				<!-- Load errors outside a dialog; the line is always there, so no reflow. -->
 				<p class="error" role="status" data-testid="file-error">
-					{#if !pasteOpen && !linkOpen && !codeOpen}{error}{/if}
+					{#if !pasteOpen && !linkOpen}{error}{/if}
 				</p>
 			</section>
 		</div>
@@ -709,29 +951,24 @@
 					facts={factsFor(shownListing)}
 					entries={shownListing?.row.entries ?? []}
 					{data}
+					sheet={preview ? playerSheet : undefined}
+					{version}
 				>
 					{#snippet actions()}
+						<PrintScriptButton script={preview} version={shownVersion} />
 						<ShareControl
 							what="script"
 							title={shownListing?.row.name || t('scripts.current.defaultName')}
-							target={shareTarget}
+							target={shownIsSaved ? shareTarget : undefined}
 						/>
-						{#if shownSaved}
-							<Button disabled>{t('scripts.details.saved')}</Button>
-						{:else}
-							<Button
-								variant="accent"
-								disabled={busy || !shownListing}
-								onclick={() => shownListing && loadTarget(shownListing.target)}
-								>{t('scripts.picker.save')}</Button
-							>
-						{/if}
-						<span class="danger">
+						<!-- One button, the same size saved or not: pressed means saved. -->
+						<span class="toggle" class:on={shownIsSaved}>
 							<IconButton
-								icon="remove"
-								label={t('scripts.details.remove')}
-								disabled={!shownSaved}
-								onclick={() => (removing = true)}
+								icon="save"
+								label={t('scripts.picker.save')}
+								aria-pressed={shownIsSaved}
+								disabled={!shownListing}
+								onclick={() => void toggleSaved()}
 							/>
 						</span>
 					{/snippet}
@@ -762,16 +999,6 @@
 			onclick={() => select(listing)}
 		>
 			<span class="title">{row.name || t('common.none')}</span>
-			<span class="sub"
-				>{[
-					row.note,
-					row.author || t('scripts.picker.noAuthor'),
-					t(`scripts.kind.${row.kind}`),
-					makeup(row)
-				]
-					.filter(Boolean)
-					.join(' · ')}</span
-			>
 		</button>
 	{:else if column.id === 'author'}
 		<span class="text">{row.author || t('common.none')}</span>
@@ -789,37 +1016,16 @@
 {/snippet}
 
 {#snippet filter(column: DataColumn<ColumnId>, close: () => void)}
-	{#if source === 'botc'}
-		<BotcFilter
-			column={column.id}
-			bind:filters={botcFilters}
-			{close}
-			onchoose={(list) => {
-				close();
-				choosing = list;
-				choosingOpen = true;
-			}}
-		/>
-	{:else}
-		<fieldset class="kinds" data-col={column.id}>
-			<legend class="visually-hidden">{t('scripts.picker.type')}</legend>
-			{#each KIND_OPTIONS as option (option.value)}
-				<label class="check">
-					<input
-						type="radio"
-						name="script-kind"
-						value={option.value}
-						checked={kind === option.value}
-						onchange={() => {
-							kind = option.value;
-							close();
-						}}
-					/>
-					{option.label}
-				</label>
-			{/each}
-		</fieldset>
-	{/if}
+	<BotcFilter
+		column={column.id}
+		bind:filters={botcFilters}
+		{close}
+		onchoose={(list) => {
+			close();
+			choosing = list;
+			choosingOpen = true;
+		}}
+	/>
 {/snippet}
 
 <Dialog
@@ -867,13 +1073,15 @@
 <Dialog bind:open={linkOpen} title={t('scripts.link.title')}>
 	<label class="field">
 		<span>{t('scripts.link.label')}</span>
-		<input
-			type="url"
-			inputmode="url"
-			autocomplete="off"
-			placeholder="https://"
-			bind:value={linkText}
-		/>
+		<ClearableField bind:value={linkText}>
+			<input
+				type="url"
+				inputmode="url"
+				autocomplete="off"
+				placeholder="https://"
+				bind:value={linkText}
+			/>
+		</ClearableField>
 	</label>
 	{@render errorLine()}
 	{#snippet actions()}
@@ -888,24 +1096,6 @@
 			variant="accent"
 			onclick={() => run(() => fetchLinkTarget(resolveLink(linkText), linkText))}
 			disabled={busy || linkText.trim() === ''}>{t('scripts.picker.save')}</Button
-		>
-	{/snippet}
-</Dialog>
-
-<Dialog bind:open={codeOpen} title={t('scripts.code.title')}>
-	{#if codeOpen}
-		<ShareCodeEntry
-			bind:value={codeText}
-			disabled={busy}
-			onsubmit={(code) => run(() => fetchSharedCode(code))}
-		/>
-	{/if}
-	{@render errorLine()}
-	{#snippet actions()}
-		<Button
-			variant="accent"
-			onclick={() => run(() => fetchSharedCode(codeText))}
-			disabled={busy || codeText === ''}>{t('scripts.picker.save')}</Button
 		>
 	{/snippet}
 </Dialog>
@@ -944,6 +1134,11 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
+		min-width: 0;
+	}
+	.sheet-stack {
+		display: grid;
+		gap: var(--space-4);
 		min-width: 0;
 	}
 	/* The list sets the height; the details scroll inside it. */
@@ -985,8 +1180,9 @@
 		font: inherit;
 		cursor: pointer;
 	}
-	.danger :global(.icon-button:not(:disabled)) {
-		color: var(--evil);
+	.toggle.on :global(.icon-button) {
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 	@container script-panes (min-width: 56rem) {
 		.grid {
@@ -1011,15 +1207,26 @@
 	}
 	.search {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		gap: var(--space-2);
-		align-items: end;
+		gap: var(--space-1);
+	}
+	.term {
+		position: relative;
+	}
+	.magnifier {
+		position: absolute;
+		inset-block: 0;
+		inset-inline-start: var(--space-2);
+		display: grid;
+		place-items: center;
+		color: var(--on-surface-muted);
+		pointer-events: none;
 	}
 	.term input {
 		width: 100%;
 		box-sizing: border-box;
 		min-height: var(--tap-target);
 		padding: var(--space-2);
+		padding-inline-start: calc(2 * var(--space-2) + 1.25em);
 		border: var(--card-border);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
@@ -1058,7 +1265,14 @@
 		text-align: left;
 		cursor: pointer;
 	}
-	.pick:hover:not(:disabled) {
+	.newer.none {
+		visibility: hidden;
+	}
+	/* The whole row selects its script (`tapRow`). */
+	.picker :global(tbody tr:has(.pick:not(:disabled))) {
+		cursor: pointer;
+	}
+	.picker :global(tbody tr:has(.pick:not(:disabled)):hover) {
 		background: var(--surface-selected);
 	}
 	.title {
@@ -1066,20 +1280,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.sub {
-		display: none;
-		font-size: 0.8rem;
-		color: var(--on-surface-muted);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	/* Narrow tables: author and type sit under the name instead of in columns of their own. */
-	@container data-table (max-width: 40rem) {
-		.sub {
-			display: block;
-		}
 	}
 	.text {
 		display: flex;
@@ -1107,41 +1307,9 @@
 		display: flex;
 		gap: var(--space-2);
 	}
-	.kinds {
-		display: grid;
-		margin: var(--space-2) 0 0;
-		padding: 0;
-		border: 0;
-	}
-	.check {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		min-height: var(--tap-target);
-	}
-	.check input {
-		width: calc(1.25 * var(--u));
-		height: calc(1.25 * var(--u));
-	}
 	section {
 		display: grid;
 		gap: var(--space-2);
-	}
-	.row {
-		display: grid;
-		gap: var(--space-2);
-	}
-	.custom {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-	}
-	/* Narrow screens and large text: the search and source stack, the buttons go two by two. */
-	@media (max-width: 30rem) {
-		.search {
-			grid-template-columns: minmax(0, 1fr);
-		}
-		.custom {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
 	}
 	.file {
 		position: absolute;

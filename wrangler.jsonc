@@ -42,13 +42,15 @@
 			{ "name": "ROOMS", "class_name": "Room" },
 			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
 			{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
-			{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" }
+			{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
+			{ "name": "REPORTS", "class_name": "ReportBox" }
 		]
 	},
 	"migrations": [
 		{ "tag": "v1", "new_sqlite_classes": ["Room"] },
 		{ "tag": "v2", "new_sqlite_classes": ["SharedScript"] },
-		{ "tag": "v3", "new_sqlite_classes": ["AccountUser", "AccountEmail"] }
+		{ "tag": "v3", "new_sqlite_classes": ["AccountUser", "AccountEmail"] },
+		{ "tag": "v4", "new_sqlite_classes": ["ReportBox"] }
 	],
 	// Script share codes (worker/share.ts): per-address limits so codes can't be guessed by
 	// trying many. namespace_id is our own number; nothing to create in the dashboard
@@ -60,7 +62,8 @@
 		{ "name": "AUTH_STARTS", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
 		// Live rooms (worker/room.ts): joins and reconnects, and rooms opened, per address.
 		{ "name": "ROOM_JOINS", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
-		{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } }
+		{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } },
+		{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } }
 	],
 	"vars": { "ENVIRONMENT": "production" },
 	// Worker Previews: Workers Builds runs `npx wrangler preview` for non-production branches,
@@ -73,7 +76,8 @@
 				{ "name": "ROOMS", "class_name": "Room" },
 				{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
 				{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
-				{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" }
+				{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
+				{ "name": "REPORTS", "class_name": "ReportBox" }
 			]
 		},
 		"ratelimits": [
@@ -81,7 +85,8 @@
 			{ "name": "SHARE_CREATES", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
 			{ "name": "AUTH_STARTS", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
 			{ "name": "ROOM_JOINS", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
-			{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } }
+			{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } },
+			{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } }
 		]
 	}
 }

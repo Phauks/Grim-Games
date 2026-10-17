@@ -3,6 +3,8 @@
 	import { onMount } from 'svelte';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { restoreScripts } from './current-script.svelte.ts';
 	import ScriptPicker from './ScriptPicker.svelte';
@@ -10,6 +12,13 @@
 	import { sharedRefFromHash } from './share.ts';
 
 	let picker: ScriptPicker | undefined = $state();
+	let adding = $state(false);
+	let addAnchor: HTMLElement | undefined = $state();
+
+	function add(which: 'paste' | 'file' | 'link') {
+		adding = false;
+		picker?.add(which);
+	}
 
 	/** A share link (`/scripts#c=…` and the like) loads through the usual checks, then is cleared. */
 	async function openSharedLink() {
@@ -80,7 +89,22 @@
 />
 
 <main>
-	<h1>{t('scripts.heading')}</h1>
+	<header>
+		<h1>{t('scripts.heading')}</h1>
+		<span bind:this={addAnchor}>
+			<Button icon="add" aria-haspopup="dialog" onclick={() => (adding = true)}
+				>{t('scripts.picker.add')}</Button
+			>
+		</span>
+	</header>
+
+	<Popover bind:open={adding} title={t('scripts.picker.add')} anchor={addAnchor}>
+		<div class="add">
+			<Button onclick={() => add('paste')}>{t('scripts.picker.paste')}</Button>
+			<Button onclick={() => add('file')}>{t('scripts.picker.file')}</Button>
+			<Button onclick={() => add('link')}>{t('scripts.picker.link')}</Button>
+		</div>
+	</Popover>
 
 	<ErrorBoundary area="scripts">
 		<ScriptPicker bind:this={picker} />
@@ -124,6 +148,18 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-5);
+	}
+	header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+	.add {
+		display: grid;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
 	}
 	h1 {
 		margin: 0;
