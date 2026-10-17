@@ -19,7 +19,7 @@ describe('player notebook', () => {
 		expect(emptyNotebook('edition:tb', 0)).toEqual({
 			schemaVersion: NOTEBOOK_VERSION,
 			scriptKey: 'edition:tb',
-			notes: [{ noteId: 'n1', title: '', text: '' }],
+			notes: [{ noteId: 'n1', title: '', text: '', hidden: false }],
 			updatedAt: 0
 		});
 	});
@@ -28,7 +28,12 @@ describe('player notebook', () => {
 		let book = emptyNotebook('edition:tb', 0);
 		const first = addNote(book);
 		book = updateNote(first.book, first.noteId, { title: 'Bluffs', text: 'Chef, Monk' });
-		expect(book.notes[1]).toEqual({ noteId: 'n2', title: 'Bluffs', text: 'Chef, Monk' });
+		expect(book.notes[1]).toEqual({
+			noteId: 'n2',
+			title: 'Bluffs',
+			text: 'Chef, Monk',
+			hidden: false
+		});
 		book = deleteNote(book, 'n1');
 		const second = addNote(book);
 		expect(second.noteId).toBe('n3');
@@ -42,10 +47,31 @@ describe('player notebook', () => {
 		expect(migrateNotebook({ schemaVersion: 4 })).toBeUndefined();
 	});
 
+	it('keeps each note hidden or shown on its own', () => {
+		const book = updateNote(emptyNotebook('edition:tb', 5), 'n1', { hidden: true });
+		expect(book.notes[0].hidden).toBe(true);
+		expect(addNote(book).book.notes[1].hidden).toBe(false);
+		expect(migrateNotebook(JSON.parse(JSON.stringify(book)))).toEqual(book);
+	});
+
+	it('hides every note from before v6 when the old Hide note contents setting was on', () => {
+		const old = {
+			schemaVersion: 5,
+			scriptKey: 'edition:tb',
+			notes: [{ noteId: 'n1', title: 'A', text: 'b' }],
+			updatedAt: 1
+		};
+		expect(migrateNotebook(old, true)?.notes[0].hidden).toBe(true);
+		expect(migrateNotebook(old, false)?.notes[0].hidden).toBe(false);
+		// From v6 on each note decides; the old setting no longer applies.
+		const v6 = { ...old, schemaVersion: 6, notes: [{ ...old.notes[0], hidden: false }] };
+		expect(migrateNotebook(v6, true)?.notes[0].hidden).toBe(false);
+	});
+
 	it('moves a v1 notes pad into one untitled note', () => {
 		expect(
 			migrateNotebook({ schemaVersion: 1, scriptKey: 'edition:tb', notes: 'hi' })?.notes
-		).toEqual([{ noteId: 'n1', title: '', text: 'hi' }]);
+		).toEqual([{ noteId: 'n1', title: '', text: 'hi', hidden: false }]);
 	});
 
 	it('keeps notes written on seats in v1 to v4 as titled notes, dropping the circle', () => {
@@ -65,9 +91,9 @@ describe('player notebook', () => {
 			schemaVersion: NOTEBOOK_VERSION,
 			scriptKey: 'edition:tb',
 			notes: [
-				{ noteId: 'n1', title: 'Mine', text: 'x' },
-				{ noteId: 'n2', title: 'Seat 1 · Alex', text: 'Pinged me' },
-				{ noteId: 'n3', title: 'Seat 3', text: 'Quiet' }
+				{ noteId: 'n1', title: 'Mine', text: 'x', hidden: false },
+				{ noteId: 'n2', title: 'Seat 1 · Alex', text: 'Pinged me', hidden: false },
+				{ noteId: 'n3', title: 'Seat 3', text: 'Quiet', hidden: false }
 			],
 			updatedAt: 7
 		});

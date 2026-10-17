@@ -13,6 +13,7 @@ import {
 	type BotcScriptsRef,
 	type BotcScriptsSearchPage
 } from './botcscripts-api.ts';
+import { homebrewScriptPage, homebrewScriptPath } from './homebrew-scripts-api.ts';
 import type { ScriptSource } from './saved-scripts.ts';
 import type { LinkTarget } from './script-links.ts';
 import { decodeScriptToolPayload, ScriptToolLinkError } from './script-tool-link.ts';
@@ -89,6 +90,26 @@ async function fetchBotcScripts(ref: BotcScriptsRef): Promise<FetchedScript> {
 		text: JSON.stringify(version.content),
 		source: { kind: 'botcscripts', scriptId: version.scriptId, version: version.version }
 	};
+}
+
+/** One BOTC HomeBrew Wiki script in TPI's format, through our Worker. */
+export async function fetchHomebrewScript(slug: string): Promise<FetchedScript> {
+	const page = homebrewScriptPage(slug);
+	let response: Response;
+	try {
+		response = await fetch(homebrewScriptPath(slug), { signal: withTimeout() });
+	} catch {
+		throw new ScriptFetchError(
+			navigator.onLine === false ? t('scripts.error.offline') : t('scripts.error.blocked'),
+			page
+		);
+	}
+	if (!response.ok) {
+		throw new ScriptFetchError(t('scripts.error.http', { status: response.status }), page);
+	}
+	const text = await response.text();
+	if (text.length > MAX_SCRIPT_BYTES) throw tooLarge();
+	return { text, source: { kind: 'link', url: page, page } };
 }
 
 /** Loads whatever `resolveLink` decided. */

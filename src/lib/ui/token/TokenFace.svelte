@@ -11,9 +11,26 @@
 		size?: number;
 		/** The character's name, written on the token (grimoire tokens, when the setting is on). */
 		name?: string;
+		/**
+		 * Night order numbers in a badge on the side leaves (Settings, Trevor 2026-10-17): the
+		 * first night on the left leaf, other nights on the right. Shown only with the leaf.
+		 */
+		nightNumbers?: { first?: number; other?: number };
 	}
 
-	let { src, label, leaves, size = 56, name }: Props = $props();
+	let { src, label, leaves, size = 56, name, nightNumbers }: Props = $props();
+	// Each badge sits on the middle of its leaf (the leaf runs from the rim inwards). The
+	// user's Night order badge size (--night-badge-scale) scales it about that point.
+	const badges = $derived(
+		[
+			{ night: 'first', x: 12.5, value: leaves.firstNight ? nightNumbers?.first : undefined },
+			{ night: 'other', x: 87.5, value: leaves.otherNight ? nightNumbers?.other : undefined }
+		].flatMap((b) =>
+			b.value === undefined
+				? []
+				: [{ ...b, text: String(b.value), width: Math.max(16, 7 + String(b.value).length * 6.5) }]
+		)
+	);
 	const layout = $derived(leafLayout(leaves));
 	// A leaf pointing up from (0,0) to (0,-19), with a midrib. Leaves hang from the rim of the
 	// face towards the middle, always inside the token (Trevor, 2026-10-15).
@@ -91,6 +108,21 @@
 			</g>
 		{/if}
 	</svg>
+	{#if badges.length}
+		<svg class="night-badges" viewBox="0 0 100 100" aria-hidden="true">
+			{#each badges as badge (badge.night)}
+				<g
+					class="night-badge"
+					data-testid="night-badge"
+					data-night={badge.night}
+					style:transform="translate({badge.x}px, 50px) scale(var(--night-badge-scale, 1))"
+				>
+					<rect x={-badge.width / 2} y="-8" width={badge.width} height="16" rx="8" />
+					<text y="4" font-size="11" text-anchor="middle">{badge.text}</text>
+				</g>
+			{/each}
+		</svg>
+	{/if}
 </span>
 
 <style>
@@ -106,6 +138,23 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
+	}
+	/* Badges may reach past the rim at large sizes. */
+	.night-badges {
+		overflow: visible;
+		pointer-events: none;
+	}
+	/* The same neutral pill as the player name badge (PlayerNameMark). */
+	.night-badge rect {
+		fill: var(--surface-raised);
+		stroke: var(--border);
+		stroke-width: 0.75;
+	}
+	.night-badge text {
+		fill: var(--on-surface);
+		font-family: var(--font-control);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
 	}
 	.face {
 		fill: var(--token-face);

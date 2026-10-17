@@ -12,6 +12,7 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import type { StepFocus } from './step-focus.svelte.ts';
 	import { bankReminders, byLabel, type StepReminders } from './reminders.ts';
 	import { scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
@@ -34,6 +35,8 @@
 		onView: (view: BankView) => void;
 		/** The character whose night step is being walked through. */
 		focus?: StepReminders;
+		/** How `focus` is shown (step-focus.svelte.ts). */
+		focusMode?: StepFocus['mode'];
 		/** The seat under a point (in % of the board), if any. */
 		seatAt: (at: SeatPoint) => SeatId | undefined;
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
@@ -41,7 +44,17 @@
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
 	}
 
-	let { grimoire, board, size, view, onView, focus, seatAt, onHints }: Props = $props();
+	let {
+		grimoire,
+		board,
+		size,
+		view,
+		onView,
+		focus,
+		focusMode = 'front',
+		seatAt,
+		onHints
+	}: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -93,7 +106,7 @@
 					now: view === 'all' && nowFor(characterId, label)
 				});
 		}
-		if (view === 'setup') return setup;
+		if (view === 'setup') return only(setup);
 		// All (Trevor, 2026-10-16): the setup reminders still to place come first, on the
 		// left of a solid line, then every other copy still off the board.
 		const pending: Record<string, number> = {};
@@ -102,7 +115,7 @@
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
-		const rest = bankReminders(game, characters, focus).flatMap(
+		const rest = bankReminders(game, characters, focus, focusMode === 'front').flatMap(
 			({ characterId, label, left, now }) => {
 				const key = `${characterId}:${label}`;
 				const n = left - (pending[key] ?? 0);
@@ -117,18 +130,25 @@
 				}));
 			}
 		);
-		return [...setup, ...rest];
+		return only([...setup, ...rest]);
 	});
+	/** "Only these": the step's reminders alone, while a step is walked through. */
+	function only(list: Item[]): Item[] {
+		return focus && focusMode === 'only' ? list.filter((i) => i.now) : list;
+	}
+	const dimRest = $derived(focusMode === 'highlight' && items.some((i) => i.now));
 	/** In All, the last setup reminder: a solid line follows it. */
 	const lastSetup = $derived(
 		view === 'all' && items.some((i) => !i.setup) ? items.findLast((i) => i.setup)?.key : undefined
 	);
 
-	// A new step's reminders are at the front: show them.
+	// A new step's reminders are at the front, or ringed in place: show them.
 	let list = $state<HTMLElement>();
 	$effect(() => {
 		void focus;
-		list?.scrollTo({ left: 0 });
+		void focusMode;
+		if (focusMode !== 'highlight') return list?.scrollTo({ left: 0 });
+		list?.querySelector('li.now')?.scrollIntoView({ inline: 'center', block: 'nearest' });
 	});
 
 	const seatName = (seatId: SeatId) =>
@@ -211,7 +231,11 @@
 		aria-label={view === 'setup' ? 'Setup reminders' : 'Reminder bank'}
 	>
 		{#each items as item (item.key)}
-			<li class:lifted={drag?.item.key === item.key && item.count === 1} class:now={item.now}>
+			<li
+				class:lifted={drag?.item.key === item.key && item.count === 1}
+				class:now={item.now}
+				class:dim={dimRest && !item.now}
+			>
 				{#if item.count > 1}<span class="count" aria-label={`${item.count} copies`}
 						>×{item.count}</span
 					>{/if}
@@ -412,6 +436,10 @@
 	}
 	li.lifted {
 		opacity: 0.3;
+	}
+	/* Highlight: everything but the step's reminders fades back. */
+	li.dim {
+		opacity: 0.4;
 	}
 	.tray > li {
 		position: relative;

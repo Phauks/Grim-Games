@@ -7,11 +7,17 @@ import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { reminderFitWarning, warningText } from './board.ts';
-import { DEFAULT_SEAT_LAYOUT, type SeatLayout } from '#lib/ui/seating/seat-layout.ts';
+import {
+	DEFAULT_SEAT_LAYOUT,
+	type SeatLayout,
+	type SeatPoint
+} from '#lib/ui/seating/seat-layout.ts';
+import type { ReminderId } from '#lib/core/model/index.ts';
 import {
 	forgetUpsideDownMarks,
 	nightViews,
 	pastNames,
+	reminderSpots,
 	seatLayouts,
 	type NightView
 } from './device-notes.ts';
@@ -27,6 +33,7 @@ export class Grimoire {
 	constructor(readonly open: OpenGame) {
 		forgetUpsideDownMarks();
 		this.layout = seatLayouts.read(open.game.gameId);
+		this.reminderSpots = reminderSpots.read(open.game.gameId);
 		this.nightView = nightViews.read(open.game.gameId);
 		this.nightDone = this.nightView.done;
 		this.nightDay = this.nightView.day ?? open.game.pastDays.length;
@@ -102,6 +109,14 @@ export class Grimoire {
 
 	dismissTray(key: string): void {
 		if (!this.trayDismissed.includes(key)) this.trayDismissed = [...this.trayDismissed, key];
+	}
+
+	/** Where reminders were dropped, for reminders that stay where they are dropped. */
+	reminderSpots = $state.raw<Readonly<Record<string, SeatPoint>>>({});
+
+	setReminderSpot(reminderId: ReminderId, at: SeatPoint): void {
+		this.reminderSpots = { ...this.reminderSpots, [reminderId]: at };
+		reminderSpots.write(this.game.gameId, this.reminderSpots);
 	}
 
 	/** Changes where seats are drawn on this device; the seating order is untouched. */

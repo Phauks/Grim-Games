@@ -4,9 +4,11 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { recentReminders } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import {
+		canAddCopy,
 		parseReminderKey,
 		reminderCopies,
 		reminderCopiesLeft,
@@ -150,6 +152,15 @@
 		}
 	}
 
+	/**
+	 * Another copy of a script character's reminder, once every listed one is placed (Trevor,
+	 * 2026-10-17: Cleopatra chooses two players but her JSON lists one "Chosen").
+	 */
+	function addCopy(reminder: Reminder) {
+		if (seatId && grimoire.run({ type: 'AddReminder', seatId, reminder }))
+			recentReminders.remember(reminderKey(reminder));
+	}
+
 	const placed = $derived(seatId ? (grimoire.game.seats[seatId]?.reminders.length ?? 0) : 0);
 </script>
 
@@ -208,6 +219,16 @@
 								>
 							</button>
 						{/each}
+						<!-- Always there for a script's own character, so nothing moves when it is needed. -->
+						{#if canAddCopy(group.character)}
+							<button
+								type="button"
+								class="chip another"
+								aria-label={`Add another ${label}`}
+								disabled={!usedUp(reminder)}
+								onclick={() => addCopy(reminder)}><Icon name="add" /></button
+							>
+						{/if}
 					{/each}
 				</span>
 			</li>
@@ -326,6 +347,10 @@
 	.chip[aria-pressed='true'] > :global(.reminder) {
 		outline: 0.2rem solid var(--accent);
 		outline-offset: 0.1rem;
+	}
+	.another {
+		color: var(--on-surface);
+		--icon-size: 1.5rem;
 	}
 	.chip:hover {
 		filter: brightness(1.15);

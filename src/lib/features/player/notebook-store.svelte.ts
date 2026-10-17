@@ -15,6 +15,7 @@ import {
 	type PlayerNotebook
 } from './notebook.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { playerSettings } from './player-settings.svelte.ts';
 
 /** The player view's own database; Settings > Data clears it by this name. */
 export const DB_NAME = 'grim-games-player';
@@ -80,7 +81,7 @@ export class NotebookState {
 
 	async load(): Promise<void> {
 		try {
-			const saved = migrateNotebook(await read(this.key));
+			const saved = migrateNotebook(await read(this.key), playerSettings.current.hideNoteContents);
 			if (saved && saved.scriptKey === this.key) this.book = saved;
 		} catch (e) {
 			// The panel says this browser cannot save, so only logged. IndexedDB errors carry
@@ -111,7 +112,7 @@ export class NotebookState {
 		this.#change(book);
 		return noteId;
 	}
-	updateNote(noteId: string, patch: { title?: string; text?: string }) {
+	updateNote(noteId: string, patch: { title?: string; text?: string; hidden?: boolean }) {
 		this.#change(updateNote(this.book, noteId, patch));
 	}
 	deleteNote(noteId: string) {

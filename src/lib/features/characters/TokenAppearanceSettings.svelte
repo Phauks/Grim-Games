@@ -19,7 +19,8 @@
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 	import CharacterToken from './CharacterToken.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
-	import ReminderToken from './ReminderToken.svelte';
+	import { sheetNumbersFor } from './sheet-night-numbers.ts';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 
 	interface Props {
 		value: TokenAppearance;
@@ -31,7 +32,19 @@
 
 	onMount(() => void loadOfficialData());
 	const sample = $derived(officialData.current?.byId.get('fortuneteller'));
+	// The sample's place on TPI's whole night sheet, counting characters only.
+	const sampleNumbers = $derived.by(() => {
+		const data = officialData.current;
+		if (!data || !value.nightNumbers) return undefined;
+		return sheetNumbersFor(data.nightSheet, 'fortuneteller');
+	});
 	const contrast = $derived(tokenContrast(value, theme));
+	// The reminder as the board draws it, at the board's size for this token (GrimoireBoard:
+	// half the token, kept between 30 and 48px, times Reminder size). Trevor, 2026-10-17: the
+	// preview showed the inline chip, not the reminder token.
+	const reminderSize = $derived(
+		Math.round(Math.max(30, Math.min(48, 56 * value.tokenScale * 0.5)) * value.reminderScale)
+	);
 
 	function setColour(key: TokenColour, colour: string | undefined) {
 		const colours = { ...value.colours };
@@ -51,11 +64,20 @@
 <SettingPreview testid="token-preview">
 	<div class="preview" aria-hidden="true">
 		{#if sample}<span class="disc"
-				><CharacterToken character={sample} size={56} showName={value.boardNames} /><PlayerNameMark
-					name={t('characters.previewPlayer')}
-				/></span
+				><CharacterToken
+					character={sample}
+					size={56}
+					showName={value.boardNames}
+					nightNumbers={sampleNumbers}
+				/><PlayerNameMark name={t('characters.previewPlayer')} /></span
 			>{/if}
-		<ReminderToken label={t('characters.previewReminder')} type="minion" />
+		{#if sample}<BoardReminder
+				label={sample.reminders[0] ?? t('characters.previewReminder')}
+				character={sample}
+				size={reminderSize}
+				disabled
+				onTap={() => {}}
+			/>{/if}
 	</div>
 </SettingPreview>
 
@@ -82,6 +104,21 @@
 		description={t('characters.boardNamesHelp')}
 		checked={value.boardNames}
 		onChange={(boardNames) => onChange({ ...value, boardNames })}
+	/>
+	<SettingToggle
+		label={t('characters.nightNumbers')}
+		description={t('characters.nightNumbersHelp')}
+		checked={value.nightNumbers}
+		onChange={(nightNumbers) => onChange({ ...value, nightNumbers })}
+	/>
+	<!-- Always shown, so switching the badges on or off never moves the settings below. -->
+	<SettingSlider
+		label={t('characters.nightBadgeSize')}
+		description={t('characters.nightBadgeSizeHelp')}
+		value={value.nightBadgeScale}
+		{...TOKEN_SCALE}
+		defaultValue={1}
+		onChange={(nightBadgeScale) => onChange({ ...value, nightBadgeScale })}
 	/>
 </div>
 

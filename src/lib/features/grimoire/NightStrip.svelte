@@ -5,6 +5,10 @@
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { stepFocus } from './step-focus.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName, stepHolders, stepName } from './night-steps.ts';
 
@@ -29,6 +33,10 @@
 	const step = $derived(steps[index]);
 	const holders = $derived(step ? stepHolders(game, step, grimoire.open.characters) : []);
 	const ticked = $derived(step ? grimoire.isNightStepDone(night, step) : false);
+
+	// The step's reminders in the bank: ringed, alone or first (Trevor, 2026-10-17).
+	let focusOpen = $state(false);
+	let focusButton = $state<HTMLElement>();
 
 	function next() {
 		if (step && !ticked) grimoire.toggleNightStep(night, step);
@@ -79,10 +87,39 @@
 		onclick={next}
 	/>
 	<!-- In the top corner (Trevor, 2026-10-16), so Previous and Next own the sides. -->
-	<span class="stop"
-		><IconButton icon="close" label="Stop the walk-through" onclick={onClose} /></span
-	>
+	<span class="corner">
+		<span bind:this={focusButton} class="focus" class:on={stepFocus.current.on}
+			><IconButton
+				icon="filter"
+				label="Step reminders"
+				aria-pressed={stepFocus.current.on}
+				onclick={() => (focusOpen = !focusOpen)}
+			/></span
+		>
+		<IconButton icon="close" label="Stop the walk-through" onclick={onClose} />
+	</span>
 </section>
+
+<Popover bind:open={focusOpen} title="Step reminders" anchor={focusButton}>
+	<div class="focus-options">
+		<Toggle
+			label="Point out this step's reminders"
+			checked={stepFocus.current.on}
+			onChange={(on) => stepFocus.update({ on })}
+		/>
+		<Segmented
+			label="How"
+			value={stepFocus.current.mode}
+			options={[
+				{ value: 'highlight', label: 'Highlight' },
+				{ value: 'only', label: 'Only these' },
+				{ value: 'front', label: 'Bring to front' }
+			]}
+			onChange={(mode) => stepFocus.update({ mode })}
+			disabled={!stepFocus.current.on}
+		/>
+	</div>
+</Popover>
 
 <style>
 	.strip {
@@ -108,15 +145,23 @@
 		height: auto;
 		margin-top: var(--tap-target);
 	}
-	.stop {
+	.corner {
 		position: absolute;
 		top: 0;
 		right: 0;
 		z-index: 1;
+		display: flex;
 	}
-	/* Clear of the Stop button in the corner. */
+	.focus.on :global(.icon-button) {
+		color: var(--accent);
+	}
+	.focus-options {
+		display: grid;
+		gap: var(--space-2);
+	}
+	/* Clear of the buttons in the corner. */
 	.name {
-		padding-inline-end: var(--tap-target);
+		padding-inline-end: calc(2 * var(--tap-target));
 	}
 	.step {
 		flex: 1;

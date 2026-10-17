@@ -6,8 +6,8 @@ const KEY = 'grim-games:player-settings:v1';
 
 export interface PlayerSettings {
 	/**
-	 * Notes on the Notes tab show their title but not their text until opened, so someone glancing at
-	 * the phone can't read them (Trevor, 2026-10-16). Off by default.
+	 * The old "Hide note contents" switch, read only so notebooks saved before each note had
+	 * its own switch keep their notes hidden (notebook v6). No longer shown in Settings.
 	 */
 	hideNoteContents: boolean;
 	/**

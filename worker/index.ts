@@ -2,6 +2,7 @@ import { handleAccount, type Env as AccountRoutesEnv } from './account/routes.ts
 import { handleBotcScripts } from './botcscripts.ts';
 import { handleCollection } from './collections.ts';
 import { handleCurated } from './curated.ts';
+import { handleHomebrewScripts } from './homebrew-scripts.ts';
 import { handleHomebrewWiki } from './homebrew-wiki.ts';
 import { handleRoom, Room, type RoomEnv } from './room.ts';
 import { handleReports, ReportBox, type ReportsEnv } from './reports.ts';
@@ -29,6 +30,13 @@ export default {
 		if (url.pathname.startsWith('/api/homebrew-wiki/')) {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
 			return handleHomebrewWiki(url);
+		}
+		if (
+			url.pathname === '/api/homebrew-scripts' ||
+			url.pathname.startsWith('/api/homebrew-scripts/')
+		) {
+			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+			return handleHomebrewScripts(url);
 		}
 		if (url.pathname === '/api/curated') {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });

@@ -35,7 +35,8 @@
 	} from './botcscripts-api.ts';
 	import BotcFilter from './BotcFilter.svelte';
 	import { collectionScripts } from './collection.svelte.ts';
-	import { fetchBotc } from './botc-previews.svelte.ts';
+	import { homebrewScripts } from './homebrew-scripts.svelte.ts';
+	import { fetchRemote } from './remote-previews.svelte.ts';
 	import { curatedScripts } from './curated.svelte.ts';
 	import { worldCupScripts } from './world-cup.svelte.ts';
 	import {
@@ -114,7 +115,8 @@
 		'curated',
 		'collection',
 		'worldcup2023',
-		'worldcup2025'
+		'worldcup2025',
+		'homebrew'
 	] as const satisfies readonly PickerSource[];
 	type PageSource = (typeof PAGE_SOURCES)[number];
 	const SOURCE_KEY = 'grim-games:scripts:source';
@@ -159,6 +161,7 @@
 		untrack(() => {
 			if (wanted === 'curated') void curatedScripts.load();
 			if (wanted === 'collection') void collectionScripts.load();
+			if (wanted === 'homebrew') void homebrewScripts.load();
 			if (wanted === 'worldcup2023') void worldCupScripts.load('2023');
 			if (wanted === 'worldcup2025') void worldCupScripts.load('2025');
 		});
@@ -176,6 +179,7 @@
 			data,
 			curated: curatedScripts.list,
 			collection: collectionScripts.list,
+			homebrew: homebrewScripts.list,
 			recent: recentScripts.list,
 			profile: [],
 			curatedLabel: curatedSectionLabel,
@@ -368,14 +372,21 @@
 	const curatedNote = $derived.by(() => {
 		const year =
 			source === 'worldcup2023' ? '2023' : source === 'worldcup2025' ? '2025' : undefined;
+		// A list fetched from a site: loading, or failed with nothing kept from last time.
+		const fetched =
+			source === 'curated'
+				? curatedScripts
+				: source === 'collection'
+					? collectionScripts
+					: source === 'homebrew'
+						? homebrewScripts
+						: undefined;
 		const loading = year
 			? worldCupScripts.status(year) === 'loading'
-			: source === 'curated' && curatedScripts.status === 'loading';
+			: fetched?.status === 'loading';
 		const failed = year
 			? worldCupScripts.status(year) === 'error'
-			: source === 'curated' &&
-				curatedScripts.status === 'error' &&
-				curatedScripts.list.length === 0;
+			: fetched?.status === 'error' && fetched.list.length === 0;
 		return loading
 			? t('scripts.picker.curatedLoading')
 			: failed
@@ -575,7 +586,8 @@
 					Promise.resolve({ text: JSON.stringify(target.json), source: target.source })
 				);
 			case 'botcscripts':
-				return run(() => fetchBotc(target.ref));
+			case 'homebrew':
+				return run(() => fetchRemote(target));
 		}
 	}
 

@@ -7,6 +7,7 @@
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { boardLooks, DEFAULT_BOARD_LOOKS, NAME_SIZE } from './board-looks.svelte.ts';
+	import ReminderModeSetting from './ReminderModeSetting.svelte';
 	import {
 		clearBackground,
 		readBackground,
@@ -168,6 +169,7 @@
 			]}
 			onChange={(rulesAt) => boardLooks.update({ rulesAt })}
 		/>
+		<ReminderModeSetting />
 	</div>
 	<input
 		bind:this={input}

@@ -4,12 +4,13 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
 	interface Props {
 		open?: boolean;
 		note?: PlayerNote;
-		onChange: (patch: { title?: string; text?: string }) => void;
+		onChange: (patch: { title?: string; text?: string; hidden?: boolean }) => void;
 		onDelete: () => void;
 	}
 
@@ -48,6 +49,12 @@
 					oninput={(event) => onChange({ text: event.currentTarget.value })}></textarea>
 			</label>
 			<div class="actions">
+				<!-- Each note hides its own text in the list (Trevor, 2026-10-17). -->
+				<Toggle
+					label={t('player.hideContents')}
+					checked={note.hidden}
+					onChange={(hidden) => onChange({ hidden })}
+				/>
 				<!-- A red trash can (Trevor, 2026-10-16); still confirms first. -->
 				<DeleteButton label={t('player.deleteNote')} onclick={() => (confirming = true)} />
 			</div>
@@ -102,7 +109,9 @@
 	}
 	.actions {
 		display: flex;
-		justify-content: flex-end;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
 	}
 	.actions :global(.icon-button) {
 		color: var(--evil);

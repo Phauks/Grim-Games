@@ -30,7 +30,12 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
-	import { livingByTeam, setupComplete, setupReminders } from '#lib/core/rules/index.ts';
+	import {
+		livingByTeam,
+		setupComplete,
+		setupReminders,
+		stepNightNumbers
+	} from '#lib/core/rules/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
@@ -81,6 +86,8 @@
 	import SeatToken from './SeatToken.svelte';
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
+	import { stepFocus } from './step-focus.svelte.ts';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import AlignmentAsk from './AlignmentAsk.svelte';
@@ -174,6 +181,18 @@
 		}));
 	});
 	const namePlaces = $derived(nameBoxes.map((n) => n.place));
+	/**
+	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
+	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
+	 */
+	const nightNumbers = $derived.by(() => {
+		const data = officialData.current;
+		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
+		return {
+			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data)),
+			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data))
+		};
+	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
 	function avoidFor(i: number): Box[] {
 		const out: Box[] = [];
@@ -294,6 +313,8 @@
 			moveConfirm?.requestReturn(reminderId);
 			return;
 		}
+		// Reminders that stay where they are dropped keep this spot, whichever seat has them.
+		if (boardLooks.current.reminders === 'free') grimoire.setReminderSpot(reminderId, at);
 		// Dropped on another seat: moved (one History entry). Anywhere else: nothing changes.
 		if (target && target !== from) moveConfirm?.request(reminderId, target);
 	}
@@ -884,6 +905,12 @@
 					number={i + 1}
 					character={seat.characterId ? characters.get(seat.characterId) : undefined}
 					{size}
+					nightNumbers={nightNumbers && seat.characterId
+						? {
+								first: nightNumbers.first.get(seat.characterId),
+								other: nightNumbers.other.get(seat.characterId)
+							}
+						: undefined}
 					orphan={isOrphan(seat, game.script, characters)}
 					dropTarget={reorderTarget === seat.seatId ||
 						(reminderDrag !== undefined &&
@@ -906,7 +933,11 @@
 				{@const at = fan[i]}
 				{#each seat.reminders as reminder, k (reminder.reminderId)}
 					{@const dragged = reminderDrag?.reminderId === reminder.reminderId}
-					{@const p = dragged ? reminderDrag!.at : at[k]}
+					{@const spot =
+						boardLooks.current.reminders === 'free'
+							? grimoire.reminderSpots[reminder.reminderId]
+							: undefined}
+					{@const p = dragged ? reminderDrag!.at : (spot ?? at[k])}
 					<div
 						class="chip-slot"
 						data-seat={i + 1}
@@ -976,9 +1007,10 @@
 			size={chip}
 			view={bankView}
 			onView={(v) => (bankChosen = v)}
-			focus={walk && walkStep?.character
+			focus={walk && walkStep?.character && stepFocus.current.on
 				? stepReminders(walkStep.character.id, walk.night)
 				: undefined}
+			focusMode={stepFocus.current.mode}
 			{seatAt}
 			onHints={(h) => (trayHints = h)}
 		/>
@@ -1083,6 +1115,14 @@
 			onclick={() => fromMenu(() => (backgroundOpen = true))}
 		>
 			Background
+		</Button>
+		<!-- Token and board settings over the board (Trevor, 2026-10-17). -->
+		<Button
+			variant="quiet"
+			icon="settings"
+			onclick={() => fromMenu(() => settingsDialog.show('board'))}
+		>
+			Board and tokens
 		</Button>
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 		<span class="menu-nav">
