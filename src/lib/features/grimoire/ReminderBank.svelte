@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
