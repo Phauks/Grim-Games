@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
@@ -265,9 +266,8 @@
 				onclick={download}
 			/>
 			<ShareControl what="script" title={d.name || t('common.none')} target={shareTarget} />
-			<IconButton
-				icon="remove"
-				class="icon-button danger"
+			<DeleteButton
+				class="icon-button"
 				label={t('script-builder.clear')}
 				disabled={isEmptyDraft(d)}
 				onclick={() => (clearOpen = true)}
@@ -537,9 +537,6 @@
 	.tools :global(.icon-button) {
 		background: var(--surface-raised);
 		box-shadow: inset 0 0 0 1px var(--border);
-	}
-	.tools :global(.icon-button.danger) {
-		color: var(--evil);
 	}
 	@media (hover: hover) {
 		.tools :global(.icon-button:hover:not(:disabled)) {

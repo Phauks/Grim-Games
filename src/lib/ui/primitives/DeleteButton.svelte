@@ -14,10 +14,10 @@
 		label: string;
 	}
 
-	let { label, ...rest }: Props = $props();
+	let { label, class: className, ...rest }: Props = $props();
 </script>
 
-<button class="delete" type="button" aria-label={label} title={label} {...rest}>
+<button class={['delete', className]} type="button" aria-label={label} title={label} {...rest}>
 	<Icon name="remove" />
 </button>
 
