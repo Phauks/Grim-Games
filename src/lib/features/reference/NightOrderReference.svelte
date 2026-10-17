@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { GameData, NightMarker, NumericNightOrder } from '#lib/core/data/index.ts';
 	import {
 		BASE_DISTRIBUTION,
@@ -120,7 +121,9 @@
 {#if view === 'table'}
 	<label class="night-filter">
 		<span class="visually-hidden">Filter night steps</span>
-		<input type="search" placeholder="Filter steps (order is kept)" bind:value={query} />
+		<ClearableField bind:value={query}>
+			<input type="search" placeholder="Filter steps (order is kept)" bind:value={query} />
+		</ClearableField>
 	</label>
 {/if}
 
