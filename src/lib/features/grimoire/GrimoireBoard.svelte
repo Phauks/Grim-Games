@@ -37,7 +37,6 @@
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
-	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import {
 		charactersReallyInPlay,
@@ -611,8 +610,8 @@
 	 * setup help, and it can be dismissed.
 	 */
 	let bluffsPromptDismissed = $state(false);
-	/** The day timer shows from the first day, or once started, until the game ends. */
-	const showTimer = $derived(!ended && (game.pastDays.length > 0 || !liveDayTimer.fresh));
+	/** The day timer is always on the board until the game ends (Trevor, 2026-10-17). */
+	const showTimer = $derived(!ended);
 	const showBluffsPrompt = $derived(
 		!bluffsPromptDismissed &&
 			!ended &&
@@ -766,7 +765,6 @@
 	let ruleShownOpen = $state(false);
 	/** Every Fabled and Loric at once, from the corner stack. */
 	let rulesGroupOpen = $state(false);
-	// eslint-disable-next-line grim/names-as-badges -- accessible name (aria-label)
 	const removeRuleLabel = (name: string) => `Remove ${name} from the game`;
 	let ruleRemoveOpen = $state(false);
 	const ruleShownCharacter = $derived(ruleShown ? characters.get(ruleShown) : undefined);
