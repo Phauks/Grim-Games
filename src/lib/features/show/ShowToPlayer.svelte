@@ -79,6 +79,16 @@
 </script>
 
 <!--
+	Esc closes only this view (the dialog's own cancel), never a sheet open under it: sheets
+	listen for Esc on the document, so it is stopped here, on the window, before them.
+-->
+<svelte:window
+	onkeydowncapture={(event) => {
+		if (open && event.key === 'Escape') event.stopPropagation();
+	}}
+/>
+
+<!--
 	Shown to a player, so it fully covers the grimoire: nothing behind it is visible. Views
 	that only the Storyteller sees dim and blur what is behind them instead. That is the
 	hide-vs-blur convention from Pocket Grimoire's README: opaque means "safe to show",
@@ -93,6 +103,11 @@
 	oncancel={(event) => {
 		event.preventDefault();
 		close();
+	}}
+	onpointerdown={(event) => {
+		// Opened from inside a sheet (Trevor, 2026-10-17: the sheet stays open underneath), the
+		// sheet must not take a tap or swipe here as a drag or a tap outside it.
+		event.stopPropagation();
 	}}
 	onkeydown={(event) => {
 		if (!chain) return;

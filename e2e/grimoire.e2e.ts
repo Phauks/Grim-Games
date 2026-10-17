@@ -294,10 +294,20 @@ test('Demon bluffs open from the toolbar, and a seat shows its token to the play
 	await show.tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown).toBeVisible();
+	// The seat's sheet stays open underneath the whole time (Trevor, 2026-10-17).
+	await expect(sheet).toHaveAttribute('data-state', 'open');
+	// A tap on the player view doesn't reach the sheet, and Esc closes only the view.
+	await shown.tap({ position: { x: 20, y: 200 } });
+	await expect(shown).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(shown).toBeHidden();
+	await expect(sheet).toHaveAttribute('data-state', 'open');
+	await show.tap();
+	await expect(shown).toBeVisible();
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(shown).toBeHidden();
-	// Back where the Storyteller was: the seat's sheet (Trevor, 2026-10-16).
 	await expect(sheet).toBeVisible();
+	await expect(sheet).toHaveAttribute('data-state', 'open');
 });
 
 test('the board leads to setup and the day; setup ends on the setup reminders', async ({

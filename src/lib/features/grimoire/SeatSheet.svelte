@@ -412,8 +412,8 @@
 				label="Show to player"
 				disabled={!character}
 				onclick={() => {
-					// The sheet closes first: it is Storyteller-only, and the shown token covers the screen.
-					open = false;
+					// The player view opens over the sheet, which stays open under it (Trevor,
+					// 2026-10-17); the view is opaque, so the sheet never shows through.
 					showOpen = true;
 				}}
 			/></span
@@ -422,6 +422,14 @@
 			><IconButton icon="more" label="Seat actions" onclick={() => (menuOpen = true)} /></span
 		>
 	{/snippet}
+	<!--
+		Inside the sheet, so the sheet stays open under it (Trevor, 2026-10-17): a modal dialog
+		drawn in the top layer, opaque, and the sheet does not count taps on it as outside.
+	-->
+	<ShowToPlayer
+		bind:open={showOpen}
+		characters={character ? [{ character, alignment: seat?.alignment }] : []}
+	/>
 	{#if seat && seatId}
 		<div class="sheet">
 			<!-- Names used before on this device, laid over the sheet so nothing moves. -->
@@ -560,13 +568,6 @@
 	{title}
 	onRemove={(id) => moveConfirm?.requestReturn(id)}
 	onMove={(id, to) => moveConfirm?.request(id, to)}
-/>
-
-<!-- Closing the player view returns to this seat's sheet (Trevor, 2026-10-16). -->
-<ShowToPlayer
-	bind:open={showOpen}
-	characters={character ? [{ character, alignment: seat?.alignment }] : []}
-	onclose={() => (open = true)}
 />
 
 <CharacterPicker

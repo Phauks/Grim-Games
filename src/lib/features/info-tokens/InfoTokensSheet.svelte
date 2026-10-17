@@ -170,15 +170,11 @@
 		adding = false;
 	}
 
-	/**
-	 * The player view opens on its own: the sheet closes first and comes back when the player
-	 * view is closed, because the sheet hides everything outside it while open.
-	 */
+	/** The player view opens over the sheet, which stays open under it (Trevor, 2026-10-17). */
 	function show(cards: Card[]) {
 		if (cards.length === 0) return;
 		shown = cards;
 		view = { kind: 'list' };
-		open = false;
 		showOpen = true;
 	}
 </script>
@@ -288,9 +284,12 @@
 			</div>
 		{/if}
 	</ErrorBoundary>
+	<!--
+		Inside the sheet, so the sheet stays open under the player view (Trevor, 2026-10-17);
+		outside the boundary, so a crash in the sheet never closes it.
+	-->
+	<ShowToPlayer bind:open={showOpen} cards={shownCards} />
 </BottomSheet>
-
-<ShowToPlayer bind:open={showOpen} cards={shownCards} onclose={() => (open = true)} />
 
 <style>
 	/* Lives in a sheet, so it follows the sheet's colours rather than the page's. */

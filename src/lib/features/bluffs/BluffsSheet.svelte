@@ -138,10 +138,9 @@
 		if (set(editing, picked)) editing = undefined;
 	}
 
-	/** Shown to the player with the sheet closed, then back to the sheet. */
+	/** Shown to the player over the sheet, which stays open under it (Trevor, 2026-10-17). */
 	function show(ids: readonly CharacterId[]) {
 		showing = [...ids];
-		open = false;
 		showOpen = true;
 	}
 </script>
@@ -176,7 +175,7 @@
 											maxlength={MAX_BLUFF_SET_NAME}
 											autocomplete="off"
 											enterkeyhint="done"
-											autofocus
+											{@attach (field) => field.focus()}
 											bind:value={typedName}
 											onkeydown={(event) => {
 												if (event.key === 'Escape') {
@@ -286,6 +285,15 @@
 			</div>
 		{/if}
 	</ErrorBoundary>
+	<!--
+		Inside the sheet, so the sheet stays open under the player view (Trevor, 2026-10-17);
+		outside the boundary, so a crash in the sheet never closes it.
+	-->
+	<ShowToPlayer
+		bind:open={showOpen}
+		title={notInPlay}
+		characters={lookup(showing).map((character) => ({ character, alignment: 'good' as const }))}
+	/>
 </BottomSheet>
 
 <ConfirmDialog
@@ -314,13 +322,6 @@
 	</p>
 	<p class="confirm hint">{t('bluffs.undoHint')}</p>
 </ConfirmDialog>
-
-<ShowToPlayer
-	bind:open={showOpen}
-	title={notInPlay}
-	characters={lookup(showing).map((character) => ({ character, alignment: 'good' as const }))}
-	onclose={() => (open = true)}
-/>
 
 <style>
 	.add {
