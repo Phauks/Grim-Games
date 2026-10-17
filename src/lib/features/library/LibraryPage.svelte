@@ -3,19 +3,23 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { GameData } from '#lib/core/data/index.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
+	import { loadScriptText, type GameData } from '#lib/core/data/index.ts';
 	import {
+		chooseScript,
 		forgetScript,
 		recentScripts,
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
+	import { fetchLinkTarget } from '#lib/features/scripts/fetch-script.ts';
+	import { relaxJson } from '#lib/features/scripts/relaxed-json.ts';
 	import { describeSource, sameScript } from '#lib/features/scripts/saved-scripts.ts';
 	import {
+		findSaved,
 		localListings,
 		profileProvider,
 		recentProvider,
@@ -271,6 +275,34 @@
 		...folders.map((f) => ({ value: f.id, label: folderName(f.id) }))
 	]);
 
+	/**
+	 * The version shown in the dialog: the saved one, or another BotC Scripts version picked
+	 * there (Trevor, 2026-10-17: a saved script still offers all its versions). Another
+	 * version stays a preview until Save; the saved one stays in the Library either way.
+	 */
+	let viewed = $state.raw<ScriptListing>();
+	const viewingUnsaved = $derived(
+		!!openRow &&
+			!!viewed &&
+			viewed.row.key !== openRow.listing.row.key &&
+			!findSaved(recentScripts.list, viewed)
+	);
+	let savingViewed = $state(false);
+	async function saveViewed() {
+		const listing = viewed;
+		if (!listing || listing.target.kind !== 'botcscripts') return;
+		savingViewed = true;
+		try {
+			const fetched = await fetchLinkTarget(listing.target, '');
+			const loaded = loadScriptText(relaxJson(fetched.text), await loadOfficialData()).script;
+			if (loaded) await chooseScript(loaded, fetched.source);
+		} catch (e) {
+			reportError(e, { area: 'library' });
+		} finally {
+			savingViewed = false;
+		}
+	}
+
 	async function removeOpen() {
 		const row = openRow;
 		if (!row) return;
@@ -449,10 +481,22 @@
 		<ScriptView
 			listing={openRow.listing}
 			{data}
-			share={() => shareTargetFor(shareable, location.origin)}
+			share={openRow.listing.saved ? undefined : () => shareTargetFor(shareable, location.origin)}
 			labels={labelRows}
+			busy={savingViewed}
+			onshown={(listing) => (viewed = listing)}
 		>
 			{#snippet extraActions()}
+				<!-- Pressed for a saved version; another version picked above can be saved too. -->
+				<span class="toggle" class:on={!viewingUnsaved}>
+					<IconButton
+						icon="save"
+						label={t('scripts.picker.save')}
+						aria-pressed={!viewingUnsaved}
+						disabled={!viewingUnsaved || savingViewed}
+						onclick={() => void saveViewed()}
+					/>
+				</span>
 				{#if built}
 					<IconButton
 						icon="buildScript"
@@ -460,7 +504,11 @@
 						onclick={() => editInBuilder(built.scriptId)}
 					/>
 				{/if}
-				<DeleteButton label={t('library.remove')} onclick={() => (removing = true)} />
+				<DeleteButton
+					label={t('library.remove')}
+					disabled={viewingUnsaved}
+					onclick={() => (removing = true)}
+				/>
 			{/snippet}
 		</ScriptView>
 	{/if}
@@ -662,6 +710,10 @@
 	.check input {
 		width: calc(1.25 * var(--u));
 		height: calc(1.25 * var(--u));
+	}
+	.toggle.on :global(.icon-button) {
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 	/* Rows of ScriptDetails' main info, styled as its own rows are. */
 	.label-term {

@@ -237,3 +237,87 @@ test('a script made in the Script builder opens there from the Library', async (
 	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Built here');
 	await expect(page.getByTestId('count-demon')).toHaveText('1');
 });
+
+test('a saved BotC Scripts script still offers its other versions', async ({ page }) => {
+	// Trevor (2026-10-17): a script saved at one version can still open all the others.
+	const content = (version: string) => [
+		{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
+		...homebrew.slice(1),
+		...(version === '1.1.0' ? ['mayor'] : [])
+	];
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name: 'Storm Front',
+						version: '1.0.0',
+						author: 'Trevor',
+						type: 'Full',
+						score: 5,
+						characters: [{ id: 'chef' }, { id: 'imp' }]
+					}
+				]
+			}
+		})
+	);
+	await page.route('**/api/botcscripts/versions/1900', (route) =>
+		route.fulfill({ json: { scriptId: 1900, latest: '1.1.0', versions: ['1.1.0', '1.0.0'] } })
+	);
+	await page.route(/\/api\/botcscripts\/(version\/900|script\/1900\/1\.[01]\.0)$/, (route) => {
+		const version = route.request().url().endsWith('1.1.0') ? '1.1.0' : '1.0.0';
+		return route.fulfill({
+			json: {
+				scriptId: 1900,
+				versionId: version === '1.1.0' ? 901 : 900,
+				name: 'Storm Front',
+				version,
+				author: 'Trevor',
+				content: content(version)
+			}
+		});
+	});
+
+	// Saved from Search at 1.0.0.
+	await page.goto('/scripts');
+	await page
+		.getByRole('table', { name: 'Scripts' })
+		.getByRole('button', { name: /^Storm Front/ })
+		.tap();
+	const search = page.getByRole('complementary', { name: 'Script details' });
+	await expect(search.getByTestId('script-sheet')).toContainText('Washerwoman');
+	await search.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(search.getByRole('button', { name: 'Save', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+
+	await page.goto('/library');
+	await tile(page, 'Storm Front').tap();
+	const script = page.getByRole('dialog', { name: 'Storm Front' });
+	const save = script.getByRole('button', { name: 'Save', exact: true });
+	await expect(save).toHaveAttribute('aria-pressed', 'true');
+	await expect(script.getByTestId('newer-version').getByRole('button')).toHaveText('Newer: 1.1.0');
+	await script.getByRole('combobox', { name: 'Version' }).tap();
+	await page.getByRole('option', { name: '1.1.0', exact: true }).tap();
+	await expect(script.getByTestId('script-sheet')).toContainText('Mayor');
+	// Only a preview until saved: the Library still holds 1.0.0, and Remove waits.
+	await expect(save).toHaveAttribute('aria-pressed', 'false');
+	await expect(script.getByRole('button', { name: 'Remove script' })).toBeDisabled();
+	await script.getByRole('button', { name: 'Close' }).tap();
+	await expect(tile(page, 'Storm Front')).toHaveCount(1);
+
+	// Saving another version keeps both.
+	await tile(page, 'Storm Front').tap();
+	await script.getByRole('combobox', { name: 'Version' }).tap();
+	await page.getByRole('option', { name: '1.1.0', exact: true }).tap();
+	await save.tap();
+	await expect(save).toHaveAttribute('aria-pressed', 'true');
+	await script.getByRole('button', { name: 'Close' }).tap();
+	await expect(tile(page, 'Storm Front')).toHaveCount(2);
+});
