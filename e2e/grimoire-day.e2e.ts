@@ -234,8 +234,13 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	const timer = page.getByTestId('day-timer');
 	const clock = timer.getByRole('timer');
 	await expect(clock).toHaveText('4:00');
-	await timer.getByRole('button', { name: 'Counting down; switch to counting up' }).tap();
+	// The mode is named on the timer, and tapping the clock switches it (Trevor, 2026-10-17).
+	await expect(timer.getByTestId('timer-mode')).toHaveText('Timer');
+	const height = (await timer.boundingBox())!.height;
+	await timer.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
+	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
 	await expect(clock).toHaveText('0:00');
+	expect((await timer.boundingBox())!.height).toBe(height);
 	await timer.getByRole('button', { name: 'Start timer' }).tap();
 	await page.clock.runFor(61_000);
 	await expect(clock).toHaveText('1:01');
@@ -248,8 +253,6 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(
-		page
-			.getByTestId('day-timer')
-			.getByRole('button', { name: 'Counting up; switch to counting down' })
+		page.getByTestId('day-timer').getByRole('button', { name: 'Stopwatch; switch to timer' })
 	).toBeVisible();
 });

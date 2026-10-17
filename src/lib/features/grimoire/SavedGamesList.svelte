@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	/**
 	 * Resume game: the games still being played, newest first. With `view="previous"`, the
 	 * ended games on the History page (Trevor, 2026-10-16), which can be reopened.
@@ -10,7 +11,6 @@
 	import type { GameId } from '#lib/core/model/index.ts';
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { endedGames, seatLayouts, type EndedGame } from './device-notes.ts';
 	import { goto } from '$app/navigation';
@@ -92,8 +92,7 @@
 							>{stageText(game)} · {game.seatCount} seats · {when.format(game.savedAt)}</span
 						>
 					</a>
-					<IconButton
-						icon="remove"
+					<DeleteButton
 						label={`Delete ${game.scriptName ?? 'game'} saved ${when.format(game.savedAt)}`}
 						onclick={() => {
 							deleting = game.gameId;
@@ -112,8 +111,7 @@
 								: 'This save is damaged'}</span
 						>
 					</span>
-					<IconButton
-						icon="remove"
+					<DeleteButton
 						label="Delete unreadable game"
 						onclick={() => {
 							deleting = game.gameId;
@@ -147,8 +145,7 @@
 							)}</span
 						>
 					</button>
-					<IconButton
-						icon="remove"
+					<DeleteButton
 						label={`Delete ${game.scriptName ?? 'game'} ended ${when.format(ended[game.gameId].endedAt)}`}
 						onclick={() => {
 							deleting = game.gameId;

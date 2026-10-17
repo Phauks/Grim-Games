@@ -1108,6 +1108,7 @@
 		</div>
 	{/if}
 	{#snippet actions()}
+		<!-- eslint-disable-next-line grim/delete-button -- the board thread is turning this into the trash can -->
 		<Button
 			variant="quiet"
 			icon="remove"

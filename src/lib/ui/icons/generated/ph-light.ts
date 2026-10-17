@@ -33,8 +33,6 @@ import ph_caret_up_light from '~icons/ph/caret-up-light';
 import ph_cat_light from '~icons/ph/cat-light';
 import ph_check_light from '~icons/ph/check-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
-import ph_clock_clockwise_light from '~icons/ph/clock-clockwise-light';
-import ph_clock_countdown_light from '~icons/ph/clock-countdown-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_club_light from '~icons/ph/club-light';
 import ph_copy_light from '~icons/ph/copy-light';
@@ -80,7 +78,6 @@ import ph_heart_light from '~icons/ph/heart-light';
 import ph_heartbeat_light from '~icons/ph/heartbeat-light';
 import ph_hexagon_light from '~icons/ph/hexagon-light';
 import ph_hourglass_light from '~icons/ph/hourglass-light';
-import ph_hourglass_low_light from '~icons/ph/hourglass-low-light';
 import ph_house_light from '~icons/ph/house-light';
 import ph_house_simple_light from '~icons/ph/house-simple-light';
 import ph_identification_card_light from '~icons/ph/identification-card-light';
@@ -198,8 +195,6 @@ const icons: IconMap = {
 	'ph:cat-light': ph_cat_light,
 	'ph:check-light': ph_check_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
-	'ph:clock-clockwise-light': ph_clock_clockwise_light,
-	'ph:clock-countdown-light': ph_clock_countdown_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:club-light': ph_club_light,
 	'ph:copy-light': ph_copy_light,
@@ -245,7 +240,6 @@ const icons: IconMap = {
 	'ph:heartbeat-light': ph_heartbeat_light,
 	'ph:hexagon-light': ph_hexagon_light,
 	'ph:hourglass-light': ph_hourglass_light,
-	'ph:hourglass-low-light': ph_hourglass_low_light,
 	'ph:house-light': ph_house_light,
 	'ph:house-simple-light': ph_house_simple_light,
 	'ph:identification-card-light': ph_identification_card_light,

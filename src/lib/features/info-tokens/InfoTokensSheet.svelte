@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
@@ -220,9 +221,8 @@
 											disabled={i === chainCards.length - 1}
 											onclick={() => move(i, 1)}
 										/>
-										<span class="danger">
-											<IconButton
-												icon="remove"
+										<span>
+											<DeleteButton
 												label={t('info-tokens.removeFromChain', { name })}
 												onclick={() => (chainCards = chainCards.filter((_, j) => j !== i))}
 											/>
@@ -233,9 +233,8 @@
 						</ol>
 					{/if}
 					<div class="chain-actions">
-						<span class="danger">
-							<IconButton
-								icon="remove"
+						<span>
+							<DeleteButton
 								label={t('info-tokens.clearChain')}
 								disabled={chainCards.length === 0}
 								onclick={() => (chainCards = [])}
@@ -342,9 +341,6 @@
 	}
 	.chain-buttons :global(.icon-button) {
 		color: inherit;
-	}
-	.danger :global(.icon-button) {
-		color: var(--accent);
 	}
 	.sets {
 		display: grid;

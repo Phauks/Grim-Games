@@ -44,7 +44,29 @@
 	{#if variant === 'full'}
 		<IconButton icon="minus" label={t('day.timerLess')} onclick={() => timer.adjust(-1)} />
 	{/if}
-	<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}>{timer.clock}</span>
+	{#if variant === 'full'}
+		<!--
+			The mode is named on the timer's top edge (Trevor, 2026-10-17: "small text that
+			denotes timer or stopwatch", no extra space); tapping the clock switches it.
+		-->
+		<button
+			type="button"
+			class="mode"
+			aria-label={timer.mode === 'down' ? t('day.timerSwitchToUp') : t('day.timerSwitchToDown')}
+			onclick={() => preferences.update({ timerMode: timer.mode === 'down' ? 'up' : 'down' })}
+		>
+			<span class="caption" data-testid="timer-mode" aria-hidden="true"
+				>{timer.mode === 'down' ? t('day.timerModeDown') : t('day.timerModeUp')}</span
+			>
+			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
+				>{timer.clock}</span
+			>
+		</button>
+	{:else}
+		<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
+			>{timer.clock}</span
+		>
+	{/if}
 	{#if variant === 'full'}
 		<IconButton icon="add" label={t('day.timerMore')} onclick={() => timer.adjust(1)} />
 	{/if}
@@ -60,11 +82,6 @@
 			label={t('day.timerReset')}
 			disabled={timer.fresh}
 			onclick={() => timer.reset(alive)}
-		/>
-		<IconButton
-			icon={timer.mode === 'down' ? 'countDown' : 'countUp'}
-			label={timer.mode === 'down' ? t('day.timerCountingDown') : t('day.timerCountingUp')}
-			onclick={() => preferences.update({ timerMode: timer.mode === 'down' ? 'up' : 'down' })}
 		/>
 		<IconButton
 			icon="sound"
@@ -88,6 +105,7 @@
 
 <style>
 	.timer {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		border: 1px solid var(--border);
@@ -105,10 +123,35 @@
 		justify-content: space-between;
 		width: 100%;
 	}
-	.timer[data-variant='full'] .clock {
+	.mode {
 		flex: 1;
+		align-self: stretch;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+	.timer[data-variant='full'] .clock {
+		display: block;
 		font-size: 2.25rem;
 		line-height: 1.1;
+	}
+	/* Sits on the timer's top border, like a legend, so it takes no height. */
+	.caption {
+		position: absolute;
+		top: 0;
+		left: 50%;
+		padding: 0 var(--space-2);
+		background: var(--dialog-background, var(--surface));
+		color: var(--on-surface-muted);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		line-height: 1;
+		text-transform: uppercase;
+		white-space: nowrap;
+		transform: translate(-50%, -50%);
 	}
 	.timer[data-done] {
 		border-color: var(--evil);

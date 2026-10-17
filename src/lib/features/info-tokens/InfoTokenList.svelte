@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -221,8 +222,7 @@
 				label={t('info-tokens.editNamed', { name })}
 				onclick={() => edit(token)}
 			/>
-			<IconButton
-				icon="remove"
+			<DeleteButton
 				label={t('info-tokens.deleteNamed', { name })}
 				onclick={() => askDelete(token)}
 			/>

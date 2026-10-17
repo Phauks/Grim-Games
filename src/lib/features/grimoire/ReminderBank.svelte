@@ -323,7 +323,7 @@
 		</ul>
 	{/if}
 	{#snippet actions()}
-		<Button variant="quiet" icon="remove" onclick={dismissShown}>Dismiss</Button>
+		<Button variant="quiet" icon="close" onclick={dismissShown}>Dismiss</Button>
 		<!-- Any seat will do (a Drunk decided later goes anywhere). -->
 		<Button
 			variant="quiet"
