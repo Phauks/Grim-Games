@@ -156,7 +156,7 @@ test('a card to show with long character names keeps the sheet its width', async
 			.getByRole('group', { name: 'Bluff characters' })
 			.getByRole('button', { name: new RegExp(`^${name}`) })
 			.tap();
-	await page.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Info tokens' }).tap();
 	await page

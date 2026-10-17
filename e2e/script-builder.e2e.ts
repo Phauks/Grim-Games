@@ -217,7 +217,8 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	await folder.getByRole('textbox', { name: 'Name' }).fill('Club night');
 	await folder.getByRole('textbox', { name: 'Name' }).press('Enter');
 	// The table view (remembered) lists every script with its folder.
-	await page.getByRole('radiogroup', { name: 'View' }).getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'View' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	await libraryRows().tap();
 	const details = page.getByRole('dialog', { name: 'Edited here' });
 	await details.getByRole('combobox', { name: 'Folder' }).tap();
