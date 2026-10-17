@@ -6,6 +6,8 @@ const CHOOSER = 'https://github.com/Phauks/Grim-Games/issues/new/choose';
 async function sendReport(page: Page): Promise<Record<string, string>> {
 	const form = page.getByRole('dialog', { name: 'Report' });
 	await expect(form).toBeVisible();
+	const title = form.getByRole('textbox', { name: 'Title' });
+	if (!(await title.inputValue())) await title.fill('Testing a report');
 	await form.getByRole('textbox', { name: 'Description' }).fill('It broke while testing.');
 	const [request] = await Promise.all([
 		page.waitForRequest((r) => r.url().endsWith('/api/reports') && r.method() === 'POST'),
