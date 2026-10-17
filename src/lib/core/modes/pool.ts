@@ -48,7 +48,11 @@ export function modeCharacters(
 			: scriptCharacters;
 	const out = base.filter((c) => !banned.has(c.id));
 	const have = new Set(out.map((c) => c.id));
-	const forced = [...(mode.parts.forced?.onScript ?? []), ...(mode.parts.forced?.inPlay ?? [])];
+	// Per-town scripts are the mode's own and already carry what it needs.
+	const forced =
+		pool?.kind === 'per-town'
+			? []
+			: [...(mode.parts.forced?.onScript ?? []), ...(mode.parts.forced?.inPlay ?? [])];
 	for (const id of forced) {
 		const character = official.find((c) => c.id === id);
 		if (character && !have.has(id) && !banned.has(id)) {
@@ -114,7 +118,12 @@ export function runsPart(mode: GameMode, part: ModePart): boolean {
 	const p = mode.parts;
 	switch (part) {
 		case 'pool':
-			return !p.pool || p.pool.kind === 'script' || p.pool.kind === 'all-characters';
+			return (
+				!p.pool ||
+				p.pool.kind === 'script' ||
+				p.pool.kind === 'all-characters' ||
+				p.pool.kind === 'per-town'
+			);
 		case 'restricted':
 			return true;
 		case 'forced':
@@ -125,13 +134,17 @@ export function runsPart(mode: GameMode, part: ModePart): boolean {
 					!p.forced.homebrew?.length)
 			);
 		case 'counts':
-			return !p.counts || p.counts.kind === 'standard';
+			// Separate towns split the players evenly (towns.ts townSizes).
+			return !p.counts || p.counts.kind === 'standard' || p.counts.kind === 'per-town';
 		case 'setupModifiers':
 			return !p.setupModifiers || p.setupModifiers.kind === 'standard';
 		case 'assignment':
 			return !p.assignment || p.assignment.kind === 'bag';
 		case 'duplicates':
 			return !p.duplicates || p.duplicates.kind === 'standard';
+		case 'towns':
+			// One saved game per town, tied together on the towns page.
+			return true;
 		case 'winConditions':
 			return !p.winConditions || p.winConditions.kind === 'standard';
 		default:

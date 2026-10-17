@@ -129,23 +129,21 @@ describe('A Script of Infinite Possibilities (https://chillclocktower.com/2024/0
 });
 
 describe('Two Towns and a Boomdandy (https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/)', () => {
-	it('puts Boomdandy and Mayor on the script, and the app does not run its towns yet', () => {
+	it('plays each town with its own script as it is', () => {
 		const two = mode('two-towns-and-a-boomdandy');
-		const ids = modeCharacters(two, tb, data.characters).map((c) => c.id);
-		expect(ids).toContain('boomdandy');
-		expect(ids.filter((id) => id === 'mayor')).toHaveLength(1);
-		expect(runsPart(two, 'towns')).toBe(false);
+		expect(modeCharacters(two, tb, data.characters).map((c) => c.id)).toEqual(tb.map((c) => c.id));
 	});
 });
 
 describe('Two games at once (Trevor, 2026-10-17)', () => {
-	it('plays every player in both towns, never the Demon in both, and the app does not run it yet', () => {
+	it('plays every player in both towns, never the Demon in both, and the app runs the towns', () => {
 		const two = mode('two-games-at-once');
 		expect(two.parts.towns).toMatchObject({
 			count: 2,
 			samePlayers: true,
 			notInEveryTown: ['demon']
 		});
-		expect(runsPart(two, 'towns')).toBe(false);
+		expect(runsPart(two, 'towns')).toBe(true);
+		expect(runsPart(mode('two-towns-and-a-boomdandy'), 'daySteps')).toBe(false);
 	});
 });

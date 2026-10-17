@@ -7,6 +7,7 @@ import { GAME_MODE_FORMAT, type GameMode } from '../types.ts';
  * after days 2 and 3, 1 after days 4 and 5. A team wins by winning both towns; if they
  * split after day 5, evil wins when Boomdandy and Mayor are in one town. The Mayor/Leviathan
  * jinx refers to the Mayor's team, and a good player learns when evil takes their town.
+ * The two scripts are on BotC Scripts, linked from the rules (6382 and 6383, v1.0.0).
  * https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/
  */
 export const TWO_TOWNS: GameMode = {
@@ -25,12 +26,12 @@ export const TWO_TOWNS: GameMode = {
 			kind: 'per-town',
 			scripts: [
 				{
-					title: 'Two Towns and a Boomdandy 1',
-					url: 'https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/'
+					title: 'Two Towns and a Boomdandy 1 (Zombuul)',
+					url: 'https://botcscripts.com/script/6382/1.0.0'
 				},
 				{
-					title: 'Two Towns and a Boomdandy 2',
-					url: 'https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/'
+					title: 'Two Towns and a Boomdandy 2 (Leviathan)',
+					url: 'https://botcscripts.com/script/6383/1.0.0'
 				}
 			]
 		},

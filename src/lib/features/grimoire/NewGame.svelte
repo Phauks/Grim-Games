@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import {
 		editionScript,
 		OFFICIAL_EDITIONS,
+		toScript,
 		type OfficialEditionId
 	} from '#lib/core/data/index.ts';
 	import { MAX_PLAYERS, MIN_PLAYERS } from '#lib/core/engine/index.ts';
@@ -21,9 +23,8 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
-	import GameModeField from '#lib/features/modes/GameModeField.svelte';
-	import { startHref, startInMode } from '#lib/features/modes/start.ts';
-	import { NO_RESTRICTIONS, STANDARD } from '#lib/core/modes/index.ts';
+	import Tabs from '#lib/ui/primitives/Tabs.svelte';
+	import GameModesPanel from '#lib/features/modes/GameModesPanel.svelte';
 
 	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
 	onMount(() => {
@@ -50,34 +51,21 @@
 	]);
 	let players = $state(8);
 	let starting = $state(false);
-	let modeId = $state(STANDARD.id);
-	let restrictions = $state(NO_RESTRICTIONS);
-
-	async function loadChosen() {
-		const data = await loadOfficialData();
-		const choice = edition;
-		const recent = choice.startsWith('recent:')
-			? [...(quick ? [quick] : []), ...recentScripts.list].find(
-					(s) => `recent:${s.scriptId}` === choice
-				)
-			: undefined;
-		const loaded = recent ? reloadSavedScript(recent, data) : editionScript(choice, data);
-		if (!loaded) throw new Error('the chosen script could not be loaded');
-		return { data, loaded };
-	}
 
 	async function start() {
 		starting = true;
 		try {
-			const { data, loaded } = await loadChosen();
-			const open = await startInMode({
-				modeId,
-				restrictions,
-				data,
-				loaded,
-				create: (script) => OpenGame.create(data, script, players)
-			});
-			await goto(startHref(modeId, open.game.gameId));
+			const data = await loadOfficialData();
+			const choice = edition;
+			const recent = choice.startsWith('recent:')
+				? [...(quick ? [quick] : []), ...recentScripts.list].find(
+						(s) => `recent:${s.scriptId}` === choice
+					)
+				: undefined;
+			const loaded = recent ? reloadSavedScript(recent, data) : editionScript(choice, data);
+			if (!loaded) throw new Error('the chosen script could not be loaded');
+			const open = await OpenGame.create(data, toScript(loaded), players);
+			await goto(resolve('/grimoire/[gameId]', { gameId: open.game.gameId }));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {
@@ -88,35 +76,49 @@
 
 <section aria-labelledby="new-game">
 	<h2 id="new-game">New game</h2>
-	<ChoiceGroup
-		label="Script"
-		value={edition}
-		options={scriptOptions}
-		onChange={(v) => (edition = v)}
-	/>
-	<div class="players">
-		<span class="label" id="players-label">Players</span>
-		<IconButton
-			icon="back"
-			label="Fewer players"
-			disabled={players <= MIN_PLAYERS}
-			onclick={() => (players = Math.max(MIN_PLAYERS, players - 1))}
-		/>
-		<output aria-labelledby="players-label">{players}</output>
-		<IconButton
-			icon="forward"
-			label="More players"
-			disabled={players >= MAX_PLAYERS}
-			onclick={() => (players = Math.min(MAX_PLAYERS, players + 1))}
-		/>
-	</div>
-	<SetupTable {players} />
-	<GameModeField
-		bind:modeId
-		bind:restrictions
-		loadScriptCharacters={async () => (await loadChosen()).loaded.characters}
-	/>
-	<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>Start game</Button>
+	<!-- Game modes are their own area: their scripts and setup differ too much (Trevor, 2026-10-17). -->
+	<Tabs
+		label="Kind of game"
+		tabs={[
+			{ value: 'standard', label: 'Standard' },
+			{ value: 'modes', label: 'Game modes' }
+		]}
+	>
+		{#snippet panel(tab)}
+			{#if tab === 'modes'}
+				<GameModesPanel />
+			{:else}
+				<div class="panel">
+					<ChoiceGroup
+						label="Script"
+						value={edition}
+						options={scriptOptions}
+						onChange={(v) => (edition = v)}
+					/>
+					<div class="players">
+						<span class="label" id="players-label">Players</span>
+						<IconButton
+							icon="back"
+							label="Fewer players"
+							disabled={players <= MIN_PLAYERS}
+							onclick={() => (players = Math.max(MIN_PLAYERS, players - 1))}
+						/>
+						<output aria-labelledby="players-label">{players}</output>
+						<IconButton
+							icon="forward"
+							label="More players"
+							disabled={players >= MAX_PLAYERS}
+							onclick={() => (players = Math.min(MAX_PLAYERS, players + 1))}
+						/>
+					</div>
+					<SetupTable {players} />
+					<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}
+						>Start game</Button
+					>
+				</div>
+			{/if}
+		{/snippet}
+	</Tabs>
 </section>
 
 <style>
@@ -124,6 +126,11 @@
 		display: grid;
 		gap: var(--space-3);
 		margin-bottom: var(--space-6);
+	}
+	.panel {
+		display: grid;
+		gap: var(--space-3);
+		padding-top: var(--space-3);
 	}
 	h2 {
 		margin: 0;

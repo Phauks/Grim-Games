@@ -9,6 +9,7 @@ import type { GameId } from '#lib/core/model/index.ts';
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import { writeGameMode } from './game-mode-store.ts';
+import { saveTownGroup } from './town-groups.ts';
 
 interface StartInput<G> {
 	modeId: string;
@@ -49,4 +50,41 @@ export function startHref(modeId: string, gameId: GameId): ResolvedPathname {
 	return kind === 'draft' || kind === 'choose-own'
 		? resolve('/grimoire/[gameId]/deal', { gameId })
 		: resolve('/grimoire/[gameId]', { gameId });
+}
+
+interface TownsInput<G> {
+	modeId: string;
+	restrictions: StorytellerRestrictions;
+	data: GameData;
+	/** One script per town. */
+	scripts: LoadedScript[];
+	/** Players per town. */
+	sizes: number[];
+	create: (script: Script, players: number) => Promise<G>;
+}
+
+/**
+ * Starts a game of several towns: one saved game per town, tied together by a town group.
+ * Returns the group's id.
+ */
+export async function startTowns<G extends { game: { gameId: GameId } }>(
+	input: TownsInput<G>
+): Promise<string> {
+	const mode = gameModeById(input.modeId) ?? STANDARD;
+	const gameIds: GameId[] = [];
+	for (const [i, loaded] of input.scripts.entries()) {
+		const script = modeScript(
+			mode,
+			toScript(loaded),
+			loaded.characters,
+			input.data.characters,
+			input.restrictions
+		);
+		const open = await input.create(script, input.sizes[i] ?? input.sizes[0]);
+		writeGameMode(open.game.gameId, { modeId: mode.id, restrictions: input.restrictions });
+		gameIds.push(open.game.gameId);
+	}
+	const groupId = crypto.randomUUID();
+	saveTownGroup({ groupId, modeId: mode.id, gameIds, createdAt: Date.now() });
+	return groupId;
 }

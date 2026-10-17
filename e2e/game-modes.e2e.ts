@@ -4,12 +4,14 @@ import { expect, test, type Page } from '@playwright/test';
  * Game modes on New game (Trevor, 2026-10-17): choose a mode, inspect every part of it, and
  * restrict characters. Whale Buffet's rules: https://whalebuffet.com/.
  */
-const modePicker = (page: Page) => page.getByRole('combobox', { name: 'Game mode' });
+const modesPanel = (page: Page) => page.getByRole('tabpanel', { name: 'Game modes' });
 
+/** Game modes have their own tab on New game (Trevor, 2026-10-17). */
 async function chooseMode(page: Page, name: string) {
-	await modePicker(page).tap();
-	await page.getByRole('option', { name, exact: true }).tap();
-	await expect(modePicker(page)).toContainText(name);
+	await page.getByRole('tab', { name: 'Game modes' }).tap();
+	const modes = modesPanel(page).getByRole('radiogroup', { name: 'Game mode' });
+	await modes.getByText(name, { exact: true }).tap();
+	await expect(modes.getByRole('radio', { name, exact: true })).toBeChecked();
 }
 
 async function noSidewaysScroll(page: Page) {
@@ -43,7 +45,7 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 }) => {
 	await page.goto('/new');
 	await chooseMode(page, 'Whale Buffet');
-	const restricted = page.getByRole('button', { name: /^Restricted characters/ });
+	const restricted = modesPanel(page).getByRole('button', { name: /^Restricted characters/ });
 	await expect(restricted).toContainText('(3)');
 	await restricted.tap();
 	const dialog = page.getByRole('dialog', { name: 'Restricted characters' });
@@ -54,7 +56,7 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(restricted).toContainText('(3)');
 
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	// Whale Buffet opens on choosing; the setup list shows the game's characters all the same.
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	await page.goto(new URL(page.url()).pathname.replace(/\/deal$/, '/setup'));
@@ -69,10 +71,13 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 /** Starts a 5-player Trouble Brewing game in `mode`; it opens on the draft or choose screen. */
 async function startIn(page: Page, mode: string) {
 	await page.goto('/new');
-	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await chooseMode(page, mode);
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	const panel = modesPanel(page);
+	// Whale Buffet plays every character, so it has no script to choose.
+	const script = panel.getByRole('radiogroup', { name: 'Script' });
+	if (await script.count()) await script.getByText('Trouble Brewing').tap();
+	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 }
 
@@ -130,4 +135,83 @@ test('Whale Buffet deals a type and each player chooses; the Storyteller can ask
 	}
 	await page.getByRole('button', { name: 'Finish' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
+});
+
+test('Two games at once: one name per player for both games, warnings start at None', async ({
+	page
+}) => {
+	// Trevor, 2026-10-17: players play two scripts at once; nobody is the Demon in both.
+	await page.goto('/new');
+	await chooseMode(page, 'Two games at once');
+	const panel = modesPanel(page);
+	await panel.getByRole('combobox', { name: 'Town 2 script' }).tap();
+	await page.getByRole('option', { name: 'Bad Moon Rising', exact: true }).tap();
+	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/towns\/[\w-]+$/);
+	await expect(page.getByTestId('town')).toHaveCount(2);
+	await expect(page.getByTestId('town').first()).toContainText('Trouble Brewing');
+	await expect(page.getByTestId('town').nth(1)).toContainText('Bad Moon Rising');
+	await expect(page.getByTestId('town-warnings')).toContainText('None');
+
+	const name = page.getByLabel('Seat 1', { exact: true });
+	await name.fill('Ana');
+	await name.press('Enter');
+	// The name reaches both games: each board shows it.
+	const hrefs = await page
+		.getByRole('link', { name: /^Open town/ })
+		.evaluateAll((links) =>
+			links.map((a) => (a as HTMLAnchorElement).pathname.replace(/\/setup$/, ''))
+		);
+	expect(hrefs).toHaveLength(2);
+	const towns = page.url();
+	for (const href of hrefs) {
+		await page.goto(href);
+		await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
+	}
+	await page.goto(towns);
+	await expect(page.getByLabel('Seat 1', { exact: true })).toHaveValue('Ana');
+	await noSidewaysScroll(page);
+});
+
+test('Two Towns and a Boomdandy starts two towns with their own scripts', async ({ page }) => {
+	// https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/
+	// The two scripts come from BotC Scripts through our Worker.
+	await page.route('**/api/botcscripts/**', async (route) => {
+		const zombuul = /6382/.test(route.request().url());
+		await route.fulfill({
+			json: {
+				scriptId: zombuul ? 6382 : 6383,
+				versionId: zombuul ? 1 : 2,
+				name: zombuul ? 'Zombuul town' : 'Leviathan town',
+				version: '1.0.0',
+				author: 'Ekin',
+				content: [
+					{ id: '_meta', name: zombuul ? 'Zombuul town' : 'Leviathan town', author: 'Ekin' },
+					'washerwoman',
+					'librarian',
+					'investigator',
+					'chef',
+					'mayor',
+					'saint',
+					'boomdandy',
+					'poisoner',
+					zombuul ? 'zombuul' : 'leviathan'
+				]
+			}
+		});
+	});
+	await page.goto('/new');
+	await chooseMode(page, 'Two Towns and a Boomdandy');
+	const panel = modesPanel(page);
+	await expect(panel.getByRole('link', { name: /Zombuul/ })).toBeVisible();
+	await expect(panel.getByTestId('town-sizes')).toHaveText('Town 1: 5 players · Town 2: 5 players');
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/towns\/[\w-]+$/);
+	await expect(page.getByTestId('town')).toHaveCount(2);
+	await expect(page.getByTestId('town').first()).toContainText('Zombuul town');
+	await expect(page.getByTestId('town').nth(1)).toContainText('Leviathan town');
+	await expect(page.getByTestId('town-moves')).toHaveText('None before the end of day 1');
+	await expect(page.getByRole('button', { name: 'Move a player' })).toBeDisabled();
+	await noSidewaysScroll(page);
 });
