@@ -1,0 +1,22 @@
+import { GAME_MODE_FORMAT, type GameMode } from '../types.ts';
+
+const TREVOR =
+	'https://claude.ai/code/project/chan_01LbwopXmmfZCTHhANoebuJ9?thread=cmsg_01LbwopXmmfZCTHhANoebuJ93ZSMjwHg5x3nzys9BmGWAh';
+
+/**
+ * Two scripts played at the same time by the same players, each with a character in both
+ * games (a Saint in one and a Vigormortis in the other); the only restriction is that no one
+ * is the Demon in both. As Trevor described it (2026-10-17); no published source or name was
+ * found yet, so the name is a placeholder and everything but the towns is unconfirmed.
+ */
+export const TWO_GAMES_AT_ONCE: GameMode = {
+	format: GAME_MODE_FORMAT,
+	id: 'two-games-at-once',
+	name: 'Two games at once',
+	sources: [{ title: 'Trevor, project thread (2026-10-17)', url: TREVOR }],
+	unconfirmed: ['pool', 'counts', 'winConditions'],
+	parts: {
+		pool: { kind: 'per-town', scripts: [] },
+		towns: { count: 2, storytellers: 1, samePlayers: true, notInEveryTown: ['demon'] }
+	}
+};

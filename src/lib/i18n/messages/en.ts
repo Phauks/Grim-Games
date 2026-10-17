@@ -21,6 +21,7 @@ import { scratch } from '#lib/i18n/messages/en/scratch.ts';
 import { library } from '#lib/i18n/messages/en/library.ts';
 import { history } from '#lib/i18n/messages/en/history.ts';
 import { scriptBuilder } from '#lib/i18n/messages/en/script-builder.ts';
+import { modes } from '#lib/i18n/messages/en/modes.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -53,5 +54,6 @@ export const en = {
 	...scratch,
 	...library,
 	...history,
-	...scriptBuilder
+	...scriptBuilder,
+	...modes
 } as const satisfies Catalog;
