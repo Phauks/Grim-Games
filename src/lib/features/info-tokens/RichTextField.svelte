@@ -78,35 +78,24 @@
 	}
 
 	/**
-	 * The colour an element gives its text: our own mark, or a colour the browser wrote
-	 * (a style or a font tag) matched to the palette. Any other colour is none.
+	 * The colour a piece of text is drawn in, matched to the palette. Only what shows counts,
+	 * whatever spans the browser wrote or split (Trevor, 2026-10-17: changing a saved colour
+	 * misbehaved while the field's own marks were trusted). The field's text colour is none.
 	 */
-	function inkOf(element: HTMLElement, inks: Map<string, InkColor>): InkColor | null | undefined {
-		const own = element.dataset.ink;
-		if (own && (INK_COLORS as readonly string[]).includes(own)) return own as InkColor;
-		const written = element.style.color || element.getAttribute('color');
-		if (!written) return undefined;
-		const probe = document.createElement('span');
-		probe.style.color = written;
-		// eslint-disable-next-line svelte/no-dom-manipulating -- a probe, removed at once
-		field?.append(probe);
-		const color = inks.get(getComputedStyle(probe).color);
-		probe.remove();
-		return color ?? null;
+	function inkOf(element: Element, inks: Map<string, InkColor>): InkColor | undefined {
+		if (!field) return undefined;
+		const shown = getComputedStyle(element).color;
+		if (shown === getComputedStyle(field).color) return undefined;
+		return inks.get(shown);
 	}
 
 	/** Reads the formatted text back as runs (the browser writes b/strong/i/em or styles). */
 	function runsOf(root: Node): TextRun[] {
 		const runs: TextRun[] = [];
 		const inks = resolvedInks();
-		const walk = (
-			node: Node,
-			isBold: boolean,
-			isItalic: boolean,
-			isUnderline: boolean,
-			color?: InkColor
-		) => {
+		const walk = (node: Node, isBold: boolean, isItalic: boolean, isUnderline: boolean) => {
 			if (node.nodeType === Node.TEXT_NODE) {
+				const color = node.parentElement ? inkOf(node.parentElement, inks) : undefined;
 				runs.push({
 					text: node.textContent ?? '',
 					bold: isBold,
@@ -131,13 +120,9 @@
 					: node.style.fontStyle === 'normal'
 						? false
 						: isItalic;
-			const own = inkOf(node, inks);
-			const nextColor = own === null ? undefined : (own ?? color);
 			const nextUnderline =
 				tag === 'U' || node.style.textDecorationLine.includes('underline') || isUnderline;
-			node.childNodes.forEach((child) =>
-				walk(child, nextBold, nextItalic, nextUnderline, nextColor)
-			);
+			node.childNodes.forEach((child) => walk(child, nextBold, nextItalic, nextUnderline));
 		};
 		root.childNodes.forEach((child) => walk(child, false, false, false));
 		return runs;
@@ -166,16 +151,9 @@
 	}
 
 	function inkAtCaret(): InkColor | undefined {
-		const inks = resolvedInks();
-		let node: Node | null = document.getSelection()?.anchorNode ?? null;
-		while (node && node !== field) {
-			if (node instanceof HTMLElement) {
-				const color = inkOf(node, inks);
-				if (color !== undefined) return color ?? undefined;
-			}
-			node = node.parentNode;
-		}
-		return undefined;
+		const node = document.getSelection()?.anchorNode ?? null;
+		const element = node instanceof Element ? node : node?.parentElement;
+		return element && field?.contains(element) ? inkOf(element, resolvedInks()) : undefined;
 	}
 
 	function format(command: 'bold' | 'italic' | 'underline') {

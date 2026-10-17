@@ -136,3 +136,49 @@ test('a fill-in card asks for its word each time and shows it', async ({ page })
 	await expect(shown.getByRole('heading')).toHaveText('Your number is');
 	await expect(shown).toContainText('42');
 });
+
+test('a saved colour can be changed and cleared, with bold kept', async ({ page }) => {
+	await page.goto('/info-tokens');
+	await page.evaluate(() =>
+		localStorage.setItem(
+			'grim-games:info-tokens',
+			JSON.stringify({
+				version: 2,
+				custom: [{ id: 'a', text: 'You are [red]**very** mad[/red] today' }]
+			})
+		)
+	);
+	await page.reload();
+	await page.getByRole('button', { name: 'Edit You are very mad today' }).tap();
+	const preview = page.getByRole('figure', { name: 'Preview' });
+
+	// Change part of the red words to blue.
+	await select(page, 'mad');
+	await page.getByRole('button', { name: 'Blue' }).tap();
+	await expect(page.getByRole('button', { name: 'Blue' })).toHaveAttribute('aria-pressed', 'true');
+	await expect(preview.locator('[data-ink="blue"]')).toHaveText('mad');
+	await expect(preview.locator('[data-ink="red"]')).toHaveText('very ');
+
+	// Clear the colour from the bold word; it stays bold.
+	await select(page, 'very');
+	await page.getByRole('button', { name: 'Text colour' }).tap();
+	await expect(page.getByRole('button', { name: 'Text colour' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(preview.locator('[data-ink="red"]')).toHaveCount(0);
+	await expect(preview.locator('strong')).toHaveText('very');
+
+	await page.getByRole('button', { name: 'Save' }).tap();
+	const tile = page.getByRole('button', { name: 'You are very mad today', exact: true });
+	await expect(tile.locator('[data-ink="blue"]')).toHaveText('mad');
+	await expect(tile.locator('[data-ink="red"]')).toHaveCount(0);
+	await expect(tile.locator('strong')).toHaveText('very');
+
+	// Reopened, the field shows what was saved, and recolouring again works.
+	await page.getByRole('button', { name: 'Edit You are very mad today' }).tap();
+	await select(page, 'mad');
+	await page.getByRole('button', { name: 'Green' }).tap();
+	await expect(preview.locator('[data-ink="green"]')).toHaveText('mad');
+	await expect(preview.locator('[data-ink="blue"]')).toHaveCount(0);
+});
