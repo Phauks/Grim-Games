@@ -3,32 +3,19 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import {
-		isSeatable,
-		loadScript,
-		type GameData,
-		type LoadedScript
-	} from '#lib/core/data/index.ts';
+	import { isSeatable, type GameData } from '#lib/core/data/index.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import InfoTokensPanel from '#lib/features/info-tokens/InfoTokensPanel.svelte';
-	import PrintScriptButton from '#lib/features/player/PrintScriptButton.svelte';
-	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import {
 		forgetScript,
-		playScript,
 		recentScripts,
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
-	import {
-		describeSource,
-		reloadSavedScript,
-		sameScript,
-		sourcePage
-	} from '#lib/features/scripts/saved-scripts.ts';
+	import { describeSource, sameScript } from '#lib/features/scripts/saved-scripts.ts';
 	import {
 		localListings,
 		profileProvider,
@@ -36,10 +23,8 @@
 		type ScriptListing
 	} from '#lib/features/scripts/script-providers.ts';
 	import AddScript from '#lib/features/scripts/AddScript.svelte';
-	import ScriptChecks from '#lib/features/scripts/ScriptChecks.svelte';
-	import ScriptDetails, { type ScriptFact } from '#lib/features/scripts/ScriptDetails.svelte';
+	import ScriptView from '#lib/features/scripts/ScriptView.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
-	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -286,39 +271,6 @@
 		...folders.map((f) => ({ value: f.id, label: folderName(f.id) }))
 	]);
 
-	/** The open script as players see it, for the player sheet, checks, Print and Play. */
-	const openScriptView = $derived.by((): LoadedScript | undefined => {
-		const listing = openRow?.listing;
-		if (!data || !listing) return undefined;
-		if (listing.saved) return reloadSavedScript(listing.saved, data);
-		return listing.target.kind === 'json'
-			? loadScript(listing.target.json, data).script
-			: undefined;
-	});
-
-	/** Author, Type and Source, as Search shows them. */
-	function factsFor(row: Row): ScriptFact[] {
-		const listing = row.listing.row;
-		const none = t('common.none');
-		return [
-			{ label: t('scripts.current.author'), value: listing.author || none },
-			{ label: t('scripts.column.type'), value: t(`scripts.kind.${listing.kind}`) },
-			{
-				label: t('scripts.current.source'),
-				value: row.listing.saved ? describeSource(row.listing.saved.source) : sourceOf(row),
-				href: sourcePage(row.shareable.source) ?? listing.page
-			}
-		];
-	}
-
-	/** Play: a new game with this script, as Search's Play starts one. */
-	function playOpen() {
-		const script = openScriptView;
-		if (!script || !openRow) return;
-		playScript(script, openRow.shareable.source);
-		void goto(resolve('/new'));
-	}
-
 	async function removeOpen() {
 		const row = openRow;
 		if (!row) return;
@@ -496,36 +448,20 @@
 	</div>
 {/snippet}
 
-<!-- The same details as Search (Trevor, 2026-10-17: "exact same info and style"), with the
-     Library's own folder and tags as rows of the main info, and Edit and Remove. -->
+<!-- Search's own script view (Trevor, 2026-10-17: "exact same info and style"), with the
+     Library's folder and tags as rows of the main info, and Edit and Remove. -->
 <Dialog bind:open={scriptOpen} title={openRow?.listing.row.name || t('common.none')} size="full">
 	{#if openRow}
 		{@const shareable = openRow.shareable}
 		{@const built =
 			openRow.listing.saved?.source.kind === 'built' ? openRow.listing.saved : undefined}
-		<ScriptDetails
-			heading={t(`scripts.sourceLabel.${openRow.listing.row.source}`)}
-			name={openRow.listing.row.name}
-			facts={factsFor(openRow)}
-			entries={openRow.listing.row.entries}
+		<ScriptView
+			listing={openRow.listing}
 			{data}
-			sheet={openScriptView ? playerSheet : undefined}
-			extra={labelRows}
-			version={versionText}
+			share={() => shareTargetFor(shareable, location.origin)}
+			labels={labelRows}
 		>
-			{#snippet actions()}
-				<IconButton
-					icon="quickPlay"
-					label={t('scripts.details.play')}
-					disabled={!openScriptView}
-					onclick={playOpen}
-				/>
-				<PrintScriptButton script={openScriptView} version={openRow.listing.row.version} />
-				<ShareControl
-					what="script"
-					title={openRow.listing.row.name || t('common.none')}
-					target={() => shareTargetFor(shareable, location.origin)}
-				/>
+			{#snippet extraActions()}
 				{#if built}
 					<IconButton
 						icon="buildScript"
@@ -535,27 +471,13 @@
 				{/if}
 				<DeleteButton label={t('library.remove')} onclick={() => (removing = true)} />
 			{/snippet}
-		</ScriptDetails>
+		</ScriptView>
 	{/if}
 </Dialog>
-
-{#snippet versionText()}
-	<span data-testid="script-version">{openRow?.listing.row.version || t('common.none')}</span>
-{/snippet}
-
-{#snippet playerSheet()}
-	{#if openScriptView}
-		<!-- Author and version are already in the details above. -->
-		<ScriptCopy script={openScriptView} byline={false} />
-	{/if}
-{/snippet}
 
 {#snippet labelRows()}
 	{#if openKey}
 		{@const key = openKey}
-		{#if data && openScriptView}
-			<ScriptChecks script={openScriptView} {data} />
-		{/if}
 		<dt class="label-term">{t('library.folder')}</dt>
 		<dd class="label-value" data-testid="script-labels">
 			<Select
