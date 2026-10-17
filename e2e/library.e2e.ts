@@ -23,16 +23,20 @@ async function noSidewaysScroll(page: Page) {
 }
 
 test('saved scripts get folders and tags, filter by them, and can be removed', async ({ page }) => {
-	await page.goto('/scripts');
+	// Scripts are added here (Trevor, 2026-10-17); a new one opens so it can be labelled.
+	await page.goto('/library');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Library');
+	await expect(page.getByRole('button', { name: 'Add script' })).toBeVisible();
 	await page.getByLabel('Script file').setInputFiles({
 		name: 'storm-front.json',
 		mimeType: 'application/json',
 		buffer: Buffer.from(JSON.stringify(homebrew))
 	});
-	await expect(page.getByTestId('script-details-name')).toHaveText('Storm Front');
-
-	await page.goto('/library');
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Library');
+	await expect(page.getByRole('dialog', { name: 'Storm Front' })).toBeVisible();
+	await page
+		.getByRole('dialog', { name: 'Storm Front' })
+		.getByRole('button', { name: 'Close' })
+		.tap();
 	await expect(row(page)).toBeVisible();
 	await noSidewaysScroll(page);
 
