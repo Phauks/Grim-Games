@@ -22,20 +22,46 @@
 
 	let { what, title, target }: Props = $props();
 	let open = $state(false);
+
+	/**
+	 * The link is made (a share code fetched or created) as soon as the icon is pointed at,
+	 * focused or pressed, and kept while the script is unchanged, so the QR code shows at
+	 * once when the screen opens: the wait was the network, not drawing the QR.
+	 */
+	let made: { for: () => Promise<ShareTarget>; link: Promise<ShareTarget> } | undefined;
+	function warm(): Promise<ShareTarget> | undefined {
+		if (!target) return undefined;
+		if (made?.for !== target) {
+			const link = target();
+			made = { for: target, link };
+			// A failure is shown (and reported) by the share screen; try again next time.
+			link.catch(() => {
+				if (made?.link === link) made = undefined;
+			});
+		}
+		return made.link;
+	}
+	const madeTarget = () => warm() ?? Promise.reject(new Error('Nothing to share'));
 </script>
 
 <div class="share">
 	<IconButton
 		icon="share"
 		label={t(`scripts.share.button.${what}`)}
-		onclick={() => (open = true)}
+		onpointerenter={() => void warm()}
+		onfocus={() => void warm()}
+		onpointerdown={() => void warm()}
+		onclick={() => {
+			void warm();
+			open = true;
+		}}
 		disabled={!target}
 	/>
 </div>
 
 <Dialog bind:open title={t('scripts.share.title', { title })}>
 	{#if target}
-		<SharePanel {title} {target} />
+		<SharePanel {title} target={madeTarget} />
 	{/if}
 </Dialog>
 

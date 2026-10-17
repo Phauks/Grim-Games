@@ -258,6 +258,16 @@ test('a saved script is shared by QR code and link, with no code to type', async
 	expect(link).toMatch(/^http:\/\/localhost:\d+\/play#c=\d{6}$/);
 	await noSidewaysScroll(page);
 
+	// The link is kept while the script is unchanged: opening Share again asks nothing new.
+	const asked: string[] = [];
+	page.on('request', (r) => {
+		if (r.url().includes('/api/share')) asked.push(r.url());
+	});
+	await page.keyboard.press('Escape');
+	await details(page).getByRole('button', { name: 'Share script' }).tap();
+	await expect(dialog.getByTestId('share-url')).toHaveValue(link);
+	expect(asked).toEqual([]);
+
 	// Another phone opens the link, as from the QR code.
 	const other = await context.newPage();
 	await other.goto(new URL(link).pathname + new URL(link).hash);
