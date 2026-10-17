@@ -1127,9 +1127,16 @@ test('the board background can be an image from the device, kept after a reload'
 	await menu(page, 'Board and tokens');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await expect(settings.getByRole('heading', { name: 'Board and tokens', level: 2 })).toBeVisible();
+	// Only that section, with no way back into the full Settings list (Trevor, 2026-10-17).
+	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toHaveCount(0);
+	await expect(settings.getByRole('button', { name: 'All settings' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await expect(page.getByTestId('board-background')).toBeVisible();
+	// The app's own Settings still lists every section.
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeAttached();
 });
 
 test('info tokens open from the toolbar and show player cards at once', async ({ page }) => {

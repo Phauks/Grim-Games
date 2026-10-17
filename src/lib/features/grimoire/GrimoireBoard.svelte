@@ -1123,7 +1123,7 @@
 		<Button
 			variant="quiet"
 			icon="settings"
-			onclick={() => fromMenu(() => settingsDialog.show('board'))}
+			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
 		>
 			Board and tokens
 		</Button>
