@@ -59,3 +59,51 @@ test('table columns resize by dragging their header edge, and remember it', asyn
 	await expect.poll(() => width(kept)).toBeCloseTo(before, 0);
 	await expect(handleAgain).not.toHaveAttribute('aria-valuenow');
 });
+
+test('a mouse scrolls a wide table sideways without going to its last row', async ({
+	page
+}, testInfo) => {
+	test.skip(testInfo.project.name === 'phone', 'phones stack the rows and never scroll sideways');
+	test.slow();
+	await page.setViewportSize({ width: 1280, height: 800 });
+	const table = await openTable(page);
+	// Widen a column so the table is surely wider than its box.
+	const handle = table.getByRole('separator', { name: 'Resize Ability' });
+	await handle.focus();
+	for (let i = 0; i < 5; i++) await page.keyboard.press('Shift+ArrowRight');
+
+	// The table scrolls in its own box, no taller than the screen, so its sideways
+	// scrollbar is on screen rather than after 181 rows.
+	const scroller = page.getByRole('region', { name: 'Characters table' });
+	await scroller.scrollIntoViewIfNeeded();
+	const area = (await scroller.boundingBox())!;
+	expect(area.y + area.height).toBeLessThanOrEqual(800 + 1);
+	const left = () => scroller.evaluate((el) => el.scrollLeft);
+	expect(await scroller.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+	const name = table.locator('tbody tr').first().locator('[data-col="name"]');
+	const nameX = (await name.boundingBox())!.x;
+
+	// A sideways wheel (trackpad, or Shift + wheel) scrolls it; the names stay in view.
+	await page.mouse.move(area.x + area.width / 2, area.y + area.height / 2);
+	await page.mouse.wheel(400, 0);
+	await expect.poll(left).toBeGreaterThan(100);
+	expect(Math.abs((await name.boundingBox())!.x - nameX)).toBeLessThan(2);
+
+	// Scrolling down inside the box: every row that comes into view is already complete.
+	await page.mouse.wheel(0, 3000);
+	await page.waitForTimeout(300);
+	const incomplete = await scroller.evaluate((box) => {
+		const view = box.getBoundingClientRect();
+		return [...box.querySelectorAll('tbody tr')].filter((tr) => {
+			const r = tr.getBoundingClientRect();
+			return r.bottom > view.top && r.top < view.bottom && !tr.querySelector('td');
+		}).length;
+	});
+	expect(incomplete).toBe(0);
+
+	// The page itself still never scrolls sideways.
+	const sideways = await page.evaluate(
+		() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
+	);
+	expect(sideways).toBe(false);
+});
