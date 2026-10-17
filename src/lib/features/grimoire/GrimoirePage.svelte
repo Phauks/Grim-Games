@@ -7,6 +7,7 @@
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { Grimoire } from './grimoire.svelte.ts';
@@ -25,6 +26,8 @@
 		| { kind: 'error'; message: string };
 
 	let view = $state<State>({ kind: 'loading' });
+	// Badges on the board, night and day name the script's homebrew characters, not their ids.
+	provideCharacters(() => (view.kind === 'ready' ? view.grimoire.open.characters : undefined));
 
 	$effect(() => {
 		const id = gameId;

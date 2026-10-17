@@ -262,3 +262,58 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 			.getByRole('button', { name: 'Stopwatch; switch to timer' })
 	).toBeVisible();
 });
+
+// A script's homebrew character shows its own name in the day view, never its id (Trevor,
+// 2026-10-17: Fall of Rome's Spartacus read as "spartacusfallofrome").
+test('the day view names a homebrew character by its script name', async ({ page }) => {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
+		.tap();
+	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	await paste.getByLabel('Script JSON or link').fill(
+		JSON.stringify([
+			{ id: '_meta', name: 'Homebrew Day' },
+			{
+				id: 'spartacus_fallofrome',
+				name: 'Spartacus',
+				team: 'townsfolk',
+				ability: 'You do something heroic.'
+			},
+			'chef',
+			'empath',
+			'spy',
+			'imp'
+		])
+	);
+	await paste.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText('Homebrew Day');
+
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Homebrew Day').tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Spartacus', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: 'Day' });
+	await seat(page, 'Seat 1').tap();
+	await page
+		.getByRole('dialog', { name: 'How did Seat 1 die?' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	const announcements = page.getByTestId('announcements');
+	await expect(announcements).toContainText('Spartacus');
+	await expect(announcements.locator('img')).toHaveCount(1);
+	await expect(day).not.toContainText('spartacusfallofrome');
+});
