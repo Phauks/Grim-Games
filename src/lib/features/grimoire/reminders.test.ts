@@ -6,6 +6,8 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	bankReminders,
 	byLabel,
+	canAddCopy,
+	reminderCopies,
 	stepReminders,
 	parseReminderKey,
 	reminderCopiesLeft,
@@ -108,6 +110,29 @@ describe('reminderCopiesLeft', () => {
 		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
 		run({ type: 'AssignCharacter', seatId: g.seating[3], characterId: 'poisoner' });
 		expect(reminderCopiesLeft(g, characters).get(key)).toBe(1);
+	});
+	it('counts an extra copy while it is on the board, and never goes below none left', () => {
+		let g = game();
+		const key = reminderKey({ characterId: 'poisoner', label: 'Poisoned' });
+		for (const seatId of [g.seating[2], g.seating[3]]) {
+			const result = dispatch(
+				{ log: { entries: [], cursor: 0 }, game: g },
+				{ type: 'AddReminder', seatId, reminder: { characterId: 'poisoner', label: 'Poisoned' } },
+				ctx
+			);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		}
+		expect(reminderCopies(g, characters).get(key)).toBe(2);
+		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
+	});
+});
+
+describe('canAddCopy', () => {
+	it("offers extra copies for a script's own characters only", () => {
+		expect(canAddCopy(characters.get('poisoner'))).toBe(false);
+		expect(canAddCopy({ ...characters.get('poisoner')!, edition: undefined })).toBe(true);
+		expect(canAddCopy(undefined)).toBe(false);
 	});
 });
 

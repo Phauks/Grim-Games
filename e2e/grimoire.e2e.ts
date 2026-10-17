@@ -2079,3 +2079,53 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 	await expect(page.locator('li.now')).toHaveCount(0);
 	await expect(page.locator('li.dim')).toHaveCount(0);
 });
+
+test("a script's own character can have another copy of a reminder (Cleopatra)", async ({
+	page
+}) => {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste JSON', exact: true })
+		.tap();
+	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	await paste.getByLabel('Script JSON or link').fill(
+		JSON.stringify([
+			{ id: '_meta', name: 'Little Rome' },
+			{
+				id: 'cleo',
+				name: 'Cleo',
+				team: 'townsfolk',
+				ability: 'Each night, choose two players.',
+				reminders: ['Chosen']
+			},
+			'chef',
+			'imp'
+		])
+	);
+	await paste.getByRole('button', { name: 'Save' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText('Little Rome');
+	await startGame(page, 'Little Rome');
+
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Cleo', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	const cleo = picker.getByRole('group', { name: 'Cleo' });
+	const another = cleo.getByRole('button', { name: 'Add another Chosen' });
+	// There from the start, usable once the listed copy is placed; official characters never.
+	await expect(another).toBeDisabled();
+	await expect(picker.getByRole('button', { name: /^Add another/ })).toHaveCount(1);
+	await cleo.getByRole('button', { name: 'Chosen' }).first().tap();
+	await expect(another).toBeEnabled();
+	await another.tap();
+	await expect(picker).toContainText('On this seat: 2');
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Cleo, 2 reminders')).toBeAttached();
+});
