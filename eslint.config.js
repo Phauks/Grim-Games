@@ -144,6 +144,13 @@ export default defineConfig(
 		rules: { 'grim/modal-actions': 'error' }
 	},
 	{
+		// One choice among a few options is a dropdown, not toggle buttons (Trevor, 2026-10-17).
+		files: ['src/**/*.svelte', 'src/**/*.ts'],
+		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: { 'grim/dropdown-choice': 'error' }
+	},
+	{
 		// Core builds no screen text, but its fields must keep the name marks for the UI.
 		files: ['src/lib/core/**/*.ts'],
 		ignores: ['src/lib/core/**/*.test.ts'],
