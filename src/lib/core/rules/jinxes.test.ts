@@ -4,13 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { editionScript } from '#lib/core/data/script.ts';
-import {
-	activeJinxes,
-	isExclusiveJinx,
-	jinxSetupWarnings,
-	needsDjinn,
-	scriptJinxes
-} from './jinxes.ts';
+import { activeJinxes, isExclusiveJinx, jinxSetupWarnings, scriptJinxes } from './jinxes.ts';
 
 const data = committedGameData();
 const name = (id: string) => data.byId.get(id)?.name ?? id;
@@ -30,7 +24,6 @@ describe('scriptJinxes', () => {
 			expect.arrayContaining(['magician+spy', 'heretic+spy', 'baron+heretic'])
 		);
 		expect(jinxes.every((j) => j.source === 'official')).toBe(true);
-		expect(needsDjinn(jinxes)).toBe(true);
 	});
 
 	it('lets a homebrew jinx replace the official one for the same pair', () => {

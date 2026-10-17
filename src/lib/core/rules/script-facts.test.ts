@@ -10,12 +10,11 @@ const data = committedGameData();
 const chars = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
 
 describe('scriptFacts', () => {
-	it('counts Trouble Brewing by type, with no jinxes and no Djinn', () => {
+	it('counts Trouble Brewing by type, with no jinxes', () => {
 		const tb = editionScript('tb', data)!;
 		const facts = scriptFacts(tb.characters, data.jinxes);
 		expect(facts.counts).toMatchObject({ townsfolk: 13, outsider: 4, minion: 4, demon: 1 });
 		expect(facts.jinxes).toEqual([]);
-		expect(facts.djinn).toBe(false);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Drunk and https://wiki.bloodontheclocktower.com/Baron
@@ -28,11 +27,10 @@ describe('scriptFacts', () => {
 		]);
 	});
 
-	// https://wiki.bloodontheclocktower.com/Djinn: any jinxed pair on the script brings it in.
-	it('lists jinxed pairs and says the Djinn applies', () => {
+	// https://wiki.bloodontheclocktower.com/Spy: the Spy and the Magician are jinxed.
+	it('lists jinxed pairs', () => {
 		const facts = scriptFacts(chars('spy', 'magician', 'chef', 'imp'), data.jinxes);
 		expect(facts.jinxes.map((j) => [...j.characters].sort().join('+'))).toEqual(['magician+spy']);
-		expect(facts.djinn).toBe(true);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Choirboy: needs the King in play.
