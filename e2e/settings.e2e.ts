@@ -210,7 +210,7 @@ test('the day timer sound and mode are in Storyteller settings', async ({ page }
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Storyteller settings');
 	await dialog.getByRole('combobox', { name: 'Timer sound' }).tap();
-	await page.getByRole('option', { name: 'Chime' }).tap();
+	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
 	await dialog.getByRole('combobox', { name: 'Day timer' }).tap();
 	await page.getByRole('option', { name: 'Stopwatch' }).tap();
 	await page.reload();

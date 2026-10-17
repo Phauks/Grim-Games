@@ -51,18 +51,38 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	// Before anything happens there is nothing to announce (Trevor).
 	await expect(page.getByTestId('announcements')).toHaveText('None');
 	// Living players and each team's, beside the votes (Trevor, 2026-10-17).
-	await expect(page.getByTestId('alive-count')).toHaveText('8 alive');
+	// Living of all players, as 8/8 (Trevor, 2026-10-17).
+	await expect(page.getByTestId('alive-count')).toHaveText('8/8');
 	// No characters yet, so no team has anyone.
-	await expect(page.getByTestId('alive-good')).toHaveText('0 good');
-	await expect(page.getByTestId('alive-evil')).toHaveText('0 evil');
+	await expect(page.getByTestId('alive-good')).toHaveAccessibleName('0 good alive');
+	await expect(page.getByTestId('alive-evil')).toHaveText('0');
 	// Ghost votes still to use sit beside the living (Trevor, 2026-10-17).
-	await expect(page.getByTestId('ghost-votes')).toHaveText('0 ghost votes');
+	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
+	// All five counts on one line (Trevor, 2026-10-17).
+	const tops = await page
+		.getByTestId('day-toolbar')
+		.locator('[role="note"]')
+		.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+	expect(tops).toHaveLength(5);
+	expect(new Set(tops).size).toBe(1);
+	// The living have no ghost vote to toggle.
+	await expect(
+		page.getByRole('button', { name: 'Ghost vote: Seat 2', includeHidden: true })
+	).toBeDisabled();
 	// Every section folds away with its caret.
 	const players = day.getByRole('button', { name: 'Players' });
 	await players.tap();
 	await expect(seat(page, 'Seat 1')).toBeHidden();
 	await players.tap();
 	await expect(seat(page, 'Seat 1')).toBeVisible();
+
+	// A section's header stays just under the toolbar while its content scrolls (Trevor).
+	await seat(page, 'Seat 8').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+	await expect(players).toBeInViewport();
+	const toolbarBox = (await page.getByTestId('day-toolbar').boundingBox())!;
+	expect((await players.boundingBox())!.y).toBeGreaterThanOrEqual(
+		toolbarBox.y + toolbarBox.height - 1
+	);
 
 	// No nomination tracking, log, Undo or History here (Trevor, 2026-10-16).
 	await expect(page.getByRole('radiogroup', { name: 'Tapping a player' })).toHaveCount(0);
@@ -88,16 +108,25 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 			.locator('.seat-player')
 			.evaluate((el) => getComputedStyle(el).color);
 	expect(await colour('Seat 2')).toBe(await colour('Seat 1'));
-	await expect(page.getByTestId('announcements')).toContainText('Seat 2 died: Executed');
-	await expect(page.getByTestId('alive-count')).toHaveText('7 alive');
-	await expect(page.getByTestId('ghost-votes')).toHaveText('1 ghost vote');
+	await expect(page.getByTestId('announcements')).toContainText('Seat 2');
+	await expect(page.getByTestId('announcements')).toContainText('died: Executed');
+	await expect(page.getByTestId('alive-count')).toHaveText('7/8');
+	await expect(page.getByTestId('ghost-votes')).toHaveText('1');
+	// One tap marks the dead player's ghost vote used, and another gives it back.
+	const ghostVote = page.getByRole('button', { name: 'Ghost vote: Seat 2' });
+	await expect(ghostVote).toHaveAttribute('aria-pressed', 'true');
+	await ghostVote.tap();
+	await expect(ghostVote).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
+	await ghostVote.tap();
+	await expect(page.getByTestId('ghost-votes')).toHaveText('1');
 
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(seat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
 	// 7 of 8 alive: 4 votes put a player on the block.
 	const votes = page.getByTestId('votes-needed');
-	await expect(votes).toHaveText('4 votes');
+	await expect(votes).toHaveText('4');
 	await expect(votes).toHaveAttribute(
 		'aria-label',
 		'4 votes put the first nominee on the block (7 alive)'
@@ -196,7 +225,8 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	// The finishing sound is the Storyteller's choice, kept as a setting.
 	await timer.getByRole('button', { name: 'Timer sound: Bell' }).tap();
 	const sounds = page.getByRole('dialog', { name: 'Timer sound' });
-	await sounds.getByText('Chime', { exact: true }).tap();
+	await sounds.getByRole('combobox', { name: 'Timer sound' }).tap();
+	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
 	await page.keyboard.press('Escape');
 	await expect(timer.getByRole('button', { name: 'Timer sound: Chime' })).toBeVisible();
 	// Reset: back to 30 seconds per living player (7 alive).
@@ -342,10 +372,12 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 	// The sound is chosen right here, so the timer's own sound button is left out.
 	await expect(timer.getByRole('button', { name: /^Timer sound/ })).toHaveCount(0);
 
-	await sheet.getByText('Stopwatch', { exact: true }).last().tap();
+	await sheet.getByRole('combobox', { name: 'Mode' }).tap();
+	await page.getByRole('option', { name: 'Stopwatch' }).tap();
 	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
-	await sheet.getByText('Chime', { exact: true }).tap();
-	await expect(sheet.getByRole('radio', { name: 'Chime' })).toBeChecked();
+	await sheet.getByRole('combobox', { name: 'Timer sound' }).tap();
+	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
+	await expect(sheet.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
 	await expect(sheet.getByRole('link')).toHaveCount(0);
 
 	await page.keyboard.press('Escape');

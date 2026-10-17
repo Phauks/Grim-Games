@@ -56,7 +56,7 @@ export const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
 
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */
-export const TIMER_SOUNDS = ['bell', 'chime', 'buzzer', 'none'] as const;
+export const TIMER_SOUNDS = ['bell', 'chime', 'clocktower', 'buzzer', 'none'] as const;
 export type TimerSound = (typeof TIMER_SOUNDS)[number];
 
 /**
