@@ -60,6 +60,11 @@
 		surface?: 'sheet' | 'page';
 		/** Custom row (the setup screen adds copies); the default is token, name and ability. */
 		item?: Snippet<[Character, PickerItemState]>;
+		/**
+		 * Adds a "None" row first, for clearing the choice (Trevor, 2026-10-17: a seat's
+		 * character is cleared through Change character). Shown as chosen when nothing is.
+		 */
+		onNone?: () => void;
 	}
 
 	let {
@@ -77,7 +82,8 @@
 		contained = true,
 		collapsibleKey = 'picker',
 		surface = 'sheet',
-		item
+		item,
+		onNone
 	}: Props = $props();
 
 	const groups = $derived(searchGroups(characters, query, filter, types));
@@ -142,6 +148,20 @@
 <div class="picker" data-contained={contained ? '' : undefined} data-surface={surface}>
 	{#if showSearch}<CharacterSearchBox bind:query />{/if}
 	<div class="list" data-testid="character-picker">
+		{#if onNone}
+			<button
+				type="button"
+				class="row none-row"
+				data-testid="picker-none"
+				aria-current={mode === 'single' && selected.length === 0 ? 'true' : undefined}
+				onclick={onNone}
+			>
+				<span class="text"><span class="name">{t('common.none')}</span></span>
+				<span class="check" aria-hidden="true"
+					>{#if mode === 'single' && selected.length === 0}<Icon name="check" />{/if}</span
+				>
+			</button>
+		{/if}
 		{#each groups as group (group.type)}
 			<Collapsible
 				title={TYPE_PLURALS[group.type]}
@@ -157,7 +177,7 @@
 				{@render rows(group)}
 			</Collapsible>
 		{:else}
-			<p class="none">{t('common.none')}</p>
+			{#if !onNone}<p class="none">{t('common.none')}</p>{/if}
 		{/each}
 	</div>
 </div>
@@ -281,5 +301,9 @@
 	}
 	.none {
 		margin: 0;
+	}
+	.none-row {
+		align-items: center;
+		margin-bottom: var(--space-2);
 	}
 </style>
