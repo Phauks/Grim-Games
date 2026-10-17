@@ -12,6 +12,9 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { resolveIconBase, resolveIconSet } from '#lib/ui/preferences.ts';
 	import SettingChoice from '#lib/ui/settings/SettingChoice.svelte';
+	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
+	import { DEFAULT_PREFERENCES, ICON_SCALE } from '#lib/ui/preferences.ts';
+	import { intl } from '#lib/i18n/locale.svelte.ts';
 
 	const theme = $derived(preferences.theme);
 	const setId = $derived(resolveIconSet(preferences.current, theme));
@@ -28,6 +31,17 @@
 		preferences.update({ iconOverrides: overrides });
 	}
 </script>
+
+<!-- Next to the icon style and choices it scales (Trevor, 2026-10-17). -->
+<SettingSlider
+	label={t('settings.iconSize')}
+	description={t('settings.iconSizeHelp')}
+	value={preferences.current.iconScale}
+	defaultValue={DEFAULT_PREFERENCES.iconScale}
+	{...ICON_SCALE}
+	format={(scale) => intl.number(scale, { style: 'percent' })}
+	onChange={(iconScale) => preferences.update({ iconScale })}
+/>
 
 <SettingChoice
 	label={t('settings.iconStyle')}

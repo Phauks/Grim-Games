@@ -1,21 +1,29 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { ASSIST_LABELS, STORYTELLER_HELP_KEYS } from '#lib/ui/assistance.ts';
+	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 	const assistance = $derived(preferences.current.assistance);
 </script>
 
-{#each STORYTELLER_HELP_KEYS as key (key)}
+<!-- Every Storyteller-only setting, under plain headings so the list scans (Trevor, 2026-10-17). -->
+{#snippet toggle(key: AssistKey)}
 	<SettingToggle
 		label={ASSIST_LABELS[key].label}
 		description={ASSIST_LABELS[key].description}
 		checked={assistance[key]}
 		onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
 	/>
-{/each}
+{/snippet}
+
+<h3>{t('settings.groupNight')}</h3>
+{#each STORYTELLER_GROUPS.night as key (key)}{@render toggle(key)}{/each}
+
+<h3>{t('settings.groupSetup')}</h3>
+{#each STORYTELLER_GROUPS.setup as key (key)}{@render toggle(key)}{/each}
 <!-- What face-down bag tiles show (Trevor, 2026-10-16: a dropdown, not a switch). -->
 <SettingSelect
 	label={t('settings.tileLabels')}
@@ -36,3 +44,23 @@
 	checked={preferences.current.requireName}
 	onChange={(requireName) => preferences.update({ requireName })}
 />
+
+<h3>{t('settings.groupDay')}</h3>
+{#each STORYTELLER_GROUPS.day as key (key)}{@render toggle(key)}{/each}
+
+<h3>{t('settings.groupBoard')}</h3>
+{#each STORYTELLER_GROUPS.board as key (key)}{@render toggle(key)}{/each}
+
+<style>
+	h3 {
+		margin: var(--space-5) 0 var(--space-1);
+		font-family: var(--font-control);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-muted);
+	}
+	h3:first-of-type {
+		margin-top: 0;
+	}
+</style>

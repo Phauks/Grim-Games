@@ -8,9 +8,11 @@ async function openTokens(page: Page) {
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Tokens' })
+		.getByRole('button', { name: 'Characters and tokens' })
 		.tap();
-	await expect(dialog.getByRole('heading', { name: 'Tokens', level: 2 })).toBeVisible();
+	await expect(
+		dialog.getByRole('heading', { name: 'Characters and tokens', level: 2 })
+	).toBeVisible();
 	return dialog;
 }
 
@@ -107,7 +109,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 			.tap();
 		await dialog
 			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: 'Tokens' })
+			.getByRole('button', { name: 'Characters and tokens' })
 			.tap();
 	}
 	await openTokens();

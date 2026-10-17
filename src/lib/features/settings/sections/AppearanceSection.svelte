@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { ICON_SCALE, TEXT_ALIGNS, TEXT_SCALE, type TextAlign } from '#lib/ui/preferences.ts';
+	import { TEXT_ALIGNS, TEXT_SCALE, type TextAlign } from '#lib/ui/preferences.ts';
 	import SettingChoice from '#lib/ui/settings/SettingChoice.svelte';
 	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import { DEFAULT_PREFERENCES } from '#lib/ui/preferences.ts';
 	import { THEMES } from '#lib/ui/themes/registry.ts';
+	import FontPreview from './FontPreview.svelte';
+	import FontsSection from './FontsSection.svelte';
+	import RulesTermsSection from './RulesTermsSection.svelte';
 
 	const alignLabels = $derived<Record<TextAlign, string>>({
 		left: t('settings.alignLeft'),
@@ -14,6 +17,9 @@
 	});
 </script>
 
+<!-- Theme and text (Trevor, 2026-10-17): theme, text size and alignment, the fonts, and the
+     rules-term underline; the preview stays at the top while these scroll. -->
+<FontPreview />
 <SettingChoice
 	label={t('settings.theme')}
 	value={preferences.theme.id}
@@ -38,21 +44,5 @@
 	options={TEXT_ALIGNS.map((align) => ({ value: align, label: alignLabels[align] }))}
 	onChange={(textAlign) => preferences.update({ textAlign: textAlign as TextAlign })}
 />
-<SettingSlider
-	label={t('settings.iconSize')}
-	description={t('settings.iconSizeHelp')}
-	value={preferences.current.iconScale}
-	defaultValue={DEFAULT_PREFERENCES.iconScale}
-	{...ICON_SCALE}
-	format={(scale) => intl.number(scale, { style: 'percent' })}
-	onChange={(iconScale) => preferences.update({ iconScale })}
-/>
-<SettingSlider
-	label={t('settings.characterIconSize')}
-	description={t('settings.characterIconSizeHelp')}
-	value={preferences.current.characterIconScale}
-	defaultValue={DEFAULT_PREFERENCES.characterIconScale}
-	{...ICON_SCALE}
-	format={(scale) => intl.number(scale, { style: 'percent' })}
-	onChange={(characterIconScale) => preferences.update({ characterIconScale })}
-/>
+<FontsSection />
+<RulesTermsSection />

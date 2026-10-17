@@ -1,5 +1,5 @@
 import type { Component } from 'svelte';
-import type { Message, MessageKey } from '#lib/i18n/catalog.ts';
+import type { Message } from '#lib/i18n/catalog.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 
 /**
@@ -9,15 +9,6 @@ import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
  * the generic rows in `#lib/ui/settings` (SettingRow, SettingChoice, SettingSelect, SettingSegmented,
  * SettingToggle) so every section looks and behaves the same.
  */
-/** Who a section's settings affect (Trevor: separate Storyteller-only settings). */
-export type SettingsAudience = 'everyone' | 'storyteller';
-
-/** Catalog keys for each audience's name. */
-export const AUDIENCE_LABELS = {
-	everyone: 'settings.audienceEveryone',
-	storyteller: 'settings.audienceStoryteller'
-} as const satisfies Record<SettingsAudience, MessageKey>;
-
 export interface SettingsSection {
 	id: string;
 	/**
@@ -29,7 +20,6 @@ export interface SettingsSection {
 	component: Component;
 	/** Optional control shown beside the section heading, such as Diagnostics' Refresh icon. */
 	headingAction?: Component;
-	audience: SettingsAudience;
 	/** Position in the sidebar, low first. Built-ins use 10, 20, 30 ... and 90 for Reset settings. */
 	order: number;
 }

@@ -133,14 +133,17 @@ test('the footer never makes the page wider than the screen, even at the largest
 	expect(widths.page).toBeLessThanOrEqual(widths.screen);
 });
 
-test('Diagnostics is a Settings section, reached from About and from its own link', async ({
+test('Diagnostics is a Settings section, also reached from its old page address', async ({
 	page
 }) => {
 	await page.goto('/');
 	await page.evaluate(() => document.fonts.ready);
-	await page.getByRole('contentinfo').getByRole('button', { name: 'About' }).tap();
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings.getByRole('button', { name: 'Diagnostics' }).last().tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Diagnostics' })
+		.tap();
 	await expect(settings.getByRole('heading', { name: 'Diagnostics' })).toBeVisible();
 	await expect(settings.getByTestId('diagnostics')).toBeVisible();
 	await expect(page).toHaveURL(/\/$/);
