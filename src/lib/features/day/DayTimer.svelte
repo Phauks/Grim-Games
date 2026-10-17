@@ -120,11 +120,16 @@
 		text-align: center;
 	}
 	.timer[data-variant='full'] {
+		container-type: inline-size;
 		justify-content: space-between;
 		width: 100%;
 	}
+	.timer > :global(*) {
+		flex-shrink: 0;
+	}
 	.mode {
-		flex: 1;
+		flex: 1 1 0;
+		min-width: 0;
 		align-self: stretch;
 		padding: 0;
 		border: 0;
@@ -133,9 +138,11 @@
 		font: inherit;
 		cursor: pointer;
 	}
+	/* Shrinks on narrow phones with large text, so the five buttons and the clock always fit
+	   (5ch of digits in what the buttons leave). */
 	.timer[data-variant='full'] .clock {
 		display: block;
-		font-size: 2.25rem;
+		font-size: min(2.25rem, calc((100cqi - 5 * var(--tap-target)) * 0.35));
 		line-height: 1.1;
 	}
 	/* Sits on the timer's top border, like a legend, so it takes no height. */
