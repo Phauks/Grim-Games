@@ -143,8 +143,8 @@ test('the table view keeps tags, filters and removing', async ({ page }) => {
 	const fun = script.getByRole('button', { name: 'Stupid fun' });
 	await fun.tap();
 	await expect(fun).toHaveAttribute('aria-pressed', 'true');
-	// Only scripts made in the Script builder open there to edit.
-	await expect(script.getByRole('button', { name: 'Edit in Script builder' })).toHaveCount(0);
+	// Every saved script opens in the Script builder (Trevor, 2026-10-17).
+	await expect(script.getByRole('button', { name: 'Edit in Script builder' })).toBeEnabled();
 	await expect(script.getByTestId('script-sheet')).toContainText('Washerwoman');
 	await script.getByRole('button', { name: 'Close' }).tap();
 	await expect(table(page)).toContainText('Club night');
@@ -304,7 +304,7 @@ test('a saved BotC Scripts script still offers its other versions', async ({ pag
 	await expect(save).toHaveAttribute('aria-pressed', 'true');
 	await expect(script.getByTestId('newer-version').getByRole('button')).toHaveText('Newer: 1.1.0');
 	await script.getByRole('combobox', { name: 'Version' }).tap();
-	await page.getByRole('option', { name: '1.1.0', exact: true }).tap();
+	await page.getByRole('option', { name: /^1\.1\.0/ }).tap();
 	await expect(script.getByTestId('script-sheet')).toContainText('Mayor');
 	// Only a preview until saved: the Library still holds 1.0.0, and Remove waits.
 	await expect(save).toHaveAttribute('aria-pressed', 'false');
@@ -315,7 +315,7 @@ test('a saved BotC Scripts script still offers its other versions', async ({ pag
 	// Saving another version keeps both.
 	await tile(page, 'Storm Front').tap();
 	await script.getByRole('combobox', { name: 'Version' }).tap();
-	await page.getByRole('option', { name: '1.1.0', exact: true }).tap();
+	await page.getByRole('option', { name: /^1\.1\.0/ }).tap();
 	await save.tap();
 	await expect(save).toHaveAttribute('aria-pressed', 'true');
 	await script.getByRole('button', { name: 'Close' }).tap();

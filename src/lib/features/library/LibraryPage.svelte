@@ -476,8 +476,9 @@
 <Dialog bind:open={scriptOpen} title={openRow?.listing.row.name || t('common.none')} size="full">
 	{#if openRow}
 		{@const shareable = openRow.shareable}
-		{@const built =
-			openRow.listing.saved?.source.kind === 'built' ? openRow.listing.saved : undefined}
+		<!-- Any saved script opens in the Script builder (Trevor, 2026-10-17); a profile-only
+		     script has no copy on this device yet, so Edit stays there but disabled. -->
+		{@const editable = openRow.listing.saved}
 		<ScriptView
 			listing={openRow.listing}
 			{data}
@@ -497,13 +498,12 @@
 						onclick={() => void saveViewed()}
 					/>
 				</span>
-				{#if built}
-					<IconButton
-						icon="buildScript"
-						label={t('library.edit')}
-						onclick={() => editInBuilder(built.scriptId)}
-					/>
-				{/if}
+				<IconButton
+					icon="buildScript"
+					label={t('library.edit')}
+					disabled={!editable || viewingUnsaved}
+					onclick={() => editable && editInBuilder(editable.scriptId)}
+				/>
 				<DeleteButton
 					label={t('library.remove')}
 					disabled={viewingUnsaved}
