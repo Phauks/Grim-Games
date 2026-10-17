@@ -16,7 +16,6 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -143,7 +142,12 @@
 									character !== undefined && blocks(index) && inPlay.has(character.id)}
 								<li data-in-play={playing ? '' : undefined}>
 									{#if character}
-										<CharacterLabel {character} alignment="good" />
+										<CharacterBadge
+											characterId={character.id}
+											{character}
+											alignment="good"
+											interactive={false}
+										/>
 										<span class="flag"
 											>{#if playing}<Icon name="warning" /> {t('bluffs.inPlayReplace')}{/if}</span
 										>

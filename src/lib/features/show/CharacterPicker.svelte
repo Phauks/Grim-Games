@@ -3,7 +3,7 @@
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import CharacterLabel from './CharacterLabel.svelte';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 
 	interface Props {
 		/** The characters to choose from, in script order. */
@@ -66,7 +66,7 @@
 						aria-label={t(blocked ? 'show.removeInPlay' : 'show.remove', { name: character.name })}
 						onclick={() => toggle(character.id)}
 					>
-						<CharacterLabel {character} />
+						<CharacterBadge characterId={character.id} {character} interactive={false} />
 						<Icon name={blocked ? 'warning' : 'close'} />
 					</button>
 				{:else}

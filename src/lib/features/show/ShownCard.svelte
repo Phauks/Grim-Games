@@ -2,8 +2,7 @@
 	import { defaultAlignment } from '#lib/core/data/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import InfoTokenText from '#lib/features/info-tokens/InfoTokenText.svelte';
-	import { fitTokens } from './fit.ts';
-	import CharacterLabel from './CharacterLabel.svelte';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import type { ShownCharacter } from './shown.ts';
 
 	interface Props {
@@ -20,14 +19,18 @@
 
 	let areaWidth = $state(0);
 	let areaHeight = $state(0);
+	let captionHeight = $state(0);
 
 	const single = $derived(characters.length === 1 ? characters[0].character : undefined);
-	const fit = $derived(
-		fitTokens(single ? 1 : 0, areaWidth, areaHeight, {
-			labelHeight: 48,
-			// A computer window has room for a bigger token than a phone (Trevor, 2026-10-16).
-			max: 640
-		})
+	/**
+	 * The token never fills the screen (Trevor, 2026-10-17): at most three quarters of the
+	 * width and just over half the height, and always leaving room for the name and ability.
+	 */
+	const size = $derived(
+		Math.max(
+			64,
+			Math.floor(Math.min(areaWidth * 0.75, areaHeight * 0.55, areaHeight - captionHeight - 16))
+		)
 	);
 </script>
 
@@ -44,26 +47,37 @@
 		<p class="detail">{detail}</p>
 	{/if}
 	{#if single}
+		<!-- The token, its name and its ability, together in the middle of the screen. -->
 		<div class="area" bind:clientWidth={areaWidth} bind:clientHeight={areaHeight}>
-			<div class="single" style:--size="{fit.size}px">
+			<div class="single" data-testid="shown-character">
 				<CharacterToken
 					character={single}
 					alignment={characters[0].alignment ?? defaultAlignment(single.type)}
-					size={fit.size}
+					{size}
 				/>
-				<!-- eslint-disable-next-line grim/names-as-badges -- the token shown to a player, captioned -->
-				<span class="name">{single.name}</span>
+				<div class="caption" bind:clientHeight={captionHeight}>
+					<span class="name"
+						><CharacterBadge
+							characterId={single.id}
+							character={single}
+							alignment={characters[0].alignment}
+							interactive={false}
+						/></span
+					>
+					<p class="ability">{single.ability}</p>
+				</div>
 			</div>
 		</div>
-		<p class="ability">{single.ability}</p>
 	{:else if characters.length > 1}
 		<!-- Several characters (bluffs): a list with each ability, not tokens (Trevor). -->
 		<ul class="list">
 			{#each characters as shown (shown.character.id)}
 				<li>
-					<CharacterLabel
+					<CharacterBadge
+						characterId={shown.character.id}
 						character={shown.character}
 						alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
+						interactive={false}
 					/>
 					<p>{shown.character.ability}</p>
 				</li>
@@ -140,7 +154,12 @@
 	.single {
 		display: grid;
 		justify-items: center;
-		gap: var(--space-1);
+		gap: var(--space-4);
+	}
+	.caption {
+		display: grid;
+		justify-items: center;
+		gap: var(--space-3);
 	}
 	.list {
 		display: grid;
@@ -164,19 +183,21 @@
 		font-size: 1.2rem;
 		line-height: 1.35;
 	}
+	/* The shared badge, larger: it names the character the player is being shown. */
 	.name {
 		max-width: 100%;
-		font-family: var(--font-character);
-		font-weight: var(--font-character-weight);
-		font-size: 1.4rem;
-		line-height: 1.2;
-		color: var(--heading);
+		font-size: clamp(1.3rem, 5vw, 1.8rem);
+		--character-icon-scale: 1.4;
 	}
 	.ability {
 		margin: 0;
 		max-width: 32ch;
 		font-family: var(--font-ability);
-		font-size: 1.3rem;
+		font-size: clamp(1.25rem, 4.5vw, 1.8rem);
 		line-height: 1.35;
+	}
+	.content[data-compact] .name {
+		font-size: 1.1rem;
+		--character-icon-scale: 1;
 	}
 </style>

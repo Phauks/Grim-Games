@@ -7,7 +7,6 @@
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
 	import ShownCard from '#lib/features/show/ShownCard.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -410,9 +409,11 @@
 					<div class="belongs">
 						<span class="belongs-label">{t('info-tokens.belongsTo')}</span>
 						<span class="belongs-owners">
-							{#each editOwners as owner (owner.id)}<CharacterLabel character={owner} />{:else}{t(
-									'common.none'
-								)}{/each}
+							{#each editOwners as owner (owner.id)}<CharacterBadge
+									characterId={owner.id}
+									character={owner}
+									interactive={false}
+								/>{:else}{t('common.none')}{/each}
 						</span>
 						<Button icon="rename" onclick={() => (editView = 'characters')}
 							>{t('info-tokens.chooseCharacters')}</Button

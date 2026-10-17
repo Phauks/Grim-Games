@@ -1548,3 +1548,34 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 	await guide.getByRole('button', { name: 'Done' }).tap();
 	await expect(guide).toBeHidden();
 });
+
+for (const desktop of [false, true]) {
+	test(`the eye shows a sensibly sized token, its name and its ability on one screen${desktop ? ' (computer window)' : ''}`, async ({
+		page
+	}, info) => {
+		if (desktop) {
+			test.skip(info.project.name !== 'tablet', 'one computer-sized run is enough');
+			await page.setViewportSize({ width: 1440, height: 900 });
+		}
+		await startGame(page);
+		const sheet = await openSeat(page, 1);
+		await sheet.getByRole('button', { name: 'Choose' }).tap();
+		await page
+			.getByRole('dialog', { name: 'Character for Seat 1' })
+			.getByRole('button', { name: 'Fortune Teller', exact: true })
+			.tap();
+		await sheet.getByRole('button', { name: 'Show to player' }).tap();
+
+		const shown = page.locator('[data-testid="show-to-player"][open]');
+		const view = page.viewportSize()!;
+		const token = (await shown.getByRole('img', { name: /Fortune Teller token/ }).boundingBox())!;
+		// Never the whole screen (Trevor, 2026-10-17).
+		expect(token.width).toBeLessThanOrEqual(view.width * 0.75 + 1);
+		expect(token.height).toBeLessThanOrEqual(view.height * 0.55 + 1);
+		// The name (as a badge) and the ability are there and on screen, without scrolling.
+		const name = shown.locator('[data-character-id="fortuneteller"]');
+		await expect(name).toBeInViewport({ ratio: 1 });
+		const ability = shown.getByText(/^Each night, choose 2 players/);
+		await expect(ability).toBeInViewport({ ratio: 1 });
+	});
+}

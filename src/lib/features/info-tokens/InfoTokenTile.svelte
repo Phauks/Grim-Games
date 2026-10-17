@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
-	import CharacterLabel from '#lib/features/show/CharacterLabel.svelte';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { plainText } from './bold.ts';
 	import InfoTokenText from './InfoTokenText.svelte';
@@ -42,8 +42,10 @@
 		<span class="text"><InfoTokenText {text} /></span>
 		{#if owners.length > 0}
 			<span class="owners">
-				{#each owners.slice(0, 2) as owner (owner.id)}<CharacterLabel
+				{#each owners.slice(0, 2) as owner (owner.id)}<CharacterBadge
+						characterId={owner.id}
 						character={owner}
+						interactive={false}
 					/>{/each}{#if owners.length > 2}<span class="more">+{owners.length - 2}</span>{/if}
 			</span>
 		{/if}
