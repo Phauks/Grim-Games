@@ -158,7 +158,7 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	});
 	await startGame(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const timer = page.getByTestId('day-timer');
+	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
 	const clock = timer.getByRole('timer');
 	// 8 players alive: 4 minutes.
 	await expect(clock).toHaveText('4:00');
@@ -222,7 +222,10 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(
-		page.getByTestId('day-timer').getByRole('button', { name: 'Timer sound: Chime' })
+		page
+			.getByTestId('day-toolbar')
+			.getByTestId('day-timer')
+			.getByRole('button', { name: 'Timer sound: Chime' })
 	).toBeVisible();
 });
 
@@ -231,7 +234,7 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	await page.clock.install();
 	await startGame(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const timer = page.getByTestId('day-timer');
+	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
 	const clock = timer.getByRole('timer');
 	await expect(clock).toHaveText('4:00');
 	// The mode is named on the timer, and tapping the clock switches it (Trevor, 2026-10-17).
@@ -253,6 +256,9 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(
-		page.getByTestId('day-timer').getByRole('button', { name: 'Stopwatch; switch to timer' })
+		page
+			.getByTestId('day-toolbar')
+			.getByTestId('day-timer')
+			.getByRole('button', { name: 'Stopwatch; switch to timer' })
 	).toBeVisible();
 });
