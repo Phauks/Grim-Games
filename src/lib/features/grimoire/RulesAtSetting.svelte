@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { boardLooks } from './board-looks.svelte.ts';
 
 	/**
@@ -8,7 +8,7 @@
 	 */
 </script>
 
-<Segmented
+<Select
 	label="Fabled and Loric"
 	value={boardLooks.current.rulesAt}
 	options={[

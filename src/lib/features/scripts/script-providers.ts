@@ -67,6 +67,8 @@ export interface LocalContext {
 	profile: readonly ProfileScriptEntry[];
 	/** Names a curated section in the app's words. */
 	curatedLabel: (section: string) => string;
+	/** Names the month a Script of the Month was first seen ("2026-10"). */
+	monthLabel?: (seen: string | undefined) => string;
 	/** Says where a saved script came from. */
 	describe: (source: ScriptSource) => string;
 	/** The World Cups' scripts loaded so far (`world-cup.svelte.ts`). */
@@ -113,17 +115,24 @@ export const officialProvider: LocalProvider = {
 		})
 };
 
-export const curatedProvider: LocalProvider = {
-	kind: 'local',
-	id: 'curated',
-	listings: ({ data, curated, curatedLabel }) =>
+/**
+ * The official site's scripts, apart from its Scripts of the Month (Trevor, 2026-10-17: kept
+ * apart from the ones it recommends), which `monthProvider` lists, past months included.
+ */
+function curatedListings(id: 'curated' | 'month'): LocalProvider['listings'] {
+	return ({ data, curated, curatedLabel, monthLabel }) =>
 		curated.flatMap((entry, i) => {
+			if ((entry.section === 'month') !== (id === 'month')) return [];
 			const script = loadScript(entry.json, data).script;
+			const note =
+				id === 'month'
+					? (monthLabel?.(entry.seen) ?? entry.seen ?? '')
+					: curatedLabel(entry.section);
 			return script
 				? [
 						{
 							row: {
-								...pickerRow(script, `curated:${i}`, 'curated', curatedLabel(entry.section)),
+								...pickerRow(script, `${id}:${i}`, id, note),
 								page: CURATED_PAGE
 							},
 							target: {
@@ -135,7 +144,20 @@ export const curatedProvider: LocalProvider = {
 						}
 					]
 				: [];
-		})
+		});
+}
+
+export const curatedProvider: LocalProvider = {
+	kind: 'local',
+	id: 'curated',
+	listings: curatedListings('curated')
+};
+
+/** Every Script of the Month our copy has seen, this month's first (`mergeCurated`). */
+export const monthProvider: LocalProvider = {
+	kind: 'local',
+	id: 'month',
+	listings: curatedListings('month')
 };
 
 export const collectionProvider: LocalProvider = {
@@ -189,7 +211,12 @@ function worldCupProvider(year: WorldCupYear): LocalProvider {
 							version,
 							page: scriptPageUrl(entry.scriptId, version || undefined)
 						},
-						target: { kind: 'botcscripts', ref: { kind: 'script', scriptId: entry.scriptId } },
+						// Our stored copy already holds it (`worker/world-cups.ts`): nothing to fetch.
+						target: {
+							kind: 'json',
+							json,
+							source: { kind: 'botcscripts', scriptId: entry.scriptId, version }
+						},
 						identity: { json }
 					}
 				];
@@ -270,6 +297,7 @@ export const LOCAL_PROVIDERS: readonly LocalProvider[] = [
 /** The Scripts page leaves out the base three: they are always in New game (Trevor, 2026-10-16). */
 export const SCRIPTS_PAGE_PROVIDERS: readonly LocalProvider[] = [
 	curatedProvider,
+	monthProvider,
 	collectionProvider,
 	worldCup2023Provider,
 	worldCup2025Provider,

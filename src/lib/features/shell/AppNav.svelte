@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import CccLogo from '#lib/features/about/CccLogo.svelte';
 	import { navDrawer } from './nav-drawer.svelte.ts';
 	import NavList from './NavList.svelte';
 
@@ -13,7 +14,10 @@
 <!-- The left sidebar on wide screens, opened and closed by the header's hamburger. -->
 {#if !navDrawer.hidden}
 	<nav class="app-nav" aria-label={t('shell.navLabel')}>
-		<div class="nav-scroll"><NavList /></div>
+		<div class="nav-scroll">
+			<NavList />
+			<div class="bottom"><CccLogo /></div>
+		</div>
 	</nav>
 {/if}
 
@@ -37,9 +41,13 @@
 			display: flex;
 			flex-direction: column;
 			gap: var(--space-2);
-			max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top));
+			height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top));
 			overflow-y: auto;
 			padding: var(--space-4) var(--space-2);
+		}
+		/* The Community Created Content logo, always at the bottom of the menu (Trevor, 2026-10-17). */
+		.bottom {
+			margin-top: auto;
 		}
 	}
 </style>

@@ -5,13 +5,11 @@
 	import { clearTermHandler } from '#lib/features/glossary/term-handler.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { iconUrl } from './icon-url.ts';
 	import { jinxesFor } from '#lib/core/data/jinxes.ts';
 	import CharacterBadge from './CharacterBadge.svelte';
 	import { officialData } from './game-data.svelte.ts';
-	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
 	import ContentsLayout, { type ContentsItem } from './ContentsLayout.svelte';
-	import ReminderToken from './ReminderToken.svelte';
+	import CharacterSummary from './CharacterSummary.svelte';
 	import WikiBox from './WikiBox.svelte';
 	import { wikiPageTitle, withoutRepeats, type WikiSection } from './wiki-page.ts';
 	import { wikiPages } from './wiki-page.svelte.ts';
@@ -25,22 +23,7 @@
 	let { open = $bindable(false), character, icon: given }: Props = $props();
 	// Terms here open their popover, even when these details were opened from the Glossary.
 	clearTermHandler();
-	// Callers may pass the seat's icon (its alignment); otherwise the character's own.
-	const icon = $derived(given ?? iconUrl(character));
 	const wiki = $derived(wikiUrl(character));
-	const typeLabel = $derived(character.type[0].toUpperCase() + character.type.slice(1));
-	// Where the character comes from, as in the Reference: TPI's edition, or Homebrew for a
-	// script's own character. Fabled and Loric are their own edition, so it is not repeated.
-	const source = $derived(
-		character.edition
-			? (EDITION_LABELS[character.edition] ?? character.edition)
-			: t('characters.homebrew')
-	);
-	/** TPI's reminder tokens, then the global ones, as in the Reference. */
-	const reminders = $derived([
-		...character.reminders.map((label) => ({ label, global: false })),
-		...character.remindersGlobal.map((label) => ({ label, global: true }))
-	]);
 	// The whole wiki page, fetched live when the dialog opens (wiki-page.svelte.ts).
 	const title = $derived(wiki ? wikiPageTitle(wiki) : undefined);
 	const page = $derived(title ? wikiPages.get(title) : undefined);
@@ -140,26 +123,7 @@
 <!-- eslint-disable-next-line grim/names-as-badges -- the character's own details; a badge here would reopen it -->
 <Dialog bind:open title={character.name} size="full">
 	<!-- Always shown, whichever section is open (Trevor, 2026-10-16). -->
-	<header class="character">
-		<span class="icon"
-			>{#if icon}<img src={icon} alt="" width="64" height="64" />{/if}</span
-		>
-		<div>
-			<p class="type">{source === typeLabel ? typeLabel : `${typeLabel} · ${source}`}</p>
-			<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
-			<!-- Every reminder token, beside the ability on every section (Trevor, 2026-10-16). -->
-			{#if reminders.length}
-				<p class="reminders" data-testid="character-reminders">
-					{#each reminders as reminder, i (i)}<ReminderToken
-							label={reminder.global
-								? t('reference.globalReminder', { label: reminder.label })
-								: reminder.label}
-							type={character.type}
-						/>{/each}
-				</p>
-			{/if}
-		</div>
-	</header>
+	<CharacterSummary {character} icon={given} />
 	<ContentsLayout
 		label={t('characters.moreFromWiki')}
 		{items}
@@ -240,40 +204,6 @@
 </Dialog>
 
 <style>
-	/* The character stays at the top on every section; only the section text scrolls. */
-	.character {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-3);
-		flex: none;
-		padding: var(--space-2) 0 var(--space-3);
-		border-bottom: var(--card-border);
-	}
-	.icon {
-		display: inline-grid;
-		flex: none;
-		place-items: center;
-		width: calc(4.5 * var(--u));
-		height: calc(4.5 * var(--u));
-		border-radius: 50%;
-		background: var(--token-face, var(--on-surface));
-	}
-	.type {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
-	.ability {
-		margin: 0;
-		font-family: var(--font-ability);
-		font-size: 1.05rem;
-		line-height: 1.5;
-	}
-	.reminders {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-		margin: var(--space-2) 0 0;
-	}
 	.wiki-page {
 		line-height: 1.5;
 	}

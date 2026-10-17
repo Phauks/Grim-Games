@@ -39,6 +39,21 @@ describe('seatPoints', () => {
 		expect(seatPoints(seats, DEFAULT_SEAT_LAYOUT, wide)[1].x).toBeCloseTo(91);
 	});
 
+	it('spaces seats an equal distance apart round an oval, not at equal angles', () => {
+		// Trevor, 2026-10-17: on a wide board equal angles bunched seats at the ends.
+		const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		const px = seatPoints(ids, DEFAULT_SEAT_LAYOUT, wide).map((p) => ({
+			x: (p.x / 100) * wide.width,
+			y: (p.y / 100) * wide.height
+		}));
+		const gaps = px.map((p, i) => {
+			const q = px[(i + 1) % px.length];
+			return Math.hypot(p.x - q.x, p.y - q.y);
+		});
+		expect(Math.max(...gaps) / Math.min(...gaps)).toBeLessThan(1.1);
+		expect(px[0]).toEqual({ x: 400, y: expect.closeTo(36) });
+	});
+
 	it('leaves empty places on the ring for gaps', () => {
 		// Four seats and a gap of two after "b": six places, and "c" takes the fifth.
 		const layout = withGap(DEFAULT_SEAT_LAYOUT, 'b', 2);

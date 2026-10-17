@@ -50,6 +50,18 @@ export function parseScale(raw: unknown): number {
 	return (Math.round(clamped / TOKEN_SCALE.step) * 5) / 100;
 }
 
+/**
+ * How wide a reminder's words may run, as a multiple of the reminder's width (Trevor,
+ * 2026-10-17: "red he..."): 100% to 300% in 25% steps.
+ */
+export const REMINDER_LABEL_WIDTH = { min: 1, max: 3, step: 0.25 } as const;
+
+function parseLabelWidth(raw: unknown): number {
+	if (typeof raw !== 'number' || !Number.isFinite(raw)) return 1.5;
+	const { min, max, step } = REMINDER_LABEL_WIDTH;
+	return Math.round(Math.min(max, Math.max(min, raw)) / step) * step;
+}
+
 export interface TokenAppearance {
 	/** Only the colours the user changed; the rest follow the theme. */
 	colours: Partial<Record<TokenColour, string>>;
@@ -64,6 +76,10 @@ export interface TokenAppearance {
 	nightNumbers: boolean;
 	/** Size of those badges, on the same 50% to 200% range. */
 	nightBadgeScale: number;
+	/** The widest a reminder's words run, on REMINDER_LABEL_WIDTH. */
+	reminderLabelWidth: number;
+	/** Words too long for that width go onto more lines instead of ending in "…". */
+	reminderLabelWrap: boolean;
 }
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
@@ -72,7 +88,9 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	reminderScale: 1,
 	boardNames: false,
 	nightNumbers: false,
-	nightBadgeScale: 1
+	nightBadgeScale: 1,
+	reminderLabelWidth: 1.5,
+	reminderLabelWrap: false
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -97,20 +115,26 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		// name always curves along the edge and the player name is always a badge.
 		boardNames: input.boardNames === true,
 		nightNumbers: input.nightNumbers === true,
-		nightBadgeScale: parseScale(input.nightBadgeScale)
+		nightBadgeScale: parseScale(input.nightBadgeScale),
+		reminderLabelWidth: parseLabelWidth(input.reminderLabelWidth),
+		reminderLabelWrap: input.reminderLabelWrap === true
 	};
 }
 
 /**
- * The CSS variables to write after the theme's: `--token-scale`, `--reminder-scale` and
- * `--night-badge-scale`
- * always, and each changed colour.
+ * The CSS variables to write after the theme's: the sizes (`--token-scale`,
+ * `--reminder-scale`, `--night-badge-scale`) and reminder words (`--reminder-label-width`,
+ * `--reminder-label-wrap`, a white-space value, and `--reminder-label-min`, so wrapped
+ * words never get cut) always, and each changed colour.
  */
 export function tokenVariables(appearance: TokenAppearance): Record<CssVariable, string> {
 	const variables: Record<CssVariable, string> = {
 		'--token-scale': String(appearance.tokenScale),
 		'--reminder-scale': String(appearance.reminderScale),
-		'--night-badge-scale': String(appearance.nightBadgeScale)
+		'--night-badge-scale': String(appearance.nightBadgeScale),
+		'--reminder-label-width': String(appearance.reminderLabelWidth),
+		'--reminder-label-wrap': appearance.reminderLabelWrap ? 'normal' : 'nowrap',
+		'--reminder-label-min': appearance.reminderLabelWrap ? 'min-content' : '0'
 	};
 	for (const { key, variables: names } of TOKEN_COLOURS) {
 		const value = appearance.colours[key];

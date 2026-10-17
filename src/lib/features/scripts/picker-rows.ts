@@ -15,6 +15,7 @@ import { homebrewScriptPage, type HomebrewScript } from './homebrew-scripts-api.
 export type PickerSource =
 	| 'official'
 	| 'curated'
+	| 'month'
 	| 'collection'
 	| 'worldcup2023'
 	| 'worldcup2025'
@@ -192,6 +193,7 @@ export interface RowSort {
 const SOURCE_ORDER: readonly PickerSource[] = [
 	'official',
 	'curated',
+	'month',
 	'collection',
 	'worldcup2023',
 	'worldcup2025',

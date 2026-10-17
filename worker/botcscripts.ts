@@ -20,6 +20,7 @@ import {
 	readVersionList,
 	upstreamSearchPath,
 	type BotcScriptsQuery,
+	type BotcScriptsVersion,
 	type CharacterEditions
 } from '../src/lib/features/scripts/botcscripts-api.ts';
 
@@ -112,6 +113,15 @@ async function handleVersions(scriptId: number): Promise<Response> {
 		}
 		return Response.json({ error: 'Could not reach BotC Scripts.' }, { status: 502 });
 	}
+}
+
+/** A script's latest version, for the stored copy of the World Cups (`mirror.ts`). */
+export async function fetchLatestVersion(scriptId: number): Promise<BotcScriptsVersion> {
+	const versionId = pickVersionId(await getJson(`/api/script_ids/${scriptId}/`));
+	if (versionId === undefined) throw new LookupError(404, 'That script has no versions.');
+	const version = readVersion(await getJson(`/api/scripts/${versionId}/`));
+	if (!version) throw new LookupError(502, 'BotC Scripts returned something unexpected.');
+	return version;
 }
 
 export async function handleBotcScripts(url: URL): Promise<Response> {

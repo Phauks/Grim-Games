@@ -200,7 +200,9 @@ test('history, add seat and remove', async ({ page }) => {
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
 	await expect(page.getByRole('dialog').getByRole('button', { name: 'Swap seats' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
-	await seatMenu(page, sheet, 'Remove seat');
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	// The trash sits beside the close X (Trevor, 2026-10-17).
+	await page.locator('.head-actions').getByRole('button', { name: 'Remove seat' }).tap();
 	const remove = page.getByRole('alertdialog', { name: 'Remove Ben?' });
 	// The player count change, and whether the characters still fit the setup sheet.
 	await expect(remove.getByTestId('table-check')).toContainText('9 → 8');
@@ -264,7 +266,9 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 	// Or small along the edge (Trevor, 2026-10-17), set beside the background.
 	await menu(page, 'Background');
 	const looks = page.getByRole('dialog', { name: 'Background' });
-	await looks.getByText('Edge, smaller', { exact: true }).tap();
+	// A drop-down (Trevor, 2026-10-17).
+	await looks.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
+	await page.getByRole('option', { name: 'Edge, smaller' }).tap();
 	await looks.getByRole('button', { name: 'Close' }).tap();
 	await expect(
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
@@ -709,8 +713,9 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	// Ticking Dawn ends the night and starts Day 1 (Trevor, 2026-10-16); the night's ticks
 	// stay on screen, and ticking Dawn again doesn't start another day.
 	const dawn = night.getByRole('button', { name: 'Done: Dawn' });
+	// The day timer is on the board from the start (Trevor, 2026-10-17).
 	const boardTimer = page.locator('.board-timer').getByTestId('day-timer');
-	await expect(boardTimer).toHaveCount(0);
+	await expect(boardTimer).toBeVisible();
 	await dawn.tap();
 	await expect(dawn).toHaveAttribute('aria-pressed', 'true');
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
@@ -720,7 +725,6 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
 	await page.keyboard.press('Escape');
-	// From the first day the day timer is on the board too (Trevor, 2026-10-17).
 	await expect(boardTimer).toBeVisible();
 	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
 	// The next night order opens on the other nights, unticked.
@@ -2032,6 +2036,17 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	const token = page.getByRole('button', { name: 'Drunk reminder' });
 	const board = (await page.locator('.board').boundingBox())!;
 	const to = { x: board.x + board.width * 0.35, y: board.y + board.height * 0.35 };
+	// Once the dialog has gone and the token has stopped moving.
+	await expect(dialog).toBeHidden();
+	let last = '';
+	await expect
+		.poll(async () => {
+			const b = JSON.stringify(await token.boundingBox());
+			const still = b === last;
+			last = b;
+			return still;
+		})
+		.toBe(true);
 	const box = (await token.boundingBox())!;
 	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 	await page.mouse.down();
@@ -2241,7 +2256,8 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 		.getByRole('button', { name: 'Angel' })
 		.tap();
 	const angel = page.getByRole('dialog', { name: 'Angel' });
-	await angel.getByText('Corner, grouped', { exact: true }).tap();
+	await angel.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
+	await page.getByRole('option', { name: 'Corner, grouped' }).tap();
 	await angel.getByRole('button', { name: 'Close' }).tap();
 
 	const stack = page.getByRole('button', { name: 'Fabled and Loric: 2' });

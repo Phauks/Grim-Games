@@ -6,7 +6,7 @@
  * threshold uses only the living. The app does not track votes; this is the number to read
  * out.
  */
-import { alignmentOf } from '#lib/core/model/selectors.ts';
+import { alignmentOf, registersAsDead } from '#lib/core/model/selectors.ts';
 import type { Game } from '#lib/core/model/types.ts';
 
 export interface BlockThreshold {
@@ -41,4 +41,14 @@ export function livingByTeam(game: Game): LivingByTeam {
 		else out.unknown++;
 	}
 	return out;
+}
+
+/**
+ * Ghost votes still to use (Trevor, 2026-10-17): players who register as dead and have not
+ * spent theirs. A dead player keeps one vote for the rest of the game
+ * (https://wiki.bloodontheclocktower.com/Dead_Player).
+ */
+export function ghostVotesLeft(game: Game): number {
+	return game.seating.filter((s) => registersAsDead(game, s) && !game.seats[s].ghostVoteUsed)
+		.length;
 }

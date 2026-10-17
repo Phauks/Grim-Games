@@ -273,3 +273,40 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect.poll(() => width(onBoard)).toBe(previewed);
 });
+
+test('reminder words can run wider or wrap instead of ending in "…"', async ({ page }) => {
+	// Trevor (2026-10-17): "red he..." on the Red Herring reminder.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const label = dialog.getByTestId('token-preview').getByTestId('board-reminder').locator('.label');
+	await expect(label).toHaveText('Red Herring');
+	const cut = () => label.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+	const lines = () =>
+		label.evaluate((el) =>
+			Math.round(el.clientHeight / parseFloat(getComputedStyle(el).lineHeight))
+		);
+	// At the narrowest width the words don't fit on one line, at any board size.
+	const width = dialog.getByRole('slider', { name: 'Reminder words width' });
+	await width.fill('1');
+	await expect.poll(cut).toBe(true);
+	expect(await lines()).toBe(1);
+
+	await dialog.getByText('Wrap long reminder words', { exact: true }).tap();
+	await expect.poll(lines).toBe(2);
+	expect(await cut()).toBe(false);
+	await dialog.getByText('Wrap long reminder words', { exact: true }).tap();
+	await expect.poll(lines).toBe(1);
+
+	await width.fill('3');
+	await expect.poll(cut).toBe(false);
+	expect(await lines()).toBe(1);
+});
+
+test('the preview player name follows the Player name size', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const name = dialog.getByTestId('token-preview').getByTestId('token-player-name');
+	const before = (await name.boundingBox())!.width;
+	await dialog.getByRole('slider', { name: 'Player name size' }).fill('1.5');
+	await expect.poll(async () => (await name.boundingBox())!.width).toBeGreaterThan(before * 1.3);
+});
