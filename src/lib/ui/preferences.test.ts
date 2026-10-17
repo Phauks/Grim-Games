@@ -49,7 +49,11 @@ describe('parsePreferences', () => {
 				colours: {},
 				tokenScale: 1.25,
 				reminderScale: 0.75,
-				boardNames: true
+				boardNames: true,
+				nightNumbers: true,
+				nightBadgeScale: 0.75,
+				reminderLabelWidth: 2,
+				reminderLabelWrap: true
 			},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',

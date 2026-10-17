@@ -188,7 +188,13 @@ test('the board looks and background are in Board and tokens, saved with the boa
 	const saved = await page.evaluate(() =>
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
 	);
-	expect(saved).toEqual({ vignette: false, vignetteStrength: 0.3, rulesAt: 'edge', nameSize: 1 });
+	expect(saved).toEqual({
+		vignette: false,
+		vignetteStrength: 0.3,
+		rulesAt: 'edge',
+		nameSize: 1,
+		reminders: 'seat'
+	});
 
 	await page.reload();
 	const again = await openSettings(page, 'Board and tokens');
@@ -196,6 +202,20 @@ test('the board looks and background are in Board and tokens, saved with the boa
 		'aria-pressed',
 		'true'
 	);
+});
+
+// Trevor (2026-10-17): every setting is in Settings too, including the day timer's.
+test('the day timer sound and mode are in Storyteller settings', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Storyteller settings');
+	await dialog.getByRole('combobox', { name: 'Timer sound' }).tap();
+	await page.getByRole('option', { name: 'Chime' }).tap();
+	await dialog.getByRole('combobox', { name: 'Day timer' }).tap();
+	await page.getByRole('option', { name: 'Stopwatch' }).tap();
+	await page.reload();
+	const again = await openSettings(page, 'Storyteller settings');
+	await expect(again.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
+	await expect(again.getByRole('combobox', { name: 'Day timer' })).toContainText('Stopwatch');
 });
 
 test('text size changes text only: icons, spacing and buttons keep their size', async ({
@@ -430,8 +450,19 @@ test('the text preview stays in view while the settings below it scroll', async 
 	await content.evaluate((el) => el.scrollTo(0, el.scrollHeight));
 	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	await expect(preview).toBeInViewport();
+	// The section's name stays at the top, with the back icon beside it on phones (Trevor,
+	// 2026-10-17), and the preview sits just under it.
 	const top = (await content.boundingBox())!.y;
-	expect(Math.abs((await preview.boundingBox())!.y - top)).toBeLessThan(2);
+	const heading = dialog.getByRole('heading', { name: 'Theme and text', level: 2 });
+	await expect(heading).toBeInViewport();
+	const row = (await heading.locator('..').boundingBox())!;
+	expect(Math.abs(row.y - top)).toBeLessThan(2);
+	expect(Math.abs((await preview.boundingBox())!.y - (row.y + row.height))).toBeLessThan(2);
+	const back = dialog.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) {
+		await expect(back).toHaveText('');
+		expect(Math.abs((await back.boundingBox())!.y - row.y)).toBeLessThan(2);
+	}
 });
 
 // Trevor (2026-10-17): the Left aligned and Justified choices scrolled over the preview.

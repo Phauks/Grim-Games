@@ -17,17 +17,12 @@
 	} from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 
-	/** The user's folders and tags: add, rename and delete them. */
+	/** The user's tags: add, rename and delete them. Folders are managed in the folder view. */
 	interface Props {
 		open?: boolean;
 	}
 
 	let { open = $bindable(false) }: Props = $props();
-
-	const KINDS: readonly { kind: LabelKind; title: 'library.folders' | 'library.tags' }[] = [
-		{ kind: 'folders', title: 'library.folders' },
-		{ kind: 'tags', title: 'library.tags' }
-	];
 
 	let renaming = $state<{ kind: LabelKind; label: Label }>();
 	let renameOpen = $state(false);
@@ -52,34 +47,30 @@
 	}
 </script>
 
-<Dialog bind:open title={t('library.manage')}>
-	{#each KINDS as { kind, title } (kind)}
-		<section aria-labelledby="manage-{kind}">
-			<h2 id="manage-{kind}">{t(title)}</h2>
-			<ul>
-				{#each byName(libraryLabels.state[kind]) as label (label.id)}
-					<li>
-						<span class="name">{label.name}</span>
-						<IconButton
-							icon="rename"
-							label={t('library.renameNamed', { name: label.name })}
-							onclick={() => startRename(kind, label)}
-						/>
-						<DeleteButton
-							label={t('library.deleteNamed', { name: label.name })}
-							onclick={() => {
-								deleting = { kind, label };
-								deleteOpen = true;
-							}}
-						/>
-					</li>
-				{:else}
-					<li class="none">{t('common.none')}</li>
-				{/each}
-			</ul>
-			<NewLabel {kind} label={t(kind === 'folders' ? 'library.newFolder' : 'library.newTag')} />
-		</section>
-	{/each}
+<Dialog bind:open title={t('library.tags')}>
+	{@const kind = 'tags'}
+	<ul>
+		{#each byName(libraryLabels.state.tags) as label (label.id)}
+			<li>
+				<span class="name">{label.name}</span>
+				<IconButton
+					icon="rename"
+					label={t('library.renameNamed', { name: label.name })}
+					onclick={() => startRename(kind, label)}
+				/>
+				<DeleteButton
+					label={t('library.deleteNamed', { name: label.name })}
+					onclick={() => {
+						deleting = { kind, label };
+						deleteOpen = true;
+					}}
+				/>
+			</li>
+		{:else}
+			<li class="none">{t('common.none')}</li>
+		{/each}
+	</ul>
+	<NewLabel {kind} label={t('library.newTag')} />
 </Dialog>
 
 <Dialog bind:open={renameOpen} title={t('library.renameTitle')}>
@@ -131,17 +122,8 @@
 </ConfirmDialog>
 
 <style>
-	section {
-		display: grid;
-		gap: var(--space-2);
-		margin-bottom: var(--space-4);
-	}
-	h2 {
-		margin: 0;
-		font-size: 1.1rem;
-	}
 	ul {
-		margin: 0;
+		margin: 0 0 var(--space-3);
 		padding: 0;
 		list-style: none;
 	}

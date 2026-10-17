@@ -109,6 +109,11 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 			}
 		})
 	);
+	// Homebrew chosen before the official characters arrive still lists the collection.
+	await page.route('**/data/roles.json', async (route) => {
+		await new Promise((done) => setTimeout(done, 1500));
+		await route.continue();
+	});
 	await page.goto('/build-script');
 	const collection = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
 	await expect(collection).toBeVisible();
@@ -133,6 +138,60 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 });
 
+// Trevor (2026-10-17): characters from several collections are hard to reach while they
+// only show under their own collection, so "On script" lists every chosen one together.
+test('On script lists the chosen characters from every source together', async ({ page }) => {
+	const collection = (id: string, name: string, character: string, creator: string) => ({
+		script: [
+			{ id: '_meta', name },
+			{ id, name: character, team: 'townsfolk', ability: 'You start knowing 1 good player.' }
+		],
+		credits: [{ name: character, creator, url: `https://botchomebrew.wiki/c/${id}` }]
+	});
+	await page.route('**/api/homebrew-wiki/collections', (route) =>
+		route.fulfill({
+			json: [
+				{ id: 'temple-fair', name: 'Temple Fair' },
+				{ id: 'night-market', name: 'Night Market' }
+			]
+		})
+	);
+	await page.route('**/api/homebrew-wiki/collections/temple-fair', (route) =>
+		route.fulfill({ json: collection('lantern', 'Temple Fair', 'Lantern', 'DJ') })
+	);
+	await page.route('**/api/homebrew-wiki/collections/night-market', (route) =>
+		route.fulfill({ json: collection('peddler', 'Night Market', 'Peddler', 'Ana') })
+	);
+	await page.goto('/build-script');
+	const sources = page.getByRole('radiogroup', { name: 'Characters from' });
+	await character(page, 'Chef').tap();
+	await sources.getByText('Homebrew Wiki', { exact: true }).tap();
+	const picked = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
+	await expect(picked).toContainText('Temple Fair');
+	await character(page, 'Lantern, By DJ').tap();
+	await picked.tap();
+	await page.getByRole('option', { name: 'Night Market' }).tap();
+	await character(page, 'Peddler, By Ana').tap();
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('3');
+
+	await sources.getByText('On script', { exact: true }).tap();
+	// Three sources still fit a phone without scrolling sideways.
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+		true
+	);
+	const list = page.getByTestId('character-picker');
+	await expect(list.getByRole('button', { pressed: true })).toHaveCount(3);
+	await expect(character(page, 'Lantern, By DJ')).toBeVisible();
+	await expect(character(page, 'Peddler, By Ana')).toBeVisible();
+	await expect(character(page, 'Chef')).toBeVisible();
+	await expect(list.getByRole('button', { name: 'Imp' })).toHaveCount(0);
+
+	// Tapping one there takes it off the script.
+	await character(page, 'Lantern, By DJ').tap();
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('2');
+	await expect(list.getByRole('button', { name: 'Lantern, By DJ' })).toHaveCount(0);
+});
+
 // Trevor (2026-10-17): "Need better ability to edit a script created in the builder".
 test('editing a built script keeps its Library folder, and Save as new keeps the original', async ({
 	page
@@ -150,11 +209,12 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 
 	// File it in a folder in the Library.
 	await page.goto('/library');
-	await page.getByRole('button', { name: 'Folders and tags' }).tap();
-	const manage = page.getByRole('dialog', { name: 'Folders and tags' });
-	await manage.getByPlaceholder('New folder').fill('Club night');
-	await manage.getByPlaceholder('New folder').press('Enter');
-	await manage.getByRole('button', { name: 'Close' }).tap();
+	await page.getByRole('button', { name: 'New folder' }).tap();
+	const folder = page.getByRole('dialog', { name: 'New folder' });
+	await folder.getByRole('textbox', { name: 'Name' }).fill('Club night');
+	await folder.getByRole('textbox', { name: 'Name' }).press('Enter');
+	// The table view (remembered) lists every script with its folder.
+	await page.getByRole('radiogroup', { name: 'View' }).getByText('Table', { exact: true }).tap();
 	await libraryRows().tap();
 	const details = page.getByRole('dialog', { name: 'Edited here' });
 	await details.getByRole('combobox', { name: 'Folder' }).tap();
@@ -185,4 +245,50 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
 	await page.goto('/library');
 	await expect(libraryRows()).toHaveCount(2);
+});
+
+// Trevor (2026-10-17): any saved script can be edited, and an edited copy says it is a variation.
+test('editing a script made elsewhere saves a variation of it', async ({ page }) => {
+	await page.goto('/library');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(
+			JSON.stringify([{ id: '_meta', name: 'Storm Front', author: 'Trevor' }, 'chef', 'imp'])
+		)
+	});
+	await expect(page.getByRole('dialog', { name: 'Storm Front' })).toBeVisible();
+
+	await page.goto('/build-script');
+	const variation = page.getByTestId('variation-of');
+	await expect(variation).toContainText('None');
+	await page.getByRole('button', { name: 'Open a saved script' }).tap();
+	await page.getByRole('dialog', { name: 'Open a saved script' }).getByText('Storm Front').tap();
+	await expect(variation).toContainText('Storm Front');
+	await character(page, 'Saint').tap();
+	await page.getByRole('textbox', { name: 'Name' }).fill('Storm Front, calmer');
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+
+	// Saved with the original whole, so what changed can be shown.
+	const source = await page.evaluate(async () => {
+		const db = await new Promise<IDBDatabase>((done, fail) => {
+			const open = indexedDB.open('grim-games-scripts');
+			open.onsuccess = () => done(open.result);
+			open.onerror = () => fail(open.error);
+		});
+		const all = await new Promise<{ name: string; source: unknown }[]>((done) => {
+			const req = db.transaction('scripts').objectStore('scripts').getAll();
+			req.onsuccess = () => done(req.result);
+		});
+		return all.find((s) => s.name === 'Storm Front, calmer')?.source;
+	});
+	expect(source).toMatchObject({
+		kind: 'built',
+		variationOf: { name: 'Storm Front', source: { kind: 'file', fileName: 'storm-front.json' } }
+	});
+
+	// The original is left as it was; the variation stays one when reopened.
+	await page.reload();
+	await expect(variation).toContainText('Storm Front');
 });

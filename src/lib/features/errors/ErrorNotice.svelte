@@ -3,6 +3,7 @@
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -12,6 +13,7 @@
 
 	// The corner card plus the details dialog; mounted once by install.ts, outside the layout.
 
+	let confirmClear = $state(false);
 	const latest = $derived(errorLog.entries.find((e) => e.key === errorLog.unseen[0]));
 	const time = $derived(new Intl.DateTimeFormat(locale.current, { timeStyle: 'short' }));
 
@@ -82,15 +84,22 @@
 			{/each}
 		</ol>
 	{/if}
-	{#snippet actions()}
+	<!-- The trash sits beside the X (Trevor, 2026-10-17). -->
+	{#snippet headActions()}
 		<DeleteButton
 			label={t('errors.clear')}
 			disabled={errorLog.entries.length === 0}
-			onclick={() => errorLog.clear()}
+			onclick={() => (confirmClear = true)}
 		/>
-		<Button onclick={() => (errorLog.open = false)}>{t('common.close')}</Button>
 	{/snippet}
 </Dialog>
+
+<ConfirmDialog
+	bind:open={confirmClear}
+	title={t('errors.clearTitle')}
+	danger
+	onConfirm={() => errorLog.clear()}
+/>
 
 <style>
 	.notice {

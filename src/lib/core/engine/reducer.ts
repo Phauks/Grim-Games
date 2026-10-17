@@ -3,7 +3,8 @@
  * never looks at character data, the clock or randomness, which the events already
  * carry. Events that refer to something missing (a seat removed since) change nothing.
  */
-import type { Game, Seat, SeatId } from '#lib/core/model/index.ts';
+import type { CharacterId } from '#lib/core/data/index.ts';
+import type { Game, ReminderInstance, Seat, SeatId } from '#lib/core/model/index.ts';
 import type { GameEvent } from './events.ts';
 
 function newSeat(seatId: SeatId, playerName?: string): Seat {
@@ -21,6 +22,30 @@ function seatHoldingReminder(game: Game, reminderId: string): Seat | undefined {
 	return Object.values(game.seats).find((s) =>
 		s.reminders.some((r) => r.reminderId === reminderId)
 	);
+}
+
+/** The Fabled or Loric holding a reminder, with what it holds. */
+function ruleHoldingReminder(
+	game: Game,
+	reminderId: string
+): { characterId: CharacterId; reminders: ReminderInstance[] } | undefined {
+	for (const [characterId, reminders] of Object.entries(game.ruleReminders ?? {})) {
+		if (reminders.some((r) => r.reminderId === reminderId)) return { characterId, reminders };
+	}
+	return undefined;
+}
+
+function withRuleReminder(game: Game, characterId: CharacterId, reminder: ReminderInstance): Game {
+	const held = game.ruleReminders?.[characterId] ?? [];
+	return { ...game, ruleReminders: { ...game.ruleReminders, [characterId]: [...held, reminder] } };
+}
+
+function withoutRuleReminder(game: Game, reminderId: string): Game {
+	const ruleReminders: Record<CharacterId, ReminderInstance[]> = {};
+	for (const [characterId, held] of Object.entries(game.ruleReminders ?? {})) {
+		ruleReminders[characterId] = held.filter((r) => r.reminderId !== reminderId);
+	}
+	return { ...game, ruleReminders };
 }
 
 /** A shallow copy without the given keys. */
@@ -177,6 +202,16 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				reminders: [...seat.reminders, { ...event.reminder }]
 			}));
 		case 'ReminderMoved': {
+			const held = ruleHoldingReminder(game, event.reminderId);
+			if (held) {
+				// From a Fabled or Loric back onto a seat.
+				if (!Object.hasOwn(game.seats, event.toSeatId)) return game;
+				const reminder = held.reminders.find((r) => r.reminderId === event.reminderId)!;
+				return updateSeat(withoutRuleReminder(game, event.reminderId), event.toSeatId, (seat) => ({
+					...seat,
+					reminders: [...seat.reminders, reminder]
+				}));
+			}
 			const from = seatHoldingReminder(game, event.reminderId);
 			if (!from || !Object.hasOwn(game.seats, event.toSeatId)) return game;
 			if (from.seatId === event.toSeatId) return game;
@@ -191,6 +226,9 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			}));
 		}
 		case 'ReminderRemoved': {
+			if (ruleHoldingReminder(game, event.reminderId)) {
+				return withoutRuleReminder(game, event.reminderId);
+			}
 			const from = seatHoldingReminder(game, event.reminderId);
 			if (!from) return game;
 			return updateSeat(game, from.seatId, (seat) => ({
@@ -231,11 +269,39 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'RuleCharacterAdded':
 			if (game.ruleCharacters.includes(event.characterId)) return game;
 			return { ...game, ruleCharacters: [...game.ruleCharacters, event.characterId] };
-		case 'RuleCharacterRemoved':
-			return {
+		case 'RuleCharacterRemoved': {
+			const removed: Game = {
 				...game,
 				ruleCharacters: game.ruleCharacters.filter((id) => id !== event.characterId)
 			};
+			// Its reminders go back off the board with it.
+			if (!game.ruleReminders || !Object.hasOwn(game.ruleReminders, event.characterId)) {
+				return removed;
+			}
+			const ruleReminders = { ...game.ruleReminders };
+			delete ruleReminders[event.characterId];
+			return { ...removed, ruleReminders };
+		}
+		case 'RuleReminderAdded':
+			if (!game.ruleCharacters.includes(event.characterId)) return game;
+			return withRuleReminder(game, event.characterId, { ...event.reminder });
+		case 'ReminderMovedToRuleCharacter': {
+			if (!game.ruleCharacters.includes(event.characterId)) return game;
+			const held = ruleHoldingReminder(game, event.reminderId);
+			if (held?.characterId === event.characterId) return game;
+			const seat = seatHoldingReminder(game, event.reminderId);
+			const reminder =
+				held?.reminders.find((r) => r.reminderId === event.reminderId) ??
+				seat?.reminders.find((r) => r.reminderId === event.reminderId);
+			if (!reminder) return game;
+			const lifted = held
+				? withoutRuleReminder(game, event.reminderId)
+				: updateSeat(game, seat!.seatId, (s) => ({
+						...s,
+						reminders: s.reminders.filter((r) => r.reminderId !== event.reminderId)
+					}));
+			return withRuleReminder(lifted, event.characterId, reminder);
+		}
 		case 'BluffsSet': {
 			const bluffs = game.bluffs.map((set) => [...set]);
 			if (event.set < 0 || event.set > bluffs.length) return game;

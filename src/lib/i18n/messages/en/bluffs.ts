@@ -1,7 +1,7 @@
 /** Demon bluffs: the bluffs sheet and its sets. */
 export const bluffs = {
 	'bluffs.title': 'Demon bluffs',
-	'bluffs.setTitle': '{set} bluffs',
+	'bluffs.pickTitle': '{set} · {count}/{max}',
 	'bluffs.set.demon': 'Demon',
 	'bluffs.set.lunatic': 'Lunatic',
 	'bluffs.set.numbered': 'Set {number}',

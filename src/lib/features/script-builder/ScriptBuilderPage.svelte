@@ -27,7 +27,8 @@
 	import {
 		reloadSavedScript,
 		sameScript,
-		type SavedScript
+		type SavedScript,
+		type VariationOf
 	} from '#lib/features/scripts/saved-scripts.ts';
 	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
@@ -79,7 +80,12 @@
 	let replacing = $state.raw<SavedScript>();
 	let replaceOpen = $state(false);
 
-	type Source = 'official' | 'homebrew';
+	/**
+	 * Where the list's characters come from. 'script' is every character already on the script,
+	 * whichever source it came from (Trevor, 2026-10-17), so characters from several collections
+	 * or opened scripts are all in one place without switching collection.
+	 */
+	type Source = 'official' | 'homebrew' | 'script';
 	let source = $state<Source>('official');
 	let collections = $state.raw<HomebrewCollection[]>([]);
 	let collectionId = $state('');
@@ -101,9 +107,10 @@
 	async function pickCollection(id: string) {
 		collectionId = id;
 		homebrewSet = undefined;
-		if (!data) return;
 		try {
-			const set = await homebrewCollection(id, data);
+			// Homebrew can be chosen before the official characters have loaded; wait for them
+			// rather than leave the collection empty.
+			const set = await homebrewCollection(id, data ?? (await loadOfficialData()));
 			if (collectionId === id) homebrewSet = set;
 			homebrewError = '';
 		} catch (e) {
@@ -137,9 +144,6 @@
 	const d = $derived(draft.current);
 	/** Every official character, listed in TPI's Sort Order like the saved script. */
 	const official = $derived(data ? sortByStandardOrder(data.characters) : []);
-	const characters = $derived(
-		source === 'homebrew' ? sortByStandardOrder(homebrewSet?.characters ?? []) : official
-	);
 	const json = $derived(data ? builtScriptJson(d.ids, d, data, chosenHomebrew(d)) : undefined);
 	/** The script as it would be saved; undefined until a character is chosen. */
 	const built = $derived.by((): LoadedScript | undefined => {
@@ -155,6 +159,13 @@
 	const chosenHomebrewCharacters = $derived(
 		built?.characters.filter((c) => built.homebrew.includes(c.id)) ?? []
 	);
+	const characters = $derived(
+		source === 'homebrew'
+			? sortByStandardOrder(homebrewSet?.characters ?? [])
+			: source === 'script'
+				? sortByStandardOrder(built?.characters ?? [])
+				: official
+	);
 
 	function choose(id: CharacterId) {
 		const entry = source === 'homebrew' ? homebrewSet?.entries[id] : undefined;
@@ -164,8 +175,16 @@
 	}
 
 	function creatorOf(character: Character): string | undefined {
-		const creator = homebrewSet?.credits[character.id]?.creator;
-		return creator ? t('script-builder.by', { creator }) : undefined;
+		const creator =
+			source === 'script'
+				? d.credits[character.id]?.creator
+				: homebrewSet?.credits[character.id]?.creator;
+		if (creator) return t('script-builder.by', { creator });
+		// On the script, a homebrew character with no known creator still says it is homebrew.
+		if (source === 'script' && built?.homebrew.includes(character.id)) {
+			return t('script-builder.source.homebrew');
+		}
+		return undefined;
 	}
 	const counts = $derived(facts?.counts);
 	const savedRecord = $derived(recentScripts.list.find((s) => s.scriptId === d.editing));
@@ -180,7 +199,14 @@
 		saving = true;
 		try {
 			const editing = asNew ? undefined : savedRecord;
-			await chooseScript(built, { kind: 'built' });
+			// A copy of a saved built script is a variation of it as it was saved. Snapshots, as
+			// storage takes plain objects and these are reactive state.
+			const variationOf: VariationOf | undefined = $state.snapshot(
+				asNew && savedRecord
+					? { name: savedRecord.name, source: { kind: 'built' }, json: savedRecord.json }
+					: d.variationOf
+			);
+			await chooseScript(built, { kind: 'built', ...(variationOf ? { variationOf } : {}) });
 			const saved = currentScript.saved;
 			if (!saved || saved.scriptId === 'unsaved') {
 				toast(t('script-builder.saveFailed'));
@@ -190,7 +216,7 @@
 			if (editing && editing.scriptId !== saved.scriptId && editing.source.kind === 'built') {
 				await replaceBuilt(editing, saved);
 			}
-			draft.setEditing(saved.scriptId);
+			draft.setEditing(saved.scriptId, variationOf);
 		} catch (e) {
 			reportError(e, { area: 'script-builder' });
 		} finally {
@@ -236,16 +262,23 @@
 		const script = reloadSavedScript(saved, data);
 		if (!script) return;
 		const kept = draft.current.credits;
-		const { entries } = homebrewFromScript(scriptToJson(script), data);
+		const json = scriptToJson(script);
+		const { entries } = homebrewFromScript(json, data);
+		// Editing a script made elsewhere makes a variation of it; a built one keeps its own.
+		const variationOf: VariationOf | undefined =
+			saved.source.kind === 'built'
+				? saved.source.variationOf
+				: { name: script.name, source: $state.snapshot(saved.source), json };
 		draft.replace({
-			version: 2,
+			version: 3,
 			name: script.name,
 			author: script.meta.author ?? '',
 			ids: script.characters.map((c) => c.id),
 			homebrew: entries,
 			// Credits aren't part of a script; keep the ones this device already knows.
 			credits: Object.fromEntries(Object.entries(kept).filter(([id]) => id in entries)),
-			...(saved.source.kind === 'built' ? { editing: saved.scriptId } : {})
+			...(saved.source.kind === 'built' ? { editing: saved.scriptId } : {}),
+			...(variationOf ? { variationOf } : {})
 		});
 	}
 </script>
@@ -306,6 +339,11 @@
 							/>
 						</ClearableField>
 					</label>
+					<!-- Always shown, so opening a script never moves the page. -->
+					<p class="variation" data-testid="variation-of">
+						<span>{t('script-builder.variationOf')}</span>
+						{d.variationOf?.name || t('common.none')}
+					</p>
 					<div class="save">
 						<Button variant="accent" disabled={!built || isSaved || saving} onclick={() => save()}
 							>{isSaved ? t('script-builder.saved') : t('script-builder.save')}</Button
@@ -325,7 +363,8 @@
 						value={source}
 						options={[
 							{ value: 'official', label: t('script-builder.source.official') },
-							{ value: 'homebrew', label: t('script-builder.source.homebrew') }
+							{ value: 'homebrew', label: t('script-builder.source.homebrew') },
+							{ value: 'script', label: t('script-builder.source.script') }
 						]}
 						onChange={(value) => (value === 'homebrew' ? void showHomebrew() : (source = value))}
 					/>
@@ -480,7 +519,7 @@
 				surface="page"
 				contained={false}
 				types={TYPES}
-				marker={source === 'homebrew' ? creatorOf : undefined}
+				marker={source === 'official' ? undefined : creatorOf}
 				onSelect={choose}
 			/>
 		</div>
@@ -563,6 +602,16 @@
 		display: grid;
 		gap: var(--space-1);
 	}
+	.variation {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+	.variation span {
+		color: var(--on-surface-muted);
+	}
 	.save {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -619,10 +668,10 @@
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 	}
+	/* Sources on one row, the collection under them, so three choices fit a phone. */
 	.source {
 		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		align-items: center;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		padding-top: var(--space-3);
 	}

@@ -4,12 +4,13 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
 	interface Props {
 		open?: boolean;
 		note?: PlayerNote;
-		onChange: (patch: { title?: string; text?: string }) => void;
+		onChange: (patch: { title?: string; text?: string; hidden?: boolean }) => void;
 		onDelete: () => void;
 	}
 
@@ -26,6 +27,12 @@
 <!-- A fixed height, so typing never resizes the sheet. -->
 <!-- The heading stays "Note" so it doesn't change while the title is typed. -->
 <BottomSheet bind:open title={t('player.note')} height="85dvh" focusFirstField={false}>
+	<!-- The trash sits beside the sheet's X (Trevor, 2026-10-17); it still confirms first. -->
+	{#snippet actions()}
+		{#if note}
+			<DeleteButton label={t('player.deleteNote')} onclick={() => (confirming = true)} />
+		{/if}
+	{/snippet}
 	{#if note}
 		<div class="editor">
 			<label class="field">
@@ -48,8 +55,12 @@
 					oninput={(event) => onChange({ text: event.currentTarget.value })}></textarea>
 			</label>
 			<div class="actions">
-				<!-- A red trash can (Trevor, 2026-10-16); still confirms first. -->
-				<DeleteButton label={t('player.deleteNote')} onclick={() => (confirming = true)} />
+				<!-- Each note hides its own text in the list (Trevor, 2026-10-17). -->
+				<Toggle
+					label={t('player.hideContents')}
+					checked={note.hidden}
+					onChange={(hidden) => onChange({ hidden })}
+				/>
 			</div>
 		</div>
 	{/if}
@@ -102,9 +113,7 @@
 	}
 	.actions {
 		display: flex;
-		justify-content: flex-end;
-	}
-	.actions :global(.icon-button) {
-		color: var(--evil);
+		align-items: center;
+		gap: var(--space-3);
 	}
 </style>

@@ -38,7 +38,7 @@
 	import SetupNav from './SetupNav.svelte';
 	import JoinButton from './JoinButton.svelte';
 	import BagSettings from './BagSettings.svelte';
-	import { buildErrors, setupWarningMessages } from './build-check.ts';
+	import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
 	import { setupSelection } from './selection.svelte.ts';
 
 	interface Props {
@@ -131,6 +131,7 @@
 			.map((id) => lookup(id))
 			.filter((c): c is Character => c !== undefined)
 	);
+	const uncurated = $derived(uncuratedReminderCharacters(inPlay));
 
 	function toggle(character: Character) {
 		const n = setupSelection.copies(character.id);
@@ -252,6 +253,7 @@
 						{jinxes}
 						{warnings}
 						{lookup}
+						{uncurated}
 						onStandIn={(id) => {
 							askingFor = id;
 							standInOpen = true;

@@ -4,7 +4,6 @@
 	import ScratchThumb from '#lib/ui/scratch/ScratchThumb.svelte';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import type { PlayerNote } from './notebook.ts';
-	import { playerSettings } from './player-settings.svelte.ts';
 
 	interface Props {
 		notes: readonly PlayerNote[];
@@ -18,8 +17,6 @@
 
 	let { notes, pads, onAdd, onOpenNote, onAddScratch, onOpenScratch }: Props = $props();
 	const preview = (text: string) => text.trim().split('\n')[0] || t('player.empty');
-	// "Hide note contents" setting: titles stay, the text is replaced, so nothing reflows.
-	const hidden = $derived(playerSettings.current.hideNoteContents);
 </script>
 
 <div class="notes">
@@ -40,7 +37,8 @@
 						>
 							<!-- Titles always show, so notes can be found (Trevor, 2026-10-16). -->
 							<span class="title">{note.title.trim() || t('player.untitled')}</span>
-							{#if hidden}
+							<!-- A hidden note keeps its title; the text line says Hidden, so nothing moves. -->
+							{#if note.hidden}
 								<span class="preview" data-hidden>{t('player.hidden')}</span>
 							{:else}
 								<span class="preview">{preview(note.text)}</span>

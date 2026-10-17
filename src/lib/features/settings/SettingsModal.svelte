@@ -21,30 +21,38 @@
 </script>
 
 <Dialog bind:open={settingsDialog.open} title={t('settings.title')} size="full">
-	<div class="layout" data-view={settingsDialog.section ? 'section' : 'list'}>
-		<nav aria-label={t('settings.sections')}>
-			<ul>
-				{#each sections as section (section.id)}
-					<li>
-						<button
-							aria-current={section.id === active?.id ? 'page' : undefined}
-							onclick={() => (settingsDialog.section = section.id)}
-						>
-							<Icon name={section.icon} />
-							<span class="label">{sectionLabel(section.label, say)}</span>
-							<span class="chevron"><Icon name="forward" /></span>
-						</button>
-					</li>
-				{/each}
-			</ul>
-		</nav>
+	<div
+		class="layout"
+		data-view={settingsDialog.only ? 'only' : settingsDialog.section ? 'section' : 'list'}
+	>
+		{#if !settingsDialog.only}<nav aria-label={t('settings.sections')}>
+				<ul>
+					{#each sections as section (section.id)}
+						<li>
+							<button
+								aria-current={section.id === active?.id ? 'page' : undefined}
+								onclick={() => (settingsDialog.section = section.id)}
+							>
+								<Icon name={section.icon} />
+								<span class="label">{sectionLabel(section.label, say)}</span>
+								<span class="chevron"><Icon name="forward" /></span>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</nav>{/if}
 		{#if active}
 			<section class="content" bind:this={content} aria-labelledby="settings-section-title">
-				<button class="back" onclick={() => (settingsDialog.section = null)}>
-					<Icon name="back" />
-					{t('settings.allSettings')}
-				</button>
+				<!-- One sticky row: back icon, then the section's name (Trevor, 2026-10-17). -->
 				<div class="heading">
+					{#if !settingsDialog.only}<button
+							class="back"
+							aria-label={t('settings.allSettings')}
+							title={t('settings.allSettings')}
+							onclick={() => (settingsDialog.section = null)}
+						>
+							<Icon name="back" />
+						</button>{/if}
 					<h2 id="settings-section-title">{sectionLabel(active.label, say)}</h2>
 					{#if active.headingAction}<active.headingAction />{/if}
 				</div>
@@ -100,6 +108,10 @@
 			grid-template-columns: calc(15 * var(--u)) 1fr;
 		}
 	}
+	/* One section on its own, opened from where it is used: no section list. */
+	.layout[data-view='only'] {
+		grid-template-columns: 1fr;
+	}
 	nav button[aria-current='page'] {
 		background: var(--surface-selected);
 		box-shadow: inset 3px 0 0 var(--accent);
@@ -117,13 +129,22 @@
 		overscroll-behavior: contain;
 		padding-bottom: var(--space-6);
 	}
-	/* Same height with or without a heading action, so sections line up. */
+	/* Same height with or without a heading action, so sections line up. It stays at the top
+	   while the section scrolls, with a sticky preview held just below it. */
+	.content {
+		--settings-heading-height: calc(var(--tap-target) + var(--space-3));
+	}
 	.heading {
+		position: sticky;
+		top: 0;
+		z-index: 2;
 		display: flex;
-		min-height: var(--tap-target);
+		box-sizing: border-box;
+		height: var(--settings-heading-height);
 		align-items: center;
 		gap: var(--space-2);
-		margin-bottom: var(--space-3);
+		padding-bottom: var(--space-3);
+		background: var(--dialog-background);
 	}
 	h2 {
 		margin: 0;
@@ -167,16 +188,17 @@
 			display: none;
 		}
 		.back {
-			display: inline-flex;
-			align-items: center;
-			gap: var(--space-2);
-			min-height: var(--tap-target);
-			margin-bottom: var(--space-2);
+			display: inline-grid;
+			place-items: center;
+			flex: none;
+			width: var(--tap-target);
+			height: var(--tap-target);
+			margin-left: calc(-1 * var(--space-2));
 			padding: 0;
 			border: 0;
 			background: none;
 			color: var(--heading);
-			font-family: var(--font-control);
+			cursor: pointer;
 		}
 	}
 </style>

@@ -130,9 +130,11 @@ describe('source pages (Trevor, 2026-10-16: every script links to its own source
 		});
 		const worldCup = listed.find((l) => l.row.source === 'worldcup2025');
 		expect(worldCup?.row).toMatchObject({ note: 'World Cup 2025 · winner', number: 6687 });
+		// Loaded from our stored copy, remembered as that BotC Scripts version.
 		expect(worldCup?.target).toEqual({
-			kind: 'botcscripts',
-			ref: { kind: 'script', scriptId: 6687 }
+			kind: 'json',
+			json: [...json, 'mayor'],
+			source: { kind: 'botcscripts', scriptId: 6687, version: '1.0.1' }
 		});
 		for (const l of listed) {
 			expect(l.row.page, l.row.key).toBeDefined();

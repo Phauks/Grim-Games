@@ -161,6 +161,152 @@ test('the token preview stays in view while the token settings scroll', async ({
 	await content.evaluate((el) => el.scrollTo(0, el.scrollHeight));
 	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	await expect(preview).toBeInViewport();
-	const top = (await content.boundingBox())!.y;
-	expect(Math.abs((await preview.boundingBox())!.y - top)).toBeLessThan(2);
+	// Just under the section's sticky heading row (Trevor, 2026-10-17).
+	const row = (await dialog
+		.getByRole('heading', { name: 'Board and tokens', level: 2 })
+		.locator('..')
+		.boundingBox())!;
+	expect(Math.abs(row.y - (await content.boundingBox())!.y)).toBeLessThan(2);
+	expect(Math.abs((await preview.boundingBox())!.y - (row.y + row.height))).toBeLessThan(2);
+});
+
+test('the preview draws the reminder as the board does, at the board size', async ({ page }) => {
+	// Trevor (2026-10-17): the preview showed the inline chip, not the reminder token.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const preview = dialog.getByTestId('token-preview');
+	const reminder = preview.getByTestId('board-reminder');
+	await expect(reminder).toHaveAttribute('aria-label', 'Red Herring reminder');
+	await expect(preview.getByTestId('reminder-token')).toHaveCount(0);
+	const before = (await reminder.boundingBox())!.width;
+	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('1.5');
+	await expect
+		.poll(async () => (await reminder.boundingBox())!.width)
+		.toBeGreaterThan(before * 1.4);
+});
+
+test('night order badges sit on the side leaves, counting this game’s characters', async ({
+	page
+}) => {
+	// Trevor (2026-10-17): night order on the leaves, characters only (no Dusk, Dawn or info).
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	for (const [n, name] of [
+		[1, 'Empath'],
+		[2, 'Washerwoman'],
+		[3, 'Poisoner']
+	] as const) {
+		await page.getByRole('button', { name: new RegExp(`^Seat ${n}:`) }).tap();
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${n}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await page.keyboard.press('Escape');
+		await expect(sheet).toBeHidden();
+	}
+	const seat = (n: number) => page.locator(`[data-testid="seat"][aria-label^="Seat ${n}:"]`);
+	await expect(seat(1).getByTestId('night-badge')).toHaveCount(0);
+
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board and tokens' })
+		.tap();
+	const label = 'Show night order numbers on tokens';
+	await dialog.getByText(label, { exact: true }).tap();
+	await expect(dialog.getByTestId('token-preview').getByTestId('night-badge')).toHaveCount(2);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+
+	// First night: Poisoner, Washerwoman, then Empath; other nights: Poisoner, then Empath.
+	const badge = (n: number, night: string) =>
+		seat(n).locator(`[data-testid="night-badge"][data-night="${night}"]`);
+	await expect(badge(3, 'first')).toHaveText('1');
+	await expect(badge(2, 'first')).toHaveText('2');
+	await expect(badge(1, 'first')).toHaveText('3');
+	await expect(badge(3, 'other')).toHaveText('1');
+	await expect(badge(1, 'other')).toHaveText('2');
+	await expect(badge(2, 'other')).toHaveCount(0);
+});
+
+test('the token preview draws at the size the board gives its tokens', async ({ page }) => {
+	// Trevor (2026-10-17): the preview size didn't match the size in play.
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	const onBoard = page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .token');
+	const width = async (token: typeof onBoard) => Math.round((await token.boundingBox())!.width);
+
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board and tokens' })
+		.tap();
+	const preview = dialog.getByTestId('token-preview').locator('.token');
+	await expect.poll(() => width(preview)).toBe(await width(onBoard));
+
+	await dialog.getByRole('slider', { name: 'Character token size' }).fill('1.25');
+	const previewed = await width(preview);
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect.poll(() => width(onBoard)).toBe(previewed);
+});
+
+test('reminder words can run wider or wrap instead of ending in "…"', async ({ page }) => {
+	// Trevor (2026-10-17): "red he..." on the Red Herring reminder.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const label = dialog.getByTestId('token-preview').getByTestId('board-reminder').locator('.label');
+	await expect(label).toHaveText('Red Herring');
+	const cut = () => label.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+	const lines = () =>
+		label.evaluate((el) =>
+			Math.round(el.clientHeight / parseFloat(getComputedStyle(el).lineHeight))
+		);
+	// At the narrowest width the words don't fit on one line, at any board size.
+	const width = dialog.getByRole('slider', { name: 'Reminder words width' });
+	await width.fill('1');
+	await expect.poll(cut).toBe(true);
+	expect(await lines()).toBe(1);
+
+	await dialog.getByText('Wrap long reminder words', { exact: true }).tap();
+	await expect.poll(lines).toBe(2);
+	expect(await cut()).toBe(false);
+	await dialog.getByText('Wrap long reminder words', { exact: true }).tap();
+	await expect.poll(lines).toBe(1);
+
+	await width.fill('3');
+	await expect.poll(cut).toBe(false);
+	expect(await lines()).toBe(1);
+});
+
+test('the preview player name follows the Player name size', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const name = dialog.getByTestId('token-preview').getByTestId('token-player-name');
+	const before = (await name.boundingBox())!.width;
+	await dialog.getByRole('slider', { name: 'Player name size' }).fill('1.5');
+	await expect.poll(async () => (await name.boundingBox())!.width).toBeGreaterThan(before * 1.3);
 });

@@ -9,6 +9,7 @@
 		dayReminders,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
+		ghostVotesLeft,
 		livingByTeam,
 		preventedDeaths,
 		type PreventedBecause,
@@ -19,6 +20,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -48,6 +50,8 @@
 	// No Undo or History here (Trevor, 2026-10-16): each day action is one entry in the
 	// game's History, in the grimoire's menu.
 	let { game, assistance, onOpenNight }: Props = $props();
+	// Every badge on the day screen names the script's own characters, homebrew included.
+	provideCharacters(() => game.characters);
 
 	const g = $derived(game.game);
 	const seats = $derived(g.seating.map((id) => g.seats[id]));
@@ -288,6 +292,7 @@
 	const block = $derived(blockThreshold(g));
 	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
 	const teams = $derived(livingByTeam(g));
+	const ghostVotes = $derived(ghostVotesLeft(g));
 
 	/**
 	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
@@ -367,6 +372,15 @@
 		>
 		<span class="badge evil" data-testid="alive-evil" aria-hidden="true"
 			>{t('day.evilBadge', { count: teams.evil })}</span
+		>
+		<!-- Beside the living, the ghost votes still to use (Trevor, 2026-10-17). -->
+		<span
+			class="badge ghost"
+			role="note"
+			data-testid="ghost-votes"
+			aria-label={t('day.ghostVotesLabel', { count: ghostVotes })}
+			title={t('day.ghostVotesLabel', { count: ghostVotes })}
+			>{t('day.ghostVotesBadge', { count: ghostVotes })}</span
 		>
 		<span
 			class="votes"

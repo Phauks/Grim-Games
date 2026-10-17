@@ -6,6 +6,8 @@ export const characters = {
 	'characters.marks.otherNight': 'wakes on other nights',
 	'characters.marks.reminders': { one: '{count} reminder token', other: '{count} reminder tokens' },
 	'characters.marks.setup': 'changes setup',
+	'characters.marks.firstNumber': 'number {number} on the first night',
+	'characters.marks.otherNumber': 'number {number} on other nights',
 	'characters.reminder': 'reminder',
 	'characters.reminderPlaced': 'already placed',
 	'characters.wikiPage': 'Wiki page',
@@ -32,6 +34,17 @@ export const characters = {
 	'characters.boardNames': 'Show character names on grimoire tokens',
 	'characters.boardNamesHelp':
 		'Storyteller: writes each character’s name on its token on the grimoire board.',
+	'characters.nightNumbers': 'Show night order numbers on tokens',
+	'characters.nightNumbersHelp':
+		'Storyteller: a badge on the left leaf gives the first night order, on the right leaf other nights. Only characters are counted. On the grimoire, the characters in this game; on Reference, every character.',
+	'characters.nightBadgeSize': 'Night order badge size',
+	'characters.nightBadgeSizeHelp': 'The night order badges on tokens.',
+	'characters.reminderLabelWidth': 'Reminder words width',
+	'characters.reminderLabelWidthHelp':
+		'How wide the words on a reminder token may run, compared with the token.',
+	'characters.reminderLabelWrap': 'Wrap long reminder words',
+	'characters.reminderLabelWrapHelp':
+		'Words too wide go onto a second line over the icon, instead of ending in “…”.',
 	'characters.previewPlayer': 'Sam',
 	'characters.colour.face': 'Token face',
 	'characters.colour.faceHelp': 'The parchment of character tokens.',

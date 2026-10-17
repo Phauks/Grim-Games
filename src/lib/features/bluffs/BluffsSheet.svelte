@@ -56,6 +56,8 @@
 	let filter = $state<'good' | 'script'>('good');
 	let showOpen = $state(false);
 	let showing = $state<CharacterId[]>([]);
+	/** A later set's name, also editable where its characters are chosen (Trevor, 2026-10-17). */
+	let pickedName = $state('');
 
 	const notInPlay = STANDARD_INFO_TOKENS.find((t) => t.id === 'not-in-play')?.text ?? '';
 	const scriptList = $derived(
@@ -75,6 +77,20 @@
 	const sets = $derived(Array.from({ length: Math.max(1, game.bluffs.length) }, (_, i) => i));
 	const label = (set: number) => bluffSetLabel(set, lunatic, game.bluffNames?.[set]);
 	const defaultLabel = (set: number) => bluffSetLabel(set, lunatic);
+
+	/**
+	 * The picker's heading: the set's name and how many are chosen, never "Set 2 bluffs",
+	 * which reads as "choose 2" (Trevor, 2026-10-17). The name follows what is typed.
+	 */
+	const pickTitle = (set: number) =>
+		t('bluffs.pickTitle', {
+			set:
+				set === DEMON_SET
+					? t('bluffs.title')
+					: bluffSetLabel(set, lunatic, pickedName || game.bluffNames?.[set]),
+			count: picked.length,
+			max: BLUFFS_PER_SET
+		});
 
 	/** The set being renamed in place, and what has been typed (Trevor, 2026-10-17). */
 	let renaming = $state<number>();
@@ -131,11 +147,17 @@
 	function edit(index: number) {
 		editing = index;
 		picked = [...(game.bluffs[index] ?? [])];
+		pickedName = game.bluffNames?.[index] ?? '';
 	}
 
 	function save() {
 		if (editing === undefined || pickedBlocked) return;
-		if (set(editing, picked)) editing = undefined;
+		const index = editing;
+		if (!set(index, picked)) return;
+		// The set exists now, so a new set's name can be given to it.
+		if (index !== DEMON_SET && pickedName.trim() !== (game.bluffNames?.[index] ?? ''))
+			run({ type: 'RenameBluffSet', set: index, name: pickedName });
+		editing = undefined;
 	}
 
 	/** Shown to the player over the sheet, which stays open under it (Trevor, 2026-10-17). */
@@ -147,7 +169,7 @@
 
 <BottomSheet
 	bind:open
-	title={editing === undefined ? t('bluffs.title') : t('bluffs.setTitle', { set: label(editing) })}
+	title={editing === undefined ? t('bluffs.title') : pickTitle(editing)}
 	height="85dvh"
 >
 	<!-- The player view below sits outside this boundary, so a crash here never closes it. -->
@@ -259,6 +281,27 @@
 				>
 			</div>
 		{:else}
+			{#if editing !== DEMON_SET}
+				<form
+					class="rename picked-name"
+					onsubmit={(event) => {
+						event.preventDefault();
+						save();
+					}}
+				>
+					<ClearableField bind:value={pickedName}>
+						<input
+							type="text"
+							aria-label={t('bluffs.setName')}
+							placeholder={defaultLabel(editing)}
+							maxlength={MAX_BLUFF_SET_NAME}
+							autocomplete="off"
+							enterkeyhint="done"
+							bind:value={pickedName}
+						/>
+					</ClearableField>
+				</form>
+			{/if}
 			<div class="filter">
 				<Segmented
 					label={t('bluffs.filter')}
@@ -368,6 +411,9 @@
 	.rename {
 		flex: 1;
 		min-width: 0;
+	}
+	.picked-name {
+		margin-bottom: var(--space-3);
 	}
 	.rename input {
 		width: 100%;

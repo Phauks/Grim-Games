@@ -5,15 +5,22 @@ describe('board looks', () => {
 	it('keeps valid values and drops the rest', () => {
 		expect(parseBoardLooks(null)).toEqual(DEFAULT_BOARD_LOOKS);
 		expect(
-			parseBoardLooks({ vignette: false, vignetteStrength: 3, rulesAt: 'edge', nameSize: 9 })
+			parseBoardLooks({
+				vignette: false,
+				vignetteStrength: 3,
+				rulesAt: 'edge',
+				nameSize: 9,
+				reminders: 'free'
+			})
 		).toEqual({
 			vignette: false,
 			vignetteStrength: 1,
 			rulesAt: 'edge',
-			nameSize: 1.6
+			nameSize: 1.6,
+			reminders: 'free'
 		});
-		expect(parseBoardLooks({ vignetteStrength: 'x', rulesAt: 'corner', nameSize: 'big' })).toEqual(
-			DEFAULT_BOARD_LOOKS
-		);
+		expect(
+			parseBoardLooks({ vignetteStrength: 'x', rulesAt: 'top', nameSize: 'big', reminders: 'x' })
+		).toEqual(DEFAULT_BOARD_LOOKS);
 	});
 });

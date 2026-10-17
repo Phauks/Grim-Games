@@ -67,6 +67,13 @@ export type Command =
 	| { type: 'MoveReminder'; reminderId: ReminderId; toSeatId: SeatId }
 	| { type: 'RemoveReminder'; reminderId: ReminderId }
 	/**
+	 * A reminder on a Fabled or Loric in play (Trevor, 2026-10-17). Any reminder may go there;
+	 * one that is not a Fabled's or Loric's own is allowed with a warning.
+	 */
+	| { type: 'AddRuleReminder'; characterId: CharacterId; reminder: Reminder }
+	/** Moves a reminder from a seat or a rule character onto a Fabled or Loric in play. */
+	| { type: 'MoveReminderToRuleCharacter'; reminderId: ReminderId; characterId: CharacterId }
+	/**
 	 * Places several reminders at once, such as the suggested setup reminders
 	 * (`setupReminders`, `placeableSetupReminders`). Each becomes a normal reminder that can
 	 * be moved or removed; undo takes them all back in one step.

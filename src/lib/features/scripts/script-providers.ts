@@ -17,10 +17,17 @@ import type { ProfileScriptEntry } from '#lib/features/account/profile-scripts.t
 import type { BotcScriptsQuery, BotcScriptsRef, BotcScriptsSearchPage } from './botcscripts-api.ts';
 import { scriptPageUrl } from './botcscripts-api.ts';
 import type { CollectionScript } from './collection-api.ts';
+import type { HomebrewScript } from './homebrew-scripts-api.ts';
 import type { WorldCupStage, WorldCupYear } from './world-cup.ts';
 import type { WorldCupScript } from './world-cup.svelte.ts';
 import { CURATED_PAGE, type CuratedScript } from './curated-api.ts';
-import { botcRow, pickerRow, type PickerRow, type PickerSource } from './picker-rows.ts';
+import {
+	botcRow,
+	homebrewRow,
+	pickerRow,
+	type PickerRow,
+	type PickerSource
+} from './picker-rows.ts';
 import {
 	reloadSavedScript,
 	sameScript,
@@ -34,7 +41,9 @@ export type LoadTarget =
 	| { kind: 'edition'; edition: string }
 	| { kind: 'saved'; saved: SavedScript }
 	| { kind: 'json'; json: unknown[]; source: ScriptSource }
-	| { kind: 'botcscripts'; ref: BotcScriptsRef };
+	| { kind: 'botcscripts'; ref: BotcScriptsRef }
+	/** A BOTC HomeBrew Wiki script, fetched by its slug (`homebrew-scripts-api.ts`). */
+	| { kind: 'homebrew'; slug: string };
 
 /** One row of the picker, and how to load it. */
 export interface ScriptListing {
@@ -52,10 +61,14 @@ export interface LocalContext {
 	curated: readonly CuratedScript[];
 	/** The Carousel Script Collection (`collection-api.ts`). */
 	collection?: readonly CollectionScript[];
+	/** The BOTC HomeBrew Wiki's scripts (`homebrew-scripts-api.ts`). */
+	homebrew?: readonly HomebrewScript[];
 	recent: readonly SavedScript[];
 	profile: readonly ProfileScriptEntry[];
 	/** Names a curated section in the app's words. */
 	curatedLabel: (section: string) => string;
+	/** Names the month a Script of the Month was first seen ("2026-10"). */
+	monthLabel?: (seen: string | undefined) => string;
 	/** Says where a saved script came from. */
 	describe: (source: ScriptSource) => string;
 	/** The World Cups' scripts loaded so far (`world-cup.svelte.ts`). */
@@ -102,17 +115,24 @@ export const officialProvider: LocalProvider = {
 		})
 };
 
-export const curatedProvider: LocalProvider = {
-	kind: 'local',
-	id: 'curated',
-	listings: ({ data, curated, curatedLabel }) =>
+/**
+ * The official site's scripts, apart from its Scripts of the Month (Trevor, 2026-10-17: kept
+ * apart from the ones it recommends), which `monthProvider` lists, past months included.
+ */
+function curatedListings(id: 'curated' | 'month'): LocalProvider['listings'] {
+	return ({ data, curated, curatedLabel, monthLabel }) =>
 		curated.flatMap((entry, i) => {
+			if ((entry.section === 'month') !== (id === 'month')) return [];
 			const script = loadScript(entry.json, data).script;
+			const note =
+				id === 'month'
+					? (monthLabel?.(entry.seen) ?? entry.seen ?? '')
+					: curatedLabel(entry.section);
 			return script
 				? [
 						{
 							row: {
-								...pickerRow(script, `curated:${i}`, 'curated', curatedLabel(entry.section)),
+								...pickerRow(script, `${id}:${i}`, id, note),
 								page: CURATED_PAGE
 							},
 							target: {
@@ -124,7 +144,20 @@ export const curatedProvider: LocalProvider = {
 						}
 					]
 				: [];
-		})
+		});
+}
+
+export const curatedProvider: LocalProvider = {
+	kind: 'local',
+	id: 'curated',
+	listings: curatedListings('curated')
+};
+
+/** Every Script of the Month our copy has seen, this month's first (`mergeCurated`). */
+export const monthProvider: LocalProvider = {
+	kind: 'local',
+	id: 'month',
+	listings: curatedListings('month')
 };
 
 export const collectionProvider: LocalProvider = {
@@ -178,7 +211,12 @@ function worldCupProvider(year: WorldCupYear): LocalProvider {
 							version,
 							page: scriptPageUrl(entry.scriptId, version || undefined)
 						},
-						target: { kind: 'botcscripts', ref: { kind: 'script', scriptId: entry.scriptId } },
+						// Our stored copy already holds it (`worker/world-cups.ts`): nothing to fetch.
+						target: {
+							kind: 'json',
+							json,
+							source: { kind: 'botcscripts', scriptId: entry.scriptId, version }
+						},
 						identity: { json }
 					}
 				];
@@ -187,6 +225,17 @@ function worldCupProvider(year: WorldCupYear): LocalProvider {
 }
 export const worldCup2023Provider = worldCupProvider('2023');
 export const worldCup2025Provider = worldCupProvider('2025');
+
+/** The BOTC HomeBrew Wiki: listed from its summaries, each script fetched when shown. */
+export const homebrewProvider: LocalProvider = {
+	kind: 'local',
+	id: 'homebrew',
+	listings: ({ data, homebrew = [] }) =>
+		homebrew.map((script) => ({
+			row: homebrewRow(script, data),
+			target: { kind: 'homebrew', slug: script.slug }
+		}))
+};
 
 export const recentProvider: LocalProvider = {
 	kind: 'local',
@@ -248,9 +297,11 @@ export const LOCAL_PROVIDERS: readonly LocalProvider[] = [
 /** The Scripts page leaves out the base three: they are always in New game (Trevor, 2026-10-16). */
 export const SCRIPTS_PAGE_PROVIDERS: readonly LocalProvider[] = [
 	curatedProvider,
+	monthProvider,
 	collectionProvider,
 	worldCup2023Provider,
 	worldCup2025Provider,
+	homebrewProvider,
 	recentProvider,
 	profileProvider
 ];
@@ -302,6 +353,9 @@ export function botcProvider(
 /** Whether a row is the script `saved` holds. */
 export function matchesSaved(saved: SavedScript, listing: ScriptListing): boolean {
 	if (listing.identity) return sameScript(saved, listing.identity);
+	if (listing.target.kind === 'homebrew') {
+		return saved.source.kind === 'link' && saved.source.page === listing.row.page;
+	}
 	return (
 		saved.source.kind === 'botcscripts' &&
 		listing.row.source === 'botc' &&

@@ -76,8 +76,9 @@ export const byLabel = (a: string, b: string): number =>
 /**
  * How many of each reminder token the game has. A token can be on the board once, unless
  * the game gives more: a label listed more than once in TPI's data, or its character in
- * play more than once (two seats, or a seat and its true character). Keyed by
- * `reminderKey`; a reminder not in the map has one copy.
+ * play more than once (two seats, or a seat and its true character). An extra copy the
+ * Storyteller added (`canAddCopy`) counts while it is on the board. Keyed by `reminderKey`;
+ * a reminder not in the map has one copy.
  */
 export function reminderCopies(game: Game, characters: CharacterLookup): Map<string, number> {
 	const inPlay = new Map<string, number>();
@@ -104,7 +105,21 @@ export function reminderCopies(game: Game, characters: CharacterLookup): Map<str
 			);
 		}
 	}
+	const placed = new Map<string, number>();
+	for (const seatId of game.seating)
+		for (const r of game.seats[seatId].reminders)
+			placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
+	for (const [key, n] of placed) if (n > (total.get(key) ?? 1)) total.set(key, n);
 	return total;
+}
+
+/**
+ * Whether the Storyteller may add another copy of a reminder once every listed copy is
+ * placed (Trevor, 2026-10-17): a script's own character may need more than its JSON lists,
+ * like Fall of Rome's Cleopatra, whose ability chooses two players but lists one "Chosen".
+ */
+export function canAddCopy(character: Character | undefined): boolean {
+	return character !== undefined && character.edition === undefined;
 }
 
 /** How many of each reminder token are left to place (`reminderCopies` less those placed). */
@@ -154,9 +169,23 @@ export interface StepReminders {
  * The reminders a character places at its step on `night` (Trevor, 2026-10-16: "only
  * highlight a token if it could be used that night"), from what each `:reminder:` in TPI's
  * night text means (`REMINDER_PLACEHOLDERS`). A step whose text handles no token places none:
- * the Grandmother's Dead token is never used on the first night.
+ * the Grandmother's Dead token is never used on the first night. A script's own character
+ * has no such data, so all of its reminders count (`character`; Trevor, 2026-10-17, Fall of
+ * Rome's Merchant).
  */
-export function stepReminders(characterId: CharacterId, night: Night): StepReminders {
+export function stepReminders(
+	characterId: CharacterId,
+	night: Night,
+	character?: Character
+): StepReminders {
+	const known =
+		`${characterId}:first` in REMINDER_PLACEHOLDERS ||
+		`${characterId}:other` in REMINDER_PLACEHOLDERS;
+	if (!known && character)
+		return {
+			characterId,
+			labels: [...new Set([...character.reminders, ...character.remindersGlobal])]
+		};
 	const entries = REMINDER_PLACEHOLDERS[`${characterId}:${night}`] ?? [];
 	const labels = entries.flatMap((e) =>
 		e.tokens.filter((t) => t.action === 'place').map((t) => t.label)
@@ -167,12 +196,13 @@ export function stepReminders(characterId: CharacterId, night: Night): StepRemin
 /**
  * The reminder bank once setup is over (Trevor, 2026-10-16): every reminder of a character
  * in play that still has a copy off the board, in the picker's order, with the reminders the
- * walked-through step uses tonight (`focus`) first.
+ * walked-through step uses tonight (`focus`) first, unless `front` is false.
  */
 export function bankReminders(
 	game: Game,
 	characters: CharacterLookup,
-	focus?: StepReminders
+	focus?: StepReminders,
+	front = true
 ): BankReminder[] {
 	const left = reminderCopiesLeft(game, characters);
 	const out: BankReminder[] = [];
@@ -183,5 +213,5 @@ export function bankReminders(
 			if (n > 0) out.push({ characterId: character.id, label, left: n, now });
 		}
 	}
-	return [...out.filter((r) => r.now), ...out.filter((r) => !r.now)];
+	return front ? [...out.filter((r) => r.now), ...out.filter((r) => !r.now)] : out;
 }

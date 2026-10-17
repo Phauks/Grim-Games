@@ -118,6 +118,10 @@
 		place-items: center;
 		width: var(--d);
 		height: var(--d);
+		/* Always a circle at its own size, even below the tap target (Trevor, 2026-10-17: small
+		   reminders became ovals); the ::after below keeps the 44px target. */
+		min-width: 0;
+		min-height: 0;
 		padding: 0;
 		border: 2px solid var(--rim);
 		border-radius: 50%;
@@ -128,6 +132,17 @@
 		touch-action: none;
 		user-select: none;
 		-webkit-user-select: none;
+	}
+	/* An invisible tap area of at least the tap target, centred on the token. */
+	.reminder::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: max(100%, var(--tap-target));
+		height: max(100%, var(--tap-target));
+		translate: -50% -50%;
+		border-radius: 50%;
 	}
 	.reminder[data-pan='x'] {
 		touch-action: pan-x;
@@ -159,13 +174,20 @@
 		object-fit: contain;
 		pointer-events: none;
 	}
-	/* The words sit across the bottom of the token, on a band so they stay legible. */
+	/* The words sit across the bottom of the token, on a band so they stay legible. How wide
+	   they may run and whether they wrap are settings (Board and tokens); wrapped words grow
+	   upwards over the icon, up to three lines, and a word wider than the limit widens the
+	   band rather than being cut. */
 	.label {
 		position: absolute;
 		left: 50%;
 		bottom: calc(-0.125 * var(--u));
 		translate: -50% 0;
-		max-width: calc(var(--d) * 1.5);
+		width: max-content;
+		max-width: calc(var(--d) * var(--reminder-label-width, 1.5));
+		/* min-content when wrapping (the longest word), else 0: min-width beats max-width. */
+		min-width: var(--reminder-label-min, 0);
+		max-height: calc(3 * 1.35em);
 		padding: 0 0.3em;
 		overflow: hidden;
 		border-radius: var(--radius-sm);
@@ -175,8 +197,10 @@
 		font-size: calc(0.6rem * var(--reminder-scale, 1));
 		font-variant: small-caps;
 		line-height: 1.35;
-		white-space: nowrap;
+		white-space: var(--reminder-label-wrap, nowrap);
 		text-overflow: ellipsis;
+		overflow-wrap: normal;
+		text-align: center;
 	}
 	.more {
 		font: 600 0.85rem / 1 var(--font-control);

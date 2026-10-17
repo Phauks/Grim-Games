@@ -15,13 +15,16 @@
 		/** Warnings in plain words, from the setup analysis, the bag and exclusive jinxes. */
 		warnings: readonly string[];
 		lookup: (id: CharacterId) => Character | undefined;
+		/** Custom characters in play whose setup reminders the app can't work out. */
+		uncurated?: readonly CharacterId[];
 		/** Opens the choice of what a Drunk, Marionette or Lunatic is shown. */
 		onStandIn: (characterId: CharacterId) => void;
 	}
 
-	let { analysis, plan, jinxes, warnings, lookup, onStandIn }: Props = $props();
+	let { analysis, plan, jinxes, warnings, lookup, uncurated = [], onStandIn }: Props = $props();
 
 	const name = (id: CharacterId) => lookup(id)?.name ?? id;
+	const warningCount = $derived(warnings.length + (uncurated.length ? 1 : 0));
 </script>
 
 <!--
@@ -34,12 +37,23 @@
 		<Collapsible title={t('setup.check.warnings')} level={3} storageKey="setup-check:warnings">
 			{#snippet aside()}<span
 					class="count"
-					data-warn={warnings.length ? '' : undefined}
-					data-testid="warning-count">{warnings.length}</span
+					data-warn={warningCount ? '' : undefined}
+					data-testid="warning-count">{warningCount}</span
 				>{/snippet}
-			{#if warnings.length}
+			{#if warningCount}
 				<ul class="warn">
 					{#each warnings as warning, i (i)}<li><GlossaryText text={warning} /></li>{/each}
+					{#if uncurated.length}
+						<li data-testid="custom-reminders">
+							{t('setup.check.customReminders')}
+							<span class="badges">
+								{#each uncurated as id (id)}<CharacterBadge
+										characterId={id}
+										character={lookup(id)}
+									/>{/each}
+							</span>
+						</li>
+					{/if}
 				</ul>
 			{:else}<p>{t('common.none')}</p>{/if}
 		</Collapsible>
@@ -108,6 +122,11 @@
 	}
 	.check:has(.warn) {
 		box-shadow: inset 0 0 0 2px var(--accent);
+	}
+	.badges {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
 	}
 	.body {
 		display: grid;

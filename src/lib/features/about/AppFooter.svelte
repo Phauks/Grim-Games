@@ -8,22 +8,7 @@
 </script>
 
 <footer>
-	<!--
-		The Pandemonium Institute asks projects that use official assets to show a Community
-		Created Content logo (release.botc.app/resources, "Community Created Content logos").
-		static/brand/ccc-parchment.webp is resources/community/ccc-parchment.png from
-		ThePandemoniumInstitute/botc-release @ f10cd02, resized to 360px wide.
-	-->
-	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-	<a
-		class="ccc"
-		href="https://bloodontheclocktower.com/pages/community-created-content-policy"
-		target="_blank"
-		rel="noopener"
-	>
-		<img src="/brand/ccc-parchment.webp" width="120" height="45" alt={t('shell.cccAlt')} />
-	</a>
-	<!-- Logo on the left, every text link on the right. Fixed-size line: more build detail lives in Settings > About and Diagnostics, never inline (no reflow). -->
+	<!-- Every text link on the right (the CCC logo is at the bottom of the menu, Trevor 2026-10-17). Fixed-size line: more build detail lives in Settings > About and Diagnostics, never inline (no reflow). -->
 	<p class="build" title={describeBuild(info)} data-testid="build-info">
 		<span class="nowrap"
 			>v{info.version} ·
@@ -53,7 +38,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-end;
 		gap: calc(0.5 * var(--u)) calc(1 * var(--u));
 		padding: calc(0.5 * var(--u)) calc(1 * var(--u))
 			calc(0.5 * var(--u) + env(safe-area-inset-bottom, 0px));
@@ -68,10 +53,6 @@
 		color: inherit;
 		display: inline-flex;
 		align-items: center;
-	}
-	.ccc img {
-		display: block;
-		height: auto;
 	}
 	.build {
 		margin: 0;

@@ -10,13 +10,16 @@ import {
 	type BotcScriptsSummary
 } from './botcscripts-api.ts';
 import { botcCard, looseId } from './botcscripts-cards.ts';
+import { homebrewScriptPage, type HomebrewScript } from './homebrew-scripts-api.ts';
 
 export type PickerSource =
 	| 'official'
 	| 'curated'
+	| 'month'
 	| 'collection'
 	| 'worldcup2023'
 	| 'worldcup2025'
+	| 'homebrew'
 	| 'recent'
 	| 'profile'
 	| 'botc';
@@ -116,6 +119,30 @@ export function botcRow(summary: BotcScriptsSummary, data: GameData): PickerRow 
 	};
 }
 
+/** A BOTC HomeBrew Wiki script, from its listing: counted from its characters, like `botcRow`. */
+export function homebrewRow(script: HomebrewScript, data: GameData): PickerRow {
+	const card = botcCard(script.characters, data);
+	const characters = PLAYABLE.reduce((n, type) => n + (card.counts[type] ?? 0), 0);
+	return {
+		key: `homebrew:${script.slug}`,
+		name: script.name,
+		author: script.author,
+		source: 'homebrew',
+		note: '',
+		kind: characters <= TEENSYVILLE_MAX_CHARACTERS ? 'Teensyville' : 'Full',
+		characters,
+		entries: script.characters,
+		page: homebrewScriptPage(script.slug),
+		haystack: [
+			script.name,
+			script.author,
+			...card.groups.flatMap((g) => g.characters.map((c) => c.name))
+		]
+			.join('\n')
+			.toLowerCase()
+	};
+}
+
 /** The search and header filters, applied to rows on the device the way the site applies them. */
 export interface RowFilter {
 	term: string;
@@ -166,9 +193,11 @@ export interface RowSort {
 const SOURCE_ORDER: readonly PickerSource[] = [
 	'official',
 	'curated',
+	'month',
 	'collection',
 	'worldcup2023',
 	'worldcup2025',
+	'homebrew',
 	'recent',
 	'profile',
 	'botc'

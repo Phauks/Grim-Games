@@ -1,10 +1,10 @@
 /**
  * `/api/collections/<id>`: the scripts a community collection's Google Doc links as
  * "Script JSON" files (`collection-api.ts`). The browser can't read Google Docs or Drive
- * itself (no CORS). Only ever fetches that doc and the Drive files it links, cached.
+ * itself (no CORS). Served from our own copy (`mirror.ts`), which only ever fetches that doc
+ * and the Drive files it links.
  */
 import {
-	COLLECTIONS,
 	collectionExportUrl,
 	collectionHeadingUrl,
 	collectionMobileUrl,
@@ -16,6 +16,8 @@ import {
 	type CollectionScript,
 	type ScriptCollectionInfo
 } from '../src/lib/features/scripts/collection-api.ts';
+import type { MirroredSource } from './mirror.ts';
+import { USER_AGENT } from './user-agent.ts';
 
 const DOC_CACHE_SECONDS = 3600;
 const FILE_CACHE_SECONDS = 86400;
@@ -25,6 +27,7 @@ const MAX_SCRIPT_BYTES = 1_000_000;
 
 async function fetchText(url: string, cacheTtl: number, maxBytes: number): Promise<string> {
 	const response = await fetch(url, {
+		headers: { 'User-Agent': USER_AGENT },
 		redirect: 'follow',
 		cf: { cacheTtl, cacheEverything: true }
 	});
@@ -74,26 +77,33 @@ async function readDocLinks(
 	return { links: [], problems };
 }
 
-export async function handleCollection(id: string): Promise<Response> {
-	const collection = COLLECTIONS.find((c) => c.id === id);
-	if (!collection) return new Response('Not found', { status: 404 });
-	const { links, problems } = await readDocLinks(collection);
-	const found = await Promise.all(links.map((link) => readScript(collection, link)));
-	const scripts = found.filter((s) => typeof s !== 'string');
-	const failed = found.filter((s) => typeof s === 'string');
-	if (failed.length || problems.length) {
-		// Kept in the Worker's logs so a broken source can be seen without a device.
-		console.warn('collection', id, { links: links.length, problems, failed: failed.slice(0, 5) });
-	}
-	if (!scripts.length) {
-		// Never cached: an empty list would hide the collection until the cache expired.
-		return Response.json(
-			{ error: 'The collection had no scripts we could read.', problems, failed },
-			{ status: 502, headers: { 'Cache-Control': 'no-store' } }
-		);
-	}
-	return Response.json(
-		{ scripts, failed: failed.length },
-		{ headers: { 'Cache-Control': `public, max-age=${DOC_CACHE_SECONDS}` } }
-	);
+/** A collection's scripts, for our copy (`mirror.ts`). */
+export function collectionSource(collection: ScriptCollectionInfo): MirroredSource {
+	return {
+		id: `collection:${collection.id}`,
+		async build() {
+			const { links, problems } = await readDocLinks(collection);
+			const found = await Promise.all(links.map((link) => readScript(collection, link)));
+			const scripts = found.filter((s) => typeof s !== 'string');
+			const failed = found.filter((s) => typeof s === 'string');
+			if (failed.length || problems.length) {
+				// Kept in the Worker's logs so a broken source can be seen without a device.
+				console.warn('collection', collection.id, {
+					links: links.length,
+					problems,
+					failed: failed.slice(0, 5)
+				});
+			}
+			if (!scripts.length) {
+				throw new Error(
+					[
+						`No scripts we could read (${links.length} links).`,
+						...problems,
+						...failed.slice(0, 3)
+					].join(' ')
+				);
+			}
+			return { scripts, failed: failed.length };
+		}
+	};
 }

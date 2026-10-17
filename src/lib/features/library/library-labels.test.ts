@@ -3,10 +3,14 @@ import {
 	addLabel,
 	deleteLabel,
 	emptyLabels,
+	childFolders,
 	filterLibrary,
+	folderPath,
+	folderTree,
 	labelsFor,
 	labelUses,
 	libraryKey,
+	moveFolder,
 	parseLabels,
 	renameLabel,
 	setFolder,
@@ -105,7 +109,7 @@ describe('parseLabels', () => {
 	});
 
 	it('leaves data from a newer build alone', () => {
-		expect(parseLabels({ version: 2 })).toBeUndefined();
+		expect(parseLabels({ version: 3 })).toBeUndefined();
 	});
 });
 
@@ -127,5 +131,95 @@ describe('filterLibrary', () => {
 		expect(keys({ term: '', folder: { kind: 'none' }, tags: [] })).toEqual(['b', 'c']);
 		expect(keys({ term: '', folder: { kind: 'all' }, tags: ['t1'] })).toEqual(['a', 'b']);
 		expect(keys({ term: '', folder: { kind: 'all' }, tags: ['t1', 't2'] })).toEqual(['a']);
+	});
+});
+
+describe('nested folders', () => {
+	function tree(): LibraryLabels {
+		let s = emptyLabels();
+		s = addLabel(s, 'folders', 'Club', 'club');
+		s = addLabel(s, 'folders', 'Teensy', 'teensy', 'club');
+		s = addLabel(s, 'folders', 'Done', 'done', 'teensy');
+		s = setFolder(s, 'k1', 'teensy');
+		s = setFolder(s, 'k2', 'done');
+		return s;
+	}
+
+	it('reads version 1 folders as top-level folders', () => {
+		const v1 = {
+			version: 1,
+			tags: [],
+			folders: [{ id: 'f', name: 'Old' }],
+			scripts: { k: { tags: [], folder: 'f' } }
+		};
+		const s = parseLabels(v1)!;
+		expect(s.version).toBe(2);
+		expect(s.folders).toEqual([{ id: 'f', name: 'Old' }]);
+		expect(labelsFor(s, 'k').folder).toBe('f');
+	});
+
+	it('drops a parent that is missing or loops', () => {
+		const s = parseLabels({
+			version: 2,
+			tags: [],
+			folders: [
+				{ id: 'a', name: 'A', parent: 'b' },
+				{ id: 'b', name: 'B', parent: 'a' },
+				{ id: 'c', name: 'C', parent: 'gone' }
+			],
+			scripts: {}
+		})!;
+		expect(s.folders.every((f) => f.parent === undefined)).toBe(true);
+	});
+
+	it('only needs names unique among a folder’s siblings', () => {
+		let s = tree();
+		s = addLabel(s, 'folders', 'teensy', 'dup', 'club');
+		expect(s.folders.some((f) => f.id === 'dup')).toBe(false);
+		s = addLabel(s, 'folders', 'Teensy', 'top');
+		expect(s.folders.find((f) => f.id === 'top')?.parent).toBeUndefined();
+	});
+
+	it('lists children, the path and the whole tree', () => {
+		const s = tree();
+		expect(childFolders(s, undefined).map((f) => f.id)).toEqual(['club']);
+		expect(childFolders(s, 'club').map((f) => f.id)).toEqual(['teensy']);
+		expect(folderPath(s, 'done').map((f) => f.name)).toEqual(['Club', 'Teensy', 'Done']);
+		expect(folderTree(s).map(({ folder, depth }) => `${depth}${folder.name}`)).toEqual([
+			'0Club',
+			'1Teensy',
+			'2Done'
+		]);
+	});
+
+	it('moves a folder, but never into itself or a folder inside it', () => {
+		let s = tree();
+		expect(moveFolder(s, 'club', 'done')).toBe(s);
+		expect(moveFolder(s, 'club', 'club')).toBe(s);
+		s = moveFolder(s, 'done', undefined);
+		expect(folderPath(s, 'done').map((f) => f.name)).toEqual(['Done']);
+	});
+
+	it('deleting a folder moves its scripts and folders up one level', () => {
+		const s = deleteLabel(tree(), 'folders', 'teensy');
+		expect(labelsFor(s, 'k1').folder).toBe('club');
+		expect(s.folders.find((f) => f.id === 'done')?.parent).toBe('club');
+		const top = deleteLabel(s, 'folders', 'club');
+		expect(labelsFor(top, 'k1').folder).toBeUndefined();
+		expect(top.folders.find((f) => f.id === 'done')?.parent).toBeUndefined();
+	});
+
+	it('filtering by a folder includes the folders inside it', () => {
+		const rows = [
+			{ key: 'k1', haystack: 'a' },
+			{ key: 'k2', haystack: 'b' },
+			{ key: 'k3', haystack: 'c' }
+		];
+		const keys = (id: string) =>
+			filterLibrary(rows, tree(), { term: '', folder: { kind: 'folder', id }, tags: [] }).map(
+				(r) => r.key
+			);
+		expect(keys('club')).toEqual(['k1', 'k2']);
+		expect(keys('done')).toEqual(['k2']);
 	});
 });

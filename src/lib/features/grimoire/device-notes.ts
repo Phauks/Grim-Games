@@ -11,7 +11,8 @@ import {
 	DEFAULT_SEAT_LAYOUT,
 	isDefaultLayout,
 	parseSeatLayout,
-	type SeatLayout
+	type SeatLayout,
+	type SeatPoint
 } from '#lib/ui/seating/seat-layout.ts';
 
 const NAMES_KEY = 'grim-games:player-names:v1';
@@ -93,19 +94,6 @@ export function forgetUpsideDownMarks(): void {
 	}
 }
 
-const RECENT_REMINDERS_KEY = 'grim-games:recent-reminders:v1';
-/** How many recently placed reminders are offered first. */
-export const MAX_RECENT_REMINDERS = 8;
-
-/** Reminders placed recently on this device (as `reminderKey`s), newest first. */
-export const recentReminders = {
-	read: (): string[] => readList(RECENT_REMINDERS_KEY),
-	remember(key: string): void {
-		const list = readList(RECENT_REMINDERS_KEY).filter((k) => k !== key);
-		writeList(RECENT_REMINDERS_KEY, [key, ...list].slice(0, MAX_RECENT_REMINDERS));
-	}
-};
-
 /** Where this device draws each game's seats. */
 export const seatLayouts = {
 	read(gameId: GameId): SeatLayout {
@@ -126,6 +114,38 @@ export const seatLayouts = {
 	},
 	forget(gameId: GameId): void {
 		this.write(gameId, DEFAULT_SEAT_LAYOUT);
+	}
+};
+
+const SPOTS_KEY = (gameId: GameId) => `grim-games:reminder-spots:v1:${gameId}`;
+
+/**
+ * Where reminders were dropped on this device, by reminder id, in % of the board, for
+ * reminders that stay where they are dropped (board looks, Trevor 2026-10-17).
+ */
+export const reminderSpots = {
+	read(gameId: GameId): Record<string, SeatPoint> {
+		try {
+			const raw: unknown = JSON.parse(globalThis.localStorage?.getItem(SPOTS_KEY(gameId)) ?? '{}');
+			if (!raw || typeof raw !== 'object') return {};
+			const out: Record<string, SeatPoint> = {};
+			for (const [id, p] of Object.entries(raw as Record<string, unknown>)) {
+				const { x, y } = (p ?? {}) as Record<string, unknown>;
+				if (typeof x === 'number' && typeof y === 'number' && isFinite(x) && isFinite(y))
+					out[id] = { x: Math.min(100, Math.max(0, x)), y: Math.min(100, Math.max(0, y)) };
+			}
+			return out;
+		} catch {
+			return {};
+		}
+	},
+	write(gameId: GameId, spots: Readonly<Record<string, SeatPoint>>): void {
+		try {
+			if (Object.keys(spots).length === 0) globalThis.localStorage?.removeItem(SPOTS_KEY(gameId));
+			else globalThis.localStorage?.setItem(SPOTS_KEY(gameId), JSON.stringify(spots));
+		} catch {
+			// Storage full or blocked: the spots last until the page is closed.
+		}
 	}
 };
 
