@@ -82,6 +82,7 @@
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import AlignmentAsk from './AlignmentAsk.svelte';
@@ -1091,6 +1092,14 @@
 			onclick={() => fromMenu(() => (backgroundOpen = true))}
 		>
 			Background
+		</Button>
+		<!-- Token and board settings over the board (Trevor, 2026-10-17). -->
+		<Button
+			variant="quiet"
+			icon="settings"
+			onclick={() => fromMenu(() => settingsDialog.show('board'))}
+		>
+			Board and tokens
 		</Button>
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 		<span class="menu-nav">

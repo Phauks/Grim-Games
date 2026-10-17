@@ -1121,6 +1121,14 @@ test('the board background can be an image from the device, kept after a reload'
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	await expect(page.locator('.watermark')).not.toHaveClass(/vignette/);
+
+	// The board and token settings open over the board from its menu (Trevor, 2026-10-17).
+	await menu(page, 'Board and tokens');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await expect(settings.getByRole('heading', { name: 'Board and tokens', level: 2 })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
+	await expect(page.getByTestId('board-background')).toBeVisible();
 });
 
 test('info tokens open from the toolbar and show player cards at once', async ({ page }) => {
