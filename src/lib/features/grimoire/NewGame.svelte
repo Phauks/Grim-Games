@@ -5,7 +5,6 @@
 	import {
 		editionScript,
 		OFFICIAL_EDITIONS,
-		toScript,
 		type OfficialEditionId
 	} from '#lib/core/data/index.ts';
 	import { MAX_PLAYERS, MIN_PLAYERS } from '#lib/core/engine/index.ts';
@@ -23,6 +22,9 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
+	import GameModeField from '#lib/features/modes/GameModeField.svelte';
+	import { startInMode } from '#lib/features/modes/start.ts';
+	import { NO_RESTRICTIONS, STANDARD } from '#lib/core/modes/index.ts';
 
 	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
 	onMount(() => {
@@ -49,20 +51,33 @@
 	]);
 	let players = $state(8);
 	let starting = $state(false);
+	let modeId = $state(STANDARD.id);
+	let restrictions = $state(NO_RESTRICTIONS);
+
+	async function loadChosen() {
+		const data = await loadOfficialData();
+		const choice = edition;
+		const recent = choice.startsWith('recent:')
+			? [...(quick ? [quick] : []), ...recentScripts.list].find(
+					(s) => `recent:${s.scriptId}` === choice
+				)
+			: undefined;
+		const loaded = recent ? reloadSavedScript(recent, data) : editionScript(choice, data);
+		if (!loaded) throw new Error('the chosen script could not be loaded');
+		return { data, loaded };
+	}
 
 	async function start() {
 		starting = true;
 		try {
-			const data = await loadOfficialData();
-			const choice = edition;
-			const recent = choice.startsWith('recent:')
-				? [...(quick ? [quick] : []), ...recentScripts.list].find(
-						(s) => `recent:${s.scriptId}` === choice
-					)
-				: undefined;
-			const loaded = recent ? reloadSavedScript(recent, data) : editionScript(choice, data);
-			if (!loaded) throw new Error('the chosen script could not be loaded');
-			const open = await OpenGame.create(data, toScript(loaded), players);
+			const { data, loaded } = await loadChosen();
+			const open = await startInMode({
+				modeId,
+				restrictions,
+				data,
+				loaded,
+				create: (script) => OpenGame.create(data, script, players)
+			});
 			await goto(resolve('/grimoire/[gameId]', { gameId: open.game.gameId }));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
@@ -97,6 +112,11 @@
 		/>
 	</div>
 	<SetupTable {players} />
+	<GameModeField
+		bind:modeId
+		bind:restrictions
+		loadScriptCharacters={async () => (await loadChosen()).loaded.characters}
+	/>
 	<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>Start game</Button>
 </section>
 
