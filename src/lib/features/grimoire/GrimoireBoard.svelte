@@ -67,6 +67,7 @@
 		withoutPlaced,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
+	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import { nameBox, placeNames, type Box } from './name-placement.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
@@ -131,6 +132,8 @@
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
+	// The Token size preview in Settings draws at this board's size.
+	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
