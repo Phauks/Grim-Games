@@ -1,6 +1,7 @@
 <script lang="ts">
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
+	import StepAfflictions from './StepAfflictions.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
@@ -177,7 +178,7 @@
 					{/if}
 				</div>
 			</div>
-			<NightAlerts {grimoire} {step} />
+			<NightAlerts {grimoire} {step} withoutImpaired />
 			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
 				<TravellerAlignment
 					{grimoire}
@@ -205,6 +206,10 @@
 						{step.reminder}
 					{/if}
 				</p>
+			{/if}
+			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
+			{#if step.character}
+				<StepAfflictions {grimoire} {step} />
 			{/if}
 			{#if rows.length > 0}
 				<h3>Reminders</h3>

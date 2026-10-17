@@ -1263,9 +1263,12 @@ test('a night step is filled in with help, and the night can be walked through',
 	// A step shows the game state that matters: the Empath is poisoned (core nightStepAlerts).
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	await page.getByRole('button', { name: 'Guide: Empath' }).tap();
-	await expect(
-		page.getByRole('dialog', { name: 'Empath' }).getByTestId('night-alerts')
-	).toContainText(/Empath.*Seat 2.*poisoned.*Poisoner/);
+	// In its own Afflictions section, not at the top (Trevor, 2026-10-17).
+	const empath = page.getByRole('dialog', { name: 'Empath' });
+	await expect(empath.getByTestId('step-afflictions')).toContainText(
+		/Poisoned\s*Empath\s*· Seat 2\s*by\s*Poisoner\s*· Seat 1/
+	);
+	await expect(empath.getByTestId('night-alerts')).toHaveCount(0);
 });
 
 test('moving a reminder that normally stays put asks first, saying why', async ({ page }) => {
