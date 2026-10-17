@@ -156,11 +156,11 @@ test('the Jinxes section lists every TPI jinx under the other character', async 
 	const jinxes = dialog.getByTestId('jinx-section');
 	// Each jinx is headed by the other character's text-size badge, across the section, with
 	// the jinx indented under it (Trevor, 2026-10-16).
-	const bar = jinxes.locator('.jinx-bar').first().locator('.badge');
+	const bar = jinxes.locator('.entry .bar').first().locator('.badge');
 	await expect(bar).toHaveAttribute('data-character-id', 'boffin');
 	await expect(bar).toHaveClass(/inline/);
 	const barBox = (await bar.boundingBox())!;
-	const sectionBox = (await jinxes.locator('.jinx').first().boundingBox())!;
+	const sectionBox = (await jinxes.locator('.entry').first().boundingBox())!;
 	expect(barBox.width).toBeGreaterThan(sectionBox.width - 2);
-	await expect(jinxes.locator('.jinx p').first()).not.toHaveCSS('padding-inline-start', '0px');
+	await expect(jinxes.locator('.entry .body').first()).not.toHaveCSS('padding-inline-start', '0px');
 });
