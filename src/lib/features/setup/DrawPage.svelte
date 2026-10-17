@@ -17,8 +17,8 @@
 	import TileMarkFace from './TileMarkFace.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
-	import JoinButton from './JoinButton.svelte';
-	import BagSettings from './BagSettings.svelte';
+	import SetupActions from './SetupActions.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import { remindersHref } from './setup-steps.ts';
 
 	interface Props {
@@ -106,15 +106,8 @@
 
 <svelte:window onkeydown={onWindowKey} />
 
-<main>
-	<header>
-		<div class="title">
-			<h1>{t('setup.draw')}</h1>
-			<span class="actions"
-				><BagSettings />{#if port.openGame}<JoinButton game={port.openGame} />{/if}</span
-			>
-		</div>
-	</header>
+<Page title={t('setup.draw')}>
+	{#snippet actions()}<SetupActions {port} />{/snippet}
 
 	<ErrorBoundary area="setup">
 		{#if !game || !bag}
@@ -177,7 +170,7 @@
 			{/snippet}
 		</SetupNav>
 	{/if}
-</main>
+</Page>
 
 {#if tile && slot && lookup}
 	{@const shows = lookup.get(tile.shows)}
@@ -195,30 +188,6 @@
 {/if}
 
 <style>
-	main {
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-4) var(--page-gutter) 0;
-	}
-	header {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-1);
-	}
-	h1 {
-		margin: var(--space-2) 0 0;
-		overflow-wrap: anywhere;
-	}
-	.actions {
-		display: flex;
-		gap: var(--space-1);
-	}
-	.title {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-	}
 	.next {
 		display: flex;
 		align-items: center;

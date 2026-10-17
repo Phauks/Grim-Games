@@ -36,8 +36,8 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupNav from './SetupNav.svelte';
-	import JoinButton from './JoinButton.svelte';
-	import BagSettings from './BagSettings.svelte';
+	import SetupActions from './SetupActions.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
 	import { setupSelection } from './selection.svelte.ts';
 
@@ -208,88 +208,81 @@
 	}
 </script>
 
-<main>
-	<header class="top">
-		<div class="title">
-			<h1>{t('setup.characters')}</h1>
-			<span class="actions"
-				><BagSettings />{#if port.openGame}<JoinButton game={port.openGame} />{/if}</span
-			>
-		</div>
-		<p class="script">
-			<span class="label">{t('setup.script')}</span>
-			<span class="name" data-testid="setup-script-name">{script?.name ?? t('common.none')}</span>
-		</p>
-	</header>
-
-	<ErrorBoundary area="setup">
-		<div class="layout">
-			<div class="side">
-				<PlayerCountSheet players={s.players} onChange={(n) => setupSelection.setPlayers(n)} />
-				<div class="counts">
-					<CountsBar {analysis} {travellers} />
-					<div class="find">
-						<CharacterSearchBox bind:query shortcut />
-						<div class="tools">
-							<IconButton
-								icon="random"
-								label={t('setup.random')}
-								disabled={!ready}
-								onclick={random}
-							/>
-							<IconButton
-								icon="clearSelection"
-								label={t('setup.clearSelection')}
-								disabled={!ready || ids.length === 0}
-								onclick={() => (clearOpen = true)}
-							/>
-						</div>
+<Page title={t('setup.characters')} sideFlow>
+	{#snippet actions()}<SetupActions {port} />{/snippet}
+	{#snippet subtitle()}<span class="script"
+			><span class="label">{t('setup.script')}</span>
+			<span class="name" data-testid="setup-script-name">{script?.name ?? t('common.none')}</span
+			></span
+		>{/snippet}
+	{#snippet side()}
+		<ErrorBoundary area="setup">
+			<PlayerCountSheet players={s.players} onChange={(n) => setupSelection.setPlayers(n)} />
+			<div class="counts">
+				<CountsBar {analysis} {travellers} />
+				<div class="find">
+					<CharacterSearchBox bind:query shortcut />
+					<div class="tools">
+						<IconButton
+							icon="random"
+							label={t('setup.random')}
+							disabled={!ready}
+							onclick={random}
+						/>
+						<IconButton
+							icon="clearSelection"
+							label={t('setup.clearSelection')}
+							disabled={!ready || ids.length === 0}
+							onclick={() => (clearOpen = true)}
+						/>
 					</div>
 				</div>
-				{#if ready}
-					<SetupCheckPanel
-						{analysis}
-						{plan}
-						{jinxes}
-						{warnings}
-						{lookup}
-						{uncurated}
-						onStandIn={(id) => {
-							askingFor = id;
-							standInOpen = true;
-						}}
-					/>
-				{/if}
 			</div>
+			{#if ready}
+				<SetupCheckPanel
+					{analysis}
+					{plan}
+					{jinxes}
+					{warnings}
+					{lookup}
+					{uncurated}
+					onStandIn={(id) => {
+						askingFor = id;
+						standInOpen = true;
+					}}
+				/>
+			{/if}
+		</ErrorBoundary>
+	{/snippet}
 
-			<CharacterPicker
-				characters={choices}
-				mode="multi"
-				selected={ids}
-				bind:query
-				showSearch={false}
-				collapsibleKey="setup"
-				surface="page"
-				contained={false}
-				types={TYPES}
-				onSelect={(id) => {
-					const character = lookup(id);
-					if (character) toggle(character);
-				}}
-			>
-				{#snippet item(character)}
-					<CharacterChoice
-						{character}
-						copies={s.selection[character.id] ?? 0}
-						duplicates={canDuplicate(character, inPlay)}
-						jinxed={jinxed.has(character.id)}
-						onToggle={() => toggle(character)}
-						onAddCopy={() =>
-							setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
-					/>
-				{/snippet}
-			</CharacterPicker>
-		</div>
+	<ErrorBoundary area="setup">
+		<CharacterPicker
+			characters={choices}
+			mode="multi"
+			selected={ids}
+			bind:query
+			showSearch={false}
+			collapsibleKey="setup"
+			surface="page"
+			contained={false}
+			types={TYPES}
+			onSelect={(id) => {
+				const character = lookup(id);
+				if (character) toggle(character);
+			}}
+		>
+			{#snippet item(character)}
+				<CharacterChoice
+					{character}
+					copies={s.selection[character.id] ?? 0}
+					duplicates={canDuplicate(character, inPlay)}
+					jinxed={jinxed.has(character.id)}
+					onToggle={() => toggle(character)}
+					onAddCopy={() =>
+						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
+				/>
+			{/snippet}
+		</CharacterPicker>
 	</ErrorBoundary>
 
 	{#if game}
@@ -308,7 +301,7 @@
 			{/snippet}
 		</SetupNav>
 	{/if}
-</main>
+</Page>
 
 <StandInDialog
 	bind:open={standInOpen}
@@ -345,35 +338,11 @@
 </ConfirmDialog>
 
 <style>
-	main {
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-4) var(--page-gutter) 0;
-	}
-	.top {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-1);
-	}
-	h1 {
-		margin: var(--space-2) 0 0;
-		overflow-wrap: anywhere;
-	}
-	.actions {
-		display: flex;
-		gap: var(--space-1);
-	}
-	.title {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-	}
 	.script {
 		display: flex;
+		min-width: 0;
 		align-items: center;
 		gap: var(--space-2);
-		margin: 0;
 	}
 	.script .label {
 		color: var(--on-surface-muted);
@@ -418,35 +387,8 @@
 			background: var(--surface-selected);
 		}
 	}
-	/* Phones and tablets: one column. */
-	.layout {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-	}
-	.side {
-		display: contents;
-	}
-	/*
-	 * A computer window: players, setup sheet, counts, search and the check in a column beside
-	 * the list, so the list starts at the top and nothing needs scrolling back to.
-	 */
+	/* A computer window: the counts sit in the side column, which is sticky itself. */
 	@media (min-width: 75rem) {
-		.layout {
-			grid-template-columns: calc(28 * var(--u)) minmax(0, 1fr);
-			align-items: start;
-			gap: var(--space-5);
-			padding-top: var(--space-2);
-		}
-		.side {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-2);
-			position: sticky;
-			top: calc(var(--tap-target) + env(safe-area-inset-top));
-			max-height: calc(100dvh - 6 * var(--u));
-			overflow-y: auto;
-			padding-bottom: var(--space-4);
-		}
 		.counts {
 			position: static;
 		}

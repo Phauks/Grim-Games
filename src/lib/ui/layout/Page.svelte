@@ -19,6 +19,12 @@
 		 * sticky below the app header; above the content on phones and tablets.
 		 */
 		side?: Snippet;
+		/**
+		 * Phones and tablets: the side's pieces join the page's flow instead of sitting in one
+		 * block, so a sticky piece (setup's counts and search) stays in view while the content
+		 * scrolls under it.
+		 */
+		sideFlow?: boolean;
 		/** The content lays out in --measure wide columns, as many as fit (Account). */
 		columns?: boolean;
 		children: Snippet;
@@ -32,6 +38,7 @@
 		subtitle,
 		toolbar,
 		side,
+		sideFlow = false,
 		columns = false,
 		children
 	}: Props = $props();
@@ -52,7 +59,7 @@
 	</header>
 	{#if toolbar}<div class="toolbar">{@render toolbar()}</div>{/if}
 	{#if side}
-		<div class="split">
+		<div class="split" data-side-flow={sideFlow ? '' : undefined}>
 			<div class="side">{@render side()}</div>
 			<div class="content" class:columns>{@render children()}</div>
 		</div>
@@ -130,6 +137,11 @@
 		grid-template-columns: minmax(0, 1fr);
 		align-content: start;
 		gap: var(--space-2);
+	}
+	@media (max-width: 74.99rem) {
+		[data-side-flow] > .side {
+			display: contents;
+		}
 	}
 	/* A computer window: the side column stays in view beside the content. */
 	@media (min-width: 75rem) {
