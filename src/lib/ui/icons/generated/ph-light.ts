@@ -11,6 +11,7 @@ import ph_arrow_u_up_left_light from '~icons/ph/arrow-u-up-left-light';
 import ph_arrow_u_up_right_light from '~icons/ph/arrow-u-up-right-light';
 import ph_arrows_down_up_light from '~icons/ph/arrows-down-up-light';
 import ph_arrows_left_right_light from '~icons/ph/arrows-left-right-light';
+import ph_arrows_out_light from '~icons/ph/arrows-out-light';
 import ph_arrows_out_cardinal_light from '~icons/ph/arrows-out-cardinal-light';
 import ph_bag_simple_light from '~icons/ph/bag-simple-light';
 import ph_beer_bottle_light from '~icons/ph/beer-bottle-light';
@@ -38,6 +39,7 @@ import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-
 import ph_club_light from '~icons/ph/club-light';
 import ph_copy_light from '~icons/ph/copy-light';
 import ph_copy_simple_light from '~icons/ph/copy-simple-light';
+import ph_corners_out_light from '~icons/ph/corners-out-light';
 import ph_cross_light from '~icons/ph/cross-light';
 import ph_crown_light from '~icons/ph/crown-light';
 import ph_database_light from '~icons/ph/database-light';
@@ -174,6 +176,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-right-light': ph_arrow_u_up_right_light,
 	'ph:arrows-down-up-light': ph_arrows_down_up_light,
 	'ph:arrows-left-right-light': ph_arrows_left_right_light,
+	'ph:arrows-out-light': ph_arrows_out_light,
 	'ph:arrows-out-cardinal-light': ph_arrows_out_cardinal_light,
 	'ph:bag-simple-light': ph_bag_simple_light,
 	'ph:beer-bottle-light': ph_beer_bottle_light,
@@ -201,6 +204,7 @@ const icons: IconMap = {
 	'ph:club-light': ph_club_light,
 	'ph:copy-light': ph_copy_light,
 	'ph:copy-simple-light': ph_copy_simple_light,
+	'ph:corners-out-light': ph_corners_out_light,
 	'ph:cross-light': ph_cross_light,
 	'ph:crown-light': ph_crown_light,
 	'ph:database-light': ph_database_light,

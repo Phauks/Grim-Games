@@ -11,6 +11,7 @@ import ph_arrow_u_up_left_duotone from '~icons/ph/arrow-u-up-left-duotone';
 import ph_arrow_u_up_right_duotone from '~icons/ph/arrow-u-up-right-duotone';
 import ph_arrows_down_up_duotone from '~icons/ph/arrows-down-up-duotone';
 import ph_arrows_left_right_duotone from '~icons/ph/arrows-left-right-duotone';
+import ph_arrows_out_duotone from '~icons/ph/arrows-out-duotone';
 import ph_arrows_out_cardinal_duotone from '~icons/ph/arrows-out-cardinal-duotone';
 import ph_bag_simple_duotone from '~icons/ph/bag-simple-duotone';
 import ph_beer_bottle_duotone from '~icons/ph/beer-bottle-duotone';
@@ -38,6 +39,7 @@ import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwis
 import ph_club_duotone from '~icons/ph/club-duotone';
 import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
+import ph_corners_out_duotone from '~icons/ph/corners-out-duotone';
 import ph_cross_duotone from '~icons/ph/cross-duotone';
 import ph_crown_duotone from '~icons/ph/crown-duotone';
 import ph_database_duotone from '~icons/ph/database-duotone';
@@ -174,6 +176,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-right-duotone': ph_arrow_u_up_right_duotone,
 	'ph:arrows-down-up-duotone': ph_arrows_down_up_duotone,
 	'ph:arrows-left-right-duotone': ph_arrows_left_right_duotone,
+	'ph:arrows-out-duotone': ph_arrows_out_duotone,
 	'ph:arrows-out-cardinal-duotone': ph_arrows_out_cardinal_duotone,
 	'ph:bag-simple-duotone': ph_bag_simple_duotone,
 	'ph:beer-bottle-duotone': ph_beer_bottle_duotone,
@@ -201,6 +204,7 @@ const icons: IconMap = {
 	'ph:club-duotone': ph_club_duotone,
 	'ph:copy-duotone': ph_copy_duotone,
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
+	'ph:corners-out-duotone': ph_corners_out_duotone,
 	'ph:cross-duotone': ph_cross_duotone,
 	'ph:crown-duotone': ph_crown_duotone,
 	'ph:database-duotone': ph_database_duotone,
