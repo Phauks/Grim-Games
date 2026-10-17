@@ -71,6 +71,8 @@ export const day = {
 	'day.aliveLabel': '{count} alive: {good} good, {evil} evil',
 	'day.goodBadge': '{count} good',
 	'day.evilBadge': '{count} evil',
+	'day.ghostVotesBadge': { one: '{count} ghost vote', other: '{count} ghost votes' },
+	'day.ghostVotesLabel': { one: '{count} ghost vote left', other: '{count} ghost votes left' },
 	'day.prevented': 'What didn’t happen',
 	'day.preventedButton': 'What didn’t happen ({count})',
 	'day.preventedChose': 'chose',

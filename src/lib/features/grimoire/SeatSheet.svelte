@@ -917,9 +917,12 @@
 		>
 			Change alignment
 		</Button>
-		<!-- Removing the character is "None" in Change character (Trevor, 2026-10-17). -->
-		<DeleteButton label="Remove seat" onclick={() => fromMenu(() => (removeOpen = true))} />
 	</div>
+	{#snippet headActions()}
+		<!-- Beside the close X, as on every sheet (Trevor, 2026-10-17). Removing the character
+		     is "None" in Change character. -->
+		<DeleteButton label="Remove seat" onclick={() => fromMenu(() => (removeOpen = true))} />
+	{/snippet}
 </Dialog>
 
 <Dialog bind:open={reminderMenuOpen} title="Reminder">
@@ -955,6 +958,8 @@
 		>
 			Return to reminder bank
 		</Button>
+	</div>
+	{#snippet headActions()}
 		<DeleteButton
 			label="Remove reminder"
 			onclick={() =>
@@ -963,7 +968,7 @@
 					moving = undefined;
 				})}
 		/>
-	</div>
+	{/snippet}
 </Dialog>
 
 <SeatChooser

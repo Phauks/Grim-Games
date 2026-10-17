@@ -9,6 +9,7 @@
 		dayReminders,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
+		ghostVotesLeft,
 		livingByTeam,
 		preventedDeaths,
 		type PreventedBecause,
@@ -291,6 +292,7 @@
 	const block = $derived(blockThreshold(g));
 	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
 	const teams = $derived(livingByTeam(g));
+	const ghostVotes = $derived(ghostVotesLeft(g));
 
 	/**
 	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
@@ -370,6 +372,15 @@
 		>
 		<span class="badge evil" data-testid="alive-evil" aria-hidden="true"
 			>{t('day.evilBadge', { count: teams.evil })}</span
+		>
+		<!-- Beside the living, the ghost votes still to use (Trevor, 2026-10-17). -->
+		<span
+			class="badge ghost"
+			role="note"
+			data-testid="ghost-votes"
+			aria-label={t('day.ghostVotesLabel', { count: ghostVotes })}
+			title={t('day.ghostVotesLabel', { count: ghostVotes })}
+			>{t('day.ghostVotesBadge', { count: ghostVotes })}</span
 		>
 		<span
 			class="votes"

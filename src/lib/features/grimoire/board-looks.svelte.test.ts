@@ -20,12 +20,7 @@ describe('board looks', () => {
 			reminders: 'free'
 		});
 		expect(
-			parseBoardLooks({
-				vignetteStrength: 'x',
-				rulesAt: 'nowhere',
-				nameSize: 'big',
-				reminders: 'x'
-			})
+			parseBoardLooks({ vignetteStrength: 'x', rulesAt: 'top', nameSize: 'big', reminders: 'x' })
 		).toEqual(DEFAULT_BOARD_LOOKS);
 	});
 });

@@ -55,6 +55,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	// No characters yet, so no team has anyone.
 	await expect(page.getByTestId('alive-good')).toHaveText('0 good');
 	await expect(page.getByTestId('alive-evil')).toHaveText('0 evil');
+	// Ghost votes still to use sit beside the living (Trevor, 2026-10-17).
+	await expect(page.getByTestId('ghost-votes')).toHaveText('0 ghost votes');
 	// Every section folds away with its caret.
 	const players = day.getByRole('button', { name: 'Players' });
 	await players.tap();
@@ -88,6 +90,7 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	expect(await colour('Seat 2')).toBe(await colour('Seat 1'));
 	await expect(page.getByTestId('announcements')).toContainText('Seat 2 died: Executed');
 	await expect(page.getByTestId('alive-count')).toHaveText('7 alive');
+	await expect(page.getByTestId('ghost-votes')).toHaveText('1 ghost vote');
 
 	await page.reload();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
