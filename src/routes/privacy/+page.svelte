@@ -137,11 +137,11 @@
 				</li>
 				<li>
 					<strong>GitHub.</strong> "Report an issue" and "Report a problem" open GitHub's list of issue
-					forms on github.com. Reporting from the problem log or the Diagnostics page first copies that
-					problem's details or the Diagnostics summary to your clipboard, with the app version and your
-					browser's description, for you to paste in. Web addresses are shortened so no game data goes
-					in, and the summary never holds player names, notes, scripts, games or room codes. Nothing is
-					sent until you submit the form, under your GitHub account.
+					forms on github.com. "Copy and report" in the problem log or on the Diagnostics page first copies
+					that problem's details or the Diagnostics summary to your clipboard, with the app version and
+					your browser's description, for you to paste in. Web addresses are shortened so no game data
+					goes in, and the summary never holds player names, notes, scripts, games or room codes. Nothing
+					is sent until you submit the form, under your GitHub account.
 				</li>
 				<li>
 					<strong>GitHub's public API.</strong> When an update is ready, the update card may ask api.github.com

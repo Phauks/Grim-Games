@@ -19,10 +19,7 @@
 	function copyForReport(error: AppError) {
 		navigator.clipboard
 			.writeText(reportDetails(errorDetails(error), buildInfo, navigator.userAgent))
-			.then(
-				() => toast(t('errors.reportCopied'), t('errors.reportCopiedDetail')),
-				() => {}
-			);
+			.catch(() => toast(t('errors.copyFailed'), t('errors.copyFailedDetail')));
 	}
 
 	async function copy(error: AppError) {

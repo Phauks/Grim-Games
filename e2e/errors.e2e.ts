@@ -38,7 +38,7 @@ test('an uncaught error shows the corner card, and Details offers a scrubbed Git
 	const dialog = page.getByRole('dialog', { name: 'Problems on this device' });
 	await expect(dialog).toBeVisible();
 	await expect(dialog).toContainText('test failure at example.com/room');
-	const report = dialog.getByRole('link', { name: 'Report' });
+	const report = dialog.getByRole('link', { name: 'Copy and report' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	// Every report opens GitHub's issue chooser, with the details copied to paste in.
 	await expect(report).toHaveAttribute('href', CHOOSER);
@@ -92,7 +92,7 @@ test('if the app cannot start, a plain screen shows the error with Reload and Re
 		const button = screen.getByRole('button', { name });
 		expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	}
-	await expect(screen.getByRole('link', { name: 'Report on GitHub' })).toHaveAttribute(
+	await expect(screen.getByRole('link', { name: 'Copy and report on GitHub' })).toHaveAttribute(
 		'href',
 		CHOOSER
 	);
@@ -138,7 +138,7 @@ test('Diagnostics gathers build, device and problems on the device, without game
 	}
 	await expect(panel).toContainText('1 problem');
 
-	const report = panel.getByRole('link', { name: 'Report an issue' });
+	const report = panel.getByRole('link', { name: 'Copy and report' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	await expect(report).toHaveAttribute('href', CHOOSER);
 	const copied = await tapReport(page, report);

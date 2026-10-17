@@ -20,10 +20,9 @@
 
 	/** The chooser can't be prefilled, so Report copies the diagnostics to paste in. */
 	function copyForReport() {
-		navigator.clipboard.writeText(reportDetails(text, buildInfo, navigator.userAgent)).then(
-			() => toast(t('errors.reportCopied'), t('errors.reportCopiedDetail')),
-			() => {}
-		);
+		navigator.clipboard
+			.writeText(reportDetails(text, buildInfo, navigator.userAgent))
+			.catch(() => toast(t('errors.copyFailed'), t('errors.copyFailedDetail')));
 	}
 
 	async function gather() {
