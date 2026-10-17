@@ -63,10 +63,10 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'History' })).toHaveCount(0);
 
-	// Tapping a player asks how they died, stating their state now and after.
+	// Tapping a player asks how they died; no Now/After line (Trevor, 2026-10-17).
 	await seat(page, 'Seat 2').tap();
 	const sheet = page.getByRole('dialog', { name: 'How did Seat 2 die?' });
-	await expect(sheet).toContainText('Now: alive. After: dead, by the cause you tap.');
+	await expect(sheet).not.toContainText('Now:');
 	await expect(sheet.getByRole('button', { name: 'Dead, no cause' })).toHaveCount(0);
 	await sheet.getByRole('button', { name: 'Executed' }).tap();
 	await expect(sheet).toBeHidden();
@@ -97,7 +97,7 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	// A dead player can be marked alive again.
 	await seat(page, 'Seat 2').tap();
 	const revive = page.getByRole('dialog', { name: 'Mark Seat 2 alive?' });
-	await expect(revive).toContainText('Now: dead. After: alive.');
+	await expect(revive).not.toContainText('Now:');
 	await revive.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(revive).toBeHidden();
 

@@ -575,8 +575,10 @@ export function abnormalSinceDawn(game: Game): AbnormalUse[] {
 
 /**
  * Mathematician: how many players' abilities worked abnormally since dawn because of
- * another character (https://wiki.bloodontheclocktower.com/Mathematician), counted from
- * what the Storyteller recorded, listed so they can check it and override.
+ * another character (https://wiki.bloodontheclocktower.com/Mathematician). Once the
+ * Storyteller has put the Mathematician's "Abnormal" reminders on players, the answer is
+ * how many players carry one (their call); until then it is counted from the info they
+ * recorded as abnormal. `abnormal` lists the recorded uses either way, so they can check.
  */
 export function mathematicianAnswer(
 	game: Game,
@@ -584,15 +586,20 @@ export function mathematicianAnswer(
 	characters: CharacterLookup
 ): NightAnswer {
 	const abnormal = abnormalSinceDawn(game);
+	const marked = game.seating.filter((s) =>
+		game.seats[s].reminders.some((r) => r.characterId === 'mathematician' && r.label === 'Abnormal')
+	);
+	const recorded = abnormal.map((u) => u.seatId).filter((s, i, all) => all.indexOf(s) === i);
+	const because = marked.length > 0 ? marked : recorded;
 	return answer(
 		game,
 		seatId,
 		'mathematician',
 		characters,
-		{ kind: 'number', value: abnormal.length },
-		abnormal.map((u) => u.seatId).filter((s, i, all) => all.indexOf(s) === i),
+		{ kind: 'number', value: marked.length > 0 ? marked.length : abnormal.length },
+		because,
 		// Registration only matters to the abilities it recorded as abnormal.
-		{ abnormal, relevant: [] }
+		{ abnormal, relevant: [], facts: because.map((s) => fact(game, s, characters)) }
 	);
 }
 

@@ -569,7 +569,6 @@
 	title={causeSeatDead
 		? t('day.markAliveTitle', { name: game.seatName(causeSeat) })
 		: t('day.howDied', { name: game.seatName(causeSeat) })}
-	description={causeSeatDead ? t('day.markAliveState') : t('day.howDiedState')}
 >
 	<div class="causes">
 		{#if causeSeatDead}

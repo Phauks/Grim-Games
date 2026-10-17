@@ -754,6 +754,29 @@ describe('relevant misregistration and why', () => {
 	});
 });
 
+// https://wiki.bloodontheclocktower.com/Mathematician: the number of players whose
+// ability worked abnormally; the Storyteller marks each with an Abnormal reminder.
+describe('Mathematician Abnormal reminders', () => {
+	it('counts the players carrying Abnormal once any are placed', () => {
+		const { game: g, seats } = game(
+			['mathematician', 'chef', 'empath', 'imp', 'monk'],
+			add(1, 'mathematician', 'Abnormal'),
+			add(2, 'mathematician', 'Abnormal')
+		);
+		const a = mathematicianAnswer(g, seats[0], characters);
+		expect(a).toMatchObject({ kind: 'number', value: 2, because: [seats[1], seats[2]] });
+		expect(a.why.facts.map((f) => [f.seatId, f.characterId])).toEqual([
+			[seats[1], 'chef'],
+			[seats[2], 'empath']
+		]);
+	});
+
+	it('counts recorded abnormal info while no Abnormal reminder is placed', () => {
+		const { game: g, seats } = game(['mathematician', 'chef', 'imp']);
+		expect(mathematicianAnswer(g, seats[0], characters)).toMatchObject({ value: 0, because: [] });
+	});
+});
+
 describe('impaired info', () => {
 	// https://wiki.bloodontheclocktower.com/Undertaker and /Glossary: a poisoned Undertaker
 	// may be shown anything, but the true answer is still worked out.
