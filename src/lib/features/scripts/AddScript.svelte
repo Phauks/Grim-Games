@@ -36,9 +36,14 @@
 		/** Called once a script is saved. */
 		onsaved?: (script: LoadedScript) => void;
 		busy?: boolean;
+		/**
+		 * False where only share links and drops are loaded (Search, once the Library has
+		 * Add script): no button, nothing else changes.
+		 */
+		button?: boolean;
 	}
 
-	let { onsaved, busy = $bindable(false) }: Props = $props();
+	let { onsaved, busy = $bindable(false), button = true }: Props = $props();
 
 	let adding = $state(false);
 	let anchor: HTMLElement | undefined = $state();
@@ -185,19 +190,21 @@
 	ondrop={onDrop}
 />
 
-<span bind:this={anchor}>
-	<Button icon="add" aria-haspopup="dialog" disabled={busy} onclick={() => (adding = true)}
-		>{t('scripts.picker.add')}</Button
-	>
-</span>
+{#if button}
+	<span bind:this={anchor}>
+		<Button icon="add" aria-haspopup="dialog" disabled={busy} onclick={() => (adding = true)}
+			>{t('scripts.picker.add')}</Button
+		>
+	</span>
 
-<Popover bind:open={adding} title={t('scripts.picker.add')} {anchor}>
-	<div class="add">
-		<Button icon="pasteJson" onclick={() => choose('paste')}>{t('scripts.picker.paste')}</Button>
-		<Button icon="uploadFile" onclick={() => choose('file')}>{t('scripts.picker.file')}</Button>
-		<Button icon="pasteLink" onclick={() => choose('link')}>{t('scripts.picker.link')}</Button>
-	</div>
-</Popover>
+	<Popover bind:open={adding} title={t('scripts.picker.add')} {anchor}>
+		<div class="add">
+			<Button icon="pasteJson" onclick={() => choose('paste')}>{t('scripts.picker.paste')}</Button>
+			<Button icon="uploadFile" onclick={() => choose('file')}>{t('scripts.picker.file')}</Button>
+			<Button icon="pasteLink" onclick={() => choose('link')}>{t('scripts.picker.link')}</Button>
+		</div>
+	</Popover>
+{/if}
 
 <!-- Not limited to application/json: some iPad and Android file providers don't label
      .json files with that type, which greyed them out in Pocket Grimoire (PG 126, PG 162). -->
