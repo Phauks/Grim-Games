@@ -70,6 +70,7 @@ import ph_hard_drives_fill from '~icons/ph/hard-drives-fill';
 import ph_heart_fill from '~icons/ph/heart-fill';
 import ph_heartbeat_fill from '~icons/ph/heartbeat-fill';
 import ph_hexagon_fill from '~icons/ph/hexagon-fill';
+import ph_hourglass_fill from '~icons/ph/hourglass-fill';
 import ph_house_fill from '~icons/ph/house-fill';
 import ph_house_simple_fill from '~icons/ph/house-simple-fill';
 import ph_identification_card_fill from '~icons/ph/identification-card-fill';
@@ -91,6 +92,8 @@ import ph_note_pencil_fill from '~icons/ph/note-pencil-fill';
 import ph_notepad_fill from '~icons/ph/notepad-fill';
 import ph_paint_brush_fill from '~icons/ph/paint-brush-fill';
 import ph_palette_fill from '~icons/ph/palette-fill';
+import ph_pause_fill from '~icons/ph/pause-fill';
+import ph_pause_circle_fill from '~icons/ph/pause-circle-fill';
 import ph_pen_nib_fill from '~icons/ph/pen-nib-fill';
 import ph_pencil_simple_fill from '~icons/ph/pencil-simple-fill';
 import ph_pencil_simple_line_fill from '~icons/ph/pencil-simple-line-fill';
@@ -129,6 +132,7 @@ import ph_swap_fill from '~icons/ph/swap-fill';
 import ph_tag_fill from '~icons/ph/tag-fill';
 import ph_text_aa_fill from '~icons/ph/text-aa-fill';
 import ph_text_t_fill from '~icons/ph/text-t-fill';
+import ph_timer_fill from '~icons/ph/timer-fill';
 import ph_tote_fill from '~icons/ph/tote-fill';
 import ph_trash_fill from '~icons/ph/trash-fill';
 import ph_trash_simple_fill from '~icons/ph/trash-simple-fill';
@@ -219,6 +223,7 @@ const icons: IconMap = {
 	'ph:heart-fill': ph_heart_fill,
 	'ph:heartbeat-fill': ph_heartbeat_fill,
 	'ph:hexagon-fill': ph_hexagon_fill,
+	'ph:hourglass-fill': ph_hourglass_fill,
 	'ph:house-fill': ph_house_fill,
 	'ph:house-simple-fill': ph_house_simple_fill,
 	'ph:identification-card-fill': ph_identification_card_fill,
@@ -240,6 +245,8 @@ const icons: IconMap = {
 	'ph:notepad-fill': ph_notepad_fill,
 	'ph:paint-brush-fill': ph_paint_brush_fill,
 	'ph:palette-fill': ph_palette_fill,
+	'ph:pause-fill': ph_pause_fill,
+	'ph:pause-circle-fill': ph_pause_circle_fill,
 	'ph:pen-nib-fill': ph_pen_nib_fill,
 	'ph:pencil-simple-fill': ph_pencil_simple_fill,
 	'ph:pencil-simple-line-fill': ph_pencil_simple_line_fill,
@@ -278,6 +285,7 @@ const icons: IconMap = {
 	'ph:tag-fill': ph_tag_fill,
 	'ph:text-aa-fill': ph_text_aa_fill,
 	'ph:text-t-fill': ph_text_t_fill,
+	'ph:timer-fill': ph_timer_fill,
 	'ph:tote-fill': ph_tote_fill,
 	'ph:trash-fill': ph_trash_fill,
 	'ph:trash-simple-fill': ph_trash_simple_fill,

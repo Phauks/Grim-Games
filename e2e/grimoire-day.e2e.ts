@@ -48,7 +48,6 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	const day = page.getByRole('dialog', { name: 'Day' });
 	await expect(day).toBeVisible();
 	await expect(page).toHaveURL(board);
-	// Announcements come first; before anything happens there is none (Trevor).
 	// The living-player count is always first (Trevor, 2026-10-17).
 	await expect(page.getByTestId('announcements')).toHaveText('8 players alive');
 	// Every section folds away with its caret.
@@ -138,4 +137,56 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 	await expect(seat(page, 'Seat 3')).toHaveAttribute('data-dead', 'true');
 	// 7 of 9 alive (the Thief exiled, Seat 3 dead): 4 votes.
 	await expect(page.getByTestId('votes-needed')).toHaveAttribute('aria-label', /\(7 alive\)$/);
+});
+
+// Trevor, 2026-10-17: a day timer, usually 30 seconds per living player.
+test('the day timer starts at 30 seconds per living player and signals time up', async ({
+	page
+}) => {
+	await page.clock.install();
+	await page.addInitScript(() => {
+		(window as unknown as { vibrated: number }).vibrated = 0;
+		navigator.vibrate = () => {
+			(window as unknown as { vibrated: number }).vibrated++;
+			return true;
+		};
+	});
+	await startGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const timer = page.getByTestId('day-timer');
+	const clock = timer.getByRole('timer');
+	// 8 players alive: 4 minutes.
+	await expect(clock).toHaveText('4:00');
+	await expect(timer.getByRole('button', { name: 'Reset timer' })).toBeDisabled();
+	// A death before it starts follows the living players.
+	await seat(page, 'Seat 2').tap();
+	await page
+		.getByRole('dialog', { name: 'How did Seat 2 die?' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await expect(clock).toHaveText('3:30');
+	// Changed by hand, before or while it runs.
+	await timer.getByRole('button', { name: '30 seconds less' }).tap();
+	await expect(clock).toHaveText('3:00');
+	const box = await timer.boundingBox();
+	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await page.clock.runFor(10_000);
+	await expect(clock).toHaveText('2:50');
+	// Ticking never moves anything.
+	expect(await timer.boundingBox()).toEqual(box);
+	await timer.getByRole('button', { name: 'Pause timer' }).tap();
+	await page.clock.runFor(60_000);
+	await expect(clock).toHaveText('2:50');
+	await timer.getByRole('button', { name: '30 seconds more' }).tap();
+	await expect(clock).toHaveText('3:20');
+	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await page.clock.runFor(201_000);
+	await expect(clock).toHaveText('0:00');
+	await expect(timer).toHaveAttribute('data-done', '');
+	await expect(timer.getByRole('button', { name: 'Start timer' })).toBeDisabled();
+	expect(await page.evaluate(() => (window as unknown as { vibrated: number }).vibrated)).toBe(1);
+	// Reset: back to 30 seconds per living player (7 alive).
+	await timer.getByRole('button', { name: 'Reset timer' }).tap();
+	await expect(clock).toHaveText('3:30');
+	await expect(timer).not.toHaveAttribute('data-done', '');
 });

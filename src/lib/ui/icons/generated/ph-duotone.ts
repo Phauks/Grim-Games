@@ -70,6 +70,7 @@ import ph_hard_drives_duotone from '~icons/ph/hard-drives-duotone';
 import ph_heart_duotone from '~icons/ph/heart-duotone';
 import ph_heartbeat_duotone from '~icons/ph/heartbeat-duotone';
 import ph_hexagon_duotone from '~icons/ph/hexagon-duotone';
+import ph_hourglass_duotone from '~icons/ph/hourglass-duotone';
 import ph_house_duotone from '~icons/ph/house-duotone';
 import ph_house_simple_duotone from '~icons/ph/house-simple-duotone';
 import ph_identification_card_duotone from '~icons/ph/identification-card-duotone';
@@ -91,6 +92,8 @@ import ph_note_pencil_duotone from '~icons/ph/note-pencil-duotone';
 import ph_notepad_duotone from '~icons/ph/notepad-duotone';
 import ph_paint_brush_duotone from '~icons/ph/paint-brush-duotone';
 import ph_palette_duotone from '~icons/ph/palette-duotone';
+import ph_pause_duotone from '~icons/ph/pause-duotone';
+import ph_pause_circle_duotone from '~icons/ph/pause-circle-duotone';
 import ph_pen_nib_duotone from '~icons/ph/pen-nib-duotone';
 import ph_pencil_simple_duotone from '~icons/ph/pencil-simple-duotone';
 import ph_pencil_simple_line_duotone from '~icons/ph/pencil-simple-line-duotone';
@@ -129,6 +132,7 @@ import ph_swap_duotone from '~icons/ph/swap-duotone';
 import ph_tag_duotone from '~icons/ph/tag-duotone';
 import ph_text_aa_duotone from '~icons/ph/text-aa-duotone';
 import ph_text_t_duotone from '~icons/ph/text-t-duotone';
+import ph_timer_duotone from '~icons/ph/timer-duotone';
 import ph_tote_duotone from '~icons/ph/tote-duotone';
 import ph_trash_duotone from '~icons/ph/trash-duotone';
 import ph_trash_simple_duotone from '~icons/ph/trash-simple-duotone';
@@ -219,6 +223,7 @@ const icons: IconMap = {
 	'ph:heart-duotone': ph_heart_duotone,
 	'ph:heartbeat-duotone': ph_heartbeat_duotone,
 	'ph:hexagon-duotone': ph_hexagon_duotone,
+	'ph:hourglass-duotone': ph_hourglass_duotone,
 	'ph:house-duotone': ph_house_duotone,
 	'ph:house-simple-duotone': ph_house_simple_duotone,
 	'ph:identification-card-duotone': ph_identification_card_duotone,
@@ -240,6 +245,8 @@ const icons: IconMap = {
 	'ph:notepad-duotone': ph_notepad_duotone,
 	'ph:paint-brush-duotone': ph_paint_brush_duotone,
 	'ph:palette-duotone': ph_palette_duotone,
+	'ph:pause-duotone': ph_pause_duotone,
+	'ph:pause-circle-duotone': ph_pause_circle_duotone,
 	'ph:pen-nib-duotone': ph_pen_nib_duotone,
 	'ph:pencil-simple-duotone': ph_pencil_simple_duotone,
 	'ph:pencil-simple-line-duotone': ph_pencil_simple_line_duotone,
@@ -278,6 +285,7 @@ const icons: IconMap = {
 	'ph:tag-duotone': ph_tag_duotone,
 	'ph:text-aa-duotone': ph_text_aa_duotone,
 	'ph:text-t-duotone': ph_text_t_duotone,
+	'ph:timer-duotone': ph_timer_duotone,
 	'ph:tote-duotone': ph_tote_duotone,
 	'ph:trash-duotone': ph_trash_duotone,
 	'ph:trash-simple-duotone': ph_trash_simple_duotone,

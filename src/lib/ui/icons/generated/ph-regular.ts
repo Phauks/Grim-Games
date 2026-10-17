@@ -70,6 +70,7 @@ import ph_hard_drives from '~icons/ph/hard-drives';
 import ph_heart from '~icons/ph/heart';
 import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_hexagon from '~icons/ph/hexagon';
+import ph_hourglass from '~icons/ph/hourglass';
 import ph_house from '~icons/ph/house';
 import ph_house_simple from '~icons/ph/house-simple';
 import ph_identification_card from '~icons/ph/identification-card';
@@ -91,6 +92,8 @@ import ph_note_pencil from '~icons/ph/note-pencil';
 import ph_notepad from '~icons/ph/notepad';
 import ph_paint_brush from '~icons/ph/paint-brush';
 import ph_palette from '~icons/ph/palette';
+import ph_pause from '~icons/ph/pause';
+import ph_pause_circle from '~icons/ph/pause-circle';
 import ph_pen_nib from '~icons/ph/pen-nib';
 import ph_pencil_simple from '~icons/ph/pencil-simple';
 import ph_pencil_simple_line from '~icons/ph/pencil-simple-line';
@@ -129,6 +132,7 @@ import ph_swap from '~icons/ph/swap';
 import ph_tag from '~icons/ph/tag';
 import ph_text_aa from '~icons/ph/text-aa';
 import ph_text_t from '~icons/ph/text-t';
+import ph_timer from '~icons/ph/timer';
 import ph_tote from '~icons/ph/tote';
 import ph_trash from '~icons/ph/trash';
 import ph_trash_simple from '~icons/ph/trash-simple';
@@ -219,6 +223,7 @@ const icons: IconMap = {
 	'ph:heart': ph_heart,
 	'ph:heartbeat': ph_heartbeat,
 	'ph:hexagon': ph_hexagon,
+	'ph:hourglass': ph_hourglass,
 	'ph:house': ph_house,
 	'ph:house-simple': ph_house_simple,
 	'ph:identification-card': ph_identification_card,
@@ -240,6 +245,8 @@ const icons: IconMap = {
 	'ph:notepad': ph_notepad,
 	'ph:paint-brush': ph_paint_brush,
 	'ph:palette': ph_palette,
+	'ph:pause': ph_pause,
+	'ph:pause-circle': ph_pause_circle,
 	'ph:pen-nib': ph_pen_nib,
 	'ph:pencil-simple': ph_pencil_simple,
 	'ph:pencil-simple-line': ph_pencil_simple_line,
@@ -278,6 +285,7 @@ const icons: IconMap = {
 	'ph:tag': ph_tag,
 	'ph:text-aa': ph_text_aa,
 	'ph:text-t': ph_text_t,
+	'ph:timer': ph_timer,
 	'ph:tote': ph_tote,
 	'ph:trash': ph_trash,
 	'ph:trash-simple': ph_trash_simple,

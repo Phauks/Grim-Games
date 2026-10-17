@@ -42,6 +42,10 @@ export const ICON_SLOTS = {
 	add: { label: 'Add', choices: ['ph:plus', 'ph:plus-circle'] },
 	minus: { label: 'Minus', choices: ['ph:minus', 'ph:minus-circle'] },
 	resume: { label: 'Resume game', choices: ['ph:play-circle', 'ph:play'] },
+	/** The day timer (Trevor, 2026-10-17). */
+	timerStart: { label: 'Start timer', choices: ['ph:play', 'ph:play-circle'] },
+	timerPause: { label: 'Pause timer', choices: ['ph:pause', 'ph:pause-circle'] },
+	timer: { label: 'Timer', choices: ['ph:timer', 'ph:hourglass'] },
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },

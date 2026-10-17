@@ -70,6 +70,7 @@ import ph_hard_drives_light from '~icons/ph/hard-drives-light';
 import ph_heart_light from '~icons/ph/heart-light';
 import ph_heartbeat_light from '~icons/ph/heartbeat-light';
 import ph_hexagon_light from '~icons/ph/hexagon-light';
+import ph_hourglass_light from '~icons/ph/hourglass-light';
 import ph_house_light from '~icons/ph/house-light';
 import ph_house_simple_light from '~icons/ph/house-simple-light';
 import ph_identification_card_light from '~icons/ph/identification-card-light';
@@ -91,6 +92,8 @@ import ph_note_pencil_light from '~icons/ph/note-pencil-light';
 import ph_notepad_light from '~icons/ph/notepad-light';
 import ph_paint_brush_light from '~icons/ph/paint-brush-light';
 import ph_palette_light from '~icons/ph/palette-light';
+import ph_pause_light from '~icons/ph/pause-light';
+import ph_pause_circle_light from '~icons/ph/pause-circle-light';
 import ph_pen_nib_light from '~icons/ph/pen-nib-light';
 import ph_pencil_simple_light from '~icons/ph/pencil-simple-light';
 import ph_pencil_simple_line_light from '~icons/ph/pencil-simple-line-light';
@@ -129,6 +132,7 @@ import ph_swap_light from '~icons/ph/swap-light';
 import ph_tag_light from '~icons/ph/tag-light';
 import ph_text_aa_light from '~icons/ph/text-aa-light';
 import ph_text_t_light from '~icons/ph/text-t-light';
+import ph_timer_light from '~icons/ph/timer-light';
 import ph_tote_light from '~icons/ph/tote-light';
 import ph_trash_light from '~icons/ph/trash-light';
 import ph_trash_simple_light from '~icons/ph/trash-simple-light';
@@ -219,6 +223,7 @@ const icons: IconMap = {
 	'ph:heart-light': ph_heart_light,
 	'ph:heartbeat-light': ph_heartbeat_light,
 	'ph:hexagon-light': ph_hexagon_light,
+	'ph:hourglass-light': ph_hourglass_light,
 	'ph:house-light': ph_house_light,
 	'ph:house-simple-light': ph_house_simple_light,
 	'ph:identification-card-light': ph_identification_card_light,
@@ -240,6 +245,8 @@ const icons: IconMap = {
 	'ph:notepad-light': ph_notepad_light,
 	'ph:paint-brush-light': ph_paint_brush_light,
 	'ph:palette-light': ph_palette_light,
+	'ph:pause-light': ph_pause_light,
+	'ph:pause-circle-light': ph_pause_circle_light,
 	'ph:pen-nib-light': ph_pen_nib_light,
 	'ph:pencil-simple-light': ph_pencil_simple_light,
 	'ph:pencil-simple-line-light': ph_pencil_simple_line_light,
@@ -278,6 +285,7 @@ const icons: IconMap = {
 	'ph:tag-light': ph_tag_light,
 	'ph:text-aa-light': ph_text_aa_light,
 	'ph:text-t-light': ph_text_t_light,
+	'ph:timer-light': ph_timer_light,
 	'ph:tote-light': ph_tote_light,
 	'ph:trash-light': ph_trash_light,
 	'ph:trash-simple-light': ph_trash_simple_light,

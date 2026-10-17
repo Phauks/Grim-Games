@@ -70,6 +70,7 @@ import ph_hard_drives_bold from '~icons/ph/hard-drives-bold';
 import ph_heart_bold from '~icons/ph/heart-bold';
 import ph_heartbeat_bold from '~icons/ph/heartbeat-bold';
 import ph_hexagon_bold from '~icons/ph/hexagon-bold';
+import ph_hourglass_bold from '~icons/ph/hourglass-bold';
 import ph_house_bold from '~icons/ph/house-bold';
 import ph_house_simple_bold from '~icons/ph/house-simple-bold';
 import ph_identification_card_bold from '~icons/ph/identification-card-bold';
@@ -91,6 +92,8 @@ import ph_note_pencil_bold from '~icons/ph/note-pencil-bold';
 import ph_notepad_bold from '~icons/ph/notepad-bold';
 import ph_paint_brush_bold from '~icons/ph/paint-brush-bold';
 import ph_palette_bold from '~icons/ph/palette-bold';
+import ph_pause_bold from '~icons/ph/pause-bold';
+import ph_pause_circle_bold from '~icons/ph/pause-circle-bold';
 import ph_pen_nib_bold from '~icons/ph/pen-nib-bold';
 import ph_pencil_simple_bold from '~icons/ph/pencil-simple-bold';
 import ph_pencil_simple_line_bold from '~icons/ph/pencil-simple-line-bold';
@@ -129,6 +132,7 @@ import ph_swap_bold from '~icons/ph/swap-bold';
 import ph_tag_bold from '~icons/ph/tag-bold';
 import ph_text_aa_bold from '~icons/ph/text-aa-bold';
 import ph_text_t_bold from '~icons/ph/text-t-bold';
+import ph_timer_bold from '~icons/ph/timer-bold';
 import ph_tote_bold from '~icons/ph/tote-bold';
 import ph_trash_bold from '~icons/ph/trash-bold';
 import ph_trash_simple_bold from '~icons/ph/trash-simple-bold';
@@ -219,6 +223,7 @@ const icons: IconMap = {
 	'ph:heart-bold': ph_heart_bold,
 	'ph:heartbeat-bold': ph_heartbeat_bold,
 	'ph:hexagon-bold': ph_hexagon_bold,
+	'ph:hourglass-bold': ph_hourglass_bold,
 	'ph:house-bold': ph_house_bold,
 	'ph:house-simple-bold': ph_house_simple_bold,
 	'ph:identification-card-bold': ph_identification_card_bold,
@@ -240,6 +245,8 @@ const icons: IconMap = {
 	'ph:notepad-bold': ph_notepad_bold,
 	'ph:paint-brush-bold': ph_paint_brush_bold,
 	'ph:palette-bold': ph_palette_bold,
+	'ph:pause-bold': ph_pause_bold,
+	'ph:pause-circle-bold': ph_pause_circle_bold,
 	'ph:pen-nib-bold': ph_pen_nib_bold,
 	'ph:pencil-simple-bold': ph_pencil_simple_bold,
 	'ph:pencil-simple-line-bold': ph_pencil_simple_line_bold,
@@ -278,6 +285,7 @@ const icons: IconMap = {
 	'ph:tag-bold': ph_tag_bold,
 	'ph:text-aa-bold': ph_text_aa_bold,
 	'ph:text-t-bold': ph_text_t_bold,
+	'ph:timer-bold': ph_timer_bold,
 	'ph:tote-bold': ph_tote_bold,
 	'ph:trash-bold': ph_trash_bold,
 	'ph:trash-simple-bold': ph_trash_simple_bold,

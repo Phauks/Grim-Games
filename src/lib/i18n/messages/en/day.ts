@@ -50,6 +50,12 @@ export const day = {
 	'day.unknownSeat': 'Seat ?',
 	'day.noCharacter': 'No character',
 	'day.announcements': 'Announcements',
+	'day.timer': 'Day timer',
+	'day.timerStart': 'Start timer',
+	'day.timerPause': 'Pause timer',
+	'day.timerReset': 'Reset timer',
+	'day.timerLess': '30 seconds less',
+	'day.timerMore': '30 seconds more',
 	'day.aliveCount': {
 		one: '{count} player alive',
 		other: '{count} players alive'

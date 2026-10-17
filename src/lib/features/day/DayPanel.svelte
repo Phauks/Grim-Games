@@ -31,8 +31,11 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { dayTimers } from '#lib/core/rules/index.ts';
+	import { liveDayTimer as timer } from './day-timer.svelte.ts';
 	import type { DayPort } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
 
@@ -285,6 +288,9 @@
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g));
 
+	// The day timer: 30 seconds per living player until started or changed (Trevor, 2026-10-17).
+	$effect(() => timer.follow(block.alive));
+
 	/**
 	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
 	 * night that just ended (the Vizier, the Leviathan), for characters in play, with TPI's
@@ -348,6 +354,33 @@
 			from who is alive now, so a death mid-day updates it. Nominations and votes are not
 			tracked, so "more than the player on the block" is left to the Storyteller.
 		-->
+		<!-- The day timer (Trevor, 2026-10-17): started by hand; vibrates and flashes at 0:00. -->
+		<div
+			class="timer"
+			role="group"
+			aria-label={t('day.timer')}
+			data-testid="day-timer"
+			data-running={timer.running ? '' : undefined}
+			data-done={timer.done ? '' : undefined}
+		>
+			<IconButton icon="minus" label={t('day.timerLess')} onclick={() => timer.adjust(-1)} />
+			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
+				>{dayTimers.formatClock(timer.remaining)}</span
+			>
+			<IconButton icon="add" label={t('day.timerMore')} onclick={() => timer.adjust(1)} />
+			<IconButton
+				icon={timer.running ? 'timerPause' : 'timerStart'}
+				label={timer.running ? t('day.timerPause') : t('day.timerStart')}
+				disabled={timer.done}
+				onclick={() => timer.toggle()}
+			/>
+			<IconButton
+				icon="reset"
+				label={t('day.timerReset')}
+				disabled={timer.fresh}
+				onclick={() => timer.reset(block.alive)}
+			/>
+		</div>
 		<span
 			class="votes"
 			role="note"
@@ -802,6 +835,36 @@
 		border-color: var(--heading);
 	}
 	/* Fixed width (room for "10 votes"), so the number changing never moves anything. */
+	.timer {
+		display: inline-flex;
+		align-items: center;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+	}
+	/* Fixed width in digits, so ticking never moves the buttons. */
+	.clock {
+		min-width: 5ch;
+		font-variant-numeric: tabular-nums;
+		font-weight: 700;
+		text-align: center;
+	}
+	.timer[data-done] {
+		border-color: var(--evil);
+	}
+	.timer[data-done] .clock {
+		color: var(--evil);
+		animation: time-up 1s steps(2, jump-none) infinite;
+	}
+	@keyframes time-up {
+		to {
+			opacity: 0.3;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.timer[data-done] .clock {
+			animation: none;
+		}
+	}
 	.votes {
 		display: inline-flex;
 		align-items: center;

@@ -26,6 +26,7 @@ export * from './reference-table.ts';
 export * from './bag-plan.ts';
 export * from './traveller-alignment.ts';
 export * from './voting.ts';
+export * as dayTimers from './day-timer.ts';
 export * from './reminder-movement.ts';
 export * from './reminder-targets.ts';
 export * from './night-alerts.ts';
