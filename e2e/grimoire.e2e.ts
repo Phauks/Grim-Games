@@ -264,14 +264,18 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 	// Or small along the edge (Trevor, 2026-10-17), set beside the background.
 	await menu(page, 'Background');
 	const looks = page.getByRole('dialog', { name: 'Background' });
-	await looks.getByText('Edge, smaller', { exact: true }).tap();
+	// A drop-down (Trevor, 2026-10-17).
+	await looks.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
+	await page.getByRole('option', { name: 'Edge, smaller' }).tap();
 	await looks.getByRole('button', { name: 'Close' }).tap();
 	await expect(
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
 	).toBeVisible();
 	await fabled.tap();
+	// The trash sits beside the close X (Trevor, 2026-10-17).
 	await page
 		.getByRole('dialog', { name: 'Spirit of Ivory' })
+		.locator('.head-actions')
 		.getByRole('button', { name: 'Remove from the game' })
 		.tap();
 	await page
@@ -1125,9 +1129,16 @@ test('the board background can be an image from the device, kept after a reload'
 	await menu(page, 'Board and tokens');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await expect(settings.getByRole('heading', { name: 'Board and tokens', level: 2 })).toBeVisible();
+	// Only that section, with no way back into the full Settings list (Trevor, 2026-10-17).
+	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toHaveCount(0);
+	await expect(settings.getByRole('button', { name: 'All settings' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await expect(page.getByTestId('board-background')).toBeVisible();
+	// The app's own Settings still lists every section.
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeAttached();
 });
 
 test('info tokens open from the toolbar and show player cards at once', async ({ page }) => {
@@ -2213,4 +2224,41 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await focusMode(page, 'Only these');
 	await expect(tokens).toHaveCount(1);
 	await expect(tokens.first()).toContainText('Paid');
+});
+
+test('the Fabled and Loric can sit grouped in a corner, listed together when tapped', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const name of ['Spirit of Ivory', 'Angel']) {
+		await menu(page, 'Add Fabled or Loric');
+		await page
+			.getByRole('dialog', { name: 'Add Fabled or Loric' })
+			.getByRole('button', { name, exact: true })
+			.tap();
+	}
+	// The choice is on the Fabled's own sheet (Trevor, 2026-10-17).
+	await page
+		.getByRole('list', { name: 'Fabled and Loric' })
+		.getByRole('button', { name: 'Angel' })
+		.tap();
+	const angel = page.getByRole('dialog', { name: 'Angel' });
+	await angel.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
+	await page.getByRole('option', { name: 'Corner, grouped' }).tap();
+	await angel.getByRole('button', { name: 'Close' }).tap();
+
+	const stack = page.getByRole('button', { name: 'Fabled and Loric: 2' });
+	await expect(stack).toBeVisible();
+	await expect(page.getByRole('list', { name: 'Fabled and Loric' })).toHaveCount(0);
+	await stack.tap();
+	const group = page.getByRole('dialog', { name: 'Fabled and Loric' });
+	await expect(group.locator('.rules-group > li')).toHaveCount(2);
+	await group.getByRole('button', { name: 'Remove Angel from the game' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Remove from the game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(group.locator('.rules-group > li')).toHaveCount(1);
+	await group.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByRole('button', { name: 'Fabled and Loric: 1' })).toBeVisible();
 });

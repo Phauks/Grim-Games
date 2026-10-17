@@ -14,7 +14,7 @@
 
 	/**
 	 * Everything about how the grimoire board and its tokens look (Trevor, 2026-10-17), also
-	 * opened on its own from the board's menu with `settingsDialog.show('board')`.
+	 * opened on its own from the board's menu with `settingsDialog.showOnly('board')`.
 	 */
 	const assistance = $derived(preferences.current.assistance);
 </script>

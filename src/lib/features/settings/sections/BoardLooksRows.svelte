@@ -44,7 +44,8 @@
 	value={boardLooks.current.rulesAt}
 	options={[
 		{ value: 'middle', label: t('settings.rulesAt.middle') },
-		{ value: 'edge', label: t('settings.rulesAt.edge') }
+		{ value: 'edge', label: t('settings.rulesAt.edge') },
+		{ value: 'corner', label: t('settings.rulesAt.corner') }
 	]}
 	defaultValue={DEFAULT_BOARD_LOOKS.rulesAt}
 	onChange={(rulesAt) => boardLooks.update({ rulesAt })}
