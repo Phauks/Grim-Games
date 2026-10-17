@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { onMount } from 'svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
@@ -162,9 +163,7 @@
 					<Button variant="quiet" onclick={() => location.assign(EXPORT_PATH)}
 						>{t('account.data.download')}</Button
 					>
-					<Button variant="quiet" icon="remove" onclick={() => (confirmDelete = true)}
-						>{t('account.data.delete')}</Button
-					>
+					<DeleteButton label={t('account.data.delete')} onclick={() => (confirmDelete = true)} />
 				</div>
 			</section>
 		{:else}

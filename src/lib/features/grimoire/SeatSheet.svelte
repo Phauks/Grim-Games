@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
@@ -907,6 +908,7 @@
 			Change alignment
 		</Button>
 		<!-- Destructive, so red (Trevor, 2026-10-16). -->
+		<!-- eslint-disable-next-line grim/delete-button -- two bare trash cans in one menu can't be told apart; the board thread is placing them -->
 		<Button
 			variant="danger-quiet"
 			icon="remove"
@@ -915,6 +917,7 @@
 		>
 			Remove character
 		</Button>
+		<!-- eslint-disable-next-line grim/delete-button -- as above -->
 		<Button
 			variant="danger-quiet"
 			icon="remove"
@@ -957,17 +960,14 @@
 		>
 			Return to reminder bank
 		</Button>
-		<Button
-			variant="quiet"
-			icon="remove"
+		<DeleteButton
+			label="Remove reminder"
 			onclick={() =>
 				fromMenu(() => {
 					if (moving) moveConfirm?.requestReturn(moving);
 					moving = undefined;
 				})}
-		>
-			Remove
-		</Button>
+		/>
 	</div>
 </Dialog>
 

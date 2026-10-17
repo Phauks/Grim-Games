@@ -1,0 +1,27 @@
+/** History: ended games and the stats worked out from them (Trevor, 2026-10-16). */
+export const history = {
+	'history.pageTitle': 'History · Grim-Games',
+	'history.summary': 'Summary',
+	'history.games': 'Games',
+	'history.goodWins': 'Good won',
+	'history.evilWins': 'Evil won',
+	'history.averageDays': 'Average days',
+	'history.averagePlayers': 'Average players',
+	'history.scripts': 'Scripts',
+	'history.characters': 'Characters',
+	'history.players': 'Players',
+	'history.script': 'Script',
+	'history.character': 'Character',
+	'history.player': 'Player',
+	'history.type': 'Type',
+	'history.good': 'Good',
+	'history.evil': 'Evil',
+	'history.wins': 'Wins',
+	'history.winRate': 'Win rate',
+	'history.deaths': 'Deaths',
+	'history.filter': 'Filter',
+	'history.filterLabel': 'Filter {column}',
+	'history.allTypes': 'All types',
+	'history.noMatch': 'None match.',
+	'history.byAuthor': 'by {author}'
+} as const;

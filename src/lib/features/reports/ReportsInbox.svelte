@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { onMount } from 'svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -193,11 +194,7 @@
 	{/if}
 	{#snippet headActions()}
 		<span class="danger">
-			<IconButton
-				icon="remove"
-				label={t('reports.delete')}
-				onclick={() => (confirmDelete = true)}
-			/>
+			<DeleteButton label={t('reports.delete')} onclick={() => (confirmDelete = true)} />
 		</span>
 	{/snippet}
 </Dialog>

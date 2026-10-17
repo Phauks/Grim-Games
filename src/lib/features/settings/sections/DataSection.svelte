@@ -1,10 +1,10 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
@@ -123,12 +123,11 @@
 				/>
 				{t('settings.storageSelectAll')}
 			</label>
-			<Button
-				variant="danger-quiet"
-				icon="remove"
+			<DeleteButton
+				label={t('settings.storageClearSelected')}
 				disabled={selected.size === 0}
-				onclick={() => (confirmOpen = true)}>{t('settings.storageClearSelected')}</Button
-			>
+				onclick={() => (confirmOpen = true)}
+			/>
 		</div>
 		<DataTable
 			label={t('settings.storageTable')}

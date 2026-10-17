@@ -221,7 +221,7 @@ function writeEnded(all: Record<string, EndedGame>): void {
 }
 
 /**
- * Ended games: moved out of Continue and Resume into Previous games on this device. The game
+ * Ended games: moved out of Continue and Resume into History on this device. The game
  * itself stays saved, so reopening it puts it back.
  */
 export const endedGames = {

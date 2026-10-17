@@ -162,7 +162,23 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 
 	await page.getByRole('button', { name: /^My bluff/ }).tap();
 	sheet = page.getByRole('dialog', { name: 'Note' });
-	await sheet.getByRole('button', { name: 'Delete note' }).tap();
+	// Every delete is the red trash can alone, no text (Trevor, 2026-10-17).
+	const del = sheet.getByRole('button', { name: 'Delete note' });
+	await expect(del).toHaveText('');
+	await expect(del.locator('[data-icon]')).toBeVisible();
+	const box = (await del.boundingBox())!;
+	expect(box.width).toBeGreaterThanOrEqual(44);
+	expect(box.height).toBeGreaterThanOrEqual(44);
+	const colours = await del.evaluate((el) => {
+		const probe = document.createElement('span');
+		probe.style.color = 'var(--evil)';
+		el.append(probe);
+		const evil = getComputedStyle(probe).color;
+		probe.remove();
+		return { own: getComputedStyle(el).color, evil };
+	});
+	expect(colours.own).toBe(colours.evil);
+	await del.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Delete this note?' });
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.locator('[data-note]')).toHaveCount(1);

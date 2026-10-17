@@ -35,8 +35,6 @@ import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_cat_bold from '~icons/ph/cat-bold';
 import ph_check_bold from '~icons/ph/check-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
-import ph_clock_clockwise_bold from '~icons/ph/clock-clockwise-bold';
-import ph_clock_countdown_bold from '~icons/ph/clock-countdown-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
@@ -83,7 +81,6 @@ import ph_heart_bold from '~icons/ph/heart-bold';
 import ph_heartbeat_bold from '~icons/ph/heartbeat-bold';
 import ph_hexagon_bold from '~icons/ph/hexagon-bold';
 import ph_hourglass_bold from '~icons/ph/hourglass-bold';
-import ph_hourglass_low_bold from '~icons/ph/hourglass-low-bold';
 import ph_house_bold from '~icons/ph/house-bold';
 import ph_house_simple_bold from '~icons/ph/house-simple-bold';
 import ph_identification_card_bold from '~icons/ph/identification-card-bold';
@@ -204,8 +201,6 @@ const icons: IconMap = {
 	'ph:cat-bold': ph_cat_bold,
 	'ph:check-bold': ph_check_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
-	'ph:clock-clockwise-bold': ph_clock_clockwise_bold,
-	'ph:clock-countdown-bold': ph_clock_countdown_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
 	'ph:copy-bold': ph_copy_bold,
@@ -252,7 +247,6 @@ const icons: IconMap = {
 	'ph:heartbeat-bold': ph_heartbeat_bold,
 	'ph:hexagon-bold': ph_hexagon_bold,
 	'ph:hourglass-bold': ph_hourglass_bold,
-	'ph:hourglass-low-bold': ph_hourglass_low_bold,
 	'ph:house-bold': ph_house_bold,
 	'ph:house-simple-bold': ph_house_simple_bold,
 	'ph:identification-card-bold': ph_identification_card_bold,

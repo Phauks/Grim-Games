@@ -19,6 +19,7 @@ import { shell } from '#lib/i18n/messages/en/shell.ts';
 import { settings } from '#lib/i18n/messages/en/settings.ts';
 import { scratch } from '#lib/i18n/messages/en/scratch.ts';
 import { library } from '#lib/i18n/messages/en/library.ts';
+import { history } from '#lib/i18n/messages/en/history.ts';
 import { scriptBuilder } from '#lib/i18n/messages/en/script-builder.ts';
 
 /**
@@ -51,5 +52,6 @@ export const en = {
 	...reference,
 	...scratch,
 	...library,
+	...history,
 	...scriptBuilder
 } as const satisfies Catalog;

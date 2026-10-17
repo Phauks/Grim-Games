@@ -1,7 +1,8 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	/**
 	 * Resume game: the games still being played, newest first. With `view="previous"`, the
-	 * Previous games page (Trevor, 2026-10-16): ended games, which can be reopened.
+	 * ended games on the History page (Trevor, 2026-10-16), which can be reopened.
 	 */
 	let { view = 'active' }: { view?: 'active' | 'previous' } = $props();
 	import { onMount } from 'svelte';
@@ -10,7 +11,6 @@
 	import type { GameId } from '#lib/core/model/index.ts';
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { endedGames, seatLayouts, type EndedGame } from './device-notes.ts';
 	import { goto } from '$app/navigation';
@@ -18,7 +18,7 @@
 	// ── Saved games ──
 	let all = $state<SavedGameSummary[]>([]);
 	let ended = $state<Record<string, EndedGame>>({});
-	/** Games still being played; ended ones are in Previous games (Trevor, 2026-10-16). */
+	/** Games still being played; ended ones are in History (Trevor, 2026-10-16). */
 	const games = $derived(all.filter((g) => !ended[g.gameId]));
 	const past = $derived(
 		all
@@ -57,7 +57,7 @@
 		await refresh();
 	}
 
-	// ── Previous games: reopening one puts it back in Resume game ──
+	// ── Ended games: reopening one puts it back in Resume game ──
 	let reopening = $state<SavedGameSummary | undefined>();
 	let reopenOpen = $state(false);
 	function reopen() {
@@ -92,8 +92,7 @@
 							>{stageText(game)} · {game.seatCount} seats · {when.format(game.savedAt)}</span
 						>
 					</a>
-					<IconButton
-						icon="remove"
+					<DeleteButton
 						label={`Delete ${game.scriptName ?? 'game'} saved ${when.format(game.savedAt)}`}
 						onclick={() => {
 							deleting = game.gameId;
@@ -112,8 +111,7 @@
 								: 'This save is damaged'}</span
 						>
 					</span>
-					<IconButton
-						icon="remove"
+					<DeleteButton
 						label="Delete unreadable game"
 						onclick={() => {
 							deleting = game.gameId;
@@ -125,7 +123,7 @@
 		</ul>
 	</section>
 {:else}<section aria-labelledby="past-games">
-		<h2 id="past-games">Previous games</h2>
+		<h2 id="past-games">Games</h2>
 		{#if loaded && past.length === 0}
 			<p class="none">None</p>
 		{/if}
@@ -147,8 +145,7 @@
 							)}</span
 						>
 					</button>
-					<IconButton
-						icon="remove"
+					<DeleteButton
 						label={`Delete ${game.scriptName ?? 'game'} ended ${when.format(ended[game.gameId].endedAt)}`}
 						onclick={() => {
 							deleting = game.gameId;
@@ -164,7 +161,7 @@
 	{#if reopening}
 		<dl class="change">
 			<dt>Now</dt>
-			<dd>{reopening.scriptName || 'None'} in Previous games</dd>
+			<dd>{reopening.scriptName || 'None'} in History</dd>
 			<dt>Becomes</dt>
 			<dd>Back in Resume game, open in the grimoire</dd>
 		</dl>

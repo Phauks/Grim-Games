@@ -1,9 +1,9 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
 	interface Props {
@@ -49,11 +49,7 @@
 			</label>
 			<div class="actions">
 				<!-- A red trash can (Trevor, 2026-10-16); still confirms first. -->
-				<IconButton
-					icon="remove"
-					label={t('player.deleteNote')}
-					onclick={() => (confirming = true)}
-				/>
+				<DeleteButton label={t('player.deleteNote')} onclick={() => (confirming = true)} />
 			</div>
 		</div>
 	{/if}

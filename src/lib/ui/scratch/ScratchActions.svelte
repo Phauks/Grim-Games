@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { isBlank } from '#lib/core/scratch/scratch.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -38,14 +39,11 @@
 	disabled={pad.history.undone.length === 0}
 	onclick={() => pad.redo()}
 />
-<span class="danger">
-	<IconButton
-		icon="remove"
-		label={t('scratch.clear')}
-		disabled={isBlank(pad.strokes)}
-		onclick={() => (confirming = true)}
-	/>
-</span>
+<DeleteButton
+	label={t('scratch.clear')}
+	disabled={isBlank(pad.strokes)}
+	onclick={() => (confirming = true)}
+/>
 
 <ConfirmDialog
 	bind:open={confirming}
@@ -55,12 +53,3 @@
 >
 	<p>{t('scratch.clearBody')}</p>
 </ConfirmDialog>
-
-<style>
-	.danger {
-		display: contents;
-	}
-	.danger :global(.icon-button:not(:disabled)) {
-		color: var(--evil);
-	}
-</style>
