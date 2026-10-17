@@ -39,6 +39,7 @@
 	import SetupSteps from './SetupSteps.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import JoinButton from './JoinButton.svelte';
+	import BagSettings from './BagSettings.svelte';
 	import { currentSetupStep } from './setup-steps.ts';
 	import { buildErrors, setupWarningMessages } from './build-check.ts';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
@@ -205,7 +206,9 @@
 		{/if}
 		<div class="title">
 			<h1>{t('setup.characters')}</h1>
-			{#if port.openGame}<JoinButton game={port.openGame} />{/if}
+			<span class="actions"
+				><BagSettings />{#if port.openGame}<JoinButton game={port.openGame} />{/if}</span
+			>
 		</div>
 		<p class="script">
 			<span class="label">{t('setup.script')}</span>
@@ -369,6 +372,10 @@
 	h1 {
 		margin: var(--space-2) 0 0;
 		overflow-wrap: anywhere;
+	}
+	.actions {
+		display: flex;
+		gap: var(--space-1);
 	}
 	.title {
 		display: flex;

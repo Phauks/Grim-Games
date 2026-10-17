@@ -19,6 +19,7 @@
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import JoinButton from './JoinButton.svelte';
+	import BagSettings from './BagSettings.svelte';
 	import { remindersHref } from './setup-steps.ts';
 
 	interface Props {
@@ -108,7 +109,9 @@
 		{/if}
 		<div class="title">
 			<h1>{t('setup.draw')}</h1>
-			{#if port.openGame}<JoinButton game={port.openGame} />{/if}
+			<span class="actions"
+				><BagSettings />{#if port.openGame}<JoinButton game={port.openGame} />{/if}</span
+			>
 		</div>
 	</header>
 
@@ -202,6 +205,10 @@
 	h1 {
 		margin: var(--space-2) 0 0;
 		overflow-wrap: anywhere;
+	}
+	.actions {
+		display: flex;
+		gap: var(--space-1);
 	}
 	.title {
 		display: flex;

@@ -204,11 +204,15 @@ test('bag tiles show numbers, letters, symbols, colours or a random mix, centred
 	await expect(page.getByRole('button', { name: 'Tile A', exact: true })).toHaveText('A');
 	await expect(page.getByRole('button', { name: 'Tile E', exact: true })).toHaveText('E');
 
-	// Symbols, colours, or Random mixing everything (Trevor, 2026-10-17), named in words.
+	// The same setting from the draw itself (Trevor, 2026-10-17), which shows the choice made
+	// in Settings. Symbols, colours, or Random mixing everything, named in words.
+	await page.getByRole('button', { name: 'Setup and bag draw' }).tap();
+	const here = page.getByTestId('bag-settings');
+	await expect(here.getByRole('combobox', { name: 'Bag tile labels' })).toContainText('Letters');
+	await page.keyboard.press('Escape');
 	async function choose(option: string) {
-		await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
-		await page.getByRole('button', { name: 'Storyteller settings' }).tap();
-		await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+		await page.getByRole('button', { name: 'Setup and bag draw' }).tap();
+		await page.getByTestId('bag-settings').getByRole('combobox', { name: 'Bag tile labels' }).tap();
 		await page.getByRole('option', { name: option }).tap();
 		await page.keyboard.press('Escape');
 	}
