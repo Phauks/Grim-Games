@@ -365,7 +365,8 @@ test('the Script sheet can be made compact from Settings', async ({ page }) => {
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Player view' })
 		.tap();
-	await settings.getByText('Super-compact', { exact: true }).tap();
+	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
+	await page.getByRole('option', { name: 'Super-compact', exact: true }).tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.locator('[data-density="super"]')).toBeVisible();
 	await page.reload();

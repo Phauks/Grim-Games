@@ -27,7 +27,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { bluffSetLabel, charactersReallyInPlay, DEMON_SET, lunaticInPlay } from './bluffs.ts';
@@ -304,7 +304,7 @@
 				</form>
 			{/if}
 			<div class="filter">
-				<Segmented
+				<Select
 					label={t('bluffs.filter')}
 					hideLabel
 					value={filter}

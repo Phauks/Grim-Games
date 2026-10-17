@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
@@ -96,7 +96,7 @@
 		<dt>Now</dt>
 		<dd>{nowText}{ownChoice ? ', for this game' : ''}</dd>
 	</dl>
-	<Segmented
+	<Select
 		label="Use for"
 		value={scope}
 		options={[

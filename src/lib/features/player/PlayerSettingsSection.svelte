@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import SettingSegmented from '#lib/ui/settings/SettingSegmented.svelte';
+	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import { playerSettings, SHEET_DENSITIES } from './player-settings.svelte.ts';
 </script>
 
-<SettingSegmented
+<SettingSelect
 	label={t('player.density')}
 	description={t('player.densityDetail')}
 	value={playerSettings.current.density}

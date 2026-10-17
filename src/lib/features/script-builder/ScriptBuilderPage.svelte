@@ -37,7 +37,6 @@
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
@@ -356,7 +355,7 @@
 			</section>
 
 			<div class="source">
-				<Segmented
+				<Select
 					label={t('script-builder.source')}
 					hideLabel
 					value={source}

@@ -5,7 +5,8 @@ const width = (cell: Locator) => cell.evaluate((el) => el.getBoundingClientRect(
 
 async function openTable(page: Page) {
 	await page.goto('/reference');
-	await page.getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Show as' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	const table = page.getByTestId('character-table');
 	await expect(table.locator('tbody tr')).toHaveCount(181);
 	return table;

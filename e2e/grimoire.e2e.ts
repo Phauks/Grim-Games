@@ -730,12 +730,14 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
 	// Each night has its own ticks; there is no Clear ticks button.
 	await expect(night.getByRole('button', { name: 'Clear ticks' })).toHaveCount(0);
-	await night.getByText('Other nights').tap();
+	await night.getByRole('combobox', { name: 'Night' }).tap();
+	await page.getByRole('option', { name: 'Other nights', exact: true }).tap();
 	await expect(night.getByRole('button', { name: 'Done: Empath' })).toHaveAttribute(
 		'aria-pressed',
 		'false'
 	);
-	await night.getByText('First night').tap();
+	await night.getByRole('combobox', { name: 'Night' }).tap();
+	await page.getByRole('option', { name: 'First night', exact: true }).tap();
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
 
 	// Ticking Dawn ends the night and starts Day 1 (Trevor, 2026-10-16); the night's ticks
@@ -757,7 +759,7 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
 	// The next night order opens on the other nights, unticked.
 	await page.getByRole('button', { name: 'Night order' }).tap();
-	await expect(night.getByRole('radio', { name: 'Other nights' })).toBeChecked();
+	await expect(night.getByRole('combobox', { name: 'Night' })).toHaveText(/Other nights/);
 	await expect(night.getByRole('button', { name: 'Done: Dawn' })).toHaveAttribute(
 		'aria-pressed',
 		'false'
@@ -1427,7 +1429,8 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	const order = page.getByRole('dialog', { name: 'Night order' });
-	await order.getByText('Other nights').tap();
+	await order.getByRole('combobox', { name: 'Night' }).tap();
+	await page.getByRole('option', { name: 'Other nights', exact: true }).tap();
 	await order.getByRole('button', { name: 'Guide: Undertaker' }).tap();
 	const suggested = page.getByRole('dialog', { name: 'Undertaker' }).getByTestId('night-suggested');
 	await expect(suggested.locator('[data-character-id="imp"]').first()).toBeVisible();
@@ -1475,7 +1478,8 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(end).toContainText(/Now\s*In Resume game\s*Becomes\s*Ended, in History/);
-	await end.getByRole('radio', { name: 'Evil' }).tap();
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// Still on the board (Trevor, 2026-10-17), which says the game is over.
 	expect(page.url()).toBe(board);
@@ -1520,7 +1524,8 @@ test('History shows stats from ended games', async ({ page }) => {
 	await startGame(page);
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await end.getByRole('radio', { name: 'Good' }).tap();
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// End game stays on the board (Trevor, 2026-10-17); History is in the sidebar.
 	await expect(page.getByTestId('game-over')).toBeVisible();
@@ -2091,7 +2096,8 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	// Turning it on says what it changes first (Trevor, 2026-10-17).
 	await menu(page, 'Background');
 	const dialog = page.getByRole('dialog', { name: 'Background' });
-	await dialog.getByText('Stay where dropped', { exact: true }).tap();
+	await dialog.getByRole('combobox', { name: 'Reminders' }).tap();
+	await page.getByRole('option', { name: 'Stay where dropped', exact: true }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Reminders stay where dropped?' });
 	await expect(confirm.getByTestId('reminder-mode-effects').locator('li')).toHaveCount(4);
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();

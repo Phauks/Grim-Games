@@ -60,7 +60,8 @@ test('the filter chips are gone; the table sorts and filters by column', async (
 	await expect(page.getByRole('group', { name: 'Character types' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Demons', exact: true })).toHaveCount(0);
 
-	await page.getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Show as' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	const table = page.getByTestId('character-table');
 	const rows = table.locator('tbody tr');
 	await expect(rows).toHaveCount(181);
@@ -159,7 +160,8 @@ test('the Witch row shows the same values as the Witch card', async ({ page }) =
 	expect(fromCard.ability).toContain('Each night, choose a player');
 	await expect(card.locator('[data-field="icons"] img')).toHaveCount(2);
 
-	await page.getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Show as' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	const row = page.getByTestId('character-table').locator('tr[data-character="witch"]');
 	await built(row);
 	expect(await read(row)).toEqual(fromCard);
@@ -207,7 +209,8 @@ test('Info cards lists the info cards a character brings, or None', async ({ pag
 	await search.fill('Washerwoman');
 	const washerwoman = page.locator('[data-testid="reference-card"][data-character="washerwoman"]');
 	await expect(washerwoman.locator('[data-field="cards"]')).toContainText('None');
-	await page.getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Show as' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	await search.fill('Mezepheles');
 	await expect(
 		page
@@ -235,7 +238,8 @@ test('the table view is remembered and the night-order table is in night order',
 	page
 }) => {
 	await page.goto('/reference');
-	await page.getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Show as' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	const table = page.getByTestId('character-table');
 	await expect(table).toBeVisible();
 	await expect(table.locator('tbody tr')).toHaveCount(181);
@@ -351,7 +355,8 @@ test('on a phone the tables stack into labelled rows instead of scrolling sidewa
 }) => {
 	test.skip(test.info().project.name !== 'phone', 'phones stack; wider screens keep the table');
 	await page.goto('/reference');
-	await page.getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Show as' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	const table = page.getByTestId('character-table');
 	const witch = table.locator('tr[data-character="witch"]');
 	await witch.scrollIntoViewIfNeeded();
@@ -452,7 +457,8 @@ test('jinxes start folded on cards and in the table; Wiki and Report sit by the 
 		card.locator('header').getByRole('button', { name: 'Report a problem' })
 	).toBeVisible();
 
-	await page.getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Show as' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	const row = page.getByTestId('character-table').locator('tr[data-character="alchemist"]');
 	await expect(row.getByTestId('jinx-toggle')).toHaveAttribute('aria-expanded', 'false');
 	const name = row.locator('[data-field="name"]');
@@ -486,7 +492,8 @@ test('reminder tokens show their copies and whether setup places them; the table
 	await expect(washer.getByRole('img', { name: 'Placed at setup' })).toHaveCount(2);
 
 	await search.fill('');
-	await page.getByText('Table', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Show as' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	const table = page.getByTestId('character-table');
 	await table.getByRole('button', { name: 'Filter Tokens', exact: true }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Filter Tokens' });

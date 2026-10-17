@@ -5,7 +5,7 @@
 	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -110,9 +110,8 @@
 		<p class="ability" class:concealed={!revealed}>{revealed ? shows.ability : ''}</p>
 		<div class="alignment" aria-hidden={!needsAlignment}>
 			{#if needsAlignment}
-				<ChoiceGroup
+				<Select
 					label={t('setup.reveal.alignment')}
-					layout="row"
 					value={alignment === '' ? 'none' : alignment}
 					options={[
 						{ value: 'none', label: t('common.none') },

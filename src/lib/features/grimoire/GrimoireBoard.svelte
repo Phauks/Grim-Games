@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
@@ -1299,17 +1300,17 @@
 		<dt>Becomes</dt>
 		<dd>Ended, in History</dd>
 	</dl>
-	<div class="winner" role="radiogroup" aria-label="Winning team">
-		<span class="winner-label">Winner</span>
-		{#each [['good', 'Good'], ['evil', 'Evil'], [undefined, 'Not recorded']] as const as [team, text] (text)}
-			<button
-				type="button"
-				role="radio"
-				aria-checked={winner === team}
-				data-team={team}
-				onclick={() => (winner = team)}>{text}</button
-			>
-		{/each}
+	<div class="winner">
+		<Select
+			label="Winner"
+			value={winner ?? 'none'}
+			options={[
+				{ value: 'good', label: 'Good' },
+				{ value: 'evil', label: 'Evil' },
+				{ value: 'none', label: 'Not recorded' }
+			]}
+			onChange={(team) => (winner = team === 'none' ? undefined : team)}
+		/>
 	</div>
 </ConfirmDialog>
 
@@ -1724,38 +1725,7 @@
 		margin: 0;
 	}
 	.winner {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-1);
 		margin-top: var(--space-3);
-	}
-	.winner-label {
-		margin-inline-end: var(--space-2);
-		color: var(--on-surface-muted);
-		font-size: 0.85rem;
-	}
-	.winner button {
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: none;
-		color: inherit;
-		font: 600 0.9rem var(--font-control);
-		cursor: pointer;
-	}
-	.winner button[aria-checked='true'] {
-		border-color: var(--accent);
-		background: var(--surface-selected);
-	}
-	.winner button[aria-checked='true'][data-team='good'] {
-		background: var(--good);
-		color: var(--on-good);
-	}
-	.winner button[aria-checked='true'][data-team='evil'] {
-		background: var(--evil);
-		color: var(--on-evil);
 	}
 	/* On a phone the arranging controls need the whole bar. */
 	.menu-nav {

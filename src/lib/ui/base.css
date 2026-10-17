@@ -132,7 +132,6 @@ select:focus-visible {
 @media (hover: hover) and (pointer: fine) {
 	:where(.icon-button):not(:disabled):hover,
 	[data-scope='tabs'][data-part='trigger']:not([data-selected]):hover,
-	[data-scope='segment-group'][data-part='item']:not([data-state='checked']):hover,
 	[data-scope='radio-group'][data-part='item']:not([data-state='checked']):hover,
 	[data-scope='select'][data-part='trigger']:hover,
 	[data-scope='dialog'][data-part='close-trigger']:hover {

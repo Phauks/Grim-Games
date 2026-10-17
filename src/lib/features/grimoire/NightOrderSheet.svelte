@@ -7,7 +7,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { boardNightSteps, seatName as nameOf, stepHolders, stepName } from './night-steps.ts';
 	import { untrack } from 'svelte';
@@ -63,7 +63,7 @@
 				}}>Walk through</Button
 			>
 		{/if}
-		<Segmented
+		<Select
 			label="Night"
 			hideLabel
 			value={night}

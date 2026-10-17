@@ -20,7 +20,7 @@
 	import type { Assistance } from '#lib/ui/assistance.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import type { DayGame } from './day-game.svelte.ts';
 	import DeathCheckSheet from './DeathCheckSheet.svelte';
 	import InfoPickerSheet from './InfoPickerSheet.svelte';
@@ -258,7 +258,7 @@
 <div class="panel">
 	<div class="toolbar">
 		<Button icon="back" variant="quiet" onclick={onBack}>Back to day</Button>
-		<Segmented
+		<Select
 			label="Which night"
 			hideLabel
 			value={night}

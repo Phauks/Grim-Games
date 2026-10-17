@@ -45,15 +45,14 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await report.getByRole('button', { name: 'Close' }).first().tap();
 	// Filtered to New by default, so an accepted report leaves the list.
 	await expect(row).toBeHidden();
-	await page
-		.getByRole('radiogroup', { name: 'Status' })
-		.getByText('Accepted', { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Status' }).tap();
+	await page.getByRole('option', { name: 'Accepted', exact: true }).tap();
 	await expect(row).toBeVisible();
 
 	// The key is remembered; delete confirms first.
 	await page.reload();
-	await page.getByRole('radiogroup', { name: 'Status' }).getByText('All', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Status' }).tap();
+	await page.getByRole('option', { name: 'All', exact: true }).tap();
 	await row.tap();
 	await page.getByRole('button', { name: 'Delete report' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();

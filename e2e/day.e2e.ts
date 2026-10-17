@@ -78,10 +78,8 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
-	await page
-		.getByRole('radiogroup', { name: 'Which night' })
-		.getByText('First', { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Which night' }).tap();
+	await page.getByRole('option', { name: 'First', exact: true }).tap();
 	const step = await walkTo(page, 'Washerwoman');
 	await step.getByRole('button', { name: 'Pick info for Ana' }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Washerwoman · Ana' });
@@ -162,10 +160,8 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 	await expect(poisoner).toContainText('Preacher · Gus');
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
-	await page
-		.getByRole('radiogroup', { name: 'Which night' })
-		.getByText('First', { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Which night' }).tap();
+	await page.getByRole('option', { name: 'First', exact: true }).tap();
 	const dev = await walkTo(page, 'Poisoner');
 	await expect(dev.getByTestId('step-impaired')).toHaveText('Dev · No Ability · Gus (Preacher)');
 
@@ -184,10 +180,8 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 		'Show 1: Ben (Chef)'
 	);
 
-	await page
-		.getByRole('radiogroup', { name: 'Which night' })
-		.getByText('Others', { exact: true })
-		.tap();
+	await page.getByRole('combobox', { name: 'Which night' }).tap();
+	await page.getByRole('option', { name: 'Others', exact: true }).tap();
 	const gambler = await walkTo(page, 'Gambler');
 	await gambler.getByRole('button', { name: 'Pick for Ana' }).tap();
 	const choice = page.getByRole('dialog', { name: 'Gambler · Ana' });

@@ -43,6 +43,7 @@
 			title={t('scratch.pen')}
 			onclick={() => (tool = 'pen')}><Icon name="pen" /></button
 		>
+		<!-- eslint-disable-next-line grim/dropdown-choice -- drawing tools switch mid-stroke; a dropdown would cost a tap each time (asked Trevor) -->
 		<button
 			type="button"
 			class="tool"

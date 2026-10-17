@@ -6,7 +6,7 @@ import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
  * Settings sections. Any feature can add its own section by calling
  * `registerSettingsSection` when its module loads; the settings modal lists whatever is
  * registered, so adding a section never touches the modal. Build the section's body from
- * the generic rows in `#lib/ui/settings` (SettingRow, SettingChoice, SettingSelect, SettingSegmented,
+ * the generic rows in `#lib/ui/settings` (SettingRow, SettingChoice, SettingSelect,
  * SettingToggle) so every section looks and behaves the same.
  */
 export interface SettingsSection {

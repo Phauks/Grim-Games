@@ -117,8 +117,8 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 	await page.goto('/build-script');
 	const collection = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
 	await expect(collection).toBeVisible();
-	const sources = page.getByRole('radiogroup', { name: 'Characters from' });
-	await sources.getByText('Homebrew Wiki', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Characters from' }).tap();
+	await page.getByRole('option', { name: 'Homebrew Wiki', exact: true }).tap();
 	await expect(collection).toContainText('Temple Fair');
 	await character(page, 'Lantern, By DJ').tap();
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
@@ -131,7 +131,8 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 	);
 
 	// Back to official characters: the homebrew one stays on the script.
-	await sources.getByText('Official', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Characters from' }).tap();
+	await page.getByRole('option', { name: 'Official', exact: true }).tap();
 	await character(page, 'Imp').tap();
 	await page.getByRole('button', { name: 'Save', exact: true }).tap();
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();

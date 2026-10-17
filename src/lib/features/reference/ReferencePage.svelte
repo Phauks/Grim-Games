@@ -12,7 +12,7 @@
 	} from '#lib/features/characters/game-data.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import CharacterReference from './CharacterReference.svelte';
 	import NightOrderReference from './NightOrderReference.svelte';
@@ -57,7 +57,7 @@
 <Page title={t('reference.title')}>
 	{#snippet toolbar()}
 		<div class="switch">
-			<Segmented
+			<Select
 				label={t('reference.showAs')}
 				hideLabel
 				value={referenceView.current}
