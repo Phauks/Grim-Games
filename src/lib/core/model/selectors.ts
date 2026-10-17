@@ -30,17 +30,23 @@ export function ruleReminders(game: Game, characterId: CharacterId): ReminderIns
 	return game.ruleReminders?.[characterId] ?? [];
 }
 
-/** Where a reminder is: on a seat, on a Fabled or Loric, or nowhere. */
+/** Reminders on the board that belong to no seat, in the order they were placed. */
+export function looseReminders(game: Game): ReminderInstance[] {
+	return game.looseReminders ?? [];
+}
+
+/** Where a reminder is: on a seat, on a Fabled or Loric, loose on the board, or nowhere. */
 export function reminderHolder(
 	game: Game,
 	reminderId: ReminderId
-): { seatId: SeatId } | { characterId: CharacterId } | undefined {
+): { seatId: SeatId } | { characterId: CharacterId } | { loose: true } | undefined {
 	for (const seatId of game.seating) {
 		if (game.seats[seatId].reminders.some((r) => r.reminderId === reminderId)) return { seatId };
 	}
 	for (const [characterId, held] of Object.entries(game.ruleReminders ?? {})) {
 		if (held.some((r) => r.reminderId === reminderId)) return { characterId };
 	}
+	if (game.looseReminders?.some((r) => r.reminderId === reminderId)) return { loose: true };
 	return undefined;
 }
 

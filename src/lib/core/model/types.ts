@@ -240,6 +240,12 @@ export interface Game {
 	 * so older saved games read as before; removing the character takes its reminders away.
 	 */
 	ruleReminders?: Record<CharacterId, ReminderInstance[]>;
+	/**
+	 * Reminders on the board that belong to no seat (Trevor, 2026-10-17: a reminder put down
+	 * anywhere "would not be assigned to a character, because we wouldn't be able to tell who
+	 * had it"). Where each one sits is the device's own; optional, so older games read as before.
+	 */
+	looseReminders?: ReminderInstance[];
 	/** Demon bluffs; more than one set when more than one player gets bluffs. */
 	bluffs: CharacterId[][];
 	/**

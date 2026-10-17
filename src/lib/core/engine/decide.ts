@@ -25,6 +25,7 @@ import {
 	isOnScript,
 	isTraveller,
 	registersAsDead,
+	looseReminders,
 	reminderHolder,
 	replacedBy,
 	ruleReminders,
@@ -280,6 +281,21 @@ function checkReminder(game: Game, reminder: Reminder, ctx: EngineContext, warn:
 	if (!available) {
 		warn('reminder-character-not-in-play', `${character.name} is not in play`);
 	}
+}
+
+/** The reminder itself, from where `reminderHolder` found it. */
+function heldReminder(
+	game: Game,
+	from: NonNullable<ReturnType<typeof reminderHolder>>,
+	reminderId: string
+): Reminder {
+	const held =
+		'seatId' in from
+			? game.seats[from.seatId].reminders
+			: 'characterId' in from
+				? ruleReminders(game, from.characterId)
+				: looseReminders(game);
+	return held.find((r) => r.reminderId === reminderId)!;
 }
 
 /** A Fabled or Loric in play, to hold reminders; refused for anything else. */
@@ -790,7 +806,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			const to = seatOf(game, command.toSeatId);
 			// Off a Fabled or Loric and onto a seat.
 			const holder = reminderHolder(game, command.reminderId);
-			if (holder && 'characterId' in holder) {
+			if (holder && !('seatId' in holder)) {
 				return [{ type: 'ReminderMoved', reminderId: command.reminderId, toSeatId: to.seatId }];
 			}
 			const from = game.seating
@@ -838,10 +854,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				warn('no-change', 'the reminder is already there');
 				return [];
 			}
-			const reminder =
-				'seatId' in from
-					? game.seats[from.seatId].reminders.find((r) => r.reminderId === command.reminderId)!
-					: ruleReminders(game, from.characterId).find((r) => r.reminderId === command.reminderId)!;
+			const reminder = heldReminder(game, from, command.reminderId);
 			warnIfNotRuleReminder(reminder, ctx, warn);
 			return [
 				{
@@ -850,6 +863,25 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 					characterId: holder
 				}
 			];
+		}
+
+		case 'PlaceLooseReminder': {
+			const reminder: Reminder = {
+				characterId: command.reminder.characterId,
+				label: command.reminder.label
+			};
+			checkReminder(game, reminder, ctx, warn);
+			return [{ type: 'LooseReminderPlaced', reminder: { reminderId: ctx.newId(), ...reminder } }];
+		}
+
+		case 'LoosenReminder': {
+			const from = reminderHolder(game, command.reminderId);
+			if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+			if ('loose' in from) {
+				warn('no-change', 'the reminder is already loose');
+				return [];
+			}
+			return [{ type: 'ReminderLoosened', reminderId: command.reminderId }];
 		}
 
 		case 'SwapSeats': {
