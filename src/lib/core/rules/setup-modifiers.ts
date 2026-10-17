@@ -9,7 +9,7 @@
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
-import type { SeatedType } from './distribution.ts';
+import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 
 /**
  * One change to the count of a character type:
@@ -33,6 +33,12 @@ export interface SetupModifier {
 	 * its type.
 	 */
 	requires?: CharacterId;
+	/**
+	 * Extra copies of this same character that may go in the bag ("+0 to +2 Legionary" is
+	 * `[0, 1, 2]`). Read from homebrew text only; official characters with copies (Village
+	 * Idiot, Legion) say so in TPI's `special` data instead.
+	 */
+	copies?: readonly number[];
 	/** Extra Storyteller notes for setup (bag contents, seating), in our words. */
 	notes: readonly string[];
 	/** Wiki page this entry encodes; none for homebrew characters. */
@@ -265,6 +271,7 @@ export function modifierFromText(
 	const ops: CountOp[] = [];
 	const notes: string[] = [];
 	let requires: CharacterId | undefined;
+	let copies: readonly number[] | undefined;
 	const clean = text.replace(/[−–]/g, '-');
 
 	for (const clause of clean
@@ -313,9 +320,29 @@ export function modifierFromText(
 				continue;
 			}
 		}
-		if ((m = /^\+\s*the\s+(.+)$/i.exec(clause))) {
-			const id = findByName?.(m[1]);
-			if (id) {
+		// "+the King", "+ Spartacus", "+1 Hannibal", "+0 to +2 Legionary": another character
+		// that must be in play, or more copies of this one.
+		if ((m = /^\+\s*(?:(\d+)(?:\s*(or|to)\s*\+?\s*(\d+))?\s+)?(?:the\s+)?(.+)$/i.exec(clause))) {
+			const a = Number(m[1] ?? 1);
+			const b = m[3] === undefined ? a : Number(m[3]);
+			const values =
+				m[2]?.toLowerCase() === 'to'
+					? Array.from({ length: Math.abs(b - a) + 1 }, (_, i) => Math.min(a, b) + i)
+					: [...new Set([a, b])];
+			const rest = selfReference(character.name, m[4]);
+			if (rest !== undefined) {
+				copies = values;
+				if (
+					(SEATED_TYPES as readonly string[]).includes(character.type) &&
+					character.type !== 'townsfolk'
+				) {
+					ops.push(delta(character.type as SeatedType, ...values));
+				}
+				if (rest) notes.push(`Check the setup text by hand: “${clause}”.`);
+				continue;
+			}
+			const id = findByName?.(m[4]);
+			if (id && id !== character.id && values.length === 1 && values[0] === 1) {
 				requires = id;
 				continue;
 			}
@@ -327,8 +354,25 @@ export function modifierFromText(
 		summary: text,
 		ops,
 		...(requires ? { requires } : {}),
+		...(copies ? { copies } : {}),
 		notes,
 		...(wikiUrl(character) ? { wiki: wikiUrl(character) } : {}),
 		source: 'ability-text'
 	};
+}
+
+/**
+ * Whether `text` names the character itself ("Legionary", "Legionaries"), maybe followed by
+ * more words ("Mercenary of opposing alignment"). Returns those extra words ('' for none),
+ * or undefined when the text names something else.
+ */
+function selfReference(name: string, text: string): string | undefined {
+	const own = name.trim().toLowerCase();
+	const forms = [own, `${own}s`, own.replace(/y$/, 'ies')];
+	const t = text.trim().toLowerCase();
+	for (const form of forms) {
+		if (t === form) return '';
+		if (t.startsWith(`${form} `)) return t.slice(form.length + 1);
+	}
+	return undefined;
 }
