@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -73,20 +74,22 @@
 		<p class="seat">{seatLabel}</p>
 		<label class="player">
 			<span>{t('setup.reveal.name')}</span>
-			<input
-				type="text"
-				autocomplete="off"
-				enterkeyhint="done"
-				placeholder={t('common.none')}
-				bind:value={name}
-				onkeydown={(e) => {
-					// Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap.
-					if (e.key === 'Enter') {
-						e.preventDefault();
-						e.currentTarget.blur();
-					}
-				}}
-			/>
+			<ClearableField bind:value={name}>
+				<input
+					type="text"
+					autocomplete="off"
+					enterkeyhint="done"
+					placeholder={t('common.none')}
+					bind:value={name}
+					onkeydown={(e) => {
+						// Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap.
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							e.currentTarget.blur();
+						}
+					}}
+				/>
+			</ClearableField>
 		</label>
 		<!-- Hidden until a name is entered when that's required; the space stays reserved. -->
 		<div class="token">
