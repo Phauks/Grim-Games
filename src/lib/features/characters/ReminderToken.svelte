@@ -1,13 +1,19 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import type { Alignment, CharacterType, ReminderLabel } from '#lib/core/data/index.ts';
+	import type { Alignment, Character, CharacterType, ReminderLabel } from '#lib/core/data/index.ts';
+	import { iconUrl } from './icon-url.ts';
 
 	interface Props {
 		/** The token's text; leave out for "a reminder" when it is not known which. */
 		label?: ReminderLabel;
 		/** Type of the character the token belongs to: it sets the colour. */
 		type?: CharacterType;
+		/**
+		 * The character the token belongs to: its icon replaces the coloured dot, so a token
+		 * says whose it is at a glance (Trevor, 2026-10-17). Sets the type too.
+		 */
+		character?: Character;
 		/**
 		 * Alignment of the player whose character put the token down, when known: it sets the
 		 * colour instead of the type (Trevor, 2026-10-16), so a turned-evil good player's
@@ -28,7 +34,8 @@
 
 	let {
 		label,
-		type,
+		type: given,
+		character,
 		alignment,
 		title,
 		variant = 'reminder',
@@ -36,6 +43,11 @@
 		count = 1,
 		setup
 	}: Props = $props();
+
+	const type = $derived(given ?? character?.type);
+	const icon = $derived(
+		variant === 'reminder' && character ? iconUrl(character, alignment) : undefined
+	);
 </script>
 
 <!-- A reminder token as a small chip, coloured by its character's type. -->
@@ -47,10 +59,14 @@
 	data-variant={variant}
 	data-testid="reminder-token"
 	data-done={done || undefined}
-	{title}
-	>{label ?? t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span
-		>{/if}{#if setup}<span class="setup" role="img" aria-label={setup} title={setup}
-			><Icon name="setup" /></span
+	data-icon={icon ? '' : undefined}
+	title={title ?? character?.name}
+	>{#if icon}<img class="owner" src={icon} alt="" />{/if}{label ??
+		t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span>{/if}{#if setup}<span
+			class="setup"
+			role="img"
+			aria-label={setup}
+			title={setup}><Icon name="setup" /></span
 		>{/if}{#if done}<span class="tick" aria-label={t('characters.reminderPlaced')}>✓</span
 		>{/if}</span
 >
@@ -93,6 +109,19 @@
 		height: 0.75em;
 		border-radius: 50%;
 		background: var(--rim);
+	}
+	/* The owner's icon instead of the dot. */
+	.reminder[data-icon] {
+		padding-left: 0.1em;
+	}
+	.reminder[data-icon]::before {
+		display: none;
+	}
+	.owner {
+		flex: none;
+		width: 1.5em;
+		height: 1.5em;
+		margin: -0.1em 0;
 	}
 	.reminder[data-type='townsfolk'],
 	.reminder[data-type='outsider'] {

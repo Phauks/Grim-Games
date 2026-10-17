@@ -30,6 +30,8 @@ test('searching shows everything the app uses for the Witch', async ({ page }) =
 	const token = card.getByTestId('night-other').getByTestId('reminder-token');
 	await expect(token).toHaveText('Cursed');
 	await expect(token).toHaveAttribute('data-type', 'minion');
+	// Its owner's icon sits on the token, so it reads as the Witch's (Trevor, 2026-10-17).
+	await expect(token.locator('img.owner')).toHaveAttribute('src', /witch/i);
 	await expect(card.getByTestId('night-other')).not.toContainText(':reminder:');
 	await expect(card).toContainText('has chosen');
 	await expect(card).toContainText('player with Cursed');

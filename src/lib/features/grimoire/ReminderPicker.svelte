@@ -155,7 +155,7 @@
 					aria-pressed="true"
 					onclick={() => onRemove(reminder.reminderId)}
 				>
-					<ReminderToken label={reminder.label} type={characters.get(reminder.characterId)?.type} />
+					<ReminderToken label={reminder.label} character={characters.get(reminder.characterId)} />
 				</button>
 			{:else}
 				<span class="none">None</span>
@@ -182,7 +182,7 @@
 								disabled={copy.done && !copy.holder}
 								onclick={() => toggle(reminder, copy)}
 							>
-								<ReminderToken {label} type={group.character.type} done={copy.done} />
+								<ReminderToken {label} character={group.character} done={copy.done} />
 								{#if copy.count !== undefined}<span class="count-badge" aria-hidden="true"
 										>×{copy.count}</span
 									>{/if}

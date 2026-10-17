@@ -1057,7 +1057,7 @@
 			<p class="origin" role="status">
 				<ReminderToken
 					label={r.label}
-					type={characters.get(r.characterId)?.type}
+					character={characters.get(r.characterId)}
 					alignment={placingAlignment(game, r.characterId, characters)}
 				/>, from <ReminderOrigin
 					{game}

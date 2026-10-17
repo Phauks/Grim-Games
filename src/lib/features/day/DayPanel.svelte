@@ -701,7 +701,7 @@
 		/>{/if}{/snippet}
 {#snippet pendingSlot(name: string)}{#if name === 'reminder'}<ReminderToken
 			label={NO_ABILITY}
-			type={pending ? game.characters.get(pending.characterId)?.type : undefined}
+			character={pending ? game.characters.get(pending.characterId) : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
 
 <ConfirmDialog bind:open={pendingOpen} title={pending?.action ?? ''} onConfirm={confirmPending}>

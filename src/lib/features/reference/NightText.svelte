@@ -54,7 +54,7 @@
 					: t('reference.deathMarker')}
 			/>{:else}<ReminderToken
 				label={s.label}
-				type={character.type}
+				{character}
 				done={s.prep}
 				title={s.prep
 					? t('reference.alreadyPlaced')

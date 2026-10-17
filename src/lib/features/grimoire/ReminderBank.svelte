@@ -297,7 +297,7 @@
 	{#snippet heading()}
 		Put {#if choosing}<ReminderToken
 				label={choosing.label}
-				type={characters.get(choosing.characterId)?.type}
+				character={characters.get(choosing.characterId)}
 			/>{/if} on
 	{/snippet}
 </SeatChooser>
@@ -306,7 +306,7 @@
 	{#snippet heading()}
 		{#if shown}<ReminderToken
 				label={shown.suggestion.label}
-				type={characters.get(shown.suggestion.characterId)?.type}
+				character={characters.get(shown.suggestion.characterId)}
 			/>{/if}
 	{/snippet}
 	{#snippet subtitle()}
@@ -318,11 +318,11 @@
 	{/snippet}
 	{#if shown}
 		{@const s = shown.suggestion}
-		{@const type = characters.get(s.characterId)?.type}
+		{@const owner = characters.get(s.characterId)}
 		<p class="text">
 			{#each prepTextSegments(s.text, names) as part, j (j)}{#if part.kind === 'reminder'}<ReminderToken
 						label={part.label}
-						{type}
+						character={owner}
 					/>{:else if part.kind === 'character'}<CharacterBadge
 						characterId={part.id}
 						character={characters.get(part.id)}

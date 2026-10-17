@@ -74,7 +74,7 @@
 				character={characters.get(part.characterId)}
 				inline
 			/>{:else}<span class="chip"
-				><ReminderToken label={part.label} type={characters.get(part.characterId)?.type} /></span
+				><ReminderToken label={part.label} character={characters.get(part.characterId)} /></span
 			>{/if}{/each}
 {/snippet}
 

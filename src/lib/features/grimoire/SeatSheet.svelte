@@ -570,7 +570,7 @@
 							></button>
 							<ReminderToken
 								label={reminder.label}
-								type={characters.get(reminder.characterId)?.type}
+								character={characters.get(reminder.characterId)}
 								alignment={placingAlignment(game, reminder.characterId, characters)}
 							/>
 							<!-- Whose it is (Trevor, 2026-10-17). -->
@@ -671,7 +671,7 @@
 					<li>
 						<ReminderToken
 							label={reminder.label}
-							type={characters.get(reminder.characterId)?.type}
+							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 						/>
 						<span>on {@render seatBadge(on)}</span>
@@ -959,7 +959,7 @@
 	{#snippet heading()}
 		{#if movingReminder}<ReminderToken
 				label={movingReminder.label}
-				type={characters.get(movingReminder.characterId)?.type}
+				character={characters.get(movingReminder.characterId)}
 				alignment={placingAlignment(game, movingReminder.characterId, characters)}
 			/>{:else}Reminder{/if}
 	{/snippet}

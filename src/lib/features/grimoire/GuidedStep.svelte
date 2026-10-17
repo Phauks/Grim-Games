@@ -220,7 +220,7 @@
 						<li>
 							<ReminderToken
 								{label}
-								type={step.character?.type}
+								character={step.character}
 								alignment={step.character
 									? placingAlignment(game, step.character.id, characters)
 									: undefined}
