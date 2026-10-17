@@ -292,3 +292,18 @@ test('editing a script made elsewhere saves a variation of it', async ({ page })
 	await page.reload();
 	await expect(variation).toContainText('Storm Front');
 });
+
+// The shared page layout (Trevor, 2026-10-17): while the list scrolls, the counts and search
+// stay in view just below the app header rather than sliding under it.
+test('the counts and search stay below the app header while the list scrolls', async ({ page }) => {
+	await page.goto('/build-script');
+	await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(
+		'Script builder'
+	);
+	await expect(character(page, 'Imp')).toBeAttached();
+	await page.evaluate(() => window.scrollBy(0, 4000));
+	const header = (await page.getByRole('banner').boundingBox())!;
+	const counts = (await page.getByTestId('builder-counts').boundingBox())!;
+	expect(counts.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+	expect(counts.y).toBeLessThan(page.viewportSize()!.height);
+});
