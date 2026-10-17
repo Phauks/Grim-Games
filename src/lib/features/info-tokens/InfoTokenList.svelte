@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { STANDARD_INFO_TOKENS, type InfoToken } from '#lib/core/data/info-tokens.ts';
@@ -332,21 +333,23 @@
 							: 'info-tokens.fill.phrase'
 				)}</span
 			>
-			<input
-				type="text"
-				value={fillText}
-				oninput={(e) => {
-					if (filling) filled[fillKey(filling)] = e.currentTarget.value;
-				}}
-				onkeydown={(e) => {
-					if (e.key === 'Enter') {
-						e.preventDefault();
-						useFilled();
-					}
-				}}
-				autocomplete="off"
-				enterkeyhint="done"
-			/>
+			<ClearableField value={fillText} onclear={() => filling && (filled[fillKey(filling)] = '')}>
+				<input
+					type="text"
+					value={fillText}
+					oninput={(e) => {
+						if (filling) filled[fillKey(filling)] = e.currentTarget.value;
+					}}
+					onkeydown={(e) => {
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							useFilled();
+						}
+					}}
+					autocomplete="off"
+					enterkeyhint="done"
+				/>
+			</ClearableField>
 		</label>
 	{/if}
 	{#snippet actions()}
