@@ -19,6 +19,9 @@
 	--page-max: calc(150 * var(--u));
 	--page-gutter: clamp(var(--space-4), 4vw, var(--space-7));
 	--measure: calc(36 * var(--u));
+	/* One title size for every page and one for its sections (ui/layout/Page.svelte). */
+	--page-title-size: 1.6rem;
+	--section-title-size: 1.1rem;
 
 	--radius-sm: calc(0.375 * var(--u));
 	--radius-md: calc(0.75 * var(--u));

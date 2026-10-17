@@ -7,7 +7,7 @@ Private project: not for public distribution until The Pandemonium Institute has
 ## Stack
 
 - SvelteKit 3 + Svelte 5 (runes) + TypeScript 6, built with `@sveltejs/adapter-static` as a client-rendered SPA.
-- One Cloudflare Worker (`worker/index.ts`) serves the static build, the `/api/*` routes and the `Room` Durable Object used for live sync. Config: `wrangler.jsonc`.
+- One Cloudflare Worker (`worker/index.ts`) serves the static build and the `/api/*` routes. Its SQLite Durable Objects are `Room` (live sync), `SharedScript` (share links), `AccountUser` and `AccountEmail` (accounts), `ReportBox` (in-app reports) and `ScriptMirror` (script sources, refreshed by a daily cron through `scheduled()`). Config: `wrangler.jsonc`.
 - Vitest for unit and component tests; Playwright for touch e2e tests on an emulated phone and tablet against the real Worker under `wrangler dev`.
 
 ## Layout

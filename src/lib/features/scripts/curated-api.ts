@@ -16,6 +16,10 @@ export interface CuratedScript {
 	link: string;
 	/** The script in TPI's format. */
 	json: unknown[];
+	/** A Script of the Month: the month our copy first saw it listed ("2026-10"). */
+	seen?: string;
+	/** A Script of the Month no longer on the page, kept from our copy. */
+	past?: boolean;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -30,7 +34,38 @@ export function readCuratedList(body: unknown): CuratedScript[] | undefined {
 		typeof raw.section === 'string' &&
 		typeof raw.link === 'string' &&
 		Array.isArray(raw.json)
-			? [{ section: raw.section, link: raw.link, json: raw.json }]
+			? [
+					{
+						section: raw.section,
+						link: raw.link,
+						json: raw.json,
+						...(typeof raw.seen === 'string' ? { seen: raw.seen } : {}),
+						...(raw.past === true ? { past: true } : {})
+					}
+				]
 			: []
 	);
+}
+
+/**
+ * The page's scripts now, with every Script of the Month our copy has seen before kept as a
+ * past one (Trevor, 2026-10-17: self-hosted, so earlier months aren't lost when the page
+ * moves on). Each month keeps the month it was first seen; newest first.
+ */
+export function mergeCurated(
+	previous: readonly CuratedScript[],
+	current: readonly CuratedScript[],
+	month: string
+): CuratedScript[] {
+	const before = new Map(previous.filter((s) => s.section === 'month').map((s) => [s.link, s]));
+	const now = current.map((script): CuratedScript => {
+		if (script.section !== 'month') return script;
+		return { ...script, seen: before.get(script.link)?.seen ?? month };
+	});
+	const links = new Set(current.map((s) => s.link));
+	const past = [...before.values()]
+		.filter((s) => !links.has(s.link))
+		.map((s): CuratedScript => ({ ...s, past: true }))
+		.sort((a, b) => (b.seen ?? '').localeCompare(a.seen ?? ''));
+	return [...now, ...past];
 }

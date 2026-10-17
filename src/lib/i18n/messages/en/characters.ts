@@ -39,6 +39,12 @@ export const characters = {
 		'Storyteller: a badge on the left leaf gives the first night order, on the right leaf other nights. Only characters are counted. On the grimoire, the characters in this game; on Reference, every character.',
 	'characters.nightBadgeSize': 'Night order badge size',
 	'characters.nightBadgeSizeHelp': 'The night order badges on tokens.',
+	'characters.reminderLabelWidth': 'Reminder words width',
+	'characters.reminderLabelWidthHelp':
+		'How wide the words on a reminder token may run, compared with the token.',
+	'characters.reminderLabelWrap': 'Wrap long reminder words',
+	'characters.reminderLabelWrapHelp':
+		'Words too wide go onto a second line over the icon, instead of ending in “…”.',
 	'characters.previewPlayer': 'Sam',
 	'characters.colour.face': 'Token face',
 	'characters.colour.faceHelp': 'The parchment of character tokens.',

@@ -7,13 +7,14 @@
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ReminderModeSetting from '#lib/features/grimoire/ReminderModeSetting.svelte';
+	import StepFocusSetting from '#lib/features/grimoire/StepFocusSetting.svelte';
 	import BoardLooksRows from './BoardLooksRows.svelte';
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 	/**
 	 * Everything about how the grimoire board and its tokens look (Trevor, 2026-10-17), also
-	 * opened on its own from the board's menu with `settingsDialog.show('board')`.
+	 * opened on its own from the board's menu with `settingsDialog.showOnly('board')`.
 	 */
 	const assistance = $derived(preferences.current.assistance);
 </script>
@@ -47,6 +48,7 @@
 <BoardLooksRows />
 <!-- The board thread's own control, with its Confirm (Trevor, 2026-10-17). -->
 <ReminderModeSetting />
+<StepFocusSetting />
 
 <style>
 	h3 {

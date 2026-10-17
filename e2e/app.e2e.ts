@@ -31,24 +31,38 @@ test('every page shows build info and a Report an issue button for the in-app fo
 	await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
 });
 
-test('the footer shows the Community Created Content logo', async ({ page }) => {
+// Trevor (2026-10-17): the Community Created Content logo sits at the bottom of the menu, not
+// in every page's footer (TPI's policy only asks that it is shown clearly).
+test('the Community Created Content logo is at the bottom of the menu', async ({ page }) => {
 	await page.goto('/');
-	const logo = page.getByRole('img', { name: /Community Created Content/ });
+	await expect(
+		page.getByRole('contentinfo').getByRole('img', { name: /Community Created Content/ })
+	).toHaveCount(0);
+	const sidebar = page.getByRole('navigation', { name: 'Menu' }).first();
+	const drawer = page.getByRole('dialog', { name: 'Menu' });
+	let menu = sidebar;
+	if (!(await sidebar.isVisible())) {
+		await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+		menu = drawer;
+	}
+	const logo = menu.getByRole('img', { name: /Community Created Content/ });
 	await expect(logo).toBeVisible();
 	await expect
 		.poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth))
 		.toBeGreaterThan(0);
+	// Below every menu link.
+	const links = await menu.getByRole('link').all();
+	const last = (await links[links.length - 2].boundingBox())!;
+	expect((await logo.boundingBox())!.y).toBeGreaterThan(last.y);
 });
 
-test('the footer has the logo on the left and every text link on the right', async ({ page }) => {
+test('the footer has every text link on the right', async ({ page }) => {
 	await page.goto('/');
 	const build = page.getByTestId('build-info');
 	await expect(build.getByRole('button', { name: 'Report an issue' })).toBeVisible();
-	const logo = await page.getByRole('img', { name: /Community Created Content/ }).boundingBox();
 	const links = await build.boundingBox();
 	const width = page.viewportSize()!.width;
-	expect(logo!.x).toBeLessThan(width / 4);
-	// The links end at the right edge, whether or not they wrap below the logo.
+	// The links end at the right edge, whether or not they wrap.
 	expect(links!.x + links!.width).toBeGreaterThan(width * 0.9);
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
 		width

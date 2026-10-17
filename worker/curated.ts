@@ -1,17 +1,23 @@
 /**
- * `/api/curated`: the scripts TPI lists on its Scripts page, for the script picker's
- * Curated source. The browser can't read that page itself (no CORS). Only ever fetches
- * that one page, once per tap that needs it, cached for an hour; the scripts are decoded
+ * `/api/curated`: the scripts TPI lists on its Scripts page, for Search's Official Custom
+ * Scripts and Scripts of the Month. The browser can't read that page itself (no CORS). Served
+ * from our own copy (`mirror.ts`), which fetches only that one page; the scripts are decoded
  * from their Script Tool links here, so nothing else is requested. Design: 08 §5.6.
  */
-import { CURATED_PAGE, type CuratedScript } from '../src/lib/features/scripts/curated-api.ts';
+import {
+	CURATED_PAGE,
+	mergeCurated,
+	readCuratedList,
+	type CuratedScript
+} from '../src/lib/features/scripts/curated-api.ts';
 import {
 	decodeScriptToolPayload,
 	readCuratedPage,
 	scriptToolPayload
 } from '../src/lib/features/scripts/script-tool-link.ts';
+import { USER_AGENT } from './user-agent.ts';
+import type { MirroredSource } from './mirror.ts';
 
-const CACHE_SECONDS = 3600;
 /** The page is a store page with its scripts inline; far bigger is not that page. */
 const MAX_PAGE_BYTES = 3_000_000;
 
@@ -26,33 +32,23 @@ async function readScript(section: string, link: string): Promise<CuratedScript 
 	}
 }
 
-export async function handleCurated(): Promise<Response> {
-	let html: string;
-	try {
+/** The page's scripts, merged with our copy's past Scripts of the Month (`mirror.ts`). */
+export const curatedSource: MirroredSource = {
+	id: 'curated',
+	async build(previous) {
 		const response = await fetch(CURATED_PAGE, {
-			headers: { Accept: 'text/html' },
-			redirect: 'follow',
-			cf: { cacheTtl: CACHE_SECONDS, cacheEverything: true }
+			headers: { Accept: 'text/html', 'User-Agent': USER_AGENT },
+			redirect: 'follow'
 		});
-		if (!response.ok) {
-			return Response.json(
-				{ error: `The official site answered with HTTP ${response.status}.` },
-				{ status: 502 }
-			);
-		}
-		html = await response.text();
-	} catch {
-		return Response.json({ error: 'Could not reach the official site.' }, { status: 502 });
+		if (!response.ok) throw new Error(`The official site answered with HTTP ${response.status}.`);
+		const html = await response.text();
+		if (html.length > MAX_PAGE_BYTES) throw new Error('The official page is too large.');
+		const found = await Promise.all(
+			readCuratedPage(html).map(({ section, link }) => readScript(section, link))
+		);
+		const scripts = found.filter((s) => s !== undefined);
+		if (!scripts.length) throw new Error('The official page listed no scripts we could read.');
+		const month = new Date().toISOString().slice(0, 7);
+		return { scripts: mergeCurated(readCuratedList(previous) ?? [], scripts, month) };
 	}
-	if (html.length > MAX_PAGE_BYTES) {
-		return Response.json({ error: 'The official page is too large.' }, { status: 502 });
-	}
-	const found = await Promise.all(
-		readCuratedPage(html).map(({ section, link }) => readScript(section, link))
-	);
-	const scripts = found.filter((s) => s !== undefined);
-	return Response.json(
-		{ scripts },
-		{ headers: { 'Cache-Control': `public, max-age=${CACHE_SECONDS}` } }
-	);
-}
+};

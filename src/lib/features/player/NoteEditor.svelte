@@ -27,6 +27,12 @@
 <!-- A fixed height, so typing never resizes the sheet. -->
 <!-- The heading stays "Note" so it doesn't change while the title is typed. -->
 <BottomSheet bind:open title={t('player.note')} height="85dvh" focusFirstField={false}>
+	<!-- The trash sits beside the sheet's X (Trevor, 2026-10-17); it still confirms first. -->
+	{#snippet actions()}
+		{#if note}
+			<DeleteButton label={t('player.deleteNote')} onclick={() => (confirming = true)} />
+		{/if}
+	{/snippet}
 	{#if note}
 		<div class="editor">
 			<label class="field">
@@ -55,8 +61,6 @@
 					checked={note.hidden}
 					onChange={(hidden) => onChange({ hidden })}
 				/>
-				<!-- A red trash can (Trevor, 2026-10-16); still confirms first. -->
-				<DeleteButton label={t('player.deleteNote')} onclick={() => (confirming = true)} />
 			</div>
 		</div>
 	{/if}
@@ -110,10 +114,6 @@
 	.actions {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-3);
-	}
-	.actions :global(.icon-button) {
-		color: var(--evil);
 	}
 </style>

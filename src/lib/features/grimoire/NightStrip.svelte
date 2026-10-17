@@ -6,9 +6,7 @@
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
-	import Segmented from '#lib/ui/primitives/Segmented.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import { stepFocus } from './step-focus.svelte.ts';
+	import StepFocusSetting from './StepFocusSetting.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName, stepHolders, stepName } from './night-steps.ts';
 
@@ -88,11 +86,10 @@
 	/>
 	<!-- In the top corner (Trevor, 2026-10-16), so Previous and Next own the sides. -->
 	<span class="corner">
-		<span bind:this={focusButton} class="focus" class:on={stepFocus.current.on}
+		<span bind:this={focusButton}
 			><IconButton
 				icon="filter"
 				label="Step reminders"
-				aria-pressed={stepFocus.current.on}
 				onclick={() => (focusOpen = !focusOpen)}
 			/></span
 		>
@@ -101,24 +98,7 @@
 </section>
 
 <Popover bind:open={focusOpen} title="Step reminders" anchor={focusButton}>
-	<div class="focus-options">
-		<Toggle
-			label="Point out this step's reminders"
-			checked={stepFocus.current.on}
-			onChange={(on) => stepFocus.update({ on })}
-		/>
-		<Segmented
-			label="How"
-			value={stepFocus.current.mode}
-			options={[
-				{ value: 'highlight', label: 'Highlight' },
-				{ value: 'only', label: 'Only these' },
-				{ value: 'front', label: 'Bring to front' }
-			]}
-			onChange={(mode) => stepFocus.update({ mode })}
-			disabled={!stepFocus.current.on}
-		/>
-	</div>
+	<StepFocusSetting />
 </Popover>
 
 <style>
@@ -151,13 +131,6 @@
 		right: 0;
 		z-index: 1;
 		display: flex;
-	}
-	.focus.on :global(.icon-button) {
-		color: var(--accent);
-	}
-	.focus-options {
-		display: grid;
-		gap: var(--space-2);
 	}
 	/* Clear of the buttons in the corner. */
 	.name {

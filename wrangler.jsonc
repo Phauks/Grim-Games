@@ -43,15 +43,21 @@
 			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
 			{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
 			{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
-			{ "name": "REPORTS", "class_name": "ReportBox" }
+			{ "name": "REPORTS", "class_name": "ReportBox" },
+			// Our copies of other sites' script lists (worker/mirror.ts).
+			{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" }
 		]
 	},
 	"migrations": [
 		{ "tag": "v1", "new_sqlite_classes": ["Room"] },
 		{ "tag": "v2", "new_sqlite_classes": ["SharedScript"] },
 		{ "tag": "v3", "new_sqlite_classes": ["AccountUser", "AccountEmail"] },
-		{ "tag": "v4", "new_sqlite_classes": ["ReportBox"] }
+		{ "tag": "v4", "new_sqlite_classes": ["ReportBox"] },
+		{ "tag": "v5", "new_sqlite_classes": ["ScriptMirror"] }
 	],
+	// Nightly refresh of the stored script copies (worker/mirror.ts). Previews run no
+	// schedule; there a copy is refreshed when it is asked for and over a day old.
+	"triggers": { "crons": ["17 4 * * *"] },
 	// Script share codes (worker/share.ts): per-address limits so codes can't be guessed by
 	// trying many. namespace_id is our own number; nothing to create in the dashboard
 	// (developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
@@ -77,7 +83,8 @@
 				{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
 				{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
 				{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
-				{ "name": "REPORTS", "class_name": "ReportBox" }
+				{ "name": "REPORTS", "class_name": "ReportBox" },
+				{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" }
 			]
 		},
 		"ratelimits": [

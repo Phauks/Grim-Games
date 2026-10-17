@@ -8,6 +8,7 @@
 	import type { Theme } from '#lib/ui/themes/types.ts';
 	import {
 		MIN_CONTRAST,
+		REMINDER_LABEL_WIDTH,
 		TOKEN_COLOURS,
 		TOKEN_SCALE,
 		tokenColour,
@@ -21,6 +22,9 @@
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import { sheetNumbersFor } from './sheet-night-numbers.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
+	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 
 	interface Props {
 		value: TokenAppearance;
@@ -39,11 +43,17 @@
 		return sheetNumbersFor(data.nightSheet, 'fortuneteller');
 	});
 	const contrast = $derived(tokenContrast(value, theme));
+	// The token at the size the board draws it (Trevor, 2026-10-17: the preview didn't match
+	// the size in play): the last board's size, or a ten-player board filling the window.
+	const viewport = $derived({ width: innerWidth.current ?? 0, height: innerHeight.current ?? 0 });
+	const tokenSize = $derived(boardTokenSize(value.tokenScale, viewport));
+	// Room for the largest Token size, so moving the slider never moves the settings below.
+	const largest = $derived(boardTokenSize(TOKEN_SCALE.max, viewport));
 	// The reminder as the board draws it, at the board's size for this token (GrimoireBoard:
 	// half the token, kept between 30 and 48px, times Reminder size). Trevor, 2026-10-17: the
 	// preview showed the inline chip, not the reminder token.
 	const reminderSize = $derived(
-		Math.round(Math.max(30, Math.min(48, 56 * value.tokenScale * 0.5)) * value.reminderScale)
+		Math.round(Math.max(30, Math.min(48, tokenSize * 0.5)) * value.reminderScale)
 	);
 
 	function setColour(key: TokenColour, colour: string | undefined) {
@@ -62,11 +72,11 @@
 <!-- The section's shared sticky preview (Trevor, 2026-10-17). Space for the largest sizes is
      kept, so changing a size never moves the settings below. -->
 <SettingPreview testid="token-preview">
-	<div class="preview" aria-hidden="true">
-		{#if sample}<span class="disc"
+	<div class="preview" aria-hidden="true" style:--sample="{largest}px">
+		{#if sample}<span class="disc" style:--name-scale={boardLooks.current.nameSize}
 				><CharacterToken
 					character={sample}
-					size={56}
+					size={tokenSize}
 					showName={value.boardNames}
 					nightNumbers={sampleNumbers}
 				/><PlayerNameMark name={t('characters.previewPlayer')} /></span
@@ -96,6 +106,20 @@
 	{...TOKEN_SCALE}
 	defaultValue={1}
 	onChange={(reminderScale) => onChange({ ...value, reminderScale })}
+/>
+<SettingSlider
+	label={t('characters.reminderLabelWidth')}
+	description={t('characters.reminderLabelWidthHelp')}
+	value={value.reminderLabelWidth}
+	{...REMINDER_LABEL_WIDTH}
+	defaultValue={1.5}
+	onChange={(reminderLabelWidth) => onChange({ ...value, reminderLabelWidth })}
+/>
+<SettingToggle
+	label={t('characters.reminderLabelWrap')}
+	description={t('characters.reminderLabelWrapHelp')}
+	checked={value.reminderLabelWrap}
+	onChange={(reminderLabelWrap) => onChange({ ...value, reminderLabelWrap })}
 />
 
 <div class="names">
@@ -156,15 +180,16 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
-		/* A fixed height that fits the largest token (56px × 2) with the player name badge on its
-		   rim, and the largest chip at any Text size, so changing a size never moves the settings
-		   below. */
-		--sample: 112px; /* px-ok: the sample token is 56px, at up to 200% */
+		/* A fixed height that fits the largest token (--sample, set above) with the player name
+		   badge on its rim, and the largest chip at any Text size, so changing a size never moves
+		   the settings below. */
 		height: max(calc(1.1 * var(--sample)), 4.4rem);
 		white-space: nowrap;
 		overflow: hidden;
 	}
 	.disc {
+		/* Drawn at the board's size, which already includes Token size (as SeatToken). */
+		--token-scale: 1;
 		position: relative;
 		display: inline-block;
 		line-height: 0;

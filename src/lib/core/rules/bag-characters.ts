@@ -1,10 +1,11 @@
 /**
  * Which characters stay out of the bag, read from TPI's `special` data so homebrew
- * characters are covered too. No imports from other rules files, so both the setup check
- * and the bag plan can use it (https://wiki.bloodontheclocktower.com/Setup).
+ * characters are covered too. Imports neither the setup check nor the bag plan, so both can
+ * use it (https://wiki.bloodontheclocktower.com/Setup).
  */
 import type { Character } from '#lib/core/data/types.ts';
 import type { Reminder } from '#lib/core/model/types.ts';
+import { setupModifierFor } from './setup-modifiers.ts';
 
 function hasSpecial(character: Character, type: string, name: string): boolean {
 	return character.special.some((s) => s.type === type && s.name === name);
@@ -45,11 +46,13 @@ export function isNotDealt(character: Character): boolean {
  *   (https://wiki.bloodontheclocktower.com/Legion);
  * - `good-duplicate` / `evil-duplicate` on a character in play, which lets good or evil
  *   characters repeat: the Pope (https://wiki.bloodontheclocktower.com/Pope) and the
- *   Atheist (https://wiki.bloodontheclocktower.com/Atheist).
+ *   Atheist (https://wiki.bloodontheclocktower.com/Atheist);
+ * - a homebrew setup bracket that adds copies of the character itself ("[+1 Hannibal]").
  * `inPlay` is everything selected plus the Fabled and Loric in play.
  */
 export function canDuplicate(character: Character, inPlay: readonly Character[]): boolean {
 	if (hasSpecial(character, 'selection', 'bag-duplicate')) return true;
+	if (setupModifierFor(character)?.copies?.some((n) => n > 0)) return true;
 	const good = character.type === 'townsfolk' || character.type === 'outsider';
 	const evil = character.type === 'minion' || character.type === 'demon';
 	return inPlay.some(

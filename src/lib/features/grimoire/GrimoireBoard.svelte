@@ -37,7 +37,6 @@
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
-	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import {
 		charactersReallyInPlay,
@@ -67,6 +66,7 @@
 		withoutPlaced,
 		type SeatPoint
 	} from '#lib/ui/seating/seat-layout.ts';
+	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import { nameBox, placeNames, type Box } from './name-placement.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
@@ -87,6 +87,7 @@
 	import ReminderBank from './ReminderBank.svelte';
 	import { stepReminders } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
+	import RulesAtSetting from './RulesAtSetting.svelte';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
@@ -131,6 +132,8 @@
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
+	// The Token size preview in Settings draws at this board's size.
+	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
 	// Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
 	// keep it all on the board so a narrow phone never scrolls sideways.
 	const unit = 16;
@@ -240,8 +243,8 @@
 			// The Set up button and the Fabled and Loric in the middle stay clear and tappable.
 			[
 				...(centreW > 0 ? [{ x: width / 2, y: height / 2, w: centreW + 12, h: centreH + 12 }] : []),
-				// Fabled and Loric along the edge, in the top left corner.
-				...(edgeW > 0 && boardLooks.current.rulesAt === 'edge'
+				// Fabled and Loric along the edge or grouped, in the top left corner.
+				...(edgeW > 0 && boardLooks.current.rulesAt !== 'middle'
 					? [{ x: edgeW / 2, y: edgeH / 2, w: edgeW + 12, h: edgeH + 12 }]
 					: []),
 				// The day timer, in the top right corner.
@@ -280,9 +283,10 @@
 	});
 
 	/** The seat under a point (in % of the board), if it is within reach of a token. */
-	function seatAt(at: SeatPoint): SeatId | undefined {
+	/** The seat under `at`, or with `nearest` the closest seat however far. */
+	function seatAt(at: SeatPoint, nearest = false): SeatId | undefined {
 		let best: SeatId | undefined;
-		let bestDistance = size * 0.75;
+		let bestDistance = nearest ? Infinity : size * 0.75;
 		game.seating.forEach((id, i) => {
 			const d = Math.hypot(
 				((points[i].x - at.x) / 100) * width,
@@ -607,8 +611,8 @@
 	 * setup help, and it can be dismissed.
 	 */
 	let bluffsPromptDismissed = $state(false);
-	/** The day timer shows from the first day, or once started, until the game ends. */
-	const showTimer = $derived(!ended && (game.pastDays.length > 0 || !liveDayTimer.fresh));
+	/** The day timer is always on the board until the game ends (Trevor, 2026-10-17). */
+	const showTimer = $derived(!ended);
 	const showBluffsPrompt = $derived(
 		!bluffsPromptDismissed &&
 			!ended &&
@@ -760,6 +764,9 @@
 	let ruleOpen = $state(false);
 	let ruleShown = $state<CharacterId | undefined>();
 	let ruleShownOpen = $state(false);
+	/** Every Fabled and Loric at once, from the corner stack. */
+	let rulesGroupOpen = $state(false);
+	const removeRuleLabel = (name: string) => `Remove ${name} from the game`;
 	let ruleRemoveOpen = $state(false);
 	const ruleShownCharacter = $derived(ruleShown ? characters.get(ruleShown) : undefined);
 </script>
@@ -1007,8 +1014,8 @@
 			size={chip}
 			view={bankView}
 			onView={(v) => (bankChosen = v)}
-			focus={walk && walkStep?.character && stepFocus.current.on
-				? stepReminders(walkStep.character.id, walk.night)
+			focus={walk && walkStep?.character
+				? stepReminders(walkStep.character.id, walk.night, walkStep.character)
 				: undefined}
 			focusMode={stepFocus.current.mode}
 			{seatAt}
@@ -1017,9 +1024,28 @@
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>
-		{#if boardLooks.current.rulesAt === 'edge' && game.ruleCharacters.length > 0}
+		{#if boardLooks.current.rulesAt !== 'middle' && game.ruleCharacters.length > 0}
 			<div class="rules-edge" bind:clientWidth={edgeW} bind:clientHeight={edgeH}>
-				{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
+				{#if boardLooks.current.rulesAt === 'edge'}
+					{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
+				{:else}
+					<!-- One stack for them all; a tap lists every one (Trevor, 2026-10-17). -->
+					{@const stack = Math.max(tapPx, Math.round(size * 0.5))}
+					<button
+						type="button"
+						class="rules-stack"
+						aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
+						onclick={() => (rulesGroupOpen = true)}
+					>
+						{#each game.ruleCharacters.slice(0, 3) as id (id)}
+							{@const character = characters.get(id)}
+							{#if character}<CharacterToken {character} size={stack} />{/if}
+						{/each}
+						{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
+								>{game.ruleCharacters.length}</span
+							>{/if}
+					</button>
+				{/if}
 			</div>
 		{/if}
 		{#if showTimer}
@@ -1120,7 +1146,7 @@
 		<Button
 			variant="quiet"
 			icon="settings"
-			onclick={() => fromMenu(() => settingsDialog.show('board'))}
+			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
 		>
 			Board and tokens
 		</Button>
@@ -1291,10 +1317,38 @@
 			<p>{ruleShownCharacter.ability}</p>
 		</div>
 	{/if}
-	{#snippet actions()}
-		<!-- A delete is a red trash icon, named for screen readers (Trevor, 2026-10-17). -->
+	<RulesAtSetting />
+	{#snippet headActions()}
+		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
 		<DeleteButton label="Remove from the game" onclick={() => (ruleRemoveOpen = true)} />
 	{/snippet}
+</Dialog>
+
+<Dialog bind:open={rulesGroupOpen} title="Fabled and Loric">
+	<ul class="rules-group">
+		{#each game.ruleCharacters as id (id)}
+			{@const character = characters.get(id)}
+			{#if character}
+				<li class="rule-detail">
+					<CharacterToken {character} size={64} />
+					<div>
+						<CharacterBadge characterId={id} {character} inline />
+						<p>{character.ability}</p>
+					</div>
+					<DeleteButton
+						label={removeRuleLabel(character.name)}
+						onclick={() => {
+							ruleShown = id;
+							ruleRemoveOpen = true;
+						}}
+					/>
+				</li>
+			{/if}
+		{:else}
+			<li class="none">None</li>
+		{/each}
+	</ul>
+	<RulesAtSetting />
 </Dialog>
 
 <ConfirmDialog
@@ -1669,5 +1723,41 @@
 	.rule-detail p {
 		margin: 0;
 		font-family: var(--font-ability);
+	}
+	.rule-detail > div {
+		flex: 1;
+		min-width: 0;
+	}
+	.rules-group {
+		display: grid;
+		gap: var(--space-3);
+		margin: 0 0 var(--space-3);
+		padding: 0;
+		list-style: none;
+	}
+	/* The corner stack: tokens overlapping, with how many there are. */
+	.rules-stack {
+		position: relative;
+		display: flex;
+		padding: 0;
+		border: 0;
+		background: none;
+		cursor: pointer;
+		--token-scale: 1;
+	}
+	.rules-stack > :global(*:not(:first-child):not(.stack-count)) {
+		margin-inline-start: -60%;
+	}
+	.stack-count {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		min-width: 1.4em;
+		padding: 0 0.3em;
+		border-radius: var(--radius-full);
+		background: var(--accent);
+		color: var(--on-accent);
+		font: 700 0.75rem / 1.4 var(--font-control);
+		text-align: center;
 	}
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
@@ -489,6 +490,29 @@
 				</button>
 			</div>
 
+			<!-- Always here, so nothing moves when the player dies (Trevor, 2026-10-17). -->
+			<div class="row">
+				<span class="label" id={`ghost-${seat.seatId}`}>Ghost vote</span>
+				<span class="value ghost">
+					{#if seat.dead}
+						<Select
+							label="Ghost vote"
+							labelledBy={`ghost-${seat.seatId}`}
+							value={seat.ghostVoteUsed ? 'used' : 'unused'}
+							options={[
+								{ value: 'unused', label: 'Not used' },
+								{ value: 'used', label: 'Used' }
+							]}
+							onChange={(v) =>
+								grimoire.run({
+									type: v === 'used' ? 'SpendGhostVote' : 'RestoreGhostVote',
+									seatId: seat.seatId
+								})}
+						/>
+					{:else}<span class="ghost-none">None while alive</span>{/if}
+				</span>
+			</div>
+
 			<div class="row">
 				<span class="label">Changes</span>
 				<button
@@ -917,9 +941,12 @@
 		>
 			Change alignment
 		</Button>
-		<!-- Removing the character is "None" in Change character (Trevor, 2026-10-17). -->
-		<DeleteButton label="Remove seat" onclick={() => fromMenu(() => (removeOpen = true))} />
 	</div>
+	{#snippet headActions()}
+		<!-- Beside the close X, as on every sheet (Trevor, 2026-10-17). Removing the character
+		     is "None" in Change character. -->
+		<DeleteButton label="Remove seat" onclick={() => fromMenu(() => (removeOpen = true))} />
+	{/snippet}
 </Dialog>
 
 <Dialog bind:open={reminderMenuOpen} title="Reminder">
@@ -955,6 +982,8 @@
 		>
 			Return to reminder bank
 		</Button>
+	</div>
+	{#snippet headActions()}
 		<DeleteButton
 			label="Remove reminder"
 			onclick={() =>
@@ -963,7 +992,7 @@
 					moving = undefined;
 				})}
 		/>
-	</div>
+	{/snippet}
 </Dialog>
 
 <SeatChooser
@@ -1261,8 +1290,25 @@
 		width: min(70%, 16rem);
 	}
 	/* One line in the sheet, so a long note never moves anything; the dialog shows it all. */
+	/* The note looks as it does in its editor (Trevor, 2026-10-17): the sheet's own text,
+	   not the buttons' font. */
+	.value.ghost {
+		display: grid;
+		padding: 0;
+		border: 0;
+		cursor: default;
+	}
+	.ghost-none {
+		align-self: center;
+		padding: 0 var(--space-2);
+		color: var(--on-sheet-muted);
+	}
 	.note-value {
 		justify-content: flex-start;
+		font: inherit;
+		text-transform: none;
+		letter-spacing: normal;
+		font-variant: normal;
 	}
 	.note-text {
 		min-width: 0;

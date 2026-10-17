@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // Trevor (2026-10-16): a Library tab with every script the user has saved or made, folders and
-// tags for them ("favorite", "wanna try", "stupid fun"), and their own info tokens.
+// tags for them ("favorite", "wanna try", "stupid fun").
 
 const homebrew = [
 	{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
@@ -14,6 +14,31 @@ const homebrew = [
 
 const table = (page: Page) => page.getByTestId('library-table');
 const row = (page: Page) => table(page).getByRole('button', { name: /^Storm Front/ });
+const tiles = (page: Page) => page.getByTestId('library-folders');
+const tile = (page: Page, name: string | RegExp) =>
+	tiles(page).getByRole('button', {
+		name: typeof name === 'string' ? new RegExp(`^${name}`) : name
+	});
+const crumbs = (page: Page) => page.getByRole('navigation', { name: 'Folder path' });
+
+async function addStormFront(page: Page) {
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(JSON.stringify(homebrew))
+	});
+	const dialog = page.getByRole('dialog', { name: 'Storm Front' });
+	await expect(dialog).toBeVisible();
+	return dialog;
+}
+
+async function newFolder(page: Page, name: string) {
+	await page.getByRole('button', { name: 'New folder' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'New folder' });
+	await dialog.getByRole('textbox', { name: 'Name' }).fill(name);
+	await dialog.getByRole('textbox', { name: 'Name' }).press('Enter');
+	await expect(dialog).toHaveCount(0);
+}
 
 async function noSidewaysScroll(page: Page) {
 	const overflow = await page.evaluate(
@@ -22,36 +47,92 @@ async function noSidewaysScroll(page: Page) {
 	expect(overflow).toBeLessThanOrEqual(0);
 }
 
-test('saved scripts get folders and tags, filter by them, and can be removed', async ({ page }) => {
-	// Scripts are added here (Trevor, 2026-10-17); a new one opens so it can be labelled.
+test('scripts sit in folders like files, and folders open, nest, move and delete', async ({
+	page
+}) => {
+	// Trevor (2026-10-17): "hold scripts like files in a file manager".
 	await page.goto('/library');
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Library');
 	await expect(page.getByRole('button', { name: 'Add script' })).toBeVisible();
-	await page.getByLabel('Script file').setInputFiles({
-		name: 'storm-front.json',
-		mimeType: 'application/json',
-		buffer: Buffer.from(JSON.stringify(homebrew))
-	});
-	await expect(page.getByRole('dialog', { name: 'Storm Front' })).toBeVisible();
-	await page
-		.getByRole('dialog', { name: 'Storm Front' })
-		.getByRole('button', { name: 'Close' })
-		.tap();
+	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByRole('radio', { name: 'Folders' })).toBeChecked();
+	await expect(tile(page, 'Storm Front')).toBeVisible();
+	// The folder actions are there but unusable at the top level, so nothing moves on opening one.
+	await expect(page.getByRole('button', { name: 'Delete folder' })).toBeDisabled();
+
+	// A new folder opens; a folder inside it opens too, and the breadcrumb leads back.
+	await newFolder(page, 'Club night');
+	await expect(crumbs(page)).toHaveText(/Scripts\s*\/\s*Club night/);
+	await expect(tiles(page)).toHaveText('None');
+	await newFolder(page, 'Teensy');
+	await expect(crumbs(page)).toHaveText(/Club night\s*\/\s*Teensy/);
+	await crumbs(page).getByRole('button', { name: 'Scripts' }).tap();
+	await expect(tile(page, 'Club night')).toContainText('1 item');
+	await noSidewaysScroll(page);
+
+	// A script goes in any folder from its own dialog.
+	await tile(page, 'Storm Front').tap();
+	const script = page.getByRole('dialog', { name: 'Storm Front' });
+	await script.getByRole('combobox', { name: 'Folder' }).tap();
+	await page.getByRole('option', { name: 'Club night / Teensy', exact: true }).tap();
+	await script.getByRole('button', { name: 'Close' }).tap();
+	await expect(tile(page, 'Storm Front')).toHaveCount(0);
+	await tile(page, 'Club night').tap();
+	await tile(page, 'Teensy').tap();
+	await expect(tile(page, 'Storm Front')).toBeVisible();
+
+	// Search finds scripts in every folder and says where each one is.
+	await crumbs(page).getByRole('button', { name: 'Scripts' }).tap();
+	await page.getByPlaceholder('Name, author or character').fill('washerwoman');
+	await expect(tile(page, 'Storm Front')).toContainText('Club night / Teensy');
+	await page.getByRole('button', { name: 'Clear' }).first().tap();
+
+	// Kept on the device.
+	await page.reload();
+	await tile(page, 'Club night').tap();
+	await tile(page, 'Teensy').tap();
+
+	// Rename, then move the open folder to the top level.
+	await page.getByRole('button', { name: 'Rename Teensy' }).tap();
+	const rename = page.getByRole('dialog', { name: 'Rename' });
+	await rename.getByRole('textbox', { name: 'Name' }).fill('Small games');
+	await rename.getByRole('button', { name: 'Save' }).tap();
+	await page.getByRole('button', { name: 'Move Small games' }).tap();
+	const move = page.getByRole('dialog', { name: 'Move Small games' });
+	await move.getByRole('combobox', { name: 'Move to' }).tap();
+	await expect(page.getByRole('option', { name: 'Club night / Small games' })).toHaveCount(0);
+	await page.getByRole('option', { name: 'Scripts', exact: true }).tap();
+	await move.getByRole('button', { name: 'Move', exact: true }).tap();
+	await expect(crumbs(page)).toHaveText(/Scripts\s*\/\s*Small games$/);
+
+	// Deleting a folder asks, and what it held moves up a level.
+	await page.getByRole('button', { name: 'Delete Small games' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Delete folder?' });
+	await expect(confirm).toContainText('Its scripts and folders move to Scripts.');
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(crumbs(page)).toHaveText('Scripts');
+	await expect(tile(page, 'Storm Front')).toBeVisible();
+	await expect(tile(page, 'Club night')).toContainText('0 items');
+});
+
+test('the table view keeps tags, filters and removing', async ({ page }) => {
+	await page.goto('/library');
+	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
+	await newFolder(page, 'Club night');
+	await page.getByRole('radiogroup', { name: 'View' }).getByText('Table', { exact: true }).tap();
 	await expect(row(page)).toBeVisible();
 	await noSidewaysScroll(page);
 
-	// Folders and tags are the user's own.
-	await page.getByRole('button', { name: 'Folders and tags' }).tap();
-	const manage = page.getByRole('dialog', { name: 'Folders and tags' });
-	await manage.getByPlaceholder('New folder').fill('Club night');
-	await manage.getByPlaceholder('New folder').press('Enter');
+	// Tags are the user's own.
+	await page.getByRole('button', { name: 'Tags', exact: true }).first().tap();
+	const manage = page.getByRole('dialog', { name: 'Tags' });
 	await manage.getByPlaceholder('New tag').fill('Stupid fun');
-	await manage.getByRole('button', { name: 'Add' }).nth(1).tap();
+	await manage.getByRole('button', { name: 'Add' }).tap();
 	await manage.getByPlaceholder('New tag').fill('stupid FUN');
 	await expect(manage.getByText('That name is already used.')).toBeVisible();
 	await manage.getByPlaceholder('New tag').fill('Wanna try');
 	await manage.getByPlaceholder('New tag').press('Enter');
-	await expect(manage.getByRole('listitem')).toHaveText(['Club night', 'Stupid fun', 'Wanna try']);
+	await expect(manage.getByRole('listitem')).toHaveText(['Stupid fun', 'Wanna try']);
 	await manage.getByRole('button', { name: 'Close' }).tap();
 
 	// A script sits in one folder and carries any tags.
@@ -62,14 +143,14 @@ test('saved scripts get folders and tags, filter by them, and can be removed', a
 	const fun = script.getByRole('button', { name: 'Stupid fun' });
 	await fun.tap();
 	await expect(fun).toHaveAttribute('aria-pressed', 'true');
-	// Only scripts made in the Script builder open there to edit.
-	await expect(script.getByRole('button', { name: 'Edit in Script builder' })).toHaveCount(0);
-	await expect(script.getByTestId('script-characters')).toContainText('Washerwoman');
+	// Every saved script opens in the Script builder (Trevor, 2026-10-17).
+	await expect(script.getByRole('button', { name: 'Edit in Script builder' })).toBeEnabled();
+	await expect(script.getByTestId('script-sheet')).toContainText('Washerwoman');
 	await script.getByRole('button', { name: 'Close' }).tap();
 	await expect(table(page)).toContainText('Club night');
 	await expect(table(page)).toContainText('Stupid fun');
 
-	// Kept on the device.
+	// The chosen view is remembered.
 	await page.reload();
 	await expect(table(page)).toContainText('Club night');
 	await expect(table(page)).toContainText('Stupid fun');
@@ -87,7 +168,7 @@ test('saved scripts get folders and tags, filter by them, and can be removed', a
 	await page.keyboard.press('Escape');
 
 	// Deleting a tag asks, then takes it off the script, which stays.
-	await page.getByRole('button', { name: 'Folders and tags' }).tap();
+	await page.getByRole('button', { name: 'Tags', exact: true }).first().tap();
 	await manage.getByRole('button', { name: 'Delete Stupid fun' }).tap();
 	const confirmTag = page.getByRole('alertdialog', { name: 'Delete tag?' });
 	await expect(confirmTag).toContainText('taken off 1 script');
@@ -107,13 +188,29 @@ test('saved scripts get folders and tags, filter by them, and can be removed', a
 	await expect(table(page)).toContainText('None');
 });
 
-test('the Library lists only the user’s own info tokens', async ({ page }) => {
+test('a script added inside an open folder goes in that folder', async ({ page }) => {
 	await page.goto('/library');
-	const section = page.getByRole('region', { name: 'Info tokens' });
-	await expect(section.getByRole('heading', { name: 'Custom' })).toBeVisible();
-	await expect(section.getByRole('heading', { name: 'Standard' })).toHaveCount(0);
-	await section.getByRole('button', { name: 'New info token' }).tap();
-	await expect(page.getByRole('dialog')).toBeVisible();
+	await newFolder(page, 'Club night');
+	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
+	await expect(tile(page, 'Storm Front')).toBeVisible();
+	await crumbs(page).getByRole('button', { name: 'Scripts' }).tap();
+	await expect(tile(page, 'Storm Front')).toHaveCount(0);
+});
+
+test('a script shows the same details as in Search, and plays from there', async ({ page }) => {
+	// Trevor (2026-10-17): "exact same info and style as in the search".
+	await page.goto('/library');
+	const script = await addStormFront(page);
+	const details = script.getByTestId('script-details');
+	for (const fact of ['Author', 'Type', 'Source', 'Version', 'Folder', 'Tags']) {
+		await expect(details.getByRole('term').filter({ hasText: fact }).first()).toBeVisible();
+	}
+	await expect(script.getByTestId('script-checks')).toBeVisible();
+	await expect(script.getByTestId('script-sheet')).toContainText('Washerwoman');
+	await expect(script.getByRole('button', { name: 'Print script' })).toBeVisible();
+	await expect(script.getByRole('button', { name: 'Share script' })).toBeVisible();
+	await script.getByRole('button', { name: 'Play', exact: true }).tap();
+	await expect(page).toHaveURL(/\/new$/);
 });
 
 test('a script made in the Script builder opens there from the Library', async ({ page }) => {
@@ -131,9 +228,7 @@ test('a script made in the Script builder opens there from the Library', async (
 		.tap();
 
 	await page.goto('/library');
-	await table(page)
-		.getByRole('button', { name: /^Built here/ })
-		.tap();
+	await tile(page, 'Built here').tap();
 	await page
 		.getByRole('dialog', { name: 'Built here' })
 		.getByRole('button', { name: 'Edit in Script builder' })
@@ -141,4 +236,121 @@ test('a script made in the Script builder opens there from the Library', async (
 	await expect(page).toHaveURL(/\/build-script$/);
 	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Built here');
 	await expect(page.getByTestId('count-demon')).toHaveText('1');
+});
+
+test('a saved BotC Scripts script still offers its other versions', async ({ page }) => {
+	// Trevor (2026-10-17): a script saved at one version can still open all the others.
+	const content = (version: string) => [
+		{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
+		...homebrew.slice(1),
+		...(version === '1.1.0' ? ['mayor'] : [])
+	];
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name: 'Storm Front',
+						version: '1.0.0',
+						author: 'Trevor',
+						type: 'Full',
+						score: 5,
+						characters: [{ id: 'chef' }, { id: 'imp' }]
+					}
+				]
+			}
+		})
+	);
+	await page.route('**/api/botcscripts/versions/1900', (route) =>
+		route.fulfill({ json: { scriptId: 1900, latest: '1.1.0', versions: ['1.1.0', '1.0.0'] } })
+	);
+	await page.route(/\/api\/botcscripts\/(version\/900|script\/1900\/1\.[01]\.0)$/, (route) => {
+		const version = route.request().url().endsWith('1.1.0') ? '1.1.0' : '1.0.0';
+		return route.fulfill({
+			json: {
+				scriptId: 1900,
+				versionId: version === '1.1.0' ? 901 : 900,
+				name: 'Storm Front',
+				version,
+				author: 'Trevor',
+				content: content(version)
+			}
+		});
+	});
+
+	// Saved from Search at 1.0.0.
+	await page.goto('/scripts');
+	await page
+		.getByRole('table', { name: 'Scripts' })
+		.getByRole('button', { name: /^Storm Front/ })
+		.tap();
+	const search = page.getByRole('complementary', { name: 'Script details' });
+	await expect(search.getByTestId('script-sheet')).toContainText('Washerwoman');
+	await search.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(search.getByRole('button', { name: 'Save', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+
+	await page.goto('/library');
+	await tile(page, 'Storm Front').tap();
+	const script = page.getByRole('dialog', { name: 'Storm Front' });
+	const save = script.getByRole('button', { name: 'Save', exact: true });
+	await expect(save).toHaveAttribute('aria-pressed', 'true');
+	await expect(script.getByTestId('newer-version').getByRole('button')).toHaveText('Newer: 1.1.0');
+	await script.getByRole('combobox', { name: 'Version' }).tap();
+	await page.getByRole('option', { name: /^1\.1\.0/ }).tap();
+	await expect(script.getByTestId('script-sheet')).toContainText('Mayor');
+	// Only a preview until saved: the Library still holds 1.0.0, and Remove waits.
+	await expect(save).toHaveAttribute('aria-pressed', 'false');
+	await expect(script.getByRole('button', { name: 'Remove script' })).toBeDisabled();
+	await script.getByRole('button', { name: 'Close' }).tap();
+	await expect(tile(page, 'Storm Front')).toHaveCount(1);
+
+	// Saving another version keeps both.
+	await tile(page, 'Storm Front').tap();
+	await script.getByRole('combobox', { name: 'Version' }).tap();
+	await page.getByRole('option', { name: /^1\.1\.0/ }).tap();
+	await save.tap();
+	await expect(save).toHaveAttribute('aria-pressed', 'true');
+	await script.getByRole('button', { name: 'Close' }).tap();
+	await expect(tile(page, 'Storm Front')).toHaveCount(2);
+});
+
+test('a script edited in the Script builder is marked as a variation, with what changed', async ({
+	page
+}) => {
+	// Trevor (2026-10-17): an edited script says it is a variation, and shows what the variation is.
+	await page.goto('/library');
+	await (await addStormFront(page)).getByRole('button', { name: 'Edit in Script builder' }).tap();
+	await expect(page).toHaveURL(/\/build-script$/);
+	await page.getByRole('textbox', { name: 'Name' }).fill('Storm Front (no Saint)');
+	await page
+		.getByTestId('character-picker')
+		.getByRole('button', { name: 'Saint', exact: true })
+		.tap();
+	await page
+		.getByTestId('character-picker')
+		.getByRole('button', { name: 'Mayor', exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+
+	await page.goto('/library');
+	// The original stays in the Library beside the variation.
+	await expect(tile(page, 'Storm Front')).toHaveCount(2);
+	await tile(page, /^Storm Front \(no Saint\)/).tap();
+	const script = page.getByRole('dialog', { name: 'Storm Front (no Saint)' });
+	await expect(script.getByTestId('variation-of')).toContainText('Storm Front');
+	await script.getByRole('button', { name: 'What changed' }).tap();
+	const changes = page.getByTestId('variation-changes');
+	await expect(changes).toContainText('Storm Front (no Saint)');
+	await expect(changes.getByRole('definition').nth(4)).toContainText('Mayor');
+	await expect(changes.getByRole('definition').nth(5)).toContainText('Saint');
+	await noSidewaysScroll(page);
 });

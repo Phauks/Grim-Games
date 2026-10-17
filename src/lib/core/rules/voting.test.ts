@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
-import { blockThreshold, livingByTeam } from './voting.ts';
+import { blockThreshold, ghostVotesLeft, livingByTeam } from './voting.ts';
 
 describe('blockThreshold', () => {
 	it('is half the living players, rounded up', () => {
@@ -35,5 +35,21 @@ describe('livingByTeam', () => {
 			{ type: 'SetDead', seatId: seats[2], dead: true }
 		).game;
 		expect(livingByTeam(g)).toEqual({ alive: 4, good: 1, evil: 2, unknown: 1 });
+	});
+});
+
+describe('ghostVotesLeft', () => {
+	// https://wiki.bloodontheclocktower.com/Dead_Player: each dead player has one vote left.
+	it('counts the dead who have not spent their vote', () => {
+		const { session, ctx, seats } = newGame(5);
+		expect(ghostVotesLeft(session.game)).toBe(0);
+		const g = run(
+			session,
+			ctx,
+			{ type: 'SetDead', seatId: seats[0], dead: true },
+			{ type: 'SetDead', seatId: seats[1], dead: true },
+			{ type: 'SpendGhostVote', seatId: seats[1] }
+		).game;
+		expect(ghostVotesLeft(g)).toBe(1);
 	});
 });

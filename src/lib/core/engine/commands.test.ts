@@ -582,6 +582,124 @@ describe('rule characters', () => {
 	});
 });
 
+describe('reminders on Fabled and Loric', () => {
+	// Trevor (2026-10-17): Fabled and Loric can hold reminders; others' reminders may go
+	// there too, with a caution.
+	it('places, moves and removes reminders held by a rule character', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AddRuleCharacter', characterId: 'fibbin' },
+			{ type: 'AddRuleCharacter', characterId: 'bootlegger' },
+			{ type: 'AddRuleCharacter', characterId: 'angel' },
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'imp' }
+		);
+		const added = run(s, ctx, {
+			type: 'AddRuleReminder',
+			characterId: 'fibbin',
+			reminder: { characterId: 'fibbin', label: 'No Ability' }
+		});
+		const [held] = added.game.ruleReminders!.fibbin;
+		expect(held).toMatchObject({ characterId: 'fibbin', label: 'No Ability' });
+
+		// Onto another rule character, then onto a seat, then back.
+		const toLoric = run(added, ctx, {
+			type: 'MoveReminderToRuleCharacter',
+			reminderId: held.reminderId,
+			characterId: 'bootlegger'
+		});
+		expect(toLoric.game.ruleReminders!.fibbin).toEqual([]);
+		expect(toLoric.game.ruleReminders!.bootlegger).toEqual([held]);
+		const toSeat = run(toLoric, ctx, {
+			type: 'MoveReminder',
+			reminderId: held.reminderId,
+			toSeatId: seats[1]
+		});
+		expect(toSeat.game.ruleReminders!.bootlegger).toEqual([]);
+		expect(toSeat.game.seats[seats[1]].reminders).toEqual([held]);
+		const back = run(toSeat, ctx, {
+			type: 'MoveReminderToRuleCharacter',
+			reminderId: held.reminderId,
+			characterId: 'fibbin'
+		});
+		expect(back.game.seats[seats[1]].reminders).toEqual([]);
+		expect(back.game.ruleReminders!.fibbin).toEqual([held]);
+
+		const removed = run(back, ctx, { type: 'RemoveReminder', reminderId: held.reminderId });
+		expect(removed.game.ruleReminders!.fibbin).toEqual([]);
+	});
+
+	it("warns when the reminder isn't a Fabled's or Loric's, and refuses a holder not in play", () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AddRuleCharacter', characterId: 'angel' },
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'imp' }
+		);
+		expect(
+			warned(s, ctx, {
+				type: 'AddRuleReminder',
+				characterId: 'angel',
+				reminder: { characterId: 'imp', label: 'Dead' }
+			})
+		).toContain('reminder-not-from-rule-character');
+		expect(
+			warned(s, ctx, {
+				type: 'AddRuleReminder',
+				characterId: 'angel',
+				reminder: { characterId: 'angel', label: 'Protected' }
+			})
+		).toEqual([]);
+		expect(
+			refused(s, ctx, {
+				type: 'AddRuleReminder',
+				characterId: 'fibbin',
+				reminder: { characterId: 'fibbin', label: 'No Ability' }
+			})
+		).toBe('rule-character-not-in-play');
+		const onSeat = run(s, ctx, {
+			type: 'AddReminder',
+			seatId: seats[1],
+			reminder: { characterId: 'imp', label: 'Dead' }
+		});
+		const id = onSeat.game.seats[seats[1]].reminders[0].reminderId;
+		expect(
+			warned(onSeat, ctx, {
+				type: 'MoveReminderToRuleCharacter',
+				reminderId: id,
+				characterId: 'angel'
+			})
+		).toContain('reminder-not-from-rule-character');
+	});
+
+	it('takes its reminders away when the rule character is removed', () => {
+		const { session, ctx } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AddRuleCharacter', characterId: 'angel' },
+			{
+				type: 'AddRuleReminder',
+				characterId: 'angel',
+				reminder: { characterId: 'angel', label: 'Protected' }
+			},
+			{ type: 'RemoveRuleCharacter', characterId: 'angel' }
+		);
+		expect(s.game.ruleCharacters).toEqual([]);
+		expect(s.game.ruleReminders).toEqual({});
+		// Undo brings both back.
+		const undone = undo(s);
+		expect(undone.game.ruleReminders!.angel).toHaveLength(1);
+	});
+
+	it('reads an older game without rule reminders', () => {
+		const { session } = newGame(names);
+		expect(session.game.ruleReminders).toBeUndefined();
+	});
+});
+
 describe('bluffs', () => {
 	it('sets, replaces and removes bluff sets', () => {
 		const { session, ctx } = newGame(names);

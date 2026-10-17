@@ -174,13 +174,20 @@
 		object-fit: contain;
 		pointer-events: none;
 	}
-	/* The words sit across the bottom of the token, on a band so they stay legible. */
+	/* The words sit across the bottom of the token, on a band so they stay legible. How wide
+	   they may run and whether they wrap are settings (Board and tokens); wrapped words grow
+	   upwards over the icon, up to three lines, and a word wider than the limit widens the
+	   band rather than being cut. */
 	.label {
 		position: absolute;
 		left: 50%;
 		bottom: calc(-0.125 * var(--u));
 		translate: -50% 0;
-		max-width: calc(var(--d) * 1.5);
+		width: max-content;
+		max-width: calc(var(--d) * var(--reminder-label-width, 1.5));
+		/* min-content when wrapping (the longest word), else 0: min-width beats max-width. */
+		min-width: var(--reminder-label-min, 0);
+		max-height: calc(3 * 1.35em);
 		padding: 0 0.3em;
 		overflow: hidden;
 		border-radius: var(--radius-sm);
@@ -190,8 +197,10 @@
 		font-size: calc(0.6rem * var(--reminder-scale, 1));
 		font-variant: small-caps;
 		line-height: 1.35;
-		white-space: nowrap;
+		white-space: var(--reminder-label-wrap, nowrap);
 		text-overflow: ellipsis;
+		overflow-wrap: normal;
+		text-align: center;
 	}
 	.more {
 		font: 600 0.85rem / 1 var(--font-control);

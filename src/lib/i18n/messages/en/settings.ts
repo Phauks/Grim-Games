@@ -50,6 +50,7 @@ export const settings = {
 	'settings.rulesAt': 'Fabled and Loric',
 	'settings.rulesAt.middle': 'Middle',
 	'settings.rulesAt.edge': 'Edge, smaller',
+	'settings.rulesAt.corner': 'Corner, grouped',
 	'settings.requireName': 'Require a name before drawing',
 	'settings.requireNameHelp': 'A player types their name before they can see the token they drew.',
 	'settings.preview': 'Preview',

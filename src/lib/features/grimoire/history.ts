@@ -54,6 +54,18 @@ function reminderOn(
 	return undefined;
 }
 
+/** A reminder a Fabled or Loric holds, and which one. */
+function ruleReminderOn(
+	game: Game | undefined,
+	reminderId: string
+): { holder: CharacterId; label: ReminderLabel; characterId: CharacterId } | undefined {
+	for (const [holder, held] of Object.entries(game?.ruleReminders ?? {})) {
+		const r = held.find((x) => x.reminderId === reminderId);
+		if (r) return { holder, label: r.label, characterId: r.characterId };
+	}
+	return undefined;
+}
+
 /** A cause as words, or the killing character as a badge. */
 function causeParts(
 	cause: DeathCause,
@@ -132,6 +144,16 @@ function describeEvent(
 				seatPart(before, event.seatId)
 			];
 		case 'ReminderMoved': {
+			const held = ruleReminderOn(before, event.reminderId);
+			if (held) {
+				return [
+					{ kind: 'reminder', label: held.label, characterId: held.characterId },
+					text(' moved from '),
+					{ kind: 'character', characterId: held.holder },
+					text(' to '),
+					seatPart(before, event.toSeatId)
+				];
+			}
 			const r = reminderOn(before, event.reminderId);
 			return r
 				? [
@@ -144,6 +166,15 @@ function describeEvent(
 				: [text('Moved a reminder')];
 		}
 		case 'ReminderRemoved': {
+			const held = ruleReminderOn(before, event.reminderId);
+			if (held) {
+				return [
+					text('Removed '),
+					{ kind: 'reminder', label: held.label, characterId: held.characterId },
+					text(' from '),
+					{ kind: 'character', characterId: held.holder }
+				];
+			}
 			const r = reminderOn(before, event.reminderId);
 			return r
 				? [
@@ -174,6 +205,26 @@ function describeEvent(
 			return [text('Added '), { kind: 'character', characterId: event.characterId }];
 		case 'RuleCharacterRemoved':
 			return [text('Removed '), { kind: 'character', characterId: event.characterId }];
+		case 'RuleReminderAdded':
+			return [
+				{ kind: 'reminder', label: event.reminder.label, characterId: event.reminder.characterId },
+				text(' on '),
+				{ kind: 'character', characterId: event.characterId }
+			];
+		case 'ReminderMovedToRuleCharacter': {
+			const r = reminderOn(before, event.reminderId) ?? ruleReminderOn(before, event.reminderId);
+			const to = { kind: 'character' as const, characterId: event.characterId };
+			if (!r) return [text('Moved a reminder to '), to];
+			const from: HistoryPart =
+				'seatId' in r ? seatPart(before, r.seatId) : { kind: 'character', characterId: r.holder };
+			return [
+				{ kind: 'reminder', label: r.label, characterId: r.characterId },
+				text(' moved from '),
+				from,
+				text(' to '),
+				to
+			];
+		}
 		case 'BluffsSet':
 		case 'BluffSetRemoved':
 		case 'BluffSetRenamed':

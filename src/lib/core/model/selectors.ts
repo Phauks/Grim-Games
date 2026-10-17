@@ -6,7 +6,16 @@
  */
 import type { Alignment, Character, CharacterId, CharacterType } from '#lib/core/data/index.ts';
 import type { CharacterLookup } from './characters.ts';
-import type { Game, OverrideField, Reminder, Seat, SeatId, SeatOverride } from './types.ts';
+import type {
+	Game,
+	OverrideField,
+	Reminder,
+	ReminderId,
+	ReminderInstance,
+	Seat,
+	SeatId,
+	SeatOverride
+} from './types.ts';
 
 /**
  * Reminders that make a living player register as dead. The Zombuul's first death: "you
@@ -15,6 +24,25 @@ import type { Game, OverrideField, Reminder, Seat, SeatId, SeatOverride } from '
 export const REGISTERS_AS_DEAD_REMINDERS: readonly Reminder[] = [
 	{ characterId: 'zombuul', label: 'Dead' }
 ];
+
+/** The reminders a Fabled or Loric in play holds, in the order they were placed. */
+export function ruleReminders(game: Game, characterId: CharacterId): ReminderInstance[] {
+	return game.ruleReminders?.[characterId] ?? [];
+}
+
+/** Where a reminder is: on a seat, on a Fabled or Loric, or nowhere. */
+export function reminderHolder(
+	game: Game,
+	reminderId: ReminderId
+): { seatId: SeatId } | { characterId: CharacterId } | undefined {
+	for (const seatId of game.seating) {
+		if (game.seats[seatId].reminders.some((r) => r.reminderId === reminderId)) return { seatId };
+	}
+	for (const [characterId, held] of Object.entries(game.ruleReminders ?? {})) {
+		if (held.some((r) => r.reminderId === reminderId)) return { characterId };
+	}
+	return undefined;
+}
 
 export function getSeat(game: Game, seatId: SeatId): Seat | undefined {
 	return Object.hasOwn(game.seats, seatId) ? game.seats[seatId] : undefined;

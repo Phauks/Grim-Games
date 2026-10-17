@@ -5,6 +5,7 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import DayTimer from './DayTimer.svelte';
 	import { liveDayTimer as timer } from './day-timer.svelte.ts';
 	import { playTimerSound } from './timer-sound.ts';
 
@@ -12,19 +13,26 @@
 	 * The day timer (Trevor, 2026-10-17): 30 seconds per living player, started by hand,
 	 * counting down or up (a setting). At the target the device vibrates, plays the chosen
 	 * sound and the clock flashes. `full` has every control (the day view); `compact` is the
-	 * clock with Start/Pause, for the board.
+	 * clock with Start/Pause, for the board. Tapping its clock opens the full timer and its
+	 * settings over the board, without the day view (Trevor, 2026-10-17).
 	 */
 	interface Props {
 		/** Living players, for the starting length and Reset. */
 		alive: number;
 		variant?: 'full' | 'compact';
+		/** False where the sound is chosen beside the timer (the board's timer sheet). */
+		soundButton?: boolean;
 	}
 
-	let { alive, variant = 'full' }: Props = $props();
+	let { alive, variant = 'full', soundButton = true }: Props = $props();
 
 	$effect(() => timer.follow(alive));
 
 	let soundOpen = $state(false);
+	let controlsOpen = $state(false);
+	const MODES = ['down', 'up'] as const;
+	const modeLabel = (mode: (typeof MODES)[number]) =>
+		mode === 'down' ? t('day.timerModeDown') : t('day.timerModeUp');
 	const soundLabel = (sound: TimerSound) => t(`day.timerSound.${sound}`);
 	function chooseSound(sound: TimerSound) {
 		preferences.update({ timerSound: sound });
@@ -63,9 +71,16 @@
 			>
 		</button>
 	{:else}
-		<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
-			>{timer.clock}</span
+		<button
+			type="button"
+			class="open"
+			aria-label={t('day.timerOpen', { clock: timer.clock })}
+			onclick={() => (controlsOpen = true)}
 		>
+			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
+				>{timer.clock}</span
+			>
+		</button>
 	{/if}
 	{#if variant === 'full'}
 		<IconButton icon="add" label={t('day.timerMore')} onclick={() => timer.adjust(1)} />
@@ -83,11 +98,13 @@
 			disabled={timer.fresh}
 			onclick={() => timer.reset(alive)}
 		/>
-		<IconButton
-			icon="sound"
-			label={t('day.timerSoundButton', { sound: soundLabel(preferences.current.timerSound) })}
-			onclick={() => (soundOpen = true)}
-		/>
+		{#if soundButton}
+			<IconButton
+				icon="sound"
+				label={t('day.timerSoundButton', { sound: soundLabel(preferences.current.timerSound) })}
+				onclick={() => (soundOpen = true)}
+			/>
+		{/if}
 	{/if}
 </div>
 
@@ -101,6 +118,25 @@
 			onChange={chooseSound}
 		/>
 	</BottomSheet>
+{:else}
+	<!-- The timer's own controls and settings, over the board; nothing leads to Settings. -->
+	<BottomSheet bind:open={controlsOpen} title={t('day.timer')}>
+		<div class="controls" data-testid="timer-sheet">
+			<DayTimer {alive} soundButton={false} />
+			<ChoiceGroup
+				label={t('day.timerModeTitle')}
+				value={timer.mode}
+				options={MODES.map((value) => ({ value, label: modeLabel(value) }))}
+				onChange={(mode) => preferences.update({ timerMode: mode })}
+			/>
+			<ChoiceGroup
+				label={t('day.timerSoundTitle')}
+				value={preferences.current.timerSound}
+				options={TIMER_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
+				onChange={chooseSound}
+			/>
+		</div>
+	</BottomSheet>
 {/if}
 
 <style>
@@ -111,6 +147,8 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius-full);
 		background: var(--dialog-background, var(--surface));
+		/* Its own text colour, so the clock reads on its background inside any sheet. */
+		color: var(--on-surface);
 	}
 	/* Fixed width in digits, so ticking never moves the buttons. */
 	.clock {
@@ -118,6 +156,28 @@
 		font-variant-numeric: tabular-nums;
 		font-weight: 700;
 		text-align: center;
+	}
+	.open {
+		align-self: stretch;
+		min-width: var(--tap-target);
+		padding: 0;
+		border: 0;
+		border-radius: var(--radius-full);
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+	.controls {
+		--timer-surround: var(--sheet-background);
+		--timer-surround-muted: var(--on-sheet-muted);
+		display: grid;
+		gap: var(--space-4);
+		padding-top: var(--space-2);
+	}
+	/* On the board the clock comes first, so it keeps clear of the rounded edge (Trevor). */
+	.timer[data-variant='compact'] .clock {
+		padding-inline-start: var(--space-3);
 	}
 	.timer[data-variant='full'] {
 		container-type: inline-size;
@@ -151,8 +211,9 @@
 		top: 0;
 		left: 50%;
 		padding: 0 var(--space-2);
-		background: var(--dialog-background, var(--surface));
-		color: var(--on-surface-muted);
+		/* Matches what is around the timer, so it reads as cut into the border. */
+		background: var(--timer-surround, var(--dialog-background, var(--surface)));
+		color: var(--timer-surround-muted, var(--on-surface-muted));
 		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 		line-height: 1;

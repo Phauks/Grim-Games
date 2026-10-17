@@ -169,6 +169,8 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	const del = sheet.getByRole('button', { name: 'Delete note' });
 	await expect(del).toHaveText('');
 	await expect(del.locator('[data-icon]')).toBeVisible();
+	// In the sheet's header, beside its X (Trevor, 2026-10-17).
+	await expect(sheet.locator('header').getByRole('button', { name: 'Delete note' })).toBeVisible();
 	const box = (await del.boundingBox())!;
 	expect(box.width).toBeGreaterThanOrEqual(44);
 	expect(box.height).toBeGreaterThanOrEqual(44);

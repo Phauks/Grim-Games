@@ -101,3 +101,28 @@ export const WORLD_CUPS: Record<WorldCupYear, WorldCup> = {
 		]
 	}
 };
+
+/** Our copy of a World Cup's scripts (`worker/world-cups.ts`): `/api/world-cups/<year>`. */
+export const WORLD_CUPS_API = '/api/world-cups';
+
+/** One World Cup script in our copy: its latest version on BotC Scripts. */
+export interface StoredWorldCupScript {
+	scriptId: number;
+	version: string;
+	/** The script in TPI's format. */
+	json: unknown[];
+}
+
+/** Our answer, checked; undefined when it isn't one. */
+export function readWorldCupAnswer(body: unknown): StoredWorldCupScript[] | undefined {
+	if (typeof body !== 'object' || body === null || !('scripts' in body)) return undefined;
+	const { scripts } = body as { scripts: unknown };
+	if (!Array.isArray(scripts)) return undefined;
+	return scripts.flatMap((raw: unknown): StoredWorldCupScript[] => {
+		if (typeof raw !== 'object' || raw === null) return [];
+		const { scriptId, version, json } = raw as Record<string, unknown>;
+		return typeof scriptId === 'number' && typeof version === 'string' && Array.isArray(json)
+			? [{ scriptId, version, json }]
+			: [];
+	});
+}

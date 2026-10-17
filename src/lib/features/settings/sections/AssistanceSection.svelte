@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
+	import { playTimerSound } from '#lib/features/day/timer-sound.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { TIMER_SOUNDS } from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
@@ -48,6 +50,27 @@
 
 <h3>{t('settings.groupDay')}</h3>
 {#each STORYTELLER_GROUPS.day as key (key)}{@render toggle(key)}{/each}
+<!-- The day timer's own choices, the same values as on the timer (Trevor, 2026-10-17). -->
+<SettingSelect
+	label={t('day.timerSoundTitle')}
+	value={preferences.current.timerSound}
+	options={TIMER_SOUNDS.map((sound) => ({ value: sound, label: t(`day.timerSound.${sound}`) }))}
+	defaultValue="bell"
+	onChange={(timerSound) => {
+		preferences.update({ timerSound });
+		playTimerSound(timerSound);
+	}}
+/>
+<SettingSelect
+	label={t('day.timer')}
+	value={preferences.current.timerMode}
+	options={[
+		{ value: 'down', label: t('day.timerModeDown') },
+		{ value: 'up', label: t('day.timerModeUp') }
+	]}
+	defaultValue="down"
+	onChange={(timerMode) => preferences.update({ timerMode })}
+/>
 
 <style>
 	h3 {

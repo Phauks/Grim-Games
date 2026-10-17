@@ -21,35 +21,38 @@
 </script>
 
 <Dialog bind:open={settingsDialog.open} title={t('settings.title')} size="full">
-	<div class="layout" data-view={settingsDialog.section ? 'section' : 'list'}>
-		<nav aria-label={t('settings.sections')}>
-			<ul>
-				{#each sections as section (section.id)}
-					<li>
-						<button
-							aria-current={section.id === active?.id ? 'page' : undefined}
-							onclick={() => (settingsDialog.section = section.id)}
-						>
-							<Icon name={section.icon} />
-							<span class="label">{sectionLabel(section.label, say)}</span>
-							<span class="chevron"><Icon name="forward" /></span>
-						</button>
-					</li>
-				{/each}
-			</ul>
-		</nav>
+	<div
+		class="layout"
+		data-view={settingsDialog.only ? 'only' : settingsDialog.section ? 'section' : 'list'}
+	>
+		{#if !settingsDialog.only}<nav aria-label={t('settings.sections')}>
+				<ul>
+					{#each sections as section (section.id)}
+						<li>
+							<button
+								aria-current={section.id === active?.id ? 'page' : undefined}
+								onclick={() => (settingsDialog.section = section.id)}
+							>
+								<Icon name={section.icon} />
+								<span class="label">{sectionLabel(section.label, say)}</span>
+								<span class="chevron"><Icon name="forward" /></span>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</nav>{/if}
 		{#if active}
 			<section class="content" bind:this={content} aria-labelledby="settings-section-title">
 				<!-- One sticky row: back icon, then the section's name (Trevor, 2026-10-17). -->
 				<div class="heading">
-					<button
-						class="back"
-						aria-label={t('settings.allSettings')}
-						title={t('settings.allSettings')}
-						onclick={() => (settingsDialog.section = null)}
-					>
-						<Icon name="back" />
-					</button>
+					{#if !settingsDialog.only}<button
+							class="back"
+							aria-label={t('settings.allSettings')}
+							title={t('settings.allSettings')}
+							onclick={() => (settingsDialog.section = null)}
+						>
+							<Icon name="back" />
+						</button>{/if}
 					<h2 id="settings-section-title">{sectionLabel(active.label, say)}</h2>
 					{#if active.headingAction}<active.headingAction />{/if}
 				</div>
@@ -104,6 +107,10 @@
 		.layout {
 			grid-template-columns: calc(15 * var(--u)) 1fr;
 		}
+	}
+	/* One section on its own, opened from where it is used: no section list. */
+	.layout[data-view='only'] {
+		grid-template-columns: 1fr;
 	}
 	nav button[aria-current='page'] {
 		background: var(--surface-selected);
