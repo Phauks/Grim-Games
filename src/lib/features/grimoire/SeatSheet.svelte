@@ -1318,6 +1318,18 @@
 		border: 0;
 		cursor: default;
 	}
+	/* The same size and text as the other values in these rows (Trevor, 2026-10-17). */
+	.value.ghost :global([data-scope='select'][data-part='trigger']) {
+		width: 100%;
+		min-height: var(--tap-target);
+		padding-block: 0;
+		border: 1px solid var(--on-sheet-muted);
+		border-radius: var(--button-radius);
+		background: transparent;
+		color: inherit;
+		font: var(--button-font);
+		font-size: 0.8rem;
+	}
 	.ghost-none {
 		align-self: center;
 		padding: 0 var(--space-2);

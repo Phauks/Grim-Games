@@ -3,8 +3,8 @@
  * background where it takes effect and in Settings:
  * - the vignette, the soft dark oval behind the script's name over a background, which keeps
  *   the words readable, and how dark it is;
- * - where the Fabled and Loric sit: large in the middle, small along the board's edge, or
- *   grouped as one stack in the corner (Trevor, 2026-10-17);
+ * - where the Fabled and Loric sit (large in the middle, or small in the top left corner) and
+ *   whether they are grouped as one stack (Trevor, 2026-10-17: two choices);
  * - how big each seat's player name badge is;
  * - whether reminders are held by their seat or stay where they are dropped.
  */
@@ -12,7 +12,9 @@ export interface BoardLooks {
 	vignette: boolean;
 	/** How dark the vignette's middle is, 0 to 1. */
 	vignetteStrength: number;
-	rulesAt: 'middle' | 'edge' | 'corner';
+	rulesAt: 'middle' | 'edge';
+	/** The Fabled and Loric as one stack that lists them all when tapped. */
+	rulesGrouped: boolean;
 	/** The player name badge's size, as a multiple of its usual size. */
 	nameSize: number;
 	/**
@@ -29,6 +31,7 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	vignette: true,
 	vignetteStrength: 0.55,
 	rulesAt: 'middle',
+	rulesGrouped: false,
 	nameSize: 1,
 	reminders: 'seat'
 };
@@ -44,7 +47,9 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		vignetteStrength: Number.isFinite(strength)
 			? Math.min(1, Math.max(0, strength))
 			: DEFAULT_BOARD_LOOKS.vignetteStrength,
-		rulesAt: value.rulesAt === 'edge' || value.rulesAt === 'corner' ? value.rulesAt : 'middle',
+		// 'corner' was the edge, grouped, before they became two choices.
+		rulesAt: value.rulesAt === 'edge' || value.rulesAt === 'corner' ? 'edge' : 'middle',
+		rulesGrouped: value.rulesGrouped === true || value.rulesAt === 'corner',
 		nameSize: Number.isFinite(nameSize)
 			? Math.min(NAME_SIZE.max, Math.max(NAME_SIZE.min, nameSize))
 			: DEFAULT_BOARD_LOOKS.nameSize,

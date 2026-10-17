@@ -287,8 +287,8 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 	await menu(page, 'Background');
 	const looks = page.getByRole('dialog', { name: 'Background' });
 	// A drop-down (Trevor, 2026-10-17).
-	await looks.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
-	await page.getByRole('option', { name: 'Edge, smaller' }).tap();
+	await looks.getByRole('combobox', { name: 'Fabled and Loric', exact: true }).tap();
+	await page.getByRole('option', { name: 'Corner, smaller' }).tap();
 	await looks.getByRole('button', { name: 'Close' }).tap();
 	await expect(
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
@@ -2299,9 +2299,13 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 		.getByRole('list', { name: 'Fabled and Loric' })
 		.getByRole('button', { name: 'Angel' })
 		.tap();
+	// Where they sit and whether they are grouped are two choices (Trevor, 2026-10-17).
 	const angel = page.getByRole('dialog', { name: 'Angel' });
-	await angel.getByRole('combobox', { name: 'Fabled and Loric' }).tap();
-	await page.getByRole('option', { name: 'Corner, grouped' }).tap();
+	await angel.getByRole('combobox', { name: 'Fabled and Loric', exact: true }).tap();
+	await page.getByRole('option', { name: 'Corner, smaller' }).tap();
+	await angel.getByRole('combobox', { name: 'Fabled and Loric grouping' }).tap();
+	await page.getByRole('option', { name: 'Grouped' }).tap();
+	await expect(page.locator('.rules-edge .rules-stack')).toBeVisible();
 	await angel.getByRole('button', { name: 'Close' }).tap();
 
 	const stack = page.getByRole('button', { name: 'Fabled and Loric: 2' });

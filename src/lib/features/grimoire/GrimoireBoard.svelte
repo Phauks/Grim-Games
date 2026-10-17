@@ -795,6 +795,24 @@
 
 <!-- Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
 	(Trevor, 2026-10-17). -->
+{#snippet rulesStack(stack: number)}
+	<!-- One stack for them all; a tap lists every one (Trevor, 2026-10-17). -->
+	<button
+		type="button"
+		class="rules-stack"
+		aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
+		onclick={() => (rulesGroupOpen = true)}
+	>
+		{#each game.ruleCharacters.slice(0, 3) as id (id)}
+			{@const character = characters.get(id)}
+			{#if character}<CharacterToken {character} size={stack} />{/if}
+		{/each}
+		{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
+				>{game.ruleCharacters.length}</span
+			>{/if}
+	</button>
+{/snippet}
+
 {#snippet rulesList(tokenSize: number)}
 	<ul class="rules" class:edge={tokenSize < size * 0.8} aria-label="Fabled and Loric">
 		{#each game.ruleCharacters as id (id)}
@@ -1049,25 +1067,10 @@
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>
 		{#if boardLooks.current.rulesAt !== 'middle' && game.ruleCharacters.length > 0}
 			<div class="rules-edge" bind:clientWidth={edgeW} bind:clientHeight={edgeH}>
-				{#if boardLooks.current.rulesAt === 'edge'}
-					{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
+				{#if boardLooks.current.rulesGrouped}
+					{@render rulesStack(Math.max(tapPx, Math.round(size * 0.5)))}
 				{:else}
-					<!-- One stack for them all; a tap lists every one (Trevor, 2026-10-17). -->
-					{@const stack = Math.max(tapPx, Math.round(size * 0.5))}
-					<button
-						type="button"
-						class="rules-stack"
-						aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
-						onclick={() => (rulesGroupOpen = true)}
-					>
-						{#each game.ruleCharacters.slice(0, 3) as id (id)}
-							{@const character = characters.get(id)}
-							{#if character}<CharacterToken {character} size={stack} />{/if}
-						{/each}
-						{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
-								>{game.ruleCharacters.length}</span
-							>{/if}
-					</button>
+					{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
 				{/if}
 			</div>
 		{/if}
@@ -1116,7 +1119,13 @@
 						: ''}
 				</button>
 			{/if}
-			{#if boardLooks.current.rulesAt === 'middle'}{@render rulesList(Math.round(size * 0.8))}{/if}
+			{#if boardLooks.current.rulesAt === 'middle'}
+				{#if boardLooks.current.rulesGrouped && game.ruleCharacters.length > 0}
+					{@render rulesStack(Math.round(size * 0.8))}
+				{:else}
+					{@render rulesList(Math.round(size * 0.8))}
+				{/if}
+			{/if}
 		</div>
 	</div>
 </div>
