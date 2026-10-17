@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 
 	interface Props {
 		query: string;
@@ -31,41 +32,27 @@
 -->
 <div class="search">
 	<Icon name="search" />
-	<input
-		bind:this={input}
-		bind:value={query}
-		type="search"
-		aria-label={label}
-		placeholder={t('picker.placeholder')}
-		aria-keyshortcuts={shortcut ? '/' : undefined}
-		title={shortcut ? t('picker.searchShortcut') : undefined}
-		autocomplete="off"
-		autocapitalize="off"
-		spellcheck="false"
-		enterkeyhint="search"
-		onkeydown={(e) => {
-			if (e.key === 'Enter') {
-				e.preventDefault();
-				e.currentTarget.blur();
-			} else if (e.key === 'Escape' && query !== '') {
-				// The first Esc clears the search; the next one reaches the sheet and closes it.
-				e.preventDefault();
-				e.stopPropagation();
-				query = '';
-			}
-		}}
-	/>
-	<button
-		type="button"
-		class="clear"
-		aria-label={t('picker.clearSearch')}
-		title={t('picker.clearSearch')}
-		disabled={query === ''}
-		onclick={() => {
-			query = '';
-			input?.focus();
-		}}><Icon name="close" /></button
-	>
+	<ClearableField bind:value={query} label={t('picker.clearSearch')} class="box">
+		<input
+			bind:this={input}
+			bind:value={query}
+			type="search"
+			aria-label={label}
+			placeholder={t('picker.placeholder')}
+			aria-keyshortcuts={shortcut ? '/' : undefined}
+			title={shortcut ? t('picker.searchShortcut') : undefined}
+			autocomplete="off"
+			autocapitalize="off"
+			spellcheck="false"
+			enterkeyhint="search"
+			onkeydown={(e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					e.currentTarget.blur();
+				}
+			}}
+		/>
+	</ClearableField>
 </div>
 
 <style>
@@ -86,37 +73,16 @@
 	.search input:focus-visible {
 		outline: none;
 	}
-	input {
+	.search > :global(.box) {
 		flex: 1;
-		min-width: 0;
+		height: 100%;
+	}
+	input {
 		height: 100%;
 		border: 0;
 		background: none;
 		color: inherit;
 		font: inherit;
 		outline: none;
-	}
-	/* Our own clear button keeps its place; hide the browser's. */
-	input::-webkit-search-cancel-button {
-		appearance: none;
-	}
-	.clear {
-		display: grid;
-		place-items: center;
-		flex: none;
-		width: var(--tap-target);
-		height: var(--tap-target);
-		border: 0;
-		border-radius: var(--radius-full);
-		background: none;
-		color: inherit;
-		cursor: pointer;
-	}
-	.clear:hover:not(:disabled) {
-		background: var(--surface-selected);
-	}
-	.clear:disabled {
-		opacity: 0.35;
-		cursor: default;
 	}
 </style>
