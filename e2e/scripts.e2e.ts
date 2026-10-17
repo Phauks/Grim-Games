@@ -1,6 +1,7 @@
 import { gzipSync } from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
+import { WORLD_CUPS } from '../src/lib/features/scripts/world-cup.ts';
 
 const homebrew = [
 	{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
@@ -37,6 +38,7 @@ test.beforeEach(async ({ page }) => {
 	await page.route('**/api/curated', (route) => route.fulfill({ json: { scripts: [] } }));
 	await page.route('**/api/collections/*', (route) => route.fulfill({ json: { scripts: [] } }));
 	await page.route('**/api/homebrew-scripts', (route) => route.fulfill({ json: { scripts: [] } }));
+	await page.route('**/api/world-cups/*', (route) => route.fulfill({ json: { scripts: [] } }));
 });
 
 /**
@@ -501,6 +503,12 @@ const bigTown = [
 	...['butler', 'drunk', 'recluse', 'saint', 'poisoner', 'spy', 'scarletwoman', 'baron', 'imp']
 ];
 
+// Teensyville, so the Type filter set earlier in the test still lists them.
+const monthly = (name: string) => [
+	{ id: '_meta', name, author: 'Someone Monthly' },
+	...teensy.slice(1)
+];
+
 test("the official site's custom scripts are a source of their own, and saved", async ({
 	page
 }) => {
@@ -511,7 +519,20 @@ test("the official site's custom scripts are a source of their own, and saved", 
 			json: {
 				scripts: [
 					{ section: 'teensyville', link: scriptToolLink(teensy), json: teensy },
-					{ section: 'recommended', link: scriptToolLink(bigTown), json: bigTown }
+					{ section: 'recommended', link: scriptToolLink(bigTown), json: bigTown },
+					{
+						section: 'month',
+						link: scriptToolLink(monthly('Autumn Fair')),
+						json: monthly('Autumn Fair'),
+						seen: '2026-10'
+					},
+					{
+						section: 'month',
+						link: scriptToolLink(monthly('Summer Fete')),
+						json: monthly('Summer Fete'),
+						seen: '2026-09',
+						past: true
+					}
 				]
 			}
 		});
@@ -573,6 +594,15 @@ test("the official site's custom scripts are a source of their own, and saved", 
 	await expect(checks.locator('[data-type="outsider"]')).toHaveText('2');
 	await expect(page.getByTestId('script-warnings')).toHaveCount(0);
 	await noSidewaysScroll(page);
+
+	// Scripts of the Month are a source of their own, past months kept, newest first.
+	await backToList(page);
+	await chooseSource(page, 'Scripts of the Month');
+	await expect(page.getByTestId('picker-status')).toHaveText('2 scripts');
+	await expect(table.locator('tbody tr').first()).toContainText('Autumn Fair');
+	await expect(table.locator('tbody tr').nth(1)).toContainText('Summer Fete');
+	// Each named by the month our copy first saw it.
+	await expect(table.getByRole('button', { name: 'Summer Fete September 2026' })).toBeVisible();
 });
 
 test('Play starts a new game with a found script, without saving it', async ({ page }) => {
@@ -651,21 +681,24 @@ test('more BotC Scripts results load by themselves when the list end comes near'
 test('a World Cup is a source: its finalists load from BotC Scripts and link there', async ({
 	page
 }) => {
+	// Served from our own copy, in one answer (Trevor, 2026-10-17: self-hosted).
 	const asked: string[] = [];
-	await page.route(/\/api\/botcscripts\/script\/\d+$/, (route) => {
-		const id = Number(route.request().url().split('/').at(-1));
-		asked.push(String(id));
+	await page.route('**/api/world-cups/*', (route) => {
+		asked.push(route.request().url().split('/').at(-1)!);
 		return route.fulfill({
 			json: {
-				scriptId: id,
-				versionId: id + 10000,
-				name: id === 6687 ? 'The Ballad of Seat 7' : `Script ${id}`,
-				version: '1.0.0',
-				author: 'Someone',
-				content: [
-					{ id: '_meta', name: id === 6687 ? 'The Ballad of Seat 7' : `Script ${id}` },
-					...teensy.slice(1)
-				]
+				scripts: WORLD_CUPS['2025'].entries.map(({ scriptId }) => ({
+					scriptId,
+					version: '1.0.0',
+					json: [
+						{
+							id: '_meta',
+							name: scriptId === 6687 ? 'The Ballad of Seat 7' : `Script ${scriptId}`
+						},
+						...teensy.slice(1)
+					]
+				})),
+				fetchedAt: '2026-10-17T04:17:00.000Z'
 			}
 		});
 	});
@@ -673,6 +706,7 @@ test('a World Cup is a source: its finalists load from BotC Scripts and link the
 	expect(asked).toEqual([]);
 	await chooseSource(page, 'World Cup 2025');
 	await expect(page.getByTestId('picker-status')).toHaveText('16 scripts');
+	expect(asked).toEqual(['2025']);
 	const table = page.getByRole('table', { name: 'Scripts' });
 	// In the World Cup's order, winner first.
 	await expect(table.locator('tbody tr').first()).toContainText('The Ballad of Seat 7');

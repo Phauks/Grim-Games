@@ -3,7 +3,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { createAttachmentKey } from 'svelte/attachments';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		editionScript,
 		loadScriptText,
@@ -113,6 +113,7 @@
 	const PAGE_SOURCES = [
 		'botc',
 		'curated',
+		'month',
 		'collection',
 		'worldcup2023',
 		'worldcup2025',
@@ -159,7 +160,7 @@
 		const wanted = source;
 		// Untracked: a failed load must not re-run this and try again in a loop.
 		untrack(() => {
-			if (wanted === 'curated') void curatedScripts.load();
+			if (wanted === 'curated' || wanted === 'month') void curatedScripts.load();
 			if (wanted === 'collection') void collectionScripts.load();
 			if (wanted === 'homebrew') void homebrewScripts.load();
 			if (wanted === 'worldcup2023') void worldCupScripts.load('2023');
@@ -174,6 +175,16 @@
 			: section;
 	}
 
+	/** The month a Script of the Month was first listed, e.g. "October 2026". */
+	function monthLabel(seen: string | undefined): string {
+		if (!seen || !/^\d{4}-\d{2}$/.test(seen)) return t('scripts.curated.month');
+		return new Date(`${seen}-01T12:00:00Z`).toLocaleDateString(locale.current, {
+			month: 'long',
+			year: 'numeric',
+			timeZone: 'UTC'
+		});
+	}
+
 	const localContext = $derived<LocalContext | undefined>(
 		data && {
 			data,
@@ -183,6 +194,7 @@
 			recent: recentScripts.list,
 			profile: [],
 			curatedLabel: curatedSectionLabel,
+			monthLabel,
 			describe: describeSource,
 			worldCups: { '2023': worldCupScripts.list('2023'), '2025': worldCupScripts.list('2025') },
 			worldCupLabel: (year, stage) =>
@@ -374,7 +386,7 @@
 			source === 'worldcup2023' ? '2023' : source === 'worldcup2025' ? '2025' : undefined;
 		// A list fetched from a site: loading, or failed with nothing kept from last time.
 		const fetched =
-			source === 'curated'
+			source === 'curated' || source === 'month'
 				? curatedScripts
 				: source === 'collection'
 					? collectionScripts

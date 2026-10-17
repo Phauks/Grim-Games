@@ -51,7 +51,9 @@ describe('parsePreferences', () => {
 				reminderScale: 0.75,
 				boardNames: true,
 				nightNumbers: true,
-				nightBadgeScale: 0.75
+				nightBadgeScale: 0.75,
+				reminderLabelWidth: 2,
+				reminderLabelWrap: true
 			},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',

@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import CccLogo from '#lib/features/about/CccLogo.svelte';
 	import { navDrawer } from './nav-drawer.svelte.ts';
 	import NavList from './NavList.svelte';
 </script>
@@ -20,10 +21,15 @@
 	<nav class="drawer-nav" aria-label={t('shell.navLabel')}>
 		<NavList withAccount onChoose={() => (navDrawer.open = false)} />
 	</nav>
+	<!-- The Community Created Content logo, always at the bottom of the menu (Trevor, 2026-10-17). -->
+	<div class="bottom"><CccLogo /></div>
 </Dialog>
 
 <style>
 	.drawer-nav {
 		margin-top: var(--space-4);
+	}
+	.bottom {
+		margin-top: var(--space-6);
 	}
 </style>
