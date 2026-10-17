@@ -321,3 +321,36 @@ test('a saved BotC Scripts script still offers its other versions', async ({ pag
 	await script.getByRole('button', { name: 'Close' }).tap();
 	await expect(tile(page, 'Storm Front')).toHaveCount(2);
 });
+
+test('a script edited in the Script builder is marked as a variation, with what changed', async ({
+	page
+}) => {
+	// Trevor (2026-10-17): an edited script says it is a variation, and shows what the variation is.
+	await page.goto('/library');
+	await (await addStormFront(page)).getByRole('button', { name: 'Edit in Script builder' }).tap();
+	await expect(page).toHaveURL(/\/build-script$/);
+	await page.getByRole('textbox', { name: 'Name' }).fill('Storm Front (no Saint)');
+	await page
+		.getByTestId('character-picker')
+		.getByRole('button', { name: 'Saint', exact: true })
+		.tap();
+	await page
+		.getByTestId('character-picker')
+		.getByRole('button', { name: 'Mayor', exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+
+	await page.goto('/library');
+	// The original stays in the Library beside the variation.
+	await expect(tile(page, 'Storm Front')).toHaveCount(2);
+	await tile(page, /^Storm Front \(no Saint\)/).tap();
+	const script = page.getByRole('dialog', { name: 'Storm Front (no Saint)' });
+	await expect(script.getByTestId('variation-of')).toContainText('Storm Front');
+	await script.getByRole('button', { name: 'What changed' }).tap();
+	const changes = page.getByTestId('variation-changes');
+	await expect(changes).toContainText('Storm Front (no Saint)');
+	await expect(changes.getByRole('definition').nth(4)).toContainText('Mayor');
+	await expect(changes.getByRole('definition').nth(5)).toContainText('Saint');
+	await noSidewaysScroll(page);
+});

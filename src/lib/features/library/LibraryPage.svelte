@@ -17,7 +17,11 @@
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import { fetchLinkTarget } from '#lib/features/scripts/fetch-script.ts';
 	import { relaxJson } from '#lib/features/scripts/relaxed-json.ts';
-	import { describeSource, sameScript } from '#lib/features/scripts/saved-scripts.ts';
+	import {
+		describeSource,
+		sameScript,
+		type VariationOf
+	} from '#lib/features/scripts/saved-scripts.ts';
 	import {
 		findSaved,
 		localListings,
@@ -308,14 +312,9 @@
 	 * A script edited from another one says so (Trevor, 2026-10-17), with what changed. The
 	 * Script builder stores the original on the saved script's source as `variationOf`.
 	 */
-	interface Variation {
-		name: string;
-		json: unknown[];
-	}
-	const variation = $derived.by((): Variation | undefined => {
+	const variation = $derived.by((): VariationOf | undefined => {
 		const source = openRow?.listing.saved?.source;
-		if (source?.kind !== 'built') return undefined;
-		const of = (source as { variationOf?: Variation }).variationOf;
+		const of = source?.kind === 'built' ? source.variationOf : undefined;
 		return of && Array.isArray(of.json) ? of : undefined;
 	});
 	let changesOpen = $state(false);
