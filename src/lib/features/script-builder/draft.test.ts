@@ -4,15 +4,29 @@ import { chosenHomebrew, emptyDraft, isEmptyDraft, parseDraft } from './draft.ts
 describe('script builder draft', () => {
 	it('reads a stored draft', () => {
 		const stored = {
-			version: 2,
+			version: 3,
 			name: 'Mine',
 			author: 'T',
 			ids: ['chef', 'lantern'],
 			homebrew: { lantern: { id: 'lantern', team: 'outsider' } },
 			credits: { lantern: { creator: 'DJ', url: 'https://botchomebrew.wiki/c/lantern' } },
-			editing: 'x'
+			editing: 'x',
+			variationOf: { name: 'Trouble Brewing', source: { kind: 'edition' }, json: [{ id: '_meta' }] }
 		};
 		expect(parseDraft(stored)).toEqual(stored);
+	});
+
+	it('reads a version 2 draft, which has no variation', () => {
+		expect(parseDraft({ version: 2, name: 'Two', ids: ['chef'] })).toEqual({
+			...emptyDraft(),
+			name: 'Two',
+			ids: ['chef']
+		});
+	});
+
+	it('drops a variation it cannot read', () => {
+		const draft = parseDraft({ version: 3, ids: ['chef'], variationOf: { name: 'X', json: [] } });
+		expect(draft.variationOf).toBeUndefined();
 	});
 
 	it('brings a version 1 draft (official characters only) up to date', () => {
@@ -26,7 +40,7 @@ describe('script builder draft', () => {
 	it('starts empty when the draft is missing, damaged or from a newer build', () => {
 		expect(parseDraft(null)).toEqual(emptyDraft());
 		expect(parseDraft('nonsense')).toEqual(emptyDraft());
-		expect(parseDraft({ version: 3, name: 'Later', ids: ['chef'] })).toEqual(emptyDraft());
+		expect(parseDraft({ version: 4, name: 'Later', ids: ['chef'] })).toEqual(emptyDraft());
 	});
 
 	it('drops ids that are not text, repeats, and homebrew that is not an object', () => {

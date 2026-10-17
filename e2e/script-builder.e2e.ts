@@ -186,3 +186,49 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	await page.goto('/library');
 	await expect(libraryRows()).toHaveCount(2);
 });
+
+// Trevor (2026-10-17): any saved script can be edited, and an edited copy says it is a variation.
+test('editing a script made elsewhere saves a variation of it', async ({ page }) => {
+	await page.goto('/library');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(
+			JSON.stringify([{ id: '_meta', name: 'Storm Front', author: 'Trevor' }, 'chef', 'imp'])
+		)
+	});
+	await expect(page.getByRole('dialog', { name: 'Storm Front' })).toBeVisible();
+
+	await page.goto('/build-script');
+	const variation = page.getByTestId('variation-of');
+	await expect(variation).toContainText('None');
+	await page.getByRole('button', { name: 'Open a saved script' }).tap();
+	await page.getByRole('dialog', { name: 'Open a saved script' }).getByText('Storm Front').tap();
+	await expect(variation).toContainText('Storm Front');
+	await character(page, 'Saint').tap();
+	await page.getByRole('textbox', { name: 'Name' }).fill('Storm Front, calmer');
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+
+	// Saved with the original whole, so what changed can be shown.
+	const source = await page.evaluate(async () => {
+		const db = await new Promise<IDBDatabase>((done, fail) => {
+			const open = indexedDB.open('grim-games-scripts');
+			open.onsuccess = () => done(open.result);
+			open.onerror = () => fail(open.error);
+		});
+		const all = await new Promise<{ name: string; source: unknown }[]>((done) => {
+			const req = db.transaction('scripts').objectStore('scripts').getAll();
+			req.onsuccess = () => done(req.result);
+		});
+		return all.find((s) => s.name === 'Storm Front, calmer')?.source;
+	});
+	expect(source).toMatchObject({
+		kind: 'built',
+		variationOf: { name: 'Storm Front', source: { kind: 'file', fileName: 'storm-front.json' } }
+	});
+
+	// The original is left as it was; the variation stays one when reopened.
+	await page.reload();
+	await expect(variation).toContainText('Storm Front');
+});

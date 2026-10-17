@@ -1,6 +1,7 @@
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
+import type { VariationOf } from '#lib/features/scripts/saved-scripts.ts';
 import { emptyDraft, parseDraft, type DraftCredit, type ScriptDraft } from './draft.ts';
 
 const STORAGE_KEY = 'grim-games:script-builder';
@@ -68,10 +69,11 @@ class ScriptBuilderDraft {
 		});
 	}
 
-	/** After saving: later saves replace that saved script. */
-	setEditing(scriptId: string | undefined): void {
-		const next: ScriptDraft = { ...this.#draft, editing: scriptId };
+	/** After saving: later saves replace that saved script, which is a variation of `variationOf`. */
+	setEditing(scriptId: string | undefined, variationOf?: VariationOf): void {
+		const next: ScriptDraft = { ...this.#draft, editing: scriptId, variationOf };
 		if (!scriptId) delete next.editing;
+		if (!variationOf) delete next.variationOf;
 		this.#set(next);
 	}
 

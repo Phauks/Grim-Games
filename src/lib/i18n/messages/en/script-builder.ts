@@ -5,6 +5,7 @@ export const scriptBuilder = {
 	'script-builder.details': 'Script details',
 	'script-builder.name': 'Name',
 	'script-builder.author': 'Author',
+	'script-builder.variationOf': 'Variation of',
 	'script-builder.editing': 'Editing',
 	'script-builder.save': 'Save',
 	'script-builder.saved': 'Saved',
