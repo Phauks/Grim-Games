@@ -1,14 +1,54 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 // Player view (09-player-script-view.md): a reading page with the script, night order and notes.
 
+/**
+ * Notes save a moment after typing (a debounce, then IndexedDB). A test waits for what is
+ * actually stored before it reloads, never a fixed time, which a busy machine can outrun.
+ */
+async function storedNotes(page: Page): Promise<{ title: string; hidden: boolean }[]> {
+	return page.evaluate(
+		() =>
+			new Promise((resolve, reject) => {
+				const req = indexedDB.open('grim-games-player');
+				req.onerror = () => reject(req.error);
+				req.onsuccess = () => {
+					const db = req.result;
+					if (!db.objectStoreNames.contains('notebooks')) {
+						db.close();
+						resolve([]);
+						return;
+					}
+					const all = db.transaction('notebooks').objectStore('notebooks').getAll();
+					all.onsuccess = () => {
+						db.close();
+						resolve(
+							(all.result as { notes: { title: string; hidden: boolean }[] }[]).flatMap((b) =>
+								b.notes.map(({ title, hidden }) => ({ title, hidden }))
+							)
+						);
+					};
+				};
+			})
+	);
+}
+
+/** Lets a sheet's opening animation end, so its size and place are final. */
+async function settled(locator: Locator) {
+	await locator.evaluate((el) =>
+		Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished))
+	);
+}
+
 test.beforeEach(async ({ page }) => {
 	await page.goto('/play');
 	// No script yet: the base three are offered here, since /scripts no longer lists them.
+	// The first load fetches the character data, slow on a busy machine.
 	await expect(page.getByRole('link', { name: 'Find a script' })).toHaveAttribute(
 		'href',
-		'/scripts'
+		'/scripts',
+		{ timeout: 15_000 }
 	);
 	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
 	await expect(page.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
@@ -156,7 +196,9 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	await page.keyboard.press('Escape');
 	await expect(page.locator('[data-note]')).toHaveCount(2);
 
-	await page.waitForTimeout(500);
+	await expect
+		.poll(async () => (await storedNotes(page)).map((n) => n.title))
+		.toEqual(['What I really know', 'My bluff']);
 	await page.reload();
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(
@@ -171,6 +213,8 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	await expect(del.locator('[data-icon]')).toBeVisible();
 	// In the sheet's header, beside its X (Trevor, 2026-10-17).
 	await expect(sheet.locator('header').getByRole('button', { name: 'Delete note' })).toBeVisible();
+	// The sheet grows in from 97%: measured mid-animation the button is a hair under 44.
+	await settled(sheet);
 	const box = (await del.boundingBox())!;
 	expect(box.width).toBeGreaterThanOrEqual(44);
 	expect(box.height).toBeGreaterThanOrEqual(44);
@@ -197,7 +241,7 @@ test('each script keeps its own notebook', async ({ page }) => {
 		.getByRole('textbox', { name: 'Title' })
 		.fill('TB');
 	await page.keyboard.press('Escape');
-	await page.waitForTimeout(500);
+	await expect.poll(async () => (await storedNotes(page)).map((n) => n.title)).toEqual(['TB']);
 
 	// Players have no Change script button (Trevor): the script comes from /scripts or a link.
 	await expect(page.getByRole('link', { name: 'Change script' })).toHaveCount(0);
@@ -313,6 +357,7 @@ test('each note can hide its contents until it is opened', async ({ page }) => {
 	await expect(sheet.getByRole('textbox', { name: 'Text' })).toHaveValue('Sam is the Imp');
 	await page.keyboard.press('Escape');
 	// Kept after a reload.
+	await expect.poll(() => storedNotes(page)).toEqual([{ title: 'Evil team', hidden: true }]);
 	await page.reload();
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(page.locator('[data-note]')).toHaveText(/^\s*Evil team\s*Hidden\s*$/);
