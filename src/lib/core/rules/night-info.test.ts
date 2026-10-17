@@ -114,9 +114,28 @@ describe('Town Crier', () => {
 		expect(townCrierAnswer(g, seats[0], characters).mustBeFalse).toBe(true);
 	});
 
-	it('flags a Spy or Recluse, who might register as something else', () => {
-		const { game: g, seats } = game(['towncrier', 'spy', 'recluse', 'imp', 'chef']);
-		expect(townCrierAnswer(g, seats[0], characters).misregister).toEqual([seats[1], seats[2]]);
+	// Trevor, 2026-10-17: only players whose registration could change the answer.
+	it('flags a Spy or Recluse who nominated, who might register as something else', () => {
+		const cast = ['towncrier', 'spy', 'recluse', 'imp', 'chef'];
+		const quiet = game(cast);
+		expect(townCrierAnswer(quiet.game, quiet.seats[0], characters).misregister).toEqual([]);
+		const { game: g, seats } = game(
+			cast,
+			(s) => ({ type: 'Nominate', nominator: s[1], nominee: s[4] }),
+			(s) => ({ type: 'Nominate', nominator: s[2], nominee: s[3] })
+		);
+		const a = townCrierAnswer(g, seats[0], characters);
+		expect(a.misregister).toEqual([seats[1], seats[2]]);
+		// Why: the nominators as they are, and what each registration would make it.
+		expect(a.why.facts.map((f) => [f.seatId, f.characterId, f.type])).toEqual([
+			[seats[1], 'spy', 'minion'],
+			[seats[2], 'recluse', 'outsider']
+		]);
+		expect(a.why.alternatives.find((x) => x.seatId === seats[2])!.as).toContainEqual({
+			alignment: 'good',
+			type: 'minion',
+			value: { kind: 'yes-no', value: true }
+		});
 	});
 
 	it('shows what the Storyteller recorded, as their override', () => {
@@ -634,6 +653,104 @@ describe('registration ranges', () => {
 				{ kind: 'yes-no', value: true }
 			]
 		});
+	});
+});
+
+// Trevor, 2026-10-17: offer a misregistration only when it could change the information,
+// and show the logic behind each suggestion.
+describe('relevant misregistration and why', () => {
+	// https://wiki.bloodontheclocktower.com/Empath: only the alive neighbours count.
+	it('Empath: a Recluse who is not a neighbour is not offered', () => {
+		const far = game(['empath', 'slayer', 'recluse', 'imp', 'monk']);
+		const p = infoPicker(far.game, far.seats[0], 'empath', characters)!;
+		expect(p.misregister).toEqual([]);
+		expect(p.why.alternatives).toEqual([]);
+		expect(p.why.facts.map((f) => [f.seatId, f.characterId, f.alignment])).toEqual([
+			[far.seats[4], 'monk', 'good'],
+			[far.seats[1], 'slayer', 'good']
+		]);
+		const near = game(['empath', 'recluse', 'slayer', 'imp', 'monk']);
+		const q = infoPicker(near.game, near.seats[0], 'empath', characters)!;
+		expect(q.misregister).toEqual([near.seats[1]]);
+		expect(q.why.alternatives).toEqual([
+			{
+				seatId: near.seats[1],
+				source: 'recluse',
+				as: expect.arrayContaining([
+					{ alignment: 'evil', type: 'outsider', value: { kind: 'number', value: 1 } }
+				])
+			}
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Empath: a dead player in between is skipped, so
+	// a dead Recluse is not a neighbour.
+	it('Empath: a dead Recluse between neighbours is not offered', () => {
+		const { game: g, seats } = game(['empath', 'recluse', 'slayer', 'imp', 'monk'], (s) => ({
+			type: 'SetDead',
+			seatId: s[1],
+			dead: true
+		}));
+		expect(infoPicker(g, seats[0], 'empath', characters)!.misregister).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Chef: only pairs of neighbours count, so a
+	// Recluse with no evil neighbour changes nothing.
+	it('Chef: a Recluse matters only beside an evil player', () => {
+		const lone = game(['chef', 'recluse', 'slayer', 'imp', 'poisoner']);
+		expect(infoPicker(lone.game, lone.seats[0], 'chef', characters)!.misregister).toEqual([]);
+		const beside = game(['chef', 'slayer', 'recluse', 'imp', 'poisoner']);
+		const p = infoPicker(beside.game, beside.seats[0], 'chef', characters)!;
+		expect(p.misregister).toEqual([beside.seats[2]]);
+		expect(p.why.facts.map((f) => f.seatId)).toEqual([beside.seats[3], beside.seats[4]]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Undertaker: only the executed player matters.
+	it('Undertaker: only the executed player is relevant', () => {
+		const { game: g, seats } = game(['undertaker', 'spy', 'recluse', 'imp', 'chef'], (s) => ({
+			type: 'Execute',
+			seatId: s[2]
+		}));
+		const a = undertakerAnswer(g, seats[0], characters);
+		expect(a.misregister).toEqual([seats[2]]);
+		expect(a.why.facts.map((f) => [f.seatId, f.characterId, f.dead])).toEqual([
+			[seats[2], 'recluse', true]
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Oracle: only dead players count.
+	it('Oracle: only dead players who may misregister are relevant', () => {
+		const { game: g, seats } = game(['oracle', 'spy', 'recluse', 'imp', 'chef'], (s) => ({
+			type: 'SetDead',
+			seatId: s[2],
+			dead: true
+		}));
+		const a = oracleAnswer(g, seats[0], characters);
+		expect(a.misregister).toEqual([seats[2]]);
+		expect(a.why.facts.map((f) => f.seatId)).toEqual([seats[2]]);
+		expect(a.why.alternatives[0].as.map((x) => x.value)).toContainEqual({
+			kind: 'number',
+			value: 1
+		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Fortune_Teller: the Demon and the red herring.
+	it('Fortune Teller: the logic names the Demon and the red herring', () => {
+		const { game: g, seats } = game(
+			['fortuneteller', 'imp', 'slayer', 'monk', 'poisoner'],
+			add(3, 'fortuneteller', 'Red Herring')
+		);
+		const p = infoPicker(g, seats[0], 'fortuneteller', characters)!;
+		expect(p.why.facts.map((f) => [f.seatId, f.type, f.redHerring ?? false])).toEqual([
+			[seats[1], 'demon', false],
+			[seats[3], 'townsfolk', true]
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Mathematician: registration isn't its input.
+	it('Mathematician: nobody is offered as misregistering', () => {
+		const { game: g, seats } = game(['mathematician', 'spy', 'recluse', 'imp', 'chef']);
+		expect(mathematicianAnswer(g, seats[0], characters).misregister).toEqual([]);
 	});
 });
 

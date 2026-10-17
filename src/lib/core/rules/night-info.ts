@@ -16,8 +16,13 @@
  * - `mustBeFalse` says a Vortox is in play, so a Townsfolk's information must be false
  *   (https://wiki.bloodontheclocktower.com/Vortox);
  * - `misregister` lists players who might register as something else (Spy, Recluse, the
- *   Faux Paw player); answers and pickers include every answer their registration allows,
- *   marked with the players it relies on;
+ *   Faux Paw player) and whose registration could change this information (Trevor,
+ *   2026-10-17: a Recluse who isn't the Empath's neighbour is not offered); answers and
+ *   pickers include every answer their registration allows, marked with the players it
+ *   relies on;
+ * - `why` is the logic behind a suggestion (Trevor, 2026-10-17: "show the logic"): the
+ *   players the answer is worked out from, as facts (character, alignment, type), and what
+ *   each relevant misregistration would change it to. Data only; the UI draws badges.
  * - `shown` is what the Storyteller recorded as shown (`RecordNightInfo`): their override;
  * - `abnormalCauses` / `answerCauses` say why a recorded answer worked abnormally, for the
  *   Mathematician.
@@ -25,7 +30,7 @@
  * The answers read the *current* day log. The Storyteller clears it by hand with "New
  * day"; opening the night order never does (Trevor, 2026-10-15).
  */
-import type { Character, CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import type { Alignment, Character, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	aliveNeighbours,
@@ -78,12 +83,44 @@ export interface Reliability {
 	mustBeFalse?: boolean;
 	/** The Vortox's seat, when `mustBeFalse`. */
 	vortox?: SeatId;
-	/** Players who might register falsely (Spy, Recluse, the Faux Paw player). */
+	/**
+	 * Players who might register falsely (Spy, Recluse, the Faux Paw player) where that could
+	 * change this information.
+	 */
 	misregister: SeatId[];
 	/** How each of them may register. */
 	registrations: Registration[];
 	/** The latest info the Storyteller recorded for this player and character today. */
 	shown?: { entryId: DayEntryId; text: string };
+}
+
+/** One player an answer is worked out from, as the default registration sees them. */
+export interface WhyFact {
+	seatId: SeatId;
+	/** The true character. */
+	characterId?: CharacterId;
+	alignment?: Alignment;
+	type?: CharacterType;
+	dead?: boolean;
+	/** The Fortune Teller's red herring. */
+	redHerring?: boolean;
+	/** The Juggler's guess for this player, and whether it is right. */
+	guess?: { characterId: CharacterId; correct: boolean };
+}
+
+/** What the information becomes if one player registers as something else. */
+export interface WhyAlternative {
+	seatId: SeatId;
+	/** The character whose ability lets them misregister (Recluse, Spy, Lycanthrope). */
+	source: CharacterId;
+	/** Each other way they may register, and the answer it gives (when it is one value). */
+	as: { alignment?: Alignment; type?: CharacterType; value?: AnswerValue }[];
+}
+
+export interface Why {
+	facts: WhyFact[];
+	/** One per relevant player in `misregister`. */
+	alternatives: WhyAlternative[];
 }
 
 /** An answer's value, worked out from the grimoire. */
@@ -117,6 +154,7 @@ export type NightAnswer = AnswerValue &
 		possible?: AnswerValue[];
 		/** The Mathematician: which abilities worked abnormally since dawn. */
 		abnormal?: AbnormalUse[];
+		why: Why;
 		wiki: string;
 	};
 
@@ -161,6 +199,121 @@ function otherRegistrations(game: Game, seatId: SeatId, characters: CharacterLoo
 	return registrations(game, characters).filter((r) => r.seatId !== seatId);
 }
 
+function fact(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	world?: RegistrationWorld
+): WhyFact {
+	const characterId = trueCharacter(game, seatId, characters);
+	const alignment = world ? world.alignment(seatId) : undefined;
+	const type = world ? world.type(seatId) : typeOf(game, seatId, characters);
+	return {
+		seatId,
+		...(characterId ? { characterId } : {}),
+		...(alignment ? { alignment } : {}),
+		...(type ? { type } : {}),
+		...(registersAsDead(game, seatId) ? { dead: true } : {})
+	};
+}
+
+/** How a world sees every seat but one: worlds that agree here differ only in that seat. */
+function worldKey(game: Game, w: RegistrationWorld, except: SeatId): string {
+	return game.seating
+		.filter((s) => s !== except)
+		.map((s) => `${w.alignment(s) ?? ''}/${w.type(s) ?? ''}`)
+		.join(',');
+}
+
+/**
+ * Of the players who may misregister, those whose registration can change the result:
+ * two worlds that differ only in how they register give different results.
+ */
+function relevantSeats(
+	game: Game,
+	regs: readonly Registration[],
+	worlds: readonly RegistrationWorld[],
+	result: (w: RegistrationWorld) => string
+): SeatId[] {
+	const results = worlds.map(result);
+	return regs
+		.filter((r) => {
+			const seen = new Map<string, string>();
+			return worlds.some((w, i) => {
+				const key = worldKey(game, w, r.seatId);
+				const before = seen.get(key);
+				if (before === undefined) seen.set(key, results[i]);
+				return before !== undefined && before !== results[i];
+			});
+		})
+		.map((r) => r.seatId);
+}
+
+/**
+ * For each relevant player, what the result is when only they register otherwise: worlds
+ * that agree with the default world on everyone else.
+ */
+function alternatives(
+	game: Game,
+	regs: readonly Registration[],
+	relevant: readonly SeatId[],
+	worlds: readonly RegistrationWorld[],
+	value?: (w: RegistrationWorld) => AnswerValue | undefined
+): WhyAlternative[] {
+	const [base] = worlds;
+	if (!base) return [];
+	return regs
+		.filter((r) => relevant.includes(r.seatId))
+		.map((r) => {
+			const baseKey = worldKey(game, base, r.seatId);
+			const as: WhyAlternative['as'] = [];
+			const seen = new Set<string>();
+			for (const w of worlds.slice(1)) {
+				if (worldKey(game, w, r.seatId) !== baseKey) continue;
+				const alignment = w.alignment(r.seatId);
+				const type = w.type(r.seatId);
+				const key = `${alignment}/${type}`;
+				if (key === `${base.alignment(r.seatId)}/${base.type(r.seatId)}` || seen.has(key)) {
+					continue;
+				}
+				seen.add(key);
+				const v = value?.(w);
+				as.push({
+					...(alignment ? { alignment } : {}),
+					...(type ? { type } : {}),
+					...(v ? { value: v } : {})
+				});
+			}
+			return { seatId: r.seatId, source: r.source.characterId, as };
+		});
+}
+
+/** Keeps only the registrations of `seats` (all when undefined). */
+function onlyRelevant(r: Reliability, seats: readonly SeatId[] | undefined): Reliability {
+	if (!seats) return r;
+	const registrations = r.registrations.filter((x) => seats.includes(x.seatId));
+	return { ...r, registrations, misregister: registrations.map((x) => x.seatId) };
+}
+
+/** Answers worked out across registration worlds: relevance and alternatives from them. */
+function byWorld(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	valueIn: (w: RegistrationWorld) => AnswerValue
+) {
+	const regs = otherRegistrations(game, seatId, characters);
+	const worlds = registrationWorlds(game, characters, regs);
+	const values = worlds.map(valueIn);
+	const relevant = relevantSeats(game, regs, worlds, (w) => JSON.stringify(valueIn(w)));
+	return {
+		worlds,
+		possible: possibleValues(values),
+		relevant,
+		alternatives: alternatives(game, regs, relevant, worlds, valueIn)
+	};
+}
+
 function answer(
 	game: Game,
 	seatId: SeatId,
@@ -168,16 +321,22 @@ function answer(
 	characters: CharacterLookup,
 	value: AnswerValue,
 	because: SeatId[],
-	extra: Pick<NightAnswer, 'possible' | 'abnormal'> = {}
+	extra: Pick<NightAnswer, 'possible' | 'abnormal'> & {
+		/** Players whose registration matters; every one who may misregister when unset. */
+		relevant?: readonly SeatId[];
+		facts?: WhyFact[];
+		alternatives?: WhyAlternative[];
+	} = {}
 ): NightAnswer {
 	return {
 		...value,
-		...reliability(game, seatId, characterId, characters),
+		...onlyRelevant(reliability(game, seatId, characterId, characters), extra.relevant),
 		characterId,
 		seatId,
 		because,
 		...(extra.possible && extra.possible.length > 1 ? { possible: extra.possible } : {}),
 		...(extra.abnormal ? { abnormal: extra.abnormal } : {}),
+		why: { facts: extra.facts ?? [], alternatives: extra.alternatives ?? [] },
 		wiki: ANSWER_WIKI[characterId] ?? W
 	};
 }
@@ -217,11 +376,12 @@ export function townCrierAnswer(
 	const nominators = entriesOf(game, 'nomination')
 		.map((e) => e.nominator)
 		.filter((s, i, all) => all.indexOf(s) === i);
-	const worlds = registrationWorlds(game, characters, otherRegistrations(game, seatId, characters));
-	const minions = nominators.filter((s) => worlds[0].type(s) === 'minion');
-	const possible = possibleValues(
-		worlds.map((w) => ({ kind: 'yes-no', value: nominators.some((s) => w.type(s) === 'minion') }))
-	);
+	const w = byWorld(game, seatId, characters, (world) => ({
+		kind: 'yes-no',
+		value: nominators.some((s) => world.type(s) === 'minion')
+	}));
+	const [base] = w.worlds;
+	const minions = nominators.filter((s) => base.type(s) === 'minion');
 	return answer(
 		game,
 		seatId,
@@ -229,7 +389,12 @@ export function townCrierAnswer(
 		characters,
 		{ kind: 'yes-no', value: minions.length > 0 },
 		minions,
-		{ possible }
+		{
+			possible: w.possible,
+			relevant: w.relevant,
+			facts: nominators.map((s) => fact(game, s, characters, base)),
+			alternatives: w.alternatives
+		}
 	);
 }
 
@@ -252,7 +417,9 @@ export function flowergirlAnswer(
 		voted === undefined
 			? { kind: 'none', reason: 'Mark whether the Demon voted today' }
 			: { kind: 'yes-no', value: voted },
-		voted ? demons : []
+		voted ? demons : [],
+		// Votes are not tracked, so anyone who may register as the Demon stays relevant.
+		{ facts: demons.map((s) => fact(game, s, characters)) }
 	);
 }
 
@@ -282,7 +449,11 @@ export function undertakerAnswer(
 		id === undefined
 			? { kind: 'none', reason: 'Nobody died by execution today' }
 			: { kind: 'character', value: id },
-		executed ? [executed.seatId] : []
+		executed ? [executed.seatId] : [],
+		{
+			relevant: executed ? [executed.seatId] : [],
+			facts: executed ? [fact(game, executed.seatId, characters)] : []
+		}
 	);
 }
 
@@ -327,7 +498,14 @@ export function jugglerAnswer(
 		latest.size === 0
 			? { kind: 'none', reason: 'No guesses logged today' }
 			: { kind: 'number', value: correct.length },
-		correct.map(([s]) => s)
+		correct.map(([s]) => s),
+		{
+			relevant: [...latest.keys()],
+			facts: [...latest].map(([s, id]) => ({
+				...fact(game, s, characters),
+				guess: { characterId: id, correct: trueCharacter(game, s, characters) === id }
+			}))
+		}
 	);
 }
 
@@ -337,10 +515,14 @@ export function jugglerAnswer(
  * might register as evil and a dead Spy as good: both work even if dead (`possible`).
  */
 export function oracleAnswer(game: Game, seatId: SeatId, characters: CharacterLookup): NightAnswer {
-	const worlds = registrationWorlds(game, characters, otherRegistrations(game, seatId, characters));
 	const evilIn = (w: RegistrationWorld) =>
 		game.seating.filter((s) => registersAsDead(game, s) && w.alignment(s) === 'evil');
-	const evilDead = evilIn(worlds[0]);
+	const w = byWorld(game, seatId, characters, (world) => ({
+		kind: 'number',
+		value: evilIn(world).length
+	}));
+	const [base] = w.worlds;
+	const evilDead = evilIn(base);
 	return answer(
 		game,
 		seatId,
@@ -348,7 +530,14 @@ export function oracleAnswer(game: Game, seatId: SeatId, characters: CharacterLo
 		characters,
 		{ kind: 'number', value: evilDead.length },
 		evilDead,
-		{ possible: possibleValues(worlds.map((w) => ({ kind: 'number', value: evilIn(w).length }))) }
+		{
+			possible: w.possible,
+			relevant: w.relevant,
+			facts: game.seating
+				.filter((s) => registersAsDead(game, s))
+				.map((s) => fact(game, s, characters, base)),
+			alternatives: w.alternatives
+		}
 	);
 }
 
@@ -402,7 +591,8 @@ export function mathematicianAnswer(
 		characters,
 		{ kind: 'number', value: abnormal.length },
 		abnormal.map((u) => u.seatId).filter((s, i, all) => all.indexOf(s) === i),
-		{ abnormal }
+		// Registration only matters to the abilities it recorded as abnormal.
+		{ abnormal, relevant: [] }
 	);
 }
 
@@ -488,6 +678,7 @@ export interface InfoPicker extends Reliability {
 	range?: NumberRange;
 	/** Every option is allowed, because the waking player's ability does not work. */
 	anyAllowed: boolean;
+	why: Why;
 	/**
 	 * Reminder tokens to place: `target` on the player who is the shown character (or the
 	 * first player tapped), `other` on the second player, `each` on every player tapped.
@@ -674,6 +865,46 @@ function truthfulOptions(
 	return out;
 }
 
+/** The players a picker's options are worked out from, as the default world sees them. */
+function pickerFacts(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	spec: PickerSpec,
+	characters: CharacterLookup,
+	world: RegistrationWorld
+): WhyFact[] {
+	const others = game.seating.filter((s) => s !== seatId);
+	const f = (s: SeatId) => fact(game, s, characters, world);
+	const evil = (s: SeatId) => world.alignment(s) === 'evil';
+	switch (characterId) {
+		case 'washerwoman':
+		case 'librarian':
+		case 'investigator':
+			return others.filter((s) => world.type(s) === spec.characterType).map(f);
+		case 'chef':
+			return game.seating.filter(evil).map(f);
+		case 'empath':
+			return aliveNeighbours(game, seatId).map(f);
+		case 'clockmaker':
+			return game.seating
+				.filter((s) => world.type(s) === 'demon' || world.type(s) === 'minion')
+				.map(f);
+		case 'fortuneteller':
+			return game.seating.flatMap((s) => {
+				const redHerring = (getSeat(game, s)?.reminders ?? []).some(
+					(r) => r.characterId === 'fortuneteller' && r.label === 'Red Herring'
+				);
+				if (world.type(s) !== 'demon' && !redHerring) return [];
+				return [{ ...f(s), ...(redHerring ? { redHerring: true } : {}) }];
+			});
+		case 'noble':
+			return others.filter(evil).map(f);
+		default:
+			return [];
+	}
+}
+
 /** The info picker for a waking player, or undefined for a character it does not cover. */
 export function infoPicker(
 	game: Game,
@@ -683,8 +914,20 @@ export function infoPicker(
 ): InfoPicker | undefined {
 	const spec = Object.hasOwn(INFO_PICKERS, characterId) ? INFO_PICKERS[characterId] : undefined;
 	if (!spec) return undefined;
-	const r = reliability(game, seatId, characterId, characters);
-	const options = truthfulOptions(game, seatId, characterId, spec, characters, r.registrations);
+	const all = reliability(game, seatId, characterId, characters);
+	const options = truthfulOptions(game, seatId, characterId, spec, characters, all.registrations);
+	const worlds = registrationWorlds(game, characters, all.registrations);
+	const optionsOf = (w: RegistrationWorld) =>
+		optionsIn(game, seatId, characterId, spec, characters, w);
+	const relevant = relevantSeats(game, all.registrations, worlds, (w) =>
+		JSON.stringify(optionsOf(w).map(optionKey).sort())
+	);
+	const r = onlyRelevant(all, relevant);
+	// A number is one value; other pickers have many options, so no single alternative.
+	const numberIn = (w: RegistrationWorld): AnswerValue | undefined => {
+		const n = optionsOf(w)[0]?.number;
+		return spec.kind === 'number' && n !== undefined ? { kind: 'number', value: n } : undefined;
+	};
 	const truth = options.find((o) => !o.registered && o.number !== undefined)?.number;
 	const range: NumberRange | undefined =
 		spec.kind === 'number' && truth !== undefined
@@ -703,6 +946,10 @@ export function infoPicker(
 		options,
 		...(range ? { range } : {}),
 		anyAllowed: r.unreliable !== undefined,
+		why: {
+			facts: pickerFacts(game, seatId, characterId, spec, characters, worlds[0]),
+			alternatives: alternatives(game, all.registrations, relevant, worlds, numberIn)
+		},
 		reminders: spec.reminders,
 		wiki: spec.wiki
 	};
