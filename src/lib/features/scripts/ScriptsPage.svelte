@@ -3,10 +3,13 @@
 	import { onMount } from 'svelte';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import Page from '#lib/ui/layout/Page.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import AddScript from './AddScript.svelte';
 	import { restoreScripts } from './current-script.svelte.ts';
 	import ScriptPicker from './ScriptPicker.svelte';
+	import ScriptSearchBar from './ScriptSearchBar.svelte';
+	import { storedSource } from './search-sources.ts';
 	import { fetchSharedRef } from './share-codes.ts';
 	import { sharedRefFromHash } from './share.ts';
 
@@ -16,6 +19,8 @@
 	 */
 	let picker: ScriptPicker | undefined = $state();
 	let adder: AddScript | undefined = $state();
+	let term = $state('');
+	let source = $state(storedSource());
 
 	/** A share link (`/scripts#c=…` and the like) loads through the usual checks, then is cleared. */
 	async function openSharedLink() {
@@ -36,36 +41,13 @@
 
 <svelte:window onhashchange={() => void openSharedLink()} />
 
-<main>
-	<header>
-		<h1>{t('scripts.heading')}</h1>
-		<!-- Share links only: adding scripts is the Library's (Trevor, 2026-10-17). -->
-		<AddScript bind:this={adder} button={false} onsaved={() => picker?.showSaved()} />
-	</header>
-
+<Page title={t('scripts.heading')}>
+	{#snippet toolbar()}
+		<ScriptSearchBar bind:term bind:source />
+	{/snippet}
+	<!-- Share links only: adding scripts is the Library's (Trevor, 2026-10-17). -->
+	<AddScript bind:this={adder} button={false} onsaved={() => picker?.showSaved()} />
 	<ErrorBoundary area="scripts">
-		<ScriptPicker bind:this={picker} />
+		<ScriptPicker bind:this={picker} bind:term bind:source />
 	</ErrorBoundary>
-</main>
-
-<style>
-	main {
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-5) var(--page-gutter);
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-5);
-	}
-	header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-	}
-	h1 {
-		margin: 0;
-		font-size: 2rem;
-	}
-</style>
+</Page>

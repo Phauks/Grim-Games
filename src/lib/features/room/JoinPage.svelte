@@ -5,6 +5,8 @@
 	import { resolve } from '$app/paths';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { formatRoomCode, normaliseRoomCode } from '#lib/core/sync/room-code.ts';
+	import Page from '#lib/ui/layout/Page.svelte';
+	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { RoomPlayer } from './player.svelte.ts';
 	import { followRoomScript } from './room-script.ts';
@@ -47,6 +49,8 @@
 
 	const view = $derived(player?.view);
 	const status = $derived(player?.status);
+	/** In a room (not the code form): the script, your seat and the table show. */
+	const joined = $derived(!!valid && status !== 'refused' && status !== 'closed');
 	const seats = $derived(view?.public?.seats ?? []);
 	const mine = $derived(view?.me.seatId);
 	const seatName = (seatId?: SeatId) => {
@@ -76,10 +80,26 @@
 	}
 </script>
 
-<main>
-	<h1>{valid ? t('room.roomTitle', { code: formatRoomCode(valid) }) : t('room.joinTitle')}</h1>
+{#snippet scriptLine()}
+	<span data-testid="room-script">
+		{t('room.scriptLine', {
+			name: scriptName === undefined ? t('common.none') : scriptName || t('common.none')
+		})}
+	</span>
+{/snippet}
+{#snippet readScript()}
+	<Button icon="script" disabled={scriptName === undefined} onclick={() => goto(resolve('/play'))}>
+		{t('room.readScript')}
+	</Button>
+{/snippet}
 
-	{#if !valid || status === 'refused' || status === 'closed'}
+<Page
+	title={valid ? t('room.roomTitle', { code: formatRoomCode(valid) }) : t('room.joinTitle')}
+	subtitle={joined ? scriptLine : undefined}
+	actions={joined ? readScript : undefined}
+	columns={joined}
+>
+	{#if !joined}
 		{#if code !== undefined}
 			<p class="problem" role="alert">
 				{!valid
@@ -107,151 +127,88 @@
 			</Button>
 		</form>
 	{:else}
-		<section class="script" aria-labelledby="script-label">
-			<h2 id="script-label">{t('room.script')}</h2>
-			<p class="script-name" data-testid="room-script">
-				{scriptName === undefined ? t('common.none') : scriptName || t('common.none')}
-			</p>
-			<Button
-				icon="script"
-				disabled={scriptName === undefined}
-				onclick={() => goto(resolve('/play'))}
-			>
-				{t('room.readScript')}
-			</Button>
-		</section>
-
-		<div class="layout">
-			<section aria-labelledby="you-label">
-				<h2 id="you-label">{t('room.you')}</h2>
-				<p class="summary" role="status" data-testid="join-status">{summary}</p>
-				<form onsubmit={ask}>
-					<label for="player-name">{t('room.yourName')}</label>
-					<ClearableField bind:value={name}>
-						<input
-							id="player-name"
-							bind:value={name}
-							maxlength="40"
-							autocomplete="nickname"
-							enterkeyhint="done"
-							onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-						/>
-					</ClearableField>
-					<fieldset>
-						<legend>{t('room.yourSeat')}</legend>
-						<div class="seats">
-							<label class="seat">
-								<input type="radio" bind:group={seat} value="" />
-								<span>{t('room.anySeat')}</span>
-							</label>
-							{#each seats as s (s.seatId)}
-								<label class="seat" data-mine={s.seatId === mine || undefined}>
-									<input type="radio" bind:group={seat} value={s.seatId} />
-									<span>{t('common.seat', { number: s.seatNumber })}</span>
-									<span class="sub">
-										{s.seatId === mine
-											? t('room.mine')
-											: (s.playerName ??
-												(view?.takenSeats.includes(s.seatId) ? t('room.taken') : t('room.empty')))}
-									</span>
-								</label>
-							{/each}
-						</div>
-					</fieldset>
-					<div class="row">
-						<Button type="submit" variant="accent" disabled={!name.trim() || status !== 'open'}>
-							{t('room.ask')}
-						</Button>
-						<Button
-							variant="quiet"
-							disabled={!view?.request || status !== 'open'}
-							onclick={() => player?.cancel()}
-						>
-							{t('room.cancelRequest')}
-						</Button>
-						<Button
-							variant="quiet"
-							disabled={!mine || status !== 'open'}
-							onclick={() => player?.leaveSeat()}
-						>
-							{t('room.leaveSeat')}
-						</Button>
-					</div>
-				</form>
-			</section>
-
-			<section aria-labelledby="table-label">
-				<h2 id="table-label">{t('room.table')}</h2>
-				{#if seats.length === 0}
-					<p class="none">{t('common.none')}</p>
-				{:else}
-					<ol class="table">
+		<PageSection title={t('room.you')}>
+			<p class="summary" role="status" data-testid="join-status">{summary}</p>
+			<form onsubmit={ask}>
+				<label for="player-name">{t('room.yourName')}</label>
+				<ClearableField bind:value={name}>
+					<input
+						id="player-name"
+						bind:value={name}
+						maxlength="40"
+						autocomplete="nickname"
+						enterkeyhint="done"
+						onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+					/>
+				</ClearableField>
+				<fieldset>
+					<legend>{t('room.yourSeat')}</legend>
+					<div class="seats">
+						<label class="seat">
+							<input type="radio" bind:group={seat} value="" />
+							<span>{t('room.anySeat')}</span>
+						</label>
 						{#each seats as s (s.seatId)}
-							<li data-dead={s.dead || undefined} data-mine={s.seatId === mine || undefined}>
-								<span class="number">{s.seatNumber}</span>
-								<span class="name">{s.playerName ?? t('common.none')}</span>
-								<span class="state">
-									{s.dead ? t('room.dead') : ''}
+							<label class="seat" data-mine={s.seatId === mine || undefined}>
+								<input type="radio" bind:group={seat} value={s.seatId} />
+								<span>{t('common.seat', { number: s.seatNumber })}</span>
+								<span class="sub">
+									{s.seatId === mine
+										? t('room.mine')
+										: (s.playerName ??
+											(view?.takenSeats.includes(s.seatId) ? t('room.taken') : t('room.empty')))}
 								</span>
-							</li>
+							</label>
 						{/each}
-					</ol>
-				{/if}
-			</section>
-		</div>
+					</div>
+				</fieldset>
+				<div class="row">
+					<Button type="submit" variant="accent" disabled={!name.trim() || status !== 'open'}>
+						{t('room.ask')}
+					</Button>
+					<Button
+						variant="quiet"
+						disabled={!view?.request || status !== 'open'}
+						onclick={() => player?.cancel()}
+					>
+						{t('room.cancelRequest')}
+					</Button>
+					<Button
+						variant="quiet"
+						disabled={!mine || status !== 'open'}
+						onclick={() => player?.leaveSeat()}
+					>
+						{t('room.leaveSeat')}
+					</Button>
+				</div>
+			</form>
+		</PageSection>
+		<PageSection title={t('room.table')}>
+			{#if seats.length === 0}
+				<p class="none">{t('common.none')}</p>
+			{:else}
+				<ol class="table">
+					{#each seats as s (s.seatId)}
+						<li data-dead={s.dead || undefined} data-mine={s.seatId === mine || undefined}>
+							<span class="number">{s.seatNumber}</span>
+							<span class="name">{s.playerName ?? t('common.none')}</span>
+							<span class="state">
+								{s.dead ? t('room.dead') : ''}
+							</span>
+						</li>
+					{/each}
+				</ol>
+			{/if}
+		</PageSection>
 	{/if}
-</main>
+</Page>
 
 <style>
-	main {
-		display: grid;
-		gap: var(--space-4);
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-4) var(--page-gutter);
-	}
-	main > :global(*) {
-		min-width: 0;
-	}
-	h1 {
-		margin: 0;
-		font-size: 1.4rem;
-	}
-	h2 {
-		margin: 0;
-		font-size: 1.1rem;
-	}
-	.layout {
-		display: grid;
-		gap: var(--space-5);
-	}
-	/* A computer or tablet shows the table beside the form, not one long phone column. */
-	@media (min-width: 48rem) {
-		.layout {
-			grid-template-columns: 1fr 1fr;
-		}
-	}
-	section,
 	form {
 		display: grid;
 		gap: var(--space-3);
 		align-content: start;
 		min-width: 0;
-	}
-	/* One row: the name takes the space, the button keeps its place when the script arrives. */
-	.script {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2) var(--space-3);
-	}
-	.script-name {
-		flex: 1;
-		min-width: 0;
-		margin: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	.code-form {
 		max-width: calc(28 * var(--u));

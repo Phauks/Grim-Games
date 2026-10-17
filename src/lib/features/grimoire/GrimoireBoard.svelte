@@ -33,6 +33,8 @@
 	import {
 		livingByTeam,
 		setupComplete,
+		diedSinceNewDay,
+		ON_DEATH,
 		setupReminders,
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
@@ -187,13 +189,27 @@
 	/**
 	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
 	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
+	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
+	 * an ability set off by dying on the night of the death (the Ravenkeeper's).
 	 */
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
+		const { entries, cursor } = grimoire.open.session.log;
+		const died = diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
+		const counts = (step: NightStep) => {
+			const holders = stepHolders(game, step, characters);
+			const id = step.character?.id;
+			return (
+				holders.length === 0 ||
+				holders.some(
+					(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && died.has(s))
+				)
+			);
+		};
 		return {
-			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data)),
-			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data))
+			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data), counts),
+			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data), counts)
 		};
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
@@ -283,10 +299,9 @@
 	});
 
 	/** The seat under a point (in % of the board), if it is within reach of a token. */
-	/** The seat under `at`, or with `nearest` the closest seat however far. */
-	function seatAt(at: SeatPoint, nearest = false): SeatId | undefined {
+	function seatAt(at: SeatPoint): SeatId | undefined {
 		let best: SeatId | undefined;
-		let bestDistance = nearest ? Infinity : size * 0.75;
+		let bestDistance = size * 0.75;
 		game.seating.forEach((id, i) => {
 			const d = Math.hypot(
 				((points[i].x - at.x) / 100) * width,
@@ -301,6 +316,20 @@
 	}
 
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
+	/**
+	 * Where a free reminder may stay: on the board, but not over the reminder bank, the night
+	 * walk-through, the middle's buttons, the timer or the Fabled and Loric (Trevor, 2026-10-17).
+	 */
+	function spotAllowed(x: number, y: number): boolean {
+		if (!board) return false;
+		const inside = (r: DOMRect | undefined) =>
+			!!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+		if (!inside(board.getBoundingClientRect())) return false;
+		const blocked = board.querySelectorAll(
+			'[data-tray], [data-testid="night-strip"], .centre > *, .board-timer, .rules-edge'
+		);
+		return ![...blocked].some((el) => inside(el.getBoundingClientRect()));
+	}
 	function dragReminder(reminderId: ReminderId, from: SeatId, x: number, y: number, end: boolean) {
 		if (!board) return;
 		const rect = board.getBoundingClientRect();
@@ -317,8 +346,10 @@
 			moveConfirm?.requestReturn(reminderId);
 			return;
 		}
-		// Reminders that stay where they are dropped keep this spot, whichever seat has them.
-		if (boardLooks.current.reminders === 'free') grimoire.setReminderSpot(reminderId, at);
+		// Reminders that stay where they are dropped keep this spot, whichever seat has them,
+		// if it is in the board's open area (Trevor, 2026-10-17).
+		if (boardLooks.current.reminders === 'free' && spotAllowed(x, y))
+			grimoire.setReminderSpot(reminderId, at);
 		// Dropped on another seat: moved (one History entry). Anywhere else: nothing changes.
 		if (target && target !== from) moveConfirm?.request(reminderId, target);
 	}
@@ -458,6 +489,13 @@
 		selected = seatId;
 		sheetOpen = true;
 	}
+	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
+	/** A tapped reminder opens its own dialog over its seat's sheet (Trevor, 2026-10-17). */
+	function openReminder(seatId: SeatId, reminderId: ReminderId) {
+		openSeat(seatId);
+		// After the tap's click, so it doesn't land on what opens under the finger.
+		setTimeout(() => seatSheet?.showReminder(reminderId));
+	}
 	// A removed (or undone) seat closes its sheet.
 	$effect(() => {
 		if (selected !== undefined && !game.seats[selected]) sheetOpen = false;
@@ -553,6 +591,11 @@
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
 		return walk && data ? boardNightSteps(game, characters, walk.night, data) : [];
+	});
+	/** The open step's night, for Previous and Next inside it. */
+	const guidedSteps = $derived.by(() => {
+		const data = officialData.current;
+		return guided && data ? boardNightSteps(game, characters, guided.night, data) : [];
 	});
 	// The saved step dialog opens once the night order can be worked out.
 	let guidedPending = $state(saved.guided);
@@ -773,6 +816,24 @@
 
 <!-- Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
 	(Trevor, 2026-10-17). -->
+{#snippet rulesStack(stack: number)}
+	<!-- One stack for them all; a tap lists every one (Trevor, 2026-10-17). -->
+	<button
+		type="button"
+		class="rules-stack"
+		aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
+		onclick={() => (rulesGroupOpen = true)}
+	>
+		{#each game.ruleCharacters.slice(0, 3) as id (id)}
+			{@const character = characters.get(id)}
+			{#if character}<CharacterToken {character} size={stack} />{/if}
+		{/each}
+		{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
+				>{game.ruleCharacters.length}</span
+			>{/if}
+	</button>
+{/snippet}
+
 {#snippet rulesList(tokenSize: number)}
 	<ul class="rules" class:edge={tokenSize < size * 0.8} aria-label="Fabled and Loric">
 		{#each game.ruleCharacters as id (id)}
@@ -958,7 +1019,7 @@
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 							size={chip}
 							disabled={arranging}
-							onTap={() => openSeat(seat.seatId)}
+							onTap={() => openReminder(seat.seatId, reminder.reminderId)}
 							onDrag={(x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
 							onCancel={() => (reminderDrag = undefined)}
 						/>
@@ -1019,6 +1080,7 @@
 				: undefined}
 			focusMode={stepFocus.current.mode}
 			{seatAt}
+			{spotAllowed}
 			onHints={(h) => (trayHints = h)}
 		/>
 
@@ -1026,25 +1088,10 @@
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>
 		{#if boardLooks.current.rulesAt !== 'middle' && game.ruleCharacters.length > 0}
 			<div class="rules-edge" bind:clientWidth={edgeW} bind:clientHeight={edgeH}>
-				{#if boardLooks.current.rulesAt === 'edge'}
-					{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
+				{#if boardLooks.current.rulesGrouped}
+					{@render rulesStack(Math.max(tapPx, Math.round(size * 0.5)))}
 				{:else}
-					<!-- One stack for them all; a tap lists every one (Trevor, 2026-10-17). -->
-					{@const stack = Math.max(tapPx, Math.round(size * 0.5))}
-					<button
-						type="button"
-						class="rules-stack"
-						aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
-						onclick={() => (rulesGroupOpen = true)}
-					>
-						{#each game.ruleCharacters.slice(0, 3) as id (id)}
-							{@const character = characters.get(id)}
-							{#if character}<CharacterToken {character} size={stack} />{/if}
-						{/each}
-						{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
-								>{game.ruleCharacters.length}</span
-							>{/if}
-					</button>
+					{@render rulesList(Math.max(tapPx, Math.round(size * 0.5)))}
 				{/if}
 			</div>
 		{/if}
@@ -1093,7 +1140,13 @@
 						: ''}
 				</button>
 			{/if}
-			{#if boardLooks.current.rulesAt === 'middle'}{@render rulesList(Math.round(size * 0.8))}{/if}
+			{#if boardLooks.current.rulesAt === 'middle'}
+				{#if boardLooks.current.rulesGrouped && game.ruleCharacters.length > 0}
+					{@render rulesStack(Math.round(size * 0.8))}
+				{:else}
+					{@render rulesList(Math.round(size * 0.8))}
+				{/if}
+			{/if}
 		</div>
 	</div>
 </div>
@@ -1235,7 +1288,7 @@
 	</div>
 </ConfirmDialog>
 
-<SeatSheet bind:open={sheetOpen} {grimoire} seatId={selected} />
+<SeatSheet bind:this={seatSheet} bind:open={sheetOpen} {grimoire} seatId={selected} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
@@ -1279,6 +1332,16 @@
 	{grimoire}
 	step={guided?.step}
 	night={guided?.night ?? 'first'}
+	steps={guidedSteps}
+	onStep={(step) => {
+		if (!guided) return;
+		guided = { step, night: guided.night };
+		// The walk-through under the board follows.
+		if (walk && walk.night === guided.night) {
+			const i = walkSteps.findIndex((s) => s.id === step.id);
+			if (i >= 0) walk = { ...walk, index: i };
+		}
+	}}
 	onInfoTokens={() => {
 		// Closing the info sheet returns to this night step (Trevor, 2026-10-16).
 		infoReturn = () => (guideOpen = true);

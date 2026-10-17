@@ -36,11 +36,13 @@
 
 	onMount(() => void loadOfficialData());
 	const sample = $derived(officialData.current?.byId.get('fortuneteller'));
-	// The sample's place on TPI's whole night sheet, counting characters only.
+	// The sample as the only character in play (Trevor, 2026-10-17: "a low number (1) (1),
+	// not absolute"): 1 on each night it wakes.
 	const sampleNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || !value.nightNumbers) return undefined;
-		return sheetNumbersFor(data.nightSheet, 'fortuneteller');
+		const { first, other } = sheetNumbersFor(data.nightSheet, 'fortuneteller');
+		return { first: first && 1, other: other && 1 };
 	});
 	const contrast = $derived(tokenContrast(value, theme));
 	// The token at the size the board draws it (Trevor, 2026-10-17: the preview didn't match

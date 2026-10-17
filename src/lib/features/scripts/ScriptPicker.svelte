@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { createAttachmentKey } from 'svelte/attachments';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -52,18 +51,12 @@
 		searchBotcScripts,
 		type FetchedScript
 	} from './fetch-script.ts';
-	import {
-		filterRows,
-		nextSort,
-		sortRows,
-		type PickerSource,
-		type RowSort,
-		type SortColumn
-	} from './picker-rows.ts';
+	import { filterRows, nextSort, sortRows, type RowSort, type SortColumn } from './picker-rows.ts';
 	import { relaxJson } from './relaxed-json.ts';
 	import { RemoteSearch } from './remote-search.svelte.ts';
 	import { describeSource, reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
 	import ScriptView from './ScriptView.svelte';
+	import { storedSource, type PageSource } from './search-sources.ts';
 	import {
 		botcProvider,
 		findSaved,
@@ -75,7 +68,6 @@
 		type LoadTarget,
 		type ScriptListing
 	} from './script-providers.ts';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { CURATED_SECTIONS } from './script-tool-link.ts';
 
@@ -88,9 +80,18 @@
 		/** Called after a script is saved (it is also the most recent saved script). */
 		onchoose?: (script: LoadedScript) => void;
 		busy?: boolean;
+		/** What is typed in the page's search box. */
+		term?: string;
+		/** The one source listed. */
+		source?: PageSource;
 	}
 
-	let { onchoose, busy = $bindable(false) }: Props = $props();
+	let {
+		onchoose,
+		busy = $bindable(false),
+		term = $bindable(''),
+		source = $bindable(storedSource())
+	}: Props = $props();
 
 	/** The row tapped; undefined shows the most recently saved script. */
 	let selected = $state.raw<ScriptListing | undefined>();
@@ -105,41 +106,14 @@
 
 	let checkOpen = $state(false);
 
-	let term = $state('');
-	/**
-	 * One source at a time (Trevor, 2026-10-17): mixing them was unfair, since only BotC
-	 * Scripts has likes and numbers. In his order; saved scripts live in the Library.
-	 */
-	const PAGE_SOURCES = [
-		'botc',
-		'curated',
-		'month',
-		'collection',
-		'worldcup2023',
-		'worldcup2025',
-		'homebrew'
-	] as const satisfies readonly PickerSource[];
-	type PageSource = (typeof PAGE_SOURCES)[number];
-	const SOURCE_KEY = 'grim-games:scripts:source';
-	function storedSource(): PageSource {
-		try {
-			const stored = globalThis.localStorage?.getItem(SOURCE_KEY);
-			return PAGE_SOURCES.find((s) => s === stored) ?? 'botc';
-		} catch {
-			return 'botc';
-		}
-	}
-	let source = $state<PageSource>(storedSource());
-	function chooseSource(next: PageSource) {
-		if (next === source) return;
-		source = next;
-		sort = undefined;
-		try {
-			globalThis.localStorage?.setItem(SOURCE_KEY, next);
-		} catch {
-			// Storage blocked: the choice lasts for this visit.
-		}
-	}
+	// The search box and source live in the page's toolbar (`ScriptSearchBar`).
+	let prevSource = source;
+	$effect(() => {
+		if (source === prevSource) return;
+		prevSource = source;
+		// Each source sorts its own way.
+		untrack(() => (sort = undefined));
+	});
 	const searchingBotc = $derived(source === 'botc');
 	let sort = $state<RowSort | undefined>();
 	let data = $state.raw<GameData>();
@@ -430,10 +404,6 @@
 							: t('scripts.picker.count', { count: shown.length })) + curatedNote
 	);
 
-	const SOURCE_OPTIONS = $derived(
-		PAGE_SOURCES.map((value) => ({ value, label: t(`scripts.picker.source.${value}`) }))
-	);
-
 	type ColumnId = SortColumn;
 	const characterFilters = $derived(
 		filterCount({ ...botcFilters, term: '', type: '', author: '' })
@@ -621,28 +591,6 @@
 <div class="panes" bind:clientWidth={width}>
 	<div class="grid" class:open={paneOpen}>
 		<div class="picker" inert={narrow && paneOpen}>
-			<div class="search">
-				<label class="term">
-					<span class="visually-hidden">{t('scripts.picker.search')}</span>
-					<span class="magnifier" aria-hidden="true"><Icon name="search" /></span>
-					<ClearableField bind:value={term}>
-						<input
-							type="search"
-							autocomplete="off"
-							enterkeyhint="search"
-							placeholder={t('scripts.picker.searchPlaceholder')}
-							bind:value={term}
-						/>
-					</ClearableField>
-				</label>
-				<Select
-					label={t('scripts.sources.label')}
-					value={source}
-					options={SOURCE_OPTIONS}
-					onChange={chooseSource}
-				/>
-			</div>
-
 			<!-- One fixed height for every source, so switching moves nothing below. -->
 			<div class="body">
 				<div class="table" data-testid="picker-table">
@@ -802,14 +750,6 @@
 />
 
 <style>
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
 	.panes {
 		container: script-panes / inline-size;
 	}
@@ -896,33 +836,6 @@
 		.pane {
 			transition: none;
 		}
-	}
-	.search {
-		display: grid;
-		gap: var(--space-1);
-	}
-	.term {
-		position: relative;
-	}
-	.magnifier {
-		position: absolute;
-		inset-block: 0;
-		inset-inline-start: var(--space-2);
-		display: grid;
-		place-items: center;
-		color: var(--on-surface-muted);
-		pointer-events: none;
-	}
-	.term input {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		padding-inline-start: calc(2 * var(--space-2) + 1.25em);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	/* The same height whichever source is chosen; rows scroll inside it. */
 	.body {

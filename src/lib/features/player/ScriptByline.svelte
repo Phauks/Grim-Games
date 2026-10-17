@@ -8,9 +8,11 @@
 	interface Props {
 		author?: string;
 		version?: string;
+		/** A span, for a line that is already a paragraph (a Page subtitle). */
+		inline?: boolean;
 	}
 
-	let { author, version }: Props = $props();
+	let { author, version, inline = false }: Props = $props();
 	const parts = $derived(
 		[
 			author?.trim() ? t('player.byAuthor', { author: author.trim() }) : undefined,
@@ -20,12 +22,16 @@
 </script>
 
 {#if parts.length}
-	<p class="byline" data-testid="script-byline">{parts.join(' · ')}</p>
+	<svelte:element this={inline ? 'span' : 'p'} class="byline" data-testid="script-byline"
+		>{parts.join(' · ')}</svelte:element
+	>
 {/if}
 
 <style>
-	.byline {
+	p.byline {
 		margin: 0 0 var(--space-3);
+	}
+	.byline {
 		color: var(--on-surface-muted);
 	}
 </style>
