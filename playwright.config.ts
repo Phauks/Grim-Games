@@ -24,7 +24,8 @@ export default defineConfig({
 	webServer: {
 		// SHARE_LIMITS:off: every test shares one address, so a full run would trip the
 		// share-code rate limits (worker/share.ts) and make share tests flaky.
-		command: `npm run build && npx wrangler dev --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off`,
+		// REPORTS_ADMIN_KEY: a test key, so the /reports inbox can be read (worker/reports.ts).
+		command: `npm run build && npx wrangler dev --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off --var REPORTS_ADMIN_KEY:e2e-admin-key`,
 		url: `http://localhost:${PORT}/api/health`,
 		reuseExistingServer: !process.env.CI,
 		timeout: 180_000

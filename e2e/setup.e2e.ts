@@ -38,9 +38,8 @@ test('the setup table is shown and follows the player count', async ({ page }) =
 test('setup is one flow of two steps with the same bar on each', async ({ page }) => {
 	await selectionFor(page, 5);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
-	const steps = page.getByRole('navigation', { name: 'Setup steps' });
-	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Characters/);
-	await expect(steps.getByRole('listitem')).toHaveCount(2);
+	// No step header: the bar at the bottom moves between the steps (Trevor, 2026-10-17).
+	await expect(page.getByRole('navigation', { name: 'Setup steps' })).toHaveCount(0);
 	// The bar: Back on the left, the step's main action on the right.
 	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
 	const barButtons = async () => {
@@ -54,13 +53,10 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	await expect(bar.getByRole('link', { name: 'Grimoire' })).toBeVisible();
 	await expect(bar.getByRole('button', { name: 'Build bag' })).toBeVisible();
 	const onCharacters = await barButtons();
-	// No bag yet, so the Draw step can't be opened.
-	await expect(steps.getByRole('link', { name: 'Draw' })).toHaveCount(0);
 
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
-	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
 	await expect(bar.getByRole('link', { name: 'Characters' })).toBeVisible();
 	await expect(bar.getByRole('link', { name: 'Grimoire' })).toBeVisible();
 	// Same place on both steps.
@@ -73,20 +69,19 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	).toBeLessThan(2);
 	// Leaving the draw before every tile is drawn asks first (Trevor, 2026-10-16).
 	const leave = page.getByRole('alertdialog', { name: 'Leave the draw?' });
-	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await bar.getByRole('link', { name: 'Characters' }).tap();
 	await expect(leave).toContainText('Now: 5 of 5 tiles not yet drawn.');
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
-	await steps.getByRole('link', { name: 'Draw' }).tap();
+	await bar.getByRole('button', { name: 'Continue draw' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
 
-	// Once the draw has started, the steps and the way back stay on screen.
+	// Once the draw has started, the way back stays on screen.
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('reveal')).toBeHidden();
-	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
 	await expect(page.getByText(/\d+ left|Enter draws/)).toHaveCount(0);
-	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await bar.getByRole('link', { name: 'Characters' }).tap();
 	await expect(leave).toContainText('Now: 4 of 5 tiles not yet drawn.');
 	await leave.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
@@ -94,16 +89,29 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	await expect(leave).toBeVisible();
 	await leave.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
-	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await bar.getByRole('link', { name: 'Characters' }).tap();
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
-	// Going back changes nothing; building again says what happens to the drawn tile.
-	await page.getByRole('button', { name: 'Build bag' }).tap();
+	// Going back changes nothing: with the same characters, the button goes back to the same
+	// draw (Trevor, 2026-10-17).
+	await bar.getByRole('button', { name: 'Continue draw' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
+	await bar.getByRole('link', { name: 'Characters' }).tap();
+	await leave.getByRole('button', { name: 'Confirm' }).tap();
+	// Other characters make a new bag: it asks first, and the old draw leaves the grimoire.
+	await select(page, 'Monk', 'Chef');
+	await bar.getByRole('button', { name: 'Build bag' }).tap();
 	const replace = page.getByRole('alertdialog', { name: 'Replace the bag?' });
 	await expect(replace).toContainText('Now: 1 of 5 tiles drawn.');
 	await replace.getByRole('button', { name: 'Cancel' }).tap();
-	await steps.getByRole('link', { name: 'Draw' }).tap();
-	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
+	await bar.getByRole('button', { name: 'Build bag' }).tap();
+	await replace.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(0);
+	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	// Finishing goes to the board, which opens its setup reminders.
 	await bar.getByRole('link', { name: 'Grimoire' }).tap();
@@ -124,6 +132,25 @@ async function noSidewaysScroll(page: Page) {
 	);
 	expect(overflow).toBeLessThanOrEqual(0);
 }
+
+// Trevor, 2026-10-17: the counts and search stay in view below the app header, never over it.
+test('the counts and search stick just below the header while the list scrolls', async ({
+	page
+}) => {
+	await selectionFor(page, 5);
+	await page.mouse.wheel(0, 3000);
+	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+	const header = (await page.getByRole('banner').boundingBox())!;
+	const counts = page.getByTestId('setup-counts');
+	await expect(counts).toBeInViewport();
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await expect(search).toBeInViewport();
+	for (const box of [await counts.boundingBox(), await search.boundingBox()]) {
+		expect(box!.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+	}
+	// It really did scroll: the page heading is gone.
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).not.toBeInViewport();
+});
 
 test('selection counts against the setup sheet and explains the Drunk', async ({ page }) => {
 	await selectionFor(page, 6);
@@ -181,7 +208,7 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
-test('bag tiles show numbers, letters, symbols, colours or a random mix, centred on the token', async ({
+test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, centred on the token', async ({
 	page
 }) => {
 	await selectionFor(page, 5);
@@ -204,11 +231,15 @@ test('bag tiles show numbers, letters, symbols, colours or a random mix, centred
 	await expect(page.getByRole('button', { name: 'Tile A', exact: true })).toHaveText('A');
 	await expect(page.getByRole('button', { name: 'Tile E', exact: true })).toHaveText('E');
 
-	// Symbols, colours, or Random mixing everything (Trevor, 2026-10-17), named in words.
+	// The same setting from the draw itself (Trevor, 2026-10-17), which shows the choice made
+	// in Settings. Symbols, colours, or Random mixing everything, named in words.
+	await page.getByRole('button', { name: 'Setup and bag draw' }).tap();
+	const here = page.getByTestId('bag-settings');
+	await expect(here.getByRole('combobox', { name: 'Bag tile labels' })).toContainText('Letters');
+	await page.keyboard.press('Escape');
 	async function choose(option: string) {
-		await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
-		await page.getByRole('button', { name: 'Storyteller settings' }).tap();
-		await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+		await page.getByRole('button', { name: 'Setup and bag draw' }).tap();
+		await page.getByTestId('bag-settings').getByRole('combobox', { name: 'Bag tile labels' }).tap();
 		await page.getByRole('option', { name: option }).tap();
 		await page.keyboard.press('Escape');
 	}
@@ -216,8 +247,20 @@ test('bag tiles show numbers, letters, symbols, colours or a random mix, centred
 	await choose('Symbols');
 	await expect(page.getByRole('button', { name: 'Tile Star', exact: true })).toBeVisible();
 	await expect(bag.first().locator('[data-kind="symbol"] svg')).toBeVisible();
+	// The symbol sits in the middle of the token (Trevor, 2026-10-17).
+	for (const button of await bag.all()) {
+		const [b, g] = await Promise.all([button.boundingBox(), button.locator('svg').boundingBox()]);
+		expect(Math.abs(b!.x + b!.width / 2 - (g!.x + g!.width / 2))).toBeLessThan(1);
+		expect(Math.abs(b!.y + b!.height / 2 - (g!.y + g!.height / 2))).toBeLessThan(1);
+	}
 	await choose('Colours');
-	await expect(page.getByRole('button', { name: 'Tile Red', exact: true })).toBeVisible();
+	// The colour fills the whole token (Trevor, 2026-10-17).
+	await expect(page.getByRole('button', { name: 'Tile Red', exact: true })).toHaveCSS(
+		'background-color',
+		'rgb(255, 0, 0)'
+	);
+	await choose('Emoji');
+	await expect(page.getByRole('button', { name: 'Tile Apple', exact: true })).toContainText('🍎');
 	await choose('Random');
 	const labels = await bag.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
 	expect(new Set(labels).size).toBe(5);
@@ -367,8 +410,6 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await noSidewaysScroll(page);
 
 	// The last step is the board's setup reminders tray, not a list in the draw.
-	const steps = page.getByRole('navigation', { name: 'Setup steps' });
-	await expect(steps.locator('[aria-current="step"]')).toHaveText(/Draw/);
 	await page
 		.getByRole('navigation', { name: 'Setup', exact: true })
 		.getByRole('link', { name: 'Grimoire' })

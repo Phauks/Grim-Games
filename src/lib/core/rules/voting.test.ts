@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
-import { blockThreshold } from './voting.ts';
+import { blockThreshold, livingByTeam } from './voting.ts';
 
 describe('blockThreshold', () => {
 	it('is half the living players, rounded up', () => {
@@ -18,5 +18,22 @@ describe('blockThreshold', () => {
 			...[0, 1].map((i): Command => ({ type: 'SetDead', seatId: seats7[i], dead: true }))
 		);
 		expect(blockThreshold(dead.game)).toEqual({ alive: 5, needed: 3 });
+	});
+});
+
+describe('livingByTeam', () => {
+	it('counts the living on each team; the dead and unset alignments apart', () => {
+		const { session, ctx, seats } = newGame(5);
+		const g = run(
+			session,
+			ctx,
+			...['imp', 'chef', 'empath', 'poisoner'].map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			})),
+			{ type: 'SetDead', seatId: seats[2], dead: true }
+		).game;
+		expect(livingByTeam(g)).toEqual({ alive: 4, good: 1, evil: 2, unknown: 1 });
 	});
 });

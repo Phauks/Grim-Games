@@ -238,7 +238,7 @@
 						{:else}
 							<NotesPanel
 								notes={notebook.book.notes}
-								scratch={scratch?.strokes ?? []}
+								{scratch}
 								onAdd={() => openNote(notebook!.addNote())}
 								onOpenNote={openNote}
 								onOpenScratch={() => scratch && (scratchOpen = true)}

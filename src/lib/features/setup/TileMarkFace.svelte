@@ -15,11 +15,14 @@
 	const weight = $derived(ICON_SETS.find((s) => s.id === set)?.weight ?? 'regular');
 </script>
 
-<!-- A face-down tile's mark; the tile button carries its name in words. -->
+<!--
+	A face-down tile's mark; the tile button carries its name in words. A colour fills the
+	whole tile (the draw page paints it), so only a repeat number shows here.
+-->
 <span class="mark" data-kind={mark.kind} aria-hidden="true">
 	{#if mark.kind === 'text'}{mark.text}
+	{:else if mark.kind === 'emoji'}<span class="emoji">{mark.emoji}</span>
 	{:else if mark.kind === 'symbol'}<IconGlyph id={withWeight(mark.icon, weight)} {set} />
-	{:else}<span class="swatch" style:background={mark.colour}></span>
 	{/if}
 	{#if mark.kind !== 'text' && mark.repeat}<span class="repeat">{mark.repeat}</span>{/if}
 </span>
@@ -31,15 +34,12 @@
 		place-items: center;
 	}
 	.mark[data-kind='symbol'] :global(.icon) {
-		--icon-size: 1.4em;
+		--icon-size: 1.6em;
+		display: block;
 	}
-	.swatch {
-		width: 1.3em;
-		height: 1.3em;
-		border-radius: 50%;
-		box-shadow:
-			0 0 0 0.08em var(--token-face, currentColor),
-			0 0 0 0.14em currentColor;
+	.emoji {
+		font-size: 1.2em;
+		line-height: 1;
 	}
 	.repeat {
 		position: absolute;

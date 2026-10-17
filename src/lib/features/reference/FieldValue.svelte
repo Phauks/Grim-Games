@@ -14,7 +14,7 @@
 	} from '#lib/core/rules/reference.ts';
 	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup-reminders.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { ISSUE_CHOOSER_URL } from '#lib/features/about/report-issue.ts';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -45,6 +45,9 @@
 	let jinxesOpen = $state(false);
 
 	const character = $derived(entry.character);
+	/** The Report form as a rules report, its title started with this character's name. */
+	// eslint-disable-next-line grim/names-as-badges -- prefilled text in a form field, not shown as a name
+	const reportCharacter = () => reportDialog.show({ kind: 'rules', title: `${character.name}: ` });
 	// Prep steps with [Token] as reminder chips and names as badges (built only for this field).
 	const prep = $derived.by(() => {
 		if (field !== 'prep') return [];
@@ -118,13 +121,12 @@
 				title={t('reference.wiki')}><Icon name="wiki" /></a
 			>
 		{/if}
-		<!-- External GitHub issue form; only public build and character info in it. -->
-		<a
-			href={ISSUE_CHOOSER_URL}
-			target="_blank"
-			rel="noopener"
+		<!-- The in-app Report form, as a rules report about this character. -->
+		<button
+			type="button"
 			aria-label={t('reference.report')}
-			title={t('reference.report')}><Icon name="report" /></a
+			title={t('reference.report')}
+			onclick={reportCharacter}><Icon name="report" /></button
 		>
 	</span>
 {/snippet}
@@ -364,12 +366,20 @@
 		/* The icons' tap areas reach past them, so they line up with the text beside. */
 		margin-inline: calc((var(--tap-target) - 1.1 * var(--u)) / -2);
 	}
-	.links a {
+	.links a,
+	.links button {
 		display: inline-grid;
 		place-items: center;
 		min-width: var(--tap-target);
 		min-height: var(--tap-target);
 		--icon-size: calc(1.1 * var(--u));
+	}
+	.links button {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		cursor: pointer;
 	}
 	.fold {
 		display: inline-flex;

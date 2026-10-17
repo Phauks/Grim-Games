@@ -7,6 +7,7 @@ import { bluffs } from '#lib/i18n/messages/en/bluffs.ts';
 import { infoTokens } from '#lib/i18n/messages/en/info-tokens.ts';
 import { show } from '#lib/i18n/messages/en/show.ts';
 import { errors } from '#lib/i18n/messages/en/errors.ts';
+import { reports } from '#lib/i18n/messages/en/reports.ts';
 import { player } from '#lib/i18n/messages/en/player.ts';
 import { room } from '#lib/i18n/messages/en/room.ts';
 import { day } from '#lib/i18n/messages/en/day.ts';
@@ -18,6 +19,7 @@ import { shell } from '#lib/i18n/messages/en/shell.ts';
 import { settings } from '#lib/i18n/messages/en/settings.ts';
 import { scratch } from '#lib/i18n/messages/en/scratch.ts';
 import { library } from '#lib/i18n/messages/en/library.ts';
+import { scriptBuilder } from '#lib/i18n/messages/en/script-builder.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -35,6 +37,7 @@ export const en = {
 	...setup,
 	...picker,
 	...errors,
+	...reports,
 	...room,
 	...show,
 	...infoTokens,
@@ -47,5 +50,6 @@ export const en = {
 	...glossary,
 	...reference,
 	...scratch,
-	...library
+	...library,
+	...scriptBuilder
 } as const satisfies Catalog;

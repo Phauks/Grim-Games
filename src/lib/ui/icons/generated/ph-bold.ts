@@ -12,6 +12,7 @@ import ph_arrow_u_up_left_bold from '~icons/ph/arrow-u-up-left-bold';
 import ph_arrow_u_up_right_bold from '~icons/ph/arrow-u-up-right-bold';
 import ph_arrows_down_up_bold from '~icons/ph/arrows-down-up-bold';
 import ph_arrows_left_right_bold from '~icons/ph/arrows-left-right-bold';
+import ph_arrows_out_bold from '~icons/ph/arrows-out-bold';
 import ph_arrows_out_cardinal_bold from '~icons/ph/arrows-out-cardinal-bold';
 import ph_bag_simple_bold from '~icons/ph/bag-simple-bold';
 import ph_beer_bottle_bold from '~icons/ph/beer-bottle-bold';
@@ -34,10 +35,13 @@ import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_cat_bold from '~icons/ph/cat-bold';
 import ph_check_bold from '~icons/ph/check-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
+import ph_clock_clockwise_bold from '~icons/ph/clock-clockwise-bold';
+import ph_clock_countdown_bold from '~icons/ph/clock-countdown-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
+import ph_corners_out_bold from '~icons/ph/corners-out-bold';
 import ph_cross_bold from '~icons/ph/cross-bold';
 import ph_crown_bold from '~icons/ph/crown-bold';
 import ph_database_bold from '~icons/ph/database-bold';
@@ -46,10 +50,12 @@ import ph_diamond_bold from '~icons/ph/diamond-bold';
 import ph_dice_five_bold from '~icons/ph/dice-five-bold';
 import ph_dots_three_bold from '~icons/ph/dots-three-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
+import ph_download_simple_bold from '~icons/ph/download-simple-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
 import ph_eraser_bold from '~icons/ph/eraser-bold';
 import ph_eye_bold from '~icons/ph/eye-bold';
 import ph_feather_bold from '~icons/ph/feather-bold';
+import ph_file_arrow_down_bold from '~icons/ph/file-arrow-down-bold';
 import ph_fire_bold from '~icons/ph/fire-bold';
 import ph_fish_bold from '~icons/ph/fish-bold';
 import ph_flag_bold from '~icons/ph/flag-bold';
@@ -58,12 +64,14 @@ import ph_floppy_disk_bold from '~icons/ph/floppy-disk-bold';
 import ph_flower_bold from '~icons/ph/flower-bold';
 import ph_flower_lotus_bold from '~icons/ph/flower-lotus-bold';
 import ph_folder_bold from '~icons/ph/folder-bold';
+import ph_folder_open_bold from '~icons/ph/folder-open-bold';
 import ph_folder_simple_bold from '~icons/ph/folder-simple-bold';
 import ph_funnel_bold from '~icons/ph/funnel-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
 import ph_graduation_cap_bold from '~icons/ph/graduation-cap-bold';
+import ph_hammer_bold from '~icons/ph/hammer-bold';
 import ph_hand_fist_bold from '~icons/ph/hand-fist-bold';
 import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
 import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
@@ -74,6 +82,8 @@ import ph_hard_drives_bold from '~icons/ph/hard-drives-bold';
 import ph_heart_bold from '~icons/ph/heart-bold';
 import ph_heartbeat_bold from '~icons/ph/heartbeat-bold';
 import ph_hexagon_bold from '~icons/ph/hexagon-bold';
+import ph_hourglass_bold from '~icons/ph/hourglass-bold';
+import ph_hourglass_low_bold from '~icons/ph/hourglass-low-bold';
 import ph_house_bold from '~icons/ph/house-bold';
 import ph_house_simple_bold from '~icons/ph/house-simple-bold';
 import ph_identification_card_bold from '~icons/ph/identification-card-bold';
@@ -95,6 +105,8 @@ import ph_note_pencil_bold from '~icons/ph/note-pencil-bold';
 import ph_notepad_bold from '~icons/ph/notepad-bold';
 import ph_paint_brush_bold from '~icons/ph/paint-brush-bold';
 import ph_palette_bold from '~icons/ph/palette-bold';
+import ph_pause_bold from '~icons/ph/pause-bold';
+import ph_pause_circle_bold from '~icons/ph/pause-circle-bold';
 import ph_pen_nib_bold from '~icons/ph/pen-nib-bold';
 import ph_pencil_simple_bold from '~icons/ph/pencil-simple-bold';
 import ph_pencil_simple_line_bold from '~icons/ph/pencil-simple-line-bold';
@@ -124,6 +136,7 @@ import ph_sort_ascending_bold from '~icons/ph/sort-ascending-bold';
 import ph_sort_descending_bold from '~icons/ph/sort-descending-bold';
 import ph_spade_bold from '~icons/ph/spade-bold';
 import ph_sparkle_bold from '~icons/ph/sparkle-bold';
+import ph_speaker_high_bold from '~icons/ph/speaker-high-bold';
 import ph_square_bold from '~icons/ph/square-bold';
 import ph_star_bold from '~icons/ph/star-bold';
 import ph_stethoscope_bold from '~icons/ph/stethoscope-bold';
@@ -134,6 +147,7 @@ import ph_tag_bold from '~icons/ph/tag-bold';
 import ph_tag_simple_bold from '~icons/ph/tag-simple-bold';
 import ph_text_aa_bold from '~icons/ph/text-aa-bold';
 import ph_text_t_bold from '~icons/ph/text-t-bold';
+import ph_timer_bold from '~icons/ph/timer-bold';
 import ph_tote_bold from '~icons/ph/tote-bold';
 import ph_trash_bold from '~icons/ph/trash-bold';
 import ph_trash_simple_bold from '~icons/ph/trash-simple-bold';
@@ -150,6 +164,7 @@ import ph_users_three_bold from '~icons/ph/users-three-bold';
 import ph_warning_bold from '~icons/ph/warning-bold';
 import ph_warning_circle_bold from '~icons/ph/warning-circle-bold';
 import ph_wine_bold from '~icons/ph/wine-bold';
+import ph_wrench_bold from '~icons/ph/wrench-bold';
 import ph_x_bold from '~icons/ph/x-bold';
 import ph_x_circle_bold from '~icons/ph/x-circle-bold';
 
@@ -166,6 +181,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-right-bold': ph_arrow_u_up_right_bold,
 	'ph:arrows-down-up-bold': ph_arrows_down_up_bold,
 	'ph:arrows-left-right-bold': ph_arrows_left_right_bold,
+	'ph:arrows-out-bold': ph_arrows_out_bold,
 	'ph:arrows-out-cardinal-bold': ph_arrows_out_cardinal_bold,
 	'ph:bag-simple-bold': ph_bag_simple_bold,
 	'ph:beer-bottle-bold': ph_beer_bottle_bold,
@@ -188,10 +204,13 @@ const icons: IconMap = {
 	'ph:cat-bold': ph_cat_bold,
 	'ph:check-bold': ph_check_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
+	'ph:clock-clockwise-bold': ph_clock_clockwise_bold,
+	'ph:clock-countdown-bold': ph_clock_countdown_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
+	'ph:corners-out-bold': ph_corners_out_bold,
 	'ph:cross-bold': ph_cross_bold,
 	'ph:crown-bold': ph_crown_bold,
 	'ph:database-bold': ph_database_bold,
@@ -200,10 +219,12 @@ const icons: IconMap = {
 	'ph:dice-five-bold': ph_dice_five_bold,
 	'ph:dots-three-bold': ph_dots_three_bold,
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
+	'ph:download-simple-bold': ph_download_simple_bold,
 	'ph:drop-bold': ph_drop_bold,
 	'ph:eraser-bold': ph_eraser_bold,
 	'ph:eye-bold': ph_eye_bold,
 	'ph:feather-bold': ph_feather_bold,
+	'ph:file-arrow-down-bold': ph_file_arrow_down_bold,
 	'ph:fire-bold': ph_fire_bold,
 	'ph:fish-bold': ph_fish_bold,
 	'ph:flag-bold': ph_flag_bold,
@@ -212,12 +233,14 @@ const icons: IconMap = {
 	'ph:flower-bold': ph_flower_bold,
 	'ph:flower-lotus-bold': ph_flower_lotus_bold,
 	'ph:folder-bold': ph_folder_bold,
+	'ph:folder-open-bold': ph_folder_open_bold,
 	'ph:folder-simple-bold': ph_folder_simple_bold,
 	'ph:funnel-bold': ph_funnel_bold,
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,
 	'ph:ghost-bold': ph_ghost_bold,
 	'ph:graduation-cap-bold': ph_graduation_cap_bold,
+	'ph:hammer-bold': ph_hammer_bold,
 	'ph:hand-fist-bold': ph_hand_fist_bold,
 	'ph:hand-grabbing-bold': ph_hand_grabbing_bold,
 	'ph:hand-heart-bold': ph_hand_heart_bold,
@@ -228,6 +251,8 @@ const icons: IconMap = {
 	'ph:heart-bold': ph_heart_bold,
 	'ph:heartbeat-bold': ph_heartbeat_bold,
 	'ph:hexagon-bold': ph_hexagon_bold,
+	'ph:hourglass-bold': ph_hourglass_bold,
+	'ph:hourglass-low-bold': ph_hourglass_low_bold,
 	'ph:house-bold': ph_house_bold,
 	'ph:house-simple-bold': ph_house_simple_bold,
 	'ph:identification-card-bold': ph_identification_card_bold,
@@ -249,6 +274,8 @@ const icons: IconMap = {
 	'ph:notepad-bold': ph_notepad_bold,
 	'ph:paint-brush-bold': ph_paint_brush_bold,
 	'ph:palette-bold': ph_palette_bold,
+	'ph:pause-bold': ph_pause_bold,
+	'ph:pause-circle-bold': ph_pause_circle_bold,
 	'ph:pen-nib-bold': ph_pen_nib_bold,
 	'ph:pencil-simple-bold': ph_pencil_simple_bold,
 	'ph:pencil-simple-line-bold': ph_pencil_simple_line_bold,
@@ -278,6 +305,7 @@ const icons: IconMap = {
 	'ph:sort-descending-bold': ph_sort_descending_bold,
 	'ph:spade-bold': ph_spade_bold,
 	'ph:sparkle-bold': ph_sparkle_bold,
+	'ph:speaker-high-bold': ph_speaker_high_bold,
 	'ph:square-bold': ph_square_bold,
 	'ph:star-bold': ph_star_bold,
 	'ph:stethoscope-bold': ph_stethoscope_bold,
@@ -288,6 +316,7 @@ const icons: IconMap = {
 	'ph:tag-simple-bold': ph_tag_simple_bold,
 	'ph:text-aa-bold': ph_text_aa_bold,
 	'ph:text-t-bold': ph_text_t_bold,
+	'ph:timer-bold': ph_timer_bold,
 	'ph:tote-bold': ph_tote_bold,
 	'ph:trash-bold': ph_trash_bold,
 	'ph:trash-simple-bold': ph_trash_simple_bold,
@@ -304,6 +333,7 @@ const icons: IconMap = {
 	'ph:warning-bold': ph_warning_bold,
 	'ph:warning-circle-bold': ph_warning_circle_bold,
 	'ph:wine-bold': ph_wine_bold,
+	'ph:wrench-bold': ph_wrench_bold,
 	'ph:x-bold': ph_x_bold,
 	'ph:x-circle-bold': ph_x_circle_bold
 };

@@ -78,6 +78,33 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	await phoneContext.close();
 });
 
+test('Share and Copy link carry the room code as well as the link', async ({ page, context }) => {
+	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+	await page.addInitScript(() => {
+		const w = window as unknown as { shared?: ShareData };
+		Object.defineProperty(navigator, 'share', {
+			configurable: true,
+			value: async (data: ShareData) => void (w.shared = data)
+		});
+	});
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	const code = (await page.getByTestId('room-code').textContent())!.replace(/\D/g, '');
+	expect(code).toMatch(/^\d{6}$/);
+	const spaced = `${code.slice(0, 3)} ${code.slice(3)}`;
+	const link = new RegExp(`/join/${code}$`);
+
+	await page.getByRole('button', { name: 'Share' }).tap();
+	const shared = await page.evaluate(() => (window as unknown as { shared: ShareData }).shared);
+	expect(shared.text).toContain(spaced);
+	expect(shared.url).toMatch(link);
+
+	await page.getByRole('button', { name: 'Copy link' }).tap();
+	const copied = await page.evaluate(() => navigator.clipboard.readText());
+	expect(copied).toContain(spaced);
+	expect(copied.split('\n').at(-1)).toMatch(link);
+});
+
 test('a phone can type a code, and wrong codes say so', async ({ page }) => {
 	await page.goto('/join/12345');
 	await expect(page.getByRole('alert')).toHaveText(

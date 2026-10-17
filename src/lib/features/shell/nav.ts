@@ -14,6 +14,7 @@ export interface NavItem {
 		| '/previous-games'
 		| '/scripts'
 		| '/library'
+		| '/build-script'
 		| '/play'
 		| '/reference'
 		| '/info-tokens'
@@ -54,6 +55,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 			{ id: 'scripts', path: '/scripts', label: 'shell.navScripts', icon: 'script' },
 			// Everything the user has saved or made (Trevor, 2026-10-16).
 			{ id: 'library', path: '/library', label: 'shell.navLibrary', icon: 'library' },
+			{
+				id: 'build-script',
+				path: '/build-script',
+				label: 'shell.navBuildScript',
+				icon: 'buildScript'
+			},
 			{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' },
 			{ id: 'reference', path: '/reference', label: 'shell.navReference', icon: 'reference' }
 		]

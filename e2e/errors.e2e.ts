@@ -2,17 +2,24 @@ import { expect, test, type Page } from '@playwright/test';
 
 const CHOOSER = 'https://github.com/Phauks/Grim-Games/issues/new/choose';
 
-/** Report links open GitHub in a new tab; answer it locally and read what Report copied. */
-async function tapReport(page: Page, link: ReturnType<Page['getByRole']>): Promise<string> {
-	await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-	await page.context().route('https://github.com/**', (route) => route.fulfill({ body: 'ok' }));
-	const [popup] = await Promise.all([page.waitForEvent('popup'), link.tap()]);
-	await popup.close();
-	await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).not.toBe('');
-	return page.evaluate(() => navigator.clipboard.readText());
+/** Fills the in-app Report form, sends it, and returns what reached the Worker. */
+async function sendReport(page: Page): Promise<Record<string, string>> {
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await expect(form).toBeVisible();
+	const title = form.getByRole('textbox', { name: 'Title' });
+	if (!(await title.inputValue())) await title.fill('Testing a report');
+	await form.getByRole('textbox', { name: 'Description' }).fill('It broke while testing.');
+	const [request] = await Promise.all([
+		page.waitForRequest((r) => r.url().endsWith('/api/reports') && r.method() === 'POST'),
+		form.getByRole('button', { name: 'Send' }).tap()
+	]);
+	await expect(form.getByTestId('report-sent')).toHaveText(/^Sent as report #\d+\.$/);
+	const sent = request.postDataJSON();
+	await form.getByRole('button', { name: 'Close' }).last().tap();
+	return sent;
 }
 
-test('an uncaught error shows the corner card, and Details offers a scrubbed GitHub report', async ({
+test('an uncaught error shows the corner card, and Details offers a scrubbed report', async ({
 	page
 }) => {
 	await page.goto('/');
@@ -38,15 +45,17 @@ test('an uncaught error shows the corner card, and Details offers a scrubbed Git
 	const dialog = page.getByRole('dialog', { name: 'Problems on this device' });
 	await expect(dialog).toBeVisible();
 	await expect(dialog).toContainText('test failure at example.com/room');
-	const report = dialog.getByRole('link', { name: 'Copy and report' });
+	const report = dialog.getByRole('button', { name: 'Report' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-	// Every report opens GitHub's issue chooser, with the details copied to paste in.
-	await expect(report).toHaveAttribute('href', CHOOSER);
-	const copied = await tapReport(page, report);
-	expect(copied).toContain('uncaught');
-	expect(copied).toContain('Build: v');
-	expect(copied).not.toContain('SECRET');
-	expect(copied).not.toContain('script=abc');
+	// Report opens the in-app form as a bug, with the problem's details to send along.
+	await report.tap();
+	const sent = await sendReport(page);
+	expect(sent.kind).toBe('bug');
+	expect(sent.title).toContain('test failure');
+	expect(sent.details).toContain('uncaught');
+	expect(sent.build).toMatch(/^v/);
+	expect(JSON.stringify(sent)).not.toContain('SECRET');
+	expect(JSON.stringify(sent)).not.toContain('script=abc');
 
 	// The log survives a reload (so a crash can be reported after reopening), until cleared.
 	await page.reload();
@@ -158,13 +167,13 @@ test('Diagnostics gathers build, device and problems on the device, without game
 	await refresh.tap();
 	await expect(panel).toHaveAttribute('aria-busy', 'false');
 
-	const report = panel.getByRole('link', { name: 'Copy and report' });
+	const report = panel.getByRole('button', { name: 'Report an issue' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-	await expect(report).toHaveAttribute('href', CHOOSER);
-	const copied = await tapReport(page, report);
-	expect(copied).toContain('diagnostics test at example.com/room');
-	expect(copied).not.toContain('SECRET');
-	expect(copied).not.toContain('Sam the Storyteller');
+	await report.tap();
+	const sent = await sendReport(page);
+	expect(sent.details).toContain('diagnostics test at example.com/room');
+	expect(JSON.stringify(sent)).not.toContain('SECRET');
+	expect(JSON.stringify(sent)).not.toContain('Sam the Storyteller');
 
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),

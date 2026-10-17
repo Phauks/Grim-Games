@@ -53,7 +53,9 @@ describe('parsePreferences', () => {
 			},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',
-			requireName: true
+			requireName: true,
+			timerSound: 'buzzer',
+			timerMode: 'up'
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
 	});
@@ -61,6 +63,9 @@ describe('parsePreferences', () => {
 	it('keeps any bag tile label, and reads an unknown one as numbers', () => {
 		expect(parsePreferences({ tileFace: 'random' }).tileFace).toBe('random');
 		expect(parsePreferences({ tileFace: 'shapes' }).tileFace).toBe('numbers');
+		expect(parsePreferences({ timerSound: 'chime' }).timerSound).toBe('chime');
+		expect(parsePreferences({ timerSound: 'gong' }).timerSound).toBe('bell');
+		expect(parsePreferences({ timerMode: 'sideways' }).timerMode).toBe('down');
 	});
 
 	it('gives character icons the one icon size saved before the split', () => {

@@ -18,6 +18,7 @@ export const setup = {
 	'setup.random': 'Random selection',
 	'setup.clearSelection': 'Clear selection',
 	'setup.buildBag': 'Build bag',
+	'setup.continueDraw': 'Continue draw',
 	'setup.or': 'or',
 	'setup.jinxed': 'Jinxed',
 	'setup.addAnother': 'Add another',
@@ -46,9 +47,9 @@ export const setup = {
 			'Now: {count} of {total} tiles not yet drawn. The bag is kept, so you can come back to the draw.'
 	},
 	'setup.replace.body': {
-		one: 'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The character already on a seat stays; History can restore the old bag.',
+		one: 'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The character it dealt and its reminders are cleared; names stay. History can restore the old bag.',
 		other:
-			'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The characters already on seats stay; History can restore the old bag.'
+			'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The characters it dealt and their reminders are cleared; names stay. History can restore the old bag.'
 	},
 	'setup.replace.keep': 'Keep',
 	'setup.replace.confirm': 'Replace',
@@ -112,6 +113,32 @@ export const setup = {
 	'setup.tileColour.black': 'Black',
 	'setup.tileColour.grey': 'Grey',
 	'setup.tileColour.white': 'White',
+
+	'setup.tileEmoji.apple': 'Apple',
+	'setup.tileEmoji.banana': 'Banana',
+	'setup.tileEmoji.grapes': 'Grapes',
+	'setup.tileEmoji.cherries': 'Cherries',
+	'setup.tileEmoji.mushroom': 'Mushroom',
+	'setup.tileEmoji.cactus': 'Cactus',
+	'setup.tileEmoji.sunflower': 'Sunflower',
+	'setup.tileEmoji.frog': 'Frog',
+	'setup.tileEmoji.octopus': 'Octopus',
+	'setup.tileEmoji.fox': 'Fox',
+	'setup.tileEmoji.bee': 'Bee',
+	'setup.tileEmoji.owl': 'Owl',
+	'setup.tileEmoji.turtle': 'Turtle',
+	'setup.tileEmoji.butterfly': 'Butterfly',
+	'setup.tileEmoji.whale': 'Whale',
+	'setup.tileEmoji.balloon': 'Balloon',
+	'setup.tileEmoji.die': 'Die',
+	'setup.tileEmoji.hat': 'Top hat',
+	'setup.tileEmoji.rocket': 'Rocket',
+	'setup.tileEmoji.pizza': 'Pizza',
+	'setup.tileEmoji.rainbow': 'Rainbow',
+	'setup.tileEmoji.fire': 'Fire',
+	'setup.tileEmoji.doughnut': 'Doughnut',
+	'setup.tileEmoji.penguin': 'Penguin',
+	'setup.tileEmoji.taco': 'Taco',
 
 	'setup.draw': 'Draw',
 	'setup.draw.noBag': 'No bag. Select characters and build the bag first.',

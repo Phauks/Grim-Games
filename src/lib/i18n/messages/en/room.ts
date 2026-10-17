@@ -13,6 +13,8 @@ export const room = {
 	'room.joinCode': 'Join code',
 	'room.qrLabel': 'QR code to join the room',
 	'room.copyLink': 'Copy link',
+	'room.share': 'Share',
+	'room.shareText': 'Join the game on Grim-Games. Room code: {code}',
 	'room.linkCopied': 'Link copied',
 	'room.copyFailed': 'Could not copy the link',
 	'room.copyFailedHint': 'Use the QR code instead.',

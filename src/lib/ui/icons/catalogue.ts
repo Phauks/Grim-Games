@@ -31,6 +31,9 @@ export const ICON_SLOTS = {
 	setup: { label: 'Setup', choices: ['ph:flower', 'ph:flower-lotus'] },
 	players: { label: 'Players', choices: ['ph:users-three', 'ph:users'] },
 	script: { label: 'Script', choices: ['ph:scroll', 'ph:book-open'] },
+	buildScript: { label: 'Script builder', choices: ['ph:hammer', 'ph:wrench'] },
+	download: { label: 'Download', choices: ['ph:download-simple', 'ph:file-arrow-down'] },
+	open: { label: 'Open', choices: ['ph:folder-open', 'ph:folder'] },
 	notes: { label: 'Notes', choices: ['ph:note-pencil', 'ph:notepad', 'ph:feather'] },
 	undo: { label: 'Undo', choices: ['ph:arrow-counter-clockwise', 'ph:arrow-u-up-left'] },
 	refresh: { label: 'Refresh', choices: ['ph:arrow-clockwise'] },
@@ -42,6 +45,13 @@ export const ICON_SLOTS = {
 	add: { label: 'Add', choices: ['ph:plus', 'ph:plus-circle'] },
 	minus: { label: 'Minus', choices: ['ph:minus', 'ph:minus-circle'] },
 	resume: { label: 'Resume game', choices: ['ph:play-circle', 'ph:play'] },
+	/** The day timer (Trevor, 2026-10-17). */
+	timerStart: { label: 'Start timer', choices: ['ph:play', 'ph:play-circle'] },
+	timerPause: { label: 'Pause timer', choices: ['ph:pause', 'ph:pause-circle'] },
+	timer: { label: 'Timer', choices: ['ph:timer', 'ph:hourglass'] },
+	sound: { label: 'Sound', choices: ['ph:speaker-high', 'ph:bell'] },
+	countDown: { label: 'Count down', choices: ['ph:clock-countdown', 'ph:hourglass-low'] },
+	countUp: { label: 'Count up', choices: ['ph:clock-clockwise', 'ph:timer'] },
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
@@ -91,6 +101,7 @@ export const ICON_SLOTS = {
 	library: { label: 'Library', choices: ['ph:bookmarks-simple', 'ph:archive'] },
 	folder: { label: 'Folder', choices: ['ph:folder', 'ph:folder-simple'] },
 	tag: { label: 'Tag', choices: ['ph:tag', 'ph:tag-simple'] },
+	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] }
 } as const satisfies Record<string, IconSlotInfo>;
 

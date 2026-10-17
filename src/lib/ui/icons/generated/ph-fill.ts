@@ -12,6 +12,7 @@ import ph_arrow_u_up_left_fill from '~icons/ph/arrow-u-up-left-fill';
 import ph_arrow_u_up_right_fill from '~icons/ph/arrow-u-up-right-fill';
 import ph_arrows_down_up_fill from '~icons/ph/arrows-down-up-fill';
 import ph_arrows_left_right_fill from '~icons/ph/arrows-left-right-fill';
+import ph_arrows_out_fill from '~icons/ph/arrows-out-fill';
 import ph_arrows_out_cardinal_fill from '~icons/ph/arrows-out-cardinal-fill';
 import ph_bag_simple_fill from '~icons/ph/bag-simple-fill';
 import ph_beer_bottle_fill from '~icons/ph/beer-bottle-fill';
@@ -34,10 +35,13 @@ import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_cat_fill from '~icons/ph/cat-fill';
 import ph_check_fill from '~icons/ph/check-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
+import ph_clock_clockwise_fill from '~icons/ph/clock-clockwise-fill';
+import ph_clock_countdown_fill from '~icons/ph/clock-countdown-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
+import ph_corners_out_fill from '~icons/ph/corners-out-fill';
 import ph_cross_fill from '~icons/ph/cross-fill';
 import ph_crown_fill from '~icons/ph/crown-fill';
 import ph_database_fill from '~icons/ph/database-fill';
@@ -46,10 +50,12 @@ import ph_diamond_fill from '~icons/ph/diamond-fill';
 import ph_dice_five_fill from '~icons/ph/dice-five-fill';
 import ph_dots_three_fill from '~icons/ph/dots-three-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
+import ph_download_simple_fill from '~icons/ph/download-simple-fill';
 import ph_drop_fill from '~icons/ph/drop-fill';
 import ph_eraser_fill from '~icons/ph/eraser-fill';
 import ph_eye_fill from '~icons/ph/eye-fill';
 import ph_feather_fill from '~icons/ph/feather-fill';
+import ph_file_arrow_down_fill from '~icons/ph/file-arrow-down-fill';
 import ph_fire_fill from '~icons/ph/fire-fill';
 import ph_fish_fill from '~icons/ph/fish-fill';
 import ph_flag_fill from '~icons/ph/flag-fill';
@@ -58,12 +64,14 @@ import ph_floppy_disk_fill from '~icons/ph/floppy-disk-fill';
 import ph_flower_fill from '~icons/ph/flower-fill';
 import ph_flower_lotus_fill from '~icons/ph/flower-lotus-fill';
 import ph_folder_fill from '~icons/ph/folder-fill';
+import ph_folder_open_fill from '~icons/ph/folder-open-fill';
 import ph_folder_simple_fill from '~icons/ph/folder-simple-fill';
 import ph_funnel_fill from '~icons/ph/funnel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
 import ph_graduation_cap_fill from '~icons/ph/graduation-cap-fill';
+import ph_hammer_fill from '~icons/ph/hammer-fill';
 import ph_hand_fist_fill from '~icons/ph/hand-fist-fill';
 import ph_hand_grabbing_fill from '~icons/ph/hand-grabbing-fill';
 import ph_hand_heart_fill from '~icons/ph/hand-heart-fill';
@@ -74,6 +82,8 @@ import ph_hard_drives_fill from '~icons/ph/hard-drives-fill';
 import ph_heart_fill from '~icons/ph/heart-fill';
 import ph_heartbeat_fill from '~icons/ph/heartbeat-fill';
 import ph_hexagon_fill from '~icons/ph/hexagon-fill';
+import ph_hourglass_fill from '~icons/ph/hourglass-fill';
+import ph_hourglass_low_fill from '~icons/ph/hourglass-low-fill';
 import ph_house_fill from '~icons/ph/house-fill';
 import ph_house_simple_fill from '~icons/ph/house-simple-fill';
 import ph_identification_card_fill from '~icons/ph/identification-card-fill';
@@ -95,6 +105,8 @@ import ph_note_pencil_fill from '~icons/ph/note-pencil-fill';
 import ph_notepad_fill from '~icons/ph/notepad-fill';
 import ph_paint_brush_fill from '~icons/ph/paint-brush-fill';
 import ph_palette_fill from '~icons/ph/palette-fill';
+import ph_pause_fill from '~icons/ph/pause-fill';
+import ph_pause_circle_fill from '~icons/ph/pause-circle-fill';
 import ph_pen_nib_fill from '~icons/ph/pen-nib-fill';
 import ph_pencil_simple_fill from '~icons/ph/pencil-simple-fill';
 import ph_pencil_simple_line_fill from '~icons/ph/pencil-simple-line-fill';
@@ -124,6 +136,7 @@ import ph_sort_ascending_fill from '~icons/ph/sort-ascending-fill';
 import ph_sort_descending_fill from '~icons/ph/sort-descending-fill';
 import ph_spade_fill from '~icons/ph/spade-fill';
 import ph_sparkle_fill from '~icons/ph/sparkle-fill';
+import ph_speaker_high_fill from '~icons/ph/speaker-high-fill';
 import ph_square_fill from '~icons/ph/square-fill';
 import ph_star_fill from '~icons/ph/star-fill';
 import ph_stethoscope_fill from '~icons/ph/stethoscope-fill';
@@ -134,6 +147,7 @@ import ph_tag_fill from '~icons/ph/tag-fill';
 import ph_tag_simple_fill from '~icons/ph/tag-simple-fill';
 import ph_text_aa_fill from '~icons/ph/text-aa-fill';
 import ph_text_t_fill from '~icons/ph/text-t-fill';
+import ph_timer_fill from '~icons/ph/timer-fill';
 import ph_tote_fill from '~icons/ph/tote-fill';
 import ph_trash_fill from '~icons/ph/trash-fill';
 import ph_trash_simple_fill from '~icons/ph/trash-simple-fill';
@@ -150,6 +164,7 @@ import ph_users_three_fill from '~icons/ph/users-three-fill';
 import ph_warning_fill from '~icons/ph/warning-fill';
 import ph_warning_circle_fill from '~icons/ph/warning-circle-fill';
 import ph_wine_fill from '~icons/ph/wine-fill';
+import ph_wrench_fill from '~icons/ph/wrench-fill';
 import ph_x_fill from '~icons/ph/x-fill';
 import ph_x_circle_fill from '~icons/ph/x-circle-fill';
 
@@ -166,6 +181,7 @@ const icons: IconMap = {
 	'ph:arrow-u-up-right-fill': ph_arrow_u_up_right_fill,
 	'ph:arrows-down-up-fill': ph_arrows_down_up_fill,
 	'ph:arrows-left-right-fill': ph_arrows_left_right_fill,
+	'ph:arrows-out-fill': ph_arrows_out_fill,
 	'ph:arrows-out-cardinal-fill': ph_arrows_out_cardinal_fill,
 	'ph:bag-simple-fill': ph_bag_simple_fill,
 	'ph:beer-bottle-fill': ph_beer_bottle_fill,
@@ -188,10 +204,13 @@ const icons: IconMap = {
 	'ph:cat-fill': ph_cat_fill,
 	'ph:check-fill': ph_check_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
+	'ph:clock-clockwise-fill': ph_clock_clockwise_fill,
+	'ph:clock-countdown-fill': ph_clock_countdown_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
+	'ph:corners-out-fill': ph_corners_out_fill,
 	'ph:cross-fill': ph_cross_fill,
 	'ph:crown-fill': ph_crown_fill,
 	'ph:database-fill': ph_database_fill,
@@ -200,10 +219,12 @@ const icons: IconMap = {
 	'ph:dice-five-fill': ph_dice_five_fill,
 	'ph:dots-three-fill': ph_dots_three_fill,
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
+	'ph:download-simple-fill': ph_download_simple_fill,
 	'ph:drop-fill': ph_drop_fill,
 	'ph:eraser-fill': ph_eraser_fill,
 	'ph:eye-fill': ph_eye_fill,
 	'ph:feather-fill': ph_feather_fill,
+	'ph:file-arrow-down-fill': ph_file_arrow_down_fill,
 	'ph:fire-fill': ph_fire_fill,
 	'ph:fish-fill': ph_fish_fill,
 	'ph:flag-fill': ph_flag_fill,
@@ -212,12 +233,14 @@ const icons: IconMap = {
 	'ph:flower-fill': ph_flower_fill,
 	'ph:flower-lotus-fill': ph_flower_lotus_fill,
 	'ph:folder-fill': ph_folder_fill,
+	'ph:folder-open-fill': ph_folder_open_fill,
 	'ph:folder-simple-fill': ph_folder_simple_fill,
 	'ph:funnel-fill': ph_funnel_fill,
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,
 	'ph:ghost-fill': ph_ghost_fill,
 	'ph:graduation-cap-fill': ph_graduation_cap_fill,
+	'ph:hammer-fill': ph_hammer_fill,
 	'ph:hand-fist-fill': ph_hand_fist_fill,
 	'ph:hand-grabbing-fill': ph_hand_grabbing_fill,
 	'ph:hand-heart-fill': ph_hand_heart_fill,
@@ -228,6 +251,8 @@ const icons: IconMap = {
 	'ph:heart-fill': ph_heart_fill,
 	'ph:heartbeat-fill': ph_heartbeat_fill,
 	'ph:hexagon-fill': ph_hexagon_fill,
+	'ph:hourglass-fill': ph_hourglass_fill,
+	'ph:hourglass-low-fill': ph_hourglass_low_fill,
 	'ph:house-fill': ph_house_fill,
 	'ph:house-simple-fill': ph_house_simple_fill,
 	'ph:identification-card-fill': ph_identification_card_fill,
@@ -249,6 +274,8 @@ const icons: IconMap = {
 	'ph:notepad-fill': ph_notepad_fill,
 	'ph:paint-brush-fill': ph_paint_brush_fill,
 	'ph:palette-fill': ph_palette_fill,
+	'ph:pause-fill': ph_pause_fill,
+	'ph:pause-circle-fill': ph_pause_circle_fill,
 	'ph:pen-nib-fill': ph_pen_nib_fill,
 	'ph:pencil-simple-fill': ph_pencil_simple_fill,
 	'ph:pencil-simple-line-fill': ph_pencil_simple_line_fill,
@@ -278,6 +305,7 @@ const icons: IconMap = {
 	'ph:sort-descending-fill': ph_sort_descending_fill,
 	'ph:spade-fill': ph_spade_fill,
 	'ph:sparkle-fill': ph_sparkle_fill,
+	'ph:speaker-high-fill': ph_speaker_high_fill,
 	'ph:square-fill': ph_square_fill,
 	'ph:star-fill': ph_star_fill,
 	'ph:stethoscope-fill': ph_stethoscope_fill,
@@ -288,6 +316,7 @@ const icons: IconMap = {
 	'ph:tag-simple-fill': ph_tag_simple_fill,
 	'ph:text-aa-fill': ph_text_aa_fill,
 	'ph:text-t-fill': ph_text_t_fill,
+	'ph:timer-fill': ph_timer_fill,
 	'ph:tote-fill': ph_tote_fill,
 	'ph:trash-fill': ph_trash_fill,
 	'ph:trash-simple-fill': ph_trash_simple_fill,
@@ -304,6 +333,7 @@ const icons: IconMap = {
 	'ph:warning-fill': ph_warning_fill,
 	'ph:warning-circle-fill': ph_warning_circle_fill,
 	'ph:wine-fill': ph_wine_fill,
+	'ph:wrench-fill': ph_wrench_fill,
 	'ph:x-fill': ph_x_fill,
 	'ph:x-circle-fill': ph_x_circle_fill
 };

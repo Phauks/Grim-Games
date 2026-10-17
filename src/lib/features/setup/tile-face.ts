@@ -6,13 +6,14 @@ import { TILE_SYMBOL_ICONS } from '#lib/ui/icons/catalogue.ts';
 
 /**
  * What a face-down tile on the bag draw shows (Trevor, 2026-10-17): a number, a letter, a
- * symbol, a colour, or Random, which mixes all four. Every tile in a bag shows a different
+ * symbol, a colour, an emoji, or Random, which mixes them all. Every tile in a bag shows a different
  * mark, and `name` says it in words for the reveal title and screen readers.
  */
 export type TileMark =
 	| { kind: 'text'; text: string; name: string }
 	| { kind: 'symbol'; icon: string; name: string; repeat?: number }
-	| { kind: 'colour'; colour: string; name: string; repeat?: number };
+	| { kind: 'emoji'; emoji: string; name: string; repeat?: number }
+	| { kind: 'colour'; colour: string; ink: 'black' | 'white'; name: string; repeat?: number };
 
 /** Phosphor shapes, each easy to tell apart at tile size; named in the catalog. */
 export const TILE_SYMBOLS: readonly { icon: string; key: MessageKey }[] = TILE_SYMBOL_ICONS.map(
@@ -23,27 +24,57 @@ export const TILE_SYMBOLS: readonly { icon: string; key: MessageKey }[] = TILE_S
  * Colours far enough apart to tell at a glance, as CSS colour keywords: tile colours are
  * content, not theme. Each carries its name, so no one has to tell two apart by hue alone.
  */
-export const TILE_COLOURS: readonly { colour: string; key: MessageKey }[] = [
-	{ colour: 'red', key: 'setup.tileColour.red' },
-	{ colour: 'orange', key: 'setup.tileColour.orange' },
-	{ colour: 'gold', key: 'setup.tileColour.yellow' },
-	{ colour: 'limegreen', key: 'setup.tileColour.lime' },
-	{ colour: 'green', key: 'setup.tileColour.green' },
-	{ colour: 'teal', key: 'setup.tileColour.teal' },
-	{ colour: 'deepskyblue', key: 'setup.tileColour.sky' },
-	{ colour: 'royalblue', key: 'setup.tileColour.blue' },
-	{ colour: 'navy', key: 'setup.tileColour.navy' },
-	{ colour: 'rebeccapurple', key: 'setup.tileColour.purple' },
-	{ colour: 'violet', key: 'setup.tileColour.violet' },
-	{ colour: 'magenta', key: 'setup.tileColour.magenta' },
-	{ colour: 'hotpink', key: 'setup.tileColour.pink' },
-	{ colour: 'saddlebrown', key: 'setup.tileColour.brown' },
-	{ colour: 'tan', key: 'setup.tileColour.tan' },
-	{ colour: 'maroon', key: 'setup.tileColour.maroon' },
-	{ colour: 'olive', key: 'setup.tileColour.olive' },
-	{ colour: 'black', key: 'setup.tileColour.black' },
-	{ colour: 'gray', key: 'setup.tileColour.grey' },
-	{ colour: 'white', key: 'setup.tileColour.white' }
+export const TILE_COLOURS: readonly { colour: string; ink: 'black' | 'white'; key: MessageKey }[] =
+	[
+		{ colour: 'red', ink: 'white', key: 'setup.tileColour.red' },
+		{ colour: 'orange', ink: 'black', key: 'setup.tileColour.orange' },
+		{ colour: 'gold', ink: 'black', key: 'setup.tileColour.yellow' },
+		{ colour: 'limegreen', ink: 'black', key: 'setup.tileColour.lime' },
+		{ colour: 'green', ink: 'white', key: 'setup.tileColour.green' },
+		{ colour: 'teal', ink: 'white', key: 'setup.tileColour.teal' },
+		{ colour: 'deepskyblue', ink: 'black', key: 'setup.tileColour.sky' },
+		{ colour: 'royalblue', ink: 'white', key: 'setup.tileColour.blue' },
+		{ colour: 'navy', ink: 'white', key: 'setup.tileColour.navy' },
+		{ colour: 'rebeccapurple', ink: 'white', key: 'setup.tileColour.purple' },
+		{ colour: 'violet', ink: 'black', key: 'setup.tileColour.violet' },
+		{ colour: 'magenta', ink: 'black', key: 'setup.tileColour.magenta' },
+		{ colour: 'hotpink', ink: 'black', key: 'setup.tileColour.pink' },
+		{ colour: 'saddlebrown', ink: 'white', key: 'setup.tileColour.brown' },
+		{ colour: 'tan', ink: 'black', key: 'setup.tileColour.tan' },
+		{ colour: 'maroon', ink: 'white', key: 'setup.tileColour.maroon' },
+		{ colour: 'olive', ink: 'white', key: 'setup.tileColour.olive' },
+		{ colour: 'black', ink: 'white', key: 'setup.tileColour.black' },
+		{ colour: 'gray', ink: 'black', key: 'setup.tileColour.grey' },
+		{ colour: 'white', ink: 'black', key: 'setup.tileColour.white' }
+	];
+
+/** Emoji that look nothing alike, each with its name in words (Trevor, 2026-10-17). */
+export const TILE_EMOJI: readonly { emoji: string; key: MessageKey }[] = [
+	{ emoji: '🍎', key: 'setup.tileEmoji.apple' },
+	{ emoji: '🍌', key: 'setup.tileEmoji.banana' },
+	{ emoji: '🍇', key: 'setup.tileEmoji.grapes' },
+	{ emoji: '🍒', key: 'setup.tileEmoji.cherries' },
+	{ emoji: '🍄', key: 'setup.tileEmoji.mushroom' },
+	{ emoji: '🌵', key: 'setup.tileEmoji.cactus' },
+	{ emoji: '🌻', key: 'setup.tileEmoji.sunflower' },
+	{ emoji: '🐸', key: 'setup.tileEmoji.frog' },
+	{ emoji: '🐙', key: 'setup.tileEmoji.octopus' },
+	{ emoji: '🦊', key: 'setup.tileEmoji.fox' },
+	{ emoji: '🐝', key: 'setup.tileEmoji.bee' },
+	{ emoji: '🦉', key: 'setup.tileEmoji.owl' },
+	{ emoji: '🐢', key: 'setup.tileEmoji.turtle' },
+	{ emoji: '🦋', key: 'setup.tileEmoji.butterfly' },
+	{ emoji: '🐳', key: 'setup.tileEmoji.whale' },
+	{ emoji: '🎈', key: 'setup.tileEmoji.balloon' },
+	{ emoji: '🎲', key: 'setup.tileEmoji.die' },
+	{ emoji: '🎩', key: 'setup.tileEmoji.hat' },
+	{ emoji: '🚀', key: 'setup.tileEmoji.rocket' },
+	{ emoji: '🍕', key: 'setup.tileEmoji.pizza' },
+	{ emoji: '🌈', key: 'setup.tileEmoji.rainbow' },
+	{ emoji: '🔥', key: 'setup.tileEmoji.fire' },
+	{ emoji: '🍩', key: 'setup.tileEmoji.doughnut' },
+	{ emoji: '🐧', key: 'setup.tileEmoji.penguin' },
+	{ emoji: '🌮', key: 'setup.tileEmoji.taco' }
 ];
 
 /** A, B … Z, then AA, AB …: the letter label for the 1-based tile `number`. */
@@ -75,10 +106,22 @@ function symbol(n: number): TileMark {
 	return { kind: 'symbol', icon: item.icon, name, ...(repeat ? { repeat } : {}) };
 }
 
+function emoji(n: number): TileMark {
+	const { item, repeat } = cycle(TILE_EMOJI, n);
+	const name = named(item.key) + (repeat ? ` ${repeat}` : '');
+	return { kind: 'emoji', emoji: item.emoji, name, ...(repeat ? { repeat } : {}) };
+}
+
 function colour(n: number): TileMark {
 	const { item, repeat } = cycle(TILE_COLOURS, n);
 	const name = named(item.key) + (repeat ? ` ${repeat}` : '');
-	return { kind: 'colour', colour: item.colour, name, ...(repeat ? { repeat } : {}) };
+	return {
+		kind: 'colour',
+		colour: item.colour,
+		ink: item.ink,
+		name,
+		...(repeat ? { repeat } : {})
+	};
 }
 
 /** A small seeded generator (mulberry32), so a bag's Random marks stay put across reloads. */
@@ -102,6 +145,7 @@ function randomMarks(size: number, seed: string): TileMark[] {
 	for (let n = 1; n <= size; n++) pool.push(text(String(n)), text(tileLetters(n)));
 	for (let n = 1; n <= TILE_SYMBOLS.length; n++) pool.push(symbol(n));
 	for (let n = 1; n <= TILE_COLOURS.length; n++) pool.push(colour(n));
+	for (let n = 1; n <= TILE_EMOJI.length; n++) pool.push(emoji(n));
 	const random = seeded(seed);
 	for (let i = pool.length - 1; i > 0; i--) {
 		const j = Math.floor(random() * (i + 1));
@@ -118,6 +162,7 @@ export function tileMarks(size: number, face: TileFace, seed: string): TileMark[
 		if (face === 'letters') return text(tileLetters(n));
 		if (face === 'symbols') return symbol(n);
 		if (face === 'colours') return colour(n);
+		if (face === 'emoji') return emoji(n);
 		return text(String(n));
 	});
 }

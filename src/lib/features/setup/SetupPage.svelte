@@ -36,10 +36,9 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SetupTable from './SetupTable.svelte';
-	import SetupSteps from './SetupSteps.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import JoinButton from './JoinButton.svelte';
-	import { currentSetupStep } from './setup-steps.ts';
+	import BagSettings from './BagSettings.svelte';
 	import { buildErrors, setupWarningMessages } from './build-check.ts';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS, setupSelection } from './selection.svelte.ts';
 
@@ -154,9 +153,24 @@
 	 * Build bag: errors are confirmed first (never by accident, but the Storyteller can
 	 * still build anyway), then replacing a bag that is being drawn from.
 	 */
+	/**
+	 * The bag in the game holds what is chosen now: Build bag goes back to its draw rather
+	 * than starting a new one (Trevor, 2026-10-17).
+	 */
+	const sameBag = $derived.by(() => {
+		const key = (ids: string[]) => [...ids].sort().join('|');
+		return (
+			bagTiles.length > 0 &&
+			key(bagTiles.map((t) => t.grimoire)) === key(plan.tiles.map((t) => t.grimoire)) &&
+			key((game?.bag?.unseated ?? []).map((r) => r.label)) ===
+				key(plan.unseated.map((r) => r.label))
+		);
+	});
+
 	function requestBuild(confirmedErrors = false) {
 		errorsOpen = false;
-		if (!confirmedErrors && errors.length > 0) errorsOpen = true;
+		if (sameBag && game) void goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }));
+		else if (!confirmedErrors && errors.length > 0) errorsOpen = true;
 		else if (drawStarted) replaceOpen = true;
 		else void buildBag();
 	}
@@ -196,16 +210,11 @@
 
 <main>
 	<header class="top">
-		{#if game}
-			<SetupSteps
-				gameId={game.gameId}
-				current="characters"
-				hasBag={currentSetupStep(game) !== 'characters'}
-			/>
-		{/if}
 		<div class="title">
 			<h1>{t('setup.characters')}</h1>
-			{#if port.openGame}<JoinButton game={port.openGame} />{/if}
+			<span class="actions"
+				><BagSettings />{#if port.openGame}<JoinButton game={port.openGame} />{/if}</span
+			>
 		</div>
 		<p class="script">
 			<span class="label">{t('setup.script')}</span>
@@ -314,7 +323,8 @@
 					variant="accent"
 					icon="bag"
 					disabled={!ready || plan.tiles.length === 0}
-					onclick={() => requestBuild()}>{t('setup.buildBag')}</Button
+					onclick={() => requestBuild()}
+					>{sameBag ? t('setup.continueDraw') : t('setup.buildBag')}</Button
 				>
 			{/snippet}
 		</SetupNav>
@@ -370,6 +380,10 @@
 		margin: var(--space-2) 0 0;
 		overflow-wrap: anywhere;
 	}
+	.actions {
+		display: flex;
+		gap: var(--space-1);
+	}
 	.title {
 		display: flex;
 		align-items: center;
@@ -405,7 +419,8 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		position: sticky;
-		top: 0;
+		/* Just below the app header, which is sticky too (as the sidebar does). */
+		top: calc(var(--tap-target) + env(safe-area-inset-top));
 		z-index: var(--z-raised);
 		padding: var(--space-2) 0;
 		background: var(--page-background, var(--surface));
@@ -486,7 +501,7 @@
 			grid-template-columns: minmax(0, 1fr);
 			gap: var(--space-2);
 			position: sticky;
-			top: 0;
+			top: calc(var(--tap-target) + env(safe-area-inset-top));
 			max-height: calc(100dvh - 6 * var(--u));
 			overflow-y: auto;
 			padding-bottom: var(--space-4);

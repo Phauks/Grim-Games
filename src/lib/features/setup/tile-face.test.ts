@@ -22,6 +22,7 @@ describe('tile marks', () => {
 		expect(names(3, 'letters')).toEqual(['A', 'B', 'C']);
 		expect(names(2, 'symbols')).toEqual(['Star', 'Moon']);
 		expect(names(2, 'colours')).toEqual(['Red', 'Orange']);
+		expect(names(2, 'emoji')).toEqual(['Apple', 'Banana']);
 	});
 
 	it('symbols and colours number their second round, so every tile differs', () => {

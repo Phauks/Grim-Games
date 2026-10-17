@@ -15,10 +15,10 @@
 	import { seatLabel } from './seat-label.ts';
 	import { tileMarks } from './tile-face.ts';
 	import TileMarkFace from './TileMarkFace.svelte';
-	import SetupSteps from './SetupSteps.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import JoinButton from './JoinButton.svelte';
+	import BagSettings from './BagSettings.svelte';
 	import { remindersHref } from './setup-steps.ts';
 
 	interface Props {
@@ -41,6 +41,11 @@
 		tileMarks(slots.length, face, `${game?.gameId ?? ''}:${slots[0]?.tileId ?? ''}`)
 	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
+	// A colour fills the whole token, with ink that reads on it (Trevor, 2026-10-17).
+	function colourOf(number: number) {
+		const mark = marks[number - 1];
+		return mark?.kind === 'colour' ? mark : undefined;
+	}
 
 	let revealing = $state<TileId | undefined>(undefined);
 	let revealOpen = $state(false);
@@ -103,12 +108,11 @@
 
 <main>
 	<header>
-		{#if game}
-			<SetupSteps gameId={game.gameId} current="draw" hasBag={bag !== undefined} />
-		{/if}
 		<div class="title">
 			<h1>{t('setup.draw')}</h1>
-			{#if port.openGame}<JoinButton game={port.openGame} />{/if}
+			<span class="actions"
+				><BagSettings />{#if port.openGame}<JoinButton game={port.openGame} />{/if}</span
+			>
 		</div>
 	</header>
 
@@ -137,6 +141,8 @@
 									? t('setup.draw.tileDrawn', { number: markName(s.number) })
 									: t('setup.draw.tile', { number: markName(s.number) })}
 							onclick={() => draw(s.tileId, s.state)}
+							style:background={colourOf(s.number)?.colour}
+							style:color={colourOf(s.number)?.ink}
 						>
 							<span class="face"
 								>{#if marks[s.number - 1]}<TileMarkFace mark={marks[s.number - 1]} />{/if}</span
@@ -203,6 +209,10 @@
 		margin: var(--space-2) 0 0;
 		overflow-wrap: anywhere;
 	}
+	.actions {
+		display: flex;
+		gap: var(--space-1);
+	}
 	.title {
 		display: flex;
 		align-items: center;
@@ -268,10 +278,6 @@
 		font-size: 2.25rem;
 		font-weight: 700;
 		line-height: 1;
-	}
-	.face :global(svg) {
-		width: 1.6em;
-		height: 1.6em;
 	}
 	.mark {
 		grid-area: tile;

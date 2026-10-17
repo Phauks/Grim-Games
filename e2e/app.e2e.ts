@@ -18,11 +18,13 @@ test('the Worker answers its health check and rejects bad room codes', async ({ 
 	expect((await request.get('/api/nope')).status()).toBe(404);
 });
 
-test('every page shows build info and a report link to the issue chooser', async ({ page }) => {
+test('every page shows build info and a Report an issue button for the in-app form', async ({
+	page
+}) => {
 	await page.goto('/');
 	await expect(page.getByTestId('build-info')).toContainText(/v\d+\.\d+\.\d+ · [0-9a-f]{7}/);
-	const href = await page.getByRole('link', { name: 'Report an issue' }).getAttribute('href');
-	expect(href).toBe('https://github.com/Phauks/Grim-Games/issues/new/choose');
+	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
 });
 
 test('the footer shows the Community Created Content logo', async ({ page }) => {
@@ -37,7 +39,7 @@ test('the footer shows the Community Created Content logo', async ({ page }) => 
 test('the footer has the logo on the left and every text link on the right', async ({ page }) => {
 	await page.goto('/');
 	const build = page.getByTestId('build-info');
-	await expect(build.getByRole('link', { name: 'Report an issue' })).toBeVisible();
+	await expect(build.getByRole('button', { name: 'Report an issue' })).toBeVisible();
 	const logo = await page.getByRole('img', { name: /Community Created Content/ }).boundingBox();
 	const links = await build.boundingBox();
 	const width = page.viewportSize()!.width;

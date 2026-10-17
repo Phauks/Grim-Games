@@ -3,7 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		addPoint,
-		PAD_ASPECT,
+		fitScale,
 		type ScratchColour,
 		type ScratchStroke,
 		type ScratchTool
@@ -15,28 +15,42 @@
 		pad: ScratchPadState;
 		tool: ScratchTool;
 		colour: ScratchColour;
+		/** Base width of new strokes, a fraction of the pad's width (see `sizeWidth`). */
+		size: number;
+		/** Shows the size ring in the middle of the pad, while its size slider moves. */
+		preview?: boolean;
 	}
 
-	let { pad, tool, colour }: Props = $props();
+	let { pad, tool, colour, size, preview = false }: Props = $props();
 
 	let frame: HTMLDivElement;
 	let canvas: HTMLCanvasElement;
-	/** The page's size in CSS pixels: the largest portrait page that fits the frame. */
+	/** The pad's size in CSS pixels: all of the frame, whatever its shape. */
 	let width = $state(0);
+	let height = $state(0);
 	let ctx: CanvasRenderingContext2D | null = null;
 	let colours: InkColours;
-	/** Canvas pixels per pad width (CSS width x device pixel ratio). */
+	/** Canvas pixels per pad unit; set on each full redraw so the drawing always fits. */
 	let scale = 0;
+	/** CSS pixels per pad unit, for pointer positions and the size ring. */
+	let cssScale = $state(0);
 	/** The strokes already on the canvas, so a finished live stroke needs no redraw. */
 	let drawn: readonly ScratchStroke[] = [];
 	let live: { stroke: ScratchStroke; pointerId: number; pointerType: string } | undefined;
 	/** Once a pen has touched the pad, fingers and palms no longer draw (palm rejection). */
 	let penSeen = false;
+	/**
+	 * Where the size ring sits, in CSS pixels from the pad's corner: under a hovering mouse or
+	 * pen, or under the finger while it draws, so the size shows where the ink goes down.
+	 */
+	let pointer = $state<{ x: number; y: number }>();
+	const ring = $derived(pointer ?? (preview ? { x: width / 2, y: height / 2 } : undefined));
 
 	$effect(() => {
 		const observer = new ResizeObserver(([entry]) => {
 			const { width: w, height: h } = entry.contentRect;
-			width = Math.max(0, Math.floor(Math.min(w, h / PAD_ASPECT)));
+			width = Math.max(0, Math.floor(w));
+			height = Math.max(0, Math.floor(h));
 		});
 		observer.observe(frame);
 		return () => observer.disconnect();
@@ -54,17 +68,19 @@
 	function redraw() {
 		if (!ctx) return;
 		colours = inkColours(canvas);
+		// Rescaled only here, never mid-stroke, so the ink stays under the pen.
+		scale = fitScale(pad.strokes, canvas.width, canvas.height);
+		cssScale = scale / (window.devicePixelRatio || 1);
 		drawAll(ctx, pad.strokes, scale, colours);
 		drawn = pad.strokes;
 	}
 
 	// Size the backing store for sharp lines, then draw everything.
 	$effect(() => {
-		if (!width) return;
+		if (!width || !height) return;
 		const ratio = window.devicePixelRatio || 1;
 		canvas.width = Math.round(width * ratio);
-		canvas.height = Math.round(width * PAD_ASPECT * ratio);
-		scale = canvas.width;
+		canvas.height = Math.round(height * ratio);
 		ctx = canvas.getContext('2d');
 		untrack(redraw);
 	});
@@ -88,12 +104,17 @@
 	/** The live stroke just handed to the pad, drawn on the canvas but not yet in `drawn`. */
 	let committed: ScratchStroke | undefined;
 
+	function place(event: PointerEvent) {
+		const rect = canvas.getBoundingClientRect();
+		pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+	}
+
 	function point(event: PointerEvent): [number, number, number] {
 		const rect = canvas.getBoundingClientRect();
 		const pressure = event.pointerType === 'pen' ? event.pressure : 0.5;
 		return [
-			(event.clientX - rect.left) / rect.width,
-			(event.clientY - rect.top) / rect.width,
+			(event.clientX - rect.left) / cssScale,
+			(event.clientY - rect.top) / cssScale,
 			pressure
 		];
 	}
@@ -120,14 +141,18 @@
 		} catch {
 			/* drawing still works inside the pad */
 		}
-		const stroke: ScratchStroke = { tool, colour, points: [] };
+		const stroke: ScratchStroke = { tool, colour, size, points: [] };
 		addPoint(stroke.points, ...point(event));
 		live = { stroke, pointerId: event.pointerId, pointerType: event.pointerType };
+		place(event);
 		drawSegment(ctx, stroke, 0, scale, colours);
 	}
 
 	function move(event: PointerEvent) {
+		// A hovering mouse or pen shows the ring before anything is drawn; fingers can't hover.
+		if (!live && event.pointerType !== 'touch') place(event);
 		if (!ctx || !live || event.pointerId !== live.pointerId) return;
+		place(event);
 		const { stroke } = live;
 		// Coalesced events carry every sample since the last frame, for smoother lines.
 		for (const sample of event.getCoalescedEvents?.() ?? [event]) {
@@ -140,45 +165,89 @@
 		if (!ctx || !live || event.pointerId !== live.pointerId) return;
 		const { stroke } = live;
 		live = undefined;
+		if (event.pointerType === 'touch') pointer = undefined;
 		finish(ctx, stroke, scale, colours);
 		committed = stroke;
 		pad.add(stroke);
 	}
 
 	function cancel(event: PointerEvent) {
-		if (live && event.pointerId === live.pointerId) discardLive();
+		if (live && event.pointerId === live.pointerId) {
+			pointer = undefined;
+			discardLive();
+		}
+	}
+
+	function leave(event: PointerEvent) {
+		if (!live || event.pointerId === live.pointerId) pointer = undefined;
 	}
 </script>
 
 <div class="frame" bind:this={frame}>
-	<canvas
-		bind:this={canvas}
-		aria-label={t('scratch.drawing')}
-		data-testid="scratch-canvas"
-		style:width="{width}px"
-		style:height="{width * PAD_ASPECT}px"
-		onpointerdown={down}
-		onpointermove={move}
-		onpointerup={up}
-		onpointercancel={cancel}
-		onlostpointercapture={cancel}
-		oncontextmenu={(event) => event.preventDefault()}
-	></canvas>
+	<div class="page">
+		<canvas
+			bind:this={canvas}
+			aria-label={t('scratch.drawing')}
+			data-testid="scratch-canvas"
+			style:width="{width}px"
+			style:height="{height}px"
+			onpointerdown={down}
+			onpointermove={move}
+			onpointerup={up}
+			onpointercancel={cancel}
+			onlostpointercapture={cancel}
+			onpointerleave={leave}
+			oncontextmenu={(event) => event.preventDefault()}
+		></canvas>
+		{#if ring}
+			<!-- The pen's width at middle pressure, or the eraser's width, at this pad's size. -->
+			<span
+				class="ring"
+				data-testid="scratch-ring"
+				data-tool={tool}
+				aria-hidden="true"
+				style:left="{ring.x}px"
+				style:top="{ring.y}px"
+				style:width="{size * cssScale}px"
+				style:height="{size * cssScale}px"
+			></span>
+		{/if}
+	</div>
 </div>
 
 <style>
+	/* The paper: it takes all the room its parent gives it, and the pad fills it exactly. */
 	.frame {
-		display: grid;
-		place-items: center;
+		position: relative;
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
-	}
-	canvas {
-		display: block;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface);
+	}
+	.page {
+		position: absolute;
+		inset: 0;
+	}
+	.ring {
+		position: absolute;
+		/* A ring smaller than its edge still shows as a dot. */
+		min-width: 0.125rem;
+		min-height: 0.125rem;
+		translate: -50% -50%;
+		border-radius: var(--radius-full);
+		/* Two edges, so the ring shows on dark ink and on bare paper alike. */
+		box-shadow:
+			0 0 0 1px var(--on-surface),
+			0 0 0 2px var(--surface);
+		pointer-events: none;
+	}
+	.ring[data-tool='eraser'] {
+		background: color-mix(in srgb, var(--surface) 40%, transparent);
+	}
+	canvas {
+		display: block;
 		/* The pad owns every touch: no scrolling, zooming or text selection while writing. */
 		touch-action: none;
 		user-select: none;

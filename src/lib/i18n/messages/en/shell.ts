@@ -13,6 +13,7 @@ export const shell = {
 	'shell.navHistory': 'History',
 	'shell.navScripts': 'Scripts',
 	'shell.navLibrary': 'Library',
+	'shell.navBuildScript': 'Script builder',
 	'shell.navPlayerView': 'Player view',
 	'shell.navReference': 'Character reference',
 	'shell.navInfoTokens': 'Info tokens',
