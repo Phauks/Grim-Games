@@ -155,9 +155,24 @@
 	 * Build bag: errors are confirmed first (never by accident, but the Storyteller can
 	 * still build anyway), then replacing a bag that is being drawn from.
 	 */
+	/**
+	 * The bag in the game holds what is chosen now: Build bag goes back to its draw rather
+	 * than starting a new one (Trevor, 2026-10-17).
+	 */
+	const sameBag = $derived.by(() => {
+		const key = (ids: string[]) => [...ids].sort().join('|');
+		return (
+			bagTiles.length > 0 &&
+			key(bagTiles.map((t) => t.grimoire)) === key(plan.tiles.map((t) => t.grimoire)) &&
+			key((game?.bag?.unseated ?? []).map((r) => r.label)) ===
+				key(plan.unseated.map((r) => r.label))
+		);
+	});
+
 	function requestBuild(confirmedErrors = false) {
 		errorsOpen = false;
-		if (!confirmedErrors && errors.length > 0) errorsOpen = true;
+		if (sameBag && game) void goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }));
+		else if (!confirmedErrors && errors.length > 0) errorsOpen = true;
 		else if (drawStarted) replaceOpen = true;
 		else void buildBag();
 	}
@@ -317,7 +332,8 @@
 					variant="accent"
 					icon="bag"
 					disabled={!ready || plan.tiles.length === 0}
-					onclick={() => requestBuild()}>{t('setup.buildBag')}</Button
+					onclick={() => requestBuild()}
+					>{sameBag ? t('setup.continueDraw') : t('setup.buildBag')}</Button
 				>
 			{/snippet}
 		</SetupNav>

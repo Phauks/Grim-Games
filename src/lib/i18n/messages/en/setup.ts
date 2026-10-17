@@ -18,6 +18,7 @@ export const setup = {
 	'setup.random': 'Random selection',
 	'setup.clearSelection': 'Clear selection',
 	'setup.buildBag': 'Build bag',
+	'setup.continueDraw': 'Continue draw',
 	'setup.or': 'or',
 	'setup.jinxed': 'Jinxed',
 	'setup.addAnother': 'Add another',
@@ -46,9 +47,9 @@ export const setup = {
 			'Now: {count} of {total} tiles not yet drawn. The bag is kept, so you can come back to the draw.'
 	},
 	'setup.replace.body': {
-		one: 'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The character already on a seat stays; History can restore the old bag.',
+		one: 'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The character it dealt and its reminders are cleared; names stay. History can restore the old bag.',
 		other:
-			'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The characters already on seats stay; History can restore the old bag.'
+			'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The characters it dealt and their reminders are cleared; names stay. History can restore the old bag.'
 	},
 	'setup.replace.keep': 'Keep',
 	'setup.replace.confirm': 'Replace',

@@ -93,6 +93,40 @@ describe('BuildBag', () => {
 		]);
 	});
 
+	// Trevor, 2026-10-17: a new bag starts the draw again, so the grimoire forgets the old one.
+	it('a new bag clears the characters and reminders the old draw put in the grimoire', () => {
+		const { session, ctx, seats } = withBag({ shuffle: false });
+		const [first, second] = session.game.bag!.order;
+		const drawn = run(
+			session,
+			ctx,
+			{ type: 'DrawTile', seatId: seats[0], tileId: first },
+			{ type: 'ConfirmDraw', tileId: first },
+			{ type: 'DrawTile', seatId: seats[1], tileId: second },
+			{ type: 'ConfirmDraw', tileId: second },
+			{
+				type: 'AddReminder',
+				seatId: seats[1],
+				reminder: { characterId: 'drunk', label: 'Is The Drunk' }
+			},
+			{ type: 'AddReminder', seatId: seats[2], reminder: { characterId: 'monk', label: 'Safe' } }
+		);
+		expect(drawn.game.seats[seats[0]].characterId).toBe('chef');
+		const rebuilt = run(drawn, ctx, {
+			type: 'BuildBag',
+			tiles: [{ shows: 'monk', grimoire: 'monk' }],
+			includeTravellers: false
+		});
+		expect(seats.map((id) => rebuilt.game.seats[id].characterId)).toEqual(
+			seats.map(() => undefined)
+		);
+		expect(rebuilt.game.seats[seats[0]].playerName).toBe('Ana');
+		// Only the old bag's characters' reminders go; a Monk reminder placed by hand stays.
+		expect(seats.flatMap((id) => rebuilt.game.seats[id].reminders.map((r) => r.label))).toEqual([
+			'Safe'
+		]);
+	});
+
 	it('refuses Fabled tiles and unknown characters, and can be cleared', () => {
 		const { session, ctx } = withBag();
 		const fabled = dispatch(

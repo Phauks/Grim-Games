@@ -906,8 +906,32 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 		}
 
 		case 'BuildBag': {
+			// A new bag starts the draw again, so what the old draw put in the grimoire goes
+			// (Trevor, 2026-10-17): the characters it dealt and the reminders of its characters.
+			// Player names and seats stay.
+			const cleared: GameEvent[] = [];
 			if (game.bag && Object.values(game.bag.tiles).some((t) => t.drawnBySeat !== undefined)) {
 				warn('bag-replaced', 'tiles had already been drawn from the old bag');
+				const old = game.bag;
+				const tiles = Object.values(old.tiles);
+				const characters = new Set([
+					...tiles.flatMap((t) => [t.grimoire, t.shows, ...t.reminders.map((r) => r.characterId)]),
+					...(old.unseated ?? []).map((r) => r.characterId)
+				]);
+				for (const tile of tiles) {
+					const seat =
+						tile.confirmed && tile.drawnBySeat ? game.seats[tile.drawnBySeat] : undefined;
+					if (seat && seat.characterId === tile.grimoire) {
+						cleared.push({ type: 'CharacterCleared', seatId: seat.seatId });
+					}
+				}
+				for (const id of game.seating) {
+					for (const r of game.seats[id].reminders) {
+						if (characters.has(r.characterId)) {
+							cleared.push({ type: 'ReminderRemoved', reminderId: r.reminderId });
+						}
+					}
+				}
 			}
 			const tiles: Tile[] = command.tiles.map((spec) => {
 				const shows = seatableCharacter(ctx, spec.shows);
@@ -945,6 +969,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			const ids = tiles.map((t) => t.tileId);
 			const order = command.shuffle === false ? ids : shuffled(ids, ctx);
 			return [
+				...cleared,
 				{
 					type: 'BagBuilt',
 					tiles,

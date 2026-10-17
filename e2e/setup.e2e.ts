@@ -97,13 +97,26 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	await steps.getByRole('link', { name: 'Characters' }).tap();
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
-	// Going back changes nothing; building again says what happens to the drawn tile.
-	await page.getByRole('button', { name: 'Build bag' }).tap();
+	// Going back changes nothing: with the same characters, the button goes back to the same
+	// draw (Trevor, 2026-10-17).
+	await bar.getByRole('button', { name: 'Continue draw' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
+	await steps.getByRole('link', { name: 'Characters' }).tap();
+	await leave.getByRole('button', { name: 'Confirm' }).tap();
+	// Other characters make a new bag: it asks first, and the old draw leaves the grimoire.
+	await select(page, 'Monk', 'Chef');
+	await bar.getByRole('button', { name: 'Build bag' }).tap();
 	const replace = page.getByRole('alertdialog', { name: 'Replace the bag?' });
 	await expect(replace).toContainText('Now: 1 of 5 tiles drawn.');
 	await replace.getByRole('button', { name: 'Cancel' }).tap();
-	await steps.getByRole('link', { name: 'Draw' }).tap();
-	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
+	await bar.getByRole('button', { name: 'Build bag' }).tap();
+	await replace.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page).toHaveURL(`${board}/draw`);
+	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(0);
+	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	// Finishing goes to the board, which opens its setup reminders.
 	await bar.getByRole('link', { name: 'Grimoire' }).tap();
