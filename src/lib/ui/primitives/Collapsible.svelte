@@ -104,7 +104,7 @@
 		background: none;
 		color: var(--collapsible-heading, var(--heading));
 		font: inherit;
-		font-size: 1.1rem;
+		font-size: var(--section-title-size);
 		font-weight: 600;
 		text-align: start;
 		cursor: pointer;
