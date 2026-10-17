@@ -443,15 +443,18 @@ test("setup opens the players' join code and QR", async ({ page }) => {
 	await expect(dialog.getByRole('img', { name: /QR/i })).toBeVisible();
 });
 
-// Factual script checks from the Ravenswood Studio review (Trevor, 2026-10-16): the Djinn
-// applies with a jinxed pair in play (https://wiki.bloodontheclocktower.com/Djinn), and a
-// Choirboy whose King isn't on the script can't be fixed by a swap
+// Factual script checks from the Ravenswood Studio review (Trevor, 2026-10-16): jinxed pairs
+// in play, and a Choirboy whose King isn't on the script can't be fixed by a swap
 // (https://wiki.bloodontheclocktower.com/Choirboy). Warnings only.
-test('the setup check says when the Djinn applies and when a required character is off the script', async ({
+test('the setup check lists jinxed pairs in play and says when a required character is off the script', async ({
 	page
 }) => {
 	await page.goto('/scripts');
-	await page.getByRole('button', { name: 'Paste', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add script' })
+		.getByRole('button', { name: 'Paste', exact: true })
+		.tap();
 	const paste = page.getByRole('dialog', { name: 'Paste a script' });
 	await paste
 		.getByLabel('Script JSON or link')
@@ -477,10 +480,11 @@ test('the setup check says when the Djinn applies and when a required character 
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 
 	const check = page.getByTestId('setup-check');
-	await expect(check.getByTestId('djinn-applies')).toHaveCount(0);
 	for (const name of ['Choirboy', 'Magician', 'Spy', 'Imp'])
 		await page.getByRole('button', { name, exact: true }).tap();
-	await expect(check.getByTestId('djinn-applies')).toHaveText(/Djinn\s*applies/);
+	await expect(check).toContainText(/Magician\s*and\s*Spy/);
+	// No Djinn line: jinxes are enough (Trevor, 2026-10-17).
+	await expect(check).not.toContainText('Djinn');
 	await expect(check).toContainText(
 		'Choirboy needs the King in play, but the King is not on the script.'
 	);

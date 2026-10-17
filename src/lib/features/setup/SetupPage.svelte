@@ -99,7 +99,7 @@
 	const askingStandIn = $derived(plan.standIns.find((x) => x.characterId === askingFor));
 	const ids = $derived(selectedIds(s.selection, scriptOrder));
 	const name = (id: CharacterId) => lookup(id)?.name ?? id;
-	// Jinxes and the Djinn from the characters chosen for play; "requires" from the whole
+	// Jinxes from the characters chosen for play; "requires" from the whole
 	// script, to know whether the required character could be put in play at all.
 	const facts = $derived(
 		data && script
@@ -264,7 +264,6 @@
 						{analysis}
 						{plan}
 						{jinxes}
-						djinn={facts?.djinn ?? false}
 						{warnings}
 						{lookup}
 						onStandIn={(id) => {

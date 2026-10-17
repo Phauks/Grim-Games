@@ -64,7 +64,6 @@ export const setup = {
 	'setup.check.jinxes': 'Jinxes',
 	'setup.check.and': 'and',
 	'setup.check.choose': 'Choose',
-	'setup.check.djinn': 'applies',
 	'setup.check.notOnScript':
 		'{name} needs the {required} in play, but the {required} is not on the script.',
 
