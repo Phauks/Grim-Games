@@ -13,6 +13,8 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/routes/+layout.svelte',
 	'src/lib/i18n/',
 	'src/lib/features/errors/',
+	'src/lib/features/reports/',
+	'src/routes/reports/',
 	'src/lib/features/room/',
 	'src/routes/join/',
 	'src/routes/grimoire/[gameId]/room/',

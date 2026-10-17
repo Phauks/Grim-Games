@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { buildInfo } from '#lib/build-info.ts';
-	import { ISSUE_CHOOSER_URL, reportDetails } from '#lib/features/about/report-issue.ts';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -16,13 +15,6 @@
 	const diagnostics = $derived(diagnosticsView.current);
 	const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
 	const text = $derived(diagnostics ? diagnosticsText(diagnostics, label) : '');
-
-	/** The chooser can't be prefilled, so Report copies the diagnostics to paste in. */
-	function copyForReport() {
-		navigator.clipboard
-			.writeText(reportDetails(text, buildInfo, navigator.userAgent))
-			.catch(() => toast(t('errors.copyFailed'), t('errors.copyFailedDetail')));
-	}
 
 	onMount(refreshDiagnostics);
 
@@ -50,19 +42,12 @@
 	<div class="actions">
 		<Button variant="accent" disabled={!diagnostics} onclick={copy}>{t('errors.diag.copy')}</Button>
 		<Button disabled={!diagnostics} onclick={download}>{t('errors.diag.download')}</Button>
-		<!-- External GitHub link, not an app route. -->
-		<!-- eslint-disable svelte/no-navigation-without-resolve -->
-		<a
-			class="link-button"
-			href={ISSUE_CHOOSER_URL}
-			target="_blank"
-			rel="noopener"
-			aria-disabled={!diagnostics}
-			onclick={copyForReport}
+		<Button
+			disabled={!diagnostics}
+			onclick={() => reportDialog.show({ kind: 'bug', details: text })}
 		>
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			<Icon name="report" /><span>{t('errors.diag.report')}</span>
-		</a>
+			<Icon name="report" />{t('errors.diag.report')}
+		</Button>
 	</div>
 
 	<section>
@@ -140,26 +125,5 @@
 	}
 	dd a {
 		color: inherit;
-	}
-	.link-button {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-4);
-		border-radius: var(--button-radius);
-		background: var(--button-background);
-		color: var(--button-color);
-		font: var(--button-font);
-		letter-spacing: 0.04em;
-		text-decoration: none;
-	}
-	.link-button[aria-disabled='true'] {
-		pointer-events: none;
-		opacity: 0.5;
-	}
-	.link-button:hover {
-		filter: brightness(1.15);
 	}
 </style>

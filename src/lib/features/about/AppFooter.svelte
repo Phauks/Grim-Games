@@ -3,7 +3,8 @@
 	import { resolve } from '$app/paths';
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
-	import { describeBuild, ISSUE_CHOOSER_URL, REPOSITORY_URL, shortCommit } from './report-issue.ts';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
+	import { describeBuild, REPOSITORY_URL, shortCommit } from './report-issue.ts';
 </script>
 
 <footer>
@@ -41,10 +42,8 @@
 			>{t('shell.about')}</button
 		>
 		<span class="sep" aria-hidden="true">·</span>
-		<!-- External GitHub link, not an app route. -->
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-		<a class="page" href={ISSUE_CHOOSER_URL} target="_blank" rel="noopener"
-			>{t('shell.reportIssue')}</a
+		<button type="button" class="about" onclick={() => reportDialog.show()}
+			>{t('shell.reportIssue')}</button
 		>
 	</p>
 </footer>

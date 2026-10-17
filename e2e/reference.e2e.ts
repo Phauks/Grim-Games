@@ -37,10 +37,14 @@ test('searching shows everything the app uses for the Witch', async ({ page }) =
 		card.getByRole('img', { name: /Witch token: wakes on the first night/ })
 	).toBeVisible();
 	await expect(card).toContainText('Starting alignment Evil');
-	await expect(card.getByRole('link', { name: 'Report a problem' })).toHaveAttribute(
-		'href',
-		'https://github.com/Phauks/Grim-Games/issues/new/choose'
+	// Report a problem opens the in-app form as a rules report about this character.
+	await card.getByRole('button', { name: 'Report a problem' }).tap();
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await expect(form.getByRole('textbox', { name: 'Title' })).toHaveValue('Witch: ');
+	await expect(form.getByRole('combobox', { name: 'Kind' })).toContainText(
+		'Rules or character error'
 	);
+	await form.getByRole('button', { name: 'Cancel' }).tap();
 
 	// Touch-first: no sideways scrolling at this width.
 	const overflow = await page.evaluate(
@@ -445,7 +449,7 @@ test('jinxes start folded on cards and in the table; Wiki and Report sit by the 
 	await expect(card.locator('.jinx').first()).toBeVisible();
 	await expect(card.locator('header').getByRole('link', { name: 'Wiki' })).toBeVisible();
 	await expect(
-		card.locator('header').getByRole('link', { name: 'Report a problem' })
+		card.locator('header').getByRole('button', { name: 'Report a problem' })
 	).toBeVisible();
 
 	await page.getByText('Table', { exact: true }).tap();
@@ -453,7 +457,7 @@ test('jinxes start folded on cards and in the table; Wiki and Report sit by the 
 	await expect(row.getByTestId('jinx-toggle')).toHaveAttribute('aria-expanded', 'false');
 	const name = row.locator('[data-field="name"]');
 	await expect(name.getByRole('link', { name: 'Wiki' })).toBeVisible();
-	await expect(name.getByRole('link', { name: 'Report a problem' })).toBeVisible();
+	await expect(name.getByRole('button', { name: 'Report a problem' })).toBeVisible();
 	await expect(
 		page.getByTestId('character-table').getByRole('columnheader', { name: /Links/ })
 	).toHaveCount(0);

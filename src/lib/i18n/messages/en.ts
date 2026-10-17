@@ -7,6 +7,7 @@ import { bluffs } from '#lib/i18n/messages/en/bluffs.ts';
 import { infoTokens } from '#lib/i18n/messages/en/info-tokens.ts';
 import { show } from '#lib/i18n/messages/en/show.ts';
 import { errors } from '#lib/i18n/messages/en/errors.ts';
+import { reports } from '#lib/i18n/messages/en/reports.ts';
 import { player } from '#lib/i18n/messages/en/player.ts';
 import { room } from '#lib/i18n/messages/en/room.ts';
 import { day } from '#lib/i18n/messages/en/day.ts';
@@ -34,6 +35,7 @@ export const en = {
 	...setup,
 	...picker,
 	...errors,
+	...reports,
 	...room,
 	...show,
 	...infoTokens,

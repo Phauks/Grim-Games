@@ -3,12 +3,13 @@ import { handleBotcScripts } from './botcscripts.ts';
 import { handleCollection } from './collections.ts';
 import { handleCurated } from './curated.ts';
 import { handleRoom, Room, type RoomEnv } from './room.ts';
+import { handleReports, ReportBox, type ReportsEnv } from './reports.ts';
 import { handleShare, SharedScript, type ShareEnv } from './share.ts';
 
-export { Room, SharedScript };
+export { ReportBox, Room, SharedScript };
 export { AccountEmail, AccountUser } from './account/objects.ts';
 
-export interface Env extends ShareEnv, AccountRoutesEnv, RoomEnv {
+export interface Env extends ShareEnv, AccountRoutesEnv, RoomEnv, ReportsEnv {
 	ASSETS: Fetcher;
 }
 
@@ -36,6 +37,8 @@ export default {
 		if (url.pathname === '/api/share' || url.pathname.startsWith('/api/share/')) {
 			return handleShare(request, env);
 		}
+		const reports = await handleReports(request, env, url);
+		if (reports) return reports;
 		const account = await handleAccount(request, env, url);
 		if (account) return account;
 		if (url.pathname.startsWith('/api/')) {
