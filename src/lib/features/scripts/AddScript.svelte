@@ -37,8 +37,8 @@
 		onsaved?: (script: LoadedScript) => void;
 		busy?: boolean;
 		/**
-		 * False where only share links and drops are loaded (Search, once the Library has
-		 * Add script): no button, nothing else changes.
+		 * False where only share links are loaded (Search, once the Library has Add script):
+		 * no button and no drop target, since adding scripts belongs to the Library.
 		 */
 		button?: boolean;
 	}
@@ -154,15 +154,16 @@
 	}
 
 	function onDragEnter(event: DragEvent) {
-		if (!carriesScript(event)) return;
+		if (!button || !carriesScript(event)) return;
 		event.preventDefault();
 		dragDepth++;
 	}
 
 	function onDragOver(event: DragEvent) {
 		if (!carriesScript(event)) return;
+		// Without the button nothing is added, but a dropped file still never replaces the app.
 		event.preventDefault();
-		if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+		if (event.dataTransfer) event.dataTransfer.dropEffect = button ? 'copy' : 'none';
 	}
 
 	/** Dropping a script file (or a link, or JSON text) loads it like Upload File or Paste. */
@@ -171,6 +172,7 @@
 		const data = event.dataTransfer;
 		if (!data) return;
 		event.preventDefault();
+		if (!button) return;
 		pasteOpen = linkOpen = false;
 		const file = data.files[0];
 		if (file) {
