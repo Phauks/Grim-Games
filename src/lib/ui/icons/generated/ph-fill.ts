@@ -46,10 +46,12 @@ import ph_diamond_fill from '~icons/ph/diamond-fill';
 import ph_dice_five_fill from '~icons/ph/dice-five-fill';
 import ph_dots_three_fill from '~icons/ph/dots-three-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
+import ph_download_simple_fill from '~icons/ph/download-simple-fill';
 import ph_drop_fill from '~icons/ph/drop-fill';
 import ph_eraser_fill from '~icons/ph/eraser-fill';
 import ph_eye_fill from '~icons/ph/eye-fill';
 import ph_feather_fill from '~icons/ph/feather-fill';
+import ph_file_arrow_down_fill from '~icons/ph/file-arrow-down-fill';
 import ph_fire_fill from '~icons/ph/fire-fill';
 import ph_fish_fill from '~icons/ph/fish-fill';
 import ph_flag_fill from '~icons/ph/flag-fill';
@@ -57,11 +59,14 @@ import ph_flask_fill from '~icons/ph/flask-fill';
 import ph_floppy_disk_fill from '~icons/ph/floppy-disk-fill';
 import ph_flower_fill from '~icons/ph/flower-fill';
 import ph_flower_lotus_fill from '~icons/ph/flower-lotus-fill';
+import ph_folder_fill from '~icons/ph/folder-fill';
+import ph_folder_open_fill from '~icons/ph/folder-open-fill';
 import ph_funnel_fill from '~icons/ph/funnel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
 import ph_graduation_cap_fill from '~icons/ph/graduation-cap-fill';
+import ph_hammer_fill from '~icons/ph/hammer-fill';
 import ph_hand_fist_fill from '~icons/ph/hand-fist-fill';
 import ph_hand_grabbing_fill from '~icons/ph/hand-grabbing-fill';
 import ph_hand_heart_fill from '~icons/ph/hand-heart-fill';
@@ -153,6 +158,7 @@ import ph_users_three_fill from '~icons/ph/users-three-fill';
 import ph_warning_fill from '~icons/ph/warning-fill';
 import ph_warning_circle_fill from '~icons/ph/warning-circle-fill';
 import ph_wine_fill from '~icons/ph/wine-fill';
+import ph_wrench_fill from '~icons/ph/wrench-fill';
 import ph_x_fill from '~icons/ph/x-fill';
 import ph_x_circle_fill from '~icons/ph/x-circle-fill';
 
@@ -203,10 +209,12 @@ const icons: IconMap = {
 	'ph:dice-five-fill': ph_dice_five_fill,
 	'ph:dots-three-fill': ph_dots_three_fill,
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
+	'ph:download-simple-fill': ph_download_simple_fill,
 	'ph:drop-fill': ph_drop_fill,
 	'ph:eraser-fill': ph_eraser_fill,
 	'ph:eye-fill': ph_eye_fill,
 	'ph:feather-fill': ph_feather_fill,
+	'ph:file-arrow-down-fill': ph_file_arrow_down_fill,
 	'ph:fire-fill': ph_fire_fill,
 	'ph:fish-fill': ph_fish_fill,
 	'ph:flag-fill': ph_flag_fill,
@@ -214,11 +222,14 @@ const icons: IconMap = {
 	'ph:floppy-disk-fill': ph_floppy_disk_fill,
 	'ph:flower-fill': ph_flower_fill,
 	'ph:flower-lotus-fill': ph_flower_lotus_fill,
+	'ph:folder-fill': ph_folder_fill,
+	'ph:folder-open-fill': ph_folder_open_fill,
 	'ph:funnel-fill': ph_funnel_fill,
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,
 	'ph:ghost-fill': ph_ghost_fill,
 	'ph:graduation-cap-fill': ph_graduation_cap_fill,
+	'ph:hammer-fill': ph_hammer_fill,
 	'ph:hand-fist-fill': ph_hand_fist_fill,
 	'ph:hand-grabbing-fill': ph_hand_grabbing_fill,
 	'ph:hand-heart-fill': ph_hand_heart_fill,
@@ -310,6 +321,7 @@ const icons: IconMap = {
 	'ph:warning-fill': ph_warning_fill,
 	'ph:warning-circle-fill': ph_warning_circle_fill,
 	'ph:wine-fill': ph_wine_fill,
+	'ph:wrench-fill': ph_wrench_fill,
 	'ph:x-fill': ph_x_fill,
 	'ph:x-circle-fill': ph_x_circle_fill
 };

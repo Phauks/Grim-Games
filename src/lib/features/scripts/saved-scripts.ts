@@ -26,6 +26,8 @@ export const MAX_SAVED_SCRIPTS = 20;
 export type ScriptSource =
 	| { kind: 'edition' }
 	| { kind: 'paste' }
+	/** Made on the Script builder page. */
+	| { kind: 'built' }
 	| { kind: 'file'; fileName: string }
 	/**
 	 * `page`: the script's source page when the link is a file behind one (a Carousel script's
@@ -86,6 +88,8 @@ export function describeSource(source: ScriptSource): string {
 			return t('scripts.from.official');
 		case 'paste':
 			return t('scripts.from.paste');
+		case 'built':
+			return t('scripts.from.built');
 		case 'file':
 			return source.fileName;
 		case 'link': {

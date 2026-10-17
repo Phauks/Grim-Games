@@ -46,10 +46,12 @@ import ph_diamond_duotone from '~icons/ph/diamond-duotone';
 import ph_dice_five_duotone from '~icons/ph/dice-five-duotone';
 import ph_dots_three_duotone from '~icons/ph/dots-three-duotone';
 import ph_dots_three_vertical_duotone from '~icons/ph/dots-three-vertical-duotone';
+import ph_download_simple_duotone from '~icons/ph/download-simple-duotone';
 import ph_drop_duotone from '~icons/ph/drop-duotone';
 import ph_eraser_duotone from '~icons/ph/eraser-duotone';
 import ph_eye_duotone from '~icons/ph/eye-duotone';
 import ph_feather_duotone from '~icons/ph/feather-duotone';
+import ph_file_arrow_down_duotone from '~icons/ph/file-arrow-down-duotone';
 import ph_fire_duotone from '~icons/ph/fire-duotone';
 import ph_fish_duotone from '~icons/ph/fish-duotone';
 import ph_flag_duotone from '~icons/ph/flag-duotone';
@@ -57,11 +59,14 @@ import ph_flask_duotone from '~icons/ph/flask-duotone';
 import ph_floppy_disk_duotone from '~icons/ph/floppy-disk-duotone';
 import ph_flower_duotone from '~icons/ph/flower-duotone';
 import ph_flower_lotus_duotone from '~icons/ph/flower-lotus-duotone';
+import ph_folder_duotone from '~icons/ph/folder-duotone';
+import ph_folder_open_duotone from '~icons/ph/folder-open-duotone';
 import ph_funnel_duotone from '~icons/ph/funnel-duotone';
 import ph_gear_duotone from '~icons/ph/gear-duotone';
 import ph_gear_six_duotone from '~icons/ph/gear-six-duotone';
 import ph_ghost_duotone from '~icons/ph/ghost-duotone';
 import ph_graduation_cap_duotone from '~icons/ph/graduation-cap-duotone';
+import ph_hammer_duotone from '~icons/ph/hammer-duotone';
 import ph_hand_fist_duotone from '~icons/ph/hand-fist-duotone';
 import ph_hand_grabbing_duotone from '~icons/ph/hand-grabbing-duotone';
 import ph_hand_heart_duotone from '~icons/ph/hand-heart-duotone';
@@ -153,6 +158,7 @@ import ph_users_three_duotone from '~icons/ph/users-three-duotone';
 import ph_warning_duotone from '~icons/ph/warning-duotone';
 import ph_warning_circle_duotone from '~icons/ph/warning-circle-duotone';
 import ph_wine_duotone from '~icons/ph/wine-duotone';
+import ph_wrench_duotone from '~icons/ph/wrench-duotone';
 import ph_x_duotone from '~icons/ph/x-duotone';
 import ph_x_circle_duotone from '~icons/ph/x-circle-duotone';
 
@@ -203,10 +209,12 @@ const icons: IconMap = {
 	'ph:dice-five-duotone': ph_dice_five_duotone,
 	'ph:dots-three-duotone': ph_dots_three_duotone,
 	'ph:dots-three-vertical-duotone': ph_dots_three_vertical_duotone,
+	'ph:download-simple-duotone': ph_download_simple_duotone,
 	'ph:drop-duotone': ph_drop_duotone,
 	'ph:eraser-duotone': ph_eraser_duotone,
 	'ph:eye-duotone': ph_eye_duotone,
 	'ph:feather-duotone': ph_feather_duotone,
+	'ph:file-arrow-down-duotone': ph_file_arrow_down_duotone,
 	'ph:fire-duotone': ph_fire_duotone,
 	'ph:fish-duotone': ph_fish_duotone,
 	'ph:flag-duotone': ph_flag_duotone,
@@ -214,11 +222,14 @@ const icons: IconMap = {
 	'ph:floppy-disk-duotone': ph_floppy_disk_duotone,
 	'ph:flower-duotone': ph_flower_duotone,
 	'ph:flower-lotus-duotone': ph_flower_lotus_duotone,
+	'ph:folder-duotone': ph_folder_duotone,
+	'ph:folder-open-duotone': ph_folder_open_duotone,
 	'ph:funnel-duotone': ph_funnel_duotone,
 	'ph:gear-duotone': ph_gear_duotone,
 	'ph:gear-six-duotone': ph_gear_six_duotone,
 	'ph:ghost-duotone': ph_ghost_duotone,
 	'ph:graduation-cap-duotone': ph_graduation_cap_duotone,
+	'ph:hammer-duotone': ph_hammer_duotone,
 	'ph:hand-fist-duotone': ph_hand_fist_duotone,
 	'ph:hand-grabbing-duotone': ph_hand_grabbing_duotone,
 	'ph:hand-heart-duotone': ph_hand_heart_duotone,
@@ -310,6 +321,7 @@ const icons: IconMap = {
 	'ph:warning-duotone': ph_warning_duotone,
 	'ph:warning-circle-duotone': ph_warning_circle_duotone,
 	'ph:wine-duotone': ph_wine_duotone,
+	'ph:wrench-duotone': ph_wrench_duotone,
 	'ph:x-duotone': ph_x_duotone,
 	'ph:x-circle-duotone': ph_x_circle_duotone
 };

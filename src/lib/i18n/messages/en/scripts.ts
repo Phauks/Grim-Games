@@ -15,6 +15,7 @@ export const scripts = {
 	// Where a script came from
 	'scripts.from.official': 'Official',
 	'scripts.from.paste': 'Pasted',
+	'scripts.from.built': 'Script builder',
 	'scripts.from.scriptTool': 'Script Tool',
 	'scripts.from.botcscripts': 'BotC Scripts {version}',
 	'scripts.from.share': 'Shared link',
