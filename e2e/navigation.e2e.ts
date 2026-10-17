@@ -21,6 +21,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Resume game',
 		'History',
 		'Scripts',
+		'Library',
 		'Script builder',
 		'Player view',
 		'Character reference',
@@ -46,6 +47,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	]);
 	await expect(drawer.getByRole('list', { name: 'Prepare' }).getByRole('link')).toHaveText([
 		'Scripts',
+		'Library',
 		'Script builder',
 		'Info tokens',
 		'Character reference'

@@ -101,6 +101,9 @@ export const ICON_SLOTS = {
 	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] },
 	pen: { label: 'Pen', choices: ['ph:pen-nib', 'ph:pencil-simple-line'] },
 	eraser: { label: 'Eraser', choices: ['ph:eraser'] },
+	library: { label: 'Library', choices: ['ph:bookmarks-simple', 'ph:archive'] },
+	folder: { label: 'Folder', choices: ['ph:folder', 'ph:folder-simple'] },
+	tag: { label: 'Tag', choices: ['ph:tag', 'ph:tag-simple'] },
 	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] }
 } as const satisfies Record<string, IconSlotInfo>;

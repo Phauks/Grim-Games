@@ -54,6 +54,8 @@
 		 * while one of them is in play (Trevor, 2026-10-16); without it, every one is.
 		 */
 		activeCharacters?: ReadonlySet<CharacterId>;
+		/** `custom`: only the user's own cards, e.g. in the Library (Trevor, 2026-10-16). */
+		only?: 'custom';
 	}
 
 	let {
@@ -63,7 +65,8 @@
 		onchooseCharacter,
 		onadd,
 		characters = [],
-		activeCharacters
+		activeCharacters,
+		only
 	}: Props = $props();
 
 	// No search: there are too few cards for it to help (Trevor, 2026-10-16).
@@ -231,19 +234,21 @@
 {/snippet}
 
 <div class="sections">
-	<Collapsible title={t('info-tokens.standard')} storageKey="info-tokens-standard" {level}>
-		<ul class="cards">
-			{#each standard as token (token.id)}
-				<InfoTokenTile
-					text={token.text}
-					onchoose={() => onchoose(token)}
-					onadd={onadd && (() => onadd(token))}
-				/>
-			{:else}
-				<li class="none">{t('common.none')}</li>
-			{/each}
-		</ul>
-	</Collapsible>
+	{#if !only}
+		<Collapsible title={t('info-tokens.standard')} storageKey="info-tokens-standard" {level}>
+			<ul class="cards">
+				{#each standard as token (token.id)}
+					<InfoTokenTile
+						text={token.text}
+						onchoose={() => onchoose(token)}
+						onadd={onadd && (() => onadd(token))}
+					/>
+				{:else}
+					<li class="none">{t('common.none')}</li>
+				{/each}
+			</ul>
+		</Collapsible>
+	{/if}
 
 	<Collapsible title={t('info-tokens.custom')} storageKey="info-tokens-custom" {level}>
 		<ul class="cards">
@@ -265,7 +270,7 @@
 		</ul>
 	</Collapsible>
 
-	{#if characterCards}
+	{#if characterCards && !only}
 		<Collapsible
 			title={t('info-tokens.characterCards')}
 			storageKey="info-tokens-characters"
