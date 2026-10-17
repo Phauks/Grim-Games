@@ -109,6 +109,11 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 			}
 		})
 	);
+	// Homebrew chosen before the official characters arrive still lists the collection.
+	await page.route('**/data/roles.json', async (route) => {
+		await new Promise((done) => setTimeout(done, 1500));
+		await route.continue();
+	});
 	await page.goto('/build-script');
 	const collection = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
 	await expect(collection).toBeVisible();
@@ -131,6 +136,60 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 	await page.getByRole('button', { name: 'Save', exact: true }).tap();
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
+});
+
+// Trevor (2026-10-17): characters from several collections are hard to reach while they
+// only show under their own collection, so "On script" lists every chosen one together.
+test('On script lists the chosen characters from every source together', async ({ page }) => {
+	const collection = (id: string, name: string, character: string, creator: string) => ({
+		script: [
+			{ id: '_meta', name },
+			{ id, name: character, team: 'townsfolk', ability: 'You start knowing 1 good player.' }
+		],
+		credits: [{ name: character, creator, url: `https://botchomebrew.wiki/c/${id}` }]
+	});
+	await page.route('**/api/homebrew-wiki/collections', (route) =>
+		route.fulfill({
+			json: [
+				{ id: 'temple-fair', name: 'Temple Fair' },
+				{ id: 'night-market', name: 'Night Market' }
+			]
+		})
+	);
+	await page.route('**/api/homebrew-wiki/collections/temple-fair', (route) =>
+		route.fulfill({ json: collection('lantern', 'Temple Fair', 'Lantern', 'DJ') })
+	);
+	await page.route('**/api/homebrew-wiki/collections/night-market', (route) =>
+		route.fulfill({ json: collection('peddler', 'Night Market', 'Peddler', 'Ana') })
+	);
+	await page.goto('/build-script');
+	const sources = page.getByRole('radiogroup', { name: 'Characters from' });
+	await character(page, 'Chef').tap();
+	await sources.getByText('Homebrew Wiki', { exact: true }).tap();
+	const picked = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
+	await expect(picked).toContainText('Temple Fair');
+	await character(page, 'Lantern, By DJ').tap();
+	await picked.tap();
+	await page.getByRole('option', { name: 'Night Market' }).tap();
+	await character(page, 'Peddler, By Ana').tap();
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('3');
+
+	await sources.getByText('On script', { exact: true }).tap();
+	// Three sources still fit a phone without scrolling sideways.
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+		true
+	);
+	const list = page.getByTestId('character-picker');
+	await expect(list.getByRole('button', { pressed: true })).toHaveCount(3);
+	await expect(character(page, 'Lantern, By DJ')).toBeVisible();
+	await expect(character(page, 'Peddler, By Ana')).toBeVisible();
+	await expect(character(page, 'Chef')).toBeVisible();
+	await expect(list.getByRole('button', { name: 'Imp' })).toHaveCount(0);
+
+	// Tapping one there takes it off the script.
+	await character(page, 'Lantern, By DJ').tap();
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('2');
+	await expect(list.getByRole('button', { name: 'Lantern, By DJ' })).toHaveCount(0);
 });
 
 // Trevor (2026-10-17): "Need better ability to edit a script created in the builder".

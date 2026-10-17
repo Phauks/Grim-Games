@@ -80,7 +80,12 @@
 	let replacing = $state.raw<SavedScript>();
 	let replaceOpen = $state(false);
 
-	type Source = 'official' | 'homebrew';
+	/**
+	 * Where the list's characters come from. 'script' is every character already on the script,
+	 * whichever source it came from (Trevor, 2026-10-17), so characters from several collections
+	 * or opened scripts are all in one place without switching collection.
+	 */
+	type Source = 'official' | 'homebrew' | 'script';
 	let source = $state<Source>('official');
 	let collections = $state.raw<HomebrewCollection[]>([]);
 	let collectionId = $state('');
@@ -102,9 +107,10 @@
 	async function pickCollection(id: string) {
 		collectionId = id;
 		homebrewSet = undefined;
-		if (!data) return;
 		try {
-			const set = await homebrewCollection(id, data);
+			// Homebrew can be chosen before the official characters have loaded; wait for them
+			// rather than leave the collection empty.
+			const set = await homebrewCollection(id, data ?? (await loadOfficialData()));
 			if (collectionId === id) homebrewSet = set;
 			homebrewError = '';
 		} catch (e) {
@@ -138,9 +144,6 @@
 	const d = $derived(draft.current);
 	/** Every official character, listed in TPI's Sort Order like the saved script. */
 	const official = $derived(data ? sortByStandardOrder(data.characters) : []);
-	const characters = $derived(
-		source === 'homebrew' ? sortByStandardOrder(homebrewSet?.characters ?? []) : official
-	);
 	const json = $derived(data ? builtScriptJson(d.ids, d, data, chosenHomebrew(d)) : undefined);
 	/** The script as it would be saved; undefined until a character is chosen. */
 	const built = $derived.by((): LoadedScript | undefined => {
@@ -156,6 +159,13 @@
 	const chosenHomebrewCharacters = $derived(
 		built?.characters.filter((c) => built.homebrew.includes(c.id)) ?? []
 	);
+	const characters = $derived(
+		source === 'homebrew'
+			? sortByStandardOrder(homebrewSet?.characters ?? [])
+			: source === 'script'
+				? sortByStandardOrder(built?.characters ?? [])
+				: official
+	);
 
 	function choose(id: CharacterId) {
 		const entry = source === 'homebrew' ? homebrewSet?.entries[id] : undefined;
@@ -165,8 +175,16 @@
 	}
 
 	function creatorOf(character: Character): string | undefined {
-		const creator = homebrewSet?.credits[character.id]?.creator;
-		return creator ? t('script-builder.by', { creator }) : undefined;
+		const creator =
+			source === 'script'
+				? d.credits[character.id]?.creator
+				: homebrewSet?.credits[character.id]?.creator;
+		if (creator) return t('script-builder.by', { creator });
+		// On the script, a homebrew character with no known creator still says it is homebrew.
+		if (source === 'script' && built?.homebrew.includes(character.id)) {
+			return t('script-builder.source.homebrew');
+		}
+		return undefined;
 	}
 	const counts = $derived(facts?.counts);
 	const savedRecord = $derived(recentScripts.list.find((s) => s.scriptId === d.editing));
@@ -345,7 +363,8 @@
 						value={source}
 						options={[
 							{ value: 'official', label: t('script-builder.source.official') },
-							{ value: 'homebrew', label: t('script-builder.source.homebrew') }
+							{ value: 'homebrew', label: t('script-builder.source.homebrew') },
+							{ value: 'script', label: t('script-builder.source.script') }
 						]}
 						onChange={(value) => (value === 'homebrew' ? void showHomebrew() : (source = value))}
 					/>
@@ -500,7 +519,7 @@
 				surface="page"
 				contained={false}
 				types={TYPES}
-				marker={source === 'homebrew' ? creatorOf : undefined}
+				marker={source === 'official' ? undefined : creatorOf}
 				onSelect={choose}
 			/>
 		</div>
@@ -649,10 +668,10 @@
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 	}
+	/* Sources on one row, the collection under them, so three choices fit a phone. */
 	.source {
 		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		align-items: center;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		padding-top: var(--space-3);
 	}
