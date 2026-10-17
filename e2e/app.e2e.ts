@@ -137,17 +137,23 @@ test('the footer never makes the page wider than the screen, even at the largest
 	expect(widths.page).toBeLessThanOrEqual(widths.screen);
 });
 
-test('About in Settings links to the Diagnostics page', async ({ page }) => {
+test('Diagnostics is a Settings section, reached from About and from its own link', async ({
+	page
+}) => {
 	await page.goto('/');
 	await page.evaluate(() => document.fonts.ready);
 	await page.getByRole('contentinfo').getByRole('button', { name: 'About' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Settings' })
-		.getByRole('link', { name: 'Diagnostics' })
-		.tap();
-	await expect(page).toHaveURL(/\/diagnostics$/);
-	await expect(page.getByRole('dialog', { name: 'Settings' })).toBeHidden();
-	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings.getByRole('button', { name: 'Diagnostics' }).last().tap();
+	await expect(settings.getByRole('heading', { name: 'Diagnostics' })).toBeVisible();
+	await expect(settings.getByTestId('diagnostics')).toBeVisible();
+	await expect(page).toHaveURL(/\/$/);
+
+	// The old page address opens the same section; closing it goes home.
+	await page.goto('/diagnostics');
+	await expect(settings.getByTestId('diagnostics')).toBeVisible();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(page).toHaveURL(/\/$/);
 });
 
 // Turned on by the board's +layout.ts ({ chrome: 'game' }); the board's toolbar opens the

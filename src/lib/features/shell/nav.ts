@@ -16,8 +16,7 @@ export interface NavItem {
 		| '/play'
 		| '/reference'
 		| '/info-tokens'
-		| '/account'
-		| '/diagnostics';
+		| '/account';
 	label: MessageKey;
 	icon: IconSlot;
 }
@@ -74,14 +73,6 @@ export const ACCOUNT_ITEM: NavItem = {
 	path: '/account',
 	label: 'shell.navAccount',
 	icon: 'account'
-};
-
-/** Build, device and problem log (Trevor, 2026-10-16); in "You" on every menu. */
-export const DIAGNOSTICS_ITEM: NavItem = {
-	id: 'diagnostics',
-	path: '/diagnostics',
-	label: 'shell.navDiagnostics',
-	icon: 'diagnostics'
 };
 
 /** The item a page belongs to: its own path or anything under it. */

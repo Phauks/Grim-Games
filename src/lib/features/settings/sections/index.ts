@@ -5,6 +5,7 @@ import AppearanceSection from './AppearanceSection.svelte';
 import FontsSection from './FontsSection.svelte';
 import IconsSection from './IconsSection.svelte';
 import DataSection from './DataSection.svelte';
+import DiagnosticsSection from './DiagnosticsSection.svelte';
 import RulesTermsSection from './RulesTermsSection.svelte';
 import TokensSection from './TokensSection.svelte';
 // Feature-owned sections, registered by their own modules.
@@ -74,4 +75,12 @@ registerSettingsSection({
 	component: AboutSection,
 	audience: 'everyone',
 	order: 95
+});
+registerSettingsSection({
+	id: 'diagnostics',
+	label: { key: 'shell.navDiagnostics' },
+	icon: 'diagnostics',
+	component: DiagnosticsSection,
+	audience: 'everyone',
+	order: 96
 });

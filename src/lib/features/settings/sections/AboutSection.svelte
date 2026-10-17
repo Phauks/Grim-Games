@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import { REPOSITORY_URL, shortCommit } from '#lib/features/about/report-issue.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -20,11 +19,11 @@
 		>
 	</dd>
 </dl>
-<!-- Build details and the problem log are on their own page. -->
-<a class="diagnostics" href={resolve('/diagnostics')} onclick={() => (settingsDialog.open = false)}>
+<!-- Build details and the problem log are in the Diagnostics section. -->
+<button type="button" class="diagnostics" onclick={() => settingsDialog.show('diagnostics')}>
 	<Icon name="diagnostics" />
 	<span>{t('shell.navDiagnostics')}</span>
-</a>
+</button>
 <p class="small">{t('shell.aboutNotice')}</p>
 
 <style>
@@ -53,7 +52,13 @@
 		gap: var(--space-2);
 		min-height: var(--tap-target);
 		margin-top: var(--space-2);
+		padding: 0;
+		border: 0;
+		background: none;
 		color: inherit;
+		font: inherit;
+		text-decoration: underline;
+		cursor: pointer;
 	}
 	.small {
 		font-size: 0.85rem;

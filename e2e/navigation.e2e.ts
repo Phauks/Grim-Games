@@ -24,8 +24,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Player view',
 		'Character reference',
 		'Info tokens',
-		'Account',
-		'Diagnostics'
+		'Account'
 	]) {
 		await expect(drawer.getByRole('link', { name })).toBeVisible();
 	}

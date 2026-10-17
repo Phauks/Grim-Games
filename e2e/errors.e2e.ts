@@ -107,7 +107,10 @@ test('Diagnostics gathers build, device and problems on the device, without game
 
 	await page.goto('/diagnostics');
 	const panel = page.getByTestId('diagnostics');
-	await expect(page.getByRole('heading', { level: 1, name: 'Diagnostics' })).toBeVisible();
+	// A Settings section, which /diagnostics opens (Trevor, 2026-10-16).
+	await expect(
+		page.getByRole('dialog', { name: 'Settings' }).getByRole('heading', { name: 'Diagnostics' })
+	).toBeVisible();
 	await expect(panel).toHaveAttribute('aria-busy', 'false');
 	for (const name of [
 		'Build',
