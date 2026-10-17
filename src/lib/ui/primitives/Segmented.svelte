@@ -53,6 +53,9 @@
 <style>
 	.track {
 		position: relative;
+		/* Keeps the items' z-index inside the control, so they never paint over a sticky header
+		   such as the Settings preview (Trevor, 2026-10-17). */
+		isolation: isolate;
 		display: flex;
 		padding: var(--space-1);
 		border: var(--card-border);

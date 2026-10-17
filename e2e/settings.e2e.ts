@@ -421,3 +421,26 @@ test('the text preview stays in view while the settings below it scroll', async 
 	const top = (await content.boundingBox())!.y;
 	expect(Math.abs((await preview.boundingBox())!.y - top)).toBeLessThan(2);
 });
+
+// Trevor (2026-10-17): the Left aligned and Justified choices scrolled over the preview.
+test('settings scroll under the text preview, never over it', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSettings(page, 'Theme and text');
+	const preview = dialog.getByTestId('font-preview');
+	const choice = dialog.getByText('Justified', { exact: true });
+	const content = dialog.locator('section.content');
+	// Scroll the choice up until it sits behind the middle of the preview.
+	const previewBox = (await preview.boundingBox())!;
+	const choiceBox = (await choice.boundingBox())!;
+	const middle = previewBox.y + previewBox.height / 2;
+	await content.evaluate(
+		(el, by) => el.scrollBy(0, by),
+		choiceBox.y + choiceBox.height / 2 - middle
+	);
+	const box = (await choice.boundingBox())!;
+	const onTop = await page.evaluate(
+		([x, y]) => document.elementFromPoint(x, y)?.closest('[data-testid="font-preview"]') !== null,
+		[box.x + box.width / 2, box.y + box.height / 2]
+	);
+	expect(onTop).toBe(true);
+});
