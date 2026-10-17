@@ -213,15 +213,6 @@ test('a script shows the same details as in Search, and plays from there', async
 	await expect(page).toHaveURL(/\/new$/);
 });
 
-test('the Library lists only the user’s own info tokens', async ({ page }) => {
-	await page.goto('/library');
-	const section = page.getByRole('region', { name: 'Info tokens' });
-	await expect(section.getByRole('heading', { name: 'Custom' })).toBeVisible();
-	await expect(section.getByRole('heading', { name: 'Standard' })).toHaveCount(0);
-	await section.getByRole('button', { name: 'New info token' }).tap();
-	await expect(page.getByRole('dialog')).toBeVisible();
-});
-
 test('a script made in the Script builder opens there from the Library', async ({ page }) => {
 	await page.goto('/build-script');
 	await page.getByRole('textbox', { name: 'Name' }).fill('Built here');

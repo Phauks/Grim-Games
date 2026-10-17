@@ -1,9 +1,8 @@
-/** The Library page (src/lib/features/library): the user's own scripts, folders, tags and info tokens. */
+/** The Library page (src/lib/features/library): the user's own scripts, folders and tags. */
 export const library = {
 	'library.pageTitle': 'Library · Grim-Games',
 	'library.heading': 'Library',
 	'library.scripts': 'Scripts',
-	'library.infoTokens': 'Info tokens',
 	'library.table': 'Your scripts',
 	'library.search': 'Search scripts',
 	'library.searchPlaceholder': 'Name, author or character',

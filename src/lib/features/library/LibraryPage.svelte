@@ -3,13 +3,12 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { isSeatable, type GameData } from '#lib/core/data/index.ts';
+	import type { GameData } from '#lib/core/data/index.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
-	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import InfoTokensPanel from '#lib/features/info-tokens/InfoTokensPanel.svelte';
 	import {
 		forgetScript,
 		recentScripts,
@@ -50,8 +49,9 @@
 	/**
 	 * Everything the user has kept (Trevor, 2026-10-16: "any scripts the user has built or
 	 * downloaded or saved, along with any tags or functionality they have created"): their saved
-	 * and profile scripts with their own folders and tags, and their own info tokens. It reads
-	 * the Scripts and Info tokens features' stores; nothing is copied.
+	 * and profile scripts with their own folders and tags. It reads the Scripts feature's
+	 * stores; nothing is copied. Custom info tokens live on the Info tokens page only (Trevor,
+	 * 2026-10-17).
 	 */
 
 	let data = $state.raw<GameData>();
@@ -291,10 +291,6 @@
 	}
 
 	let manageOpen = $state(false);
-
-	const characters = $derived(
-		officialData.current?.characters.filter((c) => isSeatable(c.type)) ?? []
-	);
 </script>
 
 <main>
@@ -362,11 +358,6 @@
 					/>
 				</div>
 			{/if}
-		</section>
-
-		<section aria-labelledby="library-info-tokens">
-			<h2 id="library-info-tokens">{t('library.infoTokens')}</h2>
-			<InfoTokensPanel {characters} only="custom" level={3} />
 		</section>
 	</ErrorBoundary>
 </main>
