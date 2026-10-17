@@ -6,7 +6,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { groupByType, matchesReference, type ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import { activeFilterCount, tableRows } from '#lib/core/rules/reference-table.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -90,12 +90,13 @@
 						filters === 0 ? t('reference.noFilters') : t('reference.filters', { count: filters })
 				})}
 			</p>
-			<Button
-				variant="quiet"
+			<!-- Clearing filters deletes nothing, so it is the clear-X, not the trash can. -->
+			<IconButton
 				icon="close"
+				label={t('reference.clearFilters')}
 				disabled={filters === 0}
-				onclick={() => referenceTable.clearFilters()}>{t('reference.clearFilters')}</Button
-			>
+				onclick={() => referenceTable.clearFilters()}
+			/>
 		</div>
 	{/if}
 </div>

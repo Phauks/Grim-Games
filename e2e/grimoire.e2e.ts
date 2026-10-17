@@ -400,7 +400,7 @@ test('reminders: add several from the picker, recent first, then move and remove
 	await sheet.getByRole('button', { name: 'Actions for Is The Drunk' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Is The Drunk' })
-		.getByRole('button', { name: 'Remove' })
+		.getByRole('button', { name: 'Remove reminder' })
 		.tap();
 	// It normally stays put, so taking it off asks first.
 	await page

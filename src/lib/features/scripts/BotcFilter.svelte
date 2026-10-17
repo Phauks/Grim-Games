@@ -4,6 +4,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import {
 		BOTC_EDITION_GROUPS,
@@ -120,7 +121,8 @@
 			checked={filters.officialOnly}
 			onChange={(v) => (filters.officialOnly = v)}
 		/>
-		<Button variant="quiet" onclick={clearCharacters}>{t('scripts.botc.clear')}</Button>
+		<!-- Clearing a filter deletes nothing, so it is the clear-X, not the trash can. -->
+		<IconButton icon="close" label={t('scripts.botc.clear')} onclick={clearCharacters} />
 	{/if}
 </div>
 

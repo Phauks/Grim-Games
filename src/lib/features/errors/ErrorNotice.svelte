@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -82,13 +83,11 @@
 		</ol>
 	{/if}
 	{#snippet actions()}
-		<Button
-			variant="quiet"
+		<DeleteButton
+			label={t('errors.clear')}
 			disabled={errorLog.entries.length === 0}
 			onclick={() => errorLog.clear()}
-		>
-			{t('errors.clear')}
-		</Button>
+		/>
 		<Button onclick={() => (errorLog.open = false)}>{t('common.close')}</Button>
 	{/snippet}
 </Dialog>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { loadScript } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { chooseScript } from '#lib/features/scripts/current-script.svelte.ts';
@@ -140,9 +141,7 @@
 		<p class="message" role="status">{message}</p>
 	{/if}
 	{#snippet actions()}
-		<Button variant="quiet" icon="remove" onclick={remove} disabled={busy}
-			>{t('account.scripts.remove')}</Button
-		>
+		<DeleteButton label={t('account.scripts.remove')} onclick={remove} disabled={busy} />
 		<Button
 			variant="quiet"
 			onclick={unlink}

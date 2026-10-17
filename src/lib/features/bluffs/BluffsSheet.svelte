@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		defaultAlignment,
@@ -22,7 +23,6 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -164,17 +164,15 @@
 							<Button icon="forward" disabled={ids.length === 0 || stale} onclick={() => show(ids)}
 								>{t('bluffs.show')}</Button
 							>
-							<span class="danger">
+							<span>
 								{#if index === DEMON_SET}
-									<IconButton
-										icon="remove"
+									<DeleteButton
 										label={t('bluffs.clearNamed', { set: label(index) })}
 										disabled={ids.length === 0}
 										onclick={() => set(index, [])}
 									/>
 								{:else}
-									<IconButton
-										icon="remove"
+									<DeleteButton
 										label={t('bluffs.deleteNamed', { set: label(index) })}
 										onclick={() => {
 											deleting = index;
@@ -256,10 +254,6 @@
 />
 
 <style>
-	/* Clearing or deleting a set is the red bin (Trevor, 2026-10-16). */
-	.danger :global(.icon-button) {
-		color: var(--accent);
-	}
 	.add {
 		display: flex;
 		justify-content: flex-start;
