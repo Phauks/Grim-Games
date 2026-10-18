@@ -70,26 +70,16 @@ test('the footer has every text link on the right', async ({ page }) => {
 	);
 });
 
-test('the commit is a link and About opens Settings without moving the page', async ({ page }) => {
+test('the commit is a link; About is in Settings, not the footer', async ({ page }) => {
 	await page.goto('/');
 	const build = page.getByTestId('build-info');
 	const commit = build.getByRole('link', { name: /^[0-9a-f]{7}$/ });
 	expect(await commit.getAttribute('href')).toMatch(/\/commit\/[0-9a-f]{40}$/);
-
-	// Measure once web fonts have swapped in, so only the dialog could move the footer.
-	await page.evaluate(() => document.fonts.ready);
-	await page.waitForLoadState('load');
-	// The footer can be below the fold; tapping would scroll it, which is not the dialog's doing.
-	await build.scrollIntoViewIfNeeded();
-	const before = await build.boundingBox();
-	await build.getByRole('button', { name: 'About' }).tap();
-	// About is a Settings section (Trevor, 2026-10-16).
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await expect(dialog.getByRole('heading', { name: 'About' })).toBeVisible();
-	await expect(dialog).toContainText('Version');
-	expect(await build.boundingBox()).toEqual(before);
-	await dialog.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(dialog).toBeHidden();
+	// Trevor (2026-10-18): "remove about from footer, access from settings only".
+	await expect(page.getByRole('contentinfo').getByRole('button', { name: 'About' })).toHaveCount(0);
+	await expect(build.getByRole('link', { name: 'Changelog' })).toBeVisible();
+	await expect(build.getByRole('link', { name: 'Privacy' })).toBeVisible();
+	await expect(build.getByRole('button', { name: 'Report an issue' })).toBeVisible();
 });
 
 test('installs as a PWA and reopens offline', async ({ page, context }) => {

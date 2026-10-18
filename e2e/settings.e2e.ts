@@ -272,7 +272,7 @@ test('text size changes text only: icons, spacing and buttons keep their size', 
 	expect(after.button?.height).toBe(before.button?.height);
 });
 
-test('there is one About: a settings section, which the footer opens', async ({ page }) => {
+test('there is one About: a settings section', async ({ page }) => {
 	await page.goto('/');
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
 	const nav = page
