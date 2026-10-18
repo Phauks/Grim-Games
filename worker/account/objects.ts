@@ -20,14 +20,23 @@ import {
 	MAX_CODES_PER_HOUR,
 	MAX_DOC_BYTES,
 	MAX_DOCS_PER_KIND,
+	MAX_PASSWORD_FAILURES,
 	SESSION_IDLE_MS,
+	SHORT_SESSION_IDLE_MS,
 	type AccountUser as User,
 	type DeviceSession,
 	type DocKind,
 	type ProfileDoc
 } from '../../src/lib/features/account/account-protocol.ts';
 import { isLegacyAccountId, randomAccountId } from '../../src/lib/features/account/account-id.ts';
-import { randomCode, randomToken, sameHash, sha256 } from './crypto.ts';
+import {
+	PASSWORD_ITERATIONS,
+	passwordHash,
+	randomCode,
+	randomToken,
+	sameHash,
+	sha256
+} from './crypto.ts';
 
 export interface AccountEnv {
 	ACCOUNT_USERS: DurableObjectNamespace<AccountUser>;
@@ -46,12 +55,25 @@ export function userStub(env: AccountEnv, userId: string): DurableObjectStub<Acc
 	);
 }
 
+/** A new salt and the password's hash with it. */
+export async function hashPassword(password: string): Promise<PasswordHash> {
+	const salt = randomToken(16);
+	return { hash: await passwordHash(password, salt), salt, iterations: PASSWORD_ITERATIONS };
+}
+
 const HOUR_MS = 60 * 60 * 1000;
 /** `last_seen_at` is written at most this often, so reads don't each cost a write. */
 const SEEN_GRANULARITY_MS = HOUR_MS;
 
 export type StartResult =
 	{ ok: true; code: string; token: string } | { ok: false; reason: 'rate-limited' };
+
+/** A password's stored form; never the password itself. */
+export interface PasswordHash {
+	hash: string;
+	salt: string;
+	iterations: number;
+}
 
 export type VerifyResult =
 	| { ok: true; userId: string; created: boolean }
@@ -112,6 +134,8 @@ export class AccountEmail extends DurableObject<AccountEnv> {
 				id INTEGER PRIMARY KEY CHECK (id = 1),
 				user_id TEXT NOT NULL
 			);
+			-- Wrong passwords for this address, for the hourly limit.
+			CREATE TABLE IF NOT EXISTS failed (at INTEGER NOT NULL);
 			-- A signed-in user moving their account to this address: the code sent here.
 			CREATE TABLE IF NOT EXISTS change_pending (
 				id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -135,6 +159,22 @@ export class AccountEmail extends DurableObject<AccountEnv> {
 	private owner(): string | undefined {
 		return this.sql.exec<{ user_id: string }>('SELECT user_id FROM owner WHERE id = 1').toArray()[0]
 			?.user_id;
+	}
+
+	/**
+	 * Before a password is checked: the account this address belongs to, or `limited` once
+	 * MAX_PASSWORD_FAILURES wrong passwords were tried in the last hour.
+	 */
+	async passwordOwner(now: number): Promise<{ limited: boolean; userId?: string }> {
+		this.sql.exec('DELETE FROM failed WHERE at < ?', now - HOUR_MS);
+		const failed = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM failed').one().n;
+		return { limited: failed >= MAX_PASSWORD_FAILURES, userId: this.owner() };
+	}
+
+	/** Counts a wrong password (also for an address with no account, so both look the same). */
+	async passwordFailed(now: number): Promise<void> {
+		this.sql.exec('INSERT INTO failed (at) VALUES (?)', now);
+		await this.ctx.storage.setAlarm(now + HOUR_MS);
 	}
 
 	/** Makes a new code and link token, replacing any earlier one. */
@@ -254,8 +294,11 @@ export class AccountEmail extends DurableObject<AccountEnv> {
 		this.sql.exec('DELETE FROM sent WHERE at < ?', now - HOUR_MS);
 		this.sql.exec('DELETE FROM pending WHERE expires_at < ?', now);
 		this.sql.exec('DELETE FROM change_pending WHERE expires_at < ?', now);
+		this.sql.exec('DELETE FROM failed WHERE at < ?', now - HOUR_MS);
 		const owned = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM owner').one().n;
-		const left = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM sent').one().n;
+		const left =
+			this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM sent').one().n +
+			this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM failed').one().n;
 		const pending =
 			this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM pending').one().n +
 			this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM change_pending').one().n;
@@ -324,7 +367,8 @@ export type PutResult =
 	| { ok: false; reason: 'conflict'; doc: ProfileDoc }
 	| { ok: false; reason: 'too-large' | 'too-many' };
 
-export type Authenticated = { user: User; sessionId: string };
+/** `remember` is false for a session made without "Remember me". */
+export type Authenticated = { user: User; sessionId: string; remember: boolean };
 
 export class AccountUser extends DurableObject<AccountEnv> {
 	private readonly sql: SqlStorage;
@@ -354,6 +398,16 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				id INTEGER PRIMARY KEY CHECK (id = 1),
 				account_id TEXT NOT NULL
 			);
+			-- Sessions made without "Remember me": they end after a shorter time unused.
+			CREATE TABLE IF NOT EXISTS short_session (id TEXT PRIMARY KEY);
+			-- The password's PBKDF2-SHA256 hash and salt; no row means sign-in by emailed code only.
+			CREATE TABLE IF NOT EXISTS password (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				hash TEXT NOT NULL,
+				salt TEXT NOT NULL,
+				iterations INTEGER NOT NULL,
+				updated_at INTEGER NOT NULL
+			);
 			-- Its own table, so accounts made before usernames need no change to the profile table.
 			CREATE TABLE IF NOT EXISTS username (
 				id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -373,8 +427,9 @@ export class AccountUser extends DurableObject<AccountEnv> {
 
 	private user(): User | undefined {
 		const row = this.sql
-			.exec<{ email: string; created_at: number; username: string | null }>(
-				`SELECT email, created_at, (SELECT name FROM username WHERE id = 1) AS username
+			.exec<{ email: string; created_at: number; username: string | null; has_password: number }>(
+				`SELECT email, created_at, (SELECT name FROM username WHERE id = 1) AS username,
+				   EXISTS (SELECT 1 FROM password) AS has_password
 				 FROM profile WHERE id = 1`
 			)
 			.toArray()[0];
@@ -383,6 +438,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				id: this.accountId(),
 				email: row.email,
 				username: row.username,
+				hasPassword: row.has_password === 1,
 				createdAt: row.created_at
 			}
 		);
@@ -402,6 +458,29 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		return { old, user: this.user() };
 	}
 
+	/** Sets or replaces the password from its hash (`hashPassword`). */
+	async setPasswordHash(password: PasswordHash, now: number): Promise<User | undefined> {
+		this.sql.exec(
+			'INSERT OR REPLACE INTO password (id, hash, salt, iterations, updated_at) VALUES (1, ?, ?, ?, ?)',
+			password.hash,
+			password.salt,
+			password.iterations,
+			now
+		);
+		return this.user();
+	}
+
+	/** Whether `password` is this account's. False when it has none. */
+	async checkPassword(password: string): Promise<boolean> {
+		const row = this.sql
+			.exec<{ hash: string; salt: string; iterations: number }>(
+				'SELECT hash, salt, iterations FROM password WHERE id = 1'
+			)
+			.toArray()[0];
+		if (!row) return false;
+		return sameHash(await passwordHash(password, row.salt, row.iterations), row.hash);
+	}
+
 	private accountId(): string {
 		return (
 			this.sql
@@ -418,17 +497,22 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		return true;
 	}
 
-	/** Starts a session; the cookie value is `<user id>.<secret>`. */
-	async createSession(device: string, now: number): Promise<string> {
+	/**
+	 * Starts a session; the cookie value is `<user id>.<secret>`. Without `remember` it ends
+	 * after SHORT_SESSION_IDLE_MS unused (and its cookie when the browser closes).
+	 */
+	async createSession(device: string, now: number, remember = true): Promise<string> {
 		const secret = randomToken();
+		const id = randomToken(9);
 		this.sql.exec(
 			'INSERT INTO session (id, token_hash, device, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?)',
-			randomToken(9),
+			id,
 			await sha256(`session:${secret}`),
 			device.slice(0, 60),
 			now,
 			now
 		);
+		if (!remember) this.sql.exec('INSERT INTO short_session (id) VALUES (?)', id);
 		return `${this.accountId()}.${secret}`;
 	}
 
@@ -437,6 +521,11 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		const user = this.user();
 		if (!user) return undefined;
 		this.sql.exec('DELETE FROM session WHERE last_seen_at < ?', now - SESSION_IDLE_MS);
+		this.sql.exec(
+			'DELETE FROM session WHERE last_seen_at < ? AND id IN (SELECT id FROM short_session)',
+			now - SHORT_SESSION_IDLE_MS
+		);
+		this.sql.exec('DELETE FROM short_session WHERE id NOT IN (SELECT id FROM session)');
 		const hash = await sha256(`session:${secret}`);
 		const row = this.sql
 			.exec<{ id: string; last_seen_at: number }>(
@@ -448,7 +537,10 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		if (now - row.last_seen_at > SEEN_GRANULARITY_MS) {
 			this.sql.exec('UPDATE session SET last_seen_at = ? WHERE id = ?', now, row.id);
 		}
-		return { user, sessionId: row.id };
+		const short = this.sql
+			.exec<{ n: number }>('SELECT COUNT(*) AS n FROM short_session WHERE id = ?', row.id)
+			.one().n;
+		return { user, sessionId: row.id, remember: short === 0 };
 	}
 
 	async sessions(currentId: string): Promise<DeviceSession[]> {
@@ -472,6 +564,10 @@ export class AccountUser extends DurableObject<AccountEnv> {
 
 	async endOtherSessions(keepId: string): Promise<void> {
 		this.sql.exec('DELETE FROM session WHERE id != ?', keepId);
+	}
+
+	async endAllSessions(): Promise<void> {
+		this.sql.exec('DELETE FROM session');
 	}
 
 	async listDocs(kind: DocKind): Promise<ProfileDoc[]> {

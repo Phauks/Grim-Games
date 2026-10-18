@@ -17,6 +17,13 @@ export const MAX_CODE_ATTEMPTS = 5;
 export const MAX_CODES_PER_HOUR = 5;
 /** A session ends after this long unused. */
 export const SESSION_IDLE_MS = 180 * 24 * 60 * 60 * 1000;
+/** Without "Remember me", a session ends when the browser closes, or after this long unused. */
+export const SHORT_SESSION_IDLE_MS = 12 * 60 * 60 * 1000;
+/** Passwords are at least this long; no other rules (NIST SP 800-63B §3.1.1.2). */
+export const PASSWORD_MIN = 10;
+export const PASSWORD_MAX = 200;
+/** Wrong passwords allowed for one address per hour before it must wait or use a code. */
+export const MAX_PASSWORD_FAILURES = 10;
 /** Name of the HttpOnly session cookie. */
 export const SESSION_COOKIE = 'gg_session';
 
@@ -47,6 +54,8 @@ export interface AccountUser {
 	email: string;
 	/** Unique across accounts (ignoring case); null until the user picks one. */
 	username: string | null;
+	/** Whether the account has a password; without one, it signs in with emailed codes. */
+	hasPassword: boolean;
 	createdAt: number;
 }
 
@@ -87,8 +96,29 @@ export interface StartResponse {
 	preview?: { code: string; link: string };
 }
 
-/** `POST /api/auth/verify` body: the typed code, or the token from a sign-in link. */
-export type VerifyRequest = { email: string; code: string } | { email: string; token: string };
+/**
+ * `POST /api/auth/verify` body: the typed code, or the token from a sign-in link. A
+ * `password` sent with it becomes the account's (signing up, or replacing a forgotten one):
+ * only whoever holds the code can set it. `remember` false makes a session that ends with
+ * the browser.
+ */
+export type VerifyRequest = ({ code: string } | { token: string }) & {
+	email: string;
+	password?: string;
+	remember?: boolean;
+};
+
+/** `POST /api/auth/password` body: signing in with a password. */
+export interface PasswordSignInRequest {
+	email: string;
+	password: string;
+	remember?: boolean;
+}
+
+/** `PUT /api/account/password` body. */
+export interface SetPasswordRequest {
+	password: string;
+}
 
 /** One device signed in to the account. */
 export interface DeviceSession {
@@ -130,6 +160,22 @@ export function isDocKind(value: string): value is DocKind {
 
 export function isDocId(value: string): boolean {
 	return DOC_ID.test(value);
+}
+
+/** A password as typed: kept exactly, but it must be PASSWORD_MIN to PASSWORD_MAX long. */
+export function checkPassword(input: unknown): string | undefined {
+	if (typeof input !== 'string') return undefined;
+	const length = [...input].length;
+	return length >= PASSWORD_MIN && length <= PASSWORD_MAX ? input : undefined;
+}
+
+/**
+ * An email address as typed, trimmed, keeping its capitals for showing and sending (Trevor,
+ * 2026-10-18). Undefined when `normaliseEmail` wouldn't accept it.
+ */
+export function cleanEmail(input: unknown): string | undefined {
+	if (typeof input !== 'string' || !normaliseEmail(input)) return undefined;
+	return input.trim();
 }
 
 /**

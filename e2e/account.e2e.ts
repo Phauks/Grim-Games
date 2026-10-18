@@ -10,19 +10,31 @@ const homebrew = [
 	'imp'
 ];
 
+// Sign-in attempts are limited per network address; each test gets its own, so the file
+// doesn't run into the limit (on Cloudflare the header is always set by Cloudflare).
+test.beforeEach(async ({ page }) => {
+	const part = () => Math.floor(Math.random() * 254) + 1;
+	await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
+});
+
 function uniqueEmail(name: string): string {
 	return `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+}
+
+/** The code shown on screen by a preview build. */
+async function previewCode(page: Page): Promise<string> {
+	const note = page.getByTestId('preview-code');
+	await expect(note).toContainText('Preview build: no email is sent');
+	const code = (await note.locator('strong').textContent()) ?? '';
+	expect(code).toMatch(/^\d{6}$/);
+	return code;
 }
 
 async function signInWithCode(page: Page, email: string) {
 	await page.goto('/account');
 	await page.getByLabel('Email address').fill(email);
-	await page.getByRole('button', { name: 'Send code' }).tap();
-	const note = page.getByTestId('preview-code');
-	await expect(note).toContainText('Preview build: no email is sent');
-	const code = (await note.locator('strong').textContent()) ?? '';
-	expect(code).toMatch(/^\d{6}$/);
-	await page.getByLabel(`Code sent to ${email}`).fill(code);
+	await page.getByRole('button', { name: 'Email me a code' }).tap();
+	await page.getByLabel(`Code sent to ${email}`).fill(await previewCode(page));
 	await page.getByRole('button', { name: 'Sign in' }).tap();
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 }
@@ -31,7 +43,7 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	const email = uniqueEmail('code');
 	await page.goto('/account');
 	await page.getByLabel('Email address').fill(email);
-	await page.getByRole('button', { name: 'Send code' }).tap();
+	await page.getByRole('button', { name: 'Email me a code' }).tap();
 	await page.getByLabel(`Code sent to ${email}`).fill('000000');
 	await page.getByRole('button', { name: 'Sign in' }).tap();
 	await expect(page.getByRole('status').filter({ hasText: 'not right' })).toBeVisible();
@@ -217,4 +229,75 @@ test('my data downloads with the account name and the time in its file name', as
 	expect((await download).suggestedFilename()).toMatch(
 		new RegExp(`^grimbinder-${id}-\\d{4}-\\d{2}-\\d{2}-\\d{4}\\.json$`)
 	);
+});
+
+/** The session cookie the browser holds, if any. */
+async function sessionCookie(page: Page) {
+	return (await page.context().cookies()).find((cookie) => cookie.name === 'gg_session');
+}
+
+test('creating an account with a password, then signing in with it', async ({ page }) => {
+	// Capitals in the address are kept as typed; the account is still found ignoring case.
+	const email = uniqueEmail('Create');
+	const password = 'correct horse battery';
+	await page.goto('/account');
+	await page.getByLabel('Email address').fill(email);
+	await page.getByLabel('Password', { exact: true }).fill('short');
+	await page.getByRole('button', { name: 'Create account' }).tap();
+	await expect(page.getByRole('status').filter({ hasText: 'A password is 10' })).toBeVisible();
+
+	await page.getByLabel('Password', { exact: true }).fill(password);
+	await page.getByRole('button', { name: 'Create account' }).tap();
+	await page.getByLabel(`Code sent to ${email}`).fill(await previewCode(page));
+	await page.getByRole('button', { name: 'Sign in' }).tap();
+	await expect(page.getByTestId('account-email')).toHaveText(email);
+	await expect(page.getByTestId('account-password')).toHaveText('Set');
+	// Remember me is on by default: the cookie outlives the browser.
+	expect((await sessionCookie(page))?.expires).toBeGreaterThan(Date.now() / 1000 + 86400);
+
+	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	// A wrong password and an unknown address get the same answer.
+	await page.getByLabel('Email address').fill(email.toLowerCase());
+	await page.getByLabel('Password', { exact: true }).fill('not the password');
+	const answer = async () => {
+		const response = page.waitForResponse((r) => r.url().endsWith('/api/auth/password'));
+		await page.getByRole('button', { name: 'Sign in' }).tap();
+		return [(await response).status(), (await (await response).json()).error];
+	};
+	const wrong = await answer();
+	expect(wrong[0]).toBe(401);
+	await expect(page.getByRole('status').filter({ hasText: 'do not match' })).toBeVisible();
+	await page.getByLabel('Email address').fill(uniqueEmail('nobody'));
+	expect(await answer()).toEqual(wrong);
+
+	// Without Remember me, the cookie ends with the browser.
+	await page.getByLabel('Email address').fill(email.toLowerCase());
+	await page.getByLabel('Password', { exact: true }).fill(password);
+	const remember = page.getByRole('checkbox', { name: 'Remember me' });
+	await expect(remember).toBeChecked();
+	await page.getByText('Remember me', { exact: true }).tap();
+	await expect(remember).not.toBeChecked();
+	await page.getByRole('button', { name: 'Sign in' }).tap();
+	await expect(page.getByTestId('account-email')).toHaveText(email);
+	expect((await sessionCookie(page))?.expires).toBe(-1);
+	await page.reload();
+	await expect(page.getByTestId('account-email')).toHaveText(email);
+	expect((await sessionCookie(page))?.expires).toBe(-1);
+});
+
+test('a code-only account can set a password in Account settings', async ({ page }) => {
+	const email = uniqueEmail('later');
+	await signInWithCode(page, email);
+	await expect(page.getByTestId('account-password')).toHaveText('None');
+	await page.getByRole('button', { name: 'Set password' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Set password' });
+	await dialog.getByLabel('New password').fill('a much longer password');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('account-password')).toHaveText('Set');
+
+	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await page.getByLabel('Email address').fill(email);
+	await page.getByLabel('Password', { exact: true }).fill('a much longer password');
+	await page.getByRole('button', { name: 'Sign in' }).tap();
+	await expect(page.getByTestId('account-email')).toHaveText(email);
 });

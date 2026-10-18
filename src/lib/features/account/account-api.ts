@@ -59,8 +59,11 @@ async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T>
 export const accountApi = {
 	session: () => call<SessionInfo>('/api/auth/session'),
 	start: (email: string) => call<StartResponse>('/api/auth/start', 'POST', { email }),
-	verifyCode: (email: string, code: string) =>
-		call<SessionInfo>('/api/auth/verify', 'POST', { email, code }),
+	/** `password` becomes the account's (signing up, or replacing a forgotten one). */
+	verifyCode: (email: string, code: string, remember: boolean, password?: string) =>
+		call<SessionInfo>('/api/auth/verify', 'POST', { email, code, remember, password }),
+	signInWithPassword: (email: string, password: string, remember: boolean) =>
+		call<SessionInfo>('/api/auth/password', 'POST', { email, password, remember }),
 	verifyLink: (email: string, token: string) =>
 		call<SessionInfo>('/api/auth/verify', 'POST', { email, token }),
 	signOut: () => call<{ ok: true }>('/api/auth/sign-out', 'POST'),
@@ -75,6 +78,8 @@ export const accountApi = {
 		call<UserResponse>('/api/account/email/verify', 'POST', { email, code }).then((r) => r.user),
 	setUsername: (username: string) =>
 		call<UserResponse>('/api/account/username', 'PUT', { username }).then((r) => r.user),
+	setPassword: (password: string) =>
+		call<UserResponse>('/api/account/password', 'PUT', { password }).then((r) => r.user),
 	/** Everything stored for the account, for "Download my data". */
 	exportData: () => call<unknown>(EXPORT_PATH),
 	deleteAccount: () => call<{ ok: true }>('/api/account', 'DELETE'),

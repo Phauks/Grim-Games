@@ -16,6 +16,7 @@
 	import { readSignInHash, type DeviceSession } from './account-protocol.ts';
 	import ChangeEmailDialog from './ChangeEmailDialog.svelte';
 	import { exportFileName } from './export-file.ts';
+	import PasswordDialog from './PasswordDialog.svelte';
 	// Scripts are shown in the Library now, but signing in here still saves the device's
 	// scripts to the profile, which this module does when the user changes.
 	import './profile-scripts.svelte.ts';
@@ -33,6 +34,7 @@
 	const deleteTyped = $derived(deletePhrase !== '' && typed.trim() === deletePhrase);
 	let editUsername = $state(false);
 	let editEmail = $state(false);
+	let editPassword = $state(false);
 	let busy = $state(false);
 
 	const date = (ms: number) => intl.date(ms);
@@ -155,6 +157,16 @@
 						onclick={() => (editEmail = true)}
 						disabled={busy || account.delivery === 'unavailable'}
 					/>
+					<dt>{t('account.you.password')}</dt>
+					<dd data-testid="account-password">
+						{account.user.hasPassword ? t('account.you.passwordSet') : t('common.none')}
+					</dd>
+					<IconButton
+						icon="rename"
+						label={t('account.password.title')}
+						onclick={() => (editPassword = true)}
+						disabled={busy}
+					/>
 					<!-- The account's own id: never changes, so it can't be edited. -->
 					<dt>{t('account.you.id')}</dt>
 					<dd data-testid="account-id">{account.user.id}</dd>
@@ -233,6 +245,7 @@
 
 <UsernameDialog bind:open={editUsername} />
 <ChangeEmailDialog bind:open={editEmail} />
+<PasswordDialog bind:open={editPassword} />
 
 <ConfirmDialog
 	bind:open={confirmDelete}
@@ -246,6 +259,7 @@
 	<p class="phrase-intro">{t('account.data.typeBelow')}</p>
 	<p class="phrase">{deletePhrase}</p>
 	<TextField
+		plain
 		hideLabel
 		label={t('account.data.typeToConfirm', { phrase: deletePhrase })}
 		bind:value={typed}
@@ -291,6 +305,11 @@
 	.muted,
 	small {
 		color: var(--on-surface-muted);
+	}
+	/* What people read and type exactly, in the plain account font (Trevor, 2026-10-18). */
+	dd,
+	.phrase {
+		font-family: var(--font-account);
 	}
 	dd {
 		margin: 0;

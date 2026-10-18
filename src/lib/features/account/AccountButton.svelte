@@ -92,6 +92,7 @@
 		display: grid;
 		min-width: 0;
 		overflow-wrap: anywhere;
+		font-family: var(--font-account);
 	}
 	small {
 		color: var(--on-surface-muted);
