@@ -34,6 +34,7 @@
 	import SetupCheckPanel from './SetupCheckPanel.svelte';
 	import StandInDialog from './StandInDialog.svelte';
 	import TravellerDialog from './TravellerDialog.svelte';
+	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupNav from './SetupNav.svelte';
@@ -353,6 +354,19 @@
 				/>
 			{/snippet}
 		</CharacterPicker>
+		<!--
+			The Demon's bluffs, from the characters chosen here rather than on the Draw screen the
+			players use (Trevor, 2026-10-18). After the list, so its appearing moves nothing.
+		-->
+		{#if game && port.lookup}
+			<SetupBluffs
+				{game}
+				characters={port.lookup}
+				dispatch={port.dispatch}
+				waiting={!ready}
+				inPlay={ids}
+			/>
+		{/if}
 	</ErrorBoundary>
 
 	{#if game}

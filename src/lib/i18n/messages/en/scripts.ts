@@ -102,7 +102,7 @@ export const scripts = {
 	'scripts.paste.fromClipboard': 'Paste from clipboard',
 	'scripts.paste.clipboardFailed':
 		'The clipboard could not be read. Long-press in the box and choose Paste.',
-	'scripts.link.label': 'Link to the script',
+	'scripts.link.label': 'Link to the JSON',
 	'scripts.link.open': 'Open link',
 
 	// Script check
