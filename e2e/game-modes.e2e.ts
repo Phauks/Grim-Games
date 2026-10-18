@@ -228,15 +228,12 @@ test('Two games at once: one name per player for both games, warnings start at N
 	await name.fill('Ana');
 	await name.press('Enter');
 	// The name reaches both games: each board shows it.
-	const hrefs = await page
-		.getByRole('link', { name: /^Open town/ })
-		.evaluateAll((links) =>
-			links.map((a) => (a as HTMLAnchorElement).pathname.replace(/\/setup$/, ''))
-		);
-	expect(hrefs).toHaveLength(2);
 	const towns = page.url();
-	for (const href of hrefs) {
-		await page.goto(href);
+	for (const n of [1, 2]) {
+		await page.goto(towns);
+		await page.getByRole('button', { name: `Open town ${n}` }).tap();
+		await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
+		await page.goto(new URL(page.url()).pathname.replace(/\/setup$/, ''));
 		await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	}
 	// Each town's board leads back to the towns from its ⋯ menu.
@@ -292,6 +289,19 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(page.getByTestId('town-moves')).toHaveText('None before the end of day 1');
 	await expect(page.getByRole('button', { name: 'Move a player' })).toBeDisabled();
 	await noSidewaysScroll(page);
+
+	// "Boomdandy and Mayor are guaranteed to be in play": the Boomdandy in the Zombuul town,
+	// the Mayor in the other, each already chosen when its setup opens.
+	const towns = page.url();
+	await page.getByRole('button', { name: 'Open town 1' }).tap();
+	await expect(page).toHaveURL(/\/setup$/);
+	await expect(page.getByTestId('count-minion')).toHaveText('1');
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
+	await page.goto(towns);
+	await page.getByRole('button', { name: 'Open town 2' }).tap();
+	await expect(page).toHaveURL(/\/setup$/);
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
+	await expect(page.getByTestId('count-minion')).toHaveText('0');
 });
 
 test('a mode file someone wrote can be added, inspected and deleted', async ({ page }) => {

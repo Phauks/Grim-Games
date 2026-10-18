@@ -198,6 +198,8 @@ export interface TownsRule extends Cited {
 	samePlayers?: boolean;
 	/** A player can't have a character of these types in more than one town. */
 	notInEveryTown?: SeatedType[];
+	/** Characters always in play in each town, by town (part 7's `inPlay`, placed). */
+	inPlay?: CharacterId[][];
 }
 
 /** 13. People taking part without a seat. */

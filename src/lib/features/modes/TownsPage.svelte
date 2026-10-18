@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		canMoveTown,
 		inEveryTown,
+		inPlayFor,
 		moveIntoTown,
 		movesOnDay,
 		STANDARD,
@@ -26,6 +28,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import { findMode } from './custom-modes.svelte.ts';
+	import { seedInPlay } from './in-play.ts';
 	import { townGroup } from './town-groups.ts';
 
 	/**
@@ -176,7 +179,15 @@
 							? t('modes.towns.day', { day: dayNumber(open.game) })
 							: t('modes.towns.setup')}
 					</p>
-					<Button variant="accent" icon="grimoire" href={openHref(open)}>
+					<!-- Characters the town always has in play go into its setup first. -->
+					<Button
+						variant="accent"
+						icon="grimoire"
+						onclick={() => {
+							seedInPlay(open.game.gameId, open.game.seating.length, inPlayFor(mode, i));
+							void goto(openHref(open));
+						}}
+					>
 						{t('modes.towns.open', { number: i + 1 })}
 					</Button>
 				</li>

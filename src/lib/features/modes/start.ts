@@ -1,6 +1,7 @@
 import { toScript, type GameData, type LoadedScript, type Script } from '#lib/core/data/index.ts';
 import {
 	campaignRule,
+	inPlayFor,
 	modeScript,
 	STANDARD,
 	type StorytellerRestrictions
@@ -11,6 +12,7 @@ import type { ResolvedPathname } from '$app/types';
 import { findMode } from './custom-modes.svelte.ts';
 import { writeGameMode } from './game-mode-store.ts';
 import { saveCampaign } from './campaigns.ts';
+import { seedInPlay } from './in-play.ts';
 import { saveTownGroup } from './town-groups.ts';
 
 interface StartInput<G> {
@@ -28,9 +30,9 @@ interface StartInput<G> {
  * beside the game on this device. A campaign mode (Flesh and Bone) also starts its campaign,
  * with this as its first game.
  */
-export async function startInMode<G extends { game: { gameId: GameId } }>(
-	input: StartInput<G>
-): Promise<G> {
+export async function startInMode<
+	G extends { game: { gameId: GameId; seating: readonly unknown[] } }
+>(input: StartInput<G>): Promise<G> {
 	const mode = findMode(input.modeId) ?? STANDARD;
 	const script = modeScript(
 		mode,
@@ -41,6 +43,7 @@ export async function startInMode<G extends { game: { gameId: GameId } }>(
 	);
 	const open = await input.create(script);
 	writeGameMode(open.game.gameId, { modeId: mode.id, restrictions: input.restrictions });
+	seedInPlay(open.game.gameId, open.game.seating.length, inPlayFor(mode));
 	if (campaignRule(mode))
 		saveCampaign({
 			campaignId: crypto.randomUUID(),

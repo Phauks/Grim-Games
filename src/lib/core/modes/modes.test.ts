@@ -9,6 +9,7 @@ import {
 	bannedIn,
 	choosableCharacters,
 	demonBluffs,
+	inPlayFor,
 	modeCharacters,
 	modeScript,
 	runsPart
@@ -194,5 +195,17 @@ describe('authors (Trevor, 2026-10-18: only when properly attributed)', () => {
 		expect(ok.ok).toBe(true);
 		const bad = parseGameMode({ ...mode('specters'), authors: ['Someone'] }, known);
 		expect(bad.ok).toBe(false);
+	});
+});
+
+describe('Two Towns and a Boomdandy: always in play', () => {
+	it('puts the Boomdandy in the Zombuul town and the Mayor in the other', () => {
+		// "Boomdandy and Mayor are guaranteed to be in play"; they "start in different towns".
+		// https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/
+		const two = mode('two-towns-and-a-boomdandy');
+		expect(inPlayFor(two, 0)).toEqual(['boomdandy']);
+		expect(inPlayFor(two, 1)).toEqual(['mayor']);
+		expect(runsPart(two, 'forced')).toBe(true);
+		expect(inPlayFor(mode('standard'))).toEqual([]);
 	});
 });
