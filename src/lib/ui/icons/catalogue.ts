@@ -71,6 +71,7 @@ export const ICON_SLOTS = {
 	selectedOnly: { label: 'Show only selected', choices: ['ph:list-checks', 'ph:check-square'] },
 	expand: { label: 'Show or hide a section', choices: ['ph:caret-down', 'ph:caret-circle-down'] },
 	wiki: { label: 'Wiki link', choices: ['ph:arrow-square-out', 'ph:book-open-text'] },
+	openInNewTab: { label: 'Open in a new tab', choices: ['ph:arrow-square-out'] },
 	search: { label: 'Search', choices: ['ph:magnifying-glass'] },
 	print: { label: 'Print', choices: ['ph:printer'] },
 	pasteJson: { label: 'Paste JSON', choices: ['ph:clipboard-text', 'ph:clipboard'] },

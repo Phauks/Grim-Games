@@ -258,6 +258,25 @@ test('a link the browser may not read explains how to paste instead', async ({ p
 	await expect(dialog.getByRole('button', { name: 'Open link' })).toBeEnabled();
 	// The error line is reserved, so the button does not move.
 	expect(await load.boundingBox()).toEqual(before);
+	// Open link sits inside the link's own field, just before its X (Trevor, 2026-10-18).
+	const field = (await dialog.getByLabel('Link to the script JSON').boundingBox())!;
+	const open = (await dialog.getByRole('button', { name: 'Open link' }).boundingBox())!;
+	const clear = (await dialog.getByRole('button', { name: 'Clear' }).boundingBox())!;
+	for (const button of [open, clear]) {
+		expect(button.y + button.height / 2).toBeCloseTo(field.y + field.height / 2, 0);
+		expect(button.x + button.width).toBeLessThanOrEqual(field.x + field.width + 1);
+		expect(button.width).toBeGreaterThanOrEqual(43.5);
+	}
+	expect(open.x + open.width).toBeLessThanOrEqual(clear.x + 1);
+	// The text stops before both buttons.
+	const padding = await dialog
+		.getByLabel('Link to the script JSON')
+		.evaluate((input) => parseFloat(getComputedStyle(input).paddingInlineEnd));
+	expect(field.x + field.width - padding).toBeLessThanOrEqual(open.x + 1);
+	// It opens the site in a new tab (that site is unreachable here, so only the tab is seen).
+	const popup = page.waitForEvent('popup');
+	await dialog.getByRole('button', { name: 'Open link' }).tap();
+	await popup;
 });
 
 test('a share link saves its script and clears the hash', async ({ page }) => {

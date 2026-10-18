@@ -10,6 +10,7 @@
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
@@ -253,31 +254,31 @@
 
 <Dialog bind:open={linkOpen} title={t('scripts.link.title')}>
 	<div class="field">
+		<!-- Open site is always there, enabled once a site refuses to share its file (no reflow). -->
 		<TextField
 			label={t('scripts.link.label')}
 			bind:value={linkText}
 			type="url"
 			inputmode="url"
 			placeholder="https://"
-		/>
+		>
+			{#snippet end()}
+				<IconButton
+					icon="openInNewTab"
+					label={t('scripts.link.open')}
+					disabled={!errorLink}
+					onclick={() => errorLink && window.open(errorLink, '_blank', 'noopener,noreferrer')}
+				/>
+			{/snippet}
+		</TextField>
 	</div>
 	{@render errorLine()}
 	{#snippet actions()}
-		<!-- Open site is always there, enabled once a site refuses to share its file (no reflow). -->
 		<ModalActions
 			onCancel={() => (linkOpen = false)}
 			onConfirm={() => run(() => fetchLinkTarget(resolveLink(linkText), linkText))}
 			disabled={busy || linkText.trim() === ''}
-		>
-			{#snippet start()}
-				<Button
-					variant="quiet"
-					disabled={!errorLink}
-					onclick={() => errorLink && window.open(errorLink, '_blank', 'noopener,noreferrer')}
-					>{t('scripts.link.open')}</Button
-				>
-			{/snippet}
-		</ModalActions>
+		/>
 	{/snippet}
 </Dialog>
 
