@@ -7,7 +7,8 @@
 	import { STANDARD } from '#lib/core/modes/index.ts';
 	import { findMode } from '#lib/features/modes/custom-modes.svelte.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
-	import { boardNightSteps, stepHolders } from './night-steps.ts';
+	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
 	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
@@ -1561,7 +1562,20 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet bind:open={dayOpen} game={grimoire.open} />
+<DaySheet
+	bind:open={dayOpen}
+	game={grimoire.open}
+	onEndDay={() => {
+		// The day's timer stops, and tonight's night order opens with Dusk ticked, which runs
+		// the rules checked at dusk (GameEndPrompt).
+		if (liveDayTimer.running) liveDayTimer.toggle();
+		grimoire.beginNight();
+		const night = tonight(game);
+		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
+			grimoire.toggleNightStep(night, { id: 'dusk' });
+		nightOpen = true;
+	}}
+/>
 
 <NightOrderSheet
 	bind:open={nightOpen}

@@ -2,6 +2,8 @@
 export const day = {
 	'day.title': 'Day',
 	'day.titleNumber': 'Day {number}',
+	'day.endDay': 'End day',
+	'day.endDayConfirm': 'End the day?',
 	'day.nightOrder': 'Night order',
 	'day.players': 'Players',
 	'day.seatButton': 'Seat: {name}',
