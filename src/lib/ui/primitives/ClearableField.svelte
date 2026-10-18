@@ -121,8 +121,9 @@
 		position: absolute;
 		inset: min(0%, calc((100% - var(--tap-target)) / 2)) 0;
 	}
+	/* No hover box: it painted over the field's focus glow (Trevor, 2026-10-18). */
 	.clear:hover:not(:disabled) {
-		background: var(--surface-selected);
+		color: var(--heading);
 	}
 	.clear:disabled {
 		opacity: 0.35;

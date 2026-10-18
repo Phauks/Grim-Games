@@ -19,9 +19,11 @@
 		version?: string;
 		/** False where the page already shows the author and version (the /play header). */
 		byline?: boolean;
+		/** Characters on seats, in a game: Travellers and Jinxes start closed when none plays. */
+		inPlay?: readonly string[];
 	}
 
-	let { script, players, version, byline = true }: Props = $props();
+	let { script, players, version, byline = true, inPlay }: Props = $props();
 
 	$effect(() => {
 		if (!officialData.current) void loadOfficialData();
@@ -33,7 +35,7 @@
 
 {#if data}
 	{#if byline}<ScriptByline author={script.meta.author} {version} />{/if}
-	<ScriptSheet {characters} {jinxes} {players} />
+	<ScriptSheet {characters} {jinxes} {players} {inPlay} />
 {:else}
 	<p class="muted">{t('player.loading')}</p>
 {/if}
