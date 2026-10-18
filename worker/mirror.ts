@@ -3,7 +3,7 @@
  * official site's custom scripts, the Carousel Script Collection and the Script World Cups.
  * A scheduled job refreshes every copy each night (`refreshAll`); a source whose copy is
  * over a day old (or missing, as in a new Worker Preview, which runs no schedule) is
- * refreshed when someone asks for it. A refresh that fails keeps the last good copy, so a
+ * refreshed when someone asks for it, after they are answered from the old copy. A refresh that fails keeps the last good copy, so a
  * site changing or going down never empties a source. One SQLite Durable Object holds them.
  */
 import { DurableObject } from 'cloudflare:workers';
@@ -98,15 +98,26 @@ async function refresh(
 	}
 }
 
-/** The route's answer from our copy, refreshing it first when it is due. */
-export async function serveMirrored(env: MirrorEnv, source: MirroredSource): Promise<Response> {
+/**
+ * The route's answer from our copy. A copy that is due is refreshed after answering, so
+ * nobody waits on the sites (fetching the Carousel's files can outlast the page's patience);
+ * only the very first ask, with nothing stored yet, waits for the fetch.
+ */
+export async function serveMirrored(
+	env: MirrorEnv,
+	ctx: Pick<ExecutionContext, 'waitUntil'>,
+	source: MirroredSource
+): Promise<Response> {
 	const old = await mirror(env).read(source.id);
 	const now = Date.now();
 	const due =
 		!old ||
 		now - old.checkedAt > (old.problem ? RETRY_MS : DAY_MS) ||
 		now - old.fetchedAt > DAY_MS * 2;
-	const { snapshot, problem } = due ? await refresh(env, source, old) : { snapshot: old };
+	let snapshot = old;
+	let problem: string | undefined;
+	if (!old) ({ snapshot, problem } = await refresh(env, source, old));
+	else if (due) ctx.waitUntil(refresh(env, source, old));
 	if (!snapshot) {
 		// Never cached: nothing to show yet, and the next ask should try again.
 		return Response.json(
