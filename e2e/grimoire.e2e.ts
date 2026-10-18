@@ -1732,6 +1732,11 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	for (let i = 0; i < 30 && !(await last.evaluate(inView)); i++) await page.mouse.wheel(0, 600);
 	await expect(last).toBeInViewport();
 	expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+	// The same Script and Night tabs as players' /play, without their private Notes (Trevor,
+	// 2026-10-18: what the Storyteller sees is what players get).
+	await expect(sheet.getByRole('tab')).toHaveText(['Script', 'Night']);
+	await sheet.getByRole('tab', { name: 'Night' }).tap();
+	await expect(sheet.locator('section[data-night="first"] li[data-step="empath"]')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	// Arrange seats moved into More to make room.
