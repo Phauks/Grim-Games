@@ -112,7 +112,18 @@
 			<li>
 				Your sign-in sessions: a random token, stored only as a hash, with a short device
 				description such as "Chrome on Android" and when the session was created and last used. A
-				session ends when you sign out, or after 180 days unused.
+				session ends when you sign out, or after 180 days unused. "Remember me" keeps you signed in
+				on that device; without it, the session ends when the browser closes, or after 12 hours
+				unused.
+			</li>
+			<li>
+				Your password, only if you choose to set one (passwords are optional; a sign-in code always
+				works). It is stored only as a salted PBKDF2-SHA256 hash, never as the password itself.
+				After 10 wrong passwords for one address in an hour, that address has to wait or use a code.
+			</li>
+			<li>
+				Your profile icon, if you choose one: only the id of an official character (such as "imp"),
+				never an image.
 			</li>
 			<li>
 				Your scripts: every script you add while signed in, and, the first time you sign in on a
@@ -192,14 +203,16 @@
 			</li>
 			<li>
 				<strong>Other script and character lists.</strong> For the Official custom scripts, the Carousel
-				Script Collection and the BotC Homebrew Wiki, our server reads bloodontheclocktower.com, the collection's
-				Google Doc and the files it links on Google Drive, and botchomebrew.wiki, and keeps the answers
-				for up to a day. Those sites see our server, not you, and nothing about you is sent.
+				Script Collection, the BotC Homebrew Wiki and Bloodstar Clocktica, our server reads bloodontheclocktower.com,
+				the collection's Google Doc and the files it links on Google Drive, botchomebrew.wiki and bloodstar.clocktica.com,
+				and keeps the answers for up to a day. Bloodstar links you paste are read the same way. Those
+				sites see our server, not you, and nothing about you is sent.
 			</li>
 			<li>
 				<strong>A link you load a script from.</strong> "Load from a link" downloads the script straight
-				from the site you name (without cookies), so that site sees your request like any page visit.
-				Pasted and uploaded scripts never leave your device unless you share them.
+				from the site you name (without cookies), so that site sees your request like any page visit (BotC
+				Scripts and Bloodstar links go through our server instead, as above). Pasted and uploaded scripts
+				never leave your device unless you share them.
 			</li>
 			<li>
 				<strong>Homebrew images.</strong> A homebrew script's character images load from the sites the

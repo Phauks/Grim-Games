@@ -1,8 +1,8 @@
 /**
- * Dragged column widths, one set per table, remembered on this device only (like the
+ * Dragged column widths and hidden columns, one set per table, remembered on this device only (like the
  * Reference table's sort). Storage can be missing or throw; then widths last until reload.
  */
-import { parseWidths, type ColumnWidths } from '#lib/ui/table/column-widths.ts';
+import { parseHidden, parseWidths, type ColumnWidths } from '#lib/ui/table/column-widths.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 const PREFIX = 'grim-games:table-widths:';
@@ -41,5 +41,32 @@ export class TableWidths {
 		// If not remembered, the widths still apply until the page is closed.
 		const empty = Object.keys(this.#widths).length === 0;
 		writeStored(PREFIX + this.#table, empty ? undefined : this.#widths);
+	}
+}
+
+const HIDDEN_PREFIX = 'grim-games:table-hidden:';
+
+/** Columns a person hid from one table, remembered on this device like its widths. */
+export class HiddenColumns {
+	readonly #table: string;
+	#hidden = $state<readonly string[]>([]);
+
+	constructor(table: string) {
+		this.#table = table;
+		this.#hidden = parseHidden(readStored(HIDDEN_PREFIX + table));
+	}
+
+	has(column: string): boolean {
+		return this.#hidden.includes(column);
+	}
+
+	get count(): number {
+		return this.#hidden.length;
+	}
+
+	set(column: string, hidden: boolean): void {
+		const rest = this.#hidden.filter((id) => id !== column);
+		this.#hidden = hidden ? [...rest, column] : rest;
+		writeStored(HIDDEN_PREFIX + this.#table, this.#hidden.length ? this.#hidden : undefined);
 	}
 }

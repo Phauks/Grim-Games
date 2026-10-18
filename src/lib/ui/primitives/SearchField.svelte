@@ -123,6 +123,9 @@
 		background: none;
 		color: inherit;
 		font: inherit;
+		/* What is typed (and the placeholder) is text, not a label: never the label font's
+		   capitals (Trevor, 2026-10-18). */
+		font-family: var(--font-body);
 		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	/* Weighted past the app-wide field ring (base.css), which otherwise drew a square ring

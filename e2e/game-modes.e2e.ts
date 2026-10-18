@@ -592,7 +592,7 @@ test('Flesh and Bone runs a campaign: the next game adds a Demon once the curren
 	// Every version of the living script is in the Library (Trevor, 2026-10-18).
 	await page.goto('/library');
 	await page.getByTestId('library-sidebar').getByRole('button', { name: 'Campaigns' }).tap();
-	const campaigns = page.getByTestId('library-campaigns').locator('li');
+	const campaigns = page.getByTestId('library-campaigns').locator('tbody tr');
 	await expect(campaigns).toHaveCount(1);
 	await expect(campaigns.first()).toContainText('Flesh and Bone');
 	await expect(campaigns.first()).toContainText('2 versions');
@@ -634,8 +634,11 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 
 	await page.goto(`/grimoire/${gameId}/room`);
-	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	// Read the code once the room is open: before that the share code isn't the room's yet.
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const shareCode = page.getByTestId('share-code');
+	await expect(shareCode).toHaveText(/^\s*\d{3}\s?\d{3}\s*$/);
+	const code = (await shareCode.textContent())!.replace(/\s/g, '');
 
 	// Specters opens over the board from the Game mode menu (Trevor, 2026-10-18: the grimoire
 	// stays in reach). Before setup the corner has no room for the name, so ⋯ has it too.

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
 	describeDevice,
+	checkPassword,
+	cleanEmail,
 	normaliseCode,
 	normaliseEmail,
+	normaliseIcon,
 	normaliseUsername,
 	readSignInHash,
 	signInHash,
@@ -16,6 +19,19 @@ describe('account protocol', () => {
 		expect(normaliseEmail('a@b')).toBeUndefined();
 		expect(normaliseEmail(`${'a'.repeat(250)}@b.co`)).toBeUndefined();
 		expect(normaliseEmail(42)).toBeUndefined();
+	});
+
+	it('keeps an address as typed for showing, and compares it lower-cased', () => {
+		expect(cleanEmail('  Trevor@Example.COM ')).toBe('Trevor@Example.COM');
+		expect(normaliseEmail(cleanEmail('Trevor@Example.COM'))).toBe('trevor@example.com');
+		expect(cleanEmail('not an email')).toBeUndefined();
+	});
+
+	it('takes passwords of 10 to 200 characters exactly as typed', () => {
+		expect(checkPassword(' correct horse ')).toBe(' correct horse ');
+		expect(checkPassword('short')).toBeUndefined();
+		expect(checkPassword('x'.repeat(201))).toBeUndefined();
+		expect(checkPassword(12345678901)).toBeUndefined();
 	});
 
 	it('reads typed codes, ignoring spaces and dashes', () => {
@@ -35,6 +51,14 @@ describe('account protocol', () => {
 		expect(normaliseUsername('trаvor')).toBeUndefined();
 		expect(normaliseUsername(7)).toBeUndefined();
 		expect(usernameKey('Trevor_G')).toBe(usernameKey('trevor_g'));
+	});
+
+	it('accepts a character id or null as the profile icon, nothing else', () => {
+		expect(normaliseIcon('fortune_teller')).toBe('fortune_teller');
+		expect(normaliseIcon(null)).toBeNull();
+		for (const bad of ['', 'Imp', 'https://example.com/a.png', 'a'.repeat(41), 7, undefined]) {
+			expect(normaliseIcon(bad)).toBeUndefined();
+		}
 	});
 
 	it('puts the sign-in token in the URL hash and reads it back', () => {

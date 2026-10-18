@@ -92,7 +92,8 @@ const ENTITIES: Record<string, string> = {
 	'#39': "'"
 };
 
-function decodeEntities(text: string): string {
+/** HTML entities in page text (`&amp;`, `&#39;`), decoded; shared with the collection doc reader. */
+export function decodeEntities(text: string): string {
 	return text.replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (whole, name: string) => {
 		const known = ENTITIES[name.toLowerCase()];
 		if (known) return known;

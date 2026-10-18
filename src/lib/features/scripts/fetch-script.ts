@@ -13,6 +13,7 @@ import {
 	type BotcScriptsRef,
 	type BotcScriptsSearchPage
 } from './botcscripts-api.ts';
+import { bloodstarPage, bloodstarScriptPath, type BloodstarScript } from './bloodstar-api.ts';
 import { homebrewScriptPage, homebrewScriptPath } from './homebrew-scripts-api.ts';
 import type { ScriptSource } from './saved-scripts.ts';
 import type { LinkTarget } from './script-links.ts';
@@ -112,6 +113,29 @@ export async function fetchHomebrewScript(slug: string): Promise<FetchedScript> 
 	return { text, source: { kind: 'link', url: page, page } };
 }
 
+/**
+ * One Bloodstar Clocktica script, through our Worker (the site sends no CORS headers). Saved
+ * with the site's new address, so a link from its old one keeps working.
+ */
+export async function fetchBloodstarScript(script: BloodstarScript): Promise<FetchedScript> {
+	const page = bloodstarPage(script);
+	let response: Response;
+	try {
+		response = await fetch(bloodstarScriptPath(script), { signal: withTimeout() });
+	} catch {
+		throw new ScriptFetchError(
+			navigator.onLine === false ? t('scripts.error.offline') : t('scripts.error.blocked'),
+			page
+		);
+	}
+	if (!response.ok) {
+		throw new ScriptFetchError(t('scripts.error.http', { status: response.status }), page);
+	}
+	const text = await response.text();
+	if (text.length > MAX_SCRIPT_BYTES) throw tooLarge();
+	return { text, source: { kind: 'link', url: page, page } };
+}
+
 /** Loads whatever `resolveLink` decided. */
 export function fetchLinkTarget(target: LinkTarget, typed: string): Promise<FetchedScript> {
 	switch (target.kind) {
@@ -119,6 +143,8 @@ export function fetchLinkTarget(target: LinkTarget, typed: string): Promise<Fetc
 			return Promise.reject(new ScriptFetchError(target.message));
 		case 'botcscripts':
 			return fetchBotcScripts(target.ref);
+		case 'bloodstar':
+			return fetchBloodstarScript(target.script);
 		case 'scripttool':
 			return decodeScriptToolPayload(target.payload).then(
 				(text) => ({ text, source: { kind: 'link', url: target.url } }),

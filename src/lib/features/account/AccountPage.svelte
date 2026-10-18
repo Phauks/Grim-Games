@@ -1,18 +1,28 @@
 <script lang="ts">
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { onMount } from 'svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { copyText } from '#lib/ui/clipboard.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import { accountApi, EXPORT_PATH } from './account-api.ts';
+	import { downloadJson } from '#lib/ui/download.ts';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
+	import { accountApi } from './account-api.ts';
 	import { account } from './account.svelte.ts';
 	import { readSignInHash, type DeviceSession } from './account-protocol.ts';
 	import ChangeEmailDialog from './ChangeEmailDialog.svelte';
-	import ProfileScripts from './ProfileScripts.svelte';
+	import { exportFileName } from './export-file.ts';
+	import PasswordDialog from './PasswordDialog.svelte';
+	import ProfileIcon from './ProfileIcon.svelte';
+	import ProfileIconDialog from './ProfileIconDialog.svelte';
+	// Scripts are shown in the Library now, but signing in here still saves the device's
+	// scripts to the profile, which this module does when the user changes.
+	import './profile-scripts.svelte.ts';
 	import SignInForm from './SignInForm.svelte';
 	import { startAccount } from './start.ts';
 	import UsernameDialog from './UsernameDialog.svelte';
@@ -21,8 +31,53 @@
 	let sessions = $state.raw<DeviceSession[] | undefined>(undefined);
 	let sessionsError = $state('');
 	let confirmDelete = $state(false);
+	/**
+	 * Deleting needs the account ID typed out (Trevor, 2026-10-18), ignoring case and spaces
+	 * around it; older accounts' long ids can be pasted from the ID row's copy button.
+	 */
+	let typed = $state('');
+	const deletePhrase = $derived(account.user?.id ?? '');
+	const deleteTyped = $derived(
+		deletePhrase !== '' && typed.trim().toLowerCase() === deletePhrase.toLowerCase()
+	);
+
+	type DeviceColumn = 'device' | 'signedIn' | 'lastUsed' | 'signOut';
+	const deviceName = (session: DeviceSession) =>
+		session.current ? t('account.devices.thisDevice', { device: session.device }) : session.device;
+	const deviceColumns = $derived<DataColumn<DeviceColumn, DeviceSession>[]>([
+		{
+			id: 'device',
+			label: t('account.devices.device'),
+			rowHeader: true,
+			value: deviceName
+		},
+		{
+			id: 'signedIn',
+			label: t('account.devices.signedIn'),
+			width: 'calc(8 * var(--u))',
+			value: (session) => date(session.createdAt)
+		},
+		{
+			id: 'lastUsed',
+			label: t('account.devices.lastUsedColumn'),
+			width: 'calc(8 * var(--u))',
+			value: (session) => date(session.lastSeenAt)
+		},
+		{
+			id: 'signOut',
+			label: t('account.signOut'),
+			hideLabel: true,
+			flush: true,
+			fixed: true,
+			alwaysShown: true,
+			width: 'var(--tap-target)',
+			noFilter: "Each row's sign-out button."
+		}
+	]);
 	let editUsername = $state(false);
 	let editEmail = $state(false);
+	let editPassword = $state(false);
+	let editIcon = $state(false);
 	let busy = $state(false);
 
 	const date = (ms: number) => intl.date(ms);
@@ -100,6 +155,18 @@
 			await loadSessions();
 		});
 
+	const download = () =>
+		act(async () => {
+			const user = account.user;
+			if (!user) return;
+			downloadJson(exportFileName(user, new Date()), await accountApi.exportData());
+		});
+
+	function askDelete(): void {
+		typed = '';
+		confirmDelete = true;
+	}
+
 	const deleteAccount = () =>
 		act(async () => {
 			await accountApi.deleteAccount();
@@ -117,6 +184,14 @@
 				<h2 id="you">{t('account.you.title')}</h2>
 				<!-- The account is its own id: the username and email can change at any time. -->
 				<dl>
+					<dt>{t('account.you.icon')}</dt>
+					<dd><span class="icon"><ProfileIcon icon={account.user.icon} /></span></dd>
+					<IconButton
+						icon="rename"
+						label={t('account.icon.title')}
+						onclick={() => (editIcon = true)}
+						disabled={busy}
+					/>
 					<dt>{t('account.you.username')}</dt>
 					<dd data-testid="account-username">{account.user.username ?? t('common.none')}</dd>
 					<IconButton
@@ -133,6 +208,26 @@
 						onclick={() => (editEmail = true)}
 						disabled={busy || account.delivery === 'unavailable'}
 					/>
+					<dt>{t('account.you.password')}</dt>
+					<dd data-testid="account-password">
+						{account.user.hasPassword ? t('account.you.passwordSet') : t('common.none')}
+					</dd>
+					<IconButton
+						icon="rename"
+						label={t('account.password.title')}
+						onclick={() => (editPassword = true)}
+						disabled={busy}
+					/>
+					<!-- The account's own id: never changes, so it can't be edited. -->
+					<dt>{t('account.you.id')}</dt>
+					<dd data-testid="account-id">{account.user.id}</dd>
+					<IconButton
+						icon="copy"
+						label={t('account.you.copyId')}
+						onclick={() =>
+							account.user &&
+							copyText(account.user.id, { failed: [t('account.you.copyIdFailed')] })}
+					/>
 					<dt>{t('account.you.since')}</dt>
 					<dd>{date(account.user.createdAt)}</dd>
 				</dl>
@@ -141,33 +236,38 @@
 				</div>
 			</section>
 
-			<section aria-labelledby="scripts">
-				<h2 id="scripts">{t('account.scripts.title')}</h2>
-				<ProfileScripts />
-			</section>
-
 			<section aria-labelledby="devices">
 				<h2 id="devices">{t('account.devices.title')}</h2>
 				{#if sessionsError}
 					<p class="muted">{sessionsError}</p>
 				{:else if sessions}
-					<ul class="devices">
-						{#each sessions as session (session.id)}
-							<li>
-								<span>
-									{session.current
-										? t('account.devices.thisDevice', { device: session.device })
-										: session.device}
-									<small>{t('account.devices.lastUsed', { date: date(session.lastSeenAt) })}</small>
-								</span>
-								<Button
-									variant="quiet"
+					<DataTable
+						label={t('account.devices.title')}
+						columns={deviceColumns}
+						rows={sessions}
+						key={(session) => session.id}
+						narrow="stack"
+						fit="container"
+						hideKey="account-devices"
+						rowSelected={(session) => session.current}
+						testid="devices-table"
+					>
+						{#snippet cell(session, column)}
+							{#if column.id === 'device'}
+								{deviceName(session)}
+							{:else if column.id === 'signedIn'}
+								{date(session.createdAt)}
+							{:else if column.id === 'lastUsed'}
+								{date(session.lastSeenAt)}
+							{:else}
+								<DeleteButton
+									label={t('account.devices.signOutDevice', { device: deviceName(session) })}
 									onclick={() => endSession(session.id)}
-									disabled={busy || session.current}>{t('account.signOut')}</Button
-								>
-							</li>
-						{/each}
-					</ul>
+									disabled={busy || session.current}
+								/>
+							{/if}
+						{/snippet}
+					</DataTable>
 					<div class="buttons">
 						<Button variant="quiet" onclick={endOthers} disabled={busy || sessions.length < 2}
 							>{t('account.devices.signOutOthers')}</Button
@@ -181,10 +281,13 @@
 			<section aria-labelledby="data">
 				<h2 id="data">{t('account.data.title')}</h2>
 				<div class="buttons start">
-					<Button variant="quiet" onclick={() => location.assign(EXPORT_PATH)}
+					<Button variant="quiet" onclick={download} disabled={busy}
 						>{t('account.data.download')}</Button
 					>
-					<DeleteButton label={t('account.data.delete')} onclick={() => (confirmDelete = true)} />
+					<!-- eslint-disable-next-line grim/delete-button -- Trevor 2026-10-18: account deletion is a labelled button, it is so high-impact -->
+					<Button variant="danger" icon="remove" onclick={askDelete} disabled={busy}
+						>{t('account.data.delete')}</Button
+					>
 				</div>
 			</section>
 		{:else}
@@ -206,15 +309,34 @@
 
 <UsernameDialog bind:open={editUsername} />
 <ChangeEmailDialog bind:open={editEmail} />
+<PasswordDialog bind:open={editPassword} />
+<ProfileIconDialog bind:open={editIcon} />
 
 <ConfirmDialog
 	bind:open={confirmDelete}
 	title={t('account.data.confirmTitle')}
 	danger
-	disabled={busy}
+	disabled={busy || !deleteTyped}
 	onConfirm={deleteAccount}
 >
 	<p>{t('account.data.confirmText')}</p>
+	<!-- The phrase on its own line, in plain text: field labels are set in capitals. -->
+	<p class="phrase-intro">{t('account.data.typeBelow')}</p>
+	<p class="phrase">{deletePhrase}</p>
+	<TextField
+		plain
+		hideLabel
+		label={t('account.data.typeToConfirm', { phrase: deletePhrase })}
+		bind:value={typed}
+		autocomplete="off"
+		spellcheck={false}
+		disabled={busy}
+		oncommit={() => {
+			if (!deleteTyped) return false;
+			confirmDelete = false;
+			void deleteAccount();
+		}}
+	/>
 </ConfirmDialog>
 
 <style>
@@ -245,9 +367,13 @@
 		grid-column: 2 / -1;
 	}
 	dt,
-	.muted,
-	small {
+	.muted {
 		color: var(--on-surface-muted);
+	}
+	/* What people read and type exactly, in the plain account font (Trevor, 2026-10-18). */
+	dd,
+	.phrase {
+		font-family: var(--font-account);
 	}
 	dd {
 		margin: 0;
@@ -255,6 +381,11 @@
 	}
 	.muted {
 		margin: 0;
+	}
+	.icon {
+		display: grid;
+		width: var(--tap-target);
+		height: var(--tap-target);
 	}
 	.buttons {
 		display: flex;
@@ -265,20 +396,12 @@
 	.buttons.start {
 		justify-content: flex-start;
 	}
-	.devices {
-		list-style: none;
+	.phrase-intro {
+		margin: var(--space-2) 0 0;
+	}
+	.phrase {
 		margin: 0 0 var(--space-2);
-		padding: 0;
-		display: grid;
-		gap: var(--space-1);
-	}
-	.devices li {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-	}
-	.devices small {
-		display: block;
+		font-weight: bold;
+		overflow-wrap: anywhere;
 	}
 </style>

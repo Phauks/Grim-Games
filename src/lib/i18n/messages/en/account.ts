@@ -5,7 +5,8 @@ export const account = {
 	'account.pageTitle': `Account · ${APP_NAME}`,
 	'account.title': 'Account',
 	'account.button': 'Account',
-	'account.buttonSignedIn': 'Account: signed in as {email}',
+	'account.buttonSignedIn': 'Account: signed in as {name}',
+	'account.settings': 'Account settings',
 
 	'account.signIn.title': 'Sign in',
 	'account.signIn.intro':
@@ -14,7 +15,15 @@ export const account = {
 	'account.signIn.offline': 'You are offline. Connect to sign in.',
 	'account.signIn.email': 'Email address',
 	'account.signIn.unavailable': 'Signing in is not available yet on this site.',
-	'account.signIn.howItWorks': 'We email you a {length}-digit code. No password.',
+	'account.signIn.howItWorks':
+		'No password, or forgot it? We can email you a {length}-digit code instead. New here? Create account.',
+	'account.signIn.password': 'Password',
+	'account.signIn.remember': 'Remember me',
+	'account.signIn.emailCode': 'Email me a code',
+	'account.signIn.create': 'Create account',
+	'account.signIn.badPassword': 'A password is {min} to {max} characters.',
+	'account.signIn.checkEmailCreate':
+		'Check your email and type the code here to finish. It works for 10 minutes.',
 	'account.signIn.sendCode': 'Send code',
 	'account.signIn.codeSentTo': 'Code sent to {email}',
 	'account.signIn.previewCode': 'Preview build: no email is sent. Your code is {code}.',
@@ -27,10 +36,22 @@ export const account = {
 	'account.signIn.linkFailed': "This sign-in link didn't work: {reason}",
 	'account.signIn.done': 'Signed in as {email}',
 
-	'account.you.title': 'Signed in',
+	'account.you.title': 'Account settings',
 	'account.you.username': 'Username',
 	'account.you.email': 'Email',
+	'account.you.id': 'Account ID',
+	'account.you.copyId': 'Copy account ID',
+	'account.you.copyIdFailed': 'The account ID could not be copied',
 	'account.you.since': 'Since',
+	'account.you.password': 'Password',
+	'account.you.icon': 'Icon',
+	'account.icon.title': 'Change icon',
+	'account.you.passwordSet': 'Set',
+	'account.password.title': 'Set password',
+	'account.password.label': 'New password',
+	'account.password.rules':
+		'{min} to {max} characters. Your other devices are signed out. You can always sign in with an emailed code instead.',
+	'account.password.saved': 'Your password is set',
 	'account.username.title': 'Change username',
 	'account.username.label': 'Username',
 	'account.username.rules': '{min} to {max} letters A-Z, digits, dots, dashes or underscores.',
@@ -48,7 +69,10 @@ export const account = {
 
 	'account.devices.title': 'Signed-in devices',
 	'account.devices.thisDevice': '{device} (this device)',
-	'account.devices.lastUsed': 'Last used {date}',
+	'account.devices.device': 'Device',
+	'account.devices.signedIn': 'Signed in',
+	'account.devices.lastUsedColumn': 'Last used',
+	'account.devices.signOutDevice': 'Sign out {device}',
 	'account.devices.signOutOthers': 'Sign out other devices',
 
 	'account.data.title': 'Your data',
@@ -57,6 +81,8 @@ export const account = {
 	'account.data.confirmTitle': 'Delete your account?',
 	'account.data.confirmText':
 		"This deletes your account and every script saved to your profile, and signs out all your devices. Scripts and games saved on this device stay here. This can't be undone.",
+	'account.data.typeBelow': 'To confirm, type:',
+	'account.data.typeToConfirm': 'Type {phrase} to confirm',
 	'account.data.keep': 'Keep my account',
 	'account.data.deleted': 'Your account and all its data were deleted',
 

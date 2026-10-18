@@ -1,8 +1,9 @@
 /**
  * How the board looks on this device, for every game (Trevor, 2026-10-17), shown beside the
  * background where it takes effect and in Settings:
- * - the vignette, the soft dark oval behind the script's name over a background, which keeps
- *   the words readable, and how dark it is;
+ * - the vignette, which darkens a background image towards the board's edges (Trevor,
+ *   2026-10-18: the old oval behind the script's name was too faint to notice once the name
+ *   moved to the corner), and how dark it is;
  * - where the Fabled and Loric sit (large in the middle, or small in the top left corner) and
  *   whether they are grouped as one stack (Trevor, 2026-10-17: two choices);
  * - how big each seat's player name badge is;
@@ -10,7 +11,7 @@
  */
 export interface BoardLooks {
 	vignette: boolean;
-	/** How dark the vignette's middle is, 0 to 1. */
+	/** How dark the vignette's edges are, 0 to 1. */
 	vignetteStrength: number;
 	rulesAt: 'middle' | 'edge';
 	/** The Fabled and Loric as one stack that lists them all when tapped. */

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Alignment, Character, CharacterType, ReminderLabel } from '#lib/core/data/index.ts';
 	import { iconUrl } from './icon-url.ts';
 
@@ -28,8 +27,6 @@
 		done?: boolean;
 		/** How many of this token the character has, shown as ×count when more than one. */
 		count?: number;
-		/** Placed at setup: a flower mark, with this as its accessible label (Reference). */
-		setup?: string;
 	}
 
 	let {
@@ -40,8 +37,7 @@
 		title,
 		variant = 'reminder',
 		done = false,
-		count = 1,
-		setup
+		count = 1
 	}: Props = $props();
 
 	const type = $derived(given ?? character?.type);
@@ -62,12 +58,9 @@
 	data-icon={icon ? '' : undefined}
 	title={title ?? character?.name}
 	>{#if icon}<img class="owner" src={icon} alt="" />{/if}{label ??
-		t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span>{/if}{#if setup}<span
-			class="setup"
-			role="img"
-			aria-label={setup}
-			title={setup}><Icon name="setup" /></span
-		>{/if}{#if done}<span class="tick" aria-label={t('characters.reminderPlaced')}>✓</span
+		t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span>{/if}{#if done}<span
+			class="tick"
+			aria-label={t('characters.reminderPlaced')}>✓</span
 		>{/if}</span
 >
 
@@ -93,8 +86,8 @@
 		 * the display font in small capitals. Never smaller than 0.8rem, which follows Text size.
 		 */
 		font-family: var(--font-reminder);
-		/* The user's Reminder size (--reminder-scale, Settings) scales it. */
-		font-size: calc(max(0.85em, 0.8rem) * var(--reminder-scale, 1));
+		/* The user's Reminder size in text (--inline-reminder-scale, Settings) scales it. */
+		font-size: calc(max(0.85em, 0.8rem) * var(--inline-reminder-scale, 1));
 		font-weight: 600;
 		line-height: 1.4;
 		/* One line, unless the chip alone is wider than its line (tiny screen, largest text). */
@@ -119,10 +112,12 @@
 	.reminder[data-icon] {
 		padding-left: 0.1em;
 	}
+	/* Settings > Tokens can show the dot instead of the icon. */
 	.reminder[data-icon]::before {
-		display: none;
+		display: var(--inline-reminder-dot, none);
 	}
 	.owner {
+		display: var(--inline-reminder-owner, inline);
 		flex: none;
 		width: 1.5em;
 		height: 1.5em;
@@ -168,10 +163,6 @@
 	}
 	.count {
 		font-variant-numeric: tabular-nums;
-	}
-	.setup {
-		display: inline-flex;
-		color: var(--on-reminder);
 	}
 	.tick {
 		margin-left: 0.15em;

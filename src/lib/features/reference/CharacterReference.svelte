@@ -10,6 +10,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import CharacterTable from './CharacterTable.svelte';
+	import ViewToggle from './ViewToggle.svelte';
 	import { TYPE_PLURALS } from './labels.ts';
 	import ReferenceCard from './ReferenceCard.svelte';
 	import { referenceTable } from './table-state.svelte.ts';
@@ -37,17 +38,25 @@
 	const groups = $derived(groupByType(shown));
 	// The table's own column filters and sort apply on top of the search.
 	const rows = $derived(view === 'table' ? tableRows(shown, referenceTable.current) : []);
-	const filters = $derived(activeFilterCount(referenceTable.current.filters));
+	// The shared table also filters the columns Reference has no filter of its own for.
+	let columnFilters = $state({});
+	let tableShown = $state(0);
+	const filters = $derived(
+		activeFilterCount(referenceTable.current.filters) + Object.keys(columnFilters).length
+	);
 </script>
 
 <div class="controls">
 	<!-- On a computer, "/" jumps to the search field and Esc clears it. -->
-	<SearchField
-		bind:value={search}
-		label={t('reference.searchLabel')}
-		placeholder={t('reference.searchPlaceholder')}
-		shortcut
-	/>
+	<div class="search-line">
+		<SearchField
+			bind:value={search}
+			label={t('reference.searchLabel')}
+			placeholder={t('reference.searchPlaceholder')}
+			shortcut
+		/>
+		<ViewToggle />
+	</div>
 	{#if view === 'cards'}
 		<p class="count" aria-live="polite">
 			{t('reference.count', { shown: shown.length, count: entries.length })}
@@ -57,7 +66,7 @@
 		<div class="table-count">
 			<p class="count" aria-live="polite" data-testid="table-count">
 				{t('reference.tableCount', {
-					shown: rows.length,
+					shown: tableShown,
 					total: entries.length,
 					filters:
 						filters === 0 ? t('reference.noFilters') : t('reference.filters', { count: filters })
@@ -68,14 +77,22 @@
 				icon="close"
 				label={t('reference.clearFilters')}
 				disabled={filters === 0}
-				onclick={() => referenceTable.clearFilters()}
+				onclick={() => {
+					referenceTable.clearFilters();
+					columnFilters = {};
+				}}
 			/>
 		</div>
 	{/if}
 </div>
 
 {#if view === 'table'}
-	<CharacterTable {rows} onExplain={explain} />
+	<CharacterTable
+		{rows}
+		onExplain={explain}
+		bind:columnFilters
+		oncount={(count) => (tableShown = count)}
+	/>
 {:else}
 	{#each groups as group (group.type)}
 		<!-- Each character type folds away under its caret (Trevor, 2026-10-16); a search shows
@@ -131,6 +148,15 @@
 			grid-template-columns: minmax(0, calc(36 * var(--u))) auto;
 			align-items: center;
 		}
+	}
+	.search-line {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.search-line > :global(:first-child) {
+		flex: 1;
+		min-width: 0;
 	}
 	.table-count {
 		display: flex;

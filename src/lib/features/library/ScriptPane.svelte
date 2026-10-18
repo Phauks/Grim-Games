@@ -4,7 +4,10 @@
 
 	export interface ScriptRow {
 		key: string;
+		/** Shown by its Library name when renamed there. */
 		listing: ScriptListing;
+		/** The script's own name, from the script itself. */
+		ownName: string;
 		shareable: Shareable;
 	}
 </script>
@@ -15,6 +18,8 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
+	import { canBeOnline, type ProfileScript } from '#lib/features/account/profile-scripts.ts';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { loadScriptText, type GameData } from '#lib/core/data/index.ts';
@@ -35,6 +40,9 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ItemPane from './ItemPane.svelte';
 	import LabelRows from './LabelRows.svelte';
+	import NameDialog from './NameDialog.svelte';
+	import { MAX_ITEM_NAME } from './library-labels.ts';
+	import { libraryLabels } from './library-labels.svelte.ts';
 	import VariationChanges from './VariationChanges.svelte';
 
 	/**
@@ -98,6 +106,62 @@
 	});
 	let changesOpen = $state(false);
 
+	/**
+	 * The signed-in profile's copy, when it follows an online version: checking for and using a
+	 * newer version, and unlinking, live here since the Account page left scripts to the Library.
+	 */
+	const profileEntry = $derived.by(() => {
+		const identity = row.listing.identity;
+		if (!account.user || !identity) return undefined;
+		return profileScripts.list.find((e) => sameScript({ json: e.script.json }, identity));
+	});
+	const online = $derived(!!profileEntry?.script.online && canBeOnline(profileEntry.script.source));
+	let newer = $state.raw<ProfileScript>();
+	let busy = $state(false);
+	$effect.pre(() => {
+		void row.key;
+		newer = undefined;
+	});
+
+	async function profileAction(action: () => Promise<string | undefined>) {
+		busy = true;
+		try {
+			const said = await action();
+			if (said) toast(said);
+		} catch (e) {
+			toast(e instanceof Error ? e.message : String(e));
+		} finally {
+			busy = false;
+		}
+	}
+
+	const checkForUpdate = () =>
+		profileAction(async () => {
+			if (!profileEntry) return;
+			newer = await profileScripts.checkForUpdate(profileEntry);
+			return newer ? undefined : t('account.scripts.latest');
+		});
+	const useNewer = () =>
+		profileAction(async () => {
+			if (!profileEntry || !newer) return;
+			await profileScripts.applyUpdate(profileEntry, newer);
+			newer = undefined;
+			return t('account.scripts.updated');
+		});
+	const unlink = () =>
+		profileAction(async () => {
+			if (!profileEntry) return;
+			await profileScripts.unlink(profileEntry);
+			newer = undefined;
+			return t('account.scripts.unlinked');
+		});
+
+	let renaming = $state(false);
+	/** Its own name again clears the Library name. */
+	function rename(name: string) {
+		libraryLabels.setName(row.key, name.trim() === row.ownName ? '' : name);
+	}
+
 	let removing = $state(false);
 	async function remove() {
 		const identity = row.listing.identity;
@@ -135,6 +199,34 @@
 				onclick={() => void saveViewed()}
 			/>
 		{:else}
+			{#if online}
+				{#if newer}
+					<IconButton
+						icon="download"
+						label={t('account.scripts.update')}
+						disabled={busy}
+						onclick={() => void useNewer()}
+					/>
+				{:else}
+					<IconButton
+						icon="refresh"
+						label={t('account.scripts.check')}
+						disabled={busy}
+						onclick={() => void checkForUpdate()}
+					/>
+				{/if}
+				<IconButton
+					icon="unlink"
+					label={t('account.scripts.unlink')}
+					disabled={busy}
+					onclick={() => void unlink()}
+				/>
+			{/if}
+			<IconButton
+				icon="rename"
+				label={t('library.renameScript')}
+				onclick={() => (renaming = true)}
+			/>
 			<DeleteButton label={t('library.remove')} onclick={() => (removing = true)} />
 		{/if}
 	{/snippet}
@@ -145,7 +237,6 @@
 			share={row.listing.saved ? undefined : () => shareTargetFor(shareable, location.origin)}
 			labels={labelRows}
 			busy={saving}
-			actionsInTop
 			onshown={(listing) => (viewed = listing)}
 		>
 			{#snippet extraActions()}
@@ -171,6 +262,14 @@
 	{/if}
 	<LabelRows itemKey={row.key} />
 {/snippet}
+
+<NameDialog
+	bind:open={renaming}
+	title={t('library.renameScript')}
+	initial={row.listing.row.name}
+	maxlength={MAX_ITEM_NAME}
+	onsave={rename}
+/>
 
 <ConfirmDialog
 	bind:open={removing}

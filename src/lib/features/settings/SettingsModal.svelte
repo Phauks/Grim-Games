@@ -2,7 +2,9 @@
 	import { say, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import BackButton from '#lib/ui/primitives/BackButton.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { sectionLabel, settingsSections } from './registry.ts';
 	import './sections/index.ts';
 	import { settingsDialog } from './settings-dialog.svelte.ts';
@@ -15,6 +17,8 @@
 	// Each section opens at its top, not at the last section's scroll position (Trevor,
 	// 2026-10-16); the section list keeps its own scroll.
 	let content = $state<HTMLElement>();
+	let confirmReset = $state(false);
+	const activeLabel = $derived(active ? sectionLabel(active.label, say) : '');
 	$effect(() => {
 		void active?.id;
 		if (content) content.scrollTop = 0;
@@ -52,14 +56,35 @@
 							hideLabel
 							onclick={() => (settingsDialog.section = null)}
 						/>{/if}
-					<h2 id="settings-section-title">{sectionLabel(active.label, say)}</h2>
+					<h2 id="settings-section-title">{activeLabel}</h2>
 					{#if active.headingAction}<active.headingAction />{/if}
+					<!-- Resets this section only (Trevor, 2026-10-18), in the header like other item
+					     controls; red, and confirmed first. -->
+					{#if active.reset}<span class="reset-section"
+							><IconButton
+								icon="reset"
+								label={t('settings.resetSection', { section: activeLabel })}
+								onclick={() => (confirmReset = true)}
+							/></span
+						>{/if}
 				</div>
 				<active.component />
 			</section>
 		{/if}
 	</div>
 </Dialog>
+
+<ConfirmDialog
+	bind:open={confirmReset}
+	title={t('settings.resetSectionTitle', { section: activeLabel })}
+	danger
+	onConfirm={() => {
+		active?.reset?.();
+		confirmReset = false;
+	}}
+>
+	<p>{t('settings.resetSectionText')}</p>
+</ConfirmDialog>
 
 <style>
 	.layout {
@@ -146,8 +171,13 @@
 		background: var(--dialog-background);
 	}
 	h2 {
+		flex: 1;
+		min-width: 0;
 		margin: 0;
 		font-size: 1.2rem;
+	}
+	.reset-section :global(.icon-button) {
+		color: var(--evil);
 	}
 
 	/* Narrow screens: a two-step drill-in instead of side by side. */

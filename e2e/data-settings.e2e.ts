@@ -79,7 +79,8 @@ test('the Data section is a table of what is stored and its size, with Reset set
 		table.getByRole('checkbox', { name: 'Select Offline copy of the app' })
 	).toBeDisabled();
 	await expect(dialog.getByRole('button', { name: 'Clear selected' })).toBeDisabled();
-	await expect(dialog.getByRole('button', { name: 'Reset all' })).toBeVisible();
+	// Resets live in each section's header now (Trevor, 2026-10-18).
+	await expect(dialog.getByRole('button', { name: 'Reset all' })).toHaveCount(0);
 });
 
 test('clearing the selected rows asks first, then deletes only those', async ({ page }) => {

@@ -64,7 +64,8 @@ export function itemsShown<T extends LibraryItem>(
 export function folderSize(
 	items: readonly LibraryItem[],
 	state: LibraryLabels,
-	folder: string
+	/** The top level when undefined. */
+	folder: string | undefined
 ): number {
 	return (
 		state.folders.filter((f) => f.parent === folder).length +

@@ -366,7 +366,7 @@ test('each note can hide its contents until it is opened', async ({ page }) => {
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Player view' })
+		.getByRole('button', { name: 'Player', exact: true })
 		.tap();
 	await expect(settings.getByText('Hide note contents')).toHaveCount(0);
 });
@@ -408,7 +408,7 @@ test('the Script sheet can be made compact from Settings', async ({ page }) => {
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Player view' })
+		.getByRole('button', { name: 'Player', exact: true })
 		.tap();
 	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
 	await page.getByRole('option', { name: 'Super-compact', exact: true }).tap();
@@ -427,6 +427,13 @@ test('Print script prints the sheet, then the night order and player counts', as
 		window.print = () => {
 			const sheet = document.querySelector('[data-testid="print-sheet"]');
 			(window as unknown as { printed: string }).printed = sheet?.textContent ?? '';
+			// Each side fits one page (Trevor, 2026-10-18): front in one or two columns.
+			(window as unknown as { pages: unknown }).pages = [
+				...document.querySelectorAll<HTMLElement>('[data-testid="print-sheet"] .page')
+			].map((p) => ({
+				fits: p.scrollHeight <= p.clientHeight + 1,
+				columns: p.dataset.columns
+			}));
 		};
 	});
 	await page.getByRole('button', { name: 'Print script' }).tap();
@@ -439,6 +446,18 @@ test('Print script prints the sheet, then the night order and player counts', as
 	const printed = await page.evaluate(() => (window as unknown as { printed: string }).printed);
 	expect(printed).toContain('Washerwoman');
 	expect(printed).toContain('Other nights');
+	expect(printed).not.toContain('Not the first night');
+	// Paper is white to its edges: a dark theme's color-scheme would paint the margins black.
+	await page.emulateMedia({ media: 'print' });
+	expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe(
+		'light'
+	);
+	await page.emulateMedia({ media: 'screen' });
+	const pages = await page.evaluate(() => (window as unknown as { pages: unknown }).pages);
+	expect(pages).toEqual([
+		{ fits: true, columns: expect.stringMatching(/^[12]$/) },
+		{ fits: true, columns: undefined }
+	]);
 	// The page itself is unchanged.
 	await expect(page.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
 });

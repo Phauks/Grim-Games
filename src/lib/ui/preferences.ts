@@ -17,6 +17,7 @@ import {
 	type TokenAppearance
 } from '#lib/ui/token/token-appearance.ts';
 import type { Theme } from '#lib/ui/themes/types.ts';
+import { parseColors, type CustomColors } from '#lib/ui/themes/colors.ts';
 
 /**
  * Per-device look-and-feel preferences (04-architecture.md §9). Separate from game state
@@ -24,6 +25,8 @@ import type { Theme } from '#lib/ui/themes/types.ts';
  */
 export interface Preferences {
 	themeId: string;
+	/** Theme colours the user changed one by one; the rest come from the theme. */
+	colors: CustomColors;
 	/** The user's font for each role; a missing role uses the theme's font. */
 	fonts: Partial<Record<FontRole, FontId>>;
 	textScale: TextScale;
@@ -105,6 +108,7 @@ export type TextAlign = (typeof TEXT_ALIGNS)[number];
 
 export const DEFAULT_PREFERENCES: Preferences = {
 	themeId: DEFAULT_THEME_ID,
+	colors: {},
 	fonts: {},
 	textScale: 1,
 	iconScale: 1,
@@ -136,6 +140,7 @@ export function parsePreferences(raw: unknown): Preferences {
 	const iconScale = parseScale(input.iconScale, ICON_SCALE, DEFAULT_PREFERENCES.iconScale);
 	return {
 		themeId: isThemeId(input.themeId) ? input.themeId : DEFAULT_PREFERENCES.themeId,
+		colors: parseColors(input.colors),
 		fonts: parseFonts(input),
 		textScale: parseScale(input.textScale, TEXT_SCALE, DEFAULT_PREFERENCES.textScale),
 		iconScale,
@@ -186,6 +191,8 @@ function parseFonts(input: Record<string, unknown>): Preferences['fonts'] {
 		return fonts;
 	}
 	for (const role of FONT_ROLES) {
+		// The account role came later and stays plain unless picked for itself.
+		if (role === 'account') continue;
 		const legacy = LEGACY_DISPLAY_ROLES.includes(role) ? input.displayFont : input.textFont;
 		if (isFontFor(role, legacy)) fonts[role] = legacy;
 	}

@@ -88,6 +88,30 @@ test('an unknown address shows Page not found without reporting an error', async
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 });
 
+test('a bad address shows Page not found once, even while a newer build waits', async ({
+	page,
+	context
+}) => {
+	// A newer build is deployed while this device still runs the one its service worker holds
+	// (it changes only when the person taps Refresh). SvelteKit reloads a page that ends in an
+	// error when it sees a newer version, which here loaded the held build again: endlessly.
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+	await context.route('**/_app/version.json', (route) =>
+		route.fulfill({ json: { version: 'a newer build' } })
+	);
+	let loads = 0;
+	page.on('request', (request) => {
+		if (request.resourceType() === 'document') loads++;
+	});
+	await page.goto('/accoun');
+	await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+	await page.waitForTimeout(3000);
+	expect(loads).toBe(1);
+	await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+});
+
 test('if the app cannot start, a plain screen shows the error with Reload and Report', async ({
 	page
 }) => {
@@ -130,9 +154,9 @@ test('Diagnostics gathers build, device and problems on the device, without game
 
 	await page.goto('/diagnostics');
 	const panel = page.getByTestId('diagnostics');
-	// A Settings section, which /diagnostics opens (Trevor, 2026-10-16).
+	// About's Advanced part, which /diagnostics opens (Trevor, 2026-10-18).
 	await expect(
-		page.getByRole('dialog', { name: 'Settings' }).getByRole('heading', { name: 'Diagnostics' })
+		page.getByRole('dialog', { name: 'Settings' }).getByRole('heading', { name: 'Advanced' })
 	).toBeVisible();
 	await expect(panel).toHaveAttribute('aria-busy', 'false');
 	for (const name of [
@@ -147,18 +171,19 @@ test('Diagnostics gathers build, device and problems on the device, without game
 		await expect(panel.getByRole('heading', { level: 2, name })).toBeVisible();
 	}
 	await expect(panel).toContainText('1 problem');
-	// Build values link to GitHub; times carry the time of day, not just the date.
-	await expect(panel.getByRole('link', { name: /^[0-9a-f]{7,}$/ })).toHaveAttribute(
-		'href',
-		/^https:\/\/github\.com\/Phauks\/Grim-Games\/commit\//
-	);
+	// The version and commit show once, in About above; times carry the time of day.
+	await expect(panel.locator('dt:text-is("Version")')).toHaveCount(0);
+	await expect(panel.getByRole('link', { name: /^[0-9a-f]{7,}$/ })).toHaveCount(0);
+	await expect(
+		page.getByRole('dialog', { name: 'Settings' }).getByRole('link', { name: /^[0-9a-f]{7,}$/ })
+	).toHaveAttribute('href', /^https:\/\/github\.com\/Phauks\/Grim-Games\/commit\//);
 	await expect(panel.locator('dt:text-is("Gathered") + dd')).toHaveText(/\d{1,2}:\d{2}:\d{2}/);
 	await expect(panel.getByRole('link', { name: 'Manage data' })).toHaveCount(0);
 
-	// Refresh is an icon beside the section heading.
+	// Refresh is an icon beside the Advanced heading.
 	const heading = page
 		.getByRole('dialog', { name: 'Settings' })
-		.getByRole('heading', { name: 'Diagnostics' });
+		.getByRole('heading', { name: 'Advanced' });
 	const refresh = page
 		.getByRole('dialog', { name: 'Settings' })
 		.getByRole('button', { name: 'Refresh' });

@@ -61,5 +61,11 @@ describe('scriptVersion', () => {
 		expect(scriptVersion({ source: { kind: 'botcscripts', version: '' } })).toBeUndefined();
 		expect(scriptVersion({ source: { kind: 'edition' } })).toBeUndefined();
 		expect(scriptVersion(undefined)).toBeUndefined();
+		// A built script's own version (Trevor, 2026-10-18).
+		expect(scriptVersion({ source: { kind: 'built' } }, { version: '1.2' })).toBe('1.2');
+		expect(scriptVersion({ source: { kind: 'botcscripts', version: '3' } }, { version: '1' })).toBe(
+			'3'
+		);
+		expect(scriptVersion(undefined, { version: ' ' })).toBeUndefined();
 	});
 });
