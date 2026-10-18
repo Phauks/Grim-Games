@@ -197,6 +197,13 @@ export default defineConfig(
 		rules: { 'grim/delete-button': 'error' }
 	},
 	{
+		// Every close or clear X is the round IconButton (Trevor, 2026-10-18).
+		files: ['src/**/*.svelte'],
+		ignores: ['src/lib/ui/primitives/**', 'src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: { 'grim/close-button': 'error' }
+	},
+	{
 		// Decision modals end in Cancel and Confirm, bottom right (Trevor, 2026-10-17).
 		files: ['src/**/*.svelte'],
 		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],

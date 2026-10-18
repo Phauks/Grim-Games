@@ -1,5 +1,6 @@
 /** Grim-Games' own lint rules, as an ESLint plugin (`grim/...`). */
 import { clearableField } from './clearable-field.js';
+import { closeButton } from './close-button.js';
 import { confirmDialog } from './confirm-dialog.js';
 import { deleteButton } from './delete-button.js';
 import { dropdownChoice } from './dropdown-choice.js';
@@ -13,6 +14,7 @@ export default {
 		'confirm-dialog': confirmDialog,
 		'clearable-field': clearableField,
 		'delete-button': deleteButton,
+		'close-button': closeButton,
 		'modal-actions': modalActions,
 		'dropdown-choice': dropdownChoice,
 		'text-field': textField

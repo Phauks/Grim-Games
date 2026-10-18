@@ -55,6 +55,8 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import CharacterBuilderDialog from '#lib/features/character-builder/CharacterBuilderDialog.svelte';
+	import type { SavedCharacter } from '#lib/features/character-builder/saved-characters.ts';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import { scriptBuilderDraft as draft } from './draft.svelte.ts';
 	import { chosenHomebrew, isEmptyDraft, isTeensyville } from './draft.ts';
@@ -195,6 +197,27 @@
 	const chosenHomebrewCharacters = $derived(
 		built?.characters.filter((c) => built.homebrew.includes(c.id)) ?? []
 	);
+	/**
+	 * The Character builder opens over the Script builder (Trevor, 2026-10-18: "open that page
+	 * as a modal so we don't move away"): a new character goes on the script once saved, and an
+	 * edited one takes its old place.
+	 */
+	let builderOpen = $state(false);
+	let builderSavedId = $state<string>();
+	let builderReplaces = $state<CharacterId>();
+	/** The saved character a homebrew character on the script came from, if made here. */
+	const savedFor = (id: CharacterId) => savedCharacters.list.find((c) => c.entry.id === id);
+	function buildCharacter(savedId?: string, replaces?: CharacterId) {
+		builderSavedId = savedId;
+		builderReplaces = replaces;
+		builderOpen = true;
+	}
+	function builtCharacter(saved: SavedCharacter) {
+		const id = saved.entry.id as CharacterId;
+		if (builderReplaces) draft.replaceHomebrew(builderReplaces, id, saved.entry);
+		else if (!d.ids.includes(id)) draft.toggle(id, { entry: saved.entry });
+	}
+
 	/** Characters made in the Character builder on this device (Trevor, 2026-10-17). */
 	const mine = $derived.by(() => {
 		if (!data || savedCharacters.list.length === 0) return { characters: [], entries: {} };
@@ -472,6 +495,7 @@
 					>
 				{/if}
 			</div>
+			<Button onclick={() => buildCharacter()}>{t('character-builder.newCharacter')}</Button>
 			<p class="source-error" role="status" data-testid="homebrew-error">
 				{source === 'homebrew' ? homebrewError : ''}
 			</p>
@@ -567,9 +591,17 @@
 						<ul class="credits">
 							{#each chosenHomebrewCharacters as character (character.id)}
 								{@const credit = d.credits[character.id]}
+								{@const saved = savedFor(character.id)}
 								<li>
 									<CharacterBadge characterId={character.id} {character} inline />
 									<span class="creator">{credit?.creator || t('common.none')}</span>
+									{#if saved}
+										<IconButton
+											icon="buildCharacter"
+											label={t('character-builder.editCharacter', { name: character.name })}
+											onclick={() => buildCharacter(saved.savedId, character.id)}
+										/>
+									{/if}
 									{#if credit?.url}
 										<!-- eslint-disable svelte/no-navigation-without-resolve -->
 										<a
@@ -712,6 +744,8 @@
 >
 	<p>{t('script-builder.clearBody')}</p>
 </ConfirmDialog>
+
+<CharacterBuilderDialog bind:open={builderOpen} savedId={builderSavedId} onsaved={builtCharacter} />
 
 <style>
 	/* A max dialog doesn't scroll itself: its content does. */
