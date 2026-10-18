@@ -521,23 +521,6 @@
 			</div>
 
 			<div class="row">
-				<span class="label">Changes</span>
-				<button
-					type="button"
-					class="value"
-					disabled={changes.length === 0}
-					aria-label={changes.length === 0
-						? 'Changes: None'
-						: `Changes: ${changes.length}, show them`}
-					onclick={() => (changesOpen = true)}
-				>
-					{changes.length === 0
-						? 'None'
-						: `${changes.length} ${changes.length === 1 ? 'change' : 'changes'}`}
-				</button>
-			</div>
-
-			<div class="row">
 				<span class="label">Notes</span>
 				<button
 					type="button"
@@ -698,7 +681,7 @@
 		data-testid="seat-note"></textarea>
 </Dialog>
 
-<Dialog bind:open={changesOpen} title={`Changes for ${seatLabel}`}>
+<Dialog bind:open={changesOpen} title={`Character history for ${seatLabel}`}>
 	<ol class="changes" data-testid="seat-changes">
 		{#each changes as change, i (i)}
 			<li>
@@ -946,6 +929,15 @@
 				})}
 		>
 			Change alignment
+		</Button>
+		<!-- Rarely needed, so in here rather than a row of its own (Trevor, 2026-10-18). -->
+		<Button
+			variant="quiet"
+			icon="history"
+			disabled={changes.length === 0}
+			onclick={() => fromMenu(() => (changesOpen = true))}
+		>
+			Character history
 		</Button>
 	</div>
 	{#snippet headActions()}

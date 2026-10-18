@@ -176,9 +176,9 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(confirm).toContainText(/Removed\s*None/);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(sheet).toContainText(/Baron\s*Evil · Seat 1/);
-	// The seat keeps its changes, in a window of their own.
-	await sheet.getByRole('button', { name: 'Changes: 1, show them' }).tap();
-	const changes = page.getByRole('dialog', { name: 'Changes for Seat 1' });
+	// The seat keeps its changes, in a window of their own from the ⋯ menu (Trevor, 2026-10-18).
+	await seatMenu(page, sheet, 'Character history');
+	const changes = page.getByRole('dialog', { name: 'Character history for Seat 1' });
 	await expect(changes.getByTestId('seat-changes')).toContainText(/Imp\s*→\s*Baron/);
 	await changes.getByRole('button', { name: 'Close' }).tap();
 
@@ -290,8 +290,8 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		.getByRole('button', { name: 'Spirit of Ivory' });
 	await expect(fabled).toBeVisible();
 	// Or small along the edge (Trevor, 2026-10-17), set beside the background.
-	await menu(page, 'Background');
-	const looks = page.getByRole('dialog', { name: 'Background' });
+	await menu(page, 'Board and tokens');
+	const looks = page.getByRole('dialog', { name: 'Settings' });
 	// A drop-down (Trevor, 2026-10-17).
 	await looks.getByRole('combobox', { name: 'Location', exact: true }).tap();
 	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
@@ -644,8 +644,26 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 
 	// A tap opens only the reminder, its character's ability first (Trevor, 2026-10-17), not
 	// the seat's sheet under it (Trevor, 2026-10-18).
+	// The same tap's click, which the browser sends after the dialog has opened under the
+	// finger, reaches nothing in the dialog (Trevor, 2026-10-18).
+	await page.evaluate(() => {
+		const w = window as unknown as { clicksInDialog: number };
+		w.clicksInDialog = 0;
+		document.addEventListener(
+			'click',
+			(event) => {
+				if ((event.target as Element).closest('[role="dialog"]')) w.clicksInDialog += 1;
+			},
+			true
+		);
+	});
 	await token.tap();
 	const reminder = page.getByRole('dialog', { name: 'Drunk' });
+	await expect(reminder).toBeVisible();
+	await page.waitForTimeout(600);
+	expect(
+		await page.evaluate(() => (window as unknown as { clicksInDialog: number }).clicksInDialog)
+	).toBe(0);
 	await expect(reminder.locator('.source')).toContainText('Sailor');
 	await expect(reminder.locator('header.character')).toContainText(/choose an alive player/i);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
@@ -1110,9 +1128,11 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.locator('.watermark')).toContainText('Trouble Brewing');
 	await expect(page.locator('.watermark')).toContainText('by The Pandemonium Institute');
 
-	await menu(page, 'Background');
-	const dialog = page.getByRole('dialog', { name: 'Background' });
-	await expect(dialog).toContainText('None (plain board)');
+	// Background is set in Board and tokens, the one way in (Trevor, 2026-10-18).
+	await expect(page.getByRole('button', { name: 'Background', exact: true })).toHaveCount(0);
+	await menu(page, 'Board and tokens');
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await expect(dialog.getByTestId('background-now')).toHaveText('None (plain board)');
 	await expect(dialog.getByRole('button', { name: 'No script background' })).toBeDisabled();
 	// A 2×2 PNG, as if picked from the photo library.
 	const png = Buffer.from(
@@ -1123,7 +1143,7 @@ test('the board background can be an image from the device, kept after a reload'
 		.getByLabel('Background image file')
 		.setInputFiles({ name: 'table.png', mimeType: 'image/png', buffer: png });
 	// It stays open, so several can be tried (Trevor, 2026-10-17).
-	await expect(dialog).toContainText('Your image, for this game');
+	await expect(dialog.getByTestId('background-now')).toHaveText('Your image, for this game');
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	const backdrop = page.getByTestId('board-background');
 	await expect(backdrop).toHaveAttribute('style', /blob:/);
@@ -1131,17 +1151,17 @@ test('the board background can be an image from the device, kept after a reload'
 
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('style', /blob:/);
-	await menu(page, 'Background');
-	await expect(dialog).toContainText('Your image, for this game');
+	await menu(page, 'Board and tokens');
+	await expect(dialog.getByTestId('background-now')).toHaveText('Your image, for this game');
 	await expect(dialog).not.toContainText('never uploaded');
 	await dialog.getByRole('button', { name: 'None', exact: true }).tap();
 	await expect(page.getByTestId('board-background')).toHaveCount(0);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	// Built-in backgrounds, drawn in CSS (Trevor, 2026-10-16), kept after a reload.
-	await menu(page, 'Background');
+	await menu(page, 'Board and tokens');
 	await dialog
-		.getByRole('group', { name: 'Built-in backgrounds' })
+		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Green felt' })
 		.tap();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
@@ -2093,9 +2113,9 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await closeSheet(page);
 
 	// Turning it on says what it changes first (Trevor, 2026-10-17).
-	await menu(page, 'Background');
-	const dialog = page.getByRole('dialog', { name: 'Background' });
-	await dialog.getByRole('combobox', { name: 'Reminders' }).tap();
+	await menu(page, 'Board and tokens');
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog.getByRole('combobox', { name: 'Reminders', exact: true }).tap();
 	await page.getByRole('option', { name: 'Stay where dropped', exact: true }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Reminders stay where dropped?' });
 	await expect(confirm.getByTestId('reminder-mode-effects').locator('li')).toHaveCount(4);
@@ -2204,7 +2224,18 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 	await expect(confirm).toContainText('Not a Fabled or Loric reminder.');
 	await expect(confirm).toContainText(/Now\s*In the reminder bank/);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	// Packed on the token: the latest, and how many more (Trevor, 2026-10-18).
 	await expect(held.getByRole('button')).toHaveCount(2);
+	await expect(held.getByRole('button', { name: '1 more reminders' })).toBeVisible();
+	// Its uncovered side, beside the latest reminder.
+	const more = held.getByRole('button', { name: '1 more reminders' });
+	const moreBox = (await more.boundingBox())!;
+	await more.tap({ position: { x: moreBox.width * 0.85, y: moreBox.height / 2 } });
+	const angelSheet = page.getByRole('dialog', { name: 'Angel' });
+	await expect(
+		angelSheet.getByRole('group', { name: 'Reminders' }).getByRole('button')
+	).toHaveCount(2);
+	await angelSheet.getByRole('button', { name: 'Close' }).tap();
 
 	// Its dialog lists them; one opens on its own, with whose it is, and can be removed.
 	await held.getByRole('button', { name: 'Poisoned reminder' }).tap();

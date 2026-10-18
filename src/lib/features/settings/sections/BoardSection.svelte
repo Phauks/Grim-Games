@@ -12,6 +12,8 @@
 	import BoardLooksRows from './BoardLooksRows.svelte';
 	import RulesLooksRows from './RulesLooksRows.svelte';
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
+	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
+	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 	/**
@@ -38,7 +40,10 @@
 />
 
 <h3>{t('settings.groupBoard')}</h3>
-<DefaultBackgroundRow />
+<!-- With a board open, its own background too (the board thread, Trevor 2026-10-18). -->
+{#if boardBackground.context}<BoardBackgroundRow
+		board={boardBackground.context}
+	/>{:else}<DefaultBackgroundRow />{/if}
 {#each STORYTELLER_GROUPS.board as key (key)}
 	<SettingToggle
 		label={ASSIST_LABELS[key].label}

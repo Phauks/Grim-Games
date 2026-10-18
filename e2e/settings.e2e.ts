@@ -167,7 +167,7 @@ test('Storyteller settings is a list of switches, saved on the device', async ({
 });
 
 // Trevor (2026-10-17): settings appear where they act and in Settings; these are the same
-// values as the board's Background dialog.
+// values as the board's own Background row (Board and tokens over the board).
 test('the board looks and background are in Board and tokens, saved with the board', async ({
 	page
 }) => {

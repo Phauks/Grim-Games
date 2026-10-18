@@ -5,6 +5,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
+	import { swallowNextClick } from '#lib/ui/tap.ts';
 	import type { NamePlace } from './name-placement.ts';
 
 	interface Props {
@@ -78,7 +79,10 @@
 	const TAP_SLOP = 10;
 
 	function pointerup(event: PointerEvent) {
-		if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) < TAP_SLOP) onTap();
+		if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) < TAP_SLOP) {
+			swallowNextClick(event.currentTarget);
+			onTap();
+		}
 		down = null;
 	}
 </script>

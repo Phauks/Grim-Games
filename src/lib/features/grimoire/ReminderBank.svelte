@@ -431,8 +431,12 @@
 		font: 600 0.85rem var(--font-control);
 		cursor: pointer;
 	}
-	.view:hover {
-		background: var(--surface-selected);
+	/* Only with a mouse: on a touchscreen :hover stays after a tap until the next one, so the
+	   button looked different until then (Trevor, 2026-10-18). */
+	@media (hover: hover) {
+		.view:hover {
+			background: var(--surface-selected);
+		}
 	}
 	.tray {
 		flex: 1;
