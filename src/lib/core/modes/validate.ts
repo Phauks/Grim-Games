@@ -10,7 +10,7 @@ import { CAMPAIGN_ENDS, GAME_MODE_FORMAT, MODE_PARTS, type GameMode } from './ty
 export type ParsedMode = { ok: true; mode: GameMode } | { ok: false; issues: string[] };
 
 /** The `kind` values each behaviour part accepts. */
-const KINDS: Partial<Record<(typeof MODE_PARTS)[number], readonly string[]>> = {
+export const KINDS: Partial<Record<(typeof MODE_PARTS)[number], readonly string[]>> = {
 	pool: ['script', 'all-characters', 'script-plus-hidden', 'campaign', 'per-town'],
 	counts: ['standard', 'per-town'],
 	setupModifiers: ['standard', 'only', 'as-chosen'],
@@ -34,6 +34,8 @@ export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>):
 		add('id', 'must be lower-case letters, digits and dashes');
 	if (typeof value.name !== 'string' || !value.name.trim()) add('name', 'must be a name');
 	if (value.about !== undefined && typeof value.about !== 'string') add('about', 'must be text');
+	if (value.revision !== undefined && !Number.isInteger(value.revision))
+		add('revision', 'must be a whole number');
 	if (!Array.isArray(value.sources) || value.sources.length === 0)
 		add('sources', 'must list at least one source');
 	else

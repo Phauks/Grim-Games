@@ -7,3 +7,4 @@ export * from './choose.ts';
 export * from './towns.ts';
 export * from './extras.ts';
 export * from './campaign.ts';
+export * from './format-guide.ts';

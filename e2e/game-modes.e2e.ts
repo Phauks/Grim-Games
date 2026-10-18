@@ -312,6 +312,17 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await expect(panel.getByRole('button', { name: 'Delete Whale Buffet' })).toBeDisabled();
 	await panel.getByRole('button', { name: 'Add mode' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Add a game mode' });
+	// How to write one (Trevor, 2026-10-18): every part, with the rolling revision.
+	await dialog.getByRole('button', { name: 'How to write a mode file' }).tap();
+	const guide = page.getByRole('dialog', { name: 'Writing a mode file' });
+	await expect(guide.getByTestId('mode-guide-version')).toContainText(/Format 1, revision \d+/);
+	await expect(guide.locator('section[data-part]')).toHaveCount(15);
+	const scroll = guide.getByTestId('mode-guide');
+	await scroll.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+	expect(await scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+	await noSidewaysScroll(page);
+	await guide.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(guide).toBeHidden();
 	await dialog.getByTestId('mode-file').fill('{"format": 1, "id": "Bad Id"}');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(dialog.getByRole('status')).toContainText('id: must be lower-case');
