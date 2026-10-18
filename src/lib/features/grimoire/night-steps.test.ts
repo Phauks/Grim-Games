@@ -4,7 +4,7 @@ import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index
 import { characterLookup, type Game } from '#lib/core/model/index.ts';
 import type { NightStep } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { boardNightSteps, stepHolders } from './night-steps.ts';
+import { boardNightSteps, givesNumber, stepHolders } from './night-steps.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -49,5 +49,23 @@ describe('boardNightSteps', () => {
 			expect(steps.map((s) => s.id)).not.toContain('dawn');
 			expect(steps.map((s) => s.id)).toContain('traveller-alignment');
 		}
+	});
+});
+
+describe('givesNumber', () => {
+	// https://wiki.bloodontheclocktower.com/Empath : learns a number each night.
+	// https://wiki.bloodontheclocktower.com/Washerwoman : learns a player and a character, no number.
+	it('is the steps whose night text gives a finger signal', () => {
+		const steps = boardNightSteps(
+			game(['empath', 'chef', 'washerwoman', 'imp']),
+			characters,
+			'first',
+			data
+		);
+		const ids = steps.filter(givesNumber).map((s) => s.id);
+		expect(ids).toContain('empath');
+		expect(ids).toContain('chef');
+		expect(ids).not.toContain('washerwoman');
+		expect(ids).not.toContain('dusk');
 	});
 });
