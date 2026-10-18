@@ -757,7 +757,7 @@ test('the night order opens from the board and steps are ticked by hand', async 
 		.tap();
 	await closeSheet(page);
 
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	const night = page.getByRole('dialog', { name: 'Night order' });
 	await expect(night).toContainText('Dusk');
 	const empath = night.getByRole('listitem').filter({ hasText: 'Empath' });
@@ -797,7 +797,7 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	await expect(boardTimer).toBeVisible();
 	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
 	// The next night order opens on the other nights, unticked.
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await expect(night.getByRole('button', { name: /^Showing other nights/ })).toBeVisible();
 	await expect(night.getByRole('button', { name: 'Done: Dawn' })).toHaveAttribute(
 		'aria-pressed',
@@ -850,7 +850,7 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 	await closeSheet(page);
 
 	// The night order starts by asking for it (core withTravellerAlignmentStep).
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	const night = page.getByRole('dialog', { name: 'Night order' });
 	const step = night.getByRole('listitem').filter({ hasText: 'Traveller alignment' });
 	await expect(step).toContainText('Thief');
@@ -1268,7 +1268,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	}
 
 	// Tap a step: TPI's text, its reminder placed on a chosen seat, then Done ticks it.
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('button', { name: 'Guide: Poisoner' }).tap();
 	const guide = page.getByRole('dialog', { name: 'Poisoner' });
 	await expect(guide).toContainText('Seat 1');
@@ -1308,7 +1308,7 @@ test('a night step is filled in with help, and the night can be walked through',
 
 	await guide.getByRole('button', { name: 'Done' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Empath, 1 reminder')).toBeAttached();
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	const order = page.getByRole('dialog', { name: 'Night order' });
 	await expect(order.getByRole('button', { name: 'Done: Poisoner' })).toHaveAttribute(
 		'aria-pressed',
@@ -1337,7 +1337,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(page.locator('.chip-slot.now')).toHaveCount(0);
 
 	// A step shows the game state that matters: the Empath is poisoned (core nightStepAlerts).
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('button', { name: 'Guide: Empath' }).tap();
 	// In its own Afflictions section, not at the top (Trevor, 2026-10-17).
 	const empath = page.getByRole('dialog', { name: 'Empath' });
@@ -1434,7 +1434,7 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 		.tap();
 	await closeSheet(page);
 
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	const step = page
 		.getByRole('dialog', { name: 'Night order' })
 		.getByRole('listitem')
@@ -1483,7 +1483,7 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 		.tap();
 	await day.getByRole('button', { name: 'Close' }).tap();
 
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	const order = page.getByRole('dialog', { name: 'Night order' });
 	await order.getByRole('button', { name: /show other nights/ }).tap();
 	await order.getByRole('button', { name: 'Guide: Undertaker' }).tap();
@@ -1865,7 +1865,7 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 		.tap();
 	await closeSheet(page);
 
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('button', { name: 'Guide: Mathematician' }).tap();
 	const guide = page.getByRole('dialog', { name: 'Mathematician' });
 	// The whole ability sits at the top, beside the icon and name.
@@ -2379,7 +2379,7 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 			.tap();
 		await closeSheet(page);
 	}
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Night order' })
 		.getByRole('button', { name: 'Run Night Order' })
@@ -2505,7 +2505,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 			.tap();
 		await closeSheet(page);
 	}
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Night order' })
 		.getByRole('button', { name: 'Run Night Order' })
@@ -2582,7 +2582,7 @@ test('an open night step moves to the step before or after without ticking it', 
 			.tap();
 		await closeSheet(page);
 	}
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('button', { name: 'Guide: Poisoner' }).tap();
 	const poisoner = page.getByRole('dialog', { name: 'Poisoner' });
 	// Trevor, 2026-10-17: Previous and Next inside the step.
@@ -2594,7 +2594,7 @@ test('an open night step moves to the step before or after without ticking it', 
 	await next.getByRole('button', { name: 'Previous step' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Poisoner' })).toBeVisible();
 	await page.keyboard.press('Escape');
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await expect(
 		page
 			.getByRole('dialog', { name: 'Night order' })
@@ -2624,7 +2624,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 			.tap();
 		await closeSheet(page);
 	}
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('button', { name: 'Guide: Minion info' }).tap();
 	const minionInfo = page.getByRole('dialog', { name: 'Minion info' });
 	const cards = minionInfo.getByTestId('evil-info-card');
@@ -2657,7 +2657,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await page.keyboard.press('Escape');
 
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('button', { name: 'Guide: Demon info' }).tap();
 	await expect(demonInfo.getByTestId('evil-info-card')).toHaveCount(2);
 	await demonInfo
@@ -2683,4 +2683,41 @@ test('Minion info and Demon info list every card they can show, with who it poin
 		.getByRole('button', { name: 'Show These characters are not in play · Demon' })
 		.tap();
 	await expect(shown).toContainText('Fortune Teller');
+});
+
+test('an information step lists every valid piece of information, not one pick', async ({
+	page
+}) => {
+	await startGame(page);
+	const give = async (seat: number, name: string) => {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	};
+	await give(1, 'Washerwoman');
+	await give(2, 'Chef');
+	await give(3, 'Empath');
+	await give(4, 'Imp');
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
+	// Trevor (2026-10-18): "show all valid information"
+	// (https://wiki.bloodontheclocktower.com/Washerwoman).
+	await page.getByRole('button', { name: 'Guide: Washerwoman' }).tap();
+	const step = page.getByRole('dialog', { name: 'Washerwoman' });
+	const rows = step.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
+	// One row per character shown with its player, and every possible other player.
+	await expect(rows).toHaveCount(2);
+	await expect(rows.nth(0)).toContainText(/Chef.*and one of/);
+	await expect(rows.nth(1)).toContainText(/Empath.*and one of/);
+	// The walk-through's one line counts them instead of naming one.
+	await step.getByRole('button', { name: 'Close' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
+	await page.getByRole('button', { name: 'Run Night Order' }).tap();
+	const strip = page.getByTestId('night-strip');
+	for (let i = 0; i < 10 && !(await strip.textContent())?.includes('Washerwoman'); i++)
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip.getByTestId('night-suggested')).toHaveText(/Suggested: \d+ valid/);
 });
