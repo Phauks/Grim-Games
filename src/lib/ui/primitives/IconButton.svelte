@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
@@ -9,9 +10,11 @@
 		label: string;
 		/** The button element, e.g. to anchor a popover. */
 		ref?: HTMLButtonElement;
+		/** Drawn instead of `icon`, e.g. the account's own profile icon. */
+		face?: Snippet;
 	}
 
-	let { icon, label, ref = $bindable(), ...rest }: Props = $props();
+	let { icon, label, ref = $bindable(), face, ...rest }: Props = $props();
 </script>
 
 <button
@@ -22,7 +25,7 @@
 	title={label}
 	{...rest}
 >
-	<Icon name={icon} />
+	{#if face}{@render face()}{:else}<Icon name={icon} />{/if}
 </button>
 
 <style>

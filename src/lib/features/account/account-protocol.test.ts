@@ -5,6 +5,7 @@ import {
 	cleanEmail,
 	normaliseCode,
 	normaliseEmail,
+	normaliseIcon,
 	normaliseUsername,
 	readSignInHash,
 	signInHash,
@@ -50,6 +51,14 @@ describe('account protocol', () => {
 		expect(normaliseUsername('trаvor')).toBeUndefined();
 		expect(normaliseUsername(7)).toBeUndefined();
 		expect(usernameKey('Trevor_G')).toBe(usernameKey('trevor_g'));
+	});
+
+	it('accepts a character id or null as the profile icon, nothing else', () => {
+		expect(normaliseIcon('fortune_teller')).toBe('fortune_teller');
+		expect(normaliseIcon(null)).toBeNull();
+		for (const bad of ['', 'Imp', 'https://example.com/a.png', 'a'.repeat(41), 7, undefined]) {
+			expect(normaliseIcon(bad)).toBeUndefined();
+		}
 	});
 
 	it('puts the sign-in token in the URL hash and reads it back', () => {

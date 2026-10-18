@@ -84,6 +84,7 @@ describe('TPI script shapes', () => {
 					id: '_meta',
 					name: 'Full',
 					author: 'A',
+					version: 2,
 					logo: 'https://example.com/logo.png',
 					background: 'https://example.com/bg.png',
 					almanac: 'https://example.com/almanac',
@@ -100,6 +101,7 @@ describe('TPI script shapes', () => {
 		expect(result.script?.meta).toEqual({
 			name: 'Full',
 			author: 'A',
+			version: '2',
 			logo: 'https://example.com/logo.png',
 			background: 'https://example.com/bg.png',
 			almanac: 'https://example.com/almanac',
