@@ -36,20 +36,49 @@
 		 * match is visible. The header can't close it meanwhile; the remembered choice is kept.
 		 */
 		forceOpen?: boolean;
+		/**
+		 * Nothing to show but "None": closed, and opened again as soon as something appears
+		 * (Trevor, 2026-10-18). The header still opens it meanwhile; nothing is remembered.
+		 */
+		empty?: boolean;
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
 		aside?: Snippet;
 		children: Snippet;
 	}
 
-	let { title, storageKey, level = 2, tone, forceOpen = false, aside, children }: Props = $props();
+	let {
+		title,
+		storageKey,
+		level = 2,
+		tone,
+		forceOpen = false,
+		empty = false,
+		aside,
+		children
+	}: Props = $props();
 
 	// Open by default; a section closed before stays closed. Read again if the key changes.
 	let open = $derived(!(storageKey && readClosed(storageKey)));
-	const shown = $derived(open || forceOpen);
+	let openWhileEmpty = $state(false);
+	// Something appeared: open it, even if it was closed before.
+	let wasEmpty = empty;
+	$effect.pre(() => {
+		if (wasEmpty && !empty) {
+			open = true;
+			if (storageKey) writeClosed(storageKey, false);
+		}
+		if (empty && !wasEmpty) openWhileEmpty = false;
+		wasEmpty = empty;
+	});
+	const shown = $derived(forceOpen || (empty ? openWhileEmpty : open));
 	const id = $props.id();
 
 	function toggle() {
 		if (forceOpen) return;
+		if (empty) {
+			openWhileEmpty = !openWhileEmpty;
+			return;
+		}
 		open = !open;
 		if (storageKey) writeClosed(storageKey, !open);
 	}
@@ -119,8 +148,11 @@
 	.toggle[aria-disabled='true'] {
 		cursor: default;
 	}
-	.toggle:not([aria-disabled='true']):hover .label {
-		text-decoration: underline;
+	/* Mouse only: a tap leaves :hover stuck on touch screens, underlining the last title. */
+	@media (hover: hover) {
+		.toggle:not([aria-disabled='true']):hover .label {
+			text-decoration: underline;
+		}
 	}
 	.caret {
 		display: grid;

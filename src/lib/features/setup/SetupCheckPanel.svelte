@@ -34,7 +34,12 @@
 -->
 <section class="check" aria-label={t('setup.check')} data-testid="setup-check">
 	<div class="body">
-		<Collapsible title={t('setup.check.warnings')} level={3} storageKey="setup-check:warnings">
+		<Collapsible
+			title={t('setup.check.warnings')}
+			level={3}
+			storageKey="setup-check:warnings"
+			empty={warningCount === 0}
+		>
 			{#snippet aside()}<span
 					class="count"
 					data-warn={warningCount ? '' : undefined}
@@ -62,6 +67,7 @@
 			title={t('setup.check.shownInstead')}
 			level={3}
 			storageKey="setup-check:shown-instead"
+			empty={plan.standIns.length === 0}
 		>
 			{#if plan.standIns.length}
 				<ul class="stand-ins">
@@ -87,6 +93,7 @@
 			title={t('setup.check.setupChanges')}
 			level={3}
 			storageKey="setup-check:setup-changes"
+			empty={analysis.modifiers.length + analysis.notes.length === 0}
 		>
 			{#if analysis.modifiers.length || analysis.notes.length}
 				<ul>
@@ -98,7 +105,12 @@
 			{:else}<p>{t('common.none')}</p>{/if}
 		</Collapsible>
 
-		<Collapsible title={t('setup.check.jinxes')} level={3} storageKey="setup-check:jinxes">
+		<Collapsible
+			title={t('setup.check.jinxes')}
+			level={3}
+			storageKey="setup-check:jinxes"
+			empty={jinxes.length === 0}
+		>
 			{#if jinxes.length}
 				<ul>
 					{#each jinxes as jinx (jinx.characters.join('+'))}
