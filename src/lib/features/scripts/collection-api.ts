@@ -7,6 +7,7 @@
  */
 
 import { relaxJson } from './relaxed-json.ts';
+import { decodeEntities } from './script-tool-link.ts';
 
 export const COLLECTIONS_API = '/api/collections';
 
@@ -105,6 +106,8 @@ export interface CollectionDocLink {
 	fileId: string;
 	/** The id of the heading the link sits under, so the script can link to its own section. */
 	heading?: string;
+	/** That heading's text: the script's name as the doc lists it. */
+	title?: string;
 }
 
 const HEADING_ID = /^h\.[\w-]+$/;
@@ -116,18 +119,23 @@ const HEADING_ID = /^h\.[\w-]+$/;
 export function readCollectionDoc(html: string): CollectionDocLink[] {
 	const links: CollectionDocLink[] = [];
 	let heading: string | undefined;
+	let title: string | undefined;
 	const parts =
-		/<h[1-6]\b[^>]*\bid="([^"]+)"[^>]*>|<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+		/<h[1-6]\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/h[1-6]>|<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
 	for (const match of html.matchAll(parts)) {
 		if (match[1] !== undefined) {
 			heading = HEADING_ID.test(match[1]) ? match[1] : undefined;
+			title =
+				decodeEntities(match[2].replace(/<[^>]+>/g, ' '))
+					.replace(/\s+/g, ' ')
+					.trim() || undefined;
 			continue;
 		}
-		const text = match[3].replace(/<[^>]+>/g, '').trim();
+		const text = match[4].replace(/<[^>]+>/g, '').trim();
 		if (!/\bjson\b/i.test(text)) continue;
-		const fileId = driveFileId(match[2]);
+		const fileId = driveFileId(match[3]);
 		if (!fileId || links.some((l) => l.fileId === fileId)) continue;
-		links.push(heading ? { fileId, heading } : { fileId });
+		links.push({ fileId, ...(heading ? { heading } : {}), ...(title ? { title } : {}) });
 		if (links.length >= MAX_COLLECTION_SCRIPTS) break;
 	}
 	return links;

@@ -41,7 +41,7 @@ async function slide(page: Page, name: string, value: number) {
 async function resetButton(scope: Locator, name: string) {
 	const id = await scope
 		.getByText(name, { exact: true })
-		.and(scope.locator('[id]'))
+		.and(scope.locator('[id]:not(h2)'))
 		.getAttribute('id');
 	return scope
 		.getByRole('button', { name: 'Reset to default' })
@@ -76,7 +76,7 @@ test('a font chosen for one role from its dropdown applies to that role only and
 	page
 }) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Theme and text');
+	const dialog = await openSettings(page, 'Text');
 	const headingBefore = await rootStyle(page, '--font-heading');
 	const trigger = dialog.getByRole('combobox', { name: 'Ability and rules text' });
 	expect((await trigger.boundingBox())?.height).toBeGreaterThanOrEqual(44);
@@ -106,7 +106,7 @@ test('a font chosen for one role from its dropdown applies to that role only and
 	await expect.poll(faces).toMatch(/Lexend/);
 	expect(await faces()).not.toContain('IM Fell');
 
-	const again = await openSettings(page, 'Theme and text');
+	const again = await openSettings(page, 'Text');
 	await expect(again.getByRole('combobox', { name: 'Ability and rules text' })).toContainText(
 		'Lexend'
 	);
@@ -114,10 +114,10 @@ test('a font chosen for one role from its dropdown applies to that role only and
 
 test('heading font, text size and icon weight apply live', async ({ page }) => {
 	await page.goto('/spikes/icons');
-	const dialog = await openSettings(page, 'Theme and text');
+	const dialog = await openSettings(page, 'Text');
 	await chooseFont(page, 'Headings', /^IM Fell English SC/);
 	expect(await rootStyle(page, '--font-heading')).toContain('IM Fell English SC');
-	await expect(dialog.getByRole('heading', { name: 'Theme and text', level: 2 })).toHaveCSS(
+	await expect(dialog.getByRole('heading', { name: 'Text', exact: true, level: 2 })).toHaveCSS(
 		'font-family',
 		/IM Fell English SC/
 	);
@@ -125,7 +125,7 @@ test('heading font, text size and icon weight apply live', async ({ page }) => {
 	// Phones drill in, so go back to the section list first; tablets show the sidebar.
 	const back = dialog.getByRole('button', { name: 'All settings' });
 	if (await back.isVisible()) await back.tap();
-	await dialog.getByRole('button', { name: 'Theme and text' }).tap();
+	await dialog.getByRole('button', { name: 'Text', exact: true }).tap();
 	await slide(page, 'Text size', 1.25);
 	expect(await rootStyle(page, '--text-scale')).toBe('1.25');
 	expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe(
@@ -171,12 +171,10 @@ test('Storyteller settings is a list of switches, saved on the device', async ({
 });
 
 // Trevor (2026-10-17): settings appear where they act and in Settings; these are the same
-// values as the board's own Background row (Board and tokens over the board).
-test('the board looks and background are in Board and tokens, saved with the board', async ({
-	page
-}) => {
+// values as the board's own Background row (Board over the board).
+test('the board looks and background are in Board, saved with the board', async ({ page }) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Board and tokens');
+	const dialog = await openSettings(page, 'Board');
 	const felt = dialog.getByRole('button', { name: 'Green felt' });
 	await expect(felt).toHaveAttribute('aria-pressed', 'false');
 	await felt.tap();
@@ -205,7 +203,7 @@ test('the board looks and background are in Board and tokens, saved with the boa
 	});
 
 	await page.reload();
-	const again = await openSettings(page, 'Board and tokens');
+	const again = await openSettings(page, 'Board');
 	await expect(again.getByRole('button', { name: 'Green felt' })).toHaveAttribute(
 		'aria-pressed',
 		'true'
@@ -250,7 +248,7 @@ test('text size changes text only: icons, spacing and buttons keep their size', 
 	});
 	const before = await measure();
 
-	const dialog = await openSettings(page, 'Theme and text');
+	const dialog = await openSettings(page, 'Text');
 	await slide(page, 'Text size', 1.5);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	const after = await measure();
@@ -268,7 +266,7 @@ test('there is one About: a settings section, which the footer opens', async ({ 
 	const nav = page
 		.getByRole('dialog', { name: 'Settings' })
 		.getByRole('navigation', { name: 'Settings sections' });
-	await expect(nav.getByRole('button', { name: 'Theme and text' })).toBeVisible();
+	await expect(nav.getByRole('button', { name: 'Theme', exact: true })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'About' })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'Data' })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'Reset settings' })).toHaveCount(0);
@@ -303,7 +301,7 @@ test('character icon size is its own slider and leaves interface icons alone', a
 		.locator('.icon');
 	const before = await settingsIcon.boundingBox();
 
-	const dialog = await openSettings(page, 'Board and tokens');
+	const dialog = await openSettings(page, 'Tokens');
 	await slide(page, 'Character icon size', 1.25);
 	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
 	expect(await rootStyle(page, '--icon-scale')).toBe('1');
@@ -320,7 +318,7 @@ test('the rules term switch is with theme and text, not Storyteller settings', a
 		help.getByRole('region', { name: 'Storyteller', exact: true }).getByText(/rules terms/i)
 	).toHaveCount(0);
 	await page.reload();
-	const terms = await openSettings(page, 'Theme and text');
+	const terms = await openSettings(page, 'Text');
 	await expect(
 		terms.getByRole('checkbox', {
 			name: 'Underline rules terms with glossary definitions',
@@ -338,11 +336,13 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	const nav = dialog.getByRole('navigation', { name: 'Settings sections' });
 	// Trevor, 2026-10-17: every Storyteller-only setting is in Storyteller settings.
 	await expect(nav.getByRole('button')).toHaveText([
-		'Theme and text',
+		'Theme',
+		'Text',
 		'Icons',
-		'Board and tokens',
+		'Board',
+		'Tokens',
 		'Storyteller',
-		'Player view',
+		'Player',
 		'Data',
 		'About'
 	]);
@@ -362,7 +362,7 @@ test('text alignment switches body text between left aligned and justified', asy
 	const align = () => paragraph.evaluate((el) => getComputedStyle(el).textAlign);
 	expect(await align()).toBe('start');
 
-	const dialog = await openSettings(page, 'Theme and text');
+	const dialog = await openSettings(page, 'Text');
 	await dialog.getByRole('combobox', { name: 'Text alignment' }).tap();
 	await page.getByRole('option', { name: 'Justified', exact: true }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
@@ -377,7 +377,7 @@ test('text alignment switches body text between left aligned and justified', asy
 
 test('text size is a percentage slider that applies while it moves', async ({ page }) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Theme and text');
+	const dialog = await openSettings(page, 'Text');
 	const slider = dialog.getByRole('slider', { name: 'Text size' });
 	await expect(slider).toHaveAttribute('aria-valuetext', '100%');
 	// The reset icon beside the label is always there, and disabled at the default.
@@ -393,7 +393,7 @@ test('text size is a percentage slider that applies while it moves', async ({ pa
 	expect(await rootStyle(page, '--text-scale')).toBe('1.2');
 
 	await page.reload();
-	const again = await openSettings(page, 'Theme and text');
+	const again = await openSettings(page, 'Text');
 	await expect(again.getByRole('slider', { name: 'Text size' })).toHaveAttribute(
 		'aria-valuetext',
 		'120%'
@@ -413,8 +413,16 @@ test('every theme, text and icon size setting has a reset icon beside its name',
 	page
 }) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Theme and text');
-	for (const name of ['Theme', 'Text size', 'Text alignment']) {
+	const theme = await openSettings(page, 'Theme');
+	await expect(await resetButton(theme, 'Theme')).toBeDisabled();
+	const back0 = theme.getByRole('button', { name: 'All settings' });
+	if (await back0.isVisible()) await back0.tap();
+	await theme
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Text', exact: true })
+		.tap();
+	const dialog = theme;
+	for (const name of ['Text size', 'Text alignment']) {
 		await expect(await resetButton(dialog, name)).toBeDisabled();
 	}
 	const back = dialog.getByRole('button', { name: 'All settings' });
@@ -427,7 +435,7 @@ test('each settings section opens at its top, wherever the last one was scrolled
 	page
 }, testInfo) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Theme and text');
+	const dialog = await openSettings(page, 'Text');
 	const content = dialog.locator('section.content');
 	await content.evaluate((el) => (el.scrollTop = el.scrollHeight));
 	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
@@ -443,29 +451,21 @@ test('each settings section opens at its top, wherever the last one was scrolled
 	expect(await content.evaluate((el) => el.scrollTop)).toBe(0);
 });
 
-test('the text preview stays in view while the settings below it scroll', async ({ page }) => {
+// Trevor (2026-10-18): each font sits beside its own sample, so the font list is no longer
+// pinned; the section's name row still stays at the top while the section scrolls.
+test('the font list scrolls with the Text section, under its sticky name row', async ({ page }) => {
+	await page.setViewportSize({ width: page.viewportSize()!.width, height: 480 });
 	await page.goto('/');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await dialog
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Theme and text' })
-		.tap();
-	const preview = dialog.getByTestId('font-preview');
-	await expect(preview).toBeVisible();
-	// Scroll the section to its end: the preview stays stuck at the top (Trevor, 2026-10-17).
+	const dialog = await openSettings(page, 'Text');
+	const fonts = dialog.getByTestId('font-preview');
 	const content = dialog.locator('section.content');
 	await content.evaluate((el) => el.scrollTo(0, el.scrollHeight));
 	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-	await expect(preview).toBeInViewport();
-	// The section's name stays at the top, with the back icon beside it on phones (Trevor,
-	// 2026-10-17), and the preview sits just under it.
-	const top = (await content.boundingBox())!.y;
-	const heading = dialog.getByRole('heading', { name: 'Theme and text', level: 2 });
+	await expect(fonts.locator('.line').first()).not.toBeInViewport();
+	const heading = dialog.getByRole('heading', { name: 'Text', exact: true, level: 2 });
 	await expect(heading).toBeInViewport();
 	const row = (await heading.locator('..').boundingBox())!;
-	expect(Math.abs(row.y - top)).toBeLessThan(2);
-	expect(Math.abs((await preview.boundingBox())!.y - (row.y + row.height))).toBeLessThan(2);
+	expect(Math.abs(row.y - (await content.boundingBox())!.y)).toBeLessThan(2);
 	const back = dialog.getByRole('button', { name: 'All settings' });
 	if (await back.isVisible()) {
 		await expect(back).toHaveText('');
@@ -473,32 +473,27 @@ test('the text preview stays in view while the settings below it scroll', async 
 	}
 });
 
-// Trevor (2026-10-17): the Left aligned and Justified choices scrolled over the preview.
-test('settings scroll under the text preview, never over it', async ({ page }) => {
-	// A short window, so the settings below the preview have room to scroll under it.
-	await page.setViewportSize({ width: page.viewportSize()!.width, height: 480 });
+test('every theme colour is its own setting, warns on low contrast, and Reset Theme puts them back', async ({
+	page
+}) => {
+	// Trevor (2026-10-18): a custom value for every theme colour; a reset in each section header.
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Theme and text');
-	const preview = dialog.getByTestId('font-preview');
-	const choice = dialog.getByRole('combobox', { name: 'Text alignment' });
-	const content = dialog.locator('section.content');
-	// Scroll the choice up until it sits behind the middle of the preview.
-	const previewBox = (await preview.boundingBox())!;
-	const choiceBox = (await choice.boundingBox())!;
-	const middle = previewBox.y + previewBox.height / 2;
-	await content.evaluate(
-		(el, by) => el.scrollBy(0, by),
-		choiceBox.y + choiceBox.height / 2 - middle
-	);
-	// Where the choice and the preview overlap, the preview is the one on top.
-	const box = (await choice.boundingBox())!;
-	const shown = (await preview.boundingBox())!;
-	const overlapTop = Math.max(box.y, shown.y);
-	const overlapBottom = Math.min(box.y + box.height, shown.y + shown.height);
-	expect(overlapBottom).toBeGreaterThan(overlapTop);
-	const onTop = await page.evaluate(
-		([x, y]) => document.elementFromPoint(x, y)?.closest('[data-testid="font-preview"]') !== null,
-		[box.x + box.width / 2, (overlapTop + overlapBottom) / 2]
-	);
-	expect(onTop).toBe(true);
+	const dialog = await openSettings(page, 'Theme');
+	await dialog.getByRole('button', { name: 'Accents and buttons' }).tap();
+	const accent = dialog.getByLabel('Accent', { exact: true });
+	const onAccent = dialog.getByLabel('Text on accent', { exact: true });
+	const original = (await rootStyle(page, '--on-accent')).trim();
+	const warning = dialog.getByRole('button', { name: 'Low contrast' });
+	await expect(warning).toHaveCount(0);
+	// Text the same colour as the accent can't be read: warned in place, never blocked.
+	await onAccent.fill(await accent.inputValue());
+	expect((await rootStyle(page, '--on-accent')).trim()).toBe(await accent.inputValue());
+	await expect(warning.first()).toBeVisible();
+
+	await dialog.getByRole('button', { name: 'Reset Theme' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Reset Theme?' });
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(confirm).toBeHidden();
+	expect((await rootStyle(page, '--on-accent')).trim()).toBe(original);
+	await expect(warning).toHaveCount(0);
 });
