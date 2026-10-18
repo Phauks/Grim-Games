@@ -94,7 +94,10 @@ export function sameScript(a: Pick<SavedScript, 'edition' | 'json'>, b: typeof a
 }
 
 /** Parses a stored record again with the current loader. */
-export function reloadSavedScript(saved: SavedScript, data: GameData): LoadedScript | undefined {
+export function reloadSavedScript(
+	saved: Pick<SavedScript, 'edition' | 'json'>,
+	data: GameData
+): LoadedScript | undefined {
 	if (saved.edition) return editionScript(saved.edition, data);
 	return loadScript(saved.json, data).script;
 }

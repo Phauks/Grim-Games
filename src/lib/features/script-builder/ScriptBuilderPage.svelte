@@ -44,6 +44,9 @@
 	import { timestampName } from '#lib/core/timestamp-name.ts';
 	import BuilderTools from '#lib/ui/builder/BuilderTools.svelte';
 	import OpenSavedDialog from '#lib/ui/builder/OpenSavedDialog.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import LibraryBrowser from '#lib/features/library/LibraryBrowser.svelte';
+	import type { ScriptRow } from '#lib/features/library/ScriptPane.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { fileNameFor } from '#lib/ui/download.ts';
@@ -301,6 +304,16 @@
 		}
 	}
 
+	/** A script tapped in the Library: a saved one opens to edit, a profile one as a base. */
+	function pickScript(row: ScriptRow) {
+		if (row.listing.saved) return chooseSaved(row.listing.saved);
+		openOpen = false;
+		replaceDraft(row.listing.row.name, () => {
+			const script = data ? reloadSavedScript(row.shareable, data) : undefined;
+			if (script) fill(script, row.shareable.source);
+		});
+	}
+
 	function chooseSaved(saved: SavedScript) {
 		openOpen = false;
 		replaceDraft(saved.name, () => openSaved(saved));
@@ -366,7 +379,7 @@
 				onSaveNew: () => save(true)
 			}}
 			openLabel={t('script-builder.open')}
-			openDisabled={!data || recentScripts.list.length === 0}
+			openDisabled={!data}
 			onOpen={() => (openOpen = true)}
 			downloadLabel={t('script-builder.download')}
 			downloadDisabled={!builtJson}
@@ -672,16 +685,15 @@
 	{#snippet row(c)}{c.name}{/snippet}
 </OpenSavedDialog>
 
-<OpenSavedDialog
-	bind:open={openOpen}
-	title={t('script-builder.openTitle')}
-	items={recentScripts.list}
-	key={(saved) => saved.scriptId}
-	onChoose={chooseSaved}
-	testid="builder-saved-list"
->
-	{#snippet row(saved)}{saved.name || t('common.none')}{/snippet}
-</OpenSavedDialog>
+<!-- The Library's file manager, scripts only (Trevor, 2026-10-18), not a bare list. -->
+<Dialog bind:open={openOpen} title={t('script-builder.openTitle')} size="max">
+	<div class="library" data-testid="builder-saved-list">
+		<LibraryBrowser
+			kind="script"
+			onpick={(pick) => pick.kind === 'script' && pickScript(pick.script)}
+		/>
+	</div>
+</Dialog>
 
 <ConfirmDialog
 	bind:open={replaceOpen}
@@ -702,6 +714,12 @@
 </ConfirmDialog>
 
 <style>
+	/* A max dialog doesn't scroll itself: its content does. */
+	.library {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+	}
 	.details {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
