@@ -1770,6 +1770,10 @@ test('History shows stats from ended games', async ({ page }) => {
 	await expect(summary).toContainText(
 		/Games\s*1\s*Good won\s*1\s*\(100%\)\s*Evil won\s*0\s*\(0%\)/
 	);
+	// How games end (Trevor, 2026-10-18): alternate wins and the final 3, each with its share.
+	await expect(summary).toContainText(/Alternate wins\s*\d+\s*\(\d+%\)/);
+	await expect(summary).toContainText(/Final 3\s*\d+\s*\(\d+%\)/);
+	await expect(summary).toContainText(/Final 3, good won\s*\d+\s*\((\d+%|None)\)/);
 	const scripts = page.getByTestId('history-scripts');
 	await expect(scripts).toContainText(/Trouble Brewing/);
 	// A long name stays inside its badge, even in a phone's narrow column (Trevor, 2026-10-18:
