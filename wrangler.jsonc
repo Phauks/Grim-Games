@@ -36,13 +36,14 @@
 		"run_worker_first": ["/api/*"]
 	},
 	// Room (live sync), SharedScript (share codes), and for accounts (07-accounts-and-multi-device.md
-	// §2.1) AccountUser and AccountEmail. SQLite Durable Objects need nothing created by hand.
+	// §2.1) AccountUser, AccountEmail and AccountName (usernames). SQLite Durable Objects need nothing created by hand.
 	"durable_objects": {
 		"bindings": [
 			{ "name": "ROOMS", "class_name": "Room" },
 			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
 			{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
 			{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
+			{ "name": "ACCOUNT_NAMES", "class_name": "AccountName" },
 			{ "name": "REPORTS", "class_name": "ReportBox" },
 			// Our copies of other sites' script lists (worker/mirror.ts).
 			{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" }
@@ -53,7 +54,8 @@
 		{ "tag": "v2", "new_sqlite_classes": ["SharedScript"] },
 		{ "tag": "v3", "new_sqlite_classes": ["AccountUser", "AccountEmail"] },
 		{ "tag": "v4", "new_sqlite_classes": ["ReportBox"] },
-		{ "tag": "v5", "new_sqlite_classes": ["ScriptMirror"] }
+		{ "tag": "v5", "new_sqlite_classes": ["ScriptMirror"] },
+		{ "tag": "v6", "new_sqlite_classes": ["AccountName"] }
 	],
 	// Nightly refresh of the stored script copies (worker/mirror.ts). Previews run no
 	// schedule; there a copy is refreshed when it is asked for and over a day old.
@@ -93,6 +95,7 @@
 				{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
 				{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
 				{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
+				{ "name": "ACCOUNT_NAMES", "class_name": "AccountName" },
 				{ "name": "REPORTS", "class_name": "ReportBox" },
 				{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" }
 			]

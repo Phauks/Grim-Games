@@ -150,3 +150,50 @@ test('account changes are refused from other sites', async ({ page }) => {
 	});
 	expect(status).toBe(403);
 });
+
+test('the account id is a chain of words that stays when the username and email change', async ({
+	page
+}) => {
+	const email = uniqueEmail('change');
+	await signInWithCode(page, email);
+	const idOf = () =>
+		page.evaluate(async () => (await (await fetch('/api/auth/session')).json()).user.id as string);
+	const id = await idOf();
+	expect(id).toMatch(/^[a-z]+(-[a-z]+){4}$/);
+	await expect(page.getByTestId('account-username')).toHaveText('None');
+
+	// A unique username, changed at any time.
+	const name = `ann${Date.now().toString(36)}`;
+	await page.getByRole('button', { name: 'Change username' }).tap();
+	const naming = page.getByRole('dialog', { name: 'Change username' });
+	await naming.getByLabel('Username').fill(name);
+	await naming.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('account-username')).toHaveText(name);
+
+	// A new email: a code goes to the new address, then the account moves to it.
+	const next = uniqueEmail('moved');
+	await page.getByRole('button', { name: 'Change email' }).tap();
+	const moving = page.getByRole('dialog', { name: 'Change email' });
+	await moving.getByLabel('New email address').fill(next);
+	await moving.getByRole('button', { name: 'Send code' }).tap();
+	await expect(moving.getByTestId('change-email-preview')).toContainText('Your code is');
+	const code = /(\d{6})/.exec(
+		(await moving.getByTestId('change-email-preview').textContent()) ?? ''
+	)![1];
+	await moving.getByLabel(`Code sent to ${next}`).fill(code);
+	await moving.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('account-email')).toHaveText(next);
+	expect(await idOf()).toBe(id);
+
+	// The old address no longer signs in to this account: it makes a new one.
+	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signInWithCode(page, email);
+	expect(await idOf()).not.toBe(id);
+	await expect(page.getByTestId('account-username')).toHaveText('None');
+
+	// Usernames are unique, ignoring case.
+	await page.getByRole('button', { name: 'Change username' }).tap();
+	await naming.getByLabel('Username').fill(name.toUpperCase());
+	await naming.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(naming.getByRole('status')).toHaveText('That username is taken.');
+});

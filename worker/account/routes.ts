@@ -12,16 +12,35 @@ import {
 	isDocKind,
 	normaliseCode,
 	normaliseEmail,
+	normaliseUsername,
 	SESSION_COOKIE,
 	SESSION_IDLE_MS,
 	signInHash,
 	type ApiError,
 	type PutDocRequest,
 	type SessionInfo,
-	type StartResponse
+	type StartResponse,
+	type UserResponse,
+	usernameKey,
+	USERNAME_MAX,
+	USERNAME_MIN
 } from '../../src/lib/features/account/account-protocol.ts';
-import { emailSender, type EmailEnv } from './email.ts';
-import type { AccountEnv, Authenticated, PutResult } from './objects.ts';
+import {
+	changeEmailCode,
+	emailChangedNotice,
+	emailSender,
+	signInEmail,
+	type EmailEnv
+} from './email.ts';
+import { isLegacyAccountId, isWordAccountId } from '../../src/lib/features/account/account-id.ts';
+import {
+	userStub,
+	type AccountEnv,
+	type AccountUser,
+	type Authenticated,
+	type ChangeResult,
+	type PutResult
+} from './objects.ts';
 
 export type Env = AccountEnv & EmailEnv & { AUTH_STARTS?: RateLimit };
 
@@ -56,15 +75,16 @@ export async function getUser(
 	env: AccountEnv
 ): Promise<(Authenticated & { userId: string }) | undefined> {
 	const cookie = readCookie(request);
-	const match = cookie && /^([0-9a-f]{64})\.([\w-]{20,100})$/.exec(cookie);
-	if (!match) return undefined;
-	let id: DurableObjectId;
+	// `<account id>.<secret>`; ids have no dots.
+	const match = cookie && /^([a-z0-9-]{1,80})\.([\w-]{20,100})$/.exec(cookie);
+	if (!match || !(isWordAccountId(match[1]) || isLegacyAccountId(match[1]))) return undefined;
+	let stub: DurableObjectStub<AccountUser>;
 	try {
-		id = env.ACCOUNT_USERS.idFromString(match[1]);
+		stub = userStub(env, match[1]);
 	} catch {
 		return undefined;
 	}
-	const found = await env.ACCOUNT_USERS.get(id).authenticate(match[2], Date.now());
+	const found = await stub.authenticate(match[2], Date.now());
 	return found && { ...found, userId: match[1] };
 }
 
@@ -107,7 +127,7 @@ async function start(request: Request, env: Env, url: URL): Promise<Response> {
 	}
 	const link = `${url.origin}/account${signInHash(email, result.token)}`;
 	try {
-		await sender.send({ to: email, code: result.code, link });
+		await sender.send(signInEmail(email, result.code, link));
 	} catch (e) {
 		console.error('Sign-in email failed', e);
 		return fail(502, 'The sign-in email could not be sent. Try again later.');
@@ -143,7 +163,7 @@ async function verify(request: Request, env: Env, url: URL): Promise<Response> {
 		}[result.reason];
 		return fail(result.reason === 'wrong' ? 401 : 410, message);
 	}
-	const user = env.ACCOUNT_USERS.get(env.ACCOUNT_USERS.idFromString(result.userId));
+	const user = userStub(env, result.userId);
 	const cookie = await user.createSession(describeDevice(request.headers.get('User-Agent')), now);
 	const signedIn = await user.authenticate(cookie.split('.')[1], now);
 	return json(
@@ -154,6 +174,115 @@ async function verify(request: Request, env: Env, url: URL): Promise<Response> {
 		200,
 		{ 'Set-Cookie': sessionCookie(cookie, Math.floor(SESSION_IDLE_MS / 1000)) }
 	);
+}
+
+/** `POST /api/account/email/start`: sends a code to the new address. */
+async function startEmailChange(
+	request: Request,
+	env: Env,
+	url: URL,
+	auth: Authenticated & { userId: string }
+): Promise<Response> {
+	const sender = emailSender(env, url);
+	if (sender.delivery === 'unavailable') {
+		return fail(503, 'Email is not available yet on this site.');
+	}
+	const caller = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+	if (env.AUTH_STARTS && !(await env.AUTH_STARTS.limit({ key: caller })).success) {
+		return fail(429, 'Too many codes asked for. Wait a minute and try again.');
+	}
+	const email = normaliseEmail((await readBody(request))?.email);
+	if (!email) return fail(400, 'Enter a valid email address.');
+	if (email === auth.user.email) return fail(400, 'That is already your email address.');
+	const result = await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).startChange(
+		auth.userId,
+		Date.now()
+	);
+	if (!result.ok) {
+		return fail(429, 'Too many codes for this address. Wait an hour and try again.');
+	}
+	try {
+		await sender.send(changeEmailCode(email, result.code));
+	} catch (e) {
+		console.error('Change-email code failed', e);
+		return fail(502, 'The email could not be sent. Try again later.');
+	}
+	const response: StartResponse =
+		sender.delivery === 'preview'
+			? { delivery: 'preview', preview: { code: result.code, link: '' } }
+			: { delivery: sender.delivery };
+	return json(response);
+}
+
+/**
+ * `POST /api/account/email/verify`: the new address now points at this account, the
+ * account's email is the new one, the old address is released and told.
+ */
+async function verifyEmailChange(
+	request: Request,
+	env: Env,
+	url: URL,
+	auth: Authenticated & { userId: string }
+): Promise<Response> {
+	const body = await readBody(request);
+	const email = normaliseEmail(body?.email);
+	const code = normaliseCode(body?.code);
+	if (!email || !code) return fail(400, 'Enter the code from the email.');
+	const result = (await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).confirmChange(
+		auth.userId,
+		code,
+		Date.now()
+	)) as ChangeResult;
+	if (!result.ok) {
+		const message = {
+			expired: 'This code has expired. Send a new one.',
+			wrong: 'That code is not right. Check the email and try again.',
+			'too-many': 'Too many wrong codes. Send a new one.',
+			taken: 'That address already has an account. Delete that account first to use it here.'
+		}[result.reason];
+		return fail(result.reason === 'wrong' ? 401 : result.reason === 'taken' ? 409 : 410, message);
+	}
+	const user = userStub(env, auth.userId);
+	const changed = await user.setEmail(email);
+	if (changed.old && changed.old !== email) {
+		await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(changed.old)).forget(auth.userId);
+		try {
+			await emailSender(env, url).send(emailChangedNotice(changed.old, email));
+		} catch (e) {
+			// The change is done; a lost notice shouldn't undo or fail it.
+			console.error('Email-changed notice failed', e);
+		}
+	}
+	return json({ user: changed.user! } satisfies UserResponse);
+}
+
+/** `PUT /api/account/username`: claims the new name, then frees the old one. */
+async function setUsername(
+	request: Request,
+	env: Env,
+	auth: Authenticated & { userId: string }
+): Promise<Response> {
+	const name = normaliseUsername((await readBody(request))?.username);
+	if (!name) {
+		return fail(
+			400,
+			`A username is ${USERNAME_MIN} to ${USERNAME_MAX} letters A-Z, digits, dots, dashes or underscores.`
+		);
+	}
+	const key = usernameKey(name);
+	const oldKey = auth.user.username === null ? undefined : usernameKey(auth.user.username);
+	if (key !== oldKey) {
+		const claimed = await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(key)).claim(
+			auth.userId
+		);
+		if (!claimed) return fail(409, 'That username is taken.');
+	}
+	const user = userStub(env, auth.userId);
+	const changed = await user.setUsername(name);
+	if (oldKey !== undefined && oldKey !== key) {
+		await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(oldKey)).release(auth.userId);
+	}
+	return json({ user: changed.user! } satisfies UserResponse);
 }
 
 /** Handles `/api/auth/*` and `/api/account/*`. Undefined for any other path. */
@@ -188,16 +317,21 @@ export async function handleAccount(
 	}
 	if (path === '/api/auth/sign-out' && method === 'POST') {
 		if (auth) {
-			await env.ACCOUNT_USERS.get(env.ACCOUNT_USERS.idFromString(auth.userId)).endSession(
-				auth.sessionId
-			);
+			await userStub(env, auth.userId).endSession(auth.sessionId);
 		}
 		return json({ ok: true }, 200, { 'Set-Cookie': clearCookie });
 	}
 
 	if (!auth) return fail(401, 'Sign in first.');
-	const user = env.ACCOUNT_USERS.get(env.ACCOUNT_USERS.idFromString(auth.userId));
+	const user = userStub(env, auth.userId);
 
+	if (path === '/api/account/email/start' && method === 'POST') {
+		return startEmailChange(request, env, url, auth);
+	}
+	if (path === '/api/account/email/verify' && method === 'POST') {
+		return verifyEmailChange(request, env, url, auth);
+	}
+	if (path === '/api/account/username' && method === 'PUT') return setUsername(request, env, auth);
 	if (path === '/api/account/sessions' && method === 'GET') {
 		return json({ sessions: await user.sessions(auth.sessionId) });
 	}
@@ -216,9 +350,14 @@ export async function handleAccount(
 		});
 	}
 	if (path === '/api/account' && method === 'DELETE') {
-		const email = await user.deleteAccount();
+		const { email, username } = await user.deleteAccount();
 		if (email) {
 			await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).forget(auth.userId);
+		}
+		if (username) {
+			await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(usernameKey(username))).release(
+				auth.userId
+			);
 		}
 		return json({ ok: true }, 200, { 'Set-Cookie': clearCookie });
 	}

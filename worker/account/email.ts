@@ -17,15 +17,16 @@ import { shell } from '../../src/lib/i18n/messages/en/shell.ts';
 /** The app's name as users see it, shared with the header. */
 const APP_NAME = shell['shell.appName'];
 
-export interface SignInEmail {
+/** One email: who it goes to, and what it says. */
+export interface Email {
 	to: string;
-	code: string;
-	link: string;
+	subject: string;
+	text: string;
 }
 
 export interface EmailSender {
 	readonly delivery: EmailDelivery;
-	send(message: SignInEmail): Promise<void>;
+	send(message: Email): Promise<void>;
 }
 
 /** The Email Service binding (developers.cloudflare.com/email-service/api/send-emails/workers-api/). */
@@ -46,15 +47,47 @@ export interface EmailEnv {
 	EMAIL_FROM?: string;
 }
 
-function body(message: SignInEmail): string {
-	return [
-		`Your ${APP_NAME} sign-in code is ${message.code}.`,
-		'',
-		`Or open this link on the device you are signing in on:`,
-		message.link,
-		'',
-		'The code and link work for 10 minutes. If you did not ask to sign in, ignore this email.'
-	].join('\n');
+/** The sign-in code and link. */
+export function signInEmail(to: string, code: string, link: string): Email {
+	return {
+		to,
+		subject: `${APP_NAME} sign-in code: ${code}`,
+		text: [
+			`Your ${APP_NAME} sign-in code is ${code}.`,
+			'',
+			`Or open this link on the device you are signing in on:`,
+			link,
+			'',
+			'The code and link work for 10 minutes. If you did not ask to sign in, ignore this email.'
+		].join('\n')
+	};
+}
+
+/** The code that confirms a new address for an existing account. */
+export function changeEmailCode(to: string, code: string): Email {
+	return {
+		to,
+		subject: `${APP_NAME} code to confirm your new email: ${code}`,
+		text: [
+			`Your code to make this the email address of your ${APP_NAME} account is ${code}.`,
+			'',
+			'The code works for 10 minutes. If you did not ask for this, ignore this email.'
+		].join('\n')
+	};
+}
+
+/** Sent to the old address once an account's email has changed, so a takeover is noticed. */
+export function emailChangedNotice(to: string, newEmail: string): Email {
+	return {
+		to,
+		subject: `Your ${APP_NAME} email address was changed`,
+		text: [
+			`The email address of your ${APP_NAME} account was changed to ${newEmail}.`,
+			'This address can no longer be used to sign in to it.',
+			'',
+			`If you did not do this, use "Report an issue" in ${APP_NAME} to tell us.`
+		].join('\n')
+	};
 }
 
 export class CloudflareSender implements EmailSender {
@@ -64,21 +97,21 @@ export class CloudflareSender implements EmailSender {
 		private readonly from: string
 	) {}
 
-	async send(message: SignInEmail): Promise<void> {
+	async send(message: Email): Promise<void> {
 		await this.binding.send({
 			to: message.to,
 			from: { email: this.from, name: APP_NAME },
-			subject: `${APP_NAME} sign-in code: ${message.code}`,
-			text: body(message)
+			subject: message.subject,
+			text: message.text
 		});
 	}
 }
 
-/** Previews and local runs: no email; the code is logged and shown on screen. */
+/** Previews and local runs: no email; what would be sent is logged (and the code shown on screen). */
 export class PreviewSender implements EmailSender {
 	readonly delivery = 'preview';
-	async send(message: SignInEmail): Promise<void> {
-		console.log(`[preview sign-in] ${message.to}: code ${message.code}, link ${message.link}`);
+	async send(message: Email): Promise<void> {
+		console.log(`[preview email] ${message.to}: ${message.subject}\n${message.text}`);
 	}
 }
 

@@ -3,8 +3,10 @@ import {
 	describeDevice,
 	normaliseCode,
 	normaliseEmail,
+	normaliseUsername,
 	readSignInHash,
-	signInHash
+	signInHash,
+	usernameKey
 } from './account-protocol.ts';
 
 describe('account protocol', () => {
@@ -21,6 +23,18 @@ describe('account protocol', () => {
 		expect(normaliseCode('123-456')).toBe('123456');
 		expect(normaliseCode('12345')).toBeUndefined();
 		expect(normaliseCode('abcdef')).toBeUndefined();
+	});
+
+	it('accepts usernames of plain letters, digits, dot, dash and underscore', () => {
+		expect(normaliseUsername('  Trevor_G ')).toBe('Trevor_G');
+		expect(normaliseUsername('a.b-c')).toBe('a.b-c');
+		expect(normaliseUsername('ab')).toBeUndefined();
+		expect(normaliseUsername('x'.repeat(25))).toBeUndefined();
+		expect(normaliseUsername('two words')).toBeUndefined();
+		// Look-alike letters from other alphabets (Cyrillic а) can't impersonate a name.
+		expect(normaliseUsername('trаvor')).toBeUndefined();
+		expect(normaliseUsername(7)).toBeUndefined();
+		expect(usernameKey('Trevor_G')).toBe(usernameKey('trevor_g'));
 	});
 
 	it('puts the sign-in token in the URL hash and reads it back', () => {
