@@ -4,8 +4,9 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
 
@@ -96,34 +97,23 @@
 			<dl class="counts">
 				<dt>Tokens</dt>
 				<dd>
-					<IconButton
-						icon="minus"
-						label="Fewer tokens"
-						disabled={count <= 1}
-						onclick={() => (count -= 1)}
-					/>
-					<output aria-label="Tokens">{count}</output>
-					<IconButton
-						icon="add"
-						label="More tokens"
-						disabled={count >= MAX}
-						onclick={() => (count += 1)}
+					<Stepper
+						bind:value={count}
+						label={t('setup.alignmentDraw.tokens')}
+						lessLabel={t('setup.alignmentDraw.fewerTokens')}
+						moreLabel={t('setup.alignmentDraw.moreTokens')}
+						min={1}
+						max={MAX}
 					/>
 				</dd>
 				<dt>Evil</dt>
 				<dd>
-					<IconButton
-						icon="minus"
-						label="Fewer evil"
-						disabled={evil <= 0}
-						onclick={() => (evil -= 1)}
-					/>
-					<output aria-label="Evil tokens">{evil}</output>
-					<IconButton
-						icon="add"
-						label="More evil"
-						disabled={evil >= count}
-						onclick={() => (evil += 1)}
+					<Stepper
+						bind:value={evil}
+						label={t('setup.alignmentDraw.evilTokens')}
+						lessLabel={t('setup.alignmentDraw.fewerEvil')}
+						moreLabel={t('setup.alignmentDraw.moreEvil')}
+						max={count}
 					/>
 				</dd>
 				<dt>Good</dt>
