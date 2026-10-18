@@ -5,7 +5,6 @@ export const characters = {
 	'characters.marks.firstNight': 'wakes on the first night',
 	'characters.marks.otherNight': 'wakes on other nights',
 	'characters.marks.reminders': { one: '{count} reminder token', other: '{count} reminder tokens' },
-	'characters.marks.setup': 'changes setup',
 	'characters.marks.firstNumber': 'number {number} on the first night',
 	'characters.marks.otherNumber': 'number {number} on other nights',
 	'characters.reminder': 'reminder',

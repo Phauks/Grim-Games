@@ -191,6 +191,8 @@ function parseFonts(input: Record<string, unknown>): Preferences['fonts'] {
 		return fonts;
 	}
 	for (const role of FONT_ROLES) {
+		// The account role came later and stays plain unless picked for itself.
+		if (role === 'account') continue;
 		const legacy = LEGACY_DISPLAY_ROLES.includes(role) ? input.displayFont : input.textFont;
 		if (isFontFor(role, legacy)) fonts[role] = legacy;
 	}

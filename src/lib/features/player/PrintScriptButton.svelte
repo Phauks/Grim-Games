@@ -21,6 +21,7 @@
 	let { script, version, labelled = false }: Props = $props();
 	let printing = $state(false);
 	let root = $state<HTMLElement>();
+	let sheet = $state<ScriptPrintSheet>();
 
 	/** Moves the printed sheet to the end of <body>, so print CSS can hide everything else. */
 	function toBody(node: HTMLElement) {
@@ -43,6 +44,8 @@
 			Promise.all(images.map((img) => img.decode().catch(() => undefined))),
 			new Promise((r) => setTimeout(r, 5000))
 		]);
+		// Each side on one page (Trevor, 2026-10-18).
+		await sheet?.fit();
 		document.documentElement.classList.add('printing');
 		const done = () => {
 			document.documentElement.classList.remove('printing');
@@ -61,7 +64,7 @@
 
 {#if printing && script}
 	<div class="print-root" bind:this={root} use:toBody>
-		<ScriptPrintSheet {script} {version} />
+		<ScriptPrintSheet bind:this={sheet} {script} {version} />
 	</div>
 {/if}
 
@@ -72,7 +75,8 @@
 			position: fixed;
 			top: 0;
 			left: -300vw;
-			width: 100vw;
+			/* A4's printable width with 12 mm margins, so the sheet is fitted at its printed size. */
+			width: 186mm;
 			visibility: hidden;
 		}
 	}

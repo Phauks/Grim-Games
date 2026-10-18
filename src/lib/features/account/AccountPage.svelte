@@ -6,13 +6,20 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { copyText } from '#lib/ui/clipboard.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import { accountApi, EXPORT_PATH } from './account-api.ts';
+	import { downloadJson } from '#lib/ui/download.ts';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import { accountApi } from './account-api.ts';
 	import { account } from './account.svelte.ts';
 	import { readSignInHash, type DeviceSession } from './account-protocol.ts';
 	import ChangeEmailDialog from './ChangeEmailDialog.svelte';
-	import ProfileScripts from './ProfileScripts.svelte';
+	import { exportFileName } from './export-file.ts';
+	import PasswordDialog from './PasswordDialog.svelte';
+	// Scripts are shown in the Library now, but signing in here still saves the device's
+	// scripts to the profile, which this module does when the user changes.
+	import './profile-scripts.svelte.ts';
 	import SignInForm from './SignInForm.svelte';
 	import { startAccount } from './start.ts';
 	import UsernameDialog from './UsernameDialog.svelte';
@@ -21,8 +28,13 @@
 	let sessions = $state.raw<DeviceSession[] | undefined>(undefined);
 	let sessionsError = $state('');
 	let confirmDelete = $state(false);
+	/** Deleting needs the username (or email) typed out (Trevor, 2026-10-18). */
+	let typed = $state('');
+	const deletePhrase = $derived(account.user?.username ?? account.user?.email ?? '');
+	const deleteTyped = $derived(deletePhrase !== '' && typed.trim() === deletePhrase);
 	let editUsername = $state(false);
 	let editEmail = $state(false);
+	let editPassword = $state(false);
 	let busy = $state(false);
 
 	const date = (ms: number) => intl.date(ms);
@@ -100,6 +112,18 @@
 			await loadSessions();
 		});
 
+	const download = () =>
+		act(async () => {
+			const user = account.user;
+			if (!user) return;
+			downloadJson(exportFileName(user, new Date()), await accountApi.exportData());
+		});
+
+	function askDelete(): void {
+		typed = '';
+		confirmDelete = true;
+	}
+
 	const deleteAccount = () =>
 		act(async () => {
 			await accountApi.deleteAccount();
@@ -133,17 +157,32 @@
 						onclick={() => (editEmail = true)}
 						disabled={busy || account.delivery === 'unavailable'}
 					/>
+					<dt>{t('account.you.password')}</dt>
+					<dd data-testid="account-password">
+						{account.user.hasPassword ? t('account.you.passwordSet') : t('common.none')}
+					</dd>
+					<IconButton
+						icon="rename"
+						label={t('account.password.title')}
+						onclick={() => (editPassword = true)}
+						disabled={busy}
+					/>
+					<!-- The account's own id: never changes, so it can't be edited. -->
+					<dt>{t('account.you.id')}</dt>
+					<dd data-testid="account-id">{account.user.id}</dd>
+					<IconButton
+						icon="copy"
+						label={t('account.you.copyId')}
+						onclick={() =>
+							account.user &&
+							copyText(account.user.id, { failed: [t('account.you.copyIdFailed')] })}
+					/>
 					<dt>{t('account.you.since')}</dt>
 					<dd>{date(account.user.createdAt)}</dd>
 				</dl>
 				<div class="buttons">
 					<Button variant="quiet" onclick={signOut} disabled={busy}>{t('account.signOut')}</Button>
 				</div>
-			</section>
-
-			<section aria-labelledby="scripts">
-				<h2 id="scripts">{t('account.scripts.title')}</h2>
-				<ProfileScripts />
 			</section>
 
 			<section aria-labelledby="devices">
@@ -181,10 +220,10 @@
 			<section aria-labelledby="data">
 				<h2 id="data">{t('account.data.title')}</h2>
 				<div class="buttons start">
-					<Button variant="quiet" onclick={() => location.assign(EXPORT_PATH)}
+					<Button variant="quiet" onclick={download} disabled={busy}
 						>{t('account.data.download')}</Button
 					>
-					<DeleteButton label={t('account.data.delete')} onclick={() => (confirmDelete = true)} />
+					<DeleteButton label={t('account.data.delete')} onclick={askDelete} />
 				</div>
 			</section>
 		{:else}
@@ -206,15 +245,33 @@
 
 <UsernameDialog bind:open={editUsername} />
 <ChangeEmailDialog bind:open={editEmail} />
+<PasswordDialog bind:open={editPassword} />
 
 <ConfirmDialog
 	bind:open={confirmDelete}
 	title={t('account.data.confirmTitle')}
 	danger
-	disabled={busy}
+	disabled={busy || !deleteTyped}
 	onConfirm={deleteAccount}
 >
 	<p>{t('account.data.confirmText')}</p>
+	<!-- The phrase on its own line, in plain text: field labels are set in capitals. -->
+	<p class="phrase-intro">{t('account.data.typeBelow')}</p>
+	<p class="phrase">{deletePhrase}</p>
+	<TextField
+		plain
+		hideLabel
+		label={t('account.data.typeToConfirm', { phrase: deletePhrase })}
+		bind:value={typed}
+		autocomplete="off"
+		spellcheck={false}
+		disabled={busy}
+		oncommit={() => {
+			if (!deleteTyped) return false;
+			confirmDelete = false;
+			void deleteAccount();
+		}}
+	/>
 </ConfirmDialog>
 
 <style>
@@ -249,6 +306,11 @@
 	small {
 		color: var(--on-surface-muted);
 	}
+	/* What people read and type exactly, in the plain account font (Trevor, 2026-10-18). */
+	dd,
+	.phrase {
+		font-family: var(--font-account);
+	}
 	dd {
 		margin: 0;
 		overflow-wrap: anywhere;
@@ -277,6 +339,14 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-2);
+	}
+	.phrase-intro {
+		margin: var(--space-2) 0 0;
+	}
+	.phrase {
+		margin: 0 0 var(--space-2);
+		font-weight: bold;
+		overflow-wrap: anywhere;
 	}
 	.devices small {
 		display: block;

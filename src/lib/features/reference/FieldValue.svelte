@@ -29,6 +29,7 @@
 	import type { FieldId } from './fields.ts';
 	import { EDITION_LABELS, TYPE_LABELS } from './labels.ts';
 	import NightText from './NightText.svelte';
+	import { reminderTargetLabel } from './reminder-target-label.ts';
 	import ReminderSentence from './ReminderSentence.svelte';
 
 	interface Props {
@@ -82,6 +83,17 @@
 			: t('reference.setupSome', { label: t(key), placed, copies: token.copies });
 	}
 
+	/** Beside each reminder: when it goes down and who it may go on, e.g. "Placed at setup · Goes on: Good players". */
+	function tokenNote(token: ReferenceToken): string | undefined {
+		const target = reminderTargetLabel(
+			character.id,
+			token.label,
+			(id) => officialData.current?.byId.get(id)?.name ?? id
+		);
+		const parts = [setupLabel(token), target && t('reference.target.label', { target })];
+		return parts.filter(Boolean).join(' · ') || undefined;
+	}
+
 	function special(s: Special): string {
 		return [
 			`${s.type}: ${s.name}`,
@@ -97,8 +109,11 @@
 {#snippet nightValue(testid: string, night: 'first' | 'other', info: ReferenceNight)}
 	<span class="night" data-testid={testid}>
 		<span class="pos" data-testid="{testid}-position" data-position={info.position}
-			>{#if info.position !== undefined}#{info.position}{:else}–{/if}{#if info.number !== undefined}<small
-					title={t('reference.provisionalNumber')}>{info.number}</small
+			>{#if info.position !== undefined}{t('reference.nightStep', {
+					position: info.position
+				})}{:else}–{/if}{#if info.number !== undefined}<small
+					title={t('reference.provisionalNumber')}
+					>{t('reference.nightSortNumber', { number: info.number })}</small
 				>{/if}</span
 		>
 		<span class="st"
@@ -173,13 +188,17 @@
 	{:else if field === 'ability'}
 		<span class="ability"><GlossaryText text={character.ability} names={[character.name]} /></span>
 	{:else if field === 'tokens'}
-		<span class="spaced"
-			>{#each entry.tokens as token, i (i)}<ReminderToken
-					label={token.global ? t('reference.globalReminder', { label: token.label }) : token.label}
-					type={character.type}
-					count={token.copies}
-					setup={setupLabel(token)}
-				/>{:else}{t('common.none')}{/each}</span
+		<span class="tokens"
+			>{#each entry.tokens as token, i (i)}{@const note = tokenNote(token)}<span class="token-row"
+					><ReminderToken
+						label={token.global
+							? t('reference.globalReminder', { label: token.label })
+							: token.label}
+						type={character.type}
+						{character}
+						count={token.copies}
+					/>{#if note}<span class="small">{note}</span>{/if}</span
+				>{:else}{t('common.none')}{/each}</span
 		>
 	{:else if field === 'special'}
 		<span class="spaced"
@@ -288,6 +307,18 @@
 	}
 	.block {
 		display: block;
+	}
+	.tokens {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: calc(0.25 * var(--u));
+	}
+	.token-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: calc(0.5 * var(--u));
 	}
 	.spaced {
 		display: inline-flex;

@@ -3,7 +3,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
-	import { cleanName, MAX_LABEL_NAME } from './library-labels.ts';
+	import { MAX_LABEL_NAME } from './library-labels.ts';
 
 	/** Names something new, or renames it; Enter saves. */
 	interface Props {
@@ -12,12 +12,21 @@
 		/** The name it starts from each time it opens. */
 		initial?: string;
 		onsave: (name: string) => void;
+		/** The longest name allowed; a folder's or tag's by default. */
+		maxlength?: number;
 	}
 
-	let { open = $bindable(false), title, initial = '', onsave }: Props = $props();
+	let {
+		open = $bindable(false),
+		title,
+		initial = '',
+		onsave,
+		maxlength = MAX_LABEL_NAME
+	}: Props = $props();
 
 	let name = $state('');
-	const ok = $derived(cleanName(name) !== '');
+	const clean = (text: string) => text.trim().replace(/\s+/g, ' ').slice(0, maxlength);
+	const ok = $derived(clean(name) !== '');
 
 	$effect(() => {
 		if (open) name = initial;
@@ -25,7 +34,7 @@
 
 	function save() {
 		if (!ok) return;
-		onsave(cleanName(name));
+		onsave(clean(name));
 		open = false;
 	}
 </script>
@@ -34,7 +43,7 @@
 	<TextField
 		label={t('library.name')}
 		bind:value={name}
-		maxlength={MAX_LABEL_NAME}
+		{maxlength}
 		oncommit={() => {
 			save();
 			return false;

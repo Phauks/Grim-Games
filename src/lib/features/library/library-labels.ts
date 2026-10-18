@@ -14,6 +14,8 @@
 export const LIBRARY_LABELS_VERSION = 2;
 /** Longest folder or tag name. */
 export const MAX_LABEL_NAME = 40;
+/** A renamed item's name: as long as a script's own name may reasonably be. */
+export const MAX_ITEM_NAME = 80;
 
 export type LabelKind = 'tags' | 'folders';
 
@@ -27,6 +29,11 @@ export interface Label {
 export interface ScriptLabels {
 	tags: string[];
 	folder?: string;
+	/**
+	 * The item's name in the Library, when renamed here (Trevor, 2026-10-18). The script itself
+	 * and where it came from are unchanged, so Search still finds it as saved.
+	 */
+	name?: string;
 }
 
 export interface LibraryLabels {
@@ -96,7 +103,10 @@ export function parseLabels(raw: unknown): LibraryLabels | undefined {
 					? value.tags.filter((t): t is string => typeof t === 'string' && tagIds.has(t))
 					: [],
 				folder:
-					typeof value.folder === 'string' && folderIds.has(value.folder) ? value.folder : undefined
+					typeof value.folder === 'string' && folderIds.has(value.folder)
+						? value.folder
+						: undefined,
+				name: typeof value.name === 'string' ? value.name : undefined
 			});
 			if (entry) scripts[key] = entry;
 		}
@@ -107,8 +117,13 @@ export function parseLabels(raw: unknown): LibraryLabels | undefined {
 /** Undefined when the script has nothing left, so its entry is dropped. */
 function tidy(entry: ScriptLabels): ScriptLabels | undefined {
 	const tags = [...new Set(entry.tags)];
-	if (!tags.length && !entry.folder) return undefined;
-	return entry.folder ? { tags, folder: entry.folder } : { tags };
+	const name = entry.name?.trim().replace(/\s+/g, ' ').slice(0, MAX_ITEM_NAME) ?? '';
+	if (!tags.length && !entry.folder && !name) return undefined;
+	return {
+		tags,
+		...(entry.folder ? { folder: entry.folder } : {}),
+		...(name ? { name } : {})
+	};
 }
 
 function withScript(state: LibraryLabels, key: string, entry: ScriptLabels): LibraryLabels {
@@ -213,7 +228,7 @@ export function deleteLabel(state: LibraryLabels, kind: LabelKind, id: string): 
 			next = withScript(next, key, { ...entry, tags: entry.tags.filter((t) => t !== id) });
 		}
 		if (kind === 'folders' && entry.folder === id) {
-			next = withScript(next, key, { tags: entry.tags, folder: up });
+			next = withScript(next, key, { ...entry, folder: up });
 		}
 	}
 	return next;
@@ -311,7 +326,12 @@ export function setFolder(
 ): LibraryLabels {
 	if (folder !== undefined && !state.folders.some((f) => f.id === folder)) return state;
 	const entry = labelsFor(state, key);
-	return withScript(state, key, { tags: entry.tags, folder });
+	return withScript(state, key, { ...entry, folder });
+}
+
+/** Renames an item in the Library; a blank name goes back to its own. */
+export function setName(state: LibraryLabels, key: string, name: string): LibraryLabels {
+	return withScript(state, key, { ...labelsFor(state, key), name });
 }
 
 /** Adds the tag to the script, or takes it off. */

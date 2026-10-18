@@ -7,7 +7,7 @@
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { accountApi } from './account-api.ts';
 	import { account } from './account.svelte.ts';
-	import { CODE_LENGTH, normaliseCode, normaliseEmail } from './account-protocol.ts';
+	import { cleanEmail, CODE_LENGTH, normaliseCode } from './account-protocol.ts';
 
 	/**
 	 * Moves the account to a new email address: a code goes to the new address, and the
@@ -46,7 +46,7 @@
 	}
 
 	function send(): void {
-		const address = normaliseEmail(email);
+		const address = cleanEmail(email);
 		if (!address) {
 			error = t('account.signIn.badEmail');
 			return;
@@ -77,6 +77,7 @@
 	<div class="fields">
 		<div class="row">
 			<TextField
+				plain
 				label={t('account.changeEmail.newEmail')}
 				bind:value={email}
 				type="email"
@@ -94,6 +95,7 @@
 			>
 		</div>
 		<TextField
+			plain
 			label={sentTo
 				? t('account.signIn.codeSentTo', { email: sentTo })
 				: t('account.changeEmail.code')}
@@ -144,6 +146,7 @@
 	.error {
 		min-height: 2lh;
 		margin: 0;
+		font-family: var(--font-account);
 	}
 	.note {
 		color: var(--on-surface-muted);

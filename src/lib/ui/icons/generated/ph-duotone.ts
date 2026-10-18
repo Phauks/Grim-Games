@@ -40,6 +40,7 @@ import ph_clipboard_duotone from '~icons/ph/clipboard-duotone';
 import ph_clipboard_text_duotone from '~icons/ph/clipboard-text-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
 import ph_club_duotone from '~icons/ph/club-duotone';
+import ph_columns_duotone from '~icons/ph/columns-duotone';
 import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
 import ph_corners_out_duotone from '~icons/ph/corners-out-duotone';
@@ -66,7 +67,6 @@ import ph_flag_duotone from '~icons/ph/flag-duotone';
 import ph_flask_duotone from '~icons/ph/flask-duotone';
 import ph_floppy_disk_duotone from '~icons/ph/floppy-disk-duotone';
 import ph_flower_duotone from '~icons/ph/flower-duotone';
-import ph_flower_lotus_duotone from '~icons/ph/flower-lotus-duotone';
 import ph_folder_duotone from '~icons/ph/folder-duotone';
 import ph_folder_open_duotone from '~icons/ph/folder-open-duotone';
 import ph_folder_simple_duotone from '~icons/ph/folder-simple-duotone';
@@ -95,7 +95,9 @@ import ph_leaf_duotone from '~icons/ph/leaf-duotone';
 import ph_lifebuoy_duotone from '~icons/ph/lifebuoy-duotone';
 import ph_lightning_duotone from '~icons/ph/lightning-duotone';
 import ph_link_duotone from '~icons/ph/link-duotone';
+import ph_link_break_duotone from '~icons/ph/link-break-duotone';
 import ph_link_simple_duotone from '~icons/ph/link-simple-duotone';
+import ph_link_simple_break_duotone from '~icons/ph/link-simple-break-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
 import ph_list_bullets_duotone from '~icons/ph/list-bullets-duotone';
 import ph_list_checks_duotone from '~icons/ph/list-checks-duotone';
@@ -128,6 +130,7 @@ import ph_prohibit_inset_duotone from '~icons/ph/prohibit-inset-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
+import ph_rows_duotone from '~icons/ph/rows-duotone';
 import ph_scales_duotone from '~icons/ph/scales-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
 import ph_shapes_duotone from '~icons/ph/shapes-duotone';
@@ -152,6 +155,7 @@ import ph_star_duotone from '~icons/ph/star-duotone';
 import ph_sun_duotone from '~icons/ph/sun-duotone';
 import ph_sun_horizon_duotone from '~icons/ph/sun-horizon-duotone';
 import ph_swap_duotone from '~icons/ph/swap-duotone';
+import ph_table_duotone from '~icons/ph/table-duotone';
 import ph_tag_duotone from '~icons/ph/tag-duotone';
 import ph_tag_simple_duotone from '~icons/ph/tag-simple-duotone';
 import ph_text_aa_duotone from '~icons/ph/text-aa-duotone';
@@ -221,6 +225,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-duotone': ph_clipboard_text_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
 	'ph:club-duotone': ph_club_duotone,
+	'ph:columns-duotone': ph_columns_duotone,
 	'ph:copy-duotone': ph_copy_duotone,
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
 	'ph:corners-out-duotone': ph_corners_out_duotone,
@@ -247,7 +252,6 @@ const icons: IconMap = {
 	'ph:flask-duotone': ph_flask_duotone,
 	'ph:floppy-disk-duotone': ph_floppy_disk_duotone,
 	'ph:flower-duotone': ph_flower_duotone,
-	'ph:flower-lotus-duotone': ph_flower_lotus_duotone,
 	'ph:folder-duotone': ph_folder_duotone,
 	'ph:folder-open-duotone': ph_folder_open_duotone,
 	'ph:folder-simple-duotone': ph_folder_simple_duotone,
@@ -276,7 +280,9 @@ const icons: IconMap = {
 	'ph:lifebuoy-duotone': ph_lifebuoy_duotone,
 	'ph:lightning-duotone': ph_lightning_duotone,
 	'ph:link-duotone': ph_link_duotone,
+	'ph:link-break-duotone': ph_link_break_duotone,
 	'ph:link-simple-duotone': ph_link_simple_duotone,
+	'ph:link-simple-break-duotone': ph_link_simple_break_duotone,
 	'ph:list-duotone': ph_list_duotone,
 	'ph:list-bullets-duotone': ph_list_bullets_duotone,
 	'ph:list-checks-duotone': ph_list_checks_duotone,
@@ -309,6 +315,7 @@ const icons: IconMap = {
 	'ph:push-pin-duotone': ph_push_pin_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
+	'ph:rows-duotone': ph_rows_duotone,
 	'ph:scales-duotone': ph_scales_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,
 	'ph:shapes-duotone': ph_shapes_duotone,
@@ -333,6 +340,7 @@ const icons: IconMap = {
 	'ph:sun-duotone': ph_sun_duotone,
 	'ph:sun-horizon-duotone': ph_sun_horizon_duotone,
 	'ph:swap-duotone': ph_swap_duotone,
+	'ph:table-duotone': ph_table_duotone,
 	'ph:tag-duotone': ph_tag_duotone,
 	'ph:tag-simple-duotone': ph_tag_simple_duotone,
 	'ph:text-aa-duotone': ph_text_aa_duotone,

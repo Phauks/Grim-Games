@@ -71,7 +71,9 @@
 		// Live rooms (worker/room.ts): joins and reconnects, and rooms opened, per address.
 		{ "name": "ROOM_JOINS", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
 		{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } },
-		{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } }
+		{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } },
+		// Password sign-ins tried per address, on top of the per-email limit in AccountEmail.
+		{ "name": "AUTH_PASSWORDS", "namespace_id": "1007", "simple": { "limit": 10, "period": 60 } }
 	],
 	// The site is served on grimbinder.com (Trevor, 2026-10-18), attached as a Custom Domain in
 	// the Cloudflare dashboard. It is deliberately not listed under "routes": wrangler only
@@ -106,7 +108,8 @@
 			{ "name": "AUTH_STARTS", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
 			{ "name": "ROOM_JOINS", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
 			{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } },
-			{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } }
+			{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } },
+			{ "name": "AUTH_PASSWORDS", "namespace_id": "1007", "simple": { "limit": 10, "period": 60 } }
 		]
 	}
 }

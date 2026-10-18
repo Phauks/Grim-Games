@@ -4,17 +4,15 @@ import { t } from '#lib/i18n/locale.svelte.ts';
  * Marks inside a character token, as on the printed tokens: one leaf on the left when the
  * character acts on the first night, one on the right when it acts on other nights, and
  * leaves across the top, one per reminder token
- * (rulebook; https://wiki.bloodontheclocktower.com/Setup for the top leaves). A character
- * that changes setup gets a flower at the bottom right instead (Trevor, 2026-10-15). Every
- * mark sits inside the token. Our own simple drawing, not TPI's artwork.
+ * (rulebook; https://wiki.bloodontheclocktower.com/Setup for the top leaves). Every mark sits
+ * inside the token. A setup change has no mark (Trevor, 2026-10-18: the flower is gone; the
+ * Reference says it in words). Our own simple drawing, not TPI's artwork.
  */
 export interface LeafMarks {
 	firstNight: boolean;
 	otherNight: boolean;
 	/** Reminder tokens the character has. */
 	reminders: number;
-	/** Changes setup ([bracketed] ability text). */
-	setup: boolean;
 }
 
 export interface Leaf {
@@ -39,15 +37,11 @@ export function leafLayout(marks: LeafMarks): Leaf[] {
 	return leaves;
 }
 
-/** Where the setup flower sits: bottom right, inside the face. */
-export const FLOWER_ANGLE = 45;
-
 /** Words for the leaves, for screen readers. */
 export function describeLeaves(marks: LeafMarks): string {
 	const parts: string[] = [];
 	if (marks.firstNight) parts.push(t('characters.marks.firstNight'));
 	if (marks.otherNight) parts.push(t('characters.marks.otherNight'));
 	if (marks.reminders > 0) parts.push(t('characters.marks.reminders', { count: marks.reminders }));
-	if (marks.setup) parts.push(t('characters.marks.setup'));
 	return parts.join(', ');
 }
