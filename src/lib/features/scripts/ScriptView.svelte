@@ -56,6 +56,8 @@
 		labels?: Snippet;
 		/** More buttons in the action row, after Play, Print and Share. */
 		extraActions?: Snippet;
+		/** The action row sits in the pinned top with the name (the Library's pane header). */
+		actionsInTop?: boolean;
 	}
 
 	let {
@@ -67,7 +69,8 @@
 		busy = false,
 		lead,
 		labels,
-		extraActions
+		extraActions,
+		actionsInTop = false
 	}: Props = $props();
 
 	// ---- Versions: BotC Scripts publishes them (and the World Cups load from it) ----
@@ -301,6 +304,7 @@
 	extra={rows}
 	{lead}
 	{version}
+	{actionsInTop}
 >
 	{#snippet actions()}
 		<IconButton

@@ -17,12 +17,22 @@
 	} from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 
-	/** The user's tags: add, rename and delete them. Folders are managed in the folder view. */
+	/**
+	 * The user's tags in the Library's sidebar (Trevor, 2026-10-18: tags in "the left side bar
+	 * of the file nav"): tap one to show what carries it; add, rename and delete them here.
+	 */
 	interface Props {
-		open?: boolean;
+		/** The tags the list is filtered by: items carrying every one. */
+		filter?: string[];
 	}
 
-	let { open = $bindable(false) }: Props = $props();
+	let { filter = $bindable([]) }: Props = $props();
+
+	const kind: LabelKind = 'tags';
+
+	function toggle(id: string) {
+		filter = filter.includes(id) ? filter.filter((f) => f !== id) : [...filter, id];
+	}
 
 	let renaming = $state<{ kind: LabelKind; label: Label }>();
 	let renameOpen = $state(false);
@@ -47,31 +57,33 @@
 	}
 </script>
 
-<Dialog bind:open title={t('library.tags')}>
-	{@const kind = 'tags'}
-	<ul>
-		{#each byName(libraryLabels.state.tags) as label (label.id)}
-			<li>
-				<span class="name">{label.name}</span>
-				<IconButton
-					icon="rename"
-					label={t('library.renameNamed', { name: label.name })}
-					onclick={() => startRename(kind, label)}
-				/>
-				<DeleteButton
-					label={t('library.deleteNamed', { name: label.name })}
-					onclick={() => {
-						deleting = { kind, label };
-						deleteOpen = true;
-					}}
-				/>
-			</li>
-		{:else}
-			<li class="none">{t('common.none')}</li>
-		{/each}
-	</ul>
-	<NewLabel {kind} label={t('library.newTag')} />
-</Dialog>
+<ul class="tags" aria-label={t('library.tags')}>
+	{#each byName(libraryLabels.state.tags) as label (label.id)}
+		<li>
+			<button
+				type="button"
+				class="tag"
+				aria-pressed={filter.includes(label.id)}
+				onclick={() => toggle(label.id)}>{label.name}</button
+			>
+			<IconButton
+				icon="rename"
+				label={t('library.renameNamed', { name: label.name })}
+				onclick={() => startRename(kind, label)}
+			/>
+			<DeleteButton
+				label={t('library.deleteNamed', { name: label.name })}
+				onclick={() => {
+					deleting = { kind, label };
+					deleteOpen = true;
+				}}
+			/>
+		</li>
+	{:else}
+		<li class="none">{t('common.none')}</li>
+	{/each}
+</ul>
+<NewLabel {kind} label={t('library.newTag')} />
 
 <Dialog bind:open={renameOpen} title={t('library.renameTitle')}>
 	<TextField
@@ -119,12 +131,30 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto auto;
 		align-items: center;
-		border-bottom: var(--card-border);
+		gap: var(--space-1);
+		padding-block: var(--space-1);
 	}
-	.name {
+	/* The tag's own look, in the font its name was typed in (Trevor, 2026-10-18). */
+	.tag {
+		justify-self: start;
+		max-width: 100%;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-3);
+		border: var(--card-border);
+		border-radius: var(--radius-full);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-family: var(--font-control);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		cursor: pointer;
+	}
+	.tag[aria-pressed='true'] {
+		border-color: var(--accent);
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 	.none {
 		display: block;
