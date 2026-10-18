@@ -38,6 +38,7 @@ function record(
 		createdAt: 0,
 		endedAt: 1,
 		script: {},
+		finalThree: false,
 		days: dayLog.length,
 		seats,
 		ruleCharacters: [],

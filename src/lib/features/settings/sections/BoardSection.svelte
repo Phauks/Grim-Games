@@ -1,10 +1,7 @@
 <script lang="ts">
-	import TokenAppearanceSettings from '#lib/features/characters/TokenAppearanceSettings.svelte';
-	import { intl, t } from '#lib/i18n/locale.svelte.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { DEFAULT_PREFERENCES, ICON_SCALE } from '#lib/ui/preferences.ts';
-	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ReminderModeSetting from '#lib/features/grimoire/ReminderModeSetting.svelte';
 	import StepFocusSetting from '#lib/features/grimoire/StepFocusSetting.svelte';
@@ -16,29 +13,12 @@
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 	/**
-	 * Everything about how the grimoire board and its tokens look (Trevor, 2026-10-17), also
-	 * opened on its own from the board's menu with `settingsDialog.showOnly('board')`.
+	 * How the grimoire board looks and behaves (Trevor, 2026-10-18: tokens have their own
+	 * section), also opened on its own from the board's menu with `settingsDialog.showOnly('board')`.
 	 */
 	const assistance = $derived(preferences.current.assistance);
 </script>
 
-<TokenAppearanceSettings
-	value={preferences.current.tokenAppearance}
-	theme={preferences.theme}
-	onChange={(tokenAppearance) => preferences.update({ tokenAppearance })}
-/>
-<!-- Beside token and reminder size (Trevor, 2026-10-16). -->
-<SettingSlider
-	label={t('settings.characterIconSize')}
-	description={t('settings.characterIconSizeHelp')}
-	value={preferences.current.characterIconScale}
-	defaultValue={DEFAULT_PREFERENCES.characterIconScale}
-	{...ICON_SCALE}
-	format={(scale) => intl.number(scale, { style: 'percent' })}
-	onChange={(characterIconScale) => preferences.update({ characterIconScale })}
-/>
-
-<h3>{t('settings.groupBoard')}</h3>
 <!-- With a board open, its own background too (the board thread, Trevor 2026-10-18). -->
 {#if boardBackground.context}<BoardBackgroundRow
 		board={boardBackground.context}

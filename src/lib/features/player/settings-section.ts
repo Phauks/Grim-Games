@@ -1,11 +1,14 @@
 import { registerSettingsSection } from '#lib/features/settings/registry.ts';
 import PlayerSettingsSection from './PlayerSettingsSection.svelte';
+import { playerSettings } from './player-settings.svelte.ts';
 
 // The player view's own settings section (settings registry: features add their own).
 registerSettingsSection({
 	id: 'player-view',
-	label: 'Player view',
+	// "Player", like "Storyteller" (Trevor, 2026-10-18).
+	label: 'Player',
 	icon: 'notes',
 	component: PlayerSettingsSection,
+	reset: () => playerSettings.update({ density: 'normal' }),
 	order: 37
 });

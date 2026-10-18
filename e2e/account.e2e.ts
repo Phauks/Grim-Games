@@ -54,7 +54,12 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	await page.reload();
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 	expect(await page.evaluate(() => document.cookie)).not.toContain('gg_session');
-	await expect(page.getByText('(this device)')).toBeVisible();
+	// Devices are a table; this device can't be signed out from its own row.
+	const devices = page.getByTestId('devices-table');
+	await expect(devices.getByText('(this device)')).toBeVisible();
+	await expect(
+		devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ })
+	).toBeDisabled();
 
 	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
 	await expect(page.getByLabel('Email address')).toBeVisible();
@@ -125,13 +130,16 @@ test('scripts added on the device are saved to the profile', async ({ page }) =>
 test('deleting the account signs out and removes it', async ({ page }) => {
 	const email = uniqueEmail('delete');
 	await signInWithCode(page, email);
+	const id = (await page.getByTestId('account-id').textContent()) ?? '';
+	// A labelled red button, not the trash icon (Trevor, 2026-10-18).
 	await page.getByRole('button', { name: 'Delete account' }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Delete your account?' });
-	// Confirm waits for the email (no username yet) typed out.
+	// Confirm waits for the account ID typed out (case and outer spaces don't matter).
+	const field = confirm.getByLabel(`Type ${id} to confirm`);
 	await expect(confirm.getByRole('button', { name: 'Confirm' })).toBeDisabled();
-	await confirm.getByLabel(`Type ${email} to confirm`).fill(email.slice(0, -1));
+	await field.fill(id.slice(0, -1));
 	await expect(confirm.getByRole('button', { name: 'Confirm' })).toBeDisabled();
-	await confirm.getByLabel(`Type ${email} to confirm`).fill(email);
+	await field.fill(` ${id.toUpperCase()} `);
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByLabel('Email address')).toBeVisible();
 	const session = await page.evaluate(async () => (await fetch('/api/auth/session')).json());
@@ -300,4 +308,26 @@ test('a code-only account can set a password in Account settings', async ({ page
 	await page.getByLabel('Password', { exact: true }).fill('a much longer password');
 	await page.getByRole('button', { name: 'Sign in' }).tap();
 	await expect(page.getByTestId('account-email')).toHaveText(email);
+});
+
+test('the profile icon is picked from the characters and shows in the header', async ({ page }) => {
+	await signInWithCode(page, uniqueEmail('icon'));
+	await expect(page.getByTestId('profile-icon').first()).not.toHaveAttribute('data-icon');
+	await page.getByRole('button', { name: 'Change icon' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Change icon' });
+	await dialog.getByRole('searchbox').fill('Fortune Teller');
+	await dialog
+		.getByRole('button', { name: /Fortune Teller/ })
+		.first()
+		.tap();
+	await expect(dialog).toBeHidden();
+	const header = page.getByRole('button', { name: /^Account: signed in as / });
+	await expect(header.getByTestId('profile-icon')).toHaveAttribute('data-icon', 'fortuneteller');
+	// It is kept on the account, not the device.
+	await page.reload();
+	await expect(header.getByTestId('profile-icon')).toHaveAttribute('data-icon', 'fortuneteller');
+
+	await page.getByRole('button', { name: 'Change icon' }).tap();
+	await dialog.getByRole('button', { name: 'None' }).tap();
+	await expect(header.getByTestId('profile-icon')).not.toHaveAttribute('data-icon');
 });
