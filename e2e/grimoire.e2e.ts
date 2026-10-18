@@ -1583,6 +1583,13 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 
 test('History shows stats from ended games', async ({ page }) => {
 	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Scarlet Woman', exact: true })
+		.tap();
+	await closeSheet(page);
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
@@ -1595,6 +1602,14 @@ test('History shows stats from ended games', async ({ page }) => {
 	await expect(summary).toContainText(/Games\s*1\s*Good won\s*1\s*Evil won\s*0/);
 	const scripts = page.getByTestId('history-scripts');
 	await expect(scripts).toContainText(/Trouble Brewing/);
+	// A long name stays inside its badge, even in a phone's narrow column (Trevor, 2026-10-18:
+	// names ran out of their badges over the next column).
+	const badge = page
+		.getByTestId('history-characters')
+		.locator('[data-character-id="scarletwoman"]');
+	await expect(badge).toContainText('Scarlet Woman');
+	const name = badge.locator('.name');
+	expect(await name.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 	// Header filters narrow a table (Trevor, 2026-10-16: filters live in the header row).
 	await scripts.getByRole('button', { name: /Filter Script/ }).tap();
 	await page.getByRole('searchbox', { name: 'Filter Script' }).fill('violets');
