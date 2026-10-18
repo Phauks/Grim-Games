@@ -31,9 +31,6 @@
 
 	let soundOpen = $state(false);
 	let controlsOpen = $state(false);
-	const MODES = ['down', 'up'] as const;
-	const modeLabel = (mode: (typeof MODES)[number]) =>
-		mode === 'down' ? t('day.timerModeDown') : t('day.timerModeUp');
 	const soundLabel = (sound: TimerSound) => t(`day.timerSound.${sound}`);
 	/** Vibration on or off beside the sound, so the alarm can be either, both or neither. */
 	function chooseVibrate(timerVibrate: boolean) {
@@ -145,12 +142,6 @@
 	<BottomSheet bind:open={controlsOpen} title={t('day.timer')}>
 		<div class="controls" data-testid="timer-sheet">
 			<DayTimer {alive} soundButton={false} />
-			<Select
-				label={t('day.timerModeTitle')}
-				value={timer.mode}
-				options={MODES.map((value) => ({ value, label: modeLabel(value) }))}
-				onChange={(mode) => preferences.update({ timerMode: mode })}
-			/>
 			<Select
 				label={t('day.timerSoundTitle')}
 				value={preferences.current.timerSound}

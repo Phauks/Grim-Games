@@ -58,7 +58,6 @@ export const day = {
 	'day.timerVibrate': 'Vibrate',
 	'day.timerVibrateUnavailable': 'This device can’t vibrate.',
 	'day.timerOpen': 'Day timer, {clock}; open its controls',
-	'day.timerModeTitle': 'Mode',
 	'day.timerModeDown': 'Timer',
 	'day.timerModeUp': 'Stopwatch',
 	'day.timerSwitchToUp': 'Timer; switch to stopwatch',

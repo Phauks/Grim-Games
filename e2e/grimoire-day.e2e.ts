@@ -372,8 +372,9 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 	// The sound is chosen right here, so the timer's own sound button is left out.
 	await expect(timer.getByRole('button', { name: /^Timer sound/ })).toHaveCount(0);
 
-	await sheet.getByRole('combobox', { name: 'Mode' }).tap();
-	await page.getByRole('option', { name: 'Stopwatch' }).tap();
+	// Tapping the clock switches timer and stopwatch; there is no drop-down for it (Trevor).
+	await expect(sheet.getByRole('combobox', { name: 'Mode' })).toHaveCount(0);
+	await timer.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
 	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
 	await sheet.getByRole('combobox', { name: 'Timer sound' }).tap();
 	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
