@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import BluffsDemo from '#lib/features/bluffs/BluffsDemo.svelte';
 </script>
 
 <svelte:head>
-	<title>Demon bluffs spike · Grim-Games</title>
+	<title>Demon bluffs spike · {APP_NAME}</title>
 </svelte:head>
 
 <main>

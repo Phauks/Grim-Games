@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 test('the menu opens the character reference; the footer no longer links it', async ({ page }) => {
 	await page.goto('/');
@@ -7,7 +8,7 @@ test('the menu opens the character reference; the footer no longer links it', as
 	);
 	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
 	await page
-		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('link', { name: 'Character reference' })
 		.tap();
 	await expect(page).toHaveURL(/\/reference$/);

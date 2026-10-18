@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 // Trevor (2026-10-16): New game, Resume game, Scripts and the other destinations in a left
 // sidebar reachable from every part of the app; a drawer on phones.
@@ -9,7 +10,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	const menu = page.getByRole('banner').getByRole('button', { name: 'Menu' });
 	await expect(menu).toHaveAttribute('aria-expanded', 'false');
 	await menu.tap();
-	const drawer = page.getByRole('dialog', { name: 'Grim-Games' });
+	const drawer = page.getByRole('dialog', { name: APP_NAME });
 	await expect(drawer).toBeVisible();
 	// The hamburger in the same spot closes it again.
 	await drawer.getByRole('button', { name: 'Close menu' }).first().tap();
@@ -34,15 +35,15 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	// Grouped under plain labels: games, preparation, players, then you (Trevor, 2026-10-16).
 	// Headed with the app's name, not "Menu" (Trevor, 2026-10-18).
 	await expect(drawer.getByRole('heading')).toHaveText([
-		'Grim-Games',
-		'Games',
+		APP_NAME,
+		'Play',
 		'Prepare',
 		'Players',
 		'You'
 	]);
 	// Home stands first on its own, outside the groups (Trevor, 2026-10-16).
 	await expect(drawer.getByRole('link').first()).toHaveText('Home');
-	await expect(drawer.getByRole('list', { name: 'Games' }).getByRole('link')).toHaveText([
+	await expect(drawer.getByRole('list', { name: 'Play', exact: true }).getByRole('link')).toHaveText([
 		'New game',
 		'Resume game',
 		'History'
@@ -96,6 +97,6 @@ test.describe('on a computer', () => {
 		await expect(nav).toBeHidden();
 		await menu.click();
 		await expect(nav).toBeVisible();
-		await expect(page.getByRole('dialog', { name: 'Grim-Games' })).toHaveCount(0);
+		await expect(page.getByRole('dialog', { name: APP_NAME })).toHaveCount(0);
 	});
 });

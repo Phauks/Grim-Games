@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -19,5 +20,5 @@
 </script>
 
 <svelte:head>
-	<title>Diagnostics · Grim-Games</title>
+	<title>Diagnostics · {APP_NAME}</title>
 </svelte:head>

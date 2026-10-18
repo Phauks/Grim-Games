@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 test('home page renders on a touch device', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 	// Blank until near 1.0, and it says so (Trevor, 2026-10-17).
 	await expect(
 		page.getByRole('main').getByText('This page is intentionally blank', { exact: true })
@@ -39,7 +40,7 @@ test('the Community Created Content logo is at the bottom of the menu', async ({
 		page.getByRole('contentinfo').getByRole('img', { name: /Community Created Content/ })
 	).toHaveCount(0);
 	const sidebar = page.getByRole('navigation', { name: 'Menu' }).first();
-	const drawer = page.getByRole('dialog', { name: 'Grim-Games' });
+	const drawer = page.getByRole('dialog', { name: APP_NAME });
 	let menu = sidebar;
 	if (!(await sidebar.isVisible())) {
 		await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
@@ -189,5 +190,5 @@ test('a game in progress hides the header and footer, so a stray tap cannot leav
 
 	// Setting up a game is not "in progress": the header is back there.
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
-	await expect(page.getByRole('banner').getByRole('link', { name: 'Grim-Games' })).toBeVisible();
+	await expect(page.getByRole('banner').getByRole('link', { name: APP_NAME })).toBeVisible();
 });

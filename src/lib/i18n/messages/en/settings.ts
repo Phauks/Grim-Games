@@ -1,3 +1,5 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** The Settings dialog and its built-in sections. */
 export const settings = {
 	'settings.title': 'Settings',
@@ -72,8 +74,7 @@ export const settings = {
 	'settings.resetDoneText': 'Back to the defaults on this device.',
 	'settings.confirm': 'Confirm',
 	'settings.storageUsed': 'Storage used on this device',
-	'settings.storageUsedHelp':
-		'What Grim-Games keeps on this device and how much room each part takes. Choose rows to clear them.',
+	'settings.storageUsedHelp': `What ${APP_NAME} keeps on this device and how much room each part takes. Choose rows to clear them.`,
 	'settings.storageTable': 'Storage on this device',
 	'settings.storageSelect': 'Select',
 	'settings.storageItem': 'Item',

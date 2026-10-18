@@ -1,7 +1,9 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** Character selection, the bag draw and the setup steps (features/setup, /setup, /draw). */
 export const setup = {
-	'setup.pageTitle.characters': 'Characters · Grim-Games',
-	'setup.pageTitle.draw': 'Draw · Grim-Games',
+	'setup.pageTitle.characters': `Characters · ${APP_NAME}`,
+	'setup.pageTitle.draw': `Draw · ${APP_NAME}`,
 	'setup.grimoire': 'Grimoire',
 	'setup.steps': 'Setup steps',
 	'setup.nav': 'Setup',

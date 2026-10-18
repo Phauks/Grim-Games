@@ -1,6 +1,8 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** The Character reference page (features/reference). */
 export const reference = {
-	'reference.pageTitle': 'Character reference · Grim-Games',
+	'reference.pageTitle': `Character reference · ${APP_NAME}`,
 	'reference.title': 'Character reference',
 	'reference.showAs': 'Show as',
 	'reference.viewCards': 'Cards',

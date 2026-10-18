@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -76,7 +77,7 @@ test('New game and Resume game are screens of their own', async ({ page }) => {
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
 	// No Back button (Trevor, 2026-10-16): the app name in the header, or Home in the menu, goes home.
 	await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0);
-	await page.getByRole('banner').getByRole('link', { name: 'Grim-Games' }).tap();
+	await page.getByRole('banner').getByRole('link', { name: APP_NAME }).tap();
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
 
@@ -1131,7 +1132,7 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 
 	// Settings open over the board, so the game is never left.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	const drawer = page.getByRole('dialog', { name: 'Grim-Games' });
+	const drawer = page.getByRole('dialog', { name: APP_NAME });
 	await drawer.getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await expect(settings).toBeVisible();
@@ -1178,7 +1179,7 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	// With "Stack duplicate reminders" on, they show as one token with what is left.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await page
-		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('button', { name: 'Settings' })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
@@ -1292,7 +1293,7 @@ test('the board background can be an image from the device, kept after a reload'
 	// The app's own Settings still lists every section.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await page
-		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('button', { name: 'Settings' })
 		.tap();
 	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeAttached();

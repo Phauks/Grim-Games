@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 </script>
 
 <svelte:head>
-	<title>Icon preview · Grim-Games</title>
+	<title>Icon preview · {APP_NAME}</title>
 </svelte:head>
 
 <!-- Labelled icons the settings e2e tests watch while changing icon style and text size. -->
