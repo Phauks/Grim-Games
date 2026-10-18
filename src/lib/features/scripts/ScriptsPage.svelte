@@ -9,7 +9,7 @@
 	import { restoreScripts } from './current-script.svelte.ts';
 	import ScriptPicker from './ScriptPicker.svelte';
 	import ScriptSearchBar from './ScriptSearchBar.svelte';
-	import { storedSource } from './search-sources.ts';
+	import { storedSources } from './search-sources.ts';
 	import { fetchSharedRef } from './share-codes.ts';
 	import { sharedRefFromHash } from './share.ts';
 
@@ -20,7 +20,7 @@
 	let picker: ScriptPicker | undefined = $state();
 	let adder: AddScript | undefined = $state();
 	let term = $state('');
-	let source = $state(storedSource());
+	let sources = $state(storedSources());
 
 	/** A share link (`/scripts#c=…` and the like) loads through the usual checks, then is cleared. */
 	async function openSharedLink() {
@@ -43,14 +43,14 @@
 
 <Page title={t('scripts.heading')}>
 	{#snippet actions()}
-		<ScriptSearchBar part="source" bind:source />
+		<ScriptSearchBar part="source" bind:sources />
 	{/snippet}
 	{#snippet toolbar()}
-		<ScriptSearchBar part="search" bind:term bind:source />
+		<ScriptSearchBar part="search" bind:term bind:sources />
 	{/snippet}
 	<!-- Share links only: adding scripts is the Library's (Trevor, 2026-10-17). -->
 	<AddScript bind:this={adder} button={false} onsaved={() => picker?.showSaved()} />
 	<ErrorBoundary area="scripts">
-		<ScriptPicker bind:this={picker} bind:term bind:source />
+		<ScriptPicker bind:this={picker} bind:term bind:sources />
 	</ErrorBoundary>
 </Page>
