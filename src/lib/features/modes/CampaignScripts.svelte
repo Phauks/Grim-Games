@@ -33,9 +33,21 @@
 	type ColumnId = 'name' | 'started';
 	const all = campaigns();
 	let sort = $state<DataSort<ColumnId> | undefined>();
-	const columns = $derived<DataColumn<ColumnId>[]>([
-		{ id: 'name', label: t('library.column.name'), sortable: true, flush: true },
-		{ id: 'started', label: t('library.campaignStarted'), sortable: true, width: '30%' }
+	const columns = $derived<DataColumn<ColumnId, Campaign>[]>([
+		{
+			id: 'name',
+			label: t('library.column.name'),
+			sortable: true,
+			flush: true,
+			value: (row) => title(row)
+		},
+		{
+			id: 'started',
+			label: t('library.campaignStarted'),
+			sortable: true,
+			width: '30%',
+			value: (row) => row.createdAt
+		}
 	]);
 	const list = $derived.by(() => {
 		const needle = term.trim().toLowerCase();
