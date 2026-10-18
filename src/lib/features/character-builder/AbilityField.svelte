@@ -2,9 +2,14 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { SORT_ORDER_PHRASES, type Character } from '#lib/core/data/index.ts';
 	import {
+		CHOICE_PHRASES,
+		RESULT_PHRASES,
 		readAbility,
+		readAction,
 		setupPartText,
+		withChoice,
 		withOpening,
+		withResult,
 		withSetup,
 		type SetupPart
 	} from '#lib/core/rules/index.ts';
@@ -16,9 +21,10 @@
 
 	/**
 	 * The ability, from TPI's standard parts (Trevor, 2026-10-18): the Sort Order phrase it
-	 * opens with, the rest in the user's words, and the [setup] bracket built clause by clause.
-	 * The text field always holds the whole ability and can be typed freely; the opening and
-	 * setup controls read it and rewrite only their own part.
+	 * opens with, who it chooses and what then happens (the clauses official abilities use
+	 * most), the rest in the user's words, and the [setup] bracket built clause by clause.
+	 * The text field always holds the whole ability and can be typed freely; the part controls
+	 * read it and rewrite only their own part.
 	 */
 	interface Props {
 		ability: string;
@@ -41,11 +47,16 @@
 		return c && { id: c.id, name: c.name };
 	};
 	const parts = $derived(readAbility(ability, name, findByName));
+	const action = $derived(readAction(parts.rest, !!parts.opening));
 
-	const openingOptions = [
+	const phraseOptions = (phrases: readonly string[]) => [
 		{ value: NONE, label: t('character-builder.openingNone') },
-		...SORT_ORDER_PHRASES.map((phrase) => ({ value: phrase, label: phrase }))
+		...phrases.map((phrase) => ({ value: phrase, label: phrase }))
 	];
+	const openingOptions = phraseOptions(SORT_ORDER_PHRASES);
+	const choiceOptions = phraseOptions(CHOICE_PHRASES);
+	const resultOptions = phraseOptions(RESULT_PHRASES);
+	const picked = (value: string) => (value === NONE ? '' : value);
 
 	function setSetup(setup: SetupPart[]) {
 		onchange(withSetup(ability, setup, name));
@@ -57,9 +68,22 @@
 		label={t('character-builder.opening')}
 		value={parts.opening || NONE}
 		options={openingOptions}
-		onChange={(opening: string) =>
-			onchange(withOpening(ability, opening === NONE ? '' : opening, name))}
+		onChange={(opening: string) => onchange(withOpening(ability, picked(opening), name))}
 	/>
+	<div class="action">
+		<Select
+			label={t('character-builder.choice')}
+			value={action.choice || NONE}
+			options={choiceOptions}
+			onChange={(choice: string) => onchange(withChoice(ability, picked(choice), name))}
+		/>
+		<Select
+			label={t('character-builder.result')}
+			value={action.result || NONE}
+			options={resultOptions}
+			onChange={(result: string) => onchange(withResult(ability, picked(result), name))}
+		/>
+	</div>
 	<TextField
 		label={t('character-builder.ability')}
 		multiline
@@ -99,6 +123,11 @@
 <style>
 	.ability-field {
 		display: grid;
+		gap: var(--space-3);
+	}
+	.action {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(14 * var(--u))), 1fr));
 		gap: var(--space-3);
 	}
 	.setup-head {

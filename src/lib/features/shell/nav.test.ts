@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACCOUNT_ITEM, isCurrent, NAV_ITEMS, NAV_SECTIONS } from './nav.ts';
+import { ACCOUNT_ITEM, isCurrent, NAV_ITEMS, NAV_SECTIONS, REPORTS_ITEM } from './nav.ts';
 
 describe('navigation', () => {
 	const scripts = NAV_ITEMS.find((item) => item.id === 'scripts')!;
@@ -18,7 +18,9 @@ describe('navigation', () => {
 	});
 
 	it('gives every destination its own icon (Trevor, 2026-10-16)', () => {
-		const icons = [...NAV_ITEMS, ACCOUNT_ITEM, { icon: 'settings' }].map((item) => item.icon);
+		const icons = [...NAV_ITEMS, ACCOUNT_ITEM, REPORTS_ITEM, { icon: 'settings' }].map(
+			(item) => item.icon
+		);
 		expect(new Set(icons).size).toBe(icons.length);
 	});
 
@@ -29,7 +31,12 @@ describe('navigation', () => {
 
 	it('groups games first, then preparation, then players (Trevor, 2026-10-16)', () => {
 		expect(NAV_SECTIONS.map((section) => section.id)).toEqual(['games', 'prepare', 'players']);
-		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual(['new', 'games', 'history']);
+		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual([
+			'new',
+			'games',
+			'join',
+			'history'
+		]);
 	});
 
 	it('puts Home first, outside the groups (Trevor, 2026-10-16)', () => {

@@ -14,7 +14,6 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { plainText } from './bold.ts';
 	import { tokenTitle } from './token-title.ts';
-	import { pickMax } from './pick.ts';
 	import { characterCardsFor } from './character-cards.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
 
@@ -156,7 +155,7 @@
 				return;
 			}
 		}
-		if (token.shows === 'characters') {
+		if (token.asks?.characters) {
 			picked = [];
 			view = { kind: 'characters', token };
 			return;
@@ -276,7 +275,7 @@
 			<CharacterPicker
 				{characters}
 				bind:selected={picked}
-				max={pickMax(token.id)}
+				max={token.asks?.characters ?? 1}
 				label={t('info-tokens.characters')}
 				inPlay={inPlay && new Set(inPlay)}
 				notInPlay={token.id === 'not-in-play'}

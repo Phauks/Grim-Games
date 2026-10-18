@@ -675,7 +675,10 @@ test('a saved BotC Scripts script still offers its other versions', async ({ pag
 		});
 	});
 
-	// Saved from Search at 1.0.0.
+	// Saved from Search at 1.0.0, searching BotC Scripts alone (the other sources aren't routed).
+	await page.addInitScript(() =>
+		localStorage.setItem('grim-games:scripts:sources', JSON.stringify(['botc']))
+	);
 	await page.goto('/scripts');
 	await page
 		.getByRole('table', { name: 'Scripts' })

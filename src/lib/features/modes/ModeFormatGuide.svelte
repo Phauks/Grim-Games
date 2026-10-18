@@ -120,7 +120,7 @@
 		display: grid;
 		gap: var(--space-2);
 		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--card-border);
+		border: var(--card-border);
 		border-radius: var(--radius-sm);
 	}
 	.fields {

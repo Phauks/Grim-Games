@@ -162,8 +162,12 @@
 	.reminder[data-type='demon'] {
 		--rim: var(--evil);
 	}
+	/* A Traveller's reminder: half good blue, half evil red, like its token (Trevor, 2026-10-18). */
 	.reminder[data-type='traveller'] {
-		--rim: var(--traveller);
+		border-color: transparent;
+		background:
+			linear-gradient(var(--reminder-face) 0 0) padding-box,
+			linear-gradient(to right, var(--good) 50%, var(--evil) 50%) border-box;
 	}
 	.reminder[data-type='fabled'] {
 		--rim: var(--fabled);
@@ -197,7 +201,8 @@
 		padding: 0 0.3em;
 		overflow: hidden;
 		border-radius: var(--radius-sm);
-		background: var(--reminder-face);
+		/* Its own colour, the face's unless changed (Trevor, 2026-10-18). */
+		background: var(--reminder-label-face, var(--reminder-face));
 		box-shadow: 0 0 0 1.5px var(--rim);
 		/* The Reminder tokens font, as reminders in text (Trevor, 2026-10-18: they match). */
 		font-family: var(--font-reminder);

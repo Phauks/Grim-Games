@@ -11,6 +11,7 @@ export type AccountStatus = 'checking' | 'signed-out' | 'signed-in' | 'offline';
 let status = $state<AccountStatus>('checking');
 let user = $state.raw<AccountUser | undefined>(undefined);
 let delivery = $state<EmailDelivery | undefined>(undefined);
+let admin = $state(false);
 let checking: Promise<void> | undefined;
 /** Bumped by every sign-in or sign-out, so an older session check can't undo it. */
 let generation = 0;
@@ -22,6 +23,7 @@ function apply(info: SessionInfo): void {
 	const before = user?.id;
 	user = info.user ?? undefined;
 	delivery = info.delivery;
+	admin = user !== undefined && info.admin === true;
 	status = user ? 'signed-in' : 'signed-out';
 	if (before !== user?.id) for (const listener of listeners) listener(user);
 }
@@ -32,6 +34,10 @@ export const account = {
 	},
 	get user(): AccountUser | undefined {
 		return user;
+	},
+	/** Whether the signed-in account is an admin (it can open the reports inbox). */
+	get admin(): boolean {
+		return admin;
 	},
 	/** How sign-in codes are delivered here; undefined until the first check. */
 	get delivery(): EmailDelivery | undefined {

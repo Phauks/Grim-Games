@@ -48,9 +48,19 @@
 	}
 </script>
 
-<SettingRow label={t('settings.background')}>
+<SettingRow layout="stacked" label={t('settings.background')}>
 	{#snippet control(labelId)}
 		<div class="presets" role="group" aria-labelledby={labelId}>
+			<!-- None first in the list, not a separate button (Trevor, 2026-10-18). -->
+			<button
+				type="button"
+				class="preset"
+				aria-pressed={!current || current.kind === 'none'}
+				onclick={() => choose(undefined)}
+			>
+				<span class="swatch none"></span>
+				<span>{t('settings.backgroundNone')}</span>
+			</button>
 			{#each Object.entries(PRESETS) as [id, preset] (id)}
 				<button
 					type="button"
@@ -69,11 +79,6 @@
 					? t('settings.backgroundYourImage')
 					: t('settings.backgroundImage')}
 			</Button>
-			<Button
-				variant="quiet"
-				aria-pressed={!current || current.kind === 'none'}
-				onclick={() => choose(undefined)}>{t('settings.backgroundNone')}</Button
-			>
 		</div>
 		<p class="error" role="status">{error}</p>
 		<input
@@ -114,6 +119,9 @@
 		aspect-ratio: 3 / 2;
 		border-radius: var(--radius-md);
 		box-shadow: inset 0 0 0 0.06rem var(--border);
+	}
+	.swatch.none {
+		background: var(--surface);
 	}
 	.choices {
 		display: grid;

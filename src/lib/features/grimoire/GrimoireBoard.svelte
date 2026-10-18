@@ -25,7 +25,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import {
 		charactersInPlay,
 		looseReminders,
@@ -51,6 +51,7 @@
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -97,9 +98,7 @@
 	import { pendingTray, trayItems, withoutOffSeat, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
-	import { campaignOf } from '#lib/features/modes/campaigns.ts';
-	import { hasSpectatorVote } from '#lib/features/modes/specters.ts';
-	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
+	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import { extraReminders, onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
@@ -390,12 +389,6 @@
 			? reminder.characterId
 			: game.ruleCharacters[0];
 	}
-	/** The town group this game is a town of, if any (kept on this device). */
-	const towns = $derived(townGroupOf(game.gameId));
-	/** The campaign this game is part of, if any (kept on this device). */
-	const campaign = $derived(campaignOf(game.gameId));
-	/** Spectators vote on a shared ability in this game's mode (Specters). */
-	const specters = $derived(hasSpectatorVote(game.gameId));
 	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
 	/** A Fabled or Loric's reminder being dragged off it. */
 	const heldDrag = $derived.by(() => {
@@ -994,6 +987,7 @@
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
+	let modeMenuOpen = $state(false);
 	function fromMenu(action: () => void) {
 		menuOpen = false;
 		action();
@@ -1008,6 +1002,9 @@
 	const removeRuleLabel = (name: string) => `Remove ${name} from the game`;
 	let ruleRemoveOpen = $state(false);
 	const ruleShownCharacter = $derived(ruleShown ? characters.get(ruleShown) : undefined);
+	// Tapping a Fabled or Loric token opens its entry, as a seat's token does (Trevor, 2026-10-18).
+	let ruleDetails = $state<Character | undefined>();
+	let ruleDetailsOpen = $state(false);
 </script>
 
 <!-- Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
@@ -1094,6 +1091,20 @@
 			<span class="none">None</span>
 		{/each}
 	</div>
+{/snippet}
+
+{#snippet ruleToken(character: Character)}
+	<button
+		type="button"
+		class="rule-token"
+		aria-label={`About the ${character.name}`}
+		onclick={() => {
+			ruleDetails = character;
+			ruleDetailsOpen = true;
+		}}
+	>
+		<CharacterToken {character} size={64} />
+	</button>
 {/snippet}
 
 {#snippet rulesList(tokenSize: number)}
@@ -1452,10 +1463,13 @@
 				bind:clientWidth={titleW}
 				bind:clientHeight={titleH}
 			>
-				<span
-					class="script-name"
-					class:mode={modeInName}
-					data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
+				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
+				<ModeMenu {game}
+					><span
+						class="script-name"
+						class:mode={modeInName}
+						data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
+					></ModeMenu
 				>
 				<!-- The mode takes the author's line, so the corner never grows. -->
 				{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span
@@ -1497,6 +1511,8 @@
 		</div>
 	</div>
 </div>
+
+<ModeMenu {game} bind:open={modeMenuOpen} />
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <Dialog bind:open={menuOpen} title="Grimoire">
@@ -1553,39 +1569,11 @@
 		>
 			Tokens
 		</Button>
-		<!-- A town of a mode game: back to all its towns (Alternative game modes). -->
-		{#if towns}
-			<Button
-				variant="quiet"
-				icon="grimoire"
-				onclick={() =>
-					fromMenu(() => goto(resolve('/towns/[groupId]', { groupId: towns.groupId })))}
-			>
-				Towns
-			</Button>
-		{/if}
-		<!-- A game of a campaign: back to the campaign and its next game (Alternative game modes). -->
-		{#if campaign}
-			<Button
-				variant="quiet"
-				icon="grimoire"
-				onclick={() =>
-					fromMenu(() =>
-						goto(resolve('/campaigns/[campaignId]', { campaignId: campaign.campaignId }))
-					)}
-			>
-				Campaign
-			</Button>
-		{/if}
-		<!-- Specters: the spectators' shared ability and vote (Alternative game modes). -->
-		{#if specters}
-			<Button
-				variant="quiet"
-				icon="vote"
-				onclick={() =>
-					fromMenu(() => goto(resolve('/grimoire/[gameId]/specters', { gameId: game.gameId })))}
-			>
-				Specters
+		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
+			too, for when the corner has no room for the name. -->
+		{#if modeName}
+			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
+				Game mode
 			</Button>
 		{/if}
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
@@ -1783,7 +1771,7 @@
 <Dialog bind:open={ruleShownOpen} title={ruleShownCharacter?.name ?? ''}>
 	{#if ruleShownCharacter}
 		<div class="rule-detail">
-			<CharacterToken character={ruleShownCharacter} size={64} />
+			{@render ruleToken(ruleShownCharacter)}
 			<p>{ruleShownCharacter.ability}</p>
 		</div>
 		{@render heldList(ruleShownCharacter.id)}
@@ -1795,13 +1783,15 @@
 	{/snippet}
 </Dialog>
 
+{#if ruleDetails}<CharacterDialog bind:open={ruleDetailsOpen} character={ruleDetails} />{/if}
+
 <Dialog bind:open={rulesGroupOpen} title="Fabled and Loric">
 	<ul class="rules-group">
 		{#each game.ruleCharacters as id (id)}
 			{@const character = characters.get(id)}
 			{#if character}
 				<li class="rule-detail">
-					<CharacterToken {character} size={64} />
+					{@render ruleToken(character)}
 					<div>
 						<CharacterBadge characterId={id} {character} inline />
 						<p>{character.ability}</p>
@@ -2058,10 +2048,15 @@
 		background: var(--evil);
 		color: var(--on-evil);
 	}
-	/* Centred in the seat ring, never wider or taller than 42% of the board; under the seats. */
+	/* Centred on the board's playable area (Trevor, 2026-10-18), inside the seat ring: at most
+	   42% of the board's width and height, the logo keeping its shape within; under the seats. */
 	.board :global(.board-logo) {
 		position: absolute;
-		inset: 29%;
+		left: 50%;
+		top: 50%;
+		width: 42%;
+		height: 42%;
+		translate: -50% -50%;
 		opacity: var(--logo-opacity);
 		pointer-events: none;
 	}
@@ -2256,6 +2251,14 @@
 		display: flex;
 		gap: var(--space-3);
 		align-items: flex-start;
+	}
+	.rule-token {
+		flex: none;
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: none;
+		cursor: pointer;
 	}
 	.rule-detail p {
 		margin: 0;

@@ -4,7 +4,15 @@
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { ACCOUNT_ITEM, HOME_ITEM, isCurrent, NAV_SECTIONS, type NavItem } from './nav.ts';
+	import { account } from '#lib/features/account/account.svelte.ts';
+	import {
+		ACCOUNT_ITEM,
+		HOME_ITEM,
+		isCurrent,
+		NAV_SECTIONS,
+		REPORTS_ITEM,
+		type NavItem
+	} from './nav.ts';
 	import { openSettings } from './shell.ts';
 
 	interface Props {
@@ -42,6 +50,10 @@
 			{#each section.items as item (item.id)}{@render link(item)}{/each}
 		</ul>
 	{/each}
+	{#if account.admin}
+		<h3 id="{listId}-admin">{t('shell.navSectionAdmin')}</h3>
+		<ul aria-labelledby="{listId}-admin">{@render link(REPORTS_ITEM)}</ul>
+	{/if}
 	{#if withAccount}
 		<h3 id="{listId}-you">{t('shell.navSectionYou')}</h3>
 		<ul aria-labelledby="{listId}-you">

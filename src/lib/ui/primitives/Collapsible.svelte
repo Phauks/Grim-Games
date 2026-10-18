@@ -31,7 +31,8 @@
 		/** Heading level of the title. */
 		level?: 2 | 3 | 4;
 		/** Colours the title by alignment, for character type groups. */
-		tone?: 'good' | 'evil';
+		/** A character type's colour family (`typeTone`). */
+		tone?: 'good' | 'evil' | 'traveller' | 'loric';
 		/**
 		 * Shown open regardless of the remembered choice, e.g. while a search is typed so every
 		 * match is visible. The header can't close it meanwhile; the remembered choice is kept.
@@ -156,6 +157,12 @@
 	}
 	.head[data-tone='evil'] .toggle {
 		color: var(--evil);
+	}
+	.head[data-tone='traveller'] .toggle {
+		color: var(--traveller-text);
+	}
+	.head[data-tone='loric'] .toggle {
+		color: var(--loric-text);
 	}
 	.toggle[aria-disabled='true'] {
 		cursor: default;

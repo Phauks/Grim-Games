@@ -24,6 +24,8 @@ export const characterBuilder = {
 	'character-builder.setup': 'Changes setup',
 	'character-builder.opening': 'Opens with',
 	'character-builder.openingNone': 'None of these',
+	'character-builder.choice': 'Chooses',
+	'character-builder.result': 'Then',
 	'character-builder.setupChanges': 'Setup changes',
 	'character-builder.addSetupChange': 'Add a setup change',
 	'character-builder.removeSetupChange': 'Remove {text}',
@@ -64,6 +66,7 @@ export const characterBuilder = {
 	'character-builder.clearBody': 'Everything on the builder is removed. Saved characters stay.',
 	'character-builder.addToScript': 'Add to Script builder',
 	'character-builder.onScript': 'On Script builder',
+	'character-builder.collections': 'Character collections',
 	'character-builder.delete': 'Delete the saved character',
 	'character-builder.deleteTitle': 'Delete {name}?',
 	'character-builder.deleteBody': 'It is removed from this device. Scripts that have it keep it.'
