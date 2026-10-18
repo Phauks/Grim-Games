@@ -34,6 +34,7 @@
 	} from './botcscripts-api.ts';
 	import BotcFilter from './BotcFilter.svelte';
 	import { collectionScripts } from './collection.svelte.ts';
+	import { bloodstarScripts } from './bloodstar.svelte.ts';
 	import { homebrewScripts } from './homebrew-scripts.svelte.ts';
 	import { fetchRemote } from './remote-previews.svelte.ts';
 	import { curatedScripts } from './curated.svelte.ts';
@@ -137,6 +138,7 @@
 			if (wanted === 'curated' || wanted === 'month') void curatedScripts.load();
 			if (wanted === 'collection') void collectionScripts.load();
 			if (wanted === 'homebrew') void homebrewScripts.load();
+			if (wanted === 'bloodstar') void bloodstarScripts.load();
 			if (wanted === 'worldcup2023') void worldCupScripts.load('2023');
 			if (wanted === 'worldcup2025') void worldCupScripts.load('2025');
 		});
@@ -165,6 +167,7 @@
 			curated: curatedScripts.list,
 			collection: collectionScripts.list,
 			homebrew: homebrewScripts.list,
+			bloodstar: bloodstarScripts.list,
 			recent: recentScripts.list,
 			profile: [],
 			curatedLabel: curatedSectionLabel,
@@ -366,7 +369,9 @@
 					? collectionScripts
 					: source === 'homebrew'
 						? homebrewScripts
-						: undefined;
+						: source === 'bloodstar'
+							? bloodstarScripts
+							: undefined;
 		const loading = year
 			? worldCupScripts.status(year) === 'loading'
 			: fetched?.status === 'loading';
@@ -378,6 +383,14 @@
 			: failed
 				? t('scripts.picker.curatedFailed')
 				: '';
+	});
+	/** Rows left after the table's own column filters (Name, Likes, No.). */
+	let shownCount = $state(0);
+	let columnFilters = $state({});
+	// Another source starts with none of the last one's column filters.
+	$effect.pre(() => {
+		void source;
+		columnFilters = {};
 	});
 	const botcStatus = $derived(
 		!searchingBotc
@@ -399,9 +412,9 @@
 				? t('scripts.botc.refHint')
 				: searchingBotc
 					? botcStatus || t('common.none')
-					: (shown.length === 0
+					: (shownCount === 0
 							? t('common.none')
-							: t('scripts.picker.count', { count: shown.length })) + curatedNote
+							: t('scripts.picker.count', { count: shownCount })) + curatedNote
 	);
 
 	type ColumnId = SortColumn;
@@ -411,17 +424,23 @@
 	/**
 	 * Name, Author, Type and a character count for every source; Likes and No. only for BotC
 	 * Scripts, the one source that has them (Trevor, 2026-10-17). Author and Type are always
-	 * columns of their own; Chars, Likes and No. give way on phones, where the Chars filter
-	 * moves into the Name header.
+	 * columns of their own; Chars, Likes and No. give way on phones (Likes and No. already on
+	 * a tablet), and their filters move into the Name header.
 	 */
-	const columns = $derived<DataColumn<ColumnId>[]>([
-		{ id: 'name', label: t('scripts.column.name'), sortable: true, flush: true },
+	const columns = $derived<DataColumn<ColumnId, ScriptListing>[]>([
+		{
+			id: 'name',
+			label: t('scripts.column.name'),
+			sortable: true,
+			flush: true,
+			noFilter: 'The search box above the table searches names.'
+		},
 		{
 			id: 'author',
 			label: t('scripts.column.author'),
 			sortable: true,
-			// Room for the label and its sort arrows on one line, even on a phone.
-			width: 'max(22%, 6rem)',
+			// Room for the label, its sort arrows and its filter on one line, even on a phone.
+			width: 'max(22%, 9.5rem)',
 			filterable: true,
 			filtered: botcFilters.author !== ''
 		},
@@ -450,19 +469,22 @@
 						id: 'likes',
 						label: t('scripts.column.likes'),
 						sortable: true,
-						wide: true,
+						wider: true,
 						align: 'end',
-						width: '5rem'
+						// Label, sort arrows and filter side by side.
+						width: '7.5rem',
+						value: (l) => l.row.likes ?? 0
 					},
 					{
 						id: 'number',
 						label: t('scripts.column.number'),
 						sortable: true,
-						wide: true,
+						wider: true,
 						align: 'end',
-						width: '5rem'
+						width: '6.5rem',
+						value: (l) => l.row.number
 					}
-				] satisfies DataColumn<ColumnId>[])
+				] satisfies DataColumn<ColumnId, ScriptListing>[])
 			: [])
 	]);
 	const tableSort = $derived<DataSort<ColumnId> | undefined>(
@@ -476,6 +498,8 @@
 	 * stays in view, until the site has no more.
 	 */
 	const NEAR_END = createAttachmentKey();
+	/** Rows drawn at a time: Bloodstar lists thousands (Trevor, 2026-10-18: a paged table). */
+	const PAGE_ROWS = 100;
 
 	/**
 	 * Tapping anywhere in a row selects its script (Trevor, 2026-10-16), as its name button
@@ -571,6 +595,7 @@
 				);
 			case 'botcscripts':
 			case 'homebrew':
+			case 'bloodstar':
 				return run(() => fetchRemote(target));
 		}
 	}
@@ -605,6 +630,9 @@
 						{filter}
 						narrow="hide"
 						resizeKey="scripts"
+						pageSize={PAGE_ROWS}
+						bind:columnFilters
+						oncount={(count) => (shownCount = count)}
 						fill
 						rowSelected={isSelected}
 						rowAttrs={(listing) => ({
@@ -676,7 +704,7 @@
 	<p>{t('scripts.details.removeBody', { name: shownListing?.row.name || t('common.none') })}</p>
 </ConfirmDialog>
 
-{#snippet cell(listing: ScriptListing, column: DataColumn<ColumnId>)}
+{#snippet cell(listing: ScriptListing, column: DataColumn<ColumnId, ScriptListing>)}
 	{@const row = listing.row}
 	{#if column.id === 'name'}
 		<button
@@ -694,9 +722,9 @@
 	{:else if column.id === 'source'}
 		<span class="text">{t(`scripts.sourceLabel.${row.source}`)}</span>
 	{:else if column.id === 'kind'}
-		<span class="text">{t(`scripts.kind.${row.kind}`)}</span>
+		<span class="text">{row.unsized ? t('common.none') : t(`scripts.kind.${row.kind}`)}</span>
 	{:else if column.id === 'characters'}
-		<span class="text numeric">{row.characters}</span>
+		<span class="text numeric">{row.unsized ? t('common.none') : row.characters}</span>
 	{:else if column.id === 'likes'}
 		<span class="text numeric">{row.likes ?? 0}</span>
 	{:else if column.id === 'number'}
@@ -704,7 +732,7 @@
 	{/if}
 {/snippet}
 
-{#snippet filter(column: DataColumn<ColumnId>, close: () => void)}
+{#snippet filter(column: DataColumn<ColumnId, ScriptListing>, close: () => void)}
 	<BotcFilter
 		column={column.id}
 		bind:filters={botcFilters}

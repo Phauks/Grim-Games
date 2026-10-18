@@ -158,8 +158,12 @@ test('Check for updates in About says Up to date in place', async ({ page }) => 
 	const button = dialog.getByRole('button', { name: 'Check for updates' });
 	const before = await button.boundingBox();
 	await button.tap();
-	await expect(result).toHaveText('Up to date');
+	// When it checked and what it found, on the version's line (Trevor, 2026-10-18).
+	await expect(result).toHaveText(/^Checked \d{1,2}:\d{2}.* · Up to date$/);
 	expect(await button.boundingBox()).toEqual(before);
+	await page.reload();
+	await openAbout(page);
+	await expect(result).toHaveText(/^Checked \d{1,2}:\d{2}/);
 	await expect(page.getByTestId('update-banner')).toHaveCount(0);
 });
 
@@ -171,6 +175,6 @@ test('Check for updates brings back the update card after Later', async ({ page 
 	await expect(banner).toHaveCount(0);
 	const dialog = await openAbout(page);
 	await dialog.getByRole('button', { name: 'Check for updates' }).tap();
-	await expect(dialog.getByTestId('update-check-result')).toHaveText('Update ready');
+	await expect(dialog.getByTestId('update-check-result')).toHaveText(/ · Update ready$/);
 	await expect(banner).toBeVisible();
 });

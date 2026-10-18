@@ -40,6 +40,7 @@ import ph_clipboard_bold from '~icons/ph/clipboard-bold';
 import ph_clipboard_text_bold from '~icons/ph/clipboard-text-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
+import ph_columns_bold from '~icons/ph/columns-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_corners_out_bold from '~icons/ph/corners-out-bold';
@@ -66,7 +67,6 @@ import ph_flag_bold from '~icons/ph/flag-bold';
 import ph_flask_bold from '~icons/ph/flask-bold';
 import ph_floppy_disk_bold from '~icons/ph/floppy-disk-bold';
 import ph_flower_bold from '~icons/ph/flower-bold';
-import ph_flower_lotus_bold from '~icons/ph/flower-lotus-bold';
 import ph_folder_bold from '~icons/ph/folder-bold';
 import ph_folder_open_bold from '~icons/ph/folder-open-bold';
 import ph_folder_simple_bold from '~icons/ph/folder-simple-bold';
@@ -95,7 +95,9 @@ import ph_leaf_bold from '~icons/ph/leaf-bold';
 import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_lightning_bold from '~icons/ph/lightning-bold';
 import ph_link_bold from '~icons/ph/link-bold';
+import ph_link_break_bold from '~icons/ph/link-break-bold';
 import ph_link_simple_bold from '~icons/ph/link-simple-bold';
+import ph_link_simple_break_bold from '~icons/ph/link-simple-break-bold';
 import ph_list_bold from '~icons/ph/list-bold';
 import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_list_checks_bold from '~icons/ph/list-checks-bold';
@@ -125,10 +127,10 @@ import ph_plus_circle_bold from '~icons/ph/plus-circle-bold';
 import ph_printer_bold from '~icons/ph/printer-bold';
 import ph_prohibit_bold from '~icons/ph/prohibit-bold';
 import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
-import ph_pulse_bold from '~icons/ph/pulse-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
+import ph_rows_bold from '~icons/ph/rows-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
@@ -150,10 +152,10 @@ import ph_speaker_high_bold from '~icons/ph/speaker-high-bold';
 import ph_spinner_bold from '~icons/ph/spinner-bold';
 import ph_square_bold from '~icons/ph/square-bold';
 import ph_star_bold from '~icons/ph/star-bold';
-import ph_stethoscope_bold from '~icons/ph/stethoscope-bold';
 import ph_sun_bold from '~icons/ph/sun-bold';
 import ph_sun_horizon_bold from '~icons/ph/sun-horizon-bold';
 import ph_swap_bold from '~icons/ph/swap-bold';
+import ph_table_bold from '~icons/ph/table-bold';
 import ph_tag_bold from '~icons/ph/tag-bold';
 import ph_tag_simple_bold from '~icons/ph/tag-simple-bold';
 import ph_text_aa_bold from '~icons/ph/text-aa-bold';
@@ -223,6 +225,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-bold': ph_clipboard_text_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
+	'ph:columns-bold': ph_columns_bold,
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:corners-out-bold': ph_corners_out_bold,
@@ -249,7 +252,6 @@ const icons: IconMap = {
 	'ph:flask-bold': ph_flask_bold,
 	'ph:floppy-disk-bold': ph_floppy_disk_bold,
 	'ph:flower-bold': ph_flower_bold,
-	'ph:flower-lotus-bold': ph_flower_lotus_bold,
 	'ph:folder-bold': ph_folder_bold,
 	'ph:folder-open-bold': ph_folder_open_bold,
 	'ph:folder-simple-bold': ph_folder_simple_bold,
@@ -278,7 +280,9 @@ const icons: IconMap = {
 	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:lightning-bold': ph_lightning_bold,
 	'ph:link-bold': ph_link_bold,
+	'ph:link-break-bold': ph_link_break_bold,
 	'ph:link-simple-bold': ph_link_simple_bold,
+	'ph:link-simple-break-bold': ph_link_simple_break_bold,
 	'ph:list-bold': ph_list_bold,
 	'ph:list-bullets-bold': ph_list_bullets_bold,
 	'ph:list-checks-bold': ph_list_checks_bold,
@@ -308,10 +312,10 @@ const icons: IconMap = {
 	'ph:printer-bold': ph_printer_bold,
 	'ph:prohibit-bold': ph_prohibit_bold,
 	'ph:prohibit-inset-bold': ph_prohibit_inset_bold,
-	'ph:pulse-bold': ph_pulse_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
+	'ph:rows-bold': ph_rows_bold,
 	'ph:scales-bold': ph_scales_bold,
 	'ph:scroll-bold': ph_scroll_bold,
 	'ph:shapes-bold': ph_shapes_bold,
@@ -333,10 +337,10 @@ const icons: IconMap = {
 	'ph:spinner-bold': ph_spinner_bold,
 	'ph:square-bold': ph_square_bold,
 	'ph:star-bold': ph_star_bold,
-	'ph:stethoscope-bold': ph_stethoscope_bold,
 	'ph:sun-bold': ph_sun_bold,
 	'ph:sun-horizon-bold': ph_sun_horizon_bold,
 	'ph:swap-bold': ph_swap_bold,
+	'ph:table-bold': ph_table_bold,
 	'ph:tag-bold': ph_tag_bold,
 	'ph:tag-simple-bold': ph_tag_simple_bold,
 	'ph:text-aa-bold': ph_text_aa_bold,

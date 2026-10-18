@@ -5,8 +5,10 @@ const width = (cell: Locator) => cell.evaluate((el) => el.getBoundingClientRect(
 
 async function openTable(page: Page) {
 	await page.goto('/reference');
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	// The view is remembered, so after a reload the table may already be on.
+	const toggle = page.getByRole('button', { name: 'Show as table' });
+	await expect(toggle).toBeVisible();
+	if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.tap();
 	const table = page.getByTestId('character-table');
 	await expect(table.locator('tbody tr')).toHaveCount(181);
 	return table;
@@ -33,7 +35,11 @@ test('table columns resize by dragging their header edge, and remember it', asyn
 	const before = await width(header);
 
 	// One finger drags the edge 100 pixels further out.
-	await handle.evaluate((el) => el.scrollIntoView({ inline: 'center', block: 'nearest' }));
+	await handle.evaluate((el) => {
+		el.scrollIntoView({ inline: 'center', block: 'nearest' });
+		// Clear of the pinned icon and name, which sit above whatever scrolls under them.
+		el.closest('.scroll')!.scrollLeft -= 150;
+	});
 	const box = (await handle.boundingBox())!;
 	const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 	await touchDrag(page, from, { x: from.x + 100, y: from.y });

@@ -51,6 +51,8 @@ export const TOKENS_FILTERS: readonly TokensFilter[] = ['yes', 'no', 'setup', 'n
 export interface TableFilters {
 	name?: string;
 	types?: CharacterType[];
+	/** TPI edition ids (`tb`, `bmr`, ...); a character matches any of them (Trevor, 2026-10-18). */
+	editions?: string[];
 	/** The starting alignment as shown: Good, Evil, Storyteller chooses, None. */
 	alignment?: string;
 	firstNight?: Presence;
@@ -113,6 +115,7 @@ export function activeFilterCount(filters: TableFilters): number {
 	let n = 0;
 	if (filters.name?.trim()) n++;
 	if (filters.types?.length) n++;
+	if (filters.editions?.length) n++;
 	if (filters.alignment) n++;
 	for (const column of PRESENCE_COLUMNS) if (filters[column]) n++;
 	return n;
@@ -122,6 +125,8 @@ export function matchesFilters(entry: ReferenceEntry, filters: TableFilters): bo
 	const name = filters.name?.trim().toLowerCase();
 	if (name && !entry.character.name.toLowerCase().includes(name)) return false;
 	if (filters.types?.length && !filters.types.includes(entry.character.type)) return false;
+	if (filters.editions?.length && !filters.editions.includes(entry.character.edition ?? ''))
+		return false;
 	if (filters.alignment && entry.alignmentNote !== filters.alignment) return false;
 	for (const column of PRESENCE_COLUMNS) {
 		const wanted = filters[column];
@@ -187,6 +192,10 @@ export function parseTableState(raw: unknown): TableState {
 			(CHARACTER_TYPES as readonly unknown[]).includes(t)
 		);
 		if (types.length) filters.types = types;
+	}
+	if (Array.isArray(f.editions)) {
+		const editions = f.editions.filter((e): e is string => typeof e === 'string' && e !== '');
+		if (editions.length) filters.editions = editions;
 	}
 	if ((ALIGNMENT_CHOICES as readonly unknown[]).includes(f.alignment))
 		filters.alignment = f.alignment as string;
