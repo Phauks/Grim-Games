@@ -66,7 +66,10 @@
 		class="main"
 		aria-pressed={selected}
 		aria-label={copies > 1 ? `${character.name}, ${copies} copies` : character.name}
-		aria-description={bluff ? (selected ? t('setup.bluffInPlay') : t('setup.bluff')) : undefined}
+		{...{
+			// Svelte's element types don't list aria-description yet, so it goes in a spread.
+			'aria-description': bluff ? (selected ? t('setup.bluffInPlay') : t('setup.bluff')) : undefined
+		}}
 		data-character-id={character.id}
 		onclick={onToggle}
 	>
