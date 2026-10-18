@@ -1226,3 +1226,21 @@ test('Save in a Search script header puts the script in the Library', async ({ p
 	await page.goto('/library');
 	await expect(page.getByRole('button', { name: /Storm Front/ }).first()).toBeVisible();
 });
+
+test('the Source drop-down lists search engines, then collections', async ({ page }) => {
+	await page.goto('/scripts');
+	await sourcePicker(page).tap();
+	const list = page.getByRole('listbox');
+	const engines = list.getByRole('group', { name: 'Search engines' });
+	const collections = list.getByRole('group', { name: 'Collections' });
+	for (const name of ['BotC Scripts', 'BOTC HomeBrew Wiki']) {
+		await expect(engines.getByRole('option', { name, exact: true })).toBeVisible();
+	}
+	const carousel = 'Carousel Script Collection';
+	for (const name of ['Official custom scripts', 'Scripts of the Month', carousel]) {
+		await expect(collections.getByRole('option', { name, exact: true })).toBeAttached();
+	}
+	await expect(engines.getByRole('option', { name: carousel, exact: true })).toHaveCount(0);
+	await collections.getByRole('option', { name: carousel, exact: true }).tap();
+	await expect(sourcePicker(page)).toContainText(carousel);
+});
