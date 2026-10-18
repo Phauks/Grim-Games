@@ -138,10 +138,11 @@
 	 */
 	.reminder[data-type='traveller']:not([data-alignment]) {
 		--rim: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
+		--face-inset: 3px; /* px-ok: twice the 1.5px rim the other chips draw */
 		box-shadow: none;
 		background:
-			linear-gradient(var(--reminder-face) 0 0) center / calc(100% - 3px) calc(100% - 3px) no-repeat
-				/* px-ok: twice the 1.5px rim */,
+			linear-gradient(var(--reminder-face) 0 0) center / calc(100% - var(--face-inset))
+				calc(100% - var(--face-inset)) no-repeat,
 			var(--rim);
 	}
 	.reminder[data-type='fabled'] {
