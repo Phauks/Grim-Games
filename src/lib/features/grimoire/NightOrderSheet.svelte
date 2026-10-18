@@ -7,7 +7,6 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { boardNightSteps, seatName as nameOf, stepHolders, stepName } from './night-steps.ts';
 	import { untrack } from 'svelte';
@@ -52,27 +51,18 @@
 
 <Dialog bind:open title="Night order" size="full">
 	<div class="head">
-		{#if assistance.nightWalkthrough}
-			<Button
-				variant="accent"
-				icon="forward"
-				disabled={steps.length === 0}
-				onclick={() => {
-					open = false;
-					onWalk(night);
-				}}>Walk through</Button
-			>
-		{/if}
-		<Select
-			label="Night"
-			hideLabel
-			value={night}
-			options={[
-				{ value: 'first', label: 'First night' },
-				{ value: 'other', label: 'Other nights' }
-			]}
-			onChange={(n) => (night = n)}
-		/>
+		<!-- One button for two nights (Trevor, 2026-10-18), like the reminder bank's Setup/All:
+		     it says which night is shown and switches to the other. -->
+		<button
+			type="button"
+			class="night"
+			aria-label={night === 'first'
+				? 'Showing the first night; show other nights'
+				: 'Showing other nights; show the first night'}
+			onclick={() => (night = night === 'first' ? 'other' : 'first')}
+		>
+			{night === 'first' ? 'First night' : 'Other nights'}
+		</button>
 	</div>
 	<ol class="steps">
 		{#each steps as step (step.id)}
@@ -132,6 +122,20 @@
 			<li class="none">None</li>
 		{/each}
 	</ol>
+	<!-- At the bottom, in reach of the thumb (Trevor, 2026-10-18). -->
+	{#snippet actions()}
+		{#if assistance.nightWalkthrough}
+			<Button
+				variant="accent"
+				icon="forward"
+				disabled={steps.length === 0}
+				onclick={() => {
+					open = false;
+					onWalk(night);
+				}}>Run Night Order</Button
+			>
+		{/if}
+	{/snippet}
 </Dialog>
 
 <style>
@@ -142,6 +146,23 @@
 		gap: var(--space-2);
 		padding-bottom: var(--space-2);
 		border-bottom: 1px solid var(--border);
+	}
+	/* Fits either night, so switching never moves the list. */
+	.night {
+		min-width: 9rem;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--button-radius);
+		background: none;
+		color: var(--on-surface);
+		font: 600 0.9rem var(--font-control);
+		cursor: pointer;
+	}
+	@media (hover: hover) {
+		.night:hover {
+			background: var(--surface-selected);
+		}
 	}
 	.steps {
 		flex: 1;

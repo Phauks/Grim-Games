@@ -23,9 +23,11 @@
 		onIndex: (index: number) => void;
 		onOpen: (step: NightStep) => void;
 		onClose: () => void;
+		/** After the last step: on into the day, with its announcements (Trevor, 2026-10-18). */
+		onDay: () => void;
 	}
 
-	let { grimoire, steps, night, index, onIndex, onOpen, onClose }: Props = $props();
+	let { grimoire, steps, night, index, onIndex, onOpen, onClose, onDay }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const step = $derived(steps[index]);
@@ -36,10 +38,11 @@
 	let focusOpen = $state(false);
 	let focusButton = $state<HTMLElement>();
 
+	const last = $derived(index >= steps.length - 1);
 	function next() {
 		if (step && !ticked) grimoire.toggleNightStep(night, step);
-		if (index < steps.length - 1) onIndex(index + 1);
-		else onClose();
+		if (!last) onIndex(index + 1);
+		else onDay();
 	}
 </script>
 
@@ -51,10 +54,11 @@
 		onclick={() => onIndex(index - 1)}
 	/>
 	{#if step}
+		<!-- Above Previous, where the side is free (Trevor, 2026-10-18). -->
+		<span class="icon" aria-hidden="true">
+			<StepIcon {step} size={44} />
+		</span>
 		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
-			<span class="icon">
-				<StepIcon {step} size={40} />
-			</span>
 			<span class="body">
 				<span class="name">
 					<strong>{stepName(step)}</strong>
@@ -79,9 +83,10 @@
 	{:else}
 		<span class="step none">None</span>
 	{/if}
+	<!-- The last step goes on into the day (Trevor, 2026-10-18). -->
 	<IconButton
-		icon="forward"
-		label={index < steps.length - 1 ? 'Next step' : 'Finish the night'}
+		icon={last ? 'day' : 'forward'}
+		label={last ? 'Start the day' : 'Next step'}
 		onclick={next}
 	/>
 	<!-- In the top corner (Trevor, 2026-10-16), so Previous and Next own the sides. -->
@@ -154,17 +159,22 @@
 	.step:hover {
 		background: var(--surface-selected);
 	}
-	.step.ticked .body {
+	.step.ticked .body,
+	.strip:has(.step.ticked) .icon {
 		opacity: 0.6;
 	}
+	/* In the free space above Previous, as wide as it. */
 	.icon {
+		position: absolute;
+		top: var(--space-1);
+		left: var(--space-1);
 		display: grid;
-		flex: none;
 		place-items: center;
-		width: calc(2.5 * var(--u));
-		height: calc(2.5 * var(--u));
-		--icon-size: calc(1.75 * var(--u));
+		width: var(--tap-target);
+		height: var(--tap-target);
+		--icon-size: var(--tap-target);
 		color: var(--heading);
+		pointer-events: none;
 	}
 	.body {
 		display: grid;
