@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { downloadFile } from '#lib/ui/download.ts';
 	import { onMount } from 'svelte';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
@@ -29,12 +30,7 @@
 
 	function download() {
 		if (!diagnostics) return;
-		const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = diagnosticsFileName(diagnostics.gatheredAt);
-		a.click();
-		setTimeout(() => URL.revokeObjectURL(url), 1000);
+		downloadFile(diagnosticsFileName(diagnostics.gatheredAt), text, 'text/plain');
 	}
 </script>
 

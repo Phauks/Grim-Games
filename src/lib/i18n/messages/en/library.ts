@@ -3,6 +3,7 @@ export const library = {
 	'library.pageTitle': 'Library · Grim-Games',
 	'library.heading': 'Library',
 	'library.scripts': 'Scripts',
+	'library.characters': 'Characters',
 	'library.table': 'Your scripts',
 	'library.search': 'Search scripts',
 	'library.searchPlaceholder': 'Name, author or character',

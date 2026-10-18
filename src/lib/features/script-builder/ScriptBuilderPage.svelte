@@ -1,6 +1,5 @@
 <script lang="ts">
-	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
@@ -34,17 +33,20 @@
 	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
+	import BuilderSave from '#lib/ui/builder/BuilderSave.svelte';
+	import BuilderTools from '#lib/ui/builder/BuilderTools.svelte';
+	import OpenSavedDialog from '#lib/ui/builder/OpenSavedDialog.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import { scriptBuilderDraft as draft } from './draft.svelte.ts';
 	import { chosenHomebrew, isEmptyDraft } from './draft.ts';
 	import { replaceBuilt } from './replace-saved.svelte.ts';
@@ -86,7 +88,7 @@
 	 * whichever source it came from (Trevor, 2026-10-17), so characters from several collections
 	 * or opened scripts are all in one place without switching collection.
 	 */
-	type Source = 'official' | 'homebrew' | 'script';
+	type Source = 'official' | 'homebrew' | 'mine' | 'script';
 	let source = $state<Source>('official');
 	let collections = $state.raw<HomebrewCollection[]>([]);
 	let collectionId = $state('');
@@ -160,16 +162,31 @@
 	const chosenHomebrewCharacters = $derived(
 		built?.characters.filter((c) => built.homebrew.includes(c.id)) ?? []
 	);
+	/** Characters made in the Character builder on this device (Trevor, 2026-10-17). */
+	const mine = $derived.by(() => {
+		if (!data || savedCharacters.list.length === 0) return { characters: [], entries: {} };
+		return homebrewFromScript(
+			[{ id: '_meta', name: '' }, ...savedCharacters.list.map((c) => c.entry)],
+			data
+		);
+	});
 	const characters = $derived(
 		source === 'homebrew'
 			? sortByStandardOrder(homebrewSet?.characters ?? [])
-			: source === 'script'
-				? sortByStandardOrder(built?.characters ?? [])
-				: official
+			: source === 'mine'
+				? sortByStandardOrder(mine.characters)
+				: source === 'script'
+					? sortByStandardOrder(built?.characters ?? [])
+					: official
 	);
 
 	function choose(id: CharacterId) {
-		const entry = source === 'homebrew' ? homebrewSet?.entries[id] : undefined;
+		const entry =
+			source === 'homebrew'
+				? homebrewSet?.entries[id]
+				: source === 'mine'
+					? mine.entries[id]
+					: undefined;
 		if (entry && !d.ids.includes(id)) {
 			draft.toggle(id, { entry, credit: homebrewSet?.credits[id] });
 		} else draft.toggle(id);
@@ -226,19 +243,7 @@
 	}
 
 	function download() {
-		if (!builtJson) return;
-		const blob = new Blob([JSON.stringify(builtJson, null, '\t')], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		const base = d.name
-			.trim()
-			.toLowerCase()
-			.replace(/[^\p{L}\p{N}]+/gu, '-')
-			.replace(/^-|-$/g, '');
-		a.download = `${base || 'script'}.json`;
-		a.click();
-		setTimeout(() => URL.revokeObjectURL(url), 1000);
+		if (builtJson) downloadJson(fileNameFor(d.name, 'script'), builtJson);
 	}
 
 	const shareTarget = $derived.by(() => {
@@ -288,70 +293,47 @@
 
 <Page title={t('script-builder.heading')}>
 	{#snippet actions()}
-		<div class="tools">
-			<IconButton
-				icon="open"
-				label={t('script-builder.open')}
-				disabled={!data || recentScripts.list.length === 0}
-				onclick={() => (openOpen = true)}
-			/>
-			<IconButton
-				icon="download"
-				label={t('script-builder.download')}
-				disabled={!builtJson}
-				onclick={download}
-			/>
+		<BuilderTools
+			openLabel={t('script-builder.open')}
+			openDisabled={!data || recentScripts.list.length === 0}
+			onOpen={() => (openOpen = true)}
+			downloadLabel={t('script-builder.download')}
+			downloadDisabled={!builtJson}
+			onDownload={download}
+			clearLabel={t('script-builder.clear')}
+			clearDisabled={isEmptyDraft(d)}
+			onClear={() => (clearOpen = true)}
+		>
 			<ShareControl what="script" title={d.name || t('common.none')} target={shareTarget} />
-			<DeleteButton
-				class="icon-button"
-				label={t('script-builder.clear')}
-				disabled={isEmptyDraft(d)}
-				onclick={() => (clearOpen = true)}
-			/>
-		</div>
+		</BuilderTools>
 	{/snippet}
 
 	{#snippet side()}
 		<ErrorBoundary area="script-builder">
 			<section class="details" aria-label={t('script-builder.details')}>
-				<label>
-					<span>{t('script-builder.name')}</span>
-					<ClearableField bind:value={() => d.name, (v) => draft.setName(v ?? '')}>
-						<input
-							value={d.name}
-							autocomplete="off"
-							enterkeyhint="done"
-							oninput={(e) => draft.setName(e.currentTarget.value)}
-							onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-						/>
-					</ClearableField>
-				</label>
-				<label>
-					<span>{t('script-builder.author')}</span>
-					<ClearableField bind:value={() => d.author, (v) => draft.setAuthor(v ?? '')}>
-						<input
-							value={d.author}
-							autocomplete="off"
-							enterkeyhint="done"
-							oninput={(e) => draft.setAuthor(e.currentTarget.value)}
-							onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-						/>
-					</ClearableField>
-				</label>
+				<TextField
+					label={t('script-builder.name')}
+					value={d.name}
+					oninput={(v) => draft.setName(v)}
+				/>
+				<TextField
+					label={t('script-builder.author')}
+					value={d.author}
+					oninput={(v) => draft.setAuthor(v)}
+				/>
 				<!-- Always shown, so opening a script never moves the page. -->
 				<p class="variation" data-testid="variation-of">
 					<span>{t('script-builder.variationOf')}</span>
 					{d.variationOf?.name || t('common.none')}
 				</p>
-				<div class="save">
-					<Button variant="accent" disabled={!built || isSaved || saving} onclick={() => save()}
-						>{isSaved ? t('script-builder.saved') : t('script-builder.save')}</Button
-					>
-					<!-- Always there, so nothing moves; only a changed saved script can be copied. -->
-					<Button disabled={!built || !savedRecord || isSaved || saving} onclick={() => save(true)}
-						>{t('script-builder.saveNew')}</Button
-					>
-				</div>
+				<BuilderSave
+					ready={!!built}
+					saved={isSaved}
+					editing={!!savedRecord}
+					busy={saving}
+					onSave={() => save()}
+					onSaveNew={() => save(true)}
+				/>
 			</section>
 
 			<div class="source">
@@ -362,6 +344,7 @@
 					options={[
 						{ value: 'official', label: t('script-builder.source.official') },
 						{ value: 'homebrew', label: t('script-builder.source.homebrew') },
+						{ value: 'mine', label: t('script-builder.source.mine') },
 						{ value: 'script', label: t('script-builder.source.script') }
 					]}
 					onChange={(value) => (value === 'homebrew' ? void showHomebrew() : (source = value))}
@@ -388,9 +371,10 @@
 					level={3}
 					storageKey="script-builder:jinxes"
 				>
-					{#snippet aside()}<span class="count" data-testid="jinx-count"
-							>{facts?.jinxes.length ?? 0}</span
-						>{/snippet}
+					{#snippet aside()}<CountBadge
+							count={facts?.jinxes.length ?? 0}
+							testid="jinx-count"
+						/>{/snippet}
 					{#if facts?.jinxes.length}
 						<ul>
 							{#each facts.jinxes as jinx (jinx.characters.join('+'))}
@@ -416,7 +400,7 @@
 					level={3}
 					storageKey="script-builder:setup"
 				>
-					{#snippet aside()}<span class="count">{facts?.modifiers.length ?? 0}</span>{/snippet}
+					{#snippet aside()}<CountBadge count={facts?.modifiers.length ?? 0} />{/snippet}
 					{#if facts?.modifiers.length}
 						<ul>
 							{#each facts.modifiers as modifier (modifier.id)}
@@ -433,9 +417,10 @@
 					{:else}<p>{t('common.none')}</p>{/if}
 				</Collapsible>
 				<Collapsible title={t('script-builder.needs')} level={3} storageKey="script-builder:needs">
-					{#snippet aside()}<span class="count" data-warn={missingNeeds.length ? '' : undefined}
-							>{missingNeeds.length}</span
-						>{/snippet}
+					{#snippet aside()}<CountBadge
+							count={missingNeeds.length}
+							warn={missingNeeds.length > 0}
+						/>{/snippet}
 					{#if missingNeeds.length}
 						<ul>
 							{#each missingNeeds as need (need.id)}
@@ -456,9 +441,10 @@
 					level={3}
 					storageKey="script-builder:homebrew"
 				>
-					{#snippet aside()}<span class="count" data-testid="homebrew-count"
-							>{chosenHomebrewCharacters.length}</span
-						>{/snippet}
+					{#snippet aside()}<CountBadge
+							count={chosenHomebrewCharacters.length}
+							testid="homebrew-count"
+						/>{/snippet}
 					{#if chosenHomebrewCharacters.length}
 						<ul class="credits">
 							{#each chosenHomebrewCharacters as character (character.id)}
@@ -519,22 +505,16 @@
 	</ErrorBoundary>
 </Page>
 
-<Dialog bind:open={openOpen} title={t('script-builder.openTitle')}>
-	<ul class="saved" data-testid="builder-saved-list">
-		{#each recentScripts.list as saved (saved.scriptId)}
-			<li>
-				<button type="button" onclick={() => chooseSaved(saved)}
-					>{saved.name || t('common.none')}</button
-				>
-			</li>
-		{:else}
-			<li>{t('common.none')}</li>
-		{/each}
-	</ul>
-	{#snippet actions()}
-		<ModalActions onCancel={() => (openOpen = false)} />
-	{/snippet}
-</Dialog>
+<OpenSavedDialog
+	bind:open={openOpen}
+	title={t('script-builder.openTitle')}
+	items={recentScripts.list}
+	key={(saved) => saved.scriptId}
+	onChoose={chooseSaved}
+	testid="builder-saved-list"
+>
+	{#snippet row(saved)}{saved.name || t('common.none')}{/snippet}
+</OpenSavedDialog>
 
 <ConfirmDialog
 	bind:open={replaceOpen}
@@ -555,28 +535,10 @@
 </ConfirmDialog>
 
 <style>
-	.tools {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-	}
-	.tools :global(.icon-button) {
-		background: var(--surface-raised);
-		box-shadow: inset 0 0 0 1px var(--border);
-	}
-	@media (hover: hover) {
-		.tools :global(.icon-button:hover:not(:disabled)) {
-			background: var(--surface-selected);
-		}
-	}
 	.details {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
-	}
-	label {
-		display: grid;
-		gap: var(--space-1);
 	}
 	.variation {
 		display: flex;
@@ -587,26 +549,6 @@
 	}
 	.variation span {
 		color: var(--on-surface-muted);
-	}
-	.save {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--space-2);
-	}
-	label span {
-		color: var(--on-surface-muted);
-	}
-	input {
-		box-sizing: border-box;
-		width: 100%;
-		min-width: 0;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font: var(--font-control);
 	}
 	.list {
 		display: grid;
@@ -701,44 +643,5 @@
 		display: grid;
 		gap: var(--space-2);
 		padding-inline-start: 1.2em;
-	}
-	.count {
-		display: inline-grid;
-		place-items: center;
-		min-width: 1.6em;
-		height: 1.6em;
-		padding: 0 0.3em;
-		border-radius: var(--radius-full);
-		background: var(--surface);
-		font-weight: 700;
-		font-variant-numeric: tabular-nums;
-	}
-	.count[data-warn] {
-		background: var(--accent);
-		color: var(--on-accent, var(--on-surface));
-	}
-	.saved {
-		display: grid;
-		gap: var(--space-1);
-		margin: var(--space-3) 0;
-		padding: 0;
-		list-style: none;
-	}
-	.saved button {
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 0;
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-	}
-	@media (hover: hover) {
-		.saved button:hover {
-			background: var(--surface-selected);
-		}
 	}
 </style>

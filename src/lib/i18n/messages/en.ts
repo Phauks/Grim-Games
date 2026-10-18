@@ -21,6 +21,7 @@ import { scratch } from '#lib/i18n/messages/en/scratch.ts';
 import { library } from '#lib/i18n/messages/en/library.ts';
 import { history } from '#lib/i18n/messages/en/history.ts';
 import { scriptBuilder } from '#lib/i18n/messages/en/script-builder.ts';
+import { characterBuilder } from '#lib/i18n/messages/en/character-builder.ts';
 import { modes } from '#lib/i18n/messages/en/modes.ts';
 
 /**
@@ -55,5 +56,6 @@ export const en = {
 	...library,
 	...history,
 	...scriptBuilder,
+	...characterBuilder,
 	...modes
 } as const satisfies Catalog;

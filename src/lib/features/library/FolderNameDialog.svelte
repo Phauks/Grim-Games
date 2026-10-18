@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { MAX_LABEL_NAME, nameFree, siblings } from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
@@ -44,25 +44,13 @@
 </script>
 
 <Dialog bind:open title={renaming ? t('library.renameTitle') : t('library.newFolder')}>
-	<label class="field">
-		<span>{t('library.name')}</span>
-		<ClearableField bind:value={name}>
-			<input
-				type="text"
-				autocomplete="off"
-				enterkeyhint="done"
-				maxlength={MAX_LABEL_NAME}
-				aria-invalid={name.trim() !== '' && !ok}
-				bind:value={name}
-				onkeydown={(e) => {
-					if (e.key === 'Enter') {
-						e.preventDefault();
-						save();
-					}
-				}}
-			/>
-		</ClearableField>
-	</label>
+	<TextField
+		label={t('library.name')}
+		bind:value={name}
+		maxlength={MAX_LABEL_NAME}
+		invalid={name.trim() !== '' && !ok}
+		oncommit={save}
+	/>
 	<p class="error" role="status">{name.trim() !== '' && !ok ? t('library.nameTaken') : ''}</p>
 	{#snippet actions()}
 		<ModalActions onCancel={() => (open = false)} onConfirm={save} disabled={!ok} />
@@ -70,21 +58,6 @@
 </Dialog>
 
 <style>
-	.field {
-		display: grid;
-		gap: var(--space-1);
-	}
-	.field input {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		color: inherit;
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
-	}
 	.error {
 		margin: var(--space-1) 0 0;
 		min-height: 1.2em;

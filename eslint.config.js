@@ -7,6 +7,25 @@ import globals from 'globals';
 import ts from 'typescript-eslint';
 import grim from './scripts/lint/plugin.js';
 
+/** Files still hand-building labelled text fields; only ever shrinks (see grim/text-field). */
+const TEXT_FIELD_TODO = [
+	'src/lib/features/account/SignInForm.svelte',
+	'src/lib/features/day/NoteSheet.svelte',
+	'src/lib/features/glossary/GlossaryDialog.svelte',
+	'src/lib/features/info-tokens/InfoTokenList.svelte',
+	'src/lib/features/library/LabelManager.svelte',
+	'src/lib/features/library/LibraryPage.svelte',
+	'src/lib/features/player/NoteEditor.svelte',
+	'src/lib/features/reference/CharacterReference.svelte',
+	'src/lib/features/reference/NightOrderReference.svelte',
+	'src/lib/features/reports/ReportDialog.svelte',
+	'src/lib/features/reports/ReportsInbox.svelte',
+	'src/lib/features/scripts/AddScript.svelte',
+	'src/lib/features/scripts/BotcFilter.svelte',
+	'src/lib/features/scripts/ScriptSearchBar.svelte',
+	'src/lib/features/setup/RevealDialog.svelte'
+];
+
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
 export default defineConfig(
@@ -128,6 +147,20 @@ export default defineConfig(
 		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
 		plugins: { grim },
 		rules: { 'grim/clearable-field': 'error' }
+	},
+	{
+		// Labelled text fields are the shared TextField (component review, 2026-10-17).
+		// TEXT_FIELD_TODO lists the files written before it; the list only shrinks: move a
+		// file onto TextField and take it off, never add one.
+		files: ['src/**/*.svelte'],
+		ignores: [
+			'src/lib/ui/primitives/**',
+			'src/lib/features/spikes/**',
+			'src/routes/spikes/**',
+			...TEXT_FIELD_TODO
+		],
+		plugins: { grim },
+		rules: { 'grim/text-field': 'error' }
 	},
 	{
 		// Every delete, remove or clear is the red trash can (Trevor, 2026-10-17).

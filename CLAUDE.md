@@ -3,6 +3,7 @@
 - Read `README.md` for the stack, layout and commands.
 - `src/lib/core` is pure TypeScript: no Svelte, SvelteKit, DOM or UI imports (ESLint enforces it). Game logic goes there with Vitest tests.
 - Features never import `@ark-ui/*`; they use our wrappers in `src/lib/ui/primitives`.
+- Before building a control, layout or helper, check `docs/shared-components.md`: the same feature in two places is one shared component (Trevor). Extend the shared one rather than copy it; lint lists named `*_TODO` only shrink.
 - Use the game's own terminology (character type vs alignment, seat, reminder, Fabled/Loric as rule characters). Don't invent terms.
 - The BotC wiki is the rules authority. Tests for characters and jinxes cite the wiki page they encode; paraphrase, never copy wiki prose (it has no licence).
 - Exception (Trevor, 2026-10-15): the glossary popover shows the wiki Glossary's exact wording, fetched live from the wiki API and cached on the device only (`src/lib/features/glossary/wiki-glossary.svelte.ts`). The same holds for a character's whole wiki page in the character dialog (`src/lib/features/characters/wiki-page.svelte.ts`, Trevor 2026-10-16). Never bundle either in the repo. Revisit before any public launch.

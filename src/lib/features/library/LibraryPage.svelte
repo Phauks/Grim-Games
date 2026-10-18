@@ -42,6 +42,7 @@
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
+	import SavedCharacterList from '#lib/features/character-builder/SavedCharacterList.svelte';
 	import FolderView from './FolderView.svelte';
 	import VariationChanges from './VariationChanges.svelte';
 	import LabelManager from './LabelManager.svelte';
@@ -403,6 +404,9 @@
 					/>
 				</div>
 			{/if}
+		</PageSection>
+		<PageSection title={t('library.characters')}>
+			<SavedCharacterList />
 		</PageSection>
 	</ErrorBoundary>
 </Page>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { BagPlan, ScriptJinx, SetupAnalysis } from '#lib/core/rules/index.ts';
@@ -35,11 +36,11 @@
 <section class="check" aria-label={t('setup.check')} data-testid="setup-check">
 	<div class="body">
 		<Collapsible title={t('setup.check.warnings')} level={3} storageKey="setup-check:warnings">
-			{#snippet aside()}<span
-					class="count"
-					data-warn={warningCount ? '' : undefined}
-					data-testid="warning-count">{warningCount}</span
-				>{/snippet}
+			{#snippet aside()}<CountBadge
+					count={warningCount}
+					warn={warningCount > 0}
+					testid="warning-count"
+				/>{/snippet}
 			{#if warningCount}
 				<ul class="warn">
 					{#each warnings as warning, i (i)}<li><GlossaryText text={warning} /></li>{/each}
@@ -141,21 +142,6 @@
 		display: grid;
 		gap: var(--space-2);
 		padding-inline-start: 1.2em;
-	}
-	.count {
-		display: inline-grid;
-		place-items: center;
-		min-width: 1.6em;
-		height: 1.6em;
-		padding: 0 0.3em;
-		border-radius: var(--radius-full);
-		background: var(--surface);
-		font-weight: 700;
-		font-variant-numeric: tabular-nums;
-	}
-	.count[data-warn] {
-		background: var(--accent);
-		color: var(--on-accent, var(--on-surface));
 	}
 	.stand-ins {
 		padding: 0;

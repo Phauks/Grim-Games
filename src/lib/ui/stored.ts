@@ -1,0 +1,33 @@
+/**
+ * localStorage that never throws (private windows, blocked storage, a full quota), for every
+ * part of the app (component review §4.6, 2026-10-17: about thirty files wrote their own
+ * try/catch around it). A stored value that a newer or older build wrote goes through the
+ * caller's `parse`, which brings it up to the current version or returns its default; the
+ * app is an offline-first PWA, so a newer build can read what an older one saved (CLAUDE.md).
+ */
+
+/** The value at `key`, as JSON, or undefined when missing, unreadable or storage is blocked. */
+export function readStored<T = unknown>(key: string): T | undefined {
+	try {
+		const raw = globalThis.localStorage?.getItem(key);
+		return raw ? (JSON.parse(raw) as T) : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/** Stores `value` as JSON (undefined removes it). False when storage refused it. */
+export function writeStored(key: string, value: unknown): boolean {
+	try {
+		if (value === undefined) globalThis.localStorage?.removeItem(key);
+		else globalThis.localStorage?.setItem(key, JSON.stringify(value));
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/** A stored record read through its own parser, which handles old versions and damage. */
+export function readParsed<T>(key: string, parse: (raw: unknown) => T): T {
+	return parse(readStored(key) ?? null);
+}

@@ -6,5 +6,8 @@ export const common = {
 	'common.confirm': 'Confirm',
 	'common.none': 'None',
 	'common.seat': 'Seat {number}',
+	'common.save': 'Save',
+	'common.saved': 'Saved',
+	'common.saveNew': 'Save as new',
 	'common.players': { one: '{count} player', other: '{count} players' }
 } as const;
