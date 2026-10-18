@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
-	import { playTimerSound } from '#lib/features/day/timer-sound.ts';
+	import { canVibrate, playTimerSound, vibrateTimer } from '#lib/features/day/timer-sound.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { TIMER_SOUNDS } from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
@@ -59,6 +59,16 @@
 	onChange={(timerSound) => {
 		preferences.update({ timerSound });
 		playTimerSound(timerSound);
+	}}
+/>
+<SettingToggle
+	label={t('day.timerVibrate')}
+	description={canVibrate() ? undefined : t('day.timerVibrateUnavailable')}
+	checked={canVibrate() && preferences.current.timerVibrate}
+	disabled={!canVibrate()}
+	onChange={(timerVibrate) => {
+		preferences.update({ timerVibrate });
+		if (timerVibrate) vibrateTimer();
 	}}
 />
 <SettingSelect

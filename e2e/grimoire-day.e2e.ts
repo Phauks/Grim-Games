@@ -378,6 +378,11 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 	await sheet.getByRole('combobox', { name: 'Timer sound' }).tap();
 	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
 	await expect(sheet.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
+	// Vibration is its own switch beside the sound (Trevor, 2026-10-18).
+	const vibrate = sheet.getByRole('checkbox', { name: 'Vibrate' });
+	await expect(vibrate).toBeChecked();
+	await sheet.getByText('Vibrate', { exact: true }).tap();
+	await expect(vibrate).not.toBeChecked();
 	await expect(sheet.getByRole('link')).toHaveCount(0);
 
 	await page.keyboard.press('Escape');

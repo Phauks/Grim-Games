@@ -55,6 +55,8 @@ export const day = {
 	'day.timerMore': '30 seconds more',
 	'day.timerSoundButton': 'Timer sound: {sound}',
 	'day.timerSoundTitle': 'Timer sound',
+	'day.timerVibrate': 'Vibrate',
+	'day.timerVibrateUnavailable': 'This device can’t vibrate.',
 	'day.timerOpen': 'Day timer, {clock}; open its controls',
 	'day.timerModeTitle': 'Mode',
 	'day.timerModeDown': 'Timer',

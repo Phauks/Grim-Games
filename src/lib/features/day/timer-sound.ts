@@ -22,6 +22,21 @@ function audio(): AudioContext | undefined {
 	return context;
 }
 
+const VIBRATION = [300, 150, 300, 150, 300];
+
+/**
+ * Whether this device can vibrate for the timer. Browsers without the Vibration API (Safari
+ * on iPhone and iPad, and desktop browsers on most computers) cannot; the setting says so.
+ */
+export function canVibrate(): boolean {
+	return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+}
+
+/** The timer's vibration, where the device has one. */
+export function vibrateTimer(): void {
+	if (canVibrate()) navigator.vibrate(VIBRATION);
+}
+
 /** Call from a tap, so a later sound is allowed. */
 export function unlockTimerSound(): void {
 	const ctx = audio();

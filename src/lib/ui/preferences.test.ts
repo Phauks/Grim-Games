@@ -59,7 +59,8 @@ describe('parsePreferences', () => {
 			tileFace: 'letters',
 			requireName: true,
 			timerSound: 'buzzer',
-			timerMode: 'up'
+			timerMode: 'up',
+			timerVibrate: false
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
 	});
@@ -69,6 +70,8 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({ tileFace: 'shapes' }).tileFace).toBe('numbers');
 		expect(parsePreferences({ timerSound: 'chime' }).timerSound).toBe('chime');
 		expect(parsePreferences({ timerSound: 'gong' }).timerSound).toBe('bell');
+		expect(parsePreferences({}).timerVibrate).toBe(true);
+		expect(parsePreferences({ timerVibrate: false }).timerVibrate).toBe(false);
 		expect(parsePreferences({ timerMode: 'sideways' }).timerMode).toBe('down');
 	});
 

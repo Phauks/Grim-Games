@@ -7,7 +7,8 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DayTimer from './DayTimer.svelte';
 	import { liveDayTimer as timer } from './day-timer.svelte.ts';
-	import { playTimerSound } from './timer-sound.ts';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { canVibrate, playTimerSound, vibrateTimer } from './timer-sound.ts';
 
 	/**
 	 * The day timer (Trevor, 2026-10-17): 30 seconds per living player, started by hand,
@@ -34,11 +35,28 @@
 	const modeLabel = (mode: (typeof MODES)[number]) =>
 		mode === 'down' ? t('day.timerModeDown') : t('day.timerModeUp');
 	const soundLabel = (sound: TimerSound) => t(`day.timerSound.${sound}`);
+	/** Vibration on or off beside the sound, so the alarm can be either, both or neither. */
+	function chooseVibrate(timerVibrate: boolean) {
+		preferences.update({ timerVibrate });
+		if (timerVibrate) vibrateTimer();
+	}
 	function chooseSound(sound: TimerSound) {
 		preferences.update({ timerSound: sound });
 		playTimerSound(sound);
 	}
 </script>
+
+{#snippet vibrate()}
+	<!-- Vibration or the sound, both or neither (Trevor, 2026-10-18). Shown off and disabled,
+	     with why, on devices that cannot vibrate, so the sheet looks the same everywhere. -->
+	<SettingToggle
+		label={t('day.timerVibrate')}
+		description={canVibrate() ? undefined : t('day.timerVibrateUnavailable')}
+		checked={canVibrate() && preferences.current.timerVibrate}
+		disabled={!canVibrate()}
+		onChange={chooseVibrate}
+	/>
+{/snippet}
 
 <div
 	class="timer"
@@ -110,14 +128,17 @@
 
 {#if variant === 'full'}
 	<BottomSheet bind:open={soundOpen} title={t('day.timerSoundTitle')}>
-		<!-- A drop-down; each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
-		<Select
-			label={t('day.timerSoundTitle')}
-			hideLabel
-			value={preferences.current.timerSound}
-			options={TIMER_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
-			onChange={chooseSound}
-		/>
+		<div class="controls">
+			<!-- A drop-down; each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
+			<Select
+				label={t('day.timerSoundTitle')}
+				hideLabel
+				value={preferences.current.timerSound}
+				options={TIMER_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
+				onChange={chooseSound}
+			/>
+			{@render vibrate()}
+		</div>
 	</BottomSheet>
 {:else}
 	<!-- The timer's own controls and settings, over the board; nothing leads to Settings. -->
@@ -136,6 +157,7 @@
 				options={TIMER_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
 				onChange={chooseSound}
 			/>
+			{@render vibrate()}
 		</div>
 	</BottomSheet>
 {/if}
