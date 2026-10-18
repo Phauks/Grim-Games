@@ -9,7 +9,7 @@ import { boldToRed } from './bold.ts';
 
 /**
  * A Storyteller's own card. Beyond the text:
- * - `characterIds`: it belongs to these characters, so it sits under Character Specific and
+ * - `characterIds`: it belongs to these characters, so it sits under Character-Specific and
  *   a game offers it only while one of them is in play (Trevor, 2026-10-16);
  * - `asks`: what it asks for when shown, each part set on its own (Trevor, 2026-10-18), such
  *   as the Mezepheles's secret word (text) or a madness card's characters.

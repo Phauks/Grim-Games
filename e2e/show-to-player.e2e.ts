@@ -177,13 +177,15 @@ test("a character's own card is filled in and shown, e.g. the Mezepheles's secre
 }) => {
 	await page.goto('/info-tokens');
 	// The section says, in a popover, that these cards are only used while the character is in play.
-	await page.getByRole('button', { name: 'About Character Specific cards' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Character Specific' })).toContainText(
+	await page.getByRole('button', { name: 'About Character-Specific cards' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Character-Specific' })).toContainText(
 		'Only used while the character is in play.'
 	);
 	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Your Secret Word is (Mezepheles)' }).tap();
-	const dialog = page.getByRole('dialog', { name: /^Your Secret Word is \(\s*Mezepheles\s*\)$/ });
+	// The card's words as the title, its character below, no brackets (Trevor, 2026-10-18).
+	const dialog = page.getByRole('dialog', { name: 'Your Secret Word is', exact: true });
+	await expect(dialog).toContainText('Mezepheles');
 	await dialog.getByRole('textbox', { name: 'Word' }).fill('lantern');
 	await dialog.getByRole('textbox', { name: 'Word' }).press('Enter');
 	const shown = page.locator('[data-testid="show-to-player"][open]');

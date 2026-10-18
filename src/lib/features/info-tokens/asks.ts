@@ -6,8 +6,8 @@ import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 export interface AskBadge {
 	icon: IconSlot;
 	label: string;
-	/** Shown beside the icon: how many characters, at most. */
-	count?: number;
+	/** Shown beside the icon: how many characters, as a range ("1–3") when more than one. */
+	count?: string;
 }
 
 /**
@@ -41,7 +41,8 @@ export function askBadges(asks: InfoTokenAsks | undefined): AskBadge[] {
 		badges.push({
 			icon: 'asksCharacters',
 			label: t('info-tokens.asks.characters', { count: asks.characters }),
-			count: asks.characters
+			// At least one, up to the most it allows (Trevor, 2026-10-18: "This player is" is 1–3).
+			count: asks.characters > 1 ? `1–${asks.characters}` : '1'
 		});
 	return badges;
 }
