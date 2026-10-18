@@ -102,12 +102,15 @@
 		gap: var(--space-2);
 		/* Room for the X, which sits at the end of the same cell. */
 		padding-inline-end: var(--tap-target);
+		min-width: 0;
 		pointer-events: none;
 	}
 	.box {
 		display: grid;
 		place-items: center;
-		width: calc(2.75 * var(--u));
+		/* Narrower on a small screen with large text, so the row never runs off the side. */
+		flex: 0 1 calc(2.75 * var(--u));
+		min-width: 0;
 		height: var(--tap-target);
 		box-sizing: border-box;
 		border: 1px solid var(--border);
@@ -129,9 +132,11 @@
 	}
 	/* As wide as its boxes, so the X sits just after the last one. */
 	:global(.clearable.code-field) {
-		flex: 0 0 auto;
+		flex: 0 1 auto;
 		justify-self: start;
+		width: fit-content;
 		max-width: 100%;
+		grid-template-columns: minmax(0, 1fr);
 	}
 	/* The real field: every tap and key lands on it, but only the boxes show. */
 	.code-input {
