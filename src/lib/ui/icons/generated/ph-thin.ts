@@ -95,7 +95,9 @@ import ph_leaf_thin from '~icons/ph/leaf-thin';
 import ph_lifebuoy_thin from '~icons/ph/lifebuoy-thin';
 import ph_lightning_thin from '~icons/ph/lightning-thin';
 import ph_link_thin from '~icons/ph/link-thin';
+import ph_link_break_thin from '~icons/ph/link-break-thin';
 import ph_link_simple_thin from '~icons/ph/link-simple-thin';
+import ph_link_simple_break_thin from '~icons/ph/link-simple-break-thin';
 import ph_list_thin from '~icons/ph/list-thin';
 import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_list_checks_thin from '~icons/ph/list-checks-thin';
@@ -278,7 +280,9 @@ const icons: IconMap = {
 	'ph:lifebuoy-thin': ph_lifebuoy_thin,
 	'ph:lightning-thin': ph_lightning_thin,
 	'ph:link-thin': ph_link_thin,
+	'ph:link-break-thin': ph_link_break_thin,
 	'ph:link-simple-thin': ph_link_simple_thin,
+	'ph:link-simple-break-thin': ph_link_simple_break_thin,
 	'ph:list-thin': ph_list_thin,
 	'ph:list-bullets-thin': ph_list_bullets_thin,
 	'ph:list-checks-thin': ph_list_checks_thin,

@@ -95,7 +95,9 @@ import ph_leaf from '~icons/ph/leaf';
 import ph_lifebuoy from '~icons/ph/lifebuoy';
 import ph_lightning from '~icons/ph/lightning';
 import ph_link from '~icons/ph/link';
+import ph_link_break from '~icons/ph/link-break';
 import ph_link_simple from '~icons/ph/link-simple';
+import ph_link_simple_break from '~icons/ph/link-simple-break';
 import ph_list from '~icons/ph/list';
 import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_list_checks from '~icons/ph/list-checks';
@@ -278,7 +280,9 @@ const icons: IconMap = {
 	'ph:lifebuoy': ph_lifebuoy,
 	'ph:lightning': ph_lightning,
 	'ph:link': ph_link,
+	'ph:link-break': ph_link_break,
 	'ph:link-simple': ph_link_simple,
+	'ph:link-simple-break': ph_link_simple_break,
 	'ph:list': ph_list,
 	'ph:list-bullets': ph_list_bullets,
 	'ph:list-checks': ph_list_checks,

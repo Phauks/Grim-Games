@@ -19,16 +19,22 @@
 
 	/**
 	 * The user's tags in the Library's sidebar (Trevor, 2026-10-18: tags in "the left side bar
-	 * of the file nav"): tap one to show what carries it; add, rename and delete them here.
+	 * of the file nav"): tap one to show what carries it. Kept compact (Trevor, 2026-10-18: "it
+	 * is so big"): New tag and Manage tags sit in the heading and open dialogs.
 	 */
 	interface Props {
 		/** The tags the list is filtered by: items carrying every one. */
 		filter?: string[];
+		/** The id of the Tags heading, which names the sidebar's section. */
+		headingId: string;
 	}
 
-	let { filter = $bindable([]) }: Props = $props();
+	let { filter = $bindable([]), headingId }: Props = $props();
 
 	const kind: LabelKind = 'tags';
+	const tags = $derived(byName(libraryLabels.state.tags));
+	let adding = $state(false);
+	let managing = $state(false);
 
 	function toggle(id: string) {
 		filter = filter.includes(id) ? filter.filter((f) => f !== id) : [...filter, id];
@@ -57,8 +63,14 @@
 	}
 </script>
 
+<div class="head">
+	<h2 id={headingId} class="heading">{t('library.tags')}</h2>
+	<IconButton icon="add" label={t('library.newTag')} onclick={() => (adding = true)} />
+	<IconButton icon="more" label={t('library.manageTags')} onclick={() => (managing = true)} />
+</div>
+<!-- Wrapped chips, one tap each to filter; renaming and deleting wait in Manage tags. -->
 <ul class="tags" aria-label={t('library.tags')}>
-	{#each byName(libraryLabels.state.tags) as label (label.id)}
+	{#each tags as label (label.id)}
 		<li>
 			<button
 				type="button"
@@ -66,24 +78,40 @@
 				aria-pressed={filter.includes(label.id)}
 				onclick={() => toggle(label.id)}>{label.name}</button
 			>
-			<IconButton
-				icon="rename"
-				label={t('library.renameNamed', { name: label.name })}
-				onclick={() => startRename(kind, label)}
-			/>
-			<DeleteButton
-				label={t('library.deleteNamed', { name: label.name })}
-				onclick={() => {
-					deleting = { kind, label };
-					deleteOpen = true;
-				}}
-			/>
 		</li>
 	{:else}
 		<li class="none">{t('common.none')}</li>
 	{/each}
 </ul>
-<NewLabel {kind} label={t('library.newTag')} />
+
+<Dialog bind:open={adding} title={t('library.newTag')}>
+	<NewLabel {kind} label={t('library.newTag')} onadd={() => (adding = false)} />
+</Dialog>
+
+<Dialog bind:open={managing} title={t('library.manageTags')}>
+	<ul class="manage" aria-label={t('library.tags')}>
+		{#each tags as label (label.id)}
+			<li>
+				<span class="tag static">{label.name}</span>
+				<IconButton
+					icon="rename"
+					label={t('library.renameNamed', { name: label.name })}
+					onclick={() => startRename(kind, label)}
+				/>
+				<DeleteButton
+					label={t('library.deleteNamed', { name: label.name })}
+					onclick={() => {
+						deleting = { kind, label };
+						deleteOpen = true;
+					}}
+				/>
+			</li>
+		{:else}
+			<li class="none">{t('common.none')}</li>
+		{/each}
+	</ul>
+	<NewLabel {kind} label={t('library.newTag')} />
+</Dialog>
 
 <Dialog bind:open={renameOpen} title={t('library.renameTitle')}>
 	<TextField
@@ -122,20 +150,47 @@
 </ConfirmDialog>
 
 <style>
+	.head {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto auto;
+		align-items: center;
+	}
+	.heading {
+		margin: 0;
+		font-size: 0.8rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--on-surface-muted);
+	}
 	ul {
-		margin: 0 0 var(--space-3);
+		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
-	li {
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+	}
+	.tags li {
+		max-width: 100%;
+	}
+	.manage {
+		display: grid;
+		gap: var(--space-1);
+		margin-bottom: var(--space-3);
+	}
+	.manage li {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto auto;
 		align-items: center;
 		gap: var(--space-1);
-		padding-block: var(--space-1);
 	}
 	/* The tag's own look, in the font its name was typed in (Trevor, 2026-10-18). */
 	.tag {
+		display: inline-flex;
+		align-items: center;
 		justify-self: start;
 		max-width: 100%;
 		min-height: var(--tap-target);
@@ -151,14 +206,15 @@
 		white-space: nowrap;
 		cursor: pointer;
 	}
+	.static {
+		cursor: default;
+	}
 	.tag[aria-pressed='true'] {
 		border-color: var(--accent);
 		background: var(--accent);
 		color: var(--on-accent);
 	}
 	.none {
-		display: block;
-		padding-block: var(--space-2);
 		color: var(--on-surface-muted);
 	}
 	.error {

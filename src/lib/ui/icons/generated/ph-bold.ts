@@ -95,7 +95,9 @@ import ph_leaf_bold from '~icons/ph/leaf-bold';
 import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_lightning_bold from '~icons/ph/lightning-bold';
 import ph_link_bold from '~icons/ph/link-bold';
+import ph_link_break_bold from '~icons/ph/link-break-bold';
 import ph_link_simple_bold from '~icons/ph/link-simple-bold';
+import ph_link_simple_break_bold from '~icons/ph/link-simple-break-bold';
 import ph_list_bold from '~icons/ph/list-bold';
 import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_list_checks_bold from '~icons/ph/list-checks-bold';
@@ -278,7 +280,9 @@ const icons: IconMap = {
 	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:lightning-bold': ph_lightning_bold,
 	'ph:link-bold': ph_link_bold,
+	'ph:link-break-bold': ph_link_break_bold,
 	'ph:link-simple-bold': ph_link_simple_bold,
+	'ph:link-simple-break-bold': ph_link_simple_break_bold,
 	'ph:list-bold': ph_list_bold,
 	'ph:list-bullets-bold': ph_list_bullets_bold,
 	'ph:list-checks-bold': ph_list_checks_bold,

@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
@@ -104,9 +102,15 @@
 				(listing.target.kind === 'json'
 					? { json: listing.target.json, source: listing.target.source }
 					: undefined);
-			return shareable
-				? [{ key: libraryKey(identity), haystack: listing.row.haystack, listing, shareable }]
-				: [];
+			if (!shareable) return [];
+			const key = libraryKey(identity);
+			// Renamed in the Library: shown by that name, found by both (Trevor, 2026-10-18).
+			const renamed = libraryLabels.for(key).name;
+			const shown = renamed ? { ...listing, row: { ...listing.row, name: renamed } } : listing;
+			const haystack = renamed
+				? `${listing.row.haystack} ${renamed.toLocaleLowerCase()}`
+				: listing.row.haystack;
+			return [{ key, haystack, listing: shown, ownName: listing.row.name, shareable }];
 		});
 	});
 
@@ -338,11 +342,6 @@
 			label={t('library.newCollection')}
 			onclick={() => (collectionNaming = true)}
 		/>
-		<IconButton
-			icon="buildCharacter"
-			label={t('library.newCharacter')}
-			onclick={() => void goto(resolve('/build-character'))}
-		/>
 		<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
 		<AddScript onsaved={openAdded} />
 	{/snippet}
@@ -351,26 +350,40 @@
 		<div class="manager" class:sided={sided.current} class:roomy={roomy.current}>
 			{#if sided.current}
 				<div class="side">
-					<LibrarySidebar bind:current={currentFolder} bind:kind bind:place bind:tags={tagFilter} />
+					<LibrarySidebar
+						bind:current={currentFolder}
+						bind:kind
+						bind:place
+						bind:tags={tagFilter}
+						count={(f) => folderSize(items, labels, f)}
+					/>
 				</div>
 			{:else}
 				<PageSection title={t('library.navigation')} collapsible storageKey="library-navigation">
-					<LibrarySidebar bind:current={currentFolder} bind:kind bind:place bind:tags={tagFilter} />
+					<LibrarySidebar
+						bind:current={currentFolder}
+						bind:kind
+						bind:place
+						bind:tags={tagFilter}
+						count={(f) => folderSize(items, labels, f)}
+					/>
 				</PageSection>
 			{/if}
 
+			<!-- One toolbar over the list (Trevor, 2026-10-18: the parts should feel connected). -->
+			<div class="toolbar">
+				<SearchField
+					bind:value={term}
+					label={t('library.search')}
+					placeholder={t('library.searchPlaceholder')}
+				/>
+				<FolderBar bind:current={currentFolder} searching={!browsing || place === 'campaigns'} />
+			</div>
+
 			<div class="files">
 				{#if place === 'campaigns'}
-					<PageSection title={t('library.campaigns')}>
-						<CampaignScripts {data} />
-					</PageSection>
+					<CampaignScripts {data} {term} />
 				{:else}
-					<SearchField
-						bind:value={term}
-						label={t('library.search')}
-						placeholder={t('library.searchPlaceholder')}
-					/>
-					<FolderBar bind:current={currentFolder} searching={!browsing} />
 					<div data-testid="library-table">
 						<DataTable
 							label={t('library.table')}
@@ -466,14 +479,8 @@
 	{/if}
 {/snippet}
 
-<FolderNameDialog
-	bind:open={folderNaming}
-	parent={folder}
-	oncreated={(id) => {
-		currentFolder = id;
-		place = 'files';
-	}}
-/>
+<!-- The new folder isn't opened (Trevor, 2026-10-18); it is listed in the folder made in. -->
+<FolderNameDialog bind:open={folderNaming} parent={folder} />
 
 <NameDialog
 	bind:open={collectionNaming}
@@ -485,14 +492,52 @@
 	.manager {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-4);
+		gap: var(--space-3);
 		align-items: start;
 	}
+	.toolbar {
+		display: grid;
+		gap: var(--space-2);
+		min-width: 0;
+	}
+	/*
+	 * Wider: one window, like a file manager (Trevor, 2026-10-18: the sidebar, list and pane
+	 * felt like separate parts). One frame, columns split by lines, one toolbar across the list
+	 * and pane, and the open item marked in the accent in the list and on the pane.
+	 */
 	.manager.sided {
 		grid-template-columns: calc(16 * var(--u)) minmax(0, 1fr);
+		grid-template-rows: auto 1fr;
+		gap: 0;
+		border: var(--card-border);
+		border-radius: var(--card-radius);
+		background: var(--card-background);
+		overflow: clip;
 	}
 	.manager.sided.roomy {
 		grid-template-columns: calc(16 * var(--u)) minmax(0, 1fr) minmax(0, 1fr);
+	}
+	.sided .side {
+		grid-row: 1 / -1;
+		padding: var(--space-3);
+	}
+	/* The sidebar's dividing line runs the window's full height on the list's side. */
+	.sided .toolbar {
+		grid-column: 2 / -1;
+		padding: var(--space-2) var(--space-3);
+		border-bottom: var(--card-border);
+		border-inline-start: var(--card-border);
+	}
+	.sided .files {
+		align-self: stretch;
+		padding: var(--space-2) var(--space-3) var(--space-3);
+		border-inline-start: var(--card-border);
+	}
+	.sided .pane {
+		border-inline-start: var(--card-border);
+	}
+	:global(.sided tr.selected) .pick {
+		box-shadow: inset 0.25rem 0 0 var(--accent);
 	}
 	/* The sidebar and pane stay in view beside the list, just below the app header. */
 	.side,
