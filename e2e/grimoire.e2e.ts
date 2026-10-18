@@ -371,6 +371,12 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
 	).toBeVisible();
 	await fabled.tap();
+	// Its token opens its entry, as a seat's token does (Trevor, 2026-10-18).
+	await page.getByRole('button', { name: 'About the Spirit of Ivory' }).tap();
+	const entry = page.getByRole('dialog', { name: 'Spirit of Ivory' }).last();
+	await expect(entry.locator('header.character')).toBeVisible();
+	await entry.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Spirit of Ivory' })).toHaveCount(1);
 	// The trash sits beside the close X (Trevor, 2026-10-17).
 	await page
 		.getByRole('dialog', { name: 'Spirit of Ivory' })
