@@ -5,32 +5,26 @@
  * version; a stored mode that no longer reads is dropped, never half-used.
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { GAME_MODES, gameModeById, parseGameMode, type GameMode } from '#lib/core/modes/index.ts';
 
 const KEY = 'grim-games:custom-modes:v1';
 
 function read(): GameMode[] {
-	try {
-		const raw: unknown = JSON.parse(globalThis.localStorage?.getItem(KEY) ?? '[]');
-		if (!Array.isArray(raw)) return [];
-		return raw.flatMap((m) => {
-			const parsed = parseGameMode(m);
-			return parsed.ok && !gameModeById(parsed.mode.id) ? [parsed.mode] : [];
-		});
-	} catch {
-		return [];
-	}
+	const raw = readStored(KEY);
+	if (!Array.isArray(raw)) return [];
+	return raw.flatMap((m) => {
+		const parsed = parseGameMode(m);
+		return parsed.ok && !gameModeById(parsed.mode.id) ? [parsed.mode] : [];
+	});
 }
 
 let list = $state.raw<GameMode[]>(read());
 
 function write(next: GameMode[]) {
 	list = next;
-	try {
-		globalThis.localStorage?.setItem(KEY, JSON.stringify(next));
-	} catch {
-		// Storage blocked: the mode stays for this visit only.
-	}
+	// Storage blocked: the mode stays for this visit only.
+	writeStored(KEY, next);
 }
 
 export const customModes = {

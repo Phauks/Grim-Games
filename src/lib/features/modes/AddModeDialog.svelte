@@ -5,6 +5,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { customModes } from './custom-modes.svelte.ts';
 
 	/**
@@ -52,16 +53,16 @@
 </script>
 
 <Dialog bind:open title={t('modes.add.title')}>
-	<label class="field">
-		<span>{t('modes.add.label')}</span>
-		<textarea
-			bind:value={text}
-			rows="10"
-			spellcheck="false"
-			autocomplete="off"
-			data-testid="mode-file"
-			oninput={() => (issues = [])}></textarea>
-	</label>
+	<TextField
+		label={t('modes.add.label')}
+		bind:value={text}
+		multiline
+		rows={10}
+		spellcheck={false}
+		autocomplete="off"
+		testid="mode-file"
+		oninput={() => (issues = [])}
+	/>
 	<!-- Room for the problems is reserved, so they never move the buttons. -->
 	<div class="issues" role="status">
 		{#if issues.length > 0}
@@ -101,22 +102,6 @@
 		height: 1px;
 		opacity: 0;
 		pointer-events: none;
-	}
-	.field {
-		display: grid;
-		gap: var(--space-1);
-	}
-	textarea {
-		width: 100%;
-		box-sizing: border-box;
-		padding: var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		/* The browser's own monospace font for a textarea, like Inspect's mode file. */
-		font-size: max(0.9rem, 16px); /* px-ok: iOS zooms into fields under 16px */
-		line-height: 1.4;
-		resize: vertical;
 	}
 	.issues {
 		min-height: 4lh;
