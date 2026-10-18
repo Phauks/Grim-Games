@@ -313,13 +313,10 @@ test('token leaves are drawn inside the token, with no setup flower', async ({ p
 	await token.screenshot({ path: 'test-results/village-idiot-token.png' });
 });
 
-test('the token key explains the leaves in an overlay', async ({ page }) => {
+test('the Reference has no token key (Trevor, 2026-10-18)', async ({ page }) => {
 	await page.goto('/reference');
-	await page.getByRole('button', { name: 'Token key' }).tap();
-	const key = page.getByRole('dialog', { name: 'Token key' });
-	await expect(key).toContainText('Leaf on the left: wakes on the first night.');
-	await expect(key).not.toContainText('Flower');
-	await expect(key.locator('g.flower')).toHaveCount(0);
+	await expect(page.getByRole('searchbox', { name: 'Search characters' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Token key' })).toHaveCount(0);
 });
 
 test('cards and rows far below the screen are built only when scrolled near', async ({ page }) => {
