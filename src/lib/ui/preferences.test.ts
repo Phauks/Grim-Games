@@ -58,6 +58,7 @@ describe('parsePreferences', () => {
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',
 			requireName: true,
+			ownWording: true,
 			timerSound: 'buzzer',
 			timerMode: 'up',
 			timerVibrate: false
@@ -71,6 +72,7 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({ timerSound: 'chime' }).timerSound).toBe('chime');
 		expect(parsePreferences({ timerSound: 'gong' }).timerSound).toBe('bell');
 		expect(parsePreferences({}).timerVibrate).toBe(true);
+		expect(parsePreferences({}).ownWording).toBe(false);
 		expect(parsePreferences({ timerVibrate: false }).timerVibrate).toBe(false);
 		expect(parsePreferences({ timerMode: 'sideways' }).timerMode).toBe('down');
 	});

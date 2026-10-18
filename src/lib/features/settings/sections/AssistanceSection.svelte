@@ -47,6 +47,12 @@
 	checked={preferences.current.requireName}
 	onChange={(requireName) => preferences.update({ requireName })}
 />
+<SettingToggle
+	label={t('settings.ownWording')}
+	description={t('settings.ownWordingHelp')}
+	checked={preferences.current.ownWording}
+	onChange={(ownWording) => preferences.update({ ownWording })}
+/>
 
 <h3>{t('settings.groupDay')}</h3>
 {#each STORYTELLER_GROUPS.day as key (key)}{@render toggle(key)}{/each}

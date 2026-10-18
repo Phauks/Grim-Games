@@ -1,13 +1,9 @@
 import { toScript, type GameData, type LoadedScript, type Script } from '#lib/core/data/index.ts';
-import {
-	gameModeById,
-	modeScript,
-	STANDARD,
-	type StorytellerRestrictions
-} from '#lib/core/modes/index.ts';
+import { modeScript, STANDARD, type StorytellerRestrictions } from '#lib/core/modes/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
+import { findMode } from './custom-modes.svelte.ts';
 import { writeGameMode } from './game-mode-store.ts';
 import { saveTownGroup } from './town-groups.ts';
 
@@ -28,7 +24,7 @@ interface StartInput<G> {
 export async function startInMode<G extends { game: { gameId: GameId } }>(
 	input: StartInput<G>
 ): Promise<G> {
-	const mode = gameModeById(input.modeId) ?? STANDARD;
+	const mode = findMode(input.modeId) ?? STANDARD;
 	const script = modeScript(
 		mode,
 		toScript(input.loaded),
@@ -43,13 +39,17 @@ export async function startInMode<G extends { game: { gameId: GameId } }>(
 
 /**
  * Where a new game opens: the draft or choose screen for a mode that doesn't use the bag
- * (Sushi Buffet, Whale Buffet), otherwise the board.
+ * (Sushi Buffet, Whale Buffet), the hidden characters for one that adds them (A Script of
+ * Infinite Possibilities), otherwise the board.
  */
 export function startHref(modeId: string, gameId: GameId): ResolvedPathname {
-	const kind = (gameModeById(modeId) ?? STANDARD).parts.assignment?.kind;
-	return kind === 'draft' || kind === 'choose-own'
-		? resolve('/grimoire/[gameId]/deal', { gameId })
-		: resolve('/grimoire/[gameId]', { gameId });
+	const mode = findMode(modeId) ?? STANDARD;
+	const kind = mode.parts.assignment?.kind;
+	if (kind === 'draft' || kind === 'choose-own')
+		return resolve('/grimoire/[gameId]/deal', { gameId });
+	if (mode.parts.pool?.kind === 'script-plus-hidden')
+		return resolve('/grimoire/[gameId]/extras', { gameId });
+	return resolve('/grimoire/[gameId]', { gameId });
 }
 
 interface TownsInput<G> {
@@ -70,7 +70,7 @@ interface TownsInput<G> {
 export async function startTowns<G extends { game: { gameId: GameId } }>(
 	input: TownsInput<G>
 ): Promise<string> {
-	const mode = gameModeById(input.modeId) ?? STANDARD;
+	const mode = findMode(input.modeId) ?? STANDARD;
 	const gameIds: GameId[] = [];
 	for (const [i, loaded] of input.scripts.entries()) {
 		const script = modeScript(

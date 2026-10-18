@@ -13,6 +13,8 @@ export const TWO_GAMES_AT_ONCE: GameMode = {
 	format: GAME_MODE_FORMAT,
 	id: 'two-games-at-once',
 	name: 'Two games at once',
+	about:
+		'The same players play two scripts at the same time, with a character in each game. No one may be the Demon in both.',
 	sources: [{ title: 'Trevor, project thread (2026-10-17)', url: TREVOR }],
 	unconfirmed: ['pool', 'counts', 'winConditions'],
 	parts: {

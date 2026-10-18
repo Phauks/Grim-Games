@@ -46,6 +46,12 @@ export interface Preferences {
 	 * pass-the-phone draw and when drawing on their own phone (Trevor, 2026-10-16).
 	 */
 	requireName: boolean;
+	/**
+	 * Show text in our own wording that Trevor hasn't approved yet, such as the game modes'
+	 * About descriptions; off by default, when only source text and links show (no authored
+	 * content, Trevor 2026-10-15).
+	 */
+	ownWording: boolean;
 	/** The sound when the day timer runs out (Trevor, 2026-10-17). */
 	timerSound: TimerSound;
 	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
@@ -110,6 +116,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	assistance: DEFAULT_ASSISTANCE,
 	tileFace: 'numbers',
 	requireName: false,
+	ownWording: false,
 	timerSound: 'bell',
 	timerMode: 'down',
 	timerVibrate: true
@@ -146,6 +153,8 @@ export function parsePreferences(raw: unknown): Preferences {
 			: DEFAULT_PREFERENCES.tileFace,
 		requireName:
 			typeof input.requireName === 'boolean' ? input.requireName : DEFAULT_PREFERENCES.requireName,
+		ownWording:
+			typeof input.ownWording === 'boolean' ? input.ownWording : DEFAULT_PREFERENCES.ownWording,
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,

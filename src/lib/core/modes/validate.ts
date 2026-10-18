@@ -32,6 +32,7 @@ export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>):
 	if (typeof value.id !== 'string' || !ID.test(value.id))
 		add('id', 'must be lower-case letters, digits and dashes');
 	if (typeof value.name !== 'string' || !value.name.trim()) add('name', 'must be a name');
+	if (value.about !== undefined && typeof value.about !== 'string') add('about', 'must be text');
 	if (!Array.isArray(value.sources) || value.sources.length === 0)
 		add('sources', 'must list at least one source');
 	else

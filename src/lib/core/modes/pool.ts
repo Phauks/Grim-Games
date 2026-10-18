@@ -122,7 +122,9 @@ export function runsPart(mode: GameMode, part: ModePart): boolean {
 				!p.pool ||
 				p.pool.kind === 'script' ||
 				p.pool.kind === 'all-characters' ||
-				p.pool.kind === 'per-town'
+				p.pool.kind === 'per-town' ||
+				// Hidden extras are rolled on the Storyteller's device (extras.ts).
+				p.pool.kind === 'script-plus-hidden'
 			);
 		case 'restricted':
 			return true;
