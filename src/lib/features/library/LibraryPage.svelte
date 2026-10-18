@@ -33,6 +33,7 @@
 	import ScriptView from '#lib/features/scripts/ScriptView.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -559,11 +560,9 @@
 		<dd class="label-value">
 			<div class="toggles" role="group" aria-label={t('library.tags')}>
 				{#each tags as tag (tag.id)}
-					<button
-						type="button"
-						class="tag-toggle"
-						aria-pressed={openLabels.tags.includes(tag.id)}
-						onclick={() => libraryLabels.toggleTag(key, tag.id)}>{tag.name}</button
+					<Chip
+						pressed={openLabels.tags.includes(tag.id)}
+						onclick={() => libraryLabels.toggleTag(key, tag.id)}>{tag.name}</Chip
 					>
 				{/each}
 			</div>
@@ -725,20 +724,5 @@
 		flex-wrap: wrap;
 		gap: var(--space-2);
 		margin-bottom: var(--space-2);
-	}
-	.tag-toggle {
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: var(--card-border);
-		border-radius: var(--radius-full);
-		background: var(--surface);
-		color: inherit;
-		font: inherit;
-		cursor: pointer;
-	}
-	.tag-toggle[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--accent);
-		color: var(--on-accent);
 	}
 </style>

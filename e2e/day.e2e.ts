@@ -112,7 +112,7 @@ test('any reminder takes an optional long note in a sheet', async ({ page }) => 
 	await sheet.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(sheet).toBeHidden();
 	const note = page.getByRole('button', { name: 'Note: Gossip (Dev)' });
-	await expect(note).toHaveAttribute('data-has-note', 'true');
+	await expect(note).toHaveAttribute('data-marked', 'true');
 	// Reopening shows the whole note (there is no log on the day page).
 	await note.tap();
 	await expect(sheet.getByTestId('note-text')).toHaveValue(text);
