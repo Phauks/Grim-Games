@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import GrimoirePage from '#lib/features/grimoire/GrimoirePage.svelte';
 	import type { PageProps } from './$types';
 
@@ -6,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>Grimoire · Grim-Games</title>
+	<title>Grimoire · {APP_NAME}</title>
 </svelte:head>
 
 {#key params.gameId}

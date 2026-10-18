@@ -180,3 +180,21 @@ test('a card to show with long character names keeps the sheet its width', async
 	const show = await page.getByRole('button', { name: /^Show 1/ }).boundingBox();
 	expect(show!.x + show!.width).toBeLessThanOrEqual(box!.x + box!.width + 1);
 });
+
+test('"not in play" on the info tokens page uses the bluff picker, with its filter and Random', async ({
+	page
+}) => {
+	// Trevor, 2026-10-18: the same picker as the Demon bluffs, Random included.
+	await page.goto('/info-tokens');
+	await page.getByRole('button', { name: 'These characters are not in play', exact: true }).tap();
+	const filter = page.getByRole('combobox', { name: 'Characters' });
+	await expect(filter).toContainText('Good Characters');
+	await page.getByRole('button', { name: 'Random', exact: true }).tap();
+	const chosen = page.getByRole('list', { name: 'Chosen' });
+	await expect(chosen.locator('[data-character-id]')).toHaveCount(3);
+	// Good characters only by default.
+	const ids = await chosen
+		.locator('[data-character-id]')
+		.evaluateAll((els) => els.map((el) => el.closest('[data-team]')?.getAttribute('data-team')));
+	expect(ids).toEqual(['good', 'good', 'good']);
+});

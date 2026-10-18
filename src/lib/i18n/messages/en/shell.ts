@@ -1,10 +1,12 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** App shell: header, footer, About, update prompt and the Changelog page. */
 export const shell = {
 	'shell.settings': 'Settings',
-	'shell.appName': 'Grim-Games',
+	'shell.appName': APP_NAME,
 	'shell.navLabel': 'Menu',
 	'shell.navClose': 'Close menu',
-	'shell.navSectionGames': 'Games',
+	'shell.navSectionGames': 'Play',
 	'shell.navSectionPrepare': 'Prepare',
 	'shell.navSectionPlayers': 'Players',
 	'shell.navSectionYou': 'You',
@@ -26,7 +28,7 @@ export const shell = {
 	'shell.privacy': 'Privacy',
 	'shell.about': 'About',
 	'shell.reportIssue': 'Report an issue',
-	'shell.aboutTitle': 'About Grim-Games',
+	'shell.aboutTitle': `About ${APP_NAME}`,
 	'shell.aboutIntro': 'A touch-first grimoire for Blood on the Clocktower Storytellers.',
 	'shell.aboutVersion': 'Version',
 	'shell.aboutCommit': 'Commit',
@@ -43,7 +45,7 @@ export const shell = {
 	'shell.whatChanged': 'What changed',
 	'shell.whatChangedCount': 'What changed ({count})',
 	'shell.olderChanges': 'Older changes not listed.',
-	'shell.changelogTitle': 'Changelog · Grim-Games',
+	'shell.changelogTitle': `Changelog · ${APP_NAME}`,
 	'shell.unreleased': 'Unreleased',
 	'shell.changeAdded': 'Added',
 	'shell.changeChanged': 'Changed',

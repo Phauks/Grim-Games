@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import { onMount } from 'svelte';
 	import { isSeatable } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -14,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>{t('info-tokens.title')} · Grim-Games</title>
+	<title>{t('info-tokens.title')} · {APP_NAME}</title>
 </svelte:head>
 
 <Page title={t('info-tokens.title')}>

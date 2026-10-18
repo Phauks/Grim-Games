@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 const CHOOSER = 'https://github.com/Phauks/Grim-Games/issues/new/choose';
 
@@ -23,7 +24,7 @@ test('an uncaught error shows the corner card, and Details offers a scrubbed rep
 	page
 }) => {
 	await page.goto('/');
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 	// Something nothing in the app catches, with a private-looking URL in its message.
 	await page.evaluate(() =>
 		setTimeout(() => {
@@ -84,7 +85,7 @@ test('an unknown address shows Page not found without reporting an error', async
 	await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
 	await expect(page.getByTestId('error-notice')).toBeHidden();
 	await page.getByRole('link', { name: 'Home' }).tap();
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 });
 
 test('if the app cannot start, a plain screen shows the error with Reload and Report', async ({
@@ -95,7 +96,7 @@ test('if the app cannot start, a plain screen shows the error with Reload and Re
 	await page.goto('/');
 	const screen = page.locator('#boot-failure');
 	await expect(screen).toBeVisible({ timeout: 15_000 });
-	await expect(screen.getByRole('heading')).toHaveText("Grim-Games couldn't start");
+	await expect(screen.getByRole('heading')).toHaveText(`${APP_NAME} couldn't start`);
 	await expect(screen).toContainText('v0.0.1 · ');
 	for (const name of ['Reload', 'Load the latest version']) {
 		const button = screen.getByRole('button', { name });
@@ -109,7 +110,7 @@ test('if the app cannot start, a plain screen shows the error with Reload and Re
 
 test('a working app never shows the boot-failure screen', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 	await page.waitForTimeout(3500);
 	await expect(page.locator('#boot-failure')).toHaveCount(0);
 });
@@ -118,7 +119,7 @@ test('Diagnostics gathers build, device and problems on the device, without game
 	page
 }) => {
 	await page.goto('/');
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 	await page.evaluate(() => {
 		localStorage.setItem('grim-games:player-name-test', 'Sam the Storyteller');
 		setTimeout(() => {
@@ -186,7 +187,7 @@ test('Diagnostics gathers build, device and problems on the device, without game
 
 test('Clear problems is a trash can beside the X and asks first', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Grim-Games');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 	await page.evaluate(() =>
 		setTimeout(() => {
 			throw new Error('clear me');

@@ -1,3 +1,5 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** Words every feature shares. */
 export const common = {
 	'common.cancel': 'Cancel',
@@ -14,7 +16,6 @@ export const common = {
 	'common.saveNew': 'Save as new',
 	'common.gameOpening': 'Opening the game…',
 	'common.gameMissing': 'There is no saved game here on this device.',
-	'common.gameTooNew':
-		'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.',
+	'common.gameTooNew': `This game was saved by a newer version of ${APP_NAME}. Refresh to update, then open it again.`,
 	'common.players': { one: '{count} player', other: '{count} players' }
 } as const;

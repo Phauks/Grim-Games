@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import { page } from '$app/state';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
@@ -12,7 +13,7 @@
 </script>
 
 <svelte:head>
-	<title>Page layout preview · Grim-Games</title>
+	<title>Page layout preview · {APP_NAME}</title>
 </svelte:head>
 
 <!-- Every slot of the shared page layout, for the page-layout e2e tests. -->

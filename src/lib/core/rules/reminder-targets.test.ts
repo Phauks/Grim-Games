@@ -153,6 +153,32 @@ describe('reminder targets', () => {
 		expect(fitting(s, { characterId: 'washerwoman', label: 'Wrong' })).toEqual([2, 3]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Investigator: two players are shown, one of them a
+	// Minion; neither is the Investigator.
+	it('Investigator: Minion on another Minion; Wrong never on the Investigator or that player', () => {
+		const { session, seats, ctx } = grimoire(['investigator', 'chef', 'poisoner', 'imp'], []);
+		expect(fitting(session, { characterId: 'investigator', label: 'Minion' })).toEqual([2]);
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[2],
+			reminder: { characterId: 'investigator', label: 'Minion' }
+		});
+		expect(fitting(s, { characterId: 'investigator', label: 'Wrong' })).toEqual([1, 3]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Librarian: two players are shown, one of them an
+	// Outsider; neither is the Librarian.
+	it('Librarian: Outsider on another Outsider; Wrong never on the Librarian or that player', () => {
+		const { session, seats, ctx } = grimoire(['librarian', 'chef', 'butler', 'imp'], []);
+		expect(fitting(session, { characterId: 'librarian', label: 'Outsider' })).toEqual([2]);
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[2],
+			reminder: { characterId: 'librarian', label: 'Outsider' }
+		});
+		expect(fitting(s, { characterId: 'librarian', label: 'Wrong' })).toEqual([1, 3]);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Evil_Twin: the twin is of the opposite alignment.
 	it('Evil Twin: the twin is the opposite alignment and never the Evil Twin', () => {
 		const { session } = grimoire(['eviltwin', 'chef', 'imp', 'empath']);

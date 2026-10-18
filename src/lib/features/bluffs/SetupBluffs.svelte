@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -17,13 +18,17 @@
 		dispatch: BluffDispatch;
 		/** Tiles still in the bag: who is in play is not known yet. */
 		waiting: boolean;
+		/** The characters chosen, on the Characters screen; otherwise the bag's tiles. */
+		inPlay?: readonly CharacterId[];
 	}
 
-	let { game, characters, dispatch, waiting }: Props = $props();
+	let { game, characters, dispatch, waiting, inPlay }: Props = $props();
 
 	let open = $state(false);
 	const hasDemon = $derived(
-		Object.values(game.bag?.tiles ?? {}).some((t) => characters.get(t.grimoire)?.type === 'demon')
+		(inPlay ?? Object.values(game.bag?.tiles ?? {}).map((t) => t.grimoire)).some(
+			(id) => characters.get(id)?.type === 'demon'
+		)
 	);
 	const bluffs = $derived(game.bluffs[DEMON_SET] ?? []);
 </script>
@@ -47,7 +52,7 @@
 			>
 		</div>
 	</section>
-	<BluffsSheet bind:open {game} {characters} {dispatch} />
+	<BluffsSheet bind:open {game} {characters} {dispatch} {inPlay} />
 {/if}
 
 <style>
