@@ -4,7 +4,6 @@
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		canMoveTown,
-		gameModeById,
 		inEveryTown,
 		moveIntoTown,
 		movesOnDay,
@@ -25,6 +24,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
+	import { findMode } from './custom-modes.svelte.ts';
 	import { townGroup } from './town-groups.ts';
 
 	/**
@@ -42,7 +42,7 @@
 	let { groupId }: Props = $props();
 
 	const group = $derived(townGroup(groupId));
-	const mode = $derived(gameModeById(group?.modeId ?? '') ?? STANDARD);
+	const mode = $derived(findMode(group?.modeId ?? '') ?? STANDARD);
 	const samePlayers = $derived(mode.parts.towns?.samePlayers === true);
 	const moving = $derived(
 		mode.parts.daySteps?.some((s) => s.kind === 'town-representative') === true

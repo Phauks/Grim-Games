@@ -19,6 +19,8 @@ export const FLESH_AND_BONE: GameMode = {
 	format: GAME_MODE_FORMAT,
 	id: 'flesh-and-bone',
 	name: 'Flesh and Bone',
+	about:
+		'A campaign of games with the Flesh and Bone Fabled. Characters executed in one game are out for the rest of the campaign and replaced on the next script.',
 	aliases: ['Living Scripts', 'Skull and Bones'],
 	sources: [
 		{ title: 'Flesh & Bone rules', url: RULES },

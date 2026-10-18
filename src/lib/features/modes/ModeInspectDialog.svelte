@@ -5,6 +5,7 @@
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import ModeValue from './ModeValue.svelte';
 	import { modeLabel } from './labels.ts';
 
@@ -41,8 +42,12 @@
 </script>
 
 <Dialog bind:open title={mode.name} size="full">
-	<div class="inspect">
+	<div class="inspect" data-testid="mode-inspect-scroll">
 		<dl class="facts">
+			{#if preferences.current.ownWording}
+				<dt>{t('modes.about')}</dt>
+				<dd data-testid="inspect-about">{mode.about ?? t('common.none')}</dd>
+			{/if}
 			{#if mode.aliases?.length}
 				<dt>{t('modes.aliases')}</dt>
 				<dd>{mode.aliases.join(', ')}</dd>
@@ -85,9 +90,14 @@
 </Dialog>
 
 <style>
+	/* A full dialog doesn't scroll itself: its content does (as the Library's script dialog). */
 	.inspect {
 		display: grid;
+		flex: 1;
+		min-height: 0;
+		align-content: start;
 		gap: var(--space-3);
+		overflow-y: auto;
 	}
 	.facts {
 		display: grid;

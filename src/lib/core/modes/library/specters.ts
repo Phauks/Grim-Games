@@ -9,6 +9,8 @@ export const SPECTERS: GameMode = {
 	format: GAME_MODE_FORMAT,
 	id: 'specters',
 	name: 'Specters',
+	about:
+		'Spectators share one ability and vote during the game on how it is used. Still in testing.',
 	sources: [
 		{ title: 'Specters', url: 'https://specters.app' },
 		{ title: 'Chill on the Clocktower', url: 'https://chillclocktower.com/' }

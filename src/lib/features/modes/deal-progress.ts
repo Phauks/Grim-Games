@@ -8,9 +8,15 @@ import type { GameId } from '#lib/core/model/index.ts';
 import type { DraftState } from '#lib/core/modes/index.ts';
 import type { SeatedType } from '#lib/core/rules/distribution.ts';
 
-export type DealProgress =
+/**
+ * `drawn` is the bag tiles taken, in seat order (1-based places on the shared bag);
+ * `held` is the tile the next seat has drawn and not chosen from yet. Both were added after
+ * the first saves, which read as the first tiles drawn in order.
+ */
+export type DealProgress = (
 	| { kind: 'draft'; state: DraftState }
-	| { kind: 'choose'; types: SeatedType[]; picks: CharacterId[] };
+	| { kind: 'choose'; types: SeatedType[]; picks: CharacterId[] }
+) & { drawn?: number[]; held?: number };
 
 const KEY = (gameId: GameId) => `grim-games:mode-deal:v1:${gameId}`;
 
