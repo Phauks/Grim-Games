@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 /** Opens settings from the header icon and goes to a section (drill-in on phones). */
 async function openSettings(page: Page, section: string) {
@@ -55,7 +56,7 @@ test('the grimoire theme and the app header are on every page', async ({ page })
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'grimoire');
 	expect(await rootStyle(page, '--font-heading')).toContain('Cinzel');
 	const header = page.getByRole('banner');
-	await expect(header.getByRole('link', { name: 'Grim-Games' })).toBeVisible();
+	await expect(header.getByRole('link', { name: APP_NAME })).toBeVisible();
 	await expect(header.getByRole('button', { name: 'Settings' })).toBeVisible();
 
 	await header.getByRole('button', { name: 'Account' }).tap();

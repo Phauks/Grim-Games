@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 </script>
 
 <svelte:head>
-	<title>Badges spike · Grim-Games</title>
+	<title>Badges spike · {APP_NAME}</title>
 </svelte:head>
 
 <main>

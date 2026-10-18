@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import ClearableField from './ClearableField.svelte';
 
@@ -37,6 +38,8 @@
 		/** Enter in a single-line field; it blurs the field afterwards unless this returns false. */
 		oncommit?: () => boolean | void;
 		oninput?: (value: string) => void;
+		/** A single-line field's one extra icon button, just before its X (ClearableField `end`). */
+		end?: Snippet;
 		testid?: string;
 	}
 
@@ -59,6 +62,7 @@
 		hideLabel = false,
 		oncommit,
 		oninput,
+		end,
 		testid
 	}: Props = $props();
 
@@ -85,7 +89,7 @@
 			data-testid={testid}
 			oninput={(e) => oninput?.(e.currentTarget.value)}></textarea>
 	{:else}
-		<ClearableField bind:value {disabled} onclear={() => oninput?.('')}>
+		<ClearableField bind:value {disabled} {end} onclear={() => oninput?.('')}>
 			<input
 				bind:value
 				{type}

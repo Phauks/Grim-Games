@@ -32,10 +32,15 @@ test.describe('on a computer (mouse, wide window)', () => {
 		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
 		await page.goto('/');
 		const settings = page.getByRole('banner').getByRole('button', { name: 'Settings' });
-		const background = () => settings.evaluate((el) => getComputedStyle(el).backgroundColor);
+		// The hover tint is layered over the button's own fill (base.css), so read both.
+		const background = () =>
+			settings.evaluate((el) => {
+				const style = getComputedStyle(el);
+				return `${style.backgroundColor} ${style.backgroundImage}`;
+			});
 		const before = await background();
 		await settings.hover();
-		expect(await background()).not.toBe(before);
+		await expect.poll(background).not.toBe(before);
 	});
 });
 

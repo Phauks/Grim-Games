@@ -65,6 +65,10 @@
 		 * character is cleared through Change character). Shown as chosen when nothing is.
 		 */
 		onNone?: () => void;
+		/** Types whose group is listed even with nothing in it, showing "None", unless searching. */
+		keepTypes?: readonly CharacterType[];
+		/** Extra controls in a type group's header, e.g. setup's All Travellers. */
+		groupAside?: Snippet<[CharacterType]>;
 	}
 
 	let {
@@ -83,10 +87,18 @@
 		collapsibleKey = 'picker',
 		surface = 'sheet',
 		item,
-		onNone
+		onNone,
+		keepTypes = [],
+		groupAside
 	}: Props = $props();
 
-	const groups = $derived(searchGroups(characters, query, filter, types));
+	const groups = $derived.by(() => {
+		const found = searchGroups(characters, query, filter, types);
+		if (keepTypes.length === 0 || query.trim() !== '') return found;
+		return types
+			.map((type) => found.find((g) => g.type === type) ?? { type, characters: [] })
+			.filter((g) => g.characters.length > 0 || keepTypes.includes(g.type));
+	});
 	const chosen = $derived(new Set(selected));
 	const searching = $derived(query.trim() !== '');
 	const full = $derived(mode === 'multi' && max !== undefined && chosen.size >= max);
@@ -173,8 +185,12 @@
 						: undefined}
 				storageKey="{collapsibleKey}:{group.type}"
 				forceOpen={searching}
+				empty={group.characters.length === 0}
 			>
-				{@render rows(group)}
+				{#snippet aside()}{@render groupAside?.(group.type)}{/snippet}
+				{#if group.characters.length > 0}{@render rows(group)}{:else}<p class="none">
+						{t('common.none')}
+					</p>{/if}
 			</Collapsible>
 		{:else}
 			{#if !onNone}<p class="none">{t('common.none')}</p>{/if}

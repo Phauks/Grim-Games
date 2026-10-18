@@ -33,6 +33,7 @@ import ph_caret_right_thin from '~icons/ph/caret-right-thin';
 import ph_caret_up_thin from '~icons/ph/caret-up-thin';
 import ph_cat_thin from '~icons/ph/cat-thin';
 import ph_check_thin from '~icons/ph/check-thin';
+import ph_check_square_thin from '~icons/ph/check-square-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
 import ph_circle_notch_thin from '~icons/ph/circle-notch-thin';
 import ph_clipboard_thin from '~icons/ph/clipboard-thin';
@@ -97,6 +98,7 @@ import ph_link_thin from '~icons/ph/link-thin';
 import ph_link_simple_thin from '~icons/ph/link-simple-thin';
 import ph_list_thin from '~icons/ph/list-thin';
 import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
+import ph_list_checks_thin from '~icons/ph/list-checks-thin';
 import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
 import ph_lock_thin from '~icons/ph/lock-thin';
 import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
@@ -214,6 +216,7 @@ const icons: IconMap = {
 	'ph:caret-up-thin': ph_caret_up_thin,
 	'ph:cat-thin': ph_cat_thin,
 	'ph:check-thin': ph_check_thin,
+	'ph:check-square-thin': ph_check_square_thin,
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
 	'ph:circle-notch-thin': ph_circle_notch_thin,
 	'ph:clipboard-thin': ph_clipboard_thin,
@@ -278,6 +281,7 @@ const icons: IconMap = {
 	'ph:link-simple-thin': ph_link_simple_thin,
 	'ph:list-thin': ph_list_thin,
 	'ph:list-bullets-thin': ph_list_bullets_thin,
+	'ph:list-checks-thin': ph_list_checks_thin,
 	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
 	'ph:lock-thin': ph_lock_thin,
 	'ph:lock-simple-thin': ph_lock_simple_thin,

@@ -1,7 +1,9 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** History: ended games and the stats worked out from them (Trevor, 2026-10-16). */
 export const history = {
 	'history.title': 'History',
-	'history.pageTitle': 'History · Grim-Games',
+	'history.pageTitle': `History · ${APP_NAME}`,
 	'history.summary': 'Summary',
 	'history.games': 'Games',
 	'history.goodWins': 'Good won',
