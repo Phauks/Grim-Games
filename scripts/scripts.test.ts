@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { findHexColours } from './check-colors.ts';
+import { findColourFunctions, findHexColours } from './check-colors.ts';
 import { findPxSizes, svelteStyles } from './check-px.ts';
 import { generatedFiles, missingIcons } from './generate-icons.ts';
 
@@ -31,6 +31,24 @@ describe('check-colors', () => {
 		expect(findHexColours("import x from '#lib/ui';\n{#each a as b}{#if c}{/if}{/each}")).toEqual(
 			[]
 		);
+	});
+
+	it('flags colour functions a screen mixes for itself', () => {
+		const css =
+			'a { border: 1px solid color-mix(in srgb, currentColor 30%, transparent); }\n' +
+			'b { background: rgb(0 0 0 / 0.06); color: oklch(0.9 0 0); }';
+		expect(findColourFunctions(css)).toEqual([
+			{ line: 1, match: 'color-mix' },
+			{ line: 2, match: 'rgb' },
+			{ line: 2, match: 'oklch' }
+		]);
+	});
+
+	it('lets a colour stay when its line says why', () => {
+		expect(
+			findColourFunctions('a { box-shadow: 0 0 1rem rgb(0 0 0); /* colour-ok: shade */ }')
+		).toEqual([]);
+		expect(findColourFunctions('a { background: var(--surface-hover); }')).toEqual([]);
 	});
 });
 

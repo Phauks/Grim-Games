@@ -19,6 +19,10 @@
 	--sheet-color: var(--on-sheet);
 	--sheet-radius: var(--radius-lg);
 	--sheet-grabber: var(--on-sheet-muted);
+	/* What a card, a pressed choice and a line are on a sheet (see the sheet scope below). */
+	--sheet-raised: color-mix(in srgb, var(--on-sheet) 6%, var(--sheet));
+	--sheet-selected: color-mix(in srgb, var(--on-sheet) 14%, var(--sheet));
+	--sheet-border: color-mix(in srgb, var(--on-sheet) 30%, transparent);
 
 	--dialog-background: var(--surface-raised);
 	--dialog-color: var(--on-surface);
@@ -34,6 +38,14 @@
 	--seat-rim: var(--token-rim);
 	--seat-color: var(--on-token);
 	--seat-font: var(--font-player-weight) 0.8rem / 1.1 var(--font-player);
+
+	/* The board's bars over the background (reminder bank, history strip, toolbar). */
+	--board-bar-background: color-mix(in srgb, var(--surface) 85%, transparent);
+	/* The glow round a seat token being picked or dragged. */
+	--focus-glow: color-mix(in srgb, var(--focus) 55%, transparent);
+	/* A pale wash of a colour behind a pressed or chosen control. */
+	--accent-wash: color-mix(in srgb, var(--accent) 20%, transparent);
+	--good-wash: color-mix(in srgb, var(--good) 20%, transparent);
 
 	--toast-background: var(--sheet);
 	--toast-color: var(--on-sheet);
@@ -56,7 +68,33 @@
 	--scratch-white-highlight: var(--token-flower);
 }
 
+/*
+ * Every sheet is parchment, so it points the surface tokens at the sheet's colours: a card,
+ * field, drop-down or line inside any sheet then takes the same colours as in every other
+ * sheet, from here, instead of each screen mixing its own (Trevor, 2026-10-18: "the same,
+ * and not just similar, colors"). The component tokens built from surface tokens are set
+ * again, because a custom property takes its value where it is declared.
+ */
+[data-scope='drawer'][data-part='content'] {
+	--surface: var(--sheet);
+	--surface-raised: var(--sheet-raised);
+	--surface-selected: var(--sheet-selected);
+	--on-surface: var(--on-sheet);
+	--on-surface-muted: var(--on-sheet-muted);
+	--border: var(--sheet-border);
+
+	--card-background: var(--surface-raised);
+	--card-border: 1px solid var(--border);
+	--choice-background: var(--surface-raised);
+	--choice-color: var(--on-surface);
+	--choice-selected-background: var(--surface-selected);
+}
+
 /* The paper a scratch pad (or a paper swatch) shows; render.ts reads the inks. */
+[data-scratch-paper] {
+	/* The eraser's ring: the pad's own paper, see through. */
+	--scratch-eraser: color-mix(in srgb, var(--scratch-paper) 40%, transparent);
+}
 [data-scratch-paper='leather'] {
 	--scratch-paper: var(--scratch-leather-paper);
 	--scratch-ink: var(--scratch-leather-ink);

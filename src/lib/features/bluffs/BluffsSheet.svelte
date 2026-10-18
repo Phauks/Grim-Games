@@ -399,7 +399,7 @@
 		display: grid;
 		gap: var(--space-2);
 		padding: var(--space-3);
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border: 1px solid var(--border);
 		border-radius: var(--card-radius);
 	}
 	/* One row high whether showing the name or the field, so nothing moves. */
@@ -429,9 +429,9 @@
 		min-height: var(--tap-target);
 		padding: 0 var(--space-2);
 		/* The sheet's own ink and paper, so the name reads on parchment. */
-		border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
-		background: color-mix(in srgb, currentColor 6%, transparent);
+		background: var(--surface-raised);
 		color: inherit;
 		font: inherit;
 		font-family: var(--font-heading);

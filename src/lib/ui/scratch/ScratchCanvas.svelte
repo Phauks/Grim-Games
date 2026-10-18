@@ -253,7 +253,7 @@
 		pointer-events: none;
 	}
 	.ring[data-tool='eraser'] {
-		background: color-mix(in srgb, var(--scratch-paper) 40%, transparent);
+		background: var(--scratch-eraser);
 	}
 	canvas {
 		display: block;

@@ -5,6 +5,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { REPOSITORY_URL } from './report-issue.ts';
+	import { updateCheck } from './update-check.svelte.ts';
 	import {
 		BUILD_NOTES_PATH,
 		changesSince,
@@ -63,6 +64,15 @@
 
 	$effect(() => {
 		if (waiting || activated) void loadChanges();
+	});
+
+	// Check for updates in About found a build: show the card again, even after Later.
+	$effect(() => {
+		if (updateCheck.found === 0) return;
+		dismissed = false;
+		void navigator.serviceWorker?.getRegistration().then((reg) => {
+			if (reg?.waiting && navigator.serviceWorker.controller) waiting = reg.waiting;
+		});
 	});
 
 	onMount(() => {
@@ -179,7 +189,7 @@
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
 		color: var(--on-surface);
-		box-shadow: 0 calc(0.5 * var(--u)) calc(1.5 * var(--u)) rgb(0 0 0 / 0.4);
+		box-shadow: 0 calc(0.5 * var(--u)) calc(1.5 * var(--u)) rgb(0 0 0 / 0.4); /* colour-ok: a shadow is darkness, not a theme colour */
 	}
 	.main {
 		display: flex;

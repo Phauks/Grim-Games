@@ -79,7 +79,7 @@
 		padding: var(--space-1);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
-		background: color-mix(in srgb, var(--surface) 85%, transparent);
+		background: var(--board-bar-background);
 	}
 	/* Fixed height: a long change scrolls inside, so stepping never moves anything. */
 	.line {

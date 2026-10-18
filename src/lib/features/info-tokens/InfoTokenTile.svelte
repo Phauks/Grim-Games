@@ -67,7 +67,7 @@
 		display: flex;
 		align-items: stretch;
 		height: calc(2 * var(--tap-target));
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border: 1px solid var(--border);
 		border-radius: var(--card-radius);
 		overflow: hidden;
 	}
@@ -75,7 +75,7 @@
 	.add {
 		display: grid;
 		flex: none;
-		border-inline-start: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+		border-inline-start: 1px solid var(--border);
 	}
 	.add :global(.icon-button) {
 		height: 100%;
@@ -128,7 +128,7 @@
 		gap: var(--space-1);
 	}
 	.card:hover {
-		background: color-mix(in srgb, currentColor 8%, transparent);
+		background: var(--surface-hover);
 	}
 	.text {
 		display: -webkit-box;
