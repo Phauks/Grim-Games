@@ -54,6 +54,7 @@
 					character={single}
 					alignment={characters[0].alignment ?? defaultAlignment(single.type)}
 					{size}
+					showName
 				/>
 				<div class="caption" bind:clientHeight={captionHeight}>
 					<span class="name"
