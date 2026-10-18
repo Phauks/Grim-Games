@@ -95,6 +95,14 @@
 	thead th {
 		font-weight: 600;
 	}
+	/* Lines between the player counts, and under the counts row (Trevor, 2026-10-18). */
+	thead th {
+		border-bottom: 1px solid var(--border);
+	}
+	th[scope='col'],
+	td {
+		border-inline-start: 1px solid var(--border);
+	}
 	tbody tr[data-type='townsfolk'] th,
 	tbody tr[data-type='outsider'] th {
 		color: var(--good);
@@ -116,9 +124,10 @@
 	[data-pick] {
 		cursor: pointer;
 	}
+	/* The chosen count in gold, not red (Trevor, 2026-10-18). */
 	[data-current] {
-		background: var(--accent);
-		color: var(--on-accent);
+		background: var(--count-current);
+		color: var(--on-count-current);
 		font-weight: 700;
 	}
 </style>

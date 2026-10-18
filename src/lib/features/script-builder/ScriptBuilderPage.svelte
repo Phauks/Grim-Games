@@ -338,7 +338,13 @@
 			clearDisabled={isEmptyDraft(d)}
 			onClear={() => (clearOpen = true)}
 		>
-			<ShareControl what="script" title={d.name || t('common.none')} target={shareTarget} />
+			<ShareControl
+				what="script"
+				title={d.name || t('common.none')}
+				author={d.author}
+				version={d.scriptVersion}
+				target={shareTarget}
+			/>
 		</BuilderTools>
 	{/snippet}
 
