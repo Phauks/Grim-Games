@@ -63,11 +63,14 @@
 <style>
 	/* Every tile is the same size (Trevor, 2026-10-16); long text is cut to fit and shown
 	   in full on the player's screen. */
+	/* Its own card colours, so a tile looks the same on the page and in a sheet (Trevor, 2026-10-18). */
 	.tile {
 		display: flex;
 		align-items: stretch;
 		height: calc(2 * var(--tap-target));
 		border: 1px solid var(--border);
+		background: var(--card-background);
+		color: var(--on-surface);
 		border-radius: var(--card-radius);
 		overflow: hidden;
 	}

@@ -32,9 +32,8 @@
 		onToggle,
 		onAddCopy
 	}: Props = $props();
-	const uid = $props.id();
-	const bluffTagId = `${uid}-bluff`;
 	const selected = $derived(copies > 0);
+	const uid = $props.id();
 	// The character's page opens from its icon (Trevor, 2026-10-18); made on first use.
 	let infoUsed = $state(false);
 	let infoOpen = $state(false);
@@ -68,21 +67,20 @@
 		class="main"
 		aria-pressed={selected}
 		aria-label={copies > 1 ? `${character.name}, ${copies} copies` : character.name}
-		aria-describedby={bluff ? bluffTagId : undefined}
+		aria-describedby={bluff ? `${uid}-bluff` : undefined}
 		data-character-id={character.id}
 		onclick={onToggle}
 	>
+		{#if bluff}<span id="{uid}-bluff" class="visually-hidden"
+				>{selected ? t('setup.bluffInPlay') : t('setup.bluff')}</span
+			>{/if}
 		<span class="text">
 			<span class="title">
 				<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
 				<span class="name">{character.name}</span>
 				{#if offScript}<span class="tag">{t('setup.offScript')}</span>{/if}
 				<!-- A bluff that is also chosen for the bag is flagged, not removed (warn, don't lock). -->
-				{#if bluff}<span
-						id={bluffTagId}
-						class="tag"
-						data-testid="bluff-tag"
-						data-warn={selected ? '' : undefined}
+				{#if bluff}<span class="tag" data-testid="bluff-tag" data-warn={selected ? '' : undefined}
 						>{selected ? t('setup.bluffInPlay') : t('setup.bluff')}</span
 					>{/if}
 			</span>
