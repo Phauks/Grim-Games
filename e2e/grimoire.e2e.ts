@@ -765,14 +765,16 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
 	// Each night has its own ticks; there is no Clear ticks button.
 	await expect(night.getByRole('button', { name: 'Clear ticks' })).toHaveCount(0);
-	await night.getByRole('combobox', { name: 'Night' }).tap();
-	await page.getByRole('option', { name: 'Other nights', exact: true }).tap();
+	// One button switches the night (Trevor, 2026-10-18).
+	await night.getByRole('button', { name: /show other nights/ }).tap();
+	await expect(night.getByRole('button', { name: /^Showing other nights/ })).toHaveText(
+		'Other nights'
+	);
 	await expect(night.getByRole('button', { name: 'Done: Empath' })).toHaveAttribute(
 		'aria-pressed',
 		'false'
 	);
-	await night.getByRole('combobox', { name: 'Night' }).tap();
-	await page.getByRole('option', { name: 'First night', exact: true }).tap();
+	await night.getByRole('button', { name: /show the first night/ }).tap();
 	await expect(tick).toHaveAttribute('aria-pressed', 'true');
 
 	// Ticking Dawn ends the night and starts Day 1 (Trevor, 2026-10-16); the night's ticks
@@ -794,7 +796,7 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
 	// The next night order opens on the other nights, unticked.
 	await page.getByRole('button', { name: 'Night order' }).tap();
-	await expect(night.getByRole('combobox', { name: 'Night' })).toHaveText(/Other nights/);
+	await expect(night.getByRole('button', { name: /^Showing other nights/ })).toBeVisible();
 	await expect(night.getByRole('button', { name: 'Done: Dawn' })).toHaveAttribute(
 		'aria-pressed',
 		'false'
@@ -1306,7 +1308,9 @@ test('a night step is filled in with help, and the night can be walked through',
 	);
 
 	// Walk through: one step at a time under the board, with Previous and Next.
-	await order.getByRole('button', { name: 'Walk through' }).tap();
+	await page.screenshot({
+		path: `/mnt/project-files/board-screens/night-order-${test.info().project.name}.png`
+	await order.getByRole('button', { name: 'Run Night Order' }).tap();
 	const strip = page.getByTestId('night-strip');
 	await expect(strip).toContainText(/^.*1 of \d+/);
 	await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -1316,8 +1320,17 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(strip).toContainText(/2 of \d+/);
 	await strip.getByRole('button', { name: 'Previous step' }).tap();
 	await expect(strip).toContainText(/1 of \d+/);
+	// The step's reminder already on the board is ringed too (Trevor, 2026-10-18).
+	for (let i = 0; i < 10 && !(await strip.textContent())?.includes('Poisoner'); i++)
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(
+		page.locator('.chip-slot.now').getByRole('button', { name: 'Poisoned reminder' })
+	).toBeVisible();
+	await page.screenshot({
+		path: `/mnt/project-files/board-screens/night-strip-${test.info().project.name}.png`
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
 	await expect(strip).toHaveCount(0);
+	await expect(page.locator('.chip-slot.now')).toHaveCount(0);
 
 	// A step shows the game state that matters: the Empath is poisoned (core nightStepAlerts).
 	await page.getByRole('button', { name: 'Night order' }).tap();
@@ -1328,6 +1341,18 @@ test('a night step is filled in with help, and the night can be walked through',
 		/Poisoned\s*Empath\s*· Seat 2\s*by\s*Poisoner\s*· Seat 1/
 	);
 	await expect(empath.getByTestId('night-alerts')).toHaveCount(0);
+	await empath.getByRole('button', { name: 'Close' }).tap();
+
+	// The last step goes on into the day, where its announcements are (Trevor, 2026-10-18).
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await order.getByRole('button', { name: 'Run Night Order' }).tap();
+	for (let i = 0; i < 20 && (await strip.getByRole('button', { name: 'Next step' }).count()); i++)
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	await page.screenshot({
+		path: `/mnt/project-files/board-screens/night-strip-dawn-${test.info().project.name}.png`
+	await strip.getByRole('button', { name: 'Start the day' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await expect(strip).toHaveCount(0);
 });
 
 test('moving a reminder that normally stays put asks first, saying why', async ({ page }) => {
@@ -1458,8 +1483,7 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	const order = page.getByRole('dialog', { name: 'Night order' });
-	await order.getByRole('combobox', { name: 'Night' }).tap();
-	await page.getByRole('option', { name: 'Other nights', exact: true }).tap();
+	await order.getByRole('button', { name: /show other nights/ }).tap();
 	await order.getByRole('button', { name: 'Guide: Undertaker' }).tap();
 	const suggested = page.getByRole('dialog', { name: 'Undertaker' }).getByTestId('night-suggested');
 	await expect(suggested.locator('[data-character-id="imp"]').first()).toBeVisible();
@@ -2329,7 +2353,7 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Night order' })
-		.getByRole('button', { name: 'Walk through' })
+		.getByRole('button', { name: 'Run Night Order' })
 		.tap();
 	const strip = page.getByTestId('night-strip');
 	for (let i = 0; i < 6 && !(await strip.textContent())?.includes('Poisoner'); i++)
@@ -2455,7 +2479,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await page.getByRole('button', { name: 'Night order' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Night order' })
-		.getByRole('button', { name: 'Walk through' })
+		.getByRole('button', { name: 'Run Night Order' })
 		.tap();
 	const strip = page.getByTestId('night-strip');
 	for (let i = 0; i < 8 && !(await strip.textContent())?.includes('Merch'); i++)

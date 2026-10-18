@@ -688,6 +688,20 @@
 		});
 	});
 	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
+	/**
+	 * The step's reminders already on the board are ringed too, on any night (Trevor,
+	 * 2026-10-18: the Butler's Master placed on the first night).
+	 */
+	const walkLabels = $derived(
+		walk && walkStep?.character
+			? new Set([
+					...stepReminders(walkStep.character.id, walk.night, walkStep.character).labels,
+					...walkStep.character.reminders
+				])
+			: undefined
+	);
+	const walkOn = (r: { characterId: CharacterId; label: string }) =>
+		walkStep?.character?.id === r.characterId && (walkLabels?.has(r.label) ?? false);
 	/** Who wakes for the current walk-through step, marked on the board. */
 	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
@@ -1167,6 +1181,7 @@
 						class="chip-slot"
 						data-seat={i + 1}
 						class:dragging={dragged}
+						class:now={walkOn(reminder)}
 						style:left="{p.x}%"
 						style:top="{p.y}%"
 					>
@@ -1195,6 +1210,7 @@
 				class="chip-slot"
 				data-loose
 				class:dragging={dragged}
+				class:now={walkOn(reminder)}
 				style:left="{p.x}%"
 				style:top="{p.y}%"
 			>
@@ -1267,6 +1283,10 @@
 					guideOpen = true;
 				}}
 				onClose={() => (walk = undefined)}
+				onDay={() => {
+					walk = undefined;
+					dayOpen = true;
+				}}
 			/>
 		{/if}
 		<ReminderBank
@@ -1740,6 +1760,11 @@
 		position: absolute;
 		translate: -50% -50%;
 		z-index: 1;
+	}
+	/* The walked-through step's reminders already on the board: the bank's ring. */
+	.chip-slot.now > :global(.reminder) {
+		outline: 0.2rem solid var(--accent);
+		outline-offset: 0.15rem;
 	}
 	.chip-slot.dragging {
 		z-index: 3;
