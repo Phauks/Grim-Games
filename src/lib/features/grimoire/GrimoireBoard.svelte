@@ -2045,12 +2045,13 @@
 		position: absolute;
 		inset: 0;
 		/* Clear in the middle, darkening to the strength at the corners. */
+		--shade-mid: rgb(0 0 0 / calc(var(--vignette) * 0.6)); /* colour-ok: a shadow is darkness */
+		--shade-edge: rgb(0 0 0 / var(--vignette)); /* colour-ok: a shadow is darkness */
 		background: radial-gradient(
 			ellipse 75% 75% at center,
 			transparent 40%,
-			rgb(0 0 0 / calc(var(--vignette) * 0.6)) 75%
-				/* colour-ok: a shadow is darkness, not a theme colour */,
-			rgb(0 0 0 / var(--vignette)) 100% /* colour-ok: a shadow is darkness, not a theme colour */
+			var(--shade-mid) 75%,
+			var(--shade-edge) 100%
 		);
 		pointer-events: none;
 	}
