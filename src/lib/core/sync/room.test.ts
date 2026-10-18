@@ -200,6 +200,14 @@ describe('a spectators’ vote', () => {
 		expect(playerView(room, 'p').vote).toBeUndefined();
 	});
 
+	it('carries what the vote is for to spectators, trimmed and capped', () => {
+		let room = roomWith('x');
+		room = openVote(room, 'v1', ['a'], '  Gains the Wizard ability  ');
+		expect(playerView(room, 'x').vote?.ability).toBe('Gains the Wizard ability');
+		expect(openVote(room, 'v2', ['a'], 'z'.repeat(900)).vote?.ability).toHaveLength(500);
+		expect(openVote(room, 'v3', ['a'], 7).vote?.ability).toBeUndefined();
+	});
+
 	it('does not open without options, and closes for everyone', () => {
 		const room = roomWith('x');
 		expect(openVote(room, 'v1', ['nope']).vote).toBeUndefined();

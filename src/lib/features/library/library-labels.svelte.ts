@@ -8,6 +8,7 @@ import {
 	parseLabels,
 	renameLabel,
 	setFolder,
+	moveLabels,
 	setName,
 	toggleTag,
 	type LabelKind,
@@ -80,6 +81,10 @@ class Labels {
 
 	setFolder(key: string, folder: string | undefined): void {
 		this.#save(setFolder(this.#state, key, folder));
+	}
+
+	moveLabels(from: string, to: string): void {
+		this.#save(moveLabels(this.#state, from, to));
 	}
 
 	setName(key: string, name: string): void {

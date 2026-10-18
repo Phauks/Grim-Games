@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
+	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import type { ShareTarget } from './share-codes.ts';
 
 	/**
@@ -13,11 +14,14 @@
 	interface Props {
 		/** Shown in the share sheet and the QR code's name, e.g. the script's name. */
 		title: string;
+		/** Under the name, when the script says (Trevor, 2026-10-18). */
+		author?: string;
+		version?: string;
 		/** Makes the link. */
 		target: () => Promise<ShareTarget>;
 	}
 
-	let { title, target }: Props = $props();
+	let { title, author, version, target }: Props = $props();
 	let made = $state.raw<ShareTarget | undefined>();
 	let failed = $state(false);
 
@@ -39,6 +43,7 @@
 </script>
 
 <div class="panel">
+	<ScriptByline {author} {version} />
 	<SharePanel
 		url={made?.url}
 		{title}

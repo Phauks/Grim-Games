@@ -24,11 +24,11 @@ export const library = {
 	'library.kind.all': 'Everything',
 	'library.kind.scripts': 'Scripts',
 	'library.kind.characters': 'Characters',
-	'library.kind.collections': 'Character collections',
+	'library.kind.collections': 'Character Collections',
 	'library.kindName.folder': 'Folder',
 	'library.kindName.script': 'Script',
 	'library.kindName.character': 'Character',
-	'library.kindName.collection': 'Character collection',
+	'library.kindName.collection': 'Character Collection',
 	'library.characterCount': { one: '{count} character', other: '{count} characters' },
 	'library.pane': 'Open item',
 	'library.paneEmpty': 'None',
@@ -57,6 +57,22 @@ export const library = {
 	'library.newFolder': 'New folder',
 	'library.newTag': 'New tag',
 	'library.manageTags': 'Manage tags',
+	'library.changeKind': 'Change kind',
+	'library.changeKind.title': 'Change kind',
+	'library.changeKind.to': 'New kind',
+	'library.changeKind.notKept': 'Not kept',
+	'library.changeKind.allKept': 'Everything carries over.',
+	'library.changeKind.lossDetails':
+		'The script’s details (author, logo and the rest) are not kept.',
+	'library.changeKind.lossOthers': {
+		one: 'Only one character is kept; {count} other is not.',
+		other: 'Only one character is kept; {count} others are not.'
+	},
+	'library.changeKind.keptCharacter':
+		'The character stays in the Library too, since the collection holds it.',
+	'library.changeKind.no-characters': 'It has no characters to become a character.',
+	'library.changeKind.no-homebrew':
+		'It has no character of its own (official characters are already in the game).',
 	'library.renameScript': 'Rename script',
 	'library.showFoldersIn': 'Folders in {name}',
 	'library.add': 'Add',

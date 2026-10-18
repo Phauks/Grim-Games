@@ -1,8 +1,8 @@
 /**
  * BotC Scripts (botcscripts.com) lookups, shared by the browser and the Worker proxy.
  *
- * Plain TypeScript with no imports: the Worker (`worker/botcscripts.ts`) compiles this file
- * too. API shape from the site's source, AdmiralGT/botc-scripts @ 8ca42e6:
+ * Plain TypeScript, importing only the dependency-free logo helpers: the Worker
+ * (`worker/botcscripts.ts`) compiles this file too. API shape from the site's source, AdmiralGT/botc-scripts @ 8ca42e6:
  * - `GET /api/script_ids/<script pk>/` → `{ pk, name, versions: { "1.0.0": <version URL> },
  *   latest_version: <version URL> }` (`scripts/serializers.py` ScriptSerializer)
  * - `GET /api/scripts/<version pk>/` → `{ pk, script_id, name, version, script_type, author,
@@ -11,6 +11,8 @@
  * so the app goes through `/api/botcscripts/...` on our Worker.
  * Design: 08-script-loading.md §4.
  */
+
+import { authorLogo, logoInScriptJson } from '#lib/core/data/script-logo.ts';
 
 export const BOTC_SCRIPTS_ORIGIN = 'https://botcscripts.com';
 
@@ -217,6 +219,8 @@ export interface BotcScriptsSummary {
 	score: number;
 	/** The script's characters (no abilities or night text), for counts and details. */
 	characters: BotcScriptsEntry[];
+	/** The author's `_meta.logo`, when it is an https link (`authorLogo`). */
+	logo?: string;
 }
 
 export interface BotcScriptsSearchPage {
@@ -463,6 +467,10 @@ export function readEntries(content: unknown): BotcScriptsEntry[] {
 	return entries;
 }
 
+function withLogo(logo: string | undefined): { logo?: string } {
+	return logo ? { logo } : {};
+}
+
 /** Reads a `/api/scripts/?…` page into slim rows (character ids, not the script JSON). */
 export function readSearchPage(json: unknown, page: number): BotcScriptsSearchPage | undefined {
 	if (!isObject(json) || !Array.isArray(json.results)) return undefined;
@@ -477,7 +485,8 @@ export function readSearchPage(json: unknown, page: number): BotcScriptsSearchPa
 			author: typeof row.author === 'string' ? row.author : '',
 			type: typeof row.script_type === 'string' ? row.script_type : '',
 			score: typeof row.score === 'number' ? row.score : 0,
-			characters: readEntries(row.content)
+			characters: readEntries(row.content),
+			...withLogo(logoInScriptJson(row.content))
 		});
 	}
 	return {
@@ -500,6 +509,10 @@ export function readProxiedSearchPage(json: unknown): BotcScriptsSearchPage | un
 				typeof r.versionId === 'number' &&
 				typeof r.name === 'string'
 		)
-		.map((r) => ({ ...r, characters: Array.isArray(r.characters) ? r.characters : [] }));
+		.map(({ logo, ...r }) => ({
+			...r,
+			characters: Array.isArray(r.characters) ? r.characters : [],
+			...withLogo(authorLogo(logo))
+		}));
 	return { page: json.page, count: json.count, hasMore: json.hasMore === true, results };
 }
