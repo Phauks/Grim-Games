@@ -2048,8 +2048,7 @@
 		background: radial-gradient(
 			ellipse 75% 75% at center,
 			transparent 40%,
-			rgb(0 0 0 / calc(var(--vignette) * 0.6)) 75%
-				/* colour-ok: a shadow is darkness, not a theme colour */,
+			rgb(0 0 0 / calc(var(--vignette) * 0.6)) 75% /* colour-ok: shadow, not a theme colour */,
 			rgb(0 0 0 / var(--vignette)) 100% /* colour-ok: a shadow is darkness, not a theme colour */
 		);
 		pointer-events: none;
