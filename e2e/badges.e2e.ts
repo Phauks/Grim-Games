@@ -59,6 +59,7 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 						'<div class="example"><p>Sample example two.</p></div>' +
 						'<h2>Tips &amp; Tricks</h2><ul><li>Sample tip one.</li></ul><ul><li>Sample tip two.</li></ul>' +
 						'<h2>Bluffing as the Witch</h2><ul><li>Sample bluff.</li></ul>' +
+						'<h2>Fighting the Witch</h2><ul><li>Sample fight.</li></ul>' +
 						'<h2>Related Jinxes (Open)</h2><p>Sample wiki jinx.</p>' +
 						`<h2>Long</h2>${'<p>Sample line.</p>'.repeat(80)}` +
 						'</div></div></div>'
@@ -121,6 +122,13 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 	await expect(section.getByRole('region', { name: 'Bluffing tip 1' })).toContainText(
 		'Sample bluff.'
 	);
+	// "Fighting the …" on Minions and Demons is boxed the same way (Trevor, 2026-10-18).
+	if (!wide) await dialog.getByRole('button', { name: 'Summary' }).tap();
+	await sections.getByRole('button', { name: 'Fighting the Witch' }).tap();
+	await expect(section.getByRole('region', { name: 'Fighting tip 1' })).toContainText(
+		'Sample fight.'
+	);
+	await expect(section.getByRole('listitem')).toHaveCount(0);
 
 	// The wiki's jinx list is left out; Jinxes lists TPI's (the Witch has none).
 	await expect(sections.getByRole('button', { name: /Related Jinxes/ })).toHaveCount(0);

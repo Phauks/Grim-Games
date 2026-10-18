@@ -1,9 +1,11 @@
+import type { CharacterId } from '#lib/core/data/index.ts';
+import type { InfoTokenAsks } from '#lib/core/data/info-tokens.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import {
 	MAX_CUSTOM_TEXT,
+	parseAsks,
 	parseStoredInfoTokens,
 	type CustomInfoToken,
-	type CustomOptions,
 	type StoredInfoTokens
 } from './custom-tokens.ts';
 
@@ -29,7 +31,7 @@ class CustomInfoTokens {
 	}
 
 	#save(custom: CustomInfoToken[]): void {
-		this.#stored = { version: 2, custom };
+		this.#stored = { version: 3, custom };
 		try {
 			globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(this.#stored));
 		} catch (error) {
@@ -39,23 +41,27 @@ class CustomInfoTokens {
 	}
 
 	/**
-	 * Adds a card, or changes an existing one. `withCharacters`: the Storyteller picks
-	 * characters to show with it; `characterIds`: the characters it belongs to; `blank`: a
-	 * word to fill in when shown. Blank text does nothing.
+	 * Adds a card, or changes an existing one: `characterIds` are the characters it belongs
+	 * to, `asks` what it asks for when shown. Blank text does nothing.
 	 */
-	save(text: string, id?: string, options: CustomOptions = {}): void {
-		const { withCharacters = false, characterIds = [], blank = false } = options;
+	save(
+		text: string,
+		id?: string,
+		options: { characterIds?: readonly CharacterId[]; asks?: InfoTokenAsks } = {}
+	): void {
+		const { characterIds = [] } = options;
 		const clean = text.trim().slice(0, MAX_CUSTOM_TEXT);
 		if (!clean) return;
+		// The same checks as reading it back, so a save never holds what a load would drop.
+		const asks = parseAsks(options.asks);
 		const custom = [...this.#stored.custom];
 		const at = id === undefined ? -1 : custom.findIndex((t) => t.id === id);
 		const token: CustomInfoToken = {
 			id: at >= 0 ? custom[at].id : `custom-${crypto.randomUUID()}`,
 			text: clean,
 			source: 'custom',
-			shows: withCharacters ? 'characters' : 'none',
-			...(characterIds.length ? { characterIds: [...characterIds] } : {}),
-			...(blank ? { blank: true } : {})
+			...(asks ? { asks } : {}),
+			...(characterIds.length ? { characterIds: [...characterIds] } : {})
 		};
 		if (at >= 0) custom[at] = token;
 		else custom.push(token);

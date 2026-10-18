@@ -18,9 +18,15 @@
 		open?: boolean;
 		character: Character;
 		icon?: string;
+		/**
+		 * The page of a character with no BotC wiki page (a homebrew one): where it came from,
+		 * such as its Homebrew Wiki page (Script builder, Trevor 2026-10-18). Opened by the
+		 * header's link in its place.
+		 */
+		sourcePage?: string;
 	}
 
-	let { open = $bindable(false), character, icon: given }: Props = $props();
+	let { open = $bindable(false), character, icon: given, sourcePage }: Props = $props();
 	// Terms here open their popover, even when these details were opened from the Glossary.
 	clearTermHandler();
 	const wiki = $derived(wikiUrl(character));
@@ -70,9 +76,12 @@
 	const tipLabel = (section: WikiSection) =>
 		/^bluffing/i.test(section.heading)
 			? 'characters.bluffingTip'
-			: /tips/i.test(section.heading)
-				? 'characters.tip'
-				: undefined;
+			: // Minions' and Demons' "Fighting the …" tips, boxed like the others (Trevor, 2026-10-18).
+				/^fighting/i.test(section.heading)
+				? 'characters.fightingTip'
+				: /tips/i.test(section.heading)
+					? 'characters.tip'
+					: undefined;
 	const items = $derived<ContentsItem[]>([
 		{ id: 'summary', label: t('characters.summary'), wideOnly: true },
 		{ id: 'jinxes', label: t('characters.jinxes') },
@@ -181,6 +190,19 @@
 				rel="noopener"
 				aria-label={t('characters.openWiki')}
 				title={t('characters.openWiki')}
+			>
+				<Icon name="wiki" />
+			</a>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+		{:else if sourcePage}
+			<!-- eslint-disable svelte/no-navigation-without-resolve -->
+			<a
+				class="wiki"
+				href={sourcePage}
+				target="_blank"
+				rel="noopener noreferrer"
+				aria-label={t('characters.openSourcePage')}
+				title={t('characters.openSourcePage')}
 			>
 				<Icon name="wiki" />
 			</a>

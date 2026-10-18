@@ -11,7 +11,7 @@ import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import { findMode } from './custom-modes.svelte.ts';
 import { writeGameMode } from './game-mode-store.ts';
-import { saveCampaign } from './campaigns.ts';
+import { saveCampaign, type Campaign } from './campaigns.ts';
 import { seedInPlay } from './in-play.ts';
 import { saveTownGroup } from './town-groups.ts';
 
@@ -20,6 +20,8 @@ interface StartInput<G> {
 	restrictions: StorytellerRestrictions;
 	data: GameData;
 	loaded: LoadedScript;
+	/** The Storyteller's Role Recycling choice for a draft mode. */
+	roleRecycling?: boolean;
 	/** Creates and saves the game with the mode's script. */
 	create: (script: Script) => Promise<G>;
 }
@@ -42,7 +44,11 @@ export async function startInMode<
 		input.restrictions
 	);
 	const open = await input.create(script);
-	writeGameMode(open.game.gameId, { modeId: mode.id, restrictions: input.restrictions });
+	writeGameMode(open.game.gameId, {
+		modeId: mode.id,
+		restrictions: input.restrictions,
+		...(input.roleRecycling !== undefined ? { roleRecycling: input.roleRecycling } : {})
+	});
 	seedInPlay(open.game.gameId, open.game.seating.length, inPlayFor(mode));
 	if (campaignRule(mode))
 		saveCampaign({
@@ -105,4 +111,46 @@ export async function startTowns<G extends { game: { gameId: GameId } }>(
 	const groupId = crypto.randomUUID();
 	saveTownGroup({ groupId, modeId: mode.id, gameIds, createdAt: Date.now() });
 	return groupId;
+}
+
+interface ContinueInput<G> {
+	campaign: Campaign;
+	/** The saved version of the campaign's script to play with. */
+	script: Script;
+	/** The campaign's current game, whose player names carry over; absent if deleted. */
+	latest?: { game: { seating: readonly string[]; seats: Record<string, { playerName?: string }> } };
+	create: (script: Script) => Promise<G>;
+}
+
+/**
+ * The next game of an ongoing campaign, started from New game with one of its saved script
+ * versions (Trevor, 2026-10-18: "if an on-going campaign, prompt which script you want to
+ * use"). Named as the campaign page names its next game; the same players carry over.
+ */
+export async function continueCampaign<
+	G extends {
+		game: { gameId: GameId; seating: readonly string[]; script: Script };
+		run: (command: { type: 'RenameSeat'; seatId: string; playerName: string }) => unknown;
+	}
+>(input: ContinueInput<G>, name: (first: string, number: number) => string): Promise<G> {
+	const { campaign } = input;
+	const first = campaign.games[0]?.script?.meta?.name ?? input.script.meta?.name ?? '';
+	const open = await input.create({
+		...input.script,
+		meta: { ...input.script.meta, name: name(first, campaign.games.length + 1) }
+	});
+	for (const [i, seatId] of (input.latest?.game.seating ?? []).entries()) {
+		const playerName = input.latest?.game.seats[seatId]?.playerName;
+		const to = open.game.seating[i];
+		if (playerName && to) open.run({ type: 'RenameSeat', seatId: to, playerName });
+	}
+	writeGameMode(open.game.gameId, { modeId: campaign.modeId, restrictions: campaign.restrictions });
+	saveCampaign({
+		...campaign,
+		games: [
+			...campaign.games,
+			{ gameId: open.game.gameId, eliminated: [], script: open.game.script }
+		]
+	});
+	return open;
 }

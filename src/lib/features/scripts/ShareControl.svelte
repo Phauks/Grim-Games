@@ -16,11 +16,14 @@
 		what: 'script';
 		/** Shown in the share sheet and the dialog title, e.g. the script's name. */
 		title: string;
+		/** The script's author and version, shown under the dialog's title when known. */
+		author?: string;
+		version?: string;
 		/** Makes the link; undefined disables the control (nothing to share yet). */
 		target: (() => Promise<ShareTarget>) | undefined;
 	}
 
-	let { what, title, target }: Props = $props();
+	let { what, title, author, version, target }: Props = $props();
 	let open = $state(false);
 
 	/**
@@ -61,7 +64,7 @@
 
 <Dialog bind:open title={t('scripts.share.title', { title })}>
 	{#if target}
-		<SharePanel {title} target={madeTarget} />
+		<SharePanel {title} {author} {version} target={madeTarget} />
 	{/if}
 </Dialog>
 

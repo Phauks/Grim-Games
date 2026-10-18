@@ -34,6 +34,18 @@ describe('player script view', () => {
 		expect(sheetCharacters(custom, data)).toEqual(custom.characters);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Bootlegger; the World Cup 2025 scripts carry their
+	// rule as `_meta.bootlegger` (https://botc-script-viewer.sthom.kiwi/wc25/).
+	it("shows the script's rules on the Bootlegger, adding it when the script doesn't list it", () => {
+		const meta = { ...tb.meta, bootlegger: ['A made-up rule.'] };
+		const custom = { ...tb, edition: undefined, meta, characters: tb.characters.slice(0, 3) };
+		const shown = sheetCharacters(custom, data);
+		expect(shown.slice(0, 3)).toEqual(custom.characters);
+		expect(shown[3]).toMatchObject({ id: 'bootlegger', type: 'loric', ability: 'A made-up rule.' });
+		const listed = { ...custom, characters: [...custom.characters, data.byId.get('bootlegger')!] };
+		expect(sheetCharacters(listed, data).filter((c) => c.id === 'bootlegger')).toHaveLength(1);
+	});
+
 	it('lists the night order as names only, with Minion and Demon info on the first night', () => {
 		const first = playerNight(tb, data, 'first');
 		const ids = first.entries.map((e) => (e.kind === 'marker' ? e.id : e.character.id));

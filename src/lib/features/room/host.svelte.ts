@@ -142,8 +142,15 @@ export class RoomHost {
 	}
 
 	/** Opens a spectators' vote on these seats, replacing any open one. False when offline. */
-	openVote(options: SeatId[]): boolean {
-		return this.#socket?.send({ type: 'open-vote', voteId: crypto.randomUUID(), options }) ?? false;
+	openVote(options: SeatId[], ability?: string): boolean {
+		return (
+			this.#socket?.send({
+				type: 'open-vote',
+				voteId: crypto.randomUUID(),
+				options,
+				...(ability ? { ability } : {})
+			}) ?? false
+		);
 	}
 
 	closeVote(): void {

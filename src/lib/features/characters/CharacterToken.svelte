@@ -37,7 +37,8 @@
 	const leaves = $derived<LeafMarks>({
 		firstNight: character.firstNightReminder !== undefined || character.firstNight !== undefined,
 		otherNight: character.otherNightReminder !== undefined || character.otherNight !== undefined,
-		reminders: character.reminders.length + character.remindersGlobal.length
+		reminders: character.reminders.length + character.remindersGlobal.length,
+		setup: character.setup
 	});
 	const src = $derived(iconUrl(character, alignment));
 	/* eslint-disable grim/names-as-badges -- the token's accessible name */

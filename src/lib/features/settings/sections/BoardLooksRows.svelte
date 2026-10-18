@@ -28,6 +28,7 @@
 	max={1}
 	step={0.05}
 	defaultValue={DEFAULT_BOARD_LOOKS.vignetteStrength}
+	disabled={!boardLooks.current.vignette}
 	format={(strength) => intl.number(strength, { style: 'percent' })}
 	onChange={(vignetteStrength) => boardLooks.update({ vignetteStrength })}
 />

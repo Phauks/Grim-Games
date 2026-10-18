@@ -190,3 +190,106 @@ export function withOpening(ability: string, opening: string, self: string): str
 export function withSetup(ability: string, setup: SetupPart[], self: string): string {
 	return writeAbility({ ...readAbility(ability, self), setup }, self);
 }
+
+/*
+ * What the ability does after its opening, from the clauses TPI's official abilities use most
+ * (Trevor, 2026-10-18: "ability to be upgraded in character builder for common parts"). Counts
+ * across the 156 official abilities in static/data/roles.json: "choose a player" 25,
+ * "(not yourself)" 5, "choose 2 players" 4, "an alive player" 3, "a living player",
+ * "a dead player" and "a character" 2 each; "you learn" 19, "they are poisoned" 4,
+ * "they are drunk" 3, "they are safe from the Demon" 1.
+ */
+export const CHOICE_PHRASES: readonly string[] = [
+	'choose a player',
+	'choose a player (not yourself)',
+	'choose 2 players',
+	'choose an alive player',
+	'choose a living player',
+	'choose a dead player',
+	'choose a character'
+];
+export const RESULT_PHRASES: readonly string[] = [
+	'you learn',
+	'they are poisoned',
+	'they are drunk',
+	'they are safe from the Demon'
+];
+
+/** The part of an ability after its opening: who is chosen, what happens, and the rest. */
+export interface AbilityAction {
+	/** One of CHOICE_PHRASES, or ''. */
+	choice: string;
+	/** One of RESULT_PHRASES, or ''. */
+	result: string;
+	/** Everything after them, as typed. */
+	tail: string;
+}
+
+/** The longest phrase `text` starts with (any case), ending at a word boundary. */
+function longestPhrase(text: string, phrases: readonly string[]): string {
+	let best = '';
+	for (const phrase of phrases) {
+		if (text.slice(0, phrase.length).toLowerCase() !== phrase.toLowerCase()) continue;
+		if (/[A-Za-z0-9]/.test(text.charAt(phrase.length))) continue;
+		if (phrase.length > best.length) best = phrase;
+	}
+	return best;
+}
+
+/**
+ * Reads the text after the opening (`, choose a player: they are poisoned.`). After an
+ * opening the action follows its comma; with no opening it starts the ability.
+ */
+export function readAction(rest: string, hasOpening: boolean): AbilityAction {
+	const lead = hasOpening ? /^,\s*/.exec(rest) : /^/.exec(rest);
+	if (!lead) return { choice: '', result: '', tail: rest };
+	let s = rest.slice(lead[0].length);
+	const choice = longestPhrase(s, CHOICE_PHRASES);
+	if (choice) {
+		s = s.slice(choice.length);
+		const colon = /^:\s*/.exec(s);
+		if (colon) s = s.slice(colon[0].length);
+		else if (/^[A-Za-z0-9]/.test(s.trimStart())) return { choice: '', result: '', tail: rest };
+	}
+	const result = longestPhrase(s, RESULT_PHRASES);
+	if (result) s = s.slice(result.length);
+	if (!choice && !result) return { choice: '', result: '', tail: rest };
+	return { choice, result, tail: s };
+}
+
+const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** Puts the action back together, as `readAction` reads it. */
+export function writeAction(action: AbilityAction, hasOpening: boolean): string {
+	const { choice, result, tail } = action;
+	let text = choice;
+	if (result) text += choice ? `: ${result}${tail}` : `${result}${tail}`;
+	// After a choice, words go after its colon; "(not yourself...)" or "." follow it directly.
+	else text += choice && /^[A-Za-z0-9]/.test(tail) ? `: ${tail}` : tail;
+	// What is left when both parts are removed keeps its place after the opening's comma.
+	if (!/^[A-Za-z0-9]/.test(text)) return text;
+	return hasOpening ? `, ${text}` : capital(text);
+}
+
+/** The ability's action, read from its whole text. */
+export function abilityAction(ability: string, self: string): AbilityAction {
+	const parts = readAbility(ability, self);
+	return readAction(parts.rest, !!parts.opening);
+}
+
+function withAction(ability: string, change: Partial<AbilityAction>, self: string): string {
+	const parts = readAbility(ability, self);
+	const hasOpening = !!parts.opening;
+	const action = { ...readAction(parts.rest, hasOpening), ...change };
+	return writeAbility({ ...parts, rest: writeAction(action, hasOpening) }, self);
+}
+
+/** The ability with a new choice ('' removes it), everything else kept. */
+export function withChoice(ability: string, choice: string, self: string): string {
+	return withAction(ability, { choice }, self);
+}
+
+/** The ability with a new result ('' removes it), everything else kept. */
+export function withResult(ability: string, result: string, self: string): string {
+	return withAction(ability, { result }, self);
+}

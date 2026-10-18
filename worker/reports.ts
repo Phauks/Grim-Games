@@ -15,12 +15,11 @@ import {
 } from '../src/lib/features/reports/reports-protocol.ts';
 import { normaliseEmail } from '../src/lib/features/account/account-protocol.ts';
 import { sameHash, sha256 } from './account/crypto.ts';
-import { emailSender, type EmailEnv } from './account/email.ts';
 import { userStub, type AccountEnv } from './account/objects.ts';
 import { getUser } from './account/routes.ts';
+import { adminSignInTrusted, type AdminsEnv } from './admins.ts';
 
-export interface ReportsEnv extends AccountEnv, EmailEnv {
-	REPORTS: DurableObjectNamespace<ReportBox>;
+export interface ReportsEnv extends AccountEnv, AdminsEnv {
 	/** Per-address limit on sending, against floods (wrangler.jsonc). */
 	REPORT_CREATES: RateLimit;
 	/**
@@ -28,12 +27,6 @@ export interface ReportsEnv extends AccountEnv, EmailEnv {
 	 * first admin accounts; after that admins sign in instead. Unset: only admin accounts.
 	 */
 	REPORTS_ADMIN_KEY?: string;
-	/**
-	 * "on" only in the local e2e server: trusts sign-ins whose code is shown on screen. Admin
-	 * accounts otherwise count only where sign-in codes really go by email, since a preview
-	 * shows the code to whoever asks for it (account/email.ts).
-	 */
-	ADMINS_TRUST_PREVIEW_SIGN_IN?: string;
 	/** "off" only in the local e2e server, like SHARE_LIMITS. */
 	SHARE_LIMITS?: string;
 }
@@ -193,9 +186,7 @@ async function adminAccount(
 	url: URL,
 	box: DurableObjectStub<ReportBox>
 ): Promise<string | undefined> {
-	const trusted =
-		emailSender(env, url).delivery === 'email' || env.ADMINS_TRUST_PREVIEW_SIGN_IN === 'on';
-	if (!trusted) return undefined;
+	if (!adminSignInTrusted(env, url)) return undefined;
 	const auth = await getUser(request, env);
 	return auth && (await box.isAdmin(auth.userId)) ? auth.userId : undefined;
 }
