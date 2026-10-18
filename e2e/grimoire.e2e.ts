@@ -141,13 +141,20 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await ghost.tap();
 	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
 	await expect(ghostMark).toBeAttached();
-	// A good Imp: as in the physical grimoire, the token turns upside down.
+	// A good Imp: the token stays upright and takes the good colour (Trevor, 2026-10-18).
+	const impIcon = page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .token img');
+	const evilSrc = await impIcon.getAttribute('src');
 	await seatMenu(page, sheet, 'Change alignment');
 	await page
 		.getByRole('dialog', { name: 'Alignment' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(sheet).toContainText(/Imp\s*Good · Seat 1/);
+	await expect(impIcon).not.toHaveAttribute('src', evilSrc!);
+	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .disc > .face')).toHaveCSS(
+		'rotate',
+		'none'
+	);
 
 	await page.reload();
 	const seat = page.getByRole('button', { name: /^Seat 1:/ });
@@ -1191,6 +1198,14 @@ test('the board background can be an image from the device, kept after a reload'
 		.getByRole('button', { name: 'Green felt' })
 		.tap();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+	// The whole screen, under the toolbar too (Trevor, 2026-10-18).
+	const viewport = page.viewportSize()!;
+	expect(await page.getByTestId('board-background').boundingBox()).toEqual({
+		x: 0,
+		y: 0,
+		width: viewport.width,
+		height: viewport.height
+	});
 	// The board's looks are here too, the same values as in Settings (Trevor, 2026-10-17).
 	await expect(page.locator('.watermark')).toHaveClass(/vignette/);
 	await dialog.getByText('Vignette', { exact: true }).tap();
@@ -2741,7 +2756,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(shown).toContainText('Fortune Teller');
 });
 
-test('an information step lists every valid piece of information, not one pick', async ({
+test('an information step suggests every valid number, and no sets of players', async ({
 	page
 }) => {
 	await startGame(page);
@@ -2758,24 +2773,28 @@ test('an information step lists every valid piece of information, not one pick',
 	await give(2, 'Chef');
 	await give(3, 'Empath');
 	await give(4, 'Imp');
+	// Trevor (2026-10-18): "only show info suggest for numbers, not sets of characters".
 	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
-	// Trevor (2026-10-18): "show all valid information"
-	// (https://wiki.bloodontheclocktower.com/Washerwoman).
 	await page.getByRole('button', { name: 'Guide: Washerwoman' }).tap();
-	const step = page.getByRole('dialog', { name: 'Washerwoman' });
-	const rows = step.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
-	// One row per character shown with its player, and every possible other player.
-	await expect(rows).toHaveCount(2);
-	await expect(rows.nth(0)).toContainText(/Chef.*and one of/);
-	await expect(rows.nth(1)).toContainText(/Empath.*and one of/);
+	const washerwoman = page.getByRole('dialog', { name: 'Washerwoman' });
+	await expect(washerwoman.getByTestId('step-ability')).toBeVisible();
+	await expect(washerwoman.getByTestId('night-suggested')).toHaveCount(0);
+	await washerwoman.getByRole('button', { name: 'Close' }).tap();
+	// No evil pair sits together: the Chef's 0 (https://wiki.bloodontheclocktower.com/Chef).
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
+	await page.getByRole('button', { name: 'Guide: Chef' }).tap();
+	const chef = page.getByRole('dialog', { name: 'Chef' });
+	const rows = chef.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
+	await expect(rows).toHaveCount(1);
+	await expect(rows.first()).toHaveText('0');
+	await chef.getByRole('button', { name: 'Close' }).tap();
 	// The walk-through's one line counts them instead of naming one.
-	await step.getByRole('button', { name: 'Close' }).tap();
 	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('button', { name: 'Run Night Order' }).tap();
 	const strip = page.getByTestId('night-strip');
-	for (let i = 0; i < 10 && !(await strip.textContent())?.includes('Washerwoman'); i++)
+	for (let i = 0; i < 10 && !(await strip.textContent())?.includes('Chef'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
-	await expect(strip.getByTestId('night-suggested')).toHaveText(/Suggested: \d+ valid/);
+	await expect(strip.getByTestId('night-suggested')).toHaveText(/Suggested: 1 valid/);
 });
 
 test('a Demon bluff in play can still be chosen, after a confirm', async ({ page }) => {
@@ -2801,4 +2820,78 @@ test('a Demon bluff in play can still be chosen, after a confirm', async ({ page
 	const set = page.getByTestId('bluff-set').first();
 	await expect(set).toContainText('Chef');
 	await expect(set).toContainText('In play: replace');
+});
+
+test('Run Night Order skips dead players, except an ability set off by dying tonight', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [seat, name, dies] of [
+		[1, 'Washerwoman', false],
+		[2, 'Empath', true],
+		[3, 'Ravenkeeper', true]
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		if (dies) {
+			await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+			await page
+				.getByRole('dialog', { name: `Status of Seat ${seat}` })
+				.getByRole('button', { name: 'Executed' })
+				.tap();
+			await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+		}
+		await closeSheet(page);
+	}
+	// Trevor (2026-10-18): "If character is dead do not show them in assisted night order."
+	// The Ravenkeeper still wakes on the night they die
+	// (https://wiki.bloodontheclocktower.com/Ravenkeeper).
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
+	const order = page.getByRole('dialog', { name: 'Night order' });
+	await order.getByRole('button', { name: /show other nights/ }).tap();
+	// The sheet still lists every step, to open by hand.
+	await expect(order.getByRole('button', { name: 'Done: Empath' })).toBeVisible();
+	await order.getByRole('button', { name: 'Run Night Order' }).tap();
+	const strip = page.getByTestId('night-strip');
+	const names: string[] = [];
+	for (let i = 0; i < 12; i++) {
+		names.push((await strip.locator('.name strong').textContent()) ?? '');
+		const next = strip.getByRole('button', { name: 'Next step' });
+		if ((await next.count()) === 0) break;
+		await next.tap();
+	}
+	expect(names).toContain('Ravenkeeper');
+	expect(names).not.toContain('Empath');
+});
+
+test("a game mode is named where the script's name is, apart from it", async ({ page }) => {
+	await startGame(page);
+	await expect(page.getByTestId('game-mode')).toHaveCount(0);
+	// Started in Sushi Buffet (the game modes thread keeps the mode beside the game).
+	const gameId = page.url().split('/').pop()!;
+	await page.evaluate(
+		(id) =>
+			localStorage.setItem(
+				`grim-games:game-mode:v1:${id}`,
+				JSON.stringify({ modeId: 'sushi-buffet', restrictions: { banned: [], allowed: [] } })
+			),
+		gameId
+	);
+	await page.reload();
+	// Trevor (2026-10-18): different text and styling for alternative game modes.
+	await expect(page.getByTestId('game-mode')).toHaveText('Sushi Buffet');
+	for (const where of ['Lower left corner', 'In the toolbar']) {
+		await menu(page, 'Board and tokens');
+		const settings = page.getByRole('dialog', { name: 'Settings' });
+		await settings.getByRole('combobox', { name: 'Script name', exact: true }).tap();
+		await page.getByRole('option', { name: where }).tap();
+		await page.keyboard.press('Escape');
+		await expect(page.getByTestId('script-title')).toContainText(
+			/Sushi Buffet\s*·?\s*Trouble Brewing|Trouble Brewing\s*Sushi Buffet/
+		);
+	}
 });

@@ -216,6 +216,13 @@ test('Two games at once: one name per player for both games, warnings start at N
 	await expect(page.getByTestId('town').first()).toContainText('Trouble Brewing');
 	await expect(page.getByTestId('town').nth(1)).toContainText('Bad Moon Rising');
 	await expect(page.getByTestId('town-warnings')).toContainText('None');
+	// The title keeps its row: Inspect is an icon, so no word breaks (Trevor, 2026-10-18).
+	const title = page.getByRole('heading', { name: 'Two games at once', level: 1 });
+	const lines = await title.evaluate(
+		(el) => el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)
+	);
+	expect(lines).toBeLessThan(2.5);
+	await expect(page.getByRole('button', { name: 'Inspect Two games at once' })).toBeVisible();
 
 	const name = page.getByLabel('Seat 1', { exact: true });
 	await name.fill('Ana');
@@ -371,10 +378,19 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 
 	await page.getByRole('button', { name: 'Choose characters' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	// Off the script, so not in the list, but chosen for the bag.
+	// Off the script but chosen for the bag: listed under their own types, marked (Trevor,
+	// 2026-10-18).
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 	await expect(page.getByTestId('count-minion')).toHaveText('0');
+	const offScript = page.locator('.choice[data-off-script]');
+	await expect(offScript).toHaveCount(2);
+	await expect(offScript.first()).toContainText('Not on script');
+	await expect(offScript.first().locator('.main')).toHaveAttribute('aria-pressed', 'true');
+	// Taking one out keeps it listed, so it can go back in.
+	await offScript.first().locator('.main').tap();
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
+	await expect(offScript).toHaveCount(2);
 });
 
 test('Flesh and Bone runs a campaign: the next game adds a Demon once the current game has ended', async ({

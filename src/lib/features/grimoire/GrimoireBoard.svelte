@@ -4,6 +4,9 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
+	import { STANDARD } from '#lib/core/modes/index.ts';
+	import { findMode } from '#lib/features/modes/custom-modes.svelte.ts';
+	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import { boardNightSteps, stepHolders } from './night-steps.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
@@ -201,21 +204,28 @@
 	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
 	 * an ability set off by dying on the night of the death (the Ravenkeeper's).
 	 */
+	/**
+	 * Whether a step wakes anyone tonight: a step for no player (Dusk, Dawn), or one with a
+	 * living player, or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
+	 */
+	const diedTonight = $derived.by(() => {
+		const { entries, cursor } = grimoire.open.session.log;
+		return diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
+	});
+	function wakes(step: NightStep): boolean {
+		const holders = stepHolders(game, step, characters);
+		const id = step.character?.id;
+		return (
+			holders.length === 0 ||
+			holders.some(
+				(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && diedTonight.has(s))
+			)
+		);
+	}
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
-		const { entries, cursor } = grimoire.open.session.log;
-		const died = diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
-		const counts = (step: NightStep) => {
-			const holders = stepHolders(game, step, characters);
-			const id = step.character?.id;
-			return (
-				holders.length === 0 ||
-				holders.some(
-					(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && died.has(s))
-				)
-			);
-		};
+		const counts = wakes;
 		return {
 			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data), counts),
 			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data), counts)
@@ -666,14 +676,20 @@
 	let guideOpen = $state(false);
 	/** Walking through the night under the board: which night and which step. */
 	let walk = $state<{ night: Night; index: number } | undefined>(saved.walk);
+	// Run Night Order leaves out dead players (Trevor, 2026-10-18) unless their ability is set
+	// off by dying tonight; the night order sheet still lists every step, to open by hand.
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
-		return walk && data ? boardNightSteps(game, characters, walk.night, data) : [];
+		return walk && data ? boardNightSteps(game, characters, walk.night, data).filter(wakes) : [];
 	});
-	/** The open step's night, for Previous and Next inside it. */
+	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
 	const guidedSteps = $derived.by(() => {
 		const data = officialData.current;
-		return guided && data ? boardNightSteps(game, characters, guided.night, data) : [];
+		if (!guided || !data) return [];
+		const open = guided.step.id;
+		return boardNightSteps(game, characters, guided.night, data).filter(
+			(s) => s.id === open || wakes(s)
+		);
 	});
 	// The saved step dialog opens once the night order can be worked out.
 	let guidedPending = $state(saved.guided);
@@ -890,6 +906,14 @@
 		}
 		backgroundUrl = background.kind === 'script' ? scriptBackground : undefined;
 	});
+	/**
+	 * A game played in an alternative mode says so where the script's name is (Trevor,
+	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
+	 */
+	const modeName = $derived.by(() => {
+		const id = readGameMode(game.gameId)?.modeId;
+		return id && id !== STANDARD.id ? findMode(id)?.name : undefined;
+	});
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
@@ -1026,6 +1050,21 @@
 {/snippet}
 
 <div class="grimoire">
+	<!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
+	{#if backgroundUrl}
+		<div
+			class="backdrop"
+			data-testid="board-background"
+			style:background-image={`url("${backgroundUrl}")`}
+		></div>
+	{:else if background.kind === 'preset'}
+		<div
+			class="backdrop preset"
+			data-testid="board-background"
+			data-preset={background.id}
+			style:background={PRESETS[background.id].css}
+		></div>
+	{/if}
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
 		{#if arranging}
 			<span class="title arranging-title">Arrange seats</span>
@@ -1056,7 +1095,9 @@
 			     script's name can sit in the room before them (Trevor, 2026-10-17). -->
 			{#if showTitle && boardLooks.current.titleAt === 'toolbar'}
 				<span class="title toolbar-title" data-testid="script-title"
-					>{game.script.meta?.name ?? ''}</span
+					>{#if modeName}<span class="mode" data-testid="game-mode">{modeName}</span>
+						&middot;
+					{/if}{game.script.meta?.name ?? ''}</span
 				>
 			{:else}
 				<span class="spacer"></span>
@@ -1106,20 +1147,6 @@
 		style:--name-scale={boardLooks.current.nameSize}
 		bind:this={board}
 	>
-		{#if backgroundUrl}
-			<div
-				class="backdrop"
-				data-testid="board-background"
-				style:background-image={`url("${backgroundUrl}")`}
-			></div>
-		{:else if background.kind === 'preset'}
-			<div
-				class="backdrop preset"
-				data-testid="board-background"
-				data-preset={background.id}
-				style:background={PRESETS[background.id].css}
-			></div>
-		{/if}
 		<!-- The script's name and author sit behind the circle, or elsewhere (titleAt). -->
 		{#if showTitle && boardLooks.current.titleAt === 'middle'}
 			<p
@@ -1129,6 +1156,7 @@
 				style:--vignette={boardLooks.current.vignetteStrength}
 				aria-hidden="true"
 			>
+				{#if modeName}<span class="mode" data-testid="game-mode">{modeName}</span>{/if}
 				{#if game.script.meta?.name}<span class="script-name">{game.script.meta.name}</span>{/if}
 				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
 			</p>
@@ -1338,7 +1366,11 @@
 				bind:clientHeight={titleH}
 			>
 				<span class="script-name">{game.script.meta.name}</span>
-				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
+				<!-- The mode takes the author's line, so the corner never grows. -->
+				{#if modeName}<span class="mode" data-testid="game-mode">{modeName}</span
+					>{:else if game.script.meta?.author}<span class="author"
+						>by {game.script.meta.author}</span
+					>{/if}
 			</p>
 		{/if}
 		{#if showTimer}
@@ -1703,6 +1735,9 @@
 
 <style>
 	.grimoire {
+		/* Its own layer, so the backdrop sits behind the toolbar and board, not the page. */
+		position: relative;
+		isolation: isolate;
 		display: flex;
 		flex-direction: column;
 		/* Fills the screen: a game hides the app header and footer (route data). */
@@ -1722,6 +1757,13 @@
 		   outline shows the board's edge while arranging. */
 		gap: min(var(--space-2), 1.5vw);
 		padding: var(--space-2) var(--space-2) 0;
+	}
+	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
+	   on any image (Trevor, 2026-10-18). */
+	.grimoire:has(> .backdrop)
+		.toolbar
+		:global(button:not([data-variant='accent']):not([data-variant='danger'])) {
+		background: color-mix(in srgb, var(--surface) 85%, transparent);
 	}
 	.title {
 		flex: 1;
@@ -1854,8 +1896,9 @@
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.backdrop {
-		position: absolute;
+		position: fixed;
 		inset: 0;
+		z-index: -1;
 		background: center / cover no-repeat;
 		filter: brightness(0.45) saturate(0.85);
 		pointer-events: none;
@@ -1909,6 +1952,18 @@
 	}
 	.author {
 		font-size: clamp(0.9rem, 3vmin, 1.5rem);
+	}
+	/* The game mode, apart from the script: small capitals in the accent colour. */
+	.mode {
+		color: var(--accent);
+		font-family: var(--font-control);
+		font-size: clamp(0.8rem, 3vmin, 1.4rem);
+		font-variant: small-caps;
+		letter-spacing: 0.08em;
+	}
+	.toolbar-title .mode,
+	.corner-title .mode {
+		font-size: 0.8em;
 	}
 	/* Over an image: a soft scrim and an outline keep the words readable. */
 	.watermark.on-image {

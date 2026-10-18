@@ -13,6 +13,12 @@ export const setup = {
 	'setup.script': 'Script',
 	'setup.players': 'Players',
 	'setup.fewerPlayers': 'Fewer players',
+	'setup.alignmentDraw.tokens': 'Tokens',
+	'setup.alignmentDraw.fewerTokens': 'Fewer tokens',
+	'setup.alignmentDraw.moreTokens': 'More tokens',
+	'setup.alignmentDraw.evilTokens': 'Evil tokens',
+	'setup.alignmentDraw.fewerEvil': 'Fewer evil',
+	'setup.alignmentDraw.moreEvil': 'More evil',
 	'setup.morePlayers': 'More players',
 	'setup.sheet': 'Setup sheet',
 	'setup.random': 'Random selection',
@@ -67,6 +73,7 @@ export const setup = {
 	'setup.check.choose': 'Choose',
 	'setup.check.notOnScript':
 		'{name} needs the {required} in play, but the {required} is not on the script.',
+	'setup.offScript': 'Not on script',
 	'setup.characterInfo': 'About the {name}',
 	'setup.check.customReminders':
 		'Custom characters: the app can’t tell which of their reminder tokens go out before the game.',

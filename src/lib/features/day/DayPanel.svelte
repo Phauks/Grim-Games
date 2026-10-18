@@ -41,6 +41,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import DayTimer from './DayTimer.svelte';
@@ -345,26 +346,22 @@
 	<span class="row-actions">
 		{#if characterId && seatId && isOnceOnlyDayAbility(characterId)}
 			{@const isUsed = used(seatId, characterId)}
-			<button
-				type="button"
-				class="chip"
-				aria-pressed={isUsed}
+			<Chip
+				pressed={isUsed}
 				aria-label={t('day.usedLabel', { who })}
 				onclick={() => (isUsed ? askUnmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
 			>
-				<span class="tick"><Icon name="check" /></span>{t('day.used')}
-			</button>
+				<span class="tick" data-on={isUsed || undefined}><Icon name="check" /></span>{t('day.used')}
+			</Chip>
 		{/if}
 		{#if characterId}
-			<button
-				type="button"
-				class="chip"
-				data-has-note={hasNote({ characterId, seatId })}
+			<Chip
+				marked={hasNote({ characterId, seatId })}
 				aria-label={t('day.noteLabel', { who })}
 				onclick={() => openNote({ characterId, seatId })}
 			>
 				<Icon name="notes" />{t('day.note')}
-			</button>
+			</Chip>
 		{/if}
 	</span>
 {/snippet}
@@ -891,39 +888,13 @@
 		gap: var(--space-2);
 		margin-left: auto;
 	}
-	.chip {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-width: var(--tap-target);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: transparent;
-		color: inherit;
-		font: inherit;
-		font-family: var(--font-control);
-		cursor: pointer;
-	}
-	.chip[aria-pressed='true'] {
-		background: var(--accent);
-		color: var(--on-accent);
-		opacity: 1;
-	}
-	.chip:disabled {
-		cursor: default;
-	}
 	/* The tick is always laid out, so pressing Used never changes the chip's width. */
 	.tick {
 		display: inline-grid;
 		visibility: hidden;
 	}
-	.chip[aria-pressed='true'] .tick {
+	.tick[data-on] {
 		visibility: visible;
-	}
-	.chip[data-has-note='true'] {
-		border-color: var(--heading);
 	}
 	/*
 	 * One line however narrow (Trevor, 2026-10-17): five equal cells sharing the width, the

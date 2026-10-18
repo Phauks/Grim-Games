@@ -266,9 +266,12 @@
 
 <Page title={mode.name}>
 	{#snippet actions()}
-		<Button icon="info" onclick={() => (inspecting = true)}>
-			{t('modes.inspect', { name: mode.name })}
-		</Button>
+		<!-- An icon, so a long mode name keeps the title row (Trevor, 2026-10-18). -->
+		<IconButton
+			icon="info"
+			label={t('modes.inspect', { name: mode.name })}
+			onclick={() => (inspecting = true)}
+		/>
 	{/snippet}
 
 	{#if !record}

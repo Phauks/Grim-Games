@@ -70,6 +70,27 @@
 	// Fabled and Loric are rule characters: the grimoire adds them, the bag never holds them.
 	const choices = $derived(script?.characters.filter((c) => !isRuleCharacter(c.type)) ?? []);
 	const scriptOrder = $derived(choices.map((c) => c.id));
+	/**
+	 * Characters chosen though they are not on the script (Infinite Possibilities' hidden
+	 * extras, or any other addition), listed under their own type with an off-script mark
+	 * (Trevor, 2026-10-18). Once listed they stay for this visit, so taking one out can be
+	 * undone.
+	 */
+	let offScriptSeen = $state.raw<CharacterId[]>([]);
+	$effect(() => {
+		const onScript = new Set(scriptOrder);
+		const added = Object.keys(s.selection).filter(
+			(id) => (s.selection[id] ?? 0) > 0 && !onScript.has(id) && !offScriptSeen.includes(id)
+		);
+		if (added.length) offScriptSeen = [...offScriptSeen, ...added];
+	});
+	const offScript = $derived(
+		offScriptSeen
+			.map((id) => lookup(id))
+			.filter((c): c is Character => c !== undefined && !isRuleCharacter(c.type))
+	);
+	const listed = $derived([...choices, ...offScript]);
+	const offScriptIds = $derived(new Set(offScript.map((c) => c.id)));
 	const TYPES: CharacterType[] = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'];
 
 	const ready = $derived(script !== undefined && game !== undefined && s.gameId === game.gameId);
@@ -257,7 +278,7 @@
 
 	<ErrorBoundary area="setup">
 		<CharacterPicker
-			characters={choices}
+			characters={listed}
 			mode="multi"
 			selected={ids}
 			bind:query
@@ -277,6 +298,7 @@
 					copies={s.selection[character.id] ?? 0}
 					duplicates={canDuplicate(character, inPlay)}
 					jinxed={jinxed.has(character.id)}
+					offScript={offScriptIds.has(character.id)}
 					onToggle={() => toggle(character)}
 					onAddCopy={() =>
 						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}

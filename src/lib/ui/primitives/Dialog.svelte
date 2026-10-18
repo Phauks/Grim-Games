@@ -29,6 +29,11 @@
 		headActions?: Snippet;
 		/** False hides the ✕, for a dialog whose `lead` already closes it (the menu drawer). */
 		closeButton?: boolean;
+		/**
+		 * A `full` or `max` dialog scrolls its content under a fixed header. False for content
+		 * that fills the space and handles its own scrolling or panning (the scratch pad).
+		 */
+		scroll?: boolean;
 	}
 
 	let {
@@ -43,7 +48,8 @@
 		heading,
 		subtitle,
 		headActions,
-		closeButton = true
+		closeButton = true,
+		scroll = true
 	}: Props = $props();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
@@ -74,7 +80,11 @@
 				</div>
 				{#if subtitle}<Dialog.Description>{@render subtitle()}</Dialog.Description
 					>{:else if description}<Dialog.Description>{description}</Dialog.Description>{/if}
-				{@render children()}
+				{#if size === 'full' || size === 'max'}
+					<div class="body" data-scroll={scroll || undefined}>{@render children()}</div>
+				{:else}
+					{@render children()}
+				{/if}
 				{#if actions}<div class="actions">{@render actions()}</div>{/if}
 			</Dialog.Content>
 		</Dialog.Positioner>
@@ -194,6 +204,22 @@
 	.head :global([data-part='title']) {
 		flex: 1;
 		min-width: 0;
+	}
+	/*
+	 * Full and max dialogs keep the header in place and scroll what is under it, so no caller
+	 * has to build its own scroll area (two "can't scroll" bugs came from that, 2026-10-18).
+	 * A caller's own `flex: 1` scroll area still fills the body as before.
+	 */
+	.body {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+		overflow: hidden;
+	}
+	.body[data-scroll] {
+		overflow-y: auto;
+		overscroll-behavior: contain;
 	}
 	/* Bottom right, and in view at the bottom of a long dialog (Trevor, 2026-10-17). */
 	.actions {

@@ -17,7 +17,7 @@
 
 <!-- The pad full screen: as much paper as the screen has (Trevor, 2026-10-17). It only
      opens when a pad is chosen, never by itself (Trevor, 2026-10-17). -->
-<Dialog bind:open title={t('scratch.title')} size="max">
+<Dialog bind:open title={t('scratch.title')} size="max" scroll={false}>
 	{#snippet headActions()}
 		<ScratchActions
 			{pad}

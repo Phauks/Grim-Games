@@ -13,6 +13,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import ModeValue from './ModeValue.svelte';
 	import { findMode } from './custom-modes.svelte.ts';
@@ -92,9 +93,12 @@
 
 <Page title={step?.ability ?? mode.name}>
 	{#snippet actions()}
-		<Button icon="info" onclick={() => (inspecting = true)}>
-			{t('modes.inspect', { name: mode.name })}
-		</Button>
+		<!-- An icon, so a long mode name keeps the title row (Trevor, 2026-10-18). -->
+		<IconButton
+			icon="info"
+			label={t('modes.inspect', { name: mode.name })}
+			onclick={() => (inspecting = true)}
+		/>
 	{/snippet}
 
 	{#if missing}

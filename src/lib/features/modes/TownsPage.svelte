@@ -19,6 +19,7 @@
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -151,9 +152,12 @@
 
 <Page title={mode.name}>
 	{#snippet actions()}
-		<Button icon="info" onclick={() => (inspecting = true)}>
-			{t('modes.inspect', { name: mode.name })}
-		</Button>
+		<!-- An icon, so a long mode name keeps the title row (Trevor, 2026-10-18). -->
+		<IconButton
+			icon="info"
+			label={t('modes.inspect', { name: mode.name })}
+			onclick={() => (inspecting = true)}
+		/>
 	{/snippet}
 
 	{#if !group || missing}

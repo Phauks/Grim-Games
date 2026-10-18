@@ -32,7 +32,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { dealTitle } from './deal-title.ts';
 	import { findMode } from './custom-modes.svelte.ts';
@@ -232,18 +232,17 @@
 		<div class="slots" role="group" aria-label={t('modes.deal.openSlots')}>
 			{#each SEATED_TYPES as type (type)}
 				<span class="slot">
-					<IconButton
-						icon="minus"
-						label={t('modes.deal.fewer', { type: TYPE_PLURALS[type] })}
-						disabled={state.slots[type] === 0}
-						onclick={() => changeSlot(state, type, -1)}
-					/>
-					<span class="count" data-type={type}>{TYPE_PLURALS[type]} {state.slots[type]}</span>
-					<IconButton
-						icon="add"
-						label={t('modes.deal.more', { type: TYPE_PLURALS[type] })}
-						onclick={() => changeSlot(state, type, 1)}
-					/>
+					<Stepper
+						value={state.slots[type]}
+						label={TYPE_PLURALS[type]}
+						lessLabel={t('modes.deal.fewer', { type: TYPE_PLURALS[type] })}
+						moreLabel={t('modes.deal.more', { type: TYPE_PLURALS[type] })}
+						onchange={(n) => changeSlot(state, type, n - state.slots[type])}
+					>
+						{#snippet display()}<span class="count" data-type={type}
+								>{TYPE_PLURALS[type]} {state.slots[type]}</span
+							>{/snippet}
+					</Stepper>
 				</span>
 			{/each}
 		</div>
