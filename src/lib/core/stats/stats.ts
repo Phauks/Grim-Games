@@ -10,7 +10,7 @@
  *   (https://wiki.bloodontheclocktower.com/Traveller).
  */
 import type { Alignment, CharacterId, CharacterName, CharacterType } from '#lib/core/data/index.ts';
-import type { GameRecord, RecordSeat } from './record.ts';
+import type { GameRecord, RecordEndRule, RecordSeat } from './record.ts';
 
 export interface TeamCounts {
 	good: number;
@@ -21,6 +21,10 @@ export interface Summary {
 	games: number;
 	/** Games won by each team; the rest had no winner recorded. */
 	wins: TeamCounts;
+	/** Decided games won some other way than the usual ends (`RecordEndRule`). */
+	alternateWins: number;
+	/** Games that reached the final 3, and the winners of those that were decided. */
+	finalThree: { games: number; wins: TeamCounts };
 	/** Undefined with no games. */
 	averageDays?: number;
 	averagePlayers?: number;
@@ -73,6 +77,10 @@ export function playerCount(record: GameRecord): number {
 	return record.seats.filter((seat) => !isTraveller(record, seat)).length;
 }
 
+/** The usual ends; every other end rule (or the Storyteller's call) is an alternate win. */
+export const isAlternateWin = (rule: RecordEndRule | undefined): boolean =>
+	rule !== undefined && rule !== 'demon-dead' && rule !== 'two-alive';
+
 const average = (values: number[]): number | undefined =>
 	values.length === 0 ? undefined : values.reduce((a, b) => a + b, 0) / values.length;
 
@@ -88,12 +96,19 @@ const playerKey = (name: string): string => name.trim().toLocaleLowerCase();
 export function historyStats(records: readonly GameRecord[]): HistoryStats {
 	const sorted = [...records].sort((a, b) => b.endedAt - a.endedAt);
 	const wins: TeamCounts = { good: 0, evil: 0 };
+	let alternateWins = 0;
+	const finalThree = { games: 0, wins: { good: 0, evil: 0 } };
 	const scripts = new Map<string, ScriptStats>();
 	const characters = new Map<CharacterId, CharacterStats>();
 	const players = new Map<string, PlayerStats>();
 
 	for (const record of sorted) {
 		if (record.winner) wins[record.winner]++;
+		if (record.winner && isAlternateWin(record.endRule)) alternateWins++;
+		if (record.finalThree) {
+			finalThree.games++;
+			if (record.winner) finalThree.wins[record.winner]++;
+		}
 
 		const key = scriptKey(record.script);
 		let script = scripts.get(key);
@@ -147,6 +162,8 @@ export function historyStats(records: readonly GameRecord[]): HistoryStats {
 		summary: {
 			games: sorted.length,
 			wins,
+			alternateWins,
+			finalThree,
 			averageDays: average(sorted.map((r) => r.days)),
 			averagePlayers: average(sorted.map(playerCount))
 		},
