@@ -8,6 +8,8 @@
 		label: string;
 		/** A short hint under the option's label in the list. */
 		description?: string;
+		/** The heading the option is listed under; options of one group are given together. */
+		group?: string;
 	}
 
 	interface Props {
@@ -38,7 +40,28 @@
 		})
 	);
 	const current = $derived(options.find((option) => option.value === value));
+	/** Runs of options under the same heading, in the given order (one untitled run without groups). */
+	const groups = $derived(
+		options.reduce<{ title?: string; options: Option[] }[]>((runs, option) => {
+			const last = runs.at(-1);
+			if (last && last.title === option.group) last.options.push(option);
+			else runs.push({ title: option.group, options: [option] });
+			return runs;
+		}, [])
+	);
 </script>
+
+{#snippet optionItem(option: Option)}
+	<Select.Item item={option}>
+		<Select.ItemText>
+			{#if item}{@render item(option)}{:else}
+				<span class="option-label">{option.label}</span>
+				{#if option.description}<small>{option.description}</small>{/if}
+			{/if}
+		</Select.ItemText>
+		<Select.ItemIndicator><Icon name="check" /></Select.ItemIndicator>
+	</Select.Item>
+{/snippet}
 
 <!--
 	A dropdown: one choice from a list that only opens on demand. The list is positioned
@@ -67,16 +90,15 @@
 	</Select.Control>
 	<Select.Positioner>
 		<Select.Content>
-			{#each options as option (option.value)}
-				<Select.Item item={option}>
-					<Select.ItemText>
-						{#if item}{@render item(option)}{:else}
-							<span class="option-label">{option.label}</span>
-							{#if option.description}<small>{option.description}</small>{/if}
-						{/if}
-					</Select.ItemText>
-					<Select.ItemIndicator><Icon name="check" /></Select.ItemIndicator>
-				</Select.Item>
+			{#each groups as group, i (group.title ?? i)}
+				{#if group.title}
+					<Select.ItemGroup>
+						<Select.ItemGroupLabel>{group.title}</Select.ItemGroupLabel>
+						{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
+					</Select.ItemGroup>
+				{:else}
+					{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
+				{/if}
 			{/each}
 		</Select.Content>
 	</Select.Positioner>
@@ -166,6 +188,13 @@
 		font-family: var(--font-control);
 		cursor: pointer;
 		touch-action: manipulation;
+	}
+	/* A group's heading: small and muted, like the field labels. */
+	:global([data-scope='select'][data-part='item-group-label']) {
+		padding: var(--space-2) var(--space-3) var(--space-1);
+		font-family: var(--font-control);
+		font-size: 0.8rem;
+		color: var(--on-surface-muted);
 	}
 	:global([data-scope='select'][data-part='item'][data-highlighted]) {
 		background: var(--surface-selected);

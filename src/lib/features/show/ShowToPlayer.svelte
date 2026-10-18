@@ -191,7 +191,14 @@
 </dialog>
 
 <style>
+	/* The page's colours, not a sheet's, even when opened from inside one. */
 	.show {
+		--surface: var(--player-view-surface);
+		--surface-raised: var(--player-view-raised);
+		--surface-selected: var(--player-view-selected);
+		--on-surface: var(--player-view-ink);
+		--on-surface-muted: var(--player-view-muted);
+		--border: var(--player-view-border);
 		width: 100vw;
 		max-width: none;
 		height: 100dvh;
