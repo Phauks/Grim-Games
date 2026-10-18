@@ -201,6 +201,8 @@ test("Trevor's Enhanced Info Tokens sit apart, and the number can be stepped or 
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 
 	await enhanced.getByRole('button', { name: 'Your number is', exact: true }).tap();
+	// The dialog takes the token's own name (Trevor, 2026-10-18).
+	await expect(page.getByRole('dialog', { name: 'Your number is' })).toBeVisible();
 	await page.getByRole('button', { name: 'Higher number' }).tap();
 	await page.getByRole('button', { name: 'Higher number' }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
@@ -210,13 +212,14 @@ test("Trevor's Enhanced Info Tokens sit apart, and the number can be stepped or 
 
 	// Typed, with Enter showing it (Trevor, 2026-10-18).
 	await enhanced.getByRole('button', { name: 'Your number is', exact: true }).tap();
-	const field = page.getByRole('textbox', { name: 'Number' });
+	const field = page.getByRole('textbox', { name: 'Your number is' });
 	await field.fill('12');
 	await field.press('Enter');
 	await expect(shown.locator('.detail')).toHaveText('12');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 
 	await enhanced.getByRole('button', { name: 'Yes/No', exact: true }).tap();
+	await expect(page.getByRole('dialog', { name: 'Yes/No' })).toBeVisible();
 	await page.getByRole('combobox', { name: 'Answer' }).tap();
 	await page.getByRole('option', { name: 'No', exact: true }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();

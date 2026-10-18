@@ -19,6 +19,11 @@ export interface ScriptDraft {
 	version: typeof DRAFT_VERSION;
 	name: string;
 	author: string;
+	/**
+	 * The script's own version, such as "1.2" (Trevor, 2026-10-18). Optional, so drafts from
+	 * before it and builds that don't know it read each other's drafts unchanged.
+	 */
+	scriptVersion?: string;
 	/** Chosen characters, in the order they were chosen (saving sorts them). */
 	ids: CharacterId[];
 	/** Definitions of the chosen homebrew characters, by id, as their source wrote them. */
@@ -76,6 +81,7 @@ export function parseDraft(raw: unknown): ScriptDraft {
 		version: DRAFT_VERSION,
 		name: text(raw.name),
 		author: text(raw.author),
+		...(text(raw.scriptVersion) ? { scriptVersion: text(raw.scriptVersion) } : {}),
 		ids: [...new Set(ids)],
 		homebrew: readHomebrew(raw.homebrew),
 		credits: readCredits(raw.credits),
@@ -85,7 +91,12 @@ export function parseDraft(raw: unknown): ScriptDraft {
 }
 
 export function isEmptyDraft(draft: ScriptDraft): boolean {
-	return draft.ids.length === 0 && !draft.name.trim() && !draft.author.trim();
+	return (
+		draft.ids.length === 0 &&
+		!draft.name.trim() &&
+		!draft.author.trim() &&
+		!draft.scriptVersion?.trim()
+	);
 }
 
 /** The homebrew definitions of the chosen characters only. */

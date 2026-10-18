@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function openTable(page: Page) {
 	await page.goto('/reference');
-	// Table/Cards is one toggle that remembers its choice, so tap it only when it shows cards.
+	// One toggle now (338f851), and the table view is remembered: only turn it on when off.
 	const toggle = page.getByRole('button', { name: 'Show as table' });
 	await expect(toggle).toBeVisible();
 	if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.tap();

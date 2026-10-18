@@ -50,6 +50,12 @@ describe('check-colors', () => {
 		).toEqual([]);
 		expect(findColourFunctions('a { background: var(--surface-hover); }')).toEqual([]);
 	});
+
+	it('takes the reason from the next line when Prettier wraps it there', () => {
+		const css =
+			'a { background: linear-gradient(\n\trgb(0 0 0) 75%\n\t/* colour-ok: shade */,\n\trgb(0 0 0)\n); }';
+		expect(findColourFunctions(css)).toEqual([{ line: 4, match: 'rgb' }]);
+	});
 });
 
 describe('check-px', () => {

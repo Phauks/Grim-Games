@@ -80,6 +80,13 @@ export interface TokenAppearance {
 	reminderLabelWidth: number;
 	/** Words too long for that width go onto more lines instead of ending in "…". */
 	reminderLabelWrap: boolean;
+	/**
+	 * Size of reminder chips inside lines of text, on the same range (Trevor, 2026-10-18:
+	 * "add the settings for in-line reminder tokens"). Earlier they followed reminderScale.
+	 */
+	inlineReminderScale: number;
+	/** The owner's icon on those chips; off, a dot in the type's colour. */
+	inlineReminderIcons: boolean;
 }
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
@@ -90,7 +97,9 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	nightNumbers: false,
 	nightBadgeScale: 1,
 	reminderLabelWidth: 1.5,
-	reminderLabelWrap: false
+	reminderLabelWrap: false,
+	inlineReminderScale: 1,
+	inlineReminderIcons: true
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -117,7 +126,9 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		nightNumbers: input.nightNumbers === true,
 		nightBadgeScale: parseScale(input.nightBadgeScale),
 		reminderLabelWidth: parseLabelWidth(input.reminderLabelWidth),
-		reminderLabelWrap: input.reminderLabelWrap === true
+		reminderLabelWrap: input.reminderLabelWrap === true,
+		inlineReminderScale: parseScale(input.inlineReminderScale),
+		inlineReminderIcons: input.inlineReminderIcons !== false
 	};
 }
 
@@ -125,7 +136,9 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
  * The CSS variables to write after the theme's: the sizes (`--token-scale`,
  * `--reminder-scale`, `--night-badge-scale`) and reminder words (`--reminder-label-width`,
  * `--reminder-label-wrap`, a white-space value, and `--reminder-label-min`, so wrapped
- * words never get cut) always, and each changed colour.
+ * words never get cut), reminders in text (`--inline-reminder-scale`, and display values
+ * `--inline-reminder-owner` and `--inline-reminder-dot` for icon or dot) always, and each
+ * changed colour.
  */
 export function tokenVariables(appearance: TokenAppearance): Record<CssVariable, string> {
 	const variables: Record<CssVariable, string> = {
@@ -134,7 +147,10 @@ export function tokenVariables(appearance: TokenAppearance): Record<CssVariable,
 		'--night-badge-scale': String(appearance.nightBadgeScale),
 		'--reminder-label-width': String(appearance.reminderLabelWidth),
 		'--reminder-label-wrap': appearance.reminderLabelWrap ? 'normal' : 'nowrap',
-		'--reminder-label-min': appearance.reminderLabelWrap ? 'min-content' : '0'
+		'--reminder-label-min': appearance.reminderLabelWrap ? 'min-content' : '0',
+		'--inline-reminder-scale': String(appearance.inlineReminderScale),
+		'--inline-reminder-owner': appearance.inlineReminderIcons ? 'inline' : 'none',
+		'--inline-reminder-dot': appearance.inlineReminderIcons ? 'none' : 'block'
 	};
 	for (const { key, variables: names } of TOKEN_COLOURS) {
 		const value = appearance.colours[key];
