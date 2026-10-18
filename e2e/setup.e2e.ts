@@ -592,13 +592,9 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	const paste = page.getByRole('dialog', { name: 'Add script' });
 	await paste
-		.getByLabel('Script JSON or link')
+		.getByLabel('Script JSON')
 		.fill(
 			JSON.stringify([
 				{ id: '_meta', name: 'Jinx Check' },
@@ -641,12 +637,8 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
-	await paste.getByLabel('Script JSON or link').fill(
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste.getByLabel('Script JSON').fill(
 		JSON.stringify([
 			{ id: '_meta', name: 'Custom Check' },
 			{

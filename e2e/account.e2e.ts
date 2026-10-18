@@ -73,12 +73,8 @@ test('a sign-in link signs in and keeps its token out of the address', async ({
 test('scripts added on the device are saved to the profile as local copies', async ({ page }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
-	await paste.getByLabel('Script JSON or link').fill(JSON.stringify(homebrew));
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste.getByLabel('Script JSON').fill(JSON.stringify(homebrew));
 	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Storm Front');
 
@@ -111,13 +107,9 @@ test('scripts added on the device are saved to the profile as local copies', asy
 	// Adding a script while signed in saves it straight away.
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const again = page.getByRole('dialog', { name: 'Paste a script' });
+	const again = page.getByRole('dialog', { name: 'Add script' });
 	await again
-		.getByLabel('Script JSON or link')
+		.getByLabel('Script JSON')
 		.fill(JSON.stringify([{ id: '_meta', name: 'Second Wind' }, ...homebrew.slice(1)]));
 	const saving = page.waitForResponse(
 		(r) => r.url().includes('/api/account/docs/script/') && r.request().method() === 'PUT'

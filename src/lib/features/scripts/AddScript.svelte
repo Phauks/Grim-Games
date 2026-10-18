@@ -13,7 +13,6 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { parseBotcScriptsRef } from './botcscripts-api.ts';
 	import { chooseScript } from './current-script.svelte.ts';
@@ -29,8 +28,9 @@
 	import { resolveLink } from './script-links.ts';
 
 	/**
-	 * Add script: Paste JSON, Upload File or Paste Link (Trevor, 2026-10-17), and a script
-	 * file or link dropped anywhere on the page. Each goes through the Script check, then is
+	 * Add script: one dialog with a link, pasted JSON and Upload File together (Trevor,
+	 * 2026-10-18: one dialog, not a menu of three), and a script file or link dropped anywhere
+	 * on the page. Each goes through the Script check, then is
 	 * saved to the user's scripts (the Library). Mounted by a page's header; `loadFetched`
 	 * loads a script that arrived another way (a share link) through the same steps.
 	 */
@@ -47,10 +47,7 @@
 
 	let { onsaved, busy = $bindable(false), button = true }: Props = $props();
 
-	let adding = $state(false);
-	let anchor: HTMLElement | undefined = $state();
-	let pasteOpen = $state(false);
-	let linkOpen = $state(false);
+	let addOpen = $state(false);
 	let checkOpen = $state(false);
 	let pasteText = $state('');
 	let linkText = $state('');
@@ -76,7 +73,7 @@
 	async function settle(fetched: FetchedScript) {
 		// Hand-edited JSON (comments, trailing commas) loads too.
 		const result = loadScriptText(relaxJson(fetched.text), await loadOfficialData());
-		pasteOpen = linkOpen = false;
+		addOpen = false;
 		const needsCheck = !result.script || result.problems.some((p) => p.severity !== 'info');
 		if (needsCheck) {
 			checking = { result, source: fetched.source };
@@ -97,7 +94,7 @@
 			error = errorMessage(e);
 			errorLink = e instanceof ScriptFetchError ? e.openUrl : undefined;
 			// Outside a dialog the reason shows in a toast, so nothing on the page moves.
-			if (!pasteOpen && !linkOpen) toast(t('scripts.add.failed'), error);
+			if (!addOpen) toast(t('scripts.add.failed'), error);
 		} finally {
 			busy = false;
 		}
@@ -129,14 +126,18 @@
 		if (file) void run(() => readScriptFile(file));
 	}
 
-	function choose(which: 'paste' | 'file' | 'link') {
-		adding = false;
+	function openAdd() {
 		clearError();
-		if (which === 'file') fileInput?.click();
-		else {
-			pasteOpen = which === 'paste';
-			linkOpen = which === 'link';
-		}
+		addOpen = true;
+	}
+
+	const hasLink = $derived(linkText.trim() !== '');
+	const hasPaste = $derived(pasteText.trim() !== '');
+
+	/** Confirm adds whichever of the link and the pasted JSON is filled in. */
+	function confirmAdd() {
+		if (hasLink) void run(() => fetchLinkTarget(resolveLink(linkText), linkText));
+		else if (hasPaste) void run(() => fromText(pasteText));
 	}
 
 	/** Loads script text that arrived another way (a share link), through the same checks. */
@@ -175,7 +176,7 @@
 		if (!data) return;
 		event.preventDefault();
 		if (!button) return;
-		pasteOpen = linkOpen = false;
+		addOpen = false;
 		const file = data.files[0];
 		if (file) {
 			void run(() => readScriptFile(file));
@@ -195,19 +196,9 @@
 />
 
 {#if button}
-	<span bind:this={anchor}>
-		<Button icon="add" aria-haspopup="dialog" disabled={busy} onclick={() => (adding = true)}
-			>{t('scripts.picker.add')}</Button
-		>
-	</span>
-
-	<Popover bind:open={adding} title={t('scripts.picker.add')} {anchor}>
-		<div class="add">
-			<Button icon="pasteJson" onclick={() => choose('paste')}>{t('scripts.picker.paste')}</Button>
-			<Button icon="uploadFile" onclick={() => choose('file')}>{t('scripts.picker.file')}</Button>
-			<Button icon="pasteLink" onclick={() => choose('link')}>{t('scripts.picker.link')}</Button>
-		</div>
-	</Popover>
+	<Button icon="add" aria-haspopup="dialog" disabled={busy} onclick={openAdd}
+		>{t('scripts.picker.add')}</Button
+	>
 {/if}
 
 <!-- Not limited to application/json: some iPad and Android file providers don't label
@@ -225,42 +216,22 @@
 	<p class="error" role="status">{error}</p>
 {/snippet}
 
-<Dialog bind:open={pasteOpen} title={t('scripts.paste.title')}>
+<!-- Every way in at once; whichever is filled in is used. Each keeps its place, and the
+     link and the JSON box take turns: filling one disables the other (no reflow). -->
+<Dialog bind:open={addOpen} title={t('scripts.picker.add')}>
 	<div class="field">
-		<TextField
-			label={t('scripts.paste.label')}
-			bind:value={pasteText}
-			multiline
-			rows={8}
-			spellcheck={false}
-			autocomplete="off"
-		/>
-	</div>
-	{@render errorLine()}
-	{#snippet actions()}
-		<ModalActions
-			onCancel={() => (pasteOpen = false)}
-			onConfirm={() => run(() => fromText(pasteText))}
-			disabled={busy || pasteText.trim() === ''}
-		>
-			{#snippet start()}
-				<Button variant="quiet" onclick={pasteFromClipboard} disabled={!canReadClipboard}
-					>{t('scripts.paste.fromClipboard')}</Button
-				>
-			{/snippet}
-		</ModalActions>
-	{/snippet}
-</Dialog>
-
-<Dialog bind:open={linkOpen} title={t('scripts.link.title')}>
-	<div class="field">
-		<!-- Open site is always there, enabled once a site refuses to share its file (no reflow). -->
+		<!-- Open link is always there, enabled once a site refuses to share its file. -->
 		<TextField
 			label={t('scripts.link.label')}
 			bind:value={linkText}
 			type="url"
 			inputmode="url"
 			placeholder="https://"
+			disabled={hasPaste}
+			oncommit={() => {
+				confirmAdd();
+				return true;
+			}}
 		>
 			{#snippet end()}
 				<IconButton
@@ -272,12 +243,34 @@
 			{/snippet}
 		</TextField>
 	</div>
+	<div class="field">
+		<TextField
+			label={t('scripts.paste.label')}
+			bind:value={pasteText}
+			multiline
+			rows={6}
+			spellcheck={false}
+			autocomplete="off"
+			disabled={hasLink}
+		/>
+		<div class="row">
+			<Button variant="quiet" onclick={pasteFromClipboard} disabled={!canReadClipboard || hasLink}
+				>{t('scripts.paste.fromClipboard')}</Button
+			>
+		</div>
+	</div>
+	<div class="field">
+		<!-- Choosing a file adds it straight away, as it always has. -->
+		<Button icon="uploadFile" disabled={busy} onclick={() => fileInput?.click()}
+			>{t('scripts.picker.file')}</Button
+		>
+	</div>
 	{@render errorLine()}
 	{#snippet actions()}
 		<ModalActions
-			onCancel={() => (linkOpen = false)}
-			onConfirm={() => run(() => fetchLinkTarget(resolveLink(linkText), linkText))}
-			disabled={busy || linkText.trim() === ''}
+			onCancel={() => (addOpen = false)}
+			onConfirm={confirmAdd}
+			disabled={busy || (!hasLink && !hasPaste)}
 		/>
 	{/snippet}
 </Dialog>
@@ -297,11 +290,6 @@
 </div>
 
 <style>
-	.add {
-		display: grid;
-		gap: var(--space-2);
-		margin-top: var(--space-2);
-	}
 	.drop {
 		position: fixed;
 		inset: 0;
@@ -335,6 +323,12 @@
 	}
 	.field {
 		margin: var(--space-3) 0 0;
+	}
+	.row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-1);
 	}
 	/* Room for three lines is always reserved, so an error never moves the buttons. */
 	.error {

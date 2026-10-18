@@ -316,12 +316,8 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 test('the day view names a homebrew character by its script name', async ({ page }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
-	await paste.getByLabel('Script JSON or link').fill(
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste.getByLabel('Script JSON').fill(
 		JSON.stringify([
 			{ id: '_meta', name: 'Homebrew Day' },
 			{
