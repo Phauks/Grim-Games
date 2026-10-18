@@ -163,8 +163,8 @@
 			onChange={(nameSize) => boardLooks.update({ nameSize })}
 		/>
 		<TitleAtSetting />
-		<RulesAtSetting />
 		<ReminderModeSetting />
+		<RulesAtSetting titled />
 	</div>
 	<input
 		bind:this={input}
