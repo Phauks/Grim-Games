@@ -39,7 +39,7 @@ export const room = {
 		"Everyone's phone leaves the room and its code stops working. The grimoire is not changed.",
 	'room.keepOpen': 'Keep it open',
 	// Players' join pages
-	'room.joinTitle': 'Join a room',
+	'room.joinTitle': 'Join game',
 	'room.roomTitle': 'Room {code}',
 	'room.pageTitle': 'Room',
 	'room.notACode': 'That is not a room code. Codes are six digits.',

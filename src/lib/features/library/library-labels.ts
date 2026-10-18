@@ -329,6 +329,13 @@ export function setFolder(
 	return withScript(state, key, { ...entry, folder });
 }
 
+/** Gives another item this one's folder and tags (an item whose kind changed). */
+export function moveLabels(state: LibraryLabels, from: string, to: string): LibraryLabels {
+	const { folder, tags } = labelsFor(state, from);
+	const next = withScript(state, to, { ...labelsFor(state, to), folder, tags });
+	return withScript(next, from, { tags: [] });
+}
+
 /** Renames an item in the Library; a blank name goes back to its own. */
 export function setName(state: LibraryLabels, key: string, name: string): LibraryLabels {
 	return withScript(state, key, { ...labelsFor(state, key), name });

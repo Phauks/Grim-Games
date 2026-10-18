@@ -16,6 +16,7 @@
 	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
 	import { boardBackground } from './board-background.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
@@ -79,7 +80,7 @@
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { fromScript } from '#lib/core/data/index.ts';
+	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
@@ -96,9 +97,7 @@
 	import { pendingTray, trayItems, withoutOffSeat, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
-	import { campaignOf } from '#lib/features/modes/campaigns.ts';
-	import { hasSpectatorVote } from '#lib/features/modes/specters.ts';
-	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
+	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import { extraReminders, onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
@@ -389,12 +388,6 @@
 			? reminder.characterId
 			: game.ruleCharacters[0];
 	}
-	/** The town group this game is a town of, if any (kept on this device). */
-	const towns = $derived(townGroupOf(game.gameId));
-	/** The campaign this game is part of, if any (kept on this device). */
-	const campaign = $derived(campaignOf(game.gameId));
-	/** Spectators vote on a shared ability in this game's mode (Specters). */
-	const specters = $derived(hasSpectatorVote(game.gameId));
 	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
 	/** A Fabled or Loric's reminder being dragged off it. */
 	const heldDrag = $derived.by(() => {
@@ -865,6 +858,7 @@
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
+	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
@@ -992,6 +986,7 @@
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
+	let modeMenuOpen = $state(false);
 	function fromMenu(action: () => void) {
 		menuOpen = false;
 		action();
@@ -1214,6 +1209,14 @@
 				style:--vignette={boardLooks.current.vignetteStrength}
 				aria-hidden="true"
 			></div>
+		{/if}
+		<!-- The script's logo, faint behind the seats (Trevor, 2026-10-18: his switch and opacity). -->
+		{#if boardLooks.current.logo && boardLogo}
+			<ScriptLogo
+				src={boardLogo}
+				class="board-logo"
+				--logo-opacity={boardLooks.current.logoOpacity}
+			/>
 		{/if}
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = shown[i]}
@@ -1442,10 +1445,13 @@
 				bind:clientWidth={titleW}
 				bind:clientHeight={titleH}
 			>
-				<span
-					class="script-name"
-					class:mode={modeInName}
-					data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
+				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
+				<ModeMenu {game}
+					><span
+						class="script-name"
+						class:mode={modeInName}
+						data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
+					></ModeMenu
 				>
 				<!-- The mode takes the author's line, so the corner never grows. -->
 				{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span
@@ -1487,6 +1493,8 @@
 		</div>
 	</div>
 </div>
+
+<ModeMenu {game} bind:open={modeMenuOpen} />
 
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <Dialog bind:open={menuOpen} title="Grimoire">
@@ -1543,39 +1551,11 @@
 		>
 			Tokens
 		</Button>
-		<!-- A town of a mode game: back to all its towns (Alternative game modes). -->
-		{#if towns}
-			<Button
-				variant="quiet"
-				icon="grimoire"
-				onclick={() =>
-					fromMenu(() => goto(resolve('/towns/[groupId]', { groupId: towns.groupId })))}
-			>
-				Towns
-			</Button>
-		{/if}
-		<!-- A game of a campaign: back to the campaign and its next game (Alternative game modes). -->
-		{#if campaign}
-			<Button
-				variant="quiet"
-				icon="grimoire"
-				onclick={() =>
-					fromMenu(() =>
-						goto(resolve('/campaigns/[campaignId]', { campaignId: campaign.campaignId }))
-					)}
-			>
-				Campaign
-			</Button>
-		{/if}
-		<!-- Specters: the spectators' shared ability and vote (Alternative game modes). -->
-		{#if specters}
-			<Button
-				variant="quiet"
-				icon="vote"
-				onclick={() =>
-					fromMenu(() => goto(resolve('/grimoire/[gameId]/specters', { gameId: game.gameId })))}
-			>
-				Specters
+		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
+			too, for when the corner has no room for the name. -->
+		{#if modeName}
+			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
+				Game mode
 			</Button>
 		{/if}
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
@@ -2047,6 +2027,13 @@
 	.game-over[data-team='evil'] {
 		background: var(--evil);
 		color: var(--on-evil);
+	}
+	/* Centred in the seat ring, never wider or taller than 42% of the board; under the seats. */
+	.board :global(.board-logo) {
+		position: absolute;
+		inset: 29%;
+		opacity: var(--logo-opacity);
+		pointer-events: none;
 	}
 	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
 	.vignette {

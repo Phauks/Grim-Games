@@ -29,7 +29,19 @@ export function extraCandidates(
 	return official.filter((c) => c.type === type && !taken.has(c.id) && !banned.has(c.id));
 }
 
-/** Picks the mode's extras at random, each type from its own candidates, never twice. */
+/** How many extras there are in all: the mode's range, or one for every type's row. */
+export function extraTotal(mode: GameMode): { min: number; max: number } {
+	const pool = mode.parts.pool;
+	const rows = Object.values(extraCounts(mode)).reduce((a, n) => a + (n ?? 0), 0);
+	if (pool?.kind !== 'script-plus-hidden' || !pool.count) return { min: rows, max: rows };
+	const max = Math.min(rows, pool.count.max);
+	return { min: Math.min(max, pool.count.min), max };
+}
+
+/**
+ * Picks the mode's extras at random, each type from its own candidates, never twice. With a
+ * range, a random number of them in that range, their types drawn from the mode's rows.
+ */
 export function rollExtras(
 	mode: GameMode,
 	scriptCharacters: readonly Character[],
@@ -38,12 +50,23 @@ export function rollExtras(
 	random: () => number
 ): Character[] {
 	const counts = extraCounts(mode);
+	const slots: SeatedType[] = SEATED_TYPES.flatMap((type) =>
+		Array.from({ length: counts[type] ?? 0 }, () => type)
+	);
+	const { min, max } = extraTotal(mode);
+	const total = min + Math.floor(random() * (max - min + 1));
+	// Keep `total` of the rows, chosen at random, in their order.
+	const order = slots.map((_, i) => i);
+	for (let i = order.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[order[i], order[j]] = [order[j], order[i]];
+	}
+	const kept = new Set(order.slice(0, total));
 	const out: Character[] = [];
-	for (const type of SEATED_TYPES) {
-		for (let n = 0; n < (counts[type] ?? 0); n++) {
-			const pool = extraCandidates(mode, type, scriptCharacters, official, restrictions, out);
-			if (pool.length > 0) out.push(pool[Math.floor(random() * pool.length)]);
-		}
+	for (const [i, type] of slots.entries()) {
+		if (!kept.has(i)) continue;
+		const pool = extraCandidates(mode, type, scriptCharacters, official, restrictions, out);
+		if (pool.length > 0) out.push(pool[Math.floor(random() * pool.length)]);
 	}
 	return out;
 }

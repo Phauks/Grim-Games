@@ -47,6 +47,24 @@ describe('readHomebrewScripts', () => {
 		]);
 	});
 
+	it('keeps a listed logo only when it is an https link or a path on the wiki', () => {
+		const logos = readHomebrewScripts(
+			[
+				{ slug: 'a', name: 'A', logo: 'https://example.com/a.png', characters: [] },
+				{ slug: 'b', name: 'B', logo: '/assets/b.png', characters: [] },
+				{ slug: 'c', name: 'C', logo: 'javascript:alert(1)', characters: [] },
+				{ slug: 'd', name: 'D', characters: [] }
+			],
+			grid
+		).map((s) => s.logo);
+		expect(logos).toEqual([
+			'https://example.com/a.png',
+			'https://botchomebrew.wiki/assets/b.png',
+			undefined,
+			undefined
+		]);
+	});
+
 	it('reads nothing from an answer that is not a list', () => {
 		expect(readHomebrewScripts({ error: 'x' }, grid)).toEqual([]);
 	});

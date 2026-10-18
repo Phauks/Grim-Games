@@ -6,7 +6,8 @@
  * files too: a screen that mixes its own 25% or 30% line ends up close to, but not the same
  * as, every other screen (Trevor, 2026-10-18: "the same, and not just similar, colors").
  * Add a token to src/lib/ui/tokens/components.css instead. A colour that must stay says
- * why in a `colour-ok: ...` comment on the same line.
+ * why in a `colour-ok: ...` comment on the same line (or alone on the next, where Prettier
+ * wraps it).
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -36,8 +37,13 @@ const COLOUR_FUNCTION = /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color-
 
 export function findColourFunctions(source: string): { line: number; match: string }[] {
 	const found: { line: number; match: string }[] = [];
-	source.split('\n').forEach((text, index) => {
-		if (text.includes('colour-ok:')) return;
+	const lines = source.split('\n');
+	lines.forEach((text, index) => {
+		// Prettier can wrap a trailing comment onto the next line on its own; that still counts.
+		const next = lines[index + 1]?.trim() ?? '';
+		if (text.includes('colour-ok:') || (next.startsWith('/* colour-ok:') && next.includes('*/'))) {
+			return;
+		}
 		for (const match of text.matchAll(COLOUR_FUNCTION)) {
 			found.push({ line: index + 1, match: match[0].slice(0, -1) });
 		}
