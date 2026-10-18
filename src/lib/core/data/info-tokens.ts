@@ -21,8 +21,10 @@ export type InfoTokenValue =
  * its tile before it is tapped, and set per card on the Storyteller's own (Trevor, 2026-10-18).
  */
 export interface InfoTokenAsks {
-	/** Up to this many characters are shown with it. */
+	/** Up to this many characters are shown with it (at least one). */
 	characters?: number;
+	/** Always exactly `characters`, never fewer: the Demon's three bluffs. */
+	exactly?: true;
 	value?: InfoTokenValue;
 }
 
@@ -45,12 +47,13 @@ export const MAX_ASKED_CHARACTERS = 6;
 export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	{ id: 'this-is-the-demon', text: 'This is the Demon', source: 'standard' },
 	{ id: 'these-are-your-minions', text: 'These are your Minions', source: 'standard' },
-	// The Demon's three bluffs (https://wiki.bloodontheclocktower.com/Demon).
+	// Always the Demon's three bluffs, as are the Minions' with a Snitch in play
+	// (https://wiki.bloodontheclocktower.com/Glossary, https://wiki.bloodontheclocktower.com/Snitch).
 	{
 		id: 'not-in-play',
 		text: 'These characters are not in play',
 		source: 'standard',
-		asks: { characters: 3 }
+		asks: { characters: 3, exactly: true }
 	},
 	{ id: 'you-are', text: 'You are', source: 'standard', asks: { characters: 1 } },
 	// May name several, such as the Dreamer's good and evil pair (Trevor, 2026-10-16).
