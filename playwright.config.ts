@@ -7,9 +7,19 @@ const PORT = Number(process.env.E2E_PORT) || 8787;
 export default defineConfig({
 	testDir: 'e2e',
 	testMatch: '**/*.e2e.ts',
+	// Tests, not files, are spread over workers and CI shards: grimoire.e2e.ts alone is
+	// several minutes of tests, which kept one worker busy while the others sat idle.
+	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 1 : 0,
-	reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
+	// The JSON report feeds the flaky-test list in the CI job summary (scripts/flaky-summary.ts).
+	reporter: process.env.CI
+		? [
+				['github'],
+				['html', { open: 'never' }],
+				['json', { outputFile: 'test-results/results.json' }]
+			]
+		: 'list',
 	use: {
 		baseURL: `http://localhost:${PORT}`,
 		launchOptions: { executablePath },
