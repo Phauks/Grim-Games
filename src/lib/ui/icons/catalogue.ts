@@ -81,7 +81,7 @@ export const ICON_SLOTS = {
 	glossary: { label: 'Glossary', choices: ['ph:book-open-text', 'ph:list-magnifying-glass'] },
 	warning: { label: 'Warning', choices: ['ph:warning', 'ph:warning-circle'] },
 	sort: { label: 'Sort', choices: ['ph:arrows-down-up'] },
-	columns: { label: 'Columns', choices: ['ph:columns'] },
+	columns: { label: 'Columns', choices: ['ph:sliders-horizontal', 'ph:list-dashes'] },
 	sortAscending: { label: 'Sorted ascending', choices: ['ph:caret-up', 'ph:sort-ascending'] },
 	sortDescending: { label: 'Sorted descending', choices: ['ph:caret-down', 'ph:sort-descending'] },
 	filter: { label: 'Filter', choices: ['ph:funnel'] },

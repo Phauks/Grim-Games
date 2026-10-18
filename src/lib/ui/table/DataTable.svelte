@@ -759,10 +759,11 @@
 		overflow: auto;
 		overscroll-behavior: contain;
 	}
+	/* Above pinned cells (z-index 2), which rows stack even where they don't stick. */
 	.fill thead {
 		position: sticky;
 		top: 0;
-		z-index: 1;
+		z-index: 3;
 	}
 	table,
 	thead,

@@ -40,7 +40,6 @@ import ph_clipboard_bold from '~icons/ph/clipboard-bold';
 import ph_clipboard_text_bold from '~icons/ph/clipboard-text-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
-import ph_columns_bold from '~icons/ph/columns-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_corners_out_bold from '~icons/ph/corners-out-bold';
@@ -101,6 +100,7 @@ import ph_link_simple_break_bold from '~icons/ph/link-simple-break-bold';
 import ph_list_bold from '~icons/ph/list-bold';
 import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_list_checks_bold from '~icons/ph/list-checks-bold';
+import ph_list_dashes_bold from '~icons/ph/list-dashes-bold';
 import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
 import ph_lock_bold from '~icons/ph/lock-bold';
 import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
@@ -141,6 +141,7 @@ import ph_shield_star_bold from '~icons/ph/shield-star-bold';
 import ph_shuffle_bold from '~icons/ph/shuffle-bold';
 import ph_skull_bold from '~icons/ph/skull-bold';
 import ph_sliders_bold from '~icons/ph/sliders-bold';
+import ph_sliders_horizontal_bold from '~icons/ph/sliders-horizontal-bold';
 import ph_smiley_bold from '~icons/ph/smiley-bold';
 import ph_smiley_angry_bold from '~icons/ph/smiley-angry-bold';
 import ph_snowflake_bold from '~icons/ph/snowflake-bold';
@@ -225,7 +226,6 @@ const icons: IconMap = {
 	'ph:clipboard-text-bold': ph_clipboard_text_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
-	'ph:columns-bold': ph_columns_bold,
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:corners-out-bold': ph_corners_out_bold,
@@ -286,6 +286,7 @@ const icons: IconMap = {
 	'ph:list-bold': ph_list_bold,
 	'ph:list-bullets-bold': ph_list_bullets_bold,
 	'ph:list-checks-bold': ph_list_checks_bold,
+	'ph:list-dashes-bold': ph_list_dashes_bold,
 	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
 	'ph:lock-bold': ph_lock_bold,
 	'ph:lock-simple-bold': ph_lock_simple_bold,
@@ -326,6 +327,7 @@ const icons: IconMap = {
 	'ph:shuffle-bold': ph_shuffle_bold,
 	'ph:skull-bold': ph_skull_bold,
 	'ph:sliders-bold': ph_sliders_bold,
+	'ph:sliders-horizontal-bold': ph_sliders_horizontal_bold,
 	'ph:smiley-bold': ph_smiley_bold,
 	'ph:smiley-angry-bold': ph_smiley_angry_bold,
 	'ph:snowflake-bold': ph_snowflake_bold,

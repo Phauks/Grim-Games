@@ -40,7 +40,6 @@ import ph_clipboard from '~icons/ph/clipboard';
 import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_club from '~icons/ph/club';
-import ph_columns from '~icons/ph/columns';
 import ph_copy from '~icons/ph/copy';
 import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_corners_out from '~icons/ph/corners-out';
@@ -101,6 +100,7 @@ import ph_link_simple_break from '~icons/ph/link-simple-break';
 import ph_list from '~icons/ph/list';
 import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_list_checks from '~icons/ph/list-checks';
+import ph_list_dashes from '~icons/ph/list-dashes';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_lock from '~icons/ph/lock';
 import ph_lock_simple from '~icons/ph/lock-simple';
@@ -141,6 +141,7 @@ import ph_shield_star from '~icons/ph/shield-star';
 import ph_shuffle from '~icons/ph/shuffle';
 import ph_skull from '~icons/ph/skull';
 import ph_sliders from '~icons/ph/sliders';
+import ph_sliders_horizontal from '~icons/ph/sliders-horizontal';
 import ph_smiley from '~icons/ph/smiley';
 import ph_smiley_angry from '~icons/ph/smiley-angry';
 import ph_snowflake from '~icons/ph/snowflake';
@@ -225,7 +226,6 @@ const icons: IconMap = {
 	'ph:clipboard-text': ph_clipboard_text,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:club': ph_club,
-	'ph:columns': ph_columns,
 	'ph:copy': ph_copy,
 	'ph:copy-simple': ph_copy_simple,
 	'ph:corners-out': ph_corners_out,
@@ -286,6 +286,7 @@ const icons: IconMap = {
 	'ph:list': ph_list,
 	'ph:list-bullets': ph_list_bullets,
 	'ph:list-checks': ph_list_checks,
+	'ph:list-dashes': ph_list_dashes,
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:lock': ph_lock,
 	'ph:lock-simple': ph_lock_simple,
@@ -326,6 +327,7 @@ const icons: IconMap = {
 	'ph:shuffle': ph_shuffle,
 	'ph:skull': ph_skull,
 	'ph:sliders': ph_sliders,
+	'ph:sliders-horizontal': ph_sliders_horizontal,
 	'ph:smiley': ph_smiley,
 	'ph:smiley-angry': ph_smiley_angry,
 	'ph:snowflake': ph_snowflake,

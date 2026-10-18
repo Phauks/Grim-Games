@@ -1297,3 +1297,30 @@ test('the Source drop-down lists search engines, then collections', async ({ pag
 	await collections.getByRole('option', { name: carousel, exact: true }).tap();
 	await expect(sourcePicker(page)).toContainText(carousel);
 });
+
+test('rows scrolled under the table header stay under it', async ({ page }) => {
+	const scripts = Array.from({ length: 17 }, (_, i) => ({
+		user: 'someone',
+		edition: `Script_${i}`
+	}));
+	await page.route('**/api/bloodstar', (route) => route.fulfill({ json: { scripts } }));
+	await page.goto('/scripts');
+	await chooseSource(page, 'Bloodstar Clocktica');
+	await expect(page.getByTestId('picker-status')).toHaveText('17 scripts');
+	// Trevor, 2026-10-18: names went over the column headers while scrolling.
+	await page.locator('.data-table .scroll').evaluate((box) => (box.scrollTop = 70));
+	const over = await page
+		.getByRole('table', { name: 'Scripts' })
+		.locator('thead')
+		.evaluate(async (head) => {
+			await new Promise((resolve) => requestAnimationFrame(resolve));
+			const box = head.getBoundingClientRect();
+			const found: string[] = [];
+			for (let x = box.left + 4; x < box.right; x += 8) {
+				const hit = document.elementFromPoint(x, box.top + box.height / 3);
+				if (hit && !head.contains(hit)) found.push(`${hit.tagName}.${hit.className} at ${x}`);
+			}
+			return found;
+		});
+	expect(over).toEqual([]);
+});
