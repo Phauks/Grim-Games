@@ -21,6 +21,7 @@ import {
 	MAX_DOC_BYTES,
 	MAX_DOCS_PER_KIND,
 	MAX_PASSWORD_FAILURES,
+	PRIVACY_VERSION,
 	SESSION_IDLE_MS,
 	SHORT_SESSION_IDLE_MS,
 	type AccountUser as User,
@@ -78,7 +79,9 @@ export interface PasswordHash {
 
 export type VerifyResult =
 	| { ok: true; userId: string; created: boolean }
-	| { ok: false; reason: 'expired' | 'wrong' | 'too-many' };
+	| { ok: false; reason: 'expired' | 'wrong' | 'too-many' }
+	/** The code is right but the privacy policy must be accepted first; the code still works. */
+	| { ok: false; reason: 'privacy'; creating: boolean };
 
 export type ChangeStartResult = { ok: true; code: string } | { ok: false; reason: 'rate-limited' };
 
@@ -234,16 +237,19 @@ export class AccountEmail extends DurableObject<AccountEnv> {
 	verify(
 		email: string,
 		proof: { code: string } | { token: string },
-		now: number
+		now: number,
+		/** The privacy policy version the user accepted on this request, if any. */
+		accepted?: string
 	): Promise<VerifyResult> {
 		// One at a time, so two devices finishing at once can't make two users.
-		return this.ctx.blockConcurrencyWhile(() => this.check(email, proof, now));
+		return this.ctx.blockConcurrencyWhile(() => this.check(email, proof, now, accepted));
 	}
 
 	private async check(
 		email: string,
 		proof: { code: string } | { token: string },
-		now: number
+		now: number,
+		accepted?: string
 	): Promise<VerifyResult> {
 		const row = this.sql
 			.exec<{ code_hash: string; token_hash: string; expires_at: number; attempts: number }>(
@@ -267,13 +273,26 @@ export class AccountEmail extends DurableObject<AccountEnv> {
 			this.sql.exec('UPDATE pending SET attempts = ? WHERE id = 1', attempts);
 			return { ok: false, reason: 'wrong' };
 		}
+		const owner = this.owner();
+		// Asked before the code is used up, so the same code works once the policy is accepted.
+		if (accepted !== PRIVACY_VERSION) {
+			if (!owner) return { ok: false, reason: 'privacy', creating: true };
+			if ((await userStub(this.env, owner).privacyVersion()) !== PRIVACY_VERSION) {
+				return { ok: false, reason: 'privacy', creating: false };
+			}
+		}
 		this.sql.exec('DELETE FROM pending');
 
-		const owner = this.owner();
-		if (owner) return { ok: true, userId: owner, created: false };
+		if (owner) {
+			if (accepted === PRIVACY_VERSION)
+				await userStub(this.env, owner).acceptPrivacy(accepted, now);
+			return { ok: true, userId: owner, created: false };
+		}
 		// A new id, picked again in the rare case it is already some account's.
 		let userId = randomAccountId();
-		while (!(await userStub(this.env, userId).init(userId, email, now))) userId = randomAccountId();
+		while (!(await userStub(this.env, userId).init(userId, email, now, PRIVACY_VERSION))) {
+			userId = randomAccountId();
+		}
 		this.sql.exec('INSERT INTO owner (id, user_id) VALUES (1, ?)', userId);
 		return { ok: true, userId, created: true };
 	}
@@ -425,6 +444,12 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				id INTEGER PRIMARY KEY CHECK (id = 1),
 				name TEXT NOT NULL
 			);
+			-- Which privacy policy version the user accepted, and when (Trevor, 2026-10-18).
+			CREATE TABLE IF NOT EXISTS privacy (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				version TEXT NOT NULL,
+				accepted_at INTEGER NOT NULL
+			);
 			-- The profile icon: an official character's id (Trevor, 2026-10-18), never an image.
 			CREATE TABLE IF NOT EXISTS icon (
 				id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -523,12 +548,39 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		);
 	}
 
-	/** Makes the account. False when this id already belongs to one (the caller picks another). */
-	async init(accountId: string, email: string, now: number): Promise<boolean> {
+	/**
+	 * Makes the account, with the privacy policy version accepted to make it. False when this
+	 * id already belongs to one (the caller picks another).
+	 */
+	async init(accountId: string, email: string, now: number, privacy: string): Promise<boolean> {
 		if (this.user()) return false;
 		this.sql.exec('INSERT INTO account (id, account_id) VALUES (1, ?)', accountId);
 		this.sql.exec('INSERT INTO profile (id, email, created_at) VALUES (1, ?, ?)', email, now);
+		await this.acceptPrivacy(privacy, now);
 		return true;
+	}
+
+	/** The privacy policy version this user last accepted; undefined for older accounts. */
+	async privacyVersion(): Promise<string | undefined> {
+		return this.privacy()?.version;
+	}
+
+	async acceptPrivacy(version: string, now: number): Promise<void> {
+		this.sql.exec(
+			`INSERT INTO privacy (id, version, accepted_at) VALUES (1, ?, ?)
+			 ON CONFLICT (id) DO UPDATE SET version = excluded.version, accepted_at = excluded.accepted_at`,
+			version,
+			now
+		);
+	}
+
+	private privacy(): { version: string; acceptedAt: number } | undefined {
+		const row = this.sql
+			.exec<{ version: string; accepted_at: number }>(
+				'SELECT version, accepted_at FROM privacy WHERE id = 1'
+			)
+			.toArray()[0];
+		return row && { version: row.version, acceptedAt: row.accepted_at };
 	}
 
 	/**
@@ -715,11 +767,13 @@ export class AccountUser extends DurableObject<AccountEnv> {
 	/** Everything stored for this user, for "Download my data". */
 	async exportAll(): Promise<{
 		user: User | undefined;
+		privacy: { version: string; acceptedAt: number } | undefined;
 		sessions: Omit<DeviceSession, 'current'>[];
 		docs: ProfileDoc[];
 	}> {
 		return {
 			user: this.user(),
+			privacy: this.privacy(),
 			sessions: (await this.sessions('')).map((session) => {
 				const { current, ...stored } = session;
 				void current;
