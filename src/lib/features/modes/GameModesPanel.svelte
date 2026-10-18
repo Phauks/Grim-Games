@@ -28,6 +28,7 @@
 	import AddModeDialog from './AddModeDialog.svelte';
 	import { allModes, customModes, findMode } from './custom-modes.svelte.ts';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import ModeValue from './ModeValue.svelte';
 	import RestrictedDialog from './RestrictedDialog.svelte';
 	import { loadLinkedScript, loadScriptChoice, scriptChoices } from './script-choices.svelte.ts';
@@ -150,7 +151,14 @@
 		/>
 	</div>
 	<!-- Room for the longest built-in description, so switching modes moves nothing. -->
-	<p class="about" data-testid="mode-about">{mode.about ?? t('common.none')}</p>
+	<!-- Our own wording waits behind its setting; off, the mode's source stands in. -->
+	<p class="about" data-testid="mode-about">
+		{#if preferences.current.ownWording && mode.about}
+			{mode.about}
+		{:else if mode.sources[0]}
+			<ModeValue field="source" value={mode.sources[0]} />
+		{/if}
+	</p>
 	<div class="tools">
 		<Button icon="info" onclick={() => (inspecting = true)}>
 			{t('modes.inspect', { name: mode.name })}

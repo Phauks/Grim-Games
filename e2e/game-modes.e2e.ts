@@ -37,9 +37,8 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	await expect(dialog.locator('[data-part="assignment"]')).toContainText('Run by the Storyteller');
 	await expect(dialog.locator('[data-part="towns"]')).toContainText('Standard');
 	await expect(dialog.locator('pre')).toContainText('"id": "whale-buffet"');
-	await expect(dialog.getByTestId('inspect-about')).toContainText(
-		'Every character is on the script'
-	);
+	// Our own wording is off by default (no authored content, Trevor 2026-10-15).
+	await expect(dialog.getByTestId('inspect-about')).toHaveCount(0);
 	// The dialog's content scrolls to its last part (Trevor, 2026-10-18).
 	const scroll = dialog.getByTestId('mode-inspect-scroll');
 	const sizes = await scroll.evaluate((el) => ({
@@ -156,7 +155,25 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await page.goto('/new');
 	await chooseMode(page, 'Sushi Buffet');
 	await expect(modesPanel(page).getByRole('radiogroup', { name: 'Script' })).toHaveCount(0);
-	await expect(modesPanel(page).getByTestId('mode-about')).toContainText('draft');
+	// Off by default, the mode's source stands in for our own description.
+	const about = modesPanel(page).getByTestId('mode-about');
+	await expect(about.getByRole('link')).toHaveAttribute(
+		'href',
+		'https://grimbits.com/draft-buffet/'
+	);
+});
+
+test('with our own wording on, each mode shows its About description', async ({ page }) => {
+	await page.addInitScript(() =>
+		localStorage.setItem('grim-games:preferences:v1', JSON.stringify({ ownWording: true }))
+	);
+	await page.goto('/new');
+	await chooseMode(page, 'Whale Buffet');
+	await expect(modesPanel(page).getByTestId('mode-about')).toContainText(
+		'Every character is on the script'
+	);
+	await page.getByRole('button', { name: 'Inspect Whale Buffet' }).tap();
+	await expect(page.getByTestId('inspect-about')).toContainText('Every character is on the script');
 });
 
 test('Whale Buffet deals a type from the tile bag and each player chooses; the Storyteller can ask for a new choice', async ({

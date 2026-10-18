@@ -55,6 +55,9 @@ export const settings = {
 	'settings.rulesGrouped.each': 'Individual',
 	'settings.rulesGrouped.grouped': 'Grouped',
 	'settings.requireName': 'Require a name before drawing',
+	'settings.ownWording': 'Show our own wording',
+	'settings.ownWordingHelp':
+		'Game mode descriptions written for this app. Off, a mode shows its source link instead.',
 	'settings.requireNameHelp': 'A player types their name before they can see the token they drew.',
 	'settings.preview': 'Preview',
 	'settings.iconStyle': 'Icon style',

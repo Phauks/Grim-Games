@@ -4,6 +4,7 @@
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import ModeValue from './ModeValue.svelte';
 	import { modeLabel } from './labels.ts';
 
@@ -45,8 +46,10 @@
 <Dialog bind:open title={mode.name} size="full">
 	<div class="inspect" data-testid="mode-inspect-scroll">
 		<dl class="facts">
-			<dt>{t('modes.about')}</dt>
-			<dd data-testid="inspect-about">{mode.about ?? t('common.none')}</dd>
+			{#if preferences.current.ownWording}
+				<dt>{t('modes.about')}</dt>
+				<dd data-testid="inspect-about">{mode.about ?? t('common.none')}</dd>
+			{/if}
 			{#if mode.aliases?.length}
 				<dt>{t('modes.aliases')}</dt>
 				<dd>{mode.aliases.join(', ')}</dd>
