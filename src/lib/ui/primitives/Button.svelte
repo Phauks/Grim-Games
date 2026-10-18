@@ -72,7 +72,7 @@
 	.button[data-variant='quiet']:hover,
 	.button[data-variant='danger-quiet']:hover {
 		filter: none;
-		background: var(--surface-selected, rgb(255 255 255 / 0.06));
+		background: var(--surface-selected);
 	}
 	.button:disabled {
 		cursor: default;

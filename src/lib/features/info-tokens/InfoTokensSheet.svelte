@@ -322,7 +322,7 @@
 		gap: var(--space-1);
 		margin-top: var(--space-3);
 		padding: var(--space-2) 0;
-		border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border-top: 1px solid var(--border);
 		background: var(--sheet-background);
 	}
 	.chain-list {
@@ -391,7 +391,7 @@
 		width: 100%;
 		min-height: var(--tap-target);
 		padding: var(--space-2) var(--space-3);
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: none;
 		color: inherit;
@@ -400,7 +400,7 @@
 		cursor: pointer;
 	}
 	.set:hover {
-		background: color-mix(in srgb, currentColor 8%, transparent);
+		background: var(--surface-hover);
 	}
 	.set-label {
 		font-family: var(--font-heading);

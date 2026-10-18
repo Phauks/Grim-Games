@@ -433,7 +433,7 @@
 		box-sizing: border-box;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
-		background: color-mix(in srgb, var(--surface) 85%, transparent);
+		background: var(--board-bar-background);
 	}
 	.run {
 		flex: none;
