@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { swallowNextClick } from '#lib/ui/tap.ts';
 
 	/**
 	 * A reminder token on the board, as in the physical grimoire: a round parchment token
@@ -75,7 +76,10 @@
 	function pointerup(event: PointerEvent) {
 		if (!down || event.pointerId !== down.id) return;
 		if (dragging) onDrag?.(event.clientX, event.clientY, true);
-		else onTap();
+		else {
+			swallowNextClick(event.currentTarget);
+			onTap();
+		}
 		down = null;
 		dragging = false;
 	}

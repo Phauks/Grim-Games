@@ -102,7 +102,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 		// Settings are in the app's menu, opened from the game toolbar.
 		await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 		await page
-			.getByRole('dialog', { name: 'Menu' })
+			.getByRole('dialog', { name: 'Grim-Games' })
 			.getByRole('button', { name: 'Settings' })
 			.tap();
 		await dialog
@@ -111,7 +111,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 			.tap();
 	}
 	await openTokens();
-	const label = 'Show character names on grimoire tokens';
+	const label = 'Show character names on tokens';
 	const toggle = dialog.getByRole('checkbox', { name: label, includeHidden: true });
 	await expect(toggle).not.toBeChecked();
 	await dialog.getByText(label, { exact: true }).tap();
@@ -130,6 +130,18 @@ test('character names on grimoire tokens are off by default and shown when switc
 	expect(await marks()).toEqual(before);
 	await page.reload();
 	await expect(name).toHaveText('Fortune Teller');
+
+	// Every token follows the setting (Trevor, 2026-10-18): the seat sheet's and Show to
+	// player's too.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await expect(sheet.getByTestId('token-name').first()).toHaveText('Fortune Teller');
+	await sheet.getByRole('button', { name: 'Show to player' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByTestId('token-name')).toHaveText('Fortune Teller');
+	await page.keyboard.press('Escape');
+	await expect(shown).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
 
 	// The player name is always a badge on the token (Trevor, 2026-10-17); no setting.
 	await openTokens();
@@ -215,7 +227,10 @@ test('night order badges sit on the side leaves, counting this game’s characte
 	await expect(seat(1).getByTestId('night-badge')).toHaveCount(0);
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -275,7 +290,10 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 	const width = async (token: typeof onBoard) => Math.round((await token.boundingBox())!.width);
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })

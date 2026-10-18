@@ -4,13 +4,18 @@
  * offline and the next visit shows it straight away (like `curated.svelte.ts`).
  */
 import { reportError } from '#lib/features/errors/report.svelte.ts';
-import { withTimeout } from './fetch-script.ts';
 import {
 	CAROUSEL_COLLECTION,
 	COLLECTIONS_API,
 	readCollectionList,
 	type CollectionScript
 } from './collection-api.ts';
+
+/**
+ * The Worker's first copy fetches every script file from Google Drive before answering;
+ * later answers come straight from its copy.
+ */
+const FIRST_COPY_TIMEOUT_MS = 45_000;
 
 const STORAGE_KEY = 'grim-games.collection-carousel';
 
@@ -50,7 +55,7 @@ export const collectionScripts = {
 			let response: Response;
 			try {
 				response = await fetch(`${COLLECTIONS_API}/${CAROUSEL_COLLECTION.id}`, {
-					signal: withTimeout()
+					signal: AbortSignal.timeout(FIRST_COPY_TIMEOUT_MS)
 				});
 			} catch {
 				status = 'error';

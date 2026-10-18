@@ -311,3 +311,26 @@ test('the counts and search stay below the app header while the list scrolls', a
 	expect(counts.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
 	expect(counts.y).toBeLessThan(page.viewportSize()!.height);
 });
+
+// Trevor (2026-10-18): check sections with nothing in them start closed, and open when they
+// gain something.
+test('empty check sections are closed until they have something', async ({ page }) => {
+	await page.goto('/build-script');
+	const check = page.getByTestId('builder-check');
+	const needs = check.getByRole('button', { name: 'Needs another character' });
+	await expect(needs).toHaveAttribute('aria-expanded', 'false');
+	await expect(check.getByRole('button', { name: 'Jinxes' })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
+	// Still opens by hand while empty.
+	await needs.tap();
+	await expect(needs).toHaveAttribute('aria-expanded', 'true');
+	await needs.tap();
+
+	await character(page, 'Choirboy').tap();
+	await expect(needs).toHaveAttribute('aria-expanded', 'true');
+	await expect(check.getByRole('button', { name: 'Add', exact: true })).toBeVisible();
+	await check.getByRole('button', { name: 'Add', exact: true }).tap();
+	await expect(needs).toHaveAttribute('aria-expanded', 'false');
+});

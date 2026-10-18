@@ -11,6 +11,8 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -44,9 +46,31 @@ describe('Mastermind', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Mastermind#Examples)', () => {
-		it.todo('Example 1: Demon dead, good player executed: evil wins');
+		it('Example 1: Demon dead, good player executed: evil wins', () => {
+			const { session } = castGame(
+				['professor', 'chef', 'empath', 'mastermind', 'shabaloth'],
+				{ type: 'NewDay' },
+				(s) => ({ type: 'Execute', seatId: s[4] }),
+				{ type: 'NewDay' },
+				(s) => ({ type: 'Execute', seatId: s[0] })
+			);
+			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+				{ rule: 'mastermind', winner: 'evil' }
+			]);
+		});
 		it.todo('Example 2: Protected evil player executed; good wins anyway');
 		it.todo("Example 3: Zombuul's second death extends the game a day");
-		it.todo('Example 4: Two alive, no execution: good wins');
+		it('Example 4: Two alive, no execution: good wins', () => {
+			const { session } = castGame(
+				['chef', 'empath', 'mastermind', 'imp'],
+				(s) => ({ type: 'SetDead', seatId: s[1], dead: true, cause: 'demon' }),
+				{ type: 'NewDay' },
+				(s) => ({ type: 'Execute', seatId: s[3] }),
+				{ type: 'NewDay' }
+			);
+			expect(gameEnds(session.game, testCharacters, { dayEnded: true })).toMatchObject([
+				{ rule: 'mastermind', winner: 'good' }
+			]);
+		});
 	});
 });

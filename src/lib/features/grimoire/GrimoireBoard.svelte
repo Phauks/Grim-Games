@@ -3,6 +3,7 @@
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
+	import HistoryStrip from './HistoryStrip.svelte';
 	import { boardNightSteps, stepHolders } from './night-steps.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
@@ -11,7 +12,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
-	import BackgroundDialog from './BackgroundDialog.svelte';
+	import { boardBackground } from './board-background.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
@@ -29,6 +30,7 @@
 		scriptCharacterIds,
 		trueCharacter,
 		type Reminder,
+		type ReminderInstance,
 		type ReminderId,
 		type SeatId
 	} from '#lib/core/model/index.ts';
@@ -78,10 +80,8 @@
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { findEdition, fromScript, scriptToJson } from '#lib/core/data/index.ts';
+	import { fromScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
-	import SharePanel from '#lib/features/scripts/SharePanel.svelte';
 	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import NightOrderSheet from './NightOrderSheet.svelte';
@@ -100,6 +100,7 @@
 	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
 	import { onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
+	import GameEndPrompt from './GameEndPrompt.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -558,9 +559,12 @@
 		sheetOpen = true;
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
-	/** A tapped reminder opens its own dialog over its seat's sheet (Trevor, 2026-10-17). */
+	/**
+	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
+	 * "they chose to open reminder, not character").
+	 */
 	function openReminder(seatId: SeatId, reminderId: ReminderId) {
-		openSeat(seatId);
+		selected = seatId;
 		// After the tap's click, so it doesn't land on what opens under the finger.
 		setTimeout(() => seatSheet?.showReminder(reminderId));
 	}
@@ -686,6 +690,20 @@
 		});
 	});
 	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
+	/**
+	 * The step's reminders already on the board are ringed too, on any night (Trevor,
+	 * 2026-10-18: the Butler's Master placed on the first night).
+	 */
+	const walkLabels = $derived(
+		walk && walkStep?.character
+			? new Set([
+					...stepReminders(walkStep.character.id, walk.night, walkStep.character).labels,
+					...walkStep.character.reminders
+				])
+			: undefined
+	);
+	const walkOn = (r: { characterId: CharacterId; label: string }) =>
+		walkStep?.character?.id === r.characterId && (walkLabels?.has(r.label) ?? false);
 	/** Who wakes for the current walk-through step, marked on the board. */
 	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
@@ -747,25 +765,14 @@
 		drawOpen = true;
 	}
 
-	// ── Share the script (never the game) ──
-	let shareOpen = $state(false);
+	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
+	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
-	const shareTarget = $derived.by(() => {
-		const data = officialData.current;
-		if (!data) return undefined;
-		const { script } = fromScript(game.script, data);
-		const edition = script.homebrew.length === 0 ? findEdition(script.name)?.id : undefined;
-		return () =>
-			shareTargetFor(
-				{ edition, json: scriptToJson(script), source: { kind: 'paste' } },
-				location.origin
-			);
-	});
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
@@ -836,7 +843,6 @@
 	}
 
 	// ── Background: an image of the Storyteller's own, kept on this device ──
-	let backgroundOpen = $state(false);
 	let background = $state<BackgroundChoice>({ kind: 'none' });
 	let backgroundRead = $state(0);
 	$effect(() => {
@@ -853,6 +859,21 @@
 		/^https:\/\//.test(game.script.meta?.background ?? '')
 			? game.script.meta?.background
 			: undefined
+	);
+	// Chosen in Board and tokens, for this game or all (Trevor, 2026-10-18).
+	$effect(() =>
+		boardBackground.set({
+			get gameId() {
+				return game.gameId;
+			},
+			get scriptImage() {
+				return scriptBackground;
+			},
+			get current() {
+				return background;
+			},
+			onChange: () => (backgroundRead += 1)
+		})
 	);
 	let backgroundUrl = $state<string | undefined>();
 	$effect(() => {
@@ -886,21 +907,64 @@
 	(Trevor, 2026-10-17). -->
 {#snippet rulesStack(stack: number)}
 	<!-- One stack for them all; a tap lists every one (Trevor, 2026-10-17). -->
-	<button
-		type="button"
-		class="rules-stack"
-		data-rule-stack
-		aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
-		onclick={() => (rulesGroupOpen = true)}
-	>
-		{#each game.ruleCharacters.slice(0, 3) as id (id)}
-			{@const character = characters.get(id)}
-			{#if character}<CharacterToken {character} size={stack} />{/if}
-		{/each}
-		{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
-				>{game.ruleCharacters.length}</span
-			>{/if}
-	</button>
+	<span class="stack-wrap">
+		<button
+			type="button"
+			class="rules-stack"
+			data-rule-stack
+			aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
+			onclick={() => (rulesGroupOpen = true)}
+		>
+			{#each game.ruleCharacters.slice(0, 3) as id (id)}
+				{@const character = characters.get(id)}
+				{#if character}<CharacterToken {character} size={stack} />{/if}
+			{/each}
+			{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
+					>{game.ruleCharacters.length}</span
+				>{/if}
+		</button>
+		{@render heldCluster(
+			Object.values(game.ruleReminders ?? {}).flat(),
+			'Fabled and Loric reminders',
+			() => (rulesGroupOpen = true)
+		)}
+	</span>
+{/snippet}
+
+<!--
+	A Fabled or Loric's reminders, packed at its token's top right (Trevor, 2026-10-18): the
+	latest one, which can be tapped or dragged off, and how many more, which opens the list.
+-->
+{#snippet heldCluster(held: ReminderInstance[], label: string, onMore: () => void)}
+	{@const last = held.at(-1)}
+	{#if last}
+		<span class="held" role="group" aria-label={label}>
+			<span class:lifted={reminderDrag?.reminderId === last.reminderId}>
+				<BoardReminder
+					label={last.label}
+					character={characters.get(last.characterId)}
+					alignment={placingAlignment(game, last.characterId, characters)}
+					size={Math.round(chip * 0.7)}
+					disabled={arranging}
+					onTap={() => heldDialog?.show(last.reminderId)}
+					onDrag={(x, y, end) => dragReminder(last.reminderId, undefined, x, y, end)}
+					onCancel={() => (reminderDrag = undefined)}
+				/>
+			</span>
+			{#if held.length > 1}
+				<span class="held-more">
+					<BoardReminder
+						label=""
+						character={undefined}
+						more={held.length - 1}
+						size={Math.round(chip * 0.7)}
+						disabled={arranging}
+						onTap={onMore}
+					/>
+				</span>
+			{/if}
+		</span>
+	{/if}
 {/snippet}
 
 <!-- A Fabled or Loric's reminders in its dialog; a tap opens one. -->
@@ -943,25 +1007,12 @@
 					>
 						<CharacterToken {character} size={tokenSize} />
 					</button>
-					<!-- Its reminders, under it (Trevor, 2026-10-17). -->
-					{#if ruleReminders(game, id).length > 0}
-						<span class="held" role="group" aria-label={heldLabel(character.name)}>
-							{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
-								<span class:lifted={reminderDrag?.reminderId === reminder.reminderId}>
-									<BoardReminder
-										label={reminder.label}
-										character={characters.get(reminder.characterId)}
-										alignment={placingAlignment(game, reminder.characterId, characters)}
-										size={Math.round(chip * 0.8)}
-										disabled={arranging}
-										onTap={() => heldDialog?.show(reminder.reminderId)}
-										onDrag={(x, y, end) => dragReminder(reminder.reminderId, undefined, x, y, end)}
-										onCancel={() => (reminderDrag = undefined)}
-									/>
-								</span>
-							{/each}
-						</span>
-					{/if}
+					<!-- Its reminders, tight to its top right: parked there, out of play (Trevor,
+					     2026-10-18). -->
+					{@render heldCluster(ruleReminders(game, id), heldLabel(character.name), () => {
+						ruleShown = id;
+						ruleShownOpen = true;
+					})}
 				</li>
 			{/if}
 		{/each}
@@ -1019,12 +1070,16 @@
 			<Button variant="quiet" icon="info" aria-label="Info tokens" onclick={() => (infoOpen = true)}
 				><span class="tool-label">Info tokens</span></Button
 			>
-			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). -->
+			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). Pointing at, focusing or
+			     pressing it starts opening the room, so the code and QR are ready. -->
 			<Button
 				variant="quiet"
 				icon="share"
-				aria-label="Share script"
-				onclick={() => (shareOpen = true)}><span class="tool-label">Share</span></Button
+				aria-label="Share"
+				onpointerenter={prepareRoom}
+				onfocus={prepareRoom}
+				onpointerdown={prepareRoom}
+				onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
 			>
 			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16). -->
 			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
@@ -1128,6 +1183,7 @@
 						class="chip-slot"
 						data-seat={i + 1}
 						class:dragging={dragged}
+						class:now={walkOn(reminder)}
 						style:left="{p.x}%"
 						style:top="{p.y}%"
 					>
@@ -1156,6 +1212,7 @@
 				class="chip-slot"
 				data-loose
 				class:dragging={dragged}
+				class:now={walkOn(reminder)}
 				style:left="{p.x}%"
 				style:top="{p.y}%"
 			>
@@ -1228,24 +1285,32 @@
 					guideOpen = true;
 				}}
 				onClose={() => (walk = undefined)}
+				onDay={() => {
+					walk = undefined;
+					dayOpen = true;
+				}}
 			/>
 		{/if}
-		<ReminderBank
-			{grimoire}
-			{board}
-			size={chip}
-			view={bankView}
-			onView={(v) => (bankChosen = v)}
-			focus={walk && walkStep?.character
-				? stepReminders(walkStep.character.id, walk.night, walkStep.character)
-				: undefined}
-			focusMode={stepFocus.current.mode}
-			{seatAt}
-			{spotAllowed}
-			{ruleAt}
-			onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
-			onHints={(h) => (trayHints = h)}
-		/>
+		{#if ended}
+			<HistoryStrip {grimoire} />
+		{:else}
+			<ReminderBank
+				{grimoire}
+				{board}
+				size={chip}
+				view={bankView}
+				onView={(v) => (bankChosen = v)}
+				focus={walk && walkStep?.character
+					? stepReminders(walkStep.character.id, walk.night, walkStep.character)
+					: undefined}
+				focusMode={stepFocus.current.mode}
+				{seatAt}
+				{spotAllowed}
+				{ruleAt}
+				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
+				onHints={(h) => (trayHints = h)}
+			/>
+		{/if}
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>
@@ -1352,24 +1417,6 @@
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
-		<!-- Pointing at, focusing or pressing it starts opening the room, so the QR is ready. -->
-		<Button
-			variant="quiet"
-			icon="players"
-			onpointerenter={prepareRoom}
-			onfocus={prepareRoom}
-			onpointerdown={prepareRoom}
-			onclick={() => fromMenu(() => (phonesOpen = true))}
-		>
-			Players' phones
-		</Button>
-		<Button
-			variant="quiet"
-			icon="appearance"
-			onclick={() => fromMenu(() => (backgroundOpen = true))}
-		>
-			Background
-		</Button>
 		<!-- Token and board settings over the board (Trevor, 2026-10-17). -->
 		<Button
 			variant="quiet"
@@ -1416,6 +1463,14 @@
 	onMove={(id, to) => moveConfirm?.request(id, to)}
 />
 <AlignmentAsk {grimoire} />
+<GameEndPrompt
+	{grimoire}
+	active={!ended && !grimoire.open.viewOnly}
+	onEnd={(team) => {
+		winner = team;
+		endGame();
+	}}
+/>
 
 <InfoTokensSheet
 	bind:open={infoOpen}
@@ -1431,14 +1486,6 @@
 		infoReturn = undefined;
 		back?.();
 	}}
-/>
-
-<BackgroundDialog
-	bind:open={backgroundOpen}
-	gameId={game.gameId}
-	scriptImage={scriptBackground}
-	current={background}
-	onChange={() => (backgroundRead += 1)}
 />
 
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
@@ -1498,12 +1545,6 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<Dialog bind:open={shareOpen} title="Share script">
-	{#if shareTarget}
-		<SharePanel title={game.script.meta?.name || 'None'} target={shareTarget} />
-	{/if}
-</Dialog>
-
 <DaySheet bind:open={dayOpen} game={grimoire.open} />
 
 <NightOrderSheet
@@ -1539,6 +1580,7 @@
 		infoReturn = () => (guideOpen = true);
 		infoOpen = true;
 	}}
+	onChooseBluffs={() => (bluffsOpen = true)}
 	{onDraw}
 />
 
@@ -1733,6 +1775,11 @@
 		position: absolute;
 		translate: -50% -50%;
 		z-index: 1;
+	}
+	/* The walked-through step's reminders already on the board: the bank's ring. */
+	.chip-slot.now > :global(.reminder) {
+		outline: 0.2rem solid var(--accent);
+		outline-offset: 0.15rem;
 	}
 	.chip-slot.dragging {
 		z-index: 3;
@@ -1955,19 +2002,25 @@
 	.rules.edge {
 		justify-content: flex-start;
 	}
-	.rules li {
-		display: grid;
-		justify-items: center;
+	.rules li,
+	.stack-wrap {
+		position: relative;
 	}
+	/* Packed on the token's top right corner, taking no room of its own. */
 	.held {
+		position: absolute;
+		top: 0;
+		right: 0;
+		z-index: 1;
 		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		max-width: calc(12 * var(--u));
+		align-items: flex-start;
+		transform: translate(35%, -25%);
 	}
-	/* Room for each token's name, which is wider than the token. */
-	.held > span {
-		padding-inline: calc(0.75 * var(--u));
+	/* The "+n" tucks behind the latest reminder, which stays whole to tap. */
+	.held-more {
+		position: relative;
+		z-index: -1;
+		margin-inline-start: -30%;
 	}
 	/* Its stand-in follows the finger; the place stays, so nothing moves. */
 	.held .lifted {

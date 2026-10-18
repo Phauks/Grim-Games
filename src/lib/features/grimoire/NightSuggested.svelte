@@ -8,8 +8,10 @@
 		NightAnswer,
 		NightStep,
 		Reliability,
+		ValidInfo,
 		Why
 	} from '#lib/core/rules/index.ts';
+	import { validInformation } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -81,12 +83,14 @@
 		return out;
 	}
 
-	function rangeText(p: InfoPicker): string {
-		if (!p.range) return '';
-		return p.range.possible.length > 1
-			? `${p.range.truth} (${p.range.possible.join(' / ')})`
-			: String(p.range.truth);
-	}
+	/**
+	 * Every valid piece of information, never one pick (Trevor, 2026-10-18: "show all valid
+	 * information"), from core's `validInformation`.
+	 */
+	const valid = (p: InfoPicker): ValidInfo[] => validInformation(game, p);
+	const validCount = $derived(
+		info?.kind === 'picker' ? info.pickers.reduce((n, p) => n + valid(p).length, 0) : 0
+	);
 
 	/**
 	 * The logic behind a suggestion (Trevor, 2026-10-17: "show the logic"): the players it is
@@ -122,7 +126,7 @@
 				info.checks.some((c) => c.verdict && c.verdict.kind !== 'choose'))
 	);
 
-	/** The strip's one line: the first answer or range; a character shows as a badge first. */
+	/** The strip's one line: the first answer, or how many are valid; a character as a badge. */
 	const line = $derived.by((): { characterId?: CharacterId; text: string } => {
 		if (!info || !has) return { text: '' };
 		if (info.kind === 'answer') {
@@ -132,16 +136,8 @@
 				? { characterId: a.value, text: note }
 				: { text: `${valueText(a)}${note}` };
 		}
-		if (info.kind === 'picker') {
-			const p = info.pickers[0];
-			const r = rangeText(p);
-			if (r) return { text: r };
-			const o = p.options[0];
-			if (!o) return { text: '' };
-			return o.characterId
-				? { characterId: o.characterId, text: `: ${names(o.seats)}` }
-				: { text: names(o.seats) };
-		}
+		// A count, never one answer: the full list is in the step (Trevor, 2026-10-18).
+		if (info.kind === 'picker') return { text: `${validCount} valid` };
 		const v = info.checks.find((c) => c.verdict && c.verdict.kind !== 'choose')?.verdict;
 		if (v?.kind === 'dies') return { text: `Dead: ${names(v.seatIds)}` };
 		if (v?.kind === 'ask') return { text: `Dead? ${names(v.ifYes)}` };
@@ -233,23 +229,32 @@
 				{#each info.pickers as p (p.seatId)}
 					<li data-unreliable={p.unreliable ? '' : undefined}>
 						{#if info.pickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span>{/if}
-						{#if p.range}
-							<span class="main"><strong>{rangeText(p)}</strong></span>
-						{:else}
-							{#each p.options.slice(0, 6) as o, i (i)}
-								<span class="main option">
-									{#if o.characterId}<CharacterBadge
-											characterId={o.characterId}
-											character={characters.get(o.characterId)}
-											inline
-										/>{/if}
-									{#if o.none}<strong>None</strong>{:else if o.yes !== undefined}<strong
-											>{o.yes ? 'Yes' : 'No'}</strong
-										>{/if}
-									{@render players(o.seats)}
-								</span>
+						<ul class="valid" aria-label="Valid information">
+							{#each valid(p) as v, i (i)}
+								<li data-reason={v.reason}>
+									<span class="main option">
+										{#if v.anyOther}<strong>Any other</strong>{/if}
+										{#if v.number !== undefined}<strong>{v.number}</strong>{/if}
+										{#if v.none}<strong>None</strong>{:else if v.yes !== undefined}<strong
+												>{v.yes ? 'Yes' : 'No'}</strong
+											>{/if}
+										{#each v.characterIds ?? [] as id, n (id)}{n ? ' / ' : ''}<CharacterBadge
+												characterId={id}
+												character={characters.get(id)}
+												inline
+											/>{/each}
+										{#if v.target}<span class="pill">{name(v.target)}</span>
+											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
+										{@render players(v.seats)}
+									</span>
+									{#if v.reason === 'registers'}<span class="tag"
+											>Registers: {@render players(v.registered ?? [])}</span
+										>{:else if v.reason === 'unreliable'}<span class="tag warn"
+											><Icon name="warning" />Not reliable</span
+										>{:else if v.reason === 'vortox'}<span class="tag warn">Vortox</span>{/if}
+								</li>
 							{/each}
-						{/if}
+						</ul>
 						{#each flags(p) as flag (flag.text)}
 							<span class="flag" class:warn={p.unreliable || p.mustBeFalse}>
 								{#if p.unreliable}<Icon name="warning" />{/if}{@render flagBody(flag)}
@@ -416,6 +421,30 @@
 	/* An answer that may not be the truth is greyed, its warning in red. */
 	li[data-unreliable] .main {
 		opacity: 0.6;
+	}
+	/* Every valid row, each with why it is valid when not simply true. */
+	.valid {
+		width: 100%;
+		gap: var(--space-1);
+	}
+	.valid > li + li {
+		padding-top: var(--space-1);
+		border-top: 1px solid var(--border);
+	}
+	.with,
+	.tag {
+		color: var(--on-surface-muted);
+	}
+	.tag {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+		font-size: 0.85rem;
+		--icon-size: 1em;
+	}
+	.tag.warn {
+		color: var(--evil);
 	}
 	.compact {
 		display: block;

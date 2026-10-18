@@ -32,9 +32,9 @@ describe('recentDeaths', () => {
 			{ type: 'NewDay' } // day 2 begins
 		);
 		expect(recentDeaths(s.log, s.game)).toEqual([{ seatId: seats[2], cause: 'demon' }]);
-		// A death during the new day is added too.
+		// A death during the day is not announced at dawn (Trevor, 2026-10-18).
 		const later = run(s, ctx, dead(seats[4], 'slayer'));
-		expect(recentDeaths(later.log, later.game).map((d) => d.seatId)).toEqual([seats[2], seats[4]]);
+		expect(recentDeaths(later.log, later.game).map((d) => d.seatId)).toEqual([seats[2]]);
 	});
 
 	it('without an execution, starts at the previous New day', () => {
@@ -58,8 +58,14 @@ describe('recentDeaths', () => {
 			dead(seats[0], 'demon'),
 			dead(seats[1], 'demon'),
 			{ type: 'SetDead', seatId: seats[0], dead: false },
-			{ type: 'SetDeathCause', seatId: seats[1], cause: 'execution' }
+			{ type: 'SetDeathCause', seatId: seats[1], cause: 'other' }
 		);
-		expect(recentDeaths(s.log, s.game)).toEqual([{ seatId: seats[1], cause: 'execution' }]);
+		expect(recentDeaths(s.log, s.game)).toEqual([{ seatId: seats[1], cause: 'other' }]);
+	});
+
+	it('never lists an execution or exile, even before the first New day', () => {
+		const { session, ctx, seats } = newGame(6);
+		const s = run(session, ctx, dead(seats[0], 'demon'), { type: 'Execute', seatId: seats[1] });
+		expect(recentDeaths(s.log, s.game)).toEqual([{ seatId: seats[0], cause: 'demon' }]);
 	});
 });

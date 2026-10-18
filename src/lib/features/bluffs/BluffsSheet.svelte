@@ -151,8 +151,14 @@
 		pickedName = game.bluffNames?.[index] ?? '';
 	}
 
-	function save() {
-		if (editing === undefined || pickedBlocked) return;
+	/** Saving the Demon's bluffs with a character in play asks first; it never refuses. */
+	let inPlayOpen = $state(false);
+	function save(confirmed = false) {
+		if (editing === undefined) return;
+		if (pickedBlocked && !confirmed) {
+			inPlayOpen = true;
+			return;
+		}
 		const index = editing;
 		if (!set(index, picked)) return;
 		// The set exists now, so a new set's name can be given to it.
@@ -252,7 +258,7 @@
 							<Button variant={stale ? 'accent' : 'quiet'} onclick={() => edit(index)}
 								>{t(stale ? 'bluffs.replace' : 'bluffs.choose')}</Button
 							>
-							<Button icon="forward" disabled={ids.length === 0 || stale} onclick={() => show(ids)}
+							<Button icon="forward" disabled={ids.length === 0} onclick={() => show(ids)}
 								>{t('bluffs.show')}</Button
 							>
 							<span>
@@ -321,13 +327,9 @@
 				max={BLUFFS_PER_SET}
 				label={t('bluffs.characters')}
 				{inPlay}
-				blockInPlay={blocks(editing)}
+				warnInPlay={blocks(editing)}
 			/>
-			<ModalActions
-				onCancel={() => (editing = undefined)}
-				onConfirm={save}
-				disabled={pickedBlocked}
-			/>
+			<ModalActions onCancel={() => (editing = undefined)} onConfirm={() => save()} />
 		{/if}
 	</ErrorBoundary>
 	<!--
@@ -340,6 +342,29 @@
 		characters={lookup(showing).map((character) => ({ character, alignment: 'good' as const }))}
 	/>
 </BottomSheet>
+
+<ConfirmDialog
+	bind:open={inPlayOpen}
+	title={t('bluffs.inPlayConfirm')}
+	onConfirm={() => save(true)}
+>
+	{@const playing = lookup(picked.filter((id) => inPlay.has(id)))}
+	<p class="confirm">
+		<Sentence
+			text={t('bluffs.inPlaySummary', {
+				names: intl.list(
+					playing.map((_, i) => slot(`c${i}`)),
+					{ type: 'unit', style: 'narrow' }
+				)
+			})}
+			>{#snippet fill(name)}{@const c = playing[Number(name.slice(1))]}<CharacterBadge
+					characterId={c.id}
+					character={c}
+					inline
+				/>{/snippet}</Sentence
+		>
+	</p>
+</ConfirmDialog>
 
 <ConfirmDialog
 	bind:open={deleteOpen}

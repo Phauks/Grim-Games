@@ -11,6 +11,8 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -51,7 +53,18 @@ describe('Leviathan', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Leviathan#Examples)', () => {
-		it.todo('Example 1: Two good players executed early, so evil wins');
+		it('Example 1: Two good players executed early, so evil wins', () => {
+			const { session } = castGame(
+				['chef', 'empath', 'monk', 'mayor', 'baron', 'leviathan'],
+				{ type: 'NewDay' },
+				(s) => ({ type: 'Execute', seatId: s[0] }),
+				{ type: 'NewDay' },
+				(s) => ({ type: 'Execute', seatId: s[1] })
+			);
+			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+				{ rule: 'leviathan-executions', winner: 'evil' }
+			]);
+		});
 		it.todo('Example 2: Two evil executed, then one good');
 	});
 });

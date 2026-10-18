@@ -39,17 +39,20 @@
 			onclick={() => set(players + 1)}>+</button
 		>
 	</div>
-	<Collapsible title={t('setup.sheet')} storageKey="setup:sheet">
+	<Collapsible title={t('setup.sheet')} level={3} storageKey="setup:sheet">
 		<SetupTable {players} onPick={set} />
 	</Collapsible>
 </section>
 
 <style>
+	/* A card like the setup check's, so the page's sections share one look. */
 	.controls {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-2);
-		padding-top: var(--space-2);
+		gap: 0;
+		padding: var(--space-1) var(--space-3) var(--space-2);
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
 	}
 	.players {
 		display: flex;
@@ -64,13 +67,15 @@
 		height: var(--tap-target);
 		border: 0;
 		border-radius: var(--radius-full);
-		background: var(--surface-raised);
+		background: var(--surface);
 		color: var(--on-surface);
 		font-size: 1.4rem;
 		cursor: pointer;
 	}
-	.step:hover {
-		background: var(--surface-selected);
+	@media (hover: hover) {
+		.step:hover:not(:disabled) {
+			background: var(--surface-selected);
+		}
 	}
 	.step:disabled {
 		opacity: 0.5;

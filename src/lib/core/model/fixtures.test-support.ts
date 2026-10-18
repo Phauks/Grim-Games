@@ -133,3 +133,26 @@ export function newGame(
 	}
 	return { session, ctx, seats };
 }
+
+/**
+ * A game with one seat per character, in seating order, then the steps run in order. A step
+ * is a command, or a function of the seat ids that returns one.
+ */
+export function castGame(
+	cast: CharacterId[],
+	...steps: (Command | ((seats: string[]) => Command))[]
+): { session: GameSession; ctx: EngineContext; seats: string[] } {
+	const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal', 'Ivy', 'Jo', 'Kit', 'Lu'];
+	const { session, ctx, seats } = newGame(names.slice(0, cast.length));
+	const done = run(
+		session,
+		ctx,
+		...cast.map((characterId, i): Command => ({
+			type: 'AssignCharacter',
+			seatId: seats[i],
+			characterId
+		})),
+		...steps.map((step) => (typeof step === 'function' ? step(seats) : step))
+	);
+	return { session: done, ctx, seats };
+}

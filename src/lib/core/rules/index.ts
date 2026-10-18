@@ -32,3 +32,4 @@ export * from './reminder-movement.ts';
 export * from './reminder-targets.ts';
 export * from './night-alerts.ts';
 export * from './night-numbers.ts';
+export * from './game-end.ts';

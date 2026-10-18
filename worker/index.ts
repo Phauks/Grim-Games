@@ -34,7 +34,7 @@ const MIRRORED_SOURCES: readonly MirroredSource[] = [
 ];
 
 export default {
-	async fetch(request, env): Promise<Response> {
+	async fetch(request, env, ctx): Promise<Response> {
 		const url = new URL(request.url);
 		if (url.pathname === '/api/health') {
 			return Response.json({ ok: true });
@@ -58,19 +58,19 @@ export default {
 		}
 		if (url.pathname === '/api/curated') {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
-			return serveMirrored(env, curatedSource);
+			return serveMirrored(env, ctx, curatedSource);
 		}
 		const collectionId = url.pathname.match(/^\/api\/collections\/([a-z0-9-]+)$/)?.[1];
 		if (collectionId) {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
 			const collection = COLLECTIONS.find((c) => c.id === collectionId);
 			if (!collection) return new Response('Not found', { status: 404 });
-			return serveMirrored(env, collectionSource(collection));
+			return serveMirrored(env, ctx, collectionSource(collection));
 		}
 		const year = url.pathname.match(/^\/api\/world-cups\/(\d{4})$/)?.[1];
 		if (year && isWorldCupYear(year)) {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
-			return serveMirrored(env, worldCupSource(year));
+			return serveMirrored(env, ctx, worldCupSource(year));
 		}
 		if (url.pathname === '/api/mirror') {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });

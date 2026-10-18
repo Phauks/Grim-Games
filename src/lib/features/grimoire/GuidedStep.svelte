@@ -11,7 +11,9 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import NightText from '#lib/features/reference/NightText.svelte';
+	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
+	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -35,6 +37,8 @@
 		night: Night;
 		/** Info tokens, for the steps that show the player something. */
 		onInfoTokens: () => void;
+		/** Demon info with no bluffs yet: open the Demon bluffs sheet. */
+		onChooseBluffs?: () => void;
 		/** A Traveller's alignment by draw. */
 		onDraw: (seatId: string) => void;
 		/** Tonight's steps, to move to the one before or after without ticking anything. */
@@ -48,6 +52,7 @@
 		step,
 		night,
 		onInfoTokens,
+		onChooseBluffs,
 		onDraw,
 		steps = [],
 		onStep
@@ -136,6 +141,8 @@
 	let showOpen = $state(false);
 	/** Shown: the step's character, or a suggested answer's (the Undertaker's). */
 	let shownId = $state<CharacterId | undefined>();
+	/** A card from Minion info or Demon info, shown instead of the step's character. */
+	let shownCard = $state<ShownInfoCard | undefined>();
 	const shownCharacter = $derived(
 		shownId ? characters.get(shownId) : (step?.character ?? undefined)
 	);
@@ -196,10 +203,28 @@
 				{step}
 				onShow={(id) => {
 					open = false;
+					shownCard = undefined;
 					shownId = id;
 					showOpen = true;
 				}}
 			/>
+			<!-- Every card Minion info or Demon info can show (Trevor, 2026-10-18). -->
+			{#if step.id === 'minioninfo' || step.id === 'demoninfo'}
+				<EvilInfoCards
+					{game}
+					{characters}
+					step={step.id}
+					onShow={(card) => {
+						open = false;
+						shownCard = card;
+						showOpen = true;
+					}}
+					onChooseBluffs={() => {
+						open = false;
+						onChooseBluffs?.();
+					}}
+				/>
+			{/if}
 			{#if step.reminder}
 				<p class="text">
 					{#if step.character}
@@ -256,6 +281,7 @@
 			disabled={!step?.character}
 			onclick={() => {
 				open = false;
+				shownCard = undefined;
 				shownId = undefined;
 				showOpen = true;
 			}}>Show to player</Button
@@ -285,6 +311,7 @@
 <ShowToPlayer
 	bind:open={showOpen}
 	characters={shownCharacter ? [{ character: shownCharacter }] : []}
+	cards={shownCard && [shownCard]}
 	onclose={() => (open = true)}
 />
 

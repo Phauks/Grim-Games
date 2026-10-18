@@ -20,7 +20,7 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 }, testInfo) => {
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	const code = (await page.getByTestId('room-code').textContent())!.replace(/\s/g, '');
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 	expect(code).toMatch(/^\d{6}$/);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 
@@ -63,7 +63,7 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	// A game with no characters assigned yet: the room can open while the game is in setup.
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	const code = (await page.getByTestId('room-code').textContent())!.replace(/\s/g, '');
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
@@ -89,7 +89,7 @@ test('Share and Copy link carry the room code as well as the link', async ({ pag
 	});
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	const code = (await page.getByTestId('room-code').textContent())!.replace(/\D/g, '');
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\D/g, '');
 	expect(code).toMatch(/^\d{6}$/);
 	const spaced = `${code.slice(0, 3)} ${code.slice(3)}`;
 	const link = new RegExp(`/join/${code}$`);
@@ -127,7 +127,7 @@ test('the Worker refuses bad room requests', async ({ request }) => {
 test('a room tells an app too old for it to update', async ({ page, browser }, testInfo) => {
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	const code = (await page.getByTestId('room-code').textContent())!.replace(/\D/g, '');
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\D/g, '');
 
 	// The real Worker turns away a hello in a protocol older than it accepts.
 	const reply = await page.evaluate(

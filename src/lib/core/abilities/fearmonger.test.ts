@@ -11,6 +11,8 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -44,9 +46,52 @@ describe('Fearmonger', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Fearmonger#Examples)', () => {
-		it.todo('Example 1: Chosen Butler executed; evil wins');
-		it.todo("Example 2: Another player's nominee executed; no win");
+		it('Example 1: Chosen Butler executed; evil wins', () => {
+			const { session } = castGame(
+				['butler', 'chef', 'empath', 'fearmonger', 'imp'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'fearmonger', label: 'Fear' }
+				}),
+				{ type: 'NewDay' },
+				(s) => ({ type: 'Nominate', nominator: s[3], nominee: s[0] }),
+				(s) => ({ type: 'Execute', seatId: s[0] })
+			);
+			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+				{ rule: 'fearmonger', winner: 'evil' }
+			]);
+		});
+		it("Example 2: Another player's nominee executed; no win", () => {
+			const { session } = castGame(
+				['butler', 'chef', 'empath', 'fearmonger', 'imp'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'fearmonger', label: 'Fear' }
+				}),
+				{ type: 'NewDay' },
+				(s) => ({ type: 'Nominate', nominator: s[1], nominee: s[0] }),
+				(s) => ({ type: 'Execute', seatId: s[0] })
+			);
+			expect(gameEnds(session.game, testCharacters)).toEqual([]);
+		});
 		it.todo('Example 3: Fearmonger switches from Empath to Soldier');
-		it.todo('Example 4: Baron chosen and executed; good wins');
+		it('Example 4: Baron chosen and executed; good wins', () => {
+			const { session } = castGame(
+				['baron', 'chef', 'empath', 'fearmonger', 'imp'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'fearmonger', label: 'Fear' }
+				}),
+				{ type: 'NewDay' },
+				(s) => ({ type: 'Nominate', nominator: s[3], nominee: s[0] }),
+				(s) => ({ type: 'Execute', seatId: s[0] })
+			);
+			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+				{ rule: 'fearmonger', winner: 'good' }
+			]);
+		});
 	});
 });

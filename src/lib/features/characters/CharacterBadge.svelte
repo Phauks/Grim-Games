@@ -60,7 +60,11 @@
 		alignment ??
 			(character
 				? (defaultAlignment(character.type) ??
-					(character.type === 'traveller' ? 'traveller' : 'neutral'))
+					(character.type === 'traveller' ||
+					character.type === 'fabled' ||
+					character.type === 'loric'
+						? character.type
+						: 'neutral'))
 				: 'neutral')
 	);
 	const icon = $derived(character && iconUrl(character, alignment));
@@ -129,6 +133,15 @@
 		background: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
 		color: var(--on-good);
 	}
+	/* Fabled and Loric in their own colours, like the other types (Trevor, 2026-10-18). */
+	.badge[data-team='fabled'] {
+		background: var(--fabled);
+		color: var(--on-fabled);
+	}
+	.badge[data-team='loric'] {
+		background: var(--loric);
+		color: var(--on-loric);
+	}
 	.icon {
 		display: inline-grid;
 		place-items: center;
@@ -151,8 +164,14 @@
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
 	}
-	/* An inline badge has a fixed height in the line, so its name never wraps. */
+	/*
+	 * An inline badge has a fixed height in the line, so its name never wraps. In a cell
+	 * narrower than the name (History's Characters table on a phone) it ends in "…" inside
+	 * the pill rather than running past it over the next column.
+	 */
 	.badge.inline .name {
+		overflow: hidden;
+		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.badge.inline {

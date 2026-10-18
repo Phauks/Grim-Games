@@ -123,16 +123,17 @@ test('the Storyteller sets the 3 Demon bluffs at once and shows them as a list',
 	await expect(page.getByRole('dialog', { name: 'Demon bluffs' })).toBeVisible();
 });
 
-test("characters in play can't be Demon bluffs, but the Drunk's Townsfolk can", async ({
+test("characters in play are marked for the Demon's bluffs, but the Drunk's Townsfolk is not", async ({
 	page
 }) => {
 	await page.goto('/spikes/bluffs');
 	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
 	await page.getByRole('button', { name: 'Choose' }).tap();
-	await expect(choice(page, 'Empath')).toBeDisabled();
+	// Marked, never locked: the Storyteller can override anything (Trevor).
+	await expect(choice(page, 'Empath')).toBeEnabled();
 	await expect(choice(page, 'Empath')).toContainText('In play');
 	// The Chef's seat is the Drunk (wiki: Drunk), so the Chef is not in play.
-	await expect(choice(page, 'Chef')).toBeEnabled();
+	await expect(choice(page, 'Chef')).not.toContainText('In play');
 	await choice(page, 'Chef').tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('bluff-set')).toContainText('Chef');

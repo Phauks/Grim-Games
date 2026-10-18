@@ -532,7 +532,7 @@ test("setup opens the players' join code and QR", async ({ page }) => {
 	await selectionFor(page, 5);
 	await page.getByRole('button', { name: "Players' phones" }).tap();
 	const dialog = page.getByRole('dialog', { name: "Players' phones" });
-	await expect(dialog.getByTestId('room-code')).toHaveText(/\d/);
+	await expect(dialog.getByTestId('share-code')).toHaveText(/\d/);
 	await expect(dialog.getByRole('img', { name: /QR/i })).toBeVisible();
 });
 
@@ -637,4 +637,38 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 		.and(page.locator(':not([data-testid="setup-check"] *)'))
 		.tap();
 	await expect(custom).toHaveCount(0);
+});
+
+// Check sections showing None start closed, and open as soon as something appears (Trevor,
+// 2026-10-18).
+test('empty setup check sections are closed and open when something appears', async ({ page }) => {
+	await selectionFor(page, 8);
+	const check = page.getByTestId('setup-check');
+	const jinxes = check.getByRole('button', { name: 'Jinxes' });
+	await expect(jinxes).toHaveAttribute('aria-expanded', 'false');
+	const warnings = check.getByRole('button', { name: 'Warnings' });
+	await expect(warnings).toHaveAttribute('aria-expanded', 'false');
+	await page.getByRole('button', { name: 'Imp', exact: true }).tap();
+	await expect(warnings).toHaveAttribute('aria-expanded', 'true');
+	await expect(check.locator('.warn li').first()).toBeVisible();
+});
+
+// The icon opens the character's page; the rest of the row still chooses it (Trevor,
+// 2026-10-18).
+test("tapping a character's icon opens its page without choosing it", async ({ page }) => {
+	await selectionFor(page, 8);
+	await page.getByRole('button', { name: 'About the Imp' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Imp' });
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(page.getByRole('button', { name: 'Imp', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
+	await page.getByRole('button', { name: 'Imp', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Imp', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 });
