@@ -13,6 +13,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { plainText } from './bold.ts';
+	import { tokenTitle } from './token-title.ts';
 	import { pickMax } from './pick.ts';
 	import { characterCardsFor } from './character-cards.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
@@ -118,9 +119,7 @@
 		[next[index], next[to]] = [next[to], next[index]];
 		chainCards = next;
 	}
-	const title = $derived(
-		view.kind === 'list' ? t('info-tokens.title') : plainText(view.token.text)
-	);
+	const title = $derived(view.kind === 'list' ? t('info-tokens.title') : tokenTitle(view.token));
 
 	// Each time the sheet opens it starts at the list.
 	$effect(() => {

@@ -48,6 +48,17 @@ describe('builtScriptJson', () => {
 		});
 	});
 
+	// Trevor, 2026-10-18: a version number can be set in the builder.
+	it('keeps the version when given, and it loads back', () => {
+		const json = builtScriptJson(['chef'], { name: 'V', author: '', version: ' 1.2 ' }, data);
+		expect(json[0]).toEqual({ id: '_meta', name: 'V', version: '1.2' });
+		expect(loadScript(json, data).script?.meta.version).toBe('1.2');
+		expect(builtScriptJson(['chef'], { name: 'V', author: '', version: ' ' }, data)[0]).toEqual({
+			id: '_meta',
+			name: 'V'
+		});
+	});
+
 	it('writes homebrew characters as their objects, sorted with the rest', () => {
 		const homebrew = {
 			lantern: {

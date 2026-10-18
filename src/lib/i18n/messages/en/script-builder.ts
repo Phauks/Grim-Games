@@ -7,6 +7,8 @@ export const scriptBuilder = {
 	'script-builder.details': 'Script details',
 	'script-builder.name': 'Name',
 	'script-builder.author': 'Author',
+	'script-builder.version': 'Version',
+	'script-builder.selectedOnly': 'Show only selected',
 	'script-builder.variationOf': 'Variation of',
 	'script-builder.editing': 'Editing',
 	'script-builder.download': 'Download script JSON',
@@ -16,7 +18,8 @@ export const scriptBuilder = {
 	'script-builder.openReplaceBody': 'The characters and details on the builder are replaced.',
 	'script-builder.clear': 'Clear the script',
 	'script-builder.clearTitle': 'Clear the script?',
-	'script-builder.clearBody': 'Its characters, name and author are removed from the builder.',
+	'script-builder.clearBody':
+		'Its characters, name, author and version are removed from the builder.',
 	'script-builder.counts': 'Characters by type',
 	'script-builder.check': 'Script check',
 	'script-builder.jinxes': 'Jinxes',
