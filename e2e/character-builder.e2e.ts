@@ -57,3 +57,50 @@ test('the Script builder lists saved characters under My characters', async ({ p
 		.tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 });
+
+// Abilities from standard parts (Trevor, 2026-10-18): the Sort Order opening, then setup
+// changes built clause by clause, including a linked character as the Choirboy needs the King.
+test('an ability is built from its opening and setup changes', async ({ page }) => {
+	await page.goto('/build-character');
+	await page.getByTestId('character-name').fill('Herald');
+	const ability = page.getByTestId('character-ability');
+	await ability.fill('choose a player: they learn something.');
+
+	await page.getByRole('combobox', { name: 'Opens with' }).tap();
+	await page.getByRole('option', { name: 'Each night*', exact: true }).tap();
+	await expect(ability).toHaveValue('Each night* choose a player: they learn something.');
+
+	const parts = page.getByTestId('setup-parts');
+	await expect(parts).toContainText('None');
+	const add = page.getByRole('button', { name: 'Add a setup change' });
+	await add.tap();
+	let dialog = page.getByRole('dialog', { name: 'Add a setup change' });
+	await dialog.getByRole('button', { name: 'Higher number' }).tap();
+	await expect(dialog.getByTestId('setup-part-preview')).toHaveText('[+2 Outsiders]');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ability).toHaveValue(
+		'Each night* choose a player: they learn something. [+2 Outsiders]'
+	);
+
+	await add.tap();
+	dialog = page.getByRole('dialog', { name: 'Add a setup change' });
+	await dialog.getByRole('combobox', { name: 'Change' }).tap();
+	await page.getByRole('option', { name: 'Another character in play', exact: true }).tap();
+	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await dialog.getByRole('button', { name: 'Choose a character' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Choose a character' });
+	await picker.getByRole('button', { name: 'King', exact: true }).tap();
+	await expect(dialog.getByTestId('setup-part-preview')).toHaveText('[+the King]');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ability).toHaveValue(
+		'Each night* choose a player: they learn something. [+2 Outsiders. +the King]'
+	);
+	await expect(
+		page.getByRole('checkbox', { name: 'Changes setup', includeHidden: true })
+	).toBeChecked();
+
+	await parts.getByRole('button', { name: 'Remove +2 Outsiders' }).tap();
+	await expect(ability).toHaveValue(
+		'Each night* choose a player: they learn something. [+the King]'
+	);
+});
