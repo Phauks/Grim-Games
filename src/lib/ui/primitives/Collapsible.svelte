@@ -42,6 +42,11 @@
 		 * (Trevor, 2026-10-18). The header still opens it meanwhile; nothing is remembered.
 		 */
 		empty?: boolean;
+		/**
+		 * Starts closed every time, whatever was remembered, and its opening isn't remembered:
+		 * for a section rarely needed, like setup's Travellers (Trevor, 2026-10-18).
+		 */
+		startClosed?: boolean;
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
 		aside?: Snippet;
 		/** Starts closed until opened (e.g. About's Advanced part); remembered like any other. */
@@ -56,13 +61,16 @@
 		tone,
 		forceOpen = false,
 		empty = false,
+		startClosed = false,
 		aside,
 		defaultOpen = true,
 		children
 	}: Props = $props();
 
 	// Open by default; a section closed before stays closed. Read again if the key changes.
-	let open = $derived(storageKey ? readOpen(storageKey, defaultOpen) : defaultOpen);
+	let open = $derived(
+		!startClosed && (storageKey ? readOpen(storageKey, defaultOpen) : defaultOpen)
+	);
 	let openWhileEmpty = $state(false);
 	// Something appeared: open it, even if it was closed before.
 	let wasEmpty = empty;
@@ -84,7 +92,7 @@
 			return;
 		}
 		open = !open;
-		if (storageKey) writeOpen(storageKey, open, defaultOpen);
+		if (storageKey && !startClosed) writeOpen(storageKey, open, defaultOpen);
 	}
 </script>
 
