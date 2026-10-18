@@ -109,7 +109,7 @@
 				bind:selected={picked}
 				max={picking.asks?.characters ?? 1}
 				label={t('info-tokens.characters')}
-				notInPlay={picking.id === 'not-in-play'}
+				notInPlay={picking.asks?.notInPlay === true}
 			/>
 			<ModalActions
 				onCancel={() => {

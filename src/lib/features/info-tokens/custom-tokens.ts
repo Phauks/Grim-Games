@@ -26,7 +26,8 @@ export interface CustomInfoToken extends InfoToken {
 export interface StoredInfoTokens {
 	/**
 	 * 2: `**bold**` means heavier type and colour has its own `[red]` tags (2026-10-16).
-	 * 3: `asks` replaces `shows: 'characters'` (3 characters) and `blank` (text) (2026-10-18).
+	 * 3: `asks` replaces `shows: 'characters'` (3 characters) and `blank` (text) (2026-10-18);
+	 *    `asks.exactly`, `asks.notInPlay` and `answerOnly` were added later as optional fields.
 	 */
 	version: 3;
 	custom: CustomInfoToken[];
@@ -76,7 +77,7 @@ function parseValue(raw: unknown): InfoTokenValue | undefined {
 /** What a stored card asks for, dropping anything it can't be; undefined for nothing. */
 export function parseAsks(raw: unknown): InfoTokenAsks | undefined {
 	if (typeof raw !== 'object' || raw === null) return undefined;
-	const { characters, value } = raw as Record<string, unknown>;
+	const { characters, value, exactly, notInPlay } = raw as Record<string, unknown>;
 	const count =
 		isInteger(characters) && characters > 0
 			? Math.min(characters, MAX_ASKED_CHARACTERS)
@@ -85,6 +86,9 @@ export function parseAsks(raw: unknown): InfoTokenAsks | undefined {
 	if (count === undefined && parsed === undefined) return undefined;
 	return {
 		...(count !== undefined ? { characters: count } : {}),
+		// Both only mean something with characters to choose.
+		...(count !== undefined && exactly === true ? { exactly: true } : {}),
+		...(count !== undefined && notInPlay === true ? { notInPlay: true } : {}),
 		...(parsed !== undefined ? { value: parsed } : {})
 	};
 }
@@ -101,7 +105,10 @@ export function parseStoredInfoTokens(raw: unknown): StoredInfoTokens {
 	const custom: CustomInfoToken[] = [];
 	for (const item of value.custom) {
 		if (typeof item !== 'object' || item === null) continue;
-		const { id, text, shows, characterIds, blank, asks } = item as Record<string, unknown>;
+		const { id, text, shows, characterIds, blank, asks, answerOnly } = item as Record<
+			string,
+			unknown
+		>;
 		if (typeof id !== 'string' || typeof text !== 'string' || !text.trim()) continue;
 		if (custom.some((t) => t.id === id)) continue;
 		// Before version 3 a card asked for up to 3 characters and a word in the blank.
@@ -117,6 +124,8 @@ export function parseStoredInfoTokens(raw: unknown): StoredInfoTokens {
 			text: migrate(text).slice(0, MAX_CUSTOM_TEXT),
 			source: 'custom',
 			...(parsed ? { asks: parsed } : {}),
+			// Added later in version 3 as an optional field; only with something to fill in.
+			...(parsed?.value && answerOnly === true ? { answerOnly: true as const } : {}),
 			// Added later in version 1 as an optional field, so older saves read as before.
 			...(Array.isArray(characterIds) && characterIds.some((c) => typeof c === 'string')
 				? { characterIds: [...new Set(characterIds.filter((c) => typeof c === 'string'))] }

@@ -24,6 +24,7 @@
 	import InfoTokenTile from './InfoTokenTile.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { plainText } from './bold.ts';
 	import { tokenTitle } from './token-title.ts';
@@ -219,6 +220,9 @@
 		max: string;
 		choices: string[];
 		characters: number;
+		exactly: boolean;
+		notInPlay: boolean;
+		answerOnly: boolean;
 	}>(blankEditor());
 	const editOwners = $derived(
 		editing.characterIds.flatMap((id) => {
@@ -237,7 +241,10 @@
 			min: '',
 			max: '',
 			choices: ['', ''],
-			characters: 0
+			characters: 0,
+			exactly: false,
+			notInPlay: false,
+			answerOnly: false
 		};
 	}
 
@@ -252,7 +259,10 @@
 			min: value?.kind === 'number' && value.min !== undefined ? String(value.min) : '',
 			max: value?.kind === 'number' && value.max !== undefined ? String(value.max) : '',
 			choices: value?.kind === 'choices' ? [...value.options] : ['', ''],
-			characters: token?.asks?.characters ?? 0
+			characters: token?.asks?.characters ?? 0,
+			exactly: token?.asks?.exactly === true,
+			notInPlay: token?.asks?.notInPlay === true,
+			answerOnly: token?.answerOnly === true
 		};
 		editView = 'text';
 		editOpen = true;
@@ -268,7 +278,8 @@
 		if (!plainText(editing.text).trim()) return;
 		customInfoTokens.save(editing.text, editing.id, {
 			characterIds: editing.characterIds,
-			asks: editorAsks(editing)
+			asks: editorAsks(editing),
+			answerOnly: editing.answerOnly
 		});
 		editOpen = false;
 	}
@@ -284,7 +295,12 @@
 					: fields.input === 'choices'
 						? { kind: 'choices', options: cleanChoices(fields.choices) }
 						: undefined;
-		return { characters: fields.characters || undefined, value };
+		return {
+			characters: fields.characters || undefined,
+			exactly: fields.exactly || undefined,
+			notInPlay: fields.notInPlay || undefined,
+			value
+		};
 	}
 	/** The editor's preview shows where the filled-in part goes. */
 	const editorDetail = $derived(
@@ -550,7 +566,11 @@
 			<figure class="preview" aria-label={t('info-tokens.preview')}>
 				<div class="preview-card">
 					<ShownCard
-						title={plainText(editing.text).trim() ? editing.text : t('info-tokens.text')}
+						title={editing.answerOnly && editorDetail
+							? undefined
+							: plainText(editing.text).trim()
+								? editing.text
+								: t('info-tokens.text')}
 						detail={editorDetail}
 						compact
 					/>
@@ -589,6 +609,13 @@
 						maxlength={MAX_CHOICE_TEXT}
 					/>
 				{/if}
+				<!-- Shown only while there is something to fill in, but always in place (no reflow). -->
+				<Toggle
+					label={t('info-tokens.answerOnly')}
+					checked={editing.answerOnly && editing.input !== 'none'}
+					disabled={editing.input === 'none'}
+					onChange={(checked) => (editing.answerOnly = checked)}
+				/>
 				<div class="count-field">
 					<span class="count-label">{t('info-tokens.askCharacters')}</span>
 					<Stepper
@@ -600,6 +627,19 @@
 						max={MAX_ASKED_CHARACTERS}
 					/>
 				</div>
+				<!-- As "These characters are not in play": always that many, chosen from those not in play. -->
+				<Toggle
+					label={t('info-tokens.exactly')}
+					checked={editing.exactly && editing.characters > 0}
+					disabled={editing.characters === 0}
+					onChange={(checked) => (editing.exactly = checked)}
+				/>
+				<Toggle
+					label={t('info-tokens.notInPlay')}
+					checked={editing.notInPlay && editing.characters > 0}
+					disabled={editing.characters === 0}
+					onChange={(checked) => (editing.notInPlay = checked)}
+				/>
 				{#if characters.length > 0}
 					<div class="belongs">
 						<span class="belongs-label">{t('info-tokens.belongsTo')}</span>
