@@ -6,6 +6,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
@@ -49,6 +50,8 @@
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
+		/** Run Night Order, at the bank's right end (Trevor, 2026-10-18); absent when switched off. */
+		run?: { disabled: boolean; onclick: () => void };
 	}
 
 	let {
@@ -63,7 +66,8 @@
 		spotAllowed,
 		ruleAt,
 		onRule,
-		onHints
+		onHints,
+		run
 	}: Props = $props();
 
 	const game = $derived(grimoire.game);
@@ -291,6 +295,19 @@
 			<li class="none">None</li>
 		{/each}
 	</ul>
+	{#if run}
+		<!-- Rounded on the right like the box, mirroring the view switch on the left. -->
+		<button
+			type="button"
+			class="run"
+			aria-label="Run Night Order"
+			disabled={run.disabled}
+			onclick={run.onclick}
+		>
+			<Icon name="night" />
+			<span>Run night</span>
+		</button>
+	{/if}
 </div>
 
 {#if drag}
@@ -417,6 +434,33 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: color-mix(in srgb, var(--surface) 85%, transparent);
+	}
+	.run {
+		flex: none;
+		align-self: stretch;
+		display: grid;
+		place-items: center;
+		align-content: center;
+		gap: var(--space-1);
+		width: 5.5rem;
+		padding: 0 var(--space-1);
+		border: 0;
+		border-inline-start: 1px solid var(--border);
+		border-start-end-radius: calc(var(--radius-md) - 1px);
+		border-end-end-radius: calc(var(--radius-md) - 1px);
+		background: var(--accent);
+		color: var(--on-accent);
+		font: 600 0.8rem var(--font-control);
+		cursor: pointer;
+	}
+	.run :global(svg) {
+		width: 1.6em;
+		height: 1.6em;
+	}
+	.run:disabled {
+		background: none;
+		color: var(--on-surface-muted);
+		cursor: default;
 	}
 	.view {
 		flex: none;
