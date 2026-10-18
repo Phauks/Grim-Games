@@ -35,6 +35,7 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import TravellerDialog from './TravellerDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
+	import { DEMON_SET } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupNav from './SetupNav.svelte';
@@ -95,6 +96,11 @@
 	});
 	let travellersOpen = $state(false);
 	/**
+	 * Travellers are rarely in play, so their section starts closed (Trevor, 2026-10-18),
+	 * unless one was already chosen when the screen opened (a resumed setup).
+	 */
+	let travellersChosenAtStart = $state<boolean | undefined>(undefined);
+	/**
 	 * Characters chosen though they are not on the script (Infinite Possibilities' hidden
 	 * extras, or any other addition), listed under their own type with an off-script mark
 	 * (Trevor, 2026-10-18). Once listed they stay for this visit, so taking one out can be
@@ -121,6 +127,8 @@
 		)
 	);
 	const offScriptIds = $derived(new Set(offScript.map((c) => c.id)));
+	/** The Demon's bluffs, chosen below the list, are tagged in it (Trevor, 2026-10-18). */
+	const bluffIds = $derived(new Set(game?.bluffs[DEMON_SET] ?? []));
 	const listedIds = $derived(new Set([...scriptOrder, ...editionTravellers.map((c) => c.id)]));
 	const TYPES: CharacterType[] = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'];
 
@@ -184,6 +192,11 @@
 			.filter((c): c is Character => c !== undefined)
 	);
 	const uncurated = $derived(uncuratedReminderCharacters(inPlay));
+
+	$effect(() => {
+		if (ready && travellersChosenAtStart === undefined)
+			travellersChosenAtStart = ids.some((id) => lookup(id)?.type === 'traveller');
+	});
 
 	function toggle(character: Character) {
 		const n = setupSelection.copies(character.id);
@@ -326,6 +339,7 @@
 			contained={false}
 			types={TYPES}
 			keepTypes={['traveller']}
+			closedTypes={travellersChosenAtStart ? [] : ['traveller']}
 			onSelect={(id) => {
 				const character = lookup(id);
 				if (character) toggle(character);
@@ -334,8 +348,8 @@
 			{#snippet groupAside(type)}
 				{#if type === 'traveller'}
 					<IconButton
-						icon="search"
-						label={t('setup.allTravellers')}
+						icon="add"
+						label={t('setup.addTraveller')}
 						disabled={!ready}
 						onclick={() => (travellersOpen = true)}
 					/>
@@ -348,6 +362,7 @@
 					duplicates={canDuplicate(character, inPlay)}
 					jinxed={jinxed.has(character.id)}
 					offScript={offScriptIds.has(character.id)}
+					bluff={bluffIds.has(character.id)}
 					onToggle={() => toggle(character)}
 					onAddCopy={() =>
 						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}

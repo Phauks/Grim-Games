@@ -214,10 +214,14 @@ test("Travellers can join the bag: the edition's are listed, the rest are a sear
 	page
 }) => {
 	await selectionFor(page, 8);
+	// Rarely in play, so the section starts closed (Trevor, 2026-10-18); its header opens it.
+	const header = page.getByRole('button', { name: 'Travellers', exact: true });
+	await expect(header).toHaveAttribute('aria-expanded', 'false');
+	await header.tap();
 	// Trouble Brewing's own Travellers are listed without being on its sheet.
 	await expect(choice(page, 'Scapegoat')).toBeVisible();
 	await expect(choice(page, 'Harlot')).toHaveCount(0);
-	await page.getByRole('button', { name: 'All Travellers' }).tap();
+	await page.getByRole('button', { name: 'Add a Traveller' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'All Travellers' });
 	await dialog.getByRole('searchbox').fill('Harlot');
 	await dialog.getByRole('button', { name: /^Harlot/ }).tap();
@@ -732,6 +736,11 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	await page.keyboard.press('Escape');
 	for (const name of ['Chef', 'Soldier', 'Mayor']) await expect(bluffs).toContainText(name);
 	await expect(bluffs.getByRole('button', { name: 'Change' })).toBeEnabled();
+	// Each bluff is tagged in the list above, and stays out of the bag (Trevor, 2026-10-18).
+	await expect(page.getByTestId('bluff-tag')).toHaveCount(3);
+	await expect(choice(page, 'Chef')).toContainText('Demon bluff');
+	await expect(choice(page, 'Chef')).toHaveAttribute('aria-pressed', 'false');
+	await expect(choice(page, 'Empath')).not.toContainText('Demon bluff');
 	await noSidewaysScroll(page);
 	// The Draw screen has none.
 	await page.getByRole('button', { name: 'Build bag' }).tap();
