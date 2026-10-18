@@ -6,6 +6,7 @@
 	import type { SeatId, TileId } from '#lib/core/model/index.ts';
 	import { bagSlots, nextDrawSeat } from '#lib/core/rules/index.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
+	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -111,6 +112,10 @@
 				<span data-testid="next-seat">{label(next)}</span>
 			</p>
 			<BagTiles {slots} {marks} seatLabel={label} onpick={(s) => draw(s.tileId, s.state)} />
+			<!-- The Demon's bluffs, once the draw has put every character in play (Trevor, 2026-10-18). -->
+			{#if lookup}
+				<SetupBluffs {game} characters={lookup} dispatch={port.dispatch} waiting={inBag > 0} />
+			{/if}
 		{/if}
 	</ErrorBoundary>
 

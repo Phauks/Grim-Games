@@ -408,3 +408,20 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(page.getByTestId('day-toolbar').getByTestId('timer-mode')).toHaveText('Stopwatch');
 });
+
+test('End day closes the day and opens tonight’s night order at Dusk', async ({ page }) => {
+	await startGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: 'Day' });
+	await day.getByRole('button', { name: 'End day' }).tap();
+	// Ending the day changes the game, so it asks first (Trevor).
+	const confirm = page.getByRole('alertdialog', { name: 'End the day?' });
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(day).toBeHidden();
+	const night = page.getByRole('dialog', { name: 'Night order' });
+	await expect(night).toBeVisible();
+	await expect(night.getByRole('button', { name: 'Done: Dusk' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+});

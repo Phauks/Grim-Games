@@ -3,6 +3,8 @@
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DayPanel from './DayPanel.svelte';
 	import { LiveDay } from './live-day.svelte.ts';
@@ -16,9 +18,15 @@
 	interface Props {
 		open: boolean;
 		game: OpenGame;
+		/**
+		 * End day (Trevor, 2026-10-18): after the Storyteller confirms, the day sheet closes and
+		 * the board starts tonight's night at Dusk. Without it there is no End day button.
+		 */
+		onEndDay?: () => void;
 	}
 
-	let { open = $bindable(), game }: Props = $props();
+	let { open = $bindable(), game, onEndDay }: Props = $props();
+	let confirmEnd = $state(false);
 
 	const day = $derived(new LiveDay(game));
 	// Which day it is (Trevor): Day 1 starts when the first night ends.
@@ -35,7 +43,26 @@
 	<div class="body">
 		<DayPanel game={day} {assistance} />
 	</div>
+	{#snippet actions()}
+		{#if onEndDay}
+			<Button
+				variant="accent"
+				icon="night"
+				disabled={game.viewOnly}
+				onclick={() => (confirmEnd = true)}>{t('day.endDay')}</Button
+			>
+		{/if}
+	{/snippet}
 </Dialog>
+
+<ConfirmDialog
+	bind:open={confirmEnd}
+	title={t('day.endDayConfirm')}
+	onConfirm={() => {
+		open = false;
+		onEndDay?.();
+	}}
+/>
 
 <style>
 	.body {
