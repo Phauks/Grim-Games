@@ -96,6 +96,9 @@ test('an admin account opens the inbox without the key; the key holder names adm
 	const other = await browser.newContext();
 	const phone = await other.newPage();
 	await signIn(phone, email);
+	// New accounts get a word-chain id (five words joined by "-"); admins are stored by it.
+	const session = await phone.evaluate(async () => (await fetch('/api/auth/session')).json());
+	expect(session.user.id).toMatch(/^[a-z]+(-[a-z]+){4}$/);
 	await admins.getByLabel('No account signs in with that email').press('Enter');
 	await expect(admins.getByTestId('admins')).toContainText(email);
 	await expect(admins.getByLabel('Add an admin by sign-in email')).toHaveValue('');

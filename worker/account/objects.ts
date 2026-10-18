@@ -239,8 +239,7 @@ export class AccountEmail extends DurableObject<AccountEnv> {
 
 	/** The user this address belongs to, if anyone has signed in with it. */
 	async ownerId(): Promise<string | undefined> {
-		return this.sql.exec<{ user_id: string }>('SELECT user_id FROM owner WHERE id = 1').toArray()[0]
-			?.user_id;
+		return this.owner();
 	}
 
 	/** Called when the account is deleted: the address no longer belongs to anyone. */

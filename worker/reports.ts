@@ -16,7 +16,7 @@ import {
 import { normaliseEmail } from '../src/lib/features/account/account-protocol.ts';
 import { sameHash, sha256 } from './account/crypto.ts';
 import { emailSender, type EmailEnv } from './account/email.ts';
-import type { AccountEnv } from './account/objects.ts';
+import { userStub, type AccountEnv } from './account/objects.ts';
 import { getUser } from './account/routes.ts';
 
 export interface ReportsEnv extends AccountEnv, EmailEnv {
@@ -204,7 +204,7 @@ async function adminAccount(
 async function adminList(env: ReportsEnv, box: DurableObjectStub<ReportBox>): Promise<Admin[]> {
 	const list: Admin[] = [];
 	for (const id of await box.admins()) {
-		const profile = await env.ACCOUNT_USERS.get(env.ACCOUNT_USERS.idFromString(id)).profile();
+		const profile = await userStub(env, id).profile();
 		if (profile) list.push({ id, email: profile.email });
 		else await box.removeAdmin(id);
 	}
