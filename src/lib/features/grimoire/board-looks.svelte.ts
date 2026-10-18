@@ -6,6 +6,7 @@
  *   moved to the corner), and how dark it is;
  * - where the Fabled and Loric sit (large in the middle, or small in the top left corner) and
  *   whether they are grouped as one stack (Trevor, 2026-10-17: two choices);
+ * - the script's logo faint in the middle of the board, and how faint (Trevor, 2026-10-18);
  * - how big each seat's player name badge is, and how far below the token it sits;
  * - whether reminders are held by their seat or stay where they are dropped.
  */
@@ -13,6 +14,10 @@ export interface BoardLooks {
 	vignette: boolean;
 	/** How dark the vignette's edges are, 0 to 1. */
 	vignetteStrength: number;
+	/** The script's logo in the middle of the board, behind the seats. */
+	logo: boolean;
+	/** How visible that logo is, 0.05 to 1. */
+	logoOpacity: number;
 	rulesAt: 'middle' | 'edge';
 	/** The Fabled and Loric as one stack that lists them all when tapped. */
 	rulesGrouped: boolean;
@@ -35,9 +40,14 @@ export const NAME_SIZE = { min: 0.6, max: 1.6, step: 0.1 } as const;
 /** How far the badge can move down, from on the rim to clear of the token's name. */
 export const NAME_OFFSET = { min: 0, max: 0.3, step: 0.02 } as const;
 
+/** The script logo's opacity range: never fully invisible while it is switched on. */
+export const LOGO_OPACITY = { min: 0.05, max: 1, step: 0.05 } as const;
+
 export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	vignette: true,
 	vignetteStrength: 0.55,
+	logo: true,
+	logoOpacity: 0.3,
 	rulesAt: 'middle',
 	rulesGrouped: false,
 	nameSize: 1,
@@ -52,11 +62,16 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 	const strength = Number(value.vignetteStrength);
 	const nameSize = Number(value.nameSize);
 	const nameOffset = Number(value.nameOffset);
+	const logoOpacity = Number(value.logoOpacity);
 	return {
 		vignette: value.vignette !== false,
 		vignetteStrength: Number.isFinite(strength)
 			? Math.min(1, Math.max(0, strength))
 			: DEFAULT_BOARD_LOOKS.vignetteStrength,
+		logo: value.logo !== false,
+		logoOpacity: Number.isFinite(logoOpacity)
+			? Math.min(LOGO_OPACITY.max, Math.max(LOGO_OPACITY.min, logoOpacity))
+			: DEFAULT_BOARD_LOOKS.logoOpacity,
 		// 'corner' was the edge, grouped, before they became two choices.
 		rulesAt: value.rulesAt === 'edge' || value.rulesAt === 'corner' ? 'edge' : 'middle',
 		rulesGrouped: value.rulesGrouped === true || value.rulesAt === 'corner',

@@ -2,6 +2,7 @@
 	import {
 		boardLooks,
 		DEFAULT_BOARD_LOOKS,
+		LOGO_OPACITY,
 		NAME_OFFSET,
 		NAME_SIZE
 	} from '#lib/features/grimoire/board-looks.svelte.ts';
@@ -29,6 +30,19 @@
 	defaultValue={DEFAULT_BOARD_LOOKS.vignetteStrength}
 	format={(strength) => intl.number(strength, { style: 'percent' })}
 	onChange={(vignetteStrength) => boardLooks.update({ vignetteStrength })}
+/>
+<SettingToggle
+	label={t('settings.scriptLogo')}
+	checked={boardLooks.current.logo}
+	onChange={(logo) => boardLooks.update({ logo })}
+/>
+<SettingSlider
+	label={t('settings.scriptLogoOpacity')}
+	value={boardLooks.current.logoOpacity}
+	{...LOGO_OPACITY}
+	defaultValue={DEFAULT_BOARD_LOOKS.logoOpacity}
+	format={(opacity) => intl.number(opacity, { style: 'percent' })}
+	onChange={(logoOpacity) => boardLooks.update({ logoOpacity })}
 />
 <SettingSlider
 	label={t('settings.nameSize')}
