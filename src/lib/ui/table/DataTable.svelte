@@ -132,6 +132,12 @@
 		 * 2026-10-18: one shared paged table for everything search lists). Unset draws all.
 		 */
 		pageSize?: number;
+		/**
+		 * Rows still to come from elsewhere (a site's next pages): their space is kept below
+		 * the drawn rows, and `onend` is called when it comes near.
+		 */
+		moreRows?: number;
+		onend?: () => void;
 	}
 
 	let {
@@ -155,6 +161,8 @@
 		resizeKey,
 		rowLabel,
 		pageSize,
+		moreRows = 0,
+		onend,
 		columnFilters = $bindable({}),
 		oncount,
 		hideKey
@@ -264,8 +272,26 @@
 		firstKey = first;
 	});
 	const drawn = $derived(limit < rows.length ? rows.slice(0, limit) : rows);
-	function nextPage() {
-		limit += pageSize ?? Infinity;
+	/** Rows not drawn yet, here or still to come: the space kept for them below. */
+	const undrawn = $derived(rows.length - drawn.length + Math.max(0, moreRows));
+
+	/**
+	 * The space kept for undrawn rows came near. The list never ends early, so a scroll in
+	 * flight never stops at the end of a page (Trevor, 2026-10-18: Search only went on once he
+	 * let go). Enough pages are drawn to reach past the screen, however far it jumped.
+	 */
+	function reachEnd(space: Element) {
+		if (drawn.length >= rows.length) {
+			onend?.();
+			return;
+		}
+		const size = pageSize ?? Infinity;
+		const box = space.getBoundingClientRect();
+		const view = root ? root.getBoundingClientRect() : { top: 0, bottom: innerHeight };
+		const rowHeight = box.height / Math.max(1, undrawn);
+		const past = view.bottom + (view.bottom - view.top) - box.top;
+		const pages = Math.max(1, Math.ceil(past / rowHeight / size));
+		limit += pages * size;
 	}
 
 	/** Tracks the same 40rem limit as the container query below. */
@@ -446,6 +472,24 @@
 	</button>
 {/snippet}
 
+<!-- Hides and shows columns. `wideOnly`: a narrow table has it on its row of moved filters. -->
+{#snippet columnsButton(wideOnly = false)}
+	<button
+		type="button"
+		class="filter columns-button"
+		class:wide-only={wideOnly}
+		class:on={hidden.count > 0}
+		aria-haspopup="dialog"
+		aria-label="Columns{hidden.count > 0 ? ' (some hidden)' : ''}"
+		onclick={(e) => {
+			pickerAnchor = e.currentTarget;
+			pickerOpen = true;
+		}}
+	>
+		<Icon name="columns" />
+	</button>
+{/snippet}
+
 <!-- The filter the table builds from a column's values (column-filter.ts). -->
 {#snippet builtFilter(column: DataColumn<K, T>, close: () => void)}
 	{@const values = column.value ? allRows.map(column.value) : []}
@@ -507,6 +551,7 @@
 	class:fit-content={fit === 'content'}
 	class:boxed
 	class:fill
+	class:lazy
 	style:--columns={template}
 	style:--columns-medium={mediumTemplate}
 	style:--columns-narrow={narrowTemplate}
@@ -556,27 +601,8 @@
 								{#if canFilter(column)}
 									{@render filterButton(column)}
 								{/if}
-								{#if i === 0 && narrow === 'hide'}
-									{#each movedFilters as moved (moved.id)}
-										<span class={moved.wider ? 'medium-only' : 'narrow-only'}
-											>{@render filterButton(moved, true)}</span
-										>
-									{/each}
-								{/if}
 								{#if column === fixedColumn && allColumns.length > 1}
-									<button
-										type="button"
-										class="filter columns-button"
-										class:on={hidden.count > 0}
-										aria-haspopup="dialog"
-										aria-label="Columns{hidden.count > 0 ? ' (some hidden)' : ''}"
-										onclick={(e) => {
-											pickerAnchor = e.currentTarget;
-											pickerOpen = true;
-										}}
-									>
-										<Icon name="columns" />
-									</button>
+									{@render columnsButton(narrow === 'hide')}
 								{/if}
 							</div>
 							{#if resizable(column)}
@@ -603,6 +629,23 @@
 							{/if}
 						</th>
 					{/each}
+					{#if narrow === 'hide'}
+						<!--
+							A narrow table's dropped columns keep their filters, with Columns, on one
+							wrapping row under the header (Trevor, 2026-10-18: they stacked up in Name).
+						-->
+						<th class="moved" class:has-medium={movedFilters.some((c) => c.wider)}>
+							<div class="head">
+								{#each movedFilters as moved (moved.id)}
+									<span class={moved.wider ? 'medium-only' : 'narrow-only'}
+										>{@render filterButton(moved, true)}</span
+									>
+								{/each}
+								{#if allColumns.length > 1}<span class="narrow-only">{@render columnsButton()}</span
+									>{/if}
+							</div>
+						</th>
+					{/if}
 				</tr>
 			</thead>
 			<tbody bind:this={body}>
@@ -654,10 +697,14 @@
 				{:else}
 					<tr class="empty"><td colspan={columns.length}>{empty}</td></tr>
 				{/each}
-				{#if drawn.length < rows.length}
-					<!-- Comes near the screen: the next page is drawn (a new watcher for each page). -->
-					{#key limit}
-						<tr class="more-rows" aria-hidden="true" {@attach near(nextPage, '100% 0px', root)}
+				{#if undrawn > 0}
+					<!-- Comes near the screen: more rows are drawn (a new watcher each time). -->
+					{#key drawn.length}
+						<tr
+							class="more-rows"
+							aria-hidden="true"
+							style:--undrawn={undrawn}
+							{@attach (space) => near(() => reachEnd(space), '200% 0px', root)(space)}
 						></tr>
 					{/key}
 				{/if}
@@ -712,10 +759,11 @@
 		overflow: auto;
 		overscroll-behavior: contain;
 	}
+	/* Above pinned cells (z-index 2), which rows stack even where they don't stick. */
 	.fill thead {
 		position: sticky;
 		top: 0;
-		z-index: 1;
+		z-index: 3;
 	}
 	table,
 	thead,
@@ -772,8 +820,12 @@
 		grid-template-columns: var(--columns);
 		border-bottom: 1px solid var(--border);
 	}
-	/* Rows off screen skip layout and paint; `auto` remembers each row's real height. */
-	tbody tr {
+	/*
+	 * Lazy tables' rows off screen skip layout and paint; `auto` remembers each row's real
+	 * height. Only there: Search's rows on a phone didn't follow a swipe until the finger
+	 * lifted (Trevor, 2026-10-18), and light rows gain nothing from skipping.
+	 */
+	.lazy tbody tr {
 		content-visibility: auto;
 		contain-intrinsic-block-size: auto var(--row-estimate);
 	}
@@ -866,17 +918,14 @@
 	}
 	/*
 	 * A header keeps its label, sort arrows and filter on one line (Trevor, 2026-10-18: Author's
-	 * buttons dropped under its label); columns are sized to fit them. Only the first header
-	 * wraps, since a narrow table moves other columns' filters into it.
+	 * buttons dropped under its label); columns are sized to fit them. A narrow table puts the
+	 * filters of the columns it drops on their own row (`.moved`).
 	 */
 	.head {
 		display: flex;
 		align-items: center;
 		width: 100%;
 		min-width: 0;
-	}
-	th:first-child .head {
-		flex-wrap: wrap;
 	}
 	.end .head {
 		justify-content: flex-end;
@@ -968,8 +1017,17 @@
 		opacity: 1;
 	}
 	.narrow-only,
-	.medium-only {
+	.medium-only,
+	.moved {
 		display: none;
+	}
+	/* The row of moved filters spans the table; it wraps if they don't fit on one line. */
+	thead th.moved {
+		grid-column: 1 / -1;
+		border-top: 1px solid var(--border);
+	}
+	th.moved .head {
+		flex-wrap: wrap;
 	}
 	/* The column picker sits at the end of the header of the column that can't be hidden. */
 	.columns-button {
@@ -987,7 +1045,7 @@
 		grid-column: var(--col);
 	}
 	.more-rows {
-		height: var(--row-estimate);
+		height: calc(var(--undrawn) * var(--row-estimate));
 	}
 	.empty td {
 		grid-column: 1 / -1;
@@ -1014,8 +1072,8 @@
 		.hide .medium-only {
 			display: contents;
 		}
-		.hide th:first-child .head {
-			flex-wrap: wrap;
+		.hide .moved.has-medium {
+			display: flex;
 		}
 	}
 
@@ -1028,7 +1086,8 @@
 			max-height: none;
 			overflow-y: visible;
 		}
-		.sticky {
+		.sticky,
+		thead .sticky {
 			position: static;
 			background: none;
 			box-shadow: none;
@@ -1050,9 +1109,11 @@
 		.hide .medium-only {
 			display: contents;
 		}
-		/* The first header wraps its moved filters onto a second line if they don't fit. */
-		.hide th:first-child .head {
-			flex-wrap: wrap;
+		.hide .moved {
+			display: flex;
+		}
+		.hide .wide-only {
+			display: none;
 		}
 
 		/* `stack`: the same fields as the table, each with its label, one block per row. */

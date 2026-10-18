@@ -41,7 +41,6 @@ import ph_clipboard_fill from '~icons/ph/clipboard-fill';
 import ph_clipboard_text_fill from '~icons/ph/clipboard-text-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
-import ph_columns_fill from '~icons/ph/columns-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
 import ph_corners_out_fill from '~icons/ph/corners-out-fill';
@@ -104,6 +103,7 @@ import ph_link_simple_break_fill from '~icons/ph/link-simple-break-fill';
 import ph_list_fill from '~icons/ph/list-fill';
 import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
 import ph_list_checks_fill from '~icons/ph/list-checks-fill';
+import ph_list_dashes_fill from '~icons/ph/list-dashes-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
 import ph_lock_fill from '~icons/ph/lock-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
@@ -145,6 +145,7 @@ import ph_shuffle_fill from '~icons/ph/shuffle-fill';
 import ph_sign_in_fill from '~icons/ph/sign-in-fill';
 import ph_skull_fill from '~icons/ph/skull-fill';
 import ph_sliders_fill from '~icons/ph/sliders-fill';
+import ph_sliders_horizontal_fill from '~icons/ph/sliders-horizontal-fill';
 import ph_smiley_fill from '~icons/ph/smiley-fill';
 import ph_smiley_angry_fill from '~icons/ph/smiley-angry-fill';
 import ph_snowflake_fill from '~icons/ph/snowflake-fill';
@@ -231,7 +232,6 @@ const icons: IconMap = {
 	'ph:clipboard-text-fill': ph_clipboard_text_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
-	'ph:columns-fill': ph_columns_fill,
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
 	'ph:corners-out-fill': ph_corners_out_fill,
@@ -294,6 +294,7 @@ const icons: IconMap = {
 	'ph:list-fill': ph_list_fill,
 	'ph:list-bullets-fill': ph_list_bullets_fill,
 	'ph:list-checks-fill': ph_list_checks_fill,
+	'ph:list-dashes-fill': ph_list_dashes_fill,
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
 	'ph:lock-fill': ph_lock_fill,
 	'ph:lock-simple-fill': ph_lock_simple_fill,
@@ -335,6 +336,7 @@ const icons: IconMap = {
 	'ph:sign-in-fill': ph_sign_in_fill,
 	'ph:skull-fill': ph_skull_fill,
 	'ph:sliders-fill': ph_sliders_fill,
+	'ph:sliders-horizontal-fill': ph_sliders_horizontal_fill,
 	'ph:smiley-fill': ph_smiley_fill,
 	'ph:smiley-angry-fill': ph_smiley_angry_fill,
 	'ph:snowflake-fill': ph_snowflake_fill,
