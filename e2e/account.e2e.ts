@@ -73,12 +73,8 @@ test('a sign-in link signs in and keeps its token out of the address', async ({
 test('scripts added on the device are saved to the profile as local copies', async ({ page }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
-	await paste.getByLabel('Script JSON or link').fill(JSON.stringify(homebrew));
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste.getByLabel('Script JSON').fill(JSON.stringify(homebrew));
 	await paste.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Storm Front');
 
@@ -111,13 +107,9 @@ test('scripts added on the device are saved to the profile as local copies', asy
 	// Adding a script while signed in saves it straight away.
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const again = page.getByRole('dialog', { name: 'Paste a script' });
+	const again = page.getByRole('dialog', { name: 'Add script' });
 	await again
-		.getByLabel('Script JSON or link')
+		.getByLabel('Script JSON')
 		.fill(JSON.stringify([{ id: '_meta', name: 'Second Wind' }, ...homebrew.slice(1)]));
 	const saving = page.waitForResponse(
 		(r) => r.url().includes('/api/account/docs/script/') && r.request().method() === 'PUT'
@@ -149,4 +141,51 @@ test('account changes are refused from other sites', async ({ page }) => {
 		return response.status;
 	});
 	expect(status).toBe(403);
+});
+
+test('the account id is a chain of words that stays when the username and email change', async ({
+	page
+}) => {
+	const email = uniqueEmail('change');
+	await signInWithCode(page, email);
+	const idOf = () =>
+		page.evaluate(async () => (await (await fetch('/api/auth/session')).json()).user.id as string);
+	const id = await idOf();
+	expect(id).toMatch(/^[a-z]+(-[a-z]+){4}$/);
+	await expect(page.getByTestId('account-username')).toHaveText('None');
+
+	// A unique username, changed at any time.
+	const name = `ann${Date.now().toString(36)}`;
+	await page.getByRole('button', { name: 'Change username' }).tap();
+	const naming = page.getByRole('dialog', { name: 'Change username' });
+	await naming.getByLabel('Username').fill(name);
+	await naming.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('account-username')).toHaveText(name);
+
+	// A new email: a code goes to the new address, then the account moves to it.
+	const next = uniqueEmail('moved');
+	await page.getByRole('button', { name: 'Change email' }).tap();
+	const moving = page.getByRole('dialog', { name: 'Change email' });
+	await moving.getByLabel('New email address').fill(next);
+	await moving.getByRole('button', { name: 'Send code' }).tap();
+	await expect(moving.getByTestId('change-email-preview')).toContainText('Your code is');
+	const code = /(\d{6})/.exec(
+		(await moving.getByTestId('change-email-preview').textContent()) ?? ''
+	)![1];
+	await moving.getByLabel(`Code sent to ${next}`).fill(code);
+	await moving.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('account-email')).toHaveText(next);
+	expect(await idOf()).toBe(id);
+
+	// The old address no longer signs in to this account: it makes a new one.
+	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signInWithCode(page, email);
+	expect(await idOf()).not.toBe(id);
+	await expect(page.getByTestId('account-username')).toHaveText('None');
+
+	// Usernames are unique, ignoring case.
+	await page.getByRole('button', { name: 'Change username' }).tap();
+	await naming.getByLabel('Username').fill(name.toUpperCase());
+	await naming.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(naming.getByRole('status')).toHaveText('That username is taken.');
 });

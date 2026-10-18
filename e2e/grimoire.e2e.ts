@@ -447,13 +447,9 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 test('a new game can use a custom script from the Library', async ({ page }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
 	await dialog
-		.getByLabel('Script JSON or link')
+		.getByLabel('Script JSON')
 		.fill(JSON.stringify([{ id: '_meta', name: 'Pocket Storm' }, 'chef', 'saint', 'imp']));
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Pocket Storm');
@@ -2093,13 +2089,9 @@ test('marking a player as the Marionette asks to make them evil', async ({ page 
 	// The Marionette is a Minion, so evil (https://wiki.bloodontheclocktower.com/Marionette).
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	const paste = page.getByRole('dialog', { name: 'Add script' });
 	await paste
-		.getByLabel('Script JSON or link')
+		.getByLabel('Script JSON')
 		.fill(
 			JSON.stringify([{ id: '_meta', name: 'Strings' }, 'clockmaker', 'chef', 'marionette', 'imp'])
 		);
@@ -2581,12 +2573,8 @@ test("a script's own character can have another copy of a reminder (Cleopatra)",
 }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
-	await paste.getByLabel('Script JSON or link').fill(
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste.getByLabel('Script JSON').fill(
 		JSON.stringify([
 			{ id: '_meta', name: 'Little Rome' },
 			{
@@ -2631,12 +2619,8 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
-	await paste.getByLabel('Script JSON or link').fill(
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste.getByLabel('Script JSON').fill(
 		JSON.stringify([
 			{ id: '_meta', name: 'Little Market' },
 			{

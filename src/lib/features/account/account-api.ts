@@ -10,7 +10,8 @@ import type {
 	ProfileDoc,
 	PutDocRequest,
 	SessionInfo,
-	StartResponse
+	StartResponse,
+	UserResponse
 } from './account-protocol.ts';
 
 /** A failed call, with a message to show. `status` is 0 when the server couldn't be reached. */
@@ -65,6 +66,12 @@ export const accountApi = {
 	endSession: (id: string) =>
 		call<{ ok: true }>(`/api/account/sessions/${encodeURIComponent(id)}`, 'DELETE'),
 	endOtherSessions: () => call<{ ok: true }>('/api/account/sessions/others', 'POST'),
+	startEmailChange: (email: string) =>
+		call<StartResponse>('/api/account/email/start', 'POST', { email }),
+	verifyEmailChange: (email: string, code: string) =>
+		call<UserResponse>('/api/account/email/verify', 'POST', { email, code }).then((r) => r.user),
+	setUsername: (username: string) =>
+		call<UserResponse>('/api/account/username', 'PUT', { username }).then((r) => r.user),
 	deleteAccount: () => call<{ ok: true }>('/api/account', 'DELETE'),
 	listDocs: <T>(kind: DocKind) =>
 		call<{ docs: ProfileDoc<T>[] }>(`/api/account/docs/${kind}`).then((r) => r.docs),

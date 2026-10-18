@@ -99,7 +99,12 @@
 		line-height: 1.4;
 		/* One line, unless the chip alone is wider than its line (tiny screen, largest text). */
 		max-width: 100%;
-		vertical-align: baseline;
+		/*
+		 * Its middle level with the text's middle (Trevor, 2026-10-18). On the baseline, a chip
+		 * with its owner's icon sat high: an inline-flex box takes its baseline from its first
+		 * item, and an image's baseline is its bottom edge.
+		 */
+		vertical-align: middle;
 	}
 	/* The little round token mark. */
 	.reminder::before {
