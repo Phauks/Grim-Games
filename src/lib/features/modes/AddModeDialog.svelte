@@ -113,7 +113,9 @@
 		border: var(--card-border);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
-		font: max(0.9rem, 16px) / 1.4 var(--font-mono, monospace); /* px-ok: iOS zooms into fields under 16px */
+		/* The browser's own monospace font for a textarea, like Inspect's mode file. */
+		font-size: max(0.9rem, 16px); /* px-ok: iOS zooms into fields under 16px */
+		line-height: 1.4;
 		resize: vertical;
 	}
 	.issues {

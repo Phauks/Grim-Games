@@ -39,13 +39,17 @@ export async function startInMode<G extends { game: { gameId: GameId } }>(
 
 /**
  * Where a new game opens: the draft or choose screen for a mode that doesn't use the bag
- * (Sushi Buffet, Whale Buffet), otherwise the board.
+ * (Sushi Buffet, Whale Buffet), the hidden characters for one that adds them (A Script of
+ * Infinite Possibilities), otherwise the board.
  */
 export function startHref(modeId: string, gameId: GameId): ResolvedPathname {
-	const kind = (findMode(modeId) ?? STANDARD).parts.assignment?.kind;
-	return kind === 'draft' || kind === 'choose-own'
-		? resolve('/grimoire/[gameId]/deal', { gameId })
-		: resolve('/grimoire/[gameId]', { gameId });
+	const mode = findMode(modeId) ?? STANDARD;
+	const kind = mode.parts.assignment?.kind;
+	if (kind === 'draft' || kind === 'choose-own')
+		return resolve('/grimoire/[gameId]/deal', { gameId });
+	if (mode.parts.pool?.kind === 'script-plus-hidden')
+		return resolve('/grimoire/[gameId]/extras', { gameId });
+	return resolve('/grimoire/[gameId]', { gameId });
 }
 
 interface TownsInput<G> {

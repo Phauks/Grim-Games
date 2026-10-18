@@ -263,3 +263,37 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await expect(modes.getByRole('radio', { name: 'Tiny Buffet', exact: true })).toHaveCount(0);
 	await noSidewaysScroll(page);
 });
+
+test('A Script of Infinite Possibilities rolls hidden characters from off the script into the selection', async ({
+	page
+}) => {
+	// https://chillclocktower.com/2024/04/28/a-script-of-infinite-possibilities/
+	await page.goto('/new');
+	await chooseMode(page, 'A Script of Infinite Possibilities');
+	const panel = modesPanel(page);
+	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
+	await expect(page.getByRole('heading', { name: 'Hidden characters', level: 1 })).toBeVisible();
+	const extras = page.getByTestId('extras').locator('li');
+	await expect(extras).toHaveCount(2);
+	await expect(extras.nth(0)).toContainText('Townsfolk');
+	await expect(extras.nth(1)).toContainText('Minion');
+	await expect(page.getByTestId('extras-range')).toHaveText(
+		'Tell the table: 1 to 3 hidden characters'
+	);
+	// Rolling one again swaps it for another off-script character of the same type.
+	const reroll = extras.nth(0).getByRole('button', { name: /^Roll again instead of / });
+	const before = await reroll.getAttribute('aria-label');
+	await reroll.tap();
+	await expect(
+		extras.nth(0).getByRole('button', { name: /^Roll again instead of / })
+	).not.toHaveAttribute('aria-label', before!);
+	await noSidewaysScroll(page);
+
+	await page.getByRole('button', { name: 'Choose characters' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	// Off the script, so not in the list, but chosen for the bag.
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
+	await expect(page.getByTestId('count-minion')).toHaveText('1');
+});
