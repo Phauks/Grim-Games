@@ -14,7 +14,7 @@
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import CharacterReference from './CharacterReference.svelte';
 	import NightOrderReference from './NightOrderReference.svelte';
-	import { referenceView, type ReferenceView } from './view-mode.svelte.ts';
+	import { referenceView } from './view-mode.svelte.ts';
 
 	type View = 'characters' | 'night';
 

@@ -88,7 +88,6 @@
 		const target = reminderTargetLabel(
 			character.id,
 			token.label,
-			// eslint-disable-next-line grim/names-as-badges -- words inside a one-line note, not a name on its own
 			(id) => officialData.current?.byId.get(id)?.name ?? id
 		);
 		const parts = [setupLabel(token), target && t('reference.target.label', { target })];
