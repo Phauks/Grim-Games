@@ -849,8 +849,11 @@ test('a BotC Scripts result offers its other versions, and says when a newer one
 		};
 	});
 	await details(page).getByRole('button', { name: 'Print script' }).tap();
+	// Printing first waits up to five seconds for the sheet and its icons, so poll longer than that.
 	await expect
-		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed))
+		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed), {
+			timeout: 15_000
+		})
 		.toContain('Storm Warden');
 	const printed = await page.evaluate(() => (window as unknown as { printed: string }).printed);
 	expect(printed).toContain('1.0.0');
