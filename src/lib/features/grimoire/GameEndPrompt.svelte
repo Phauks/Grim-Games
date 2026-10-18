@@ -2,12 +2,17 @@
 	import { untrack } from 'svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
-	import { gameEnds, suggestedWinner, type GameEnd, type GameHold } from '#lib/core/rules/index.ts';
+	import {
+		gameEnds,
+		promptable,
+		suggestedWinner,
+		type GameEnd,
+		type GameHold
+	} from '#lib/core/rules/index.ts';
 	import { impairmentOfLabel } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -19,7 +24,9 @@
 	 * When a game end condition is met (Trevor, 2026-10-18), list every one met, with what may
 	 * keep the game going, and offer End game. A recommendation, never a requirement: Cancel
 	 * (or closing it) dismisses those conditions until they change, and the winner is only
-	 * preselected when every condition agrees. Rules: `#lib/core/rules/game-end.ts`.
+	 * preselected when every condition agrees. A condition something may hold off (a living
+	 * Mastermind, both twins alive) doesn't open it (Trevor, 2026-10-18). Rules:
+	 * `#lib/core/rules/game-end.ts`.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -32,8 +39,8 @@
 
 	/**
 	 * Our own sentences ("Saint executed."), off until Trevor approves them: no new authored
-	 * content (Trevor, 2026-10-15). Off, each line is the players' badges, the character's TPI
-	 * ability text and the wiki link.
+	 * content (Trevor, 2026-10-15). Off, each line is the players' badges and the character's
+	 * TPI ability text; a badge opens the character's page (Trevor: no separate wiki links).
 	 */
 	const OWN_WORDING = false;
 
@@ -47,6 +54,9 @@
 	const on = $derived(active && preferences.current.assistance.gameEndPrompts);
 	const ends = $derived(on ? gameEnds(game, characters, { dayEnded }) : []);
 
+	// Dismissed per condition and what holds it off, so a hold ending asks again.
+	const dismissKey = (e: GameEnd) => `${e.key}|${e.holds.map((h) => h.rule).join(',')}`;
+
 	// Kept on this device, so reopening the game doesn't ask again.
 	let dismissed = $state<readonly string[]>(
 		dismissedGameEnds.read(untrack(() => grimoire.game.gameId))
@@ -59,7 +69,7 @@
 	// A condition that stops holding can prompt again if it comes back.
 	$effect(() => {
 		if (!on) return;
-		const keys = new Set(ends.map((e) => e.key));
+		const keys = new Set(ends.map(dismissKey));
 		if (dismissed.some((k) => !keys.has(k))) dismissed = dismissed.filter((k) => keys.has(k));
 	});
 	// Closed any way but Confirm: dismissed until something changes. Then a condition not
@@ -68,12 +78,12 @@
 	$effect(() => {
 		if (open) return;
 		if (shown.length > 0) {
-			if (!ending) dismissed = [...new Set([...dismissed, ...shown.map((e) => e.key)])];
+			if (!ending) dismissed = [...new Set([...dismissed, ...shown.map(dismissKey)])];
 			ending = false;
 			shown = [];
 			return;
 		}
-		if (!ends.some((e) => !dismissed.includes(e.key))) return;
+		if (!promptable(ends).some((e) => !dismissed.includes(dismissKey(e)))) return;
 		shown = ends;
 		winner = suggestedWinner(ends) ?? 'none';
 		open = true;
@@ -110,14 +120,6 @@
 	{#if c}<span class="ability"><GlossaryText text={c.ability} names={[c.name]} /></span>{/if}
 {/snippet}
 
-{#snippet wiki(href: string)}
-	<!-- External wiki page (the rules authority), not an app route. -->
-	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-	<a class="wiki" {href} target="_blank" rel="noopener" aria-label="Open wiki entry">
-		<Icon name="wiki" />
-	</a>
-{/snippet}
-
 {#snippet hold(h: GameHold)}
 	<li class="hold" data-rule={h.rule}>
 		<span class="text">
@@ -139,11 +141,12 @@
 				{@render seat(h.seats[0])}: play for 1 more day.
 			{:else if h.rule === 'imp'}
 				{@render character('imp')}: a Minion may become the Imp.
+			{:else if h.rule === 'fang-gu'}
+				{@render character('fanggu')}: an Outsider may become the Fang Gu.
 			{:else}
 				{@render seat(h.seats[0])} is drunk, poisoned or has no ability.
 			{/if}
 		</span>
-		{@render wiki(h.wiki)}
 	</li>
 {/snippet}
 
@@ -186,7 +189,6 @@
 						({@render seat(end.flippedBy.seatId)} flips it)
 					{/if}
 				</span>
-				{@render wiki(end.wiki)}
 			</li>
 			{#if end.flippedBy?.seatId && !OWN_WORDING}
 				<li class="hold" data-rule="heretic">
@@ -194,7 +196,6 @@
 						{@render seat(end.flippedBy.seatId)}
 						{@render ability('heretic')}
 					</span>
-					{@render wiki('https://wiki.bloodontheclocktower.com/Heretic')}
 				</li>
 			{/if}
 			{#each end.holds as h, i (i)}{@render hold(h)}{/each}
@@ -237,14 +238,6 @@
 	}
 	.ability {
 		font-family: var(--font-ability);
-	}
-	.wiki {
-		display: inline-grid;
-		place-items: center;
-		min-width: var(--tap-target);
-		min-height: var(--tap-target);
-		border-radius: var(--radius-md);
-		color: var(--on-surface);
 	}
 	.team {
 		display: inline-block;
