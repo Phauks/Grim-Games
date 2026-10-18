@@ -16,6 +16,7 @@ const KINDS: Partial<Record<(typeof MODE_PARTS)[number], readonly string[]>> = {
 	setupModifiers: ['standard', 'only', 'as-chosen'],
 	assignment: ['bag', 'draft', 'choose-own'],
 	duplicates: ['standard', 'allowed'],
+	bluffs: ['standard', 'none'],
 	daySteps: ['town-representative', 'spectator-vote'],
 	winConditions: ['standard', 'all-towns'],
 	betweenGames: ['campaign']
@@ -41,6 +42,15 @@ export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>):
 				add(`sources[${i}]`, 'must have a title and a url');
 			else if (!/^https:\/\//.test(s.url)) add(`sources[${i}].url`, 'must be an https link');
 		});
+	if (value.authors !== undefined) {
+		if (!Array.isArray(value.authors)) add('authors', 'must be a list of links');
+		else
+			value.authors.forEach((a, i) => {
+				if (!isObject(a) || typeof a.title !== 'string' || typeof a.url !== 'string')
+					add(`authors[${i}]`, 'must have a name (title) and the url that names them');
+				else if (!/^https:\/\//.test(a.url)) add(`authors[${i}].url`, 'must be an https link');
+			});
+	}
 	if (value.unconfirmed !== undefined) {
 		if (!Array.isArray(value.unconfirmed)) add('unconfirmed', 'must be a list of parts');
 		else
@@ -102,7 +112,8 @@ const ID_LISTS = [
 	'onScript',
 	'ruleCharacters',
 	'characters',
-	'together'
+	'together',
+	'grants'
 ];
 
 function characterIds(item: unknown, path: string): [string, CharacterId][] {

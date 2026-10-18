@@ -5,7 +5,14 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { GAME_MODES, gameModeById } from './registry.ts';
-import { bannedIn, choosableCharacters, modeCharacters, modeScript, runsPart } from './pool.ts';
+import {
+	bannedIn,
+	choosableCharacters,
+	demonBluffs,
+	modeCharacters,
+	modeScript,
+	runsPart
+} from './pool.ts';
 import { parseGameMode } from './validate.ts';
 import { MODE_PARTS } from './types.ts';
 
@@ -166,5 +173,26 @@ describe('about', () => {
 	it('describes every built-in mode but Standard', () => {
 		for (const m of GAME_MODES.filter((m) => m.id !== 'standard'))
 			expect(m.about, m.id).toBeTruthy();
+	});
+});
+
+describe('Demon bluffs (Trevor, 2026-10-18)', () => {
+	it('are off in Sushi Buffet and Whale Buffet only', () => {
+		const off = GAME_MODES.filter((m) => !demonBluffs(m)).map((m) => m.id);
+		expect(off.sort()).toEqual(['sushi-buffet', 'whale-buffet']);
+	});
+});
+
+describe('authors (Trevor, 2026-10-18: only when properly attributed)', () => {
+	it('link every author to an https page that names them', () => {
+		for (const m of GAME_MODES)
+			for (const a of m.authors ?? []) expect(a.url, m.id).toMatch(/^https:\/\//);
+	});
+
+	it('rejects an author without a link', () => {
+		const ok = parseGameMode({ ...mode('specters') }, known);
+		expect(ok.ok).toBe(true);
+		const bad = parseGameMode({ ...mode('specters'), authors: ['Someone'] }, known);
+		expect(bad.ok).toBe(false);
 	});
 });

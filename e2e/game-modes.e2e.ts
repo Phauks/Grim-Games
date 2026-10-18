@@ -339,9 +339,12 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	await expect(page.getByRole('heading', { name: 'Hidden characters', level: 1 })).toBeVisible();
 	const extras = page.getByTestId('extras').locator('li');
-	await expect(extras).toHaveCount(2);
+	// A row for each of Townsfolk, Outsider and Minion (Trevor, 2026-10-18); Outsider starts empty.
+	await expect(extras).toHaveCount(3);
 	await expect(extras.nth(0)).toContainText('Townsfolk');
-	await expect(extras.nth(1)).toContainText('Minion');
+	await expect(extras.nth(1)).toContainText('Outsider');
+	await expect(extras.nth(1)).toContainText('None');
+	await expect(extras.nth(2)).toContainText('Minion');
 	await expect(page.getByTestId('extras-range')).toHaveText(
 		'Tell the table: 1 to 3 hidden characters'
 	);
@@ -352,13 +355,26 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(
 		extras.nth(0).getByRole('button', { name: /^Roll again instead of / })
 	).not.toHaveAttribute('aria-label', before!);
+	// The Storyteller can choose the character, or leave a row empty.
+	await extras.nth(1).getByRole('button', { name: 'Choose a hidden Outsider' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
+	await picker.getByRole('searchbox').fill('Goon');
+	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
+	await expect(picker).toBeHidden();
+	await expect(extras.nth(1)).toContainText('Goon');
+	await extras.nth(2).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
+	await expect(extras.nth(2)).toContainText('None');
+	await expect(page.getByTestId('extras-range')).toHaveText(
+		'Tell the table: 1 to 3 hidden characters'
+	);
 	await noSidewaysScroll(page);
 
 	await page.getByRole('button', { name: 'Choose characters' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	// Off the script, so not in the list, but chosen for the bag.
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
-	await expect(page.getByTestId('count-minion')).toHaveText('1');
+	await expect(page.getByTestId('count-outsider')).toHaveText('1');
+	await expect(page.getByTestId('count-minion')).toHaveText('0');
 });
 
 test('Flesh and Bone runs a campaign: the next game adds a Demon once the current game has ended', async ({
@@ -411,4 +427,53 @@ test('Flesh and Bone runs a campaign: the next game adds a Demon once the curren
 	await expect(games).toHaveCount(2);
 	await expect(games.nth(0)).toContainText('Ended');
 	await expect(next).toBeDisabled();
+});
+
+test('Specters: spectators vote on their phones and the Storyteller sees the count', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Apparition, from https://www.youtube.com/watch?v=-R34QbIgDh8
+	await page.goto('/new');
+	await chooseMode(page, 'Specters');
+	const panel = modesPanel(page);
+	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+
+	await page.goto(`/grimoire/${gameId}/room`);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+
+	await page.goto(`/grimoire/${gameId}/specters`);
+	await expect(page.getByRole('heading', { name: 'Apparition', level: 1 })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Wizard' })).toBeVisible();
+
+	// A phone without a seat is a spectator.
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toBeVisible();
+	await expect(page.getByTestId('specters-room')).toHaveText('0/1 spectators voted');
+
+	await page.getByRole('button', { name: 'Open vote' }).tap();
+	const vote = phone.getByRole('dialog', { name: 'Spectators’ vote' });
+	await expect(vote).toBeVisible();
+	await vote.getByRole('button', { name: /^2\s*Seat 2$/ }).tap();
+	await expect(vote.getByRole('button', { name: /^2\s*Seat 2$/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(page.getByTestId('specters-room')).toHaveText('1/1 spectators voted');
+	const tally = page.getByTestId('specters-tally').locator('li');
+	await expect(tally.nth(1)).toHaveAttribute('data-most', 'true');
+	await expect(tally.nth(1)).toContainText('1');
+
+	// Closing the vote closes it on the phone; the count stays for the Storyteller.
+	await page.getByRole('button', { name: 'Close vote' }).tap();
+	await expect(vote).toBeHidden();
+	await expect(tally.nth(1)).toHaveAttribute('data-most', 'true');
+	await noSidewaysScroll(page);
+	await phoneContext.close();
 });

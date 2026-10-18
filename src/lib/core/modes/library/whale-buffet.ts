@@ -33,6 +33,8 @@ export const WHALE_BUFFET: GameMode = {
 		setupModifiers: { kind: 'only', characters: ['bountyhunter'] },
 		assignment: { kind: 'choose-own', when: 'first-night', reconsider: true },
 		duplicates: { kind: 'allowed', extrasMayBeDrunk: true },
-		information: [{ characters: [] }]
+		information: [{ characters: [] }],
+		// Trevor, 2026-10-18, in the project chat.
+		bluffs: { kind: 'none', cite: 'https://claude.ai/code/project/chan_01LbwopXmmfZCTHhANoebuJ9' }
 	}
 };

@@ -3,7 +3,7 @@ import { GAME_MODE_FORMAT, type GameMode } from '../types.ts';
 const POST = 'https://chillclocktower.com/2024/04/28/a-script-of-infinite-possibilities/';
 
 /**
- * A Script of Infinite Possibilities (Patters): Trouble Brewing plus the Banshee, with "+1"
+ * A Script of Infinite Possibilities (by Nashable, from an idea Patters popularised): Trouble Brewing plus the Banshee, with "+1"
  * tokens standing for extra characters from off the script, picked at random or by an
  * audience; only their players know them. One extra good and one extra evil is common; the
  * Storyteller may share a range of how many. Off-script registration is the Storyteller's
@@ -18,7 +18,8 @@ export const INFINITE_POSSIBILITIES: GameMode = {
 		'Trouble Brewing plus the Banshee, with hidden extra characters from off the script that only their players know about. The Storyteller may tell the table a range of how many.',
 	aliases: ['Trouble Bucket', 'Infinite Impossibilities'],
 	sources: [{ title: 'A Script of Infinite Possibilities (Chill on the Clocktower)', url: POST }],
-	credits: ['Patters'],
+	// The post's byline; it credits Patters with the idea, not the script.
+	authors: [{ title: 'Nashable', url: POST }],
 	parts: {
 		pool: {
 			kind: 'script-plus-hidden',

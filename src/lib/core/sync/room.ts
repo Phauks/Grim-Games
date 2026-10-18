@@ -43,7 +43,24 @@ export interface RoomState {
 	members: RoomMember[];
 	/** At most one per member, oldest first. */
 	requests: RoomRequest[];
+	/** A spectators' vote the Storyteller has open (Specters), if any. */
+	vote?: SpectatorVote;
 }
+
+/**
+ * Specters (https://www.youtube.com/watch?v=-R34QbIgDh8): spectators share one ability and
+ * vote on how it is used. A spectator is a member without a seat. The Storyteller opens a
+ * vote with the seats it can pick, reads the tally, and decides; the room only counts.
+ */
+export interface SpectatorVote {
+	voteId: string;
+	options: SeatId[];
+	/** One choice per spectator, by member id. */
+	votes: Record<string, SeatId>;
+}
+
+/** At most this many options in a vote: one per seat. */
+export const MAX_VOTE_OPTIONS = MAX_MEMBERS;
 
 /**
  * The room protocol this build speaks. The Worker updates the moment a build deploys, but an
@@ -65,6 +82,8 @@ export type ClientMessage =
 	| { type: 'request'; name: string; seatId?: SeatId }
 	| { type: 'cancel-request' }
 	| { type: 'leave-seat' }
+	/** A spectator's choice in the open vote; a new choice replaces the last. */
+	| { type: 'vote'; voteId: string; choice: SeatId }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**
@@ -75,6 +94,8 @@ export type ClientMessage =
 	/** `seatId` puts the player in a different seat from the one they asked for. */
 	| { type: 'resolve'; requestId: string; accept: boolean; seatId?: SeatId }
 	| { type: 'unseat'; memberId: string }
+	| { type: 'open-vote'; voteId: string; options: SeatId[] }
+	| { type: 'close-vote' }
 	| { type: 'close' };
 
 /** What the Storyteller's device sees. */
@@ -82,6 +103,19 @@ export interface HostView {
 	type: 'host-view';
 	members: RoomMember[];
 	requests: RoomRequest[];
+	/** The open vote's count of spectators' choices; absent when no vote is open. */
+	vote?: VoteTally;
+}
+
+export interface VoteTally {
+	voteId: string;
+	options: SeatId[];
+	/** Votes per option, every option listed. */
+	counts: Record<SeatId, number>;
+	/** Spectators who have voted. */
+	voted: number;
+	/** Spectators in the room (members without a seat). */
+	spectators: number;
 }
 
 /** What one player's phone sees: the public table, and their own place in it. */
@@ -92,6 +126,8 @@ export interface PlayerView {
 	request?: Pick<RoomRequest, 'name' | 'seatId'>;
 	/** Seats someone in the room already sits in. */
 	takenSeats: SeatId[];
+	/** The open vote, shown to spectators only. */
+	vote?: { voteId: string; options: SeatId[]; choice?: SeatId };
 }
 
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
@@ -140,7 +176,30 @@ export function newRoom(hostKeyHash: string): RoomState {
 }
 
 export function hostView(room: RoomState): HostView {
-	return { type: 'host-view', members: room.members, requests: room.requests };
+	const view: HostView = { type: 'host-view', members: room.members, requests: room.requests };
+	if (room.vote) view.vote = tally(room, room.vote);
+	return view;
+}
+
+const isSpectator = (m: RoomMember) => m.seatId === undefined;
+
+function tally(room: RoomState, vote: SpectatorVote): VoteTally {
+	const spectators = room.members.filter(isSpectator);
+	const counts = Object.fromEntries(vote.options.map((o) => [o, 0])) as Record<SeatId, number>;
+	let voted = 0;
+	for (const m of spectators) {
+		const choice = vote.votes[m.memberId];
+		if (choice === undefined || !(choice in counts)) continue;
+		counts[choice]++;
+		voted++;
+	}
+	return {
+		voteId: vote.voteId,
+		options: vote.options,
+		counts,
+		voted,
+		spectators: spectators.length
+	};
 }
 
 export function playerView(room: RoomState, memberId: string): PlayerView {
@@ -152,6 +211,11 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 		takenSeats: room.members.flatMap((m) => (m.seatId ? [m.seatId] : []))
 	};
 	if (room.public) view.public = room.public;
+	if (room.vote && isSpectator(me)) {
+		const choice = room.vote.votes[memberId];
+		view.vote = { voteId: room.vote.voteId, options: room.vote.options };
+		if (choice !== undefined) view.vote.choice = choice;
+	}
 	if (request) {
 		view.request = { name: request.name };
 		if (request.seatId) view.request.seatId = request.seatId;
@@ -245,14 +309,16 @@ export function unseat(room: RoomState, memberId: string): RoomState {
 
 /**
  * New public state from the Storyteller. Seats that no longer exist lose their phone; a
- * different game clears every seat and every seat request, but names stay.
+ * different game clears every seat, every seat request and any open vote, but names stay.
  */
 export function publish(room: RoomState, gameId: string, state: PublicGameState): RoomState {
 	const newGame = room.gameId !== undefined && room.gameId !== gameId;
 	const seats = new Set(state.seats.map((s) => s.seatId));
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
+	// A vote belongs to its game.
+	const base = newGame ? closeVote(room) : room;
 	return {
-		...room,
+		...base,
 		gameId,
 		public: state,
 		members: room.members.map((m) =>
@@ -265,6 +331,42 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 			return without;
 		})
 	};
+}
+
+/**
+ * Opens a spectators' vote, replacing any open one. Options must be seats at the table, each
+ * once; a vote with none is not opened.
+ */
+export function openVote(room: RoomState, voteId: unknown, options: unknown): RoomState {
+	if (typeof voteId !== 'string' || !voteId || !Array.isArray(options)) return room;
+	const seats = [
+		...new Set(
+			options.filter((o): o is SeatId => typeof o === 'string' && seatExists(room, o as SeatId))
+		)
+	].slice(0, MAX_VOTE_OPTIONS);
+	if (seats.length === 0) return room;
+	return { ...room, vote: { voteId, options: seats, votes: {} } };
+}
+
+export function closeVote(room: RoomState): RoomState {
+	if (!room.vote) return room;
+	const { vote: _closed, ...rest } = room;
+	void _closed;
+	return rest;
+}
+
+/** A spectator's vote in the open vote; anything else (a seated player, a stale vote) is ignored. */
+export function castVote(
+	room: RoomState,
+	memberId: string,
+	voteId: unknown,
+	choice: unknown
+): RoomState {
+	const vote = room.vote;
+	const member = room.members.find((m) => m.memberId === memberId);
+	if (!vote || !member || !isSpectator(member) || voteId !== vote.voteId) return room;
+	if (typeof choice !== 'string' || !vote.options.includes(choice as SeatId)) return room;
+	return { ...room, vote: { ...vote, votes: { ...vote.votes, [memberId]: choice as SeatId } } };
 }
 
 /** Parses a socket message; anything malformed is `null` and ignored. */

@@ -60,8 +60,18 @@
 					{/each}
 				</ul>
 			</dd>
-			<dt>{t('modes.credits')}</dt>
-			<dd>{mode.credits?.length ? mode.credits.join(', ') : t('common.none')}</dd>
+			<dt>{t('modes.authors')}</dt>
+			<dd data-testid="inspect-authors">
+				{#if mode.authors?.length}
+					<ul role="list">
+						{#each mode.authors as author (author.title + author.url)}
+							<li><ModeValue field="author" value={author} /></li>
+						{/each}
+					</ul>
+				{:else}
+					{t('common.none')}
+				{/if}
+			</dd>
 		</dl>
 
 		<h3>{t('modes.parts')}</h3>

@@ -8,6 +8,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { RoomPlayer } from './player.svelte.ts';
 	import { followRoomScript } from './room-script.ts';
 
@@ -64,6 +65,17 @@
 		if (mine) return t('room.seated', { seat: seatName(mine), name: view.me.name ?? '' });
 		if (view.me.name) return t('room.unseated', { name: view.me.name });
 		return t('room.choose');
+	});
+
+	// Specters: a spectators' vote opens over the page, once for each new vote.
+	const vote = $derived(view?.vote);
+	let voting = $state(false);
+	let seenVote: string | undefined;
+	$effect(() => {
+		const id = vote?.voteId;
+		if (id && id !== seenVote) voting = true;
+		if (!id) voting = false;
+		seenVote = id;
 	});
 
 	function enterCode(event: SubmitEvent) {
@@ -203,6 +215,28 @@
 	{/if}
 </Page>
 
+<Dialog bind:open={voting} title={t('room.vote.title')}>
+	<ul class="vote" data-testid="spectator-vote">
+		{#each vote?.options ?? [] as option (option)}
+			{@const s = seats.find((x) => x.seatId === option)}
+			<li>
+				<button
+					type="button"
+					class="choice"
+					aria-pressed={vote?.choice === option}
+					disabled={status !== 'open'}
+					onclick={() => player?.vote(option)}
+				>
+					<span class="number">{s?.seatNumber ?? ''}</span>
+					<span class="name"
+						>{s?.playerName ?? t('common.seat', { number: s?.seatNumber ?? 0 })}</span
+					>
+				</button>
+			</li>
+		{/each}
+	</ul>
+</Dialog>
+
 <style>
 	form {
 		display: grid;
@@ -318,5 +352,32 @@
 	}
 	.state {
 		color: var(--on-surface-muted);
+	}
+	.vote {
+		display: grid;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.choice {
+		display: grid;
+		grid-template-columns: 2.5em 1fr;
+		align-items: center;
+		gap: var(--space-2);
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		background: var(--surface-raised);
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		touch-action: manipulation;
+	}
+	.choice[aria-pressed='true'] {
+		border-color: var(--accent);
+		background: var(--surface-selected);
 	}
 </style>

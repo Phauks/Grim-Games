@@ -22,7 +22,10 @@ export const TWO_TOWNS: GameMode = {
 			url: 'https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/'
 		}
 	],
-	credits: ['Ekin', 'Tyler Nafe', 'James Capelli', 'Tom R.'],
+	// The rules' byline; Tyler, James and Tom R. are thanked, not authors.
+	authors: [
+		{ title: 'Ekin', url: 'https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/' }
+	],
 	parts: {
 		pool: {
 			kind: 'per-town',

@@ -10,8 +10,9 @@
 		rollExtras,
 		STANDARD
 	} from '#lib/core/modes/index.ts';
-	import { SEATED_TYPES, type SeatedType } from '#lib/core/rules/distribution.ts';
+	import type { SeatedType } from '#lib/core/rules/distribution.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
@@ -19,6 +20,8 @@
 	import { setupSelection } from '#lib/features/setup/selection.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { findMode } from './custom-modes.svelte.ts';
@@ -46,7 +49,6 @@
 	const restrictions = $derived(record?.restrictions ?? NO_RESTRICTIONS);
 	const pool = $derived(mode.parts.pool);
 	const announce = $derived(pool?.kind === 'script-plus-hidden' && pool.announceRange);
-	const wanted = $derived(Object.values(extraCounts(mode)).reduce((sum, n) => sum + (n ?? 0), 0));
 	const scriptCharacters = $derived(
 		game.script.entries.flatMap((e): Character[] => {
 			const c = e.kind === 'custom' ? e.character : port.lookup?.get(e.id);
@@ -54,11 +56,30 @@
 		})
 	);
 
-	const isSeated = (type: string): type is SeatedType =>
-		(SEATED_TYPES as readonly string[]).includes(type);
+	/**
+	 * One row per type the Storyteller may add a hidden character of (Trevor, 2026-10-18:
+	 * Townsfolk, Outsider and Minion), more where the mode adds several of a type. Any row
+	 * can be left empty.
+	 */
+	const ROW_TYPES: readonly SeatedType[] = ['townsfolk', 'outsider', 'minion'];
+	const rowTypes = $derived(
+		ROW_TYPES.flatMap((type) =>
+			Array.from({ length: Math.max(1, extraCounts(mode)[type] ?? 0) }, () => type)
+		)
+	);
 
 	let official = $state.raw<readonly Character[]>([]);
-	let extras = $state.raw<Character[]>([]);
+	/** The character in each row, or undefined for none. */
+	let rows = $state.raw<(Character | undefined)[]>([]);
+
+	/** Puts characters into the rows of their type, in order. */
+	function fill(characters: readonly Character[]): (Character | undefined)[] {
+		const left = [...characters];
+		return rowTypes.map((type) => {
+			const at = left.findIndex((c) => c.type === type);
+			return at >= 0 ? left.splice(at, 1)[0] : undefined;
+		});
+	}
 
 	$effect(() => {
 		let cancelled = false;
@@ -67,40 +88,53 @@
 				if (cancelled) return;
 				official = data.characters;
 				const saved = readExtras(gameId)?.flatMap((id) => data.byId.get(id) ?? []);
-				if (saved) extras = saved;
+				if (saved) rows = fill(saved);
 				else roll();
 			})
 			.catch((e) => reportError(e, { area: 'grimoire' }));
 		return () => (cancelled = true);
 	});
 
-	function keep(next: Character[]) {
-		extras = next;
+	const extras = $derived(rows.filter((c): c is Character => c !== undefined));
+
+	function keep(next: (Character | undefined)[]) {
+		rows = next;
 		writeExtras(
 			gameId,
-			next.map((c) => c.id)
+			next.flatMap((c) => (c ? [c.id] : []))
 		);
 	}
 
 	function roll() {
-		keep(rollExtras(mode, scriptCharacters, official, restrictions, Math.random));
+		keep(fill(rollExtras(mode, scriptCharacters, official, restrictions, Math.random)));
 	}
 
-	function rollOne(i: number) {
-		const type = extras[i]?.type;
-		if (!type || !isSeated(type)) return;
-		const candidates = extraCandidates(
+	function candidates(i: number): Character[] {
+		return extraCandidates(
 			mode,
-			type,
+			rowTypes[i],
 			scriptCharacters,
 			official,
 			restrictions,
-			extras
+			rows.filter((c, j): c is Character => j !== i && c !== undefined)
 		);
-		if (candidates.length === 0) return;
-		const picked = candidates[Math.floor(Math.random() * candidates.length)];
-		keep(extras.map((c, j) => (j === i ? picked : c)));
 	}
+
+	function rollOne(i: number) {
+		const pool = candidates(i).filter((c) => c.id !== rows[i]?.id);
+		if (pool.length === 0) return;
+		const picked = pool[Math.floor(Math.random() * pool.length)];
+		keep(rows.map((c, j) => (j === i ? picked : c)));
+	}
+
+	function set(i: number, character: Character | undefined) {
+		keep(rows.map((c, j) => (j === i ? character : c)));
+	}
+
+	// Choosing a row's character from a list of the ones it can be.
+	let choosing = $state(0);
+	let picking = $state(false);
+	const choices = $derived(picking ? candidates(choosing) : []);
 
 	const range = $derived(announcedRange(extras.length));
 
@@ -111,7 +145,7 @@
 	async function next() {
 		setupSelection.open(gameId, game.seating.length);
 		const onScript = new Set(scriptCharacters.map((c) => c.id));
-		const types = new Set(Object.keys(extraCounts(mode)));
+		const types = new Set<string>(ROW_TYPES);
 		const ids = new Set<CharacterId>(extras.map((c) => c.id));
 		for (const id of Object.keys(setupSelection.state.selection)) {
 			const type = port.lookup?.get(id)?.type;
@@ -130,22 +164,41 @@
 		</Button>
 	{/snippet}
 
-	<!-- One row per extra the mode asks for, so rolling never moves anything. -->
+	<!-- One row per type, always drawn, so choosing or rolling never moves anything. -->
 	<ul class="extras" data-testid="extras">
-		{#each Array.from({ length: Math.max(wanted, extras.length) }, (_, i) => i) as i (i)}
-			{@const extra = extras[i]}
+		{#each rowTypes as type, i (i)}
+			{@const extra = rows[i]}
 			<li class="extra">
+				<span class="muted">{TYPE_LABELS[type]}</span>
 				{#if extra}
-					<span class="muted">{TYPE_LABELS[extra.type]}</span>
 					<CharacterBadge characterId={extra.id} character={extra} />
-					<IconButton
-						icon="random"
-						label={t('modes.extras.rollOne', { name: extra.name })}
-						onclick={() => rollOne(i)}
-					/>
 				{:else}
 					<span class="muted">{t('common.none')}</span>
 				{/if}
+				<span class="tools">
+					<IconButton
+						icon="search"
+						label={t('modes.extras.choose', { type: TYPE_LABELS[type] })}
+						disabled={official.length === 0}
+						onclick={() => {
+							choosing = i;
+							picking = true;
+						}}
+					/>
+					<IconButton
+						icon="random"
+						label={extra
+							? t('modes.extras.rollOne', { name: extra.name })
+							: t('modes.extras.rollType', { type: TYPE_LABELS[type] })}
+						disabled={official.length === 0}
+						onclick={() => rollOne(i)}
+					/>
+					<DeleteButton
+						label={t('modes.extras.clear', { type: TYPE_LABELS[type] })}
+						disabled={!extra}
+						onclick={() => set(i, undefined)}
+					/>
+				</span>
 			</li>
 		{/each}
 	</ul>
@@ -162,6 +215,21 @@
 		</Button>
 	</div>
 </Page>
+
+<Dialog
+	bind:open={picking}
+	title={t('modes.extras.choose', { type: TYPE_LABELS[rowTypes[choosing] ?? 'townsfolk'] })}
+	size="full"
+>
+	<CharacterPicker
+		characters={choices}
+		onSelect={(id) => {
+			const picked = choices.find((c) => c.id === id);
+			if (picked) set(choosing, picked);
+			picking = false;
+		}}
+	/>
+</Dialog>
 
 <style>
 	.extras {
@@ -180,6 +248,10 @@
 		padding: var(--space-1) var(--space-2);
 		border: 1px solid var(--card-border);
 		border-radius: var(--radius-sm);
+	}
+	.tools {
+		display: flex;
+		gap: var(--space-1);
 	}
 	.muted {
 		color: var(--on-surface-muted);

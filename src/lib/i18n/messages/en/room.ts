@@ -69,6 +69,7 @@ export const room = {
 	'room.leaveSeat': 'Leave seat',
 	'room.table': 'Table',
 	'room.dead': 'Dead',
+	'room.vote.title': 'Spectators’ vote',
 	'room.scriptLine': 'Script: {name}',
 	'room.readScript': 'Read the script'
 } as const;
