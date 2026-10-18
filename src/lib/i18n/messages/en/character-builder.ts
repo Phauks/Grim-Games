@@ -24,6 +24,8 @@ export const characterBuilder = {
 	'character-builder.setup': 'Changes setup',
 	'character-builder.opening': 'Opens with',
 	'character-builder.openingNone': 'None of these',
+	'character-builder.choice': 'Chooses',
+	'character-builder.result': 'Then',
 	'character-builder.setupChanges': 'Setup changes',
 	'character-builder.addSetupChange': 'Add a setup change',
 	'character-builder.removeSetupChange': 'Remove {text}',

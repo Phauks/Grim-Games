@@ -182,6 +182,16 @@
 		font: inherit;
 		cursor: pointer;
 	}
+	/* The clock's button is only part of the timer, so the keyboard ring goes round the whole
+	   timer and follows its pill shape, not round the clock alone (Trevor, 2026-10-18). */
+	.open:focus-visible,
+	.mode:focus-visible {
+		outline: none;
+	}
+	.timer:has(> .open:focus-visible, > .mode:focus-visible) {
+		outline: 3px solid var(--focus);
+		outline-offset: 2px;
+	}
 	.controls {
 		--timer-surround: var(--sheet-background);
 		--timer-surround-muted: var(--on-surface-muted);

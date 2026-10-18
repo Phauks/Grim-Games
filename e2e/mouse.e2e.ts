@@ -143,3 +143,31 @@ test('the day timer sheet and Info tokens read on their panel', async ({ page })
 	await page.getByRole('button', { name: 'More', exact: true }).click();
 	expect(await panel('Grimoire')).toBe(sheetColour);
 });
+
+// The timer's focus ring goes round the whole pill, not round the clock alone, and clicking
+// in and out of its sheet leaves no ring (Trevor, 2026-10-18).
+test('the board timer shows one ring round the whole pill', async ({ page }) => {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.click();
+	await page.getByRole('button', { name: 'Start game' }).click();
+	const timer = page.getByTestId('day-timer').first();
+	const open = timer.getByRole('button', { name: /open its controls$/ });
+	const ring = (el: typeof timer) => el.evaluate((node) => getComputedStyle(node).outlineStyle);
+
+	await open.click();
+	await expect(page.getByTestId('timer-sheet')).toBeVisible();
+	await page.mouse.click(5, 5);
+	await expect(page.getByTestId('timer-sheet')).toBeHidden();
+	expect(await ring(open)).toBe('none');
+	expect(await ring(timer)).toBe('none');
+
+	await open.focus();
+	await page.keyboard.press('Shift+Tab');
+	await page.keyboard.press('Tab');
+	await expect(open).toBeFocused();
+	expect(await ring(open)).toBe('none');
+	expect(await ring(timer)).toBe('solid');
+});

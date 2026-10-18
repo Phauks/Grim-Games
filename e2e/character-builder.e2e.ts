@@ -127,3 +127,24 @@ test('one trash button clears a new character and deletes a saved one', async ({
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('character-name')).toHaveValue('');
 });
+
+// The clauses official abilities use most, after the opening (Trevor, 2026-10-18): who is
+// chosen and what then happens, each written in TPI's words; typed text around them stays.
+test('an ability gets who it chooses and what happens from drop-downs', async ({ page }) => {
+	await page.goto('/build-character');
+	const ability = page.getByTestId('character-ability');
+	await ability.fill('Each night*, you learn a number.');
+	await expect(page.getByRole('combobox', { name: 'Then' })).toContainText('you learn');
+
+	await page.getByRole('combobox', { name: 'Chooses' }).tap();
+	await page.getByRole('option', { name: 'choose a player (not yourself)', exact: true }).tap();
+	await expect(ability).toHaveValue(
+		'Each night*, choose a player (not yourself): you learn a number.'
+	);
+
+	await page.getByRole('combobox', { name: 'Then' }).tap();
+	await page.getByRole('option', { name: 'they are poisoned', exact: true }).tap();
+	await expect(ability).toHaveValue(
+		'Each night*, choose a player (not yourself): they are poisoned a number.'
+	);
+});
