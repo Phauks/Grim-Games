@@ -7,23 +7,33 @@ import globals from 'globals';
 import ts from 'typescript-eslint';
 import grim from './scripts/lint/plugin.js';
 
-/** Files still hand-building labelled text fields; only ever shrinks (see grim/text-field). */
-const TEXT_FIELD_TODO = [
-	'src/lib/features/account/SignInForm.svelte',
-	'src/lib/features/day/NoteSheet.svelte',
-	'src/lib/features/glossary/GlossaryDialog.svelte',
-	'src/lib/features/info-tokens/InfoTokenList.svelte',
-	'src/lib/features/library/LabelManager.svelte',
+/**
+ * Files still reaching localStorage directly instead of #lib/ui/stored.ts; only ever shrinks
+ * (component review, 2026-10-18).
+ */
+const LOCAL_STORAGE_TODO = [
+	'src/lib/features/account/profile-scripts.svelte.ts',
+	'src/lib/features/characters/wiki-page.svelte.ts',
+	'src/lib/features/errors/report.svelte.ts',
+	'src/lib/features/glossary/wiki-glossary.svelte.ts',
+	'src/lib/features/grimoire/board-looks.svelte.ts',
+	'src/lib/features/grimoire/device-notes.ts',
+	'src/lib/features/info-tokens/custom-tokens.svelte.ts',
 	'src/lib/features/library/LibraryPage.svelte',
-	'src/lib/features/player/NoteEditor.svelte',
-	'src/lib/features/reference/CharacterReference.svelte',
-	'src/lib/features/reference/NightOrderReference.svelte',
-	'src/lib/features/reports/ReportDialog.svelte',
+	'src/lib/features/library/library-labels.svelte.ts',
+	'src/lib/features/player/PlayerCounts.svelte',
+	'src/lib/features/player/player-settings.svelte.ts',
+	'src/lib/features/reference/table-state.svelte.ts',
 	'src/lib/features/reports/ReportsInbox.svelte',
-	'src/lib/features/scripts/AddScript.svelte',
-	'src/lib/features/scripts/BotcFilter.svelte',
-	'src/lib/features/scripts/ScriptSearchBar.svelte',
-	'src/lib/features/setup/RevealDialog.svelte'
+	'src/lib/features/script-builder/draft.svelte.ts',
+	'src/lib/features/scripts/collection.svelte.ts',
+	'src/lib/features/scripts/curated.svelte.ts',
+	'src/lib/features/scripts/current-script.svelte.ts',
+	'src/lib/features/scripts/homebrew-scripts.svelte.ts',
+	'src/lib/features/scripts/search-sources.ts',
+	'src/lib/features/setup/selection.svelte.ts',
+	'src/lib/i18n/locale.svelte.ts',
+	'src/lib/ui/preferences.svelte.ts'
 ];
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
@@ -149,16 +159,43 @@ export default defineConfig(
 		rules: { 'grim/clearable-field': 'error' }
 	},
 	{
-		// Labelled text fields are the shared TextField (component review, 2026-10-17).
-		// TEXT_FIELD_TODO lists the files written before it; the list only shrinks: move a
-		// file onto TextField and take it off, never add one.
-		files: ['src/**/*.svelte'],
+		// localStorage goes through #lib/ui/stored.ts, which never throws (component review,
+		// 2026-10-18). LOCAL_STORAGE_TODO only shrinks.
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
 		ignores: [
-			'src/lib/ui/primitives/**',
+			'src/lib/ui/stored.ts',
+			// The Data section lists and clears every key, so it reads storage itself.
+			'src/lib/features/settings/data/**',
+			'src/**/*.test.ts',
 			'src/lib/features/spikes/**',
 			'src/routes/spikes/**',
-			...TEXT_FIELD_TODO
+			...LOCAL_STORAGE_TODO
 		],
+		rules: {
+			'no-restricted-globals': [
+				'error',
+				{ name: 'localStorage', message: 'Use readStored/writeStored from #lib/ui/stored.ts.' }
+			],
+			'no-restricted-properties': [
+				'error',
+				{
+					object: 'globalThis',
+					property: 'localStorage',
+					message: 'Use readStored/writeStored from #lib/ui/stored.ts.'
+				},
+				{
+					object: 'window',
+					property: 'localStorage',
+					message: 'Use readStored/writeStored from #lib/ui/stored.ts.'
+				}
+			]
+		}
+	},
+	{
+		// Labelled text fields are the shared TextField, search boxes SearchField
+		// (component review, 2026-10-17; every older file moved 2026-10-18).
+		files: ['src/**/*.svelte'],
+		ignores: ['src/lib/ui/primitives/**', 'src/lib/features/spikes/**', 'src/routes/spikes/**'],
 		plugins: { grim },
 		rules: { 'grim/text-field': 'error' }
 	},

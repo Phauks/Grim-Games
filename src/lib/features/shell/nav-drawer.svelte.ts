@@ -1,13 +1,11 @@
+import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
+
 const HIDDEN_KEY = 'grim-games:nav-collapsed';
 /** Where the sidebar shows beside the page instead of the drawer (matches AppNav's CSS). */
 const WIDE = '(min-width: 64rem)';
 
 function readHidden(): boolean {
-	try {
-		return globalThis.localStorage?.getItem(HIDDEN_KEY) === '1';
-	} catch {
-		return false;
-	}
+	return readStoredText(HIDDEN_KEY) === '1';
 }
 
 /**
@@ -45,12 +43,8 @@ class NavMenu {
 			return;
 		}
 		this.hidden = !this.hidden;
-		try {
-			if (this.hidden) localStorage.setItem(HIDDEN_KEY, '1');
-			else localStorage.removeItem(HIDDEN_KEY);
-		} catch {
-			// Storage blocked: the choice lasts for this visit.
-		}
+		// Storage blocked: the choice lasts for this visit.
+		writeStoredText(HIDDEN_KEY, this.hidden ? '1' : undefined);
 	}
 
 	show(): void {

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { STANDARD_INFO_TOKENS, type InfoToken } from '#lib/core/data/info-tokens.ts';
@@ -20,6 +19,7 @@
 	import RichTextField from './RichTextField.svelte';
 	import InfoTokenTile from './InfoTokenTile.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { plainText } from './bold.ts';
 	import type { CharacterCard } from './character-cards.ts';
 	import { MAX_CUSTOM_TEXT, type CustomInfoToken } from './custom-tokens.ts';
@@ -328,34 +328,23 @@
 					/>{/snippet}</Sentence
 			>{/if}{/snippet}
 	{#if filling}
-		<label class="field">
-			<span
-				>{t(
-					filling.kind === 'custom'
-						? 'info-tokens.fill.answer'
-						: filling.card.fills === 'word'
-							? 'info-tokens.fill.word'
-							: 'info-tokens.fill.phrase'
-				)}</span
-			>
-			<ClearableField value={fillText} onclear={() => filling && (filled[fillKey(filling)] = '')}>
-				<input
-					type="text"
-					value={fillText}
-					oninput={(e) => {
-						if (filling) filled[fillKey(filling)] = e.currentTarget.value;
-					}}
-					onkeydown={(e) => {
-						if (e.key === 'Enter') {
-							e.preventDefault();
-							useFilled();
-						}
-					}}
-					autocomplete="off"
-					enterkeyhint="done"
-				/>
-			</ClearableField>
-		</label>
+		<TextField
+			label={t(
+				filling.kind === 'custom'
+					? 'info-tokens.fill.answer'
+					: filling.card.fills === 'word'
+						? 'info-tokens.fill.word'
+						: 'info-tokens.fill.phrase'
+			)}
+			value={fillText}
+			oninput={(value) => {
+				if (filling) filled[fillKey(filling)] = value;
+			}}
+			oncommit={() => {
+				useFilled();
+				return false;
+			}}
+		/>
 	{/if}
 	{#snippet actions()}
 		<ModalActions
@@ -552,23 +541,6 @@
 	}
 	.none {
 		opacity: 0.7;
-	}
-	.field {
-		display: grid;
-		gap: var(--space-1);
-	}
-	input {
-		min-height: var(--tap-target);
-	}
-	input {
-		width: 100%;
-		padding: var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface);
-		color: inherit;
-		font: inherit;
-		resize: vertical;
 	}
 	.confirm-text {
 		margin: 0;

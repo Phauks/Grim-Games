@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -21,6 +21,7 @@
 
 	let key = $state('');
 	let typed = $state('');
+	let keyForm = $state<HTMLFormElement>();
 	let wrongKey = $state(false);
 	let reports = $state<Report[]>();
 	let filter = $state<Filter>('new');
@@ -128,13 +129,16 @@
 		/>
 	{/snippet}
 	{#if !key}
-		<form class="key" onsubmit={useKey}>
-			<label>
-				<span>{wrongKey ? t('reports.wrongKey') : t('reports.adminKey')}</span>
-				<ClearableField bind:value={typed}>
-					<input type="password" bind:value={typed} autocomplete="off" />
-				</ClearableField>
-			</label>
+		<form class="key" bind:this={keyForm} onsubmit={useKey}>
+			<TextField
+				label={wrongKey ? t('reports.wrongKey') : t('reports.adminKey')}
+				bind:value={typed}
+				type="password"
+				oncommit={() => {
+					keyForm?.requestSubmit();
+					return false;
+				}}
+			/>
 		</form>
 	{:else}
 		<ul class="list" aria-busy={reports === undefined} data-testid="reports">
@@ -207,10 +211,6 @@
 />
 
 <style>
-	.key label {
-		display: grid;
-		gap: var(--space-1);
-	}
 	.list {
 		display: grid;
 		margin: 0;

@@ -216,12 +216,13 @@
 		background: color-mix(in srgb, currentColor 14%, transparent);
 		box-shadow: inset 0 0 0 2px var(--focus);
 	}
-	.picker[data-surface='sheet'] :global(.search) {
+	.picker[data-surface='sheet'] :global(.search-field) {
+		border-color: color-mix(in srgb, currentColor 30%, transparent);
 		background: color-mix(in srgb, currentColor 8%, transparent);
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+		color: inherit;
 	}
-	.picker[data-surface='sheet'] :global(.search:focus-within) {
-		box-shadow: inset 0 0 0 2px var(--focus);
+	.picker[data-surface='sheet'] :global(.search-field:focus-within) {
+		border-color: var(--focus);
 	}
 	ul {
 		display: grid;

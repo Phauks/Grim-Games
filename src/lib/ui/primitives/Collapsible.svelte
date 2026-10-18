@@ -1,21 +1,15 @@
 <script lang="ts" module>
+	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
+
 	const PREFIX = 'grim-games:collapsed:';
 
 	function readClosed(key: string): boolean {
-		try {
-			return globalThis.localStorage?.getItem(PREFIX + key) === '1';
-		} catch {
-			return false;
-		}
+		return readStoredText(PREFIX + key) === '1';
 	}
 
+	// Storage blocked: the section still opens and closes for this visit.
 	function writeClosed(key: string, closed: boolean): void {
-		try {
-			if (closed) globalThis.localStorage?.setItem(PREFIX + key, '1');
-			else globalThis.localStorage?.removeItem(PREFIX + key);
-		} catch {
-			// Storage blocked: the section still opens and closes for this visit.
-		}
+		writeStoredText(PREFIX + key, closed ? '1' : undefined);
 	}
 </script>
 

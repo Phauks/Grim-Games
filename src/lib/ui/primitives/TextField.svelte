@@ -17,8 +17,16 @@
 		multiline?: boolean;
 		/** Visible rows of a multi-line field. */
 		rows?: number;
-		type?: 'text' | 'url' | 'email' | 'search';
+		type?: 'text' | 'url' | 'email' | 'search' | 'password';
 		inputmode?: HTMLInputAttributes['inputmode'];
+		/** Off by default in a single-line field; `email` or `one-time-code` where the browser can fill it in. */
+		autocomplete?: HTMLInputAttributes['autocomplete'];
+		/** The phone keyboard's Enter key; `done` by default. */
+		enterkeyhint?: HTMLInputAttributes['enterkeyhint'];
+		/** Off for text that isn't words, such as pasted JSON. */
+		spellcheck?: boolean;
+		/** A multi-line field that fills the height its parent gives it, instead of `rows`. */
+		grow?: boolean;
 		placeholder?: string;
 		maxlength?: number;
 		required?: boolean;
@@ -39,6 +47,10 @@
 		rows = 3,
 		type = 'text',
 		inputmode,
+		autocomplete,
+		enterkeyhint = 'done',
+		spellcheck,
+		grow = false,
 		placeholder,
 		maxlength,
 		required = false,
@@ -57,13 +69,15 @@
 	}
 </script>
 
-<label class="text-field">
+<label class={['text-field', grow && multiline && 'grow']}>
 	<span class={hideLabel ? 'visually-hidden' : 'label'}>{label}</span>
 	{#if multiline}
 		<textarea
 			bind:value
 			{rows}
 			{placeholder}
+			{spellcheck}
+			{autocomplete}
 			{maxlength}
 			{required}
 			{disabled}
@@ -80,8 +94,9 @@
 				{maxlength}
 				{required}
 				{disabled}
-				autocomplete="off"
-				enterkeyhint="done"
+				autocomplete={autocomplete ?? 'off'}
+				{enterkeyhint}
+				{spellcheck}
 				aria-invalid={invalid || undefined}
 				data-testid={testid}
 				{onkeydown}
@@ -119,6 +134,14 @@
 	textarea {
 		resize: vertical;
 		font-family: var(--font-body);
+	}
+	/* The textarea takes the rest of the height the field is given. */
+	.grow {
+		grid-template-rows: auto 1fr;
+	}
+	.grow textarea {
+		height: 100%;
+		resize: none;
 	}
 	[aria-invalid='true'] {
 		border-color: var(--evil);

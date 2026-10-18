@@ -4,6 +4,7 @@
  * If a code can't be made (offline, or the Worker refuses), the long `#s=` link still
  * works. Design: 08-script-loading.md §5.5 and §5.7.
  */
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import {
 	readCreatedShare,
@@ -93,12 +94,9 @@ interface CodeStore {
 }
 
 function readStore(): CodeStore {
-	try {
-		const raw = JSON.parse(localStorage.getItem(STORE_KEY) ?? 'null');
-		if (raw?.v === STORE_VERSION && typeof raw.codes === 'object') return raw as CodeStore;
-	} catch {
-		// Unreadable or blocked storage: start again.
-	}
+	// Unreadable or blocked storage: start again.
+	const raw = readStored<Partial<CodeStore>>(STORE_KEY);
+	if (raw?.v === STORE_VERSION && typeof raw.codes === 'object') return raw as CodeStore;
 	return { v: STORE_VERSION, codes: {} };
 }
 
@@ -106,14 +104,8 @@ function writeStore(store: CodeStore): void {
 	const entries = Object.entries(store.codes)
 		.sort(([, a], [, b]) => b.at - a.at)
 		.slice(0, MAX_STORED);
-	try {
-		localStorage.setItem(
-			STORE_KEY,
-			JSON.stringify({ v: STORE_VERSION, codes: Object.fromEntries(entries) })
-		);
-	} catch {
-		// Storage full or blocked: the code still works, it just isn't remembered.
-	}
+	// Storage full or blocked: the code still works, it just isn't remembered.
+	writeStored(STORE_KEY, { v: STORE_VERSION, codes: Object.fromEntries(entries) });
 }
 
 async function scriptKey(json: unknown[]): Promise<string> {

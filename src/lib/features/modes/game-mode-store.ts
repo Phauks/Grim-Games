@@ -5,6 +5,7 @@
  * standard game.
  */
 import type { GameId } from '#lib/core/model/index.ts';
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 import type { StorytellerRestrictions } from '#lib/core/modes/index.ts';
 
 export interface GameModeRecord {
@@ -18,24 +19,17 @@ const ids = (value: unknown): string[] =>
 	Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 
 export function readGameMode(gameId: GameId): GameModeRecord | undefined {
-	try {
-		const raw: unknown = JSON.parse(globalThis.localStorage?.getItem(KEY(gameId)) ?? 'null');
-		if (!raw || typeof raw !== 'object') return undefined;
-		const r = raw as Partial<GameModeRecord>;
-		if (typeof r.modeId !== 'string') return undefined;
-		return {
-			modeId: r.modeId,
-			restrictions: { banned: ids(r.restrictions?.banned), allowed: ids(r.restrictions?.allowed) }
-		};
-	} catch {
-		return undefined;
-	}
+	const raw = readStored(KEY(gameId));
+	if (!raw || typeof raw !== 'object') return undefined;
+	const r = raw as Partial<GameModeRecord>;
+	if (typeof r.modeId !== 'string') return undefined;
+	return {
+		modeId: r.modeId,
+		restrictions: { banned: ids(r.restrictions?.banned), allowed: ids(r.restrictions?.allowed) }
+	};
 }
 
 export function writeGameMode(gameId: GameId, record: GameModeRecord): void {
-	try {
-		globalThis.localStorage?.setItem(KEY(gameId), JSON.stringify(record));
-	} catch {
-		// Storage full or blocked: the game itself is saved; only the mode label is lost.
-	}
+	// Storage full or blocked: the game itself is saved; only the mode label is lost.
+	writeStored(KEY(gameId), record);
 }

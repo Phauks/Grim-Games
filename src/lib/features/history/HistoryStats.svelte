@@ -18,7 +18,7 @@
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import { loadGameRecords } from './records.ts';
@@ -177,18 +177,15 @@
 </script>
 
 {#snippet textFilter(column: string, value: string, set: (v: string) => void, close: () => void)}
-	<ClearableField {value} onclear={() => set('')}>
-		<input
-			class="text"
-			type="search"
-			aria-label={t('history.filterLabel', { column })}
+	<div class="text">
+		<SearchField
+			label={t('history.filterLabel', { column })}
 			placeholder={t('history.filter')}
-			enterkeyhint="done"
 			{value}
-			oninput={(e) => set(e.currentTarget.value)}
-			onkeydown={(e) => e.key === 'Enter' && close()}
+			oninput={set}
+			oncommit={() => (close(), false)}
 		/>
-	</ClearableField>
+	</div>
 {/snippet}
 
 <PageSection title={t('history.summary')}>
@@ -375,16 +372,6 @@
 		white-space: nowrap;
 	}
 	.text {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
 		margin-top: var(--space-2);
-		padding: 0 var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		color: var(--on-surface);
-		font: inherit;
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 </style>

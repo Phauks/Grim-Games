@@ -3,17 +3,14 @@
  * storage can be missing or throw (private windows, blocked site data); then the default
  * is used and nothing breaks.
  */
+import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
+
 export type ReferenceView = 'cards' | 'table';
 
 const KEY = 'grim-games:reference-view';
 
 function read(): ReferenceView {
-	try {
-		const value = globalThis.localStorage?.getItem(KEY);
-		return value === 'table' ? 'table' : 'cards';
-	} catch {
-		return 'cards';
-	}
+	return readStoredText(KEY) === 'table' ? 'table' : 'cards';
 }
 
 class ReferenceViewMode {
@@ -25,11 +22,8 @@ class ReferenceViewMode {
 
 	set current(value: ReferenceView) {
 		this.#value = value;
-		try {
-			globalThis.localStorage?.setItem(KEY, value);
-		} catch {
-			// Not remembered; the choice still applies until the page is closed.
-		}
+		// If not remembered, the choice still applies until the page is closed.
+		writeStoredText(KEY, value);
 	}
 }
 

@@ -6,6 +6,7 @@
  * - 'only': the step's reminders alone;
  * - 'front': the step's reminders first, ringed (how the bank worked before).
  */
+import { readParsed, writeStored } from '#lib/ui/stored.ts';
 export interface StepFocus {
 	mode: 'highlight' | 'only' | 'front';
 }
@@ -20,11 +21,7 @@ export function parseStepFocus(raw: unknown): StepFocus {
 }
 
 function read(): StepFocus {
-	try {
-		return parseStepFocus(JSON.parse(globalThis.localStorage?.getItem(KEY) ?? 'null'));
-	} catch {
-		return { ...DEFAULT_STEP_FOCUS };
-	}
+	return readParsed(KEY, parseStepFocus);
 }
 
 class StepFocusStore {
@@ -32,11 +29,8 @@ class StepFocusStore {
 
 	update(change: Partial<StepFocus>): void {
 		this.current = parseStepFocus({ ...this.current, ...change });
-		try {
-			globalThis.localStorage?.setItem(KEY, JSON.stringify(this.current));
-		} catch {
-			// Storage blocked: the choice still applies for this visit.
-		}
+		// Storage blocked: the choice still applies for this visit.
+		writeStored(KEY, this.current);
 	}
 }
 

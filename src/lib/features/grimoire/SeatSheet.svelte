@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
@@ -57,9 +58,7 @@
 	const traveller = $derived(character?.type === 'traveller');
 	const title = $derived(seat ? (seat.playerName ?? `Seat ${number}`) : '');
 	/** "Seat 3 (Cat)", or "Seat 3" with no name. */
-	const seatLabel = $derived(
-		seat?.playerName ? `Seat ${number} (${seat.playerName})` : `Seat ${number}`
-	);
+	const seatLabel = $derived(seatId === undefined ? '' : seatLabelFor(game, seatId));
 	const alignmentText = $derived(
 		seat?.alignment === 'evil' ? 'Evil' : seat?.alignment === 'good' ? 'Good' : 'None'
 	);

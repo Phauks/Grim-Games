@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { GameData, NightMarker, NumericNightOrder } from '#lib/core/data/index.ts';
 	import {
 		BASE_DISTRIBUTION,
@@ -11,6 +10,8 @@
 	import { fullNightOrder, sheetPosition } from '#lib/core/rules/reference.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
 	import { TYPE_PLURALS } from './labels.ts';
 	import NightText from './NightText.svelte';
@@ -119,12 +120,13 @@
 {/snippet}
 
 {#if view === 'table'}
-	<label class="night-filter">
-		<span class="visually-hidden">Filter night steps</span>
-		<ClearableField bind:value={query}>
-			<input type="search" placeholder="Filter steps (order is kept)" bind:value={query} />
-		</ClearableField>
-	</label>
+	<div class="night-filter">
+		<SearchField
+			bind:value={query}
+			label={t('reference.nightFilterLabel')}
+			placeholder={t('reference.nightFilterPlaceholder')}
+		/>
+	</div>
 {/if}
 
 {#each nights as n (n.night)}
@@ -188,25 +190,9 @@
 </section>
 
 <style>
-	.night-filter input {
-		width: 100%;
-		min-height: var(--tap-target);
+	/* The filter sits above the night tables. */
+	.night-filter {
 		margin-bottom: var(--space-4);
-		padding: 0 var(--space-3);
-		border: var(--card-border);
-		border-radius: var(--radius-full);
-		background: var(--card-background);
-		color: var(--on-surface);
-		font: inherit;
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
-	}
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 	.night {
 		margin-bottom: var(--space-6);

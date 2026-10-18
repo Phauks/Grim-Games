@@ -31,3 +31,23 @@ export function writeStored(key: string, value: unknown): boolean {
 export function readParsed<T>(key: string, parse: (raw: unknown) => T): T {
 	return parse(readStored(key) ?? null);
 }
+
+/** The text at `key` as stored (not JSON), or undefined when missing or storage is blocked. */
+export function readStoredText(key: string): string | undefined {
+	try {
+		return globalThis.localStorage?.getItem(key) ?? undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/** Stores plain text (undefined removes it). False when storage refused it. */
+export function writeStoredText(key: string, value: string | undefined): boolean {
+	try {
+		if (value === undefined) globalThis.localStorage?.removeItem(key);
+		else globalThis.localStorage?.setItem(key, value);
+		return true;
+	} catch {
+		return false;
+	}
+}

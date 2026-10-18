@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -74,24 +74,15 @@
 </Dialog>
 
 <Dialog bind:open={renameOpen} title={t('library.renameTitle')}>
-	<label class="field">
-		<span>{t('library.name')}</span>
-		<ClearableField bind:value={renameText}>
-			<input
-				type="text"
-				autocomplete="off"
-				enterkeyhint="done"
-				maxlength={MAX_LABEL_NAME}
-				bind:value={renameText}
-				onkeydown={(e) => {
-					if (e.key === 'Enter') {
-						e.preventDefault();
-						rename();
-					}
-				}}
-			/>
-		</ClearableField>
-	</label>
+	<TextField
+		label={t('library.name')}
+		bind:value={renameText}
+		maxlength={MAX_LABEL_NAME}
+		oncommit={() => {
+			rename();
+			return false;
+		}}
+	/>
 	<p class="error" role="status">
 		{renameText.trim() !== '' && !renameOk ? t('library.nameTaken') : ''}
 	</p>
@@ -139,21 +130,6 @@
 		display: block;
 		padding-block: var(--space-2);
 		color: var(--on-surface-muted);
-	}
-	.field {
-		display: grid;
-		gap: var(--space-1);
-	}
-	.field input {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		color: inherit;
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	.error {
 		margin: var(--space-1) 0 0;
