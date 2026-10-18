@@ -10,6 +10,7 @@
 	import StepFocusSetting from '#lib/features/grimoire/StepFocusSetting.svelte';
 	import TitleAtSetting from '#lib/features/grimoire/TitleAtSetting.svelte';
 	import BoardLooksRows from './BoardLooksRows.svelte';
+	import RulesLooksRows from './RulesLooksRows.svelte';
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
@@ -52,6 +53,9 @@
 <!-- The board thread's own control, with its Confirm (Trevor, 2026-10-17). -->
 <ReminderModeSetting />
 <StepFocusSetting />
+
+<h3>{t('settings.groupRules')}</h3>
+<RulesLooksRows />
 
 <style>
 	h3 {

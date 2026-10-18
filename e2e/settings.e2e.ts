@@ -182,7 +182,7 @@ test('the board looks and background are in Board and tokens, saved with the boa
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	await expect(vignette).not.toBeChecked();
 	await slide(page, 'Vignette strength', 0.3);
-	await dialog.getByRole('combobox', { name: 'Fabled and Loric', exact: true }).tap();
+	await dialog.getByRole('combobox', { name: 'Location', exact: true }).tap();
 	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
 	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
 	await page.getByRole('option', { name: 'Lower left corner' }).tap();
