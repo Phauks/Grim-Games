@@ -19,7 +19,7 @@ import { isWorldCupYear, worldCupSource } from './world-cups.ts';
 import { COLLECTIONS } from '../src/lib/features/scripts/collection-api.ts';
 
 export { ReportBox, Room, ScriptMirror, SharedScript };
-export { AccountEmail, AccountUser } from './account/objects.ts';
+export { AccountEmail, AccountName, AccountUser } from './account/objects.ts';
 
 export interface Env extends ShareEnv, AccountRoutesEnv, RoomEnv, ReportsEnv, MirrorEnv {
 	ASSETS: Fetcher;

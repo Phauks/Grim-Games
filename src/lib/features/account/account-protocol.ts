@@ -38,11 +38,39 @@ const DOC_ID = /^[\w-]{1,64}$/;
  */
 export type EmailDelivery = 'email' | 'preview' | 'unavailable';
 
+/**
+ * The signed-in user. `id` is the account's own random id and never changes; everything
+ * stored for the account hangs off it, so `email` and `username` can change at any time.
+ */
 export interface AccountUser {
 	id: string;
 	email: string;
+	/** Unique across accounts (ignoring case); null until the user picks one. */
+	username: string | null;
 	createdAt: number;
 }
+
+/** `POST /api/account/email/start` body: the new address, which is sent a code. */
+export interface ChangeEmailStartRequest {
+	email: string;
+}
+/** `POST /api/account/email/verify` body: the new address and the code sent to it. */
+export interface ChangeEmailVerifyRequest {
+	email: string;
+	code: string;
+}
+/** `PUT /api/account/username` body. */
+export interface SetUsernameRequest {
+	username: string;
+}
+/** Answer to a change of email or username: the user as now stored. */
+export interface UserResponse {
+	user: AccountUser;
+}
+
+/** Usernames are this long. */
+export const USERNAME_MIN = 3;
+export const USERNAME_MAX = 24;
 
 export interface SessionInfo {
 	user: AccountUser | null;
@@ -113,6 +141,23 @@ export function normaliseEmail(input: unknown): string | undefined {
 	const email = input.trim().toLowerCase();
 	if (email.length > 254) return undefined;
 	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : undefined;
+}
+
+/**
+ * A username as typed, trimmed. Plain letters A-Z, digits, `_`, `-` and `.`, between
+ * USERNAME_MIN and USERNAME_MAX long, so no two names can look alike in different scripts.
+ * Undefined when it isn't one.
+ */
+export function normaliseUsername(input: unknown): string | undefined {
+	if (typeof input !== 'string') return undefined;
+	const name = input.trim();
+	if (name.length < USERNAME_MIN || name.length > USERNAME_MAX) return undefined;
+	return /^[A-Za-z0-9_.-]+$/.test(name) ? name : undefined;
+}
+
+/** Usernames are unique ignoring case: the key a name is claimed by. */
+export function usernameKey(name: string): string {
+	return name.toLowerCase();
 }
 
 /** A sign-in code as typed: digits only, spaces and dashes ignored. */

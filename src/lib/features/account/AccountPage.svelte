@@ -5,19 +5,24 @@
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { accountApi, EXPORT_PATH } from './account-api.ts';
 	import { account } from './account.svelte.ts';
 	import { readSignInHash, type DeviceSession } from './account-protocol.ts';
+	import ChangeEmailDialog from './ChangeEmailDialog.svelte';
 	import ProfileScripts from './ProfileScripts.svelte';
 	import SignInForm from './SignInForm.svelte';
 	import { startAccount } from './start.ts';
+	import UsernameDialog from './UsernameDialog.svelte';
 
 	let linkError = $state('');
 	let sessions = $state.raw<DeviceSession[] | undefined>(undefined);
 	let sessionsError = $state('');
 	let confirmDelete = $state(false);
+	let editUsername = $state(false);
+	let editEmail = $state(false);
 	let busy = $state(false);
 
 	const date = (ms: number) => intl.date(ms);
@@ -110,9 +115,24 @@
 		{#if account.status === 'signed-in' && account.user}
 			<section class="card" aria-labelledby="you">
 				<h2 id="you">{t('account.you.title')}</h2>
+				<!-- The account is its own id: the username and email can change at any time. -->
 				<dl>
+					<dt>{t('account.you.username')}</dt>
+					<dd data-testid="account-username">{account.user.username ?? t('common.none')}</dd>
+					<IconButton
+						icon="rename"
+						label={t('account.username.title')}
+						onclick={() => (editUsername = true)}
+						disabled={busy}
+					/>
 					<dt>{t('account.you.email')}</dt>
 					<dd data-testid="account-email">{account.user.email}</dd>
+					<IconButton
+						icon="rename"
+						label={t('account.changeEmail.title')}
+						onclick={() => (editEmail = true)}
+						disabled={busy || account.delivery === 'unavailable'}
+					/>
 					<dt>{t('account.you.since')}</dt>
 					<dd>{date(account.user.createdAt)}</dd>
 				</dl>
@@ -184,6 +204,9 @@
 	</ErrorBoundary>
 </Page>
 
+<UsernameDialog bind:open={editUsername} />
+<ChangeEmailDialog bind:open={editEmail} />
+
 <ConfirmDialog
 	bind:open={confirmDelete}
 	title={t('account.data.confirmTitle')}
@@ -210,11 +233,16 @@
 	.card h2 {
 		margin: 0;
 	}
+	/* Label, value, and the value's edit button (or nothing). */
 	dl {
 		margin: 0;
 		display: grid;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: auto 1fr auto;
+		align-items: center;
 		gap: var(--space-1) var(--space-3);
+	}
+	dd:last-child {
+		grid-column: 2 / -1;
 	}
 	dt,
 	.muted,

@@ -36,13 +36,14 @@
 		"run_worker_first": ["/api/*"]
 	},
 	// Room (live sync), SharedScript (share codes), and for accounts (07-accounts-and-multi-device.md
-	// §2.1) AccountUser and AccountEmail. SQLite Durable Objects need nothing created by hand.
+	// §2.1) AccountUser, AccountEmail and AccountName (usernames). SQLite Durable Objects need nothing created by hand.
 	"durable_objects": {
 		"bindings": [
 			{ "name": "ROOMS", "class_name": "Room" },
 			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
 			{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
 			{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
+			{ "name": "ACCOUNT_NAMES", "class_name": "AccountName" },
 			{ "name": "REPORTS", "class_name": "ReportBox" },
 			// Our copies of other sites' script lists (worker/mirror.ts).
 			{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" }
@@ -53,7 +54,8 @@
 		{ "tag": "v2", "new_sqlite_classes": ["SharedScript"] },
 		{ "tag": "v3", "new_sqlite_classes": ["AccountUser", "AccountEmail"] },
 		{ "tag": "v4", "new_sqlite_classes": ["ReportBox"] },
-		{ "tag": "v5", "new_sqlite_classes": ["ScriptMirror"] }
+		{ "tag": "v5", "new_sqlite_classes": ["ScriptMirror"] },
+		{ "tag": "v6", "new_sqlite_classes": ["AccountName"] }
 	],
 	// Nightly refresh of the stored script copies (worker/mirror.ts). Previews run no
 	// schedule; there a copy is refreshed when it is asked for and over a day old.
@@ -71,7 +73,17 @@
 		{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } },
 		{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } }
 	],
-	"vars": { "ENVIRONMENT": "production" },
+	// The site is served on grimbinder.com (Trevor, 2026-10-18), attached as a Custom Domain in
+	// the Cloudflare dashboard. It is deliberately not listed under "routes": wrangler only
+	// touches custom domains when the config lists some, and then replaces the whole set, so
+	// dashboard settings (such as previews on the domain) stay as Trevor set them. Switching
+	// domains later: attach the new one in the dashboard and change EMAIL_FROM below; sign-in
+	// links use whatever address the request came in on (worker/account/routes.ts).
+	// Sign-in emails (worker/account/email.ts) through Cloudflare Email Service; grimbinder.com
+	// must be onboarded under Email Sending first. Previews don't inherit this binding, so
+	// they keep showing the code on screen instead of sending email.
+	"send_email": [{ "name": "EMAIL" }],
+	"vars": { "ENVIRONMENT": "production", "EMAIL_FROM": "sign-in@grimbinder.com" },
 	// Worker Previews: Workers Builds runs `npx wrangler preview` for non-production branches,
 	// giving each branch/PR its own URL on this same Worker, with its own Durable Object
 	// namespace and storage. Previews don't inherit vars or bindings, so they're repeated here.
@@ -83,6 +95,7 @@
 				{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
 				{ "name": "ACCOUNT_USERS", "class_name": "AccountUser" },
 				{ "name": "ACCOUNT_EMAILS", "class_name": "AccountEmail" },
+				{ "name": "ACCOUNT_NAMES", "class_name": "AccountName" },
 				{ "name": "REPORTS", "class_name": "ReportBox" },
 				{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" }
 			]
