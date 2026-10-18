@@ -12,7 +12,7 @@ import { CAMPAIGN_ENDS, GAME_MODE_FORMAT, MODE_PARTS, type ModePart } from './ty
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 5;
+export const GAME_MODE_REVISION = 6;
 
 export interface GuideField {
 	name: string;
@@ -163,6 +163,13 @@ export const GUIDE_PARTS: GuidePart[] = [
 						type: 'true or false',
 						required: true,
 						about: 'The Storyteller may tell the table a range of how many there are.'
+					},
+					{
+						name: 'count',
+						type: 'object { "min", "max" }',
+						required: false,
+						about:
+							'How many hidden characters in all, e.g. { "min": 1, "max": 4 }; `extras` is then the most of each type. Left out, every one in `extras` is added.'
 					}
 				]
 			},
@@ -584,7 +591,7 @@ export function documentedFields(): Set<string> {
 		for (const f of [...p.fields, CITE]) names.add(f.name);
 		for (const k of p.kinds) for (const f of k.fields) names.add(f.name);
 	}
-	for (const extra of ['afterDay', 'together', 'winner']) names.add(extra);
+	for (const extra of ['afterDay', 'together', 'winner', 'min', 'max']) names.add(extra);
 	return names;
 }
 

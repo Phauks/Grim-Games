@@ -14,8 +14,7 @@ export const SPECTERS: GameMode = {
 	format: GAME_MODE_FORMAT,
 	id: 'specters',
 	name: 'Specters',
-	about:
-		'Spectators share one ability and vote during the game on how it is used. With Apparition, each dawn they pick a player who gains the Wizard’s ability until the next dawn.',
+	about: 'Spectators share one ability and vote during the game on how it is used.',
 	sources: [
 		{ title: 'PRESENTING: SPECTERS (Arif)', url: STREAM },
 		{ title: 'Specters', url: 'https://specters.app' },

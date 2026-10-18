@@ -55,7 +55,14 @@ export type PoolRule = Cited &
 		/** Every official character of these types (all seated types when absent). */
 		| { kind: 'all-characters'; types?: CharacterType[] }
 		/** The chosen script plus unknown extra characters from off it (`extras` per type). */
-		| { kind: 'script-plus-hidden'; extras: Partial<TypeCounts>; announceRange: boolean }
+		| {
+				kind: 'script-plus-hidden';
+				/** The most of each type; each is a row the Storyteller may fill or leave empty. */
+				extras: Partial<TypeCounts>;
+				announceRange: boolean;
+				/** How many there are in all, when not every row is filled. */
+				count?: { min: number; max: number };
+		  }
 		/** The script changes from game to game (`betweenGames` says how). */
 		| { kind: 'campaign'; startingScript: 'any' }
 		/** One script per town (`towns`). */

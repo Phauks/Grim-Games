@@ -181,7 +181,7 @@ export class Room extends DurableObject<RoomEnv> {
 				room = unseat(room, message.memberId);
 				break;
 			case 'open-vote':
-				room = openVote(room, message.voteId, message.options);
+				room = openVote(room, message.voteId, message.options, message.ability);
 				break;
 			case 'close-vote':
 				room = closeVote(room);
