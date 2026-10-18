@@ -50,8 +50,11 @@
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
-		/** Run Night Order, at the bank's right end (Trevor, 2026-10-18); absent when switched off. */
-		run?: { disabled: boolean; onclick: () => void };
+		/**
+		 * At the bank's right end (Trevor, 2026-10-18): Run Night Order, or End night while a
+		 * night is running. Always there, so the bank never moves.
+		 */
+		run?: { end: boolean; disabled: boolean; onclick: () => void };
 	}
 
 	let {
@@ -149,7 +152,7 @@
 		);
 		return only([...setup, ...rest]);
 	});
-	/** "Only these": the step's reminders alone, while a step is walked through. */
+	/** "Only this character": the step's reminders alone, while a step is walked through. */
 	function only(list: Item[]): Item[] {
 		return focus && focusMode === 'only' ? list.filter((i) => i.now) : list;
 	}
@@ -300,12 +303,12 @@
 		<button
 			type="button"
 			class="run"
-			aria-label="Run Night Order"
+			aria-label={run.end ? 'End night' : 'Run Night Order'}
 			disabled={run.disabled}
 			onclick={run.onclick}
 		>
-			<Icon name="night" />
-			<span>Run night</span>
+			<Icon name={run.end ? 'day' : 'night'} />
+			<span>{run.end ? 'End night' : 'Run night'}</span>
 		</button>
 	{/if}
 </div>

@@ -4,9 +4,7 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
-	import { STANDARD } from '#lib/core/modes/index.ts';
-	import { findMode } from '#lib/features/modes/custom-modes.svelte.ts';
-	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { gameModeName } from './game-mode-name.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -785,6 +783,18 @@
 		walk = { night, index: Math.max(0, next) };
 	}
 	/**
+	 * A night is running (walked through, or Dusk ticked by End day): the bank's button is End
+	 * night, which replaces ticking Dawn (Trevor, 2026-10-18). With the walk-through switched
+	 * off it is End night all the time, usable while a night runs.
+	 */
+	const nightOn = $derived(!ended && (walk !== undefined || grimoire.nightRunning));
+	let endNightOpen = $state(false);
+	function endNight() {
+		if (!grimoire.endNight()) return;
+		walk = undefined;
+		dayOpen = true;
+	}
+	/**
 	 * The step's reminders already on the board are ringed too, on any night (Trevor,
 	 * 2026-10-18: the Butler's Master placed on the first night).
 	 */
@@ -960,10 +970,7 @@
 	 * A game played in an alternative mode says so where the script's name is (Trevor,
 	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
 	 */
-	const modeName = $derived.by(() => {
-		const id = readGameMode(game.gameId)?.modeId;
-		return id && id !== STANDARD.id ? findMode(id)?.name : undefined;
-	});
+	const modeName = $derived(gameModeName(game.gameId));
 	/**
 	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
 	 * says it once, in the mode's colour, rather than twice (Trevor, 2026-10-18).
@@ -1151,15 +1158,6 @@
 			<span class="nav-menu"><NavMenuButton /></span>
 			<!-- Icons on phones; with their words on wider screens, where there is room. -->
 			<span class="spacer"></span>
-			<Button
-				variant="quiet"
-				icon="night"
-				aria-label="Night order"
-				onclick={() => {
-					grimoire.beginNight();
-					nightOpen = true;
-				}}><span class="tool-label">Night order</span></Button
-			>
 			<Button variant="quiet" icon="day" aria-label="Day" onclick={() => (dayOpen = true)}
 				><span class="tool-label">Day</span></Button
 			>
@@ -1197,8 +1195,8 @@
 		style:--name-scale={boardLooks.current.nameSize}
 		bind:this={board}
 	>
-		<!-- The vignette darkens the middle of an image background (Trevor, 2026-10-17: its own
-		     switch and strength). The script's name is only in the lower left corner (2026-10-18). -->
+		<!-- The vignette darkens an image background towards the edges (Trevor, 2026-10-17: its
+		     own switch and strength; 2026-10-18: clearly visible). The script's name is only in the lower left corner (2026-10-18). -->
 		{#if boardLooks.current.vignette && (backgroundUrl !== undefined || background.kind === 'preset')}
 			<div
 				class="vignette"
@@ -1363,10 +1361,6 @@
 					guideOpen = true;
 				}}
 				onClose={() => (walk = undefined)}
-				onDay={() => {
-					walk = undefined;
-					dayOpen = true;
-				}}
 			/>
 		{/if}
 		{#if ended}
@@ -1403,9 +1397,11 @@
 				{ruleAt}
 				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
 				onHints={(h) => (trayHints = h)}
-				run={preferences.current.assistance.nightWalkthrough
-					? { disabled: !canRun, onclick: runNight }
-					: undefined}
+				run={nightOn
+					? { end: true, disabled: grimoire.open.viewOnly, onclick: () => (endNightOpen = true) }
+					: preferences.current.assistance.nightWalkthrough
+						? { end: false, disabled: !canRun, onclick: runNight }
+						: { end: true, disabled: true, onclick: () => {} }}
 			/>
 		{/if}
 
@@ -1481,6 +1477,19 @@
 	<div class="menu">
 		<Button variant="quiet" icon="history" onclick={() => fromMenu(() => (historyOpen = true))}>
 			History
+		</Button>
+		<!-- The full night list, ticked by hand; running a night is the bank's Run night, so it
+		     left the toolbar (Trevor, 2026-10-18). -->
+		<Button
+			variant="quiet"
+			icon="night"
+			onclick={() =>
+				fromMenu(() => {
+					grimoire.beginNight();
+					nightOpen = true;
+				})}
+		>
+			Night order
 		</Button>
 		<Button
 			variant="quiet"
@@ -1596,6 +1605,9 @@
 		back?.();
 	}}
 />
+
+<!-- Like the day's End day: the title alone (DaySheet). -->
+<ConfirmDialog bind:open={endNightOpen} title="End the night?" onConfirm={endNight} />
 
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">
@@ -2003,10 +2015,12 @@
 	.vignette {
 		position: absolute;
 		inset: 0;
+		/* Clear in the middle, darkening to the strength at the corners. */
 		background: radial-gradient(
-			ellipse 45% 22% at center,
-			rgb(0 0 0 / var(--vignette)) /* colour-ok: a shadow is darkness, not a theme colour */,
-			transparent 100%
+			ellipse 75% 75% at center,
+			transparent 40%,
+			rgb(0 0 0 / calc(var(--vignette) * 0.6)) 75% /* colour-ok: a shadow is darkness, not a theme colour */,
+			rgb(0 0 0 / var(--vignette)) 100% /* colour-ok: a shadow is darkness, not a theme colour */
 		);
 		pointer-events: none;
 	}
