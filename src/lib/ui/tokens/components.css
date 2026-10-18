@@ -15,6 +15,17 @@
 	--card-border: 1px solid var(--border);
 	--card-radius: var(--radius-md);
 
+	/*
+	 * The player view keeps the page's own colours wherever it opens, even from inside a
+	 * sheet (Trevor, 2026-10-18: he liked the shown cards dark).
+	 */
+	--player-view-surface: var(--surface);
+	--player-view-raised: var(--surface-raised);
+	--player-view-selected: var(--surface-selected);
+	--player-view-ink: var(--on-surface);
+	--player-view-muted: var(--on-surface-muted);
+	--player-view-border: var(--border);
+
 	/* Sheets are the same panel as dialogs, only sliding up from the bottom (Trevor,
 	   2026-10-18: "the info tokens modal is still parchment"). */
 	--sheet-background: var(--dialog-background);

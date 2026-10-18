@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import IconButton from './IconButton.svelte';
+	import ClearableField from './ClearableField.svelte';
 
 	/**
 	 * A number with − and + buttons either side (component review, 2026-10-18: the player
@@ -25,6 +26,13 @@
 		/** Shown but not usable, e.g. a number the current choice doesn't use. */
 		disabled?: boolean;
 		testid?: string;
+		/**
+		 * The number can also be typed (Trevor, 2026-10-18: "Your number is"), with the
+		 * phone's number keyboard. Not with `display`.
+		 */
+		typeable?: boolean;
+		/** Enter in the typed number, e.g. to confirm the dialog it sits in. */
+		oncommit?: () => void;
 	}
 
 	let {
@@ -38,8 +46,18 @@
 		display,
 		large = false,
 		disabled = false,
-		testid
+		testid,
+		typeable = false,
+		oncommit
 	}: Props = $props();
+
+	/** What is typed; digits only. Empty (after the X) keeps the number until typing. */
+	let text = $derived(String(value));
+	function typed(next: string) {
+		const digits = next.replace(/\D/g, '');
+		text = digits;
+		if (digits !== '') set(Number(digits));
+	}
 
 	function set(next: number) {
 		next = Math.min(max, Math.max(min, next));
@@ -56,9 +74,33 @@
 		disabled={disabled || value <= min}
 		onclick={() => set(value - 1)}
 	/>
-	<output aria-label={label} data-testid={testid}
-		>{#if display}{@render display()}{:else}{value}{/if}</output
-	>
+	{#if typeable && !display}
+		<ClearableField bind:value={text} {disabled} class="typed">
+			<input
+				type="text"
+				inputmode="numeric"
+				pattern="[0-9]*"
+				enterkeyhint="done"
+				autocomplete="off"
+				aria-label={label}
+				data-testid={testid}
+				{disabled}
+				value={text}
+				oninput={(event) => typed(event.currentTarget.value)}
+				onblur={() => (text = String(value))}
+				onkeydown={(event) => {
+					if (event.key !== 'Enter') return;
+					event.preventDefault();
+					text = String(value);
+					oncommit?.();
+				}}
+			/>
+		</ClearableField>
+	{:else}
+		<output aria-label={label} data-testid={testid}
+			>{#if display}{@render display()}{:else}{value}{/if}</output
+		>
+	{/if}
 	<IconButton
 		icon="add"
 		label={moreLabel}
@@ -77,6 +119,23 @@
 		min-width: 2ch;
 		text-align: center;
 		font-variant-numeric: tabular-nums;
+	}
+	/* Typed numbers: as wide as a few digits, a full tap target high. */
+	input {
+		width: 5ch;
+		min-height: var(--tap-target);
+		padding: 0;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: center;
+		font-variant-numeric: tabular-nums;
+	}
+	.large input {
+		font-size: 1.4rem;
+		font-weight: 700;
 	}
 	[data-disabled] output {
 		opacity: 0.5;
