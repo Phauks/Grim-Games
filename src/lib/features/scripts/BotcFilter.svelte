@@ -6,6 +6,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
 	import {
 		BOTC_EDITION_GROUPS,
 		type BotcEditionGroup,
@@ -61,24 +62,17 @@
 			oncommit={close}
 		/>
 	{:else if column === 'kind'}
-		<fieldset>
-			<legend class="visually-hidden">{t('scripts.botc.scriptType')}</legend>
-			{#each KINDS as [value, key] (value)}
-				<label class="check">
-					<input
-						type="radio"
-						name="botc-kind"
-						{value}
-						checked={filters.type === value}
-						onchange={() => {
-							filters.type = value;
-							close();
-						}}
-					/>
-					{t(key)}
-				</label>
-			{/each}
-		</fieldset>
+		<FilterOptions
+			legend={t('scripts.botc.scriptType')}
+			hideLegend
+			name="botc-kind"
+			options={KINDS.map(([value, key]) => ({ value, label: t(key) }))}
+			value={filters.type}
+			onpick={(value) => {
+				filters.type = value as typeof filters.type;
+				close();
+			}}
+		/>
 	{:else}
 		<fieldset>
 			<legend>{t('scripts.botc.charactersFrom')}</legend>
@@ -121,14 +115,6 @@
 </div>
 
 <style>
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
 	.filter {
 		display: grid;
 		gap: var(--space-3);
@@ -145,16 +131,6 @@
 	h3 {
 		margin: 0 0 var(--space-1);
 		font-size: 1rem;
-	}
-	.check {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		min-height: var(--tap-target);
-	}
-	.check input {
-		width: calc(1.25 * var(--u));
-		height: calc(1.25 * var(--u));
 	}
 	.chosen-head {
 		display: flex;

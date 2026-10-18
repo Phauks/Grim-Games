@@ -21,6 +21,7 @@
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
+	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
 	import { loadGameRecords } from './records.ts';
 	import { matchesText, nextSort, sortRows } from './stat-rows.ts';
 
@@ -273,19 +274,13 @@
 		{/snippet}
 		{#snippet filter(column, close)}
 			{#if column.id === 'type'}
-				<fieldset>
-					<legend class="visually-hidden">{column.label}</legend>
-					{#each CHARACTER_TYPES as type (type)}
-						<label class="check">
-							<input
-								type="checkbox"
-								checked={typeFilter.includes(type)}
-								onchange={(e) => toggleType(type, e.currentTarget.checked)}
-							/>
-							{TYPE_PLURALS[type]}
-						</label>
-					{/each}
-				</fieldset>
+				<FilterOptions
+					legend={column.label}
+					hideLegend
+					options={CHARACTER_TYPES.map((type) => ({ value: type, label: TYPE_PLURALS[type] }))}
+					values={typeFilter}
+					ontoggle={(type, on) => toggleType(type as CharacterType, on)}
+				/>
 				<Button variant="quiet" onclick={() => (typeFilter = [])}>{t('history.allTypes')}</Button>
 			{:else}
 				{@render textFilter(column.label, characterFilter, (v) => (characterFilter = v), close)}
@@ -355,30 +350,6 @@
 		padding: 0 var(--space-2);
 		border-radius: 999em;
 		background: var(--surface-selected);
-	}
-	fieldset {
-		display: grid;
-		margin: var(--space-2) 0 0;
-		padding: 0;
-		border: 0;
-	}
-	.check {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		min-height: var(--tap-target);
-	}
-	.check input {
-		width: calc(1.25 * var(--u));
-		height: calc(1.25 * var(--u));
-	}
-	.visually-hidden {
-		position: absolute;
-		width: 1px; /* px-ok: hidden from sight, kept for screen readers */
-		height: 1px; /* px-ok: hidden from sight, kept for screen readers */
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 	.text {
 		margin-top: var(--space-2);
