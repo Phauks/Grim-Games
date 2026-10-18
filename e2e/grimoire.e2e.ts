@@ -639,15 +639,16 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	await expect(history).toContainText('New game:');
 	await page.keyboard.press('Escape');
 
-	// A tap opens the reminder over the seat it is on, its character's ability first (Trevor,
-	// 2026-10-17).
+	// A tap opens only the reminder, its character's ability first (Trevor, 2026-10-17), not
+	// the seat's sheet under it (Trevor, 2026-10-18).
 	await token.tap();
 	const reminder = page.getByRole('dialog', { name: 'Drunk' });
 	await expect(reminder.locator('.source')).toContainText('Sailor');
 	await expect(reminder.locator('header.character')).toContainText(/choose an alive player/i);
+	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
 	await reminder.getByRole('button', { name: 'Close' }).tap();
-	await expect(page.getByRole('heading', { name: 'No name' })).toBeVisible();
-	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toContainText('Seat 3');
+	await expect(reminder).toBeHidden();
+	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
 });
 
 test('every reminder on a crowded seat is shown and can be dragged off', async ({ page }) => {

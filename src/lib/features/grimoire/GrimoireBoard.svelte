@@ -556,9 +556,12 @@
 		sheetOpen = true;
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
-	/** A tapped reminder opens its own dialog over its seat's sheet (Trevor, 2026-10-17). */
+	/**
+	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
+	 * "they chose to open reminder, not character").
+	 */
 	function openReminder(seatId: SeatId, reminderId: ReminderId) {
-		openSeat(seatId);
+		selected = seatId;
 		// After the tap's click, so it doesn't land on what opens under the finger.
 		setTimeout(() => seatSheet?.showReminder(reminderId));
 	}
