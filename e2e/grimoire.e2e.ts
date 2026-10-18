@@ -3085,3 +3085,32 @@ test('a reminder in hand marks its source seat, the seats it fits, or both', asy
 	await page.mouse.up();
 	await expect(page.locator('[data-testid="seat"][data-role]')).toHaveCount(0);
 });
+
+test('Run Night Order starts in one tap from the middle of a set-up board', async ({ page }) => {
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	const board = page.url();
+	// Not before setup: the middle is Set up's.
+	await expect(page.getByRole('button', { name: 'Run Night Order' })).toHaveCount(0);
+	await page.goto(`${new URL(board).pathname}/setup`);
+	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Chef', 'Fortune Teller', 'Poisoner', 'Imp'])
+		await page.getByRole('button', { name, exact: true }).first().tap();
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	for (let n = 1; n <= 7; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	await page.goto(board);
+	await expect(page.getByTestId('seat')).toHaveCount(7);
+	// Trevor (2026-10-18): one tap on the board, where Set up was.
+	const run = page.getByRole('button', { name: 'Run Night Order' });
+	await run.tap();
+	const strip = page.getByTestId('night-strip');
+	await expect(strip).toBeVisible();
+	await expect(run).toHaveCount(0);
+	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
+	await expect(run).toBeVisible();
+});
