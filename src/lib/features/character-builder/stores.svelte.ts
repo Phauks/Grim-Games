@@ -11,9 +11,19 @@ import {
 export const CHARACTER_DRAFT_KEY = 'grim-games:character-builder';
 export const SAVED_CHARACTERS_KEY = 'grim-games:characters';
 
-/** The character on the builder, saved on this device on every change. */
-class CharacterBuilderDraft {
-	#draft = $state<CharacterDraft>(readParsed(CHARACTER_DRAFT_KEY, parseCharacterDraft));
+/**
+ * A character being built. The Character builder page keeps its draft on this device on every
+ * change; the builder opened over another page (a modal) keeps one only while it is open.
+ */
+export class CharacterBuilderDraft {
+	#key: string | undefined;
+	#draft = $state<CharacterDraft>(emptyCharacterDraft());
+
+	/** With a storage key, read from and saved to the device; without, starts from `initial`. */
+	constructor(key?: string, initial?: CharacterDraft) {
+		this.#key = key;
+		this.#draft = key ? readParsed(key, parseCharacterDraft) : (initial ?? emptyCharacterDraft());
+	}
 
 	get current(): CharacterDraft {
 		return this.#draft;
@@ -21,7 +31,7 @@ class CharacterBuilderDraft {
 
 	#set(next: CharacterDraft): void {
 		this.#draft = next;
-		writeStored(CHARACTER_DRAFT_KEY, next);
+		if (this.#key) writeStored(this.#key, next);
 	}
 
 	update(change: Partial<CharacterFields>): void {
@@ -50,7 +60,7 @@ class CharacterBuilderDraft {
 	}
 }
 
-export const characterBuilderDraft = new CharacterBuilderDraft();
+export const characterBuilderDraft = new CharacterBuilderDraft(CHARACTER_DRAFT_KEY);
 
 function newSavedId(): string {
 	return (

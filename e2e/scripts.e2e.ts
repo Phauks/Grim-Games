@@ -22,16 +22,47 @@ const homebrew = [
 const details = (page: Page) => page.getByRole('complementary', { name: 'Script details' });
 const detailsName = (page: Page) => page.getByTestId('script-details-name');
 
-/** The one source listed, chosen beside the search box (Trevor, 2026-10-17). */
-const sourcePicker = (page: Page) => page.getByRole('combobox', { name: 'Source' });
-async function chooseSource(page: Page, label: string) {
+/** The sources menu beside the title (Trevor, 2026-10-18): any sources, on or off. */
+const sourcePicker = (page: Page) => page.getByRole('button', { name: /^Sources:/ });
+const sourceMenu = (page: Page) => page.getByTestId('search-sources');
+const SOURCE_NAMES = [
+	'BotC Scripts',
+	'BOTC HomeBrew Wiki',
+	'Bloodstar Clocktica',
+	'Official custom scripts',
+	'Scripts of the Month',
+	'Carousel Script Collection',
+	'World Cup 2023',
+	'World Cup 2025'
+];
+/** Opens the sources menu with both groups open. */
+async function openSources(page: Page) {
 	await sourcePicker(page).tap();
-	await page.getByRole('option', { name: label, exact: true }).tap();
-	await expect(sourcePicker(page)).toContainText(label);
+	for (const group of ['Search engines', 'Collections']) {
+		await sourceMenu(page).getByRole('button', { name: group, exact: true }).tap();
+	}
+}
+/** Turns every source off but one, without turning the others on on the way. */
+async function chooseSource(page: Page, label: string) {
+	await openSources(page);
+	const menu = sourceMenu(page);
+	for (const name of SOURCE_NAMES) {
+		const on = await menu.getByRole('checkbox', { name, exact: true }).isChecked();
+		if (on !== (name === label)) await menu.getByText(name, { exact: true }).tap();
+	}
+	await page.keyboard.press('Escape');
+	await expect(sourcePicker(page)).toHaveAccessibleName(`Sources: ${label}`);
 }
 
 // Every source answers empty; tests that need results route these again.
 test.beforeEach(async ({ page }) => {
+	// Most tests search BotC Scripts alone; `e2e:app-sources` keeps the app's own default.
+	await page.addInitScript(() => {
+		if (localStorage.getItem('e2e:app-sources')) return;
+		if (!localStorage.getItem('grim-games:scripts:sources')) {
+			localStorage.setItem('grim-games:scripts:sources', JSON.stringify(['botc']));
+		}
+	});
 	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
 		route.fulfill({ json: { page: 1, count: 0, hasMore: false, results: [] } })
 	);
@@ -1280,22 +1311,114 @@ test('a narrow table keeps its header to the labels, with the dropped filters on
 	expect(new Set(tops).size).toBe(1);
 });
 
-test('the Source drop-down lists search engines, then collections', async ({ page }) => {
+test('Sources: All Sources by default, each group behind its caret, every source a toggle', async ({
+	page
+}) => {
 	await page.goto('/scripts');
+	await page.evaluate(() => {
+		localStorage.setItem('e2e:app-sources', '1');
+		localStorage.removeItem('grim-games:scripts:sources');
+	});
+	await page.reload();
+	await expect(sourcePicker(page)).toContainText('All Sources');
 	await sourcePicker(page).tap();
-	const list = page.getByRole('listbox');
-	const engines = list.getByRole('group', { name: 'Search engines' });
-	const collections = list.getByRole('group', { name: 'Collections' });
-	for (const name of ['BotC Scripts', 'BOTC HomeBrew Wiki']) {
-		await expect(engines.getByRole('option', { name, exact: true })).toBeVisible();
+	const menu = sourceMenu(page);
+	await expect(menu.getByRole('checkbox', { name: 'All Sources' })).toBeChecked();
+	// Each group's sources stay hidden until its caret opens them.
+	await expect(menu.getByText('BotC Scripts', { exact: true })).toBeHidden();
+	await menu.getByRole('button', { name: 'Search engines', exact: true }).tap();
+	for (const name of ['BotC Scripts', 'BOTC HomeBrew Wiki', 'Bloodstar Clocktica']) {
+		await expect(menu.getByRole('checkbox', { name, exact: true })).toBeChecked();
 	}
-	const carousel = 'Carousel Script Collection';
-	for (const name of ['Official custom scripts', 'Scripts of the Month', carousel]) {
-		await expect(collections.getByRole('option', { name, exact: true })).toBeAttached();
+	await expect(menu.getByText('Carousel Script Collection', { exact: true })).toBeHidden();
+
+	// A whole group off, then one of its sources back on.
+	const engines = menu.getByRole('checkbox', { name: 'Search engines', exact: true });
+	await menu.locator('.aside').first().locator('[data-part="control"]').tap();
+	await expect(engines).not.toBeChecked();
+	await expect(menu.getByRole('checkbox', { name: 'All Sources' })).not.toBeChecked();
+	await menu.getByText('Bloodstar Clocktica', { exact: true }).tap();
+	await expect(menu.getByRole('checkbox', { name: 'Bloodstar Clocktica' })).toBeChecked();
+	await page.keyboard.press('Escape');
+	// Five collections and Bloodstar; remembered on the device.
+	await expect(sourcePicker(page)).toContainText('6 sources');
+	await page.reload();
+	await expect(sourcePicker(page)).toContainText('6 sources');
+	await noSidewaysScroll(page);
+});
+
+test('Search lists every source on in one table, once they have all answered', async ({
+	page
+}, testInfo) => {
+	const hamletScript = [
+		{ id: '_meta', name: 'Little Hamlet', author: 'TPI' },
+		'washerwoman',
+		'imp'
+	];
+	let answerBotc: () => void = () => {};
+	const botcAnswered = new Promise<void>((resolve) => (answerBotc = resolve));
+	await page.route(/\/api\/botcscripts\/search\?/, async (route) => {
+		await botcAnswered;
+		await route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 77,
+						versionId: 77,
+						name: 'From The Site',
+						version: '1.0.0',
+						author: 'Someone',
+						score: 3,
+						type: 'Full',
+						characters: []
+					}
+				]
+			}
+		});
+	});
+	await page.route('**/api/curated', (route) =>
+		route.fulfill({
+			json: {
+				scripts: [
+					{
+						section: 'recommended',
+						link: scriptToolLink(hamletScript),
+						json: hamletScript
+					}
+				]
+			}
+		})
+	);
+	await page.route('**/api/bloodstar', (route) => route.fulfill({ status: 503 }));
+	await page.goto('/scripts');
+	await chooseSource(page, 'BotC Scripts');
+	await openSources(page);
+	for (const name of ['Official custom scripts', 'Bloodstar Clocktica']) {
+		await sourceMenu(page).getByText(name, { exact: true }).tap();
 	}
-	await expect(engines.getByRole('option', { name: carousel, exact: true })).toHaveCount(0);
-	await collections.getByRole('option', { name: carousel, exact: true }).tap();
-	await expect(sourcePicker(page)).toContainText(carousel);
+	await page.keyboard.press('Escape');
+	await expect(sourcePicker(page)).toContainText('3 sources');
+
+	// Nothing is listed while BotC Scripts is still searching.
+	const status = page.getByTestId('picker-status');
+	await expect(status).toHaveText('Searching BotC Scripts…');
+	const table = page.getByRole('table', { name: 'Scripts' });
+	await expect(table.locator('button.pick')).toHaveCount(0);
+	answerBotc();
+	// Then every row at once, each with its Source; a failed source is named, not waited for.
+	await expect(status).toHaveText('2 scripts · Bloodstar Clocktica could not be reached');
+	await expect(table.locator('button.pick')).toHaveCount(2);
+	// Source gives way on a phone, like Chars.
+	if (testInfo.project.name !== 'phone') {
+		const hamlet = table.locator('tbody tr', { hasText: 'Little Hamlet' });
+		await expect(hamlet.locator('[data-col="source"]')).toHaveText('Official');
+		const site = table.locator('tbody tr', { hasText: 'From The Site' });
+		await expect(site.locator('[data-col="source"]')).toHaveText('BotC Scripts');
+	}
+	await noSidewaysScroll(page);
 });
 
 test('rows scrolled under the table header stay under it', async ({ page }) => {

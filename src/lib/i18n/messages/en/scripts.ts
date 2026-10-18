@@ -28,7 +28,11 @@ export const scripts = {
 	// Picker
 	'scripts.picker.search': 'Search scripts',
 	'scripts.picker.searchPlaceholder': 'Names, authors, characters, or a link',
-	'scripts.sources.label': 'Source',
+	'scripts.sources.label': 'Sources',
+	'scripts.sources.all': 'All Sources',
+	'scripts.sources.count': { one: '{count} source', other: '{count} sources' },
+	'scripts.sources.searching': 'Searching {names}…',
+	'scripts.sources.failed': ' · {names} could not be reached',
 	'scripts.sources.group.engines': 'Search engines',
 	'scripts.sources.group.collections': 'Collections',
 	'scripts.picker.source.curated': 'Official custom scripts',

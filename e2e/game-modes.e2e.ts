@@ -56,7 +56,16 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 		await expect(banned.getByRole('button', { name, exact: true })).toBeVisible();
 	await expect(dialog.locator('[data-part="assignment"]')).toContainText('Run by the Storyteller');
 	await expect(dialog.locator('[data-part="towns"]')).toContainText('Standard');
+	// The mode file starts closed every time (Trevor, 2026-10-18).
+	await expect(dialog.locator('pre')).toBeHidden();
+	await dialog.getByRole('button', { name: 'Mode file', exact: true }).tap();
 	await expect(dialog.locator('pre')).toContainText('"id": "whale-buffet"');
+	// Download sits beside Copy and saves the file under the mode's name.
+	const [download] = await Promise.all([
+		page.waitForEvent('download'),
+		dialog.getByRole('button', { name: 'Download mode file' }).tap()
+	]);
+	expect(download.suggestedFilename()).toBe('whale-buffet.json');
 	// Our own wording is off by default (no authored content, Trevor 2026-10-15).
 	await expect(dialog.getByTestId('inspect-about')).toHaveText('None');
 	// The dialog's content scrolls to its last part (Trevor, 2026-10-18).
@@ -179,6 +188,24 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	const about = modesPanel(page).getByTestId('mode-about');
 	await expect(about.getByTestId('inspect-about')).toContainText('three drafted characters');
 	await expect(about.locator('a[href="https://grimbits.com/draft-buffet/"]')).toHaveCount(1);
+	// The description wraps so it reads whole, never cut off (Trevor, 2026-10-18).
+	const description = about.getByTestId('inspect-about');
+	expect(await description.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+	await expect(description).toContainText('The demon gets no bluffs.');
+
+	// Role Recycling is the Storyteller's choice (Trevor, 2026-10-18): off by default.
+	const recycling = modesPanel(page).getByRole('checkbox', { name: 'Role Recycling' });
+	await expect(recycling).not.toBeChecked();
+	await modesPanel(page).getByText('Role Recycling').tap();
+	await expect(recycling).toBeChecked();
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const record = await page.evaluate(
+		(id) => JSON.parse(localStorage.getItem(`grim-games:game-mode:v1:${id}`) ?? '{}'),
+		gameId
+	);
+	expect(record.roleRecycling).toBe(true);
 });
 
 test('with our own wording on, each mode shows its About description', async ({ page }) => {

@@ -12,6 +12,7 @@
 	const RESULT = {
 		idle: '',
 		checking: 'shell.updateChecking',
+		downloading: 'shell.updateDownloading',
 		current: 'shell.updateCurrent',
 		ready: 'shell.updateFound',
 		failed: 'shell.updateCheckFailed',
@@ -28,12 +29,20 @@
 		);
 		return t('shell.updateCheckedAt', { time });
 	}
+	// While a check runs, only where it has got: checking, then the download (Trevor,
+	// 2026-10-18: "give status of download"), then the usual "Checked … · Update ready".
 	const status = $derived(
 		updateCheck.result === 'checking'
 			? t('shell.updateChecking')
-			: [updateCheck.checkedAt ? checkedText(updateCheck.checkedAt) : '', result ? t(result) : '']
-					.filter(Boolean)
-					.join(' · ')
+			: updateCheck.result === 'downloading'
+				? updateCheck.percent === undefined
+					? t('shell.updateDownloading')
+					: t('shell.updateDownloadingPercent', {
+							percent: intl.number(updateCheck.percent / 100, { style: 'percent' })
+						})
+				: [updateCheck.checkedAt ? checkedText(updateCheck.checkedAt) : '', result ? t(result) : '']
+						.filter(Boolean)
+						.join(' · ')
 	);
 </script>
 
@@ -48,7 +57,7 @@
 		<IconButton
 			icon="refresh"
 			label={t('shell.checkUpdates')}
-			disabled={updateCheck.result === 'checking'}
+			disabled={updateCheck.result === 'checking' || updateCheck.result === 'downloading'}
 			onclick={() => void updateCheck.check()}
 		/>
 		<span class="result" role="status" data-testid="update-check-result">{status}</span>

@@ -7,6 +7,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { copyText } from '#lib/ui/clipboard.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
+	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { downloadJson } from '#lib/ui/download.ts';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -137,12 +138,6 @@
 		}
 	}
 
-	const signOut = () =>
-		act(async () => {
-			await account.signOut();
-			toast(t('account.signedOut'));
-		});
-
 	const endSession = (id: string) =>
 		act(async () => {
 			await accountApi.endSession(id);
@@ -236,13 +231,17 @@
 					<dt>{t('account.you.since')}</dt>
 					<dd>{date(account.user.createdAt)}</dd>
 				</dl>
-				<div class="buttons">
-					<Button variant="quiet" onclick={signOut} disabled={busy}>{t('account.signOut')}</Button>
-				</div>
 			</section>
 
-			<section aria-labelledby="devices">
-				<h2 id="devices">{t('account.devices.title')}</h2>
+			<PageSection title={t('account.devices.title')}>
+				{#snippet aside()}
+					<Button
+						variant="quiet"
+						onclick={endOthers}
+						disabled={busy || !sessions || sessions.length < 2}
+						>{t('account.devices.signOutOthers')}</Button
+					>
+				{/snippet}
 				{#if sessionsError}
 					<p class="muted">{sessionsError}</p>
 				{:else if sessions}
@@ -273,28 +272,28 @@
 							{/if}
 						{/snippet}
 					</DataTable>
-					<div class="buttons">
-						<Button variant="quiet" onclick={endOthers} disabled={busy || sessions.length < 2}
-							>{t('account.devices.signOutOthers')}</Button
-						>
-					</div>
 				{:else}
 					<p class="muted">{t('account.loading')}</p>
 				{/if}
-			</section>
+			</PageSection>
 
-			<section aria-labelledby="data">
-				<h2 id="data">{t('account.data.title')}</h2>
-				<div class="buttons start">
+			<PageSection title={t('account.data.title')}>
+				<div class="buttons">
 					<Button variant="quiet" onclick={download} disabled={busy}
 						>{t('account.data.download')}</Button
 					>
+				</div>
+			</PageSection>
+
+			<!-- Its own section, apart from everything else (Trevor, 2026-10-18). -->
+			<PageSection title={t('account.data.delete')}>
+				{#snippet aside()}
 					<!-- eslint-disable-next-line grim/delete-button -- Trevor 2026-10-18: account deletion is a labelled button, it is so high-impact -->
 					<Button variant="danger" icon="remove" onclick={askDelete} disabled={busy}
 						>{t('account.data.delete')}</Button
 					>
-				</div>
-			</section>
+				{/snippet}
+			</PageSection>
 		{:else}
 			<section class="card" aria-labelledby="sign-in">
 				<h2 id="sign-in">{t('account.signIn.title')}</h2>
@@ -397,11 +396,7 @@
 	.buttons {
 		display: flex;
 		flex-wrap: wrap;
-		justify-content: flex-end;
 		gap: var(--space-2);
-	}
-	.buttons.start {
-		justify-content: flex-start;
 	}
 	.phrase-intro {
 		margin: var(--space-2) 0 0;

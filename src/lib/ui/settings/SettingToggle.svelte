@@ -19,8 +19,12 @@
 </div>
 
 <style>
-	.row + :global(.row) {
-		margin-top: var(--space-5);
+	.row {
+		padding-block: var(--space-3);
+	}
+	/* A thin line between settings (Trevor, 2026-10-18), as SettingRow. */
+	:global(.row) + .row {
+		border-top: 1px solid var(--border);
 	}
 	.description {
 		margin: 0;

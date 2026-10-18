@@ -75,7 +75,7 @@
 			return {
 				kind: 'draft',
 				state: startDraft(
-					assignment,
+					{ ...assignment, recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen },
 					split.counts,
 					pickableCharacters(mode, characters),
 					Math.random

@@ -23,6 +23,7 @@
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import ScriptChoiceLabel from '#lib/features/scripts/ScriptChoiceLabel.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import AddModeDialog from './AddModeDialog.svelte';
@@ -63,6 +64,11 @@
 	const pool = $derived(mode.parts.pool);
 	const towns = $derived(mode.parts.towns);
 	let restrictions = $state(NO_RESTRICTIONS);
+	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
+	let roleRecycling = $state<boolean | undefined>();
+	const draft = $derived(
+		mode.parts.assignment?.kind === 'draft' ? mode.parts.assignment : undefined
+	);
 	let players = $state(8);
 	let starting = $state(false);
 	let inspecting = $state(false);
@@ -193,6 +199,7 @@
 				restrictions,
 				data,
 				loaded: loaded[0],
+				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen } : {}),
 				create: (s) => OpenGame.create(data, s, total)
 			});
 			await goto(startHref(modeId, open.game.gameId));
@@ -214,6 +221,7 @@
 			onChange={(v) => {
 				modeId = v;
 				restrictions = NO_RESTRICTIONS;
+				roleRecycling = undefined;
 				campaignId = 'new';
 			}}
 		/>
@@ -315,6 +323,13 @@
 			</p>
 		{/if}
 
+		{#if draft}
+			<Toggle
+				label={t('modes.roleRecycling')}
+				checked={roleRecycling ?? draft.recycleUnchosen}
+				onChange={(on) => (roleRecycling = on)}
+			/>
+		{/if}
 		<Button icon="restricted" onclick={openRestricted}>
 			{t('modes.restrictedButton', { count: restrictedCount })}
 		</Button>

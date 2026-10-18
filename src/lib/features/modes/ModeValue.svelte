@@ -2,7 +2,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Self from './ModeValue.svelte';
-	import { CHARACTER_FIELDS, SEQUENCE_FIELDS, modeLabel } from './labels.ts';
+	import { CHARACTER_FIELDS, SEQUENCE_FIELDS, fieldLabel, modeLabel } from './labels.ts';
 
 	/**
 	 * One value of a mode file, shown as it is: characters as badges, links as links, kinds
@@ -61,7 +61,7 @@
 			{#each Object.entries(value) as [key, inner] (key)}
 				<!-- One row per field, so a label and its value read together. -->
 				<div class="row">
-					<dt>{modeLabel('field', key)}</dt>
+					<dt>{fieldLabel(field, key)}</dt>
 					<dd>
 						{#if key === 'kind' && typeof inner === 'string'}
 							{modeLabel('kind', inner)}
