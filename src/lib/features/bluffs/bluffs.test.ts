@@ -7,6 +7,7 @@ import {
 	charactersReallyInPlay,
 	demonBluffsInPlay,
 	lunaticInPlay,
+	randomBluffs,
 	showableBluffSets
 } from './bluffs.ts';
 
@@ -99,5 +100,24 @@ describe('bluffs and characters in play', () => {
 			'Demon',
 			'Set 3'
 		]);
+	});
+});
+
+describe('random Demon bluffs', () => {
+	it('picks three different characters, none in play', () => {
+		const choices = ['chef', 'empath', 'soldier', 'mayor', 'monk'];
+		const picks = randomBluffs(choices, new Set(['empath', 'monk']), 3, () => 0.5);
+		expect(new Set(picks).size).toBe(3);
+		expect(picks.toSorted()).toEqual(['chef', 'mayor', 'soldier']);
+	});
+
+	it('picks fewer when fewer are left', () => {
+		expect(randomBluffs(['chef', 'empath'], new Set(['chef']), 3, Math.random)).toEqual(['empath']);
+	});
+
+	it('follows the random source, so each tap can differ', () => {
+		const choices = ['chef', 'empath', 'soldier', 'mayor'];
+		expect(randomBluffs(choices, new Set(), 3, () => 0)).toEqual(['chef', 'empath', 'soldier']);
+		expect(randomBluffs(choices, new Set(), 3, () => 0.99)).toEqual(['mayor', 'soldier', 'empath']);
 	});
 });
