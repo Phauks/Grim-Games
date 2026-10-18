@@ -17,6 +17,7 @@ import {
 	forgetUpsideDownMarks,
 	nightViews,
 	pastNames,
+	reminderCopyIds,
 	reminderSpots,
 	seatLayouts,
 	type NightView
@@ -34,6 +35,7 @@ export class Grimoire {
 		forgetUpsideDownMarks();
 		this.layout = seatLayouts.read(open.game.gameId);
 		this.reminderSpots = reminderSpots.read(open.game.gameId);
+		this.copies = reminderCopyIds.read(open.game.gameId);
 		this.nightView = nightViews.read(open.game.gameId);
 		this.nightDone = this.nightView.done;
 		this.nightDay = this.nightView.day ?? open.game.pastDays.length;
@@ -137,6 +139,19 @@ export class Grimoire {
 
 	/** Where reminders were dropped, for reminders that stay where they are dropped. */
 	reminderSpots = $state.raw<Readonly<Record<string, SeatPoint>>>({});
+	/**
+	 * Reminders made with Duplicate reminder (device-only, `reminderCopyIds`). Replaced, never
+	 * changed in place, so a plain Set is enough.
+	 */
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	copies = $state.raw<ReadonlySet<ReminderId>>(new Set());
+
+	/** Marks a reminder as a duplicate, a token beyond the game's own. */
+	markCopy(reminderId: ReminderId): void {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		this.copies = new Set([...this.copies, reminderId]);
+		reminderCopyIds.write(this.game.gameId, this.copies);
+	}
 
 	setReminderSpot(reminderId: ReminderId, at: SeatPoint): void {
 		this.reminderSpots = { ...this.reminderSpots, [reminderId]: at };

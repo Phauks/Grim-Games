@@ -150,6 +150,31 @@ export const reminderSpots = {
 	}
 };
 
+const COPIES_KEY = (gameId: GameId) => `grim-games:reminder-copies:v1:${gameId}`;
+
+/**
+ * Reminders made with ⋯ > Duplicate reminder on this device, by reminder id: new tokens
+ * beyond the game's, so they never use up the bank's copies (Trevor, 2026-10-18).
+ */
+export const reminderCopyIds = {
+	read(gameId: GameId): Set<string> {
+		try {
+			const raw: unknown = JSON.parse(globalThis.localStorage?.getItem(COPIES_KEY(gameId)) ?? '[]');
+			return new Set(Array.isArray(raw) ? raw.filter((id) => typeof id === 'string') : []);
+		} catch {
+			return new Set();
+		}
+	},
+	write(gameId: GameId, ids: ReadonlySet<string>): void {
+		try {
+			if (ids.size === 0) globalThis.localStorage?.removeItem(COPIES_KEY(gameId));
+			else globalThis.localStorage?.setItem(COPIES_KEY(gameId), JSON.stringify([...ids]));
+		} catch {
+			// Storage full or blocked: the marks last until the page is closed.
+		}
+	}
+};
+
 const NIGHT_KEY = (gameId: GameId) => `grim-games:night:v1:${gameId}`;
 
 /**

@@ -11,6 +11,7 @@ describe('board looks', () => {
 				rulesAt: 'edge',
 				rulesGrouped: true,
 				nameSize: 9,
+				nameOffset: 1,
 				reminders: 'free',
 				// The script's name is only in the lower left corner now (Trevor, 2026-10-18).
 				titleAt: 'corner'
@@ -21,6 +22,7 @@ describe('board looks', () => {
 			rulesAt: 'edge',
 			rulesGrouped: true,
 			nameSize: 1.6,
+			nameOffset: 0.3,
 			reminders: 'free'
 		});
 		expect(
@@ -28,6 +30,7 @@ describe('board looks', () => {
 				vignetteStrength: 'x',
 				rulesAt: 'top',
 				nameSize: 'big',
+				nameOffset: -1,
 				reminders: 'x',
 				titleAt: 'x'
 			})

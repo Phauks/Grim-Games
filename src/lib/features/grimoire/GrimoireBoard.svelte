@@ -84,7 +84,6 @@
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
-	import NightOrderSheet from './NightOrderSheet.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
@@ -203,7 +202,8 @@
 			const c = toPx(p);
 			const name = nameBoxes[i]?.box;
 			// The token, with the name pill straddling its lower rim (PlayerNameMark).
-			const token = { x: c.x, y: c.y + 0.05 * size, w: size, h: 1.1 * size };
+			const off = boardLooks.current.nameOffset;
+			const token = { x: c.x, y: c.y + (0.05 + off / 2) * size, w: size, h: (1.1 + off) * size };
 			return name ? [token, name] : [token];
 		});
 		// The name sits 4px (--space-1) in from the edges.
@@ -252,7 +252,9 @@
 			if (name) out.push(name);
 		} else {
 			// The badge pill straddles the token's lower rim (PlayerNameMark).
-			out.push({ x: c.x, y: c.y + 0.5 * size, w: 0.9 * size, h: 0.18 * size });
+			// Lower by the badge offset (Board and tokens).
+			const off = boardLooks.current.nameOffset;
+			out.push({ x: c.x, y: c.y + (0.5 + off) * size, w: 0.9 * size, h: 0.18 * size });
 		}
 		if (seats[i]?.dead) {
 			out.push({ x: c.x - 0.41 * size, y: c.y + 0.37 * size, w: 0.38 * size, h: 0.38 * size });
@@ -661,7 +663,7 @@
 	 */
 	const looseMode = $derived(boardLooks.current.reminders === 'free');
 	/** Copies beyond what the game gives (Duplicate reminder): marked as unusual. */
-	const extras = $derived(extraReminders(game, characters));
+	const extras = $derived(extraReminders(game, characters, grimoire.copies));
 	const handReminder = $derived(
 		looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder)
 	);
@@ -706,10 +708,10 @@
 	);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
-	// The night order, the walk-through and the open step come back after a reload or an
-	// update (Trevor, 2026-10-16), from what this device saved.
+	// The walk-through and the open step come back after a reload or an update (Trevor,
+	// 2026-10-16), from what this device saved. The night order sheet left the board (Trevor,
+	// 2026-10-18): the bank's Run night runs it, and the Script screen lists it.
 	const saved = untrack(() => grimoire.nightView);
-	let nightOpen = $state(saved.sheet === true);
 	/** The day sheet; the old /day route lands here with `#day` to open it. */
 	let dayOpen = $state(false);
 	// ── Assisted night order (Trevor, 2026-10-16) ──
@@ -747,7 +749,6 @@
 	});
 	$effect(() => {
 		grimoire.saveNightView({
-			sheet: nightOpen || undefined,
 			walk: walk ? { ...walk } : undefined,
 			guided: guideOpen && guided ? { night: guided.night, stepId: guided.step.id } : guidedPending
 		});
@@ -756,18 +757,17 @@
 	/**
 	 * Run Night Order in one tap, from the right end of the reminder bank (Trevor, 2026-10-18:
 	 * a change on the board itself, not a toolbar page). Always there while the walk-through
-	 * setting is on, so the bank never moves; usable once every seat has a token. It starts
-	 * tonight's walk-through at the first step not yet done.
+	 * setting is on, so the bank never moves; usable once a seat has a character, empty seats
+	 * or not (warn, never lock: it is the only way into the night steps on the board). It
+	 * starts tonight's walk-through at the first step not yet done.
 	 */
 	const canRun = $derived(
-		!showSetup &&
-			!ended &&
+		!ended &&
 			!grimoire.open.viewOnly &&
 			!walk &&
 			!arranging &&
 			!placing &&
-			game.seating.length > 0 &&
-			game.seating.every((id) => game.seats[id].characterId !== undefined)
+			game.seating.some((id) => game.seats[id].characterId !== undefined)
 	);
 	function runNight() {
 		const data = officialData.current;
@@ -779,11 +779,17 @@
 		walk = { night, index: Math.max(0, next) };
 	}
 	/**
-	 * A night is running (walked through, or Dusk ticked by End day): the bank's button is End
-	 * night, which replaces ticking Dawn (Trevor, 2026-10-18). With the walk-through switched
-	 * off it is End night all the time, usable while a night runs.
+	 * While the night is walked through, the bank's button is End night, which replaces
+	 * ticking Dawn (Trevor, 2026-10-18). A walk-through stopped mid-night shows Run night
+	 * again, to pick it up at the first step not done: with the night order sheet gone it is
+	 * the only way back to the steps. With the walk-through switched off it is End night all
+	 * the time, usable while a night runs (Dusk ticked by End day).
 	 */
-	const nightOn = $derived(!ended && (walk !== undefined || grimoire.nightRunning));
+	const nightOn = $derived(
+		!ended &&
+			(walk !== undefined ||
+				(grimoire.nightRunning && !preferences.current.assistance.nightWalkthrough))
+	);
 	let endNightOpen = $state(false);
 	function endNight() {
 		if (!grimoire.endNight()) return;
@@ -1061,6 +1067,8 @@
 
 <!-- A Fabled or Loric's reminders in its dialog; a tap opens one. -->
 {#snippet heldList(id: CharacterId)}
+	<!-- Nothing when it holds none; placed ones under a Reminders header (Trevor, 2026-10-18). -->
+	{#if ruleReminders(game, id).length > 0}<h3 class="held-head">Reminders</h3>{/if}
 	<div class="held-list" role="group" aria-label="Reminders">
 		{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
 			<button
@@ -1075,8 +1083,6 @@
 					alignment={placingAlignment(game, reminder.characterId, characters)}
 				/>
 			</button>
-		{:else}
-			<span class="none">None</span>
 		{/each}
 	</div>
 {/snippet}
@@ -1201,6 +1207,7 @@
 		style:--tray-h="{chip + 30}px"
 		style:--strip-h={walk ? '7.5rem' : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
+		style:--name-offset={boardLooks.current.nameOffset}
 		bind:this={board}
 	>
 		{#each seats as seat, i (seat.seatId)}
@@ -1480,19 +1487,6 @@
 		<Button variant="quiet" icon="history" onclick={() => fromMenu(() => (historyOpen = true))}>
 			History
 		</Button>
-		<!-- The full night list, ticked by hand; running a night is the bank's Run night, so it
-		     left the toolbar (Trevor, 2026-10-18). -->
-		<Button
-			variant="quiet"
-			icon="night"
-			onclick={() =>
-				fromMenu(() => {
-					grimoire.beginNight();
-					nightOpen = true;
-				})}
-		>
-			Night order
-		</Button>
 		<Button
 			variant="quiet"
 			icon="add"
@@ -1687,28 +1681,15 @@
 	bind:open={dayOpen}
 	game={grimoire.open}
 	onEndDay={() => {
-		// The day's timer stops, and tonight's night order opens with Dusk ticked, which runs
-		// the rules checked at dusk (GameEndPrompt).
+		// The day's timer stops and Dusk is ticked, which runs the rules checked at dusk
+		// (GameEndPrompt); the walk-through starts on the board, where it is on.
 		if (liveDayTimer.running) liveDayTimer.toggle();
 		grimoire.beginNight();
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
-		nightOpen = true;
+		if (preferences.current.assistance.nightWalkthrough) runNight();
 	}}
-/>
-
-<NightOrderSheet
-	bind:open={nightOpen}
-	{grimoire}
-	onGuide={(step, night) => {
-		guided = { step, night };
-		guideOpen = true;
-	}}
-	onWalk={(night) => {
-		walk = { night, index: 0 };
-	}}
-	{onDraw}
 />
 
 <GuidedStep
@@ -2195,6 +2176,13 @@
 	/* Its stand-in follows the finger; the place stays, so nothing moves. */
 	.held .lifted {
 		opacity: 0.3;
+	}
+	.held-head {
+		margin: var(--space-2) 0 0;
+		font-size: 0.8rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--on-surface-muted);
 	}
 	.held-list {
 		display: flex;

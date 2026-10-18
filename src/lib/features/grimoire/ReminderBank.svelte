@@ -137,22 +137,26 @@
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
-		const rest = bankReminders(game, characters, focus, focusMode === 'front').flatMap(
-			({ characterId, label, left, now }) => {
-				const key = `${characterId}:${label}`;
-				const n = left - (pending[key] ?? 0);
-				if (n <= 0) return [];
-				// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
-				if (stack) return [{ key: `bank:${key}`, characterId, label, count: n, now }];
-				return Array.from({ length: n }, (_, i) => ({
-					key: `bank:${key}:${i}`,
-					characterId,
-					label,
-					count: 1,
-					now
-				}));
-			}
-		);
+		const rest = bankReminders(
+			game,
+			characters,
+			focus,
+			focusMode === 'front',
+			grimoire.copies
+		).flatMap(({ characterId, label, left, now }) => {
+			const key = `${characterId}:${label}`;
+			const n = left - (pending[key] ?? 0);
+			if (n <= 0) return [];
+			// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
+			if (stack) return [{ key: `bank:${key}`, characterId, label, count: n, now }];
+			return Array.from({ length: n }, (_, i) => ({
+				key: `bank:${key}:${i}`,
+				characterId,
+				label,
+				count: 1,
+				now
+			}));
+		});
 		return only([...setup, ...rest]);
 	});
 	/** "Only this character": the step's reminders alone, while a step is walked through. */

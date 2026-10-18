@@ -75,7 +75,10 @@
      kept, so changing a size never moves the settings below. -->
 <SettingPreview testid="token-preview">
 	<div class="preview" aria-hidden="true" style:--sample="{largest}px">
-		{#if sample}<span class="disc" style:--name-scale={boardLooks.current.nameSize}
+		{#if sample}<span
+				class="disc"
+				style:--name-scale={boardLooks.current.nameSize}
+				style:--name-offset={boardLooks.current.nameOffset}
 				><CharacterToken
 					character={sample}
 					size={tokenSize}

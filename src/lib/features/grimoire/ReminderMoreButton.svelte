@@ -32,6 +32,7 @@
 		const holder = reminderId ? reminderHolder(game, reminderId) : undefined;
 		if (!reminder || !holder) return;
 		const copy = { characterId: reminder.characterId, label: reminder.label };
+		const before = new Set(onBoard(game).map((r) => r.reminderId));
 		let done = false;
 		if ('seatId' in holder)
 			done = grimoire.run({ type: 'AddReminder', seatId: holder.seatId, reminder: copy });
@@ -49,6 +50,9 @@
 			if (at && added) grimoire.setReminderSpot(added.reminderId, { x: at.x + 4, y: at.y + 4 });
 		}
 		if (!done) return;
+		// A new token, never one of the bank's (Trevor, 2026-10-18), so it is marked.
+		const added = onBoard(grimoire.game).find((r) => !before.has(r.reminderId));
+		if (added) grimoire.markCopy(added.reminderId);
 		toast('Uncommon', 'More copies of this reminder than the game gives. The copy is marked.');
 		onDone?.();
 	}

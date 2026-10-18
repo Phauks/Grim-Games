@@ -24,7 +24,7 @@
 	value={boardLooks.current.rulesGrouped ? 'grouped' : 'each'}
 	options={[
 		{ value: 'each', label: 'Individual' },
-		{ value: 'grouped', label: 'Grouped' }
+		{ value: 'grouped', label: 'Stacked' }
 	]}
 	onChange={(v) => boardLooks.update({ rulesGrouped: v === 'grouped' })}
 />
