@@ -148,8 +148,10 @@ test('each tile says what it will ask for before it is tapped', async ({ page })
 	// Icons, each named by its words (Trevor, 2026-10-18), the quick card marked apart.
 	const asks = (name: string) =>
 		page.getByRole('button', { name, exact: true }).getByTestId('info-token-asks');
+	// Always the three bluffs (Trevor, 2026-10-18).
+	await expect(asks('These characters are not in play')).toHaveText('3');
 	await expect(asks('These characters are not in play').getByRole('img')).toHaveAccessibleName(
-		'Asks for 1 to 3 characters'
+		'Asks for 3 characters'
 	);
 	await expect(asks('You are').getByRole('img')).toHaveAccessibleName('Asks for 1 character');
 	// At least one, up to three (Trevor, 2026-10-18).

@@ -44,6 +44,13 @@
 		...(quick ? [{ icon: 'quickCard' as const, label: t('info-tokens.quickAbout') }] : []),
 		...askBadges(asks)
 	]);
+	// Read as the card's words, then its characters, though the characters show first.
+	const spoken = $derived(
+		owners.length
+			? // eslint-disable-next-line grim/names-as-badges -- the button's spoken name, never shown; the badges show
+				t('info-tokens.cardFor', { card: name, name: owners.map((o) => o.name).join(', ') })
+			: name
+	);
 	const id = $props.id();
 </script>
 
@@ -57,12 +64,11 @@
 		class="card"
 		class:owned={owners.length > 0}
 		data-asks={badges.length || undefined}
-		aria-label={label ?? (badges.length ? name : undefined)}
+		aria-label={label ?? (badges.length || owners.length ? spoken : undefined)}
 		aria-describedby={badges.length ? `${id}-asks` : undefined}
 		onclick={onchoose}
 	>
-		<!-- One inline box, so the card's flex layout keeps the spaces between runs. -->
-		<span class="text"><InfoTokenText {text} /></span>
+		<!-- The character first, then the card's words (Trevor, 2026-10-18). -->
 		{#if owners.length > 0}
 			<span class="owners">
 				{#each owners.slice(0, 2) as owner (owner.id)}<CharacterBadge
@@ -73,6 +79,8 @@
 					/>{/each}{#if owners.length > 2}<span class="more">+{owners.length - 2}</span>{/if}
 			</span>
 		{/if}
+		<!-- One inline box, so the card's flex layout keeps the spaces between runs. -->
+		<span class="text"><InfoTokenText {text} /></span>
 		<!-- Before the tap, what the card will ask for: icons, each named by its words. -->
 		{#if badges.length}
 			<span class="asks" id="{id}-asks" data-testid="info-token-asks">
@@ -160,7 +168,7 @@
 		overflow-wrap: anywhere;
 		cursor: pointer;
 	}
-	/* A card that belongs to characters: its text, then the characters. */
+	/* A card that belongs to characters: the characters, then its text. */
 	/* Room for the corner icons, the same on every tile that has them, so nothing moves. */
 	.card[data-asks] {
 		padding-inline-end: calc(var(--tap-target) + var(--space-2));
