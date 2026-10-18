@@ -7,8 +7,9 @@
 	import NavList from './NavList.svelte';
 </script>
 
-<!-- The same destinations as the sidebar, sliding in from the left (phones and game screens). -->
-<Dialog bind:open={navDrawer.open} title={t('shell.navLabel')} size="side" closeButton={false}>
+<!-- The same destinations as the sidebar, sliding in from the left (phones and game screens).
+     Headed with the app's name, as in the header; the nav keeps "Menu" as its label (Trevor, 2026-10-18). -->
+<Dialog bind:open={navDrawer.open} title={t('shell.appName')} size="side" closeButton={false}>
 	{#snippet lead()}
 		<!-- Where the hamburger that opened it was, so the same spot closes it. -->
 		<IconButton

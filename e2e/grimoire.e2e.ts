@@ -1070,7 +1070,7 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 
 	// Settings open over the board, so the game is never left.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	const drawer = page.getByRole('dialog', { name: 'Menu' });
+	const drawer = page.getByRole('dialog', { name: 'Grim-Games' });
 	await drawer.getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await expect(settings).toBeVisible();
@@ -1116,7 +1116,10 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 
 	// With "Stack duplicate reminders" on, they show as one token with what is left.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -1227,7 +1230,10 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.getByTestId('board-background')).toBeVisible();
 	// The app's own Settings still lists every section.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
 	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeAttached();
 });
 

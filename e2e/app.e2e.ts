@@ -39,7 +39,7 @@ test('the Community Created Content logo is at the bottom of the menu', async ({
 		page.getByRole('contentinfo').getByRole('img', { name: /Community Created Content/ })
 	).toHaveCount(0);
 	const sidebar = page.getByRole('navigation', { name: 'Menu' }).first();
-	const drawer = page.getByRole('dialog', { name: 'Menu' });
+	const drawer = page.getByRole('dialog', { name: 'Grim-Games' });
 	let menu = sidebar;
 	if (!(await sidebar.isVisible())) {
 		await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();

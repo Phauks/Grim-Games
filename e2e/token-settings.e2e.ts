@@ -102,7 +102,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 		// Settings are in the app's menu, opened from the game toolbar.
 		await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 		await page
-			.getByRole('dialog', { name: 'Menu' })
+			.getByRole('dialog', { name: 'Grim-Games' })
 			.getByRole('button', { name: 'Settings' })
 			.tap();
 		await dialog
@@ -227,7 +227,10 @@ test('night order badges sit on the side leaves, counting this game’s characte
 	await expect(seat(1).getByTestId('night-badge')).toHaveCount(0);
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -287,7 +290,10 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 	const width = async (token: typeof onBoard) => Math.round((await token.boundingBox())!.width);
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page.getByRole('dialog', { name: 'Menu' }).getByRole('button', { name: 'Settings' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('button', { name: 'Settings' })
+		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })

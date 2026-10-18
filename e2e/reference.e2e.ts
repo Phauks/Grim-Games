@@ -7,7 +7,7 @@ test('the menu opens the character reference; the footer no longer links it', as
 	);
 	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
 	await page
-		.getByRole('dialog', { name: 'Menu' })
+		.getByRole('dialog', { name: 'Grim-Games' })
 		.getByRole('link', { name: 'Character reference' })
 		.tap();
 	await expect(page).toHaveURL(/\/reference$/);
