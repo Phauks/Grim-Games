@@ -8,7 +8,7 @@
 	import { jinxesFor } from '#lib/core/data/jinxes.ts';
 	import CharacterEntry from './CharacterEntry.svelte';
 	import { officialData } from './game-data.svelte.ts';
-	import ContentsLayout, { type ContentsItem } from './ContentsLayout.svelte';
+	import ContentsLayout, { type ContentsItem } from '#lib/ui/layout/ContentsLayout.svelte';
 	import CharacterSummary from './CharacterSummary.svelte';
 	import WikiBox from './WikiBox.svelte';
 	import { wikiPageTitle, withoutRepeats, type WikiSection } from './wiki-page.ts';

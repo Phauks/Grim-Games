@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { GLOSSARY, glossaryEntryUrl, GLOSSARY_URL } from '#lib/core/rules/glossary.ts';
-	import ContentsLayout, {
-		type ContentsItem
-	} from '#lib/features/characters/ContentsLayout.svelte';
+	import ContentsLayout, { type ContentsItem } from '#lib/ui/layout/ContentsLayout.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';

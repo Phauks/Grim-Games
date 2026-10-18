@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import BackButton from '#lib/ui/primitives/BackButton.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { glossaryPopover } from './glossary-popover.svelte.ts';
 	import { glossaryDialog } from './glossary-dialog.svelte.ts';
@@ -45,9 +46,10 @@
 >
 	{#if glossaryPopover.term}
 		{#if previous}
-			<button type="button" class="back" onclick={() => glossaryPopover.back()}
-				><Icon name="back" /><span>{t('glossary.back', { term: previous.term })}</span></button
-			>
+			<BackButton
+				label={t('glossary.back', { term: previous.term })}
+				onclick={() => glossaryPopover.back()}
+			/>
 		{/if}
 		{#if entry}
 			<WikiEntryText
@@ -65,19 +67,6 @@
 <GlossaryDialog />
 
 <style>
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		color: var(--on-surface-muted);
-		font: inherit;
-		cursor: pointer;
-		--icon-size: 1rem;
-	}
 	.open {
 		display: inline-flex;
 		align-items: center;
