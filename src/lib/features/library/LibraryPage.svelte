@@ -1,72 +1,64 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
+	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import { loadScriptText, type GameData } from '#lib/core/data/index.ts';
+	import CampaignScripts from '#lib/features/modes/CampaignScripts.svelte';
+	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/index.ts';
+	import type { Character, GameData } from '#lib/core/data/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { recentScripts, restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
+	import { describeSource } from '#lib/features/scripts/saved-scripts.ts';
 	import {
-		chooseScript,
-		forgetScript,
-		recentScripts,
-		restoreScripts
-	} from '#lib/features/scripts/current-script.svelte.ts';
-	import { fetchLinkTarget } from '#lib/features/scripts/fetch-script.ts';
-	import { relaxJson } from '#lib/features/scripts/relaxed-json.ts';
-	import {
-		describeSource,
-		sameScript,
-		type VariationOf
-	} from '#lib/features/scripts/saved-scripts.ts';
-	import {
-		findSaved,
 		localListings,
 		profileProvider,
-		recentProvider,
-		type ScriptListing
+		recentProvider
 	} from '#lib/features/scripts/script-providers.ts';
 	import AddScript from '#lib/features/scripts/AddScript.svelte';
-	import ScriptView from '#lib/features/scripts/ScriptView.svelte';
-	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
-	import Chip from '#lib/ui/primitives/Chip.svelte';
-	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import type { Shareable } from '#lib/features/scripts/share-codes.ts';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
-	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
-	import SavedCharacterList from '#lib/features/character-builder/SavedCharacterList.svelte';
-	import CampaignScripts from '#lib/features/modes/CampaignScripts.svelte';
-	import FolderView from './FolderView.svelte';
-	import VariationChanges from './VariationChanges.svelte';
-	import LabelManager from './LabelManager.svelte';
-	import NewLabel from './NewLabel.svelte';
+	import CharacterPane from './CharacterPane.svelte';
+	import CollectionPane from './CollectionPane.svelte';
+	import FolderBar from './FolderBar.svelte';
+	import FolderNameDialog from './FolderNameDialog.svelte';
+	import ItemPane from './ItemPane.svelte';
+	import LibrarySidebar, { type Place } from './LibrarySidebar.svelte';
+	import NameDialog from './NameDialog.svelte';
+	import ScriptPane, { type ScriptRow } from './ScriptPane.svelte';
+	import { dragToFolder, type DragSource } from './drag-to-folder.ts';
+	import { characterCollections } from './library-collections.svelte.ts';
 	import {
-		byName,
-		filterLibrary,
-		folderPath,
-		folderTree,
-		libraryKey,
-		type FolderFilter
-	} from './library-labels.ts';
+		characterKey,
+		collectionKey,
+		folderSize,
+		isBrowsing,
+		itemsShown,
+		type ItemKind,
+		type KindFilter,
+		type LibraryItem
+	} from './library-items.ts';
+	import { byName, childFolders, folderPath, libraryKey } from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 
 	/**
-	 * Everything the user has kept (Trevor, 2026-10-16: "any scripts the user has built or
-	 * downloaded or saved, along with any tags or functionality they have created"): their saved
-	 * and profile scripts with their own folders and tags. It reads the Scripts feature's
-	 * stores; nothing is copied. Custom info tokens live on the Info tokens page only (Trevor,
-	 * 2026-10-17).
+	 * Everything the user has kept, held like files in a file manager (Trevor, 2026-10-18): a
+	 * sidebar of folders, kinds and tags; a table of what the open folder holds, each row
+	 * draggable onto a folder; and the open item in a pane to the right. Scripts are read from
+	 * the Scripts feature's stores and characters from the Character builder's; nothing is
+	 * copied. Custom info tokens live on the Info tokens page only (Trevor, 2026-10-17).
 	 */
 
 	let data = $state.raw<GameData>();
@@ -84,14 +76,14 @@
 		if (account.user && profileScripts.status === 'idle') void profileScripts.refresh();
 	});
 
-	interface Row {
-		key: string;
-		haystack: string;
-		listing: ScriptListing;
-		shareable: Shareable;
-	}
+	/** The sidebar sits beside the list; below this it folds above it. */
+	const sided = new MediaQuery('min-width: 40rem', true);
+	/** The open item sits beside the list; below this it fills the screen. */
+	const roomy = new MediaQuery('min-width: 75rem', true);
 
-	const rows = $derived.by<Row[]>(() => {
+	// ---- What the Library holds ----
+
+	const scripts = $derived.by<(ScriptRow & { haystack: string })[]>(() => {
 		if (!data) return [];
 		const profile = account.user ? profileScripts.list : [];
 		return localListings(
@@ -118,77 +110,138 @@
 		});
 	});
 
-	// ---- View: folders like a file manager, or a table (Trevor, 2026-10-17) ----
+	const characters = $derived(
+		savedCharacters.list.map((saved) => {
+			const fields = fieldsFromEntry(saved.entry);
+			return { saved, fields, character: previewCharacter(fields) };
+		})
+	);
 
-	type View = 'folders' | 'table';
-	const VIEW_KEY = 'grim-games:library-view';
-	function readView(): View {
-		return readStoredText(VIEW_KEY) === 'table' ? 'table' : 'folders';
+	interface Item extends LibraryItem {
+		/** One muted line under the name. */
+		sub: string;
+		/** Characters: shown as a badge (names always show as badges). */
+		character?: Character;
 	}
-	let view = $state<View>(readView());
-	function setView(next: View) {
-		view = next;
-		// A remembered view is only a convenience.
-		writeStoredText(VIEW_KEY, next);
-	}
-	/** The folder open in the folder view; the top level when none. */
+
+	const items = $derived<Item[]>([
+		...scripts.map((s) => ({
+			key: s.key,
+			kind: 'script' as const,
+			name: s.listing.row.name,
+			haystack: s.haystack,
+			sub: s.listing.row.author
+		})),
+		...characters.map(({ saved, fields, character }) => ({
+			key: characterKey(saved.savedId),
+			kind: 'character' as const,
+			name: fields.name,
+			haystack: `${fields.name} ${fields.ability}`.toLocaleLowerCase(),
+			// The character type, as the character's own details name it.
+			sub: fields.team[0].toUpperCase() + fields.team.slice(1),
+			character
+		})),
+		...characterCollections.list.map((c) => ({
+			key: collectionKey(c.id),
+			kind: 'collection' as const,
+			name: c.name,
+			haystack: c.name.toLocaleLowerCase(),
+			sub: t('library.characterCount', { count: c.characters.length })
+		}))
+	]);
+
+	// ---- Where the list is: folder, kind, tags, search ----
+
+	let place = $state<Place>('files');
+	/** The open folder; the top level when none. */
 	let currentFolder = $state<string>();
-
-	// ---- Search, filters and sort ----
-
-	let term = $state('');
-	let folderFilter = $state<string>('all');
+	let kind = $state<KindFilter>('all');
 	let tagFilter = $state<string[]>([]);
-	type ColumnId = 'name' | 'folder' | 'tags' | 'source';
-	let sort = $state<DataSort<ColumnId> | undefined>();
+	let term = $state('');
 
-	const folders = $derived(folderTree(libraryLabels.state).map(({ folder }) => folder));
-	const tags = $derived(byName(libraryLabels.state.tags));
+	const labels = $derived(libraryLabels.state);
+	// A tag deleted elsewhere drops out of the filter.
+	const activeTags = $derived(tagFilter.filter((id) => labels.tags.some((tag) => tag.id === id)));
+	// A folder deleted elsewhere: back to the top level.
+	const folder = $derived(
+		currentFolder && labels.folders.some((f) => f.id === currentFolder) ? currentFolder : undefined
+	);
+	const filter = $derived({ folder, kind, tags: activeTags, term });
+	const browsing = $derived(isBrowsing(filter));
+
 	/** A folder's whole path, so folders of the same name in different places differ. */
 	const folderName = (id: string | undefined) =>
-		folderPath(libraryLabels.state, id)
+		folderPath(labels, id)
 			.map((f) => f.name)
 			.join(' / ');
 	const tagNames = (ids: readonly string[]) =>
-		tags.filter((tag) => ids.includes(tag.id)).map((tag) => tag.name);
-	const sourceOf = (row: Row) =>
-		row.listing.row.note || t(`scripts.sourceLabel.${row.listing.row.source}`);
+		byName(labels.tags)
+			.filter((tag) => ids.includes(tag.id))
+			.map((tag) => tag.name);
 
-	// A folder or tag deleted elsewhere drops out of the filter.
-	const folder = $derived<FolderFilter>(
-		folderFilter === 'all'
-			? { kind: 'all' }
-			: folderFilter === 'none'
-				? { kind: 'none' }
-				: folders.some((f) => f.id === folderFilter)
-					? { kind: 'folder', id: folderFilter }
-					: { kind: 'all' }
-	);
-	const activeTags = $derived(tagFilter.filter((id) => tags.some((tag) => tag.id === id)));
+	// ---- The table ----
 
-	const shown = $derived.by(() => {
-		const list = filterLibrary(rows, libraryLabels.state, {
-			term,
-			folder,
-			tags: activeTags
-		});
-		if (!sort) return list;
-		const { column, direction } = sort;
-		const text = (row: Row) => {
-			const labels = libraryLabels.for(row.key);
-			if (column === 'folder') return folderName(labels.folder);
-			if (column === 'tags') return tagNames(labels.tags).join(', ');
-			if (column === 'source') return sourceOf(row);
-			return row.listing.row.name;
-		};
-		const sign = direction === 'ascending' ? 1 : -1;
-		// Blank values sort last either way.
-		return [...list].sort((a, b) => {
-			const x = text(a);
-			const y = text(b);
-			if (!x !== !y) return x ? -1 : 1;
-			return sign * x.localeCompare(y, undefined, { sensitivity: 'base', numeric: true });
-		});
+	type RowKind = 'folder' | ItemKind;
+	interface Row {
+		key: string;
+		kind: RowKind;
+		name: string;
+		sub: string;
+		/** Folders: the folder's id. */
+		folderId?: string;
+		character?: Character;
+	}
+	type ColumnId = 'name' | 'kind' | 'folder' | 'tags';
+	let sort = $state<DataSort<ColumnId> | undefined>();
+
+	const KIND_ICONS: Record<RowKind, IconSlot> = {
+		folder: 'folder',
+		script: 'script',
+		character: 'buildCharacter',
+		collection: 'players'
+	};
+	const kindName = (k: RowKind) => t(`library.kindName.${k}`);
+	const folderOf = (row: Row) =>
+		row.kind === 'folder'
+			? folderName(labels.folders.find((f) => f.id === row.folderId)?.parent)
+			: folderName(libraryLabels.for(row.key).folder);
+
+	const rows = $derived.by<Row[]>(() => {
+		// Folders first, as a file manager lists them; only while browsing one folder.
+		const folders: Row[] = browsing
+			? childFolders(labels, folder).map((f) => ({
+					key: `folder:${f.id}`,
+					kind: 'folder',
+					name: f.name,
+					sub: t('library.itemCount', { count: folderSize(items, labels, f.id) }),
+					folderId: f.id
+				}))
+			: [];
+		let shown: Row[] = itemsShown(items, labels, filter).map((item) => ({
+			key: item.key,
+			kind: item.kind,
+			name: item.name,
+			sub: item.sub,
+			character: item.character
+		}));
+		if (sort) {
+			const { column, direction } = sort;
+			const text = (row: Row) => {
+				if (column === 'kind') return kindName(row.kind);
+				if (column === 'folder') return folderOf(row);
+				if (column === 'tags') return tagNames(libraryLabels.for(row.key).tags).join(', ');
+				return row.name;
+			};
+			const sign = direction === 'ascending' ? 1 : -1;
+			// Blank values sort last either way.
+			shown = [...shown].sort((a, b) => {
+				const x = text(a);
+				const y = text(b);
+				if (!x !== !y) return x ? -1 : 1;
+				return sign * x.localeCompare(y, undefined, { sensitivity: 'base', numeric: true });
+			});
+		}
+		return [...folders, ...shown];
 	});
 
 	function onSort(column: ColumnId) {
@@ -202,407 +255,299 @@
 
 	const columns = $derived<DataColumn<ColumnId>[]>([
 		{ id: 'name', label: t('library.column.name'), sortable: true, flush: true },
-		{
-			id: 'folder',
-			label: t('library.column.folder'),
-			sortable: true,
-			wide: true,
-			width: '22%',
-			filterable: true,
-			filtered: folder.kind !== 'all'
-		},
-		{
-			id: 'tags',
-			label: t('library.column.tags'),
-			sortable: true,
-			wide: true,
-			width: '26%',
-			filterable: true,
-			filtered: activeTags.length > 0
-		},
-		{ id: 'source', label: t('library.column.source'), sortable: true, wide: true, width: '18%' }
+		{ id: 'kind', label: t('library.column.kind'), sortable: true, wide: true, width: '16%' },
+		{ id: 'folder', label: t('library.column.folder'), sortable: true, wide: true, width: '24%' },
+		{ id: 'tags', label: t('library.column.tags'), sortable: true, wide: true, width: '24%' }
 	]);
 
-	const folderOptions = $derived([
-		{ value: 'all', label: t('library.folderAll') },
-		{ value: 'none', label: t('library.folderNone') },
-		...folders.map((f) => ({ value: f.id, label: folderName(f.id) }))
-	]);
+	// ---- Moving: drag a row onto a folder ----
 
-	// The folder view searches every folder; the table's filters belong to the table.
-	const found = $derived(
-		filterLibrary(rows, libraryLabels.state, { term, folder: { kind: 'all' }, tags: [] }).map(
-			(row) => ({ key: row.key, name: row.listing.row.name, author: row.listing.row.author })
-		)
-	);
-
-	// ---- One script's dialog: its folder, tags, details, Share and Remove ----
-
-	let openKey = $state<string>();
-	let scriptOpen = $state(false);
-	let removing = $state(false);
-	/** The Script builder opens a saved script from its id in the hash (never sent to the server). */
-	function editInBuilder(scriptId: string) {
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- the path is resolved; only the hash is added
-		void goto(`${resolve('/build-script')}#edit=${encodeURIComponent(scriptId)}`);
+	function move(source: DragSource, target: string | undefined) {
+		if (source.folder) libraryLabels.moveFolder(source.id, target);
+		else libraryLabels.setFolder(source.id, target);
 	}
 
-	const openRow = $derived(rows.find((row) => row.key === openKey));
-	const openLabels = $derived(openKey ? libraryLabels.for(openKey) : { tags: [] });
+	// ---- The open item ----
+
+	let openKey = $state<string>();
+	const openScript = $derived(scripts.find((s) => s.key === openKey));
+	const openCharacter = $derived(
+		characters.find(({ saved }) => characterKey(saved.savedId) === openKey)?.saved
+	);
+	const openCollection = $derived(
+		characterCollections.list.find((c) => collectionKey(c.id) === openKey)
+	);
+	// Closing the pane, or the item going (deleted here or elsewhere), clears it.
+	const paneOpen = {
+		get open() {
+			return !!(openScript || openCharacter || openCollection);
+		},
+		set open(value: boolean) {
+			if (!value) openKey = undefined;
+		}
+	};
+
+	function activate(row: Row) {
+		if (row.kind === 'folder') {
+			currentFolder = row.folderId;
+			term = '';
+		} else {
+			openKey = row.key;
+		}
+	}
 
 	/**
 	 * A script just added opens straight away, so its folder and tags can be set. Added while a
 	 * folder is open, it goes in that folder, as a file saved there would.
 	 */
 	function openAdded() {
-		let newest: Row | undefined;
-		for (const row of rows) {
+		let newest: (typeof scripts)[number] | undefined;
+		for (const row of scripts) {
 			const used = row.listing.saved?.lastUsedAt ?? -1;
 			if (used > (newest?.listing.saved?.lastUsedAt ?? -1)) newest = row;
 		}
 		if (!newest) return;
-		if (view === 'folders' && currentFolder && !libraryLabels.for(newest.key).folder) {
-			libraryLabels.setFolder(newest.key, currentFolder);
+		if (folder && !libraryLabels.for(newest.key).folder) {
+			libraryLabels.setFolder(newest.key, folder);
 		}
-		openScript(newest);
+		openKey = newest.key;
 	}
 
-	function openScript(row: Row) {
-		openKey = row.key;
-		scriptOpen = true;
+	// ---- New folder, new collection ----
+
+	let folderNaming = $state(false);
+	let collectionNaming = $state(false);
+	function addCollection(name: string) {
+		const id = characterCollections.add(name);
+		if (!id) return;
+		if (folder) libraryLabels.setFolder(collectionKey(id), folder);
+		openKey = collectionKey(id);
 	}
-
-	/** No folder, as a Select value (an empty value would read as nothing chosen). */
-	const NO_FOLDER = 'none';
-	const scriptFolderOptions = $derived([
-		{ value: NO_FOLDER, label: t('common.none') },
-		...folders.map((f) => ({ value: f.id, label: folderName(f.id) }))
-	]);
-
-	/**
-	 * The version shown in the dialog: the saved one, or another BotC Scripts version picked
-	 * there (Trevor, 2026-10-17: a saved script still offers all its versions). Another
-	 * version stays a preview until Save; the saved one stays in the Library either way.
-	 */
-	let viewed = $state.raw<ScriptListing>();
-	const viewingUnsaved = $derived(
-		!!openRow &&
-			!!viewed &&
-			viewed.row.key !== openRow.listing.row.key &&
-			!findSaved(recentScripts.list, viewed)
-	);
-	let savingViewed = $state(false);
-	async function saveViewed() {
-		const listing = viewed;
-		if (!listing || listing.target.kind !== 'botcscripts') return;
-		savingViewed = true;
-		try {
-			const fetched = await fetchLinkTarget(listing.target, '');
-			const loaded = loadScriptText(relaxJson(fetched.text), await loadOfficialData()).script;
-			if (loaded) await chooseScript(loaded, fetched.source);
-		} catch (e) {
-			reportError(e, { area: 'library' });
-		} finally {
-			savingViewed = false;
-		}
-	}
-
-	/**
-	 * A script edited from another one says so (Trevor, 2026-10-17), with what changed. The
-	 * Script builder stores the original on the saved script's source as `variationOf`.
-	 */
-	const variation = $derived.by((): VariationOf | undefined => {
-		const source = openRow?.listing.saved?.source;
-		const of = source?.kind === 'built' ? source.variationOf : undefined;
-		return of && Array.isArray(of.json) ? of : undefined;
-	});
-	let changesOpen = $state(false);
-
-	async function removeOpen() {
-		const row = openRow;
-		if (!row) return;
-		scriptOpen = false;
-		const identity = row.listing.identity;
-		try {
-			if (row.listing.saved) await forgetScript(row.listing.saved.scriptId);
-			if (account.user && identity) {
-				for (const entry of profileScripts.list) {
-					if (sameScript({ json: entry.script.json }, identity)) {
-						await profileScripts.remove(entry);
-					}
-				}
-			}
-		} catch (e) {
-			reportError(e, { area: 'library' });
-		}
-	}
-
-	let manageOpen = $state(false);
 </script>
 
 <Page title={t('library.heading')}>
 	{#snippet actions()}
-		<Button icon="tag" onclick={() => (manageOpen = true)}>{t('library.tags')}</Button>
+		<!-- Icon buttons, so the title row stays one row on a phone (Trevor: icon buttons). -->
+		<IconButton
+			icon="folder"
+			label={t('library.newFolder')}
+			onclick={() => (folderNaming = true)}
+		/>
+		<IconButton
+			icon="players"
+			label={t('library.newCollection')}
+			onclick={() => (collectionNaming = true)}
+		/>
+		<IconButton
+			icon="buildCharacter"
+			label={t('library.newCharacter')}
+			onclick={() => void goto(resolve('/build-character'))}
+		/>
 		<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
 		<AddScript onsaved={openAdded} />
 	{/snippet}
 
 	<ErrorBoundary area="library">
-		<PageSection title={t('library.scripts')}>
-			<div class="find">
-				<div class="term">
+		<div class="manager" class:sided={sided.current} class:roomy={roomy.current}>
+			{#if sided.current}
+				<div class="side">
+					<LibrarySidebar bind:current={currentFolder} bind:kind bind:place bind:tags={tagFilter} />
+				</div>
+			{:else}
+				<PageSection title={t('library.navigation')} collapsible storageKey="library-navigation">
+					<LibrarySidebar bind:current={currentFolder} bind:kind bind:place bind:tags={tagFilter} />
+				</PageSection>
+			{/if}
+
+			<div class="files">
+				{#if place === 'campaigns'}
+					<PageSection title={t('library.campaigns')}>
+						<CampaignScripts {data} />
+					</PageSection>
+				{:else}
 					<SearchField
 						bind:value={term}
 						label={t('library.search')}
 						placeholder={t('library.searchPlaceholder')}
 					/>
-				</div>
-				<span class="view">
-					<Select
-						label={t('library.view')}
-						hideLabel
-						value={view}
-						options={[
-							{ value: 'folders', label: t('library.viewFolders') },
-							{ value: 'table', label: t('library.viewTable') }
-						]}
-						onChange={setView}
-					/>
-				</span>
+					<FolderBar bind:current={currentFolder} searching={!browsing} />
+					<div data-testid="library-table">
+						<DataTable
+							label={t('library.table')}
+							{columns}
+							{rows}
+							key={(row) => row.key}
+							{cell}
+							{sort}
+							{onSort}
+							rowSelected={(row) => row.key === openKey}
+							narrow="hide"
+							empty={t('common.none')}
+						/>
+					</div>
+				{/if}
 			</div>
-			{#if view === 'folders'}
-				<FolderView
-					items={found}
-					searching={term.trim() !== ''}
-					bind:current={currentFolder}
-					onopen={(key) => {
-						const row = rows.find((r) => r.key === key);
-						if (row) openScript(row);
-					}}
-				/>
-			{:else}
-				<div data-testid="library-table">
-					<DataTable
-						label={t('library.table')}
-						{columns}
-						rows={shown}
-						key={(row) => row.key}
-						{cell}
-						{sort}
-						{onSort}
-						{filter}
-						narrow="hide"
-						empty={t('common.none')}
-					/>
+
+			{#if roomy.current}
+				<div class="pane">
+					{@render pane(true)}
 				</div>
 			{/if}
-		</PageSection>
-		<!-- Each version of a living script (Trevor, 2026-10-18). -->
-		<PageSection title={t('library.campaigns')}>
-			<CampaignScripts {data} />
-		</PageSection>
-		<PageSection title={t('library.characters')}>
-			<SavedCharacterList />
-		</PageSection>
+		</div>
 	</ErrorBoundary>
 </Page>
 
-{#snippet labelList(labels: readonly string[])}
-	{#each labels as name (name)}<span class="chip">{name}</span>{:else}<span class="muted"
-			>{t('common.none')}</span
-		>{/each}
+{#if !roomy.current}
+	{@render pane(false)}
+{/if}
+
+{#snippet pane(inline: boolean)}
+	{#if openScript}
+		<ScriptPane bind:open={paneOpen.open} row={openScript} {data} {inline} />
+	{:else if openCharacter}
+		<CharacterPane bind:open={paneOpen.open} saved={openCharacter} {inline} />
+	{:else if openCollection}
+		<CollectionPane bind:open={paneOpen.open} collection={openCollection} {data} {inline} />
+	{:else if inline}
+		<ItemPane title={t('library.pane')} inline>{t('common.none')}</ItemPane>
+	{/if}
 {/snippet}
 
 {#snippet cell(row: Row, column: DataColumn<ColumnId>)}
-	{@const labels = libraryLabels.for(row.key)}
 	{#if column.id === 'name'}
-		<button type="button" class="pick" onclick={() => openScript(row)}>
-			<span class="title">{row.listing.row.name || t('common.none')}</span>
-			<span class="sub"
-				>{[
-					row.listing.row.author,
-					folderName(labels.folder),
-					tagNames(labels.tags).join(', '),
-					sourceOf(row)
-				]
-					.filter(Boolean)
-					.join(' · ')}</span
+		{@const where = folderOf(row)}
+		<button
+			type="button"
+			class="pick"
+			data-drop-folder={row.folderId}
+			data-kind={row.kind}
+			onclick={() => activate(row)}
+			use:dragToFolder={{
+				source: {
+					id: row.folderId ?? row.key,
+					folder: row.kind === 'folder',
+					label: row.name || t('common.none')
+				},
+				onmove: move
+			}}
+		>
+			<span class="icon" class:accent={row.kind === 'folder'}
+				><Icon name={KIND_ICONS[row.kind]} /></span
 			>
-		</button>
-	{:else if column.id === 'folder'}
-		<span class="text">{folderName(labels.folder) || t('common.none')}</span>
-	{:else if column.id === 'tags'}
-		<span class="chips">{@render labelList(tagNames(labels.tags))}</span>
-	{:else}
-		<span class="text">{sourceOf(row)}</span>
-	{/if}
-{/snippet}
-
-{#snippet filter(column: DataColumn<ColumnId>, close: () => void)}
-	<div class="filters">
-		{#if column.id === 'folder' || column.id === 'name'}
-			<FilterOptions
-				legend={t('library.column.folder')}
-				name="library-folder"
-				options={folderOptions}
-				value={folder.kind === 'all' ? 'all' : folderFilter}
-				onpick={(value) => {
-					folderFilter = value;
-					close();
-				}}
-			/>
-		{/if}
-		{#if column.id === 'tags' || column.id === 'name'}
-			<FilterOptions
-				legend={t('library.tagFilter')}
-				options={tags.map((tag) => ({ value: tag.id, label: tag.name }))}
-				values={activeTags}
-				ontoggle={(id, on) =>
-					(tagFilter = on ? [...activeTags, id] : activeTags.filter((tagId) => tagId !== id))}
-				empty={t('common.none')}
-			/>
-		{/if}
-	</div>
-{/snippet}
-
-<!-- Search's own script view (Trevor, 2026-10-17: "exact same info and style"), with the
-     Library's folder and tags as rows of the main info, and Edit and Remove. -->
-<Dialog bind:open={scriptOpen} title={openRow?.listing.row.name || t('common.none')} size="full">
-	<!-- Delete sits beside Close in every dialog's header (Trevor, 2026-10-17). One place for
-	     Save and Remove, since only one ever applies (Trevor, 2026-10-18): Save while another
-	     version is previewed, then Remove once what is shown is in the Library. -->
-	{#snippet headActions()}
-		{#if viewingUnsaved}
-			<IconButton
-				icon="save"
-				label={t('scripts.picker.save')}
-				disabled={savingViewed}
-				onclick={() => void saveViewed()}
-			/>
-		{:else}
-			<DeleteButton
-				label={t('library.remove')}
-				disabled={!openRow}
-				onclick={() => (removing = true)}
-			/>
-		{/if}
-	{/snippet}
-	{#if openRow}
-		{@const shareable = openRow.shareable}
-		<!-- Any saved script opens in the Script builder (Trevor, 2026-10-17); a profile-only
-		     script has no copy on this device yet, so Edit stays there but disabled. -->
-		{@const editable = openRow.listing.saved}
-		<!-- A full dialog doesn't scroll itself: its content does (Trevor, 2026-10-18). -->
-		<div class="dialog-scroll" data-testid="library-script-scroll">
-			<ScriptView
-				listing={openRow.listing}
-				{data}
-				share={openRow.listing.saved ? undefined : () => shareTargetFor(shareable, location.origin)}
-				labels={labelRows}
-				busy={savingViewed}
-				onshown={(listing) => (viewed = listing)}
-			>
-				{#snippet extraActions()}
-					<IconButton
-						icon="buildScript"
-						label={t('library.edit')}
-						disabled={!editable || viewingUnsaved}
-						onclick={() => editable && editInBuilder(editable.scriptId)}
-					/>
-				{/snippet}
-			</ScriptView>
-		</div>
-	{/if}
-</Dialog>
-
-{#snippet labelRows()}
-	{#if openKey}
-		{@const key = openKey}
-		{#if variation}
-			<dt class="label-term">{t('library.variationOf')}</dt>
-			<dd class="label-value variation" data-testid="variation-of">
-				<span>{variation.name || t('common.none')}</span>
-				<Button icon="history" onclick={() => (changesOpen = true)}
-					>{t('library.whatChanged')}</Button
+			<span class="text-block">
+				<span class="title">
+					{#if row.character}
+						<CharacterBadge
+							characterId={row.character.id}
+							character={row.character}
+							inline
+							interactive={false}
+						/>
+					{:else}
+						{row.name || t('common.none')}
+					{/if}
+				</span>
+				<span class="sub"
+					>{[row.sub, browsing ? '' : where].filter(Boolean).join(' · ') || ' '}</span
 				>
-			</dd>
-		{/if}
-		<dt class="label-term">{t('library.folder')}</dt>
-		<dd class="label-value" data-testid="script-labels">
-			<Select
-				label={t('library.folder')}
-				hideLabel
-				value={openLabels.folder ?? NO_FOLDER}
-				options={scriptFolderOptions}
-				onChange={(value) => libraryLabels.setFolder(key, value === NO_FOLDER ? undefined : value)}
-			/>
-		</dd>
-		<dt class="label-term">{t('library.tags')}</dt>
-		<dd class="label-value">
-			<div class="toggles" role="group" aria-label={t('library.tags')}>
-				{#each tags as tag (tag.id)}
-					<Chip
-						pressed={openLabels.tags.includes(tag.id)}
-						onclick={() => libraryLabels.toggleTag(key, tag.id)}>{tag.name}</Chip
-					>
-				{/each}
-			</div>
-			<NewLabel
-				kind="tags"
-				label={t('library.newTag')}
-				onadd={(id) => libraryLabels.toggleTag(key, id)}
-			/>
-		</dd>
+			</span>
+		</button>
+	{:else if column.id === 'kind'}
+		<span class="text">{kindName(row.kind)}</span>
+	{:else if column.id === 'folder'}
+		<span class="text">{folderOf(row) || t('library.heading')}</span>
+	{:else}
+		{@const names = tagNames(libraryLabels.for(row.key).tags)}
+		<span class="chips">
+			{#each names as name (name)}<span class="chip">{name}</span>{:else}<span class="muted"
+					>{t('common.none')}</span
+				>{/each}
+		</span>
 	{/if}
 {/snippet}
 
-<ConfirmDialog
-	bind:open={removing}
-	title={t('library.removeConfirm')}
-	danger
-	onConfirm={() => void removeOpen()}
->
-	<p>{t('library.removeBody', { name: openRow?.listing.row.name || t('common.none') })}</p>
-</ConfirmDialog>
+<FolderNameDialog
+	bind:open={folderNaming}
+	parent={folder}
+	oncreated={(id) => {
+		currentFolder = id;
+		place = 'files';
+	}}
+/>
 
-<LabelManager bind:open={manageOpen} />
-
-{#if variation && openRow?.listing.saved}
-	<VariationChanges
-		bind:open={changesOpen}
-		original={variation.json}
-		variation={openRow.listing.saved.json}
-		{data}
-	/>
-{/if}
+<NameDialog
+	bind:open={collectionNaming}
+	title={t('library.newCollection')}
+	onsave={addCollection}
+/>
 
 <style>
-	.find {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
+	.manager {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-4);
+		align-items: start;
 	}
-	.term {
-		flex: 1 1 calc(14 * var(--u));
+	.manager.sided {
+		grid-template-columns: calc(16 * var(--u)) minmax(0, 1fr);
+	}
+	.manager.sided.roomy {
+		grid-template-columns: calc(16 * var(--u)) minmax(0, 1fr) minmax(0, 1fr);
+	}
+	/* The sidebar and pane stay in view beside the list, just below the app header. */
+	.side,
+	.pane {
+		position: sticky;
+		top: calc(var(--tap-target) + env(safe-area-inset-top) + var(--space-2));
+		max-height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+		min-width: 0;
+	}
+	.side {
+		overflow-y: auto;
+	}
+	.pane {
+		display: grid;
+		height: calc(100dvh - var(--tap-target) - env(safe-area-inset-top) - var(--space-4));
+	}
+	.files {
+		display: grid;
+		gap: var(--space-3);
 		min-width: 0;
 	}
 	.pick {
 		width: 100%;
 		height: 100%;
 		min-height: var(--tap-target);
-		align-content: center;
-		padding: var(--space-1) var(--space-2);
 		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-1) var(--space-2);
 		border: 0;
 		background: none;
 		color: inherit;
 		font: inherit;
 		text-align: start;
 		cursor: pointer;
+		/* A held touch drags the row rather than selecting its text. */
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
 	}
 	.pick:hover {
 		background: var(--surface-selected);
+	}
+	.icon {
+		display: flex;
+		font-size: 1.3rem;
+		color: var(--on-surface-muted);
+	}
+	.icon.accent {
+		color: var(--accent);
+	}
+	.text-block {
+		display: grid;
+		min-width: 0;
 	}
 	.title {
 		font-weight: 600;
@@ -611,18 +556,12 @@
 		white-space: nowrap;
 	}
 	.sub {
-		display: none;
+		min-height: 1.2em;
 		font-size: 0.8rem;
 		color: var(--on-surface-muted);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	/* Narrow tables: folder, tags and source sit under the name. */
-	@container data-table (max-width: 40rem) {
-		.sub {
-			display: block;
-		}
 	}
 	.text {
 		display: flex;
@@ -639,49 +578,44 @@
 		gap: var(--space-1);
 		min-height: var(--tap-target);
 	}
+	/* A tag looks the same everywhere, in the font its name was typed in (Trevor, 2026-10-18). */
 	.chip {
 		padding: 0 var(--space-2);
 		border: var(--card-border);
 		border-radius: var(--radius-full);
+		font-family: var(--font-control);
 		font-size: 0.85rem;
 		white-space: nowrap;
 	}
 	.muted {
-		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	.filters {
-		display: grid;
-		gap: var(--space-3);
-	}
-	.dialog-scroll {
-		flex: 1;
-		min-height: 0;
-		overflow-y: auto;
-		margin-top: var(--space-3);
-	}
-	/* Rows of ScriptDetails' main info, styled as its own rows are. */
-	.label-term {
-		color: var(--on-surface-muted);
-	}
-	.label-value {
-		margin: 0;
-		min-width: 0;
-	}
-	.variation {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.view {
-		flex: none;
+	/* Dragging: the row's name follows the finger, and the folder under it is outlined. */
+	:global(.library-drag-ghost) {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 1000;
+		max-width: calc(20 * var(--u));
+		margin: calc(-1 * var(--space-5)) 0 0 var(--space-2);
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--radius-full);
+		background: var(--accent);
+		color: var(--on-accent);
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		white-space: nowrap;
+		pointer-events: none;
 	}
-	.toggles {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-		margin-bottom: var(--space-2);
+	:global([data-drop-over]) {
+		outline: 2px dashed var(--accent);
+		outline-offset: -2px;
+		background: var(--surface-selected);
+	}
+	:global(body.library-dragging) {
+		cursor: grabbing;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 </style>

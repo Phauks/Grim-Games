@@ -44,19 +44,38 @@
 		 * top of the scrolling details (Trevor, 2026-10-17).
 		 */
 		lead?: Snippet;
+		/**
+		 * The actions sit in the pinned top with the name, a header for the Library's pane
+		 * (Trevor, 2026-10-18: "controls ... should all be in the header").
+		 */
+		actionsInTop?: boolean;
 	}
 
-	let { heading, name, facts, entries, data, actions, sheet, version, extra, lead }: Props =
-		$props();
+	let {
+		heading,
+		name,
+		facts,
+		entries,
+		data,
+		actions,
+		sheet,
+		version,
+		extra,
+		lead,
+		actionsInTop = false
+	}: Props = $props();
 
 	const card = $derived(data ? botcCard(entries, data) : undefined);
 </script>
 
 <div class="details" data-testid="script-details">
-	<div class="top" class:pinned={!!lead} data-testid="script-details-top">
+	<div class="top" class:pinned={!!lead || actionsInTop} data-testid="script-details-top">
 		{@render lead?.()}
 		<h2>{heading}</h2>
 		<p class="name" data-testid="script-details-name">{name || t('common.none')}</p>
+		{#if actions && actionsInTop}
+			<div class="actions">{@render actions()}</div>
+		{/if}
 	</div>
 	<dl>
 		{#each facts as fact (fact.label)}
@@ -77,7 +96,7 @@
 		{/if}
 		{@render extra?.()}
 	</dl>
-	{#if actions}
+	{#if actions && !actionsInTop}
 		<div class="actions">{@render actions()}</div>
 	{/if}
 	{#if sheet}
