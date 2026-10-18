@@ -29,6 +29,16 @@ test('the board shows the script logo faintly, with its switch and opacity', asy
 	await expect(logo).toHaveAttribute('data-logo', '/data/logos/tb.webp');
 	await expect.poll(() => loaded(page, '.board [data-testid="script-logo"] img')).toBe(true);
 	await expect(logo).toHaveCSS('opacity', '0.3');
+	// Centred on the board, inside the seat ring, and the picture stays in its box rather than
+	// drawing at its own size (Trevor, 2026-10-18: "in the middle where people can appreciate it").
+	const board = (await page.locator('.board').boundingBox())!;
+	const box = (await logo.boundingBox())!;
+	const img = (await logo.locator('img').boundingBox())!;
+	expect(Math.abs(box.x + box.width / 2 - (board.x + board.width / 2))).toBeLessThan(2);
+	expect(Math.abs(box.y + box.height / 2 - (board.y + board.height / 2))).toBeLessThan(2);
+	expect(box.width).toBeLessThan(board.width / 2);
+	expect(box.height).toBeLessThan(board.height / 2);
+	expect(img).toEqual(box);
 	// Taps go through it to the board.
 	await expect(logo).toHaveCSS('pointer-events', 'none');
 
