@@ -2058,10 +2058,15 @@
 		background: var(--evil);
 		color: var(--on-evil);
 	}
-	/* Centred in the seat ring, never wider or taller than 42% of the board; under the seats. */
+	/* Centred on the board's playable area (Trevor, 2026-10-18), inside the seat ring: at most
+	   42% of the board's width and height, the logo keeping its shape within; under the seats. */
 	.board :global(.board-logo) {
 		position: absolute;
-		inset: 29%;
+		left: 50%;
+		top: 50%;
+		width: 42%;
+		height: 42%;
+		translate: -50% -50%;
 		opacity: var(--logo-opacity);
 		pointer-events: none;
 	}
