@@ -1308,8 +1308,6 @@ test('a night step is filled in with help, and the night can be walked through',
 	);
 
 	// Walk through: one step at a time under the board, with Previous and Next.
-	await page.screenshot({
-		path: `/mnt/project-files/board-screens/night-order-${test.info().project.name}.png`
 	await order.getByRole('button', { name: 'Run Night Order' }).tap();
 	const strip = page.getByTestId('night-strip');
 	await expect(strip).toContainText(/^.*1 of \d+/);
@@ -1326,8 +1324,6 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(
 		page.locator('.chip-slot.now').getByRole('button', { name: 'Poisoned reminder' })
 	).toBeVisible();
-	await page.screenshot({
-		path: `/mnt/project-files/board-screens/night-strip-${test.info().project.name}.png`
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
 	await expect(strip).toHaveCount(0);
 	await expect(page.locator('.chip-slot.now')).toHaveCount(0);
@@ -1348,8 +1344,6 @@ test('a night step is filled in with help, and the night can be walked through',
 	await order.getByRole('button', { name: 'Run Night Order' }).tap();
 	for (let i = 0; i < 20 && (await strip.getByRole('button', { name: 'Next step' }).count()); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
-	await page.screenshot({
-		path: `/mnt/project-files/board-screens/night-strip-dawn-${test.info().project.name}.png`
 	await strip.getByRole('button', { name: 'Start the day' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
 	await expect(strip).toHaveCount(0);
