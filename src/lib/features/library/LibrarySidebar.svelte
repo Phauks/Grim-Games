@@ -26,6 +26,8 @@
 		tags?: string[];
 		/** What a folder holds, shown beside it (Trevor, 2026-10-18); the top level when none. */
 		count: (folder: string | undefined) => number;
+		/** False leaves out the Kinds list and Campaigns, for a browser of one kind of item. */
+		kinds?: boolean;
 	}
 
 	let {
@@ -33,7 +35,8 @@
 		kind = $bindable('all'),
 		place = $bindable('files'),
 		tags = $bindable([]),
-		count
+		count,
+		kinds: showKinds = true
 	}: Props = $props();
 
 	/** Folders shown closed, their folders hidden (Trevor, 2026-10-18: collapsible), per device. */
@@ -122,39 +125,41 @@
 		</ul>
 	</section>
 
-	<section aria-labelledby="library-nav-kinds">
-		<h2 id="library-nav-kinds" class="heading">{t('library.kinds')}</h2>
-		<ul>
-			{#each kinds as k (k.value)}
+	{#if showKinds}
+		<section aria-labelledby="library-nav-kinds">
+			<h2 id="library-nav-kinds" class="heading">{t('library.kinds')}</h2>
+			<ul>
+				{#each kinds as k (k.value)}
+					<li>
+						<button
+							type="button"
+							class="entry"
+							aria-pressed={place === 'files' && kind === k.value}
+							onclick={() => {
+								kind = k.value;
+								place = 'files';
+							}}
+						>
+							<Icon name={k.icon} />
+							<span class="name">{k.label}</span>
+						</button>
+					</li>
+				{/each}
 				<li>
+					<!-- Each version of a living script (Trevor, 2026-10-18). -->
 					<button
 						type="button"
 						class="entry"
-						aria-pressed={place === 'files' && kind === k.value}
-						onclick={() => {
-							kind = k.value;
-							place = 'files';
-						}}
+						aria-pressed={place === 'campaigns'}
+						onclick={() => (place = 'campaigns')}
 					>
-						<Icon name={k.icon} />
-						<span class="name">{k.label}</span>
+						<Icon name="history" />
+						<span class="name">{t('library.campaigns')}</span>
 					</button>
 				</li>
-			{/each}
-			<li>
-				<!-- Each version of a living script (Trevor, 2026-10-18). -->
-				<button
-					type="button"
-					class="entry"
-					aria-pressed={place === 'campaigns'}
-					onclick={() => (place = 'campaigns')}
-				>
-					<Icon name="history" />
-					<span class="name">{t('library.campaigns')}</span>
-				</button>
-			</li>
-		</ul>
-	</section>
+			</ul>
+		</section>
+	{/if}
 
 	<section aria-labelledby="library-nav-tags">
 		<TagList bind:filter={tags} headingId="library-nav-tags" />
