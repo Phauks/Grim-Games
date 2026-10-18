@@ -371,7 +371,7 @@
 		</CharacterPicker>
 		<!--
 			The Demon's bluffs, from the characters chosen here rather than on the Draw screen the
-			players use (Trevor, 2026-10-18). After the list, so its appearing moves nothing.
+			players use (Trevor, 2026-10-18). Always there, even before a Demon is chosen.
 		-->
 		{#if game && port.lookup}
 			<SetupBluffs
@@ -380,6 +380,7 @@
 				dispatch={port.dispatch}
 				waiting={!ready}
 				inPlay={ids}
+				always
 			/>
 		{/if}
 	</ErrorBoundary>

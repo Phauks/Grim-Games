@@ -66,7 +66,7 @@
 		class="main"
 		aria-pressed={selected}
 		aria-label={copies > 1 ? `${character.name}, ${copies} copies` : character.name}
-		aria-description={bluff ? t('setup.bluff') : undefined}
+		aria-description={bluff ? (selected ? t('setup.bluffInPlay') : t('setup.bluff')) : undefined}
 		data-character-id={character.id}
 		onclick={onToggle}
 	>
@@ -75,7 +75,10 @@
 				<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
 				<span class="name">{character.name}</span>
 				{#if offScript}<span class="tag">{t('setup.offScript')}</span>{/if}
-				{#if bluff}<span class="tag" data-testid="bluff-tag">{t('setup.bluff')}</span>{/if}
+				<!-- A bluff that is also chosen for the bag is flagged, not removed (warn, don't lock). -->
+				{#if bluff}<span class="tag" data-testid="bluff-tag" data-warn={selected ? '' : undefined}
+						>{selected ? t('setup.bluffInPlay') : t('setup.bluff')}</span
+					>{/if}
 			</span>
 			<span class="ability">{character.ability}</span>
 		</span>
@@ -145,6 +148,10 @@
 		font-size: 0.7rem;
 		font-weight: 600;
 		vertical-align: middle;
+	}
+	.tag[data-warn] {
+		background: var(--evil);
+		color: var(--on-evil);
 	}
 	.choice[data-selected] {
 		background: var(--choice-selected-background);

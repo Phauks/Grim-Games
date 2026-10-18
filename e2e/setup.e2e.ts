@@ -721,10 +721,10 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	// Trevor, 2026-10-18: where the Storyteller picks characters, not the screen players use.
 	await selectionFor(page, 5);
 	const bluffs = page.getByTestId('setup-bluffs');
-	// Only once a Demon is chosen; it appears after the list, so nothing above it moves.
-	await expect(bluffs).toHaveCount(0);
-	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	// There and usable before anything is chosen (Trevor, 2026-10-18), so it never pops in.
 	await expect(bluffs).toContainText('None');
+	await expect(bluffs.getByRole('button', { name: 'Choose' })).toBeEnabled();
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
 	const choices = page.getByRole('group', { name: 'Bluff characters' });
@@ -741,6 +741,11 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	await expect(choice(page, 'Chef')).toContainText('Demon bluff');
 	await expect(choice(page, 'Chef')).toHaveAttribute('aria-pressed', 'false');
 	await expect(choice(page, 'Empath')).not.toContainText('Demon bluff');
+	// A bluff then chosen for the bag is flagged, not dropped (warn, don't lock).
+	await choice(page, 'Chef').tap();
+	await expect(choice(page, 'Chef')).toContainText('Demon bluff, in play');
+	await expect(bluffs).toContainText('Chef');
+	await choice(page, 'Chef').tap();
 	await noSidewaysScroll(page);
 	// The Draw screen has none.
 	await page.getByRole('button', { name: 'Build bag' }).tap();
