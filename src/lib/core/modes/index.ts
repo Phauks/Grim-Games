@@ -6,3 +6,4 @@ export * from './draft.ts';
 export * from './choose.ts';
 export * from './towns.ts';
 export * from './extras.ts';
+export * from './campaign.ts';

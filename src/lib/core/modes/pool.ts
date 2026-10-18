@@ -123,6 +123,8 @@ export function runsPart(mode: GameMode, part: ModePart): boolean {
 				p.pool.kind === 'script' ||
 				p.pool.kind === 'all-characters' ||
 				p.pool.kind === 'per-town' ||
+				// Each game's script is made from the last on the campaign page (campaign.ts).
+				p.pool.kind === 'campaign' ||
 				// Hidden extras are rolled on the Storyteller's device (extras.ts).
 				p.pool.kind === 'script-plus-hidden'
 			);
@@ -147,6 +149,8 @@ export function runsPart(mode: GameMode, part: ModePart): boolean {
 		case 'towns':
 			// One saved game per town, tied together on the towns page.
 			return true;
+		case 'betweenGames':
+			return !p.betweenGames || p.betweenGames.kind === 'campaign';
 		case 'winConditions':
 			return !p.winConditions || p.winConditions.kind === 'standard';
 		default:

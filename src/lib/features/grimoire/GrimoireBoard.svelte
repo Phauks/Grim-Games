@@ -97,6 +97,7 @@
 	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
+	import { campaignOf } from '#lib/features/modes/campaigns.ts';
 	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
 	import { onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
@@ -361,6 +362,8 @@
 	}
 	/** The town group this game is a town of, if any (kept on this device). */
 	const towns = $derived(townGroupOf(game.gameId));
+	/** The campaign this game is part of, if any (kept on this device). */
+	const campaign = $derived(campaignOf(game.gameId));
 	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
 	/** A Fabled or Loric's reminder being dragged off it. */
 	const heldDrag = $derived.by(() => {
@@ -1434,6 +1437,19 @@
 					fromMenu(() => goto(resolve('/towns/[groupId]', { groupId: towns.groupId })))}
 			>
 				Towns
+			</Button>
+		{/if}
+		<!-- A game of a campaign: back to the campaign and its next game (Alternative game modes). -->
+		{#if campaign}
+			<Button
+				variant="quiet"
+				icon="grimoire"
+				onclick={() =>
+					fromMenu(() =>
+						goto(resolve('/campaigns/[campaignId]', { campaignId: campaign.campaignId }))
+					)}
+			>
+				Campaign
 			</Button>
 		{/if}
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
