@@ -9,5 +9,10 @@ export const show = {
 	'show.cards': 'Cards',
 	'show.previousCard': 'Previous card',
 	'show.nextCard': 'Next card',
-	'show.failed': "Couldn't show this."
+	'show.failed': "Couldn't show this.",
+	'show.evil.title': 'Cards to show',
+	'show.evil.show': 'Show',
+	'show.evil.showNamed': 'Show {card}',
+	'show.evil.chooseBluffs': 'Choose bluffs',
+	'show.evil.inPlay': 'In play: replace'
 } as const;

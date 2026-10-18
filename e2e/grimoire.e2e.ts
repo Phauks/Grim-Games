@@ -2601,3 +2601,68 @@ test('an open night step moves to the step before or after without ticking it', 
 			.getByRole('button', { name: 'Done: Poisoner' })
 	).toHaveAttribute('aria-pressed', 'false');
 });
+
+test('Minion info and Demon info list every card they can show, with who it points at', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Poisoner'],
+		[3, 'Spy'],
+		[4, 'Empath'],
+		[5, 'Chef'],
+		[6, 'Monk'],
+		[7, 'Soldier']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Guide: Minion info' }).tap();
+	const minionInfo = page.getByRole('dialog', { name: 'Minion info' });
+	const cards = minionInfo.getByTestId('evil-info-card');
+	// Every card, never one pick (Trevor, 2026-10-18).
+	await expect(cards).toHaveCount(2);
+	await expect(cards.nth(0)).toContainText('This is the Demon');
+	await expect(cards.nth(0)).toContainText('Seat 1');
+	await expect(cards.nth(1)).toContainText('These are your Minions');
+	await expect(cards.nth(1)).toContainText('Seat 2');
+	await expect(cards.nth(1)).toContainText('Seat 3');
+	await minionInfo.getByRole('button', { name: 'Show This is the Demon' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('heading')).toHaveText('This is the Demon');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	await expect(minionInfo).toBeVisible();
+
+	// Demon info with no bluffs yet: its Minions, and a way to choose the bluffs.
+	await minionInfo.getByRole('button', { name: 'Next step' }).tap();
+	const demonInfo = page.getByRole('dialog', { name: 'Demon info' });
+	await expect(demonInfo.getByTestId('evil-info-card').nth(0)).toContainText(
+		'These are your Minions'
+	);
+	await demonInfo.getByRole('button', { name: 'Choose bluffs' }).tap();
+	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
+	for (const name of ['Fortune Teller', 'Washerwoman', 'Investigator'])
+		await page
+			.getByRole('group', { name: 'Bluff characters' })
+			.getByRole('button', { name: new RegExp(`^${name}`) })
+			.tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Guide: Demon info' }).tap();
+	await expect(demonInfo.getByTestId('evil-info-card')).toHaveCount(2);
+	await demonInfo
+		.getByRole('button', { name: 'Show These characters are not in play · Demon' })
+		.tap();
+	await expect(shown).toContainText('Fortune Teller');
+	await expect(shown).toContainText('Investigator');
+});

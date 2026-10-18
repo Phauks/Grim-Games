@@ -1571,6 +1571,7 @@
 		infoReturn = () => (guideOpen = true);
 		infoOpen = true;
 	}}
+	onChooseBluffs={() => (bluffsOpen = true)}
 	{onDraw}
 />
 
