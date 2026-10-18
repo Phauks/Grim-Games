@@ -80,6 +80,15 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 		answerOnly: true,
 		extra: true
 	},
+	// True or False, chosen when shown, like Yes/No (Trevor, 2026-10-18).
+	{
+		id: 'true-false',
+		text: 'True/False',
+		source: 'standard',
+		asks: { value: { kind: 'choices', options: ['True', 'False'] } },
+		answerOnly: true,
+		extra: true
+	},
 	{ id: 'what-are-you-bluffing', text: 'What are you bluffing?', source: 'standard', extra: true },
 	{ id: 'use-your-ability', text: 'Use your ability?', source: 'standard', extra: true },
 	{ id: 'choose-again', text: 'Please choose again', source: 'standard', extra: true }

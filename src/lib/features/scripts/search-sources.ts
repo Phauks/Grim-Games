@@ -1,9 +1,9 @@
 /**
- * Search's sources, one at a time (Trevor, 2026-10-17): mixing them was unfair, since only
- * BotC Scripts has likes and numbers. In his order; saved scripts live in the Library. The
- * last one chosen is remembered on the device.
+ * Search's sources (Trevor, 2026-10-18): any of them, on or off, searched together and listed
+ * in one table with a Source column. In his order; saved scripts live in the Library. The
+ * sources turned on are remembered on the device.
  */
-import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
+import { readStored, readStoredText, writeStored } from '#lib/ui/stored.ts';
 import type { PickerSource } from './picker-rows.ts';
 
 export const PAGE_SOURCES = [
@@ -39,14 +39,32 @@ export const GROUPED_SOURCES: readonly PageSource[] = (['engines', 'collections'
 	(group) => PAGE_SOURCES.filter((source) => SOURCE_GROUP[source] === group)
 );
 
-const SOURCE_KEY = 'grim-games:scripts:source';
-
-export function storedSource(): PageSource {
-	const stored = readStoredText(SOURCE_KEY);
-	return PAGE_SOURCES.find((s) => s === stored) ?? 'botc';
+/** The sources of one group, in the menu's order. */
+export function groupSources(group: SourceGroup): PageSource[] {
+	return GROUPED_SOURCES.filter((source) => SOURCE_GROUP[source] === group);
 }
 
-export function keepSource(source: PageSource): void {
+/** A list of sources in the menu's order, each once; anything unknown is dropped. */
+export function orderSources(sources: readonly string[]): PageSource[] {
+	return GROUPED_SOURCES.filter((source) => sources.includes(source));
+}
+
+const SOURCES_KEY = 'grim-games:scripts:sources';
+/** Before sources were toggles, one source was remembered here. */
+const OLD_SOURCE_KEY = 'grim-games:scripts:source';
+
+/** The sources turned on: as left last time, else the one source chosen before, else all. */
+export function storedSources(): PageSource[] {
+	const stored = readStored(SOURCES_KEY);
+	if (Array.isArray(stored)) {
+		return orderSources(stored.filter((s): s is string => typeof s === 'string'));
+	}
+	const old = readStoredText(OLD_SOURCE_KEY);
+	const one = PAGE_SOURCES.find((s) => s === old);
+	return one ? [one] : [...GROUPED_SOURCES];
+}
+
+export function keepSources(sources: readonly PageSource[]): void {
 	// Storage blocked: the choice lasts for this visit.
-	writeStoredText(SOURCE_KEY, source);
+	writeStored(SOURCES_KEY, sources);
 }

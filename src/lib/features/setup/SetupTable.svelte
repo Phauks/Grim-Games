@@ -124,10 +124,14 @@
 	[data-pick] {
 		cursor: pointer;
 	}
-	/* The chosen count in gold, not red (Trevor, 2026-10-18). */
 	[data-current] {
+		background: var(--accent);
+		color: var(--on-accent);
+		font-weight: 700;
+	}
+	/* The chosen total in gold; its counts below stay red (Trevor, 2026-10-18). */
+	thead [data-current] {
 		background: var(--count-current);
 		color: var(--on-count-current);
-		font-weight: 700;
 	}
 </style>

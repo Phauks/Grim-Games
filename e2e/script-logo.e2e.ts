@@ -29,6 +29,16 @@ test('the board shows the script logo faintly, with its switch and opacity', asy
 	await expect(logo).toHaveAttribute('data-logo', '/data/logos/tb.webp');
 	await expect.poll(() => loaded(page, '.board [data-testid="script-logo"] img')).toBe(true);
 	await expect(logo).toHaveCSS('opacity', '0.3');
+	// Centred on the board, inside the seat ring, and the picture stays in its box rather than
+	// drawing at its own size (Trevor, 2026-10-18: "in the middle where people can appreciate it").
+	const board = (await page.locator('.board').boundingBox())!;
+	const box = (await logo.boundingBox())!;
+	const img = (await logo.locator('img').boundingBox())!;
+	expect(Math.abs(box.x + box.width / 2 - (board.x + board.width / 2))).toBeLessThan(2);
+	expect(Math.abs(box.y + box.height / 2 - (board.y + board.height / 2))).toBeLessThan(2);
+	expect(box.width).toBeLessThan(board.width / 2);
+	expect(box.height).toBeLessThan(board.height / 2);
+	expect(img).toEqual(box);
 	// Taps go through it to the board.
 	await expect(logo).toHaveCSS('pointer-events', 'none');
 
@@ -76,6 +86,10 @@ test("Search shows a script's own logo beside its name, and in its details", asy
 		})
 	);
 	await page.route(LOGO, (route) => route.fulfill({ body: PNG, contentType: 'image/png' }));
+	// BotC Scripts alone: the other sources aren't routed, and Search waits for every source.
+	await page.addInitScript(() =>
+		localStorage.setItem('grim-games:scripts:sources', JSON.stringify(['botc']))
+	);
 	await page.goto('/scripts');
 
 	const row = (name: string) =>
@@ -88,4 +102,17 @@ test("Search shows a script's own logo beside its name, and in its details", asy
 
 	await page.getByRole('button', { name: /^Storm Front/ }).tap();
 	await expect(page.getByRole('img', { name: 'Storm Front logo' })).toBeVisible();
+});
+
+test("Resume game shows each game's script logo beside its name", async ({ page }) => {
+	// Trevor (2026-10-18): "resume game should include script logo".
+	await startGame(page);
+	await page.goto('/games');
+	const row = page.getByRole('region', { name: 'Saved games' }).getByRole('listitem').first();
+	const logo = row.getByTestId('script-logo');
+	await expect(logo).toHaveAttribute('data-logo', '/data/logos/tb.webp');
+	await expect.poll(() => loaded(page, '.games [data-testid="script-logo"] img')).toBe(true);
+	const box = (await logo.boundingBox())!;
+	const name = (await row.getByText('Trouble Brewing').boundingBox())!;
+	expect(name.x).toBeGreaterThan(box.x + box.width);
 });

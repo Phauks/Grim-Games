@@ -45,15 +45,20 @@
 </span>
 
 <style>
+	/* The image is laid over the box, so its size is always the box's and never the picture's
+	   own (about 500px for TPI's logos), whatever a browser makes of percentage heights. */
 	.script-logo {
-		display: inline-grid;
-		place-items: center;
+		position: relative;
+		display: inline-block;
 		flex: none;
 	}
 	img {
+		position: absolute;
+		inset: 0;
 		width: 100%;
 		height: 100%;
 		object-fit: contain;
+		object-position: center;
 		user-select: none;
 	}
 </style>

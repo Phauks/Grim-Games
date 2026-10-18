@@ -145,25 +145,32 @@ test('tapping a player count highlights its column, and it is remembered', async
 	await expect(seven).toHaveAttribute('aria-pressed', 'true');
 	// 7 players: 5 Townsfolk, 0 Outsiders, 1 Minion, 1 Demon (wiki: Setup).
 	await expect(panel.locator('td[data-current]')).toHaveText(['5', '0', '1', '1']);
-	// The chosen column is gold, not red, and lines part the counts (Trevor, 2026-10-18).
+	// The chosen total is gold, its counts below red, and lines part the counts (Trevor,
+	// 2026-10-18).
 	const look = await panel
 		.locator('td[data-current]')
 		.first()
 		.evaluate((td) => {
-			const probe = document.createElement('div');
-			probe.style.color = 'var(--heading)';
-			td.append(probe);
-			const gold = getComputedStyle(probe).color;
-			probe.remove();
-			const head = td.closest('table')!.querySelector('thead th[scope="col"]')!;
+			const colour = (value: string) => {
+				const probe = document.createElement('div');
+				probe.style.color = value;
+				td.append(probe);
+				const c = getComputedStyle(probe).color;
+				probe.remove();
+				return c;
+			};
+			const total = td.closest('table')!.querySelector('thead th[data-current]')!;
 			return {
-				gold,
-				background: getComputedStyle(td).backgroundColor,
+				gold: colour('var(--heading)'),
+				red: colour('var(--accent)'),
+				total: getComputedStyle(total).backgroundColor,
+				count: getComputedStyle(td).backgroundColor,
 				column: getComputedStyle(td).borderInlineStartStyle,
-				counts: getComputedStyle(head).borderBottomStyle
+				counts: getComputedStyle(total).borderBottomStyle
 			};
 		});
-	expect(look.background).toBe(look.gold);
+	expect(look.total).toBe(look.gold);
+	expect(look.count).toBe(look.red);
 	expect([look.column, look.counts]).toEqual(['solid', 'solid']);
 	await page.reload();
 	await expect(seven).toHaveAttribute('aria-pressed', 'true');

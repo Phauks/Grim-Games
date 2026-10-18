@@ -17,6 +17,7 @@ describe('info tokens', () => {
 		expect(extras).toEqual([
 			'Your number is',
 			'Yes/No',
+			'True/False',
 			'What are you bluffing?',
 			'Use your ability?',
 			'Please choose again'
@@ -49,6 +50,11 @@ describe('info tokens', () => {
 		expect(byId('number')?.asks?.value).toEqual({ kind: 'number', min: 0 });
 		expect(byId('yes-no')?.asks?.value).toEqual({ kind: 'choices', options: ['Yes', 'No'] });
 		expect(byId('yes-no')?.answerOnly).toBe(true);
+		expect(byId('true-false')?.asks?.value).toEqual({
+			kind: 'choices',
+			options: ['True', 'False']
+		});
+		expect(byId('true-false')?.answerOnly).toBe(true);
 	});
 
 	it('asks nothing of the cards the Storyteller only points with', () => {

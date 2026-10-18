@@ -27,7 +27,7 @@
 		 */
 		bluffSets?: readonly ShowableBluffSet[];
 		/**
-		 * Characters on a seat. Character Specific cards load only for these (Trevor,
+		 * Characters on a seat. Character-Specific cards load only for these (Trevor,
 		 * 2026-10-16); without it, for every character given.
 		 */
 		inPlay?: readonly CharacterId[];
@@ -283,6 +283,7 @@
 			<ModalActions
 				onCancel={() => (view = { kind: 'list' })}
 				onConfirm={() => use(token.text, picked)}
+				disabled={picked.length === 0}
 			/>
 		{:else}
 			{@const token = view.token}

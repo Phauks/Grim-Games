@@ -1,6 +1,5 @@
 <script lang="ts">
-	import Select from '#lib/ui/primitives/Select.svelte';
-	import type { Night, NightStep } from '#lib/core/rules/index.ts';
+	import type { EndReason, Night, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
@@ -101,6 +100,7 @@
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import { extraReminders, onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
+	import EndGameFields from './EndGameFields.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 
 	interface Props {
@@ -819,9 +819,10 @@
 	// The Storyteller stays on the board, which says the game is over (Trevor, 2026-10-17).
 	let endOpen = $state(false);
 	let winner = $state<'good' | 'evil' | undefined>();
+	let endReason = $state<EndReason | undefined>();
 	function endGame() {
 		endOpen = false;
-		endedGames.end(game.gameId, winner);
+		endedGames.end(game.gameId, winner, endReason);
 		grimoire.open.setViewOnly(true);
 		endedRead += 1;
 		if (roomHost().code) roomHost().close();
@@ -1606,8 +1607,9 @@
 <GameEndPrompt
 	{grimoire}
 	active={!ended && !grimoire.open.viewOnly}
-	onEnd={(team) => {
+	onEnd={(team, reason) => {
 		winner = team;
+		endReason = reason;
 		endGame();
 	}}
 />
@@ -1657,16 +1659,7 @@
 		<dd>Ended, in History</dd>
 	</dl>
 	<div class="winner">
-		<Select
-			label="Winner"
-			value={winner ?? 'none'}
-			options={[
-				{ value: 'good', label: 'Good' },
-				{ value: 'evil', label: 'Evil' },
-				{ value: 'none', label: 'Not recorded' }
-			]}
-			onChange={(team) => (winner = team === 'none' ? undefined : team)}
-		/>
+		<EndGameFields {grimoire} bind:winner bind:reason={endReason} />
 	</div>
 </ConfirmDialog>
 
@@ -2048,10 +2041,15 @@
 		background: var(--evil);
 		color: var(--on-evil);
 	}
-	/* Centred in the seat ring, never wider or taller than 42% of the board; under the seats. */
+	/* Centred on the board's playable area (Trevor, 2026-10-18), inside the seat ring: at most
+	   42% of the board's width and height, the logo keeping its shape within; under the seats. */
 	.board :global(.board-logo) {
 		position: absolute;
-		inset: 29%;
+		left: 50%;
+		top: 50%;
+		width: 42%;
+		height: 42%;
+		translate: -50% -50%;
 		opacity: var(--logo-opacity);
 		pointer-events: none;
 	}

@@ -41,9 +41,10 @@ test('makes a character, saves it, and puts it on a script', async ({ page }) =>
 		.getByTestId('library-table')
 		.getByRole('button', { name: /^Lamp Lighter/ })
 		.tap();
-	await page.getByRole('button', { name: 'Edit in Character builder' }).tap();
-	await expect(page).toHaveURL(/\/build-character$/);
-	await expect(page.getByTestId('character-name')).toHaveValue('Lamp Lighter');
+	await page.getByRole('button', { name: 'Edit character' }).tap();
+	await expect(
+		page.getByRole('dialog', { name: 'Edit character' }).getByTestId('character-name')
+	).toHaveValue('Lamp Lighter');
 });
 
 test('the Script builder lists saved characters under My characters', async ({ page }) => {
@@ -178,4 +179,41 @@ test('a saved character goes into a new character collection', async ({ page }) 
 	await page.getByRole('option', { name: 'Lights', exact: true }).tap();
 	await page.keyboard.press('Escape');
 	await expect(collections).toContainText('None');
+});
+
+// The Character builder over the Script builder (Trevor, 2026-10-18: "open that page as a
+// modal so we don't move away"): a new character goes on the script, an edit replaces it, and
+// Cancel asks before throwing changes away.
+test('the Script builder builds and edits a character without leaving', async ({ page }) => {
+	await page.goto('/build-script');
+	await page.getByRole('button', { name: 'New character', exact: true }).tap();
+	let builder = page.getByRole('dialog', { name: 'New character' });
+	await builder.getByTestId('character-name').fill('Moth Keeper');
+	await builder.getByTestId('character-ability').fill('You start knowing a moth.');
+	await builder.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(builder).toBeHidden();
+	await expect(page).toHaveURL(/\/build-script$/);
+	await expect(page.getByTestId('homebrew-count')).toHaveText('1');
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
+
+	await page.getByRole('button', { name: 'Edit Moth Keeper' }).tap();
+	builder = page.getByRole('dialog', { name: 'Edit character' });
+	await expect(builder.getByTestId('character-name')).toHaveValue('Moth Keeper');
+	await builder.getByTestId('character-name').fill('Moth Warden');
+	await builder.getByRole('button', { name: 'Cancel' }).tap();
+	const discard = page.getByRole('alertdialog', { name: 'Discard changes?' });
+	await discard.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(builder.getByTestId('character-name')).toHaveValue('Moth Warden');
+	// Escape asks the same question, and the builder stays open.
+	await page.keyboard.press('Escape');
+	await discard.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(builder.getByTestId('character-name')).toHaveValue('Moth Warden');
+	await builder.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(builder).toBeHidden();
+	await expect(page.getByRole('button', { name: 'Edit Moth Warden' })).toBeVisible();
+	await expect(page.getByTestId('homebrew-count')).toHaveText('1');
+
+	// The page's own draft is untouched.
+	await page.goto('/build-character');
+	await expect(page.getByTestId('character-name')).toHaveValue('');
 });

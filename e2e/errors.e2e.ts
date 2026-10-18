@@ -80,10 +80,34 @@ test('dismissing the card keeps the page as it was', async ({ page }) => {
 	await expect(card).toBeHidden();
 });
 
-test('an unknown address shows Page not found without reporting an error', async ({ page }) => {
+test('an unknown address shows the Fool and ways out, without reporting an error', async ({
+	page
+}) => {
+	await page.goto('/library');
 	await page.goto('/no-such-page');
 	await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+	const main = page.locator('main.page');
+	const notFound = page.getByTestId('not-found');
+	await expect(notFound.getByRole('img', { name: 'Fool' })).toBeVisible();
+	await expect(notFound).toContainText("The first time you visit this page, it doesn't exist.");
 	await expect(page.getByTestId('error-notice')).toBeHidden();
+	for (const name of ['Back', 'Library', 'Report an issue', 'Home']) {
+		const box = await main
+			.getByRole(name === 'Back' || name === 'Report an issue' ? 'button' : 'link', { name })
+			.boundingBox();
+		expect(box!.height).toBeGreaterThanOrEqual(44);
+	}
+
+	// Report an issue opens the Report form, already titled; the address goes with it.
+	await main.getByRole('button', { name: 'Report an issue' }).tap();
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await expect(form.getByRole('textbox', { name: 'Title' })).toHaveValue('Page not found');
+	await expect(form).toContainText('/no-such-page');
+	await form.getByRole('button', { name: 'Cancel' }).tap();
+
+	await main.getByRole('button', { name: 'Back' }).tap();
+	await expect(page).toHaveURL(/\/library$/);
+	await page.goto('/no-such-page');
 	await page.getByRole('link', { name: 'Home' }).tap();
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 });

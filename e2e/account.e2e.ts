@@ -30,6 +30,12 @@ async function previewCode(page: Page): Promise<string> {
 	return code;
 }
 
+/** Sign out lives in the header's account card, not on the Account page (Trevor, 2026-10-18). */
+async function signOut(page: Page) {
+	await page.getByRole('button', { name: /^Account: signed in as / }).tap();
+	await page.getByRole('button', { name: 'Sign out', exact: true }).tap();
+}
+
 async function signInWithCode(page: Page, email: string) {
 	await page.goto('/account');
 	await page.getByLabel('Email address').fill(email);
@@ -57,11 +63,18 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	// Devices are a table; this device can't be signed out from its own row.
 	const devices = page.getByTestId('devices-table');
 	await expect(devices.getByText('(this device)')).toBeVisible();
+	// A rough place per device; the local server has none from Cloudflare, so None.
+	await expect(devices.getByText('Location').first()).toBeVisible();
 	await expect(
 		devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ })
 	).toBeDisabled();
+	// Sign out other devices sits in the section's header; Delete account has a section of its own;
+	// signing out of this device is only in the header's account card.
+	await expect(page.getByRole('button', { name: 'Sign out other devices' })).toBeDisabled();
+	await expect(page.getByRole('heading', { name: 'Delete account' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toHaveCount(0);
 
-	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signOut(page);
 	await expect(page.getByLabel('Email address')).toBeVisible();
 });
 
@@ -195,7 +208,7 @@ test('the account id is a chain of words that stays when the username and email 
 	await expect(page.getByTestId('account-id')).toHaveText(id);
 
 	// The old address no longer signs in to this account: it makes a new one.
-	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signOut(page);
 	await signInWithCode(page, email);
 	expect(await idOf()).not.toBe(id);
 	await expect(page.getByTestId('account-username')).toHaveText('None');
@@ -263,7 +276,7 @@ test('creating an account with a password, then signing in with it', async ({ pa
 	// Remember me is on by default: the cookie outlives the browser.
 	expect((await sessionCookie(page))?.expires).toBeGreaterThan(Date.now() / 1000 + 86400);
 
-	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signOut(page);
 	// A wrong password and an unknown address get the same answer.
 	await page.getByLabel('Email address').fill(email.toLowerCase());
 	await page.getByLabel('Password', { exact: true }).fill('not the password');
@@ -303,7 +316,7 @@ test('a code-only account can set a password in Account settings', async ({ page
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('account-password')).toHaveText('Set');
 
-	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signOut(page);
 	await page.getByLabel('Email address').fill(email);
 	await page.getByLabel('Password', { exact: true }).fill('a much longer password');
 	await page.getByRole('button', { name: 'Sign in' }).tap();

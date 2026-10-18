@@ -91,11 +91,11 @@
 		display: grid;
 		place-items: center;
 		flex: none;
-		width: var(--tap-target);
-		height: var(--tap-target);
+		padding: 0;
 		margin-right: calc(var(--space-2) * -1);
 		border: 0;
-		background: none;
+		/* Not `background: none`: that would reset the shared hover tint (base.css). */
+		background-color: transparent;
 		color: inherit;
 		cursor: pointer;
 		--icon-size: 1.25rem;

@@ -50,6 +50,11 @@
 		startClosed?: boolean;
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
 		aside?: Snippet;
+		/**
+		 * The aside sits right after the title instead of at the row's far end, e.g. an (i)
+		 * that explains the heading (Trevor, 2026-10-18).
+		 */
+		asideByTitle?: boolean;
 		/** Starts closed until opened (e.g. About's Advanced part); remembered like any other. */
 		defaultOpen?: boolean;
 		children: Snippet;
@@ -64,6 +69,7 @@
 		empty = false,
 		startClosed = false,
 		aside,
+		asideByTitle = false,
 		defaultOpen = true,
 		children
 	}: Props = $props();
@@ -102,7 +108,7 @@
 	sections keep their header, so only the content below moves.
 -->
 <section class="collapsible" data-open={shown ? '' : undefined}>
-	<div class="head" data-tone={tone}>
+	<div class="head" data-tone={tone} data-aside-by-title={asideByTitle ? '' : undefined}>
 		<svelte:element this={`h${level}`} class="title">
 			<button
 				type="button"
@@ -134,6 +140,9 @@
 		min-width: 0;
 		margin: 0;
 		font-size: inherit;
+	}
+	.head[data-aside-by-title] .title {
+		flex: 0 1 auto;
 	}
 	.toggle {
 		display: flex;
