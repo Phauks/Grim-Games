@@ -151,7 +151,7 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 		.tap();
 	await expect(sheet).toContainText(/Imp\s*Good · Seat 1/);
 	await expect(impIcon).not.toHaveAttribute('src', evilSrc!);
-	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .face')).toHaveCSS(
+	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .disc > .face')).toHaveCSS(
 		'rotate',
 		'none'
 	);
