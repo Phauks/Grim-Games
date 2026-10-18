@@ -6,6 +6,7 @@
 	import RefreshDiagnostics from '#lib/features/errors/RefreshDiagnostics.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { ADVANCED_KEY } from './about-advanced.ts';
+	import { formatBytes } from '#lib/i18n/bytes.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 
@@ -37,16 +38,23 @@
 			: updateCheck.result === 'downloading'
 				? updateCheck.percent === undefined
 					? t('shell.updateDownloading')
-					: t('shell.updateDownloadingPercent', {
-							percent: intl.number(updateCheck.percent / 100, { style: 'percent' })
-						})
+					: updateCheck.bytes
+						? // Sizes too (Trevor, 2026-10-18): "2.4 MB of 6.1 MB · 39%".
+							t('shell.updateDownloadingSize', {
+								done: formatBytes(updateCheck.bytes.done),
+								total: formatBytes(updateCheck.bytes.total),
+								percent: intl.number(updateCheck.percent / 100, { style: 'percent' })
+							})
+						: t('shell.updateDownloadingPercent', {
+								percent: intl.number(updateCheck.percent / 100, { style: 'percent' })
+							})
 				: [updateCheck.checkedAt ? checkedText(updateCheck.checkedAt) : '', result ? t(result) : '']
 						.filter(Boolean)
 						.join(' · ')
 	);
 </script>
 
-<!-- The one About in the app (Trevor, 2026-10-16: About lives in Settings; the footer opens it). -->
+<!-- The one About in the app (Trevor, 2026-10-16: About lives in Settings; 2026-10-18: only there, not the footer). -->
 <p>{t('shell.aboutIntro')}</p>
 <dl>
 	<dt>{t('shell.aboutVersion')}</dt>
