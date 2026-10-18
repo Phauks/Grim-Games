@@ -418,6 +418,11 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				id INTEGER PRIMARY KEY CHECK (id = 1),
 				name TEXT NOT NULL
 			);
+			-- The profile icon: an official character's id (Trevor, 2026-10-18), never an image.
+			CREATE TABLE IF NOT EXISTS icon (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				character_id TEXT NOT NULL
+			);
 			CREATE TABLE IF NOT EXISTS doc (
 				kind TEXT NOT NULL,
 				id TEXT NOT NULL,
@@ -432,8 +437,15 @@ export class AccountUser extends DurableObject<AccountEnv> {
 
 	private user(): User | undefined {
 		const row = this.sql
-			.exec<{ email: string; created_at: number; username: string | null; has_password: number }>(
+			.exec<{
+				email: string;
+				created_at: number;
+				username: string | null;
+				icon: string | null;
+				has_password: number;
+			}>(
 				`SELECT email, created_at, (SELECT name FROM username WHERE id = 1) AS username,
+				   (SELECT character_id FROM icon WHERE id = 1) AS icon,
 				   EXISTS (SELECT 1 FROM password) AS has_password
 				 FROM profile WHERE id = 1`
 			)
@@ -443,6 +455,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				id: this.accountId(),
 				email: row.email,
 				username: row.username,
+				icon: row.icon,
 				hasPassword: row.has_password === 1,
 				createdAt: row.created_at
 			}
@@ -454,6 +467,15 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		const old = this.user()?.email;
 		this.sql.exec('UPDATE profile SET email = ? WHERE id = 1', email);
 		return { old, user: this.user() };
+	}
+
+	/** Sets the profile icon (a character id), or clears it with null. */
+	async setIcon(characterId: string | null): Promise<User | undefined> {
+		if (characterId === null) this.sql.exec('DELETE FROM icon');
+		else {
+			this.sql.exec('INSERT OR REPLACE INTO icon (id, character_id) VALUES (1, ?)', characterId);
+		}
+		return this.user();
 	}
 
 	/** After the name was claimed (`AccountName.claim`). Returns the old name. */

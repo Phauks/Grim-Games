@@ -400,7 +400,7 @@ test('each note can hide its contents until it is opened', async ({ page }) => {
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Player view' })
+		.getByRole('button', { name: 'Player', exact: true })
 		.tap();
 	await expect(settings.getByText('Hide note contents')).toHaveCount(0);
 });
@@ -448,7 +448,7 @@ test('the Script sheet can be made compact from Settings', async ({ page }) => {
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Player view' })
+		.getByRole('button', { name: 'Player', exact: true })
 		.tap();
 	await settings.getByRole('combobox', { name: 'Script sheet layout' }).tap();
 	await page.getByRole('option', { name: 'Super-compact', exact: true }).tap();

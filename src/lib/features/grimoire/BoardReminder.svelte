@@ -199,7 +199,8 @@
 		border-radius: var(--radius-sm);
 		background: var(--reminder-face);
 		box-shadow: 0 0 0 1.5px var(--rim);
-		font-family: var(--font-character);
+		/* The Reminder tokens font, as reminders in text (Trevor, 2026-10-18: they match). */
+		font-family: var(--font-reminder);
 		font-size: calc(0.6rem * var(--reminder-scale, 1));
 		font-variant: small-caps;
 		line-height: 1.35;
