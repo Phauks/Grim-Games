@@ -434,6 +434,12 @@ test('a jinxed character shows its partners beside its name, and tapping shows t
 	await mark.tap();
 	const dialog = page.getByRole('dialog', { name: 'Jinxes' });
 	await expect(dialog).toContainText('Marionette ability');
+	// A faint line under each jinx (Trevor, 2026-10-18).
+	const line = await dialog
+		.locator('li')
+		.first()
+		.evaluate((li) => getComputedStyle(li).borderBottomStyle);
+	expect(line).toBe('solid');
 });
 
 test('the Script sheet can be made compact from Settings', async ({ page }) => {

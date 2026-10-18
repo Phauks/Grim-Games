@@ -225,6 +225,11 @@
 	.jinx-dialog {
 		grid-template-columns: minmax(0, 1fr);
 	}
+	/* A faint line under each jinx, as in the Reference's lists (Trevor, 2026-10-18). */
+	.jinx {
+		padding-bottom: var(--space-2);
+		border-bottom: var(--card-border);
+	}
 	section h2 {
 		margin: 0 0 var(--space-2);
 		font-size: 1.1rem;
