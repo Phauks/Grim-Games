@@ -570,7 +570,7 @@ test('a No Dashii game offers its two Poisoned tokens on the board after the dra
 		.tap();
 	await expect(
 		page
-			.getByRole('list', { name: 'Setup reminders' })
+			.getByRole('list', { name: 'Reminder bank' })
 			.getByRole('button', { name: 'Poisoned reminder' })
 	).toHaveCount(2);
 });

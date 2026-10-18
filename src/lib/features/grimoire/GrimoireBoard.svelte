@@ -13,6 +13,8 @@
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
 	import { boardBackground } from './board-background.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
@@ -42,7 +44,6 @@
 		setupComplete,
 		diedSinceNewDay,
 		ON_DEATH,
-		setupReminders,
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
@@ -93,7 +94,6 @@
 	import { stepFocus } from './step-focus.svelte.ts';
 	import RulesAtSetting from './RulesAtSetting.svelte';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
-	import { pendingTray, trayItems, withoutOffSeat, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import { campaignOf } from '#lib/features/modes/campaigns.ts';
@@ -680,19 +680,6 @@
 		const target = targetSeats.includes(seatId);
 		return source && target ? 'both' : source ? 'source' : target ? 'target' : undefined;
 	}
-	const setupPending = $derived(
-		withoutOffSeat(
-			pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed),
-			[...looseReminders(game), ...Object.values(game.ruleReminders ?? {}).flat()]
-		).length
-	);
-	let bankChosen = $state<BankView | undefined>();
-	const bankView = $derived<BankView>(
-		bankChosen ?? (setupPending > 0 && game.pastDays.length === 0 ? 'setup' : 'all')
-	);
-	function startTray() {
-		bankChosen = 'setup';
-	}
 	// The setup flow's last step lands here with its setup reminders in the bank.
 	onMount(() => {
 		if (location.hash === DAY_HASH) {
@@ -701,7 +688,6 @@
 			return;
 		}
 		if (location.hash !== REMINDERS_HASH) return;
-		startTray();
 		replaceState(resolve('/grimoire/[gameId]', { gameId: game.gameId }), {});
 	});
 
@@ -802,7 +788,8 @@
 	function endNight() {
 		if (!grimoire.endNight()) return;
 		walk = undefined;
-		dayOpen = true;
+		// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
+		if (preferences.current.assistance.dayAfterNight) dayOpen = true;
 	}
 	/**
 	 * The step's reminders already on the board are ringed too, on any night (Trevor,
@@ -1140,6 +1127,17 @@
 			style:background={PRESETS[background.id].css}
 		></div>
 	{/if}
+	<!-- The vignette darkens the background towards the screen's edges, on every background
+	     (Trevor, 2026-10-17: its own switch and strength; 2026-10-18: noticeable, and over the
+	     whole screen like the background, not just the board). -->
+	{#if boardLooks.current.vignette}
+		<div
+			class="vignette"
+			data-testid="vignette"
+			style:--vignette={boardLooks.current.vignetteStrength}
+			aria-hidden="true"
+		></div>
+	{/if}
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
 		{#if arranging}
 			<span class="title arranging-title">Arrange seats</span>
@@ -1205,16 +1203,6 @@
 		style:--name-scale={boardLooks.current.nameSize}
 		bind:this={board}
 	>
-		<!-- The vignette darkens the background towards the edges, on every background (Trevor,
-		     2026-10-17: its own switch and strength; 2026-10-18: it should be noticeable). -->
-		{#if boardLooks.current.vignette}
-			<div
-				class="vignette"
-				data-testid="vignette"
-				style:--vignette={boardLooks.current.vignetteStrength}
-				aria-hidden="true"
-			></div>
-		{/if}
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = shown[i]}
 			<div
@@ -1402,8 +1390,6 @@
 				{grimoire}
 				{board}
 				size={chip}
-				view={bankView}
-				onView={(v) => (bankChosen = v)}
 				focus={walk && walkStep?.character
 					? stepReminders(walkStep.character.id, walk.night, walkStep.character)
 					: undefined}
@@ -1622,8 +1608,18 @@
 	}}
 />
 
-<!-- Like the day's End day: the title alone (DaySheet). -->
-<ConfirmDialog bind:open={endNightOpen} title="End the night?" onConfirm={endNight} />
+<!-- Like the day's End day, with its setting where it is used (Trevor, 2026-10-18). -->
+<ConfirmDialog bind:open={endNightOpen} title="End the night?" onConfirm={endNight}>
+	<SettingToggle
+		label={ASSIST_LABELS.dayAfterNight.label}
+		description={ASSIST_LABELS.dayAfterNight.description}
+		checked={preferences.current.assistance.dayAfterNight}
+		onChange={(dayAfterNight) =>
+			preferences.update({
+				assistance: { ...preferences.current.assistance, dayAfterNight }
+			})}
+	/>
+</ConfirmDialog>
 
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">
@@ -2042,15 +2038,18 @@
 	}
 	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
 	.vignette {
-		position: absolute;
+		position: fixed;
 		inset: 0;
+		z-index: -1;
+		/* Shadow is darkness, not a theme colour. */
+		--vignette-mid: rgb(0 0 0 / calc(var(--vignette) * 0.6)); /* colour-ok: shadow */
+		--vignette-edge: rgb(0 0 0 / var(--vignette)); /* colour-ok: shadow */
 		/* Clear in the middle, darkening to the strength at the corners. */
 		background: radial-gradient(
 			ellipse 75% 75% at center,
 			transparent 40%,
-			rgb(0 0 0 / calc(var(--vignette) * 0.6)) 75%
-				/* colour-ok: a shadow is darkness, not a theme colour */,
-			rgb(0 0 0 / var(--vignette)) 100% /* colour-ok: a shadow is darkness, not a theme colour */
+			var(--vignette-mid) 75%,
+			var(--vignette-edge) 100%
 		);
 		pointer-events: none;
 	}
