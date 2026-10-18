@@ -22,6 +22,7 @@ export type PickerSource =
 	| 'homebrew'
 	| 'recent'
 	| 'profile'
+	| 'campaign'
 	| 'botc';
 
 export type ScriptKind = 'Full' | 'Teensyville';

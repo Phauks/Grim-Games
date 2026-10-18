@@ -251,7 +251,10 @@
 			const played = record.games.map((g, i) =>
 				i === record!.games.length - 1 ? { ...g, eliminated: chosen } : g
 			);
-			const next = { ...record, games: [...played, { gameId: open.game.gameId, eliminated: [] }] };
+			const next = {
+				...record,
+				games: [...played, { gameId: open.game.gameId, eliminated: [], script: open.game.script }]
+			};
 			saveCampaign(next);
 			saved = next;
 			planning = false;
@@ -266,9 +269,12 @@
 
 <Page title={mode.name}>
 	{#snippet actions()}
-		<Button icon="info" onclick={() => (inspecting = true)}>
-			{t('modes.inspect', { name: mode.name })}
-		</Button>
+		<!-- An icon, so a long mode name keeps the title row (Trevor, 2026-10-18). -->
+		<IconButton
+			icon="info"
+			label={t('modes.inspect', { name: mode.name })}
+			onclick={() => (inspecting = true)}
+		/>
 	{/snippet}
 
 	{#if !record}

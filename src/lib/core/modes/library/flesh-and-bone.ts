@@ -26,7 +26,8 @@ export const FLESH_AND_BONE: GameMode = {
 		{ title: 'Flesh & Bone rules', url: RULES },
 		{ title: 'Flesh & Bone', url: 'https://fleshandbone.app/' }
 	],
-	credits: ['hey.andrew', 'lindsaykwardell', 'Chill on the Clocktower', 'Nashable'],
+	// The rules page names no author; the Specters stream's description calls Nashable its creator.
+	authors: [{ title: 'Nashable', url: 'https://www.youtube.com/watch?v=-R34QbIgDh8' }],
 	parts: {
 		pool: { kind: 'campaign', startingScript: 'any' },
 		forced: {

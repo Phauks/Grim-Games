@@ -33,6 +33,7 @@ export const MODE_PARTS = [
 	'forced',
 	'ruleChanges',
 	'information',
+	'bluffs',
 	'daySteps',
 	'winConditions',
 	'towns',
@@ -142,6 +143,12 @@ export interface LinkedRule extends Cited {
 	characters: CharacterId[];
 }
 
+/**
+ * Demon bluffs: `none` when the Demon learns no not-in-play characters (Trevor, 2026-10-18:
+ * Sushi Buffet and Whale Buffet have no Demon bluffs).
+ */
+export type BluffsRule = Cited & { kind: 'standard' | 'none' };
+
 /** 10. Steps added to each day. */
 export type DayStep = Cited &
 	(
@@ -150,7 +157,19 @@ export type DayStep = Cited &
 				/** Players the representative moves to the other town at the end of day N + 1. */
 				movesPerDay: number[];
 		  }
-		| { kind: 'spectator-vote' }
+		/**
+		 * Spectators vote on how their shared ability is used (Specters). `when` they vote;
+		 * the player they `pick` gains the `grants` character's ability, for as long as `lasts`.
+		 */
+		| {
+				kind: 'spectator-vote';
+				/** The shared ability's name, e.g. Apparition. */
+				ability?: string;
+				when?: 'each-dawn';
+				pick?: 'player';
+				grants?: CharacterId[];
+				lasts?: 'until-next-dawn';
+		  }
 	);
 
 /** 11. How the game is won. */
@@ -179,6 +198,8 @@ export interface TownsRule extends Cited {
 	samePlayers?: boolean;
 	/** A player can't have a character of these types in more than one town. */
 	notInEveryTown?: SeatedType[];
+	/** Characters always in play in each town, by town (part 7's `inPlay`, placed). */
+	inPlay?: CharacterId[][];
 }
 
 /** 13. People taking part without a seat. */
@@ -225,6 +246,7 @@ export interface ModeParts {
 	forced?: ForcedRule;
 	ruleChanges?: LinkedRule[];
 	information?: LinkedRule[];
+	bluffs?: BluffsRule;
 	daySteps?: DayStep[];
 	winConditions?: WinRule;
 	towns?: TownsRule;
@@ -242,8 +264,11 @@ export interface GameMode {
 	aliases?: string[];
 	/** Where its rules come from, the rules page first. Every mode credits its source. */
 	sources: SourceLink[];
-	/** People the source credits. */
-	credits?: string[];
+	/**
+	 * Who made the mode, each linked to a page that names them as its author (Trevor,
+	 * 2026-10-18: no author unless properly attributed). Thanks and testers are not authors.
+	 */
+	authors?: SourceLink[];
 	/**
 	 * A short description of how the mode plays, shown on New game and in Inspect. Trevor
 	 * asked for one per mode (2026-10-18); the built-in ones are our own wording, not the

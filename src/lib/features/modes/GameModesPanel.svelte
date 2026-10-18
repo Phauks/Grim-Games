@@ -223,7 +223,7 @@
 		<SetupTable players={total} />
 	{/if}
 
-	<Button icon="filter" onclick={openRestricted}>
+	<Button icon="restricted" onclick={openRestricted}>
 		{t('modes.restrictedButton', { count: restrictedCount })}
 	</Button>
 	<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>

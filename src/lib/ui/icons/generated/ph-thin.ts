@@ -121,6 +121,8 @@ import ph_play_circle_thin from '~icons/ph/play-circle-thin';
 import ph_plus_thin from '~icons/ph/plus-thin';
 import ph_plus_circle_thin from '~icons/ph/plus-circle-thin';
 import ph_printer_thin from '~icons/ph/printer-thin';
+import ph_prohibit_thin from '~icons/ph/prohibit-thin';
+import ph_prohibit_inset_thin from '~icons/ph/prohibit-inset-thin';
 import ph_pulse_thin from '~icons/ph/pulse-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
@@ -300,6 +302,8 @@ const icons: IconMap = {
 	'ph:plus-thin': ph_plus_thin,
 	'ph:plus-circle-thin': ph_plus_circle_thin,
 	'ph:printer-thin': ph_printer_thin,
+	'ph:prohibit-thin': ph_prohibit_thin,
+	'ph:prohibit-inset-thin': ph_prohibit_inset_thin,
 	'ph:pulse-thin': ph_pulse_thin,
 	'ph:push-pin-thin': ph_push_pin_thin,
 	'ph:qr-code-thin': ph_qr_code_thin,

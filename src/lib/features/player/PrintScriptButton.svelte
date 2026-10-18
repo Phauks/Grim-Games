@@ -35,8 +35,14 @@
 		// Wait for the sheet's data and icons, so the page isn't printed half drawn.
 		for (let i = 0; i < 50 && !root?.querySelector('[data-testid="print-sheet"]'); i++)
 			await new Promise((r) => setTimeout(r, 100));
+		// The sheet is drawn off screen, where lazy icons never load and decode() never settles:
+		// load them now, and print after five seconds whatever is still missing.
 		const images = [...(root?.querySelectorAll('img') ?? [])];
-		await Promise.all(images.map((img) => img.decode().catch(() => undefined)));
+		for (const img of images) img.loading = 'eager';
+		await Promise.race([
+			Promise.all(images.map((img) => img.decode().catch(() => undefined))),
+			new Promise((r) => setTimeout(r, 5000))
+		]);
 		document.documentElement.classList.add('printing');
 		const done = () => {
 			document.documentElement.classList.remove('printing');

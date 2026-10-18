@@ -121,6 +121,8 @@ import ph_play_circle_fill from '~icons/ph/play-circle-fill';
 import ph_plus_fill from '~icons/ph/plus-fill';
 import ph_plus_circle_fill from '~icons/ph/plus-circle-fill';
 import ph_printer_fill from '~icons/ph/printer-fill';
+import ph_prohibit_fill from '~icons/ph/prohibit-fill';
+import ph_prohibit_inset_fill from '~icons/ph/prohibit-inset-fill';
 import ph_pulse_fill from '~icons/ph/pulse-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
@@ -300,6 +302,8 @@ const icons: IconMap = {
 	'ph:plus-fill': ph_plus_fill,
 	'ph:plus-circle-fill': ph_plus_circle_fill,
 	'ph:printer-fill': ph_printer_fill,
+	'ph:prohibit-fill': ph_prohibit_fill,
+	'ph:prohibit-inset-fill': ph_prohibit_inset_fill,
 	'ph:pulse-fill': ph_pulse_fill,
 	'ph:push-pin-fill': ph_push_pin_fill,
 	'ph:qr-code-fill': ph_qr_code_fill,

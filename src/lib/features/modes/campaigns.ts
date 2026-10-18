@@ -3,7 +3,7 @@
  * saved game, and this record ties them together with the characters eliminated so far.
  * Versioned key; anything unreadable is dropped.
  */
-import type { CharacterId } from '#lib/core/data/index.ts';
+import type { CharacterId, Script } from '#lib/core/data/index.ts';
 import type { StorytellerRestrictions } from '#lib/core/modes/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
@@ -12,6 +12,12 @@ export interface CampaignGame {
 	gameId: GameId;
 	/** Eliminated after this game, once the next one starts. */
 	eliminated: CharacterId[];
+	/**
+	 * This game's script, kept here so every version of the campaign's script stays in the
+	 * Library after its game is deleted (Trevor, 2026-10-18). Added later: older records read
+	 * the script from the saved game.
+	 */
+	script?: Script;
 }
 
 export interface Campaign {
@@ -46,9 +52,19 @@ function readAll(): Campaign[] {
 					typeof g === 'object' &&
 					g !== null &&
 					typeof (g as CampaignGame).gameId === 'string' &&
-					isIds((g as CampaignGame).eliminated)
+					isIds((g as CampaignGame).eliminated) &&
+					isScript((g as CampaignGame).script)
 			)
 	);
+}
+
+const isScript = (value: unknown): boolean =>
+	value === undefined ||
+	(typeof value === 'object' && value !== null && Array.isArray((value as Script).entries));
+
+/** Every campaign on this device, newest first. */
+export function campaigns(): Campaign[] {
+	return readAll().sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export function saveCampaign(campaign: Campaign): void {

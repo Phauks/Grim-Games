@@ -25,8 +25,9 @@ export const SUSHI_BUFFET: GameMode = {
 			url: 'https://ekins.blog/2026/05/02/final-3-con-2026-part-1/'
 		}
 	],
-	credits: ['Grimbits', 'Tomozbot'],
 	parts: {
+		// Trevor, 2026-10-18, in the project chat.
+		bluffs: { kind: 'none', cite: 'https://claude.ai/code/project/chan_01LbwopXmmfZCTHhANoebuJ9' },
 		pool: { kind: 'all-characters' },
 		restricted: { banned: [] },
 		setupModifiers: { kind: 'as-chosen' },

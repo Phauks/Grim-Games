@@ -3,11 +3,15 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
 	cancelRequest,
+	castVote,
+	closeVote,
+	hostView,
 	isScript,
 	join,
 	MAX_MEMBERS,
 	MIN_ROOM_PROTOCOL,
 	newRoom,
+	openVote,
 	parseClientMessage,
 	playerView,
 	publish,
@@ -165,5 +169,48 @@ describe('the script a room relays', () => {
 		expect(isScript({ entries: [{ kind: 'official' }] })).toBe(false);
 		expect(isScript({ entries: [{ kind: 'custom', character: null }] })).toBe(false);
 		expect(isScript({ entries: ['washerwoman'] })).toBe(false);
+	});
+});
+
+/** Specters: spectators share one ability and vote on how it is used (https://www.youtube.com/watch?v=-R34QbIgDh8). */
+describe('a spectators’ vote', () => {
+	function seated(room: RoomState, memberId: string, seatId: string): RoomState {
+		room = request(room, memberId, { name: memberId, seatId }, 1, `r-${memberId}`);
+		return resolve(room, `r-${memberId}`, true);
+	}
+
+	it('counts only spectators, one choice each, and shows the vote to spectators only', () => {
+		let room = seated(roomWith('p', 'x', 'y'), 'p', 'a');
+		room = openVote(room, 'v1', ['a', 'b', 'b', 'nope']);
+		expect(room.vote?.options).toEqual(['a', 'b']);
+		room = castVote(room, 'x', 'v1', 'b');
+		room = castVote(room, 'y', 'v1', 'a');
+		room = castVote(room, 'y', 'v1', 'b');
+		// A seated player and a stale vote change nothing.
+		room = castVote(room, 'p', 'v1', 'a');
+		room = castVote(room, 'x', 'v0', 'a');
+		expect(hostView(room).vote).toEqual({
+			voteId: 'v1',
+			options: ['a', 'b'],
+			counts: { a: 0, b: 2 },
+			voted: 2,
+			spectators: 2
+		});
+		expect(playerView(room, 'x').vote).toEqual({ voteId: 'v1', options: ['a', 'b'], choice: 'b' });
+		expect(playerView(room, 'p').vote).toBeUndefined();
+	});
+
+	it('does not open without options, and closes for everyone', () => {
+		const room = roomWith('x');
+		expect(openVote(room, 'v1', ['nope']).vote).toBeUndefined();
+		const open = openVote(room, 'v1', ['a']);
+		expect(closeVote(open).vote).toBeUndefined();
+		expect(hostView(closeVote(open)).vote).toBeUndefined();
+	});
+
+	it('closes when a different game is published', () => {
+		const open = openVote(roomWith('x'), 'v1', ['a']);
+		expect(publish(open, 'g1', table('a', 'b')).vote).toBeDefined();
+		expect(publish(open, 'g2', table('a', 'b')).vote).toBeUndefined();
 	});
 });

@@ -121,6 +121,8 @@ import ph_play_circle from '~icons/ph/play-circle';
 import ph_plus from '~icons/ph/plus';
 import ph_plus_circle from '~icons/ph/plus-circle';
 import ph_printer from '~icons/ph/printer';
+import ph_prohibit from '~icons/ph/prohibit';
+import ph_prohibit_inset from '~icons/ph/prohibit-inset';
 import ph_pulse from '~icons/ph/pulse';
 import ph_push_pin from '~icons/ph/push-pin';
 import ph_qr_code from '~icons/ph/qr-code';
@@ -300,6 +302,8 @@ const icons: IconMap = {
 	'ph:plus': ph_plus,
 	'ph:plus-circle': ph_plus_circle,
 	'ph:printer': ph_printer,
+	'ph:prohibit': ph_prohibit,
+	'ph:prohibit-inset': ph_prohibit_inset,
 	'ph:pulse': ph_pulse,
 	'ph:push-pin': ph_push_pin,
 	'ph:qr-code': ph_qr_code,

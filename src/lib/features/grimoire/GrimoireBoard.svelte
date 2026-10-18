@@ -99,6 +99,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import { campaignOf } from '#lib/features/modes/campaigns.ts';
+	import { hasSpectatorVote } from '#lib/features/modes/specters.ts';
 	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
 	import { onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
@@ -394,6 +395,8 @@
 	const towns = $derived(townGroupOf(game.gameId));
 	/** The campaign this game is part of, if any (kept on this device). */
 	const campaign = $derived(campaignOf(game.gameId));
+	/** Spectators vote on a shared ability in this game's mode (Specters). */
+	const specters = $derived(hasSpectatorVote(game.gameId));
 	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
 	/** A Fabled or Loric's reminder being dragged off it. */
 	const heldDrag = $derived.by(() => {
@@ -1551,6 +1554,17 @@
 					)}
 			>
 				Campaign
+			</Button>
+		{/if}
+		<!-- Specters: the spectators' shared ability and vote (Alternative game modes). -->
+		{#if specters}
+			<Button
+				variant="quiet"
+				icon="vote"
+				onclick={() =>
+					fromMenu(() => goto(resolve('/grimoire/[gameId]/specters', { gameId: game.gameId })))}
+			>
+				Specters
 			</Button>
 		{/if}
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->

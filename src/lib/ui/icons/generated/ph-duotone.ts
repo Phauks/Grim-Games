@@ -121,6 +121,8 @@ import ph_play_circle_duotone from '~icons/ph/play-circle-duotone';
 import ph_plus_duotone from '~icons/ph/plus-duotone';
 import ph_plus_circle_duotone from '~icons/ph/plus-circle-duotone';
 import ph_printer_duotone from '~icons/ph/printer-duotone';
+import ph_prohibit_duotone from '~icons/ph/prohibit-duotone';
+import ph_prohibit_inset_duotone from '~icons/ph/prohibit-inset-duotone';
 import ph_pulse_duotone from '~icons/ph/pulse-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
@@ -300,6 +302,8 @@ const icons: IconMap = {
 	'ph:plus-duotone': ph_plus_duotone,
 	'ph:plus-circle-duotone': ph_plus_circle_duotone,
 	'ph:printer-duotone': ph_printer_duotone,
+	'ph:prohibit-duotone': ph_prohibit_duotone,
+	'ph:prohibit-inset-duotone': ph_prohibit_inset_duotone,
 	'ph:pulse-duotone': ph_pulse_duotone,
 	'ph:push-pin-duotone': ph_push_pin_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,

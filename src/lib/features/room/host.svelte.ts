@@ -14,7 +14,8 @@ import {
 	ROOM_PROTOCOL,
 	type RoomMember,
 	type RoomRequest,
-	type ServerMessage
+	type ServerMessage,
+	type VoteTally
 } from '#lib/core/sync/room.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
@@ -31,6 +32,8 @@ export class RoomHost {
 	code = $state<string>();
 	members = $state.raw<RoomMember[]>([]);
 	requests = $state.raw<RoomRequest[]>([]);
+	/** The spectators' open vote and its count (Specters), if one is open. */
+	vote = $state.raw<VoteTally>();
 	/** True when opening a room failed, e.g. offline. */
 	problem = $state(false);
 	/** True while a room is being opened. */
@@ -138,6 +141,15 @@ export class RoomHost {
 		this.#socket?.send({ type: 'unseat', memberId: member.memberId });
 	}
 
+	/** Opens a spectators' vote on these seats, replacing any open one. False when offline. */
+	openVote(options: SeatId[]): boolean {
+		return this.#socket?.send({ type: 'open-vote', voteId: crypto.randomUUID(), options }) ?? false;
+	}
+
+	closeVote(): void {
+		this.#socket?.send({ type: 'close-vote' });
+	}
+
 	#connect(room: StoredRoom): void {
 		this.#socket?.stop();
 		this.code = room.code;
@@ -153,6 +165,7 @@ export class RoomHost {
 		if (message.type === 'host-view') {
 			this.members = message.members;
 			this.requests = message.requests;
+			this.vote = message.vote;
 		} else if (message.type === 'refused' && message.reason === 'too-old') {
 			// The room is still this device's: keep it for after the update.
 		} else if (message.type === 'refused' || message.type === 'closed') {
@@ -177,6 +190,7 @@ export class RoomHost {
 		this.code = undefined;
 		this.members = [];
 		this.requests = [];
+		this.vote = undefined;
 		writeStored(STORAGE_KEY, undefined);
 	}
 }

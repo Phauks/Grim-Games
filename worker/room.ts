@@ -2,11 +2,14 @@ import { DurableObject } from 'cloudflare:workers';
 import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import {
 	cancelRequest,
+	castVote,
+	closeVote,
 	hostView,
 	isScript,
 	join,
 	MAX_SCRIPT_BYTES,
 	newRoom,
+	openVote,
 	parseClientMessage,
 	playerView,
 	publish,
@@ -142,6 +145,8 @@ export class Room extends DurableObject<RoomEnv> {
 				room = cancelRequest(room, id);
 			} else if (message.type === 'leave-seat') {
 				room = unseat(room, id);
+			} else if (message.type === 'vote') {
+				room = castVote(room, id, message.voteId, message.choice);
 			} else return;
 			await this.save(room);
 			return;
@@ -174,6 +179,12 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			case 'unseat':
 				room = unseat(room, message.memberId);
+				break;
+			case 'open-vote':
+				room = openVote(room, message.voteId, message.options);
+				break;
+			case 'close-vote':
+				room = closeVote(room);
 				break;
 			case 'close':
 				this.broadcastClosed('Room closed');
