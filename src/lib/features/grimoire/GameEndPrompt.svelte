@@ -3,7 +3,10 @@
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import { gameEnds, suggestedWinner, type GameEnd, type GameHold } from '#lib/core/rules/index.ts';
+	import { impairmentOfLabel } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -26,6 +29,13 @@
 	}
 
 	let { grimoire, active, onEnd }: Props = $props();
+
+	/**
+	 * Our own sentences ("Saint executed."), off until Trevor approves them: no new authored
+	 * content (Trevor, 2026-10-15). Off, each line is the players' badges, the character's TPI
+	 * ability text and the wiki link.
+	 */
+	const OWN_WORDING = false;
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -95,6 +105,11 @@
 	<CharacterBadge characterId={id} character={characters.get(id)} inline />
 {/snippet}
 
+{#snippet ability(id: CharacterId)}
+	{@const c = characters.get(id)}
+	{#if c}<span class="ability"><GlossaryText text={c.ability} names={[c.name]} /></span>{/if}
+{/snippet}
+
 {#snippet wiki(href: string)}
 	<!-- External wiki page (the rules authority), not an app route. -->
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
@@ -106,7 +121,17 @@
 {#snippet hold(h: GameHold)}
 	<li class="hold" data-rule={h.rule}>
 		<span class="text">
-			{#if h.rule === 'evil-twin'}
+			{#if !OWN_WORDING}
+				{#each h.seats as id (id)}{@render seat(id)}{/each}
+				{#if h.rule === 'impaired'}
+					{@const s = game.seats[h.seats[0]]}
+					{#each s?.reminders.filter((r) => impairmentOfLabel(r.label) || r.label === 'No Ability') ?? [] as r (r.reminderId)}
+						<ReminderToken label={r.label} character={characters.get(r.characterId)} />
+					{/each}
+				{:else}
+					{@render ability(h.characterId)}
+				{/if}
+			{:else if h.rule === 'evil-twin'}
 				Good can't win while {@render seat(h.seats[0])} and {@render seat(h.seats[1])} live.
 			{:else if h.rule === 'scarlet-woman'}
 				{@render seat(h.seats[0])} may become the Demon.
@@ -127,7 +152,10 @@
 		{#each shown as end (end.key)}
 			<li data-rule={end.rule}>
 				<span class="text">
-					{#if end.rule === 'demon-dead'}
+					{#if !OWN_WORDING}
+						{#each end.seats as id (id)}{@render seat(id)}{/each}
+						{#if end.characterId}{@render ability(end.characterId)}{/if}
+					{:else if end.rule === 'demon-dead'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead.
 					{:else if end.rule === 'two-alive'}
 						Just 2 players alive.
@@ -154,12 +182,21 @@
 						{@render character('mastermind')}: no execution on day {end.day}.
 					{/if}
 					<strong class="team" data-team={end.winner}>{teamText(end.winner)}</strong>
-					{#if end.flippedBy?.seatId}
+					{#if end.flippedBy?.seatId && OWN_WORDING}
 						({@render seat(end.flippedBy.seatId)} flips it)
 					{/if}
 				</span>
 				{@render wiki(end.wiki)}
 			</li>
+			{#if end.flippedBy?.seatId && !OWN_WORDING}
+				<li class="hold" data-rule="heretic">
+					<span class="text">
+						{@render seat(end.flippedBy.seatId)}
+						{@render ability('heretic')}
+					</span>
+					{@render wiki('https://wiki.bloodontheclocktower.com/Heretic')}
+				</li>
+			{/if}
 			{#each end.holds as h, i (i)}{@render hold(h)}{/each}
 		{/each}
 	</ul>
@@ -197,6 +234,9 @@
 	.text {
 		flex: 1;
 		min-width: 0;
+	}
+	.ability {
+		font-family: var(--font-ability);
 	}
 	.wiki {
 		display: inline-grid;
