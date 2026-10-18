@@ -1726,6 +1726,13 @@
 		gap: min(var(--space-2), 1.5vw);
 		padding: var(--space-2) var(--space-2) 0;
 	}
+	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
+	   on any image (Trevor, 2026-10-18). */
+	.grimoire:has(> .backdrop)
+		.toolbar
+		:global(button:not([data-variant='accent']):not([data-variant='danger'])) {
+		background: color-mix(in srgb, var(--surface) 85%, transparent);
+	}
 	.title {
 		flex: 1;
 		min-width: 0;
