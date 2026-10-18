@@ -43,7 +43,7 @@ export const library = {
 	'library.deleteCollection': 'Delete collection',
 	'library.deleteCollectionConfirm': 'Delete collection?',
 	'library.deleteCollectionBody': '{name} is deleted. Its characters stay where they are.',
-	'library.editCharacter': 'Edit in Character builder',
+	'library.editCharacter': 'Edit character',
 	'library.deleteCharacter': 'Delete character',
 	'library.deleteCharacterConfirm': 'Delete character?',
 	'library.deleteCharacterBody': 'It is deleted from this device.',

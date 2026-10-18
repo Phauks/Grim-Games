@@ -235,11 +235,9 @@
 		display: none;
 		place-items: center;
 		flex: none;
-		width: var(--tap-target);
-		height: var(--tap-target);
 		border: 0;
-		border-radius: var(--radius-full);
-		background: none;
+		/* Not `background: none`: that would reset the shared hover tint (base.css). */
+		background-color: transparent;
 		color: inherit;
 		cursor: pointer;
 	}
@@ -272,9 +270,6 @@
 		}
 		:global([data-scope='drawer'][data-part='close-trigger'].desktop-close) {
 			display: grid;
-		}
-		:global([data-scope='drawer'][data-part='close-trigger'].desktop-close:hover) {
-			background: var(--surface-hover);
 		}
 		header {
 			align-items: center;

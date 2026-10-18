@@ -66,8 +66,16 @@ test('opens a saved script to edit it', async ({ page }) => {
 		.tap();
 	await expect(page.getByTestId('count-demon')).toHaveText('0');
 
+	// The Library's file manager, scripts only (Trevor, 2026-10-18), not a bare list.
 	await page.getByRole('button', { name: 'Open a saved script' }).tap();
-	await page.getByRole('dialog', { name: 'Open a saved script' }).getByText('Reopen me').tap();
+	const library = page.getByRole('dialog', { name: 'Open a saved script' });
+	await expect(library.getByTestId('library-table')).toBeVisible();
+	await expect(library.getByRole('heading', { name: 'Kinds' })).toHaveCount(0);
+	// The search sits behind its button beside the folder controls (Trevor, 2026-10-18).
+	await library.getByRole('button', { name: 'Search the Library' }).tap();
+	await library.getByRole('searchbox', { name: 'Search the Library' }).fill('reopen');
+	await library.getByText('Reopen me').tap();
+	await expect(library).toBeHidden();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 	await expect(page.getByTestId('count-demon')).toHaveText('1');
 	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Reopen me');

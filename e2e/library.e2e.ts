@@ -344,11 +344,12 @@ test('characters and character collections are Library items too', async ({ page
 	await expect(row(page, 'Lamp set')).toHaveCount(0);
 	await expect(row(page, 'Lamp Lighter')).toBeVisible();
 
-	// A character opens in the Character builder from its header.
+	// A character opens in the Character builder, over the Library, from its header.
 	await row(page, 'Lamp Lighter').tap();
-	await character.getByRole('button', { name: 'Edit in Character builder' }).tap();
-	await expect(page).toHaveURL(/\/build-character$/);
-	await expect(page.getByTestId('character-name')).toHaveValue('Lamp Lighter');
+	await character.getByRole('button', { name: 'Edit character' }).tap();
+	const builder = page.getByRole('dialog', { name: 'Edit character' });
+	await expect(builder.getByTestId('character-name')).toHaveValue('Lamp Lighter');
+	await expect(page).toHaveURL(/\/library/);
 });
 
 test('a script saved without a name is named after the time it was saved', async ({ page }) => {
