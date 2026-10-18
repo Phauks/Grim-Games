@@ -180,7 +180,7 @@
 		width: 100%;
 		min-height: var(--tap-target);
 		padding: var(--space-1) var(--space-2);
-		border: 1px solid var(--on-sheet-muted);
+		border: 1px solid var(--on-surface-muted);
 		border-radius: var(--radius-md);
 		background: transparent;
 		color: inherit;
@@ -197,6 +197,6 @@
 		color: var(--on-reminder);
 	}
 	.empty {
-		color: var(--on-sheet-muted);
+		color: var(--on-surface-muted);
 	}
 </style>

@@ -145,6 +145,26 @@ test('tapping a player count highlights its column, and it is remembered', async
 	await expect(seven).toHaveAttribute('aria-pressed', 'true');
 	// 7 players: 5 Townsfolk, 0 Outsiders, 1 Minion, 1 Demon (wiki: Setup).
 	await expect(panel.locator('td[data-current]')).toHaveText(['5', '0', '1', '1']);
+	// The chosen column is gold, not red, and lines part the counts (Trevor, 2026-10-18).
+	const look = await panel
+		.locator('td[data-current]')
+		.first()
+		.evaluate((td) => {
+			const probe = document.createElement('div');
+			probe.style.color = 'var(--heading)';
+			td.append(probe);
+			const gold = getComputedStyle(probe).color;
+			probe.remove();
+			const head = td.closest('table')!.querySelector('thead th[scope="col"]')!;
+			return {
+				gold,
+				background: getComputedStyle(td).backgroundColor,
+				column: getComputedStyle(td).borderInlineStartStyle,
+				counts: getComputedStyle(head).borderBottomStyle
+			};
+		});
+	expect(look.background).toBe(look.gold);
+	expect([look.column, look.counts]).toEqual(['solid', 'solid']);
 	await page.reload();
 	await expect(seven).toHaveAttribute('aria-pressed', 'true');
 	await seven.tap();
@@ -317,6 +337,20 @@ test('the header shares the script from an icon and has no Code button', async (
 	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
 	await expect(qr.getByTestId('share-url')).toHaveValue(/\/play#c=\d{6}$/);
 	await expect(qr.getByTestId('share-digits')).toHaveCount(0);
+	await expect(qr.getByTestId('script-byline')).toHaveCount(0);
+});
+
+test('the share screen names the script, its author and its version', async ({ page }) => {
+	const shared = [
+		{ id: '_meta', name: 'Signed Night', author: 'Trevor', version: '1.2' },
+		'chef',
+		'imp'
+	];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	await page.getByRole('button', { name: 'Share script' }).tap();
+	// Trevor, 2026-10-18: name, author and version (when there is one) on the share screen.
+	const dialog = page.getByRole('dialog', { name: 'Share Signed Night' });
+	await expect(dialog.getByTestId('script-byline')).toHaveText('by Trevor · v1.2');
 });
 
 test('a shared link with problems opens the Script check first', async ({ page }) => {
@@ -400,6 +434,12 @@ test('a jinxed character shows its partners beside its name, and tapping shows t
 	await mark.tap();
 	const dialog = page.getByRole('dialog', { name: 'Jinxes' });
 	await expect(dialog).toContainText('Marionette ability');
+	// A faint line under each jinx (Trevor, 2026-10-18).
+	const line = await dialog
+		.locator('li')
+		.first()
+		.evaluate((li) => getComputedStyle(li).borderBottomStyle);
+	expect(line).toBe('solid');
 });
 
 test('the Script sheet can be made compact from Settings', async ({ page }) => {

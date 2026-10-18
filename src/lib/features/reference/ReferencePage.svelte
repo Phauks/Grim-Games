@@ -11,17 +11,12 @@
 		loadOfficialData
 	} from '#lib/features/characters/game-data.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import CharacterReference from './CharacterReference.svelte';
-	import NightOrderReference from './NightOrderReference.svelte';
 	import { referenceView } from './view-mode.svelte.ts';
-
-	type View = 'characters' | 'night';
 
 	let data = $state<GameData>();
 	let numeric = $state<NumericNightOrder>();
 	let error = $state<string>();
-	let view = $state<View>('characters');
 
 	// Built at runtime from the same data and rules code the app uses.
 	const entries = $derived(data ? characterReference(data, numeric) : []);
@@ -51,29 +46,18 @@
 </script>
 
 <Page title={t('reference.title')}>
-	<Tabs
-		bind:value={view}
-		label={t('reference.views')}
-		tabs={[
-			{ value: 'characters', label: t('reference.tabCharacters') },
-			{ value: 'night', label: t('reference.tabNight') }
-		]}
-	>
-		{#snippet panel(tab)}
-			<ErrorBoundary area="reference">
-				{#if error}
-					<p role="alert">{t('reference.loadError', { error })}</p>
-				{:else if !data}
-					<!-- Reserved space while the data loads, so nothing below jumps. -->
-					<div class="loading" aria-busy="true">{t('reference.loading')}</div>
-				{:else if tab === 'characters'}
-					<CharacterReference {entries} view={referenceView.current} />
-				{:else}
-					<NightOrderReference {data} {numeric} view={referenceView.current} />
-				{/if}
-			</ErrorBoundary>
-		{/snippet}
-	</Tabs>
+	<!-- One view: the table's night columns sort by night order, so no Night order tab
+		(Trevor, 2026-10-18). -->
+	<ErrorBoundary area="reference">
+		{#if error}
+			<p role="alert">{t('reference.loadError', { error })}</p>
+		{:else if !data}
+			<!-- Reserved space while the data loads, so nothing below jumps. -->
+			<div class="loading" aria-busy="true">{t('reference.loading')}</div>
+		{:else}
+			<CharacterReference {entries} view={referenceView.current} />
+		{/if}
+	</ErrorBoundary>
 </Page>
 
 <style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { typeTone, type TypeTone } from '#lib/core/data/character-type.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { ScriptJinx } from '#lib/core/rules/jinxes.ts';
@@ -53,12 +54,6 @@
 	let jinxFor = $state<Character>();
 	let jinxOpen = $state(false);
 	const nameOf = (id: string) => byId.get(id)?.name ?? id;
-	const TONES: Partial<Record<Character['type'], 'good' | 'evil'>> = {
-		townsfolk: 'good',
-		outsider: 'good',
-		minion: 'evil',
-		demon: 'evil'
-	};
 </script>
 
 {#snippet row(c: Character)}
@@ -105,7 +100,7 @@
 {/snippet}
 
 <!-- On screen every section closes from its header (Trevor); in print each is a plain heading. -->
-{#snippet section(title: string, key: string, body: Snippet, tone?: 'good' | 'evil', empty = false)}
+{#snippet section(title: string, key: string, body: Snippet, tone?: TypeTone, empty = false)}
 	{#if flat}
 		<section data-tone={tone}>
 			<h2>{title}</h2>
@@ -127,7 +122,7 @@
 			group.type === 'traveller' ? t('player.recommendedTravellers') : TYPE_PLURALS[group.type],
 			`play:${group.type}`,
 			list,
-			TONES[group.type],
+			typeTone(group.type),
 			group.type === 'traveller' && !!playing && !group.characters.some((c) => playing.has(c.id))
 		)}
 	{/each}
@@ -225,6 +220,11 @@
 	.jinx-dialog {
 		grid-template-columns: minmax(0, 1fr);
 	}
+	/* A faint line under each jinx, as in the Reference's lists (Trevor, 2026-10-18). */
+	.jinx {
+		padding-bottom: var(--space-2);
+		border-bottom: var(--card-border);
+	}
 	section h2 {
 		margin: 0 0 var(--space-2);
 		font-size: 1.1rem;
@@ -235,6 +235,12 @@
 	}
 	section[data-tone='evil'] h2 {
 		color: var(--evil);
+	}
+	section[data-tone='traveller'] h2 {
+		color: var(--traveller-text);
+	}
+	section[data-tone='loric'] h2 {
+		color: var(--loric-text);
 	}
 
 	/* Compact: name and ability side by side, more per row (Trevor approved, 2026-10-16). */

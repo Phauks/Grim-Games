@@ -14,6 +14,7 @@ import {
 	type CharacterType,
 	type ScriptMeta
 } from '#lib/core/data/types.ts';
+import type { TypeCounts } from './distribution.ts';
 
 /** A homebrew character in TPI's script format (`id`, `name`, `team`, `ability`, ...). */
 export type HomebrewEntry = Readonly<Record<string, unknown>>;
@@ -79,3 +80,17 @@ export function builtScriptJson(
 		)
 	];
 }
+
+/** A full script, or a Teensyville one for 5 or 6 players. */
+export type ScriptSize = 'full' | 'teensyville';
+
+/**
+ * How many of each type a script usually has, shown beside the builder's counts as a guide,
+ * never a limit (Trevor, 2026-10-18). Full: 13, 4, 4, 4, as TPI's "Behind the Curtain #6"
+ * gives for a full script. Teensyville: 6, 2, 2, 2, from the BotC wiki's Teensyville page
+ * (TPI's same post says 1 Demon; the wiki is our rules authority).
+ */
+export const EXPECTED_SCRIPT_COUNTS: Readonly<Record<ScriptSize, Readonly<TypeCounts>>> = {
+	full: { townsfolk: 13, outsider: 4, minion: 4, demon: 4 },
+	teensyville: { townsfolk: 6, outsider: 2, minion: 2, demon: 2 }
+};

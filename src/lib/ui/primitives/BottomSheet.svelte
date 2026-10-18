@@ -190,7 +190,7 @@
 	}
 	:global([data-scope='drawer'][data-part='description']) {
 		margin: var(--space-1) 0 0;
-		color: var(--on-sheet-muted);
+		color: var(--on-surface-muted);
 	}
 
 	header {

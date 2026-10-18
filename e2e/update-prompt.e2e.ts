@@ -178,3 +178,73 @@ test('Check for updates brings back the update card after Later', async ({ page 
 	await expect(dialog.getByTestId('update-check-result')).toHaveText(/ · Update ready$/);
 	await expect(banner).toBeVisible();
 });
+
+test('a check that finds a build shows its download, then Update ready', async ({ page }) => {
+	// Trevor (2026-10-18): "don't just say checking, give status of download".
+	await page.addInitScript(() => {
+		const listeners: ((event: MessageEvent) => void)[] = [];
+		const stateListeners: (() => void)[] = [];
+		const active = { state: 'activated', postMessage() {}, addEventListener() {} };
+		const next = {
+			state: 'installing',
+			postMessage() {},
+			addEventListener: (_: string, listener: () => void) => stateListeners.push(listener),
+			removeEventListener() {}
+		};
+		const registration = {
+			waiting: null as unknown,
+			installing: null as unknown,
+			active,
+			addEventListener() {},
+			update: () => {
+				registration.installing = next;
+				return Promise.resolve();
+			}
+		};
+		Object.defineProperty(navigator, 'serviceWorker', {
+			value: {
+				controller: active,
+				ready: Promise.resolve(registration),
+				register: () => Promise.resolve(registration),
+				getRegistration: () => Promise.resolve(registration),
+				startMessages() {},
+				addEventListener: (type: string, listener: (event: MessageEvent) => void) => {
+					if (type === 'message') listeners.push(listener);
+				},
+				removeEventListener() {}
+			}
+		});
+		// The test drives the new worker: progress messages, then installed.
+		Object.assign(window, {
+			swProgress: (done: number, total: number) =>
+				listeners.forEach((listener) =>
+					listener(
+						new MessageEvent('message', { data: { type: 'PRECACHE_PROGRESS', done, total } })
+					)
+				),
+			swInstalled: () => {
+				next.state = 'installed';
+				registration.installing = null;
+				registration.waiting = next;
+				stateListeners.forEach((listener) => listener());
+			}
+		});
+	});
+	await page.goto('/');
+	const dialog = await openAbout(page);
+	const result = dialog.getByTestId('update-check-result');
+	const button = dialog.getByRole('button', { name: 'Check for updates' });
+	await button.tap();
+	await expect(result).toHaveText('Downloading update…');
+	await expect(button).toBeDisabled();
+	const box = await result.boundingBox();
+	await page.evaluate(() =>
+		(window as unknown as { swProgress: (d: number, t: number) => void }).swProgress(2, 5)
+	);
+	await expect(result).toHaveText('Downloading update… 40%');
+	// In place, on the version's line: nothing moves.
+	expect((await result.boundingBox())!.y).toBeCloseTo(box!.y, 0);
+	await page.evaluate(() => (window as unknown as { swInstalled: () => void }).swInstalled());
+	await expect(result).toHaveText(/ · Update ready$/);
+	await expect(page.getByTestId('update-banner')).toBeVisible();
+});

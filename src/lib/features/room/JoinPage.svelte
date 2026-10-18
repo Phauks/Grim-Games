@@ -130,8 +130,7 @@
 					inputmode="numeric"
 					autocomplete="off"
 					enterkeyhint="go"
-					placeholder="482 913"
-					maxlength="7"
+					maxlength="12"
 				/>
 			</ClearableField>
 			<Button type="submit" variant="accent" disabled={!normaliseRoomCode(typed)}>

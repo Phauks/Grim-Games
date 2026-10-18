@@ -35,6 +35,8 @@
 	import { loadLinkedScript, loadScriptChoice, scriptChoices } from './script-choices.svelte.ts';
 	import { campaigns } from './campaigns.ts';
 	import { continueCampaign, startHref, startInMode, startTowns } from './start.ts';
+	import { townGroup } from './town-groups.ts';
+	import { townSetupHref } from './town-setup.ts';
 
 	/**
 	 * New game's Game modes area (Trevor, 2026-10-17: modes are their own area because they
@@ -186,7 +188,10 @@
 					sizes: sizes ?? Array.from({ length: towns.count }, () => total),
 					create: (s, n) => OpenGame.create(data, s, n)
 				});
-				await goto(resolve('/towns/[groupId]', { groupId }));
+				// Straight into town 1's setup; each bag built opens the next (Trevor, 2026-10-18).
+				const group = townGroup(groupId);
+				if (group) await goto(townSetupHref(group, 0, sizes?.[0] ?? total));
+				else await goto(resolve('/towns/[groupId]', { groupId }));
 				return;
 			}
 			const open = await startInMode({

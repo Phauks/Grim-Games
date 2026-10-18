@@ -90,6 +90,8 @@ export const USERNAME_MAX = 24;
 export interface SessionInfo {
 	user: AccountUser | null;
 	delivery: EmailDelivery;
+	/** The account's type: an admin can open the reports inbox (Trevor, 2026-10-18). */
+	admin?: boolean;
 }
 
 /** `POST /api/auth/start` body. */

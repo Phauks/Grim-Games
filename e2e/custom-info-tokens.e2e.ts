@@ -122,10 +122,16 @@ test('in a game, a character card is offered only while its character is in play
 	await expect(page.getByRole('button', { name: /^Chef card/ })).toHaveCount(0);
 });
 
+/** Picks what a new card asks to fill in. */
+async function fillIn(page: Page, kind: string) {
+	await page.getByRole('combobox', { name: 'Fill in' }).tap();
+	await page.getByRole('option', { name: kind, exact: true }).tap();
+}
+
 test('a fill-in card asks for its word each time and shows it', async ({ page }) => {
 	await page.goto('/info-tokens');
 	await newCard(page, 'Your score is');
-	await page.getByText('Fill in when shown').tap();
+	await fillIn(page, 'Words');
 	await expect(page.getByRole('figure', { name: 'Preview' })).toContainText('…');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 
@@ -135,6 +141,64 @@ test('a fill-in card asks for its word each time and shows it', async ({ page })
 	const shown = page.getByTestId('show-to-player');
 	await expect(shown.getByRole('heading')).toHaveText('Your score is');
 	await expect(shown).toContainText('42');
+});
+
+test('each tile says what it will ask for before it is tapped', async ({ page }) => {
+	await page.goto('/info-tokens');
+	// Icons, each named by its words (Trevor, 2026-10-18), the quick card marked apart.
+	const asks = (name: string) =>
+		page.getByRole('button', { name, exact: true }).getByTestId('info-token-asks');
+	await expect(asks('These characters are not in play').getByRole('img')).toHaveAccessibleName(
+		'Asks for up to 3 characters'
+	);
+	await expect(asks('You are').getByRole('img')).toHaveAccessibleName('Asks for 1 character');
+	await expect(asks('Your number is').getByRole('img')).toHaveAccessibleName(
+		'Asks for a number from 0'
+	);
+	await expect(asks('Yes/No').getByRole('img')).toHaveAccessibleName('Asks for one of: Yes, No');
+	await expect(asks('This is the Demon')).toHaveCount(0);
+	await expect(asks('Quick card').getByRole('img')).toHaveCount(2);
+	await expect(asks('Quick card').getByRole('img').first()).toHaveAccessibleName(
+		'Used once, never saved'
+	);
+});
+
+test("a custom card's answers, number range and characters are each set on their own", async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	await newCard(page, 'Your colour is');
+	await fillIn(page, 'Choices');
+	await page.getByRole('textbox', { name: 'Answer 1' }).fill('Red');
+	await page.getByRole('textbox', { name: 'Answer 2' }).fill('Blue');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const tile = page.getByRole('button', { name: 'Your colour is', exact: true });
+	await expect(tile.getByRole('img')).toHaveAccessibleName('Asks for one of: Red, Blue');
+	await tile.tap();
+	await page.getByRole('combobox', { name: 'Answer' }).tap();
+	await page.getByRole('option', { name: 'Blue', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.locator('.detail')).toHaveText('Blue');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+
+	await newCard(page, 'You saw this many');
+	await fillIn(page, 'Number');
+	await page.getByRole('textbox', { name: 'Lowest' }).fill('1');
+	await page.getByRole('textbox', { name: 'Highest' }).fill('3');
+	await page.getByRole('button', { name: 'More characters' }).tap();
+	await page.getByRole('button', { name: 'More characters' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const counted = page.getByRole('button', { name: 'You saw this many', exact: true });
+	await expect(counted.getByRole('img').first()).toHaveAccessibleName(
+		'Asks for a number from 1 to 3'
+	);
+	await expect(counted.getByRole('img').last()).toHaveAccessibleName('Asks for up to 2 characters');
+	// Saved and read back the same after a reload.
+	await page.reload();
+	await expect(counted.getByRole('img')).toHaveCount(2);
+	await page.getByRole('button', { name: 'Edit You saw this many' }).tap();
+	await expect(page.getByRole('textbox', { name: 'Highest' })).toHaveValue('3');
 });
 
 test('a saved colour can be changed and cleared, with bold kept', async ({ page }) => {

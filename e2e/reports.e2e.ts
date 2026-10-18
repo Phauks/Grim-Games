@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 async function signIn(page: Page, email: string) {
 	await page.goto('/account');
@@ -103,6 +104,13 @@ test('an admin account opens the inbox without the key; the key holder names adm
 	await expect(admins.getByTestId('admins')).toContainText(email);
 	await expect(admins.getByLabel('Add an admin by sign-in email')).toHaveValue('');
 
+	// Their account is now an Admin, with Reports in the menu (Trevor, 2026-10-18).
+	await phone.goto('/account');
+	await expect(phone.getByTestId('account-type')).toHaveText('Admin');
+	await phone.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	await phone.getByRole('dialog', { name: APP_NAME }).getByRole('link', { name: 'Reports' }).tap();
+	await expect(phone).toHaveURL(/\/reports$/);
+
 	// Now their account opens the inbox with no key prompt.
 	await phone.goto('/reports');
 	await expect(phone.getByTestId('reports')).toBeVisible();
@@ -119,6 +127,11 @@ test('an admin account opens the inbox without the key; the key holder names adm
 
 test('a signed-in account that is not an admin is refused', async ({ page }) => {
 	await signIn(page, `not-admin-${Date.now()}@example.com`);
+	await expect(page.getByTestId('account-type')).toHaveText('User');
+	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	const menu = page.getByRole('dialog', { name: APP_NAME });
+	await expect(menu.getByRole('link', { name: 'Library' })).toBeVisible();
+	await expect(menu.getByRole('link', { name: 'Reports' })).toHaveCount(0);
 	expect((await page.request.get('/api/reports')).status()).toBe(404);
 	expect((await page.request.get('/api/reports/admins')).status()).toBe(404);
 });
