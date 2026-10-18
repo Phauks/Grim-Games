@@ -34,14 +34,14 @@
 	import type { Shareable } from '#lib/features/scripts/share-codes.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
-	import SearchField from '#lib/ui/primitives/SearchField.svelte';
+	import { readStored, writeStored } from '#lib/ui/stored.ts';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import CharacterPane from './CharacterPane.svelte';
 	import CollectionPane from './CollectionPane.svelte';
 	import FolderBar from './FolderBar.svelte';
 	import FolderNameDialog from './FolderNameDialog.svelte';
-	import ItemPane from './ItemPane.svelte';
+	import ItemPane, { setLibraryWindow } from './ItemPane.svelte';
 	import LibrarySidebar, { type Place } from './LibrarySidebar.svelte';
 	import NameDialog from './NameDialog.svelte';
 	import { timestampName } from '#lib/core/timestamp-name.ts';
@@ -101,6 +101,30 @@
 	const sided = new MediaQuery('min-width: 40rem', true);
 	/** The open item sits beside the list; below this it fills the screen. */
 	const roomy = new MediaQuery('min-width: 75rem', true);
+
+	/**
+	 * Preview (Trevor, 2026-10-18): on, the open item shows beside the list; off, the list takes
+	 * the room and an item opens in a window over the page. Remembered on this device. Where
+	 * nothing fits beside the list, items always open in a window, so the Library's button
+	 * rests; a picker never previews.
+	 */
+	const PREVIEW_KEY = 'grim-games:library-preview';
+	let preview = $state(readStored<boolean>(PREVIEW_KEY) !== false);
+	const previewing = $derived(roomy.current && !onpick && preview);
+	/** Whether the item shows beside the list now (the Preview button's pressed state). */
+	export function isPreviewing() {
+		return previewing;
+	}
+	/** Whether there is room for Preview at all. */
+	export function canPreview() {
+		return roomy.current && !onpick;
+	}
+	export function togglePreview() {
+		preview = !preview;
+		writeStored(PREVIEW_KEY, preview);
+		// The previewed item goes with the preview rather than jumping into a window.
+		if (!preview) openKey = undefined;
+	}
 
 	// ---- What the Library holds ----
 
@@ -347,6 +371,26 @@
 		}
 	};
 
+	/**
+	 * The item in a window over the page (Trevor, 2026-10-18: "you should be able to click into
+	 * a file to see its contents in a modal"), whether or not Preview is on. Closing the window
+	 * keeps the item open in the preview.
+	 */
+	let windowOpen = $state(false);
+	function openWindow(key: string) {
+		openKey = key;
+		windowOpen = true;
+	}
+	setLibraryWindow(() => (windowOpen = true));
+	const isOpen = (inline: boolean) => paneOpen.open && (inline || !previewing || windowOpen);
+	function setOpen(inline: boolean, value: boolean) {
+		if (!inline && previewing) windowOpen = value;
+		else paneOpen.open = value;
+	}
+	$effect(() => {
+		if (!paneOpen.open) windowOpen = false;
+	});
+
 	function activate(row: Row) {
 		if (row.kind === 'folder') {
 			currentFolder = row.folderId;
@@ -404,7 +448,7 @@
 	<div
 		class="manager"
 		class:sided={sided.current}
-		class:roomy={roomy.current && !onpick}
+		class:roomy={previewing}
 		class:picking={!!onpick}
 	>
 		{#if sided.current}
@@ -435,17 +479,16 @@
 
 		<!-- One toolbar over the list (Trevor, 2026-10-18: the parts should feel connected). -->
 		<div class="toolbar">
-			<SearchField
-				bind:value={term}
-				label={t('library.search')}
-				placeholder={t('library.searchPlaceholder')}
+			<FolderBar
+				bind:current={currentFolder}
+				bind:term
+				searching={!browsing || place === 'campaigns'}
 			/>
-			<FolderBar bind:current={currentFolder} searching={!browsing || place === 'campaigns'} />
 		</div>
 
 		<div class="files">
 			{#if place === 'campaigns'}
-				<CampaignScripts {data} {term} />
+				<CampaignScripts {data} {term} frameless={sided.current} />
 			{:else}
 				<div data-testid="library-table">
 					<DataTable
@@ -461,12 +504,13 @@
 						pageSize={100}
 						hideKey="library"
 						empty={t('common.none')}
+						frameless={sided.current}
 					/>
 				</div>
 			{/if}
 		</div>
 
-		{#if roomy.current && !onpick}
+		{#if previewing}
 			<div class="pane">
 				{@render pane(true)}
 			</div>
@@ -474,16 +518,23 @@
 	</div>
 </ErrorBoundary>
 
-{#if !roomy.current && !onpick}
+<!-- The open item in a window: always without Preview, and from the preview when opened. -->
+{#if !onpick && (!previewing || windowOpen)}
 	{@render pane(false)}
 {/if}
 
 {#snippet pane(inline: boolean)}
 	{#if openScript}
-		<ScriptPane bind:open={paneOpen.open} row={openScript} {data} {inline} onchanged={openItem} />
+		<ScriptPane
+			bind:open={() => isOpen(inline), (v) => setOpen(inline, v)}
+			row={openScript}
+			{data}
+			{inline}
+			onchanged={openItem}
+		/>
 	{:else if openCharacter}
 		<CharacterPane
-			bind:open={paneOpen.open}
+			bind:open={() => isOpen(inline), (v) => setOpen(inline, v)}
 			saved={openCharacter}
 			{data}
 			{inline}
@@ -491,7 +542,7 @@
 		/>
 	{:else if openCollection}
 		<CollectionPane
-			bind:open={paneOpen.open}
+			bind:open={() => isOpen(inline), (v) => setOpen(inline, v)}
 			collection={openCollection}
 			{data}
 			{inline}
@@ -511,6 +562,7 @@
 			data-drop-folder={row.folderId}
 			data-kind={row.kind}
 			onclick={() => activate(row)}
+			ondblclick={() => !onpick && row.kind !== 'folder' && openWindow(row.key)}
 			use:dragToFolder={{
 				source: {
 					id: row.folderId ?? row.key,
@@ -605,9 +657,9 @@
 		border-bottom: var(--card-border);
 		border-inline-start: var(--card-border);
 	}
+	/* The table runs to the column's walls (Trevor, 2026-10-18: not a separate instance). */
 	.sided .files {
 		align-self: stretch;
-		padding: var(--space-2) var(--space-3) var(--space-3);
 		border-inline-start: var(--card-border);
 	}
 	.sided .pane {

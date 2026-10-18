@@ -150,10 +150,9 @@
 	li[data-status='unconfirmed'] .status {
 		color: var(--evil);
 	}
+	/* The file runs at full length in the dialog's own scroll, never a small box of its own. */
 	pre {
-		max-height: 60vh;
 		margin: 0;
-		overflow: auto;
 		font-size: 0.85rem;
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;

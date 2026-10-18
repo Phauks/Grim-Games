@@ -48,6 +48,14 @@ async function newFolder(page: Page, name: string) {
 	await expect(dialog).toHaveCount(0);
 }
 
+/** The search opens from its button beside the folder controls (Trevor, 2026-10-18). */
+async function search(page: Page, text: string) {
+	const box = page.getByRole('searchbox', { name: 'Search the Library' });
+	if (!(await box.isVisible()))
+		await page.getByRole('button', { name: 'Search the Library' }).tap();
+	await box.fill(text);
+}
+
 async function noSidewaysScroll(page: Page) {
 	const overflow = await page.evaluate(
 		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -101,7 +109,7 @@ test('scripts sit in folders like files, and folders open, nest, move and delete
 
 	// Search finds items in every folder and says where each one is.
 	await crumbs(page).getByRole('button', { name: 'Library' }).tap();
-	await page.getByPlaceholder('Name, author, character or ability').fill('washerwoman');
+	await search(page, 'washerwoman');
 	await expect(row(page)).toContainText('Club night / Teensy');
 	await page.getByRole('searchbox', { name: 'Search the Library' }).fill('');
 
@@ -224,13 +232,13 @@ test('a saved script can be renamed in the Library and still knows where it came
 	await page.reload();
 	await expect(row(page, 'Club storm')).toBeVisible();
 	// Its own name still finds it.
-	await page.getByRole('searchbox', { name: 'Search the Library' }).fill('storm front');
+	await search(page, 'storm front');
 	await expect(row(page, 'Club storm')).toBeVisible();
 
 	// Empty Campaigns look like the rest: the same table, saying None (Trevor, 2026-10-18).
 	await sidebar(page).getByRole('button', { name: 'Campaigns' }).tap();
 	await expect(page.getByTestId('library-campaigns').getByRole('table')).toContainText('None');
-	await expect(page.getByRole('searchbox', { name: 'Search the Library' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Search the Library' })).toBeVisible();
 });
 
 test('a script added inside an open folder goes in that folder', async ({ page }) => {
@@ -471,6 +479,87 @@ test.describe('in a computer window', () => {
 		await expect(row(page)).toBeVisible();
 		await noSidewaysScroll(page);
 	});
+
+	test('Preview shows or hides the pane, and any item opens in a window', async ({ page }) => {
+		// Trevor (2026-10-18): "add a preview button ... regardless, you should be able to click
+		// into a file to see its contents in a modal".
+		await page.goto('/library');
+		await addStormFront(page);
+		const toggle = page.getByRole('button', { name: 'Preview', exact: true });
+		await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+		// One line of headers beside the pane (Trevor's screenshot had Tags wrapping under).
+		// (A narrow table's own row of moved filters, `th.moved`, sits under it by design.)
+		const tops = await table(page)
+			.locator('thead th:not(.moved)')
+			.evaluateAll((cells) =>
+				cells.flatMap((c) => {
+					const box = c.getBoundingClientRect();
+					return box.width > 0 ? [Math.round(box.top)] : [];
+				})
+			);
+		expect(new Set(tops).size).toBe(1);
+
+		// From the preview, Open puts the same item in a window; closing it keeps the preview.
+		await pane(page, 'Storm Front').getByRole('button', { name: 'Open in a window' }).click();
+		const window = page.getByRole('dialog', { name: 'Storm Front' });
+		await expect(window.getByTestId('script-sheet')).toContainText('Washerwoman');
+		await window.getByRole('button', { name: 'Close' }).click();
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+		await expect(page.getByRole('region', { name: 'Storm Front' })).toBeVisible();
+		// A double-click opens the window too.
+		await row(page).dblclick();
+		await expect(window).toBeVisible();
+		await window.getByRole('button', { name: 'Close' }).click();
+
+		// Off: no pane, the list takes the room, and a tap opens the window. Remembered.
+		const listWidth = await table(page).evaluate((t) => t.getBoundingClientRect().width);
+		await toggle.click();
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		await expect(page.getByTestId('library-pane')).toHaveCount(0);
+		expect(await table(page).evaluate((t) => t.getBoundingClientRect().width)).toBeGreaterThan(
+			listWidth
+		);
+		await page.reload();
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		await row(page).click();
+		await expect(window.getByTestId('script-sheet')).toContainText('Washerwoman');
+		await window.getByRole('button', { name: 'Close' }).click();
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+		await toggle.click();
+		await expect(page.getByTestId('library-pane')).toBeVisible();
+	});
+});
+
+test('search opens from its button over the folder path, and folds away', async ({ page }) => {
+	// Trevor (2026-10-18): "move search next to the pencil icon, when clicked, expand".
+	await page.goto('/library');
+	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
+	const button = page.getByRole('button', { name: 'Search the Library' });
+	const box = page.getByRole('searchbox', { name: 'Search the Library' });
+	await expect(box).toBeHidden();
+	// Where nothing fits beside the list, items always open in a window: Preview rests.
+	await expect(page.getByRole('button', { name: 'Preview', exact: true })).toBeDisabled();
+	const listTop = () => table(page).evaluate((t) => t.getBoundingClientRect().top + scrollY);
+	const before = await listTop();
+
+	await button.tap();
+	await expect(box).toBeFocused();
+	await box.fill('nothing like it');
+	await expect(table(page)).toContainText('None');
+	// Opened in the path's place: the list doesn't move.
+	expect(await listTop()).toBe(before);
+	// A typed search stays open and marks the button.
+	await page.getByRole('heading', { level: 1 }).tap();
+	await expect(box).toBeVisible();
+	await expect(button).toHaveAttribute('aria-pressed', 'true');
+	// Esc clears it (as every search field does), then a second Esc folds it away.
+	await box.press('Escape');
+	await expect(box).toHaveValue('');
+	await box.press('Escape');
+	await expect(box).toBeHidden();
+	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	await expect(row(page)).toBeVisible();
+	await expect(crumbs(page)).toHaveText('Library');
 });
 
 test('a script shows the same details as in Search, and plays from there', async ({ page }) => {

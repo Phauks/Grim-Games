@@ -71,6 +71,7 @@ import ph_flower_light from '~icons/ph/flower-light';
 import ph_folder_light from '~icons/ph/folder-light';
 import ph_folder_open_light from '~icons/ph/folder-open-light';
 import ph_folder_simple_light from '~icons/ph/folder-simple-light';
+import ph_frame_corners_light from '~icons/ph/frame-corners-light';
 import ph_funnel_light from '~icons/ph/funnel-light';
 import ph_gear_light from '~icons/ph/gear-light';
 import ph_gear_six_light from '~icons/ph/gear-six-light';
@@ -142,6 +143,7 @@ import ph_shield_light from '~icons/ph/shield-light';
 import ph_shield_check_light from '~icons/ph/shield-check-light';
 import ph_shield_star_light from '~icons/ph/shield-star-light';
 import ph_shuffle_light from '~icons/ph/shuffle-light';
+import ph_sidebar_simple_light from '~icons/ph/sidebar-simple-light';
 import ph_sign_in_light from '~icons/ph/sign-in-light';
 import ph_skull_light from '~icons/ph/skull-light';
 import ph_sliders_light from '~icons/ph/sliders-light';
@@ -156,6 +158,7 @@ import ph_sparkle_light from '~icons/ph/sparkle-light';
 import ph_speaker_high_light from '~icons/ph/speaker-high-light';
 import ph_spinner_light from '~icons/ph/spinner-light';
 import ph_square_light from '~icons/ph/square-light';
+import ph_square_split_horizontal_light from '~icons/ph/square-split-horizontal-light';
 import ph_star_light from '~icons/ph/star-light';
 import ph_sun_light from '~icons/ph/sun-light';
 import ph_sun_horizon_light from '~icons/ph/sun-horizon-light';
@@ -262,6 +265,7 @@ const icons: IconMap = {
 	'ph:folder-light': ph_folder_light,
 	'ph:folder-open-light': ph_folder_open_light,
 	'ph:folder-simple-light': ph_folder_simple_light,
+	'ph:frame-corners-light': ph_frame_corners_light,
 	'ph:funnel-light': ph_funnel_light,
 	'ph:gear-light': ph_gear_light,
 	'ph:gear-six-light': ph_gear_six_light,
@@ -333,6 +337,7 @@ const icons: IconMap = {
 	'ph:shield-check-light': ph_shield_check_light,
 	'ph:shield-star-light': ph_shield_star_light,
 	'ph:shuffle-light': ph_shuffle_light,
+	'ph:sidebar-simple-light': ph_sidebar_simple_light,
 	'ph:sign-in-light': ph_sign_in_light,
 	'ph:skull-light': ph_skull_light,
 	'ph:sliders-light': ph_sliders_light,
@@ -347,6 +352,7 @@ const icons: IconMap = {
 	'ph:speaker-high-light': ph_speaker_high_light,
 	'ph:spinner-light': ph_spinner_light,
 	'ph:square-light': ph_square_light,
+	'ph:square-split-horizontal-light': ph_square_split_horizontal_light,
 	'ph:star-light': ph_star_light,
 	'ph:sun-light': ph_sun_light,
 	'ph:sun-horizon-light': ph_sun_horizon_light,

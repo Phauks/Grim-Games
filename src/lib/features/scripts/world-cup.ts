@@ -39,9 +39,10 @@ export interface WorldCupEntry {
 	stage: WorldCupStage;
 	/**
 	 * The script's logo when its BotC Scripts JSON may lack one: TPI hosts every 2025 finalist's
-	 * logo at release.botc.app/wc25/<key>/logo.webp, the address Binary Supernovae's own final
-	 * JSON names in `_meta.logo` (findings: /mnt/project-files/script-logos/missing-logos.md).
-	 * Loaded from there at runtime, never copied.
+	 * logo at release.botc.app/wc25/<key>/logo.webp, the address its own copy of the script
+	 * (wc25/<key>/script.json in TPI's botc-release repository) names in `_meta.logo`
+	 * (findings: /mnt/project-files/script-logos/missing-logos.md). Loaded from there at
+	 * runtime, never copied.
 	 */
 	logo?: string;
 }
@@ -114,13 +115,13 @@ export const WORLD_CUPS: Record<WorldCupYear, WorldCup> = {
 			entry(6457, 'Binary Supernovae', 'Hystrex', 'quarterFinal', wc25Logo('binarysupernovae')),
 			entry(6026, 'The River Styx', 'Rhea', 'finalist', wc25Logo('riverstyx')),
 			entry(6407, 'Witch Hunt', 'Nick B', 'finalist', wc25Logo('witchhunt')),
-			entry(6741, 'One Day More', 'Robe', 'finalist'),
+			entry(6741, 'One Day More', 'Robe', 'finalist', wc25Logo('1daymore')),
 			entry(6742, 'Council of the Dead', 'Ember', 'finalist', wc25Logo('deadcouncil')),
 			entry(6799, 'I see dead people', 'A Terrifying Wizard', 'finalist', wc25Logo('deadpeople')),
 			entry(6707, 'This Is Not My Beautiful House', 'JC', 'finalist', wc25Logo('beautifulhouse')),
 			entry(6773, 'The Warrens', 'Zets', 'finalist', wc25Logo('warrens')),
 			entry(6779, 'Show Me Wonders', 'DinosaurSatan', 'finalist', wc25Logo('wonders')),
-			entry(6679, 'Off to see the Wizard', 'CrispyDuck', 'finalist')
+			entry(6679, 'Off to see the Wizard', 'CrispyDuck', 'finalist', wc25Logo('offwizard'))
 		]
 	}
 };

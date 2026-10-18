@@ -34,9 +34,11 @@
 		compact?: boolean;
 		/** Show a character to the player. */
 		onShow?: (characterId: CharacterId) => void;
+		/** Show the "Your number is" info token with a suggested number (a number step). */
+		onShowNumber?: (n: number) => void;
 	}
 
-	let { grimoire, step, compact = false, onShow }: Props = $props();
+	let { grimoire, step, compact = false, onShow, onShowNumber }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -213,6 +215,9 @@
 		{#if a.kind === 'character' && onShow}
 			{@const id = a.value}
 			<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
+		{:else if a.kind === 'number' && onShowNumber}
+			{@const n = a.value}
+			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
 		{/if}
 	</li>
 {/snippet}
@@ -260,6 +265,10 @@
 										>{:else if v.reason === 'unreliable'}<span class="tag warn"
 											><Icon name="warning" />Not reliable</span
 										>{:else if v.reason === 'vortox'}<span class="tag warn">Vortox</span>{/if}
+									{#if v.number !== undefined && onShowNumber}
+										{@const n = v.number}
+										<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+									{/if}
 								</li>
 							{/each}
 						</ul>

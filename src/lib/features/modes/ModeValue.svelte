@@ -29,14 +29,12 @@
 <!-- eslint-disable svelte/no-navigation-without-resolve -- external https source links -->
 {#if field === 'cite' && typeof value === 'string'}
 	<a href={safeUrl(value)} target="_blank" rel="noopener noreferrer">{t('modes.rules')}</a>
+{:else if Array.isArray(value) && value.length === 0}
+	{t('common.none')}
 {:else if CHARACTER_FIELDS.has(field) && Array.isArray(value)}
-	{#if value.length === 0}
-		{t('common.none')}
-	{:else}
-		<span class="badges">
-			{#each value as id (id)}<CharacterBadge characterId={String(id)} inline />{/each}
-		</span>
-	{/if}
+	<span class="badges">
+		{#each value as id (id)}<CharacterBadge characterId={String(id)} inline />{/each}
+	</span>
 {:else if Array.isArray(value) && value.every((v) => typeof v === 'number')}
 	{value.join(SEQUENCE_FIELDS.has(field) ? ' → ' : ', ')}
 {:else if Array.isArray(value) && value.every((v) => typeof v === 'string')}
@@ -44,34 +42,33 @@
 {:else if isLink(value)}
 	<a href={safeUrl(value.url)} target="_blank" rel="noopener noreferrer">{value.title}</a>
 {:else if Array.isArray(value)}
-	{#if value.length === 0}
-		{t('common.none')}
-	{:else}
-		<!-- Several entries of one field: numbered, each set apart. -->
-		<ol class="items" class:single={value.length === 1} role="list">
-			{#each value as item, i (i)}<li><Self {field} value={item} /></li>{/each}
-		</ol>
-	{/if}
+	<!-- Several entries of one field: numbered, each set apart. -->
+	<ol class="items" class:single={value.length === 1} role="list">
+		{#each value as item, i (i)}<li><Self {field} value={item} /></li>{/each}
+	</ol>
 {:else if isRecord(value)}
 	{#if field === 'onlyFor' || ('characterId' in value && 'type' in value)}
 		<CharacterBadge characterId={String(value.characterId)} inline />
 		{modeLabel('value', String(value.type))}
 	{:else}
-		<dl>
-			{#each Object.entries(value) as [key, inner] (key)}
-				<!-- One row per field, so a label and its value read together. -->
-				<div class="row">
-					<dt>{fieldLabel(field, key)}</dt>
-					<dd>
-						{#if key === 'kind' && typeof inner === 'string'}
-							{modeLabel('kind', inner)}
-						{:else}
-							<Self field={key} value={inner} />
-						{/if}
-					</dd>
-				</div>
-			{/each}
-		</dl>
+		<!-- One row per field, so a label and its value read together, as a table (Trevor,
+			2026-10-18: rows were hard to parse); a field inside a field is a table in its cell. -->
+		<table class="facts">
+			<tbody>
+				{#each Object.entries(value) as [key, inner] (key)}
+					<tr>
+						<th scope="row">{fieldLabel(field, key)}</th>
+						<td>
+							{#if key === 'kind' && typeof inner === 'string'}
+								{modeLabel('kind', inner)}
+							{:else}
+								<Self field={key} value={inner} />
+							{/if}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	{/if}
 {:else if typeof value === 'boolean'}
 	{value ? t('modes.yes') : t('modes.no')}
@@ -84,31 +81,32 @@
 <!-- eslint-enable svelte/no-navigation-without-resolve -->
 
 <style>
-	dl {
-		display: grid;
-		margin: 0;
+	table {
+		width: 100%;
+		border-collapse: collapse;
 	}
-	.row {
-		display: grid;
-		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-		gap: var(--space-3);
-		padding: var(--space-1) 0;
-		border-bottom: 1px solid var(--border);
+	th,
+	td {
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid var(--border);
+		text-align: start;
+		vertical-align: top;
 	}
-	.row:last-child {
-		border-bottom: 0;
+	/* Labels break only between words; values may break anywhere (long links). */
+	td {
+		overflow-wrap: anywhere;
 	}
-	/* A field inside a field: indented under its label's value with a rule. */
-	dd :global(dl) {
-		padding-inline-start: var(--space-2);
-		border-inline-start: 2px solid var(--border);
-	}
-	dt {
+	th {
+		overflow-wrap: break-word;
 		color: var(--on-surface-muted);
+		font-weight: normal;
 	}
-	dd {
-		margin: 0;
-		min-width: 0;
+	.facts th {
+		width: 40%;
+	}
+	/* A table inside a cell sizes its labels to their words. */
+	td .facts th {
+		width: auto;
 	}
 	ol {
 		display: grid;

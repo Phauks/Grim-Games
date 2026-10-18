@@ -31,6 +31,8 @@ export const library = {
 	'library.kindName.collection': 'Character Collection',
 	'library.characterCount': { one: '{count} character', other: '{count} characters' },
 	'library.pane': 'Open item',
+	'library.preview': 'Preview',
+	'library.openWindow': 'Open in a window',
 	'library.paneEmpty': 'None',
 	'library.newCollection': 'New collection',
 	'library.chooseCharacters': 'Choose characters',

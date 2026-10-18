@@ -170,6 +170,8 @@ export const modes = {
 	// The pool's rows are the most of each type, drawn from up to its count in all.
 	'modes.field.pool.extras': 'Most of each type',
 	'modes.field.pool.count': 'Hidden extras in all',
+	'modes.field.min': 'Fewest',
+	'modes.field.max': 'Most',
 	'modes.field.announceRange': 'Range may be announced',
 	'modes.field.startingScript': 'Starting script',
 	'modes.field.scripts': 'Scripts',

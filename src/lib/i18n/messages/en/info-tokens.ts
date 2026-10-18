@@ -14,6 +14,10 @@ export const infoTokens = {
 	'info-tokens.asks.numberTo': 'Asks for a number up to {max}',
 	'info-tokens.asks.numberRange': 'Asks for a number from {min} to {max}',
 	'info-tokens.asks.choices': 'Asks for one of: {options}',
+	'info-tokens.asks.charactersExactly': {
+		one: 'Asks for {count} character',
+		other: 'Asks for {count} characters'
+	},
 	'info-tokens.asks.characters': {
 		one: 'Asks for {count} character',
 		other: 'Asks for 1 to {count} characters'
@@ -30,6 +34,9 @@ export const infoTokens = {
 	'info-tokens.choiceRemove': 'Remove answer {number}',
 	'info-tokens.choiceAdd': 'Add answer',
 	'info-tokens.askCharacters': 'Characters to show',
+	'info-tokens.exactly': 'Always this many',
+	'info-tokens.notInPlay': 'Only characters not in play',
+	'info-tokens.answerOnly': 'Show only the answer',
 	'info-tokens.fewer': 'Fewer characters',
 	'info-tokens.more': 'More characters',
 	'info-tokens.answer': 'Answer',
