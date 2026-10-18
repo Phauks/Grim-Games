@@ -67,6 +67,8 @@
 		onNone?: () => void;
 		/** Types whose group is listed even with nothing in it, showing "None", unless searching. */
 		keepTypes?: readonly CharacterType[];
+		/** Types whose group starts closed every time (Collapsible's `startClosed`). */
+		closedTypes?: readonly CharacterType[];
 		/** Extra controls in a type group's header, e.g. setup's All Travellers. */
 		groupAside?: Snippet<[CharacterType]>;
 	}
@@ -89,6 +91,7 @@
 		item,
 		onNone,
 		keepTypes = [],
+		closedTypes = [],
 		groupAside
 	}: Props = $props();
 
@@ -188,6 +191,7 @@
 				storageKey="{collapsibleKey}:{group.type}"
 				forceOpen={searching}
 				empty={group.characters.length === 0}
+				startClosed={closedTypes.includes(group.type)}
 			>
 				{#snippet aside()}{@render groupAside?.(group.type)}{/snippet}
 				{#if group.characters.length > 0}{@render rows(group)}{:else}<p class="none">

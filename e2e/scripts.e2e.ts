@@ -229,11 +229,11 @@ test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 	);
 	await page.goto('/scripts');
 	await page.getByLabel('Search scripts').fill('42');
-	await expect(page.getByTestId('picker-status')).toHaveText(
-		'A BotC Scripts link or number: tap Save.'
-	);
-	await page.getByTestId('picker-more').getByRole('button', { name: 'Save', exact: true }).tap();
+	// The number is fetched and listed as its own row; Save is in its details' header.
+	await page.getByRole('button', { name: /^Storm Front/ }).tap();
 	await expect(detailsName(page)).toHaveText('Storm Front');
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
 	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.2.0' })).toHaveAttribute(
 		'href',
 		'https://botcscripts.com/script/42/1.2.0'
@@ -1173,4 +1173,74 @@ test('Upload File in the Add script dialog adds the chosen file straight away', 
 	});
 	await expect(dialog).toBeHidden();
 	await expect(detailsName(page)).toHaveText('Storm Front');
+});
+
+test('Save in a Search script header puts the script in the Library', async ({ page }) => {
+	const content = [{ id: '_meta', name: 'Storm Front', author: 'Trevor' }, ...homebrew.slice(1)];
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name: 'Storm Front',
+						version: '1.0.0',
+						author: 'Trevor',
+						type: 'Full',
+						score: 5,
+						characters: [{ id: 'chef' }, { id: 'imp' }]
+					}
+				]
+			}
+		})
+	);
+	await page.route('**/api/botcscripts/versions/1900', (route) =>
+		route.fulfill({ json: { scriptId: 1900, latest: '1.0.0', versions: ['1.0.0'] } })
+	);
+	await page.route(/\/api\/botcscripts\/(version\/900|script\/1900\/1\.0\.0)$/, (route) =>
+		route.fulfill({
+			json: {
+				scriptId: 1900,
+				versionId: 900,
+				name: 'Storm Front',
+				version: '1.0.0',
+				author: 'Trevor',
+				content
+			}
+		})
+	);
+	await page.goto('/scripts');
+	await page.getByRole('button', { name: /^Storm Front/ }).tap();
+	// The controls are in the pinned header with the name (Trevor, 2026-10-18), not under the list.
+	const top = details(page).getByTestId('script-details-top');
+	for (const name of ['Play', 'Save']) {
+		await expect(top.getByRole('button', { name, exact: true })).toBeVisible();
+	}
+	await expect(page.getByTestId('picker-more').getByRole('button')).toHaveCount(0);
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
+	await page.goto('/library');
+	await expect(page.getByRole('button', { name: /Storm Front/ }).first()).toBeVisible();
+});
+
+test('the Source drop-down lists search engines, then collections', async ({ page }) => {
+	await page.goto('/scripts');
+	await sourcePicker(page).tap();
+	const list = page.getByRole('listbox');
+	const engines = list.getByRole('group', { name: 'Search engines' });
+	const collections = list.getByRole('group', { name: 'Collections' });
+	for (const name of ['BotC Scripts', 'BOTC HomeBrew Wiki']) {
+		await expect(engines.getByRole('option', { name, exact: true })).toBeVisible();
+	}
+	const carousel = 'Carousel Script Collection';
+	for (const name of ['Official custom scripts', 'Scripts of the Month', carousel]) {
+		await expect(collections.getByRole('option', { name, exact: true })).toBeAttached();
+	}
+	await expect(engines.getByRole('option', { name: carousel, exact: true })).toHaveCount(0);
+	await collections.getByRole('option', { name: carousel, exact: true }).tap();
+	await expect(sourcePicker(page)).toContainText(carousel);
 });

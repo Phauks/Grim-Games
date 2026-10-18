@@ -28,6 +28,8 @@ export const scripts = {
 	'scripts.picker.search': 'Search scripts',
 	'scripts.picker.searchPlaceholder': 'Names, authors, characters, or a link',
 	'scripts.sources.label': 'Source',
+	'scripts.sources.group.engines': 'Search engines',
+	'scripts.sources.group.collections': 'Collections',
 	'scripts.picker.source.curated': 'Official custom scripts',
 	'scripts.picker.source.month': 'Scripts of the Month',
 	'scripts.picker.source.collection': 'Carousel Script Collection',
@@ -121,7 +123,6 @@ export const scripts = {
 	'scripts.botc.sort.newest': 'Newest',
 	'scripts.botc.sort.oldest': 'Oldest',
 	'scripts.botc.sort.match': 'Best match',
-	'scripts.botc.refHint': 'A BotC Scripts link or number: tap Save.',
 	'scripts.botc.searching': 'Searching…',
 	'scripts.botc.count': {
 		one: '{count} on BotC Scripts · {sort}',

@@ -13,7 +13,8 @@ describe('info tokens', () => {
 	it("marks Trevor's additions as extras, listed after the base cards", () => {
 		const extras = STANDARD_INFO_TOKENS.filter((t) => t.extra).map((t) => t.text);
 		expect(extras).toEqual([
-			'Number',
+			'Your number is',
+			'Yes/No',
 			'What are you bluffing?',
 			'Use your ability?',
 			'Please choose again'

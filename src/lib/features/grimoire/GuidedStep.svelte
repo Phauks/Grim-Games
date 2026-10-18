@@ -8,6 +8,7 @@
 	import { TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import NightText from '#lib/features/reference/NightText.svelte';
@@ -242,6 +243,7 @@
 				<h3>Reminders</h3>
 				<ul class="reminders">
 					{#each rows as { label, at, key } (key)}
+						{@const held = at ? game.seats[at.seatId] : undefined}
 						<li>
 							<ReminderToken
 								{label}
@@ -250,7 +252,16 @@
 									? placingAlignment(game, step.character.id, characters)
 									: undefined}
 							/>
-							<span class="where">{at ? `On ${seatName(game, at.seatId)}` : 'Not placed'}</span>
+							<!-- The seat and its character (Trevor, 2026-10-18), on one line. -->
+							<span class="where"
+								>{at ? `On ${seatName(game, at.seatId)}` : 'Not placed'}{#if held?.characterId}
+									<CharacterBadge
+										characterId={held.characterId}
+										character={characters.get(held.characterId)}
+										alignment={held.alignment}
+										inline
+									/>{/if}</span
+							>
 							<Button variant="quiet" onclick={() => choose(label, at)}
 								>{at ? 'Move' : 'Place'}</Button
 							>
@@ -371,6 +382,9 @@
 	.where {
 		flex: 1;
 		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
 	}
