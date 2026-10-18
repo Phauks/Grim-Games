@@ -2828,3 +2828,49 @@ test('a Demon bluff in play can still be chosen, after a confirm', async ({ page
 	await expect(set).toContainText('Chef');
 	await expect(set).toContainText('In play: replace');
 });
+
+test('Run Night Order skips dead players, except an ability set off by dying tonight', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [seat, name, dies] of [
+		[1, 'Washerwoman', false],
+		[2, 'Empath', true],
+		[3, 'Ravenkeeper', true]
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		if (dies) {
+			await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+			await page
+				.getByRole('dialog', { name: `Status of Seat ${seat}` })
+				.getByRole('button', { name: 'Executed' })
+				.tap();
+			await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+		}
+		await closeSheet(page);
+	}
+	// Trevor (2026-10-18): "If character is dead do not show them in assisted night order."
+	// The Ravenkeeper still wakes on the night they die
+	// (https://wiki.bloodontheclocktower.com/Ravenkeeper).
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
+	const order = page.getByRole('dialog', { name: 'Night order' });
+	await order.getByRole('button', { name: /show other nights/ }).tap();
+	// The sheet still lists every step, to open by hand.
+	await expect(order.getByRole('button', { name: 'Done: Empath' })).toBeVisible();
+	await order.getByRole('button', { name: 'Run Night Order' }).tap();
+	const strip = page.getByTestId('night-strip');
+	const names: string[] = [];
+	for (let i = 0; i < 12; i++) {
+		names.push((await strip.locator('.name strong').textContent()) ?? '');
+		const next = strip.getByRole('button', { name: 'Next step' });
+		if ((await next.count()) === 0) break;
+		await next.tap();
+	}
+	expect(names).toContain('Ravenkeeper');
+	expect(names).not.toContain('Empath');
+});

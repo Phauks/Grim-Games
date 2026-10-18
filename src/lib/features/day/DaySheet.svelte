@@ -26,7 +26,12 @@
 	const assistance = $derived(preferences.current.assistance);
 </script>
 
-<Dialog bind:open title={number > 0 ? t('day.titleNumber', { number }) : t('day.title')} size="max">
+<Dialog
+	bind:open
+	title={number > 0 ? t('day.titleNumber', { number }) : t('day.title')}
+	size="max"
+	scroll={false}
+>
 	<div class="body">
 		<DayPanel game={day} {assistance} />
 	</div>
@@ -46,9 +51,11 @@
 	/*
 	 * Phones: the day takes most of the dialog's side padding back, so long character names
 	 * (Investigator, Fortune Teller) fit on one line in the player tiles (Trevor, 2026-10-18).
+	 * The widening goes on the dialog's own body, which clips what spills past it: a
+	 * negative margin here was cut off at its edges and hid text and buttons (Trevor).
 	 */
 	@media (max-width: 40rem) {
-		.body {
+		:global([data-scope='dialog'][data-part='content'] > div):has(> .body) {
 			margin-inline: calc(-1 * var(--space-3));
 		}
 	}
