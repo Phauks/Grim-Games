@@ -1,3 +1,13 @@
+<script lang="ts" module>
+	import { getContext, setContext } from 'svelte';
+
+	const WINDOW = Symbol('library-window');
+	/** How the Library opens the previewed item in a window over the page. */
+	export function setLibraryWindow(open: () => void) {
+		setContext(WINDOW, open);
+	}
+</script>
+
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -22,6 +32,7 @@
 	}
 
 	let { open = $bindable(false), title, inline, heading, headActions, children }: Props = $props();
+	const openWindow = getContext<(() => void) | undefined>(WINDOW);
 </script>
 
 {#if inline}
@@ -39,6 +50,9 @@
 				</h2>
 				<div class="head-actions">
 					{@render headActions?.()}
+					{#if openWindow}
+						<IconButton icon="openItem" label={t('library.openWindow')} onclick={openWindow} />
+					{/if}
 					<IconButton icon="close" label={t('common.close')} onclick={() => (open = false)} />
 				</div>
 			</header>

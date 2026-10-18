@@ -71,6 +71,7 @@ import ph_flower from '~icons/ph/flower';
 import ph_folder from '~icons/ph/folder';
 import ph_folder_open from '~icons/ph/folder-open';
 import ph_folder_simple from '~icons/ph/folder-simple';
+import ph_frame_corners from '~icons/ph/frame-corners';
 import ph_funnel from '~icons/ph/funnel';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
@@ -142,6 +143,7 @@ import ph_shield from '~icons/ph/shield';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
 import ph_shuffle from '~icons/ph/shuffle';
+import ph_sidebar_simple from '~icons/ph/sidebar-simple';
 import ph_sign_in from '~icons/ph/sign-in';
 import ph_skull from '~icons/ph/skull';
 import ph_sliders from '~icons/ph/sliders';
@@ -156,6 +158,7 @@ import ph_sparkle from '~icons/ph/sparkle';
 import ph_speaker_high from '~icons/ph/speaker-high';
 import ph_spinner from '~icons/ph/spinner';
 import ph_square from '~icons/ph/square';
+import ph_square_split_horizontal from '~icons/ph/square-split-horizontal';
 import ph_star from '~icons/ph/star';
 import ph_sun from '~icons/ph/sun';
 import ph_sun_horizon from '~icons/ph/sun-horizon';
@@ -262,6 +265,7 @@ const icons: IconMap = {
 	'ph:folder': ph_folder,
 	'ph:folder-open': ph_folder_open,
 	'ph:folder-simple': ph_folder_simple,
+	'ph:frame-corners': ph_frame_corners,
 	'ph:funnel': ph_funnel,
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,
@@ -333,6 +337,7 @@ const icons: IconMap = {
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,
 	'ph:shuffle': ph_shuffle,
+	'ph:sidebar-simple': ph_sidebar_simple,
 	'ph:sign-in': ph_sign_in,
 	'ph:skull': ph_skull,
 	'ph:sliders': ph_sliders,
@@ -347,6 +352,7 @@ const icons: IconMap = {
 	'ph:speaker-high': ph_speaker_high,
 	'ph:spinner': ph_spinner,
 	'ph:square': ph_square,
+	'ph:square-split-horizontal': ph_square_split_horizontal,
 	'ph:star': ph_star,
 	'ph:sun': ph_sun,
 	'ph:sun-horizon': ph_sun_horizon,

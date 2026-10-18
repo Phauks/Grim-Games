@@ -71,6 +71,8 @@ test('opens a saved script to edit it', async ({ page }) => {
 	const library = page.getByRole('dialog', { name: 'Open a saved script' });
 	await expect(library.getByTestId('library-table')).toBeVisible();
 	await expect(library.getByRole('heading', { name: 'Kinds' })).toHaveCount(0);
+	// The search sits behind its button beside the folder controls (Trevor, 2026-10-18).
+	await library.getByRole('button', { name: 'Search the Library' }).tap();
 	await library.getByRole('searchbox', { name: 'Search the Library' }).fill('reopen');
 	await library.getByText('Reopen me').tap();
 	await expect(library).toBeHidden();
@@ -211,8 +213,13 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 }) => {
 	const libraryRows = () =>
 		page.getByTestId('library-table').getByRole('button', { name: /^Edited here/ });
-	const search = () =>
-		page.getByRole('searchbox', { name: 'Search the Library' }).fill('Edited here');
+	// The Library's search opens from its button (Trevor, 2026-10-18), unless left open.
+	const search = async () => {
+		const box = page.getByRole('searchbox', { name: 'Search the Library' });
+		if (!(await box.isVisible()))
+			await page.getByRole('button', { name: 'Search the Library' }).tap();
+		await box.fill('Edited here');
+	};
 	await page.goto('/build-script');
 	await page.getByRole('textbox', { name: 'Name' }).fill('Edited here');
 	for (const name of ['Chef', 'Imp']) await character(page, name).tap();

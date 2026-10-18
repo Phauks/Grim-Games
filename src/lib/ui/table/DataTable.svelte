@@ -133,6 +133,12 @@
 		 */
 		pageSize?: number;
 		/**
+		 * No box of its own: the table sits flush in a frame that already has one (Trevor,
+		 * 2026-10-18, the Library: "doesn't need to be a separate instance with space between
+		 * the walls").
+		 */
+		frameless?: boolean;
+		/**
 		 * Rows still to come from elsewhere (a site's next pages): their space is kept below
 		 * the drawn rows, and `onend` is called when it comes near.
 		 */
@@ -161,6 +167,7 @@
 		resizeKey,
 		rowLabel,
 		pageSize,
+		frameless = false,
 		moreRows = 0,
 		onend,
 		columnFilters = $bindable({}),
@@ -550,6 +557,7 @@
 	class="data-table {narrow}"
 	class:fit-content={fit === 'content'}
 	class:boxed
+	class:frameless
 	class:fill
 	class:lazy
 	style:--columns={template}
@@ -749,6 +757,11 @@
 		border: var(--card-border);
 		border-radius: var(--card-radius);
 		background: var(--card-background);
+	}
+	.frameless .scroll {
+		border: 0;
+		border-radius: 0;
+		background: none;
 	}
 	.fill {
 		height: 100%;
