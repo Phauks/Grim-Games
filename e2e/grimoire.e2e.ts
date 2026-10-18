@@ -2777,3 +2777,28 @@ test('an information step lists every valid piece of information, not one pick',
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(strip.getByTestId('night-suggested')).toHaveText(/Suggested: \d+ valid/);
 });
+
+test('a Demon bluff in play can still be chosen, after a confirm', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Chef', exact: true })
+		.tap();
+	await closeSheet(page);
+	await menu(page, 'Demon bluffs');
+	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
+	// Marked as in play, never locked (the Storyteller can override anything).
+	await page
+		.getByRole('group', { name: 'Bluff characters' })
+		.getByRole('button', { name: /^Chef/ })
+		.tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Save bluffs that are in play?' });
+	await expect(ask).toContainText('Chef');
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	const set = page.getByTestId('bluff-set').first();
+	await expect(set).toContainText('Chef');
+	await expect(set).toContainText('In play: replace');
+});

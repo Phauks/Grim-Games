@@ -13,9 +13,10 @@
 		max: number;
 		/** Accessible name of the list. */
 		label: string;
-		/** Characters in play: not choosable when `blockInPlay` is set. */
+		/** Characters in play: always marked, and choosable (the Storyteller decides). */
 		inPlay?: ReadonlySet<CharacterId>;
-		blockInPlay?: boolean;
+		/** A chosen character in play is flagged as needing replacing (the Demon's bluffs). */
+		warnInPlay?: boolean;
 	}
 
 	let {
@@ -24,7 +25,7 @@
 		max,
 		label,
 		inPlay,
-		blockInPlay = false
+		warnInPlay = false
 	}: Props = $props();
 
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
@@ -36,15 +37,9 @@
 		else if (!full) selected = [...selected, id];
 	}
 
-	function disabledReason(character: Character): string | undefined {
-		if (selected.includes(character.id)) return undefined;
-		if (blockInPlay && inPlay?.has(character.id)) return t('show.inPlay');
-		return undefined;
-	}
-
-	/** Where in-play characters are allowed (the Lunatic's set), they are still marked. */
+	/** Warned, never locked (Trevor's rule: the Storyteller can override anything). */
 	function marker(character: Character): string | undefined {
-		return !blockInPlay && inPlay?.has(character.id) ? t('show.inPlay') : undefined;
+		return inPlay?.has(character.id) ? t('show.inPlay') : undefined;
 	}
 </script>
 
@@ -58,7 +53,7 @@
 			{@const character = id ? byId.get(id) : undefined}
 			<li>
 				{#if character}
-					{@const blocked = blockInPlay && inPlay?.has(character.id)}
+					{@const blocked = warnInPlay && inPlay?.has(character.id)}
 					<button
 						type="button"
 						class="slot"
@@ -82,7 +77,6 @@
 			mode={max === 1 ? 'single' : 'multi'}
 			{selected}
 			onSelect={toggle}
-			{disabledReason}
 			max={max > 1 ? max : undefined}
 			marker={inPlay ? marker : undefined}
 			contained={false}
