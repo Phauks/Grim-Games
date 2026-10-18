@@ -81,7 +81,8 @@ test('an admin account opens the inbox without the key; the key holder names adm
 	browser
 }) => {
 	const email = `admin-${Date.now()}@example.com`;
-	// The key holder adds the first admin from the Admins list.
+	// The key holder adds the first admin from the Admins list. Only an existing account can
+	// be named: admins are stored by account id, so the email can change later.
 	await page.goto('/reports');
 	await page.getByLabel('Admin key').fill('e2e-admin-key');
 	await page.getByLabel('Admin key').press('Enter');
@@ -89,12 +90,17 @@ test('an admin account opens the inbox without the key; the key holder names adm
 	const admins = page.getByRole('dialog', { name: 'Admins' });
 	await admins.getByLabel('Add an admin by sign-in email').fill(email);
 	await admins.getByLabel('Add an admin by sign-in email').press('Enter');
-	await expect(admins.getByTestId('admins')).toContainText(email);
+	await expect(admins.getByLabel('No account signs in with that email')).toBeVisible();
 
-	// On another device, signing in as that account opens the inbox with no key prompt.
+	// On another device, that person signs in once.
 	const other = await browser.newContext();
 	const phone = await other.newPage();
 	await signIn(phone, email);
+	await admins.getByLabel('No account signs in with that email').press('Enter');
+	await expect(admins.getByTestId('admins')).toContainText(email);
+	await expect(admins.getByLabel('Add an admin by sign-in email')).toHaveValue('');
+
+	// Now their account opens the inbox with no key prompt.
 	await phone.goto('/reports');
 	await expect(phone.getByTestId('reports')).toBeVisible();
 	await expect(phone.getByLabel('Admin key')).toBeHidden();

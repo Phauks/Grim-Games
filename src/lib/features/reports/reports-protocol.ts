@@ -8,9 +8,9 @@
  *   PATCH  /api/reports/<id>         (admin) { status }           -> 204
  *   DELETE /api/reports/<id>         (admin)                      -> 204
  *
- *   GET    /api/reports/admins                                    -> 200 { admins: string[] }
- *   POST   /api/reports/admins       { email }                    -> 204
- *   DELETE /api/reports/admins       { email }                    -> 204
+ *   GET    /api/reports/admins                                    -> 200 { admins: Admin[] }
+ *   POST   /api/reports/admins       { email }                    -> 204, 404 no such account
+ *   DELETE /api/reports/admins       { id }                       -> 204
  *
  * Reading, triage and the admin list need a signed-in admin account (Trevor, 2026-10-18) or
  * the Worker secret REPORTS_ADMIN_KEY as a Bearer token; otherwise they answer 404.
@@ -18,9 +18,14 @@
 export const REPORTS_API = '/api/reports';
 export const REPORTS_ADMINS_API = '/api/reports/admins';
 
+/** An account that may read reports: stored by user id, shown by its current email. */
+export interface Admin {
+	id: string;
+	email: string;
+}
+
 export interface AdminList {
-	/** Sign-in emails of the accounts that may read reports. */
-	admins: string[];
+	admins: Admin[];
 }
 
 /** The same kinds as `.github/ISSUE_TEMPLATE/`. */

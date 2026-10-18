@@ -1,6 +1,7 @@
 import {
 	REPORTS_ADMINS_API,
 	REPORTS_API,
+	type Admin,
 	type AdminList,
 	type CreatedReport,
 	type Report,
@@ -48,17 +49,29 @@ export async function deleteReport(key: string, id: number) {
 	if (!response.ok) throw new Error(await response.text());
 }
 
-export async function listAdmins(key: string): Promise<string[]> {
+export async function listAdmins(key: string): Promise<Admin[]> {
 	const response = await fetch(REPORTS_ADMINS_API, { headers: admin(key) });
 	if (!response.ok) throw new Error(await response.text());
 	return ((await response.json()) as AdminList).admins;
 }
 
-export async function changeAdmin(key: string, email: string, add: boolean) {
+/** False when nobody has signed in with that email yet. */
+export async function addAdmin(key: string, email: string): Promise<boolean> {
 	const response = await fetch(REPORTS_ADMINS_API, {
-		method: add ? 'POST' : 'DELETE',
+		method: 'POST',
 		headers: admin(key),
 		body: JSON.stringify({ email })
+	});
+	if (response.status === 404) return false;
+	if (!response.ok) throw new Error(await response.text());
+	return true;
+}
+
+export async function removeAdmin(key: string, id: string) {
+	const response = await fetch(REPORTS_ADMINS_API, {
+		method: 'DELETE',
+		headers: admin(key),
+		body: JSON.stringify({ id })
 	});
 	if (!response.ok) throw new Error(await response.text());
 }

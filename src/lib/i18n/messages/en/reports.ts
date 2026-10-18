@@ -26,6 +26,7 @@ export const reports = {
 	'reports.checking': 'Checking access…',
 	'reports.admins': 'Admins',
 	'reports.addAdmin': 'Add an admin by sign-in email',
+	'reports.noAccount': 'No account signs in with that email',
 	'reports.removeAdmin': 'Remove admin {email}',
 	'reports.status': 'Status',
 	'reports.status.all': 'All',

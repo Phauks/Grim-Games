@@ -6,6 +6,7 @@ import {
 	REPORT_OPTIONAL_FIELDS,
 	REPORTS_ADMINS_API,
 	REPORTS_API,
+	type Admin,
 	type AdminList,
 	type CreatedReport,
 	type Report,
@@ -66,8 +67,8 @@ export class ReportBox extends DurableObject<ReportsEnv> {
 		super(ctx, env);
 		this.sql = ctx.storage.sql;
 		this.sql.exec(`
-			CREATE TABLE IF NOT EXISTS admins (
-				email TEXT PRIMARY KEY,
+			CREATE TABLE IF NOT EXISTS admin_users (
+				user_id TEXT PRIMARY KEY,
 				added_at INTEGER NOT NULL
 			);
 			CREATE TABLE IF NOT EXISTS reports (
@@ -142,24 +143,33 @@ export class ReportBox extends DurableObject<ReportsEnv> {
 		return this.sql.exec('DELETE FROM reports WHERE id = ?', id).rowsWritten > 0;
 	}
 
-	/** Accounts (by sign-in email) that may read and triage reports. */
+	/**
+	 * Accounts that may read and triage reports, by internal user id: people can change their
+	 * email or username (Trevor, 2026-10-18), so neither may decide who is an admin.
+	 */
 	async admins(): Promise<string[]> {
 		return this.sql
-			.exec<{ email: string }>('SELECT email FROM admins ORDER BY email')
+			.exec<{ user_id: string }>('SELECT user_id FROM admin_users ORDER BY added_at')
 			.toArray()
-			.map((row) => row.email);
+			.map((row) => row.user_id);
 	}
 
-	async isAdmin(email: string): Promise<boolean> {
-		return this.sql.exec('SELECT 1 FROM admins WHERE email = ?', email).toArray().length > 0;
+	async isAdmin(userId: string): Promise<boolean> {
+		return (
+			this.sql.exec('SELECT 1 FROM admin_users WHERE user_id = ?', userId).toArray().length > 0
+		);
 	}
 
-	async addAdmin(email: string, now: number): Promise<void> {
-		this.sql.exec('INSERT OR IGNORE INTO admins (email, added_at) VALUES (?, ?)', email, now);
+	async addAdmin(userId: string, now: number): Promise<void> {
+		this.sql.exec(
+			'INSERT OR IGNORE INTO admin_users (user_id, added_at) VALUES (?, ?)',
+			userId,
+			now
+		);
 	}
 
-	async removeAdmin(email: string): Promise<void> {
-		this.sql.exec('DELETE FROM admins WHERE email = ?', email);
+	async removeAdmin(userId: string): Promise<void> {
+		this.sql.exec('DELETE FROM admin_users WHERE user_id = ?', userId);
 	}
 }
 
@@ -187,7 +197,18 @@ async function adminAccount(
 		emailSender(env, url).delivery === 'email' || env.ADMINS_TRUST_PREVIEW_SIGN_IN === 'on';
 	if (!trusted) return undefined;
 	const auth = await getUser(request, env);
-	return auth && (await box.isAdmin(auth.user.email)) ? auth.user.email : undefined;
+	return auth && (await box.isAdmin(auth.userId)) ? auth.userId : undefined;
+}
+
+/** Each admin with the account's current email; accounts deleted since are dropped. */
+async function adminList(env: ReportsEnv, box: DurableObjectStub<ReportBox>): Promise<Admin[]> {
+	const list: Admin[] = [];
+	for (const id of await box.admins()) {
+		const profile = await env.ACCOUNT_USERS.get(env.ACCOUNT_USERS.idFromString(id)).profile();
+		if (profile) list.push({ id, email: profile.email });
+		else await box.removeAdmin(id);
+	}
+	return list;
 }
 
 /** Cookie-signed changes must come from our own pages with a JSON body (as account/routes.ts). */
@@ -236,16 +257,25 @@ export async function handleReports(
 
 	if (url.pathname === REPORTS_ADMINS_API) {
 		if (request.method === 'GET') {
-			return Response.json({ admins: await box.admins() } satisfies AdminList, {
+			return Response.json({ admins: await adminList(env, box) } satisfies AdminList, {
 				headers: noStore
 			});
 		}
-		const body = (await request.json().catch(() => null)) as { email?: unknown } | null;
-		const email = normaliseEmail(body?.email);
-		if (!email) return text('Bad email', 400);
-		if (request.method === 'POST') await box.addAdmin(email, Date.now());
-		else if (request.method === 'DELETE') await box.removeAdmin(email);
-		else return text('Method not allowed', 405);
+		const body = (await request.json().catch(() => null)) as {
+			email?: unknown;
+			id?: unknown;
+		} | null;
+		if (request.method === 'POST') {
+			// Named by the email they sign in with today, stored by the account's id.
+			const email = normaliseEmail(body?.email);
+			if (!email) return text('Bad email', 400);
+			const userId = await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).ownerId();
+			if (!userId) return text('No account', 404);
+			await box.addAdmin(userId, Date.now());
+		} else if (request.method === 'DELETE') {
+			if (typeof body?.id !== 'string') return text('Bad id', 400);
+			await box.removeAdmin(body.id);
+		} else return text('Method not allowed', 405);
 		return new Response(null, { status: 204, headers: noStore });
 	}
 	if (url.pathname === REPORTS_API && request.method === 'GET') {

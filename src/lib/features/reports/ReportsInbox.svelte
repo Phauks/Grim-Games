@@ -12,13 +12,19 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
-		changeAdmin,
+		addAdmin,
 		deleteReport,
 		listAdmins,
+		removeAdmin,
 		listReports,
 		setReportStatus
 	} from './reports-api.ts';
-	import { REPORT_STATUSES, type Report, type ReportStatus } from './reports-protocol.ts';
+	import {
+		REPORT_STATUSES,
+		type Admin,
+		type Report,
+		type ReportStatus
+	} from './reports-protocol.ts';
 
 	// Trevor's inbox for in-app reports, at /reports (not in the menu). A signed-in admin
 	// account opens it (Trevor, 2026-10-18); otherwise the Worker secret REPORTS_ADMIN_KEY,
@@ -32,8 +38,9 @@
 	let access = $state<'checking' | 'none' | 'account' | 'key'>('checking');
 	const allowed = $derived(access === 'account' || access === 'key');
 	let adminsOpen = $state(false);
-	let admins = $state<string[]>();
+	let admins = $state<Admin[]>();
 	let newAdmin = $state('');
+	let noAccount = $state(false);
 	let typed = $state('');
 	let keyForm = $state<HTMLFormElement>();
 	let wrongKey = $state(false);
@@ -87,10 +94,10 @@
 		}
 	}
 
-	async function setAdmin(email: string, add: boolean) {
+	async function changeAdmins(change: () => Promise<boolean | void>) {
 		try {
-			await changeAdmin(key, email, add);
-			if (add) newAdmin = '';
+			noAccount = (await change()) === false;
+			if (!noAccount) newAdmin = '';
 			admins = await listAdmins(key);
 		} catch {
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
@@ -240,12 +247,12 @@
 
 <Dialog bind:open={adminsOpen} title={t('reports.admins')}>
 	<ul class="admins" data-testid="admins">
-		{#each admins ?? [] as email (email)}
+		{#each admins ?? [] as { id, email } (id)}
 			<li>
 				<span>{email}</span>
 				<DeleteButton
 					label={t('reports.removeAdmin', { email })}
-					onclick={() => setAdmin(email, false)}
+					onclick={() => changeAdmins(() => removeAdmin(key, id))}
 				/>
 			</li>
 		{:else}
@@ -253,12 +260,13 @@
 		{/each}
 	</ul>
 	<TextField
-		label={t('reports.addAdmin')}
+		label={noAccount ? t('reports.noAccount') : t('reports.addAdmin')}
 		type="email"
 		autocomplete="off"
 		bind:value={newAdmin}
 		oncommit={() => {
-			if (newAdmin.trim()) void setAdmin(newAdmin.trim(), true);
+			const email = newAdmin.trim();
+			if (email) void changeAdmins(() => addAdmin(key, email));
 			return false;
 		}}
 	/>
