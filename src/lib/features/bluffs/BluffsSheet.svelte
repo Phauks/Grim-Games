@@ -40,9 +40,14 @@
 		characters: CharacterLookup;
 		/** Runs a command on the game session (the grimoire board's store). */
 		dispatch: BluffDispatch;
+		/**
+		 * The characters in play when there are no seats yet (setup's Characters screen);
+		 * otherwise each seat's true character.
+		 */
+		inPlay?: readonly CharacterId[];
 	}
 
-	let { open = $bindable(false), game, characters, dispatch }: Props = $props();
+	let { open = $bindable(false), game, characters, dispatch, inPlay: given }: Props = $props();
 
 	let editing = $state<number>();
 	let deleteOpen = $state(false);
@@ -60,7 +65,7 @@
 			return character ? [character] : [];
 		})
 	);
-	const inPlay = $derived(charactersReallyInPlay(game, characters));
+	const inPlay = $derived(given ? new Set(given) : charactersReallyInPlay(game, characters));
 	const lunatic = $derived(lunaticInPlay(game, characters));
 	// The Demon's set always, then any others the Storyteller added (Trevor, 2026-10-16).
 	const sets = $derived(Array.from({ length: Math.max(1, game.bluffs.length) }, (_, i) => i));
