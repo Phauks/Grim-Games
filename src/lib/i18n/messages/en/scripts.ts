@@ -20,6 +20,7 @@ export const scripts = {
 	'scripts.from.scriptTool': 'Script Tool',
 	'scripts.from.botcscripts': 'BotC Scripts {version}',
 	'scripts.from.share': 'Shared link',
+	'scripts.from.campaign': 'Campaign, game {number}',
 
 	// Picker
 	'scripts.picker.search': 'Search scripts',
@@ -55,6 +56,7 @@ export const scripts = {
 	'scripts.sourceLabel.botc': 'BotC Scripts',
 	'scripts.sourceLabel.worldcup2023': 'World Cup 2023',
 	'scripts.sourceLabel.worldcup2025': 'World Cup 2025',
+	'scripts.sourceLabel.campaign': 'Campaign',
 	'scripts.curated.month': 'Script of the Month',
 	'scripts.curated.recommended': 'Recommended',
 	'scripts.curated.teensyville': 'Teensyville',

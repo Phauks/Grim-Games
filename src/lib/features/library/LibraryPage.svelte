@@ -45,6 +45,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import SavedCharacterList from '#lib/features/character-builder/SavedCharacterList.svelte';
+	import CampaignScripts from '#lib/features/modes/CampaignScripts.svelte';
 	import FolderView from './FolderView.svelte';
 	import VariationChanges from './VariationChanges.svelte';
 	import LabelManager from './LabelManager.svelte';
@@ -401,6 +402,10 @@
 					/>
 				</div>
 			{/if}
+		</PageSection>
+		<!-- Each version of a living script (Trevor, 2026-10-18). -->
+		<PageSection title={t('library.campaigns')}>
+			<CampaignScripts {data} />
 		</PageSection>
 		<PageSection title={t('library.characters')}>
 			<SavedCharacterList />

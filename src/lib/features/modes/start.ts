@@ -31,7 +31,7 @@ interface StartInput<G> {
  * with this as its first game.
  */
 export async function startInMode<
-	G extends { game: { gameId: GameId; seating: readonly unknown[] } }
+	G extends { game: { gameId: GameId; seating: readonly unknown[]; script: Script } }
 >(input: StartInput<G>): Promise<G> {
 	const mode = findMode(input.modeId) ?? STANDARD;
 	const script = modeScript(
@@ -49,7 +49,7 @@ export async function startInMode<
 			campaignId: crypto.randomUUID(),
 			modeId: mode.id,
 			restrictions: input.restrictions,
-			games: [{ gameId: open.game.gameId, eliminated: [] }],
+			games: [{ gameId: open.game.gameId, eliminated: [], script: open.game.script }],
 			createdAt: Date.now()
 		});
 	return open;

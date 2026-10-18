@@ -84,6 +84,8 @@ export const ICON_SLOTS = {
 	sortAscending: { label: 'Sorted ascending', choices: ['ph:caret-up', 'ph:sort-ascending'] },
 	sortDescending: { label: 'Sorted descending', choices: ['ph:caret-down', 'ph:sort-descending'] },
 	filter: { label: 'Filter', choices: ['ph:funnel'] },
+	/** Characters a game keeps out (game modes' Restricted characters). */
+	restricted: { label: 'Restricted characters', choices: ['ph:prohibit', 'ph:prohibit-inset'] },
 	assistance: { label: 'Storyteller settings', choices: ['ph:lifebuoy', 'ph:hand-heart'] },
 	remove: { label: 'Remove', choices: ['ph:trash', 'ph:trash-simple'] },
 	save: { label: 'Save', choices: ['ph:bookmark-simple', 'ph:floppy-disk'] },

@@ -464,6 +464,17 @@ test('Flesh and Bone runs a campaign: the next game adds a Demon once the curren
 	await expect(games).toHaveCount(2);
 	await expect(games.nth(0)).toContainText('Ended');
 	await expect(next).toBeDisabled();
+
+	// Every version of the living script is in the Library (Trevor, 2026-10-18).
+	await page.goto('/library');
+	const campaigns = page.getByTestId('library-campaigns').locator('li');
+	await expect(campaigns).toHaveCount(1);
+	await expect(campaigns.first()).toContainText('Flesh and Bone');
+	await expect(campaigns.first()).toContainText('2 versions');
+	await campaigns.first().getByRole('button').tap();
+	const versions = page.getByRole('dialog', { name: 'Flesh and Bone' });
+	await expect(versions.getByTestId('campaign-script-scroll')).toContainText('game 2');
+	await expect(versions.getByRole('link', { name: 'Campaign' })).toBeVisible();
 });
 
 test('Specters: spectators vote on their phones and the Storyteller sees the count', async ({

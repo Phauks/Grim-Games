@@ -251,7 +251,10 @@
 			const played = record.games.map((g, i) =>
 				i === record!.games.length - 1 ? { ...g, eliminated: chosen } : g
 			);
-			const next = { ...record, games: [...played, { gameId: open.game.gameId, eliminated: [] }] };
+			const next = {
+				...record,
+				games: [...played, { gameId: open.game.gameId, eliminated: [], script: open.game.script }]
+			};
 			saveCampaign(next);
 			saved = next;
 			planning = false;
