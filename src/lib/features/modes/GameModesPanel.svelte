@@ -21,6 +21,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
+	import ScriptChoiceLabel from '#lib/features/scripts/ScriptChoiceLabel.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -67,6 +68,14 @@
 	let restrictPool = $state.raw<readonly Character[]>([]);
 
 	const choices = $derived(scriptChoices());
+	/** "by Author · vN" for a drop-down's line under the name, as ScriptByline words it. */
+	const byline = (c: { author?: string; version?: string }) =>
+		[
+			c.author ? t('player.byAuthor', { author: c.author }) : undefined,
+			c.version ? t('player.version', { version: c.version }) : undefined
+		]
+			.filter(Boolean)
+			.join(' · ');
 
 	/**
 	 * A campaign mode (Flesh and Bone) asks which campaign: a new one starts from a script
@@ -258,13 +267,22 @@
 				value={script}
 				options={choices}
 				onChange={(v) => (script = v)}
-			/>
+			>
+				{#snippet item(option)}
+					{@const c = choices.find((x) => x.value === option.value)}
+					<ScriptChoiceLabel label={option.label} author={c?.author} version={c?.version} />
+				{/snippet}
+			</ChoiceGroup>
 		{:else if scriptKind === 'per-town'}
 			{#each Array.from({ length: towns?.count ?? 2 }, (_, i) => i) as i (i)}
 				<Select
 					label={t('modes.townScript', { number: i + 1 })}
 					value={townScripts[i] ?? 'tb'}
-					options={choices}
+					options={choices.map((c) => ({
+						value: c.value,
+						label: c.label,
+						...(c.author || c.version ? { description: byline(c) } : {})
+					}))}
 					onChange={(v) => (townScripts[i] = v)}
 				/>
 			{/each}

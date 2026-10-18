@@ -71,6 +71,7 @@
 		if (ability.kind === 'custom') customText = ability.text;
 	});
 	/** What the spectators read on their vote. */
+	/* eslint-disable grim/names-as-badges -- plain text sent to the spectators' phones */
 	const abilityText = $derived(
 		ability.kind === 'character'
 			? character
@@ -78,6 +79,7 @@
 				: ''
 			: ability.text.trim()
 	);
+	/* eslint-enable grim/names-as-badges */
 	let picking = $state(false);
 
 	const host = roomHost();

@@ -696,3 +696,28 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await noSidewaysScroll(page);
 	await phoneContext.close();
 });
+
+test('New game shows each script’s author and version under its name', async ({ page }) => {
+	await page.addInitScript(() => {
+		localStorage.setItem(
+			'grim-games:scripts:quick-play',
+			JSON.stringify({
+				schemaVersion: 1,
+				scriptId: 'quick-play',
+				name: 'Byline Test',
+				json: [{ id: '_meta', name: 'Byline Test', author: 'Test Author' }, 'washerwoman', 'imp'],
+				source: { kind: 'botcscripts', scriptId: 1, version: '2.1' },
+				addedAt: 1,
+				lastUsedAt: 1,
+				revision: 1
+			})
+		);
+	});
+	await page.goto('/new');
+	const byline = modesPanel(page).getByTestId('script-byline');
+	await expect(byline).toHaveCount(1);
+	await expect(byline).toContainText('Test Author');
+	await expect(byline).toContainText('2.1');
+	await chooseMode(page, 'A Script of Infinite Possibilities');
+	await expect(modesPanel(page).getByTestId('script-byline')).toContainText('Test Author');
+});

@@ -86,6 +86,7 @@
 
 	function go(path: Parameters<typeof goto>[0]) {
 		open = false;
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- every caller passes a resolved path
 		void goto(path);
 	}
 </script>
