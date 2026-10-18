@@ -37,9 +37,8 @@
 		 */
 		forceOpen?: boolean;
 		/**
-		 * Nothing in it yet (its content reads "None"): shown closed, and opened again as soon as
-		 * it has something (Trevor, 2026-10-18). It can still be opened by hand meanwhile; that
-		 * isn't remembered, so the remembered choice is kept for when it has content.
+		 * Nothing to show but "None": closed, and opened again as soon as something appears
+		 * (Trevor, 2026-10-18). The header still opens it meanwhile; nothing is remembered.
 		 */
 		empty?: boolean;
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
@@ -60,18 +59,24 @@
 
 	// Open by default; a section closed before stays closed. Read again if the key changes.
 	let open = $derived(!(storageKey && readClosed(storageKey)));
-	// Opened by hand while empty; back to closed whenever `empty` changes.
-	let openedEmpty = $derived.by(() => {
-		void empty;
-		return false;
+	let openWhileEmpty = $state(false);
+	// Something appeared: open it, even if it was closed before.
+	let wasEmpty = empty;
+	$effect.pre(() => {
+		if (wasEmpty && !empty) {
+			open = true;
+			if (storageKey) writeClosed(storageKey, false);
+		}
+		if (empty && !wasEmpty) openWhileEmpty = false;
+		wasEmpty = empty;
 	});
-	const shown = $derived(forceOpen || (empty ? openedEmpty : open));
+	const shown = $derived(forceOpen || (empty ? openWhileEmpty : open));
 	const id = $props.id();
 
 	function toggle() {
 		if (forceOpen) return;
 		if (empty) {
-			openedEmpty = !openedEmpty;
+			openWhileEmpty = !openWhileEmpty;
 			return;
 		}
 		open = !open;
@@ -143,8 +148,11 @@
 	.toggle[aria-disabled='true'] {
 		cursor: default;
 	}
-	.toggle:not([aria-disabled='true']):hover .label {
-		text-decoration: underline;
+	/* Mouse only: a tap leaves :hover stuck on touch screens, underlining the last title. */
+	@media (hover: hover) {
+		.toggle:not([aria-disabled='true']):hover .label {
+			text-decoration: underline;
+		}
 	}
 	.caret {
 		display: grid;

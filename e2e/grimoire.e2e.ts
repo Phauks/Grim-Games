@@ -116,12 +116,22 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 		'[data-testid="seat"][aria-label^="Seat 1:"] [data-testid="ghost-vote"]'
 	);
 	await expect(ghostMark).toBeAttached();
-	const ghost = sheet.getByRole('combobox', { name: 'Ghost vote' });
+	// One toggle, as wide as the Status button above it (Trevor, 2026-10-18).
+	const ghost = sheet.getByRole('button', { name: 'Ghost vote' });
+	const width = async (l: Locator) => (await l.boundingBox())!.width;
+	expect(
+		Math.abs(
+			(await width(ghost)) -
+				(await width(sheet.getByRole('button', { name: 'Status: Dead: Executed' })))
+		)
+	).toBeLessThan(1);
+	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
 	await ghost.tap();
-	await page.getByRole('option', { name: 'Used', exact: true }).tap();
+	await expect(ghost).toHaveAttribute('aria-pressed', 'true');
+	await expect(ghost).toContainText('Used');
 	await expect(ghostMark).toHaveCount(0);
 	await ghost.tap();
-	await page.getByRole('option', { name: 'Not used', exact: true }).tap();
+	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
 	await expect(ghostMark).toBeAttached();
 	// A good Imp: as in the physical grimoire, the token turns upside down.
 	await seatMenu(page, sheet, 'Change alignment');

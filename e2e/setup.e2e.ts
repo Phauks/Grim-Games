@@ -638,3 +638,17 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 		.tap();
 	await expect(custom).toHaveCount(0);
 });
+
+// Check sections showing None start closed, and open as soon as something appears (Trevor,
+// 2026-10-18).
+test('empty setup check sections are closed and open when something appears', async ({ page }) => {
+	await selectionFor(page, 8);
+	const check = page.getByTestId('setup-check');
+	const jinxes = check.getByRole('button', { name: 'Jinxes' });
+	await expect(jinxes).toHaveAttribute('aria-expanded', 'false');
+	const warnings = check.getByRole('button', { name: 'Warnings' });
+	await expect(warnings).toHaveAttribute('aria-expanded', 'false');
+	await page.getByRole('button', { name: 'Imp', exact: true }).tap();
+	await expect(warnings).toHaveAttribute('aria-expanded', 'true');
+	await expect(check.locator('.warn li').first()).toBeVisible();
+});
