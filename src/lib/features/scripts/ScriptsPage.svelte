@@ -42,8 +42,11 @@
 <svelte:window onhashchange={() => void openSharedLink()} />
 
 <Page title={t('scripts.heading')}>
+	{#snippet actions()}
+		<ScriptSearchBar part="source" bind:source />
+	{/snippet}
 	{#snippet toolbar()}
-		<ScriptSearchBar bind:term bind:source />
+		<ScriptSearchBar part="search" bind:term bind:source />
 	{/snippet}
 	<!-- Share links only: adding scripts is the Library's (Trevor, 2026-10-17). -->
 	<AddScript bind:this={adder} button={false} onsaved={() => picker?.showSaved()} />
