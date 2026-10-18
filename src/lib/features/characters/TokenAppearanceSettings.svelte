@@ -87,7 +87,10 @@
 <SettingGroup title={t('characters.group.token')} testid="token-preview">
 	{#snippet preview()}
 		<div class="preview token-sample" style:--sample="{largest}px">
-			{#if sample}<span class="disc" style:--name-scale={boardLooks.current.nameSize}
+			{#if sample}<span
+					class="disc"
+					style:--name-scale={boardLooks.current.nameSize}
+					style:--name-offset={boardLooks.current.nameOffset}
 					><CharacterToken
 						character={sample}
 						size={tokenSize}

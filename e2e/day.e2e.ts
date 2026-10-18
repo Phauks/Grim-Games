@@ -170,7 +170,7 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 	// The Preacher (Gus) chose the Poisoner (Dev): one line, naming the Preacher.
 	const poisoner = page.locator('li[data-character="poisoner"]');
 	await expect(poisoner).toHaveCount(1);
-	await expect(poisoner).toContainText('has no ability');
+	await expect(poisoner).toContainText('Has no ability');
 	await expect(poisoner).toContainText('Preacher · Gus');
 
 	await page.getByRole('button', { name: 'Night order', exact: true }).tap();

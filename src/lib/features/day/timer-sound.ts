@@ -25,11 +25,18 @@ function audio(): AudioContext | undefined {
 const VIBRATION = [300, 150, 300, 150, 300];
 
 /**
- * Whether this device can vibrate for the timer. Browsers without the Vibration API (Safari
- * on iPhone and iPad, and desktop browsers on most computers) cannot; the setting says so.
+ * Whether this device can vibrate for the timer. Safari on iPhone and iPad has no Vibration
+ * API; desktop Chrome and Edge have it with no motor behind it (Trevor, 2026-10-18: Vibrate
+ * looked usable on his laptop), so a touch-first screen is required too. A touchscreen
+ * laptop whose main pointer is coarse can still pass: browsers don't say whether a motor exists.
  */
 export function canVibrate(): boolean {
-	return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+	return (
+		typeof navigator !== 'undefined' &&
+		typeof navigator.vibrate === 'function' &&
+		typeof matchMedia === 'function' &&
+		matchMedia('(pointer: coarse)').matches
+	);
 }
 
 /** The timer's vibration, where the device has one. */

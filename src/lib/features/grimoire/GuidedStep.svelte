@@ -90,7 +90,7 @@
 	 * The character's own reminder tokens, one row per copy the game has (the Mathematician's
 	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
 	 */
-	const total = $derived(reminderCopies(game, characters));
+	const total = $derived(reminderCopies(game, characters, grimoire.copies));
 	const rows = $derived.by(() => {
 		const character = step?.character;
 		if (!character) return [];
@@ -203,7 +203,9 @@
 				{grimoire}
 				{step}
 				onShow={(id) => {
-					open = false;
+					// Over the open step: closing the step in the same update threw inside the
+					// dialog library (an effect scheduled outside a batch, from the Undertaker's
+					// suggestion opened from the walk-through).
 					shownCard = undefined;
 					shownId = id;
 					showOpen = true;
