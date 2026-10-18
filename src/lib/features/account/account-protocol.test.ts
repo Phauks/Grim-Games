@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
 	describeDevice,
+	checkPassword,
+	cleanEmail,
 	normaliseCode,
 	normaliseEmail,
 	normaliseUsername,
@@ -16,6 +18,19 @@ describe('account protocol', () => {
 		expect(normaliseEmail('a@b')).toBeUndefined();
 		expect(normaliseEmail(`${'a'.repeat(250)}@b.co`)).toBeUndefined();
 		expect(normaliseEmail(42)).toBeUndefined();
+	});
+
+	it('keeps an address as typed for showing, and compares it lower-cased', () => {
+		expect(cleanEmail('  Trevor@Example.COM ')).toBe('Trevor@Example.COM');
+		expect(normaliseEmail(cleanEmail('Trevor@Example.COM'))).toBe('trevor@example.com');
+		expect(cleanEmail('not an email')).toBeUndefined();
+	});
+
+	it('takes passwords of 10 to 200 characters exactly as typed', () => {
+		expect(checkPassword(' correct horse ')).toBe(' correct horse ');
+		expect(checkPassword('short')).toBeUndefined();
+		expect(checkPassword('x'.repeat(201))).toBeUndefined();
+		expect(checkPassword(12345678901)).toBeUndefined();
 	});
 
 	it('reads typed codes, ignoring spaces and dashes', () => {

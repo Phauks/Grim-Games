@@ -60,6 +60,18 @@ describe('tableRows', () => {
 });
 
 describe('tokens filter', () => {
+	it('filters by edition, matching any chosen edition', () => {
+		const rows = tableRows(entries, { filters: { editions: ['tb', 'bmr'] } });
+		expect(rows.length).toBeGreaterThan(0);
+		expect(rows.every((e) => ['tb', 'bmr'].includes(e.character.edition ?? ''))).toBe(true);
+		expect(ids({ filters: { editions: ['tb'] } })).toContain('imp');
+		expect(ids({ filters: { editions: ['tb'] } })).not.toContain('zombuul');
+		expect(activeFilterCount({ editions: ['tb'] })).toBe(1);
+		expect(parseTableState({ filters: { editions: ['snv', 3, ''] } }).filters).toEqual({
+			editions: ['snv']
+		});
+	});
+
 	it('splits characters with tokens by whether any is placed at setup', () => {
 		const setup = ids({ filters: { tokens: 'setup' } });
 		const notSetup = ids({ filters: { tokens: 'not-setup' } });

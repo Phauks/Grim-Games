@@ -40,6 +40,7 @@ import ph_clipboard_light from '~icons/ph/clipboard-light';
 import ph_clipboard_text_light from '~icons/ph/clipboard-text-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_club_light from '~icons/ph/club-light';
+import ph_columns_light from '~icons/ph/columns-light';
 import ph_copy_light from '~icons/ph/copy-light';
 import ph_copy_simple_light from '~icons/ph/copy-simple-light';
 import ph_corners_out_light from '~icons/ph/corners-out-light';
@@ -66,7 +67,6 @@ import ph_flag_light from '~icons/ph/flag-light';
 import ph_flask_light from '~icons/ph/flask-light';
 import ph_floppy_disk_light from '~icons/ph/floppy-disk-light';
 import ph_flower_light from '~icons/ph/flower-light';
-import ph_flower_lotus_light from '~icons/ph/flower-lotus-light';
 import ph_folder_light from '~icons/ph/folder-light';
 import ph_folder_open_light from '~icons/ph/folder-open-light';
 import ph_folder_simple_light from '~icons/ph/folder-simple-light';
@@ -95,7 +95,9 @@ import ph_leaf_light from '~icons/ph/leaf-light';
 import ph_lifebuoy_light from '~icons/ph/lifebuoy-light';
 import ph_lightning_light from '~icons/ph/lightning-light';
 import ph_link_light from '~icons/ph/link-light';
+import ph_link_break_light from '~icons/ph/link-break-light';
 import ph_link_simple_light from '~icons/ph/link-simple-light';
+import ph_link_simple_break_light from '~icons/ph/link-simple-break-light';
 import ph_list_light from '~icons/ph/list-light';
 import ph_list_bullets_light from '~icons/ph/list-bullets-light';
 import ph_list_checks_light from '~icons/ph/list-checks-light';
@@ -125,10 +127,10 @@ import ph_plus_circle_light from '~icons/ph/plus-circle-light';
 import ph_printer_light from '~icons/ph/printer-light';
 import ph_prohibit_light from '~icons/ph/prohibit-light';
 import ph_prohibit_inset_light from '~icons/ph/prohibit-inset-light';
-import ph_pulse_light from '~icons/ph/pulse-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
 import ph_qr_code_light from '~icons/ph/qr-code-light';
 import ph_question_light from '~icons/ph/question-light';
+import ph_rows_light from '~icons/ph/rows-light';
 import ph_scales_light from '~icons/ph/scales-light';
 import ph_scroll_light from '~icons/ph/scroll-light';
 import ph_shapes_light from '~icons/ph/shapes-light';
@@ -150,10 +152,10 @@ import ph_speaker_high_light from '~icons/ph/speaker-high-light';
 import ph_spinner_light from '~icons/ph/spinner-light';
 import ph_square_light from '~icons/ph/square-light';
 import ph_star_light from '~icons/ph/star-light';
-import ph_stethoscope_light from '~icons/ph/stethoscope-light';
 import ph_sun_light from '~icons/ph/sun-light';
 import ph_sun_horizon_light from '~icons/ph/sun-horizon-light';
 import ph_swap_light from '~icons/ph/swap-light';
+import ph_table_light from '~icons/ph/table-light';
 import ph_tag_light from '~icons/ph/tag-light';
 import ph_tag_simple_light from '~icons/ph/tag-simple-light';
 import ph_text_aa_light from '~icons/ph/text-aa-light';
@@ -223,6 +225,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-light': ph_clipboard_text_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:club-light': ph_club_light,
+	'ph:columns-light': ph_columns_light,
 	'ph:copy-light': ph_copy_light,
 	'ph:copy-simple-light': ph_copy_simple_light,
 	'ph:corners-out-light': ph_corners_out_light,
@@ -249,7 +252,6 @@ const icons: IconMap = {
 	'ph:flask-light': ph_flask_light,
 	'ph:floppy-disk-light': ph_floppy_disk_light,
 	'ph:flower-light': ph_flower_light,
-	'ph:flower-lotus-light': ph_flower_lotus_light,
 	'ph:folder-light': ph_folder_light,
 	'ph:folder-open-light': ph_folder_open_light,
 	'ph:folder-simple-light': ph_folder_simple_light,
@@ -278,7 +280,9 @@ const icons: IconMap = {
 	'ph:lifebuoy-light': ph_lifebuoy_light,
 	'ph:lightning-light': ph_lightning_light,
 	'ph:link-light': ph_link_light,
+	'ph:link-break-light': ph_link_break_light,
 	'ph:link-simple-light': ph_link_simple_light,
+	'ph:link-simple-break-light': ph_link_simple_break_light,
 	'ph:list-light': ph_list_light,
 	'ph:list-bullets-light': ph_list_bullets_light,
 	'ph:list-checks-light': ph_list_checks_light,
@@ -308,10 +312,10 @@ const icons: IconMap = {
 	'ph:printer-light': ph_printer_light,
 	'ph:prohibit-light': ph_prohibit_light,
 	'ph:prohibit-inset-light': ph_prohibit_inset_light,
-	'ph:pulse-light': ph_pulse_light,
 	'ph:push-pin-light': ph_push_pin_light,
 	'ph:qr-code-light': ph_qr_code_light,
 	'ph:question-light': ph_question_light,
+	'ph:rows-light': ph_rows_light,
 	'ph:scales-light': ph_scales_light,
 	'ph:scroll-light': ph_scroll_light,
 	'ph:shapes-light': ph_shapes_light,
@@ -333,10 +337,10 @@ const icons: IconMap = {
 	'ph:spinner-light': ph_spinner_light,
 	'ph:square-light': ph_square_light,
 	'ph:star-light': ph_star_light,
-	'ph:stethoscope-light': ph_stethoscope_light,
 	'ph:sun-light': ph_sun_light,
 	'ph:sun-horizon-light': ph_sun_horizon_light,
 	'ph:swap-light': ph_swap_light,
+	'ph:table-light': ph_table_light,
 	'ph:tag-light': ph_tag_light,
 	'ph:tag-simple-light': ph_tag_simple_light,
 	'ph:text-aa-light': ph_text_aa_light,

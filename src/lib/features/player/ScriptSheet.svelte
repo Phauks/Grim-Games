@@ -11,7 +11,7 @@
 	import type { Snippet } from 'svelte';
 	import PlayerCounts from './PlayerCounts.svelte';
 	import { groupByType } from './player-script.ts';
-	import { playerSettings } from './player-settings.svelte.ts';
+	import { playerSettings, type SheetDensity } from './player-settings.svelte.ts';
 
 	interface Props {
 		/** What the sheet lists: the script's characters plus recommended Travellers. */
@@ -29,14 +29,16 @@
 		 * while none of theirs is in play, and open when one comes into play (Trevor, 2026-10-18).
 		 */
 		inPlay?: readonly string[];
+		/** Overrides the reader's density setting (printing picks whatever fits one page). */
+		density?: SheetDensity;
 	}
 
-	let { characters, jinxes, players, flat = false, inPlay }: Props = $props();
+	let { characters, jinxes, players, flat = false, inPlay, density: fixed }: Props = $props();
 	const playing = $derived(inPlay && new Set(inPlay));
 	const noJinxInPlay = $derived(
 		!!playing && !jinxes.some((j) => j.characters.every((id) => playing.has(id)))
 	);
-	const density = $derived(playerSettings.current.density);
+	const density = $derived(fixed ?? playerSettings.current.density);
 	const groups = $derived(groupByType(characters));
 	const names = $derived(characters.map((c) => c.name));
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));

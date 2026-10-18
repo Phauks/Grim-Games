@@ -21,6 +21,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { endedGames, seatLayouts, type EndedGame } from './device-notes.ts';
+	import { gameModeName } from './game-mode-name.ts';
 
 	// ── Saved games ──
 	let all = $state<SavedGameSummary[]>([]);
@@ -106,7 +107,13 @@
 			{#each games as game (game.gameId)}
 				<li>
 					<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
-						<span class="name">{game.scriptName || 'None'}</span>
+						<!-- An alternative mode is named beside the script (Trevor, 2026-10-18). -->
+						<span class="name"
+							>{game.scriptName || 'None'}{#if gameModeName(game.gameId)}<span
+									class="mode"
+									data-testid="game-mode">{` · ${gameModeName(game.gameId)}`}</span
+								>{/if}</span
+						>
 						<span class="meta"
 							>{stageText(game)} · {game.seatCount} seats · {when.format(game.savedAt)}</span
 						>
@@ -151,7 +158,13 @@
 				<li>
 					<!-- Opens read-only, to look around; Reopen is on the board (Trevor, 2026-10-17). -->
 					<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
-						<span class="name">{game.scriptName || 'None'}</span>
+						<!-- An alternative mode is named beside the script (Trevor, 2026-10-18). -->
+						<span class="name"
+							>{game.scriptName || 'None'}{#if gameModeName(game.gameId)}<span
+									class="mode"
+									data-testid="game-mode">{` · ${gameModeName(game.gameId)}`}</span
+								>{/if}</span
+						>
 						<span class="meta"
 							>{winnerText(game.gameId)} · {stageText(game)} · {when.format(
 								ended[game.gameId].endedAt
@@ -217,6 +230,10 @@
 	.name {
 		font-family: var(--font-heading);
 		color: var(--heading);
+	}
+	/* The mode in its own colour, as in the board's corner title. */
+	.mode {
+		color: var(--accent);
 	}
 	.meta {
 		font-size: 0.9rem;

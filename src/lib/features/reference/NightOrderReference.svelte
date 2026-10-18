@@ -15,6 +15,7 @@
 	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
 	import { TYPE_PLURALS } from './labels.ts';
 	import NightText from './NightText.svelte';
+	import ViewToggle from './ViewToggle.svelte';
 	import type { ReferenceView } from './view-mode.svelte.ts';
 
 	interface Props {
@@ -119,15 +120,15 @@
 	</li>
 {/snippet}
 
-{#if view === 'table'}
-	<div class="night-filter">
-		<SearchField
-			bind:value={query}
-			label={t('reference.nightFilterLabel')}
-			placeholder={t('reference.nightFilterPlaceholder')}
-		/>
-	</div>
-{/if}
+<div class="night-filter">
+	<!-- Filters the table's rows and the cards' steps alike; the order is kept. -->
+	<SearchField
+		bind:value={query}
+		label={t('reference.nightFilterLabel')}
+		placeholder={t('reference.nightFilterPlaceholder')}
+	/>
+	<ViewToggle />
+</div>
 
 {#each nights as n (n.night)}
 	<section class="night" aria-labelledby="night-{n.night}" data-testid="night-{n.night}">
@@ -153,12 +154,12 @@
 			</div>
 		{:else}
 			<ol class="steps" aria-label="{n.title} until Dawn">
-				{#each n.beforeDawn as s (s.id)}{@render step(n.night, s)}{/each}
+				{#each n.beforeDawn.filter(matches) as s (s.id)}{@render step(n.night, s)}{/each}
 			</ol>
 			{#if n.afterDawn.length}
 				<h3>After Dawn: announcements</h3>
 				<ol class="steps" aria-label="{n.title} after Dawn">
-					{#each n.afterDawn as s (s.id)}{@render step(n.night, s)}{/each}
+					{#each n.afterDawn.filter(matches) as s (s.id)}{@render step(n.night, s)}{/each}
 				</ol>
 			{/if}
 		{/if}
@@ -192,7 +193,14 @@
 <style>
 	/* The filter sits above the night tables. */
 	.night-filter {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 		margin-bottom: var(--space-4);
+	}
+	.night-filter > :global(:first-child) {
+		flex: 1;
+		min-width: 0;
 	}
 	.night {
 		margin-bottom: var(--space-6);

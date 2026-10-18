@@ -56,8 +56,6 @@
 		labels?: Snippet;
 		/** More buttons in the action row, after Play, Print and Share. */
 		extraActions?: Snippet;
-		/** The action row sits in the pinned top with the name (the Library's pane header). */
-		actionsInTop?: boolean;
 	}
 
 	let {
@@ -69,8 +67,7 @@
 		busy = false,
 		lead,
 		labels,
-		extraActions,
-		actionsInTop = false
+		extraActions
 	}: Props = $props();
 
 	// ---- Versions: BotC Scripts publishes them (and the World Cups load from it) ----
@@ -164,7 +161,8 @@
 			case 'json':
 				return loadScript(target.json, data).script;
 			case 'botcscripts':
-			case 'homebrew': {
+			case 'homebrew':
+			case 'bloodstar': {
 				const fetched = remotePreviews.get(target);
 				return fetched && loadScriptText(fetched.text, data).script;
 			}
@@ -191,6 +189,7 @@
 				return target.source;
 			case 'botcscripts':
 			case 'homebrew':
+			case 'bloodstar':
 				return remotePreviews.get(target)?.source;
 		}
 		return undefined;
@@ -302,7 +301,6 @@
 	extra={rows}
 	{lead}
 	{version}
-	{actionsInTop}
 >
 	{#snippet actions()}
 		<IconButton

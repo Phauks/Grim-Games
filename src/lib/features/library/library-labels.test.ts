@@ -14,6 +14,7 @@ import {
 	parseLabels,
 	renameLabel,
 	setFolder,
+	setName,
 	toggleTag,
 	type LibraryLabels
 } from './library-labels.ts';
@@ -68,6 +69,16 @@ describe('labels', () => {
 		expect(labelsFor(s, 'k').tags).toEqual(['t2']);
 		s = setFolder(s, 'k', undefined);
 		s = toggleTag(s, 'k', 't2');
+		expect(s.scripts).toEqual({});
+	});
+
+	it('renames an item in the Library and keeps it through other changes', () => {
+		let s = setName(sample(), 'k', '  Club   night  ');
+		s = setFolder(s, 'k', 'f1');
+		s = toggleTag(s, 'k', 't1');
+		expect(labelsFor(s, 'k')).toEqual({ name: 'Club night', folder: 'f1', tags: ['t1'] });
+		expect(parseLabels(JSON.parse(JSON.stringify(s)))?.scripts.k.name).toBe('Club night');
+		s = setName(setFolder(toggleTag(s, 'k', 't1'), 'k', undefined), 'k', ' ');
 		expect(s.scripts).toEqual({});
 	});
 

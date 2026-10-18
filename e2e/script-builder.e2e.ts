@@ -218,11 +218,6 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	const folder = page.getByRole('dialog', { name: 'New folder' });
 	await folder.getByRole('textbox', { name: 'Name' }).fill('Club night');
 	await folder.getByRole('textbox', { name: 'Name' }).press('Enter');
-	// The new folder opens; the script is at the top level.
-	await page
-		.getByRole('navigation', { name: 'Folder path' })
-		.getByRole('button', { name: 'Library' })
-		.tap();
 	await libraryRows().tap();
 	const details = page.getByRole('dialog', { name: 'Edited here' });
 	await details.getByRole('combobox', { name: 'Folder' }).tap();

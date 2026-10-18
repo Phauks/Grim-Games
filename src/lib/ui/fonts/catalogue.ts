@@ -118,7 +118,8 @@ export const FONT_ROLES = [
 	'ability',
 	'player',
 	'control',
-	'body'
+	'body',
+	'account'
 ] as const;
 export type FontRole = (typeof FONT_ROLES)[number];
 
@@ -187,6 +188,16 @@ export const FONT_ROLE_INFO: Record<FontRole, FontRoleInfo> = {
 		label: 'Body text',
 		description: 'Descriptions and hints, settings help, messages, notes, logs and night answers.',
 		sample: 'Alex nominates Sam.',
+		length: 'running'
+	},
+	// Plain by default in every theme, so what people type to sign in reads exactly
+	// (Trevor, 2026-10-18: not Cinzel or the theme's font).
+	account: {
+		id: 'account',
+		label: 'Sign-in and account details',
+		description:
+			'Email, password, code and username fields when signing in, and your details on the Account page.',
+		sample: 'alex@example.com',
 		length: 'running'
 	}
 };
