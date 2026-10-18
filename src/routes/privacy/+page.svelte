@@ -112,7 +112,14 @@
 			<li>
 				Your sign-in sessions: a random token, stored only as a hash, with a short device
 				description such as "Chrome on Android" and when the session was created and last used. A
-				session ends when you sign out, or after 180 days unused.
+				session ends when you sign out, or after 180 days unused. "Remember me" keeps you signed in
+				on that device; without it, the session ends when the browser closes, or after 12 hours
+				unused.
+			</li>
+			<li>
+				Your password, only if you choose to set one (passwords are optional; a sign-in code always
+				works). It is stored only as a salted PBKDF2-SHA256 hash, never as the password itself.
+				After 10 wrong passwords for one address in an hour, that address has to wait or use a code.
 			</li>
 			<li>
 				Your scripts: every script you add while signed in, and, the first time you sign in on a
