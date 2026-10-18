@@ -112,3 +112,11 @@ export const seatName = (game: Game, seatId: SeatId): string =>
 /** A tick belongs to one night, by the number of days before it: a new day starts afresh. */
 export const doneKey = (day: number, night: Night, step: { id: string }): string =>
 	`${day}:${night}:${step.id}`;
+
+/**
+ * Whether a step gives its player a number, so the walk-through offers the "Your number is"
+ * info token (Trevor, 2026-10-18): TPI's night text for the step says to give a finger
+ * signal (the Chef, Empath, Clockmaker, Chambermaid, Mathematician, Oracle, Juggler, Barista
+ * and Duchess in TPI's data).
+ */
+export const givesNumber = (step: NightStep): boolean => /finger signal/i.test(step.reminder ?? '');
