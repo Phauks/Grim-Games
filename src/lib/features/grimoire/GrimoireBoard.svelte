@@ -198,7 +198,7 @@
 	const namePlaces = $derived(nameBoxes.map((n) => n.place));
 	/**
 	 * The script's name in the corner keeps clear of every seat and name (Trevor, 2026-10-18),
-	 * cut short with an ellipsis where it would reach one, in whichever lower corner has room.
+	 * cut short with an ellipsis where it would reach one (always the lower left).
 	 */
 	const corner = $derived.by(() => {
 		const boxes = shown.flatMap((p, i) => {
@@ -302,10 +302,10 @@
 					? [{ x: width - timerW / 2, y: timerH / 2, w: timerW + 12, h: timerH + 12 }]
 					: []),
 				// The script's name in a lower corner.
-				...(titleW > 0 && boardLooks.current.titleAt === 'corner'
+				...(titleW > 0
 					? [
 							{
-								x: corner.side === 'left' ? titleW / 2 : width - titleW / 2,
+								x: titleW / 2,
 								y: height - titleH / 2,
 								w: titleW + 12,
 								h: titleH + 12
@@ -1149,19 +1149,8 @@
 		{:else}
 			<!-- The app's navigation; on the narrowest phones it is in More instead. -->
 			<span class="nav-menu"><NavMenuButton /></span>
-			<!-- Icons on phones; with their words on wider screens, where there is room. The
-			     script's name can sit in the room before them (Trevor, 2026-10-17). -->
-			{#if showTitle && boardLooks.current.titleAt === 'toolbar'}
-				<span class="title toolbar-title" data-testid="script-title"
-					>{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span>
-						&middot;
-					{/if}<span class:mode={modeInName} data-testid={modeInName ? 'game-mode' : undefined}
-						>{game.script.meta?.name ?? ''}</span
-					></span
-				>
-			{:else}
-				<span class="spacer"></span>
-			{/if}
+			<!-- Icons on phones; with their words on wider screens, where there is room. -->
+			<span class="spacer"></span>
 			<Button
 				variant="quiet"
 				icon="night"
@@ -1208,23 +1197,15 @@
 		style:--name-scale={boardLooks.current.nameSize}
 		bind:this={board}
 	>
-		<!-- The script's name and author sit behind the circle, or elsewhere (titleAt). -->
-		{#if showTitle && boardLooks.current.titleAt === 'middle'}
-			<p
-				class="watermark"
-				class:on-image={backgroundUrl !== undefined || background.kind === 'preset'}
-				class:vignette={boardLooks.current.vignette}
+		<!-- The vignette darkens the middle of an image background (Trevor, 2026-10-17: its own
+		     switch and strength). The script's name is only in the lower left corner (2026-10-18). -->
+		{#if boardLooks.current.vignette && (backgroundUrl !== undefined || background.kind === 'preset')}
+			<div
+				class="vignette"
+				data-testid="vignette"
 				style:--vignette={boardLooks.current.vignetteStrength}
 				aria-hidden="true"
-			>
-				{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span>{/if}
-				{#if game.script.meta?.name}<span
-						class="script-name"
-						class:mode={modeInName}
-						data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
-					>{/if}
-				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
-			</p>
+			></div>
 		{/if}
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = shown[i]}
@@ -1436,13 +1417,12 @@
 				{/if}
 			</div>
 		{/if}
-		{#if showTitle && boardLooks.current.titleAt === 'corner' && game.script.meta?.name}
+		{#if showTitle && game.script.meta?.name}
 			<!-- Small in the lower left corner, clear of the seats (Trevor, 2026-10-17). -->
 			<p
 				class="corner-title"
-				class:right={corner.side === 'right'}
-				style:max-width={width > 0 ? `${(corner.width / width) * 100}%` : undefined}
-				class:no-room={width > 0 && corner.width < 2 * rootFont}
+				style:max-width={width > 0 ? `${(corner / width) * 100}%` : undefined}
+				class:no-room={width > 0 && corner < 2 * rootFont}
 				data-testid="script-title"
 				bind:clientWidth={titleW}
 				bind:clientHeight={titleH}
@@ -2021,65 +2001,29 @@
 		background: var(--evil);
 		color: var(--on-evil);
 	}
-	.watermark {
+	/* The vignette (Trevor, 2026-10-17: its own switch and strength), over an image only. */
+	.vignette {
 		position: absolute;
 		inset: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		margin: 0;
-		padding: 0 15%;
-		font-family: var(--font-heading);
-		line-height: 1.1;
-		text-align: center;
-		color: var(--heading);
-		opacity: 0.12;
-		pointer-events: none;
-		user-select: none;
-	}
-	.script-name {
-		font-size: clamp(1.5rem, 7vmin, 4rem);
-	}
-	.author {
-		font-size: clamp(0.9rem, 3vmin, 1.5rem);
-	}
-	/* The game mode, apart from the script: small capitals in the accent colour. */
-	.mode {
-		color: var(--accent);
-		font-family: var(--font-control);
-		font-size: clamp(0.8rem, 3vmin, 1.4rem);
-		font-variant: small-caps;
-		letter-spacing: 0.08em;
-	}
-	.toolbar-title .mode,
-	.corner-title .mode {
-		font-size: 0.8em;
-	}
-	.watermark .script-name.mode {
-		font-size: clamp(1.5rem, 7vmin, 4rem);
-	}
-	/* Over an image: a soft scrim and an outline keep the words readable. */
-	.watermark.on-image {
-		opacity: 0.5;
-		text-shadow:
-			0 0 2px var(--backdrop),
-			0 0 6px var(--backdrop);
-	}
-	/* The vignette (Trevor, 2026-10-17: its own switch and strength). */
-	.watermark.on-image.vignette {
 		background: radial-gradient(
 			ellipse 45% 22% at center,
 			rgb(0 0 0 / var(--vignette)),
 			transparent 100%
 		);
+		pointer-events: none;
+	}
+	/* The game mode, apart from the script: small capitals in the accent colour. */
+	.mode {
+		color: var(--accent);
+		font-family: var(--font-control);
+		font-variant: small-caps;
+		letter-spacing: 0.08em;
+	}
+	.corner-title .mode {
+		font-size: 0.8em;
 	}
 	.spacer {
 		flex: 1;
-	}
-	.toolbar-title {
-		padding-inline: var(--space-2);
-		font-size: 1.05rem;
 	}
 	.corner-title {
 		position: absolute;
@@ -2094,11 +2038,6 @@
 		line-height: 1.15;
 		color: var(--heading);
 		pointer-events: none;
-	}
-	.corner-title.right {
-		left: auto;
-		right: var(--space-1);
-		text-align: right;
 	}
 	.corner-title.no-room {
 		visibility: hidden;

@@ -12,6 +12,7 @@ describe('board looks', () => {
 				rulesGrouped: true,
 				nameSize: 9,
 				reminders: 'free',
+				// The script's name is only in the lower left corner now (Trevor, 2026-10-18).
 				titleAt: 'corner'
 			})
 		).toEqual({
@@ -20,8 +21,7 @@ describe('board looks', () => {
 			rulesAt: 'edge',
 			rulesGrouped: true,
 			nameSize: 1.6,
-			reminders: 'free',
-			titleAt: 'corner'
+			reminders: 'free'
 		});
 		expect(
 			parseBoardLooks({

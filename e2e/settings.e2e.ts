@@ -184,8 +184,6 @@ test('the board looks and background are in Board and tokens, saved with the boa
 	await slide(page, 'Vignette strength', 0.3);
 	await dialog.getByRole('combobox', { name: 'Location', exact: true }).tap();
 	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
-	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
-	await page.getByRole('option', { name: 'Lower left corner' }).tap();
 
 	const saved = await page.evaluate(() =>
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
@@ -195,7 +193,6 @@ test('the board looks and background are in Board and tokens, saved with the boa
 		vignetteStrength: 0.3,
 		rulesAt: 'edge',
 		rulesGrouped: false,
-		titleAt: 'corner',
 		nameSize: 1,
 		reminders: 'seat'
 	});

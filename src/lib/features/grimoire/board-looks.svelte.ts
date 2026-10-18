@@ -15,11 +15,6 @@ export interface BoardLooks {
 	rulesAt: 'middle' | 'edge';
 	/** The Fabled and Loric as one stack that lists them all when tapped. */
 	rulesGrouped: boolean;
-	/**
-	 * Where the script's name sits (Trevor, 2026-10-17: seats and reminders cover it in the
-	 * middle): behind the circle, in the toolbar, or small in the board's lower left corner.
-	 */
-	titleAt: 'middle' | 'toolbar' | 'corner';
 	/** The player name badge's size, as a multiple of its usual size. */
 	nameSize: number;
 	/**
@@ -37,7 +32,6 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	vignetteStrength: 0.55,
 	rulesAt: 'middle',
 	rulesGrouped: false,
-	titleAt: 'middle',
 	nameSize: 1,
 	reminders: 'seat'
 };
@@ -56,7 +50,6 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		// 'corner' was the edge, grouped, before they became two choices.
 		rulesAt: value.rulesAt === 'edge' || value.rulesAt === 'corner' ? 'edge' : 'middle',
 		rulesGrouped: value.rulesGrouped === true || value.rulesAt === 'corner',
-		titleAt: value.titleAt === 'toolbar' || value.titleAt === 'corner' ? value.titleAt : 'middle',
 		nameSize: Number.isFinite(nameSize)
 			? Math.min(NAME_SIZE.max, Math.max(NAME_SIZE.min, nameSize))
 			: DEFAULT_BOARD_LOOKS.nameSize,

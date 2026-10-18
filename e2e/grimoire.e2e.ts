@@ -458,7 +458,7 @@ test('a new game can use a custom script from the Library', async ({ page }) => 
 	await expect(page.getByTestId('script-details-name')).toHaveText('Pocket Storm');
 
 	await startGame(page, 'Pocket Storm');
-	await expect(page.locator('.watermark')).toHaveText('Pocket Storm');
+	await expect(page.locator('.corner-title .script-name')).toHaveText('Pocket Storm');
 });
 
 test("reminders: add several from the picker, this seat's first, then move and remove", async ({
@@ -1202,9 +1202,10 @@ test('the board background can be an image from the device, kept after a reload'
 	page
 }) => {
 	await startGame(page);
-	// The official script's name and author sit behind the circle.
-	await expect(page.locator('.watermark')).toContainText('Trouble Brewing');
-	await expect(page.locator('.watermark')).toContainText('by The Pandemonium Institute');
+	// The official script's name and author, in the lower left corner only (Trevor, 2026-10-18).
+	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
+	await expect(page.locator('.corner-title')).toContainText('by The Pandemonium Institute');
+	await expect(page.locator('.watermark, .toolbar-title')).toHaveCount(0);
 
 	// Background is set in Board and tokens, the one way in (Trevor, 2026-10-18).
 	await expect(page.getByRole('button', { name: 'Background', exact: true })).toHaveCount(0);
@@ -1225,7 +1226,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	const backdrop = page.getByTestId('board-background');
 	await expect(backdrop).toHaveAttribute('style', /blob:/);
-	await expect(page.locator('.watermark')).toHaveClass(/on-image/);
+	await expect(page.getByTestId('vignette')).toBeAttached();
 
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('style', /blob:/);
@@ -1252,24 +1253,15 @@ test('the board background can be an image from the device, kept after a reload'
 		height: viewport.height
 	});
 	// The board's looks are here too, the same values as in Settings (Trevor, 2026-10-17).
-	await expect(page.locator('.watermark')).toHaveClass(/vignette/);
+	await expect(page.getByTestId('vignette')).toBeAttached();
 	await dialog.getByText('Vignette', { exact: true }).tap();
-	await expect(page.locator('.watermark')).not.toHaveClass(/vignette/);
+	await expect(page.getByTestId('vignette')).toHaveCount(0);
 	await dialog.getByText('Script name on the board', { exact: true }).tap();
-	await expect(page.locator('.watermark')).toHaveCount(0);
-	await dialog.getByText('Script name on the board', { exact: true }).tap();
-	// The name can sit elsewhere, clear of the circle (Trevor, 2026-10-17).
-	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
-	await page.getByRole('option', { name: 'Lower left corner' }).tap();
-	await expect(page.locator('.watermark')).toHaveCount(0);
-	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
-	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
-	await page.getByRole('option', { name: 'In the toolbar' }).tap();
-	await expect(page.locator('.toolbar-title')).toHaveText('Trouble Brewing');
 	await expect(page.locator('.corner-title')).toHaveCount(0);
-	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
-	await page.getByRole('option', { name: 'Behind the circle' }).tap();
-	await expect(page.locator('.watermark')).toContainText('Trouble Brewing');
+	await dialog.getByText('Script name on the board', { exact: true }).tap();
+	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
+	// One place only (Trevor, 2026-10-18): no choice of where.
+	await expect(dialog.getByRole('combobox', { name: 'Script name', exact: true })).toHaveCount(0);
 	// The player name badge size is an option (Trevor, 2026-10-17), live on the board.
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
@@ -1285,7 +1277,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
-	await expect(page.locator('.watermark')).not.toHaveClass(/vignette/);
+	await expect(page.getByTestId('vignette')).toHaveCount(0);
 
 	// The board and token settings open over the board from its menu (Trevor, 2026-10-17).
 	await menu(page, 'Board and tokens');
@@ -2985,16 +2977,7 @@ test("a game mode is named where the script's name is, apart from it", async ({ 
 	await page.reload();
 	// Trevor (2026-10-18): different text and styling for alternative game modes.
 	await expect(page.getByTestId('game-mode')).toHaveText('Sushi Buffet');
-	for (const where of ['Lower left corner', 'In the toolbar']) {
-		await menu(page, 'Board and tokens');
-		const settings = page.getByRole('dialog', { name: 'Settings' });
-		await settings.getByRole('combobox', { name: 'Script name', exact: true }).tap();
-		await page.getByRole('option', { name: where }).tap();
-		await page.keyboard.press('Escape');
-		await expect(page.getByTestId('script-title')).toContainText(
-			/Sushi Buffet\s*·?\s*Trouble Brewing|Trouble Brewing\s*Sushi Buffet/
-		);
-	}
+	await expect(page.getByTestId('script-title')).toContainText(/Trouble Brewing\s*Sushi Buffet/);
 });
 
 test('the script name in the corner keeps clear of every seat, and a town names its mode once', async ({
@@ -3021,7 +3004,6 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		await page.goto('/new');
 		await page.evaluate((mode) => {
 			localStorage.setItem('grim-games:custom-modes:v1', JSON.stringify([mode]));
-			localStorage.setItem('grim.boardLooks', JSON.stringify({ titleAt: 'corner' }));
 		}, trouble);
 		await page.reload();
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
