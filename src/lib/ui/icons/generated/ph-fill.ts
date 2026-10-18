@@ -67,7 +67,6 @@ import ph_flag_fill from '~icons/ph/flag-fill';
 import ph_flask_fill from '~icons/ph/flask-fill';
 import ph_floppy_disk_fill from '~icons/ph/floppy-disk-fill';
 import ph_flower_fill from '~icons/ph/flower-fill';
-import ph_flower_lotus_fill from '~icons/ph/flower-lotus-fill';
 import ph_folder_fill from '~icons/ph/folder-fill';
 import ph_folder_open_fill from '~icons/ph/folder-open-fill';
 import ph_folder_simple_fill from '~icons/ph/folder-simple-fill';
@@ -251,7 +250,6 @@ const icons: IconMap = {
 	'ph:flask-fill': ph_flask_fill,
 	'ph:floppy-disk-fill': ph_floppy_disk_fill,
 	'ph:flower-fill': ph_flower_fill,
-	'ph:flower-lotus-fill': ph_flower_lotus_fill,
 	'ph:folder-fill': ph_folder_fill,
 	'ph:folder-open-fill': ph_folder_open_fill,
 	'ph:folder-simple-fill': ph_folder_simple_fill,

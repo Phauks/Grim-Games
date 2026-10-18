@@ -67,7 +67,6 @@ import ph_flag_bold from '~icons/ph/flag-bold';
 import ph_flask_bold from '~icons/ph/flask-bold';
 import ph_floppy_disk_bold from '~icons/ph/floppy-disk-bold';
 import ph_flower_bold from '~icons/ph/flower-bold';
-import ph_flower_lotus_bold from '~icons/ph/flower-lotus-bold';
 import ph_folder_bold from '~icons/ph/folder-bold';
 import ph_folder_open_bold from '~icons/ph/folder-open-bold';
 import ph_folder_simple_bold from '~icons/ph/folder-simple-bold';
@@ -251,7 +250,6 @@ const icons: IconMap = {
 	'ph:flask-bold': ph_flask_bold,
 	'ph:floppy-disk-bold': ph_floppy_disk_bold,
 	'ph:flower-bold': ph_flower_bold,
-	'ph:flower-lotus-bold': ph_flower_lotus_bold,
 	'ph:folder-bold': ph_folder_bold,
 	'ph:folder-open-bold': ph_folder_open_bold,
 	'ph:folder-simple-bold': ph_folder_simple_bold,

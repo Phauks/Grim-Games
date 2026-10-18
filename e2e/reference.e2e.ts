@@ -25,8 +25,8 @@ test('searching shows everything the app uses for the Witch', async ({ page }) =
 	await expect(card).toContainText('Each night, choose a player');
 	await expect(card.getByTestId('no-jinxes')).toBeVisible();
 	await expect(card.getByTestId('no-jinxes')).toHaveText('None');
-	await expect(card.getByTestId('night-first-position')).toHaveText(/^#\d+/);
-	await expect(card.getByTestId('night-other-position')).toHaveText(/^#\d+/);
+	await expect(card.getByTestId('night-first-position')).toHaveText(/^Step \d+/);
+	await expect(card.getByTestId('night-other-position')).toHaveText(/^Step \d+/);
 	// TPI's :reminder: markup is drawn as the Witch's own token, coloured as a Minion's.
 	const token = card.getByTestId('night-other').getByTestId('reminder-token');
 	await expect(token).toHaveText('Cursed');
@@ -291,15 +291,15 @@ test('the table view is remembered and the night-order table is in night order',
 	expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test('token leaves and the setup flower are drawn inside the token', async ({ page }) => {
+test('token leaves are drawn inside the token, with no setup flower', async ({ page }) => {
+	// Trevor (2026-10-18): the setup change is shown inside the Reference, not as a flower.
 	await page.goto('/reference');
 	await page.getByRole('searchbox').fill('Village Idiot');
 	const token = page.locator('.token[role="img"]').first();
 	await expect(token).toBeVisible();
 	const face = await token.locator('circle.face').boundingBox();
-	const leaves = token.locator('g.leaf, g.flower');
-	await expect(token.locator('g.flower')).toHaveCount(1);
-	await expect(token.locator('g.leaf[data-kind="setup"]')).toHaveCount(0);
+	const leaves = token.locator('g.leaf');
+	await expect(token.locator('g.flower')).toHaveCount(0);
 	await expect(leaves.first()).toBeAttached();
 	expect(face).not.toBeNull();
 	for (const leaf of await leaves.all()) {
@@ -313,13 +313,13 @@ test('token leaves and the setup flower are drawn inside the token', async ({ pa
 	await token.screenshot({ path: 'test-results/village-idiot-token.png' });
 });
 
-test('the token key explains the leaves and the flower in an overlay', async ({ page }) => {
+test('the token key explains the leaves in an overlay', async ({ page }) => {
 	await page.goto('/reference');
 	await page.getByRole('button', { name: 'Token key' }).tap();
 	const key = page.getByRole('dialog', { name: 'Token key' });
 	await expect(key).toContainText('Leaf on the left: wakes on the first night.');
-	await expect(key).toContainText('Flower at the bottom right: changes setup.');
-	await expect(key.locator('g.flower')).toHaveCount(1);
+	await expect(key).not.toContainText('Flower');
+	await expect(key.locator('g.flower')).toHaveCount(0);
 });
 
 test('cards and rows far below the screen are built only when scrolled near', async ({ page }) => {
@@ -497,14 +497,23 @@ test('reminder tokens show their copies and whether setup places them; the table
 		.getByTestId('reminder-token');
 	// TPI lists Poisoned twice; setup poisons both of its Townsfolk neighbours.
 	await expect(tokens).toHaveText(['Dead', 'Poisoned×2']);
-	await expect(tokens.nth(0).getByRole('img', { name: /setup/i })).toHaveCount(0);
-	await expect(tokens.nth(1).getByRole('img', { name: 'Placed at setup' })).toHaveCount(1);
+	// Beside each chip: when it goes down, and who it may go on (Trevor, 2026-10-18), read from
+	// the board's own placement rules. The chips carry the No Dashii's icon, not a setup flower.
+	const rowsOf = (id: string) =>
+		page
+			.locator(`[data-testid="reference-card"][data-character="${id}"]`)
+			.locator('[data-row="tokens"] .token-row');
+	await expect(rowsOf('nodashii')).toHaveText([
+		'DeadGoes on: Any player',
+		'Poisoned×2Placed at setup · Goes on: Townsfolk, nearest each side'
+	]);
+	await expect(tokens.first().locator('img')).toHaveAttribute('src', /nodashii/);
 
 	await search.fill('Washerwoman');
-	const washer = page
-		.locator('[data-testid="reference-card"][data-character="washerwoman"]')
-		.locator('[data-row="tokens"]');
-	await expect(washer.getByRole('img', { name: 'Placed at setup' })).toHaveCount(2);
+	await expect(rowsOf('washerwoman')).toHaveText([
+		'TownsfolkPlaced at setup · Goes on: Townsfolk, not self',
+		'WrongPlaced at setup · Goes on: Players, not self, not with Townsfolk'
+	]);
 
 	await search.fill('');
 	await page.getByRole('combobox', { name: 'Show as' }).tap();
@@ -517,4 +526,24 @@ test('reminder tokens show their copies and whether setup places them; the table
 	await expect(table.locator('tr[data-character="imp"]')).toHaveCount(1);
 	await expect(table.locator('tr[data-character="nodashii"]')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Clear filters' }).tap();
+});
+
+test('the table filters characters by edition', async ({ page }) => {
+	// Trevor (2026-10-18): "allow filtering by edition".
+	await page.goto('/reference');
+	await page.getByRole('combobox', { name: 'Show as' }).tap();
+	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	const table = page.getByTestId('character-table');
+	await table.getByRole('button', { name: 'Filter Edition', exact: true }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Filter Edition' });
+	await dialog.getByLabel('Trouble Brewing').check();
+	await dialog.getByLabel('Bad Moon Rising').check();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(table.getByRole('button', { name: 'Filter Edition (set)' })).toBeVisible();
+	await expect(page.getByTestId('table-count')).toContainText('1 filter');
+	await expect(table.locator('tr[data-character="imp"]')).toHaveCount(1);
+	await expect(table.locator('tr[data-character="zombuul"]')).toHaveCount(1);
+	await expect(table.locator('tr[data-character="vortox"]')).toHaveCount(0);
+	await page.getByRole('button', { name: 'Clear filters' }).tap();
+	await expect(table.locator('tr[data-character="vortox"]')).toHaveCount(1);
 });

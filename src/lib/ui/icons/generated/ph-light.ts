@@ -67,7 +67,6 @@ import ph_flag_light from '~icons/ph/flag-light';
 import ph_flask_light from '~icons/ph/flask-light';
 import ph_floppy_disk_light from '~icons/ph/floppy-disk-light';
 import ph_flower_light from '~icons/ph/flower-light';
-import ph_flower_lotus_light from '~icons/ph/flower-lotus-light';
 import ph_folder_light from '~icons/ph/folder-light';
 import ph_folder_open_light from '~icons/ph/folder-open-light';
 import ph_folder_simple_light from '~icons/ph/folder-simple-light';
@@ -251,7 +250,6 @@ const icons: IconMap = {
 	'ph:flask-light': ph_flask_light,
 	'ph:floppy-disk-light': ph_floppy_disk_light,
 	'ph:flower-light': ph_flower_light,
-	'ph:flower-lotus-light': ph_flower_lotus_light,
 	'ph:folder-light': ph_folder_light,
 	'ph:folder-open-light': ph_folder_open_light,
 	'ph:folder-simple-light': ph_folder_simple_light,

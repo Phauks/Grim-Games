@@ -67,7 +67,6 @@ import ph_flag_duotone from '~icons/ph/flag-duotone';
 import ph_flask_duotone from '~icons/ph/flask-duotone';
 import ph_floppy_disk_duotone from '~icons/ph/floppy-disk-duotone';
 import ph_flower_duotone from '~icons/ph/flower-duotone';
-import ph_flower_lotus_duotone from '~icons/ph/flower-lotus-duotone';
 import ph_folder_duotone from '~icons/ph/folder-duotone';
 import ph_folder_open_duotone from '~icons/ph/folder-open-duotone';
 import ph_folder_simple_duotone from '~icons/ph/folder-simple-duotone';
@@ -251,7 +250,6 @@ const icons: IconMap = {
 	'ph:flask-duotone': ph_flask_duotone,
 	'ph:floppy-disk-duotone': ph_floppy_disk_duotone,
 	'ph:flower-duotone': ph_flower_duotone,
-	'ph:flower-lotus-duotone': ph_flower_lotus_duotone,
 	'ph:folder-duotone': ph_folder_duotone,
 	'ph:folder-open-duotone': ph_folder_open_duotone,
 	'ph:folder-simple-duotone': ph_folder_simple_duotone,

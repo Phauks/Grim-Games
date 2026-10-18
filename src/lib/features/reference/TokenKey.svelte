@@ -10,12 +10,11 @@
 	}
 
 	let { open = $bindable(false) }: Props = $props();
-	const none = { firstNight: false, otherNight: false, reminders: 0, setup: false };
+	const none = { firstNight: false, otherNight: false, reminders: 0 };
 	const KEY: { marks: LeafMarks; text: PlainMessageKey }[] = [
 		{ marks: { ...none, firstNight: true }, text: 'reference.key.firstNight' },
 		{ marks: { ...none, otherNight: true }, text: 'reference.key.otherNight' },
-		{ marks: { ...none, reminders: 3 }, text: 'reference.key.reminders' },
-		{ marks: { ...none, setup: true }, text: 'reference.key.setup' }
+		{ marks: { ...none, reminders: 3 }, text: 'reference.key.reminders' }
 	];
 </script>
 

@@ -67,7 +67,6 @@ import ph_flag_thin from '~icons/ph/flag-thin';
 import ph_flask_thin from '~icons/ph/flask-thin';
 import ph_floppy_disk_thin from '~icons/ph/floppy-disk-thin';
 import ph_flower_thin from '~icons/ph/flower-thin';
-import ph_flower_lotus_thin from '~icons/ph/flower-lotus-thin';
 import ph_folder_thin from '~icons/ph/folder-thin';
 import ph_folder_open_thin from '~icons/ph/folder-open-thin';
 import ph_folder_simple_thin from '~icons/ph/folder-simple-thin';
@@ -251,7 +250,6 @@ const icons: IconMap = {
 	'ph:flask-thin': ph_flask_thin,
 	'ph:floppy-disk-thin': ph_floppy_disk_thin,
 	'ph:flower-thin': ph_flower_thin,
-	'ph:flower-lotus-thin': ph_flower_lotus_thin,
 	'ph:folder-thin': ph_folder_thin,
 	'ph:folder-open-thin': ph_folder_open_thin,
 	'ph:folder-simple-thin': ph_folder_simple_thin,

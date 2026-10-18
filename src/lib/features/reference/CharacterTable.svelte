@@ -21,7 +21,7 @@
 		type FieldId,
 		type ReferenceField
 	} from './fields.ts';
-	import { TYPE_PLURALS } from './labels.ts';
+	import { EDITION_LABELS, TYPE_PLURALS } from './labels.ts';
 	import { referenceTable } from './table-state.svelte.ts';
 
 	interface Props {
@@ -72,6 +72,8 @@
 				return !!f.name?.trim();
 			case 'types':
 				return !!f.types?.length;
+			case 'editions':
+				return !!f.editions?.length;
 			case 'alignment':
 				return !!f.alignment;
 			case 'presence':
@@ -120,6 +122,21 @@
 		);
 	}
 
+	function toggleEdition(edition: string, on: boolean) {
+		const editions = (table.filters.editions ?? []).filter((e) => e !== edition);
+		referenceTable.setFilter('editions', on ? [...editions, edition] : editions);
+	}
+
+	/** TPI's editions in release order, then any the data adds that we have no name for. */
+	const editionOptions = $derived.by(() => {
+		const ids = [...Object.keys(EDITION_LABELS)];
+		for (const entry of rows) {
+			const id = entry.character.edition;
+			if (id && !ids.includes(id)) ids.push(id);
+		}
+		return ids.map((id) => ({ value: id, label: EDITION_LABELS[id] ?? id }));
+	});
+
 	const TYPE_OPTIONS = CHARACTER_TYPES.map((type) => ({ value: type, label: TYPE_PLURALS[type] }));
 	const field = (id: FieldId) => REFERENCE_FIELDS.find((f) => f.id === id)!;
 </script>
@@ -156,6 +173,19 @@
 		<div class="actions">
 			<Button variant="quiet" onclick={() => referenceTable.setFilter('types', undefined)}
 				>All types</Button
+			>
+		</div>
+	{:else if f.filter === 'editions'}
+		<FilterOptions
+			legend={f.label}
+			hideLegend
+			options={editionOptions}
+			values={table.filters.editions ?? []}
+			ontoggle={toggleEdition}
+		/>
+		<div class="actions">
+			<Button variant="quiet" onclick={() => referenceTable.setFilter('editions', undefined)}
+				>{t('reference.allEditions')}</Button
 			>
 		</div>
 	{:else if f.filter === 'alignment'}

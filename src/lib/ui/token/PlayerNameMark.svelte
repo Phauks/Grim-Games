@@ -2,7 +2,7 @@
 	/**
 	 * A seat's player name in a pill straddling the bottom of its token's rim (Trevor,
 	 * 2026-10-17: "player name is badge"). It fills its parent, which must be exactly the
-	 * token's box, and sits over the token rather than inside it. The leaves, the setup flower, the
+	 * token's box, and sits over the token rather than inside it. The leaves, the
 	 * icon and the character name on the edge never move for it.
 	 */
 	interface Props {
