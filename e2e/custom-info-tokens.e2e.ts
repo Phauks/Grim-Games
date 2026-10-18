@@ -124,16 +124,16 @@ test('in a game, a character card is offered only while its character is in play
 
 test('a fill-in card asks for its word each time and shows it', async ({ page }) => {
 	await page.goto('/info-tokens');
-	await newCard(page, 'Your number is');
+	await newCard(page, 'Your score is');
 	await page.getByText('Fill in when shown').tap();
 	await expect(page.getByRole('figure', { name: 'Preview' })).toContainText('…');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 
-	await page.getByRole('button', { name: 'Your number is', exact: true }).tap();
+	await page.getByRole('button', { name: 'Your score is', exact: true }).tap();
 	await page.getByRole('textbox', { name: 'Fill in' }).fill('42');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const shown = page.getByTestId('show-to-player');
-	await expect(shown.getByRole('heading')).toHaveText('Your number is');
+	await expect(shown.getByRole('heading')).toHaveText('Your score is');
 	await expect(shown).toContainText('42');
 });
 
@@ -183,24 +183,44 @@ test('a saved colour can be changed and cleared, with bold kept', async ({ page 
 	await expect(preview.locator('[data-ink="blue"]')).toHaveCount(0);
 });
 
-test("Trevor's extra cards sit apart from the base game's, and Number shows just a number", async ({
+test("Trevor's Enhanced Info Tokens sit apart, and the number can be stepped or typed", async ({
 	page
 }) => {
 	await page.goto('/info-tokens');
-	const extras = page.getByRole('list', { name: 'Not in the base game' });
+	const enhanced = page
+		.locator('section.collapsible')
+		.filter({ has: page.getByRole('heading', { name: 'Enhanced Info Tokens' }) });
 	for (const name of [
-		'Number',
+		'Your number is',
+		'Yes/No',
 		'What are you bluffing?',
 		'Use your ability?',
 		'Please choose again'
 	])
-		await expect(extras.getByRole('button', { name, exact: true })).toBeVisible();
-	await extras.getByRole('button', { name: 'Number', exact: true }).tap();
+		await expect(enhanced.getByRole('button', { name, exact: true })).toBeVisible();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+
+	await enhanced.getByRole('button', { name: 'Your number is', exact: true }).tap();
 	await page.getByRole('button', { name: 'Higher number' }).tap();
 	await page.getByRole('button', { name: 'Higher number' }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
-	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.locator('h2.title')).toHaveText('Your number is');
 	await expect(shown.locator('.detail')).toHaveText('2');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+
+	// Typed, with Enter showing it (Trevor, 2026-10-18).
+	await enhanced.getByRole('button', { name: 'Your number is', exact: true }).tap();
+	const field = page.getByRole('textbox', { name: 'Number' });
+	await field.fill('12');
+	await field.press('Enter');
+	await expect(shown.locator('.detail')).toHaveText('12');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+
+	await enhanced.getByRole('button', { name: 'Yes/No', exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Answer' }).tap();
+	await page.getByRole('option', { name: 'No', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(shown.locator('.detail')).toHaveText('No');
 	await expect(shown.locator('h2.title')).toHaveCount(0);
 });
 
