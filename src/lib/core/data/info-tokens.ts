@@ -12,8 +12,8 @@ export interface InfoToken {
 	text: string;
 	/** Built in (cannot be deleted, only hidden) or made by the Storyteller. */
 	source: 'standard' | 'custom';
-	/** Shown to a player alongside: character tokens, a player, a number, or nothing. */
-	shows?: 'characters' | 'player' | 'none' | 'number';
+	/** Shown to a player alongside: character tokens, a player, a number, Yes or No, or nothing. */
+	shows?: 'characters' | 'player' | 'none' | 'number' | 'yes-no';
 	/** Not one of the base game's cards: Trevor's own additions (2026-10-18), marked apart. */
 	extra?: true;
 }
@@ -43,8 +43,9 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	{ id: 'did-you-nominate', text: 'Did you nominate today?', source: 'standard', shows: 'none' },
 	{ id: 'did-you-vote', text: 'Did you vote today?', source: 'standard', shows: 'none' },
 	// Trevor's own additions and wording (2026-10-18), listed apart from the base game's.
-	// Number shows only the number chosen, instead of fingers (Trevor, 2026-10-18).
-	{ id: 'number', text: 'Number', source: 'standard', shows: 'number', extra: true },
+	// A number instead of fingers, and Yes or No, chosen when shown (Trevor, 2026-10-18).
+	{ id: 'number', text: 'Your number is', source: 'standard', shows: 'number', extra: true },
+	{ id: 'yes-no', text: 'Yes/No', source: 'standard', shows: 'yes-no', extra: true },
 	{
 		id: 'what-are-you-bluffing',
 		text: 'What are you bluffing?',

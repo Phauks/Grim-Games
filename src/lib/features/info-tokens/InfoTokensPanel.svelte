@@ -9,6 +9,7 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import { characterCardsFor } from './character-cards.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
+	import { tokenTitle } from './token-title.ts';
 	import { pickMax } from './pick.ts';
 
 	interface Props {
@@ -76,7 +77,7 @@
 		onchooseCharacter={({ title, detail }) => show(title, [], detail)}
 	/>
 
-	<BottomSheet bind:open={pickOpen} title={picking?.text ?? ''} height="85dvh">
+	<BottomSheet bind:open={pickOpen} title={picking ? tokenTitle(picking) : ''} height="85dvh">
 		{#if picking}
 			<CharacterPicker
 				{characters}

@@ -14,6 +14,7 @@ import {
 	checkPassword,
 	cleanEmail,
 	normaliseEmail,
+	normaliseIcon,
 	normaliseUsername,
 	PASSWORD_MAX,
 	PASSWORD_MIN,
@@ -424,6 +425,11 @@ export async function handleAccount(
 	}
 	if (path === '/api/account/username' && method === 'PUT') return setUsername(request, env, auth);
 	if (path === '/api/account/password' && method === 'PUT') return setPassword(request, env, auth);
+	if (path === '/api/account/icon' && method === 'PUT') {
+		const icon = normaliseIcon((await readBody(request))?.icon);
+		if (icon === undefined) return fail(400, 'Bad icon.');
+		return json({ user: (await user.setIcon(icon))! } satisfies UserResponse);
+	}
 	if (path === '/api/account/sessions' && method === 'GET') {
 		return json({ sessions: await user.sessions(auth.sessionId) });
 	}

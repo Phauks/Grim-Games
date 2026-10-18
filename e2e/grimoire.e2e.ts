@@ -361,7 +361,7 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		.getByRole('button', { name: 'Spirit of Ivory' });
 	await expect(fabled).toBeVisible();
 	// Or small along the edge (Trevor, 2026-10-17), set beside the background.
-	await menu(page, 'Board and tokens');
+	await menu(page, 'Board');
 	const looks = page.getByRole('dialog', { name: 'Settings' });
 	// A drop-down (Trevor, 2026-10-17).
 	await looks.getByRole('combobox', { name: 'Location', exact: true }).tap();
@@ -1183,7 +1183,7 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board and tokens' })
+		.getByRole('button', { name: 'Board' })
 		.tap();
 	await settings.getByText('Stack duplicate reminders', { exact: true }).tap();
 	await expect(
@@ -1206,9 +1206,9 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.locator('.corner-title')).toContainText('by The Pandemonium Institute');
 	await expect(page.locator('.watermark, .toolbar-title')).toHaveCount(0);
 
-	// Background is set in Board and tokens, the one way in (Trevor, 2026-10-18).
+	// Background is set in Board, the one way in (Trevor, 2026-10-18).
 	await expect(page.getByRole('button', { name: 'Background', exact: true })).toHaveCount(0);
-	await menu(page, 'Board and tokens');
+	await menu(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await expect(dialog.getByTestId('background-now')).toHaveText('None (plain board)');
 	await expect(dialog.getByRole('button', { name: 'No script background' })).toBeDisabled();
@@ -1229,7 +1229,7 @@ test('the board background can be an image from the device, kept after a reload'
 
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('style', /blob:/);
-	await menu(page, 'Board and tokens');
+	await menu(page, 'Board');
 	await expect(dialog.getByTestId('background-now')).toHaveText('Your image, for this game');
 	await expect(dialog).not.toContainText('never uploaded');
 	await dialog.getByRole('button', { name: 'None', exact: true }).tap();
@@ -1237,7 +1237,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	// Built-in backgrounds, drawn in CSS (Trevor, 2026-10-16), kept after a reload.
-	await menu(page, 'Board and tokens');
+	await menu(page, 'Board');
 	await dialog
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Green felt' })
@@ -1279,12 +1279,17 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.getByTestId('vignette')).toHaveCount(0);
 
 	// The board and token settings open over the board from its menu (Trevor, 2026-10-17).
-	await menu(page, 'Board and tokens');
+	await menu(page, 'Board');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await expect(settings.getByRole('heading', { name: 'Board and tokens', level: 2 })).toBeVisible();
+	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toBeVisible();
 	// Only that section, with no way back into the full Settings list (Trevor, 2026-10-17).
 	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toHaveCount(0);
 	await expect(settings.getByRole('button', { name: 'All settings' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
+	// Tokens has its own menu item, beside Board (Trevor, 2026-10-18).
+	await menu(page, 'Tokens');
+	await expect(settings.getByRole('heading', { name: 'Tokens', level: 2 })).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await expect(page.getByTestId('board-background')).toBeVisible();
@@ -1765,6 +1770,10 @@ test('History shows stats from ended games', async ({ page }) => {
 	await expect(summary).toContainText(
 		/Games\s*1\s*Good won\s*1\s*\(100%\)\s*Evil won\s*0\s*\(0%\)/
 	);
+	// How games end (Trevor, 2026-10-18): alternate wins and the final 3, each with its share.
+	await expect(summary).toContainText(/Alternate wins\s*\d+\s*\(\d+%\)/);
+	await expect(summary).toContainText(/Final 3\s*\d+\s*\(\d+%\)/);
+	await expect(summary).toContainText(/Final 3, good won\s*\d+\s*\((\d+%|None)\)/);
 	const scripts = page.getByTestId('history-scripts');
 	await expect(scripts).toContainText(/Trouble Brewing/);
 	// A long name stays inside its badge, even in a phone's narrow column (Trevor, 2026-10-18:
@@ -2343,7 +2352,7 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await closeSheet(page);
 
 	// Turning it on says what it changes first (Trevor, 2026-10-17).
-	await menu(page, 'Board and tokens');
+	await menu(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog.getByRole('combobox', { name: 'Reminders', exact: true }).tap();
 	await page.getByRole('option', { name: 'Stay where dropped', exact: true }).tap();
@@ -3162,7 +3171,7 @@ test('Resume game names a game’s alternative mode beside its script', async ({
 });
 
 async function reminderMode(page: Page, mode: 'Held by seat' | 'Stay where dropped') {
-	await menu(page, 'Board and tokens');
+	await menu(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog.getByRole('combobox', { name: 'Reminders', exact: true }).tap();
 	await page.getByRole('option', { name: mode, exact: true }).tap();
