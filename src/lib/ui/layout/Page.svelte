@@ -8,7 +8,7 @@
 		hideTitle?: boolean;
 		/** `page`: the window's width up to --page-max. `text`: running text at --measure. */
 		width?: 'page' | 'text';
-		/** Buttons at the end of the title row. */
+		/** Buttons at the end of the title row; on a narrow page, in their own row under it. */
 		actions?: Snippet;
 		/** One muted line under the title (an author, a date, the script in play). */
 		subtitle?: Snippet;
@@ -46,7 +46,8 @@
 
 <!--
 	The frame of every page reached from the sidebar (Trevor, 2026-10-17): one width and gutter,
-	the title row with its actions at the end, then an optional toolbar, then the content.
+	the title row with its actions at the end (under the title on a phone), then an optional
+	toolbar, then the content.
 	No Back button: the sidebar navigates. Overlays (dialogs, sheets) go beside it, not inside.
 -->
 <main class="page" data-width={width}>
@@ -83,13 +84,17 @@
 	.head {
 		display: grid;
 		gap: var(--space-1);
+		container: page-head / inline-size;
 	}
-	/* The actions stay at the end of the title's row on every screen; a long title wraps. */
+	/*
+	 * A narrow page (phones): the actions get their own row under the title, so a wide button
+	 * can never squeeze the title into a column that breaks its words. Decided by the page's
+	 * width alone, never by how wide the buttons happen to be.
+	 */
 	.title-row {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: center;
-		gap: var(--space-3);
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-2);
 	}
 	h1 {
 		margin: 0;
@@ -98,9 +103,19 @@
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		justify-content: flex-end;
 		align-items: center;
 		gap: var(--space-2);
+	}
+	/* Wider pages: the actions sit at the end of the title's row; the title keeps 20u at least. */
+	@container page-head (min-width: 36rem) {
+		.title-row {
+			grid-template-columns: minmax(calc(20 * var(--u)), 1fr) minmax(0, auto);
+			align-items: center;
+			gap: var(--space-3);
+		}
+		.actions {
+			justify-content: flex-end;
+		}
 	}
 	.subtitle {
 		margin: 0;
