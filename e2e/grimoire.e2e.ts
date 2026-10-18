@@ -1578,6 +1578,32 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
 });
 
+test("the Demon executed with a living Mastermind doesn't offer End game", async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	for (const [number, name] of [
+		[1, 'Pukka'],
+		[2, 'Mastermind']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const day = page.getByRole('dialog', { name: 'Day' });
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await day.getByRole('button', { name: 'Seat: Seat 1' }).tap();
+	await page
+		.getByRole('dialog', { name: 'How did Seat 1 die?' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	// The Mastermind plays one more day (https://wiki.bloodontheclocktower.com/Mastermind).
+	await expect(page.getByRole('dialog', { name: 'How did Seat 1 die?' })).toBeHidden();
+	await expect(page.getByRole('alertdialog', { name: 'End game?' })).toHaveCount(0);
+});
+
 test('End game keeps the Storyteller on the board, says it is over, and can be reopened', async ({
 	page
 }) => {
