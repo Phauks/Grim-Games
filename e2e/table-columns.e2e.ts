@@ -2,8 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function openTable(page: Page) {
 	await page.goto('/reference');
-	// One toggle on the search line; the view is remembered, so after a reload it may be on.
+	// One toggle now (338f851), and the table view is remembered: only turn it on when off.
 	const toggle = page.getByRole('button', { name: 'Show as table' });
+	await expect(toggle).toBeVisible();
 	if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.tap();
 	const table = page.getByTestId('character-table');
 	await expect(table.locator('tbody tr')).toHaveCount(181);

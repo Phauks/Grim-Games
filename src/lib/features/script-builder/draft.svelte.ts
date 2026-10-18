@@ -46,6 +46,10 @@ class ScriptBuilderDraft {
 		this.#set({ ...this.#draft, author });
 	}
 
+	setScriptVersion(scriptVersion: string): void {
+		this.#set({ ...this.#draft, scriptVersion });
+	}
+
 	/**
 	 * Adds the character, or takes it off when it is already on. A homebrew character comes
 	 * with its definition (and credit, when known), kept while it is on the script.

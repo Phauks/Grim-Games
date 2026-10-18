@@ -154,7 +154,7 @@
 	});
 
 	const version = $derived(
-		currentScript.current === script ? scriptVersion(currentScript.saved) : undefined
+		scriptVersion(currentScript.current === script ? currentScript.saved : undefined, script?.meta)
 	);
 	let noteId = $state<string>();
 	let noteOpen = $state(false);
