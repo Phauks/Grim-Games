@@ -48,6 +48,8 @@ export const settings = {
 	'settings.backgroundImageError': 'That file could not be read as an image.',
 	'settings.vignette': 'Vignette',
 	'settings.vignetteStrength': 'Vignette strength',
+	'settings.scriptLogo': 'Script logo',
+	'settings.scriptLogoOpacity': 'Script logo opacity',
 	'settings.nameSize': 'Player name size',
 	'settings.rulesAt': 'Location',
 	'settings.rulesAt.middle': 'Middle',

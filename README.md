@@ -72,6 +72,7 @@ Every page footer shows the version, commit, branch, channel (`production`, `pre
 
 - `roles.json`, `jinxes.json`, `nightsheet.json` (from `resources/data/` in botc-release) and `script-schema.json`, copied byte for byte;
 - `icons/<edition>/` character icons: `<id>_g.webp` (good), `<id>_e.webp` (evil) and `<id>.webp` (unaligned: Travellers, Fabled, Loric);
+- `logos/<edition>.webp` the base three editions' logos, from `resources/editions/<edition>/logo.webp`;
 - `manifest.json`: the botc-release commit, fetch date, counts, and a SHA-256 for every file.
 
 `npm run sync:data` refreshes it from a shallow git checkout of botc-release `main` (`-- --ref <sha>` pins a commit, `-- --source <dir>` uses a local checkout). It validates everything with the parsers in `src/lib/core/data` first and fails without writing if TPI's format has changed. With no upstream change it leaves no diff. The `Data sync` workflow runs it every Monday and opens or updates a pull request when something changed; `src/lib/core/data/tpi-data.test.ts` pins the expected counts, so update it after reviewing the change.
@@ -82,6 +83,6 @@ In code, load the files with `loadGameData` from `#lib/core/data/index.ts`; it m
 
 ## Data and acknowledgements
 
-Character data and icons come from The Pandemonium Institute's [botc-release](https://github.com/ThePandemoniumInstitute/botc-release) under its Community Created Content policy. Rules references link to the [official wiki](https://wiki.bloodontheclocktower.com), which is fetched live and never bundled.
+Character data, icons and edition logos come from The Pandemonium Institute's [botc-release](https://github.com/ThePandemoniumInstitute/botc-release) under its Community Created Content policy. Rules references link to the [official wiki](https://wiki.bloodontheclocktower.com), which is fetched live and never bundled.
 
 Grim-Games is not affiliated with The Pandemonium Institute. Blood on the Clocktower is a trademark of Steven Medway and The Pandemonium Institute.

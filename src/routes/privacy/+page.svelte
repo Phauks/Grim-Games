@@ -211,8 +211,10 @@
 				never leave your device unless you share them.
 			</li>
 			<li>
-				<strong>Homebrew images.</strong> A homebrew script's character images load from the sites the
-				script names, which see your request like any page visit.
+				<strong>Homebrew images and script logos.</strong> A homebrew script's character images, and a
+				script's logo or background, load from the sites the script names (logos without telling that
+				site which page asked), which see your request like any page visit. The three base editions' logos
+				come with the app.
 			</li>
 			<li>
 				<strong>GitHub.</strong> If the app fails to start, its error screen links to GitHub's list of

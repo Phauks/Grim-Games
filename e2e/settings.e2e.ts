@@ -195,6 +195,8 @@ test('the board looks and background are in Board and tokens, saved with the boa
 	expect(saved).toEqual({
 		vignette: false,
 		vignetteStrength: 0.3,
+		logo: true,
+		logoOpacity: 0.3,
 		rulesAt: 'edge',
 		rulesGrouped: false,
 		nameSize: 1,

@@ -15,6 +15,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { BotcScriptsEntry } from './botcscripts-api.ts';
 	import { botcCard } from './botcscripts-cards.ts';
+	import ScriptLogo from './ScriptLogo.svelte';
 
 	/**
 	 * One script's details beside the list on the Scripts page (Trevor, 2026-10-16: script info
@@ -26,6 +27,8 @@
 		heading: string;
 		/** The script's own name; '' shows "None". */
 		name: string;
+		/** The script's logo (`scriptLogo`), shown right of the name; none, no space kept. */
+		logo?: string;
 		facts: readonly ScriptFact[];
 		entries: readonly BotcScriptsEntry[];
 		data: GameData | undefined;
@@ -54,6 +57,7 @@
 	let {
 		heading,
 		name,
+		logo,
 		facts,
 		entries,
 		data,
@@ -71,8 +75,11 @@
 <div class="details" data-testid="script-details">
 	<div class="top" class:pinned={!!lead || actionsInTop} data-testid="script-details-top">
 		{@render lead?.()}
-		<h2>{heading}</h2>
-		<p class="name" data-testid="script-details-name">{name || t('common.none')}</p>
+		<div class="titles" class:with-logo={!!logo}>
+			<h2>{heading}</h2>
+			<p class="name" data-testid="script-details-name">{name || t('common.none')}</p>
+			{#if logo}<ScriptLogo src={logo} {name} class="details-logo" />{/if}
+		</div>
 		{#if actions && actionsInTop}
 			<div class="actions">{@render actions()}</div>
 		{/if}
@@ -147,6 +154,21 @@
 		padding-bottom: var(--space-2);
 		border-bottom: var(--card-border);
 		background: var(--card-background);
+	}
+	.titles {
+		display: grid;
+		gap: var(--space-2);
+	}
+	/* The logo spans the source and name lines on the right; its box is set before it loads. */
+	.titles.with-logo {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+	.titles :global(.details-logo) {
+		grid-column: 2;
+		grid-row: 1 / span 2;
+		width: 4.5rem;
+		height: 4.5rem;
+		align-self: center;
 	}
 	h2 {
 		margin: 0;
