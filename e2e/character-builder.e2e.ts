@@ -217,3 +217,21 @@ test('the Script builder builds and edits a character without leaving', async ({
 	await page.goto('/build-character');
 	await expect(page.getByTestId('character-name')).toHaveValue('');
 });
+
+// Like the Script builder (Trevor, 2026-10-18): Save sits in the header, and Download shows
+// the character's JSON first, with Copy and Download.
+test('Save is in the header and Download shows the JSON first', async ({ page }) => {
+	await page.goto('/build-character');
+	await page.getByTestId('character-name').fill('Wick Trimmer');
+	await page.getByTestId('character-ability').fill('You start knowing a wick.');
+	await page.getByRole('main').getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+
+	await page.getByRole('button', { name: 'Download character JSON' }).tap();
+	const dialog = page.getByRole('dialog');
+	await expect(dialog.getByTestId('builder-json')).toContainText('Wick Trimmer');
+	await expect(dialog.getByRole('button', { name: 'Copy JSON' })).toBeVisible();
+	const download = page.waitForEvent('download');
+	await dialog.getByRole('button', { name: 'Download character JSON' }).tap();
+	expect((await download).suggestedFilename()).toBe('wick-trimmer.json');
+});
