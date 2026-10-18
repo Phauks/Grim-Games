@@ -87,6 +87,7 @@
 			/>
 			<ModalActions
 				onCancel={() => (pickOpen = false)}
+				disabled={picked.length === 0}
 				onConfirm={() => {
 					pickOpen = false;
 					if (picking) show(picking.text, picked, pickingDetail);

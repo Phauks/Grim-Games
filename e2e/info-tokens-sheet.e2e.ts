@@ -130,7 +130,7 @@ test('character cards load only for characters on the script', async ({ page }) 
 	await expect(
 		page
 			.getByRole('dialog', { name: 'Info tokens' })
-			.getByRole('button', { name: 'Character Specific', exact: true })
+			.getByRole('button', { name: 'Character-Specific', exact: true })
 	).toBeVisible();
 	await expect(page.getByRole('button', { name: /^Your Secret Word/ })).toHaveCount(0);
 });

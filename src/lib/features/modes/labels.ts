@@ -8,6 +8,15 @@ export function modeLabel(group: 'part' | 'field' | 'kind' | 'value', name: stri
 	return key in en ? t(key as PlainMessageKey) : name;
 }
 
+/**
+ * A field's label where it sits: a name read differently in one part has its own label (the
+ * pool's `count` is how many hidden extras, a town's `count` how many towns).
+ */
+export function fieldLabel(parent: string, name: string): string {
+	const key = `modes.field.${parent}.${name}`;
+	return key in en ? t(key as PlainMessageKey) : modeLabel('field', name);
+}
+
 /** Fields holding lists of character ids, shown as badges. */
 export const CHARACTER_FIELDS: ReadonlySet<string> = new Set([
 	'banned',

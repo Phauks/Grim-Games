@@ -171,3 +171,39 @@ test('the board timer shows one ring round the whole pill', async ({ page }) => 
 	expect(await ring(open)).toBe('none');
 	expect(await ring(timer)).toBe('solid');
 });
+
+// Every close X is round with the same hover tint (Trevor, 2026-10-18: "some places it is
+// square, other places it is a circle").
+test('close buttons are round and tint the same on hover', async ({ page }) => {
+	async function roundTint(button: Locator) {
+		await button.hover();
+		const tint = () => button.evaluate((el) => getComputedStyle(el).backgroundImage);
+		await expect.poll(tint).not.toBe('none');
+		const style = await button.evaluate((el) => {
+			const s = getComputedStyle(el);
+			const box = el.getBoundingClientRect();
+			return {
+				round: parseFloat(s.borderTopLeftRadius) >= box.width / 2,
+				square: Math.abs(box.width - box.height) < 1,
+				tint: s.backgroundImage
+			};
+		});
+		expect(style.round && style.square).toBe(true);
+		return tint();
+	}
+
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.click();
+	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: 'More', exact: true }).click();
+	const sheet = page.getByRole('dialog', { name: 'Grimoire' });
+	const sheetTint = await roundTint(sheet.getByRole('button', { name: 'Close' }));
+
+	await sheet.getByRole('button', { name: 'Demon bluffs' }).click();
+	await page.getByRole('button', { name: 'Choose' }).first().click();
+	const dialog = page.getByRole('dialog').last();
+	expect(await roundTint(dialog.getByRole('button', { name: 'Close' }).first())).toBe(sheetTint);
+});

@@ -4,6 +4,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import { downloadFile, fileNameFor } from '#lib/ui/download.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeValue from './ModeValue.svelte';
@@ -68,9 +69,16 @@
 			</ul>
 		</section>
 
-		<Collapsible title={t('modes.file')} level={3} storageKey="mode-file">
+		<!-- Starts closed: the file is for writing modes, rarely needed when inspecting (Trevor, 2026-10-18). -->
+		<Collapsible title={t('modes.file')} level={3} startClosed>
 			{#snippet aside()}
 				<IconButton icon="copy" label={t('modes.copyFile')} onclick={copy} />
+				<!-- Copy and Download side by side, as the builders' files (Trevor, 2026-10-18). -->
+				<IconButton
+					icon="download"
+					label={t('modes.downloadFile')}
+					onclick={() => downloadFile(fileNameFor(mode.name, mode.id), file)}
+				/>
 			{/snippet}
 			<pre><code>{file}</code></pre>
 		</Collapsible>

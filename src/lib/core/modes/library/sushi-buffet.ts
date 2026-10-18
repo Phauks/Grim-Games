@@ -27,7 +27,7 @@ export const SUSHI_BUFFET: GameMode = {
 	],
 	parts: {
 		// Trevor, 2026-10-18, in the project chat.
-		bluffs: { kind: 'none', cite: 'https://claude.ai/code/project/chan_01LbwopXmmfZCTHhANoebuJ9' },
+		bluffs: { kind: 'none' },
 		pool: { kind: 'all-characters' },
 		restricted: { banned: [] },
 		setupModifiers: { kind: 'as-chosen' },

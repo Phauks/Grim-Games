@@ -80,6 +80,22 @@ class ScriptBuilderDraft {
 		});
 	}
 
+	/**
+	 * A homebrew character on the script was edited (its id may have changed with its name):
+	 * the new definition takes its place, in the same spot on the script.
+	 */
+	replaceHomebrew(oldId: CharacterId, id: CharacterId, entry: HomebrewEntry): void {
+		const { ids, homebrew, credits } = this.#draft;
+		if (!ids.includes(oldId)) return;
+		const kept = ids.filter((x) => x !== id || x === oldId);
+		this.#set({
+			...this.#draft,
+			ids: kept.map((x) => (x === oldId ? id : x)),
+			homebrew: { ...without(homebrew, oldId), [id]: entry },
+			credits: oldId === id ? credits : without(credits, oldId)
+		});
+	}
+
 	/** After saving: later saves replace that saved script, which is a variation of `variationOf`. */
 	setEditing(scriptId: string | undefined, variationOf?: VariationOf): void {
 		const next: ScriptDraft = { ...this.#draft, editing: scriptId, variationOf };
