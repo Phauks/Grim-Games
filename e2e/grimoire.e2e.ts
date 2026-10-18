@@ -3351,7 +3351,7 @@ test('a step opened from the walk-through closes cleanly', async ({ page }) => {
 		await closeSheet(page);
 	}
 	const strip = await walkTo(page, 'Washerwoman');
-	await strip.getByRole('button', { name: /Washerwoman/ }).tap();
+	await strip.locator('button.step').tap();
 	const step = page.getByRole('dialog', { name: 'Washerwoman' });
 	await expect(step).toBeVisible();
 	await step.getByRole('button', { name: 'Close' }).tap();
