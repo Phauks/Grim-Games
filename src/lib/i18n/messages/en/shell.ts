@@ -41,6 +41,8 @@ export const shell = {
 	'shell.checkUpdates': 'Check for updates',
 	'shell.updateCheckedAt': 'Checked {time}',
 	'shell.updateChecking': 'Checking…',
+	'shell.updateDownloading': 'Downloading update…',
+	'shell.updateDownloadingPercent': 'Downloading update… {percent}',
 	'shell.updateCurrent': 'Up to date',
 	'shell.updateFound': 'Update ready',
 	'shell.updateCheckFailed': "Couldn't check",

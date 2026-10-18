@@ -47,6 +47,7 @@
 
 <!-- A setting with a continuous size (Trevor, 2026-10-16: granular sliders, not S/M/L). -->
 <SettingRow
+	layout="inline-wide"
 	{label}
 	{description}
 	onReset={defaultValue === undefined ? undefined : () => onChange(defaultValue)}
@@ -73,6 +74,8 @@
 <style>
 	.slider {
 		display: flex;
+		flex: 1;
+		width: 100%;
 		align-items: center;
 		gap: var(--space-2) var(--space-3);
 	}

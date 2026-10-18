@@ -48,7 +48,7 @@
 	}
 </script>
 
-<SettingRow label={t('settings.background')}>
+<SettingRow layout="stacked" label={t('settings.background')}>
 	{#snippet control(labelId)}
 		<div class="presets" role="group" aria-labelledby={labelId}>
 			{#each Object.entries(PRESETS) as [id, preset] (id)}

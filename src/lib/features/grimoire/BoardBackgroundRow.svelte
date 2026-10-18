@@ -77,7 +77,7 @@
 	}
 </script>
 
-<SettingRow label="Background">
+<SettingRow layout="stacked" label="Background">
 	{#snippet control(labelId)}
 		<dl class="change">
 			<dt>Now</dt>

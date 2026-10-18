@@ -25,6 +25,7 @@
 
 <!-- A setting picked from a visible set of options (themes, fonts, icon weights). -->
 <SettingRow
+	layout="stacked"
 	{label}
 	{description}
 	onReset={defaultValue === undefined ? undefined : () => choice.onChange(defaultValue)}
