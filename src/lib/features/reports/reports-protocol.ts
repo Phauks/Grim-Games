@@ -4,13 +4,24 @@
  * Shared by the app and the Worker (worker/reports.ts).
  *
  *   POST   /api/reports              body: ReportDraft            -> 201 { id }
- *   GET    /api/reports              Authorization: Bearer <key>  -> 200 { reports: Report[] }
- *   PATCH  /api/reports/<id>         Authorization, { status }    -> 204
- *   DELETE /api/reports/<id>         Authorization                -> 204
+ *   GET    /api/reports              (admin)                      -> 200 { reports: Report[] }
+ *   PATCH  /api/reports/<id>         (admin) { status }           -> 204
+ *   DELETE /api/reports/<id>         (admin)                      -> 204
  *
- * The key is the Worker secret REPORTS_ADMIN_KEY; without it the reading routes answer 404.
+ *   GET    /api/reports/admins                                    -> 200 { admins: string[] }
+ *   POST   /api/reports/admins       { email }                    -> 204
+ *   DELETE /api/reports/admins       { email }                    -> 204
+ *
+ * Reading, triage and the admin list need a signed-in admin account (Trevor, 2026-10-18) or
+ * the Worker secret REPORTS_ADMIN_KEY as a Bearer token; otherwise they answer 404.
  */
 export const REPORTS_API = '/api/reports';
+export const REPORTS_ADMINS_API = '/api/reports/admins';
+
+export interface AdminList {
+	/** Sign-in emails of the accounts that may read reports. */
+	admins: string[];
+}
 
 /** The same kinds as `.github/ISSUE_TEMPLATE/`. */
 export const REPORT_KINDS = ['bug', 'enhancement', 'rules', 'data', 'question'] as const;

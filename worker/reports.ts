@@ -4,20 +4,35 @@ import {
 	parseReportDraft,
 	parseReportIdPath,
 	REPORT_OPTIONAL_FIELDS,
+	REPORTS_ADMINS_API,
 	REPORTS_API,
+	type AdminList,
 	type CreatedReport,
 	type Report,
 	type ReportDraft,
 	type ReportStatus
 } from '../src/lib/features/reports/reports-protocol.ts';
+import { normaliseEmail } from '../src/lib/features/account/account-protocol.ts';
 import { sameHash, sha256 } from './account/crypto.ts';
+import { emailSender, type EmailEnv } from './account/email.ts';
+import type { AccountEnv } from './account/objects.ts';
+import { getUser } from './account/routes.ts';
 
-export interface ReportsEnv {
+export interface ReportsEnv extends AccountEnv, EmailEnv {
 	REPORTS: DurableObjectNamespace<ReportBox>;
 	/** Per-address limit on sending, against floods (wrangler.jsonc). */
 	REPORT_CREATES: RateLimit;
-	/** Worker secret Trevor sets in Cloudflare; reading reports needs it. Unset: reading is off. */
+	/**
+	 * Worker secret Trevor sets in Cloudflare. It opens the inbox and lets its holder name the
+	 * first admin accounts; after that admins sign in instead. Unset: only admin accounts.
+	 */
 	REPORTS_ADMIN_KEY?: string;
+	/**
+	 * "on" only in the local e2e server: trusts sign-ins whose code is shown on screen. Admin
+	 * accounts otherwise count only where sign-in codes really go by email, since a preview
+	 * shows the code to whoever asks for it (account/email.ts).
+	 */
+	ADMINS_TRUST_PREVIEW_SIGN_IN?: string;
 	/** "off" only in the local e2e server, like SHARE_LIMITS. */
 	SHARE_LIMITS?: string;
 }
@@ -51,6 +66,10 @@ export class ReportBox extends DurableObject<ReportsEnv> {
 		super(ctx, env);
 		this.sql = ctx.storage.sql;
 		this.sql.exec(`
+			CREATE TABLE IF NOT EXISTS admins (
+				email TEXT PRIMARY KEY,
+				added_at INTEGER NOT NULL
+			);
 			CREATE TABLE IF NOT EXISTS reports (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				kind TEXT NOT NULL,
@@ -122,6 +141,26 @@ export class ReportBox extends DurableObject<ReportsEnv> {
 	async remove(id: number): Promise<boolean> {
 		return this.sql.exec('DELETE FROM reports WHERE id = ?', id).rowsWritten > 0;
 	}
+
+	/** Accounts (by sign-in email) that may read and triage reports. */
+	async admins(): Promise<string[]> {
+		return this.sql
+			.exec<{ email: string }>('SELECT email FROM admins ORDER BY email')
+			.toArray()
+			.map((row) => row.email);
+	}
+
+	async isAdmin(email: string): Promise<boolean> {
+		return this.sql.exec('SELECT 1 FROM admins WHERE email = ?', email).toArray().length > 0;
+	}
+
+	async addAdmin(email: string, now: number): Promise<void> {
+		this.sql.exec('INSERT OR IGNORE INTO admins (email, added_at) VALUES (?, ?)', email, now);
+	}
+
+	async removeAdmin(email: string): Promise<void> {
+		this.sql.exec('DELETE FROM admins WHERE email = ?', email);
+	}
 }
 
 const noStore = { 'Cache-Control': 'no-store' };
@@ -130,11 +169,33 @@ function text(message: string, status: number): Response {
 	return new Response(message, { status, headers: noStore });
 }
 
-async function isAdmin(request: Request, env: ReportsEnv): Promise<boolean> {
+async function holdsKey(request: Request, env: ReportsEnv): Promise<boolean> {
 	const key = env.REPORTS_ADMIN_KEY;
 	const given = request.headers.get('Authorization')?.match(/^Bearer (.+)$/)?.[1];
 	if (!key || !given) return false;
 	return sameHash(await sha256(given), await sha256(key));
+}
+
+/** The signed-in account, when its sign-in can be trusted and it is an admin. */
+async function adminAccount(
+	request: Request,
+	env: ReportsEnv,
+	url: URL,
+	box: DurableObjectStub<ReportBox>
+): Promise<string | undefined> {
+	const trusted =
+		emailSender(env, url).delivery === 'email' || env.ADMINS_TRUST_PREVIEW_SIGN_IN === 'on';
+	if (!trusted) return undefined;
+	const auth = await getUser(request, env);
+	return auth && (await box.isAdmin(auth.user.email)) ? auth.user.email : undefined;
+}
+
+/** Cookie-signed changes must come from our own pages with a JSON body (as account/routes.ts). */
+function fromApp(request: Request, url: URL): boolean {
+	return (
+		request.headers.get('Origin') === url.origin &&
+		(request.headers.get('Content-Type') ?? '').startsWith('application/json')
+	);
 }
 
 /** Handles `/api/reports` and `/api/reports/<id>`; undefined for other paths. */
@@ -165,9 +226,28 @@ export async function handleReports(
 		return Response.json({ id } satisfies CreatedReport, { status: 201, headers: noStore });
 	}
 
-	// Reading and triage: only with the admin key. Answers 404 otherwise, so the routes don't
-	// advertise themselves.
-	if (!(await isAdmin(request, env))) return text('Not found', 404);
+	// Reading and triage: an admin account, or the key. Answers 404 otherwise, so the routes
+	// don't advertise themselves.
+	const viaKey = await holdsKey(request, env);
+	if (!viaKey && !(await adminAccount(request, env, url, box))) return text('Not found', 404);
+	if (!viaKey && request.method !== 'GET' && !fromApp(request, url)) {
+		return text('This request must come from the app', 403);
+	}
+
+	if (url.pathname === REPORTS_ADMINS_API) {
+		if (request.method === 'GET') {
+			return Response.json({ admins: await box.admins() } satisfies AdminList, {
+				headers: noStore
+			});
+		}
+		const body = (await request.json().catch(() => null)) as { email?: unknown } | null;
+		const email = normaliseEmail(body?.email);
+		if (!email) return text('Bad email', 400);
+		if (request.method === 'POST') await box.addAdmin(email, Date.now());
+		else if (request.method === 'DELETE') await box.removeAdmin(email);
+		else return text('Method not allowed', 405);
+		return new Response(null, { status: 204, headers: noStore });
+	}
 	if (url.pathname === REPORTS_API && request.method === 'GET') {
 		return Response.json({ reports: await box.list() }, { headers: noStore });
 	}

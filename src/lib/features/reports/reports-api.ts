@@ -1,5 +1,7 @@
 import {
+	REPORTS_ADMINS_API,
 	REPORTS_API,
+	type AdminList,
 	type CreatedReport,
 	type Report,
 	type ReportDraft,
@@ -17,11 +19,14 @@ export async function sendReport(draft: ReportDraft): Promise<number> {
 	return ((await response.json()) as CreatedReport).id;
 }
 
+/** A signed-in admin account needs no key: the session cookie goes with the request. */
 function admin(key: string): HeadersInit {
-	return { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };
+	return key
+		? { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }
+		: { 'Content-Type': 'application/json' };
 }
 
-/** Every report, newest first; undefined when the key is wrong. */
+/** Every report, newest first; undefined when neither the account nor the key may read them. */
 export async function listReports(key: string): Promise<Report[] | undefined> {
 	const response = await fetch(REPORTS_API, { headers: admin(key) });
 	if (response.status === 404) return undefined;
@@ -40,5 +45,20 @@ export async function setReportStatus(key: string, id: number, status: ReportSta
 
 export async function deleteReport(key: string, id: number) {
 	const response = await fetch(`${REPORTS_API}/${id}`, { method: 'DELETE', headers: admin(key) });
+	if (!response.ok) throw new Error(await response.text());
+}
+
+export async function listAdmins(key: string): Promise<string[]> {
+	const response = await fetch(REPORTS_ADMINS_API, { headers: admin(key) });
+	if (!response.ok) throw new Error(await response.text());
+	return ((await response.json()) as AdminList).admins;
+}
+
+export async function changeAdmin(key: string, email: string, add: boolean) {
+	const response = await fetch(REPORTS_ADMINS_API, {
+		method: add ? 'POST' : 'DELETE',
+		headers: admin(key),
+		body: JSON.stringify({ email })
+	});
 	if (!response.ok) throw new Error(await response.text());
 }
