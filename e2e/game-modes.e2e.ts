@@ -439,11 +439,22 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await dialog.getByRole('button', { name: 'How to write a mode file' }).tap();
 	const guide = page.getByRole('dialog', { name: 'Writing a mode file' });
 	await expect(guide.getByTestId('mode-guide-version')).toContainText(/Format 1, revision \d+/);
-	await expect(guide.locator('section[data-part]')).toHaveCount(15);
-	const scroll = guide.getByTestId('mode-guide');
-	await scroll.evaluate((el) => el.scrollTo(0, el.scrollHeight));
-	expect(await scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+	// Two panes: the sections listed, the chosen one beside them (Trevor, 2026-10-18); a phone
+	// lists them behind Back.
+	const sections = guide.getByRole('navigation', { name: 'Sections' });
+	if (!(await sections.isVisible()))
+		await guide.getByRole('button', { name: 'Sections', exact: true }).tap();
+	await expect(sections.getByRole('button')).toHaveCount(18);
+	await sections.getByRole('button', { name: 'Character pool', exact: true }).tap();
+	await expect(guide.locator('section[data-part="pool"]')).toBeVisible();
 	await noSidewaysScroll(page);
+	// The whole guide downloads as Markdown or plain text.
+	await guide.getByRole('button', { name: 'Download the guide' }).tap();
+	const [download] = await Promise.all([
+		page.waitForEvent('download'),
+		page.getByRole('button', { name: 'Markdown (.md)' }).tap()
+	]);
+	expect(download.suggestedFilename()).toBe('writing-a-mode-file.md');
 	await guide.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(guide).toBeHidden();
 	await dialog.getByTestId('mode-file').fill('{"format": 1, "id": "Bad Id"}');
