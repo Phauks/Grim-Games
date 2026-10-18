@@ -1036,6 +1036,21 @@
 {/snippet}
 
 <div class="grimoire">
+	<!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
+	{#if backgroundUrl}
+		<div
+			class="backdrop"
+			data-testid="board-background"
+			style:background-image={`url("${backgroundUrl}")`}
+		></div>
+	{:else if background.kind === 'preset'}
+		<div
+			class="backdrop preset"
+			data-testid="board-background"
+			data-preset={background.id}
+			style:background={PRESETS[background.id].css}
+		></div>
+	{/if}
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
 		{#if arranging}
 			<span class="title arranging-title">Arrange seats</span>
@@ -1116,20 +1131,6 @@
 		style:--name-scale={boardLooks.current.nameSize}
 		bind:this={board}
 	>
-		{#if backgroundUrl}
-			<div
-				class="backdrop"
-				data-testid="board-background"
-				style:background-image={`url("${backgroundUrl}")`}
-			></div>
-		{:else if background.kind === 'preset'}
-			<div
-				class="backdrop preset"
-				data-testid="board-background"
-				data-preset={background.id}
-				style:background={PRESETS[background.id].css}
-			></div>
-		{/if}
 		<!-- The script's name and author sit behind the circle, or elsewhere (titleAt). -->
 		{#if showTitle && boardLooks.current.titleAt === 'middle'}
 			<p
@@ -1702,6 +1703,9 @@
 
 <style>
 	.grimoire {
+		/* Its own layer, so the backdrop sits behind the toolbar and board, not the page. */
+		position: relative;
+		isolation: isolate;
 		display: flex;
 		flex-direction: column;
 		/* Fills the screen: a game hides the app header and footer (route data). */
@@ -1853,8 +1857,9 @@
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.backdrop {
-		position: absolute;
+		position: fixed;
 		inset: 0;
+		z-index: -1;
 		background: center / cover no-repeat;
 		filter: brightness(0.45) saturate(0.85);
 		pointer-events: none;

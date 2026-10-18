@@ -1191,6 +1191,14 @@ test('the board background can be an image from the device, kept after a reload'
 		.getByRole('button', { name: 'Green felt' })
 		.tap();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
+	// The whole screen, under the toolbar too (Trevor, 2026-10-18).
+	const viewport = page.viewportSize()!;
+	expect(await page.getByTestId('board-background').boundingBox()).toEqual({
+		x: 0,
+		y: 0,
+		width: viewport.width,
+		height: viewport.height
+	});
 	// The board's looks are here too, the same values as in Settings (Trevor, 2026-10-17).
 	await expect(page.locator('.watermark')).toHaveClass(/vignette/);
 	await dialog.getByText('Vignette', { exact: true }).tap();
