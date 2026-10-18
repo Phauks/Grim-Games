@@ -321,8 +321,11 @@ test('Two games at once draws one token for both games', async ({ page }) => {
 	await expect(page.getByTestId('next-seat')).toHaveText('None');
 	await page.getByRole('link', { name: 'Done' }).tap();
 	await expect(page).toHaveURL(towns);
-	// Nobody drew the Demon in both games.
-	await expect(page.getByTestId('town-warnings')).toContainText('None');
+	// The draw is random, so one seat may get the Demon in both games: the app warns and
+	// never stops it (towns.test.ts covers the warning itself).
+	await expect(page.getByTestId('town-warnings')).toHaveText(
+		/Warnings\s*(None|Seat \d+ is a Demon in every town)$/
+	);
 
 	// The corner script name switches towns (Trevor, 2026-10-18).
 	await page.getByRole('button', { name: 'Open town 1' }).tap();
