@@ -180,9 +180,8 @@ test('each preview box stays in view only while its own settings scroll', async 
 	await content.evaluate((el) => el.scrollTo(0, 120));
 	await expect.poll(() => pinned(character)).toBeLessThan(2);
 	// Down in the reminder settings, the reminder box is pinned and the character box has gone.
-	await dialog
-		.getByText('Wrap long reminder words', { exact: true })
-		.evaluate((el) => el.scrollIntoView({ block: 'end' }));
+	await reminder.evaluate((el) => el.closest('section.setting-group')!.scrollIntoView());
+	await content.evaluate((el) => el.scrollBy(0, 60));
 	await expect.poll(() => pinned(reminder)).toBeLessThan(2);
 	const [c, r] = [(await character.boundingBox())!, (await reminder.boundingBox())!];
 	expect(c.y + c.height).toBeLessThanOrEqual(r.y + 1);
@@ -376,6 +375,17 @@ test('the preview player name follows the Player name size', async ({ page }) =>
 	const dialog = await openTokens(page);
 	const name = dialog.getByTestId('token-preview').getByTestId('token-player-name');
 	const before = (await name.boundingBox())!.width;
+	// Player name size is a Board setting (Trevor, 2026-10-18: Board and Tokens split).
+	const go = async (section: string) => {
+		const back = dialog.getByRole('button', { name: 'All settings' });
+		if (await back.isVisible()) await back.tap();
+		await dialog
+			.getByRole('navigation', { name: 'Settings sections' })
+			.getByRole('button', { name: section, exact: true })
+			.tap();
+	};
+	await go('Board');
 	await dialog.getByRole('slider', { name: 'Player name size' }).fill('1.5');
+	await go('Tokens');
 	await expect.poll(async () => (await name.boundingBox())!.width).toBeGreaterThan(before * 1.3);
 });

@@ -13,11 +13,12 @@
 		type ColorToken
 	} from '#lib/ui/themes/colors.ts';
 	import { THEMES } from '#lib/ui/themes/registry.ts';
+	import type { PlainMessageKey } from '#lib/i18n/catalog.ts';
 
 	const theme = $derived(preferences.theme);
 	const colors = $derived(preferences.current.colors);
 	const groups = Object.entries(COLOR_GROUPS) as [ColorGroup, readonly ColorToken[]][];
-	const name = (token: ColorToken) => t(`settings.color.${token}`);
+	const name = (token: ColorToken) => t(`settings.color.${token.slice(2)}` as PlainMessageKey);
 
 	function setColor(token: ColorToken, value: string | undefined) {
 		const next = { ...colors };

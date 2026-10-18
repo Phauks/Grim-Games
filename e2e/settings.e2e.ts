@@ -41,7 +41,7 @@ async function slide(page: Page, name: string, value: number) {
 async function resetButton(scope: Locator, name: string) {
 	const id = await scope
 		.getByText(name, { exact: true })
-		.and(scope.locator('[id]'))
+		.and(scope.locator('[id]:not(h2)'))
 		.getAttribute('id');
 	return scope
 		.getByRole('button', { name: 'Reset to default' })
@@ -414,7 +414,10 @@ test('every theme, text and icon size setting has a reset icon beside its name',
 	await expect(await resetButton(theme, 'Theme')).toBeDisabled();
 	const back0 = theme.getByRole('button', { name: 'All settings' });
 	if (await back0.isVisible()) await back0.tap();
-	await theme.getByRole('button', { name: 'Text', exact: true }).tap();
+	await theme
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Text', exact: true })
+		.tap();
 	const dialog = theme;
 	for (const name of ['Text size', 'Text alignment']) {
 		await expect(await resetButton(dialog, name)).toBeDisabled();
