@@ -3283,14 +3283,7 @@ test('a step opened from the walk-through closes cleanly', async ({ page }) => {
 			.tap();
 		await closeSheet(page);
 	}
-	await menu(page, 'Night order');
-	await page
-		.getByRole('dialog', { name: 'Night order' })
-		.getByRole('button', { name: 'Run Night Order' })
-		.tap();
-	const strip = page.getByTestId('night-strip');
-	for (let i = 0; i < 15 && !(await strip.textContent())?.includes('Washerwoman'); i++)
-		await strip.getByRole('button', { name: 'Next step' }).tap();
+	const strip = await walkTo(page, 'Washerwoman');
 	await strip.getByRole('button', { name: /Washerwoman/ }).tap();
 	const step = page.getByRole('dialog', { name: 'Washerwoman' });
 	await expect(step).toBeVisible();
