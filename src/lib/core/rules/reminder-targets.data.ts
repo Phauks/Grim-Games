@@ -695,7 +695,7 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 				note: 'The player whose Outsider character the Librarian is shown.'
 			},
 			Wrong: {
-				seat: 'any',
+				seat: 'other',
 				notWithLabel: 'Outsider',
 				note: 'The second player shown, who is not that Outsider.'
 			}
