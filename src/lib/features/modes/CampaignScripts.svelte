@@ -33,10 +33,23 @@
 	type ColumnId = 'name' | 'started';
 	const all = campaigns();
 	let sort = $state<DataSort<ColumnId> | undefined>();
-	const columns = $derived<DataColumn<ColumnId>[]>([
-		{ id: 'name', label: t('library.column.name'), sortable: true, flush: true },
-		{ id: 'started', label: t('library.campaignStarted'), sortable: true, width: '30%' }
+	const columns = $derived<DataColumn<ColumnId, Campaign>[]>([
+		{
+			id: 'name',
+			label: t('library.column.name'),
+			sortable: true,
+			flush: true,
+			value: (c) => title(c)
+		},
+		{
+			id: 'started',
+			label: t('library.campaignStarted'),
+			sortable: true,
+			width: '30%',
+			value: (c) => started(c)
+		}
 	]);
+	const started = (c: Campaign) => new Date(c.createdAt).toLocaleDateString();
 	const list = $derived.by(() => {
 		const needle = term.trim().toLowerCase();
 		const found = all.filter((c) => !needle || title(c).toLowerCase().includes(needle));
@@ -134,7 +147,7 @@
 			<span class="sub">{t('library.campaignVersions', { count: c.games.length })}</span>
 		</button>
 	{:else}
-		<span class="text">{new Date(c.createdAt).toLocaleDateString()}</span>
+		<span class="text">{started(c)}</span>
 	{/if}
 {/snippet}
 
