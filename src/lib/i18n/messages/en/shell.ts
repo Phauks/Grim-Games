@@ -24,6 +24,8 @@ export const shell = {
 	'shell.navReference': 'Character reference',
 	'shell.navInfoTokens': 'Info tokens',
 	'shell.navAccount': 'Account',
+	'shell.navSectionAdmin': 'Admin',
+	'shell.navReports': 'Reports',
 	'shell.cccAlt': 'Community Created Content: not an official Blood on the Clocktower product',
 	'shell.changelog': 'Changelog',
 	'shell.privacy': 'Privacy',
