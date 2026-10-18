@@ -8,8 +8,12 @@ import type { CharacterId } from '#lib/core/data/index.ts';
 import { MAX_SEATS } from '#lib/core/engine/index.ts';
 
 export const MIN_SELECT_PLAYERS = 5;
-/** Fifteen dealt players plus up to five Travellers, as on the setup sheet. */
-export const MAX_SELECT_PLAYERS = Math.min(20, MAX_SEATS);
+/**
+ * As many as the game allows (Trevor, 2026-10-18: stress tests go past 15 and 20). Beyond 15
+ * the setup sheet's 15 column applies and the extra players are Travellers
+ * (https://wiki.bloodontheclocktower.com/Setup); the bag check warns when they're missing.
+ */
+export const MAX_SELECT_PLAYERS = MAX_SEATS;
 const DEFAULT_PLAYERS = 8;
 const KEY = 'grim-games:setup-selection';
 
