@@ -96,8 +96,8 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 			},
 			{
 				label: 'Wrong',
-				text: 'Choose another player: put [Wrong] on them',
-				target: { choose: 'any', choice: 'any other player', notSelf: true },
+				text: 'Choose a player: put [Wrong] on them',
+				target: { choose: 'any', choice: 'any player' },
 				reason: 'Marks the second player the Washerwoman is shown'
 			}
 		]
@@ -115,8 +115,8 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 			},
 			{
 				label: 'Wrong',
-				text: 'Choose another player: put [Wrong] on them',
-				target: { choose: 'any', choice: 'any other player', notSelf: true },
+				text: 'Choose a player: put [Wrong] on them',
+				target: { choose: 'any', choice: 'any player' },
 				reason: 'Marks the second player the Librarian is shown',
 				when: { minOutsiders: 1 }
 			}
@@ -134,8 +134,8 @@ export const SETUP_REMINDER_ENTRIES: readonly SetupReminderEntry[] = [
 			},
 			{
 				label: 'Wrong',
-				text: 'Choose another player: put [Wrong] on them',
-				target: { choose: 'any', choice: 'any other player', notSelf: true },
+				text: 'Choose a player: put [Wrong] on them',
+				target: { choose: 'any', choice: 'any player' },
 				reason: 'Marks the second player the Investigator is shown'
 			}
 		]

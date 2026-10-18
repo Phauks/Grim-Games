@@ -1,3 +1,4 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
 import type { MessageKey } from '#lib/i18n/catalog.ts';
 import { errorDetails, scrubUrls, type AppError } from './app-error.ts';
 
@@ -58,7 +59,7 @@ export function diagnosticsText(
 	diagnostics: Diagnostics,
 	label: (key: MessageKey) => string
 ): string {
-	const lines = [`Grim-Games diagnostics · ${new Date(diagnostics.gatheredAt).toISOString()}`];
+	const lines = [`${APP_NAME} diagnostics · ${new Date(diagnostics.gatheredAt).toISOString()}`];
 	for (const section of diagnostics.sections) {
 		lines.push('', `## ${label(section.title)}`);
 		for (const row of section.rows) lines.push(`${label(row.label)}: ${row.value}`);

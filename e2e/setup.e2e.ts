@@ -208,6 +208,54 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
+// Trevor, 2026-10-18: Travellers in the bag, the recommended ones listed first and every
+// other one found through a searchable dialog.
+test("Travellers can join the bag: the edition's are listed, the rest are a search away", async ({
+	page
+}) => {
+	await selectionFor(page, 8);
+	// Trouble Brewing's own Travellers are listed without being on its sheet.
+	await expect(choice(page, 'Scapegoat')).toBeVisible();
+	await expect(choice(page, 'Harlot')).toHaveCount(0);
+	await page.getByRole('button', { name: 'All Travellers' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'All Travellers' });
+	await dialog.getByRole('searchbox').fill('Harlot');
+	await dialog.getByRole('button', { name: /^Harlot/ }).tap();
+	await expect(dialog.getByRole('button', { name: /^Harlot/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(choice(page, 'Harlot')).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('li', { has: choice(page, 'Harlot') })).toContainText('Not on script');
+	await expect(page.locator('li', { has: choice(page, 'Scapegoat') })).not.toContainText(
+		'Not on script'
+	);
+	await expect(page.getByTestId('count-traveller')).toHaveText('1');
+	await noSidewaysScroll(page);
+});
+
+// Trevor, 2026-10-18: a button to list only the chosen characters, together with the search.
+test('Show only selected lists just the chosen characters and still searches', async ({ page }) => {
+	await selectionFor(page, 5);
+	await select(page, 'Chef', 'Empath', 'Imp');
+	const only = page.getByRole('button', { name: 'Show only selected' });
+	await only.tap();
+	await expect(only).toHaveAttribute('aria-pressed', 'true');
+	await expect(choice(page, 'Washerwoman')).toHaveCount(0);
+	await expect(choice(page, 'Chef')).toBeVisible();
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('pairs of EVIL');
+	await expect(choice(page, 'Chef')).toBeVisible();
+	await expect(choice(page, 'Empath')).toHaveCount(0);
+	await search.fill('');
+	await only.tap();
+	await expect(only).toHaveAttribute('aria-pressed', 'false');
+	await expect(choice(page, 'Washerwoman')).toBeVisible();
+	await noSidewaysScroll(page);
+});
+
 test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, centred on the token', async ({
 	page
 }) => {
@@ -544,13 +592,9 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	const paste = page.getByRole('dialog', { name: 'Add script' });
 	await paste
-		.getByLabel('Script JSON or link')
+		.getByLabel('Script JSON')
 		.fill(
 			JSON.stringify([
 				{ id: '_meta', name: 'Jinx Check' },
@@ -593,12 +637,8 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
-	await paste.getByLabel('Script JSON or link').fill(
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste.getByLabel('Script JSON').fill(
 		JSON.stringify([
 			{ id: '_meta', name: 'Custom Check' },
 			{
@@ -713,7 +753,13 @@ test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 0/3' })).toBeVisible();
-	await page.getByRole('button', { name: 'Random bluffs' }).tap();
+	// Trevor, 2026-10-18: the filter reads Good Characters or All Characters.
+	const filter = page.getByRole('combobox', { name: 'Characters' });
+	await expect(filter).toContainText('Good Characters');
+	await filter.tap();
+	await expect(page.getByRole('option', { name: 'All Characters' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Random', exact: true }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 3/3' })).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	// No in-play warning to confirm: none of them is in play.

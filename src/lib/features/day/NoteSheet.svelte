@@ -7,6 +7,7 @@
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import type { DayPort } from './day-port.ts';
 
@@ -36,6 +37,12 @@
 		game.game.script.entries.map((e) => (e.kind === 'official' ? e.id : e.character.id))
 	);
 	const others = $derived(game.game.seating.filter((s) => s !== target?.seatId));
+	/** The guess drop-down's value for no guess. */
+	const NO_GUESS = 'none';
+	const guessOptions = $derived([
+		{ value: NO_GUESS, label: t('day.noGuess') },
+		...scriptIds.map((id) => ({ value: id as string, label: game.characterName(id) }))
+	]);
 
 	let text = $state('');
 	let guesses = $state<Record<SeatId, CharacterId>>({});
@@ -104,18 +111,18 @@
 			<fieldset class="guesses">
 				<legend>{t('day.jugglerGuesses')}</legend>
 				{#each others as seatId (seatId)}
-					<label class="guess">
+					<div class="guess">
 						<span>{game.seatName(seatId)}</span>
-						<select
-							bind:value={guesses[seatId]}
-							aria-label={t('day.guessFor', { name: game.seatName(seatId) })}
-						>
-							<option value="">{t('day.noGuess')}</option>
-							{#each scriptIds as id (id)}
-								<option value={id}>{game.characterName(id)}</option>
-							{/each}
-						</select>
-					</label>
+						<Select
+							label={t('day.guessFor', { name: game.seatName(seatId) })}
+							hideLabel
+							value={guesses[seatId] ?? NO_GUESS}
+							options={guessOptions}
+							onChange={(id: string) =>
+								// No guess is left out when the note is saved.
+								(guesses[seatId] = (id === NO_GUESS ? '' : id) as CharacterId)}
+						/>
+					</div>
 				{/each}
 			</fieldset>
 		{/if}
@@ -146,14 +153,5 @@
 		grid-template-columns: calc(5 * var(--u)) 1fr;
 		align-items: center;
 		gap: var(--space-2);
-	}
-	select {
-		min-height: var(--tap-target);
-		padding: 0 var(--space-2);
-		border: 1px solid var(--on-sheet-muted);
-		border-radius: var(--radius-md);
-		background: transparent;
-		color: inherit;
-		font: inherit;
 	}
 </style>

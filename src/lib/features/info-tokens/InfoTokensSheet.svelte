@@ -278,6 +278,8 @@
 				bind:selected={picked}
 				max={pickMax(token.id)}
 				label={t('info-tokens.characters')}
+				inPlay={inPlay && new Set(inPlay)}
+				notInPlay={token.id === 'not-in-play'}
 			/>
 			<ModalActions
 				onCancel={() => (view = { kind: 'list' })}

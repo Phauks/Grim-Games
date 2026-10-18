@@ -1,3 +1,5 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /**
  * Game modes (src/lib/features/modes): the mode picker on New game, Inspect and restricted
  * characters. Part, field and kind labels name the fields of a mode file
@@ -34,7 +36,7 @@ export const modes = {
 	'modes.morePlayers': 'More players',
 	'modes.townPlayers': 'Town {number}: {count} players',
 	'modes.start': 'Start game',
-	'modes.towns.pageTitle': 'Towns · Grim-Games',
+	'modes.towns.pageTitle': `Towns · ${APP_NAME}`,
 	'modes.towns.missing': 'Some of these towns are no longer saved on this device.',
 	'modes.towns.town': 'Town {number}',
 	'modes.towns.players': '{count} players',
@@ -43,7 +45,7 @@ export const modes = {
 	'modes.towns.open': 'Open town {number}',
 	'modes.towns.draw': 'Draw both games',
 	'modes.towns.drawTitle': 'Draw both games',
-	'modes.towns.drawPageTitle': 'Draw both games · Grim-Games',
+	'modes.towns.drawPageTitle': `Draw both games · ${APP_NAME}`,
 	'modes.towns.drawNeedsBags': 'Build the bag in both towns first',
 	'modes.towns.drawSizes': 'The bags differ: {first} and {second} tokens',
 	'modes.towns.drawDone': 'Done',
@@ -55,7 +57,7 @@ export const modes = {
 	'modes.towns.movesToday': 'End of day {day}: move {count}',
 	'modes.towns.move': 'Move a player',
 	'modes.towns.moveConfirm': 'Move {player} to town {number}?',
-	'modes.campaign.pageTitle': 'Campaign · Grim-Games',
+	'modes.campaign.pageTitle': `Campaign · ${APP_NAME}`,
 	'modes.campaign.missing': 'This campaign is no longer saved on this device.',
 	'modes.campaign.games': 'Games',
 	'modes.campaign.game': 'Game {number}',
@@ -75,7 +77,7 @@ export const modes = {
 	'modes.campaign.added': 'Added',
 	'modes.campaign.scriptSize': '{count} characters',
 	'modes.campaign.scriptName': '{name}, game {number}',
-	'modes.specters.pageTitle': 'Specters · Grim-Games',
+	'modes.specters.pageTitle': `Specters · ${APP_NAME}`,
 	'modes.specters.missing': 'This game is no longer saved on this device.',
 	'modes.specters.ability': 'Shared ability',
 	'modes.specters.vote': 'Spectators’ vote',
@@ -89,7 +91,7 @@ export const modes = {
 	'modes.restrictedTitle': 'Restricted characters',
 	'modes.modeBan': 'Banned by the mode',
 	'modes.notChoosable': 'Can’t be chosen',
-	'modes.extras.pageTitle': 'Hidden characters · Grim-Games',
+	'modes.extras.pageTitle': `Hidden characters · ${APP_NAME}`,
 	'modes.extras.title': 'Hidden characters',
 	'modes.extras.rollAll': 'Roll again',
 	'modes.extras.rollOne': 'Roll again instead of {name}',
@@ -98,7 +100,7 @@ export const modes = {
 	'modes.extras.clear': 'Clear the hidden {type}',
 	'modes.extras.announce': 'Tell the table: {low} to {high} hidden characters',
 	'modes.extras.next': 'Choose characters',
-	'modes.deal.pageTitle': 'Characters · Grim-Games',
+	'modes.deal.pageTitle': `Characters · ${APP_NAME}`,
 	'modes.deal.draftHeading': 'Draft',
 	'modes.deal.chooseHeading': 'Choose characters',
 	'modes.deal.passTo': 'Pass to {seat}',

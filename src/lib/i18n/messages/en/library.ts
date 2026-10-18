@@ -1,6 +1,8 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** The Library page (src/lib/features/library): the user's own scripts, folders and tags. */
 export const library = {
-	'library.pageTitle': 'Library · Grim-Games',
+	'library.pageTitle': `Library · ${APP_NAME}`,
 	'library.heading': 'Library',
 	'library.scripts': 'Scripts',
 	'library.characters': 'Characters',

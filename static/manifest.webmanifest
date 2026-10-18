@@ -1,6 +1,6 @@
 {
-	"name": "Grim-Games",
-	"short_name": "Grim-Games",
+	"name": "Grimbinder",
+	"short_name": "Grimbinder",
 	"description": "A touch-first grimoire for Blood on the Clocktower.",
 	"id": "/",
 	"start_url": "/",

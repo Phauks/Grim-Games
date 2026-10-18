@@ -4,7 +4,7 @@ import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts
 
 /**
  * Route data that hides the app header and footer. A game in progress returns
- * `{ chrome: 'game' }` from its `+layout.ts`, so a stray tap on Grim-Games or a footer link
+ * `{ chrome: 'game' }` from its `+layout.ts`, so a stray tap on the app name or a footer link
  * can't leave the game (Trevor, 2026-10-16). That screen's own menu offers Settings, Account
  * and Exit game instead, using the functions below.
  */

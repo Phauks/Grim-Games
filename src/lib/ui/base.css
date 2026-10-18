@@ -135,7 +135,10 @@ select:focus-visible {
 	[data-scope='radio-group'][data-part='item']:not([data-state='checked']):hover,
 	[data-scope='select'][data-part='trigger']:hover,
 	[data-scope='dialog'][data-part='close-trigger']:hover {
-		background: var(--surface-hover);
+		/* A tint over the control's own background, never in place of it: a filled control
+		   (a drop-down, an unchosen choice) keeps its fill, so its text stays readable
+		   (Trevor, 2026-10-18: the Demon bluffs drop-down vanished on hover). */
+		background-image: linear-gradient(var(--surface-hover), var(--surface-hover));
 	}
 	[data-scope='tabs'][data-part='trigger']:not([data-selected]):hover {
 		color: var(--on-surface);

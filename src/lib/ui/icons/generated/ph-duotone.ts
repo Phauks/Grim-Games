@@ -33,6 +33,7 @@ import ph_caret_right_duotone from '~icons/ph/caret-right-duotone';
 import ph_caret_up_duotone from '~icons/ph/caret-up-duotone';
 import ph_cat_duotone from '~icons/ph/cat-duotone';
 import ph_check_duotone from '~icons/ph/check-duotone';
+import ph_check_square_duotone from '~icons/ph/check-square-duotone';
 import ph_circle_dashed_duotone from '~icons/ph/circle-dashed-duotone';
 import ph_circle_notch_duotone from '~icons/ph/circle-notch-duotone';
 import ph_clipboard_duotone from '~icons/ph/clipboard-duotone';
@@ -97,6 +98,7 @@ import ph_link_duotone from '~icons/ph/link-duotone';
 import ph_link_simple_duotone from '~icons/ph/link-simple-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
 import ph_list_bullets_duotone from '~icons/ph/list-bullets-duotone';
+import ph_list_checks_duotone from '~icons/ph/list-checks-duotone';
 import ph_list_magnifying_glass_duotone from '~icons/ph/list-magnifying-glass-duotone';
 import ph_lock_duotone from '~icons/ph/lock-duotone';
 import ph_lock_simple_duotone from '~icons/ph/lock-simple-duotone';
@@ -214,6 +216,7 @@ const icons: IconMap = {
 	'ph:caret-up-duotone': ph_caret_up_duotone,
 	'ph:cat-duotone': ph_cat_duotone,
 	'ph:check-duotone': ph_check_duotone,
+	'ph:check-square-duotone': ph_check_square_duotone,
 	'ph:circle-dashed-duotone': ph_circle_dashed_duotone,
 	'ph:circle-notch-duotone': ph_circle_notch_duotone,
 	'ph:clipboard-duotone': ph_clipboard_duotone,
@@ -278,6 +281,7 @@ const icons: IconMap = {
 	'ph:link-simple-duotone': ph_link_simple_duotone,
 	'ph:list-duotone': ph_list_duotone,
 	'ph:list-bullets-duotone': ph_list_bullets_duotone,
+	'ph:list-checks-duotone': ph_list_checks_duotone,
 	'ph:list-magnifying-glass-duotone': ph_list_magnifying_glass_duotone,
 	'ph:lock-duotone': ph_lock_duotone,
 	'ph:lock-simple-duotone': ph_lock_simple_duotone,

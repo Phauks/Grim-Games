@@ -2,12 +2,7 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
-	import {
-		defaultAlignment,
-		STANDARD_INFO_TOKENS,
-		type Character,
-		type CharacterId
-	} from '#lib/core/data/index.ts';
+	import { STANDARD_INFO_TOKENS, type Character, type CharacterId } from '#lib/core/data/index.ts';
 	import {
 		BLUFFS_PER_SET,
 		MAX_BLUFF_SET_NAME,
@@ -27,16 +22,9 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import {
-		bluffSetLabel,
-		charactersReallyInPlay,
-		DEMON_SET,
-		lunaticInPlay,
-		randomBluffs
-	} from './bluffs.ts';
+	import { bluffSetLabel, charactersReallyInPlay, DEMON_SET, lunaticInPlay } from './bluffs.ts';
 
 	export type BluffCommand = Extract<
 		Command,
@@ -52,15 +40,19 @@
 		characters: CharacterLookup;
 		/** Runs a command on the game session (the grimoire board's store). */
 		dispatch: BluffDispatch;
+		/**
+		 * The characters in play when there are no seats yet (setup's Characters screen);
+		 * otherwise each seat's true character.
+		 */
+		inPlay?: readonly CharacterId[];
 	}
 
-	let { open = $bindable(false), game, characters, dispatch }: Props = $props();
+	let { open = $bindable(false), game, characters, dispatch, inPlay: given }: Props = $props();
 
 	let editing = $state<number>();
 	let deleteOpen = $state(false);
 	let deleting = $state<number>();
 	let picked = $state<CharacterId[]>([]);
-	let filter = $state<'good' | 'script'>('good');
 	let showOpen = $state(false);
 	let showing = $state<CharacterId[]>([]);
 	/** A later set's name, also editable where its characters are chosen (Trevor, 2026-10-17). */
@@ -73,12 +65,7 @@
 			return character ? [character] : [];
 		})
 	);
-	const choices = $derived(
-		filter === 'good'
-			? scriptList.filter((c) => defaultAlignment(c.type) === 'good' && c.type !== 'traveller')
-			: scriptList
-	);
-	const inPlay = $derived(charactersReallyInPlay(game, characters));
+	const inPlay = $derived(given ? new Set(given) : charactersReallyInPlay(game, characters));
 	const lunatic = $derived(lunaticInPlay(game, characters));
 	// The Demon's set always, then any others the Storyteller added (Trevor, 2026-10-16).
 	const sets = $derived(Array.from({ length: Math.max(1, game.bluffs.length) }, (_, i) => i));
@@ -171,16 +158,6 @@
 		if (index !== DEMON_SET && pickedName.trim() !== (game.bluffNames?.[index] ?? ''))
 			run({ type: 'RenameBluffSet', set: index, name: pickedName });
 		editing = undefined;
-	}
-
-	/** A fresh random three on every tap, from the characters listed (Trevor, 2026-10-18). */
-	function random() {
-		picked = randomBluffs(
-			choices.map((c) => c.id),
-			inPlay,
-			BLUFFS_PER_SET,
-			Math.random
-		);
 	}
 
 	/** Shown to the player over the sheet, which stays open under it (Trevor, 2026-10-17). */
@@ -325,28 +302,14 @@
 					</ClearableField>
 				</form>
 			{/if}
-			<div class="filter">
-				<Select
-					label={t('bluffs.filter')}
-					hideLabel
-					value={filter}
-					options={[
-						{ value: 'good', label: t('bluffs.good') },
-						{ value: 'script', label: t('bluffs.wholeScript') }
-					]}
-					onChange={(value) => (filter = value)}
-				/>
-				<span class="ink"
-					><IconButton icon="random" label={t('bluffs.random')} onclick={random} /></span
-				>
-			</div>
 			<CharacterPicker
-				characters={choices}
+				characters={scriptList}
 				bind:selected={picked}
 				max={BLUFFS_PER_SET}
 				label={t('bluffs.characters')}
 				{inPlay}
 				warnInPlay={blocks(editing)}
+				notInPlay
 			/>
 			<ModalActions onCancel={() => (editing = undefined)} onConfirm={() => save()} />
 		{/if}
@@ -505,13 +468,5 @@
 		flex-wrap: wrap;
 		gap: var(--space-2);
 		justify-content: flex-end;
-	}
-	/* The filter, then Random beside it, as in setup. */
-	.filter {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: center;
-		gap: var(--space-2);
-		margin-bottom: var(--space-3);
 	}
 </style>
