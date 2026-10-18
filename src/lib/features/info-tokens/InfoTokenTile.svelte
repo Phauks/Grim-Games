@@ -68,6 +68,7 @@
 				{#each owners.slice(0, 2) as owner (owner.id)}<CharacterBadge
 						characterId={owner.id}
 						character={owner}
+						inline
 						interactive={false}
 					/>{/each}{#if owners.length > 2}<span class="more">+{owners.length - 2}</span>{/if}
 			</span>
@@ -203,6 +204,11 @@
 		-webkit-line-clamp: 3;
 		line-clamp: 3;
 		overflow: hidden;
+	}
+	/* Text and its characters share the tile's height: two lines, then the badges. */
+	.card.owned .text {
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
 	}
 	.owners {
 		display: flex;

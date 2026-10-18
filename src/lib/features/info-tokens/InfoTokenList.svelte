@@ -11,8 +11,6 @@
 		type InfoTokenValue
 	} from '#lib/core/data/info-tokens.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import Sentence from '#lib/features/characters/Sentence.svelte';
-	import { slot } from '#lib/features/characters/slots.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import ShownCard from '#lib/features/show/ShownCard.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -167,7 +165,7 @@
 			})
 		)
 	);
-	// A card that belongs to characters sits under Character Specific instead of Custom.
+	// A card that belongs to characters sits under Character-Specific instead of Custom.
 	const custom = $derived(sorted.filter((token) => !token.characterIds?.length));
 	const tied = $derived(
 		sorted.filter(
@@ -188,11 +186,7 @@
 	let filled = $state<Record<string, string>>({});
 	let fillAdds = $state(false);
 	const fillText = $derived(filling ? (filled[filling.card.id] ?? '') : '');
-	const fillTitle = $derived(
-		filling
-			? t('info-tokens.cardFor', { card: t(filling.card.titleKey), name: slot('character') })
-			: ''
-	);
+	const fillTitle = $derived(filling ? t(filling.card.titleKey) : '');
 
 	function fill(row: { card: CharacterCard; character: Character }, add = false) {
 		filling = { ...row };
@@ -399,6 +393,7 @@
 			title={t('info-tokens.characterCards')}
 			storageKey="info-tokens-characters"
 			{level}
+			asideByTitle
 		>
 			{#snippet aside()}
 				<span class="about" bind:this={aboutAnchor}>
@@ -437,19 +432,15 @@
 </Popover>
 
 <Dialog bind:open={fillOpen} title={fillTitle}>
-	{#snippet heading()}{#if filling}<Sentence
-				text={t('info-tokens.cardFor', {
-					card: t(filling.card.titleKey),
-					name: slot('character')
-				})}
-				>{#snippet fill()}<CharacterBadge
-						characterId={filling?.character.id ?? ''}
-						character={filling?.character}
-						inline
-						interactive={false}
-					/>{/snippet}</Sentence
-			>{/if}{/snippet}
 	{#if filling}
+		<!-- The card's character, apart from its words (Trevor, 2026-10-18: no brackets). -->
+		<p class="fill-owner">
+			<CharacterBadge
+				characterId={filling.character.id}
+				character={filling.character}
+				interactive={false}
+			/>
+		</p>
 		<TextField
 			label={t(filling.card.fills === 'word' ? 'info-tokens.fill.word' : 'info-tokens.fill.phrase')}
 			value={fillText}
@@ -652,6 +643,9 @@
 </ConfirmDialog>
 
 <style>
+	.fill-owner {
+		margin: 0 0 var(--space-2);
+	}
 	.number {
 		display: grid;
 		place-items: center;

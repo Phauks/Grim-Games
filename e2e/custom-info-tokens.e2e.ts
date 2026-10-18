@@ -76,7 +76,7 @@ test('a card saved before colours keeps its red words as red, not bold', async (
 	await expect(tile.locator('strong')).toHaveCount(0);
 });
 
-test('a card that belongs to a character sits under Character Specific', async ({ page }) => {
+test('a card that belongs to a character sits under Character-Specific', async ({ page }) => {
 	await page.goto('/info-tokens');
 	await newCard(page, 'You feel uneasy');
 	const dialog = page.getByRole('dialog');
@@ -95,7 +95,7 @@ test('a card that belongs to a character sits under Character Specific', async (
 	// Listed with the character cards, not with the other custom cards.
 	await expect(
 		page
-			.locator('.collapsible', { hasText: 'Character Specific' })
+			.locator('.collapsible', { hasText: 'Character-Specific' })
 			.getByRole('button', { name: /^You feel uneasy/ })
 	).toBeVisible();
 });
@@ -149,9 +149,14 @@ test('each tile says what it will ask for before it is tapped', async ({ page })
 	const asks = (name: string) =>
 		page.getByRole('button', { name, exact: true }).getByTestId('info-token-asks');
 	await expect(asks('These characters are not in play').getByRole('img')).toHaveAccessibleName(
-		'Asks for up to 3 characters'
+		'Asks for 1 to 3 characters'
 	);
 	await expect(asks('You are').getByRole('img')).toHaveAccessibleName('Asks for 1 character');
+	// At least one, up to three (Trevor, 2026-10-18).
+	await expect(asks('This player is')).toHaveText('1–3');
+	await expect(asks('This player is').getByRole('img')).toHaveAccessibleName(
+		'Asks for 1 to 3 characters'
+	);
 	await expect(asks('Your number is').getByRole('img')).toHaveAccessibleName(
 		'Asks for a number from 0'
 	);
@@ -193,7 +198,7 @@ test("a custom card's answers, number range and characters are each set on their
 	await expect(counted.getByRole('img').first()).toHaveAccessibleName(
 		'Asks for a number from 1 to 3'
 	);
-	await expect(counted.getByRole('img').last()).toHaveAccessibleName('Asks for up to 2 characters');
+	await expect(counted.getByRole('img').last()).toHaveAccessibleName('Asks for 1 to 2 characters');
 	// Saved and read back the same after a reload.
 	await page.reload();
 	await expect(counted.getByRole('img')).toHaveCount(2);
@@ -247,16 +252,17 @@ test('a saved colour can be changed and cleared, with bold kept', async ({ page 
 	await expect(preview.locator('[data-ink="blue"]')).toHaveCount(0);
 });
 
-test("Trevor's Enhanced Info Tokens sit apart, and the number can be stepped or typed", async ({
+test("Trevor's Enhanced tokens sit apart, and the number can be stepped or typed", async ({
 	page
 }) => {
 	await page.goto('/info-tokens');
 	const enhanced = page
 		.locator('section.collapsible')
-		.filter({ has: page.getByRole('heading', { name: 'Enhanced Info Tokens' }) });
+		.filter({ has: page.getByRole('heading', { name: 'Enhanced' }) });
 	for (const name of [
 		'Your number is',
 		'Yes/No',
+		'True/False',
 		'What are you bluffing?',
 		'Use your ability?',
 		'Please choose again'
