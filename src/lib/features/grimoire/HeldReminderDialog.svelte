@@ -65,16 +65,14 @@
 			/>{:else}Reminder{/if}
 	{/snippet}
 	{#snippet subtitle()}
-		{#if holder && 'characterId' in holder}On <CharacterBadge
+		{#if source}From <CharacterBadge characterId={source.id} character={source} inline />{/if}
+		{#if holder && 'characterId' in holder}on <CharacterBadge
 				characterId={holder.characterId}
 				character={characters.get(holder.characterId)}
 				inline
-			/>{:else}Loose on the board{/if}
+			/>{:else}loose on the board{/if}
 	{/snippet}
 	{#if source}
-		<p class="source">
-			<CharacterBadge characterId={source.id} character={source} inline />
-		</p>
 		<CharacterSummary character={source} reminders={false} />
 	{/if}
 	<div class="menu">
@@ -104,9 +102,6 @@
 />
 
 <style>
-	.source {
-		margin: 0 0 var(--space-1);
-	}
 	.menu {
 		display: grid;
 		gap: var(--space-2);

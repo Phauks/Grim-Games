@@ -3,6 +3,7 @@
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
+	import HistoryStrip from './HistoryStrip.svelte';
 	import { boardNightSteps, stepHolders } from './night-steps.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
@@ -99,6 +100,7 @@
 	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
 	import { onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
+	import GameEndPrompt from './GameEndPrompt.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -688,6 +690,20 @@
 		});
 	});
 	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
+	/**
+	 * The step's reminders already on the board are ringed too, on any night (Trevor,
+	 * 2026-10-18: the Butler's Master placed on the first night).
+	 */
+	const walkLabels = $derived(
+		walk && walkStep?.character
+			? new Set([
+					...stepReminders(walkStep.character.id, walk.night, walkStep.character).labels,
+					...walkStep.character.reminders
+				])
+			: undefined
+	);
+	const walkOn = (r: { characterId: CharacterId; label: string }) =>
+		walkStep?.character?.id === r.characterId && (walkLabels?.has(r.label) ?? false);
 	/** Who wakes for the current walk-through step, marked on the board. */
 	const walkHolders = $derived(walkStep ? stepHolders(game, walkStep, characters) : []);
 
@@ -1167,6 +1183,7 @@
 						class="chip-slot"
 						data-seat={i + 1}
 						class:dragging={dragged}
+						class:now={walkOn(reminder)}
 						style:left="{p.x}%"
 						style:top="{p.y}%"
 					>
@@ -1195,6 +1212,7 @@
 				class="chip-slot"
 				data-loose
 				class:dragging={dragged}
+				class:now={walkOn(reminder)}
 				style:left="{p.x}%"
 				style:top="{p.y}%"
 			>
@@ -1267,24 +1285,32 @@
 					guideOpen = true;
 				}}
 				onClose={() => (walk = undefined)}
+				onDay={() => {
+					walk = undefined;
+					dayOpen = true;
+				}}
 			/>
 		{/if}
-		<ReminderBank
-			{grimoire}
-			{board}
-			size={chip}
-			view={bankView}
-			onView={(v) => (bankChosen = v)}
-			focus={walk && walkStep?.character
-				? stepReminders(walkStep.character.id, walk.night, walkStep.character)
-				: undefined}
-			focusMode={stepFocus.current.mode}
-			{seatAt}
-			{spotAllowed}
-			{ruleAt}
-			onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
-			onHints={(h) => (trayHints = h)}
-		/>
+		{#if ended}
+			<HistoryStrip {grimoire} />
+		{:else}
+			<ReminderBank
+				{grimoire}
+				{board}
+				size={chip}
+				view={bankView}
+				onView={(v) => (bankChosen = v)}
+				focus={walk && walkStep?.character
+					? stepReminders(walkStep.character.id, walk.night, walkStep.character)
+					: undefined}
+				focusMode={stepFocus.current.mode}
+				{seatAt}
+				{spotAllowed}
+				{ruleAt}
+				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
+				onHints={(h) => (trayHints = h)}
+			/>
+		{/if}
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>
@@ -1437,6 +1463,14 @@
 	onMove={(id, to) => moveConfirm?.request(id, to)}
 />
 <AlignmentAsk {grimoire} />
+<GameEndPrompt
+	{grimoire}
+	active={!ended && !grimoire.open.viewOnly}
+	onEnd={(team) => {
+		winner = team;
+		endGame();
+	}}
+/>
 
 <InfoTokensSheet
 	bind:open={infoOpen}
@@ -1546,6 +1580,7 @@
 		infoReturn = () => (guideOpen = true);
 		infoOpen = true;
 	}}
+	onChooseBluffs={() => (bluffsOpen = true)}
 	{onDraw}
 />
 
@@ -1740,6 +1775,11 @@
 		position: absolute;
 		translate: -50% -50%;
 		z-index: 1;
+	}
+	/* The walked-through step's reminders already on the board: the bank's ring. */
+	.chip-slot.now > :global(.reminder) {
+		outline: 0.2rem solid var(--accent);
+		outline-offset: 0.15rem;
 	}
 	.chip-slot.dragging {
 		z-index: 3;

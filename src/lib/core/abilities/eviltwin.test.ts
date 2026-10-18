@@ -11,6 +11,8 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -45,8 +47,34 @@ describe('Evil Twin', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Evil_Twin#Examples)', () => {
 		it.todo('Example 1: Both twins claim Oracle; game continues');
-		it.todo('Example 2: Sage-turned Mutant twin executed; evil wins');
-		it.todo('Example 3: Wrong twin executed; night deaths stop');
+		it('Example 2: Sage-turned Mutant twin executed; evil wins', () => {
+			const { session } = castGame(
+				['mutant', 'chef', 'empath', 'eviltwin', 'imp'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'eviltwin', label: 'Twin' }
+				}),
+				(s) => ({ type: 'Execute', seatId: s[0] })
+			);
+			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+				{ rule: 'evil-twin', winner: 'evil' }
+			]);
+		});
+		it('Example 3: Wrong twin executed; night deaths stop', () => {
+			const { session } = castGame(
+				['artist', 'chef', 'empath', 'eviltwin', 'imp'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'eviltwin', label: 'Twin' }
+				}),
+				(s) => ({ type: 'Execute', seatId: s[4] })
+			);
+			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+				{ rule: 'demon-dead', holds: [{ rule: 'evil-twin' }] }
+			]);
+		});
 		it.todo('Example 4: New good twin executed; evil wins');
 	});
 });

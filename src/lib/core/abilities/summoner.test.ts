@@ -11,6 +11,8 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -45,7 +47,16 @@ describe('Summoner', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Summoner#Examples)', () => {
 		it.todo('Example 1: Summoner turns Snitch into Lleech');
-		it.todo('Example 2: Summoner executed on day one; good wins');
+		it('Example 2: Summoner executed on day one; good wins', () => {
+			const { session } = castGame(
+				['chef', 'empath', 'monk', 'mayor', 'summoner'],
+				{ type: 'NewDay' },
+				(s) => ({ type: 'Execute', seatId: s[4] })
+			);
+			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+				{ rule: 'summoner', winner: 'good' }
+			]);
+		});
 		it.todo('Example 3: Alchemist turned into Leviathan, revealed at dawn');
 	});
 });

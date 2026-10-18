@@ -3,7 +3,6 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
@@ -134,14 +133,18 @@
 		const parts: LinePart[] = [];
 		if (isOrphan(seat, game.script, characters)) parts.push({ text: 'Not on the script' });
 		if (really) parts.push({ text: 'Is the ', characterId: really.id });
+		// Only what the sheet shows nowhere else (Trevor, 2026-10-18): a reminder on this seat
+		// is in Reminders below, and death is in Status.
+		const onSeat = new Set(seat.reminders.map((r) => r.reminderId));
 		for (const impairment of ability?.impairments ?? []) {
+			const from = impairment.source.reminderId;
+			if (from && onSeat.has(from)) continue;
 			const words = impairmentWords[impairment.reason];
 			const by = impairment.source.characterId;
 			parts.push(
 				characters.has(by) ? { text: `${words} (`, characterId: by, after: ')' } : { text: words }
 			);
 		}
-		if (ability?.dead) parts.push({ text: 'Dead: no ability' });
 		// An ability works unless something says otherwise (Trevor, 2026-10-16): the line stays
 		// reserved but empty.
 		return parts;
@@ -499,24 +502,22 @@
 			<!-- Always here, so nothing moves when the player dies (Trevor, 2026-10-17). -->
 			<div class="row">
 				<span class="label" id={`ghost-${seat.seatId}`}>Ghost vote</span>
-				<span class="value ghost">
-					{#if seat.dead}
-						<Select
-							label="Ghost vote"
-							labelledBy={`ghost-${seat.seatId}`}
-							value={seat.ghostVoteUsed ? 'used' : 'unused'}
-							options={[
-								{ value: 'unused', label: 'Not used' },
-								{ value: 'used', label: 'Used' }
-							]}
-							onChange={(v) =>
-								grimoire.run({
-									type: v === 'used' ? 'SpendGhostVote' : 'RestoreGhostVote',
-									seatId: seat.seatId
-								})}
-						/>
-					{:else}<span class="ghost-none">None while alive</span>{/if}
-				</span>
+				<!-- One toggle, as wide as the buttons around it (Trevor, 2026-10-18): two states. -->
+				<button
+					type="button"
+					class="value ghost"
+					aria-labelledby={`ghost-${seat.seatId}`}
+					aria-pressed={seat.dead ? seat.ghostVoteUsed : undefined}
+					disabled={!seat.dead}
+					onclick={() =>
+						grimoire.run({
+							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
+							seatId: seat.seatId
+						})}
+				>
+					<Icon name="ghostVote" />
+					{seat.dead ? (seat.ghostVoteUsed ? 'Used' : 'Not used') : 'None while alive'}
+				</button>
 			</div>
 
 			<div class="row">
@@ -963,15 +964,10 @@
 			/>{/if}
 	{/snippet}
 	<!-- Whose ability it comes from, first, so an unfamiliar reminder makes sense (Trevor,
-	     2026-10-17). -->
+	     2026-10-17); "From" above already names it (Trevor, 2026-10-18). -->
 	{#if movingReminder}
 		{@const source = characters.get(movingReminder.characterId)}
-		{#if source}
-			<p class="source">
-				<CharacterBadge characterId={source.id} character={source} inline />
-			</p>
-			<CharacterSummary character={source} reminders={false} />
-		{/if}
+		{#if source}<CharacterSummary character={source} reminders={false} />{/if}
 	{/if}
 	<div class="menu">
 		<Button variant="quiet" icon="move" onclick={() => fromMenu(() => (moveOpen = true))}>
@@ -1300,31 +1296,10 @@
 	/* One line in the sheet, so a long note never moves anything; the dialog shows it all. */
 	/* The note looks as it does in its editor (Trevor, 2026-10-17): the sheet's own text,
 	   not the buttons' font. */
-	.source {
-		margin: 0 0 var(--space-1);
-	}
-	.value.ghost {
-		display: grid;
-		padding: 0;
-		border: 0;
-		cursor: default;
-	}
-	/* The same size and text as the other values in these rows (Trevor, 2026-10-17). */
-	.value.ghost :global([data-scope='select'][data-part='trigger']) {
-		width: 100%;
-		min-height: var(--tap-target);
-		padding-block: 0;
-		border: 1px solid var(--on-sheet-muted);
-		border-radius: var(--button-radius);
-		background: transparent;
-		color: inherit;
-		font: var(--button-font);
-		font-size: 0.8rem;
-	}
-	.ghost-none {
-		align-self: center;
-		padding: 0 var(--space-2);
-		color: var(--on-sheet-muted);
+	/* Used shows whatever has focus (Trevor, 2026-10-18). */
+	.value.ghost[aria-pressed='true'] {
+		border-color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 20%, transparent);
 	}
 	.note-value {
 		justify-content: flex-start;

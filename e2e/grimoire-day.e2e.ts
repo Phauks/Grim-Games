@@ -106,8 +106,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 			.locator('.seat-player')
 			.evaluate((el) => getComputedStyle(el).color);
 	expect(await colour('Seat 2')).toBe(await colour('Seat 1'));
-	await expect(page.getByTestId('announcements')).toContainText('Seat 2');
-	await expect(page.getByTestId('announcements')).toContainText('died: Executed');
+	// A day death is not an announcement: those are the night's, for dawn (Trevor, 2026-10-18).
+	await expect(page.getByTestId('announcements')).toHaveText('None');
 	await expect(page.getByTestId('alive-count')).toHaveText('7/8');
 	await expect(page.getByTestId('ghost-votes')).toHaveText('1');
 	// A small mark while the ghost vote is unused; tapping the dead player offers it (Trevor).
@@ -345,7 +345,7 @@ test('the day view names a homebrew character by its script name', async ({ page
 	await seat(page, 'Seat 1').tap();
 	await page
 		.getByRole('dialog', { name: 'How did Seat 1 die?' })
-		.getByRole('button', { name: 'Executed' })
+		.getByRole('button', { name: 'Killed by the Demon' })
 		.tap();
 	const announcements = page.getByTestId('announcements');
 	await expect(announcements).toContainText('Spartacus');

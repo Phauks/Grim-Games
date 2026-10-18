@@ -370,6 +370,7 @@
 					title={t('script-builder.jinxes')}
 					level={3}
 					storageKey="script-builder:jinxes"
+					empty={!facts?.jinxes.length}
 				>
 					{#snippet aside()}<CountBadge
 							count={facts?.jinxes.length ?? 0}
@@ -399,6 +400,7 @@
 					title={t('script-builder.setupChanges')}
 					level={3}
 					storageKey="script-builder:setup"
+					empty={!facts?.modifiers.length}
 				>
 					{#snippet aside()}<CountBadge count={facts?.modifiers.length ?? 0} />{/snippet}
 					{#if facts?.modifiers.length}
@@ -416,7 +418,12 @@
 						</ul>
 					{:else}<p>{t('common.none')}</p>{/if}
 				</Collapsible>
-				<Collapsible title={t('script-builder.needs')} level={3} storageKey="script-builder:needs">
+				<Collapsible
+					title={t('script-builder.needs')}
+					level={3}
+					storageKey="script-builder:needs"
+					empty={!missingNeeds.length}
+				>
 					{#snippet aside()}<CountBadge
 							count={missingNeeds.length}
 							warn={missingNeeds.length > 0}
@@ -440,6 +447,7 @@
 					title={t('script-builder.homebrew')}
 					level={3}
 					storageKey="script-builder:homebrew"
+					empty={!chosenHomebrewCharacters.length}
 				>
 					{#snippet aside()}<CountBadge
 							count={chosenHomebrewCharacters.length}

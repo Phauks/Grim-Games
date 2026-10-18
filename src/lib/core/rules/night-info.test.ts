@@ -33,6 +33,7 @@ import {
 	townCrierAnswer,
 	truthfulFirst,
 	undertakerAnswer,
+	validInformation,
 	withNightInfo
 } from './night-info.ts';
 import { nightOrder } from './night-order.ts';
@@ -895,5 +896,49 @@ describe('Mathematician', () => {
 		expect(answerCauses(undertakerAnswer(g, seats[0], characters))).toEqual([
 			{ reason: 'poisoned', characterId: 'poisoner', seatId: seats[2] }
 		]);
+	});
+});
+
+// Trevor (2026-10-18): never one suggestion; every valid piece of information, with why.
+describe('every valid piece of information', () => {
+	const tb = ['washerwoman', 'slayer', 'virgin', 'butler', 'poisoner', 'imp', 'chef'];
+
+	it('Washerwoman: each Townsfolk with every player who may be shown beside them', () => {
+		const { game: g, seats } = game(tb);
+		const valid = validInformation(g, infoPicker(g, seats[0], 'washerwoman', characters)!);
+		expect(valid.map((v) => v.characterIds)).toEqual([['slayer'], ['virgin'], ['chef']]);
+		const slayer = valid[0];
+		expect(slayer).toMatchObject({ reason: 'true', target: seats[1] });
+		expect(slayer.seats).toHaveLength(5);
+		expect(slayer.seats).not.toContain(seats[0]);
+		expect(slayer.seats).not.toContain(seats[1]);
+	});
+
+	it('a poisoned Chef: the true number, then every other number, marked', () => {
+		const { game: g, seats } = game(['poisoner', 'chef', 'baron', 'imp', 'scarletwoman'], (s) => ({
+			type: 'AddReminder',
+			seatId: s[1],
+			reminder: { characterId: 'poisoner', label: 'Poisoned' }
+		}));
+		const valid = validInformation(g, infoPicker(g, seats[1], 'chef', characters)!);
+		expect(valid[0]).toEqual({ reason: 'true', number: 3, seats: [] });
+		expect(valid.slice(1).map((v) => [v.reason, v.number])).toEqual([
+			['unreliable', 0],
+			['unreliable', 1],
+			['unreliable', 2],
+			['unreliable', 4],
+			['unreliable', 5]
+		]);
+	});
+
+	it('a poisoned Washerwoman: the true pairs, and any other choice', () => {
+		const { game: g, seats } = game(tb, (s) => ({
+			type: 'AddReminder',
+			seatId: s[0],
+			reminder: { characterId: 'poisoner', label: 'Poisoned' }
+		}));
+		const valid = validInformation(g, infoPicker(g, seats[0], 'washerwoman', characters)!);
+		expect(valid.at(-1)).toEqual({ reason: 'unreliable', seats: [], anyOther: true });
+		expect(valid.filter((v) => v.reason === 'true')).toHaveLength(3);
 	});
 });

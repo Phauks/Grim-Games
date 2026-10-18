@@ -2,6 +2,9 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
+	import { iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 
 	interface Props {
@@ -17,13 +20,29 @@
 
 	let { character, copies, duplicates, jinxed, onToggle, onAddCopy }: Props = $props();
 	const selected = $derived(copies > 0);
+	// The character's page opens from its icon (Trevor, 2026-10-18); made on first use.
+	let infoUsed = $state(false);
+	let infoOpen = $state(false);
 </script>
 
 <!--
-	One selectable character. Tapping toggles it (or removes one copy when there are several);
-	the + button adds a copy. Every mark has a fixed slot, so selecting never moves anything.
+	One selectable character. Tapping its icon opens its character page; tapping the rest
+	toggles it (or removes one copy when there are several); the + button adds a copy. Every mark has a fixed slot, so selecting never moves anything.
 -->
 <div class="choice" data-selected={selected ? '' : undefined} data-type={character.type}>
+	<button
+		type="button"
+		class="info"
+		aria-haspopup="dialog"
+		aria-label={t('setup.characterInfo', { name: character.name })}
+		onpointerdown={() => prefetchWikiPage(character)}
+		onclick={() => {
+			infoUsed = true;
+			infoOpen = true;
+		}}
+	>
+		<CharacterToken {character} alignment={defaultAlignment(character.type)} size={44} />
+	</button>
 	<button
 		type="button"
 		class="main"
@@ -32,7 +51,6 @@
 		data-character-id={character.id}
 		onclick={onToggle}
 	>
-		<CharacterToken {character} alignment={defaultAlignment(character.type)} size={44} />
 		<span class="text">
 			<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
 			<span class="name">{character.name}</span>
@@ -56,6 +74,11 @@
 		>
 	{/if}
 </div>
+{#if infoUsed}<CharacterDialog
+		bind:open={infoOpen}
+		{character}
+		icon={iconUrl(character, defaultAlignment(character.type))}
+	/>{/if}
 
 <style>
 	.choice {
@@ -91,7 +114,7 @@
 	 */
 	.main {
 		display: grid;
-		grid-template-columns: auto minmax(0, 1fr) auto;
+		grid-template-columns: minmax(0, 1fr) auto;
 		flex: 1;
 		align-items: start;
 		column-gap: var(--space-2);
@@ -112,22 +135,37 @@
 			border-radius: var(--radius-md);
 		}
 	}
-	.main > :global(:first-child) {
-		grid-column: 1;
-		grid-row: 1 / 3;
+	/* The icon is its own tap target: the character's page, never a toggle. */
+	.info {
+		display: grid;
+		place-items: start center;
+		flex: none;
+		min-width: var(--tap-target);
+		padding: var(--space-1) 0 var(--space-1) var(--space-2);
+		border: 0;
+		border-radius: var(--radius-md);
+		background: none;
+		color: inherit;
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	@media (hover: hover) {
+		.info:hover {
+			background: var(--surface-selected);
+		}
 	}
 	.text {
 		display: contents;
 	}
 	.name {
-		grid-column: 2;
+		grid-column: 1;
 		grid-row: 1;
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
 		overflow-wrap: anywhere;
 	}
 	.ability {
-		grid-column: 2 / 4;
+		grid-column: 1 / 3;
 		grid-row: 2;
 		font-family: var(--font-ability);
 		font-size: 0.8rem;
@@ -135,7 +173,7 @@
 		opacity: 0.9;
 	}
 	.marks {
-		grid-column: 3;
+		grid-column: 2;
 		grid-row: 1;
 		display: grid;
 		grid-template-columns: 1em 2em 1.25em;

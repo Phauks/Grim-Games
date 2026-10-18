@@ -1,6 +1,7 @@
 /** App shell: header, footer, About, update prompt and the Changelog page. */
 export const shell = {
 	'shell.settings': 'Settings',
+	'shell.appName': 'Grim-Games',
 	'shell.navLabel': 'Menu',
 	'shell.navClose': 'Close menu',
 	'shell.navSectionGames': 'Games',

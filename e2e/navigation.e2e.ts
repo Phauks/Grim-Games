@@ -9,7 +9,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	const menu = page.getByRole('banner').getByRole('button', { name: 'Menu' });
 	await expect(menu).toHaveAttribute('aria-expanded', 'false');
 	await menu.tap();
-	const drawer = page.getByRole('dialog', { name: 'Menu' });
+	const drawer = page.getByRole('dialog', { name: 'Grim-Games' });
 	await expect(drawer).toBeVisible();
 	// The hamburger in the same spot closes it again.
 	await drawer.getByRole('button', { name: 'Close menu' }).first().tap();
@@ -32,8 +32,9 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		await expect(drawer.getByRole('link', { name })).toBeVisible();
 	}
 	// Grouped under plain labels: games, preparation, players, then you (Trevor, 2026-10-16).
+	// Headed with the app's name, not "Menu" (Trevor, 2026-10-18).
 	await expect(drawer.getByRole('heading')).toHaveText([
-		'Menu',
+		'Grim-Games',
 		'Games',
 		'Prepare',
 		'Players',
@@ -95,6 +96,6 @@ test.describe('on a computer', () => {
 		await expect(nav).toBeHidden();
 		await menu.click();
 		await expect(nav).toBeVisible();
-		await expect(page.getByRole('dialog', { name: 'Menu' })).toHaveCount(0);
+		await expect(page.getByRole('dialog', { name: 'Grim-Games' })).toHaveCount(0);
 	});
 });

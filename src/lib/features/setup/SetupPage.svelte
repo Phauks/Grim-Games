@@ -364,8 +364,11 @@
 		/* Just below the app header, which is sticky too (as the sidebar does). */
 		top: calc(var(--tap-target) + env(safe-area-inset-top));
 		z-index: var(--z-raised);
-		padding: var(--space-2) 0;
+		/* Edge to edge, like the app header above it, so nothing shows beside it (Trevor). */
+		margin-inline: calc(-1 * var(--page-gutter));
+		padding: var(--space-2) var(--page-gutter);
 		background: var(--page-background, var(--surface));
+		box-shadow: 0 1px 0 var(--border);
 	}
 	/* Search, then Random and Clear as icon buttons right beside it. */
 	.find {
@@ -391,6 +394,9 @@
 	@media (min-width: 75rem) {
 		.counts {
 			position: static;
+			margin-inline: 0;
+			padding-inline: 0;
+			box-shadow: none;
 		}
 	}
 	.errors {

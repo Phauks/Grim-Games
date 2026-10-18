@@ -11,6 +11,8 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -45,7 +47,17 @@ describe('Mayor', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Mayor#Examples)', () => {
 		it.todo("Example 1: Imp's attack on Mayor bounces to Ravenkeeper");
-		it.todo('Example 2: Three alive and no execution: good wins');
+		it('Example 2: Three alive and no execution: good wins', () => {
+			const { session } = castGame(
+				['mayor', 'chef', 'empath', 'baron', 'imp'],
+				{ type: 'NewDay' },
+				(s) => ({ type: 'SetDead', seatId: s[1], dead: true, cause: 'demon' }),
+				(s) => ({ type: 'SetDead', seatId: s[2], dead: true, cause: 'demon' })
+			);
+			expect(gameEnds(session.game, testCharacters, { dayEnded: true })).toMatchObject([
+				{ rule: 'mayor', winner: 'good' }
+			]);
+		});
 		it.todo('Example 3: Tied vote spares everyone; good wins');
 	});
 });

@@ -92,7 +92,16 @@
 			width: width(7)
 		},
 		{ id: 'games', label: t('history.games'), sortable: true, align: 'end', width: width(5) },
-		{ id: 'wins', label: t('history.wins'), sortable: true, align: 'end', width: width(5) },
+		// Off on phones so the character's badge has room for its name (Trevor, 2026-10-18:
+		// names ran past their badges); Win rate stays.
+		{
+			id: 'wins',
+			label: t('history.wins'),
+			sortable: true,
+			align: 'end',
+			wide: true,
+			width: width(5)
+		},
 		{ id: 'rate', label: t('history.winRate'), sortable: true, align: 'end', width: width(5) }
 	]);
 	const characterValue = (c: CharacterStats, column: CharacterColumn) =>

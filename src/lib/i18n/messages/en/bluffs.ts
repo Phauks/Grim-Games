@@ -20,6 +20,8 @@ export const bluffs = {
 	'bluffs.wholeScript': 'Whole script',
 	'bluffs.characters': 'Bluff characters',
 	'bluffs.deleteConfirm': 'Delete bluff set?',
+	'bluffs.inPlayConfirm': 'Save bluffs that are in play?',
+	'bluffs.inPlaySummary': 'In play: {names}',
 	'bluffs.deleteSummary': '{set}: {names}',
 	'bluffs.undoHint': 'You can undo it from History.',
 	'bluffs.notDone': 'Not done',
