@@ -30,7 +30,13 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import { bluffSetLabel, charactersReallyInPlay, DEMON_SET, lunaticInPlay } from './bluffs.ts';
+	import {
+		bluffSetLabel,
+		charactersReallyInPlay,
+		DEMON_SET,
+		lunaticInPlay,
+		randomBluffs
+	} from './bluffs.ts';
 
 	export type BluffCommand = Extract<
 		Command,
@@ -165,6 +171,16 @@
 		if (index !== DEMON_SET && pickedName.trim() !== (game.bluffNames?.[index] ?? ''))
 			run({ type: 'RenameBluffSet', set: index, name: pickedName });
 		editing = undefined;
+	}
+
+	/** A fresh random three on every tap, from the characters listed (Trevor, 2026-10-18). */
+	function random() {
+		picked = randomBluffs(
+			choices.map((c) => c.id),
+			inPlay,
+			BLUFFS_PER_SET,
+			Math.random
+		);
 	}
 
 	/** Shown to the player over the sheet, which stays open under it (Trevor, 2026-10-17). */
@@ -320,6 +336,9 @@
 					]}
 					onChange={(value) => (filter = value)}
 				/>
+				<span class="ink"
+					><IconButton icon="random" label={t('bluffs.random')} onclick={random} /></span
+				>
 			</div>
 			<CharacterPicker
 				characters={choices}
@@ -487,7 +506,12 @@
 		gap: var(--space-2);
 		justify-content: flex-end;
 	}
+	/* The filter, then Random beside it, as in setup. */
 	.filter {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-2);
 		margin-bottom: var(--space-3);
 	}
 </style>

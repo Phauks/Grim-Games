@@ -72,3 +72,20 @@ export function showableBluffSets(game: Game, characters: CharacterLookup): Show
 			: []
 	);
 }
+
+/**
+ * Up to three bluffs picked at random from the choices shown (Trevor, 2026-10-18), never one
+ * in play. Fewer when fewer are left; the Storyteller can still swap any of them.
+ */
+export function randomBluffs(
+	choices: readonly CharacterId[],
+	inPlay: ReadonlySet<CharacterId>,
+	count: number,
+	random: () => number
+): CharacterId[] {
+	const pool = choices.filter((id) => !inPlay.has(id));
+	const out: CharacterId[] = [];
+	while (out.length < count && pool.length > 0)
+		out.push(pool.splice(Math.floor(random() * pool.length), 1)[0]);
+	return out;
+}

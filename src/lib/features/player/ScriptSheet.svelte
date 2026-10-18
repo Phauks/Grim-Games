@@ -24,9 +24,18 @@
 		players?: number;
 		/** Printing: every section shown with a plain heading, none can be closed. */
 		flat?: boolean;
+		/**
+		 * Characters on seats, in a game (the board). Travellers and Jinxes then start closed
+		 * while none of theirs is in play, and open when one comes into play (Trevor, 2026-10-18).
+		 */
+		inPlay?: readonly string[];
 	}
 
-	let { characters, jinxes, players, flat = false }: Props = $props();
+	let { characters, jinxes, players, flat = false, inPlay }: Props = $props();
+	const playing = $derived(inPlay && new Set(inPlay));
+	const noJinxInPlay = $derived(
+		!!playing && !jinxes.some((j) => j.characters.every((id) => playing.has(id)))
+	);
 	const density = $derived(playerSettings.current.density);
 	const groups = $derived(groupByType(characters));
 	const names = $derived(characters.map((c) => c.name));
@@ -94,14 +103,14 @@
 {/snippet}
 
 <!-- On screen every section closes from its header (Trevor); in print each is a plain heading. -->
-{#snippet section(title: string, key: string, body: Snippet, tone?: 'good' | 'evil')}
+{#snippet section(title: string, key: string, body: Snippet, tone?: 'good' | 'evil', empty = false)}
 	{#if flat}
 		<section data-tone={tone}>
 			<h2>{title}</h2>
 			{@render body()}
 		</section>
 	{:else}
-		<Collapsible {title} storageKey={key} {tone}>{@render body()}</Collapsible>
+		<Collapsible {title} storageKey={key} {tone} {empty}>{@render body()}</Collapsible>
 	{/if}
 {/snippet}
 
@@ -116,11 +125,10 @@
 			group.type === 'traveller' ? t('player.recommendedTravellers') : TYPE_PLURALS[group.type],
 			`play:${group.type}`,
 			list,
-			TONES[group.type]
+			TONES[group.type],
+			group.type === 'traveller' && !!playing && !group.characters.some((c) => playing.has(c.id))
 		)}
 	{/each}
-	<!-- Explains the * in ability text, so it stays when any section is closed (Trevor). -->
-	<p class="legend">{t('player.notFirstNight')}</p>
 
 	{#snippet jinxList()}
 		{#if jinxes.length}
@@ -131,7 +139,7 @@
 			<p class="none" data-testid="no-jinxes">{t('common.none')}</p>
 		{/if}
 	{/snippet}
-	{@render section(t('player.jinxes'), 'play:jinxes', jinxList)}
+	{@render section(t('player.jinxes'), 'play:jinxes', jinxList, undefined, noJinxInPlay)}
 
 	{#if !flat}
 		{#snippet breakdown()}<PlayerCounts {players} />{/snippet}
@@ -182,8 +190,7 @@
 		font-family: var(--font-ability);
 		line-height: 1.35;
 	}
-	.none,
-	.legend {
+	.none {
 		margin: 0;
 		color: var(--on-surface-muted);
 	}

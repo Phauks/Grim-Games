@@ -9,8 +9,9 @@
 		type ScratchTool
 	} from '#lib/core/scratch/scratch.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import HideContentsButton from '#lib/ui/primitives/HideContentsButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import ScratchCanvas from './ScratchCanvas.svelte';
 	import { scratchSizes, setScratchSize } from './scratch-sizes.svelte.ts';
@@ -31,13 +32,6 @@
 	let paperButton = $state<HTMLButtonElement>();
 	let choosingPaper = $state(false);
 
-	// Phones don't close the keyboard on Enter in a single-line field; Done should (Trevor).
-	function doneOnEnter(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
-		if (event.key !== 'Enter' || event.isComposing) return;
-		event.preventDefault();
-		event.currentTarget.blur();
-	}
-
 	function resize(value: number) {
 		setScratchSize(tool, value);
 		sizing = true;
@@ -48,18 +42,13 @@
 
 <div class="pad" data-scratch-paper={pad.paper}>
 	<div class="details">
-		<ClearableField value={pad.title} label={t('scratch.padTitle')} onclear={() => pad.rename('')}>
-			<input
-				type="text"
-				aria-label={t('scratch.padTitle')}
-				placeholder={t('scratch.untitled')}
-				value={pad.title}
-				autocomplete="off"
-				enterkeyhint="done"
-				oninput={(event) => pad.rename(event.currentTarget.value)}
-				onkeydown={doneOnEnter}
-			/>
-		</ClearableField>
+		<!-- The same title row as a note: the title, then the pad's switches. -->
+		<TextField
+			label={t('scratch.padTitle')}
+			value={pad.title}
+			placeholder={t('scratch.untitled')}
+			oninput={(title) => pad.rename(title)}
+		/>
 		<span class="switches">
 			<IconButton
 				bind:ref={paperButton}
@@ -77,13 +66,11 @@
 				data-testid="scratch-lock"
 				onclick={() => pad.setLocked(!pad.locked)}
 			/>
-			<!-- Per pad, like each note's own Hide (Trevor, 2026-10-17). -->
-			<IconButton
-				icon="hide"
-				label={t('scratch.hide')}
-				aria-pressed={pad.hidden}
-				data-testid="scratch-hide"
-				onclick={() => pad.setHidden(!pad.hidden)}
+			<!-- Per pad, the same switch as each note's (Trevor, 2026-10-17, 2026-10-18). -->
+			<HideContentsButton
+				hidden={pad.hidden}
+				onchange={(hidden) => pad.setHidden(hidden)}
+				testid="scratch-hide"
 			/>
 		</span>
 	</div>
@@ -169,25 +156,15 @@
 		min-height: 0;
 		gap: var(--space-2);
 	}
+	/* The title row, as in a note: the switches line up with the field, under its label. */
 	.details {
 		display: flex;
-		align-items: center;
+		align-items: flex-end;
 		gap: var(--space-2);
 	}
-	.details :global(.clearable) {
+	.details :global(.text-field) {
 		flex: 1;
 		min-width: 0;
-	}
-	.details input {
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: color-mix(in srgb, currentColor 6%, transparent);
-		color: inherit;
-		font-family: var(--font-body);
-		font-size: 1rem;
 	}
 	.switches {
 		display: flex;

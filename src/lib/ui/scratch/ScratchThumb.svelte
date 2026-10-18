@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { fitScale } from '#lib/core/scratch/scratch.ts';
-	import { drawAll, inkColours } from './render.ts';
+	import { previewFit } from '#lib/core/scratch/scratch.ts';
+	import { drawStroke, inkColours } from './render.ts';
 	import type { ScratchPadState } from './scratch-store.svelte.ts';
 
 	interface Props {
@@ -21,7 +21,8 @@
 		return () => observer.disconnect();
 	});
 
-	// The whole drawing, small, on its own paper; redrawn when it or the paper changes.
+	// The whole drawing, as large as fits and centred, on its own paper (Trevor, 2026-10-18:
+	// no empty space beside it); redrawn when it or the paper changes.
 	$effect(() => {
 		const strokes = pad.strokes;
 		void pad.paper;
@@ -31,7 +32,13 @@
 		canvas.height = Math.round(height * ratio);
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
-		drawAll(ctx, strokes, fitScale(strokes, canvas.width, canvas.height), inkColours(canvas));
+		const { scale, x, y } = previewFit(strokes, canvas.width, canvas.height);
+		const colours = inkColours(canvas);
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.save();
+		ctx.translate(x, y);
+		for (const stroke of strokes) drawStroke(ctx, stroke, scale, colours);
+		ctx.restore();
 	});
 </script>
 

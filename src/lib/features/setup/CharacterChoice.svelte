@@ -14,11 +14,21 @@
 		duplicates: boolean;
 		/** Jinxed with another selected character. */
 		jinxed: boolean;
+		/** In play though not on the script: marked, still under its own type. */
+		offScript?: boolean;
 		onToggle: () => void;
 		onAddCopy: () => void;
 	}
 
-	let { character, copies, duplicates, jinxed, onToggle, onAddCopy }: Props = $props();
+	let {
+		character,
+		copies,
+		duplicates,
+		jinxed,
+		offScript = false,
+		onToggle,
+		onAddCopy
+	}: Props = $props();
 	const selected = $derived(copies > 0);
 	// The character's page opens from its icon (Trevor, 2026-10-18); made on first use.
 	let infoUsed = $state(false);
@@ -29,7 +39,12 @@
 	One selectable character. Tapping its icon opens its character page; tapping the rest
 	toggles it (or removes one copy when there are several); the + button adds a copy. Every mark has a fixed slot, so selecting never moves anything.
 -->
-<div class="choice" data-selected={selected ? '' : undefined} data-type={character.type}>
+<div
+	class="choice"
+	data-selected={selected ? '' : undefined}
+	data-off-script={offScript ? '' : undefined}
+	data-type={character.type}
+>
 	<button
 		type="button"
 		class="info"
@@ -52,8 +67,11 @@
 		onclick={onToggle}
 	>
 		<span class="text">
-			<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
-			<span class="name">{character.name}</span>
+			<span class="title">
+				<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
+				<span class="name">{character.name}</span>
+				{#if offScript}<span class="tag">{t('setup.offScript')}</span>{/if}
+			</span>
 			<span class="ability">{character.ability}</span>
 		</span>
 		<span class="marks" aria-hidden="true">
@@ -96,6 +114,32 @@
 	 */
 	.choice {
 		position: relative;
+	}
+	/* Not on the script: a dashed edge and a tag beside the name. */
+	.choice[data-off-script] {
+		box-shadow: none;
+		outline: 2px dashed var(--border);
+		outline-offset: -2px;
+	}
+	/* The name, then the off-script tag on the same line when it fits. */
+	.title {
+		grid-column: 1;
+		grid-row: 1;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0 var(--space-2);
+		min-width: 0;
+	}
+	.tag {
+		padding: 0 0.4em;
+		border-radius: var(--radius-full);
+		background: var(--surface);
+		color: var(--on-surface-muted);
+		font-family: var(--font-control);
+		font-size: 0.7rem;
+		font-weight: 600;
+		vertical-align: middle;
 	}
 	.choice[data-selected] {
 		background: var(--choice-selected-background);
@@ -158,8 +202,7 @@
 		display: contents;
 	}
 	.name {
-		grid-column: 1;
-		grid-row: 1;
+		min-width: 0;
 		font-family: var(--font-character);
 		font-weight: var(--font-character-weight);
 		overflow-wrap: anywhere;

@@ -3,8 +3,8 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import HideContentsButton from '#lib/ui/primitives/HideContentsButton.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
 	interface Props {
@@ -18,22 +18,32 @@
 	let confirming = $state(false);
 </script>
 
-<!-- A fixed height, so typing never resizes the sheet. -->
-<!-- The heading stays "Note" so it doesn't change while the title is typed. -->
-<BottomSheet bind:open title={t('player.note')} height="85dvh" focusFirstField={false}>
-	<!-- The trash sits beside the sheet's X (Trevor, 2026-10-17); it still confirms first. -->
-	{#snippet actions()}
+<!-- The same full-screen panel as a scratch pad, so notes and pads look alike (Trevor,
+     2026-10-18). The heading stays "Note" so it doesn't change while the title is typed. -->
+<Dialog bind:open title={t('player.note')} size="max" scroll={false}>
+	<!-- The trash sits beside the X (Trevor, 2026-10-17); it still confirms first. -->
+	{#snippet headActions()}
 		{#if note}
 			<DeleteButton label={t('player.deleteNote')} onclick={() => (confirming = true)} />
 		{/if}
 	{/snippet}
 	{#if note}
 		<div class="editor">
-			<TextField
-				label={t('player.noteTitle')}
-				value={note.title}
-				oninput={(title) => onChange({ title })}
-			/>
+			<!-- The same title row as a scratch pad: the title, then Hide contents. -->
+			<div class="title-row">
+				<TextField
+					label={t('player.noteTitle')}
+					value={note.title}
+					placeholder={t('player.untitled')}
+					oninput={(title) => onChange({ title })}
+				/>
+				<!-- Each note hides its own text in the list (Trevor, 2026-10-17). -->
+				<HideContentsButton
+					hidden={note.hidden}
+					onchange={(hidden) => onChange({ hidden })}
+					testid="note-hide"
+				/>
+			</div>
 			<TextField
 				label={t('player.noteText')}
 				value={note.text}
@@ -41,17 +51,9 @@
 				grow
 				oninput={(text) => onChange({ text })}
 			/>
-			<div class="actions">
-				<!-- Each note hides its own text in the list (Trevor, 2026-10-17). -->
-				<Toggle
-					label={t('player.hideContents')}
-					checked={note.hidden}
-					onChange={(hidden) => onChange({ hidden })}
-				/>
-			</div>
 		</div>
 	{/if}
-</BottomSheet>
+</Dialog>
 
 <ConfirmDialog
 	bind:open={confirming}
@@ -70,18 +72,18 @@
 <style>
 	.editor {
 		display: grid;
-		grid-template-rows: auto 1fr auto;
-		gap: var(--space-3);
-		height: 100%;
-		padding-bottom: var(--space-4);
+		grid-template-rows: auto 1fr;
+		gap: var(--space-2);
+		flex: 1;
+		min-height: 0;
 	}
-	/* The note's text takes the sheet's spare height, never less than this. */
-	.editor :global(textarea) {
-		min-height: 40dvh;
-	}
-	.actions {
+	.title-row {
 		display: flex;
-		align-items: center;
-		gap: var(--space-3);
+		align-items: flex-end;
+		gap: var(--space-2);
+	}
+	.title-row :global(.text-field) {
+		flex: 1;
+		min-width: 0;
 	}
 </style>

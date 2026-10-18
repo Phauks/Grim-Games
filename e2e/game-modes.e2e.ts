@@ -356,9 +356,18 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 
 	await page.getByRole('button', { name: 'Choose characters' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	// Off the script, so not in the list, but chosen for the bag.
+	// Off the script but chosen for the bag: listed under their own types, marked (Trevor,
+	// 2026-10-18).
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 	await expect(page.getByTestId('count-minion')).toHaveText('1');
+	const offScript = page.locator('.choice[data-off-script]');
+	await expect(offScript).toHaveCount(2);
+	await expect(offScript.first()).toContainText('Not on script');
+	await expect(offScript.first().locator('.main')).toHaveAttribute('aria-pressed', 'true');
+	// Taking one out keeps it listed, so it can go back in.
+	await offScript.first().locator('.main').tap();
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
+	await expect(offScript).toHaveCount(2);
 });
 
 test('Flesh and Bone runs a campaign: the next game adds a Demon once the current game has ended', async ({

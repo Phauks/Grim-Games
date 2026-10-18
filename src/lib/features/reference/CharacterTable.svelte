@@ -11,6 +11,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
+	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
 	import FieldValue from './FieldValue.svelte';
 	import {
 		PRESENCE_LABELS,
@@ -107,6 +108,7 @@
 		);
 	}
 
+	const TYPE_OPTIONS = CHARACTER_TYPES.map((type) => ({ value: type, label: TYPE_PLURALS[type] }));
 	const field = (id: FieldId) => REFERENCE_FIELDS.find((f) => f.id === id)!;
 </script>
 
@@ -116,21 +118,7 @@
 	value: string,
 	onPick: (value: string) => void
 )}
-	<fieldset>
-		<legend class="visually-hidden">{name}</legend>
-		{#each options as option (option.value)}
-			<label class="check">
-				<input
-					type="radio"
-					{name}
-					value={option.value}
-					checked={value === option.value}
-					onchange={() => onPick(option.value)}
-				/>
-				{option.label}
-			</label>
-		{/each}
-	</fieldset>
+	<FilterOptions legend={name} hideLegend {name} {options} {value} onpick={onPick} />
 {/snippet}
 
 {#snippet filter(column: DataColumn<FieldId>, close: () => void)}
@@ -146,19 +134,13 @@
 			/>
 		</div>
 	{:else if f.filter === 'types'}
-		<fieldset>
-			<legend class="visually-hidden">Character types</legend>
-			{#each CHARACTER_TYPES as type (type)}
-				<label class="check">
-					<input
-						type="checkbox"
-						checked={table.filters.types?.includes(type) ?? false}
-						onchange={(e) => toggleType(type, e.currentTarget.checked)}
-					/>
-					{TYPE_PLURALS[type]}
-				</label>
-			{/each}
-		</fieldset>
+		<FilterOptions
+			legend="Character types"
+			hideLegend
+			options={TYPE_OPTIONS}
+			values={table.filters.types ?? []}
+			ontoggle={(type, on) => toggleType(type as Character['type'], on)}
+		/>
 		<div class="actions">
 			<Button variant="quiet" onclick={() => referenceTable.setFilter('types', undefined)}
 				>All types</Button
@@ -235,36 +217,12 @@
 	.table-view {
 		font-size: 0.9rem;
 	}
-	fieldset {
-		display: grid;
-		margin: var(--space-2) 0 0;
-		padding: 0;
-		border: 0;
-	}
-	.check {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		min-height: var(--tap-target);
-	}
-	.check input {
-		width: calc(1.25 * var(--u));
-		height: calc(1.25 * var(--u));
-	}
 	.text {
 		margin-top: var(--space-2);
 	}
 	.actions {
 		display: flex;
 		justify-content: flex-end;
-	}
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 	/* Stacked rows: the value sits beside its label when there is room, else under it. */
 	@container data-table (max-width: 40rem) {

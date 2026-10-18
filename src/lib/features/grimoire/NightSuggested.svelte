@@ -88,9 +88,16 @@
 	 * information"), from core's `validInformation`.
 	 */
 	const valid = (p: InfoPicker): ValidInfo[] => validInformation(game, p);
-	const validCount = $derived(
-		info?.kind === 'picker' ? info.pickers.reduce((n, p) => n + valid(p).length, 0) : 0
+	/**
+	 * Only number information is suggested (Trevor, 2026-10-18: "only show info suggest for
+	 * numbers, not sets of characters"); players and characters are left to the Storyteller.
+	 */
+	const numberPickers = $derived(
+		info?.kind === 'picker'
+			? info.pickers.filter((p) => valid(p).some((v) => v.number !== undefined))
+			: []
 	);
+	const validCount = $derived(numberPickers.reduce((n, p) => n + valid(p).length, 0));
 
 	/**
 	 * The logic behind a suggestion (Trevor, 2026-10-17: "show the logic"): the players it is
@@ -120,7 +127,7 @@
 	const showPickers = $derived(assistance.infoSuggestions);
 	const has = $derived(
 		(info?.kind === 'answer' && showAnswers && info.answers.length > 0) ||
-			(info?.kind === 'picker' && showPickers && info.pickers.length > 0) ||
+			(info?.kind === 'picker' && showPickers && numberPickers.length > 0) ||
 			(info?.kind === 'death' &&
 				showAnswers &&
 				info.checks.some((c) => c.verdict && c.verdict.kind !== 'choose'))
@@ -226,9 +233,10 @@
 			{#if info.kind === 'answer'}
 				{#each info.answers as a (a.seatId)}{@render answer(a)}{/each}
 			{:else if info.kind === 'picker'}
-				{#each info.pickers as p (p.seatId)}
+				{#each numberPickers as p (p.seatId)}
 					<li data-unreliable={p.unreliable ? '' : undefined}>
-						{#if info.pickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span>{/if}
+						{#if numberPickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span
+							>{/if}
 						<ul class="valid" aria-label="Valid information">
 							{#each valid(p) as v, i (i)}
 								<li data-reason={v.reason}>

@@ -6,6 +6,7 @@ export const common = {
 	'common.searchShortcut': 'Search (press /)',
 	'common.confirm': 'Confirm',
 	'common.none': 'None',
+	'common.hideContents': 'Hide contents',
 	'common.seat': 'Seat {number}',
 	'common.seatWithName': '{seat} ({name})',
 	'common.save': 'Save',

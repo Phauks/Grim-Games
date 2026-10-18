@@ -7,13 +7,9 @@
 		loadScriptText,
 		OFFICIAL_EDITIONS,
 		type ScriptLoadResult,
-		type GameData,
-		type NumericNightOrder
+		type GameData
 	} from '#lib/core/data/index.ts';
-	import {
-		loadNumericNightOrder,
-		loadOfficialData
-	} from '#lib/features/characters/game-data.svelte.ts';
+	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -30,39 +26,33 @@
 	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import ScratchPadDialog from '#lib/ui/scratch/ScratchPadDialog.svelte';
 	import { ScratchPads, type ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import { NotebookState } from './notebook-store.svelte.ts';
 	import { scriptKey } from './notebook.ts';
 	import NoteEditor from './NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
-	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import PrintScriptButton from './PrintScriptButton.svelte';
-	import { playerNight, scriptVersion } from './player-script.ts';
+	import { scriptVersion } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
-	import ScriptCopy from './ScriptCopy.svelte';
+	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
-	type Tab = 'script' | 'night' | 'notes';
 
 	let data = $state<GameData>();
-	let numeric = $state<NumericNightOrder>();
 	let notebook = $state<NotebookState>();
 	let error = $state<string>();
-	let tab = $state<Tab>('script');
+	let tab = $state('script');
 
 	onMount(async () => {
 		try {
-			const [game, numbers] = await Promise.all([
+			const [game] = await Promise.all([
 				loadOfficialData(),
-				loadNumericNightOrder().catch(() => undefined),
 				// The script chosen on /scripts; reports its own storage errors.
 				restoreScripts()
 			]);
-			numeric = numbers;
 			data = game;
 			// Restored first, so the shared script ends up current rather than the last one used.
 			await openSharedLink();
@@ -163,12 +153,6 @@
 		toast(t('player.cannotSave'), t('player.cannotSaveDetail'));
 	});
 
-	const nights = $derived(
-		script && data
-			? (['first', 'other'] as const).map((n) => playerNight(script!, data!, n, numeric))
-			: []
-	);
-
 	const version = $derived(
 		currentScript.current === script ? scriptVersion(currentScript.saved) : undefined
 	);
@@ -213,40 +197,26 @@
 				</li>
 			</ul>
 		</PageSection>
+	{:else if !script}
+		<p class="muted">{t('player.loading')}</p>
 	{:else}
-		<Tabs
-			bind:value={tab}
-			label={t('player.title')}
-			tabs={[
-				{ value: 'script', label: t('player.tab.script') },
-				{ value: 'night', label: t('player.tab.night') },
-				{ value: 'notes', label: t('player.tab.notes') }
-			]}
-		>
-			{#snippet panel(value)}
-				<div class="panel">
-					<!-- A crash in one tab replaces only that tab. -->
-					<ErrorBoundary area="play">
-						{#if !script || !notebook}
-							<p class="muted">{t('player.loading')}</p>
-						{:else if value === 'script'}
-							<ScriptCopy {script} byline={false} />
-						{:else if value === 'night'}
-							<PlayerNightOrder {nights} />
-						{:else}
-							<NotesPanel
-								notes={notebook.book.notes}
-								pads={scratch?.pads}
-								onAdd={() => openNote(notebook!.addNote())}
-								onOpenNote={openNote}
-								onAddScratch={() => scratch && openScratch(scratch.add())}
-								onOpenScratch={openScratch}
-							/>
-						{/if}
-					</ErrorBoundary>
-				</div>
+		<!-- The same tabs the board's Script button shows, plus the player's own Notes. -->
+		<PlayerScriptTabs {script} bind:tab>
+			{#snippet notes()}
+				{#if !notebook}
+					<p class="muted">{t('player.loading')}</p>
+				{:else}
+					<NotesPanel
+						notes={notebook.book.notes}
+						pads={scratch?.pads}
+						onAdd={() => openNote(notebook!.addNote())}
+						onOpenNote={openNote}
+						onAddScratch={() => scratch && openScratch(scratch.add())}
+						onOpenScratch={openScratch}
+					/>
+				{/if}
 			{/snippet}
-		</Tabs>
+		</PlayerScriptTabs>
 	{/if}
 </Page>
 
@@ -292,9 +262,6 @@
 	.choose :global(a),
 	.choose :global(button) {
 		width: 100%;
-	}
-	.panel {
-		padding-top: var(--space-3);
 	}
 	.muted {
 		color: var(--on-surface-muted);

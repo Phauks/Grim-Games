@@ -4,7 +4,11 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
-	import { boardNightSteps, stepHolders } from './night-steps.ts';
+	import { STANDARD } from '#lib/core/modes/index.ts';
+	import { findMode } from '#lib/features/modes/custom-modes.svelte.ts';
+	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
 	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
@@ -45,11 +49,7 @@
 	} from '#lib/core/rules/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
-	import {
-		charactersReallyInPlay,
-		DEMON_SET,
-		showableBluffSets
-	} from '#lib/features/bluffs/bluffs.ts';
+	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -82,7 +82,7 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import { fromScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
+	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import NightOrderSheet from './NightOrderSheet.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
@@ -750,28 +750,8 @@
 				? 'Evil won'
 				: 'Winner not recorded'
 	);
-	/**
-	 * Once every token is placed, the middle offers the Demon's bluffs, as it offered Set up
-	 * (Trevor, 2026-10-17). Only with a Demon in play and its set still empty; part of the
-	 * setup help, and it can be dismissed.
-	 */
-	let bluffsPromptDismissed = $state(false);
 	/** The day timer is always on the board until the game ends (Trevor, 2026-10-17). */
 	const showTimer = $derived(!ended);
-	const showBluffsPrompt = $derived(
-		!bluffsPromptDismissed &&
-			!ended &&
-			!arranging &&
-			!placing &&
-			preferences.current.assistance.setupReminders &&
-			game.pastDays.length === 0 &&
-			game.seating.every((id) => game.seats[id].characterId !== undefined) &&
-			setupPending === 0 &&
-			(game.bluffs[DEMON_SET] ?? []).length === 0 &&
-			[...charactersReallyInPlay(game, characters)].some(
-				(id) => characters.get(id)?.type === 'demon'
-			)
-	);
 
 	// A Traveller's alignment by draw, kept here: setting it ends the step that opened it.
 	let drawFor = $state<SeatId | undefined>();
@@ -899,6 +879,14 @@
 			return () => URL.revokeObjectURL(url);
 		}
 		backgroundUrl = background.kind === 'script' ? scriptBackground : undefined;
+	});
+	/**
+	 * A game played in an alternative mode says so where the script's name is (Trevor,
+	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
+	 */
+	const modeName = $derived.by(() => {
+		const id = readGameMode(game.gameId)?.modeId;
+		return id && id !== STANDARD.id ? findMode(id)?.name : undefined;
 	});
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
@@ -1036,6 +1024,21 @@
 {/snippet}
 
 <div class="grimoire">
+	<!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
+	{#if backgroundUrl}
+		<div
+			class="backdrop"
+			data-testid="board-background"
+			style:background-image={`url("${backgroundUrl}")`}
+		></div>
+	{:else if background.kind === 'preset'}
+		<div
+			class="backdrop preset"
+			data-testid="board-background"
+			data-preset={background.id}
+			style:background={PRESETS[background.id].css}
+		></div>
+	{/if}
 	<div class="toolbar" role="toolbar" aria-label="Grimoire">
 		{#if arranging}
 			<span class="title arranging-title">Arrange seats</span>
@@ -1066,7 +1069,9 @@
 			     script's name can sit in the room before them (Trevor, 2026-10-17). -->
 			{#if showTitle && boardLooks.current.titleAt === 'toolbar'}
 				<span class="title toolbar-title" data-testid="script-title"
-					>{game.script.meta?.name ?? ''}</span
+					>{#if modeName}<span class="mode" data-testid="game-mode">{modeName}</span>
+						&middot;
+					{/if}{game.script.meta?.name ?? ''}</span
 				>
 			{:else}
 				<span class="spacer"></span>
@@ -1116,20 +1121,6 @@
 		style:--name-scale={boardLooks.current.nameSize}
 		bind:this={board}
 	>
-		{#if backgroundUrl}
-			<div
-				class="backdrop"
-				data-testid="board-background"
-				style:background-image={`url("${backgroundUrl}")`}
-			></div>
-		{:else if background.kind === 'preset'}
-			<div
-				class="backdrop preset"
-				data-testid="board-background"
-				data-preset={background.id}
-				style:background={PRESETS[background.id].css}
-			></div>
-		{/if}
 		<!-- The script's name and author sit behind the circle, or elsewhere (titleAt). -->
 		{#if showTitle && boardLooks.current.titleAt === 'middle'}
 			<p
@@ -1139,6 +1130,7 @@
 				style:--vignette={boardLooks.current.vignetteStrength}
 				aria-hidden="true"
 			>
+				{#if modeName}<span class="mode" data-testid="game-mode">{modeName}</span>{/if}
 				{#if game.script.meta?.name}<span class="script-name">{game.script.meta.name}</span>{/if}
 				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
 			</p>
@@ -1348,7 +1340,11 @@
 				bind:clientHeight={titleH}
 			>
 				<span class="script-name">{game.script.meta.name}</span>
-				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
+				<!-- The mode takes the author's line, so the corner never grows. -->
+				{#if modeName}<span class="mode" data-testid="game-mode">{modeName}</span
+					>{:else if game.script.meta?.author}<span class="author"
+						>by {game.script.meta.author}</span
+					>{/if}
 			</p>
 		{/if}
 		{#if showTimer}
@@ -1372,14 +1368,6 @@
 									: resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })
 							)}>Set up</Button
 					>
-				</div>
-			{/if}
-			{#if showBluffsPrompt}
-				<div class="setup bluffs-prompt">
-					<Button variant="accent" icon="demon" onclick={() => (bluffsOpen = true)}
-						>Demon bluffs</Button
-					>
-					<IconButton icon="close" label="Not now" onclick={() => (bluffsPromptDismissed = true)} />
 				</div>
 			{/if}
 			{#if ended}
@@ -1564,7 +1552,12 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			<ScriptCopy script={loadedScript} players={game.seating.length} />
+			<!-- Exactly the players' Script and Night tabs (Trevor, 2026-10-18). -->
+			<PlayerScriptTabs
+				script={loadedScript}
+				players={game.seating.length}
+				inPlay={charactersInPlay(game)}
+			/>
 		{/if}
 	</div>
 </Dialog>
@@ -1574,7 +1567,20 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet bind:open={dayOpen} game={grimoire.open} />
+<DaySheet
+	bind:open={dayOpen}
+	game={grimoire.open}
+	onEndDay={() => {
+		// The day's timer stops, and tonight's night order opens with Dusk ticked, which runs
+		// the rules checked at dusk (GameEndPrompt).
+		if (liveDayTimer.running) liveDayTimer.toggle();
+		grimoire.beginNight();
+		const night = tonight(game);
+		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
+			grimoire.toggleNightStep(night, { id: 'dusk' });
+		nightOpen = true;
+	}}
+/>
 
 <NightOrderSheet
 	bind:open={nightOpen}
@@ -1702,6 +1708,9 @@
 
 <style>
 	.grimoire {
+		/* Its own layer, so the backdrop sits behind the toolbar and board, not the page. */
+		position: relative;
+		isolation: isolate;
 		display: flex;
 		flex-direction: column;
 		/* Fills the screen: a game hides the app header and footer (route data). */
@@ -1721,6 +1730,13 @@
 		   outline shows the board's edge while arranging. */
 		gap: min(var(--space-2), 1.5vw);
 		padding: var(--space-2) var(--space-2) 0;
+	}
+	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
+	   on any image (Trevor, 2026-10-18). */
+	.grimoire:has(> .backdrop)
+		.toolbar
+		:global(button:not([data-variant='accent']):not([data-variant='danger'])) {
+		background: color-mix(in srgb, var(--surface) 85%, transparent);
 	}
 	.title {
 		flex: 1;
@@ -1834,10 +1850,6 @@
 		display: grid;
 		gap: var(--space-2);
 	}
-	.bluffs-prompt {
-		grid-auto-flow: column;
-		align-items: center;
-	}
 	.script-scroll {
 		flex: 1;
 		min-height: 0;
@@ -1853,8 +1865,9 @@
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.backdrop {
-		position: absolute;
+		position: fixed;
 		inset: 0;
+		z-index: -1;
 		background: center / cover no-repeat;
 		filter: brightness(0.45) saturate(0.85);
 		pointer-events: none;
@@ -1908,6 +1921,18 @@
 	}
 	.author {
 		font-size: clamp(0.9rem, 3vmin, 1.5rem);
+	}
+	/* The game mode, apart from the script: small capitals in the accent colour. */
+	.mode {
+		color: var(--accent);
+		font-family: var(--font-control);
+		font-size: clamp(0.8rem, 3vmin, 1.4rem);
+		font-variant: small-caps;
+		letter-spacing: 0.08em;
+	}
+	.toolbar-title .mode,
+	.corner-title .mode {
+		font-size: 0.8em;
 	}
 	/* Over an image: a soft scrim and an outline keep the words readable. */
 	.watermark.on-image {
