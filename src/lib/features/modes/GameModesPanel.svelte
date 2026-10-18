@@ -22,6 +22,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import ScriptChoiceLabel from '#lib/features/scripts/ScriptChoiceLabel.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -226,19 +227,13 @@
 				campaignId = 'new';
 			}}
 		/>
-	</div>
-	<!-- Each mode's About, one line a row so switching modes moves nothing (Trevor, 2026-10-18). -->
-	{#if !isStandard}
-		<section class="about" aria-labelledby="mode-about-title">
-			<h3 id="mode-about-title">{t('modes.about')}</h3>
-			<ModeAbout {mode} compact />
-		</section>
-	{/if}
-	<div class="tools">
-		<Button icon="info" onclick={() => (inspecting = true)}>
-			{t('modes.inspect', { name: mode.name })}
-		</Button>
-		<Button icon="add" onclick={() => (adding = true)}>{t('modes.add.button')}</Button>
+		<!-- Inspect and Add mode beside the drop-down they act on (Trevor, 2026-10-18). -->
+		<IconButton
+			icon="info"
+			label={t('modes.inspect', { name: mode.name })}
+			onclick={() => (inspecting = true)}
+		/>
+		<IconButton icon="add" label={t('modes.add.button')} onclick={() => (adding = true)} />
 		<!-- Always there, so nothing moves; only a mode added on this device can go. -->
 		<DeleteButton
 			label={t('modes.add.delete', { name: mode.name })}
@@ -246,6 +241,11 @@
 			onclick={() => (deleting = true)}
 		/>
 	</div>
+	<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
+	<section class="about" aria-labelledby="mode-about-title">
+		<h3 id="mode-about-title">{t('modes.about')}</h3>
+		<ModeAbout {mode} compact />
+	</section>
 
 	{#if isStandard}
 		{@render standard()}
@@ -373,13 +373,20 @@
 	}
 	.modes {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
 	}
-	.tools {
+	/* The drop-down takes the row, the icon buttons their own size; a long mode name is cut
+	   in the drop-down, never the page. */
+	.pick {
+		min-width: 0;
 		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
+		align-items: flex-end;
+		gap: var(--space-1);
+	}
+	.pick > :global(:first-child) {
+		flex: 1;
+		min-width: 0;
 	}
 	.fixed {
 		display: grid;

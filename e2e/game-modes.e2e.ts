@@ -30,13 +30,14 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 	const mode = modesPanel(page).getByRole('combobox', { name: 'Game mode' });
 	await expect(mode).toContainText('Standard');
 	await expect(page.getByRole('tab')).toHaveCount(0);
-	await expect(page.getByTestId('mode-about')).toHaveCount(0);
+	// Standard has its About too, crediting The Pandemonium Institute (Trevor, 2026-10-18).
+	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
 	await expect(page.getByTestId('player-count')).toHaveCount(1);
 	await chooseMode(page, 'Whale Buffet');
 	await expect(page.getByTestId('mode-about')).toBeVisible();
 	await expect(page.getByTestId('player-count')).toHaveCount(1);
 	await chooseMode(page, 'Standard');
-	await expect(page.getByTestId('mode-about')).toHaveCount(0);
+	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 });
