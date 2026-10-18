@@ -733,6 +733,12 @@ test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 0/3' })).toBeVisible();
+	// Trevor, 2026-10-18: the filter reads Good Characters or All Characters.
+	const filter = page.getByRole('combobox', { name: 'Characters' });
+	await expect(filter).toContainText('Good Characters');
+	await filter.tap();
+	await expect(page.getByRole('option', { name: 'All Characters' })).toBeVisible();
+	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Random bluffs' }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 3/3' })).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();

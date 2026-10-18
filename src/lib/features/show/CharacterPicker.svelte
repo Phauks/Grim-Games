@@ -4,12 +4,13 @@
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import Chip from '#lib/ui/primitives/Chip.svelte';
 
 	interface Props {
 		/** The characters to choose from, in script order. */
 		characters: readonly Character[];
 		selected: CharacterId[];
-		/** At most this many; one slot per place is always drawn, so nothing moves. */
+		/** At most this many. */
 		max: number;
 		/** Accessible name of the list. */
 		label: string;
@@ -44,32 +45,32 @@
 </script>
 
 <!--
-	The chosen characters in fixed slots (so choosing never moves anything), then the shared
-	searchable character list.
+	The chosen characters on one line, each with its own X (Trevor, 2026-10-18), one tap-target
+	high whatever is chosen, so choosing never moves anything; long names shorten to fit.
+	Then the shared searchable character list.
 -->
 <div class="picker">
-	<ol class="slots" aria-label={t('show.chosen')}>
-		{#each Array.from({ length: max }, (_, i) => selected[i]) as id, i (i)}
-			{@const character = id ? byId.get(id) : undefined}
-			<li>
-				{#if character}
-					{@const blocked = warnInPlay && inPlay?.has(character.id)}
-					<button
-						type="button"
-						class="slot"
+	<ul class="slots" aria-label={t('show.chosen')} style:--max={max}>
+		{#each selected as id (id)}
+			{@const character = byId.get(id)}
+			{#if character}
+				{@const blocked = warnInPlay && inPlay?.has(character.id)}
+				<li>
+					<Chip
+						class="pick"
 						data-blocked={blocked ? '' : undefined}
 						aria-label={t(blocked ? 'show.removeInPlay' : 'show.remove', { name: character.name })}
 						onclick={() => toggle(character.id)}
 					>
 						<CharacterBadge characterId={character.id} {character} interactive={false} />
 						<Icon name={blocked ? 'warning' : 'close'} />
-					</button>
-				{:else}
-					<span class="slot empty">{t('common.none')}</span>
-				{/if}
-			</li>
+					</Chip>
+				</li>
+			{/if}
+		{:else}
+			<li class="empty">{t('common.none')}</li>
 		{/each}
-	</ol>
+	</ul>
 
 	<div role="group" aria-label={label}>
 		<SharedPicker
@@ -88,39 +89,53 @@
 	/* Lives in sheets, so it follows the sheet's colours rather than the page's. */
 	.picker {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
 		--line: color-mix(in srgb, currentColor 30%, transparent);
 	}
 	.slots {
-		display: grid;
+		display: flex;
+		align-items: center;
 		gap: var(--space-1);
+		min-height: var(--tap-target);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
-	.slot {
+	/* Shorter names give their spare room to longer ones; none takes more than its share. */
+	.slots li {
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-2) 0 var(--space-1);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
-		background: none;
-		color: inherit;
-		font: inherit;
-		cursor: pointer;
+		flex: 0 1 auto;
+		min-width: 0;
+		max-width: calc((100% - (var(--max) - 1) * var(--space-1)) / var(--max));
 	}
-	.slot[data-blocked] {
+	/* The badge and its X as one pill; the name shortens rather than wrapping. */
+	.slots :global(.pick) {
+		gap: 0;
+		min-width: 0;
+		max-width: 100%;
+		padding: 0 var(--space-1) 0 0;
+		border-color: var(--line);
+	}
+	.slots :global(.pick .badge) {
+		flex: 0 1 auto;
+		min-width: 0;
+		padding-right: var(--space-1);
+	}
+	.slots :global(.pick .icon) {
+		flex: none;
+	}
+	.slots :global(.pick .name) {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.slots :global(.pick[data-blocked]) {
 		border: 2px solid var(--accent);
 		color: var(--accent);
 	}
-	.slot.empty {
-		border-style: dashed;
-		color: var(--on-sheet-muted);
-		cursor: default;
+	.empty {
 		padding-left: var(--space-3);
+		color: var(--on-sheet-muted);
 	}
 </style>
