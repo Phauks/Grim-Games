@@ -93,13 +93,13 @@
 	import { stepFocus } from './step-focus.svelte.ts';
 	import RulesAtSetting from './RulesAtSetting.svelte';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
-	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
+	import { pendingTray, trayItems, withoutOffSeat, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import { campaignOf } from '#lib/features/modes/campaigns.ts';
 	import { hasSpectatorVote } from '#lib/features/modes/specters.ts';
 	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
-	import { onBoard } from './reminders.ts';
+	import { extraReminders, onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 
@@ -421,7 +421,12 @@
 		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
 		const target = seatAt(at);
 		if (!end) {
-			reminderDrag = { reminderId, from, at, target };
+			reminderDrag = {
+				reminderId,
+				from,
+				at,
+				target: boardLooks.current.reminders === 'free' ? undefined : target
+			};
 			return;
 		}
 		reminderDrag = undefined;
@@ -440,21 +445,17 @@
 				moveConfirm?.requestRule(reminderId, rule);
 			return;
 		}
-		const free = boardLooks.current.reminders === 'free' && spotAllowed(x, y);
-		// Dropped on another seat: moved (one History entry), keeping the spot when free.
-		if (target && target !== from) {
-			if (free) grimoire.setReminderSpot(reminderId, at);
-			moveConfirm?.request(reminderId, target);
+		// Loose mode (Trevor, 2026-10-18): nothing is given to a seat. A reminder goes where it
+		// is dropped, seats included; one still on a seat from before comes off it.
+		if (boardLooks.current.reminders === 'free') {
+			if (!spotAllowed(x, y)) return;
+			if (looseReminders(game).some((r) => r.reminderId === reminderId))
+				grimoire.setReminderSpot(reminderId, at);
+			else moveConfirm?.requestLoose(reminderId, () => looseAt(reminderId, at));
 			return;
 		}
-		if (!free) return;
-		// Moved about near its own seat, or already loose: only its spot changes.
-		if (target || looseReminders(game).some((r) => r.reminderId === reminderId)) {
-			grimoire.setReminderSpot(reminderId, at);
-			return;
-		}
-		// Put down anywhere else in the open area: it belongs to no one (Trevor, 2026-10-17).
-		moveConfirm?.requestLoose(reminderId, () => looseAt(reminderId, at));
+		// Dropped on another seat: moved (one History entry).
+		if (target && target !== from) moveConfirm?.request(reminderId, target);
 	}
 
 	// ── Arranging seats ──
@@ -646,7 +647,8 @@
 	 * reminder target rules). Warns only: it can still be dropped there.
 	 */
 	const misfits = $derived.by(() => {
-		const reminder = dragOrigin?.reminder ?? trayHints.reminder;
+		// Loose mode marks no seats: nothing is given to one (Trevor, 2026-10-18).
+		const reminder = looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder);
 		if (!reminder) return new Set<SeatId>();
 		return new Set(
 			game.seating.filter((id) => seatMisses(game, reminder, id, characters).length > 0)
@@ -657,7 +659,12 @@
 	 * (its source), the seats it fits (valid targets), or both. With no reminder in hand, a
 	 * walked night step marks its holders as sources.
 	 */
-	const handReminder = $derived(dragOrigin?.reminder ?? trayHints.reminder);
+	const looseMode = $derived(boardLooks.current.reminders === 'free');
+	/** Copies beyond what the game gives (Duplicate reminder): marked as unusual. */
+	const extras = $derived(extraReminders(game, characters));
+	const handReminder = $derived(
+		looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder)
+	);
 	const sourceSeats = $derived.by(() => {
 		const id = handReminder?.characterId;
 		if (id === undefined) return walkHolders;
@@ -674,7 +681,10 @@
 		return source && target ? 'both' : source ? 'source' : target ? 'target' : undefined;
 	}
 	const setupPending = $derived(
-		pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed).length
+		withoutOffSeat(
+			pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed),
+			[...looseReminders(game), ...Object.values(game.ruleReminders ?? {}).flat()]
+		).length
 	);
 	let bankChosen = $state<BankView | undefined>();
 	const bankView = $derived<BankView>(
@@ -1195,9 +1205,9 @@
 		style:--name-scale={boardLooks.current.nameSize}
 		bind:this={board}
 	>
-		<!-- The vignette darkens an image background towards the edges (Trevor, 2026-10-17: its
-		     own switch and strength; 2026-10-18: clearly visible). The script's name is only in the lower left corner (2026-10-18). -->
-		{#if boardLooks.current.vignette && (backgroundUrl !== undefined || background.kind === 'preset')}
+		<!-- The vignette darkens the background towards the edges, on every background (Trevor,
+		     2026-10-17: its own switch and strength; 2026-10-18: it should be noticeable). -->
+		{#if boardLooks.current.vignette}
 			<div
 				class="vignette"
 				data-testid="vignette"
@@ -1259,6 +1269,8 @@
 						class="chip-slot"
 						data-seat={i + 1}
 						class:dragging={dragged}
+						class:extra={extras.has(reminder.reminderId)}
+						data-extra={extras.has(reminder.reminderId) ? '' : undefined}
 						class:now={walkOn(reminder)}
 						style:left="{p.x}%"
 						style:top="{p.y}%"
@@ -1288,6 +1300,10 @@
 				class="chip-slot"
 				data-loose
 				class:dragging={dragged}
+				class:extra={extras.has(reminder.reminderId)}
+				data-extra={extras.has(reminder.reminderId) ? '' : undefined}
+				class:unassigned={!looseMode}
+				data-unassigned={looseMode ? undefined : ''}
 				class:now={walkOn(reminder)}
 				style:left="{p.x}%"
 				style:top="{p.y}%"
@@ -1929,6 +1945,19 @@
 		translate: -50% -50%;
 		z-index: 1;
 	}
+	/* Back in attached mode, a reminder left loose belongs to no seat (Trevor, 2026-10-18): a
+	   dashed ring until it is put on a seat or back in the bank. */
+	/* A copy beyond what the game gives (Trevor, 2026-10-18): dashed and faded, like the
+	   reminder list's tokens that don't fit a seat. */
+	.chip-slot.extra > :global(.reminder) {
+		outline: 0.15rem dashed var(--on-surface);
+		outline-offset: 0.15rem;
+		opacity: 0.75;
+	}
+	.chip-slot.unassigned > :global(.reminder) {
+		outline: 0.15rem dashed var(--on-surface);
+		outline-offset: 0.15rem;
+	}
 	/* The walked-through step's reminders already on the board: the bank's ring. */
 	.chip-slot.now > :global(.reminder) {
 		outline: 0.2rem solid var(--accent);
@@ -2011,7 +2040,7 @@
 		background: var(--evil);
 		color: var(--on-evil);
 	}
-	/* The vignette (Trevor, 2026-10-17: its own switch and strength), over an image only. */
+	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
 	.vignette {
 		position: absolute;
 		inset: 0;

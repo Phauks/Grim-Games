@@ -2949,7 +2949,8 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	for (let i = 0; i < 12; i++) {
 		names.push((await strip.locator('.name strong').textContent()) ?? '');
 		const next = strip.getByRole('button', { name: 'Next step' });
-		if ((await next.count()) === 0) break;
+		// Next stops at the last step; End night ends the night (Trevor, 2026-10-18).
+		if (await next.isDisabled()) break;
 		await next.tap();
 	}
 	expect(names).toContain('Ravenkeeper');
@@ -3158,4 +3159,84 @@ test('Resume game names a game’s alternative mode beside its script', async ({
 	await expect(saved.getByRole('link', { name: /Sects & Violets · Sushi Buffet/ })).toBeVisible();
 	// A standard game shows nothing extra.
 	await expect(saved.locator(`a[href$="${plain}"]`).getByTestId('game-mode')).toHaveCount(0);
+});
+
+async function reminderMode(page: Page, mode: 'Held by seat' | 'Stay where dropped') {
+	await menu(page, 'Board and tokens');
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog.getByRole('combobox', { name: 'Reminders', exact: true }).tap();
+	await page.getByRole('option', { name: mode, exact: true }).tap();
+	if (mode === 'Stay where dropped')
+		await page
+			.getByRole('alertdialog', { name: 'Reminders stay where dropped?' })
+			.getByRole('button', { name: 'Confirm' })
+			.tap();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
+}
+
+test('loose reminders belong to no seat, leave the bank, and are marked back in seat mode', async ({
+	page
+}) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Washerwoman', exact: true })
+		.tap();
+	await closeSheet(page);
+	await reminderMode(page, 'Stay where dropped');
+
+	const bank = page.getByRole('list', { name: /Reminder bank|Setup reminders/ });
+	const inBank = (label: string) => bank.getByRole('button', { name: `${label} reminder` });
+	await expect(inBank('Townsfolk')).toHaveCount(1);
+	// Trevor (2026-10-18): dropped on a seat or anywhere else, it is put there, belongs to no
+	// seat, and leaves the bank either way.
+	const board = (await page.locator('.board').boundingBox())!;
+	await dragTo(page, inBank('Townsfolk'), await centreOf(seatLabelled(page, 'Seat 2')));
+	await dragTo(page, inBank('Wrong'), {
+		x: board.x + board.width * 0.35,
+		y: board.y + board.height * 0.4
+	});
+	await expect(inBank('Townsfolk')).toHaveCount(0);
+	await expect(inBank('Wrong')).toHaveCount(0);
+	const loose = page.locator('[data-loose]');
+	await expect(loose).toHaveCount(2);
+
+	// Back to held by seat: the loose ones are marked until each goes on a seat.
+	await reminderMode(page, 'Held by seat');
+	await expect(page.locator('[data-loose][data-unassigned]')).toHaveCount(2);
+	const wrong = loose.getByRole('button', { name: 'Wrong reminder' });
+	await dragTo(page, wrong, await centreOf(seatLabelled(page, 'Seat 3')));
+	await expect(page.locator('[data-loose][data-unassigned]')).toHaveCount(1);
+});
+
+test("a placed reminder's ⋯ duplicates it beside the original, marked as uncommon", async ({
+	page
+}) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await picker
+		.getByRole('group', { name: 'Poisoner' })
+		.getByRole('button', { name: 'Poisoned' })
+		.tap();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+
+	const onSeat = page.locator('.chip-slot[data-seat="1"]');
+	await onSeat.getByRole('button', { name: 'Poisoned reminder' }).tap();
+	await page.getByRole('button', { name: 'More reminder actions' }).tap();
+	await page.getByRole('button', { name: 'Duplicate reminder' }).tap();
+	// Trevor (2026-10-18): allowed, but more than the game gives, so it says so and is marked.
+	await expect(page.getByText(/More copies of this reminder than the game gives/)).toBeVisible();
+	await expect(onSeat).toHaveCount(2);
+	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(1);
 });

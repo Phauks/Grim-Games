@@ -111,9 +111,7 @@
 						<span class="name"
 							>{game.scriptName || 'None'}{#if gameModeName(game.gameId)}<span
 									class="mode"
-									data-testid="game-mode"
-								>
-									· {gameModeName(game.gameId)}</span
+									data-testid="game-mode">{` · ${gameModeName(game.gameId)}`}</span
 								>{/if}</span
 						>
 						<span class="meta"
@@ -164,9 +162,7 @@
 						<span class="name"
 							>{game.scriptName || 'None'}{#if gameModeName(game.gameId)}<span
 									class="mode"
-									data-testid="game-mode"
-								>
-									· {gameModeName(game.gameId)}</span
+									data-testid="game-mode">{` · ${gameModeName(game.gameId)}`}</span
 								>{/if}</span
 						>
 						<span class="meta"
