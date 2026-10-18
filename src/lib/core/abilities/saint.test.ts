@@ -11,6 +11,8 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -44,8 +46,27 @@ describe('Saint', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Saint#Examples)', () => {
-		it.todo('Example 1: Saint executed, so evil wins');
-		it.todo('Example 2: Gunslinger kills Saint; game continues');
+		it('Example 1: Saint executed, so evil wins', () => {
+			const { session } = castGame(['saint', 'chef', 'empath', 'baron', 'imp'], (s) => ({
+				type: 'Execute',
+				seatId: s[0]
+			}));
+			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+				{ rule: 'saint', winner: 'evil' }
+			]);
+		});
+		it('Example 2: Gunslinger kills Saint; game continues', () => {
+			const { session } = castGame(
+				['saint', 'chef', 'empath', 'baron', 'imp', 'gunslinger'],
+				(s) => ({
+					type: 'SetDead',
+					seatId: s[0],
+					dead: true,
+					cause: 'gunslinger'
+				})
+			);
+			expect(gameEnds(session.game, testCharacters)).toEqual([]);
+		});
 		it.todo("Example 3: Scapegoat dies in Saint's place; game continues");
 	});
 });
