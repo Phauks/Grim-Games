@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import { gameEnds, suggestedWinner, type GameEnd, type GameHold } from '#lib/core/rules/index.ts';
@@ -8,6 +9,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import { dismissedGameEnds } from './device-notes.ts';
 	import { tonight } from './night-steps.ts';
 
 	/**
@@ -32,19 +34,21 @@
 		grimoire.nightDay === game.pastDays.length &&
 			grimoire.isNightStepDone(tonight(game), { id: 'dusk' })
 	);
-	const ends = $derived(
-		active && preferences.current.assistance.gameEndPrompts
-			? gameEnds(game, characters, { dayEnded })
-			: []
-	);
+	const on = $derived(active && preferences.current.assistance.gameEndPrompts);
+	const ends = $derived(on ? gameEnds(game, characters, { dayEnded }) : []);
 
-	let dismissed = $state<readonly string[]>([]);
+	// Kept on this device, so reopening the game doesn't ask again.
+	let dismissed = $state<readonly string[]>(
+		dismissedGameEnds.read(untrack(() => grimoire.game.gameId))
+	);
+	$effect(() => dismissedGameEnds.write(game.gameId, dismissed));
 	let shown = $state<GameEnd[]>([]);
 	let open = $state(false);
 	let winner = $state<Alignment | 'none'>('none');
 
 	// A condition that stops holding can prompt again if it comes back.
 	$effect(() => {
+		if (!on) return;
 		const keys = new Set(ends.map((e) => e.key));
 		if (dismissed.some((k) => !keys.has(k))) dismissed = dismissed.filter((k) => keys.has(k));
 	});

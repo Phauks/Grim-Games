@@ -18,6 +18,7 @@ import {
 const NAMES_KEY = 'grim-games:player-names:v1';
 const FLIPPED_PREFIX = 'grim-games:upside-down:v1:';
 const LAYOUT_KEY = (gameId: GameId) => `grim-games:seat-layout:v1:${gameId}`;
+const END_DISMISSED_KEY = (gameId: GameId) => `grim-games:game-end-dismissed:v1:${gameId}`;
 /** How many past names are remembered. */
 export const MAX_NAMES = 60;
 
@@ -256,5 +257,18 @@ export const endedGames = {
 		const all = readEnded();
 		delete all[gameId];
 		writeEnded(all);
+	}
+};
+
+/**
+ * Game end conditions the Storyteller dismissed (`GameEndPrompt`), by key, so reopening the
+ * game doesn't ask again about the same one.
+ */
+export const dismissedGameEnds = {
+	read(gameId: GameId): string[] {
+		return readList(END_DISMISSED_KEY(gameId));
+	},
+	write(gameId: GameId, keys: readonly string[]): void {
+		writeList(END_DISMISSED_KEY(gameId), keys);
 	}
 };

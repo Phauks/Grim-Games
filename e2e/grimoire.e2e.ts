@@ -56,6 +56,13 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
 	await page.getByRole('dialog').getByRole('button', { name: action }).last().tap();
 }
 
+/** The Demon died: the game end prompt asks first; Cancel keeps playing. */
+async function keepPlaying(page: Page) {
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	await prompt.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(prompt).toBeHidden();
+}
+
 test('New game and Resume game are screens of their own', async ({ page }) => {
 	// Home is blank for now (Trevor, 2026-10-16); the sidebar leads to each screen.
 	await page.goto('/new');
@@ -102,6 +109,7 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 		'true'
 	);
 	await cause.getByRole('button', { name: 'Executed' }).tap();
+	await keepPlaying(page);
 	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
 	// Alive brings them back, after saying what changes.
 	await sheet.getByRole('button', { name: 'Status: Dead: Executed' }).tap();
@@ -900,6 +908,7 @@ test('the cause of death offers only characters that could have killed the playe
 	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
 	cause = page.getByRole('dialog', { name: 'Status of Seat 3' });
 	await cause.getByRole('button', { name: 'Slayer' }).tap();
+	await keepPlaying(page);
 	await expect(sheet.getByRole('button', { name: 'Status: Dead: Slayer' })).toBeVisible();
 	await closeSheet(page);
 
@@ -1481,6 +1490,7 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 		.getByRole('dialog', { name: 'How did Seat 2 die?' })
 		.getByRole('button', { name: 'Executed' })
 		.tap();
+	await keepPlaying(page);
 	await day.getByRole('button', { name: 'Close' }).tap();
 
 	await page.getByRole('button', { name: 'Night order' }).tap();
