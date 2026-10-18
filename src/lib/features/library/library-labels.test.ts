@@ -14,6 +14,7 @@ import {
 	parseLabels,
 	renameLabel,
 	setFolder,
+	moveLabels,
 	setName,
 	toggleTag,
 	type LibraryLabels
@@ -80,6 +81,12 @@ describe('labels', () => {
 		expect(parseLabels(JSON.parse(JSON.stringify(s)))?.scripts.k.name).toBe('Club night');
 		s = setName(setFolder(toggleTag(s, 'k', 't1'), 'k', undefined), 'k', ' ');
 		expect(s.scripts).toEqual({});
+	});
+
+	it('moves an item’s folder and tags to the item it became', () => {
+		const s = moveLabels(toggleTag(setFolder(sample(), 'a', 'f1'), 'a', 't1'), 'a', 'b');
+		expect(labelsFor(s, 'b')).toEqual({ folder: 'f1', tags: ['t1'] });
+		expect(s.scripts.a).toBeUndefined();
 	});
 
 	it('ignores unknown folders and tags', () => {

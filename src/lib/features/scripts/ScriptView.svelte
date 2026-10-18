@@ -294,6 +294,7 @@
 		? t(`scripts.sourceLabel.${shownListing.row.source}`)
 		: t('scripts.current.defaultName')}
 	name={shownListing?.row.name ?? ''}
+	logo={shownListing?.row.logo}
 	{facts}
 	entries={shownListing?.row.entries ?? []}
 	{data}

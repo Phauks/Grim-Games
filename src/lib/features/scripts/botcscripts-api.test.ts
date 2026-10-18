@@ -342,6 +342,27 @@ describe('search', () => {
 		expect(readSearchPage({ results: [], next: null }, 4)?.hasMore).toBe(false);
 		expect(readSearchPage({ detail: 'Invalid page.' }, 9)).toBeUndefined();
 	});
+
+	it("keeps the author's https logo from each result's _meta", () => {
+		const row = (pk: number, logo: unknown) => ({
+			pk,
+			script_id: pk,
+			name: 'Storm Front',
+			version: '1.0.0',
+			author: 'Trevor',
+			content: [{ id: '_meta', name: 'Storm Front', logo }, 'chef']
+		});
+		const page = readSearchPage(
+			{ results: [row(1, 'https://example.com/logo.png'), row(2, 'http://example.com/x.png')] },
+			1
+		);
+		expect(page?.results.map((r) => r.logo)).toEqual(['https://example.com/logo.png', undefined]);
+		expect(readProxiedSearchPage(page)).toEqual(page);
+		expect(
+			readProxiedSearchPage({ ...page, results: [{ ...page?.results[0], logo: 'javascript:x' }] })
+				?.results[0].logo
+		).toBeUndefined();
+	});
 });
 
 describe('BotC Scripts versions', () => {
