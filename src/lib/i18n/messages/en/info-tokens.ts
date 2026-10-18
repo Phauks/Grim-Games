@@ -4,7 +4,6 @@ export const infoTokens = {
 	'info-tokens.standard': 'Standard',
 	'info-tokens.custom': 'Custom',
 	'info-tokens.extras': 'Enhanced Info Tokens',
-	'info-tokens.number': 'Number',
 	'info-tokens.numberLess': 'Lower number',
 	'info-tokens.numberMore': 'Higher number',
 	'info-tokens.quick': 'Quick card',
