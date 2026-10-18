@@ -284,8 +284,11 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await expect(page.getByTestId('town')).toHaveCount(2);
 	await expect(page.getByTestId('town').first()).toContainText('Trouble Brewing');
 	await expect(page.getByTestId('town').nth(1)).toContainText('Bad Moon Rising');
-	// Nobody drew the Demon in both games, and names aren't asked for up front.
-	await expect(page.getByTestId('town-warnings')).toContainText('None');
+	// The draw is random, so one seat may get the Demon in both games: the app warns and
+	// never stops it (towns.test.ts covers the warning itself). Names aren't asked up front.
+	await expect(page.getByTestId('town-warnings')).toHaveText(
+		/Warnings\s*(None|Seat \d+ is a Demon in every town)$/
+	);
 	await expect(page.getByRole('heading', { name: 'Player names' })).toHaveCount(0);
 	// The title keeps its row: Inspect is an icon, so no word breaks (Trevor, 2026-10-18).
 	const title = page.getByRole('heading', { name: 'Two games at once', level: 1 });
