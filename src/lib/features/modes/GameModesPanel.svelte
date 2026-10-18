@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Character, GameData, LoadedScript } from '#lib/core/data/index.ts';
-	import { MAX_PLAYERS, MIN_PLAYERS } from '#lib/core/engine/index.ts';
+	import { MAX_PLAYERS, MAX_SEATS, MIN_PLAYERS } from '#lib/core/engine/index.ts';
 	import {
 		bannedIn,
 		campaignRule,
@@ -119,10 +119,11 @@
 					: 'per-town'
 				: 'one'
 	);
-	// Separate towns each need a full game's players (5 to 15).
+	// Separate towns each need a full game's players (5 to 15); one town goes up to the
+	// game's seat limit, like character selection (Trevor, 2026-10-18).
 	const split = $derived(towns && !towns.samePlayers ? towns.count : 1);
 	const minPlayers = $derived(MIN_PLAYERS * split);
-	const maxPlayers = $derived(MAX_PLAYERS * split);
+	const maxPlayers = $derived(split > 1 ? MAX_PLAYERS * split : MAX_SEATS);
 	const total = $derived(Math.min(maxPlayers, Math.max(minPlayers, players)));
 	const sizes = $derived(split > 1 ? townSizes(total, split) : undefined);
 	const restrictedCount = $derived(bannedIn(mode, restrictions).size);

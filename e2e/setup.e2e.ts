@@ -7,6 +7,7 @@ async function selectionFor(page: Page, players: number, script = 'Trouble Brewi
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script).tap();
 	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
+	for (let n = 8; n < players; n++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
@@ -273,6 +274,15 @@ test('Fabled and Loric are added from their own closed sections, not to the bag'
 	await choice(page, 'Sentinel').tap();
 	await expect(choice(page, 'Sentinel')).toHaveAttribute('aria-pressed', 'false');
 	await noSidewaysScroll(page);
+});
+
+// Trevor, 2026-10-18: New game's count stopped at 15; stress tests need more players.
+test('New game and character selection take more than 15 players', async ({ page }) => {
+	await selectionFor(page, 24);
+	// Beyond 15 the sheet's 15+ column applies (https://wiki.bloodontheclocktower.com/Setup).
+	await expect(page.getByTestId('setup-table').locator('thead [data-current]')).toHaveText('15+');
+	await page.getByRole('button', { name: 'More players' }).tap();
+	await expect(page.getByTestId('player-count')).toHaveText('25');
 });
 
 // Trevor, 2026-10-18: with every Trouble Brewing character chosen for 20 players the bag
