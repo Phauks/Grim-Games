@@ -88,6 +88,30 @@ test('an unknown address shows Page not found without reporting an error', async
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 });
 
+test('a bad address shows Page not found once, even while a newer build waits', async ({
+	page,
+	context
+}) => {
+	// A newer build is deployed while this device still runs the one its service worker holds
+	// (it changes only when the person taps Refresh). SvelteKit reloads a page that ends in an
+	// error when it sees a newer version, which here loaded the held build again: endlessly.
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+	await context.route('**/_app/version.json', (route) =>
+		route.fulfill({ json: { version: 'a newer build' } })
+	);
+	let loads = 0;
+	page.on('request', (request) => {
+		if (request.resourceType() === 'document') loads++;
+	});
+	await page.goto('/accoun');
+	await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+	await page.waitForTimeout(3000);
+	expect(loads).toBe(1);
+	await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+});
+
 test('if the app cannot start, a plain screen shows the error with Reload and Report', async ({
 	page
 }) => {
