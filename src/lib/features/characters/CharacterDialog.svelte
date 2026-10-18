@@ -70,9 +70,12 @@
 	const tipLabel = (section: WikiSection) =>
 		/^bluffing/i.test(section.heading)
 			? 'characters.bluffingTip'
-			: /tips/i.test(section.heading)
-				? 'characters.tip'
-				: undefined;
+			: // Minions' and Demons' "Fighting the …" tips, boxed like the others (Trevor, 2026-10-18).
+				/^fighting/i.test(section.heading)
+				? 'characters.fightingTip'
+				: /tips/i.test(section.heading)
+					? 'characters.tip'
+					: undefined;
 	const items = $derived<ContentsItem[]>([
 		{ id: 'summary', label: t('characters.summary'), wideOnly: true },
 		{ id: 'jinxes', label: t('characters.jinxes') },

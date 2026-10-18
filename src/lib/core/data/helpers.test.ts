@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultAlignment, isSeatable } from './character-type.ts';
+import { defaultAlignment, isSeatable, typeTone } from './character-type.ts';
 import { characterIcons } from './icons.ts';
 import { findJinx, indexJinxes, jinxesAmong, jinxesFor } from './jinxes.ts';
 import type { Character, Jinx } from './types.ts';
@@ -74,5 +74,19 @@ describe('characterIcons', () => {
 			unaligned: 'fabled/angel.webp'
 		});
 		expect(characterIcons({ ...base, edition: undefined })).toBeUndefined();
+	});
+});
+
+describe('typeTone', () => {
+	// https://wiki.bloodontheclocktower.com/Character_Types: the seated types' teams; Travellers,
+	// Fabled and Loric have none, so they get their own colours (Trevor, 2026-10-18).
+	it('colours each type', () => {
+		expect(typeTone('townsfolk')).toBe('good');
+		expect(typeTone('outsider')).toBe('good');
+		expect(typeTone('minion')).toBe('evil');
+		expect(typeTone('demon')).toBe('evil');
+		expect(typeTone('traveller')).toBe('traveller');
+		expect(typeTone('loric')).toBe('loric');
+		expect(typeTone('fabled')).toBeUndefined();
 	});
 });

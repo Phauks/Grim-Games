@@ -8,6 +8,25 @@ export function isSeatable(type: CharacterType): type is SeatableType {
 }
 
 /**
+ * The colour family a character type's headings and labels use: good and evil for the
+ * seated types, purple for Travellers and green for Loric (Trevor, 2026-10-18). Fabled keep
+ * the plain heading colour.
+ */
+export type TypeTone = 'good' | 'evil' | 'traveller' | 'loric';
+
+export function typeTone(type: CharacterType): TypeTone | undefined {
+	switch (type) {
+		case 'traveller':
+		case 'loric':
+			return type;
+		case 'fabled':
+			return undefined;
+		default:
+			return defaultAlignment(type);
+	}
+}
+
+/**
  * The alignment a character starts with, from its type: Townsfolk and Outsiders are good,
  * Minions and Demons are evil. Travellers have none (the Storyteller chooses when one is
  * assigned), and Fabled and Loric have none because they are not players' characters.
