@@ -8,6 +8,7 @@
  */
 import {
 	describeDevice,
+	readPlace,
 	isDocId,
 	isDocKind,
 	normaliseCode,
@@ -100,7 +101,8 @@ async function signIn(
 	const cookie = await user.createSession(
 		describeDevice(request.headers.get('User-Agent')),
 		now,
-		remember
+		remember,
+		readPlace(request.cf)
 	);
 	const signedIn = await user.authenticate(cookie.split('.')[1], now);
 	return json(
@@ -137,7 +139,7 @@ export async function getUser(
 	} catch {
 		return undefined;
 	}
-	const found = await stub.authenticate(match[2], Date.now());
+	const found = await stub.authenticate(match[2], Date.now(), readPlace(request.cf));
 	return found && { ...found, userId: match[1] };
 }
 

@@ -63,6 +63,8 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	// Devices are a table; this device can't be signed out from its own row.
 	const devices = page.getByTestId('devices-table');
 	await expect(devices.getByText('(this device)')).toBeVisible();
+	// A rough place per device; the local server has none from Cloudflare, so None.
+	await expect(devices.getByText('Location').first()).toBeVisible();
 	await expect(
 		devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ })
 	).toBeDisabled();

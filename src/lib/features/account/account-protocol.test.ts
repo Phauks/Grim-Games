@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	describeDevice,
+	readPlace,
 	checkPassword,
 	cleanEmail,
 	normaliseCode,
@@ -77,5 +78,19 @@ describe('account protocol', () => {
 			)
 		).toBe('Safari on iPhone');
 		expect(describeDevice(null)).toBe('Unknown device');
+	});
+});
+
+describe('readPlace', () => {
+	it("keeps only the city and country from Cloudflare's request data", () => {
+		expect(
+			readPlace({ city: ' Austin ', country: 'US', region: 'Texas', latitude: '30.2' })
+		).toEqual({ city: 'Austin', country: 'US' });
+		expect(readPlace({ country: 'GB' })).toEqual({ country: 'GB' });
+	});
+	it('is undefined without a place, as in local development', () => {
+		expect(readPlace(undefined)).toBeUndefined();
+		expect(readPlace({})).toBeUndefined();
+		expect(readPlace({ city: '', country: 'not a code' })).toBeUndefined();
 	});
 });
