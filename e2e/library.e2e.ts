@@ -319,7 +319,7 @@ test('characters and character collections are Library items too', async ({ page
 	await expect(members).toContainText('Lamp Lighter');
 	await collection.getByRole('button', { name: 'Close' }).tap();
 
-	await sidebar(page).getByRole('button', { name: 'Character collections' }).tap();
+	await sidebar(page).getByRole('button', { name: 'Character Collections' }).tap();
 	await expect(row(page, 'Lamp set')).toContainText('2 characters');
 	await page.reload();
 	await sidebar(page).getByRole('button', { name: 'Everything' }).tap();
@@ -341,6 +341,97 @@ test('characters and character collections are Library items too', async ({ page
 	await character.getByRole('button', { name: 'Edit in Character builder' }).tap();
 	await expect(page).toHaveURL(/\/build-character$/);
 	await expect(page.getByTestId('character-name')).toHaveValue('Lamp Lighter');
+});
+
+test('a script saved without a name is named after the time it was saved', async ({ page }) => {
+	// Trevor (2026-10-18): "do not allow uploading or saving a file without a name. if no name,
+	// assign timestamp name".
+	await page.goto('/library');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'nameless.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(JSON.stringify([{ id: '_meta', name: '' }, 'chef', 'imp']))
+	});
+	const timeName = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+	await expect(
+		page.getByRole('dialog', { name: timeName }).or(page.getByRole('region', { name: timeName }))
+	).toBeVisible();
+});
+
+test('the sidebar’s folders, kinds and tags fold away, and folders are made there', async ({
+	page
+}) => {
+	// Trevor (2026-10-18): "allow collapsing of folders, kind, and tags" and "move add folder
+	// button into left sidebar, in nav area".
+	await page.goto('/library');
+	const nav = sidebar(page);
+	await expect(nav.getByRole('button', { name: 'New folder' })).toBeVisible();
+	await newFolder(page, 'Club night');
+	await expect(nav.getByRole('button', { name: /^Club night/ })).toBeVisible();
+
+	for (const [group, inside] of [
+		['Folders', /^Club night/],
+		['Kinds', /^Scripts/],
+		['Tags', 'New tag']
+	] as const) {
+		const head = nav.getByRole('button', { name: group, exact: true });
+		await expect(head).toHaveAttribute('aria-expanded', 'true');
+		await head.tap();
+		await expect(head).toHaveAttribute('aria-expanded', 'false');
+		if (group !== 'Tags') await expect(nav.getByRole('button', { name: inside })).toBeHidden();
+	}
+	// Remembered on this device.
+	await page.reload();
+	await expect(nav.getByRole('button', { name: 'Kinds', exact: true })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
+	await nav.getByRole('button', { name: 'Kinds', exact: true }).tap();
+	await expect(nav.getByRole('button', { name: /^Scripts/ })).toBeVisible();
+});
+
+test('an item changes kind, told first what won’t carry over', async ({ page }) => {
+	// Trevor (2026-10-18): "allow changing type of file from character collection to script or
+	// character, but note if being changed to incompatible format".
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'New collection' }).tap();
+	const naming = page.getByRole('dialog', { name: 'New collection' });
+	await naming.getByRole('textbox', { name: 'Name' }).fill('Lamp set');
+	await naming.getByRole('textbox', { name: 'Name' }).press('Enter');
+	const collection = pane(page, 'Lamp set');
+	await collection.getByRole('button', { name: 'Choose characters' }).tap();
+	const choose = page.getByRole('dialog', { name: 'Choose characters' });
+	await choose.getByRole('button', { name: /^Chef/ }).first().tap();
+	await choose.getByRole('button', { name: /^Imp/ }).first().tap();
+	await choose.getByRole('button', { name: 'Close' }).tap();
+
+	// Into a script: everything carries over.
+	await collection.getByRole('button', { name: 'Change kind' }).tap();
+	let dialog = page.getByRole('dialog', { name: 'Change kind' });
+	await expect(dialog.getByRole('combobox', { name: 'New kind' })).toContainText('Script');
+	await expect(dialog).toContainText('Everything carries over.');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	const script = pane(page, 'Lamp set');
+	await expect(script.getByRole('button', { name: 'Rename script' })).toBeVisible();
+
+	// Into a character: official characters can't become one, so it says why and won't go.
+	await script.getByRole('button', { name: 'Change kind' }).tap();
+	dialog = page.getByRole('dialog', { name: 'Change kind' });
+	await dialog.getByRole('combobox', { name: 'New kind' }).tap();
+	await page.getByRole('option', { name: 'Character', exact: true }).tap();
+	await expect(dialog).toContainText('It has no character of its own');
+	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+
+	// Back into a collection.
+	await dialog.getByRole('combobox', { name: 'New kind' }).tap();
+	await page.getByRole('option', { name: 'Character Collection', exact: true }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(
+		pane(page, 'Lamp set').getByRole('list', { name: 'Characters' }).getByRole('listitem')
+	).toHaveCount(2);
+	// The one item, not a copy beside the old one.
+	await pane(page, 'Lamp set').getByRole('button', { name: 'Close' }).tap();
+	await expect(row(page, 'Lamp set')).toHaveCount(1);
 });
 
 test.describe('in a computer window', () => {

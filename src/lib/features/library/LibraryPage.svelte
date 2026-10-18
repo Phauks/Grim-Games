@@ -35,6 +35,7 @@
 	import ItemPane from './ItemPane.svelte';
 	import LibrarySidebar, { type Place } from './LibrarySidebar.svelte';
 	import NameDialog from './NameDialog.svelte';
+	import { timestampName } from '#lib/core/timestamp-name.ts';
 	import ScriptPane, { type ScriptRow } from './ScriptPane.svelte';
 	import { dragToFolder, type DragSource } from './drag-to-folder.ts';
 	import { characterCollections } from './library-collections.svelte.ts';
@@ -328,6 +329,11 @@
 		}
 	}
 
+	/** An item that changed kind opens as its new self. */
+	function openItem(key: string) {
+		openKey = key;
+	}
+
 	/**
 	 * A script just added opens straight away, so its folder and tags can be set. Added while a
 	 * folder is open, it goes in that folder, as a file saved there would.
@@ -361,11 +367,6 @@
 	{#snippet actions()}
 		<!-- Icon buttons, so the title row stays one row on a phone (Trevor: icon buttons). -->
 		<IconButton
-			icon="folder"
-			label={t('library.newFolder')}
-			onclick={() => (folderNaming = true)}
-		/>
-		<IconButton
 			icon="players"
 			label={t('library.newCollection')}
 			onclick={() => (collectionNaming = true)}
@@ -384,6 +385,7 @@
 						bind:place
 						bind:tags={tagFilter}
 						count={(f) => folderSize(items, labels, f)}
+						onnewfolder={() => (folderNaming = true)}
 					/>
 				</div>
 			{:else}
@@ -394,6 +396,7 @@
 						bind:place
 						bind:tags={tagFilter}
 						count={(f) => folderSize(items, labels, f)}
+						onnewfolder={() => (folderNaming = true)}
 					/>
 				</PageSection>
 			{/if}
@@ -446,11 +449,23 @@
 
 {#snippet pane(inline: boolean)}
 	{#if openScript}
-		<ScriptPane bind:open={paneOpen.open} row={openScript} {data} {inline} />
+		<ScriptPane bind:open={paneOpen.open} row={openScript} {data} {inline} onchanged={openItem} />
 	{:else if openCharacter}
-		<CharacterPane bind:open={paneOpen.open} saved={openCharacter} {inline} />
+		<CharacterPane
+			bind:open={paneOpen.open}
+			saved={openCharacter}
+			{data}
+			{inline}
+			onchanged={openItem}
+		/>
 	{:else if openCollection}
-		<CollectionPane bind:open={paneOpen.open} collection={openCollection} {data} {inline} />
+		<CollectionPane
+			bind:open={paneOpen.open}
+			collection={openCollection}
+			{data}
+			{inline}
+			onchanged={openItem}
+		/>
 	{:else if inline}
 		<ItemPane title={t('library.pane')} inline>{t('common.none')}</ItemPane>
 	{/if}
@@ -515,6 +530,7 @@
 <NameDialog
 	bind:open={collectionNaming}
 	title={t('library.newCollection')}
+	blankName={timestampName}
 	onsave={addCollection}
 />
 
