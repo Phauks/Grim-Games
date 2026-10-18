@@ -38,7 +38,7 @@ test('Demon voted feeds the Flowergirl, and there is no New day button', async (
 	await expect(
 		page.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })
 	).toBeChecked();
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	const flowergirl = await walkTo(page, 'Flowergirl');
 	await expect(flowergirl.getByRole('group', { name: 'Flowergirl answer' })).toContainText(
 		'Yes: the Demon Fay (Fang Gu) voted'
@@ -75,7 +75,7 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('combobox', { name: 'Which night' }).tap();
 	await page.getByRole('option', { name: 'First', exact: true }).tap();
 	const step = await walkTo(page, 'Washerwoman');
@@ -138,7 +138,7 @@ test('with help switched off the night is a checklist with no worked-out answers
 	await expect(page.getByRole('heading', { name: 'Abilities and notes' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Seat: Eve' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	const checklist = page.getByTestId('night-checklist');
 	await expect(checklist).toBeVisible();
 	await expect(page.getByTestId('night-walkthrough')).toHaveCount(0);
@@ -157,7 +157,7 @@ test('impaired abilities, registration ranges, the Mathematician and a Gambler d
 	await expect(poisoner).toContainText('has no ability');
 	await expect(poisoner).toContainText('Preacher · Gus');
 
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('combobox', { name: 'Which night' }).tap();
 	await page.getByRole('option', { name: 'First', exact: true }).tap();
 	const dev = await walkTo(page, 'Poisoner');

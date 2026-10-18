@@ -2676,7 +2676,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 		.getByRole('button', { name: 'Fortune Teller', exact: true })
 		.tap();
 	await closeSheet(page);
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('button', { name: 'Guide: Demon info' }).tap();
 	await expect(demonInfo.getByTestId('evil-info-card').nth(1)).toContainText('In play: replace');
 	await demonInfo
