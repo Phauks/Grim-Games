@@ -21,6 +21,7 @@
 		type PreventedBecause,
 		type Night,
 		validDeathCauses,
+		daySentence,
 		type DayReminder,
 		type ValidDeathCause
 	} from '#lib/core/rules/index.ts';
@@ -539,36 +540,44 @@
 			<Collapsible title={group.title} storageKey={`day.group.${group.group}`}>
 				<ul class="reminders">
 					{#each group.reminders as reminder (reminder.key)}
-						{@const explained = explainBlock(
-							reminder.segments.map((s) => (s.kind === 'text' ? s.text : ''))
-						)}
 						{@const head =
 							reminder.segments[0]?.kind === 'character' ? reminder.segments[0] : undefined}
+						<!-- The heading is the character; the rest is a written sentence (Trevor, 2026-10-18). -->
+						{@const line = daySentence(head ? reminder.segments.slice(1) : reminder.segments)}
+						{@const explained = explainBlock(
+							line.segments.map((s) => (s.kind === 'text' ? s.text : ''))
+						)}
 						<li data-character={reminder.characterId}>
 							<CharacterEntry
 								characterId={head?.ref.characterId}
 								alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
 								playerName={head?.ref.playerName}
 							>
-								<span class="sentence">
-									{#each reminder.segments as segment, i (i)}
-										{#if segment === head}{:else if segment.kind === 'character'}
-											<CharacterBadge
-												characterId={segment.ref.characterId}
-												alignment={segment.ref.seatId
-													? g.seats[segment.ref.seatId]?.alignment
-													: undefined}
-												playerName={segment.ref.playerName}
-											/>
+								<!-- The ability first, beside the name; the state under it (Trevor, 2026-10-18). -->
+								{@render ability(reminder.characterId)}
+								<span class="sentence" data-testid="day-state">
+									{#each line.segments as segment, i (i)}
+										{@const stop = line.stop && i === line.segments.length - 1}
+										{#if segment.kind === 'character'}
+											<span class="glued"
+												><CharacterBadge
+													characterId={segment.ref.characterId}
+													alignment={segment.ref.seatId
+														? g.seats[segment.ref.seatId]?.alignment
+														: undefined}
+													playerName={segment.ref.playerName}
+												/>{#if stop}.{/if}</span
+											>
 										{:else if segment.kind === 'value'}
 											<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
-											<span>({segment.value ?? segment.placeholder})</span>
+											<span
+												>({segment.value ?? segment.placeholder}){#if stop}.{/if}</span
+											>
 										{:else}
 											<span><GlossaryText segments={explained[i] ?? []} /></span>
 										{/if}
 									{/each}
 								</span>
-								{@render ability(reminder.characterId)}
 								{@render actions(reminder.characterId, seatOf(reminder))}
 							</CharacterEntry>
 						</li>
@@ -835,7 +844,7 @@
 		padding: 0;
 		list-style: none;
 	}
-	/* Laid out like a jinx (CharacterEntry): the text, ability and actions under the bar. */
+	/* Laid out like a jinx (CharacterEntry): the ability, then the state and actions. */
 	.reminders li :global(.body) {
 		display: flex;
 		flex-wrap: wrap;
@@ -869,6 +878,10 @@
 	.ghost-mark[data-shown='true'] {
 		visibility: visible;
 	}
+	.glued {
+		display: inline-flex;
+		align-items: center;
+	}
 	.sentence {
 		font-family: var(--font-ability);
 		display: inline-flex;
@@ -876,9 +889,9 @@
 		align-items: center;
 		gap: var(--space-1) var(--space-2);
 	}
+	/* Under the name, before the state and actions (Trevor, 2026-10-18). */
 	.ability {
 		flex-basis: 100%;
-		order: 1;
 		margin: 0;
 		font-family: var(--font-ability);
 		font-size: 0.9rem;

@@ -134,6 +134,30 @@ export interface DayReminders {
 	hidden: DayReminder[];
 }
 
+/**
+ * A reminder as a written sentence (Trevor, 2026-10-18: "Is alive." not "is alive"). The day
+ * view shows the leading character as the entry's heading, so `segments` here are what follows
+ * it. Words that open the line get a capital; a line that starts with a badge keeps its verb
+ * lower case ("[Saint] is alive."). The line ends with a full stop unless it already ends in
+ * one, "!" or "?"; `stop` asks for one after a trailing badge or value, which can't hold it.
+ */
+export function daySentence(segments: readonly ReminderSegment[]): {
+	segments: ReminderSegment[];
+	stop: boolean;
+} {
+	const out = segments.map((s) => ({ ...s }));
+	const first = out[0];
+	if (first?.kind === 'text') {
+		const text = first.text.trimStart();
+		first.text = text.charAt(0).toUpperCase() + text.slice(1);
+	}
+	const last = out.at(-1);
+	if (last?.kind !== 'text') return { segments: out, stop: last !== undefined };
+	last.text = last.text.trimEnd();
+	if (!/[.!?]$/.test(last.text)) last.text += '.';
+	return { segments: out, stop: false };
+}
+
 const ENTRIES = new Map(DAY_REMINDER_ENTRIES.map((e) => [e.id, e]));
 const QUIET = new Set(Object.keys(NO_DAY_RELEVANCE));
 
