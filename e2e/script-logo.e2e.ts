@@ -103,3 +103,16 @@ test("Search shows a script's own logo beside its name, and in its details", asy
 	await page.getByRole('button', { name: /^Storm Front/ }).tap();
 	await expect(page.getByRole('img', { name: 'Storm Front logo' })).toBeVisible();
 });
+
+test("Resume game shows each game's script logo beside its name", async ({ page }) => {
+	// Trevor (2026-10-18): "resume game should include script logo".
+	await startGame(page);
+	await page.goto('/games');
+	const row = page.getByRole('region', { name: 'Saved games' }).getByRole('listitem').first();
+	const logo = row.getByTestId('script-logo');
+	await expect(logo).toHaveAttribute('data-logo', '/data/logos/tb.webp');
+	await expect.poll(() => loaded(page, '.games [data-testid="script-logo"] img')).toBe(true);
+	const box = (await logo.boundingBox())!;
+	const name = (await row.getByText('Trouble Brewing').boundingBox())!;
+	expect(name.x).toBeGreaterThan(box.x + box.width);
+});

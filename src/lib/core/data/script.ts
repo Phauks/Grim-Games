@@ -707,6 +707,13 @@ export function toScript(loaded: LoadedScript): Script {
 	return script;
 }
 
+/** The official edition a game's script is: its name is the edition's, with no homebrew. */
+export function scriptEdition(script: Script): (typeof OFFICIAL_EDITIONS)[number] | undefined {
+	if (script.entries.some((entry) => entry.kind === 'custom')) return undefined;
+	const name = script.meta?.name ?? '';
+	return OFFICIAL_EDITIONS.find((e) => e.name === name);
+}
+
 /**
  * The reverse of `toScript`, for a saved game's script: official ids are resolved against
  * `data`. Ids `data` no longer knows (a newer build removed them) are left out and returned
@@ -730,7 +737,7 @@ export function fromScript(
 		else missing.push(entry.id);
 	}
 	const meta: ScriptMeta = { ...script.meta, name: script.meta?.name ?? '' };
-	const edition = OFFICIAL_EDITIONS.find((e) => e.name === meta.name && homebrew.length === 0);
+	const edition = scriptEdition(script);
 	return {
 		script: {
 			name: meta.name || edition?.name || '',
