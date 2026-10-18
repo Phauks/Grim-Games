@@ -1522,6 +1522,52 @@ test('a character is taken away with None in Change character', async ({ page })
 	await expect(seatLabelled(page, 'Seat 1: no name, no character')).toBeAttached();
 });
 
+test('a met game end condition offers End game, listing every outcome', async ({ page }) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Saint'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const execute = async (seat: number) => {
+		const day = page.getByRole('dialog', { name: 'Day' });
+		if (!(await day.isVisible()))
+			await page.getByRole('button', { name: 'Day', exact: true }).tap();
+		await day.getByRole('button', { name: `Seat: Seat ${seat}` }).tap();
+		await page
+			.getByRole('dialog', { name: `How did Seat ${seat} die?` })
+			.getByRole('button', { name: 'Executed' })
+			.tap();
+	};
+	// The Saint executed: its team loses (https://wiki.bloodontheclocktower.com/Saint).
+	await execute(1);
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	await expect(prompt.getByTestId('game-end-prompt')).toContainText('Evil wins');
+	await expect(prompt.locator('[data-rule="saint"] [data-character-id="saint"]')).toBeVisible();
+	await expect(prompt.getByRole('combobox', { name: 'Winner' })).toContainText('Evil');
+	await page.screenshot({ path: `test-results/game-end-${test.info().project.name}.png` });
+	// A recommendation: Cancel keeps playing, and the same condition doesn't ask again.
+	await prompt.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(prompt).toBeHidden();
+	// The Demon dies too: both outcomes are listed and the Storyteller picks the winner.
+	await execute(2);
+	await expect(prompt.locator('[data-rule]')).toHaveCount(2);
+	await expect(prompt.locator('[data-rule="demon-dead"]')).toContainText('Good wins');
+	await expect(prompt.getByRole('combobox', { name: 'Winner' })).toContainText('Not recorded');
+	await prompt.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	await prompt.getByRole('button', { name: 'Confirm' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
+});
+
 test('End game keeps the Storyteller on the board, says it is over, and can be reopened', async ({
 	page
 }) => {

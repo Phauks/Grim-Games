@@ -100,6 +100,7 @@
 	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
 	import { onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
+	import GameEndPrompt from './GameEndPrompt.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -1462,6 +1463,14 @@
 	onMove={(id, to) => moveConfirm?.request(id, to)}
 />
 <AlignmentAsk {grimoire} />
+<GameEndPrompt
+	{grimoire}
+	active={!ended && !grimoire.open.viewOnly}
+	onEnd={(team) => {
+		winner = team;
+		endGame();
+	}}
+/>
 
 <InfoTokensSheet
 	bind:open={infoOpen}

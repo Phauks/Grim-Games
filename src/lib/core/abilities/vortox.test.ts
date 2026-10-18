@@ -11,6 +11,8 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -48,6 +50,13 @@ describe('Vortox', () => {
 		it.todo("Example 2: Mutant's execution: two Townsfolk say yes");
 		it.todo('Example 3: Dreamer narrows Savant to two characters');
 		it.todo("Example 4: Pit-Hag's change gives Juggler true info");
-		it.todo('Example 5: Nobody executed, so evil wins');
+		it('Example 5: Nobody executed, so evil wins', () => {
+			const { session } = castGame(['chef', 'empath', 'monk', 'witch', 'vortox'], {
+				type: 'NewDay'
+			});
+			expect(gameEnds(session.game, testCharacters, { dayEnded: true })).toMatchObject([
+				{ rule: 'vortox', winner: 'evil' }
+			]);
+		});
 	});
 });

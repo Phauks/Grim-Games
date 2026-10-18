@@ -12,6 +12,7 @@ export const ASSIST_KEYS = [
 	'setupReminders',
 	'preDayReminders',
 	'deathCause',
+	'gameEndPrompts',
 	'rulesWarnings',
 	'stackReminders',
 	'scriptTitle',
@@ -55,6 +56,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	deathCause: {
 		label: 'Ask how players died',
 		description: 'Offer a cause when you mark someone dead. You can always set it later.'
+	},
+	gameEndPrompts: {
+		label: 'Game end prompts',
+		description:
+			'When a win condition is met, such as the Saint executed, list why and offer to end the game.'
 	},
 	rulesWarnings: {
 		label: 'Setup and jinx warnings',
