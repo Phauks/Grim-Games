@@ -41,6 +41,11 @@
 		/** A single-line field's one extra icon button, just before its X (ClearableField `end`). */
 		end?: Snippet;
 		testid?: string;
+		/**
+		 * The label and the value in the account font (plain by default), for what people must
+		 * read and type exactly (sign-in details: Trevor, 2026-10-18).
+		 */
+		plain?: boolean;
 	}
 
 	let {
@@ -63,7 +68,8 @@
 		oncommit,
 		oninput,
 		end,
-		testid
+		testid,
+		plain = false
 	}: Props = $props();
 
 	function onkeydown(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
@@ -73,7 +79,7 @@
 	}
 </script>
 
-<label class={['text-field', grow && multiline && 'grow']}>
+<label class={['text-field', grow && multiline && 'grow', plain && 'plain']}>
 	<span class={hideLabel ? 'visually-hidden' : 'label'}>{label}</span>
 	{#if multiline}
 		<textarea
@@ -146,6 +152,10 @@
 	.grow textarea {
 		height: 100%;
 		resize: none;
+	}
+	.plain,
+	.plain input {
+		font-family: var(--font-account);
 	}
 	[aria-invalid='true'] {
 		border-color: var(--evil);

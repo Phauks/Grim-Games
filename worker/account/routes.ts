@@ -11,8 +11,12 @@ import {
 	isDocId,
 	isDocKind,
 	normaliseCode,
+	checkPassword,
+	cleanEmail,
 	normaliseEmail,
 	normaliseUsername,
+	PASSWORD_MAX,
+	PASSWORD_MIN,
 	SESSION_COOKIE,
 	SESSION_IDLE_MS,
 	signInHash,
@@ -33,7 +37,9 @@ import {
 	type EmailEnv
 } from './email.ts';
 import { isLegacyAccountId, isWordAccountId } from '../../src/lib/features/account/account-id.ts';
+import { passwordHash } from './crypto.ts';
 import {
+	hashPassword,
 	userStub,
 	type AccountEnv,
 	type AccountUser,
@@ -42,7 +48,11 @@ import {
 	type PutResult
 } from './objects.ts';
 
-export type Env = AccountEnv & EmailEnv & { AUTH_STARTS?: RateLimit };
+export type Env = AccountEnv & EmailEnv & { AUTH_STARTS?: RateLimit; AUTH_PASSWORDS?: RateLimit };
+
+/** The same answer for an unknown address, an account with no password and a wrong one. */
+const WRONG_PASSWORD = 'That email and password do not match. Check them, or sign in with a code.';
+const PASSWORD_RULE = `A password is ${PASSWORD_MIN} to ${PASSWORD_MAX} characters.`;
 
 function json(body: unknown, status = 200, headers: HeadersInit = {}): Response {
 	return Response.json(body, {
@@ -55,11 +65,49 @@ function fail(status: number, error: string): Response {
 	return json({ error } satisfies ApiError, status);
 }
 
-function sessionCookie(value: string, maxAgeSeconds: number): string {
-	return `${SESSION_COOKIE}=${value}; Path=/api; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAgeSeconds}`;
+/** Without `maxAgeSeconds` the cookie ends when the browser closes. */
+function sessionCookie(value: string, maxAgeSeconds?: number): string {
+	const age = maxAgeSeconds === undefined ? '' : `; Max-Age=${maxAgeSeconds}`;
+	return `${SESSION_COOKIE}=${value}; Path=/api; HttpOnly; Secure; SameSite=Lax${age}`;
+}
+
+/** A signed-in session's cookie: long-lived with "Remember me", else gone with the browser. */
+function signedInCookie(value: string, remember: boolean): string {
+	return sessionCookie(value, remember ? Math.floor(SESSION_IDLE_MS / 1000) : undefined);
 }
 
 const clearCookie = sessionCookie('', 0);
+
+/** The record for an address. Addresses are looked up lower-cased, so case never splits one. */
+function emailStub(env: AccountEnv, email: string) {
+	return env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(normaliseEmail(email) ?? email));
+}
+
+/** Starts a session for `userId` and answers with the signed-in user and its cookie. */
+async function signIn(
+	request: Request,
+	env: Env,
+	url: URL,
+	userId: string,
+	remember: boolean,
+	now: number
+): Promise<Response> {
+	const user = userStub(env, userId);
+	const cookie = await user.createSession(
+		describeDevice(request.headers.get('User-Agent')),
+		now,
+		remember
+	);
+	const signedIn = await user.authenticate(cookie.split('.')[1], now);
+	return json(
+		{
+			user: signedIn?.user ?? null,
+			delivery: emailSender(env, url).delivery
+		} satisfies SessionInfo,
+		200,
+		{ 'Set-Cookie': signedInCookie(cookie, remember) }
+	);
+}
 
 function readCookie(request: Request): string | undefined {
 	for (const part of (request.headers.get('Cookie') ?? '').split(';')) {
@@ -117,11 +165,9 @@ async function start(request: Request, env: Env, url: URL): Promise<Response> {
 	if (env.AUTH_STARTS && !(await env.AUTH_STARTS.limit({ key: caller })).success) {
 		return fail(429, 'Too many sign-in attempts. Wait a minute and try again.');
 	}
-	const email = normaliseEmail((await readBody(request))?.email);
+	const email = cleanEmail((await readBody(request))?.email);
 	if (!email) return fail(400, 'Enter a valid email address.');
-	const result = await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).start(
-		Date.now()
-	);
+	const result = await emailStub(env, email).start(Date.now());
 	if (!result.ok) {
 		return fail(429, 'Too many codes for this address. Wait an hour and try again.');
 	}
@@ -144,13 +190,15 @@ async function verify(request: Request, env: Env, url: URL): Promise<Response> {
 		return fail(503, 'Signing in is not available yet on this site.');
 	}
 	const body = await readBody(request);
-	const email = normaliseEmail(body?.email);
+	const email = cleanEmail(body?.email);
 	const code = normaliseCode(body?.code);
+	const password = body?.password === undefined ? undefined : checkPassword(body.password);
+	if (body?.password !== undefined && !password) return fail(400, PASSWORD_RULE);
 	const token =
 		typeof body?.token === 'string' && /^[\w-]{20,100}$/.test(body.token) ? body.token : undefined;
 	if (!email || (!code && !token)) return fail(400, 'Enter the code from the email.');
 	const now = Date.now();
-	const result = await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).verify(
+	const result = await emailStub(env, email).verify(
 		email,
 		code ? { code } : { token: token! },
 		now
@@ -163,17 +211,61 @@ async function verify(request: Request, env: Env, url: URL): Promise<Response> {
 		}[result.reason];
 		return fail(result.reason === 'wrong' ? 401 : 410, message);
 	}
-	const user = userStub(env, result.userId);
-	const cookie = await user.createSession(describeDevice(request.headers.get('User-Agent')), now);
-	const signedIn = await user.authenticate(cookie.split('.')[1], now);
-	return json(
-		{
-			user: signedIn?.user ?? null,
-			delivery: emailSender(env, url).delivery
-		} satisfies SessionInfo,
-		200,
-		{ 'Set-Cookie': sessionCookie(cookie, Math.floor(SESSION_IDLE_MS / 1000)) }
-	);
+	if (password) {
+		const user = userStub(env, result.userId);
+		await user.setPasswordHash(await hashPassword(password), now);
+		// A new password ends sessions elsewhere, as when it is changed in Account settings.
+		if (!result.created) await user.endAllSessions();
+	}
+	return signIn(request, env, url, result.userId, body?.remember !== false, now);
+}
+
+/**
+ * `POST /api/auth/password`: signs in with email and password. Limited per network address
+ * and per email; every failure gives the same answer, so it never says which addresses
+ * have accounts or passwords.
+ */
+async function passwordSignIn(request: Request, env: Env, url: URL): Promise<Response> {
+	if (emailSender(env, url).delivery === 'unavailable') {
+		return fail(503, 'Signing in is not available yet on this site.');
+	}
+	const caller = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+	if (env.AUTH_PASSWORDS && !(await env.AUTH_PASSWORDS.limit({ key: caller })).success) {
+		return fail(429, 'Too many sign-in attempts. Wait a minute and try again.');
+	}
+	const body = await readBody(request);
+	const email = normaliseEmail(body?.email);
+	const password = typeof body?.password === 'string' ? body.password : '';
+	if (!email || !password) return fail(400, 'Enter your email and password.');
+	const now = Date.now();
+	const record = emailStub(env, email);
+	const { limited, userId } = await record.passwordOwner(now);
+	if (limited) {
+		return fail(429, 'Too many wrong passwords for this address. Sign in with a code instead.');
+	}
+	const matches = userId
+		? await userStub(env, userId).checkPassword(password)
+		: // Hashed anyway, so an unknown address takes as long to answer as a wrong password.
+			(await passwordHash(password, 'no-account'), false);
+	if (!userId || !matches) {
+		await record.passwordFailed(now);
+		return fail(401, WRONG_PASSWORD);
+	}
+	return signIn(request, env, url, userId, body?.remember !== false, now);
+}
+
+/** `PUT /api/account/password`: sets or replaces the password, signing out other devices. */
+async function setPassword(
+	request: Request,
+	env: Env,
+	auth: Authenticated & { userId: string }
+): Promise<Response> {
+	const password = checkPassword((await readBody(request))?.password);
+	if (!password) return fail(400, PASSWORD_RULE);
+	const user = userStub(env, auth.userId);
+	const changed = await user.setPasswordHash(await hashPassword(password), Date.now());
+	await user.endOtherSessions(auth.sessionId);
+	return json({ user: changed! } satisfies UserResponse);
 }
 
 /** `POST /api/account/email/start`: sends a code to the new address. */
@@ -191,13 +283,10 @@ async function startEmailChange(
 	if (env.AUTH_STARTS && !(await env.AUTH_STARTS.limit({ key: caller })).success) {
 		return fail(429, 'Too many codes asked for. Wait a minute and try again.');
 	}
-	const email = normaliseEmail((await readBody(request))?.email);
+	const email = cleanEmail((await readBody(request))?.email);
 	if (!email) return fail(400, 'Enter a valid email address.');
 	if (email === auth.user.email) return fail(400, 'That is already your email address.');
-	const result = await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).startChange(
-		auth.userId,
-		Date.now()
-	);
+	const result = await emailStub(env, email).startChange(auth.userId, Date.now());
 	if (!result.ok) {
 		return fail(429, 'Too many codes for this address. Wait an hour and try again.');
 	}
@@ -225,10 +314,10 @@ async function verifyEmailChange(
 	auth: Authenticated & { userId: string }
 ): Promise<Response> {
 	const body = await readBody(request);
-	const email = normaliseEmail(body?.email);
+	const email = cleanEmail(body?.email);
 	const code = normaliseCode(body?.code);
 	if (!email || !code) return fail(400, 'Enter the code from the email.');
-	const result = (await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).confirmChange(
+	const result = (await emailStub(env, email).confirmChange(
 		auth.userId,
 		code,
 		Date.now()
@@ -244,8 +333,9 @@ async function verifyEmailChange(
 	}
 	const user = userStub(env, auth.userId);
 	const changed = await user.setEmail(email);
-	if (changed.old && changed.old !== email) {
-		await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(changed.old)).forget(auth.userId);
+	// The same address with different capitals stays this account's; only its spelling changes.
+	if (changed.old && normaliseEmail(changed.old) !== normaliseEmail(email)) {
+		await emailStub(env, changed.old).forget(auth.userId);
 		try {
 			await emailSender(env, url).send(emailChangedNotice(changed.old, email));
 		} catch (e) {
@@ -300,6 +390,7 @@ export async function handleAccount(
 
 	if (path === '/api/auth/start' && method === 'POST') return start(request, env, url);
 	if (path === '/api/auth/verify' && method === 'POST') return verify(request, env, url);
+	if (path === '/api/auth/password' && method === 'POST') return passwordSignIn(request, env, url);
 
 	const auth = await getUser(request, env);
 	if (path === '/api/auth/session' && method === 'GET') {
@@ -309,7 +400,7 @@ export async function handleAccount(
 			// A live session's cookie is renewed, so it ends after 180 days unused (not 180 days
 			// after signing in), matching the server; a cookie for an ended session is removed.
 			auth
-				? { 'Set-Cookie': sessionCookie(readCookie(request)!, Math.floor(SESSION_IDLE_MS / 1000)) }
+				? { 'Set-Cookie': signedInCookie(readCookie(request)!, auth.remember) }
 				: readCookie(request)
 					? { 'Set-Cookie': clearCookie }
 					: {}
@@ -332,6 +423,7 @@ export async function handleAccount(
 		return verifyEmailChange(request, env, url, auth);
 	}
 	if (path === '/api/account/username' && method === 'PUT') return setUsername(request, env, auth);
+	if (path === '/api/account/password' && method === 'PUT') return setPassword(request, env, auth);
 	if (path === '/api/account/sessions' && method === 'GET') {
 		return json({ sessions: await user.sessions(auth.sessionId) });
 	}
@@ -352,7 +444,7 @@ export async function handleAccount(
 	if (path === '/api/account' && method === 'DELETE') {
 		const { email, username } = await user.deleteAccount();
 		if (email) {
-			await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).forget(auth.userId);
+			await emailStub(env, email).forget(auth.userId);
 		}
 		if (username) {
 			await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(usernameKey(username))).release(
