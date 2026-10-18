@@ -9,7 +9,7 @@
 <script lang="ts">
 	import { typeTone } from '#lib/core/data/character-type.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import {
 		defaultAlignment,
 		type Character,
@@ -18,6 +18,7 @@
 	} from '#lib/core/data/index.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { prefetchWikiPage } from './wiki-page.svelte.ts';
 	import CharacterSearchBox from './CharacterSearchBox.svelte';
 	import CharacterToken from './CharacterToken.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
@@ -72,6 +73,17 @@
 		closedTypes?: readonly CharacterType[];
 		/** Extra controls in a type group's header, e.g. setup's All Travellers. */
 		groupAside?: Snippet<[CharacterType]>;
+		/**
+		 * The token opens the character's page (its wiki, or where it came from), as in setup,
+		 * and the rest of the row still chooses it (Script builder, Trevor 2026-10-18).
+		 */
+		onInfo?: (character: Character) => void;
+		/**
+		 * Pins each type's header this far from the top of the window while its group scrolls
+		 * past, handing over to the next type's (Trevor, 2026-10-18), for a picker that grows
+		 * with the page under a sticky band: a CSS length, e.g. the band's bottom edge.
+		 */
+		pinTop?: string;
 	}
 
 	let {
@@ -93,8 +105,23 @@
 		onNone,
 		keepTypes = [],
 		closedTypes = [],
-		groupAside
+		groupAside,
+		onInfo,
+		pinTop
 	}: Props = $props();
+
+	// A pinned header closed while pinned leaves its type's top above the window: keep the
+	// header where it was, so the tap that closed it doesn't send the list elsewhere.
+	function keepPinnedHeader(event: MouseEvent) {
+		if (!pinTop || !(event.target instanceof Element)) return;
+		const head = event.target.closest('.collapsible > .head');
+		if (!head) return;
+		const before = head.getBoundingClientRect().top;
+		void tick().then(() => {
+			const moved = head.getBoundingClientRect().top - before;
+			if (moved < 0) window.scrollBy({ top: moved });
+		});
+	}
 
 	const groups = $derived.by(() => {
 		const found = searchGroups(characters, query, filter, types);
@@ -125,10 +152,22 @@
 				disabledReason: reasonFor(character, chosen.has(character.id))
 			}}
 			{@const note = state.disabledReason ?? marker?.(character)}
-			<li>
+			<li class:with-info={!!onInfo && !item}>
 				{#if item}
 					{@render item(character, state)}
 				{:else}
+					{#if onInfo}
+						<button
+							type="button"
+							class="info"
+							aria-haspopup="dialog"
+							aria-label={t('picker.characterInfo', { name: character.name })}
+							onpointerdown={() => prefetchWikiPage(character)}
+							onclick={() => onInfo(character)}
+						>
+							<CharacterToken {character} alignment={defaultAlignment(character.type)} size={36} />
+						</button>
+					{/if}
 					<button
 						type="button"
 						class="row"
@@ -139,7 +178,9 @@
 						disabled={state.disabledReason !== undefined}
 						onclick={() => onSelect(character.id)}
 					>
-						<CharacterToken {character} alignment={defaultAlignment(character.type)} size={36} />
+						{#if !onInfo}
+							<CharacterToken {character} alignment={defaultAlignment(character.type)} size={36} />
+						{/if}
 						<span class="text">
 							<span class="head">
 								<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
@@ -163,9 +204,17 @@
 	with their ability text. Single or multi select, an optional filter, and rows that are
 	shown disabled with a reason rather than hidden.
 -->
-<div class="picker" data-contained={contained ? '' : undefined} data-surface={surface}>
+<div
+	class="picker"
+	data-contained={contained ? '' : undefined}
+	data-surface={surface}
+	data-pinned={pinTop ? '' : undefined}
+	style:--picker-pin-top={pinTop}
+>
 	{#if showSearch}<CharacterSearchBox bind:query />{/if}
-	<div class="list" data-testid="character-picker">
+	<!-- Only watches the clicks of its headers' own buttons, so it needs no keys of its own. -->
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+	<div class="list" data-testid="character-picker" onclick={keepPinnedHeader}>
 		{#if onNone}
 			<button
 				type="button"
@@ -221,6 +270,16 @@
 	/* In a sheet or dialog the headings take the panel's own text colour. */
 	.picker[data-surface='sheet'] {
 		--collapsible-heading: currentColor;
+	}
+	/* Each type's header stays at the top while its group scrolls under it; the next one's
+	   pushes it off, since a header only sticks within its own group. */
+	.picker[data-pinned] :global(.collapsible > .head) {
+		position: sticky;
+		top: var(--picker-pin-top);
+		/* Under the band it sits below, over the rows. */
+		z-index: calc(var(--z-raised) - 1);
+		background: var(--page-background, var(--surface));
+		background-attachment: fixed;
 	}
 	ul {
 		display: grid;
@@ -303,6 +362,29 @@
 		flex: none;
 		width: 1.25em;
 		align-self: center;
+	}
+	/* The token is its own button over the row's start, so the row looks the same. */
+	.with-info {
+		position: relative;
+	}
+	.with-info .row {
+		padding-inline-start: calc(var(--space-2) + 2.25rem + var(--space-2));
+	}
+	.info {
+		position: absolute;
+		inset-block: 0;
+		inset-inline-start: 0;
+		z-index: 1;
+		display: flex;
+		align-items: flex-start;
+		width: calc(var(--space-2) + 2.25rem + var(--space-1));
+		min-width: var(--tap-target);
+		padding: var(--space-1) 0 var(--space-1) var(--space-2);
+		border: 0;
+		border-radius: var(--radius-md) 0 0 var(--radius-md);
+		background: none;
+		cursor: pointer;
+		touch-action: manipulation;
 	}
 	.none {
 		margin: 0;
