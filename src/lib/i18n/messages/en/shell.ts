@@ -13,6 +13,7 @@ export const shell = {
 	'shell.navHome': 'Home',
 	'shell.navNewGame': 'New game',
 	'shell.navResumeGame': 'Resume game',
+	'shell.navJoinGame': 'Join game',
 	'shell.navHistory': 'History',
 	'shell.homeBlank': 'This page is intentionally blank',
 	'shell.navScripts': 'Search',

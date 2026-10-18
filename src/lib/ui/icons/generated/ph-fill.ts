@@ -50,6 +50,7 @@ import ph_database_fill from '~icons/ph/database-fill';
 import ph_device_mobile_fill from '~icons/ph/device-mobile-fill';
 import ph_diamond_fill from '~icons/ph/diamond-fill';
 import ph_dice_five_fill from '~icons/ph/dice-five-fill';
+import ph_door_open_fill from '~icons/ph/door-open-fill';
 import ph_dots_three_fill from '~icons/ph/dots-three-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
 import ph_download_simple_fill from '~icons/ph/download-simple-fill';
@@ -139,6 +140,7 @@ import ph_shield_fill from '~icons/ph/shield-fill';
 import ph_shield_check_fill from '~icons/ph/shield-check-fill';
 import ph_shield_star_fill from '~icons/ph/shield-star-fill';
 import ph_shuffle_fill from '~icons/ph/shuffle-fill';
+import ph_sign_in_fill from '~icons/ph/sign-in-fill';
 import ph_skull_fill from '~icons/ph/skull-fill';
 import ph_sliders_fill from '~icons/ph/sliders-fill';
 import ph_smiley_fill from '~icons/ph/smiley-fill';
@@ -235,6 +237,7 @@ const icons: IconMap = {
 	'ph:device-mobile-fill': ph_device_mobile_fill,
 	'ph:diamond-fill': ph_diamond_fill,
 	'ph:dice-five-fill': ph_dice_five_fill,
+	'ph:door-open-fill': ph_door_open_fill,
 	'ph:dots-three-fill': ph_dots_three_fill,
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
 	'ph:download-simple-fill': ph_download_simple_fill,
@@ -324,6 +327,7 @@ const icons: IconMap = {
 	'ph:shield-check-fill': ph_shield_check_fill,
 	'ph:shield-star-fill': ph_shield_star_fill,
 	'ph:shuffle-fill': ph_shuffle_fill,
+	'ph:sign-in-fill': ph_sign_in_fill,
 	'ph:skull-fill': ph_skull_fill,
 	'ph:sliders-fill': ph_sliders_fill,
 	'ph:smiley-fill': ph_smiley_fill,
