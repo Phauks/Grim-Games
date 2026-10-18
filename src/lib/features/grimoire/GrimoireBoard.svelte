@@ -4,9 +4,7 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
-	import { STANDARD } from '#lib/core/modes/index.ts';
-	import { findMode } from '#lib/features/modes/custom-modes.svelte.ts';
-	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { gameModeName } from './game-mode-name.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -95,11 +93,11 @@
 	import { stepFocus } from './step-focus.svelte.ts';
 	import RulesAtSetting from './RulesAtSetting.svelte';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
-	import { pendingTray, trayItems, type BankView } from './setup-tray.ts';
+	import { pendingTray, trayItems, withoutOffSeat, type BankView } from './setup-tray.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
-	import { onBoard } from './reminders.ts';
+	import { extraReminders, onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 
@@ -415,7 +413,12 @@
 		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
 		const target = seatAt(at);
 		if (!end) {
-			reminderDrag = { reminderId, from, at, target };
+			reminderDrag = {
+				reminderId,
+				from,
+				at,
+				target: boardLooks.current.reminders === 'free' ? undefined : target
+			};
 			return;
 		}
 		reminderDrag = undefined;
@@ -434,21 +437,17 @@
 				moveConfirm?.requestRule(reminderId, rule);
 			return;
 		}
-		const free = boardLooks.current.reminders === 'free' && spotAllowed(x, y);
-		// Dropped on another seat: moved (one History entry), keeping the spot when free.
-		if (target && target !== from) {
-			if (free) grimoire.setReminderSpot(reminderId, at);
-			moveConfirm?.request(reminderId, target);
+		// Loose mode (Trevor, 2026-10-18): nothing is given to a seat. A reminder goes where it
+		// is dropped, seats included; one still on a seat from before comes off it.
+		if (boardLooks.current.reminders === 'free') {
+			if (!spotAllowed(x, y)) return;
+			if (looseReminders(game).some((r) => r.reminderId === reminderId))
+				grimoire.setReminderSpot(reminderId, at);
+			else moveConfirm?.requestLoose(reminderId, () => looseAt(reminderId, at));
 			return;
 		}
-		if (!free) return;
-		// Moved about near its own seat, or already loose: only its spot changes.
-		if (target || looseReminders(game).some((r) => r.reminderId === reminderId)) {
-			grimoire.setReminderSpot(reminderId, at);
-			return;
-		}
-		// Put down anywhere else in the open area: it belongs to no one (Trevor, 2026-10-17).
-		moveConfirm?.requestLoose(reminderId, () => looseAt(reminderId, at));
+		// Dropped on another seat: moved (one History entry).
+		if (target && target !== from) moveConfirm?.request(reminderId, target);
 	}
 
 	// ── Arranging seats ──
@@ -640,7 +639,8 @@
 	 * reminder target rules). Warns only: it can still be dropped there.
 	 */
 	const misfits = $derived.by(() => {
-		const reminder = dragOrigin?.reminder ?? trayHints.reminder;
+		// Loose mode marks no seats: nothing is given to one (Trevor, 2026-10-18).
+		const reminder = looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder);
 		if (!reminder) return new Set<SeatId>();
 		return new Set(
 			game.seating.filter((id) => seatMisses(game, reminder, id, characters).length > 0)
@@ -651,7 +651,12 @@
 	 * (its source), the seats it fits (valid targets), or both. With no reminder in hand, a
 	 * walked night step marks its holders as sources.
 	 */
-	const handReminder = $derived(dragOrigin?.reminder ?? trayHints.reminder);
+	const looseMode = $derived(boardLooks.current.reminders === 'free');
+	/** Copies beyond what the game gives (Duplicate reminder): marked as unusual. */
+	const extras = $derived(extraReminders(game, characters));
+	const handReminder = $derived(
+		looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder)
+	);
 	const sourceSeats = $derived.by(() => {
 		const id = handReminder?.characterId;
 		if (id === undefined) return walkHolders;
@@ -668,7 +673,10 @@
 		return source && target ? 'both' : source ? 'source' : target ? 'target' : undefined;
 	}
 	const setupPending = $derived(
-		pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed).length
+		withoutOffSeat(
+			pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed),
+			[...looseReminders(game), ...Object.values(game.ruleReminders ?? {}).flat()]
+		).length
 	);
 	let bankChosen = $state<BankView | undefined>();
 	const bankView = $derived<BankView>(
@@ -775,6 +783,18 @@
 		const steps = boardNightSteps(game, characters, night, data).filter(wakes);
 		const next = steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
+	}
+	/**
+	 * A night is running (walked through, or Dusk ticked by End day): the bank's button is End
+	 * night, which replaces ticking Dawn (Trevor, 2026-10-18). With the walk-through switched
+	 * off it is End night all the time, usable while a night runs.
+	 */
+	const nightOn = $derived(!ended && (walk !== undefined || grimoire.nightRunning));
+	let endNightOpen = $state(false);
+	function endNight() {
+		if (!grimoire.endNight()) return;
+		walk = undefined;
+		dayOpen = true;
 	}
 	/**
 	 * The step's reminders already on the board are ringed too, on any night (Trevor,
@@ -952,10 +972,7 @@
 	 * A game played in an alternative mode says so where the script's name is (Trevor,
 	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
 	 */
-	const modeName = $derived.by(() => {
-		const id = readGameMode(game.gameId)?.modeId;
-		return id && id !== STANDARD.id ? findMode(id)?.name : undefined;
-	});
+	const modeName = $derived(gameModeName(game.gameId));
 	/**
 	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
 	 * says it once, in the mode's colour, rather than twice (Trevor, 2026-10-18).
@@ -1144,15 +1161,6 @@
 			<span class="nav-menu"><NavMenuButton /></span>
 			<!-- Icons on phones; with their words on wider screens, where there is room. -->
 			<span class="spacer"></span>
-			<Button
-				variant="quiet"
-				icon="night"
-				aria-label="Night order"
-				onclick={() => {
-					grimoire.beginNight();
-					nightOpen = true;
-				}}><span class="tool-label">Night order</span></Button
-			>
 			<Button variant="quiet" icon="day" aria-label="Day" onclick={() => (dayOpen = true)}
 				><span class="tool-label">Day</span></Button
 			>
@@ -1190,9 +1198,9 @@
 		style:--name-scale={boardLooks.current.nameSize}
 		bind:this={board}
 	>
-		<!-- The vignette darkens the middle of an image background (Trevor, 2026-10-17: its own
-		     switch and strength). The script's name is only in the lower left corner (2026-10-18). -->
-		{#if boardLooks.current.vignette && (backgroundUrl !== undefined || background.kind === 'preset')}
+		<!-- The vignette darkens the background towards the edges, on every background (Trevor,
+		     2026-10-17: its own switch and strength; 2026-10-18: it should be noticeable). -->
+		{#if boardLooks.current.vignette}
 			<div
 				class="vignette"
 				data-testid="vignette"
@@ -1254,6 +1262,8 @@
 						class="chip-slot"
 						data-seat={i + 1}
 						class:dragging={dragged}
+						class:extra={extras.has(reminder.reminderId)}
+						data-extra={extras.has(reminder.reminderId) ? '' : undefined}
 						class:now={walkOn(reminder)}
 						style:left="{p.x}%"
 						style:top="{p.y}%"
@@ -1283,6 +1293,10 @@
 				class="chip-slot"
 				data-loose
 				class:dragging={dragged}
+				class:extra={extras.has(reminder.reminderId)}
+				data-extra={extras.has(reminder.reminderId) ? '' : undefined}
+				class:unassigned={!looseMode}
+				data-unassigned={looseMode ? undefined : ''}
 				class:now={walkOn(reminder)}
 				style:left="{p.x}%"
 				style:top="{p.y}%"
@@ -1356,10 +1370,6 @@
 					guideOpen = true;
 				}}
 				onClose={() => (walk = undefined)}
-				onDay={() => {
-					walk = undefined;
-					dayOpen = true;
-				}}
 			/>
 		{/if}
 		{#if ended}
@@ -1396,9 +1406,11 @@
 				{ruleAt}
 				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
 				onHints={(h) => (trayHints = h)}
-				run={preferences.current.assistance.nightWalkthrough
-					? { disabled: !canRun, onclick: runNight }
-					: undefined}
+				run={nightOn
+					? { end: true, disabled: grimoire.open.viewOnly, onclick: () => (endNightOpen = true) }
+					: preferences.current.assistance.nightWalkthrough
+						? { end: false, disabled: !canRun, onclick: runNight }
+						: { end: true, disabled: true, onclick: () => {} }}
 			/>
 		{/if}
 
@@ -1479,6 +1491,19 @@
 	<div class="menu">
 		<Button variant="quiet" icon="history" onclick={() => fromMenu(() => (historyOpen = true))}>
 			History
+		</Button>
+		<!-- The full night list, ticked by hand; running a night is the bank's Run night, so it
+		     left the toolbar (Trevor, 2026-10-18). -->
+		<Button
+			variant="quiet"
+			icon="night"
+			onclick={() =>
+				fromMenu(() => {
+					grimoire.beginNight();
+					nightOpen = true;
+				})}
+		>
+			Night order
 		</Button>
 		<Button
 			variant="quiet"
@@ -1566,6 +1591,9 @@
 		back?.();
 	}}
 />
+
+<!-- Like the day's End day: the title alone (DaySheet). -->
+<ConfirmDialog bind:open={endNightOpen} title="End the night?" onConfirm={endNight} />
 
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">
@@ -1887,6 +1915,19 @@
 		translate: -50% -50%;
 		z-index: 1;
 	}
+	/* Back in attached mode, a reminder left loose belongs to no seat (Trevor, 2026-10-18): a
+	   dashed ring until it is put on a seat or back in the bank. */
+	/* A copy beyond what the game gives (Trevor, 2026-10-18): dashed and faded, like the
+	   reminder list's tokens that don't fit a seat. */
+	.chip-slot.extra > :global(.reminder) {
+		outline: 0.15rem dashed var(--on-surface);
+		outline-offset: 0.15rem;
+		opacity: 0.75;
+	}
+	.chip-slot.unassigned > :global(.reminder) {
+		outline: 0.15rem dashed var(--on-surface);
+		outline-offset: 0.15rem;
+	}
 	/* The walked-through step's reminders already on the board: the bank's ring. */
 	.chip-slot.now > :global(.reminder) {
 		outline: 0.2rem solid var(--accent);
@@ -1969,14 +2010,17 @@
 		background: var(--evil);
 		color: var(--on-evil);
 	}
-	/* The vignette (Trevor, 2026-10-17: its own switch and strength), over an image only. */
+	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
 	.vignette {
 		position: absolute;
 		inset: 0;
+		/* Clear in the middle, darkening to the strength at the corners. */
 		background: radial-gradient(
-			ellipse 45% 22% at center,
-			rgb(0 0 0 / var(--vignette)) /* colour-ok: a shadow is darkness, not a theme colour */,
-			transparent 100%
+			ellipse 75% 75% at center,
+			transparent 40%,
+			rgb(0 0 0 / calc(var(--vignette) * 0.6)) 75%
+				/* colour-ok: a shadow is darkness, not a theme colour */,
+			rgb(0 0 0 / var(--vignette)) 100% /* colour-ok: a shadow is darkness, not a theme colour */
 		);
 		pointer-events: none;
 	}

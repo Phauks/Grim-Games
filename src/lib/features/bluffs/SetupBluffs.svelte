@@ -20,9 +20,14 @@
 		waiting: boolean;
 		/** The characters chosen, on the Characters screen; otherwise the bag's tiles. */
 		inPlay?: readonly CharacterId[];
+		/**
+		 * Shown and usable before a Demon is chosen (the Characters screen, Trevor 2026-10-18),
+		 * so it never appears later and moves things.
+		 */
+		always?: boolean;
 	}
 
-	let { game, characters, dispatch, waiting, inPlay }: Props = $props();
+	let { game, characters, dispatch, waiting, inPlay, always = false }: Props = $props();
 
 	let open = $state(false);
 	const hasDemon = $derived(
@@ -33,7 +38,7 @@
 	const bluffs = $derived(game.bluffs[DEMON_SET] ?? []);
 </script>
 
-{#if hasDemon}
+{#if hasDemon || always}
 	<section class="bluffs" aria-labelledby="setup-bluffs-title" data-testid="setup-bluffs">
 		<h2 id="setup-bluffs-title">{t('bluffs.title')}</h2>
 		<div class="row">

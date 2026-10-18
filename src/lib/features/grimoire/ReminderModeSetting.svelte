@@ -6,7 +6,8 @@
 	/**
 	 * Whether reminders are held by their seat or stay where they are dropped (Trevor,
 	 * 2026-10-17: "nonsticky mode", telling people what it affects). Turning it on asks first
-	 * and lists what changes; turning it off just lays reminders out around their seats again.
+	 * and lists what changes; turning it off lays seat reminders out around their seats again,
+	 * and marks the loose ones on the board, which belong to no seat (Trevor, 2026-10-18).
 	 */
 	let confirmOpen = $state(false);
 
@@ -39,9 +40,9 @@
 	</dl>
 	<ul class="effects" data-testid="reminder-mode-effects">
 		<li>
-			A reminder still belongs to one seat: the seat it was dropped on, or its old seat when dropped
-			away from every seat. Night suggestions, setup reminders, warnings and History go by that
-			seat, not by where the reminder is drawn.
+			No reminder belongs to a seat: one dropped anywhere, on a seat too, is only put there. Seats
+			aren't marked while dragging, and tapping a reminder in the bank doesn't offer seats. One
+			already on a seat comes off it when moved.
 		</li>
 		<li>Reminders no longer move with their seat when seats are arranged, added or removed.</li>
 		<li>

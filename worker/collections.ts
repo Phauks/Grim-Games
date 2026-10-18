@@ -16,6 +16,7 @@ import {
 	type CollectionScript,
 	type ScriptCollectionInfo
 } from '../src/lib/features/scripts/collection-api.ts';
+import { nameFromListing } from '../src/lib/features/scripts/script-names.ts';
 import type { MirroredSource } from './mirror.ts';
 import { USER_AGENT } from './user-agent.ts';
 
@@ -39,7 +40,7 @@ async function fetchText(url: string, cacheTtl: number, maxBytes: number): Promi
 
 async function readScript(
 	collection: ScriptCollectionInfo,
-	{ fileId, heading }: CollectionDocLink
+	{ fileId, heading, title }: CollectionDocLink
 ): Promise<CollectionScript | string> {
 	let why = 'no download address';
 	for (const url of driveDownloadUrls(fileId)) {
@@ -49,7 +50,8 @@ async function readScript(
 				return {
 					link: driveViewUrl(fileId),
 					page: collectionHeadingUrl(collection, heading),
-					json
+					// Some files name the script nothing; the doc's heading does (Trevor, 2026-10-18).
+					json: nameFromListing(json, title)
 				};
 			}
 			why = `not a script from ${new URL(url).hostname}`;

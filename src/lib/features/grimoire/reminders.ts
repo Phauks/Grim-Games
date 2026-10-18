@@ -14,6 +14,7 @@ import {
 	type CharacterLookup,
 	type Game,
 	type Reminder,
+	type ReminderId,
 	type ReminderInstance
 } from '#lib/core/model/index.ts';
 
@@ -95,6 +96,15 @@ export const byLabel = (a: string, b: string): number =>
  * a reminder not in the map has one copy.
  */
 export function reminderCopies(game: Game, characters: CharacterLookup): Map<string, number> {
+	const total = listedCopies(game, characters);
+	const placed = new Map<string, number>();
+	for (const r of onBoard(game)) placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
+	for (const [key, n] of placed) if (n > (total.get(key) ?? 1)) total.set(key, n);
+	return total;
+}
+
+/** The copies the game gives, before any extra the Storyteller added (`reminderCopies`). */
+function listedCopies(game: Game, characters: CharacterLookup): Map<string, number> {
 	const inPlay = new Map<string, number>();
 	const count = (id: string | undefined) => {
 		if (id !== undefined) inPlay.set(id, (inPlay.get(id) ?? 0) + 1);
@@ -119,10 +129,25 @@ export function reminderCopies(game: Game, characters: CharacterLookup): Map<str
 			);
 		}
 	}
-	const placed = new Map<string, number>();
-	for (const r of onBoard(game)) placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
-	for (const [key, n] of placed) if (n > (total.get(key) ?? 1)) total.set(key, n);
 	return total;
+}
+
+/**
+ * The reminders on the board beyond the copies the game gives (a Duplicate, or Add another
+ * for a script's own character): the latest placed of each token. The board marks them as
+ * unusual (Trevor, 2026-10-18), never blocks them.
+ */
+export function extraReminders(game: Game, characters: CharacterLookup): Set<ReminderId> {
+	const listed = listedCopies(game, characters);
+	const seen = new Map<string, number>();
+	const out = new Set<ReminderId>();
+	for (const r of onBoard(game)) {
+		const key = reminderKey(r);
+		const n = (seen.get(key) ?? 0) + 1;
+		seen.set(key, n);
+		if (n > (listed.get(key) ?? 1)) out.add(r.reminderId);
+	}
+	return out;
 }
 
 /**

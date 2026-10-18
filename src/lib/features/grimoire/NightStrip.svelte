@@ -23,11 +23,9 @@
 		onIndex: (index: number) => void;
 		onOpen: (step: NightStep) => void;
 		onClose: () => void;
-		/** After the last step: on into the day, with its announcements (Trevor, 2026-10-18). */
-		onDay: () => void;
 	}
 
-	let { grimoire, steps, night, index, onIndex, onOpen, onClose, onDay }: Props = $props();
+	let { grimoire, steps, night, index, onIndex, onOpen, onClose }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const step = $derived(steps[index]);
@@ -42,7 +40,6 @@
 	function next() {
 		if (step && !ticked) grimoire.toggleNightStep(night, step);
 		if (!last) onIndex(index + 1);
-		else onDay();
 	}
 </script>
 
@@ -83,19 +80,15 @@
 	{:else}
 		<span class="step none">None</span>
 	{/if}
-	<!-- The last step goes on into the day (Trevor, 2026-10-18). -->
-	<IconButton
-		icon={last ? 'day' : 'forward'}
-		label={last ? 'Start the day' : 'Next step'}
-		onclick={next}
-	/>
+	<!-- Next ticks the step; the bank's End night ends the night (Trevor, 2026-10-18). -->
+	<IconButton icon="forward" label="Next step" disabled={last && ticked} onclick={next} />
 	<!-- In the top corner (Trevor, 2026-10-16), so Previous and Next own the sides. The step
 	     reminders setting is behind ⋯, the app's icon for more choices (Trevor, 2026-10-18). -->
 	<span class="corner">
 		<span bind:this={focusButton}
 			><IconButton
 				icon="more"
-				label="Step reminders"
+				label="Character reminders"
 				onclick={() => (focusOpen = !focusOpen)}
 			/></span
 		>
@@ -103,7 +96,7 @@
 	</span>
 </section>
 
-<Popover bind:open={focusOpen} title="Step reminders" anchor={focusButton}>
+<Popover bind:open={focusOpen} title="Character reminders" anchor={focusButton}>
 	<StepFocusSetting />
 </Popover>
 
