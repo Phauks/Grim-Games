@@ -22,7 +22,6 @@ export const scratch = {
 	'scratch.paper.parchment': 'Parchment',
 	'scratch.paper.white': 'White',
 	'scratch.lock': 'Lock, so nothing draws on it',
-	'scratch.hide': 'Hide contents',
 	'scratch.undo': 'Undo',
 	'scratch.redo': 'Redo',
 	'scratch.delete': 'Delete pad',
