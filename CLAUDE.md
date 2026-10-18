@@ -11,7 +11,7 @@
 - Touch first: tap targets of at least 44px, Pointer Events, and every new flow gets a Playwright test on the phone and tablet projects.
 - No fixed pixel sizes in styles (Trevor, 2026-10-16): layout uses `var(--u)` and the tokens, text uses rem/em, space-filling uses % or viewport units. `npm run lint:px` enforces it; a px that must stay says why in a `/* px-ok: ... */` comment on the same line.
 - Imports inside `src` use `#lib/...` with the `.ts` extension for TypeScript files.
-- Before pushing: `npm run check && npm run lint && npm run test:unit -- --run && npm run test:e2e`.
+- Before pushing: `npm run verify` (check, lint, unit tests; the pre-push hook runs it) and the e2e tests you touched. Changes reach `beta` through a PR with green CI; turn on auto-merge so it lands when the checks pass.
 - Worker logs keep query strings (`redact_query_string: false` in wrangler.jsonc). Never put private game state, room secrets or scripts in a query string; use the path or the URL hash (the hash never reaches the server).
 - All work goes on the `beta` branch (Trevor, 2026-10-15); it deploys as the `beta` Worker Preview. `main` is production and only receives releases from `beta`.
 - The app is an offline-first PWA (`src/service-worker.ts`): each build is precached and only replaces the old one when the user taps Refresh. Saved game state must therefore be versioned with migrations, because a newer build can open a game saved by an older one.
