@@ -3,7 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import QrCode, { fitsQrCode } from '#lib/ui/primitives/QrCode.svelte';
-	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import { copyText } from '#lib/ui/clipboard.ts';
 
 	/**
 	 * The one share screen (Trevor, 2026-10-18): an optional code in large type, the QR code,
@@ -46,14 +46,13 @@
 
 	async function copy() {
 		if (!url) return;
-		try {
-			await navigator.clipboard.writeText(text ? `${text}\n${url}` : url);
-			copied = true;
-			clearTimeout(copiedTimer);
-			copiedTimer = setTimeout(() => (copied = false), COPIED_MS);
-		} catch {
-			toast(t('share.copyFailed'), t('share.copyFailedHint'));
-		}
+		const done = await copyText(text ? `${text}\n${url}` : url, {
+			failed: [t('share.copyFailed'), t('share.copyFailedHint')]
+		});
+		if (!done) return;
+		copied = true;
+		clearTimeout(copiedTimer);
+		copiedTimer = setTimeout(() => (copied = false), COPIED_MS);
 	}
 
 	async function share() {
