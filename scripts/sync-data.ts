@@ -4,6 +4,7 @@
  *   roles.json, jinxes.json, nightsheet.json   from botc-release resources/data/
  *   script-schema.json                         from botc-release (repository root)
  *   icons/<edition>/<file>.webp                from botc-release resources/characters/
+ *   logos/<edition>.webp                       from botc-release resources/editions/<edition>/logo.webp
  *   manifest.json                              source commit, fetch date, hashes, counts
  *
  * Everything is validated with the core parsers before anything is written, so a change
@@ -55,6 +56,10 @@ const DATA_FILES = {
 	'script-schema.json': 'script-schema.json'
 } as const;
 const ICONS_SOURCE = 'resources/characters';
+const LOGOS_OUT = path.join(OUT, 'logos');
+/** Edition logos TPI publishes for toolmakers: the base three, shown for those scripts. */
+const LOGOS_SOURCE = 'resources/editions';
+const LOGO_EDITIONS = ['tb', 'bmr', 'snv'] as const;
 
 interface FileEntry {
 	source: string;
@@ -107,7 +112,7 @@ function main(): void {
 		: checkout({
 				repository: REPOSITORY,
 				ref: option('ref') ?? 'main',
-				paths: ['/resources/data/', `/${ICONS_SOURCE}/`, '/script-schema.json']
+				paths: ['/resources/data/', `/${ICONS_SOURCE}/`, `/${LOGOS_SOURCE}/`, '/script-schema.json']
 			});
 	try {
 		sync(source);
@@ -141,6 +146,11 @@ function sync(source: Checkout): void {
 			`Characters without their icons in ${ICONS_SOURCE}:\n  ${missing.join('\n  ')}`
 		);
 	}
+	const logos = LOGO_EDITIONS.map((edition) => `${LOGOS_SOURCE}/${edition}/logo.webp`);
+	const missingLogos = logos.filter((file) => !existsSync(upstream(file)));
+	if (missingLogos.length > 0) {
+		throw new SyncError(`Expected edition logos are missing upstream: ${missingLogos.join(', ')}`);
+	}
 
 	// 2. Write data files and replace the icons folder.
 	mkdirSync(OUT, { recursive: true });
@@ -164,6 +174,18 @@ function sync(source: Checkout): void {
 			sha256: sha256(bytes)
 		};
 	}
+
+	rmSync(LOGOS_OUT, { recursive: true, force: true });
+	mkdirSync(LOGOS_OUT, { recursive: true });
+	LOGO_EDITIONS.forEach((edition, i) => {
+		const bytes = readFileSync(upstream(logos[i]));
+		writeFileSync(path.join(LOGOS_OUT, `${edition}.webp`), bytes);
+		files[`logos/${edition}.webp`] = {
+			source: logos[i],
+			bytes: bytes.length,
+			sha256: sha256(bytes)
+		};
+	});
 
 	// 3. Manifest. Kept as-is when only the commit or fetch date would change.
 	const byType = Object.fromEntries(CHARACTER_TYPES.map((type) => [type, 0])) as Record<

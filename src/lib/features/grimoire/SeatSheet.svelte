@@ -1109,10 +1109,10 @@
 		border: 2px dashed var(--border);
 		border-radius: 50%;
 		font: 600 1.1rem / 1 var(--font-control);
-		color: var(--on-sheet-muted);
+		color: var(--on-surface-muted);
 	}
 	.no-name {
-		color: var(--on-sheet-muted);
+		color: var(--on-surface-muted);
 	}
 	.player-name {
 		font-size: 1.05rem;
@@ -1122,7 +1122,7 @@
 		font-weight: var(--font-heading-weight);
 		font-size: 1.45rem;
 		letter-spacing: 0.04em;
-		color: var(--on-sheet);
+		color: var(--on-surface);
 	}
 	.meta {
 		font-size: 0.8rem;
@@ -1167,7 +1167,7 @@
 		font-family: var(--font-control);
 		font-size: 0.8rem;
 		letter-spacing: 0.04em;
-		color: var(--on-sheet-muted);
+		color: var(--on-surface-muted);
 	}
 	.suggestions {
 		position: absolute;
@@ -1219,7 +1219,7 @@
 		font-size: 0.85rem;
 		white-space: nowrap;
 		text-overflow: ellipsis;
-		color: var(--on-sheet-muted);
+		color: var(--on-surface-muted);
 		--icon-size: 1em;
 	}
 	.state.warn {
@@ -1328,7 +1328,7 @@
 	}
 	.none {
 		margin: 0;
-		color: var(--on-sheet-muted);
+		color: var(--on-surface-muted);
 	}
 	.reminders {
 		display: grid;

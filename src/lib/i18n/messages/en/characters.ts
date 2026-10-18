@@ -15,6 +15,7 @@ export const characters = {
 	'characters.wikiFailed':
 		"The wiki page can't be loaded right now. Open it with the wiki button at the top.",
 	'characters.openWiki': 'Open wiki',
+	'characters.openSourcePage': 'Open source page',
 	'characters.noWiki': 'No wiki entry',
 	'characters.wikiIntroduction': 'Introduction',
 	'characters.summary': 'Summary',
@@ -24,6 +25,7 @@ export const characters = {
 	'characters.example': 'Example {number}',
 	'characters.tip': 'Tip {number}',
 	'characters.bluffingTip': 'Bluffing tip {number}',
+	'characters.fightingTip': 'Fighting tip {number}',
 	'characters.previewReminder': 'Poisoned',
 	'characters.tokenSize': 'Character token size',
 	'characters.tokenSizeHelp':

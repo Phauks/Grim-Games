@@ -38,6 +38,7 @@ import {
 	type EmailEnv
 } from './email.ts';
 import { isLegacyAccountId, isWordAccountId } from '../../src/lib/features/account/account-id.ts';
+import { isAdmin, type AdminsEnv } from '../admins.ts';
 import { passwordHash } from './crypto.ts';
 import {
 	hashPassword,
@@ -49,7 +50,9 @@ import {
 	type PutResult
 } from './objects.ts';
 
-export type Env = AccountEnv & EmailEnv & { AUTH_STARTS?: RateLimit; AUTH_PASSWORDS?: RateLimit };
+export type Env = AccountEnv &
+	EmailEnv &
+	AdminsEnv & { AUTH_STARTS?: RateLimit; AUTH_PASSWORDS?: RateLimit };
 
 /** The same answer for an unknown address, an account with no password and a wrong one. */
 const WRONG_PASSWORD = 'That email and password do not match. Check them, or sign in with a code.';
@@ -103,7 +106,8 @@ async function signIn(
 	return json(
 		{
 			user: signedIn?.user ?? null,
-			delivery: emailSender(env, url).delivery
+			delivery: emailSender(env, url).delivery,
+			admin: await isAdmin(env, url, userId)
 		} satisfies SessionInfo,
 		200,
 		{ 'Set-Cookie': signedInCookie(cookie, remember) }
@@ -396,7 +400,11 @@ export async function handleAccount(
 	const auth = await getUser(request, env);
 	if (path === '/api/auth/session' && method === 'GET') {
 		return json(
-			{ user: auth?.user ?? null, delivery: emailSender(env, url).delivery } satisfies SessionInfo,
+			{
+				user: auth?.user ?? null,
+				delivery: emailSender(env, url).delivery,
+				admin: auth ? await isAdmin(env, url, auth.userId) : false
+			} satisfies SessionInfo,
 			200,
 			// A live session's cookie is renewed, so it ends after 180 days unused (not 180 days
 			// after signing in), matching the server; a cookie for an ended session is removed.

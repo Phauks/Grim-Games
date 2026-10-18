@@ -79,7 +79,12 @@ export const setup = {
 	'setup.offScript': 'Not on script',
 	'setup.allTravellers': 'All Travellers',
 	'setup.addTraveller': 'Add a Traveller',
+	'setup.allFabled': 'All Fabled',
+	'setup.addFabled': 'Add a Fabled',
+	'setup.allLoric': 'All Loric',
+	'setup.addLoric': 'Add a Loric',
 	'setup.bluff': 'Demon bluff',
+	'setup.bluffShort': 'Bluff',
 	'setup.bluffInPlay': 'Demon bluff, in play',
 	'setup.characterInfo': 'About the {name}',
 	'setup.check.customReminders':
@@ -166,6 +171,7 @@ export const setup = {
 	'setup.draw.tileHeld': 'Tile {number}, held by {seat}',
 	'setup.draw.tileDrawn': 'Tile {number}, drawn',
 	'setup.draw.everySeat': 'Every seat has a character',
+	'setup.draw.newSeat': 'A new seat',
 	'setup.draw.everySeatHint': 'Add a seat on the grimoire to draw for it.',
 
 	'setup.reveal.name': 'Name',

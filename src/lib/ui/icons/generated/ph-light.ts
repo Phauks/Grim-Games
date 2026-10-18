@@ -26,6 +26,7 @@ import ph_bookmark_simple_light from '~icons/ph/bookmark-simple-light';
 import ph_bookmarks_simple_light from '~icons/ph/bookmarks-simple-light';
 import ph_books_light from '~icons/ph/books-light';
 import ph_bug_light from '~icons/ph/bug-light';
+import ph_calculator_light from '~icons/ph/calculator-light';
 import ph_caret_circle_down_light from '~icons/ph/caret-circle-down-light';
 import ph_caret_down_light from '~icons/ph/caret-down-light';
 import ph_caret_left_light from '~icons/ph/caret-left-light';
@@ -49,6 +50,7 @@ import ph_database_light from '~icons/ph/database-light';
 import ph_device_mobile_light from '~icons/ph/device-mobile-light';
 import ph_diamond_light from '~icons/ph/diamond-light';
 import ph_dice_five_light from '~icons/ph/dice-five-light';
+import ph_door_open_light from '~icons/ph/door-open-light';
 import ph_dots_three_light from '~icons/ph/dots-three-light';
 import ph_dots_three_vertical_light from '~icons/ph/dots-three-vertical-light';
 import ph_download_simple_light from '~icons/ph/download-simple-light';
@@ -81,6 +83,7 @@ import ph_hand_palm_light from '~icons/ph/hand-palm-light';
 import ph_hand_pointing_light from '~icons/ph/hand-pointing-light';
 import ph_handbag_light from '~icons/ph/handbag-light';
 import ph_hard_drives_light from '~icons/ph/hard-drives-light';
+import ph_hash_light from '~icons/ph/hash-light';
 import ph_heart_light from '~icons/ph/heart-light';
 import ph_heartbeat_light from '~icons/ph/heartbeat-light';
 import ph_hexagon_light from '~icons/ph/hexagon-light';
@@ -139,6 +142,7 @@ import ph_shield_light from '~icons/ph/shield-light';
 import ph_shield_check_light from '~icons/ph/shield-check-light';
 import ph_shield_star_light from '~icons/ph/shield-star-light';
 import ph_shuffle_light from '~icons/ph/shuffle-light';
+import ph_sign_in_light from '~icons/ph/sign-in-light';
 import ph_skull_light from '~icons/ph/skull-light';
 import ph_sliders_light from '~icons/ph/sliders-light';
 import ph_sliders_horizontal_light from '~icons/ph/sliders-horizontal-light';
@@ -161,6 +165,7 @@ import ph_tag_light from '~icons/ph/tag-light';
 import ph_tag_simple_light from '~icons/ph/tag-simple-light';
 import ph_text_aa_light from '~icons/ph/text-aa-light';
 import ph_text_t_light from '~icons/ph/text-t-light';
+import ph_textbox_light from '~icons/ph/textbox-light';
 import ph_timer_light from '~icons/ph/timer-light';
 import ph_tote_light from '~icons/ph/tote-light';
 import ph_trash_light from '~icons/ph/trash-light';
@@ -212,6 +217,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple-light': ph_bookmarks_simple_light,
 	'ph:books-light': ph_books_light,
 	'ph:bug-light': ph_bug_light,
+	'ph:calculator-light': ph_calculator_light,
 	'ph:caret-circle-down-light': ph_caret_circle_down_light,
 	'ph:caret-down-light': ph_caret_down_light,
 	'ph:caret-left-light': ph_caret_left_light,
@@ -235,6 +241,7 @@ const icons: IconMap = {
 	'ph:device-mobile-light': ph_device_mobile_light,
 	'ph:diamond-light': ph_diamond_light,
 	'ph:dice-five-light': ph_dice_five_light,
+	'ph:door-open-light': ph_door_open_light,
 	'ph:dots-three-light': ph_dots_three_light,
 	'ph:dots-three-vertical-light': ph_dots_three_vertical_light,
 	'ph:download-simple-light': ph_download_simple_light,
@@ -267,6 +274,7 @@ const icons: IconMap = {
 	'ph:hand-pointing-light': ph_hand_pointing_light,
 	'ph:handbag-light': ph_handbag_light,
 	'ph:hard-drives-light': ph_hard_drives_light,
+	'ph:hash-light': ph_hash_light,
 	'ph:heart-light': ph_heart_light,
 	'ph:heartbeat-light': ph_heartbeat_light,
 	'ph:hexagon-light': ph_hexagon_light,
@@ -325,6 +333,7 @@ const icons: IconMap = {
 	'ph:shield-check-light': ph_shield_check_light,
 	'ph:shield-star-light': ph_shield_star_light,
 	'ph:shuffle-light': ph_shuffle_light,
+	'ph:sign-in-light': ph_sign_in_light,
 	'ph:skull-light': ph_skull_light,
 	'ph:sliders-light': ph_sliders_light,
 	'ph:sliders-horizontal-light': ph_sliders_horizontal_light,
@@ -347,6 +356,7 @@ const icons: IconMap = {
 	'ph:tag-simple-light': ph_tag_simple_light,
 	'ph:text-aa-light': ph_text_aa_light,
 	'ph:text-t-light': ph_text_t_light,
+	'ph:textbox-light': ph_textbox_light,
 	'ph:timer-light': ph_timer_light,
 	'ph:tote-light': ph_tote_light,
 	'ph:trash-light': ph_trash_light,

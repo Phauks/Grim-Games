@@ -218,6 +218,11 @@
 						onclick={() => (editPassword = true)}
 						disabled={busy}
 					/>
+					<!-- Set by admins in the reports inbox, not here. -->
+					<dt>{t('account.you.type')}</dt>
+					<dd class="wide" data-testid="account-type">
+						{account.admin ? t('account.you.typeAdmin') : t('account.you.typeUser')}
+					</dd>
 					<!-- The account's own id: never changes, so it can't be edited. -->
 					<dt>{t('account.you.id')}</dt>
 					<dd data-testid="account-id">{account.user.id}</dd>
@@ -363,7 +368,9 @@
 		align-items: center;
 		gap: var(--space-1) var(--space-3);
 	}
-	dd:last-child {
+	/* A value with no button after it. */
+	dd:last-child,
+	dd.wide {
 		grid-column: 2 / -1;
 	}
 	dt,

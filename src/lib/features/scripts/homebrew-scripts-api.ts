@@ -11,6 +11,7 @@
  *   Download JSON button), loaded when a script is opened.
  * The site has no licence: every script credits its author and links to its own wiki page.
  */
+import { authorLogo } from '#lib/core/data/script-logo.ts';
 import type { BotcScriptsEntry } from './botcscripts-api.ts';
 
 export const HOMEBREW_ORIGIN = 'https://botchomebrew.wiki';
@@ -27,6 +28,8 @@ export interface HomebrewScript {
 	author: string;
 	/** Official characters by id; homebrew ones with their own name and team. */
 	characters: BotcScriptsEntry[];
+	/** The script's logo from the wiki's list, when it is an https link. */
+	logo?: string;
 }
 
 export function homebrewScriptPage(slug: string): string {
@@ -79,8 +82,15 @@ export function readHomebrewScripts(list: unknown, grid: unknown): HomebrewScrip
 				return [known ? { id: character, name: known.name, team: known.team } : { id: character }];
 			}
 		);
-		return [{ slug, name, author: text(row.author), characters }];
+		return [{ slug, name, author: text(row.author), characters, ...wikiLogo(row.logo) }];
 	});
+}
+
+/** The list's `logo`: a web link, or a path on the wiki itself. */
+function wikiLogo(value: unknown): { logo?: string } {
+	const path = text(value);
+	const logo = authorLogo(path.startsWith('/') ? `${HOMEBREW_ORIGIN}${path}` : path);
+	return logo ? { logo } : {};
 }
 
 /** Our list answer as the page reads it back (also its copy kept on the device). */
@@ -102,6 +112,7 @@ export function readHomebrewList(json: unknown): HomebrewScript[] | undefined {
 					]
 				: []
 		);
-		return [{ slug, name, author: text(row.author), characters }];
+		const logo = authorLogo(row.logo);
+		return [{ slug, name, author: text(row.author), characters, ...(logo ? { logo } : {}) }];
 	});
 }

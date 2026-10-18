@@ -5,6 +5,7 @@
 import type { HomebrewEntries, HomebrewEntry } from '#lib/core/rules/script-builder.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { ScriptSource, VariationOf } from '#lib/features/scripts/saved-scripts.ts';
+import { TEENSYVILLE_MAX_CHARACTERS } from '#lib/features/scripts/picker-rows.ts';
 
 /** 2: homebrew characters and their credits; 3: the script it is a variation of (2026-10-17). */
 export const DRAFT_VERSION = 3;
@@ -24,6 +25,13 @@ export interface ScriptDraft {
 	 * before it and builds that don't know it read each other's drafts unchanged.
 	 */
 	scriptVersion?: string;
+	/**
+	 * A Teensyville script rather than a full one, which sets the counts it is measured against
+	 * (Trevor, 2026-10-18). Optional like `scriptVersion`; absent is a full script. Kept with the
+	 * draft only: TPI's script format has no field for it, so a script opened later is judged by
+	 * its size again (`sizeOfScript`).
+	 */
+	teensyville?: true;
 	/** Chosen characters, in the order they were chosen (saving sorts them). */
 	ids: CharacterId[];
 	/** Definitions of the chosen homebrew characters, by id, as their source wrote them. */
@@ -82,12 +90,21 @@ export function parseDraft(raw: unknown): ScriptDraft {
 		name: text(raw.name),
 		author: text(raw.author),
 		...(text(raw.scriptVersion) ? { scriptVersion: text(raw.scriptVersion) } : {}),
+		...(raw.teensyville === true ? { teensyville: true as const } : {}),
 		ids: [...new Set(ids)],
 		homebrew: readHomebrew(raw.homebrew),
 		credits: readCredits(raw.credits),
 		...(typeof raw.editing === 'string' ? { editing: raw.editing } : {}),
 		...(variationOf ? { variationOf } : {})
 	};
+}
+
+/**
+ * A script opened on the builder is a Teensyville one when it is that small, as the script
+ * lists judge it (`TEENSYVILLE_MAX_CHARACTERS`); an empty one starts as a full script.
+ */
+export function isTeensyville(seated: number): boolean {
+	return seated > 0 && seated <= TEENSYVILLE_MAX_CHARACTERS;
 }
 
 export function isEmptyDraft(draft: ScriptDraft): boolean {

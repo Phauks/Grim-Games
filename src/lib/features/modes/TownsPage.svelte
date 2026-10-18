@@ -22,7 +22,6 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
@@ -34,7 +33,8 @@
 	/**
 	 * The towns of one game mode game (Two Towns and a Boomdandy, Two games at once), each an
 	 * ordinary saved game opened from here. Two games at once seats the same players in both,
-	 * so names are set once for both and a player who is the Demon in both is flagged. Two
+	 * a player who is the Demon in both is flagged, and players type their names as they draw
+	 * (Trevor, 2026-10-18). Two
 	 * Towns moves living players across at the end of each day, keeping their character and
 	 * the reminders on their own seat
 	 * (https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/).
@@ -97,20 +97,6 @@
 			return (seat && towns?.[0]?.game.seats[seat]?.playerName) ?? '';
 		})
 	);
-	let typed = $state<string[]>([]);
-	$effect.pre(() => {
-		if (typed.length !== names.length) typed = [...names];
-	});
-
-	function rename(i: number) {
-		const name = typed[i]?.trim() ?? '';
-		if (name === names[i]) return;
-		for (const open of towns ?? []) {
-			const seatId = open.game.seating[i];
-			if (seatId) open.run({ type: 'RenameSeat', seatId, playerName: name });
-		}
-		towns = [...(towns ?? [])];
-	}
 
 	const warnings = $derived.by(() => {
 		if (!towns || !samePlayers) return [];
@@ -205,27 +191,9 @@
 					{t('modes.towns.draw')}
 				</Button>
 			</div>
-			<section aria-labelledby="names-heading">
-				<h2 id="names-heading">{t('modes.towns.names')}</h2>
-				<ol class="names">
-					{#each Array.from(typed.keys()) as i (i)}
-						<li>
-							<label for="town-name-{i}">{t('common.seat', { number: i + 1 })}</label>
-							<ClearableField bind:value={typed[i]} onclear={() => rename(i)}>
-								<input
-									id="town-name-{i}"
-									type="text"
-									autocomplete="off"
-									bind:value={typed[i]}
-									onblur={() => rename(i)}
-									onkeydown={(e) => e.key === 'Enter' && rename(i)}
-								/>
-							</ClearableField>
-						</li>
-					{/each}
-				</ol>
+			<section aria-labelledby="warnings-heading">
 				<div class="warnings" data-testid="town-warnings">
-					<span class="muted">{t('modes.towns.warnings')}</span>
+					<span class="muted" id="warnings-heading">{t('modes.towns.warnings')}</span>
 					{#if warnings.length === 0}
 						{t('common.none')}
 					{:else}
@@ -322,28 +290,12 @@
 		display: grid;
 		gap: var(--space-2);
 		padding: var(--space-3);
-		border: 1px solid var(--card-border);
+		border: var(--card-border);
 		border-radius: var(--radius-sm);
 	}
 	section {
 		display: grid;
 		gap: var(--space-2);
-	}
-	.names {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(calc(14 * var(--u)), 1fr));
-		gap: var(--space-2) var(--space-3);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.names li {
-		display: grid;
-		gap: var(--space-1);
-	}
-	.names input {
-		width: 100%;
-		min-height: var(--tap-target);
 	}
 	.warnings {
 		display: grid;
@@ -368,7 +320,7 @@
 		justify-content: space-between;
 		gap: var(--space-2);
 		padding: var(--space-1) var(--space-2);
-		border: 1px solid var(--card-border);
+		border: var(--card-border);
 		border-radius: var(--radius-sm);
 		background: none;
 		color: inherit;
