@@ -539,13 +539,6 @@
 		sort && { column: sort.column, direction: sort.descending ? 'descending' : 'ascending' }
 	);
 
-	/**
-	 * More BotC Scripts results load by themselves when the list's end comes within about a
-	 * screen of view (Trevor, 2026-10-17: no More button). The last row carries the watcher;
-	 * after a page arrives the new last row starts watching, so it keeps going while the end
-	 * stays in view, until the site has no more.
-	 */
-	const NEAR_END = createAttachmentKey();
 	/** Rows drawn at a time: Bloodstar lists thousands (Trevor, 2026-10-18: a paged table). */
 	const PAGE_ROWS = 100;
 
@@ -564,22 +557,18 @@
 		row.addEventListener('click', tap);
 		return () => row.removeEventListener('click', tap);
 	}
-	const lastKey = $derived(shown.at(-1)?.row.key);
+	/**
+	 * More BotC Scripts results load by themselves when the list's end comes near (Trevor,
+	 * 2026-10-17: no More button). The table keeps the space of the results still to come, so
+	 * scrolling never stops at the end of a page, and asks again after each page arrives.
+	 */
+	const botcMore = $derived(
+		searchingBotc && !botcRef && botc.hasMore ? Math.max(1, botc.count - botc.listings.length) : 0
+	);
 	function loadMore() {
 		if (busy || !searchingBotc || botc.loading || !botc.hasMore || botcRef || !data) return;
 		void botc.load($state.snapshot(botcQuery) as BotcScriptsQuery, botc.page + 1, data);
 	}
-	function nearEnd(row: Element) {
-		const watcher = new IntersectionObserver(
-			(seen) => {
-				if (seen.some((s) => s.isIntersecting)) loadMore();
-			},
-			{ rootMargin: '100% 0px' }
-		);
-		watcher.observe(row);
-		return () => watcher.disconnect();
-	}
-
 	function onSort(column: ColumnId) {
 		sort = nextSort(sort, column);
 	}
@@ -683,10 +672,9 @@
 						oncount={(count) => (shownCount = count)}
 						fill
 						rowSelected={isSelected}
-						rowAttrs={(listing) => ({
-							[TAP_ROW]: tapRow,
-							...(listing.row.key === lastKey ? { [NEAR_END]: nearEnd } : {})
-						})}
+						moreRows={botcMore}
+						onend={loadMore}
+						rowAttrs={() => ({ [TAP_ROW]: tapRow })}
 						empty={botcRef && !refFailed ? '' : t('common.none')}
 					/>
 				</div>
