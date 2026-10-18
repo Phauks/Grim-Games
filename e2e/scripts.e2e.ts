@@ -248,10 +248,10 @@ test('a pasted Bloodstar link, old address or new, is read through our Worker', 
 		asked.push(new URL(route.request().url()).pathname);
 		return route.fulfill({ json: homebrew });
 	});
-	await addScript(page, 'Paste Link');
-	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
+	await addScript(page);
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
 	await dialog
-		.getByLabel('Link to the script JSON')
+		.getByLabel('Link to the JSON')
 		.fill('https://www.bloodstar.xyz/p/Trevor/Storm_Front/script.json?2715117b');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(detailsName(page)).toHaveText('Storm Front');
