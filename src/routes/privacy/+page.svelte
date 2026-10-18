@@ -188,14 +188,16 @@
 			</li>
 			<li>
 				<strong>Other script and character lists.</strong> For the Official custom scripts, the Carousel
-				Script Collection and the BotC Homebrew Wiki, our server reads bloodontheclocktower.com, the collection's
-				Google Doc and the files it links on Google Drive, and botchomebrew.wiki, and keeps the answers
-				for up to a day. Those sites see our server, not you, and nothing about you is sent.
+				Script Collection, the BotC Homebrew Wiki and Bloodstar Clocktica, our server reads bloodontheclocktower.com,
+				the collection's Google Doc and the files it links on Google Drive, botchomebrew.wiki and bloodstar.clocktica.com,
+				and keeps the answers for up to a day. Bloodstar links you paste are read the same way. Those
+				sites see our server, not you, and nothing about you is sent.
 			</li>
 			<li>
 				<strong>A link you load a script from.</strong> "Load from a link" downloads the script straight
-				from the site you name (without cookies), so that site sees your request like any page visit.
-				Pasted and uploaded scripts never leave your device unless you share them.
+				from the site you name (without cookies), so that site sees your request like any page visit (BotC
+				Scripts and Bloodstar links go through our server instead, as above). Pasted and uploaded scripts
+				never leave your device unless you share them.
 			</li>
 			<li>
 				<strong>Homebrew images.</strong> A homebrew script's character images load from the sites the

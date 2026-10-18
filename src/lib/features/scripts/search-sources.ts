@@ -12,7 +12,8 @@ export const PAGE_SOURCES = [
 	'collection',
 	'worldcup2023',
 	'worldcup2025',
-	'homebrew'
+	'homebrew',
+	'bloodstar'
 ] as const satisfies readonly PickerSource[];
 export type PageSource = (typeof PAGE_SOURCES)[number];
 

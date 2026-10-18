@@ -10,6 +10,7 @@ import {
 	type BotcScriptsSummary
 } from './botcscripts-api.ts';
 import { botcCard, looseId } from './botcscripts-cards.ts';
+import { bloodstarName, bloodstarPage, type BloodstarScript } from './bloodstar-api.ts';
 import { homebrewScriptPage, type HomebrewScript } from './homebrew-scripts-api.ts';
 
 export type PickerSource =
@@ -20,6 +21,7 @@ export type PickerSource =
 	| 'worldcup2023'
 	| 'worldcup2025'
 	| 'homebrew'
+	| 'bloodstar'
 	| 'recent'
 	| 'profile'
 	| 'botc';
@@ -38,6 +40,11 @@ export interface PickerRow {
 	kind: ScriptKind;
 	/** Townsfolk, Outsiders, Minions and Demons on the script. */
 	characters: number;
+	/**
+	 * Set when the listing doesn't say which characters the script has (Bloodstar lists
+	 * paths only): Type and Chars show "None" until the script is opened.
+	 */
+	unsized?: true;
 	/** Every character on the script, for the preview. */
 	entries: BotcScriptsEntry[];
 	/** Votes ("Likes") on BotC Scripts. */
@@ -143,6 +150,27 @@ export function homebrewRow(script: HomebrewScript, data: GameData): PickerRow {
 	};
 }
 
+/**
+ * A Bloodstar Clocktica script, from its folder names alone: its name is the script's folder
+ * and its author the user's folder, the only words the site's list has.
+ */
+export function bloodstarRow(script: BloodstarScript): PickerRow {
+	const name = bloodstarName(script.edition);
+	return {
+		key: `bloodstar:${script.user}/${script.edition}`,
+		name,
+		author: script.user,
+		source: 'bloodstar',
+		note: '',
+		kind: 'Full',
+		characters: 0,
+		unsized: true,
+		entries: [],
+		page: bloodstarPage(script),
+		haystack: `${name}\n${script.user}`.toLowerCase()
+	};
+}
+
 /** The search and header filters, applied to rows on the device the way the site applies them. */
 export interface RowFilter {
 	term: string;
@@ -168,7 +196,7 @@ export function filterRows(
 	const exclude = (filter.exclude ?? []).map(looseId);
 	return rows.filter((row) => {
 		if (!filter.sources.includes(row.source)) return false;
-		if (filter.kind !== '' && row.kind !== filter.kind) return false;
+		if (filter.kind !== '' && (row.unsized || row.kind !== filter.kind)) return false;
 		if (!words.every((word) => row.haystack.includes(word))) return false;
 		if (author && !row.author.toLowerCase().includes(author)) return false;
 		if (include.length > 0 || exclude.length > 0) {
@@ -198,6 +226,7 @@ const SOURCE_ORDER: readonly PickerSource[] = [
 	'worldcup2023',
 	'worldcup2025',
 	'homebrew',
+	'bloodstar',
 	'recent',
 	'profile',
 	'botc'

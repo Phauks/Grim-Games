@@ -38,6 +38,7 @@ test.beforeEach(async ({ page }) => {
 	await page.route('**/api/curated', (route) => route.fulfill({ json: { scripts: [] } }));
 	await page.route('**/api/collections/*', (route) => route.fulfill({ json: { scripts: [] } }));
 	await page.route('**/api/homebrew-scripts', (route) => route.fulfill({ json: { scripts: [] } }));
+	await page.route('**/api/bloodstar', (route) => route.fulfill({ json: { scripts: [] } }));
 	await page.route('**/api/world-cups/*', (route) => route.fulfill({ json: { scripts: [] } }));
 });
 
@@ -242,6 +243,30 @@ test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.2.0' })).toHaveAttribute(
 		'href',
 		'https://botcscripts.com/script/42/1.2.0'
+	);
+});
+
+test('a pasted Bloodstar link, old address or new, is read through our Worker', async ({
+	page
+}) => {
+	const asked: string[] = [];
+	await page.route(/\/api\/bloodstar\/[^/]+\/[^/]+$/, (route) => {
+		asked.push(new URL(route.request().url()).pathname);
+		return route.fulfill({ json: homebrew });
+	});
+	await addScript(page, 'Paste Link');
+	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
+	await dialog
+		.getByLabel('Link to the script JSON')
+		.fill('https://www.bloodstar.xyz/p/Trevor/Storm_Front/script.json?2715117b');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	expect(asked).toEqual(['/api/bloodstar/Trevor/Storm_Front']);
+	// Saved with the site's new address, as the Library's script dialog shows.
+	const saved = page.getByRole('dialog', { name: 'Storm Front' });
+	await expect(saved.getByRole('link', { name: 'Bloodstar Clocktica' })).toHaveAttribute(
+		'href',
+		'https://bloodstar.clocktica.com/p/Trevor/Storm_Front/almanac.html'
 	);
 });
 
@@ -859,6 +884,56 @@ test('a BotC Scripts result offers its other versions, and says when a newer one
 	await saveToggle(page).tap();
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
 	await expect(details(page).getByRole('link', { name: 'BotC Scripts 1.0.0' })).toBeVisible();
+	await noSidewaysScroll(page);
+});
+
+test('Bloodstar Clocktica is a source: found by folder names, each script loads when opened', async ({
+	page
+}) => {
+	const asked: string[] = [];
+	await page.route('**/api/bloodstar', (route) =>
+		route.fulfill({
+			json: {
+				scripts: [
+					{ user: 'Someone', edition: 'Stone_and_Salt' },
+					{ user: 'Another', edition: 'Lanterns' }
+				]
+			}
+		})
+	);
+	await page.route(/\/api\/bloodstar\/[^/]+\/[^/]+$/, (route) => {
+		asked.push(new URL(route.request().url()).pathname);
+		return route.fulfill({
+			json: [
+				{ id: '_meta', name: 'Stone and Salt', author: 'Some One' },
+				{
+					id: 'quarrywarden',
+					name: 'Quarry Warden',
+					team: 'townsfolk',
+					ability: 'You start knowing how many steps from the Demon to its nearest Minion.'
+				},
+				'chef',
+				'imp'
+			]
+		});
+	});
+	await page.goto('/scripts');
+	await chooseSource(page, 'Bloodstar Clocktica');
+	await expect(page.getByTestId('picker-status')).toHaveText('2 scripts');
+	await page.getByLabel('Search scripts').fill('salt');
+	await expect(page.getByTestId('picker-status')).toHaveText('1 script');
+	expect(asked).toEqual([]);
+	await page
+		.getByRole('table', { name: 'Scripts' })
+		.getByRole('button', { name: /^Stone and Salt/ })
+		.tap();
+	await expect(page.getByTestId('script-sheet')).toContainText('nearest Minion');
+	await expect(detailsName(page)).toHaveText('Stone and Salt');
+	expect(asked).toEqual(['/api/bloodstar/Someone/Stone_and_Salt']);
+	await expect(details(page).getByRole('link', { name: 'Bloodstar' })).toHaveAttribute(
+		'href',
+		'https://bloodstar.clocktica.com/p/Someone/Stone_and_Salt/almanac.html'
+	);
 	await noSidewaysScroll(page);
 });
 
