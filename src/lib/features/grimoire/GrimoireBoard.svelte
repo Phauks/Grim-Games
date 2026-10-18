@@ -200,21 +200,28 @@
 	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
 	 * an ability set off by dying on the night of the death (the Ravenkeeper's).
 	 */
+	/**
+	 * Whether a step wakes anyone tonight: a step for no player (Dusk, Dawn), or one with a
+	 * living player, or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
+	 */
+	const diedTonight = $derived.by(() => {
+		const { entries, cursor } = grimoire.open.session.log;
+		return diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
+	});
+	function wakes(step: NightStep): boolean {
+		const holders = stepHolders(game, step, characters);
+		const id = step.character?.id;
+		return (
+			holders.length === 0 ||
+			holders.some(
+				(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && diedTonight.has(s))
+			)
+		);
+	}
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
-		const { entries, cursor } = grimoire.open.session.log;
-		const died = diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
-		const counts = (step: NightStep) => {
-			const holders = stepHolders(game, step, characters);
-			const id = step.character?.id;
-			return (
-				holders.length === 0 ||
-				holders.some(
-					(s) => !game.seats[s].dead || (id !== undefined && id in ON_DEATH && died.has(s))
-				)
-			);
-		};
+		const counts = wakes;
 		return {
 			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data), counts),
 			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data), counts)
@@ -663,14 +670,20 @@
 	let guideOpen = $state(false);
 	/** Walking through the night under the board: which night and which step. */
 	let walk = $state<{ night: Night; index: number } | undefined>(saved.walk);
+	// Run Night Order leaves out dead players (Trevor, 2026-10-18) unless their ability is set
+	// off by dying tonight; the night order sheet still lists every step, to open by hand.
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
-		return walk && data ? boardNightSteps(game, characters, walk.night, data) : [];
+		return walk && data ? boardNightSteps(game, characters, walk.night, data).filter(wakes) : [];
 	});
-	/** The open step's night, for Previous and Next inside it. */
+	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
 	const guidedSteps = $derived.by(() => {
 		const data = officialData.current;
-		return guided && data ? boardNightSteps(game, characters, guided.night, data) : [];
+		if (!guided || !data) return [];
+		const open = guided.step.id;
+		return boardNightSteps(game, characters, guided.night, data).filter(
+			(s) => s.id === open || wakes(s)
+		);
 	});
 	// The saved step dialog opens once the night order can be worked out.
 	let guidedPending = $state(saved.guided);
