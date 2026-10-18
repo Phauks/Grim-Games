@@ -3,8 +3,13 @@
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import ReminderModeSetting from '#lib/features/grimoire/ReminderModeSetting.svelte';
-	import StepFocusSetting from '#lib/features/grimoire/StepFocusSetting.svelte';
+	import ReminderModeSetting, {
+		REMINDER_MODE_LABEL
+	} from '#lib/features/grimoire/ReminderModeSetting.svelte';
+	import StepFocusSetting, {
+		STEP_FOCUS_LABEL
+	} from '#lib/features/grimoire/StepFocusSetting.svelte';
+	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import BoardLooksRows from './BoardLooksRows.svelte';
 	import RulesLooksRows from './RulesLooksRows.svelte';
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
@@ -33,8 +38,13 @@
 {/each}
 <BoardLooksRows />
 <!-- The board thread's own control, with its Confirm (Trevor, 2026-10-17). -->
-<ReminderModeSetting />
-<StepFocusSetting />
+<!-- Name left, drop-down right, as every setting row (Trevor, 2026-10-18). -->
+<SettingRow label={REMINDER_MODE_LABEL}>
+	{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
+</SettingRow>
+<SettingRow label={STEP_FOCUS_LABEL}>
+	{#snippet control(labelId)}<StepFocusSetting labelledBy={labelId} />{/snippet}
+</SettingRow>
 
 <h3>{t('settings.groupRules')}</h3>
 <RulesLooksRows />

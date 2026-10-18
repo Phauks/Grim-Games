@@ -125,6 +125,16 @@ select:focus-visible {
 }
 
 /*
+ * Every close X is round, like an IconButton, so its hover tint and focus ring are a circle
+ * wherever it is (Trevor, 2026-10-18: "some places it is square, other places it is a circle").
+ */
+[data-part='close-trigger'] {
+	width: var(--tap-target);
+	height: var(--tap-target);
+	border-radius: var(--radius-full);
+}
+
+/*
  * Computers (Trevor, 2026-10-16: on a computer it shouldn't feel like a phone app). With a
  * mouse, everything pressable answers the pointer before it is clicked, and scroll bars are
  * slim and in the theme's colours. Touch screens never see these.
@@ -134,7 +144,7 @@ select:focus-visible {
 	[data-scope='tabs'][data-part='trigger']:not([data-selected]):hover,
 	[data-scope='radio-group'][data-part='item']:not([data-state='checked']):hover,
 	[data-scope='select'][data-part='trigger']:hover,
-	[data-scope='dialog'][data-part='close-trigger']:hover {
+	[data-part='close-trigger']:hover {
 		/* A tint over the control's own background, never in place of it: a filled control
 		   (a drop-down, an unchosen choice) keeps its fill, so its text stays readable
 		   (Trevor, 2026-10-18: the Demon bluffs drop-down vanished on hover). */

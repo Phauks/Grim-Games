@@ -2,7 +2,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Self from './ModeValue.svelte';
-	import { CHARACTER_FIELDS, SEQUENCE_FIELDS, modeLabel } from './labels.ts';
+	import { CHARACTER_FIELDS, SEQUENCE_FIELDS, fieldLabel, modeLabel } from './labels.ts';
 
 	/**
 	 * One value of a mode file, shown as it is: characters as badges, links as links, kinds
@@ -47,9 +47,10 @@
 	{#if value.length === 0}
 		{t('common.none')}
 	{:else}
-		<ul role="list">
+		<!-- Several entries of one field: numbered, each set apart. -->
+		<ol class="items" class:single={value.length === 1} role="list">
 			{#each value as item, i (i)}<li><Self {field} value={item} /></li>{/each}
-		</ul>
+		</ol>
 	{/if}
 {:else if isRecord(value)}
 	{#if field === 'onlyFor' || ('characterId' in value && 'type' in value)}
@@ -58,14 +59,17 @@
 	{:else}
 		<dl>
 			{#each Object.entries(value) as [key, inner] (key)}
-				<dt>{modeLabel('field', key)}</dt>
-				<dd>
-					{#if key === 'kind' && typeof inner === 'string'}
-						{modeLabel('kind', inner)}
-					{:else}
-						<Self field={key} value={inner} />
-					{/if}
-				</dd>
+				<!-- One row per field, so a label and its value read together. -->
+				<div class="row">
+					<dt>{fieldLabel(field, key)}</dt>
+					<dd>
+						{#if key === 'kind' && typeof inner === 'string'}
+							{modeLabel('kind', inner)}
+						{:else}
+							<Self field={key} value={inner} />
+						{/if}
+					</dd>
+				</div>
 			{/each}
 		</dl>
 	{/if}
@@ -82,9 +86,22 @@
 <style>
 	dl {
 		display: grid;
-		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-		gap: var(--space-1) var(--space-3);
 		margin: 0;
+	}
+	.row {
+		display: grid;
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+		gap: var(--space-3);
+		padding: var(--space-1) 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.row:last-child {
+		border-bottom: 0;
+	}
+	/* A field inside a field: indented under its label's value with a rule. */
+	dd :global(dl) {
+		padding-inline-start: var(--space-2);
+		border-inline-start: 2px solid var(--border);
 	}
 	dt {
 		color: var(--on-surface-muted);
@@ -93,12 +110,36 @@
 		margin: 0;
 		min-width: 0;
 	}
-	ul {
+	ol {
 		display: grid;
 		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
 		list-style: none;
+	}
+	.items {
+		counter-reset: item;
+	}
+	.items > li {
+		counter-increment: item;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: var(--space-2);
+	}
+	.items > li + li {
+		padding-top: var(--space-1);
+		border-top: 1px dashed var(--border);
+	}
+	.items.single > li {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.items.single > li::before {
+		content: none;
+	}
+	.items > li::before {
+		content: counter(item) '.';
+		color: var(--on-surface-muted);
+		font-variant-numeric: tabular-nums;
 	}
 	.badges {
 		display: flex;

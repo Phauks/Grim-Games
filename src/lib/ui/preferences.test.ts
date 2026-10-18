@@ -55,7 +55,13 @@ describe('parsePreferences', () => {
 				reminderLabelWidth: 2,
 				reminderLabelWrap: true,
 				inlineReminderScale: 1.5,
-				inlineReminderIcons: false
+				inlineReminderIconScale: 1.25,
+				inlineReminderBadgeScale: 0.75,
+				inlineNameTextScale: 1.1,
+				inlineNameIconScale: 0.9,
+				inlineNameBadgeScale: 2,
+				reminderLeaves: false,
+				setupFlower: true
 			},
 			colors: {},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },

@@ -16,7 +16,7 @@ export const SUSHI_BUFFET: GameMode = {
 	id: 'sushi-buffet',
 	name: 'Sushi Buffet',
 	about:
-		'Players draft their characters in turn instead of drawing them. Each is offered three characters from every official character and keeps one, or refuses for a smaller new offer.',
+		'Each Player can select from three drafted characters, players can select their character, or mulligan into a new set of two drafted characters, where they once again can select their character, or mulligan into the final character. The demon gets no bluffs.',
 	aliases: ['Draft Buffet'],
 	sources: [
 		{ title: 'Sushi Buffet Draft (Grimbits)', url: 'https://grimbits.com/draft-buffet/' },
@@ -27,7 +27,7 @@ export const SUSHI_BUFFET: GameMode = {
 	],
 	parts: {
 		// Trevor, 2026-10-18, in the project chat.
-		bluffs: { kind: 'none', cite: 'https://claude.ai/code/project/chan_01LbwopXmmfZCTHhANoebuJ9' },
+		bluffs: { kind: 'none' },
 		pool: { kind: 'all-characters' },
 		restricted: { banned: [] },
 		setupModifiers: { kind: 'as-chosen' },

@@ -17,7 +17,7 @@ async function problems(template: string) {
 ${template}
 `;
 	const [result] = await eslint.lintText(code, {
-		filePath: 'src/lib/features/character-builder/SavedCharacterList.svelte'
+		filePath: 'src/lib/features/character-builder/CharacterForm.svelte'
 	});
 	return result.messages.filter((m) => m.ruleId === 'grim/text-field').length;
 }

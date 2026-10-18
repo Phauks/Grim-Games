@@ -77,7 +77,7 @@
 	}
 </script>
 
-<SettingRow label="Background">
+<SettingRow layout="stacked" label="Background">
 	{#snippet control(labelId)}
 		<dl class="change">
 			<dt>Now</dt>
@@ -93,6 +93,16 @@
 			onChange={(s) => (scope = s)}
 		/>
 		<div class="presets" role="group" aria-labelledby={labelId}>
+			<!-- None first in the list, not a separate button (Trevor, 2026-10-18). -->
+			<button
+				type="button"
+				class="preset"
+				aria-pressed={current.kind === 'none'}
+				onclick={() => choose({ kind: 'none' })}
+			>
+				<span class="swatch none"></span>
+				<span>{t('settings.backgroundNone')}</span>
+			</button>
 			{#each Object.entries(PRESETS) as [id, preset] (id)}
 				<button
 					type="button"
@@ -114,9 +124,6 @@
 			>
 				{board.scriptImage ? "The script's background" : 'No script background'}
 			</Button>
-			<Button variant="quiet" onclick={() => choose({ kind: 'none' })}
-				>{t('settings.backgroundNone')}</Button
-			>
 			<Button variant="quiet" disabled={!ownChoice} onclick={useDefault}>
 				Use the default for all games
 			</Button>
@@ -175,6 +182,9 @@
 		aspect-ratio: 3 / 2;
 		border-radius: var(--radius-md);
 		box-shadow: inset 0 0 0 0.06rem var(--border);
+	}
+	.swatch.none {
+		background: var(--surface);
 	}
 	.choices {
 		display: grid;

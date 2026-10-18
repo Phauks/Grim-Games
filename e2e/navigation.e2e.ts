@@ -20,6 +20,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Home',
 		'New game',
 		'Resume game',
+		'Join game',
 		'History',
 		'Search',
 		'Library',
@@ -45,7 +46,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	await expect(drawer.getByRole('link').first()).toHaveText('Home');
 	await expect(
 		drawer.getByRole('list', { name: 'Play', exact: true }).getByRole('link')
-	).toHaveText(['New game', 'Resume game', 'History']);
+	).toHaveText(['New game', 'Resume game', 'Join game', 'History']);
 	await expect(drawer.getByRole('list', { name: 'Prepare' }).getByRole('link')).toHaveText([
 		'Search',
 		'Library',

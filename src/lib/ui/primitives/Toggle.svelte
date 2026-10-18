@@ -6,14 +6,16 @@
 		checked: boolean;
 		onChange: (checked: boolean) => void;
 		disabled?: boolean;
+		/** The label stays its accessible name but isn't shown (a row's title already says it). */
+		hideLabel?: boolean;
 	}
 
-	let { label, checked, onChange, disabled }: Props = $props();
+	let { label, checked, onChange, disabled, hideLabel = false }: Props = $props();
 </script>
 
 <!-- An on/off switch; the whole row is the tap target. -->
 <Switch.Root {checked} {disabled} onCheckedChange={(details) => onChange(details.checked)}>
-	<Switch.Label>{label}</Switch.Label>
+	<Switch.Label class={hideLabel ? 'visually-hidden' : undefined}>{label}</Switch.Label>
 	<Switch.Control><Switch.Thumb /></Switch.Control>
 	<Switch.HiddenInput />
 </Switch.Root>

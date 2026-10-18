@@ -12,41 +12,107 @@
 		onReset?: () => void;
 		/** Already at the default: the reset icon stays in place, disabled, so nothing moves. */
 		isDefault?: boolean;
+		/**
+		 * `inline` (default): the control sits right of the name, wrapping under it only when
+		 * the row is too narrow (Trevor, 2026-10-18). `stacked`: under it, for wide controls
+		 * such as option cards or tables. `inline-wide`: inline only where there is room for a
+		 * long control (sliders), stacked on phones.
+		 */
+		layout?: 'inline' | 'inline-wide' | 'stacked';
 	}
 
-	let { label, description, control, onReset, isDefault = false }: Props = $props();
+	let {
+		label,
+		description,
+		control,
+		onReset,
+		isDefault = false,
+		layout = 'inline'
+	}: Props = $props();
 	const labelId = $props.id();
 </script>
 
-<!-- One setting: a visible label, an optional hint and its control, stacked for touch. -->
-<div class="row">
-	<div class="head">
-		<span class="label" id={labelId}>{label}</span>
-		{#if onReset}
-			<button
-				class="reset"
-				type="button"
-				aria-label={t('settings.resetToDefault')}
-				title={t('settings.resetToDefault')}
-				aria-describedby={labelId}
-				disabled={isDefault}
-				onclick={onReset}><Icon name="reset" /></button
-			>
-		{/if}
+<!-- One setting: a visible label, an optional hint and its control. Rows are divided by a
+     thin line (Trevor, 2026-10-18). -->
+<div class="row" data-layout={layout}>
+	<div class="grid">
+		<div class="head">
+			<span class="label" id={labelId}>{label}</span>
+			{#if onReset}
+				<button
+					class="reset"
+					type="button"
+					aria-label={t('settings.resetToDefault')}
+					title={t('settings.resetToDefault')}
+					aria-describedby={labelId}
+					disabled={isDefault}
+					onclick={onReset}><Icon name="reset" /></button
+				>
+			{/if}
+		</div>
+		{#if description}<p class="description">{description}</p>{/if}
+		<div class="control">{@render control(labelId)}</div>
 	</div>
-	{#if description}<p class="description">{description}</p>{/if}
-	{@render control(labelId)}
 </div>
 
 <style>
-	.row + :global(.row) {
-		margin-top: var(--space-5);
+	.row {
+		container-type: inline-size;
+		padding-block: var(--space-3);
+	}
+	/* A thin line between settings, whatever kind of row comes before. */
+	:global(.row) + .row {
+		border-top: 1px solid var(--border);
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: 'head' 'description' 'control';
+	}
+	/* Name and hint on the left, the control on the right, when there is room. */
+	@container (min-width: 30rem) {
+		.row[data-layout='inline-wide'] .grid {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			grid-template-areas: 'head control' 'description control';
+			column-gap: var(--space-4);
+			align-items: center;
+		}
+		.row[data-layout='inline-wide'] .control {
+			margin-top: 0;
+		}
+	}
+	@container (min-width: 20rem) {
+		.row[data-layout='inline'] .grid {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			grid-template-areas: 'head control' 'description control';
+			column-gap: var(--space-4);
+			align-items: center;
+		}
+		.row[data-layout='inline'] .control {
+			margin-top: 0;
+			display: flex;
+			justify-content: flex-end;
+		}
+		/* A drop-down fills its half, so a longer choice never resizes it. */
+		.row[data-layout='inline'] .control > :global([data-scope='select'][data-part='root']) {
+			flex: 1;
+		}
 	}
 	.head {
+		grid-area: head;
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		margin-bottom: var(--space-2);
+	}
+	/* Margins, not a row gap, so a row without a hint has no empty gap. */
+	.control {
+		grid-area: control;
+		min-width: 0;
+		margin-top: var(--space-2);
+	}
+	.control > :global(*) {
+		min-width: 0;
+		max-width: 100%;
 	}
 	.label {
 		font-family: var(--font-control);
@@ -87,7 +153,8 @@
 		outline-offset: 2px;
 	}
 	.description {
-		margin: calc(-1 * var(--space-1)) 0 var(--space-2);
+		grid-area: description;
+		margin: var(--space-1) 0 0;
 		font-size: 0.9rem;
 		color: var(--on-surface-muted);
 	}

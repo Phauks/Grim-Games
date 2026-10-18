@@ -18,19 +18,48 @@ import {
 	quickPlayScript,
 	recentScripts
 } from '#lib/features/scripts/current-script.svelte.ts';
-import { reloadSavedScript } from '#lib/features/scripts/saved-scripts.ts';
+import { reloadSavedScript, type SavedScript } from '#lib/features/scripts/saved-scripts.ts';
+import { scriptVersion } from '#lib/features/player/player-script.ts';
 
 export type ScriptChoice = string;
 
-export function scriptChoices(): { value: ScriptChoice; label: string }[] {
+export interface ScriptChoiceOption {
+	value: ScriptChoice;
+	label: string;
+	/** Shown under the name with the version (Trevor, 2026-10-18), when the script says. */
+	author?: string;
+	version?: string;
+}
+
+/** The author a saved script's own `_meta` names, if any. */
+function savedAuthor(saved: SavedScript): string | undefined {
+	const meta = saved.json.find(
+		(e): e is { id: string; author?: unknown } =>
+			typeof e === 'object' && e !== null && (e as { id?: unknown }).id === '_meta'
+	);
+	return typeof meta?.author === 'string' && meta.author.trim() ? meta.author : undefined;
+}
+
+function savedOption(saved: SavedScript, value: ScriptChoice): ScriptChoiceOption {
+	const author = savedAuthor(saved);
+	const version = scriptVersion(saved);
+	return {
+		value,
+		label: saved.name,
+		...(author ? { author } : {}),
+		...(version ? { version } : {})
+	};
+}
+
+export function scriptChoices(): ScriptChoiceOption[] {
 	const quick = quickPlayScript.saved;
 	return [
 		...OFFICIAL_EDITIONS.map((e) => ({ value: e.id as string, label: e.name })),
-		...(quick ? [{ value: `recent:${QUICK_PLAY_ID}`, label: quick.name }] : []),
+		...(quick ? [savedOption(quick, `recent:${QUICK_PLAY_ID}`)] : []),
 		...recentScripts.list
 			.filter((s) => !s.edition)
 			.slice(0, 3)
-			.map((s) => ({ value: `recent:${s.scriptId}`, label: s.name }))
+			.map((s) => savedOption(s, `recent:${s.scriptId}`))
 	];
 }
 

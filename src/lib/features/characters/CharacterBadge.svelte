@@ -169,7 +169,8 @@
 	 * narrower than the name (History's Characters table on a phone) it ends in "…" inside
 	 * the pill rather than running past it over the next column.
 	 */
-	.badge.inline .name {
+	.badge.inline .name,
+	.badge.inline .player {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -180,12 +181,17 @@
 		min-height: 0;
 		/*
 		 * Fits inside the line box (Trevor, 2026-10-16: names sat high and crowded the
-		 * underlined word above), so it never makes the line taller; grows only when a
-		 * larger Icon size needs it.
+		 * underlined word above), so it never makes the line taller; grows with Settings >
+		 * Tokens' Name badge size, and when a larger name or icon needs it. Name text, icon and
+		 * badge sizes are each their own setting (Trevor, 2026-10-18).
 		 */
-		--badge-h: max(1.3em, calc(1.1em * var(--character-icon-scale, 1) + 0.2em));
+		--badge-h: max(
+			calc(1.3em * var(--inline-name-badge, 1)),
+			calc(1.1em * var(--inline-name-icon, 1) + 0.2em),
+			calc(1.3em * var(--inline-name-text, 1))
+		);
 		height: var(--badge-h);
-		padding: 0 0.5em 0 0.1em;
+		padding: 0 calc(0.5em * var(--inline-name-badge, 1)) 0 calc(0.1em * var(--inline-name-badge, 1));
 		font-size: 0.92em;
 		line-height: 1;
 		/* Centred on the text's x-height, not sitting on the baseline (which lifts it). */
@@ -197,13 +203,16 @@
 		position: absolute;
 		inset: calc((var(--badge-h) - var(--tap-target)) / 2) 0;
 	}
+	.badge.inline .name {
+		font-size: calc(1em * var(--inline-name-text, 1));
+	}
 	.badge.inline .icon {
-		width: calc(1.1em * var(--character-icon-scale, 1));
-		height: calc(1.1em * var(--character-icon-scale, 1));
+		width: calc(1.1em * var(--inline-name-icon, 1));
+		height: calc(1.1em * var(--inline-name-icon, 1));
 	}
 	.badge.inline .icon img {
-		width: calc(0.95em * var(--character-icon-scale, 1));
-		height: calc(0.95em * var(--character-icon-scale, 1));
+		width: calc(0.95em * var(--inline-name-icon, 1));
+		height: calc(0.95em * var(--inline-name-icon, 1));
 	}
 	.player {
 		font-family: var(--font-player);
