@@ -1798,7 +1798,7 @@
 	.grimoire:has(> .backdrop)
 		.toolbar
 		:global(button:not([data-variant='accent']):not([data-variant='danger'])) {
-		background: color-mix(in srgb, var(--surface) 85%, transparent);
+		background: var(--board-bar-background);
 	}
 	.title {
 		flex: 1;
@@ -1975,7 +1975,7 @@
 		inset: 0;
 		background: radial-gradient(
 			ellipse 45% 22% at center,
-			rgb(0 0 0 / var(--vignette)),
+			rgb(0 0 0 / var(--vignette)) /* colour-ok: a shadow is darkness, not a theme colour */,
 			transparent 100%
 		);
 		pointer-events: none;

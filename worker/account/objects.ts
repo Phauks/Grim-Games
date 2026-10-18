@@ -237,6 +237,11 @@ export class AccountEmail extends DurableObject<AccountEnv> {
 		return { ok: true, userId, created: true };
 	}
 
+	/** The user this address belongs to, if anyone has signed in with it. */
+	async ownerId(): Promise<string | undefined> {
+		return this.owner();
+	}
+
 	/** Called when the account is deleted: the address no longer belongs to anyone. */
 	async forget(userId: string): Promise<void> {
 		const owner = this.owner();
@@ -430,6 +435,11 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			now
 		);
 		return `${this.accountId()}.${secret}`;
+	}
+
+	/** The profile, or undefined once the account is deleted. */
+	async profile(): Promise<User | undefined> {
+		return this.user();
 	}
 
 	/** The signed-in user for a session secret, or undefined when it isn't (or no longer) valid. */

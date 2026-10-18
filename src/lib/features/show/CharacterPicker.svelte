@@ -73,48 +73,54 @@
 </script>
 
 <!--
-	The chosen characters on one line, each with its own X (Trevor, 2026-10-18), one tap-target
+	The chosen characters on one line; tapping one removes it (Trevor, 2026-10-18), one tap-target
 	high whatever is chosen, so choosing never moves anything; long names shorten to fit.
 	Then the shared searchable character list.
 -->
 <div class="picker">
-	{#if notInPlay}
-		<div class="filter">
-			<Select
-				label={t('show.filter')}
-				hideLabel
-				value={filter}
-				options={[
-					{ value: 'good', label: t('show.goodCharacters') },
-					{ value: 'all', label: t('show.allCharacters') }
-				]}
-				onChange={(value) => (filter = value)}
-			/>
-			<span class="ink"><IconButton icon="random" label={t('show.random')} onclick={random} /></span
-			>
-		</div>
-	{/if}
-	<ul class="slots" aria-label={t('show.chosen')} style:--max={max}>
-		{#each selected as id (id)}
-			{@const character = byId.get(id)}
-			{#if character}
-				{@const blocked = warnInPlay && inPlay?.has(character.id)}
-				<li>
-					<Chip
-						class="pick"
-						data-blocked={blocked ? '' : undefined}
-						aria-label={t(blocked ? 'show.removeInPlay' : 'show.remove', { name: character.name })}
-						onclick={() => toggle(character.id)}
-					>
-						<CharacterBadge characterId={character.id} {character} interactive={false} />
-						<Icon name={blocked ? 'warning' : 'close'} />
-					</Chip>
-				</li>
-			{/if}
-		{:else}
-			<li class="empty">{t('common.none')}</li>
-		{/each}
-	</ul>
+	<!-- Pinned while the list scrolls, so what is chosen stays in view (Trevor, 2026-10-18). -->
+	<div class="pinned">
+		{#if notInPlay}
+			<div class="filter">
+				<Select
+					label={t('show.filter')}
+					hideLabel
+					value={filter}
+					options={[
+						{ value: 'good', label: t('show.goodCharacters') },
+						{ value: 'all', label: t('show.allCharacters') }
+					]}
+					onChange={(value) => (filter = value)}
+				/>
+				<span class="ink"
+					><IconButton icon="random" label={t('show.random')} onclick={random} /></span
+				>
+			</div>
+		{/if}
+		<ul class="slots" aria-label={t('show.chosen')} style:--max={max}>
+			{#each selected as id (id)}
+				{@const character = byId.get(id)}
+				{#if character}
+					{@const blocked = warnInPlay && inPlay?.has(character.id)}
+					<li>
+						<Chip
+							class="pick"
+							data-blocked={blocked ? '' : undefined}
+							aria-label={t(blocked ? 'show.removeInPlay' : 'show.remove', {
+								name: character.name
+							})}
+							onclick={() => toggle(character.id)}
+						>
+							<CharacterBadge characterId={character.id} {character} interactive={false} />
+							{#if blocked}<Icon name="warning" />{/if}
+						</Chip>
+					</li>
+				{/if}
+			{:else}
+				<li class="empty">{t('common.none')}</li>
+			{/each}
+		</ul>
+	</div>
 
 	<div role="group" aria-label={label}>
 		<SharedPicker
@@ -135,7 +141,16 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
-		--line: color-mix(in srgb, currentColor 30%, transparent);
+	}
+	.pinned {
+		position: sticky;
+		/* The sheet body's top padding, so nothing shows above it while scrolling. */
+		top: calc(-1 * var(--space-1));
+		z-index: 1;
+		display: grid;
+		gap: var(--space-2);
+		padding-block: var(--space-1);
+		background: var(--sheet-background);
 	}
 	/* The filter, then Random beside it, as in setup. */
 	.filter {
@@ -164,18 +179,17 @@
 		min-width: 0;
 		max-width: calc((100% - (var(--max) - 1) * var(--space-1)) / var(--max));
 	}
-	/* The badge and its X as one pill; the name shortens rather than wrapping. */
+	/* The badge is the button; the name shortens rather than wrapping. */
 	.slots :global(.pick) {
 		gap: 0;
 		min-width: 0;
 		max-width: 100%;
-		padding: 0 var(--space-1) 0 0;
-		border-color: var(--line);
+		padding: 0;
+		border-color: transparent;
 	}
 	.slots :global(.pick .badge) {
 		flex: 0 1 auto;
 		min-width: 0;
-		padding-right: var(--space-1);
 	}
 	.slots :global(.pick .icon) {
 		flex: none;
@@ -186,6 +200,8 @@
 		white-space: nowrap;
 	}
 	.slots :global(.pick[data-blocked]) {
+		gap: var(--space-1);
+		padding-right: var(--space-2);
 		border: 2px solid var(--accent);
 		color: var(--accent);
 	}

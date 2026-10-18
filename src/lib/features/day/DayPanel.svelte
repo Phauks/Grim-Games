@@ -945,7 +945,7 @@
 	}
 	.cancel :global(.button) {
 		/* A cool tint, unlike the parchment cause buttons. */
-		background: color-mix(in srgb, var(--good) 16%, transparent);
+		background: var(--good-wash);
 		border: 1px solid var(--good);
 	}
 	.state {

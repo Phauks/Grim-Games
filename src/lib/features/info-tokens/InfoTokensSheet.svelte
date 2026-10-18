@@ -100,9 +100,12 @@
 			})
 		}))
 	);
+	/** A filled-in card's words and answer; the Number card is only its number. */
+	const detailLabel = (card: Card) =>
+		plainText(card.text) ? `${plainText(card.text)}: ${card.detail}` : (card.detail ?? '');
 	const chainLabel = (card: Card) =>
 		card.detail
-			? `${plainText(card.text)}: ${card.detail}`
+			? detailLabel(card)
 			: card.characterIds.length
 				? `${plainText(card.text)} (${names(card.characterIds)})`
 				: plainText(card.text);
@@ -211,9 +214,7 @@
 									<!-- The chosen characters wrap under the card's words, so the row keeps its width (Trevor, 2026-10-17). -->
 									<span class="chain-card">
 										<span class="chain-text"
-											>{i + 1}. {card.detail
-												? `${plainText(card.text)}: ${card.detail}`
-												: plainText(card.text)}</span
+											>{i + 1}. {card.detail ? detailLabel(card) : plainText(card.text)}</span
 										>
 										{#if card.characterIds.length > 0}
 											<span class="badges">
@@ -322,7 +323,7 @@
 		gap: var(--space-1);
 		margin-top: var(--space-3);
 		padding: var(--space-2) 0;
-		border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border-top: 1px solid var(--border);
 		background: var(--sheet-background);
 	}
 	.chain-list {
@@ -391,7 +392,7 @@
 		width: 100%;
 		min-height: var(--tap-target);
 		padding: var(--space-2) var(--space-3);
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: none;
 		color: inherit;
@@ -400,7 +401,7 @@
 		cursor: pointer;
 	}
 	.set:hover {
-		background: color-mix(in srgb, currentColor 8%, transparent);
+		background: var(--surface-hover);
 	}
 	.set-label {
 		font-family: var(--font-heading);

@@ -249,7 +249,7 @@
 		min-height: 0;
 	}
 	.cell + .cell {
-		border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+		border-top: 1px solid var(--border);
 	}
 	@media (orientation: landscape) {
 		.together {
@@ -258,7 +258,7 @@
 		}
 		.cell + .cell {
 			border-top: 0;
-			border-left: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+			border-left: 1px solid var(--border);
 		}
 	}
 	.track {
@@ -321,7 +321,7 @@
 		width: 0.6rem;
 		height: 0.6rem;
 		border-radius: var(--radius-full);
-		background: color-mix(in srgb, currentColor 30%, transparent);
+		background: var(--border);
 	}
 	.dots li[aria-current='step'] {
 		background: var(--accent);
