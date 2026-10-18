@@ -258,11 +258,39 @@
 					: undefined;
 	}
 
-	const columns = $derived<DataColumn<ColumnId>[]>([
-		{ id: 'name', label: t('library.column.name'), sortable: true, flush: true },
-		{ id: 'kind', label: t('library.column.kind'), sortable: true, wide: true, width: '16%' },
-		{ id: 'folder', label: t('library.column.folder'), sortable: true, wide: true, width: '24%' },
-		{ id: 'tags', label: t('library.column.tags'), sortable: true, wide: true, width: '24%' }
+	// Every column filters (Trevor, 2026-10-18), with the shared table's built-in filters.
+	const columns = $derived<DataColumn<ColumnId, Row>[]>([
+		{
+			id: 'name',
+			label: t('library.column.name'),
+			sortable: true,
+			flush: true,
+			value: (row) => row.name
+		},
+		{
+			id: 'kind',
+			label: t('library.column.kind'),
+			sortable: true,
+			wide: true,
+			width: '16%',
+			value: (row) => kindName(row.kind)
+		},
+		{
+			id: 'folder',
+			label: t('library.column.folder'),
+			sortable: true,
+			wide: true,
+			width: '24%',
+			value: folderOf
+		},
+		{
+			id: 'tags',
+			label: t('library.column.tags'),
+			sortable: true,
+			wide: true,
+			width: '24%',
+			value: (row) => tagNames(libraryLabels.for(row.key).tags)
+		}
 	]);
 
 	// ---- Moving: drag a row onto a folder ----
@@ -398,6 +426,8 @@
 							{onSort}
 							rowSelected={(row) => row.key === openKey}
 							narrow="hide"
+							pageSize={100}
+							hideKey="library"
 							empty={t('common.none')}
 						/>
 					</div>
@@ -441,7 +471,7 @@
 	{/if}
 {/snippet}
 
-{#snippet cell(row: Row, column: DataColumn<ColumnId>)}
+{#snippet cell(row: Row, column: DataColumn<ColumnId, Row>)}
 	{#if column.id === 'name'}
 		{@const where = folderOf(row)}
 		<button

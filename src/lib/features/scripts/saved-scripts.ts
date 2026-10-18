@@ -6,6 +6,7 @@
  * its own loader. They carry `schemaVersion` because a newer build can open records an
  * older build wrote (CLAUDE.md); `scriptId` and `revision` are there for 0.99 cloud sync.
  */
+import { BLOODSTAR_ORIGIN } from './bloodstar-api.ts';
 import { HOMEBREW_ORIGIN } from './homebrew-scripts-api.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import {
@@ -116,6 +117,8 @@ export function describeSource(source: ScriptSource): string {
 			if (source.page === CURATED_PAGE) return t('scripts.picker.source.curated');
 			if (source.page?.startsWith(`${HOMEBREW_ORIGIN}/`))
 				return t('scripts.picker.source.homebrew');
+			if (source.page?.startsWith(`${BLOODSTAR_ORIGIN}/`))
+				return t('scripts.picker.source.bloodstar');
 			const host = new URL(source.url).hostname.replace(/^www\./, '');
 			return host === SCRIPT_TOOL_HOST ? t('scripts.from.scriptTool') : host;
 		}

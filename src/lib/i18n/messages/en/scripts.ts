@@ -32,6 +32,7 @@ export const scripts = {
 	'scripts.picker.source.month': 'Scripts of the Month',
 	'scripts.picker.source.collection': 'Carousel Script Collection',
 	'scripts.picker.source.homebrew': 'BOTC HomeBrew Wiki',
+	'scripts.picker.source.bloodstar': 'Bloodstar Clocktica',
 	'scripts.picker.source.recent': 'Saved',
 	'scripts.picker.source.profile': 'Profile',
 	'scripts.picker.source.botc': 'BotC Scripts',
@@ -53,6 +54,7 @@ export const scripts = {
 	'scripts.sourceLabel.month': 'Script of the Month',
 	'scripts.sourceLabel.collection': 'Collection',
 	'scripts.sourceLabel.homebrew': 'HomeBrew Wiki',
+	'scripts.sourceLabel.bloodstar': 'Bloodstar',
 	'scripts.sourceLabel.recent': 'Saved',
 	'scripts.sourceLabel.profile': 'Profile',
 	'scripts.sourceLabel.botc': 'BotC Scripts',
@@ -119,7 +121,6 @@ export const scripts = {
 	'scripts.botc.sort.newest': 'Newest',
 	'scripts.botc.sort.oldest': 'Oldest',
 	'scripts.botc.sort.match': 'Best match',
-	'scripts.botc.refHint': 'A BotC Scripts link or number: tap Save.',
 	'scripts.botc.searching': 'Searching…',
 	'scripts.botc.count': {
 		one: '{count} on BotC Scripts · {sort}',

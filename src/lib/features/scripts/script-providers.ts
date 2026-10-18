@@ -17,11 +17,13 @@ import type { ProfileScriptEntry } from '#lib/features/account/profile-scripts.t
 import type { BotcScriptsQuery, BotcScriptsRef, BotcScriptsSearchPage } from './botcscripts-api.ts';
 import { scriptPageUrl } from './botcscripts-api.ts';
 import type { CollectionScript } from './collection-api.ts';
+import type { BloodstarScript } from './bloodstar-api.ts';
 import type { HomebrewScript } from './homebrew-scripts-api.ts';
 import type { WorldCupStage, WorldCupYear } from './world-cup.ts';
 import type { WorldCupScript } from './world-cup.svelte.ts';
 import { CURATED_PAGE, type CuratedScript } from './curated-api.ts';
 import {
+	bloodstarRow,
 	botcRow,
 	homebrewRow,
 	pickerRow,
@@ -43,7 +45,9 @@ export type LoadTarget =
 	| { kind: 'json'; json: unknown[]; source: ScriptSource }
 	| { kind: 'botcscripts'; ref: BotcScriptsRef }
 	/** A BOTC HomeBrew Wiki script, fetched by its slug (`homebrew-scripts-api.ts`). */
-	| { kind: 'homebrew'; slug: string };
+	| { kind: 'homebrew'; slug: string }
+	/** A Bloodstar Clocktica script, fetched by its folders (`bloodstar-api.ts`). */
+	| { kind: 'bloodstar'; script: BloodstarScript };
 
 /** One row of the picker, and how to load it. */
 export interface ScriptListing {
@@ -63,6 +67,8 @@ export interface LocalContext {
 	collection?: readonly CollectionScript[];
 	/** The BOTC HomeBrew Wiki's scripts (`homebrew-scripts-api.ts`). */
 	homebrew?: readonly HomebrewScript[];
+	/** Bloodstar Clocktica's published scripts (`bloodstar-api.ts`). */
+	bloodstar?: readonly BloodstarScript[];
 	recent: readonly SavedScript[];
 	profile: readonly ProfileScriptEntry[];
 	/** Names a curated section in the app's words. */
@@ -237,6 +243,17 @@ export const homebrewProvider: LocalProvider = {
 		}))
 };
 
+/** Bloodstar Clocktica: listed from its folder names, each script fetched when shown. */
+export const bloodstarProvider: LocalProvider = {
+	kind: 'local',
+	id: 'bloodstar',
+	listings: ({ bloodstar = [] }) =>
+		bloodstar.map((script) => ({
+			row: bloodstarRow(script),
+			target: { kind: 'bloodstar', script }
+		}))
+};
+
 export const recentProvider: LocalProvider = {
 	kind: 'local',
 	id: 'recent',
@@ -302,6 +319,7 @@ export const SCRIPTS_PAGE_PROVIDERS: readonly LocalProvider[] = [
 	worldCup2023Provider,
 	worldCup2025Provider,
 	homebrewProvider,
+	bloodstarProvider,
 	recentProvider,
 	profileProvider
 ];
@@ -353,7 +371,7 @@ export function botcProvider(
 /** Whether a row is the script `saved` holds. */
 export function matchesSaved(saved: SavedScript, listing: ScriptListing): boolean {
 	if (listing.identity) return sameScript(saved, listing.identity);
-	if (listing.target.kind === 'homebrew') {
+	if (listing.target.kind === 'homebrew' || listing.target.kind === 'bloodstar') {
 		return saved.source.kind === 'link' && saved.source.page === listing.row.page;
 	}
 	return (

@@ -236,7 +236,6 @@
 			share={row.listing.saved ? undefined : () => shareTargetFor(shareable, location.origin)}
 			labels={labelRows}
 			busy={saving}
-			actionsInTop
 			onshown={(listing) => (viewed = listing)}
 		>
 			{#snippet extraActions()}

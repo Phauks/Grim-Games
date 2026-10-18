@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 async function signIn(page: Page, email: string) {
 	await page.goto('/account');
 	await page.getByLabel('Email address').fill(email);
-	await page.getByRole('button', { name: 'Send code' }).tap();
+	await page.getByRole('button', { name: 'Email me a code' }).tap();
 	const code = (await page.getByTestId('preview-code').locator('strong').textContent()) ?? '';
 	await page.getByLabel(`Code sent to ${email}`).fill(code);
 	await page.getByRole('button', { name: 'Sign in' }).tap();

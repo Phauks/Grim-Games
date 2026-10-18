@@ -38,15 +38,15 @@ describe('stepHolders', () => {
 });
 
 describe('boardNightSteps', () => {
-	// Dusk opens every night and Dawn closes it (Trevor, 2026-10-16;
-	// https://wiki.bloodontheclocktower.com/Night_Order): a Traveller's alignment step too
-	// falls between them.
-	it('starts with Dusk and ends with Dawn, on the first and other nights', () => {
+	// Dusk opens every night (Trevor, 2026-10-16;
+	// https://wiki.bloodontheclocktower.com/Night_Order), a Traveller's alignment step after it.
+	// No Dawn step: the board's End night ends the night (Trevor, 2026-10-18).
+	it('starts with Dusk and has no Dawn, on the first and other nights', () => {
 		const g = game(['poisoner', 'imp', 'empath', 'thief']);
 		for (const night of ['first', 'other'] as const) {
 			const steps = boardNightSteps(g, characters, night, data).filter((s) => !s.afterDawn);
 			expect(steps[0].id).toBe('dusk');
-			expect(steps.at(-1)!.id).toBe('dawn');
+			expect(steps.map((s) => s.id)).not.toContain('dawn');
 			expect(steps.map((s) => s.id)).toContain('traveller-alignment');
 		}
 	});
