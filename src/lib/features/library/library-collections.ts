@@ -3,6 +3,7 @@
  * official ones by their id and Character builder ones as `saved:<savedId>`. Versioned, because
  * a newer build can open what an older one stored (CLAUDE.md).
  */
+import { timestampName } from '#lib/core/timestamp-name.ts';
 import { cleanName, MAX_LABEL_NAME } from './library-labels.ts';
 
 export const COLLECTIONS_VERSION = 1;
@@ -71,8 +72,8 @@ export function addCollection(
 	name: string,
 	now: number
 ): Collections {
-	const clean = cleanName(name);
-	if (!clean) return state;
+	// Never without a name (Trevor, 2026-10-18): a blank one becomes a timestamp.
+	const clean = cleanName(name) || timestampName(new Date(now));
 	return {
 		...state,
 		collections: [...state.collections, { id, name: clean, characters: [], updatedAt: now }]
@@ -94,8 +95,7 @@ export function renameCollection(
 	name: string,
 	now: number
 ): Collections {
-	const clean = cleanName(name);
-	if (!clean) return state;
+	const clean = cleanName(name) || timestampName(new Date(now));
 	return change(state, id, (c) => ({ ...c, name: clean, updatedAt: now }));
 }
 

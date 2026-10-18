@@ -6,6 +6,8 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import GroupHead from './GroupHead.svelte';
 	import TagList from './TagList.svelte';
 	import { TOP_FOLDER } from './drag-to-folder.ts';
 	import type { KindFilter } from './library-items.ts';
@@ -26,6 +28,8 @@
 		tags?: string[];
 		/** What a folder holds, shown beside it (Trevor, 2026-10-18); the top level when none. */
 		count: (folder: string | undefined) => number;
+		/** New folder, in the Folders heading (Trevor, 2026-10-18). */
+		onnewfolder: () => void;
 	}
 
 	let {
@@ -33,8 +37,31 @@
 		kind = $bindable('all'),
 		place = $bindable('files'),
 		tags = $bindable([]),
-		count
+		count,
+		onnewfolder
 	}: Props = $props();
+
+	/** Sidebar groups folded away, per device. */
+	type Group = 'folders' | 'kinds' | 'tags';
+	const GROUPS_KEY = 'grim-games:library-closed-groups';
+	const storedGroups = readStored<unknown>(GROUPS_KEY);
+	let closedGroups = $state<string[]>(
+		Array.isArray(storedGroups) ? storedGroups.filter((v) => typeof v === 'string') : []
+	);
+	const groupOpen = (group: Group) => ({
+		get open() {
+			return !closedGroups.includes(group);
+		},
+		set open(value: boolean) {
+			closedGroups = value
+				? closedGroups.filter((g) => g !== group)
+				: [...closedGroups.filter((g) => g !== group), group];
+			writeStored(GROUPS_KEY, closedGroups);
+		}
+	});
+	const folders = groupOpen('folders');
+	const kindsGroup = groupOpen('kinds');
+	const tagsGroup = groupOpen('tags');
 
 	/** Folders shown closed, their folders hidden (Trevor, 2026-10-18: collapsible), per device. */
 	const CLOSED_KEY = 'grim-games:library-closed-folders';
@@ -74,8 +101,12 @@
 
 <nav class="sidebar" aria-label={t('library.navigation')} data-testid="library-sidebar">
 	<section aria-labelledby="library-nav-folders">
-		<h2 id="library-nav-folders" class="heading">{t('library.folders')}</h2>
-		<ul>
+		<GroupHead id="library-nav-folders" title={t('library.folders')} bind:open={folders.open}>
+			{#snippet actions()}
+				<IconButton icon="add" label={t('library.newFolder')} onclick={onnewfolder} />
+			{/snippet}
+		</GroupHead>
+		<ul hidden={!folders.open}>
 			<li>
 				<button
 					type="button"
@@ -123,8 +154,8 @@
 	</section>
 
 	<section aria-labelledby="library-nav-kinds">
-		<h2 id="library-nav-kinds" class="heading">{t('library.kinds')}</h2>
-		<ul>
+		<GroupHead id="library-nav-kinds" title={t('library.kinds')} bind:open={kindsGroup.open} />
+		<ul hidden={!kindsGroup.open}>
 			{#each kinds as k (k.value)}
 				<li>
 					<button
@@ -157,11 +188,15 @@
 	</section>
 
 	<section aria-labelledby="library-nav-tags">
-		<TagList bind:filter={tags} headingId="library-nav-tags" />
+		<TagList bind:filter={tags} headingId="library-nav-tags" bind:open={tagsGroup.open} />
 	</section>
 </nav>
 
 <style>
+	/* A folded group: its list keeps its place in the markup, out of view. */
+	ul[hidden] {
+		display: none;
+	}
 	.sidebar {
 		display: grid;
 		align-content: start;
@@ -172,14 +207,6 @@
 		display: grid;
 		gap: var(--space-1);
 		min-width: 0;
-	}
-	.heading {
-		margin: 0;
-		font-size: 0.8rem;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--on-surface-muted);
 	}
 	ul {
 		margin: 0;

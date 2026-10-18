@@ -37,6 +37,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import BuilderSave from '#lib/ui/builder/BuilderSave.svelte';
+	import { timestampName } from '#lib/core/timestamp-name.ts';
 	import BuilderTools from '#lib/ui/builder/BuilderTools.svelte';
 	import OpenSavedDialog from '#lib/ui/builder/OpenSavedDialog.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
@@ -214,6 +215,8 @@
 	/** Saves over the script being edited, or as a new script when `asNew` (the old one stays). */
 	async function save(asNew = false) {
 		if (!built || saving) return;
+		// Nothing is saved without a name (Trevor, 2026-10-18): a timestamp, kept in the draft.
+		if (!d.name.trim()) draft.setName(timestampName());
 		saving = true;
 		try {
 			const editing = asNew ? undefined : savedRecord;
@@ -224,6 +227,7 @@
 					? { name: savedRecord.name, source: { kind: 'built' }, json: savedRecord.json }
 					: d.variationOf
 			);
+			if (!built) return;
 			await chooseScript(built, { kind: 'built', ...(variationOf ? { variationOf } : {}) });
 			const saved = currentScript.saved;
 			if (!saved || saved.scriptId === 'unsaved') {

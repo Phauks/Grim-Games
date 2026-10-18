@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { CHARACTER_TYPES, type CharacterType, type GameData } from '#lib/core/data/index.ts';
+	import { timestampName } from '#lib/core/timestamp-name.ts';
 	import {
 		blocksSaving,
 		changesSetup,
@@ -68,6 +69,9 @@
 	const preview = $derived(previewCharacter(f));
 	const problems = $derived(characterProblems(f, data));
 	const canSave = $derived(!blocksSaving(problems));
+	// Saving to the Library is never stopped by a missing name: it gets a timestamp name
+	// (Trevor, 2026-10-18).
+	const canStore = $derived(!blocksSaving(problems.filter((p) => p.kind !== 'name-missing')));
 	const savedRecord = $derived(d.editing ? savedCharacters.get(d.editing) : undefined);
 	const entryJson = $derived(JSON.stringify(characterEntry(f)));
 	const isSaved = $derived(!!savedRecord && JSON.stringify(savedRecord.entry) === entryJson);
@@ -84,7 +88,8 @@
 	}
 
 	function save(asNew = false) {
-		if (!canSave) return;
+		if (!canStore) return;
+		if (!f.name.trim()) f.name = timestampName();
 		const savedId = savedCharacters.save(f, asNew ? undefined : d.editing);
 		draft.setEditing(savedId);
 	}
@@ -174,7 +179,7 @@
 				</p>
 			</section>
 			<BuilderSave
-				ready={canSave}
+				ready={canStore}
 				saved={isSaved}
 				editing={!!savedRecord}
 				onSave={() => save()}

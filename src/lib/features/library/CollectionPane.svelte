@@ -9,6 +9,8 @@
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { timestampName } from '#lib/core/timestamp-name.ts';
+	import ChangeKind from './ChangeKind.svelte';
 	import ItemPane from './ItemPane.svelte';
 	import LabelRows from './LabelRows.svelte';
 	import NameDialog from './NameDialog.svelte';
@@ -22,9 +24,12 @@
 		collection: CharacterCollection;
 		data: GameData | undefined;
 		inline: boolean;
+		/** The item it became, after Change kind. */
+		onchanged?: (key: string) => void;
 	}
 
-	let { open = $bindable(false), collection, data, inline }: Props = $props();
+	let { open = $bindable(false), collection, data, inline, onchanged }: Props = $props();
+	let changingKind = $state(false);
 
 	/** Every character a collection can hold: TPI's, then the Character builder's. */
 	const choices = $derived.by(() => {
@@ -70,6 +75,11 @@
 			label={t('library.renameNamed', { name: collection.name })}
 			onclick={() => (renaming = true)}
 		/>
+		<IconButton
+			icon="changeKind"
+			label={t('library.changeKind')}
+			onclick={() => (changingKind = true)}
+		/>
 		<DeleteButton label={t('library.deleteCollection')} onclick={() => (deleting = true)} />
 	{/snippet}
 	<div class="collection" data-testid="library-collection">
@@ -98,10 +108,13 @@
 	<CharacterPicker characters={[...choices.values()]} mode="multi" {selected} onSelect={toggle} />
 </Dialog>
 
+<ChangeKind bind:open={changingKind} item={{ kind: 'collection', collection }} {data} {onchanged} />
+
 <NameDialog
 	bind:open={renaming}
 	title={t('library.renameTitle')}
 	initial={collection.name}
+	blankName={timestampName}
 	onsave={(name) => characterCollections.rename(collection.id, name)}
 />
 
