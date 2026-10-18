@@ -8,11 +8,13 @@
 		sortByStandardOrder,
 		type Character,
 		type CharacterId,
+		type CharacterType,
 		type GameData,
 		type LoadedScript
 	} from '#lib/core/data/index.ts';
-	import { builtScriptJson, scriptFacts } from '#lib/core/rules/index.ts';
+	import { builtScriptJson, EXPECTED_SCRIPT_COUNTS, scriptFacts } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -39,11 +41,11 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import AddScript from '#lib/features/scripts/AddScript.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import BuilderSave from '#lib/ui/builder/BuilderSave.svelte';
 	import BuilderTools from '#lib/ui/builder/BuilderTools.svelte';
 	import OpenSavedDialog from '#lib/ui/builder/OpenSavedDialog.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
-	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { fileNameFor } from '#lib/ui/download.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -51,7 +53,7 @@
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import { scriptBuilderDraft as draft } from './draft.svelte.ts';
-	import { chosenHomebrew, isEmptyDraft } from './draft.ts';
+	import { chosenHomebrew, isEmptyDraft, isTeensyville } from './draft.ts';
 	import { replaceBuilt } from './replace-saved.svelte.ts';
 	import type { HomebrewCollection } from './homebrew-wiki-api.ts';
 	import {
@@ -72,10 +74,16 @@
 	const SEATED = ['townsfolk', 'outsider', 'minion', 'demon'] as const;
 	const OTHERS = ['traveller', 'fabled', 'loric'] as const;
 	const TYPES = [...SEATED, ...OTHERS];
+	const isSeated = (type: CharacterType): type is (typeof SEATED)[number] =>
+		(SEATED as readonly CharacterType[]).includes(type);
 
 	let data = $state.raw<GameData>();
 	let query = $state('');
-	/** Lists only the characters on the script, still searched (Trevor, 2026-10-18), as in setup. */
+	/**
+	 * Lists only the characters on the script, still searched (Trevor, 2026-10-18), as in setup:
+	 * every chosen one, whichever source it came from (it was the "On script" source until
+	 * Trevor split it out the same day, as a state rather than a place characters come from).
+	 */
 	let selectedOnly = $state(false);
 	let saving = $state(false);
 	let clearOpen = $state(false);
@@ -84,15 +92,26 @@
 	let replacing = $state.raw<{ name: string; fill: () => void }>();
 	let replaceOpen = $state(false);
 
-	/**
-	 * Where the list's characters come from. 'script' is every character already on the script,
-	 * whichever source it came from (Trevor, 2026-10-17), so characters from several collections
-	 * or opened scripts are all in one place without switching collection.
-	 */
-	type Source = 'official' | 'homebrew' | 'mine' | 'script';
+	/** Where the list's characters come from. */
+	type Source = 'official' | 'homebrew' | 'mine';
 	let source = $state<Source>('official');
+	/**
+	 * Official's sub-choice, in the collection's place (Trevor, 2026-10-18): the base three
+	 * editions, Carousel, or both. The Fabled and Loric are listed with either.
+	 */
+	type OfficialPart = 'all' | 'base' | 'carousel';
+	let officialPart = $state<OfficialPart>('all');
+	const BASE_THREE = ['tb', 'bmr', 'snv'];
+	const RULE_EDITIONS = ['fabled', 'loric'];
+	function inPart(character: Character): boolean {
+		const edition = character.edition ?? '';
+		if (officialPart === 'all' || RULE_EDITIONS.includes(edition)) return true;
+		return BASE_THREE.includes(edition) === (officialPart === 'base');
+	}
 	let collections = $state.raw<HomebrewCollection[]>([]);
 	let collectionId = $state('');
+	let collectionOpen = $state(false);
+	const currentCollection = $derived(collections.find((c) => c.id === collectionId));
 	let homebrewSet = $state.raw<HomebrewSet>();
 	let homebrewError = $state('');
 
@@ -180,17 +199,14 @@
 			data
 		);
 	});
-	const fromSource = $derived(
-		source === 'homebrew'
-			? sortByStandardOrder(homebrewSet?.characters ?? [])
-			: source === 'mine'
-				? sortByStandardOrder(mine.characters)
-				: source === 'script'
-					? sortByStandardOrder(built?.characters ?? [])
-					: official
-	);
 	const characters = $derived(
-		selectedOnly ? fromSource.filter((c) => d.ids.includes(c.id)) : fromSource
+		selectedOnly
+			? sortByStandardOrder(built?.characters ?? [])
+			: source === 'homebrew'
+				? sortByStandardOrder(homebrewSet?.characters ?? [])
+				: source === 'mine'
+					? sortByStandardOrder(mine.characters)
+					: official.filter(inPart)
 	);
 
 	function choose(id: CharacterId) {
@@ -206,18 +222,28 @@
 	}
 
 	function creatorOf(character: Character): string | undefined {
-		const creator =
-			source === 'script'
-				? d.credits[character.id]?.creator
-				: homebrewSet?.credits[character.id]?.creator;
+		const creator = selectedOnly
+			? d.credits[character.id]?.creator
+			: homebrewSet?.credits[character.id]?.creator;
 		if (creator) return t('script-builder.by', { creator });
 		// On the script, a homebrew character with no known creator still says it is homebrew.
-		if (source === 'script' && built?.homebrew.includes(character.id)) {
+		if (selectedOnly && built?.homebrew.includes(character.id)) {
 			return t('script-builder.source.homebrew');
 		}
 		return undefined;
 	}
 	const counts = $derived(facts?.counts);
+	/** The sticky band's height, so each type's header pins just below it. */
+	let bandHeight = $state(0);
+	/** The character whose page is open; made on first use, as in setup. */
+	let info = $state.raw<Character>();
+	let infoOpen = $state(false);
+	/** A homebrew character's page where it came from, when known (its Homebrew Wiki page). */
+	const infoPage = $derived(
+		info ? (homebrewSet?.credits[info.id]?.url ?? d.credits[info.id]?.url) || undefined : undefined
+	);
+	/** What a full or Teensyville script usually has of each seated type: a guide, never a limit. */
+	const expected = $derived(EXPECTED_SCRIPT_COUNTS[d.teensyville ? 'teensyville' : 'full']);
 	const savedRecord = $derived(recentScripts.list.find((s) => s.scriptId === d.editing));
 	const isSaved = $derived(
 		!!savedRecord && !!builtJson && sameScript(savedRecord, { json: builtJson })
@@ -253,10 +279,6 @@
 		} finally {
 			saving = false;
 		}
-	}
-
-	function download() {
-		if (builtJson) downloadJson(fileNameFor(d.name, 'script'), builtJson);
 	}
 
 	const shareTarget = $derived.by(() => {
@@ -312,6 +334,9 @@
 			name: script.name,
 			author: script.meta.author ?? '',
 			...(script.meta.version ? { scriptVersion: script.meta.version } : {}),
+			...(isTeensyville(script.characters.filter((c) => isSeated(c.type)).length)
+				? { teensyville: true as const }
+				: {}),
 			ids: script.characters.map((c) => c.id),
 			homebrew: entries,
 			// Credits aren't part of a script; keep the ones this device already knows.
@@ -328,12 +353,22 @@
 	{#snippet actions()}
 		<AddScript onloaded={useAsBase} />
 		<BuilderTools
+			save={{
+				ready: !!built,
+				saved: isSaved,
+				editing: !!savedRecord,
+				busy: saving,
+				onSave: () => save(),
+				onSaveNew: () => save(true)
+			}}
 			openLabel={t('script-builder.open')}
 			openDisabled={!data || recentScripts.list.length === 0}
 			onOpen={() => (openOpen = true)}
 			downloadLabel={t('script-builder.download')}
 			downloadDisabled={!builtJson}
-			onDownload={download}
+			json={builtJson}
+			fileName={fileNameFor(d.name, 'script')}
+			jsonTitle={d.name || t('common.none')}
 			clearLabel={t('script-builder.clear')}
 			clearDisabled={isEmptyDraft(d)}
 			onClear={() => (clearOpen = true)}
@@ -362,19 +397,17 @@
 						oninput={(v) => draft.setScriptVersion(v)}
 					/>
 				</div>
+				<!-- Full or Teensyville (Trevor, 2026-10-18): sets the counts the script is measured by. -->
+				<Toggle
+					label={t('script-builder.teensyville')}
+					checked={!!d.teensyville}
+					onChange={(on) => draft.setTeensyville(on)}
+				/>
 				<!-- Always shown, so opening a script never moves the page. -->
 				<p class="variation" data-testid="variation-of">
 					<span>{t('script-builder.variationOf')}</span>
 					{d.variationOf?.name || t('common.none')}
 				</p>
-				<BuilderSave
-					ready={!!built}
-					saved={isSaved}
-					editing={!!savedRecord}
-					busy={saving}
-					onSave={() => save()}
-					onSaveNew={() => save(true)}
-				/>
 			</section>
 
 			<div class="source">
@@ -385,23 +418,36 @@
 					options={[
 						{ value: 'official', label: t('script-builder.source.official') },
 						{ value: 'homebrew', label: t('script-builder.source.homebrew') },
-						{ value: 'mine', label: t('script-builder.source.mine') },
-						{ value: 'script', label: t('script-builder.source.script') }
+						{ value: 'mine', label: t('script-builder.source.mine') }
 					]}
 					onChange={(value) => (value === 'homebrew' ? void showHomebrew() : (source = value))}
 				/>
-				<!-- Always in place, so switching source never moves the page. -->
-				<div class="collection" data-disabled={source !== 'homebrew' ? '' : undefined}>
+				<!-- Always in place, so switching source never moves the page: Official's editions,
+				     or the Homebrew Wiki collection (disabled for My characters). -->
+				{#if source === 'official'}
 					<Select
-						label={t('script-builder.collection')}
+						label={t('script-builder.editions')}
 						hideLabel
-						value={collectionId}
-						options={collections.length
-							? collections.map((c) => ({ value: c.id, label: c.name }))
-							: [{ value: '', label: t('common.none') }]}
-						onChange={(id) => id && void pickCollection(id)}
+						value={officialPart}
+						options={[
+							{ value: 'all', label: t('script-builder.editions.all') },
+							{ value: 'base', label: t('script-builder.editions.base') },
+							{ value: 'carousel', label: t('script-builder.editions.carousel') }
+						]}
+						onChange={(value) => (officialPart = value)}
 					/>
-				</div>
+				{:else}
+					<!-- A search over the collections, not a drop-down of all of them (Trevor, 2026-10-18),
+				     so it stays usable when more sources (Bloodstar) are added. -->
+					<Button
+						disabled={source !== 'homebrew' || collections.length === 0}
+						aria-label={t('script-builder.collectionOf', {
+							name: currentCollection?.name || t('common.none')
+						})}
+						onclick={() => (collectionOpen = true)}
+						data-testid="builder-collection">{currentCollection?.name || t('common.none')}</Button
+					>
+				{/if}
 			</div>
 			<p class="source-error" role="status" data-testid="homebrew-error">
 				{source === 'homebrew' ? homebrewError : ''}
@@ -526,7 +572,7 @@
 	<ErrorBoundary area="script-builder">
 		<!-- The counts and search stay in view while the list scrolls. -->
 		<div class="list">
-			<div class="counts">
+			<div class="counts" bind:offsetHeight={bandHeight}>
 				<!-- Two groups: if they don't fit on one line, Travellers, Fabled and Loric go on the
 				     second together (Trevor, 2026-10-18), never wherever the line happens to break. -->
 				<div
@@ -538,9 +584,22 @@
 					{#each [SEATED, OTHERS] as group, i (i)}
 						<div class="group" role="presentation">
 							{#each group as type (type)}
-								<span class="type" role="listitem" data-type={type}>
+								{@const n = counts?.[type] ?? 0}
+								{@const target = isSeated(type) ? expected[type] : undefined}
+								<span
+									class="type"
+									role="listitem"
+									data-type={type}
+									data-off={target !== undefined && n !== target ? '' : undefined}
+								>
 									<span class="label">{TYPE_PLURALS[type]}</span>
-									<span class="n" data-testid="count-{type}">{counts?.[type] ?? 0}</span>
+									<!-- The count and its usual number as one, e.g. "9/13". -->
+									<span class="nums"
+										><span class="n" data-testid="count-{type}">{n}</span
+										>{#if target !== undefined}<span class="of" data-testid="expected-{type}"
+												>/{target}</span
+											>{/if}</span
+									>
 								</span>
 							{/each}
 						</div>
@@ -566,12 +625,42 @@
 				surface="page"
 				contained={false}
 				types={TYPES}
-				marker={source === 'official' ? undefined : creatorOf}
+				marker={source === 'official' && !selectedOnly ? undefined : creatorOf}
+				pinTop="calc(var(--tap-target) + env(safe-area-inset-top) + {Math.max(
+					0,
+					bandHeight - 1
+				)}px)"
+				onInfo={(character) => {
+					info = character;
+					infoOpen = true;
+				}}
 				onSelect={choose}
 			/>
 		</div>
 	</ErrorBoundary>
 </Page>
+
+{#if info}
+	<CharacterDialog bind:open={infoOpen} character={info} sourcePage={infoPage} />
+{/if}
+
+<OpenSavedDialog
+	bind:open={collectionOpen}
+	title={t('script-builder.collection')}
+	items={collections}
+	key={(c) => c.id}
+	search={{
+		label: t('script-builder.collectionSearch'),
+		matches: (c, words) => words.every((w) => c.name.toLowerCase().includes(w))
+	}}
+	onChoose={(c) => {
+		collectionOpen = false;
+		void pickCollection(c.id);
+	}}
+	testid="builder-collections"
+>
+	{#snippet row(c)}{c.name}{/snippet}
+</OpenSavedDialog>
 
 <OpenSavedDialog
 	bind:open={openOpen}
@@ -658,8 +747,9 @@
 		flex-wrap: wrap;
 		gap: var(--space-1);
 	}
+	/* Small enough that the four seated types fit one line on a phone. */
 	.types {
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 	}
 	/* Search, then Show only selected right beside it, as in setup. */
 	.find {
@@ -681,26 +771,31 @@
 		display: flex;
 		align-items: baseline;
 		gap: var(--space-1);
-		padding: 0 var(--space-2);
+		padding: 0 calc(0.75 * var(--space-2));
 		border-radius: var(--radius-full);
 		background: var(--surface-raised);
 	}
 	.types .label {
 		color: var(--on-surface-muted);
 	}
+	.types .nums {
+		font-variant-numeric: tabular-nums;
+	}
 	.types .n {
 		font-weight: 700;
-		font-variant-numeric: tabular-nums;
+	}
+	.types .of {
+		color: var(--on-surface-muted);
+	}
+	/* Not what a script of this size usually has: ringed as setup's counts are, never blocked. */
+	.type[data-off] {
+		box-shadow: inset 0 0 0 2px var(--accent);
 	}
 	/* Sources on one row, the collection under them, so three choices fit a phone. */
 	.source {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
-	}
-	.collection[data-disabled] {
-		opacity: 0.5;
-		pointer-events: none;
 	}
 	.source-error {
 		margin: 0;
