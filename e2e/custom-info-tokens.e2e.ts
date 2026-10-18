@@ -312,3 +312,21 @@ test('a quick card is shown once and never saved', async ({ page }) => {
 		await page.evaluate(() => localStorage.getItem('grim-games:info-tokens') ?? '')
 	).not.toContain('You may not speak');
 });
+
+test('the Info tokens page shows several cards together, like the board sheet', async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	// Each card's + adds it; then all are shown in order (Trevor, 2026-10-18).
+	await page.getByRole('button', { name: 'Add This is the Demon to the cards to show' }).tap();
+	await page.getByRole('button', { name: 'Add You are to the cards to show' }).tap();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
+	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const list = page.getByTestId('chain-list');
+	await expect(list.getByRole('listitem')).toHaveCount(2);
+	await expect(list.getByRole('listitem').last()).toContainText('2. You are');
+	await page.getByRole('button', { name: 'Show 2 cards' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('heading').first()).toHaveText('This is the Demon');
+});
