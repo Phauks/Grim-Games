@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Character } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -8,8 +7,8 @@
 	import { activeFilterCount, tableRows } from '#lib/core/rules/reference-table.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import CharacterTable from './CharacterTable.svelte';
 	import { TYPE_PLURALS } from './labels.ts';
 	import ReferenceCard from './ReferenceCard.svelte';
@@ -34,22 +33,6 @@
 
 	// Search is the one filter for cards; the table adds its own per-column filters.
 	let search = $state('');
-	let searchInput = $state<HTMLInputElement>();
-
-	// Keyboard comforts on a computer: "/" jumps to the search field, Esc clears it.
-	function onWindowKey(event: KeyboardEvent) {
-		if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
-		const target = event.target as HTMLElement | null;
-		if (target?.closest('input, textarea, select, [contenteditable], [role="dialog"]')) return;
-		event.preventDefault();
-		searchInput?.focus();
-	}
-	function onSearchKey(event: KeyboardEvent) {
-		if (event.key === 'Escape' && search) {
-			event.preventDefault();
-			search = '';
-		}
-	}
 	const shown = $derived(entries.filter((e) => matchesReference(e, { search })));
 	const groups = $derived(groupByType(shown));
 	// The table's own column filters and sort apply on top of the search.
@@ -57,24 +40,14 @@
 	const filters = $derived(activeFilterCount(referenceTable.current.filters));
 </script>
 
-<svelte:window onkeydown={onWindowKey} />
-
 <div class="controls">
-	<label class="search">
-		<span class="visually-hidden">{t('reference.searchLabel')}</span>
-		<Icon name="search" />
-		<ClearableField bind:value={search}>
-			<input
-				type="search"
-				placeholder={t('reference.searchPlaceholder')}
-				autocomplete="off"
-				aria-keyshortcuts="/"
-				bind:this={searchInput}
-				bind:value={search}
-				onkeydown={onSearchKey}
-			/>
-		</ClearableField>
-	</label>
+	<!-- On a computer, "/" jumps to the search field and Esc clears it. -->
+	<SearchField
+		bind:value={search}
+		label={t('reference.searchLabel')}
+		placeholder={t('reference.searchPlaceholder')}
+		shortcut
+	/>
 	{#if view === 'cards'}
 		<p class="count" aria-live="polite">
 			{t('reference.count', { shown: shown.length, count: entries.length })}
@@ -158,46 +131,6 @@
 			grid-template-columns: minmax(0, calc(36 * var(--u))) auto;
 			align-items: center;
 		}
-	}
-	.search {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: var(--card-border);
-		border-radius: var(--radius-full);
-		background: var(--card-background);
-		color: var(--on-surface-muted);
-	}
-	/* One focus mark, on the field's own rounded border, drawn inside so nothing clips it;
-	   the input's ring is off (Trevor, 2026-10-16: no double halo). */
-	.search:focus-within {
-		border-color: var(--focus);
-		box-shadow: inset 0 0 0 calc(0.0625 * var(--u)) var(--focus);
-	}
-	.search input:focus-visible {
-		outline: none;
-	}
-	input {
-		flex: 1;
-		min-width: 0;
-		min-height: var(--tap-target);
-		border: 0;
-		outline: none;
-		background: none;
-		color: var(--on-surface);
-		/* 16px or more stops iOS zooming into the field. */
-		font: inherit;
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
-	}
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 	.table-count {
 		display: flex;

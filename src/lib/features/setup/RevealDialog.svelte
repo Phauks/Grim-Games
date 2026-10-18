@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { defaultAlignment, type Alignment, type Character } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -73,25 +73,10 @@
 <Dialog bind:open title={t('setup.draw.tile', { number })} size="full">
 	<div class="reveal" data-testid="reveal">
 		<p class="seat">{seatLabel}</p>
-		<label class="player">
-			<span>{t('setup.reveal.name')}</span>
-			<ClearableField bind:value={name}>
-				<input
-					type="text"
-					autocomplete="off"
-					enterkeyhint="done"
-					placeholder={t('common.none')}
-					bind:value={name}
-					onkeydown={(e) => {
-						// Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap.
-						if (e.key === 'Enter') {
-							e.preventDefault();
-							e.currentTarget.blur();
-						}
-					}}
-				/>
-			</ClearableField>
-		</label>
+		<!-- Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap. -->
+		<div class="player">
+			<TextField label={t('setup.reveal.name')} bind:value={name} placeholder={t('common.none')} />
+		</div>
 		<!-- Hidden until a name is entered when that's required; the space stays reserved. -->
 		<div class="token">
 			{#if revealed}<CharacterToken character={shows} size={160} />{:else}<span
@@ -187,19 +172,11 @@
 		font-family: var(--font-ability);
 	}
 	.player {
-		display: grid;
-		gap: var(--space-1);
 		width: min(100%, 20rem);
 		text-align: start;
 	}
-	.player input {
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font: inherit;
+	/* A player's name is in the player font, as on their seat. */
+	.player :global(.text-field input) {
 		font-family: var(--font-player);
 	}
 	/* Space for the Traveller's alignment is always reserved, so the actions never move. */

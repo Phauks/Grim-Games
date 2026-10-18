@@ -6,7 +6,8 @@
 import type { Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { ROOM_PROTOCOL, type PlayerView } from '#lib/core/sync/room.ts';
-import { randomKey, readStored, RoomSocket, writeStored } from './room-socket.svelte.ts';
+import { readStored, writeStored } from '#lib/ui/stored.ts';
+import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 
 const STORAGE_KEY = 'grim-games-room-player';
 

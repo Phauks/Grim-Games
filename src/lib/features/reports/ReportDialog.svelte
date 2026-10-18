@@ -5,7 +5,7 @@
 	import { scrubUrls } from '#lib/features/errors/app-error.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -47,8 +47,9 @@
 	);
 
 	/** Enter in a single-line field sends (UI rules). */
-	function onkeydown(event: KeyboardEvent) {
-		if (event.key === 'Enter') void send(event);
+	function sendOnEnter(): false {
+		void send();
+		return false;
 	}
 
 	async function send(event?: Event) {
@@ -80,28 +81,27 @@
 	{:else}
 		<form class="form" onsubmit={send} data-testid="report-form">
 			<Select label={t('reports.kind')} value={kind} options={kinds} onChange={(v) => (kind = v)} />
-			<label class="field">
-				<span>{t('reports.summary')}</span>
-				<ClearableField bind:value={title}>
-					<input
-						type="text"
-						bind:value={title}
-						maxlength={REPORT_LIMITS.title}
-						required
-						{onkeydown}
-					/>
-				</ClearableField>
-			</label>
-			<label class="field">
-				<span>{t('reports.body')}</span>
-				<textarea bind:value={body} rows="5" maxlength={REPORT_LIMITS.body} required></textarea>
-			</label>
-			<label class="field">
-				<span>{t('reports.contact')}</span>
-				<ClearableField bind:value={contact}>
-					<input type="text" bind:value={contact} maxlength={REPORT_LIMITS.contact} {onkeydown} />
-				</ClearableField>
-			</label>
+			<TextField
+				label={t('reports.summary')}
+				bind:value={title}
+				maxlength={REPORT_LIMITS.title}
+				required
+				oncommit={sendOnEnter}
+			/>
+			<TextField
+				label={t('reports.body')}
+				bind:value={body}
+				multiline
+				rows={5}
+				maxlength={REPORT_LIMITS.body}
+				required
+			/>
+			<TextField
+				label={t('reports.contact')}
+				bind:value={contact}
+				maxlength={REPORT_LIMITS.contact}
+				oncommit={sendOnEnter}
+			/>
 			{#if details}
 				<Toggle
 					label={t('reports.includeDetails')}
@@ -141,16 +141,6 @@
 	.form {
 		display: grid;
 		gap: var(--space-3);
-	}
-	.field {
-		display: grid;
-		gap: var(--space-1);
-		font-size: 0.9rem;
-	}
-	.field input,
-	.field textarea {
-		width: 100%;
-		box-sizing: border-box;
 	}
 	.sent {
 		margin: 0;

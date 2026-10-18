@@ -32,16 +32,17 @@
 	import AddScript from '#lib/features/scripts/AddScript.svelte';
 	import ScriptView from '#lib/features/scripts/ScriptView.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
+	import SavedCharacterList from '#lib/features/character-builder/SavedCharacterList.svelte';
 	import FolderView from './FolderView.svelte';
 	import VariationChanges from './VariationChanges.svelte';
 	import LabelManager from './LabelManager.svelte';
@@ -352,18 +353,13 @@
 	<ErrorBoundary area="library">
 		<PageSection title={t('library.scripts')}>
 			<div class="find">
-				<label class="term">
-					<span class="visually-hidden">{t('library.search')}</span>
-					<ClearableField bind:value={term}>
-						<input
-							type="search"
-							autocomplete="off"
-							enterkeyhint="search"
-							placeholder={t('library.searchPlaceholder')}
-							bind:value={term}
-						/>
-					</ClearableField>
-				</label>
+				<div class="term">
+					<SearchField
+						bind:value={term}
+						label={t('library.search')}
+						placeholder={t('library.searchPlaceholder')}
+					/>
+				</div>
 				<span class="view">
 					<Select
 						label={t('library.view')}
@@ -403,6 +399,9 @@
 					/>
 				</div>
 			{/if}
+		</PageSection>
+		<PageSection title={t('library.characters')}>
+			<SavedCharacterList />
 		</PageSection>
 	</ErrorBoundary>
 </Page>
@@ -598,14 +597,6 @@
 {/if}
 
 <style>
-	.visually-hidden {
-		position: absolute;
-		width: 1px; /* px-ok: visually hidden, still read aloud */
-		height: 1px; /* px-ok: visually hidden, still read aloud */
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
 	.find {
 		display: flex;
 		flex-wrap: wrap;
@@ -615,17 +606,6 @@
 	.term {
 		flex: 1 1 calc(14 * var(--u));
 		min-width: 0;
-	}
-	.term input {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		color: inherit;
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	.pick {
 		width: 100%;

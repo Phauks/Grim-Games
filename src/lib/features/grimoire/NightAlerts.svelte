@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import type { NightStep, NightAlert, Impairment } from '#lib/core/rules/index.ts';
 	import { nightStepAlerts } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -29,12 +30,6 @@
 		)
 	);
 
-	/** "Seat 4 (Sam)", or "Seat 4". */
-	function seatLabel(seatId: string) {
-		const n = `Seat ${game.seating.indexOf(seatId) + 1}`;
-		const name = game.seats[seatId]?.playerName;
-		return name ? `${n} (${name})` : n;
-	}
 	const WORD: Record<Impairment['reason'], string> = {
 		drunk: 'drunk',
 		poisoned: 'poisoned',
@@ -85,18 +80,18 @@
 				<Icon name={alert.impairments[0]?.reason === 'drunk' ? 'drunk' : ICON[alert.kind]} />
 				<span>
 					{#if alert.kind === 'impaired'}
-						{@render badge(sourceId(alert))} in {seatLabel(alert.seatId)} is {@render why(
+						{@render badge(sourceId(alert))} in {seatLabel(game, alert.seatId)} is {@render why(
 							alert.impairments
 						)}
 					{:else if alert.kind === 'protected'}
-						{seatLabel(alert.seatId)} can't die{#if alert.source === 'override'}
+						{seatLabel(game, alert.seatId)} can't die{#if alert.source === 'override'}
 							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}
 					{:else if alert.kind === 'may-bounce'}
-						{seatLabel(alert.seatId)}: {@render badge(sourceId(alert))} may bounce the death
+						{seatLabel(game, alert.seatId)}: {@render badge(sourceId(alert))} may bounce the death
 					{:else if alert.kind === 'survives-first-death'}
-						{seatLabel(alert.seatId)}: {@render badge(sourceId(alert))} survives the first death
+						{seatLabel(game, alert.seatId)}: {@render badge(sourceId(alert))} survives the first death
 					{:else}
-						{seatLabel(alert.seatId)} dying sets off {@render badge(sourceId(alert))}
+						{seatLabel(game, alert.seatId)} dying sets off {@render badge(sourceId(alert))}
 					{/if}
 					{#if !alert.works && alert.kind !== 'impaired'}
 						<strong class="not">Not working:</strong> {@render why(alert.impairments)}

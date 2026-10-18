@@ -129,22 +129,3 @@ export async function sha256Hex(text: string): Promise<string> {
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
 	return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
-
-/** localStorage that never throws (private windows, blocked storage). */
-export function readStored<T>(key: string): T | undefined {
-	try {
-		const raw = localStorage.getItem(key);
-		return raw ? (JSON.parse(raw) as T) : undefined;
-	} catch {
-		return undefined;
-	}
-}
-
-export function writeStored(key: string, value: unknown): void {
-	try {
-		if (value === undefined) localStorage.removeItem(key);
-		else localStorage.setItem(key, JSON.stringify(value));
-	} catch {
-		// Without storage the room still works until the page is closed.
-	}
-}

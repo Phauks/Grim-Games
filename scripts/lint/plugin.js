@@ -5,6 +5,7 @@ import { deleteButton } from './delete-button.js';
 import { dropdownChoice } from './dropdown-choice.js';
 import { modalActions } from './modal-actions.js';
 import { namesAsBadges } from './names-as-badges.js';
+import { textField } from './text-field.js';
 
 export default {
 	rules: {
@@ -13,6 +14,7 @@ export default {
 		'clearable-field': clearableField,
 		'delete-button': deleteButton,
 		'modal-actions': modalActions,
-		'dropdown-choice': dropdownChoice
+		'dropdown-choice': dropdownChoice,
+		'text-field': textField
 	}
 };

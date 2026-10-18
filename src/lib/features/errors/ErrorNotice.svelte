@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { copyText } from '#lib/ui/clipboard.ts';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -6,7 +7,6 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import { errorDetails, type AppError } from './app-error.ts';
 	import { errorLog } from './report.svelte.ts';
@@ -26,12 +26,10 @@
 	}
 
 	async function copy(error: AppError) {
-		try {
-			await navigator.clipboard.writeText(errorDetails(error));
-			toast(t('errors.copied'), t('errors.copiedDetail'));
-		} catch {
-			toast(t('errors.copyFailed'), t('errors.copyFailedDetail'));
-		}
+		await copyText(errorDetails(error), {
+			copied: [t('errors.copied'), t('errors.copiedDetail')],
+			failed: [t('errors.copyFailed'), t('errors.copyFailedDetail')]
+		});
 	}
 </script>
 

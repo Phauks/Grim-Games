@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { MAX_LABEL_NAME, nameFree, type LabelKind } from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
@@ -26,26 +26,19 @@
 </script>
 
 <div class="new">
-	<label class="field">
-		<span class="visually-hidden">{label}</span>
-		<ClearableField bind:value={name}>
-			<input
-				type="text"
-				autocomplete="off"
-				enterkeyhint="done"
-				maxlength={MAX_LABEL_NAME}
-				placeholder={label}
-				aria-invalid={taken}
-				bind:value={name}
-				onkeydown={(e) => {
-					if (e.key === 'Enter') {
-						e.preventDefault();
-						add();
-					}
-				}}
-			/>
-		</ClearableField>
-	</label>
+	<TextField
+		{label}
+		hideLabel
+		placeholder={label}
+		bind:value={name}
+		maxlength={MAX_LABEL_NAME}
+		invalid={taken}
+		oncommit={() => {
+			add();
+			// Stays in the field, ready for the next name.
+			return false;
+		}}
+	/>
 	<Button icon="add" disabled={name.trim() === '' || taken} onclick={add}>{t('library.add')}</Button
 	>
 	<!-- Always there, so the message never moves what is below. -->
@@ -59,30 +52,11 @@
 		gap: var(--space-1) var(--space-2);
 		align-items: center;
 	}
-	.field input {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		color: inherit;
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
-	}
 	.error {
 		grid-column: 1 / -1;
 		margin: 0;
 		min-height: 1.2em;
 		font-size: 0.85rem;
 		color: var(--evil);
-	}
-	.visually-hidden {
-		position: absolute;
-		width: 1px; /* px-ok: visually hidden, still read aloud */
-		height: 1px; /* px-ok: visually hidden, still read aloud */
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 </style>

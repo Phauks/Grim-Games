@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		reminderHolder,
@@ -43,13 +44,6 @@
 		run: () => void;
 	}
 	let pending = $state<Pending>();
-
-	/** "Seat 3 (Alex)", or "Seat 3" without a name. */
-	function seatLabel(seatId: SeatId) {
-		const n = `Seat ${game.seating.indexOf(seatId) + 1}`;
-		const name = game.seats[seatId]?.playerName;
-		return name ? `${n} (${name})` : n;
-	}
 
 	/** The reminder and where it is now; undefined when it is not on the board. */
 	function find(reminderId: ReminderId): { reminder: Reminder; from: Place } | undefined {
@@ -138,7 +132,7 @@
 </script>
 
 {#snippet place(at: Place, back = false)}
-	{#if 'seatId' in at}On {seatLabel(at.seatId)}
+	{#if 'seatId' in at}On {seatLabel(game, at.seatId)}
 	{:else if 'characterId' in at}On <CharacterBadge
 			characterId={at.characterId}
 			character={characters.get(at.characterId)}

@@ -3,16 +3,12 @@
  * Reference table's sort). Storage can be missing or throw; then widths last until reload.
  */
 import { parseWidths, type ColumnWidths } from '#lib/ui/table/column-widths.ts';
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 const PREFIX = 'grim-games:table-widths:';
 
 function read(table: string): ColumnWidths {
-	try {
-		const raw = globalThis.localStorage?.getItem(PREFIX + table);
-		return parseWidths(raw ? JSON.parse(raw) : undefined);
-	} catch {
-		return {};
-	}
+	return parseWidths(readStored(PREFIX + table));
 }
 
 export class TableWidths {
@@ -42,12 +38,8 @@ export class TableWidths {
 	}
 
 	save(): void {
-		try {
-			if (Object.keys(this.#widths).length === 0)
-				globalThis.localStorage?.removeItem(PREFIX + this.#table);
-			else globalThis.localStorage?.setItem(PREFIX + this.#table, JSON.stringify(this.#widths));
-		} catch {
-			// Not remembered; the widths still apply until the page is closed.
-		}
+		// If not remembered, the widths still apply until the page is closed.
+		const empty = Object.keys(this.#widths).length === 0;
+		writeStored(PREFIX + this.#table, empty ? undefined : this.#widths);
 	}
 }
