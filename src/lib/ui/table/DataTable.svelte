@@ -551,6 +551,7 @@
 	class:fit-content={fit === 'content'}
 	class:boxed
 	class:fill
+	class:lazy
 	style:--columns={template}
 	style:--columns-medium={mediumTemplate}
 	style:--columns-narrow={narrowTemplate}
@@ -818,8 +819,12 @@
 		grid-template-columns: var(--columns);
 		border-bottom: 1px solid var(--border);
 	}
-	/* Rows off screen skip layout and paint; `auto` remembers each row's real height. */
-	tbody tr {
+	/*
+	 * Lazy tables' rows off screen skip layout and paint; `auto` remembers each row's real
+	 * height. Only there: Search's rows on a phone didn't follow a swipe until the finger
+	 * lifted (Trevor, 2026-10-18), and light rows gain nothing from skipping.
+	 */
+	.lazy tbody tr {
 		content-visibility: auto;
 		contain-intrinsic-block-size: auto var(--row-estimate);
 	}
