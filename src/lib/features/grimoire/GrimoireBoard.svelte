@@ -1533,6 +1533,16 @@
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
+		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
+			too, for when the corner has no room for the name. -->
+		{#if modeName}
+			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
+				Game mode
+			</Button>
+		{/if}
+		<!-- Lines set the settings apart from what changes the game, and End game apart at the
+		     bottom (Trevor, 2026-10-18). -->
+		<hr class="menu-rule" />
 		<!-- Board and token settings over the board (Trevor, 2026-10-17); two sections since
 		     2026-10-18. -->
 		<Button
@@ -1549,19 +1559,13 @@
 		>
 			Tokens
 		</Button>
-		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
-			too, for when the corner has no room for the name. -->
-		{#if modeName}
-			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
-				Game mode
-			</Button>
-		{/if}
 		<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 		<span class="menu-nav">
 			<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
 				Navigation
 			</Button>
 		</span>
+		<hr class="menu-rule" />
 		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
 		{#if ended}
 			<Button variant="quiet" icon="undo" onclick={() => fromMenu(() => (reopenOpen = true))}>
@@ -2231,6 +2235,12 @@
 		display: grid;
 		gap: var(--space-2);
 		margin-top: var(--space-3);
+	}
+	.menu-rule {
+		width: 100%;
+		margin: 0;
+		border: 0;
+		border-top: 1px solid var(--border);
 	}
 	.rule-detail {
 		display: flex;

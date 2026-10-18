@@ -192,6 +192,9 @@
 <style>
 	/* The page's colours, not a sheet's, even when opened from inside one. */
 	.show {
+		/* Opened over a modal dialog (a night step), which turns off pointer events on the
+		   page: this view is in the top layer and must still take taps. */
+		pointer-events: auto;
 		--surface: var(--player-view-surface);
 		--surface-raised: var(--player-view-raised);
 		--surface-selected: var(--player-view-selected);

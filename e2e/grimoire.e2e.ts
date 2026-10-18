@@ -2865,7 +2865,6 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 }) => {
 	await startGame(page);
 	for (const [seat, name] of [
-		[1, 'Washerwoman'],
 		[2, 'Chef'],
 		[4, 'Imp']
 	] as const) {
@@ -2878,10 +2877,12 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 		await closeSheet(page);
 	}
 	const shown = page.locator('[data-testid="show-to-player"][open]');
-	// TPI's night text has the Chef give a finger signal; the Washerwoman's has none.
-	const washerwoman = await openStep(page, 'Washerwoman');
-	await expect(washerwoman.getByTestId('step-number')).toHaveCount(0);
-	await washerwoman.getByRole('button', { name: 'Close' }).tap();
+	// Over the step, whose modal dialog hides the rest of the page from the accessibility tree.
+	const closeShown = async () => {
+		await shown.locator('.close button').tap();
+		await expect(shown).toHaveCount(0);
+	};
+	// TPI's night text has the Chef give a finger signal (steps without one: night-steps.test.ts).
 	const chef = await openStep(page, 'Chef');
 	// The suggested 0 (no evil pair sits together) is shown from its own row.
 	await chef
@@ -2890,25 +2891,40 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 		.tap();
 	await expect(shown.locator('h2.title')).toHaveText('Your number is');
 	await expect(shown.locator('.detail')).toHaveText('0');
-	await shown.getByRole('button', { name: 'Close' }).tap();
+	await closeShown();
 	// Any other number from the step's own info token.
 	const number = chef.getByTestId('step-number');
 	await number.getByRole('button', { name: 'Higher number' }).tap();
 	await number.getByRole('button', { name: 'Higher number' }).tap();
 	await number.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(shown.locator('.detail')).toHaveText('2');
-	await shown.getByRole('button', { name: 'Close' }).tap();
-	// The step's token opens the Chef's details, as a badge does: a second dialog named Chef.
-	const details = page.getByRole('dialog', { name: 'Chef', exact: true });
+	await closeShown();
+	// The step's token opens the Chef's details, as a badge does.
+	const details = page
+		.getByRole('dialog', { name: 'Chef', exact: true })
+		.filter({ has: page.getByRole('link', { name: 'Open wiki' }) });
 	await chef.getByRole('button', { name: 'About Chef' }).tap();
-	await expect(details).toHaveCount(2);
-	await details.last().getByRole('button', { name: 'Close' }).tap();
-	await expect(details).toHaveCount(1);
+	await expect(details).toBeVisible();
+	await details.getByRole('button', { name: 'Close' }).tap();
+	await expect(details).toHaveCount(0);
 	await chef.getByRole('button', { name: 'Close' }).tap();
 	// And from the walk-through.
 	const strip = await walkTo(page, 'Chef');
 	await strip.getByRole('button', { name: 'About Chef' }).tap();
 	await expect(details).toBeVisible();
+});
+
+test('the board menu sets the settings and End game apart with lines', async ({ page }) => {
+	await startGame(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	// Trevor (2026-10-18): game actions, then settings, then End game on its own.
+	await expect(menu.getByRole('separator')).toHaveCount(2);
+	const items = menu.locator('.menu > :is(button, hr), .menu > .menu-nav > button');
+	const names = await items.evaluateAll((els) =>
+		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
+	);
+	expect(names.join(' ')).toMatch(/Arrange seats \| Board Tokens .*\| End game$/);
 });
 
 test('a Demon bluff in play can still be chosen, after a confirm', async ({ page }) => {
