@@ -30,12 +30,20 @@ describe('script collections', () => {
 			<a href="https://drive.google.com/file/d/${ID}/view">Script JSON</a></p>`;
 		// Each with the heading it sits under, so it links to its own section of the doc.
 		expect(readCollectionDoc(html)).toEqual([
-			{ fileId: ID, heading: 'h.gnrzqiid7k9x' },
-			{ fileId: '1_rxIlqzJnLgME8GTt3aFTrdQd9dhD41O', heading: 'h.second1' }
+			{ fileId: ID, heading: 'h.gnrzqiid7k9x', title: 'Contempt' },
+			{ fileId: '1_rxIlqzJnLgME8GTt3aFTrdQd9dhD41O', heading: 'h.second1', title: 'Devout Theists' }
 		]);
 		expect(collectionHeadingUrl(CAROUSEL_COLLECTION, 'h.gnrzqiid7k9x')).toBe(
 			'https://docs.google.com/document/d/1U_OQJQXyp5p0yuRaqqd44zWwQYRjvrql9D-4xIogQK4/edit#heading=h.gnrzqiid7k9x'
 		);
+	});
+
+	it('reads each heading’s text, entities decoded, as the script’s listed name', () => {
+		const html = `<h2 id="h.abc"><span>Harold Holt&#39;s</span> <span>Revenge</span></h2>
+			<p><a href="https://drive.google.com/file/d/${ID}/view">Script JSON</a></p>`;
+		expect(readCollectionDoc(html)).toEqual([
+			{ fileId: ID, heading: 'h.abc', title: "Harold Holt's Revenge" }
+		]);
 	});
 
 	it('checks the Worker’s answer', () => {

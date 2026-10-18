@@ -111,7 +111,7 @@
 
 	let checkOpen = $state(false);
 
-	// The search box and source live in the page's toolbar (`ScriptSearchBar`).
+	// The search box (toolbar) and source (title row) live on the page (`ScriptSearchBar`).
 	let prevSource = source;
 	$effect(() => {
 		if (source === prevSource) return;

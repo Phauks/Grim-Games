@@ -29,6 +29,8 @@ export const scripts = {
 	'scripts.picker.search': 'Search scripts',
 	'scripts.picker.searchPlaceholder': 'Names, authors, characters, or a link',
 	'scripts.sources.label': 'Source',
+	'scripts.sources.group.engines': 'Search engines',
+	'scripts.sources.group.collections': 'Collections',
 	'scripts.picker.source.curated': 'Official custom scripts',
 	'scripts.picker.source.month': 'Scripts of the Month',
 	'scripts.picker.source.collection': 'Carousel Script Collection',
