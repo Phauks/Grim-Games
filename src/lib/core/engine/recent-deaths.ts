@@ -1,14 +1,14 @@
 /**
- * Who has died since the previous day ended, from the game's log, so the Storyteller can
- * announce every death (Trevor, 2026-10-16: "add the names ... of the people who died, so
- * the Storyteller doesn't forget").
+ * Who died in the night, from the game's log, so the Storyteller announces every death at
+ * dawn (Trevor, 2026-10-16: "add the names ... of the people who died, so the Storyteller
+ * doesn't forget"). Deaths during the day are not announcements (Trevor, 2026-10-18:
+ * "announcements is meant for things that happen at night that should be announced at dawn").
  *
- * The app does not track day and night, so the boundary comes from the log:
- * - the window starts after the previous day's last execution or exile (that death was
+ * The boundaries come from the log:
+ * - the night starts after the previous day's last execution or exile (that death was
  *   public), or at that day's New day if it had none, or at the start of the game;
- * - "the previous day" is the one before the most recent New day. Before any New day, the
- *   whole game counts.
- * So whether the Storyteller taps New day at dawn or not yet, last night's deaths are in it.
+ * - it ends at the most recent New day (dawn); before any New day, the whole game so far.
+ * Executions and exiles are always day deaths, so they are never listed.
  *
  * Only players still dead are listed, in the order they died, with their latest cause.
  */
@@ -26,10 +26,12 @@ export function recentDeaths(log: GameLog, game: Game): RecentDeath[] {
 		e.events.some((ev) => ev.type === 'DayStarted') ? [i] : []
 	);
 	let from = 0;
+	let to = entries.length;
 	if (dayStarts.length > 0) {
 		const latest = dayStarts[dayStarts.length - 1];
 		const previous = dayStarts.length > 1 ? dayStarts[dayStarts.length - 2] : 0;
 		from = previous;
+		to = latest + 1;
 		for (let i = previous; i < latest; i++) {
 			const ended = entries[i].events.some(
 				(ev) =>
@@ -41,7 +43,7 @@ export function recentDeaths(log: GameLog, game: Game): RecentDeath[] {
 	}
 
 	const deaths = new Map<SeatId, RecentDeath>();
-	for (const entry of entries.slice(from)) {
+	for (const entry of entries.slice(from, to)) {
 		for (const event of entry.events) {
 			if (event.type === 'DeathSet') {
 				deaths.delete(event.seatId);
@@ -62,5 +64,7 @@ export function recentDeaths(log: GameLog, game: Game): RecentDeath[] {
 			}
 		}
 	}
-	return [...deaths.values()].filter((d) => game.seats[d.seatId]?.dead === true);
+	return [...deaths.values()].filter(
+		(d) => game.seats[d.seatId]?.dead === true && d.cause !== 'execution' && d.cause !== 'exile'
+	);
 }

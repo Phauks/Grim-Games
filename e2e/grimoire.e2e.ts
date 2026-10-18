@@ -674,7 +674,9 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	expect(
 		await page.evaluate(() => (window as unknown as { clicksInDialog: number }).clicksInDialog)
 	).toBe(0);
-	await expect(reminder.locator('.source')).toContainText('Sailor');
+	// Named once, in "From" (Trevor, 2026-10-18).
+	await expect(reminder).toContainText(/From\s*Sailor/);
+	await expect(reminder.getByText('Sailor', { exact: true })).toHaveCount(1);
 	await expect(reminder.locator('header.character')).toContainText(/choose an alive player/i);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
 	await reminder.getByRole('button', { name: 'Close' }).tap();
@@ -2268,7 +2270,7 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 	// Its dialog lists them; one opens on its own, with whose it is, and can be removed.
 	await held.getByRole('button', { name: 'Poisoned reminder' }).tap();
 	const reminder = page.getByRole('dialog', { name: 'Poisoned' });
-	await expect(reminder.locator('.source')).toContainText('Poisoner');
+	await expect(reminder).toContainText(/From\s*Poisoner\s*on\s*Angel/);
 	await reminder.getByRole('button', { name: 'Remove reminder' }).tap();
 	await expect(held.getByRole('button')).toHaveCount(1);
 	await expect(all.getByRole('button', { name: 'Poisoned reminder' })).toBeVisible();
@@ -2307,7 +2309,7 @@ test('a reminder put down in the open belongs to no one, and can go back on a se
 	// Tapped: it is on no seat, and can be put on one.
 	await loose.tap();
 	const dialog = page.getByRole('dialog', { name: 'Poisoned' });
-	await expect(dialog).toContainText('Loose on the board');
+	await expect(dialog).toContainText(/From\s*Poisoner\s*loose on the board/);
 	await dialog.getByRole('button', { name: 'Move to a seat' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Move reminder to' })
