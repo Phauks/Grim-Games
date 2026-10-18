@@ -6,6 +6,12 @@
 export const modes = {
 	'modes.label': 'Game mode',
 	'modes.script': 'Script',
+	'modes.add.button': 'Add mode',
+	'modes.add.title': 'Add a game mode',
+	'modes.add.label': 'Mode file (JSON)',
+	'modes.add.upload': 'Upload file',
+	'modes.add.delete': 'Delete {name}',
+	'modes.add.deleteConfirm': 'Delete {name} from this device?',
 	'modes.townScript': 'Town {number} script',
 	'modes.everyCharacter': 'Every character',
 	'modes.players': 'Players',

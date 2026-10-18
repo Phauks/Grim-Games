@@ -7,7 +7,6 @@
 	import {
 		bannedIn,
 		GAME_MODES,
-		gameModeById,
 		modeCharacters,
 		NO_RESTRICTIONS,
 		STANDARD,
@@ -24,6 +23,10 @@
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import AddModeDialog from './AddModeDialog.svelte';
+	import { allModes, customModes, findMode } from './custom-modes.svelte.ts';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import ModeValue from './ModeValue.svelte';
 	import RestrictedDialog from './RestrictedDialog.svelte';
@@ -38,9 +41,12 @@
 	 */
 	onMount(() => void restoreScripts());
 
-	const modes = GAME_MODES.filter((m) => m.id !== STANDARD.id);
-	let modeId = $state(modes[0].id);
-	const mode = $derived<GameMode>(gameModeById(modeId) ?? STANDARD);
+	const modes = $derived(allModes().filter((m) => m.id !== STANDARD.id));
+	let modeId = $state(GAME_MODES.find((m) => m.id !== STANDARD.id)!.id);
+	const custom = $derived(customModes.list.some((m) => m.id === modeId));
+	let adding = $state(false);
+	let deleting = $state(false);
+	const mode = $derived<GameMode>(findMode(modeId) ?? STANDARD);
 	const pool = $derived(mode.parts.pool);
 	const towns = $derived(mode.parts.towns);
 	let restrictions = $state(NO_RESTRICTIONS);
@@ -143,9 +149,18 @@
 			}}
 		/>
 	</div>
-	<Button icon="info" onclick={() => (inspecting = true)}>
-		{t('modes.inspect', { name: mode.name })}
-	</Button>
+	<div class="tools">
+		<Button icon="info" onclick={() => (inspecting = true)}>
+			{t('modes.inspect', { name: mode.name })}
+		</Button>
+		<Button icon="add" onclick={() => (adding = true)}>{t('modes.add.button')}</Button>
+		<!-- Always there, so nothing moves; only a mode added on this device can go. -->
+		<DeleteButton
+			label={t('modes.add.delete', { name: mode.name })}
+			disabled={!custom}
+			onclick={() => (deleting = true)}
+		/>
+	</div>
 
 	{#if scriptKind === 'one'}
 		<ChoiceGroup
@@ -207,6 +222,23 @@
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
+<AddModeDialog
+	bind:open={adding}
+	onadded={(m) => {
+		modeId = m.id;
+		restrictions = NO_RESTRICTIONS;
+	}}
+/>
+<ConfirmDialog
+	bind:open={deleting}
+	title={t('modes.add.deleteConfirm', { name: mode.name })}
+	danger
+	onConfirm={() => {
+		customModes.remove(modeId);
+		modeId = GAME_MODES.find((m) => m.id !== STANDARD.id)!.id;
+		restrictions = NO_RESTRICTIONS;
+	}}
+/>
 <RestrictedDialog
 	bind:open={restricting}
 	{mode}
@@ -220,6 +252,12 @@
 		display: grid;
 		gap: var(--space-3);
 		padding-top: var(--space-3);
+	}
+	.tools {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 	}
 	.players {
 		display: flex;

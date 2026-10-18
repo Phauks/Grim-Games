@@ -223,3 +223,43 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(page.getByRole('button', { name: 'Move a player' })).toBeDisabled();
 	await noSidewaysScroll(page);
 });
+
+test('a mode file someone wrote can be added, inspected and deleted', async ({ page }) => {
+	// Trevor, 2026-10-17: modes are inspectable so people can add their own.
+	await page.goto('/new');
+	await chooseMode(page, 'Whale Buffet');
+	const panel = modesPanel(page);
+	await expect(panel.getByRole('button', { name: 'Delete Whale Buffet' })).toBeDisabled();
+	await panel.getByRole('button', { name: 'Add mode' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Add a game mode' });
+	await dialog.getByTestId('mode-file').fill('{"format": 1, "id": "Bad Id"}');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(dialog.getByRole('status')).toContainText('id: must be lower-case');
+	await expect(dialog.getByRole('status')).toContainText('sources: must list at least one source');
+
+	const mine = {
+		format: 1,
+		id: 'tiny-buffet',
+		name: 'Tiny Buffet',
+		sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
+		parts: {
+			pool: { kind: 'all-characters' },
+			restricted: { banned: ['pithag'] },
+			assignment: { kind: 'choose-own', when: 'first-night', reconsider: false }
+		}
+	};
+	await dialog.getByTestId('mode-file').fill(JSON.stringify(mine));
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(dialog).toHaveCount(0);
+	const modes = panel.getByRole('radiogroup', { name: 'Game mode' });
+	await expect(modes.getByRole('radio', { name: 'Tiny Buffet', exact: true })).toBeChecked();
+	await expect(panel.getByRole('button', { name: /^Restricted characters/ })).toContainText('(1)');
+
+	// It stays on this device.
+	await page.reload();
+	await chooseMode(page, 'Tiny Buffet');
+	await panel.getByRole('button', { name: 'Delete Tiny Buffet' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	await expect(modes.getByRole('radio', { name: 'Tiny Buffet', exact: true })).toHaveCount(0);
+	await noSidewaysScroll(page);
+});

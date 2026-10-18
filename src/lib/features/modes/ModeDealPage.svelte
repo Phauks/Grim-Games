@@ -6,7 +6,6 @@
 		canRefuse,
 		chooseOptions,
 		dealTypes,
-		gameModeById,
 		pickableCharacters,
 		refuseOffer,
 		seatsLeft,
@@ -29,6 +28,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { dealTitle } from './deal-title.ts';
+	import { findMode } from './custom-modes.svelte.ts';
 	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
 	import { readGameMode } from './game-mode-store.ts';
 
@@ -48,7 +48,7 @@
 	const game = $derived(port.game!);
 	const gameId = $derived(game.gameId);
 	const record = $derived(readGameMode(gameId));
-	const mode = $derived(gameModeById(record?.modeId ?? '') ?? STANDARD);
+	const mode = $derived(findMode(record?.modeId ?? '') ?? STANDARD);
 	const assignment = $derived(mode.parts.assignment);
 	const split = $derived(splitPlayers(game.seating.length));
 	const seats = $derived(game.seating.slice(0, split.dealt));
