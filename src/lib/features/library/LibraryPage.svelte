@@ -487,46 +487,50 @@
 <!-- Search's own script view (Trevor, 2026-10-17: "exact same info and style"), with the
      Library's folder and tags as rows of the main info, and Edit and Remove. -->
 <Dialog bind:open={scriptOpen} title={openRow?.listing.row.name || t('common.none')} size="full">
-	<!-- Delete sits beside Close in every dialog's header (Trevor, 2026-10-17). -->
+	<!-- Delete sits beside Close in every dialog's header (Trevor, 2026-10-17). One place for
+	     Save and Remove, since only one ever applies (Trevor, 2026-10-18): Save while another
+	     version is previewed, then Remove once what is shown is in the Library. -->
 	{#snippet headActions()}
-		<DeleteButton
-			label={t('library.remove')}
-			disabled={!openRow || viewingUnsaved}
-			onclick={() => (removing = true)}
-		/>
+		{#if viewingUnsaved}
+			<IconButton
+				icon="save"
+				label={t('scripts.picker.save')}
+				disabled={savingViewed}
+				onclick={() => void saveViewed()}
+			/>
+		{:else}
+			<DeleteButton
+				label={t('library.remove')}
+				disabled={!openRow}
+				onclick={() => (removing = true)}
+			/>
+		{/if}
 	{/snippet}
 	{#if openRow}
 		{@const shareable = openRow.shareable}
 		<!-- Any saved script opens in the Script builder (Trevor, 2026-10-17); a profile-only
 		     script has no copy on this device yet, so Edit stays there but disabled. -->
 		{@const editable = openRow.listing.saved}
-		<ScriptView
-			listing={openRow.listing}
-			{data}
-			share={openRow.listing.saved ? undefined : () => shareTargetFor(shareable, location.origin)}
-			labels={labelRows}
-			busy={savingViewed}
-			onshown={(listing) => (viewed = listing)}
-		>
-			{#snippet extraActions()}
-				<!-- Pressed for a saved version; another version picked above can be saved too. -->
-				<span class="toggle" class:on={!viewingUnsaved}>
+		<!-- A full dialog doesn't scroll itself: its content does (Trevor, 2026-10-18). -->
+		<div class="dialog-scroll" data-testid="library-script-scroll">
+			<ScriptView
+				listing={openRow.listing}
+				{data}
+				share={openRow.listing.saved ? undefined : () => shareTargetFor(shareable, location.origin)}
+				labels={labelRows}
+				busy={savingViewed}
+				onshown={(listing) => (viewed = listing)}
+			>
+				{#snippet extraActions()}
 					<IconButton
-						icon="save"
-						label={t('scripts.picker.save')}
-						aria-pressed={!viewingUnsaved}
-						disabled={!viewingUnsaved || savingViewed}
-						onclick={() => void saveViewed()}
+						icon="buildScript"
+						label={t('library.edit')}
+						disabled={!editable || viewingUnsaved}
+						onclick={() => editable && editInBuilder(editable.scriptId)}
 					/>
-				</span>
-				<IconButton
-					icon="buildScript"
-					label={t('library.edit')}
-					disabled={!editable || viewingUnsaved}
-					onclick={() => editable && editInBuilder(editable.scriptId)}
-				/>
-			{/snippet}
-		</ScriptView>
+				{/snippet}
+			</ScriptView>
+		</div>
 	{/if}
 </Dialog>
 
@@ -712,9 +716,11 @@
 		width: calc(1.25 * var(--u));
 		height: calc(1.25 * var(--u));
 	}
-	.toggle.on :global(.icon-button) {
-		background: var(--accent);
-		color: var(--on-accent);
+	.dialog-scroll {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		margin-top: var(--space-3);
 	}
 	/* Rows of ScriptDetails' main info, styled as its own rows are. */
 	.label-term {
