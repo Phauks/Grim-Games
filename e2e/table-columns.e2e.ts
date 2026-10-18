@@ -2,8 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function openTable(page: Page) {
 	await page.goto('/reference');
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	// One toggle on the search line; the view is remembered, so after a reload it may be on.
+	const toggle = page.getByRole('button', { name: 'Show as table' });
+	if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.tap();
 	const table = page.getByTestId('character-table');
 	await expect(table.locator('tbody tr')).toHaveCount(181);
 	return table;
