@@ -86,8 +86,8 @@
 		 * the display font in small capitals. Never smaller than 0.8rem, which follows Text size.
 		 */
 		font-family: var(--font-reminder);
-		/* The user's Reminder size (--reminder-scale, Settings) scales it. */
-		font-size: calc(max(0.85em, 0.8rem) * var(--reminder-scale, 1));
+		/* The user's Reminder size in text (--inline-reminder-scale, Settings) scales it. */
+		font-size: calc(max(0.85em, 0.8rem) * var(--inline-reminder-scale, 1));
 		font-weight: 600;
 		line-height: 1.4;
 		/* One line, unless the chip alone is wider than its line (tiny screen, largest text). */
@@ -112,10 +112,12 @@
 	.reminder[data-icon] {
 		padding-left: 0.1em;
 	}
+	/* Settings > Tokens can show the dot instead of the icon. */
 	.reminder[data-icon]::before {
-		display: none;
+		display: var(--inline-reminder-dot, none);
 	}
 	.owner {
+		display: var(--inline-reminder-owner, inline);
 		flex: none;
 		width: 1.5em;
 		height: 1.5em;

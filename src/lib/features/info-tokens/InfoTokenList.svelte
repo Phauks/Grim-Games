@@ -21,7 +21,9 @@
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { plainText } from './bold.ts';
+	import { tokenTitle } from './token-title.ts';
 	import type { CharacterCard } from './character-cards.ts';
 	import { MAX_CUSTOM_TEXT, type CustomInfoToken } from './custom-tokens.ts';
 	import { customInfoTokens } from './custom-tokens.svelte.ts';
@@ -76,15 +78,21 @@
 	// Trevor's own additions, listed apart so they read as not the base game's (2026-10-18).
 	const extras = STANDARD_INFO_TOKENS.filter((token) => token.extra);
 
-	/** A standard card: Number asks for its number first. */
+	/** An enhanced card: "Your number is" asks for the number, Yes/No for the answer. */
 	function chooseStandard(token: InfoToken, add = false) {
-		if (token.shows !== 'number') return add ? onadd?.(token) : onchoose(token);
-		numberToken = token;
-		numberAdds = add;
-		numberOpen = true;
+		if (token.shows === 'number') {
+			numberToken = token;
+			numberAdds = add;
+			numberOpen = true;
+		} else if (token.shows === 'yes-no') {
+			yesNoAdds = add;
+			yesNoToken = token;
+			yesNoOpen = true;
+		} else if (add) onadd?.(token);
+		else onchoose(token);
 	}
 
-	/** The Number card shows only the number, big, so its title is left off. */
+	/** "Your number is", then the number, big. */
 	let numberOpen = $state(false);
 	let numberToken = $state<InfoToken>();
 	let numberAdds = $state(false);
@@ -92,9 +100,21 @@
 	function useNumber() {
 		if (!numberToken) return;
 		numberOpen = false;
-		const card = { ...numberToken, text: '' };
-		if (numberAdds) onadd?.(card, String(number));
-		else onchoose(card, String(number));
+		if (numberAdds) onadd?.(numberToken, String(number));
+		else onchoose(numberToken, String(number));
+	}
+
+	/** Yes/No shows only the answer, big, so the card's own words are left off. */
+	let yesNoOpen = $state(false);
+	let yesNoToken = $state<InfoToken>();
+	let yesNoAdds = $state(false);
+	let answer = $state<'yes' | 'no'>('yes');
+	function useYesNo(answer: string) {
+		if (!yesNoToken) return;
+		yesNoOpen = false;
+		const card = { ...yesNoToken, text: '' };
+		if (yesNoAdds) onadd?.(card, answer);
+		else onchoose(card, answer);
 	}
 
 	/** A card for once: shown, then gone, never saved (Trevor, 2026-10-18). */
@@ -162,7 +182,7 @@
 			? ''
 			: filling.kind === 'card'
 				? t('info-tokens.cardFor', { card: t(filling.card.titleKey), name: slot('character') })
-				: plainText(filling.token.text)
+				: tokenTitle(filling.token)
 	);
 
 	function fill(row: { card: CharacterCard; character: Character }, add = false) {
@@ -289,8 +309,10 @@
 					<li class="none">{t('common.none')}</li>
 				{/each}
 			</ul>
-			<h4 class="extras-title">{t('info-tokens.extras')}</h4>
-			<ul class="cards" aria-label={t('info-tokens.extras')}>
+		</Collapsible>
+		<!-- Trevor's own additions, apart from the base game's (2026-10-18). -->
+		<Collapsible title={t('info-tokens.extras')} storageKey="info-tokens-enhanced" {level}>
+			<ul class="cards">
 				{#each extras as token (token.id)}
 					<InfoTokenTile
 						text={token.text}
@@ -411,19 +433,39 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={numberOpen} title={t('info-tokens.number')}>
+<Dialog bind:open={numberOpen} title={numberToken ? tokenTitle(numberToken) : ''}>
 	<div class="number">
 		<Stepper
 			bind:value={number}
-			label={t('info-tokens.number')}
+			label={numberToken ? tokenTitle(numberToken) : ''}
 			lessLabel={t('info-tokens.numberLess')}
 			moreLabel={t('info-tokens.numberMore')}
 			min={0}
 			large
+			typeable
+			oncommit={useNumber}
 		/>
 	</div>
 	{#snippet actions()}
 		<ModalActions onCancel={() => (numberOpen = false)} onConfirm={useNumber} />
+	{/snippet}
+</Dialog>
+
+<Dialog bind:open={yesNoOpen} title={yesNoToken ? tokenTitle(yesNoToken) : ''}>
+	<Select
+		label={t('info-tokens.answer')}
+		value={answer}
+		options={[
+			{ value: 'yes', label: t('info-tokens.yes') },
+			{ value: 'no', label: t('info-tokens.no') }
+		]}
+		onChange={(value) => (answer = value)}
+	/>
+	{#snippet actions()}
+		<ModalActions
+			onCancel={() => (yesNoOpen = false)}
+			onConfirm={() => useYesNo(t(answer === 'yes' ? 'info-tokens.yes' : 'info-tokens.no'))}
+		/>
 	{/snippet}
 </Dialog>
 
@@ -541,20 +583,16 @@
 </ConfirmDialog>
 
 <style>
-	.extras-title {
-		margin: var(--space-3) 0 var(--space-2);
-		font-size: 0.9rem;
-		color: var(--on-surface-muted);
-	}
 	.number {
 		display: grid;
 		place-items: center;
 		padding-block: var(--space-3);
 	}
-	/* Follows the colours of whatever holds it: the page or a parchment sheet. */
+	/* The same on the page and in a sheet: the surface's own text and heading colours. */
 	.sections {
 		display: grid;
 		gap: var(--space-3);
+		color: var(--on-surface);
 		--collapsible-heading: currentColor;
 	}
 	/* The global heading colour (gold) is too faint on a parchment sheet. */
@@ -574,6 +612,8 @@
 		display: flex;
 		height: calc(2 * var(--tap-target));
 		border: 1px dashed var(--border);
+		background: var(--card-background);
+		color: var(--on-surface);
 		border-radius: var(--card-radius);
 		overflow: hidden;
 	}

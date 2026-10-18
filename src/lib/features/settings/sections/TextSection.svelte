@@ -1,13 +1,16 @@
 <script lang="ts">
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { TEXT_ALIGNS, TEXT_SCALE, type TextAlign } from '#lib/ui/preferences.ts';
-	import SettingChoice from '#lib/ui/settings/SettingChoice.svelte';
+	import {
+		DEFAULT_PREFERENCES,
+		TEXT_ALIGNS,
+		TEXT_SCALE,
+		type TextAlign
+	} from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
-	import { DEFAULT_PREFERENCES } from '#lib/ui/preferences.ts';
-	import { THEMES } from '#lib/ui/themes/registry.ts';
 	import FontPreview from './FontPreview.svelte';
+	import { TEXT_FONT_ROLES } from './font-roles.ts';
 	import RulesTermsSection from './RulesTermsSection.svelte';
 
 	const alignLabels = $derived<Record<TextAlign, string>>({
@@ -16,16 +19,10 @@
 	});
 </script>
 
-<!-- Theme and text (Trevor, 2026-10-17): theme, text size and alignment, and the rules-term
-     underline; the preview, with each font's drop-down, stays at the top while these scroll. -->
-<FontPreview />
-<SettingChoice
-	label={t('settings.theme')}
-	value={preferences.theme.id}
-	defaultValue={DEFAULT_PREFERENCES.themeId}
-	options={THEMES.map((theme) => ({ value: theme.id, label: theme.name }))}
-	onChange={(themeId) => preferences.update({ themeId })}
-/>
+<!-- Text (Trevor, 2026-10-18: split from Theme): the fonts on their preview lines, size,
+     alignment and the rules-term underline. Character names and Reminder tokens fonts are in
+     Tokens, beside their previews (Trevor, 2026-10-18). -->
+<FontPreview roles={TEXT_FONT_ROLES} />
 <SettingSlider
 	label={t('settings.textSize')}
 	description={t('settings.textSizeHelp')}

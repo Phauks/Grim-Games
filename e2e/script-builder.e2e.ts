@@ -336,3 +336,77 @@ test('empty check sections are closed until they have something', async ({ page 
 	await check.getByRole('button', { name: 'Add', exact: true }).tap();
 	await expect(needs).toHaveAttribute('aria-expanded', 'false');
 });
+
+// Trevor, 2026-10-18: Add script on the builder too, so a script can be the base for a new
+// one. It fills the builder (version included) and is not saved until the builder saves it;
+// changes already on the builder are only replaced once confirmed.
+test('Add script starts the builder from a script, without saving it', async ({ page }) => {
+	await page.goto('/build-script');
+	await character(page, 'Saint').tap();
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'base.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(
+			JSON.stringify([{ id: '_meta', name: 'Base', author: 'T', version: '2.1' }, 'chef', 'imp'])
+		)
+	});
+	const confirm = page.getByRole('alertdialog', { name: 'Open Base?' });
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Base');
+	await expect(page.getByRole('textbox', { name: 'Version' })).toHaveValue('2.1');
+	await expect(character(page, 'Saint')).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.getByTestId('count-demon')).toHaveText('1');
+	await expect(page.getByTestId('variation-of')).toContainText('Base');
+	await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+	await page.goto('/library');
+	await expect(page.getByText('Base', { exact: true })).toHaveCount(0);
+});
+
+// Trevor, 2026-10-18: a version number, saved in the script and shown with its author.
+test('the version is saved with the script and shown on its player view', async ({ page }) => {
+	await page.goto('/build-script');
+	await page.getByRole('textbox', { name: 'Name' }).fill('Versioned');
+	await page.getByRole('textbox', { name: 'Author' }).fill('Trevor');
+	await page.getByRole('textbox', { name: 'Version' }).fill('1.2');
+	for (const name of ['Chef', 'Imp']) await character(page, name).tap();
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+	await page.goto('/play');
+	await expect(page.getByTestId('script-byline')).toHaveText('by Trevor · v1.2');
+});
+
+// Trevor, 2026-10-18: only the chosen characters can be listed, still searchable, as in setup.
+test('Show only selected lists just the chosen characters', async ({ page }) => {
+	await page.goto('/build-script');
+	for (const name of ['Chef', 'Empath', 'Imp']) await character(page, name).tap();
+	const only = page.getByRole('button', { name: 'Show only selected' });
+	await only.tap();
+	await expect(only).toHaveAttribute('aria-pressed', 'true');
+	await expect(character(page, 'Washerwoman')).toHaveCount(0);
+	await expect(character(page, 'Chef')).toBeVisible();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
+	await expect(character(page, 'Empath')).toBeVisible();
+	await expect(character(page, 'Chef')).toHaveCount(0);
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('');
+	await only.tap();
+	await expect(character(page, 'Washerwoman')).toBeVisible();
+});
+
+// Trevor, 2026-10-18: when the counts take two lines, Travellers, Fabled and Loric are the
+// second line together; the search's words are text, not the label font's capitals.
+test('the counts split by kind, and the search reads as text', async ({ page }) => {
+	await page.goto('/build-script');
+	const top = async (type: string) => (await page.getByTestId(`count-${type}`).boundingBox())!.y;
+	const [townsfolk, demon, traveller, fabled, loric] = await Promise.all(
+		['townsfolk', 'demon', 'traveller', 'fabled', 'loric'].map(top)
+	);
+	expect(demon).toBe(townsfolk);
+	expect(loric).toBe(traveller);
+	expect(fabled).toBe(traveller);
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	const font = (el: Element) => getComputedStyle(el).fontFamily;
+	expect(await search.evaluate(font)).toBe(await page.locator('body').evaluate(font));
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+		page.viewportSize()!.width
+	);
+});
