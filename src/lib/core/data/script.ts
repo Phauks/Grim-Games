@@ -610,7 +610,7 @@ function loadMeta(
 	const where = 'Script details';
 	if (!raw) return { name: '' };
 	const meta: ScriptMeta = { name: coerceString(raw.name)?.trim() ?? '' };
-	for (const key of ['author', 'logo', 'background', 'almanac'] as const) {
+	for (const key of ['author', 'version', 'logo', 'background', 'almanac'] as const) {
 		if (raw[key] === undefined || raw[key] === null) continue;
 		const value = coerceString(raw[key]);
 		if (value === undefined) problems.push(warn(where, `Ignored ${key}: expected text.`));

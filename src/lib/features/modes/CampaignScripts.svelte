@@ -33,6 +33,7 @@
 	type ColumnId = 'name' | 'started';
 	const all = campaigns();
 	let sort = $state<DataSort<ColumnId> | undefined>();
+	// Each column filters on its own value (the shared table filters every column).
 	const columns = $derived<DataColumn<ColumnId, Campaign>[]>([
 		{
 			id: 'name',
@@ -46,10 +47,9 @@
 			label: t('library.campaignStarted'),
 			sortable: true,
 			width: '30%',
-			value: (c) => started(c)
+			value: (c) => new Date(c.createdAt).toLocaleDateString()
 		}
 	]);
-	const started = (c: Campaign) => new Date(c.createdAt).toLocaleDateString();
 	const list = $derived.by(() => {
 		const needle = term.trim().toLowerCase();
 		const found = all.filter((c) => !needle || title(c).toLowerCase().includes(needle));
@@ -147,7 +147,7 @@
 			<span class="sub">{t('library.campaignVersions', { count: c.games.length })}</span>
 		</button>
 	{:else}
-		<span class="text">{started(c)}</span>
+		<span class="text">{new Date(c.createdAt).toLocaleDateString()}</span>
 	{/if}
 {/snippet}
 

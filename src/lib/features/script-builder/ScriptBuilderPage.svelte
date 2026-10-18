@@ -28,6 +28,7 @@
 		reloadSavedScript,
 		sameScript,
 		type SavedScript,
+		type ScriptSource,
 		type VariationOf
 	} from '#lib/features/scripts/saved-scripts.ts';
 	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
@@ -35,6 +36,8 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import AddScript from '#lib/features/scripts/AddScript.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import BuilderSave from '#lib/ui/builder/BuilderSave.svelte';
 	import { timestampName } from '#lib/core/timestamp-name.ts';
@@ -66,22 +69,20 @@
 	 * same saved scripts the Scripts page and New game use.
 	 */
 
-	const TYPES = [
-		'townsfolk',
-		'outsider',
-		'minion',
-		'demon',
-		'traveller',
-		'fabled',
-		'loric'
-	] as const;
+	/** The seated types first, then the rest: when the counts take two lines, these split them. */
+	const SEATED = ['townsfolk', 'outsider', 'minion', 'demon'] as const;
+	const OTHERS = ['traveller', 'fabled', 'loric'] as const;
+	const TYPES = [...SEATED, ...OTHERS];
 
 	let data = $state.raw<GameData>();
 	let query = $state('');
+	/** Lists only the characters on the script, still searched (Trevor, 2026-10-18), as in setup. */
+	let selectedOnly = $state(false);
 	let saving = $state(false);
 	let clearOpen = $state(false);
 	let openOpen = $state(false);
-	let replacing = $state.raw<SavedScript>();
+	/** A script waiting to replace the builder's changes once confirmed. */
+	let replacing = $state.raw<{ name: string; fill: () => void }>();
 	let replaceOpen = $state(false);
 
 	/**
@@ -148,7 +149,16 @@
 	const d = $derived(draft.current);
 	/** Every official character, listed in TPI's Sort Order like the saved script. */
 	const official = $derived(data ? sortByStandardOrder(data.characters) : []);
-	const json = $derived(data ? builtScriptJson(d.ids, d, data, chosenHomebrew(d)) : undefined);
+	const json = $derived(
+		data
+			? builtScriptJson(
+					d.ids,
+					{ name: d.name, author: d.author, version: d.scriptVersion },
+					data,
+					chosenHomebrew(d)
+				)
+			: undefined
+	);
 	/** The script as it would be saved; undefined until a character is chosen. */
 	const built = $derived.by((): LoadedScript | undefined => {
 		if (!data || !json || d.ids.length === 0) return undefined;
@@ -171,7 +181,7 @@
 			data
 		);
 	});
-	const characters = $derived(
+	const fromSource = $derived(
 		source === 'homebrew'
 			? sortByStandardOrder(homebrewSet?.characters ?? [])
 			: source === 'mine'
@@ -179,6 +189,9 @@
 				: source === 'script'
 					? sortByStandardOrder(built?.characters ?? [])
 					: official
+	);
+	const characters = $derived(
+		selectedOnly ? fromSource.filter((c) => d.ids.includes(c.id)) : fromSource
 	);
 
 	function choose(id: CharacterId) {
@@ -257,37 +270,57 @@
 			: undefined;
 	});
 
-	function chooseSaved(saved: SavedScript) {
-		openOpen = false;
-		if (isEmptyDraft(d)) openSaved(saved);
+	/** Fills the builder at once when it is empty; otherwise asks before replacing its changes. */
+	function replaceDraft(name: string, fill: () => void) {
+		if (isEmptyDraft(d)) fill();
 		else {
-			replacing = saved;
+			replacing = { name, fill };
 			replaceOpen = true;
 		}
+	}
+
+	function chooseSaved(saved: SavedScript) {
+		openOpen = false;
+		replaceDraft(saved.name, () => openSaved(saved));
 	}
 
 	/** Puts a saved script on the builder, homebrew characters included. */
 	function openSaved(saved: SavedScript) {
 		if (!data) return;
 		const script = reloadSavedScript(saved, data);
-		if (!script) return;
+		if (script)
+			fill(script, saved.source, saved.source.kind === 'built' ? saved.scriptId : undefined);
+	}
+
+	/**
+	 * A script added with Add script is a base to build from (Trevor, 2026-10-18): it fills
+	 * the builder, and is saved only when the builder saves it.
+	 */
+	function useAsBase(script: LoadedScript, source: ScriptSource) {
+		replaceDraft(script.name, () => fill(script, source));
+	}
+
+	/** Puts a script on the builder; `editing` is the saved built script that saving replaces. */
+	function fill(script: LoadedScript, source: ScriptSource, editing?: string) {
+		if (!data) return;
 		const kept = draft.current.credits;
 		const json = scriptToJson(script);
 		const { entries } = homebrewFromScript(json, data);
 		// Editing a script made elsewhere makes a variation of it; a built one keeps its own.
 		const variationOf: VariationOf | undefined =
-			saved.source.kind === 'built'
-				? saved.source.variationOf
-				: { name: script.name, source: $state.snapshot(saved.source), json };
+			source.kind === 'built'
+				? source.variationOf
+				: { name: script.name, source: $state.snapshot(source), json };
 		draft.replace({
 			version: 3,
 			name: script.name,
 			author: script.meta.author ?? '',
+			...(script.meta.version ? { scriptVersion: script.meta.version } : {}),
 			ids: script.characters.map((c) => c.id),
 			homebrew: entries,
 			// Credits aren't part of a script; keep the ones this device already knows.
 			credits: Object.fromEntries(Object.entries(kept).filter(([id]) => id in entries)),
-			...(saved.source.kind === 'built' ? { editing: saved.scriptId } : {}),
+			...(editing ? { editing } : {}),
 			...(variationOf ? { variationOf } : {})
 		});
 	}
@@ -297,6 +330,7 @@
 
 <Page title={t('script-builder.heading')}>
 	{#snippet actions()}
+		<AddScript onloaded={useAsBase} />
 		<BuilderTools
 			openLabel={t('script-builder.open')}
 			openDisabled={!data || recentScripts.list.length === 0}
@@ -320,11 +354,18 @@
 					value={d.name}
 					oninput={(v) => draft.setName(v)}
 				/>
-				<TextField
-					label={t('script-builder.author')}
-					value={d.author}
-					oninput={(v) => draft.setAuthor(v)}
-				/>
+				<div class="byline">
+					<TextField
+						label={t('script-builder.author')}
+						value={d.author}
+						oninput={(v) => draft.setAuthor(v)}
+					/>
+					<TextField
+						label={t('script-builder.version')}
+						value={d.scriptVersion ?? ''}
+						oninput={(v) => draft.setScriptVersion(v)}
+					/>
+				</div>
 				<!-- Always shown, so opening a script never moves the page. -->
 				<p class="variation" data-testid="variation-of">
 					<span>{t('script-builder.variationOf')}</span>
@@ -490,15 +531,34 @@
 		<!-- The counts and search stay in view while the list scrolls. -->
 		<div class="list">
 			<div class="counts">
-				<ul class="types" aria-label={t('script-builder.counts')} data-testid="builder-counts">
-					{#each TYPES as type (type)}
-						<li data-type={type}>
-							<span class="label">{TYPE_PLURALS[type]}</span>
-							<span class="n" data-testid="count-{type}">{counts?.[type] ?? 0}</span>
-						</li>
+				<!-- Two groups: if they don't fit on one line, Travellers, Fabled and Loric go on the
+				     second together (Trevor, 2026-10-18), never wherever the line happens to break. -->
+				<div
+					class="types"
+					role="list"
+					aria-label={t('script-builder.counts')}
+					data-testid="builder-counts"
+				>
+					{#each [SEATED, OTHERS] as group, i (i)}
+						<div class="group" role="presentation">
+							{#each group as type (type)}
+								<span class="type" role="listitem" data-type={type}>
+									<span class="label">{TYPE_PLURALS[type]}</span>
+									<span class="n" data-testid="count-{type}">{counts?.[type] ?? 0}</span>
+								</span>
+							{/each}
+						</div>
 					{/each}
-				</ul>
-				<CharacterSearchBox bind:query shortcut />
+				</div>
+				<div class="find">
+					<CharacterSearchBox bind:query shortcut />
+					<IconButton
+						icon="selectedOnly"
+						label={t('script-builder.selectedOnly')}
+						aria-pressed={selectedOnly}
+						onclick={() => (selectedOnly = !selectedOnly)}
+					/>
+				</div>
 			</div>
 			<CharacterPicker
 				{characters}
@@ -532,7 +592,7 @@
 	bind:open={replaceOpen}
 	title={t('script-builder.openReplace', { name: replacing?.name || t('common.none') })}
 	danger
-	onConfirm={() => replacing && openSaved(replacing)}
+	onConfirm={() => replacing?.fill()}
 >
 	<p>{t('script-builder.openReplaceBody')}</p>
 </ConfirmDialog>
@@ -566,6 +626,12 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 	}
+	/* Author and version share a row; the version is short. */
+	.byline {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 7rem);
+		gap: var(--space-2);
+	}
 	/* The counts and search stay in view, just below the sticky app header, while the list scrolls. */
 	.counts {
 		display: grid;
@@ -574,20 +640,48 @@
 		position: sticky;
 		top: calc(var(--tap-target) + env(safe-area-inset-top));
 		z-index: var(--z-raised);
-		padding: var(--space-2) 0;
+		/* Edge to edge on a phone, like the app header above it and setup's counts. */
+		margin-inline: calc(-1 * var(--page-gutter));
+		padding: var(--space-2) var(--page-gutter);
+		/* The page's own background, pinned to the window as the body's is, so it lines up. */
 		background: var(--page-background, var(--surface));
+		background-attachment: fixed;
+		box-shadow: 0 1px 0 var(--border);
+	}
+	/* A computer window: the side column is beside it, so the band stays within its column. */
+	@media (min-width: 75rem) {
+		.counts {
+			margin-inline: 0;
+			padding-inline: 0;
+		}
 	}
 	/* Compact, so the counts and search stay a short bar while the list scrolls under. */
-	.types {
+	.types,
+	.group {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
+	}
+	.types {
 		font-size: 0.85rem;
 	}
-	.types li {
+	/* Search, then Show only selected right beside it, as in setup. */
+	.find {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.find :global(.icon-button) {
+		background: var(--surface-raised);
+		box-shadow: inset 0 0 0 1px var(--border);
+	}
+	@media (hover: hover) {
+		.find :global(.icon-button:hover:not(:disabled)) {
+			background: var(--surface-selected);
+		}
+	}
+	.type {
 		display: flex;
 		align-items: baseline;
 		gap: var(--space-1);

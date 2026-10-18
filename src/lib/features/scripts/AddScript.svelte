@@ -31,12 +31,17 @@
 	 * Add script: one dialog with a link, pasted JSON and Upload File together (Trevor,
 	 * 2026-10-18: one dialog, not a menu of three), and a script file or link dropped anywhere
 	 * on the page. Each goes through the Script check, then is
-	 * saved to the user's scripts (the Library). Mounted by a page's header; `loadFetched`
+	 * saved to the user's scripts (the Library), or handed to `onloaded`. Mounted by a page's header; `loadFetched`
 	 * loads a script that arrived another way (a share link) through the same steps.
 	 */
 	interface Props {
 		/** Called once a script is saved. */
 		onsaved?: (script: LoadedScript) => void;
+		/**
+		 * Given, the checked script is handed over here instead of being saved: the page uses
+		 * it itself (the Script builder starts from it, Trevor 2026-10-18).
+		 */
+		onloaded?: (script: LoadedScript, source: ScriptSource) => void;
 		busy?: boolean;
 		/**
 		 * False where only share links are loaded (Search, once the Library has Add script):
@@ -45,7 +50,7 @@
 		button?: boolean;
 	}
 
-	let { onsaved, busy = $bindable(false), button = true }: Props = $props();
+	let { onsaved, onloaded, busy = $bindable(false), button = true }: Props = $props();
 
 	let addOpen = $state(false);
 	let checkOpen = $state(false);
@@ -65,6 +70,10 @@
 	}
 
 	async function save(script: LoadedScript, source: ScriptSource) {
+		if (onloaded) {
+			onloaded(script, source);
+			return;
+		}
 		await chooseScript(script, source);
 		onsaved?.(script);
 	}
