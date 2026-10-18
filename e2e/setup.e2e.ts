@@ -713,23 +713,18 @@ test("tapping a character's icon opens its page without choosing it", async ({ p
 	);
 });
 
-test('the Demon bluffs are chosen in setup once the draw is done', async ({ page }) => {
-	// Trevor, 2026-10-18: while setting up, not as a prompt on the board.
+test('the Demon bluffs are chosen on the Characters screen, not the Draw', async ({ page }) => {
+	// Trevor, 2026-10-18: where the Storyteller picks characters, not the screen players use.
 	await selectionFor(page, 5);
-	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
-	await page.getByRole('button', { name: 'Build bag' }).tap();
 	const bluffs = page.getByTestId('setup-bluffs');
-	// There from the start, so nothing moves; usable once every tile is drawn.
+	// Only once a Demon is chosen; it appears after the list, so nothing above it moves.
+	await expect(bluffs).toHaveCount(0);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await expect(bluffs).toContainText('None');
-	await expect(bluffs.getByRole('button', { name: 'Choose' })).toBeDisabled();
-	for (let n = 1; n <= 5; n++) {
-		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
-		await page.getByRole('button', { name: 'Confirm' }).tap();
-	}
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
 	const choices = page.getByRole('group', { name: 'Bluff characters' });
-	// What the draw put in play is marked.
+	// The characters chosen for the bag are marked as in play.
 	await expect(choices.getByRole('button', { name: /^Empath/ })).toContainText('In play');
 	for (const name of ['Chef', 'Soldier', 'Mayor'])
 		await choices.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
@@ -738,17 +733,16 @@ test('the Demon bluffs are chosen in setup once the draw is done', async ({ page
 	for (const name of ['Chef', 'Soldier', 'Mayor']) await expect(bluffs).toContainText(name);
 	await expect(bluffs.getByRole('button', { name: 'Change' })).toBeEnabled();
 	await noSidewaysScroll(page);
+	// The Draw screen has none.
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
+	await expect(page.getByTestId('setup-bluffs')).toHaveCount(0);
 });
 
 test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 	// Trevor, 2026-10-18: the same Random button as setup's.
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
-	await page.getByRole('button', { name: 'Build bag' }).tap();
-	for (let n = 1; n <= 5; n++) {
-		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
-		await page.getByRole('button', { name: 'Confirm' }).tap();
-	}
 	const bluffs = page.getByTestId('setup-bluffs');
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
