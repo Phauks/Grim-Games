@@ -57,7 +57,7 @@ describe('parsePreferences', () => {
 				inlineReminderScale: 1.5,
 				inlineReminderIcons: false
 			},
-			colors: { '--accent': '#123456' },
+			colors: {},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },
 			tileFace: 'letters',
 			requireName: true,
