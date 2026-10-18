@@ -189,7 +189,7 @@
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
 		color: var(--on-surface);
-		box-shadow: 0 calc(0.5 * var(--u)) calc(1.5 * var(--u)) rgb(0 0 0 / 0.4);
+		box-shadow: 0 calc(0.5 * var(--u)) calc(1.5 * var(--u)) rgb(0 0 0 / 0.4); /* colour-ok: a shadow is darkness, not a theme colour */
 	}
 	.main {
 		display: flex;

@@ -1,4 +1,14 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function signIn(page: Page, email: string) {
+	await page.goto('/account');
+	await page.getByLabel('Email address').fill(email);
+	await page.getByRole('button', { name: 'Send code' }).tap();
+	const code = (await page.getByTestId('preview-code').locator('strong').textContent()) ?? '';
+	await page.getByLabel(`Code sent to ${email}`).fill(code);
+	await page.getByRole('button', { name: 'Sign in' }).tap();
+	await expect(page.getByTestId('account-email')).toHaveText(email);
+}
 
 test('a report sent from the footer reaches the inbox, where it can be triaged and deleted', async ({
 	page
@@ -64,4 +74,51 @@ test('reading reports without the key is refused', async ({ request }) => {
 	expect((await request.get('/api/reports')).status()).toBe(404);
 	const bad = await request.post('/api/reports', { data: { kind: 'spam', title: 'x', body: 'y' } });
 	expect(bad.status()).toBe(400);
+});
+
+test('an admin account opens the inbox without the key; the key holder names admins', async ({
+	page,
+	browser
+}) => {
+	const email = `admin-${Date.now()}@example.com`;
+	// The key holder adds the first admin from the Admins list. Only an existing account can
+	// be named: admins are stored by account id, so the email can change later.
+	await page.goto('/reports');
+	await page.getByLabel('Admin key').fill('e2e-admin-key');
+	await page.getByLabel('Admin key').press('Enter');
+	await page.getByRole('button', { name: 'Admins' }).tap();
+	const admins = page.getByRole('dialog', { name: 'Admins' });
+	await admins.getByLabel('Add an admin by sign-in email').fill(email);
+	await admins.getByLabel('Add an admin by sign-in email').press('Enter');
+	await expect(admins.getByLabel('No account signs in with that email')).toBeVisible();
+
+	// On another device, that person signs in once.
+	const other = await browser.newContext();
+	const phone = await other.newPage();
+	await signIn(phone, email);
+	// New accounts get a word-chain id (five words joined by "-"); admins are stored by it.
+	const session = await phone.evaluate(async () => (await fetch('/api/auth/session')).json());
+	expect(session.user.id).toMatch(/^[a-z]+(-[a-z]+){4}$/);
+	await admins.getByLabel('No account signs in with that email').press('Enter');
+	await expect(admins.getByTestId('admins')).toContainText(email);
+	await expect(admins.getByLabel('Add an admin by sign-in email')).toHaveValue('');
+
+	// Now their account opens the inbox with no key prompt.
+	await phone.goto('/reports');
+	await expect(phone.getByTestId('reports')).toBeVisible();
+	await expect(phone.getByLabel('Admin key')).toBeHidden();
+	await expect(phone.getByRole('button', { name: 'Forget key' })).toBeDisabled();
+
+	// Removing the admin closes the inbox to that account again.
+	await admins.getByRole('button', { name: `Remove admin ${email}` }).tap();
+	await expect(admins.getByTestId('admins')).not.toContainText(email);
+	await phone.reload();
+	await expect(phone.getByLabel('Admin key')).toBeVisible();
+	await other.close();
+});
+
+test('a signed-in account that is not an admin is refused', async ({ page }) => {
+	await signIn(page, `not-admin-${Date.now()}@example.com`);
+	expect((await page.request.get('/api/reports')).status()).toBe(404);
+	expect((await page.request.get('/api/reports/admins')).status()).toBe(404);
 });

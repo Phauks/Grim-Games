@@ -102,7 +102,7 @@
 	const chosen = $derived(new Set(selected));
 	const searching = $derived(query.trim() !== '');
 	const full = $derived(mode === 'multi' && max !== undefined && chosen.size >= max);
-	// The note line is reserved on every row when any row may show one, so nothing reflows.
+	// The note sits on the name's line, so it never adds a line (Trevor, 2026-10-18: dense rows).
 	const notes = $derived(disabledReason !== undefined || marker !== undefined || max !== undefined);
 
 	function reasonFor(character: Character, isChosen: boolean): string | undefined {
@@ -135,11 +135,13 @@
 						disabled={state.disabledReason !== undefined}
 						onclick={() => onSelect(character.id)}
 					>
-						<CharacterToken {character} alignment={defaultAlignment(character.type)} size={44} />
+						<CharacterToken {character} alignment={defaultAlignment(character.type)} size={36} />
 						<span class="text">
-							<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
-							<span class="name">{character.name}</span>
-							{#if notes}<span class="note">{note ?? ''}</span>{/if}
+							<span class="head">
+								<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
+								<span class="name">{character.name}</span>
+								{#if notes}<span class="note">{note ?? ''}</span>{/if}
+							</span>
 							<span class="ability">{character.ability}</span>
 						</span>
 						<span class="check" aria-hidden="true"
@@ -215,35 +217,14 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
-	/*
-	 * In sheets, dialogs and desktop panels the picker takes the panel's own text colour and
-	 * tints from it, so it reads on parchment as well as on the dark page.
-	 */
+	/* In a sheet or dialog the headings take the panel's own text colour. */
 	.picker[data-surface='sheet'] {
 		--collapsible-heading: currentColor;
-	}
-	.picker[data-surface='sheet'] .row {
-		background: color-mix(in srgb, currentColor 6%, transparent);
-		color: inherit;
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 25%, transparent);
-	}
-	.picker[data-surface='sheet'] .row[aria-pressed='true'],
-	.picker[data-surface='sheet'] .row[aria-current='true'] {
-		background: color-mix(in srgb, currentColor 14%, transparent);
-		box-shadow: inset 0 0 0 2px var(--focus);
-	}
-	.picker[data-surface='sheet'] :global(.search-field) {
-		border-color: color-mix(in srgb, currentColor 30%, transparent);
-		background: color-mix(in srgb, currentColor 8%, transparent);
-		color: inherit;
-	}
-	.picker[data-surface='sheet'] :global(.search-field:focus-within) {
-		border-color: var(--focus);
 	}
 	ul {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
-		gap: var(--space-2);
+		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -265,16 +246,10 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
+	/* Every surface's own colours: a sheet sets them to parchment (tokens/components.css). */
 	@media (hover: hover) {
 		.row:hover:not(:disabled):not([aria-pressed='true']):not([aria-current='true']) {
 			background: var(--surface-selected);
-		}
-	}
-	/* On parchment the hover darkens the paper slightly, so the ink stays readable. */
-	@media (hover: hover) {
-		.picker[data-surface='sheet']
-			.row:hover:not(:disabled):not([aria-pressed='true']):not([aria-current='true']) {
-			background: color-mix(in srgb, currentColor 10%, transparent);
 		}
 	}
 	.row[aria-pressed='true'],
@@ -296,8 +271,20 @@
 		font-weight: var(--font-character-weight);
 		overflow-wrap: anywhere;
 	}
+	/* The name, then any note after it on the same line. */
+	.head {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-2);
+		min-width: 0;
+	}
 	.note {
-		min-height: 1.2em;
+		flex: 0 1 auto;
+		min-width: 0;
+		margin-left: auto;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		font-size: 0.75rem;
 		font-weight: 600;
 		line-height: 1.2;

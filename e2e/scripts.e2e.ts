@@ -659,6 +659,26 @@ test('a Script Tool link is read from the link itself, with no request', async (
 	expect(requests).toEqual([]);
 });
 
+test('a Script Tool share link, encoded twice as the official site writes them, adds its homebrew too', async ({
+	page
+}) => {
+	const requests: string[] = [];
+	page.on('request', (r) => {
+		if (r.url().includes('bloodontheclocktower.com')) requests.push(r.url());
+	});
+	// The official Scripts page links like this: the gzipped, base64 JSON URL-encoded twice.
+	const payload = gzipSync(Buffer.from(JSON.stringify(homebrew))).toString('base64');
+	const link = `https://script.bloodontheclocktower.com/?script=${encodeURIComponent(encodeURIComponent(payload))}`;
+	await addScript(page);
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
+	await dialog.getByLabel('Link to the JSON').fill(link);
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	// The homebrew character comes through as in pasted JSON.
+	await expect(added(page, 'Storm Front')).toContainText('Storm Warden');
+	expect(requests).toEqual([]);
+});
+
 test('more BotC Scripts results load by themselves when the list end comes near', async ({
 	page
 }) => {

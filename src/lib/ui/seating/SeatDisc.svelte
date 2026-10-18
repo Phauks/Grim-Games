@@ -86,10 +86,10 @@
 		place-items: center;
 		width: calc(var(--size) * 0.38);
 		height: calc(var(--size) * 0.38);
-		border: calc(0.125 * var(--u)) solid oklch(0.93 0.02 85);
+		border: calc(0.125 * var(--u)) solid var(--on-button);
 		border-radius: 50%;
-		background: oklch(0.16 0.01 60);
-		color: oklch(0.93 0.02 85);
+		background: var(--button);
+		color: var(--on-button);
 		box-shadow: var(--shadow);
 		--icon-size: calc(var(--size) * 0.26);
 	}
