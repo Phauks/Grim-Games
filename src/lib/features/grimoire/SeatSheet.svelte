@@ -1034,11 +1034,8 @@
 </ConfirmDialog>
 
 <style>
-	/* Header buttons take the sheet's ink, not the dark page's. */
 	.ink {
 		display: contents;
-		--on-surface: var(--on-sheet);
-		--surface-selected: rgb(0 0 0 / 0.08);
 	}
 	.gained {
 		color: var(--on-surface-muted);
@@ -1107,7 +1104,7 @@
 		place-items: center;
 		width: 100%;
 		height: 100%;
-		border: 2px dashed var(--on-sheet-muted);
+		border: 2px dashed var(--border);
 		border-radius: 50%;
 		font: 600 1.1rem / 1 var(--font-control);
 		color: var(--on-sheet-muted);
@@ -1153,15 +1150,12 @@
 		border: 0;
 		border-bottom: 2px solid var(--accent);
 		border-radius: 0;
-		background: rgb(0 0 0 / 0.06);
+		background: var(--surface-raised);
 		color: inherit;
 		font: inherit;
 		letter-spacing: inherit;
 	}
 	.sheet {
-		/* Icon buttons take the sheet's ink, not the dark page's. */
-		--on-surface: var(--on-sheet);
-		--surface-selected: rgb(0 0 0 / 0.08);
 		position: relative;
 		display: grid;
 		gap: var(--space-2);
@@ -1182,14 +1176,14 @@
 		padding: var(--space-1) 0;
 		overflow-x: auto;
 		scrollbar-width: none;
-		background: var(--sheet, var(--surface-raised));
-		box-shadow: 0 6px 8px -6px rgb(0 0 0 / 0.4);
+		background: var(--surface);
+		box-shadow: 0 6px 8px -6px rgb(0 0 0 / 0.4); /* colour-ok: a shadow is darkness, not a theme colour */
 	}
 	.chip {
 		flex: none;
 		min-height: var(--tap-target);
 		padding: 0 var(--space-3);
-		border: 1px solid var(--on-sheet-muted);
+		border: 1px solid var(--border);
 		border-radius: var(--radius-full);
 		background: transparent;
 		color: inherit;
@@ -1201,11 +1195,11 @@
 		display: grid;
 		gap: calc(0.125 * var(--u));
 		padding-bottom: var(--space-2);
-		border-bottom: 1px solid var(--on-sheet-muted);
+		border-bottom: 1px solid var(--border);
 	}
 	.reminders-head {
 		padding-top: var(--space-2);
-		border-top: 1px solid var(--on-sheet-muted);
+		border-top: 1px solid var(--border);
 	}
 	.ability p {
 		margin: 0;
@@ -1263,7 +1257,7 @@
 		align-items: center;
 		gap: var(--space-1);
 		padding: 0 var(--space-2);
-		border: 1px solid var(--on-sheet-muted);
+		border: 1px solid var(--border);
 		border-radius: var(--radius-full);
 	}
 	.status-icon {
@@ -1277,7 +1271,7 @@
 		gap: var(--space-1);
 		min-height: var(--tap-target);
 		padding: 0 var(--space-2);
-		border: 1px solid var(--on-sheet-muted);
+		border: 1px solid var(--border);
 		border-radius: var(--button-radius);
 		background: transparent;
 		color: inherit;
@@ -1299,7 +1293,7 @@
 	/* Used shows whatever has focus (Trevor, 2026-10-18). */
 	.value.ghost[aria-pressed='true'] {
 		border-color: var(--accent);
-		background: color-mix(in srgb, var(--accent) 20%, transparent);
+		background: var(--accent-wash);
 	}
 	.note-value {
 		justify-content: flex-start;
@@ -1318,7 +1312,7 @@
 		width: 100%;
 		min-height: calc(7 * var(--u));
 		padding: var(--space-3);
-		border: 1px solid var(--on-surface-muted);
+		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: transparent;
 		color: inherit;

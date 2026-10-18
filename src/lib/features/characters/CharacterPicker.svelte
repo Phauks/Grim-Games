@@ -215,30 +215,9 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
-	/*
-	 * In sheets, dialogs and desktop panels the picker takes the panel's own text colour and
-	 * tints from it, so it reads on parchment as well as on the dark page.
-	 */
+	/* In a sheet or dialog the headings take the panel's own text colour. */
 	.picker[data-surface='sheet'] {
 		--collapsible-heading: currentColor;
-	}
-	.picker[data-surface='sheet'] .row {
-		background: color-mix(in srgb, currentColor 6%, transparent);
-		color: inherit;
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 25%, transparent);
-	}
-	.picker[data-surface='sheet'] .row[aria-pressed='true'],
-	.picker[data-surface='sheet'] .row[aria-current='true'] {
-		background: color-mix(in srgb, currentColor 14%, transparent);
-		box-shadow: inset 0 0 0 2px var(--focus);
-	}
-	.picker[data-surface='sheet'] :global(.search-field) {
-		border-color: color-mix(in srgb, currentColor 30%, transparent);
-		background: color-mix(in srgb, currentColor 8%, transparent);
-		color: inherit;
-	}
-	.picker[data-surface='sheet'] :global(.search-field:focus-within) {
-		border-color: var(--focus);
 	}
 	ul {
 		display: grid;
@@ -265,16 +244,10 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
+	/* Every surface's own colours: a sheet sets them to parchment (tokens/components.css). */
 	@media (hover: hover) {
 		.row:hover:not(:disabled):not([aria-pressed='true']):not([aria-current='true']) {
 			background: var(--surface-selected);
-		}
-	}
-	/* On parchment the hover darkens the paper slightly, so the ink stays readable. */
-	@media (hover: hover) {
-		.picker[data-surface='sheet']
-			.row:hover:not(:disabled):not([aria-pressed='true']):not([aria-current='true']) {
-			background: color-mix(in srgb, currentColor 10%, transparent);
 		}
 	}
 	.row[aria-pressed='true'],

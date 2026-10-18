@@ -159,13 +159,13 @@
 	.seat[data-role='target'] :global(.disc),
 	.seat[data-role='both'] :global(.disc) {
 		box-shadow:
-			0 0 0 calc(0.2 * var(--u)) color-mix(in srgb, var(--focus) 55%, transparent),
+			0 0 0 calc(0.2 * var(--u)) var(--focus-glow),
 			0 0 var(--u) calc(0.4 * var(--u)) var(--focus);
 	}
 	/* Both: the glow sits outside the ring. */
 	.seat[data-role='both'] :global(.disc) {
 		box-shadow:
-			0 0 0 calc(0.6 * var(--u)) color-mix(in srgb, var(--focus) 55%, transparent),
+			0 0 0 calc(0.6 * var(--u)) var(--focus-glow),
 			0 0 var(--u) calc(0.8 * var(--u)) var(--focus);
 	}
 	.seat[data-misfit] :global(.disc) {

@@ -135,7 +135,6 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
-		--line: color-mix(in srgb, currentColor 30%, transparent);
 	}
 	/* The filter, then Random beside it, as in setup. */
 	.filter {
@@ -170,7 +169,7 @@
 		min-width: 0;
 		max-width: 100%;
 		padding: 0 var(--space-1) 0 0;
-		border-color: var(--line);
+		border-color: var(--border);
 	}
 	.slots :global(.pick .badge) {
 		flex: 0 1 auto;

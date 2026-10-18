@@ -463,7 +463,7 @@
 	.new {
 		display: flex;
 		height: calc(2 * var(--tap-target));
-		border: 1px dashed color-mix(in srgb, currentColor 30%, transparent);
+		border: 1px dashed var(--border);
 		border-radius: var(--card-radius);
 		overflow: hidden;
 	}
@@ -481,7 +481,7 @@
 		cursor: pointer;
 	}
 	.new-card:hover {
-		background: color-mix(in srgb, currentColor 8%, transparent);
+		background: var(--surface-hover);
 	}
 	/* Editor and preview: side by side when there is room, preview first on a phone. */
 	.editor {
