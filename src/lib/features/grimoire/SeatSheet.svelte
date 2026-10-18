@@ -2,7 +2,6 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
@@ -500,24 +499,22 @@
 			<!-- Always here, so nothing moves when the player dies (Trevor, 2026-10-17). -->
 			<div class="row">
 				<span class="label" id={`ghost-${seat.seatId}`}>Ghost vote</span>
-				<span class="value ghost">
-					{#if seat.dead}
-						<Select
-							label="Ghost vote"
-							labelledBy={`ghost-${seat.seatId}`}
-							value={seat.ghostVoteUsed ? 'used' : 'unused'}
-							options={[
-								{ value: 'unused', label: 'Not used' },
-								{ value: 'used', label: 'Used' }
-							]}
-							onChange={(v) =>
-								grimoire.run({
-									type: v === 'used' ? 'SpendGhostVote' : 'RestoreGhostVote',
-									seatId: seat.seatId
-								})}
-						/>
-					{:else}<span class="ghost-none">None while alive</span>{/if}
-				</span>
+				<!-- One toggle, as wide as the buttons around it (Trevor, 2026-10-18): two states. -->
+				<button
+					type="button"
+					class="value ghost"
+					aria-labelledby={`ghost-${seat.seatId}`}
+					aria-pressed={seat.dead ? seat.ghostVoteUsed : undefined}
+					disabled={!seat.dead}
+					onclick={() =>
+						grimoire.run({
+							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
+							seatId: seat.seatId
+						})}
+				>
+					<Icon name="ghostVote" />
+					{seat.dead ? (seat.ghostVoteUsed ? 'Used' : 'Not used') : 'None while alive'}
+				</button>
 			</div>
 
 			<div class="row">
@@ -1304,28 +1301,10 @@
 	.source {
 		margin: 0 0 var(--space-1);
 	}
-	.value.ghost {
-		display: grid;
-		padding: 0;
-		border: 0;
-		cursor: default;
-	}
-	/* The same size and text as the other values in these rows (Trevor, 2026-10-17). */
-	.value.ghost :global([data-scope='select'][data-part='trigger']) {
-		width: 100%;
-		min-height: var(--tap-target);
-		padding-block: 0;
-		border: 1px solid var(--on-sheet-muted);
-		border-radius: var(--button-radius);
-		background: transparent;
-		color: inherit;
-		font: var(--button-font);
-		font-size: 0.8rem;
-	}
-	.ghost-none {
-		align-self: center;
-		padding: 0 var(--space-2);
-		color: var(--on-sheet-muted);
+	/* Used shows whatever has focus (Trevor, 2026-10-18). */
+	.value.ghost[aria-pressed='true'] {
+		border-color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 20%, transparent);
 	}
 	.note-value {
 		justify-content: flex-start;
