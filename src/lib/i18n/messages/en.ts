@@ -10,6 +10,7 @@ import { errors } from '#lib/i18n/messages/en/errors.ts';
 import { reports } from '#lib/i18n/messages/en/reports.ts';
 import { player } from '#lib/i18n/messages/en/player.ts';
 import { room } from '#lib/i18n/messages/en/room.ts';
+import { share } from '#lib/i18n/messages/en/share.ts';
 import { day } from '#lib/i18n/messages/en/day.ts';
 import { scripts } from '#lib/i18n/messages/en/scripts.ts';
 import { characters } from '#lib/i18n/messages/en/characters.ts';
@@ -41,6 +42,7 @@ export const en = {
 	...errors,
 	...reports,
 	...room,
+	...share,
 	...show,
 	...infoTokens,
 	...bluffs,

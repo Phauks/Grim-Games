@@ -769,18 +769,23 @@ test('the night order opens from the board and steps are ticked by hand', async 
 	);
 });
 
-test('the script is shared from the grimoire menu, never the game', async ({ page }) => {
+test('Share in the toolbar shows the room code, QR and join link, never the game', async ({
+	page
+}) => {
 	await startGame(page);
-	// Share sits in the toolbar, never hidden in the menu.
-	await page.getByRole('button', { name: 'Share script' }).tap();
-	const share = page.getByRole('dialog', { name: 'Share script' });
-	await expect(share).not.toContainText('never anything from this game');
-	// The QR code and link show straight away; an official edition shares by its id,
-	// so nothing about seats or names is in the link.
-	await expect(share.getByRole('img', { name: /^QR code for / })).toBeVisible();
-	const link = share.getByTestId('share-url');
-	await expect(link).toHaveValue(/\/play#e=tb$/);
-	expect(await link.inputValue()).not.toContain('seat');
+	const url = page.url();
+	// Share sits in the toolbar, never hidden in the menu, and opens over the board.
+	await page.getByRole('button', { name: 'Share', exact: true }).tap();
+	const share = page.getByRole('dialog', { name: "Players' phones" });
+	await expect(share.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
+	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');
+	// The link is the room's: phones that join get the script, names and deaths only.
+	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
+	expect(page.url()).toBe(url);
+	await share.getByRole('button', { name: 'Close', exact: true }).tap();
+	await expect(share).toBeHidden();
+	await expect(seatLabelled(page, 'Seat 1:')).toBeVisible();
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
@@ -1350,19 +1355,6 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	await gains.getByRole('button', { name: 'Monk', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 9: no name, Monk, 1 reminder')).toBeAttached();
 	await expect(sheet.getByRole('button', { name: 'Actions for Is The Apprentice' })).toBeVisible();
-});
-
-test("Players' phones opens over the board from the grimoire menu", async ({ page }) => {
-	await startGame(page);
-	const url = page.url();
-	await menu(page, "Players' phones");
-	// Over the board: the game stays open behind it.
-	const dialog = page.getByRole('dialog', { name: "Players' phones" });
-	await expect(dialog).toBeVisible();
-	expect(page.url()).toBe(url);
-	await dialog.getByRole('button', { name: 'Close', exact: true }).tap();
-	await expect(dialog).toBeHidden();
-	await expect(seatLabelled(page, 'Seat 1:')).toBeVisible();
 });
 
 test("a Traveller's alignment can be drawn from face-down tokens", async ({ page }) => {

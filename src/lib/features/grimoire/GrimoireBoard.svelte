@@ -78,10 +78,8 @@
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { findEdition, fromScript, scriptToJson } from '#lib/core/data/index.ts';
+	import { fromScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
-	import SharePanel from '#lib/features/scripts/SharePanel.svelte';
 	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import NightOrderSheet from './NightOrderSheet.svelte';
@@ -747,25 +745,14 @@
 		drawOpen = true;
 	}
 
-	// ── Share the script (never the game) ──
-	let shareOpen = $state(false);
+	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
+	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
-	const shareTarget = $derived.by(() => {
-		const data = officialData.current;
-		if (!data) return undefined;
-		const { script } = fromScript(game.script, data);
-		const edition = script.homebrew.length === 0 ? findEdition(script.name)?.id : undefined;
-		return () =>
-			shareTargetFor(
-				{ edition, json: scriptToJson(script), source: { kind: 'paste' } },
-				location.origin
-			);
-	});
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
@@ -1019,12 +1006,16 @@
 			<Button variant="quiet" icon="info" aria-label="Info tokens" onclick={() => (infoOpen = true)}
 				><span class="tool-label">Info tokens</span></Button
 			>
-			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). -->
+			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). Pointing at, focusing or
+			     pressing it starts opening the room, so the code and QR are ready. -->
 			<Button
 				variant="quiet"
 				icon="share"
-				aria-label="Share script"
-				onclick={() => (shareOpen = true)}><span class="tool-label">Share</span></Button
+				aria-label="Share"
+				onpointerenter={prepareRoom}
+				onfocus={prepareRoom}
+				onpointerdown={prepareRoom}
+				onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
 			>
 			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16). -->
 			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
@@ -1352,17 +1343,6 @@
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
-		<!-- Pointing at, focusing or pressing it starts opening the room, so the QR is ready. -->
-		<Button
-			variant="quiet"
-			icon="players"
-			onpointerenter={prepareRoom}
-			onfocus={prepareRoom}
-			onpointerdown={prepareRoom}
-			onclick={() => fromMenu(() => (phonesOpen = true))}
-		>
-			Players' phones
-		</Button>
 		<Button
 			variant="quiet"
 			icon="appearance"
@@ -1496,12 +1476,6 @@
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
 <Dialog bind:open={phonesOpen} title="Players' phones" size="full">
 	<RoomPanel game={grimoire.open} />
-</Dialog>
-
-<Dialog bind:open={shareOpen} title="Share script">
-	{#if shareTarget}
-		<SharePanel title={game.script.meta?.name || 'None'} target={shareTarget} />
-	{/if}
 </Dialog>
 
 <DaySheet bind:open={dayOpen} game={grimoire.open} />
