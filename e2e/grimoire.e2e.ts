@@ -2867,3 +2867,31 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	expect(names).toContain('Ravenkeeper');
 	expect(names).not.toContain('Empath');
 });
+
+test("a game mode is named where the script's name is, apart from it", async ({ page }) => {
+	await startGame(page);
+	await expect(page.getByTestId('game-mode')).toHaveCount(0);
+	// Started in Sushi Buffet (the game modes thread keeps the mode beside the game).
+	const gameId = page.url().split('/').pop()!;
+	await page.evaluate(
+		(id) =>
+			localStorage.setItem(
+				`grim-games:game-mode:v1:${id}`,
+				JSON.stringify({ modeId: 'sushi-buffet', restrictions: { banned: [], allowed: [] } })
+			),
+		gameId
+	);
+	await page.reload();
+	// Trevor (2026-10-18): different text and styling for alternative game modes.
+	await expect(page.getByTestId('game-mode')).toHaveText('Sushi Buffet');
+	for (const where of ['Lower left corner', 'In the toolbar']) {
+		await menu(page, 'Board and tokens');
+		const settings = page.getByRole('dialog', { name: 'Settings' });
+		await settings.getByRole('combobox', { name: 'Script name', exact: true }).tap();
+		await page.getByRole('option', { name: where }).tap();
+		await page.keyboard.press('Escape');
+		await expect(page.getByTestId('script-title')).toContainText(
+			/Sushi Buffet\s*·?\s*Trouble Brewing|Trouble Brewing\s*Sushi Buffet/
+		);
+	}
+});
