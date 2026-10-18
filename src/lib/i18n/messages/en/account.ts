@@ -73,6 +73,7 @@ export const account = {
 	'account.devices.title': 'Signed-in devices',
 	'account.devices.thisDevice': '{device} (this device)',
 	'account.devices.device': 'Device',
+	'account.devices.location': 'Location',
 	'account.devices.signedIn': 'Signed in',
 	'account.devices.lastUsedColumn': 'Last used',
 	'account.devices.signOutDevice': 'Sign out {device}',

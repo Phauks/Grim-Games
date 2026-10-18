@@ -1019,8 +1019,16 @@ test('a long list is drawn a page at a time as it scrolls', async ({ page }) => 
 		.getByRole('table', { name: 'Scripts' })
 		.locator('tbody tr:not(.more-rows, .empty)');
 	await expect(rows).toHaveCount(100);
+	// The rows not drawn yet keep their space, so a scroll never stops at a page's end
+	// (Trevor, 2026-10-18: it only went on once he let go).
+	const scroller = page.locator('.data-table .scroll');
+	const full = await scroller.evaluate((box) => box.scrollHeight);
 	await rows.last().scrollIntoViewIfNeeded();
 	await expect(rows).toHaveCount(200);
+	expect(Math.abs((await scroller.evaluate((box) => box.scrollHeight)) - full)).toBeLessThan(
+		full * 0.05
+	);
+	expect(full).toBeGreaterThan((await rows.first().boundingBox())!.height * 200);
 	await rows.last().scrollIntoViewIfNeeded();
 	await expect(rows).toHaveCount(250);
 	// A new search starts again at one page.
@@ -1258,6 +1266,51 @@ test('Save in a Search script header puts the script in the Library', async ({ p
 	await expect(page.getByRole('button', { name: /Storm Front/ }).first()).toBeVisible();
 });
 
+test('a narrow table keeps its header to the labels, with the dropped filters on one row', async ({
+	page
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'phone', 'only phones drop columns');
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name: 'Storm Front',
+						version: '1.0.0',
+						author: 'Trevor',
+						type: 'Full',
+						score: 5,
+						characters: [{ id: 'chef' }]
+					}
+				]
+			}
+		})
+	);
+	await page.goto('/scripts');
+	const table = page.getByRole('table', { name: 'Scripts' });
+	await expect(table.getByRole('button', { name: /^Storm Front/ })).toBeVisible();
+	// Trevor, 2026-10-18: Name, Chars, Likes, No. and Columns stacked on five lines.
+	const name = table.locator('thead th[data-col="name"]');
+	const author = table.locator('thead th[data-col="author"]');
+	expect((await name.boundingBox())!.height).toBeLessThanOrEqual(
+		(await author.boundingBox())!.height + 1
+	);
+	const moved = table.locator('thead th.moved').getByRole('button');
+	await expect(moved.and(page.getByRole('button', { name: 'Filter Likes' }))).toBeVisible();
+	await expect(moved.and(page.getByRole('button', { name: 'Filter No.' }))).toBeVisible();
+	const tops = await moved.evaluateAll((buttons) =>
+		buttons
+			.filter((b) => b.getClientRects().length)
+			.map((b) => Math.round(b.getBoundingClientRect().top))
+	);
+	expect(new Set(tops).size).toBe(1);
+});
+
 test('Sources: All Sources by default, each group behind its caret, every source a toggle', async ({
 	page
 }) => {
@@ -1366,4 +1419,31 @@ test('Search lists every source on in one table, once they have all answered', a
 		await expect(site.locator('[data-col="source"]')).toHaveText('BotC Scripts');
 	}
 	await noSidewaysScroll(page);
+});
+
+test('rows scrolled under the table header stay under it', async ({ page }) => {
+	const scripts = Array.from({ length: 17 }, (_, i) => ({
+		user: 'someone',
+		edition: `Script_${i}`
+	}));
+	await page.route('**/api/bloodstar', (route) => route.fulfill({ json: { scripts } }));
+	await page.goto('/scripts');
+	await chooseSource(page, 'Bloodstar Clocktica');
+	await expect(page.getByTestId('picker-status')).toHaveText('17 scripts');
+	// Trevor, 2026-10-18: names went over the column headers while scrolling.
+	await page.locator('.data-table .scroll').evaluate((box) => (box.scrollTop = 70));
+	const over = await page
+		.getByRole('table', { name: 'Scripts' })
+		.locator('thead')
+		.evaluate(async (head) => {
+			await new Promise((resolve) => requestAnimationFrame(resolve));
+			const box = head.getBoundingClientRect();
+			const found: string[] = [];
+			for (let x = box.left + 4; x < box.right; x += 8) {
+				const hit = document.elementFromPoint(x, box.top + box.height / 3);
+				if (hit && !head.contains(hit)) found.push(`${hit.tagName}.${hit.className} at ${x}`);
+			}
+			return found;
+		});
+	expect(over).toEqual([]);
 });

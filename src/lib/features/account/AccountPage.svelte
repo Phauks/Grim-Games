@@ -42,15 +42,24 @@
 		deletePhrase !== '' && typed.trim().toLowerCase() === deletePhrase.toLowerCase()
 	);
 
-	type DeviceColumn = 'device' | 'signedIn' | 'lastUsed' | 'signOut';
+	type DeviceColumn = 'device' | 'location' | 'signedIn' | 'lastUsed' | 'signOut';
 	const deviceName = (session: DeviceSession) =>
 		session.current ? t('account.devices.thisDevice', { device: session.device }) : session.device;
+	/** "City, Country", roughly, from where the device was last used; None when unknown. */
+	const placeName = (session: DeviceSession) =>
+		[session.city, session.country && intl.region(session.country)].filter(Boolean).join(', ') ||
+		t('common.none');
 	const deviceColumns = $derived<DataColumn<DeviceColumn, DeviceSession>[]>([
 		{
 			id: 'device',
 			label: t('account.devices.device'),
 			rowHeader: true,
 			value: deviceName
+		},
+		{
+			id: 'location',
+			label: t('account.devices.location'),
+			value: placeName
 		},
 		{
 			id: 'signedIn',
@@ -259,6 +268,8 @@
 						{#snippet cell(session, column)}
 							{#if column.id === 'device'}
 								{deviceName(session)}
+							{:else if column.id === 'location'}
+								{placeName(session)}
 							{:else if column.id === 'signedIn'}
 								{date(session.createdAt)}
 							{:else if column.id === 'lastUsed'}

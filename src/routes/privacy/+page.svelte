@@ -51,9 +51,10 @@
 		</ul>
 		<p>
 			None of this is sent to us, apart from a script you share, a live room's public table, a
-			report you send, and your scripts if you sign in (below). Clearing this site's data in your
-			browser deletes it all. Settings, Data lets you clear parts of it, and Reset settings resets
-			your settings.
+			report you send, and your scripts if you sign in (below). When the app opens it asks your
+			browser to keep this data rather than clear it to free up space; Settings, Data shows the
+			answer. Clearing this site's data in your browser deletes it all. Settings, Data lets you
+			clear parts of it, and Reset settings resets your settings.
 		</p>
 	</PageSection>
 	<PageSection title="Shared scripts">
@@ -111,10 +112,11 @@
 			<li>Your email address.</li>
 			<li>
 				Your sign-in sessions: a random token, stored only as a hash, with a short device
-				description such as "Chrome on Android" and when the session was created and last used. A
-				session ends when you sign out, or after 180 days unused. "Remember me" keeps you signed in
-				on that device; without it, the session ends when the browser closes, or after 12 hours
-				unused.
+				description such as "Chrome on Android", the rough place it was last used from (the city and
+				country Cloudflare estimates from your IP address; the address itself is not kept), and when
+				the session was created and last used. A session ends when you sign out, or after 180 days
+				unused. "Remember me" keeps you signed in on that device; without it, the session ends when
+				the browser closes, or after 12 hours unused.
 			</li>
 			<li>
 				Your password, only if you choose to set one (passwords are optional; a sign-in code always

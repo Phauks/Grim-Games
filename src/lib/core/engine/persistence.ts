@@ -11,6 +11,8 @@
  * add a fixture of the old shape to `persistence.test.ts`.
  */
 import { APP_NAME } from '#lib/core/app-name.ts';
+import { scriptLogo } from '#lib/core/data/script-logo.ts';
+import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
@@ -30,6 +32,8 @@ export interface SavedGameSummary {
 	savedAt: number;
 	createdAt: number;
 	scriptName?: string;
+	/** The script's logo (`scriptLogo`), for the list (Trevor, 2026-10-18); read from the save, not stored. */
+	scriptLogo?: string;
 	seatCount: number;
 	/**
 	 * How far the game has got, for the saved games list: `setup` until a seat has a
@@ -241,6 +245,13 @@ export function summariseSavedGame(saved: SavedGame): SavedGameSummary {
 	}
 	if (assigned || days > 0) summary.stage = { kind: 'day', day: days + 1 };
 	if (script?.meta?.name) summary.scriptName = script.meta.name;
+	const logo =
+		script &&
+		scriptLogo({
+			edition: scriptEdition(script)?.id,
+			meta: { ...script.meta, name: script.meta?.name ?? '' }
+		});
+	if (logo) summary.scriptLogo = logo;
 	summary.seatCount = seats;
 	return summary;
 }

@@ -24,6 +24,7 @@ import {
 	SESSION_IDLE_MS,
 	SHORT_SESSION_IDLE_MS,
 	type AccountUser as User,
+	type DevicePlace,
 	type DeviceSession,
 	type DocKind,
 	type ProfileDoc
@@ -405,6 +406,12 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			);
 			-- Sessions made without "Remember me": they end after a shorter time unused.
 			CREATE TABLE IF NOT EXISTS short_session (id TEXT PRIMARY KEY);
+			-- Where each session was last used, roughly (Cloudflare's city and country; no IP).
+			CREATE TABLE IF NOT EXISTS session_place (
+				id TEXT PRIMARY KEY,
+				city TEXT,
+				country TEXT
+			);
 			-- The password's PBKDF2-SHA256 hash and salt; no row means sign-in by emailed code only.
 			CREATE TABLE IF NOT EXISTS password (
 				id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -528,7 +535,12 @@ export class AccountUser extends DurableObject<AccountEnv> {
 	 * Starts a session; the cookie value is `<user id>.<secret>`. Without `remember` it ends
 	 * after SHORT_SESSION_IDLE_MS unused (and its cookie when the browser closes).
 	 */
-	async createSession(device: string, now: number, remember = true): Promise<string> {
+	async createSession(
+		device: string,
+		now: number,
+		remember = true,
+		place?: DevicePlace
+	): Promise<string> {
 		const secret = randomToken();
 		const id = randomToken(9);
 		this.sql.exec(
@@ -540,6 +552,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			now
 		);
 		if (!remember) this.sql.exec('INSERT INTO short_session (id) VALUES (?)', id);
+		if (place) this.setPlace(id, place);
 		return `${this.accountId()}.${secret}`;
 	}
 
@@ -549,7 +562,11 @@ export class AccountUser extends DurableObject<AccountEnv> {
 	}
 
 	/** The signed-in user for a session secret, or undefined when it isn't (or no longer) valid. */
-	async authenticate(secret: string, now: number): Promise<Authenticated | undefined> {
+	async authenticate(
+		secret: string,
+		now: number,
+		place?: DevicePlace
+	): Promise<Authenticated | undefined> {
 		const user = this.user();
 		if (!user) return undefined;
 		this.sql.exec('DELETE FROM session WHERE last_seen_at < ?', now - SESSION_IDLE_MS);
@@ -558,6 +575,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			now - SHORT_SESSION_IDLE_MS
 		);
 		this.sql.exec('DELETE FROM short_session WHERE id NOT IN (SELECT id FROM session)');
+		this.sql.exec('DELETE FROM session_place WHERE id NOT IN (SELECT id FROM session)');
 		const hash = await sha256(`session:${secret}`);
 		const row = this.sql
 			.exec<{ id: string; last_seen_at: number }>(
@@ -568,6 +586,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		if (!row) return undefined;
 		if (now - row.last_seen_at > SEEN_GRANULARITY_MS) {
 			this.sql.exec('UPDATE session SET last_seen_at = ? WHERE id = ?', now, row.id);
+			if (place) this.setPlace(row.id, place);
 		}
 		const short = this.sql
 			.exec<{ n: number }>('SELECT COUNT(*) AS n FROM short_session WHERE id = ?', row.id)
@@ -575,10 +594,27 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		return { user, sessionId: row.id, remember: short === 0 };
 	}
 
+	private setPlace(id: string, { city, country }: DevicePlace): void {
+		this.sql.exec(
+			'INSERT OR REPLACE INTO session_place (id, city, country) VALUES (?, ?, ?)',
+			id,
+			city ?? null,
+			country ?? null
+		);
+	}
+
 	async sessions(currentId: string): Promise<DeviceSession[]> {
 		return this.sql
-			.exec<{ id: string; device: string; created_at: number; last_seen_at: number }>(
-				'SELECT id, device, created_at, last_seen_at FROM session ORDER BY last_seen_at DESC'
+			.exec<{
+				id: string;
+				device: string;
+				created_at: number;
+				last_seen_at: number;
+				city: string | null;
+				country: string | null;
+			}>(
+				`SELECT s.id, s.device, s.created_at, s.last_seen_at, p.city, p.country
+				FROM session s LEFT JOIN session_place p ON p.id = s.id ORDER BY s.last_seen_at DESC`
 			)
 			.toArray()
 			.map((row) => ({
@@ -586,7 +622,9 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				device: row.device,
 				createdAt: row.created_at,
 				lastSeenAt: row.last_seen_at,
-				current: row.id === currentId
+				current: row.id === currentId,
+				...(row.city ? { city: row.city } : {}),
+				...(row.country ? { country: row.country } : {})
 			}));
 	}
 
@@ -682,12 +720,11 @@ export class AccountUser extends DurableObject<AccountEnv> {
 	}> {
 		return {
 			user: this.user(),
-			sessions: (await this.sessions('')).map(({ id, device, createdAt, lastSeenAt }) => ({
-				id,
-				device,
-				createdAt,
-				lastSeenAt
-			})),
+			sessions: (await this.sessions('')).map((session) => {
+				const { current, ...stored } = session;
+				void current;
+				return stored;
+			}),
 			docs: this.sql
 				.exec<DocRow>(
 					'SELECT kind, id, rev, updated_at, deleted, body FROM doc WHERE deleted = 0 ORDER BY kind, updated_at DESC'

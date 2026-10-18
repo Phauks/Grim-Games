@@ -3,7 +3,7 @@ export const infoTokens = {
 	'info-tokens.title': 'Info tokens',
 	'info-tokens.standard': 'Standard',
 	'info-tokens.custom': 'Custom',
-	'info-tokens.extras': 'Enhanced Info Tokens',
+	'info-tokens.extras': 'Enhanced',
 	'info-tokens.numberLess': 'Lower number',
 	'info-tokens.numberMore': 'Higher number',
 	'info-tokens.quick': 'Quick card',
@@ -16,7 +16,7 @@ export const infoTokens = {
 	'info-tokens.asks.choices': 'Asks for one of: {options}',
 	'info-tokens.asks.characters': {
 		one: 'Asks for {count} character',
-		other: 'Asks for up to {count} characters'
+		other: 'Asks for 1 to {count} characters'
 	},
 	'info-tokens.input': 'Fill in',
 	'info-tokens.inputs.none': 'Nothing',
@@ -68,8 +68,8 @@ export const infoTokens = {
 	'info-tokens.clearChain': 'Clear the cards to show',
 	'info-tokens.showCards': { one: 'Show {count} card', other: 'Show {count} cards' },
 	'info-tokens.bluffSets': 'Bluff sets',
-	'info-tokens.characterCards': 'Character Specific',
-	'info-tokens.characterCardsAbout': 'About Character Specific cards',
+	'info-tokens.characterCards': 'Character-Specific',
+	'info-tokens.characterCardsAbout': 'About Character-Specific cards',
 	'info-tokens.characterCardsNote': 'Only used while the character is in play.',
 	'info-tokens.card.secretWord': 'Your Secret Word is',
 	'info-tokens.card.secretPhrase': 'Your Secret Phrase is',

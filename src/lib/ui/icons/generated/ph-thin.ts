@@ -41,7 +41,6 @@ import ph_clipboard_thin from '~icons/ph/clipboard-thin';
 import ph_clipboard_text_thin from '~icons/ph/clipboard-text-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_club_thin from '~icons/ph/club-thin';
-import ph_columns_thin from '~icons/ph/columns-thin';
 import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
 import ph_corners_out_thin from '~icons/ph/corners-out-thin';
@@ -105,6 +104,7 @@ import ph_link_simple_break_thin from '~icons/ph/link-simple-break-thin';
 import ph_list_thin from '~icons/ph/list-thin';
 import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_list_checks_thin from '~icons/ph/list-checks-thin';
+import ph_list_dashes_thin from '~icons/ph/list-dashes-thin';
 import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
 import ph_lock_thin from '~icons/ph/lock-thin';
 import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
@@ -147,6 +147,7 @@ import ph_sidebar_simple_thin from '~icons/ph/sidebar-simple-thin';
 import ph_sign_in_thin from '~icons/ph/sign-in-thin';
 import ph_skull_thin from '~icons/ph/skull-thin';
 import ph_sliders_thin from '~icons/ph/sliders-thin';
+import ph_sliders_horizontal_thin from '~icons/ph/sliders-horizontal-thin';
 import ph_smiley_thin from '~icons/ph/smiley-thin';
 import ph_smiley_angry_thin from '~icons/ph/smiley-angry-thin';
 import ph_snowflake_thin from '~icons/ph/snowflake-thin';
@@ -234,7 +235,6 @@ const icons: IconMap = {
 	'ph:clipboard-text-thin': ph_clipboard_text_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:club-thin': ph_club_thin,
-	'ph:columns-thin': ph_columns_thin,
 	'ph:copy-thin': ph_copy_thin,
 	'ph:copy-simple-thin': ph_copy_simple_thin,
 	'ph:corners-out-thin': ph_corners_out_thin,
@@ -298,6 +298,7 @@ const icons: IconMap = {
 	'ph:list-thin': ph_list_thin,
 	'ph:list-bullets-thin': ph_list_bullets_thin,
 	'ph:list-checks-thin': ph_list_checks_thin,
+	'ph:list-dashes-thin': ph_list_dashes_thin,
 	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
 	'ph:lock-thin': ph_lock_thin,
 	'ph:lock-simple-thin': ph_lock_simple_thin,
@@ -340,6 +341,7 @@ const icons: IconMap = {
 	'ph:sign-in-thin': ph_sign_in_thin,
 	'ph:skull-thin': ph_skull_thin,
 	'ph:sliders-thin': ph_sliders_thin,
+	'ph:sliders-horizontal-thin': ph_sliders_horizontal_thin,
 	'ph:smiley-thin': ph_smiley_thin,
 	'ph:smiley-angry-thin': ph_smiley_angry_thin,
 	'ph:snowflake-thin': ph_snowflake_thin,

@@ -9,6 +9,8 @@
  * A rule constrains the seat the token goes on, at the moment it is placed:
  * - `seat`: `self` only the character's own seat, `other` never it, `any` either;
  * - `types` / `characters`: the target's true character type, or true character;
+ * - `shown`: the type of the character token the target was dealt, which may not be their
+ *   true character (the Drunk is dealt a Townsfolk);
  * - `alignment`: `good`/`evil`, or `same`/`opposite` to the character's player;
  * - `life`: whether the target is alive or dead when the token goes down;
  * - `neighbour`: the nearest seat each way from the character's own seat (`of: 'self'`)
@@ -17,7 +19,12 @@
  *   seats of other types (the No Dashii's nearest Townsfolk); `alive` skips the dead;
  * - `withLabel` / `notWithLabel`: must share, or must not share, a seat with another of
  *   the character's tokens (the Washerwoman's Wrong is never on her Townsfolk);
- * - `global`: the token marks the game, never a player (the Riot's day count).
+ * - `global`: the token marks the game, never a player (the Riot's day count);
+ * - `info`: the token marks what the character's information showed. While the character
+ *   is drunk or poisoned (or is really the Drunk, Lunatic or Marionette) that information
+ *   can be false, so any seat fits (Trevor, 2026-10-18: a drunk Librarian can see anyone).
+ *   Its `types` and `alignment` also accept what a player may register as (the Recluse as
+ *   an evil Minion or Demon, the Spy as a good Townsfolk or Outsider).
  *
  * The checks only suggest and warn (`reminder-targets.ts`); the Storyteller can put any
  * token anywhere.
@@ -38,6 +45,7 @@ export interface NeighbourRule {
 export interface TargetRule {
 	seat?: 'self' | 'other' | 'any';
 	types?: readonly CharacterType[];
+	shown?: readonly CharacterType[];
 	characters?: readonly CharacterId[];
 	alignment?: Alignment | 'same' | 'opposite';
 	life?: 'alive' | 'dead';
@@ -45,6 +53,7 @@ export interface TargetRule {
 	withLabel?: string;
 	notWithLabel?: string;
 	global?: boolean;
+	info?: true;
 	note: string;
 	ambiguous?: string;
 }
@@ -59,6 +68,7 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 		wiki: 'https://wiki.bloodontheclocktower.com/Steward',
 		labels: {
 			Know: {
+				info: true,
 				seat: 'other',
 				alignment: 'good',
 				note: 'Marks the one good player the Steward is shown at setup.'
@@ -69,11 +79,13 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 		wiki: 'https://wiki.bloodontheclocktower.com/Washerwoman',
 		labels: {
 			Townsfolk: {
+				info: true,
 				seat: 'other',
 				types: ['townsfolk'],
 				note: 'The Townsfolk whose character the Washerwoman is shown.'
 			},
 			Wrong: {
+				info: true,
 				seat: 'any',
 				notWithLabel: 'Townsfolk',
 				note: 'The second, decoy player pointed at alongside the Townsfolk.'
@@ -84,6 +96,7 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 		wiki: 'https://wiki.bloodontheclocktower.com/Bounty_Hunter',
 		labels: {
 			Know: {
+				info: true,
 				seat: 'other',
 				alignment: 'evil',
 				note: 'The evil player the Bounty Hunter currently knows; moves to a new evil player when they die.'
@@ -201,8 +214,10 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 	drunk: {
 		wiki: 'https://wiki.bloodontheclocktower.com/Drunk',
 		labels: {
+			// Never on a Minion or Demon (Trevor, 2026-10-18): the Drunk was dealt a Townsfolk.
 			'Is The Drunk': {
-				seat: 'self',
+				seat: 'any',
+				shown: ['townsfolk'],
 				note: 'Beside the Townsfolk token of the player who is really the Drunk.'
 			}
 		}
@@ -387,6 +402,7 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 		wiki: 'https://wiki.bloodontheclocktower.com/Knight',
 		labels: {
 			Know: {
+				info: true,
 				seat: 'any',
 				types: ['townsfolk', 'outsider', 'minion', 'traveller'],
 				note: 'Two non-Demon players shown to the Knight at setup; with the Vortox in play one of them may be the Demon.'
@@ -690,11 +706,13 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 		wiki: 'https://wiki.bloodontheclocktower.com/Librarian',
 		labels: {
 			Outsider: {
+				info: true,
 				seat: 'other',
 				types: ['outsider'],
 				note: 'The player whose Outsider character the Librarian is shown.'
 			},
 			Wrong: {
+				info: true,
 				seat: 'any',
 				notWithLabel: 'Outsider',
 				note: 'The second player shown, who is not that Outsider.'
@@ -987,11 +1005,13 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 		wiki: 'https://wiki.bloodontheclocktower.com/Investigator',
 		labels: {
 			Minion: {
+				info: true,
 				seat: 'other',
 				types: ['minion'],
 				note: 'Goes on the Minion whose character the Investigator learns.'
 			},
 			Wrong: {
+				info: true,
 				seat: 'any',
 				notWithLabel: 'Minion',
 				note: 'Goes on the second shown player, who is not that Minion.'

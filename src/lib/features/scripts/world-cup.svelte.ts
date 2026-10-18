@@ -9,7 +9,8 @@ import {
 	WORLD_CUPS_API,
 	type StoredWorldCupScript,
 	type WorldCupEntry,
-	type WorldCupYear
+	type WorldCupYear,
+	withEntryLogo
 } from './world-cup.ts';
 
 export interface WorldCupScript {
@@ -48,7 +49,9 @@ export const worldCupScripts = {
 		}
 		lists[year] = WORLD_CUPS[year].entries.flatMap((entry) => {
 			const script = stored?.find((s) => s.scriptId === entry.scriptId);
-			return script ? [{ entry, version: script.version, json: script.json }] : [];
+			return script
+				? [{ entry, version: script.version, json: withEntryLogo(script.json, entry.logo) }]
+				: [];
 		});
 		statuses[year] = lists[year].length > 0 ? 'ready' : 'error';
 	}

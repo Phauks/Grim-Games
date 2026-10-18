@@ -17,10 +17,9 @@
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { scriptBuilderDraft } from '#lib/features/script-builder/draft.svelte.ts';
-	import BuilderSave from '#lib/ui/builder/BuilderSave.svelte';
 	import BuilderTools from '#lib/ui/builder/BuilderTools.svelte';
 	import OpenSavedDialog from '#lib/ui/builder/OpenSavedDialog.svelte';
-	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
+	import { fileNameFor } from '#lib/ui/download.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -117,12 +116,21 @@
 <Page title={t('character-builder.heading')}>
 	{#snippet actions()}
 		<BuilderTools
+			save={{
+				ready: canStore,
+				saved: isSaved,
+				editing: !!savedRecord,
+				onSave: () => save(),
+				onSaveNew: () => save(true)
+			}}
 			openLabel={t('character-builder.open')}
 			openDisabled={savedCharacters.list.length === 0}
 			onOpen={() => (openOpen = true)}
 			downloadLabel={t('character-builder.download')}
 			downloadDisabled={!canSave}
-			onDownload={() => downloadJson(fileNameFor(f.name, 'character'), characterEntry(f))}
+			json={characterEntry(f)}
+			fileName={fileNameFor(f.name, 'character')}
+			jsonTitle={f.name || t('common.none')}
 			clearLabel={savedRecord ? t('character-builder.delete') : t('character-builder.clear')}
 			clearDisabled={!savedRecord && isEmptyCharacterDraft(d)}
 			onClear={() => (savedRecord ? (deleteOpen = true) : (clearOpen = true))}
@@ -132,13 +140,6 @@
 	{#snippet side()}
 		<ErrorBoundary area="character-builder">
 			<CharacterPreview fields={f} {problems}>
-				<BuilderSave
-					ready={canStore}
-					saved={isSaved}
-					editing={!!savedRecord}
-					onSave={() => save()}
-					onSaveNew={() => save(true)}
-				/>
 				<Button disabled={!canSave || onScriptBuilder} onclick={addToScript}
 					>{onScriptBuilder
 						? t('character-builder.onScript')

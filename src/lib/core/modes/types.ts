@@ -11,6 +11,7 @@
  */
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { SeatedType, TypeCounts } from '#lib/core/rules/distribution.ts';
+import type { CountOp } from '#lib/core/rules/setup-modifiers.ts';
 
 /** Bumped when the format changes incompatibly; `parseGameMode` reads older versions. */
 export const GAME_MODE_FORMAT = 1;
@@ -262,6 +263,8 @@ export interface ModeParts {
 }
 
 export interface GameMode {
+	/** Absent in files written before special rules existed (Trevor, 2026-10-18). */
+	kind?: 'game-mode';
 	format: typeof GAME_MODE_FORMAT;
 	/** Lower-case letters, digits and dashes; unique among modes. */
 	id: string;
@@ -285,4 +288,109 @@ export interface GameMode {
 	/** Parts no source confirms; Inspect marks them. */
 	unconfirmed?: ModePart[];
 	parts: ModeParts;
+}
+
+/**
+ * Special rules (Trevor, 2026-10-18: "Yes, split"): a game has one game mode, and any number
+ * of special rules on top. A mode may replace what the game is played with or how it is
+ * dealt (pool, assignment, towns, between games); a rule only adds to a game, so several can
+ * stack. The World Cup 2025 scripts carry their rule this way, as Bootlegger lines
+ * (https://botc-script-viewer.sthom.kiwi/wc25/). Design:
+ * /mnt/project-files/world-cup-rules/format-design.md.
+ */
+export const SPECIAL_RULE_FORMAT = 1;
+
+/** The game mode parts a special rule may also set: the ones that add to a game. */
+export const STACKING_PARTS = [
+	'pool',
+	'restricted',
+	'setupModifiers',
+	'duplicates',
+	'forced',
+	'ruleChanges',
+	'information',
+	'bluffs',
+	'daySteps',
+	'winConditions',
+	'participants'
+] as const satisfies readonly ModePart[];
+export type StackingPart = (typeof STACKING_PARTS)[number];
+
+/** Parts only a special rule sets, in the order Inspect shows them. */
+export const RULE_ONLY_PARTS = [
+	'text',
+	'countChanges',
+	'travellers',
+	'seats',
+	'deaths',
+	'nightSteps'
+] as const;
+export type RuleOnlyPart = (typeof RULE_ONLY_PARTS)[number];
+
+/** Every part a special rule can set. */
+export const RULE_PARTS = [...STACKING_PARTS, ...RULE_ONLY_PARTS] as const;
+export type RulePart = (typeof RULE_PARTS)[number];
+
+/** Travellers dealt from the bag like other characters (Stowed Away). */
+export interface TravellersRule extends Cited {
+	/** At most this many Travellers in the bag; the other counts are for that many fewer players. */
+	inBag: number;
+	/** Whether the table is told which players are Travellers. */
+	announced: boolean;
+}
+
+/** A seat no one plays; the Storyteller may speak for it (The Ballad of Seat 7). */
+export interface SeatsRule extends Cited {
+	kind: 'storyteller-seat';
+	count: number;
+	speaks: 'never' | 'once-per-game';
+}
+
+/** Deaths the Storyteller does not announce (I See Dead People). */
+export interface DeathsRule extends Cited {
+	kind: 'private';
+}
+
+/** A step added to each night, for these characters or character types. */
+export interface NightStep extends Cited {
+	kind: 'wake';
+	when: 'each-night' | 'each-night-except-first';
+	characters?: CharacterId[];
+	types?: SeatedType[];
+}
+
+export interface RuleOnlyParts {
+	/** The rule's own lines, shown on the Bootlegger (a script's `_meta.bootlegger`). */
+	text?: string[];
+	/** Changes to the type counts, added to the others' ("[+1 Demon]"). */
+	countChanges?: CountOp[];
+	travellers?: TravellersRule;
+	seats?: SeatsRule;
+	deaths?: DeathsRule;
+	nightSteps?: NightStep[];
+}
+
+/** A special rule's pool can only add to the script. */
+export type RuleParts = Omit<Pick<ModeParts, StackingPart>, 'pool'> & {
+	pool?: Extract<PoolRule, { kind: 'script-plus-hidden' }>;
+} & RuleOnlyParts;
+
+/** A game mode with its special rules folded in (`combineRules`). */
+export type CombinedParts = ModeParts & RuleOnlyParts;
+
+export interface SpecialRule {
+	kind: 'special-rule';
+	format: typeof SPECIAL_RULE_FORMAT;
+	/** Lower-case letters, digits and dashes; unique among special rules. */
+	id: string;
+	name: string;
+	aliases?: string[];
+	/** Where the rule comes from; empty only for a script's own rule, which is the script. */
+	sources: SourceLink[];
+	authors?: SourceLink[];
+	about?: string;
+	unconfirmed?: RulePart[];
+	/** Modes and rules this one can't sensibly be played with; choosing both warns. */
+	conflictsWith?: { modes?: string[]; rules?: string[] };
+	parts: RuleParts;
 }

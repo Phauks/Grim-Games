@@ -13,12 +13,14 @@ import {
 import {
 	DAY_REMINDER_ENTRIES,
 	dayReminders,
+	daySentence,
 	dayStateFromGame,
 	impairment,
 	isOnceOnlyDayAbility,
 	NO_DAY_RELEVANCE,
 	renderReminder,
 	type DayReminderOverride,
+	type ReminderSegment,
 	type DaySeat,
 	type DayState
 } from './day-reminders.ts';
@@ -418,5 +420,49 @@ describe('registration interactions', () => {
 		const lines = texts({ seats: [seat('recluse'), seat('spy'), seat('towncrier')] });
 		expect(lines).toContain('[Recluse] may register as a Minion when nominating, for [Town Crier]');
 		expect(lines).toContain('[Spy] may register as not a Minion when nominating, for [Town Crier]');
+	});
+});
+
+describe('daySentence', () => {
+	const badge = (characterId: string): ReminderSegment => ({
+		kind: 'character',
+		ref: { characterId }
+	});
+	const words = (text: string): ReminderSegment => ({ kind: 'text', text });
+	const shown = (segments: ReminderSegment[]) => {
+		const { segments: out, stop } = daySentence(segments);
+		return renderReminder(out) + (stop ? '.' : '');
+	};
+
+	// Trevor (2026-10-18): the day view's lines are proper sentences.
+	it('opens with a capital and ends with a full stop', () => {
+		expect(shown([words('is alive')])).toBe('Is alive.');
+		expect(shown([words('cannot die.')])).toBe('Cannot die.');
+		expect(shown([words('may kill before nominations?')])).toBe('May kill before nominations?');
+	});
+
+	it('keeps the verb lower case after a leading badge, and stops after a trailing one', () => {
+		expect(shown([badge('saint'), words('is alive')])).toBe('[saint] is alive.');
+		const { segments, stop } = daySentence([words('has chosen'), badge('librarian')]);
+		expect(segments[0]).toEqual(words('Has chosen'));
+		expect(stop).toBe(true);
+	});
+
+	it('makes every curated line a sentence, the character heading left out', () => {
+		for (const entry of DAY_REMINDER_ENTRIES) {
+			for (const spec of entry.reminders) {
+				const segments = spec.template.map((t): ReminderSegment =>
+					'text' in t
+						? words(t.text)
+						: 'value' in t
+							? { kind: 'value', characterId: entry.id, key: t.value, placeholder: t.placeholder }
+							: badge(entry.id)
+				);
+				const line = segments[0]?.kind === 'character' ? segments.slice(1) : segments;
+				const text = shown(line);
+				expect(text, entry.id).toMatch(/^[A-Z[(]/);
+				expect(text, entry.id).toMatch(/[.!?]$/);
+			}
+		}
 	});
 });

@@ -19,6 +19,7 @@
 	import type { GameId } from '#lib/core/model/index.ts';
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { endedGames, seatLayouts, type EndedGame } from './device-notes.ts';
 	import { gameModeName } from './game-mode-name.ts';
@@ -107,6 +108,8 @@
 			{#each games as game (game.gameId)}
 				<li>
 					<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
+						<!-- The script's logo, its slot kept in every row (Trevor, 2026-10-18). -->
+						<ScriptLogo src={game.scriptLogo} class="game-logo" />
 						<!-- An alternative mode is named beside the script (Trevor, 2026-10-18). -->
 						<span class="name"
 							>{game.scriptName || 'None'}{#if gameModeName(game.gameId)}<span
@@ -130,6 +133,7 @@
 			{#each unreadable as game (game.gameId)}
 				<li>
 					<span class="open" aria-disabled="true">
+						<ScriptLogo src={undefined} class="game-logo" />
 						<span class="name">Unreadable game</span>
 						<span class="meta"
 							>{game.problem === 'too-new'
@@ -158,6 +162,8 @@
 				<li>
 					<!-- Opens read-only, to look around; Reopen is on the board (Trevor, 2026-10-17). -->
 					<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
+						<!-- The script's logo, its slot kept in every row (Trevor, 2026-10-18). -->
+						<ScriptLogo src={game.scriptLogo} class="game-logo" />
 						<!-- An alternative mode is named beside the script (Trevor, 2026-10-18). -->
 						<span class="name"
 							>{game.scriptName || 'None'}{#if gameModeName(game.gameId)}<span
@@ -218,6 +224,9 @@
 	.open {
 		flex: 1;
 		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		column-gap: var(--space-3);
+		align-items: center;
 		min-height: var(--tap-target);
 		padding: var(--space-2) var(--space-3);
 		color: inherit;
@@ -226,6 +235,16 @@
 	a.open:hover {
 		background: var(--surface-selected);
 		border-radius: var(--radius-md);
+	}
+	/* Beside both lines, the same size in every row so names line up. */
+	.open :global(.game-logo) {
+		grid-row: 1 / span 2;
+		width: 2.5rem;
+		height: 2.5rem;
+	}
+	.name,
+	.meta {
+		grid-column: 2;
 	}
 	.name {
 		font-family: var(--font-heading);

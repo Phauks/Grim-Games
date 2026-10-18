@@ -186,7 +186,13 @@ test('a saved character goes into a new character collection', async ({ page }) 
 // Cancel asks before throwing changes away.
 test('the Script builder builds and edits a character without leaving', async ({ page }) => {
 	await page.goto('/build-script');
-	await page.getByRole('button', { name: 'New character', exact: true }).tap();
+	const newCharacter = page.getByRole('button', { name: 'New character', exact: true });
+	// In the header's controls with Save (Trevor, 2026-10-18), not a line in the builder: the
+	// controls may wrap on a phone, but all sit above the character search.
+	const name = (await page.getByRole('searchbox', { name: 'Search characters' }).boundingBox())!;
+	const box = (await newCharacter.boundingBox())!;
+	expect(box.y + box.height).toBeLessThanOrEqual(name.y);
+	await newCharacter.tap();
 	let builder = page.getByRole('dialog', { name: 'New character' });
 	await builder.getByTestId('character-name').fill('Moth Keeper');
 	await builder.getByTestId('character-ability').fill('You start knowing a moth.');
@@ -216,4 +222,22 @@ test('the Script builder builds and edits a character without leaving', async ({
 	// The page's own draft is untouched.
 	await page.goto('/build-character');
 	await expect(page.getByTestId('character-name')).toHaveValue('');
+});
+
+// Like the Script builder (Trevor, 2026-10-18): Save sits in the header, and Download shows
+// the character's JSON first, with Copy and Download.
+test('Save is in the header and Download shows the JSON first', async ({ page }) => {
+	await page.goto('/build-character');
+	await page.getByTestId('character-name').fill('Wick Trimmer');
+	await page.getByTestId('character-ability').fill('You start knowing a wick.');
+	await page.getByRole('main').getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+
+	await page.getByRole('button', { name: 'Download character JSON' }).tap();
+	const dialog = page.getByRole('dialog');
+	await expect(dialog.getByTestId('builder-json')).toContainText('Wick Trimmer');
+	await expect(dialog.getByRole('button', { name: 'Copy JSON' })).toBeVisible();
+	const download = page.waitForEvent('download');
+	await dialog.getByRole('button', { name: 'Download character JSON' }).tap();
+	expect((await download).suggestedFilename()).toBe('wick-trimmer.json');
 });

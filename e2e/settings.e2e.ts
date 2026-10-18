@@ -194,6 +194,8 @@ test('the board looks and background are in Board, saved with the board', async 
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	await expect(strength).toBeEnabled();
 	await dialog.getByText('Vignette', { exact: true }).tap();
+	// The player name badge can sit lower, clear of the token's name (Trevor, 2026-10-18).
+	await slide(page, 'Player name offset', 0.1);
 	await dialog.getByRole('combobox', { name: 'Location', exact: true }).tap();
 	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
 
@@ -208,6 +210,7 @@ test('the board looks and background are in Board, saved with the board', async 
 		rulesAt: 'edge',
 		rulesGrouped: false,
 		nameSize: 1,
+		nameOffset: 0.1,
 		reminders: 'seat'
 	});
 

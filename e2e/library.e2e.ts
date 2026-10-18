@@ -488,8 +488,9 @@ test.describe('in a computer window', () => {
 		const toggle = page.getByRole('button', { name: 'Preview', exact: true });
 		await expect(toggle).toHaveAttribute('aria-pressed', 'true');
 		// One line of headers beside the pane (Trevor's screenshot had Tags wrapping under).
+		// (A narrow table's own row of moved filters, `th.moved`, sits under it by design.)
 		const tops = await table(page)
-			.locator('thead th')
+			.locator('thead th:not(.moved)')
 			.evaluateAll((cells) =>
 				cells.flatMap((c) => {
 					const box = c.getBoundingClientRect();

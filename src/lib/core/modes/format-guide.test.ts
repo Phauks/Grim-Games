@@ -11,11 +11,14 @@ import {
 	GAME_MODE_REVISION,
 	GUIDE_PARTS,
 	guideFingerprint,
-	MINIMAL_EXAMPLE
+	MINIMAL_EXAMPLE,
+	RULE_GUIDE_PARTS,
+	RULE_MINIMAL_EXAMPLE
 } from './format-guide.ts';
+import { SPECIAL_RULES } from './rules/index.ts';
 import { GAME_MODES } from './registry.ts';
-import { MODE_PARTS } from './types.ts';
-import { KINDS, parseGameMode } from './validate.ts';
+import { MODE_PARTS, RULE_ONLY_PARTS } from './types.ts';
+import { KINDS, parseGameMode, parseSpecialRule } from './validate.ts';
 
 /**
  * The format's source at each revision. Changing types.ts, validate.ts or the guide fails
@@ -23,7 +26,8 @@ import { KINDS, parseGameMode } from './validate.ts';
  */
 const FORMAT_HASH: Record<number, string> = {
 	5: 'f69e2a77045f7378',
-	6: '5ee123ca6fdee674'
+	6: '5ee123ca6fdee674',
+	7: '58ca08aaf930fa03'
 };
 
 function formatHash(): string {
@@ -62,6 +66,20 @@ describe('the mode file guide', () => {
 		const documented = documentedFields();
 		const missing = [...used].filter((k) => !documented.has(k));
 		expect(missing).toEqual([]);
+	});
+
+	it('describes every special rule part, kind and field the library uses', () => {
+		expect(RULE_GUIDE_PARTS.map((p) => p.part)).toEqual([...RULE_ONLY_PARTS]);
+		for (const p of RULE_GUIDE_PARTS)
+			if (p.part in KINDS)
+				expect(
+					p.kinds.map((k) => k.kind),
+					p.part
+				).toEqual([...(KINDS[p.part] ?? [])]);
+		const used = new Set<string>();
+		for (const r of SPECIAL_RULES) keys(r, used);
+		expect([...used].filter((k) => !documentedFields().has(k))).toEqual([]);
+		expect(parseSpecialRule(RULE_MINIMAL_EXAMPLE).ok).toBe(true);
 	});
 
 	it('has a minimal example that is a valid mode', () => {

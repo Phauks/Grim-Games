@@ -142,6 +142,29 @@ describe('reminderCopiesLeft', () => {
 		expect(reminderCopies(g, characters).get(key)).toBe(2);
 		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
 	});
+	// Trevor (2026-10-18): Duplicate reminder makes a new token; it never takes the bank's.
+	it("leaves the bank's copies alone for a duplicate, which is always extra", () => {
+		let g = game();
+		const key = reminderKey({ characterId: 'poisoner', label: 'Poisoned' });
+		const run = (command: Parameters<typeof dispatch>[1]) => {
+			const result = dispatch({ log: { entries: [], cursor: 0 }, game: g }, command, ctx);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		};
+		// A second Poisoner: the game gives two Poisoned tokens.
+		run({ type: 'AssignCharacter', seatId: g.seating[3], characterId: 'poisoner' });
+		const poisoned = { characterId: 'poisoner', label: 'Poisoned' };
+		run({ type: 'AddReminder', seatId: g.seating[2], reminder: poisoned });
+		run({ type: 'AddReminder', seatId: g.seating[2], reminder: poisoned });
+		const copy = g.seats[g.seating[2]].reminders.at(-1)!.reminderId;
+		const copies = new Set([copy]);
+		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
+		expect(reminderCopiesLeft(g, characters, copies).get(key)).toBe(1);
+		expect(bankReminders(g, characters, undefined, true, copies)).toContainEqual(
+			expect.objectContaining({ ...poisoned, left: 1 })
+		);
+		expect(extraReminders(g, characters, copies)).toEqual(copies);
+	});
 });
 
 describe('canAddCopy', () => {
