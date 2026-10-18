@@ -60,7 +60,11 @@
 		alignment ??
 			(character
 				? (defaultAlignment(character.type) ??
-					(character.type === 'traveller' ? 'traveller' : 'neutral'))
+					(character.type === 'traveller' ||
+					character.type === 'fabled' ||
+					character.type === 'loric'
+						? character.type
+						: 'neutral'))
 				: 'neutral')
 	);
 	const icon = $derived(character && iconUrl(character, alignment));
@@ -128,6 +132,15 @@
 	.badge[data-team='traveller'] {
 		background: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
 		color: var(--on-good);
+	}
+	/* Fabled and Loric in their own colours, like the other types (Trevor, 2026-10-18). */
+	.badge[data-team='fabled'] {
+		background: var(--fabled);
+		color: var(--on-fabled);
+	}
+	.badge[data-team='loric'] {
+		background: var(--loric);
+		color: var(--on-loric);
 	}
 	.icon {
 		display: inline-grid;

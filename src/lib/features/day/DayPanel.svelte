@@ -301,7 +301,9 @@
 	const teams = $derived(livingByTeam(g));
 	const ghostVotes = $derived(ghostVotesLeft(g));
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
-	let toolbarHeight = $state(0);
+	let toolbarSize = $state<ResizeObserverSize[]>();
+	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
+	const toolbarHeight = $derived(toolbarSize?.[0]?.blockSize ?? 0);
 
 	/** One tap gives a dead player's ghost vote back or marks it used (Trevor, 2026-10-17). */
 	function toggleGhostVote(seatId: SeatId) {
@@ -364,7 +366,7 @@
 
 <div class="panel" style:--toolbar-height={`${toolbarHeight}px`}>
 	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
-	<div class="toolbar" data-testid="day-toolbar" bind:offsetHeight={toolbarHeight}>
+	<div class="toolbar" data-testid="day-toolbar" bind:borderBoxSize={toolbarSize}>
 		<DayTimer alive={block.alive} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
@@ -484,7 +486,6 @@
 	</Collapsible>
 
 	<Collapsible title={t('day.players')} storageKey="day.players">
-		<p class="prompt">{t('day.tapPlayer')}</p>
 		<div class="seats">
 			{#each seats as seat (seat.seatId)}
 				{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
@@ -620,42 +621,45 @@
 		{#each prevented as p (p.reminderId)}
 			{@const target = g.seats[p.seatId]}
 			<li>
-				<span class="sentence">
-					<CharacterBadge
-						characterId={p.killer}
-						alignment={p.killerSeats[0] ? g.seats[p.killerSeats[0]].alignment : undefined}
-						playerName={p.killerSeats[0] ? game.seatName(p.killerSeats[0]) : undefined}
-					/>
-					<span>{t('day.preventedChose')}</span>
-					{#if target.characterId}
-						<CharacterBadge
-							characterId={target.characterId}
-							alignment={target.alignment}
-							playerName={game.seatName(p.seatId)}
-						/>
-					{:else}
-						<span>{game.seatName(p.seatId)}</span>
-					{/if}
-				</span>
-				<ul class="because">
-					{#each p.because as because, i (i)}
-						{#if because.kind === 'protected' && because.source === 'override'}
-							<li>{t('day.preventedOverride')}</li>
+				<!-- Laid out like a jinx, as every row of the day (Trevor, 2026-10-18). -->
+				<CharacterEntry
+					characterId={p.killer}
+					alignment={p.killerSeats[0] ? g.seats[p.killerSeats[0]].alignment : undefined}
+					playerName={p.killerSeats[0] ? game.seatName(p.killerSeats[0]) : undefined}
+				>
+					<span class="sentence">
+						<span>{t('day.preventedChose')}</span>
+						{#if target.characterId}
+							<CharacterBadge
+								characterId={target.characterId}
+								alignment={target.alignment}
+								playerName={game.seatName(p.seatId)}
+							/>
+						{:else}
+							<span>{game.seatName(p.seatId)}</span>
 						{/if}
-						{#each blockers(because) as b (b.characterId)}
-							<li data-character={b.characterId}>
-								<CharacterBadge
-									characterId={b.characterId}
-									alignment={b.seatId ? g.seats[b.seatId].alignment : undefined}
-									playerName={b.seatId ? game.seatName(b.seatId) : undefined}
-								/>
-								{@render ability(b.characterId)}
-							</li>
+					</span>
+					<ul class="because">
+						{#each p.because as because, i (i)}
+							{#if because.kind === 'protected' && because.source === 'override'}
+								<li>{t('day.preventedOverride')}</li>
+							{/if}
+							{#each blockers(because) as b (b.characterId)}
+								<li data-character={b.characterId}>
+									<CharacterEntry
+										characterId={b.characterId}
+										alignment={b.seatId ? g.seats[b.seatId].alignment : undefined}
+										playerName={b.seatId ? game.seatName(b.seatId) : undefined}
+									>
+										{@render ability(b.characterId)}
+									</CharacterEntry>
+								</li>
+							{/each}
+						{:else}
+							<li>{t('day.preventedNoReason')}</li>
 						{/each}
-					{:else}
-						<li>{t('day.preventedNoReason')}</li>
-					{/each}
-				</ul>
+					</ul>
+				</CharacterEntry>
 			</li>
 		{/each}
 	</ul>
@@ -739,10 +743,6 @@
 		gap: var(--space-2);
 		padding-block: var(--space-1);
 		background: var(--dialog-background, var(--surface));
-	}
-	.prompt {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	.seats {
 		display: grid;
@@ -852,7 +852,8 @@
 	/* While a section scrolls, its header stays just under the toolbar (Trevor, 2026-10-17). */
 	.panel > :global(.collapsible > .head) {
 		position: sticky;
-		top: var(--toolbar-height, 0);
+		/* Tucked 1px under the toolbar, so no scrolled content shows between them (Trevor). */
+		top: calc(var(--toolbar-height, 0px) - 1px); /* px-ok: hairline overlap */
 		z-index: 1;
 		background: var(--dialog-background, var(--surface));
 	}
@@ -996,10 +997,8 @@
 		margin: 0;
 		padding: 0;
 		display: grid;
-		gap: var(--space-3);
 	}
 	.because {
-		padding-inline-start: var(--space-4);
-		margin-block-start: var(--space-2);
+		margin-block-start: var(--space-1);
 	}
 </style>

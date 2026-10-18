@@ -4,7 +4,6 @@ export const day = {
 	'day.titleNumber': 'Day {number}',
 	'day.nightOrder': 'Night order',
 	'day.players': 'Players',
-	'day.tapPlayer': 'Tap a player to mark them dead or alive.',
 	'day.seatButton': 'Seat: {name}',
 	'day.demonVoted': 'Demon voted',
 	'day.abilitiesAndNotes': 'Abilities and notes',
