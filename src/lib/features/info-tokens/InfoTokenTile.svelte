@@ -47,7 +47,8 @@
 	// Read as the card's words, then its characters, though the characters show first.
 	const spoken = $derived(
 		owners.length
-			? t('info-tokens.cardFor', { card: name, name: owners.map((o) => o.name).join(', ') })
+			? // eslint-disable-next-line grim/names-as-badges -- the button's spoken name, never shown; the badges show
+				t('info-tokens.cardFor', { card: name, name: owners.map((o) => o.name).join(', ') })
 			: name
 	);
 	const id = $props.id();
