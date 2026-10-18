@@ -1,16 +1,18 @@
 <script lang="ts" module>
+	import type { FilterKind, FilterValue } from '#lib/ui/table/column-filter.ts';
+
 	export type SortDirection = 'ascending' | 'descending';
 
-	export interface DataColumn<K extends string = string> {
+	interface ColumnBase<K extends string> {
 		id: K;
 		label: string;
 		/** A CSS grid track. Fixed widths keep columns the same whichever rows are drawn. */
 		width?: string;
 		sortable?: boolean;
-		/** Has a filter: a funnel button in its header cell opens the `filter` snippet. */
-		filterable?: boolean;
-		/** Its filter is set (the funnel is highlighted). */
+		/** With `filterable`: its own filter is set (the button is highlighted). */
 		filtered?: boolean;
+		/** With `value`: the filter to use instead of the one its values suggest. */
+		filterKind?: FilterKind;
 		/** The rows' first cell: a row header (`th scope="row"`), always built. */
 		rowHeader?: boolean;
 		align?: 'start' | 'end';
@@ -18,6 +20,8 @@
 		hideLabel?: boolean;
 		/** `narrow="hide"`: dropped on a narrow table; its filter moves to the first header. */
 		wide?: boolean;
+		/** `wide`, and also dropped on a medium table (under 48rem, e.g. Search on a tablet). */
+		wider?: boolean;
 		/** The cell has no padding: its content (a full-size button) fills it. */
 		flush?: boolean;
 		/** `narrow="stack"`: stays on the row's first line, beside the row header, unlabelled. */
@@ -26,7 +30,22 @@
 		fixed?: boolean;
 		/** With `resizeKey`: the narrowest it can be dragged, in --u (default MIN_WIDTH). */
 		minWidth?: number;
+		/** Can't be hidden from the Columns list (a row's own controls, such as a tick box). */
+		alwaysShown?: boolean;
 	}
+
+	/**
+	 * Every column filters (Trevor, 2026-10-18: all columns get the same filter and search).
+	 * Most give a plain `value` per row and the table builds the filter (column-filter.ts); a
+	 * column with its own filter sets `filterable` and the table's `filter` snippet draws it;
+	 * a column with no filter says why in `noFilter`.
+	 */
+	export type DataColumn<K extends string = string, T = unknown> = ColumnBase<K> &
+		(
+			| { value(row: T): FilterValue; filterable?: never; noFilter?: never }
+			| { filterable: true; value?: never; noFilter?: never }
+			| { noFilter: string; value?: never; filterable?: never }
+		);
 
 	export interface DataSort<K extends string = string> {
 		column: K;
@@ -40,7 +59,20 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { near } from '#lib/ui/near.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
-	import { TableWidths } from '#lib/ui/table/column-widths.svelte.ts';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import {
+		EMPTY,
+		applyFilters,
+		filterKindOf,
+		isActive,
+		pickOptions,
+		readBound,
+		type ColumnFilter,
+		type FilterValue as Value
+	} from '#lib/ui/table/column-filter.ts';
+	import { HiddenColumns, TableWidths } from '#lib/ui/table/column-widths.svelte.ts';
+	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
 	import {
 		KEY_STEP,
 		MAX_WIDTH,
@@ -52,15 +84,24 @@
 	interface Props {
 		/** The table's accessible name. */
 		label: string;
-		columns: readonly DataColumn<K>[];
+		columns: readonly DataColumn<K, NoInfer<T>>[];
 		/** Already filtered and sorted (the pure functions live with each feature's data). */
 		rows: readonly T[];
 		key: (row: T) => string;
-		cell: Snippet<[T, DataColumn<K>]>;
+		cell: Snippet<[T, DataColumn<K, T>]>;
 		sort?: DataSort<K>;
 		onSort?: (column: K) => void;
-		/** The filter controls for one column, in a popover from its header; `close` shuts it. */
-		filter?: Snippet<[DataColumn<K>, () => void]>;
+		/** Columns' own filters (`filterable`), in a popover from the header; `close` shuts it. */
+		filter?: Snippet<[DataColumn<K, T>, () => void]>;
+		/** The filters the table builds for `value` columns, by column. */
+		columnFilters?: Partial<Record<K, ColumnFilter>>;
+		/** Told how many rows are left after those filters, whenever it changes. */
+		oncount?: (count: number) => void;
+		/**
+		 * People can hide columns (Trevor, 2026-10-18); the choice is remembered on this device
+		 * under this name. Defaults to `resizeKey`; without either it lasts until reload.
+		 */
+		hideKey?: string;
 		/**
 		 * Narrow tables (under 40rem): `stack` turns each row into a block of labelled fields;
 		 * `hide` drops the `wide` columns.
@@ -95,8 +136,8 @@
 
 	let {
 		label,
-		columns,
-		rows,
+		columns: allColumns,
+		rows: allRows,
 		key,
 		cell,
 		sort,
@@ -113,13 +154,47 @@
 		testid,
 		resizeKey,
 		rowLabel,
-		pageSize
+		pageSize,
+		columnFilters = $bindable({}),
+		oncount,
+		hideKey
 	}: Props = $props();
 
+	/** The row header, else the first column: it names the row, so it can't be hidden. */
+	const fixedColumn = $derived(allColumns.find((c) => c.rowHeader) ?? allColumns[0]);
+	const hidden = $derived(new HiddenColumns(hideKey ?? resizeKey ?? ''));
+	const keeps = (c: DataColumn<K, T>) => c === fixedColumn || !!c.alwaysShown;
+	const columns = $derived(allColumns.filter((c) => keeps(c) || !hidden.has(c.id)));
+	const canFilter = (column: DataColumn<K, T>) =>
+		!!column.value || (!!column.filterable && !!filter);
+	const isFiltered = (column: DataColumn<K, T>) =>
+		column.filterable ? !!column.filtered : isActive(columnFilters[column.id]);
+
+	function setHidden(id: string, hide: boolean) {
+		hidden.set(id, hide);
+		// A hidden column's filter would keep rows out with nothing on screen to say so.
+		if (hide && id in columnFilters) setFilter(id as K, undefined);
+	}
+
+	function setFilter(id: K, value: ColumnFilter | undefined) {
+		const next = { ...columnFilters };
+		if (value && isActive(value)) next[id] = value;
+		else delete next[id];
+		columnFilters = next;
+	}
+
+	const valueColumns = $derived(new Map(allColumns.map((c) => [c.id as string, c])));
+	const rows = $derived(
+		applyFilters(allRows, columnFilters, (row, id): Value => valueColumns.get(id)?.value?.(row))
+	);
+	$effect.pre(() => {
+		oncount?.(rows.length);
+	});
+
 	const widths = $derived(resizeKey ? new TableWidths(resizeKey) : undefined);
-	const resizable = (column: DataColumn<K>) => !!widths && !column.fixed;
-	const track = (column: DataColumn<K>) => column.width ?? 'minmax(0, 1fr)';
-	const dragged = (column: DataColumn<K>) =>
+	const resizable = (column: DataColumn<K, T>) => !!widths && !column.fixed;
+	const track = (column: DataColumn<K, T>) => column.width ?? 'minmax(0, 1fr)';
+	const dragged = (column: DataColumn<K, T>) =>
 		resizable(column) ? widths?.current[column.id] : undefined;
 	/** The header padding the handles take in column `i` (see `th.resizable` below), in --hit. */
 	function room(i: number): string | undefined {
@@ -143,14 +218,15 @@
 			.slice(0, last + 1)
 			.map((_, i) => (i === 0 ? '0rem' : `calc(${tracks.slice(0, i).join(' + ')})`));
 	});
+	const mediumTemplate = $derived(tracks.filter((_, i) => !columns[i].wider).join(' '));
 	const narrowTemplate = $derived(
 		columns
-			.filter((c) => !c.wide)
+			.filter((c) => !c.wide && !c.wider)
 			.map(track)
 			.join(' ')
 	);
 	// Filters of columns a narrow table drops; the first header offers them instead.
-	const movedFilters = $derived(columns.filter((c) => c.wide && c.filterable));
+	const movedFilters = $derived(columns.filter((c) => (c.wide || c.wider) && canFilter(c)));
 
 	const built = new SvelteSet<string>();
 	let body = $state<HTMLElement>();
@@ -230,10 +306,13 @@
 	});
 
 	let filterOpen = $state(false);
-	let filterColumn = $state<DataColumn<K>>();
+	let filterColumn = $state<DataColumn<K, T>>();
 	let filterAnchor = $state<HTMLElement>();
 
-	function openFilter(column: DataColumn<K>, event: MouseEvent) {
+	let pickerOpen = $state(false);
+	let pickerAnchor = $state<HTMLElement>();
+
+	function openFilter(column: DataColumn<K, T>, event: MouseEvent) {
 		filterColumn = column;
 		filterAnchor = event.currentTarget as HTMLElement;
 		filterOpen = true;
@@ -250,10 +329,13 @@
 		return result;
 	}
 
-	const minOf = (column: DataColumn<K>) => column.minWidth ?? MIN_WIDTH;
+	const minOf = (column: DataColumn<K, T>) => column.minWidth ?? MIN_WIDTH;
 
 	/** The column's width now, in --u: its dragged width, else what its header measures. */
-	function widthNow(column: DataColumn<K>, handle: HTMLElement): { width: number; unit: number } {
+	function widthNow(
+		column: DataColumn<K, T>,
+		handle: HTMLElement
+	): { width: number; unit: number } {
 		const th = handle.closest('th') as HTMLElement;
 		const unit = px('var(--u)', th) || 16;
 		// The handle's room is added on top of the stored width (columnTrack).
@@ -273,7 +355,7 @@
 	let frame = 0;
 	let lastTap: { column: K; time: number } | undefined;
 
-	function startResize(column: DataColumn<K>, event: PointerEvent) {
+	function startResize(column: DataColumn<K, T>, event: PointerEvent) {
 		if (!widths || event.button !== 0) return;
 		const handle = event.currentTarget as HTMLElement;
 		const { width, unit } = widthNow(column, handle);
@@ -290,7 +372,7 @@
 		event.preventDefault();
 	}
 
-	function moveResize(column: DataColumn<K>, event: PointerEvent) {
+	function moveResize(column: DataColumn<K, T>, event: PointerEvent) {
 		if (!drag || drag.pointer !== event.pointerId) return;
 		const dx = (event.clientX - drag.startX) * drag.sign;
 		// A few pixels of wobble is still a tap (a double tap resets).
@@ -304,7 +386,7 @@
 		});
 	}
 
-	function endResize(column: DataColumn<K>, event: PointerEvent) {
+	function endResize(column: DataColumn<K, T>, event: PointerEvent) {
 		if (!drag || drag.pointer !== event.pointerId) return;
 		const moved = drag.moved;
 		drag = undefined;
@@ -327,7 +409,7 @@
 		}
 	}
 
-	function keyResize(column: DataColumn<K>, event: KeyboardEvent) {
+	function keyResize(column: DataColumn<K, T>, event: KeyboardEvent) {
 		const handle = event.currentTarget as HTMLElement;
 		if (event.key === 'Enter') {
 			widths?.reset(column.id);
@@ -342,26 +424,76 @@
 		widths?.set(column.id, clampWidth(width + step, minOf(column)));
 	}
 
-	function ariaSort(column: DataColumn<K>) {
+	function ariaSort(column: DataColumn<K, T>) {
 		if (!column.sortable) return undefined;
 		return sort?.column === column.id ? sort.direction : 'none';
 	}
 </script>
 
-{#snippet filterButton(column: DataColumn<K>, labelled = false)}
+{#snippet filterButton(column: DataColumn<K, T>, labelled = false)}
 	<button
 		type="button"
 		class="filter"
 		class:labelled
-		class:on={column.filtered}
+		class:on={isFiltered(column)}
 		aria-haspopup="dialog"
-		aria-label="Filter {column.label}{column.filtered ? ' (set)' : ''}"
+		aria-label="Filter {column.label}{isFiltered(column) ? ' (set)' : ''}"
 		onclick={(e) => openFilter(column, e)}
 	>
 		<!-- Moved filters carry their column's name, so several in one header stay distinct. -->
 		{#if labelled}<span class="filter-label" aria-hidden="true">{column.label}</span>{/if}
 		<Icon name="filter" />
 	</button>
+{/snippet}
+
+<!-- The filter the table builds from a column's values (column-filter.ts). -->
+{#snippet builtFilter(column: DataColumn<K, T>, close: () => void)}
+	{@const values = column.value ? allRows.map(column.value) : []}
+	{@const current = columnFilters[column.id]}
+	{@const kind = current?.kind ?? column.filterKind ?? filterKindOf(values)}
+	{#if kind === 'pick'}
+		{@const ticked = current?.kind === 'pick' ? current.values : []}
+		<FilterOptions
+			legend={column.label}
+			hideLegend
+			options={pickOptions(values).map((v) => ({ value: v, label: v === EMPTY ? empty : v }))}
+			values={ticked}
+			ontoggle={(v, on) =>
+				setFilter(column.id, {
+					kind: 'pick',
+					values: on ? [...ticked, v] : ticked.filter((x) => x !== v)
+				})}
+			{empty}
+		/>
+	{:else if kind === 'text'}
+		<SearchField
+			label="Search {column.label}"
+			value={current?.kind === 'text' ? current.text : ''}
+			oninput={(text) => setFilter(column.id, { kind: 'text', text })}
+			oncommit={() => {
+				close();
+			}}
+		/>
+	{:else}
+		{@const range: Extract<ColumnFilter, { kind: 'range' }> =
+			current?.kind === 'range' ? current : { kind: 'range' }}
+		<div class="range">
+			<TextField
+				label="Lowest"
+				inputmode="decimal"
+				value={range.min === undefined ? '' : String(range.min)}
+				oninput={(text) => setFilter(column.id, { ...range, min: readBound(text) })}
+				oncommit={close}
+			/>
+			<TextField
+				label="Highest"
+				inputmode="decimal"
+				value={range.max === undefined ? '' : String(range.max)}
+				oninput={(text) => setFilter(column.id, { ...range, max: readBound(text) })}
+				oncommit={close}
+			/>
+		</div>
+	{/if}
 {/snippet}
 
 <!--
@@ -376,6 +508,7 @@
 	class:boxed
 	class:fill
 	style:--columns={template}
+	style:--columns-medium={mediumTemplate}
 	style:--columns-narrow={narrowTemplate}
 	style:--row-estimate={rowEstimate}
 	{@attach fit === 'content' && watchWidth}
@@ -394,8 +527,9 @@
 							scope="col"
 							data-col={column.id}
 							class:wide={column.wide}
+							class:wider={column.wider}
 							class:end={column.align === 'end'}
-							class:control={column.sortable || column.filterable}
+							class:control={column.sortable || canFilter(column) || column === fixedColumn}
 							class:resizable={resizable(column)}
 							class:after-resizable={i > 0 && resizable(columns[i - 1])}
 							class:last={i === columns.length - 1}
@@ -419,13 +553,30 @@
 								{:else}
 									<span class="plain" class:visually-hidden={column.hideLabel}>{column.label}</span>
 								{/if}
-								{#if column.filterable && filter}
+								{#if canFilter(column)}
 									{@render filterButton(column)}
 								{/if}
-								{#if i === 0 && narrow === 'hide' && filter}
+								{#if i === 0 && narrow === 'hide'}
 									{#each movedFilters as moved (moved.id)}
-										<span class="narrow-only">{@render filterButton(moved, true)}</span>
+										<span class={moved.wider ? 'medium-only' : 'narrow-only'}
+											>{@render filterButton(moved, true)}</span
+										>
 									{/each}
+								{/if}
+								{#if column === fixedColumn && allColumns.length > 1}
+									<button
+										type="button"
+										class="filter columns-button"
+										class:on={hidden.count > 0}
+										aria-haspopup="dialog"
+										aria-label="Columns{hidden.count > 0 ? ' (some hidden)' : ''}"
+										onclick={(e) => {
+											pickerAnchor = e.currentTarget;
+											pickerOpen = true;
+										}}
+									>
+										<Icon name="columns" />
+									</button>
 								{/if}
 							</div>
 							{#if resizable(column)}
@@ -487,6 +638,7 @@
 									data-col={column.id}
 									data-label={column.label}
 									class:wide={column.wide}
+									class:wider={column.wider}
 									class:end={column.align === 'end'}
 									class:stack-head={column.stackHead}
 									class:flush={column.flush}
@@ -514,11 +666,27 @@
 	</div>
 </div>
 
-{#if filter}
-	<Popover bind:open={filterOpen} anchor={filterAnchor} title="Filter {filterColumn?.label ?? ''}">
-		{#if filterColumn}{@render filter(filterColumn, () => (filterOpen = false))}{/if}
-	</Popover>
-{/if}
+<Popover bind:open={filterOpen} anchor={filterAnchor} title="Filter {filterColumn?.label ?? ''}">
+	{#if filterColumn?.filterable && filter}
+		{@render filter(filterColumn, () => (filterOpen = false))}
+	{:else if filterColumn}
+		{@render builtFilter(filterColumn, () => (filterOpen = false))}
+	{/if}
+</Popover>
+
+<Popover bind:open={pickerOpen} anchor={pickerAnchor} title="Columns">
+	<FilterOptions
+		legend="Columns"
+		hideLegend
+		options={allColumns.map((c) => ({
+			value: c.id,
+			label: c.label,
+			disabled: keeps(c)
+		}))}
+		values={columns.map((c) => c.id)}
+		ontoggle={(id, on) => setHidden(id, !on)}
+	/>
+</Popover>
 
 <style>
 	.data-table {
@@ -583,6 +751,16 @@
 	/* A line where the scrolling columns slide under. */
 	.sticky-end {
 		box-shadow: inset -1px 0 var(--border);
+	}
+	/*
+	 * Pinned header cells sit above the scrolling ones, resize lines included (Trevor,
+	 * 2026-10-18: header lines showed over the pinned columns when scrolled sideways).
+	 */
+	thead .sticky {
+		z-index: 3;
+	}
+	tbody .sticky {
+		z-index: 2;
 	}
 	thead .sticky,
 	tr.selected > .sticky {
@@ -721,10 +899,21 @@
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
 		text-align: start;
-		/* Long labels (Starting alignment) wrap between words inside their fixed column. */
 		max-width: 100%;
-		overflow-wrap: break-word;
 		--icon-size: calc(0.95 * var(--u));
+	}
+	/*
+	 * Labels stay on one line (Trevor, 2026-10-18: Starting alignment took two); columns are
+	 * sized to fit them, and one dragged narrower cuts its label short.
+	 */
+	.label,
+	.plain {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.label {
+		min-width: 0;
 	}
 	.end .sort {
 		justify-content: flex-end;
@@ -778,8 +967,17 @@
 		color: var(--on-accent);
 		opacity: 1;
 	}
-	.narrow-only {
+	.narrow-only,
+	.medium-only {
 		display: none;
+	}
+	/* The column picker sits at the end of the header of the column that can't be hidden. */
+	.columns-button {
+		margin-inline-start: auto;
+	}
+	.range {
+		display: grid;
+		gap: var(--space-2);
 	}
 	tbody th {
 		font-weight: 600;
@@ -805,6 +1003,22 @@
 		white-space: nowrap;
 	}
 
+	/* `hide` on a medium table: the `wider` columns go first; their filters move as below. */
+	@container data-table (max-width: 48rem) {
+		.hide tr {
+			grid-template-columns: var(--columns-medium);
+		}
+		.hide .wider {
+			display: none;
+		}
+		.hide .medium-only {
+			display: contents;
+		}
+		.hide th:first-child .head {
+			flex-wrap: wrap;
+		}
+	}
+
 	@container data-table (max-width: 40rem) {
 		/* Narrow tables fit the screen as they are: nothing to resize. */
 		.resize {
@@ -828,10 +1042,12 @@
 		.hide tr {
 			grid-template-columns: var(--columns-narrow);
 		}
-		.hide .wide {
+		.hide .wide,
+		.hide .wider {
 			display: none;
 		}
-		.hide .narrow-only {
+		.hide .narrow-only,
+		.hide .medium-only {
 			display: contents;
 		}
 		/* The first header wraps its moved filters onto a second line if they don't fit. */

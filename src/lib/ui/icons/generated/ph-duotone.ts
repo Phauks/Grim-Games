@@ -39,6 +39,7 @@ import ph_clipboard_duotone from '~icons/ph/clipboard-duotone';
 import ph_clipboard_text_duotone from '~icons/ph/clipboard-text-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
 import ph_club_duotone from '~icons/ph/club-duotone';
+import ph_columns_duotone from '~icons/ph/columns-duotone';
 import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
 import ph_corners_out_duotone from '~icons/ph/corners-out-duotone';
@@ -220,6 +221,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-duotone': ph_clipboard_text_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
 	'ph:club-duotone': ph_club_duotone,
+	'ph:columns-duotone': ph_columns_duotone,
 	'ph:copy-duotone': ph_copy_duotone,
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
 	'ph:corners-out-duotone': ph_corners_out_duotone,

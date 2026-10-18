@@ -39,6 +39,7 @@ import ph_clipboard from '~icons/ph/clipboard';
 import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_club from '~icons/ph/club';
+import ph_columns from '~icons/ph/columns';
 import ph_copy from '~icons/ph/copy';
 import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_corners_out from '~icons/ph/corners-out';
@@ -220,6 +221,7 @@ const icons: IconMap = {
 	'ph:clipboard-text': ph_clipboard_text,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:club': ph_club,
+	'ph:columns': ph_columns,
 	'ph:copy': ph_copy,
 	'ph:copy-simple': ph_copy_simple,
 	'ph:corners-out': ph_corners_out,

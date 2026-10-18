@@ -475,11 +475,12 @@ test('BotC Scripts can be browsed, searched, sorted and filtered, then a result 
 		'?page=1&q=storm&type=Teensyville&include=imp&editions=base,carousel'
 	]);
 
-	// Likes sorts what is loaded; the site already sends the most liked first.
+	// Chars sorts what is loaded, without asking the site again. (Likes and No. give way on
+	// phones and tablets.)
 	if (!phone) {
-		const likes = table.getByRole('columnheader', { name: 'Likes' });
-		await likes.getByRole('button').tap();
-		await expect(likes).toHaveAttribute('aria-sort', 'ascending');
+		const chars = table.getByRole('columnheader', { name: 'Chars' });
+		await chars.getByRole('button', { name: 'Chars', exact: true }).tap();
+		await expect(chars).toHaveAttribute('aria-sort', 'ascending');
 		expect(searches).toHaveLength(5);
 	}
 

@@ -45,22 +45,30 @@
 		void storageUse().then((use) => (browserTotal = use.total));
 	});
 
-	const columns = $derived<DataColumn<Column>[]>([
+	const columns = $derived<DataColumn<Column, StorageItem>[]>([
 		{
 			id: 'select',
 			label: t('settings.storageSelect'),
 			hideLabel: true,
 			flush: true,
 			fixed: true,
-			width: 'var(--tap-target)'
+			width: 'var(--tap-target)',
+			alwaysShown: true,
+			noFilter: 'A tick box per row, for choosing what to clear.'
 		},
-		{ id: 'item', label: t('settings.storageItem'), rowHeader: true },
+		{
+			id: 'item',
+			label: t('settings.storageItem'),
+			rowHeader: true,
+			value: (item) => itemName(item.id)
+		},
 		{
 			id: 'size',
 			label: t('settings.storageSize'),
 			align: 'end',
 			sortable: true,
-			width: 'calc(7 * var(--u))'
+			width: 'calc(7 * var(--u))',
+			value: (item) => size(item.bytes)
 		}
 	]);
 

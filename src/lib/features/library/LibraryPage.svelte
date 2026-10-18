@@ -200,8 +200,14 @@
 					: undefined;
 	}
 
-	const columns = $derived<DataColumn<ColumnId>[]>([
-		{ id: 'name', label: t('library.column.name'), sortable: true, flush: true },
+	const columns = $derived<DataColumn<ColumnId, Row>[]>([
+		{
+			id: 'name',
+			label: t('library.column.name'),
+			sortable: true,
+			flush: true,
+			value: (row) => row.listing.row.name
+		},
 		{
 			id: 'folder',
 			label: t('library.column.folder'),
@@ -220,7 +226,14 @@
 			filterable: true,
 			filtered: activeTags.length > 0
 		},
-		{ id: 'source', label: t('library.column.source'), sortable: true, wide: true, width: '18%' }
+		{
+			id: 'source',
+			label: t('library.column.source'),
+			sortable: true,
+			wide: true,
+			width: '18%',
+			value: sourceOf
+		}
 	]);
 
 	const folderOptions = $derived([
@@ -393,6 +406,7 @@
 						{filter}
 						narrow="hide"
 						pageSize={100}
+						hideKey="library"
 						empty={t('common.none')}
 					/>
 				</div>
@@ -414,7 +428,7 @@
 		>{/each}
 {/snippet}
 
-{#snippet cell(row: Row, column: DataColumn<ColumnId>)}
+{#snippet cell(row: Row, column: DataColumn<ColumnId, Row>)}
 	{@const labels = libraryLabels.for(row.key)}
 	{#if column.id === 'name'}
 		<button type="button" class="pick" onclick={() => openScript(row)}>
@@ -439,7 +453,7 @@
 	{/if}
 {/snippet}
 
-{#snippet filter(column: DataColumn<ColumnId>, close: () => void)}
+{#snippet filter(column: DataColumn<ColumnId, Row>, close: () => void)}
 	<div class="filters">
 		{#if column.id === 'folder' || column.id === 'name'}
 			<FilterOptions

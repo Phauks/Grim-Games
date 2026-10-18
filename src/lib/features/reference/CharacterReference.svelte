@@ -37,7 +37,12 @@
 	const groups = $derived(groupByType(shown));
 	// The table's own column filters and sort apply on top of the search.
 	const rows = $derived(view === 'table' ? tableRows(shown, referenceTable.current) : []);
-	const filters = $derived(activeFilterCount(referenceTable.current.filters));
+	// The shared table also filters the columns Reference has no filter of its own for.
+	let columnFilters = $state({});
+	let tableShown = $state(0);
+	const filters = $derived(
+		activeFilterCount(referenceTable.current.filters) + Object.keys(columnFilters).length
+	);
 </script>
 
 <div class="controls">
@@ -57,7 +62,7 @@
 		<div class="table-count">
 			<p class="count" aria-live="polite" data-testid="table-count">
 				{t('reference.tableCount', {
-					shown: rows.length,
+					shown: tableShown,
 					total: entries.length,
 					filters:
 						filters === 0 ? t('reference.noFilters') : t('reference.filters', { count: filters })
@@ -68,14 +73,22 @@
 				icon="close"
 				label={t('reference.clearFilters')}
 				disabled={filters === 0}
-				onclick={() => referenceTable.clearFilters()}
+				onclick={() => {
+					referenceTable.clearFilters();
+					columnFilters = {};
+				}}
 			/>
 		</div>
 	{/if}
 </div>
 
 {#if view === 'table'}
-	<CharacterTable {rows} onExplain={explain} />
+	<CharacterTable
+		{rows}
+		onExplain={explain}
+		bind:columnFilters
+		oncount={(count) => (tableShown = count)}
+	/>
 {:else}
 	{#each groups as group (group.type)}
 		<!-- Each character type folds away under its caret (Trevor, 2026-10-16); a search shows

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_WIDTH, MIN_WIDTH, clampWidth, columnTrack, parseWidths } from './column-widths.ts';
+import {
+	MAX_WIDTH,
+	MIN_WIDTH,
+	clampWidth,
+	columnTrack,
+	parseHidden,
+	parseWidths
+} from './column-widths.ts';
 
 describe('clampWidth', () => {
 	it('keeps widths between the limits', () => {
@@ -48,5 +55,12 @@ describe('columnTrack', () => {
 		);
 		expect(columnTrack(undefined, '20%', '0.5 * var(--hit)')).toBe('20%');
 		expect(columnTrack(undefined, 'minmax(0, 1fr)', '0.5 * var(--hit)')).toBe('minmax(0, 1fr)');
+	});
+});
+
+describe('parseHidden', () => {
+	it('keeps column ids once and drops anything else', () => {
+		expect(parseHidden(['likes', 'likes', 3, '', 'number'])).toEqual(['likes', 'number']);
+		expect(parseHidden({ likes: true })).toEqual([]);
 	});
 });

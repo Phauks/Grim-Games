@@ -158,7 +158,7 @@ test('the table view keeps tags, filters and removing', async ({ page }) => {
 
 	// Filtering by a tag the script lacks leaves nothing; by its own, the script.
 	await page
-		.getByRole('button', { name: /^Filter (Tags|Name)/ })
+		.getByRole('button', { name: /^Filter Tags/ })
 		.first()
 		.tap();
 	await page.getByRole('checkbox', { name: 'Wanna try' }).check();

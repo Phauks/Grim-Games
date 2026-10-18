@@ -39,6 +39,7 @@ import ph_clipboard_bold from '~icons/ph/clipboard-bold';
 import ph_clipboard_text_bold from '~icons/ph/clipboard-text-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
+import ph_columns_bold from '~icons/ph/columns-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_corners_out_bold from '~icons/ph/corners-out-bold';
@@ -220,6 +221,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-bold': ph_clipboard_text_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
+	'ph:columns-bold': ph_columns_bold,
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:corners-out-bold': ph_corners_out_bold,

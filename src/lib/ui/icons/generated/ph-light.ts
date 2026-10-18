@@ -39,6 +39,7 @@ import ph_clipboard_light from '~icons/ph/clipboard-light';
 import ph_clipboard_text_light from '~icons/ph/clipboard-text-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_club_light from '~icons/ph/club-light';
+import ph_columns_light from '~icons/ph/columns-light';
 import ph_copy_light from '~icons/ph/copy-light';
 import ph_copy_simple_light from '~icons/ph/copy-simple-light';
 import ph_corners_out_light from '~icons/ph/corners-out-light';
@@ -220,6 +221,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-light': ph_clipboard_text_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:club-light': ph_club_light,
+	'ph:columns-light': ph_columns_light,
 	'ph:copy-light': ph_copy_light,
 	'ph:copy-simple-light': ph_copy_simple_light,
 	'ph:corners-out-light': ph_corners_out_light,

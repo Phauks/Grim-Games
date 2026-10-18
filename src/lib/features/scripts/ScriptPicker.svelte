@@ -384,6 +384,14 @@
 				? t('scripts.picker.curatedFailed')
 				: '';
 	});
+	/** Rows left after the table's own column filters (Name, Likes, No.). */
+	let shownCount = $state(0);
+	let columnFilters = $state({});
+	// Another source starts with none of the last one's column filters.
+	$effect.pre(() => {
+		void source;
+		columnFilters = {};
+	});
 	const botcStatus = $derived(
 		!searchingBotc
 			? ''
@@ -404,9 +412,9 @@
 				? t('scripts.botc.refHint')
 				: searchingBotc
 					? botcStatus || t('common.none')
-					: (shown.length === 0
+					: (shownCount === 0
 							? t('common.none')
-							: t('scripts.picker.count', { count: shown.length })) + curatedNote
+							: t('scripts.picker.count', { count: shownCount })) + curatedNote
 	);
 
 	type ColumnId = SortColumn;
@@ -416,11 +424,17 @@
 	/**
 	 * Name, Author, Type and a character count for every source; Likes and No. only for BotC
 	 * Scripts, the one source that has them (Trevor, 2026-10-17). Author and Type are always
-	 * columns of their own; Chars, Likes and No. give way on phones, where the Chars filter
-	 * moves into the Name header.
+	 * columns of their own; Chars, Likes and No. give way on phones (Likes and No. already on
+	 * a tablet), and their filters move into the Name header.
 	 */
-	const columns = $derived<DataColumn<ColumnId>[]>([
-		{ id: 'name', label: t('scripts.column.name'), sortable: true, flush: true },
+	const columns = $derived<DataColumn<ColumnId, ScriptListing>[]>([
+		{
+			id: 'name',
+			label: t('scripts.column.name'),
+			sortable: true,
+			flush: true,
+			noFilter: 'The search box above the table searches names.'
+		},
 		{
 			id: 'author',
 			label: t('scripts.column.author'),
@@ -455,19 +469,22 @@
 						id: 'likes',
 						label: t('scripts.column.likes'),
 						sortable: true,
-						wide: true,
+						wider: true,
 						align: 'end',
-						width: '5rem'
+						// Label, sort arrows and filter side by side.
+						width: '7.5rem',
+						value: (l) => l.row.likes ?? 0
 					},
 					{
 						id: 'number',
 						label: t('scripts.column.number'),
 						sortable: true,
-						wide: true,
+						wider: true,
 						align: 'end',
-						width: '5rem'
+						width: '6.5rem',
+						value: (l) => l.row.number
 					}
-				] satisfies DataColumn<ColumnId>[])
+				] satisfies DataColumn<ColumnId, ScriptListing>[])
 			: [])
 	]);
 	const tableSort = $derived<DataSort<ColumnId> | undefined>(
@@ -614,6 +631,8 @@
 						narrow="hide"
 						resizeKey="scripts"
 						pageSize={PAGE_ROWS}
+						bind:columnFilters
+						oncount={(count) => (shownCount = count)}
 						fill
 						rowSelected={isSelected}
 						rowAttrs={(listing) => ({
@@ -685,7 +704,7 @@
 	<p>{t('scripts.details.removeBody', { name: shownListing?.row.name || t('common.none') })}</p>
 </ConfirmDialog>
 
-{#snippet cell(listing: ScriptListing, column: DataColumn<ColumnId>)}
+{#snippet cell(listing: ScriptListing, column: DataColumn<ColumnId, ScriptListing>)}
 	{@const row = listing.row}
 	{#if column.id === 'name'}
 		<button
@@ -713,7 +732,7 @@
 	{/if}
 {/snippet}
 
-{#snippet filter(column: DataColumn<ColumnId>, close: () => void)}
+{#snippet filter(column: DataColumn<ColumnId, ScriptListing>, close: () => void)}
 	<BotcFilter
 		column={column.id}
 		bind:filters={botcFilters}
