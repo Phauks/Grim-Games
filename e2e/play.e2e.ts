@@ -447,6 +447,12 @@ test('Print script prints the sheet, then the night order and player counts', as
 	expect(printed).toContain('Washerwoman');
 	expect(printed).toContain('Other nights');
 	expect(printed).not.toContain('Not the first night');
+	// Paper is white to its edges: a dark theme's color-scheme would paint the margins black.
+	await page.emulateMedia({ media: 'print' });
+	expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe(
+		'light'
+	);
+	await page.emulateMedia({ media: 'screen' });
 	const pages = await page.evaluate(() => (window as unknown as { pages: unknown }).pages);
 	expect(pages).toEqual([
 		{ fits: true, columns: expect.stringMatching(/^[12]$/) },
