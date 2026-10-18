@@ -4,6 +4,7 @@
  * bundled. Each is a Script Tool link, so the Worker returns the scripts themselves.
  * Shared by the app and the Worker (`worker/curated.ts`). Design: 08 §5.6.
  */
+import { officialName } from './script-names.ts';
 
 export const CURATED_API = '/api/curated';
 /** TPI's page listing the scripts it recommends. */
@@ -38,7 +39,8 @@ export function readCuratedList(body: unknown): CuratedScript[] | undefined {
 					{
 						section: raw.section,
 						link: raw.link,
-						json: raw.json,
+						// Copies made before a name fix get it too.
+						json: officialName(raw.json),
 						...(typeof raw.seen === 'string' ? { seen: raw.seen } : {}),
 						...(raw.past === true ? { past: true } : {})
 					}

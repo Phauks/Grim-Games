@@ -78,6 +78,9 @@ export const setup = {
 	'setup.selectedOnly': 'Show only selected',
 	'setup.offScript': 'Not on script',
 	'setup.allTravellers': 'All Travellers',
+	'setup.addTraveller': 'Add a Traveller',
+	'setup.bluff': 'Demon bluff',
+	'setup.bluffInPlay': 'Demon bluff, in play',
 	'setup.characterInfo': 'About the {name}',
 	'setup.check.customReminders':
 		'Custom characters: the app can’t tell which of their reminder tokens go out before the game.',
