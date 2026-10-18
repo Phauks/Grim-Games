@@ -75,8 +75,7 @@ test('the filter chips are gone; the table sorts and filters by column', async (
 	await expect(page.getByRole('group', { name: 'Character types' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Demons', exact: true })).toHaveCount(0);
 
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	const rows = table.locator('tbody tr');
 	await expect(rows).toHaveCount(181);
@@ -175,8 +174,7 @@ test('the Witch row shows the same values as the Witch card', async ({ page }) =
 	expect(fromCard.ability).toContain('Each night, choose a player');
 	await expect(card.locator('[data-field="icons"] img')).toHaveCount(2);
 
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const row = page.getByTestId('character-table').locator('tr[data-character="witch"]');
 	await built(row);
 	expect(await read(row)).toEqual(fromCard);
@@ -224,8 +222,7 @@ test('Info cards lists the info cards a character brings, or None', async ({ pag
 	await search.fill('Washerwoman');
 	const washerwoman = page.locator('[data-testid="reference-card"][data-character="washerwoman"]');
 	await expect(washerwoman.locator('[data-field="cards"]')).toContainText('None');
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	await page.getByRole('button', { name: 'Show as table' }).tap();
 	await search.fill('Mezepheles');
 	await expect(
 		page
@@ -253,8 +250,7 @@ test('the table view is remembered and the night-order table is in night order',
 	page
 }) => {
 	await page.goto('/reference');
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	await expect(table).toBeVisible();
 	await expect(table.locator('tbody tr')).toHaveCount(181);
@@ -367,8 +363,7 @@ test('on a phone the tables stack into labelled rows instead of scrolling sidewa
 }) => {
 	test.skip(test.info().project.name !== 'phone', 'phones stack; wider screens keep the table');
 	await page.goto('/reference');
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	const witch = table.locator('tr[data-character="witch"]');
 	await witch.scrollIntoViewIfNeeded();
@@ -469,8 +464,7 @@ test('jinxes start folded on cards and in the table; Wiki and Report sit by the 
 		card.locator('header').getByRole('button', { name: 'Report a problem' })
 	).toBeVisible();
 
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const row = page.getByTestId('character-table').locator('tr[data-character="alchemist"]');
 	await expect(row.getByTestId('jinx-toggle')).toHaveAttribute('aria-expanded', 'false');
 	const name = row.locator('[data-field="name"]');
@@ -513,8 +507,7 @@ test('reminder tokens show their copies and whether setup places them; the table
 	]);
 
 	await search.fill('');
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	await table.getByRole('button', { name: 'Filter Tokens', exact: true }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Filter Tokens' });
@@ -528,8 +521,7 @@ test('reminder tokens show their copies and whether setup places them; the table
 test('the table filters characters by edition', async ({ page }) => {
 	// Trevor (2026-10-18): "allow filtering by edition".
 	await page.goto('/reference');
-	await page.getByRole('combobox', { name: 'Show as' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
+	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	await table.getByRole('button', { name: 'Filter Edition', exact: true }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Filter Edition' });
@@ -543,4 +535,28 @@ test('the table filters characters by edition', async ({ page }) => {
 	await expect(table.locator('tr[data-character="vortox"]')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Clear filters' }).tap();
 	await expect(table.locator('tr[data-character="vortox"]')).toHaveCount(1);
+});
+
+test('the table toggle sits on the search line on both tabs', async ({ page }) => {
+	// Trevor (2026-10-18): "put table/cards in the same line as the search".
+	await page.goto('/reference');
+	const toggle = page.getByRole('button', { name: 'Show as table' });
+	const sameLine = async (field: ReturnType<typeof page.getByRole>) => {
+		const a = (await field.boundingBox())!;
+		const b = (await toggle.boundingBox())!;
+		expect(Math.abs(a.y + a.height / 2 - (b.y + b.height / 2))).toBeLessThan(a.height / 2);
+		expect(b.x).toBeGreaterThan(a.x);
+	};
+	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+	await sameLine(page.getByRole('searchbox', { name: 'Search characters' }));
+	await toggle.tap();
+	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.getByTestId('character-table')).toBeVisible();
+	await sameLine(page.getByRole('searchbox', { name: 'Search characters' }));
+
+	await page.getByRole('tab', { name: 'Night order' }).tap();
+	await sameLine(page.getByRole('searchbox', { name: 'Filter night steps' }));
+	await toggle.tap();
+	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+	await sameLine(page.getByRole('searchbox', { name: 'Filter night steps' }));
 });

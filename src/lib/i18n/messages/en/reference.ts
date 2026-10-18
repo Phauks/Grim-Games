@@ -4,9 +4,7 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const reference = {
 	'reference.pageTitle': `Character reference · ${APP_NAME}`,
 	'reference.title': 'Character reference',
-	'reference.showAs': 'Show as',
-	'reference.viewCards': 'Cards',
-	'reference.viewTable': 'Table',
+	'reference.showAsTable': 'Show as table',
 	'reference.views': 'Reference views',
 	'reference.tabCharacters': 'Characters',
 	'reference.tabNight': 'Night order',

@@ -130,6 +130,7 @@ import ph_prohibit_inset_duotone from '~icons/ph/prohibit-inset-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
+import ph_rows_duotone from '~icons/ph/rows-duotone';
 import ph_scales_duotone from '~icons/ph/scales-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
 import ph_shapes_duotone from '~icons/ph/shapes-duotone';
@@ -154,6 +155,7 @@ import ph_star_duotone from '~icons/ph/star-duotone';
 import ph_sun_duotone from '~icons/ph/sun-duotone';
 import ph_sun_horizon_duotone from '~icons/ph/sun-horizon-duotone';
 import ph_swap_duotone from '~icons/ph/swap-duotone';
+import ph_table_duotone from '~icons/ph/table-duotone';
 import ph_tag_duotone from '~icons/ph/tag-duotone';
 import ph_tag_simple_duotone from '~icons/ph/tag-simple-duotone';
 import ph_text_aa_duotone from '~icons/ph/text-aa-duotone';
@@ -313,6 +315,7 @@ const icons: IconMap = {
 	'ph:push-pin-duotone': ph_push_pin_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
+	'ph:rows-duotone': ph_rows_duotone,
 	'ph:scales-duotone': ph_scales_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,
 	'ph:shapes-duotone': ph_shapes_duotone,
@@ -337,6 +340,7 @@ const icons: IconMap = {
 	'ph:sun-duotone': ph_sun_duotone,
 	'ph:sun-horizon-duotone': ph_sun_horizon_duotone,
 	'ph:swap-duotone': ph_swap_duotone,
+	'ph:table-duotone': ph_table_duotone,
 	'ph:tag-duotone': ph_tag_duotone,
 	'ph:tag-simple-duotone': ph_tag_simple_duotone,
 	'ph:text-aa-duotone': ph_text_aa_duotone,

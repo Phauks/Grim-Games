@@ -10,6 +10,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import CharacterTable from './CharacterTable.svelte';
+	import ViewToggle from './ViewToggle.svelte';
 	import { TYPE_PLURALS } from './labels.ts';
 	import ReferenceCard from './ReferenceCard.svelte';
 	import { referenceTable } from './table-state.svelte.ts';
@@ -47,12 +48,15 @@
 
 <div class="controls">
 	<!-- On a computer, "/" jumps to the search field and Esc clears it. -->
-	<SearchField
-		bind:value={search}
-		label={t('reference.searchLabel')}
-		placeholder={t('reference.searchPlaceholder')}
-		shortcut
-	/>
+	<div class="search-line">
+		<SearchField
+			bind:value={search}
+			label={t('reference.searchLabel')}
+			placeholder={t('reference.searchPlaceholder')}
+			shortcut
+		/>
+		<ViewToggle />
+	</div>
 	{#if view === 'cards'}
 		<p class="count" aria-live="polite">
 			{t('reference.count', { shown: shown.length, count: entries.length })}
@@ -144,6 +148,15 @@
 			grid-template-columns: minmax(0, calc(36 * var(--u))) auto;
 			align-items: center;
 		}
+	}
+	.search-line {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.search-line > :global(:first-child) {
+		flex: 1;
+		min-width: 0;
 	}
 	.table-count {
 		display: flex;

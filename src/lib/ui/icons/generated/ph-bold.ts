@@ -130,6 +130,7 @@ import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
+import ph_rows_bold from '~icons/ph/rows-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
@@ -154,6 +155,7 @@ import ph_star_bold from '~icons/ph/star-bold';
 import ph_sun_bold from '~icons/ph/sun-bold';
 import ph_sun_horizon_bold from '~icons/ph/sun-horizon-bold';
 import ph_swap_bold from '~icons/ph/swap-bold';
+import ph_table_bold from '~icons/ph/table-bold';
 import ph_tag_bold from '~icons/ph/tag-bold';
 import ph_tag_simple_bold from '~icons/ph/tag-simple-bold';
 import ph_text_aa_bold from '~icons/ph/text-aa-bold';
@@ -313,6 +315,7 @@ const icons: IconMap = {
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
+	'ph:rows-bold': ph_rows_bold,
 	'ph:scales-bold': ph_scales_bold,
 	'ph:scroll-bold': ph_scroll_bold,
 	'ph:shapes-bold': ph_shapes_bold,
@@ -337,6 +340,7 @@ const icons: IconMap = {
 	'ph:sun-bold': ph_sun_bold,
 	'ph:sun-horizon-bold': ph_sun_horizon_bold,
 	'ph:swap-bold': ph_swap_bold,
+	'ph:table-bold': ph_table_bold,
 	'ph:tag-bold': ph_tag_bold,
 	'ph:tag-simple-bold': ph_tag_simple_bold,
 	'ph:text-aa-bold': ph_text_aa_bold,
