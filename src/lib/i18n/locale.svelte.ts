@@ -1,3 +1,4 @@
+import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 import {
 	createTranslator,
 	type Message,
@@ -21,21 +22,13 @@ const STORAGE_KEY = 'grim-games:locale:v1';
 export type LocaleChoice = LocaleId | 'device';
 
 function readChoice(): LocaleChoice {
-	try {
-		const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-		return isLocaleId(raw) ? raw : 'device';
-	} catch {
-		return 'device';
-	}
+	const raw = readStoredText(STORAGE_KEY);
+	return isLocaleId(raw) ? raw : 'device';
 }
 
 function writeChoice(choice: LocaleChoice): void {
-	try {
-		if (choice === 'device') globalThis.localStorage?.removeItem(STORAGE_KEY);
-		else globalThis.localStorage?.setItem(STORAGE_KEY, choice);
-	} catch {
-		// Storage blocked: the choice still applies for this visit.
-	}
+	// Storage blocked: the choice still applies for this visit.
+	writeStoredText(STORAGE_KEY, choice === 'device' ? undefined : choice);
 }
 
 function deviceLocale(): LocaleId {

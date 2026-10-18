@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -122,20 +123,13 @@
 	type View = 'folders' | 'table';
 	const VIEW_KEY = 'grim-games:library-view';
 	function readView(): View {
-		try {
-			return globalThis.localStorage?.getItem(VIEW_KEY) === 'table' ? 'table' : 'folders';
-		} catch {
-			return 'folders';
-		}
+		return readStoredText(VIEW_KEY) === 'table' ? 'table' : 'folders';
 	}
 	let view = $state<View>(readView());
 	function setView(next: View) {
 		view = next;
-		try {
-			globalThis.localStorage?.setItem(VIEW_KEY, next);
-		} catch {
-			// A remembered view is only a convenience.
-		}
+		// A remembered view is only a convenience.
+		writeStoredText(VIEW_KEY, next);
 	}
 	/** The folder open in the folder view; the top level when none. */
 	let currentFolder = $state<string>();
