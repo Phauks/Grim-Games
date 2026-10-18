@@ -76,6 +76,10 @@ test("Search shows a script's own logo beside its name, and in its details", asy
 		})
 	);
 	await page.route(LOGO, (route) => route.fulfill({ body: PNG, contentType: 'image/png' }));
+	// BotC Scripts alone: the other sources aren't routed, and Search waits for every source.
+	await page.addInitScript(() =>
+		localStorage.setItem('grim-games:scripts:sources', JSON.stringify(['botc']))
+	);
 	await page.goto('/scripts');
 
 	const row = (name: string) =>
