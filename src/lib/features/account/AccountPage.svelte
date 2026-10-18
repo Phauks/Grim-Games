@@ -25,6 +25,8 @@
 	// scripts to the profile, which this module does when the user changes.
 	import './profile-scripts.svelte.ts';
 	import SignInForm from './SignInForm.svelte';
+	import PrivacyConsent from './PrivacyConsent.svelte';
+	import { withPrivacyConsent } from './privacy-consent.svelte.ts';
 	import { startAccount } from './start.ts';
 	import UsernameDialog from './UsernameDialog.svelte';
 
@@ -98,8 +100,7 @@
 		if (!link) return false;
 		history.replaceState(history.state, '', location.pathname);
 		linkError = '';
-		accountApi
-			.verifyLink(link.email, link.token)
+		withPrivacyConsent((accepted) => accountApi.verifyLink(link.email, link.token, accepted))
 			.then((info) => {
 				account.signedIn(info);
 				toast(t('account.signIn.done', { email: link.email }));
@@ -322,6 +323,8 @@
 		{/if}
 	</ErrorBoundary>
 </Page>
+
+<PrivacyConsent />
 
 <UsernameDialog bind:open={editUsername} />
 <ChangeEmailDialog bind:open={editEmail} />
