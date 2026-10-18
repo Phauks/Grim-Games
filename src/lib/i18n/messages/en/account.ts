@@ -36,7 +36,7 @@ export const account = {
 	'account.signIn.linkFailed': "This sign-in link didn't work: {reason}",
 	'account.signIn.done': 'Signed in as {email}',
 
-	'account.you.title': 'Signed in',
+	'account.you.title': 'Account settings',
 	'account.you.username': 'Username',
 	'account.you.email': 'Email',
 	'account.you.id': 'Account ID',
@@ -44,6 +44,11 @@ export const account = {
 	'account.you.copyIdFailed': 'The account ID could not be copied',
 	'account.you.since': 'Since',
 	'account.you.password': 'Password',
+	'account.you.icon': 'Icon',
+	'account.you.type': 'Account type',
+	'account.you.typeUser': 'User',
+	'account.you.typeAdmin': 'Admin',
+	'account.icon.title': 'Change icon',
 	'account.you.passwordSet': 'Set',
 	'account.password.title': 'Set password',
 	'account.password.label': 'New password',
@@ -67,7 +72,10 @@ export const account = {
 
 	'account.devices.title': 'Signed-in devices',
 	'account.devices.thisDevice': '{device} (this device)',
-	'account.devices.lastUsed': 'Last used {date}',
+	'account.devices.device': 'Device',
+	'account.devices.signedIn': 'Signed in',
+	'account.devices.lastUsedColumn': 'Last used',
+	'account.devices.signOutDevice': 'Sign out {device}',
 	'account.devices.signOutOthers': 'Sign out other devices',
 
 	'account.data.title': 'Your data',

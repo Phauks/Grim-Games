@@ -10,6 +10,7 @@ import {
 	type GameData,
 	type LoadedScript
 } from '#lib/core/data/index.ts';
+import { timestampName } from '#lib/core/timestamp-name.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { saveScriptToProfile } from '#lib/features/account/profile-scripts.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -115,7 +116,13 @@ function recordFor(script: LoadedScript, source: ScriptSource): NewRecord {
 /** Makes `script` the current script and saves it to Recent. */
 export async function chooseScript(chosen: LoadedScript, source: ScriptSource): Promise<void> {
 	// Callers may pass reactive state; IndexedDB can only store plain objects.
-	const script = $state.snapshot(chosen) as LoadedScript;
+	const snapshot = $state.snapshot(chosen) as LoadedScript;
+	// Nothing is saved without a name (Trevor, 2026-10-18): a nameless one gets a timestamp.
+	const named = snapshot.name.trim() || timestampName();
+	const script: LoadedScript =
+		named === snapshot.name
+			? snapshot
+			: { ...snapshot, name: named, meta: { ...snapshot.meta, name: named } };
 	const record = recordFor(script, source);
 	const lib = getLibrary();
 	try {

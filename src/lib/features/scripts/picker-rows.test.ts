@@ -33,6 +33,14 @@ describe('pickerRow', () => {
 		expect(tb).toMatchObject({ characters: 22, kind: 'Full', author: 'The Pandemonium Institute' });
 		expect(small).toMatchObject({ characters: 5, kind: 'Teensyville', note: 'Teensyville' });
 	});
+
+	it("carries TPI's edition logo, or the author's, or none", () => {
+		expect(tb.logo).toBe('/data/logos/tb.webp');
+		const logo = 'https://example.com/logo.png';
+		const own = loadScript([{ id: '_meta', name: 'Own', logo }, 'chef', 'imp'], data).script!;
+		expect(pickerRow(own, 'own', 'recent').logo).toBe(logo);
+		expect(anon.logo).toBeUndefined();
+	});
 });
 
 describe('filterRows', () => {

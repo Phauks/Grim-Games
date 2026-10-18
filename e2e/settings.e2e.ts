@@ -203,6 +203,8 @@ test('the board looks and background are in Board, saved with the board', async 
 	expect(saved).toEqual({
 		vignette: false,
 		vignetteStrength: 0.3,
+		logo: true,
+		logoOpacity: 0.3,
 		rulesAt: 'edge',
 		rulesGrouped: false,
 		nameSize: 1,

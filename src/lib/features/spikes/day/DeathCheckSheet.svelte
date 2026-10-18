@@ -139,7 +139,7 @@
 	.option {
 		min-height: var(--tap-target);
 		padding: var(--space-1) var(--space-2);
-		border: 1px solid var(--on-sheet-muted);
+		border: 1px solid var(--on-surface-muted);
 		border-radius: var(--radius-md);
 		background: transparent;
 		color: inherit;
@@ -147,7 +147,7 @@
 		cursor: pointer;
 	}
 	.option[aria-pressed='true'] {
-		background: var(--sheet-color, var(--on-sheet));
+		background: var(--sheet-color, var(--on-surface));
 		color: var(--sheet-background, var(--sheet));
 	}
 	.verdict {

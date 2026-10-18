@@ -50,6 +50,7 @@ import ph_database_light from '~icons/ph/database-light';
 import ph_device_mobile_light from '~icons/ph/device-mobile-light';
 import ph_diamond_light from '~icons/ph/diamond-light';
 import ph_dice_five_light from '~icons/ph/dice-five-light';
+import ph_door_open_light from '~icons/ph/door-open-light';
 import ph_dots_three_light from '~icons/ph/dots-three-light';
 import ph_dots_three_vertical_light from '~icons/ph/dots-three-vertical-light';
 import ph_download_simple_light from '~icons/ph/download-simple-light';
@@ -139,6 +140,7 @@ import ph_shield_light from '~icons/ph/shield-light';
 import ph_shield_check_light from '~icons/ph/shield-check-light';
 import ph_shield_star_light from '~icons/ph/shield-star-light';
 import ph_shuffle_light from '~icons/ph/shuffle-light';
+import ph_sign_in_light from '~icons/ph/sign-in-light';
 import ph_skull_light from '~icons/ph/skull-light';
 import ph_sliders_light from '~icons/ph/sliders-light';
 import ph_smiley_light from '~icons/ph/smiley-light';
@@ -235,6 +237,7 @@ const icons: IconMap = {
 	'ph:device-mobile-light': ph_device_mobile_light,
 	'ph:diamond-light': ph_diamond_light,
 	'ph:dice-five-light': ph_dice_five_light,
+	'ph:door-open-light': ph_door_open_light,
 	'ph:dots-three-light': ph_dots_three_light,
 	'ph:dots-three-vertical-light': ph_dots_three_vertical_light,
 	'ph:download-simple-light': ph_download_simple_light,
@@ -324,6 +327,7 @@ const icons: IconMap = {
 	'ph:shield-check-light': ph_shield_check_light,
 	'ph:shield-star-light': ph_shield_star_light,
 	'ph:shuffle-light': ph_shuffle_light,
+	'ph:sign-in-light': ph_sign_in_light,
 	'ph:skull-light': ph_skull_light,
 	'ph:sliders-light': ph_sliders_light,
 	'ph:smiley-light': ph_smiley_light,

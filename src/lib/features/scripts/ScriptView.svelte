@@ -294,6 +294,7 @@
 		? t(`scripts.sourceLabel.${shownListing.row.source}`)
 		: t('scripts.current.defaultName')}
 	name={shownListing?.row.name ?? ''}
+	logo={shownListing?.row.logo}
 	{facts}
 	entries={shownListing?.row.entries ?? []}
 	{data}
@@ -313,6 +314,8 @@
 		<ShareControl
 			what="script"
 			title={shownListing?.row.name || t('scripts.current.defaultName')}
+			author={preview?.meta.author}
+			version={shownVersion ?? preview?.meta.version}
 			target={shareTarget}
 		/>
 		{@render extraActions?.()}

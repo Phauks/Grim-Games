@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { findColourFunctions, findHexColours } from './check-colors.ts';
 import { findPxSizes, svelteStyles } from './check-px.ts';
+import { flakyTests, summaryMarkdown } from './flaky-summary.ts';
 import { generatedFiles, missingIcons } from './generate-icons.ts';
 
 describe('generate-icons', () => {
@@ -50,6 +51,12 @@ describe('check-colors', () => {
 		).toEqual([]);
 		expect(findColourFunctions('a { background: var(--surface-hover); }')).toEqual([]);
 	});
+
+	it('takes the reason from the next line when Prettier wraps it there', () => {
+		const css =
+			'a { background: linear-gradient(\n\trgb(0 0 0) 75%\n\t/* colour-ok: shade */,\n\trgb(0 0 0)\n); }';
+		expect(findColourFunctions(css)).toEqual([{ line: 4, match: 'rgb' }]);
+	});
 });
 
 describe('check-px', () => {
@@ -83,5 +90,53 @@ describe('check-px', () => {
 		expect(findPxSizes(blocks[0].css, blocks[0].firstLine)).toEqual([
 			{ line: 3, match: '40px', property: 'width' }
 		]);
+	});
+});
+
+describe('flaky-summary', () => {
+	const report = {
+		suites: [
+			{
+				title: 'room.e2e.ts',
+				specs: [
+					{
+						title: 'a phone joins',
+						file: 'room.e2e.ts',
+						line: 17,
+						tests: [
+							{ projectName: 'phone', status: 'flaky' },
+							{ projectName: 'tablet', status: 'expected' }
+						]
+					}
+				],
+				suites: [
+					{
+						title: 'no sideways scrolling',
+						specs: [
+							{
+								title: '320px',
+								file: 'room.e2e.ts',
+								line: 80,
+								tests: [{ projectName: 'tablet', status: 'flaky' }]
+							}
+						]
+					}
+				]
+			}
+		]
+	};
+
+	it('lists only tests that passed on a retry, with their describe titles', () => {
+		expect(flakyTests(report)).toEqual([
+			{ project: 'phone', file: 'room.e2e.ts', line: 17, title: 'a phone joins' },
+			{ project: 'tablet', file: 'room.e2e.ts', line: 80, title: 'no sideways scrolling › 320px' }
+		]);
+	});
+
+	it('says None when nothing was flaky', () => {
+		expect(summaryMarkdown([])).toContain('None.');
+		expect(summaryMarkdown(flakyTests(report))).toContain(
+			'| phone | `e2e/room.e2e.ts:17` | a phone joins |'
+		);
 	});
 });

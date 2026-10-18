@@ -371,6 +371,12 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
 	).toBeVisible();
 	await fabled.tap();
+	// Its token opens its entry, as a seat's token does (Trevor, 2026-10-18).
+	await page.getByRole('button', { name: 'About the Spirit of Ivory' }).tap();
+	const entry = page.getByRole('dialog', { name: 'Spirit of Ivory' }).last();
+	await expect(entry.locator('header.character')).toBeVisible();
+	await entry.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Spirit of Ivory' })).toHaveCount(1);
 	// The trash sits beside the close X (Trevor, 2026-10-17).
 	await page
 		.getByRole('dialog', { name: 'Spirit of Ivory' })
@@ -1776,6 +1782,10 @@ test('History shows stats from ended games', async ({ page }) => {
 	await expect(summary).toContainText(
 		/Games\s*1\s*Good won\s*1\s*\(100%\)\s*Evil won\s*0\s*\(0%\)/
 	);
+	// How games end (Trevor, 2026-10-18): alternate wins and the final 3, each with its share.
+	await expect(summary).toContainText(/Alternate wins\s*\d+\s*\(\d+%\)/);
+	await expect(summary).toContainText(/Final 3\s*\d+\s*\(\d+%\)/);
+	await expect(summary).toContainText(/Final 3, good won\s*\d+\s*\((\d+%|None)\)/);
 	const scripts = page.getByTestId('history-scripts');
 	await expect(scripts).toContainText(/Trouble Brewing/);
 	// A long name stays inside its badge, even in a phone's narrow column (Trevor, 2026-10-18:

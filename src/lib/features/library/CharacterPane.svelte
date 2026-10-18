@@ -10,6 +10,8 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import type { GameData } from '#lib/core/data/index.ts';
+	import ChangeKind from './ChangeKind.svelte';
 	import ItemPane from './ItemPane.svelte';
 	import LabelRows from './LabelRows.svelte';
 	import { characterKey } from './library-items.ts';
@@ -18,10 +20,14 @@
 	interface Props {
 		open?: boolean;
 		saved: SavedCharacter;
+		data: GameData | undefined;
 		inline: boolean;
+		/** The item it became, after Change kind. */
+		onchanged?: (key: string) => void;
 	}
 
-	let { open = $bindable(false), saved, inline }: Props = $props();
+	let { open = $bindable(false), saved, data, inline, onchanged }: Props = $props();
+	let changingKind = $state(false);
 
 	const fields = $derived(fieldsFromEntry(saved.entry));
 	const character = $derived(previewCharacter(fields));
@@ -45,6 +51,11 @@
 	{/snippet}
 	{#snippet headActions()}
 		<IconButton icon="buildCharacter" label={t('library.editCharacter')} onclick={edit} />
+		<IconButton
+			icon="changeKind"
+			label={t('library.changeKind')}
+			onclick={() => (changingKind = true)}
+		/>
 		<DeleteButton label={t('library.deleteCharacter')} onclick={() => (deleting = true)} />
 	{/snippet}
 	<div class="character" data-testid="library-character">
@@ -54,6 +65,8 @@
 		</dl>
 	</div>
 </ItemPane>
+
+<ChangeKind bind:open={changingKind} item={{ kind: 'character', saved }} {data} {onchanged} />
 
 <ConfirmDialog
 	bind:open={deleting}

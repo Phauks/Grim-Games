@@ -162,8 +162,12 @@
 	.reminder[data-type='demon'] {
 		--rim: var(--evil);
 	}
+	/* A Traveller's reminder: half good blue, half evil red, like its token (Trevor, 2026-10-18). */
 	.reminder[data-type='traveller'] {
-		--rim: var(--traveller);
+		border-color: transparent;
+		background:
+			linear-gradient(var(--reminder-face) 0 0) padding-box,
+			linear-gradient(to right, var(--good) 50%, var(--evil) 50%) border-box;
 	}
 	.reminder[data-type='fabled'] {
 		--rim: var(--fabled);
