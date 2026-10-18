@@ -197,7 +197,8 @@
 		padding: 0 0.3em;
 		overflow: hidden;
 		border-radius: var(--radius-sm);
-		background: var(--reminder-face);
+		/* Its own colour, the face's unless changed (Trevor, 2026-10-18). */
+		background: var(--reminder-label-face, var(--reminder-face));
 		box-shadow: 0 0 0 1.5px var(--rim);
 		/* The Reminder tokens font, as reminders in text (Trevor, 2026-10-18: they match). */
 		font-family: var(--font-reminder);

@@ -1232,7 +1232,13 @@ test('the board background can be an image from the device, kept after a reload'
 	await menu(page, 'Board');
 	await expect(dialog.getByTestId('background-now')).toHaveText('Your image, for this game');
 	await expect(dialog).not.toContainText('never uploaded');
-	await dialog.getByRole('button', { name: 'None', exact: true }).tap();
+	// None is the first in the list (Trevor, 2026-10-18).
+	const none = dialog
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button')
+		.first();
+	await expect(none).toHaveAccessibleName('None');
+	await none.tap();
 	await expect(page.getByTestId('board-background')).toHaveCount(0);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 

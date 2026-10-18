@@ -179,11 +179,21 @@ test('the board looks and background are in Board, saved with the board', async 
 	await expect(felt).toHaveAttribute('aria-pressed', 'false');
 	await felt.tap();
 	await expect(felt).toHaveAttribute('aria-pressed', 'true');
+	// None is the first background in the list, not a separate button (Trevor, 2026-10-18).
+	const backgrounds = dialog.getByRole('group', { name: 'Background for all games' });
+	await expect(backgrounds.getByRole('button').first()).toHaveAccessibleName('None');
+	await expect(dialog.getByRole('button', { name: 'None', exact: true })).toHaveCount(1);
 	const vignette = dialog.getByRole('checkbox', { name: 'Vignette', includeHidden: true });
 	await expect(vignette).toBeChecked();
+	await slide(page, 'Vignette strength', 0.3);
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	await expect(vignette).not.toBeChecked();
-	await slide(page, 'Vignette strength', 0.3);
+	// Shown but disabled while the vignette is off (Trevor, 2026-10-18).
+	const strength = dialog.getByRole('slider', { name: 'Vignette strength' });
+	await expect(strength).toBeDisabled();
+	await dialog.getByText('Vignette', { exact: true }).tap();
+	await expect(strength).toBeEnabled();
+	await dialog.getByText('Vignette', { exact: true }).tap();
 	await dialog.getByRole('combobox', { name: 'Location', exact: true }).tap();
 	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
 
@@ -298,7 +308,7 @@ test('character icon size is its own slider and leaves interface icons alone', a
 		.locator('.icon');
 	const before = await settingsIcon.boundingBox();
 
-	const dialog = await openSettings(page, 'Tokens');
+	const dialog = await openSettings(page, 'Icons');
 	await slide(page, 'Character icon size', 1.25);
 	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
 	expect(await rootStyle(page, '--icon-scale')).toBe('1');

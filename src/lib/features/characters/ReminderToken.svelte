@@ -57,11 +57,11 @@
 	data-done={done || undefined}
 	data-icon={icon ? '' : undefined}
 	title={title ?? character?.name}
-	>{#if icon}<img class="owner" src={icon} alt="" />{/if}{label ??
-		t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span>{/if}{#if done}<span
-			class="tick"
-			aria-label={t('characters.reminderPlaced')}>✓</span
-		>{/if}</span
+	>{#if icon}<img class="owner" src={icon} alt="" />{/if}<span class="words"
+		>{label ?? t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span
+			>{/if}{#if done}<span class="tick" aria-label={t('characters.reminderPlaced')}>✓</span
+			>{/if}</span
+	></span
 >
 
 <!-- eslint-enable grim/names-as-badges -->
@@ -76,7 +76,13 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.3em;
-		padding: 0 0.45em 0 0.2em;
+		padding: 0 calc(0.45em * var(--badge)) 0 calc(0.2em * var(--badge));
+		/*
+		 * Its words, the owner's icon and the chip round them each have a size in Settings >
+		 * Tokens (Trevor, 2026-10-18); the chip never gets smaller than what it holds.
+		 */
+		--badge: var(--inline-reminder-badge, 1);
+		min-height: calc(1.4em * var(--badge));
 		border-radius: 0.35em;
 		background: var(--reminder-face);
 		box-shadow: inset 0 0 0 1.5px var(--rim);
@@ -86,8 +92,7 @@
 		 * the display font in small capitals. Never smaller than 0.8rem, which follows Text size.
 		 */
 		font-family: var(--font-reminder);
-		/* The user's Reminder size in text (--inline-reminder-scale, Settings) scales it. */
-		font-size: calc(max(0.85em, 0.8rem) * var(--inline-reminder-scale, 1));
+		font-size: max(0.85em, 0.8rem);
 		font-weight: 600;
 		line-height: 1.4;
 		/* One line, unless the chip alone is wider than its line (tiny screen, largest text). */
@@ -99,28 +104,29 @@
 		 */
 		vertical-align: middle;
 	}
-	/* The little round token mark. */
+	.words {
+		font-size: calc(1em * var(--inline-reminder-scale, 1));
+	}
+	/* The little round token mark, for a token with no known owner. */
 	.reminder::before {
 		content: '';
 		flex: none;
-		width: 0.75em;
-		height: 0.75em;
+		width: calc(0.75em * var(--inline-reminder-icon, 1));
+		height: calc(0.75em * var(--inline-reminder-icon, 1));
 		border-radius: 50%;
 		background: var(--rim);
 	}
 	/* The owner's icon instead of the dot. */
 	.reminder[data-icon] {
-		padding-left: 0.1em;
+		padding-left: calc(0.1em * var(--badge));
 	}
-	/* Settings > Tokens can show the dot instead of the icon. */
 	.reminder[data-icon]::before {
-		display: var(--inline-reminder-dot, none);
+		display: none;
 	}
 	.owner {
-		display: var(--inline-reminder-owner, inline);
 		flex: none;
-		width: 1.5em;
-		height: 1.5em;
+		width: calc(1.5em * var(--inline-reminder-icon, 1));
+		height: calc(1.5em * var(--inline-reminder-icon, 1));
 		margin: -0.1em 0;
 	}
 	.reminder[data-type='townsfolk'],
@@ -149,7 +155,7 @@
 	}
 	/* Info tokens belong to no character: no mark, dashed rim. */
 	.reminder[data-variant='info'] {
-		padding-left: 0.45em;
+		padding-left: calc(0.45em * var(--badge));
 		box-shadow: none;
 		outline: 1.5px dashed var(--on-token);
 		outline-offset: -1.5px;
