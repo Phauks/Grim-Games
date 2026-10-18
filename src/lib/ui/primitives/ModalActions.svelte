@@ -56,7 +56,11 @@
 	/* Stays in view at the bottom of a long modal, over what scrolls under it. */
 	.modal-actions {
 		position: sticky;
-		bottom: 0;
+		/*
+		 * Over the scroll box's bottom padding too, and its sides by shadow, so nothing that
+		 * scrolls shows around the buttons (Trevor, 2026-10-18).
+		 */
+		bottom: calc(-1 * var(--modal-actions-inset, var(--space-1)));
 		display: flex;
 		flex: 1 1 100%;
 		flex-wrap: wrap;
@@ -64,7 +68,11 @@
 		justify-content: flex-end;
 		gap: var(--space-2);
 		padding-top: var(--space-3);
+		padding-bottom: var(--modal-actions-inset, var(--space-1));
 		background: var(--modal-actions-background, var(--sheet-background));
+		box-shadow:
+			var(--space-2) 0 0 var(--modal-actions-background, var(--sheet-background)),
+			calc(-1 * var(--space-2)) 0 0 var(--modal-actions-background, var(--sheet-background));
 	}
 	.start {
 		display: flex;

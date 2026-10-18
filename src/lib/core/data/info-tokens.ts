@@ -12,8 +12,10 @@ export interface InfoToken {
 	text: string;
 	/** Built in (cannot be deleted, only hidden) or made by the Storyteller. */
 	source: 'standard' | 'custom';
-	/** Shown to a player alongside: character tokens, a player, or nothing. */
-	shows?: 'characters' | 'player' | 'none';
+	/** Shown to a player alongside: character tokens, a player, a number, or nothing. */
+	shows?: 'characters' | 'player' | 'none' | 'number';
+	/** Not one of the base game's cards: Trevor's own additions (2026-10-18), marked apart. */
+	extra?: true;
 }
 
 export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
@@ -39,7 +41,31 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 		shows: 'characters'
 	},
 	{ id: 'did-you-nominate', text: 'Did you nominate today?', source: 'standard', shows: 'none' },
-	{ id: 'did-you-vote', text: 'Did you vote today?', source: 'standard', shows: 'none' }
+	{ id: 'did-you-vote', text: 'Did you vote today?', source: 'standard', shows: 'none' },
+	// Trevor's own additions and wording (2026-10-18), listed apart from the base game's.
+	// Number shows only the number chosen, instead of fingers (Trevor, 2026-10-18).
+	{ id: 'number', text: 'Number', source: 'standard', shows: 'number', extra: true },
+	{
+		id: 'what-are-you-bluffing',
+		text: 'What are you bluffing?',
+		source: 'standard',
+		shows: 'none',
+		extra: true
+	},
+	{
+		id: 'use-your-ability',
+		text: 'Use your ability?',
+		source: 'standard',
+		shows: 'none',
+		extra: true
+	},
+	{
+		id: 'choose-again',
+		text: 'Please choose again',
+		source: 'standard',
+		shows: 'none',
+		extra: true
+	}
 ];
 
 /** The standard list with the Storyteller's hidden ones removed and custom ones added. */
