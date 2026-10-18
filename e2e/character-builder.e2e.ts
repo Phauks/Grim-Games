@@ -104,3 +104,26 @@ test('an ability is built from its opening and setup changes', async ({ page }) 
 		'Each night* choose a player: they learn something. [+the King]'
 	);
 });
+
+// One trash in the header (Trevor, 2026-10-18: "two delete buttons"): it clears an unsaved
+// character, and deletes the saved one once there is one.
+test('one trash button clears a new character and deletes a saved one', async ({ page }) => {
+	await page.goto('/build-character');
+	const header = page.getByRole('main');
+	const trash = () =>
+		header.getByRole('button', { name: /^(Clear the character|Delete the saved character)$/ });
+	await expect(trash()).toHaveCount(1);
+	await expect(header.getByRole('button', { name: 'Clear the character' })).toBeDisabled();
+
+	await page.getByTestId('character-name').fill('Candle Snuffer');
+	await page.getByTestId('character-ability').fill('You start knowing a candle.');
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(trash()).toHaveCount(1);
+	await header.getByRole('button', { name: 'Delete the saved character' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+
+	await header.getByRole('button', { name: 'Clear the character' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('character-name')).toHaveValue('');
+});

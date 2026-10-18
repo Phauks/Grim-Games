@@ -29,7 +29,6 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import TextListField from '#lib/ui/primitives/TextListField.svelte';
@@ -147,17 +146,10 @@
 			downloadLabel={t('character-builder.download')}
 			downloadDisabled={!canSave}
 			onDownload={() => downloadJson(fileNameFor(f.name, 'character'), characterEntry(f))}
-			clearLabel={t('character-builder.clear')}
-			clearDisabled={isEmptyCharacterDraft(d)}
-			onClear={() => (clearOpen = true)}
-		>
-			<DeleteButton
-				class="icon-button"
-				label={t('character-builder.delete')}
-				disabled={!savedRecord}
-				onclick={() => (deleteOpen = true)}
-			/>
-		</BuilderTools>
+			clearLabel={savedRecord ? t('character-builder.delete') : t('character-builder.clear')}
+			clearDisabled={!savedRecord && isEmptyCharacterDraft(d)}
+			onClear={() => (savedRecord ? (deleteOpen = true) : (clearOpen = true))}
+		/>
 	{/snippet}
 
 	{#snippet side()}
