@@ -1527,13 +1527,21 @@
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
-		<!-- Token and board settings over the board (Trevor, 2026-10-17). -->
+		<!-- Board and token settings over the board (Trevor, 2026-10-17); two sections since
+		     2026-10-18. -->
 		<Button
 			variant="quiet"
 			icon="settings"
 			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
 		>
-			Board and tokens
+			Board
+		</Button>
+		<Button
+			variant="quiet"
+			icon="settings"
+			onclick={() => fromMenu(() => settingsDialog.showOnly('tokens'))}
+		>
+			Tokens
 		</Button>
 		<!-- A town of a mode game: back to all its towns (Alternative game modes). -->
 		{#if towns}

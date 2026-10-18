@@ -6,7 +6,6 @@ export const settings = {
 	'settings.sections': 'Settings sections',
 	'settings.allSettings': 'All settings',
 	'settings.themeText': 'Theme and text',
-	'settings.boardTokens': 'Board and tokens',
 	'settings.groupNight': 'Night',
 	'settings.groupSetup': 'Setup and bag draw',
 	'settings.groupDay': 'Day',

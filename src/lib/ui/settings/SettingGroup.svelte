@@ -34,7 +34,12 @@
 <style>
 	.setting-group {
 		container-type: inline-size;
-		margin: 0 0 var(--space-6);
+		margin: 0 0 var(--space-5);
+	}
+	/* A line between groups, so each kind of token reads as its own (Trevor, 2026-10-18). */
+	:global(.setting-group) + .setting-group {
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--border);
 	}
 	.layout {
 		display: grid;
