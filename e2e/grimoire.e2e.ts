@@ -3101,8 +3101,9 @@ test('Run Night Order starts in one tap from the end of the reminder bank', asyn
 	await expect(run).toBeEnabled();
 });
 
-// https://wiki.bloodontheclocktower.com/Investigator: the two players shown are others.
-test("the Investigator's own seat marks its Wrong as not a usual place, and warns if placed", async ({
+// https://wiki.bloodontheclocktower.com/Investigator: the Minion shown is another player; the
+// other player shown may be the Investigator (Trevor, 2026-10-18).
+test("the Investigator's own seat fits its Wrong; its Minion is marked and warns if placed", async ({
 	page
 }) => {
 	await startGame(page);
@@ -3115,14 +3116,13 @@ test("the Investigator's own seat marks its Wrong as not a usual place, and warn
 	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
 	const investigator = picker.getByRole('group', { name: 'Investigator' });
-	const wrong = investigator.getByRole('button').filter({ hasText: 'Wrong' });
-	await expect(wrong).toHaveAttribute('data-misfit', '');
-	await expect(investigator.getByRole('button').filter({ hasText: 'Minion' })).toHaveAttribute(
-		'data-misfit',
-		''
+	await expect(investigator.getByRole('button').filter({ hasText: 'Wrong' })).not.toHaveAttribute(
+		'data-misfit'
 	);
+	const minion = investigator.getByRole('button').filter({ hasText: 'Minion' });
+	await expect(minion).toHaveAttribute('data-misfit', '');
 	// Warn, never lock: it is still placed, with a note saying why.
-	await wrong.tap();
+	await minion.tap();
 	await expect(picker.getByText('On this seat: 1')).toBeVisible();
 	await expect(page.getByText(/never goes on its character's own player/)).toBeVisible();
 });

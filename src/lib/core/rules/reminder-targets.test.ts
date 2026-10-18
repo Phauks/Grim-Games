@@ -141,8 +141,9 @@ describe('reminder targets', () => {
 		expect(fitting(session, { characterId: 'tealady', label: 'Cannot Die' })).toEqual([0, 3]);
 	});
 
-	// https://wiki.bloodontheclocktower.com/Washerwoman: one Townsfolk and one other player.
-	it('Washerwoman: Townsfolk on another Townsfolk; Wrong never on that player', () => {
+	// https://wiki.bloodontheclocktower.com/Washerwoman: one Townsfolk and one other player, who may
+	// be the Washerwoman herself (Trevor, 2026-10-18).
+	it('Washerwoman: Townsfolk on another Townsfolk; Wrong anywhere but that player', () => {
 		const { session, seats, ctx } = grimoire(['washerwoman', 'chef', 'butler', 'imp'], []);
 		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([1]);
 		const s = run(session, ctx, {
@@ -150,12 +151,12 @@ describe('reminder targets', () => {
 			seatId: seats[1],
 			reminder: { characterId: 'washerwoman', label: 'Townsfolk' }
 		});
-		expect(fitting(s, { characterId: 'washerwoman', label: 'Wrong' })).toEqual([2, 3]);
+		expect(fitting(s, { characterId: 'washerwoman', label: 'Wrong' })).toEqual([0, 2, 3]);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Investigator: two players are shown, one of them a
-	// Minion; neither is the Investigator.
-	it('Investigator: Minion on another Minion; Wrong never on the Investigator or that player', () => {
+	// Minion; the other may be the Investigator (Trevor, 2026-10-18).
+	it('Investigator: Minion on another Minion; Wrong anywhere but that player', () => {
 		const { session, seats, ctx } = grimoire(['investigator', 'chef', 'poisoner', 'imp'], []);
 		expect(fitting(session, { characterId: 'investigator', label: 'Minion' })).toEqual([2]);
 		const s = run(session, ctx, {
@@ -163,12 +164,12 @@ describe('reminder targets', () => {
 			seatId: seats[2],
 			reminder: { characterId: 'investigator', label: 'Minion' }
 		});
-		expect(fitting(s, { characterId: 'investigator', label: 'Wrong' })).toEqual([1, 3]);
+		expect(fitting(s, { characterId: 'investigator', label: 'Wrong' })).toEqual([0, 1, 3]);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Librarian: two players are shown, one of them an
 	// Outsider; neither is the Librarian.
-	it('Librarian: Outsider on another Outsider; Wrong never on the Librarian or that player', () => {
+	it('Librarian: Outsider on another Outsider; Wrong anywhere but that player', () => {
 		const { session, seats, ctx } = grimoire(['librarian', 'chef', 'butler', 'imp'], []);
 		expect(fitting(session, { characterId: 'librarian', label: 'Outsider' })).toEqual([2]);
 		const s = run(session, ctx, {
@@ -176,7 +177,7 @@ describe('reminder targets', () => {
 			seatId: seats[2],
 			reminder: { characterId: 'librarian', label: 'Outsider' }
 		});
-		expect(fitting(s, { characterId: 'librarian', label: 'Wrong' })).toEqual([1, 3]);
+		expect(fitting(s, { characterId: 'librarian', label: 'Wrong' })).toEqual([0, 1, 3]);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Evil_Twin: the twin is of the opposite alignment.

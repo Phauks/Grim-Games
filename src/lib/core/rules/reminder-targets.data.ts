@@ -74,7 +74,7 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 				note: 'The Townsfolk whose character the Washerwoman is shown.'
 			},
 			Wrong: {
-				seat: 'other',
+				seat: 'any',
 				notWithLabel: 'Townsfolk',
 				note: 'The second, decoy player pointed at alongside the Townsfolk.'
 			}
@@ -695,7 +695,7 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 				note: 'The player whose Outsider character the Librarian is shown.'
 			},
 			Wrong: {
-				seat: 'other',
+				seat: 'any',
 				notWithLabel: 'Outsider',
 				note: 'The second player shown, who is not that Outsider.'
 			}
@@ -992,7 +992,7 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
 				note: 'Goes on the Minion whose character the Investigator learns.'
 			},
 			Wrong: {
-				seat: 'other',
+				seat: 'any',
 				notWithLabel: 'Minion',
 				note: 'Goes on the second shown player, who is not that Minion.'
 			}
