@@ -73,6 +73,7 @@ export const setup = {
 	'setup.check.choose': 'Choose',
 	'setup.check.notOnScript':
 		'{name} needs the {required} in play, but the {required} is not on the script.',
+	'setup.offScript': 'Not on script',
 	'setup.characterInfo': 'About the {name}',
 	'setup.check.customReminders':
 		'Custom characters: the app can’t tell which of their reminder tokens go out before the game.',
