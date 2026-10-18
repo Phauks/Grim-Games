@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/index.ts';
+	import CharacterBuilderDialog from '#lib/features/character-builder/CharacterBuilderDialog.svelte';
 	import type { SavedCharacter } from '#lib/features/character-builder/saved-characters.ts';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -32,11 +31,8 @@
 	const fields = $derived(fieldsFromEntry(saved.entry));
 	const character = $derived(previewCharacter(fields));
 	let deleting = $state(false);
-
-	function edit() {
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- the path is resolved; only the hash is added
-		void goto(`${resolve('/build-character')}#edit=${encodeURIComponent(saved.savedId)}`);
-	}
+	// The Character builder opens over the Library, so editing never leaves it (Trevor, 2026-10-18).
+	let editing = $state(false);
 
 	function remove() {
 		// Deleted before closing: closing unmounts this pane.
@@ -50,7 +46,11 @@
 		<CharacterBadge characterId={character.id} {character} interactive={false} />
 	{/snippet}
 	{#snippet headActions()}
-		<IconButton icon="buildCharacter" label={t('library.editCharacter')} onclick={edit} />
+		<IconButton
+			icon="buildCharacter"
+			label={t('library.editCharacter')}
+			onclick={() => (editing = true)}
+		/>
 		<IconButton
 			icon="changeKind"
 			label={t('library.changeKind')}
@@ -67,6 +67,7 @@
 </ItemPane>
 
 <ChangeKind bind:open={changingKind} item={{ kind: 'character', saved }} {data} {onchanged} />
+<CharacterBuilderDialog bind:open={editing} savedId={saved.savedId} />
 
 <ConfirmDialog
 	bind:open={deleting}

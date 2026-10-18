@@ -15,7 +15,8 @@
 		aside?: Snippet;
 		/** A collapsible section that starts closed. */
 		defaultOpen?: boolean;
-		children: Snippet;
+		/** Left out for a section that is only its header (a heading and its button). */
+		children?: Snippet;
 	}
 
 	let {
@@ -34,7 +35,7 @@
 <!-- One section of a Page: a heading at the one section size, its optional aside, its content. -->
 {#if collapsible}
 	<Collapsible {title} {level} {storageKey} {forceOpen} {aside} {defaultOpen}>
-		<div class="body">{@render children()}</div>
+		{#if children}<div class="body">{@render children()}</div>{/if}
 	</Collapsible>
 {:else}
 	<section class="page-section" aria-labelledby="{id}-title">
@@ -42,7 +43,7 @@
 			<svelte:element this={`h${level}`} id="{id}-title" class="title">{title}</svelte:element>
 			{#if aside}<div class="aside">{@render aside()}</div>{/if}
 		</div>
-		<div class="body">{@render children()}</div>
+		{#if children}<div class="body">{@render children()}</div>{/if}
 	</section>
 {/if}
 

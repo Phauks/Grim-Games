@@ -48,10 +48,12 @@
 	:global([data-scope='toast'][data-part='close-trigger']) {
 		display: grid;
 		place-items: center;
-		min-width: var(--tap-target);
+		flex: none;
+		padding: 0;
 		margin-left: auto;
 		border: 0;
-		background: none;
+		/* Not `background: none`: that would reset the shared hover tint (base.css). */
+		background-color: transparent;
 	}
 	.text {
 		flex: 1;

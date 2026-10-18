@@ -67,6 +67,12 @@ export const characterBuilder = {
 	'character-builder.addToScript': 'Add to Script builder',
 	'character-builder.onScript': 'On Script builder',
 	'character-builder.collections': 'Character collections',
+	'character-builder.newTitle': 'New character',
+	'character-builder.editTitle': 'Edit character',
+	'character-builder.discardTitle': 'Discard changes?',
+	'character-builder.discardBody': 'What you changed in this character is not saved.',
+	'character-builder.newCharacter': 'New character',
+	'character-builder.editCharacter': 'Edit {name}',
 	'character-builder.delete': 'Delete the saved character',
 	'character-builder.deleteTitle': 'Delete {name}?',
 	'character-builder.deleteBody': 'It is removed from this device. Scripts that have it keep it.'
