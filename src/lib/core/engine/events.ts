@@ -48,6 +48,7 @@ export type GameEvent =
 	| { type: 'ReminderMovedToRuleCharacter'; reminderId: ReminderId; characterId: CharacterId }
 	| { type: 'LooseReminderPlaced'; reminder: ReminderInstance }
 	| { type: 'ReminderLoosened'; reminderId: ReminderId }
+	| { type: 'ReminderNoteSet'; reminderId: ReminderId; note?: string }
 	| { type: 'SeatsSwapped'; seatA: SeatId; seatB: SeatId }
 	/** The whole seating order, the same seats in a new order (RotateSeats, MoveSeat). */
 	| { type: 'SeatingReordered'; seating: SeatId[] }

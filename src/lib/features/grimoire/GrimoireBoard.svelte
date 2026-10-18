@@ -97,7 +97,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
-	import { extraReminders, onBoard } from './reminders.ts';
+	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import EndGameFields from './EndGameFields.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
@@ -1039,7 +1039,8 @@
 		<span class="held" role="group" aria-label={label}>
 			<span class:lifted={reminderDrag?.reminderId === last.reminderId}>
 				<BoardReminder
-					label={last.label}
+					label={reminderWords(last)}
+					infinite={isGeneric(last)}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last.characterId, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1078,7 +1079,7 @@
 				onclick={() => heldDialog?.show(reminder.reminderId)}
 			>
 				<ReminderToken
-					label={reminder.label}
+					label={tokenLabel(reminder)}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder.characterId, characters)}
 				/>
@@ -1293,7 +1294,8 @@
 						style:top="{p.y}%"
 					>
 						<BoardReminder
-							label={reminder.label}
+							label={reminderWords(reminder)}
+							infinite={isGeneric(reminder)}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 							size={chip}
@@ -1326,7 +1328,8 @@
 				style:top="{p.y}%"
 			>
 				<BoardReminder
-					label={reminder.label}
+					label={reminderWords(reminder)}
+					infinite={isGeneric(reminder)}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder.characterId, characters)}
 					size={chip}
@@ -1346,7 +1349,8 @@
 				aria-hidden="true"
 			>
 				<BoardReminder
-					label={heldDrag.label}
+					label={reminderWords(heldDrag)}
+					infinite={isGeneric(heldDrag)}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled
@@ -1369,7 +1373,7 @@
 			{@const r = dragOrigin.reminder}
 			<p class="origin" role="status">
 				<ReminderToken
-					label={r.label}
+					label={tokenLabel(r)}
 					character={characters.get(r.characterId)}
 					alignment={placingAlignment(game, r.characterId, characters)}
 				/>, from <ReminderOrigin

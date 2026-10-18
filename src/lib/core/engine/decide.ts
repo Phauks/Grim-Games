@@ -19,6 +19,7 @@ import {
 import {
 	ABNORMAL_REASONS,
 	GENERAL_DEATH_CAUSES,
+	GENERIC_REMINDER_ID,
 	OVERRIDE_FIELDS,
 	getSeat,
 	isKnownReminder,
@@ -36,6 +37,7 @@ import {
 	type DeathCause,
 	type Game,
 	type Reminder,
+	type ReminderInstance,
 	type Seat,
 	type Tile
 } from '#lib/core/model/index.ts';
@@ -288,6 +290,8 @@ function alignmentFromCharacters(
 }
 
 function checkReminder(game: Game, reminder: Reminder, ctx: EngineContext, warn: Warn): void {
+	// The generic ∞ reminder belongs to no character and may be placed anywhere.
+	if (reminder.characterId === GENERIC_REMINDER_ID) return;
 	const character = characterOf(ctx, reminder.characterId);
 	if (!isKnownReminder(character, reminder.label)) {
 		warn('reminder-not-for-character', `${character.name} has no "${reminder.label}" reminder`);
@@ -306,7 +310,7 @@ function heldReminder(
 	game: Game,
 	from: NonNullable<ReturnType<typeof reminderHolder>>,
 	reminderId: string
-): Reminder {
+): ReminderInstance {
 	const held =
 		'seatId' in from
 			? game.seats[from.seatId].reminders
@@ -330,6 +334,7 @@ function ruleHolderOf(game: Game, ctx: EngineContext, characterId: CharacterId):
  * (Trevor, 2026-10-17).
  */
 function warnIfNotRuleReminder(reminder: Reminder, ctx: EngineContext, warn: Warn): void {
+	if (reminder.characterId === GENERIC_REMINDER_ID) return;
 	const type = ctx.characters.get(reminder.characterId)?.type;
 	if (type !== 'fabled' && type !== 'loric') {
 		warn('reminder-not-from-rule-character', `${reminder.label} is not a Fabled or Loric reminder`);
@@ -881,6 +886,20 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 					characterId: holder
 				}
 			];
+		}
+
+		case 'SetReminderNote': {
+			const from = reminderHolder(game, command.reminderId);
+			if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+			const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
+			const note = command.note?.trim() || undefined;
+			if (note === reminder.note) {
+				warn('no-change', 'the note is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'ReminderNoteSet', reminderId: command.reminderId };
+			if (note !== undefined) event.note = note;
+			return [event];
 		}
 
 		case 'PlaceLooseReminder': {

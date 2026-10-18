@@ -86,6 +86,8 @@ export type Command =
 	| { type: 'PlaceLooseReminder'; reminder: Reminder }
 	/** Takes a reminder off its seat or Fabled or Loric and leaves it loose on the board. */
 	| { type: 'LoosenReminder'; reminderId: ReminderId }
+	/** The Storyteller's text on a reminder; empty clears it. */
+	| { type: 'SetReminderNote'; reminderId: ReminderId; note?: string }
 	/**
 	 * Places several reminders at once, such as the suggested setup reminders
 	 * (`setupReminders`, `placeableSetupReminders`). Each becomes a normal reminder that can
