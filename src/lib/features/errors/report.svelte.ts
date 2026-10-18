@@ -1,3 +1,4 @@
+import { readParsed, writeStored } from '#lib/ui/stored.ts';
 import {
 	describeThrown,
 	isBenignBrowserError,
@@ -24,20 +25,12 @@ export interface ReportOptions {
 }
 
 function read(): AppError[] {
-	try {
-		const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-		return parseErrorLog(raw ? JSON.parse(raw) : null, MAX_LOGGED);
-	} catch {
-		return [];
-	}
+	return readParsed(STORAGE_KEY, (raw) => parseErrorLog(raw, MAX_LOGGED));
 }
 
 function write(log: AppError[]): void {
-	try {
-		globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(log));
-	} catch {
-		// Storage full or blocked: the log still works for this visit.
-	}
+	// Storage full or blocked: the log still works for this visit.
+	writeStored(STORAGE_KEY, log);
 }
 
 function currentPage(): string {

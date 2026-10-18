@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 	import { onMount } from 'svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -43,11 +44,7 @@
 	]);
 
 	onMount(() => {
-		try {
-			key = localStorage.getItem(KEY_STORAGE) ?? '';
-		} catch {
-			key = '';
-		}
+		key = readStoredText(KEY_STORAGE) ?? '';
 		if (key) void load();
 	});
 
@@ -71,22 +68,15 @@
 		key = typed.trim();
 		typed = '';
 		wrongKey = false;
-		try {
-			localStorage.setItem(KEY_STORAGE, key);
-		} catch {
-			// Storage blocked: the key lasts for this visit.
-		}
+		// Storage blocked: the key lasts for this visit.
+		writeStoredText(KEY_STORAGE, key);
 		void load();
 	}
 
 	function forget() {
 		key = '';
 		reports = undefined;
-		try {
-			localStorage.removeItem(KEY_STORAGE);
-		} catch {
-			// Nothing stored.
-		}
+		writeStoredText(KEY_STORAGE, undefined);
 	}
 
 	async function changeStatus(report: Report, status: ReportStatus) {

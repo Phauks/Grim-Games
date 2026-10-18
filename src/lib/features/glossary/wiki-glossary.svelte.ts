@@ -1,3 +1,4 @@
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { GLOSSARY, glossaryEntryUrl, type GlossaryTerm } from '#lib/core/rules/glossary.ts';
 import { parseGlossaryHtml, glossaryKey, type WikiEntry } from './wiki-glossary.ts';
 
@@ -23,14 +24,9 @@ interface Cached {
 }
 
 function readCache(): Cached | undefined {
-	try {
-		globalThis.localStorage?.removeItem('grim-games:wiki-glossary'); // v1, without links
-		const raw = globalThis.localStorage?.getItem(KEY);
-		const parsed = raw ? (JSON.parse(raw) as Cached) : undefined;
-		return parsed && Array.isArray(parsed.entries) ? parsed : undefined;
-	} catch {
-		return undefined;
-	}
+	writeStored('grim-games:wiki-glossary', undefined); // v1, without links
+	const parsed = readStored<Cached>(KEY);
+	return parsed && Array.isArray(parsed.entries) ? parsed : undefined;
 }
 
 class WikiGlossary {
@@ -66,14 +62,11 @@ class WikiGlossary {
 				if (entries.size === 0) return;
 				this.#entries = entries;
 				this.#fetchedAt = Date.now();
-				try {
-					globalThis.localStorage?.setItem(
-						KEY,
-						JSON.stringify({ fetchedAt: this.#fetchedAt, entries: [...entries] } satisfies Cached)
-					);
-				} catch {
-					// Not kept; it is fetched again next time.
-				}
+				// Not kept when storage refuses it; it is fetched again next time.
+				writeStored(KEY, {
+					fetchedAt: this.#fetchedAt,
+					entries: [...entries]
+				} satisfies Cached);
 			} catch {
 				// Offline or blocked: keep the cached copy (or none) and show the link only.
 			} finally {

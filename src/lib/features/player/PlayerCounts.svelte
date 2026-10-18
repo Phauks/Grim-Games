@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { MAX_DEALT_PLAYERS, MIN_PLAYERS } from '#lib/core/rules/distribution.ts';
+	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
 
 	/** The character types dealt for each player count (the Players section of the sheet). */
@@ -17,12 +18,8 @@
 	// 2026-10-16). The board starts from its seat count and doesn't store a choice.
 	const COUNT_KEY = 'grim-games:play:player-count';
 	function storedCount(): number | undefined {
-		try {
-			const n = Number(globalThis.localStorage?.getItem(COUNT_KEY));
-			return counts.includes(n) ? n : undefined;
-		} catch {
-			return undefined;
-		}
+		const n = Number(readStoredText(COUNT_KEY));
+		return counts.includes(n) ? n : undefined;
 	}
 	let chosen = $state<number | null>();
 	const highlighted = $derived(
@@ -35,12 +32,8 @@
 	function choose(n: number) {
 		chosen = highlighted === n ? null : n;
 		if (players !== undefined) return;
-		try {
-			if (chosen === null) globalThis.localStorage?.removeItem(COUNT_KEY);
-			else globalThis.localStorage?.setItem(COUNT_KEY, String(chosen));
-		} catch {
-			// Private browsing or full storage: the choice lasts until the page closes.
-		}
+		// Private browsing or full storage: the choice lasts until the page closes.
+		writeStoredText(COUNT_KEY, chosen === null ? undefined : String(chosen));
 	}
 </script>
 

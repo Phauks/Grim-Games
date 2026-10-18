@@ -2,6 +2,7 @@
  * The Character reference table's sort and filters, remembered on this device only (like
  * the Cards/Table choice). Storage can be missing or throw; then nothing is remembered.
  */
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 import {
 	parseTableState,
 	type TableFilters,
@@ -12,12 +13,7 @@ import {
 const KEY = 'grim-games:reference-table';
 
 function read(): TableState {
-	try {
-		const raw = globalThis.localStorage?.getItem(KEY);
-		return parseTableState(raw ? JSON.parse(raw) : undefined);
-	} catch {
-		return { filters: {} };
-	}
+	return parseTableState(readStored(KEY));
 }
 
 class ReferenceTableState {
@@ -45,11 +41,8 @@ class ReferenceTableState {
 
 	#save(state: TableState): void {
 		this.#state = state;
-		try {
-			globalThis.localStorage?.setItem(KEY, JSON.stringify(state));
-		} catch {
-			// Not remembered; the choice still applies until the page is closed.
-		}
+		// Not remembered when storage refuses it; the choice still applies until the page closes.
+		writeStored(KEY, state);
 	}
 }
 
