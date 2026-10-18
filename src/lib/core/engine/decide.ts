@@ -186,12 +186,24 @@ function createGame(command: CommandOf<'CreateGame'>, ctx: EngineContext, warn: 
 			script: command.script,
 			seatIds
 		},
-		// The script's Fabled and Loric start in play (script-rules.ts).
-		...startingRuleCharacters(command.script, ctx.characters).map((characterId): GameEvent => ({
+		// The chosen Fabled and Loric, or the script's own, start in play (script-rules.ts).
+		...startingRules(command, ctx).map((characterId): GameEvent => ({
 			type: 'RuleCharacterAdded',
 			characterId
 		}))
 	];
+}
+
+function startingRules(command: CommandOf<'CreateGame'>, ctx: EngineContext): CharacterId[] {
+	if (!command.ruleCharacters) return startingRuleCharacters(command.script, ctx.characters);
+	const ids = [...new Set(command.ruleCharacters)];
+	for (const id of ids) {
+		const character = characterOf(ctx, id);
+		if (character.type !== 'fabled' && character.type !== 'loric') {
+			refuse('not-rule-character', `${character.name} is not a Fabled or Loric`);
+		}
+	}
+	return ids;
 }
 
 function seatOf(game: Game, seatId: string): Seat {

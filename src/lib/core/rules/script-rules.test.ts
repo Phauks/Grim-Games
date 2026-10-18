@@ -63,6 +63,26 @@ describe('startingRuleCharacters', () => {
 		);
 		expect(created.ok && created.session.game.ruleCharacters).toEqual(['ferryman', 'bootlegger']);
 	});
+
+	it('starts with the Fabled and Loric New game chose instead, when it chose', () => {
+		const s = script(['ferryman', 'chef', 'imp'], RULES);
+		const ctx = testContext({ characters: characterLookup(data, s) });
+		const chosen = createGame(
+			{ type: 'CreateGame', script: s, playerCount: 5, ruleCharacters: ['angel'] },
+			ctx
+		);
+		expect(chosen.ok && chosen.session.game.ruleCharacters).toEqual(['angel']);
+		const none = createGame(
+			{ type: 'CreateGame', script: s, playerCount: 5, ruleCharacters: [] },
+			ctx
+		);
+		expect(none.ok && none.session.game.ruleCharacters).toEqual([]);
+		const seated = createGame(
+			{ type: 'CreateGame', script: s, playerCount: 5, ruleCharacters: ['chef'] },
+			ctx
+		);
+		expect(seated.ok ? 'ok' : seated.error.code).toBe('not-rule-character');
+	});
 });
 
 describe('the Bootlegger in a game', () => {
