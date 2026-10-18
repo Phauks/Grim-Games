@@ -26,6 +26,7 @@ import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_bookmarks_simple from '~icons/ph/bookmarks-simple';
 import ph_books from '~icons/ph/books';
 import ph_bug from '~icons/ph/bug';
+import ph_calculator from '~icons/ph/calculator';
 import ph_caret_circle_down from '~icons/ph/caret-circle-down';
 import ph_caret_down from '~icons/ph/caret-down';
 import ph_caret_left from '~icons/ph/caret-left';
@@ -83,6 +84,7 @@ import ph_hand_palm from '~icons/ph/hand-palm';
 import ph_hand_pointing from '~icons/ph/hand-pointing';
 import ph_handbag from '~icons/ph/handbag';
 import ph_hard_drives from '~icons/ph/hard-drives';
+import ph_hash from '~icons/ph/hash';
 import ph_heart from '~icons/ph/heart';
 import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_hexagon from '~icons/ph/hexagon';
@@ -162,6 +164,7 @@ import ph_tag from '~icons/ph/tag';
 import ph_tag_simple from '~icons/ph/tag-simple';
 import ph_text_aa from '~icons/ph/text-aa';
 import ph_text_t from '~icons/ph/text-t';
+import ph_textbox from '~icons/ph/textbox';
 import ph_timer from '~icons/ph/timer';
 import ph_tote from '~icons/ph/tote';
 import ph_trash from '~icons/ph/trash';
@@ -213,6 +216,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple': ph_bookmarks_simple,
 	'ph:books': ph_books,
 	'ph:bug': ph_bug,
+	'ph:calculator': ph_calculator,
 	'ph:caret-circle-down': ph_caret_circle_down,
 	'ph:caret-down': ph_caret_down,
 	'ph:caret-left': ph_caret_left,
@@ -270,6 +274,7 @@ const icons: IconMap = {
 	'ph:hand-pointing': ph_hand_pointing,
 	'ph:handbag': ph_handbag,
 	'ph:hard-drives': ph_hard_drives,
+	'ph:hash': ph_hash,
 	'ph:heart': ph_heart,
 	'ph:heartbeat': ph_heartbeat,
 	'ph:hexagon': ph_hexagon,
@@ -349,6 +354,7 @@ const icons: IconMap = {
 	'ph:tag-simple': ph_tag_simple,
 	'ph:text-aa': ph_text_aa,
 	'ph:text-t': ph_text_t,
+	'ph:textbox': ph_textbox,
 	'ph:timer': ph_timer,
 	'ph:tote': ph_tote,
 	'ph:trash': ph_trash,
