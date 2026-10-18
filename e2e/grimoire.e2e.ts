@@ -1342,7 +1342,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await empath.getByRole('button', { name: 'Close' }).tap();
 
 	// The last step goes on into the day, where its announcements are (Trevor, 2026-10-18).
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await order.getByRole('button', { name: 'Run Night Order' }).tap();
 	for (let i = 0; i < 20 && (await strip.getByRole('button', { name: 'Next step' }).count()); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
