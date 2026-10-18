@@ -545,6 +545,8 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 
 	await page.goto(`/grimoire/${gameId}/room`);
+	// The code arrives from the server after the share screen opens.
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 

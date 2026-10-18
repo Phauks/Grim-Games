@@ -21,6 +21,8 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 }, testInfo) => {
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
+	// The code arrives from the server after the share screen opens.
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 	expect(code).toMatch(/^\d{6}$/);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -64,6 +66,8 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	// A game with no characters assigned yet: the room can open while the game is in setup.
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
+	// The code arrives from the server after the share screen opens.
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
@@ -90,6 +94,8 @@ test('Share and Copy link carry the room code as well as the link', async ({ pag
 	});
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
+	// The code arrives from the server after the share screen opens.
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\D/g, '');
 	expect(code).toMatch(/^\d{6}$/);
 	const spaced = `${code.slice(0, 3)} ${code.slice(3)}`;
@@ -128,6 +134,8 @@ test('the Worker refuses bad room requests', async ({ request }) => {
 test('a room tells an app too old for it to update', async ({ page, browser }, testInfo) => {
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
+	// The code arrives from the server after the share screen opens.
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\D/g, '');
 
 	// The real Worker turns away a hello in a protocol older than it accepts.
