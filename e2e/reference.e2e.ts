@@ -541,6 +541,32 @@ test('the table toggle sits on the search line', async ({ page }) => {
 	await sameLine(page.getByRole('searchbox', { name: 'Search characters' }));
 });
 
+test('the search and its controls sit in the page header', async ({ page }) => {
+	// Trevor (2026-10-18): "move the search bar and controls in character reference in-line
+	// with the header to save space".
+	await page.goto('/reference');
+	const header = page.locator('main header');
+	const search = header.getByRole('searchbox', { name: 'Search characters' });
+	await expect(search).toBeVisible();
+	await expect(header.getByRole('button', { name: 'Show as table' })).toBeVisible();
+	const title = (await header.getByRole('heading', { level: 1 }).boundingBox())!;
+	const field = (await search.boundingBox())!;
+	if ((page.viewportSize()?.width ?? 0) >= 640) {
+		// Wide enough: on the title's own row, after it.
+		expect(Math.abs(field.y + field.height / 2 - (title.y + title.height / 2))).toBeLessThan(
+			field.height / 2
+		);
+		expect(field.x).toBeGreaterThan(title.x + title.width);
+	} else {
+		// A phone: the row under the title, still inside the header.
+		expect(field.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
+	}
+	// The table's count and Clear filters join the same header.
+	await header.getByRole('button', { name: 'Show as table' }).tap();
+	await expect(header.getByTestId('table-count')).toBeVisible();
+	await expect(header.getByRole('button', { name: 'Clear filters' })).toBeVisible();
+});
+
 test('Loric are green, Travellers purple in headings and split blue and red on chips', async ({
 	page
 }) => {

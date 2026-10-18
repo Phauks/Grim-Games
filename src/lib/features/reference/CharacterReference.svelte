@@ -5,14 +5,12 @@
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { groupByType, matchesReference, type ReferenceEntry } from '#lib/core/rules/reference.ts';
-	import { activeFilterCount, tableRows } from '#lib/core/rules/reference-table.ts';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { tableRows } from '#lib/core/rules/reference-table.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import CharacterTable from './CharacterTable.svelte';
-	import ViewToggle from './ViewToggle.svelte';
 	import { TYPE_PLURALS } from './labels.ts';
+	import type { ReferenceQuery } from './query.svelte.ts';
 	import ReferenceCard from './ReferenceCard.svelte';
 	import { referenceTable } from './table-state.svelte.ts';
 	import type { ReferenceView } from './view-mode.svelte.ts';
@@ -20,9 +18,10 @@
 	interface Props {
 		entries: readonly ReferenceEntry[];
 		view: ReferenceView;
+		query: ReferenceQuery;
 	}
 
-	let { entries, view }: Props = $props();
+	let { entries, view, query }: Props = $props();
 
 	// One shared details overlay, so extra detail never expands a card or row inline.
 	// `title` may hold the `character` slot (slots.ts), shown as `character`'s badge.
@@ -33,66 +32,20 @@
 		detailsOpen = true;
 	}
 
-	// Search is the one filter for cards; the table adds its own per-column filters.
-	let search = $state('');
-	const shown = $derived(entries.filter((e) => matchesReference(e, { search })));
+	// Search is the one filter for cards; the table adds its own per-column filters. Both are
+	// set by the controls in the page's title row (ReferenceControls).
+	const shown = $derived(entries.filter((e) => matchesReference(e, { search: query.search })));
 	const groups = $derived(groupByType(shown));
 	// The table's own column filters and sort apply on top of the search.
 	const rows = $derived(view === 'table' ? tableRows(shown, referenceTable.current) : []);
-	// The shared table also filters the columns Reference has no filter of its own for.
-	let columnFilters = $state({});
-	let tableShown = $state(0);
-	const filters = $derived(
-		activeFilterCount(referenceTable.current.filters) + Object.keys(columnFilters).length
-	);
 </script>
-
-<div class="controls">
-	<!-- On a computer, "/" jumps to the search field and Esc clears it. -->
-	<div class="search-line">
-		<SearchField
-			bind:value={search}
-			label={t('reference.searchLabel')}
-			placeholder={t('reference.searchPlaceholder')}
-			shortcut
-		/>
-		<ViewToggle />
-	</div>
-	{#if view === 'cards'}
-		<p class="count" aria-live="polite">
-			{t('reference.count', { shown: shown.length, count: entries.length })}
-		</p>
-	{:else}
-		<!-- The table's count and Clear sit on the search line, not a line of their own. -->
-		<div class="table-count">
-			<p class="count" aria-live="polite" data-testid="table-count">
-				{t('reference.tableCount', {
-					shown: tableShown,
-					total: entries.length,
-					filters:
-						filters === 0 ? t('reference.noFilters') : t('reference.filters', { count: filters })
-				})}
-			</p>
-			<!-- Clearing filters deletes nothing, so it is the clear-X, not the trash can. -->
-			<IconButton
-				icon="close"
-				label={t('reference.clearFilters')}
-				disabled={filters === 0}
-				onclick={() => {
-					referenceTable.clearFilters();
-					columnFilters = {};
-				}}
-			/>
-		</div>
-	{/if}
-</div>
 
 {#if view === 'table'}
 	<CharacterTable
 		{rows}
 		onExplain={explain}
-		bind:columnFilters
-		oncount={(count) => (tableShown = count)}
+		bind:columnFilters={query.columnFilters}
+		oncount={(count) => (query.tableShown = count)}
 	/>
 {:else}
 	{#each groups as group (group.type)}
@@ -103,7 +56,7 @@
 				title={TYPE_PLURALS[group.type]}
 				tone={typeTone(group.type)}
 				storageKey="reference:{group.type}"
-				forceOpen={search.trim() !== ''}
+				forceOpen={query.search.trim() !== ''}
 			>
 				{#snippet aside()}<span class="group-count">({group.entries.length})</span>{/snippet}
 				<div class="cards">
@@ -132,40 +85,6 @@
 </Dialog>
 
 <style>
-	.controls {
-		display: grid;
-		/* minmax(0, …): the search field shrinks to the screen instead of widening the page. */
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-3);
-		margin-bottom: var(--space-5);
-	}
-	/* On a wider screen the search field stops at a readable width, with the count beside it. */
-	@media (min-width: 48rem) {
-		.controls {
-			grid-template-columns: minmax(0, calc(36 * var(--u))) auto;
-			align-items: center;
-		}
-	}
-	.search-line {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.search-line > :global(:first-child) {
-		flex: 1;
-		min-width: 0;
-	}
-	.table-count {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-	}
-	.count {
-		margin: 0;
-		font-size: 0.9rem;
-		color: var(--on-surface-muted);
-	}
 	.group {
 		margin-bottom: var(--space-6);
 	}
