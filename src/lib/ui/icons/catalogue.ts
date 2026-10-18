@@ -76,6 +76,7 @@ export const ICON_SLOTS = {
 	pasteJson: { label: 'Paste JSON', choices: ['ph:clipboard-text', 'ph:clipboard'] },
 	uploadFile: { label: 'Upload file', choices: ['ph:upload-simple', 'ph:file-arrow-up'] },
 	pasteLink: { label: 'Paste link', choices: ['ph:link', 'ph:link-simple'] },
+	unlink: { label: 'Unlink', choices: ['ph:link-break', 'ph:link-simple-break'] },
 	quickPlay: { label: 'Play script', choices: ['ph:play', 'ph:play-circle'] },
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
 	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },

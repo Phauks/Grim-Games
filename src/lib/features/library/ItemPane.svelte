@@ -26,7 +26,12 @@
 
 {#if inline}
 	<!-- Always there, so the list never moves when an item opens. -->
-	<section class="pane" aria-label={open ? title : t('library.pane')} data-testid="library-pane">
+	<section
+		class="pane"
+		class:open
+		aria-label={open ? title : t('library.pane')}
+		data-testid="library-pane"
+	>
 		{#if open}
 			<header class="head">
 				<h2>
@@ -55,9 +60,10 @@
 		grid-template-rows: auto minmax(0, 1fr);
 		min-width: 0;
 		min-height: 0;
-		border: var(--card-border);
-		border-radius: var(--card-radius);
-		background: var(--card-background);
+	}
+	/* Part of the Library's one window: the open item's header carries the accent, as its row does. */
+	.pane.open .head {
+		box-shadow: inset 0 0.25rem 0 var(--accent);
 	}
 	.head {
 		display: flex;

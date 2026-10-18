@@ -11,6 +11,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import { campaigns, type Campaign } from './campaigns.ts';
 	import { findMode } from './custom-modes.svelte.ts';
 
@@ -18,15 +19,42 @@
 	 * The Library's Campaigns: a living script (Flesh and Bone) changes from game to game, and
 	 * each version is kept and seen here (Trevor, 2026-10-18), one entry per campaign with its
 	 * versions in the order played. Versions live in the campaign record, not among the saved
-	 * scripts, so a long campaign doesn't push other scripts out.
+	 * scripts, so a long campaign doesn't push other scripts out. A table like the Library's
+	 * own, even with none (Trevor, 2026-10-18: no different states).
 	 */
 	interface Props {
 		data: GameData | undefined;
+		/** The Library's search. */
+		term?: string;
 	}
 
-	let { data }: Props = $props();
+	let { data, term = '' }: Props = $props();
 
-	const list = campaigns();
+	type ColumnId = 'name' | 'started';
+	const all = campaigns();
+	let sort = $state<DataSort<ColumnId> | undefined>();
+	const columns = $derived<DataColumn<ColumnId>[]>([
+		{ id: 'name', label: t('library.column.name'), sortable: true, flush: true },
+		{ id: 'started', label: t('library.campaignStarted'), sortable: true, width: '30%' }
+	]);
+	const list = $derived.by(() => {
+		const needle = term.trim().toLowerCase();
+		const found = all.filter((c) => !needle || title(c).toLowerCase().includes(needle));
+		if (!sort) return found;
+		const sign = sort.direction === 'ascending' ? 1 : -1;
+		return [...found].sort((a, b) =>
+			sort?.column === 'name'
+				? sign * title(a).localeCompare(title(b))
+				: sign * (a.createdAt - b.createdAt)
+		);
+	});
+
+	function onSort(column: ColumnId) {
+		sort =
+			sort?.column !== column
+				? { column, direction: 'ascending' }
+				: { column, direction: sort.direction === 'ascending' ? 'descending' : 'ascending' };
+	}
 
 	/** Each game's script: kept on the campaign, or read from the saved game for older records. */
 	async function versions(c: Campaign, loaded: GameData): Promise<(Script | undefined)[]> {
@@ -84,22 +112,31 @@
 	);
 </script>
 
-<ul class="campaigns" data-testid="library-campaigns">
-	{#each list as c (c.campaignId)}
-		<li>
-			<button type="button" class="pick" disabled={!data} onclick={() => void show(c)}>
-				<span class="title">{title(c)}</span>
-				<span class="sub"
-					>{t('library.campaignVersions', { count: c.games.length })} · {new Date(
-						c.createdAt
-					).toLocaleDateString()}</span
-				>
-			</button>
-		</li>
+<div data-testid="library-campaigns">
+	<DataTable
+		label={t('library.campaigns')}
+		{columns}
+		rows={list}
+		key={(c) => c.campaignId}
+		{cell}
+		{sort}
+		{onSort}
+		rowSelected={(c) => open && opened?.campaignId === c.campaignId}
+		narrow="hide"
+		empty={t('common.none')}
+	/>
+</div>
+
+{#snippet cell(c: Campaign, column: DataColumn<ColumnId>)}
+	{#if column.id === 'name'}
+		<button type="button" class="pick" disabled={!data} onclick={() => void show(c)}>
+			<span class="title">{title(c)}</span>
+			<span class="sub">{t('library.campaignVersions', { count: c.games.length })}</span>
+		</button>
 	{:else}
-		<li class="muted">{t('common.none')}</li>
-	{/each}
-</ul>
+		<span class="text">{new Date(c.createdAt).toLocaleDateString()}</span>
+	{/if}
+{/snippet}
 
 <Dialog bind:open title={opened ? title(opened) : t('common.none')} size="full">
 	<div class="dialog-scroll" data-testid="campaign-script-scroll">
@@ -138,21 +175,13 @@
 </Dialog>
 
 <style>
-	.campaigns {
-		display: grid;
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
 	.pick {
 		width: 100%;
 		min-height: var(--tap-target);
 		display: grid;
 		align-content: center;
-		padding: var(--space-1) var(--space-3);
-		border: 1px solid var(--card-border);
-		border-radius: var(--radius-sm);
+		padding: var(--space-1) var(--space-2);
+		border: 0;
 		background: none;
 		color: inherit;
 		font: inherit;
@@ -164,6 +193,12 @@
 	}
 	.title {
 		font-weight: 600;
+	}
+	.text {
+		display: flex;
+		align-items: center;
+		min-height: var(--tap-target);
+		white-space: nowrap;
 	}
 	.sub,
 	.muted {

@@ -95,7 +95,9 @@ import ph_leaf_duotone from '~icons/ph/leaf-duotone';
 import ph_lifebuoy_duotone from '~icons/ph/lifebuoy-duotone';
 import ph_lightning_duotone from '~icons/ph/lightning-duotone';
 import ph_link_duotone from '~icons/ph/link-duotone';
+import ph_link_break_duotone from '~icons/ph/link-break-duotone';
 import ph_link_simple_duotone from '~icons/ph/link-simple-duotone';
+import ph_link_simple_break_duotone from '~icons/ph/link-simple-break-duotone';
 import ph_list_duotone from '~icons/ph/list-duotone';
 import ph_list_bullets_duotone from '~icons/ph/list-bullets-duotone';
 import ph_list_checks_duotone from '~icons/ph/list-checks-duotone';
@@ -276,7 +278,9 @@ const icons: IconMap = {
 	'ph:lifebuoy-duotone': ph_lifebuoy_duotone,
 	'ph:lightning-duotone': ph_lightning_duotone,
 	'ph:link-duotone': ph_link_duotone,
+	'ph:link-break-duotone': ph_link_break_duotone,
 	'ph:link-simple-duotone': ph_link_simple_duotone,
+	'ph:link-simple-break-duotone': ph_link_simple_break_duotone,
 	'ph:list-duotone': ph_list_duotone,
 	'ph:list-bullets-duotone': ph_list_bullets_duotone,
 	'ph:list-checks-duotone': ph_list_checks_duotone,

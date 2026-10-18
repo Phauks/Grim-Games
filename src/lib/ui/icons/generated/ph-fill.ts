@@ -95,7 +95,9 @@ import ph_leaf_fill from '~icons/ph/leaf-fill';
 import ph_lifebuoy_fill from '~icons/ph/lifebuoy-fill';
 import ph_lightning_fill from '~icons/ph/lightning-fill';
 import ph_link_fill from '~icons/ph/link-fill';
+import ph_link_break_fill from '~icons/ph/link-break-fill';
 import ph_link_simple_fill from '~icons/ph/link-simple-fill';
+import ph_link_simple_break_fill from '~icons/ph/link-simple-break-fill';
 import ph_list_fill from '~icons/ph/list-fill';
 import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
 import ph_list_checks_fill from '~icons/ph/list-checks-fill';
@@ -276,7 +278,9 @@ const icons: IconMap = {
 	'ph:lifebuoy-fill': ph_lifebuoy_fill,
 	'ph:lightning-fill': ph_lightning_fill,
 	'ph:link-fill': ph_link_fill,
+	'ph:link-break-fill': ph_link_break_fill,
 	'ph:link-simple-fill': ph_link_simple_fill,
+	'ph:link-simple-break-fill': ph_link_simple_break_fill,
 	'ph:list-fill': ph_list_fill,
 	'ph:list-bullets-fill': ph_list_bullets_fill,
 	'ph:list-checks-fill': ph_list_checks_fill,
