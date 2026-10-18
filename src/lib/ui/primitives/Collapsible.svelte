@@ -36,20 +36,44 @@
 		 * match is visible. The header can't close it meanwhile; the remembered choice is kept.
 		 */
 		forceOpen?: boolean;
+		/**
+		 * Nothing in it yet (its content reads "None"): shown closed, and opened again as soon as
+		 * it has something (Trevor, 2026-10-18). It can still be opened by hand meanwhile; that
+		 * isn't remembered, so the remembered choice is kept for when it has content.
+		 */
+		empty?: boolean;
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
 		aside?: Snippet;
 		children: Snippet;
 	}
 
-	let { title, storageKey, level = 2, tone, forceOpen = false, aside, children }: Props = $props();
+	let {
+		title,
+		storageKey,
+		level = 2,
+		tone,
+		forceOpen = false,
+		empty = false,
+		aside,
+		children
+	}: Props = $props();
 
 	// Open by default; a section closed before stays closed. Read again if the key changes.
 	let open = $derived(!(storageKey && readClosed(storageKey)));
-	const shown = $derived(open || forceOpen);
+	// Opened by hand while empty; back to closed whenever `empty` changes.
+	let openedEmpty = $derived.by(() => {
+		void empty;
+		return false;
+	});
+	const shown = $derived(forceOpen || (empty ? openedEmpty : open));
 	const id = $props.id();
 
 	function toggle() {
 		if (forceOpen) return;
+		if (empty) {
+			openedEmpty = !openedEmpty;
+			return;
+		}
 		open = !open;
 		if (storageKey) writeClosed(storageKey, !open);
 	}
