@@ -30,10 +30,10 @@ describe('withEntryLogo', () => {
 		expect(withEntryLogo(own, logo)).toBe(own);
 		expect(withEntryLogo(['mayor'], undefined)).toEqual(['mayor']);
 	});
-	it("names TPI's hosted logo for the 2025 finalists found there", () => {
+	it("names TPI's hosted logo for every 2025 finalist", () => {
 		const logos = WORLD_CUPS['2025'].entries.filter((e) => e.logo);
-		expect(logos).toHaveLength(14);
+		expect(logos).toHaveLength(16);
 		for (const e of logos)
-			expect(e.logo).toMatch(/^https:\/\/release\.botc\.app\/wc25\/\w+\/logo\.webp$/);
+			expect(e.logo).toMatch(/^https:\/\/release\.botc\.app\/wc25\/[a-z0-9]+\/logo\.webp$/);
 	});
 });
