@@ -7,7 +7,8 @@
 	import { STANDARD } from '#lib/core/modes/index.ts';
 	import { findMode } from '#lib/features/modes/custom-modes.svelte.ts';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
-	import { boardNightSteps, stepHolders } from './night-steps.ts';
+	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
 	import { prepareRoom, roomHost } from '#lib/features/room/host.svelte.ts';
@@ -48,11 +49,7 @@
 	} from '#lib/core/rules/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
-	import {
-		charactersReallyInPlay,
-		DEMON_SET,
-		showableBluffSets
-	} from '#lib/features/bluffs/bluffs.ts';
+	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -756,28 +753,8 @@
 				? 'Evil won'
 				: 'Winner not recorded'
 	);
-	/**
-	 * Once every token is placed, the middle offers the Demon's bluffs, as it offered Set up
-	 * (Trevor, 2026-10-17). Only with a Demon in play and its set still empty; part of the
-	 * setup help, and it can be dismissed.
-	 */
-	let bluffsPromptDismissed = $state(false);
 	/** The day timer is always on the board until the game ends (Trevor, 2026-10-17). */
 	const showTimer = $derived(!ended);
-	const showBluffsPrompt = $derived(
-		!bluffsPromptDismissed &&
-			!ended &&
-			!arranging &&
-			!placing &&
-			preferences.current.assistance.setupReminders &&
-			game.pastDays.length === 0 &&
-			game.seating.every((id) => game.seats[id].characterId !== undefined) &&
-			setupPending === 0 &&
-			(game.bluffs[DEMON_SET] ?? []).length === 0 &&
-			[...charactersReallyInPlay(game, characters)].some(
-				(id) => characters.get(id)?.type === 'demon'
-			)
-	);
 
 	// A Traveller's alignment by draw, kept here: setting it ends the step that opened it.
 	let drawFor = $state<SeatId | undefined>();
@@ -1396,14 +1373,6 @@
 					>
 				</div>
 			{/if}
-			{#if showBluffsPrompt}
-				<div class="setup bluffs-prompt">
-					<Button variant="accent" icon="demon" onclick={() => (bluffsOpen = true)}
-						>Demon bluffs</Button
-					>
-					<IconButton icon="close" label="Not now" onclick={() => (bluffsPromptDismissed = true)} />
-				</div>
-			{/if}
 			{#if ended}
 				<!-- The game is over; the board stays open to look around in, read-only (Trevor, 2026-10-17). -->
 				<button
@@ -1607,7 +1576,20 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet bind:open={dayOpen} game={grimoire.open} />
+<DaySheet
+	bind:open={dayOpen}
+	game={grimoire.open}
+	onEndDay={() => {
+		// The day's timer stops, and tonight's night order opens with Dusk ticked, which runs
+		// the rules checked at dusk (GameEndPrompt).
+		if (liveDayTimer.running) liveDayTimer.toggle();
+		grimoire.beginNight();
+		const night = tonight(game);
+		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
+			grimoire.toggleNightStep(night, { id: 'dusk' });
+		nightOpen = true;
+	}}
+/>
 
 <NightOrderSheet
 	bind:open={nightOpen}
@@ -1876,10 +1858,6 @@
 	.setup {
 		display: grid;
 		gap: var(--space-2);
-	}
-	.bluffs-prompt {
-		grid-auto-flow: column;
-		align-items: center;
 	}
 	.script-scroll {
 		flex: 1;

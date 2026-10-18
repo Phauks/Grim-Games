@@ -2175,8 +2175,10 @@ test('Back closes an open sheet first, then asks before leaving the game', async
 	await expect(page).toHaveURL(/\/new$/);
 });
 
-test('once every token is placed, the middle offers the Demon bluffs', async ({ page }) => {
-	// Trevor, 2026-10-17: a prompt like the bag's Set up.
+test('once every token is placed, the board does not prompt for the Demon bluffs', async ({
+	page
+}) => {
+	// They are chosen in setup, after the draw, instead (Trevor, 2026-10-18).
 	await startGame(page);
 	const names = ['Chef', 'Empath', 'Monk', 'Soldier', 'Mayor', 'Ravenkeeper', 'Undertaker', 'Imp'];
 	for (const [i, name] of names.entries()) {
@@ -2188,14 +2190,9 @@ test('once every token is placed, the middle offers the Demon bluffs', async ({ 
 			.tap();
 		await closeSheet(page);
 	}
-	const centre = page.locator('.centre');
-	await expect(centre.getByRole('button', { name: 'Demon bluffs' })).toBeVisible();
-	await centre.getByRole('button', { name: 'Demon bluffs' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Demon bluffs' })).toBeVisible();
-	await page.keyboard.press('Escape');
-	// Not now: it goes.
-	await centre.getByRole('button', { name: 'Not now' }).tap();
-	await expect(centre.getByRole('button', { name: 'Demon bluffs' })).toHaveCount(0);
+	await expect(page.locator('.centre').getByRole('button', { name: 'Demon bluffs' })).toHaveCount(
+		0
+	);
 });
 
 test('a new Demon bluff set is named on the screen where its characters are chosen', async ({
