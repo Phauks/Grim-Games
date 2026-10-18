@@ -10,8 +10,7 @@
 	 * A mode's About (Trevor, 2026-10-18: "an about section that describes each game mode ...
 	 * information about authorship"): its description, authors and sources. One component for
 	 * New game and the inspector. A built-in description waits for Trevor's approval (approved-about.ts); authors show
-	 * only where a source names them. `compact` keeps each row to one line, so switching modes
-	 * on New game moves nothing.
+	 * only where a source names them. `compact` keeps each row but the description to one line.
 	 */
 	interface Props {
 		mode: GameMode;
@@ -85,8 +84,9 @@
 		margin: 0;
 		min-width: 0;
 	}
-	/* One line a row on New game; the inspector shows every line. */
-	.compact dd {
+	/* One line a row on New game, except the description, which wraps so it can be read
+	   whole (Trevor, 2026-10-18); the inspector shows every line. */
+	.compact dd:not([data-testid='inspect-about']) {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;

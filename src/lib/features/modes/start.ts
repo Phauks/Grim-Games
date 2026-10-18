@@ -20,6 +20,8 @@ interface StartInput<G> {
 	restrictions: StorytellerRestrictions;
 	data: GameData;
 	loaded: LoadedScript;
+	/** The Storyteller's Role Recycling choice for a draft mode. */
+	roleRecycling?: boolean;
 	/** Creates and saves the game with the mode's script. */
 	create: (script: Script) => Promise<G>;
 }
@@ -42,7 +44,11 @@ export async function startInMode<
 		input.restrictions
 	);
 	const open = await input.create(script);
-	writeGameMode(open.game.gameId, { modeId: mode.id, restrictions: input.restrictions });
+	writeGameMode(open.game.gameId, {
+		modeId: mode.id,
+		restrictions: input.restrictions,
+		...(input.roleRecycling !== undefined ? { roleRecycling: input.roleRecycling } : {})
+	});
 	seedInPlay(open.game.gameId, open.game.seating.length, inPlayFor(mode));
 	if (campaignRule(mode))
 		saveCampaign({

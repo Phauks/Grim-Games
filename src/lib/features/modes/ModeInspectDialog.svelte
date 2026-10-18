@@ -68,7 +68,8 @@
 			</ul>
 		</section>
 
-		<Collapsible title={t('modes.file')} level={3} storageKey="mode-file">
+		<!-- Starts closed: the file is for writing modes, rarely needed when inspecting (Trevor, 2026-10-18). -->
+		<Collapsible title={t('modes.file')} level={3} startClosed>
 			{#snippet aside()}
 				<IconButton icon="copy" label={t('modes.copyFile')} onclick={copy} />
 			{/snippet}
