@@ -648,8 +648,11 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 
 	await page.goto(`/grimoire/${gameId}/room`);
-	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	// Read the code once the room is open: before that the share code isn't the room's yet.
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const shareCode = page.getByTestId('share-code');
+	await expect(shareCode).toHaveText(/^\s*\d{3}\s?\d{3}\s*$/);
+	const code = (await shareCode.textContent())!.replace(/\s/g, '');
 
 	// Specters opens over the board from the Game mode menu (Trevor, 2026-10-18: the grimoire
 	// stays in reach). Before setup the corner has no room for the name, so ⋯ has it too.
