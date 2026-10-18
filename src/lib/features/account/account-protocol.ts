@@ -135,6 +135,29 @@ export interface DeviceSession {
 	createdAt: number;
 	lastSeenAt: number;
 	current: boolean;
+	/** Where it was last used, roughly: Cloudflare's guess from the IP, which is never stored. */
+	city?: string;
+	/** ISO 3166-1 alpha-2, as Cloudflare gives it. */
+	country?: string;
+}
+
+/** A request's approximate place, as stored for the signed-in devices list. */
+export interface DevicePlace {
+	city?: string;
+	country?: string;
+}
+
+/**
+ * The approximate place from a Worker request's `cf` object (city and country only; the IP
+ * itself is never kept). Undefined when Cloudflare gave neither, as in local development.
+ */
+export function readPlace(cf: unknown): DevicePlace | undefined {
+	if (typeof cf !== 'object' || cf === null) return undefined;
+	const { city, country } = cf as Record<string, unknown>;
+	const place: DevicePlace = {};
+	if (typeof city === 'string' && city.trim()) place.city = city.trim().slice(0, 60);
+	if (typeof country === 'string' && /^[A-Z][A-Z0-9]$/.test(country)) place.country = country;
+	return place.city || place.country ? place : undefined;
 }
 
 /** A stored profile document. `body` is absent once deleted (a tombstone). */
