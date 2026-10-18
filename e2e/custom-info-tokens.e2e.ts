@@ -182,3 +182,38 @@ test('a saved colour can be changed and cleared, with bold kept', async ({ page 
 	await expect(preview.locator('[data-ink="green"]')).toHaveText('mad');
 	await expect(preview.locator('[data-ink="blue"]')).toHaveCount(0);
 });
+
+test("Trevor's extra cards sit apart from the base game's, and Number shows just a number", async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	const extras = page.getByRole('list', { name: 'Not in the base game' });
+	for (const name of [
+		'Number',
+		'What are you bluffing?',
+		'Use your ability?',
+		'Please choose again'
+	])
+		await expect(extras.getByRole('button', { name, exact: true })).toBeVisible();
+	await extras.getByRole('button', { name: 'Number', exact: true }).tap();
+	await page.getByRole('button', { name: 'Higher number' }).tap();
+	await page.getByRole('button', { name: 'Higher number' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.locator('.detail')).toHaveText('2');
+	await expect(shown.locator('h2.title')).toHaveCount(0);
+});
+
+test('a quick card is shown once and never saved', async ({ page }) => {
+	await page.goto('/info-tokens');
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	await page.getByRole('textbox', { name: 'Text' }).fill('You may not speak');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('heading')).toHaveText('You may not speak');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByRole('button', { name: 'You may not speak', exact: true })).toHaveCount(0);
+	expect(
+		await page.evaluate(() => localStorage.getItem('grim-games:info-tokens') ?? '')
+	).not.toContain('You may not speak');
+});

@@ -20,6 +20,7 @@
 	import InfoTokenTile from './InfoTokenTile.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import { plainText } from './bold.ts';
 	import type { CharacterCard } from './character-cards.ts';
 	import { MAX_CUSTOM_TEXT, type CustomInfoToken } from './custom-tokens.ts';
@@ -71,7 +72,47 @@
 	}: Props = $props();
 
 	// No search: there are too few cards for it to help (Trevor, 2026-10-16).
-	const standard = STANDARD_INFO_TOKENS;
+	const standard = STANDARD_INFO_TOKENS.filter((token) => !token.extra);
+	// Trevor's own additions, listed apart so they read as not the base game's (2026-10-18).
+	const extras = STANDARD_INFO_TOKENS.filter((token) => token.extra);
+
+	/** A standard card: Number asks for its number first. */
+	function chooseStandard(token: InfoToken, add = false) {
+		if (token.shows !== 'number') return add ? onadd?.(token) : onchoose(token);
+		numberToken = token;
+		numberAdds = add;
+		numberOpen = true;
+	}
+
+	/** The Number card shows only the number, big, so its title is left off. */
+	let numberOpen = $state(false);
+	let numberToken = $state<InfoToken>();
+	let numberAdds = $state(false);
+	let number = $state(0);
+	function useNumber() {
+		if (!numberToken) return;
+		numberOpen = false;
+		const card = { ...numberToken, text: '' };
+		if (numberAdds) onadd?.(card, String(number));
+		else onchoose(card, String(number));
+	}
+
+	/** A card for once: shown, then gone, never saved (Trevor, 2026-10-18). */
+	let quickOpen = $state(false);
+	let quickAdds = $state(false);
+	let quickText = $state('');
+	function openQuick(add = false) {
+		quickText = '';
+		quickAdds = add;
+		quickOpen = true;
+	}
+	function useQuick() {
+		if (!plainText(quickText).trim()) return;
+		quickOpen = false;
+		const card: InfoToken = { id: 'quick', text: quickText, source: 'custom', shows: 'none' };
+		if (quickAdds) onadd?.(card);
+		else onchoose(card);
+	}
 
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const ownersOf = (token: CustomInfoToken) =>
@@ -248,11 +289,26 @@
 					<li class="none">{t('common.none')}</li>
 				{/each}
 			</ul>
+			<h4 class="extras-title">{t('info-tokens.extras')}</h4>
+			<ul class="cards" aria-label={t('info-tokens.extras')}>
+				{#each extras as token (token.id)}
+					<InfoTokenTile
+						text={token.text}
+						onchoose={() => chooseStandard(token)}
+						onadd={onadd && (() => chooseStandard(token, true))}
+					/>
+				{/each}
+			</ul>
 		</Collapsible>
 	{/if}
 
 	<Collapsible title={t('info-tokens.custom')} storageKey="info-tokens-custom" {level}>
 		<ul class="cards">
+			<InfoTokenTile
+				text={t('info-tokens.quick')}
+				onchoose={() => openQuick()}
+				onadd={onadd && (() => openQuick(true))}
+			/>
 			{#each custom as token (token.id)}
 				{@render customTile(token)}
 			{/each}
@@ -355,6 +411,50 @@
 	{/snippet}
 </Dialog>
 
+<Dialog bind:open={numberOpen} title={t('info-tokens.number')}>
+	<div class="number">
+		<Stepper
+			bind:value={number}
+			label={t('info-tokens.number')}
+			lessLabel={t('info-tokens.numberLess')}
+			moreLabel={t('info-tokens.numberMore')}
+			min={0}
+			large
+		/>
+	</div>
+	{#snippet actions()}
+		<ModalActions onCancel={() => (numberOpen = false)} onConfirm={useNumber} />
+	{/snippet}
+</Dialog>
+
+<Dialog bind:open={quickOpen} size="full" title={t('info-tokens.quick')}>
+	<div class="editor">
+		<figure class="preview" aria-label={t('info-tokens.preview')}>
+			<div class="preview-card">
+				<ShownCard
+					title={plainText(quickText).trim() ? quickText : t('info-tokens.text')}
+					compact
+				/>
+			</div>
+		</figure>
+		<div class="fields">
+			<RichTextField
+				bind:value={quickText}
+				label={t('info-tokens.text')}
+				maxlength={MAX_CUSTOM_TEXT}
+				onsubmit={useQuick}
+			/>
+		</div>
+	</div>
+	{#snippet actions()}
+		<ModalActions
+			onCancel={() => (quickOpen = false)}
+			onConfirm={useQuick}
+			disabled={!plainText(quickText).trim()}
+		/>
+	{/snippet}
+</Dialog>
+
 <Dialog
 	bind:open={editOpen}
 	size="full"
@@ -441,6 +541,16 @@
 </ConfirmDialog>
 
 <style>
+	.extras-title {
+		margin: var(--space-3) 0 var(--space-2);
+		font-size: 0.9rem;
+		color: var(--on-surface-muted);
+	}
+	.number {
+		display: grid;
+		place-items: center;
+		padding-block: var(--space-3);
+	}
 	/* Follows the colours of whatever holds it: the page or a parchment sheet. */
 	.sections {
 		display: grid;

@@ -131,6 +131,12 @@
 		color: var(--accent);
 		overflow-wrap: anywhere;
 	}
+	/* A number on its own (the Number card): as big as the screen allows. */
+	.content:not([data-has-title]) .detail {
+		margin-block: auto;
+		font-size: clamp(6rem, 45vmin, 20rem);
+		line-height: 1;
+	}
 	.content[data-compact] .detail {
 		font-size: clamp(1.6rem, 7vw, 3rem);
 	}
