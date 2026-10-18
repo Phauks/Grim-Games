@@ -312,3 +312,51 @@ test('a quick card is shown once and never saved', async ({ page }) => {
 		await page.evaluate(() => localStorage.getItem('grim-games:info-tokens') ?? '')
 	).not.toContain('You may not speak');
 });
+
+test('the Info tokens page shows several cards together, like the board sheet', async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	// Each card's + adds it; then all are shown in order (Trevor, 2026-10-18).
+	await page.getByRole('button', { name: 'Add This is the Demon to the cards to show' }).tap();
+	await page.getByRole('button', { name: 'Add You are to the cards to show' }).tap();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
+	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const list = page.getByTestId('chain-list');
+	await expect(list.getByRole('listitem')).toHaveCount(2);
+	await expect(list.getByRole('listitem').last()).toContainText('2. You are');
+	await page.getByRole('button', { name: 'Show 2 cards' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('heading').first()).toHaveText('This is the Demon');
+});
+
+test('a custom card can do what the built-in ones do: exactly, not in play, answer only', async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	// Like "These characters are not in play" (Trevor, 2026-10-18).
+	await newCard(page, 'Your bluffs are');
+	for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'More characters' }).tap();
+	await page.getByText('Always this many').tap();
+	await page.getByText('Only characters not in play').tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const bluffs = page.getByRole('button', { name: 'Your bluffs are', exact: true });
+	await expect(bluffs.getByTestId('info-token-asks')).toHaveText('3');
+	await bluffs.tap();
+	await expect(page.getByRole('button', { name: 'Random', exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+
+	// Like Yes/No: only the answer is shown.
+	await newCard(page, 'Heads or tails');
+	await fillIn(page, 'Choices');
+	await page.getByRole('textbox', { name: 'Answer 1' }).fill('Heads');
+	await page.getByRole('textbox', { name: 'Answer 2' }).fill('Tails');
+	await page.getByText('Show only the answer').tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await page.getByRole('button', { name: 'Heads or tails', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.locator('.detail')).toHaveText('Heads');
+	await expect(shown.locator('h2.title')).toHaveCount(0);
+});
