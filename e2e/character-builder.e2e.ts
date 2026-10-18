@@ -152,3 +152,30 @@ test('an ability gets who it chooses and what happens from drop-downs', async ({
 		'Each night*, choose a player (not yourself): they are poisoned a number.'
 	);
 });
+
+// Character collections from the builder (Trevor, 2026-10-18: "in character builder, allow
+// assigning to character collection"): the Library's own collections, shown once saved.
+test('a saved character goes into a new character collection', async ({ page }) => {
+	await page.goto('/build-character');
+	const collections = page.getByRole('combobox', { name: 'Character collections' });
+	await expect(collections).toBeDisabled();
+	await expect(collections).toContainText('None');
+
+	await page.getByTestId('character-name').fill('Lantern Keeper');
+	await page.getByTestId('character-ability').fill('You start knowing a lantern.');
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(collections).toBeEnabled();
+
+	await collections.tap();
+	await page.getByRole('option', { name: 'New collection', exact: true }).tap();
+	const naming = page.getByRole('dialog', { name: 'New collection' });
+	await naming.getByRole('textbox').fill('Lights');
+	await naming.getByRole('textbox').press('Enter');
+	await expect(collections).toContainText('Lights');
+
+	// Unticking takes it out again.
+	await collections.tap();
+	await page.getByRole('option', { name: 'Lights', exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(collections).toContainText('None');
+});

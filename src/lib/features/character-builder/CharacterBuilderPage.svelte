@@ -34,6 +34,7 @@
 	import TextListField from '#lib/ui/primitives/TextListField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import AbilityField from './AbilityField.svelte';
+	import CollectionField from './CollectionField.svelte';
 	import type { SavedCharacter } from './saved-characters.ts';
 	import { isEmptyCharacterDraft } from './draft.ts';
 	import { characterBuilderDraft as draft, savedCharacters } from './stores.svelte.ts';
@@ -177,6 +178,7 @@
 					? t('character-builder.onScript')
 					: t('character-builder.addToScript')}</Button
 			>
+			<CollectionField savedId={savedRecord?.savedId} />
 			<!-- Reserved room: problems come and go as the form is filled, so nothing moves. -->
 			<ul class="problems" role="status" aria-label={t('character-builder.problems')}>
 				{#each problems as problem (problem.kind)}

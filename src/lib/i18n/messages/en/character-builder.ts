@@ -66,6 +66,7 @@ export const characterBuilder = {
 	'character-builder.clearBody': 'Everything on the builder is removed. Saved characters stay.',
 	'character-builder.addToScript': 'Add to Script builder',
 	'character-builder.onScript': 'On Script builder',
+	'character-builder.collections': 'Character collections',
 	'character-builder.delete': 'Delete the saved character',
 	'character-builder.deleteTitle': 'Delete {name}?',
 	'character-builder.deleteBody': 'It is removed from this device. Scripts that have it keep it.'

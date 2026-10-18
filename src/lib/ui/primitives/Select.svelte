@@ -16,9 +16,21 @@
 		hideLabel?: boolean;
 		/** Id of a visible label elsewhere (e.g. a SettingRow's); then no label is rendered. */
 		labelledBy?: string;
-		value: T;
+		value?: T;
 		options: Option[];
-		onChange: (value: T) => void;
+		onChange?: (value: T) => void;
+		/** Any number of options at once, each ticked in the list (a character's collections). */
+		multiple?: boolean;
+		/** The chosen options, with `multiple`. */
+		values?: T[];
+		onValuesChange?: (values: T[]) => void;
+		/**
+		 * A last option that does something instead of being chosen ("New collection"): picking
+		 * it closes the list and runs it.
+		 */
+		action?: Option & { run: () => void };
+		/** Shown in the closed control when nothing is chosen. */
+		placeholder?: string;
 		/** Custom content for one option in the list; defaults to its label and description. */
 		item?: Snippet<[Option]>;
 		/** Custom content for the closed control; defaults to the chosen option's label. */
@@ -27,27 +39,67 @@
 		disabled?: boolean;
 	}
 
-	let { label, hideLabel, labelledBy, value, options, onChange, item, selected, disabled }: Props =
-		$props();
+	let {
+		label,
+		hideLabel,
+		labelledBy,
+		value,
+		options,
+		onChange,
+		multiple = false,
+		values,
+		onValuesChange,
+		placeholder = '',
+		action,
+		item,
+		selected,
+		disabled
+	}: Props = $props();
 
+	let open = $state(false);
+
+	function change(next: T[]) {
+		if (action && next.includes(action.value)) {
+			open = false;
+			action.run();
+			return;
+		}
+		if (multiple) onValuesChange?.(next);
+		else if (next[0]) onChange?.(next[0]);
+	}
+	const items = $derived(action ? [...options, action] : options);
 	const collection = $derived(
 		createListCollection({
-			items: options,
+			items,
 			itemToValue: (option) => option.value,
 			itemToString: (option) => option.label
 		})
 	);
-	const current = $derived(options.find((option) => option.value === value));
+	const chosen = $derived(multiple ? (values ?? []) : value === undefined ? [] : [value]);
+	const current = $derived(options.find((option) => option.value === chosen[0]));
+	/** What the closed control says: the chosen option, or every chosen one with `multiple`. */
+	const shown = $derived(
+		multiple
+			? options
+					.filter((option) => chosen.includes(option.value))
+					.map((option) => option.label)
+					.join(', ') || placeholder
+			: (current?.label ?? placeholder)
+	);
 </script>
 
 <!--
-	A dropdown: one choice from a list that only opens on demand. The list is positioned
+	A dropdown: one choice (or, with `multiple`, any number) from a list that only opens on demand. The list is positioned
 	`fixed` so it overlays dialogs and scroll boxes and never pushes anything down.
 -->
 <Select.Root
 	{collection}
-	value={[value]}
-	onValueChange={(details) => details.value[0] && onChange(details.value[0] as T)}
+	{multiple}
+	closeOnSelect={!multiple}
+	value={chosen}
+	{open}
+	onOpenChange={(details) => (open = details.open)}
+	onValueChange={(details) => change(details.value as T[])}
 	ids={labelledBy ? { label: labelledBy } : undefined}
 	{disabled}
 	positioning={{ strategy: 'fixed', sameWidth: true, fitViewport: true, gutter: 4 }}
@@ -60,14 +112,14 @@
 	<Select.Control>
 		<Select.Trigger>
 			<span class="value">
-				{#if current && selected}{@render selected(current)}{:else}{current?.label ?? ''}{/if}
+				{#if current && selected && !multiple}{@render selected(current)}{:else}{shown}{/if}
 			</span>
 			<Select.Indicator><Icon name="forward" /></Select.Indicator>
 		</Select.Trigger>
 	</Select.Control>
 	<Select.Positioner>
 		<Select.Content>
-			{#each options as option (option.value)}
+			{#each items as option (option.value)}
 				<Select.Item item={option}>
 					<Select.ItemText>
 						{#if item}{@render item(option)}{:else}
