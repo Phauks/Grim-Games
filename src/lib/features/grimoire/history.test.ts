@@ -34,6 +34,33 @@ const first = (s: GameSession) => s.game.seating[0];
 const second = (s: GameSession) => s.game.seating[1];
 
 describe('historyItems', () => {
+	// Trevor (2026-10-18): drawing a token and confirming it are one line, and one step.
+	it('words a confirmed draw as one line saying which token the seat drew', () => {
+		const tile = (s: GameSession) => s.game.bag!.order[0];
+		const session = play(
+			() => ({
+				type: 'BuildBag',
+				tiles: [{ shows: 'chef', grimoire: 'chef', reminders: [] }],
+				includeTravellers: false,
+				shuffle: false
+			}),
+			(s) => ({ type: 'DrawTile', seatId: first(s), tileId: tile(s) }),
+			(s) => ({ type: 'ConfirmDraw', tileId: Object.keys(s.game.bag!.tiles)[0] })
+		);
+		const items = historyItems(session.log.entries, session.log.cursor, characters);
+		expect(items.map((i) => i.cursor)).toEqual([4, 2, 1]);
+		expect(items[0].parts).toEqual([
+			{ kind: 'text', text: 'Seat 1' },
+			{ kind: 'text', text: ' drew ' },
+			{ kind: 'character', characterId: 'chef' }
+		]);
+		// Not yet confirmed: the draw has its own line.
+		const drawn = historyItems(session.log.entries.slice(0, 3), 3, characters);
+		expect(drawn[0].parts).toEqual([
+			{ kind: 'text', text: 'Seat 1' },
+			{ kind: 'text', text: ' drew a token' }
+		]);
+	});
 	it('words each change with the seat as it was, newest first', () => {
 		const session = play(
 			(s) => ({ type: 'RenameSeat', seatId: first(s), playerName: 'Ana' }),

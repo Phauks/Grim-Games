@@ -359,6 +359,17 @@ export function describeEntry(
 		});
 		if (moved) return [seatPart(before, moved), text(` moved to seat ${now.indexOf(moved) + 1}`)];
 	}
+	// A confirmed draw says who drew which token: the draw and its confirmation are one line
+	// (Trevor, 2026-10-18).
+	if (first.type === 'DrawConfirmed') {
+		const assigned = entry.events.find((e) => e.type === 'CharacterAssigned');
+		if (assigned?.type === 'CharacterAssigned')
+			return [
+				seatName(after, assigned.seatId),
+				text(' drew '),
+				{ kind: 'character', characterId: assigned.characterId }
+			];
+	}
 	if (entry.events.length > 1 && entry.events.every((e) => e.type === 'ReminderAdded')) {
 		return [text(`Placed ${entry.events.length} reminders`)];
 	}
@@ -377,6 +388,15 @@ export function historyItems(
 		const before = game;
 		game = applyEvents(game, entry.events);
 		if (!game) return;
+		// A draw that was then confirmed is told by the confirmation's line.
+		const [first] = entry.events;
+		const [next] = entries[i + 1]?.events ?? [];
+		if (
+			first?.type === 'TileDrawn' &&
+			next?.type === 'DrawConfirmed' &&
+			next.tileId === first.tileId
+		)
+			return;
 		items.push({
 			cursor: i + 1,
 			at: entry.at,
