@@ -1644,6 +1644,8 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await expect(prompt.getByTestId('game-end-prompt')).toContainText('Evil wins');
 	await expect(prompt.locator('[data-rule="saint"] [data-character-id="saint"]')).toBeVisible();
 	await expect(prompt.getByRole('combobox', { name: 'Winner' })).toContainText('Evil');
+	// How it ended is preselected from the grimoire (Trevor, 2026-10-18), for History's stats.
+	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toContainText('Saint');
 	await page.screenshot({ path: `test-results/game-end-${test.info().project.name}.png` });
 	// A recommendation: Cancel keeps playing, and the same condition doesn't ask again.
 	await prompt.getByRole('button', { name: 'Cancel' }).tap();
@@ -1653,8 +1655,10 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await expect(prompt.locator('[data-rule]')).toHaveCount(2);
 	await expect(prompt.locator('[data-rule="demon-dead"]')).toContainText('Good wins');
 	await expect(prompt.getByRole('combobox', { name: 'Winner' })).toContainText('Not recorded');
+	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toBeDisabled();
 	await prompt.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	await expect(prompt.getByRole('combobox', { name: 'How it ended' })).toContainText('Demon died');
 	await prompt.getByRole('button', { name: 'Confirm' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
@@ -1774,6 +1778,12 @@ test('History shows stats from ended games', async ({ page }) => {
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	// Nothing in the grimoire gave good the win, so it's the Storyteller's call until they
+	// say how; the Mayor is on the script (https://wiki.bloodontheclocktower.com/Mayor).
+	const how = end.getByRole('combobox', { name: 'How it ended' });
+	await expect(how).toContainText('Other');
+	await how.tap();
+	await page.getByRole('option', { name: 'Mayor', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// End game stays on the board (Trevor, 2026-10-17); History is in the sidebar.
 	await expect(page.getByTestId('game-over')).toBeVisible();
@@ -1783,7 +1793,7 @@ test('History shows stats from ended games', async ({ page }) => {
 		/Games\s*1\s*Good won\s*1\s*\(100%\)\s*Evil won\s*0\s*\(0%\)/
 	);
 	// How games end (Trevor, 2026-10-18): alternate wins and the final 3, each with its share.
-	await expect(summary).toContainText(/Alternate wins\s*\d+\s*\(\d+%\)/);
+	await expect(summary).toContainText(/Alternate wins\s*1\s*\(100%\)/);
 	await expect(summary).toContainText(/Final 3\s*\d+\s*\(\d+%\)/);
 	await expect(summary).toContainText(/Final 3, good won\s*\d+\s*\((\d+%|None)\)/);
 	const scripts = page.getByTestId('history-scripts');
