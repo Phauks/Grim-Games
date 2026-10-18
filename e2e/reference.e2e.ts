@@ -540,3 +540,35 @@ test('the table toggle sits on the search line', async ({ page }) => {
 	await expect(page.getByTestId('character-table')).toBeVisible();
 	await sameLine(page.getByRole('searchbox', { name: 'Search characters' }));
 });
+
+test('Loric are green, Travellers purple in headings and split blue and red on chips', async ({
+	page
+}) => {
+	// Trevor (2026-10-18): "Associate Lorics with their proper green color. Assign travellers
+	// with their proper red/blue color, but ... Purple for their headers".
+	await page.goto('/reference');
+	const heading = (name: string) =>
+		page.getByRole('button', { name: new RegExp(`^${name}`) }).first();
+	const colour = (el: ReturnType<typeof heading>) => el.evaluate((e) => getComputedStyle(e).color);
+	const token = (name: string) =>
+		page.evaluate(
+			(n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(),
+			name
+		);
+	const rgb = (hex: string) =>
+		`rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
+	await expect(heading('Travellers')).toBeVisible();
+	expect(await colour(heading('Travellers'))).toBe(rgb(await token('--palette-violet-400')));
+	expect(await colour(heading('Loric'))).toBe(rgb(await token('--palette-grass-400')));
+
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Bureaucrat');
+	const chip = page
+		.locator('[data-testid="reference-card"][data-character="bureaucrat"]')
+		.locator('[data-row="tokens"]')
+		.getByTestId('reminder-token')
+		.first();
+	const background = await chip.evaluate((e) => getComputedStyle(e).backgroundImage);
+	expect(background).toContain(rgb(await token('--palette-lapis-700')));
+	expect(background).toContain(rgb(await token('--palette-blood-700')));
+	await chip.screenshot({ path: 'test-results/traveller-reminder.png' });
+});
