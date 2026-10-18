@@ -50,6 +50,8 @@ export interface Preferences {
 	timerSound: TimerSound;
 	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
 	timerMode: TimerMode;
+	/** The device vibrates when the day timer runs out (Trevor, 2026-10-18). */
+	timerVibrate: boolean;
 }
 
 export const TIMER_MODES = ['down', 'up'] as const;
@@ -109,7 +111,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	tileFace: 'numbers',
 	requireName: false,
 	timerSound: 'bell',
-	timerMode: 'down'
+	timerMode: 'down',
+	timerVibrate: true
 };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
@@ -148,7 +151,11 @@ export function parsePreferences(raw: unknown): Preferences {
 			: DEFAULT_PREFERENCES.timerSound,
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
-			: DEFAULT_PREFERENCES.timerMode
+			: DEFAULT_PREFERENCES.timerMode,
+		timerVibrate:
+			typeof input.timerVibrate === 'boolean'
+				? input.timerVibrate
+				: DEFAULT_PREFERENCES.timerVibrate
 	};
 }
 
