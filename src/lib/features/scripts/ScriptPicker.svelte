@@ -60,7 +60,7 @@
 	import { RemoteSearch } from './remote-search.svelte.ts';
 	import { describeSource, reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
 	import ScriptView from './ScriptView.svelte';
-	import { storedSource, type PageSource } from './search-sources.ts';
+	import { storedSources, type PageSource } from './search-sources.ts';
 	import {
 		botcProvider,
 		findSaved,
@@ -86,15 +86,15 @@
 		busy?: boolean;
 		/** What is typed in the page's search box. */
 		term?: string;
-		/** The one source listed. */
-		source?: PageSource;
+		/** The sources turned on, searched together. */
+		sources?: PageSource[];
 	}
 
 	let {
 		onchoose,
 		busy = $bindable(false),
 		term = $bindable(''),
-		source = $bindable(storedSource())
+		sources = $bindable(storedSources())
 	}: Props = $props();
 
 	/** The row tapped; undefined shows the most recently saved script. */
@@ -110,15 +110,16 @@
 
 	let checkOpen = $state(false);
 
-	// The search box (toolbar) and source (title row) live on the page (`ScriptSearchBar`).
-	let prevSource = source;
+	// The search box (toolbar) and sources (title row) live on the page (`ScriptSearchBar`).
+	const sourcesKey = $derived(sources.join(','));
+	let prevSources = untrack(() => sourcesKey);
 	$effect(() => {
-		if (source === prevSource) return;
-		prevSource = source;
-		// Each source sorts its own way.
+		if (sourcesKey === prevSources) return;
+		prevSources = sourcesKey;
+		// Likes and No. come and go with BotC Scripts, so the sort starts again.
 		untrack(() => (sort = undefined));
 	});
-	const searchingBotc = $derived(source === 'botc');
+	const searchingBotc = $derived(sources.includes('botc'));
 	let sort = $state<RowSort | undefined>();
 	let data = $state.raw<GameData>();
 	let error = $state('');
@@ -133,17 +134,17 @@
 		);
 	});
 
-	// A collection is only fetched while it is the chosen source.
+	// A list is only fetched once its source is turned on.
 	$effect(() => {
-		const wanted = source;
+		const wanted = sources;
 		// Untracked: a failed load must not re-run this and try again in a loop.
 		untrack(() => {
-			if (wanted === 'curated' || wanted === 'month') void curatedScripts.load();
-			if (wanted === 'collection') void collectionScripts.load();
-			if (wanted === 'homebrew') void homebrewScripts.load();
-			if (wanted === 'bloodstar') void bloodstarScripts.load();
-			if (wanted === 'worldcup2023') void worldCupScripts.load('2023');
-			if (wanted === 'worldcup2025') void worldCupScripts.load('2025');
+			if (wanted.includes('curated') || wanted.includes('month')) void curatedScripts.load();
+			if (wanted.includes('collection')) void collectionScripts.load();
+			if (wanted.includes('homebrew')) void homebrewScripts.load();
+			if (wanted.includes('bloodstar')) void bloodstarScripts.load();
+			if (wanted.includes('worldcup2023')) void worldCupScripts.load('2023');
+			if (wanted.includes('worldcup2025')) void worldCupScripts.load('2025');
 		});
 	});
 
@@ -181,15 +182,17 @@
 				`${t(`scripts.picker.source.worldcup${year}`)} · ${t(`scripts.worldCup.${stage}`)}`
 		}
 	);
-	/** The chosen source's rows, when it is listed on the device (all but BotC Scripts). */
-	const local = $derived(
-		localContext
-			? localListings(
-					localContext,
-					SCRIPTS_PAGE_PROVIDERS.filter((p) => p.id === source)
-				)
-			: []
-	);
+	/**
+	 * The rows of the sources listed on the device (all but BotC Scripts). Each source keeps its
+	 * own rows: a script two sources list shows twice, once with each Source.
+	 */
+	const local = $derived.by(() => {
+		const context = localContext;
+		if (!context) return [];
+		return SCRIPTS_PAGE_PROVIDERS.filter((p) =>
+			(sources as readonly string[]).includes(p.id)
+		).flatMap((provider) => localListings(context, [provider]));
+	});
 	/** Saved scripts: not listed here (the Library lists them), but the details show the latest. */
 	const savedListings = $derived(localContext ? localListings(localContext, [recentProvider]) : []);
 
@@ -200,7 +203,7 @@
 			local.map((l) => l.row),
 			{
 				term,
-				sources: [source],
+				sources,
 				kind: f.type,
 				author: f.author,
 				include: f.include,
@@ -316,14 +319,66 @@
 	});
 	const refFailed = $derived(!!refTarget && remotePreviews.failed(refTarget));
 
+	/**
+	 * Each source turned on: still loading, loaded, or failed (with nothing kept from last
+	 * time). A failed source doesn't hold up the others.
+	 */
+	type SourceState = 'loading' | 'done' | 'failed';
+	function listState(status: string, kept: number): SourceState {
+		if (status === 'ready') return 'done';
+		if (status === 'error') return kept > 0 ? 'done' : 'failed';
+		return 'loading';
+	}
+	const botcState = $derived<SourceState>(
+		botcRef
+			? refFailed
+				? 'failed'
+				: refListing
+					? 'done'
+					: 'loading'
+			: botc.failure
+				? 'failed'
+				: botc.searched === botcKey
+					? 'done'
+					: 'loading'
+	);
+	function stateOf(source: PageSource): SourceState {
+		switch (source) {
+			case 'botc':
+				return botcState;
+			case 'curated':
+			case 'month':
+				return listState(curatedScripts.status, curatedScripts.list.length);
+			case 'collection':
+				return listState(collectionScripts.status, collectionScripts.list.length);
+			case 'homebrew':
+				return listState(homebrewScripts.status, homebrewScripts.list.length);
+			case 'bloodstar':
+				return listState(bloodstarScripts.status, bloodstarScripts.list.length);
+			case 'worldcup2023':
+				return listState(worldCupScripts.status('2023'), worldCupScripts.list('2023').length);
+			case 'worldcup2025':
+				return listState(worldCupScripts.status('2025'), worldCupScripts.list('2025').length);
+		}
+	}
+	const pendingSources = $derived(sources.filter((s) => stateOf(s) === 'loading'));
+	const failedSources = $derived(sources.filter((s) => stateOf(s) === 'failed'));
+
+	/**
+	 * Every source's rows in one list, shown only once every source has answered (Trevor,
+	 * 2026-10-18), so rows never jump about as each one arrives. BotC Scripts comes last, so
+	 * its further pages add to the end.
+	 */
 	const shown = $derived.by<ScriptListing[]>(() => {
-		const all = searchingBotc
-			? botcRef
+		if (!data || pendingSources.length > 0) return [];
+		const botcRows = !searchingBotc
+			? []
+			: botcRef
 				? refListing
 					? [refListing]
 					: []
-				: botc.listings
-			: shownLocal;
+				: botc.listings;
+		const all = [...shownLocal, ...botcRows];
 		if (!sort) return all;
 		const byKey = new Map(all.map((l) => [l.row.key, l]));
 		return sortRows(
@@ -402,38 +457,12 @@
 		}
 	}
 
-	const curatedNote = $derived.by(() => {
-		const year =
-			source === 'worldcup2023' ? '2023' : source === 'worldcup2025' ? '2025' : undefined;
-		// A list fetched from a site: loading, or failed with nothing kept from last time.
-		const fetched =
-			source === 'curated' || source === 'month'
-				? curatedScripts
-				: source === 'collection'
-					? collectionScripts
-					: source === 'homebrew'
-						? homebrewScripts
-						: source === 'bloodstar'
-							? bloodstarScripts
-							: undefined;
-		const loading = year
-			? worldCupScripts.status(year) === 'loading'
-			: fetched?.status === 'loading';
-		const failed = year
-			? worldCupScripts.status(year) === 'error'
-			: fetched?.status === 'error' && fetched.list.length === 0;
-		return loading
-			? t('scripts.picker.curatedLoading')
-			: failed
-				? t('scripts.picker.curatedFailed')
-				: '';
-	});
 	/** Rows left after the table's own column filters (Name, Likes, No.). */
 	let shownCount = $state(0);
 	let columnFilters = $state({});
-	// Another source starts with none of the last one's column filters.
+	// Other sources start with none of the last ones' column filters.
 	$effect.pre(() => {
-		void source;
+		void sourcesKey;
 		columnFilters = {};
 	});
 	const botcStatus = $derived(
@@ -449,20 +478,26 @@
 									sort: t(`scripts.botc.sort.${siteSort}`).toLowerCase()
 								}))
 	);
+	/** Source names in a sentence: "BotC Scripts and Bloodstar Clocktica". */
+	function sourceNames(list: readonly PageSource[]): string {
+		const names = list.map((s) => t(`scripts.picker.source.${s}`));
+		return new Intl.ListFormat(locale.current, { type: 'conjunction' }).format(names);
+	}
+	const failedNote = $derived(
+		failedSources.length > 0
+			? t('scripts.sources.failed', { names: sourceNames(failedSources) })
+			: ''
+	);
 	const status = $derived(
 		!data
 			? t('scripts.picker.loading')
-			: botcRef
-				? refListing || refFailed
-					? refListing
-						? t('scripts.picker.count', { count: 1 })
-						: t('common.none')
-					: t('scripts.picker.loading')
-				: searchingBotc
+			: pendingSources.length > 0
+				? t('scripts.sources.searching', { names: sourceNames(pendingSources) })
+				: sources.length === 1 && searchingBotc && !botcRef
 					? botcStatus || t('common.none')
 					: (shownCount === 0
 							? t('common.none')
-							: t('scripts.picker.count', { count: shownCount })) + curatedNote
+							: t('scripts.picker.count', { count: shownCount })) + failedNote
 	);
 
 	type ColumnId = SortColumn;
@@ -470,10 +505,10 @@
 		filterCount({ ...botcFilters, term: '', type: '', author: '' })
 	);
 	/**
-	 * Name, Author, Type and a character count for every source; Likes and No. only for BotC
-	 * Scripts, the one source that has them (Trevor, 2026-10-17). Author and Type are always
-	 * columns of their own; Chars, Likes and No. give way on phones (Likes and No. already on
-	 * a tablet), and their filters move into the Name header.
+	 * Name, Author, Source, Type and a character count for every source; Likes and No. while
+	 * BotC Scripts is on, the one source that has them (Trevor, 2026-10-17). Author and Type are
+	 * always columns of their own; Source, Chars, Likes and No. give way on phones (Likes and
+	 * No. already on a tablet), and their filters move into the Name header.
 	 */
 	const columns = $derived<DataColumn<ColumnId, ScriptListing>[]>([
 		{
@@ -491,6 +526,15 @@
 			width: 'max(22%, 9.5rem)',
 			filterable: true,
 			filtered: botcFilters.author !== ''
+		},
+		{
+			id: 'source',
+			label: t('scripts.column.source'),
+			sortable: true,
+			// Gives way on phones like Chars; the details name the source.
+			wide: true,
+			width: '9rem',
+			value: (l) => t(`scripts.sourceLabel.${l.row.source}`)
 		},
 		{
 			id: 'kind',
@@ -687,7 +731,7 @@
 							[TAP_ROW]: tapRow,
 							...(listing.row.key === lastKey ? { [NEAR_END]: nearEnd } : {})
 						})}
-						empty={botcRef && !refFailed ? '' : t('common.none')}
+						empty={pendingSources.length > 0 ? '' : t('common.none')}
 					/>
 				</div>
 
