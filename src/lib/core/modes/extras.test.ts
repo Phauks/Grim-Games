@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { announcedRange, extraCandidates, rollExtras } from './extras.ts';
+import { announcedRange, extraCandidates, extraTotal, rollExtras } from './extras.ts';
 import { NO_RESTRICTIONS, runsPart } from './pool.ts';
 import { gameModeById } from './registry.ts';
 
@@ -13,17 +13,30 @@ const tb = data.characters.filter((c) => c.edition === 'tb');
 const infinite = gameModeById('infinite-possibilities')!;
 
 describe('rollExtras', () => {
-	it('adds one Townsfolk and one Minion from off the script', () => {
-		const extras = rollExtras(infinite, tb, data.characters, NO_RESTRICTIONS, Math.random);
-		expect(extras.map((c) => c.type)).toEqual(['townsfolk', 'minion']);
-		for (const c of extras) expect(tb.some((t) => t.id === c.id)).toBe(false);
+	// Trevor, 2026-10-18: "1-4 hidden extra characters from off the script".
+	it('adds 1 to 4 characters from off the script, of the mode’s row types', () => {
+		expect(extraTotal(infinite)).toEqual({ min: 1, max: 4 });
+		const seen = new Set<number>();
+		for (let i = 0; i < 200; i++) {
+			const extras = rollExtras(infinite, tb, data.characters, NO_RESTRICTIONS, Math.random);
+			seen.add(extras.length);
+			expect(extras.length).toBeGreaterThanOrEqual(1);
+			expect(extras.length).toBeLessThanOrEqual(4);
+			for (const c of extras) {
+				expect(['townsfolk', 'outsider', 'minion']).toContain(c.type);
+				expect(tb.some((t) => t.id === c.id)).toBe(false);
+			}
+			expect(extras.filter((c) => c.type === 'minion').length).toBeLessThanOrEqual(1);
+		}
+		expect([...seen].sort()).toEqual([1, 2, 3, 4]);
 	});
 
 	it('never picks a restricted character', () => {
 		const minions = extraCandidates(infinite, 'minion', tb, data.characters, NO_RESTRICTIONS);
 		const banned = minions.slice(1).map((c) => c.id);
-		const extras = rollExtras(infinite, tb, data.characters, { banned, allowed: [] }, Math.random);
-		expect(extras[1].id).toBe(minions[0].id);
+		// random() 0.99 keeps every row, so the Minion row is filled.
+		const extras = rollExtras(infinite, tb, data.characters, { banned, allowed: [] }, () => 0.99);
+		expect(extras.find((c) => c.type === 'minion')?.id).toBe(minions[0].id);
 	});
 
 	it('adds none for a mode without hidden extras', () => {

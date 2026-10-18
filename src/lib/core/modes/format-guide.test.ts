@@ -22,7 +22,8 @@ import { KINDS, parseGameMode } from './validate.ts';
  * this test: raise GAME_MODE_REVISION, update the guide, then record the new hash here.
  */
 const FORMAT_HASH: Record<number, string> = {
-	5: 'f69e2a77045f7378'
+	5: 'f69e2a77045f7378',
+	6: '5ee123ca6fdee674'
 };
 
 function formatHash(): string {

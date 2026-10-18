@@ -101,6 +101,7 @@
 	import { campaignOf } from '#lib/features/modes/campaigns.ts';
 	import { hasSpectatorVote } from '#lib/features/modes/specters.ts';
 	import { townGroupOf } from '#lib/features/modes/town-groups.ts';
+	import TownMenu from '#lib/features/modes/TownMenu.svelte';
 	import { onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
@@ -1427,10 +1428,13 @@
 				bind:clientWidth={titleW}
 				bind:clientHeight={titleH}
 			>
-				<span
-					class="script-name"
-					class:mode={modeInName}
-					data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
+				<!-- A town's name switches towns (Alternative game modes, Trevor 2026-10-18). -->
+				<TownMenu gameId={game.gameId}
+					><span
+						class="script-name"
+						class:mode={modeInName}
+						data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
+					></TownMenu
 				>
 				<!-- The mode takes the author's line, so the corner never grows. -->
 				{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span
