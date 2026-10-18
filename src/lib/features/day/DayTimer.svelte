@@ -184,7 +184,7 @@
 	}
 	.controls {
 		--timer-surround: var(--sheet-background);
-		--timer-surround-muted: var(--on-sheet-muted);
+		--timer-surround-muted: var(--on-surface-muted);
 		display: grid;
 		gap: var(--space-4);
 		padding-top: var(--space-2);

@@ -190,6 +190,6 @@
 	}
 	.empty {
 		padding-left: var(--space-3);
-		color: var(--on-sheet-muted);
+		color: var(--on-surface-muted);
 	}
 </style>
