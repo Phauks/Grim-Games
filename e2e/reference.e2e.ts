@@ -231,22 +231,7 @@ test('Info cards lists the info cards a character brings, or None', async ({ pag
 	).toHaveText('Your Secret Word is');
 });
 
-test('the night order runs from Dusk to Dawn', async ({ page }) => {
-	await page.goto('/reference');
-	await page.getByRole('tab', { name: 'Night order' }).tap();
-	for (const night of ['first', 'other']) {
-		const steps = page
-			.getByTestId(`night-${night}`)
-			.getByRole('list', { name: /until Dawn/ })
-			.locator(':scope > li');
-		await expect(steps.first()).toHaveAttribute('data-step', 'dusk');
-		await expect(steps.last()).toHaveAttribute('data-step', 'dawn');
-	}
-	await expect(page.getByTestId('night-first').locator('[data-step="minioninfo"]')).toBeVisible();
-	await expect(page.getByRole('table')).toContainText('15');
-});
-
-test('the table view is remembered and the night-order table is in night order', async ({
+test('the table view is remembered and its night columns sort into night order', async ({
 	page
 }) => {
 	await page.goto('/reference');
@@ -262,22 +247,26 @@ test('the table view is remembered and the night-order table is in night order',
 	await page.reload();
 	await expect(page.getByTestId('character-table')).toBeVisible();
 
-	await page.getByRole('tab', { name: 'Night order' }).tap();
-	for (const night of ['first', 'other']) {
-		const rows = page.getByTestId(`night-table-${night}`).locator('tbody tr');
-		await expect(rows.first()).toHaveAttribute('data-step', 'dusk');
-		const positions = await rows
-			.locator('td.num')
-			.allTextContents()
-			.then((all) => all.map((t) => Number(t.replace('#', ''))));
-		console.log(JSON.stringify(positions));
-		expect(positions.length).toBeGreaterThan(50);
-		expect(positions).toEqual([...positions].sort((a, b) => a - b));
-		// The last step before the after-Dawn announcements is Dawn.
-		await expect(rows.locator(':scope:not([data-after-dawn])').last()).toHaveAttribute(
-			'data-step',
-			'dawn'
+	// No Night order tab (Trevor, 2026-10-18): the night columns sort into night order instead.
+	await expect(page.getByRole('tab')).toHaveCount(0);
+	const table2 = page.getByTestId('character-table');
+	for (const [night, label] of [
+		['firstNight', 'First night'],
+		['otherNight', 'Other nights']
+	]) {
+		await table2.getByRole('button', { name: label, exact: true }).tap();
+		await expect(table2.locator(`th[data-col="${night}"]`)).toHaveAttribute(
+			'aria-sort',
+			'ascending'
 		);
+		const positions = (
+			await table2
+				.locator(`td[data-col="${night}"] [data-position]`)
+				.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-position'))))
+		).filter((n) => n > 0);
+		// Only rows near the screen are built (lazy), so a phone sees fewer.
+		expect(positions.length).toBeGreaterThanOrEqual(5);
+		expect(positions).toEqual([...positions].sort((x, y) => x - y));
 	}
 
 	// Tables scroll inside their own box; the page never scrolls sideways.
@@ -382,9 +371,6 @@ test('on a phone the tables stack into labelled rows instead of scrolling sidewa
 				root.scrollWidth > root.clientWidth + 1 || [...document.querySelectorAll(s)].some(scrolls)
 			);
 		}, selector);
-	expect(await sideways('.scroll')).toBe(false);
-	await page.getByRole('tab', { name: 'Night order' }).tap();
-	await expect(page.getByTestId('night-table-first')).toBeVisible();
 	expect(await sideways('.scroll')).toBe(false);
 });
 
@@ -537,7 +523,7 @@ test('the table filters characters by edition', async ({ page }) => {
 	await expect(table.locator('tr[data-character="vortox"]')).toHaveCount(1);
 });
 
-test('the table toggle sits on the search line on both tabs', async ({ page }) => {
+test('the table toggle sits on the search line', async ({ page }) => {
 	// Trevor (2026-10-18): "put table/cards in the same line as the search".
 	await page.goto('/reference');
 	const toggle = page.getByRole('button', { name: 'Show as table' });
@@ -553,10 +539,4 @@ test('the table toggle sits on the search line on both tabs', async ({ page }) =
 	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByTestId('character-table')).toBeVisible();
 	await sameLine(page.getByRole('searchbox', { name: 'Search characters' }));
-
-	await page.getByRole('tab', { name: 'Night order' }).tap();
-	await sameLine(page.getByRole('searchbox', { name: 'Filter night steps' }));
-	await toggle.tap();
-	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-	await sameLine(page.getByRole('searchbox', { name: 'Filter night steps' }));
 });
