@@ -10,7 +10,6 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { downloadJson } from '#lib/ui/download.ts';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import { accountApi } from './account-api.ts';
@@ -82,7 +81,8 @@
 			flush: true,
 			fixed: true,
 			alwaysShown: true,
-			width: 'var(--tap-target)',
+			// Room for the words "Sign out" (no longer an icon, Trevor 2026-10-18).
+			width: 'calc(7 * var(--u))',
 			noFilter: "Each row's sign-out button."
 		}
 	]);
@@ -276,11 +276,13 @@
 							{:else if column.id === 'lastUsed'}
 								{date(session.lastSeenAt)}
 							{:else}
-								<DeleteButton
-									label={t('account.devices.signOutDevice', { device: deviceName(session) })}
+								<!-- Signing out is not a delete: a text button (Trevor, 2026-10-18). -->
+								<Button
+									variant="quiet"
+									aria-label={t('account.devices.signOutDevice', { device: deviceName(session) })}
 									onclick={() => endSession(session.id)}
-									disabled={busy || session.current}
-								/>
+									disabled={busy || session.current}>{t('account.devices.signOut')}</Button
+								>
 							{/if}
 						{/snippet}
 					</DataTable>
@@ -301,7 +303,6 @@
 			<!-- The button sits beneath its heading, not beside it (Trevor, 2026-10-18). -->
 			<PageSection title={t('account.data.delete')}>
 				<div class="buttons">
-					<!-- eslint-disable-next-line grim/delete-button -- Trevor 2026-10-18: account deletion is a labelled button, it is so high-impact -->
 					<Button variant="danger" icon="remove" onclick={askDelete} disabled={busy}
 						>{t('account.data.delete')}</Button
 					>
