@@ -739,7 +739,7 @@ test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 	await filter.tap();
 	await expect(page.getByRole('option', { name: 'All Characters' })).toBeVisible();
 	await page.keyboard.press('Escape');
-	await page.getByRole('button', { name: 'Random bluffs' }).tap();
+	await page.getByRole('button', { name: 'Random', exact: true }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 3/3' })).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	// No in-play warning to confirm: none of them is in play.

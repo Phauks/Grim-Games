@@ -5,6 +5,10 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
+	import { defaultAlignment } from '#lib/core/data/index.ts';
+	import { randomBluffs } from '#lib/features/bluffs/bluffs.ts';
 
 	interface Props {
 		/** The characters to choose from, in script order. */
@@ -18,6 +22,12 @@
 		inPlay?: ReadonlySet<CharacterId>;
 		/** A chosen character in play is flagged as needing replacing (the Demon's bluffs). */
 		warnInPlay?: boolean;
+		/**
+		 * Choosing characters not in play (the Demon's bluffs, "These characters are not in
+		 * play"): a Good Characters / All Characters filter and setup's Random button, which
+		 * never picks one in play. One picker for both (Trevor, 2026-10-18).
+		 */
+		notInPlay?: boolean;
 	}
 
 	let {
@@ -26,8 +36,26 @@
 		max,
 		label,
 		inPlay,
-		warnInPlay = false
+		warnInPlay = false,
+		notInPlay = false
 	}: Props = $props();
+
+	let filter = $state<'good' | 'all'>('good');
+	const choices = $derived(
+		notInPlay && filter === 'good'
+			? characters.filter((c) => defaultAlignment(c.type) === 'good' && c.type !== 'traveller')
+			: characters
+	);
+
+	/** A fresh random pick on every tap, from the characters listed. */
+	function random() {
+		selected = randomBluffs(
+			choices.map((c) => c.id),
+			inPlay ?? new Set(),
+			max,
+			Math.random
+		);
+	}
 
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	const full = $derived(selected.length >= max);
@@ -50,6 +78,22 @@
 	Then the shared searchable character list.
 -->
 <div class="picker">
+	{#if notInPlay}
+		<div class="filter">
+			<Select
+				label={t('show.filter')}
+				hideLabel
+				value={filter}
+				options={[
+					{ value: 'good', label: t('show.goodCharacters') },
+					{ value: 'all', label: t('show.allCharacters') }
+				]}
+				onChange={(value) => (filter = value)}
+			/>
+			<span class="ink"><IconButton icon="random" label={t('show.random')} onclick={random} /></span
+			>
+		</div>
+	{/if}
 	<ul class="slots" aria-label={t('show.chosen')} style:--max={max}>
 		{#each selected as id (id)}
 			{@const character = byId.get(id)}
@@ -74,7 +118,7 @@
 
 	<div role="group" aria-label={label}>
 		<SharedPicker
-			{characters}
+			characters={choices}
 			mode={max === 1 ? 'single' : 'multi'}
 			{selected}
 			onSelect={toggle}
@@ -92,6 +136,17 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
 		--line: color-mix(in srgb, currentColor 30%, transparent);
+	}
+	/* The filter, then Random beside it, as in setup. */
+	.filter {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	/* The sheet is parchment: the button takes its ink colour. */
+	.ink :global(.icon-button) {
+		color: inherit;
 	}
 	.slots {
 		display: flex;

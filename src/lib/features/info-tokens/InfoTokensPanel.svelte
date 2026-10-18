@@ -83,6 +83,7 @@
 				bind:selected={picked}
 				max={pickMax(picking.id)}
 				label={t('info-tokens.characters')}
+				notInPlay={picking.id === 'not-in-play'}
 			/>
 			<ModalActions
 				onCancel={() => (pickOpen = false)}
