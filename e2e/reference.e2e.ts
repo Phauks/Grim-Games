@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 test('the menu opens the character reference; the footer no longer links it', async ({ page }) => {
 	await page.goto('/');
@@ -7,7 +8,7 @@ test('the menu opens the character reference; the footer no longer links it', as
 	);
 	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
 	await page
-		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('link', { name: 'Character reference' })
 		.tap();
 	await expect(page).toHaveURL(/\/reference$/);
@@ -32,6 +33,18 @@ test('searching shows everything the app uses for the Witch', async ({ page }) =
 	await expect(token).toHaveAttribute('data-type', 'minion');
 	// Its owner's icon sits on the token, so it reads as the Witch's (Trevor, 2026-10-17).
 	await expect(token.locator('img.owner')).toHaveAttribute('src', /witch/i);
+	// Level with the words around it, not sitting high (Trevor, 2026-10-18).
+	const offset = await token.evaluate((chip) => {
+		// A letter in the sentence's own font, just after the chip.
+		const probe = document.createElement('span');
+		probe.textContent = 'x';
+		chip.after(probe);
+		const text = probe.getBoundingClientRect();
+		probe.remove();
+		const box = chip.getBoundingClientRect();
+		return Math.abs(box.top + box.height / 2 - (text.top + text.height / 2)) / text.height;
+	});
+	expect(offset).toBeLessThan(0.15);
 	await expect(card.getByTestId('night-other')).not.toContainText(':reminder:');
 	await expect(card).toContainText('has chosen');
 	await expect(card).toContainText('player with Cursed');

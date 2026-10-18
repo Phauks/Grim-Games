@@ -752,13 +752,13 @@
 	});
 	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
 	/**
-	 * Run Night Order in one tap, from the middle of the circle once the game is set up
-	 * (Trevor, 2026-10-18: a change on the board itself, not a toolbar page). It starts
+	 * Run Night Order in one tap, from the right end of the reminder bank (Trevor, 2026-10-18:
+	 * a change on the board itself, not a toolbar page). Always there while the walk-through
+	 * setting is on, so the bank never moves; usable once every seat has a token. It starts
 	 * tonight's walk-through at the first step not yet done.
 	 */
-	const showRun = $derived(
-		preferences.current.assistance.nightWalkthrough &&
-			!showSetup &&
+	const canRun = $derived(
+		!showSetup &&
 			!ended &&
 			!grimoire.open.viewOnly &&
 			!walk &&
@@ -1396,6 +1396,9 @@
 				{ruleAt}
 				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
 				onHints={(h) => (trayHints = h)}
+				run={preferences.current.assistance.nightWalkthrough
+					? { disabled: !canRun, onclick: runNight }
+					: undefined}
 			/>
 		{/if}
 
@@ -1442,11 +1445,6 @@
 			</div>
 		{/if}
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
-			{#if showRun}
-				<div class="setup">
-					<Button variant="accent" icon="night" onclick={runNight}>Run Night Order</Button>
-				</div>
-			{/if}
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if showSetup}
 				<div class="setup">

@@ -164,15 +164,15 @@ describe('tokens on the character’s own seat', () => {
 
 describe('tokens on a player the Storyteller picks', () => {
 	// https://wiki.bloodontheclocktower.com/Washerwoman: TOWNSFOLK by a Townsfolk, WRONG by
-	// any other player.
+	// any player but that one (the Washerwoman herself too, Trevor 2026-10-18).
 	it('pre-fills the Washerwoman’s Townsfolk when only one player fits', () => {
 		const { list, seats } = suggest(['washerwoman', 'chef', 'saint', 'imp']);
 		expect(list.map((s) => [s.label, s.seatId, s.choice])).toEqual([
 			['Townsfolk', seats[1], undefined],
-			['Wrong', undefined, 'any other player']
+			['Wrong', undefined, 'any player']
 		]);
-		// Wrong is neither the Washerwoman nor the Townsfolk player.
-		expect(list[1].candidates).toEqual([seats[2], seats[3]]);
+		// Wrong is any player but the Townsfolk player.
+		expect(list[1].candidates).toEqual([seats[0], seats[2], seats[3]]);
 	});
 
 	it('leaves the Washerwoman’s Townsfolk to the Storyteller when several fit', () => {

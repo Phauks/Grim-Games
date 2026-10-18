@@ -208,6 +208,34 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
+// Trevor, 2026-10-18: Travellers in the bag, the recommended ones listed first and every
+// other one found through a searchable dialog.
+test("Travellers can join the bag: the edition's are listed, the rest are a search away", async ({
+	page
+}) => {
+	await selectionFor(page, 8);
+	// Trouble Brewing's own Travellers are listed without being on its sheet.
+	await expect(choice(page, 'Scapegoat')).toBeVisible();
+	await expect(choice(page, 'Harlot')).toHaveCount(0);
+	await page.getByRole('button', { name: 'All Travellers' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'All Travellers' });
+	await dialog.getByRole('searchbox').fill('Harlot');
+	await dialog.getByRole('button', { name: /^Harlot/ }).tap();
+	await expect(dialog.getByRole('button', { name: /^Harlot/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(choice(page, 'Harlot')).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('li', { has: choice(page, 'Harlot') })).toContainText('Not on script');
+	await expect(page.locator('li', { has: choice(page, 'Scapegoat') })).not.toContainText(
+		'Not on script'
+	);
+	await expect(page.getByTestId('count-traveller')).toHaveText('1');
+	await noSidewaysScroll(page);
+});
+
 // Trevor, 2026-10-18: a button to list only the chosen characters, together with the search.
 test('Show only selected lists just the chosen characters and still searches', async ({ page }) => {
 	await selectionFor(page, 5);
@@ -564,13 +592,9 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
+	const paste = page.getByRole('dialog', { name: 'Add script' });
 	await paste
-		.getByLabel('Script JSON or link')
+		.getByLabel('Script JSON')
 		.fill(
 			JSON.stringify([
 				{ id: '_meta', name: 'Jinx Check' },
@@ -613,12 +637,8 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: 'Paste JSON', exact: true })
-		.tap();
-	const paste = page.getByRole('dialog', { name: 'Paste a script' });
-	await paste.getByLabel('Script JSON or link').fill(
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste.getByLabel('Script JSON').fill(
 		JSON.stringify([
 			{ id: '_meta', name: 'Custom Check' },
 			{
@@ -693,23 +713,18 @@ test("tapping a character's icon opens its page without choosing it", async ({ p
 	);
 });
 
-test('the Demon bluffs are chosen in setup once the draw is done', async ({ page }) => {
-	// Trevor, 2026-10-18: while setting up, not as a prompt on the board.
+test('the Demon bluffs are chosen on the Characters screen, not the Draw', async ({ page }) => {
+	// Trevor, 2026-10-18: where the Storyteller picks characters, not the screen players use.
 	await selectionFor(page, 5);
-	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
-	await page.getByRole('button', { name: 'Build bag' }).tap();
 	const bluffs = page.getByTestId('setup-bluffs');
-	// There from the start, so nothing moves; usable once every tile is drawn.
+	// Only once a Demon is chosen; it appears after the list, so nothing above it moves.
+	await expect(bluffs).toHaveCount(0);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await expect(bluffs).toContainText('None');
-	await expect(bluffs.getByRole('button', { name: 'Choose' })).toBeDisabled();
-	for (let n = 1; n <= 5; n++) {
-		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
-		await page.getByRole('button', { name: 'Confirm' }).tap();
-	}
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
 	const choices = page.getByRole('group', { name: 'Bluff characters' });
-	// What the draw put in play is marked.
+	// The characters chosen for the bag are marked as in play.
 	await expect(choices.getByRole('button', { name: /^Empath/ })).toContainText('In play');
 	for (const name of ['Chef', 'Soldier', 'Mayor'])
 		await choices.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
@@ -718,22 +733,27 @@ test('the Demon bluffs are chosen in setup once the draw is done', async ({ page
 	for (const name of ['Chef', 'Soldier', 'Mayor']) await expect(bluffs).toContainText(name);
 	await expect(bluffs.getByRole('button', { name: 'Change' })).toBeEnabled();
 	await noSidewaysScroll(page);
+	// The Draw screen has none.
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
+	await expect(page.getByTestId('setup-bluffs')).toHaveCount(0);
 });
 
 test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 	// Trevor, 2026-10-18: the same Random button as setup's.
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
-	await page.getByRole('button', { name: 'Build bag' }).tap();
-	for (let n = 1; n <= 5; n++) {
-		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
-		await page.getByRole('button', { name: 'Confirm' }).tap();
-	}
 	const bluffs = page.getByTestId('setup-bluffs');
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 0/3' })).toBeVisible();
-	await page.getByRole('button', { name: 'Random bluffs' }).tap();
+	// Trevor, 2026-10-18: the filter reads Good Characters or All Characters.
+	const filter = page.getByRole('combobox', { name: 'Characters' });
+	await expect(filter).toContainText('Good Characters');
+	await filter.tap();
+	await expect(page.getByRole('option', { name: 'All Characters' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'Random', exact: true }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 3/3' })).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	// No in-play warning to confirm: none of them is in play.

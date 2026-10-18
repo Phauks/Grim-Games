@@ -10,6 +10,7 @@
  * `SAVED_GAME_VERSION`, add a migration from the previous version to `MIGRATIONS`, and
  * add a fixture of the old shape to `persistence.test.ts`.
  */
+import { APP_NAME } from '#lib/core/app-name.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
@@ -162,7 +163,7 @@ export function runMigrations(
 	if (current.schemaVersion > target) {
 		throw new SavedGameError(
 			'too-new',
-			`saved by a newer version of Grim-Games (format ${current.schemaVersion}, this build reads up to ${target})`
+			`saved by a newer version of ${APP_NAME} (format ${current.schemaVersion}, this build reads up to ${target})`
 		);
 	}
 	while (current.schemaVersion < target) {
@@ -194,7 +195,7 @@ function checkCurrent(doc: SavedDocument): SavedGame {
 		log.cursor < 1 ||
 		log.cursor > log.entries.length
 	) {
-		throw new SavedGameError('invalid', 'not a Grim-Games saved game');
+		throw new SavedGameError('invalid', `not a ${APP_NAME} saved game`);
 	}
 	return doc as unknown as SavedGame;
 }
@@ -210,7 +211,7 @@ export function migrateSavedGame(
 	target: number = SAVED_GAME_VERSION
 ): SavedGame {
 	if (!isRecord(raw) || !Number.isInteger(raw.schemaVersion) || (raw.schemaVersion as number) < 1) {
-		throw new SavedGameError('invalid', 'not a Grim-Games saved game');
+		throw new SavedGameError('invalid', `not a ${APP_NAME} saved game`);
 	}
 	return checkCurrent(runMigrations(raw as SavedDocument, chain, target));
 }

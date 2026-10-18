@@ -114,3 +114,63 @@ test('a tab left behind by Refresh in another tab offers to reload', async ({ pa
 	await reloaded;
 	await expect(prompt).toBeHidden();
 });
+
+// Trevor (2026-10-18): About can check for a new build now; the result shows in place.
+/** A service worker with nothing waiting, or with a build waiting when `waiting` is set. */
+async function fakeServiceWorker(page: Page, waiting: boolean) {
+	await page.addInitScript((waiting) => {
+		const worker = { state: 'installed', postMessage() {}, addEventListener() {} };
+		const registration = {
+			waiting: waiting ? worker : null,
+			installing: null,
+			active: worker,
+			addEventListener() {},
+			update: () => Promise.resolve()
+		};
+		Object.defineProperty(navigator, 'serviceWorker', {
+			value: {
+				controller: worker,
+				ready: Promise.resolve(registration),
+				register: () => Promise.resolve(registration),
+				getRegistration: () => Promise.resolve(registration),
+				addEventListener() {},
+				removeEventListener() {}
+			}
+		});
+	}, waiting);
+}
+
+async function openAbout(page: Page) {
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'About' })
+		.tap();
+	return dialog;
+}
+
+test('Check for updates in About says Up to date in place', async ({ page }) => {
+	await fakeServiceWorker(page, false);
+	await page.goto('/');
+	const dialog = await openAbout(page);
+	const result = dialog.getByTestId('update-check-result');
+	const button = dialog.getByRole('button', { name: 'Check for updates' });
+	const before = await button.boundingBox();
+	await button.tap();
+	await expect(result).toHaveText('Up to date');
+	expect(await button.boundingBox()).toEqual(before);
+	await expect(page.getByTestId('update-banner')).toHaveCount(0);
+});
+
+test('Check for updates brings back the update card after Later', async ({ page }) => {
+	await fakeServiceWorker(page, true);
+	await page.goto('/');
+	const banner = page.getByTestId('update-banner');
+	await banner.getByRole('button', { name: 'Later' }).tap();
+	await expect(banner).toHaveCount(0);
+	const dialog = await openAbout(page);
+	await dialog.getByRole('button', { name: 'Check for updates' }).tap();
+	await expect(dialog.getByTestId('update-check-result')).toHaveText('Update ready');
+	await expect(banner).toBeVisible();
+});

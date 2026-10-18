@@ -33,6 +33,8 @@
 	import type { SetupGamePort } from './game-port.ts';
 	import SetupCheckPanel from './SetupCheckPanel.svelte';
 	import StandInDialog from './StandInDialog.svelte';
+	import TravellerDialog from './TravellerDialog.svelte';
+	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupNav from './SetupNav.svelte';
@@ -71,6 +73,28 @@
 	const choices = $derived(script?.characters.filter((c) => !isRuleCharacter(c.type)) ?? []);
 	const scriptOrder = $derived(choices.map((c) => c.id));
 	/**
+	 * Travellers listed first (Trevor, 2026-10-18): the script's own, then, on an official
+	 * edition, that edition's, which aren't on its sheet but go with it.
+	 */
+	const editionTravellers = $derived(
+		script?.edition && data
+			? data.characters.filter(
+					(c) =>
+						c.type === 'traveller' && c.edition === script.edition && !scriptOrder.includes(c.id)
+				)
+			: []
+	);
+	/** Every Traveller there is, recommended first, for the All Travellers dialog. */
+	const allTravellers = $derived.by(() => {
+		const recommended = [...choices.filter((c) => c.type === 'traveller'), ...editionTravellers];
+		const seen = new Set(recommended.map((c) => c.id));
+		return [
+			...recommended,
+			...(data?.characters ?? []).filter((c) => c.type === 'traveller' && !seen.has(c.id))
+		];
+	});
+	let travellersOpen = $state(false);
+	/**
 	 * Characters chosen though they are not on the script (Infinite Possibilities' hidden
 	 * extras, or any other addition), listed under their own type with an off-script mark
 	 * (Trevor, 2026-10-18). Once listed they stay for this visit, so taking one out can be
@@ -78,7 +102,7 @@
 	 */
 	let offScriptSeen = $state.raw<CharacterId[]>([]);
 	$effect(() => {
-		const onScript = new Set(scriptOrder);
+		const onScript = new Set([...scriptOrder, ...editionTravellers.map((c) => c.id)]);
 		const added = Object.keys(s.selection).filter(
 			(id) => (s.selection[id] ?? 0) > 0 && !onScript.has(id) && !offScriptSeen.includes(id)
 		);
@@ -92,9 +116,12 @@
 	/** Only the chosen characters, with the search still applying (Trevor, 2026-10-18). */
 	let selectedOnly = $state(false);
 	const listed = $derived(
-		[...choices, ...offScript].filter((c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0)
+		[...choices, ...editionTravellers, ...offScript].filter(
+			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0
+		)
 	);
 	const offScriptIds = $derived(new Set(offScript.map((c) => c.id)));
+	const listedIds = $derived(new Set([...scriptOrder, ...editionTravellers.map((c) => c.id)]));
 	const TYPES: CharacterType[] = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'];
 
 	const ready = $derived(script !== undefined && game !== undefined && s.gameId === game.gameId);
@@ -298,11 +325,22 @@
 			surface="page"
 			contained={false}
 			types={TYPES}
+			keepTypes={['traveller']}
 			onSelect={(id) => {
 				const character = lookup(id);
 				if (character) toggle(character);
 			}}
 		>
+			{#snippet groupAside(type)}
+				{#if type === 'traveller'}
+					<IconButton
+						icon="search"
+						label={t('setup.allTravellers')}
+						disabled={!ready}
+						onclick={() => (travellersOpen = true)}
+					/>
+				{/if}
+			{/snippet}
 			{#snippet item(character)}
 				<CharacterChoice
 					{character}
@@ -316,6 +354,19 @@
 				/>
 			{/snippet}
 		</CharacterPicker>
+		<!--
+			The Demon's bluffs, from the characters chosen here rather than on the Draw screen the
+			players use (Trevor, 2026-10-18). After the list, so its appearing moves nothing.
+		-->
+		{#if game && port.lookup}
+			<SetupBluffs
+				{game}
+				characters={port.lookup}
+				dispatch={port.dispatch}
+				waiting={!ready}
+				inPlay={ids}
+			/>
+		{/if}
 	</ErrorBoundary>
 
 	{#if game}
@@ -336,6 +387,16 @@
 	{/if}
 </Page>
 
+<TravellerDialog
+	bind:open={travellersOpen}
+	travellers={allTravellers}
+	selected={ids}
+	marker={(c) => (listedIds.has(c.id) ? undefined : t('setup.offScript'))}
+	onToggle={(id) => {
+		const character = lookup(id);
+		if (character) toggle(character);
+	}}
+/>
 <StandInDialog
 	bind:open={standInOpen}
 	standIn={askingStandIn}

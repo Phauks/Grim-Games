@@ -1,7 +1,9 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** The player view (/play): script sheet, night order, circle and notes. */
 export const player = {
 	'player.title': 'Player view',
-	'player.pageTitle': 'Player view · Grim-Games',
+	'player.pageTitle': `Player view · ${APP_NAME}`,
 	'player.loadFailed': 'Could not load the script: {error}',
 	'player.loading': 'Loading…',
 	'player.tab.script': 'Script',

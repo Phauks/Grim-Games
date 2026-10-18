@@ -1,6 +1,8 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** The Account page, sign-in and profile scripts (src/lib/features/account). */
 export const account = {
-	'account.pageTitle': 'Account · Grim-Games',
+	'account.pageTitle': `Account · ${APP_NAME}`,
 	'account.title': 'Account',
 	'account.button': 'Account',
 	'account.buttonSignedIn': 'Account: signed in as {email}',
@@ -26,8 +28,19 @@ export const account = {
 	'account.signIn.done': 'Signed in as {email}',
 
 	'account.you.title': 'Signed in',
+	'account.you.username': 'Username',
 	'account.you.email': 'Email',
 	'account.you.since': 'Since',
+	'account.username.title': 'Change username',
+	'account.username.label': 'Username',
+	'account.username.rules': '{min} to {max} letters A-Z, digits, dots, dashes or underscores.',
+	'account.username.saved': 'Your username is now {name}',
+	'account.changeEmail.title': 'Change email',
+	'account.changeEmail.newEmail': 'New email address',
+	'account.changeEmail.code': 'Code',
+	'account.changeEmail.howItWorks':
+		'We email a code to the new address. Your old address gets a notice once it changes.',
+	'account.changeEmail.done': 'Your email is now {email}',
 	'account.signOut': 'Sign out',
 	'account.signedOut': 'Signed out on this device',
 	'account.failed': 'That did not work',

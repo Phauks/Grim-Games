@@ -1,3 +1,5 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** Live rooms: the Storyteller's "Players' phones" page and the players' join pages. */
 export const room = {
 	// Storyteller's page
@@ -10,7 +12,7 @@ export const room = {
 	'room.qrLabel': 'QR code to join the room',
 	'room.copyLink': 'Copy link',
 	'room.share': 'Share',
-	'room.shareText': 'Join the game on Grim-Games. Room code: {code}',
+	'room.shareText': `Join the game on ${APP_NAME}. Room code: {code}`,
 	'room.linkCopied': 'Link copied',
 	'room.copyFailed': 'Could not copy the link',
 	'room.copyFailedHint': 'Use the QR code instead.',
@@ -18,8 +20,7 @@ export const room = {
 	'room.connected': 'Connected',
 	'room.connecting': 'Connecting…',
 	'room.offline': 'Offline: reconnecting. The game carries on here.',
-	'room.tooOld':
-		'This room needs a newer version of Grim-Games. Refresh to update, then try again.',
+	'room.tooOld': `This room needs a newer version of ${APP_NAME}. Refresh to update, then try again.`,
 	'room.requests': 'Requests',
 	'room.noSeat': 'No seat',
 	'room.seatWithName': 'Seat {number} · {name}',

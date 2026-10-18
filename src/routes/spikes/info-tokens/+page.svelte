@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import { onMount } from 'svelte';
 	import { editionScript } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -22,7 +23,7 @@
 </script>
 
 <svelte:head>
-	<title>Info tokens spike · Grim-Games</title>
+	<title>Info tokens spike · {APP_NAME}</title>
 </svelte:head>
 
 <main>

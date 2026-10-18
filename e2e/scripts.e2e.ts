@@ -43,15 +43,11 @@ test.beforeEach(async ({ page }) => {
 
 /**
  * Add script lives in the Library (Trevor, 2026-10-17: what the user added); Search only
- * finds scripts. Opens the Library, then one of Add script's choices.
+ * finds scripts. Opens the Library, then Add script's one dialog (link, JSON and file).
  */
-async function addScript(page: Page, choice: 'Paste JSON' | 'Paste Link') {
+async function addScript(page: Page) {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Add script' })
-		.getByRole('button', { name: choice, exact: true })
-		.tap();
 }
 
 /** Taps a row of the list, then Save in its details. */
@@ -155,11 +151,9 @@ async function backToList(page: Page) {
 }
 
 test('a pasted script with a typo is checked, then saved anyway', async ({ page }) => {
-	await addScript(page, 'Paste JSON');
-	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
-	await dialog
-		.getByLabel('Script JSON or link')
-		.fill(JSON.stringify([...homebrew, 'fortune_teler']));
+	await addScript(page);
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
+	await dialog.getByLabel('Script JSON').fill(JSON.stringify([...homebrew, 'fortune_teler']));
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 
 	const check = page.getByRole('dialog', { name: 'Script check' });
@@ -171,10 +165,10 @@ test('a pasted script with a typo is checked, then saved anyway', async ({ page 
 });
 
 test('hand-edited script JSON with comments and trailing commas is saved', async ({ page }) => {
-	await addScript(page, 'Paste JSON');
-	const dialog = page.getByRole('dialog', { name: 'Paste a script' });
+	await addScript(page);
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
 	await dialog
-		.getByLabel('Script JSON or link')
+		.getByLabel('Script JSON')
 		.fill(
 			'[\n  // made by hand\n  { "id": "_meta", "name": "Hand Made", },\n  "chef", "choirboy", "baron", "imp", /* more */\n]'
 		);
@@ -247,10 +241,10 @@ test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 
 test('a link the browser may not read explains how to paste instead', async ({ page }) => {
 	await page.route('https://scripts.example/blocked.json', (route) => route.abort('failed'));
-	await addScript(page, 'Paste Link');
-	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
+	await addScript(page);
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
 	const load = dialog.getByRole('button', { name: 'Confirm' });
-	await dialog.getByLabel('Link to the script JSON').fill('https://scripts.example/blocked.json');
+	await dialog.getByLabel('Link to the JSON').fill('https://scripts.example/blocked.json');
 	await expect(dialog.getByRole('button', { name: 'Open link' })).toBeDisabled();
 	const before = await load.boundingBox();
 	await load.tap();
@@ -259,7 +253,7 @@ test('a link the browser may not read explains how to paste instead', async ({ p
 	// The error line is reserved, so the button does not move.
 	expect(await load.boundingBox()).toEqual(before);
 	// Open link sits inside the link's own field, just before its X (Trevor, 2026-10-18).
-	const field = (await dialog.getByLabel('Link to the script JSON').boundingBox())!;
+	const field = (await dialog.getByLabel('Link to the JSON').boundingBox())!;
 	const open = (await dialog.getByRole('button', { name: 'Open link' }).boundingBox())!;
 	const clear = (await dialog.getByRole('button', { name: 'Clear' }).boundingBox())!;
 	for (const button of [open, clear]) {
@@ -270,7 +264,7 @@ test('a link the browser may not read explains how to paste instead', async ({ p
 	expect(open.x + open.width).toBeLessThanOrEqual(clear.x + 1);
 	// The text stops before both buttons.
 	const padding = await dialog
-		.getByLabel('Link to the script JSON')
+		.getByLabel('Link to the JSON')
 		.evaluate((input) => parseFloat(getComputedStyle(input).paddingInlineEnd));
 	expect(field.x + field.width - padding).toBeLessThanOrEqual(open.x + 1);
 	// It opens the site in a new tab (that site is unreachable here, so only the tab is seen).
@@ -294,9 +288,9 @@ test('a saved script is shared by QR code and link, with no code to type', async
 	// Codes are only for joining a game (Trevor, 2026-10-16).
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	const add = page.getByRole('dialog', { name: 'Add script' });
-	for (const choice of ['Paste JSON', 'Upload File', 'Paste Link']) {
-		await expect(add.getByRole('button', { name: choice, exact: true })).toBeVisible();
-	}
+	await expect(add.getByLabel('Link to the JSON')).toBeVisible();
+	await expect(add.getByLabel('Script JSON')).toBeVisible();
+	await expect(add.getByRole('button', { name: 'Upload File', exact: true })).toBeVisible();
 	await expect(add.getByRole('button', { name: 'Code' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await page.getByLabel('Script file').setInputFiles({
@@ -657,9 +651,9 @@ test('a Script Tool link is read from the link itself, with no request', async (
 	page.on('request', (r) => {
 		if (r.url().includes('bloodontheclocktower.com')) requests.push(r.url());
 	});
-	await addScript(page, 'Paste Link');
-	const dialog = page.getByRole('dialog', { name: 'Save from a link' });
-	await dialog.getByLabel('Link to the script JSON').fill(scriptToolLink(teensy));
+	await addScript(page);
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
+	await dialog.getByLabel('Link to the JSON').fill(scriptToolLink(teensy));
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
 	expect(requests).toEqual([]);
@@ -1017,4 +1011,46 @@ test('the results table headers never overlap, even on a phone', async ({ page }
 	});
 	expect(problems).toEqual([]);
 	await noSidewaysScroll(page);
+});
+
+test('Add script is one dialog: the link and the JSON take turns, and the layout never moves', async ({
+	page
+}) => {
+	await addScript(page);
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
+	const link = dialog.getByLabel('Link to the JSON');
+	const json = dialog.getByLabel('Script JSON');
+	const confirm = dialog.getByRole('button', { name: 'Confirm' });
+	await expect(confirm).toBeDisabled();
+	const before = await confirm.boundingBox();
+	// Filling one disables the other, so it is always clear which one Confirm adds.
+	await link.fill('https://scripts.example/a.json');
+	await expect(json).toBeDisabled();
+	await expect(confirm).toBeEnabled();
+	await link.fill('');
+	await json.fill(JSON.stringify(homebrew));
+	await expect(link).toBeDisabled();
+	expect(await confirm.boundingBox()).toEqual(before);
+	await confirm.tap();
+	await expect(dialog).toBeHidden();
+	await expect(detailsName(page)).toHaveText('Storm Front');
+	await noSidewaysScroll(page);
+});
+
+test('Upload File in the Add script dialog adds the chosen file straight away', async ({
+	page
+}) => {
+	await addScript(page);
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
+	const chooser = page.waitForEvent('filechooser');
+	await dialog.getByRole('button', { name: 'Upload File', exact: true }).tap();
+	await (
+		await chooser
+	).setFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(JSON.stringify(homebrew))
+	});
+	await expect(dialog).toBeHidden();
+	await expect(detailsName(page)).toHaveText('Storm Front');
 });

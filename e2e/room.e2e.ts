@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 // Players' phones in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
 // seat and name, the Storyteller approves, and the seat is named in the grimoire.
@@ -152,7 +153,7 @@ test('a room tells an app too old for it to update', async ({ page, browser }, t
 	});
 	await phone.goto(`/join/${code}`);
 	await expect(phone.getByRole('alert')).toHaveText(
-		'This room needs a newer version of Grim-Games. Refresh to update, then try again.'
+		`This room needs a newer version of ${APP_NAME}. Refresh to update, then try again.`
 	);
 	await phoneContext.close();
 });

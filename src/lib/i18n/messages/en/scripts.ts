@@ -1,6 +1,8 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** Scripts: the /scripts page, the script picker, BotC Scripts search, share codes and the share screen. */
 export const scripts = {
-	'scripts.pageTitle': 'Search · Grim-Games',
+	'scripts.pageTitle': `Search · ${APP_NAME}`,
 	'scripts.heading': 'Search',
 
 	// Current script card
@@ -74,9 +76,7 @@ export const scripts = {
 	'scripts.column.number': 'No.',
 	'scripts.picker.noAuthor': 'No author',
 	'scripts.picker.add': 'Add script',
-	'scripts.picker.paste': 'Paste JSON',
 	'scripts.picker.file': 'Upload File',
-	'scripts.picker.link': 'Paste Link',
 	'scripts.picker.fileLabel': 'Script file',
 	'scripts.picker.save': 'Save',
 
@@ -98,13 +98,11 @@ export const scripts = {
 	'scripts.checks.needs': 'needs',
 	'scripts.checks.notOnScript': 'not on the script',
 
-	'scripts.paste.title': 'Paste a script',
-	'scripts.paste.label': 'Script JSON or link',
+	'scripts.paste.label': 'Script JSON',
 	'scripts.paste.fromClipboard': 'Paste from clipboard',
 	'scripts.paste.clipboardFailed':
 		'The clipboard could not be read. Long-press in the box and choose Paste.',
-	'scripts.link.title': 'Save from a link',
-	'scripts.link.label': 'Link to the script JSON',
+	'scripts.link.label': 'Link to the JSON',
 	'scripts.link.open': 'Open link',
 
 	// Script check

@@ -1,6 +1,8 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** The Character builder page (src/lib/features/character-builder). */
 export const characterBuilder = {
-	'character-builder.pageTitle': 'Character builder · Grim-Games',
+	'character-builder.pageTitle': `Character builder · ${APP_NAME}`,
 	'character-builder.heading': 'Character builder',
 	'character-builder.character': 'Character',
 	'character-builder.name': 'Name',

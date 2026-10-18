@@ -118,6 +118,22 @@ test('any reminder takes an optional long note in a sheet', async ({ page }) => 
 	await expect(sheet.getByTestId('note-text')).toHaveValue(text);
 });
 
+test("the Juggler's note keeps a guess for each player", async ({ page }) => {
+	await loaded(page);
+	await sampleGame(page, 'Sects & Violets');
+	await page.getByRole('button', { name: /^Note: Juggler/ }).tap();
+	const sheet = page.getByRole('dialog', { name: /^Note: Juggler/ });
+	const guess = sheet.getByRole('combobox', { name: 'Guess for Ana' });
+	await expect(guess).toHaveText('No guess');
+	await guess.tap();
+	await page.getByRole('option', { name: 'Witch', exact: true }).tap();
+	await expect(guess).toHaveText('Witch');
+	await sheet.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(sheet).toBeHidden();
+	await page.getByRole('button', { name: /^Note: Juggler/ }).tap();
+	await expect(guess).toHaveText('Witch');
+});
+
 test('with help switched off the night is a checklist with no worked-out answers', async ({
 	page
 }) => {

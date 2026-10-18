@@ -125,7 +125,10 @@
 		font: inherit;
 		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
-	input:focus-visible {
+	/* Weighted past the app-wide field ring (base.css), which otherwise drew a square ring
+	   inside the box's round one (Trevor, 2026-10-18: one effect, not two). */
+	.search-field input:focus-visible {
 		outline: none;
+		border-color: transparent;
 	}
 </style>
