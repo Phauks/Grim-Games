@@ -694,6 +694,9 @@
 		replaceState(resolve('/grimoire/[gameId]', { gameId: game.gameId }), {});
 	});
 
+	/** This game's ending, if it has ended (End game below). */
+	let endedRead = $state(0);
+	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
 	/** Characters and Bag draw show in the middle until the game is set up, then go. */
 	const showSetup = $derived(
 		// Never while looking back through History (Trevor, 2026-10-18): it is read-only.
@@ -774,8 +777,6 @@
 	// The Storyteller stays on the board, which says the game is over (Trevor, 2026-10-17).
 	let endOpen = $state(false);
 	let winner = $state<'good' | 'evil' | undefined>();
-	let endedRead = $state(0);
-	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
 	function endGame() {
 		endOpen = false;
 		endedGames.end(game.gameId, winner);
