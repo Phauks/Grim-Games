@@ -29,6 +29,7 @@
 		filterCount,
 		normaliseSearch,
 		parseBotcScriptsRef,
+		scriptPageUrl,
 		searchPath,
 		type BotcScriptsQuery,
 		type BotcScriptsSort
@@ -37,7 +38,7 @@
 	import { collectionScripts } from './collection.svelte.ts';
 	import { bloodstarScripts } from './bloodstar.svelte.ts';
 	import { homebrewScripts } from './homebrew-scripts.svelte.ts';
-	import { fetchRemote } from './remote-previews.svelte.ts';
+	import { fetchRemote, remotePreviews } from './remote-previews.svelte.ts';
 	import { curatedScripts } from './curated.svelte.ts';
 	import { worldCupScripts } from './world-cup.svelte.ts';
 	import {
@@ -47,13 +48,15 @@
 		recentScripts,
 		restoreScripts
 	} from './current-script.svelte.ts';
+	import { ScriptFetchError, searchBotcScripts, type FetchedScript } from './fetch-script.ts';
 	import {
-		fetchLinkTarget,
-		ScriptFetchError,
-		searchBotcScripts,
-		type FetchedScript
-	} from './fetch-script.ts';
-	import { filterRows, nextSort, sortRows, type RowSort, type SortColumn } from './picker-rows.ts';
+		filterRows,
+		nextSort,
+		pickerRow,
+		sortRows,
+		type RowSort,
+		type SortColumn
+	} from './picker-rows.ts';
 	import { relaxJson } from './relaxed-json.ts';
 	import { RemoteSearch } from './remote-search.svelte.ts';
 	import { describeSource, reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
@@ -279,8 +282,49 @@
 	 * The chosen source's rows; a header tap sorts what is loaded (BotC Scripts also asks the
 	 * site for its order by likes or number).
 	 */
+	/**
+	 * A typed BotC Scripts link or number is fetched and listed as its own row, so it opens
+	 * and saves like any other (Save lives in the details' header, Trevor 2026-10-18).
+	 */
+	const refTarget = $derived(
+		botcRef ? ({ kind: 'botcscripts', ref: botcRef } as const) : undefined
+	);
+	$effect(() => {
+		const target = refTarget;
+		if (target) untrack(() => void fetchRemote(target).catch(() => {}));
+	});
+	const refListing = $derived.by((): ScriptListing | undefined => {
+		const target = refTarget;
+		const fetched = target && remotePreviews.get(target);
+		if (!target || !fetched || !data) return undefined;
+		const script = loadScriptText(fetched.text, data).script;
+		if (!script) return undefined;
+		const source = fetched.source;
+		const botcSource = source.kind === 'botcscripts' ? source : undefined;
+		return {
+			row: {
+				...pickerRow(script, `botc-ref:${JSON.stringify(target.ref)}`, 'botc'),
+				...(botcSource
+					? {
+							number: botcSource.scriptId,
+							version: botcSource.version,
+							page: scriptPageUrl(botcSource.scriptId, botcSource.version)
+						}
+					: {})
+			},
+			target
+		};
+	});
+	const refFailed = $derived(!!refTarget && remotePreviews.failed(refTarget));
+
 	const shown = $derived.by<ScriptListing[]>(() => {
-		const all = searchingBotc ? (botcRef ? [] : botc.listings) : shownLocal;
+		const all = searchingBotc
+			? botcRef
+				? refListing
+					? [refListing]
+					: []
+				: botc.listings
+			: shownLocal;
 		if (!sort) return all;
 		const byKey = new Map(all.map((l) => [l.row.key, l]));
 		return sortRows(
@@ -410,7 +454,11 @@
 		!data
 			? t('scripts.picker.loading')
 			: botcRef
-				? t('scripts.botc.refHint')
+				? refListing || refFailed
+					? refListing
+						? t('scripts.picker.count', { count: 1 })
+						: t('common.none')
+					: t('scripts.picker.loading')
 				: searchingBotc
 					? botcStatus || t('common.none')
 					: (shownCount === 0
@@ -623,7 +671,7 @@
 					<DataTable
 						label={t('scripts.picker.table')}
 						{columns}
-						rows={botcRef ? [] : shown}
+						rows={shown}
 						key={(listing) => listing.row.key}
 						{cell}
 						sort={tableSort}
@@ -640,23 +688,13 @@
 							[TAP_ROW]: tapRow,
 							...(listing.row.key === lastKey ? { [NEAR_END]: nearEnd } : {})
 						})}
-						empty={botcRef ? '' : t('common.none')}
+						empty={botcRef && !refFailed ? '' : t('common.none')}
 					/>
 				</div>
 
-				<!-- The count shares the line under the table with the next action; both always there. -->
+				<!-- The count under the table; always there. -->
 				<div class="more" data-testid="picker-more">
 					<p class="status" role="status" data-testid="picker-status">{status}</p>
-					<!-- Always there, enabled when a BotC Scripts link was typed. -->
-					<div class="buttons">
-						<Button
-							variant="accent"
-							disabled={busy || !botcRef}
-							onclick={() =>
-								botcRef && run(() => fetchLinkTarget({ kind: 'botcscripts', ref: botcRef }, ''))}
-							>{t('scripts.picker.save')}</Button
-						>
-					</div>
 				</div>
 			</div>
 
@@ -934,10 +972,6 @@
 	.more .status {
 		flex: 1;
 		min-width: 0;
-	}
-	.buttons {
-		display: flex;
-		gap: var(--space-2);
 	}
 	section {
 		display: grid;

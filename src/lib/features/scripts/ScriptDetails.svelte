@@ -43,44 +43,28 @@
 		/** More rows of the main info (`dt`/`dd`), e.g. the script's checks. */
 		extra?: Snippet;
 		/**
-		 * Above the heading, e.g. a Back button. Given, the heading and name stay pinned to the
-		 * top of the scrolling details (Trevor, 2026-10-17).
+		 * Above the heading, e.g. a Back button. The heading, the name and the actions stay
+		 * pinned to the top of the scrolling details as its header (Trevor, 2026-10-17; 2026-10-18:
+		 * the controls sit in the header of whatever is selected, in Search and the Library).
 		 */
 		lead?: Snippet;
-		/**
-		 * The actions sit in the pinned top with the name, a header for the Library's pane
-		 * (Trevor, 2026-10-18: "controls ... should all be in the header").
-		 */
-		actionsInTop?: boolean;
 	}
 
-	let {
-		heading,
-		name,
-		logo,
-		facts,
-		entries,
-		data,
-		actions,
-		sheet,
-		version,
-		extra,
-		lead,
-		actionsInTop = false
-	}: Props = $props();
+	let { heading, name, logo, facts, entries, data, actions, sheet, version, extra, lead }: Props =
+		$props();
 
 	const card = $derived(data ? botcCard(entries, data) : undefined);
 </script>
 
 <div class="details" data-testid="script-details">
-	<div class="top" class:pinned={!!lead || actionsInTop} data-testid="script-details-top">
+	<div class="top pinned" data-testid="script-details-top">
 		{@render lead?.()}
 		<div class="titles" class:with-logo={!!logo}>
 			<h2>{heading}</h2>
 			<p class="name" data-testid="script-details-name">{name || t('common.none')}</p>
 			{#if logo}<ScriptLogo src={logo} {name} class="details-logo" />{/if}
 		</div>
-		{#if actions && actionsInTop}
+		{#if actions}
 			<div class="actions">{@render actions()}</div>
 		{/if}
 	</div>
@@ -103,9 +87,6 @@
 		{/if}
 		{@render extra?.()}
 	</dl>
-	{#if actions && !actionsInTop}
-		<div class="actions">{@render actions()}</div>
-	{/if}
 	{#if sheet}
 		<div class="sheet" data-testid="script-sheet">{@render sheet()}</div>
 	{:else}

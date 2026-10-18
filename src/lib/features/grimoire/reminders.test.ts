@@ -7,6 +7,7 @@ import {
 	bankReminders,
 	byLabel,
 	canAddCopy,
+	extraReminders,
 	reminderCopies,
 	stepReminders,
 	parseReminderKey,
@@ -226,5 +227,24 @@ describe('reminderKey', () => {
 		const r = { characterId: 'drunk', label: 'Is The Drunk' };
 		expect(parseReminderKey(reminderKey(r))).toEqual(r);
 		expect(parseReminderKey('nope')).toBeUndefined();
+	});
+});
+
+describe('extraReminders', () => {
+	// Trevor (2026-10-18): a duplicated reminder beyond the copies the game gives is marked.
+	it('marks the copies placed after the ones the game gives', () => {
+		let g = game();
+		const ids: string[] = [];
+		for (const seatId of [g.seating[2], g.seating[3]]) {
+			const result = dispatch(
+				{ log: { entries: [], cursor: 0 }, game: g },
+				{ type: 'AddReminder', seatId, reminder: { characterId: 'poisoner', label: 'Poisoned' } },
+				ctx
+			);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+			ids.push(g.seats[seatId].reminders.at(-1)!.reminderId);
+		}
+		expect([...extraReminders(g, characters)]).toEqual([ids[1]]);
 	});
 });
