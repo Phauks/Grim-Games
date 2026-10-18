@@ -21,6 +21,7 @@ import {
 	MAX_DOC_BYTES,
 	MAX_DOCS_PER_KIND,
 	MAX_PASSWORD_FAILURES,
+	normaliseEmail,
 	PRIVACY_VERSION,
 	SESSION_IDLE_MS,
 	SHORT_SESSION_IDLE_MS,
@@ -44,21 +45,95 @@ import {
 	sha256
 } from './crypto.ts';
 
+/**
+ * Where accounts live. With `ACCOUNTS` bound, they are the shared accounts Worker's
+ * (`worker/accounts-service.ts`, Trevor 2026-10-18: "i want to share one set of accounts"),
+ * reached the same way from production and from every preview. Without it, this Worker's own
+ * objects hold them, as before; they stay bound either way, so their data is never deleted.
+ */
 export interface AccountEnv {
 	ACCOUNT_USERS: DurableObjectNamespace<AccountUser>;
 	ACCOUNT_EMAILS: DurableObjectNamespace<AccountEmail>;
 	ACCOUNT_NAMES: DurableObjectNamespace<AccountName>;
+	ACCOUNTS?: AccountsBinding;
 }
 
+/** One method call on one account object, forwarded to the shared accounts Worker. */
+export interface AccountCall {
+	kind: 'user' | 'address' | 'username';
+	key: string;
+	method: string;
+	args: unknown[];
+}
+
+/** What the shared accounts Worker offers over its service binding. */
+export interface AccountsBinding {
+	call(request: AccountCall): Promise<unknown>;
+}
+
+/** The three kinds of account object, by the key each is found by. */
+interface AccountObjects {
+	user(userId: string): DurableObjectStub<AccountUser>;
+	/** Not `email`: that name is a Worker's handler for incoming mail. */
+	address(key: string): DurableObjectStub<AccountEmail>;
+	username(key: string): DurableObjectStub<AccountName>;
+}
+
+/** This Worker's own account objects, which the shared accounts Worker also uses. */
+export const localAccounts = (env: AccountEnv): AccountObjects => ({
+	/**
+	 * New accounts are named by their word-chain id; accounts made before those keep the hex
+	 * id of a `newUniqueId()` object, which stays valid.
+	 */
+	user(userId) {
+		const users = env.ACCOUNT_USERS;
+		return users.get(
+			isLegacyAccountId(userId) ? users.idFromString(userId) : users.idFromName(userId)
+		);
+	},
+	address: (key) => env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(key)),
+	username: (key) => env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(key))
+});
+
 /**
- * The Durable Object of an account. New accounts are named by their word-chain id; accounts
- * made before those keep the hex id of a `newUniqueId()` object, which stays valid.
+ * Stands in for a stub of the shared accounts Worker's object: each method call goes over
+ * the binding by name, with plain data in and out, as calls to a stub do.
  */
+function remote<T>(binding: AccountsBinding, kind: AccountCall['kind'], key: string): T {
+	return new Proxy(
+		{},
+		{
+			get: (_target, method) =>
+				typeof method === 'string' && method !== 'then'
+					? (...args: unknown[]) => binding.call({ kind, key, method, args })
+					: undefined
+		}
+	) as T;
+}
+
+function accounts(env: AccountEnv): AccountObjects {
+	const binding = env.ACCOUNTS;
+	if (!binding) return localAccounts(env);
+	return {
+		user: (userId) => remote(binding, 'user', userId),
+		address: (key) => remote(binding, 'address', key),
+		username: (key) => remote(binding, 'username', key)
+	};
+}
+
+/** The Durable Object of an account. */
 export function userStub(env: AccountEnv, userId: string): DurableObjectStub<AccountUser> {
-	const users = env.ACCOUNT_USERS;
-	return users.get(
-		isLegacyAccountId(userId) ? users.idFromString(userId) : users.idFromName(userId)
-	);
+	return accounts(env).user(userId);
+}
+
+/** The record of one email address: its sign-in codes and which account it belongs to. */
+export function emailStub(env: AccountEnv, email: string): DurableObjectStub<AccountEmail> {
+	return accounts(env).address(normaliseEmail(email) ?? email);
+}
+
+/** Who holds a username (`usernameKey`). */
+export function nameStub(env: AccountEnv, key: string): DurableObjectStub<AccountName> {
+	return accounts(env).username(key);
 }
 
 /** A new salt and the password's hash with it. */

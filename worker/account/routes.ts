@@ -48,6 +48,8 @@ import { isAdmin, type AdminsEnv } from '../admins.ts';
 import { passwordHash } from './crypto.ts';
 import {
 	hashPassword,
+	emailStub,
+	nameStub,
 	userStub,
 	type AccountEnv,
 	type AccountUser,
@@ -89,9 +91,6 @@ function signedInCookie(value: string, remember: boolean): string {
 const clearCookie = sessionCookie('', 0);
 
 /** The record for an address. Addresses are looked up lower-cased, so case never splits one. */
-function emailStub(env: AccountEnv, email: string) {
-	return env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(normaliseEmail(email) ?? email));
-}
 
 /** The policy version the request accepted: only the current one counts. */
 function acceptedPrivacy(body: Record<string, unknown> | undefined): string | undefined {
@@ -399,15 +398,13 @@ async function setUsername(
 	const key = usernameKey(name);
 	const oldKey = auth.user.username === null ? undefined : usernameKey(auth.user.username);
 	if (key !== oldKey) {
-		const claimed = await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(key)).claim(
-			auth.userId
-		);
+		const claimed = await nameStub(env, key).claim(auth.userId);
 		if (!claimed) return fail(409, 'That username is taken.');
 	}
 	const user = userStub(env, auth.userId);
 	const changed = await user.setUsername(name);
 	if (oldKey !== undefined && oldKey !== key) {
-		await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(oldKey)).release(auth.userId);
+		await nameStub(env, oldKey).release(auth.userId);
 	}
 	return json({ user: changed.user! } satisfies UserResponse);
 }
@@ -493,9 +490,7 @@ export async function handleAccount(
 			await emailStub(env, email).forget(auth.userId);
 		}
 		if (username) {
-			await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(usernameKey(username))).release(
-				auth.userId
-			);
+			await nameStub(env, usernameKey(username)).release(auth.userId);
 		}
 		return json({ ok: true }, 200, { 'Set-Cookie': clearCookie });
 	}
