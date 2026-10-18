@@ -216,6 +216,8 @@
 </Page>
 
 <Dialog bind:open={voting} title={t('room.vote.title')}>
+	<!-- What the vote is for, as the Storyteller set it (Specters, Trevor 2026-10-18). -->
+	{#if vote?.ability}<p class="ability" data-testid="spectator-ability">{vote.ability}</p>{/if}
 	<ul class="vote" data-testid="spectator-vote">
 		{#each vote?.options ?? [] as option (option)}
 			{@const s = seats.find((x) => x.seatId === option)}
@@ -352,6 +354,9 @@
 	}
 	.state {
 		color: var(--on-surface-muted);
+	}
+	.ability {
+		margin: 0 0 var(--space-2);
 	}
 	.vote {
 		display: grid;

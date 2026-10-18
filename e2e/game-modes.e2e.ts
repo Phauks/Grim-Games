@@ -175,9 +175,9 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await page.goto('/new');
 	await chooseMode(page, 'Sushi Buffet');
 	await expect(modesPanel(page).getByRole('radiogroup', { name: 'Script' })).toHaveCount(0);
-	// Its About names the source; our own description is off by default.
+	// Its About names the source, with Trevor's approved description (2026-10-18).
 	const about = modesPanel(page).getByTestId('mode-about');
-	await expect(about.getByTestId('inspect-about')).toHaveText('None');
+	await expect(about.getByTestId('inspect-about')).toContainText('three drafted characters');
 	await expect(about.locator('a[href="https://grimbits.com/draft-buffet/"]')).toHaveCount(1);
 });
 
@@ -256,9 +256,12 @@ test('Two games at once: one name per player for both games, warnings start at N
 		await page.goto(new URL(page.url()).pathname.replace(/\/setup$/, ''));
 		await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	}
-	// Each town's board leads back to the towns from its ⋯ menu.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Towns' }).tap();
+	// Each town's board leads back to the towns from the mode's menu on the corner name.
+	await page.getByTestId('mode-menu').tap();
+	await page
+		.getByRole('dialog', { name: 'Game mode' })
+		.getByRole('button', { name: 'Towns' })
+		.tap();
 	// Leaving the board asks first, as the app's navigation does; the game stays saved.
 	await page
 		.getByRole('alertdialog', { name: 'Leave the game?' })
@@ -325,8 +328,8 @@ test('Two games at once draws one token for both games', async ({ page }) => {
 	await page.getByRole('button', { name: 'Open town 1' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const first = page.url();
-	await page.getByTestId('town-switch').tap();
-	const menu = page.getByRole('dialog', { name: 'Switch town' });
+	await page.getByTestId('mode-menu').tap();
+	const menu = page.getByRole('dialog', { name: 'Game mode' });
 	await expect(menu.getByRole('button', { name: 'Town 1 · Trouble Brewing' })).toHaveAttribute(
 		'aria-current',
 		'page'
@@ -340,9 +343,9 @@ test('Two games at once draws one token for both games', async ({ page }) => {
 	await expect(page).not.toHaveURL(first);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await expect(page.getByTestId('script-title')).toContainText('Bad Moon Rising');
-	await page.getByTestId('town-switch').tap();
+	await page.getByTestId('mode-menu').tap();
 	await page
-		.getByRole('dialog', { name: 'Switch town' })
+		.getByRole('dialog', { name: 'Game mode' })
 		.getByRole('button', { name: 'Towns' })
 		.tap();
 	// Leaving asks unless it was just confirmed (shell.ts keeps a short pass).
@@ -644,9 +647,26 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 
-	await page.goto(`/grimoire/${gameId}/specters`);
-	await expect(page.getByRole('heading', { name: 'Apparition', level: 1 })).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Wizard' })).toBeVisible();
+	// Specters opens over the board from the Game mode menu (Trevor, 2026-10-18: the grimoire
+	// stays in reach). Before setup the corner has no room for the name, so ⋯ has it too.
+	await page.goto(`/grimoire/${gameId}`);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Game mode' })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Game mode' })
+		.getByRole('button', { name: 'Specters vote and ability' })
+		.tap();
+	const sheet = page.getByRole('dialog', { name: 'Apparition' });
+	await expect(sheet).toBeVisible();
+	await expect(page).toHaveURL(new RegExp(`/grimoire/${gameId}$`));
+	// The Storyteller sets the ability: the Wizard's by default, or their own words.
+	await expect(sheet.getByRole('button', { name: 'Wizard' })).toBeVisible();
+	await sheet.getByRole('combobox', { name: 'Kind of ability' }).tap();
+	await page.getByRole('option', { name: 'Custom' }).tap();
+	await sheet.getByRole('textbox', { name: 'Ability' }).fill('Swap two players’ seats');
 
 	// A phone without a seat is a spectator.
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
@@ -655,9 +675,10 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await expect(phone.getByTestId('join-status')).toBeVisible();
 	await expect(page.getByTestId('specters-room')).toHaveText('0/1 spectators voted');
 
-	await page.getByRole('button', { name: 'Open vote' }).tap();
+	await sheet.getByRole('button', { name: 'Open vote' }).tap();
 	const vote = phone.getByRole('dialog', { name: 'Spectators’ vote' });
 	await expect(vote).toBeVisible();
+	await expect(vote.getByTestId('spectator-ability')).toHaveText('Swap two players’ seats');
 	await vote.getByRole('button', { name: /^2\s*Seat 2$/ }).tap();
 	await expect(vote.getByRole('button', { name: /^2\s*Seat 2$/ })).toHaveAttribute(
 		'aria-pressed',
@@ -669,7 +690,7 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await expect(tally.nth(1)).toContainText('1');
 
 	// Closing the vote closes it on the phone; the count stays for the Storyteller.
-	await page.getByRole('button', { name: 'Close vote' }).tap();
+	await sheet.getByRole('button', { name: 'Close vote' }).tap();
 	await expect(vote).toBeHidden();
 	await expect(tally.nth(1)).toHaveAttribute('data-most', 'true');
 	await noSidewaysScroll(page);
