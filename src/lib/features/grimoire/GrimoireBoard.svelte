@@ -694,6 +694,9 @@
 		replaceState(resolve('/grimoire/[gameId]', { gameId: game.gameId }), {});
 	});
 
+	/** This game's ending, if it has ended (End game below). */
+	let endedRead = $state(0);
+	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
 	/** Characters and Bag draw show in the middle until the game is set up, then go. */
 	const showSetup = $derived(
 		// Never while looking back through History (Trevor, 2026-10-18): it is read-only.
@@ -754,6 +757,31 @@
 	});
 	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
 	/**
+	 * Run Night Order in one tap, from the middle of the circle once the game is set up
+	 * (Trevor, 2026-10-18: a change on the board itself, not a toolbar page). It starts
+	 * tonight's walk-through at the first step not yet done.
+	 */
+	const showRun = $derived(
+		preferences.current.assistance.nightWalkthrough &&
+			!showSetup &&
+			!ended &&
+			!grimoire.open.viewOnly &&
+			!walk &&
+			!arranging &&
+			!placing &&
+			game.seating.length > 0 &&
+			game.seating.every((id) => game.seats[id].characterId !== undefined)
+	);
+	function runNight() {
+		const data = officialData.current;
+		if (!data) return;
+		grimoire.beginNight();
+		const night = tonight(game);
+		const steps = boardNightSteps(game, characters, night, data).filter(wakes);
+		const next = steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
+		walk = { night, index: Math.max(0, next) };
+	}
+	/**
 	 * The step's reminders already on the board are ringed too, on any night (Trevor,
 	 * 2026-10-18: the Butler's Master placed on the first night).
 	 */
@@ -774,8 +802,6 @@
 	// The Storyteller stays on the board, which says the game is over (Trevor, 2026-10-17).
 	let endOpen = $state(false);
 	let winner = $state<'good' | 'evil' | undefined>();
-	let endedRead = $state(0);
-	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
 	function endGame() {
 		endOpen = false;
 		endedGames.end(game.gameId, winner);
@@ -1437,6 +1463,11 @@
 			</div>
 		{/if}
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
+			{#if showRun}
+				<div class="setup">
+					<Button variant="accent" icon="night" onclick={runNight}>Run Night Order</Button>
+				</div>
+			{/if}
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
 			{#if showSetup}
 				<div class="setup">

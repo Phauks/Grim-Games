@@ -1646,6 +1646,32 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
 });
 
+test("the Demon executed with a living Mastermind doesn't offer End game", async ({ page }) => {
+	await startGame(page, 'Bad Moon Rising');
+	for (const [number, name] of [
+		[1, 'Pukka'],
+		[2, 'Mastermind']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const day = page.getByRole('dialog', { name: 'Day' });
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await day.getByRole('button', { name: 'Seat: Seat 1' }).tap();
+	await page
+		.getByRole('dialog', { name: 'How did Seat 1 die?' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	// The Mastermind plays one more day (https://wiki.bloodontheclocktower.com/Mastermind).
+	await expect(page.getByRole('dialog', { name: 'How did Seat 1 die?' })).toBeHidden();
+	await expect(page.getByRole('alertdialog', { name: 'End game?' })).toHaveCount(0);
+});
+
 test('End game keeps the Storyteller on the board, says it is over, and can be reopened', async ({
 	page
 }) => {
@@ -3058,4 +3084,33 @@ test('a reminder in hand marks its source seat, the seats it fits, or both', asy
 		await expect(seat).toHaveAttribute('data-role', 'target');
 	await page.mouse.up();
 	await expect(page.locator('[data-testid="seat"][data-role]')).toHaveCount(0);
+});
+
+test('Run Night Order starts in one tap from the middle of a set-up board', async ({ page }) => {
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	const board = page.url();
+	// Not before setup: the middle is Set up's.
+	await expect(page.getByRole('button', { name: 'Run Night Order' })).toHaveCount(0);
+	await page.goto(`${new URL(board).pathname}/setup`);
+	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Chef', 'Fortune Teller', 'Poisoner', 'Imp'])
+		await page.getByRole('button', { name, exact: true }).first().tap();
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	for (let n = 1; n <= 7; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	await page.goto(board);
+	await expect(page.getByTestId('seat')).toHaveCount(7);
+	// Trevor (2026-10-18): one tap on the board, where Set up was.
+	const run = page.getByRole('button', { name: 'Run Night Order' });
+	await run.tap();
+	const strip = page.getByTestId('night-strip');
+	await expect(strip).toBeVisible();
+	await expect(run).toHaveCount(0);
+	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
+	await expect(run).toBeVisible();
 });

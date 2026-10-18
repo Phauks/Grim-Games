@@ -3,12 +3,12 @@
  * - https://wiki.bloodontheclocktower.com/Glossary ("Demon", "Evil": Travellers don't count)
  * - https://wiki.bloodontheclocktower.com/Saint, /Evil_Twin, /Scarlet_Woman, /Mastermind, /Imp
  * - https://wiki.bloodontheclocktower.com/Vortox, /Mayor, /Leviathan, /Fearmonger, /Summoner
- * - https://wiki.bloodontheclocktower.com/Heretic, /Zombuul, /Lil%27_Monsta, /Legion
+ * - https://wiki.bloodontheclocktower.com/Heretic, /Zombuul, /Lleech, /Fang_Gu, /Lil%27_Monsta, /Legion
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { gameEnds, suggestedWinner, type GameEndOptions } from './game-end.ts';
+import { gameEnds, promptable, suggestedWinner, type GameEndOptions } from './game-end.ts';
 
 type Step = Command | ((s: string[]) => Command);
 
@@ -89,6 +89,30 @@ describe('core rules (Glossary)', () => {
 	it("the Zombuul's first death leaves it alive (Zombuul)", () => {
 		const cast = ['chef', 'empath', 'monk', 'poisoner', 'zombuul'];
 		expect(ends(cast, [remind(4, 'zombuul', 'Dead')]).ends).toEqual([]);
+	});
+
+	it('the Zombuul marked dead the first time still lives (Zombuul)', () => {
+		const cast = ['chef', 'empath', 'monk', 'poisoner', 'zombuul'];
+		expect(ends(cast, [execute(4)]).ends).toEqual([]);
+		// Only 2 others alive: it still lives, so evil hasn't won either.
+		expect(ends(cast, [dead(0), dead(1), execute(4)]).ends).toEqual([]);
+	});
+
+	it('the Zombuul dying after its first death, or while poisoned, ends it (Zombuul)', () => {
+		const cast = ['chef', 'empath', 'monk', 'poisoner', 'zombuul'];
+		const again = ends(cast, [remind(4, 'zombuul', 'Dead'), execute(4)]).ends;
+		expect(again).toMatchObject([{ rule: 'demon-dead', winner: 'good', holds: [] }]);
+		const poisoned = ends(cast, [remind(4, 'poisoner', 'Poisoned'), execute(4)]).ends;
+		expect(poisoned).toMatchObject([{ rule: 'demon-dead', winner: 'good' }]);
+	});
+
+	it('the Lleech dies only with its host (Lleech)', () => {
+		const cast = ['chef', 'empath', 'monk', 'poisoner', 'lleech'];
+		const host = remind(0, 'lleech', 'Poisoned');
+		expect(ends(cast, [host, execute(4)]).ends).toEqual([]);
+		expect(ends(cast, [host, dead(0), dead(4)]).ends).toMatchObject([
+			{ rule: 'demon-dead', winner: 'good' }
+		]);
 	});
 
 	it("Lil' Monsta's babysitter dying ends it: the Demon is dead (Lil' Monsta)", () => {
@@ -184,6 +208,22 @@ describe('Imp (https://wiki.bloodontheclocktower.com/Imp)', () => {
 	it('killing itself with a Minion alive: a Minion may become the Imp', () => {
 		const { ends: e, seats } = ends(TB, [dead(6, 'imp')]);
 		expect(e).toMatchObject([{ rule: 'demon-dead', holds: [{ rule: 'imp', seats: [seats[5]] }] }]);
+	});
+});
+
+describe('Fang Gu (https://wiki.bloodontheclocktower.com/Fang_Gu)', () => {
+	const cast = ['chef', 'empath', 'monk', 'recluse', 'poisoner', 'fanggu'];
+
+	it('dying by its own kill with an Outsider alive: the Outsider may become the Fang Gu', () => {
+		const { ends: e, seats } = ends(cast, [dead(5, 'fanggu')]);
+		expect(e).toMatchObject([
+			{ rule: 'demon-dead', holds: [{ rule: 'fang-gu', seats: [seats[3]] }] }
+		]);
+	});
+
+	it('after it has jumped once, its death ends it', () => {
+		const e = ends(cast, [remind(3, 'fanggu', 'Once'), dead(5, 'fanggu')]).ends;
+		expect(e).toMatchObject([{ rule: 'demon-dead', holds: [] }]);
 	});
 });
 
@@ -349,5 +389,15 @@ describe('suggestedWinner', () => {
 		expect(e.map((x) => x.winner)).toEqual(['good', 'evil']);
 		expect(suggestedWinner(e)).toBeUndefined();
 		expect(suggestedWinner([])).toBeUndefined();
+	});
+});
+
+describe('promptable', () => {
+	it('leaves out ends that may not end the game', () => {
+		const cast = ['washerwoman', 'saint', 'empath', 'monk', 'mastermind', 'imp'];
+		const held = ends(cast, [newDay, execute(5)]).ends;
+		expect(promptable(held)).toEqual([]);
+		const both = ends(cast, [newDay, execute(5), dead(1, 'execution')]).ends;
+		expect(promptable(both).map((e) => e.rule)).toEqual(['saint']);
 	});
 });

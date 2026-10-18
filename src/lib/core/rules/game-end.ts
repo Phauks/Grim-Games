@@ -8,12 +8,13 @@
  *   counted (https://wiki.bloodontheclocktower.com/Glossary, "Demon", "Evil").
  * - A Demon is a seat whose true character is one, or a player with an "Is The Demon"
  *   reminder (Lil' Monsta's babysitter, https://wiki.bloodontheclocktower.com/Lil%27_Monsta;
- *   a Scarlet Woman who took over). Alive means the `dead` flag (`isAliveForWin`), so a
- *   Zombuul's first death doesn't count.
+ *   a Scarlet Woman who took over). Alive means the `dead` flag (`isAliveForWin`), except a
+ *   Zombuul's first death and a Lleech whose host lives (`aliveForEnd`).
  * - Characters that end it themselves: Saint, Evil Twin, Vortox, Mayor, Leviathan,
  *   Fearmonger, Summoner, Mastermind; the Heretic flips every result.
  * - Characters that may keep it going once the Demon is dead (`holds`): Evil Twin, Scarlet
- *   Woman, Mastermind, Imp.
+ *   Woman, Mastermind, Imp, Fang Gu. An end with holds is listed but doesn't prompt
+ *   (`promptable`).
  *
  * Results are data only (no wording): `rule` says which rule, `seats` say who.
  * Rules checked "at dusk" (Vortox, Mayor, Leviathan's day 5) use `dayEnded` for today, and
@@ -67,10 +68,13 @@ export type GameEndRule =
  * - `scarlet-woman`: 5 or more were alive when the Demon died, so she may become the Demon;
  * - `mastermind`: the Demon died by execution, so play one more day;
  * - `imp`: the Imp killed itself, so a Minion may become the Imp (`seats`: alive Minions);
+ * - `fang-gu`: the Fang Gu killed an Outsider, who may become the Fang Gu (`seats`: alive
+ *   Outsiders);
  * - `impaired`: the character whose rule it is is drunk, poisoned or has no ability, so it
  *   may not apply (the Storyteller's call).
  */
-export type GameHoldRule = 'evil-twin' | 'scarlet-woman' | 'mastermind' | 'imp' | 'impaired';
+export type GameHoldRule =
+	'evil-twin' | 'scarlet-woman' | 'mastermind' | 'imp' | 'fang-gu' | 'impaired';
 
 export interface GameHold {
 	rule: GameHoldRule;
@@ -134,6 +138,40 @@ function impaired(
 		: [];
 }
 
+/**
+ * Alive for the game's end. Marked dead isn't always dead:
+ * - the Zombuul's first death: it lives but registers as dead, unless drunk or poisoned
+ *   then (https://wiki.bloodontheclocktower.com/Zombuul). Its own "Dead" reminder marks
+ *   that the first death has happened, so marked dead with it is dead;
+ * - the Lleech dies only when its host (its "Poisoned" reminder) is dead, unless drunk or
+ *   poisoned (https://wiki.bloodontheclocktower.com/Lleech).
+ */
+function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	if (isAliveForWin(game, seatId)) return true;
+	const seat = game.seats[seatId];
+	if (!seat) return false;
+	const sober = abilityState(game, seatId, characters).impairments.length === 0;
+	switch (trueCharacter(game, seatId, characters)) {
+		case 'zombuul':
+			return (
+				sober && !seat.reminders.some((r) => r.characterId === 'zombuul' && r.label === 'Dead')
+			);
+		case 'lleech':
+			return (
+				sober &&
+				game.seating.some(
+					(id) =>
+						isAliveForWin(game, id) &&
+						game.seats[id].reminders.some(
+							(r) => r.characterId === 'lleech' && r.label === 'Poisoned'
+						)
+				)
+			);
+		default:
+			return false;
+	}
+}
+
 /** The Demons: by true character, or an "Is The Demon" reminder. */
 export function demonSeats(game: Game, characters: CharacterLookup): SeatId[] {
 	return game.seating.filter(
@@ -145,7 +183,9 @@ export function demonSeats(game: Game, characters: CharacterLookup): SeatId[] {
 
 /** Players alive for the "just 2 alive" rule: Travellers don't count. */
 function aliveNonTravellers(game: Game, characters: CharacterLookup): SeatId[] {
-	return game.seating.filter((id) => isAliveForWin(game, id) && !isTraveller(game, id, characters));
+	return game.seating.filter(
+		(id) => aliveForEnd(game, id, characters) && !isTraveller(game, id, characters)
+	);
 }
 
 /**
@@ -162,18 +202,18 @@ function endedDays(game: Game, options: GameEndOptions): number[] {
 
 function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 	const demons = demonSeats(game, characters);
-	if (demons.length === 0 || demons.some((id) => isAliveForWin(game, id))) return [];
+	if (demons.length === 0 || demons.some((id) => aliveForEnd(game, id, characters))) return [];
 	const holds: GameHold[] = [];
 
 	// Evil Twin: good can't win while both twins live (https://wiki.bloodontheclocktower.com/Evil_Twin).
 	for (const twin of seatsOf(game, 'eviltwin', characters)) {
-		if (!isAliveForWin(game, twin)) continue;
+		if (!aliveForEnd(game, twin, characters)) continue;
 		const pair = twinOf(game);
-		if (pair.length === 0 || !pair.some((id) => isAliveForWin(game, id))) continue;
+		if (pair.length === 0 || !pair.some((id) => aliveForEnd(game, id, characters))) continue;
 		holds.push({
 			rule: 'evil-twin',
 			characterId: 'eviltwin',
-			seats: [twin, ...pair.filter((id) => isAliveForWin(game, id))],
+			seats: [twin, ...pair.filter((id) => aliveForEnd(game, id, characters))],
 			wiki: `${W}Evil_Twin`
 		});
 		holds.push(...impaired(game, twin, 'eviltwin', characters));
@@ -182,7 +222,7 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 	// Scarlet Woman: 5 or more alive (not Travellers) just before the Demon died
 	// (https://wiki.bloodontheclocktower.com/Scarlet_Woman). The Demon is dead now, so 4 or more.
 	for (const woman of seatsOf(game, 'scarletwoman', characters)) {
-		if (!isAliveForWin(game, woman)) continue;
+		if (!aliveForEnd(game, woman, characters)) continue;
 		if (aliveNonTravellers(game, characters).length < 4) continue;
 		holds.push({
 			rule: 'scarlet-woman',
@@ -195,13 +235,30 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 
 	// Imp: killing itself makes a Minion the Imp (https://wiki.bloodontheclocktower.com/Imp).
 	const minions = game.seating.filter(
-		(id) => isAliveForWin(game, id) && typeOf(game, id, characters) === 'minion'
+		(id) => aliveForEnd(game, id, characters) && typeOf(game, id, characters) === 'minion'
 	);
 	for (const id of demons) {
 		const cause = game.seats[id].deathCause;
 		if (trueCharacter(game, id, characters) !== 'imp' || minions.length === 0) continue;
 		if (cause !== 'demon' && cause !== 'imp') continue;
 		holds.push({ rule: 'imp', characterId: 'imp', seats: minions, wiki: `${W}Imp` });
+	}
+
+	// Fang Gu: the first Outsider it kills becomes the Fang Gu, and it dies instead
+	// (https://wiki.bloodontheclocktower.com/Fang_Gu). Its "Once" reminder says that happened.
+	const outsiders = game.seating.filter(
+		(id) => aliveForEnd(game, id, characters) && typeOf(game, id, characters) === 'outsider'
+	);
+	const jumped = game.seating.some((id) =>
+		game.seats[id].reminders.some((r) => r.characterId === 'fanggu' && r.label === 'Once')
+	);
+	for (const id of demons) {
+		const cause = game.seats[id].deathCause;
+		if (trueCharacter(game, id, characters) !== 'fanggu' || outsiders.length === 0 || jumped) {
+			continue;
+		}
+		if (cause !== 'demon' && cause !== 'fanggu') continue;
+		holds.push({ rule: 'fang-gu', characterId: 'fanggu', seats: outsiders, wiki: `${W}Fang_Gu` });
 	}
 
 	return [
@@ -245,7 +302,7 @@ function mastermind(
 	const extra = demonDay === -1 ? undefined : demonDay + 1;
 	const executed = extra === undefined ? [] : executedOn(logs[extra] ?? { entries: [] });
 	// The Mastermind must be alive for the extra day; executed on it still counts.
-	const mind = masterminds.find((id) => isAliveForWin(game, id) || executed.includes(id));
+	const mind = masterminds.find((id) => aliveForEnd(game, id, characters) || executed.includes(id));
 	if (mind === undefined) return undefined;
 	const hold: GameHold = {
 		rule: 'mastermind',
@@ -315,7 +372,7 @@ function evilTwinExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
 	const out: GameEnd[] = [];
 	for (const evil of seatsOf(game, 'eviltwin', characters)) {
 		// A dead Evil Twin has no ability (https://wiki.bloodontheclocktower.com/Evil_Twin).
-		if (!isAliveForWin(game, evil)) continue;
+		if (!aliveForEnd(game, evil, characters)) continue;
 		for (const twin of twinOf(game)) {
 			const seat = game.seats[twin];
 			if (!seat.dead || seat.deathCause !== 'execution') continue;
@@ -335,7 +392,9 @@ function evilTwinExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
 
 /** Vortox: each day, if no-one is executed, evil wins (exile doesn't count). */
 function vortox(game: Game, characters: CharacterLookup, options: GameEndOptions): GameEnd[] {
-	const vortox = seatsOf(game, 'vortox', characters).find((id) => isAliveForWin(game, id));
+	const vortox = seatsOf(game, 'vortox', characters).find((id) =>
+		aliveForEnd(game, id, characters)
+	);
 	if (vortox === undefined) return [];
 	const logs = days(game);
 	const day = endedDays(game, options).find((d) => executedOn(logs[d]).length === 0);
@@ -361,10 +420,10 @@ function vortox(game: Game, characters: CharacterLookup, options: GameEndOptions
  */
 function mayor(game: Game, characters: CharacterLookup, options: GameEndOptions): GameEnd[] {
 	if (!options.dayEnded || game.pastDays.length < 1) return [];
-	const alive = game.seating.filter((id) => isAliveForWin(game, id));
+	const alive = game.seating.filter((id) => aliveForEnd(game, id, characters));
 	if (alive.length !== 3 || executedOn(game.today).length > 0) return [];
 	return seatsOf(game, 'mayor', characters)
-		.filter((id) => isAliveForWin(game, id))
+		.filter((id) => aliveForEnd(game, id, characters))
 		.map((id) => ({
 			key: `mayor:${game.pastDays.length}`,
 			rule: 'mayor',
@@ -383,7 +442,9 @@ function mayor(game: Game, characters: CharacterLookup, options: GameEndOptions)
  * alignment the rules use now.
  */
 function leviathan(game: Game, characters: CharacterLookup, options: GameEndOptions): GameEnd[] {
-	const leviathan = seatsOf(game, 'leviathan', characters).find((id) => isAliveForWin(game, id));
+	const leviathan = seatsOf(game, 'leviathan', characters).find((id) =>
+		aliveForEnd(game, id, characters)
+	);
 	if (leviathan === undefined) return [];
 	const holds = impaired(game, leviathan, 'leviathan', characters);
 	const out: GameEnd[] = [];
@@ -454,7 +515,8 @@ function fearmonger(game: Game, characters: CharacterLookup): GameEnd[] {
 function summoner(game: Game, characters: CharacterLookup): GameEnd[] {
 	if (demonSeats(game, characters).length > 0) return [];
 	const summoners = seatsOf(game, 'summoner', characters);
-	if (summoners.length === 0 || summoners.some((id) => isAliveForWin(game, id))) return [];
+	if (summoners.length === 0 || summoners.some((id) => aliveForEnd(game, id, characters)))
+		return [];
 	return [
 		{
 			key: `summoner:${summoners.join(',')}`,
@@ -521,6 +583,11 @@ export function gameEnds(
  * keep the game going. Undefined when they disagree or something holds, so the Storyteller
  * picks (Trevor, 2026-10-18: list every valid outcome, never one pick).
  */
+/** The ends that open the prompt: nothing may keep the game going (Trevor, 2026-10-18). */
+export function promptable(ends: readonly GameEnd[]): GameEnd[] {
+	return ends.filter((e) => e.holds.length === 0);
+}
+
 export function suggestedWinner(ends: readonly GameEnd[]): Alignment | undefined {
 	if (ends.length === 0 || ends.some((e) => e.holds.length > 0)) return undefined;
 	const winners = new Set(ends.map((e) => e.winner));
