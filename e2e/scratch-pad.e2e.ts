@@ -213,6 +213,51 @@ test('a hidden pad shows only its title in the list', async ({ page }) => {
 	await expect(row.locator('canvas')).toHaveCount(1);
 });
 
+// The list preview fits what was drawn, centred, with no empty space beside it (Trevor,
+// 2026-10-18).
+test('a pad preview fits the drawing, centred in its row', async ({ page }) => {
+	const { canvas } = await newPad(page);
+	const box = (await canvas.boundingBox())!;
+	// A tall box near the pad's left edge.
+	const x1 = box.x + box.width * 0.1;
+	const x2 = box.x + box.width * 0.25;
+	const y1 = box.y + box.height * 0.1;
+	const y2 = box.y + box.height * 0.9;
+	await touchDrag(page, { x: x1, y: y1 }, { x: x1, y: y2 });
+	await touchDrag(page, { x: x2, y: y1 }, { x: x2, y: y2 });
+	await expect.poll(() => inked(canvas)).toBeGreaterThan(0);
+	await page.keyboard.press('Escape');
+
+	const thumb = padRows(page).first().locator('canvas');
+	await expect.poll(() => inked(thumb)).toBeGreaterThan(0);
+	const extent = await thumb.evaluate((element) => {
+		const c = element as HTMLCanvasElement;
+		const data = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+		let left = c.width;
+		let right = -1;
+		let top = c.height;
+		let bottom = -1;
+		for (let y = 0; y < c.height; y++)
+			for (let x = 0; x < c.width; x++)
+				if (data[(y * c.width + x) * 4 + 3] > 0) {
+					left = Math.min(left, x);
+					right = Math.max(right, x);
+					top = Math.min(top, y);
+					bottom = Math.max(bottom, y);
+				}
+		return {
+			left,
+			right: c.width - 1 - right,
+			top,
+			bottom: c.height - 1 - bottom,
+			height: c.height
+		};
+	});
+	// As much room on each side, and the drawing fills the row's height.
+	expect(Math.abs(extent.left - extent.right)).toBeLessThanOrEqual(extent.height * 0.1);
+	expect(extent.top + extent.bottom).toBeLessThanOrEqual(extent.height * 0.2);
+});
+
 test('once a pen is used, a resting palm does not draw', async ({ page }) => {
 	const { canvas } = await newPad(page);
 	const send = (type: string, pointerType: string, pointerId: number, x: number, y: number) =>

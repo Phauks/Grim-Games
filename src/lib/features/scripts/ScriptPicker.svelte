@@ -420,7 +420,8 @@
 			id: 'author',
 			label: t('scripts.column.author'),
 			sortable: true,
-			width: '22%',
+			// Room for the label and its sort arrows on one line, even on a phone.
+			width: 'max(22%, 6rem)',
 			filterable: true,
 			filtered: botcFilters.author !== ''
 		},
@@ -428,7 +429,8 @@
 			id: 'kind',
 			label: t('scripts.column.type'),
 			sortable: true,
-			width: '6.5rem',
+			// Label, sort arrows and filter side by side.
+			width: '7rem',
 			filterable: true,
 			filtered: botcFilters.type !== ''
 		},
@@ -438,7 +440,7 @@
 			sortable: true,
 			align: 'end',
 			wide: true,
-			width: '7rem',
+			width: '8rem',
 			filterable: true,
 			filtered: characterFilters > 0
 		},

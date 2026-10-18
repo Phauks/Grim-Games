@@ -82,7 +82,7 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import { fromScript } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
+	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import NightOrderSheet from './NightOrderSheet.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
@@ -1552,7 +1552,12 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			<ScriptCopy script={loadedScript} players={game.seating.length} />
+			<!-- Exactly the players' Script and Night tabs (Trevor, 2026-10-18). -->
+			<PlayerScriptTabs
+				script={loadedScript}
+				players={game.seating.length}
+				inPlay={charactersInPlay(game)}
+			/>
 		{/if}
 	</div>
 </Dialog>

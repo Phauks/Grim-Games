@@ -3,21 +3,56 @@ import { expect, test } from '@playwright/test';
 // Trevor (2026-10-17): every page reached from the sidebar uses the same page structure
 // (src/lib/ui/layout/Page.svelte). The preview route renders every slot.
 
-test('the page title row keeps its actions beside the title', async ({ page }) => {
+// On a phone the actions take their own row under the title; on anything wider they sit at
+// the end of the title's row. Decided by the page's width, never by the buttons' width.
+test('the page title row puts its actions beside the title, or under it on a phone', async ({
+	page
+}, testInfo) => {
 	await page.goto('/spikes/page');
 	const main = page.getByRole('main');
 	const title = main.getByRole('heading', { level: 1, name: 'Page layout preview' });
 	await expect(title).toBeVisible();
 	await expect(main.getByRole('heading', { level: 1 })).toHaveCount(1);
-	const action = main.getByRole('button', { name: 'Action' });
-	const titleBox = await title.boundingBox();
-	const actionBox = await action.boundingBox();
-	// Same row: the action's vertical middle sits within the title's line.
-	const actionMiddle = actionBox!.y + actionBox!.height / 2;
-	expect(actionMiddle).toBeGreaterThan(titleBox!.y - actionBox!.height / 2);
-	expect(actionMiddle).toBeLessThan(titleBox!.y + titleBox!.height + actionBox!.height / 2);
-	expect(actionBox!.x).toBeGreaterThan(titleBox!.x);
+	const titleBox = (await title.boundingBox())!;
+	const actionBox = (await main.getByRole('button', { name: 'Action' }).boundingBox())!;
+	if (testInfo.project.name === 'phone') {
+		expect(actionBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height - 1);
+	} else {
+		// Same row: the action's vertical middle sits within the title's line.
+		const actionMiddle = actionBox.y + actionBox.height / 2;
+		expect(actionMiddle).toBeGreaterThan(titleBox.y - actionBox.height / 2);
+		expect(actionMiddle).toBeLessThan(titleBox.y + titleBox.height + actionBox.height / 2);
+		expect(actionBox.x).toBeGreaterThan(titleBox.x);
+	}
 });
+
+// Trevor (2026-10-18, "See weird header"): a wide text button squeezed the Towns page title
+// until its words broke mid-word. No word of a title may ever break across lines.
+for (const width of [undefined, 320]) {
+	test(`a long title beside a text button never breaks a word${width ? ` (${width} wide)` : ''}`, async ({
+		page
+	}) => {
+		if (width) await page.setViewportSize({ width, height: 800 });
+		await page.goto('/spikes/page?long');
+		const title = page.getByRole('heading', { level: 1 });
+		await expect(title).toHaveText('Two games at once with a longer page title');
+		const brokenWords = await title.evaluate((h1) => {
+			const text = h1.firstChild as Text;
+			const broken: string[] = [];
+			for (const match of text.data.matchAll(/\S+/g)) {
+				const range = document.createRange();
+				range.setStart(text, match.index);
+				range.setEnd(text, match.index + match[0].length);
+				const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top)));
+				if (lines.size > 1) broken.push(match[0]);
+			}
+			return broken;
+		});
+		expect(brokenWords).toEqual([]);
+		const button = page.getByRole('button', { name: 'Inspect the second town' });
+		await expect(button).toBeInViewport({ ratio: 1 });
+	});
+}
 
 test('subtitle, toolbar and sections follow the title in order', async ({ page }) => {
 	await page.goto('/spikes/page');

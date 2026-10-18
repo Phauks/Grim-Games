@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -6,6 +7,8 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 
 	let query = $state('');
+	// `?long`: a long title beside a wide text button, the case that once broke titles mid-word.
+	const long = $derived(page.url.searchParams.has('long'));
 </script>
 
 <svelte:head>
@@ -13,10 +16,10 @@
 </svelte:head>
 
 <!-- Every slot of the shared page layout, for the page-layout e2e tests. -->
-<Page title="Page layout preview">
+<Page title={long ? 'Two games at once with a longer page title' : 'Page layout preview'}>
 	{#snippet actions()}
 		<IconButton icon="share" label="Share" />
-		<Button>Action</Button>
+		<Button>{long ? 'Inspect the second town' : 'Action'}</Button>
 	{/snippet}
 	{#snippet subtitle()}Subtitle line{/snippet}
 	{#snippet toolbar()}
