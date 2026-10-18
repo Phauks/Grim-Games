@@ -208,6 +208,34 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
+// Trevor, 2026-10-18: Travellers in the bag, the recommended ones listed first and every
+// other one found through a searchable dialog.
+test("Travellers can join the bag: the edition's are listed, the rest are a search away", async ({
+	page
+}) => {
+	await selectionFor(page, 8);
+	// Trouble Brewing's own Travellers are listed without being on its sheet.
+	await expect(choice(page, 'Scapegoat')).toBeVisible();
+	await expect(choice(page, 'Harlot')).toHaveCount(0);
+	await page.getByRole('button', { name: 'All Travellers' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'All Travellers' });
+	await dialog.getByRole('searchbox').fill('Harlot');
+	await dialog.getByRole('button', { name: /^Harlot/ }).tap();
+	await expect(dialog.getByRole('button', { name: /^Harlot/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(choice(page, 'Harlot')).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('li', { has: choice(page, 'Harlot') })).toContainText('Not on script');
+	await expect(page.locator('li', { has: choice(page, 'Scapegoat') })).not.toContainText(
+		'Not on script'
+	);
+	await expect(page.getByTestId('count-traveller')).toHaveText('1');
+	await noSidewaysScroll(page);
+});
+
 // Trevor, 2026-10-18: a button to list only the chosen characters, together with the search.
 test('Show only selected lists just the chosen characters and still searches', async ({ page }) => {
 	await selectionFor(page, 5);

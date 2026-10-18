@@ -77,6 +77,7 @@ export const setup = {
 		'{name} needs the {required} in play, but the {required} is not on the script.',
 	'setup.selectedOnly': 'Show only selected',
 	'setup.offScript': 'Not on script',
+	'setup.allTravellers': 'All Travellers',
 	'setup.characterInfo': 'About the {name}',
 	'setup.check.customReminders':
 		'Custom characters: the app can’t tell which of their reminder tokens go out before the game.',
