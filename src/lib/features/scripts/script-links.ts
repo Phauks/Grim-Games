@@ -1,15 +1,18 @@
 /**
  * Turns a link the Storyteller pasted into something we can fetch: the raw file behind a
  * Pastebin, GitHub or Gist page (Pocket Grimoire issue 124 was a Pastebin page link), or a
- * BotC Scripts lookup through our Worker. Design: 08-script-loading.md §5.2.
+ * BotC Scripts or Bloodstar Clocktica lookup through our Worker. Design: 08-script-loading.md §5.2.
  */
 import { t } from '#lib/i18n/locale.svelte.ts';
+import { parseBloodstarLink, type BloodstarScript } from './bloodstar-api.ts';
 import { parseBotcScriptsRef, type BotcScriptsRef } from './botcscripts-api.ts';
 import { scriptToolPayload } from './script-tool-link.ts';
 
 export type LinkTarget =
 	| { kind: 'fetch'; url: string }
 	| { kind: 'botcscripts'; ref: BotcScriptsRef }
+	/** A Bloodstar Clocktica script, on its old or new address, through our Worker. */
+	| { kind: 'bloodstar'; script: BloodstarScript }
 	/** A Script Tool link holds the script itself: read without any request. */
 	| { kind: 'scripttool'; payload: string; url: string }
 	| { kind: 'invalid'; message: string };
@@ -34,6 +37,9 @@ export function resolveLink(input: string): LinkTarget {
 	if (url.username || url.password) {
 		return { kind: 'invalid', message: t('scripts.error.credentials') };
 	}
+
+	const bloodstar = parseBloodstarLink(url);
+	if (bloodstar) return { kind: 'bloodstar', script: bloodstar };
 
 	const host = url.hostname.toLowerCase().replace(/^www\./, '');
 	const parts = url.pathname.split('/').filter(Boolean);

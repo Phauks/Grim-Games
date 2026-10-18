@@ -33,7 +33,11 @@ test('table columns resize by dragging their header edge, and remember it', asyn
 	const before = await width(header);
 
 	// One finger drags the edge 100 pixels further out.
-	await handle.evaluate((el) => el.scrollIntoView({ inline: 'center', block: 'nearest' }));
+	await handle.evaluate((el) => {
+		el.scrollIntoView({ inline: 'center', block: 'nearest' });
+		// Clear of the pinned icon and name, which sit above whatever scrolls under them.
+		el.closest('.scroll')!.scrollLeft -= 150;
+	});
 	const box = (await handle.boundingBox())!;
 	const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 	await touchDrag(page, from, { x: from.x + 100, y: from.y });

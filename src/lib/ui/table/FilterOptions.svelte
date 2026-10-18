@@ -7,6 +7,8 @@
 	interface Option {
 		value: string;
 		label: string;
+		/** Shown but can't be changed (a table's name column can't be hidden). */
+		disabled?: boolean;
 	}
 
 	type Props = {
@@ -47,6 +49,7 @@
 				<input
 					type="checkbox"
 					checked={props.values.includes(option.value)}
+					disabled={option.disabled}
 					onchange={(e) => props.ontoggle?.(option.value, e.currentTarget.checked)}
 				/>
 			{:else}

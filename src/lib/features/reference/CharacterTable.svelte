@@ -12,6 +12,8 @@
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
+	import type { ColumnFilter } from '#lib/ui/table/column-filter.ts';
+	import { fieldFilterValue } from './field-filter.ts';
 	import FieldValue from './FieldValue.svelte';
 	import {
 		PRESENCE_LABELS,
@@ -26,21 +28,27 @@
 		/** Already filtered and sorted (`tableRows`), so the page can show the count. */
 		rows: readonly ReferenceEntry[];
 		onExplain: (title: string, text: string, character?: Character) => void;
+		/** The shared table's own filters, for columns without a Reference one. */
+		columnFilters?: Partial<Record<FieldId, ColumnFilter>>;
+		/** Told how many rows are left after those filters. */
+		oncount?: (count: number) => void;
 	}
 
-	let { rows, onExplain }: Props = $props();
+	let { rows, onExplain, columnFilters = $bindable({}), oncount }: Props = $props();
 
 	const table = $derived(referenceTable.current);
 
 	/** Fixed widths (in --u): layout never depends on which rows are drawn, so nothing reflows. */
 	const WIDTHS: Record<FieldId, number> = {
 		token: 4,
-		// Plain text: wide enough for the longest names (Deus ex Fiasco, Hell's Librarian).
-		name: 10,
+		// Plain text: wide enough for the longest names (Deus ex Fiasco, Hell's Librarian), and
+		// its header for the label, sort, filter and Columns buttons.
+		name: 13,
 		type: 7,
 		edition: 9,
 		icons: 6.5,
-		alignment: 11,
+		// "Starting alignment", its sort arrows and filter on one line (Trevor, 2026-10-18).
+		alignment: 14.5,
 		setup: 11,
 		prep: 18,
 		ability: 18,
@@ -75,16 +83,20 @@
 
 	const TABLE_FIELDS = REFERENCE_FIELDS.filter((f) => !f.cardOnly);
 	const columns = $derived(
-		TABLE_FIELDS.map((field): DataColumn<FieldId> => ({
-			id: field.id,
-			label: field.label,
-			width: `calc(${WIDTHS[field.id]} * var(--u))`,
-			sortable: field.sort !== undefined,
-			filterable: field.filter !== undefined,
-			filtered: filterSet(field),
-			rowHeader: field.id === 'name',
-			stackHead: field.id === 'token'
-		}))
+		TABLE_FIELDS.map((field): DataColumn<FieldId, ReferenceEntry> => {
+			const base = {
+				id: field.id,
+				label: field.label,
+				width: `calc(${WIDTHS[field.id]} * var(--u))`,
+				sortable: field.sort !== undefined,
+				rowHeader: field.id === 'name',
+				stackHead: field.id === 'token'
+			};
+			// Columns with no filter of their own get the shared table's (Trevor, 2026-10-18).
+			if (field.filter) return { ...base, filterable: true, filtered: filterSet(field) };
+			if (field.id === 'token') return { ...base, noFilter: 'The icon; Name filters by the same.' };
+			return { ...base, value: (entry) => fieldFilterValue(entry, field.id) };
+		})
 	);
 
 	const sort = $derived(
@@ -203,6 +215,8 @@
 		narrow="stack"
 		fit="content"
 		resizeKey="reference"
+		bind:columnFilters
+		{oncount}
 		lazy
 		rowEstimate="calc(10 * var(--u))"
 		rowAttrs={(entry) => ({

@@ -40,3 +40,9 @@ export function columnTrack(dragged: number | undefined, fallback: string, room?
 	if (!room || /fr|%|minmax|auto|content/.test(fallback)) return fallback;
 	return `calc(${fallback}${extra})`;
 }
+
+/** Saved hidden columns: ids only, anything else dropped (storage may be stale). */
+export function parseHidden(value: unknown): string[] {
+	if (!Array.isArray(value)) return [];
+	return [...new Set(value.filter((id): id is string => typeof id === 'string' && id !== ''))];
+}
