@@ -75,6 +75,7 @@
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import { nameBox, placeNames, type Box } from './name-placement.ts';
+	import { cornerRoom } from './corner-room.ts';
 	import { fitReminders } from './reminder-fan.ts';
 	import { isOrphan, placingAlignment, seatMisses } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
@@ -195,6 +196,21 @@
 	});
 	const namePlaces = $derived(nameBoxes.map((n) => n.place));
 	/**
+	 * The script's name in the corner keeps clear of every seat and name (Trevor, 2026-10-18),
+	 * cut short with an ellipsis where it would reach one, in whichever lower corner has room.
+	 */
+	const corner = $derived.by(() => {
+		const boxes = shown.flatMap((p, i) => {
+			const c = toPx(p);
+			const name = nameBoxes[i]?.box;
+			// The token, with the name pill straddling its lower rim (PlayerNameMark).
+			const token = { x: c.x, y: c.y + 0.05 * size, w: size, h: 1.1 * size };
+			return name ? [token, name] : [token];
+		});
+		// The name sits 4px (--space-1) in from the edges.
+		return cornerRoom(boxes, { width, height }, titleH + 4, 4 + 8);
+	});
+	/**
 	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
 	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
 	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
@@ -284,9 +300,16 @@
 				...(timerW > 0 && showTimer
 					? [{ x: width - timerW / 2, y: timerH / 2, w: timerW + 12, h: timerH + 12 }]
 					: []),
-				// The script's name in the lower left corner.
+				// The script's name in a lower corner.
 				...(titleW > 0 && boardLooks.current.titleAt === 'corner'
-					? [{ x: titleW / 2, y: height - titleH / 2, w: titleW + 12, h: titleH + 12 }]
+					? [
+							{
+								x: corner.side === 'left' ? titleW / 2 : width - titleW / 2,
+								y: height - titleH / 2,
+								w: titleW + 12,
+								h: titleH + 12
+							}
+						]
 					: [])
 			],
 			{ width, height }
@@ -888,6 +911,14 @@
 		const id = readGameMode(game.gameId)?.modeId;
 		return id && id !== STANDARD.id ? findMode(id)?.name : undefined;
 	});
+	/**
+	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
+	 * says it once, in the mode's colour, rather than twice (Trevor, 2026-10-18).
+	 */
+	const modeInName = $derived(
+		!!modeName && (game.script.meta?.name ?? '').toLowerCase().startsWith(modeName.toLowerCase())
+	);
+	const modeLabel = $derived(modeInName ? undefined : modeName);
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
@@ -1069,9 +1100,11 @@
 			     script's name can sit in the room before them (Trevor, 2026-10-17). -->
 			{#if showTitle && boardLooks.current.titleAt === 'toolbar'}
 				<span class="title toolbar-title" data-testid="script-title"
-					>{#if modeName}<span class="mode" data-testid="game-mode">{modeName}</span>
+					>{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span>
 						&middot;
-					{/if}{game.script.meta?.name ?? ''}</span
+					{/if}<span class:mode={modeInName} data-testid={modeInName ? 'game-mode' : undefined}
+						>{game.script.meta?.name ?? ''}</span
+					></span
 				>
 			{:else}
 				<span class="spacer"></span>
@@ -1130,8 +1163,12 @@
 				style:--vignette={boardLooks.current.vignetteStrength}
 				aria-hidden="true"
 			>
-				{#if modeName}<span class="mode" data-testid="game-mode">{modeName}</span>{/if}
-				{#if game.script.meta?.name}<span class="script-name">{game.script.meta.name}</span>{/if}
+				{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span>{/if}
+				{#if game.script.meta?.name}<span
+						class="script-name"
+						class:mode={modeInName}
+						data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
+					>{/if}
 				{#if game.script.meta?.author}<span class="author">by {game.script.meta.author}</span>{/if}
 			</p>
 		{/if}
@@ -1335,13 +1372,20 @@
 			<!-- Small in the lower left corner, clear of the seats (Trevor, 2026-10-17). -->
 			<p
 				class="corner-title"
+				class:right={corner.side === 'right'}
+				style:max-width={width > 0 ? `${(corner.width / width) * 100}%` : undefined}
+				class:no-room={width > 0 && corner.width < 2 * rootFont}
 				data-testid="script-title"
 				bind:clientWidth={titleW}
 				bind:clientHeight={titleH}
 			>
-				<span class="script-name">{game.script.meta.name}</span>
+				<span
+					class="script-name"
+					class:mode={modeInName}
+					data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
+				>
 				<!-- The mode takes the author's line, so the corner never grows. -->
-				{#if modeName}<span class="mode" data-testid="game-mode">{modeName}</span
+				{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span
 					>{:else if game.script.meta?.author}<span class="author"
 						>by {game.script.meta.author}</span
 					>{/if}
@@ -1934,6 +1978,9 @@
 	.corner-title .mode {
 		font-size: 0.8em;
 	}
+	.watermark .script-name.mode {
+		font-size: clamp(1.5rem, 7vmin, 4rem);
+	}
 	/* Over an image: a soft scrim and an outline keep the words readable. */
 	.watermark.on-image {
 		opacity: 0.5;
@@ -1962,7 +2009,7 @@
 		bottom: var(--space-1);
 		z-index: 1;
 		display: grid;
-		/* Inside the oval's empty corner, short of the bottom seat. */
+		/* Until the board is measured; then as wide as the corner's room (corner-room.ts). */
 		max-width: 32%;
 		margin: 0;
 		font-family: var(--font-heading);
@@ -1970,13 +2017,24 @@
 		color: var(--heading);
 		pointer-events: none;
 	}
+	.corner-title.right {
+		left: auto;
+		right: var(--space-1);
+		text-align: right;
+	}
+	.corner-title.no-room {
+		visibility: hidden;
+	}
+	/* One line each, cut short rather than wrapping up into the seats (Trevor, 2026-10-18). */
+	.corner-title > span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 	.corner-title .script-name {
 		font-size: 0.9rem;
 	}
 	.corner-title .author {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 		font-size: 0.7rem;
 		color: var(--on-surface-muted);
 	}

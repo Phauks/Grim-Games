@@ -89,6 +89,51 @@ test('New game and Resume game are screens of their own', async ({ page }) => {
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 });
 
+test('a new game offers no "Is The Drunk" before anyone has a token', async ({ page }) => {
+	// Trevor (2026-10-18): the Drunk's reminder was offered before the bag was set up.
+	// https://wiki.bloodontheclocktower.com/Drunk : the Drunk is in play only if chosen.
+	await startGame(page);
+	await expect(page.getByText('Is The Drunk')).toHaveCount(0);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await expect(picker.getByRole('group', { name: 'Drunk' })).toHaveCount(0);
+});
+
+test('Resume game deletes every saved game at once, and leaves History alone', async ({ page }) => {
+	// One ended game, in History.
+	await startGame(page);
+	await menu(page, 'End game');
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('game-over')).toBeVisible();
+	// Two still being played.
+	await startGame(page);
+	await startGame(page, 'Sects & Violets');
+
+	await page.goto('/games');
+	const games = page.getByRole('region', { name: 'Saved games' }).getByRole('link');
+	await expect(games).toHaveCount(2);
+	// Trevor (2026-10-18): one button clears the whole list, after asking.
+	const clear = page.getByRole('button', { name: 'Delete all saved games' });
+	await clear.tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Delete all 2 saved games?' });
+	await confirm.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(games).toHaveCount(2);
+	await clear.tap();
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(games).toHaveCount(0);
+	await expect(page.getByText('None', { exact: true })).toBeVisible();
+	await expect(clear).toBeDisabled();
+	await page.reload();
+	await expect(games).toHaveCount(0);
+
+	await page.goto('/history');
+	await expect(
+		page.getByRole('region', { name: 'Games' }).getByRole('link', { name: /Trouble Brewing/ })
+	).toHaveCount(1);
+});
+
 test('the seat sheet names, assigns, shrouds and survives a reload', async ({ page }) => {
 	await startGame(page);
 	let sheet = await openSeat(page, 1);
@@ -1383,6 +1428,14 @@ test('a night step is filled in with help, and the night can be walked through',
 
 test('moving a reminder that normally stays put asks first, saying why', async ({ page }) => {
 	await startGame(page);
+	// Tokens given out by hand, so any player may secretly be the Drunk.
+	const other = await openSeat(page, 2);
+	await other.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 2' })
+		.getByRole('button', { name: 'Chef', exact: true })
+		.tap();
+	await closeSheet(page);
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
@@ -2905,5 +2958,68 @@ test("a game mode is named where the script's name is, apart from it", async ({ 
 		await expect(page.getByTestId('script-title')).toContainText(
 			/Sushi Buffet\s*·?\s*Trouble Brewing|Trouble Brewing\s*Sushi Buffet/
 		);
+	}
+});
+
+test('the script name in the corner keeps clear of every seat, and a town names its mode once', async ({
+	page
+}) => {
+	// Trevor (2026-10-18, phone screenshot): the corner ran into Seat 4's name.
+	const overlaps = (a: Box, b: Box) =>
+		a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+	type Box = { x: number; y: number; width: number; height: number };
+	// A mode named like the start of the script, as a town's script is ("Two Towns and a
+	// Boomdandy 1"), so the name says it once.
+	const trouble = {
+		format: 1,
+		id: 'trouble',
+		name: 'Trouble',
+		sources: [{ title: 'Our group', url: 'https://example.com/trouble' }],
+		parts: {
+			pool: { kind: 'all-characters' },
+			restricted: { banned: [] },
+			assignment: { kind: 'choose-own', when: 'first-night', reconsider: false }
+		}
+	};
+	for (const players of [5, 9, 12, 15]) {
+		await page.goto('/new');
+		await page.evaluate((mode) => {
+			localStorage.setItem('grim-games:custom-modes:v1', JSON.stringify([mode]));
+			localStorage.setItem('grim.boardLooks', JSON.stringify({ titleAt: 'corner' }));
+		}, trouble);
+		await page.reload();
+		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+		const count = page.getByTestId('player-count');
+		for (let n = 8; n < players; n++)
+			await page.getByRole('button', { name: 'More players' }).tap();
+		for (let n = 8; n > players; n--)
+			await page.getByRole('button', { name: 'Fewer players' }).tap();
+		await expect(count).toContainText(String(players));
+		await page.getByRole('button', { name: 'Start game' }).tap();
+		await expect(page.getByTestId('seat')).toHaveCount(players);
+		const gameId = page.url().split('/').pop()!;
+		await page.evaluate(
+			(id) =>
+				localStorage.setItem(
+					`grim-games:game-mode:v1:${id}`,
+					JSON.stringify({ modeId: 'trouble', restrictions: { banned: [], allowed: [] } })
+				),
+			gameId
+		);
+		await page.reload();
+		const corner = page.getByTestId('script-title');
+		await expect(corner).toBeVisible();
+		await expect(page.getByTestId('game-mode')).toHaveText('Trouble Brewing');
+		await expect(corner).not.toContainText(/Trouble.*Trouble/);
+		const box = (await corner.boundingBox())!;
+		for (const seat of await page.getByTestId('seat').all()) {
+			// The token itself: its slot has a --u of room either side.
+			const slot = (await seat.boundingBox())!;
+			const token = { ...slot, x: slot.x + (slot.width - slot.height) / 2, width: slot.height };
+			expect(overlaps(box, token)).toBe(false);
+		}
+		for (const name of await page.getByText(/^Seat \d+$/).all()) {
+			expect(overlaps(box, (await name.boundingBox())!)).toBe(false);
+		}
 	}
 });
