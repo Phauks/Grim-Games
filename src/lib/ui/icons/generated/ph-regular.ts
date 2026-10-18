@@ -50,6 +50,7 @@ import ph_database from '~icons/ph/database';
 import ph_device_mobile from '~icons/ph/device-mobile';
 import ph_diamond from '~icons/ph/diamond';
 import ph_dice_five from '~icons/ph/dice-five';
+import ph_door_open from '~icons/ph/door-open';
 import ph_dots_three from '~icons/ph/dots-three';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_download_simple from '~icons/ph/download-simple';
@@ -139,6 +140,7 @@ import ph_shield from '~icons/ph/shield';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
 import ph_shuffle from '~icons/ph/shuffle';
+import ph_sign_in from '~icons/ph/sign-in';
 import ph_skull from '~icons/ph/skull';
 import ph_sliders from '~icons/ph/sliders';
 import ph_smiley from '~icons/ph/smiley';
@@ -235,6 +237,7 @@ const icons: IconMap = {
 	'ph:device-mobile': ph_device_mobile,
 	'ph:diamond': ph_diamond,
 	'ph:dice-five': ph_dice_five,
+	'ph:door-open': ph_door_open,
 	'ph:dots-three': ph_dots_three,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
 	'ph:download-simple': ph_download_simple,
@@ -324,6 +327,7 @@ const icons: IconMap = {
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,
 	'ph:shuffle': ph_shuffle,
+	'ph:sign-in': ph_sign_in,
 	'ph:skull': ph_skull,
 	'ph:sliders': ph_sliders,
 	'ph:smiley': ph_smiley,

@@ -6,6 +6,7 @@
 		announcedRange,
 		extraCandidates,
 		extraCounts,
+		extraTotal,
 		NO_RESTRICTIONS,
 		rollExtras,
 		STANDARD
@@ -137,6 +138,8 @@
 	const choices = $derived(picking ? candidates(choosing) : []);
 
 	const range = $derived(announcedRange(extras.length));
+	/** How many in all the mode allows (Trevor, 2026-10-18: 1 to 4 for Infinite Possibilities). */
+	const total = $derived(extraTotal(mode));
 
 	/**
 	 * Puts the extras into the setup selection, taking out any earlier roll first: the setup
@@ -210,7 +213,12 @@
 	{/if}
 
 	<div class="next">
-		<Button variant="accent" icon="forward" disabled={official.length === 0} onclick={next}>
+		<Button
+			variant="accent"
+			icon="forward"
+			disabled={official.length === 0 || extras.length < total.min || extras.length > total.max}
+			onclick={next}
+		>
 			{t('modes.extras.next')}
 		</Button>
 	</div>
@@ -246,7 +254,7 @@
 		gap: var(--space-2);
 		min-height: var(--tap-target);
 		padding: var(--space-1) var(--space-2);
-		border: 1px solid var(--card-border);
+		border: var(--card-border);
 		border-radius: var(--radius-sm);
 	}
 	.tools {

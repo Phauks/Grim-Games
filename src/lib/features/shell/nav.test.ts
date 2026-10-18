@@ -29,7 +29,12 @@ describe('navigation', () => {
 
 	it('groups games first, then preparation, then players (Trevor, 2026-10-16)', () => {
 		expect(NAV_SECTIONS.map((section) => section.id)).toEqual(['games', 'prepare', 'players']);
-		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual(['new', 'games', 'history']);
+		expect(NAV_SECTIONS[0].items.map((item) => item.id)).toEqual([
+			'new',
+			'games',
+			'join',
+			'history'
+		]);
 	});
 
 	it('puts Home first, outside the groups (Trevor, 2026-10-16)', () => {

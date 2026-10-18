@@ -7,6 +7,11 @@ import { describe, expect, it } from 'vitest';
 import type { Character, CharacterName } from '#lib/core/data/types.ts';
 import { gameData } from '#lib/core/model/fixtures.test-support.ts';
 import {
+	abilityAction,
+	readAction,
+	withChoice,
+	withResult,
+	writeAction,
 	openingPhrase,
 	readAbility,
 	setupPartText,
@@ -142,5 +147,52 @@ describe('reading an ability into parts', () => {
 	};
 	it.each(official.map((c) => [c.id, c] as const))('%s keeps its text', (_, role) => {
 		expect(writeAbility(readAbility(role.ability, role.name, find), role.name)).toBe(role.ability);
+	});
+});
+
+describe('the action after the opening', () => {
+	it('reads who is chosen and what happens', () => {
+		expect(
+			abilityAction('Each night*, choose a player (not yourself): they are poisoned.', 'S')
+		).toEqual({ choice: 'choose a player (not yourself)', result: 'they are poisoned', tail: '.' });
+		expect(abilityAction('Each night, you learn how many players are evil.', 'S')).toEqual({
+			choice: '',
+			result: 'you learn',
+			tail: ' how many players are evil.'
+		});
+	});
+
+	it('changes one part and keeps the rest', () => {
+		expect(
+			withChoice('Each night, choose a player: they are drunk.', 'choose 2 players', 'S')
+		).toBe('Each night, choose 2 players: they are drunk.');
+		expect(
+			withResult('Each night, choose a player: they are drunk.', 'they are poisoned', 'S')
+		).toBe('Each night, choose a player: they are poisoned.');
+		expect(withChoice('Each night, you learn a number.', 'choose a player', 'S')).toBe(
+			'Each night, choose a player: you learn a number.'
+		);
+		expect(withChoice('Each night, choose a player: they die.', '', 'S')).toBe(
+			'Each night, they die.'
+		);
+		expect(withResult('Each night*, choose a player.', 'they are poisoned', 'S')).toBe(
+			'Each night*, choose a player: they are poisoned.'
+		);
+	});
+
+	it('leaves an ability with none of the parts as it is', () => {
+		expect(abilityAction('You start knowing 1 good player.', 'S')).toEqual({
+			choice: '',
+			result: '',
+			tail: ' 1 good player.'
+		});
+	});
+
+	// Every official ability reads back to the same text through the action parts too.
+	it.each(gameData.characters.map((c) => [c.id, c] as const))('%s keeps its text', (_, role) => {
+		const parts = readAbility(role.ability, role.name);
+		const hasOpening = !!parts.opening;
+		const rest = writeAction(readAction(parts.rest, hasOpening), hasOpening);
+		expect(writeAbility({ ...parts, rest }, role.name)).toBe(writeAbility(parts, role.name));
 	});
 });

@@ -50,6 +50,7 @@ import ph_database_bold from '~icons/ph/database-bold';
 import ph_device_mobile_bold from '~icons/ph/device-mobile-bold';
 import ph_diamond_bold from '~icons/ph/diamond-bold';
 import ph_dice_five_bold from '~icons/ph/dice-five-bold';
+import ph_door_open_bold from '~icons/ph/door-open-bold';
 import ph_dots_three_bold from '~icons/ph/dots-three-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
 import ph_download_simple_bold from '~icons/ph/download-simple-bold';
@@ -139,6 +140,7 @@ import ph_shield_bold from '~icons/ph/shield-bold';
 import ph_shield_check_bold from '~icons/ph/shield-check-bold';
 import ph_shield_star_bold from '~icons/ph/shield-star-bold';
 import ph_shuffle_bold from '~icons/ph/shuffle-bold';
+import ph_sign_in_bold from '~icons/ph/sign-in-bold';
 import ph_skull_bold from '~icons/ph/skull-bold';
 import ph_sliders_bold from '~icons/ph/sliders-bold';
 import ph_smiley_bold from '~icons/ph/smiley-bold';
@@ -235,6 +237,7 @@ const icons: IconMap = {
 	'ph:device-mobile-bold': ph_device_mobile_bold,
 	'ph:diamond-bold': ph_diamond_bold,
 	'ph:dice-five-bold': ph_dice_five_bold,
+	'ph:door-open-bold': ph_door_open_bold,
 	'ph:dots-three-bold': ph_dots_three_bold,
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
 	'ph:download-simple-bold': ph_download_simple_bold,
@@ -324,6 +327,7 @@ const icons: IconMap = {
 	'ph:shield-check-bold': ph_shield_check_bold,
 	'ph:shield-star-bold': ph_shield_star_bold,
 	'ph:shuffle-bold': ph_shuffle_bold,
+	'ph:sign-in-bold': ph_sign_in_bold,
 	'ph:skull-bold': ph_skull_bold,
 	'ph:sliders-bold': ph_sliders_bold,
 	'ph:smiley-bold': ph_smiley_bold,

@@ -141,12 +141,13 @@ describe('Storyteller restrictions', () => {
 });
 
 describe('A Script of Infinite Possibilities (https://chillclocktower.com/2024/04/28/a-script-of-infinite-possibilities/)', () => {
-	it('adds the Banshee to Trouble Brewing', () => {
+	// Trevor, 2026-10-18: "Any script", so the script plays as it is (the extras stay hidden).
+	it('plays any script as it is', () => {
 		const ids = modeCharacters(mode('infinite-possibilities'), tb, data.characters).map(
 			(c) => c.id
 		);
-		expect(ids).toContain('banshee');
-		expect(ids).toHaveLength(tb.length + 1);
+		expect(ids).not.toContain('banshee');
+		expect(ids).toHaveLength(tb.length);
 	});
 });
 

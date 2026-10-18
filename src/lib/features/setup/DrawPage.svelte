@@ -61,11 +61,15 @@
 			revealOpen = true;
 			return;
 		}
-		if (!next) {
+		// More tiles than seats (a bag built off-count and confirmed): the tile gets a new
+		// seat rather than being stranded in the bag (Trevor, 2026-10-18: warn, never lock).
+		let seatId = next;
+		if (!seatId && send({ type: 'AddSeat' }) && port.game) seatId = nextDrawSeat(port.game);
+		if (!seatId) {
 			toast(t('setup.draw.everySeat'), t('setup.draw.everySeatHint'));
 			return;
 		}
-		if (send({ type: 'DrawTile', seatId: next, tileId })) {
+		if (send({ type: 'DrawTile', seatId, tileId })) {
 			revealing = tileId;
 			revealOpen = true;
 		}
@@ -108,7 +112,11 @@
 		{:else}
 			<p class="next">
 				<span class="label">{t('setup.draw.next')}</span>
-				<span data-testid="next-seat">{label(next)}</span>
+				<span data-testid="next-seat"
+					>{!next && slots.some((s) => s.state === 'in-bag')
+						? t('setup.draw.newSeat')
+						: label(next)}</span
+				>
 			</p>
 			<BagTiles {slots} {marks} seatLabel={label} onpick={(s) => draw(s.tileId, s.state)} />
 		{/if}

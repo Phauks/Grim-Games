@@ -12,7 +12,6 @@
 <Page title={t('library.heading')}>
 	{#snippet actions()}
 		<!-- Icon buttons, so the title row stays one row on a phone (Trevor: icon buttons). -->
-		<IconButton icon="folder" label={t('library.newFolder')} onclick={() => browser?.newFolder()} />
 		<IconButton
 			icon="players"
 			label={t('library.newCollection')}

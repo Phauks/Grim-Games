@@ -50,6 +50,7 @@ import ph_database_thin from '~icons/ph/database-thin';
 import ph_device_mobile_thin from '~icons/ph/device-mobile-thin';
 import ph_diamond_thin from '~icons/ph/diamond-thin';
 import ph_dice_five_thin from '~icons/ph/dice-five-thin';
+import ph_door_open_thin from '~icons/ph/door-open-thin';
 import ph_dots_three_thin from '~icons/ph/dots-three-thin';
 import ph_dots_three_vertical_thin from '~icons/ph/dots-three-vertical-thin';
 import ph_download_simple_thin from '~icons/ph/download-simple-thin';
@@ -139,6 +140,7 @@ import ph_shield_thin from '~icons/ph/shield-thin';
 import ph_shield_check_thin from '~icons/ph/shield-check-thin';
 import ph_shield_star_thin from '~icons/ph/shield-star-thin';
 import ph_shuffle_thin from '~icons/ph/shuffle-thin';
+import ph_sign_in_thin from '~icons/ph/sign-in-thin';
 import ph_skull_thin from '~icons/ph/skull-thin';
 import ph_sliders_thin from '~icons/ph/sliders-thin';
 import ph_smiley_thin from '~icons/ph/smiley-thin';
@@ -235,6 +237,7 @@ const icons: IconMap = {
 	'ph:device-mobile-thin': ph_device_mobile_thin,
 	'ph:diamond-thin': ph_diamond_thin,
 	'ph:dice-five-thin': ph_dice_five_thin,
+	'ph:door-open-thin': ph_door_open_thin,
 	'ph:dots-three-thin': ph_dots_three_thin,
 	'ph:dots-three-vertical-thin': ph_dots_three_vertical_thin,
 	'ph:download-simple-thin': ph_download_simple_thin,
@@ -324,6 +327,7 @@ const icons: IconMap = {
 	'ph:shield-check-thin': ph_shield_check_thin,
 	'ph:shield-star-thin': ph_shield_star_thin,
 	'ph:shuffle-thin': ph_shuffle_thin,
+	'ph:sign-in-thin': ph_sign_in_thin,
 	'ph:skull-thin': ph_skull_thin,
 	'ph:sliders-thin': ph_sliders_thin,
 	'ph:smiley-thin': ph_smiley_thin,

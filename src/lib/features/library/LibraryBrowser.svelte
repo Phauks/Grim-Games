@@ -3,7 +3,7 @@
 	import type { CharacterCollection } from './library-collections.ts';
 	import type { ScriptRow as PickedScript } from './ScriptPane.svelte';
 
-	/** An item tapped in a picking browser. */
+	/** An item tapped in a picking browser, looked up for the caller. */
 	export type LibraryPick =
 		| { kind: 'script'; script: PickedScript }
 		| { kind: 'character'; saved: SavedCharacter }
@@ -44,6 +44,7 @@
 	import ItemPane from './ItemPane.svelte';
 	import LibrarySidebar, { type Place } from './LibrarySidebar.svelte';
 	import NameDialog from './NameDialog.svelte';
+	import { timestampName } from '#lib/core/timestamp-name.ts';
 	import ScriptPane, { type ScriptRow } from './ScriptPane.svelte';
 	import { dragToFolder, type DragSource } from './drag-to-folder.ts';
 	import { characterCollections } from './library-collections.svelte.ts';
@@ -69,10 +70,11 @@
 	 *
 	 * The Library page, and a picker elsewhere (Trevor, 2026-10-18: the Script builder's
 	 * "Open a saved script" opens the file manager in a modal): `kind` keeps it to one kind of
-	 * item, without the Kinds list, and `onpick` gets the tapped item instead of the pane.
+	 * item, without the Kinds list, Campaigns or a Kind column, and `onpick` gets the tapped
+	 * item instead of the pane.
 	 */
 	interface Props {
-		/** Only this kind of item; the Kinds list and Campaigns are left out. */
+		/** Only this kind of item. */
 		kind?: ItemKind;
 		/** Tapping an item hands it here instead of opening it in the pane. */
 		onpick?: (pick: LibraryPick) => void;
@@ -316,9 +318,7 @@
 		}
 	]);
 	// One kind only: no Kind column, as every row would say the same.
-	const columns = $derived<DataColumn<ColumnId, Row>[]>(
-		allColumns.filter((c) => !(onlyKind && c.id === 'kind'))
-	);
+	const columns = $derived(allColumns.filter((c) => !(onlyKind && c.id === 'kind')));
 
 	// ---- Moving: drag a row onto a folder ----
 
@@ -363,6 +363,11 @@
 		}
 	}
 
+	/** An item that changed kind opens as its new self. */
+	function openItem(key: string) {
+		openKey = key;
+	}
+
 	/**
 	 * A script just added opens straight away, so its folder and tags can be set. Added while a
 	 * folder is open, it goes in that folder, as a file saved there would.
@@ -384,9 +389,6 @@
 
 	let folderNaming = $state(false);
 	let collectionNaming = $state(false);
-	export function newFolder() {
-		folderNaming = true;
-	}
 	export function newCollection() {
 		collectionNaming = true;
 	}
@@ -414,6 +416,7 @@
 					bind:place
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
+					onnewfolder={() => (folderNaming = true)}
 				/>
 			</div>
 		{:else}
@@ -425,6 +428,7 @@
 					bind:place
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
+					onnewfolder={() => (folderNaming = true)}
 				/>
 			</PageSection>
 		{/if}
@@ -476,11 +480,23 @@
 
 {#snippet pane(inline: boolean)}
 	{#if openScript}
-		<ScriptPane bind:open={paneOpen.open} row={openScript} {data} {inline} />
+		<ScriptPane bind:open={paneOpen.open} row={openScript} {data} {inline} onchanged={openItem} />
 	{:else if openCharacter}
-		<CharacterPane bind:open={paneOpen.open} saved={openCharacter} {inline} />
+		<CharacterPane
+			bind:open={paneOpen.open}
+			saved={openCharacter}
+			{data}
+			{inline}
+			onchanged={openItem}
+		/>
 	{:else if openCollection}
-		<CollectionPane bind:open={paneOpen.open} collection={openCollection} {data} {inline} />
+		<CollectionPane
+			bind:open={paneOpen.open}
+			collection={openCollection}
+			{data}
+			{inline}
+			onchanged={openItem}
+		/>
 	{:else if inline}
 		<ItemPane title={t('library.pane')} inline>{t('common.none')}</ItemPane>
 	{/if}
@@ -545,6 +561,7 @@
 <NameDialog
 	bind:open={collectionNaming}
 	title={t('library.newCollection')}
+	blankName={timestampName}
 	onsave={addCollection}
 />
 
@@ -599,7 +616,8 @@
 	:global(.sided tr.selected) .pick {
 		box-shadow: inset 0.25rem 0 0 var(--accent);
 	}
-	/* The sidebar and pane stay in view beside the list, just below the app header. */
+	/* The sidebar and pane stay in view beside the list, just below the app header (not in a
+	   picker's dialog, which scrolls itself). */
 	.manager:not(.picking) .side,
 	.pane {
 		position: sticky;

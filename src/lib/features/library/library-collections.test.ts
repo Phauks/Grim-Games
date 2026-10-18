@@ -28,9 +28,11 @@ describe('character collections', () => {
 		expect(deleteCollection(state, 'c1').collections).toEqual([]);
 	});
 
-	it('ignores a blank name', () => {
-		const state = emptyCollections();
-		expect(addCollection(state, 'c1', '   ', 1)).toBe(state);
+	it('names a collection given a blank name after the time it was made', () => {
+		const at = new Date(2026, 9, 18, 19, 51).getTime();
+		const state = addCollection(emptyCollections(), 'c1', '   ', at);
+		expect(state.collections[0].name).toBe('2026-10-18 19:51');
+		expect(renameCollection(state, 'c1', ' ', at).collections[0].name).toBe('2026-10-18 19:51');
 	});
 
 	it('reads stored collections, dropping junk, and leaves a newer build’s alone', () => {
