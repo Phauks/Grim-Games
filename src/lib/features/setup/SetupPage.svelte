@@ -33,7 +33,7 @@
 	import type { SetupGamePort } from './game-port.ts';
 	import SetupCheckPanel from './SetupCheckPanel.svelte';
 	import StandInDialog from './StandInDialog.svelte';
-	import TravellerDialog from './TravellerDialog.svelte';
+	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
 	import { DEMON_SET } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -85,16 +85,42 @@
 				)
 			: []
 	);
-	/** Every Traveller there is, recommended first, for the All Travellers dialog. */
-	const allTravellers = $derived.by(() => {
-		const recommended = [...choices.filter((c) => c.type === 'traveller'), ...editionTravellers];
+	/**
+	 * The script's own Fabled and Loric, then any other the game has in play (Trevor,
+	 * 2026-10-18). They go straight into the game's rule characters, never the bag; once
+	 * listed they stay for this visit, so taking one out can be undone.
+	 */
+	const scriptRules = $derived(script?.characters.filter((c) => isRuleCharacter(c.type)) ?? []);
+	const inRule = $derived(new Set(game?.ruleCharacters ?? []));
+	let rulesSeen = $state.raw<CharacterId[]>([]);
+	$effect(() => {
+		const onScript = new Set(scriptRules.map((c) => c.id));
+		const added = (game?.ruleCharacters ?? []).filter(
+			(id) => !onScript.has(id) && !rulesSeen.includes(id)
+		);
+		if (added.length) rulesSeen = [...rulesSeen, ...added];
+	});
+	const offScriptRules = $derived(
+		rulesSeen.map((id) => lookup(id)).filter((c): c is Character => c !== undefined)
+	);
+	/** Every character of a type there is, the script's (and edition's) first, for its Add dialog. */
+	function allOf(type: CharacterType): Character[] {
+		const recommended = [...(script?.characters ?? []), ...editionTravellers].filter(
+			(c) => c.type === type
+		);
 		const seen = new Set(recommended.map((c) => c.id));
 		return [
 			...recommended,
-			...(data?.characters ?? []).filter((c) => c.type === 'traveller' && !seen.has(c.id))
+			...(data?.characters ?? []).filter((c) => c.type === type && !seen.has(c.id))
 		];
-	});
-	let travellersOpen = $state(false);
+	}
+	/** Which type's Add dialog is open: Travellers, Fabled or Loric. */
+	let adding = $state<'traveller' | 'fabled' | 'loric' | undefined>(undefined);
+	const ADD_LABELS = {
+		traveller: { button: 'setup.addTraveller', title: 'setup.allTravellers' },
+		fabled: { button: 'setup.addFabled', title: 'setup.allFabled' },
+		loric: { button: 'setup.addLoric', title: 'setup.allLoric' }
+	} as const;
 	/**
 	 * Travellers are rarely in play, so their section starts closed (Trevor, 2026-10-18),
 	 * unless one was already chosen when the screen opened (a resumed setup).
@@ -122,15 +148,25 @@
 	/** Only the chosen characters, with the search still applying (Trevor, 2026-10-18). */
 	let selectedOnly = $state(false);
 	const listed = $derived(
-		[...choices, ...editionTravellers, ...offScript].filter(
-			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0
+		[...choices, ...editionTravellers, ...offScript, ...scriptRules, ...offScriptRules].filter(
+			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id)
 		)
 	);
-	const offScriptIds = $derived(new Set(offScript.map((c) => c.id)));
+	const offScriptIds = $derived(new Set([...offScript, ...offScriptRules].map((c) => c.id)));
 	/** The Demon's bluffs, chosen below the list, are tagged in it (Trevor, 2026-10-18). */
 	const bluffIds = $derived(new Set(game?.bluffs[DEMON_SET] ?? []));
-	const listedIds = $derived(new Set([...scriptOrder, ...editionTravellers.map((c) => c.id)]));
-	const TYPES: CharacterType[] = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'];
+	const listedIds = $derived(
+		new Set([...scriptOrder, ...[...editionTravellers, ...scriptRules].map((c) => c.id)])
+	);
+	const TYPES: CharacterType[] = [
+		'townsfolk',
+		'outsider',
+		'minion',
+		'demon',
+		'traveller',
+		'fabled',
+		'loric'
+	];
 
 	const ready = $derived(script !== undefined && game !== undefined && s.gameId === game.gameId);
 	const analysis = $derived(
@@ -199,6 +235,13 @@
 	});
 
 	function toggle(character: Character) {
+		if (isRuleCharacter(character.type)) {
+			send({
+				type: inRule.has(character.id) ? 'RemoveRuleCharacter' : 'AddRuleCharacter',
+				characterId: character.id
+			});
+			return;
+		}
 		const n = setupSelection.copies(character.id);
 		setupSelection.setCopies(character.id, n === 0 ? 1 : n - 1);
 	}
@@ -331,35 +374,39 @@
 		<CharacterPicker
 			characters={listed}
 			mode="multi"
-			selected={ids}
+			selected={[...ids, ...inRule]}
 			bind:query
 			showSearch={false}
 			collapsibleKey="setup"
 			surface="page"
 			contained={false}
 			types={TYPES}
-			keepTypes={['traveller']}
-			closedTypes={travellersChosenAtStart ? [] : ['traveller']}
+			keepTypes={['traveller', 'fabled', 'loric']}
+			closedTypes={travellersChosenAtStart ? ['fabled', 'loric'] : ['traveller', 'fabled', 'loric']}
 			onSelect={(id) => {
 				const character = lookup(id);
 				if (character) toggle(character);
 			}}
 		>
 			{#snippet groupAside(type)}
-				{#if type === 'traveller'}
+				{#if type === 'traveller' || type === 'fabled' || type === 'loric'}
 					<IconButton
 						icon="add"
-						label={t('setup.addTraveller')}
+						label={t(ADD_LABELS[type].button)}
 						disabled={!ready}
-						onclick={() => (travellersOpen = true)}
+						onclick={() => (adding = type)}
 					/>
 				{/if}
 			{/snippet}
 			{#snippet item(character)}
 				<CharacterChoice
 					{character}
-					copies={s.selection[character.id] ?? 0}
-					duplicates={canDuplicate(character, inPlay)}
+					copies={isRuleCharacter(character.type)
+						? inRule.has(character.id)
+							? 1
+							: 0
+						: (s.selection[character.id] ?? 0)}
+					duplicates={!isRuleCharacter(character.type) && canDuplicate(character, inPlay)}
 					jinxed={jinxed.has(character.id)}
 					offScript={offScriptIds.has(character.id)}
 					bluff={bluffIds.has(character.id)}
@@ -403,16 +450,21 @@
 	{/if}
 </Page>
 
-<TravellerDialog
-	bind:open={travellersOpen}
-	travellers={allTravellers}
-	selected={ids}
-	marker={(c) => (listedIds.has(c.id) ? undefined : t('setup.offScript'))}
-	onToggle={(id) => {
-		const character = lookup(id);
-		if (character) toggle(character);
-	}}
-/>
+{#if adding}
+	{@const type = adding}
+	<AddCharactersDialog
+		bind:open={() => adding === type, (open) => (adding = open ? type : undefined)}
+		title={t(ADD_LABELS[type].title)}
+		{type}
+		characters={allOf(type)}
+		selected={[...ids, ...inRule]}
+		marker={(c) => (listedIds.has(c.id) ? undefined : t('setup.offScript'))}
+		onToggle={(id) => {
+			const character = lookup(id);
+			if (character) toggle(character);
+		}}
+	/>
+{/if}
 <StandInDialog
 	bind:open={standInOpen}
 	standIn={askingStandIn}

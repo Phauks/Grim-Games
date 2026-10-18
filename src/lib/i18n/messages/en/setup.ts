@@ -79,7 +79,12 @@ export const setup = {
 	'setup.offScript': 'Not on script',
 	'setup.allTravellers': 'All Travellers',
 	'setup.addTraveller': 'Add a Traveller',
+	'setup.allFabled': 'All Fabled',
+	'setup.addFabled': 'Add a Fabled',
+	'setup.allLoric': 'All Loric',
+	'setup.addLoric': 'Add a Loric',
 	'setup.bluff': 'Demon bluff',
+	'setup.bluffShort': 'Bluff',
 	'setup.bluffInPlay': 'Demon bluff, in play',
 	'setup.characterInfo': 'About the {name}',
 	'setup.check.customReminders':

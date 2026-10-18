@@ -240,6 +240,41 @@ test("Travellers can join the bag: the edition's are listed, the rest are a sear
 	await noSidewaysScroll(page);
 });
 
+// Trevor, 2026-10-18: Fabled and Loric on the Characters screen, closed at first; they join
+// the game as rule characters, never the bag.
+test('Fabled and Loric are added from their own closed sections, not to the bag', async ({
+	page
+}) => {
+	await selectionFor(page, 8);
+	for (const name of ['Fabled', 'Loric'])
+		await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute(
+			'aria-expanded',
+			'false'
+		);
+	await page.getByRole('button', { name: 'Add a Fabled' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'All Fabled' });
+	await dialog.getByRole('searchbox').fill('Sentinel');
+	await dialog.getByRole('button', { name: /^Sentinel/ }).tap();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	// Its section opens to show it.
+	await expect(page.getByRole('button', { name: 'Fabled', exact: true })).toHaveAttribute(
+		'aria-expanded',
+		'true'
+	);
+	await expect(choice(page, 'Sentinel')).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('li', { has: choice(page, 'Sentinel') })).toContainText(
+		'Not on script'
+	);
+	// In play as a rule character, so the bag's counts don't change.
+	for (const type of ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'])
+		await expect(page.getByTestId(`count-${type}`)).toHaveText('0');
+	// A tap takes it out again, and it stays listed so that can be undone.
+	await choice(page, 'Sentinel').tap();
+	await expect(choice(page, 'Sentinel')).toHaveAttribute('aria-pressed', 'false');
+	await noSidewaysScroll(page);
+});
+
 // Trevor, 2026-10-18: a button to list only the chosen characters, together with the search.
 test('Show only selected lists just the chosen characters and still searches', async ({ page }) => {
 	await selectionFor(page, 5);
@@ -738,12 +773,13 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	await expect(bluffs.getByRole('button', { name: 'Change' })).toBeEnabled();
 	// Each bluff is tagged in the list above, and stays out of the bag (Trevor, 2026-10-18).
 	await expect(page.getByTestId('bluff-tag')).toHaveCount(3);
-	await expect(choice(page, 'Chef')).toContainText('Demon bluff');
+	await expect(choice(page, 'Chef')).toHaveAccessibleDescription('Demon bluff');
 	await expect(choice(page, 'Chef')).toHaveAttribute('aria-pressed', 'false');
-	await expect(choice(page, 'Empath')).not.toContainText('Demon bluff');
+	await expect(choice(page, 'Empath').getByTestId('bluff-tag')).toHaveCount(0);
 	// A bluff then chosen for the bag is flagged, not dropped (warn, don't lock).
 	await choice(page, 'Chef').tap();
-	await expect(choice(page, 'Chef')).toContainText('Demon bluff, in play');
+	await expect(choice(page, 'Chef')).toHaveAccessibleDescription('Demon bluff, in play');
+	await expect(choice(page, 'Chef').getByTestId('bluff-tag')).toBeVisible();
 	await expect(bluffs).toContainText('Chef');
 	await choice(page, 'Chef').tap();
 	await noSidewaysScroll(page);
