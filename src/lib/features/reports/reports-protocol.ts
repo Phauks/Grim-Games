@@ -12,8 +12,8 @@
  *   POST   /api/reports/admins       { email }                    -> 204, 404 no such account
  *   DELETE /api/reports/admins       { id }                       -> 204
  *
- * Reading, triage and the admin list need a signed-in admin account (Trevor, 2026-10-18) or
- * the Worker secret REPORTS_ADMIN_KEY as a Bearer token; otherwise they answer 404.
+ * Reading, triage and the admin list need a signed-in admin account (Trevor, 2026-10-18);
+ * otherwise they answer 404. The first admin is added in the database itself (worker/admins.ts).
  */
 export const REPORTS_API = '/api/reports';
 export const REPORTS_ADMINS_API = '/api/reports/admins';

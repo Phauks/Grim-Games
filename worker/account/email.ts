@@ -128,11 +128,25 @@ function isLocal(url: URL): boolean {
 }
 
 /**
- * The sender for this request: preview mode off production, else real email when set up.
- * Local runs come first because `wrangler dev` gives them a simulated `EMAIL` binding too.
+ * The beta preview, where testers play before a release: it sends real email like production
+ * (Trevor, 2026-10-18), so admin accounts can be trusted there. Branch previews are named
+ * after their branch and keep showing the code.
+ */
+function isBeta(url: URL): boolean {
+	return url.hostname.split('.')[0] === 'beta';
+}
+
+/**
+ * The sender for this request: preview mode off production and beta, else real email when set
+ * up. Local runs come first because `wrangler dev` gives them a simulated `EMAIL` binding too.
  */
 export function emailSender(env: EmailEnv, url: URL): EmailSender {
-	if (env.ENVIRONMENT === 'preview' || isLocal(url)) return new PreviewSender();
+	if (isLocal(url)) return new PreviewSender();
+	if (env.ENVIRONMENT === 'preview') {
+		return isBeta(url) && env.EMAIL && env.EMAIL_FROM
+			? new CloudflareSender(env.EMAIL, env.EMAIL_FROM)
+			: new PreviewSender();
+	}
 	if (env.EMAIL && env.EMAIL_FROM) return new CloudflareSender(env.EMAIL, env.EMAIL_FROM);
 	return new NoSender();
 }

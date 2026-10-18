@@ -20,46 +20,42 @@ export async function sendReport(draft: ReportDraft): Promise<number> {
 	return ((await response.json()) as CreatedReport).id;
 }
 
-/** A signed-in admin account needs no key: the session cookie goes with the request. */
-function admin(key: string): HeadersInit {
-	return key
-		? { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }
-		: { 'Content-Type': 'application/json' };
-}
+/** Admin requests carry the signed-in account's session cookie and a JSON body. */
+const admin: HeadersInit = { 'Content-Type': 'application/json' };
 
-/** Every report, newest first; undefined when neither the account nor the key may read them. */
-export async function listReports(key: string): Promise<Report[] | undefined> {
-	const response = await fetch(REPORTS_API, { headers: admin(key) });
+/** Every report, newest first; undefined when this account may not read them. */
+export async function listReports(): Promise<Report[] | undefined> {
+	const response = await fetch(REPORTS_API, { headers: admin });
 	if (response.status === 404) return undefined;
 	if (!response.ok) throw new Error(await response.text());
 	return ((await response.json()) as { reports: Report[] }).reports;
 }
 
-export async function setReportStatus(key: string, id: number, status: ReportStatus) {
+export async function setReportStatus(id: number, status: ReportStatus) {
 	const response = await fetch(`${REPORTS_API}/${id}`, {
 		method: 'PATCH',
-		headers: admin(key),
+		headers: admin,
 		body: JSON.stringify({ status })
 	});
 	if (!response.ok) throw new Error(await response.text());
 }
 
-export async function deleteReport(key: string, id: number) {
-	const response = await fetch(`${REPORTS_API}/${id}`, { method: 'DELETE', headers: admin(key) });
+export async function deleteReport(id: number) {
+	const response = await fetch(`${REPORTS_API}/${id}`, { method: 'DELETE', headers: admin });
 	if (!response.ok) throw new Error(await response.text());
 }
 
-export async function listAdmins(key: string): Promise<Admin[]> {
-	const response = await fetch(REPORTS_ADMINS_API, { headers: admin(key) });
+export async function listAdmins(): Promise<Admin[]> {
+	const response = await fetch(REPORTS_ADMINS_API, { headers: admin });
 	if (!response.ok) throw new Error(await response.text());
 	return ((await response.json()) as AdminList).admins;
 }
 
 /** False when nobody has signed in with that email yet. */
-export async function addAdmin(key: string, email: string): Promise<boolean> {
+export async function addAdmin(email: string): Promise<boolean> {
 	const response = await fetch(REPORTS_ADMINS_API, {
 		method: 'POST',
-		headers: admin(key),
+		headers: admin,
 		body: JSON.stringify({ email })
 	});
 	if (response.status === 404) return false;
@@ -67,10 +63,10 @@ export async function addAdmin(key: string, email: string): Promise<boolean> {
 	return true;
 }
 
-export async function removeAdmin(key: string, id: string) {
+export async function removeAdmin(id: string) {
 	const response = await fetch(REPORTS_ADMINS_API, {
 		method: 'DELETE',
-		headers: admin(key),
+		headers: admin,
 		body: JSON.stringify({ id })
 	});
 	if (!response.ok) throw new Error(await response.text());

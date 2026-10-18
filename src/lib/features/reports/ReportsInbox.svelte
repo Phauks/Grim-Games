@@ -1,6 +1,5 @@
 <script lang="ts">
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 	import { onMount } from 'svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -26,24 +25,18 @@
 		type ReportStatus
 	} from './reports-protocol.ts';
 
-	// Trevor's inbox for in-app reports, at /reports (not in the menu). A signed-in admin
-	// account opens it (Trevor, 2026-10-18); otherwise the Worker secret REPORTS_ADMIN_KEY,
-	// typed once and kept on this device only. The Worker checks both.
+	// Trevor's inbox for in-app reports, at /reports. Only a signed-in admin account opens it
+	// (Trevor, 2026-10-18); the Worker checks.
 
-	const KEY_STORAGE = 'grim-games:reports-admin-key';
 	type Filter = ReportStatus | 'all';
 
-	let key = $state('');
-	/** How this device reads reports: still checking, not allowed, an admin account, or the key. */
-	let access = $state<'checking' | 'none' | 'account' | 'key'>('checking');
-	const allowed = $derived(access === 'account' || access === 'key');
+	/** Whether this account reads reports: still checking, not allowed, or an admin. */
+	let access = $state<'checking' | 'none' | 'admin'>('checking');
+	const allowed = $derived(access === 'admin');
 	let adminsOpen = $state(false);
 	let admins = $state<Admin[]>();
 	let newAdmin = $state('');
 	let noAccount = $state(false);
-	let typed = $state('');
-	let keyForm = $state<HTMLFormElement>();
-	let wrongKey = $state(false);
 	let reports = $state<Report[]>();
 	let filter = $state<Filter>('new');
 	let openId = $state<number>();
@@ -63,22 +56,12 @@
 		...statusOptions
 	]);
 
-	onMount(() => {
-		key = readStoredText(KEY_STORAGE) ?? '';
-		void load();
-	});
+	onMount(() => void load());
 
 	async function load() {
 		try {
-			let list = await listReports(key);
-			if (list === undefined && key) {
-				// A wrong or retired key: an admin account may still open the inbox.
-				wrongKey = true;
-				forget();
-				list = await listReports('');
-			}
-			reports = list;
-			access = list === undefined ? 'none' : key ? 'key' : 'account';
+			reports = await listReports();
+			access = reports === undefined ? 'none' : 'admin';
 		} catch {
 			if (access === 'checking') access = 'none';
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
@@ -88,7 +71,7 @@
 	async function openAdmins() {
 		adminsOpen = true;
 		try {
-			admins = await listAdmins(key);
+			admins = await listAdmins();
 		} catch {
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
 		}
@@ -98,35 +81,17 @@
 		try {
 			noAccount = (await change()) === false;
 			if (!noAccount) newAdmin = '';
-			admins = await listAdmins(key);
+			admins = await listAdmins();
 		} catch {
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
 		}
-	}
-
-	function useKey(event: Event) {
-		event.preventDefault();
-		if (!typed.trim()) return;
-		key = typed.trim();
-		typed = '';
-		wrongKey = false;
-		// Storage blocked: the key lasts for this visit.
-		writeStoredText(KEY_STORAGE, key);
-		void load();
-	}
-
-	function forget() {
-		key = '';
-		reports = undefined;
-		access = 'none';
-		writeStoredText(KEY_STORAGE, undefined);
 	}
 
 	async function changeStatus(report: Report, status: ReportStatus) {
 		const before = report.status;
 		report.status = status;
 		try {
-			await setReportStatus(key, report.id, status);
+			await setReportStatus(report.id, status);
 		} catch {
 			report.status = before;
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
@@ -135,7 +100,7 @@
 
 	async function remove(report: Report) {
 		try {
-			await deleteReport(key, report.id);
+			await deleteReport(report.id);
 			reports = reports?.filter((r) => r.id !== report.id);
 			dialogOpen = false;
 		} catch {
@@ -144,7 +109,7 @@
 	}
 </script>
 
-<!-- Refresh, Admins, Forget key and the status filter are always there, disabled until the
+<!-- Refresh, Admins and the status filter are always there, disabled until the
      inbox opens, so nothing moves when the list appears. -->
 <Page title={t('reports.inbox')}>
 	{#snippet actions()}
@@ -155,9 +120,6 @@
 			onclick={load}
 		/>
 		<Button variant="quiet" disabled={!allowed} onclick={openAdmins}>{t('reports.admins')}</Button>
-		<Button variant="quiet" disabled={access !== 'key'} onclick={forget}
-			>{t('reports.forgetKey')}</Button
-		>
 	{/snippet}
 	{#snippet toolbar()}
 		<Select
@@ -172,17 +134,7 @@
 	{#if access === 'checking'}
 		<p class="none" aria-busy="true">{t('reports.checking')}</p>
 	{:else if access === 'none'}
-		<form class="key" bind:this={keyForm} onsubmit={useKey}>
-			<TextField
-				label={wrongKey ? t('reports.wrongKey') : t('reports.adminKey')}
-				bind:value={typed}
-				type="password"
-				oncommit={() => {
-					keyForm?.requestSubmit();
-					return false;
-				}}
-			/>
-		</form>
+		<p class="none">{t('reports.adminsOnly')}</p>
 	{:else}
 		<ul class="list" aria-busy={reports === undefined} data-testid="reports">
 			{#each shown as report (report.id)}
@@ -252,7 +204,7 @@
 				<span>{email}</span>
 				<DeleteButton
 					label={t('reports.removeAdmin', { email })}
-					onclick={() => changeAdmins(() => removeAdmin(key, id))}
+					onclick={() => changeAdmins(() => removeAdmin(id))}
 				/>
 			</li>
 		{:else}
@@ -266,7 +218,7 @@
 		bind:value={newAdmin}
 		oncommit={() => {
 			const email = newAdmin.trim();
-			if (email) void changeAdmins(() => addAdmin(key, email));
+			if (email) void changeAdmins(() => addAdmin(email));
 			return false;
 		}}
 	/>

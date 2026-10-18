@@ -35,9 +35,9 @@ export default defineConfig({
 	webServer: {
 		// SHARE_LIMITS:off: every test shares one address, so a full run would trip the
 		// share-code rate limits (worker/share.ts) and make share tests flaky.
-		// REPORTS_ADMIN_KEY: a test key, so the /reports inbox can be read (worker/reports.ts).
+		// ADMIN_EMAILS: an account that is an admin from the start, as one added in the database.
 		// ADMINS_TRUST_PREVIEW_SIGN_IN: admin accounts count although local sign-in shows its code.
-		command: `npm run build && npx wrangler dev --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off --var REPORTS_ADMIN_KEY:e2e-admin-key --var ADMINS_TRUST_PREVIEW_SIGN_IN:on`,
+		command: `npm run build && npx wrangler dev --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off --var ADMIN_EMAILS:first-admin@example.com --var ADMINS_TRUST_PREVIEW_SIGN_IN:on`,
 		url: `http://localhost:${PORT}/api/health`,
 		reuseExistingServer: !process.env.CI,
 		timeout: 180_000

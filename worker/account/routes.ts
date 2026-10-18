@@ -107,7 +107,7 @@ async function signIn(
 		{
 			user: signedIn?.user ?? null,
 			delivery: emailSender(env, url).delivery,
-			admin: await isAdmin(env, url, userId)
+			admin: signedIn ? await isAdmin(env, url, { userId, email: signedIn.user.email }) : false
 		} satisfies SessionInfo,
 		200,
 		{ 'Set-Cookie': signedInCookie(cookie, remember) }
@@ -403,7 +403,9 @@ export async function handleAccount(
 			{
 				user: auth?.user ?? null,
 				delivery: emailSender(env, url).delivery,
-				admin: auth ? await isAdmin(env, url, auth.userId) : false
+				admin: auth
+					? await isAdmin(env, url, { userId: auth.userId, email: auth.user.email })
+					: false
 			} satisfies SessionInfo,
 			200,
 			// A live session's cookie is renewed, so it ends after 180 days unused (not 180 days

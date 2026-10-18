@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 
+/** An admin from the start (playwright.config.ts), as the first one added in the database. */
+const FIRST_ADMIN = 'first-admin@example.com';
+
 async function signIn(page: Page, email: string) {
 	await page.goto('/account');
 	await page.getByLabel('Email address').fill(email);
@@ -34,17 +37,14 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await expect(form.getByTestId('report-sent')).toHaveText(/^Sent as report #\d+\.$/);
 	await form.getByRole('button', { name: 'Close' }).last().tap();
 
-	// The inbox needs the admin key, kept on this device.
+	// The inbox is for admins only. There is no key to type.
 	await page.goto('/reports');
-	// The title row's buttons and the filter are there before the key, disabled, so nothing moves.
+	await expect(page.getByText('Only admins can read reports.')).toBeVisible();
+	// The title row's buttons and the filter are there, disabled, so nothing moves.
 	await expect(page.getByRole('button', { name: 'Refresh' })).toBeDisabled();
-	await expect(page.getByRole('button', { name: 'Forget key' })).toBeDisabled();
-	const key = page.getByLabel('Admin key');
-	await key.fill('wrong');
-	await key.press('Enter');
-	await expect(page.getByLabel('Wrong key')).toBeVisible();
-	await page.getByLabel('Wrong key').fill('e2e-admin-key');
-	await page.getByLabel('Wrong key').press('Enter');
+	await expect(page.getByRole('button', { name: 'Admins' })).toBeDisabled();
+	await signIn(page, FIRST_ADMIN);
+	await page.goto('/reports');
 
 	const row = page.getByTestId('reports').getByRole('button', { name: new RegExp(title) });
 	await expect(row).toContainText('Enhancement request');
@@ -61,7 +61,7 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await page.getByRole('option', { name: 'Accepted', exact: true }).tap();
 	await expect(row).toBeVisible();
 
-	// The key is remembered; delete confirms first.
+	// Delete confirms first.
 	await page.reload();
 	await page.getByRole('combobox', { name: 'Status' }).tap();
 	await page.getByRole('option', { name: 'All', exact: true }).tap();
@@ -71,22 +71,21 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await expect(row).toBeHidden();
 });
 
-test('reading reports without the key is refused', async ({ request }) => {
+test('reading reports signed out is refused', async ({ request }) => {
 	expect((await request.get('/api/reports')).status()).toBe(404);
 	const bad = await request.post('/api/reports', { data: { kind: 'spam', title: 'x', body: 'y' } });
 	expect(bad.status()).toBe(400);
 });
 
-test('an admin account opens the inbox without the key; the key holder names admins', async ({
+test('an admin names another admin, whose account then opens the inbox', async ({
 	page,
 	browser
 }) => {
 	const email = `admin-${Date.now()}@example.com`;
-	// The key holder adds the first admin from the Admins list. Only an existing account can
-	// be named: admins are stored by account id, so the email can change later.
+	// An admin adds another from the Admins list. Only an existing account can be named:
+	// admins are stored by account id, so the email can change later.
+	await signIn(page, FIRST_ADMIN);
 	await page.goto('/reports');
-	await page.getByLabel('Admin key').fill('e2e-admin-key');
-	await page.getByLabel('Admin key').press('Enter');
 	await page.getByRole('button', { name: 'Admins' }).tap();
 	const admins = page.getByRole('dialog', { name: 'Admins' });
 	await admins.getByLabel('Add an admin by sign-in email').fill(email);
@@ -111,17 +110,15 @@ test('an admin account opens the inbox without the key; the key holder names adm
 	await phone.getByRole('dialog', { name: APP_NAME }).getByRole('link', { name: 'Reports' }).tap();
 	await expect(phone).toHaveURL(/\/reports$/);
 
-	// Now their account opens the inbox with no key prompt.
+	// Now their account opens the inbox.
 	await phone.goto('/reports');
 	await expect(phone.getByTestId('reports')).toBeVisible();
-	await expect(phone.getByLabel('Admin key')).toBeHidden();
-	await expect(phone.getByRole('button', { name: 'Forget key' })).toBeDisabled();
 
 	// Removing the admin closes the inbox to that account again.
 	await admins.getByRole('button', { name: `Remove admin ${email}` }).tap();
 	await expect(admins.getByTestId('admins')).not.toContainText(email);
 	await phone.reload();
-	await expect(phone.getByLabel('Admin key')).toBeVisible();
+	await expect(phone.getByText('Only admins can read reports.')).toBeVisible();
 	await other.close();
 });
 

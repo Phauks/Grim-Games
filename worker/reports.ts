@@ -14,19 +14,13 @@ import {
 	type ReportStatus
 } from '../src/lib/features/reports/reports-protocol.ts';
 import { normaliseEmail } from '../src/lib/features/account/account-protocol.ts';
-import { sameHash, sha256 } from './account/crypto.ts';
 import { userStub, type AccountEnv } from './account/objects.ts';
 import { getUser } from './account/routes.ts';
-import { adminSignInTrusted, type AdminsEnv } from './admins.ts';
+import { isAdmin, type AdminsEnv } from './admins.ts';
 
 export interface ReportsEnv extends AccountEnv, AdminsEnv {
 	/** Per-address limit on sending, against floods (wrangler.jsonc). */
 	REPORT_CREATES: RateLimit;
-	/**
-	 * Worker secret Trevor sets in Cloudflare. It opens the inbox and lets its holder name the
-	 * first admin accounts; after that admins sign in instead. Unset: only admin accounts.
-	 */
-	REPORTS_ADMIN_KEY?: string;
 	/** "off" only in the local e2e server, like SHARE_LIMITS. */
 	SHARE_LIMITS?: string;
 }
@@ -172,23 +166,17 @@ function text(message: string, status: number): Response {
 	return new Response(message, { status, headers: noStore });
 }
 
-async function holdsKey(request: Request, env: ReportsEnv): Promise<boolean> {
-	const key = env.REPORTS_ADMIN_KEY;
-	const given = request.headers.get('Authorization')?.match(/^Bearer (.+)$/)?.[1];
-	if (!key || !given) return false;
-	return sameHash(await sha256(given), await sha256(key));
-}
-
 /** The signed-in account, when its sign-in can be trusted and it is an admin. */
 async function adminAccount(
 	request: Request,
 	env: ReportsEnv,
-	url: URL,
-	box: DurableObjectStub<ReportBox>
+	url: URL
 ): Promise<string | undefined> {
-	if (!adminSignInTrusted(env, url)) return undefined;
 	const auth = await getUser(request, env);
-	return auth && (await box.isAdmin(auth.userId)) ? auth.userId : undefined;
+	if (!auth) return undefined;
+	return (await isAdmin(env, url, { userId: auth.userId, email: auth.user.email }))
+		? auth.userId
+		: undefined;
 }
 
 /** Each admin with the account's current email; accounts deleted since are dropped. */
@@ -238,11 +226,10 @@ export async function handleReports(
 		return Response.json({ id } satisfies CreatedReport, { status: 201, headers: noStore });
 	}
 
-	// Reading and triage: an admin account, or the key. Answers 404 otherwise, so the routes
-	// don't advertise themselves.
-	const viaKey = await holdsKey(request, env);
-	if (!viaKey && !(await adminAccount(request, env, url, box))) return text('Not found', 404);
-	if (!viaKey && request.method !== 'GET' && !fromApp(request, url)) {
+	// Reading and triage: an admin account only. Answers 404 otherwise, so the routes don't
+	// advertise themselves.
+	if (!(await adminAccount(request, env, url))) return text('Not found', 404);
+	if (request.method !== 'GET' && !fromApp(request, url)) {
 		return text('This request must come from the app', 403);
 	}
 
