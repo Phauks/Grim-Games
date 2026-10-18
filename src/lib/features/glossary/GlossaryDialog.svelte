@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { GLOSSARY, glossaryEntryUrl, GLOSSARY_URL } from '#lib/core/rules/glossary.ts';
 	import ContentsLayout, {
@@ -7,6 +6,7 @@
 	} from '#lib/features/characters/ContentsLayout.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import { glossaryDialog } from './glossary-dialog.svelte.ts';
 	import { glossaryKey } from './wiki-glossary.ts';
 	import { glossaryPopover } from './glossary-popover.svelte.ts';
@@ -62,18 +62,11 @@
 		onBack={() => (glossaryDialog.key = undefined)}
 	>
 		{#snippet navTop()}
-			<label class="search">
-				<span class="visually-hidden">{t('glossary.search')}</span>
-				<Icon name="search" />
-				<ClearableField bind:value={search}>
-					<input
-						type="search"
-						placeholder={t('glossary.searchPlaceholder')}
-						autocomplete="off"
-						bind:value={search}
-					/>
-				</ClearableField>
-			</label>
+			<SearchField
+				bind:value={search}
+				label={t('glossary.search')}
+				placeholder={t('glossary.searchPlaceholder')}
+			/>
 		{/snippet}
 		{#if name}
 			<section class="entry" aria-label={name} data-testid="glossary-entry">
@@ -120,45 +113,6 @@
 	}
 	.muted {
 		color: var(--on-surface-muted);
-	}
-	.search {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: var(--card-border);
-		border-radius: var(--radius-full);
-		background: var(--card-background);
-		color: var(--on-surface-muted);
-	}
-	/* One focus mark, on the field's own rounded border, drawn inside so nothing clips it;
-	   the input's ring is off (Trevor, 2026-10-16: no double halo). */
-	.search:focus-within {
-		border-color: var(--focus);
-		box-shadow: inset 0 0 0 calc(0.0625 * var(--u)) var(--focus);
-	}
-	.search input:focus-visible {
-		outline: none;
-	}
-	input {
-		flex: 1;
-		min-width: 0;
-		min-height: var(--tap-target);
-		border: 0;
-		outline: none;
-		background: none;
-		color: var(--on-surface);
-		font: inherit;
-		font-size: max(1rem, 16px); /* px-ok: 16px or more stops iOS zooming into the field */
-	}
-	.visually-hidden {
-		position: absolute;
-		width: 1px; /* px-ok: visually hidden */
-		height: 1px; /* px-ok: visually hidden */
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 	.wiki {
 		display: grid;

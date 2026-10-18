@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { copyText } from '#lib/ui/clipboard.ts';
 	import { MODE_PARTS, runsPart, type GameMode, type ModePart } from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
@@ -34,11 +35,8 @@
 	const file = $derived(JSON.stringify(mode, null, '\t'));
 
 	async function copy() {
-		try {
-			await navigator.clipboard.writeText(file);
-		} catch {
-			// Clipboard blocked: the file is still shown to select by hand.
-		}
+		// Clipboard blocked: the file is still shown to select by hand.
+		await copyText(file);
 	}
 </script>
 

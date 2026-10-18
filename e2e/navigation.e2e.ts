@@ -23,6 +23,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Search',
 		'Library',
 		'Script builder',
+		'Character builder',
 		'Player view',
 		'Character reference',
 		'Info tokens',
@@ -50,6 +51,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Search',
 		'Library',
 		'Script builder',
+		'Character builder',
 		'Info tokens',
 		'Character reference'
 	]);

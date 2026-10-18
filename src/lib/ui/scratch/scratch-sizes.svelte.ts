@@ -3,16 +3,12 @@
  * missing or throw; then the sizes last until reload.
  */
 import { parseSizes, type ScratchTool } from '#lib/core/scratch/scratch.ts';
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 const KEY = 'grim-games:scratch-sizes';
 
 function read(): Record<ScratchTool, number> {
-	try {
-		const raw = globalThis.localStorage?.getItem(KEY);
-		return parseSizes(raw ? JSON.parse(raw) : undefined);
-	} catch {
-		return parseSizes(undefined);
-	}
+	return parseSizes(readStored(KEY));
 }
 
 /** Slider steps per tool (1 to SIZE_STEPS), shared by every scratch pad. */
@@ -20,9 +16,6 @@ export const scratchSizes = $state(read());
 
 export function setScratchSize(tool: ScratchTool, step: number) {
 	scratchSizes[tool] = step;
-	try {
-		globalThis.localStorage?.setItem(KEY, JSON.stringify(scratchSizes));
-	} catch {
-		/* kept until reload */
-	}
+	// If storage is blocked, kept until reload.
+	writeStored(KEY, scratchSizes);
 }

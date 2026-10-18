@@ -32,6 +32,7 @@ export const ICON_SLOTS = {
 	players: { label: 'Players', choices: ['ph:users-three', 'ph:users'] },
 	script: { label: 'Script', choices: ['ph:scroll', 'ph:book-open'] },
 	buildScript: { label: 'Script builder', choices: ['ph:hammer', 'ph:wrench'] },
+	buildCharacter: { label: 'Character builder', choices: ['ph:user-gear', 'ph:user-plus'] },
 	download: { label: 'Download', choices: ['ph:download-simple', 'ph:file-arrow-down'] },
 	open: { label: 'Open', choices: ['ph:folder-open', 'ph:folder'] },
 	notes: { label: 'Notes', choices: ['ph:note-pencil', 'ph:notepad', 'ph:feather'] },

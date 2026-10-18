@@ -1,7 +1,7 @@
 <script lang="ts">
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { accountApi } from './account-api.ts';
 	import { account } from './account.svelte.ts';
 	import { CODE_LENGTH, normaliseCode, normaliseEmail } from './account-protocol.ts';
@@ -20,6 +20,14 @@
 	let previewCode = $state<string | undefined>(undefined);
 	let error = $state('');
 	let busy = $state(false);
+	let emailForm = $state<HTMLFormElement>();
+	let codeForm = $state<HTMLFormElement>();
+
+	/** Enter submits the form, as it did before (the browser checks `required` first). */
+	function submitOnEnter(form: HTMLFormElement | undefined): false {
+		form?.requestSubmit();
+		return false;
+	}
 
 	/** The preview line, split around the code so the code can be bold. */
 	const previewLine = $derived.by(() => {
@@ -79,21 +87,18 @@
 
 <div class="sign-in">
 	{#if step === 'email'}
-		<form onsubmit={send}>
-			<label class="field">
-				<span>{t('account.signIn.email')}</span>
-				<ClearableField bind:value={email} disabled={unavailable || busy} class="email">
-					<input
-						type="email"
-						inputmode="email"
-						autocomplete="email"
-						enterkeyhint="send"
-						required
-						disabled={unavailable || busy}
-						bind:value={email}
-					/>
-				</ClearableField>
-			</label>
+		<form class="email" bind:this={emailForm} onsubmit={send}>
+			<TextField
+				label={t('account.signIn.email')}
+				bind:value={email}
+				type="email"
+				inputmode="email"
+				autocomplete="email"
+				enterkeyhint="send"
+				required
+				disabled={unavailable || busy}
+				oncommit={() => submitOnEnter(emailForm)}
+			/>
 			<p class="note">
 				{unavailable
 					? t('account.signIn.unavailable')
@@ -106,22 +111,17 @@
 			</div>
 		</form>
 	{:else}
-		<form onsubmit={verify}>
-			<label class="field">
-				<span>{t('account.signIn.codeSentTo', { email: sentTo })}</span>
-				<ClearableField bind:value={code} disabled={busy} class="code">
-					<input
-						type="text"
-						inputmode="numeric"
-						autocomplete="one-time-code"
-						enterkeyhint="done"
-						maxlength={CODE_LENGTH + 2}
-						required
-						disabled={busy}
-						bind:value={code}
-					/>
-				</ClearableField>
-			</label>
+		<form class="code" bind:this={codeForm} onsubmit={verify}>
+			<TextField
+				label={t('account.signIn.codeSentTo', { email: sentTo })}
+				bind:value={code}
+				inputmode="numeric"
+				autocomplete="one-time-code"
+				maxlength={CODE_LENGTH + 2}
+				required
+				disabled={busy}
+				oncommit={() => submitOnEnter(codeForm)}
+			/>
 			<p class="note" data-testid="preview-code">
 				{#if previewLine}
 					{previewLine.before}<strong>{previewCode}</strong>{previewLine.after}
@@ -153,36 +153,20 @@
 		display: grid;
 		gap: var(--space-2);
 	}
-	.field {
-		display: grid;
-		gap: var(--space-1);
-	}
-	.field span {
+	/* The address can be long and unbroken. */
+	form :global(.text-field > span) {
 		overflow-wrap: anywhere;
 	}
-	.field input {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
-	}
 	/* Full width on a phone; on a computer, sized to what goes in them. */
-	.field :global(.clearable.email) {
+	.email :global(.clearable) {
 		max-width: 28rem;
 	}
-	.field :global(.clearable.code) {
+	.code :global(.clearable) {
 		max-width: 12rem;
 	}
-	.field input[inputmode='numeric'] {
+	.code :global(input) {
 		letter-spacing: 0.3em;
 		font-variant-numeric: tabular-nums;
-	}
-	.field input:disabled {
-		opacity: 0.6;
 	}
 	/* Two lines reserved, so the two steps and their notes keep the same height. */
 	.note {

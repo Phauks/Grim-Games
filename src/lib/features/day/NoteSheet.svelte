@@ -7,6 +7,7 @@
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import type { DayPort } from './day-port.ts';
 
 	export interface NoteTarget {
@@ -97,10 +98,7 @@
 			save();
 		}}
 	>
-		<label class="field">
-			<span>{t('day.note')}</span>
-			<textarea bind:value={text} rows="6" data-testid="note-text"></textarea>
-		</label>
+		<TextField label={t('day.note')} bind:value={text} multiline rows={6} testid="note-text" />
 
 		{#if juggler}
 			<fieldset class="guesses">
@@ -131,23 +129,6 @@
 		display: grid;
 		gap: var(--space-4);
 	}
-	.field {
-		display: grid;
-		gap: var(--space-1);
-		font-weight: 600;
-	}
-	textarea {
-		width: 100%;
-		min-height: calc(9 * var(--u));
-		padding: var(--space-3);
-		border: 1px solid var(--on-sheet-muted);
-		border-radius: var(--radius-md);
-		background: transparent;
-		color: inherit;
-		font: inherit;
-		font-weight: 400;
-		resize: vertical;
-	}
 	.guesses {
 		display: grid;
 		gap: var(--space-2);
@@ -155,11 +136,8 @@
 		padding: 0;
 		border: 0;
 	}
-	.field > span,
 	legend {
 		font-family: var(--font-control);
-	}
-	legend {
 		margin-bottom: var(--space-2);
 		font-weight: 600;
 	}

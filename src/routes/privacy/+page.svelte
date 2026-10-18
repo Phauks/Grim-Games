@@ -31,8 +31,8 @@
 			<li>
 				Your settings and screen choices, such as theme, fonts, text size, language, column widths
 				and how you last viewed the <a href={resolve('/reference')}>Reference</a> page; your Library tags
-				and folders; a script you are building; your custom info tokens; the player names you have used;
-				and setup in progress (localStorage).
+				and folders; a script you are building; the characters you make and one you are building; your
+				custom info tokens; the player names you have used; and setup in progress (localStorage).
 			</li>
 			<li>
 				A log of up to 20 recent problems the app ran into: the error, where in the app and on which

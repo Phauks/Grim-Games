@@ -10,7 +10,7 @@
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -225,10 +225,16 @@
 {/snippet}
 
 <Dialog bind:open={pasteOpen} title={t('scripts.paste.title')}>
-	<label class="field">
-		<span>{t('scripts.paste.label')}</span>
-		<textarea bind:value={pasteText} rows="8" spellcheck="false" autocomplete="off"></textarea>
-	</label>
+	<div class="field">
+		<TextField
+			label={t('scripts.paste.label')}
+			bind:value={pasteText}
+			multiline
+			rows={8}
+			spellcheck={false}
+			autocomplete="off"
+		/>
+	</div>
 	{@render errorLine()}
 	{#snippet actions()}
 		<ModalActions
@@ -246,18 +252,15 @@
 </Dialog>
 
 <Dialog bind:open={linkOpen} title={t('scripts.link.title')}>
-	<label class="field">
-		<span>{t('scripts.link.label')}</span>
-		<ClearableField bind:value={linkText}>
-			<input
-				type="url"
-				inputmode="url"
-				autocomplete="off"
-				placeholder="https://"
-				bind:value={linkText}
-			/>
-		</ClearableField>
-	</label>
+	<div class="field">
+		<TextField
+			label={t('scripts.link.label')}
+			bind:value={linkText}
+			type="url"
+			inputmode="url"
+			placeholder="https://"
+		/>
+	</div>
 	{@render errorLine()}
 	{#snippet actions()}
 		<!-- Open site is always there, enabled once a site refuses to share its file (no reflow). -->
@@ -330,24 +333,7 @@
 		pointer-events: none;
 	}
 	.field {
-		display: grid;
-		gap: var(--space-1);
 		margin: var(--space-3) 0 0;
-	}
-	.field input,
-	.field textarea {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
-	}
-	.field textarea {
-		resize: vertical;
-		font-size: max(0.9rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	/* Room for three lines is always reserved, so an error never moves the buttons. */
 	.error {

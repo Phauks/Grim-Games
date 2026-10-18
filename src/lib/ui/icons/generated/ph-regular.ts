@@ -164,6 +164,7 @@ import ph_umbrella from '~icons/ph/umbrella';
 import ph_upload_simple from '~icons/ph/upload-simple';
 import ph_user from '~icons/ph/user';
 import ph_user_circle from '~icons/ph/user-circle';
+import ph_user_gear from '~icons/ph/user-gear';
 import ph_user_plus from '~icons/ph/user-plus';
 import ph_user_switch from '~icons/ph/user-switch';
 import ph_users from '~icons/ph/users';
@@ -342,6 +343,7 @@ const icons: IconMap = {
 	'ph:upload-simple': ph_upload_simple,
 	'ph:user': ph_user,
 	'ph:user-circle': ph_user_circle,
+	'ph:user-gear': ph_user_gear,
 	'ph:user-plus': ph_user_plus,
 	'ph:user-switch': ph_user_switch,
 	'ph:users': ph_users,

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import { CHARACTER_TYPES, type Character } from '#lib/core/data/types.ts';
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import {
@@ -10,6 +9,7 @@
 	} from '#lib/core/rules/reference-table.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import FieldValue from './FieldValue.svelte';
 	import {
@@ -136,21 +136,15 @@
 {#snippet filter(column: DataColumn<FieldId>, close: () => void)}
 	{@const f = field(column.id)}
 	{#if f.filter === 'text'}
-		<ClearableField
-			value={table.filters.name ?? ''}
-			onclear={() => referenceTable.setFilter('name', '')}
-		>
-			<input
-				class="text"
-				type="search"
-				aria-label="Filter {f.label}"
-				placeholder="Filter"
-				enterkeyhint="done"
+		<div class="text">
+			<SearchField
+				label={t('reference.columnFilter', { column: f.label })}
+				placeholder={t('reference.filterPlaceholder')}
 				value={table.filters.name ?? ''}
-				oninput={(e) => referenceTable.setFilter('name', e.currentTarget.value)}
-				onkeydown={(e) => e.key === 'Enter' && close()}
+				oninput={(v) => referenceTable.setFilter('name', v)}
+				oncommit={() => (close(), false)}
 			/>
-		</ClearableField>
+		</div>
 	{:else if f.filter === 'types'}
 		<fieldset>
 			<legend class="visually-hidden">Character types</legend>
@@ -258,18 +252,7 @@
 		height: calc(1.25 * var(--u));
 	}
 	.text {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
 		margin-top: var(--space-2);
-		padding: 0 var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		color: var(--on-surface);
-		font: inherit;
-		/* 16px or more stops iOS zooming into the field. */
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	.actions {
 		display: flex;

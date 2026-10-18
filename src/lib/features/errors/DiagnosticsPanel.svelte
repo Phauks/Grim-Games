@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { copyText } from '#lib/ui/clipboard.ts';
+	import { downloadFile } from '#lib/ui/download.ts';
 	import { onMount } from 'svelte';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { diagnosticsFileName, diagnosticsText } from './diagnostics.ts';
 	import { diagnosticsView, refreshDiagnostics } from './diagnostics-view.svelte.ts';
 	import { errorLog } from './report.svelte.ts';
@@ -19,22 +20,15 @@
 	onMount(refreshDiagnostics);
 
 	async function copy() {
-		try {
-			await navigator.clipboard.writeText(text);
-			toast(t('errors.copied'), t('errors.diag.copiedDetail'));
-		} catch {
-			toast(t('errors.copyFailed'), t('errors.copyFailedDetail'));
-		}
+		await copyText(text, {
+			copied: [t('errors.copied'), t('errors.diag.copiedDetail')],
+			failed: [t('errors.copyFailed'), t('errors.copyFailedDetail')]
+		});
 	}
 
 	function download() {
 		if (!diagnostics) return;
-		const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = diagnosticsFileName(diagnostics.gatheredAt);
-		a.click();
-		setTimeout(() => URL.revokeObjectURL(url), 1000);
+		downloadFile(diagnosticsFileName(diagnostics.gatheredAt), text, 'text/plain');
 	}
 </script>
 

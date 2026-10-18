@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -54,18 +54,12 @@
 
 <div class="filter" data-testid="botc-filter-{column}">
 	{#if column === 'author'}
-		<label class="field">
-			<span>{t('scripts.botc.author')}</span>
-			<ClearableField bind:value={filters.author}>
-				<input
-					type="text"
-					autocomplete="off"
-					enterkeyhint="search"
-					bind:value={filters.author}
-					onkeydown={(e) => e.key === 'Enter' && close()}
-				/>
-			</ClearableField>
-		</label>
+		<TextField
+			label={t('scripts.botc.author')}
+			bind:value={filters.author}
+			enterkeyhint="search"
+			oncommit={close}
+		/>
 	{:else if column === 'kind'}
 		<fieldset>
 			<legend class="visually-hidden">{t('scripts.botc.scriptType')}</legend>
@@ -151,20 +145,6 @@
 	h3 {
 		margin: 0 0 var(--space-1);
 		font-size: 1rem;
-	}
-	.field {
-		display: grid;
-		gap: var(--space-1);
-	}
-	.field input {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: var(--card-border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
 	.check {
 		display: flex;

@@ -9,6 +9,7 @@ export * from './setup.ts';
 export * from './jinxes.ts';
 export * from './script-facts.ts';
 export * from './script-builder.ts';
+export * from './character-builder.ts';
 export * from './prevented-deaths.ts';
 export * from './teensyville.ts';
 export * from './night-order.ts';

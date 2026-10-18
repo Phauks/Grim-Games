@@ -17,7 +17,8 @@ import {
 	type ServerMessage
 } from '#lib/core/sync/room.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
-import { randomKey, readStored, RoomSocket, sha256Hex, writeStored } from './room-socket.svelte.ts';
+import { readStored, writeStored } from '#lib/ui/stored.ts';
+import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 
 const STORAGE_KEY = 'grim-games-room-host';
 
