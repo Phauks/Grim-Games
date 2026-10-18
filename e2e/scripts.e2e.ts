@@ -935,3 +935,67 @@ test('the BOTC HomeBrew Wiki is a source: each script loads when opened and link
 	expect(asked).toEqual(['stone-and-salt']);
 	await noSidewaysScroll(page);
 });
+
+test('the results table headers never overlap, even on a phone', async ({ page }) => {
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name: 'Storm Front',
+						version: '1.0.0',
+						author: 'Trevor',
+						type: 'Full',
+						score: 5,
+						characters: [{ id: 'chef' }, { id: 'imp' }]
+					}
+				]
+			}
+		})
+	);
+	await page.goto('/scripts');
+	await expect(page.getByRole('button', { name: /^Storm Front/ })).toBeVisible();
+	// Every sort and filter button in the header row: inside its own column, clear of the rest.
+	const problems = await page.locator('thead').evaluate((head) => {
+		const boxes = [...head.querySelectorAll('button')]
+			.map((button) => ({
+				name: button.getAttribute('aria-label') ?? button.textContent?.trim() ?? '',
+				box: button.getBoundingClientRect(),
+				cell: button.closest('th')!.getBoundingClientRect()
+			}))
+			.filter(({ box }) => box.width > 0);
+		const found: string[] = [];
+		const slack = 0.5;
+		for (const button of head.querySelectorAll('button')) {
+			// A squeezed button spills its label and arrows under its neighbour.
+			if (button.scrollWidth > button.clientWidth + 1) {
+				found.push(
+					`${button.getAttribute('aria-label') ?? button.textContent?.trim()} spills over`
+				);
+			}
+		}
+		for (const { name, box, cell } of boxes) {
+			if (box.left < cell.left - slack || box.right > cell.right + slack) {
+				found.push(`${name} leaves its column`);
+			}
+		}
+		boxes.forEach((a, i) =>
+			boxes.slice(i + 1).forEach((b) => {
+				const apart =
+					a.box.right <= b.box.left + slack ||
+					b.box.right <= a.box.left + slack ||
+					a.box.bottom <= b.box.top + slack ||
+					b.box.bottom <= a.box.top + slack;
+				if (!apart) found.push(`${a.name} overlaps ${b.name}`);
+			})
+		);
+		return found;
+	});
+	expect(problems).toEqual([]);
+	await noSidewaysScroll(page);
+});

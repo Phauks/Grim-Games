@@ -42,9 +42,24 @@ describe('reminderGroups', () => {
 		// Trouble Brewing lists the Drunk (an Outsider) before the Poisoner (a Minion).
 		expect(ids.indexOf('drunk')).toBeLessThan(ids.indexOf('poisoner'));
 		expect(groups.find((g) => g.character.id === 'poisoner')?.labels).toEqual(['Poisoned']);
-		// The Drunk is never in the bag, so a player may secretly be it at any time.
+		// Tokens given out by hand: any player may secretly be the Drunk.
 		expect(groups.find((g) => g.character.id === 'drunk')?.labels).toEqual(['Is The Drunk']);
 		expect(groups.some((g) => g.character.id === 'washerwoman')).toBe(false);
+	});
+	// https://wiki.bloodontheclocktower.com/Drunk : the Drunk's player is shown a Townsfolk, so
+	// the Drunk is in play only when the Storyteller chose it (Trevor, 2026-10-18: "Is The
+	// Drunk" was offered before the bag was set up).
+	it('offers no Drunk on an empty board, or when the bag has none', () => {
+		const created = createGame({ type: 'CreateGame', script, playerCount: 5 }, ctx);
+		if (!created.ok) throw new Error();
+		const empty = created.session.game;
+		const has = (g: typeof empty) =>
+			reminderGroups(g, characters).some((x) => x.character.id === 'drunk');
+		expect(has(empty)).toBe(false);
+		const bag = { tiles: {}, order: [], includeTravellers: false };
+		expect(has({ ...game(), bag })).toBe(false);
+		const drunk = { characterId: 'drunk', label: 'Is The Drunk' } as const;
+		expect(has({ ...empty, bag: { ...bag, unseated: [drunk] } })).toBe(true);
 	});
 	// Trevor (2026-10-16): Catfishing offered "Is The Philosopher" with no Philosopher in play.
 	// https://wiki.bloodontheclocktower.com/Philosopher : the reminder marks a Philosopher who

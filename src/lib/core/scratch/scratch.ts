@@ -142,6 +142,50 @@ export function fitScale(strokes: readonly ScratchStroke[], width: number, heigh
 	return Math.min(width / right, bottom > 0 ? height / bottom : Infinity);
 }
 
+/** The area the ink covers, in pad units, or undefined for a blank pad. */
+export interface InkBounds {
+	left: number;
+	top: number;
+	right: number;
+	bottom: number;
+}
+
+export function inkBounds(strokes: readonly ScratchStroke[]): InkBounds | undefined {
+	let bounds: InkBounds | undefined;
+	for (const stroke of strokes) {
+		if (stroke.tool !== 'pen') continue;
+		const edge = stroke.size;
+		for (let i = 0; i < stroke.points.length; i += 3) {
+			const [x, y] = [stroke.points[i], stroke.points[i + 1]];
+			bounds = {
+				left: Math.min(bounds?.left ?? Infinity, x - edge),
+				top: Math.min(bounds?.top ?? Infinity, y - edge),
+				right: Math.max(bounds?.right ?? -Infinity, x + edge),
+				bottom: Math.max(bounds?.bottom ?? -Infinity, y + edge)
+			};
+		}
+	}
+	return bounds;
+}
+
+/**
+ * Where to draw a pad in a preview `width` x `height` pixels: the ink as large as fits,
+ * centred, so a preview of any shape shows the drawing and no empty paper beside it. Never
+ * larger than the pad's own full-width size, so a small mark stays small.
+ */
+export function previewFit(strokes: readonly ScratchStroke[], width: number, height: number) {
+	const bounds = inkBounds(strokes);
+	if (!bounds) return { scale: width, x: 0, y: 0 };
+	const w = bounds.right - bounds.left;
+	const h = bounds.bottom - bounds.top;
+	const scale = Math.min(width, width / w, height / h);
+	return {
+		scale,
+		x: (width - w * scale) / 2 - bounds.left * scale,
+		y: (height - h * scale) / 2 - bounds.top * scale
+	};
+}
+
 /** The strokes on the pad plus the ones undone, which Redo brings back. */
 export interface ScratchHistory {
 	strokes: readonly ScratchStroke[];

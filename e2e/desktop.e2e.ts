@@ -12,10 +12,10 @@ test.describe('on a computer (mouse, wide window)', () => {
 
 	test('a sheet opens as a centred panel with a Close button', async ({ page }) => {
 		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
-		await page.goto('/play#e=tb');
-		await page.getByRole('tab', { name: 'Notes' }).click();
-		await page.getByRole('button', { name: /^Untitled/ }).click();
-		const sheet = page.getByRole('dialog', { name: 'Note' });
+		// The info-token sheet stands in for every bottom sheet (notes open full screen now).
+		await page.goto('/spikes/info-tokens');
+		await page.getByRole('button', { name: 'Info tokens', exact: true }).click();
+		const sheet = page.getByRole('dialog', { name: 'Info tokens' });
 		await expect(sheet).toBeVisible();
 		await page.waitForTimeout(400);
 		const box = await sheet.boundingBox();
@@ -42,10 +42,9 @@ test.describe('on a computer (mouse, wide window)', () => {
 test('on a touch screen the sheet still slides up from the bottom, with no Close button', async ({
 	page
 }) => {
-	await page.goto('/play#e=tb');
-	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await page.getByRole('button', { name: /^Untitled/ }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Note' });
+	await page.goto('/spikes/info-tokens');
+	await page.getByRole('button', { name: 'Info tokens', exact: true }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Info tokens' });
 	await expect(sheet).toBeVisible();
 	await page.waitForTimeout(600);
 	await expect(sheet.getByRole('button', { name: 'Close' })).toBeHidden();

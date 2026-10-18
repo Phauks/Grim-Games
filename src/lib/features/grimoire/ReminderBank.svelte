@@ -226,7 +226,10 @@
 		if (item.setup) {
 			shown = item.setup;
 			shownOpen = true;
-			onHints({ seats: seatsFor(item) });
+			onHints({
+				seats: seatsFor(item),
+				reminder: { characterId: item.characterId, label: item.label }
+			});
 		} else {
 			choosing = item;
 			chooserOpen = true;

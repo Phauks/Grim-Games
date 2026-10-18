@@ -5,7 +5,7 @@
  */
 import type { Character, CharacterId } from '#lib/core/data/index.ts';
 import { gainedAbilities, type Night } from '#lib/core/rules/index.ts';
-import { isBagDisabled } from '#lib/core/rules/bag-characters.ts';
+import { isBagDisabled, isNotDealt } from '#lib/core/rules/bag-characters.ts';
 import { REMINDER_PLACEHOLDERS } from '#lib/core/rules/reminder-placeholders.data.ts';
 import {
 	charactersInPlay,
@@ -31,11 +31,13 @@ function unique(labels: readonly string[]): string[] {
  * Reminder groups for a game: only characters in play offer reminders. In play means a
  * token on a seat, a seat's true character (the Drunk, Marionette, Philosopher or Alchemist
  * marked by its "Is The …" reminder), the Fabled and Loric, and an ability a seat has
- * gained (the Pixie's Townsfolk). Characters never in the bag (TPI's `bag-disabled`: the
- * Drunk, Marionette and Lil' Monsta) can be in play with no token of their own, so their
- * global reminders ("Is The Drunk") are offered whenever they are on the script. Others only
- * on the script offer nothing (Trevor, 2026-10-16: Catfishing offered "Is The Philosopher"
- * with no Philosopher in play).
+ * gained (the Pixie's Townsfolk). A character never dealt to anyone (Lil' Monsta) is in play
+ * with no token of its own, so its global reminders are offered whenever it is on the script.
+ * Others only on the script offer nothing (Trevor, 2026-10-16: Catfishing offered "Is The
+ * Philosopher" with no Philosopher in play). The Drunk and Marionette are in play once the
+ * bag holds them, or a seat is one; with tokens given out by hand and no bag, once a seat
+ * has a token. Never on an empty board (Trevor, 2026-10-18: "Is The Drunk" was offered
+ * before the bag was set up).
  */
 export function reminderGroups(game: Game, characters: CharacterLookup): ReminderGroup[] {
 	const inPlay = [
@@ -47,9 +49,20 @@ export function reminderGroups(game: Game, characters: CharacterLookup): Reminde
 		])
 	];
 	const script = scriptCharacterIds(game.script);
+	const bag = game.bag;
+	const inBag = new Set(
+		bag
+			? [
+					...Object.values(bag.tiles).flatMap((t) => t.reminders.map((r) => r.characterId)),
+					...(bag.unseated ?? []).map((r) => r.characterId)
+				]
+			: []
+	);
+	const byHand = !bag && charactersInPlay(game).length > 0;
 	const onScript = script.filter((id) => {
 		const character = characters.get(id);
-		return !inPlay.includes(id) && character !== undefined && isBagDisabled(character);
+		if (inPlay.includes(id) || character === undefined || !isBagDisabled(character)) return false;
+		return isNotDealt(character) || inBag.has(id) || byHand;
 	});
 	const groups: ReminderGroup[] = [];
 	for (const id of [...inPlay, ...onScript]) {

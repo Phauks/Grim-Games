@@ -3,6 +3,8 @@ import {
 	addPoint,
 	commitStroke,
 	fitScale,
+	inkBounds,
+	previewFit,
 	emptyPad,
 	isBlank,
 	migratePad,
@@ -160,5 +162,31 @@ describe('migratePad', () => {
 		const v3 = { ...emptyPad(5), title: 'Day 2', paper: 'white', locked: true, hidden: true };
 		expect(migratePad(v3)).toEqual(v3);
 		expect(migratePad({ ...v3, paper: 'neon' })?.paper).toBe('leather');
+	});
+});
+
+describe('previewFit', () => {
+	it('is blank-safe', () => {
+		expect(inkBounds([])).toBeUndefined();
+		expect(previewFit([], 300, 60)).toEqual({ scale: 300, x: 0, y: 0 });
+	});
+
+	it('centres a tall drawing in a wide preview, with no empty paper to one side only', () => {
+		// A box drawn on a portrait phone pad, shown in a wide, short list row.
+		const box = pen([0.1, 0.1, 0.5, 0.9, 0.1, 0.5, 0.9, 1.6, 0.5, 0.1, 1.6, 0.5]);
+		const { scale, x, y } = previewFit([box], 300, 60);
+		const b = inkBounds([box])!;
+		expect((b.bottom - b.top) * scale).toBeCloseTo(60);
+		const left = b.left * scale + x;
+		const right = 300 - (b.right * scale + x);
+		expect(left).toBeCloseTo(right);
+		expect(b.top * scale + y).toBeCloseTo(0);
+	});
+
+	it('fills a wide preview with a wide drawing, but never enlarges past full width', () => {
+		const line = pen([0, 0.5, 0.5, 1, 0.5, 0.5]);
+		expect(previewFit([line], 300, 60).scale).toBeCloseTo(300 / (1 + 0.016));
+		const dot = pen([0.5, 0.5, 0.5]);
+		expect(previewFit([dot], 300, 60).scale).toBe(300);
 	});
 });

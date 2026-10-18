@@ -89,11 +89,12 @@
 		label={last ? 'Start the day' : 'Next step'}
 		onclick={next}
 	/>
-	<!-- In the top corner (Trevor, 2026-10-16), so Previous and Next own the sides. -->
+	<!-- In the top corner (Trevor, 2026-10-16), so Previous and Next own the sides. The step
+	     reminders setting is behind ⋯, the app's icon for more choices (Trevor, 2026-10-18). -->
 	<span class="corner">
 		<span bind:this={focusButton}
 			><IconButton
-				icon="filter"
+				icon="more"
 				label="Step reminders"
 				onclick={() => (focusOpen = !focusOpen)}
 			/></span
