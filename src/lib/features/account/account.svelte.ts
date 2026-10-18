@@ -64,6 +64,10 @@ export const account = {
 		generation++;
 		apply({ user: null, delivery: delivery ?? 'unavailable' });
 	},
+	/** After the user's email or username changed: the same account, new details. */
+	updated(next: AccountUser): void {
+		if (user?.id === next.id) user = next;
+	},
 	/** After the account was deleted. */
 	forget(): void {
 		generation++;
