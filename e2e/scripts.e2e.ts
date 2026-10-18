@@ -244,7 +244,7 @@ test('a link the browser may not read explains how to paste instead', async ({ p
 	await addScript(page);
 	const dialog = page.getByRole('dialog', { name: 'Add script' });
 	const load = dialog.getByRole('button', { name: 'Confirm' });
-	await dialog.getByLabel('Link to the script').fill('https://scripts.example/blocked.json');
+	await dialog.getByLabel('Link to the JSON').fill('https://scripts.example/blocked.json');
 	await expect(dialog.getByRole('button', { name: 'Open link' })).toBeDisabled();
 	const before = await load.boundingBox();
 	await load.tap();
@@ -253,7 +253,7 @@ test('a link the browser may not read explains how to paste instead', async ({ p
 	// The error line is reserved, so the button does not move.
 	expect(await load.boundingBox()).toEqual(before);
 	// Open link sits inside the link's own field, just before its X (Trevor, 2026-10-18).
-	const field = (await dialog.getByLabel('Link to the script').boundingBox())!;
+	const field = (await dialog.getByLabel('Link to the JSON').boundingBox())!;
 	const open = (await dialog.getByRole('button', { name: 'Open link' }).boundingBox())!;
 	const clear = (await dialog.getByRole('button', { name: 'Clear' }).boundingBox())!;
 	for (const button of [open, clear]) {
@@ -264,7 +264,7 @@ test('a link the browser may not read explains how to paste instead', async ({ p
 	expect(open.x + open.width).toBeLessThanOrEqual(clear.x + 1);
 	// The text stops before both buttons.
 	const padding = await dialog
-		.getByLabel('Link to the script')
+		.getByLabel('Link to the JSON')
 		.evaluate((input) => parseFloat(getComputedStyle(input).paddingInlineEnd));
 	expect(field.x + field.width - padding).toBeLessThanOrEqual(open.x + 1);
 	// It opens the site in a new tab (that site is unreachable here, so only the tab is seen).
@@ -288,7 +288,7 @@ test('a saved script is shared by QR code and link, with no code to type', async
 	// Codes are only for joining a game (Trevor, 2026-10-16).
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	const add = page.getByRole('dialog', { name: 'Add script' });
-	await expect(add.getByLabel('Link to the script')).toBeVisible();
+	await expect(add.getByLabel('Link to the JSON')).toBeVisible();
 	await expect(add.getByLabel('Script JSON')).toBeVisible();
 	await expect(add.getByRole('button', { name: 'Upload File', exact: true })).toBeVisible();
 	await expect(add.getByRole('button', { name: 'Code' })).toHaveCount(0);
@@ -653,7 +653,7 @@ test('a Script Tool link is read from the link itself, with no request', async (
 	});
 	await addScript(page);
 	const dialog = page.getByRole('dialog', { name: 'Add script' });
-	await dialog.getByLabel('Link to the script').fill(scriptToolLink(teensy));
+	await dialog.getByLabel('Link to the JSON').fill(scriptToolLink(teensy));
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
 	expect(requests).toEqual([]);
@@ -1018,7 +1018,7 @@ test('Add script is one dialog: the link and the JSON take turns, and the layout
 }) => {
 	await addScript(page);
 	const dialog = page.getByRole('dialog', { name: 'Add script' });
-	const link = dialog.getByLabel('Link to the script');
+	const link = dialog.getByLabel('Link to the JSON');
 	const json = dialog.getByLabel('Script JSON');
 	const confirm = dialog.getByRole('button', { name: 'Confirm' });
 	await expect(confirm).toBeDisabled();
