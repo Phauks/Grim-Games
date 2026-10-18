@@ -43,4 +43,13 @@
 		 */
 		padding: 0 var(--space-1) var(--space-1);
 	}
+	/*
+	 * Phones: the day takes most of the dialog's side padding back, so long character names
+	 * (Investigator, Fortune Teller) fit on one line in the player tiles (Trevor, 2026-10-18).
+	 */
+	@media (max-width: 40rem) {
+		.body {
+			margin-inline: calc(-1 * var(--space-3));
+		}
+	}
 </style>

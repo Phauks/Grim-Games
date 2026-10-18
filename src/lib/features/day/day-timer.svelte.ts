@@ -1,6 +1,6 @@
 import { dayTimers } from '#lib/core/rules/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
-import { playTimerSound, unlockTimerSound } from './timer-sound.ts';
+import { playTimerSound, unlockTimerSound, vibrateTimer } from './timer-sound.ts';
 
 const { adjust, dayTimer, elapsed, isFresh, isOver, isRunning, pause, remaining, shown, start } =
 	dayTimers;
@@ -99,7 +99,7 @@ class LiveDayTimer {
 		}
 		if (!this.#signalled) {
 			this.#signalled = true;
-			navigator.vibrate?.([300, 150, 300, 150, 300]);
+			if (preferences.current.timerVibrate) vibrateTimer();
 			playTimerSound(preferences.current.timerSound);
 		}
 	}

@@ -532,7 +532,7 @@ test("setup opens the players' join code and QR", async ({ page }) => {
 	await selectionFor(page, 5);
 	await page.getByRole('button', { name: "Players' phones" }).tap();
 	const dialog = page.getByRole('dialog', { name: "Players' phones" });
-	await expect(dialog.getByTestId('room-code')).toHaveText(/\d/);
+	await expect(dialog.getByTestId('share-code')).toHaveText(/\d/);
 	await expect(dialog.getByRole('img', { name: /QR/i })).toBeVisible();
 });
 

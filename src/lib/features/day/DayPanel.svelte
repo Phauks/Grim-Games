@@ -93,6 +93,17 @@
 	}
 
 	const causeSeatDead = $derived(causeSeat ? g.seats[causeSeat]?.dead === true : false);
+	const causeGhostVoteUsed = $derived(
+		causeSeat ? g.seats[causeSeat]?.ghostVoteUsed === true : false
+	);
+
+	/** Marks the tapped dead player's ghost vote used, or gives it back (Trevor, 2026-10-18). */
+	function toggleCauseGhostVote() {
+		const seatId = causeSeat;
+		causeOpen = false;
+		if (!seatId) return;
+		game.run({ type: causeGhostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote', seatId });
+	}
 
 	// ── Confirming a change: what it is now, and what it will be ──
 	// TPI's reminder token text (game data, not interface text).
@@ -301,13 +312,9 @@
 	const teams = $derived(livingByTeam(g));
 	const ghostVotes = $derived(ghostVotesLeft(g));
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
-	let toolbarHeight = $state(0);
-
-	/** One tap gives a dead player's ghost vote back or marks it used (Trevor, 2026-10-17). */
-	function toggleGhostVote(seatId: SeatId) {
-		const used = g.seats[seatId].ghostVoteUsed === true;
-		game.run({ type: used ? 'RestoreGhostVote' : 'SpendGhostVote', seatId });
-	}
+	let toolbarSize = $state<ResizeObserverSize[]>();
+	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
+	const toolbarHeight = $derived(toolbarSize?.[0]?.blockSize ?? 0);
 
 	/**
 	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
@@ -364,7 +371,7 @@
 
 <div class="panel" style:--toolbar-height={`${toolbarHeight}px`}>
 	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
-	<div class="toolbar" data-testid="day-toolbar" bind:offsetHeight={toolbarHeight}>
+	<div class="toolbar" data-testid="day-toolbar" bind:borderBoxSize={toolbarSize}>
 		<DayTimer alive={block.alive} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
@@ -484,51 +491,38 @@
 	</Collapsible>
 
 	<Collapsible title={t('day.players')} storageKey="day.players">
-		<p class="prompt">{t('day.tapPlayer')}</p>
 		<div class="seats">
 			{#each seats as seat (seat.seatId)}
 				{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
 				{@const icon = character && iconUrl(character, seat.alignment)}
-				{@const ghost = registersAsDead(g, seat.seatId)}
-				<div class="seat-tile">
-					<button
-						type="button"
-						class="seat"
-						aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
-						data-dead={seat.dead}
-						onclick={() => tapSeat(seat.seatId)}
+				{@const ghost = registersAsDead(g, seat.seatId) && !seat.ghostVoteUsed}
+				<button
+					type="button"
+					class="seat"
+					aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
+					data-dead={seat.dead}
+					onclick={() => tapSeat(seat.seatId)}
+				>
+					<!-- Icon two lines tall, character name above, player name below (Trevor). -->
+					<span class="seat-icon" aria-hidden="true"
+						><span class="face"
+							>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
+						><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span><span
+							class="ghost-mark"
+							data-testid="ghost-mark"
+							data-shown={ghost}
+							title={t('day.hasGhostVote')}><Icon name="ghostVote" /></span
+						></span
 					>
-						<!-- Icon two lines tall, character name above, player name below (Trevor). -->
-						<span class="seat-icon" aria-hidden="true"
-							><span class="face"
-								>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
-							><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span></span
+					<span class="seat-text">
+						<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
+						<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
+							>{character?.name ?? t('day.noCharacter')}</span
 						>
-						<span class="seat-text">
-							<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
-							<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
-								>{character?.name ?? t('day.noCharacter')}</span
-							>
-							<!-- eslint-enable grim/names-as-badges -->
-							<span class="seat-player">{game.seatName(seat.seatId)}</span>
-						</span>
-					</button>
-					<!--
-					The ghost vote, beside each dead player (Trevor, 2026-10-17): filled while they
-					still have it. Laid out for the living too, so a death moves nothing.
-				-->
-					<button
-						type="button"
-						class="chip ghost"
-						data-testid="ghost-vote"
-						aria-pressed={ghost ? !seat.ghostVoteUsed : undefined}
-						aria-label={t('day.ghostVoteToggle', { name: game.seatName(seat.seatId) })}
-						aria-hidden={ghost ? undefined : 'true'}
-						tabindex={ghost ? undefined : -1}
-						disabled={!ghost}
-						onclick={() => toggleGhostVote(seat.seatId)}><Icon name="ghostVote" /></button
-					>
-				</div>
+						<!-- eslint-enable grim/names-as-badges -->
+						<span class="seat-player">{game.seatName(seat.seatId)}</span>
+					</span>
+				</button>
 			{/each}
 		</div>
 		{#if hasFlowergirl}
@@ -620,42 +614,45 @@
 		{#each prevented as p (p.reminderId)}
 			{@const target = g.seats[p.seatId]}
 			<li>
-				<span class="sentence">
-					<CharacterBadge
-						characterId={p.killer}
-						alignment={p.killerSeats[0] ? g.seats[p.killerSeats[0]].alignment : undefined}
-						playerName={p.killerSeats[0] ? game.seatName(p.killerSeats[0]) : undefined}
-					/>
-					<span>{t('day.preventedChose')}</span>
-					{#if target.characterId}
-						<CharacterBadge
-							characterId={target.characterId}
-							alignment={target.alignment}
-							playerName={game.seatName(p.seatId)}
-						/>
-					{:else}
-						<span>{game.seatName(p.seatId)}</span>
-					{/if}
-				</span>
-				<ul class="because">
-					{#each p.because as because, i (i)}
-						{#if because.kind === 'protected' && because.source === 'override'}
-							<li>{t('day.preventedOverride')}</li>
+				<!-- Laid out like a jinx, as every row of the day (Trevor, 2026-10-18). -->
+				<CharacterEntry
+					characterId={p.killer}
+					alignment={p.killerSeats[0] ? g.seats[p.killerSeats[0]].alignment : undefined}
+					playerName={p.killerSeats[0] ? game.seatName(p.killerSeats[0]) : undefined}
+				>
+					<span class="sentence">
+						<span>{t('day.preventedChose')}</span>
+						{#if target.characterId}
+							<CharacterBadge
+								characterId={target.characterId}
+								alignment={target.alignment}
+								playerName={game.seatName(p.seatId)}
+							/>
+						{:else}
+							<span>{game.seatName(p.seatId)}</span>
 						{/if}
-						{#each blockers(because) as b (b.characterId)}
-							<li data-character={b.characterId}>
-								<CharacterBadge
-									characterId={b.characterId}
-									alignment={b.seatId ? g.seats[b.seatId].alignment : undefined}
-									playerName={b.seatId ? game.seatName(b.seatId) : undefined}
-								/>
-								{@render ability(b.characterId)}
-							</li>
+					</span>
+					<ul class="because">
+						{#each p.because as because, i (i)}
+							{#if because.kind === 'protected' && because.source === 'override'}
+								<li>{t('day.preventedOverride')}</li>
+							{/if}
+							{#each blockers(because) as b (b.characterId)}
+								<li data-character={b.characterId}>
+									<CharacterEntry
+										characterId={b.characterId}
+										alignment={b.seatId ? g.seats[b.seatId].alignment : undefined}
+										playerName={b.seatId ? game.seatName(b.seatId) : undefined}
+									>
+										{@render ability(b.characterId)}
+									</CharacterEntry>
+								</li>
+							{/each}
+						{:else}
+							<li>{t('day.preventedNoReason')}</li>
 						{/each}
-					{:else}
-						<li>{t('day.preventedNoReason')}</li>
-					{/each}
-				</ul>
+					</ul>
+				</CharacterEntry>
 			</li>
 		{/each}
 	</ul>
@@ -664,12 +661,16 @@
 <BottomSheet
 	bind:open={causeOpen}
 	title={causeSeatDead
-		? t('day.markAliveTitle', { name: game.seatName(causeSeat) })
+		? t('day.deadPlayerTitle', { name: game.seatName(causeSeat) })
 		: t('day.howDied', { name: game.seatName(causeSeat) })}
 >
 	<div class="causes">
 		{#if causeSeatDead}
 			<Button onclick={markAlive}>{t('day.markAlive')}</Button>
+			<!-- The ghost vote, one tap away (Trevor, 2026-10-18). -->
+			<Button icon="ghostVote" onclick={toggleCauseGhostVote}
+				>{causeGhostVoteUsed ? t('day.restoreGhostVote') : t('day.spendGhostVote')}</Button
+			>
 		{:else}
 			{#each causes as option (option.cause)}
 				{@const caution = causeCaution(option)}
@@ -740,14 +741,10 @@
 		padding-block: var(--space-1);
 		background: var(--dialog-background, var(--surface));
 	}
-	.prompt {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
 	.seats {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(10 * var(--u))), 1fr));
-		gap: var(--space-2);
+		gap: var(--space-1);
 		touch-action: manipulation;
 	}
 	.seat {
@@ -758,7 +755,7 @@
 		align-items: center;
 		gap: var(--space-2);
 		min-height: var(--tap-target);
-		padding: var(--space-1) var(--space-2);
+		padding: var(--space-1);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
@@ -852,23 +849,28 @@
 	/* While a section scrolls, its header stays just under the toolbar (Trevor, 2026-10-17). */
 	.panel > :global(.collapsible > .head) {
 		position: sticky;
-		top: var(--toolbar-height, 0);
+		/* Tucked 1px under the toolbar, so no scrolled content shows between them (Trevor). */
+		top: calc(var(--toolbar-height, 0px) - 1px); /* px-ok: hairline overlap */
 		z-index: 1;
 		background: var(--dialog-background, var(--surface));
 	}
-	.seat-tile {
+	/* The ghost vote still to use, on the icon's upper rim, as the board shows it. */
+	.ghost-mark {
+		position: absolute;
+		right: -10%;
+		top: -6%;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: stretch;
-		gap: var(--space-1);
-		min-width: 0;
-	}
-	.ghost {
-		padding: 0;
-		justify-content: center;
-	}
-	.ghost:disabled {
+		place-items: center;
+		width: 45%;
+		height: 45%;
+		border-radius: 50%;
+		background: var(--dialog-background);
+		color: var(--on-surface);
 		visibility: hidden;
+		--icon-size: calc(0.6 * var(--u) * var(--character-icon-scale, 1));
+	}
+	.ghost-mark[data-shown='true'] {
+		visibility: visible;
 	}
 	.sentence {
 		font-family: var(--font-ability);
@@ -996,10 +998,8 @@
 		margin: 0;
 		padding: 0;
 		display: grid;
-		gap: var(--space-3);
 	}
 	.because {
-		padding-inline-start: var(--space-4);
-		margin-block-start: var(--space-2);
+		margin-block-start: var(--space-1);
 	}
 </style>

@@ -56,6 +56,7 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/glossary/',
 	'src/lib/ui/token/',
 	'src/lib/ui/scratch/',
+	'src/lib/ui/share/',
 	'src/lib/features/library/',
 	'src/routes/library/'
 ];

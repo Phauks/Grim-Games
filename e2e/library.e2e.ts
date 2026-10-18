@@ -214,6 +214,38 @@ test('a script shows the same details as in Search, and plays from there', async
 	await expect(page).toHaveURL(/\/new$/);
 });
 
+test('a long script scrolls to its end in the Library', async ({ page }) => {
+	// Trevor (2026-10-18): "While viewing script in library, cannot scroll."
+	await page.goto('/library');
+	const long = [
+		{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
+		...['washerwoman', 'librarian', 'investigator', 'chef', 'empath', 'fortuneteller'],
+		...['undertaker', 'monk', 'ravenkeeper', 'virgin', 'slayer', 'soldier', 'mayor'],
+		...['butler', 'drunk', 'recluse', 'saint', 'poisoner', 'spy', 'scarletwoman', 'baron', 'imp']
+	];
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(JSON.stringify(long))
+	});
+	const script = page.getByRole('dialog', { name: 'Storm Front' });
+	await expect(script.getByTestId('script-sheet')).toContainText('Imp');
+	const scroller = script.getByTestId('library-script-scroll');
+	expect(
+		await scroller.evaluate((el) => el.scrollHeight > el.clientHeight),
+		'the script is longer than the dialog'
+	).toBe(true);
+	await scroller.hover();
+	await page.mouse.wheel(0, 20000);
+	await expect
+		.poll(() => scroller.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 2))
+		.toBe(true);
+	await expect(
+		script.getByTestId('script-sheet').getByText('Imp', { exact: true }).last()
+	).toBeInViewport();
+	await noSidewaysScroll(page);
+});
+
 test('a script made in the Script builder opens there from the Library', async ({ page }) => {
 	await page.goto('/build-script');
 	await page.getByRole('textbox', { name: 'Name' }).fill('Built here');
@@ -302,14 +334,17 @@ test('a saved BotC Scripts script still offers its other versions', async ({ pag
 	await tile(page, 'Storm Front').tap();
 	const script = page.getByRole('dialog', { name: 'Storm Front' });
 	const save = script.getByRole('button', { name: 'Save', exact: true });
-	await expect(save).toHaveAttribute('aria-pressed', 'true');
+	const remove = script.getByRole('button', { name: 'Remove script' });
+	// One place for Save and Remove: only the one that applies is there (Trevor, 2026-10-18).
+	await expect(save).toHaveCount(0);
+	await expect(remove).toBeEnabled();
 	await expect(script.getByTestId('newer-version').getByRole('button')).toHaveText('Newer: 1.1.0');
 	await script.getByRole('combobox', { name: 'Version' }).tap();
 	await page.getByRole('option', { name: /^1\.1\.0/ }).tap();
 	await expect(script.getByTestId('script-sheet')).toContainText('Mayor');
-	// Only a preview until saved: the Library still holds 1.0.0, and Remove waits.
-	await expect(save).toHaveAttribute('aria-pressed', 'false');
-	await expect(script.getByRole('button', { name: 'Remove script' })).toBeDisabled();
+	// Only a preview until saved: the Library still holds 1.0.0, so Save takes Remove's place.
+	await expect(save).toBeVisible();
+	await expect(remove).toHaveCount(0);
 	await script.getByRole('button', { name: 'Close' }).tap();
 	await expect(tile(page, 'Storm Front')).toHaveCount(1);
 
@@ -318,7 +353,8 @@ test('a saved BotC Scripts script still offers its other versions', async ({ pag
 	await script.getByRole('combobox', { name: 'Version' }).tap();
 	await page.getByRole('option', { name: /^1\.1\.0/ }).tap();
 	await save.tap();
-	await expect(save).toHaveAttribute('aria-pressed', 'true');
+	await expect(remove).toBeVisible();
+	await expect(save).toHaveCount(0);
 	await script.getByRole('button', { name: 'Close' }).tap();
 	await expect(tile(page, 'Storm Front')).toHaveCount(2);
 });

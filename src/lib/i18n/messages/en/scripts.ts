@@ -147,14 +147,8 @@ export const scripts = {
 	'scripts.share.button.script': 'Share script',
 	'scripts.share.title': 'Share {title}',
 	'scripts.share.qr': 'QR code for {title}',
-	'scripts.share.tooLong': 'Too long for a QR code. Copy the link or use Share.',
 	'scripts.share.failed': 'The link could not be made.',
 	'scripts.share.making': 'Making the link…',
-	'scripts.share.link': 'Link',
-	'scripts.share.copy': 'Copy link',
-	'scripts.share.share': 'Share',
-	'scripts.share.copyFailed': 'Could not copy the link',
-	'scripts.share.copyFailedHint': 'Use the QR code instead.',
 
 	// Loading errors
 	'scripts.error.tooLarge': 'This file is too large to be a script.',

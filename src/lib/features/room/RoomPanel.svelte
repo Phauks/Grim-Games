@@ -7,10 +7,8 @@
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import QrCode from '#lib/ui/primitives/QrCode.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import { roomHost } from './host.svelte.ts';
 
 	interface Props {
@@ -81,25 +79,6 @@
 	const message = $derived(
 		host.code ? t('room.shareText', { code: formatRoomCode(host.code) }) : ''
 	);
-	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
-
-	async function copy() {
-		try {
-			await navigator.clipboard.writeText(`${message}\n${link}`);
-			toast(t('room.linkCopied'));
-		} catch {
-			toast(t('room.copyFailed'), t('room.copyFailedHint'));
-		}
-	}
-
-	async function share() {
-		try {
-			await navigator.share({ title: t('room.title'), text: message, url: link });
-		} catch (e) {
-			// Closing the share sheet is not a failure.
-			if (!(e instanceof DOMException && e.name === 'AbortError')) await copy();
-		}
-	}
 
 	function approve(request: RoomRequest) {
 		const seatId = seatFor(request);
@@ -113,34 +92,32 @@
 -->
 <!-- Laid out the same before the room opens, so the code and QR arrive without a reflow. -->
 <div class="layout">
-	<section class="join" aria-labelledby="room-code-label">
-		<h2 id="room-code-label">{t('room.joinCode')}</h2>
-		<p class="code" data-testid="room-code">
-			{host.code ? formatRoomCode(host.code) : '··· ···'}
-		</p>
-		<div class="qr">
-			{#if host.code}
-				<QrCode value={link} label={t('room.qrLabel')} />
-			{:else}
-				<div class="qr-space" aria-busy={host.opening}></div>
-			{/if}
-		</div>
-		<p class="link">{link}</p>
-		<div class="row">
-			{#if host.code}
-				{#if canShare}
-					<IconButton icon="share" label={t('room.share')} onclick={share} />
+	<section class="join">
+		<SharePanel
+			url={link || undefined}
+			title={t('room.title')}
+			qrLabel={t('room.qrLabel')}
+			pending={host.problem ? t('room.openFailed') : t('room.openingRoom')}
+			code={{ label: t('room.joinCode'), value: host.code && formatRoomCode(host.code) }}
+			text={message || undefined}
+		>
+			{#snippet actions()}
+				{#if host.code}
+					<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
+						{t('room.close')}
+					</Button>
+				{:else}
+					<Button
+						variant="accent"
+						icon="players"
+						onclick={() => host.open()}
+						disabled={host.opening}
+					>
+						{t('room.open')}
+					</Button>
 				{/if}
-				<IconButton icon="copy" label={t('room.copyLink')} onclick={copy} />
-				<Button variant="quiet" icon="close" onclick={() => (closeOpen = true)}>
-					{t('room.close')}
-				</Button>
-			{:else}
-				<Button variant="accent" icon="players" onclick={() => host.open()} disabled={host.opening}>
-					{t('room.open')}
-				</Button>
-			{/if}
-		</div>
+			{/snippet}
+		</SharePanel>
 		<p class="status" role="status" data-status={host.status}>{statusText}</p>
 	</section>
 
@@ -265,38 +242,13 @@
 			grid-template-columns: minmax(16rem, 22rem) 1fr;
 		}
 	}
-	.code {
-		margin: 0;
-		font-family: var(--font-heading);
-		font-size: 2.6rem;
-		letter-spacing: 0.08em;
-		font-variant-numeric: tabular-nums;
-	}
-	.qr {
-		width: min(100%, 16rem);
-	}
-	/* The QR's own size and face, held while the room opens. */
-	.qr-space {
-		width: 100%;
-		aspect-ratio: 1;
-		border-radius: var(--radius-md);
-		background: var(--token-face);
-	}
-	.link,
-	.status {
-		min-height: 1.4em;
-	}
-	.link {
-		margin: 0;
-		overflow-wrap: anywhere;
-		color: var(--on-surface-muted);
-	}
 	.row {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2);
 	}
 	.status {
+		min-height: 1.4em;
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
