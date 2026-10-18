@@ -166,10 +166,5 @@ export const setup = {
 	'setup.reveal.alignment': 'Alignment',
 	'setup.reveal.good': 'Good',
 	'setup.reveal.evil': 'Evil',
-	'setup.reveal.reveal': 'Reveal',
-
-	'setup.open.loading': 'Opening the game…',
-	'setup.open.missing': 'There is no saved game here on this device.',
-	'setup.open.tooNew':
-		'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.'
+	'setup.reveal.reveal': 'Reveal'
 } as const;
