@@ -1552,7 +1552,11 @@
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			<ScriptCopy script={loadedScript} players={game.seating.length} />
+			<ScriptCopy
+				script={loadedScript}
+				players={game.seating.length}
+				inPlay={charactersInPlay(game)}
+			/>
 		{/if}
 	</div>
 </Dialog>

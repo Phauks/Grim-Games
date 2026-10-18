@@ -119,9 +119,8 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 	await expect(jinxes).toHaveAttribute('aria-expanded', 'true');
 	await jinxes.tap();
 	await expect(page.getByTestId('no-jinxes')).toBeHidden();
-	// The * legend explains ability text, so it stays when Players closes (Trevor).
-	await panel.getByRole('button', { name: 'Players', exact: true }).tap();
-	await expect(page.getByText('* Not the first night')).toBeVisible();
+	// No "* Not the first night" footnote (Trevor, 2026-10-18).
+	await expect(page.getByText('Not the first night')).toHaveCount(0);
 	await panel.getByRole('button', { name: 'Townsfolk', exact: true }).tap();
 	await expect(empath).toBeHidden();
 	await page.reload();

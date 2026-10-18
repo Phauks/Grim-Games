@@ -1713,7 +1713,17 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await expect(sheet.locator('[data-character="empath"]')).toContainText(
 		'Each night, you learn how many of your 2 alive neighbors'
 	);
-	await expect(sheet.getByTestId('no-jinxes')).toHaveText('None');
+	// In a game, Travellers and Jinxes start closed while none of theirs is in play
+	// (Trevor, 2026-10-18); the header still opens them.
+	const travellers = sheet.getByRole('button', { name: 'Recommended Travellers' });
+	await expect(travellers).toHaveAttribute('aria-expanded', 'false');
+	await expect(sheet.getByRole('button', { name: 'Jinxes' })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
+	await expect(sheet.getByTestId('no-jinxes')).toBeHidden();
+	await travellers.tap();
+	await expect(sheet.locator('[data-character="gunslinger"]')).toBeVisible();
 	// It scrolls to the end (Trevor, 2026-10-16: it couldn't be scrolled).
 	const scroller = sheet.getByTestId('script-scroll');
 	const box = (await scroller.boundingBox())!;

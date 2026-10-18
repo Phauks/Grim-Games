@@ -12,7 +12,6 @@ export const player = {
 	'player.cannotSaveDetail': 'Notes are lost when the page closes.',
 
 	'player.recommendedTravellers': 'Recommended Travellers',
-	'player.notFirstNight': '* Not the first night',
 	'player.jinxes': 'Jinxes',
 	'player.chooseScript': 'Choose a script',
 	'player.findScript': 'Find a script',
