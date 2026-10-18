@@ -17,7 +17,6 @@
 		type StorageItem,
 		type StorageItemId
 	} from '../data/storage-items.ts';
-	import ResetSection from './ResetSection.svelte';
 
 	type Column = 'select' | 'item' | 'size';
 
@@ -165,8 +164,6 @@
 		</dl>
 	{/snippet}
 </SettingRow>
-
-<ResetSection />
 
 <ConfirmDialog
 	bind:open={confirmOpen}

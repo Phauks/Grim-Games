@@ -16,7 +16,10 @@
 		type TokenAppearance,
 		type TokenColour
 	} from '#lib/ui/token/token-appearance.ts';
-	import SettingPreview from '#lib/ui/settings/SettingPreview.svelte';
+	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
+	import CharacterBadge from './CharacterBadge.svelte';
+	import ReminderToken from './ReminderToken.svelte';
+	import type { Snippet } from 'svelte';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 	import CharacterToken from './CharacterToken.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
@@ -30,9 +33,11 @@
 		value: TokenAppearance;
 		theme: Theme;
 		onChange: (value: TokenAppearance) => void;
+		/** More settings for names and reminders in text, shown in that group's box. */
+		inText?: Snippet;
 	}
 
-	let { value, theme, onChange }: Props = $props();
+	let { value, theme, onChange, inText }: Props = $props();
 
 	onMount(() => void loadOfficialData());
 	const sample = $derived(officialData.current?.byId.get('fortuneteller'));
@@ -58,6 +63,10 @@
 		Math.round(Math.max(30, Math.min(48, tokenSize * 0.5)) * value.reminderScale)
 	);
 
+	const largestReminder = $derived(
+		Math.round(Math.max(30, Math.min(48, largest * 0.5)) * TOKEN_SCALE.max)
+	);
+
 	function setColour(key: TokenColour, colour: string | undefined) {
 		const colours = { ...value.colours };
 		if (colour) colours[key] = colour;
@@ -71,60 +80,29 @@
 		});
 </script>
 
-<!-- The section's shared sticky preview (Trevor, 2026-10-17). Space for the largest sizes is
-     kept, so changing a size never moves the settings below. -->
-<SettingPreview testid="token-preview">
-	<div class="preview" aria-hidden="true" style:--sample="{largest}px">
-		{#if sample}<span class="disc" style:--name-scale={boardLooks.current.nameSize}
-				><CharacterToken
-					character={sample}
-					size={tokenSize}
-					showName={value.boardNames}
-					nightNumbers={sampleNumbers}
-				/><PlayerNameMark name={t('characters.previewPlayer')} /></span
-			>{/if}
-		{#if sample}<BoardReminder
-				label={sample.reminders[0] ?? t('characters.previewReminder')}
-				character={sample}
-				size={reminderSize}
-				disabled
-				onTap={() => {}}
-			/>{/if}
-	</div>
-</SettingPreview>
-
-<SettingSlider
-	label={t('characters.tokenSize')}
-	description={t('characters.tokenSizeHelp')}
-	value={value.tokenScale}
-	{...TOKEN_SCALE}
-	defaultValue={1}
-	onChange={(tokenScale) => onChange({ ...value, tokenScale })}
-/>
-<SettingSlider
-	label={t('characters.reminderSize')}
-	description={t('characters.reminderSizeHelp')}
-	value={value.reminderScale}
-	{...TOKEN_SCALE}
-	defaultValue={1}
-	onChange={(reminderScale) => onChange({ ...value, reminderScale })}
-/>
-<SettingSlider
-	label={t('characters.reminderLabelWidth')}
-	description={t('characters.reminderLabelWidthHelp')}
-	value={value.reminderLabelWidth}
-	{...REMINDER_LABEL_WIDTH}
-	defaultValue={1.5}
-	onChange={(reminderLabelWidth) => onChange({ ...value, reminderLabelWidth })}
-/>
-<SettingToggle
-	label={t('characters.reminderLabelWrap')}
-	description={t('characters.reminderLabelWrapHelp')}
-	checked={value.reminderLabelWrap}
-	onChange={(reminderLabelWrap) => onChange({ ...value, reminderLabelWrap })}
-/>
-
-<div class="names">
+<!-- One box per kind of token, each with its own preview (Trevor, 2026-10-18). Space for the
+     largest sizes is kept in each preview, so changing a size never moves the settings. -->
+<SettingGroup title={t('characters.group.token')} testid="token-preview">
+	{#snippet preview()}
+		<div class="preview token-sample" style:--sample="{largest}px">
+			{#if sample}<span class="disc" style:--name-scale={boardLooks.current.nameSize}
+					><CharacterToken
+						character={sample}
+						size={tokenSize}
+						showName={value.boardNames}
+						nightNumbers={sampleNumbers}
+					/><PlayerNameMark name={t('characters.previewPlayer')} /></span
+				>{/if}
+		</div>
+	{/snippet}
+	<SettingSlider
+		label={t('characters.tokenSize')}
+		description={t('characters.tokenSizeHelp')}
+		value={value.tokenScale}
+		{...TOKEN_SCALE}
+		defaultValue={1}
+		onChange={(tokenScale) => onChange({ ...value, tokenScale })}
+	/>
 	<SettingToggle
 		label={t('characters.boardNames')}
 		description={t('characters.boardNamesHelp')}
@@ -146,9 +124,86 @@
 		defaultValue={1}
 		onChange={(nightBadgeScale) => onChange({ ...value, nightBadgeScale })}
 	/>
-</div>
+	{@render colourRow(TOKEN_COLOURS[0])}
+	{@render colourRow(TOKEN_COLOURS[2])}
+	{@render contrastRow('characters.contrast.face', contrast.face)}
+</SettingGroup>
 
-{#each TOKEN_COLOURS as colour (colour.key)}
+<SettingGroup title={t('characters.group.reminder')} testid="reminder-preview">
+	{#snippet preview()}
+		<div class="preview reminder-sample" style:--sample="{largestReminder}px">
+			{#if sample}<BoardReminder
+					label={sample.reminders[0] ?? t('characters.previewReminder')}
+					character={sample}
+					size={reminderSize}
+					disabled
+					onTap={() => {}}
+				/>{/if}
+		</div>
+	{/snippet}
+	<SettingSlider
+		label={t('characters.reminderSize')}
+		description={t('characters.reminderSizeHelp')}
+		value={value.reminderScale}
+		{...TOKEN_SCALE}
+		defaultValue={1}
+		onChange={(reminderScale) => onChange({ ...value, reminderScale })}
+	/>
+	<SettingSlider
+		label={t('characters.reminderLabelWidth')}
+		description={t('characters.reminderLabelWidthHelp')}
+		value={value.reminderLabelWidth}
+		{...REMINDER_LABEL_WIDTH}
+		defaultValue={1.5}
+		onChange={(reminderLabelWidth) => onChange({ ...value, reminderLabelWidth })}
+	/>
+	<SettingToggle
+		label={t('characters.reminderLabelWrap')}
+		description={t('characters.reminderLabelWrapHelp')}
+		checked={value.reminderLabelWrap}
+		onChange={(reminderLabelWrap) => onChange({ ...value, reminderLabelWrap })}
+	/>
+	{@render colourRow(TOKEN_COLOURS[1])}
+	{@render contrastRow('characters.contrast.reminder', contrast.reminder)}
+</SettingGroup>
+
+<!-- Reminders and character names inside lines of text (Trevor, 2026-10-18: "add the settings
+     for in-line reminder tokens"). -->
+<SettingGroup title={t('characters.group.inText')} testid="in-text-preview">
+	{#snippet preview()}
+		<p class="preview in-text">
+			{#if sample}<CharacterBadge
+					characterId={sample.id}
+					character={sample}
+					inline
+					interactive={false}
+				/>
+				{t('characters.inTextPlaces')}
+				<ReminderToken
+					label={sample.reminders[0] ?? t('characters.previewReminder')}
+					character={sample}
+				/>
+				{t('characters.inTextOn', { player: t('characters.previewPlayer') })}{/if}
+		</p>
+	{/snippet}
+	{@render inText?.()}
+	<SettingSlider
+		label={t('characters.inlineReminderSize')}
+		description={t('characters.inlineReminderSizeHelp')}
+		value={value.inlineReminderScale}
+		{...TOKEN_SCALE}
+		defaultValue={1}
+		onChange={(inlineReminderScale) => onChange({ ...value, inlineReminderScale })}
+	/>
+	<SettingToggle
+		label={t('characters.inlineReminderIcons')}
+		description={t('characters.inlineReminderIconsHelp')}
+		checked={value.inlineReminderIcons}
+		onChange={(inlineReminderIcons) => onChange({ ...value, inlineReminderIcons })}
+	/>
+</SettingGroup>
+
+{#snippet colourRow(colour: (typeof TOKEN_COLOURS)[number])}
 	<SettingRow label={t(colour.label)} description={t(colour.description)}>
 		{#snippet control(labelId)}
 			<div class="colour">
@@ -168,19 +223,23 @@
 			</div>
 		{/snippet}
 	</SettingRow>
-{/each}
+{/snippet}
 
-<dl class="contrast" data-testid="token-contrast">
-	<dt>{t('characters.contrast.face')}</dt>
-	<dd data-poor={contrast.face < MIN_CONTRAST || undefined}>{readable(contrast.face)}</dd>
-	<dt>{t('characters.contrast.reminder')}</dt>
-	<dd data-poor={contrast.reminder < MIN_CONTRAST || undefined}>{readable(contrast.reminder)}</dd>
-</dl>
+{#snippet contrastRow(
+	label: 'characters.contrast.face' | 'characters.contrast.reminder',
+	ratio: number
+)}
+	<dl class="contrast" data-testid="token-contrast">
+		<dt>{t(label)}</dt>
+		<dd data-poor={ratio < MIN_CONTRAST || undefined}>{readable(ratio)}</dd>
+	</dl>
+{/snippet}
 
 <style>
 	.preview {
 		display: flex;
 		align-items: center;
+		justify-content: center;
 		gap: var(--space-4);
 		/* A fixed height that fits the largest token (--sample, set above) with the player name
 		   badge on its rim, and the largest chip at any Text size, so changing a size never moves
@@ -189,15 +248,24 @@
 		white-space: nowrap;
 		overflow: hidden;
 	}
+	.reminder-sample {
+		height: max(var(--sample), 3rem);
+	}
+	/* Room for the largest chip and badge at any Text size: no reflow. */
+	.in-text {
+		display: block;
+		height: auto;
+		min-height: 5.5rem;
+		margin: 0;
+		white-space: normal;
+		line-height: 2.2;
+	}
 	.disc {
 		/* Drawn at the board's size, which already includes Token size (as SeatToken). */
 		--token-scale: 1;
 		position: relative;
 		display: inline-block;
 		line-height: 0;
-	}
-	.names {
-		margin: var(--space-5) 0;
 	}
 	.colour {
 		display: flex;

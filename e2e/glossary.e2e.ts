@@ -58,7 +58,7 @@ test('with rules term underlines off the terms are plain text', async ({ page })
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Theme and text' })
+		.getByRole('button', { name: 'Text', exact: true })
 		.tap();
 	const label = 'Underline rules terms with glossary definitions';
 	const explain = settings.getByRole('checkbox', { name: label, includeHidden: true });

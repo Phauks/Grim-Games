@@ -1181,7 +1181,7 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board and tokens' })
+		.getByRole('button', { name: 'Board' })
 		.tap();
 	await settings.getByText('Stack duplicate reminders', { exact: true }).tap();
 	await expect(
@@ -1279,7 +1279,7 @@ test('the board background can be an image from the device, kept after a reload'
 	// The board and token settings open over the board from its menu (Trevor, 2026-10-17).
 	await menu(page, 'Board and tokens');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await expect(settings.getByRole('heading', { name: 'Board and tokens', level: 2 })).toBeVisible();
+	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toBeVisible();
 	// Only that section, with no way back into the full Settings list (Trevor, 2026-10-17).
 	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toHaveCount(0);
 	await expect(settings.getByRole('button', { name: 'All settings' })).toHaveCount(0);

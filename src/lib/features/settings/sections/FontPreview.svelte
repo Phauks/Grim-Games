@@ -17,7 +17,6 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { resolveFonts } from '#lib/ui/preferences.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import SettingPreview from '#lib/ui/settings/SettingPreview.svelte';
 
 	const theme = $derived(preferences.theme);
 	const fonts = $derived(resolveFonts(preferences.current, theme));
@@ -41,9 +40,9 @@
 </script>
 
 <!-- One line per role: its name, a sample in the applied font and the font's drop-down, side
-     by side to save space (Trevor, 2026-10-18). Each line has a fixed height and the sample
-     cuts off with "…", so a font change never moves anything. -->
-<SettingPreview testid="font-preview">
+     by side to save space; with each sample beside its own choice nothing needs pinning to
+     the top (Trevor, 2026-10-18). The sample cuts off with "…", so a font change moves nothing. -->
+<div class="fonts" data-testid="font-preview">
 	<dl>
 		{#each FONT_ROLES as role (role)}
 			<div class="line" data-role={role}>
@@ -85,9 +84,12 @@
 			</div>
 		{/each}
 	</dl>
-</SettingPreview>
+</div>
 
 <style>
+	.fonts {
+		margin-bottom: var(--space-5);
+	}
 	dl {
 		display: grid;
 		gap: var(--space-1);
