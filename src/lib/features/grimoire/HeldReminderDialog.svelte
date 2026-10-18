@@ -14,6 +14,7 @@
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import SeatChooser from './SeatChooser.svelte';
+	import ReminderMoreButton from './ReminderMoreButton.svelte';
 
 	/**
 	 * A reminder that is on no seat: one a Fabled or Loric holds, or one loose on the board
@@ -79,6 +80,7 @@
 		<Button variant="quiet" icon="move" onclick={() => (seatOpen = true)}>Move to a seat</Button>
 	</div>
 	{#snippet headActions()}
+		<ReminderMoreButton {grimoire} reminderId={shown} onDone={() => (open = false)} />
 		<DeleteButton
 			label="Remove reminder"
 			onclick={() => {

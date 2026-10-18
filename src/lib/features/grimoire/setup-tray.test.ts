@@ -4,7 +4,7 @@ import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index
 import { characterLookup } from '#lib/core/model/index.ts';
 import { setupReminders, type SetupReminder } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { pendingTray, trayItems, traySeats } from './setup-tray.ts';
+import { pendingTray, trayItems, traySeats, withoutOffSeat } from './setup-tray.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -81,5 +81,20 @@ describe('setup tray', () => {
 			'a',
 			'c'
 		]);
+	});
+});
+
+describe('withoutOffSeat', () => {
+	// Trevor (2026-10-18): a Noble's Know put down loose leaves the bank like one on a seat.
+	it('leaves out one suggestion per matching reminder off the seats', () => {
+		const items = trayItems([
+			suggestion('noble', 'Know'),
+			suggestion('noble', 'Know'),
+			suggestion('noble', 'Know'),
+			suggestion('chef', 'Chef')
+		]);
+		const left = withoutOffSeat(items, [{ characterId: 'noble', label: 'Know' }]);
+		expect(left.map((i) => i.suggestion.label)).toEqual(['Know', 'Know', 'Chef']);
+		expect(withoutOffSeat(items, [{ characterId: 'imp', label: 'Dead' }])).toHaveLength(4);
 	});
 });

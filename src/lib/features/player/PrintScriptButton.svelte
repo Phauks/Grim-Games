@@ -84,8 +84,10 @@
 		:global(html.printing body > *:not(.print-root)) {
 			display: none !important;
 		}
+		/* A dark theme sets color-scheme: dark on <html>, which paints the page margins black. */
 		:global(html.printing),
 		:global(html.printing body) {
+			color-scheme: light !important;
 			background: white !important;
 		}
 	}
