@@ -10,6 +10,7 @@
 		fieldsFromEntry,
 		fieldsId,
 		previewCharacter,
+		SEATED_TYPES,
 		type CharacterFields
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -33,6 +34,7 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import TextListField from '#lib/ui/primitives/TextListField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import AbilityField from './AbilityField.svelte';
 	import type { SavedCharacter } from './saved-characters.ts';
 	import { isEmptyCharacterDraft } from './draft.ts';
 	import { characterBuilderDraft as draft, savedCharacters } from './stores.svelte.ts';
@@ -122,8 +124,16 @@
 		else draft.update({ [key]: n });
 	}
 
-	const typeOptions = CHARACTER_TYPES.map((value) => ({ value, label: TYPE_LABELS[value] }));
 	const savedPreview = (saved: SavedCharacter) => previewCharacter(fieldsFromEntry(saved.entry));
+
+	/** Characters a setup change can name ("+the King"): official and saved, seated types. */
+	const linkable = $derived(
+		[...(data?.characters ?? []), ...savedCharacters.list.map(savedPreview)].filter(
+			(c) => (SEATED_TYPES as readonly string[]).includes(c.type) && c.id !== id
+		)
+	);
+
+	const typeOptions = CHARACTER_TYPES.map((value) => ({ value, label: TYPE_LABELS[value] }));
 </script>
 
 <svelte:window onhashchange={openFromHash} />
@@ -202,12 +212,11 @@
 						options={typeOptions}
 						onChange={(team: CharacterType) => draft.update({ team })}
 					/>
-					<TextField
-						label={t('character-builder.ability')}
-						multiline
-						value={f.ability}
-						testid="character-ability"
-						oninput={(ability) => draft.update({ ability })}
+					<AbilityField
+						ability={f.ability}
+						name={f.name}
+						characters={linkable}
+						onchange={(ability) => draft.update({ ability })}
 					/>
 					<Toggle
 						label={t('character-builder.setup')}

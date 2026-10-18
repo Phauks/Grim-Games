@@ -22,6 +22,8 @@
 		display?: Snippet;
 		/** A larger number, for a page's main count (the player count). */
 		large?: boolean;
+		/** Shown but not usable, e.g. a number the current choice doesn't use. */
+		disabled?: boolean;
 		testid?: string;
 	}
 
@@ -35,6 +37,7 @@
 		onchange,
 		display,
 		large = false,
+		disabled = false,
 		testid
 	}: Props = $props();
 
@@ -46,17 +49,22 @@
 	}
 </script>
 
-<span class={['stepper', large && 'large']}>
+<span class={['stepper', large && 'large']} data-disabled={disabled || undefined}>
 	<IconButton
 		icon="minus"
 		label={lessLabel}
-		disabled={value <= min}
+		disabled={disabled || value <= min}
 		onclick={() => set(value - 1)}
 	/>
 	<output aria-label={label} data-testid={testid}
 		>{#if display}{@render display()}{:else}{value}{/if}</output
 	>
-	<IconButton icon="add" label={moreLabel} disabled={value >= max} onclick={() => set(value + 1)} />
+	<IconButton
+		icon="add"
+		label={moreLabel}
+		disabled={disabled || value >= max}
+		onclick={() => set(value + 1)}
+	/>
 </span>
 
 <style>
@@ -69,6 +77,9 @@
 		min-width: 2ch;
 		text-align: center;
 		font-variant-numeric: tabular-nums;
+	}
+	[data-disabled] output {
+		opacity: 0.5;
 	}
 	.large output {
 		font-size: 1.4rem;
