@@ -42,6 +42,17 @@
 	format={(scale) => intl.number(scale, { style: 'percent' })}
 	onChange={(iconScale) => preferences.update({ iconScale })}
 />
+<!-- Character icons in lists and the day, next to the interface's (2026-10-18: names in text
+     got their own sizes in Tokens). -->
+<SettingSlider
+	label={t('settings.characterIconSize')}
+	description={t('settings.characterIconSizeHelp')}
+	value={preferences.current.characterIconScale}
+	defaultValue={DEFAULT_PREFERENCES.characterIconScale}
+	{...ICON_SCALE}
+	format={(scale) => intl.number(scale, { style: 'percent' })}
+	onChange={(characterIconScale) => preferences.update({ characterIconScale })}
+/>
 
 <SettingChoice
 	label={t('settings.iconStyle')}

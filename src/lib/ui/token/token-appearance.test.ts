@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { grimoire } from '#lib/ui/themes/grimoire/theme.ts';
 import {
+	DEFAULT_TOKEN_APPEARANCE,
 	MIN_CONTRAST,
 	parseTokenAppearance,
 	tokenColour,
@@ -22,29 +23,12 @@ describe('token appearance', () => {
 				reminderScale: 3
 			})
 		).toEqual({
+			...DEFAULT_TOKEN_APPEARANCE,
 			colours: { face: PALE.toLowerCase() },
 			tokenScale: 1.5,
-			reminderScale: 2,
-			boardNames: false,
-			nightNumbers: false,
-			nightBadgeScale: 1,
-			reminderLabelWidth: 1.5,
-			reminderLabelWrap: false,
-			inlineReminderScale: 1,
-			inlineReminderIcons: true
+			reminderScale: 2
 		});
-		expect(parseTokenAppearance(null)).toEqual({
-			colours: {},
-			tokenScale: 1,
-			reminderScale: 1,
-			boardNames: false,
-			nightNumbers: false,
-			nightBadgeScale: 1,
-			reminderLabelWidth: 1.5,
-			reminderLabelWrap: false,
-			inlineReminderScale: 1,
-			inlineReminderIcons: true
-		});
+		expect(parseTokenAppearance(null)).toEqual(DEFAULT_TOKEN_APPEARANCE);
 		expect(parseTokenAppearance({ boardNames: true }).boardNames).toBe(true);
 		expect(parseTokenAppearance({ boardNames: 'yes' }).boardNames).toBe(false);
 		expect(parseTokenAppearance({ nightNumbers: true, nightBadgeScale: 1.33 })).toMatchObject({
@@ -55,9 +39,13 @@ describe('token appearance', () => {
 			parseTokenAppearance({ reminderLabelWidth: 2.1, reminderLabelWrap: true })
 		).toMatchObject({ reminderLabelWidth: 2, reminderLabelWrap: true });
 		expect(parseTokenAppearance({ reminderLabelWidth: 9 }).reminderLabelWidth).toBe(3);
-		expect(
-			parseTokenAppearance({ inlineReminderScale: 1.33, inlineReminderIcons: false })
-		).toMatchObject({ inlineReminderScale: 1.35, inlineReminderIcons: false });
+		expect(parseTokenAppearance({ inlineReminderScale: 1.33 }).inlineReminderScale).toBe(1.35);
+		expect(parseTokenAppearance({ reminderLeaves: false, setupFlower: true })).toMatchObject({
+			reminderLeaves: false,
+			setupFlower: true
+		});
+		// Earlier builds' dot instead of the owner's icon is dropped (Trevor, 2026-10-18).
+		expect(parseTokenAppearance({ inlineReminderIcons: false })).toEqual(parseTokenAppearance({}));
 		expect(parseTokenAppearance({ reminderLabelWidth: 'wide' }).reminderLabelWidth).toBe(1.5);
 		// Earlier builds' name placements are dropped: the player name is always a badge now.
 		expect(
@@ -74,19 +62,22 @@ describe('token appearance', () => {
 		expect(scale('big')).toBe(1);
 	});
 
-	it('writes the sizes and only the changed colours; text colours both kinds of token', () => {
+	it('writes the sizes and only the changed colours, each to its own variable', () => {
 		expect(
 			tokenVariables({
-				colours: { ink: DARK },
+				...DEFAULT_TOKEN_APPEARANCE,
+				colours: { ink: DARK, rim: DARK, reminderLabel: PALE },
 				tokenScale: 1.25,
 				reminderScale: 0.75,
-				boardNames: true,
-				nightNumbers: true,
 				nightBadgeScale: 1.5,
 				reminderLabelWidth: 2.5,
 				reminderLabelWrap: true,
 				inlineReminderScale: 1.5,
-				inlineReminderIcons: false
+				inlineReminderIconScale: 0.5,
+				inlineReminderBadgeScale: 2,
+				inlineNameTextScale: 1.25,
+				inlineNameIconScale: 1.75,
+				inlineNameBadgeScale: 0.75
 			})
 		).toEqual({
 			'--token-scale': '1.25',
@@ -96,17 +87,58 @@ describe('token appearance', () => {
 			'--reminder-label-wrap': 'normal',
 			'--reminder-label-min': 'min-content',
 			'--inline-reminder-scale': '1.5',
-			'--inline-reminder-owner': 'none',
-			'--inline-reminder-dot': 'block',
+			'--inline-reminder-icon': '0.5',
+			'--inline-reminder-badge': '2',
+			'--inline-name-text': '1.25',
+			'--inline-name-icon': '1.75',
+			'--inline-name-badge': '0.75',
 			'--on-token': DARK,
-			'--on-reminder': DARK
+			'--token-face-shade': DARK,
+			'--reminder-label-face': PALE
 		});
+	});
+
+	it('names and reminders in text keep their own sizes', () => {
+		// Trevor (2026-10-18): text, icon and badge sizes "are all different to me".
+		expect(
+			parseTokenAppearance({
+				inlineNameTextScale: 1.33,
+				inlineNameIconScale: 2,
+				inlineNameBadgeScale: 9,
+				inlineReminderIconScale: 0.5,
+				inlineReminderBadgeScale: 'big'
+			})
+		).toMatchObject({
+			inlineNameTextScale: 1.35,
+			inlineNameIconScale: 2,
+			inlineNameBadgeScale: 2,
+			inlineReminderIconScale: 0.5,
+			inlineReminderBadgeScale: 1
+		});
+	});
+
+	it('an older single text colour becomes the reminder text colour too', () => {
+		expect(parseTokenAppearance({ colours: { ink: DARK } }).colours).toEqual({
+			ink: DARK,
+			reminderInk: DARK
+		});
+		expect(
+			parseTokenAppearance({ colours: { ink: DARK, reminderInk: PALE } }).colours.reminderInk
+		).toBe(PALE);
+		// Once saved by this build, the reminder text keeps the theme's colour.
+		const saved = parseTokenAppearance({ ...DEFAULT_TOKEN_APPEARANCE, colours: { ink: DARK } });
+		expect(saved.colours).toEqual({ ink: DARK });
 	});
 
 	it('falls back to the theme colours', () => {
 		const defaults = parseTokenAppearance({});
 		expect(tokenColour('reminder', defaults, grimoire)).toBe(PALE);
 		expect(tokenColour('face', { ...defaults, colours: { face: DARK } }, grimoire)).toBe(DARK);
+		// The reminder's text band follows its face until it has its own colour.
+		expect(tokenColour('reminderLabel', defaults, grimoire)).toBe(PALE);
+		expect(
+			tokenColour('reminderLabel', { ...defaults, colours: { reminder: DARK } }, grimoire)
+		).toBe(DARK);
 	});
 
 	it('the theme defaults read clearly; a pale text on pale faces does not', () => {
@@ -114,7 +146,13 @@ describe('token appearance', () => {
 		const ok = tokenContrast(defaults, grimoire);
 		expect(ok.face).toBeGreaterThanOrEqual(MIN_CONTRAST);
 		expect(ok.reminder).toBeGreaterThanOrEqual(MIN_CONTRAST);
-		const poor = tokenContrast({ ...defaults, colours: { ink: LIGHT_TEXT } }, grimoire);
+		const poor = tokenContrast({ ...defaults, colours: { reminderInk: LIGHT_TEXT } }, grimoire);
 		expect(poor.reminder).toBeLessThan(MIN_CONTRAST);
+		// A dark band under pale words is still poor while the face stays pale.
+		const band = tokenContrast(
+			{ ...defaults, colours: { reminderInk: LIGHT_TEXT, reminderLabel: DARK } },
+			grimoire
+		);
+		expect(band.reminder).toBeLessThan(MIN_CONTRAST);
 	});
 });

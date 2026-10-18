@@ -5,9 +5,10 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import Icons from 'unplugin-icons/vite';
 import type { Plugin } from 'vite';
 import { readBuildInfo, readCommits } from './build-info.ts';
+import { chromiumPath } from './scripts/lib/chromium-path.ts';
 
 // Lets sandboxes with a preinstalled Chromium skip `playwright install`.
-const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
+const executablePath = chromiumPath();
 
 const buildInfo = readBuildInfo();
 // One line naming the build, in the same format as describeBuild() in

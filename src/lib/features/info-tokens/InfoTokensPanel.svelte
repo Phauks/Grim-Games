@@ -10,7 +10,6 @@
 	import { characterCardsFor } from './character-cards.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
 	import { tokenTitle } from './token-title.ts';
-	import { pickMax } from './pick.ts';
 
 	interface Props {
 		/** Characters the Storyteller can show with a card, in script order. */
@@ -58,7 +57,7 @@
 
 	function choose(token: InfoToken, detail?: string) {
 		// Player cards ("This is the Demon") are shown at once: the Storyteller points.
-		if (token.shows !== 'characters') return show(token.text, [], detail);
+		if (!token.asks?.characters) return show(token.text, [], detail);
 		picking = token;
 		pickingDetail = detail;
 		picked = [];
@@ -82,7 +81,7 @@
 			<CharacterPicker
 				{characters}
 				bind:selected={picked}
-				max={pickMax(picking.id)}
+				max={picking.asks?.characters ?? 1}
 				label={t('info-tokens.characters')}
 				notInPlay={picking.id === 'not-in-play'}
 			/>

@@ -29,7 +29,9 @@ export const grimoire: Theme = {
 		'--palette-lapis-700': '#1f4a7a',
 		'--palette-plum-700': '#563463',
 		'--palette-ochre-800': '#6b4a10',
-		'--palette-moss-800': '#24513f',
+		'--palette-grass-700': '#2e6b34',
+		'--palette-grass-400': '#6fb862',
+		'--palette-violet-400': '#a77fcf',
 		'--palette-leaf-500': '#5f9a3c',
 		'--palette-amber-500': '#d07a22',
 		'--palette-black': '#000000'
@@ -54,10 +56,15 @@ export const grimoire: Theme = {
 		'--on-evil': 'var(--palette-parchment-100)',
 		'--traveller': 'var(--palette-plum-700)',
 		'--on-traveller': 'var(--palette-parchment-100)',
+		// Traveller headings and labels: purple, as split blue and red reads badly on text
+		// (Trevor, 2026-10-18). Badges and reminder rims are split --good / --evil instead.
+		'--traveller-text': 'var(--palette-violet-400)',
 		'--fabled': 'var(--palette-ochre-800)',
 		'--on-fabled': 'var(--palette-parchment-100)',
-		'--loric': 'var(--palette-moss-800)',
+		// Loric in its own green (Trevor, 2026-10-18), with a lighter green for text on the page.
+		'--loric': 'var(--palette-grass-700)',
 		'--on-loric': 'var(--palette-parchment-100)',
+		'--loric-text': 'var(--palette-grass-400)',
 		'--leaf': 'var(--palette-leaf-500)',
 		'--token-flower': 'var(--palette-amber-500)',
 		'--token-flower-centre': 'var(--palette-gold-400)',

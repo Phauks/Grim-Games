@@ -50,6 +50,13 @@ class ScriptBuilderDraft {
 		this.#set({ ...this.#draft, scriptVersion });
 	}
 
+	setTeensyville(teensyville: boolean): void {
+		const next: ScriptDraft = { ...this.#draft };
+		if (teensyville) next.teensyville = true;
+		else delete next.teensyville;
+		this.#set(next);
+	}
+
 	/**
 	 * Adds the character, or takes it off when it is already on. A homebrew character comes
 	 * with its definition (and credit, when known), kept while it is on the script.
@@ -70,6 +77,22 @@ class ScriptBuilderDraft {
 			ids: [...ids, id],
 			homebrew: homebrew ? { ...entries, [id]: homebrew.entry } : entries,
 			credits: homebrew?.credit ? { ...credits, [id]: homebrew.credit } : credits
+		});
+	}
+
+	/**
+	 * A homebrew character on the script was edited (its id may have changed with its name):
+	 * the new definition takes its place, in the same spot on the script.
+	 */
+	replaceHomebrew(oldId: CharacterId, id: CharacterId, entry: HomebrewEntry): void {
+		const { ids, homebrew, credits } = this.#draft;
+		if (!ids.includes(oldId)) return;
+		const kept = ids.filter((x) => x !== id || x === oldId);
+		this.#set({
+			...this.#draft,
+			ids: kept.map((x) => (x === oldId ? id : x)),
+			homebrew: { ...without(homebrew, oldId), [id]: entry },
+			credits: oldId === id ? credits : without(credits, oldId)
 		});
 	}
 

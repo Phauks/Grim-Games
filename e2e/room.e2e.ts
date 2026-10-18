@@ -21,7 +21,8 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 }, testInfo) => {
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	// The code arrives from the server after the share screen opens.
+	// Read the code once the room is open: before that the share code isn't the room's yet.
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 	expect(code).toMatch(/^\d{6}$/);
@@ -66,7 +67,8 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	// A game with no characters assigned yet: the room can open while the game is in setup.
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	// The code arrives from the server after the share screen opens.
+	// Read the code once the room is open: before that the share code isn't the room's yet.
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 
@@ -94,7 +96,8 @@ test('Share and Copy link carry the room code as well as the link', async ({ pag
 	});
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	// The code arrives from the server after the share screen opens.
+	// Read the code once the room is open: before that the share code isn't the room's yet.
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\D/g, '');
 	expect(code).toMatch(/^\d{6}$/);
@@ -125,6 +128,23 @@ test('a phone can type a code, and wrong codes say so', async ({ page }) => {
 	await expect(page).toHaveURL(/\/join\/000001$/);
 });
 
+test('Join game in the menu takes a typed code, with spaces, and says when the room is closed', async ({
+	page
+}) => {
+	await page.goto('/');
+	await page.getByRole('banner').getByRole('button', { name: 'Menu' }).tap();
+	await page.getByRole('link', { name: 'Join game' }).tap();
+	await expect(page).toHaveURL(/\/join$/);
+	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
+	const field = page.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	await field.fill(' 482-913 ');
+	// Enter joins; no room has this code, so the same screen says so in place.
+	await field.press('Enter');
+	await expect(page).toHaveURL(/\/join\/482913$/);
+	await expect(page.getByRole('alert')).toHaveText('This room is closed, or the code is wrong.');
+	await expect(page.getByRole('textbox', { name: 'Room code from the Storyteller' })).toBeVisible();
+});
+
 test('the Worker refuses bad room requests', async ({ request }) => {
 	expect((await request.get('/api/room/ABCDEF')).status()).toBe(400);
 	expect((await request.post('/api/rooms', { data: { hostKeyHash: 'nope' } })).status()).toBe(400);
@@ -134,7 +154,8 @@ test('the Worker refuses bad room requests', async ({ request }) => {
 test('a room tells an app too old for it to update', async ({ page, browser }, testInfo) => {
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
-	// The code arrives from the server after the share screen opens.
+	// Read the code once the room is open: before that the share code isn't the room's yet.
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\D/g, '');
 

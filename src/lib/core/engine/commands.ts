@@ -26,7 +26,13 @@ export interface TileSpec {
 }
 
 export type Command =
-	| { type: 'CreateGame'; script: Script; playerCount: number }
+	| {
+			type: 'CreateGame';
+			script: Script;
+			playerCount: number;
+			/** Fabled and Loric in play from the start; the script's own when absent. */
+			ruleCharacters?: CharacterId[];
+	  }
 	/**
 	 * Replaces the script mid-game (08-script-loading.md §5.6). Seats, reminders, bluffs and
 	 * the bag keep their characters; any that are not on the new script are only warned about.

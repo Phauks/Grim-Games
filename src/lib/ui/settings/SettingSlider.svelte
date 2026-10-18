@@ -13,6 +13,8 @@
 		defaultValue?: number;
 		/** How the value reads beside the slider; a whole percentage by default. */
 		format?: (value: number) => string;
+		/** Shown but unusable, e.g. a strength while its effect is off (no reflow). */
+		disabled?: boolean;
 		/** Called as the slider moves (at most once a frame), so the change shows while dragging. */
 		onChange: (value: number) => void;
 	}
@@ -26,6 +28,7 @@
 		step,
 		defaultValue,
 		format = (v) => `${Math.round(v * 100)}%`,
+		disabled = false,
 		onChange
 	}: Props = $props();
 
@@ -45,12 +48,14 @@
 	}
 </script>
 
-<!-- A setting with a continuous size (Trevor, 2026-10-16: granular sliders, not S/M/L). -->
+<!-- A setting with a continuous size (Trevor, 2026-10-16: granular sliders, not S/M/L), right
+     of its name on every screen (Trevor, 2026-10-18). -->
 <SettingRow
+	layout="inline"
 	{label}
 	{description}
 	onReset={defaultValue === undefined ? undefined : () => onChange(defaultValue)}
-	isDefault={defaultValue !== undefined && Math.abs(value - defaultValue) < step / 2}
+	isDefault={disabled || (defaultValue !== undefined && Math.abs(value - defaultValue) < step / 2)}
 >
 	{#snippet control(labelId)}
 		<div class="slider">
@@ -62,6 +67,7 @@
 				{max}
 				{step}
 				{value}
+				{disabled}
 				oninput={(event) => move(Number(event.currentTarget.value))}
 			/>
 			<!-- Fixed width, so the number changing never moves the slider. -->
@@ -73,6 +79,8 @@
 <style>
 	.slider {
 		display: flex;
+		flex: 1;
+		width: 100%;
 		align-items: center;
 		gap: var(--space-2) var(--space-3);
 	}
@@ -83,6 +91,10 @@
 		margin: 0;
 		accent-color: var(--accent);
 		cursor: pointer;
+	}
+	input:disabled {
+		opacity: 0.4;
+		cursor: default;
 	}
 	input:focus-visible {
 		outline: 2px solid var(--focus);

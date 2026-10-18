@@ -14,6 +14,7 @@ export const common = {
 	'common.save': 'Save',
 	'common.saved': 'Saved',
 	'common.saveNew': 'Save as new',
+	'common.copyJson': 'Copy JSON',
 	'common.gameOpening': 'Opening the game…',
 	'common.gameMissing': 'There is no saved game here on this device.',
 	'common.gameTooNew': `This game was saved by a newer version of ${APP_NAME}. Refresh to update, then open it again.`,

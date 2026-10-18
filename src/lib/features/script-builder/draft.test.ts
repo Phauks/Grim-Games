@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chosenHomebrew, emptyDraft, isEmptyDraft, parseDraft } from './draft.ts';
+import { chosenHomebrew, emptyDraft, isEmptyDraft, isTeensyville, parseDraft } from './draft.ts';
 
 describe('script builder draft', () => {
 	it('reads a stored draft', () => {
@@ -8,6 +8,7 @@ describe('script builder draft', () => {
 			name: 'Mine',
 			author: 'T',
 			scriptVersion: '1.2',
+			teensyville: true,
 			ids: ['chef', 'lantern'],
 			homebrew: { lantern: { id: 'lantern', team: 'outsider' } },
 			credits: { lantern: { creator: 'DJ', url: 'https://botchomebrew.wiki/c/lantern' } },
@@ -15,6 +16,16 @@ describe('script builder draft', () => {
 			variationOf: { name: 'Trouble Brewing', source: { kind: 'edition' }, json: [{ id: '_meta' }] }
 		};
 		expect(parseDraft(stored)).toEqual(stored);
+	});
+
+	it('keeps Teensyville only when it is set', () => {
+		expect(parseDraft({ version: 3, ids: [], teensyville: 'yes' }).teensyville).toBeUndefined();
+	});
+
+	it('judges an opened script Teensyville by its size, and an empty one full', () => {
+		expect(isTeensyville(0)).toBe(false);
+		expect(isTeensyville(11)).toBe(true);
+		expect(isTeensyville(22)).toBe(false);
 	});
 
 	it('reads a version 2 draft, which has no variation', () => {

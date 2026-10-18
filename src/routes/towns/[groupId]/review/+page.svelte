@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SpectersPage from '#lib/features/modes/SpectersPage.svelte';
+	import TownReviewPage from '#lib/features/modes/TownReviewPage.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { PageProps } from './$types';
 
@@ -7,9 +7,9 @@
 </script>
 
 <svelte:head>
-	<title>{t('modes.specters.pageTitle')}</title>
+	<title>{t('modes.towns.reviewPageTitle')}</title>
 </svelte:head>
 
-{#key params.gameId}
-	<SpectersPage gameId={params.gameId} />
+{#key params.groupId}
+	<TownReviewPage groupId={params.groupId} />
 {/key}
