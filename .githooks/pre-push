@@ -1,0 +1,5 @@
+#!/bin/sh
+# Runs the fast checks before every push (typecheck, lint, unit tests), so a push can't break
+# beta's CI on something a contributor could have caught in two minutes. Installed by
+# `npm install` (the `prepare` script sets core.hooksPath). Skip once with `git push --no-verify`.
+npm run verify

@@ -8,19 +8,26 @@ import { applyEvent, type SavedGame } from '#lib/core/engine/index.ts';
 import {
 	alignmentOf,
 	characterLookup,
+	isAliveForWin,
+	isTraveller,
 	trueCharacter,
 	type CharacterLookup,
 	type DayLog,
 	type Game,
 	type SeatId
 } from '#lib/core/model/index.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import {
 	GAME_RECORD_VERSION,
 	type GameRecord,
 	type RecordCharacter,
 	type RecordDay,
+	type RecordEndRule,
 	type RecordRole
 } from './record.ts';
+
+/** The usual ends: the Demon died, or just 2 players live. */
+const USUAL_ENDS: readonly RecordEndRule[] = ['demon-dead', 'two-alive'];
 
 /** What ending the game recorded on this device (`endedGames` in the grimoire). */
 export interface GameEnding {
@@ -37,6 +44,21 @@ function snapshot(game: Game, characters: CharacterLookup): Map<SeatId, RecordCh
 		out.set(seatId, alignment ? { characterId, alignment } : { characterId });
 	}
 	return out;
+}
+
+function aliveCount(game: Game, characters: CharacterLookup): number {
+	return game.seating.filter((id) => isAliveForWin(game, id) && !isTraveller(game, id, characters))
+		.length;
+}
+
+/**
+ * Which rule gave the recorded winner: a usual end if one did, else the first other rule
+ * that did, else the Storyteller's own call. Checked with today's day over, since the game
+ * was ended then.
+ */
+function endRule(game: Game, characters: CharacterLookup, winner: Alignment): RecordEndRule {
+	const ends = gameEnds(game, characters, { dayEnded: true }).filter((e) => e.winner === winner);
+	return ends.find((e) => USUAL_ENDS.includes(e.rule))?.rule ?? ends[0]?.rule ?? 'storyteller';
 }
 
 function recordDay(log: DayLog, day: number): RecordDay {
@@ -63,6 +85,13 @@ export function deriveGameRecord(
 	let game: Game | undefined;
 	let start: Map<SeatId, RecordCharacter> | undefined;
 	const diedOnDay = new Map<SeatId, number>();
+	let finalThree = false;
+	let lookup: { script: Game['script']; characters: CharacterLookup } | undefined;
+	const charactersOf = (g: Game) => {
+		if (lookup?.script !== g.script)
+			lookup = { script: g.script, characters: characterLookup(data, g.script) };
+		return lookup.characters;
+	};
 	for (const entry of saved.log.entries.slice(0, saved.log.cursor)) {
 		for (const event of entry.events) {
 			if (event.type === 'DayStarted' && game && !start) {
@@ -73,6 +102,10 @@ export function deriveGameRecord(
 				if (event.dead) diedOnDay.set(event.seatId, game.pastDays.length);
 				else diedOnDay.delete(event.seatId);
 			}
+		}
+		// After each step, so deaths in one step (a night's kills) count together.
+		if (game && start && !finalThree) {
+			finalThree = aliveCount(game, charactersOf(game)) === 3;
 		}
 	}
 	if (!game) throw new Error('the log has no GameCreated entry');
@@ -97,6 +130,7 @@ export function deriveGameRecord(
 		createdAt: game.createdAt,
 		endedAt: ending.endedAt,
 		script: {},
+		finalThree,
 		days,
 		seats: game.seating.map((seatId) => {
 			const seat = game.seats[seatId];
@@ -116,6 +150,9 @@ export function deriveGameRecord(
 	};
 	if (game.script.meta?.name) record.script.name = game.script.meta.name;
 	if (game.script.meta?.author) record.script.author = game.script.meta.author;
-	if (ending.winner) record.winner = ending.winner;
+	if (ending.winner) {
+		record.winner = ending.winner;
+		record.endRule = endRule(game, characters, ending.winner);
+	}
 	return record;
 }

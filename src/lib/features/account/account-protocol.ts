@@ -54,6 +54,8 @@ export interface AccountUser {
 	email: string;
 	/** Unique across accounts (ignoring case); null until the user picks one. */
 	username: string | null;
+	/** The profile icon: an official character's id, or null for the default icon. */
+	icon: string | null;
 	/** Whether the account has a password; without one, it signs in with emailed codes. */
 	hasPassword: boolean;
 	createdAt: number;
@@ -67,6 +69,10 @@ export interface ChangeEmailStartRequest {
 export interface ChangeEmailVerifyRequest {
 	email: string;
 	code: string;
+}
+/** `PUT /api/account/icon` body: a character id, or null for the default icon. */
+export interface SetIconRequest {
+	icon: string | null;
 }
 /** `PUT /api/account/username` body. */
 export interface SetUsernameRequest {
@@ -160,6 +166,15 @@ export function isDocKind(value: string): value is DocKind {
 
 export function isDocId(value: string): boolean {
 	return DOC_ID.test(value);
+}
+
+/**
+ * A profile icon as sent: a character id (lower-case letters, digits and underscores, as
+ * TPI's ids are), or null to clear it. Undefined when it is neither.
+ */
+export function normaliseIcon(input: unknown): string | null | undefined {
+	if (input === null) return null;
+	return typeof input === 'string' && /^[a-z0-9_]{1,40}$/.test(input) ? input : undefined;
 }
 
 /** A password as typed: kept exactly, but it must be PASSWORD_MIN to PASSWORD_MAX long. */

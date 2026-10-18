@@ -34,6 +34,9 @@
 	const stats = $derived(historyStats(records));
 	// Shares of the games with a recorded winner (Trevor, 2026-10-18), as win rates count them.
 	const decided = $derived(stats.summary.wins.good + stats.summary.wins.evil);
+	const finalThreeDecided = $derived(
+		stats.summary.finalThree.wins.good + stats.summary.finalThree.wins.evil
+	);
 
 	const count = (n: number) => intl.number(n);
 	const decimal = (n: number | undefined) =>
@@ -283,6 +286,36 @@
 			<dd>
 				{count(stats.summary.wins.evil)}
 				<span class="share">({percent(stats.summary.wins.evil, decided)})</span>
+			</dd>
+		</div>
+		<div>
+			<dt>{t('history.alternateWins')}</dt>
+			<dd>
+				{count(stats.summary.alternateWins)}
+				<span class="share">({percent(stats.summary.alternateWins, decided)})</span>
+			</dd>
+		</div>
+		<div>
+			<dt>{t('history.finalThree')}</dt>
+			<dd>
+				{count(stats.summary.finalThree.games)}
+				<span class="share">({percent(stats.summary.finalThree.games, stats.summary.games)})</span>
+			</dd>
+		</div>
+		<div>
+			<dt>{t('history.finalThreeGood')}</dt>
+			<dd>
+				{count(stats.summary.finalThree.wins.good)}
+				<span class="share">({percent(stats.summary.finalThree.wins.good, finalThreeDecided)})</span
+				>
+			</dd>
+		</div>
+		<div>
+			<dt>{t('history.finalThreeEvil')}</dt>
+			<dd>
+				{count(stats.summary.finalThree.wins.evil)}
+				<span class="share">({percent(stats.summary.finalThree.wins.evil, finalThreeDecided)})</span
+				>
 			</dd>
 		</div>
 		<div>
