@@ -20,6 +20,11 @@ export interface SettingsSection {
 	component: Component;
 	/** Optional control shown beside the section heading, such as Diagnostics' Refresh icon. */
 	headingAction?: Component;
+	/**
+	 * Puts every setting in this section back to its default, and only those (Trevor,
+	 * 2026-10-18); gives the section a reset icon in its heading row, confirmed first.
+	 */
+	reset?: () => void;
 	/** Position in the sidebar, low first. Built-ins use 10, 20, 30 ... and 90 for Reset settings. */
 	order: number;
 }

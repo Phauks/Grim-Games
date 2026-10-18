@@ -23,6 +23,7 @@
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { plainText } from './bold.ts';
+	import { tokenTitle } from './token-title.ts';
 	import type { CharacterCard } from './character-cards.ts';
 	import { MAX_CUSTOM_TEXT, type CustomInfoToken } from './custom-tokens.ts';
 	import { customInfoTokens } from './custom-tokens.svelte.ts';
@@ -181,7 +182,7 @@
 			? ''
 			: filling.kind === 'card'
 				? t('info-tokens.cardFor', { card: t(filling.card.titleKey), name: slot('character') })
-				: plainText(filling.token.text)
+				: tokenTitle(filling.token)
 	);
 
 	function fill(row: { card: CharacterCard; character: Character }, add = false) {
@@ -432,11 +433,11 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={numberOpen} title={t('info-tokens.number')}>
+<Dialog bind:open={numberOpen} title={numberToken ? tokenTitle(numberToken) : ''}>
 	<div class="number">
 		<Stepper
 			bind:value={number}
-			label={t('info-tokens.number')}
+			label={numberToken ? tokenTitle(numberToken) : ''}
 			lessLabel={t('info-tokens.numberLess')}
 			moreLabel={t('info-tokens.numberMore')}
 			min={0}
@@ -450,7 +451,7 @@
 	{/snippet}
 </Dialog>
 
-<Dialog bind:open={yesNoOpen} title={yesNoToken?.text ?? ''}>
+<Dialog bind:open={yesNoOpen} title={yesNoToken ? tokenTitle(yesNoToken) : ''}>
 	<Select
 		label={t('info-tokens.answer')}
 		value={answer}

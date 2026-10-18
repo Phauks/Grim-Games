@@ -2,12 +2,12 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { account } from './account.svelte.ts';
+	import ProfileIcon from './ProfileIcon.svelte';
 
 	let open = $state(false);
 	let anchor = $state<HTMLButtonElement>();
@@ -51,12 +51,16 @@
 	data-signed-in={account.status === 'signed-in'}
 	aria-expanded={user ? open : undefined}
 	onclick={tap}
-/>
+>
+	{#snippet face()}
+		<span class="face"><ProfileIcon icon={user?.icon} /></span>
+	{/snippet}
+</IconButton>
 
 <Popover bind:open {anchor} title={t('account.title')}>
 	{#if user}
 		<div class="who" data-testid="account-card">
-			<span class="avatar"><Icon name="account" /></span>
+			<span class="avatar"><ProfileIcon icon={user.icon} /></span>
 			<span class="names">
 				<strong>{user.username ?? user.email}</strong>
 				{#if user.username}<small>{user.email}</small>{/if}
@@ -87,6 +91,12 @@
 		border-radius: var(--radius-full);
 		background: var(--surface-selected);
 		--icon-size: 1.5rem;
+	}
+	/* The header button's own size; a character icon fills most of it. */
+	.face {
+		display: grid;
+		width: 80%;
+		height: 80%;
 	}
 	.names {
 		display: grid;

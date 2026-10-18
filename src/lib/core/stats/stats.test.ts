@@ -5,10 +5,15 @@
  * - https://wiki.bloodontheclocktower.com/Scarlet_Woman (becomes the Demon mid-game, so starting
  *   and final characters differ)
  * - https://wiki.bloodontheclocktower.com/Traveller (Travellers are not counted as players)
+ * - https://wiki.bloodontheclocktower.com/Saint (executing the Saint loses the game for good,
+ *   an alternate win condition)
+ * - https://wiki.bloodontheclocktower.com/Glossary, "Demon" and "Evil" (the usual ends: good
+ *   wins when the Demon dies, evil when just 2 players live)
  */
 import { describe, expect, it } from 'vitest';
 import type { CharacterName } from '#lib/core/data/index.ts';
-import { toSavedGame } from '#lib/core/engine/index.ts';
+import { toSavedGame, type Command } from '#lib/core/engine/index.ts';
+import type { SeatId } from '#lib/core/model/index.ts';
 import { gameData, newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import { deriveGameRecord } from './derive.ts';
 import type { GameRecord } from './record.ts';
@@ -95,6 +100,58 @@ describe('deriveGameRecord', () => {
 	});
 });
 
+function fiveGame(...steps: ((seats: SeatId[]) => Command)[]) {
+	const { session, ctx, seats } = newGame(names.slice(0, 5));
+	const [ana, ben, cat, dev, eve] = seats;
+	const s = run(
+		session,
+		ctx,
+		{ type: 'AssignCharacter', seatId: ana, characterId: 'imp' },
+		{ type: 'AssignCharacter', seatId: ben, characterId: 'saint' },
+		{ type: 'AssignCharacter', seatId: cat, characterId: 'chef' },
+		{ type: 'AssignCharacter', seatId: dev, characterId: 'empath' },
+		{ type: 'AssignCharacter', seatId: eve, characterId: 'washerwoman' },
+		{ type: 'NewDay' },
+		...steps.map((step) => step(seats))
+	);
+	return toSavedGame(s, 1);
+}
+
+describe('deriveGameRecord: how the game was won', () => {
+	it('records a usual end when the Demon is executed', () => {
+		const saved = fiveGame((seats) => ({ type: 'Execute', seatId: seats[0] }));
+		const r = deriveGameRecord(saved, { endedAt: 2, winner: 'good' }, gameData);
+		expect(r.endRule).toBe('demon-dead');
+	});
+
+	it('records the Saint as an alternate win condition', () => {
+		const saved = fiveGame((seats) => ({ type: 'Execute', seatId: seats[1] }));
+		const r = deriveGameRecord(saved, { endedAt: 2, winner: 'evil' }, gameData);
+		expect(r.endRule).toBe('saint');
+	});
+
+	it('records the Storyteller’s call when no checked rule gave the winner', () => {
+		const r = deriveGameRecord(fiveGame(), { endedAt: 2, winner: 'evil' }, gameData);
+		expect(r.endRule).toBe('storyteller');
+		expect(deriveGameRecord(fiveGame(), { endedAt: 2 }, gameData).endRule).toBeUndefined();
+	});
+
+	it('notes when exactly 3 players were alive', () => {
+		const kill =
+			(i: number) =>
+			(seats: SeatId[]): Command => ({
+				type: 'SetDead',
+				seatId: seats[i],
+				dead: true,
+				cause: 'demon'
+			});
+		expect(deriveGameRecord(fiveGame(kill(2)), { endedAt: 2 }, gameData).finalThree).toBe(false);
+		expect(deriveGameRecord(fiveGame(kill(2), kill(3)), { endedAt: 2 }, gameData).finalThree).toBe(
+			true
+		);
+	});
+});
+
 function record(overrides: Partial<GameRecord>): GameRecord {
 	return {
 		recordVersion: 1,
@@ -104,6 +161,7 @@ function record(overrides: Partial<GameRecord>): GameRecord {
 		endedAt: 0,
 		script: { name: 'Trouble Brewing' },
 		days: 3,
+		finalThree: false,
 		seats: [],
 		ruleCharacters: [],
 		dayLog: [],
@@ -121,6 +179,8 @@ describe('historyStats', () => {
 		gameId: 'a',
 		endedAt: 2,
 		winner: 'evil',
+		endRule: 'two-alive',
+		finalThree: true,
 		days: 4,
 		seats: [
 			{
@@ -147,6 +207,7 @@ describe('historyStats', () => {
 		gameId: 'b',
 		endedAt: 1,
 		winner: 'good',
+		endRule: 'mayor',
 		days: 2,
 		script: { name: 'Sects & Violets', author: 'TPI' },
 		seats: [
@@ -164,17 +225,24 @@ describe('historyStats', () => {
 			}
 		]
 	});
-	const c = record({ gameId: 'c', endedAt: 3, days: 3, seats: [] });
+	const c = record({ gameId: 'c', endedAt: 3, days: 3, finalThree: true, seats: [] });
 
 	it('summarises games, wins by team, and average days and players', () => {
 		const { summary } = historyStats([a, b, c]);
 		expect(summary).toEqual({
 			games: 3,
 			wins: { good: 1, evil: 1 },
+			alternateWins: 1,
+			finalThree: { games: 2, wins: { good: 0, evil: 1 } },
 			averageDays: 3,
 			averagePlayers: (2 + 2 + 0) / 3
 		});
-		expect(historyStats([]).summary).toEqual({ games: 0, wins: { good: 0, evil: 0 } });
+		expect(historyStats([]).summary).toEqual({
+			games: 0,
+			wins: { good: 0, evil: 0 },
+			alternateWins: 0,
+			finalThree: { games: 0, wins: { good: 0, evil: 0 } }
+		});
 	});
 
 	it('leaves Travellers out of the player count', () => {

@@ -9,9 +9,9 @@ async function openTokens(page: Page) {
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board and tokens' })
+		.getByRole('button', { name: 'Tokens' })
 		.tap();
-	await expect(dialog.getByRole('heading', { name: 'Board and tokens', level: 2 })).toBeVisible();
+	await expect(dialog.getByRole('heading', { name: 'Tokens', level: 2 })).toBeVisible();
 	return dialog;
 }
 
@@ -30,9 +30,12 @@ test('token and reminder sizes apply to the tokens and stay after a reload', asy
 	// Sizes are percentages on a slider (50% to 200%).
 	await dialog.getByRole('slider', { name: 'Character token size' }).fill('1.5');
 	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('1.5');
+	// Reminder chips in text have their own size (Trevor, 2026-10-18).
+	await dialog.getByRole('slider', { name: 'Reminder size in text' }).fill('1.5');
 	await expect(dialog).toContainText('150%');
 	expect(await rootStyle(page, '--token-scale')).toBe('1.5');
 	expect(await rootStyle(page, '--reminder-scale')).toBe('1.5');
+	expect(await rootStyle(page, '--inline-reminder-scale')).toBe('1.5');
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	expect((await token.boundingBox())!.width).toBeCloseTo(before * 1.5, 0);
@@ -46,7 +49,7 @@ test('token and reminder sizes apply to the tokens and stay after a reload', asy
 test('a token colour can be changed, warns when hard to read, and resets', async ({ page }) => {
 	await page.goto('/reference');
 	const dialog = await openTokens(page);
-	const contrast = dialog.getByTestId('token-contrast');
+	const contrast = dialog.getByTestId('token-contrast').first();
 	await expect(contrast).toContainText('easy to read');
 	const reset = dialog.getByRole('button', { name: 'Reset Token text' });
 	await expect(reset).toBeDisabled();
@@ -108,7 +111,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 			.tap();
 		await dialog
 			.getByRole('navigation', { name: 'Settings sections' })
-			.getByRole('button', { name: 'Board and tokens' })
+			.getByRole('button', { name: 'Tokens' })
 			.tap();
 	}
 	await openTokens();
@@ -159,35 +162,57 @@ test('character names on grimoire tokens are off by default and shown when switc
 	await expect(empty.locator('.seat-disc > .name')).toHaveText('Seat 2');
 });
 
-test('the token preview stays in view while the token settings scroll', async ({ page }) => {
-	// Trevor (2026-10-17): previews stick to the top so changes stay in view.
+test('each preview box stays in view only while its own settings scroll', async ({ page }) => {
+	// Trevor (2026-10-18): one box per kind of token, pinned only while its settings show.
 	await page.goto('/');
-	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await dialog
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board and tokens' })
-		.tap();
-	const preview = dialog.getByTestId('token-preview');
-	await expect(preview.getByTestId('token-player-name')).toBeVisible();
+	const dialog = await openTokens(page);
 	const content = dialog.locator('section.content');
-	await content.evaluate((el) => el.scrollTo(0, el.scrollHeight));
-	expect(await content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-	await expect(preview).toBeInViewport();
-	// Just under the section's sticky heading row (Trevor, 2026-10-17).
+	const character = dialog.getByTestId('token-preview');
+	const reminder = dialog.getByTestId('reminder-preview');
+	await expect(character.getByTestId('token-player-name')).toBeVisible();
+	// Just under the section's sticky heading row.
 	const row = (await dialog
-		.getByRole('heading', { name: 'Board and tokens', level: 2 })
+		.getByRole('heading', { name: 'Tokens', level: 2 })
 		.locator('..')
 		.boundingBox())!;
-	expect(Math.abs(row.y - (await content.boundingBox())!.y)).toBeLessThan(2);
-	expect(Math.abs((await preview.boundingBox())!.y - (row.y + row.height))).toBeLessThan(2);
+	const pinned = async (box: typeof character) =>
+		Math.abs((await box.boundingBox())!.y - (row.y + row.height));
+	await content.evaluate((el) => el.scrollTo(0, 120));
+	await expect.poll(() => pinned(character)).toBeLessThan(2);
+	// Down in the reminder settings, the reminder box is pinned and the character box has gone.
+	await reminder.evaluate((el) => el.closest('section.setting-group')!.scrollIntoView());
+	await content.evaluate((el) => el.scrollBy(0, 60));
+	await expect.poll(() => pinned(reminder)).toBeLessThan(2);
+	const [c, r] = [(await character.boundingBox())!, (await reminder.boundingBox())!];
+	expect(c.y + c.height).toBeLessThanOrEqual(r.y + 1);
+});
+
+test('reminders in text have their own size and can show a dot instead of the icon', async ({
+	page
+}) => {
+	// Trevor (2026-10-18): "add the settings for in-line reminder tokens".
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const chip = dialog.getByTestId('in-text-preview').getByTestId('reminder-token');
+	const owner = chip.locator('img.owner');
+	await expect(owner).toBeVisible();
+	const before = (await chip.boundingBox())!.height;
+	await dialog.getByRole('slider', { name: 'Reminder size in text' }).fill('1.5');
+	await expect.poll(async () => (await chip.boundingBox())!.height).toBeGreaterThan(before * 1.3);
+	// The board's Reminder token size leaves it as it is.
+	const after = (await chip.boundingBox())!.height;
+	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('2');
+	expect((await chip.boundingBox())!.height).toBeCloseTo(after, 0);
+	await dialog.getByText("Owner's icon on reminders in text", { exact: true }).tap();
+	await expect(owner).toBeHidden();
+	expect(await rootStyle(page, '--inline-reminder-dot')).toBe('block');
 });
 
 test('the preview draws the reminder as the board does, at the board size', async ({ page }) => {
 	// Trevor (2026-10-17): the preview showed the inline chip, not the reminder token.
 	await page.goto('/');
 	const dialog = await openTokens(page);
-	const preview = dialog.getByTestId('token-preview');
+	const preview = dialog.getByTestId('reminder-preview');
 	const reminder = preview.getByTestId('board-reminder');
 	await expect(reminder).toHaveAttribute('aria-label', 'Red Herring reminder');
 	await expect(preview.getByTestId('reminder-token')).toHaveCount(0);
@@ -235,7 +260,7 @@ test('night order badges sit on the side leaves, counting this game’s characte
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board and tokens' })
+		.getByRole('button', { name: 'Tokens' })
 		.tap();
 	const label = 'Show night order numbers on tokens';
 	await dialog.getByText(label, { exact: true }).tap();
@@ -298,7 +323,7 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	await dialog
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board and tokens' })
+		.getByRole('button', { name: 'Tokens' })
 		.tap();
 	const preview = dialog.getByTestId('token-preview').locator('.token');
 	await expect.poll(() => width(preview)).toBe(await width(onBoard));
@@ -313,7 +338,10 @@ test('reminder words can run wider or wrap instead of ending in "…"', async ({
 	// Trevor (2026-10-17): "red he..." on the Red Herring reminder.
 	await page.goto('/');
 	const dialog = await openTokens(page);
-	const label = dialog.getByTestId('token-preview').getByTestId('board-reminder').locator('.label');
+	const label = dialog
+		.getByTestId('reminder-preview')
+		.getByTestId('board-reminder')
+		.locator('.label');
 	await expect(label).toHaveText('Red Herring');
 	const cut = () => label.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
 	const lines = () =>
@@ -347,6 +375,49 @@ test('the preview player name follows the Player name size', async ({ page }) =>
 	const dialog = await openTokens(page);
 	const name = dialog.getByTestId('token-preview').getByTestId('token-player-name');
 	const before = (await name.boundingBox())!.width;
+	// Player name size is a Board setting (Trevor, 2026-10-18: Board and Tokens split).
+	const go = async (section: string) => {
+		const back = dialog.getByRole('button', { name: 'All settings' });
+		if (await back.isVisible()) await back.tap();
+		await dialog
+			.getByRole('navigation', { name: 'Settings sections' })
+			.getByRole('button', { name: section, exact: true })
+			.tap();
+	};
+	await go('Board');
 	await dialog.getByRole('slider', { name: 'Player name size' }).fill('1.5');
+	await go('Tokens');
 	await expect.poll(async () => (await name.boundingBox())!.width).toBeGreaterThan(before * 1.3);
+});
+
+test('the character name and reminder fonts are set beside their token previews', async ({
+	page
+}) => {
+	// Trevor (2026-10-18): the token and in-text fonts always match, so they live in Tokens.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	await expect(
+		dialog.getByTestId('character-font').getByRole('combobox', { name: 'Character names' })
+	).toBeVisible();
+	await expect(
+		dialog.getByTestId('reminder-font').getByRole('combobox', { name: 'Reminder tokens' })
+	).toBeVisible();
+	// The board reminder's words use the Reminder tokens font, as the chips in text do.
+	const label = dialog
+		.getByTestId('reminder-preview')
+		.getByTestId('board-reminder')
+		.locator('.label');
+	const chip = dialog.getByTestId('in-text-preview').getByTestId('reminder-token');
+	const family = (el: typeof label) => el.evaluate((e) => getComputedStyle(e).fontFamily);
+	expect(await family(label)).toBe(await family(chip));
+
+	const back = dialog.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Text', exact: true })
+		.tap();
+	await expect(dialog.getByRole('combobox', { name: 'Headings' })).toBeVisible();
+	await expect(dialog.getByRole('combobox', { name: 'Character names' })).toHaveCount(0);
+	await expect(dialog.getByRole('combobox', { name: 'Reminder tokens' })).toHaveCount(0);
 });
