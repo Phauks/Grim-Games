@@ -23,11 +23,7 @@
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { loadScriptText, type GameData } from '#lib/core/data/index.ts';
-	import {
-		chooseScript,
-		forgetScript,
-		recentScripts
-	} from '#lib/features/scripts/current-script.svelte.ts';
+	import { chooseScript, recentScripts } from '#lib/features/scripts/current-script.svelte.ts';
 	import { fetchLinkTarget } from '#lib/features/scripts/fetch-script.ts';
 	import { relaxJson } from '#lib/features/scripts/relaxed-json.ts';
 	import { sameScript, type VariationOf } from '#lib/features/scripts/saved-scripts.ts';
@@ -44,6 +40,8 @@
 	import { MAX_ITEM_NAME } from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 	import VariationChanges from './VariationChanges.svelte';
+	import ChangeKind from './ChangeKind.svelte';
+	import { removeScript } from './remove-script.ts';
 
 	/**
 	 * A script in the Library's pane: Search's own script view (Trevor, 2026-10-17: "exact same
@@ -55,9 +53,12 @@
 		row: ScriptRow;
 		data: GameData | undefined;
 		inline: boolean;
+		/** The item it became, after Change kind. */
+		onchanged?: (key: string) => void;
 	}
 
-	let { open = $bindable(false), row, data, inline }: Props = $props();
+	let { open = $bindable(false), row, data, inline, onchanged }: Props = $props();
+	let changingKind = $state(false);
 
 	/**
 	 * The version shown: the saved one, or another BotC Scripts version picked in the details
@@ -164,18 +165,11 @@
 
 	let removing = $state(false);
 	async function remove() {
-		const identity = row.listing.identity;
-		const saved = row.listing.saved;
+		// Read before closing: closing unmounts this pane.
+		const listing = row.listing;
 		open = false;
 		try {
-			if (saved) await forgetScript(saved.scriptId);
-			if (account.user && identity) {
-				for (const entry of profileScripts.list) {
-					if (sameScript({ json: entry.script.json }, identity)) {
-						await profileScripts.remove(entry);
-					}
-				}
-			}
+			await removeScript(listing);
 		} catch (e) {
 			reportError(e, { area: 'library' });
 		}
@@ -227,6 +221,11 @@
 				label={t('library.renameScript')}
 				onclick={() => (renaming = true)}
 			/>
+			<IconButton
+				icon="changeKind"
+				label={t('library.changeKind')}
+				onclick={() => (changingKind = true)}
+			/>
 			<DeleteButton label={t('library.remove')} onclick={() => (removing = true)} />
 		{/if}
 	{/snippet}
@@ -263,11 +262,14 @@
 	<LabelRows itemKey={row.key} />
 {/snippet}
 
+<ChangeKind bind:open={changingKind} item={{ kind: 'script', row }} {data} {onchanged} />
+
 <NameDialog
 	bind:open={renaming}
 	title={t('library.renameScript')}
 	initial={row.listing.row.name}
 	maxlength={MAX_ITEM_NAME}
+	blankName={() => row.ownName}
 	onsave={rename}
 />
 

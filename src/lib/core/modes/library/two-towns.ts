@@ -15,7 +15,7 @@ export const TWO_TOWNS: GameMode = {
 	id: 'two-towns-and-a-boomdandy',
 	name: 'Two Towns and a Boomdandy',
 	about:
-		'Two towns play side by side, each with its own Storyteller and script. Each day some players move to the other town, and a team wins by winning both towns.',
+		'Two towns play side by side, each with its own Storyteller and script. Each day some players move to the other town. The game ends if both demons are killed, or 5 days pass. If both demons have been killed, good wins; if both demons are alive, evil wins; if one demon is dead and one is alive, the evil team wins if the boomdandy is alive and in the same town as the living mayor.',
 	sources: [
 		{
 			title: 'Two Towns and a Boomdandy Rules (Ekin)',

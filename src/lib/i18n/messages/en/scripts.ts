@@ -11,6 +11,7 @@ export const scripts = {
 	'scripts.current.characters': 'Characters',
 	'scripts.current.source': 'Source',
 	'scripts.current.defaultName': 'Script',
+	'scripts.logoAlt': '{name} logo',
 	'scripts.dropHint': 'Drop the script file to save it',
 	'scripts.add.failed': 'Could not add the script',
 	'scripts.openSharedFailed': 'Could not open the shared script',

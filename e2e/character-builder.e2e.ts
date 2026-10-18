@@ -108,3 +108,74 @@ test('an ability is built from its opening and setup changes', async ({ page }) 
 		'Each night* choose a player: they learn something. [+the King]'
 	);
 });
+
+// One trash in the header (Trevor, 2026-10-18: "two delete buttons"): it clears an unsaved
+// character, and deletes the saved one once there is one.
+test('one trash button clears a new character and deletes a saved one', async ({ page }) => {
+	await page.goto('/build-character');
+	const header = page.getByRole('main');
+	const trash = () =>
+		header.getByRole('button', { name: /^(Clear the character|Delete the saved character)$/ });
+	await expect(trash()).toHaveCount(1);
+	await expect(header.getByRole('button', { name: 'Clear the character' })).toBeDisabled();
+
+	await page.getByTestId('character-name').fill('Candle Snuffer');
+	await page.getByTestId('character-ability').fill('You start knowing a candle.');
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(trash()).toHaveCount(1);
+	await header.getByRole('button', { name: 'Delete the saved character' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+
+	await header.getByRole('button', { name: 'Clear the character' }).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('character-name')).toHaveValue('');
+});
+
+// The clauses official abilities use most, after the opening (Trevor, 2026-10-18): who is
+// chosen and what then happens, each written in TPI's words; typed text around them stays.
+test('an ability gets who it chooses and what happens from drop-downs', async ({ page }) => {
+	await page.goto('/build-character');
+	const ability = page.getByTestId('character-ability');
+	await ability.fill('Each night*, you learn a number.');
+	await expect(page.getByRole('combobox', { name: 'Then' })).toContainText('you learn');
+
+	await page.getByRole('combobox', { name: 'Chooses' }).tap();
+	await page.getByRole('option', { name: 'choose a player (not yourself)', exact: true }).tap();
+	await expect(ability).toHaveValue(
+		'Each night*, choose a player (not yourself): you learn a number.'
+	);
+
+	await page.getByRole('combobox', { name: 'Then' }).tap();
+	await page.getByRole('option', { name: 'they are poisoned', exact: true }).tap();
+	await expect(ability).toHaveValue(
+		'Each night*, choose a player (not yourself): they are poisoned a number.'
+	);
+});
+
+// Character collections from the builder (Trevor, 2026-10-18: "in character builder, allow
+// assigning to character collection"): the Library's own collections, shown once saved.
+test('a saved character goes into a new character collection', async ({ page }) => {
+	await page.goto('/build-character');
+	const collections = page.getByRole('combobox', { name: 'Character collections' });
+	await expect(collections).toBeDisabled();
+	await expect(collections).toContainText('None');
+
+	await page.getByTestId('character-name').fill('Lantern Keeper');
+	await page.getByTestId('character-ability').fill('You start knowing a lantern.');
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(collections).toBeEnabled();
+
+	await collections.tap();
+	await page.getByRole('option', { name: 'New collection', exact: true }).tap();
+	const naming = page.getByRole('dialog', { name: 'New collection' });
+	await naming.getByRole('textbox').fill('Lights');
+	await naming.getByRole('textbox').press('Enter');
+	await expect(collections).toContainText('Lights');
+
+	// Unticking takes it out again.
+	await collections.tap();
+	await page.getByRole('option', { name: 'Lights', exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(collections).toContainText('None');
+});

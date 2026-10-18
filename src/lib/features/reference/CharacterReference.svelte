@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { typeTone } from '#lib/core/data/character-type.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -100,11 +101,7 @@
 		<div class="group">
 			<Collapsible
 				title={TYPE_PLURALS[group.type]}
-				tone={group.type === 'townsfolk' || group.type === 'outsider'
-					? 'good'
-					: group.type === 'minion' || group.type === 'demon'
-						? 'evil'
-						: undefined}
+				tone={typeTone(group.type)}
 				storageKey="reference:{group.type}"
 				forceOpen={search.trim() !== ''}
 			>

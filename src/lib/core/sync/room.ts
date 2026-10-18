@@ -55,12 +55,16 @@ export interface RoomState {
 export interface SpectatorVote {
 	voteId: string;
 	options: SeatId[];
+	/** What the vote is for, as the Storyteller set it: the shared ability. */
+	ability?: string;
 	/** One choice per spectator, by member id. */
 	votes: Record<string, SeatId>;
 }
 
 /** At most this many options in a vote: one per seat. */
 export const MAX_VOTE_OPTIONS = MAX_MEMBERS;
+/** The longest ability text a vote carries. */
+export const MAX_VOTE_ABILITY = 500;
 
 /**
  * The room protocol this build speaks. The Worker updates the moment a build deploys, but an
@@ -94,7 +98,7 @@ export type ClientMessage =
 	/** `seatId` puts the player in a different seat from the one they asked for. */
 	| { type: 'resolve'; requestId: string; accept: boolean; seatId?: SeatId }
 	| { type: 'unseat'; memberId: string }
-	| { type: 'open-vote'; voteId: string; options: SeatId[] }
+	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }
 	| { type: 'close-vote' }
 	| { type: 'close' };
 
@@ -127,7 +131,7 @@ export interface PlayerView {
 	/** Seats someone in the room already sits in. */
 	takenSeats: SeatId[];
 	/** The open vote, shown to spectators only. */
-	vote?: { voteId: string; options: SeatId[]; choice?: SeatId };
+	vote?: { voteId: string; options: SeatId[]; ability?: string; choice?: SeatId };
 }
 
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
@@ -214,6 +218,7 @@ export function playerView(room: RoomState, memberId: string): PlayerView {
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
 		view.vote = { voteId: room.vote.voteId, options: room.vote.options };
+		if (room.vote.ability) view.vote.ability = room.vote.ability;
 		if (choice !== undefined) view.vote.choice = choice;
 	}
 	if (request) {
@@ -335,9 +340,14 @@ export function publish(room: RoomState, gameId: string, state: PublicGameState)
 
 /**
  * Opens a spectators' vote, replacing any open one. Options must be seats at the table, each
- * once; a vote with none is not opened.
+ * once; a vote with none is not opened. `ability` (optional, added later) says what it is for.
  */
-export function openVote(room: RoomState, voteId: unknown, options: unknown): RoomState {
+export function openVote(
+	room: RoomState,
+	voteId: unknown,
+	options: unknown,
+	ability?: unknown
+): RoomState {
 	if (typeof voteId !== 'string' || !voteId || !Array.isArray(options)) return room;
 	const seats = [
 		...new Set(
@@ -345,7 +355,11 @@ export function openVote(room: RoomState, voteId: unknown, options: unknown): Ro
 		)
 	].slice(0, MAX_VOTE_OPTIONS);
 	if (seats.length === 0) return room;
-	return { ...room, vote: { voteId, options: seats, votes: {} } };
+	const text = typeof ability === 'string' ? ability.trim().slice(0, MAX_VOTE_ABILITY) : '';
+	return {
+		...room,
+		vote: { voteId, options: seats, votes: {}, ...(text ? { ability: text } : {}) }
+	};
 }
 
 export function closeVote(room: RoomState): RoomState {

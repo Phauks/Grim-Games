@@ -14,6 +14,11 @@
 		onsave: (name: string) => void;
 		/** The longest name allowed; a folder's or tag's by default. */
 		maxlength?: number;
+		/**
+		 * For a saved item: a blank name saves as this instead of being refused (Trevor,
+		 * 2026-10-18: nothing saved without a name, a timestamp when none is given).
+		 */
+		blankName?: () => string;
 	}
 
 	let {
@@ -21,12 +26,13 @@
 		title,
 		initial = '',
 		onsave,
-		maxlength = MAX_LABEL_NAME
+		maxlength = MAX_LABEL_NAME,
+		blankName
 	}: Props = $props();
 
 	let name = $state('');
 	const clean = (text: string) => text.trim().replace(/\s+/g, ' ').slice(0, maxlength);
-	const ok = $derived(clean(name) !== '');
+	const ok = $derived(clean(name) !== '' || !!blankName);
 
 	$effect(() => {
 		if (open) name = initial;
@@ -34,7 +40,7 @@
 
 	function save() {
 		if (!ok) return;
-		onsave(clean(name));
+		onsave(clean(name) || blankName?.() || '');
 		open = false;
 	}
 </script>

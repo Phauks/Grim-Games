@@ -79,18 +79,20 @@
 				<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token; a badge would repeat the icon -->
 				<span class="name">{character.name}</span>
 				{#if offScript}<span class="tag">{t('setup.offScript')}</span>{/if}
-				<!-- A bluff that is also chosen for the bag is flagged, not removed (warn, don't lock). -->
-				{#if bluff}<span class="tag" data-testid="bluff-tag" data-warn={selected ? '' : undefined}
-						>{selected ? t('setup.bluffInPlay') : t('setup.bluff')}</span
-					>{/if}
 			</span>
 			<span class="ability">{character.ability}</span>
 		</span>
 		<span class="marks" aria-hidden="true">
 			<span class="jinx" title={t('setup.jinxed')}>{jinxed ? '★' : ''}</span>
 			<span class="copies">{copies > 1 ? `×${copies}` : ''}</span>
+			<!--
+				A Demon bluff shows a red badge where the check goes (Trevor, 2026-10-18); one also
+				chosen for the bag adds a warning, not a lock.
+			-->
 			<span class="check"
-				>{#if selected}<Icon name="check" />{/if}</span
+				>{#if bluff}<span class="bluff" data-testid="bluff-tag"
+						>{#if selected}<Icon name="warning" />{/if}{t('setup.bluffShort')}</span
+					>{:else if selected}<Icon name="check" />{/if}</span
 			>
 		</span>
 	</button>
@@ -153,9 +155,18 @@
 		font-weight: 600;
 		vertical-align: middle;
 	}
-	.tag[data-warn] {
+	.bluff {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2em;
+		padding: 0 0.4em;
+		border-radius: var(--radius-full);
 		background: var(--evil);
 		color: var(--on-evil);
+		font-family: var(--font-control);
+		font-size: 0.7rem;
+		font-weight: 600;
+		white-space: nowrap;
 	}
 	.choice[data-selected] {
 		background: var(--choice-selected-background);
@@ -235,7 +246,7 @@
 		grid-column: 2;
 		grid-row: 1;
 		display: grid;
-		grid-template-columns: 1em 2em 1.25em;
+		grid-template-columns: 1em 2em minmax(1.25em, auto);
 		align-items: center;
 		justify-items: center;
 		flex: none;

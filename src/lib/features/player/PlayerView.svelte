@@ -172,7 +172,13 @@
 	     Another script loads only from a share link or QR code. -->
 	{#snippet actions()}
 		<PrintScriptButton {script} {version} />
-		<ShareControl what="script" title={script?.name ?? 'Script'} target={shareTarget} />
+		<ShareControl
+			what="script"
+			title={script?.name ?? 'Script'}
+			author={script?.meta.author}
+			{version}
+			target={shareTarget}
+		/>
 	{/snippet}
 	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). -->
 	{#snippet subtitle()}

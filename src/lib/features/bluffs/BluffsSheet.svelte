@@ -461,7 +461,7 @@
 	}
 	.none {
 		padding-left: var(--space-2);
-		color: var(--on-sheet-muted);
+		color: var(--on-surface-muted);
 	}
 	.actions {
 		display: flex;

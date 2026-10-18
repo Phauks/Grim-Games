@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { CHARACTER_TYPES, type CharacterType, type GameData } from '#lib/core/data/index.ts';
+	import { timestampName } from '#lib/core/timestamp-name.ts';
 	import {
 		blocksSaving,
 		changesSetup,
@@ -29,12 +30,12 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import TextListField from '#lib/ui/primitives/TextListField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import AbilityField from './AbilityField.svelte';
+	import CollectionField from './CollectionField.svelte';
 	import type { SavedCharacter } from './saved-characters.ts';
 	import { isEmptyCharacterDraft } from './draft.ts';
 	import { characterBuilderDraft as draft, savedCharacters } from './stores.svelte.ts';
@@ -68,6 +69,9 @@
 	const preview = $derived(previewCharacter(f));
 	const problems = $derived(characterProblems(f, data));
 	const canSave = $derived(!blocksSaving(problems));
+	// Saving to the Library is never stopped by a missing name: it gets a timestamp name
+	// (Trevor, 2026-10-18).
+	const canStore = $derived(!blocksSaving(problems.filter((p) => p.kind !== 'name-missing')));
 	const savedRecord = $derived(d.editing ? savedCharacters.get(d.editing) : undefined);
 	const entryJson = $derived(JSON.stringify(characterEntry(f)));
 	const isSaved = $derived(!!savedRecord && JSON.stringify(savedRecord.entry) === entryJson);
@@ -84,7 +88,8 @@
 	}
 
 	function save(asNew = false) {
-		if (!canSave) return;
+		if (!canStore) return;
+		if (!f.name.trim()) f.name = timestampName();
 		const savedId = savedCharacters.save(f, asNew ? undefined : d.editing);
 		draft.setEditing(savedId);
 	}
@@ -147,17 +152,10 @@
 			downloadLabel={t('character-builder.download')}
 			downloadDisabled={!canSave}
 			onDownload={() => downloadJson(fileNameFor(f.name, 'character'), characterEntry(f))}
-			clearLabel={t('character-builder.clear')}
-			clearDisabled={isEmptyCharacterDraft(d)}
-			onClear={() => (clearOpen = true)}
-		>
-			<DeleteButton
-				class="icon-button"
-				label={t('character-builder.delete')}
-				disabled={!savedRecord}
-				onclick={() => (deleteOpen = true)}
-			/>
-		</BuilderTools>
+			clearLabel={savedRecord ? t('character-builder.delete') : t('character-builder.clear')}
+			clearDisabled={!savedRecord && isEmptyCharacterDraft(d)}
+			onClear={() => (savedRecord ? (deleteOpen = true) : (clearOpen = true))}
+		/>
 	{/snippet}
 
 	{#snippet side()}
@@ -174,7 +172,7 @@
 				</p>
 			</section>
 			<BuilderSave
-				ready={canSave}
+				ready={canStore}
 				saved={isSaved}
 				editing={!!savedRecord}
 				onSave={() => save()}
@@ -185,6 +183,7 @@
 					? t('character-builder.onScript')
 					: t('character-builder.addToScript')}</Button
 			>
+			<CollectionField savedId={savedRecord?.savedId} />
 			<!-- Reserved room: problems come and go as the form is filled, so nothing moves. -->
 			<ul class="problems" role="status" aria-label={t('character-builder.problems')}>
 				{#each problems as problem (problem.kind)}

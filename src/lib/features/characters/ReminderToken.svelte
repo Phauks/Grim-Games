@@ -131,8 +131,19 @@
 	.reminder[data-type='demon'] {
 		--rim: var(--evil);
 	}
-	.reminder[data-type='traveller'] {
-		--rim: var(--traveller);
+	/*
+	 * A Traveller's reminder, its player's alignment unknown: half good blue, half evil red,
+	 * like a Traveller's token (Trevor, 2026-10-18). The face is laid over the split, inset
+	 * by the rim's width, so the chip keeps its size.
+	 */
+	.reminder[data-type='traveller']:not([data-alignment]) {
+		--rim: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
+		--face-inset: 3px; /* px-ok: twice the 1.5px rim the other chips draw */
+		box-shadow: none;
+		background:
+			linear-gradient(var(--reminder-face) 0 0) center / calc(100% - var(--face-inset))
+				calc(100% - var(--face-inset)) no-repeat,
+			var(--rim);
 	}
 	.reminder[data-type='fabled'] {
 		--rim: var(--fabled);
