@@ -60,6 +60,12 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	await expect(dialog.locator('pre')).toBeHidden();
 	await dialog.getByRole('button', { name: 'Mode file', exact: true }).tap();
 	await expect(dialog.locator('pre')).toContainText('"id": "whale-buffet"');
+	// Download sits beside Copy and saves the file under the mode's name.
+	const [download] = await Promise.all([
+		page.waitForEvent('download'),
+		dialog.getByRole('button', { name: 'Download mode file' }).tap()
+	]);
+	expect(download.suggestedFilename()).toBe('whale-buffet.json');
 	// Our own wording is off by default (no authored content, Trevor 2026-10-15).
 	await expect(dialog.getByTestId('inspect-about')).toHaveText('None');
 	// The dialog's content scrolls to its last part (Trevor, 2026-10-18).

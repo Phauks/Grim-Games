@@ -139,6 +139,7 @@ export const modes = {
 	'modes.aliases': 'Also called',
 	'modes.parts': 'Parts',
 	'modes.file': 'Mode file',
+	'modes.downloadFile': 'Download mode file',
 	'modes.copyFile': 'Copy mode file',
 	'modes.rules': 'Rules',
 	'modes.yes': 'Yes',
