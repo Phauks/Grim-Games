@@ -32,6 +32,8 @@
 			.catch((e: unknown) => reportError(e, { area: 'history' }));
 	});
 	const stats = $derived(historyStats(records));
+	// Shares of the games with a recorded winner (Trevor, 2026-10-18), as win rates count them.
+	const decided = $derived(stats.summary.wins.good + stats.summary.wins.evil);
 
 	const count = (n: number) => intl.number(n);
 	const decimal = (n: number | undefined) =>
@@ -206,11 +208,17 @@
 		</div>
 		<div>
 			<dt>{t('history.goodWins')}</dt>
-			<dd>{count(stats.summary.wins.good)}</dd>
+			<dd>
+				{count(stats.summary.wins.good)}
+				<span class="share">({percent(stats.summary.wins.good, decided)})</span>
+			</dd>
 		</div>
 		<div>
 			<dt>{t('history.evilWins')}</dt>
-			<dd>{count(stats.summary.wins.evil)}</dd>
+			<dd>
+				{count(stats.summary.wins.evil)}
+				<span class="share">({percent(stats.summary.wins.evil, decided)})</span>
+			</dd>
 		</div>
 		<div>
 			<dt>{t('history.averageDays')}</dt>
@@ -334,9 +342,14 @@
 	}
 	dd {
 		margin: 0;
+		white-space: nowrap;
 		font-family: var(--font-heading);
 		font-size: 1.3rem;
 		color: var(--heading);
+	}
+	.share {
+		font-size: 0.7em;
+		color: var(--on-surface-muted);
 	}
 	.script {
 		display: block;
