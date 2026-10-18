@@ -46,6 +46,7 @@ import {
 	type NightStepOverride,
 	fixedReminderMove
 } from '#lib/core/rules/index.ts';
+import { startingRuleCharacters } from '#lib/core/rules/script-rules.ts';
 import type { Command, CommandOf } from './commands.ts';
 import type { EngineContext } from './context.ts';
 import type { GameEvent } from './events.ts';
@@ -184,7 +185,12 @@ function createGame(command: CommandOf<'CreateGame'>, ctx: EngineContext, warn: 
 			createdAt: ctx.now(),
 			script: command.script,
 			seatIds
-		}
+		},
+		// The script's Fabled and Loric start in play (script-rules.ts).
+		...startingRuleCharacters(command.script, ctx.characters).map((characterId): GameEvent => ({
+			type: 'RuleCharacterAdded',
+			characterId
+		}))
 	];
 }
 

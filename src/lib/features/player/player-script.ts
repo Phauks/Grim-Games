@@ -14,6 +14,7 @@ import {
 } from '#lib/core/data/index.ts';
 import { MAX_DEALT_PLAYERS } from '#lib/core/rules/distribution.ts';
 import { scriptJinxes, type ScriptJinx } from '#lib/core/rules/jinxes.ts';
+import { BOOTLEGGER, withScriptRules } from '#lib/core/rules/script-rules.ts';
 import { isNightMarker, nightOrder, type Night } from '#lib/core/rules/night-order.ts';
 
 export interface TypeGroup {
@@ -33,14 +34,16 @@ export function groupByType(characters: readonly Character[]): TypeGroup[] {
  * The characters on the player's script sheet: the script's own, plus, for an official
  * edition, its Travellers, which TPI recommends for that edition though they are not on its
  * character sheet (Trevor, 2026-10-16). A custom script's Travellers are the ones it lists.
+ * The Bootlegger shows the script's own rules (core `script-rules.ts`).
  */
 export function sheetCharacters(script: LoadedScript, data: GameData): Character[] {
-	if (!script.edition) return [...script.characters];
+	const own = withScriptRules(script.characters, script.meta, data.byId.get(BOOTLEGGER));
+	if (!script.edition) return own;
 	const listed = new Set(script.characters.map((c) => c.id));
 	const travellers = data.characters.filter(
 		(c) => c.edition === script.edition && c.type === 'traveller' && !listed.has(c.id)
 	);
-	return [...script.characters, ...travellers];
+	return [...own, ...travellers];
 }
 
 export function playerJinxes(script: LoadedScript, data: GameData): ScriptJinx[] {
