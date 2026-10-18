@@ -32,6 +32,8 @@
 		onToggle,
 		onAddCopy
 	}: Props = $props();
+	const uid = $props.id();
+	const bluffTagId = `${uid}-bluff`;
 	const selected = $derived(copies > 0);
 	// The character's page opens from its icon (Trevor, 2026-10-18); made on first use.
 	let infoUsed = $state(false);
@@ -66,7 +68,7 @@
 		class="main"
 		aria-pressed={selected}
 		aria-label={copies > 1 ? `${character.name}, ${copies} copies` : character.name}
-		aria-description={bluff ? (selected ? t('setup.bluffInPlay') : t('setup.bluff')) : undefined}
+		aria-describedby={bluff ? bluffTagId : undefined}
 		data-character-id={character.id}
 		onclick={onToggle}
 	>
@@ -76,7 +78,11 @@
 				<span class="name">{character.name}</span>
 				{#if offScript}<span class="tag">{t('setup.offScript')}</span>{/if}
 				<!-- A bluff that is also chosen for the bag is flagged, not removed (warn, don't lock). -->
-				{#if bluff}<span class="tag" data-testid="bluff-tag" data-warn={selected ? '' : undefined}
+				{#if bluff}<span
+						id={bluffTagId}
+						class="tag"
+						data-testid="bluff-tag"
+						data-warn={selected ? '' : undefined}
 						>{selected ? t('setup.bluffInPlay') : t('setup.bluff')}</span
 					>{/if}
 			</span>
