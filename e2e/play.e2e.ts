@@ -210,9 +210,9 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	const del = sheet.getByRole('button', { name: 'Delete note' });
 	await expect(del).toHaveText('');
 	await expect(del.locator('[data-icon]')).toBeVisible();
-	// In the sheet's header, beside its X (Trevor, 2026-10-17).
-	await expect(sheet.locator('header').getByRole('button', { name: 'Delete note' })).toBeVisible();
-	// The sheet grows in from 97%: measured mid-animation the button is a hair under 44.
+	// In the header, beside its X (Trevor, 2026-10-17).
+	await expect(sheet.locator('.head').getByRole('button', { name: 'Delete note' })).toBeVisible();
+	// The panel grows in: measured mid-animation the button is a hair under 44.
 	await settled(sheet);
 	const box = (await del.boundingBox())!;
 	expect(box.width).toBeGreaterThanOrEqual(44);
@@ -340,12 +340,13 @@ test('each note can hide its contents until it is opened', async ({ page }) => {
 	const row = page.locator('[data-note]');
 	await expect(row).toContainText('Sam is the Imp');
 
-	// Each note has its own switch (Trevor, 2026-10-17), not a setting.
+	// Each note has its own switch (Trevor, 2026-10-17), not a setting, and it is the same
+	// one as a scratch pad's, beside the title (Trevor, 2026-10-18).
 	await row.tap();
-	const hide = sheet.getByRole('checkbox', { name: 'Hide contents', includeHidden: true });
-	await expect(hide).not.toBeChecked();
-	await sheet.getByText('Hide contents', { exact: true }).tap();
-	await expect(hide).toBeChecked();
+	const hide = sheet.getByRole('button', { name: 'Hide contents' });
+	await expect(hide).toHaveAttribute('aria-pressed', 'false');
+	await hide.tap();
+	await expect(hide).toHaveAttribute('aria-pressed', 'true');
 	await page.keyboard.press('Escape');
 
 	// The title stays so notes can be found; the text is hidden (Trevor, 2026-10-16).
