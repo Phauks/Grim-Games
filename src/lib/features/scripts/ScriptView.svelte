@@ -164,7 +164,8 @@
 			case 'json':
 				return loadScript(target.json, data).script;
 			case 'botcscripts':
-			case 'homebrew': {
+			case 'homebrew':
+			case 'bloodstar': {
 				const fetched = remotePreviews.get(target);
 				return fetched && loadScriptText(fetched.text, data).script;
 			}
@@ -191,6 +192,7 @@
 				return target.source;
 			case 'botcscripts':
 			case 'homebrew':
+			case 'bloodstar':
 				return remotePreviews.get(target)?.source;
 		}
 		return undefined;

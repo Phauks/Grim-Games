@@ -43,12 +43,17 @@
 		return rate === undefined ? t('common.none') : intl.number(rate, { style: 'percent' });
 	};
 	const width = (u: number) => `calc(${u} * var(--u))`;
+	/** A win rate as a whole percentage, for the column's filter. */
+	const percentOf = (wins: number, decided: number) => {
+		const rate = winRate(wins, decided);
+		return rate === undefined ? undefined : Math.round(rate * 100);
+	};
 
 	// ── Scripts ──
 	type ScriptColumn = 'script' | 'games' | 'good' | 'evil';
 	let scriptSort = $state<DataSort<ScriptColumn> | undefined>();
 	let scriptFilter = $state('');
-	const scriptColumns = $derived<DataColumn<ScriptColumn>[]>([
+	const scriptColumns = $derived<DataColumn<ScriptColumn, ScriptStats>[]>([
 		{
 			id: 'script',
 			label: t('history.script'),
@@ -57,9 +62,30 @@
 			filterable: true,
 			filtered: scriptFilter.trim() !== ''
 		},
-		{ id: 'games', label: t('history.games'), sortable: true, align: 'end', width: width(5) },
-		{ id: 'good', label: t('history.goodWins'), sortable: true, align: 'end', width: width(5) },
-		{ id: 'evil', label: t('history.evilWins'), sortable: true, align: 'end', width: width(5) }
+		{
+			id: 'games',
+			label: t('history.games'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (s) => scriptValue(s, 'games')
+		},
+		{
+			id: 'good',
+			label: t('history.goodWins'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (s) => scriptValue(s, 'good')
+		},
+		{
+			id: 'evil',
+			label: t('history.evilWins'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (s) => scriptValue(s, 'evil')
+		}
 	]);
 	const scriptValue = (s: ScriptStats, c: ScriptColumn) =>
 		c === 'script' ? (s.name ?? '') : c === 'games' ? s.games : s.wins[c];
@@ -76,7 +102,7 @@
 	let characterSort = $state<DataSort<CharacterColumn> | undefined>();
 	let characterFilter = $state('');
 	let typeFilter = $state<CharacterType[]>([]);
-	const characterColumns = $derived<DataColumn<CharacterColumn>[]>([
+	const characterColumns = $derived<DataColumn<CharacterColumn, CharacterStats>[]>([
 		{
 			id: 'character',
 			label: t('history.character'),
@@ -94,7 +120,14 @@
 			wide: true,
 			width: width(7)
 		},
-		{ id: 'games', label: t('history.games'), sortable: true, align: 'end', width: width(5) },
+		{
+			id: 'games',
+			label: t('history.games'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (c) => characterValue(c, 'games')
+		},
 		// Off on phones so the character's badge has room for its name (Trevor, 2026-10-18:
 		// names ran past their badges); Win rate stays.
 		{
@@ -103,9 +136,17 @@
 			sortable: true,
 			align: 'end',
 			wide: true,
-			width: width(5)
+			width: width(5),
+			value: (c) => characterValue(c, 'wins')
 		},
-		{ id: 'rate', label: t('history.winRate'), sortable: true, align: 'end', width: width(5) }
+		{
+			id: 'rate',
+			label: t('history.winRate'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (c) => percentOf(c.wins, c.decided)
+		}
 	]);
 	const characterValue = (c: CharacterStats, column: CharacterColumn) =>
 		column === 'character'
@@ -134,7 +175,7 @@
 	type PlayerColumn = 'player' | 'games' | 'good' | 'evil' | 'wins' | 'rate' | 'deaths';
 	let playerSort = $state<DataSort<PlayerColumn> | undefined>();
 	let playerFilter = $state('');
-	const playerColumns = $derived<DataColumn<PlayerColumn>[]>([
+	const playerColumns = $derived<DataColumn<PlayerColumn, PlayerStats>[]>([
 		{
 			id: 'player',
 			label: t('history.player'),
@@ -143,14 +184,22 @@
 			filterable: true,
 			filtered: playerFilter.trim() !== ''
 		},
-		{ id: 'games', label: t('history.games'), sortable: true, align: 'end', width: width(5) },
+		{
+			id: 'games',
+			label: t('history.games'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (p) => playerValue(p, 'games')
+		},
 		{
 			id: 'good',
 			label: t('history.good'),
 			sortable: true,
 			align: 'end',
 			wide: true,
-			width: width(5)
+			width: width(5),
+			value: (p) => playerValue(p, 'good')
 		},
 		{
 			id: 'evil',
@@ -158,17 +207,33 @@
 			sortable: true,
 			align: 'end',
 			wide: true,
-			width: width(5)
+			width: width(5),
+			value: (p) => playerValue(p, 'evil')
 		},
-		{ id: 'wins', label: t('history.wins'), sortable: true, align: 'end', width: width(5) },
-		{ id: 'rate', label: t('history.winRate'), sortable: true, align: 'end', width: width(5) },
+		{
+			id: 'wins',
+			label: t('history.wins'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (p) => playerValue(p, 'wins')
+		},
+		{
+			id: 'rate',
+			label: t('history.winRate'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (p) => percentOf(p.wins, p.decided)
+		},
 		{
 			id: 'deaths',
 			label: t('history.deaths'),
 			sortable: true,
 			align: 'end',
 			wide: true,
-			width: width(5)
+			width: width(5),
+			value: (p) => playerValue(p, 'deaths')
 		}
 	]);
 	const playerValue = (p: PlayerStats, column: PlayerColumn) =>

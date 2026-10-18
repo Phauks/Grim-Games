@@ -10,14 +10,11 @@
 		loadNumericNightOrder,
 		loadOfficialData
 	} from '#lib/features/characters/game-data.svelte.ts';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import CharacterReference from './CharacterReference.svelte';
 	import NightOrderReference from './NightOrderReference.svelte';
-	import TokenKey from './TokenKey.svelte';
-	import { referenceView, type ReferenceView } from './view-mode.svelte.ts';
+	import { referenceView } from './view-mode.svelte.ts';
 
 	type View = 'characters' | 'night';
 
@@ -25,7 +22,6 @@
 	let numeric = $state<NumericNightOrder>();
 	let error = $state<string>();
 	let view = $state<View>('characters');
-	let keyOpen = $state(false);
 
 	// Built at runtime from the same data and rules code the app uses.
 	const entries = $derived(data ? characterReference(data, numeric) : []);
@@ -55,22 +51,6 @@
 </script>
 
 <Page title={t('reference.title')}>
-	{#snippet toolbar()}
-		<div class="switch">
-			<Select
-				label={t('reference.showAs')}
-				hideLabel
-				value={referenceView.current}
-				options={[
-					{ value: 'cards', label: t('reference.viewCards') },
-					{ value: 'table', label: t('reference.viewTable') }
-				] satisfies { value: ReferenceView; label: string }[]}
-				onChange={(value) => (referenceView.current = value)}
-			/>
-		</div>
-		<IconButton icon="info" label={t('reference.tokenKey')} onclick={() => (keyOpen = true)} />
-	{/snippet}
-
 	<Tabs
 		bind:value={view}
 		label={t('reference.views')}
@@ -95,12 +75,8 @@
 		{/snippet}
 	</Tabs>
 </Page>
-<TokenKey bind:open={keyOpen} />
 
 <style>
-	.switch {
-		flex: 0 1 calc(16 * var(--u));
-	}
 	.loading {
 		min-height: 100dvh;
 		color: var(--on-surface-muted);

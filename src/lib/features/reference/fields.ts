@@ -31,7 +31,7 @@ export const FIELD_IDS = [
 export type FieldId = (typeof FIELD_IDS)[number];
 
 /** How a table column filters. */
-export type FilterKind = 'text' | 'types' | 'alignment' | 'presence';
+export type FilterKind = 'text' | 'types' | 'editions' | 'alignment' | 'presence';
 
 export interface ReferenceField {
 	id: FieldId;
@@ -53,7 +53,7 @@ const FIELDS: readonly Omit<ReferenceField, 'label'>[] = [
 	{ id: 'token', card: 'header' },
 	{ id: 'name', card: 'header', sort: 'name', filter: 'text' },
 	{ id: 'type', card: 'header', sort: 'type', filter: 'types' },
-	{ id: 'edition', card: 'header', sort: 'edition' },
+	{ id: 'edition', card: 'header', sort: 'edition', filter: 'editions' },
 	// The table's token column already shows the icon, so it spends no space on the icon pair
 	// (Trevor, 2026-10-16).
 	{ id: 'icons', card: 'header', cardOnly: true },

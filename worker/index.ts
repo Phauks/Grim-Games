@@ -1,4 +1,5 @@
 import { handleAccount, type Env as AccountRoutesEnv } from './account/routes.ts';
+import { bloodstarSource, handleBloodstarScript } from './bloodstar.ts';
 import { handleBotcScripts } from './botcscripts.ts';
 import { collectionSource } from './collections.ts';
 import { curatedSource } from './curated.ts';
@@ -30,7 +31,8 @@ const MIRRORED_SOURCES: readonly MirroredSource[] = [
 	curatedSource,
 	...COLLECTIONS.map(collectionSource),
 	worldCupSource('2023'),
-	worldCupSource('2025')
+	worldCupSource('2025'),
+	bloodstarSource
 ];
 
 export default {
@@ -55,6 +57,14 @@ export default {
 		) {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
 			return handleHomebrewScripts(url);
+		}
+		if (url.pathname === '/api/bloodstar') {
+			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+			return serveMirrored(env, ctx, bloodstarSource);
+		}
+		if (url.pathname.startsWith('/api/bloodstar/')) {
+			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+			return handleBloodstarScript(url);
 		}
 		if (url.pathname === '/api/curated') {
 			if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
