@@ -95,7 +95,9 @@ import ph_leaf_bold from '~icons/ph/leaf-bold';
 import ph_lifebuoy_bold from '~icons/ph/lifebuoy-bold';
 import ph_lightning_bold from '~icons/ph/lightning-bold';
 import ph_link_bold from '~icons/ph/link-bold';
+import ph_link_break_bold from '~icons/ph/link-break-bold';
 import ph_link_simple_bold from '~icons/ph/link-simple-bold';
+import ph_link_simple_break_bold from '~icons/ph/link-simple-break-bold';
 import ph_list_bold from '~icons/ph/list-bold';
 import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_list_checks_bold from '~icons/ph/list-checks-bold';
@@ -125,7 +127,6 @@ import ph_plus_circle_bold from '~icons/ph/plus-circle-bold';
 import ph_printer_bold from '~icons/ph/printer-bold';
 import ph_prohibit_bold from '~icons/ph/prohibit-bold';
 import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
-import ph_pulse_bold from '~icons/ph/pulse-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
@@ -150,7 +151,6 @@ import ph_speaker_high_bold from '~icons/ph/speaker-high-bold';
 import ph_spinner_bold from '~icons/ph/spinner-bold';
 import ph_square_bold from '~icons/ph/square-bold';
 import ph_star_bold from '~icons/ph/star-bold';
-import ph_stethoscope_bold from '~icons/ph/stethoscope-bold';
 import ph_sun_bold from '~icons/ph/sun-bold';
 import ph_sun_horizon_bold from '~icons/ph/sun-horizon-bold';
 import ph_swap_bold from '~icons/ph/swap-bold';
@@ -278,7 +278,9 @@ const icons: IconMap = {
 	'ph:lifebuoy-bold': ph_lifebuoy_bold,
 	'ph:lightning-bold': ph_lightning_bold,
 	'ph:link-bold': ph_link_bold,
+	'ph:link-break-bold': ph_link_break_bold,
 	'ph:link-simple-bold': ph_link_simple_bold,
+	'ph:link-simple-break-bold': ph_link_simple_break_bold,
 	'ph:list-bold': ph_list_bold,
 	'ph:list-bullets-bold': ph_list_bullets_bold,
 	'ph:list-checks-bold': ph_list_checks_bold,
@@ -308,7 +310,6 @@ const icons: IconMap = {
 	'ph:printer-bold': ph_printer_bold,
 	'ph:prohibit-bold': ph_prohibit_bold,
 	'ph:prohibit-inset-bold': ph_prohibit_inset_bold,
-	'ph:pulse-bold': ph_pulse_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
@@ -333,7 +334,6 @@ const icons: IconMap = {
 	'ph:spinner-bold': ph_spinner_bold,
 	'ph:square-bold': ph_square_bold,
 	'ph:star-bold': ph_star_bold,
-	'ph:stethoscope-bold': ph_stethoscope_bold,
 	'ph:sun-bold': ph_sun_bold,
 	'ph:sun-horizon-bold': ph_sun_horizon_bold,
 	'ph:swap-bold': ph_swap_bold,

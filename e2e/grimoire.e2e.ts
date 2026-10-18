@@ -1754,7 +1754,9 @@ test('History shows stats from ended games', async ({ page }) => {
 	await expect(page.getByTestId('game-over')).toBeVisible();
 	await page.goto('/history');
 	const summary = page.getByRole('region', { name: 'Summary' });
-	await expect(summary).toContainText(/Games\s*1\s*Good won\s*1\s*Evil won\s*0/);
+	await expect(summary).toContainText(
+		/Games\s*1\s*Good won\s*1\s*\(100%\)\s*Evil won\s*0\s*\(0%\)/
+	);
 	const scripts = page.getByTestId('history-scripts');
 	await expect(scripts).toContainText(/Trouble Brewing/);
 	// A long name stays inside its badge, even in a phone's narrow column (Trevor, 2026-10-18:

@@ -37,7 +37,11 @@ test('makes a character, saves it, and puts it on a script', async ({ page }) =>
 	await expect(page.getByTestId('homebrew-count')).toHaveText('1');
 
 	await page.goto('/library');
-	await page.getByTestId('library-characters').getByRole('link').first().tap();
+	await page
+		.getByTestId('library-table')
+		.getByRole('button', { name: /^Lamp Lighter/ })
+		.tap();
+	await page.getByRole('button', { name: 'Edit in Character builder' }).tap();
 	await expect(page).toHaveURL(/\/build-character$/);
 	await expect(page.getByTestId('character-name')).toHaveValue('Lamp Lighter');
 });

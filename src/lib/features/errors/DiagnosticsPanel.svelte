@@ -13,6 +13,13 @@
 
 	// Gathered on this device when the page opens; nothing is sent unless the person taps Report.
 
+	interface Props {
+		/** Rows already shown nearby (About's version and commit); still in the copied text. */
+		hideRows?: readonly MessageKey[];
+	}
+
+	let { hideRows = [] }: Props = $props();
+
 	const diagnostics = $derived(diagnosticsView.current);
 	const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
 	const text = $derived(diagnostics ? diagnosticsText(diagnostics, label) : '');
@@ -64,7 +71,7 @@
 		<section data-section={section.id}>
 			<h2>{label(section.title)}</h2>
 			<dl>
-				{#each section.rows as row (row.label)}
+				{#each section.rows.filter((row) => !hideRows.includes(row.label)) as row (row.label)}
 					<dt>{label(row.label)}</dt>
 					<dd>
 						{#if row.href}

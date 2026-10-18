@@ -1,61 +1,43 @@
 <script lang="ts">
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import FolderNameDialog from './FolderNameDialog.svelte';
+	import { TOP_FOLDER } from './drag-to-folder.ts';
 	import {
-		childFolders,
 		folderAndDescendants,
 		folderPath,
 		folderTree,
-		labelUses,
 		nameFree,
 		siblings
 	} from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 
 	/**
-	 * Scripts held like files (Trevor, 2026-10-17: "like files in a file manager"): folders open,
-	 * hold scripts and other folders, and a breadcrumb leads back up. While searching, matches
-	 * from every folder are listed together, each with the folder it is in.
+	 * Where the list is in the folders, like a file manager's path bar: a breadcrumb back up
+	 * (each step also a place to drop a dragged item), and the open folder's own controls.
 	 */
-	interface Item {
-		key: string;
-		name: string;
-		author: string;
-	}
-
 	interface Props {
-		/** The scripts to show: all of them, or the search's matches. */
-		items: readonly Item[];
-		searching: boolean;
 		/** The open folder; the top level when none. */
 		current?: string;
-		onopen: (key: string) => void;
+		/** A search or filter shows items from every folder: the folder controls rest. */
+		searching: boolean;
 	}
 
-	let { items, searching, current = $bindable(), onopen }: Props = $props();
+	let { current = $bindable(), searching }: Props = $props();
 
 	const labels = $derived(libraryLabels.state);
 	const path = $derived(folderPath(labels, current));
 	// A folder deleted elsewhere: back to the top level.
 	const here = $derived(path.at(-1));
-	const folders = $derived(searching ? [] : childFolders(labels, here?.id));
-	const scripts = $derived(
-		searching ? items : items.filter((item) => libraryLabels.for(item.key).folder === here?.id)
-	);
 	const pathName = (id: string | undefined) =>
 		folderPath(labels, id)
 			.map((f) => f.name)
 			.join(' / ');
-	const itemCount = (id: string) =>
-		childFolders(labels, id).length + labelUses(labels, 'folders', id);
 
 	let naming = $state<{ folder?: string }>();
 	let nameOpen = $state(false);
@@ -66,10 +48,6 @@
 	const target = $derived(moveTo === TOP ? undefined : moveTo);
 	let deleteOpen = $state(false);
 
-	function newFolder() {
-		naming = {};
-		nameOpen = true;
-	}
 	function rename() {
 		if (!here) return;
 		naming = { folder: here.id };
@@ -80,7 +58,7 @@
 		if (!here) return [];
 		const inside = folderAndDescendants(labels, here.id);
 		return [
-			{ value: TOP, label: t('library.scripts') },
+			{ value: TOP, label: t('library.heading') },
 			...folderTree(labels)
 				.filter(({ folder }) => !inside.has(folder.id))
 				.map(({ folder }) => ({ value: folder.id, label: pathName(folder.id) }))
@@ -114,11 +92,14 @@
 		<ol>
 			<li>
 				{#if here}
-					<button type="button" class="crumb" onclick={() => (current = undefined)}
-						>{t('library.scripts')}</button
+					<button
+						type="button"
+						class="crumb"
+						data-drop-folder={TOP_FOLDER}
+						onclick={() => (current = undefined)}>{t('library.heading')}</button
 					>
 				{:else}
-					<span class="crumb" aria-current="location">{t('library.scripts')}</span>
+					<span class="crumb" aria-current="location">{t('library.heading')}</span>
 				{/if}
 			</li>
 			{#each path as folder (folder.id)}
@@ -127,8 +108,11 @@
 					{#if folder.id === here?.id}
 						<span class="crumb" aria-current="location">{folder.name}</span>
 					{:else}
-						<button type="button" class="crumb" onclick={() => (current = folder.id)}
-							>{folder.name}</button
+						<button
+							type="button"
+							class="crumb"
+							data-drop-folder={folder.id}
+							onclick={() => (current = folder.id)}>{folder.name}</button
 						>
 					{/if}
 				</li>
@@ -154,45 +138,10 @@
 			disabled={!here || searching}
 			onclick={() => (deleteOpen = true)}
 		/>
-		<Button icon="folder" disabled={searching} onclick={newFolder}>{t('library.newFolder')}</Button>
 	</div>
 </div>
 
-<ul class="tiles" data-testid="library-folders" aria-label={here?.name ?? t('library.scripts')}>
-	{#each folders as folder (folder.id)}
-		<li>
-			<button type="button" class="tile" onclick={() => (current = folder.id)}>
-				<span class="icon folder"><Icon name="folder" /></span>
-				<span class="text">
-					<span class="title">{folder.name}</span>
-					<span class="sub">{t('library.itemCount', { count: itemCount(folder.id) })}</span>
-				</span>
-			</button>
-		</li>
-	{/each}
-	{#each scripts as item (item.key)}
-		{@const where = searching ? pathName(libraryLabels.for(item.key).folder) : ''}
-		<li>
-			<button type="button" class="tile" onclick={() => onopen(item.key)}>
-				<span class="icon"><Icon name="script" /></span>
-				<span class="text">
-					<span class="title">{item.name || t('common.none')}</span>
-					<span class="sub">{[item.author, where].filter(Boolean).join(' · ')}</span>
-				</span>
-			</button>
-		</li>
-	{/each}
-	{#if folders.length === 0 && scripts.length === 0}
-		<li class="none">{t('common.none')}</li>
-	{/if}
-</ul>
-
-<FolderNameDialog
-	bind:open={nameOpen}
-	folder={naming?.folder}
-	parent={here?.id}
-	oncreated={(id) => (current = id)}
-/>
+<FolderNameDialog bind:open={nameOpen} folder={naming?.folder} parent={here?.id} />
 
 <Dialog bind:open={moveOpen} title={here ? t('library.moveNamed', { name: here.name }) : ''}>
 	<Select
@@ -219,7 +168,7 @@
 		<p>
 			{t('library.deleteFolderBody', {
 				name: here.name,
-				parent: here.parent ? pathName(here.parent) : t('library.scripts')
+				parent: here.parent ? pathName(here.parent) : t('library.heading')
 			})}
 		</p>
 	{/if}
@@ -276,63 +225,6 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1);
-	}
-	.tiles {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(14 * var(--u))), 1fr));
-		gap: var(--space-2);
-	}
-	.tile {
-		width: 100%;
-		height: 100%;
-		min-height: calc(1.5 * var(--tap-target));
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2) var(--space-3);
-		border: var(--card-border);
-		border-radius: var(--card-radius);
-		background: var(--surface);
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-	}
-	.tile:hover {
-		background: var(--surface-selected);
-	}
-	.icon {
-		display: flex;
-		font-size: 1.6rem;
-		color: var(--on-surface-muted);
-	}
-	.icon.folder {
-		color: var(--accent);
-	}
-	.text {
-		display: grid;
-		min-width: 0;
-	}
-	.title {
-		font-weight: 600;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.sub {
-		min-height: 1.2em;
-		font-size: 0.8rem;
-		color: var(--on-surface-muted);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 	.error {
 		margin: var(--space-1) 0 0;

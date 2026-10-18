@@ -4,14 +4,15 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
+	import { showDiagnostics } from '#lib/features/settings/sections/about-advanced.ts';
 
-	// Deep link: /diagnostics opens Settings at Diagnostics (Trevor, 2026-10-16: a Settings
-	// section, not a page); closing it returns home.
+	// Deep link: /diagnostics opens Settings at About with Advanced open, where the diagnostics
+	// live (Trevor, 2026-10-18); closing it returns home.
 	let shown = $state(false);
 	onMount(async () => {
 		// Wait a tick so the layout's SettingsModal has mounted and sees the change.
 		await tick();
-		settingsDialog.show('diagnostics');
+		showDiagnostics();
 		shown = true;
 	});
 	$effect(() => {
