@@ -31,9 +31,9 @@ export const characters = {
 		'Character tokens on the board, reference cards and setup. Text size and Icon size stay the same.',
 	'characters.reminderSize': 'Reminder token size',
 	'characters.reminderSizeHelp': 'Reminder tokens wherever they show.',
-	'characters.boardNames': 'Show character names on grimoire tokens',
+	'characters.boardNames': 'Show character names on tokens',
 	'characters.boardNamesHelp':
-		'Storyteller: writes each character’s name on its token on the grimoire board.',
+		'Writes each character’s name on its token: on the grimoire board, in Show to player and in the seat sheet. Small icons in lists stay plain.',
 	'characters.nightNumbers': 'Show night order numbers on tokens',
 	'characters.nightNumbersHelp':
 		'Storyteller: a badge on the left leaf gives the first night order, on the right leaf other nights. Only characters are counted. On the grimoire, the characters in this game; on Reference, every character.',

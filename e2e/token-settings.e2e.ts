@@ -111,7 +111,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 			.tap();
 	}
 	await openTokens();
-	const label = 'Show character names on grimoire tokens';
+	const label = 'Show character names on tokens';
 	const toggle = dialog.getByRole('checkbox', { name: label, includeHidden: true });
 	await expect(toggle).not.toBeChecked();
 	await dialog.getByText(label, { exact: true }).tap();
@@ -130,6 +130,18 @@ test('character names on grimoire tokens are off by default and shown when switc
 	expect(await marks()).toEqual(before);
 	await page.reload();
 	await expect(name).toHaveText('Fortune Teller');
+
+	// Every token follows the setting (Trevor, 2026-10-18): the seat sheet's and Show to
+	// player's too.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await expect(sheet.getByTestId('token-name').first()).toHaveText('Fortune Teller');
+	await sheet.getByRole('button', { name: 'Show to player' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByTestId('token-name')).toHaveText('Fortune Teller');
+	await page.keyboard.press('Escape');
+	await expect(shown).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
 
 	// The player name is always a badge on the token (Trevor, 2026-10-17); no setting.
 	await openTokens();

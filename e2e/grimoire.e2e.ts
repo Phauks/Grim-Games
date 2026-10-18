@@ -338,8 +338,9 @@ test('Demon bluffs open from the toolbar, and a seat shows its token to the play
 	await show.tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown).toBeVisible();
-	// The token carries its name, like a physical token (Trevor, 2026-10-18).
-	await expect(shown.getByTestId('token-name')).toHaveText('Empath');
+	// The token follows the character name setting, off by default (Trevor, 2026-10-18);
+	// token-settings.e2e covers it switched on.
+	await expect(shown.getByTestId('token-name')).toHaveCount(0);
 	// The seat's sheet stays open underneath the whole time (Trevor, 2026-10-17).
 	await expect(sheet).toHaveAttribute('data-state', 'open');
 	// A tap on the player view doesn't reach the sheet, and Esc closes only the view.
