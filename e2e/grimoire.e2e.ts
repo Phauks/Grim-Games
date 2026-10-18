@@ -1691,6 +1691,16 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await steps.getByRole('button', { name: 'Previous change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
+	// Read-only: nothing pops up in the middle (Trevor, 2026-10-18), and the game over line
+	// sits just above Previous and Next, out of the circle.
+	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
+	const over = (await page.getByTestId('game-over').boundingBox())!;
+	const strip = (await steps.boundingBox())!;
+	expect(over.y + over.height).toBeLessThanOrEqual(strip.y);
+	expect(over.y).toBeGreaterThanOrEqual(
+		(await page.locator('.board').boundingBox())!.y +
+			(await page.locator('.board').boundingBox())!.height
+	);
 	await steps.getByRole('button', { name: 'Next change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 	await expect(steps.getByRole('button', { name: 'Next change' })).toBeDisabled();
@@ -3022,4 +3032,30 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 			expect(overlaps(box, (await name.boundingBox())!)).toBe(false);
 		}
 	}
+});
+
+test('a reminder in hand marks its source seat, the seats it fits, or both', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	const all = page.getByRole('list', { name: 'Reminder bank' });
+	const token = all.getByRole('button', { name: 'Poisoned reminder' });
+	const box = (await token.boundingBox())!;
+	const board = (await page.locator('.board').boundingBox())!;
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(box.x + box.width / 2, box.y - box.height, { steps: 4 });
+	await page.mouse.move(board.x + board.width / 2, board.y + board.height / 2, { steps: 6 });
+	// Trevor (2026-10-18): a ring on the Poisoner's seat, a glow on each seat it may go on.
+	const seats = page.getByTestId('seat');
+	await expect(seats.first()).toHaveAttribute('data-role', /^(source|both)$/);
+	for (const seat of (await seats.all()).slice(1))
+		await expect(seat).toHaveAttribute('data-role', 'target');
+	await page.mouse.up();
+	await expect(page.locator('[data-testid="seat"][data-role]')).toHaveCount(0);
 });

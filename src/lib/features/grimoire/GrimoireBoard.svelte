@@ -651,6 +651,27 @@
 			game.seating.filter((id) => seatMisses(game, reminder, id, characters).length > 0)
 		);
 	});
+	/**
+	 * Marks for the reminder in hand (Trevor, 2026-10-18): the seats whose character it is
+	 * (its source), the seats it fits (valid targets), or both. With no reminder in hand, a
+	 * walked night step marks its holders as sources.
+	 */
+	const handReminder = $derived(dragOrigin?.reminder ?? trayHints.reminder);
+	const sourceSeats = $derived.by(() => {
+		const id = handReminder?.characterId;
+		if (id === undefined) return walkHolders;
+		return game.seating.filter(
+			(s) => game.seats[s].characterId === id || trueCharacter(game, s, characters) === id
+		);
+	});
+	const targetSeats = $derived(
+		handReminder ? game.seating.filter((s) => !misfits.has(s)) : trayHints.seats
+	);
+	function seatRole(seatId: SeatId): 'source' | 'target' | 'both' | undefined {
+		const source = sourceSeats.includes(seatId);
+		const target = targetSeats.includes(seatId);
+		return source && target ? 'both' : source ? 'source' : target ? 'target' : undefined;
+	}
 	const setupPending = $derived(
 		pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed).length
 	);
@@ -675,7 +696,10 @@
 
 	/** Characters and Bag draw show in the middle until the game is set up, then go. */
 	const showSetup = $derived(
-		!setUp &&
+		// Never while looking back through History (Trevor, 2026-10-18): it is read-only.
+		!ended &&
+			!grimoire.open.viewOnly &&
+			!setUp &&
 			!arranging &&
 			!placing &&
 			game.seating.some((id) => game.seats[id].characterId === undefined)
@@ -1149,6 +1173,7 @@
 		class="board"
 		class:arranging
 		class:walking={walk !== undefined}
+		class:ended={!!ended}
 		style:--tray-h="{chip + 30}px"
 		style:--strip-h={walk ? '7.5rem' : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
@@ -1204,9 +1229,7 @@
 							reminderDrag.from !== seat.seatId) ||
 						trayHints.target === seat.seatId}
 					misfit={misfits.has(seat.seatId)}
-					hint={trayHints.seats.includes(seat.seatId) ||
-						walkHolders.includes(seat.seatId) ||
-						(dragOrigin?.holders.includes(seat.seatId) ?? false)}
+					role={seatRole(seat.seatId)}
 					namePlace={namePlaces[i] ?? 'below'}
 					onTap={() => !arranging && openSeat(seat.seatId)}
 				/>
@@ -1337,7 +1360,23 @@
 			/>
 		{/if}
 		{#if ended}
-			<HistoryStrip {grimoire} />
+			<HistoryStrip {grimoire}>
+				{#snippet notice()}
+					<!-- Above History's Previous and Next, out of the circle (Trevor, 2026-10-18).
+					     Tapping it offers to reopen the game. -->
+					<button
+						type="button"
+						class="game-over"
+						data-testid="game-over"
+						data-team={ended.winner}
+						onclick={() => (reopenOpen = true)}
+					>
+						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
+							? ' · Shown from History'
+							: ''}
+					</button>
+				{/snippet}
+			</HistoryStrip>
 		{:else}
 			<ReminderBank
 				{grimoire}
@@ -1413,20 +1452,6 @@
 							)}>Set up</Button
 					>
 				</div>
-			{/if}
-			{#if ended}
-				<!-- The game is over; the board stays open to look around in, read-only (Trevor, 2026-10-17). -->
-				<button
-					type="button"
-					class="game-over"
-					data-testid="game-over"
-					data-team={ended.winner}
-					onclick={() => (reopenOpen = true)}
-				>
-					Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
-						? ' · Shown from History'
-						: ''}
-				</button>
 			{/if}
 			{#if boardLooks.current.rulesAt === 'middle'}
 				{#if boardLooks.current.rulesGrouped && game.ruleCharacters.length > 0}
@@ -1803,6 +1828,10 @@
 	.board {
 		margin-bottom: calc(var(--tray-h) + 2 * var(--space-2));
 	}
+	/* An ended game: the game over line sits above History's Previous and Next. */
+	.board.ended {
+		margin-bottom: calc(var(--tray-h) + var(--tap-target) + 3 * var(--space-2));
+	}
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
@@ -1925,7 +1954,11 @@
 		filter: brightness(0.5);
 	}
 	.game-over {
+		max-width: 100%;
 		min-height: var(--tap-target);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		padding: 0 var(--space-3);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-full);
