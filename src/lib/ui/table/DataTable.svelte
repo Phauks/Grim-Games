@@ -35,7 +35,7 @@
 </script>
 
 <script lang="ts" generics="T, K extends string">
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { near } from '#lib/ui/near.ts';
@@ -86,6 +86,11 @@
 		resizeKey?: string;
 		/** With `lazy`: plain text for a row header until the row comes near the screen. */
 		rowLabel?: (row: T) => string;
+		/**
+		 * Draws this many rows, then the next as many each time the end comes near (Trevor,
+		 * 2026-10-18: one shared paged table for everything search lists). Unset draws all.
+		 */
+		pageSize?: number;
 	}
 
 	let {
@@ -107,7 +112,8 @@
 		empty = 'None',
 		testid,
 		resizeKey,
-		rowLabel
+		rowLabel,
+		pageSize
 	}: Props = $props();
 
 	const widths = $derived(resizeKey ? new TableWidths(resizeKey) : undefined);
@@ -163,6 +169,28 @@
 	const boxed = $derived(fit === 'content' && !narrowNow);
 	/** Rows are "near" relative to the box they scroll in: the table's own, or the page. */
 	const root = $derived(boxed ? (scroller ?? null) : null);
+
+	/**
+	 * Paging: building thousands of rows at once took about 4 s on a phone (Bloodstar's 4,682
+	 * scripts). A new list starts at one page again; a list that only grew at its end (BotC
+	 * Scripts' next page) keeps what is drawn, so nothing jumps while scrolling.
+	 */
+	let limit = $state(Infinity);
+	let firstKey: string | undefined;
+	$effect.pre(() => {
+		const first = rows.length ? key(rows[0]) : undefined;
+		if (first !== firstKey || untrack(() => limit) === Infinity) {
+			limit = pageSize ?? Infinity;
+			// A new list starts at its top, or the old scroll position would draw page after page.
+			const box = untrack(() => scroller);
+			if (pageSize && fill && box) box.scrollTop = 0;
+		}
+		firstKey = first;
+	});
+	const drawn = $derived(limit < rows.length ? rows.slice(0, limit) : rows);
+	function nextPage() {
+		limit += pageSize ?? Infinity;
+	}
 
 	/** Tracks the same 40rem limit as the container query below. */
 	function watchWidth(element: HTMLElement) {
@@ -427,7 +455,7 @@
 				</tr>
 			</thead>
 			<tbody bind:this={body}>
-				{#each rows as row (key(row))}
+				{#each drawn as row (key(row))}
 					{@const id = key(row)}
 					{@const ready = !lazy || built.has(id)}
 					<!--
@@ -474,6 +502,13 @@
 				{:else}
 					<tr class="empty"><td colspan={columns.length}>{empty}</td></tr>
 				{/each}
+				{#if drawn.length < rows.length}
+					<!-- Comes near the screen: the next page is drawn (a new watcher for each page). -->
+					{#key limit}
+						<tr class="more-rows" aria-hidden="true" {@attach near(nextPage, '100% 0px', root)}
+						></tr>
+					{/key}
+				{/if}
 			</tbody>
 		</table>
 	</div>
@@ -652,15 +687,18 @@
 		background: var(--accent);
 	}
 	/*
-	 * A header too narrow for its label, sort arrows and filters (Search on a phone) wraps
-	 * them onto more lines, never under one another.
+	 * A header keeps its label, sort arrows and filter on one line (Trevor, 2026-10-18: Author's
+	 * buttons dropped under its label); columns are sized to fit them. Only the first header
+	 * wraps, since a narrow table moves other columns' filters into it.
 	 */
 	.head {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
 		width: 100%;
 		min-width: 0;
+	}
+	th:first-child .head {
+		flex-wrap: wrap;
 	}
 	.end .head {
 		justify-content: flex-end;
@@ -749,6 +787,9 @@
 	/* A row not built yet keeps its header in its own column. */
 	tr.pending th {
 		grid-column: var(--col);
+	}
+	.more-rows {
+		height: var(--row-estimate);
 	}
 	.empty td {
 		grid-column: 1 / -1;

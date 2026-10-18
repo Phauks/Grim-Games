@@ -392,6 +392,7 @@
 						{onSort}
 						{filter}
 						narrow="hide"
+						pageSize={100}
 						empty={t('common.none')}
 					/>
 				</div>

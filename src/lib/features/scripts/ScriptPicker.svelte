@@ -425,8 +425,8 @@
 			id: 'author',
 			label: t('scripts.column.author'),
 			sortable: true,
-			// Room for the label and its sort arrows on one line, even on a phone.
-			width: 'max(22%, 6rem)',
+			// Room for the label, its sort arrows and its filter on one line, even on a phone.
+			width: 'max(22%, 9.5rem)',
 			filterable: true,
 			filtered: botcFilters.author !== ''
 		},
@@ -481,6 +481,8 @@
 	 * stays in view, until the site has no more.
 	 */
 	const NEAR_END = createAttachmentKey();
+	/** Rows drawn at a time: Bloodstar lists thousands (Trevor, 2026-10-18: a paged table). */
+	const PAGE_ROWS = 100;
 
 	/**
 	 * Tapping anywhere in a row selects its script (Trevor, 2026-10-16), as its name button
@@ -611,6 +613,7 @@
 						{filter}
 						narrow="hide"
 						resizeKey="scripts"
+						pageSize={PAGE_ROWS}
 						fill
 						rowSelected={isSelected}
 						rowAttrs={(listing) => ({

@@ -940,6 +940,30 @@ test('Bloodstar Clocktica is a source: found by folder names, each script loads 
 	await noSidewaysScroll(page);
 });
 
+test('a long list is drawn a page at a time as it scrolls', async ({ page }) => {
+	const scripts = Array.from({ length: 250 }, (_, i) => ({
+		user: 'someone',
+		edition: `Script_${i}`
+	}));
+	await page.route('**/api/bloodstar', (route) => route.fulfill({ json: { scripts } }));
+	await page.goto('/scripts');
+	await chooseSource(page, 'Bloodstar Clocktica');
+	// The count is the whole list; only the first page of rows is built.
+	await expect(page.getByTestId('picker-status')).toHaveText('250 scripts');
+	const rows = page
+		.getByRole('table', { name: 'Scripts' })
+		.locator('tbody tr:not(.more-rows, .empty)');
+	await expect(rows).toHaveCount(100);
+	await rows.last().scrollIntoViewIfNeeded();
+	await expect(rows).toHaveCount(200);
+	await rows.last().scrollIntoViewIfNeeded();
+	await expect(rows).toHaveCount(250);
+	// A new search starts again at one page.
+	await page.getByLabel('Search scripts').fill('1');
+	await expect(page.getByTestId('picker-status')).toHaveText('133 scripts');
+	await expect(rows).toHaveCount(100);
+});
+
 test('the BOTC HomeBrew Wiki is a source: each script loads when opened and links to its page', async ({
 	page
 }) => {
