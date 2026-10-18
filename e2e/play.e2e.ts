@@ -430,8 +430,11 @@ test('Print script prints the sheet, then the night order and player counts', as
 		};
 	});
 	await page.getByRole('button', { name: 'Print script' }).tap();
+	// Printing first waits up to five seconds for the sheet and its icons, so poll longer than that.
 	await expect
-		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed))
+		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed), {
+			timeout: 15_000
+		})
 		.toContain('First night');
 	const printed = await page.evaluate(() => (window as unknown as { printed: string }).printed);
 	expect(printed).toContain('Washerwoman');
