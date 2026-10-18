@@ -151,6 +151,11 @@ export interface NightSheet {
 export interface ScriptMeta {
 	name: string;
 	author?: string;
+	/**
+	 * The script's own version, such as "1.2". Not in TPI's schema (which allows extra keys);
+	 * written by the Script builder (Trevor, 2026-10-18).
+	 */
+	version?: string;
 	logo?: string;
 	hideTitle?: boolean;
 	background?: string;

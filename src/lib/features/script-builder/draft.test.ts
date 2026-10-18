@@ -7,6 +7,7 @@ describe('script builder draft', () => {
 			version: 3,
 			name: 'Mine',
 			author: 'T',
+			scriptVersion: '1.2',
 			ids: ['chef', 'lantern'],
 			homebrew: { lantern: { id: 'lantern', team: 'outsider' } },
 			credits: { lantern: { creator: 'DJ', url: 'https://botchomebrew.wiki/c/lantern' } },
@@ -52,6 +53,7 @@ describe('script builder draft', () => {
 	it('counts blank details as empty', () => {
 		expect(isEmptyDraft({ ...emptyDraft(), name: '  ' })).toBe(true);
 		expect(isEmptyDraft({ ...emptyDraft(), ids: ['chef'] })).toBe(false);
+		expect(isEmptyDraft({ ...emptyDraft(), scriptVersion: '2' })).toBe(false);
 	});
 
 	it('keeps homebrew definitions only for chosen characters', () => {
