@@ -3263,3 +3263,40 @@ test("a placed reminder's ⋯ duplicates it beside the original, marked as uncom
 	// A new token: the bank keeps its Poisoned (Trevor, 2026-10-18).
 	await expect(inBank).toHaveCount(1);
 });
+
+// Closing a step opened from the walk-through must not crash the dialog (Grimoire board,
+// 2026-10-18). On a phone the tap also opens a glossary word in the strip's text, and closing
+// the step closed that popover from inside zag, which crashed Svelte (null batch).
+test('a step opened from the walk-through closes cleanly', async ({ page }) => {
+	const errors: string[] = [];
+	page.on('pageerror', (error) => errors.push(error.message));
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await menu(page, 'Night order');
+	await page
+		.getByRole('dialog', { name: 'Night order' })
+		.getByRole('button', { name: 'Run Night Order' })
+		.tap();
+	const strip = page.getByTestId('night-strip');
+	for (let i = 0; i < 15 && !(await strip.textContent())?.includes('Washerwoman'); i++)
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	await strip.getByRole('button', { name: /Washerwoman/ }).tap();
+	const step = page.getByRole('dialog', { name: 'Washerwoman' });
+	await expect(step).toBeVisible();
+	await step.getByRole('button', { name: 'Close' }).tap();
+	await expect(step).toBeHidden();
+	await expect(page.getByText("Couldn't show this part")).toHaveCount(0);
+	await expect(strip).toContainText('Washerwoman');
+	expect(errors).toEqual([]);
+});

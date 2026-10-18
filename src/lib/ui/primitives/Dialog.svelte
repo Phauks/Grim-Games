@@ -68,6 +68,15 @@
 		return taken.close;
 	});
 
+	/**
+	 * The overlay under this one closed. Zag would close this one from inside that close, with
+	 * a flushSync that crashes Svelte 5.57 (null batch), so close it just after, through `open`.
+	 */
+	function dismissedByParent(event: { preventDefault(): void }) {
+		event.preventDefault();
+		queueMicrotask(() => (open = false));
+	}
+
 	/** Keeps the dialog open when `beforeClose` says no. */
 	function guard(event: { preventDefault(): void }) {
 		if (beforeClose?.() === false) event.preventDefault();
@@ -81,6 +90,7 @@
 	unmountOnExit
 	onEscapeKeyDown={guard}
 	onInteractOutside={guard}
+	onRequestDismiss={dismissedByParent}
 >
 	<Portal>
 		<Dialog.Backdrop style={layerStyle(layer, 'backdrop')} />
