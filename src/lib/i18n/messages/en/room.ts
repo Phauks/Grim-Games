@@ -3,10 +3,6 @@ export const room = {
 	// Storyteller's page
 	'room.title': "Players' phones",
 	'room.back': 'Grimoire',
-	'room.opening': 'Opening the game…',
-	'room.missing': 'There is no saved game here on this device.',
-	'room.tooNew':
-		'This game was saved by a newer version of Grim-Games. Refresh to update, then open it again.',
 	'room.open': 'Open a room',
 	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',
@@ -69,6 +65,7 @@ export const room = {
 	'room.leaveSeat': 'Leave seat',
 	'room.table': 'Table',
 	'room.dead': 'Dead',
+	'room.vote.title': 'Spectators’ vote',
 	'room.scriptLine': 'Script: {name}',
 	'room.readScript': 'Read the script'
 } as const;

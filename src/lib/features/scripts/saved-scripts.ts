@@ -42,7 +42,9 @@ export type ScriptSource =
 	| { kind: 'link'; url: string; page?: string }
 	| { kind: 'botcscripts'; scriptId: number; version: string }
 	/** `code` is the share code it was opened with, so sharing it again reuses that code. */
-	| { kind: 'share'; code?: string };
+	| { kind: 'share'; code?: string }
+	/** One version of a campaign's script (Flesh and Bone): game `game` (from 1) of it. */
+	| { kind: 'campaign'; campaignId: string; game: number };
 
 /**
  * The script a variation was made from, kept whole so what changed can still be shown after
@@ -124,6 +126,8 @@ export function describeSource(source: ScriptSource): string {
 			return t('scripts.from.botcscripts', { version: source.version });
 		case 'share':
 			return t('scripts.from.share');
+		case 'campaign':
+			return t('scripts.from.campaign', { number: source.game });
 	}
 }
 

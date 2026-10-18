@@ -121,6 +121,8 @@ import ph_play_circle_bold from '~icons/ph/play-circle-bold';
 import ph_plus_bold from '~icons/ph/plus-bold';
 import ph_plus_circle_bold from '~icons/ph/plus-circle-bold';
 import ph_printer_bold from '~icons/ph/printer-bold';
+import ph_prohibit_bold from '~icons/ph/prohibit-bold';
+import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
 import ph_pulse_bold from '~icons/ph/pulse-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
@@ -300,6 +302,8 @@ const icons: IconMap = {
 	'ph:plus-bold': ph_plus_bold,
 	'ph:plus-circle-bold': ph_plus_circle_bold,
 	'ph:printer-bold': ph_printer_bold,
+	'ph:prohibit-bold': ph_prohibit_bold,
+	'ph:prohibit-inset-bold': ph_prohibit_inset_bold,
 	'ph:pulse-bold': ph_pulse_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,

@@ -19,8 +19,12 @@
 		orphan: boolean;
 		/** Highlighted while a reminder is dragged over it. */
 		dropTarget?: boolean;
-		/** Marked as a seat a setup reminder fits, while one is dragged or open. */
-		hint?: boolean;
+		/**
+		 * While a reminder is picked up, chosen or its night step walked (Trevor, 2026-10-18):
+		 * the seat whose character it belongs to (`source`), a seat it may go on (`target`), or
+		 * both. A ring, a glow, or the two together, so it never rests on colour alone.
+		 */
+		role?: 'source' | 'target' | 'both';
 		/** Faded while a reminder that doesn't fit this seat is dragged (it can still go here). */
 		misfit?: boolean;
 		/** Which side of the token the name goes, so nothing covers it. */
@@ -37,15 +41,16 @@
 		size,
 		orphan,
 		dropTarget = false,
-		hint = false,
+		role,
 		misfit = false,
 		namePlace = 'below',
 		nightNumbers,
 		onTap
 	}: Props = $props();
 
-	// As in the physical grimoire, a token is upside down when the player's alignment is not
-	// the one their character type starts with (a good Minion, an evil Townsfolk).
+	// The player's alignment is not the one their character type starts with (a good Minion,
+	// an evil Townsfolk): said in the label. The token stays upright and shows it by its icon's
+	// colour (Trevor, 2026-10-18: "don't flip token, just change the color").
 	const startsAs = $derived(character ? defaultAlignment(character.type) : undefined);
 	const shifted = $derived(
 		startsAs !== undefined && seat.alignment !== undefined && seat.alignment !== startsAs
@@ -120,7 +125,7 @@
 	class="seat"
 	data-dead={seat.dead || undefined}
 	data-drop={dropTarget || undefined}
-	data-hint={hint || undefined}
+	data-role={role}
 	data-misfit={misfit || undefined}
 	data-testid="seat"
 	aria-label={label}
@@ -134,7 +139,6 @@
 	<SeatDisc
 		{size}
 		dead={seat.dead}
-		flipped={shifted}
 		{name}
 		{number}
 		{namePlace}
@@ -144,10 +148,25 @@
 </button>
 
 <style>
-	.seat[data-hint] :global(.disc) {
-		outline: 2px dashed var(--focus);
-		outline-offset: 4px;
+	.seat[data-role] :global(.disc) {
 		border-radius: 50%;
+	}
+	.seat[data-role='source'] :global(.disc),
+	.seat[data-role='both'] :global(.disc) {
+		outline: calc(0.15 * var(--u)) solid var(--accent);
+		outline-offset: calc(0.25 * var(--u));
+	}
+	.seat[data-role='target'] :global(.disc),
+	.seat[data-role='both'] :global(.disc) {
+		box-shadow:
+			0 0 0 calc(0.2 * var(--u)) color-mix(in srgb, var(--focus) 55%, transparent),
+			0 0 var(--u) calc(0.4 * var(--u)) var(--focus);
+	}
+	/* Both: the glow sits outside the ring. */
+	.seat[data-role='both'] :global(.disc) {
+		box-shadow:
+			0 0 0 calc(0.6 * var(--u)) color-mix(in srgb, var(--focus) 55%, transparent),
+			0 0 var(--u) calc(0.8 * var(--u)) var(--focus);
 	}
 	.seat[data-misfit] :global(.disc) {
 		opacity: 0.4;

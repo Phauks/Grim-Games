@@ -4,8 +4,10 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import ModeFormatGuide from './ModeFormatGuide.svelte';
 	import { customModes } from './custom-modes.svelte.ts';
 
 	/**
@@ -23,6 +25,7 @@
 	let text = $state('');
 	let issues = $state<string[]>([]);
 	let fileInput = $state<HTMLInputElement>();
+	let guide = $state(false);
 
 	$effect(() => {
 		if (!open) {
@@ -53,6 +56,9 @@
 </script>
 
 <Dialog bind:open title={t('modes.add.title')}>
+	{#snippet headActions()}
+		<IconButton icon="about" label={t('modes.guide.open')} onclick={() => (guide = true)} />
+	{/snippet}
 	<TextField
 		label={t('modes.add.label')}
 		bind:value={text}
@@ -85,6 +91,8 @@
 		</ModalActions>
 	{/snippet}
 </Dialog>
+
+<ModeFormatGuide bind:open={guide} />
 
 <input
 	bind:this={fileInput}

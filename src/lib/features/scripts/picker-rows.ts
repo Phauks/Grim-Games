@@ -24,6 +24,7 @@ export type PickerSource =
 	| 'bloodstar'
 	| 'recent'
 	| 'profile'
+	| 'campaign'
 	| 'botc';
 
 export type ScriptKind = 'Full' | 'Teensyville';

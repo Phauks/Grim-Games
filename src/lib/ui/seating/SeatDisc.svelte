@@ -13,8 +13,6 @@
 		/** Token size in px. */
 		size: number;
 		dead?: boolean;
-		/** Turned upside down: the player's alignment differs from their character's. */
-		flipped?: boolean;
 		name: string;
 		/** 1-based place in the seating order, shown when there is no face. */
 		number: number;
@@ -25,16 +23,7 @@
 		marks?: Snippet;
 	}
 
-	let {
-		size,
-		dead = false,
-		flipped = false,
-		name,
-		number,
-		namePlace = 'below',
-		face,
-		marks
-	}: Props = $props();
+	let { size, dead = false, name, number, namePlace = 'below', face, marks }: Props = $props();
 
 	/** The player's name is a badge on the token (Trevor, 2026-10-17); a seat with no character keeps the pill under it. */
 	const onToken = $derived(face !== undefined);
@@ -42,10 +31,10 @@
 
 <span class="seat-disc" data-dead={dead || undefined} style:--size="{size}px">
 	<span class="disc">
-		<span class="face" class:flipped
+		<span class="face"
 			>{#if face}{@render face()}{:else}<span class="empty">{number}</span>{/if}</span
 		>
-		<!-- Over the face, not in it, so a token turned upside down leaves the name upright. -->
+		<!-- Over the face, not in it, so the face's own size never moves the name. -->
 		{#if onToken}<PlayerNameMark {name} />{/if}
 		{#if dead}<span class="skull" data-testid="dead-mark"><Icon name="dead" /></span>{/if}
 		{#if marks}{@render marks()}{/if}
@@ -72,10 +61,6 @@
 		height: 100%;
 		border-radius: 50%;
 		box-shadow: var(--shadow);
-		transition: rotate var(--duration-normal) var(--ease-out);
-	}
-	.face.flipped {
-		rotate: 180deg;
 	}
 	.empty {
 		display: grid;

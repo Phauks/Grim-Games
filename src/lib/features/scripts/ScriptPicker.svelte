@@ -19,7 +19,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
+	import BackButton from '#lib/ui/primitives/BackButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import {
@@ -425,7 +425,8 @@
 			id: 'author',
 			label: t('scripts.column.author'),
 			sortable: true,
-			width: '22%',
+			// Room for the label and its sort arrows on one line, even on a phone.
+			width: 'max(22%, 6rem)',
 			filterable: true,
 			filtered: botcFilters.author !== ''
 		},
@@ -433,7 +434,8 @@
 			id: 'kind',
 			label: t('scripts.column.type'),
 			sortable: true,
-			width: '6.5rem',
+			// Label, sort arrows and filter side by side.
+			width: '7rem',
 			filterable: true,
 			filtered: botcFilters.type !== ''
 		},
@@ -443,7 +445,7 @@
 			sortable: true,
 			align: 'end',
 			wide: true,
-			width: '7rem',
+			width: '8rem',
 			filterable: true,
 			filtered: characterFilters > 0
 		},
@@ -587,9 +589,7 @@
 </script>
 
 {#snippet backButton()}
-	<button type="button" class="back" onclick={() => (paneOpen = false)}
-		><Icon name="back" /><span>{t('scripts.details.back')}</span></button
-	>
+	<BackButton class="back" label={t('scripts.details.back')} onclick={() => (paneOpen = false)} />
 {/snippet}
 
 <!-- The list on the left, the shown script's details on the right; on a phone the details
@@ -804,19 +804,6 @@
 		align-content: start;
 		gap: var(--space-2);
 	}
-	.back {
-		justify-self: start;
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-2) 0 0;
-		border: 0;
-		background: none;
-		color: var(--accent);
-		font: inherit;
-		cursor: pointer;
-	}
 	.toggle.on :global(.icon-button) {
 		background: var(--accent);
 		color: var(--on-accent);
@@ -833,7 +820,7 @@
 			visibility: visible;
 			transition: none;
 		}
-		.back {
+		:global(.back-button.back) {
 			display: none;
 		}
 	}

@@ -651,8 +651,13 @@
 		width: calc(0.25 * var(--u));
 		background: var(--accent);
 	}
+	/*
+	 * A header too narrow for its label, sort arrows and filters (Search on a phone) wraps
+	 * them onto more lines, never under one another.
+	 */
 	.head {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		width: 100%;
 		min-width: 0;
@@ -679,6 +684,7 @@
 		text-transform: uppercase;
 		text-align: start;
 		/* Long labels (Starting alignment) wrap between words inside their fixed column. */
+		max-width: 100%;
 		overflow-wrap: break-word;
 		--icon-size: calc(0.95 * var(--u));
 	}

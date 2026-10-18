@@ -1,12 +1,9 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
-	import { SavedGameError } from '#lib/core/engine/index.ts';
 	import type { GameId } from '#lib/core/model/index.ts';
-	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { errorMessage } from '#lib/features/errors/app-error.ts';
-	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import { OpenGame } from '#lib/features/game/session.svelte.ts';
+	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
+	import WithSavedGame from '#lib/features/game/WithSavedGame.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { prepareRoom } from './host.svelte.ts';
 	import RoomPanel from './RoomPanel.svelte';
@@ -17,39 +14,8 @@
 
 	let { gameId }: Props = $props();
 
-	type View =
-		| { kind: 'loading' }
-		| { kind: 'ready'; game: OpenGame }
-		| { kind: 'missing' }
-		| { kind: 'error'; message: string };
-
-	let view = $state<View>({ kind: 'loading' });
 	// The room opens while the game loads, not after.
 	prepareRoom();
-
-	$effect(() => {
-		const id = gameId;
-		view = { kind: 'loading' };
-		let cancelled = false;
-		(async () => {
-			try {
-				const open = await OpenGame.open(await loadOfficialData(), id);
-				if (cancelled) return;
-				view = open ? { kind: 'ready', game: open } : { kind: 'missing' };
-			} catch (e) {
-				if (cancelled) return;
-				reportError(e, { area: 'grimoire', notify: false });
-				view = {
-					kind: 'error',
-					message:
-						e instanceof SavedGameError && e.problem === 'too-new'
-							? t('room.tooNew')
-							: errorMessage(e)
-				};
-			}
-		})();
-		return () => (cancelled = true);
-	});
 </script>
 
 <main>
@@ -59,15 +25,20 @@
 		</Button>
 		<h1>{t('room.title')}</h1>
 	</header>
-	{#if view.kind === 'ready'}
-		<RoomPanel game={view.game} />
-	{:else if view.kind === 'loading'}
-		<p class="message" aria-busy="true">{t('room.opening')}</p>
-	{:else if view.kind === 'missing'}
-		<p class="message">{t('room.missing')}</p>
-	{:else}
-		<p class="message" role="alert">{view.message}</p>
-	{/if}
+	<WithSavedGame {gameId} area="grimoire">
+		{#snippet children(game: OpenGame)}
+			<RoomPanel {game} />
+		{/snippet}
+		{#snippet fallback({ kind, message })}
+			<p
+				class="message"
+				aria-busy={kind === 'loading'}
+				role={kind === 'error' ? 'alert' : undefined}
+			>
+				{message}
+			</p>
+		{/snippet}
+	</WithSavedGame>
 </main>
 
 <style>

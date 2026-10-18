@@ -12,6 +12,7 @@
 	import { fly } from 'svelte/transition';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import BackButton from '#lib/ui/primitives/BackButton.svelte';
 
 	interface Props {
 		/** The contents list's accessible name. */
@@ -114,9 +115,7 @@
 			{#key current}
 				<div class="view" in:fly={{ x: slides ? direction * 48 : 0, duration: slides ? 200 : 0 }}>
 					{#if !home}
-						<button type="button" class="back" onclick={back}
-							><Icon name="back" /><span>{backLabel}</span></button
-						>
+						<BackButton class="back" label={backLabel} onclick={back} />
 					{/if}
 					{@render children()}
 				</div>
@@ -202,18 +201,8 @@
 		display: inline-flex;
 		color: var(--on-surface-muted);
 	}
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
+	.view > :global(.back) {
 		margin-bottom: var(--space-1);
-		padding: 0;
-		border: 0;
-		background: none;
-		color: var(--on-surface-muted);
-		font: inherit;
-		cursor: pointer;
 	}
 	@container (min-width: 40rem) {
 		.layout:has(.nav) {
@@ -240,7 +229,7 @@
 			border-radius: 0 var(--radius-md) var(--radius-md) 0;
 		}
 		.chevron,
-		.back {
+		.view > :global(.back) {
 			display: none;
 		}
 	}

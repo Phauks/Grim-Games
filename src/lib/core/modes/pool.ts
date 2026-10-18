@@ -86,6 +86,21 @@ export function modeScript(
 	return out;
 }
 
+/**
+ * The characters a town's game always has in play: the town's own (`towns.inPlay`), or for a
+ * single game the mode's `forced.inPlay`.
+ */
+export function inPlayFor(mode: GameMode, town = 0): CharacterId[] {
+	const perTown = mode.parts.towns?.inPlay;
+	if (perTown) return perTown[town] ?? [];
+	return mode.parts.forced?.inPlay ?? [];
+}
+
+/** Whether the Demon learns bluffs in this mode (no: Sushi Buffet, Whale Buffet). */
+export function demonBluffs(mode: GameMode): boolean {
+	return mode.parts.bluffs?.kind !== 'none';
+}
+
 /** Characters players may choose or be offered: the game's, less those that can't be chosen. */
 export function choosableCharacters(mode: GameMode, characters: readonly Character[]): Character[] {
 	const not = new Set(mode.parts.restricted?.notChoosable ?? []);
@@ -133,9 +148,8 @@ export function runsPart(mode: GameMode, part: ModePart): boolean {
 		case 'forced':
 			return (
 				!p.forced ||
-				(p.forced.inPlay.length === 0 &&
-					!p.forced.ruleCharacters?.length &&
-					!p.forced.homebrew?.length)
+				// Characters always in play are put in setup's selection (features/modes/in-play.ts).
+				(!p.forced.ruleCharacters?.length && !p.forced.homebrew?.length)
 			);
 		case 'counts':
 			// Separate towns split the players evenly (towns.ts townSizes).
@@ -146,6 +160,14 @@ export function runsPart(mode: GameMode, part: ModePart): boolean {
 			return !p.assignment || p.assignment.kind === 'bag';
 		case 'duplicates':
 			return !p.duplicates || p.duplicates.kind === 'standard';
+		case 'bluffs':
+			// No bluffs is the Storyteller's to run until the Demon info step reads `demonBluffs`.
+			return !p.bluffs || p.bluffs.kind === 'standard';
+		case 'participants':
+			// Spectators join on their phones like players and vote there (Specters).
+			return !p.participants || p.participants.spectators === 'shared-ability';
+		case 'daySteps':
+			return (p.daySteps ?? []).every((s) => s.kind === 'spectator-vote');
 		case 'towns':
 			// One saved game per town, tied together on the towns page.
 			return true;

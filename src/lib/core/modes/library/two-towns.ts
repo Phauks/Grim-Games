@@ -22,7 +22,10 @@ export const TWO_TOWNS: GameMode = {
 			url: 'https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/'
 		}
 	],
-	credits: ['Ekin', 'Tyler Nafe', 'James Capelli', 'Tom R.'],
+	// The rules' byline; Tyler, James and Tom R. are thanked, not authors.
+	authors: [
+		{ title: 'Ekin', url: 'https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/' }
+	],
 	parts: {
 		pool: {
 			kind: 'per-town',
@@ -46,6 +49,8 @@ export const TWO_TOWNS: GameMode = {
 			kind: 'all-towns',
 			splitTiebreak: { afterDay: 5, together: ['boomdandy', 'mayor'], winner: 'evil' }
 		},
-		towns: { count: 2, storytellers: 2 }
+		// "Boomdandy and Mayor are guaranteed to be in play"; the Boomdandy is one of the
+		// Zombuul town's Minions, and the two "start in different towns" (rules FAQ).
+		towns: { count: 2, storytellers: 2, inPlay: [['boomdandy'], ['mayor']] }
 	}
 };

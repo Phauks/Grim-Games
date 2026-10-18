@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -41,9 +42,11 @@
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
+	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import SavedCharacterList from '#lib/features/character-builder/SavedCharacterList.svelte';
+	import CampaignScripts from '#lib/features/modes/CampaignScripts.svelte';
 	import FolderView from './FolderView.svelte';
 	import VariationChanges from './VariationChanges.svelte';
 	import LabelManager from './LabelManager.svelte';
@@ -120,20 +123,13 @@
 	type View = 'folders' | 'table';
 	const VIEW_KEY = 'grim-games:library-view';
 	function readView(): View {
-		try {
-			return globalThis.localStorage?.getItem(VIEW_KEY) === 'table' ? 'table' : 'folders';
-		} catch {
-			return 'folders';
-		}
+		return readStoredText(VIEW_KEY) === 'table' ? 'table' : 'folders';
 	}
 	let view = $state<View>(readView());
 	function setView(next: View) {
 		view = next;
-		try {
-			globalThis.localStorage?.setItem(VIEW_KEY, next);
-		} catch {
-			// A remembered view is only a convenience.
-		}
+		// A remembered view is only a convenience.
+		writeStoredText(VIEW_KEY, next);
 	}
 	/** The folder open in the folder view; the top level when none. */
 	let currentFolder = $state<string>();
@@ -401,6 +397,10 @@
 				</div>
 			{/if}
 		</PageSection>
+		<!-- Each version of a living script (Trevor, 2026-10-18). -->
+		<PageSection title={t('library.campaigns')}>
+			<CampaignScripts {data} />
+		</PageSection>
 		<PageSection title={t('library.characters')}>
 			<SavedCharacterList />
 		</PageSection>
@@ -441,45 +441,26 @@
 {#snippet filter(column: DataColumn<ColumnId>, close: () => void)}
 	<div class="filters">
 		{#if column.id === 'folder' || column.id === 'name'}
-			<fieldset>
-				<legend>{t('library.column.folder')}</legend>
-				{#each folderOptions as option (option.value)}
-					<label class="check">
-						<input
-							type="radio"
-							name="library-folder"
-							value={option.value}
-							checked={folderFilter === option.value ||
-								(option.value === 'all' && folder.kind === 'all')}
-							onchange={() => {
-								folderFilter = option.value;
-								close();
-							}}
-						/>
-						{option.label}
-					</label>
-				{/each}
-			</fieldset>
+			<FilterOptions
+				legend={t('library.column.folder')}
+				name="library-folder"
+				options={folderOptions}
+				value={folder.kind === 'all' ? 'all' : folderFilter}
+				onpick={(value) => {
+					folderFilter = value;
+					close();
+				}}
+			/>
 		{/if}
 		{#if column.id === 'tags' || column.id === 'name'}
-			<fieldset>
-				<legend>{t('library.tagFilter')}</legend>
-				{#each tags as tag (tag.id)}
-					<label class="check">
-						<input
-							type="checkbox"
-							checked={activeTags.includes(tag.id)}
-							onchange={() =>
-								(tagFilter = activeTags.includes(tag.id)
-									? activeTags.filter((id) => id !== tag.id)
-									: [...activeTags, tag.id])}
-						/>
-						{tag.name}
-					</label>
-				{:else}
-					<p class="muted">{t('common.none')}</p>
-				{/each}
-			</fieldset>
+			<FilterOptions
+				legend={t('library.tagFilter')}
+				options={tags.map((tag) => ({ value: tag.id, label: tag.name }))}
+				values={activeTags}
+				ontoggle={(id, on) =>
+					(tagFilter = on ? [...activeTags, id] : activeTags.filter((tagId) => tagId !== id))}
+				empty={t('common.none')}
+			/>
 		{/if}
 	</div>
 {/snippet}
@@ -672,28 +653,6 @@
 	.filters {
 		display: grid;
 		gap: var(--space-3);
-	}
-	fieldset {
-		margin: 0;
-		padding: 0;
-		border: 0;
-		display: grid;
-		gap: var(--space-1);
-	}
-	legend {
-		padding: 0;
-		margin-bottom: var(--space-1);
-		font-weight: 600;
-	}
-	.check {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		min-height: var(--tap-target);
-	}
-	.check input {
-		width: calc(1.25 * var(--u));
-		height: calc(1.25 * var(--u));
 	}
 	.dialog-scroll {
 		flex: 1;

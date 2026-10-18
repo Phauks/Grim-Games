@@ -24,6 +24,11 @@
 		/** "Seat 3", the seat the draw goes to. */
 		seatLabel: string;
 		playerName: string;
+		/**
+		 * One token for two games (Two games at once, Trevor 2026-10-18): the other game's
+		 * character, shown beside `shows`, with a label for each game.
+		 */
+		pair?: { shows: Character; labels: [string, string] };
 		onConfirm: (details: { playerName: string; alignment?: Alignment }) => void;
 	}
 
@@ -34,8 +39,17 @@
 		needsAlignment,
 		seatLabel,
 		playerName,
+		pair,
 		onConfirm
 	}: Props = $props();
+	const faces = $derived(
+		pair
+			? [
+					{ label: pair.labels[0], character: shows },
+					{ label: pair.labels[1], character: pair.shows }
+				]
+			: [{ label: '', character: shows }]
+	);
 
 	let name = $state('');
 	let alignment = $state<Alignment | ''>('');
@@ -78,21 +92,32 @@
 			<TextField label={t('setup.reveal.name')} bind:value={name} placeholder={t('common.none')} />
 		</div>
 		<!-- Hidden until a name is entered when that's required; the space stays reserved. -->
-		<div class="token">
-			{#if revealed}<CharacterToken character={shows} size={160} />{:else}<span
-					class="hidden-token"
-					data-testid="reveal-locked">{t('setup.reveal.locked')}</span
-				>{/if}
+		<div class="faces" class:pair={!!pair}>
+			{#each faces as face, i (i)}
+				<div class="face" data-testid="reveal-face">
+					{#if face.label}<p class="town">{face.label}</p>{/if}
+					<div class="token">
+						{#if revealed}<CharacterToken
+								character={face.character}
+								size={pair ? 120 : 160}
+							/>{:else}<span class="hidden-token" data-testid="reveal-locked"
+								>{t('setup.reveal.locked')}</span
+							>{/if}
+					</div>
+					<p class="name" data-testid="reveal-name">
+						{#if revealed}<CharacterBadge
+								characterId={face.character.id}
+								character={face.character}
+								alignment={defaultAlignment(face.character.type)}
+								interactive={false}
+							/>{/if}
+					</p>
+					<p class="ability" class:concealed={!revealed}>
+						{revealed ? face.character.ability : ''}
+					</p>
+				</div>
+			{/each}
 		</div>
-		<p class="name" data-testid="reveal-name">
-			{#if revealed}<CharacterBadge
-					characterId={shows.id}
-					character={shows}
-					alignment={defaultAlignment(shows.type)}
-					interactive={false}
-				/>{/if}
-		</p>
-		<p class="ability" class:concealed={!revealed}>{revealed ? shows.ability : ''}</p>
 		<div class="alignment" aria-hidden={!needsAlignment}>
 			{#if needsAlignment}
 				<Select
@@ -128,6 +153,25 @@
 		gap: var(--space-2);
 		overflow-y: auto;
 		text-align: center;
+	}
+	.faces {
+		display: grid;
+		gap: var(--space-3);
+		justify-items: center;
+	}
+	.faces.pair {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		align-items: start;
+	}
+	.face {
+		display: grid;
+		justify-items: center;
+		gap: var(--space-2);
+		min-width: 0;
+	}
+	.town {
+		margin: 0;
+		font-weight: 600;
 	}
 	.seat {
 		margin: 0;

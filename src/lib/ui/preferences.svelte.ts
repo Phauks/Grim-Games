@@ -1,24 +1,17 @@
+import { readParsed, writeStored } from '#lib/ui/stored.ts';
 import { getTheme } from '#lib/ui/themes/registry.ts';
 import { DEFAULT_PREFERENCES, parsePreferences, type Preferences } from '#lib/ui/preferences.ts';
 
 const STORAGE_KEY = 'grim-games:preferences:v1';
 
 function read(): Preferences {
-	try {
-		const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-		return parsePreferences(raw ? JSON.parse(raw) : null);
-	} catch {
-		// Private mode, blocked storage or corrupt JSON: fall back to the defaults.
-		return { ...DEFAULT_PREFERENCES };
-	}
+	// Private mode, blocked storage or corrupt JSON read as nothing: the defaults.
+	return readParsed(STORAGE_KEY, parsePreferences);
 }
 
 function write(prefs: Preferences): void {
-	try {
-		globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(prefs));
-	} catch {
-		// Storage full or blocked: the choice still applies for this visit.
-	}
+	// Storage full or blocked: the choice still applies for this visit.
+	writeStored(STORAGE_KEY, prefs);
 }
 
 /** The device's preferences, persisted in localStorage on every change. */

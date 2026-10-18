@@ -16,7 +16,8 @@ export const CHARACTER_FIELDS: ReadonlySet<string> = new Set([
 	'onScript',
 	'ruleCharacters',
 	'characters',
-	'together'
+	'together',
+	'grants'
 ]);
 
 /** Number lists read as a sequence. */

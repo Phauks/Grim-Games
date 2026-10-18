@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		canMoveTown,
 		inEveryTown,
+		inPlayFor,
 		moveIntoTown,
 		movesOnDay,
 		STANDARD,
@@ -19,12 +21,14 @@
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import { findMode } from './custom-modes.svelte.ts';
+	import { seedInPlay } from './in-play.ts';
 	import { townGroup } from './town-groups.ts';
 
 	/**
@@ -151,9 +155,12 @@
 
 <Page title={mode.name}>
 	{#snippet actions()}
-		<Button icon="info" onclick={() => (inspecting = true)}>
-			{t('modes.inspect', { name: mode.name })}
-		</Button>
+		<!-- An icon, so a long mode name keeps the title row (Trevor, 2026-10-18). -->
+		<IconButton
+			icon="info"
+			label={t('modes.inspect', { name: mode.name })}
+			onclick={() => (inspecting = true)}
+		/>
 	{/snippet}
 
 	{#if !group || missing}
@@ -172,7 +179,15 @@
 							? t('modes.towns.day', { day: dayNumber(open.game) })
 							: t('modes.towns.setup')}
 					</p>
-					<Button variant="accent" icon="grimoire" href={openHref(open)}>
+					<!-- Characters the town always has in play go into its setup first. -->
+					<Button
+						variant="accent"
+						icon="grimoire"
+						onclick={() => {
+							seedInPlay(open.game.gameId, open.game.seating.length, inPlayFor(mode, i));
+							void goto(openHref(open));
+						}}
+					>
 						{t('modes.towns.open', { number: i + 1 })}
 					</Button>
 				</li>
@@ -180,6 +195,16 @@
 		</ol>
 
 		{#if samePlayers}
+			<!-- One token for both games once each town has built its bag (Trevor, 2026-10-18). -->
+			<div>
+				<Button
+					icon="bag"
+					disabled={!towns.every((open) => open.game.bag)}
+					onclick={() => void goto(resolve('/towns/[groupId]/draw', { groupId }))}
+				>
+					{t('modes.towns.draw')}
+				</Button>
+			</div>
 			<section aria-labelledby="names-heading">
 				<h2 id="names-heading">{t('modes.towns.names')}</h2>
 				<ol class="names">

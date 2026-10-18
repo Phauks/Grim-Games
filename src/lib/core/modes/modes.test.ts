@@ -5,7 +5,15 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { GAME_MODES, gameModeById } from './registry.ts';
-import { bannedIn, choosableCharacters, modeCharacters, modeScript, runsPart } from './pool.ts';
+import {
+	bannedIn,
+	choosableCharacters,
+	demonBluffs,
+	inPlayFor,
+	modeCharacters,
+	modeScript,
+	runsPart
+} from './pool.ts';
 import { parseGameMode } from './validate.ts';
 import { MODE_PARTS } from './types.ts';
 
@@ -166,5 +174,38 @@ describe('about', () => {
 	it('describes every built-in mode but Standard', () => {
 		for (const m of GAME_MODES.filter((m) => m.id !== 'standard'))
 			expect(m.about, m.id).toBeTruthy();
+	});
+});
+
+describe('Demon bluffs (Trevor, 2026-10-18)', () => {
+	it('are off in Sushi Buffet and Whale Buffet only', () => {
+		const off = GAME_MODES.filter((m) => !demonBluffs(m)).map((m) => m.id);
+		expect(off.sort()).toEqual(['sushi-buffet', 'whale-buffet']);
+	});
+});
+
+describe('authors (Trevor, 2026-10-18: only when properly attributed)', () => {
+	it('link every author to an https page that names them', () => {
+		for (const m of GAME_MODES)
+			for (const a of m.authors ?? []) expect(a.url, m.id).toMatch(/^https:\/\//);
+	});
+
+	it('rejects an author without a link', () => {
+		const ok = parseGameMode({ ...mode('specters') }, known);
+		expect(ok.ok).toBe(true);
+		const bad = parseGameMode({ ...mode('specters'), authors: ['Someone'] }, known);
+		expect(bad.ok).toBe(false);
+	});
+});
+
+describe('Two Towns and a Boomdandy: always in play', () => {
+	it('puts the Boomdandy in the Zombuul town and the Mayor in the other', () => {
+		// "Boomdandy and Mayor are guaranteed to be in play"; they "start in different towns".
+		// https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/
+		const two = mode('two-towns-and-a-boomdandy');
+		expect(inPlayFor(two, 0)).toEqual(['boomdandy']);
+		expect(inPlayFor(two, 1)).toEqual(['mayor']);
+		expect(runsPart(two, 'forced')).toBe(true);
+		expect(inPlayFor(mode('standard'))).toEqual([]);
 	});
 });

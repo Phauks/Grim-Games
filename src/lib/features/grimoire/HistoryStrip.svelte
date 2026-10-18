@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { historyItems } from './history.ts';
@@ -11,38 +12,59 @@
 	 */
 	interface Props {
 		grimoire: Grimoire;
+		/** One line above Previous and Next: the board's game over notice. */
+		notice?: Snippet;
 	}
 
-	let { grimoire }: Props = $props();
+	let { grimoire, notice }: Props = $props();
 
 	const open = $derived(grimoire.open);
 	const cursor = $derived(open.session.log.cursor);
 	/** The last change the game kept; later (undone) entries are not part of it. */
 	const last = $derived(open.savedCursor);
 	const items = $derived(historyItems(open.session.log.entries, last, open.characters));
+	/** Oldest first: the points Previous and Next step between (a draw and its confirmation are one). */
+	const stops = $derived(items.map((i) => i.cursor).reverse());
 	const item = $derived(items.find((i) => i.cursor === cursor));
+	const previous = $derived(stops.findLast((c) => c < cursor));
+	const next = $derived(stops.find((c) => c > cursor));
+	const position = $derived(stops.filter((c) => c <= cursor).length);
 </script>
 
-<section class="strip" aria-label="Game history" data-testid="history-strip">
+{#if notice}<div class="notice">{@render notice()}</div>{/if}
+<section class="strip" class:below={!!notice} aria-label="Game history" data-testid="history-strip">
 	<IconButton
 		icon="back"
 		label="Previous change"
-		disabled={cursor <= 1}
-		onclick={() => open.goTo(cursor - 1)}
+		disabled={previous === undefined}
+		onclick={() => previous !== undefined && open.goTo(previous)}
 	/>
 	<p class="line" aria-live="polite">
-		<span class="count">{cursor} of {last}</span>
+		<span class="count">{position} of {stops.length}</span>
 		{#if item}<HistoryLine parts={item.parts} characters={open.characters} />{/if}
 	</p>
 	<IconButton
 		icon="forward"
 		label="Next change"
-		disabled={cursor >= last}
-		onclick={() => open.goTo(cursor + 1)}
+		disabled={next === undefined}
+		onclick={() => next !== undefined && open.goTo(next)}
 	/>
 </section>
 
 <style>
+	.notice {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: calc(100% + var(--space-2));
+		z-index: 2;
+		display: flex;
+		justify-content: center;
+		height: var(--tap-target);
+	}
+	.strip.below {
+		top: calc(100% + 2 * var(--space-2) + var(--tap-target));
+	}
 	.strip {
 		position: absolute;
 		left: 0;

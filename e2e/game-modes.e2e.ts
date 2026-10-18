@@ -216,20 +216,24 @@ test('Two games at once: one name per player for both games, warnings start at N
 	await expect(page.getByTestId('town').first()).toContainText('Trouble Brewing');
 	await expect(page.getByTestId('town').nth(1)).toContainText('Bad Moon Rising');
 	await expect(page.getByTestId('town-warnings')).toContainText('None');
+	// The title keeps its row: Inspect is an icon, so no word breaks (Trevor, 2026-10-18).
+	const title = page.getByRole('heading', { name: 'Two games at once', level: 1 });
+	const lines = await title.evaluate(
+		(el) => el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)
+	);
+	expect(lines).toBeLessThan(2.5);
+	await expect(page.getByRole('button', { name: 'Inspect Two games at once' })).toBeVisible();
 
 	const name = page.getByLabel('Seat 1', { exact: true });
 	await name.fill('Ana');
 	await name.press('Enter');
 	// The name reaches both games: each board shows it.
-	const hrefs = await page
-		.getByRole('link', { name: /^Open town/ })
-		.evaluateAll((links) =>
-			links.map((a) => (a as HTMLAnchorElement).pathname.replace(/\/setup$/, ''))
-		);
-	expect(hrefs).toHaveLength(2);
 	const towns = page.url();
-	for (const href of hrefs) {
-		await page.goto(href);
+	for (const n of [1, 2]) {
+		await page.goto(towns);
+		await page.getByRole('button', { name: `Open town ${n}` }).tap();
+		await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
+		await page.goto(new URL(page.url()).pathname.replace(/\/setup$/, ''));
 		await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	}
 	// Each town's board leads back to the towns from its ⋯ menu.
@@ -243,6 +247,59 @@ test('Two games at once: one name per player for both games, warnings start at N
 	await expect(page).toHaveURL(towns);
 	await expect(page.getByLabel('Seat 1', { exact: true })).toHaveValue('Ana');
 	await noSidewaysScroll(page);
+});
+
+test('Two games at once draws one token for both games', async ({ page }) => {
+	// Trevor, 2026-10-18: "The same one token will account for both pulls".
+	await page.goto('/new');
+	await chooseMode(page, 'Two games at once');
+	const panel = modesPanel(page);
+	await panel.getByRole('combobox', { name: 'Town 2 script' }).tap();
+	await page.getByRole('option', { name: 'Bad Moon Rising', exact: true }).tap();
+	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/towns\/[\w-]+$/);
+	const towns = page.url();
+	const both = page.getByRole('button', { name: 'Draw both games' });
+	await expect(both).toBeDisabled();
+
+	// Each town builds its own bag.
+	const picks = [
+		['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'],
+		['Grandmother', 'Sailor', 'Chambermaid', 'Godfather', 'Zombuul']
+	];
+	for (const [i, names] of picks.entries()) {
+		await page.goto(towns);
+		await page.getByRole('button', { name: `Open town ${i + 1}` }).tap();
+		await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+		for (const name of names)
+			await page
+				.getByRole('button', { name, exact: true })
+				.and(page.locator('[aria-pressed]'))
+				.tap();
+		await page.getByRole('button', { name: 'Build bag' }).tap();
+		await expect(page).toHaveURL(/\/draw$/);
+	}
+
+	await page.goto(towns);
+	await both.tap();
+	await expect(page).toHaveURL(/\/towns\/[\w-]+\/draw$/);
+	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
+	for (let n = 1; n <= 5; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		const reveal = page.getByTestId('reveal');
+		// One token, both games' characters.
+		await expect(reveal.getByTestId('reveal-face')).toHaveCount(2);
+		await expect(reveal).toContainText('Town 1');
+		await expect(reveal).toContainText('Town 2');
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+		await expect(reveal).toBeHidden();
+	}
+	await expect(page.getByTestId('next-seat')).toHaveText('None');
+	await page.getByRole('link', { name: 'Done' }).tap();
+	await expect(page).toHaveURL(towns);
+	// Nobody drew the Demon in both games.
+	await expect(page.getByTestId('town-warnings')).toContainText('None');
 });
 
 test('Two Towns and a Boomdandy starts two towns with their own scripts', async ({ page }) => {
@@ -285,6 +342,19 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(page.getByTestId('town-moves')).toHaveText('None before the end of day 1');
 	await expect(page.getByRole('button', { name: 'Move a player' })).toBeDisabled();
 	await noSidewaysScroll(page);
+
+	// "Boomdandy and Mayor are guaranteed to be in play": the Boomdandy in the Zombuul town,
+	// the Mayor in the other, each already chosen when its setup opens.
+	const towns = page.url();
+	await page.getByRole('button', { name: 'Open town 1' }).tap();
+	await expect(page).toHaveURL(/\/setup$/);
+	await expect(page.getByTestId('count-minion')).toHaveText('1');
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
+	await page.goto(towns);
+	await page.getByRole('button', { name: 'Open town 2' }).tap();
+	await expect(page).toHaveURL(/\/setup$/);
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
+	await expect(page.getByTestId('count-minion')).toHaveText('0');
 });
 
 test('a mode file someone wrote can be added, inspected and deleted', async ({ page }) => {
@@ -295,6 +365,17 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await expect(panel.getByRole('button', { name: 'Delete Whale Buffet' })).toBeDisabled();
 	await panel.getByRole('button', { name: 'Add mode' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Add a game mode' });
+	// How to write one (Trevor, 2026-10-18): every part, with the rolling revision.
+	await dialog.getByRole('button', { name: 'How to write a mode file' }).tap();
+	const guide = page.getByRole('dialog', { name: 'Writing a mode file' });
+	await expect(guide.getByTestId('mode-guide-version')).toContainText(/Format 1, revision \d+/);
+	await expect(guide.locator('section[data-part]')).toHaveCount(15);
+	const scroll = guide.getByTestId('mode-guide');
+	await scroll.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+	expect(await scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+	await noSidewaysScroll(page);
+	await guide.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(guide).toBeHidden();
 	await dialog.getByTestId('mode-file').fill('{"format": 1, "id": "Bad Id"}');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(dialog.getByRole('status')).toContainText('id: must be lower-case');
@@ -339,9 +420,12 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	await expect(page.getByRole('heading', { name: 'Hidden characters', level: 1 })).toBeVisible();
 	const extras = page.getByTestId('extras').locator('li');
-	await expect(extras).toHaveCount(2);
+	// A row for each of Townsfolk, Outsider and Minion (Trevor, 2026-10-18); Outsider starts empty.
+	await expect(extras).toHaveCount(3);
 	await expect(extras.nth(0)).toContainText('Townsfolk');
-	await expect(extras.nth(1)).toContainText('Minion');
+	await expect(extras.nth(1)).toContainText('Outsider');
+	await expect(extras.nth(1)).toContainText('None');
+	await expect(extras.nth(2)).toContainText('Minion');
 	await expect(page.getByTestId('extras-range')).toHaveText(
 		'Tell the table: 1 to 3 hidden characters'
 	);
@@ -352,13 +436,35 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(
 		extras.nth(0).getByRole('button', { name: /^Roll again instead of / })
 	).not.toHaveAttribute('aria-label', before!);
+	// The Storyteller can choose the character, or leave a row empty.
+	await extras.nth(1).getByRole('button', { name: 'Choose a hidden Outsider' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
+	await picker.getByRole('searchbox').fill('Goon');
+	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
+	await expect(picker).toBeHidden();
+	await expect(extras.nth(1)).toContainText('Goon');
+	await extras.nth(2).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
+	await expect(extras.nth(2)).toContainText('None');
+	await expect(page.getByTestId('extras-range')).toHaveText(
+		'Tell the table: 1 to 3 hidden characters'
+	);
 	await noSidewaysScroll(page);
 
 	await page.getByRole('button', { name: 'Choose characters' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	// Off the script, so not in the list, but chosen for the bag.
+	// Off the script but chosen for the bag: listed under their own types, marked (Trevor,
+	// 2026-10-18).
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
-	await expect(page.getByTestId('count-minion')).toHaveText('1');
+	await expect(page.getByTestId('count-outsider')).toHaveText('1');
+	await expect(page.getByTestId('count-minion')).toHaveText('0');
+	const offScript = page.locator('.choice[data-off-script]');
+	await expect(offScript).toHaveCount(2);
+	await expect(offScript.first()).toContainText('Not on script');
+	await expect(offScript.first().locator('.main')).toHaveAttribute('aria-pressed', 'true');
+	// Taking one out keeps it listed, so it can go back in.
+	await offScript.first().locator('.main').tap();
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
+	await expect(offScript).toHaveCount(2);
 });
 
 test('Flesh and Bone runs a campaign: the next game adds a Demon once the current game has ended', async ({
@@ -411,4 +517,64 @@ test('Flesh and Bone runs a campaign: the next game adds a Demon once the curren
 	await expect(games).toHaveCount(2);
 	await expect(games.nth(0)).toContainText('Ended');
 	await expect(next).toBeDisabled();
+
+	// Every version of the living script is in the Library (Trevor, 2026-10-18).
+	await page.goto('/library');
+	const campaigns = page.getByTestId('library-campaigns').locator('li');
+	await expect(campaigns).toHaveCount(1);
+	await expect(campaigns.first()).toContainText('Flesh and Bone');
+	await expect(campaigns.first()).toContainText('2 versions');
+	await campaigns.first().getByRole('button').tap();
+	const versions = page.getByRole('dialog', { name: 'Flesh and Bone' });
+	await expect(versions.getByTestId('campaign-script-scroll')).toContainText('game 2');
+	await expect(versions.getByRole('link', { name: 'Campaign' })).toBeVisible();
+});
+
+test('Specters: spectators vote on their phones and the Storyteller sees the count', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Apparition, from https://www.youtube.com/watch?v=-R34QbIgDh8
+	await page.goto('/new');
+	await chooseMode(page, 'Specters');
+	const panel = modesPanel(page);
+	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+
+	await page.goto(`/grimoire/${gameId}/room`);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+
+	await page.goto(`/grimoire/${gameId}/specters`);
+	await expect(page.getByRole('heading', { name: 'Apparition', level: 1 })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Wizard' })).toBeVisible();
+
+	// A phone without a seat is a spectator.
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toBeVisible();
+	await expect(page.getByTestId('specters-room')).toHaveText('0/1 spectators voted');
+
+	await page.getByRole('button', { name: 'Open vote' }).tap();
+	const vote = phone.getByRole('dialog', { name: 'Spectators’ vote' });
+	await expect(vote).toBeVisible();
+	await vote.getByRole('button', { name: /^2\s*Seat 2$/ }).tap();
+	await expect(vote.getByRole('button', { name: /^2\s*Seat 2$/ })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(page.getByTestId('specters-room')).toHaveText('1/1 spectators voted');
+	const tally = page.getByTestId('specters-tally').locator('li');
+	await expect(tally.nth(1)).toHaveAttribute('data-most', 'true');
+	await expect(tally.nth(1)).toContainText('1');
+
+	// Closing the vote closes it on the phone; the count stays for the Storyteller.
+	await page.getByRole('button', { name: 'Close vote' }).tap();
+	await expect(vote).toBeHidden();
+	await expect(tally.nth(1)).toHaveAttribute('data-most', 'true');
+	await noSidewaysScroll(page);
+	await phoneContext.close();
 });

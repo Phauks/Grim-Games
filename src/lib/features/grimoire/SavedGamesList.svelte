@@ -5,7 +5,14 @@
 	 * History page (Trevor, 2026-10-16): ended games, opened read-only to look around
 	 * (Trevor, 2026-10-17); the board can reopen one.
 	 */
-	let { view = 'active' }: { view?: 'active' | 'previous' } = $props();
+	let {
+		view = 'active',
+		onCount
+	}: {
+		view?: 'active' | 'previous';
+		/** How many games the list shows (unreadable ones too), for a Clear all in the page header. */
+		onCount?: (count: number) => void;
+	} = $props();
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import type { SavedGameSummary, UnreadableGame } from '#lib/core/engine/index.ts';
@@ -27,6 +34,9 @@
 	);
 	let unreadable = $state<UnreadableGame[]>([]);
 	let loaded = $state(false);
+	$effect(() => {
+		onCount?.(view === 'active' ? games.length + unreadable.length : past.length);
+	});
 
 	async function refresh() {
 		try {
@@ -47,13 +57,31 @@
 		deleteOpen = false;
 		if (!deleting) return;
 		try {
-			await gameStore().delete(deleting);
-			seatLayouts.forget(deleting);
-			endedGames.reopen(deleting);
+			await forget(deleting);
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		}
 		deleting = undefined;
+		await refresh();
+	}
+
+	async function forget(gameId: GameId) {
+		await gameStore().delete(gameId);
+		seatLayouts.forget(gameId);
+		endedGames.reopen(gameId);
+	}
+
+	/** Deletes every game this list shows (Trevor, 2026-10-18: clear all on Resume game). */
+	export async function clearAll() {
+		const ids =
+			view === 'active'
+				? [...games.map((g) => g.gameId), ...unreadable.map((g) => g.gameId)]
+				: past.map((g) => g.gameId);
+		try {
+			for (const id of ids) await forget(id);
+		} catch (e) {
+			reportError(e, { area: 'grimoire' });
+		}
 		await refresh();
 	}
 

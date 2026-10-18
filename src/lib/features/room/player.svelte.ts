@@ -69,6 +69,12 @@ export class RoomPlayer {
 		this.#socket.send({ type: 'leave-seat' });
 	}
 
+	/** A spectator's choice in the open vote (Specters); a new choice replaces the last. */
+	vote(choice: SeatId): boolean {
+		const voteId = this.view?.vote?.voteId;
+		return voteId ? this.#socket.send({ type: 'vote', voteId, choice }) : false;
+	}
+
 	stop(): void {
 		this.#socket.stop();
 	}

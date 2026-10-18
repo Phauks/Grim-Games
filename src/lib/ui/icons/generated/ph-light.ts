@@ -121,6 +121,8 @@ import ph_play_circle_light from '~icons/ph/play-circle-light';
 import ph_plus_light from '~icons/ph/plus-light';
 import ph_plus_circle_light from '~icons/ph/plus-circle-light';
 import ph_printer_light from '~icons/ph/printer-light';
+import ph_prohibit_light from '~icons/ph/prohibit-light';
+import ph_prohibit_inset_light from '~icons/ph/prohibit-inset-light';
 import ph_pulse_light from '~icons/ph/pulse-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
 import ph_qr_code_light from '~icons/ph/qr-code-light';
@@ -300,6 +302,8 @@ const icons: IconMap = {
 	'ph:plus-light': ph_plus_light,
 	'ph:plus-circle-light': ph_plus_circle_light,
 	'ph:printer-light': ph_printer_light,
+	'ph:prohibit-light': ph_prohibit_light,
+	'ph:prohibit-inset-light': ph_prohibit_inset_light,
 	'ph:pulse-light': ph_pulse_light,
 	'ph:push-pin-light': ph_push_pin_light,
 	'ph:qr-code-light': ph_qr_code_light,

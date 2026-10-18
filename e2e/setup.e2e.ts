@@ -672,3 +672,59 @@ test("tapping a character's icon opens its page without choosing it", async ({ p
 		'true'
 	);
 });
+
+test('the Demon bluffs are chosen in setup once the draw is done', async ({ page }) => {
+	// Trevor, 2026-10-18: while setting up, not as a prompt on the board.
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	const bluffs = page.getByTestId('setup-bluffs');
+	// There from the start, so nothing moves; usable once every tile is drawn.
+	await expect(bluffs).toContainText('None');
+	await expect(bluffs.getByRole('button', { name: 'Choose' })).toBeDisabled();
+	for (let n = 1; n <= 5; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	await bluffs.getByRole('button', { name: 'Choose' }).tap();
+	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
+	const choices = page.getByRole('group', { name: 'Bluff characters' });
+	// What the draw put in play is marked.
+	await expect(choices.getByRole('button', { name: /^Empath/ })).toContainText('In play');
+	for (const name of ['Chef', 'Soldier', 'Mayor'])
+		await choices.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await page.keyboard.press('Escape');
+	for (const name of ['Chef', 'Soldier', 'Mayor']) await expect(bluffs).toContainText(name);
+	await expect(bluffs.getByRole('button', { name: 'Change' })).toBeEnabled();
+	await noSidewaysScroll(page);
+});
+
+test('Random picks three Demon bluffs, none in play', async ({ page }) => {
+	// Trevor, 2026-10-18: the same Random button as setup's.
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	for (let n = 1; n <= 5; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	const bluffs = page.getByTestId('setup-bluffs');
+	await bluffs.getByRole('button', { name: 'Choose' }).tap();
+	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
+	await expect(page.getByRole('heading', { name: 'Demon bluffs · 0/3' })).toBeVisible();
+	await page.getByRole('button', { name: 'Random bluffs' }).tap();
+	await expect(page.getByRole('heading', { name: 'Demon bluffs · 3/3' })).toBeVisible();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	// No in-play warning to confirm: none of them is in play.
+	await expect(page.getByRole('heading', { name: 'Save bluffs that are in play?' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	const picked = bluffs.locator('[data-character-id]');
+	await expect(picked).toHaveCount(3);
+	const ids = await picked.evaluateAll((els) =>
+		els.map((el) => el.getAttribute('data-character-id'))
+	);
+	for (const id of ['washerwoman', 'empath', 'monk', 'poisoner', 'imp'])
+		expect(ids).not.toContain(id);
+	await noSidewaysScroll(page);
+});

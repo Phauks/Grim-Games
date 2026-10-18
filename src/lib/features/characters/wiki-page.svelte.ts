@@ -1,3 +1,4 @@
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { SvelteMap } from 'svelte/reactivity';
 import { wikiUrl, type Character } from '#lib/core/data/index.ts';
 import { parseWikiPage, wikiPageTitle, type WikiSection } from './wiki-page.ts';
@@ -43,32 +44,24 @@ function apiUrl(title: string): string {
 let memory: Record<string, Cached> | undefined;
 
 function readCache(): Record<string, Cached> {
-	memory ??= readStored();
+	memory ??= readKept();
 	return memory;
 }
 
-function readStored(): Record<string, Cached> {
-	try {
-		const raw = globalThis.localStorage?.getItem(KEY);
-		const parsed = raw ? (JSON.parse(raw) as Record<string, Cached>) : {};
-		return parsed && typeof parsed === 'object' ? parsed : {};
-	} catch {
-		return {};
-	}
+function readKept(): Record<string, Cached> {
+	const parsed = readStored<Record<string, Cached>>(KEY);
+	return parsed && typeof parsed === 'object' ? parsed : {};
 }
 
 function writeCache(title: string, entry: Cached) {
-	try {
-		const all = { ...readCache(), [title]: entry };
-		memory = Object.fromEntries(
-			Object.entries(all)
-				.sort(([, a], [, b]) => b.fetchedAt - a.fetchedAt)
-				.slice(0, KEEP)
-		);
-		globalThis.localStorage?.setItem(KEY, JSON.stringify(memory));
-	} catch {
-		// Not kept; it is fetched again next time.
-	}
+	const all = { ...readCache(), [title]: entry };
+	memory = Object.fromEntries(
+		Object.entries(all)
+			.sort(([, a], [, b]) => b.fetchedAt - a.fetchedAt)
+			.slice(0, KEEP)
+	);
+	// Not kept when storage refuses it; it is fetched again next time.
+	writeStored(KEY, memory);
 }
 
 class WikiPages {
