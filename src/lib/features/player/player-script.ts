@@ -98,7 +98,14 @@ export function playerNight(
 	return { night, entries };
 }
 
-/** The version of a saved script, when its source records one (a BotC Scripts page). */
-export function scriptVersion(saved: { source: { kind: string; version?: string } } | undefined) {
-	return saved?.source.kind === 'botcscripts' ? saved.source.version || undefined : undefined;
+/**
+ * The version of a script: the BotC Scripts page's version when it came from there, else the
+ * one in its own `_meta` (the Script builder writes it, Trevor 2026-10-18).
+ */
+export function scriptVersion(
+	saved: { source: { kind: string; version?: string } } | undefined,
+	meta?: { version?: string }
+) {
+	const fromSource = saved?.source.kind === 'botcscripts' ? saved.source.version : undefined;
+	return fromSource || meta?.version?.trim() || undefined;
 }

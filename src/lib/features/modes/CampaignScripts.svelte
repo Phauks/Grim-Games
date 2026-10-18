@@ -33,7 +33,7 @@
 	type ColumnId = 'name' | 'started';
 	const all = campaigns();
 	let sort = $state<DataSort<ColumnId> | undefined>();
-	// Every column filters (Trevor, 2026-10-18), with the shared table's built-in filters.
+	// Each column filters on its own value (the shared table filters every column).
 	const columns = $derived<DataColumn<ColumnId, Campaign>[]>([
 		{
 			id: 'name',
