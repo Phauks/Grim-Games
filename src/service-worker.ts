@@ -18,6 +18,11 @@ import {
 	staleCaches,
 	type KeepOfflineMessage
 } from '#lib/features/offline/cache-rules.ts';
+import {
+	percentDone,
+	PRECACHE_PROGRESS,
+	type PrecacheProgress
+} from '#lib/features/about/update-progress.ts';
 
 const CACHE = `${BUILD_CACHE_PREFIX}${version}`;
 const SHELL = '/';
@@ -52,11 +57,43 @@ async function refreshIcons(cache: Cache): Promise<void> {
 	await runtime.put(ICON_DATA_KEY, new Response(fetchedAt ?? ''));
 }
 
+/**
+ * Stores the build, a few files at a time, telling every open page how far it has got
+ * (About's Check for updates shows it). Any file failing fails the install, as addAll did.
+ */
+async function precache(cache: Cache): Promise<void> {
+	const total = ASSETS.length;
+	let done = 0;
+	let told = -1;
+	const tell = async () => {
+		// Each whole percent at most once, so a large build doesn't flood the pages.
+		const percent = percentDone({ done, total });
+		if (percent === told) return;
+		told = percent;
+		const message: PrecacheProgress = { type: PRECACHE_PROGRESS, done, total };
+		for (const client of await sw.clients.matchAll({ includeUncontrolled: true, type: 'window' }))
+			client.postMessage(message);
+	};
+	const queue = [...ASSETS];
+	const next = async (): Promise<void> => {
+		const path = queue.shift();
+		if (!path) return;
+		const response = await fetch(path);
+		if (!response.ok) throw new Error(`${path}: ${response.status}`);
+		await cache.put(path, response);
+		done++;
+		await tell();
+		await next();
+	};
+	await tell();
+	await Promise.all([next(), next(), next(), next()]);
+}
+
 sw.addEventListener('install', (event) => {
 	event.waitUntil(
 		(async () => {
 			const cache = await caches.open(CACHE);
-			await cache.addAll(ASSETS);
+			await precache(cache);
 			await refreshIcons(cache).catch(() => {});
 		})()
 	);

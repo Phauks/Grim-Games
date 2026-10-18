@@ -118,7 +118,11 @@
 	}
 </script>
 
-<SettingRow label={t('settings.storageUsed')} description={t('settings.storageUsedHelp')}>
+<SettingRow
+	layout="stacked"
+	label={t('settings.storageUsed')}
+	description={t('settings.storageUsedHelp')}
+>
 	{#snippet control()}
 		<div class="tools">
 			<label class="all">
