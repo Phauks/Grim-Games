@@ -6,6 +6,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import GroupHead from './GroupHead.svelte';
 	import NewLabel from './NewLabel.svelte';
 	import {
 		byName,
@@ -27,9 +28,11 @@
 		filter?: string[];
 		/** The id of the Tags heading, which names the sidebar's section. */
 		headingId: string;
+		/** Folded away from its heading. */
+		open?: boolean;
 	}
 
-	let { filter = $bindable([]), headingId }: Props = $props();
+	let { filter = $bindable([]), headingId, open = $bindable(true) }: Props = $props();
 
 	const kind: LabelKind = 'tags';
 	const tags = $derived(byName(libraryLabels.state.tags));
@@ -63,13 +66,14 @@
 	}
 </script>
 
-<div class="head">
-	<h2 id={headingId} class="heading">{t('library.tags')}</h2>
-	<IconButton icon="add" label={t('library.newTag')} onclick={() => (adding = true)} />
-	<IconButton icon="more" label={t('library.manageTags')} onclick={() => (managing = true)} />
-</div>
+<GroupHead id={headingId} title={t('library.tags')} bind:open>
+	{#snippet actions()}
+		<IconButton icon="add" label={t('library.newTag')} onclick={() => (adding = true)} />
+		<IconButton icon="more" label={t('library.manageTags')} onclick={() => (managing = true)} />
+	{/snippet}
+</GroupHead>
 <!-- Wrapped chips, one tap each to filter; renaming and deleting wait in Manage tags. -->
-<ul class="tags" aria-label={t('library.tags')}>
+<ul class="tags" aria-label={t('library.tags')} hidden={!open}>
 	{#each tags as label (label.id)}
 		<li>
 			<button
@@ -150,18 +154,9 @@
 </ConfirmDialog>
 
 <style>
-	.head {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto auto;
-		align-items: center;
-	}
-	.heading {
-		margin: 0;
-		font-size: 0.8rem;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--on-surface-muted);
+	/* A folded group: its list keeps its place in the markup, out of view. */
+	ul[hidden] {
+		display: none;
 	}
 	ul {
 		margin: 0;
