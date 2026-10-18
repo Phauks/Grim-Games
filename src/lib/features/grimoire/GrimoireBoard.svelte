@@ -3,6 +3,7 @@
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
+	import HistoryStrip from './HistoryStrip.svelte';
 	import { boardNightSteps, stepHolders } from './night-steps.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
@@ -1289,22 +1290,26 @@
 				}}
 			/>
 		{/if}
-		<ReminderBank
-			{grimoire}
-			{board}
-			size={chip}
-			view={bankView}
-			onView={(v) => (bankChosen = v)}
-			focus={walk && walkStep?.character
-				? stepReminders(walkStep.character.id, walk.night, walkStep.character)
-				: undefined}
-			focusMode={stepFocus.current.mode}
-			{seatAt}
-			{spotAllowed}
-			{ruleAt}
-			onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
-			onHints={(h) => (trayHints = h)}
-		/>
+		{#if ended}
+			<HistoryStrip {grimoire} />
+		{:else}
+			<ReminderBank
+				{grimoire}
+				{board}
+				size={chip}
+				view={bankView}
+				onView={(v) => (bankChosen = v)}
+				focus={walk && walkStep?.character
+					? stepReminders(walkStep.character.id, walk.night, walkStep.character)
+					: undefined}
+				focusMode={stepFocus.current.mode}
+				{seatAt}
+				{spotAllowed}
+				{ruleAt}
+				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
+				onHints={(h) => (trayHints = h)}
+			/>
+		{/if}
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={tapPx}></span>

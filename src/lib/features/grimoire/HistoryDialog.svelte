@@ -1,11 +1,10 @@
 <script lang="ts">
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { historyItems, itemCharacters, type HistoryItem, type HistoryPart } from './history.ts';
+	import { historyItems, itemCharacters, type HistoryItem } from './history.ts';
+	import HistoryLine from './HistoryLine.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 
@@ -61,23 +60,6 @@
 	}
 </script>
 
-{#snippet line(parts: HistoryPart[])}
-	{#each parts as part, i (i)}{#if part.kind === 'text'}{part.text}{:else if part.kind === 'seat'}{#if part.characterId}<CharacterBadge
-					characterId={part.characterId}
-					character={characters.get(part.characterId)}
-					alignment={part.alignment}
-					playerName={part.name}
-					inline
-				/>{:else}<strong>{part.name}</strong
-				>{/if}{:else if part.kind === 'character'}<CharacterBadge
-				characterId={part.characterId}
-				character={characters.get(part.characterId)}
-				inline
-			/>{:else}<span class="chip"
-				><ReminderToken label={part.label} character={characters.get(part.characterId)} /></span
-			>{/if}{/each}
-{/snippet}
-
 <Dialog bind:open title="History" size="full">
 	<div class="filter" role="group" aria-label="Show changes for">
 		<button
@@ -104,7 +86,7 @@
 	<ol class="history">
 		{#each shown as item (item.cursor)}
 			<li class:undone={item.undone} class:now={item.cursor === cursor}>
-				<span class="text">{@render line(item.parts)}</span>
+				<span class="text"><HistoryLine parts={item.parts} {characters} /></span>
 				<span class="when">
 					{item.cursor === cursor
 						? viewOnly
@@ -141,7 +123,7 @@
 				? 'and including'
 				: 'just before'}:
 		</p>
-		<p class="target">{@render line(chosen.item.parts)}</p>
+		<p class="target"><HistoryLine parts={chosen.item.parts} {characters} /></p>
 		<p class="note">
 			{chosen.item.undone
 				? 'Restored changes are applied again.'
@@ -223,10 +205,6 @@
 	li.undone .text {
 		opacity: 0.5;
 		text-decoration: line-through;
-	}
-	.chip {
-		display: inline-block;
-		vertical-align: middle;
 	}
 	p {
 		margin: 0 0 var(--space-2);

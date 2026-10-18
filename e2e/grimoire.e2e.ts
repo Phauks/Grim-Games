@@ -1342,7 +1342,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await empath.getByRole('button', { name: 'Close' }).tap();
 
 	// The last step goes on into the day, where its announcements are (Trevor, 2026-10-18).
-	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await order.getByRole('button', { name: 'Run Night Order' }).tap();
 	for (let i = 0; i < 20 && (await strip.getByRole('button', { name: 'Next step' }).count()); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -1552,6 +1552,18 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(page.getByRole('link', { name: /Trouble Brewing/ })).toHaveCount(0);
 	await page.goto(board);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
+	// Previous and Next step through History on the board itself, in the reminder bank's
+	// place (Trevor, 2026-10-18).
+	const steps = page.getByTestId('history-strip');
+	await expect(page.getByRole('list', { name: /Reminder bank|Setup reminders/ })).toHaveCount(0);
+	await expect(steps.getByRole('button', { name: 'Next change' })).toBeDisabled();
+	await expect(steps).toContainText(/(\d+) of \1.*Ana/);
+	await steps.getByRole('button', { name: 'Previous change' }).tap();
+	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
+	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
+	await steps.getByRole('button', { name: 'Next change' }).tap();
+	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
+	await expect(steps.getByRole('button', { name: 'Next change' })).toBeDisabled();
 	// Changes are refused until the game is reopened.
 	await nameSeat(await openSeat(page, 1), 'Bo');
 	await expect(page.getByText('The game is over. Reopen it to change it.')).toBeVisible();
