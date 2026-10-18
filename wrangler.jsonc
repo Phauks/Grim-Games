@@ -71,7 +71,17 @@
 		{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } },
 		{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } }
 	],
-	"vars": { "ENVIRONMENT": "production" },
+	// The site is served on grimbinder.com (Trevor, 2026-10-18), attached as a Custom Domain in
+	// the Cloudflare dashboard. It is deliberately not listed under "routes": wrangler only
+	// touches custom domains when the config lists some, and then replaces the whole set, so
+	// dashboard settings (such as previews on the domain) stay as Trevor set them. Switching
+	// domains later: attach the new one in the dashboard and change EMAIL_FROM below; sign-in
+	// links use whatever address the request came in on (worker/account/routes.ts).
+	// Sign-in emails (worker/account/email.ts) through Cloudflare Email Service; grimbinder.com
+	// must be onboarded under Email Sending first. Previews don't inherit this binding, so
+	// they keep showing the code on screen instead of sending email.
+	"send_email": [{ "name": "EMAIL" }],
+	"vars": { "ENVIRONMENT": "production", "EMAIL_FROM": "sign-in@grimbinder.com" },
 	// Worker Previews: Workers Builds runs `npx wrangler preview` for non-production branches,
 	// giving each branch/PR its own URL on this same Worker, with its own Durable Object
 	// namespace and storage. Previews don't inherit vars or bindings, so they're repeated here.

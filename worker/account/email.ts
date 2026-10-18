@@ -1,19 +1,21 @@
 /**
  * Sending sign-in emails, behind one interface so the real provider slots in later.
  *
- * Today there is no domain, so Cloudflare Email Service can't send to anyone yet (it only
- * sends from a domain on the account: developers.cloudflare.com/email-service/platform/limits/).
- * Until then:
- * - Previews and local runs use `PreviewSender`: nothing is sent; the code and link go to
- *   the Worker log and back to the page, which shows them on screen;
- * - production has no sender, so sign-in is switched off there.
+ * Production sends real email through Cloudflare Email Service: the `send_email` binding
+ * `EMAIL` and the var `EMAIL_FROM` in wrangler.jsonc. It only sends from a domain onboarded
+ * in Email Service on the same account (developers.cloudflare.com/email-service/platform/limits/).
+ * - Previews and local runs have no binding and use `PreviewSender`: nothing is sent; the code
+ *   and link go to the Worker log and back to the page, which shows them on screen;
+ * - production without the binding or var has no sender, so sign-in is switched off there.
  *
- * To turn real email on (07-accounts-and-multi-device.md §1): add the domain to Cloudflare,
- * onboard it in Email Service, then add `"send_email": [{ "name": "EMAIL" }]` and the var
- * `EMAIL_FROM` (for example `"Grim-Games <sign-in@example.com>"`) to wrangler.jsonc.
- * `CloudflareSender` is then used automatically.
+ * The link in the email is built from the address the request came in on (routes.ts), so the
+ * only domain-specific value here is `EMAIL_FROM`.
  */
 import type { EmailDelivery } from '../../src/lib/features/account/account-protocol.ts';
+import { shell } from '../../src/lib/i18n/messages/en/shell.ts';
+
+/** The app's name as users see it, shared with the header. */
+const APP_NAME = shell['shell.appName'];
 
 export interface SignInEmail {
 	to: string;
@@ -30,7 +32,7 @@ export interface EmailSender {
 export interface EmailBinding {
 	send(message: {
 		to: string;
-		from: string;
+		from: string | { email: string; name?: string };
 		subject: string;
 		text: string;
 		html?: string;
@@ -40,12 +42,13 @@ export interface EmailBinding {
 export interface EmailEnv {
 	ENVIRONMENT?: string;
 	EMAIL?: EmailBinding;
+	/** The sending address alone, for example `sign-in@grimbinder.com`. */
 	EMAIL_FROM?: string;
 }
 
 function body(message: SignInEmail): string {
 	return [
-		`Your Grim-Games sign-in code is ${message.code}.`,
+		`Your ${APP_NAME} sign-in code is ${message.code}.`,
 		'',
 		`Or open this link on the device you are signing in on:`,
 		message.link,
@@ -64,8 +67,8 @@ export class CloudflareSender implements EmailSender {
 	async send(message: SignInEmail): Promise<void> {
 		await this.binding.send({
 			to: message.to,
-			from: this.from,
-			subject: `Grim-Games sign-in code: ${message.code}`,
+			from: { email: this.from, name: APP_NAME },
+			subject: `${APP_NAME} sign-in code: ${message.code}`,
 			text: body(message)
 		});
 	}
@@ -91,9 +94,12 @@ function isLocal(url: URL): boolean {
 	return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
 }
 
-/** The sender for this request: real email when set up, else preview mode off production. */
+/**
+ * The sender for this request: preview mode off production, else real email when set up.
+ * Local runs come first because `wrangler dev` gives them a simulated `EMAIL` binding too.
+ */
 export function emailSender(env: EmailEnv, url: URL): EmailSender {
-	if (env.EMAIL && env.EMAIL_FROM) return new CloudflareSender(env.EMAIL, env.EMAIL_FROM);
 	if (env.ENVIRONMENT === 'preview' || isLocal(url)) return new PreviewSender();
+	if (env.EMAIL && env.EMAIL_FROM) return new CloudflareSender(env.EMAIL, env.EMAIL_FROM);
 	return new NoSender();
 }
