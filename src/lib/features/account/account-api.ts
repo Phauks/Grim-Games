@@ -14,6 +14,9 @@ import type {
 	UserResponse
 } from './account-protocol.ts';
 
+/** Everything stored for the account, as JSON. */
+const EXPORT_PATH = '/api/account/export';
+
 /** A failed call, with a message to show. `status` is 0 when the server couldn't be reached. */
 export class AccountApiError extends Error {
 	constructor(
@@ -72,12 +75,11 @@ export const accountApi = {
 		call<UserResponse>('/api/account/email/verify', 'POST', { email, code }).then((r) => r.user),
 	setUsername: (username: string) =>
 		call<UserResponse>('/api/account/username', 'PUT', { username }).then((r) => r.user),
+	/** Everything stored for the account, for "Download my data". */
+	exportData: () => call<unknown>(EXPORT_PATH),
 	deleteAccount: () => call<{ ok: true }>('/api/account', 'DELETE'),
 	listDocs: <T>(kind: DocKind) =>
 		call<{ docs: ProfileDoc<T>[] }>(`/api/account/docs/${kind}`).then((r) => r.docs),
 	putDoc: <T>(kind: DocKind, id: string, request: PutDocRequest) =>
 		call<ProfileDoc<T>>(`/api/account/docs/${kind}/${encodeURIComponent(id)}`, 'PUT', request)
 };
-
-/** Where "Download my data" points: the browser saves the Worker's JSON as a file. */
-export const EXPORT_PATH = '/api/account/export';

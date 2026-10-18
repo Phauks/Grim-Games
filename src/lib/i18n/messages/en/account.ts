@@ -5,7 +5,8 @@ export const account = {
 	'account.pageTitle': `Account · ${APP_NAME}`,
 	'account.title': 'Account',
 	'account.button': 'Account',
-	'account.buttonSignedIn': 'Account: signed in as {email}',
+	'account.buttonSignedIn': 'Account: signed in as {name}',
+	'account.settings': 'Account settings',
 
 	'account.signIn.title': 'Sign in',
 	'account.signIn.intro':
@@ -30,6 +31,9 @@ export const account = {
 	'account.you.title': 'Signed in',
 	'account.you.username': 'Username',
 	'account.you.email': 'Email',
+	'account.you.id': 'Account ID',
+	'account.you.copyId': 'Copy account ID',
+	'account.you.copyIdFailed': 'The account ID could not be copied',
 	'account.you.since': 'Since',
 	'account.username.title': 'Change username',
 	'account.username.label': 'Username',
@@ -57,6 +61,8 @@ export const account = {
 	'account.data.confirmTitle': 'Delete your account?',
 	'account.data.confirmText':
 		"This deletes your account and every script saved to your profile, and signs out all your devices. Scripts and games saved on this device stay here. This can't be undone.",
+	'account.data.typeBelow': 'To confirm, type:',
+	'account.data.typeToConfirm': 'Type {phrase} to confirm',
 	'account.data.keep': 'Keep my account',
 	'account.data.deleted': 'Your account and all its data were deleted',
 
