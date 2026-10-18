@@ -116,7 +116,14 @@ export const ICON_SLOTS = {
 	folder: { label: 'Folder', choices: ['ph:folder', 'ph:folder-simple'] },
 	tag: { label: 'Tag', choices: ['ph:tag', 'ph:tag-simple'] },
 	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
-	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] }
+	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
+	/** What an info token asks for when shown, on its tile (Trevor, 2026-10-18). */
+	asksText: { label: 'Asks for words', choices: ['ph:text-t', 'ph:textbox'] },
+	asksNumber: { label: 'Asks for a number', choices: ['ph:hash', 'ph:calculator'] },
+	asksChoices: { label: 'Asks for an answer', choices: ['ph:list-bullets', 'ph:list-checks'] },
+	asksCharacters: { label: 'Asks for characters', choices: ['ph:user-circle', 'ph:users'] },
+	/** The one-time info token, used once and never saved. */
+	quickCard: { label: 'Quick card', choices: ['ph:lightning', 'ph:timer'] }
 } as const satisfies Record<string, IconSlotInfo>;
 
 export type IconSlot = keyof typeof ICON_SLOTS;

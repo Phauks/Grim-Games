@@ -7,6 +7,7 @@
 </script>
 
 <script lang="ts">
+	import { typeTone } from '#lib/core/data/character-type.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { tick, type Snippet } from 'svelte';
 	import {
@@ -232,11 +233,7 @@
 			<Collapsible
 				title={TYPE_PLURALS[group.type]}
 				level={3}
-				tone={group.type === 'townsfolk' || group.type === 'outsider'
-					? 'good'
-					: group.type === 'minion' || group.type === 'demon'
-						? 'evil'
-						: undefined}
+				tone={typeTone(group.type)}
 				storageKey="{collapsibleKey}:{group.type}"
 				forceOpen={searching}
 				empty={group.characters.length === 0}

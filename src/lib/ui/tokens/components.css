@@ -56,6 +56,10 @@
 	--accent-wash: color-mix(in srgb, var(--accent) 20%, transparent);
 	--good-wash: color-mix(in srgb, var(--good) 20%, transparent);
 
+	/* The chosen player count's column in the setup sheet table. */
+	--count-current: var(--heading);
+	--on-count-current: var(--on-sheet);
+
 	--toast-background: var(--sheet);
 	--toast-color: var(--on-sheet);
 

@@ -26,6 +26,7 @@ import ph_bookmark_simple_bold from '~icons/ph/bookmark-simple-bold';
 import ph_bookmarks_simple_bold from '~icons/ph/bookmarks-simple-bold';
 import ph_books_bold from '~icons/ph/books-bold';
 import ph_bug_bold from '~icons/ph/bug-bold';
+import ph_calculator_bold from '~icons/ph/calculator-bold';
 import ph_caret_circle_down_bold from '~icons/ph/caret-circle-down-bold';
 import ph_caret_down_bold from '~icons/ph/caret-down-bold';
 import ph_caret_left_bold from '~icons/ph/caret-left-bold';
@@ -83,6 +84,7 @@ import ph_hand_palm_bold from '~icons/ph/hand-palm-bold';
 import ph_hand_pointing_bold from '~icons/ph/hand-pointing-bold';
 import ph_handbag_bold from '~icons/ph/handbag-bold';
 import ph_hard_drives_bold from '~icons/ph/hard-drives-bold';
+import ph_hash_bold from '~icons/ph/hash-bold';
 import ph_heart_bold from '~icons/ph/heart-bold';
 import ph_heartbeat_bold from '~icons/ph/heartbeat-bold';
 import ph_hexagon_bold from '~icons/ph/hexagon-bold';
@@ -162,6 +164,7 @@ import ph_tag_bold from '~icons/ph/tag-bold';
 import ph_tag_simple_bold from '~icons/ph/tag-simple-bold';
 import ph_text_aa_bold from '~icons/ph/text-aa-bold';
 import ph_text_t_bold from '~icons/ph/text-t-bold';
+import ph_textbox_bold from '~icons/ph/textbox-bold';
 import ph_timer_bold from '~icons/ph/timer-bold';
 import ph_tote_bold from '~icons/ph/tote-bold';
 import ph_trash_bold from '~icons/ph/trash-bold';
@@ -213,6 +216,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple-bold': ph_bookmarks_simple_bold,
 	'ph:books-bold': ph_books_bold,
 	'ph:bug-bold': ph_bug_bold,
+	'ph:calculator-bold': ph_calculator_bold,
 	'ph:caret-circle-down-bold': ph_caret_circle_down_bold,
 	'ph:caret-down-bold': ph_caret_down_bold,
 	'ph:caret-left-bold': ph_caret_left_bold,
@@ -270,6 +274,7 @@ const icons: IconMap = {
 	'ph:hand-pointing-bold': ph_hand_pointing_bold,
 	'ph:handbag-bold': ph_handbag_bold,
 	'ph:hard-drives-bold': ph_hard_drives_bold,
+	'ph:hash-bold': ph_hash_bold,
 	'ph:heart-bold': ph_heart_bold,
 	'ph:heartbeat-bold': ph_heartbeat_bold,
 	'ph:hexagon-bold': ph_hexagon_bold,
@@ -349,6 +354,7 @@ const icons: IconMap = {
 	'ph:tag-simple-bold': ph_tag_simple_bold,
 	'ph:text-aa-bold': ph_text_aa_bold,
 	'ph:text-t-bold': ph_text_t_bold,
+	'ph:textbox-bold': ph_textbox_bold,
 	'ph:timer-bold': ph_timer_bold,
 	'ph:tote-bold': ph_tote_bold,
 	'ph:trash-bold': ph_trash_bold,

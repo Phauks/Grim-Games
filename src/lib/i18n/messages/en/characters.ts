@@ -25,6 +25,7 @@ export const characters = {
 	'characters.example': 'Example {number}',
 	'characters.tip': 'Tip {number}',
 	'characters.bluffingTip': 'Bluffing tip {number}',
+	'characters.fightingTip': 'Fighting tip {number}',
 	'characters.previewReminder': 'Poisoned',
 	'characters.tokenSize': 'Character token size',
 	'characters.tokenSizeHelp':

@@ -26,6 +26,7 @@ import ph_bookmark_simple_duotone from '~icons/ph/bookmark-simple-duotone';
 import ph_bookmarks_simple_duotone from '~icons/ph/bookmarks-simple-duotone';
 import ph_books_duotone from '~icons/ph/books-duotone';
 import ph_bug_duotone from '~icons/ph/bug-duotone';
+import ph_calculator_duotone from '~icons/ph/calculator-duotone';
 import ph_caret_circle_down_duotone from '~icons/ph/caret-circle-down-duotone';
 import ph_caret_down_duotone from '~icons/ph/caret-down-duotone';
 import ph_caret_left_duotone from '~icons/ph/caret-left-duotone';
@@ -83,6 +84,7 @@ import ph_hand_palm_duotone from '~icons/ph/hand-palm-duotone';
 import ph_hand_pointing_duotone from '~icons/ph/hand-pointing-duotone';
 import ph_handbag_duotone from '~icons/ph/handbag-duotone';
 import ph_hard_drives_duotone from '~icons/ph/hard-drives-duotone';
+import ph_hash_duotone from '~icons/ph/hash-duotone';
 import ph_heart_duotone from '~icons/ph/heart-duotone';
 import ph_heartbeat_duotone from '~icons/ph/heartbeat-duotone';
 import ph_hexagon_duotone from '~icons/ph/hexagon-duotone';
@@ -162,6 +164,7 @@ import ph_tag_duotone from '~icons/ph/tag-duotone';
 import ph_tag_simple_duotone from '~icons/ph/tag-simple-duotone';
 import ph_text_aa_duotone from '~icons/ph/text-aa-duotone';
 import ph_text_t_duotone from '~icons/ph/text-t-duotone';
+import ph_textbox_duotone from '~icons/ph/textbox-duotone';
 import ph_timer_duotone from '~icons/ph/timer-duotone';
 import ph_tote_duotone from '~icons/ph/tote-duotone';
 import ph_trash_duotone from '~icons/ph/trash-duotone';
@@ -213,6 +216,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple-duotone': ph_bookmarks_simple_duotone,
 	'ph:books-duotone': ph_books_duotone,
 	'ph:bug-duotone': ph_bug_duotone,
+	'ph:calculator-duotone': ph_calculator_duotone,
 	'ph:caret-circle-down-duotone': ph_caret_circle_down_duotone,
 	'ph:caret-down-duotone': ph_caret_down_duotone,
 	'ph:caret-left-duotone': ph_caret_left_duotone,
@@ -270,6 +274,7 @@ const icons: IconMap = {
 	'ph:hand-pointing-duotone': ph_hand_pointing_duotone,
 	'ph:handbag-duotone': ph_handbag_duotone,
 	'ph:hard-drives-duotone': ph_hard_drives_duotone,
+	'ph:hash-duotone': ph_hash_duotone,
 	'ph:heart-duotone': ph_heart_duotone,
 	'ph:heartbeat-duotone': ph_heartbeat_duotone,
 	'ph:hexagon-duotone': ph_hexagon_duotone,
@@ -349,6 +354,7 @@ const icons: IconMap = {
 	'ph:tag-simple-duotone': ph_tag_simple_duotone,
 	'ph:text-aa-duotone': ph_text_aa_duotone,
 	'ph:text-t-duotone': ph_text_t_duotone,
+	'ph:textbox-duotone': ph_textbox_duotone,
 	'ph:timer-duotone': ph_timer_duotone,
 	'ph:tote-duotone': ph_tote_duotone,
 	'ph:trash-duotone': ph_trash_duotone,

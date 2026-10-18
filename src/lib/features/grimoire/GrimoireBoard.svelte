@@ -25,7 +25,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { currentSetupStep, REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import { resolve } from '$app/paths';
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import {
 		charactersInPlay,
 		looseReminders,
@@ -51,6 +51,7 @@
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -1001,6 +1002,9 @@
 	const removeRuleLabel = (name: string) => `Remove ${name} from the game`;
 	let ruleRemoveOpen = $state(false);
 	const ruleShownCharacter = $derived(ruleShown ? characters.get(ruleShown) : undefined);
+	// Tapping a Fabled or Loric token opens its entry, as a seat's token does (Trevor, 2026-10-18).
+	let ruleDetails = $state<Character | undefined>();
+	let ruleDetailsOpen = $state(false);
 </script>
 
 <!-- Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
@@ -1087,6 +1091,20 @@
 			<span class="none">None</span>
 		{/each}
 	</div>
+{/snippet}
+
+{#snippet ruleToken(character: Character)}
+	<button
+		type="button"
+		class="rule-token"
+		aria-label={`About the ${character.name}`}
+		onclick={() => {
+			ruleDetails = character;
+			ruleDetailsOpen = true;
+		}}
+	>
+		<CharacterToken {character} size={64} />
+	</button>
 {/snippet}
 
 {#snippet rulesList(tokenSize: number)}
@@ -1753,7 +1771,7 @@
 <Dialog bind:open={ruleShownOpen} title={ruleShownCharacter?.name ?? ''}>
 	{#if ruleShownCharacter}
 		<div class="rule-detail">
-			<CharacterToken character={ruleShownCharacter} size={64} />
+			{@render ruleToken(ruleShownCharacter)}
 			<p>{ruleShownCharacter.ability}</p>
 		</div>
 		{@render heldList(ruleShownCharacter.id)}
@@ -1765,13 +1783,15 @@
 	{/snippet}
 </Dialog>
 
+{#if ruleDetails}<CharacterDialog bind:open={ruleDetailsOpen} character={ruleDetails} />{/if}
+
 <Dialog bind:open={rulesGroupOpen} title="Fabled and Loric">
 	<ul class="rules-group">
 		{#each game.ruleCharacters as id (id)}
 			{@const character = characters.get(id)}
 			{#if character}
 				<li class="rule-detail">
-					<CharacterToken {character} size={64} />
+					{@render ruleToken(character)}
 					<div>
 						<CharacterBadge characterId={id} {character} inline />
 						<p>{character.ability}</p>
@@ -2226,6 +2246,14 @@
 		display: flex;
 		gap: var(--space-3);
 		align-items: flex-start;
+	}
+	.rule-token {
+		flex: none;
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: none;
+		cursor: pointer;
 	}
 	.rule-detail p {
 		margin: 0;
