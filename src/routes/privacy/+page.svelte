@@ -122,6 +122,10 @@
 				After 10 wrong passwords for one address in an hour, that address has to wait or use a code.
 			</li>
 			<li>
+				Your profile icon, if you choose one: only the id of an official character (such as "imp"),
+				never an image.
+			</li>
+			<li>
 				Your scripts: every script you add while signed in, and, the first time you sign in on a
 				device, the scripts already in its Recent list. You can remove them on the Account page.
 			</li>

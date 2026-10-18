@@ -155,6 +155,13 @@ sw.addEventListener('fetch', (event) => {
 	}
 	// Live sync and other APIs always go to the network.
 	if (url.origin !== sw.location.origin || url.pathname.startsWith('/api/')) return;
+	// The app's version is the build this worker holds. SvelteKit reloads a page that ends in an
+	// error (such as a bad address) when version.json names a newer build, but a newer build
+	// only takes over on Refresh, so that reload brought the same page back endlessly.
+	if (url.pathname === '/_app/version.json') {
+		event.respondWith(Response.json({ version }, { headers: { 'Cache-Control': 'no-store' } }));
+		return;
+	}
 
 	event.respondWith(
 		(async () => {

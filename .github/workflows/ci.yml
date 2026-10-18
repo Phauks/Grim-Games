@@ -5,9 +5,13 @@ on:
   push:
     branches: [main, beta]
 
+# A newer push cancels a PR's stale run. On beta and main a run is never cancelled once it has
+# started, so every push that lands gets a verdict; pushes that arrive meanwhile wait, and
+# only the newest waiting one runs (on 2026-10-18, 86% of beta runs were cancelled mid-way
+# and a broken beta went unnoticed for hours).
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:
@@ -29,14 +33,15 @@ jobs:
       - run: npm run build
 
   e2e:
-    name: Touch e2e (phone + tablet, shard ${{ matrix.shard }}/2)
+    name: Touch e2e (phone + tablet, shard ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
-    # Each shard runs about half the suite (the whole suite took ~20 minutes on one runner).
+    # Each shard runs a third of the tests (fullyParallel spreads single tests, not files);
+    # the whole suite is about 23 minutes on one runner.
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -45,7 +50,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/2
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/3
+      - name: List flaky tests
+        if: always()
+        run: node scripts/flaky-summary.ts --run
       - if: failure()
         uses: actions/upload-artifact@v6
         with:

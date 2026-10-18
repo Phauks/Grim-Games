@@ -34,6 +34,7 @@ static/data/       synced TPI data and icons (generated; see Data)
 | `npm run icons`                                  | Regenerate the bundled icon modules after editing the icon catalogue                                              |
 | `npm run test:unit -- --run`                     | Vitest (node + browser projects)                                                                                  |
 | `npm run test:e2e`                               | Playwright touch tests (phone + tablet)                                                                           |
+| `npm run verify`                                 | check + lint + unit tests; the pre-push hook in `.githooks` runs it (`npm install` turns the hook on)             |
 | `npm run sync:data`                              | Refresh TPI's data and icons in `static/data/` (see [Data](#data))                                                |
 | `npm run scaffold:rules-tests`                   | Create missing character and jinx test files (see [Rules tests](#rules-tests))                                    |
 | `npm run check:rules-coverage`                   | Fail if a character or jinx has no test file; count scenario todos                                                |

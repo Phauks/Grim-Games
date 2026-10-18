@@ -1537,13 +1537,21 @@
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
-		<!-- Token and board settings over the board (Trevor, 2026-10-17). -->
+		<!-- Board and token settings over the board (Trevor, 2026-10-17); two sections since
+		     2026-10-18. -->
 		<Button
 			variant="quiet"
 			icon="settings"
 			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
 		>
-			Board and tokens
+			Board
+		</Button>
+		<Button
+			variant="quiet"
+			icon="settings"
+			onclick={() => fromMenu(() => settingsDialog.showOnly('tokens'))}
+		>
+			Tokens
 		</Button>
 		<!-- A town of a mode game: back to all its towns (Alternative game modes). -->
 		{#if towns}
@@ -2062,12 +2070,14 @@
 		position: absolute;
 		inset: 0;
 		/* Clear in the middle, darkening to the strength at the corners. */
+		/* The two shades are darkness, not theme colours. */
+		--vignette-mid: rgb(0 0 0 / calc(var(--vignette) * 0.6)); /* colour-ok: shadow */
+		--vignette-edge: rgb(0 0 0 / var(--vignette)); /* colour-ok: shadow */
 		background: radial-gradient(
 			ellipse 75% 75% at center,
 			transparent 40%,
-			rgb(0 0 0 / calc(var(--vignette) * 0.6)) 75%
-				/* colour-ok: a shadow is darkness, not a theme colour */,
-			rgb(0 0 0 / var(--vignette)) 100% /* colour-ok: a shadow is darkness, not a theme colour */
+			var(--vignette-mid) 75%,
+			var(--vignette-edge) 100%
 		);
 		pointer-events: none;
 	}

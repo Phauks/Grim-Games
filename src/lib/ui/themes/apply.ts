@@ -36,6 +36,7 @@ export function applyAppearance(theme: Theme, prefs: Preferences, root = documen
 		...theme.palette,
 		...theme.tokens,
 		...theme.components,
+		...prefs.colors,
 		...tokenVariables(prefs.tokenAppearance),
 		...fontVariables(theme, prefs),
 		'--text-scale': String(prefs.textScale),
