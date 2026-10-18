@@ -652,3 +652,23 @@ test('empty setup check sections are closed and open when something appears', as
 	await expect(warnings).toHaveAttribute('aria-expanded', 'true');
 	await expect(check.locator('.warn li').first()).toBeVisible();
 });
+
+// The icon opens the character's page; the rest of the row still chooses it (Trevor,
+// 2026-10-18).
+test("tapping a character's icon opens its page without choosing it", async ({ page }) => {
+	await selectionFor(page, 8);
+	await page.getByRole('button', { name: 'About the Imp' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Imp' });
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(page.getByRole('button', { name: 'Imp', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
+	await page.getByRole('button', { name: 'Imp', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Imp', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+});
