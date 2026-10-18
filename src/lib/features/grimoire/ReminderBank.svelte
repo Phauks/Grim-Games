@@ -19,7 +19,13 @@
 	import { scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import type { BankView } from './setup-tray.ts';
-	import { pendingTray, trayItems, traySeats, type TrayItem } from './setup-tray.ts';
+	import {
+		pendingTray,
+		trayItems,
+		withoutOffSeat,
+		traySeats,
+		type TrayItem
+	} from './setup-tray.ts';
 
 	/**
 	 * The reminder bank (Trevor, 2026-10-16), always docked under the board. During setup it
@@ -50,8 +56,11 @@
 		/** Seats to mark while a token is dragged or open, and the one under the drag. */
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
-		/** Run Night Order, at the bank's right end (Trevor, 2026-10-18); absent when switched off. */
-		run?: { disabled: boolean; onclick: () => void };
+		/**
+		 * At the bank's right end (Trevor, 2026-10-18): Run Night Order, or End night while a
+		 * night is running. Always there, so the bank never moves.
+		 */
+		run?: { end: boolean; disabled: boolean; onclick: () => void };
 	}
 
 	let {
@@ -93,7 +102,10 @@
 		return i < 0 ? scriptOrder.length : i;
 	};
 	const setupItems = $derived(
-		pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed).sort(
+		withoutOffSeat(
+			pendingTray(trayItems(setupReminders(game, characters)), grimoire.trayDismissed),
+			[...(game.looseReminders ?? []), ...Object.values(game.ruleReminders ?? {}).flat()]
+		).sort(
 			(a, b) =>
 				at(a.suggestion.characterId) - at(b.suggestion.characterId) ||
 				byLabel(a.suggestion.label, b.suggestion.label)
@@ -149,7 +161,7 @@
 		);
 		return only([...setup, ...rest]);
 	});
-	/** "Only these": the step's reminders alone, while a step is walked through. */
+	/** "Only this character": the step's reminders alone, while a step is walked through. */
 	function only(list: Item[]): Item[] {
 		return focus && focusMode === 'only' ? list.filter((i) => i.now) : list;
 	}
@@ -177,6 +189,12 @@
 		return grimoire.run({ type: 'AddReminder', seatId, reminder: { characterId, label } });
 	}
 
+	/**
+	 * Loose mode ("stay where dropped", Trevor 2026-10-18): nothing is given to a seat. A
+	 * token goes where it is dropped, seats are not marked, and a tap doesn't offer seats.
+	 */
+	const loose = $derived(boardLooks.current.reminders === 'free');
+
 	// ── Drag a token from the bank onto a seat ──
 	let drag = $state<{ item: Item; at: SeatPoint } | undefined>();
 	function dragItem(item: Item, x: number, y: number, end: boolean) {
@@ -186,11 +204,15 @@
 		const target = seatAt(at);
 		if (!end) {
 			drag = { item, at };
-			onHints({
-				seats: seatsFor(item),
-				target,
-				reminder: { characterId: item.characterId, label: item.label }
-			});
+			onHints(
+				loose
+					? { seats: [] }
+					: {
+							seats: seatsFor(item),
+							target,
+							reminder: { characterId: item.characterId, label: item.label }
+						}
+			);
 			return;
 		}
 		drag = undefined;
@@ -199,22 +221,18 @@
 		// On a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
 		const rule = ruleAt(x, y, reminder);
 		if (rule) return onRule(reminder, rule);
-		const free = boardLooks.current.reminders === 'free' && spotAllowed(x, y);
-		// Anywhere in the board's open area: it stays there, belonging to no one.
-		if (!target) {
+		const free = loose && spotAllowed(x, y);
+		// Loose mode: anywhere in the board's open area, seats too; it belongs to no one.
+		if (loose) {
 			if (free && grimoire.run({ type: 'PlaceLooseReminder', reminder })) {
 				const added = grimoire.game.looseReminders?.at(-1);
 				if (added) grimoire.setReminderSpot(added.reminderId, at);
 			}
 			return;
 		}
+		if (!target) return;
 		// Any seat will do: the Storyteller can override the suggestion.
-		if (!place(item, target)) return;
-		// Stays where dropped, inside the board's open area (Trevor, 2026-10-17).
-		if (free) {
-			const added = grimoire.game.seats[target]?.reminders.at(-1);
-			if (added) grimoire.setReminderSpot(added.reminderId, at);
-		}
+		place(item, target);
 	}
 	function cancelDrag() {
 		drag = undefined;
@@ -230,11 +248,12 @@
 		if (item.setup) {
 			shown = item.setup;
 			shownOpen = true;
-			onHints({
-				seats: seatsFor(item),
-				reminder: { characterId: item.characterId, label: item.label }
-			});
-		} else {
+			if (!loose)
+				onHints({
+					seats: seatsFor(item),
+					reminder: { characterId: item.characterId, label: item.label }
+				});
+		} else if (!loose) {
 			choosing = item;
 			chooserOpen = true;
 		}
@@ -300,12 +319,12 @@
 		<button
 			type="button"
 			class="run"
-			aria-label="Run Night Order"
+			aria-label={run.end ? 'End night' : 'Run Night Order'}
 			disabled={run.disabled}
 			onclick={run.onclick}
 		>
-			<Icon name="night" />
-			<span>Run night</span>
+			<Icon name={run.end ? 'day' : 'night'} />
+			<span>{run.end ? 'End night' : 'Run night'}</span>
 		</button>
 	{/if}
 </div>
@@ -369,42 +388,46 @@
 						inline
 					/>{:else}{part.text}{/if}{/each}
 		</p>
-		{@const seats = traySeats(s)}
-		<p class="hint">
-			{seats.length > 0
-				? 'Suggested seats, or drag it onto any seat.'
-				: 'Drag it onto any seat, or choose one.'}
-		</p>
-		<ul class="seats">
-			{#each seats as seatId (seatId)}
-				{@const id = game.seats[seatId]?.characterId}
-				<li>
-					{#if id}
-						<CharacterBadge
-							characterId={id}
-							character={characters.get(id)}
-							alignment={game.seats[seatId].alignment}
-							playerName={seatName(seatId)}
-							inline
-						/>
-					{:else}
-						{seatName(seatId)}
-					{/if}
-					<span class="spacer"></span>
-					<Button
-						variant="quiet"
-						aria-label={`Place on ${seatName(seatId)}`}
-						onclick={() => placeShown(seatId)}>Place</Button
-					>
-				</li>
-			{/each}
-		</ul>
+		<!-- Loose mode gives nothing to a seat: it is dragged onto the board. -->
+		{#if !loose}
+			{@const seats = traySeats(s)}
+			<p class="hint">
+				{seats.length > 0
+					? 'Suggested seats, or drag it onto any seat.'
+					: 'Drag it onto any seat, or choose one.'}
+			</p>
+			<ul class="seats">
+				{#each seats as seatId (seatId)}
+					{@const id = game.seats[seatId]?.characterId}
+					<li>
+						{#if id}
+							<CharacterBadge
+								characterId={id}
+								character={characters.get(id)}
+								alignment={game.seats[seatId].alignment}
+								playerName={seatName(seatId)}
+								inline
+							/>
+						{:else}
+							{seatName(seatId)}
+						{/if}
+						<span class="spacer"></span>
+						<Button
+							variant="quiet"
+							aria-label={`Place on ${seatName(seatId)}`}
+							onclick={() => placeShown(seatId)}>Place</Button
+						>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 	{/if}
 	{#snippet actions()}
 		<Button variant="quiet" icon="close" onclick={dismissShown}>Dismiss</Button>
 		<!-- Any seat will do (a Drunk decided later goes anywhere). -->
 		<Button
 			variant="quiet"
+			disabled={loose}
 			onclick={() => {
 				const s = shown?.suggestion;
 				shownOpen = false;

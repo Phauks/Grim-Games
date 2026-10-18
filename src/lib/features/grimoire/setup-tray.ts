@@ -5,6 +5,7 @@
  * Nothing is placed automatically.
  */
 import type { SetupReminder } from '#lib/core/rules/index.ts';
+import type { Reminder } from '#lib/core/model/index.ts';
 
 export interface TrayItem {
 	/** Stable while the suggestions do not change: character, words and which copy. */
@@ -31,6 +32,25 @@ export function trayItems(suggestions: readonly SetupReminder[]): TrayItem[] {
  */
 export function pendingTray(items: readonly TrayItem[], dismissed: readonly string[]): TrayItem[] {
 	return items.filter(({ key }) => !dismissed.includes(key));
+}
+
+/**
+ * Leaves out one suggestion for each matching reminder that is on the board but not on a
+ * seat (loose, or held by a Fabled or Loric): core only counts seats, so without this a
+ * Noble's "Know" put down loose stayed in the bank (Trevor, 2026-10-18).
+ */
+export function withoutOffSeat(
+	items: readonly TrayItem[],
+	offSeat: readonly Reminder[]
+): TrayItem[] {
+	const out = [...items];
+	for (const r of offSeat) {
+		const i = out.findLastIndex(
+			(item) => item.suggestion.characterId === r.characterId && item.suggestion.label === r.label
+		);
+		if (i >= 0) out.splice(i, 1);
+	}
+	return out;
 }
 
 /** The seats a suggestion fits, best first: the pre-filled seat, then the candidates. */
