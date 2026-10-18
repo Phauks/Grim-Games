@@ -104,6 +104,30 @@ export class Grimoire {
 			this.run({ type: 'NewDay' });
 	}
 
+	/**
+	 * Tonight's night is running: Dusk is ticked (Run night's walk-through or the day's End
+	 * day) and no new day has started since.
+	 */
+	get nightRunning(): boolean {
+		const night = this.game.pastDays.length === 0 ? 'first' : 'other';
+		return (
+			this.nightDay === this.game.pastDays.length && this.isNightStepDone(night, { id: 'dusk' })
+		);
+	}
+
+	/**
+	 * Ends tonight's night and starts a new day, from the board's End night button (Trevor,
+	 * 2026-10-18; it replaces ticking Dawn). Once a night; History's Restore undoes it.
+	 */
+	endNight(): boolean {
+		if (this.open.viewOnly) {
+			toast('Not done', 'The game is over. Reopen it to change it.');
+			return false;
+		}
+		if (this.nightDay !== this.game.pastDays.length) return false;
+		return this.run({ type: 'NewDay' });
+	}
+
 	/** Setup reminder suggestions the Storyteller dismissed from the tray (`setup-tray.ts`). */
 	trayDismissed = $state.raw<readonly string[]>([]);
 

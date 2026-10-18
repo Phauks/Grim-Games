@@ -49,8 +49,9 @@ export function boardNightSteps(
 		overrides: game.nightOrderOverrides
 	});
 	// What the game says for each step (suggested answers, impairments), a step for each
-	// gained ability, and a step to choose any Traveller's alignment still unset.
-	return duskToDawn(withNightInfo(steps, game, characters, night));
+	// gained ability, and a step to choose any Traveller's alignment still unset. No Dawn step:
+	// the board's End night button ends the night (Trevor, 2026-10-18).
+	return duskToDawn(withNightInfo(steps, game, characters, night)).filter((s) => s.id !== 'dawn');
 }
 
 /**

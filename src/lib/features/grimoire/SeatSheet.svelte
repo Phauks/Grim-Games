@@ -37,6 +37,7 @@
 	import { pastNames, suggestNames } from './device-notes.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ReminderPicker from './ReminderPicker.svelte';
+	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { seatChanges } from './history.ts';
@@ -988,6 +989,7 @@
 		</Button>
 	</div>
 	{#snippet headActions()}
+		<ReminderMoreButton {grimoire} reminderId={moving} onDone={() => (reminderMenuOpen = false)} />
 		<DeleteButton
 			label="Remove reminder"
 			onclick={() =>

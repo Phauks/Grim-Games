@@ -121,7 +121,6 @@ export const scripts = {
 	'scripts.botc.sort.newest': 'Newest',
 	'scripts.botc.sort.oldest': 'Oldest',
 	'scripts.botc.sort.match': 'Best match',
-	'scripts.botc.refHint': 'A BotC Scripts link or number: tap Save.',
 	'scripts.botc.searching': 'Searching…',
 	'scripts.botc.count': {
 		one: '{count} on BotC Scripts · {sort}',
