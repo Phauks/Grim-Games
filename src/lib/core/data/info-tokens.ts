@@ -99,6 +99,9 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	},
 	{ id: 'what-are-you-bluffing', text: 'What are you bluffing?', source: 'standard', extra: true },
 	{ id: 'use-your-ability', text: 'Use your ability?', source: 'standard', extra: true },
+	// Asks the player to choose; nothing is filled in (Trevor, 2026-10-18).
+	{ id: 'select-a-player', text: 'Select a player', source: 'standard', extra: true },
+	{ id: 'select-a-character', text: 'Select a character', source: 'standard', extra: true },
 	{ id: 'choose-again', text: 'Please choose again', source: 'standard', extra: true }
 ];
 

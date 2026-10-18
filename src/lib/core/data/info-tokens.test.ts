@@ -20,6 +20,8 @@ describe('info tokens', () => {
 			'True/False',
 			'What are you bluffing?',
 			'Use your ability?',
+			'Select a player',
+			'Select a character',
 			'Please choose again'
 		]);
 		const firstExtra = STANDARD_INFO_TOKENS.findIndex((t) => t.extra);
