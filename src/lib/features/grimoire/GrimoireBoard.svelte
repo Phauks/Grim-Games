@@ -16,6 +16,7 @@
 	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
 	import { boardBackground } from './board-background.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
@@ -79,7 +80,7 @@
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { fromScript } from '#lib/core/data/index.ts';
+	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
@@ -865,6 +866,7 @@
 	const loadedScript = $derived(
 		officialData.current ? fromScript(game.script, officialData.current).script : undefined
 	);
+	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
@@ -1214,6 +1216,14 @@
 				style:--vignette={boardLooks.current.vignetteStrength}
 				aria-hidden="true"
 			></div>
+		{/if}
+		<!-- The script's logo, faint behind the seats (Trevor, 2026-10-18: his switch and opacity). -->
+		{#if boardLooks.current.logo && boardLogo}
+			<ScriptLogo
+				src={boardLogo}
+				class="board-logo"
+				--logo-opacity={boardLooks.current.logoOpacity}
+			/>
 		{/if}
 		{#each seats as seat, i (seat.seatId)}
 			{@const at = shown[i]}
@@ -2047,6 +2057,13 @@
 	.game-over[data-team='evil'] {
 		background: var(--evil);
 		color: var(--on-evil);
+	}
+	/* Centred in the seat ring, never wider or taller than 42% of the board; under the seats. */
+	.board :global(.board-logo) {
+		position: absolute;
+		inset: 29%;
+		opacity: var(--logo-opacity);
+		pointer-events: none;
 	}
 	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
 	.vignette {

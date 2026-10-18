@@ -3,7 +3,12 @@
  * Local sources are searched, filtered and sorted here; BotC Scripts does that on the site,
  * so its rows arrive ready (`botcRow`). Design: 08-script-loading.md §5.6.
  */
-import type { CharacterType, GameData, LoadedScript } from '#lib/core/data/index.ts';
+import {
+	scriptLogo,
+	type CharacterType,
+	type GameData,
+	type LoadedScript
+} from '#lib/core/data/index.ts';
 import {
 	scriptPageUrl,
 	type BotcScriptsEntry,
@@ -36,6 +41,8 @@ export interface PickerRow {
 	/** Empty when the script names no author. */
 	author: string;
 	source: PickerSource;
+	/** The script's logo (`scriptLogo`): TPI's for the base three, else the author's link. */
+	logo?: string;
 	/** A detail under the name, e.g. the Curated section; empty for none. */
 	note: string;
 	kind: ScriptKind;
@@ -87,11 +94,13 @@ export function pickerRow(
 ): PickerRow {
 	const characters = script.characters.filter((c) => PLAYABLE.includes(c.type)).length;
 	const author = script.meta.author?.trim() ?? '';
+	const logo = scriptLogo(script);
 	return {
 		key,
 		name: scriptTitle(script),
 		author,
 		source,
+		...(logo ? { logo } : {}),
 		note,
 		kind: characters <= TEENSYVILLE_MAX_CHARACTERS ? 'Teensyville' : 'Full',
 		characters,
@@ -111,6 +120,7 @@ export function botcRow(summary: BotcScriptsSummary, data: GameData): PickerRow 
 		name: summary.name,
 		author: summary.author.trim(),
 		source: 'botc',
+		...(summary.logo ? { logo: summary.logo } : {}),
 		note: '',
 		kind:
 			summary.type === 'Teensyville' ||
@@ -136,6 +146,7 @@ export function homebrewRow(script: HomebrewScript, data: GameData): PickerRow {
 		name: script.name,
 		author: script.author,
 		source: 'homebrew',
+		...(script.logo ? { logo: script.logo } : {}),
 		note: '',
 		kind: characters <= TEENSYVILLE_MAX_CHARACTERS ? 'Teensyville' : 'Full',
 		characters,
