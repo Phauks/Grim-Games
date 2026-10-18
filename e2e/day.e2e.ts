@@ -142,7 +142,7 @@ test('with help switched off the night is a checklist with no worked-out answers
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Storyteller settings' })
+		.getByRole('button', { name: 'Storyteller', exact: true })
 		.tap();
 	for (const name of ['Walk me through the night', 'Work out night answers', 'Pre-day reminders']) {
 		await settings.getByText(name, { exact: true }).tap();

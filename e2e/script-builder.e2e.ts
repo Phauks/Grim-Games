@@ -201,6 +201,8 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 }) => {
 	const libraryRows = () =>
 		page.getByTestId('library-table').getByRole('button', { name: /^Edited here/ });
+	const search = () =>
+		page.getByRole('searchbox', { name: 'Search the Library' }).fill('Edited here');
 	await page.goto('/build-script');
 	await page.getByRole('textbox', { name: 'Name' }).fill('Edited here');
 	for (const name of ['Chef', 'Imp']) await character(page, name).tap();
@@ -216,9 +218,6 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	const folder = page.getByRole('dialog', { name: 'New folder' });
 	await folder.getByRole('textbox', { name: 'Name' }).fill('Club night');
 	await folder.getByRole('textbox', { name: 'Name' }).press('Enter');
-	// The table view (remembered) lists every script with its folder.
-	await page.getByRole('combobox', { name: 'View' }).tap();
-	await page.getByRole('option', { name: 'Table', exact: true }).tap();
 	await libraryRows().tap();
 	const details = page.getByRole('dialog', { name: 'Edited here' });
 	await details.getByRole('combobox', { name: 'Folder' }).tap();
@@ -231,6 +230,8 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	await page.getByRole('button', { name: 'Save', exact: true }).tap();
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
 	await page.goto('/library');
+	// A search lists items from every folder, with where each one is.
+	await search();
 	await expect(libraryRows()).toHaveCount(1);
 	await expect(libraryRows()).toContainText('Club night');
 
@@ -248,6 +249,7 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	await saveNew.tap();
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
 	await page.goto('/library');
+	await search();
 	await expect(libraryRows()).toHaveCount(2);
 });
 

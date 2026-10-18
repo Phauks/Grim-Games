@@ -12,7 +12,7 @@ export const settings = {
 	'settings.groupDay': 'Day',
 	'settings.groupBoard': 'Board',
 	'settings.icons': 'Icons',
-	'settings.storyteller': 'Storyteller settings',
+	'settings.storyteller': 'Storyteller',
 	'settings.reset': 'Reset settings',
 	'settings.data': 'Data',
 	'settings.theme': 'Theme',

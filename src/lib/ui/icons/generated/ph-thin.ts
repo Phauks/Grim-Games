@@ -95,7 +95,9 @@ import ph_leaf_thin from '~icons/ph/leaf-thin';
 import ph_lifebuoy_thin from '~icons/ph/lifebuoy-thin';
 import ph_lightning_thin from '~icons/ph/lightning-thin';
 import ph_link_thin from '~icons/ph/link-thin';
+import ph_link_break_thin from '~icons/ph/link-break-thin';
 import ph_link_simple_thin from '~icons/ph/link-simple-thin';
+import ph_link_simple_break_thin from '~icons/ph/link-simple-break-thin';
 import ph_list_thin from '~icons/ph/list-thin';
 import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_list_checks_thin from '~icons/ph/list-checks-thin';
@@ -125,7 +127,6 @@ import ph_plus_circle_thin from '~icons/ph/plus-circle-thin';
 import ph_printer_thin from '~icons/ph/printer-thin';
 import ph_prohibit_thin from '~icons/ph/prohibit-thin';
 import ph_prohibit_inset_thin from '~icons/ph/prohibit-inset-thin';
-import ph_pulse_thin from '~icons/ph/pulse-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
@@ -150,7 +151,6 @@ import ph_speaker_high_thin from '~icons/ph/speaker-high-thin';
 import ph_spinner_thin from '~icons/ph/spinner-thin';
 import ph_square_thin from '~icons/ph/square-thin';
 import ph_star_thin from '~icons/ph/star-thin';
-import ph_stethoscope_thin from '~icons/ph/stethoscope-thin';
 import ph_sun_thin from '~icons/ph/sun-thin';
 import ph_sun_horizon_thin from '~icons/ph/sun-horizon-thin';
 import ph_swap_thin from '~icons/ph/swap-thin';
@@ -278,7 +278,9 @@ const icons: IconMap = {
 	'ph:lifebuoy-thin': ph_lifebuoy_thin,
 	'ph:lightning-thin': ph_lightning_thin,
 	'ph:link-thin': ph_link_thin,
+	'ph:link-break-thin': ph_link_break_thin,
 	'ph:link-simple-thin': ph_link_simple_thin,
+	'ph:link-simple-break-thin': ph_link_simple_break_thin,
 	'ph:list-thin': ph_list_thin,
 	'ph:list-bullets-thin': ph_list_bullets_thin,
 	'ph:list-checks-thin': ph_list_checks_thin,
@@ -308,7 +310,6 @@ const icons: IconMap = {
 	'ph:printer-thin': ph_printer_thin,
 	'ph:prohibit-thin': ph_prohibit_thin,
 	'ph:prohibit-inset-thin': ph_prohibit_inset_thin,
-	'ph:pulse-thin': ph_pulse_thin,
 	'ph:push-pin-thin': ph_push_pin_thin,
 	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
@@ -333,7 +334,6 @@ const icons: IconMap = {
 	'ph:spinner-thin': ph_spinner_thin,
 	'ph:square-thin': ph_square_thin,
 	'ph:star-thin': ph_star_thin,
-	'ph:stethoscope-thin': ph_stethoscope_thin,
 	'ph:sun-thin': ph_sun_thin,
 	'ph:sun-horizon-thin': ph_sun_horizon_thin,
 	'ph:swap-thin': ph_swap_thin,
