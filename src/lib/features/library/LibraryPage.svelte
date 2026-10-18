@@ -41,6 +41,7 @@
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
+	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import SavedCharacterList from '#lib/features/character-builder/SavedCharacterList.svelte';
@@ -441,45 +442,26 @@
 {#snippet filter(column: DataColumn<ColumnId>, close: () => void)}
 	<div class="filters">
 		{#if column.id === 'folder' || column.id === 'name'}
-			<fieldset>
-				<legend>{t('library.column.folder')}</legend>
-				{#each folderOptions as option (option.value)}
-					<label class="check">
-						<input
-							type="radio"
-							name="library-folder"
-							value={option.value}
-							checked={folderFilter === option.value ||
-								(option.value === 'all' && folder.kind === 'all')}
-							onchange={() => {
-								folderFilter = option.value;
-								close();
-							}}
-						/>
-						{option.label}
-					</label>
-				{/each}
-			</fieldset>
+			<FilterOptions
+				legend={t('library.column.folder')}
+				name="library-folder"
+				options={folderOptions}
+				value={folder.kind === 'all' ? 'all' : folderFilter}
+				onpick={(value) => {
+					folderFilter = value;
+					close();
+				}}
+			/>
 		{/if}
 		{#if column.id === 'tags' || column.id === 'name'}
-			<fieldset>
-				<legend>{t('library.tagFilter')}</legend>
-				{#each tags as tag (tag.id)}
-					<label class="check">
-						<input
-							type="checkbox"
-							checked={activeTags.includes(tag.id)}
-							onchange={() =>
-								(tagFilter = activeTags.includes(tag.id)
-									? activeTags.filter((id) => id !== tag.id)
-									: [...activeTags, tag.id])}
-						/>
-						{tag.name}
-					</label>
-				{:else}
-					<p class="muted">{t('common.none')}</p>
-				{/each}
-			</fieldset>
+			<FilterOptions
+				legend={t('library.tagFilter')}
+				options={tags.map((tag) => ({ value: tag.id, label: tag.name }))}
+				values={activeTags}
+				ontoggle={(id, on) =>
+					(tagFilter = on ? [...activeTags, id] : activeTags.filter((tagId) => tagId !== id))}
+				empty={t('common.none')}
+			/>
 		{/if}
 	</div>
 {/snippet}
@@ -672,28 +654,6 @@
 	.filters {
 		display: grid;
 		gap: var(--space-3);
-	}
-	fieldset {
-		margin: 0;
-		padding: 0;
-		border: 0;
-		display: grid;
-		gap: var(--space-1);
-	}
-	legend {
-		padding: 0;
-		margin-bottom: var(--space-1);
-		font-weight: 600;
-	}
-	.check {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		min-height: var(--tap-target);
-	}
-	.check input {
-		width: calc(1.25 * var(--u));
-		height: calc(1.25 * var(--u));
 	}
 	.dialog-scroll {
 		flex: 1;
