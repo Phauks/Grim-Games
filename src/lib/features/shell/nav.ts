@@ -19,7 +19,8 @@ export interface NavItem {
 		| '/play'
 		| '/reference'
 		| '/info-tokens'
-		| '/account';
+		| '/account'
+		| '/reports';
 	label: MessageKey;
 	icon: IconSlot;
 }
@@ -90,6 +91,17 @@ export const ACCOUNT_ITEM: NavItem = {
 	path: '/account',
 	label: 'shell.navAccount',
 	icon: 'account'
+};
+
+/**
+ * The reports inbox, in its own "Admin" group, shown only to admin accounts (Trevor,
+ * 2026-10-18); everyone else never sees it, so it is left out rather than disabled.
+ */
+export const REPORTS_ITEM: NavItem = {
+	id: 'reports',
+	path: '/reports',
+	label: 'shell.navReports',
+	icon: 'report'
 };
 
 /** The item a page belongs to: its own path or anything under it. */
