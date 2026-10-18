@@ -249,6 +249,59 @@ test('Two games at once: one name per player for both games, warnings start at N
 	await noSidewaysScroll(page);
 });
 
+test('Two games at once draws one token for both games', async ({ page }) => {
+	// Trevor, 2026-10-18: "The same one token will account for both pulls".
+	await page.goto('/new');
+	await chooseMode(page, 'Two games at once');
+	const panel = modesPanel(page);
+	await panel.getByRole('combobox', { name: 'Town 2 script' }).tap();
+	await page.getByRole('option', { name: 'Bad Moon Rising', exact: true }).tap();
+	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/towns\/[\w-]+$/);
+	const towns = page.url();
+	const both = page.getByRole('button', { name: 'Draw both games' });
+	await expect(both).toBeDisabled();
+
+	// Each town builds its own bag.
+	const picks = [
+		['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'],
+		['Grandmother', 'Sailor', 'Chambermaid', 'Godfather', 'Zombuul']
+	];
+	for (const [i, names] of picks.entries()) {
+		await page.goto(towns);
+		await page.getByRole('button', { name: `Open town ${i + 1}` }).tap();
+		await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+		for (const name of names)
+			await page
+				.getByRole('button', { name, exact: true })
+				.and(page.locator('[aria-pressed]'))
+				.tap();
+		await page.getByRole('button', { name: 'Build bag' }).tap();
+		await expect(page).toHaveURL(/\/draw$/);
+	}
+
+	await page.goto(towns);
+	await both.tap();
+	await expect(page).toHaveURL(/\/towns\/[\w-]+\/draw$/);
+	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
+	for (let n = 1; n <= 5; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		const reveal = page.getByTestId('reveal');
+		// One token, both games' characters.
+		await expect(reveal.getByTestId('reveal-face')).toHaveCount(2);
+		await expect(reveal).toContainText('Town 1');
+		await expect(reveal).toContainText('Town 2');
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+		await expect(reveal).toBeHidden();
+	}
+	await expect(page.getByTestId('next-seat')).toHaveText('None');
+	await page.getByRole('link', { name: 'Done' }).tap();
+	await expect(page).toHaveURL(towns);
+	// Nobody drew the Demon in both games.
+	await expect(page.getByTestId('town-warnings')).toContainText('None');
+});
+
 test('Two Towns and a Boomdandy starts two towns with their own scripts', async ({ page }) => {
 	// https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/
 	// The two scripts come from BotC Scripts through our Worker.

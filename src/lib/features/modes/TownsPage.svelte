@@ -195,6 +195,16 @@
 		</ol>
 
 		{#if samePlayers}
+			<!-- One token for both games once each town has built its bag (Trevor, 2026-10-18). -->
+			<div>
+				<Button
+					icon="bag"
+					disabled={!towns.every((open) => open.game.bag)}
+					onclick={() => void goto(resolve('/towns/[groupId]/draw', { groupId }))}
+				>
+					{t('modes.towns.draw')}
+				</Button>
+			</div>
 			<section aria-labelledby="names-heading">
 				<h2 id="names-heading">{t('modes.towns.names')}</h2>
 				<ol class="names">
