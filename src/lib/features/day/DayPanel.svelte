@@ -93,6 +93,17 @@
 	}
 
 	const causeSeatDead = $derived(causeSeat ? g.seats[causeSeat]?.dead === true : false);
+	const causeGhostVoteUsed = $derived(
+		causeSeat ? g.seats[causeSeat]?.ghostVoteUsed === true : false
+	);
+
+	/** Marks the tapped dead player's ghost vote used, or gives it back (Trevor, 2026-10-18). */
+	function toggleCauseGhostVote() {
+		const seatId = causeSeat;
+		causeOpen = false;
+		if (!seatId) return;
+		game.run({ type: causeGhostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote', seatId });
+	}
 
 	// ── Confirming a change: what it is now, and what it will be ──
 	// TPI's reminder token text (game data, not interface text).
@@ -305,12 +316,6 @@
 	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
 	const toolbarHeight = $derived(toolbarSize?.[0]?.blockSize ?? 0);
 
-	/** One tap gives a dead player's ghost vote back or marks it used (Trevor, 2026-10-17). */
-	function toggleGhostVote(seatId: SeatId) {
-		const used = g.seats[seatId].ghostVoteUsed === true;
-		game.run({ type: used ? 'RestoreGhostVote' : 'SpendGhostVote', seatId });
-	}
-
 	/**
 	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
 	 * night that just ended (the Vizier, the Leviathan), for characters in play, with TPI's
@@ -490,46 +495,34 @@
 			{#each seats as seat (seat.seatId)}
 				{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
 				{@const icon = character && iconUrl(character, seat.alignment)}
-				{@const ghost = registersAsDead(g, seat.seatId)}
-				<div class="seat-tile">
-					<button
-						type="button"
-						class="seat"
-						aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
-						data-dead={seat.dead}
-						onclick={() => tapSeat(seat.seatId)}
+				{@const ghost = registersAsDead(g, seat.seatId) && !seat.ghostVoteUsed}
+				<button
+					type="button"
+					class="seat"
+					aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
+					data-dead={seat.dead}
+					onclick={() => tapSeat(seat.seatId)}
+				>
+					<!-- Icon two lines tall, character name above, player name below (Trevor). -->
+					<span class="seat-icon" aria-hidden="true"
+						><span class="face"
+							>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
+						><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span><span
+							class="ghost-mark"
+							data-testid="ghost-mark"
+							data-shown={ghost}
+							title={t('day.hasGhostVote')}><Icon name="ghostVote" /></span
+						></span
 					>
-						<!-- Icon two lines tall, character name above, player name below (Trevor). -->
-						<span class="seat-icon" aria-hidden="true"
-							><span class="face"
-								>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
-							><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span></span
+					<span class="seat-text">
+						<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
+						<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
+							>{character?.name ?? t('day.noCharacter')}</span
 						>
-						<span class="seat-text">
-							<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
-							<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
-								>{character?.name ?? t('day.noCharacter')}</span
-							>
-							<!-- eslint-enable grim/names-as-badges -->
-							<span class="seat-player">{game.seatName(seat.seatId)}</span>
-						</span>
-					</button>
-					<!--
-					The ghost vote, beside each dead player (Trevor, 2026-10-17): filled while they
-					still have it. Laid out for the living too, so a death moves nothing.
-				-->
-					<button
-						type="button"
-						class="chip ghost"
-						data-testid="ghost-vote"
-						aria-pressed={ghost ? !seat.ghostVoteUsed : undefined}
-						aria-label={t('day.ghostVoteToggle', { name: game.seatName(seat.seatId) })}
-						aria-hidden={ghost ? undefined : 'true'}
-						tabindex={ghost ? undefined : -1}
-						disabled={!ghost}
-						onclick={() => toggleGhostVote(seat.seatId)}><Icon name="ghostVote" /></button
-					>
-				</div>
+						<!-- eslint-enable grim/names-as-badges -->
+						<span class="seat-player">{game.seatName(seat.seatId)}</span>
+					</span>
+				</button>
 			{/each}
 		</div>
 		{#if hasFlowergirl}
@@ -668,12 +661,16 @@
 <BottomSheet
 	bind:open={causeOpen}
 	title={causeSeatDead
-		? t('day.markAliveTitle', { name: game.seatName(causeSeat) })
+		? t('day.deadPlayerTitle', { name: game.seatName(causeSeat) })
 		: t('day.howDied', { name: game.seatName(causeSeat) })}
 >
 	<div class="causes">
 		{#if causeSeatDead}
 			<Button onclick={markAlive}>{t('day.markAlive')}</Button>
+			<!-- The ghost vote, one tap away (Trevor, 2026-10-18). -->
+			<Button icon="ghostVote" onclick={toggleCauseGhostVote}
+				>{causeGhostVoteUsed ? t('day.restoreGhostVote') : t('day.spendGhostVote')}</Button
+			>
 		{:else}
 			{#each causes as option (option.cause)}
 				{@const caution = causeCaution(option)}
@@ -857,19 +854,23 @@
 		z-index: 1;
 		background: var(--dialog-background, var(--surface));
 	}
-	.seat-tile {
+	/* The ghost vote still to use, on the icon's upper rim, as the board shows it. */
+	.ghost-mark {
+		position: absolute;
+		right: -10%;
+		top: -6%;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: stretch;
-		gap: var(--space-1);
-		min-width: 0;
-	}
-	.ghost {
-		padding: 0;
-		justify-content: center;
-	}
-	.ghost:disabled {
+		place-items: center;
+		width: 45%;
+		height: 45%;
+		border-radius: 50%;
+		background: var(--dialog-background);
+		color: var(--on-surface);
 		visibility: hidden;
+		--icon-size: calc(0.6 * var(--u) * var(--character-icon-scale, 1));
+	}
+	.ghost-mark[data-shown='true'] {
+		visibility: visible;
 	}
 	.sentence {
 		font-family: var(--font-ability);

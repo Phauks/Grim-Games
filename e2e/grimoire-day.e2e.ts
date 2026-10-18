@@ -65,10 +65,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 		.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
 	expect(tops).toHaveLength(5);
 	expect(new Set(tops).size).toBe(1);
-	// The living have no ghost vote to toggle.
-	await expect(
-		page.getByRole('button', { name: 'Ghost vote: Seat 2', includeHidden: true })
-	).toBeDisabled();
+	// The living show no ghost vote mark.
+	await expect(seat(page, 'Seat 2').getByTestId('ghost-mark')).toBeHidden();
 	// Every section folds away with its caret.
 	const players = day.getByRole('button', { name: 'Players' });
 	await players.tap();
@@ -112,13 +110,16 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByTestId('announcements')).toContainText('died: Executed');
 	await expect(page.getByTestId('alive-count')).toHaveText('7/8');
 	await expect(page.getByTestId('ghost-votes')).toHaveText('1');
-	// One tap marks the dead player's ghost vote used, and another gives it back.
-	const ghostVote = page.getByRole('button', { name: 'Ghost vote: Seat 2' });
-	await expect(ghostVote).toHaveAttribute('aria-pressed', 'true');
-	await ghostVote.tap();
-	await expect(ghostVote).toHaveAttribute('aria-pressed', 'false');
+	// A small mark while the ghost vote is unused; tapping the dead player offers it (Trevor).
+	await expect(seat(page, 'Seat 2').getByTestId('ghost-mark')).toBeVisible();
+	await seat(page, 'Seat 2').tap();
+	const dead = page.getByRole('dialog', { name: 'Seat 2 is dead' });
+	await dead.getByRole('button', { name: 'Mark ghost vote used' }).tap();
+	await expect(dead).toBeHidden();
 	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
-	await ghostVote.tap();
+	await expect(seat(page, 'Seat 2').getByTestId('ghost-mark')).toBeHidden();
+	await seat(page, 'Seat 2').tap();
+	await dead.getByRole('button', { name: 'Give ghost vote back' }).tap();
 	await expect(page.getByTestId('ghost-votes')).toHaveText('1');
 
 	await page.reload();
@@ -134,7 +135,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 
 	// A dead player can be marked alive again.
 	await seat(page, 'Seat 2').tap();
-	const revive = page.getByRole('dialog', { name: 'Mark Seat 2 alive?' });
+	const revive = page.getByRole('dialog', { name: 'Seat 2 is dead' });
+	await expect(revive.getByRole('button', { name: 'Mark alive' })).toBeVisible();
 	await expect(revive).not.toContainText('Now:');
 	await revive.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(revive).toBeHidden();
