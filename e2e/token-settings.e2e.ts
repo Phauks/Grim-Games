@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 // Settings > Tokens (Trevor, 2026-10-16): character token and reminder sizes, token colours
 // with a contrast readout. Stored on the device and applied everywhere tokens show.
@@ -102,7 +103,7 @@ test('character names on grimoire tokens are off by default and shown when switc
 		// Settings are in the app's menu, opened from the game toolbar.
 		await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 		await page
-			.getByRole('dialog', { name: 'Grim-Games' })
+			.getByRole('dialog', { name: APP_NAME })
 			.getByRole('button', { name: 'Settings' })
 			.tap();
 		await dialog
@@ -228,7 +229,7 @@ test('night order badges sit on the side leaves, counting this game’s characte
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await page
-		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('button', { name: 'Settings' })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
@@ -291,7 +292,7 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await page
-		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('button', { name: 'Settings' })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Settings' });

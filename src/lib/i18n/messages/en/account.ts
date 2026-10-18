@@ -1,6 +1,8 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** The Account page, sign-in and profile scripts (src/lib/features/account). */
 export const account = {
-	'account.pageTitle': 'Account · Grim-Games',
+	'account.pageTitle': `Account · ${APP_NAME}`,
 	'account.title': 'Account',
 	'account.button': 'Account',
 	'account.buttonSignedIn': 'Account: signed in as {email}',

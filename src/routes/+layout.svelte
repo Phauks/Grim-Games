@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import favicon from '#lib/assets/favicon.svg';
@@ -49,7 +50,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>Grim-Games</title>
+	<title>{APP_NAME}</title>
 </svelte:head>
 
 {#if shell}<AppHeader />{/if}

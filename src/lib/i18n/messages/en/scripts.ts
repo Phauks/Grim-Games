@@ -1,6 +1,8 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** Scripts: the /scripts page, the script picker, BotC Scripts search, share codes and the share screen. */
 export const scripts = {
-	'scripts.pageTitle': 'Search · Grim-Games',
+	'scripts.pageTitle': `Search · ${APP_NAME}`,
 	'scripts.heading': 'Search',
 
 	// Current script card

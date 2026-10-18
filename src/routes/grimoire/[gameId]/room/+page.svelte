@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import RoomPage from '#lib/features/room/RoomPage.svelte';
 	import type { PageProps } from './$types';
@@ -7,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>{`${t('room.title')} · Grim-Games`}</title>
+	<title>{`${t('room.title')} · ${APP_NAME}`}</title>
 </svelte:head>
 
 {#key params.gameId}

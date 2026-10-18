@@ -1,3 +1,5 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** In-app reports: the Report form and the reports inbox. */
 export const reports = {
 	'reports.title': 'Report',
@@ -19,7 +21,7 @@ export const reports = {
 	'reports.sendFailed': 'Could not send',
 	'reports.sendFailedDetail': 'Check the connection and try again.',
 	'reports.inbox': 'Reports',
-	'reports.pageTitle': 'Reports · Grim-Games',
+	'reports.pageTitle': `Reports · ${APP_NAME}`,
 	'reports.adminKey': 'Admin key',
 	'reports.wrongKey': 'Wrong key',
 	'reports.forgetKey': 'Forget key',

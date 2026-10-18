@@ -1,6 +1,8 @@
+import { APP_NAME } from '#lib/core/app-name.ts';
+
 /** The Script builder page (src/lib/features/script-builder). */
 export const scriptBuilder = {
-	'script-builder.pageTitle': 'Script builder · Grim-Games',
+	'script-builder.pageTitle': `Script builder · ${APP_NAME}`,
 	'script-builder.heading': 'Script builder',
 	'script-builder.details': 'Script details',
 	'script-builder.name': 'Name',

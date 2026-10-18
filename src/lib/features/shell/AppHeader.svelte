@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import NavMenuButton from './NavMenuButton.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
@@ -10,7 +11,7 @@
 <header>
 	<div class="start">
 		<span class="menu"><NavMenuButton /></span>
-		<a class="brand" href={resolve('/')}>Grim-Games</a>
+		<a class="brand" href={resolve('/')}>{APP_NAME}</a>
 	</div>
 	<div class="actions">
 		<IconButton icon="settings" label={t('shell.settings')} onclick={() => settingsDialog.show()} />
@@ -36,10 +37,15 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
+		min-width: 0;
 	}
+	/* On the narrowest phones at the largest text the name gives way to the buttons. */
 	.brand {
-		display: inline-flex;
-		align-items: center;
+		display: block;
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 		font-family: var(--font-heading);
 		font-weight: var(--font-heading-weight);
 		font-size: 1.1rem;
@@ -49,6 +55,7 @@
 	}
 	.actions {
 		display: flex;
+		flex: none;
 		gap: var(--space-1);
 	}
 </style>

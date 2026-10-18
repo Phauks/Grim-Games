@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import SavedGamesList from '#lib/features/grimoire/SavedGamesList.svelte';
@@ -11,7 +12,7 @@
 </script>
 
 <svelte:head>
-	<title>Resume game · Grim-Games</title>
+	<title>Resume game · {APP_NAME}</title>
 </svelte:head>
 
 <Page title="Resume game">

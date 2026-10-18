@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -76,7 +77,7 @@ test('New game and Resume game are screens of their own', async ({ page }) => {
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
 	// No Back button (Trevor, 2026-10-16): the app name in the header, or Home in the menu, goes home.
 	await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0);
-	await page.getByRole('banner').getByRole('link', { name: 'Grim-Games' }).tap();
+	await page.getByRole('banner').getByRole('link', { name: APP_NAME }).tap();
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
 
@@ -458,7 +459,7 @@ test('a new game can use a custom script from the Library', async ({ page }) => 
 	await expect(page.getByTestId('script-details-name')).toHaveText('Pocket Storm');
 
 	await startGame(page, 'Pocket Storm');
-	await expect(page.locator('.watermark')).toHaveText('Pocket Storm');
+	await expect(page.locator('.corner-title .script-name')).toHaveText('Pocket Storm');
 });
 
 test("reminders: add several from the picker, this seat's first, then move and remove", async ({
@@ -1131,7 +1132,7 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 
 	// Settings open over the board, so the game is never left.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	const drawer = page.getByRole('dialog', { name: 'Grim-Games' });
+	const drawer = page.getByRole('dialog', { name: APP_NAME });
 	await drawer.getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await expect(settings).toBeVisible();
@@ -1178,7 +1179,7 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	// With "Stack duplicate reminders" on, they show as one token with what is left.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await page
-		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('button', { name: 'Settings' })
 		.tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
@@ -1202,9 +1203,10 @@ test('the board background can be an image from the device, kept after a reload'
 	page
 }) => {
 	await startGame(page);
-	// The official script's name and author sit behind the circle.
-	await expect(page.locator('.watermark')).toContainText('Trouble Brewing');
-	await expect(page.locator('.watermark')).toContainText('by The Pandemonium Institute');
+	// The official script's name and author, in the lower left corner only (Trevor, 2026-10-18).
+	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
+	await expect(page.locator('.corner-title')).toContainText('by The Pandemonium Institute');
+	await expect(page.locator('.watermark, .toolbar-title')).toHaveCount(0);
 
 	// Background is set in Board and tokens, the one way in (Trevor, 2026-10-18).
 	await expect(page.getByRole('button', { name: 'Background', exact: true })).toHaveCount(0);
@@ -1225,7 +1227,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	const backdrop = page.getByTestId('board-background');
 	await expect(backdrop).toHaveAttribute('style', /blob:/);
-	await expect(page.locator('.watermark')).toHaveClass(/on-image/);
+	await expect(page.getByTestId('vignette')).toBeAttached();
 
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('style', /blob:/);
@@ -1252,24 +1254,15 @@ test('the board background can be an image from the device, kept after a reload'
 		height: viewport.height
 	});
 	// The board's looks are here too, the same values as in Settings (Trevor, 2026-10-17).
-	await expect(page.locator('.watermark')).toHaveClass(/vignette/);
+	await expect(page.getByTestId('vignette')).toBeAttached();
 	await dialog.getByText('Vignette', { exact: true }).tap();
-	await expect(page.locator('.watermark')).not.toHaveClass(/vignette/);
+	await expect(page.getByTestId('vignette')).toHaveCount(0);
 	await dialog.getByText('Script name on the board', { exact: true }).tap();
-	await expect(page.locator('.watermark')).toHaveCount(0);
-	await dialog.getByText('Script name on the board', { exact: true }).tap();
-	// The name can sit elsewhere, clear of the circle (Trevor, 2026-10-17).
-	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
-	await page.getByRole('option', { name: 'Lower left corner' }).tap();
-	await expect(page.locator('.watermark')).toHaveCount(0);
-	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
-	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
-	await page.getByRole('option', { name: 'In the toolbar' }).tap();
-	await expect(page.locator('.toolbar-title')).toHaveText('Trouble Brewing');
 	await expect(page.locator('.corner-title')).toHaveCount(0);
-	await dialog.getByRole('combobox', { name: 'Script name', exact: true }).tap();
-	await page.getByRole('option', { name: 'Behind the circle' }).tap();
-	await expect(page.locator('.watermark')).toContainText('Trouble Brewing');
+	await dialog.getByText('Script name on the board', { exact: true }).tap();
+	await expect(page.locator('.corner-title')).toContainText('Trouble Brewing');
+	// One place only (Trevor, 2026-10-18): no choice of where.
+	await expect(dialog.getByRole('combobox', { name: 'Script name', exact: true })).toHaveCount(0);
 	// The player name badge size is an option (Trevor, 2026-10-17), live on the board.
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
@@ -1285,7 +1278,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
-	await expect(page.locator('.watermark')).not.toHaveClass(/vignette/);
+	await expect(page.getByTestId('vignette')).toHaveCount(0);
 
 	// The board and token settings open over the board from its menu (Trevor, 2026-10-17).
 	await menu(page, 'Board and tokens');
@@ -1300,7 +1293,7 @@ test('the board background can be an image from the device, kept after a reload'
 	// The app's own Settings still lists every section.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
 	await page
-		.getByRole('dialog', { name: 'Grim-Games' })
+		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('button', { name: 'Settings' })
 		.tap();
 	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeAttached();
@@ -2985,16 +2978,7 @@ test("a game mode is named where the script's name is, apart from it", async ({ 
 	await page.reload();
 	// Trevor (2026-10-18): different text and styling for alternative game modes.
 	await expect(page.getByTestId('game-mode')).toHaveText('Sushi Buffet');
-	for (const where of ['Lower left corner', 'In the toolbar']) {
-		await menu(page, 'Board and tokens');
-		const settings = page.getByRole('dialog', { name: 'Settings' });
-		await settings.getByRole('combobox', { name: 'Script name', exact: true }).tap();
-		await page.getByRole('option', { name: where }).tap();
-		await page.keyboard.press('Escape');
-		await expect(page.getByTestId('script-title')).toContainText(
-			/Sushi Buffet\s*·?\s*Trouble Brewing|Trouble Brewing\s*Sushi Buffet/
-		);
-	}
+	await expect(page.getByTestId('script-title')).toContainText(/Trouble Brewing\s*Sushi Buffet/);
 });
 
 test('the script name in the corner keeps clear of every seat, and a town names its mode once', async ({
@@ -3021,7 +3005,6 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		await page.goto('/new');
 		await page.evaluate((mode) => {
 			localStorage.setItem('grim-games:custom-modes:v1', JSON.stringify([mode]));
-			localStorage.setItem('grim.boardLooks', JSON.stringify({ titleAt: 'corner' }));
 		}, trouble);
 		await page.reload();
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
@@ -3086,15 +3069,19 @@ test('a reminder in hand marks its source seat, the seats it fits, or both', asy
 	await expect(page.locator('[data-testid="seat"][data-role]')).toHaveCount(0);
 });
 
-test('Run Night Order starts in one tap from the middle of a set-up board', async ({ page }) => {
+test('Run Night Order starts in one tap from the end of the reminder bank', async ({ page }) => {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const board = page.url();
-	// Not before setup: the middle is Set up's.
-	await expect(page.getByRole('button', { name: 'Run Night Order' })).toHaveCount(0);
+	// Always in place, so the bank never moves; usable once every seat has a token.
+	const run = page
+		.getByRole('list', { name: /Reminder bank|Setup reminders/ })
+		.locator('..')
+		.getByRole('button', { name: 'Run Night Order' });
+	await expect(run).toBeDisabled();
 	await page.goto(`${new URL(board).pathname}/setup`);
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Chef', 'Fortune Teller', 'Poisoner', 'Imp'])
 		await page.getByRole('button', { name, exact: true }).first().tap();
@@ -3105,12 +3092,37 @@ test('Run Night Order starts in one tap from the middle of a set-up board', asyn
 	}
 	await page.goto(board);
 	await expect(page.getByTestId('seat')).toHaveCount(7);
-	// Trevor (2026-10-18): one tap on the board, where Set up was.
-	const run = page.getByRole('button', { name: 'Run Night Order' });
+	// Trevor (2026-10-18): one tap, at the right end of the reminder bank.
 	await run.tap();
 	const strip = page.getByTestId('night-strip');
 	await expect(strip).toBeVisible();
-	await expect(run).toHaveCount(0);
+	await expect(run).toBeDisabled();
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
-	await expect(run).toBeVisible();
+	await expect(run).toBeEnabled();
+});
+
+// https://wiki.bloodontheclocktower.com/Investigator: the Minion shown is another player; the
+// other player shown may be the Investigator (Trevor, 2026-10-18).
+test("the Investigator's own seat fits its Wrong; its Minion is marked and warns if placed", async ({
+	page
+}) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Investigator', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	const investigator = picker.getByRole('group', { name: 'Investigator' });
+	await expect(investigator.getByRole('button').filter({ hasText: 'Wrong' })).not.toHaveAttribute(
+		'data-misfit'
+	);
+	const minion = investigator.getByRole('button').filter({ hasText: 'Minion' });
+	await expect(minion).toHaveAttribute('data-misfit', '');
+	// Warn, never lock: it is still placed, with a note saying why.
+	await minion.tap();
+	await expect(picker.getByText('On this seat: 1')).toBeVisible();
+	await expect(page.getByText(/never goes on its character's own player/)).toBeVisible();
 });

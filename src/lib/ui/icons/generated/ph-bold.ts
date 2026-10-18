@@ -33,6 +33,7 @@ import ph_caret_right_bold from '~icons/ph/caret-right-bold';
 import ph_caret_up_bold from '~icons/ph/caret-up-bold';
 import ph_cat_bold from '~icons/ph/cat-bold';
 import ph_check_bold from '~icons/ph/check-bold';
+import ph_check_square_bold from '~icons/ph/check-square-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
 import ph_circle_notch_bold from '~icons/ph/circle-notch-bold';
 import ph_clipboard_bold from '~icons/ph/clipboard-bold';
@@ -98,6 +99,7 @@ import ph_link_bold from '~icons/ph/link-bold';
 import ph_link_simple_bold from '~icons/ph/link-simple-bold';
 import ph_list_bold from '~icons/ph/list-bold';
 import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
+import ph_list_checks_bold from '~icons/ph/list-checks-bold';
 import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
 import ph_lock_bold from '~icons/ph/lock-bold';
 import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
@@ -215,6 +217,7 @@ const icons: IconMap = {
 	'ph:caret-up-bold': ph_caret_up_bold,
 	'ph:cat-bold': ph_cat_bold,
 	'ph:check-bold': ph_check_bold,
+	'ph:check-square-bold': ph_check_square_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
 	'ph:circle-notch-bold': ph_circle_notch_bold,
 	'ph:clipboard-bold': ph_clipboard_bold,
@@ -280,6 +283,7 @@ const icons: IconMap = {
 	'ph:link-simple-bold': ph_link_simple_bold,
 	'ph:list-bold': ph_list_bold,
 	'ph:list-bullets-bold': ph_list_bullets_bold,
+	'ph:list-checks-bold': ph_list_checks_bold,
 	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
 	'ph:lock-bold': ph_lock_bold,
 	'ph:lock-simple-bold': ph_lock_simple_bold,

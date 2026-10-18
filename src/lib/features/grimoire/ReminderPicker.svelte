@@ -6,6 +6,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import { seatMisses } from './board.ts';
 	import {
 		canAddCopy,
 		reminderCopies,
@@ -139,6 +140,13 @@
 		if (seatId) grimoire.run({ type: 'AddReminder', seatId, reminder });
 	}
 
+	/**
+	 * A token that doesn't usually go on this seat (the Investigator's own Wrong) is marked with
+	 * a dashed edge; it can still be placed, and the board then says why (warn, never lock).
+	 */
+	const misfit = (reminder: Reminder) =>
+		seatId !== undefined && seatMisses(grimoire.game, reminder, seatId, characters).length > 0;
+
 	const placed = $derived(seatId ? (grimoire.game.seats[seatId]?.reminders.length ?? 0) : 0);
 </script>
 
@@ -177,7 +185,10 @@
 							<button
 								type="button"
 								class="chip"
+								class:misfit={!copy.on && misfit(reminder)}
+								data-misfit={!copy.on && misfit(reminder) ? '' : undefined}
 								aria-label={copy.label}
+								title={!copy.on && misfit(reminder) ? 'Not a usual place for it' : undefined}
 								aria-pressed={copy.on}
 								disabled={copy.done && !copy.holder}
 								onclick={() => toggle(reminder, copy)}
@@ -320,6 +331,12 @@
 	.chip[aria-pressed='true'] > :global(.reminder) {
 		outline: 0.2rem solid var(--accent);
 		outline-offset: 0.1rem;
+	}
+	/* Not a usual place for it: dashed and faded, still tappable. */
+	.misfit > :global(.reminder) {
+		outline: 0.15rem dashed var(--on-surface);
+		outline-offset: 0.1rem;
+		opacity: 0.6;
 	}
 	.another {
 		color: var(--on-surface);

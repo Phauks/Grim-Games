@@ -33,6 +33,7 @@ import ph_caret_right_fill from '~icons/ph/caret-right-fill';
 import ph_caret_up_fill from '~icons/ph/caret-up-fill';
 import ph_cat_fill from '~icons/ph/cat-fill';
 import ph_check_fill from '~icons/ph/check-fill';
+import ph_check_square_fill from '~icons/ph/check-square-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
 import ph_circle_notch_fill from '~icons/ph/circle-notch-fill';
 import ph_clipboard_fill from '~icons/ph/clipboard-fill';
@@ -98,6 +99,7 @@ import ph_link_fill from '~icons/ph/link-fill';
 import ph_link_simple_fill from '~icons/ph/link-simple-fill';
 import ph_list_fill from '~icons/ph/list-fill';
 import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
+import ph_list_checks_fill from '~icons/ph/list-checks-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
 import ph_lock_fill from '~icons/ph/lock-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
@@ -215,6 +217,7 @@ const icons: IconMap = {
 	'ph:caret-up-fill': ph_caret_up_fill,
 	'ph:cat-fill': ph_cat_fill,
 	'ph:check-fill': ph_check_fill,
+	'ph:check-square-fill': ph_check_square_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
 	'ph:circle-notch-fill': ph_circle_notch_fill,
 	'ph:clipboard-fill': ph_clipboard_fill,
@@ -280,6 +283,7 @@ const icons: IconMap = {
 	'ph:link-simple-fill': ph_link_simple_fill,
 	'ph:list-fill': ph_list_fill,
 	'ph:list-bullets-fill': ph_list_bullets_fill,
+	'ph:list-checks-fill': ph_list_checks_fill,
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
 	'ph:lock-fill': ph_lock_fill,
 	'ph:lock-simple-fill': ph_lock_simple_fill,

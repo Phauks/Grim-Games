@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_NAME } from '#lib/core/app-name.ts';
 	// Draft for Trevor's review (2026-10-15). Describes only what the app does today; update it
 	// whenever a feature sends or stores something new (live rooms).
 	import { resolve } from '$app/paths';
@@ -7,18 +8,17 @@
 </script>
 
 <svelte:head>
-	<title>Privacy policy · Grim-Games</title>
+	<title>Privacy policy · {APP_NAME}</title>
 </svelte:head>
 
 <!-- One column across the page width, not a narrow reading strip (Trevor, 2026-10-16). -->
 <Page title="Privacy policy">
-	{#snippet subtitle()}Last updated 17 October 2026{/snippet}
+	{#snippet subtitle()}Last updated 18 October 2026{/snippet}
 	<PageSection title="Summary">
 		<p>
-			Grim-Games has no analytics, no advertising and no tracking cookies. Your games and settings
-			stay on your device. Our server stores a custom script only when you share it, a live room's
-			public table only while it is open, a report only when you send one, and your account only if
-			you sign in.
+			{APP_NAME} has no analytics, no advertising and no tracking cookies. Your games and settings stay
+			on your device. Our server stores a custom script only when you share it, a live room's public table
+			only while it is open, a report only when you send one, and your account only if you sign in.
 		</p>
 	</PageSection>
 	<PageSection title="What stays on your device">
@@ -127,6 +127,10 @@
 			store the address. Nothing is shared with anyone. The
 			<a href={resolve('/account')}>Account</a> page lets you download everything, or delete your account
 			and all its data immediately.
+		</p>
+		<p>
+			When you sign in, we email a one-time sign-in code and link to the address you entered, sent
+			from sign-in@grimbinder.com through Cloudflare Email Service. Nothing else is emailed.
 		</p>
 		<p>
 			On the Preview (test) version no email is sent: the sign-in code is shown on screen, and the

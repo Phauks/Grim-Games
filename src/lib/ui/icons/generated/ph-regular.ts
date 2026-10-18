@@ -33,6 +33,7 @@ import ph_caret_right from '~icons/ph/caret-right';
 import ph_caret_up from '~icons/ph/caret-up';
 import ph_cat from '~icons/ph/cat';
 import ph_check from '~icons/ph/check';
+import ph_check_square from '~icons/ph/check-square';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
 import ph_circle_notch from '~icons/ph/circle-notch';
 import ph_clipboard from '~icons/ph/clipboard';
@@ -98,6 +99,7 @@ import ph_link from '~icons/ph/link';
 import ph_link_simple from '~icons/ph/link-simple';
 import ph_list from '~icons/ph/list';
 import ph_list_bullets from '~icons/ph/list-bullets';
+import ph_list_checks from '~icons/ph/list-checks';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_lock from '~icons/ph/lock';
 import ph_lock_simple from '~icons/ph/lock-simple';
@@ -215,6 +217,7 @@ const icons: IconMap = {
 	'ph:caret-up': ph_caret_up,
 	'ph:cat': ph_cat,
 	'ph:check': ph_check,
+	'ph:check-square': ph_check_square,
 	'ph:circle-dashed': ph_circle_dashed,
 	'ph:circle-notch': ph_circle_notch,
 	'ph:clipboard': ph_clipboard,
@@ -280,6 +283,7 @@ const icons: IconMap = {
 	'ph:link-simple': ph_link_simple,
 	'ph:list': ph_list,
 	'ph:list-bullets': ph_list_bullets,
+	'ph:list-checks': ph_list_checks,
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:lock': ph_lock,
 	'ph:lock-simple': ph_lock_simple,
