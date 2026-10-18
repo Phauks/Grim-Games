@@ -72,7 +72,9 @@
 	.button[data-variant='quiet']:hover,
 	.button[data-variant='danger-quiet']:hover {
 		filter: none;
-		background: var(--surface-selected);
+		/* A wash of the button's own text colour, so the label reads on any surface and in any
+		   theme (Trevor, 2026-10-18: a hovered Cancel was hard to read on a sheet). */
+		background: var(--surface-hover);
 	}
 	.button:disabled {
 		cursor: default;
