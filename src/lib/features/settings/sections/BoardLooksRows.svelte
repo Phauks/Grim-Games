@@ -3,6 +3,7 @@
 		boardLooks,
 		DEFAULT_BOARD_LOOKS,
 		LOGO_OPACITY,
+		NAME_OFFSET,
 		NAME_SIZE
 	} from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
@@ -51,4 +52,13 @@
 	defaultValue={DEFAULT_BOARD_LOOKS.nameSize}
 	format={(size) => intl.number(size, { style: 'percent' })}
 	onChange={(nameSize) => boardLooks.update({ nameSize })}
+/>
+<!-- Clear of the character's name on the token (Trevor, 2026-10-18). -->
+<SettingSlider
+	label={t('settings.nameOffset')}
+	value={boardLooks.current.nameOffset}
+	{...NAME_OFFSET}
+	defaultValue={DEFAULT_BOARD_LOOKS.nameOffset}
+	format={(offset) => intl.number(offset, { style: 'percent' })}
+	onChange={(nameOffset) => boardLooks.update({ nameOffset })}
 />

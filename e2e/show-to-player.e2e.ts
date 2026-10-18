@@ -184,7 +184,7 @@ test("a character's own card is filled in and shown, e.g. the Mezepheles's secre
 	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Your Secret Word is (Mezepheles)' }).tap();
 	// The card's words as the title, its character below, no brackets (Trevor, 2026-10-18).
-	const dialog = page.getByRole('dialog', { name: 'Your Secret Word is', exact: true });
+	const dialog = page.getByRole('dialog', { name: /Mezepheles\s*Your Secret Word is$/ });
 	await expect(dialog).toContainText('Mezepheles');
 	await dialog.getByRole('textbox', { name: 'Word' }).fill('lantern');
 	await dialog.getByRole('textbox', { name: 'Word' }).press('Enter');

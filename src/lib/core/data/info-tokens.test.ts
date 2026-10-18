@@ -35,9 +35,10 @@ describe('info tokens', () => {
 		expect(list.at(-1)?.text).toBe('You are mad');
 	});
 
-	it('asks for the three bluffs with "not in play", and one character with "You are"', () => {
-		// https://wiki.bloodontheclocktower.com/Demon: the Demon learns 3 not-in-play characters.
-		expect(byId('not-in-play')?.asks).toEqual({ characters: 3 });
+	it('asks for exactly the three bluffs with "not in play", and one character with "You are"', () => {
+		// https://wiki.bloodontheclocktower.com/Glossary: the Demon is shown 3 not-in-play good
+		// characters; https://wiki.bloodontheclocktower.com/Snitch: each Minion learns 3 too.
+		expect(byId('not-in-play')?.asks).toEqual({ characters: 3, exactly: true });
 		expect(byId('you-are')?.asks).toEqual({ characters: 1 });
 	});
 

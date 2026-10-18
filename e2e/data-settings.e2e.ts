@@ -130,3 +130,31 @@ test('Select all clears settings and saved data, not other sites', async ({ page
 	expect(await page.evaluate(() => localStorage.getItem('grim-games:preferences:v1'))).toBeNull();
 	expect(await page.evaluate(() => localStorage.getItem('someone-else'))).toBe('stays');
 });
+
+// Storage plan (Trevor, 2026-10-18): the app asks the browser to keep its data, and on iPhone
+// Safari, where everything is deleted after 7 days without a visit, offers Add to Home Screen.
+test('Data shows whether the browser keeps the data, and Add to Home Screen on iPhone Safari', async ({
+	page
+}, testInfo) => {
+	await page.goto('/');
+	const dialog = await openData(page);
+	await expect(dialog.getByTestId('data-kept')).toHaveText(/^(Yes|No|Not shown by this browser)$/);
+	const steps = dialog.getByTestId('home-screen-steps');
+	// The phone project is an iPhone 13 (Safari's user agent); the tablet is Android.
+	if (testInfo.project.name === 'phone') {
+		await expect(steps).toContainText('Add to Home Screen');
+		await expect(dialog.getByText(/after 7 days/)).toBeVisible();
+	} else {
+		await expect(steps).toHaveCount(0);
+	}
+});
+
+test('opened from the Home Screen, Add to Home Screen is not offered', async ({ page }) => {
+	await page.addInitScript(() =>
+		Object.defineProperty(navigator, 'standalone', { value: true, configurable: true })
+	);
+	await page.goto('/');
+	const dialog = await openData(page);
+	await expect(dialog.getByTestId('data-kept')).toBeVisible();
+	await expect(dialog.getByTestId('home-screen-steps')).toHaveCount(0);
+});

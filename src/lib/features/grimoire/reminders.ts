@@ -95,10 +95,15 @@ export const byLabel = (a: string, b: string): number =>
  * Storyteller added (`canAddCopy`) counts while it is on the board. Keyed by `reminderKey`;
  * a reminder not in the map has one copy.
  */
-export function reminderCopies(game: Game, characters: CharacterLookup): Map<string, number> {
+export function reminderCopies(
+	game: Game,
+	characters: CharacterLookup,
+	copies: ReadonlySet<ReminderId> = NO_COPIES
+): Map<string, number> {
 	const total = listedCopies(game, characters);
 	const placed = new Map<string, number>();
-	for (const r of onBoard(game)) placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
+	for (const r of counted(game, copies))
+		placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
 	for (const [key, n] of placed) if (n > (total.get(key) ?? 1)) total.set(key, n);
 	return total;
 }
@@ -137,11 +142,19 @@ function listedCopies(game: Game, characters: CharacterLookup): Map<string, numb
  * for a script's own character): the latest placed of each token. The board marks them as
  * unusual (Trevor, 2026-10-18), never blocks them.
  */
-export function extraReminders(game: Game, characters: CharacterLookup): Set<ReminderId> {
+export function extraReminders(
+	game: Game,
+	characters: CharacterLookup,
+	copies: ReadonlySet<ReminderId> = NO_COPIES
+): Set<ReminderId> {
 	const listed = listedCopies(game, characters);
 	const seen = new Map<string, number>();
 	const out = new Set<ReminderId>();
 	for (const r of onBoard(game)) {
+		if (copies.has(r.reminderId)) {
+			out.add(r.reminderId);
+			continue;
+		}
 		const key = reminderKey(r);
 		const n = (seen.get(key) ?? 0) + 1;
 		seen.set(key, n);
@@ -160,13 +173,28 @@ export function canAddCopy(character: Character | undefined): boolean {
 }
 
 /** How many of each reminder token are left to place (`reminderCopies` less those placed). */
-export function reminderCopiesLeft(game: Game, characters: CharacterLookup): Map<string, number> {
-	const left = reminderCopies(game, characters);
-	for (const r of onBoard(game)) {
+export function reminderCopiesLeft(
+	game: Game,
+	characters: CharacterLookup,
+	copies: ReadonlySet<ReminderId> = NO_COPIES
+): Map<string, number> {
+	const left = reminderCopies(game, characters, copies);
+	for (const r of counted(game, copies)) {
 		const key = reminderKey(r);
 		left.set(key, (left.get(key) ?? 1) - 1);
 	}
 	return left;
+}
+
+const NO_COPIES: ReadonlySet<ReminderId> = new Set();
+
+/**
+ * The reminders on the board that come from the game's tokens: a duplicate made with ⋯ >
+ * Duplicate reminder is a new token (Trevor, 2026-10-18), so it never uses up a copy the
+ * bank still holds.
+ */
+function counted(game: Game, copies: ReadonlySet<ReminderId>): ReminderInstance[] {
+	return copies.size === 0 ? onBoard(game) : onBoard(game).filter((r) => !copies.has(r.reminderId));
 }
 
 /** Every reminder on the board: on seats, on Fabled and Loric, and loose. */
@@ -246,9 +274,10 @@ export function bankReminders(
 	game: Game,
 	characters: CharacterLookup,
 	focus?: StepReminders,
-	front = true
+	front = true,
+	copies: ReadonlySet<ReminderId> = NO_COPIES
 ): BankReminder[] {
-	const left = reminderCopiesLeft(game, characters);
+	const left = reminderCopiesLeft(game, characters, copies);
 	const out: BankReminder[] = [];
 	for (const { character, labels } of reminderGroups(game, characters)) {
 		for (const label of labels) {

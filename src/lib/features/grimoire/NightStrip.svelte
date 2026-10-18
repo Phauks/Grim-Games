@@ -52,8 +52,8 @@
 	/>
 	{#if step}
 		<!-- Above Previous, where the side is free (Trevor, 2026-10-18). -->
-		<span class="icon" aria-hidden="true">
-			<StepIcon {step} size={44} />
+		<span class="icon">
+			<StepIcon {step} size={44} details />
 		</span>
 		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
 			<span class="body">
@@ -168,7 +168,6 @@
 		height: var(--tap-target);
 		--icon-size: var(--tap-target);
 		color: var(--heading);
-		pointer-events: none;
 	}
 	.body {
 		display: grid;

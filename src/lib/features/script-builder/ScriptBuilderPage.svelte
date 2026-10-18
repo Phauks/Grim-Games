@@ -392,6 +392,12 @@
 <Page title={t('script-builder.heading')}>
 	{#snippet actions()}
 		<AddScript onloaded={useAsBase} />
+		<!-- In the header, with the other controls (Trevor, 2026-10-18). -->
+		<IconButton
+			icon="buildCharacter"
+			label={t('character-builder.newCharacter')}
+			onclick={() => buildCharacter()}
+		/>
 		<BuilderTools
 			save={{
 				ready: !!built,
@@ -495,7 +501,6 @@
 					>
 				{/if}
 			</div>
-			<Button onclick={() => buildCharacter()}>{t('character-builder.newCharacter')}</Button>
 			<p class="source-error" role="status" data-testid="homebrew-error">
 				{source === 'homebrew' ? homebrewError : ''}
 			</p>

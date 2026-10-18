@@ -19,6 +19,7 @@ import {
 	typeOf
 } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
+import { abilityState, registrations } from './ability.ts';
 import {
 	REMINDER_TARGETS,
 	type CharacterTargets,
@@ -33,8 +34,9 @@ export type { CharacterTargets, NeighbourRule, TargetRule };
  * Why a seat doesn't fit a token's rule, one code per broken condition:
  * - `global`: the token marks the game, not a player;
  * - `not-self` / `self`: only the owner's seat, or never the owner's seat;
- * - `type`, `alignment`, `character`, `life`: the seat's true character type, alignment,
- *   character, or alive/dead state is wrong;
+ * - `type`, `alignment`, `character`, `life`: the seat's true character type (or the type
+ *   of the token it was dealt, for `shown`), alignment, character, or alive/dead state is
+ *   wrong;
  * - `neighbour`: not a neighbour as the rule counts them;
  * - `with-label` / `not-with-label`: missing, or already carrying, the owner's other token.
  */
@@ -94,6 +96,21 @@ function neighbours(
 }
 
 /**
+ * Whether the information a character's player was given may be false: they are really
+ * another character (the Drunk, Lunatic or Marionette shown it), or drunk or poisoned
+ * (https://wiki.bloodontheclocktower.com/Drunk, https://wiki.bloodontheclocktower.com/Poisoner).
+ */
+function mayBeFalse(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): boolean {
+	if (trueCharacter(game, seatId, characters) !== characterId) return true;
+	return abilityState(game, seatId, characters).impairments.length > 0;
+}
+
+/**
  * Whether `seatId` fits the token's rule. A seat always fits a token with no rule. Rules
  * that depend on the owner (its seat, alignment or neighbours) are skipped while the
  * owner isn't in play, so nothing is flagged that can't be judged.
@@ -108,15 +125,29 @@ export function reminderTargetMisses(
 	if (!rule || !Object.hasOwn(game.seats, seatId)) return [];
 	if (rule.global) return ['global'];
 
-	const misses: TargetMiss[] = [];
 	const owners = ownerSeats(game, reminder.characterId, characters);
+	if (rule.info && owners.some((id) => mayBeFalse(game, id, reminder.characterId, characters)))
+		return [];
+	const misses: TargetMiss[] = [];
 	const isOwner = owners.includes(seatId);
 	if (rule.seat === 'self' && owners.length > 0 && !isOwner) misses.push('not-self');
 	if (rule.seat === 'other' && isOwner) misses.push('self');
 
+	// What an info token marks is what the player registered as: the Recluse may register as
+	// an evil Minion or Demon, the Spy as a good Townsfolk or Outsider (Trevor, 2026-10-18;
+	// https://wiki.bloodontheclocktower.com/Recluse, https://wiki.bloodontheclocktower.com/Spy).
+	const registered = rule.info
+		? registrations(game, characters).find((r) => r.seatId === seatId)
+		: undefined;
 	if (rule.types) {
 		const type = typeOf(game, seatId, characters);
-		if (type !== undefined && !rule.types.includes(type)) misses.push('type');
+		const types = registered?.types ?? (type === undefined ? [] : [type]);
+		if (type !== undefined && !types.some((t) => rule.types!.includes(t))) misses.push('type');
+	}
+	if (rule.shown) {
+		const shown = game.seats[seatId].characterId;
+		const type = shown === undefined ? undefined : characters.get(shown)?.type;
+		if (type !== undefined && !rule.shown.includes(type)) misses.push('type');
 	}
 	if (rule.characters) {
 		const id = trueCharacter(game, seatId, characters);
@@ -126,7 +157,8 @@ export function reminderTargetMisses(
 		const alignment = alignmentOf(game, seatId);
 		if (alignment !== undefined) {
 			if (rule.alignment === 'good' || rule.alignment === 'evil') {
-				if (alignment !== rule.alignment) misses.push('alignment');
+				const alignments = registered?.alignments ?? [alignment];
+				if (!alignments.includes(rule.alignment)) misses.push('alignment');
 			} else {
 				const ownerAlignments = owners
 					.map((id) => alignmentOf(game, id))

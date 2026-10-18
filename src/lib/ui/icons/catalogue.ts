@@ -82,7 +82,7 @@ export const ICON_SLOTS = {
 	glossary: { label: 'Glossary', choices: ['ph:book-open-text', 'ph:list-magnifying-glass'] },
 	warning: { label: 'Warning', choices: ['ph:warning', 'ph:warning-circle'] },
 	sort: { label: 'Sort', choices: ['ph:arrows-down-up'] },
-	columns: { label: 'Columns', choices: ['ph:columns'] },
+	columns: { label: 'Columns', choices: ['ph:sliders-horizontal', 'ph:list-dashes'] },
 	sortAscending: { label: 'Sorted ascending', choices: ['ph:caret-up', 'ph:sort-ascending'] },
 	sortDescending: { label: 'Sorted descending', choices: ['ph:caret-down', 'ph:sort-descending'] },
 	filter: { label: 'Filter', choices: ['ph:funnel'] },
@@ -115,6 +115,10 @@ export const ICON_SLOTS = {
 	library: { label: 'Library', choices: ['ph:bookmarks-simple', 'ph:archive'] },
 	folder: { label: 'Folder', choices: ['ph:folder', 'ph:folder-simple'] },
 	tag: { label: 'Tag', choices: ['ph:tag', 'ph:tag-simple'] },
+	/** Shows or hides the Library's preview beside the list. */
+	preview: { label: 'Preview', choices: ['ph:sidebar-simple', 'ph:square-split-horizontal'] },
+	/** Opens an item from its preview into a window over the page. */
+	openItem: { label: 'Open', choices: ['ph:arrow-square-out', 'ph:frame-corners'] },
 	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] },
 	/** What an info token asks for when shown, on its tile (Trevor, 2026-10-18). */

@@ -90,7 +90,10 @@
 	// giving each branch/PR its own URL on this same Worker, with its own Durable Object
 	// namespace and storage. Previews don't inherit vars or bindings, so they're repeated here.
 	"previews": {
-		"vars": { "ENVIRONMENT": "preview" },
+		// The beta preview sends real sign-in email from the same address (account/email.ts);
+		// other previews show the code on screen.
+		"vars": { "ENVIRONMENT": "preview", "EMAIL_FROM": "sign-in@grimbinder.com" },
+		"send_email": [{ "name": "EMAIL" }],
 		"durable_objects": {
 			"bindings": [
 				{ "name": "ROOMS", "class_name": "Room" },

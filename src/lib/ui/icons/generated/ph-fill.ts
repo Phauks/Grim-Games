@@ -41,7 +41,6 @@ import ph_clipboard_fill from '~icons/ph/clipboard-fill';
 import ph_clipboard_text_fill from '~icons/ph/clipboard-text-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
-import ph_columns_fill from '~icons/ph/columns-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
 import ph_corners_out_fill from '~icons/ph/corners-out-fill';
@@ -72,6 +71,7 @@ import ph_flower_fill from '~icons/ph/flower-fill';
 import ph_folder_fill from '~icons/ph/folder-fill';
 import ph_folder_open_fill from '~icons/ph/folder-open-fill';
 import ph_folder_simple_fill from '~icons/ph/folder-simple-fill';
+import ph_frame_corners_fill from '~icons/ph/frame-corners-fill';
 import ph_funnel_fill from '~icons/ph/funnel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
@@ -104,6 +104,7 @@ import ph_link_simple_break_fill from '~icons/ph/link-simple-break-fill';
 import ph_list_fill from '~icons/ph/list-fill';
 import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
 import ph_list_checks_fill from '~icons/ph/list-checks-fill';
+import ph_list_dashes_fill from '~icons/ph/list-dashes-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
 import ph_lock_fill from '~icons/ph/lock-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
@@ -142,9 +143,11 @@ import ph_shield_fill from '~icons/ph/shield-fill';
 import ph_shield_check_fill from '~icons/ph/shield-check-fill';
 import ph_shield_star_fill from '~icons/ph/shield-star-fill';
 import ph_shuffle_fill from '~icons/ph/shuffle-fill';
+import ph_sidebar_simple_fill from '~icons/ph/sidebar-simple-fill';
 import ph_sign_in_fill from '~icons/ph/sign-in-fill';
 import ph_skull_fill from '~icons/ph/skull-fill';
 import ph_sliders_fill from '~icons/ph/sliders-fill';
+import ph_sliders_horizontal_fill from '~icons/ph/sliders-horizontal-fill';
 import ph_smiley_fill from '~icons/ph/smiley-fill';
 import ph_smiley_angry_fill from '~icons/ph/smiley-angry-fill';
 import ph_snowflake_fill from '~icons/ph/snowflake-fill';
@@ -155,6 +158,7 @@ import ph_sparkle_fill from '~icons/ph/sparkle-fill';
 import ph_speaker_high_fill from '~icons/ph/speaker-high-fill';
 import ph_spinner_fill from '~icons/ph/spinner-fill';
 import ph_square_fill from '~icons/ph/square-fill';
+import ph_square_split_horizontal_fill from '~icons/ph/square-split-horizontal-fill';
 import ph_star_fill from '~icons/ph/star-fill';
 import ph_sun_fill from '~icons/ph/sun-fill';
 import ph_sun_horizon_fill from '~icons/ph/sun-horizon-fill';
@@ -231,7 +235,6 @@ const icons: IconMap = {
 	'ph:clipboard-text-fill': ph_clipboard_text_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
-	'ph:columns-fill': ph_columns_fill,
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
 	'ph:corners-out-fill': ph_corners_out_fill,
@@ -262,6 +265,7 @@ const icons: IconMap = {
 	'ph:folder-fill': ph_folder_fill,
 	'ph:folder-open-fill': ph_folder_open_fill,
 	'ph:folder-simple-fill': ph_folder_simple_fill,
+	'ph:frame-corners-fill': ph_frame_corners_fill,
 	'ph:funnel-fill': ph_funnel_fill,
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,
@@ -294,6 +298,7 @@ const icons: IconMap = {
 	'ph:list-fill': ph_list_fill,
 	'ph:list-bullets-fill': ph_list_bullets_fill,
 	'ph:list-checks-fill': ph_list_checks_fill,
+	'ph:list-dashes-fill': ph_list_dashes_fill,
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
 	'ph:lock-fill': ph_lock_fill,
 	'ph:lock-simple-fill': ph_lock_simple_fill,
@@ -332,9 +337,11 @@ const icons: IconMap = {
 	'ph:shield-check-fill': ph_shield_check_fill,
 	'ph:shield-star-fill': ph_shield_star_fill,
 	'ph:shuffle-fill': ph_shuffle_fill,
+	'ph:sidebar-simple-fill': ph_sidebar_simple_fill,
 	'ph:sign-in-fill': ph_sign_in_fill,
 	'ph:skull-fill': ph_skull_fill,
 	'ph:sliders-fill': ph_sliders_fill,
+	'ph:sliders-horizontal-fill': ph_sliders_horizontal_fill,
 	'ph:smiley-fill': ph_smiley_fill,
 	'ph:smiley-angry-fill': ph_smiley_angry_fill,
 	'ph:snowflake-fill': ph_snowflake_fill,
@@ -345,6 +352,7 @@ const icons: IconMap = {
 	'ph:speaker-high-fill': ph_speaker_high_fill,
 	'ph:spinner-fill': ph_spinner_fill,
 	'ph:square-fill': ph_square_fill,
+	'ph:square-split-horizontal-fill': ph_square_split_horizontal_fill,
 	'ph:star-fill': ph_star_fill,
 	'ph:sun-fill': ph_sun_fill,
 	'ph:sun-horizon-fill': ph_sun_horizon_fill,

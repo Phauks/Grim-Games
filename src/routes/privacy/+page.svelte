@@ -51,9 +51,10 @@
 		</ul>
 		<p>
 			None of this is sent to us, apart from a script you share, a live room's public table, a
-			report you send, and your scripts if you sign in (below). Clearing this site's data in your
-			browser deletes it all. Settings, Data lets you clear parts of it, and Reset settings resets
-			your settings.
+			report you send, and your scripts if you sign in (below). When the app opens it asks your
+			browser to keep this data rather than clear it to free up space; Settings, Data shows the
+			answer. Clearing this site's data in your browser deletes it all. Settings, Data lets you
+			clear parts of it, and Reset settings resets your settings.
 		</p>
 	</PageSection>
 	<PageSection title="Shared scripts">

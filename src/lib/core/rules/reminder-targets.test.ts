@@ -180,6 +180,56 @@ describe('reminder targets', () => {
 		expect(fitting(s, { characterId: 'librarian', label: 'Wrong' })).toEqual([0, 1, 3]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Drunk: the Drunk is dealt a Townsfolk token, so
+	// "Is The Drunk" is never on a Minion, Demon or Outsider (Trevor, 2026-10-18).
+	it('Drunk: Is The Drunk only beside a Townsfolk token', () => {
+		const { session } = grimoire(['chef', 'butler', 'poisoner', 'imp', 'empath']);
+		expect(fitting(session, { characterId: 'drunk', label: 'Is The Drunk' })).toEqual([0, 4]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Drunk and https://wiki.bloodontheclocktower.com/Poisoner:
+	// a drunk or poisoned player's information can be false, so their info tokens fit any seat
+	// (Trevor, 2026-10-18: "like a librarian being drunk, they can see anyone").
+	it('Librarian really the Drunk: Outsider and Wrong fit any seat', () => {
+		const { session } = grimoire(['drunk:librarian', 'chef', 'butler', 'imp']);
+		expect(fitting(session, { characterId: 'librarian', label: 'Outsider' })).toEqual([0, 1, 2, 3]);
+		expect(fitting(session, { characterId: 'librarian', label: 'Wrong' })).toEqual([0, 1, 2, 3]);
+	});
+
+	it('poisoned Washerwoman and Investigator: their tokens fit any seat', () => {
+		const { session, seats, ctx } = grimoire(['washerwoman', 'investigator', 'chef', 'poisoner']);
+		const poisoned = (seatId: string): Command => ({
+			type: 'AddReminder',
+			seatId,
+			reminder: { characterId: 'poisoner', label: 'Poisoned' }
+		});
+		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([1, 2]);
+		const s = run(session, ctx, poisoned(seats[0]), poisoned(seats[1]));
+		expect(fitting(s, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([0, 1, 2, 3]);
+		expect(fitting(s, { characterId: 'investigator', label: 'Minion' })).toEqual([0, 1, 2, 3]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Recluse and https://wiki.bloodontheclocktower.com/Spy:
+	// they may register as the other side, so info tokens fit them (Trevor, 2026-10-18).
+	it('Recluse and Spy fit the info tokens they may register for', () => {
+		const { session } = grimoire(['investigator', 'washerwoman', 'recluse', 'spy', 'imp']);
+		expect(fitting(session, { characterId: 'investigator', label: 'Minion' })).toEqual([2, 3]);
+		expect(fitting(session, { characterId: 'washerwoman', label: 'Townsfolk' })).toEqual([0, 3]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Knight: a sober Knight's Know tokens are never on
+	// the Demon; a drunk one's may be.
+	it('Knight: Know never on the Demon unless the Knight is drunk', () => {
+		const { session, seats, ctx } = grimoire(['knight', 'chef', 'imp']);
+		expect(fitting(session, { characterId: 'knight', label: 'Know' })).not.toContain(2);
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[0],
+			reminder: { characterId: 'sweetheart', label: 'Drunk' }
+		});
+		expect(fitting(s, { characterId: 'knight', label: 'Know' })).toContain(2);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Evil_Twin: the twin is of the opposite alignment.
 	it('Evil Twin: the twin is the opposite alignment and never the Evil Twin', () => {
 		const { session } = grimoire(['eviltwin', 'chef', 'imp', 'empath']);

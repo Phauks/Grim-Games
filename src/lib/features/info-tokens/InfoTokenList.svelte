@@ -432,15 +432,15 @@
 </Popover>
 
 <Dialog bind:open={fillOpen} title={fillTitle}>
+	<!-- The character above the card's words, no brackets (Trevor, 2026-10-18). -->
+	{#snippet heading()}{#if filling}<span class="fill-heading"
+				><CharacterBadge
+					characterId={filling.character.id}
+					character={filling.character}
+					interactive={false}
+				/><span>{fillTitle}</span></span
+			>{/if}{/snippet}
 	{#if filling}
-		<!-- The card's character, apart from its words (Trevor, 2026-10-18: no brackets). -->
-		<p class="fill-owner">
-			<CharacterBadge
-				characterId={filling.character.id}
-				character={filling.character}
-				interactive={false}
-			/>
-		</p>
 		<TextField
 			label={t(filling.card.fills === 'word' ? 'info-tokens.fill.word' : 'info-tokens.fill.phrase')}
 			value={fillText}
@@ -643,8 +643,10 @@
 </ConfirmDialog>
 
 <style>
-	.fill-owner {
-		margin: 0 0 var(--space-2);
+	.fill-heading {
+		display: grid;
+		justify-items: start;
+		gap: var(--space-1);
 	}
 	.number {
 		display: grid;

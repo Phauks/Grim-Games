@@ -17,6 +17,13 @@
 			label={t('library.newCollection')}
 			onclick={() => browser?.newCollection()}
 		/>
+		<IconButton
+			icon="preview"
+			label={t('library.preview')}
+			aria-pressed={browser?.isPreviewing() ?? false}
+			disabled={!browser?.canPreview()}
+			onclick={() => browser?.togglePreview()}
+		/>
 		<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
 		<AddScript onsaved={() => browser?.openAdded()} />
 	{/snippet}

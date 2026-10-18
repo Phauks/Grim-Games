@@ -297,13 +297,14 @@
 			</PageSection>
 
 			<!-- Its own section, apart from everything else (Trevor, 2026-10-18). -->
+			<!-- The button sits beneath its heading, not beside it (Trevor, 2026-10-18). -->
 			<PageSection title={t('account.data.delete')}>
-				{#snippet aside()}
+				<div class="buttons">
 					<!-- eslint-disable-next-line grim/delete-button -- Trevor 2026-10-18: account deletion is a labelled button, it is so high-impact -->
 					<Button variant="danger" icon="remove" onclick={askDelete} disabled={busy}
 						>{t('account.data.delete')}</Button
 					>
-				{/snippet}
+				</div>
 			</PageSection>
 		{:else}
 			<section class="card" aria-labelledby="sign-in">

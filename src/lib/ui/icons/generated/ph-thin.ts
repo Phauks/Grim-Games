@@ -41,7 +41,6 @@ import ph_clipboard_thin from '~icons/ph/clipboard-thin';
 import ph_clipboard_text_thin from '~icons/ph/clipboard-text-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_club_thin from '~icons/ph/club-thin';
-import ph_columns_thin from '~icons/ph/columns-thin';
 import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
 import ph_corners_out_thin from '~icons/ph/corners-out-thin';
@@ -72,6 +71,7 @@ import ph_flower_thin from '~icons/ph/flower-thin';
 import ph_folder_thin from '~icons/ph/folder-thin';
 import ph_folder_open_thin from '~icons/ph/folder-open-thin';
 import ph_folder_simple_thin from '~icons/ph/folder-simple-thin';
+import ph_frame_corners_thin from '~icons/ph/frame-corners-thin';
 import ph_funnel_thin from '~icons/ph/funnel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
@@ -104,6 +104,7 @@ import ph_link_simple_break_thin from '~icons/ph/link-simple-break-thin';
 import ph_list_thin from '~icons/ph/list-thin';
 import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_list_checks_thin from '~icons/ph/list-checks-thin';
+import ph_list_dashes_thin from '~icons/ph/list-dashes-thin';
 import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
 import ph_lock_thin from '~icons/ph/lock-thin';
 import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
@@ -142,9 +143,11 @@ import ph_shield_thin from '~icons/ph/shield-thin';
 import ph_shield_check_thin from '~icons/ph/shield-check-thin';
 import ph_shield_star_thin from '~icons/ph/shield-star-thin';
 import ph_shuffle_thin from '~icons/ph/shuffle-thin';
+import ph_sidebar_simple_thin from '~icons/ph/sidebar-simple-thin';
 import ph_sign_in_thin from '~icons/ph/sign-in-thin';
 import ph_skull_thin from '~icons/ph/skull-thin';
 import ph_sliders_thin from '~icons/ph/sliders-thin';
+import ph_sliders_horizontal_thin from '~icons/ph/sliders-horizontal-thin';
 import ph_smiley_thin from '~icons/ph/smiley-thin';
 import ph_smiley_angry_thin from '~icons/ph/smiley-angry-thin';
 import ph_snowflake_thin from '~icons/ph/snowflake-thin';
@@ -155,6 +158,7 @@ import ph_sparkle_thin from '~icons/ph/sparkle-thin';
 import ph_speaker_high_thin from '~icons/ph/speaker-high-thin';
 import ph_spinner_thin from '~icons/ph/spinner-thin';
 import ph_square_thin from '~icons/ph/square-thin';
+import ph_square_split_horizontal_thin from '~icons/ph/square-split-horizontal-thin';
 import ph_star_thin from '~icons/ph/star-thin';
 import ph_sun_thin from '~icons/ph/sun-thin';
 import ph_sun_horizon_thin from '~icons/ph/sun-horizon-thin';
@@ -231,7 +235,6 @@ const icons: IconMap = {
 	'ph:clipboard-text-thin': ph_clipboard_text_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:club-thin': ph_club_thin,
-	'ph:columns-thin': ph_columns_thin,
 	'ph:copy-thin': ph_copy_thin,
 	'ph:copy-simple-thin': ph_copy_simple_thin,
 	'ph:corners-out-thin': ph_corners_out_thin,
@@ -262,6 +265,7 @@ const icons: IconMap = {
 	'ph:folder-thin': ph_folder_thin,
 	'ph:folder-open-thin': ph_folder_open_thin,
 	'ph:folder-simple-thin': ph_folder_simple_thin,
+	'ph:frame-corners-thin': ph_frame_corners_thin,
 	'ph:funnel-thin': ph_funnel_thin,
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
@@ -294,6 +298,7 @@ const icons: IconMap = {
 	'ph:list-thin': ph_list_thin,
 	'ph:list-bullets-thin': ph_list_bullets_thin,
 	'ph:list-checks-thin': ph_list_checks_thin,
+	'ph:list-dashes-thin': ph_list_dashes_thin,
 	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
 	'ph:lock-thin': ph_lock_thin,
 	'ph:lock-simple-thin': ph_lock_simple_thin,
@@ -332,9 +337,11 @@ const icons: IconMap = {
 	'ph:shield-check-thin': ph_shield_check_thin,
 	'ph:shield-star-thin': ph_shield_star_thin,
 	'ph:shuffle-thin': ph_shuffle_thin,
+	'ph:sidebar-simple-thin': ph_sidebar_simple_thin,
 	'ph:sign-in-thin': ph_sign_in_thin,
 	'ph:skull-thin': ph_skull_thin,
 	'ph:sliders-thin': ph_sliders_thin,
+	'ph:sliders-horizontal-thin': ph_sliders_horizontal_thin,
 	'ph:smiley-thin': ph_smiley_thin,
 	'ph:smiley-angry-thin': ph_smiley_angry_thin,
 	'ph:snowflake-thin': ph_snowflake_thin,
@@ -345,6 +352,7 @@ const icons: IconMap = {
 	'ph:speaker-high-thin': ph_speaker_high_thin,
 	'ph:spinner-thin': ph_spinner_thin,
 	'ph:square-thin': ph_square_thin,
+	'ph:square-split-horizontal-thin': ph_square_split_horizontal_thin,
 	'ph:star-thin': ph_star_thin,
 	'ph:sun-thin': ph_sun_thin,
 	'ph:sun-horizon-thin': ph_sun_horizon_thin,
