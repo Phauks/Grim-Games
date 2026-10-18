@@ -15,6 +15,8 @@ export const SUSHI_BUFFET: GameMode = {
 	format: GAME_MODE_FORMAT,
 	id: 'sushi-buffet',
 	name: 'Sushi Buffet',
+	about:
+		'Players draft their characters in turn instead of drawing them. Each is offered three characters from every official character and keeps one, or refuses for a smaller new offer.',
 	aliases: ['Draft Buffet'],
 	sources: [
 		{ title: 'Sushi Buffet Draft (Grimbits)', url: 'https://grimbits.com/draft-buffet/' },

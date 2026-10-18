@@ -161,3 +161,10 @@ describe('Two games at once (Trevor, 2026-10-17)', () => {
 		expect(runsPart(mode('two-towns-and-a-boomdandy'), 'daySteps')).toBe(false);
 	});
 });
+
+describe('about', () => {
+	it('describes every built-in mode but Standard', () => {
+		for (const m of GAME_MODES.filter((m) => m.id !== 'standard'))
+			expect(m.about, m.id).toBeTruthy();
+	});
+});

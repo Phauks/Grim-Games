@@ -37,6 +37,18 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	await expect(dialog.locator('[data-part="assignment"]')).toContainText('Run by the Storyteller');
 	await expect(dialog.locator('[data-part="towns"]')).toContainText('Standard');
 	await expect(dialog.locator('pre')).toContainText('"id": "whale-buffet"');
+	await expect(dialog.getByTestId('inspect-about')).toContainText(
+		'Every character is on the script'
+	);
+	// The dialog's content scrolls to its last part (Trevor, 2026-10-18).
+	const scroll = dialog.getByTestId('mode-inspect-scroll');
+	const sizes = await scroll.evaluate((el) => ({
+		scroll: el.scrollHeight,
+		client: el.clientHeight
+	}));
+	expect(sizes.scroll).toBeGreaterThan(sizes.client);
+	await scroll.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+	expect(await scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	await noSidewaysScroll(page);
 });
 
@@ -84,15 +96,39 @@ async function startIn(page: Page, mode: string) {
 const rows = (page: Page) =>
 	page.getByTestId('character-picker').locator('button[data-character-id]');
 
-test('Sushi Buffet drafts seat by seat on one device: offers of 3, 2 and 1, then the board', async ({
+/** The same tile bag as setup's draw (Trevor, 2026-10-18). */
+const bagTiles = (page: Page) =>
+	page.getByRole('list', { name: 'Bag' }).locator('button[data-state="in-bag"]');
+
+/** A player draws a tile; it opens their offer or dealt type. */
+async function drawTile(page: Page) {
+	await bagTiles(page).first().tap();
+	await expect(rows(page).first()).toBeVisible();
+}
+
+/** The player keeps the first character, sees it as in setup's draw and confirms. */
+async function keepFirst(page: Page): Promise<string> {
+	const first = rows(page).first();
+	const id = (await first.getAttribute('data-character-id'))!;
+	await first.tap();
+	const reveal = page.getByTestId('reveal');
+	await expect(reveal).toBeVisible();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(reveal).toBeHidden();
+	return id;
+}
+
+test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, then the board', async ({
 	page
 }) => {
 	// https://grimbits.com/draft-buffet/
 	await startIn(page, 'Sushi Buffet');
 	await expect(page.getByRole('heading', { name: 'Draft', level: 1 })).toBeVisible();
-	await expect(page.getByTestId('seats-left')).toHaveText('5 seats left');
-	await expect(page.getByText('Pass to Seat 1')).toBeVisible();
-	await page.getByRole('button', { name: 'Show' }).tap();
+	// No count of seats left (Trevor, 2026-10-18).
+	await expect(page.getByTestId('seats-left')).toHaveCount(0);
+	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
+	await expect(bagTiles(page)).toHaveCount(5);
+	await drawTile(page);
 	await expect(rows(page)).toHaveCount(3);
 	await page.getByRole('button', { name: 'Refuse offer' }).tap();
 	await expect(rows(page)).toHaveCount(2);
@@ -102,36 +138,46 @@ test('Sushi Buffet drafts seat by seat on one device: offers of 3, 2 and 1, then
 	const kept: string[] = [];
 	for (let seat = 1; seat <= 5; seat++) {
 		if (seat > 1) {
-			await expect(page.getByText(`Pass to Seat ${seat}`)).toBeVisible();
-			await page.getByRole('button', { name: 'Show' }).tap();
+			await expect(page.getByTestId('next-seat')).toHaveText(`Seat ${seat}`);
+			await drawTile(page);
 		}
-		const first = rows(page).first();
-		kept.push((await first.getAttribute('data-character-id'))!);
-		await first.tap();
+		kept.push(await keepFirst(page));
 	}
 	expect(new Set(kept).size).toBe(5);
+	await expect(bagTiles(page)).toHaveCount(0);
 	await page.getByRole('button', { name: 'Finish' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);
 	await noSidewaysScroll(page);
 });
 
-test('Whale Buffet deals a type and each player chooses; the Storyteller can ask for a new choice', async ({
+test('Sushi Buffet has no script to choose: it drafts from every official character', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await chooseMode(page, 'Sushi Buffet');
+	await expect(modesPanel(page).getByRole('radiogroup', { name: 'Script' })).toHaveCount(0);
+	await expect(modesPanel(page).getByTestId('mode-about')).toContainText('draft');
+});
+
+test('Whale Buffet deals a type from the tile bag and each player chooses; the Storyteller can ask for a new choice', async ({
 	page
 }) => {
 	// https://whalebuffet.com/
 	await startIn(page, 'Whale Buffet');
 	await expect(page.getByRole('heading', { name: 'Choose characters', level: 1 })).toBeVisible();
-	await page.getByRole('button', { name: 'Show' }).tap();
+	await drawTile(page);
 	await expect(page.getByText(/^Choose a (Townsfolk|Minion|Demon)$/)).toBeVisible();
-	await expect(rows(page).first()).toBeVisible();
 	await expect(page.locator('button[data-character-id="drunk"]')).toHaveCount(0);
-	await rows(page).first().tap();
-	await expect(page.getByText('Pass to Seat 2')).toBeVisible();
+	await keepFirst(page);
+	await expect(page.getByTestId('next-seat')).toHaveText('Seat 2');
 	await page.getByRole('button', { name: 'Choose again' }).tap();
-	await expect(page.getByText('Pass to Seat 1')).toBeVisible();
-	for (let seat = 1; seat <= 5; seat++) {
-		await page.getByRole('button', { name: 'Show' }).tap();
-		await rows(page).first().tap();
+	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
+	// The tile stays in Seat 1's hand: tapping it reopens their choice.
+	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
+	await keepFirst(page);
+	for (let seat = 2; seat <= 5; seat++) {
+		await drawTile(page);
+		await keepFirst(page);
 	}
 	await page.getByRole('button', { name: 'Finish' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#setup-reminders)?$/);

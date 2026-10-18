@@ -149,6 +149,8 @@
 			}}
 		/>
 	</div>
+	<!-- Room for the longest built-in description, so switching modes moves nothing. -->
+	<p class="about" data-testid="mode-about">{mode.about ?? t('common.none')}</p>
 	<div class="tools">
 		<Button icon="info" onclick={() => (inspecting = true)}>
 			{t('modes.inspect', { name: mode.name })}
@@ -248,6 +250,10 @@
 />
 
 <style>
+	.about {
+		min-height: 5lh;
+		margin: 0;
+	}
 	.modes {
 		display: grid;
 		gap: var(--space-3);

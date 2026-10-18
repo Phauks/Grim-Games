@@ -14,6 +14,8 @@ export const TWO_TOWNS: GameMode = {
 	format: GAME_MODE_FORMAT,
 	id: 'two-towns-and-a-boomdandy',
 	name: 'Two Towns and a Boomdandy',
+	about:
+		'Two towns play side by side, each with its own Storyteller and script. Each day some players move to the other town, and a team wins by winning both towns.',
 	sources: [
 		{
 			title: 'Two Towns and a Boomdandy Rules (Ekin)',

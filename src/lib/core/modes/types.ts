@@ -244,6 +244,12 @@ export interface GameMode {
 	sources: SourceLink[];
 	/** People the source credits. */
 	credits?: string[];
+	/**
+	 * A short description of how the mode plays, shown on New game and in Inspect. Trevor
+	 * asked for one per mode (2026-10-18); the built-in ones are our own wording, not the
+	 * sources', which are linked.
+	 */
+	about?: string;
 	/** Parts no source confirms; Inspect marks them. */
 	unconfirmed?: ModePart[];
 	parts: ModeParts;

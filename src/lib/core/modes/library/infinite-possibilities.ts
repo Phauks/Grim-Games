@@ -14,6 +14,8 @@ export const INFINITE_POSSIBILITIES: GameMode = {
 	format: GAME_MODE_FORMAT,
 	id: 'infinite-possibilities',
 	name: 'A Script of Infinite Possibilities',
+	about:
+		'Trouble Brewing plus the Banshee, with hidden extra characters from off the script that only their players know about. The Storyteller may tell the table a range of how many.',
 	aliases: ['Trouble Bucket', 'Infinite Impossibilities'],
 	sources: [{ title: 'A Script of Infinite Possibilities (Chill on the Clocktower)', url: POST }],
 	credits: ['Patters'],

@@ -13,6 +13,8 @@ export const WHALE_BUFFET: GameMode = {
 	format: GAME_MODE_FORMAT,
 	id: 'whale-buffet',
 	name: 'Whale Buffet',
+	about:
+		'Every character is on the script. Each player draws only a character type, then chooses any character of that type to play.',
 	aliases: ['Whalebuffet', 'Whale Bucket', 'Whalebucket'],
 	sources: [
 		{ title: 'Whalebuffet', url: 'https://whalebuffet.com/' },

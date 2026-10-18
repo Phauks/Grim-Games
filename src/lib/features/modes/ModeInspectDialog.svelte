@@ -43,8 +43,10 @@
 </script>
 
 <Dialog bind:open title={mode.name} size="full">
-	<div class="inspect">
+	<div class="inspect" data-testid="mode-inspect-scroll">
 		<dl class="facts">
+			<dt>{t('modes.about')}</dt>
+			<dd data-testid="inspect-about">{mode.about ?? t('common.none')}</dd>
 			{#if mode.aliases?.length}
 				<dt>{t('modes.aliases')}</dt>
 				<dd>{mode.aliases.join(', ')}</dd>
@@ -87,9 +89,14 @@
 </Dialog>
 
 <style>
+	/* A full dialog doesn't scroll itself: its content does (as the Library's script dialog). */
 	.inspect {
 		display: grid;
+		flex: 1;
+		min-height: 0;
+		align-content: start;
 		gap: var(--space-3);
+		overflow-y: auto;
 	}
 	.facts {
 		display: grid;
