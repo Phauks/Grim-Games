@@ -2749,7 +2749,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(shown).toContainText('Fortune Teller');
 });
 
-test('an information step lists every valid piece of information, not one pick', async ({
+test('an information step suggests every valid number, and no sets of players', async ({
 	page
 }) => {
 	await startGame(page);
@@ -2766,24 +2766,28 @@ test('an information step lists every valid piece of information, not one pick',
 	await give(2, 'Chef');
 	await give(3, 'Empath');
 	await give(4, 'Imp');
+	// Trevor (2026-10-18): "only show info suggest for numbers, not sets of characters".
 	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
-	// Trevor (2026-10-18): "show all valid information"
-	// (https://wiki.bloodontheclocktower.com/Washerwoman).
 	await page.getByRole('button', { name: 'Guide: Washerwoman' }).tap();
-	const step = page.getByRole('dialog', { name: 'Washerwoman' });
-	const rows = step.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
-	// One row per character shown with its player, and every possible other player.
-	await expect(rows).toHaveCount(2);
-	await expect(rows.nth(0)).toContainText(/Chef.*and one of/);
-	await expect(rows.nth(1)).toContainText(/Empath.*and one of/);
+	const washerwoman = page.getByRole('dialog', { name: 'Washerwoman' });
+	await expect(washerwoman.getByTestId('step-ability')).toBeVisible();
+	await expect(washerwoman.getByTestId('night-suggested')).toHaveCount(0);
+	await washerwoman.getByRole('button', { name: 'Close' }).tap();
+	// No evil pair sits together: the Chef's 0 (https://wiki.bloodontheclocktower.com/Chef).
+	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
+	await page.getByRole('button', { name: 'Guide: Chef' }).tap();
+	const chef = page.getByRole('dialog', { name: 'Chef' });
+	const rows = chef.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
+	await expect(rows).toHaveCount(1);
+	await expect(rows.first()).toHaveText('0');
+	await chef.getByRole('button', { name: 'Close' }).tap();
 	// The walk-through's one line counts them instead of naming one.
-	await step.getByRole('button', { name: 'Close' }).tap();
 	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	await page.getByRole('button', { name: 'Run Night Order' }).tap();
 	const strip = page.getByTestId('night-strip');
-	for (let i = 0; i < 10 && !(await strip.textContent())?.includes('Washerwoman'); i++)
+	for (let i = 0; i < 10 && !(await strip.textContent())?.includes('Chef'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
-	await expect(strip.getByTestId('night-suggested')).toHaveText(/Suggested: \d+ valid/);
+	await expect(strip.getByTestId('night-suggested')).toHaveText(/Suggested: 1 valid/);
 });
 
 test('a Demon bluff in play can still be chosen, after a confirm', async ({ page }) => {
