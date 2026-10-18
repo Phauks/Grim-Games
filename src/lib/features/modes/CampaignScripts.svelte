@@ -26,9 +26,11 @@
 		data: GameData | undefined;
 		/** The Library's search. */
 		term?: string;
+		/** Flush in the Library's frame, as its file list is. */
+		frameless?: boolean;
 	}
 
-	let { data, term = '' }: Props = $props();
+	let { data, term = '', frameless = false }: Props = $props();
 
 	type ColumnId = 'name' | 'started';
 	const all = campaigns();
@@ -137,6 +139,7 @@
 		rowSelected={(c) => open && opened?.campaignId === c.campaignId}
 		narrow="hide"
 		empty={t('common.none')}
+		{frameless}
 	/>
 </div>
 

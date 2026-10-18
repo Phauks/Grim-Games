@@ -114,6 +114,10 @@ export const ICON_SLOTS = {
 	library: { label: 'Library', choices: ['ph:bookmarks-simple', 'ph:archive'] },
 	folder: { label: 'Folder', choices: ['ph:folder', 'ph:folder-simple'] },
 	tag: { label: 'Tag', choices: ['ph:tag', 'ph:tag-simple'] },
+	/** Shows or hides the Library's preview beside the list. */
+	preview: { label: 'Preview', choices: ['ph:sidebar-simple', 'ph:square-split-horizontal'] },
+	/** Opens an item from its preview into a window over the page. */
+	openItem: { label: 'Open', choices: ['ph:arrow-square-out', 'ph:frame-corners'] },
 	fullScreen: { label: 'Full screen', choices: ['ph:arrows-out', 'ph:corners-out'] },
 	showToPlayer: { label: 'Show to player', choices: ['ph:eye', 'ph:device-mobile'] }
 } as const satisfies Record<string, IconSlotInfo>;

@@ -132,6 +132,12 @@
 		 * 2026-10-18: one shared paged table for everything search lists). Unset draws all.
 		 */
 		pageSize?: number;
+		/**
+		 * No box of its own: the table sits flush in a frame that already has one (Trevor,
+		 * 2026-10-18, the Library: "doesn't need to be a separate instance with space between
+		 * the walls").
+		 */
+		frameless?: boolean;
 	}
 
 	let {
@@ -155,6 +161,7 @@
 		resizeKey,
 		rowLabel,
 		pageSize,
+		frameless = false,
 		columnFilters = $bindable({}),
 		oncount,
 		hideKey
@@ -506,6 +513,7 @@
 	class="data-table {narrow}"
 	class:fit-content={fit === 'content'}
 	class:boxed
+	class:frameless
 	class:fill
 	style:--columns={template}
 	style:--columns-medium={mediumTemplate}
@@ -702,6 +710,11 @@
 		border: var(--card-border);
 		border-radius: var(--card-radius);
 		background: var(--card-background);
+	}
+	.frameless .scroll {
+		border: 0;
+		border-radius: 0;
+		background: none;
 	}
 	.fill {
 		height: 100%;

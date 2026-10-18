@@ -201,8 +201,13 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 }) => {
 	const libraryRows = () =>
 		page.getByTestId('library-table').getByRole('button', { name: /^Edited here/ });
-	const search = () =>
-		page.getByRole('searchbox', { name: 'Search the Library' }).fill('Edited here');
+	// The Library's search opens from its button (Trevor, 2026-10-18), unless left open.
+	const search = async () => {
+		const box = page.getByRole('searchbox', { name: 'Search the Library' });
+		if (!(await box.isVisible()))
+			await page.getByRole('button', { name: 'Search the Library' }).tap();
+		await box.fill('Edited here');
+	};
 	await page.goto('/build-script');
 	await page.getByRole('textbox', { name: 'Name' }).fill('Edited here');
 	for (const name of ['Chef', 'Imp']) await character(page, name).tap();
