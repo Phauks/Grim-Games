@@ -744,7 +744,7 @@
 	.seats {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(10 * var(--u))), 1fr));
-		gap: var(--space-2);
+		gap: var(--space-1);
 		touch-action: manipulation;
 	}
 	.seat {
@@ -755,7 +755,7 @@
 		align-items: center;
 		gap: var(--space-2);
 		min-height: var(--tap-target);
-		padding: var(--space-1) var(--space-2);
+		padding: var(--space-1);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
