@@ -18,8 +18,7 @@ export function hasSpectatorVote(gameId: GameId): boolean {
  * own (Apparition grants the Wizard).
  */
 export type SpecterAbility =
-	| { kind: 'character'; characterId: CharacterId }
-	| { kind: 'custom'; text: string };
+	{ kind: 'character'; characterId: CharacterId } | { kind: 'custom'; text: string };
 
 const ABILITY_KEY = (gameId: GameId) => `grim-games:specters-ability:v1:${gameId}`;
 
