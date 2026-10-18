@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Alignment, Character, CharacterType, ReminderLabel } from '#lib/core/data/index.ts';
 	import { iconUrl } from './icon-url.ts';
 
@@ -28,8 +27,6 @@
 		done?: boolean;
 		/** How many of this token the character has, shown as ×count when more than one. */
 		count?: number;
-		/** Placed at setup: a flower mark, with this as its accessible label (Reference). */
-		setup?: string;
 	}
 
 	let {
@@ -40,8 +37,7 @@
 		title,
 		variant = 'reminder',
 		done = false,
-		count = 1,
-		setup
+		count = 1
 	}: Props = $props();
 
 	const type = $derived(given ?? character?.type);
@@ -62,12 +58,9 @@
 	data-icon={icon ? '' : undefined}
 	title={title ?? character?.name}
 	>{#if icon}<img class="owner" src={icon} alt="" />{/if}{label ??
-		t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span>{/if}{#if setup}<span
-			class="setup"
-			role="img"
-			aria-label={setup}
-			title={setup}><Icon name="setup" /></span
-		>{/if}{#if done}<span class="tick" aria-label={t('characters.reminderPlaced')}>✓</span
+		t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span>{/if}{#if done}<span
+			class="tick"
+			aria-label={t('characters.reminderPlaced')}>✓</span
 		>{/if}</span
 >
 
@@ -168,10 +161,6 @@
 	}
 	.count {
 		font-variant-numeric: tabular-nums;
-	}
-	.setup {
-		display: inline-flex;
-		color: var(--on-reminder);
 	}
 	.tick {
 		margin-left: 0.15em;

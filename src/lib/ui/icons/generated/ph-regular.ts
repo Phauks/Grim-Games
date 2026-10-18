@@ -40,6 +40,7 @@ import ph_clipboard from '~icons/ph/clipboard';
 import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_club from '~icons/ph/club';
+import ph_columns from '~icons/ph/columns';
 import ph_copy from '~icons/ph/copy';
 import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_corners_out from '~icons/ph/corners-out';
@@ -66,7 +67,6 @@ import ph_flag from '~icons/ph/flag';
 import ph_flask from '~icons/ph/flask';
 import ph_floppy_disk from '~icons/ph/floppy-disk';
 import ph_flower from '~icons/ph/flower';
-import ph_flower_lotus from '~icons/ph/flower-lotus';
 import ph_folder from '~icons/ph/folder';
 import ph_folder_open from '~icons/ph/folder-open';
 import ph_folder_simple from '~icons/ph/folder-simple';
@@ -130,6 +130,7 @@ import ph_prohibit_inset from '~icons/ph/prohibit-inset';
 import ph_push_pin from '~icons/ph/push-pin';
 import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
+import ph_rows from '~icons/ph/rows';
 import ph_scales from '~icons/ph/scales';
 import ph_scroll from '~icons/ph/scroll';
 import ph_shapes from '~icons/ph/shapes';
@@ -154,6 +155,7 @@ import ph_star from '~icons/ph/star';
 import ph_sun from '~icons/ph/sun';
 import ph_sun_horizon from '~icons/ph/sun-horizon';
 import ph_swap from '~icons/ph/swap';
+import ph_table from '~icons/ph/table';
 import ph_tag from '~icons/ph/tag';
 import ph_tag_simple from '~icons/ph/tag-simple';
 import ph_text_aa from '~icons/ph/text-aa';
@@ -223,6 +225,7 @@ const icons: IconMap = {
 	'ph:clipboard-text': ph_clipboard_text,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:club': ph_club,
+	'ph:columns': ph_columns,
 	'ph:copy': ph_copy,
 	'ph:copy-simple': ph_copy_simple,
 	'ph:corners-out': ph_corners_out,
@@ -249,7 +252,6 @@ const icons: IconMap = {
 	'ph:flask': ph_flask,
 	'ph:floppy-disk': ph_floppy_disk,
 	'ph:flower': ph_flower,
-	'ph:flower-lotus': ph_flower_lotus,
 	'ph:folder': ph_folder,
 	'ph:folder-open': ph_folder_open,
 	'ph:folder-simple': ph_folder_simple,
@@ -313,6 +315,7 @@ const icons: IconMap = {
 	'ph:push-pin': ph_push_pin,
 	'ph:qr-code': ph_qr_code,
 	'ph:question': ph_question,
+	'ph:rows': ph_rows,
 	'ph:scales': ph_scales,
 	'ph:scroll': ph_scroll,
 	'ph:shapes': ph_shapes,
@@ -337,6 +340,7 @@ const icons: IconMap = {
 	'ph:sun': ph_sun,
 	'ph:sun-horizon': ph_sun_horizon,
 	'ph:swap': ph_swap,
+	'ph:table': ph_table,
 	'ph:tag': ph_tag,
 	'ph:tag-simple': ph_tag_simple,
 	'ph:text-aa': ph_text_aa,

@@ -88,7 +88,8 @@ export const grimoire: Theme = {
 		ability: 'eb-garamond',
 		player: 'eb-garamond',
 		control: 'cinzel',
-		body: 'eb-garamond'
+		body: 'eb-garamond',
+		account: 'inter'
 	},
 	icons: {
 		dead: 'ph:skull',

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { FLOWER_ANGLE, leafLayout, type LeafMarks } from './leaves.ts';
+	import { leafLayout, type LeafMarks } from './leaves.ts';
 
 	interface Props {
 		/** Icon image URL; the face stays (empty) when there is none. */
@@ -35,23 +35,17 @@
 	// A leaf pointing up from (0,0) to (0,-19), with a midrib. Leaves hang from the rim of the
 	// face towards the middle, always inside the token (Trevor, 2026-10-15).
 	const LEAF = 'M0 0 C7 -5 7 -13 0 -19 C-7 -13 -7 -5 0 0 Z';
-	// The setup flower: five petals round a centre, inside the face at the bottom right.
-	const FLOWER_R = 36;
-	const flowerX = 50 + FLOWER_R * Math.cos((FLOWER_ANGLE * Math.PI) / 180);
-	const flowerY = 50 + FLOWER_R * Math.sin((FLOWER_ANGLE * Math.PI) / 180);
-	const PETALS = [0, 72, 144, 216, 288];
 
 	const NAME_SIZE = 13;
 	/** Squeezes a long name into `room`; short ones keep their natural width. */
 	const fit = (room: number, fontSize = NAME_SIZE) =>
 		name && name.length * fontSize * 0.62 > room ? room : undefined;
 
-	// Edge: along the bottom inside the rim, clear of the side leaves (at 180° and 0°). With
-	// the setup flower (at 45°) it stops short of the flower, so it sits a little left of
-	// centre. The top of the rim belongs to the reminder leaves.
+	// Edge: along the bottom inside the rim, clear of the side leaves (at 180° and 0°). The
+	// top of the rim belongs to the reminder leaves.
 	const EDGE_R = 37;
 	const EDGE_FROM = 150;
-	const edgeTo = $derived(leaves.setup ? 68 : 30);
+	const edgeTo = 30;
 	const edgePath = $derived.by(() => {
 		const point = (degrees: number) => {
 			const a = (degrees * Math.PI) / 180;
@@ -76,7 +70,7 @@
 	</svg>
 	<!-- The icon fills most of the face, as on a real token (Trevor, 2026-10-16). -->
 	{#if src}<img {src} alt="" width={size} height={size} loading="lazy" />{/if}
-	<!-- Leaves and the flower are drawn over the icon, so they always show. -->
+	<!-- Leaves are drawn over the icon, so they always show. -->
 	<svg class="marks" viewBox="0 0 100 100" aria-hidden="true">
 		{#each layout as leaf, i (i)}
 			<g
@@ -98,14 +92,6 @@
 					lengthAdjust="spacingAndGlyphs">{name}</textPath
 				></text
 			>
-		{/if}
-		{#if leaves.setup}
-			<g class="flower" data-kind="setup" transform="translate({flowerX} {flowerY})">
-				{#each PETALS as angle (angle)}
-					<ellipse cx="0" cy="-4.2" rx="2.8" ry="4.2" transform="rotate({angle})" />
-				{/each}
-				<circle class="centre" r="2.4" />
-			</g>
 		{/if}
 	</svg>
 	{#if badges.length}
@@ -163,12 +149,6 @@
 	}
 	.leaf path {
 		fill: var(--leaf);
-	}
-	.flower ellipse {
-		fill: var(--token-flower);
-	}
-	.flower .centre {
-		fill: var(--token-flower-centre);
 	}
 	.leaf .rib {
 		fill: none;

@@ -46,6 +46,7 @@
 
 <Dialog bind:open title={t('account.username.title')}>
 	<TextField
+		plain
 		label={t('account.username.label')}
 		bind:value={name}
 		maxlength={USERNAME_MAX}

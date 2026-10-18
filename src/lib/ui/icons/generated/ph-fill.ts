@@ -40,6 +40,7 @@ import ph_clipboard_fill from '~icons/ph/clipboard-fill';
 import ph_clipboard_text_fill from '~icons/ph/clipboard-text-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
+import ph_columns_fill from '~icons/ph/columns-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
 import ph_corners_out_fill from '~icons/ph/corners-out-fill';
@@ -66,7 +67,6 @@ import ph_flag_fill from '~icons/ph/flag-fill';
 import ph_flask_fill from '~icons/ph/flask-fill';
 import ph_floppy_disk_fill from '~icons/ph/floppy-disk-fill';
 import ph_flower_fill from '~icons/ph/flower-fill';
-import ph_flower_lotus_fill from '~icons/ph/flower-lotus-fill';
 import ph_folder_fill from '~icons/ph/folder-fill';
 import ph_folder_open_fill from '~icons/ph/folder-open-fill';
 import ph_folder_simple_fill from '~icons/ph/folder-simple-fill';
@@ -130,6 +130,7 @@ import ph_prohibit_inset_fill from '~icons/ph/prohibit-inset-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
+import ph_rows_fill from '~icons/ph/rows-fill';
 import ph_scales_fill from '~icons/ph/scales-fill';
 import ph_scroll_fill from '~icons/ph/scroll-fill';
 import ph_shapes_fill from '~icons/ph/shapes-fill';
@@ -154,6 +155,7 @@ import ph_star_fill from '~icons/ph/star-fill';
 import ph_sun_fill from '~icons/ph/sun-fill';
 import ph_sun_horizon_fill from '~icons/ph/sun-horizon-fill';
 import ph_swap_fill from '~icons/ph/swap-fill';
+import ph_table_fill from '~icons/ph/table-fill';
 import ph_tag_fill from '~icons/ph/tag-fill';
 import ph_tag_simple_fill from '~icons/ph/tag-simple-fill';
 import ph_text_aa_fill from '~icons/ph/text-aa-fill';
@@ -223,6 +225,7 @@ const icons: IconMap = {
 	'ph:clipboard-text-fill': ph_clipboard_text_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
+	'ph:columns-fill': ph_columns_fill,
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
 	'ph:corners-out-fill': ph_corners_out_fill,
@@ -249,7 +252,6 @@ const icons: IconMap = {
 	'ph:flask-fill': ph_flask_fill,
 	'ph:floppy-disk-fill': ph_floppy_disk_fill,
 	'ph:flower-fill': ph_flower_fill,
-	'ph:flower-lotus-fill': ph_flower_lotus_fill,
 	'ph:folder-fill': ph_folder_fill,
 	'ph:folder-open-fill': ph_folder_open_fill,
 	'ph:folder-simple-fill': ph_folder_simple_fill,
@@ -313,6 +315,7 @@ const icons: IconMap = {
 	'ph:push-pin-fill': ph_push_pin_fill,
 	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
+	'ph:rows-fill': ph_rows_fill,
 	'ph:scales-fill': ph_scales_fill,
 	'ph:scroll-fill': ph_scroll_fill,
 	'ph:shapes-fill': ph_shapes_fill,
@@ -337,6 +340,7 @@ const icons: IconMap = {
 	'ph:sun-fill': ph_sun_fill,
 	'ph:sun-horizon-fill': ph_sun_horizon_fill,
 	'ph:swap-fill': ph_swap_fill,
+	'ph:table-fill': ph_table_fill,
 	'ph:tag-fill': ph_tag_fill,
 	'ph:tag-simple-fill': ph_tag_simple_fill,
 	'ph:text-aa-fill': ph_text_aa_fill,

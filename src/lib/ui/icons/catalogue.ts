@@ -27,8 +27,6 @@ export const ICON_SLOTS = {
 	demon: { label: 'Demon', choices: ['ph:mask-sad', 'ph:smiley-angry', 'ph:fire'] },
 	bag: { label: 'Bag', choices: ['ph:handbag', 'ph:tote', 'ph:bag-simple'] },
 	reminder: { label: 'Reminder', choices: ['ph:push-pin', 'ph:bookmark-simple', 'ph:tag'] },
-	/** A reminder token placed at setup (Reference); the flower echoes the tokens' setup flower. */
-	setup: { label: 'Setup', choices: ['ph:flower', 'ph:flower-lotus'] },
 	players: { label: 'Players', choices: ['ph:users-three', 'ph:users'] },
 	script: { label: 'Script', choices: ['ph:scroll', 'ph:book-open'] },
 	buildScript: { label: 'Script builder', choices: ['ph:hammer', 'ph:wrench'] },
@@ -83,9 +81,11 @@ export const ICON_SLOTS = {
 	glossary: { label: 'Glossary', choices: ['ph:book-open-text', 'ph:list-magnifying-glass'] },
 	warning: { label: 'Warning', choices: ['ph:warning', 'ph:warning-circle'] },
 	sort: { label: 'Sort', choices: ['ph:arrows-down-up'] },
+	columns: { label: 'Columns', choices: ['ph:columns'] },
 	sortAscending: { label: 'Sorted ascending', choices: ['ph:caret-up', 'ph:sort-ascending'] },
 	sortDescending: { label: 'Sorted descending', choices: ['ph:caret-down', 'ph:sort-descending'] },
 	filter: { label: 'Filter', choices: ['ph:funnel'] },
+	tableView: { label: 'Show as table', choices: ['ph:table', 'ph:rows'] },
 	/** Characters a game keeps out (game modes' Restricted characters). */
 	restricted: { label: 'Restricted characters', choices: ['ph:prohibit', 'ph:prohibit-inset'] },
 	assistance: { label: 'Storyteller', choices: ['ph:lifebuoy', 'ph:hand-heart'] },
