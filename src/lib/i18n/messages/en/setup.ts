@@ -171,6 +171,7 @@ export const setup = {
 	'setup.draw.tileHeld': 'Tile {number}, held by {seat}',
 	'setup.draw.tileDrawn': 'Tile {number}, drawn',
 	'setup.draw.everySeat': 'Every seat has a character',
+	'setup.draw.newSeat': 'A new seat',
 	'setup.draw.everySeatHint': 'Add a seat on the grimoire to draw for it.',
 
 	'setup.reveal.name': 'Name',

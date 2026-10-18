@@ -275,6 +275,39 @@ test('Fabled and Loric are added from their own closed sections, not to the bag'
 	await noSidewaysScroll(page);
 });
 
+// Trevor, 2026-10-18: with every Trouble Brewing character chosen for 20 players the bag
+// holds 21 tiles (the Drunk shares a Townsfolk's); confirmed anyway, the last tile is drawn
+// to a new seat rather than left in the bag.
+test('a bag with more tiles than seats draws the extra tiles to new seats', async ({ page }) => {
+	await selectionFor(page, 8);
+	for (let n = 8; n < 20; n++) await page.getByRole('button', { name: 'More players' }).tap();
+	await expect(page.getByTestId('player-count')).toHaveText('20');
+	const names = await page
+		.locator('main [aria-pressed][data-character-id]')
+		.evaluateAll((els) =>
+			els
+				.filter(
+					(el) => !el.closest('[data-type="traveller"], [data-type="fabled"], [data-type="loric"]')
+				)
+				.map((el) => el.getAttribute('aria-label') ?? '')
+		);
+	for (const name of names) await choice(page, name).tap();
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	const tiles = page.getByRole('button', { name: /^Tile \d+$/ });
+	await expect(tiles).toHaveCount(21);
+	for (let n = 1; n <= 20; n++) {
+		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
+		await page.getByRole('button', { name: 'Confirm' }).tap();
+	}
+	await expect(page.getByTestId('next-seat')).toHaveText('A new seat');
+	await page.getByRole('button', { name: 'Tile 21', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('next-seat')).toHaveText('None');
+	await noSidewaysScroll(page);
+});
+
 // Trevor, 2026-10-18: a button to list only the chosen characters, together with the search.
 test('Show only selected lists just the chosen characters and still searches', async ({ page }) => {
 	await selectionFor(page, 5);
