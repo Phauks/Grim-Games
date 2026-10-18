@@ -44,8 +44,9 @@
 		onTap
 	}: Props = $props();
 
-	// As in the physical grimoire, a token is upside down when the player's alignment is not
-	// the one their character type starts with (a good Minion, an evil Townsfolk).
+	// The player's alignment is not the one their character type starts with (a good Minion,
+	// an evil Townsfolk): said in the label. The token stays upright and shows it by its icon's
+	// colour (Trevor, 2026-10-18: "don't flip token, just change the color").
 	const startsAs = $derived(character ? defaultAlignment(character.type) : undefined);
 	const shifted = $derived(
 		startsAs !== undefined && seat.alignment !== undefined && seat.alignment !== startsAs
@@ -134,7 +135,6 @@
 	<SeatDisc
 		{size}
 		dead={seat.dead}
-		flipped={shifted}
 		{name}
 		{number}
 		{namePlace}

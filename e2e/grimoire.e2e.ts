@@ -141,13 +141,20 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await ghost.tap();
 	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
 	await expect(ghostMark).toBeAttached();
-	// A good Imp: as in the physical grimoire, the token turns upside down.
+	// A good Imp: the token stays upright and takes the good colour (Trevor, 2026-10-18).
+	const impIcon = page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .token img');
+	const evilSrc = await impIcon.getAttribute('src');
 	await seatMenu(page, sheet, 'Change alignment');
 	await page
 		.getByRole('dialog', { name: 'Alignment' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(sheet).toContainText(/Imp\s*Good · Seat 1/);
+	await expect(impIcon).not.toHaveAttribute('src', evilSrc!);
+	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .face')).toHaveCSS(
+		'rotate',
+		'none'
+	);
 
 	await page.reload();
 	const seat = page.getByRole('button', { name: /^Seat 1:/ });
