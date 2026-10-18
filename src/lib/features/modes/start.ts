@@ -1,10 +1,16 @@
 import { toScript, type GameData, type LoadedScript, type Script } from '#lib/core/data/index.ts';
-import { modeScript, STANDARD, type StorytellerRestrictions } from '#lib/core/modes/index.ts';
+import {
+	campaignRule,
+	modeScript,
+	STANDARD,
+	type StorytellerRestrictions
+} from '#lib/core/modes/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import { findMode } from './custom-modes.svelte.ts';
 import { writeGameMode } from './game-mode-store.ts';
+import { saveCampaign } from './campaigns.ts';
 import { saveTownGroup } from './town-groups.ts';
 
 interface StartInput<G> {
@@ -19,7 +25,8 @@ interface StartInput<G> {
 /**
  * Starts a game in a mode: the game is created with the mode's script (its pool, less banned
  * and restricted characters, plus those it always puts on the script), and the mode is kept
- * beside the game on this device.
+ * beside the game on this device. A campaign mode (Flesh and Bone) also starts its campaign,
+ * with this as its first game.
  */
 export async function startInMode<G extends { game: { gameId: GameId } }>(
 	input: StartInput<G>
@@ -34,6 +41,14 @@ export async function startInMode<G extends { game: { gameId: GameId } }>(
 	);
 	const open = await input.create(script);
 	writeGameMode(open.game.gameId, { modeId: mode.id, restrictions: input.restrictions });
+	if (campaignRule(mode))
+		saveCampaign({
+			campaignId: crypto.randomUUID(),
+			modeId: mode.id,
+			restrictions: input.restrictions,
+			games: [{ gameId: open.game.gameId, eliminated: [] }],
+			createdAt: Date.now()
+		});
 	return open;
 }
 

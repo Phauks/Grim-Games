@@ -360,3 +360,55 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 	await expect(page.getByTestId('count-minion')).toHaveText('1');
 });
+
+test('Flesh and Bone runs a campaign: the next game adds a Demon once the current game has ended', async ({
+	page
+}) => {
+	// https://fleshandbone.app/rules.php
+	await page.goto('/new');
+	await chooseMode(page, 'Flesh and Bone');
+	const panel = modesPanel(page);
+	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
+	const { campaignId, gameId } = await page.evaluate(() => {
+		const [c] = JSON.parse(localStorage.getItem('grim-games:campaigns:v1') ?? '[]');
+		return { campaignId: c.campaignId as string, gameId: c.games[0].gameId as string };
+	});
+
+	await page.goto(`/campaigns/${campaignId}`);
+	await expect(page.getByRole('heading', { name: 'Flesh and Bone', level: 1 })).toBeVisible();
+	const games = page.getByTestId('campaign-games').locator('li');
+	await expect(games).toHaveCount(1);
+	await expect(page.getByTestId('campaign-eliminated')).toHaveText('None');
+	const next = page.getByRole('button', { name: 'Next game' });
+	await expect(next).toBeDisabled();
+	await expect(page.getByTestId('campaign-next-hint')).toHaveText(
+		'End the current game to start the next'
+	);
+	await noSidewaysScroll(page);
+
+	// Ending the game itself is covered by the grimoire tests; here it is recorded directly.
+	await page.evaluate((id) => {
+		localStorage.setItem(
+			'grim-games:ended-games:v1',
+			JSON.stringify({ [id]: { endedAt: Date.now(), winner: 'good' } })
+		);
+	}, gameId);
+	await page.reload();
+	await expect(next).toBeEnabled();
+	await next.tap();
+	const plan = page.getByRole('dialog', { name: 'Next game' });
+	await expect(plan.getByTestId('campaign-plan')).toContainText('Executed');
+	// Nobody was executed, so the script changes by one more Demon.
+	const changes = plan.getByTestId('campaign-changes').locator('li');
+	await expect(changes).toHaveCount(1);
+	await expect(changes.first()).toContainText('Added');
+	await plan.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+
+	await page.goto(`/campaigns/${campaignId}`);
+	await expect(games).toHaveCount(2);
+	await expect(games.nth(0)).toContainText('Ended');
+	await expect(next).toBeDisabled();
+});
