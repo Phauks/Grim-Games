@@ -3,13 +3,20 @@
 
 	const PREFIX = 'grim-games:collapsed:';
 
-	function readClosed(key: string): boolean {
-		return readStoredText(PREFIX + key) === '1';
+	// '1' closed, '0' opened (only stored for a section that starts closed), else the default.
+	function readOpen(key: string, defaultOpen: boolean): boolean {
+		const stored = readStoredText(PREFIX + key);
+		return stored === undefined ? defaultOpen : stored !== '1';
 	}
 
 	// Storage blocked: the section still opens and closes for this visit.
-	function writeClosed(key: string, closed: boolean): void {
-		writeStoredText(PREFIX + key, closed ? '1' : undefined);
+	function writeOpen(key: string, open: boolean, defaultOpen = true): void {
+		writeStoredText(PREFIX + key, open === defaultOpen ? undefined : open ? '0' : '1');
+	}
+
+	/** Opens a remembered section before it is shown, e.g. a link straight to its content. */
+	export function rememberOpen(key: string): void {
+		writeStoredText(PREFIX + key, '0');
 	}
 </script>
 
@@ -37,6 +44,8 @@
 		empty?: boolean;
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
 		aside?: Snippet;
+		/** Starts closed until opened (e.g. About's Advanced part); remembered like any other. */
+		defaultOpen?: boolean;
 		children: Snippet;
 	}
 
@@ -48,18 +57,19 @@
 		forceOpen = false,
 		empty = false,
 		aside,
+		defaultOpen = true,
 		children
 	}: Props = $props();
 
 	// Open by default; a section closed before stays closed. Read again if the key changes.
-	let open = $derived(!(storageKey && readClosed(storageKey)));
+	let open = $derived(storageKey ? readOpen(storageKey, defaultOpen) : defaultOpen);
 	let openWhileEmpty = $state(false);
 	// Something appeared: open it, even if it was closed before.
 	let wasEmpty = empty;
 	$effect.pre(() => {
 		if (wasEmpty && !empty) {
 			open = true;
-			if (storageKey) writeClosed(storageKey, false);
+			if (storageKey) writeOpen(storageKey, true, defaultOpen);
 		}
 		if (empty && !wasEmpty) openWhileEmpty = false;
 		wasEmpty = empty;
@@ -74,7 +84,7 @@
 			return;
 		}
 		open = !open;
-		if (storageKey) writeClosed(storageKey, !open);
+		if (storageKey) writeOpen(storageKey, open, defaultOpen);
 	}
 </script>
 

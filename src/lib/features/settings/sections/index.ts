@@ -4,8 +4,6 @@ import AssistanceSection from './AssistanceSection.svelte';
 import AppearanceSection from './AppearanceSection.svelte';
 import IconsSection from './IconsSection.svelte';
 import DataSection from './DataSection.svelte';
-import DiagnosticsSection from './DiagnosticsSection.svelte';
-import RefreshDiagnostics from '#lib/features/errors/RefreshDiagnostics.svelte';
 import BoardSection from './BoardSection.svelte';
 // Feature-owned sections, registered by their own modules.
 import '#lib/features/player/settings-section.ts';
@@ -55,12 +53,4 @@ registerSettingsSection({
 	icon: 'about',
 	component: AboutSection,
 	order: 95
-});
-registerSettingsSection({
-	id: 'diagnostics',
-	label: { key: 'shell.navDiagnostics' },
-	icon: 'diagnostics',
-	component: DiagnosticsSection,
-	headingAction: RefreshDiagnostics,
-	order: 96
 });

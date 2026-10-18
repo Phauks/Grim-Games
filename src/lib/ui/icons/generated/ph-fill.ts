@@ -125,7 +125,6 @@ import ph_plus_circle_fill from '~icons/ph/plus-circle-fill';
 import ph_printer_fill from '~icons/ph/printer-fill';
 import ph_prohibit_fill from '~icons/ph/prohibit-fill';
 import ph_prohibit_inset_fill from '~icons/ph/prohibit-inset-fill';
-import ph_pulse_fill from '~icons/ph/pulse-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
@@ -150,7 +149,6 @@ import ph_speaker_high_fill from '~icons/ph/speaker-high-fill';
 import ph_spinner_fill from '~icons/ph/spinner-fill';
 import ph_square_fill from '~icons/ph/square-fill';
 import ph_star_fill from '~icons/ph/star-fill';
-import ph_stethoscope_fill from '~icons/ph/stethoscope-fill';
 import ph_sun_fill from '~icons/ph/sun-fill';
 import ph_sun_horizon_fill from '~icons/ph/sun-horizon-fill';
 import ph_swap_fill from '~icons/ph/swap-fill';
@@ -308,7 +306,6 @@ const icons: IconMap = {
 	'ph:printer-fill': ph_printer_fill,
 	'ph:prohibit-fill': ph_prohibit_fill,
 	'ph:prohibit-inset-fill': ph_prohibit_inset_fill,
-	'ph:pulse-fill': ph_pulse_fill,
 	'ph:push-pin-fill': ph_push_pin_fill,
 	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
@@ -333,7 +330,6 @@ const icons: IconMap = {
 	'ph:spinner-fill': ph_spinner_fill,
 	'ph:square-fill': ph_square_fill,
 	'ph:star-fill': ph_star_fill,
-	'ph:stethoscope-fill': ph_stethoscope_fill,
 	'ph:sun-fill': ph_sun_fill,
 	'ph:sun-horizon-fill': ph_sun_horizon_fill,
 	'ph:swap-fill': ph_swap_fill,

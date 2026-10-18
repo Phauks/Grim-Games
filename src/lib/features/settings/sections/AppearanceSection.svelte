@@ -8,7 +8,6 @@
 	import { DEFAULT_PREFERENCES } from '#lib/ui/preferences.ts';
 	import { THEMES } from '#lib/ui/themes/registry.ts';
 	import FontPreview from './FontPreview.svelte';
-	import FontsSection from './FontsSection.svelte';
 	import RulesTermsSection from './RulesTermsSection.svelte';
 
 	const alignLabels = $derived<Record<TextAlign, string>>({
@@ -17,8 +16,8 @@
 	});
 </script>
 
-<!-- Theme and text (Trevor, 2026-10-17): theme, text size and alignment, the fonts, and the
-     rules-term underline; the preview stays at the top while these scroll. -->
+<!-- Theme and text (Trevor, 2026-10-17): theme, text size and alignment, and the rules-term
+     underline; the preview, with each font's drop-down, stays at the top while these scroll. -->
 <FontPreview />
 <SettingChoice
 	label={t('settings.theme')}
@@ -44,5 +43,4 @@
 	options={TEXT_ALIGNS.map((align) => ({ value: align, label: alignLabels[align] }))}
 	onChange={(textAlign) => preferences.update({ textAlign: textAlign as TextAlign })}
 />
-<FontsSection />
 <RulesTermsSection />

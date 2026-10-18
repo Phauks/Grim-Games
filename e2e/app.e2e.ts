@@ -154,24 +154,28 @@ test('the footer never makes the page wider than the screen, even at the largest
 	expect(widths.page).toBeLessThanOrEqual(widths.screen);
 });
 
-test('Diagnostics is a Settings section, also reached from its old page address', async ({
-	page
-}) => {
+// Trevor (2026-10-18): Diagnostics is About's Advanced part, closed until opened.
+test('Diagnostics is under About, closed, and its old page address opens it', async ({ page }) => {
 	await page.goto('/');
 	await page.evaluate(() => document.fonts.ready);
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Diagnostics' })
+		.getByRole('button', { name: 'About' })
 		.tap();
-	await expect(settings.getByRole('heading', { name: 'Diagnostics' })).toBeVisible();
+	const advanced = settings.getByRole('button', { name: 'Advanced' });
+	await expect(advanced).toHaveAttribute('aria-expanded', 'false');
+	await expect(settings.getByTestId('diagnostics')).toBeHidden();
+	await advanced.tap();
 	await expect(settings.getByTestId('diagnostics')).toBeVisible();
+	await advanced.tap();
 	await expect(page).toHaveURL(/\/$/);
 
-	// The old page address opens the same section; closing it goes home.
+	// The old page address opens About with Advanced open; closing it goes home.
 	await page.goto('/diagnostics');
 	await expect(settings.getByTestId('diagnostics')).toBeVisible();
+	await expect(advanced).toHaveAttribute('aria-expanded', 'true');
 	await settings.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(page).toHaveURL(/\/$/);
 });

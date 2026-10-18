@@ -91,7 +91,10 @@ test('a font chosen for one role from its dropdown applies to that role only and
 	expect(
 		await trigger.getByText('Lexend').evaluate((el) => getComputedStyle(el).fontFamily)
 	).toContain('Lexend');
-	await expect(dialog.locator('.line[data-role="ability"] dd')).toHaveCSS('font-family', /Lexend/);
+	await expect(dialog.locator('.line[data-role="ability"] dd.sample')).toHaveCSS(
+		'font-family',
+		/Lexend/
+	);
 
 	await page.reload();
 	await expect.poll(() => rootStyle(page, '--font-ability')).toContain('Lexend');
@@ -147,7 +150,7 @@ test('heading font, text size and icon weight apply live', async ({ page }) => {
 
 test('Storyteller settings is a list of switches, saved on the device', async ({ page }) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Storyteller settings');
+	const dialog = await openSettings(page, 'Storyteller');
 	await expect(dialog.getByRole('radiogroup')).toHaveCount(0);
 	const walkthrough = dialog.getByRole('checkbox', {
 		name: 'Walk me through the night',
@@ -158,7 +161,7 @@ test('Storyteller settings is a list of switches, saved on the device', async ({
 	await expect(walkthrough).not.toBeChecked();
 
 	await page.reload();
-	const again = await openSettings(page, 'Storyteller settings');
+	const again = await openSettings(page, 'Storyteller');
 	await expect(
 		again.getByRole('checkbox', { name: 'Walk me through the night', includeHidden: true })
 	).not.toBeChecked();
@@ -209,13 +212,13 @@ test('the board looks and background are in Board and tokens, saved with the boa
 // Trevor (2026-10-17): every setting is in Settings too, including the day timer's.
 test('the day timer sound and mode are in Storyteller settings', async ({ page }) => {
 	await page.goto('/');
-	const dialog = await openSettings(page, 'Storyteller settings');
+	const dialog = await openSettings(page, 'Storyteller');
 	await dialog.getByRole('combobox', { name: 'Timer sound' }).tap();
 	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
 	await dialog.getByRole('combobox', { name: 'Day timer' }).tap();
 	await page.getByRole('option', { name: 'Stopwatch' }).tap();
 	await page.reload();
-	const again = await openSettings(page, 'Storyteller settings');
+	const again = await openSettings(page, 'Storyteller');
 	await expect(again.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
 	await expect(again.getByRole('combobox', { name: 'Day timer' })).toContainText('Stopwatch');
 });
@@ -309,9 +312,9 @@ test('character icon size is its own slider and leaves interface icons alone', a
 
 test('the rules term switch is with theme and text, not Storyteller settings', async ({ page }) => {
 	await page.goto('/');
-	const help = await openSettings(page, 'Storyteller settings');
+	const help = await openSettings(page, 'Storyteller');
 	await expect(
-		help.getByRole('region', { name: 'Storyteller settings' }).getByText(/rules terms/i)
+		help.getByRole('region', { name: 'Storyteller', exact: true }).getByText(/rules terms/i)
 	).toHaveCount(0);
 	await page.reload();
 	const terms = await openSettings(page, 'Theme and text');
@@ -335,14 +338,13 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Theme and text',
 		'Icons',
 		'Board and tokens',
-		'Storyteller settings',
+		'Storyteller',
 		'Player view',
 		'Data',
-		'About',
-		'Diagnostics'
+		'About'
 	]);
 	await expect(nav.getByRole('heading')).toHaveCount(0);
-	await nav.getByRole('button', { name: 'Storyteller settings' }).tap();
+	await nav.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await expect(dialog).not.toContainText('Applies to');
 	await expect(dialog.getByRole('heading', { level: 3 })).toHaveText([
 		'Night',
@@ -470,6 +472,8 @@ test('the text preview stays in view while the settings below it scroll', async 
 
 // Trevor (2026-10-17): the Left aligned and Justified choices scrolled over the preview.
 test('settings scroll under the text preview, never over it', async ({ page }) => {
+	// A short window, so the settings below the preview have room to scroll under it.
+	await page.setViewportSize({ width: page.viewportSize()!.width, height: 480 });
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Theme and text');
 	const preview = dialog.getByTestId('font-preview');
@@ -483,10 +487,15 @@ test('settings scroll under the text preview, never over it', async ({ page }) =
 		(el, by) => el.scrollBy(0, by),
 		choiceBox.y + choiceBox.height / 2 - middle
 	);
+	// Where the choice and the preview overlap, the preview is the one on top.
 	const box = (await choice.boundingBox())!;
+	const shown = (await preview.boundingBox())!;
+	const overlapTop = Math.max(box.y, shown.y);
+	const overlapBottom = Math.min(box.y + box.height, shown.y + shown.height);
+	expect(overlapBottom).toBeGreaterThan(overlapTop);
 	const onTop = await page.evaluate(
 		([x, y]) => document.elementFromPoint(x, y)?.closest('[data-testid="font-preview"]') !== null,
-		[box.x + box.width / 2, box.y + box.height / 2]
+		[box.x + box.width / 2, (overlapTop + overlapBottom) / 2]
 	);
 	expect(onTop).toBe(true);
 });

@@ -272,7 +272,7 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 
 	// A dropdown, not a switch (Trevor, 2026-10-16).
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
-	await page.getByRole('button', { name: 'Storyteller settings' }).tap();
+	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByRole('combobox', { name: 'Bag tile labels' }).tap();
 	await page.getByRole('option', { name: 'Letters' }).tap();
 	await page.keyboard.press('Escape');
@@ -324,7 +324,7 @@ test('with Require a name, the token stays hidden until a name is typed', async 
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
-	await page.getByRole('button', { name: 'Storyteller settings' }).tap();
+	await page.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await page.getByText('Require a name before drawing', { exact: true }).tap();
 	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Build bag' }).tap();

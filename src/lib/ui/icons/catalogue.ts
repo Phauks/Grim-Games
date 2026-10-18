@@ -62,7 +62,6 @@ export const ICON_SLOTS = {
 	menu: { label: 'Menu', choices: ['ph:list', 'ph:dots-three-vertical'] },
 	info: { label: 'Info', choices: ['ph:info', 'ph:question'] },
 	about: { label: 'About', choices: ['ph:identification-card', 'ph:info'] },
-	diagnostics: { label: 'Diagnostics', choices: ['ph:stethoscope', 'ph:pulse'] },
 	back: { label: 'Back', choices: ['ph:caret-left', 'ph:arrow-left'] },
 	forward: { label: 'Forward', choices: ['ph:caret-right', 'ph:arrow-right'] },
 	check: { label: 'Selected', choices: ['ph:check'] },
@@ -88,7 +87,7 @@ export const ICON_SLOTS = {
 	filter: { label: 'Filter', choices: ['ph:funnel'] },
 	/** Characters a game keeps out (game modes' Restricted characters). */
 	restricted: { label: 'Restricted characters', choices: ['ph:prohibit', 'ph:prohibit-inset'] },
-	assistance: { label: 'Storyteller settings', choices: ['ph:lifebuoy', 'ph:hand-heart'] },
+	assistance: { label: 'Storyteller', choices: ['ph:lifebuoy', 'ph:hand-heart'] },
 	remove: { label: 'Remove', choices: ['ph:trash', 'ph:trash-simple'] },
 	save: { label: 'Save', choices: ['ph:bookmark-simple', 'ph:floppy-disk'] },
 	swap: { label: 'Swap seats', choices: ['ph:arrows-left-right', 'ph:swap'] },

@@ -125,7 +125,6 @@ import ph_plus_circle from '~icons/ph/plus-circle';
 import ph_printer from '~icons/ph/printer';
 import ph_prohibit from '~icons/ph/prohibit';
 import ph_prohibit_inset from '~icons/ph/prohibit-inset';
-import ph_pulse from '~icons/ph/pulse';
 import ph_push_pin from '~icons/ph/push-pin';
 import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
@@ -150,7 +149,6 @@ import ph_speaker_high from '~icons/ph/speaker-high';
 import ph_spinner from '~icons/ph/spinner';
 import ph_square from '~icons/ph/square';
 import ph_star from '~icons/ph/star';
-import ph_stethoscope from '~icons/ph/stethoscope';
 import ph_sun from '~icons/ph/sun';
 import ph_sun_horizon from '~icons/ph/sun-horizon';
 import ph_swap from '~icons/ph/swap';
@@ -308,7 +306,6 @@ const icons: IconMap = {
 	'ph:printer': ph_printer,
 	'ph:prohibit': ph_prohibit,
 	'ph:prohibit-inset': ph_prohibit_inset,
-	'ph:pulse': ph_pulse,
 	'ph:push-pin': ph_push_pin,
 	'ph:qr-code': ph_qr_code,
 	'ph:question': ph_question,
@@ -333,7 +330,6 @@ const icons: IconMap = {
 	'ph:spinner': ph_spinner,
 	'ph:square': ph_square,
 	'ph:star': ph_star,
-	'ph:stethoscope': ph_stethoscope,
 	'ph:sun': ph_sun,
 	'ph:sun-horizon': ph_sun_horizon,
 	'ph:swap': ph_swap,
