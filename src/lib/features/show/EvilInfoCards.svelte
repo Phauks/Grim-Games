@@ -132,7 +132,6 @@
 				<Button
 					variant="quiet"
 					icon="forward"
-					disabled={row.blocked}
 					aria-label={t('show.evil.showNamed', {
 						card: row.set ? `${row.title} · ${row.set}` : row.title
 					})}

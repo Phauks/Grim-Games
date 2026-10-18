@@ -252,7 +252,7 @@
 							<Button variant={stale ? 'accent' : 'quiet'} onclick={() => edit(index)}
 								>{t(stale ? 'bluffs.replace' : 'bluffs.choose')}</Button
 							>
-							<Button icon="forward" disabled={ids.length === 0 || stale} onclick={() => show(ids)}
+							<Button icon="forward" disabled={ids.length === 0} onclick={() => show(ids)}
 								>{t('bluffs.show')}</Button
 							>
 							<span>

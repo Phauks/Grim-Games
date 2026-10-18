@@ -2665,4 +2665,22 @@ test('Minion info and Demon info list every card they can show, with who it poin
 		.tap();
 	await expect(shown).toContainText('Fortune Teller');
 	await expect(shown).toContainText('Investigator');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	await page.keyboard.press('Escape');
+
+	// A bluff that comes into play is flagged, but can still be shown: the Storyteller decides.
+	const sheet = await openSeat(page, 8);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 8' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await closeSheet(page);
+	await page.getByRole('button', { name: 'Night order' }).tap();
+	await page.getByRole('button', { name: 'Guide: Demon info' }).tap();
+	await expect(demonInfo.getByTestId('evil-info-card').nth(1)).toContainText('In play: replace');
+	await demonInfo
+		.getByRole('button', { name: 'Show These characters are not in play · Demon' })
+		.tap();
+	await expect(shown).toContainText('Fortune Teller');
 });
