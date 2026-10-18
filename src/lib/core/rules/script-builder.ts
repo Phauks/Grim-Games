@@ -53,9 +53,14 @@ export function scriptOrder(
 export interface BuiltScriptDetails {
 	name: string;
 	author: string;
+	/** The script's version, such as "1.2"; left out of `_meta` when empty. */
+	version?: string;
 }
 
-/** The script in TPI's format: `_meta` (name and author, when given), then the characters. */
+/**
+ * The script in TPI's format: `_meta` (name, and author and version when given), then the
+ * characters.
+ */
 export function builtScriptJson(
 	ids: Iterable<CharacterId>,
 	details: BuiltScriptDetails,
@@ -65,6 +70,8 @@ export function builtScriptJson(
 	const meta: { id: '_meta' } & Partial<ScriptMeta> = { id: '_meta', name: details.name.trim() };
 	const author = details.author.trim();
 	if (author) meta.author = author;
+	const version = details.version?.trim();
+	if (version) meta.version = version;
 	return [
 		meta,
 		...scriptOrder(ids, data, homebrew).map((id) =>

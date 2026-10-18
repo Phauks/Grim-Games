@@ -131,7 +131,9 @@
 		border-radius: var(--radius-sm);
 		background: var(--surface-raised);
 		color: var(--on-surface);
-		font: var(--font-control);
+		/* What is typed is text, not a label: never the label font's capitals (Trevor,
+		   2026-10-18). */
+		font-family: var(--font-body);
 		/* iOS zooms into fields under 16px. */
 		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 	}
