@@ -35,9 +35,13 @@
 		onChange: (value: TokenAppearance) => void;
 		/** More settings for names and reminders in text, shown in that group's box. */
 		inText?: Snippet;
+		/** The Character names font, first in the character token's box. */
+		characterFont?: Snippet;
+		/** The Reminder tokens font, first in the reminder token's box. */
+		reminderFont?: Snippet;
 	}
 
-	let { value, theme, onChange, inText }: Props = $props();
+	let { value, theme, onChange, inText, characterFont, reminderFont }: Props = $props();
 
 	onMount(() => void loadOfficialData());
 	const sample = $derived(officialData.current?.byId.get('fortuneteller'));
@@ -95,6 +99,7 @@
 				>{/if}
 		</div>
 	{/snippet}
+	{@render characterFont?.()}
 	<SettingSlider
 		label={t('characters.tokenSize')}
 		description={t('characters.tokenSizeHelp')}
@@ -141,6 +146,7 @@
 				/>{/if}
 		</div>
 	{/snippet}
+	{@render reminderFont?.()}
 	<SettingSlider
 		label={t('characters.reminderSize')}
 		description={t('characters.reminderSizeHelp')}

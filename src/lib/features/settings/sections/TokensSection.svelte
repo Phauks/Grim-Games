@@ -4,6 +4,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { DEFAULT_PREFERENCES, ICON_SCALE } from '#lib/ui/preferences.ts';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
+	import FontPreview from './FontPreview.svelte';
 </script>
 
 <!-- Tokens (Trevor, 2026-10-18: split from Board): one box each for the character token, the
@@ -13,6 +14,12 @@
 	theme={preferences.theme}
 	onChange={(tokenAppearance) => preferences.update({ tokenAppearance })}
 >
+	{#snippet characterFont()}
+		<FontPreview roles={['character']} testid="character-font" />
+	{/snippet}
+	{#snippet reminderFont()}
+		<FontPreview roles={['reminder']} testid="reminder-font" />
+	{/snippet}
 	{#snippet inText()}
 		<SettingSlider
 			label={t('settings.characterIconSize')}

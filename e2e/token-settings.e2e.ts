@@ -389,3 +389,35 @@ test('the preview player name follows the Player name size', async ({ page }) =>
 	await go('Tokens');
 	await expect.poll(async () => (await name.boundingBox())!.width).toBeGreaterThan(before * 1.3);
 });
+
+test('the character name and reminder fonts are set beside their token previews', async ({
+	page
+}) => {
+	// Trevor (2026-10-18): the token and in-text fonts always match, so they live in Tokens.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	await expect(
+		dialog.getByTestId('character-font').getByRole('combobox', { name: 'Character names' })
+	).toBeVisible();
+	await expect(
+		dialog.getByTestId('reminder-font').getByRole('combobox', { name: 'Reminder tokens' })
+	).toBeVisible();
+	// The board reminder's words use the Reminder tokens font, as the chips in text do.
+	const label = dialog
+		.getByTestId('reminder-preview')
+		.getByTestId('board-reminder')
+		.locator('.label');
+	const chip = dialog.getByTestId('in-text-preview').getByTestId('reminder-token');
+	const family = (el: typeof label) => el.evaluate((e) => getComputedStyle(e).fontFamily);
+	expect(await family(label)).toBe(await family(chip));
+
+	const back = dialog.getByRole('button', { name: 'All settings' });
+	if (await back.isVisible()) await back.tap();
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Text', exact: true })
+		.tap();
+	await expect(dialog.getByRole('combobox', { name: 'Headings' })).toBeVisible();
+	await expect(dialog.getByRole('combobox', { name: 'Character names' })).toHaveCount(0);
+	await expect(dialog.getByRole('combobox', { name: 'Reminder tokens' })).toHaveCount(0);
+});

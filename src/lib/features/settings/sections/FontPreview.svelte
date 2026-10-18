@@ -18,6 +18,16 @@
 	import { resolveFonts } from '#lib/ui/preferences.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
 
+	interface Props {
+		/**
+		 * The roles to list. Character names and Reminder tokens sit with their token
+		 * previews in Tokens (Trevor, 2026-10-18); Text lists the rest.
+		 */
+		roles?: readonly FontRole[];
+		testid?: string;
+	}
+
+	let { roles = FONT_ROLES, testid = 'font-preview' }: Props = $props();
 	const theme = $derived(preferences.theme);
 	const fonts = $derived(resolveFonts(preferences.current, theme));
 	const id = $props.id();
@@ -42,9 +52,9 @@
 <!-- One line per role: its name, a sample in the applied font and the font's drop-down, side
      by side to save space; with each sample beside its own choice nothing needs pinning to
      the top (Trevor, 2026-10-18). The sample cuts off with "…", so a font change moves nothing. -->
-<div class="fonts" data-testid="font-preview">
+<div class="fonts" data-testid={testid}>
 	<dl>
-		{#each FONT_ROLES as role (role)}
+		{#each roles as role (role)}
 			<div class="line" data-role={role}>
 				<dt id="{id}-{role}">{FONT_ROLE_INFO[role].label}</dt>
 				<dd

@@ -10,6 +10,7 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import FontPreview from './FontPreview.svelte';
+	import { TEXT_FONT_ROLES } from './font-roles.ts';
 	import RulesTermsSection from './RulesTermsSection.svelte';
 
 	const alignLabels = $derived<Record<TextAlign, string>>({
@@ -19,8 +20,9 @@
 </script>
 
 <!-- Text (Trevor, 2026-10-18: split from Theme): the fonts on their preview lines, size,
-     alignment and the rules-term underline; the preview stays at the top while these scroll. -->
-<FontPreview />
+     alignment and the rules-term underline. Character names and Reminder tokens fonts are in
+     Tokens, beside their previews (Trevor, 2026-10-18). -->
+<FontPreview roles={TEXT_FONT_ROLES} />
 <SettingSlider
 	label={t('settings.textSize')}
 	description={t('settings.textSizeHelp')}
