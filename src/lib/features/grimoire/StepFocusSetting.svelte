@@ -9,11 +9,11 @@
 </script>
 
 <Select
-	label="Show the step's reminders"
+	label="Show this character's reminders"
 	value={stepFocus.current.mode}
 	options={[
 		{ value: 'highlight', label: 'Highlight' },
-		{ value: 'only', label: 'Only these' },
+		{ value: 'only', label: 'Only this character' },
 		{ value: 'front', label: 'Bring to front' }
 	]}
 	onChange={(mode) => stepFocus.update({ mode })}
