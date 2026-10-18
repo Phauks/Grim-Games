@@ -33,9 +33,22 @@
 	type ColumnId = 'name' | 'started';
 	const all = campaigns();
 	let sort = $state<DataSort<ColumnId> | undefined>();
-	const columns = $derived<DataColumn<ColumnId>[]>([
-		{ id: 'name', label: t('library.column.name'), sortable: true, flush: true },
-		{ id: 'started', label: t('library.campaignStarted'), sortable: true, width: '30%' }
+	// Every column filters (Trevor, 2026-10-18), with the shared table's built-in filters.
+	const columns = $derived<DataColumn<ColumnId, Campaign>[]>([
+		{
+			id: 'name',
+			label: t('library.column.name'),
+			sortable: true,
+			flush: true,
+			value: (c) => title(c)
+		},
+		{
+			id: 'started',
+			label: t('library.campaignStarted'),
+			sortable: true,
+			width: '30%',
+			value: (c) => new Date(c.createdAt).toLocaleDateString()
+		}
 	]);
 	const list = $derived.by(() => {
 		const needle = term.trim().toLowerCase();
