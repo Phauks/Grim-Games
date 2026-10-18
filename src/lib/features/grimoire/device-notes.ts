@@ -7,6 +7,7 @@
  * All live in localStorage with a version in the key, and anything unreadable is ignored.
  */
 import type { GameId } from '#lib/core/model/index.ts';
+import { parseEndReason, type EndReason } from '#lib/core/rules/end-reason.ts';
 import {
 	DEFAULT_SEAT_LAYOUT,
 	isDefaultLayout,
@@ -210,10 +211,14 @@ export const nightViews = {
 
 const ENDED_KEY = 'grim-games:ended-games:v1';
 
-/** A game the Storyteller ended (Trevor, 2026-10-16), and which team won if recorded. */
+/**
+ * A game the Storyteller ended (Trevor, 2026-10-16), which team won if recorded, and how
+ * (Trevor, 2026-10-18; absent for games ended before End game asked).
+ */
 export interface EndedGame {
 	endedAt: number;
 	winner?: 'good' | 'evil';
+	reason?: EndReason;
 }
 
 function readEnded(): Record<string, EndedGame> {
@@ -226,6 +231,8 @@ function readEnded(): Record<string, EndedGame> {
 			if (!e || typeof e.endedAt !== 'number') continue;
 			out[id] = { endedAt: e.endedAt };
 			if (e.winner === 'good' || e.winner === 'evil') out[id].winner = e.winner;
+			const reason = out[id].winner ? parseEndReason(e.reason) : undefined;
+			if (reason) out[id].reason = reason;
 		}
 		return out;
 	} catch {
@@ -247,10 +254,14 @@ function writeEnded(all: Record<string, EndedGame>): void {
  */
 export const endedGames = {
 	read: readEnded,
-	end(gameId: GameId, winner?: 'good' | 'evil'): void {
+	end(gameId: GameId, winner?: 'good' | 'evil', reason?: EndReason): void {
 		writeEnded({
 			...readEnded(),
-			[gameId]: { endedAt: Date.now(), ...(winner ? { winner } : {}) }
+			[gameId]: {
+				endedAt: Date.now(),
+				...(winner ? { winner } : {}),
+				...(winner && reason ? { reason } : {})
+			}
 		});
 	},
 	reopen(gameId: GameId): void {

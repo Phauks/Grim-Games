@@ -9,7 +9,7 @@
  */
 import type { Alignment, CharacterId, CharacterName, CharacterType } from '#lib/core/data/index.ts';
 import type { DeathCause, GameId, SeatId } from '#lib/core/model/index.ts';
-import type { GameEndRule } from '#lib/core/rules/game-end.ts';
+import type { EndReason } from '#lib/core/rules/end-reason.ts';
 
 /** Bump when the record's shape changes, as with saved games, once records are stored. */
 export const GAME_RECORD_VERSION = 1;
@@ -25,14 +25,6 @@ export interface RecordCharacter {
 	characterId: CharacterId;
 	alignment?: Alignment;
 }
-
-/**
- * How the game was won (Trevor, 2026-10-18): the game end rule met at the end whose winner
- * is the recorded winner (`gameEnds`), or `storyteller` when the Storyteller named a winner
- * no checked rule gave. The usual ends are `demon-dead` and `two-alive`; every other one is
- * an alternate win condition.
- */
-export type RecordEndRule = GameEndRule | 'storyteller';
 
 export interface RecordSeat {
 	seatId: SeatId;
@@ -65,8 +57,11 @@ export interface GameRecord {
 	script: { name?: string; author?: string };
 	/** Absent when the Storyteller did not record it. */
 	winner?: Alignment;
-	/** Absent when no winner was recorded. */
-	endRule?: RecordEndRule;
+	/**
+	 * How it was won: what End game saved, else what the grimoire shows (`detectedEndReason`).
+	 * Absent when no winner was recorded.
+	 */
+	endReason?: EndReason;
 	/**
 	 * Whether exactly 3 players were alive at some point after the first Dawn, not counting
 	 * Travellers (the final 3 before the "just 2 alive" end).
