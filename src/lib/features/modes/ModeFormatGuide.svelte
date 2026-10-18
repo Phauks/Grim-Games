@@ -30,27 +30,32 @@
 
 {#snippet fields(list: GuideField[])}
 	{#if list.length > 0}
-		<dl class="fields">
-			{#each list as f (f.name)}
-				<dt>
-					<code>{f.name}</code>
-					<span class="muted">
-						{f.type} · {f.required ? t('modes.guide.required') : t('modes.guide.optional')}
-					</span>
-				</dt>
-				<dd>
-					{f.about}
-					{#if f.values}
-						<span class="values">
-							{t('modes.guide.values')}
-							{#each f.values as v, i (v)}<code>{v}</code>{i < f.values.length - 1
-									? ', '
-									: ''}{/each}
-						</span>
-					{/if}
-				</dd>
-			{/each}
-		</dl>
+		<!-- A table, field by field (Trevor, 2026-10-18: rows were hard to parse). -->
+		<table class="fields">
+			<tbody>
+				{#each list as f (f.name)}
+					<tr>
+						<th scope="row">
+							<code>{f.name}</code>
+							<span class="muted">
+								{f.type} · {f.required ? t('modes.guide.required') : t('modes.guide.optional')}
+							</span>
+						</th>
+						<td>
+							{f.about}
+							{#if f.values}
+								<span class="values">
+									{t('modes.guide.values')}
+									{#each f.values as v, i (v)}<code>{v}</code>{i < f.values.length - 1
+											? ', '
+											: ''}{/each}
+								</span>
+							{/if}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	{/if}
 {/snippet}
 
@@ -102,8 +107,7 @@
 	p,
 	h3,
 	h4,
-	h5,
-	dl {
+	h5 {
 		margin: 0;
 	}
 	h3 {
@@ -124,22 +128,34 @@
 		border-radius: var(--radius-sm);
 	}
 	.fields {
-		display: grid;
-		gap: var(--space-1) var(--space-3);
+		width: 100%;
+		border-collapse: collapse;
+		table-layout: fixed;
 	}
-	dt {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
+	.fields th,
+	.fields td {
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid var(--border);
+		text-align: start;
+		vertical-align: top;
+		overflow-wrap: anywhere;
 	}
-	dd {
-		margin: 0 0 var(--space-2);
+	.fields th {
+		width: 35%;
+		font-weight: normal;
+	}
+	.fields th .muted {
+		display: block;
+		font-size: 0.9em;
 	}
 	.values {
 		display: block;
 	}
+	/* The example files wrap so they read whole on a phone, nothing scrolled off sideways. */
 	pre {
-		overflow-x: auto;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		tab-size: 2;
 		margin: 0;
 		padding: var(--space-2);
 		border-radius: var(--radius-sm);
