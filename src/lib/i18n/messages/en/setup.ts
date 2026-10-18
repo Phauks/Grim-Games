@@ -73,6 +73,7 @@ export const setup = {
 	'setup.check.choose': 'Choose',
 	'setup.check.notOnScript':
 		'{name} needs the {required} in play, but the {required} is not on the script.',
+	'setup.selectedOnly': 'Show only selected',
 	'setup.offScript': 'Not on script',
 	'setup.characterInfo': 'About the {name}',
 	'setup.check.customReminders':

@@ -24,6 +24,8 @@
 		disabled?: boolean;
 		/** Runs after the text is cleared. */
 		onclear?: () => void;
+		/** One more icon button inside the field, just before the X (e.g. open the link). */
+		end?: Snippet;
 		class?: string;
 	}
 
@@ -33,6 +35,7 @@
 		label,
 		disabled = false,
 		onclear,
+		end,
 		class: className
 	}: Props = $props();
 	let root = $state<HTMLElement>();
@@ -58,8 +61,9 @@
 
 <!-- Esc is handled here for the input inside. -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<span class={['clearable', className]} bind:this={root} {onkeydown}>
+<span class={['clearable', end && 'two-ends', className]} bind:this={root} {onkeydown}>
 	{@render children()}
+	{#if end}<span class="end">{@render end()}</span>{/if}
 	<button
 		type="button"
 		class="clear"
@@ -94,6 +98,17 @@
 		 * padding shorthand would otherwise win.
 		 */
 		padding-inline-end: var(--tap-target) !important;
+	}
+	.two-ends > :global(input) {
+		padding-inline-end: calc(2 * var(--tap-target)) !important;
+	}
+	/* The extra button sits just before the X, in the same cell. */
+	.end {
+		grid-area: field;
+		justify-self: end;
+		align-self: stretch;
+		display: grid;
+		margin-inline-end: var(--tap-target);
 	}
 	/* Our own X keeps its place; hide the browser's. */
 	.clearable > :global(input::-webkit-search-cancel-button) {

@@ -89,7 +89,11 @@
 			.map((id) => lookup(id))
 			.filter((c): c is Character => c !== undefined && !isRuleCharacter(c.type))
 	);
-	const listed = $derived([...choices, ...offScript]);
+	/** Only the chosen characters, with the search still applying (Trevor, 2026-10-18). */
+	let selectedOnly = $state(false);
+	const listed = $derived(
+		[...choices, ...offScript].filter((c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0)
+	);
 	const offScriptIds = $derived(new Set(offScript.map((c) => c.id)));
 	const TYPES: CharacterType[] = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'];
 
@@ -251,6 +255,13 @@
 							onclick={random}
 						/>
 						<IconButton
+							icon="selectedOnly"
+							label={t('setup.selectedOnly')}
+							aria-pressed={selectedOnly}
+							disabled={!ready}
+							onclick={() => (selectedOnly = !selectedOnly)}
+						/>
+						<IconButton
 							icon="clearSelection"
 							label={t('setup.clearSelection')}
 							disabled={!ready || ids.length === 0}
@@ -389,7 +400,9 @@
 		/* Edge to edge, like the app header above it, so nothing shows beside it (Trevor). */
 		margin-inline: calc(-1 * var(--page-gutter));
 		padding: var(--space-2) var(--page-gutter);
+		/* The page's own background, pinned to the window as the body's is, so it lines up. */
 		background: var(--page-background, var(--surface));
+		background-attachment: fixed;
 		box-shadow: 0 1px 0 var(--border);
 	}
 	/* Search, then Random and Clear as icon buttons right beside it. */
@@ -418,6 +431,7 @@
 			position: static;
 			margin-inline: 0;
 			padding-inline: 0;
+			background: none;
 			box-shadow: none;
 		}
 	}

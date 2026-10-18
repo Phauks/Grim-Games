@@ -208,6 +208,26 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
+// Trevor, 2026-10-18: a button to list only the chosen characters, together with the search.
+test('Show only selected lists just the chosen characters and still searches', async ({ page }) => {
+	await selectionFor(page, 5);
+	await select(page, 'Chef', 'Empath', 'Imp');
+	const only = page.getByRole('button', { name: 'Show only selected' });
+	await only.tap();
+	await expect(only).toHaveAttribute('aria-pressed', 'true');
+	await expect(choice(page, 'Washerwoman')).toHaveCount(0);
+	await expect(choice(page, 'Chef')).toBeVisible();
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('pairs of EVIL');
+	await expect(choice(page, 'Chef')).toBeVisible();
+	await expect(choice(page, 'Empath')).toHaveCount(0);
+	await search.fill('');
+	await only.tap();
+	await expect(only).toHaveAttribute('aria-pressed', 'false');
+	await expect(choice(page, 'Washerwoman')).toBeVisible();
+	await noSidewaysScroll(page);
+});
+
 test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, centred on the token', async ({
 	page
 }) => {

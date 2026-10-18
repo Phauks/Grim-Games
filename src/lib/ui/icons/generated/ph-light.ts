@@ -33,6 +33,7 @@ import ph_caret_right_light from '~icons/ph/caret-right-light';
 import ph_caret_up_light from '~icons/ph/caret-up-light';
 import ph_cat_light from '~icons/ph/cat-light';
 import ph_check_light from '~icons/ph/check-light';
+import ph_check_square_light from '~icons/ph/check-square-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
 import ph_circle_notch_light from '~icons/ph/circle-notch-light';
 import ph_clipboard_light from '~icons/ph/clipboard-light';
@@ -97,6 +98,7 @@ import ph_link_light from '~icons/ph/link-light';
 import ph_link_simple_light from '~icons/ph/link-simple-light';
 import ph_list_light from '~icons/ph/list-light';
 import ph_list_bullets_light from '~icons/ph/list-bullets-light';
+import ph_list_checks_light from '~icons/ph/list-checks-light';
 import ph_list_magnifying_glass_light from '~icons/ph/list-magnifying-glass-light';
 import ph_lock_light from '~icons/ph/lock-light';
 import ph_lock_simple_light from '~icons/ph/lock-simple-light';
@@ -214,6 +216,7 @@ const icons: IconMap = {
 	'ph:caret-up-light': ph_caret_up_light,
 	'ph:cat-light': ph_cat_light,
 	'ph:check-light': ph_check_light,
+	'ph:check-square-light': ph_check_square_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
 	'ph:circle-notch-light': ph_circle_notch_light,
 	'ph:clipboard-light': ph_clipboard_light,
@@ -278,6 +281,7 @@ const icons: IconMap = {
 	'ph:link-simple-light': ph_link_simple_light,
 	'ph:list-light': ph_list_light,
 	'ph:list-bullets-light': ph_list_bullets_light,
+	'ph:list-checks-light': ph_list_checks_light,
 	'ph:list-magnifying-glass-light': ph_list_magnifying_glass_light,
 	'ph:lock-light': ph_lock_light,
 	'ph:lock-simple-light': ph_lock_simple_light,
