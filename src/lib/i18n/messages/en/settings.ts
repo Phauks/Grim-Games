@@ -121,6 +121,8 @@ export const settings = {
 	'settings.homeScreenHelp': `Safari deletes everything ${APP_NAME} saves on this device, games included, after 7 days of using Safari without opening ${APP_NAME}. Opened from the Home Screen, it is kept.`,
 	'settings.homeScreenSteps': `Tap Share, then Add to Home Screen, and open ${APP_NAME} from there.`,
 	'settings.storageUsed': 'Storage used on this device',
+	'settings.sync.script': 'Sync scripts with your account',
+	'settings.syncSignedOut': 'Sign in to sync.',
 	'settings.storageUsedHelp': `What ${APP_NAME} keeps on this device and how much room each part takes. Choose rows to clear them.`,
 	'settings.storageTable': 'Storage on this device',
 	'settings.storageSelect': 'Select',

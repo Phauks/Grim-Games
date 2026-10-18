@@ -6,6 +6,7 @@
  * in idb-store.ts, script-library.ts and notebook-store.svelte.ts); a reload releases any
  * other, so a deletion that was waiting on it finishes before the app opens it again.
  */
+import { SYNC_DB } from '#lib/features/account/sync/sync-db.ts';
 import { DB_NAME as GAMES_DB } from '#lib/features/game/idb-store.ts';
 import { RUNTIME_CACHE } from '#lib/features/offline/cache-rules.ts';
 import { SCRIPTS_DB_NAME } from '#lib/features/scripts/script-library.ts';
@@ -96,7 +97,7 @@ export async function clearCache(): Promise<void> {
 /** Everything this app keeps here except its offline copy: databases, keys and stored files. */
 export async function clearEverything(): Promise<void> {
 	const listed = (await indexedDB.databases?.().catch(() => [])) ?? [];
-	const names = new Set([GAMES_DB, NOTES_DB, SCRIPTS_DB_NAME]);
+	const names = new Set([GAMES_DB, NOTES_DB, SCRIPTS_DB_NAME, SYNC_DB]);
 	for (const db of listed) if (db.name && isAppKey(db.name)) names.add(db.name);
 	await clearDatabases([...names]);
 	await clearCache();

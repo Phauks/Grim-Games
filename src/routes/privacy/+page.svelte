@@ -38,6 +38,10 @@
 			</li>
 			<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 			<li>
+				While you are signed in, a copy of your account's scripts and any changes still waiting to
+				reach it, so they work offline (IndexedDB).
+			</li>
+			<li>
 				Your settings and screen choices, such as theme, fonts, text size, language, column widths
 				and how you last viewed the <a href={resolve('/reference')}>Reference</a> page; your Library tags
 				and folders; a script you are building; the characters you make and one you are building; your
@@ -139,7 +143,9 @@
 			</li>
 			<li>
 				Your scripts: every script you add while signed in, and, the first time you sign in on a
-				device, the scripts already in its Recent list. You can remove them on the Account page.
+				device, the scripts already in its Recent list. Every device you sign in on keeps them in
+				step; you can remove them on the Account page, or stop a device syncing them in Settings,
+				Data.
 			</li>
 		</ul>
 		<p>

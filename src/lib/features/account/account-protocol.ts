@@ -210,6 +210,69 @@ export interface PutDocRequest {
 	deleted?: boolean;
 }
 
+/** One change a device sends in a sync: a new body, or a delete (as in `PutDocRequest`). */
+export interface SyncChange {
+	kind: DocKind;
+	id: string;
+	baseRev: number;
+	body?: unknown;
+	deleted?: boolean;
+}
+
+/**
+ * `POST /api/account/sync`: the device's queued changes, and the change counter it last saw
+ * (0 the first time). One request pushes and pulls, so it costs one Durable Object call.
+ */
+export interface SyncRequest {
+	since: number;
+	changes: SyncChange[];
+	/** The kinds this device syncs; others aren't sent back. */
+	kinds: DocKind[];
+}
+
+/** What happened to one pushed change. `doc` is the saved copy, or the server's on a conflict. */
+export type SyncResult =
+	| { kind: DocKind; id: string; status: 'saved' | 'conflict'; doc: ProfileDoc }
+	| { kind: DocKind; id: string; status: 'too-large' | 'too-many' };
+
+export interface SyncResponse {
+	results: SyncResult[];
+	/** Documents of `kinds` changed after `since`, oldest change first. */
+	changes: ProfileDoc[];
+	/** The counter to send as `since` next time. */
+	cursor: number;
+	/** More changes are waiting: ask again with `cursor`. */
+	more: boolean;
+}
+
+/** Changes in one sync request; a device with more sends them in several. */
+export const MAX_SYNC_CHANGES = 50;
+/** Rough cap on the JSON in one sync request or response, below Workers' message limits. */
+export const MAX_SYNC_BYTES = 4_000_000;
+
+/** A sync request as sent, or undefined when it isn't one. */
+export function parseSyncRequest(input: unknown): SyncRequest | undefined {
+	if (typeof input !== 'object' || input === null) return undefined;
+	const { since, changes, kinds } = input as Record<string, unknown>;
+	if (typeof since !== 'number' || !Number.isInteger(since) || since < 0) return undefined;
+	if (!Array.isArray(changes) || changes.length > MAX_SYNC_CHANGES) return undefined;
+	if (!Array.isArray(kinds) || !kinds.every((k) => typeof k === 'string' && isDocKind(k))) {
+		return undefined;
+	}
+	const parsed: SyncChange[] = [];
+	for (const change of changes as unknown[]) {
+		if (typeof change !== 'object' || change === null) return undefined;
+		const { kind, id, baseRev, body, deleted } = change as Record<string, unknown>;
+		if (typeof kind !== 'string' || !isDocKind(kind)) return undefined;
+		if (typeof id !== 'string' || !isDocId(id)) return undefined;
+		if (typeof baseRev !== 'number' || !Number.isInteger(baseRev) || baseRev < 0) return undefined;
+		if (deleted === true) parsed.push({ kind, id, baseRev, deleted: true });
+		else if (body !== undefined) parsed.push({ kind, id, baseRev, body });
+		else return undefined;
+	}
+	return { since, changes: parsed, kinds: [...new Set(kinds as DocKind[])] };
+}
+
 export interface ApiError {
 	error: string;
 }
