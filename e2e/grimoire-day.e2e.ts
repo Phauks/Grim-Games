@@ -58,6 +58,19 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByTestId('alive-evil')).toHaveText('0');
 	// Ghost votes still to use sit beside the living (Trevor, 2026-10-17).
 	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
+	// Nothing at the sides is cut off by a box that clips its overflow (Trevor, 2026-10-18).
+	for (const id of ['alive-count', 'votes-needed']) {
+		const clipped = await page.getByTestId(id).evaluate((el) => {
+			const box = el.getBoundingClientRect();
+			for (let up = el.parentElement; up; up = up.parentElement) {
+				if (getComputedStyle(up).overflowX === 'visible') continue;
+				const clip = up.getBoundingClientRect();
+				if (box.left < clip.left - 0.5 || box.right > clip.right + 0.5) return true;
+			}
+			return false;
+		});
+		expect(clipped, id).toBe(false);
+	}
 	// All five counts on one line (Trevor, 2026-10-17).
 	const tops = await page
 		.getByTestId('day-toolbar')
