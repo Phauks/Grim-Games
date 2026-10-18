@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { say, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import BackButton from '#lib/ui/primitives/BackButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { sectionLabel, settingsSections } from './registry.ts';
 	import './sections/index.ts';
@@ -45,14 +46,12 @@
 			<section class="content" bind:this={content} aria-labelledby="settings-section-title">
 				<!-- One sticky row: back icon, then the section's name (Trevor, 2026-10-17). -->
 				<div class="heading">
-					{#if !settingsDialog.only}<button
+					{#if !settingsDialog.only}<BackButton
 							class="back"
-							aria-label={t('settings.allSettings')}
-							title={t('settings.allSettings')}
+							label={t('settings.allSettings')}
+							hideLabel
 							onclick={() => (settingsDialog.section = null)}
-						>
-							<Icon name="back" />
-						</button>{/if}
+						/>{/if}
 					<h2 id="settings-section-title">{sectionLabel(active.label, say)}</h2>
 					{#if active.headingAction}<active.headingAction />{/if}
 				</div>
@@ -120,7 +119,7 @@
 		flex: 1;
 	}
 	.chevron,
-	.back {
+	.heading > :global(.back) {
 		display: none;
 	}
 	.content {
@@ -187,18 +186,8 @@
 		.layout[data-view='section'] nav {
 			display: none;
 		}
-		.back {
-			display: inline-grid;
-			place-items: center;
-			flex: none;
-			width: var(--tap-target);
-			height: var(--tap-target);
-			margin-left: calc(-1 * var(--space-2));
-			padding: 0;
-			border: 0;
-			background: none;
-			color: var(--heading);
-			cursor: pointer;
+		.heading > :global(.back) {
+			display: inline-flex;
 		}
 	}
 </style>
