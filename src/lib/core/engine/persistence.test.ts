@@ -68,6 +68,23 @@ describe('saved games', () => {
 		});
 	});
 
+	it("reads the script's logo for the list: an edition's own, else the author's link", () => {
+		const { saved } = savedGame();
+		const withMeta = (meta: { name: string; logo?: string }) => {
+			const copy = structuredClone(saved);
+			const created = copy.log.entries[0].events.find((e) => e.type === 'GameCreated');
+			if (created?.type !== 'GameCreated') throw new Error('no GameCreated');
+			created.script = { ...created.script, meta: { ...created.script.meta, ...meta } };
+			return summariseSavedGame(copy).scriptLogo;
+		};
+		expect(withMeta({ name: 'Trouble Brewing' })).toBe('/data/logos/tb.webp');
+		expect(withMeta({ name: 'Storm', logo: 'https://logo.example/storm.png' })).toBe(
+			'https://logo.example/storm.png'
+		);
+		expect(withMeta({ name: 'Storm', logo: 'http://logo.example/storm.png' })).toBeUndefined();
+		expect(summariseSavedGame(saved).scriptLogo).toBeUndefined();
+	});
+
 	it('says how far a game has got: setup until a character is in, then the day', () => {
 		const { session, ctx } = newGame(names);
 		expect(summariseSavedGame(toSavedGame(session, 1)).stage).toEqual({ kind: 'setup' });
