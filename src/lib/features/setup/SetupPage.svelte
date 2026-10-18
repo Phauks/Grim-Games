@@ -42,6 +42,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
 	import { setupSelection } from './selection.svelte.ts';
+	import { afterTownBag } from '#lib/features/modes/town-setup.ts';
 
 	interface Props {
 		port: SetupGamePort;
@@ -221,7 +222,7 @@
 
 	function requestBuild(confirmedErrors = false) {
 		errorsOpen = false;
-		if (sameBag && game) void goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }));
+		if (sameBag && game) void openDraw(game.gameId);
 		else if (!confirmedErrors && errors.length > 0) errorsOpen = true;
 		else if (drawStarted) replaceOpen = true;
 		else void buildBag();
@@ -242,7 +243,14 @@
 		});
 		if (!built) return;
 		await port.flush();
-		await goto(resolve('/grimoire/[gameId]/draw', { gameId: game.gameId }));
+		await openDraw(game.gameId);
+	}
+
+	/** The draw, or for a town of a mode game the next town's setup (Alternative game modes). */
+	async function openDraw(gameId: string) {
+		const town = await afterTownBag(gameId, await loadOfficialData());
+		await goto(town?.href ?? resolve('/grimoire/[gameId]/draw', { gameId }));
+		town?.seed?.();
 	}
 
 	function random() {
