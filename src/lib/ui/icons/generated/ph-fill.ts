@@ -26,6 +26,7 @@ import ph_bookmark_simple_fill from '~icons/ph/bookmark-simple-fill';
 import ph_bookmarks_simple_fill from '~icons/ph/bookmarks-simple-fill';
 import ph_books_fill from '~icons/ph/books-fill';
 import ph_bug_fill from '~icons/ph/bug-fill';
+import ph_calculator_fill from '~icons/ph/calculator-fill';
 import ph_caret_circle_down_fill from '~icons/ph/caret-circle-down-fill';
 import ph_caret_down_fill from '~icons/ph/caret-down-fill';
 import ph_caret_left_fill from '~icons/ph/caret-left-fill';
@@ -82,6 +83,7 @@ import ph_hand_palm_fill from '~icons/ph/hand-palm-fill';
 import ph_hand_pointing_fill from '~icons/ph/hand-pointing-fill';
 import ph_handbag_fill from '~icons/ph/handbag-fill';
 import ph_hard_drives_fill from '~icons/ph/hard-drives-fill';
+import ph_hash_fill from '~icons/ph/hash-fill';
 import ph_heart_fill from '~icons/ph/heart-fill';
 import ph_heartbeat_fill from '~icons/ph/heartbeat-fill';
 import ph_hexagon_fill from '~icons/ph/hexagon-fill';
@@ -160,6 +162,7 @@ import ph_tag_fill from '~icons/ph/tag-fill';
 import ph_tag_simple_fill from '~icons/ph/tag-simple-fill';
 import ph_text_aa_fill from '~icons/ph/text-aa-fill';
 import ph_text_t_fill from '~icons/ph/text-t-fill';
+import ph_textbox_fill from '~icons/ph/textbox-fill';
 import ph_timer_fill from '~icons/ph/timer-fill';
 import ph_tote_fill from '~icons/ph/tote-fill';
 import ph_trash_fill from '~icons/ph/trash-fill';
@@ -211,6 +214,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple-fill': ph_bookmarks_simple_fill,
 	'ph:books-fill': ph_books_fill,
 	'ph:bug-fill': ph_bug_fill,
+	'ph:calculator-fill': ph_calculator_fill,
 	'ph:caret-circle-down-fill': ph_caret_circle_down_fill,
 	'ph:caret-down-fill': ph_caret_down_fill,
 	'ph:caret-left-fill': ph_caret_left_fill,
@@ -267,6 +271,7 @@ const icons: IconMap = {
 	'ph:hand-pointing-fill': ph_hand_pointing_fill,
 	'ph:handbag-fill': ph_handbag_fill,
 	'ph:hard-drives-fill': ph_hard_drives_fill,
+	'ph:hash-fill': ph_hash_fill,
 	'ph:heart-fill': ph_heart_fill,
 	'ph:heartbeat-fill': ph_heartbeat_fill,
 	'ph:hexagon-fill': ph_hexagon_fill,
@@ -345,6 +350,7 @@ const icons: IconMap = {
 	'ph:tag-simple-fill': ph_tag_simple_fill,
 	'ph:text-aa-fill': ph_text_aa_fill,
 	'ph:text-t-fill': ph_text_t_fill,
+	'ph:textbox-fill': ph_textbox_fill,
 	'ph:timer-fill': ph_timer_fill,
 	'ph:tote-fill': ph_tote_fill,
 	'ph:trash-fill': ph_trash_fill,

@@ -26,6 +26,7 @@ import ph_bookmark_simple_thin from '~icons/ph/bookmark-simple-thin';
 import ph_bookmarks_simple_thin from '~icons/ph/bookmarks-simple-thin';
 import ph_books_thin from '~icons/ph/books-thin';
 import ph_bug_thin from '~icons/ph/bug-thin';
+import ph_calculator_thin from '~icons/ph/calculator-thin';
 import ph_caret_circle_down_thin from '~icons/ph/caret-circle-down-thin';
 import ph_caret_down_thin from '~icons/ph/caret-down-thin';
 import ph_caret_left_thin from '~icons/ph/caret-left-thin';
@@ -82,6 +83,7 @@ import ph_hand_palm_thin from '~icons/ph/hand-palm-thin';
 import ph_hand_pointing_thin from '~icons/ph/hand-pointing-thin';
 import ph_handbag_thin from '~icons/ph/handbag-thin';
 import ph_hard_drives_thin from '~icons/ph/hard-drives-thin';
+import ph_hash_thin from '~icons/ph/hash-thin';
 import ph_heart_thin from '~icons/ph/heart-thin';
 import ph_heartbeat_thin from '~icons/ph/heartbeat-thin';
 import ph_hexagon_thin from '~icons/ph/hexagon-thin';
@@ -160,6 +162,7 @@ import ph_tag_thin from '~icons/ph/tag-thin';
 import ph_tag_simple_thin from '~icons/ph/tag-simple-thin';
 import ph_text_aa_thin from '~icons/ph/text-aa-thin';
 import ph_text_t_thin from '~icons/ph/text-t-thin';
+import ph_textbox_thin from '~icons/ph/textbox-thin';
 import ph_timer_thin from '~icons/ph/timer-thin';
 import ph_tote_thin from '~icons/ph/tote-thin';
 import ph_trash_thin from '~icons/ph/trash-thin';
@@ -211,6 +214,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple-thin': ph_bookmarks_simple_thin,
 	'ph:books-thin': ph_books_thin,
 	'ph:bug-thin': ph_bug_thin,
+	'ph:calculator-thin': ph_calculator_thin,
 	'ph:caret-circle-down-thin': ph_caret_circle_down_thin,
 	'ph:caret-down-thin': ph_caret_down_thin,
 	'ph:caret-left-thin': ph_caret_left_thin,
@@ -267,6 +271,7 @@ const icons: IconMap = {
 	'ph:hand-pointing-thin': ph_hand_pointing_thin,
 	'ph:handbag-thin': ph_handbag_thin,
 	'ph:hard-drives-thin': ph_hard_drives_thin,
+	'ph:hash-thin': ph_hash_thin,
 	'ph:heart-thin': ph_heart_thin,
 	'ph:heartbeat-thin': ph_heartbeat_thin,
 	'ph:hexagon-thin': ph_hexagon_thin,
@@ -345,6 +350,7 @@ const icons: IconMap = {
 	'ph:tag-simple-thin': ph_tag_simple_thin,
 	'ph:text-aa-thin': ph_text_aa_thin,
 	'ph:text-t-thin': ph_text_t_thin,
+	'ph:textbox-thin': ph_textbox_thin,
 	'ph:timer-thin': ph_timer_thin,
 	'ph:tote-thin': ph_tote_thin,
 	'ph:trash-thin': ph_trash_thin,
