@@ -134,14 +134,18 @@
 		const parts: LinePart[] = [];
 		if (isOrphan(seat, game.script, characters)) parts.push({ text: 'Not on the script' });
 		if (really) parts.push({ text: 'Is the ', characterId: really.id });
+		// Only what the sheet shows nowhere else (Trevor, 2026-10-18): a reminder on this seat
+		// is in Reminders below, and death is in Status.
+		const onSeat = new Set(seat.reminders.map((r) => r.reminderId));
 		for (const impairment of ability?.impairments ?? []) {
+			const from = impairment.source.reminderId;
+			if (from && onSeat.has(from)) continue;
 			const words = impairmentWords[impairment.reason];
 			const by = impairment.source.characterId;
 			parts.push(
 				characters.has(by) ? { text: `${words} (`, characterId: by, after: ')' } : { text: words }
 			);
 		}
-		if (ability?.dead) parts.push({ text: 'Dead: no ability' });
 		// An ability works unless something says otherwise (Trevor, 2026-10-16): the line stays
 		// reserved but empty.
 		return parts;
@@ -961,15 +965,10 @@
 			/>{/if}
 	{/snippet}
 	<!-- Whose ability it comes from, first, so an unfamiliar reminder makes sense (Trevor,
-	     2026-10-17). -->
+	     2026-10-17); "From" above already names it (Trevor, 2026-10-18). -->
 	{#if movingReminder}
 		{@const source = characters.get(movingReminder.characterId)}
-		{#if source}
-			<p class="source">
-				<CharacterBadge characterId={source.id} character={source} inline />
-			</p>
-			<CharacterSummary character={source} reminders={false} />
-		{/if}
+		{#if source}<CharacterSummary character={source} reminders={false} />{/if}
 	{/if}
 	<div class="menu">
 		<Button variant="quiet" icon="move" onclick={() => fromMenu(() => (moveOpen = true))}>
@@ -1298,9 +1297,6 @@
 	/* One line in the sheet, so a long note never moves anything; the dialog shows it all. */
 	/* The note looks as it does in its editor (Trevor, 2026-10-17): the sheet's own text,
 	   not the buttons' font. */
-	.source {
-		margin: 0 0 var(--space-1);
-	}
 	/* Used shows whatever has focus (Trevor, 2026-10-18). */
 	.value.ghost[aria-pressed='true'] {
 		border-color: var(--accent);
