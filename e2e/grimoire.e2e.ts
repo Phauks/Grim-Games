@@ -272,9 +272,14 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	const sheetMark = ghost.getByTestId('sheet-ghost-vote');
 	await expect(sheetMark).toHaveAttribute('data-vote', 'unused');
 	await expect(sheetMark.locator('[data-icon="ph:ghost-fill"]')).toBeAttached();
+	const markBefore = (await sheetMark.boundingBox())!;
 	await ghost.tap();
 	await expect(ghost).toHaveAttribute('aria-pressed', 'true');
 	await expect(ghost).toContainText('Used');
+	// Grey like the spent ghost, not red, and only the words change (Trevor, 2026-10-19).
+	await expect(ghost).toHaveCSS('border-top-color', 'rgb(90, 86, 96)');
+	const markAfter = (await sheetMark.boundingBox())!;
+	expect(Math.abs(markAfter.x - markBefore.x)).toBeLessThan(1);
 	await expect(ghostMark).toHaveAttribute('data-vote', 'used');
 	await expect(sheetMark).toHaveAttribute('data-vote', 'used');
 	await expect(sheetMark).toHaveAttribute('data-used-look', 'hollow');

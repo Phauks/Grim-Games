@@ -54,8 +54,8 @@
 	}
 	/* The ghost vote spent: a grey outline ghost. */
 	.dead-badge[data-vote='used'] {
-		border-color: rgb(90 86 96); /* colour-ok: the badge looks the same on every theme */
-		color: rgb(130 126 136); /* colour-ok: the badge looks the same on every theme */
+		border-color: var(--ghost-used-rim);
+		color: var(--ghost-used);
 	}
 	/* Or struck through: a red slash and rim over the grey ghost. */
 	.dead-badge[data-used-look='struck'] {
