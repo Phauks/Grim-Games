@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { pickScript } from './new-game.ts';
 
 // The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
@@ -336,7 +337,7 @@ test('the day view names a homebrew character by its script name', async ({ page
 	await expect(page.getByTestId('script-details-name')).toHaveText('Homebrew Day');
 
 	await page.goto('/new');
-	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Homebrew Day').tap();
+	await pickScript(page, 'Homebrew Day');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();

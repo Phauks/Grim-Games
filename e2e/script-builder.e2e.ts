@@ -34,9 +34,8 @@ test('builds, checks and saves a script that New game can use', async ({ page })
 	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Builder test');
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
 	await page.goto('/new');
-	await expect(
-		page.getByRole('radiogroup', { name: 'Script' }).getByText('Builder test')
-	).toBeVisible();
+	await page.getByRole('combobox', { name: 'Find a script' }).tap();
+	await expect(page.getByRole('option').filter({ hasText: 'Builder test' })).toBeVisible();
 });
 
 test('offers the character another needs, and clearing confirms', async ({ page }) => {

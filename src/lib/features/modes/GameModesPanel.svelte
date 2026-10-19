@@ -22,8 +22,6 @@
 	import PlayerCountSheet from '#lib/features/setup/PlayerCountSheet.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
-	import ScriptChoiceLabel from '#lib/features/scripts/ScriptChoiceLabel.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
@@ -36,6 +34,7 @@
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import ModeValue from './ModeValue.svelte';
+	import ScriptPicker from './ScriptPicker.svelte';
 	import RestrictedDialog from './RestrictedDialog.svelte';
 	import SpecialRulesDialog from './SpecialRulesDialog.svelte';
 	import { loadLinkedScript, loadScriptChoice, scriptChoices } from './script-choices.svelte.ts';
@@ -298,17 +297,7 @@
 				onChange={(v) => (version = v)}
 			/>
 		{:else if scriptKind === 'one'}
-			<ChoiceGroup
-				label={t('modes.script')}
-				value={script}
-				options={choices}
-				onChange={(v) => (script = v)}
-			>
-				{#snippet item(option)}
-					{@const c = choices.find((x) => x.value === option.value)}
-					<ScriptChoiceLabel label={option.label} author={c?.author} version={c?.version} />
-				{/snippet}
-			</ChoiceGroup>
+			<ScriptPicker label={t('modes.script')} value={script} onChange={(v) => (script = v)} />
 		{:else if scriptKind === 'per-town'}
 			{#each Array.from({ length: towns?.count ?? 2 }, (_, i) => i) as i (i)}
 				<Select

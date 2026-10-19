@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
+import { pickScript } from './new-game.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
 
 /** Starts a game of `script` with `players` seats and opens its character selection. */
 async function selectionFor(page: Page, players: number, script = 'Trouble Brewing') {
 	await page.goto('/new');
-	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script).tap();
+	await pickScript(page, script);
 	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	for (let n = 8; n < players; n++) await page.getByRole('button', { name: 'More players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
@@ -692,7 +693,7 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	await expect(page.getByTestId('script-details-name')).toHaveText('Jinx Check');
 
 	await page.goto('/new');
-	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Jinx Check').tap();
+	await pickScript(page, 'Jinx Check');
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
@@ -741,7 +742,7 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 	await expect(page.getByTestId('script-details-name')).toHaveText('Custom Check');
 
 	await page.goto('/new');
-	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Custom Check').tap();
+	await pickScript(page, 'Custom Check');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);

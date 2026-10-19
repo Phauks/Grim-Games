@@ -773,12 +773,33 @@ test('New game shows each script’s author and version under its name', async (
 		);
 	});
 	await page.goto('/new');
-	const byline = modesPanel(page).getByTestId('script-byline');
-	await expect(byline).toHaveCount(1);
-	await expect(byline).toContainText('Test Author');
-	await expect(byline).toContainText('2.1');
+	// In the script search's list (Trevor, 2026-10-19), on Standard and in a mode alike.
+	const option = page.getByRole('option').filter({ hasText: 'Byline Test' });
+	await page.getByRole('combobox', { name: 'Find a script' }).tap();
+	await expect(option).toContainText('by Test Author');
+	await expect(option).toContainText('2.1');
+	await page.keyboard.press('Escape');
 	await chooseMode(page, 'Flesh and Bone');
-	await expect(modesPanel(page).getByTestId('script-byline')).toContainText('Test Author');
+	await page.getByRole('combobox', { name: 'Find a script' }).tap();
+	await expect(option).toContainText('by Test Author');
+});
+
+test('any script beyond the base three is found by typing, or picked in the Library', async ({
+	page
+}) => {
+	// Trevor, 2026-10-19: easy to reach with 50 scripts.
+	await page.goto('/new');
+	const script = page.getByRole('radiogroup', { name: 'Script' });
+	await expect(script.getByRole('radio')).toHaveCount(3);
+	const search = page.getByRole('combobox', { name: 'Find a script' });
+	await search.tap();
+	await search.fill('no such script');
+	await expect(page.getByRole('listbox')).toContainText('None');
+	await page.getByRole('option', { name: 'Find more scripts online' }).tap();
+	await expect(page).toHaveURL(/\/scripts$/);
+	await page.goto('/new');
+	await page.getByRole('button', { name: 'Choose from the Library' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Choose from the Library' })).toBeVisible();
 });
 
 test('special rules stack on a mode: two at once, a conflict warns, and the game starts anyway', async ({

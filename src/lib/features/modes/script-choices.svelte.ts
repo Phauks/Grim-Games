@@ -18,7 +18,12 @@ import {
 	quickPlayScript,
 	recentScripts
 } from '#lib/features/scripts/current-script.svelte.ts';
-import { reloadSavedScript, type SavedScript } from '#lib/features/scripts/saved-scripts.ts';
+import { profileScripts } from '#lib/features/account/profile-scripts.svelte.ts';
+import {
+	reloadSavedScript,
+	sameScript,
+	type SavedScript
+} from '#lib/features/scripts/saved-scripts.ts';
 import { scriptVersion } from '#lib/features/player/player-script.ts';
 
 export type ScriptChoice = string;
@@ -29,10 +34,12 @@ export interface ScriptChoiceOption {
 	/** Shown under the name with the version (Trevor, 2026-10-18), when the script says. */
 	author?: string;
 	version?: string;
+	/** The heading it is listed under in the script search. */
+	group?: 'recent' | 'library';
 }
 
 /** The author a saved script's own `_meta` names, if any. */
-function savedAuthor(saved: SavedScript): string | undefined {
+function savedAuthor(saved: Pick<SavedScript, 'json'>): string | undefined {
 	const meta = saved.json.find(
 		(e): e is { id: string; author?: unknown } =>
 			typeof e === 'object' && e !== null && (e as { id?: unknown }).id === '_meta'
@@ -63,6 +70,30 @@ export function scriptChoices(): ScriptChoiceOption[] {
 	];
 }
 
+/**
+ * Every script the search on New game offers (Trevor, 2026-10-19: easy to reach with 50
+ * scripts): the recent ones, most recently used first, then the rest of the account's
+ * Library. The base three are chips beside it, so they are left out.
+ */
+export function searchableScripts(): ScriptChoiceOption[] {
+	const quick = quickPlayScript.saved;
+	const recent = [...(quick ? [quick] : []), ...recentScripts.list.filter((s) => !s.edition)];
+	return [
+		...recent.map((s) => ({ ...savedOption(s, `recent:${s.scriptId}`), group: 'recent' as const })),
+		...profileScripts.list
+			.filter((entry) => !recent.some((s) => sameScript(s, { json: entry.script.json })))
+			.map((entry) => {
+				const author = savedAuthor(entry.script);
+				return {
+					value: `profile:${entry.id}`,
+					label: entry.script.name,
+					...(author ? { author } : {}),
+					group: 'library' as const
+				};
+			})
+	];
+}
+
 export function loadScriptChoice(choice: ScriptChoice, data: GameData): LoadedScript {
 	const quick = quickPlayScript.saved;
 	const recent = choice.startsWith('recent:')
@@ -70,7 +101,14 @@ export function loadScriptChoice(choice: ScriptChoice, data: GameData): LoadedSc
 				(s) => `recent:${s.scriptId}` === choice
 			)
 		: undefined;
-	const loaded = recent ? reloadSavedScript(recent, data) : editionScript(choice, data);
+	const profile = choice.startsWith('profile:')
+		? profileScripts.list.find((entry) => `profile:${entry.id}` === choice)
+		: undefined;
+	const loaded = recent
+		? reloadSavedScript(recent, data)
+		: profile
+			? loadScript(profile.script.json, data).script
+			: editionScript(choice, data);
 	if (!loaded) throw new Error('the chosen script could not be loaded');
 	return loaded;
 }
