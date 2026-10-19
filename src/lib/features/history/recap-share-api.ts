@@ -118,6 +118,7 @@ function isRecap(v: unknown): v is GameRecap {
 		isObject(v) &&
 		text(v.title) &&
 		optionalText(v.author) &&
+		optionalText(v.storyteller) &&
 		text(v.played) &&
 		text(v.result) &&
 		optionalText(v.howEnded) &&

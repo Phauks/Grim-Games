@@ -55,6 +55,7 @@ describe('readSharedRecap', () => {
 		expect(readSharedRecap(undefined)).toBeUndefined();
 		expect(readSharedRecap({ ...good, v: 2 })).toBeUndefined();
 		expect(readSharedRecap({ ...good, recap: { ...recap, title: 5 } })).toBeUndefined();
+		expect(readSharedRecap({ ...good, recap: { ...recap, storyteller: 5 } })).toBeUndefined();
 		expect(
 			readSharedRecap({ ...good, recap: { ...recap, seats: [{ ...recap.seats[0], dead: 'no' }] } })
 		).toBeUndefined();

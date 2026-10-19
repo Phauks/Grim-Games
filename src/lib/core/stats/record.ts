@@ -55,6 +55,8 @@ export interface GameRecord {
 	createdAt: number;
 	endedAt: number;
 	script: { name?: string; author?: string };
+	/** Who ran the game (`Game.storytellerName`); absent when no name was given. */
+	storyteller?: string;
 	/** Absent when the Storyteller did not record it. */
 	winner?: Alignment;
 	/**
