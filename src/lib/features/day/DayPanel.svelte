@@ -553,7 +553,7 @@
 		</ul>
 	</Collapsible>
 
-	<Collapsible title={t('day.players')} storageKey="day.players">
+	<Collapsible title={t('day.players')} storageKey="day.players" count={seats.length}>
 		<div class="seats">
 			{#each seats as seat (seat.seatId)}
 				{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
@@ -611,7 +611,11 @@
 	{#if assistance.preDayReminders}
 		<!-- Each group is its own section; no "Today" wrapper (Trevor, 2026-10-17). -->
 		{#each reminders.groups as group (group.group)}
-			<Collapsible title={group.title} storageKey={`day.group.${group.group}`}>
+			<Collapsible
+				title={group.title}
+				storageKey={`day.group.${group.group}`}
+				count={group.reminders.length}
+			>
 				<ul class="reminders">
 					{#each group.reminders as reminder (reminder.key)}
 						{@const head =
