@@ -67,6 +67,26 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 });
 
+test('a mode’s own settings sit under Game mode settings, each with its description', async ({
+	page
+}) => {
+	// Trevor, 2026-10-19: a Game mode settings header beneath About and before the setup sheet,
+	// holding every mode setting (Role Recycling, Restricted characters), each described.
+	await page.goto('/new');
+	await expect(page.getByTestId('mode-settings')).toHaveCount(0);
+	await chooseMode(page, 'Sushi Buffet');
+	const settings = page.getByTestId('mode-settings');
+	await expect(settings.getByRole('heading', { name: 'Game mode settings' })).toBeVisible();
+	await expect(settings.getByRole('checkbox', { name: 'Role Recycling' })).toBeVisible();
+	await expect(settings).toContainText('go back into the pool');
+	await expect(settings.getByRole('button', { name: /^Restricted characters/ })).toBeVisible();
+	await expect(settings).toContainText('Characters kept out of this game.');
+	// Above the setup sheet.
+	const sheet = modesPanel(page).getByTestId('player-count');
+	const [a, b] = await Promise.all([settings.boundingBox(), sheet.boundingBox()]);
+	expect(a!.y + a!.height).toBeLessThanOrEqual(b!.y);
+});
+
 test('Inspect shows every part of a mode with its status and the mode file', async ({ page }) => {
 	await page.goto('/new');
 	await chooseMode(page, 'Whale Buffet');
