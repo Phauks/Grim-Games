@@ -5,7 +5,7 @@
  * - A game is *decided* when its winning team was recorded; win rates count decided games only.
  * - A character's games are those a player started as it (their true character at the first
  *   Dawn); it won when that player's team at the end was the winning team.
- * - Players are matched by name, ignoring case and surrounding spaces.
+ * - Players, and Storytellers, are matched by name, ignoring case and surrounding spaces.
  * - Player counts leave out Travellers, as the setup table does
  *   (https://wiki.bloodontheclocktower.com/Traveller).
  */
@@ -61,9 +61,19 @@ export interface PlayerStats {
 	deaths: number;
 }
 
+/** Games by who ran them; games with no Storyteller named share one row with no name. */
+export interface StorytellerStats {
+	key: string;
+	/** The name as first written, most recent game first. */
+	name?: string;
+	games: number;
+	wins: TeamCounts;
+}
+
 export interface HistoryStats {
 	summary: Summary;
 	scripts: ScriptStats[];
+	storytellers: StorytellerStats[];
 	characters: CharacterStats[];
 	players: PlayerStats[];
 }
@@ -98,6 +108,7 @@ export function historyStats(records: readonly GameRecord[]): HistoryStats {
 	const scripts = new Map<string, ScriptStats>();
 	const characters = new Map<CharacterId, CharacterStats>();
 	const players = new Map<string, PlayerStats>();
+	const storytellers = new Map<string, StorytellerStats>();
 
 	for (const record of sorted) {
 		if (record.winner) wins[record.winner]++;
@@ -117,6 +128,17 @@ export function historyStats(records: readonly GameRecord[]): HistoryStats {
 		}
 		script.games++;
 		if (record.winner) script.wins[record.winner]++;
+
+		const runBy = record.storyteller?.trim();
+		const storytellerKey = runBy ? playerKey(runBy) : '';
+		let storyteller = storytellers.get(storytellerKey);
+		if (!storyteller) {
+			storyteller = { key: storytellerKey, games: 0, wins: { good: 0, evil: 0 } };
+			if (runBy) storyteller.name = runBy;
+			storytellers.set(storytellerKey, storyteller);
+		}
+		storyteller.games++;
+		if (record.winner) storyteller.wins[record.winner]++;
 
 		for (const seat of record.seats) {
 			const team = seat.end?.alignment ?? seat.start?.alignment;
@@ -165,6 +187,7 @@ export function historyStats(records: readonly GameRecord[]): HistoryStats {
 			averagePlayers: average(sorted.map(playerCount))
 		},
 		scripts: [...scripts.values()],
+		storytellers: [...storytellers.values()],
 		characters: [...characters.values()],
 		players: [...players.values()]
 	};

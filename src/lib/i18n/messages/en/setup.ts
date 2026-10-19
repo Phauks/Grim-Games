@@ -205,5 +205,8 @@ export const setup = {
 	'setup.lock.forgotCountdown': 'Unlocking in {seconds} s.',
 	'setup.lock.keepLocked': 'Keep locked',
 	'setup.lock.handBack': 'Every tile is drawn. Hand the phone back to the Storyteller.',
-	'setup.lock.clear': 'Clear PIN'
+	'setup.lock.clear': 'Clear PIN',
+	'setup.lock.boardTitle': 'The grimoire is locked',
+	'setup.lock.boardBody': 'The draw is locked. Only the Storyteller can open the grimoire.',
+	'setup.lock.backToDraw': 'Back to the draw'
 } as const;

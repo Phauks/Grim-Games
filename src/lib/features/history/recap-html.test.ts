@@ -4,6 +4,7 @@ import { ALL_RECAP_PARTS, escapeHtml, recapHtml, type GameRecap } from './recap-
 const recap: GameRecap = {
 	title: 'Trouble <Brewing>',
 	author: 'TPI',
+	storyteller: 'Sam <ST>',
 	played: '19 Oct 2026',
 	result: 'Evil won',
 	howEnded: 'Saint',
@@ -43,6 +44,10 @@ describe('recapHtml', () => {
 	it('lists the result, the players, history and notes', () => {
 		const html = recapHtml(recap, ALL_RECAP_PARTS);
 		expect(html).toContain('Evil won · How it ended: Saint');
+		expect(html).toContain('<p>Storyteller: Sam &lt;ST&gt;</p>');
+		expect(recapHtml({ ...recap, storyteller: undefined }, ALL_RECAP_PARTS)).toContain(
+			'<p>Storyteller: None</p>'
+		);
 		expect(html).toContain('<span class="character" data-team="evil">Imp</span>');
 		expect(html).toContain(
 			'(started as <span class="character" data-team="evil">Scarlet Woman</span>)'

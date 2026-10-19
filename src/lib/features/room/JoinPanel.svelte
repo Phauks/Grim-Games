@@ -74,6 +74,7 @@
 		if (valid && (status === 'refused' || status === 'closed')) forgetRoom(valid);
 	});
 	const seats = $derived(view?.public?.seats ?? []);
+	const storyteller = $derived(view?.public?.storytellerName);
 	const mine = $derived(view?.me.seatId);
 	const seatName = (seatId?: SeatId) => {
 		const s = seats.find((x) => x.seatId === seatId);
@@ -184,6 +185,11 @@
 				{#if found}
 					<p class="game-name">{found.name || t('room.noScriptYet')}</p>
 					<ScriptByline author={found.author} inline />
+					{#if found.storyteller}
+						<span class="game-table" data-testid="game-storyteller"
+							>{t('room.storytellerLine', { name: found.storyteller })}</span
+						>
+					{/if}
 					{#if found.seats !== undefined}
 						<span class="game-table"
 							>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
@@ -259,6 +265,9 @@
 		{#if seats.length === 0}
 			<p class="none">{t('common.none')}</p>
 		{:else}
+			<p class="storyteller" data-testid="room-storyteller">
+				{t('room.storytellerLine', { name: storyteller ?? t('common.none') })}
+			</p>
 			<ol class="table">
 				{#each seats as s (s.seatId)}
 					<li data-dead={s.dead || undefined} data-mine={s.seatId === mine || undefined}>
@@ -325,8 +334,8 @@
 		gap: var(--space-3);
 		box-sizing: border-box;
 		width: 100%;
-		/* Room for the name, the author and the table, so none of them moves the page. */
-		min-height: calc(7.5 * var(--u));
+		/* Room for the name, the author, the Storyteller and the table, so none of them moves the page. */
+		min-height: calc(9 * var(--u));
 		padding: var(--space-3);
 		border: 1px dashed var(--border);
 		border-radius: var(--radius-md);
@@ -364,6 +373,7 @@
 		min-width: calc(10 * var(--u));
 	}
 	.problem,
+	.storyteller,
 	.none {
 		margin: 0;
 		color: var(--on-surface-muted);

@@ -41,11 +41,23 @@ describe('buildRecap', () => {
 		});
 		expect(recap.result).toBe('Good won');
 		expect(recap.howEnded).toBe('Demon died');
+		expect(recap.storyteller).toBeUndefined();
 		const woman = recap.seats[4];
 		expect(woman.start?.name).toBe('Scarlet Woman');
 		expect(woman.end?.name).toBe('Imp');
 		expect(recap.seats[5]).toMatchObject({ dead: true, death: 'Executed' });
 		expect(recap.seats[5].seatId).toBe(session.game.seating[5]);
+	});
+
+	it('names who ran the game', () => {
+		const { session } = castGame(TB, { type: 'SetStorytellerName', name: 'Sam' });
+		const recap = buildRecap({
+			game: session.game,
+			entries: session.log.entries,
+			cursor: session.log.cursor,
+			characters
+		});
+		expect(recap.storyteller).toBe('Sam');
 	});
 
 	it('gathers seat notes, then the day log’s notes', () => {

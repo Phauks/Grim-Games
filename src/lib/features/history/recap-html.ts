@@ -55,6 +55,8 @@ export interface RecapNote {
 export interface GameRecap {
 	title: string;
 	author?: string;
+	/** Who ran the game (`Game.storytellerName`), when named. */
+	storyteller?: string;
 	/** When it was played, worded. */
 	played: string;
 	/** "Good won", "Evil won" or "Winner not recorded". */
@@ -124,6 +126,7 @@ export function recapHtml(recap: GameRecap, parts: RecapParts, image?: string): 
 		`<header><h1>${escapeHtml(recap.title)}</h1>` +
 			(recap.author ? `<p class="author">by ${escapeHtml(recap.author)}</p>` : '') +
 			`<p>${escapeHtml(recap.played)} · ${recap.days} ${recap.days === 1 ? 'day' : 'days'}</p>` +
+			`<p>Storyteller: ${escapeHtml(recap.storyteller ?? 'None')}</p>` +
 			`<p class="result">${summary}</p></header>`
 	);
 	if (parts.image && isImageData(image)) {

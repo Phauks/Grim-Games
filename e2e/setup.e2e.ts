@@ -1063,3 +1063,24 @@ test('locked characters stay in play through Random and are remembered', async (
 	await expect(lock('baron')).toBeDisabled();
 	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
 });
+
+test('the board stays locked while the draw is, until the Storyteller PIN', async ({ page }) => {
+	// Trevor (2026-10-19): with the phone passed round, opening the game's grimoire (by its
+	// address, or a reload there) shows a lock screen, never the board.
+	await lockedDraw(page);
+	const draw = page.url();
+	await page.goto(draw.replace(/\/draw$/, ''));
+	const locked = page.getByTestId('board-locked');
+	await expect(locked).toContainText('The grimoire is locked');
+	await expect(page.getByTestId('seat')).toHaveCount(0);
+	await expect(page.getByRole('banner')).toHaveCount(0);
+
+	// Back to the draw is always there; the PIN opens the board.
+	await expect(locked.getByRole('link', { name: 'Back to the draw' })).toBeVisible();
+	await locked.getByRole('button', { name: 'Unlock the draw' }).tap();
+	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(locked).toHaveCount(0);
+	await expect(page.getByTestId('seat')).toHaveCount(5);
+});

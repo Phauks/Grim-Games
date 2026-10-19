@@ -115,6 +115,7 @@ export function buildRecap(source: RecapSource): GameRecap {
 	return {
 		title: game.script.meta?.name || 'Game',
 		...(game.script.meta?.author ? { author: game.script.meta.author } : {}),
+		...(game.storytellerName ? { storyteller: game.storytellerName } : {}),
 		played: date.format(firstAt),
 		result: source.winner ? RESULT[source.winner] : 'Winner not recorded',
 		...(source.winner && howEnded ? { howEnded } : {}),

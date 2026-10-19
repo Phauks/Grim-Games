@@ -166,6 +166,8 @@ export interface RoomPreview {
 		/** No characters of its own, so an edition's name means that edition (and its logo). */
 		official: boolean;
 	};
+	/** The Storyteller's name, once published, when the game has one. */
+	storyteller?: string;
 	/** Seats at the table, once the Storyteller's device has published it. */
 	seats?: number;
 	/** Seats someone in the room sits in. */
@@ -185,6 +187,7 @@ export function roomPreview(room: RoomState | undefined, script?: Script): RoomP
 		};
 	}
 	if (room.public) {
+		if (room.public.storytellerName) preview.storyteller = room.public.storytellerName;
 		preview.seats = room.public.seats.length;
 		preview.seated = room.members.filter((m) => m.seatId).length;
 	}

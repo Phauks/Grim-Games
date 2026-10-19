@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * History's stats (Trevor, 2026-10-16): a summary, then scripts, characters and players
+	 * History's stats (Trevor, 2026-10-16): a summary, then scripts, Storytellers, characters and players
 	 * worked out from the games ended on this device (`#lib/core/stats`).
 	 */
 	import { onMount } from 'svelte';
@@ -11,7 +11,8 @@
 		type CharacterStats,
 		type GameRecord,
 		type PlayerStats,
-		type ScriptStats
+		type ScriptStats,
+		type StorytellerStats
 	} from '#lib/core/stats/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -97,6 +98,54 @@
 			stats.scripts.filter((s) => matchesText(s.name, scriptFilter)),
 			scriptSort,
 			scriptValue
+		)
+	);
+
+	// ── Storytellers: who ran each game (Game.storytellerName); unnamed games show as None ──
+	type StorytellerColumn = 'storyteller' | 'games' | 'good' | 'evil';
+	let storytellerSort = $state<DataSort<StorytellerColumn> | undefined>();
+	let storytellerFilter = $state('');
+	const storytellerColumns = $derived<DataColumn<StorytellerColumn, StorytellerStats>[]>([
+		{
+			id: 'storyteller',
+			label: t('history.storyteller'),
+			rowHeader: true,
+			sortable: true,
+			filterable: true,
+			filtered: storytellerFilter.trim() !== ''
+		},
+		{
+			id: 'games',
+			label: t('history.games'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (s) => storytellerValue(s, 'games')
+		},
+		{
+			id: 'good',
+			label: t('history.goodWins'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (s) => storytellerValue(s, 'good')
+		},
+		{
+			id: 'evil',
+			label: t('history.evilWins'),
+			sortable: true,
+			align: 'end',
+			width: width(5),
+			value: (s) => storytellerValue(s, 'evil')
+		}
+	]);
+	const storytellerValue = (s: StorytellerStats, c: StorytellerColumn) =>
+		c === 'storyteller' ? (s.name ?? '') : c === 'games' ? s.games : s.wins[c];
+	const storytellerRows = $derived(
+		sortRows(
+			stats.storytellers.filter((s) => matchesText(s.name ?? t('common.none'), storytellerFilter)),
+			storytellerSort ?? { column: 'games', direction: 'descending' },
+			storytellerValue
 		)
 	);
 
@@ -351,6 +400,31 @@
 		{/snippet}
 		{#snippet filter(column, close)}
 			{@render textFilter(column.label, scriptFilter, (v) => (scriptFilter = v), close)}
+		{/snippet}
+	</DataTable>
+</PageSection>
+
+<PageSection title={t('history.storytellers')} collapsible storageKey="history.storytellers">
+	<DataTable
+		label={t('history.storytellers')}
+		testid="history-storytellers"
+		columns={storytellerColumns}
+		rows={storytellerRows}
+		key={(s) => s.key}
+		sort={storytellerSort}
+		onSort={(c) => (storytellerSort = nextSort(storytellerSort, c, ['storyteller']))}
+		narrow="stack"
+		empty={records.length > 0 ? t('history.noMatch') : t('common.none')}
+	>
+		{#snippet cell(s, column)}
+			{#if column.id === 'storyteller'}
+				{s.name ?? t('common.none')}
+			{:else}
+				{count(storytellerValue(s, column.id) as number)}
+			{/if}
+		{/snippet}
+		{#snippet filter(column, close)}
+			{@render textFilter(column.label, storytellerFilter, (v) => (storytellerFilter = v), close)}
 		{/snippet}
 	</DataTable>
 </PageSection>

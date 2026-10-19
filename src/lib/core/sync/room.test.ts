@@ -206,6 +206,12 @@ describe('what a phone sees before it joins', () => {
 		});
 	});
 
+	it("shows the Storyteller's name once the game has one", () => {
+		const room = publish(roomWith('m1'), 'g1', { ...table('a'), storytellerName: 'Sam' });
+		expect(roomPreview(room).storyteller).toBe('Sam');
+		expect('storyteller' in roomPreview(publish(room, 'g1', table('a')))).toBe(false);
+	});
+
 	it('marks a script with no characters of its own as official', () => {
 		expect(
 			roomPreview(newRoom('hash'), {

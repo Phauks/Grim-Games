@@ -90,6 +90,16 @@ describe('deriveGameRecord', () => {
 		expect(record.seats[3].diedOnDay).toBeUndefined();
 	});
 
+	it('records who ran the game, when a Storyteller was named', () => {
+		const { session, ctx } = newGame(['Ana']);
+		const named = run(session, ctx, { type: 'SetStorytellerName', name: 'Sam' });
+		expect(deriveGameRecord(toSavedGame(named, 1), { endedAt: 2 }, gameData).storyteller).toBe(
+			'Sam'
+		);
+		const record = deriveGameRecord(toSavedGame(session, 1), { endedAt: 2 }, gameData);
+		expect(record).not.toHaveProperty('storyteller');
+	});
+
 	it('uses the final characters as starting ones when the first night never ended', () => {
 		const { session, ctx, seats } = newGame(['Ana']);
 		const s = run(session, ctx, { type: 'AssignCharacter', seatId: seats[0], characterId: 'imp' });
@@ -283,6 +293,18 @@ describe('historyStats', () => {
 			deaths: 0
 		});
 		expect(players.find((p) => p.name === 'Ben')).toMatchObject({ games: 2, wins: 0, deaths: 2 });
+	});
+
+	it('counts games per Storyteller by name, with unnamed games together', () => {
+		const { storytellers } = historyStats([
+			{ ...a, storyteller: 'Sam' },
+			{ ...b, storyteller: ' sam ' },
+			c
+		]);
+		expect(storytellers).toEqual([
+			{ key: '', games: 1, wins: { good: 0, evil: 0 } },
+			{ key: 'sam', name: 'Sam', games: 2, wins: { good: 1, evil: 1 } }
+		]);
 	});
 
 	it('gives no win rate when nothing was decided', () => {
