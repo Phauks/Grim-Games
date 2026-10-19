@@ -33,7 +33,7 @@ export const setup = {
 	'setup.buildBag': 'Build bag',
 	'setup.continueDraw': 'Continue draw',
 	'setup.or': 'or',
-	'setup.jinxed': 'Jinxed',
+	'setup.jinxedWith': 'Jinxed with {names}',
 	'setup.addAnother': 'Add another',
 	'setup.addAnotherOf': 'Add another {name}',
 
