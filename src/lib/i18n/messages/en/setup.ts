@@ -25,6 +25,8 @@ export const setup = {
 	'setup.sheet': 'Setup sheet',
 	'setup.random': 'Random selection',
 	'setup.randomNone': 'No valid selection fits this script and player count',
+	'setup.randomNoneLocked': 'No valid selection fits the locked characters',
+	'setup.lockFor': 'Keep {name} when randomizing',
 	'setup.clearSelection': 'Clear selection',
 	'setup.buildBag': 'Build bag',
 	'setup.continueDraw': 'Continue draw',
