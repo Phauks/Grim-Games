@@ -438,3 +438,21 @@ test("the example card fills its box, and the page doesn't scroll behind a shown
 		.tap();
 	await expect(page.locator('html')).not.toHaveCSS('overflow', 'hidden');
 });
+
+test('every section lists its cards A to Z', async ({ page }) => {
+	await page.goto('/info-tokens');
+	// Trevor (2026-10-18): built-in and custom alike, by their words.
+	await expect(page.getByRole('button', { name: 'This is the Demon', exact: true })).toBeVisible();
+	for (const heading of ['Standard', 'Enhanced']) {
+		const names = await page
+			.locator('section.collapsible')
+			.filter({ has: page.getByRole('heading', { name: heading }) })
+			.locator('button.card')
+			.allTextContents();
+		const words = names.map((name) => name.trim());
+		expect(words.length).toBeGreaterThan(1);
+		expect(words).toEqual(
+			[...words].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+		);
+	}
+});

@@ -94,9 +94,14 @@
 	}: Props = $props();
 
 	// No search: there are too few cards for it to help (Trevor, 2026-10-16).
-	const standard = STANDARD_INFO_TOKENS.filter((token) => !token.extra);
+	/** Alphabetical by their words, formatting and case ignored (Trevor, 2026-10-18: every list). */
+	const byWords = (a: string, b: string) =>
+		plainText(a).localeCompare(plainText(b), undefined, { sensitivity: 'base', numeric: true });
+	const alphabetical = <T extends { text: string }>(tokens: readonly T[]) =>
+		[...tokens].sort((a, b) => byWords(a.text, b.text));
+	const standard = alphabetical(STANDARD_INFO_TOKENS.filter((token) => !token.extra));
 	// Trevor's own additions, listed apart so they read as not the base game's (2026-10-18).
-	const extras = STANDARD_INFO_TOKENS.filter((token) => token.extra);
+	const extras = alphabetical(STANDARD_INFO_TOKENS.filter((token) => token.extra));
 
 	/**
 	 * A card that asks for something to fill in (words, a number or one of its answers) asks
@@ -164,15 +169,7 @@
 			return character ? [character] : [];
 		});
 
-	// Alphabetical by their words, formatting ignored (Trevor, 2026-10-16).
-	const sorted = $derived(
-		[...customInfoTokens.list].sort((a, b) =>
-			plainText(a.text).localeCompare(plainText(b.text), undefined, {
-				sensitivity: 'base',
-				numeric: true
-			})
-		)
-	);
+	const sorted = $derived(alphabetical(customInfoTokens.list));
 	// A card that belongs to characters sits under Character-Specific instead of Custom.
 	const custom = $derived(sorted.filter((token) => !token.characterIds?.length));
 	const tied = $derived(
@@ -182,7 +179,25 @@
 				(!activeCharacters || token.characterIds.some((id) => activeCharacters.has(id)))
 		)
 	);
-	const characterRows = $derived(characterCards ?? []);
+	/** Character cards and the Storyteller's own for characters, in one A–Z list. */
+	const characterSpecific = $derived(
+		[
+			...(characterCards ?? []).map((row) => ({
+				key: `card:${row.card.id}`,
+				words: t(row.card.titleKey),
+				tieBreak: row.character.name,
+				row,
+				token: undefined
+			})),
+			...tied.map((token) => ({
+				key: `custom:${token.id}`,
+				words: token.text,
+				tieBreak: '',
+				row: undefined,
+				token
+			}))
+		].sort((a, b) => byWords(a.words, b.words) || byWords(a.tieBreak, b.tieBreak))
+	);
 
 	let aboutOpen = $state(false);
 	let aboutAnchor = $state<HTMLElement>();
@@ -464,23 +479,23 @@
 				</span>
 			{/snippet}
 			<ul class="cards">
-				{#each characterRows as row (row.card.id)}
-					{@const title = t(row.card.titleKey)}
-					<InfoTokenTile
-						text={title}
-						asks={{ value: { kind: 'text' } }}
-						aria-label={t('info-tokens.cardFor', { card: title, name: row.character.name })}
-						owners={[row.character]}
-						onchoose={() => fill(row)}
-						onadd={onadd && (() => fill(row, true))}
-					/>
-				{/each}
-				{#each tied as token (token.id)}
-					{@render customTile(token)}
-				{/each}
-				{#if characterRows.length === 0 && tied.length === 0}
+				{#each characterSpecific as item (item.key)}
+					{#if item.row}
+						{@const row = item.row}
+						<InfoTokenTile
+							text={item.words}
+							asks={{ value: { kind: 'text' } }}
+							aria-label={t('info-tokens.cardFor', { card: item.words, name: row.character.name })}
+							owners={[row.character]}
+							onchoose={() => fill(row)}
+							onadd={onadd && (() => fill(row, true))}
+						/>
+					{:else if item.token}
+						{@render customTile(item.token)}
+					{/if}
+				{:else}
 					<li class="none">{t('common.none')}</li>
-				{/if}
+				{/each}
 			</ul>
 		</Collapsible>
 	{/if}
