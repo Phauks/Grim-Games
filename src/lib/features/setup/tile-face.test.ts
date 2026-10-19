@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TILE_COLOURS, TILE_SYMBOLS, tileLetters, tileMarks } from './tile-face.ts';
+import { TILE_COLOURS, TILE_SYMBOLS, tileLetters, tileMarks, tileRoman } from './tile-face.ts';
 
 const names = (size: number, face: Parameters<typeof tileMarks>[1], seed = 'g') =>
 	tileMarks(size, face, seed).map((m) => m.name);
@@ -17,9 +17,22 @@ describe('tile marks', () => {
 		]);
 	});
 
+	it('Roman numerals count up past the tens', () => {
+		expect([9, 14, 19, 20, 24, 40, 49].map(tileRoman)).toEqual([
+			'IX',
+			'XIV',
+			'XIX',
+			'XX',
+			'XXIV',
+			'XL',
+			'XLIX'
+		]);
+	});
+
 	it('numbers, letters, symbols and colours in order', () => {
 		expect(names(3, 'numbers')).toEqual(['1', '2', '3']);
 		expect(names(3, 'letters')).toEqual(['A', 'B', 'C']);
+		expect(names(5, 'roman')).toEqual(['I', 'II', 'III', 'IV', 'V']);
 		expect(names(2, 'symbols')).toEqual(['Star', 'Moon']);
 		expect(names(2, 'colours')).toEqual(['Red', 'Orange']);
 		expect(names(2, 'emoji')).toEqual(['Apple', 'Banana']);
