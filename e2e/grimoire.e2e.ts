@@ -1810,7 +1810,8 @@ test('History shows stats from ended games', async ({ page }) => {
 	await expect(page).toHaveURL(/\/history$/);
 });
 
-test('a finished game exports as a recap file and a grimoire image', async ({ page }) => {
+/** Ends a game as an Evil win, with the Imp in Seat 1 and a private note on that seat. */
+async function endWithNote(page: Page) {
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -1830,6 +1831,10 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('game-over')).toBeVisible();
+}
+
+test('a finished game exports as a recap file and a grimoire image', async ({ page }) => {
+	await endWithNote(page);
 
 	// Trevor, 2026-10-19: the history log, the final grimoire and the Storyteller's notes.
 	await menu(page, 'Export game');
@@ -1859,6 +1864,55 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	await page.goto('/history');
 	await page.getByRole('button', { name: /^Export Trouble Brewing ended/ }).tap();
 	await expect(page.getByRole('dialog', { name: 'Export game' })).toBeVisible();
+});
+
+test("a finished game is shared to the players' phones, without the notes", async ({
+	page,
+	context
+}) => {
+	await endWithNote(page);
+	await menu(page, 'Export game');
+	await page
+		.getByRole('dialog', { name: 'Export game' })
+		.getByRole('button', { name: 'Share', exact: true })
+		.tap();
+	// Trevor, 2026-10-19: "if the storyteller allows (allow them to denote what information
+	// to share)". The notes start off.
+	const dialog = page.getByRole('dialog', { name: 'Share with players' });
+	await expect(dialog.getByRole('checkbox', { name: 'Storyteller notes' })).not.toBeChecked();
+	await dialog.getByRole('button', { name: 'Share', exact: true }).tap();
+	const link = dialog.getByTestId('share-url');
+	await expect(link).toHaveValue(/\/recap\/[\w-]{22}$/);
+	const url = await link.inputValue();
+
+	// A player's phone opens the link.
+	const phone = await context.newPage();
+	await phone.goto(url);
+	const recap = phone.frameLocator('[data-testid="recap-frame"]');
+	await expect(recap.getByText('Evil won')).toBeVisible();
+	await expect(recap.getByText('Imp', { exact: true })).toBeVisible();
+	await expect(recap.locator('img')).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
+	await expect(recap.locator('body')).not.toContainText('Secret word: lantern');
+	const download = phone.waitForEvent('download');
+	await phone.getByRole('button', { name: 'Save', exact: true }).tap();
+	expect((await download).suggestedFilename()).toMatch(/^trouble-brewing-.*\.html$/);
+
+	// Reopening the dialog finds the same share; Stop sharing deletes it.
+	await page.keyboard.press('Escape');
+	await menu(page, 'Export game');
+	await page
+		.getByRole('dialog', { name: 'Export game' })
+		.getByRole('button', { name: 'Share', exact: true })
+		.tap();
+	await expect(link).toHaveValue(url);
+	await dialog.getByRole('button', { name: 'Stop sharing' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Stop sharing this game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(link).toHaveValue('');
+	await phone.reload();
+	await expect(phone.getByRole('alert')).toHaveText('This recap is no longer shared.');
 });
 
 /** Whether an element is fully inside the window. */

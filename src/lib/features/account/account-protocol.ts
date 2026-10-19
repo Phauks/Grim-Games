@@ -29,7 +29,7 @@ export const MAX_PASSWORD_FAILURES = 10;
  * this value. Creating an account means accepting it (Trevor, 2026-10-18); changing it asks
  * every account to accept again at its next sign-in.
  */
-export const PRIVACY_VERSION = '2026-10-18';
+export const PRIVACY_VERSION = '2026-10-19';
 /** Name of the HttpOnly session cookie. */
 export const SESSION_COOKIE = 'gg_session';
 
