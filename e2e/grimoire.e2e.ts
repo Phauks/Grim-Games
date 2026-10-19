@@ -2209,6 +2209,10 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	// The same component as /play's Script tab (Trevor, 2026-10-16): 22 characters plus the
 	// edition's 5 recommended Travellers (wiki: Trouble Brewing).
 	await expect(sheet.locator('[data-character]')).toHaveCount(27);
+	// Like /play's title line (Trevor, 2026-10-19): who wrote it, Print and Share.
+	await expect(sheet.getByTestId('script-byline')).toHaveText('by The Pandemonium Institute');
+	for (const name of ['Print script', 'Share script'])
+		await expect(sheet.getByRole('button', { name })).toBeEnabled();
 	await expect(sheet.locator('[data-character="empath"]')).toContainText(
 		'Each night, you learn how many of your 2 alive neighbors'
 	);

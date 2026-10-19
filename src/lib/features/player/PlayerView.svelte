@@ -19,11 +19,9 @@
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
-	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
-	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import type { FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
-	import { fetchSharedRef, shareTargetFor } from '#lib/features/scripts/share-codes.ts';
+	import { fetchSharedRef } from '#lib/features/scripts/share-codes.ts';
 	import { sharedRefFromHash } from '#lib/features/scripts/share.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -33,7 +31,7 @@
 	import { scriptKey } from './notebook.ts';
 	import NoteEditor from './NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
-	import PrintScriptButton from './PrintScriptButton.svelte';
+	import PlayerScriptActions from './PlayerScriptActions.svelte';
 	import { scriptVersion } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
@@ -101,16 +99,17 @@
 		if (chosen) void chooseScript(chosen, { kind: 'edition' });
 	}
 
-	/** Makes the share link when Share or QR code is tapped (a short code for custom scripts). */
-	const shareTarget = $derived.by(() => {
+	/** What Share links to: the saved script, or the edition. */
+	const shareable = $derived.by(() => {
 		if (!script) return undefined;
 		const saved = currentScript.current === script ? currentScript.saved : undefined;
-		const from = saved ?? {
-			edition: script.edition,
-			json: script.edition ? [script.edition] : [],
-			source: { kind: 'edition' as const }
-		};
-		return () => shareTargetFor(from, location.origin);
+		return (
+			saved ?? {
+				edition: script.edition,
+				json: script.edition ? [script.edition] : [],
+				source: { kind: 'edition' as const }
+			}
+		);
 	});
 	// One notebook per script: official editions by id, saved scripts by their library id.
 	const key = $derived.by(() => {
@@ -174,15 +173,7 @@
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. -->
 	{#snippet actions()}
-		<PrintScriptButton {script} {version} />
-		<ShareControl
-			what="script"
-			title={script?.name ?? 'Script'}
-			author={script?.meta.author}
-			{version}
-			logo={script ? scriptLogo(script) : undefined}
-			target={shareTarget}
-		/>
+		<PlayerScriptActions {script} {version} share={shareable} />
 	{/snippet}
 	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). -->
 	{#snippet subtitle()}
