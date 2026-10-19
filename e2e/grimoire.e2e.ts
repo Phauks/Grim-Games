@@ -3967,3 +3967,45 @@ test('Next on the last night step lights up End night', async ({ page }) => {
 	await next.tap();
 	await expect(end).toHaveAttribute('data-hint', '');
 });
+
+// Trevor, 2026-10-19: each special rule helps run the game. I See Dead People: poisoned
+// players don't wake (https://beardytas.com/garden-of-djinn/i-see-dead-people/).
+test('with I See Dead People, the walk-through says a poisoned player doesn’t wake', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: /^Special rules/ }).tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	await rules.getByText('I See Dead People', { exact: true }).tap();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const guide = await openStep(page, 'Poisoner');
+	await guide.getByRole('button', { name: 'Place' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Put Poisoned on' })
+		.getByRole('button', { name: /Seat 2 Empath/ })
+		.tap();
+	await guide.getByRole('button', { name: 'Done' }).tap();
+
+	const strip = await walkTo(page, 'Poisoner');
+	await expect(strip.getByTestId('step-asleep')).toHaveCount(0);
+	await walkTo(page, 'Empath');
+	await expect(strip.getByTestId('step-asleep')).toHaveText(
+		'Poisoned: doesn’t wake (I See Dead People)'
+	);
+});

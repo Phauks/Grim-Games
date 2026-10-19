@@ -26,9 +26,15 @@
 		onClose: () => void;
 		/** Next on the last step: nothing is left, so the board points at End night. */
 		onPastEnd?: () => void;
+		/**
+		 * A special rule keeps this step's player asleep (I See Dead People: poisoned players
+		 * don't wake), named by the rule. The board works it out, so night steps stay mode-free.
+		 */
+		asleepBy?: string;
 	}
 
-	let { grimoire, steps, night, index, onIndex, onOpen, onClose, onPastEnd }: Props = $props();
+	let { grimoire, steps, night, index, onIndex, onOpen, onClose, onPastEnd, asleepBy }: Props =
+		$props();
 
 	const game = $derived(grimoire.game);
 	const step = $derived(steps[index]);
@@ -78,6 +84,10 @@
 						>{/each}
 					<span class="count">{index + 1} of {steps.length}</span>
 				</span>
+				<!-- Inside the strip's fixed height, which scrolls, so nothing outside moves. -->
+				{#if asleepBy}<span class="asleep" data-testid="step-asleep"
+						>Poisoned: doesn’t wake ({asleepBy})</span
+					>{/if}
 				<NightAlerts {grimoire} {step} compact />
 				<NightSuggested {grimoire} {step} compact />
 				<span class="text">
@@ -205,6 +215,10 @@
 	.count {
 		margin-inline-start: var(--space-2);
 		font-size: 0.8rem;
+	}
+	.asleep {
+		color: var(--evil);
+		font-size: 0.9rem;
 	}
 	.text {
 		font-family: var(--font-ability);
