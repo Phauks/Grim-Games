@@ -970,8 +970,8 @@ test('Special rules sits under Game mode, and opening it closes the Game mode li
 });
 
 test('each special rule shows its description under its switch', async ({ page }) => {
-	// Trevor, 2026-10-19: descriptions when toggling, the rest behind Inspect. Specters'
-	// description is approved; one not yet approved shows the author's own rule text.
+	// Trevor, 2026-10-19: descriptions when toggling, the rest behind Inspect. Only approved
+	// descriptions show (I See Dead People's was approved the same day).
 	await page.goto('/new');
 	await modesPanel(page)
 		.getByRole('button', { name: /^Special rules/ })
@@ -984,7 +984,9 @@ test('each special rule shows its description under its switch', async ({ page }
 	);
 	await expect(
 		rows.filter({ hasText: 'I See Dead People' }).getByTestId('rule-description')
-	).toContainText("doesn't announce deaths");
+	).toHaveText(
+		'Characters die as normal, but the Storyteller doesn’t announce deaths. Dead players can still nominate, and poisoned players don’t wake.'
+	);
 	await noSidewaysScroll(page);
 });
 
