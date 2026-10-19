@@ -307,6 +307,9 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	// Its own tab beside the players' (Trevor, 2026-10-19).
+	const watchTab = () => page.getByRole('tab', { name: 'View grimoire' }).tap();
+	await watchTab();
 	const watch = page.getByTestId('watch-link');
 	const toggle = watch.getByRole('checkbox', { name: 'View-only grimoire link' });
 	// The switch is tapped by its label, as the whole row is one tap target.
@@ -408,6 +411,7 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	// Turning it off takes the grimoire away at once; turning it on again makes a new link.
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await watchTab();
 	await flip();
 	await expect(url).toHaveValue('');
 	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');
