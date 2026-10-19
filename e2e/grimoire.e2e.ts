@@ -1305,6 +1305,11 @@ test('copies of a reminder are picked one by one, or stacked with a count', asyn
 	// TPI's data gives the Shabaloth two "Dead" tokens: each is its own chip.
 	await expect(shabaloth.getByRole('button', { name: /^Dead, copy/ })).toHaveCount(2);
 	await shabaloth.getByRole('button', { name: 'Dead, copy 1 of 2' }).tap();
+	// A Dead token on a living player asks whether to mark them dead; not here.
+	await page
+		.getByRole('alertdialog', { name: /^Mark .* dead\?$/ })
+		.getByRole('button', { name: 'Cancel', exact: true })
+		.tap();
 	// The placed copy shows as on this seat: tapping it again would take it off.
 	await expect(shabaloth.getByRole('button', { name: 'Dead, copy 2 of 2' })).toHaveAttribute(
 		'aria-pressed',
@@ -2174,6 +2179,11 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 2' });
 	await picker.getByRole('group', { name: 'Imp' }).getByRole('button', { name: 'Dead' }).tap();
+	// The Soldier lives, so the Storyteller says no to marking them dead.
+	await page
+		.getByRole('alertdialog', { name: /^Mark .* dead\?$/ })
+		.getByRole('button', { name: 'Cancel', exact: true })
+		.tap();
 	await picker.getByRole('button', { name: 'Close' }).tap();
 	await closeSheet(page);
 
@@ -4162,4 +4172,47 @@ test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', as
 	await expect(strip.getByTestId('step-empty-seat')).toHaveText(
 		'No player: make its choices (The Ballad of Seat 7)'
 	);
+});
+
+test('a Dead reminder put on a living player asks whether to mark them dead', async ({ page }) => {
+	// Trevor (2026-10-19): placing a death reminder offers to mark the player dead; a help
+	// switch turns the question off. The Imp's "Dead" (https://wiki.bloodontheclocktower.com/Imp).
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	const addDead = async (seat: number) => {
+		const s = await openSeat(page, seat);
+		await s.getByRole('button', { name: 'Add reminder' }).tap();
+		const picker = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
+		await picker.getByRole('group', { name: 'Imp' }).getByRole('button', { name: 'Dead' }).tap();
+	};
+	await addDead(2);
+	const ask = page.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' });
+	await expect(ask).toBeVisible();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(seatLabelled(page, 'Seat 2: no name, no character, dead')).toBeAttached();
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+
+	// Cancel leaves them alive; switched off, it never asks.
+	await addDead(3);
+	const again = page.getByRole('alertdialog', { name: 'Mark Seat 3 dead?' });
+	await again.getByText('Ask to mark dead', { exact: true }).tap();
+	await again.getByRole('button', { name: 'Cancel', exact: true }).tap();
+	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+	await addDead(4);
+	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).not.toHaveAttribute(
+		'aria-label',
+		/dead/
+	);
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
