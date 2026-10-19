@@ -516,10 +516,13 @@ test('Download shows the JSON first, with Copy and Download', async ({ page }) =
 	await character(page, 'Imp').tap();
 	await page.getByRole('button', { name: 'Download script JSON' }).tap();
 	const dialog = page.getByRole('dialog');
-	await expect(dialog.getByTestId('builder-json')).toContainText('"imp"');
-	await expect(dialog.getByRole('button', { name: 'Copy JSON' })).toBeVisible();
+	// The shared file view: the file's name, Copy and Download in its own header, line numbers.
+	const file = dialog.getByTestId('builder-json');
+	await expect(file).toContainText('"imp"');
+	await expect(file.locator('figcaption')).toContainText('script.json');
+	await expect(file.getByRole('button', { name: 'Copy JSON' })).toBeVisible();
 	const download = page.waitForEvent('download');
-	await dialog.getByRole('button', { name: 'Download script JSON' }).tap();
+	await file.getByRole('button', { name: 'Download script JSON' }).tap();
 	expect((await download).suggestedFilename()).toBe('script.json');
 });
 
