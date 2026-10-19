@@ -59,6 +59,8 @@ export interface ScriptListing {
 	 * is as saving writes it (`scriptToJson`), so a saved copy matches the row it came from.
 	 */
 	identity?: Pick<SavedScript, 'edition' | 'json'>;
+	/** A PDF of the script its source publishes, for Print: linked, never copied. */
+	pdf?: string;
 	/** Set for Recent rows, which can be removed. */
 	saved?: SavedScript;
 }
@@ -190,7 +192,8 @@ export const collectionProvider: LocalProvider = {
 								json: entry.json,
 								source: { kind: 'link', url: entry.link, page: entry.page }
 							},
-							identity: { json: scriptToJson(script) }
+							identity: { json: scriptToJson(script) },
+							...(entry.pdf ? { pdf: entry.pdf } : {})
 						}
 					]
 				: [];

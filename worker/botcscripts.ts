@@ -18,6 +18,8 @@ import {
 	readSearchPage,
 	readVersion,
 	readVersionList,
+	pageHasPdf,
+	scriptPageUrl,
 	upstreamSearchPath,
 	type BotcScriptsQuery,
 	type BotcScriptsVersion,
@@ -99,6 +101,26 @@ async function handleSearch(query: BotcScriptsQuery, page: number): Promise<Resp
 	}
 }
 
+/**
+ * Whether the author uploaded a PDF of this version, for Print (Trevor, 2026-10-19). The API
+ * leaves it out, so the version's page is read: it links the PDF only when there is one.
+ * Unknown counts as no.
+ */
+async function hasPdf(scriptId: number, version: string): Promise<boolean> {
+	try {
+		const response = await fetch(scriptPageUrl(scriptId, version), {
+			headers: { Accept: 'text/html' },
+			redirect: 'follow',
+			cf: { cacheTtl: CACHE_SECONDS, cacheEverything: true }
+		});
+		if (!response.ok) return false;
+		const html = await response.text();
+		return html.length <= MAX_SEARCH_BYTES && pageHasPdf(html, scriptId, version);
+	} catch {
+		return false;
+	}
+}
+
 /** `/api/botcscripts/versions/<pk>`: every version the site publishes for one script. */
 async function handleVersions(scriptId: number): Promise<Response> {
 	try {
@@ -148,7 +170,8 @@ export async function handleBotcScripts(url: URL): Promise<Response> {
 		}
 		const version = readVersion(await getJson(`/api/scripts/${versionId}/`));
 		if (!version) throw new LookupError(502, 'BotC Scripts returned something unexpected.');
-		return Response.json(version, {
+		const pdf = await hasPdf(version.scriptId, version.version);
+		return Response.json(pdf ? { ...version, pdf } : version, {
 			headers: { 'Cache-Control': `public, max-age=${CACHE_SECONDS}` }
 		});
 	} catch (error) {

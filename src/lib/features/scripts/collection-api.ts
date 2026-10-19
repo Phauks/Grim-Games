@@ -108,16 +108,20 @@ export interface CollectionDocLink {
 	heading?: string;
 	/** That heading's text: the script's name as the doc lists it. */
 	title?: string;
+	/** The Drive file its heading links as the script's PDF ("Script PDF"), if any. */
+	pdf?: string;
 }
 
 const HEADING_ID = /^h\.[\w-]+$/;
 
 /**
  * The Drive files a doc links as a script's JSON ("Script JSON"), in the doc's order, each
- * with the heading it sits under (Trevor, 2026-10-16: every script links to its source page).
+ * with the heading it sits under (Trevor, 2026-10-16: every script links to its source page)
+ * and the PDF linked under that heading, for Print (Trevor, 2026-10-19; linked, never copied).
  */
 export function readCollectionDoc(html: string): CollectionDocLink[] {
 	const links: CollectionDocLink[] = [];
+	const pdfs = new Map<string, string>();
 	let heading: string | undefined;
 	let title: string | undefined;
 	const parts =
@@ -132,13 +136,21 @@ export function readCollectionDoc(html: string): CollectionDocLink[] {
 			continue;
 		}
 		const text = match[4].replace(/<[^>]+>/g, '').trim();
+		if (/\bpdf\b/i.test(text)) {
+			const pdf = driveFileId(match[3]);
+			if (pdf && heading && !pdfs.has(heading)) pdfs.set(heading, pdf);
+			continue;
+		}
 		if (!/\bjson\b/i.test(text)) continue;
 		const fileId = driveFileId(match[3]);
 		if (!fileId || links.some((l) => l.fileId === fileId)) continue;
 		links.push({ fileId, ...(heading ? { heading } : {}), ...(title ? { title } : {}) });
 		if (links.length >= MAX_COLLECTION_SCRIPTS) break;
 	}
-	return links;
+	return links.map((link) => {
+		const pdf = link.heading && pdfs.get(link.heading);
+		return pdf ? { ...link, pdf } : link;
+	});
 }
 
 export interface CollectionScript {
@@ -148,6 +160,8 @@ export interface CollectionScript {
 	page: string;
 	/** The script in TPI's format. */
 	json: unknown[];
+	/** The doc's PDF of it, as people open it on Drive. */
+	pdf?: string;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -164,7 +178,8 @@ export function readCollectionList(body: unknown): CollectionScript[] | undefine
 						link: raw.link,
 						// A list cached before pages were sent links to the doc itself.
 						page: typeof raw.page === 'string' ? raw.page : collectionDocUrl(CAROUSEL_COLLECTION),
-						json: raw.json
+						json: raw.json,
+						...(typeof raw.pdf === 'string' && driveFileId(raw.pdf) ? { pdf: raw.pdf } : {})
 					}
 				]
 			: []

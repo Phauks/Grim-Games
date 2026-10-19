@@ -40,7 +40,7 @@ async function fetchText(url: string, cacheTtl: number, maxBytes: number): Promi
 
 async function readScript(
 	collection: ScriptCollectionInfo,
-	{ fileId, heading, title }: CollectionDocLink
+	{ fileId, heading, title, pdf }: CollectionDocLink
 ): Promise<CollectionScript | string> {
 	let why = 'no download address';
 	for (const url of driveDownloadUrls(fileId)) {
@@ -51,7 +51,8 @@ async function readScript(
 					link: driveViewUrl(fileId),
 					page: collectionHeadingUrl(collection, heading),
 					// Some files name the script nothing; the doc's heading does (Trevor, 2026-10-18).
-					json: nameFromListing(json, title)
+					json: nameFromListing(json, title),
+					...(pdf ? { pdf: driveViewUrl(pdf) } : {})
 				};
 			}
 			why = `not a script from ${new URL(url).hostname}`;

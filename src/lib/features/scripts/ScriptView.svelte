@@ -12,7 +12,9 @@
 		type GameData,
 		type LoadedScript
 	} from '#lib/core/data/index.ts';
-	import PrintScriptButton from '#lib/features/player/PrintScriptButton.svelte';
+	import PrintScriptButton, {
+		type SourcePrint
+	} from '#lib/features/player/PrintScriptButton.svelte';
 	import ScriptCopy from '#lib/features/player/ScriptCopy.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -196,6 +198,14 @@
 		return undefined;
 	});
 
+	/** The PDF the shown script's source publishes, for Print (Trevor, 2026-10-19): linked only. */
+	const sourcePrints = $derived.by((): SourcePrint[] => {
+		const listing = shownListing;
+		const target = listing?.target;
+		const pdf = listing?.pdf ?? (isRemote(target) ? remotePreviews.get(target)?.pdf : undefined);
+		return pdf ? [{ label: t('scripts.print.sourcePdf'), url: pdf }] : [];
+	});
+
 	/** Play: a new game with the shown script, without saving it (Trevor, 2026-10-17). */
 	async function play() {
 		if (!preview || !shownSource) return;
@@ -322,7 +332,7 @@
 			disabled={!preview || !shownSource || busy}
 			onclick={() => void play()}
 		/>
-		<PrintScriptButton script={preview} version={shownVersion} />
+		<PrintScriptButton script={preview} version={shownVersion} {sourcePrints} />
 		<ShareControl
 			what="script"
 			title={shownListing?.row.name || t('scripts.current.defaultName')}

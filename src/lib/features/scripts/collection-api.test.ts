@@ -29,8 +29,14 @@ describe('script collections', () => {
 			<p><a href="https://drive.google.com/open?id=1_rxIlqzJnLgME8GTt3aFTrdQd9dhD41O">Script JSON</a>
 			<a href="https://drive.google.com/file/d/${ID}/view">Script JSON</a></p>`;
 		// Each with the heading it sits under, so it links to its own section of the doc.
+		// The PDF beside it goes to Print as a link.
 		expect(readCollectionDoc(html)).toEqual([
-			{ fileId: ID, heading: 'h.gnrzqiid7k9x', title: 'Contempt' },
+			{
+				fileId: ID,
+				heading: 'h.gnrzqiid7k9x',
+				title: 'Contempt',
+				pdf: '1d-ToSIRLvPfyQgwGX_rdSjfNwbigX1tH'
+			},
 			{ fileId: '1_rxIlqzJnLgME8GTt3aFTrdQd9dhD41O', heading: 'h.second1', title: 'Devout Theists' }
 		]);
 		expect(collectionHeadingUrl(CAROUSEL_COLLECTION, 'h.gnrzqiid7k9x')).toBe(
@@ -58,6 +64,19 @@ describe('script collections', () => {
 			{ link: 'y', page: collectionHeadingUrl(CAROUSEL_COLLECTION), json: [] }
 		]);
 		expect(readCollectionList({})).toBeUndefined();
+		// A PDF is kept only when it is a Drive link.
+		const pdf = `https://drive.google.com/file/d/${ID}/view`;
+		expect(
+			readCollectionList({
+				scripts: [
+					{ link: 'x', page, json: [], pdf },
+					{ link: 'y', page, json: [], pdf: 'https://example.com/a.pdf' }
+				]
+			})
+		).toEqual([
+			{ link: 'x', page, json: [], pdf },
+			{ link: 'y', page, json: [] }
+		]);
 	});
 
 	it('downloads from Drive’s current file host first, skipping the virus-scan page', () => {

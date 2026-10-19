@@ -1706,3 +1706,81 @@ test('saving and un-saving an official script leaves its source as it was', asyn
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'false');
 	await expect.poll(summary).toBe(before);
 });
+
+test("Print lists the PDF a script's source publishes, as a link", async ({ page }) => {
+	const content = [{ id: '_meta', name: 'Storm Front', author: 'Trevor' }, ...homebrew.slice(1)];
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name: 'Storm Front',
+						version: '1.0.0',
+						author: 'Trevor',
+						type: 'Full',
+						score: 5,
+						characters: [{ id: 'chef' }, { id: 'imp' }]
+					}
+				]
+			}
+		})
+	);
+	await page.route('**/api/botcscripts/versions/1900', (route) =>
+		route.fulfill({ json: { scriptId: 1900, latest: '1.0.0', versions: ['1.0.0'] } })
+	);
+	// The author uploaded a PDF of this version.
+	await page.route(/\/api\/botcscripts\/(version\/900|script\/1900\/1\.0\.0)$/, (route) =>
+		route.fulfill({
+			json: {
+				scriptId: 1900,
+				versionId: 900,
+				name: 'Storm Front',
+				version: '1.0.0',
+				author: 'Trevor',
+				content,
+				pdf: true
+			}
+		})
+	);
+	const pdfLink = async () => {
+		await details(page).getByRole('button', { name: 'Print script' }).tap();
+		const routes = page.getByRole('dialog', { name: 'Print script' });
+		const link = routes.getByRole('link', { name: 'Script PDF' });
+		const href = await link.getAttribute('href');
+		await expect(link).toHaveAttribute('target', '_blank');
+		await page.keyboard.press('Escape');
+		await expect(routes).toBeHidden();
+		return href;
+	};
+	await page.goto('/scripts');
+	await page.getByRole('button', { name: /^Storm Front/ }).tap();
+	await expect(page.getByTestId('script-sheet')).toBeVisible();
+	expect(await pdfLink()).toBe('https://botcscripts.com/script/1900/1.0.0/download_pdf');
+
+	// The Carousel's "Script PDF" on Drive.
+	const pdf = 'https://drive.google.com/file/d/1d-ToSIRLvPfyQgwGX_rdSjfNwbigX1tH/view';
+	await page.route('**/api/collections/*', (route) =>
+		route.fulfill({
+			json: {
+				scripts: [
+					{
+						link: 'https://drive.google.com/file/d/1AVrIxWsrBMlATsoU-2M5X03jGeBaJYJb/view',
+						page: 'https://docs.google.com/document/d/x/edit#heading=h.a',
+						json: [{ id: '_meta', name: 'Carousel Ride', author: 'Someone' }, 'chef', 'imp'],
+						pdf
+					}
+				]
+			}
+		})
+	);
+	await backToList(page);
+	await chooseSource(page, 'Carousel Script Collection');
+	await page.getByRole('button', { name: /^Carousel Ride/ }).tap();
+	await expect(detailsName(page)).toHaveText('Carousel Ride');
+	expect(await pdfLink()).toBe(pdf);
+});
