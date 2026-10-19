@@ -15,6 +15,7 @@ import {
 	publish,
 	request,
 	resolve,
+	roomPreview,
 	supportsProtocol,
 	unseat,
 	type RoomState,
@@ -80,7 +81,8 @@ export class Room extends DurableObject<RoomEnv> {
 	async fetch(request: Request): Promise<Response> {
 		const room = await this.load();
 		if (request.headers.get('Upgrade') !== 'websocket') {
-			return Response.json({ open: room !== undefined });
+			const script = room && (await this.ctx.storage.get<ScriptView>('script'));
+			return Response.json(roomPreview(room, script?.script));
 		}
 		if (room) await this.touch();
 		const pair = new WebSocketPair();
@@ -223,7 +225,8 @@ const clientAddress = (request: Request) => request.headers.get('CF-Connecting-I
 
 /**
  * `POST /api/rooms` opens a room (body: the host key's hash) and returns its code;
- * `GET /api/room/<code>` says whether it is open, or upgrades to the room's WebSocket.
+ * `GET /api/room/<code>` says whether it is open and what game it holds (`RoomPreview`), or
+ * upgrades to the room's WebSocket.
  * Returns undefined for other paths.
  */
 export async function handleRoom(

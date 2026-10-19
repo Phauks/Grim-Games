@@ -128,11 +128,54 @@ test('a phone can type a code, and wrong codes say so', async ({ page }) => {
 	const join = page.getByRole('button', { name: 'Join' });
 	await expect(join).toBeDisabled();
 	await page.getByRole('textbox', { name: 'Room code from the Storyteller' }).fill('000 001');
-	await join.tap();
-	await expect(page).toHaveURL(/\/join\/000001$/);
+	// No room has this code, so the page says so before anyone joins (Trevor, 2026-10-19).
+	await expect(page.getByTestId('room-preview')).toHaveText('No open game has this code.');
+	await expect(join).toBeDisabled();
 });
 
-test('Join game in the menu takes a typed code, with spaces, and says when the room is closed', async ({
+test('a typed code shows the game it opens before the phone joins', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-19): "you type in the code, and then it shows you what game you will be joining".
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto('/join');
+	const preview = phone.getByTestId('room-preview');
+	const join = phone.getByRole('button', { name: 'Join', exact: true });
+	const before = (await preview.boundingBox())!;
+	const field = phone.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	await field.tap();
+	await field.pressSequentially(code);
+	await expect(preview.getByText('Trouble Brewing', { exact: true })).toBeVisible();
+	await expect(preview.getByTestId('script-logo')).toHaveAttribute(
+		'data-logo',
+		'/data/logos/tb.webp'
+	);
+	await expect(preview).toContainText('8 seats, 0 taken');
+	// The game fills space kept for it: nothing moves.
+	expect((await preview.boundingBox())!.height).toBeCloseTo(before.height, 0);
+	// The code boxes sit in the middle of the page.
+	const boxes = phone.locator('.code-field .box');
+	const first = (await boxes.first().boundingBox())!;
+	const last = (await boxes.last().boundingBox())!;
+	const page_ = phone.viewportSize()!;
+	expect(Math.abs((first.x + last.x + last.width) / 2 - page_.width / 2)).toBeLessThan(
+		page_.width / 8
+	);
+	await join.tap();
+	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
+	await expect(phone.getByRole('heading', { level: 1 })).toHaveText(/^Room \d{3} \d{3}$/);
+	await phoneContext.close();
+});
+
+test('Join game in the menu takes a typed code, with spaces, and says when no game has it', async ({
 	page
 }) => {
 	await page.goto('/');
@@ -142,11 +185,11 @@ test('Join game in the menu takes a typed code, with spaces, and says when the r
 	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
 	const field = page.getByRole('textbox', { name: 'Room code from the Storyteller' });
 	await field.fill(' 482-913 ');
-	// Enter joins; no room has this code, so the same screen says so in place.
+	// No room has this code, so the screen says so in place and Enter doesn't leave it.
+	await expect(page.getByTestId('room-preview')).toHaveText('No open game has this code.');
 	await field.press('Enter');
-	await expect(page).toHaveURL(/\/join\/482913$/);
-	await expect(page.getByRole('alert')).toHaveText('This room is closed, or the code is wrong.');
-	await expect(page.getByRole('textbox', { name: 'Room code from the Storyteller' })).toBeVisible();
+	await expect(page).toHaveURL(/\/join$/);
+	await expect(field).toHaveValue('482913');
 });
 
 test('the room code goes in one box per digit, and takes no more than the code holds', async ({
@@ -166,7 +209,9 @@ test('the room code goes in one box per digit, and takes no more than the code h
 	await field.pressSequentially('x37');
 	await expect(boxes).toHaveText(['4', '8', '2', '9', '1', '3']);
 	await expect(field).toHaveValue('482913');
-	await expect(join).toBeEnabled();
+	// A full code is looked up; no room has this one.
+	await expect(page.getByTestId('room-preview')).toHaveText('No open game has this code.');
+	await expect(join).toBeDisabled();
 	// Backspace steps back one box.
 	await field.press('Backspace');
 	await expect(boxes).toHaveText(['4', '8', '2', '9', '1', '']);

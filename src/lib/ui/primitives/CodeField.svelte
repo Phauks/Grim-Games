@@ -22,6 +22,8 @@
 		inputmode?: 'numeric' | 'text';
 		/** Accessible name of the X. */
 		clearLabel?: string;
+		/** Sits in the middle of its row, the boxes centred with the X beside them. */
+		centred?: boolean;
 	}
 
 	let {
@@ -31,7 +33,8 @@
 		group,
 		id,
 		inputmode = 'numeric',
-		clearLabel
+		clearLabel,
+		centred = false
 	}: Props = $props();
 
 	let focused = $state(false);
@@ -61,8 +64,12 @@
 	}
 </script>
 
-<ClearableField bind:value label={clearLabel} class="code-field">
-	<span class="boxes" aria-hidden="true">
+<ClearableField
+	bind:value
+	label={clearLabel}
+	class={centred ? 'code-field code-field-centred' : 'code-field'}
+>
+	<span class="boxes" class:centred aria-hidden="true">
 		{#each { length }, i (i)}
 			<span
 				class="box"
@@ -104,6 +111,13 @@
 		padding-inline-end: var(--tap-target);
 		min-width: 0;
 		pointer-events: none;
+	}
+	/* As much room before the boxes as the X takes after them, so the boxes are centred. */
+	.boxes.centred {
+		padding-inline-start: var(--tap-target);
+	}
+	:global(.clearable.code-field.code-field-centred) {
+		justify-self: center;
 	}
 	.box {
 		display: grid;
