@@ -232,6 +232,13 @@ export const modes = {
 	'modes.field.offers': 'Offer sizes',
 	'modes.field.recycleUnchosen': 'Role Recycling',
 	'modes.roleRecycling': 'Role Recycling',
+	'modes.roleRecyclingHint':
+		'When on, characters a player turns down go back into the pool for later offers. When off, they are set aside.',
+	'modes.settings': 'Game mode settings',
+	'modes.campaign.chooseHint': 'Start a new campaign, or carry on one you have played before.',
+	'modes.campaign.versionHint': 'The saved version of the campaign’s script this game plays.',
+	'modes.restrictedHint':
+		'Characters kept out of this game. The mode’s own restrictions are listed and can be lifted.',
 	'modes.field.oneTypePerOffer': 'One type per offer',
 	'modes.field.when': 'When',
 	'modes.field.reconsider': 'Storyteller may ask to choose again',

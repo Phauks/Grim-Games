@@ -24,7 +24,8 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import AddModeDialog from './AddModeDialog.svelte';
@@ -303,31 +304,54 @@
 	{#if isStandard}
 		{@render standard(rules)}
 	{:else}
-		{#if ongoing.length > 0}
-			<Select
-				label={t('modes.campaign.choose')}
-				value={campaignId}
-				options={[
-					{ value: 'new', label: t('modes.campaign.new') },
-					...ongoing.map((c) => ({
-						value: c.campaignId,
-						label: t('modes.campaign.ongoing', {
-							name: c.games[0]?.script?.meta?.name ?? mode.name,
-							date: new Date(c.createdAt).toLocaleDateString()
-						}),
-						description: t('library.campaignVersions', { count: c.games.length })
-					}))
-				]}
-				onChange={(v) => (campaignId = v)}
-			/>
-		{/if}
+		<section class="settings" aria-labelledby="mode-settings-title" data-testid="mode-settings">
+			<h3 id="mode-settings-title">{t('modes.settings')}</h3>
+			{#if ongoing.length > 0}
+				<SettingSelect
+					label={t('modes.campaign.choose')}
+					description={t('modes.campaign.chooseHint')}
+					value={campaignId}
+					options={[
+						{ value: 'new', label: t('modes.campaign.new') },
+						...ongoing.map((c) => ({
+							value: c.campaignId,
+							label: t('modes.campaign.ongoing', {
+								name: c.games[0]?.script?.meta?.name ?? mode.name,
+								date: new Date(c.createdAt).toLocaleDateString()
+							}),
+							description: t('library.campaignVersions', { count: c.games.length })
+						}))
+					]}
+					onChange={(v) => (campaignId = v)}
+				/>
+			{/if}
+			{#if continuing}
+				<SettingSelect
+					label={t('modes.campaign.version')}
+					description={t('modes.campaign.versionHint')}
+					value={versionValue}
+					options={versions}
+					onChange={(v) => (version = v)}
+				/>
+			{/if}
+			{#if draft}
+				<SettingToggle
+					label={t('modes.roleRecycling')}
+					description={t('modes.roleRecyclingHint')}
+					checked={roleRecycling ?? draft.recycleUnchosen}
+					onChange={(on) => (roleRecycling = on)}
+				/>
+			{/if}
+			<div class="setting">
+				<Button variant="field" icon="restricted" onclick={openRestricted}>
+					{t('modes.restrictedButton', { count: restrictedCount })}
+				</Button>
+				<p class="description">{t('modes.restrictedHint')}</p>
+			</div>
+		</section>
+
 		{#if continuing}
-			<Select
-				label={t('modes.campaign.version')}
-				value={versionValue}
-				options={versions}
-				onChange={(v) => (version = v)}
-			/>
+			<!-- The campaign's saved version is its script. -->
 		{:else if scriptKind === 'one'}
 			<ScriptPicker label={t('modes.script')} value={script} onChange={(v) => (script = v)} />
 		{:else if scriptKind === 'per-town'}
@@ -386,16 +410,6 @@
 			/>
 		{/if}
 
-		{#if draft}
-			<Toggle
-				label={t('modes.roleRecycling')}
-				checked={roleRecycling ?? draft.recycleUnchosen}
-				onChange={(on) => (roleRecycling = on)}
-			/>
-		{/if}
-		<Button variant="field" icon="restricted" onclick={openRestricted}>
-			{t('modes.restrictedButton', { count: restrictedCount })}
-		</Button>
 		<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>
 			{t('modes.start')}
 		</Button>
@@ -437,9 +451,28 @@
 />
 
 <style>
-	.about h3 {
+	.about h3,
+	.settings h3 {
 		margin: 0;
 		font-size: 1.05rem;
+	}
+	/* Each setting has its description under it, always there (Trevor, 2026-10-19). */
+	.setting {
+		display: grid;
+		gap: var(--space-1);
+		padding-block: var(--space-3);
+	}
+	/* The thin line between settings, as SettingRow draws it; none under the heading. */
+	.setting {
+		border-top: 1px solid var(--border);
+	}
+	.settings h3 + .setting {
+		border-top: 0;
+	}
+	.description {
+		margin: 0;
+		color: var(--on-surface-muted);
+		font-size: 0.9em;
 	}
 	.modes {
 		display: grid;
