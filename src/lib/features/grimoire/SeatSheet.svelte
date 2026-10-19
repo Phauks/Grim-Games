@@ -49,9 +49,11 @@
 		seatId: SeatId | undefined;
 		/** Opens the alignment draw for a seat, kept by the board (Trevor, 2026-10-19). */
 		onDraw?: (seatId: SeatId) => void;
+		/** Edits this player's notes, which live in the board's Notes sheet. */
+		onNotes?: (seatId: SeatId) => void;
 	}
 
-	let { open = $bindable(), grimoire, seatId, onDraw }: Props = $props();
+	let { open = $bindable(), grimoire, seatId, onDraw, onNotes }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -885,6 +887,17 @@
 				})}
 		>
 			Change alignment
+		</Button>
+		<!-- The same notes as in ⋯ Notes on the board (Trevor, 2026-10-19). -->
+		<Button
+			variant="quiet"
+			icon="notes"
+			onclick={() =>
+				fromMenu(() => {
+					if (seatId) onNotes?.(seatId);
+				})}
+		>
+			Notes
 		</Button>
 		<!-- Rarely needed, so in here rather than a row of its own (Trevor, 2026-10-18). -->
 		<Button

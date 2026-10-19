@@ -2099,7 +2099,7 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await startGame(page);
 	const seat = await openSeat(page, 1);
 	await nameSeat(seat, 'Ana');
-	// Player notes live in the ⋯ Notes sheet, not the seat sheet (Trevor, 2026-10-19).
+	// Player notes live in the ⋯ Notes sheet, not as a row of the seat sheet (Trevor, 2026-10-19).
 	await expect(seat.getByRole('button', { name: /^Notes/ })).toHaveCount(0);
 	await closeSheet(page);
 
@@ -2146,12 +2146,29 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await expect(seatLabelled(page, 'Seat 1: Ana, no character, has a note')).toBeAttached();
 	const mark = page.getByTestId('note-mark');
 	await expect(mark).toHaveCount(1);
-	// Tapping the pen mark opens the Notes sheet at that player (Trevor, 2026-10-19).
+	// Tapping the pen mark opens just that player's note (Trevor, 2026-10-19).
 	await mark.tap();
-	await expect(sheet.locator('li[data-focus]')).toHaveCount(1);
-	await expect(sheet.locator('li[data-focus]')).toContainText('Secret word: lantern');
+	await expect(dialog).toBeVisible();
+	await expect(field).toHaveValue(/Secret word: lantern/);
+	await expect(sheet).toBeHidden();
 	await expect(page.getByRole('button', { name: 'Edit player name' })).toHaveCount(0);
-	await page.screenshot({ path: `test-results/notes-sheet-${test.info().project.name}.png` });
+	await page.screenshot({ path: `test-results/seat-note-${test.info().project.name}.png` });
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
+	// The seat's own ⋯ menu edits the same notes (Trevor, 2026-10-19).
+	const again = await openSeat(page, 1);
+	await again.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog', { name: 'Ana' }).getByRole('button', { name: 'Notes' }).tap();
+	await expect(dialog).toBeVisible();
+	await expect(field).toHaveValue(/Secret word: lantern/);
+	await field.tap();
+	await page.keyboard.press('Control+End');
+	await page.keyboard.type(' (from the seat)');
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
+	await closeSheet(page);
+	await menu(page, 'Notes');
+	await expect(notes).toContainText('(from the seat)');
 	await closeSheet(page);
 	// Saved with the game, and listed in History.
 	await page.reload();
