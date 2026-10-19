@@ -332,9 +332,10 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await expect(pledge.getByTestId('watch-pledge').getByRole('listitem')).toHaveCount(3);
 	await pledge.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
-	// Every control the Storyteller has is there but disabled (Trevor, 2026-10-19): nothing
-	// opens, so nothing invites a try. Only the players' script opens.
+	// Every control that changes the game is there but disabled (Trevor, 2026-10-19), so
+	// nothing invites a try; what only reads still opens. The board says it is view-only.
 	const toolbar = viewer.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(toolbar.getByTestId('view-only')).toHaveText('View-Only');
 	for (const name of ['Day', 'Info tokens', 'Share', 'More'])
 		await expect(toolbar.getByRole('button', { name, exact: true })).toBeDisabled();
 	await expect(toolbar.getByRole('button', { name: 'Script', exact: true })).toBeEnabled();
@@ -381,6 +382,22 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await expect(clock).toHaveText(
 		(await page.getByTestId('day-timer').getByRole('timer').textContent()) ?? ''
 	);
+
+	// A seat opens its character to read, never the seat sheet.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: /^Character for / })
+		.getByRole('button', { name: 'Washerwoman', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(viewer.getByRole('button', { name: /^Seat 1: Alex.*Washerwoman/ })).toBeVisible();
+	await viewer.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await expect(viewer.getByRole('dialog', { name: 'Washerwoman' })).toBeVisible();
+	await expect(
+		viewer.locator('[data-scope="drawer"][data-part="content"][data-state="open"]')
+	).toHaveCount(0);
+	await viewer.keyboard.press('Escape');
 
 	// Every open asks again.
 	await viewer.reload();

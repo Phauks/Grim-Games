@@ -641,6 +641,16 @@
 		sheetOpen = true;
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
+	/**
+	 * A spectator reads, never changes (Trevor, 2026-10-19): a seat opens its character's
+	 * details, as a Fabled or Loric does, not the seat sheet.
+	 */
+	function readCharacter(id: CharacterId | undefined) {
+		const character = id ? characters.get(id) : undefined;
+		if (!character) return;
+		ruleDetails = character;
+		ruleDetailsOpen = true;
+	}
 
 	// ── Notes (Trevor, 2026-10-19): the game's and every player's in ⋯ Notes ──
 	let notesOpen = $state(false);
@@ -1286,7 +1296,6 @@
 			type="button"
 			class="rules-stack"
 			data-rule-stack
-			disabled={watching}
 			aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
 			onclick={() => (rulesGroupOpen = true)}
 		>
@@ -1354,6 +1363,7 @@
 				type="button"
 				class="held-chip"
 				aria-label={reminder.label}
+				disabled={watching}
 				onclick={() => heldDialog?.show(reminder.reminderId)}
 			>
 				<ReminderToken
@@ -1390,7 +1400,6 @@
 						type="button"
 						class="rule"
 						data-rule={id}
-						disabled={watching}
 						aria-label={character.name}
 						onclick={() => {
 							ruleShown = id;
@@ -1464,8 +1473,11 @@
 		{:else}
 			<!-- The app's navigation; on the narrowest phones it is in More instead. -->
 			<span class="nav-menu" class:watching><NavMenuButton /></span>
-			<!-- Icons on phones; with their words on wider screens, where there is room. -->
-			<span class="spacer"></span>
+			<!-- Icons on phones; with their words on wider screens, where there is room. A
+			     spectator's board says what it is in that room (Trevor, 2026-10-19). -->
+			<span class="spacer"
+				>{#if watching}<span class="view-only" data-testid="view-only">View-Only</span>{/if}</span
+			>
 			<!-- A spectator sees every control the Storyteller does, disabled (Trevor, 2026-10-19):
 			     nothing opens, so nothing invites a try. Script only shows the players' copy. -->
 			<Button
@@ -1564,8 +1576,11 @@
 					namePlace={namePlaces[i] ?? 'below'}
 					onTap={(part) =>
 						!arranging &&
-						!watching &&
-						(part === 'note' ? editNote(seat.seatId) : openSeat(seat.seatId))}
+						(watching
+							? readCharacter(seat.characterId)
+							: part === 'note'
+								? editNote(seat.seatId)
+								: openSeat(seat.seatId))}
 					onGhostVote={() =>
 						!arranging &&
 						!watching &&
@@ -2124,7 +2139,11 @@
 	<RulesAtSetting />
 	{#snippet headActions()}
 		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
-		<DeleteButton label="Remove from the game" onclick={() => (ruleRemoveOpen = true)} />
+		<DeleteButton
+			label="Remove from the game"
+			disabled={watching}
+			onclick={() => (ruleRemoveOpen = true)}
+		/>
 	{/snippet}
 </Dialog>
 
@@ -2144,6 +2163,7 @@
 					</div>
 					<DeleteButton
 						label={removeRuleLabel(character.name)}
+						disabled={watching}
 						onclick={() => {
 							ruleShown = id;
 							ruleRemoveOpen = true;
@@ -2432,6 +2452,17 @@
 	}
 	.spacer {
 		flex: 1;
+		min-width: 0;
+		text-align: center;
+	}
+	.view-only {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--evil);
+		font-family: var(--font-heading);
+		font-weight: 700;
 	}
 	.corner-title {
 		position: absolute;
