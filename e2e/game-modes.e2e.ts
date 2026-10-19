@@ -383,7 +383,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	const board = page.url();
 	await page.getByTestId('mode-menu').tap();
-	const menu = page.getByRole('dialog', { name: 'Game mode' });
+	const menu = page.getByRole('dialog', { name: 'Game info' });
 	await expect(menu.getByRole('button', { name: 'Town 1 · Trouble Brewing' })).toHaveAttribute(
 		'aria-current',
 		'page'
@@ -398,7 +398,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	await page.getByTestId('mode-menu').tap();
 	await page
-		.getByRole('dialog', { name: 'Game mode' })
+		.getByRole('dialog', { name: 'Game info' })
 		.getByRole('button', { name: 'Towns' })
 		.tap();
 	await expect(page).toHaveURL(towns);
@@ -767,10 +767,10 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Game mode' })
+		.getByRole('button', { name: 'Game info' })
 		.tap();
 	await page
-		.getByRole('dialog', { name: 'Game mode' })
+		.getByRole('dialog', { name: 'Game info' })
 		.getByRole('button', { name: 'Specters vote and ability' })
 		.tap();
 	const sheet = page.getByRole('dialog', { name: 'Specters vote and ability' });
@@ -1014,11 +1014,11 @@ test('each special rule takes its own line under the script name in the board co
 	const lines = corner.getByTestId('game-mode');
 	if (test.info().project.name === 'phone') {
 		// A phone's corner beside seat 5 has no room for the name and a rule line: the name
-		// hides, and the ⋯ menu's Game mode has the mode and its rules instead.
+		// hides, and the ⋯ menu's Game info has the mode and its rules instead.
 		await expect(corner).toBeHidden();
 		await page.getByRole('button', { name: 'More', exact: true }).tap();
 		await expect(
-			page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Game mode' })
+			page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Game info' })
 		).toBeVisible();
 		return;
 	}

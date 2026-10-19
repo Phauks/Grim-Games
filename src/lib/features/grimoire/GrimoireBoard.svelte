@@ -1130,7 +1130,6 @@
 	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
 	 */
 	const modeNames = $derived(gameModeNames(game.gameId));
-	const modeName = $derived(modeNames.length ? modeNames.join(' + ') : undefined);
 	/**
 	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
 	 * says it once, in the mode's colour, rather than twice (Trevor, 2026-10-18).
@@ -1698,13 +1697,11 @@
 		<Button variant="quiet" icon="rename" onclick={() => fromMenu(() => (storytellerOpen = true))}>
 			Storyteller
 		</Button>
-		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
-			too, for when the corner has no room for the name. -->
-		{#if modeName}
-			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
-				Game mode
-			</Button>
-		{/if}
+		<!-- The game's info and a mode's own actions are on the corner name (ModeMenu, Trevor
+			2026-10-18, 2026-10-19); here too, for when the corner has no room for the name. -->
+		<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
+			Game info
+		</Button>
 		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
 		     apart at the bottom (Trevor, 2026-10-18). -->
 		<hr class="menu-rule" />
