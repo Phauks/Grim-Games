@@ -28,9 +28,14 @@
 		variant?: 'full' | 'compact';
 		/** False where the sound is chosen beside the timer (the board's timer sheet). */
 		soundButton?: boolean;
+		/**
+		 * A spectator's board (Trevor, 2026-10-19): the clock is shown but nothing on it can
+		 * be pressed, held or opened.
+		 */
+		readOnly?: boolean;
 	}
 
-	let { alive, variant = 'full', soundButton = true }: Props = $props();
+	let { alive, variant = 'full', soundButton = true, readOnly = false }: Props = $props();
 
 	$effect(() => timer.follow(alive));
 
@@ -108,8 +113,9 @@
 			type="button"
 			class="open"
 			aria-label={t('day.timerOpen', { clock: timer.clock })}
+			disabled={readOnly}
 			onclick={() => (controlsOpen = true)}
-			{@attach hold(() => timer.reset(alive))}
+			{@attach hold(() => !readOnly && timer.reset(alive))}
 		>
 			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
 				>{timer.clock}</span
@@ -122,7 +128,7 @@
 	<IconButton
 		icon={timer.running ? 'timerPause' : 'timerStart'}
 		label={timer.running ? t('day.timerPause') : t('day.timerStart')}
-		disabled={!timer.running && !timer.startable}
+		disabled={readOnly || (!timer.running && !timer.startable)}
 		onclick={() => timer.toggle()}
 	/>
 	{#if variant === 'full'}

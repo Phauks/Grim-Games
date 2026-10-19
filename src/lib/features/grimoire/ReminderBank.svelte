@@ -64,6 +64,8 @@
 		 * End night, End day, or Run night to pick a stopped walk-through up). Always there, so the
 		 * bank never moves. `hint`: a count; each rise lights it up for a moment.
 		 */
+		/** A spectator's board (Trevor, 2026-10-19): every token shown, none taken. */
+		disabled?: boolean;
 		run?: {
 			/** Its accessible name, and the shorter words shown. */
 			label: string;
@@ -86,7 +88,8 @@
 		ruleAt,
 		onRule,
 		onHints,
-		run
+		run,
+		disabled = false
 	}: Props = $props();
 
 	const game = $derived(grimoire.game);
@@ -441,6 +444,7 @@
 					alignment={placingAlignment(game, item, characters)}
 					infinite={isGeneric(item)}
 					{size}
+					{disabled}
 					onTap={() => tap(item)}
 					onDrag={(x, y, end) => dragItem(item, x, y, end)}
 					onCancel={cancelDrag}

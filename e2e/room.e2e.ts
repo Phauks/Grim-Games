@@ -316,10 +316,22 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await expect(pledge.getByTestId('watch-pledge').getByRole('listitem')).toHaveCount(3);
 	await pledge.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
-	// Nothing to share or change from here.
+	// Every control the Storyteller has is there but disabled (Trevor, 2026-10-19): nothing
+	// opens, so nothing invites a try. Only the players' script opens.
 	const toolbar = viewer.getByRole('toolbar', { name: 'Grimoire' });
-	await expect(toolbar.getByRole('button', { name: 'Share', exact: true })).toHaveCount(0);
-	await expect(toolbar.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
+	for (const name of ['Day', 'Info tokens', 'Share', 'More'])
+		await expect(toolbar.getByRole('button', { name, exact: true })).toBeDisabled();
+	await expect(toolbar.getByRole('button', { name: 'Script', exact: true })).toBeEnabled();
+	const timer = viewer.getByTestId('day-timer');
+	await expect(timer).toBeVisible();
+	for (const button of await timer.getByRole('button').all()) await expect(button).toBeDisabled();
+	await viewer.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await expect(
+		viewer.locator(
+			'[data-part="content"][data-state="open"]:is([data-scope="dialog"], [data-scope="drawer"])'
+		)
+	).toHaveCount(0);
+	await expect(viewer.getByText('Only the Storyteller can change this game.')).toHaveCount(0);
 	// Game info, from the corner where it shows, has no pencil for a viewer.
 	const corner = viewer.getByTestId('mode-menu');
 	if (await corner.isVisible()) {
