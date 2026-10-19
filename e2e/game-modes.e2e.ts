@@ -84,6 +84,9 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	await expect(dialog.locator('[data-part="assignment"] [data-field="instructions"]')).toHaveCount(
 		0
 	);
+	// Only the parts the mode changes, until Changed only is turned off (Trevor, 2026-10-19).
+	await expect(dialog.locator('[data-part="towns"]')).toHaveCount(0);
+	await dialog.getByText('Changed only', { exact: true }).tap();
 	await expect(dialog.locator('[data-part="towns"]')).toContainText('Standard');
 	// The mode file starts closed every time (Trevor, 2026-10-18).
 	await expect(dialog.locator('pre')).toBeHidden();
@@ -110,6 +113,10 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	await scroll.evaluate((el) => el.scrollTo(0, el.scrollHeight));
 	expect(await scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	await noSidewaysScroll(page);
+	// The choice is remembered.
+	await dialog.getByRole('button', { name: 'Close' }).first().tap();
+	await page.getByRole('button', { name: 'Inspect Whale Buffet' }).tap();
+	await expect(dialog.locator('[data-part="towns"]')).toContainText('Standard');
 });
 
 test('restricted characters stay out of the game, and the mode’s bans can be lifted', async ({
