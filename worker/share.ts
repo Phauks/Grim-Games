@@ -67,14 +67,14 @@ export class SharedScript extends DurableObject<ShareEnv> {
 	}
 }
 
-function base64url(bytes: Uint8Array): string {
+export function base64url(bytes: Uint8Array): string {
 	return btoa(String.fromCharCode(...bytes))
 		.replaceAll('+', '-')
 		.replaceAll('/', '_')
 		.replace(/=+$/, '');
 }
 
-async function hashKey(key: string): Promise<string> {
+export async function hashKey(key: string): Promise<string> {
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key));
 	return base64url(new Uint8Array(digest));
 }
@@ -101,7 +101,7 @@ async function readScriptBody(request: Request): Promise<string | { error: strin
 	return JSON.stringify(json);
 }
 
-async function allowed(env: ShareEnv, limiter: RateLimit, caller: string): Promise<boolean> {
+export async function allowed(env: ShareEnv, limiter: RateLimit, caller: string): Promise<boolean> {
 	if (env.SHARE_LIMITS === 'off') return true;
 	return (await limiter.limit({ key: caller })).success;
 }

@@ -7,6 +7,7 @@ import { handleHomebrewScripts } from './homebrew-scripts.ts';
 import { handleHomebrewWiki } from './homebrew-wiki.ts';
 import { handleRoom, Room, type RoomEnv } from './room.ts';
 import { handleReports, ReportBox, type ReportsEnv } from './reports.ts';
+import { handleRecap, SharedRecap, type RecapEnv } from './recap.ts';
 import { handleShare, SharedScript, type ShareEnv } from './share.ts';
 import {
 	mirrorStatus,
@@ -19,10 +20,10 @@ import {
 import { isWorldCupYear, worldCupSource } from './world-cups.ts';
 import { COLLECTIONS } from '../src/lib/features/scripts/collection-api.ts';
 
-export { ReportBox, Room, ScriptMirror, SharedScript };
+export { ReportBox, Room, ScriptMirror, SharedRecap, SharedScript };
 export { AccountEmail, AccountName, AccountUser } from './account/objects.ts';
 
-export interface Env extends ShareEnv, AccountRoutesEnv, RoomEnv, ReportsEnv, MirrorEnv {
+export interface Env extends ShareEnv, RecapEnv, AccountRoutesEnv, RoomEnv, ReportsEnv, MirrorEnv {
 	ASSETS: Fetcher;
 }
 
@@ -88,6 +89,9 @@ export default {
 		}
 		if (url.pathname === '/api/share' || url.pathname.startsWith('/api/share/')) {
 			return handleShare(request, env);
+		}
+		if (url.pathname === '/api/recap' || url.pathname.startsWith('/api/recap/')) {
+			return handleRecap(request, env);
 		}
 		const reports = await handleReports(request, env, url);
 		if (reports) return reports;

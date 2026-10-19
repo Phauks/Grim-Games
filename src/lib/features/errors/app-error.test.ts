@@ -13,13 +13,16 @@ import {
 const at = { area: 'scripts', page: '/scripts', handled: true, now: 1_000 };
 
 describe('scrubUrls', () => {
-	it('masks room, share and account codes kept in the path', () => {
+	it('masks room, share, recap and account codes kept in the path', () => {
 		expect(scrubUrls('socket wss://x.dev/api/room/482913 closed at /join/482913')).toBe(
 			'socket x.dev/api/room/•••• closed at /join/••••'
 		);
 		expect(scrubUrls('GET /api/share/abc123 and /api/account/docs/scripts/d-9 failed')).toBe(
 			'GET /api/share/•••• and /api/account/docs/scripts/•••• failed'
 		);
+		expect(
+			scrubUrls('on /recap/AbC_-1234567890abcdefgh GET /api/recap/AbC_-1234567890abcdefgh')
+		).toBe('on /recap/•••• GET /api/recap/••••');
 		expect(scrubUrls('/api/share POST /api/rooms ok')).toBe('/api/share POST /api/rooms ok');
 	});
 

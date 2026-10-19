@@ -59,15 +59,16 @@
 				For a live room, its code, your device's key for it and the name you joined with
 				(localStorage).
 			</li>
+			<li>For a game recap you shared, its link and the key to stop sharing it (localStorage).</li>
 			<li>Copies of wiki pages you have opened, and of script lists you have browsed.</li>
 			<li>A copy of the app itself, so it works offline, plus images from homebrew scripts.</li>
 		</ul>
 		<p>
-			None of this is sent to us, apart from a script you share, a live room's public table, a
-			report you send, and your scripts if you sign in (below). When the app opens it asks your
-			browser to keep this data rather than clear it to free up space; Settings, Data shows the
-			answer. Clearing this site's data in your browser deletes it all. Settings, Data lets you
-			clear parts of it, and Reset settings resets your settings.
+			None of this is sent to us, apart from a script you share, a game recap you share, a live
+			room's public table, a report you send, and your scripts if you sign in (below). When the app
+			opens it asks your browser to keep this data rather than clear it to free up space; Settings,
+			Data shows the answer. Clearing this site's data in your browser deletes it all. Settings,
+			Data lets you clear parts of it, and Reset settings resets your settings.
 		</p>
 	</PageSection>
 	<PageSection title="Shared scripts">
@@ -95,6 +96,38 @@
 			<li>
 				If a code can't be made, for example while you are offline, the app shares a longer link
 				that carries the whole script in the part of the address browsers never send to a server.
+			</li>
+		</ul>
+	</PageSection>
+	<PageSection title="Shared game recaps">
+		<p>
+			When a game has ended and the Storyteller taps Share in Export game, the app uploads a recap
+			of that game to our server and stores it under a long random code in its link. Nothing is
+			uploaded unless the Storyteller shares it.
+		</p>
+		<ul>
+			<li>
+				The recap holds the script's name, the result, each seat's player name, characters and
+				whether they died, and, as the Storyteller chooses, the history log, a picture of the
+				grimoire and the Storyteller's notes. Notes are left out unless the Storyteller turns them
+				on.
+			</li>
+			<li>No account or IP address is stored with the recap.</li>
+			<li>
+				Anyone who has the link or scans its QR code can open the recap, so don't share one you want
+				kept private.
+			</li>
+			<li>
+				It is deleted automatically 30 days after it was last opened, or straight away when the
+				Storyteller taps Stop sharing.
+			</li>
+			<li>
+				Our server limits how many recaps one IP address can open or share each minute, using
+				Cloudflare's rate limiter. We do not store the address.
+			</li>
+			<li>
+				The code appears in our request logs as part of the address the app asks our server for; the
+				recap itself never does.
 			</li>
 		</ul>
 	</PageSection>
