@@ -35,9 +35,9 @@
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { dealTitle } from './deal-title.ts';
-	import { findMode } from './custom-modes.svelte.ts';
 	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
 	import { readGameMode } from './game-mode-store.ts';
+	import { gameModeOf } from './game-mode.ts';
 
 	/**
 	 * Characters for a mode that doesn't put characters in the bag, on the Storyteller's
@@ -57,7 +57,7 @@
 	const game = $derived(port.game!);
 	const gameId = $derived(game.gameId);
 	const record = $derived(readGameMode(gameId));
-	const mode = $derived(findMode(record?.modeId ?? '') ?? STANDARD);
+	const mode = $derived(gameModeOf(gameId) ?? STANDARD);
 	const assignment = $derived(mode.parts.assignment);
 	const split = $derived(splitPlayers(game.seating.length));
 	const seats = $derived(game.seating.slice(0, split.dealt));

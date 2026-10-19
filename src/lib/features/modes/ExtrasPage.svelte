@@ -25,8 +25,8 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import { findMode } from './custom-modes.svelte.ts';
 	import { readGameMode } from './game-mode-store.ts';
+	import { gameModeOf } from './game-mode.ts';
 	import { readExtras, writeExtras } from './mode-extras.ts';
 
 	/**
@@ -46,7 +46,7 @@
 	const game = $derived(port.game!);
 	const gameId = $derived(game.gameId);
 	const record = $derived(readGameMode(gameId));
-	const mode = $derived(findMode(record?.modeId ?? '') ?? STANDARD);
+	const mode = $derived(gameModeOf(gameId) ?? STANDARD);
 	const restrictions = $derived(record?.restrictions ?? NO_RESTRICTIONS);
 	const pool = $derived(mode.parts.pool);
 	const announce = $derived(pool?.kind === 'script-plus-hidden' && pool.announceRange);

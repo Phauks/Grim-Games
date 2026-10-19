@@ -4,7 +4,7 @@
  * puts on the script (part 7).
  */
 import type { Character, CharacterId, Script } from '#lib/core/data/types.ts';
-import type { GameMode, ModePart } from './types.ts';
+import type { CombinedParts, GameMode, ModePart, RulePart } from './types.ts';
 import { isBagDisabled, isNotDealt, isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
 import { standInKind } from '#lib/core/rules/bag-plan.ts';
 
@@ -129,9 +129,13 @@ export function pickableCharacters(mode: GameMode, characters: readonly Characte
  * Whether this app runs the part as the mode sets it; any other part is shown in Inspect and
  * run by the Storyteller. Parts a mode leaves out are standard, which the app always runs.
  */
-export function runsPart(mode: GameMode, part: ModePart): boolean {
-	const p = mode.parts;
+/** Whether the app runs a part of a mode, a combined mode or a special rule. */
+export function runsPart(mode: { parts: CombinedParts }, part: ModePart | RulePart): boolean {
+	const p: CombinedParts = mode.parts;
 	switch (part) {
+		case 'text':
+			// A rule's lines go on the script's Bootlegger when the game starts (features/modes/start.ts).
+			return true;
 		case 'pool':
 			return (
 				!p.pool ||
@@ -176,6 +180,6 @@ export function runsPart(mode: GameMode, part: ModePart): boolean {
 		case 'winConditions':
 			return !p.winConditions || p.winConditions.kind === 'standard';
 		default:
-			return p[part] === undefined;
+			return p[part as keyof CombinedParts] === undefined;
 	}
 }

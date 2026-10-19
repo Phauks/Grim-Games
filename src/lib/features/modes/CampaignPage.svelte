@@ -39,7 +39,7 @@
 		type Campaign
 	} from './campaigns.ts';
 	import { findMode } from './custom-modes.svelte.ts';
-	import { writeGameMode } from './game-mode-store.ts';
+	import { readGameMode, writeGameMode } from './game-mode-store.ts';
 
 	/**
 	 * A campaign of a mode like Flesh and Bone (https://fleshandbone.app/rules.php): its games
@@ -247,7 +247,12 @@
 				const to = open.game.seating[i];
 				if (name && to) open.run({ type: 'RenameSeat', seatId: to, playerName: name });
 			}
-			writeGameMode(open.game.gameId, { modeId: mode.id, restrictions: record.restrictions });
+			writeGameMode(open.game.gameId, {
+				modeId: mode.id,
+				// The rules carry over from the game before.
+				rules: readGameMode(current.game.gameId)?.rules ?? [],
+				restrictions: record.restrictions
+			});
 			const played = record.games.map((g, i) =>
 				i === record!.games.length - 1 ? { ...g, eliminated: chosen } : g
 			);

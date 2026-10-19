@@ -6,11 +6,14 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { announcedRange, extraCandidates, extraTotal, rollExtras } from './extras.ts';
 import { NO_RESTRICTIONS, runsPart } from './pool.ts';
-import { gameModeById } from './registry.ts';
+import { withRules } from './combine.ts';
+import { STANDARD } from './registry.ts';
+import { INFINITE_POSSIBILITIES } from './rules/index.ts';
 
 const data = committedGameData();
 const tb = data.characters.filter((c) => c.edition === 'tb');
-const infinite = gameModeById('infinite-possibilities')!;
+// Since 2026-10-18 a special rule, played here on Standard.
+const infinite = withRules(STANDARD, [INFINITE_POSSIBILITIES]);
 
 describe('rollExtras', () => {
 	// Trevor, 2026-10-18: "1-4 hidden extra characters from off the script".
@@ -40,9 +43,7 @@ describe('rollExtras', () => {
 	});
 
 	it('adds none for a mode without hidden extras', () => {
-		expect(
-			rollExtras(gameModeById('standard')!, tb, data.characters, NO_RESTRICTIONS, Math.random)
-		).toEqual([]);
+		expect(rollExtras(STANDARD, tb, data.characters, NO_RESTRICTIONS, Math.random)).toEqual([]);
 	});
 });
 
