@@ -2429,6 +2429,67 @@ test('in the reminder bank a sideways swipe scrolls; an upward one picks the tok
 	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).toBeAttached();
 });
 
+test('a reminder dragged out of the bank at a shallow angle, or after a hold, is picked up', async ({
+	page
+}) => {
+	// Trevor, 2026-10-19: drags out of the bank at under 45 degrees scrolled it instead.
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Librarian'],
+		[3, 'Investigator'],
+		[5, 'Fortune Teller'],
+		[6, 'Poisoner'],
+		[7, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	expect(await bank.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+	const scrolled = () => bank.evaluate((el) => el.scrollLeft);
+	const tokenAt = async (n: number) => {
+		const box = (await bank.getByTestId('board-reminder').nth(n).boundingBox())!;
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+	const centre = async (name: RegExp) => {
+		const box = (await page.getByRole('button', { name }).boundingBox())!;
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+
+	// About 30 degrees up and to the right, then on to seat 4.
+	const lift = await tokenAt(0);
+	await swipe(page, lift, { x: lift.x + 52, y: lift.y - 30 }, await centre(/^Seat 4:/));
+	await expect(seatLabelled(page, 'Seat 4: no name, no character, 1 reminder')).toBeAttached();
+	expect(await scrolled()).toBe(0);
+
+	// Held still for a moment, then level along the bank, then up to seat 8.
+	const held = await tokenAt(1);
+	const cdp = await page.context().newCDPSession(page);
+	const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', p?: { x: number; y: number }) =>
+		cdp.send('Input.dispatchTouchEvent', {
+			type,
+			touchPoints: p ? [{ x: p.x, y: p.y, id: 1 }] : []
+		});
+	await touch('touchStart', held);
+	await page.waitForTimeout(400);
+	for (let i = 1; i <= 6; i++) await touch('touchMove', { x: held.x + i * 10, y: held.y });
+	const seat8 = await centre(/^Seat 8:/);
+	for (let i = 1; i <= 10; i++)
+		await touch('touchMove', {
+			x: held.x + 60 + ((seat8.x - held.x - 60) * i) / 10,
+			y: held.y + ((seat8.y - held.y) * i) / 10
+		});
+	await touch('touchEnd');
+	await cdp.detach();
+	await expect(seatLabelled(page, 'Seat 8: no name, no character, 1 reminder')).toBeAttached();
+});
+
 test('Back closes an open sheet first, then asks before leaving the game', async ({ page }) => {
 	// Trevor, 2026-10-17: the browser's Back, a back swipe or Android's Back button.
 	await startGame(page);
