@@ -50,26 +50,34 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 	await page.getByLabel('Wrong key').fill('e2e-admin-key');
 	await page.getByLabel('Wrong key').press('Enter');
 
-	const row = page.getByTestId('reports').getByRole('button', { name: new RegExp(title) });
+	// One table: every column filters (Trevor, 2026-10-18); a tap anywhere on a row opens it.
+	const table = page.getByTestId('reports');
+	const row = table.locator('tr', { hasText: title });
 	await expect(row).toContainText('Enhancement request');
-	await row.tap();
+	// Sent signed out: no account to show.
+	await expect(row).toContainText('Signed out');
+	await row.getByRole('button', { name: title }).tap();
 	const report = page.getByRole('dialog', { name: new RegExp(title) });
 	await expect(report).toContainText('Show the night order on phones.');
 	await report.getByRole('combobox', { name: 'Status' }).tap();
 	await page.getByRole('option', { name: 'Accepted' }).tap();
 	await report.getByRole('button', { name: 'Close' }).first().tap();
-	// Filtered to New by default, so an accepted report leaves the list.
+	// Admins start filtered to New, so an accepted report leaves the list.
 	await expect(row).toBeHidden();
 	await expect(report).toBeHidden();
-	await page.getByRole('combobox', { name: 'Status' }).tap();
-	await page.getByRole('option', { name: 'Accepted', exact: true }).tap();
+	await table.getByRole('button', { name: 'Filter Status (set)' }).tap();
+	const status = page.getByRole('dialog', { name: 'Filter Status' });
+	await status.getByLabel('New').uncheck();
+	await status.getByLabel('Accepted').check();
+	await status.getByRole('button', { name: 'Close' }).tap();
 	await expect(row).toBeVisible();
 
 	// The key is remembered; delete confirms first.
 	await page.reload();
-	await page.getByRole('combobox', { name: 'Status' }).tap();
-	await page.getByRole('option', { name: 'All', exact: true }).tap();
-	await row.tap();
+	await table.getByRole('button', { name: 'Filter Status (set)' }).tap();
+	await status.getByLabel('New').uncheck();
+	await status.getByRole('button', { name: 'Close' }).tap();
+	await row.getByRole('button', { name: title }).tap();
 	await page.getByRole('button', { name: 'Delete report' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await expect(row).toBeHidden();
@@ -124,18 +132,79 @@ test('an admin account opens the inbox without the key; the key holder names adm
 	// Removing the admin closes the inbox to that account again.
 	await admins.getByRole('button', { name: `Remove admin ${email}` }).tap();
 	await expect(admins.getByTestId('admins')).not.toContainText(email);
+	// They still read reports, like any signed-in account, but no longer triage them.
 	await phone.reload();
-	await expect(phone.getByLabel('Admin key')).toBeVisible();
+	await expect(phone.getByTestId('reports')).toBeVisible();
+	await expect(phone.getByRole('button', { name: 'Admins' })).toBeDisabled();
 	await other.close();
 });
 
-test('a signed-in account that is not an admin is refused', async ({ page }) => {
-	await signIn(page, `not-admin-${Date.now()}@example.com`);
-	await expect(page.getByTestId('account-type')).toHaveText('User');
-	await page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
-	const menu = page.getByRole('dialog', { name: APP_NAME });
+test('a signed-in account that is not an admin reads reports but cannot triage them', async ({
+	page,
+	browser
+}) => {
+	// Sent while signed in: stored with the account (Trevor, 2026-10-19: filter by user).
+	const sender = `sender-${Date.now()}@example.com`;
+	const title = `Signed in ${Date.now()}`;
+	await signIn(page, sender);
+	await page.goto('/');
+	await page.getByTestId('build-info').getByRole('button', { name: 'Report an issue' }).tap();
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await form.getByRole('textbox', { name: 'Title' }).fill(title);
+	await form.getByRole('textbox', { name: 'Description' }).fill('The bag forgets the Drunk.');
+	await form.getByRole('textbox', { name: 'Contact (optional)' }).fill('sender on Discord');
+	await form.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(form.getByTestId('report-sent')).toBeVisible();
+	await form.getByRole('button', { name: 'Close' }).last().tap();
+
+	// Another account, not an admin: no Reports in the menu, but Account settings opens them.
+	const other = await browser.newContext();
+	const reader = await other.newPage();
+	await signIn(reader, `reader-${Date.now()}@example.com`);
+	await expect(reader.getByTestId('account-type')).toHaveText('User');
+	await reader.getByRole('banner').getByRole('button', { name: 'Menu', exact: true }).tap();
+	const menu = reader.getByRole('dialog', { name: APP_NAME });
 	await expect(menu.getByRole('link', { name: 'Library' })).toBeVisible();
 	await expect(menu.getByRole('link', { name: 'Reports' })).toHaveCount(0);
-	expect((await page.request.get('/api/reports')).status()).toBe(404);
-	expect((await page.request.get('/api/reports/admins')).status()).toBe(404);
+	await reader.keyboard.press('Escape');
+	await expect(menu).toBeHidden();
+	await reader.getByRole('button', { name: 'Reports', exact: true }).tap();
+	await expect(reader).toHaveURL(/\/reports$/);
+
+	const table = reader.getByTestId('reports');
+	const row = table.locator('tr', { hasText: title });
+	await expect(row).toContainText('No username');
+	// Reports sent signed out are for admins only.
+	await expect(table).not.toContainText('Signed out');
+	// What it was sent with stays with its sender and the admins; triage is for admins.
+	await row.getByRole('button', { name: title }).tap();
+	const report = reader.getByRole('dialog', { name: new RegExp(title) });
+	await expect(report).toContainText('The bag forgets the Drunk.');
+	await expect(report).not.toContainText('sender on Discord');
+	await expect(report.getByRole('combobox', { name: 'Status' })).toBeDisabled();
+	await expect(report.getByRole('button', { name: 'Delete report' })).toBeDisabled();
+	await report.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(reader.getByRole('button', { name: 'Admins' })).toBeDisabled();
+	// Only mine: yourself as the reporter in one tap.
+	await reader.getByText('Only mine', { exact: true }).tap();
+	await expect(row).toBeHidden();
+	expect((await reader.request.get('/api/reports/admins')).status()).toBe(404);
+	expect(
+		(
+			await reader.request.patch('/api/reports/1', {
+				data: { status: 'done' },
+				headers: { Origin: new URL(reader.url()).origin }
+			})
+		).status()
+	).toBe(404);
+	await other.close();
+
+	// The sender sees it under Only mine, with what it was sent with.
+	await page.goto('/reports');
+	await page.getByText('Only mine', { exact: true }).tap();
+	const mine = page.getByTestId('reports').locator('tr', { hasText: title });
+	await mine.getByRole('button', { name: title }).tap();
+	await expect(page.getByRole('dialog', { name: new RegExp(title) })).toContainText(
+		'sender on Discord'
+	);
 });

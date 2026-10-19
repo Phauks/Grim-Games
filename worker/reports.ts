@@ -11,6 +11,7 @@ import {
 	type CreatedReport,
 	type Report,
 	type ReportDraft,
+	type ReportList,
 	type ReportStatus
 } from '../src/lib/features/reports/reports-protocol.ts';
 import { normaliseEmail } from '../src/lib/features/account/account-protocol.ts';
@@ -46,6 +47,7 @@ interface Row extends Record<string, SqlStorageValue> {
 	device: string | null;
 	status: string;
 	created_at: number;
+	user_id: string | null;
 }
 
 /**
@@ -78,9 +80,15 @@ export class ReportBox extends DurableObject<ReportsEnv> {
 				created_at INTEGER NOT NULL
 			);
 		`);
+		// The sending account (Trevor, 2026-10-19: filter reports by user). Reports stored
+		// before it, and those sent signed out, have none.
+		const columns = this.sql.exec<{ name: string }>('PRAGMA table_info(reports)').toArray();
+		if (!columns.some((c) => c.name === 'user_id')) {
+			this.sql.exec('ALTER TABLE reports ADD COLUMN user_id TEXT');
+		}
 	}
 
-	async add(draft: ReportDraft, now: number): Promise<number | undefined> {
+	async add(draft: ReportDraft, now: number, userId?: string): Promise<number | undefined> {
 		const count = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM reports').one().n;
 		if (count >= MAX_STORED) {
 			this.sql.exec(
@@ -93,8 +101,8 @@ export class ReportBox extends DurableObject<ReportsEnv> {
 		}
 		return this.sql
 			.exec<{ id: number }>(
-				`INSERT INTO reports (kind, title, body, details, contact, page, build, device, created_at)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+				`INSERT INTO reports (kind, title, body, details, contact, page, build, device, created_at, user_id)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
 				draft.kind,
 				draft.title,
 				draft.body,
@@ -103,17 +111,24 @@ export class ReportBox extends DurableObject<ReportsEnv> {
 				draft.page ?? null,
 				draft.build ?? null,
 				draft.device ?? null,
-				now
+				now,
+				userId ?? null
 			)
 			.one().id;
 	}
 
-	async list(): Promise<Report[]> {
+	/**
+	 * Newest first, each with its sending account's id. `fromAccounts`: only those sent while
+	 * signed in (what a non-admin may read).
+	 */
+	async list(fromAccounts = false): Promise<(Report & { userId?: string })[]> {
 		return this.sql
-			.exec<Row>('SELECT * FROM reports ORDER BY id DESC')
+			.exec<Row>(
+				`SELECT * FROM reports ${fromAccounts ? 'WHERE user_id IS NOT NULL' : ''} ORDER BY id DESC`
+			)
 			.toArray()
 			.map((row) => {
-				const report: Report = {
+				const report: Report & { userId?: string } = {
 					id: row.id,
 					kind: row.kind as Report['kind'],
 					title: row.title,
@@ -124,6 +139,7 @@ export class ReportBox extends DurableObject<ReportsEnv> {
 				for (const key of REPORT_OPTIONAL_FIELDS) {
 					if (row[key] !== null) report[key] = row[key];
 				}
+				if (row.user_id !== null) report.userId = row.user_id;
 				return report;
 			});
 	}
@@ -191,6 +207,37 @@ async function adminAccount(
 	return auth && (await box.isAdmin(auth.userId)) ? auth.userId : undefined;
 }
 
+/**
+ * The list as `reader` may see it: admins everything; any other signed-in account the reports
+ * sent from an account, without what they were sent with unless they sent them. Account ids
+ * stay here: the reader gets the sender's username and whether it was them.
+ */
+async function reportList(
+	env: ReportsEnv,
+	box: DurableObjectStub<ReportBox>,
+	reader: { userId?: string; admin: boolean; ownTrusted: boolean }
+): Promise<ReportList> {
+	const names = new Map<string, string | undefined>();
+	const reports: Report[] = [];
+	for (const { userId, ...report } of await box.list(!reader.admin)) {
+		if (userId !== undefined) {
+			if (!names.has(userId)) {
+				names.set(userId, (await userStub(env, userId).profile())?.username ?? undefined);
+			}
+			report.fromAccount = true;
+			const name = names.get(userId);
+			if (name) report.reporter = name;
+			if (userId === reader.userId) report.mine = true;
+		}
+		// Their own reports' details only where sign-in can be trusted (not on other previews).
+		if (!reader.admin && !(report.mine && reader.ownTrusted)) {
+			for (const key of REPORT_OPTIONAL_FIELDS) delete report[key];
+		}
+		reports.push(report);
+	}
+	return { reports, admin: reader.admin };
+}
+
 /** Each admin with the account's current email; accounts deleted since are dropped. */
 async function adminList(env: ReportsEnv, box: DurableObjectStub<ReportBox>): Promise<Admin[]> {
 	const list: Admin[] = [];
@@ -233,15 +280,27 @@ export async function handleReports(
 		}
 		const draft = parseReportDraft(raw);
 		if ('error' in draft) return text(draft.error, 400);
-		const id = await box.add(draft, Date.now());
+		// Sent while signed in: stored with the account, so it shows under its user.
+		const sender = await getUser(request, env);
+		const id = await box.add(draft, Date.now(), sender?.userId);
 		if (id === undefined) return text('Full', 503);
 		return Response.json({ id } satisfies CreatedReport, { status: 201, headers: noStore });
 	}
 
-	// Reading and triage: an admin account, or the key. Answers 404 otherwise, so the routes
-	// don't advertise themselves.
 	const viaKey = await holdsKey(request, env);
-	if (!viaKey && !(await adminAccount(request, env, url, box))) return text('Not found', 404);
+	const admin = viaKey || !!(await adminAccount(request, env, url, box));
+	// Reading: any signed-in account (reportList decides what it sees).
+	if (!admin && url.pathname === REPORTS_API && request.method === 'GET') {
+		const auth = await getUser(request, env);
+		if (!auth) return text('Not found', 404);
+		const ownTrusted = adminSignInTrusted(env, url);
+		return Response.json(await reportList(env, box, { userId: auth.userId, admin, ownTrusted }), {
+			headers: noStore
+		});
+	}
+	// Triage: an admin account, or the key. Answers 404 otherwise, so the routes don't
+	// advertise themselves.
+	if (!admin) return text('Not found', 404);
 	if (!viaKey && request.method !== 'GET' && !fromApp(request, url)) {
 		return text('This request must come from the app', 403);
 	}
@@ -270,7 +329,11 @@ export async function handleReports(
 		return new Response(null, { status: 204, headers: noStore });
 	}
 	if (url.pathname === REPORTS_API && request.method === 'GET') {
-		return Response.json({ reports: await box.list() }, { headers: noStore });
+		const auth = viaKey ? undefined : await getUser(request, env);
+		return Response.json(
+			await reportList(env, box, { userId: auth?.userId, admin: true, ownTrusted: true }),
+			{ headers: noStore }
+		);
 	}
 	const id = parseReportIdPath(url.pathname);
 	if (id === undefined) return text('Not found', 404);
