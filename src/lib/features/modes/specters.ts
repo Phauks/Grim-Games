@@ -1,13 +1,11 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
-import { findMode } from './custom-modes.svelte.ts';
-import { readGameMode } from './game-mode-store.ts';
+import { gameModeOf } from './game-mode.ts';
 
-/** Whether the game's mode gives spectators a vote (Specters), for a link from its board. */
+/** Whether the game's mode or rules give spectators a vote (Specters), for a link from its board. */
 export function hasSpectatorVote(gameId: GameId): boolean {
-	const record = readGameMode(gameId);
-	const mode = record && findMode(record.modeId);
+	const mode = gameModeOf(gameId);
 	return mode?.parts.daySteps?.some((s) => s.kind === 'spectator-vote') === true;
 }
 

@@ -1,5 +1,5 @@
 /**
- * Built-in mode descriptions Trevor has approved (2026-10-18: "You write game mode
+ * Built-in mode and special rule descriptions Trevor has approved (2026-10-18: "You write game mode
  * descriptions, but I will verify them"). Each entry is the exact text he approved, so a
  * description shows to everyone only while it still matches; any later edit hides it behind
  * our own wording setting again until he approves the new text.

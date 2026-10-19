@@ -3,7 +3,13 @@
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import type { Game } from '#lib/core/model/index.ts';
-	import { inPlayFor, STANDARD } from '#lib/core/modes/index.ts';
+	import {
+		inPlayFor,
+		STANDARD,
+		withRules,
+		type GameMode,
+		type SpecialRule
+	} from '#lib/core/modes/index.ts';
 	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -27,7 +33,8 @@
 	 * "Game modes" place for any special actions, not in the toolbar, since most games have
 	 * no mode). A Standard game shows the name unchanged. A mode's name opens its towns
 	 * (picked as the towns page's Open town does), campaign, Specters vote, hidden
-	 * characters or draft, and Inspect.
+	 * characters or draft, and Inspect for the mode and each special rule. A Standard game with
+	 * special rules has the menu too.
 	 */
 	interface Props {
 		game: Game;
@@ -40,11 +47,16 @@
 	const gameId = $derived(game.gameId);
 
 	const group = $derived(townGroupOf(gameId));
-	const mode = $derived.by(() => {
-		const id = readGameMode(gameId)?.modeId;
-		const found = id ? findMode(id) : undefined;
+	const record = $derived(readGameMode(gameId));
+	/** The mode itself, when it isn't Standard. */
+	const base = $derived.by(() => {
+		const found = record ? findMode(record.modeId) : undefined;
 		return found && found.id !== STANDARD.id ? found : undefined;
 	});
+	const rules = $derived(record?.rules ?? []);
+	/** The mode as it plays, with its rules; undefined for a Standard game with none. */
+	const mode = $derived(base || rules.length ? withRules(base ?? STANDARD, rules) : undefined);
+	let inspected = $state<GameMode | SpecialRule>();
 	const campaign = $derived(campaignOf(gameId));
 	const specters = $derived(hasSpectatorVote(gameId));
 	const assignment = $derived(mode?.parts.assignment?.kind);
@@ -167,16 +179,19 @@
 					{t('modes.deal.menu')}
 				</Button>
 			{/if}
-			<Button
-				variant="quiet"
-				icon="info"
-				onclick={() => {
-					open = false;
-					inspecting = true;
-				}}
-			>
-				{t('modes.inspect', { name: mode.name })}
-			</Button>
+			{#each [...(base ? [base] : []), ...rules] as item (item.id)}
+				<Button
+					variant="quiet"
+					icon="info"
+					onclick={() => {
+						open = false;
+						inspected = item;
+						inspecting = true;
+					}}
+				>
+					{t('modes.inspect', { name: item.name })}
+				</Button>
+			{/each}
 		</div>
 	{/snippet}
 	{#if children}
@@ -184,7 +199,7 @@
 	{:else}
 		<Dialog bind:open title={t('modes.label')}>{@render actions()}</Dialog>
 	{/if}
-	<ModeInspectDialog bind:open={inspecting} {mode} />
+	{#if inspected}<ModeInspectDialog bind:open={inspecting} mode={inspected} />{/if}
 	{#if specters}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
 {:else if children}
 	{@render children()}

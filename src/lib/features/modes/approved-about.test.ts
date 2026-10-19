@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GAME_MODES } from '#lib/core/modes/index.ts';
+import { GAME_MODES, SPECIAL_RULES } from '#lib/core/modes/index.ts';
 import { aboutApproved, APPROVED_ABOUT } from './approved-about.ts';
 
 describe('approved mode descriptions', () => {
@@ -11,9 +11,10 @@ describe('approved mode descriptions', () => {
 		}
 	});
 
-	it('approve only built-in modes, each still matching its description', () => {
+	it('approve only built-in modes and rules, each still matching its description', () => {
+		const builtIn = [...GAME_MODES, ...SPECIAL_RULES];
 		const stale = Object.entries(APPROVED_ABOUT).filter(
-			([id, text]) => GAME_MODES.find((m) => m.id === id)?.about !== text
+			([id, text]) => builtIn.find((m) => m.id === id)?.about !== text
 		);
 		expect(stale).toEqual([]);
 	});
