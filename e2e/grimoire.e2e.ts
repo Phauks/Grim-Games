@@ -157,6 +157,13 @@ test('Resume game deletes every saved game at once, and leaves History alone', a
 	await expect(games).toHaveCount(2);
 	// Trevor (2026-10-18): one button clears the whole list, after asking.
 	const clear = page.getByRole('button', { name: 'Delete all saved games' });
+	// On the title's line, phones too (Trevor, 2026-10-19).
+	const title = (await page.getByRole('heading', { name: 'Resume game', level: 1 }).boundingBox())!;
+	const button = (await clear.boundingBox())!;
+	expect(Math.abs(button.y + button.height / 2 - (title.y + title.height / 2))).toBeLessThan(
+		title.height / 2
+	);
+	expect(button.x).toBeGreaterThan(title.x + title.width);
 	await clear.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Delete all 2 saved games?' });
 	await confirm.getByRole('button', { name: 'Cancel' }).tap();
