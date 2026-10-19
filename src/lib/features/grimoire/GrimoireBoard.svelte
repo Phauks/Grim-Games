@@ -103,6 +103,7 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
+	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
@@ -1177,7 +1178,11 @@
 		!(showTitle && game.script.meta?.name) || (width > 0 && corner < 2 * rootFont)
 	);
 	let modeMenuOpen = $state(false);
-	const renameStoryteller = (name: string) => grimoire.run({ type: 'SetStorytellerName', name });
+	/** Game info's pencil: only what changed becomes a command, so undo stays meaningful. */
+	function editGameInfo(changes: GameInfoChanges) {
+		if (changes.storytellerName !== (game.storytellerName ?? ''))
+			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
+	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
 	function fromMenu(action: () => void) {
@@ -1667,7 +1672,7 @@
 				bind:clientHeight={titleH}
 			>
 				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
-				<ModeMenu {game} onStorytellerName={renameStoryteller}
+				<ModeMenu {game} onEdit={editGameInfo}
 					><span
 						class="script-name"
 						class:mode={modeInName}
@@ -1796,7 +1801,7 @@
 	</div>
 </Dialog>
 
-<ModeMenu {game} bind:open={modeMenuOpen} onStorytellerName={renameStoryteller} />
+<ModeMenu {game} bind:open={modeMenuOpen} onEdit={editGameInfo} />
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 <HeldReminderDialog
 	bind:this={heldDialog}

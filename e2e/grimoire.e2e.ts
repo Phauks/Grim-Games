@@ -4147,10 +4147,13 @@ test('the Storyteller is named on the Characters screen and renamed from the cor
 	await page.keyboard.press('Escape');
 	await expect(more).toBeHidden();
 	await openGameInfo(page);
-	const info = page.getByRole('dialog', { name: 'Game info' });
-	await info.getByTestId('storyteller-edit').tap();
-	const dialog = page.getByRole('dialog', { name: 'Storyteller' });
-	const name = dialog.getByRole('textbox', { name: 'Name' });
+	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
+	// One pencil in Game info's header edits what can change (Trevor, 2026-10-19).
+	await expect(info.locator('tr[data-field="storyteller"] button')).toHaveCount(0);
+	await info.getByTestId('game-info-edit').tap();
+	await expect(info).toBeHidden();
+	const dialog = page.getByRole('dialog', { name: 'Edit game info' });
+	const name = dialog.getByRole('textbox', { name: 'Storyteller' });
 	await expect(name).toHaveValue('Trev');
 	await name.fill('Sam');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
@@ -4168,11 +4171,13 @@ test('the corner script name opens the game’s info, in a Standard game too', a
 	// Trevor, 2026-10-19: "Allow tapping on the script name ... even in normal mode".
 	await startGame(page);
 	await nameStoryteller(page, 'Trev');
-	const dialog = page.getByRole('dialog', { name: 'Game info' });
+	const dialog = page.getByRole('dialog', { name: 'Game info', exact: true });
 	const row = (field: string) => dialog.locator(`tr[data-field="${field}"] td`);
 	await openGameInfo(page);
 	await expect(row('script')).toHaveText('Trouble Brewing');
 	await expect(row('storyteller')).toHaveText('Trev');
+	// Trevor, 2026-10-19: "In Game info, include player count as well".
+	await expect(row('players')).toHaveText(String(await page.getByTestId('seat').count()));
 	await expect(row('mode')).toHaveText('Standard');
 	await expect(row('rules')).toHaveText('None');
 	await expect(row('version')).toHaveText('None');
@@ -4185,7 +4190,7 @@ test('the corner’s Game info closes when a seat opens', async ({ page }) => {
 	// A phone before setup has no room for the corner name; Game info is then a ⋯ dialog.
 	if (!(await corner.isVisible())) return;
 	await corner.tap();
-	const info = page.getByRole('dialog', { name: 'Game info' });
+	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
 	await expect(info).toBeVisible();
 	await openSeat(page, 1);
 	await expect(info).toBeHidden();
