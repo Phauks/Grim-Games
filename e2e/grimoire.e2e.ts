@@ -1125,7 +1125,7 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await page.mouse.move(to.x, to.y, { steps: 4 });
 	await page.mouse.up();
 	await expect(seatLabelled(page, 'Seat 4: Ana')).toBeAttached();
-	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+	await toolbar.getByRole('button', { name: 'Done' }).tap();
 
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
@@ -3628,4 +3628,54 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	await expect(strip).toBeVisible();
 	// No motion: the strip is there at once, fully shown.
 	await expect(strip).toHaveCSS('opacity', '1');
+});
+
+test('a seat dragged over another leaves both name badges readable', async ({ page }) => {
+	// Trevor (2026-10-19): when two tokens overlap, the name badge stays visible.
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Empath'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const seat = (n: number) => page.getByRole('button', { name: new RegExp(`^Seat ${n}:`) });
+	const one = (await seat(1).boundingBox())!;
+	const two = (await seat(2).boundingBox())!;
+	// Seat 2, drawn after seat 1, goes just below it: its token covers seat 1's badge, but
+	// it is too far off seat 1 to be a drop that swaps their places.
+	const size = one.height;
+	const from = { x: two.x + two.width / 2, y: two.y + two.height / 2 };
+	const to = { x: one.x + one.width / 2, y: one.y + one.height / 2 + size * 0.7 };
+	await menu(page, 'Arrange seats');
+	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(toolbar).toContainText('Arrange seats');
+	await page.mouse.move(from.x, from.y);
+	await page.mouse.down();
+	await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+	await page.mouse.move(to.x, to.y, { steps: 4 });
+	await page.mouse.up();
+	await toolbar.getByRole('button', { name: 'Done' }).tap();
+	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
+
+	// What is drawn on top at the middle of each badge is the badge's own pill. Badges let
+	// taps through to their token, so the probe makes just the pills hit-testable.
+	await page.addStyleTag({
+		content: '[data-testid="token-player-name"] > * { pointer-events: auto !important; }'
+	});
+	for (const n of [1, 2]) {
+		const badge = seatLabelled(page, `Seat ${n}:`).getByTestId('token-player-name');
+		const top = await badge.evaluate((svg) => {
+			const pill = svg.querySelector('rect')!.getBoundingClientRect();
+			const hit = document.elementFromPoint(pill.x + pill.width / 2, pill.y + pill.height / 2);
+			return hit?.closest('[data-testid="token-player-name"]') === svg;
+		});
+		expect(top, `Seat ${n}'s badge is on top`).toBe(true);
+	}
 });
