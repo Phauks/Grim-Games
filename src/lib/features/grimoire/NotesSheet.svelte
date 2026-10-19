@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -22,6 +23,7 @@
 	let { open = $bindable(), grimoire }: Props = $props();
 
 	const game = $derived(grimoire.game);
+	const characters = $derived(grimoire.open.characters);
 	const viewOnly = $derived(grimoire.open.viewOnly);
 
 	// ── Editing one note: 'game' for the general notes, or a seat ──
@@ -113,7 +115,27 @@
 	</div>
 </BottomSheet>
 
-<Dialog bind:open={editOpen} title={editTitle}>
+{#snippet seatCharacter()}
+	<!-- A player's note says whose it is: seat and name in the title, character here
+	     (Trevor, 2026-10-19). -->
+	{@const seat = editing && editing !== 'game' ? game.seats[editing] : undefined}
+	{#if seat?.characterId}
+		<CharacterBadge
+			characterId={seat.characterId}
+			character={characters.get(seat.characterId)}
+			alignment={seat.alignment}
+			inline
+		/>
+	{:else}
+		None
+	{/if}
+{/snippet}
+
+<Dialog
+	bind:open={editOpen}
+	title={editTitle}
+	subtitle={editing === undefined || editing === 'game' ? undefined : seatCharacter}
+>
 	<!-- Several lines: Enter starts a new line. Kept on close. Never shown to players. -->
 	<TextField
 		label={editTitle}

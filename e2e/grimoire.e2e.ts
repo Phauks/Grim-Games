@@ -2226,6 +2226,8 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await notes.tap();
 	const dialog = page.getByRole('dialog', { name: 'Notes for Seat 1 (Ana)' });
 	const field = dialog.getByRole('textbox');
+	// Whose note it is: seat and name in the title, the character under it (Trevor, 2026-10-19).
+	await expect(dialog.getByText('None', { exact: true })).toBeVisible();
 	// Nothing grabs focus (and the keyboard) when it opens; Enter starts a new line.
 	await expect(field).not.toBeFocused();
 	await field.tap();
@@ -2257,15 +2259,21 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await expect(field).toHaveValue(/Secret word: lantern/);
 	await expect(sheet).toBeHidden();
 	await expect(page.getByRole('button', { name: 'Edit player name' })).toHaveCount(0);
-	await page.screenshot({ path: `test-results/seat-note-${test.info().project.name}.png` });
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
 	// The seat's own ⋯ menu edits the same notes (Trevor, 2026-10-19).
 	const again = await openSeat(page, 1);
+	await again.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Ana' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
 	await again.getByRole('button', { name: 'Seat actions' }).tap();
 	await page.getByRole('dialog', { name: 'Ana' }).getByRole('button', { name: 'Notes' }).tap();
 	await expect(dialog).toBeVisible();
 	await expect(field).toHaveValue(/Secret word: lantern/);
+	await expect(dialog.locator('[data-character-id="poisoner"]')).toBeVisible();
+	await page.screenshot({ path: `test-results/seat-note-${test.info().project.name}.png` });
 	await field.tap();
 	await page.keyboard.press('Control+End');
 	await page.keyboard.type(' (from the seat)');
