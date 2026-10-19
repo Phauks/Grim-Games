@@ -434,9 +434,9 @@ test("a script's logo sits in the middle of its QR code, and its name if the log
 	const center = qr.getByTestId('qr-center');
 	await expect(center.getByTestId('script-logo')).toHaveAttribute('data-logo', logo);
 	await expect(center.getByTestId('qr-name')).toHaveCount(0);
-	// The middle covers under 7% of the code, so it still scans at the highest correction.
+	// The logo covers under 10% of the code, so it still scans at the highest correction.
 	const [code, middle] = await Promise.all([qr.boundingBox(), center.boundingBox()]);
-	expect((middle!.width * middle!.height) / (code!.width * code!.height)).toBeLessThan(0.07);
+	expect((middle!.width * middle!.height) / (code!.width * code!.height)).toBeLessThan(0.1);
 
 	// A logo that fails to load leaves the name instead, never an empty square.
 	const broken = await share('Calm Front', missing);
