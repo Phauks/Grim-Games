@@ -97,6 +97,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
+	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import EndGameFields from './EndGameFields.svelte';
@@ -894,7 +895,8 @@
 				pendingLeave = leave;
 				exitOpen = true;
 			},
-			(url) => url.pathname.startsWith(`/grimoire/${gameId}`)
+			// This board's screens, and the other boards and pages of its mode.
+			(url) => url.pathname.startsWith(`/grimoire/${gameId}`) || withinModeSession(gameId, url)
 		);
 		releaseGuard = release;
 		return release;
@@ -1684,7 +1686,16 @@
 	</div>
 </ConfirmDialog>
 
-<SeatSheet bind:this={seatSheet} bind:open={sheetOpen} {grimoire} seatId={selected} />
+<SeatSheet
+	bind:this={seatSheet}
+	bind:open={sheetOpen}
+	{grimoire}
+	seatId={selected}
+	onDraw={(id) => {
+		sheetOpen = false;
+		onDraw(id);
+	}}
+/>
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
@@ -1897,9 +1908,18 @@
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
+	/*
+	 * A point on the board with its seat centred on it. No transform, so a slot makes no
+	 * stacking context of its own and every seat's name badge can sit above every token
+	 * (Trevor, 2026-10-19: when two tokens overlap the name stays visible).
+	 */
 	.slot {
 		position: absolute;
-		translate: -50% -50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 0;
+		height: 0;
 	}
 	/* While arranging, a press drags a seat instead of scrolling or zooming. */
 	.arranging {
@@ -2262,8 +2282,9 @@
 		width: 100%;
 		margin: 0;
 		border: 0;
-		/* Stronger than a plain border, so the sections read at a glance (Trevor, 2026-10-19). */
-		border-top: 0.125rem solid var(--on-surface-muted);
+		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
+		   2026-10-19). */
+		border-top: 0.125rem solid var(--border);
 	}
 	.rule-detail {
 		display: flex;

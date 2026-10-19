@@ -55,8 +55,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('the player view is a reading page, with no Storyteller controls', async ({ page }) => {
-	// Script, night order and notes only (Trevor, 2026-10-16: "nothing close to ... controls").
-	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Notes']);
+	// Script, night order, notes and the live room only (Trevor, 2026-10-16: "nothing close
+	// to ... controls"; 2026-10-19: a Room tab to move between).
+	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Notes', 'Room']);
 	await expect(page.getByTestId('seat-ring')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
@@ -340,6 +341,13 @@ test('the header shares the script from an icon and has no Code button', async (
 	await expect(page.getByTestId('script-byline')).toHaveCount(0);
 	// Players are already in a script, so there is no code to enter here (Trevor, 2026-10-16).
 	await expect(page.getByRole('button', { name: 'Code', exact: true })).toHaveCount(0);
+	// Print and Share sit on the title's line, phones included (Trevor, 2026-10-19).
+	const title = await page.getByRole('heading', { name: 'Code Night', level: 1 }).boundingBox();
+	for (const name of ['Print script', 'Share script']) {
+		const icon = await page.getByRole('button', { name }).boundingBox();
+		expect(icon!.y).toBeLessThan(title!.y + title!.height);
+		expect(icon!.y + icon!.height).toBeGreaterThan(title!.y);
+	}
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
 	await expect(qr.getByTestId('share-url')).toHaveValue(/\/play#c=\d{6}$/);
@@ -507,4 +515,70 @@ test('Print script prints the sheet, then the night order and player counts', as
 	]);
 	// The page itself is unchanged.
 	await expect(page.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
+});
+
+test('the Room tab joins a live room in place, and the player moves between it and the script', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-10-19: a tab on the player view for the room, to move between.
+	await page.getByRole('tab', { name: 'Room' }).tap();
+	const room = page.getByRole('tabpanel', { name: 'Room' });
+	await expect(room.getByRole('heading', { name: 'Join game' })).toBeVisible();
+	// Nothing to share until the phone is in a room; the icon is there, so nothing moves.
+	await expect(room.getByRole('button', { name: 'Share room' })).toBeDisabled();
+
+	// The Storyteller opens a room on another device.
+	const st = await (await browser.newContext({ ...testInfo.project.use })).newPage();
+	await st.goto('/new');
+	await st
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await st.getByRole('button', { name: 'Start game' }).tap();
+	await expect(st).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await st.goto(`${new URL(st.url()).pathname}/room`);
+	await expect(st.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(st.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const shown = (await st.getByTestId('share-code').textContent())!;
+	const code = shown.replace(/\s/g, '');
+
+	const field = room.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	await field.tap();
+	await field.pressSequentially(code);
+	await expect(room.getByTestId('room-preview')).toContainText('Trouble Brewing');
+	await room.getByRole('button', { name: 'Join', exact: true }).tap();
+	// Joined in place: still /play, now in the room.
+	await expect(page).toHaveURL(/\/play$/);
+	await expect(room.getByRole('heading', { name: `Room ${shown}` })).toBeVisible();
+	await expect(room.getByTestId('join-status')).toHaveText(
+		'Choose your seat and type your name, then ask the Storyteller.'
+	);
+	await room.getByRole('textbox', { name: 'Your name' }).fill('Alex');
+	await room.getByText('Seat 2', { exact: true }).tap();
+	await room.getByRole('button', { name: 'Ask the Storyteller' }).tap();
+	await expect(room.getByTestId('join-status')).toHaveText(
+		'Waiting for the Storyteller: Alex, seat 2.'
+	);
+
+	// To the script and back: the room is as it was.
+	await page.getByRole('tab', { name: 'Script' }).tap();
+	await expect(page.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
+	await page.getByRole('tab', { name: 'Room' }).tap();
+	await expect(room.getByTestId('join-status')).toHaveText(
+		'Waiting for the Storyteller: Alex, seat 2.'
+	);
+
+	// The room's own link and code, to pass on.
+	await room.getByRole('button', { name: 'Share room' }).tap();
+	const share = page.getByRole('dialog', { name: 'Share room' });
+	await expect(share.getByTestId('share-code')).toHaveText(shown);
+	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
+	await share.getByRole('button', { name: 'Close' }).tap();
+
+	// Coming back to /play opens the same room.
+	await page.reload();
+	await page.getByRole('tab', { name: 'Room' }).tap();
+	await expect(room.getByRole('heading', { name: `Room ${shown}` })).toBeVisible();
+	await st.context().close();
 });

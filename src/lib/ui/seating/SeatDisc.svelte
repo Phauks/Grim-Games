@@ -100,6 +100,8 @@
 	 */
 	.name {
 		position: absolute;
+		/* Above every seat's token, like the badge on a token. */
+		z-index: 1;
 		box-sizing: border-box;
 		max-width: 100%;
 		overflow: hidden;

@@ -20,7 +20,7 @@ const rootStyle = (page: Page, name: string) =>
 
 test('token and reminder sizes apply to the tokens and stay after a reload', async ({ page }) => {
 	await page.goto('/reference');
-	const token = page.locator('[data-testid="reference-card"] .token').first();
+	const token = page.getByTestId('character-table').locator('[data-field="token"] .token').first();
 	const reminder = page.getByTestId('reminder-token').first();
 	await expect(token).toBeVisible();
 	const before = (await token.boundingBox())!.width;

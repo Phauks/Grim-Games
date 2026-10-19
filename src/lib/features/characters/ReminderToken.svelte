@@ -82,7 +82,7 @@
 		 * Tokens (Trevor, 2026-10-18); the chip never gets smaller than what it holds.
 		 */
 		--badge: var(--inline-reminder-badge, 1);
-		min-height: calc(1.4em * var(--badge));
+		min-height: calc(1.3em * var(--badge));
 		border-radius: 0.35em;
 		background: var(--reminder-face);
 		box-shadow: inset 0 0 0 1.5px var(--rim);
@@ -94,7 +94,8 @@
 		font-family: var(--font-reminder);
 		font-size: max(0.85em, 0.8rem);
 		font-weight: 600;
-		line-height: 1.4;
+		/* Shorter than a name badge in the same line, also in a table's smaller text. */
+		line-height: 1.3;
 		/* One line, unless the chip alone is wider than its line (tiny screen, largest text). */
 		max-width: 100%;
 		/*

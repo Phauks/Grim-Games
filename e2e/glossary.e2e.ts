@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/** The Poisoner's card on the Character reference. */
+/** The Poisoner's row in the Character reference table. */
 async function poisonerCard(page: Page) {
 	await page.goto('/reference');
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Poisoner');
-	const card = page.locator('[data-testid="reference-card"][data-character="poisoner"]');
+	const card = page.getByTestId('character-table').locator('tr[data-character="poisoner"]');
 	await expect(card).toBeVisible();
 	return card;
 }
@@ -28,13 +28,20 @@ test('tapping a rules term shows the wiki Glossary wording and button, without m
 	// A dotted underline, so it is not mistaken for a link.
 	expect(await term.evaluate((el) => getComputedStyle(el).textDecorationStyle)).toBe('dotted');
 
-	// Tap just above the word: the hit area is a full tap target, not only the letters.
+	// Tap just below the word: the hit area is a full tap target, not only the letters. (Above
+	// it, a row's first line sits under the table's sticky header.)
+	// Clear of the table's pinned columns, which scroll over a term at their edge.
 	await term.scrollIntoViewIfNeeded();
+	await term.evaluate((el) => {
+		const scroller = el.closest('[role="region"]')!;
+		const pinned = scroller.querySelector('th[data-col="name"]')!.getBoundingClientRect();
+		scroller.scrollLeft += el.getBoundingClientRect().left - pinned.right - 40;
+	});
 	const box = (await term.boundingBox())!;
 	// The word sits in the line like plain text: no taller than the line around it.
 	expect(box.height).toBeLessThan(32);
 	const before = await card.boundingBox();
-	await page.touchscreen.tap(box.x + box.width / 2, box.y - 8);
+	await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height + 8);
 
 	const popover = page.getByRole('dialog', { name: 'Poisoned' });
 	await expect(popover).toBeVisible();

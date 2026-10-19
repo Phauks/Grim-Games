@@ -15,10 +15,10 @@
 		canDuplicate,
 		jinxSetupWarnings,
 		planBag,
-		randomSelection,
 		scriptFacts,
 		selectedIds,
-		isRuleCharacter
+		isRuleCharacter,
+		validRandomSelection
 	} from '#lib/core/rules/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -309,18 +309,31 @@
 		town?.seed?.();
 	}
 
+	// Random only shows a selection the setup check accepts (Trevor, 2026-10-19: "do not show
+	// an invalid draw"); when none fits, the selection stays and the toast says why.
 	function random() {
-		const selection = randomSelection({
+		const result = validRandomSelection({
 			players: s.players,
-			// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one.
-			selection: {},
+			// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one,
+			// except for the characters the Storyteller locked (Trevor, 2026-10-19).
+			selection: setupSelection.lockedSelection(),
+			ruleCharacters: game?.ruleCharacters,
 			scriptCharacters: choices,
 			scriptOrder,
 			lookup,
 			findByName,
+			jinxes:
+				data && script
+					? scriptFacts(script.characters, data.jinxes, script.homebrewJinxes).jinxes
+					: [],
 			random: Math.random
 		});
-		setupSelection.replace(selection);
+		if (result.ok) setupSelection.replace(result.selection);
+		else
+			toast(
+				t(s.locked.length > 0 ? 'setup.randomNoneLocked' : 'setup.randomNone'),
+				result.problems[0]
+			);
 	}
 </script>
 
@@ -419,6 +432,10 @@
 					offScript={offScriptIds.has(character.id)}
 					bluff={bluffIds.has(character.id)}
 					onToggle={() => toggle(character)}
+					locked={s.locked.includes(character.id)}
+					onLock={isRuleCharacter(character.type)
+						? undefined
+						: () => setupSelection.toggleLock(character.id)}
 					onAddCopy={() =>
 						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
 				/>

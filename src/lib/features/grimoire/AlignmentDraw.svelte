@@ -7,6 +7,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import { readParsed, writeStored } from '#lib/ui/stored.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
 
@@ -30,8 +31,17 @@
 	const seat = $derived(seatId ? game.seats[seatId] : undefined);
 
 	const MAX = 8;
-	let count = $state(4);
-	let evil = $state(1);
+	// The last mix is kept on this device (Trevor, 2026-10-19), never with the game.
+	const KEY = 'grim-games:alignment-draw:v1';
+	function parseMix(raw: unknown): { count: number; evil: number } {
+		const { count, evil } = (raw ?? {}) as Record<string, unknown>;
+		if (!Number.isInteger(count) || !Number.isInteger(evil)) return { count: 4, evil: 1 };
+		const c = Math.min(MAX, Math.max(1, count as number));
+		return { count: c, evil: Math.min(c, Math.max(0, evil as number)) };
+	}
+	const saved = readParsed(KEY, parseMix);
+	let count = $state(saved.count);
+	let evil = $state(saved.evil);
 	let phase = $state<'setup' | 'pick' | 'shown'>('setup');
 	let tokens = $state<Alignment[]>([]);
 	let picked = $state<number | undefined>();
@@ -57,7 +67,11 @@
 		return out;
 	}
 
+	/** The chance of drawing one of `n` tokens, whole percent (Trevor, 2026-10-19). */
+	const percent = (n: number) => `${Math.round((100 * n) / count)}%`;
+
 	function start() {
+		writeStored(KEY, { count, evil });
 		tokens = shuffle(
 			Array.from({ length: count }, (_, i): Alignment => (i < evil ? 'evil' : 'good'))
 		);
@@ -94,9 +108,26 @@
 						inline
 					/>{:else}{seatName(game, seatId)}{/if}
 			</p>
-			<dl class="counts">
-				<dt>Tokens</dt>
-				<dd>
+			<!--
+				One line with the mix and each side's chance (Trevor, 2026-10-19): Good on the left,
+				Evil on the right, a bar between them split by share. Fixed widths, so changing a
+				count moves nothing.
+			-->
+			<div class="mix" data-testid="draw-mix">
+				<span class="side" data-team="good" data-testid="good-chance"
+					>Good {count - evil} · {percent(count - evil)}</span
+				>
+				<span class="bar" aria-hidden="true">
+					<span class="part" data-team="good" style:flex-grow={count - evil}></span>
+					<span class="part" data-team="evil" style:flex-grow={evil}></span>
+				</span>
+				<span class="side end" data-team="evil" data-testid="evil-chance"
+					>Evil {evil} · {percent(evil)}</span
+				>
+			</div>
+			<div class="steppers">
+				<span class="stepper">
+					<span>Tokens</span>
 					<Stepper
 						bind:value={count}
 						label={t('setup.alignmentDraw.tokens')}
@@ -105,9 +136,9 @@
 						min={1}
 						max={MAX}
 					/>
-				</dd>
-				<dt>Evil</dt>
-				<dd>
+				</span>
+				<span class="stepper">
+					<span>Evil</span>
 					<Stepper
 						bind:value={evil}
 						label={t('setup.alignmentDraw.evilTokens')}
@@ -115,10 +146,8 @@
 						moreLabel={t('setup.alignmentDraw.moreEvil')}
 						max={count}
 					/>
-				</dd>
-				<dt>Good</dt>
-				<dd><output aria-label="Good tokens">{count - evil}</output></dd>
-			</dl>
+				</span>
+			</div>
 		{:else}
 			<!-- The player's view: face-down tokens, the counts never shown. -->
 			<ol class="tiles" aria-label="Tokens">
@@ -160,23 +189,47 @@
 	.who {
 		margin: 0 0 var(--space-3);
 	}
-	.counts {
+	.mix {
 		display: grid;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: auto minmax(calc(3 * var(--u)), 1fr) auto;
 		align-items: center;
-		gap: var(--space-2) var(--space-3);
-		margin: 0;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-3);
+		font-variant-numeric: tabular-nums;
 	}
-	.counts dd {
+	/* Wide enough for "Good 8 · 100%", so a changing count never moves the bar. */
+	.side {
+		min-width: 12ch;
+		font-weight: 600;
+	}
+	.side.end {
+		text-align: end;
+	}
+	.bar {
+		display: flex;
+		height: 0.9rem;
+		overflow: hidden;
+		border-radius: var(--radius-pill, 999rem);
+		background: var(--surface-raised);
+	}
+	.part {
+		flex-basis: 0;
+	}
+	.part[data-team='good'] {
+		background: var(--good);
+	}
+	.part[data-team='evil'] {
+		background: var(--evil);
+	}
+	.steppers {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2) var(--space-4);
+	}
+	.stepper {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		margin: 0;
-	}
-	output {
-		min-width: 2ch;
-		font: 700 1.3rem var(--font-control);
-		text-align: center;
 	}
 	/* The bag draw's face-down token look (features/setup DrawPage). */
 	.tiles {

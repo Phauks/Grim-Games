@@ -26,6 +26,11 @@
 		centred?: boolean;
 		/** Shows a dot for each character, like a password (a PIN). */
 		masked?: boolean;
+		/**
+		 * Big boxes that share the row's width, for a page that is about the code (Join game;
+		 * Trevor, 2026-10-19: "make the number input bigger").
+		 */
+		large?: boolean;
 	}
 
 	let {
@@ -37,7 +42,8 @@
 		inputmode = 'numeric',
 		clearLabel,
 		centred = false,
-		masked = false
+		masked = false,
+		large = false
 	}: Props = $props();
 
 	let focused = $state(false);
@@ -70,9 +76,11 @@
 <ClearableField
 	bind:value
 	label={clearLabel}
-	class={centred ? 'code-field code-field-centred' : 'code-field'}
+	class={['code-field', centred && 'code-field-centred', large && 'code-field-large']
+		.filter(Boolean)
+		.join(' ')}
 >
-	<span class="boxes" class:centred aria-hidden="true">
+	<span class="boxes" class:centred class:large aria-hidden="true">
 		{#each { length }, i (i)}
 			<span
 				class="box"
@@ -137,6 +145,20 @@
 		font: var(--font-control);
 		font-size: 1.4rem;
 		font-variant-numeric: tabular-nums;
+	}
+	/* Large: the boxes grow to share the row, up to a comfortable size for a thumb. */
+	:global(.clearable.code-field.code-field-large) {
+		width: 100%;
+		max-width: calc(30 * var(--u));
+	}
+	.boxes.large {
+		justify-content: center;
+	}
+	.large .box {
+		flex: 1 1 0;
+		max-width: calc(4 * var(--u));
+		height: calc(1.5 * var(--tap-target));
+		font-size: 2rem;
 	}
 	.group-end {
 		margin-inline-end: var(--space-2);

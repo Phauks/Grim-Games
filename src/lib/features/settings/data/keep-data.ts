@@ -6,7 +6,7 @@
  * Cookie Blocking and More", 2020).
  */
 
-/** Asks once, silently, at startup: true when the browser keeps the data, null when it can't say. */
+/** Asks silently: true when the browser keeps the data, null when it can't say. */
 export async function askToKeepData(): Promise<boolean | null> {
 	try {
 		const storage = navigator.storage;
@@ -17,13 +17,18 @@ export async function askToKeepData(): Promise<boolean | null> {
 	}
 }
 
-/** Whether the browser keeps the data now, without asking; null when it can't say. */
-export async function dataKept(): Promise<boolean | null> {
-	try {
-		return (await navigator.storage?.persisted?.()) ?? null;
-	} catch {
-		return null;
-	}
+/**
+ * Always on, with no setting (Trevor, 2026-10-19): asks at every start, and again when the app
+ * is installed. Chromium grants it from how much the site is used and whether it is installed,
+ * so a later ask can succeed where the first did not; Firefox shows a prompt, so it is never
+ * asked more than that (MDN, "Storage quotas and eviction criteria"). Diagnostics reports the
+ * answer for bug reports. Returns a function that stops listening.
+ */
+export function keepData(): () => void {
+	const ask = () => void askToKeepData();
+	addEventListener('appinstalled', ask);
+	ask();
+	return () => removeEventListener('appinstalled', ask);
 }
 
 export interface BrowserInfo {

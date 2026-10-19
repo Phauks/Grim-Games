@@ -385,12 +385,10 @@ test('Two games at once: one setup for both bags, then one token for both games'
 		'page'
 	);
 	await menu.getByRole('button', { name: 'Town 2 · Bad Moon Rising' }).tap();
-	// Leaving the board asks first, as the app's navigation does; the game stays saved.
-	await page
-		.getByRole('alertdialog', { name: 'Leave the game?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	// Moving between the mode's boards isn't leaving the game, so it never asks (Trevor,
+	// 2026-10-19); leaving for anywhere else still does (grimoire.e2e.ts).
 	await expect(page).not.toHaveURL(board);
+	await expect(page.getByRole('alertdialog', { name: 'Leave the game?' })).toHaveCount(0);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await expect(page.getByTestId('script-title')).toContainText('Bad Moon Rising');
 	await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
@@ -399,11 +397,8 @@ test('Two games at once: one setup for both bags, then one token for both games'
 		.getByRole('dialog', { name: 'Game mode' })
 		.getByRole('button', { name: 'Towns' })
 		.tap();
-	// Leaving asks unless it was just confirmed (shell.ts keeps a short pass).
-	const ask = page.getByRole('alertdialog', { name: 'Leave the game?' });
-	await Promise.race([page.waitForURL(towns), ask.waitFor()]);
-	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page).toHaveURL(towns);
+	await expect(page.getByRole('alertdialog', { name: 'Leave the game?' })).toHaveCount(0);
 });
 
 test('Two Towns and a Boomdandy starts two towns with their own scripts', async ({ page }) => {
@@ -437,7 +432,24 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await chooseMode(page, 'Two Towns and a Boomdandy');
 	const panel = modesPanel(page);
 	await expect(panel.getByRole('link', { name: /Zombuul/ })).toBeVisible();
-	await expect(panel.getByTestId('town-sizes')).toHaveText('Town 1: 5 players · Town 2: 5 players');
+	// Each town sets its own count on its own setup sheet (Trevor, 2026-10-19), split evenly
+	// to start; towns further apart than the rules allow warn, and never block.
+	await expect(panel.getByTestId('player-count')).toHaveCount(0);
+	await expect(panel.getByTestId('town-1-player-count')).toHaveText('5');
+	await expect(panel.getByTestId('town-2-player-count')).toHaveText('5');
+	await expect(panel.getByRole('heading', { name: 'Town 2 setup sheet' })).toBeVisible();
+	const warning = panel.getByTestId('town-sizes-warning');
+	const town2 = panel.getByRole('region', { name: 'Town 2 setup sheet' });
+	await town2.getByRole('button', { name: 'More players' }).tap();
+	await expect(panel.getByTestId('town-2-player-count')).toHaveText('6');
+	await expect(warning).toBeHidden();
+	await town2.getByRole('button', { name: 'More players' }).tap();
+	await expect(warning).toBeVisible();
+	await expect(warning).toHaveText('The towns’ player counts differ by more than 1.');
+	await town2.getByRole('button', { name: 'Fewer players' }).tap();
+	await town2.getByRole('button', { name: 'Fewer players' }).tap();
+	await expect(panel.getByTestId('town-2-player-count')).toHaveText('5');
+	await expect(panel.getByTestId('town-1-player-count')).toHaveText('5');
 	await panel.getByRole('button', { name: 'Start game' }).tap();
 
 	// "Boomdandy and Mayor are guaranteed to be in play": the Boomdandy in the Zombuul town,
@@ -896,5 +908,24 @@ test('Special rules sits under Game mode, and opening it closes the Game mode li
 	await rules.evaluate((el: HTMLElement) => el.click());
 	await expect(page.getByRole('dialog', { name: 'Special rules' })).toBeVisible();
 	await expect(page.getByRole('listbox')).toBeHidden();
+	await noSidewaysScroll(page);
+});
+
+test('each special rule shows its description under its switch', async ({ page }) => {
+	// Trevor, 2026-10-19: descriptions when toggling, the rest behind Inspect. Specters'
+	// description is approved; one not yet approved shows the author's own rule text.
+	await page.goto('/new');
+	await modesPanel(page)
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const rows = dialog.getByTestId('special-rules').locator('li');
+	const specters = rows.filter({ hasText: 'Specters' });
+	await expect(specters.getByTestId('rule-description')).toHaveText(
+		'Spectators share one ability and vote during the game on how it is used.'
+	);
+	await expect(
+		rows.filter({ hasText: 'I See Dead People' }).getByTestId('rule-description')
+	).toContainText("doesn't announce deaths");
 	await noSidewaysScroll(page);
 });
