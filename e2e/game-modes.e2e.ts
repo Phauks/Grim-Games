@@ -78,7 +78,10 @@ test('a mode’s own settings sit under Game mode settings, each with its descri
 	const settings = page.getByTestId('mode-settings');
 	await expect(settings.getByRole('heading', { name: 'Game mode settings' })).toBeVisible();
 	await expect(settings.getByRole('checkbox', { name: 'Role Recycling' })).toBeVisible();
-	await expect(settings).toContainText('go back into the pool');
+	// A setting is on or off, so its description says what it does (Trevor, 2026-10-19).
+	await expect(settings).toContainText(
+		'Declined characters return to character pool for future players.'
+	);
 	await expect(settings.getByRole('button', { name: /^Restricted characters/ })).toBeVisible();
 	await expect(settings).toContainText('Characters kept out of this game.');
 	// Above the setup sheet.
@@ -846,7 +849,9 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await phoneContext.close();
 });
 
-test('New game shows each script’s author and version under its name', async ({ page }) => {
+test('New game shows each script’s author under its name, and its versions in a drop-down', async ({
+	page
+}) => {
 	await page.addInitScript(() => {
 		localStorage.setItem(
 			'grim-games:scripts:quick-play',
@@ -867,11 +872,16 @@ test('New game shows each script’s author and version under its name', async (
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Custom', { exact: true });
 	// Under the picker once chosen, on a line that was already there (Trevor, 2026-10-19):
-	// Custom chooses the most recent custom script.
+	// Custom chooses the most recent custom script. Its version is a drop-down, empty and
+	// disabled until then.
 	const line = page.getByTestId('chosen-script');
+	const version = page.getByRole('combobox', { name: 'Script version' });
+	await expect(version).toBeDisabled();
+	await expect(version).not.toContainText('v');
 	const before = await line.boundingBox();
 	await custom.tap();
-	await expect(page.getByTestId('script-byline')).toHaveText('by Test Author · v2.1');
+	await expect(page.getByTestId('script-byline')).toHaveText('by Test Author');
+	await expect(version).toContainText('v2.1');
 	expect((await line.boundingBox())?.height).toBe(before?.height);
 	// In the script search's list too, on Standard and in a mode alike.
 	const option = page.getByRole('option').filter({ hasText: 'Byline Test' });
