@@ -5,10 +5,11 @@ const STREAM = 'https://www.youtube.com/watch?v=-R34QbIgDh8';
 /**
  * Specters: spectators share one ability and vote during the game to control it. Still in
  * alpha (https://specters.app, listed at https://chillclocktower.com/). Its one published
- * ability, Apparition, comes from the description of the stream that presented it (Arif,
- * 2025-08-24, with Nashable, who makes Specters): each dawn one player gains the Wizard's
- * ability, everyone learns who, and it ends at the next dawn. How votes are counted isn't
- * published, so the Storyteller reads the count and decides. A special rule since
+ * ability comes from the description of the stream that presented it (Arif, 2025-08-24,
+ * with Nashable, who makes Specters); it has no name of its own (Trevor, 2026-10-19): each
+ * dawn one player gains the Wizard's ability, everyone learns who, and it ends at the next
+ * dawn. How votes are counted isn't published, so the Storyteller reads the count and
+ * decides. A special rule since
  * 2026-10-18 (Trevor: rules stack on a game mode), so Specters plays with any mode.
  */
 export const SPECTERS: SpecialRule = {
@@ -30,7 +31,6 @@ export const SPECTERS: SpecialRule = {
 		daySteps: [
 			{
 				kind: 'spectator-vote',
-				ability: 'Apparition',
 				when: 'each-dawn',
 				pick: 'player',
 				grants: ['wizard'],
