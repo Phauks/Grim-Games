@@ -217,24 +217,21 @@ test('Diagnostics gathers build, device and problems on the device, without game
 	await expect(panel.locator('dt:text-is("Gathered") + dd')).toHaveText(/\d{1,2}:\d{2}:\d{2}/);
 	await expect(panel.getByRole('link', { name: 'Manage data' })).toHaveCount(0);
 
-	// Refresh is an icon beside the Advanced heading.
-	const heading = page
-		.getByRole('dialog', { name: 'Settings' })
-		.getByRole('heading', { name: 'Advanced' });
-	const refresh = page
-		.getByRole('dialog', { name: 'Settings' })
-		.getByRole('button', { name: 'Refresh' });
-	const [h, r] = [(await heading.boundingBox())!, (await refresh.boundingBox())!];
-	expect(r.height).toBeGreaterThanOrEqual(44);
-	expect(Math.abs(r.y + r.height / 2 - (h.y + h.height / 2))).toBeLessThan(12);
-	await refresh.tap();
-	await expect(panel).toHaveAttribute('aria-busy', 'false');
+	// Copy and Download are icons beside the Advanced heading, with no Refresh (Trevor, 2026-10-19).
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const heading = settings.getByRole('heading', { name: 'Advanced' });
+	const h = (await heading.boundingBox())!;
+	for (const name of ['Copy diagnostics', 'Download diagnostics']) {
+		const icon = (await settings.getByRole('button', { name, exact: true }).boundingBox())!;
+		expect(icon.height).toBeGreaterThanOrEqual(44);
+		expect(Math.abs(icon.y + icon.height / 2 - (h.y + h.height / 2))).toBeLessThan(12);
+	}
+	await expect(settings.getByRole('button', { name: 'Refresh', exact: true })).toHaveCount(0);
+	await expect(panel.getByRole('button', { name: /Copy|Download/ })).toHaveCount(0);
 
 	// Report an issue is in About's main part, above Advanced (Trevor, 2026-10-19).
 	await expect(panel.getByRole('button', { name: 'Report an issue' })).toHaveCount(0);
-	const report = page
-		.getByRole('dialog', { name: 'Settings' })
-		.getByRole('button', { name: 'Report an issue' });
+	const report = settings.getByRole('button', { name: 'Report an issue' });
 	expect((await report.boundingBox())!.y).toBeLessThan((await heading.boundingBox())!.y);
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	await report.tap();
@@ -245,7 +242,7 @@ test('Diagnostics gathers build, device and problems on the device, without game
 
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),
-		panel.getByRole('button', { name: 'Download' }).tap()
+		settings.getByRole('button', { name: 'Download diagnostics' }).tap()
 	]);
 	expect(download.suggestedFilename()).toMatch(
 		/^grim-games-diagnostics-\d{4}-\d{2}-\d{2}-\d{6}\.txt$/

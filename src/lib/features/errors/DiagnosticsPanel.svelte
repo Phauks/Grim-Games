@@ -1,11 +1,8 @@
 <script lang="ts">
-	import { copyText } from '#lib/ui/clipboard.ts';
-	import { downloadFile } from '#lib/ui/download.ts';
 	import { onMount } from 'svelte';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import { diagnosticsFileName, diagnosticsText } from './diagnostics.ts';
 	import { diagnosticsView, refreshDiagnostics } from './diagnostics-view.svelte.ts';
 	import { errorLog } from './report.svelte.ts';
 
@@ -20,30 +17,13 @@
 
 	const diagnostics = $derived(diagnosticsView.current);
 	const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
-	const text = $derived(diagnostics ? diagnosticsText(diagnostics, label) : '');
 
 	onMount(refreshDiagnostics);
-
-	async function copy() {
-		await copyText(text, {
-			copied: [t('errors.copied'), t('errors.diag.copiedDetail')],
-			failed: [t('errors.copyFailed'), t('errors.copyFailedDetail')]
-		});
-	}
-
-	function download() {
-		if (!diagnostics) return;
-		downloadFile(diagnosticsFileName(diagnostics.gatheredAt), text, 'text/plain');
-	}
 </script>
 
 <div class="panel" data-testid="diagnostics" aria-busy={!diagnostics}>
-	<div class="actions">
-		<Button variant="accent" disabled={!diagnostics} onclick={copy}>{t('errors.diag.copy')}</Button>
-		<Button disabled={!diagnostics} onclick={download}>{t('errors.diag.download')}</Button>
-		<!-- Report an issue moved up into About's main part (Trevor, 2026-10-19). -->
-	</div>
-
+	<!-- Copy and Download are icons beside the Advanced heading (DiagnosticsActions); Report an
+	     issue is in About's main part (Trevor, 2026-10-19). -->
 	<section>
 		<h2>{t('errors.diag.problems')}</h2>
 		<div class="row-line">
@@ -85,7 +65,6 @@
 		display: grid;
 		gap: var(--space-4);
 	}
-	.actions,
 	.row-line {
 		display: flex;
 		flex-wrap: wrap;
