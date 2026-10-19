@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { dataUrl, grimoireImage } from '#lib/features/grimoire/grimoire-image.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -59,17 +60,31 @@
 	}
 </script>
 
-<Dialog bind:open title="Export game">
+<Dialog bind:open title={t('history.exportTitle')}>
 	<div class="parts" data-testid="export-parts">
-		<Toggle label="History" checked={parts.log} onChange={(on) => (parts.log = on)} />
-		<Toggle label="Grimoire" checked={parts.image} onChange={(on) => (parts.image = on)} />
-		<Toggle label="Storyteller notes" checked={parts.notes} onChange={(on) => (parts.notes = on)} />
+		<Toggle
+			label={t('history.exportLog')}
+			checked={parts.log}
+			onChange={(on) => (parts.log = on)}
+		/>
+		<Toggle
+			label={t('history.exportImage')}
+			checked={parts.image}
+			onChange={(on) => (parts.image = on)}
+		/>
+		<Toggle
+			label={t('history.exportNotes')}
+			checked={parts.notes}
+			onChange={(on) => (parts.notes = on)}
+		/>
 	</div>
 	{#snippet actions()}
 		<Button icon="grimoire" variant="quiet" disabled={busy} onclick={() => run('image')}>
-			Image
+			{t('history.exportPicture')}
 		</Button>
-		<Button icon="download" disabled={busy} onclick={() => run('recap')}>Download</Button>
+		<Button icon="download" disabled={busy} onclick={() => run('recap')}
+			>{t('history.exportDownload')}</Button
+		>
 	{/snippet}
 </Dialog>
 
