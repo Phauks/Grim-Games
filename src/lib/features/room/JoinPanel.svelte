@@ -19,7 +19,7 @@
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then your name
-	 * and seat, the table, and the Specters vote. JoinPage puts it in a page; /play shows it
+	 * and seat, the table, and the Specters vote. /play shows it
 	 * in its Room tab (Trevor, 2026-10-19), so a player moves between script and room.
 	 */
 	interface Props {
@@ -34,11 +34,9 @@
 		onJoined?: (joined: boolean) => void;
 		/** Told the Storyteller's name the room gives, for the share text around it. */
 		onStoryteller?: (name: string | undefined) => void;
-		/** The room's script arrived ('' when it has no name). */
-		onScript?: (name: string) => void;
 	}
 
-	let { code, onCode, onJoined, onScript, onStoryteller }: Props = $props();
+	let { code, onCode, onJoined, onStoryteller }: Props = $props();
 
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
@@ -63,7 +61,6 @@
 		void followRoomScript(sent)
 			.then((loaded) => {
 				if (cancelled || !loaded) return;
-				onScript?.(loaded.name);
 				if (valid) rememberRoom(valid, loaded.name);
 			})
 			.catch(() => {});

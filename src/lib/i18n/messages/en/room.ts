@@ -78,8 +78,6 @@ export const room = {
 	'room.table': 'Table',
 	'room.dead': 'Dead',
 	'room.vote.title': 'Spectators’ vote',
-	'room.scriptLine': 'Script: {name}',
-	'room.readScript': 'Read the script',
 	// The view-only grimoire link (Specters)
 	'room.watch.title': 'Watch the grimoire',
 	'room.tabs': 'Share',

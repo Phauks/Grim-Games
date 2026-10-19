@@ -21,13 +21,21 @@
 	 */
 	interface Props {
 		/** The game's script, for the share screen's byline and the middle of its QR code. */
-		script: LoadedScript;
+		script?: LoadedScript;
 		version?: string;
+		/**
+		 * The room a join link named; null for Join game's code form; left out, the room this
+		 * phone last joined.
+		 */
+		initialCode?: string | null;
+		/** A typed code was entered; without it the tab switches rooms in place. */
+		onCode?: (code: string) => void;
 	}
 
-	let { script, version }: Props = $props();
-	let code = $state(lastRoom());
-	const logo = $derived(scriptLogo(script));
+	let { script, version, initialCode, onCode }: Props = $props();
+	// svelte-ignore state_referenced_locally
+	let code = $state(initialCode === undefined ? lastRoom() : (initialCode ?? undefined));
+	const logo = $derived(script && scriptLogo(script));
 	let logoFailed = $state(false);
 	const roomTitle = $derived(code ? t('room.roomTitle', { code: formatRoomCode(code) }) : '');
 	let joined = $state(false);
@@ -72,7 +80,7 @@
 	{#key code}
 		<JoinPanel
 			{code}
-			onCode={(c) => (code = c)}
+			onCode={(c) => (onCode ? onCode(c) : (code = c))}
 			onJoined={(j) => (joined = j)}
 			onStoryteller={(name) => (storyteller = name)}
 		/>
@@ -81,10 +89,10 @@
 
 <Dialog bind:open={sharing} title={t('scripts.share.title', { title: roomTitle })}>
 	<div class="panel">
-		<ScriptByline author={script.meta.author} {version} />
+		<ScriptByline author={script?.meta.author} {version} />
 		<SharePanel
 			url={link}
-			title={script.name || roomTitle}
+			title={script?.name || roomTitle}
 			qrLabel={t('room.qrLabel')}
 			pending={t('room.joining')}
 			code={{ label: t('room.joinCode'), value: code && formatRoomCode(code) }}
@@ -92,7 +100,7 @@
 			qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 		>
 			{#snippet qrCenter()}
-				<ScriptQrCenter {logo} name={script.name} bind:failed={logoFailed} />
+				<ScriptQrCenter {logo} name={script?.name ?? ''} bind:failed={logoFailed} />
 			{/snippet}
 		</SharePanel>
 	</div>
