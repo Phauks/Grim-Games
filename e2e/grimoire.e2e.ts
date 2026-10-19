@@ -3535,3 +3535,31 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
 });
+
+test('the night walk-through rises into place, and appears at once with reduced motion', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): a transition instead of appearing instantly; the shared `rise`.
+	await startGame(page);
+	// A character in play, so there is a night to run.
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await closeSheet(page);
+	const strip = page.getByTestId('night-strip');
+	const animating = () =>
+		strip.evaluate((el) => el.getAnimations().length > 0 || el.style.animation !== '');
+	await bankNight(page, 'Run Night Order').tap();
+	expect(await animating()).toBe(true);
+	await expect(strip).toBeVisible();
+	await expect.poll(animating).toBe(false);
+
+	await page.getByRole('button', { name: 'Stop the walk-through' }).tap();
+	await expect(strip).toHaveCount(0);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await bankNight(page, 'Run Night Order').tap();
+	expect(await animating()).toBe(false);
+});
