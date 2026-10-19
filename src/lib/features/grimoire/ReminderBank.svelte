@@ -273,7 +273,8 @@
 	const itemW = $state<Record<string, number>>({});
 	/**
 	 * Room added after a captioned stretch narrower than its caption, so the caption sits over
-	 * its own tokens (Trevor, 2026-10-19: Dead players over one token ran over the ∞).
+	 * its own tokens (Trevor, 2026-10-19: Dead players over one token ran over the ∞). A margin
+	 * on the stretch's last token, so the list holds only tokens.
 	 */
 	const spacers = $derived.by(() => {
 		const out: Partial<Record<Group, number>> = {};
@@ -282,7 +283,7 @@
 			const caption = captionW[group];
 			if (own.length === 0 || caption === undefined) continue;
 			const tokens = own.reduce((n, i) => n + (itemW[i.key] ?? 0), 0);
-			const room = caption - tokens - (own.length + 1) * gap;
+			const room = caption - tokens - own.length * gap;
 			if (room > 0) out[group] = room;
 		}
 		return out;
@@ -457,6 +458,9 @@
 				class:lifted={drag?.item.key === item.key && item.count === 1}
 				class:now={item.now}
 				class:dim={dimRest && !item.now}
+				style:margin-inline-end={endsGroup(i) && spacers[item.group]
+					? `${spacers[item.group]}px`
+					: undefined}
 			>
 				{#if item.count > 1}<span class="count" aria-label={`${item.count} copies`}
 						>×{item.count}</span
@@ -473,11 +477,6 @@
 					panX
 				/>
 			</li>
-			{#if endsGroup(i) && spacers[item.group]}<li
-					class="spacer"
-					aria-hidden="true"
-					style:width="{spacers[item.group]}px"
-				></li>{/if}
 		{:else}
 			<li class="none">None</li>
 		{/each}
