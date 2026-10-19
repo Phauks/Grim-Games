@@ -741,6 +741,19 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	for (const name of ['Choirboy', 'Magician', 'Spy', 'Imp'])
 		await page.getByRole('button', { name, exact: true }).tap();
 	await expect(check).toContainText(/Magician\s*and\s*Spy/);
+	// Each jinxed character shows its partner's icon where a star used to be (Trevor, 2026-10-19).
+	const partners = (id: string) =>
+		page.locator(`.choice:has([data-character-id="${id}"]) [data-testid="jinx-partners"]`);
+	await expect(partners('magician').locator('[data-partner]')).toHaveAttribute(
+		'data-partner',
+		'spy'
+	);
+	await expect(partners('magician')).toHaveAttribute('title', 'Jinxed with Spy');
+	await expect(partners('spy').locator('[data-partner]')).toHaveAttribute(
+		'data-partner',
+		'magician'
+	);
+	await expect(partners('choirboy').locator('[data-partner]')).toHaveCount(0);
 	// No Djinn line: jinxes are enough (Trevor, 2026-10-17).
 	await expect(check).not.toContainText('Djinn');
 	await expect(check).toContainText(
