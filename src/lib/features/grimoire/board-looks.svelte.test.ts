@@ -15,6 +15,7 @@ describe('board looks', () => {
 				nameSize: 9,
 				nameOffset: 1,
 				reminders: 'free',
+				usedGhostVote: 'struck',
 				// The script's name is only in the lower left corner now (Trevor, 2026-10-18).
 				titleAt: 'corner'
 			})
@@ -27,7 +28,8 @@ describe('board looks', () => {
 			rulesGrouped: true,
 			nameSize: 1.6,
 			nameOffset: 0.3,
-			reminders: 'free'
+			reminders: 'free',
+			usedGhostVote: 'struck'
 		});
 		expect(
 			parseBoardLooks({
@@ -37,6 +39,7 @@ describe('board looks', () => {
 				nameSize: 'big',
 				nameOffset: -1,
 				reminders: 'x',
+				usedGhostVote: 'x',
 				titleAt: 'x'
 			})
 		).toEqual(DEFAULT_BOARD_LOOKS);

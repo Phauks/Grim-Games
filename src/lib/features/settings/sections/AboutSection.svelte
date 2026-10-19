@@ -11,7 +11,7 @@
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import RefreshDiagnostics from '#lib/features/errors/RefreshDiagnostics.svelte';
+	import DiagnosticsActions from '#lib/features/errors/DiagnosticsActions.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { ADVANCED_KEY } from './about-advanced.ts';
 	import { formatBytes } from '#lib/i18n/bytes.ts';
@@ -121,7 +121,7 @@
 	storageKey={ADVANCED_KEY}
 	defaultOpen={false}
 >
-	{#snippet aside()}<RefreshDiagnostics />{/snippet}
+	{#snippet aside()}<DiagnosticsActions />{/snippet}
 	<DiagnosticsPanel hideRows={['errors.diag.version', 'errors.diag.commit']} />
 </PageSection>
 

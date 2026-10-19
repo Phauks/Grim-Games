@@ -72,9 +72,29 @@ export function rollExtras(
 }
 
 /**
- * A range to tell the table, one either side of the real number and never below none, so
+ * The numbers the Storyteller may tell the table: any range that holds the real number is
+ * true (Trevor, 2026-10-19: "The story teller puts in 2, any statement that includes 2 would
+ * be accurate 1-3, 1-4, 2-3, 2"), kept within how many the mode allows.
+ */
+export function announceBounds(
+	count: number,
+	total: { min: number; max: number }
+): { lows: number[]; highs: number[] } {
+	const from = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+	return {
+		lows: from(Math.min(total.min, count), count),
+		highs: from(count, Math.max(total.max, count))
+	};
+}
+
+/**
+ * The range offered first: one either side of the real number, within the mode's bounds, so
  * players know extras may be in play without learning how many.
  */
-export function announcedRange(count: number): [number, number] {
-	return [Math.max(0, count - 1), count + 1];
+export function announcedRange(
+	count: number,
+	total: { min: number; max: number }
+): [number, number] {
+	const { lows, highs } = announceBounds(count, total);
+	return [Math.max(lows[0], count - 1), Math.min(highs[highs.length - 1], count + 1)];
 }

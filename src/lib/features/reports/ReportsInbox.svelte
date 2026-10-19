@@ -204,20 +204,20 @@
 	}
 </script>
 
-<!-- Refresh, Admins, Forget key and Only mine are always there, disabled until they apply,
-     so nothing moves when the list appears. -->
+<!-- Refresh and Only mine are always there, disabled until they apply, so nothing moves when the
+     list appears. Admins is only for admins (Trevor, 2026-10-19); it sits left of Refresh so
+     Refresh stays put when it appears. -->
 <Page title={t('reports.inbox')}>
 	{#snippet actions()}
+		{#if allowed}
+			<Button variant="quiet" onclick={openAdmins}>{t('reports.admins')}</Button>
+		{/if}
 		<IconButton
 			icon="refresh"
 			label={t('errors.diag.refresh')}
 			disabled={!reading}
 			onclick={load}
 		/>
-		<Button variant="quiet" disabled={!allowed} onclick={openAdmins}>{t('reports.admins')}</Button>
-		<Button variant="quiet" disabled={access !== 'key'} onclick={forget}
-			>{t('reports.forgetKey')}</Button
-		>
 	{/snippet}
 	{#snippet toolbar()}
 		<!-- Yourself as the reporter in one tap (Trevor, 2026-10-19); the Reporter column filters

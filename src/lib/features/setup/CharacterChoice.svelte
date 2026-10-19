@@ -12,8 +12,8 @@
 		copies: number;
 		/** Whether more than one copy may be added (Village Idiot, Legion, or the switch). */
 		duplicates: boolean;
-		/** Jinxed with another selected character. */
-		jinxed: boolean;
+		/** The other selected characters it is jinxed with, shown by their icons (Trevor, 2026-10-19). */
+		jinxedWith?: readonly Character[];
 		/** In play though not on the script: marked, still under its own type. */
 		offScript?: boolean;
 		/** One of the Demon's bluffs (Trevor, 2026-10-18): tagged, not chosen for the bag. */
@@ -30,7 +30,7 @@
 		character,
 		copies,
 		duplicates,
-		jinxed,
+		jinxedWith = [],
 		offScript = false,
 		bluff = false,
 		locked = false,
@@ -89,7 +89,20 @@
 			<span class="ability">{character.ability}</span>
 		</span>
 		<span class="marks" aria-hidden="true">
-			<span class="jinx" title={t('setup.jinxed')}>{jinxed ? '★' : ''}</span>
+			<span
+				class="jinx"
+				data-testid="jinx-partners"
+				title={jinxedWith.length
+					? t('setup.jinxedWith', { names: jinxedWith.map((p) => p.name).join(', ') })
+					: undefined}
+				>{#each jinxedWith as p (p.id)}{@const src = iconUrl(
+						p,
+						defaultAlignment(p.type)
+					)}{#if src}<img {src} alt="" data-partner={p.id} />{:else}<span
+							class="dot"
+							data-partner={p.id}
+						></span>{/if}{/each}</span
+			>
 			<span class="copies">{copies > 1 ? `×${copies}` : ''}</span>
 			<!--
 				A Demon bluff shows a red badge where the check goes (Trevor, 2026-10-18); one also
@@ -265,14 +278,28 @@
 		grid-column: 2;
 		grid-row: 1;
 		display: grid;
-		grid-template-columns: 1em 2em minmax(1.25em, auto);
+		grid-template-columns: 2em 2em minmax(1.25em, auto);
 		align-items: center;
 		justify-items: center;
 		flex: none;
 		font-weight: 700;
 	}
+	/* A fixed slot: a second partner overlaps the first, so nothing beside it moves. */
 	.jinx {
-		color: var(--accent);
+		display: flex;
+		justify-content: center;
+		width: 2em;
+	}
+	.jinx img,
+	.jinx .dot {
+		flex: none;
+		width: 1.4em;
+		height: 1.4em;
+		border-radius: 50%;
+		background: var(--token-face);
+	}
+	.jinx > * + * {
+		margin-inline-start: -0.8em;
 	}
 	.add {
 		display: grid;

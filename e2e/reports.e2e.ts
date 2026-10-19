@@ -40,9 +40,9 @@ test('a report sent from the footer reaches the inbox, where it can be triaged a
 
 	// The inbox needs the admin key, kept on this device.
 	await page.goto('/reports');
-	// The title row's buttons and the filter are there before the key, disabled, so nothing moves.
+	// Refresh is there before the key, disabled, so nothing moves; Admins is only for admins.
 	await expect(page.getByRole('button', { name: 'Refresh' })).toBeDisabled();
-	await expect(page.getByRole('button', { name: 'Forget key' })).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Admins' })).toBeHidden();
 	const key = page.getByLabel('Admin key');
 	await key.fill('wrong');
 	await key.press('Enter');
@@ -127,7 +127,7 @@ test('an admin account opens the inbox without the key; the key holder names adm
 	await phone.goto('/reports');
 	await expect(phone.getByTestId('reports')).toBeVisible();
 	await expect(phone.getByLabel('Admin key')).toBeHidden();
-	await expect(phone.getByRole('button', { name: 'Forget key' })).toBeDisabled();
+	await expect(phone.getByRole('button', { name: 'Admins' })).toBeVisible();
 
 	// Removing the admin closes the inbox to that account again.
 	await admins.getByRole('button', { name: `Remove admin ${email}` }).tap();
@@ -135,7 +135,7 @@ test('an admin account opens the inbox without the key; the key holder names adm
 	// They still read reports, like any signed-in account, but no longer triage them.
 	await phone.reload();
 	await expect(phone.getByTestId('reports')).toBeVisible();
-	await expect(phone.getByRole('button', { name: 'Admins' })).toBeDisabled();
+	await expect(phone.getByRole('button', { name: 'Admins' })).toBeHidden();
 	await other.close();
 });
 
@@ -184,7 +184,7 @@ test('a signed-in account that is not an admin reads reports but cannot triage t
 	await expect(report.getByRole('combobox', { name: 'Status' })).toBeDisabled();
 	await expect(report.getByRole('button', { name: 'Delete report' })).toBeDisabled();
 	await report.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(reader.getByRole('button', { name: 'Admins' })).toBeDisabled();
+	await expect(reader.getByRole('button', { name: 'Admins' })).toBeHidden();
 	// Only mine: yourself as the reporter in one tap.
 	await reader.getByText('Only mine', { exact: true }).tap();
 	await expect(row).toBeHidden();
