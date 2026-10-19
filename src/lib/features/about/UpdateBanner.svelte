@@ -83,6 +83,8 @@
 
 		const watch = (reg: ServiceWorkerRegistration) => {
 			registration = reg;
+			// About shows a download the browser started by itself.
+			updateCheck.watch(reg);
 			// Only a waiting worker with a controller already in place is an update;
 			// the very first install has nothing to replace.
 			if (reg.waiting && navigator.serviceWorker.controller) waiting = reg.waiting;
