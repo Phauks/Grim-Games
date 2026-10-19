@@ -765,6 +765,9 @@
 		--hit: var(--tap-target);
 		container: data-table / inline-size;
 		min-width: 0;
+		/* Keeps the sticky header and pinned cells' z-index inside the table, so a sticky
+		   heading around it (a Settings section's) stays on top while the table scrolls under. */
+		isolation: isolate;
 	}
 	.scroll {
 		max-width: 100%;
