@@ -27,7 +27,8 @@
 		<p>
 			{APP_NAME} has no analytics, no advertising and no tracking cookies. Your games and settings stay
 			on your device. Our server stores a custom script only when you share it, a live room's public table
-			only while it is open, a report only when you send one, and your account only if you sign in.
+			only while it is open (and the whole grimoire only while its view-only link is on), a report only
+			when you send one, and your account only if you sign in.
 		</p>
 	</PageSection>
 	<PageSection title="What stays on your device">
@@ -66,10 +67,11 @@
 		</ul>
 		<p>
 			None of this is sent to us, apart from a script you share, a game recap you share, a live
-			room's public table, a report you send, and your scripts if you sign in (below). When the app
-			opens it asks your browser to keep this data rather than clear it to free up space; Settings,
-			Data shows the answer. Clearing this site's data in your browser deletes it all. Settings,
-			Data lets you clear parts of it, and Reset settings resets your settings.
+			room's public table (and the grimoire, while its view-only link is on), a report you send, and
+			your scripts if you sign in (below). When the app opens it asks your browser to keep this data
+			rather than clear it to free up space; Settings, Data shows the answer. Clearing this site's
+			data in your browser deletes it all. Settings, Data lets you clear parts of it, and Reset
+			settings resets your settings.
 		</p>
 	</PageSection>
 	<PageSection title="Shared scripts">
@@ -137,7 +139,15 @@
 			When the Storyteller opens Players' phones, the app opens a room on our server under a
 			six-digit code. The room holds what everyone at the table can already see: each seat's number
 			and player name, who looks dead, today's nominations and executions, and the script. It never
-			holds characters, reminders, notes or anything else in the grimoire.
+			holds characters, reminders, notes or anything else in the grimoire, unless the Storyteller
+			turns on its view-only grimoire link.
+		</p>
+		<p>
+			The view-only link lets spectators watch the whole grimoire live: the game and its history,
+			and where the Storyteller's device draws the seats and reminders. While it is on, the room
+			holds a copy of all of it. Turning the link off deletes that copy and stops the link, and so
+			does closing the room. The link's key is in the part of the address after #, which browsers
+			never send to our server.
 		</p>
 		<ul>
 			<li>Phones ask to join with a name, and the Storyteller approves each one.</li>

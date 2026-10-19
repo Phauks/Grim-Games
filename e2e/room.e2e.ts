@@ -114,12 +114,13 @@ test('Share and Copy link carry the room code as well as the link', async ({ pag
 	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
 	await expect(qr.getByTestId('qr-name')).toHaveCount(0);
 
-	await page.getByRole('button', { name: 'Share' }).tap();
+	// The join link's buttons come first; the view-only grimoire link's follow.
+	await page.getByRole('button', { name: 'Share', exact: true }).first().tap();
 	const shared = await page.evaluate(() => (window as unknown as { shared: ShareData }).shared);
 	expect(shared.text).toContain(spaced);
 	expect(shared.url).toMatch(link);
 
-	await page.getByRole('button', { name: 'Copy link' }).tap();
+	await page.getByRole('button', { name: 'Copy link' }).first().tap();
 	const copied = await page.evaluate(() => navigator.clipboard.readText());
 	expect(copied).toContain(spaced);
 	expect(copied.split('\n').at(-1)).toMatch(link);
@@ -279,4 +280,74 @@ test('a room tells an app too old for it to update', async ({ page, browser }, t
 		`This room needs a newer version of ${APP_NAME}. Refresh to update, then try again.`
 	);
 	await phoneContext.close();
+});
+
+test('a spectator watches the whole grimoire through the view-only link, after promising', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Specters (Trevor, 2026-10-18): spectators see the Storyteller's grimoire live, through a
+	// link the Storyteller turns on and off, after promising not to spoil the game.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const watch = page.getByTestId('watch-link');
+	const toggle = watch.getByRole('checkbox', { name: 'View-only grimoire link' });
+	// The switch is tapped by its label, as the whole row is one tap target.
+	const flip = () => watch.getByText('View-only grimoire link', { exact: true }).tap();
+	const url = watch.getByTestId('share-url');
+	// Off until turned on, with its place kept.
+	await expect(toggle).not.toBeChecked();
+	await expect(url).toHaveValue('');
+	await flip();
+	// The key is in the hash, which never reaches the server.
+	await expect(url).toHaveValue(/\/watch\/\d{6}#[0-9a-f]{64}$/);
+	const link = await url.inputValue();
+
+	const viewerContext = await browser.newContext({ ...testInfo.project.use });
+	const viewer = await viewerContext.newPage();
+	await viewer.goto(link);
+	const pledge = viewer.getByRole('alertdialog', { name: 'Before you watch' });
+	await expect(pledge.getByTestId('watch-pledge').getByRole('listitem')).toHaveCount(3);
+	await pledge.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
+	// Nothing to share or change from here.
+	const toolbar = viewer.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(toolbar.getByRole('button', { name: 'Share', exact: true })).toHaveCount(0);
+	await expect(toolbar.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
+
+	// The Storyteller's changes show live.
+	await page.goto(board);
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
+	await sheet.getByRole('textbox', { name: 'Player name' }).fill('Alex');
+	await sheet.getByRole('textbox', { name: 'Player name' }).press('Enter');
+	await expect(viewer.getByRole('button', { name: /^Seat 1: Alex/ })).toBeVisible();
+
+	// Every open asks again.
+	await viewer.reload();
+	await expect(pledge).toBeVisible();
+	await pledge.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(viewer.getByRole('button', { name: /^Seat 1: Alex/ })).toBeVisible();
+
+	// Turning it off takes the grimoire away at once; turning it on again makes a new link.
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await flip();
+	await expect(url).toHaveValue('');
+	await expect(viewer.getByRole('alert')).toHaveText('The Storyteller has turned this link off.');
+	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toHaveCount(0);
+	await flip();
+	await expect(url).toHaveValue(/#[0-9a-f]{64}$/);
+	expect(await url.inputValue()).not.toBe(link);
+	await viewerContext.close();
+});
+
+test('a view-only link cut short says so and connects to nothing', async ({ page }) => {
+	await page.goto('/watch/123456');
+	await expect(page.getByRole('alert')).toHaveText(
+		'This link is incomplete. Ask the Storyteller for it again.'
+	);
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });

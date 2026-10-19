@@ -75,5 +75,24 @@ export const room = {
 	'room.dead': 'Dead',
 	'room.vote.title': 'Spectators’ vote',
 	'room.scriptLine': 'Script: {name}',
-	'room.readScript': 'Read the script'
+	'room.readScript': 'Read the script',
+	// The view-only grimoire link (Specters)
+	'room.watch.title': 'Watch the grimoire',
+	'room.watch.toggle': 'View-only grimoire link',
+	'room.watch.hint':
+		'Spectators with this link see the whole grimoire live, after promising not to spoil the game. Each new link stops the last one.',
+	'room.watch.qrLabel': 'QR code to watch the grimoire',
+	'room.watch.off': 'Off',
+	'room.watch.shareText': 'Watch the grimoire. Never show it to a player.',
+	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',
+	'room.watch.pledgeTitle': 'Before you watch',
+	'room.watch.pledgeLead':
+		'You will see everything the Storyteller sees: every character, reminder and note. You promise that:',
+	'room.watch.pledgeCheat': 'You won’t use it to cheat, or to help anyone playing.',
+	'room.watch.pledgeShare': 'You won’t tell or show any player what you see.',
+	'room.watch.pledgeIntegrity': 'You won’t do anything that spoils the game for its players.',
+	'room.watch.waiting': 'Waiting for the Storyteller’s grimoire…',
+	'room.watch.turnedOff': 'The Storyteller has turned this link off.',
+	'room.watch.badLink': 'This link is incomplete. Ask the Storyteller for it again.',
+	'room.watch.home': 'Home'
 } as const;

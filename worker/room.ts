@@ -6,7 +6,9 @@ import {
 	closeVote,
 	hostView,
 	isScript,
+	isSharedGrimoire,
 	join,
+	MAX_GRIMOIRE_BYTES,
 	MAX_SCRIPT_BYTES,
 	newRoom,
 	openVote,
@@ -16,8 +18,10 @@ import {
 	request,
 	resolve,
 	roomPreview,
+	setViewers,
 	supportsProtocol,
 	unseat,
+	type GrimoireView,
 	type RoomState,
 	type ScriptView,
 	type ServerMessage
@@ -37,12 +41,13 @@ export interface RoomEnv {
 const ROOM_IDLE_MS = 24 * 60 * 60 * 1000;
 /**
  * Public state is small (names and flags for at most a few dozen seats). Only the
- * Storyteller's device may send more, for a script with its own characters.
+ * Storyteller's device may send more, for a script with its own characters or the whole
+ * grimoire for the view-only link.
  */
 const MAX_MESSAGE_BYTES = 64 * 1024;
 const KEY_PATTERN = /^[0-9a-f]{32,128}$/;
 
-type Attachment = { role: 'host' } | { role: 'player'; memberId: string };
+type Attachment = { role: 'host' } | { role: 'player'; memberId: string } | { role: 'viewer' };
 
 async function sha256(text: string): Promise<string> {
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -93,10 +98,12 @@ export class Room extends DurableObject<RoomEnv> {
 
 	async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer): Promise<void> {
 		const who = ws.deserializeAttachment() as Attachment | null;
-		const limit = who?.role === 'host' ? MAX_SCRIPT_BYTES : MAX_MESSAGE_BYTES;
+		const limit = who?.role === 'host' ? MAX_GRIMOIRE_BYTES : MAX_MESSAGE_BYTES;
 		if (typeof raw !== 'string' || raw.length > limit) return;
 		const message = parseClientMessage(raw);
 		if (!message) return;
+		// Only the grimoire may be that large; a script keeps its own limit.
+		if (raw.length > MAX_SCRIPT_BYTES && message.type !== 'grimoire') return;
 		let room = await this.load();
 		if (!room) {
 			send(ws, { type: 'refused', reason: 'no-room' });
@@ -123,6 +130,17 @@ export class Room extends DurableObject<RoomEnv> {
 				send(ws, hostView(room));
 				return;
 			}
+			if (message.role === 'viewer') {
+				if (hash !== room.viewerKeyHash) {
+					send(ws, { type: 'refused', reason: 'not-viewer' });
+					ws.close(4403, 'Link turned off');
+					return;
+				}
+				ws.serializeAttachment({ role: 'viewer' } satisfies Attachment);
+				const grimoire = await this.ctx.storage.get<GrimoireView>('grimoire');
+				if (grimoire) send(ws, grimoire);
+				return;
+			}
 			const memberId = hash.slice(0, 24);
 			const joined = join(room, memberId);
 			if (!joined) {
@@ -137,7 +155,7 @@ export class Room extends DurableObject<RoomEnv> {
 			if (script) send(ws, script);
 			return;
 		}
-		if (!who) return;
+		if (!who || who.role === 'viewer') return;
 
 		if (who.role === 'player') {
 			const id = who.memberId;
@@ -168,6 +186,31 @@ export class Room extends DurableObject<RoomEnv> {
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
 					if (to?.role === 'player') socket.send(text);
+				}
+				return;
+			}
+			case 'viewers': {
+				const next = setViewers(room, message.keyHash);
+				if (next.viewerKeyHash === room.viewerKeyHash) return;
+				// A link turned off (or replaced) stops working now, and its grimoire is deleted.
+				await this.ctx.storage.delete('grimoire');
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role !== 'viewer') continue;
+					send(socket, { type: 'refused', reason: 'not-viewer' });
+					socket.close(4403, 'Link turned off');
+				}
+				room = next;
+				break;
+			}
+			case 'grimoire': {
+				if (!room.viewerKeyHash || !isSharedGrimoire(message.grimoire)) return;
+				const view: GrimoireView = { type: 'grimoire', grimoire: message.grimoire };
+				await this.ctx.storage.put('grimoire', view);
+				const text = JSON.stringify(view);
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'viewer') socket.send(text);
 				}
 				return;
 			}
@@ -204,7 +247,7 @@ export class Room extends DurableObject<RoomEnv> {
 		const host = JSON.stringify(hostView(room));
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
-			if (!who) continue;
+			if (!who || who.role === 'viewer') continue;
 			socket.send(who.role === 'host' ? host : JSON.stringify(playerView(room, who.memberId)));
 		}
 	}

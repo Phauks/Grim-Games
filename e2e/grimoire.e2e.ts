@@ -979,8 +979,10 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	await expect(share.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');
-	// The link is the room's: phones that join get the script, names and deaths only.
-	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
+	// The link is the room's: phones that join get the script, names and deaths only. The
+	// view-only grimoire link comes after it, off.
+	await expect(share.getByTestId('share-url').first()).toHaveValue(new RegExp(`/join/${code}$`));
+	await expect(share.getByTestId('watch-link').getByTestId('share-url')).toHaveValue('');
 	expect(page.url()).toBe(url);
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	await expect(share).toBeHidden();

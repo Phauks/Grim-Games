@@ -91,7 +91,7 @@ export class Grimoire {
 	 */
 	toggleNightStep(night: Night, step: { id: string }): void {
 		if (this.open.viewOnly) {
-			toast('Not done', 'The game is over. Reopen it to change it.');
+			toast('Not done', this.open.readOnlyMessage);
 			return;
 		}
 		const key = doneKey(this.nightDay, night, step);
@@ -136,7 +136,7 @@ export class Grimoire {
 	 */
 	endNight(): boolean {
 		if (this.open.viewOnly) {
-			toast('Not done', 'The game is over. Reopen it to change it.');
+			toast('Not done', this.open.readOnlyMessage);
 			return false;
 		}
 		if (this.nightDay !== this.game.pastDays.length) return false;
