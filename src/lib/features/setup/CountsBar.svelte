@@ -7,9 +7,26 @@
 		analysis: SetupAnalysis;
 		/** Travellers selected. */
 		travellers: number;
+		/** The Travellers allowed when a special rule puts some in the bag (Stowed Away). */
+		travellerLimits?: { min: number; max: number };
 	}
 
-	let { analysis, travellers }: Props = $props();
+	let { analysis, travellers, travellerLimits }: Props = $props();
+	const travellersOk = $derived(
+		travellerLimits
+			? travellers >= travellerLimits.min && travellers <= travellerLimits.max
+			: travellers === analysis.travellers
+	);
+	const travellersExpected = $derived(
+		travellerLimits
+			? range(
+					Array.from(
+						{ length: travellerLimits.max - travellerLimits.min + 1 },
+						(_, i) => travellerLimits.min + i
+					)
+				)
+			: String(analysis.travellers)
+	);
 
 	function range(values: readonly number[]): string {
 		if (values.length === 1) return String(values[0]);
@@ -31,15 +48,11 @@
 			</dd>
 		</div>
 	{/each}
-	<div
-		class="cell"
-		data-type="traveller"
-		data-ok={travellers === analysis.travellers ? '' : undefined}
-	>
+	<div class="cell" data-type="traveller" data-ok={travellersOk ? '' : undefined}>
 		<dt>{TYPE_PLURALS.traveller}</dt>
 		<dd>
 			<span class="chosen" data-testid="count-traveller">{travellers}</span><span class="of"
-				>/ {analysis.travellers}</span
+				>/ {travellersExpected}</span
 			>
 		</dd>
 	</div>

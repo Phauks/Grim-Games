@@ -304,7 +304,7 @@
 	</div>
 	<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18), directly under
 		the mode they stack on (2026-10-19). -->
-	<Button icon="fabled" onclick={() => (choosingRules = true)}>
+	<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
 		{t('modes.specialRulesButton', { count: rules.length })}
 	</Button>
 	<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
@@ -406,7 +406,7 @@
 				onChange={(on) => (roleRecycling = on)}
 			/>
 		{/if}
-		<Button icon="restricted" onclick={openRestricted}>
+		<Button variant="field" icon="restricted" onclick={openRestricted}>
 			{t('modes.restrictedButton', { count: restrictedCount })}
 		</Button>
 		<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>

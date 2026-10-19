@@ -218,6 +218,8 @@ function describeEvent(
 			return event.note
 				? [text('Note on '), seatPart(before, event.seatId)]
 				: [text('Cleared the note on '), seatPart(before, event.seatId)];
+		case 'GameNotesSet':
+			return [text(event.notes ? 'Game notes' : 'Cleared the game notes')];
 		case 'SeatsSwapped':
 			return [
 				text('Swapped '),

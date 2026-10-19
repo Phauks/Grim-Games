@@ -253,14 +253,14 @@ describe('version 8 saves', () => {
 	});
 });
 
-describe('version 9 saves', () => {
+describe('version 10 saves', () => {
 	// Before the Storyteller's name: the log loads unchanged, and a name set afterwards is saved.
 	it('migrate with the log unchanged and then keep a Storyteller name', () => {
 		const { session, ctx } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
-		const v9 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 9 };
-		const loaded = migrateSavedGame(v9);
+		const v10 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 10 };
+		const loaded = migrateSavedGame(v10);
 		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual(v9.log);
+		expect(loaded.log).toEqual(v10.log);
 		const opened = openSession(loaded.log);
 		expect(opened.game).not.toHaveProperty('storytellerName');
 		const named = run(opened, ctx, { type: 'SetStorytellerName', name: 'Trev' });

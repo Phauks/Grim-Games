@@ -139,12 +139,14 @@ function curatedListings(id: 'curated' | 'month'): LocalProvider['listings'] {
 						{
 							row: {
 								...pickerRow(script, `${id}:${i}`, id, note),
-								page: CURATED_PAGE
+								page: entry.botc ? entry.link : CURATED_PAGE
 							},
 							target: {
 								kind: 'json',
 								json: entry.json,
-								source: { kind: 'link', url: entry.link, page: CURATED_PAGE }
+								source: entry.botc
+									? { kind: 'botcscripts', ...entry.botc }
+									: { kind: 'link', url: entry.link, page: CURATED_PAGE }
 							},
 							identity: { json: entry.json }
 						}

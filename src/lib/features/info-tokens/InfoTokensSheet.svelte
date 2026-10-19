@@ -139,6 +139,15 @@
 		use(token.text, [], detail);
 	}
 
+	/**
+	 * Opens the sheet straight at one card, as tapped in the list: a night step's own cards
+	 * (Trevor, 2026-10-19). Closing goes back to the list.
+	 */
+	export function openWith(token: InfoToken) {
+		open = true;
+		choose(token);
+	}
+
 	/** Shows the card now, or adds it to the cards to show together. */
 	function use(
 		text: string,
@@ -162,7 +171,7 @@
 	}
 </script>
 
-<BottomSheet bind:open {title} height="85dvh" focusFirstField={false}>
+<BottomSheet bind:open {title} height="85dvh">
 	<!-- The quick card, in the header next to the X (Trevor, 2026-10-18); kept in place on
 	     every view, usable on the list. -->
 	{#snippet actions()}

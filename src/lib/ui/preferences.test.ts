@@ -43,6 +43,7 @@ describe('parsePreferences', () => {
 			iconScale: 1.5,
 			characterIconScale: 0.8,
 			textAlign: 'justify',
+			allowZoom: true,
 			iconSet: 'ph-fill',
 			iconOverrides: { dead: 'ph:cross' },
 			tokenAppearance: {
@@ -71,6 +72,7 @@ describe('parsePreferences', () => {
 			timerSound: 'buzzer',
 			timerMode: 'up',
 			timerVibrate: false,
+			timerKeepAwake: false,
 			timerPerPlayer: 45
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
@@ -84,6 +86,9 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({}).timerVibrate).toBe(true);
 		expect(parsePreferences({}).ownWording).toBe(false);
 		expect(parsePreferences({ timerVibrate: false }).timerVibrate).toBe(false);
+		expect(parsePreferences({}).timerKeepAwake).toBe(true);
+		expect(parsePreferences({ timerKeepAwake: 'yes' }).timerKeepAwake).toBe(true);
+		expect(parsePreferences({ timerKeepAwake: false }).timerKeepAwake).toBe(false);
 		expect(parsePreferences({ timerMode: 'sideways' }).timerMode).toBe('down');
 	});
 

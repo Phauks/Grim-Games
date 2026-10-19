@@ -13,7 +13,13 @@
 	import AppHeader from '#lib/features/shell/AppHeader.svelte';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
 	import NavDrawer from '#lib/features/shell/NavDrawer.svelte';
-	import { leaveTo, mustAskBeforeLeaving, showsAppShell } from '#lib/features/shell/shell.ts';
+	import {
+		leaveTo,
+		lockedDrawHidesShell,
+		mustAskBeforeLeaving,
+		showsAppShell
+	} from '#lib/features/shell/shell.ts';
+	import { drawLock } from '#lib/features/setup/draw-lock.svelte.ts';
 	import { locale } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Toaster from '#lib/ui/primitives/Toaster.svelte';
@@ -49,8 +55,11 @@
 		leaveTo(() => void goto(to.href));
 	});
 
-	// A game in progress hides the header and footer (src/lib/features/shell/shell.ts).
-	const shell = $derived(showsAppShell(page.data));
+	// A game in progress hides the header and footer (src/lib/features/shell/shell.ts), and so
+	// does a locked draw while the phone is passed round.
+	const shell = $derived(
+		showsAppShell(page.data) && !lockedDrawHidesShell(page.url.pathname, drawLock.lockedGame)
+	);
 </script>
 
 <svelte:head>
@@ -60,7 +69,7 @@
 
 {#if shell}<AppHeader />{/if}
 <!-- Grows to fill the screen so the footer sits at the bottom on short pages. -->
-<div class="app-body">
+<div class="app-body" class:bare={!shell}>
 	{#if shell}<AppNav />{/if}
 	<div class="app-main">{@render children()}</div>
 </div>
@@ -78,6 +87,12 @@
 		display: flex;
 		flex: 1 0 auto;
 		min-width: 0;
+		/* Clear of a landscape phone's notch (viewport-fit=cover in app.html). */
+		padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+	}
+	/* No header or footer (a game): clear of the status and navigation bars here instead. */
+	.app-body.bare {
+		padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
 	}
 	.app-main {
 		flex: 1;

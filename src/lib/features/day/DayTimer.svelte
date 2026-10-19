@@ -7,8 +7,10 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DayTimer from './DayTimer.svelte';
 	import { liveDayTimer as timer } from './day-timer.svelte.ts';
+	import { hold } from '#lib/ui/hold.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { canVibrate, playTimerSound, vibrateTimer } from './timer-sound.ts';
+	import { canKeepAwake } from './timer-wake-lock.ts';
 	import TimerPerPlayerRow from './TimerPerPlayerRow.svelte';
 
 	/**
@@ -17,7 +19,8 @@
 	 * counting down or up (a setting). At the target the device vibrates, plays the chosen
 	 * sound and the clock flashes. `full` has every control (the day view); `compact` is the
 	 * clock with Start/Pause, for the board. Tapping its clock opens the full timer and its
-	 * settings over the board, without the day view (Trevor, 2026-10-17).
+	 * settings over the board, without the day view (Trevor, 2026-10-17). Holding the clock
+	 * resets it to the time per living player (Trevor, 2026-10-19).
 	 */
 	interface Props {
 		/** Living players, for the starting length and Reset. */
@@ -57,6 +60,18 @@
 	/>
 {/snippet}
 
+{#snippet keepAwake()}
+	<!-- The screen stays on while the timer runs (Trevor, 2026-10-19), so it can be followed
+	     on a phone that would otherwise lock. Off and disabled, with why, where unsupported. -->
+	<SettingToggle
+		label={t('day.timerKeepAwake')}
+		description={canKeepAwake() ? undefined : t('day.timerKeepAwakeUnavailable')}
+		checked={canKeepAwake() && preferences.current.timerKeepAwake}
+		disabled={!canKeepAwake()}
+		onChange={(on) => timer.setKeepAwake(on)}
+	/>
+{/snippet}
+
 <div
 	class="timer"
 	data-variant={variant}
@@ -79,6 +94,7 @@
 			class="mode"
 			aria-label={timer.mode === 'down' ? t('day.timerSwitchToUp') : t('day.timerSwitchToDown')}
 			onclick={() => preferences.update({ timerMode: timer.mode === 'down' ? 'up' : 'down' })}
+			{@attach hold(() => timer.reset(alive))}
 		>
 			<span class="caption" data-testid="timer-mode" aria-hidden="true"
 				>{timer.mode === 'down' ? t('day.timerModeDown') : t('day.timerModeUp')}</span
@@ -93,6 +109,7 @@
 			class="open"
 			aria-label={t('day.timerOpen', { clock: timer.clock })}
 			onclick={() => (controlsOpen = true)}
+			{@attach hold(() => timer.reset(alive))}
 		>
 			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
 				>{timer.clock}</span
@@ -137,6 +154,7 @@
 				onChange={chooseSound}
 			/>
 			{@render vibrate()}
+			{@render keepAwake()}
 			<TimerPerPlayerRow />
 		</div>
 	</BottomSheet>
@@ -152,6 +170,7 @@
 				onChange={chooseSound}
 			/>
 			{@render vibrate()}
+			{@render keepAwake()}
 			<TimerPerPlayerRow />
 		</div>
 	</BottomSheet>

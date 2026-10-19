@@ -37,8 +37,6 @@
 		height: 100%;
 		overflow: visible;
 		pointer-events: none;
-		/* Above every seat's token, so a name stays readable where tokens overlap. */
-		z-index: 1;
 		/* The badge size setting (--name-scale, Trevor 2026-10-17) grows it from its middle;
 		   --name-offset moves it down, a share of the token (Trevor, 2026-10-18). */
 		transform: translateY(calc(var(--name-offset, 0) * 100%)) scale(var(--name-scale, 1));

@@ -9,9 +9,37 @@ import {
 } from '#lib/ui/fonts/catalogue.ts';
 import { resolveFonts, type Preferences } from '#lib/ui/preferences.ts';
 import { tokenVariables } from '#lib/ui/token/token-appearance.ts';
+import { colorFor } from './colors.ts';
 import type { CssVariable, Theme } from './types.ts';
 
 let written: CssVariable[] = [];
+
+const VIEWPORT = 'width=device-width, initial-scale=1, viewport-fit=cover';
+let gesturesBlocked = false;
+
+/**
+ * Pinch to zoom (Settings > Text, off by default). Android honours the viewport's
+ * user-scalable=no; iOS ignores it, so base.css limits touches to panning
+ * (`html:not([data-zoom='on'])`) and Safari's own gesture events are cancelled here.
+ */
+function applyZoom(allow: boolean, root: HTMLElement) {
+	root.dataset.zoom = allow ? 'on' : 'off';
+	const doc = root.ownerDocument;
+	doc
+		.querySelector('meta[name="viewport"]')
+		?.setAttribute('content', allow ? VIEWPORT : `${VIEWPORT}, maximum-scale=1, user-scalable=no`);
+	if (gesturesBlocked) return;
+	gesturesBlocked = true;
+	for (const type of ['gesturestart', 'gesturechange']) {
+		doc.addEventListener(
+			type,
+			(event) => {
+				if (root.dataset.zoom !== 'on') event.preventDefault();
+			},
+			{ passive: false }
+		);
+	}
+}
 
 /** `--font-<role>` for every role, plus `--font-<role>-weight` for the short-text roles. */
 export function fontVariables(theme: Theme, prefs: Preferences): Record<CssVariable, string> {
@@ -53,6 +81,10 @@ export function applyAppearance(theme: Theme, prefs: Preferences, root = documen
 	root.dataset.theme = theme.id;
 	root.dataset.textAlign = prefs.textAlign;
 	root.style.colorScheme = theme.colorScheme;
+	applyZoom(prefs.allowZoom, root);
+	// The phone's status bar (and an installed app's title bar) takes the header's colour.
+	const themeColor = root.ownerDocument.querySelector('meta[name="theme-color"]');
+	themeColor?.setAttribute('content', colorFor(theme, prefs.colors, '--surface'));
 	// Only the fonts in use are fetched; Settings loads the rest for its previews.
 	for (const font of new Set(Object.values(resolveFonts(prefs, theme)))) void loadFont(font);
 }

@@ -56,6 +56,9 @@ export const ICON_SLOTS = {
 	appearance: { label: 'Appearance', choices: ['ph:palette', 'ph:paint-brush'] },
 	fonts: { label: 'Fonts', choices: ['ph:text-aa', 'ph:text-t'] },
 	icons: { label: 'Icons', choices: ['ph:shapes', 'ph:smiley'] },
+	/** Board and Tokens settings, each its own (Trevor, 2026-10-19). */
+	boardSettings: { label: 'Board settings', choices: ['ph:circle-dashed', 'ph:circles-three'] },
+	tokenSettings: { label: 'Token settings', choices: ['ph:poker-chip', 'ph:coin'] },
 	close: { label: 'Close', choices: ['ph:x', 'ph:x-circle'] },
 	menu: { label: 'Menu', choices: ['ph:list', 'ph:dots-three-vertical'] },
 	info: { label: 'Info', choices: ['ph:info', 'ph:question'] },

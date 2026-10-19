@@ -37,10 +37,12 @@ import ph_check_fill from '~icons/ph/check-fill';
 import ph_check_square_fill from '~icons/ph/check-square-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
 import ph_circle_notch_fill from '~icons/ph/circle-notch-fill';
+import ph_circles_three_fill from '~icons/ph/circles-three-fill';
 import ph_clipboard_fill from '~icons/ph/clipboard-fill';
 import ph_clipboard_text_fill from '~icons/ph/clipboard-text-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
+import ph_coin_fill from '~icons/ph/coin-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
 import ph_corners_out_fill from '~icons/ph/corners-out-fill';
@@ -128,6 +130,7 @@ import ph_play_fill from '~icons/ph/play-fill';
 import ph_play_circle_fill from '~icons/ph/play-circle-fill';
 import ph_plus_fill from '~icons/ph/plus-fill';
 import ph_plus_circle_fill from '~icons/ph/plus-circle-fill';
+import ph_poker_chip_fill from '~icons/ph/poker-chip-fill';
 import ph_printer_fill from '~icons/ph/printer-fill';
 import ph_prohibit_fill from '~icons/ph/prohibit-fill';
 import ph_prohibit_inset_fill from '~icons/ph/prohibit-inset-fill';
@@ -229,10 +232,12 @@ const icons: IconMap = {
 	'ph:check-square-fill': ph_check_square_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
 	'ph:circle-notch-fill': ph_circle_notch_fill,
+	'ph:circles-three-fill': ph_circles_three_fill,
 	'ph:clipboard-fill': ph_clipboard_fill,
 	'ph:clipboard-text-fill': ph_clipboard_text_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
+	'ph:coin-fill': ph_coin_fill,
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
 	'ph:corners-out-fill': ph_corners_out_fill,
@@ -320,6 +325,7 @@ const icons: IconMap = {
 	'ph:play-circle-fill': ph_play_circle_fill,
 	'ph:plus-fill': ph_plus_fill,
 	'ph:plus-circle-fill': ph_plus_circle_fill,
+	'ph:poker-chip-fill': ph_poker_chip_fill,
 	'ph:printer-fill': ph_printer_fill,
 	'ph:prohibit-fill': ph_prohibit_fill,
 	'ph:prohibit-inset-fill': ph_prohibit_inset_fill,

@@ -135,6 +135,9 @@ function joinForced(a: ForcedRule | undefined, b: ForcedRule): ForcedRule {
 }
 
 /** The mode as the game plays it: its parts with the rules folded in (conflicts aside). */
-export function withRules(mode: GameMode, rules: readonly SpecialRule[]): GameMode {
+export function withRules(
+	mode: GameMode,
+	rules: readonly SpecialRule[]
+): GameMode & { parts: CombinedParts } {
 	return rules.length ? { ...mode, parts: combineRules(mode, rules).parts } : mode;
 }

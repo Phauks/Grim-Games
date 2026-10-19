@@ -234,6 +234,12 @@ export function setupModifierFor(
 	findByName?: (name: string) => CharacterId | undefined
 ): SetupModifier | undefined {
 	const entry = TABLE[character.id];
+	// The Bootlegger carries the script's own rules (script-rules.ts): a bracket there, such as
+	// Binary Supernovae's "[+1 Demon]", changes setup as a homebrew character's does.
+	if (entry && character.id === 'bootlegger' && bracketText(character.ability)) {
+		const fromText = modifierFromText(character, findByName);
+		if (fromText) return { ...fromText, notes: [...(entry.notes ?? []), ...fromText.notes] };
+	}
 	// A homebrew character that reuses an official id but changes the text is read from text.
 	if (entry && (character.edition !== undefined || !bracketText(character.ability))) {
 		return { id: character.id, source: 'table', notes: [], ...entry };

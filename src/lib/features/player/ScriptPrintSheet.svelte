@@ -123,7 +123,7 @@
 						<SetupTable />
 					</div>
 				</header>
-				<PlayerNightOrder {nights} />
+				<PlayerNightOrder {nights} flat />
 			</div>
 		</section>
 	</article>

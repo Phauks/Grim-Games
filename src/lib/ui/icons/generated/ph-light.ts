@@ -37,10 +37,12 @@ import ph_check_light from '~icons/ph/check-light';
 import ph_check_square_light from '~icons/ph/check-square-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
 import ph_circle_notch_light from '~icons/ph/circle-notch-light';
+import ph_circles_three_light from '~icons/ph/circles-three-light';
 import ph_clipboard_light from '~icons/ph/clipboard-light';
 import ph_clipboard_text_light from '~icons/ph/clipboard-text-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_club_light from '~icons/ph/club-light';
+import ph_coin_light from '~icons/ph/coin-light';
 import ph_copy_light from '~icons/ph/copy-light';
 import ph_copy_simple_light from '~icons/ph/copy-simple-light';
 import ph_corners_out_light from '~icons/ph/corners-out-light';
@@ -128,6 +130,7 @@ import ph_play_light from '~icons/ph/play-light';
 import ph_play_circle_light from '~icons/ph/play-circle-light';
 import ph_plus_light from '~icons/ph/plus-light';
 import ph_plus_circle_light from '~icons/ph/plus-circle-light';
+import ph_poker_chip_light from '~icons/ph/poker-chip-light';
 import ph_printer_light from '~icons/ph/printer-light';
 import ph_prohibit_light from '~icons/ph/prohibit-light';
 import ph_prohibit_inset_light from '~icons/ph/prohibit-inset-light';
@@ -229,10 +232,12 @@ const icons: IconMap = {
 	'ph:check-square-light': ph_check_square_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
 	'ph:circle-notch-light': ph_circle_notch_light,
+	'ph:circles-three-light': ph_circles_three_light,
 	'ph:clipboard-light': ph_clipboard_light,
 	'ph:clipboard-text-light': ph_clipboard_text_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:club-light': ph_club_light,
+	'ph:coin-light': ph_coin_light,
 	'ph:copy-light': ph_copy_light,
 	'ph:copy-simple-light': ph_copy_simple_light,
 	'ph:corners-out-light': ph_corners_out_light,
@@ -320,6 +325,7 @@ const icons: IconMap = {
 	'ph:play-circle-light': ph_play_circle_light,
 	'ph:plus-light': ph_plus_light,
 	'ph:plus-circle-light': ph_plus_circle_light,
+	'ph:poker-chip-light': ph_poker_chip_light,
 	'ph:printer-light': ph_printer_light,
 	'ph:prohibit-light': ph_prohibit_light,
 	'ph:prohibit-inset-light': ph_prohibit_inset_light,

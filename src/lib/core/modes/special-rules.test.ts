@@ -36,6 +36,24 @@ describe('reading a special rule file', () => {
 		expect(missing).toEqual([]);
 	});
 
+	// Trevor, 2026-10-19: "If there are no restricted characters ... shouldn't it be standard?"
+	// A part that changes nothing is left out, so Inspect shows it as Standard.
+	it('sets no part of a library rule or mode to nothing', () => {
+		const empty = (value: unknown): boolean =>
+			Array.isArray(value)
+				? value.length === 0
+				: typeof value === 'object' &&
+					value !== null &&
+					Object.values(value).length > 0 &&
+					Object.values(value).every((v) => Array.isArray(v) && v.length === 0);
+		const found = [...SPECIAL_RULES, ...GAME_MODES].flatMap((m) =>
+			Object.entries(m.parts)
+				.filter(([, value]) => empty(value))
+				.map(([part]) => `${m.id}.${part}`)
+		);
+		expect(found).toEqual([]);
+	});
+
 	it('refuses the parts only a game mode sets, saying why', () => {
 		const parsed = parseSpecialRule({
 			...rule('x', {}),
