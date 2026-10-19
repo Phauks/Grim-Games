@@ -60,7 +60,7 @@
 			<Button icon="add" disabled={!pads} onclick={onAddScratch}>{t('scratch.newPad')}</Button>
 		</div>
 		{#if pads?.length}
-			<ul>
+			<ul class="pads">
 				{#each pads as pad (pad.key)}
 					<li>
 						<button type="button" class="row" data-pad={pad.key} onclick={() => onOpenScratch(pad)}>
@@ -148,11 +148,16 @@
 	.preview[data-hidden] {
 		font-style: italic;
 	}
+	/* Pads two to a row on a phone, each preview the shape of a phone's pad (Trevor,
+	   2026-10-19: "2x2 on mobile", so no paper shows that could never be written on). */
+	.pads {
+		grid-template-columns: repeat(auto-fill, minmax(min(45%, calc(12 * var(--u))), 1fr));
+	}
 	.thumb {
 		position: relative;
 		display: grid;
 		place-items: center;
-		height: calc(6 * var(--u));
+		aspect-ratio: 3 / 4;
 	}
 	/* Out of the flow, so the canvas's own size never stretches the row. */
 	.thumb :global(canvas) {
