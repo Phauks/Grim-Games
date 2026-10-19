@@ -1897,9 +1897,18 @@
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
+	/*
+	 * A point on the board with its seat centred on it. No transform, so a slot makes no
+	 * stacking context of its own and every seat's name badge can sit above every token
+	 * (Trevor, 2026-10-19: when two tokens overlap the name stays visible).
+	 */
 	.slot {
 		position: absolute;
-		translate: -50% -50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 0;
+		height: 0;
 	}
 	/* While arranging, a press drags a seat instead of scrolling or zooming. */
 	.arranging {
