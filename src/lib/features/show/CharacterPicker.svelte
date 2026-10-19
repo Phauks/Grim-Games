@@ -6,7 +6,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { defaultAlignment } from '#lib/core/data/index.ts';
 	import { randomBluffs } from '#lib/features/bluffs/bluffs.ts';
 
@@ -24,8 +24,9 @@
 		warnInPlay?: boolean;
 		/**
 		 * Choosing characters not in play (the Demon's bluffs, "These characters are not in
-		 * play"): a Good Characters / All Characters filter and setup's Random button, which
-		 * never picks one in play. One picker for both (Trevor, 2026-10-18).
+		 * play"): good characters only, a "Not in play only" toggle and setup's Random button,
+		 * which never picks one in play. One picker for both (Trevor, 2026-10-18; good only
+		 * and the toggle, 2026-10-19).
 		 */
 		notInPlay?: boolean;
 	}
@@ -40,10 +41,16 @@
 		notInPlay = false
 	}: Props = $props();
 
-	let filter = $state<'good' | 'all'>('good');
+	let hideInPlay = $state(false);
+	/** Good characters only; with the toggle on, none in play unless already chosen. */
 	const choices = $derived(
-		notInPlay && filter === 'good'
-			? characters.filter((c) => defaultAlignment(c.type) === 'good' && c.type !== 'traveller')
+		notInPlay
+			? characters.filter(
+					(c) =>
+						defaultAlignment(c.type) === 'good' &&
+						c.type !== 'traveller' &&
+						(!hideInPlay || !inPlay?.has(c.id) || selected.includes(c.id))
+				)
 			: characters
 	);
 
@@ -82,22 +89,17 @@
 	<div class="pinned">
 		{#if notInPlay}
 			<div class="filter">
-				<Select
-					label={t('show.filter')}
-					hideLabel
-					value={filter}
-					options={[
-						{ value: 'good', label: t('show.goodCharacters') },
-						{ value: 'all', label: t('show.allCharacters') }
-					]}
-					onChange={(value) => (filter = value)}
+				<Toggle
+					label={t('show.notInPlayOnly')}
+					checked={hideInPlay}
+					onChange={(checked) => (hideInPlay = checked)}
 				/>
 				<span class="ink"
 					><IconButton icon="random" label={t('show.random')} onclick={random} /></span
 				>
 			</div>
 		{/if}
-		<ul class="slots" aria-label={t('show.chosen')} style:--max={max}>
+		<ul class="slots" aria-label={t('show.chosen')}>
 			{#each selected as id (id)}
 				{@const character = byId.get(id)}
 				{#if character}
@@ -152,7 +154,7 @@
 		padding-block: var(--space-1);
 		background: var(--sheet-background);
 	}
-	/* The filter, then Random beside it, as in setup. */
+	/* The toggle, then Random beside it, as in setup. */
 	.filter {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
@@ -163,8 +165,10 @@
 	.ink :global(.icon-button) {
 		color: inherit;
 	}
+	/* Wraps onto more lines rather than running off a phone (Trevor, 2026-10-19). */
 	.slots {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1);
 		min-height: var(--tap-target);
@@ -172,12 +176,12 @@
 		padding: 0;
 		list-style: none;
 	}
-	/* Shorter names give their spare room to longer ones; none takes more than its share. */
+	/* A name too long for a whole line shortens. */
 	.slots li {
 		display: flex;
 		flex: 0 1 auto;
 		min-width: 0;
-		max-width: calc((100% - (var(--max) - 1) * var(--space-1)) / var(--max));
+		max-width: 100%;
 	}
 	/* The badge is the button; the name shortens rather than wrapping. */
 	.slots :global(.pick) {

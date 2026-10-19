@@ -182,14 +182,15 @@ test('a card to show with long character names keeps the sheet its width', async
 	expect(show!.x + show!.width).toBeLessThanOrEqual(box!.x + box!.width + 1);
 });
 
-test('"not in play" on the info tokens page uses the bluff picker, with its filter and Random', async ({
+test('"not in play" on the info tokens page uses the bluff picker, with its toggle and Random', async ({
 	page
 }) => {
-	// Trevor, 2026-10-18: the same picker as the Demon bluffs, Random included.
+	// Trevor, 2026-10-18: the same picker as the Demon bluffs, Random included. Good
+	// characters only, with no filter to change it (Trevor, 2026-10-19).
 	await page.goto('/info-tokens');
 	await page.getByRole('button', { name: 'These characters are not in play', exact: true }).tap();
-	const filter = page.getByRole('combobox', { name: 'Characters' });
-	await expect(filter).toContainText('Good Characters');
+	await expect(page.getByRole('combobox', { name: 'Characters' })).toHaveCount(0);
+	await expect(page.getByRole('checkbox', { name: 'Not in play only' })).not.toBeChecked();
 	await page.getByRole('button', { name: 'Random', exact: true }).tap();
 	const chosen = page.getByRole('list', { name: 'Chosen' });
 	await expect(chosen.locator('[data-character-id]')).toHaveCount(3);

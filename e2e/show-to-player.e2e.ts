@@ -146,7 +146,18 @@ test('the Storyteller sets the 3 Demon bluffs at once and shows them as a list',
 
 	const set = page.getByTestId('bluff-set');
 	await expect(set).toContainText('Investigator');
-	await set.getByRole('button', { name: 'Show' }).tap();
+	// The set's pencil, eye and delete share its name's line (Trevor, 2026-10-19).
+	const name = (await set.getByText('Demon', { exact: true }).boundingBox())!;
+	for (const label of [
+		'Choose the Demon bluffs',
+		'Show the Demon bluffs',
+		'Clear the Demon bluffs'
+	]) {
+		const box = (await set.getByRole('button', { name: label }).boundingBox())!;
+		expect(box.y).toBeLessThan(name.y + name.height);
+		expect(box.y + box.height).toBeGreaterThan(name.y);
+	}
+	await set.getByRole('button', { name: 'Show the Demon bluffs' }).tap();
 	// The open one: the Lunatic sample on the same page has its own (closed) player view.
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('These characters are not in play');
