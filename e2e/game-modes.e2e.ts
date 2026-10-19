@@ -744,7 +744,7 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	page,
 	browser
 }, testInfo) => {
-	// Apparition, from https://www.youtube.com/watch?v=-R34QbIgDh8
+	// https://www.youtube.com/watch?v=-R34QbIgDh8
 	await page.goto('/new');
 	await chooseRules(page, 'Specters');
 	const panel = modesPanel(page);
@@ -772,7 +772,7 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 		.getByRole('dialog', { name: 'Game mode' })
 		.getByRole('button', { name: 'Specters vote and ability' })
 		.tap();
-	const sheet = page.getByRole('dialog', { name: 'Apparition' });
+	const sheet = page.getByRole('dialog', { name: 'Specters vote and ability' });
 	await expect(sheet).toBeVisible();
 	await expect(page).toHaveURL(new RegExp(`/grimoire/${gameId}$`));
 	// The Storyteller sets the ability: the Wizard's by default, or their own words.

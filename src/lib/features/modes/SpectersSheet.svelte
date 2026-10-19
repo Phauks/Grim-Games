@@ -48,7 +48,7 @@
 			.catch((e) => reportError(e, { area: 'grimoire' }));
 	});
 
-	// Unset: the mode's own ability (Apparition grants the Wizard's).
+	// Unset: the mode's own ability (the Wizard's).
 	let saved = $state.raw<SpecterAbility | undefined>();
 	$effect.pre(() => {
 		saved = readSpecterAbility(game.gameId);
@@ -110,7 +110,12 @@
 	}
 </script>
 
-<BottomSheet bind:open title={step?.ability ?? mode.name} height="85dvh" focusFirstField={false}>
+<BottomSheet
+	bind:open
+	title={step?.ability ?? t('modes.specters.menu')}
+	height="85dvh"
+	focusFirstField={false}
+>
 	<div class="sheet" data-testid="specters-sheet">
 		<section class="group" aria-labelledby="specters-ability-title">
 			<h3 id="specters-ability-title">{t('modes.specters.ability')}</h3>
