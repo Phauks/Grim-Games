@@ -412,6 +412,9 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 		await page.keyboard.press('Escape');
 	}
 	const bag = page.getByRole('list', { name: 'Bag' }).getByRole('button');
+	// Roman numerals (Trevor, 2026-10-19).
+	await choose('Roman numerals');
+	await expect(page.getByRole('button', { name: 'Tile IV', exact: true })).toHaveText('IV');
 	await choose('Symbols');
 	await expect(page.getByRole('button', { name: 'Tile Star', exact: true })).toBeVisible();
 	await expect(bag.first().locator('[data-kind="symbol"] svg')).toBeVisible();

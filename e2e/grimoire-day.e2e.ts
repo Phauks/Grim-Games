@@ -59,6 +59,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByTestId('alive-evil')).toHaveText('0');
 	// Ghost votes still to use sit beside the living (Trevor, 2026-10-17).
 	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
+	// The ghost is filled, like an unused ghost vote on the board (Trevor, 2026-10-19).
+	await expect(page.getByTestId('ghost-votes').locator('[data-icon$="-fill"]')).toHaveCount(1);
 	// Nothing at the sides is cut off by a box that clips its overflow (Trevor, 2026-10-18).
 	for (const id of ['alive-count', 'votes-needed']) {
 		const clipped = await page.getByTestId(id).evaluate((el) => {
@@ -402,6 +404,11 @@ test('the day view names a homebrew character by its script name', async ({ page
 		/Spartacus.*, killed by the Demon/
 	);
 	await expect(announcements).toContainText('Spartacus');
+	// The words are italic; the character's name stays upright (Trevor, 2026-10-19).
+	await expect(announcements.getByTestId('storyteller-only').locator('.badge')).toHaveCSS(
+		'font-style',
+		'normal'
+	);
 	await expect(announcements.locator('img')).toHaveCount(1);
 	await expect(day).not.toContainText('spartacusfallofrome');
 });

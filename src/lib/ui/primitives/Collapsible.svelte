@@ -23,6 +23,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import CountBadge from './CountBadge.svelte';
 
 	interface Props {
 		title: string;
@@ -55,6 +56,11 @@
 		 * that explains the heading (Trevor, 2026-10-18).
 		 */
 		asideByTitle?: boolean;
+		/**
+		 * How many items it holds, shown beside the title while closed, so a closed section
+		 * still says what is inside (Trevor, 2026-10-19).
+		 */
+		count?: number;
 		/** Starts closed until opened (e.g. About's Advanced part); remembered like any other. */
 		defaultOpen?: boolean;
 		children: Snippet;
@@ -70,6 +76,7 @@
 		startClosed = false,
 		aside,
 		asideByTitle = false,
+		count,
 		defaultOpen = true,
 		children
 	}: Props = $props();
@@ -120,6 +127,11 @@
 			>
 				<span class="caret" aria-hidden="true"><Icon name="expand" /></span>
 				<span class="label">{title}</span>
+				{#if count !== undefined && !shown}<span
+						class="count"
+						aria-hidden="true"
+						data-testid="section-count"><CountBadge {count} /></span
+					>{/if}
 			</button>
 		</svelte:element>
 		{#if aside}<div class="aside">{@render aside()}</div>{/if}
@@ -197,6 +209,10 @@
 	}
 	.aside {
 		flex: none;
+	}
+	.count {
+		flex: none;
+		font-size: 0.75em;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.caret {

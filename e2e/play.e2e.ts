@@ -190,8 +190,13 @@ test('First night and Other nights each close from their header, remembered', as
 	const other = page.getByRole('button', { name: 'Other nights' });
 	await expect(first).toHaveAttribute('aria-expanded', 'true');
 	await expect(other).toHaveAttribute('aria-expanded', 'true');
+	// A closed section shows how many it holds (Trevor, 2026-10-19): here, who wakes.
+	const waking = await page.locator('section[data-night="first"] li:has(button.name)').count();
+	expect(waking).toBeGreaterThan(0);
+	await expect(first.getByTestId('section-count')).toHaveCount(0);
 	await first.tap();
 	await expect(first).toHaveAttribute('aria-expanded', 'false');
+	await expect(first.getByTestId('section-count')).toHaveText(String(waking));
 	await expect(page.locator('section[data-night="first"] li[data-step="poisoner"]')).toBeHidden();
 	await expect(page.locator('section[data-night="other"] li[data-step="poisoner"]')).toBeVisible();
 	await page.reload();

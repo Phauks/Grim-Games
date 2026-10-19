@@ -72,7 +72,12 @@
 				<h2>{title}</h2>
 				{@render list()}
 			{:else}
-				<Collapsible {title} storageKey="play:night-{n.night}">{@render list()}</Collapsible>
+				<Collapsible
+					{title}
+					storageKey="play:night-{n.night}"
+					count={n.entries.filter((e) => e.kind === 'character').length}
+					>{@render list()}</Collapsible
+				>
 			{/if}
 		</section>
 	{/each}

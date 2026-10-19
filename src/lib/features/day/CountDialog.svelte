@@ -109,7 +109,7 @@
 		border-top: 1px solid var(--border);
 	}
 	/* Column names read as headings and the total as a sum (Trevor, 2026-10-19): headings in
-	   the heading colour over a heavier rule, the total bold under a double rule. */
+	   the heading colour over a heavier rule, the total bold under the same rule. */
 	.count thead th {
 		padding-bottom: var(--space-2);
 		border-bottom: 2px solid var(--heading); /* px-ok: a rule's thickness */
@@ -117,7 +117,7 @@
 		font-weight: bold;
 	}
 	tfoot tr {
-		border-top: 3px double var(--on-surface); /* px-ok: a rule's thickness */
+		border-top: 2px solid var(--heading); /* px-ok: a rule's thickness */
 	}
 	.count tfoot th,
 	.count tfoot td {
