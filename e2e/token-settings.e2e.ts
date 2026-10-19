@@ -18,7 +18,11 @@ async function openTokens(page: Page) {
 const rootStyle = (page: Page, name: string) =>
 	page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
 
-test('token and reminder sizes apply to the tokens and stay after a reload', async ({ page }) => {
+test('token sizes are for the board: tokens elsewhere keep their size, and the setting stays', async ({
+	page
+}) => {
+	// Trevor (2026-10-19) picked "Board only": a large Character token size broke sheets and
+	// dialogs, so it sizes the grimoire board's seats (tested below) and nothing else.
 	await page.goto('/reference');
 	const token = page.getByTestId('character-table').locator('[data-field="token"] .token').first();
 	const reminder = page.getByTestId('reminder-token').first();
@@ -38,12 +42,13 @@ test('token and reminder sizes apply to the tokens and stay after a reload', asy
 	expect(await rootStyle(page, '--inline-reminder-scale')).toBe('1.5');
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
-	expect((await token.boundingBox())!.width).toBeCloseTo(before * 1.5, 0);
+	expect((await token.boundingBox())!.width).toBeCloseTo(before, 0);
 	expect((await reminder.boundingBox())!.height).toBeGreaterThan(chipBefore * 1.3);
 
 	await page.reload();
 	await expect(token).toBeVisible();
-	expect((await token.boundingBox())!.width).toBeCloseTo(before * 1.5, 0);
+	expect(await rootStyle(page, '--token-scale')).toBe('1.5');
+	expect((await token.boundingBox())!.width).toBeCloseTo(before, 0);
 });
 
 test('a token colour can be changed, warns when hard to read, and resets', async ({ page }) => {
