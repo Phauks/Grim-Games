@@ -9,18 +9,15 @@
 		pickableCharacters,
 		refuseOffer,
 		seatsLeft,
-		setSlots,
 		STANDARD,
 		startDraft,
-		takeOffer,
-		type DraftState
+		takeOffer
 	} from '#lib/core/modes/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { BagSlot } from '#lib/core/rules/index.ts';
-	import { SEATED_TYPES, splitPlayers, type SeatedType } from '#lib/core/rules/distribution.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { splitPlayers, type SeatedType } from '#lib/core/rules/distribution.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import BagTiles from '#lib/features/setup/BagTiles.svelte';
 	import type { SetupGamePort } from '#lib/features/setup/game-port.ts';
 	import RevealDialog from '#lib/features/setup/RevealDialog.svelte';
@@ -32,7 +29,6 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { dealTitle } from './deal-title.ts';
 	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
@@ -159,7 +155,7 @@
 		const seat = seatId;
 		const bag = { drawn: [...drawn, tile], held: undefined };
 		if (progress.kind === 'draft')
-			save({ kind: 'draft', state: takeOffer(progress.state, id, byId, Math.random), ...bag });
+			save({ kind: 'draft', state: takeOffer(progress.state, id, Math.random), ...bag });
 		else save({ ...progress, picks: [...progress.picks, id], ...bag });
 		choosing = false;
 		const character = byId.get(id);
@@ -193,11 +189,6 @@
 		});
 	}
 
-	function changeSlot(state: DraftState, type: SeatedType, by: number) {
-		const slots = { ...state.slots, [type]: Math.max(0, state.slots[type] + by) };
-		save({ kind: 'draft', state: setSlots(state, slots, Math.random) });
-	}
-
 	async function finish() {
 		const built = port.dispatch({
 			type: 'BuildBag',
@@ -225,36 +216,6 @@
 			{t('modes.deal.restart')}
 		</Button>
 	{/snippet}
-
-	<!-- The Storyteller's controls between seats: the open slots and drafted setup changes. -->
-	{#if progress?.kind === 'draft'}
-		{@const state = progress.state}
-		<div class="slots" role="group" aria-label={t('modes.deal.openSlots')}>
-			{#each SEATED_TYPES as type (type)}
-				<span class="slot">
-					<Stepper
-						value={state.slots[type]}
-						label={TYPE_PLURALS[type]}
-						lessLabel={t('modes.deal.fewer', { type: TYPE_PLURALS[type] })}
-						moreLabel={t('modes.deal.more', { type: TYPE_PLURALS[type] })}
-						onchange={(n) => changeSlot(state, type, n - state.slots[type])}
-					>
-						{#snippet display()}<span class="count" data-type={type}
-								>{TYPE_PLURALS[type]} {state.slots[type]}</span
-							>{/snippet}
-					</Stepper>
-				</span>
-			{/each}
-		</div>
-		<div class="decisions" aria-live="polite">
-			<span class="muted">{t('modes.deal.decisions')}</span>
-			{#if state.decisions.length === 0}
-				{t('common.none')}
-			{:else}
-				{#each state.decisions as id (id)}<CharacterBadge characterId={id} inline />{/each}
-			{/if}
-		</div>
-	{/if}
 
 	<p class="next">
 		<span class="muted">{t('setup.draw.next')}</span>
@@ -332,28 +293,6 @@
 <style>
 	.muted {
 		color: var(--on-surface-muted);
-	}
-	.slots {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(calc(10 * var(--u)), 1fr));
-		gap: var(--space-2);
-	}
-	.slot {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-1);
-	}
-	.count {
-		font-variant-numeric: tabular-nums;
-		text-align: center;
-	}
-	.decisions {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
 	}
 	.next {
 		display: flex;
