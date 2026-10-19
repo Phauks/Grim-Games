@@ -18,6 +18,11 @@ interface DeviceKind {
 	count(): Promise<number>;
 	/** Adds them to the account. */
 	upload(): Promise<void>;
+	/**
+	 * Offered but not chosen (or the sheet closed): what to do instead, for a kind that can't
+	 * both keep the device's own copy and follow the account (Library labels, collections).
+	 */
+	skip?(): Promise<void>;
 }
 
 export interface Offer {
@@ -82,12 +87,22 @@ export const firstSignIn = {
 		await accountSync.syncNow();
 		if (!accountSync.pulled) throw new Error(t('account.offline'));
 		for (const kind of chosen) await kinds.get(kind)?.upload();
+		for (const { kind } of asked.items) if (!chosen.includes(kind)) await kinds.get(kind)?.skip?.();
 		markAnswered(asked.userId);
 		offer = undefined;
 	},
 	/** Leaves this device's items on the device only. */
 	decline(): void {
-		if (offer) markAnswered(offer.userId);
+		const asked = offer;
+		if (!asked) return;
+		markAnswered(asked.userId);
 		offer = undefined;
+		void (async () => {
+			for (const { kind } of asked.items) await kinds.get(kind)?.skip?.();
+		})().catch((e) => reportError(e, { area: 'account', notify: false }));
+	},
+	/** Whether this device has answered the sheet for `userId` (or had nothing to offer). */
+	answered(userId: string): boolean {
+		return answered(userId);
 	}
 };

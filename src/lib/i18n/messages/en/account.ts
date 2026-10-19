@@ -79,6 +79,14 @@ export const account = {
 	'account.firstSync.title': "Add this device's data to your account?",
 	'account.firstSync.text': 'Nothing is deleted from this device or your account.',
 	'account.firstSync.script': { one: '{count} script', other: '{count} scripts' },
+	'account.firstSync.library-labels': {
+		one: '{count} Library folder, tag or name',
+		other: '{count} Library folders, tags and names'
+	},
+	'account.firstSync.collection': {
+		one: '{count} character collection',
+		other: '{count} character collections'
+	},
 	'account.sync.otherDevice': '{name} (other device)',
 
 	'account.devices.title': 'Signed-in devices',

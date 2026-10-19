@@ -9,6 +9,7 @@ import {
 	folderTree,
 	labelsFor,
 	labelUses,
+	labelsToOffer,
 	libraryKey,
 	folderMoveProblem,
 	mergeLabels,
@@ -314,5 +315,15 @@ describe('mergeLabels (two devices changed the Library before syncing)', () => {
 			'Club night',
 			'Club night 2'
 		]);
+	});
+});
+
+describe('labelsToOffer', () => {
+	it('counts the folders, tags and item labels the account lacks', () => {
+		const mine = setFolder(sample(), 'k1', 'f1');
+		expect(labelsToOffer(mine, undefined)).toBe(4);
+		expect(labelsToOffer(mine, sample())).toBe(1);
+		expect(labelsToOffer(mine, mine)).toBe(0);
+		expect(labelsToOffer(emptyLabels(), mine)).toBe(0);
 	});
 });
