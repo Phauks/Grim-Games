@@ -17,6 +17,7 @@ export const modes = {
 	'modes.script': 'Script',
 	'modes.scriptSearch.label': 'Find a script',
 	'modes.scriptSearch.custom': 'Custom',
+	'modes.scriptSearch.version': 'Script version',
 	'modes.scriptSearch.placeholder': 'Find a script',
 	'modes.scriptSearch.recent': 'Recent',
 	'modes.scriptSearch.library': 'Library',
@@ -232,11 +233,9 @@ export const modes = {
 	'modes.field.offers': 'Offer sizes',
 	'modes.field.recycleUnchosen': 'Role Recycling',
 	'modes.roleRecycling': 'Role Recycling',
-	'modes.roleRecyclingHint':
-		'When on, characters a player turns down go back into the pool for later offers. When off, they are set aside.',
+	'modes.roleRecyclingHint': 'Declined characters return to character pool for future players.',
 	'modes.settings': 'Game mode settings',
 	'modes.campaign.chooseHint': 'Start a new campaign, or carry on one you have played before.',
-	'modes.campaign.versionHint': 'The saved version of the campaign’s script this game plays.',
 	'modes.restrictedHint':
 		'Characters kept out of this game. The mode’s own restrictions are listed and can be lifted.',
 	'modes.field.oneTypePerOffer': 'One type per offer',

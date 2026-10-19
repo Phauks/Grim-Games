@@ -38,18 +38,28 @@ export interface ScriptChoiceOption {
 	group?: 'recent' | 'library';
 }
 
-/** The author a saved script's own `_meta` names, if any. */
-function savedAuthor(saved: Pick<SavedScript, 'json'>): string | undefined {
-	const meta = saved.json.find(
-		(e): e is { id: string; author?: unknown } =>
+function savedMeta(saved: Pick<SavedScript, 'json'>) {
+	return saved.json.find(
+		(e): e is { id: string; author?: unknown; version?: unknown } =>
 			typeof e === 'object' && e !== null && (e as { id?: unknown }).id === '_meta'
 	);
+}
+
+/** The author a saved script's own `_meta` names, if any. */
+function savedAuthor(saved: Pick<SavedScript, 'json'>): string | undefined {
+	const meta = savedMeta(saved);
 	return typeof meta?.author === 'string' && meta.author.trim() ? meta.author : undefined;
+}
+
+/** Its BotC Scripts version, or else the version its own `_meta` names. */
+function savedVersion(saved: Pick<SavedScript, 'json' | 'source'>): string | undefined {
+	const version = savedMeta(saved)?.version;
+	return scriptVersion(saved, typeof version === 'string' ? { version } : undefined);
 }
 
 function savedOption(saved: SavedScript, value: ScriptChoice): ScriptChoiceOption {
 	const author = savedAuthor(saved);
-	const version = scriptVersion(saved);
+	const version = savedVersion(saved);
 	return {
 		value,
 		label: saved.name,
@@ -84,10 +94,12 @@ export function searchableScripts(): ScriptChoiceOption[] {
 			.filter((entry) => !recent.some((s) => sameScript(s, { json: entry.script.json })))
 			.map((entry) => {
 				const author = savedAuthor(entry.script);
+				const version = savedVersion(entry.script);
 				return {
 					value: `profile:${entry.id}`,
 					label: entry.script.name,
 					...(author ? { author } : {}),
+					...(version ? { version } : {}),
 					group: 'library' as const
 				};
 			})
