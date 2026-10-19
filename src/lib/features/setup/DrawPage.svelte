@@ -94,6 +94,16 @@
 		return result.ok;
 	}
 
+	/** Names on the other seats, so the reveal doesn't offer them. */
+	function takenNames(seatId: SeatId | undefined): string[] {
+		if (!game) return [];
+		const seats = game.seats;
+		return game.seating.flatMap((id) => {
+			const name = id !== seatId ? seats[id].playerName : undefined;
+			return name ? [name] : [];
+		});
+	}
+
 	function label(seatId: SeatId | undefined): string {
 		return game && seatId ? seatLabel(game, seatId) : t('common.none');
 	}
@@ -211,6 +221,7 @@
 			needsAlignment={lookup.get(tile.grimoire)?.type === 'traveller'}
 			seatLabel={label(tile.drawnBySeat)}
 			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
+			taken={takenNames(tile.drawnBySeat)}
 			holdToReveal={locked}
 			onConfirm={confirm}
 		/>
