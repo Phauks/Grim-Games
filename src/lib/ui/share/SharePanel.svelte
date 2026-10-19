@@ -42,21 +42,33 @@
 
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
-	/** The copy icon shows a check for a moment instead of a success popup. */
+	/** A copy icon shows a check for a moment instead of a success popup. */
 	const COPIED_MS = 1500;
-	let copied = $state(false);
+	let copied = $state<'link' | 'code' | undefined>();
 	let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => () => clearTimeout(copiedTimer));
+
+	function showCopied(what: 'link' | 'code') {
+		copied = what;
+		clearTimeout(copiedTimer);
+		copiedTimer = setTimeout(() => (copied = undefined), COPIED_MS);
+	}
 
 	async function copy() {
 		if (!url) return;
 		const done = await copyText(text ? `${text}\n${url}` : url, {
 			failed: [t('share.copyFailed'), t('share.copyFailedHint')]
 		});
-		if (!done) return;
-		copied = true;
-		clearTimeout(copiedTimer);
-		copiedTimer = setTimeout(() => (copied = false), COPIED_MS);
+		if (done) showCopied('link');
+	}
+
+	/** The code alone, without the spaces that group it for reading (Trevor, 2026-10-19). */
+	async function copyCode() {
+		if (!code?.value) return;
+		const done = await copyText(code.value.replace(/\s/g, ''), {
+			failed: [t('share.copyCodeFailed'), t('share.copyFailedHint')]
+		});
+		if (done) showCopied('code');
 	}
 
 	async function share() {
@@ -74,9 +86,17 @@
 	{#if code}
 		<div class="code-block">
 			<span class="code-label" id={codeId}>{code.label}</span>
-			<p class="code" aria-labelledby={codeId} data-testid="share-code">
-				{code.value ?? '··· ···'}
-			</p>
+			<div class="code-row">
+				<p class="code" aria-labelledby={codeId} data-testid="share-code">
+					{code.value ?? '··· ···'}
+				</p>
+				<IconButton
+					icon={copied === 'code' ? 'check' : 'copy'}
+					label={t('share.copyCode')}
+					onclick={copyCode}
+					disabled={!code.value}
+				/>
+			</div>
 		</div>
 	{/if}
 	<div class="qr">
@@ -98,7 +118,7 @@
 				data-testid="share-url"
 			/>
 			<IconButton
-				icon={copied ? 'check' : 'copy'}
+				icon={copied === 'link' ? 'check' : 'copy'}
 				label={t('share.copy')}
 				onclick={copy}
 				disabled={!url}
@@ -126,6 +146,12 @@
 	.label {
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
+	}
+	/* The copy icon sits right after the code. */
+	.code-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 	}
 	.code {
 		margin: 0;
