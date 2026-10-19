@@ -29,7 +29,6 @@ export const SUSHI_BUFFET: GameMode = {
 		// Trevor, 2026-10-18, in the project chat.
 		bluffs: { kind: 'none', instructions: 'Don’t show the Demon any bluffs.' },
 		pool: { kind: 'all-characters' },
-		restricted: { banned: [] },
 		setupModifiers: {
 			kind: 'as-chosen',
 			instructions:
