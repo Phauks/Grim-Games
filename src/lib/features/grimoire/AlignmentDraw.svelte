@@ -7,6 +7,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import { readParsed, writeStored } from '#lib/ui/stored.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
 
@@ -30,8 +31,17 @@
 	const seat = $derived(seatId ? game.seats[seatId] : undefined);
 
 	const MAX = 8;
-	let count = $state(4);
-	let evil = $state(1);
+	// The last mix is kept on this device (Trevor, 2026-10-19), never with the game.
+	const KEY = 'grim-games:alignment-draw:v1';
+	function parseMix(raw: unknown): { count: number; evil: number } {
+		const { count, evil } = (raw ?? {}) as Record<string, unknown>;
+		if (!Number.isInteger(count) || !Number.isInteger(evil)) return { count: 4, evil: 1 };
+		const c = Math.min(MAX, Math.max(1, count as number));
+		return { count: c, evil: Math.min(c, Math.max(0, evil as number)) };
+	}
+	const saved = readParsed(KEY, parseMix);
+	let count = $state(saved.count);
+	let evil = $state(saved.evil);
 	let phase = $state<'setup' | 'pick' | 'shown'>('setup');
 	let tokens = $state<Alignment[]>([]);
 	let picked = $state<number | undefined>();
@@ -57,7 +67,11 @@
 		return out;
 	}
 
+	/** The chance of drawing one of `n` tokens, whole percent (Trevor, 2026-10-19). */
+	const percent = (n: number) => `${Math.round((100 * n) / count)}%`;
+
 	function start() {
+		writeStored(KEY, { count, evil });
 		tokens = shuffle(
 			Array.from({ length: count }, (_, i): Alignment => (i < evil ? 'evil' : 'good'))
 		);
@@ -115,9 +129,13 @@
 						moreLabel={t('setup.alignmentDraw.moreEvil')}
 						max={count}
 					/>
+					<span class="chance" data-testid="evil-chance">{percent(evil)}</span>
 				</dd>
 				<dt>Good</dt>
-				<dd><output aria-label="Good tokens">{count - evil}</output></dd>
+				<dd>
+					<output aria-label="Good tokens">{count - evil}</output>
+					<span class="chance" data-testid="good-chance">{percent(count - evil)}</span>
+				</dd>
 			</dl>
 		{:else}
 			<!-- The player's view: face-down tokens, the counts never shown. -->
@@ -172,6 +190,13 @@
 		align-items: center;
 		gap: var(--space-2);
 		margin: 0;
+	}
+	/* Wide enough for 100%, so a changing chance never moves anything. */
+	.chance {
+		min-width: 4ch;
+		color: var(--on-surface-muted);
+		font-variant-numeric: tabular-nums;
+		text-align: end;
 	}
 	output {
 		min-width: 2ch;
