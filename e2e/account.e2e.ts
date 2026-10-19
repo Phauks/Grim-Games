@@ -92,9 +92,10 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	await expect(devices.getByText('(this device)')).toBeVisible();
 	// A rough place per device; the local server has none from Cloudflare, so None.
 	await expect(devices.getByText('Location').first()).toBeVisible();
-	await expect(
-		devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ })
-	).toBeDisabled();
+	const own = devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ });
+	await expect(own).toBeDisabled();
+	// Signing out is a text button, not the trash can (Trevor, 2026-10-18).
+	await expect(own).toHaveText('Sign out');
 	// Sign out other devices sits in the section's header; Delete account has a section of its own;
 	// signing out of this device is only in the header's account card.
 	await expect(page.getByRole('button', { name: 'Sign out other devices' })).toBeDisabled();
