@@ -189,6 +189,7 @@
 	let bankEl = $state<HTMLElement>();
 	let divider = $state<HTMLElement>();
 	let scrolled = $state(0);
+	let otherW = $state(0);
 	const captions = $derived.by(() => {
 		void items;
 		if (!bankEl || !list) return { setup: 0, other: undefined as number | undefined };
@@ -196,10 +197,28 @@
 		const start = list.offsetLeft;
 		const line = divider ? start + divider.offsetLeft - scrolled : undefined;
 		const pct = (x: number) => (x / width) * 100;
+		// Only once the line has scrolled in far enough for the whole caption: never past the
+		// row's end, over the Run night button (Trevor, 2026-10-19).
+		const shown = line !== undefined && line + otherW <= start + list.clientWidth;
 		return {
 			setup: pct(start),
-			other: line === undefined ? undefined : pct(Math.max(start, line))
+			other: shown ? pct(Math.max(start, line)) : undefined
 		};
+	});
+	/** More tokens off either end of the row: its edge fades (Trevor, 2026-10-19). */
+	let more = $state({ start: false, end: false });
+	function measure() {
+		if (!list) return;
+		const { scrollLeft, clientWidth, scrollWidth } = list;
+		more = { start: scrollLeft > 1, end: scrollLeft + clientWidth < scrollWidth - 1 };
+	}
+	$effect(() => {
+		void items;
+		if (!list) return;
+		const observer = new ResizeObserver(measure);
+		observer.observe(list);
+		measure();
+		return () => observer.disconnect();
 	});
 	/** "Setup" goes once the line has scrolled to the start. */
 	const setupShown = $derived(
@@ -330,13 +349,19 @@
 	{#if captions.other !== undefined}<span
 			class="caption"
 			data-testid="bank-other"
+			bind:offsetWidth={otherW}
 			style:left="{captions.other}%">Other reminders</span
 		>{/if}
 	<ul
 		class="tray"
 		bind:this={list}
 		aria-label="Reminder bank"
-		onscroll={(e) => (scrolled = e.currentTarget.scrollLeft)}
+		data-more-start={more.start || undefined}
+		data-more-end={more.end || undefined}
+		onscroll={(e) => {
+			scrolled = e.currentTarget.scrollLeft;
+			measure();
+		}}
 	>
 		{#each items as item (item.key)}
 			<li
@@ -588,6 +613,26 @@
 	}
 	.tray::-webkit-scrollbar {
 		display: none;
+	}
+	/* More tokens past an edge: that edge fades out, drawn over nothing so nothing moves. */
+	.tray {
+		--fade: calc(1.5 * var(--u));
+		--shown: rgb(0 0 0); /* colour-ok: a mask's opacity, not a colour */
+	}
+	.tray[data-more-start] {
+		mask-image: linear-gradient(to right, transparent, var(--shown) var(--fade));
+	}
+	.tray[data-more-end] {
+		mask-image: linear-gradient(to left, transparent, var(--shown) var(--fade));
+	}
+	.tray[data-more-start][data-more-end] {
+		mask-image: linear-gradient(
+			to right,
+			transparent,
+			var(--shown) var(--fade),
+			var(--shown) calc(100% - var(--fade)),
+			transparent
+		);
 	}
 	/* The walked-through step's reminders, at the front: a ring that hugs the round token. */
 	li.now > :global(.reminder) {
