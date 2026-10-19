@@ -318,7 +318,8 @@ test('character icon size is its own slider and leaves interface icons alone', a
 		.locator('.icon');
 	const before = await settingsIcon.boundingBox();
 
-	const dialog = await openSettings(page, 'Icons');
+	// With the characters in Tokens, not with the interface icons (Trevor, 2026-10-19).
+	const dialog = await openSettings(page, 'Tokens');
 	await slide(page, 'Character icon size', 1.25);
 	expect(await rootStyle(page, '--character-icon-scale')).toBe('1.25');
 	expect(await rootStyle(page, '--icon-scale')).toBe('1');
