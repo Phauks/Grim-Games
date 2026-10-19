@@ -31,7 +31,8 @@
 		namePlace?: NamePlace;
 		/** Night order numbers for the leaf badges, when that setting is on. */
 		nightNumbers?: { first?: number; other?: number };
-		onTap: () => void;
+		/** `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat). */
+		onTap: (part?: 'note') => void;
 	}
 
 	let {
@@ -86,7 +87,8 @@
 	function pointerup(event: PointerEvent) {
 		if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) < TAP_SLOP) {
 			swallowNextClick(event.currentTarget);
-			onTap();
+			const target = event.target instanceof Element ? event.target : null;
+			onTap(target?.closest('.mark.note') ? 'note' : undefined);
 		}
 		down = null;
 	}
@@ -224,5 +226,12 @@
 		bottom: -4%;
 		background: var(--surface-raised);
 		color: var(--on-surface);
+	}
+	/* A tap target bigger than the mark it shows (Trevor, 2026-10-19: tap it for the notes). */
+	.note::after {
+		content: '';
+		position: absolute;
+		inset: calc(-0.875 * var(--u));
+		border-radius: 50%;
 	}
 </style>

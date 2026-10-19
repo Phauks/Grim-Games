@@ -45,6 +45,8 @@ export type Command =
 	| { type: 'RenameSeat'; seatId: SeatId; playerName?: string }
 	/** The Storyteller's private note on a seat. Trimmed; an empty or missing note clears it. */
 	| { type: 'SetSeatNote'; seatId: SeatId; note?: string }
+	/** The game's general notes; no `notes` or blank text clears them. */
+	| { type: 'SetGameNotes'; notes?: string }
 	/**
 	 * Puts a character token on a seat. Without `alignment`, an empty seat takes the
 	 * default for the character type and a seat that had a character keeps its alignment

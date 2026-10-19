@@ -86,6 +86,7 @@
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
@@ -593,6 +594,14 @@
 		sheetOpen = true;
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
+
+	// ── Notes (Trevor, 2026-10-19): the game's and every player's, from ⋯ or a pen mark ──
+	let notesOpen = $state(false);
+	let notesFocus = $state<SeatId | undefined>();
+	function openNotes(seatId?: SeatId) {
+		notesFocus = seatId;
+		notesOpen = true;
+	}
 	/**
 	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
 	 * "they chose to open reminder, not character").
@@ -1289,7 +1298,8 @@
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
 					namePlace={namePlaces[i] ?? 'below'}
-					onTap={() => !arranging && openSeat(seat.seatId)}
+					onTap={(part) =>
+						!arranging && (part === 'note' ? openNotes(seat.seatId) : openSeat(seat.seatId))}
 				/>
 			</div>
 		{/each}
@@ -1543,6 +1553,7 @@
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
 			Demon bluffs
 		</Button>
+		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => openNotes())}>Notes</Button>
 		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
 			too, for when the corner has no room for the name. -->
 		{#if modeName}
@@ -1700,6 +1711,8 @@
 />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
+
+<NotesSheet bind:open={notesOpen} {grimoire} focus={notesFocus} />
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} />
 

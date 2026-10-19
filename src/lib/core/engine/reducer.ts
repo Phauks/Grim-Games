@@ -177,6 +177,8 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return updateSeat(game, event.seatId, (seat) =>
 				event.note === undefined ? omit(seat, 'note') : { ...seat, note: event.note }
 			);
+		case 'GameNotesSet':
+			return event.notes === undefined ? omit(game, 'notes') : { ...game, notes: event.notes };
 		case 'CharacterAssigned':
 			return updateSeat(game, event.seatId, (seat) =>
 				event.alignment === undefined
