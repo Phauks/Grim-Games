@@ -20,6 +20,7 @@ export const modes = {
 	'modes.scriptSearch.label': 'Find a script',
 	'modes.scriptSearch.custom': 'Custom',
 	'modes.scriptSearch.version': 'Script version',
+	'modes.scriptSearch.noVersion': 'N/A',
 	'modes.scriptSearch.placeholder': 'Find a script',
 	'modes.scriptSearch.recent': 'Recent',
 	'modes.scriptSearch.library': 'Library',
