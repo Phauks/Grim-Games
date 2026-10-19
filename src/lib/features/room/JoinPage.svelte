@@ -163,7 +163,14 @@
 		{/if}
 		<form class="code-form" onsubmit={enterCode}>
 			<label for="room-code">{t('room.codeLabel')}</label>
-			<CodeField id="room-code" bind:value={typed} length={ROOM_CODE_LENGTH} group={3} centred />
+			<CodeField
+				id="room-code"
+				bind:value={typed}
+				length={ROOM_CODE_LENGTH}
+				group={3}
+				centred
+				large
+			/>
 			<!-- Always this size, so the game arriving moves nothing. -->
 			<section
 				class="game"
