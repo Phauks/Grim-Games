@@ -15,8 +15,11 @@ import {
 	planBag,
 	randomSelection,
 	selectedIds,
+	selectionProblems,
+	validRandomSelection,
 	type BagSelection
 } from './bag-plan.ts';
+import { scriptFacts } from './script-facts.ts';
 
 const data = committedGameData();
 const lookup = (id: string) => data.byId.get(id);
@@ -313,5 +316,79 @@ describe('the draw', () => {
 		);
 		expect([...truths].sort()).toEqual(['chef', 'drunk', 'imp', 'monk', 'poisoner']);
 		expect(session.game.bag!.order).toEqual([]);
+	});
+});
+
+// Trevor, 2026-10-19: Random never lands on a selection the page would warn about, whatever
+// the setup changes (https://wiki.bloodontheclocktower.com/Baron,
+// https://wiki.bloodontheclocktower.com/Huntsman) or exclusive jinxes in play.
+describe('validRandomSelection', () => {
+	const editions = ['tb', 'bmr', 'snv'] as const;
+	const seeded = (seed: number) => () => {
+		seed = (seed * 1664525 + 1013904223) % 4294967296;
+		return seed / 4294967296;
+	};
+	for (const edition of editions) {
+		const characters = [...data.byId.values()].filter(
+			(c) => c.edition === edition && c.type !== 'traveller'
+		);
+		const scriptOrder = characters.map((c) => c.id);
+		const jinxes = scriptFacts(characters, data.jinxes).jinxes;
+		it.each([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])(
+			`${edition}: every random selection for %i players is valid`,
+			(players) => {
+				const random = seeded(players * 31 + edition.length);
+				for (let i = 0; i < 60; i++) {
+					const input = { players, scriptCharacters: characters, scriptOrder, lookup, jinxes };
+					const result = validRandomSelection({ ...input, selection: {}, random });
+					expect(result.ok).toBe(true);
+					if (result.ok)
+						expect(selectionProblems({ ...input, selection: result.selection })).toEqual([]);
+				}
+			}
+		);
+	}
+
+	it('says why instead of choosing when nothing fits', () => {
+		// Two Townsfolk and an Imp can't fill seven seats.
+		const result = validRandomSelection({
+			players: 7,
+			selection: {},
+			scriptCharacters: script(['washerwoman', 'chef', 'imp']),
+			scriptOrder: ['washerwoman', 'chef', 'imp'],
+			lookup,
+			random: sequence(0.3),
+			tries: 5
+		});
+		expect(result.ok).toBe(false);
+		if (!result.ok) expect(result.problems.length).toBeGreaterThan(0);
+	});
+
+	it('finds the Damsel for a Huntsman, or leaves the Huntsman out', () => {
+		const characters = script([
+			'huntsman',
+			'chef',
+			'empath',
+			'monk',
+			'soldier',
+			'mayor',
+			'damsel',
+			'saint',
+			'poisoner',
+			'imp'
+		]);
+		const scriptOrder = characters.map((c) => c.id);
+		for (let i = 0; i < 40; i++) {
+			const result = validRandomSelection({
+				players: 6,
+				selection: {},
+				scriptCharacters: characters,
+				scriptOrder,
+				lookup,
+				random: seeded(i + 7)
+			});
+			expect(result.ok).toBe(true);
+			if (result.ok && result.selection.huntsman) expect(result.selection.damsel).toBe(1);
+		}
 	});
 });
