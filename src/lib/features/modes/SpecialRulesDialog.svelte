@@ -14,11 +14,14 @@
 	import { allRules, customRules, findRule } from './custom-rules.svelte.ts';
 	import { modeLabel } from './labels.ts';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
+	import { shownAbout } from './own-wording.svelte.ts';
 
 	/**
 	 * New game's special rules (Trevor, 2026-10-18: rules stack on a game mode, modes don't
 	 * mix): one switch per rule, on in the order chosen. Two that set the same part
-	 * differently are listed as conflicts; they warn, never stop the game starting.
+	 * differently are listed as conflicts; they warn, never stop the game starting. Each rule
+	 * shows its description under its switch (Trevor, 2026-10-19), or the author's own rule text
+	 * until he has approved one; everything else is behind Inspect.
 	 * Design: /mnt/project-files/world-cup-rules/format-design.md.
 	 */
 	interface Props {
@@ -63,28 +66,33 @@
 			{#each rules as rule (rule.id)}
 				{@const custom = customRules.list.some((r) => r.id === rule.id)}
 				<li>
-					<Toggle
-						label={rule.name}
-						checked={ruleIds.includes(rule.id)}
-						onChange={(on) => toggle(rule.id, on)}
-					/>
-					<IconButton
-						icon="info"
-						label={t('modes.inspectRule', { name: rule.name })}
-						onclick={() => {
-							inspecting = rule;
-							inspectOpen = true;
-						}}
-					/>
-					<!-- Always there, so nothing moves; only a rule added on this device can go. -->
-					<DeleteButton
-						label={t('modes.deleteRule', { name: rule.name })}
-						disabled={!custom}
-						onclick={() => {
-							deleting = rule;
-							deleteOpen = true;
-						}}
-					/>
+					<div class="row">
+						<Toggle
+							label={rule.name}
+							checked={ruleIds.includes(rule.id)}
+							onChange={(on) => toggle(rule.id, on)}
+						/>
+						<IconButton
+							icon="info"
+							label={t('modes.inspectRule', { name: rule.name })}
+							onclick={() => {
+								inspecting = rule;
+								inspectOpen = true;
+							}}
+						/>
+						<!-- Always there, so nothing moves; only a rule added on this device can go. -->
+						<DeleteButton
+							label={t('modes.deleteRule', { name: rule.name })}
+							disabled={!custom}
+							onclick={() => {
+								deleting = rule;
+								deleteOpen = true;
+							}}
+						/>
+					</div>
+					<p class="description" data-testid="rule-description">
+						{shownAbout(rule) ?? rule.parts.text?.join(' ') ?? t('common.none')}
+					</p>
 				</li>
 			{/each}
 		</ul>
@@ -128,15 +136,25 @@
 		padding: 0;
 		list-style: none;
 	}
+	ul[data-testid='special-rules'] {
+		display: grid;
+		gap: var(--space-2);
+	}
 	/* The switch takes the row; Inspect and Delete their own size beside it. */
-	li {
+	.row {
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
 	}
-	li > :global(:first-child) {
+	.row > :global(:first-child) {
 		flex: 1;
 		min-width: 0;
+	}
+	/* The description under its switch, quieter, always there so nothing moves. */
+	.description {
+		margin: 0;
+		color: var(--on-surface-muted);
+		font-size: 0.9em;
 	}
 	h3 {
 		margin: 0 0 var(--space-1);

@@ -12,6 +12,9 @@ export const STOWED_AWAY: SpecialRule = {
 	format: SPECIAL_RULE_FORMAT,
 	id: 'stowed-away',
 	name: 'Stowed Away',
+	// Our own draft (2026-10-19): shows once Trevor approves it (approved-about.ts).
+	about:
+		'Up to 2 Travellers may be in the bag, with the other counts set for that many fewer players. No one is told who the Travellers are, and exiling one counts as an execution.',
 	sources: [{ title: 'Stowed Away (Beardy on the Clocktower)', url: PAGE }],
 	parts: {
 		// The author's rule, quoted.

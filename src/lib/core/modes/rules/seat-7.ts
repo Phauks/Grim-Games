@@ -13,6 +13,9 @@ export const SEAT_7: SpecialRule = {
 	format: SPECIAL_RULE_FORMAT,
 	id: 'seat-7',
 	name: 'The Ballad of Seat 7',
+	// Our own draft (2026-10-19): shows once Trevor approves it (approved-about.ts).
+	about:
+		'One seat is dealt a character as usual, but no one plays it. Its choices are arbitrary, and once per game the Storyteller may speak for it.',
 	aliases: ['Seat 7'],
 	sources: [{ title: 'The Ballad of Seat 7 (Beardy on the Clocktower)', url: PAGE }],
 	parts: {

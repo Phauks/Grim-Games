@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { GameMode, SpecialRule } from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { aboutApproved } from './approved-about.ts';
-	import { showsOwnWording } from './own-wording.svelte.ts';
+	import { shownAbout } from './own-wording.svelte.ts';
 	import ModeValue from './ModeValue.svelte';
 
 	/**
@@ -19,9 +18,7 @@
 
 	let { mode, compact = false }: Props = $props();
 
-	const description = $derived(
-		showsOwnWording(mode) || aboutApproved(mode.id, mode.about) ? mode.about : undefined
-	);
+	const description = $derived(shownAbout(mode));
 </script>
 
 <dl class="about" class:compact data-testid="mode-about">
