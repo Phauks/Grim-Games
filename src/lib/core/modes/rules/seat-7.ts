@@ -20,6 +20,12 @@ export const SEAT_7: SpecialRule = {
 		text: [
 			'Seat 7 remains empty. Its choices are arbitrary. Once per game the storyteller may speak on its behalf.'
 		],
-		seats: { kind: 'storyteller-seat', count: 1, speaks: 'once-per-game' }
+		seats: {
+			kind: 'storyteller-seat',
+			count: 1,
+			speaks: 'once-per-game',
+			instructions:
+				'One seat is dealt a character as usual, but no one plays it. Make its choices arbitrarily. Once per game you may speak for it.'
+		}
 	}
 };

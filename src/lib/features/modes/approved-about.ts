@@ -1,3 +1,5 @@
+import type { CombinedParts } from '#lib/core/modes/index.ts';
+
 /**
  * Built-in mode and special rule descriptions Trevor has approved (2026-10-18: "You write game mode
  * descriptions, but I will verify them"). Each entry is the exact text he approved, so a
@@ -20,4 +22,36 @@ export const APPROVED_ABOUT: Readonly<Record<string, string>> = {
 /** Whether a built-in mode's description is the text Trevor approved. */
 export function aboutApproved(modeId: string, about: string | undefined): boolean {
 	return about !== undefined && APPROVED_ABOUT[modeId] === about;
+}
+
+/**
+ * Built-in Storyteller instructions Trevor has approved, by mode or rule id and the part's
+ * path (`whale-buffet:parts.ruleChanges[0]`), each the exact text, as descriptions are. None
+ * yet: the drafts of 2026-10-19 wait for his review.
+ */
+export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string>> = {};
+
+/**
+ * A mode's parts as Inspect shows them: Storyteller instructions Trevor hasn't approved are
+ * left out (the whole file still has them). `ownWording` shows every one.
+ */
+export function shownParts(
+	modeId: string,
+	parts: CombinedParts,
+	ownWording: boolean
+): CombinedParts {
+	if (ownWording) return parts;
+	const shown = (path: string, item: unknown): unknown => {
+		if (typeof item !== 'object' || item === null || !('instructions' in item)) return item;
+		const { instructions, ...rest } = item as { instructions: unknown };
+		return APPROVED_INSTRUCTIONS[`${modeId}:${path}`] === instructions ? item : rest;
+	};
+	return Object.fromEntries(
+		Object.entries(parts).map(([part, value]) => [
+			part,
+			Array.isArray(value)
+				? value.map((item, i) => shown(`parts.${part}[${i}]`, item))
+				: shown(`parts.${part}`, value)
+		])
+	) as CombinedParts;
 }

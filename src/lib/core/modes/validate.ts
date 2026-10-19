@@ -6,12 +6,14 @@
 import { isObject } from '#lib/core/data/validate.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { SEATED_TYPES } from '#lib/core/rules/distribution.ts';
+import { runsPart } from './pool.ts';
 import {
 	CAMPAIGN_ENDS,
 	GAME_MODE_FORMAT,
 	MODE_PARTS,
 	RULE_PARTS,
 	SPECIAL_RULE_FORMAT,
+	type CombinedParts,
 	type GameMode,
 	type ModePart,
 	type SpecialRule
@@ -36,6 +38,12 @@ export const KINDS: Partial<Record<(typeof RULE_PARTS)[number] | ModePart, reado
 };
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * The format revision from which a part the Storyteller runs must say how (`instructions`).
+ * Older files are read without them, as are a script's own rules, which have no revision.
+ */
+export const INSTRUCTIONS_FROM_REVISION = 8;
 
 export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>): ParsedMode {
 	if (!isObject(value)) return { ok: false, issues: ['(root): must be an object'] };
@@ -166,6 +174,8 @@ function checkFile(
 	}
 
 	const parts = value.parts;
+	const needsInstructions =
+		Number.isInteger(value.revision) && (value.revision as number) >= INSTRUCTIONS_FROM_REVISION;
 	if (!isObject(parts)) add('parts', 'must be an object');
 	else {
 		for (const [key, part] of Object.entries(parts)) {
@@ -175,7 +185,9 @@ function checkFile(
 				continue;
 			}
 			const kinds = KINDS[key as keyof typeof KINDS];
-			// Plain lists of lines and count changes are checked by their kind's parser.
+			// Plain lists of lines and count changes are checked by their kind's parser. They need
+			// no instructions: a rule's lines are its instructions, and a count change ("+1
+			// Demon") says all it does.
 			if (key === 'text' || key === 'countChanges') continue;
 			for (const [i, item] of (Array.isArray(part) ? part : [part]).entries()) {
 				const at = Array.isArray(part) ? `${path}[${i}]` : path;
@@ -185,6 +197,17 @@ function checkFile(
 				}
 				if (kinds && !kinds.includes(item.kind as string))
 					add(`${at}.kind`, `must be one of ${kinds.join(', ')}`);
+				if (
+					item.instructions !== undefined &&
+					(typeof item.instructions !== 'string' || !item.instructions.trim())
+				)
+					add(`${at}.instructions`, 'must be text');
+				else if (
+					needsInstructions &&
+					item.instructions === undefined &&
+					!runsPart({ parts: parts as CombinedParts }, key as ModePart)
+				)
+					add(`${at}.instructions`, 'the Storyteller runs this part, so say what they do');
 				if (key === 'betweenGames' && Array.isArray(item.endConditions))
 					item.endConditions.forEach((e, n) => {
 						if (!(CAMPAIGN_ENDS as readonly unknown[]).includes(e))

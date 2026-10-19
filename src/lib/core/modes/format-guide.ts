@@ -21,7 +21,7 @@ import {
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 7;
+export const GAME_MODE_REVISION = 8;
 
 export interface GuideField {
 	name: string;
@@ -45,7 +45,7 @@ export interface GuidePart {
 	/** One object, or a list of them. */
 	list: boolean;
 	about: string;
-	/** Fields every kind of this part has (besides `cite`, which every part has). */
+	/** Fields every kind of this part has (besides `cite` and `instructions`, which every part has). */
 	fields: GuideField[];
 	kinds: GuideKind[];
 }
@@ -55,6 +55,15 @@ const CITE: GuideField = {
 	type: 'https link',
 	required: false,
 	about: 'The page this part comes from, when it is not the mode’s first source.'
+};
+
+/** Required, from revision 8, on a part the app doesn't run (validate.ts). */
+const INSTRUCTIONS: GuideField = {
+	name: 'instructions',
+	type: 'text',
+	required: false,
+	about:
+		'What the Storyteller does for this part. Required on a part Inspect shows as run by the Storyteller, so the file alone says what the game needs.'
 };
 
 const IDS = 'list of character ids';
@@ -791,7 +800,7 @@ export function documentedFields(): Set<string> {
 	for (const part of MODE_PARTS) names.add(part);
 	for (const extra of ['modes', 'rules']) names.add(extra);
 	for (const p of [...GUIDE_PARTS, ...RULE_GUIDE_PARTS]) {
-		for (const f of [...p.fields, CITE]) names.add(f.name);
+		for (const f of [...p.fields, CITE, INSTRUCTIONS]) names.add(f.name);
 		for (const k of p.kinds) for (const f of k.fields) names.add(f.name);
 	}
 	for (const extra of ['afterDay', 'together', 'winner', 'min', 'max']) names.add(extra);

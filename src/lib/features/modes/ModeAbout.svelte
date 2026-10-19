@@ -1,10 +1,8 @@
 <script lang="ts">
 	import type { GameMode, SpecialRule } from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { aboutApproved } from './approved-about.ts';
-	import { customModes } from './custom-modes.svelte.ts';
-	import { customRules } from './custom-rules.svelte.ts';
+	import { showsOwnWording } from './own-wording.svelte.ts';
 	import ModeValue from './ModeValue.svelte';
 
 	/**
@@ -21,16 +19,8 @@
 
 	let { mode, compact = false }: Props = $props();
 
-	// A mode file someone added is their own wording; a built-in one shows once Trevor has
-	// approved its text, or with our own wording on.
 	const description = $derived(
-		(mode.kind === 'special-rule' ? customRules.list : customModes.list).some(
-			(m) => m.id === mode.id
-		) ||
-			preferences.current.ownWording ||
-			aboutApproved(mode.id, mode.about)
-			? mode.about
-			: undefined
+		showsOwnWording(mode) || aboutApproved(mode.id, mode.about) ? mode.about : undefined
 	);
 </script>
 

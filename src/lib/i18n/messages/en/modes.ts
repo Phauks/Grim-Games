@@ -28,7 +28,7 @@ export const modes = {
 	'modes.guide.top': 'The mode',
 	'modes.guide.parts': 'Parts',
 	'modes.guide.cite':
-		'Every part may also have "cite": a link to the page it comes from, when that isn’t the mode’s first source.',
+		'Every part may also have "cite": a link to the page it comes from, when that isn’t the mode’s first source. A part the app doesn’t run (Inspect shows it as run by the Storyteller) must have "instructions": what the Storyteller does for it, so the file alone says what the game needs. Rule text and setup count changes need none.',
 	'modes.guide.list': 'A list of these.',
 	'modes.guide.object': 'One object.',
 	'modes.guide.required': 'required',
@@ -200,6 +200,7 @@ export const modes = {
 	'modes.part.nightSteps': 'Night steps',
 	'modes.field.kind': 'Kind',
 	'modes.field.cite': 'Source',
+	'modes.field.instructions': 'Storyteller instructions',
 	'modes.field.types': 'Types',
 	'modes.field.extras': 'Hidden extras',
 	// The pool's rows are the most of each type, drawn from up to its count in all.
