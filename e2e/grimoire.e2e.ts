@@ -3726,11 +3726,15 @@ test('the seat last touched draws over the seats it overlaps, name and all', asy
 	await menu(page, 'Arrange seats');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar).toContainText('Arrange seats');
-	await page.mouse.move(from.x, from.y);
-	await page.mouse.down();
-	await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
-	await page.mouse.move(to.x, to.y, { steps: 4 });
-	await page.mouse.up();
+	// Under load the first press can land before the seats take drags: drag until it moves.
+	await expect(async () => {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+		await page.mouse.move(to.x, to.y, { steps: 4 });
+		await page.mouse.up();
+		expect((await seat(2).boundingBox())!.x).toBeCloseTo(one.x, 0);
+	}).toPass();
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
 
@@ -3747,11 +3751,12 @@ test('the seat last touched draws over the seats it overlaps, name and all', asy
 				const hit = document.elementFromPoint(pill.x + pill.width / 2, pill.y + pill.height / 2);
 				return hit?.closest('[data-testid="token-player-name"]') === svg;
 			});
-	// Seat 2 was dragged last: it covers seat 1's name.
-	expect(await onTop(2)).toBe(true);
-	expect(await onTop(1)).toBe(false);
+	// Seat 2 was dragged last: it covers seat 1's name. Polled, as the seat may still be
+	// gliding into place.
+	await expect.poll(() => onTop(2)).toBe(true);
+	await expect.poll(() => onTop(1)).toBe(false);
 	// Tapping seat 1 brings it to the front, its name with it.
 	await openSeat(page, 1);
 	await closeSheet(page);
-	expect(await onTop(1)).toBe(true);
+	await expect.poll(() => onTop(1)).toBe(true);
 });
