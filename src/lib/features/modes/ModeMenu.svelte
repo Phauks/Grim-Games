@@ -18,6 +18,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import { onLayerOpen } from '#lib/ui/primitives/layers.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { campaignOf } from './campaigns.ts';
 	import { findMode } from './custom-modes.svelte.ts';
@@ -46,6 +47,12 @@
 
 	let { game, children, open = $bindable(false) }: Props = $props();
 	const gameId = $derived(game.gameId);
+	// The corner's popover closes when a seat's sheet or another overlay opens over the board
+	// (Trevor, 2026-10-19: "Game info popup should close if other item is opened like a
+	// character"). The ⋯ dialog is an overlay itself, so it isn't closed this way.
+	$effect(() => {
+		if (open && children) return onLayerOpen(() => (open = false));
+	});
 
 	const group = $derived(townGroupOf(gameId));
 	const record = $derived(readGameMode(gameId));
