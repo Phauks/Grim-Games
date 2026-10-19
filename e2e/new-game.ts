@@ -18,3 +18,17 @@ export async function pickScript(page: Page, name: string): Promise<void> {
 	await page.getByRole('option').filter({ hasText: name }).first().tap();
 	await expect(field).toHaveValue(name);
 }
+
+/**
+ * Names the Storyteller of the game on the board, on its Characters screen, where the name
+ * is typed (Trevor, 2026-10-19), then comes back to the board.
+ */
+export async function nameStoryteller(page: Page, name: string): Promise<void> {
+	const board = new URL(page.url()).pathname;
+	await page.goto(`${board}/setup`);
+	const field = page.getByRole('textbox', { name: 'Storyteller' });
+	await field.fill(name);
+	await field.press('Enter');
+	await page.goto(board);
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+}

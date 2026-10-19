@@ -13,9 +13,13 @@ import { self as sw } from '$app/service-worker';
 import {
 	BUILD_CACHE_PREFIX,
 	cachedOnUse,
+	parseHashes,
 	precached,
+	PRECACHE_HASHES_PATH,
 	RUNTIME_CACHE,
 	staleCaches,
+	unchanged,
+	type FileHashes,
 	type KeepOfflineMessage
 } from '#lib/features/offline/cache-rules.ts';
 import {
@@ -60,19 +64,68 @@ async function refreshIcons(cache: Cache): Promise<void> {
 	await runtime.put(ICON_DATA_KEY, new Response(fetchedAt ?? ''));
 }
 
+/** A JSON file of this build, straight from the network; `{}` when it can't be read. */
+function fetchJson(path: string): Promise<unknown> {
+	return fetch(path, { cache: 'no-store' })
+		.then((response) => (response.ok ? response.json() : {}))
+		.catch(() => ({}));
+}
+
+/** The precache of the build this one replaces, while it is still active. */
+async function previousBuild(): Promise<Cache | undefined> {
+	const marker = await (await caches.open(RUNTIME_CACHE)).match(ACTIVE_BUILD_KEY);
+	const name = marker ? await marker.text() : undefined;
+	return name && name !== CACHE && (await caches.has(name)) ? caches.open(name) : undefined;
+}
+
 /**
- * Stores the build, a few files at a time, telling every open page how far it has got
+ * The stored copy of a file an earlier build already holds unchanged, if any: a build file
+ * from any cache (its name is its content), another file from the previous build when its
+ * content hash is the same.
+ */
+async function keptCopy(
+	path: string,
+	hashes: FileHashes,
+	previous: { cache: Cache | undefined; hashes: FileHashes }
+): Promise<Response | undefined> {
+	if (!unchanged(path, hashes, previous.hashes)) return undefined;
+	if (path.startsWith('/_app/immutable/')) return caches.match(path);
+	return previous.cache?.match(path);
+}
+
+/**
+ * Stores the build. Files the previous build already holds unchanged are copied from it, so
+ * an update only downloads what changed (Trevor, 2026-10-19: a full download each time
+ * stuttered). The rest come a few at a time, telling every open page how far it has got
  * (About's Check for updates shows it). Any file failing fails the install, as addAll did.
  */
 async function precache(cache: Cache): Promise<void> {
 	// The build's file sizes, so the page can say "2.4 MB of 6.1 MB"; without them, files only.
-	const sizes = parseSizes(
-		await fetch(PRECACHE_SIZES_PATH, { cache: 'no-store' })
-			.then((response) => (response.ok ? response.json() : {}))
-			.catch(() => ({}))
-	);
-	const total = ASSETS.length;
-	const allBytes = totalBytes(ASSETS, sizes);
+	const [sizes, hashes] = await Promise.all([
+		fetchJson(PRECACHE_SIZES_PATH).then(parseSizes),
+		fetchJson(PRECACHE_HASHES_PATH).then(parseHashes)
+	]);
+	const previousCache = await previousBuild().catch(() => undefined);
+	const previous = {
+		cache: previousCache,
+		hashes: parseHashes(
+			await previousCache
+				?.match(PRECACHE_HASHES_PATH)
+				.then((response) => response?.json())
+				.catch(() => ({}))
+		)
+	};
+	const queue: string[] = [];
+	for (const path of ASSETS) {
+		const kept = await keptCopy(path, hashes, previous).catch(() => undefined);
+		if (kept) await cache.put(path, kept);
+		else queue.push(path);
+	}
+	// Kept with the build, for the next one to compare against.
+	await cache.put(PRECACHE_HASHES_PATH, Response.json(hashes));
+
+	const total = queue.length;
+	const allBytes = totalBytes(queue, sizes);
 	let done = 0;
 	let bytes = 0;
 	let told = -1;
@@ -90,7 +143,6 @@ async function precache(cache: Cache): Promise<void> {
 		for (const client of await sw.clients.matchAll({ includeUncontrolled: true, type: 'window' }))
 			client.postMessage(message);
 	};
-	const queue = [...ASSETS];
 	const next = async (): Promise<void> => {
 		const path = queue.shift();
 		if (!path) return;

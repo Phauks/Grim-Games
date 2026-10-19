@@ -259,6 +259,73 @@ test('a check that finds a build shows its download, then Update ready', async (
 	await expect(page.getByTestId('update-banner')).toBeVisible();
 });
 
+// Trevor (2026-10-19): "If update is already downloading, show this in about instead of
+// requiring user to press the check icon".
+test('About shows a download the app started by itself, without a check', async ({ page }) => {
+	await page.addInitScript(() => {
+		const listeners: ((event: MessageEvent) => void)[] = [];
+		const stateListeners: (() => void)[] = [];
+		const active = { state: 'activated', postMessage() {}, addEventListener() {} };
+		// The browser's own update check found a build and is storing it as the page opens.
+		const next = {
+			state: 'installing',
+			postMessage() {},
+			addEventListener: (_: string, listener: () => void) => stateListeners.push(listener),
+			removeEventListener() {}
+		};
+		const registration = {
+			waiting: null as unknown,
+			installing: next as unknown,
+			active,
+			addEventListener() {},
+			update: () => Promise.resolve()
+		};
+		Object.defineProperty(navigator, 'serviceWorker', {
+			value: {
+				controller: active,
+				ready: Promise.resolve(registration),
+				register: () => Promise.resolve(registration),
+				getRegistration: () => Promise.resolve(registration),
+				startMessages() {},
+				addEventListener: (type: string, listener: (event: MessageEvent) => void) => {
+					if (type === 'message') listeners.push(listener);
+				},
+				removeEventListener() {}
+			}
+		});
+		Object.assign(window, {
+			swProgress: (done: number, total: number, bytes: number, totalBytes: number) =>
+				listeners.forEach((listener) =>
+					listener(
+						new MessageEvent('message', {
+							data: { type: 'PRECACHE_PROGRESS', done, total, bytes, totalBytes }
+						})
+					)
+				),
+			swInstalled: () => {
+				next.state = 'installed';
+				registration.installing = null;
+				registration.waiting = next;
+				stateListeners.forEach((listener) => listener());
+			}
+		});
+	});
+	await page.goto('/');
+	const dialog = await openAbout(page);
+	const result = dialog.getByTestId('update-check-result');
+	await expect(result).toHaveText('Downloading update…');
+	await expect(dialog.getByRole('button', { name: 'Check for updates' })).toBeDisabled();
+	await page.evaluate(() =>
+		(
+			window as unknown as { swProgress: (d: number, t: number, b: number, tb: number) => void }
+		).swProgress(3, 5, 2_400_000, 6_100_000)
+	);
+	await expect(result).toHaveText('Downloading update… 2.4 MB of 6.1 MB · 39%');
+	await page.evaluate(() => (window as unknown as { swInstalled: () => void }).swInstalled());
+	await expect(result).toHaveText(/ · Update ready$/);
+	await expect(dialog.getByTestId('update-refresh')).toBeVisible();
+});
+
 // Trevor (2026-10-19): "once update has been loaded from about, also add a refresh button there".
 test('About offers Refresh once a build is ready, and it moves onto the new build', async ({
 	page

@@ -42,11 +42,7 @@
 	import { continueCampaign, startHref, startInMode, startTowns } from './start.ts';
 	import { townGroup } from './town-groups.ts';
 	import { townSetupHref } from './town-setup.ts';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
-	import {
-		MAX_STORYTELLER_NAME,
-		storytellerName
-	} from '#lib/features/game/storyteller-name.svelte.ts';
+	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
 
 	/**
 	 * New game's Game modes area (Trevor, 2026-10-17: modes are their own area because they
@@ -266,15 +262,6 @@
 </script>
 
 <div class="modes">
-	<!-- Who runs the game, saved with it to show players (Trevor, 2026-10-19); empty is none. -->
-	<TextField
-		label={t('modes.storytellerName')}
-		value={storyteller}
-		maxlength={MAX_STORYTELLER_NAME}
-		autocomplete="off"
-		oninput={(v) => storytellerName.set(v)}
-		testid="storyteller-name"
-	/>
 	<div class="pick">
 		<!-- One drop-down for the mode (Trevor, 2026-10-18: "a dropdown, not buttons"). -->
 		<Select

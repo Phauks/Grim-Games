@@ -4,6 +4,7 @@ import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import Icons from 'unplugin-icons/vite';
 import type { Plugin } from 'vite';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { readBuildInfo, readCommits } from './build-info.ts';
@@ -74,6 +75,20 @@ function precacheSizes(): Plugin {
 							fs.statSync(full).size;
 					}
 			fs.writeFileSync(path.join(options.dir, 'precache-sizes.json'), JSON.stringify(sizes));
+			// Content hashes of the files without one in their name, so the next build's service
+			// worker keeps the ones that did not change (src/lib/features/offline/cache-rules.ts).
+			const hashes: Record<string, string> = {};
+			for (const file of Object.keys(sizes))
+				if (!file.startsWith('/_app/immutable/')) {
+					const full = fs.existsSync(path.join(options.dir, file))
+						? path.join(options.dir, file)
+						: path.join(staticDir, file);
+					hashes[file] = createHash('sha256')
+						.update(fs.readFileSync(full))
+						.digest('hex')
+						.slice(0, 16);
+				}
+			fs.writeFileSync(path.join(options.dir, 'precache-hashes.json'), JSON.stringify(hashes));
 		}
 	};
 }

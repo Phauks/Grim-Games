@@ -594,9 +594,11 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(extras.nth(1)).toContainText('Outsider');
 	await expect(extras.nth(2)).toContainText('Minion');
 	await expect(extras.nth(3)).toContainText('Demon');
-	await expect(page.getByTestId('extras-range')).toHaveText(
-		'Tell the table: 3 to 5 hidden characters'
-	);
+	// Any range that holds the real number, within 1 to 4 (Trevor, 2026-10-19).
+	const fewest = page.getByRole('combobox', { name: 'Fewest hidden characters to tell the table' });
+	const most = page.getByRole('combobox', { name: 'Most hidden characters to tell the table' });
+	await expect(fewest).toContainText('3');
+	await expect(most).toContainText('4');
 	// Rolling one again swaps it for another off-script character of the same type.
 	const reroll = extras.nth(0).getByRole('button', { name: /^Roll again instead of / });
 	const before = await reroll.getAttribute('aria-label');
@@ -614,9 +616,18 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await extras.nth(2).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
 	await expect(extras.nth(2)).toContainText('None');
 	await extras.nth(3).getByRole('button', { name: 'Clear the hidden Demon' }).tap();
-	await expect(page.getByTestId('extras-range')).toHaveText(
-		'Tell the table: 1 to 3 hidden characters'
-	);
+	await expect(fewest).toContainText('1');
+	await expect(most).toContainText('3');
+	// "The story teller puts in 2, any statement that includes 2 would be accurate 1-3, 1-4,
+	// 2-3, 2": the exact number, or a wider range.
+	await fewest.tap();
+	await page.getByRole('option', { name: '2', exact: true }).tap();
+	await most.tap();
+	await expect(page.getByRole('option')).toHaveText(['2', '3', '4']);
+	await page.getByRole('option', { name: '2', exact: true }).tap();
+	await expect(page.getByTestId('extras-range')).toContainText('Tell the table:');
+	await expect(fewest).toContainText('2');
+	await expect(most).toContainText('2');
 	await noSidewaysScroll(page);
 
 	await page.getByRole('button', { name: 'Choose characters' }).tap();
@@ -761,14 +772,18 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await expect(shareCode).toHaveText(/^\s*\d{3}\s?\d{3}\s*$/);
 	const code = (await shareCode.textContent())!.replace(/\s/g, '');
 
-	// Specters opens over the board from the Game mode menu (Trevor, 2026-10-18: the grimoire
-	// stays in reach). Before setup the corner has no room for the name, so ⋯ has it too.
+	// Specters opens over the board from Game info (Trevor, 2026-10-18: the grimoire stays in
+	// reach). Where the corner has no room for the name before setup, ⋯ has Game info instead.
 	await page.goto(`/grimoire/${gameId}`);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Game info' })
-		.tap();
+	const more = page.getByRole('dialog', { name: 'Grimoire' });
+	const entry = more.getByRole('button', { name: 'Game info' });
+	if (await entry.count()) await entry.tap();
+	else {
+		await page.keyboard.press('Escape');
+		await expect(more).toBeHidden();
+		await page.getByTestId('mode-menu').tap();
+	}
 	await page
 		.getByRole('dialog', { name: 'Game info' })
 		.getByRole('button', { name: 'Specters vote and ability' })
@@ -1014,7 +1029,7 @@ test('each special rule takes its own line under the script name in the board co
 	const lines = corner.getByTestId('game-mode');
 	if (test.info().project.name === 'phone') {
 		// A phone's corner beside seat 5 has no room for the name and a rule line: the name
-		// hides, and the ⋯ menu's Game info has the mode and its rules instead.
+		// hides, and the ⋯ menu has Game info, with the mode and its rules, instead.
 		await expect(corner).toBeHidden();
 		await page.getByRole('button', { name: 'More', exact: true }).tap();
 		await expect(
