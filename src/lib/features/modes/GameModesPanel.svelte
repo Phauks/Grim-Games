@@ -258,15 +258,16 @@
 			onclick={() => (deleting = true)}
 		/>
 	</div>
+	<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18), directly under
+		the mode they stack on (2026-10-19). -->
+	<Button icon="fabled" onclick={() => (choosingRules = true)}>
+		{t('modes.specialRulesButton', { count: rules.length })}
+	</Button>
 	<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
 	<section class="about" aria-labelledby="mode-about-title">
 		<h3 id="mode-about-title">{t('modes.about')}</h3>
 		<ModeAbout {mode} compact />
 	</section>
-	<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18). -->
-	<Button icon="fabled" onclick={() => (choosingRules = true)}>
-		{t('modes.specialRulesButton', { count: rules.length })}
-	</Button>
 
 	{#if isStandard}
 		{@render standard(rules)}

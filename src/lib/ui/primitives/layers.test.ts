@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layerStyle, openLayer } from './layers.ts';
+import { layerStyle, onLayerOpen, openLayer } from './layers.ts';
 
 describe('overlay layers', () => {
 	it('puts each newly opened overlay above every open one, in the order opened', () => {
@@ -19,6 +19,16 @@ describe('overlay layers', () => {
 		expect(only.layer).toBe(1);
 		only.close();
 		expect(openLayer().layer).toBe(1);
+	});
+
+	it('tells listeners when an overlay opens, until they stop listening', () => {
+		let calls = 0;
+		const stop = onLayerOpen(() => calls++);
+		openLayer().close();
+		expect(calls).toBe(1);
+		stop();
+		openLayer().close();
+		expect(calls).toBe(1);
 	});
 
 	it('draws a backdrop under its own content', () => {
