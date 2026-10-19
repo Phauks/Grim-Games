@@ -405,7 +405,53 @@
 		if (!paneOpen.open) windowOpen = false;
 	});
 
+	/**
+	 * Like Finder (Trevor, 2026-10-18: "require double clicking to enter a folder or file"): one
+	 * click or tap selects a row, and with Preview on a selected item shows beside the list; a
+	 * double click or double tap (or Enter) opens it: a folder is entered, an item opens in a
+	 * window, and a picker takes it. Timed here rather than with `dblclick`, so a double tap on a
+	 * touchscreen opens the same way.
+	 */
+	const DOUBLE_MS = 450;
+	let selectedKey = $state<string>();
+	let lastTap: { key: string; at: number } | undefined;
+	/** A selected folder row in the list as it stands (not one left behind in another folder). */
+	const selectedFolder = $derived(rows.find((r) => r.key === selectedKey)?.folderId);
+
+	function tapRow(row: Row, event: MouseEvent) {
+		const now = event.timeStamp;
+		const double = lastTap?.key === row.key && now - lastTap.at < DOUBLE_MS;
+		lastTap = double ? undefined : { key: row.key, at: now };
+		if (double) activate(row);
+		else select(row);
+	}
+
+	function select(row: Row) {
+		selectedKey = row.key;
+		if (row.kind !== 'folder' && previewing) openKey = row.key;
+	}
+
+	function rowKey(row: Row, event: KeyboardEvent) {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			activate(row);
+		} else if (event.key === 'F2' && row.folderId) {
+			event.preventDefault();
+			renameFolder(row.folderId);
+		}
+	}
+
+	// ---- Renaming a folder from where it is listed (Trevor, 2026-10-18: "from outside the folder") ----
+
+	let renaming = $state<string>();
+	let renameOpen = $state(false);
+	function renameFolder(id: string) {
+		renaming = id;
+		renameOpen = true;
+	}
+
 	function activate(row: Row) {
+		selectedKey = row.key;
 		if (row.kind === 'folder') {
 			currentFolder = row.folderId;
 			term = '';
@@ -417,13 +463,14 @@
 			else if (saved) onpick({ kind: 'character', saved });
 			else if (collection) onpick({ kind: 'collection', collection });
 		} else {
-			openKey = row.key;
+			openWindow(row.key);
 		}
 	}
 
 	/** An item that changed kind opens as its new self. */
 	function openItem(key: string) {
 		openKey = key;
+		selectedKey = key;
 	}
 
 	/**
@@ -441,6 +488,7 @@
 			libraryLabels.setFolder(newest.key, folder);
 		}
 		openKey = newest.key;
+		selectedKey = newest.key;
 	}
 
 	// ---- New folder, new collection ----
@@ -455,6 +503,7 @@
 		if (!id) return;
 		if (folder) libraryLabels.setFolder(collectionKey(id), folder);
 		openKey = collectionKey(id);
+		selectedKey = collectionKey(id);
 	}
 </script>
 
@@ -476,6 +525,7 @@
 					count={(f) => folderSize(items, labels, f)}
 					onnewfolder={() => (folderNaming = true)}
 					onmove={move}
+					onrename={renameFolder}
 				/>
 			</div>
 		{:else}
@@ -489,6 +539,7 @@
 					count={(f) => folderSize(items, labels, f)}
 					onnewfolder={() => (folderNaming = true)}
 					onmove={move}
+					onrename={renameFolder}
 				/>
 			</PageSection>
 		{/if}
@@ -499,6 +550,7 @@
 				bind:current={currentFolder}
 				bind:term
 				searching={!browsing || place === 'campaigns'}
+				selected={selectedFolder}
 			/>
 		</div>
 
@@ -515,7 +567,7 @@
 						{cell}
 						{sort}
 						{onSort}
-						rowSelected={(row) => row.key === openKey}
+						rowSelected={(row) => row.key === selectedKey}
 						narrow="hide"
 						pageSize={100}
 						hideKey="library"
@@ -577,8 +629,8 @@
 			class="pick"
 			data-drop-folder={row.folderId}
 			data-kind={row.kind}
-			onclick={() => activate(row)}
-			ondblclick={() => !onpick && row.kind !== 'folder' && openWindow(row.key)}
+			onclick={(e) => tapRow(row, e)}
+			onkeydown={(e) => rowKey(row, e)}
 			use:dragToFolder={{
 				source: {
 					id: row.folderId ?? row.key,
@@ -625,6 +677,7 @@
 
 <!-- The new folder isn't opened (Trevor, 2026-10-18); it is listed in the folder made in. -->
 <FolderNameDialog bind:open={folderNaming} parent={folder} />
+<FolderNameDialog bind:open={renameOpen} folder={renaming} />
 
 <NameDialog
 	bind:open={collectionNaming}

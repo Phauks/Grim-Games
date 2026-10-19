@@ -31,9 +31,14 @@
 		searching: boolean;
 		/** The Library's search, behind a button beside the folder controls (Trevor, 2026-10-18). */
 		term?: string;
+		/**
+		 * A folder row selected in the list: the folder controls act on it, so a folder is
+		 * renamed, moved or deleted from outside it (Trevor, 2026-10-18).
+		 */
+		selected?: string;
 	}
 
-	let { current = $bindable(), searching, term = $bindable('') }: Props = $props();
+	let { current = $bindable(), searching, term = $bindable(''), selected }: Props = $props();
 
 	/*
 	 * The search opens over the path, in the same row, so nothing moves (no reflow) and the
@@ -60,7 +65,9 @@
 	const labels = $derived(libraryLabels.state);
 	const path = $derived(folderPath(labels, current));
 	// A folder deleted elsewhere: back to the top level.
-	const here = $derived(path.at(-1));
+	const inside = $derived(path.at(-1));
+	/** What the controls act on: the selected folder row, else the open folder. */
+	const here = $derived(labels.folders.find((f) => f.id === selected) ?? inside);
 	const pathName = (id: string | undefined) =>
 		folderPath(labels, id)
 			.map((f) => f.name)
@@ -109,8 +116,9 @@
 	function remove() {
 		if (!here) return;
 		const up = here.parent;
+		const wasOpen = here.id === inside?.id;
 		libraryLabels.delete('folders', here.id);
-		current = up;
+		if (wasOpen) current = up;
 	}
 </script>
 
@@ -118,7 +126,7 @@
 	<nav aria-label={t('library.folderPath')} class="crumbs" inert={searchOpen}>
 		<ol>
 			<li>
-				{#if here}
+				{#if inside}
 					<button
 						type="button"
 						class="crumb root"
@@ -135,7 +143,7 @@
 			{#each path as folder (folder.id)}
 				<li>
 					<span class="sep" aria-hidden="true">/</span>
-					{#if folder.id === here?.id}
+					{#if folder.id === inside?.id}
 						<span class="crumb" aria-current="location">{folder.name}</span>
 					{:else}
 						<button

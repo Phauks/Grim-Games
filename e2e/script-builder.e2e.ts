@@ -74,6 +74,8 @@ test('opens a saved script to edit it', async ({ page }) => {
 	// The search sits behind its button beside the folder controls (Trevor, 2026-10-18).
 	await library.getByRole('button', { name: 'Search the Library' }).tap();
 	await library.getByRole('searchbox', { name: 'Search the Library' }).fill('reopen');
+	// One tap selects, a double tap takes it (Trevor, 2026-10-18).
+	await library.getByText('Reopen me').tap();
 	await library.getByText('Reopen me').tap();
 	await expect(library).toBeHidden();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
@@ -236,6 +238,7 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	await folder.getByRole('textbox', { name: 'Name' }).fill('Club night');
 	await folder.getByRole('textbox', { name: 'Name' }).press('Enter');
 	await libraryRows().tap();
+	await libraryRows().tap();
 	const details = page.getByRole('dialog', { name: 'Edited here' });
 	await details.getByRole('combobox', { name: 'Folder' }).tap();
 	await page.getByRole('option', { name: 'Club night' }).tap();
@@ -253,6 +256,7 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 	await expect(libraryRows()).toContainText('Club night');
 
 	// Back in the builder, the edit carries on without asking to replace it.
+	await libraryRows().tap();
 	await libraryRows().tap();
 	await page
 		.getByRole('dialog', { name: 'Edited here' })
@@ -286,7 +290,9 @@ test('editing a script made elsewhere saves a variation of it', async ({ page })
 	const variation = page.getByTestId('variation-of');
 	await expect(variation).toContainText('None');
 	await page.getByRole('button', { name: 'Open a saved script' }).tap();
-	await page.getByRole('dialog', { name: 'Open a saved script' }).getByText('Storm Front').tap();
+	const saved = page.getByRole('dialog', { name: 'Open a saved script' }).getByText('Storm Front');
+	await saved.tap();
+	await saved.tap();
 	await expect(variation).toContainText('Storm Front');
 	await character(page, 'Saint').tap();
 	await page.getByRole('textbox', { name: 'Name' }).fill('Storm Front, calmer');

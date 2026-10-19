@@ -32,6 +32,8 @@
 		onnewfolder: () => void;
 		/** A folder dragged onto another, or onto the top level (Trevor, 2026-10-18). */
 		onmove: (source: DragSource, target: string | undefined) => void;
+		/** F2 on a folder renames it where it is (Trevor, 2026-10-18: "from outside the folder"). */
+		onrename: (folder: string) => void;
 		/** False leaves out the Kinds list and Campaigns, for a browser of one kind of item. */
 		kinds?: boolean;
 	}
@@ -44,6 +46,7 @@
 		count,
 		onnewfolder,
 		onmove,
+		onrename,
 		kinds: showKinds = true
 	}: Props = $props();
 
@@ -149,6 +152,11 @@
 						data-drop-folder={folder.id}
 						aria-current={place === 'files' && current === folder.id ? 'location' : undefined}
 						onclick={() => openFolder(folder.id)}
+						onkeydown={(e) => {
+							if (e.key !== 'F2') return;
+							e.preventDefault();
+							onrename(folder.id);
+						}}
 						use:dragToFolder={{
 							source: { id: folder.id, folder: true, label: folder.name },
 							onmove
