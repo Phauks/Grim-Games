@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { pickScript, nameStoryteller } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
@@ -21,6 +21,20 @@ const seatLabelled = (page: Page, start: string) =>
 async function menu(page: Page, action: string) {
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: action }).tap();
+}
+
+/**
+ * Opens Game info: from the corner script name, or from ⋯ while the corner name is hidden
+ * (a phone before setup), the only time ⋯ has it.
+ */
+async function openGameInfo(page: Page) {
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const more = page.getByRole('dialog', { name: 'Grimoire' });
+	const entry = more.getByRole('button', { name: 'Game info' });
+	if (await entry.count()) return entry.tap();
+	await page.keyboard.press('Escape');
+	await expect(more).toBeHidden();
+	await page.getByTestId('mode-menu').tap();
 }
 
 async function closeSheet(page: Page) {
@@ -1945,10 +1959,7 @@ test('History shows stats from ended games', async ({ page }) => {
 		.getByRole('button', { name: 'Scarlet Woman', exact: true })
 		.tap();
 	await closeSheet(page);
-	await menu(page, 'Storyteller');
-	const storyteller = page.getByRole('dialog', { name: 'Storyteller' });
-	await storyteller.getByRole('textbox', { name: 'Name' }).fill('Sam');
-	await storyteller.getByRole('button', { name: 'Confirm' }).tap();
+	await nameStoryteller(page, 'Sam');
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
@@ -3346,7 +3357,7 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes Storyteller Game info \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens .*\| End game$/
+		/^History Demon bluffs Notes( Game info)? \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens .*\| End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu
@@ -4034,51 +4045,59 @@ test('a big name badge beside a dialog title shrinks instead of squeezing the ti
 	expect(badge!.x + badge!.width).toBeLessThanOrEqual(close!.x);
 });
 
-test('the Storyteller’s name is typed on New game, kept for next time, and changed from the menu', async ({
+test('the Storyteller is named on the Characters screen and renamed from the corner', async ({
 	page
 }) => {
-	// Trevor, 2026-10-19: "Add in new game the ability to put in the storyteller name".
+	// Trevor, 2026-10-19: the name goes "on the screen you pick characters, not on the new game
+	// screen", and is edited "in bottom left of screen" (the corner script name's Game info).
 	await page.goto('/new');
+	await expect(page.getByRole('textbox', { name: 'Storyteller' })).toHaveCount(0);
+	await startGame(page);
+	const board = new URL(page.url()).pathname;
+	await page.goto(`${board}/setup`);
 	const field = page.getByRole('textbox', { name: 'Storyteller' });
 	await expect(field).toHaveValue('');
 	await field.fill('Trev');
-	await startGame(page);
-	await menu(page, 'Storyteller');
+	await field.press('Enter');
+	await page.reload();
+	await expect(field).toHaveValue('Trev');
+	// The ⋯ menu has no Storyteller entry; Game info has the name.
+	await page.goto(board);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const more = page.getByRole('dialog', { name: 'Grimoire' });
+	await expect(more.getByRole('button', { name: 'Storyteller', exact: true })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(more).toBeHidden();
+	await openGameInfo(page);
+	const info = page.getByRole('dialog', { name: 'Game info' });
+	await info.getByTestId('storyteller-edit').tap();
 	const dialog = page.getByRole('dialog', { name: 'Storyteller' });
 	const name = dialog.getByRole('textbox', { name: 'Name' });
 	await expect(name).toHaveValue('Trev');
 	await name.fill('Sam');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(dialog).toBeHidden();
-	await page.reload();
-	await menu(page, 'Storyteller');
-	await expect(name).toHaveValue('Sam');
-	// New game offers the name typed there last.
+	await page.goto(`${board}/setup`);
+	await expect(field).toHaveValue('Sam');
+	// A new game offers the name typed last.
 	await page.goto('/new');
+	await startGame(page);
+	await page.goto(`${new URL(page.url()).pathname}/setup`);
 	await expect(field).toHaveValue('Trev');
 });
 
 test('the corner script name opens the game’s info, in a Standard game too', async ({ page }) => {
 	// Trevor, 2026-10-19: "Allow tapping on the script name ... even in normal mode".
-	await page.goto('/new');
-	await page.getByRole('textbox', { name: 'Storyteller' }).fill('Trev');
 	await startGame(page);
+	await nameStoryteller(page, 'Trev');
 	const dialog = page.getByRole('dialog', { name: 'Game info' });
 	const row = (field: string) => dialog.locator(`tr[data-field="${field}"] td`);
-	// From the menu, for when the corner has no room for the name (a phone before setup).
-	await menu(page, 'Game info');
+	await openGameInfo(page);
 	await expect(row('script')).toHaveText('Trouble Brewing');
 	await expect(row('storyteller')).toHaveText('Trev');
 	await expect(row('mode')).toHaveText('Standard');
 	await expect(row('rules')).toHaveText('None');
 	await expect(row('version')).toHaveText('None');
-	await page.keyboard.press('Escape');
-	await expect(dialog).toBeHidden();
-	const corner = page.getByTestId('mode-menu');
-	if (await corner.isVisible()) {
-		await corner.tap();
-		await expect(row('script')).toHaveText('Trouble Brewing');
-	}
 });
 
 test('Next on the last night step lights up End night', async ({ page }) => {
