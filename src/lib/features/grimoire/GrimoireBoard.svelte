@@ -90,9 +90,12 @@
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
+	import { fromScript, scriptLogo, scriptToJson } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
+	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
+	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
+	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import NotesSheet from './NotesSheet.svelte';
@@ -1995,11 +1998,30 @@
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} />
 
+<!-- Exactly what players see on /play (Trevor, 2026-10-19): byline, Print, Share and tabs. -->
 <Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">
+	{#snippet headActions()}
+		<PlayerScriptActions
+			script={loadedScript}
+			version={scriptVersion(undefined, loadedScript?.meta)}
+			share={loadedScript && {
+				edition: loadedScript.edition,
+				json: loadedScript.edition ? [loadedScript.edition] : scriptToJson(loadedScript),
+				source: { kind: 'edition' }
+			}}
+		/>
+	{/snippet}
+	{#snippet subtitle()}
+		<ScriptByline
+			author={loadedScript?.meta.author}
+			version={scriptVersion(undefined, loadedScript?.meta)}
+			storyteller={game.storytellerName}
+			inline
+		/>
+	{/snippet}
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid="script-scroll">
 		{#if loadedScript}
-			<!-- Exactly the players' Script and Night tabs (Trevor, 2026-10-18). -->
 			<PlayerScriptTabs
 				script={loadedScript}
 				players={game.seating.length}
