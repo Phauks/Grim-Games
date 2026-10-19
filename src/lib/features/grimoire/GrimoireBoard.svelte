@@ -1547,13 +1547,11 @@
 		<Button variant="quiet" icon="rename" onclick={() => fromMenu(() => (storytellerOpen = true))}>
 			Storyteller
 		</Button>
-		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
-			too, for when the corner has no room for the name. -->
-		{#if modeName}
-			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
-				Game mode
-			</Button>
-		{/if}
+		<!-- The game's info and a mode's own actions are on the corner name (ModeMenu, Trevor
+			2026-10-18, 2026-10-19); here too, for when the corner has no room for the name. -->
+		<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
+			Game info
+		</Button>
 		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
 		     apart at the bottom (Trevor, 2026-10-18). -->
 		<hr class="menu-rule" />

@@ -27,14 +27,15 @@
 	import { hasSpectatorVote } from './specters.ts';
 	import SpectersSheet from './SpectersSheet.svelte';
 	import { townGroupOf } from './town-groups.ts';
+	import { scriptVersion } from '#lib/features/player/player-script.ts';
 
 	/**
-	 * A game mode's own actions, on the board's corner script name (Trevor, 2026-10-18: one
-	 * "Game modes" place for any special actions, not in the toolbar, since most games have
-	 * no mode). A Standard game shows the name unchanged. A mode's name opens its towns
-	 * (picked as the towns page's Open town does), campaign, Specters vote, hidden
-	 * characters or draft, and Inspect for the mode and each special rule. A Standard game with
-	 * special rules has the menu too.
+	 * The game's info and a game mode's own actions, on the board's corner script name (Trevor,
+	 * 2026-10-18: one "Game modes" place for any special actions, not in the toolbar). Every
+	 * game, Standard too, shows its script, author, version, Storyteller, mode and special
+	 * rules (Trevor, 2026-10-19: "even in normal mode, to get the various info on the game").
+	 * A mode adds its towns (picked as the towns page's Open town does), campaign, Specters
+	 * vote, hidden characters or draft, and Inspect for the mode and each special rule.
 	 */
 	interface Props {
 		game: Game;
@@ -57,6 +58,23 @@
 	/** The mode as it plays, with its rules; undefined for a Standard game with none. */
 	const mode = $derived(base || rules.length ? withRules(base ?? STANDARD, rules) : undefined);
 	let inspected = $state<GameMode | SpecialRule>();
+	const none = $derived(t('common.none'));
+	const info = $derived([
+		{ key: 'script', label: t('modes.info.script'), value: game.script.meta?.name },
+		{ key: 'author', label: t('modes.info.author'), value: game.script.meta?.author },
+		{
+			key: 'version',
+			label: t('modes.info.version'),
+			value: scriptVersion(undefined, game.script.meta)
+		},
+		{ key: 'storyteller', label: t('modes.info.storyteller'), value: game.storytellerName },
+		{ key: 'mode', label: t('modes.label'), value: (base ?? STANDARD).name },
+		{
+			key: 'rules',
+			label: t('modes.info.rules'),
+			value: rules.map((r) => r.name).join(', ')
+		}
+	]);
 	const campaign = $derived(campaignOf(gameId));
 	const specters = $derived(hasSpectatorVote(gameId));
 	const assignment = $derived(mode?.parts.assignment?.kind);
@@ -103,107 +121,112 @@
 	}
 </script>
 
-{#if mode}
-	{#if children}<button
-			type="button"
-			class="name"
-			bind:this={anchor}
-			aria-haspopup="dialog"
-			aria-expanded={open}
-			data-testid="mode-menu"
-			onclick={() => (open = true)}>{@render children()}<Icon name="expand" /></button
-		>{/if}
-	{#snippet actions()}
-		<div class="actions">
-			{#if group}
-				{#each group.gameIds as id, i (id)}
-					{@const town = towns[i]}
-					<Button
-						variant="quiet"
-						icon={id === gameId ? 'check' : undefined}
-						disabled={!town}
-						aria-current={id === gameId ? 'page' : undefined}
-						onclick={() => town && pick(town, i)}
-					>
-						{t('modes.towns.townScript', {
-							number: i + 1,
-							script: town?.game.script.meta?.name ?? t('common.none')
-						})}
-					</Button>
-				{/each}
+{#if children}<button
+		type="button"
+		class="name"
+		bind:this={anchor}
+		aria-haspopup="dialog"
+		aria-expanded={open}
+		data-testid="mode-menu"
+		onclick={() => (open = true)}>{@render children()}<Icon name="expand" /></button
+	>{/if}
+{#snippet actions()}
+	<table class="info" data-testid="game-info">
+		<tbody>
+			{#each info as row (row.key)}
+				<tr data-field={row.key}>
+					<th scope="row">{row.label}</th>
+					<td>{row.value?.trim() || none}</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+	<div class="actions">
+		{#if group}
+			{#each group.gameIds as id, i (id)}
+				{@const town = towns[i]}
 				<Button
 					variant="quiet"
-					icon="grimoire"
-					onclick={() => go(resolve('/towns/[groupId]', { groupId: group.groupId }))}
+					icon={id === gameId ? 'check' : undefined}
+					disabled={!town}
+					aria-current={id === gameId ? 'page' : undefined}
+					onclick={() => town && pick(town, i)}
 				>
-					{t('modes.towns.all')}
-				</Button>
-			{/if}
-			{#if campaign}
-				<Button
-					variant="quiet"
-					icon="history"
-					onclick={() =>
-						go(resolve('/campaigns/[campaignId]', { campaignId: campaign.campaignId }))}
-				>
-					{t('library.campaignOpen')}
-				</Button>
-			{/if}
-			{#if specters}
-				<Button
-					variant="quiet"
-					icon="vote"
-					onclick={() => {
-						open = false;
-						spectating = true;
-					}}
-				>
-					{t('modes.specters.menu')}
-				</Button>
-			{/if}
-			{#if hidden}
-				<Button
-					variant="quiet"
-					icon="random"
-					onclick={() => go(resolve('/grimoire/[gameId]/extras', { gameId }))}
-				>
-					{t('modes.extras.title')}
-				</Button>
-			{/if}
-			{#if assignment === 'draft' || assignment === 'choose-own'}
-				<Button
-					variant="quiet"
-					icon="bag"
-					onclick={() => go(resolve('/grimoire/[gameId]/deal', { gameId }))}
-				>
-					{t('modes.deal.menu')}
-				</Button>
-			{/if}
-			{#each [...(base ? [base] : []), ...rules] as item (item.id)}
-				<Button
-					variant="quiet"
-					icon="info"
-					onclick={() => {
-						open = false;
-						inspected = item;
-						inspecting = true;
-					}}
-				>
-					{t('modes.inspect', { name: item.name })}
+					{t('modes.towns.townScript', {
+						number: i + 1,
+						script: town?.game.script.meta?.name ?? t('common.none')
+					})}
 				</Button>
 			{/each}
-		</div>
-	{/snippet}
-	{#if children}
-		<Popover bind:open title={t('modes.label')} {anchor}>{@render actions()}</Popover>
-	{:else}
-		<Dialog bind:open title={t('modes.label')}>{@render actions()}</Dialog>
-	{/if}
-	{#if inspected}<ModeInspectDialog bind:open={inspecting} mode={inspected} />{/if}
-	{#if specters}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
-{:else if children}
-	{@render children()}
+			<Button
+				variant="quiet"
+				icon="grimoire"
+				onclick={() => go(resolve('/towns/[groupId]', { groupId: group.groupId }))}
+			>
+				{t('modes.towns.all')}
+			</Button>
+		{/if}
+		{#if campaign}
+			<Button
+				variant="quiet"
+				icon="history"
+				onclick={() => go(resolve('/campaigns/[campaignId]', { campaignId: campaign.campaignId }))}
+			>
+				{t('library.campaignOpen')}
+			</Button>
+		{/if}
+		{#if specters}
+			<Button
+				variant="quiet"
+				icon="vote"
+				onclick={() => {
+					open = false;
+					spectating = true;
+				}}
+			>
+				{t('modes.specters.menu')}
+			</Button>
+		{/if}
+		{#if hidden}
+			<Button
+				variant="quiet"
+				icon="random"
+				onclick={() => go(resolve('/grimoire/[gameId]/extras', { gameId }))}
+			>
+				{t('modes.extras.title')}
+			</Button>
+		{/if}
+		{#if assignment === 'draft' || assignment === 'choose-own'}
+			<Button
+				variant="quiet"
+				icon="bag"
+				onclick={() => go(resolve('/grimoire/[gameId]/deal', { gameId }))}
+			>
+				{t('modes.deal.menu')}
+			</Button>
+		{/if}
+		{#each [...(base ? [base] : []), ...rules] as item (item.id)}
+			<Button
+				variant="quiet"
+				icon="info"
+				onclick={() => {
+					open = false;
+					inspected = item;
+					inspecting = true;
+				}}
+			>
+				{t('modes.inspect', { name: item.name })}
+			</Button>
+		{/each}
+	</div>
+{/snippet}
+{#if children}
+	<Popover bind:open title={t('modes.info.title')} {anchor}>{@render actions()}</Popover>
+{:else}
+	<Dialog bind:open title={t('modes.info.title')}>{@render actions()}</Dialog>
 {/if}
+{#if inspected}<ModeInspectDialog bind:open={inspecting} mode={inspected} />{/if}
+{#if specters && mode}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
 
 <style>
 	/* The name keeps its size and place; only the caret is added, inside the same line. */
@@ -243,6 +266,25 @@
 		min-width: max(100%, var(--tap-target));
 		min-height: max(100%, var(--tap-target));
 		transform: translate(-50%, -50%);
+	}
+	.info {
+		border-collapse: collapse;
+		margin-top: var(--space-2);
+	}
+	.info th {
+		padding-right: var(--space-3);
+		color: var(--on-surface-muted);
+		font-weight: normal;
+		text-align: left;
+		white-space: nowrap;
+	}
+	.info th,
+	.info td {
+		padding-block: var(--space-1);
+		vertical-align: top;
+	}
+	.actions:empty {
+		display: none;
 	}
 	.actions {
 		display: grid;

@@ -3096,7 +3096,7 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Storyteller \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens .*\| End game$/
+		/^History Demon bluffs Storyteller Game info \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens .*\| End game$/
 	);
 });
 
@@ -3703,4 +3703,27 @@ test('the Storyteller’s name is typed on New game, kept for next time, and cha
 	// New game offers the name typed there last.
 	await page.goto('/new');
 	await expect(field).toHaveValue('Trev');
+});
+
+test('the corner script name opens the game’s info, in a Standard game too', async ({ page }) => {
+	// Trevor, 2026-10-19: "Allow tapping on the script name ... even in normal mode".
+	await page.goto('/new');
+	await page.getByRole('textbox', { name: 'Storyteller' }).fill('Trev');
+	await startGame(page);
+	const dialog = page.getByRole('dialog', { name: 'Game info' });
+	const row = (field: string) => dialog.locator(`tr[data-field="${field}"] td`);
+	// From the menu, for when the corner has no room for the name (a phone before setup).
+	await menu(page, 'Game info');
+	await expect(row('script')).toHaveText('Trouble Brewing');
+	await expect(row('storyteller')).toHaveText('Trev');
+	await expect(row('mode')).toHaveText('Standard');
+	await expect(row('rules')).toHaveText('None');
+	await expect(row('version')).toHaveText('None');
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	const corner = page.getByTestId('mode-menu');
+	if (await corner.isVisible()) {
+		await corner.tap();
+		await expect(row('script')).toHaveText('Trouble Brewing');
+	}
 });
