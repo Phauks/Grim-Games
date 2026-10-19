@@ -1,6 +1,6 @@
 import { registerSettingsSection } from '#lib/features/settings/registry.ts';
 import PlayerSettingsSection from './PlayerSettingsSection.svelte';
-import { playerSettings } from './player-settings.svelte.ts';
+import { playerSettings, PRINT_DEFAULTS } from './player-settings.svelte.ts';
 
 // The player view's own settings section (settings registry: features add their own).
 registerSettingsSection({
@@ -9,6 +9,6 @@ registerSettingsSection({
 	label: 'Player',
 	icon: 'notes',
 	component: PlayerSettingsSection,
-	reset: () => playerSettings.update({ density: 'normal' }),
+	reset: () => playerSettings.update({ density: 'normal', print: PRINT_DEFAULTS }),
 	order: 37
 });

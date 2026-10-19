@@ -35,6 +35,8 @@
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play: each shows who plays it (Trevor, 2026-10-19). */
 		travellers?: readonly TravellerInPlay[];
+		/** False leaves the Jinxes section out (a printed sheet without them). */
+		showJinxes?: boolean;
 		/** Overrides the reader's density setting (printing picks whatever fits one page). */
 		density?: SheetDensity;
 	}
@@ -46,6 +48,7 @@
 		flat = false,
 		inPlay,
 		travellers,
+		showJinxes = true,
 		density: fixed
 	}: Props = $props();
 	const playing = $derived(
@@ -171,14 +174,14 @@
 			<p class="none" data-testid="no-jinxes">{t('common.none')}</p>
 		{/if}
 	{/snippet}
-	{@render section(
-		t('player.jinxes'),
-		'play:jinxes',
-		jinxList,
-		undefined,
-		noJinxInPlay,
-		jinxes.length
-	)}
+	{#if showJinxes}{@render section(
+			t('player.jinxes'),
+			'play:jinxes',
+			jinxList,
+			undefined,
+			noJinxInPlay,
+			jinxes.length
+		)}{/if}
 
 	{#if !flat}
 		{#snippet breakdown()}<PlayerCounts

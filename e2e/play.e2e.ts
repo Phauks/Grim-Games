@@ -546,6 +546,11 @@ test('Print script prints the sheet, then the night order and player counts', as
 	}, href);
 	expect(json).toContain('washerwoman');
 	await routes.getByRole('button', { name: 'Print our sheet' }).tap();
+	// Our sheet opens its settings beside a preview first (Trevor, 2026-10-19).
+	await page
+		.getByRole('dialog', { name: 'Print our sheet' })
+		.getByRole('button', { name: 'Print', exact: true })
+		.tap();
 	// Printing first waits up to five seconds for the sheet and its icons, so poll longer than that.
 	await expect
 		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed), {
@@ -575,6 +580,58 @@ test('Print script prints the sheet, then the night order and player counts', as
 	]);
 	// The page itself is unchanged.
 	await expect(page.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
+});
+
+// Trevor, 2026-10-19: "our own sheet should open a screen where users can select the various
+// settings for the printable", with ideas from Ravenswood Studio's generator.
+test('Print our sheet opens its settings beside a live preview', async ({ page }) => {
+	await page.evaluate(() => {
+		window.print = () => {
+			(window as unknown as { pages: number }).pages = document.querySelectorAll(
+				'.print-root [data-testid="print-sheet"] .page'
+			).length;
+		};
+	});
+	await page.getByRole('button', { name: 'Print script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Print script' })
+		.getByRole('button', { name: 'Print our sheet' })
+		.tap();
+	const screen = page.getByRole('dialog', { name: 'Print our sheet' });
+	const preview = screen.getByTestId('print-preview');
+	await expect(preview.locator('.front')).toHaveCount(1);
+	await expect(preview.locator('.back')).toHaveCount(1);
+	await expect(preview.locator('[data-night-strip]')).toHaveCount(2);
+	// Each choice shows in the preview straight away.
+	await screen.getByText('Night order on the front', { exact: true }).tap();
+	await expect(preview.locator('[data-night-strip]')).toHaveCount(0);
+	await screen.getByRole('button', { name: 'More character sheets' }).tap();
+	await expect(preview.locator('.front')).toHaveCount(2);
+	await screen.getByTestId('print-settings').getByText('Jinxes', { exact: true }).tap();
+	await expect(preview).not.toContainText('Jinxes');
+	// Two character sheets and the back.
+	await screen.getByRole('button', { name: 'Print', exact: true }).tap();
+	await expect
+		.poll(() => page.evaluate(() => (window as unknown as { pages?: number }).pages), {
+			timeout: 15_000
+		})
+		.toBe(3);
+	// Remembered on the device, and also in Settings → Player.
+	await page.reload();
+	await page.getByRole('button', { name: 'Print script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Print script' })
+		.getByRole('button', { name: 'Print our sheet' })
+		.tap();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Print our sheet' })
+			.getByRole('checkbox', { name: 'Night order on the front' })
+	).not.toBeChecked();
+	// The preview shrinks to fit; nothing scrolls sideways.
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+		true
+	);
 });
 
 test('the Room tab joins a live room in place, and the player moves between it and the script', async ({

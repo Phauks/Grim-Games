@@ -16,6 +16,9 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ScriptPrintSheet from './ScriptPrintSheet.svelte';
+	import PrintSettingsFields from './PrintSettingsFields.svelte';
+	import { playerSettings } from './player-settings.svelte.ts';
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 
 	/**
 	 * Print opens the ways to print a script (Trevor, 2026-10-19: routes 1, 3 and 4 of
@@ -54,9 +57,31 @@
 		toolLink = await scriptToolLink(json).catch(() => undefined);
 	}
 
+	// Our sheet opens its settings beside a live preview first (Trevor, 2026-10-19).
+	let setting = $state(false);
+	const printChoices = $derived(playerSettings.current.print);
+	let preview = $state<ScriptPrintSheet>();
+	let previewWidth = $state(0);
+	let previewPage = $state<HTMLElement>();
+	/** The preview is the printed sheet at its real size, zoomed down to the space it has. */
+	const previewZoom = $derived(
+		previewPage && previewWidth ? previewWidth / previewPage.offsetWidth : 1
+	);
+	$effect(() => {
+		if (!setting || !preview) return;
+		void JSON.stringify(printChoices);
+		const sheet = preview;
+		void tick().then(() => sheet.fit());
+	});
+	function openSettings() {
+		choosing = false;
+		setting = true;
+	}
+
 	async function print() {
 		if (!script || printing) return;
 		choosing = false;
+		setting = false;
 		printing = true;
 		await tick();
 		// Wait for the sheet's data and icons, so the page isn't printed half drawn.
@@ -113,20 +138,65 @@
 		</li>
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		<li>
-			<button type="button" class="route" onclick={print} data-testid="print-here">
+			<button type="button" class="route" onclick={openSettings} data-testid="print-here">
 				<Icon name="print" /><span>{t('player.printHere')}</span>
 			</button>
 		</li>
 	</ul>
 </Dialog>
 
+<Dialog bind:open={setting} title={t('player.printSettings')} size="max">
+	<div class="settings">
+		<PrintSettingsFields />
+		<section class="preview" aria-label={t('player.printPreview')} bind:clientWidth={previewWidth}>
+			{#if setting && script}
+				<div
+					class="paper"
+					bind:this={previewPage}
+					style:zoom={previewZoom}
+					data-testid="print-preview"
+				>
+					<ScriptPrintSheet bind:this={preview} {script} {version} settings={printChoices} />
+				</div>
+			{/if}
+		</section>
+	</div>
+	{#snippet actions()}
+		<ModalActions
+			onCancel={() => (setting = false)}
+			onConfirm={print}
+			confirmLabel={t('player.printConfirm')}
+			confirmIcon="print"
+		/>
+	{/snippet}
+</Dialog>
+
 {#if printing && script}
 	<div class="print-root" bind:this={root} use:toBody>
-		<ScriptPrintSheet bind:this={sheet} {script} {version} />
+		<ScriptPrintSheet bind:this={sheet} {script} {version} settings={printChoices} />
 	</div>
 {/if}
 
 <style>
+	/* Settings beside the preview where there is room; above it on a phone. */
+	.settings {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(28 * var(--u))), 1fr));
+		gap: var(--space-4);
+		align-items: start;
+	}
+	.preview {
+		min-width: 0;
+		overflow: hidden;
+	}
+	/* The sheet at its printed width (A4's, less 12 mm margins), so the fit matches print. */
+	.paper {
+		width: 186mm;
+	}
+	.paper :global(.page) {
+		margin-bottom: var(--space-3);
+		box-shadow: 0 0 0 1px var(--border);
+	}
 	.routes {
 		display: grid;
 		gap: var(--space-1);
