@@ -515,31 +515,24 @@
 			{:else}
 				<ul class="reminders">
 					{#each seat.reminders as reminder (reminder.reminderId)}
+						<!-- Just the token: tapping it opens its actions, delete among them (Trevor,
+						     2026-10-19: no tick box, no owner, no ⋯; the icon says whose it is). -->
 						<li>
-							<!-- Ticking a reminder off takes it off the seat (History can bring it back). -->
 							<button
 								type="button"
-								class="tick"
-								aria-label={`Done: remove ${tokenLabel(reminder)}`}
-								onclick={() => moveConfirm?.requestReturn(reminder.reminderId)}
-							></button>
-							<ReminderToken
-								label={tokenLabel(reminder)}
-								character={characters.get(reminder.characterId)}
-								alignment={placingAlignment(game, reminder.characterId, characters)}
-							/>
-							<!-- Whose it is (Trevor, 2026-10-17). -->
-							<span class="spacer"
-								><ReminderOrigin {game} {characters} characterId={reminder.characterId} /></span
-							>
-							<IconButton
-								icon="more"
-								label={`Actions for ${tokenLabel(reminder)}`}
+								class="reminder-tap"
+								aria-label={`Actions for ${tokenLabel(reminder)}`}
 								onclick={() => {
 									moving = reminder.reminderId;
 									reminderMenuOpen = true;
 								}}
-							/>
+							>
+								<ReminderToken
+									label={tokenLabel(reminder)}
+									character={characters.get(reminder.characterId)}
+									alignment={placingAlignment(game, reminder.characterId, characters)}
+								/>
+							</button>
 						</li>
 					{/each}
 				</ul>
@@ -1284,19 +1277,23 @@
 		color: var(--on-surface-muted);
 	}
 	.reminders {
-		display: grid;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
-	.reminders li {
-		display: flex;
+	.reminder-tap {
+		display: inline-flex;
 		align-items: center;
-		gap: var(--space-1);
-	}
-	.spacer {
-		flex: 1;
-		min-width: 0;
+		min-height: var(--tap-target);
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
 	}
 	.choices {
 		display: flex;
@@ -1328,18 +1325,6 @@
 	}
 	.cause[aria-pressed='true'] {
 		border-color: var(--focus);
-	}
-	.tick {
-		flex: none;
-		width: var(--tap-target);
-		height: var(--tap-target);
-		border: 2px solid var(--border);
-		border-radius: var(--radius-md);
-		background: none;
-		cursor: pointer;
-	}
-	.tick:hover {
-		background: var(--surface-selected);
 	}
 	.cause-row {
 		display: grid;

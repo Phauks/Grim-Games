@@ -1177,10 +1177,12 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
 	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
 	await expect(actions).toContainText(/From\s*Washerwoman\s*· Seat 1\s*on\s*\S+\s*· Seat 2/);
-	// The list in the seat sheet says whose each reminder is too.
-	await expect(sheet.getByTestId('reminder-origin').first()).toContainText(
-		/Washerwoman\s*· Seat 1/
-	);
+	// In the seat sheet a reminder is just its token, tapped for these actions, delete among
+	// them (Trevor, 2026-10-19): no tick box, no owner, no ⋯.
+	await expect(actions.getByRole('button', { name: 'Remove reminder' })).toBeVisible();
+	const row = sheet.locator('ul.reminders > li').first();
+	await expect(row.locator('button')).toHaveCount(1);
+	await expect(row.getByTestId('reminder-origin')).toHaveCount(0);
 	await actions.getByRole('button', { name: 'Return to reminder bank' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Confirm change?' })
