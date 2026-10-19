@@ -887,6 +887,42 @@ test('the night order is walked through from the bank, and End night starts the 
 	await expect(bankNight(page, 'Run Night Order')).toBeEnabled();
 });
 
+test('a night step offers the info tokens its text names', async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Imp : a Minion who becomes the Imp is shown
+	// "You are" and the Imp token (Trevor, 2026-10-19: such tokens are ready in the step).
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Dusk');
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+
+	// Tapped at its count: the middle of the Imp's text is a glossary word with its own popover.
+	await (await walkTo(page, 'Imp')).locator('button.step .count').tap();
+	const step = page.getByRole('dialog', { name: 'Imp' });
+	const tiles = step.getByTestId('step-info-tokens');
+	await expect(tiles.getByRole('button')).toHaveCount(1);
+	// The card asks which character first, as on the info tokens sheet.
+	await tiles.getByRole('button', { name: 'You are', exact: true }).tap();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Imp');
+	await page.getByRole('button', { name: 'Imp, In play', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
+	// The step stays open under the sheet, for the rest of the Imp's turn.
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(step).toBeVisible();
+});
+
 test('Share in the toolbar shows the room code, QR and join link, never the game', async ({
 	page
 }) => {

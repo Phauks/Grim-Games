@@ -13,6 +13,8 @@
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
+	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
+	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -37,8 +39,11 @@
 		grimoire: Grimoire;
 		step: NightStep | undefined;
 		night: Night;
-		/** Info tokens, for the steps that show the player something. */
-		onInfoTokens: () => void;
+		/**
+		 * Info tokens, for the steps that show the player something; with a token, opened
+		 * straight at that card (one the step's text names, Trevor 2026-10-19).
+		 */
+		onInfoTokens: (token?: InfoToken) => void;
 		/** Demon info with no bluffs yet: open the Demon bluffs sheet. */
 		onChooseBluffs?: () => void;
 		/** A Traveller's alignment by draw. */
@@ -273,6 +278,11 @@
 						{step.reminder}
 					{/if}
 				</p>
+			{/if}
+			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). -->
+			{#if step.character}
+				<!-- Over the open step, which stays open under the sheet, as with onShow above. -->
+				<StepInfoTokens text={step.reminder} onchoose={(token) => onInfoTokens(token)} />
 			{/if}
 			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
 			{#if step.character}
