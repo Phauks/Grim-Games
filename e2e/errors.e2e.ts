@@ -98,9 +98,9 @@ test('an unknown address shows the Fool and ways out, without reporting an error
 	await expect(notFound.getByRole('img', { name: 'Fool' })).toBeVisible();
 	await expect(notFound).toContainText("The first time you visit this page, it doesn't exist.");
 	await expect(page.getByTestId('error-notice')).toBeHidden();
-	for (const name of ['Back', 'Library', 'Report an issue', 'Home']) {
+	for (const name of ['Library', 'Report an issue', 'Home']) {
 		const box = await main
-			.getByRole(name === 'Back' || name === 'Report an issue' ? 'button' : 'link', { name })
+			.getByRole(name === 'Report an issue' ? 'button' : 'link', { name })
 			.boundingBox();
 		expect(box!.height).toBeGreaterThanOrEqual(44);
 	}
@@ -118,7 +118,7 @@ test('an unknown address shows the Fool and ways out, without reporting an error
 	await expect(form).toContainText('/no-such-page');
 	await form.getByRole('button', { name: 'Cancel' }).tap();
 
-	await main.getByRole('button', { name: 'Back' }).tap();
+	await main.getByRole('link', { name: 'Library' }).tap();
 	await expect(page).toHaveURL(/\/library$/);
 	await page.goto('/no-such-page');
 	await page.getByRole('link', { name: 'Home' }).tap();

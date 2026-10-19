@@ -14,10 +14,8 @@
 	const notFound = $derived(page.status === 404);
 	// Page not found is a joke about the Fool (Trevor, 2026-10-18): the first time you die, you don't.
 	let fool = $state.raw<Character>();
-	let canGoBack = $state(false);
 
 	onMount(() => {
-		canGoBack = history.length > 1;
 		if (notFound) {
 			loadOfficialData()
 				.then((data) => (fool = data.byId.get('fool')))
@@ -28,7 +26,7 @@
 
 {#if notFound}
 	<!-- Compact (Trevor, 2026-10-19): the Fool and the joke on the left, a thin line, the ways out
-	     stacked on the right. Back is always there (disabled with nowhere to go back to), so nothing moves. -->
+	     stacked on the right. No Back: the sidebar navigates. -->
 	<Page title={t('errors.pageNotFound')} width="text">
 		<div class="not-found" data-testid="not-found">
 			<figure class="fool">
@@ -42,9 +40,6 @@
 			</figure>
 			<div class="divider" aria-hidden="true"></div>
 			<nav class="ways-out" aria-label={t('errors.pageNotFound')}>
-				<Button variant="quiet" icon="back" disabled={!canGoBack} onclick={() => history.back()}
-					>{t('errors.back')}</Button
-				>
 				<Button variant="quiet" icon="library" href={resolve('/library')}
 					>{t('shell.navLibrary')}</Button
 				>
