@@ -20,6 +20,8 @@
 		alignment?: Alignment;
 		/** "+3" style overflow marker instead of a token. */
 		more?: number;
+		/** The generic reminder: ∞ in place of an icon, `label` its optional text. */
+		infinite?: boolean;
 		disabled?: boolean;
 		onTap: () => void;
 		/** Pointer position in client px while dragging; `end` true when released. */
@@ -38,6 +40,7 @@
 		size,
 		alignment,
 		more,
+		infinite = false,
 		disabled = false,
 		onTap,
 		onDrag,
@@ -97,7 +100,11 @@
 	data-testid="board-reminder"
 	data-pan={panX ? 'x' : undefined}
 	style:--d="{size}px"
-	aria-label={more ? `${more} more reminders` : `${label} reminder`}
+	aria-label={more
+		? `${more} more reminders`
+		: infinite
+			? `Generic reminder${label ? `: ${label}` : ''}`
+			: `${label} reminder`}
 	{disabled}
 	onpointerdown={pointerdown}
 	onpointermove={pointermove}
@@ -108,9 +115,13 @@
 	{#if more}
 		<span class="more">+{more}</span>
 	{:else}
-		{#if src}<img {src} alt="" draggable="false" />{/if}
+		{#if infinite}<span class="infinite" aria-hidden="true">∞</span>{:else if src}<img
+				{src}
+				alt=""
+				draggable="false"
+			/>{/if}
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
-		<span class="label">{label}</span>
+		{#if label}<span class="label">{label}</span>{/if}
 	{/if}
 </button>
 
@@ -174,6 +185,12 @@
 	}
 	.reminder[data-type='loric'] {
 		--rim: var(--loric);
+	}
+	.infinite {
+		margin-top: -12%;
+		font-size: calc(var(--d) * 0.55);
+		line-height: 1;
+		color: var(--on-reminder);
 	}
 	img {
 		width: 84%;

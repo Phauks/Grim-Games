@@ -51,9 +51,9 @@ class LiveDayTimer {
 		return !this.running && (this.mode === 'up' || !this.done);
 	}
 
-	/** Matches the length to the living players while the timer is untouched. */
+	/** Matches the length to the living players, and the time each, while untouched. */
 	follow(alive: number): void {
-		const next = dayTimer(alive);
+		const next = dayTimer(alive, preferences.current.timerPerPlayer);
 		if (this.fresh && !this.#adjusted && next.durationMs !== this.#timer.durationMs) {
 			this.#timer = next;
 		}
@@ -73,12 +73,12 @@ class LiveDayTimer {
 		this.#ticker = setInterval(() => this.#tick(), 250);
 	}
 
-	/** Stopped, at 30 seconds per living player again. */
+	/** Stopped, at the time per living player again. */
 	reset(alive: number): void {
 		this.#stop();
 		this.#adjusted = false;
 		this.#signalled = false;
-		this.#timer = dayTimer(alive);
+		this.#timer = dayTimer(alive, preferences.current.timerPerPlayer);
 		this.now = Date.now();
 	}
 

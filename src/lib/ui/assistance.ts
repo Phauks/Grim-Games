@@ -65,7 +65,7 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	},
 	dayAfterNight: {
 		label: 'Open the day after End night',
-		description: 'End night opens the day with its announcements. Off stays on the grimoire.'
+		description: 'Open Day View'
 	},
 	rulesWarnings: {
 		label: 'Setup and jinx warnings',

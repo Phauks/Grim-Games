@@ -3,8 +3,12 @@
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { account } from '#lib/features/account/account.svelte.ts';
+	import { DOC_KINDS, type DocKind } from '#lib/features/account/account-protocol.ts';
+	import { accountSync } from '#lib/features/account/sync/sync.svelte.ts';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
-	import { intl, t } from '#lib/i18n/locale.svelte.ts';
+	import { formatBytes } from '#lib/i18n/bytes.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
@@ -25,6 +29,8 @@
 	const text = (key: string): string => (t as (key: MessageKey) => string)(key as MessageKey);
 	const itemName = (id: StorageItemId) => text(`settings.storage.${id}`);
 	const itemHelp = (id: StorageItemId) => text(`settings.storage.${id}Help`);
+	const syncLabel = (kind: DocKind) => text(`settings.sync.${kind}`);
+	const signedIn = $derived(account.status === 'signed-in');
 
 	// Rows are in place before they are measured, so nothing moves when the sizes arrive.
 	let items = $state<StorageItem[]>(
@@ -109,10 +115,7 @@
 	function size(bytes: number | null | undefined, ready = measured): string {
 		if (!ready || bytes === undefined) return '…';
 		if (bytes === null) return t('settings.storageUnknown');
-		const mb = bytes / 1_000_000;
-		return mb >= 0.1
-			? intl.number(mb, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1 })
-			: intl.number(bytes / 1000, { style: 'unit', unit: 'kilobyte', maximumFractionDigits: 0 });
+		return formatBytes(bytes);
 	}
 
 	async function confirm() {
@@ -150,6 +153,17 @@
 		{/snippet}
 	</SettingRow>
 {/if}
+<!-- What this device keeps in step with the account (account sync, Trevor 2026-10-18). -->
+{#each DOC_KINDS as kind (kind)}
+	<SettingToggle
+		label={syncLabel(kind)}
+		description={signedIn ? undefined : t('settings.syncSignedOut')}
+		checked={signedIn && accountSync.enabled(kind)}
+		disabled={!signedIn}
+		onChange={(on) => void accountSync.setEnabled(kind, on)}
+	/>
+{/each}
+
 <SettingRow
 	layout="stacked"
 	label={t('settings.storageUsed')}

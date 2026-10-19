@@ -97,9 +97,11 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
-	import { extraReminders, onBoard } from './reminders.ts';
+	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import EndGameFields from './EndGameFields.svelte';
+	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
+	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 
 	interface Props {
@@ -820,6 +822,23 @@
 		endedRead += 1;
 		if (roomHost().code) roomHost().close();
 	}
+	// A finished game can be saved as a recap (Trevor, 2026-10-19), as it was when it ended.
+	let exportOpen = $state(false);
+	const exportGame = async () => {
+		const session = grimoire.open.session;
+		const cursor = grimoire.open.savedCursor;
+		return {
+			source: {
+				game: gameAt(session.log.entries, cursor) ?? game,
+				entries: session.log.entries,
+				cursor,
+				characters,
+				winner: ended?.winner,
+				reason: ended?.reason
+			},
+			layout
+		};
+	};
 	// Reopening puts it back in Resume game.
 	let reopenOpen = $state(false);
 	function reopenGame() {
@@ -1039,7 +1058,8 @@
 		<span class="held" role="group" aria-label={label}>
 			<span class:lifted={reminderDrag?.reminderId === last.reminderId}>
 				<BoardReminder
-					label={last.label}
+					label={reminderWords(last)}
+					infinite={isGeneric(last)}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last.characterId, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1078,7 +1098,7 @@
 				onclick={() => heldDialog?.show(reminder.reminderId)}
 			>
 				<ReminderToken
-					label={reminder.label}
+					label={tokenLabel(reminder)}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder.characterId, characters)}
 				/>
@@ -1293,7 +1313,8 @@
 						style:top="{p.y}%"
 					>
 						<BoardReminder
-							label={reminder.label}
+							label={reminderWords(reminder)}
+							infinite={isGeneric(reminder)}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 							size={chip}
@@ -1326,7 +1347,8 @@
 				style:top="{p.y}%"
 			>
 				<BoardReminder
-					label={reminder.label}
+					label={reminderWords(reminder)}
+					infinite={isGeneric(reminder)}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder.characterId, characters)}
 					size={chip}
@@ -1346,7 +1368,8 @@
 				aria-hidden="true"
 			>
 				<BoardReminder
-					label={heldDrag.label}
+					label={reminderWords(heldDrag)}
+					infinite={isGeneric(heldDrag)}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled
@@ -1369,7 +1392,7 @@
 			{@const r = dragOrigin.reminder}
 			<p class="origin" role="status">
 				<ReminderToken
-					label={r.label}
+					label={tokenLabel(r)}
 					character={characters.get(r.characterId)}
 					alignment={placingAlignment(game, r.characterId, characters)}
 				/>, from <ReminderOrigin
@@ -1514,6 +1537,19 @@
 		<Button variant="quiet" icon="history" onclick={() => fromMenu(() => (historyOpen = true))}>
 			History
 		</Button>
+		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
+			Demon bluffs
+		</Button>
+		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
+			too, for when the corner has no room for the name. -->
+		{#if modeName}
+			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
+				Game mode
+			</Button>
+		{/if}
+		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
+		     apart at the bottom (Trevor, 2026-10-18). -->
+		<hr class="menu-rule" />
 		<Button
 			variant="quiet"
 			icon="add"
@@ -1528,21 +1564,9 @@
 		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(() => (ruleOpen = true))}>
 			Add Fabled or Loric
 		</Button>
-		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
-			Demon bluffs
-		</Button>
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
-		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
-			too, for when the corner has no room for the name. -->
-		{#if modeName}
-			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
-				Game mode
-			</Button>
-		{/if}
-		<!-- Lines set the settings apart from what changes the game, and End game apart at the
-		     bottom (Trevor, 2026-10-18). -->
 		<hr class="menu-rule" />
 		<!-- Board and token settings over the board (Trevor, 2026-10-17); two sections since
 		     2026-10-18. -->
@@ -1569,6 +1593,9 @@
 		<hr class="menu-rule" />
 		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
 		{#if ended}
+			<Button variant="quiet" icon="download" onclick={() => fromMenu(() => (exportOpen = true))}>
+				Export game
+			</Button>
 			<Button variant="quiet" icon="undo" onclick={() => fromMenu(() => (reopenOpen = true))}>
 				Reopen game
 			</Button>
@@ -1660,6 +1687,8 @@
 <SeatSheet bind:this={seatSheet} bind:open={sheetOpen} {grimoire} seatId={selected} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
+
+<ExportGameDialog bind:open={exportOpen} load={exportGame} />
 
 <Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
@@ -2233,7 +2262,8 @@
 		width: 100%;
 		margin: 0;
 		border: 0;
-		border-top: 1px solid var(--border);
+		/* Stronger than a plain border, so the sections read at a glance (Trevor, 2026-10-19). */
+		border-top: 0.125rem solid var(--on-surface-muted);
 	}
 	.rule-detail {
 		display: flex;

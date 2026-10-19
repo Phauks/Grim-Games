@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { copyText } from '#lib/ui/clipboard.ts';
 	import {
 		MODE_PARTS,
 		RULE_PARTS,
@@ -11,10 +10,9 @@
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { downloadFile, fileNameFor } from '#lib/ui/download.ts';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { fileNameFor } from '#lib/ui/download.ts';
+	import FileView from '#lib/ui/primitives/FileView.svelte';
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeValue from './ModeValue.svelte';
 	import { modeLabel } from './labels.ts';
@@ -50,11 +48,6 @@
 		unconfirmed: 'modes.status.unconfirmed'
 	} as const;
 	const file = $derived(JSON.stringify(mode, null, '\t'));
-
-	async function copy() {
-		// Clipboard blocked: the file is still shown to select by hand.
-		await copyText(file);
-	}
 </script>
 
 <Dialog bind:open title={mode.name} size="full">
@@ -84,23 +77,17 @@
 			</ul>
 		</section>
 
-		<!-- Starts closed: the file is for writing modes, rarely needed when inspecting (Trevor, 2026-10-18). -->
-		<Collapsible title={t(isRule ? 'modes.ruleFile' : 'modes.file')} level={3} startClosed>
-			{#snippet aside()}
-				<IconButton
-					icon="copy"
-					label={t(isRule ? 'modes.copyRuleFile' : 'modes.copyFile')}
-					onclick={copy}
-				/>
-				<!-- Copy and Download side by side, as the builders' files (Trevor, 2026-10-18). -->
-				<IconButton
-					icon="download"
-					label={t(isRule ? 'modes.downloadRuleFile' : 'modes.downloadFile')}
-					onclick={() => downloadFile(fileNameFor(mode.name, mode.id), file)}
-				/>
-			{/snippet}
-			<pre><code>{file}</code></pre>
-		</Collapsible>
+		<!-- Starts closed: the file is for writing modes, rarely needed when inspecting (Trevor,
+			2026-10-18); shown as a file, with Copy and Download in its header. -->
+		<FileView
+			title={t(isRule ? 'modes.ruleFile' : 'modes.file')}
+			text={file}
+			fileName={fileNameFor(mode.name, mode.id)}
+			copyLabel={t(isRule ? 'modes.copyRuleFile' : 'modes.copyFile')}
+			downloadLabel={t(isRule ? 'modes.downloadRuleFile' : 'modes.downloadFile')}
+			collapsible
+			testid="mode-file-view"
+		/>
 	</div>
 </Dialog>
 
@@ -168,12 +155,5 @@
 	}
 	li[data-status='unconfirmed'] .status {
 		color: var(--evil);
-	}
-	/* The file runs at full length in the dialog's own scroll, never a small box of its own. */
-	pre {
-		margin: 0;
-		font-size: 0.85rem;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
 	}
 </style>

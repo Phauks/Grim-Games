@@ -405,6 +405,26 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 	await expect(page.getByTestId('day-toolbar').getByTestId('timer-mode')).toHaveText('Stopwatch');
 });
 
+test('the time per living player is set on the timer and starts it at that much', async ({
+	page
+}) => {
+	await startGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	await expect(timer.getByRole('timer')).toHaveText('4:00');
+	// Trevor (2026-10-19): a setting, 30 seconds by default, on the timer and in Settings.
+	await timer.getByRole('button', { name: /^Timer sound/ }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Timer sound' });
+	const seconds = sheet.getByTestId('timer-per-player');
+	await expect(seconds).toHaveValue('30');
+	await seconds.fill('45');
+	await seconds.press('Enter');
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	// 8 living players at 45 seconds each.
+	await expect(timer.getByRole('timer')).toHaveText('6:00');
+});
+
 test('End day closes the day and walks through tonight from Dusk', async ({ page }) => {
 	await startGame(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();

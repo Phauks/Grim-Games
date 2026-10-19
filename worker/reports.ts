@@ -15,7 +15,7 @@ import {
 } from '../src/lib/features/reports/reports-protocol.ts';
 import { normaliseEmail } from '../src/lib/features/account/account-protocol.ts';
 import { sameHash, sha256 } from './account/crypto.ts';
-import { userStub, type AccountEnv } from './account/objects.ts';
+import { emailStub, userStub, type AccountEnv } from './account/objects.ts';
 import { getUser } from './account/routes.ts';
 import { adminSignInTrusted, type AdminsEnv } from './admins.ts';
 
@@ -260,7 +260,7 @@ export async function handleReports(
 			// Named by the email they sign in with today, stored by the account's id.
 			const email = normaliseEmail(body?.email);
 			if (!email) return text('Bad email', 400);
-			const userId = await env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(email)).ownerId();
+			const userId = await emailStub(env, email).ownerId();
 			if (!userId) return text('No account', 404);
 			await box.addAdmin(userId, Date.now());
 		} else if (request.method === 'DELETE') {

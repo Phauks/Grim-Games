@@ -92,9 +92,10 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	await expect(devices.getByText('(this device)')).toBeVisible();
 	// A rough place per device; the local server has none from Cloudflare, so None.
 	await expect(devices.getByText('Location').first()).toBeVisible();
-	await expect(
-		devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ })
-	).toBeDisabled();
+	const own = devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ });
+	await expect(own).toBeDisabled();
+	// Signing out is a text button, not the trash can (Trevor, 2026-10-18).
+	await expect(own).toHaveText('Sign out');
 	// Sign out other devices sits in the section's header; Delete account has a section of its own;
 	// signing out of this device is only in the header's account card.
 	await expect(page.getByRole('button', { name: 'Sign out other devices' })).toBeDisabled();
@@ -160,12 +161,91 @@ test('scripts added on the device are saved to the profile', async ({ page }) =>
 		.getByLabel('Script JSON')
 		.fill(JSON.stringify([{ id: '_meta', name: 'Second Wind' }, ...homebrew.slice(1)]));
 	const saving = page.waitForResponse(
-		(r) => r.url().includes('/api/account/docs/script/') && r.request().method() === 'PUT'
+		(r) => r.url().endsWith('/api/account/sync') && r.request().method() === 'POST'
 	);
 	await again.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Second Wind');
 	expect((await saving).status()).toBe(200);
 	await expect.poll(() => profileScriptNames(page)).toContain('Second Wind');
+});
+
+/** Adds a pasted script in the Library. */
+async function addScript(page: Page, name: string) {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste
+		.getByLabel('Script JSON')
+		.fill(JSON.stringify([{ id: '_meta', name }, ...homebrew.slice(1)]));
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText(name);
+}
+
+const libraryRow = (page: Page, name: string) =>
+	page.getByTestId('library-table').getByRole('button', { name: new RegExp(`^${name}`) });
+
+async function scriptsSwitch(page: Page) {
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Data' })
+		.tap();
+	return {
+		dialog,
+		input: dialog.getByRole('checkbox', {
+			name: 'Sync scripts with your account',
+			includeHidden: true
+		}),
+		label: dialog.getByText('Sync scripts with your account', { exact: true })
+	};
+}
+
+// Account sync (Storage thread's plan, Trevor 2026-10-18): one account, two devices, kept in step.
+test('scripts sync between two devices, unless a device turns it off', async ({
+	page,
+	browser
+}, testInfo) => {
+	const email = uniqueEmail('sync');
+	const other = await browser.newContext({ ...testInfo.project.use });
+	const second = await other.newPage();
+	const part = () => Math.floor(Math.random() * 254) + 1;
+	await second.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
+
+	await signInWithCode(page, email);
+	await addScript(page, 'Storm Front');
+	await expect.poll(() => profileScriptNames(page)).toContain('Storm Front');
+
+	// The second device gets it when it signs in, without adding anything itself.
+	await signInWithCode(second, email, false);
+	await second.goto('/library');
+	await expect(libraryRow(second, 'Storm Front')).toBeVisible();
+
+	// And sends its own back.
+	await addScript(second, 'Second Wind');
+	await expect.poll(() => profileScriptNames(second)).toContain('Second Wind');
+	await page.goto('/library');
+	await expect(libraryRow(page, 'Second Wind')).toBeVisible();
+
+	// Switched off on the second device: it no longer takes the first device's changes.
+	await second.goto('/');
+	const off = await scriptsSwitch(second);
+	await expect(off.input).toBeChecked();
+	await off.label.tap();
+	await expect(off.input).not.toBeChecked();
+	await addScript(page, 'Third Rain');
+	await expect.poll(() => profileScriptNames(page)).toContain('Third Rain');
+	await second.goto('/library');
+	await expect(libraryRow(second, 'Second Wind')).toBeVisible();
+	await expect(libraryRow(second, 'Third Rain')).toHaveCount(0);
+
+	// Back on: it catches up on everything it skipped.
+	const on = await scriptsSwitch(second);
+	await on.label.tap();
+	await expect(on.input).toBeChecked();
+	await second.goto('/library');
+	await expect(libraryRow(second, 'Third Rain')).toBeVisible();
+	await other.close();
 });
 
 test('deleting the account signs out and removes it', async ({ page }) => {
@@ -372,4 +452,42 @@ test('the profile icon is picked from the characters and shows in the header', a
 	await page.getByRole('button', { name: 'Change icon' }).tap();
 	await dialog.getByRole('button', { name: 'None' }).tap();
 	await expect(header.getByTestId('profile-icon')).not.toHaveAttribute('data-icon');
+});
+
+// Trevor (2026-10-18): what Download my data saves, Import data reads back in.
+test('a downloaded data file imports into another account, adding only what is missing', async ({
+	page,
+	browser
+}, testInfo) => {
+	await signInWithCode(page, uniqueEmail('export'));
+	await addScript(page, 'Storm Front');
+	await expect.poll(() => profileScriptNames(page)).toContain('Storm Front');
+	await page.goto('/account');
+	const downloading = page.waitForEvent('download');
+	await page.getByRole('button', { name: 'Download my data' }).tap();
+	const file = testInfo.outputPath('my-data.json');
+	await (await downloading).saveAs(file);
+
+	// Another account on another device, which has never seen the script.
+	const other = await browser.newContext({ ...testInfo.project.use });
+	const second = await other.newPage();
+	const part = () => Math.floor(Math.random() * 254) + 1;
+	await second.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
+	await signInWithCode(second, uniqueEmail('import'));
+	const importOnce = async () => {
+		await second.locator('input[type="file"][aria-label="Import data"]').setInputFiles(file);
+		return second.getByRole('alertdialog', { name: 'Import data' });
+	};
+	let dialog = await importOnce();
+	const plan = dialog.getByTestId('import-plan');
+	await expect(plan.getByRole('row', { name: 'Scripts to add' })).toContainText('1');
+	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('0');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect.poll(() => profileScriptNames(second)).toEqual(['Storm Front']);
+
+	// The same file again has nothing to add.
+	dialog = await importOnce();
+	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('1');
+	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await other.close();
 });

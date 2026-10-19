@@ -10,7 +10,6 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { downloadJson } from '#lib/ui/download.ts';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import { accountApi } from './account-api.ts';
@@ -18,6 +17,8 @@
 	import { readSignInHash, type DeviceSession } from './account-protocol.ts';
 	import ChangeEmailDialog from './ChangeEmailDialog.svelte';
 	import { exportFileName } from './export-file.ts';
+	import { planImport, readAccountExport, type ImportPlan } from './import-file.ts';
+	import { accountSync } from './sync/sync.svelte.ts';
 	import PasswordDialog from './PasswordDialog.svelte';
 	import ProfileIcon from './ProfileIcon.svelte';
 	import ProfileIconDialog from './ProfileIconDialog.svelte';
@@ -82,7 +83,8 @@
 			flush: true,
 			fixed: true,
 			alwaysShown: true,
-			width: 'var(--tap-target)',
+			// Room for the words "Sign out" (no longer an icon, Trevor 2026-10-18).
+			width: 'calc(7 * var(--u))',
 			noFilter: "Each row's sign-out button."
 		}
 	]);
@@ -165,6 +167,55 @@
 			const user = account.user;
 			if (!user) return;
 			downloadJson(exportFileName(user, new Date()), await accountApi.exportData());
+		});
+
+	// ---- Import (Trevor, 2026-10-18): a Download my data file read back in ----
+
+	let importInput = $state<HTMLInputElement>();
+	let importing = $state<{ file: string; plan: ImportPlan; skipped: number } | undefined>();
+	let confirmImport = $state(false);
+
+	async function onImportFile(event: Event & { currentTarget: HTMLInputElement }) {
+		const file = event.currentTarget.files?.[0];
+		event.currentTarget.value = '';
+		if (!file) return;
+		await act(async () => {
+			let raw: unknown;
+			try {
+				raw = JSON.parse(await file.text());
+			} catch {
+				throw new Error(t('account.import.notExport'));
+			}
+			const read = readAccountExport(raw);
+			if (!read.ok) {
+				throw new Error(
+					t(read.reason === 'newer' ? 'account.import.newer' : 'account.import.notExport')
+				);
+			}
+			await accountSync.whenReady();
+			// A kind this device doesn't sync can't be saved to the account from here.
+			const syncing = read.docs.filter((doc) => accountSync.enabled(doc.kind));
+			const plan = planImport(
+				syncing,
+				(kind) => accountSync.docs(kind),
+				() => crypto.randomUUID()
+			);
+			importing = {
+				file: file.name,
+				plan,
+				skipped: read.unknown + read.docs.length - syncing.length
+			};
+			confirmImport = true;
+		});
+	}
+
+	const runImport = () =>
+		act(async () => {
+			const plan = importing?.plan;
+			if (!plan) return;
+			for (const doc of plan.add) await accountSync.save(doc.kind, doc.id, doc.body);
+			await accountSync.syncNow();
+			toast(t('account.import.done', { count: plan.add.length }));
 		});
 
 	function askDelete(): void {
@@ -276,11 +327,13 @@
 							{:else if column.id === 'lastUsed'}
 								{date(session.lastSeenAt)}
 							{:else}
-								<DeleteButton
-									label={t('account.devices.signOutDevice', { device: deviceName(session) })}
+								<!-- Signing out is not a delete: a text button (Trevor, 2026-10-18). -->
+								<Button
+									variant="quiet"
+									aria-label={t('account.devices.signOutDevice', { device: deviceName(session) })}
 									onclick={() => endSession(session.id)}
-									disabled={busy || session.current}
-								/>
+									disabled={busy || session.current}>{t('account.devices.signOut')}</Button
+								>
 							{/if}
 						{/snippet}
 					</DataTable>
@@ -291,9 +344,20 @@
 
 			<PageSection title={t('account.data.title')}>
 				<div class="buttons">
+					<Button variant="quiet" onclick={() => importInput?.click()} disabled={busy}
+						>{t('account.data.import')}</Button
+					>
 					<Button variant="quiet" onclick={download} disabled={busy}
 						>{t('account.data.download')}</Button
 					>
+					<input
+						bind:this={importInput}
+						class="file"
+						type="file"
+						accept=".json,application/json"
+						aria-label={t('account.data.import')}
+						onchange={onImportFile}
+					/>
 				</div>
 			</PageSection>
 
@@ -301,7 +365,6 @@
 			<!-- The button sits beneath its heading, not beside it (Trevor, 2026-10-18). -->
 			<PageSection title={t('account.data.delete')}>
 				<div class="buttons">
-					<!-- eslint-disable-next-line grim/delete-button -- Trevor 2026-10-18: account deletion is a labelled button, it is so high-impact -->
 					<Button variant="danger" icon="remove" onclick={askDelete} disabled={busy}
 						>{t('account.data.delete')}</Button
 					>
@@ -325,6 +388,24 @@
 </Page>
 
 <PrivacyConsent />
+
+<ConfirmDialog
+	bind:open={confirmImport}
+	title={t('account.import.title')}
+	description={importing ? t('account.import.text', { file: importing.file }) : undefined}
+	disabled={busy || !importing || importing.plan.add.length === 0}
+	onConfirm={runImport}
+>
+	{#if importing}
+		<table class="import" data-testid="import-plan">
+			<tbody>
+				<tr><th scope="row">{t('account.import.add')}</th><td>{importing.plan.add.length}</td></tr>
+				<tr><th scope="row">{t('account.import.same')}</th><td>{importing.plan.same}</td></tr>
+				<tr><th scope="row">{t('account.import.skipped')}</th><td>{importing.skipped}</td></tr>
+			</tbody>
+		</table>
+	{/if}
+</ConfirmDialog>
 
 <UsernameDialog bind:open={editUsername} />
 <ChangeEmailDialog bind:open={editEmail} />
@@ -359,6 +440,27 @@
 </ConfirmDialog>
 
 <style>
+	/* The file picker opens from the Import data button. */
+	.file {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.import {
+		border-collapse: collapse;
+		margin-top: var(--space-2);
+	}
+	.import th {
+		text-align: start;
+		font-weight: normal;
+		padding: var(--space-1) var(--space-4) var(--space-1) 0;
+	}
+	.import td {
+		text-align: end;
+		font-variant-numeric: tabular-nums;
+	}
 	h2 {
 		margin: 0 0 var(--space-2);
 		font-size: var(--section-title-size);

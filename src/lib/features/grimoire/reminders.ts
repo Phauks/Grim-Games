@@ -3,11 +3,12 @@
  * with recent reminders first. Reminder tokens come from TPI's data: a character's
  * `reminders` and `remindersGlobal` while it is in play (`reminderGroups` has the exceptions).
  */
-import type { Character, CharacterId } from '#lib/core/data/index.ts';
+import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { gainedAbilities, type Night } from '#lib/core/rules/index.ts';
 import { isBagDisabled, isNotDealt } from '#lib/core/rules/bag-characters.ts';
 import { REMINDER_PLACEHOLDERS } from '#lib/core/rules/reminder-placeholders.data.ts';
 import {
+	GENERIC_REMINDER_ID,
 	charactersInPlay,
 	scriptCharacterIds,
 	trueCharacter,
@@ -151,6 +152,8 @@ export function extraReminders(
 	const seen = new Map<string, number>();
 	const out = new Set<ReminderId>();
 	for (const r of onBoard(game)) {
+		// The generic reminder has no limit, so no copy of it is ever unusual.
+		if (isGeneric(r)) continue;
 		if (copies.has(r.reminderId)) {
 			out.add(r.reminderId);
 			continue;
@@ -188,13 +191,27 @@ export function reminderCopiesLeft(
 
 const NO_COPIES: ReadonlySet<ReminderId> = new Set();
 
+/** The generic ∞ reminder (core's GENERIC_REMINDER_ID): any number, belonging to no one. */
+export const isGeneric = (reminder: Pick<Reminder, 'characterId'>): boolean =>
+	reminder.characterId === GENERIC_REMINDER_ID;
+
+/** A reminder token's words in a sentence or heading: a generic one with no text shows ∞. */
+export const tokenLabel = (reminder: ReminderInstance | Reminder): ReminderLabel =>
+	reminderWords(reminder) || ((isGeneric(reminder) ? '∞' : '') as ReminderLabel);
+
+/** The words on a reminder token: its label, or a generic reminder's own text. */
+export const reminderWords = (reminder: ReminderInstance | Reminder): ReminderLabel =>
+	isGeneric(reminder)
+		? ((('note' in reminder && reminder.note) || '') as ReminderLabel)
+		: reminder.label;
+
 /**
  * The reminders on the board that come from the game's tokens: a duplicate made with ⋯ >
  * Duplicate reminder is a new token (Trevor, 2026-10-18), so it never uses up a copy the
  * bank still holds.
  */
 function counted(game: Game, copies: ReadonlySet<ReminderId>): ReminderInstance[] {
-	return copies.size === 0 ? onBoard(game) : onBoard(game).filter((r) => !copies.has(r.reminderId));
+	return onBoard(game).filter((r) => !copies.has(r.reminderId) && !isGeneric(r));
 }
 
 /** Every reminder on the board: on seats, on Fabled and Loric, and loose. */

@@ -4,6 +4,8 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const library = {
 	'library.pageTitle': `Library · ${APP_NAME}`,
 	'library.heading': 'Library',
+	/** The Library's top level, in the sidebar and the folder path (Trevor, 2026-10-19). */
+	'library.home': 'Home',
 	'library.scripts': 'Scripts',
 	'library.characters': 'Characters',
 	'library.campaignStarted': 'Started',
@@ -33,6 +35,7 @@ export const library = {
 	'library.pane': 'Open item',
 	'library.preview': 'Preview',
 	'library.openWindow': 'Open in a window',
+	'library.pick': 'Choose',
 	'library.paneEmpty': 'None',
 	'library.newCollection': 'New collection',
 	'library.chooseCharacters': 'Choose characters',
@@ -79,6 +82,8 @@ export const library = {
 	'library.showFoldersIn': 'Folders in {name}',
 	'library.add': 'Add',
 	'library.nameTaken': 'That name is already used.',
+	'library.moveInside': '{name} can’t go inside itself.',
+	'library.moveNameTaken': 'There is already a folder called {name} there.',
 	'library.renameNamed': 'Rename {name}',
 	'library.deleteNamed': 'Delete {name}',
 	'library.renameTitle': 'Rename',

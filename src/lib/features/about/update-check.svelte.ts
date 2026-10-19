@@ -20,15 +20,21 @@ class UpdateChecker {
 	checkedAt = $state(readCheckedAt());
 	/** While downloading: whole percent of the new build stored, once the worker says. */
 	percent = $state<number | undefined>();
+	/** While downloading: bytes stored and the build's total, when the build published sizes. */
+	bytes = $state<{ done: number; total: number } | undefined>();
 
 	async check(): Promise<UpdateCheck> {
 		this.result = 'checking';
 		this.percent = undefined;
+		this.bytes = undefined;
 		// The new worker reports each file it stores (update-progress.ts).
 		const onMessage = (event: MessageEvent) => {
 			if (!isPrecacheProgress(event.data)) return;
 			this.result = 'downloading';
 			this.percent = percentDone(event.data);
+			const { bytes, totalBytes } = event.data;
+			this.bytes =
+				bytes !== undefined && totalBytes ? { done: bytes, total: totalBytes } : undefined;
 		};
 		const container = 'serviceWorker' in navigator ? navigator.serviceWorker : undefined;
 		container?.addEventListener('message', onMessage);
@@ -40,6 +46,7 @@ class UpdateChecker {
 		} finally {
 			container?.removeEventListener('message', onMessage);
 			this.percent = undefined;
+			this.bytes = undefined;
 		}
 		if (this.result === 'ready') this.found++;
 		if (this.result === 'ready' || this.result === 'current') {

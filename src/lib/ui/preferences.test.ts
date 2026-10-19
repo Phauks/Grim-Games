@@ -70,7 +70,8 @@ describe('parsePreferences', () => {
 			ownWording: true,
 			timerSound: 'buzzer',
 			timerMode: 'up',
-			timerVibrate: false
+			timerVibrate: false,
+			timerPerPlayer: 45
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
 	});

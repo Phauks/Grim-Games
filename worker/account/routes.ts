@@ -11,6 +11,8 @@ import {
 	readPlace,
 	isDocId,
 	isDocKind,
+	parseSyncRequest,
+	MAX_SYNC_BYTES,
 	normaliseCode,
 	checkPassword,
 	cleanEmail,
@@ -27,12 +29,14 @@ import {
 	type PrivacyRequired,
 	type PutDocRequest,
 	type SessionInfo,
+	type SyncResponse,
 	type StartResponse,
 	type UserResponse,
 	usernameKey,
 	USERNAME_MAX,
 	USERNAME_MIN
 } from '../../src/lib/features/account/account-protocol.ts';
+import { EXPORT_FORMAT, EXPORT_VERSION } from '../../src/lib/features/account/import-file.ts';
 import {
 	changeEmailCode,
 	emailChangedNotice,
@@ -45,6 +49,8 @@ import { isAdmin, type AdminsEnv } from '../admins.ts';
 import { passwordHash } from './crypto.ts';
 import {
 	hashPassword,
+	emailStub,
+	nameStub,
 	userStub,
 	type AccountEnv,
 	type AccountUser,
@@ -86,9 +92,6 @@ function signedInCookie(value: string, remember: boolean): string {
 const clearCookie = sessionCookie('', 0);
 
 /** The record for an address. Addresses are looked up lower-cased, so case never splits one. */
-function emailStub(env: AccountEnv, email: string) {
-	return env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(normaliseEmail(email) ?? email));
-}
 
 /** The policy version the request accepted: only the current one counts. */
 function acceptedPrivacy(body: Record<string, unknown> | undefined): string | undefined {
@@ -167,9 +170,12 @@ function sameOriginJson(request: Request, url: URL): boolean {
 	return (request.headers.get('Content-Type') ?? '').startsWith('application/json');
 }
 
-async function readBody(request: Request): Promise<Record<string, unknown> | undefined> {
+async function readBody(
+	request: Request,
+	maxLength = 1_100_000
+): Promise<Record<string, unknown> | undefined> {
 	const text = await request.text();
-	if (text.length > 1_100_000) return undefined;
+	if (text.length > maxLength) return undefined;
 	try {
 		const body: unknown = JSON.parse(text || '{}');
 		return typeof body === 'object' && body !== null && !Array.isArray(body)
@@ -393,15 +399,13 @@ async function setUsername(
 	const key = usernameKey(name);
 	const oldKey = auth.user.username === null ? undefined : usernameKey(auth.user.username);
 	if (key !== oldKey) {
-		const claimed = await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(key)).claim(
-			auth.userId
-		);
+		const claimed = await nameStub(env, key).claim(auth.userId);
 		if (!claimed) return fail(409, 'That username is taken.');
 	}
 	const user = userStub(env, auth.userId);
 	const changed = await user.setUsername(name);
 	if (oldKey !== undefined && oldKey !== key) {
-		await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(oldKey)).release(auth.userId);
+		await nameStub(env, oldKey).release(auth.userId);
 	}
 	return json({ user: changed.user! } satisfies UserResponse);
 }
@@ -477,7 +481,13 @@ export async function handleAccount(
 		return json({ ok: true });
 	}
 	if (path === '/api/account/export' && method === 'GET') {
-		return json(await user.exportAll(), 200, {
+		// Named and versioned, so Import can tell it apart and read older files (import-file.ts).
+		const data = {
+			format: EXPORT_FORMAT,
+			version: EXPORT_VERSION,
+			...((await user.exportAll()) as object)
+		};
+		return json(data, 200, {
 			'Content-Disposition': 'attachment; filename="grim-games-account.json"'
 		});
 	}
@@ -487,11 +497,17 @@ export async function handleAccount(
 			await emailStub(env, email).forget(auth.userId);
 		}
 		if (username) {
-			await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(usernameKey(username))).release(
-				auth.userId
-			);
+			await nameStub(env, usernameKey(username)).release(auth.userId);
 		}
 		return json({ ok: true }, 200, { 'Set-Cookie': clearCookie });
+	}
+
+	if (path === '/api/account/sync' && method === 'POST') {
+		const body = await readBody(request, MAX_SYNC_BYTES);
+		const sync = body && parseSyncRequest(body);
+		if (!sync) return fail(400, 'Bad sync request.');
+		// Workers RPC typing can't express `unknown` bodies, so the result is restated here.
+		return json((await user.sync(sync, Date.now())) as unknown as SyncResponse);
 	}
 
 	const docs = /^\/api\/account\/docs\/([a-z]+)(?:\/([^/]+))?$/.exec(path);

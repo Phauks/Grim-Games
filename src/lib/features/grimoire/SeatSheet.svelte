@@ -41,6 +41,8 @@
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { seatChanges } from './history.ts';
+	import { isGeneric, tokenLabel } from './reminders.ts';
+	import ReminderNoteField from './ReminderNoteField.svelte';
 
 	interface Props {
 		open: boolean;
@@ -549,11 +551,11 @@
 							<button
 								type="button"
 								class="tick"
-								aria-label={`Done: remove ${reminder.label}`}
+								aria-label={`Done: remove ${tokenLabel(reminder)}`}
 								onclick={() => moveConfirm?.requestReturn(reminder.reminderId)}
 							></button>
 							<ReminderToken
-								label={reminder.label}
+								label={tokenLabel(reminder)}
 								character={characters.get(reminder.characterId)}
 								alignment={placingAlignment(game, reminder.characterId, characters)}
 							/>
@@ -563,7 +565,7 @@
 							>
 							<IconButton
 								icon="more"
-								label={`Actions for ${reminder.label}`}
+								label={`Actions for ${tokenLabel(reminder)}`}
 								onclick={() => {
 									moving = reminder.reminderId;
 									reminderMenuOpen = true;
@@ -654,7 +656,7 @@
 				{#each dropped as { seatId: on, reminder } (reminder.reminderId)}
 					<li>
 						<ReminderToken
-							label={reminder.label}
+							label={tokenLabel(reminder)}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 						/>
@@ -951,7 +953,7 @@
 <Dialog bind:open={reminderMenuOpen} title="Reminder">
 	{#snippet heading()}
 		{#if movingReminder}<ReminderToken
-				label={movingReminder.label}
+				label={tokenLabel(movingReminder)}
 				character={characters.get(movingReminder.characterId)}
 				alignment={placingAlignment(game, movingReminder.characterId, characters)}
 			/>{:else}Reminder{/if}
@@ -966,6 +968,9 @@
 	{/snippet}
 	<!-- Whose ability it comes from, first, so an unfamiliar reminder makes sense (Trevor,
 	     2026-10-17); "From" above already names it (Trevor, 2026-10-18). -->
+	{#if movingReminder && isGeneric(movingReminder)}
+		<ReminderNoteField {grimoire} reminder={movingReminder} />
+	{/if}
 	{#if movingReminder}
 		{@const source = characters.get(movingReminder.characterId)}
 		{#if source}<CharacterSummary character={source} reminders={false} />{/if}

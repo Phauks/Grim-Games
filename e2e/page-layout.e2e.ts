@@ -93,3 +93,39 @@ test('on a computer window the side column sits beside the content', async ({ pa
 	const first = await page.getByRole('heading', { name: 'First section' }).boundingBox();
 	expect(side!.x + side!.width).toBeLessThanOrEqual(first!.x);
 });
+
+// Trevor (2026-10-18): Account looked one way on first load and another after the sidebar was
+// opened and closed. Sections keep their arrangement whether the sidebar is open or closed,
+// and come back exactly as they first loaded.
+for (const width of [undefined, 1280, 1600]) {
+	test(`opening and closing the menu keeps the page's arrangement${width ? ` (${width} wide)` : ''}`, async ({
+		page
+	}) => {
+		if (width) await page.setViewportSize({ width, height: 900 });
+		await page.goto('/spikes/page?columns');
+		await expect(page.getByRole('heading', { name: 'Third section' })).toBeVisible();
+		const names = ['First section', 'Second section', 'Third section'];
+		const boxes = async () =>
+			Promise.all(
+				names.map(async (name) => (await page.getByRole('heading', { name }).boundingBox())!)
+			);
+		/** Which sections sit in a column to the right of the first: the arrangement. */
+		const columnsOf = (all: { x: number }[]) => all.map((box) => box.x > all[0].x + 1);
+		const first = await boxes();
+		const menu = page.getByRole('button', { name: 'Menu', exact: true }).first();
+		const drawer = page.getByRole('dialog');
+		await menu.click();
+		if (!width) {
+			// Phones and tablets: the menu is a drawer over the page.
+			await expect(drawer).toBeVisible();
+			await page.keyboard.press('Escape');
+			await expect(drawer).toBeHidden();
+		} else {
+			await expect(menu).toHaveAttribute('aria-expanded', 'false');
+			expect(columnsOf(await boxes())).toEqual(columnsOf(first));
+			await menu.click();
+		}
+		await expect(menu).toHaveAttribute('aria-expanded', width ? 'true' : 'false');
+		expect(await boxes()).toEqual(first);
+	});
+}

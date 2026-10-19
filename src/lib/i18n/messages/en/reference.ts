@@ -5,6 +5,7 @@ export const reference = {
 	'reference.pageTitle': `Character reference · ${APP_NAME}`,
 	'reference.title': 'Character reference',
 	'reference.showAsTable': 'Show as table',
+	'reference.aboutCharacter': 'About the {name}',
 	'reference.loadError': 'Could not load the character data: {error}',
 	'reference.loading': 'Loading characters…',
 	'reference.searchLabel': 'Search characters',

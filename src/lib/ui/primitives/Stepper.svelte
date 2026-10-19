@@ -53,8 +53,11 @@
 
 	/** What is typed; digits only. Empty (after the X) keeps the number until typing. */
 	let text = $derived(String(value));
-	function typed(next: string) {
-		const digits = next.replace(/\D/g, '');
+	function typed(input: HTMLInputElement) {
+		const digits = input.value.replace(/\D/g, '');
+		// Written back at once: when only a letter was typed the state doesn't change, so
+		// Svelte would leave the letter showing (Trevor, 2026-10-18).
+		input.value = digits;
 		text = digits;
 		if (digits !== '') set(Number(digits));
 	}
@@ -86,7 +89,7 @@
 				data-testid={testid}
 				{disabled}
 				value={text}
-				oninput={(event) => typed(event.currentTarget.value)}
+				oninput={(event) => typed(event.currentTarget)}
 				onblur={() => (text = String(value))}
 				onkeydown={(event) => {
 					if (event.key !== 'Enter') return;

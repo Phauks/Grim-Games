@@ -16,7 +16,11 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import type { SavedGameSummary, UnreadableGame } from '#lib/core/engine/index.ts';
-	import type { GameId } from '#lib/core/model/index.ts';
+	import { characterLookup, type GameId } from '#lib/core/model/index.ts';
+	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
+	import { gameAt } from '#lib/features/history/recap.ts';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -85,6 +89,30 @@
 			reportError(e, { area: 'grimoire' });
 		}
 		await refresh();
+	}
+
+	// ── Export a finished game (Trevor, 2026-10-19) ──
+	let exporting = $state<GameId | undefined>();
+	let exportOpen = $state(false);
+	async function loadExport() {
+		const gameId = exporting;
+		const [saved, data] = await Promise.all([
+			gameId ? gameStore().load(gameId) : undefined,
+			loadOfficialData()
+		]);
+		const game = saved && gameAt(saved.log.entries, saved.log.cursor);
+		if (!saved || !game) throw new Error('the game could not be opened');
+		return {
+			source: {
+				game,
+				entries: saved.log.entries,
+				cursor: saved.log.cursor,
+				characters: characterLookup(data, game.script),
+				winner: ended[game.gameId]?.winner,
+				reason: ended[game.gameId]?.reason
+			},
+			layout: seatLayouts.read(game.gameId)
+		};
 	}
 
 	const winnerText = (id: GameId) =>
@@ -177,6 +205,14 @@
 							)}</span
 						>
 					</a>
+					<IconButton
+						icon="download"
+						label={`Export ${game.scriptName ?? 'game'} ended ${when.format(ended[game.gameId].endedAt)}`}
+						onclick={() => {
+							exporting = game.gameId;
+							exportOpen = true;
+						}}
+					/>
 					<DeleteButton
 						label={`Delete ${game.scriptName ?? 'game'} ended ${when.format(ended[game.gameId].endedAt)}`}
 						onclick={() => {
@@ -188,6 +224,8 @@
 			{/each}
 		</ul>
 	</section>{/if}
+
+<ExportGameDialog bind:open={exportOpen} load={loadExport} />
 
 <ConfirmDialog bind:open={deleteOpen} title="Delete this game?" danger onConfirm={confirmDelete}>
 	<p>It is removed from this device and cannot be brought back.</p>

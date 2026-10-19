@@ -10,6 +10,7 @@ import {
 	labelsFor,
 	labelUses,
 	libraryKey,
+	folderMoveProblem,
 	moveFolder,
 	parseLabels,
 	renameLabel,
@@ -216,6 +217,17 @@ describe('nested folders', () => {
 		expect(moveFolder(s, 'club', 'club')).toBe(s);
 		s = moveFolder(s, 'done', undefined);
 		expect(folderPath(s, 'done').map((f) => f.name)).toEqual(['Done']);
+	});
+
+	it('says why a folder cannot move: inside itself, or a name already used there', () => {
+		let s = tree();
+		expect(folderMoveProblem(s, 'club', 'done')).toBe('inside');
+		expect(folderMoveProblem(s, 'club', 'club')).toBe('inside');
+		expect(folderMoveProblem(s, 'done', undefined)).toBeUndefined();
+		s = addLabel(s, 'folders', 'Done', 'other');
+		expect(folderMoveProblem(s, 'done', undefined)).toBe('nameTaken');
+		// Already there: nothing to warn about.
+		expect(folderMoveProblem(s, 'club', undefined)).toBeUndefined();
 	});
 
 	it('deleting a folder moves its scripts and folders up one level', () => {

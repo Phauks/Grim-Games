@@ -26,6 +26,11 @@ export interface InfoTokenAsks {
 	/** Always exactly `characters`, never fewer: the Demon's three bluffs. */
 	exactly?: true;
 	/**
+	 * A range's lowest, when above 1: from this many up to `characters` (Trevor, 2026-10-18:
+	 * a count is exact or a range). Never set with `exactly`.
+	 */
+	fewest?: number;
+	/**
 	 * The characters are ones not in play: the picker offers the Good / All filter and
 	 * Random, and never picks one in play (the Demon's bluffs).
 	 */
@@ -99,6 +104,9 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	},
 	{ id: 'what-are-you-bluffing', text: 'What are you bluffing?', source: 'standard', extra: true },
 	{ id: 'use-your-ability', text: 'Use your ability?', source: 'standard', extra: true },
+	// Asks the player to choose; nothing is filled in (Trevor, 2026-10-18).
+	{ id: 'select-a-player', text: 'Select a player', source: 'standard', extra: true },
+	{ id: 'select-a-character', text: 'Select a character', source: 'standard', extra: true },
 	{ id: 'choose-again', text: 'Please choose again', source: 'standard', extra: true }
 ];
 

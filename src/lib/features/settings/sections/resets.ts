@@ -50,7 +50,15 @@ export const resets = {
 		}),
 	assistance: () =>
 		preferences.update({
-			...pick('tileFace', 'requireName', 'ownWording', 'timerSound', 'timerMode', 'timerVibrate'),
+			...pick(
+				'tileFace',
+				'requireName',
+				'ownWording',
+				'timerSound',
+				'timerMode',
+				'timerVibrate',
+				'timerPerPlayer'
+			),
 			assistance: assistanceWith([
 				...STORYTELLER_GROUPS.night,
 				...STORYTELLER_GROUPS.setup,

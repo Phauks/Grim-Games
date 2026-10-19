@@ -52,6 +52,10 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 	await expect(page.getByRole('tab')).toHaveCount(0);
 	// Standard has its About too, crediting The Pandemonium Institute (Trevor, 2026-10-18).
 	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
+	// Trevor's own wording (2026-10-19), so it shows without our own wording on.
+	await expect(page.getByTestId('inspect-about')).toHaveText(
+		'Normal rules for Blood on the Clocktower'
+	);
 	await expect(page.getByTestId('player-count')).toHaveCount(1);
 	await chooseMode(page, 'Whale Buffet');
 	await expect(page.getByTestId('mode-about')).toBeVisible();
@@ -81,6 +85,9 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	await expect(dialog.locator('pre')).toBeHidden();
 	await dialog.getByRole('button', { name: 'Mode file', exact: true }).tap();
 	await expect(dialog.locator('pre')).toContainText('"id": "whale-buffet"');
+	// JSON is coloured by kind of piece (Trevor, 2026-10-19).
+	await expect(dialog.locator('pre .key', { hasText: '"id"' })).toBeVisible();
+	await expect(dialog.locator('pre .string', { hasText: '"whale-buffet"' })).toBeVisible();
 	// Download sits beside Copy and saves the file under the mode's name.
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),
@@ -459,11 +466,22 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await dialog.getByRole('button', { name: 'How to write a mode file' }).tap();
 	const guide = page.getByRole('dialog', { name: 'Writing a mode file' });
 	await expect(guide.getByTestId('mode-guide-version')).toContainText(/Format 1, revision \d+/);
-	await expect(guide.locator('section[data-part]')).toHaveCount(15);
-	const scroll = guide.getByTestId('mode-guide');
-	await scroll.evaluate((el) => el.scrollTo(0, el.scrollHeight));
-	expect(await scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+	// Two panes: the sections listed, the chosen one beside them (Trevor, 2026-10-18); a phone
+	// lists them behind Back.
+	const sections = guide.getByRole('navigation', { name: 'Sections' });
+	if (!(await sections.isVisible()))
+		await guide.getByRole('button', { name: 'Sections', exact: true }).tap();
+	await expect(sections.getByRole('button')).toHaveCount(18);
+	await sections.getByRole('button', { name: 'Character pool', exact: true }).tap();
+	await expect(guide.locator('section[data-part="pool"]')).toBeVisible();
 	await noSidewaysScroll(page);
+	// The whole guide downloads as Markdown or plain text.
+	await guide.getByRole('button', { name: 'Download the guide' }).tap();
+	const [download] = await Promise.all([
+		page.waitForEvent('download'),
+		page.getByRole('button', { name: 'Markdown (.md)' }).tap()
+	]);
+	expect(download.suggestedFilename()).toBe('writing-a-mode-file.md');
 	await guide.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(guide).toBeHidden();
 	await dialog.getByTestId('mode-file').fill('{"format": 1, "id": "Bad Id"}');
@@ -783,7 +801,7 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 	await dialog.getByRole('button', { name: 'Inspect A Script of Infinite Possibilities' }).tap();
 	const inspect = page.getByRole('dialog', { name: 'A Script of Infinite Possibilities' });
 	await expect(inspect.locator('li[data-part="pool"]')).toHaveAttribute('data-status', 'runs');
-	await expect(inspect.getByRole('heading', { name: 'Rule file' })).toBeVisible();
+	await expect(inspect.getByRole('button', { name: 'Rule file' })).toBeVisible();
 	await inspect.getByRole('button', { name: 'Close' }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await noSidewaysScroll(page);

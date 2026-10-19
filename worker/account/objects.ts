@@ -21,14 +21,19 @@ import {
 	MAX_DOC_BYTES,
 	MAX_DOCS_PER_KIND,
 	MAX_PASSWORD_FAILURES,
+	normaliseEmail,
 	PRIVACY_VERSION,
 	SESSION_IDLE_MS,
 	SHORT_SESSION_IDLE_MS,
 	type AccountUser as User,
+	MAX_SYNC_BYTES,
 	type DevicePlace,
 	type DeviceSession,
 	type DocKind,
-	type ProfileDoc
+	type ProfileDoc,
+	type SyncRequest,
+	type SyncResponse,
+	type SyncResult
 } from '../../src/lib/features/account/account-protocol.ts';
 import { isLegacyAccountId, randomAccountId } from '../../src/lib/features/account/account-id.ts';
 import {
@@ -40,21 +45,95 @@ import {
 	sha256
 } from './crypto.ts';
 
+/**
+ * Where accounts live. With `ACCOUNTS` bound, they are the shared accounts Worker's
+ * (`worker/accounts-service.ts`, Trevor 2026-10-18: "i want to share one set of accounts"),
+ * reached the same way from production and from every preview. Without it, this Worker's own
+ * objects hold them, as before; they stay bound either way, so their data is never deleted.
+ */
 export interface AccountEnv {
 	ACCOUNT_USERS: DurableObjectNamespace<AccountUser>;
 	ACCOUNT_EMAILS: DurableObjectNamespace<AccountEmail>;
 	ACCOUNT_NAMES: DurableObjectNamespace<AccountName>;
+	ACCOUNTS?: AccountsBinding;
 }
 
+/** One method call on one account object, forwarded to the shared accounts Worker. */
+export interface AccountCall {
+	kind: 'user' | 'address' | 'username';
+	key: string;
+	method: string;
+	args: unknown[];
+}
+
+/** What the shared accounts Worker offers over its service binding. */
+export interface AccountsBinding {
+	call(request: AccountCall): Promise<unknown>;
+}
+
+/** The three kinds of account object, by the key each is found by. */
+interface AccountObjects {
+	user(userId: string): DurableObjectStub<AccountUser>;
+	/** Not `email`: that name is a Worker's handler for incoming mail. */
+	address(key: string): DurableObjectStub<AccountEmail>;
+	username(key: string): DurableObjectStub<AccountName>;
+}
+
+/** This Worker's own account objects, which the shared accounts Worker also uses. */
+export const localAccounts = (env: AccountEnv): AccountObjects => ({
+	/**
+	 * New accounts are named by their word-chain id; accounts made before those keep the hex
+	 * id of a `newUniqueId()` object, which stays valid.
+	 */
+	user(userId) {
+		const users = env.ACCOUNT_USERS;
+		return users.get(
+			isLegacyAccountId(userId) ? users.idFromString(userId) : users.idFromName(userId)
+		);
+	},
+	address: (key) => env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(key)),
+	username: (key) => env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(key))
+});
+
 /**
- * The Durable Object of an account. New accounts are named by their word-chain id; accounts
- * made before those keep the hex id of a `newUniqueId()` object, which stays valid.
+ * Stands in for a stub of the shared accounts Worker's object: each method call goes over
+ * the binding by name, with plain data in and out, as calls to a stub do.
  */
+function remote<T>(binding: AccountsBinding, kind: AccountCall['kind'], key: string): T {
+	return new Proxy(
+		{},
+		{
+			get: (_target, method) =>
+				typeof method === 'string' && method !== 'then'
+					? (...args: unknown[]) => binding.call({ kind, key, method, args })
+					: undefined
+		}
+	) as T;
+}
+
+function accounts(env: AccountEnv): AccountObjects {
+	const binding = env.ACCOUNTS;
+	if (!binding) return localAccounts(env);
+	return {
+		user: (userId) => remote(binding, 'user', userId),
+		address: (key) => remote(binding, 'address', key),
+		username: (key) => remote(binding, 'username', key)
+	};
+}
+
+/** The Durable Object of an account. */
 export function userStub(env: AccountEnv, userId: string): DurableObjectStub<AccountUser> {
-	const users = env.ACCOUNT_USERS;
-	return users.get(
-		isLegacyAccountId(userId) ? users.idFromString(userId) : users.idFromName(userId)
-	);
+	return accounts(env).user(userId);
+}
+
+/** The record of one email address: its sign-in codes and which account it belongs to. */
+export function emailStub(env: AccountEnv, email: string): DurableObjectStub<AccountEmail> {
+	return accounts(env).address(normaliseEmail(email) ?? email);
+}
+
+/** Who holds a username (`usernameKey`). */
+export function nameStub(env: AccountEnv, key: string): DurableObjectStub<AccountName> {
+	return accounts(env).username(key);
 }
 
 /** A new salt and the password's hash with it. */
@@ -464,6 +543,22 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				body TEXT,
 				PRIMARY KEY (kind, id)
 			);
+			-- The account's change counter: a device asks for documents changed after a value.
+			CREATE TABLE IF NOT EXISTS sync_counter (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				value INTEGER NOT NULL
+			);
+			INSERT OR IGNORE INTO sync_counter (id, value) VALUES (1, 1);
+			-- The counter's value when each document last changed.
+			CREATE TABLE IF NOT EXISTS doc_seq (
+				kind TEXT NOT NULL,
+				id TEXT NOT NULL,
+				seq INTEGER NOT NULL,
+				PRIMARY KEY (kind, id)
+			);
+			CREATE INDEX IF NOT EXISTS doc_seq_by_seq ON doc_seq (seq);
+			-- Documents saved before the counter existed count as changed at 1.
+			INSERT OR IGNORE INTO doc_seq (kind, id, seq) SELECT kind, id, 1 FROM doc;
 		`);
 	}
 
@@ -751,6 +846,12 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			deleted ? 1 : 0,
 			text
 		);
+		const seq = this.sql
+			.exec<{ value: number }>(
+				'UPDATE sync_counter SET value = value + 1 WHERE id = 1 RETURNING value'
+			)
+			.one().value;
+		this.sql.exec('INSERT OR REPLACE INTO doc_seq (kind, id, seq) VALUES (?, ?, ?)', kind, id, seq);
 		return {
 			ok: true,
 			doc: {
@@ -762,6 +863,64 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				...(text === null ? {} : { body: JSON.parse(text) as unknown })
 			}
 		};
+	}
+
+	/**
+	 * Applies a device's queued changes in order (each as `putDoc`), then returns the
+	 * documents of `kinds` changed after `since`, oldest first, up to about MAX_SYNC_BYTES.
+	 */
+	async sync(request: SyncRequest, now: number): Promise<SyncResponse> {
+		const results: SyncResult[] = [];
+		for (const change of request.changes) {
+			const { kind, id } = change;
+			const result = await this.putDoc(
+				kind,
+				id,
+				change.baseRev,
+				change.body,
+				change.deleted === true,
+				now
+			);
+			results.push(
+				result.ok
+					? { kind, id, status: 'saved', doc: result.doc }
+					: result.reason === 'conflict'
+						? { kind, id, status: 'conflict', doc: result.doc }
+						: { kind, id, status: result.reason }
+			);
+		}
+		const changes: ProfileDoc[] = [];
+		let cursor = request.since;
+		let more = false;
+		if (request.kinds.length > 0) {
+			const rows = this.sql.exec<DocRow & { seq: number }>(
+				`SELECT d.kind, d.id, d.rev, d.updated_at, d.deleted, d.body, s.seq
+				FROM doc_seq s JOIN doc d ON d.kind = s.kind AND d.id = s.id
+				WHERE s.seq > ? AND s.kind IN (${request.kinds.map(() => '?').join(', ')})
+				ORDER BY s.seq`,
+				request.since,
+				...request.kinds
+			);
+			let bytes = 0;
+			for (const row of rows) {
+				bytes += (row.body?.length ?? 0) + 200;
+				// Always at least one, so a single large document still gets through.
+				if (changes.length > 0 && bytes > MAX_SYNC_BYTES) {
+					more = true;
+					break;
+				}
+				changes.push(toDoc(row));
+				cursor = row.seq;
+			}
+		}
+		if (!more) {
+			// Nothing further of these kinds: the device can start from the newest value.
+			cursor = Math.max(
+				cursor,
+				this.sql.exec<{ value: number }>('SELECT value FROM sync_counter WHERE id = 1').one().value
+			);
+		}
+		return { results, changes, cursor, more };
 	}
 
 	/** Everything stored for this user, for "Download my data". */

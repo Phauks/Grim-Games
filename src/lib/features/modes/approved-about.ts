@@ -5,6 +5,8 @@
  * our own wording setting again until he approves the new text.
  */
 export const APPROVED_ABOUT: Readonly<Record<string, string>> = {
+	// Trevor's own wording, 2026-10-19.
+	standard: 'Normal rules for Blood on the Clocktower',
 	// Trevor's own wording, 2026-10-18.
 	'sushi-buffet':
 		'Each Player can select from three drafted characters, players can select their character, or mulligan into a new set of two drafted characters, where they once again can select their character, or mulligan into the final character. The demon gets no bluffs.',
