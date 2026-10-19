@@ -155,6 +155,7 @@ export const modes = {
 	'modes.description': 'Description',
 	'modes.aliases': 'Also called',
 	'modes.parts': 'Parts',
+	'modes.changedOnly': 'Changed only',
 	'modes.file': 'Mode file',
 	'modes.downloadFile': 'Download mode file',
 	'modes.copyFile': 'Copy mode file',
