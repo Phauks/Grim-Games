@@ -117,9 +117,14 @@
 
 	interface Props {
 		grimoire: Grimoire;
+		/**
+		 * Someone else's grimoire through the view-only link (Specters, Trevor 2026-10-18):
+		 * nothing to share or change, and leaving needs no asking.
+		 */
+		watching?: boolean;
 	}
 
-	let { grimoire }: Props = $props();
+	let { grimoire, watching = false }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
@@ -1062,6 +1067,7 @@
 	let pendingLeave: (() => void) | undefined;
 	let releaseGuard: (() => void) | undefined;
 	$effect(() => {
+		if (watching) return;
 		const gameId = game.gameId;
 		const release = setLeaveGuard(
 			(leave) => {
@@ -1082,6 +1088,7 @@
 	let trapped = false;
 	// After the setup and day hash handling below, which replaces the entry's state.
 	onMount(() => {
+		if (watching) return;
 		setTimeout(() => {
 			if (!page.state.inGame) pushState('', { inGame: true });
 			trapped = true;
@@ -1396,7 +1403,7 @@
 			<Button variant="quiet" icon="close" onclick={() => (placing = undefined)}>Cancel</Button>
 		{:else}
 			<!-- The app's navigation; on the narrowest phones it is in More instead. -->
-			<span class="nav-menu"><NavMenuButton /></span>
+			<span class="nav-menu" class:watching><NavMenuButton /></span>
 			<!-- Icons on phones; with their words on wider screens, where there is room. -->
 			<span class="spacer"></span>
 			<Button variant="quiet" icon="day" aria-label="Day" onclick={() => (dayOpen = true)}
@@ -1407,22 +1414,26 @@
 			>
 			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). Pointing at, focusing or
 			     pressing it starts opening the room, so the code and QR are ready. -->
-			<Button
-				variant="quiet"
-				icon="share"
-				aria-label="Share"
-				onpointerenter={prepareRoom}
-				onfocus={prepareRoom}
-				onpointerdown={prepareRoom}
-				onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
-			>
+			{#if !watching}
+				<Button
+					variant="quiet"
+					icon="share"
+					aria-label="Share"
+					onpointerenter={prepareRoom}
+					onfocus={prepareRoom}
+					onpointerdown={prepareRoom}
+					onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
+				>
+			{/if}
 			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16). -->
 			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
 				><span class="tool-label">Script</span></Button
 			>
-			<Button variant="quiet" icon="more" aria-label="More" onclick={() => (menuOpen = true)}
-				><span class="tool-label">More</span></Button
-			>
+			{#if !watching}
+				<Button variant="quiet" icon="more" aria-label="More" onclick={() => (menuOpen = true)}
+					><span class="tool-label">More</span></Button
+				>
+			{/if}
 		{/if}
 	</div>
 
@@ -1684,7 +1695,7 @@
 				bind:clientHeight={titleH}
 			>
 				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
-				<ModeMenu {game} onEdit={editGameInfo}
+				<ModeMenu {game} onEdit={watching ? undefined : editGameInfo}
 					><span
 						class="script-name"
 						class:mode={modeInName}
@@ -1813,7 +1824,7 @@
 	</div>
 </Dialog>
 
-<ModeMenu {game} bind:open={modeMenuOpen} onEdit={editGameInfo} />
+<ModeMenu {game} bind:open={modeMenuOpen} onEdit={watching ? undefined : editGameInfo} />
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 <HeldReminderDialog
 	bind:this={heldDialog}
@@ -2395,7 +2406,8 @@
 		display: none;
 	}
 	@media (max-width: 359.98px) {
-		.nav-menu {
+		/* Without More, a viewer's navigation stays on the toolbar. */
+		.nav-menu:not(.watching) {
 			display: none;
 		}
 		.menu-nav {

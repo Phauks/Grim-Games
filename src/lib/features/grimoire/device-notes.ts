@@ -128,15 +128,9 @@ const SPOTS_KEY = (gameId: GameId) => `grim-games:reminder-spots:v1:${gameId}`;
 export const reminderSpots = {
 	read(gameId: GameId): Record<string, SeatPoint> {
 		try {
-			const raw: unknown = JSON.parse(globalThis.localStorage?.getItem(SPOTS_KEY(gameId)) ?? '{}');
-			if (!raw || typeof raw !== 'object') return {};
-			const out: Record<string, SeatPoint> = {};
-			for (const [id, p] of Object.entries(raw as Record<string, unknown>)) {
-				const { x, y } = (p ?? {}) as Record<string, unknown>;
-				if (typeof x === 'number' && typeof y === 'number' && isFinite(x) && isFinite(y))
-					out[id] = { x: Math.min(100, Math.max(0, x)), y: Math.min(100, Math.max(0, y)) };
-			}
-			return out;
+			return parseReminderSpots(
+				JSON.parse(globalThis.localStorage?.getItem(SPOTS_KEY(gameId)) ?? '{}')
+			);
 		} catch {
 			return {};
 		}
@@ -151,6 +145,23 @@ export const reminderSpots = {
 	}
 };
 
+/** Reminder spots as stored or sent (the view-only link); anything malformed is left out. */
+export function parseReminderSpots(raw: unknown): Record<string, SeatPoint> {
+	if (!raw || typeof raw !== 'object') return {};
+	const out: Record<string, SeatPoint> = {};
+	for (const [id, p] of Object.entries(raw as Record<string, unknown>)) {
+		const { x, y } = (p ?? {}) as Record<string, unknown>;
+		if (typeof x === 'number' && typeof y === 'number' && isFinite(x) && isFinite(y))
+			out[id] = { x: Math.min(100, Math.max(0, x)), y: Math.min(100, Math.max(0, y)) };
+	}
+	return out;
+}
+
+/** Duplicated reminders' ids as stored or sent; anything but a string is left out. */
+export function parseReminderCopyIds(raw: unknown): Set<string> {
+	return new Set(Array.isArray(raw) ? raw.filter((id) => typeof id === 'string') : []);
+}
+
 const COPIES_KEY = (gameId: GameId) => `grim-games:reminder-copies:v1:${gameId}`;
 
 /**
@@ -160,8 +171,9 @@ const COPIES_KEY = (gameId: GameId) => `grim-games:reminder-copies:v1:${gameId}`
 export const reminderCopyIds = {
 	read(gameId: GameId): Set<string> {
 		try {
-			const raw: unknown = JSON.parse(globalThis.localStorage?.getItem(COPIES_KEY(gameId)) ?? '[]');
-			return new Set(Array.isArray(raw) ? raw.filter((id) => typeof id === 'string') : []);
+			return parseReminderCopyIds(
+				JSON.parse(globalThis.localStorage?.getItem(COPIES_KEY(gameId)) ?? '[]')
+			);
 		} catch {
 			return new Set();
 		}

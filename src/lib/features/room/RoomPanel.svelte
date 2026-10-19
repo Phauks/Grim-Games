@@ -10,6 +10,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import { roomHost } from './host.svelte.ts';
@@ -48,6 +49,12 @@
 		host.code ? `${location.origin}${resolve('/join/[code]', { code: host.code })}` : ''
 	);
 	const connected = $derived(host.status === 'open');
+	// The key goes in the hash, which never reaches the server (CLAUDE.md).
+	const watchLink = $derived(
+		host.code && host.viewerKey
+			? `${location.origin}${resolve('/watch/[code]', { code: host.code })}#${host.viewerKey}`
+			: ''
+	);
 	const seated = $derived(host.members.filter((m) => m.name !== undefined));
 	const statusText = $derived(
 		!host.code
@@ -137,6 +144,26 @@
 			{/snippet}
 		</SharePanel>
 		<p class="status" role="status" data-status={host.status}>{statusText}</p>
+
+		<!-- Specters: spectators watch the whole grimoire (Trevor, 2026-10-18). Off until
+		     turned on; the link's QR and buttons stay in place while it is off. -->
+		<div class="watch" data-testid="watch-link">
+			<SettingToggle
+				label={t('room.watch.toggle')}
+				description={t('room.watch.hint')}
+				checked={!!host.viewerKey}
+				disabled={!host.code}
+				onChange={(on) => void host.setViewers(on)}
+			/>
+			<SharePanel
+				url={watchLink || undefined}
+				title={t('room.watch.title')}
+				qrLabel={t('room.watch.qrLabel')}
+				pending={t('room.watch.off')}
+				text={watchLink ? t('room.watch.shareText') : undefined}
+			/>
+			<p class="status" role="status">{host.grimoireTooLarge ? t('room.watch.tooLarge') : ''}</p>
+		</div>
 	</section>
 
 	<section aria-labelledby="requests-label">
@@ -244,6 +271,11 @@
 		gap: var(--space-2);
 		align-content: start;
 		min-width: 0;
+	}
+	.watch {
+		display: grid;
+		gap: var(--space-2);
+		border-top: 1px solid var(--border);
 	}
 	.note {
 		min-height: 1.4em;

@@ -14,6 +14,7 @@ import {
 	dispatch,
 	MemoryGameStore,
 	openSession,
+	type SavedGame,
 	redo,
 	systemContext,
 	toSavedGame,
@@ -105,6 +106,43 @@ export class OpenGame {
 	}
 
 	/**
+	 * Someone else's game, from the view-only link (Specters, Trevor 2026-10-18): it is
+	 * shown as their device sends it, never saved here, and no command is accepted.
+	 */
+	static watch(data: Pick<GameData, 'characters'>, saved: SavedGame): OpenGame {
+		const session = openSession(saved.log);
+		const game = new OpenGame(
+			session,
+			characterLookup(data, session.game.script),
+			new MemoryGameStore()
+		);
+		game.watching = true;
+		game.setViewOnly(true);
+		return game;
+	}
+
+	watching = false;
+
+	/**
+	 * Shows a newer copy of a watched game. False when its script changed, so its characters
+	 * must be looked up again (`watch`).
+	 */
+	follow(saved: SavedGame): boolean {
+		const session = openSession(saved.log);
+		if (JSON.stringify(session.game.script) !== JSON.stringify(this.game.script)) return false;
+		this.session = session;
+		this.#savedCursor = session.log.cursor;
+		return true;
+	}
+
+	/** Why a command is refused while the game can't be changed here. */
+	get readOnlyMessage(): string {
+		return this.watching
+			? 'Only the Storyteller can change this game.'
+			: 'The game is over. Reopen it to change it.';
+	}
+
+	/**
 	 * An ended game opens to look around in (Trevor, 2026-10-17): no command is accepted,
 	 * and stepping through History (`goTo`, undo, redo) only changes what is shown, never
 	 * the saved game. Reopening the game leaves this mode at the saved point.
@@ -134,7 +172,7 @@ export class OpenGame {
 		if (this.viewOnly)
 			return {
 				ok: false,
-				error: { code: 'no-game', message: 'The game is over. Reopen it to change it.' }
+				error: { code: 'no-game', message: this.readOnlyMessage }
 			};
 		const result = dispatch(this.session, command, this.#ctx);
 		if (!result.ok) return result;

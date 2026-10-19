@@ -3,8 +3,9 @@
  * its stored state, the messages devices and the room exchange, and the pure rules the
  * `Room` Durable Object applies. Shared by the Worker and the app so both sides agree.
  *
- * The room holds public state only. Phones ask (a name, a seat); the Storyteller approves,
- * and only then does the grimoire change, through its own commands.
+ * The room holds public state only, unless the Storyteller turns on the view-only grimoire
+ * link (`SharedGrimoire`). Phones ask (a name, a seat); the Storyteller approves, and only
+ * then does the grimoire change, through its own commands.
  */
 import type { Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
@@ -45,7 +46,30 @@ export interface RoomState {
 	requests: RoomRequest[];
 	/** A spectators' vote the Storyteller has open (Specters), if any. */
 	vote?: SpectatorVote;
+	/**
+	 * SHA-256 (hex) of the key in the view-only grimoire link, while the Storyteller has the
+	 * link turned on. Turning it off (or on again, with a new key) stops every earlier link.
+	 */
+	viewerKeyHash?: string;
 }
+
+/**
+ * The Storyteller's whole grimoire, for the view-only link (Trevor, 2026-10-18: Specters
+ * spectators watch the grimoire, after promising not to spoil the game). Only the
+ * Storyteller's device sends it and only viewers with the link's key receive it; the room
+ * relays it as given, and each viewer checks `saved` as a saved game before showing it.
+ */
+export interface SharedGrimoire {
+	/** The game as the Storyteller's device saves it (`SavedGame`). */
+	saved: Record<string, unknown>;
+	/** Where that device draws the seats, and its reminders' spots and copies (device notes). */
+	layout?: unknown;
+	reminderSpots?: unknown;
+	copies?: unknown;
+}
+
+/** A whole game's history with a homebrew script: well above `MAX_SCRIPT_BYTES`. */
+export const MAX_GRIMOIRE_BYTES = 1024 * 1024;
 
 /**
  * Specters (https://www.youtube.com/watch?v=-R34QbIgDh8): spectators share one ability and
@@ -81,7 +105,7 @@ export type ClientMessage =
 	 * First message on every socket. Keys never go in the URL. `protocol` is missing from
 	 * apps built before it existed, which speak protocol 1.
 	 */
-	| { type: 'hello'; role: 'host' | 'player'; key: string; protocol?: number }
+	| { type: 'hello'; role: 'host' | 'player' | 'viewer'; key: string; protocol?: number }
 	// From a player.
 	| { type: 'request'; name: string; seatId?: SeatId }
 	| { type: 'cancel-request' }
@@ -100,6 +124,10 @@ export type ClientMessage =
 	| { type: 'unseat'; memberId: string }
 	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }
 	| { type: 'close-vote' }
+	/** Turns the view-only grimoire link on with this key's hash, or off with `null`. */
+	| { type: 'viewers'; keyHash: string | null }
+	/** The grimoire for viewers; ignored while the link is off. */
+	| { type: 'grimoire'; grimoire: SharedGrimoire }
 	| { type: 'close' };
 
 /** What the Storyteller's device sees. */
@@ -140,15 +168,25 @@ export interface ScriptView {
 	script: Script;
 }
 
+/** What a viewer of the view-only link sees, on joining and on every change. */
+export interface GrimoireView {
+	type: 'grimoire';
+	grimoire: SharedGrimoire;
+}
+
 export type ServerMessage =
 	| HostView
 	| PlayerView
 	| ScriptView
+	| GrimoireView
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 
-/** `too-old`: the app must update before it can use the room; the room itself is fine. */
-export type RefusedReason = 'no-room' | 'not-host' | 'room-full' | 'too-old';
+/**
+ * `too-old`: the app must update before it can use the room; the room itself is fine.
+ * `not-viewer`: the view-only link is off, or was replaced by a newer one.
+ */
+export type RefusedReason = 'no-room' | 'not-host' | 'room-full' | 'too-old' | 'not-viewer';
 
 /**
  * What a phone sees of a room before it joins, from `GET /api/room/<code>` (Trevor,
@@ -425,6 +463,24 @@ export function castVote(
 	if (!vote || !member || !isSpectator(member) || voteId !== vote.voteId) return room;
 	if (typeof choice !== 'string' || !vote.options.includes(choice as SeatId)) return room;
 	return { ...room, vote: { ...vote, votes: { ...vote.votes, [memberId]: choice as SeatId } } };
+}
+
+/** Turns the view-only link on (a SHA-256 hex hash) or off (`null`); anything else is ignored. */
+export function setViewers(room: RoomState, keyHash: unknown): RoomState {
+	if (keyHash === null) {
+		const { viewerKeyHash: _off, ...rest } = room;
+		void _off;
+		return rest;
+	}
+	if (typeof keyHash !== 'string' || !/^[0-9a-f]{64}$/.test(keyHash)) return room;
+	return { ...room, viewerKeyHash: keyHash };
+}
+
+/** A light shape check of a grimoire for viewers: they check the saved game themselves. */
+export function isSharedGrimoire(value: unknown): value is SharedGrimoire {
+	if (typeof value !== 'object' || value === null) return false;
+	const { saved } = value as { saved?: unknown };
+	return typeof saved === 'object' && saved !== null && !Array.isArray(saved);
 }
 
 /** Parses a socket message; anything malformed is `null` and ignored. */
