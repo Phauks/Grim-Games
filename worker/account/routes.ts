@@ -11,6 +11,8 @@ import {
 	readPlace,
 	isDocId,
 	isDocKind,
+	parseSyncRequest,
+	MAX_SYNC_BYTES,
 	normaliseCode,
 	checkPassword,
 	cleanEmail,
@@ -27,6 +29,7 @@ import {
 	type PrivacyRequired,
 	type PutDocRequest,
 	type SessionInfo,
+	type SyncResponse,
 	type StartResponse,
 	type UserResponse,
 	usernameKey,
@@ -167,9 +170,12 @@ function sameOriginJson(request: Request, url: URL): boolean {
 	return (request.headers.get('Content-Type') ?? '').startsWith('application/json');
 }
 
-async function readBody(request: Request): Promise<Record<string, unknown> | undefined> {
+async function readBody(
+	request: Request,
+	maxLength = 1_100_000
+): Promise<Record<string, unknown> | undefined> {
 	const text = await request.text();
-	if (text.length > 1_100_000) return undefined;
+	if (text.length > maxLength) return undefined;
 	try {
 		const body: unknown = JSON.parse(text || '{}');
 		return typeof body === 'object' && body !== null && !Array.isArray(body)
@@ -492,6 +498,14 @@ export async function handleAccount(
 			);
 		}
 		return json({ ok: true }, 200, { 'Set-Cookie': clearCookie });
+	}
+
+	if (path === '/api/account/sync' && method === 'POST') {
+		const body = await readBody(request, MAX_SYNC_BYTES);
+		const sync = body && parseSyncRequest(body);
+		if (!sync) return fail(400, 'Bad sync request.');
+		// Workers RPC typing can't express `unknown` bodies, so the result is restated here.
+		return json((await user.sync(sync, Date.now())) as unknown as SyncResponse);
 	}
 
 	const docs = /^\/api\/account\/docs\/([a-z]+)(?:\/([^/]+))?$/.exec(path);

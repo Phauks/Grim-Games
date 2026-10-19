@@ -75,6 +75,8 @@ export const account = {
 	'account.privacy.read': 'Read the Privacy policy',
 	'account.privacy.accept': 'I accept the Privacy policy',
 	'account.privacy.declined': 'Signing in needs the Privacy policy accepted.',
+	'account.offline': 'You are offline.',
+	'account.sync.otherDevice': '{name} (other device)',
 
 	'account.devices.title': 'Signed-in devices',
 	'account.devices.thisDevice': '{device} (this device)',
