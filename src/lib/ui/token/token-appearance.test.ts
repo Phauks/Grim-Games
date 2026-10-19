@@ -44,6 +44,9 @@ describe('token appearance', () => {
 			reminderLeaves: false,
 			setupFlower: true
 		});
+		// The flower leaves the name in place unless asked (Trevor, 2026-10-19).
+		expect(parseTokenAppearance({}).setupMovesName).toBe(false);
+		expect(parseTokenAppearance({ setupMovesName: true }).setupMovesName).toBe(true);
 		// Earlier builds' dot instead of the owner's icon is dropped (Trevor, 2026-10-18).
 		expect(parseTokenAppearance({ inlineReminderIcons: false })).toEqual(parseTokenAppearance({}));
 		expect(parseTokenAppearance({ reminderLabelWidth: 'wide' }).reminderLabelWidth).toBe(1.5);

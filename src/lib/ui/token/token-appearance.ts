@@ -126,6 +126,8 @@ export interface TokenAppearance {
 	reminderLeaves: boolean;
 	/** The setup flower at the bottom right of a character that changes setup; off by default. */
 	setupFlower: boolean;
+	/** Whether the setup flower shortens the name on the token to stay clear of it (off, Trevor 2026-10-19). */
+	setupMovesName: boolean;
 }
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
@@ -144,7 +146,8 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	inlineNameIconScale: 1,
 	inlineNameBadgeScale: 1,
 	reminderLeaves: true,
-	setupFlower: false
+	setupFlower: false,
+	setupMovesName: false
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -185,7 +188,8 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		// Earlier builds' `inlineReminderIcons` is dropped: chips in text always show the
 		// owner's icon (Trevor, 2026-10-18).
 		reminderLeaves: input.reminderLeaves !== false,
-		setupFlower: input.setupFlower === true
+		setupFlower: input.setupFlower === true,
+		setupMovesName: input.setupMovesName === true
 	};
 }
 
