@@ -1047,6 +1047,8 @@
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
 	let modeMenuOpen = $state(false);
+	/** Counts Next taps past the walk-through's last step; each lights up End night. */
+	let endHint = $state(0);
 	function fromMenu(action: () => void) {
 		menuOpen = false;
 		action();
@@ -1459,6 +1461,7 @@
 				night={walk.night}
 				index={walk.index}
 				onIndex={(index) => walk && (walk = { ...walk, index })}
+				onPastEnd={() => endHint++}
 				onOpen={(step) => {
 					if (!walk) return;
 					guided = { step, night: walk.night };
@@ -1500,7 +1503,12 @@
 				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
 				onHints={(h) => (trayHints = h)}
 				run={nightOn
-					? { end: true, disabled: grimoire.open.viewOnly, onclick: () => (endNightOpen = true) }
+					? {
+							end: true,
+							disabled: grimoire.open.viewOnly,
+							onclick: () => (endNightOpen = true),
+							hint: endHint
+						}
 					: preferences.current.assistance.nightWalkthrough
 						? { end: false, disabled: !canRun, onclick: runNight }
 						: { end: true, disabled: true, onclick: () => {} }}

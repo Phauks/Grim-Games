@@ -61,6 +61,12 @@ const bankNight = (page: Page, name: 'Run Night Order' | 'End night') =>
  * The walk-through under the board, on this step: the night order left the board (Trevor,
  * 2026-10-18), so Run night starts it and Next (which ticks each step) or Previous finds it.
  */
+/** Whether the walk-through shows its last step ("9 of 9"). */
+async function lastStep(strip: Locator) {
+	const [at, of] = ((await strip.locator('.count').textContent()) ?? '').split(' of ');
+	return at === of;
+}
+
 async function walkTo(page: Page, title: string) {
 	const strip = page.getByTestId('night-strip');
 	// A step closing hides the board from the a11y tree for a moment; wait it out.
@@ -72,6 +78,8 @@ async function walkTo(page: Page, title: string) {
 		const button = strip.getByRole('button', { name: way });
 		for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) {
 			if (await button.isDisabled()) break;
+			// Next stays enabled on the last step, where it points at End night.
+			if (way === 'Next step' && (await lastStep(strip))) break;
 			await button.tap();
 		}
 	}
@@ -1476,8 +1484,8 @@ test('a night step is filled in with help, and the night can be walked through',
 	// Next stops at the last step; End night goes on into the day, where its announcements are
 	// (Trevor, 2026-10-18).
 	const nextStep = strip.getByRole('button', { name: 'Next step' });
-	for (let i = 0; i < 30 && (await nextStep.isEnabled()); i++) await nextStep.tap();
-	await expect(nextStep).toBeDisabled();
+	for (let i = 0; i < 30 && !(await lastStep(strip)); i++) await nextStep.tap();
+	expect(await lastStep(strip)).toBe(true);
 	await endNight(page);
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
 	await expect(strip).toHaveCount(0);
@@ -3325,8 +3333,8 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	for (let i = 0; i < 12; i++) {
 		names.push((await strip.locator('.name strong').textContent()) ?? '');
 		const next = strip.getByRole('button', { name: 'Next step' });
-		// Next stops at the last step; End night ends the night (Trevor, 2026-10-18).
-		if (await next.isDisabled()) break;
+		// The last step; End night ends the night (Trevor, 2026-10-18).
+		if (await lastStep(strip)) break;
 		await next.tap();
 	}
 	expect(names).toContain('Ravenkeeper');
@@ -3906,4 +3914,30 @@ test('a big name badge beside a dialog title shrinks instead of squeezing the ti
 	const close = await menu.getByRole('button', { name: 'Close' }).boundingBox();
 	expect(badge!.x).toBeGreaterThanOrEqual(head!.x - 1);
 	expect(badge!.x + badge!.width).toBeLessThanOrEqual(close!.x);
+});
+
+test('Next on the last night step lights up End night', async ({ page }) => {
+	// Trevor (2026-10-19): Next past the end points at End night; it never ends the night.
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await closeSheet(page);
+	await bankNight(page, 'Run Night Order').tap();
+	const strip = page.getByTestId('night-strip');
+	const next = strip.getByRole('button', { name: 'Next step' });
+	for (let i = 0; i < 30 && !(await lastStep(strip)); i++) await next.tap();
+	const end = bankNight(page, 'End night');
+	await expect(end).not.toHaveAttribute('data-hint');
+	await next.tap();
+	await expect(next).toBeEnabled();
+	await expect(end).toHaveAttribute('data-hint', '');
+	await expect(strip).toBeVisible();
+	// It fades after a moment, and lights up again on the next tap.
+	await expect(end).not.toHaveAttribute('data-hint', { timeout: 5000 });
+	await next.tap();
+	await expect(end).toHaveAttribute('data-hint', '');
 });

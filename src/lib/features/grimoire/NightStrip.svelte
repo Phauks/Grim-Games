@@ -24,9 +24,11 @@
 		onIndex: (index: number) => void;
 		onOpen: (step: NightStep) => void;
 		onClose: () => void;
+		/** Next on the last step: nothing is left, so the board points at End night. */
+		onPastEnd?: () => void;
 	}
 
-	let { grimoire, steps, night, index, onIndex, onOpen, onClose }: Props = $props();
+	let { grimoire, steps, night, index, onIndex, onOpen, onClose, onPastEnd }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const step = $derived(steps[index]);
@@ -41,6 +43,8 @@
 	function next() {
 		if (step && !ticked) grimoire.toggleNightStep(night, step);
 		if (!last) onIndex(index + 1);
+		// Nothing after it: show where the night ends (Trevor, 2026-10-19).
+		else onPastEnd?.();
 	}
 </script>
 
@@ -90,8 +94,9 @@
 	{:else}
 		<span class="step none">None</span>
 	{/if}
-	<!-- Next ticks the step; the bank's End night ends the night (Trevor, 2026-10-18). -->
-	<IconButton icon="forward" label="Next step" disabled={last && ticked} onclick={next} />
+	<!-- Next ticks the step; the bank's End night ends the night (Trevor, 2026-10-18), and Next
+	     past the last step lights it up (Trevor, 2026-10-19). -->
+	<IconButton icon="forward" label="Next step" onclick={next} />
 	<!-- In the top corner (Trevor, 2026-10-16), so Previous and Next own the sides. The step
 	     reminders setting is behind ⋯, the app's icon for more choices (Trevor, 2026-10-18). -->
 	<span class="corner">
