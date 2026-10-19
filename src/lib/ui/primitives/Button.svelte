@@ -11,7 +11,12 @@
 		href?: ResolvedPathname;
 		/** `accent` is the one main action in a group (e.g. Refresh). */
 		/** `danger` and `danger-quiet` mark a destructive action in red (Trevor, 2026-10-16). */
-		variant?: 'solid' | 'quiet' | 'accent' | 'danger' | 'danger-quiet';
+		/**
+		 * `field` opens a picker (Special rules, Restricted characters) and looks like the
+		 * drop-downs and chips beside it (Trevor, 2026-10-19: it "looks different from other
+		 * button on page").
+		 */
+		variant?: 'solid' | 'quiet' | 'accent' | 'danger' | 'danger-quiet' | 'field';
 		children: Snippet;
 	}
 
@@ -52,6 +57,17 @@
 		background: transparent;
 		color: inherit;
 		box-shadow: inset 0 0 0 1px var(--border);
+	}
+	/* The drop-down trigger's look (Select.svelte), label at the start. */
+	.button[data-variant='field'] {
+		justify-content: flex-start;
+		padding: var(--space-1) var(--space-3);
+		border: var(--card-border);
+		border-radius: var(--card-radius);
+		background: var(--choice-background);
+		color: var(--choice-color);
+		font-family: var(--font-control);
+		text-align: left;
 	}
 	.button[data-variant='danger'] {
 		background: var(--evil);

@@ -28,8 +28,9 @@
 		onDrag?: (x: number, y: number, end: boolean) => void;
 		onCancel?: () => void;
 		/**
-		 * In a row that scrolls sideways (the reminder bank): a finger moving mostly sideways
-		 * scrolls the row; one moving up or down picks the token up (Trevor, 2026-10-17).
+		 * In a row that scrolls sideways (the reminder bank): a quick, nearly level move scrolls
+		 * the row (Trevor, 2026-10-17); a steeper one, or one after a short hold, picks the
+		 * token up (Trevor, 2026-10-19).
 		 */
 		panX?: boolean;
 	}
@@ -52,44 +53,114 @@
 
 	/** Pointer movement, in px, before a press becomes a drag. */
 	const SLOP = 8;
-	let down: { x: number; y: number; id: number } | null = null;
+	/**
+	 * In a row that scrolls (panX), only a move this close to level scrolls the row; anything
+	 * steeper picks the token up (Trevor, 2026-10-19: drags under 45 degrees used to scroll).
+	 */
+	const LEVEL = Math.tan((20 * Math.PI) / 180);
+	/** A press held this long, in ms, picks the token up whichever way it then moves. */
+	const HOLD = 250;
+	let down: {
+		x: number;
+		y: number;
+		id: number;
+		at: number;
+		row?: HTMLElement;
+		scroll: number;
+	} | null = null;
 	let dragging = false;
+	/** The finger is scrolling the row instead (panX), since the browser no longer does. */
+	let scrolling = false;
+	let speed = 0;
+	let last = { x: 0, at: 0 };
+	let glide = 0;
+
+	/** The nearest ancestor that scrolls sideways, if it has anything to scroll. */
+	function rowOf(node: HTMLElement): HTMLElement | undefined {
+		for (let el = node.parentElement; el; el = el.parentElement) {
+			if (el.scrollWidth > el.clientWidth && /auto|scroll/.test(getComputedStyle(el).overflowX))
+				return el;
+		}
+		return undefined;
+	}
 
 	function pointerdown(event: PointerEvent) {
 		if (disabled) return;
-		down = { x: event.clientX, y: event.clientY, id: event.pointerId };
+		cancelAnimationFrame(glide);
+		const node = event.currentTarget as HTMLElement;
+		const row = panX ? rowOf(node) : undefined;
+		down = {
+			x: event.clientX,
+			y: event.clientY,
+			id: event.pointerId,
+			at: event.timeStamp,
+			row,
+			scroll: row?.scrollLeft ?? 0
+		};
 		dragging = false;
-		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		scrolling = false;
+		node.setPointerCapture(event.pointerId);
 	}
 	function pointermove(event: PointerEvent) {
 		if (!down || event.pointerId !== down.id || !onDrag) return;
 		const dx = event.clientX - down.x;
 		const dy = event.clientY - down.y;
+		if (scrolling && down.row) {
+			down.row.scrollLeft = down.scroll - dx;
+			const dt = event.timeStamp - last.at;
+			if (dt > 0) speed = (event.clientX - last.x) / dt;
+			last = { x: event.clientX, at: event.timeStamp };
+			return;
+		}
 		if (!dragging && Math.hypot(dx, dy) < SLOP) return;
-		// The browser scrolls a sideways start itself (touch-action: pan-x) and cancels the
-		// press; this lets go too, for browsers that keep sending moves.
-		if (!dragging && panX && event.pointerType !== 'mouse' && Math.abs(dx) > Math.abs(dy)) {
-			(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
-			down = null;
+		// A quick, nearly level move along a row that scrolls scrolls it; held first, or any
+		// steeper, it is a drag. The row's touch-action is none, so the browser never takes
+		// the press away mid-drag.
+		if (
+			!dragging &&
+			down.row &&
+			event.pointerType !== 'mouse' &&
+			event.timeStamp - down.at < HOLD &&
+			Math.abs(dy) <= Math.abs(dx) * LEVEL
+		) {
+			scrolling = true;
+			last = { x: event.clientX, at: event.timeStamp };
+			down.row.scrollLeft = down.scroll - dx;
 			return;
 		}
 		dragging = true;
 		onDrag(event.clientX, event.clientY, false);
 	}
+	/** After a flick, the row keeps moving and slows to a stop. */
+	function coast(row: HTMLElement) {
+		let v = speed * 16;
+		const step = () => {
+			if (Math.abs(v) < 0.5) return;
+			row.scrollLeft -= v;
+			v *= 0.94;
+			glide = requestAnimationFrame(step);
+		};
+		glide = requestAnimationFrame(step);
+	}
 	function pointerup(event: PointerEvent) {
 		if (!down || event.pointerId !== down.id) return;
-		if (dragging) onDrag?.(event.clientX, event.clientY, true);
+		if (scrolling) {
+			swallowNextClick(event.currentTarget);
+			if (down.row && event.timeStamp - last.at < 100) coast(down.row);
+		} else if (dragging) onDrag?.(event.clientX, event.clientY, true);
 		else {
 			swallowNextClick(event.currentTarget);
 			onTap();
 		}
 		down = null;
 		dragging = false;
+		scrolling = false;
 	}
 	function pointercancel() {
 		if (dragging) onCancel?.();
 		down = null;
 		dragging = false;
+		scrolling = false;
 	}
 </script>
 
@@ -160,7 +231,8 @@
 		border-radius: 50%;
 	}
 	.reminder[data-pan='x'] {
-		touch-action: pan-x;
+		/* The token scrolls its row itself (pointermove), so a drag at any angle stays a drag. */
+		touch-action: none;
 	}
 	.reminder:disabled {
 		cursor: default;

@@ -3,7 +3,6 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
-	import { untrack } from 'svelte';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import type { DeathCause, ReminderId, SeatId } from '#lib/core/model/index.ts';
@@ -209,35 +208,6 @@
 			: []
 	);
 	let changesOpen = $state(false);
-
-	// ── The Storyteller's note on this player (Trevor, 2026-10-16): a Mezepheles' secret word,
-	// the Amnesiac's ability. Never shown to players. ──
-	let noteOpen = $state(false);
-	let noteDraft = $state('');
-	let noteFor: SeatId | undefined;
-	function editNote() {
-		noteDraft = seat?.note ?? '';
-		noteFor = seatId;
-		noteOpen = true;
-	}
-	/**
-	 * Saved as it closes, however it closes (Trevor, 2026-10-17: no Save or Cancel; a swipe down
-	 * keeps it), as one History entry per edit. Also if the app is put away mid-edit.
-	 */
-	function saveNote() {
-		const on = noteFor;
-		if (!on) return;
-		const before = grimoire.game.seats[on]?.note ?? '';
-		if (noteDraft.trim() === before.trim()) return;
-		grimoire.run({ type: 'SetSeatNote', seatId: on, note: noteDraft });
-	}
-	$effect(() => {
-		if (noteOpen) return;
-		untrack(() => {
-			saveNote();
-			noteFor = undefined;
-		});
-	});
 
 	function assign(id: CharacterId) {
 		if (!seatId) return;
@@ -532,18 +502,6 @@
 				</button>
 			</div>
 
-			<div class="row">
-				<span class="label">Notes</span>
-				<button
-					type="button"
-					class="value note-value"
-					aria-label={seat.note ? `Notes: ${seat.note}` : 'Notes: None'}
-					onclick={editNote}
-				>
-					<span class="note-text">{seat.note ?? 'None'}</span>
-				</button>
-			</div>
-
 			<div class="row reminders-head">
 				<h3>Reminders</h3>
 				<Button variant="quiet" icon="add" onclick={() => (remindersOpen = true)}>
@@ -676,22 +634,6 @@
 		{/if}
 	{/if}
 </ConfirmDialog>
-
-<svelte:document
-	onvisibilitychange={() => {
-		if (document.visibilityState === 'hidden' && noteOpen) saveNote();
-	}}
-/>
-
-<Dialog bind:open={noteOpen} title={`Notes for ${seatLabel}`}>
-	<!-- Several lines: Enter starts a new line. Kept on close. Never shown to players. -->
-	<textarea
-		bind:value={noteDraft}
-		readonly={grimoire.open.viewOnly}
-		rows="5"
-		aria-label="Notes"
-		data-testid="seat-note"></textarea>
-</Dialog>
 
 <Dialog bind:open={changesOpen} title={`Character history for ${seatLabel}`}>
 	<ol class="changes" data-testid="seat-changes">
@@ -1305,37 +1247,10 @@
 	.value {
 		width: min(70%, 16rem);
 	}
-	/* One line in the sheet, so a long note never moves anything; the dialog shows it all. */
-	/* The note looks as it does in its editor (Trevor, 2026-10-17): the sheet's own text,
-	   not the buttons' font. */
 	/* Used shows whatever has focus (Trevor, 2026-10-18). */
 	.value.ghost[aria-pressed='true'] {
 		border-color: var(--accent);
 		background: var(--accent-wash);
-	}
-	.note-value {
-		justify-content: flex-start;
-		font: inherit;
-		text-transform: none;
-		letter-spacing: normal;
-		font-variant: normal;
-	}
-	.note-text {
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	textarea[data-testid='seat-note'] {
-		width: 100%;
-		min-height: calc(7 * var(--u));
-		padding: var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: transparent;
-		color: inherit;
-		font: inherit;
-		resize: vertical;
 	}
 	h3 {
 		margin: var(--space-2) 0 0;

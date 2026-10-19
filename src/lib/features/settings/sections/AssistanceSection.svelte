@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
+	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import { canVibrate, playTimerSound, vibrateTimer } from '#lib/features/day/timer-sound.ts';
+	import { canKeepAwake } from '#lib/features/day/timer-wake-lock.ts';
 	import TimerPerPlayerRow from '#lib/features/day/TimerPerPlayerRow.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { TIMER_SOUNDS } from '#lib/ui/preferences.ts';
@@ -77,6 +79,13 @@
 		preferences.update({ timerVibrate });
 		if (timerVibrate) vibrateTimer();
 	}}
+/>
+<SettingToggle
+	label={t('day.timerKeepAwake')}
+	description={canKeepAwake() ? undefined : t('day.timerKeepAwakeUnavailable')}
+	checked={canKeepAwake() && preferences.current.timerKeepAwake}
+	disabled={!canKeepAwake()}
+	onChange={(on) => liveDayTimer.setKeepAwake(on)}
 />
 <SettingSelect
 	label={t('day.timer')}

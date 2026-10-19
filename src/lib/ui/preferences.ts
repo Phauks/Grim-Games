@@ -41,6 +41,11 @@ export interface Preferences {
 	characterIconScale: IconScale;
 	/** How paragraphs of body text line up: ragged right, or justified to both edges. */
 	textAlign: TextAlign;
+	/**
+	 * Two fingers can zoom the page. Off by default (Trevor, 2026-10-19: two thumbs on the board
+	 * zoomed the app by accident); Text size enlarges everything instead.
+	 */
+	allowZoom: boolean;
 	iconSet: IconSetId | null;
 	iconOverrides: Partial<Record<IconSlot, string>>;
 	/** Character token and reminder token sizes, and any token colours the user changed. */
@@ -66,6 +71,8 @@ export interface Preferences {
 	timerMode: TimerMode;
 	/** The device vibrates when the day timer runs out (Trevor, 2026-10-18). */
 	timerVibrate: boolean;
+	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
+	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
 	timerPerPlayer: number;
 }
@@ -121,6 +128,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	iconScale: 1,
 	characterIconScale: 1,
 	textAlign: 'left',
+	allowZoom: false,
 	iconSet: null,
 	iconOverrides: {},
 	tokenAppearance: DEFAULT_TOKEN_APPEARANCE,
@@ -131,6 +139,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerSound: 'bell',
 	timerMode: 'down',
 	timerVibrate: true,
+	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE
 };
 
@@ -157,6 +166,8 @@ export function parsePreferences(raw: unknown): Preferences {
 		textAlign: (TEXT_ALIGNS as readonly unknown[]).includes(input.textAlign)
 			? (input.textAlign as TextAlign)
 			: DEFAULT_PREFERENCES.textAlign,
+		allowZoom:
+			typeof input.allowZoom === 'boolean' ? input.allowZoom : DEFAULT_PREFERENCES.allowZoom,
 		iconSet: isIconSetId(input.iconSet) ? input.iconSet : null,
 		iconOverrides,
 		tokenAppearance: parseTokenAppearance(input.tokenAppearance),
@@ -178,6 +189,10 @@ export function parsePreferences(raw: unknown): Preferences {
 			typeof input.timerVibrate === 'boolean'
 				? input.timerVibrate
 				: DEFAULT_PREFERENCES.timerVibrate,
+		timerKeepAwake:
+			typeof input.timerKeepAwake === 'boolean'
+				? input.timerKeepAwake
+				: DEFAULT_PREFERENCES.timerKeepAwake,
 		timerPerPlayer:
 			Number.isInteger(input.timerPerPlayer) &&
 			(input.timerPerPlayer as number) >= DAY_SECONDS_PER_ALIVE_MIN &&

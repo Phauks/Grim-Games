@@ -210,6 +210,44 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
+// Trevor, 2026-10-19: with Stowed Away, "the 0-2 travelers should show themselves in the
+// calculation". Rule: https://beardytas.com/garden-of-djinn/stowed-away/
+test('Stowed Away: up to 2 Travellers count in the bag, the rest for fewer players', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: /^Special rules/ }).tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	await rules.getByText('Stowed Away', { exact: true }).tap();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	await page.goto(`/grimoire/${gameId}/setup`);
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+
+	// The rule's Travellers are part of setup, so their section starts open.
+	const header = page.getByRole('button', { name: 'Travellers', exact: true });
+	await expect(header).toHaveAttribute('aria-expanded', 'true');
+	const travellers = page.locator('[data-testid="setup-counts"] [data-type="traveller"]');
+	await expect(travellers).toContainText('0/ 0–2');
+	await expect(travellers).toHaveAttribute('data-ok', '');
+
+	// Two Travellers: the other counts are for 6 players (https://wiki.bloodontheclocktower.com/Setup).
+	await select(page, 'Scapegoat', 'Gunslinger');
+	await expect(travellers).toContainText('2/ 0–2');
+	await expect(travellers).toHaveAttribute('data-ok', '');
+	await expect(page.locator('[data-testid="setup-counts"] [data-type="townsfolk"]')).toContainText(
+		'/ 3'
+	);
+	// A third is more than the rule allows.
+	await select(page, 'Beggar');
+	await expect(travellers).not.toHaveAttribute('data-ok', '');
+	await noSidewaysScroll(page);
+});
+
 // Trevor, 2026-10-18: Travellers in the bag, the recommended ones listed first and every
 // other one found through a searchable dialog.
 test("Travellers can join the bag: the edition's are listed, the rest are a search away", async ({
@@ -919,4 +957,103 @@ test('a Teensyville script greys out player counts above 6 but still allows them
 	await expect(page.getByTestId('player-count')).toHaveText('7');
 	await expect(page.getByText('This script is made for at most 6 players.')).toBeVisible();
 	await expect(page.getByTestId('setup-check')).toContainText('Teensyville');
+});
+
+// Trevor, 2026-10-19: the locked pass-the-phone draw. A Storyteller PIN keeps players from
+// leaving the draw, the token shows only while held, and a reload stays locked.
+async function lockDraw(page: Page, pin = '2468') {
+	await page.getByTestId('draw-lock').tap();
+	const dialog = page.getByRole('dialog', { name: 'Lock the draw' });
+	await dialog.getByLabel('PIN', { exact: true }).fill(pin);
+	await dialog.getByLabel('PIN again').fill(pin);
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
+}
+
+async function lockedDraw(page: Page) {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page.getByRole('heading', { name: 'Draw', level: 1 })).toBeVisible();
+	await lockDraw(page);
+}
+
+test('a locked draw asks for the PIN to leave and shows tokens only while held', async ({
+	page
+}) => {
+	await lockedDraw(page);
+	await expect(page.getByRole('button', { name: 'Setup and bag draw' })).toBeDisabled();
+
+	await page.getByRole('button', { name: /^Tile 1/ }).tap();
+	const reveal = page.getByRole('dialog', { name: /^Tile/ });
+	const hold = reveal.getByTestId('reveal-hold');
+	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
+	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
+	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
+	await reveal.getByRole('button', { name: 'Confirm' }).tap();
+
+	// A reload is still locked.
+	await page.reload();
+	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
+
+	// Leaving asks for the PIN; a wrong one keeps the draw.
+	await page.locator('.setup-nav').getByRole('link', { name: 'Characters' }).tap();
+	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
+	await pin.getByLabel('PIN', { exact: true }).fill('1111');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(pin.getByTestId('pin-message')).toHaveText('Wrong PIN.');
+	await expect(page).toHaveURL(/\/draw$/);
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+	await noSidewaysScroll(page);
+});
+
+test('three wrong PINs make entry wait', async ({ page }) => {
+	await lockedDraw(page);
+	await page.getByTestId('draw-lock').tap();
+	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
+	for (let n = 0; n < 3; n++) {
+		await pin.getByLabel('PIN', { exact: true }).fill('0000');
+		await pin.getByRole('button', { name: 'Confirm' }).tap();
+		await expect(pin.getByLabel('PIN', { exact: true })).toHaveValue('');
+	}
+	await expect(pin.getByTestId('pin-message')).toHaveText(/^Try again in (30|29) s\.$/);
+	await pin.getByLabel('PIN', { exact: true }).fill('2468');
+	await expect(pin.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	// Forgot PIN counts down where everyone can see it, and can be stopped.
+	await pin.getByRole('button', { name: 'Forgot PIN' }).tap();
+	await expect(pin.getByTestId('pin-message')).toHaveText(/^Unlocking in (60|59) s\.$/);
+	await pin.getByRole('button', { name: 'Keep locked' }).tap();
+	await expect(pin.getByTestId('pin-message')).toHaveText(/^Try again in/);
+});
+
+test('locked characters stay in play through Random and are remembered', async ({ page }) => {
+	await selectionFor(page, 9);
+	const choice = (id: string) => page.locator(`.main[data-character-id="${id}"]`);
+	const row = (id: string) => page.locator('.choice', { has: choice(id) });
+	const lock = (id: string) => row(id).getByTestId('lock-character');
+	// Unselected: the lock is in place but can't be used.
+	await expect(lock('baron')).toBeDisabled();
+	for (const id of ['baron', 'drunk']) {
+		await choice(id).tap();
+		await lock(id).tap();
+		await expect(lock(id)).toHaveAttribute('aria-pressed', 'true');
+	}
+	for (let i = 0; i < 5; i++) {
+		await page.getByRole('button', { name: 'Random selection' }).tap();
+		for (const id of ['baron', 'drunk']) {
+			await expect(row(id)).toHaveAttribute('data-selected', '');
+			await expect(lock(id)).toHaveAttribute('aria-pressed', 'true');
+		}
+	}
+	await page.reload();
+	await expect(lock('drunk')).toHaveAttribute('aria-pressed', 'true');
+	// Deselecting unlocks.
+	await choice('baron').tap();
+	await expect(lock('baron')).toBeDisabled();
+	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
 });

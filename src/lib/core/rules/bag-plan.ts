@@ -18,7 +18,8 @@
 import type { Character, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
-import { analyseSetup, type SetupAnalysis } from './setup.ts';
+import { analyseSetup, type SetupAnalysis, type SetupWarning } from './setup.ts';
+import { jinxSetupWarnings, type ScriptJinx } from './jinxes.ts';
 import {
 	canDuplicate,
 	isBagDisabled,
@@ -222,19 +223,36 @@ export function analyseSelection(input: SelectionAnalysisInput): SetupAnalysis {
 	});
 }
 
+/**
+ * How many Travellers a game may have: everyone beyond 15 joins as one
+ * (https://wiki.bloodontheclocktower.com/Setup), and a rule may let up to `inBag` more into
+ * the bag (Stowed Away), counted among the players.
+ */
+export function travellerRange(players: number, inBag = 0): { min: number; max: number } {
+	const min = Math.max(0, players - 15);
+	return { min, max: Math.max(min, inBag) };
+}
+
 export interface RandomSelectionInput extends Omit<SelectionAnalysisInput, 'selection'> {
 	/** The script's characters, in script order. */
 	scriptCharacters: readonly Character[];
 	/** Kept as they are; the rest is filled around them. */
 	selection: BagSelection;
 	random: () => number;
+	/**
+	 * A rule lets up to this many Travellers into the bag (Stowed Away): first 0 to this many
+	 * are picked at random, counting any already selected, and the rest is filled for that
+	 * many fewer players.
+	 */
+	travellersInBag?: number;
 }
 
 /**
  * Fills the selection up to the setup counts with random characters from the script,
  * keeping what is already selected: the Demon first, then Minions, then (with their setup
  * changes known) Outsiders and Townsfolk, then Travellers for players beyond the dealt
- * count. Where a modifier allows several counts, one is picked at random.
+ * count. Where a modifier allows several counts, one is picked at random. A rule that puts
+ * Travellers in the bag has them picked first.
  */
 export function randomSelection(input: RandomSelectionInput): Record<CharacterId, number> {
 	const selection: Record<CharacterId, number> = { ...input.selection };
@@ -245,6 +263,12 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 			selection[character.id] = 1;
 		}
 	};
+	const travellersSelected = () =>
+		input.scriptCharacters.filter((c) => c.type === 'traveller' && selection[c.id] > 0).length;
+	if (input.travellersInBag) {
+		const n = Math.floor(input.random() * (input.travellersInBag + 1));
+		take('traveller', n - travellersSelected());
+	}
 	const order: SeatedType[] = ['demon', 'minion', 'outsider', 'townsfolk'];
 	for (const type of order) {
 		const analysis = analyseSelection({ ...input, selection });
@@ -263,11 +287,76 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 		take(type, target - have);
 	}
 	const analysis = analyseSelection({ ...input, selection });
-	const travellers = input.scriptCharacters.filter(
-		(c) => c.type === 'traveller' && selection[c.id] > 0
-	).length;
-	take('traveller', Math.max(0, input.players - analysis.dealt - travellers));
+	take('traveller', Math.max(0, input.players - analysis.dealt - travellersSelected()));
 	return selection;
+}
+
+/** Setup warnings that make a selection wrong for its table (the page's build errors). */
+const INVALID: ReadonlySet<SetupWarning['code']> = new Set([
+	'count-mismatch',
+	'total-mismatch',
+	'missing-required',
+	'duplicate'
+]);
+
+export interface SelectionCheckInput extends SelectionAnalysisInput {
+	scriptCharacters: readonly Character[];
+	/** The script's jinxes: one that forbids both characters makes the pair invalid. */
+	jinxes?: readonly ScriptJinx[];
+}
+
+/**
+ * Why a selection is wrong for the table, empty when it is valid: the counts (with every
+ * setup change), required characters (the Huntsman's Damsel), copies, a Demon stand-in the
+ * Lunatic can't have, Travellers for players beyond 15, and jinxed pairs that can't both be
+ * in play. The same checks the Characters page asks to confirm before building the bag,
+ * except the player count itself, which no selection can change.
+ */
+export function selectionProblems(input: SelectionCheckInput): string[] {
+	const analysis = analyseSelection(input);
+	const plan = planBag({
+		selection: input.selection,
+		scriptCharacters: input.scriptCharacters,
+		lookup: input.lookup
+	});
+	const ids = selectedIds(input.selection, input.scriptOrder);
+	const travellers = ids.filter((id) => input.lookup(id)?.type === 'traveller').length;
+	return [
+		...analysis.warnings.filter((w) => INVALID.has(w.code)).map((w) => w.message),
+		...plan.issues
+			.filter((i) => i.code === 'no-stand-in' || i.code === 'unknown-character')
+			.map((i) => i.message),
+		...(travellers < analysis.travellers
+			? [`${analysis.travellers} Travellers needed; ${travellers} chosen.`]
+			: []),
+		...jinxSetupWarnings(input.jinxes ?? [], ids, (id) => input.lookup(id)?.name ?? id).map(
+			(w) => w.message
+		)
+	];
+}
+
+export type RandomResult =
+	{ ok: true; selection: Record<CharacterId, number> } | { ok: false; problems: string[] };
+
+/** Random selections tried before saying none fits. */
+const RANDOM_TRIES = 300;
+
+/**
+ * A random selection that is valid for the table (Trevor, 2026-10-19: "do not show an
+ * invalid draw"): `randomSelection` is tried until `selectionProblems` finds nothing. When
+ * no try fits (the kept characters or the script make it impossible), the problems of the
+ * last try say why, and nothing is chosen.
+ */
+export function validRandomSelection(
+	input: RandomSelectionInput & { jinxes?: readonly ScriptJinx[]; tries?: number }
+): RandomResult {
+	let problems: string[] = [];
+	for (let i = 0; i < (input.tries ?? RANDOM_TRIES); i++) {
+		const selection = randomSelection(input);
+		problems = selectionProblems({ ...input, selection });
+		if (problems.length === 0) return { ok: true, selection };
+	}
+	return { ok: false, problems };
 }
 
 /**

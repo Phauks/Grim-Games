@@ -26,6 +26,9 @@ export const setup = {
 	'setup.morePlayers': 'More players',
 	'setup.sheet': 'Setup sheet',
 	'setup.random': 'Random selection',
+	'setup.randomNone': 'No valid selection fits this script and player count',
+	'setup.randomNoneLocked': 'No valid selection fits the locked characters',
+	'setup.lockFor': 'Keep {name} when randomizing',
 	'setup.clearSelection': 'Clear selection',
 	'setup.buildBag': 'Build bag',
 	'setup.continueDraw': 'Continue draw',
@@ -48,6 +51,10 @@ export const setup = {
 	'setup.errors.travellers': {
 		one: '{count} Traveller chosen; expected {expected} for {players} players.',
 		other: '{count} Travellers chosen; expected {expected} for {players} players.'
+	},
+	'setup.errors.travellersInBag': {
+		one: '{count} Traveller chosen; a special rule allows up to {max} in the bag.',
+		other: '{count} Travellers chosen; a special rule allows up to {max} in the bag.'
 	},
 	'setup.replace.title': 'Replace the bag?',
 	'setup.leave.title': 'Leave the draw?',
@@ -181,5 +188,22 @@ export const setup = {
 	'setup.reveal.alignment': 'Alignment',
 	'setup.reveal.good': 'Good',
 	'setup.reveal.evil': 'Evil',
-	'setup.reveal.reveal': 'Reveal'
+	'setup.reveal.reveal': 'Reveal',
+	'setup.reveal.hold': 'Hold to see your character',
+
+	'setup.lock.lock': 'Lock the draw',
+	'setup.lock.unlock': 'Unlock the draw',
+	'setup.lock.setTitle': 'Lock the draw',
+	'setup.lock.setBody': 'Players can draw, but leaving the draw needs this PIN.',
+	'setup.lock.pin': 'PIN',
+	'setup.lock.again': 'PIN again',
+	'setup.lock.mismatch': 'The PINs are different.',
+	'setup.lock.enterTitle': 'Enter the Storyteller PIN',
+	'setup.lock.wrong': 'Wrong PIN.',
+	'setup.lock.wait': 'Try again in {seconds} s.',
+	'setup.lock.forgot': 'Forgot PIN',
+	'setup.lock.forgotCountdown': 'Unlocking in {seconds} s.',
+	'setup.lock.keepLocked': 'Keep locked',
+	'setup.lock.handBack': 'Every tile is drawn. Hand the phone back to the Storyteller.',
+	'setup.lock.clear': 'Clear PIN'
 } as const;
