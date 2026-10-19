@@ -915,3 +915,22 @@ test('Special rules sits under Game mode, and opening it closes the Game mode li
 	await expect(page.getByRole('listbox')).toBeHidden();
 	await noSidewaysScroll(page);
 });
+
+test('each special rule shows its description under its switch', async ({ page }) => {
+	// Trevor, 2026-10-19: descriptions when toggling, the rest behind Inspect. Specters'
+	// description is approved; one not yet approved shows the author's own rule text.
+	await page.goto('/new');
+	await modesPanel(page)
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const rows = dialog.getByTestId('special-rules').locator('li');
+	const specters = rows.filter({ hasText: 'Specters' });
+	await expect(specters.getByTestId('rule-description')).toHaveText(
+		'Spectators share one ability and vote during the game on how it is used.'
+	);
+	await expect(
+		rows.filter({ hasText: 'I See Dead People' }).getByTestId('rule-description')
+	).toContainText("doesn't announce deaths");
+	await noSidewaysScroll(page);
+});
