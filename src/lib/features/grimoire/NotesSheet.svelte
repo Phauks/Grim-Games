@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
@@ -11,38 +11,26 @@
 	/**
 	 * Every note in the game on one screen (Trevor, 2026-10-19): the game's general notes,
 	 * then each player's note, headed by their character, seat and name. Player notes live
-	 * here, not in the seat sheet; a seat's pen mark on the board opens this at that seat.
-	 * Never shown to players.
+	 * here, not in the seat sheet; a seat's pen mark or its ⋯ Notes opens just that note's
+	 * editor (`edit`). Never shown to players.
 	 */
 	interface Props {
 		open: boolean;
 		grimoire: Grimoire;
-		/** The seat to bring into view and mark as the sheet opens (its pen mark was tapped). */
-		focus?: SeatId;
 	}
 
-	let { open = $bindable(), grimoire, focus }: Props = $props();
+	let { open = $bindable(), grimoire }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const viewOnly = $derived(grimoire.open.viewOnly);
-
-	let list = $state<HTMLElement>();
-	$effect(() => {
-		if (!open || !focus) return;
-		const seatId = focus;
-		void tick().then(() =>
-			list
-				?.querySelector(`[data-seat="${CSS.escape(seatId)}"]`)
-				?.scrollIntoView({ block: 'center' })
-		);
-	});
 
 	// ── Editing one note: 'game' for the general notes, or a seat ──
 	let editOpen = $state(false);
 	let draft = $state('');
 	let editing = $state<'game' | SeatId>();
 
-	function edit(target: 'game' | SeatId) {
+	/** Opens one note's editor; also used straight from a seat's ⋯ menu, without the sheet. */
+	export function edit(target: 'game' | SeatId) {
 		editing = target;
 		draft = (target === 'game' ? game.notes : game.seats[target]?.note) ?? '';
 		editOpen = true;
@@ -85,7 +73,7 @@
 />
 
 <BottomSheet bind:open title="Notes">
-	<div class="notes" bind:this={list} data-testid="notes-sheet">
+	<div class="notes" data-testid="notes-sheet">
 		<section aria-labelledby="notes-game">
 			<h3 id="notes-game">Game</h3>
 			<button
@@ -101,7 +89,7 @@
 				{#each game.seating as seatId (seatId)}
 					{@const seat = game.seats[seatId]}
 					{@const label = seatLabel(game, seatId)}
-					<li data-seat={seatId} data-focus={seatId === focus || undefined}>
+					<li data-seat={seatId}>
 						<!-- Character, seat and name above the note (Trevor, 2026-10-19). -->
 						<CharacterEntry
 							characterId={seat.characterId}
@@ -168,9 +156,5 @@
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 		cursor: pointer;
-	}
-	/* The seat whose pen mark opened the sheet. */
-	li[data-focus] .note {
-		border-color: var(--accent);
 	}
 </style>

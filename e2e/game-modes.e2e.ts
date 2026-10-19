@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { pickScript } from './new-game.ts';
 
 /**
  * Game modes on New game (Trevor, 2026-10-17): choose a mode, inspect every part of it, and
@@ -998,4 +999,35 @@ test('special rules read plainly in Inspect, and Special rules looks like the co
 	await expect(extras).toHaveText([/Townsfolk\s*1/, /Outsiders\s*1/, /Minions\s*1/, /Demons\s*1/]);
 	await expect(infinite.locator('tr[data-field="announceRange"]')).toContainText('Yes');
 	await noSidewaysScroll(page);
+});
+
+test('each special rule takes its own line under the script name in the board corner', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): a line each, so none is run together or cut off with the others.
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await chooseRules(page, 'Stowed Away', 'I See Dead People');
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	const corner = page.getByTestId('script-title');
+	const lines = corner.getByTestId('game-mode');
+	if (test.info().project.name === 'phone') {
+		// A phone's corner beside seat 5 has no room for the name and a rule line: the name
+		// hides, and the ⋯ menu's Game mode has the mode and its rules instead.
+		await expect(corner).toBeHidden();
+		await page.getByRole('button', { name: 'More', exact: true }).tap();
+		await expect(
+			page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Game mode' })
+		).toBeVisible();
+		return;
+	}
+	await expect(corner).toBeVisible();
+	await expect(lines).toHaveText(['Stowed Away', 'I See Dead People']);
+	const [first, second] = [
+		(await lines.nth(0).boundingBox())!,
+		(await lines.nth(1).boundingBox())!
+	];
+	expect(second.y).toBeGreaterThanOrEqual(first.y + first.height - 1);
+	await expect(page.getByTestId('script-title')).not.toContainText('+');
 });
