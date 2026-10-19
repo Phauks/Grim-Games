@@ -877,6 +877,7 @@
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
+	let infoSheet = $state<ReturnType<typeof InfoTokensSheet>>();
 	/** Where closing the info sheet goes back to, when something other than the toolbar opened it. */
 	let infoReturn: (() => void) | undefined;
 	const infoCharacters = $derived(
@@ -1628,6 +1629,7 @@
 />
 
 <InfoTokensSheet
+	bind:this={infoSheet}
 	bind:open={infoOpen}
 	characters={infoCharacters}
 	inPlay={charactersInPlay(game)}
@@ -1750,7 +1752,9 @@
 			if (i >= 0) walk = { ...walk, index: i };
 		}
 	}}
-	onInfoTokens={() => {
+	onInfoTokens={(token) => {
+		// A card the step's text names opens over the step, which stays open under it.
+		if (token && infoSheet) return infoSheet.openWith(token);
 		// Closing the info sheet returns to this night step (Trevor, 2026-10-16).
 		infoReturn = () => (guideOpen = true);
 		infoOpen = true;

@@ -139,6 +139,15 @@
 		use(token.text, [], detail);
 	}
 
+	/**
+	 * Opens the sheet straight at one card, as tapped in the list: a night step's own cards
+	 * (Trevor, 2026-10-19). Closing goes back to the list.
+	 */
+	export function openWith(token: InfoToken) {
+		open = true;
+		choose(token);
+	}
+
 	/** Shows the card now, or adds it to the cards to show together. */
 	function use(
 		text: string,
