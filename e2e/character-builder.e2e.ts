@@ -37,10 +37,10 @@ test('makes a character, saves it, and puts it on a script', async ({ page }) =>
 	await expect(page.getByTestId('homebrew-count')).toHaveText('1');
 
 	await page.goto('/library');
-	await page
-		.getByTestId('library-table')
-		.getByRole('button', { name: /^Lamp Lighter/ })
-		.tap();
+	// One tap selects, a double tap opens (Trevor, 2026-10-18).
+	const lamp = page.getByTestId('library-table').getByRole('button', { name: /^Lamp Lighter/ });
+	await lamp.tap();
+	await lamp.tap();
 	await page.getByRole('button', { name: 'Edit character' }).tap();
 	await expect(
 		page.getByRole('dialog', { name: 'Edit character' }).getByTestId('character-name')
