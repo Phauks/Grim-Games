@@ -8,6 +8,7 @@
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import { endReasonLabel } from './end-reason-label.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**
@@ -37,16 +38,16 @@
 		reason = winner ? detectedEndReason(game, characters, winner, { dayEnded }) : undefined;
 	});
 
-	const reasons = $derived<{ value: EndReason; label: string }[]>([
-		{ value: 'demon-dead', label: 'Demon died' },
-		{ value: 'two-alive', label: '2 alive' },
-		...endCharacters(game, characters, reason).map((id) => ({
-			value: `character:${id}` as EndReason,
-			// eslint-disable-next-line grim/names-as-badges -- the option's accessible name; shown as a badge
-			label: characters.get(id)?.name ?? id
-		})),
-		{ value: 'other', label: 'Other' }
-	]);
+	const reasons = $derived(
+		(
+			[
+				'demon-dead',
+				'two-alive',
+				...endCharacters(game, characters, reason).map((id): EndReason => `character:${id}`),
+				'other'
+			] as EndReason[]
+		).map((value) => ({ value, label: endReasonLabel(value, characters) }))
+	);
 </script>
 
 {#snippet reasonLabel(option: { value: EndReason; label: string })}
