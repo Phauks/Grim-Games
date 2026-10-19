@@ -522,7 +522,13 @@
 			y: ((event.clientY - rect.top) / rect.height) * 100
 		};
 	}
+	/**
+	 * The seat last touched draws over the others where tokens overlap, its name included
+	 * (Trevor, 2026-10-19). Only for this visit to the board: a reload goes back to seat order.
+	 */
+	let front = $state<SeatId | undefined>();
 	function dragStart(event: PointerEvent, seatId: SeatId, at: SeatPoint) {
+		front = seatId;
 		if (!arranging || drag || !board) return;
 		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 		const p = boardPoint(event);
@@ -1259,6 +1265,7 @@
 			<div
 				class="slot"
 				class:dragging={drag?.seatId === seat.seatId}
+				class:front={front === seat.seatId}
 				style:left="{at.x}%"
 				style:top="{at.y}%"
 				onpointerdown={(event) => dragStart(event, seat.seatId, at)}
@@ -1908,11 +1915,7 @@
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
-	/*
-	 * A point on the board with its seat centred on it. No transform, so a slot makes no
-	 * stacking context of its own and every seat's name badge can sit above every token
-	 * (Trevor, 2026-10-19: when two tokens overlap the name stays visible).
-	 */
+	/* A point on the board with its seat centred on it. */
 	.slot {
 		position: absolute;
 		display: flex;
@@ -1930,6 +1933,10 @@
 	}
 	.arranging .slot {
 		cursor: grab;
+	}
+	/* Above the other seats, still under the reminders (later in the page). */
+	.slot.front {
+		z-index: 1;
 	}
 	.slot.dragging {
 		z-index: 2;

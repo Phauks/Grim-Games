@@ -3700,8 +3700,8 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	await expect(strip).toHaveCSS('opacity', '1');
 });
 
-test('a seat dragged over another leaves both name badges readable', async ({ page }) => {
-	// Trevor (2026-10-19): when two tokens overlap, the name badge stays visible.
+test('the seat last touched draws over the seats it overlaps, name and all', async ({ page }) => {
+	// Trevor (2026-10-19): where tokens overlap, the one last touched is on top.
 	await startGame(page);
 	for (const [number, name] of [
 		[1, 'Empath'],
@@ -3734,18 +3734,24 @@ test('a seat dragged over another leaves both name badges readable', async ({ pa
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
 
-	// What is drawn on top at the middle of each badge is the badge's own pill. Badges let
+	// What is drawn on top at the middle of a badge: its own pill, or another seat. Badges let
 	// taps through to their token, so the probe makes just the pills hit-testable.
 	await page.addStyleTag({
 		content: '[data-testid="token-player-name"] > * { pointer-events: auto !important; }'
 	});
-	for (const n of [1, 2]) {
-		const badge = seatLabelled(page, `Seat ${n}:`).getByTestId('token-player-name');
-		const top = await badge.evaluate((svg) => {
-			const pill = svg.querySelector('rect')!.getBoundingClientRect();
-			const hit = document.elementFromPoint(pill.x + pill.width / 2, pill.y + pill.height / 2);
-			return hit?.closest('[data-testid="token-player-name"]') === svg;
-		});
-		expect(top, `Seat ${n}'s badge is on top`).toBe(true);
-	}
+	const onTop = (n: number) =>
+		seatLabelled(page, `Seat ${n}:`)
+			.getByTestId('token-player-name')
+			.evaluate((svg) => {
+				const pill = svg.querySelector('rect')!.getBoundingClientRect();
+				const hit = document.elementFromPoint(pill.x + pill.width / 2, pill.y + pill.height / 2);
+				return hit?.closest('[data-testid="token-player-name"]') === svg;
+			});
+	// Seat 2 was dragged last: it covers seat 1's name.
+	expect(await onTop(2)).toBe(true);
+	expect(await onTop(1)).toBe(false);
+	// Tapping seat 1 brings it to the front, its name with it.
+	await openSeat(page, 1);
+	await closeSheet(page);
+	expect(await onTop(1)).toBe(true);
 });
