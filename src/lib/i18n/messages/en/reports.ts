@@ -31,7 +31,6 @@ export const reports = {
 	'reports.noAccount': 'No account signs in with that email',
 	'reports.removeAdmin': 'Remove admin {email}',
 	'reports.status': 'Status',
-	'reports.status.all': 'All',
 	'reports.status.new': 'New',
 	'reports.status.accepted': 'Accepted',
 	'reports.status.done': 'Done',
@@ -41,5 +40,10 @@ export const reports = {
 	'reports.deleteDetail': 'It is removed for good.',
 	'reports.details': 'Details',
 	'reports.sentAt': 'Sent',
+	'reports.reporter': 'Reporter',
+	'reports.noUsername': 'No username',
+	'reports.signedOut': 'Signed out',
+	'reports.onlyMine': 'Only mine',
+	'reports.hidden': 'Hidden',
 	'reports.loadFailed': 'Could not load reports'
 } as const;

@@ -4,7 +4,7 @@
  * Shared by the app and the Worker (worker/reports.ts).
  *
  *   POST   /api/reports              body: ReportDraft            -> 201 { id }
- *   GET    /api/reports              (admin)                      -> 200 { reports: Report[] }
+ *   GET    /api/reports              (signed in)                  -> 200 ReportList
  *   PATCH  /api/reports/<id>         (admin) { status }           -> 204
  *   DELETE /api/reports/<id>         (admin)                      -> 204
  *
@@ -12,8 +12,10 @@
  *   POST   /api/reports/admins       { email }                    -> 204, 404 no such account
  *   DELETE /api/reports/admins       { id }                       -> 204
  *
- * Reading, triage and the admin list need a signed-in admin account (Trevor, 2026-10-18) or
- * the Worker secret REPORTS_ADMIN_KEY as a Bearer token; otherwise they answer 404.
+ * Triage and the admin list need a signed-in admin account (Trevor, 2026-10-18) or the Worker
+ * secret REPORTS_ADMIN_KEY as a Bearer token; otherwise they answer 404. Any signed-in account
+ * reads the reports sent from an account (Trevor, 2026-10-19: filter by user, and set yourself
+ * as the user easily); what a report was sent with stays with its sender and the admins.
  */
 export const REPORTS_API = '/api/reports';
 export const REPORTS_ADMINS_API = '/api/reports/admins';
@@ -62,12 +64,26 @@ export interface Report extends ReportDraft {
 	id: number;
 	status: ReportStatus;
 	createdAt: number;
+	/** Sent while signed in to an account; reports sent signed out are for admins only. */
+	fromAccount?: boolean;
+	/** The sender's username today, when the account has one. */
+	reporter?: string;
+	/** Sent from the account reading the list. */
+	mine?: boolean;
+}
+
+/** What the list shows the reader: everything to an admin, else the public part (above). */
+export interface ReportList {
+	reports: Report[];
+	/** The reader may triage (status, delete, admins). */
+	admin: boolean;
 }
 
 export interface CreatedReport {
 	id: number;
 }
 
+/** What a report was sent with: shown only to its sender and the admins. */
 export const REPORT_OPTIONAL_FIELDS = ['details', 'contact', 'page', 'build', 'device'] as const;
 
 export function isReportKind(value: unknown): value is ReportKind {

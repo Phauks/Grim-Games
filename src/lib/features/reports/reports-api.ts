@@ -4,8 +4,8 @@ import {
 	type Admin,
 	type AdminList,
 	type CreatedReport,
-	type Report,
 	type ReportDraft,
+	type ReportList,
 	type ReportStatus
 } from './reports-protocol.ts';
 
@@ -27,12 +27,15 @@ function admin(key: string): HeadersInit {
 		: { 'Content-Type': 'application/json' };
 }
 
-/** Every report, newest first; undefined when neither the account nor the key may read them. */
-export async function listReports(key: string): Promise<Report[] | undefined> {
+/**
+ * The reports this account (or the key) may read, newest first; undefined when signed out
+ * without the key.
+ */
+export async function listReports(key: string): Promise<ReportList | undefined> {
 	const response = await fetch(REPORTS_API, { headers: admin(key) });
 	if (response.status === 404) return undefined;
 	if (!response.ok) throw new Error(await response.text());
-	return ((await response.json()) as { reports: Report[] }).reports;
+	return (await response.json()) as ReportList;
 }
 
 export async function setReportStatus(key: string, id: number, status: ReportStatus) {
