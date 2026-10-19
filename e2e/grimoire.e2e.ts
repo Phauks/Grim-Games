@@ -1884,6 +1884,9 @@ test("a finished game is shared to the players' phones, without the notes", asyn
 	const link = dialog.getByTestId('share-url');
 	await expect(link).toHaveValue(/\/recap\/[\w-]{22}$/);
 	const url = await link.inputValue();
+	// The script's logo sits in the middle of the QR code (Trevor, 2026-10-19).
+	const qr = dialog.getByRole('img', { name: 'QR code for the game recap' });
+	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
 
 	// A player's phone opens the link.
 	const phone = await context.newPage();

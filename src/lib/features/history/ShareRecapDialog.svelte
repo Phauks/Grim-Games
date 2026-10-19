@@ -2,6 +2,9 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { dataUrl, grimoireImage } from '#lib/features/grimoire/grimoire-image.ts';
+	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
+	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import type { GameId } from '#lib/core/model/types.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -36,6 +39,9 @@
 	let busy = $state(false);
 	let failed = $state(false);
 	let confirmStop = $state(false);
+	/** The script's logo, in the middle of the QR code (Trevor, 2026-10-19). */
+	let logo = $state<string>();
+	let logoFailed = $state(false);
 
 	const url = $derived(share ? `${location.origin}${recapPagePath(share.id)}` : undefined);
 
@@ -49,6 +55,9 @@
 				title = buildRecap(source).title;
 				share = recapShares.read(gameId);
 				if (share) parts = { ...share.parts };
+				return loadOfficialData().then((data) => {
+					if (current) logo = scriptLogo(fromScript(source.game.script, data).script);
+				});
 			})
 			.catch((error) => reportError(error, { area: 'history' }));
 		return () => (current = false);
@@ -125,12 +134,16 @@
 			{url}
 			{title}
 			qrLabel={t('history.shareQr')}
+			qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 			pending={failed
 				? t('history.shareFailed')
 				: busy
 					? t('history.sharing')
 					: t('history.notShared')}
 		>
+			{#snippet qrCenter()}
+				<ScriptQrCenter {logo} name={title} bind:failed={logoFailed} />
+			{/snippet}
 			{#snippet actions()}
 				{#if share}
 					<DeleteButton
