@@ -10,6 +10,8 @@
 	let query = $state('');
 	// `?long`: a long title beside a wide text button, the case that once broke titles mid-word.
 	const long = $derived(page.url.searchParams.has('long'));
+	// `?columns`: content in Page `columns` (Account), with no side column.
+	const columns = $derived(page.url.searchParams.has('columns'));
 </script>
 
 <svelte:head>
@@ -17,7 +19,11 @@
 </svelte:head>
 
 <!-- Every slot of the shared page layout, for the page-layout e2e tests. -->
-<Page title={long ? 'Two games at once with a longer page title' : 'Page layout preview'}>
+<Page
+	title={long ? 'Two games at once with a longer page title' : 'Page layout preview'}
+	{columns}
+	side={columns ? undefined : sideColumn}
+>
 	{#snippet actions()}
 		<IconButton icon="share" label="Share" />
 		<Button>{long ? 'Inspect the second town' : 'Action'}</Button>
@@ -28,15 +34,21 @@
 			<input type="search" aria-label="Search" bind:value={query} />
 		</ClearableField>
 	{/snippet}
-	{#snippet side()}
-		<PageSection title="Side">
-			<p>Side column</p>
-		</PageSection>
-	{/snippet}
 	<PageSection title="First section">
 		<p>None</p>
 	</PageSection>
 	<PageSection title="Second section" collapsible storageKey="spike-page-second">
 		<p>Collapsible content</p>
 	</PageSection>
+	{#if columns}
+		<PageSection title="Third section">
+			<p>None</p>
+		</PageSection>
+	{/if}
 </Page>
+
+{#snippet sideColumn()}
+	<PageSection title="Side">
+		<p>Side column</p>
+	</PageSection>
+{/snippet}
