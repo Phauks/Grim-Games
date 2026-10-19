@@ -58,11 +58,11 @@
 	);
 
 	/**
-	 * One row per type the Storyteller may add a hidden character of (Trevor, 2026-10-18:
-	 * Townsfolk, Outsider and Minion), more where the mode adds several of a type. Any row
-	 * can be left empty.
+	 * One row per type the Storyteller may add a hidden character of (Trevor, 2026-10-19:
+	 * one each of Townsfolk, Outsider, Minion and Demon), more where the mode adds several of
+	 * a type. Any row can be left empty.
 	 */
-	const ROW_TYPES: readonly SeatedType[] = ['townsfolk', 'outsider', 'minion'];
+	const ROW_TYPES: readonly SeatedType[] = ['townsfolk', 'outsider', 'minion', 'demon'];
 	const rowTypes = $derived(
 		ROW_TYPES.flatMap((type) =>
 			Array.from({ length: Math.max(1, extraCounts(mode)[type] ?? 0) }, () => type)

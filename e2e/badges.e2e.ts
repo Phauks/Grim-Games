@@ -154,10 +154,7 @@ test('the Jinxes section lists every TPI jinx under the other character', async 
 	);
 	await page.goto('/reference');
 	await page.getByRole('searchbox').fill('Alchemist');
-	await page
-		.locator('[data-testid="reference-card"] button.badge[data-character-id="alchemist"]')
-		.first()
-		.tap();
+	await page.getByRole('button', { name: 'About the Alchemist' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Alchemist' });
 	const sections = dialog.getByRole('navigation', { name: 'More from the wiki' });
 	await sections.getByRole('button', { name: 'Jinxes' }).tap();

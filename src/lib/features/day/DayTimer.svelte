@@ -9,6 +9,7 @@
 	import { liveDayTimer as timer } from './day-timer.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { canVibrate, playTimerSound, vibrateTimer } from './timer-sound.ts';
+	import { canKeepAwake } from './timer-wake-lock.ts';
 	import TimerPerPlayerRow from './TimerPerPlayerRow.svelte';
 
 	/**
@@ -54,6 +55,18 @@
 		checked={canVibrate() && preferences.current.timerVibrate}
 		disabled={!canVibrate()}
 		onChange={chooseVibrate}
+	/>
+{/snippet}
+
+{#snippet keepAwake()}
+	<!-- The screen stays on while the timer runs (Trevor, 2026-10-19), so it can be followed
+	     on a phone that would otherwise lock. Off and disabled, with why, where unsupported. -->
+	<SettingToggle
+		label={t('day.timerKeepAwake')}
+		description={canKeepAwake() ? undefined : t('day.timerKeepAwakeUnavailable')}
+		checked={canKeepAwake() && preferences.current.timerKeepAwake}
+		disabled={!canKeepAwake()}
+		onChange={(on) => timer.setKeepAwake(on)}
 	/>
 {/snippet}
 
@@ -137,6 +150,7 @@
 				onChange={chooseSound}
 			/>
 			{@render vibrate()}
+			{@render keepAwake()}
 			<TimerPerPlayerRow />
 		</div>
 	</BottomSheet>
@@ -152,6 +166,7 @@
 				onChange={chooseSound}
 			/>
 			{@render vibrate()}
+			{@render keepAwake()}
 			<TimerPerPlayerRow />
 		</div>
 	</BottomSheet>

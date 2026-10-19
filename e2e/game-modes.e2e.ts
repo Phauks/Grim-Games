@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
  * Game modes on New game (Trevor, 2026-10-17): choose a mode, inspect every part of it, and
@@ -193,6 +193,9 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	await expect(page.getByRole('heading', { name: 'Draft', level: 1 })).toBeVisible();
 	// No count of seats left (Trevor, 2026-10-18).
 	await expect(page.getByTestId('seats-left')).toHaveCount(0);
+	// Nothing of the draft on the screen passed round the table (Trevor, 2026-10-19).
+	await expect(page.getByRole('group', { name: 'Open slots' })).toHaveCount(0);
+	await expect(page.getByText('Setup changes to apply by hand')).toHaveCount(0);
 	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
 	await expect(bagTiles(page)).toHaveCount(5);
 	await drawTile(page);
@@ -385,12 +388,10 @@ test('Two games at once: one setup for both bags, then one token for both games'
 		'page'
 	);
 	await menu.getByRole('button', { name: 'Town 2 · Bad Moon Rising' }).tap();
-	// Leaving the board asks first, as the app's navigation does; the game stays saved.
-	await page
-		.getByRole('alertdialog', { name: 'Leave the game?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	// Moving between the mode's boards isn't leaving the game, so it never asks (Trevor,
+	// 2026-10-19); leaving for anywhere else still does (grimoire.e2e.ts).
 	await expect(page).not.toHaveURL(board);
+	await expect(page.getByRole('alertdialog', { name: 'Leave the game?' })).toHaveCount(0);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await expect(page.getByTestId('script-title')).toContainText('Bad Moon Rising');
 	await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
@@ -399,11 +400,8 @@ test('Two games at once: one setup for both bags, then one token for both games'
 		.getByRole('dialog', { name: 'Game mode' })
 		.getByRole('button', { name: 'Towns' })
 		.tap();
-	// Leaving asks unless it was just confirmed (shell.ts keeps a short pass).
-	const ask = page.getByRole('alertdialog', { name: 'Leave the game?' });
-	await Promise.race([page.waitForURL(towns), ask.waitFor()]);
-	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page).toHaveURL(towns);
+	await expect(page.getByRole('alertdialog', { name: 'Leave the game?' })).toHaveCount(0);
 });
 
 test('Two Towns and a Boomdandy starts two towns with their own scripts', async ({ page }) => {
@@ -437,7 +435,24 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await chooseMode(page, 'Two Towns and a Boomdandy');
 	const panel = modesPanel(page);
 	await expect(panel.getByRole('link', { name: /Zombuul/ })).toBeVisible();
-	await expect(panel.getByTestId('town-sizes')).toHaveText('Town 1: 5 players · Town 2: 5 players');
+	// Each town sets its own count on its own setup sheet (Trevor, 2026-10-19), split evenly
+	// to start; towns further apart than the rules allow warn, and never block.
+	await expect(panel.getByTestId('player-count')).toHaveCount(0);
+	await expect(panel.getByTestId('town-1-player-count')).toHaveText('5');
+	await expect(panel.getByTestId('town-2-player-count')).toHaveText('5');
+	await expect(panel.getByRole('heading', { name: 'Town 2 setup sheet' })).toBeVisible();
+	const warning = panel.getByTestId('town-sizes-warning');
+	const town2 = panel.getByRole('region', { name: 'Town 2 setup sheet' });
+	await town2.getByRole('button', { name: 'More players' }).tap();
+	await expect(panel.getByTestId('town-2-player-count')).toHaveText('6');
+	await expect(warning).toBeHidden();
+	await town2.getByRole('button', { name: 'More players' }).tap();
+	await expect(warning).toBeVisible();
+	await expect(warning).toHaveText('The towns’ player counts differ by more than 1.');
+	await town2.getByRole('button', { name: 'Fewer players' }).tap();
+	await town2.getByRole('button', { name: 'Fewer players' }).tap();
+	await expect(panel.getByTestId('town-2-player-count')).toHaveText('5');
+	await expect(panel.getByTestId('town-1-player-count')).toHaveText('5');
 	await panel.getByRole('button', { name: 'Start game' }).tap();
 
 	// "Boomdandy and Mayor are guaranteed to be in play": the Boomdandy in the Zombuul town,
@@ -572,12 +587,12 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	await expect(page.getByRole('heading', { name: 'Hidden characters', level: 1 })).toBeVisible();
 	const extras = page.getByTestId('extras').locator('li');
-	// Up to four: two Townsfolk, an Outsider and a Minion.
+	// Up to four, one of each type (Trevor, 2026-10-19).
 	await expect(extras).toHaveCount(4);
 	await expect(extras.nth(0)).toContainText('Townsfolk');
-	await expect(extras.nth(1)).toContainText('Townsfolk');
-	await expect(extras.nth(2)).toContainText('Outsider');
-	await expect(extras.nth(3)).toContainText('Minion');
+	await expect(extras.nth(1)).toContainText('Outsider');
+	await expect(extras.nth(2)).toContainText('Minion');
+	await expect(extras.nth(3)).toContainText('Demon');
 	await expect(page.getByTestId('extras-range')).toHaveText(
 		'Tell the table: 3 to 5 hidden characters'
 	);
@@ -589,15 +604,15 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 		extras.nth(0).getByRole('button', { name: /^Roll again instead of / })
 	).not.toHaveAttribute('aria-label', before!);
 	// The Storyteller can choose the character, or leave a row empty.
-	await extras.nth(2).getByRole('button', { name: 'Choose a hidden Outsider' }).tap();
+	await extras.nth(1).getByRole('button', { name: 'Choose a hidden Outsider' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
 	await picker.getByRole('searchbox').fill('Goon');
 	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
 	await expect(picker).toBeHidden();
-	await expect(extras.nth(2)).toContainText('Goon');
-	await extras.nth(3).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
-	await expect(extras.nth(3)).toContainText('None');
-	await extras.nth(1).getByRole('button', { name: 'Clear the hidden Townsfolk' }).tap();
+	await expect(extras.nth(1)).toContainText('Goon');
+	await extras.nth(2).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
+	await expect(extras.nth(2)).toContainText('None');
+	await extras.nth(3).getByRole('button', { name: 'Clear the hidden Demon' }).tap();
 	await expect(page.getByTestId('extras-range')).toHaveText(
 		'Tell the table: 1 to 3 hidden characters'
 	);
@@ -633,7 +648,8 @@ test('with no hidden character, Infinite Possibilities can’t go on to the setu
 	await expect(
 		extras.getByRole('button', { name: /^Roll again instead of / }).first()
 	).toBeVisible();
-	for (const [i, type] of ['Townsfolk', 'Townsfolk', 'Outsider', 'Minion'].entries()) {
+	// One row of each type (Trevor, 2026-10-19).
+	for (const [i, type] of ['Townsfolk', 'Outsider', 'Minion', 'Demon'].entries()) {
 		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
 		if (await clear.isEnabled()) await clear.tap();
 	}
@@ -896,5 +912,72 @@ test('Special rules sits under Game mode, and opening it closes the Game mode li
 	await rules.evaluate((el: HTMLElement) => el.click());
 	await expect(page.getByRole('dialog', { name: 'Special rules' })).toBeVisible();
 	await expect(page.getByRole('listbox')).toBeHidden();
+	await noSidewaysScroll(page);
+});
+
+test('each special rule shows its description under its switch', async ({ page }) => {
+	// Trevor, 2026-10-19: descriptions when toggling, the rest behind Inspect. Specters'
+	// description is approved; one not yet approved shows the author's own rule text.
+	await page.goto('/new');
+	await modesPanel(page)
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const rows = dialog.getByTestId('special-rules').locator('li');
+	const specters = rows.filter({ hasText: 'Specters' });
+	await expect(specters.getByTestId('rule-description')).toHaveText(
+		'Spectators share one ability and vote during the game on how it is used.'
+	);
+	await expect(
+		rows.filter({ hasText: 'I See Dead People' }).getByTestId('rule-description')
+	).toContainText("doesn't announce deaths");
+	await noSidewaysScroll(page);
+});
+
+test('special rules read plainly in Inspect, and Special rules looks like the controls beside it', async ({
+	page
+}) => {
+	await page.goto('/new');
+	const panel = modesPanel(page);
+	// Trevor, 2026-10-19: "Special rules button looks different from other button on page".
+	const button = panel.getByRole('button', { name: /^Special rules/ });
+	const modes = panel.getByRole('combobox', { name: 'Game mode' });
+	const look = (l: typeof button) =>
+		l.evaluate((el) => {
+			const s = getComputedStyle(el);
+			return [s.borderTopWidth, s.borderTopStyle, s.backgroundColor, s.justifyContent];
+		});
+	const [width, style, background] = await look(modes);
+	expect(await look(button)).toEqual([width, style, background, 'flex-start']);
+
+	await button.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const inspect = async (name: string) => {
+		await dialog.getByRole('button', { name: `Inspect ${name}` }).tap();
+		return page.getByRole('dialog', { name });
+	};
+	const close = async (d: Locator) => {
+		await d.getByRole('button', { name: 'Close' }).tap();
+		await expect(d).toBeHidden();
+	};
+	// Seat 7's seat count was labelled Towns.
+	const seat7 = await inspect('The Ballad of Seat 7');
+	const seats = seat7.locator('li[data-part="seats"]');
+	await expect(seats.locator('tr[data-field="count"] th')).toHaveText('Seats');
+	await expect(seats.locator('tr[data-field="speaks"] td')).toHaveText('Once per game');
+	await close(seat7);
+	// Stowed Away is 0 to 2 Travellers in the bag; its rule text reads as sentences.
+	const stowed = await inspect('Stowed Away');
+	await expect(stowed.locator('tr[data-field="inBag"] td')).toHaveText('0–2');
+	await expect(stowed.locator('li[data-part="text"]')).not.toContainText('., ');
+	await close(stowed);
+	// Infinite Possibilities: one of each type, nothing restricted, and the Storyteller may
+	// tell the table how many.
+	const infinite = await inspect('A Script of Infinite Possibilities');
+	await expect(infinite.locator('li[data-part="restricted"]')).toHaveCount(0);
+	await expect(infinite.locator('li[data-part="information"]')).toHaveCount(0);
+	const extras = infinite.locator('tr[data-field="extras"] td tr');
+	await expect(extras).toHaveText([/Townsfolk\s*1/, /Outsiders\s*1/, /Minions\s*1/, /Demons\s*1/]);
+	await expect(infinite.locator('tr[data-field="announceRange"]')).toContainText('Yes');
 	await noSidewaysScroll(page);
 });

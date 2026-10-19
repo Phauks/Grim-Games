@@ -23,6 +23,11 @@ export interface SelectionState {
 	players: number;
 	selection: Record<CharacterId, number>;
 	standIns: Record<CharacterId, CharacterId>;
+	/**
+	 * Selected characters Random keeps (Trevor, 2026-10-19: "if you randomize, they will
+	 * still be in play"). Only ever selected ones: deselecting unlocks.
+	 */
+	locked: CharacterId[];
 }
 
 function fresh(gameId: string, players = DEFAULT_PLAYERS): SelectionState {
@@ -30,7 +35,8 @@ function fresh(gameId: string, players = DEFAULT_PLAYERS): SelectionState {
 		gameId,
 		players,
 		selection: {},
-		standIns: {}
+		standIns: {},
+		locked: []
 	};
 }
 
@@ -44,7 +50,11 @@ function read(): SelectionState | undefined {
 		return {
 			...fresh(v.gameId, v.players),
 			selection: { ...v.selection },
-			standIns: { ...v.standIns }
+			standIns: { ...v.standIns },
+			// Saved before locks existed: none locked.
+			locked: Array.isArray(v.locked)
+				? v.locked.filter((id): id is CharacterId => typeof id === 'string' && !!v.selection?.[id])
+				: []
 		};
 	} catch {
 		return undefined;
@@ -93,6 +103,7 @@ export const setupSelection = {
 		if (n <= 0) {
 			delete state.selection[id];
 			delete state.standIns[id];
+			state.locked = state.locked.filter((x) => x !== id);
 		} else state.selection[id] = n;
 		save();
 	},
@@ -101,15 +112,32 @@ export const setupSelection = {
 		for (const id of Object.keys(state.standIns)) {
 			if (!state.selection[id]) delete state.standIns[id];
 		}
+		state.locked = state.locked.filter((id) => state.selection[id]);
 		save();
 	},
 	setStandIn(id: CharacterId, shows: CharacterId) {
 		state.standIns[id] = shows;
 		save();
 	},
+	isLocked(id: CharacterId): boolean {
+		return state.locked.includes(id);
+	},
+	/** Locks or unlocks a selected character for Random. */
+	toggleLock(id: CharacterId) {
+		if (state.locked.includes(id)) state.locked = state.locked.filter((x) => x !== id);
+		else if (state.selection[id]) state.locked = [...state.locked, id];
+		save();
+	},
+	/** The locked characters with their copies: what Random starts from. */
+	lockedSelection(): Record<CharacterId, number> {
+		return Object.fromEntries(
+			state.locked.filter((id) => state.selection[id]).map((id) => [id, state.selection[id]])
+		);
+	},
 	clear() {
 		state.selection = {};
 		state.standIns = {};
+		state.locked = [];
 		save();
 	}
 };

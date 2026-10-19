@@ -56,6 +56,7 @@ function busyGame() {
 		{ type: 'UseAbility', seatId: seats[1], characterId: 'washerwoman' },
 		{ type: 'DayNote', characterId: 'washerwoman', seatId: seats[1], text: 'day note secret' },
 		{ type: 'SetDemonVoted', voted: true },
+		{ type: 'SetGameNotes', notes: 'game notes secret' },
 		{
 			type: 'RecordNightInfo',
 			seatId: seats[1],
@@ -97,6 +98,7 @@ describe('publicProjection', () => {
 			'day-secret',
 			'day secret',
 			'day note secret',
+			'game notes secret',
 			'info secret',
 			'demonVoted',
 			'ability',

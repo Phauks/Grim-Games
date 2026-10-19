@@ -56,6 +56,9 @@ export const ICON_SLOTS = {
 	appearance: { label: 'Appearance', choices: ['ph:palette', 'ph:paint-brush'] },
 	fonts: { label: 'Fonts', choices: ['ph:text-aa', 'ph:text-t'] },
 	icons: { label: 'Icons', choices: ['ph:shapes', 'ph:smiley'] },
+	/** Board and Tokens settings, each its own (Trevor, 2026-10-19). */
+	boardSettings: { label: 'Board settings', choices: ['ph:circle-dashed', 'ph:circles-three'] },
+	tokenSettings: { label: 'Token settings', choices: ['ph:poker-chip', 'ph:coin'] },
 	close: { label: 'Close', choices: ['ph:x', 'ph:x-circle'] },
 	menu: { label: 'Menu', choices: ['ph:list', 'ph:dots-three-vertical'] },
 	info: { label: 'Info', choices: ['ph:info', 'ph:question'] },
@@ -86,7 +89,6 @@ export const ICON_SLOTS = {
 	sortAscending: { label: 'Sorted ascending', choices: ['ph:caret-up', 'ph:sort-ascending'] },
 	sortDescending: { label: 'Sorted descending', choices: ['ph:caret-down', 'ph:sort-descending'] },
 	filter: { label: 'Filter', choices: ['ph:funnel'] },
-	tableView: { label: 'Show as table', choices: ['ph:table', 'ph:rows'] },
 	/** Characters a game keeps out (game modes' Restricted characters). */
 	restricted: { label: 'Restricted characters', choices: ['ph:prohibit', 'ph:prohibit-inset'] },
 	assistance: { label: 'Storyteller', choices: ['ph:lifebuoy', 'ph:hand-heart'] },

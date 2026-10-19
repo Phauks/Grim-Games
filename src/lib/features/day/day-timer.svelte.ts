@@ -1,6 +1,7 @@
 import { dayTimers } from '#lib/core/rules/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { playTimerSound, unlockTimerSound, vibrateTimer } from './timer-sound.ts';
+import { keepScreenAwake } from './timer-wake-lock.ts';
 
 const { adjust, dayTimer, elapsed, isFresh, isOver, isRunning, pause, remaining, shown, start } =
 	dayTimers;
@@ -12,7 +13,8 @@ type DayTimer = dayTimers.DayTimer;
  * (`DayTimer.svelte`, or read `clock`, `running`, `done`). Until it is started or changed by
  * hand its length follows the living players (`follow`). It counts down, stopping at 0:00,
  * or up past the target, by the `timerMode` setting. When the target is reached the device
- * vibrates where it can, plays the chosen sound (`timerSound`), and `done` turns on.
+ * vibrates where it can, plays the chosen sound (`timerSound`), and `done` turns on. While it
+ * runs the screen stays on (`timerKeepAwake`), so the phone doesn't lock mid-day.
  */
 class LiveDayTimer {
 	#timer = $state<DayTimer>(dayTimer(0));
@@ -71,6 +73,7 @@ class LiveDayTimer {
 		unlockTimerSound();
 		this.#signalled = this.done;
 		this.#ticker = setInterval(() => this.#tick(), 250);
+		keepScreenAwake(preferences.current.timerKeepAwake);
 	}
 
 	/** Stopped, at the time per living player again. */
@@ -87,6 +90,12 @@ class LiveDayTimer {
 		this.#adjusted = true;
 		this.#timer = adjust(this.#timer, steps, this.now);
 		this.#signalled = this.done;
+	}
+
+	/** Turns `timerKeepAwake` on or off, taking effect at once if the timer is running. */
+	setKeepAwake(timerKeepAwake: boolean): void {
+		preferences.update({ timerKeepAwake });
+		keepScreenAwake(timerKeepAwake && this.running);
 	}
 
 	#tick(): void {
@@ -107,6 +116,7 @@ class LiveDayTimer {
 	#stop(): void {
 		if (this.#ticker !== undefined) clearInterval(this.#ticker);
 		this.#ticker = undefined;
+		keepScreenAwake(false);
 	}
 }
 

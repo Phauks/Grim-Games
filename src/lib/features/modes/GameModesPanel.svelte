@@ -145,7 +145,28 @@
 	const minPlayers = $derived(MIN_PLAYERS * split);
 	const maxPlayers = $derived(split > 1 ? MAX_PLAYERS * split : MAX_SEATS);
 	const total = $derived(Math.min(maxPlayers, Math.max(minPlayers, players)));
-	const sizes = $derived(split > 1 ? townSizes(total, split) : undefined);
+	/**
+	 * Separate towns each set their own count, with the setup sheet once per town (Trevor,
+	 * 2026-10-19: "show the player count setup twice to account for the two different
+	 * towns"); they start as the total split evenly.
+	 */
+	let townPlayers = $state<number[]>([]);
+	const sizes = $derived(
+		split > 1
+			? townSizes(total, split).map((even, i) =>
+					Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, townPlayers[i] ?? even))
+				)
+			: undefined
+	);
+	/** Towns further apart than the mode allows: a warning, never a lock. */
+	const counts = $derived(played.parts.counts);
+	const uneven = $derived(
+		sizes &&
+			counts?.kind === 'per-town' &&
+			Math.max(...sizes) - Math.min(...sizes) > counts.maxDifference
+			? counts.maxDifference
+			: undefined
+	);
 	const restrictedCount = $derived(bannedIn(played, restrictions).size);
 
 	async function loadScripts(data: GameData): Promise<LoadedScript[]> {
@@ -260,7 +281,7 @@
 	</div>
 	<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18), directly under
 		the mode they stack on (2026-10-19). -->
-	<Button icon="fabled" onclick={() => (choosingRules = true)}>
+	<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
 		{t('modes.specialRulesButton', { count: rules.length })}
 	</Button>
 	<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
@@ -323,17 +344,36 @@
 			<p class="muted">{t('modes.everyCharacter')}</p>
 		{/if}
 
-		<!-- The same count and setup sheet as Standard (Trevor, 2026-10-18). -->
-		<PlayerCountSheet
-			players={total}
-			min={minPlayers}
-			max={maxPlayers}
-			onChange={(n) => (players = n)}
-		/>
+		<!-- The same count and setup sheet as Standard (Trevor, 2026-10-18), once per town
+			when the towns have their own players. -->
 		{#if sizes}
-			<p class="sizes" data-testid="town-sizes">
-				{sizes.map((n, i) => t('modes.townPlayers', { number: i + 1, count: n })).join(' · ')}
+			{#each sizes as count, i (i)}
+				<PlayerCountSheet
+					players={count}
+					min={MIN_PLAYERS}
+					max={MAX_PLAYERS}
+					title={t('modes.townSheet', { number: i + 1 })}
+					storageKey={`setup:sheet:town-${i + 1}`}
+					testid={`town-${i + 1}-player-count`}
+					onChange={(n) => (townPlayers[i] = n)}
+				/>
+			{/each}
+			<!-- The warning's line is kept, so the page doesn't move when it shows. -->
+			<p
+				class="warn"
+				class:shown={uneven !== undefined}
+				role="status"
+				data-testid="town-sizes-warning"
+			>
+				{t('modes.townsUneven', { count: uneven ?? 0 })}
 			</p>
+		{:else}
+			<PlayerCountSheet
+				players={total}
+				min={minPlayers}
+				max={maxPlayers}
+				onChange={(n) => (players = n)}
+			/>
 		{/if}
 
 		{#if draft}
@@ -343,7 +383,7 @@
 				onChange={(on) => (roleRecycling = on)}
 			/>
 		{/if}
-		<Button icon="restricted" onclick={openRestricted}>
+		<Button variant="field" icon="restricted" onclick={openRestricted}>
 			{t('modes.restrictedButton', { count: restrictedCount })}
 		</Button>
 		<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}>
@@ -422,7 +462,12 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	.sizes {
+	.warn {
 		margin: 0;
+		color: var(--evil);
+		visibility: hidden;
+	}
+	.warn.shown {
+		visibility: visible;
 	}
 </style>

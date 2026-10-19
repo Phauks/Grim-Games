@@ -52,6 +52,7 @@
 		setup: 11,
 		prep: 18,
 		ability: 18,
+		flavor: 16,
 		tokens: 12,
 		special: 11,
 		cards: 9,
@@ -59,8 +60,7 @@
 		otherNight: 17,
 		jinxes: 18,
 		preDay: 19,
-		problems: 15,
-		links: 0
+		problems: 15
 	};
 
 	type PresenceColumn = Exclude<TableColumn, 'name' | 'type' | 'edition' | 'alignment'>;
@@ -83,9 +83,8 @@
 		}
 	}
 
-	const TABLE_FIELDS = REFERENCE_FIELDS.filter((f) => !f.cardOnly);
 	const columns = $derived(
-		TABLE_FIELDS.map((field): DataColumn<FieldId, ReferenceEntry> => {
+		REFERENCE_FIELDS.map((field): DataColumn<FieldId, ReferenceEntry> => {
 			const base = {
 				id: field.id,
 				label: field.label,
@@ -222,7 +221,7 @@
 	{@const f = field(column.id)}
 	<!-- Shown in full: rows are as tall as their longest field (Trevor, 2026-10-16). -->
 	<div class="cell">
-		<FieldValue field={f.id} {entry} {onExplain} tokenSize={f.long ? undefined : 40} plainName />
+		<FieldValue field={f.id} {entry} {onExplain} tokenSize={f.long ? undefined : 40} />
 	</div>
 {/snippet}
 
@@ -250,10 +249,12 @@
 		lazy
 		rowEstimate="calc(10 * var(--u))"
 		rowAttrs={(entry) => ({
+			// A link to one character (#witch, from a bug report) scrolls to its row.
+			id: entry.character.id,
 			'data-character': entry.character.id,
 			'data-type': entry.character.type
 		})}
-		empty="No characters match."
+		empty={t('reference.noMatch')}
 	/>
 </div>
 

@@ -37,10 +37,12 @@ import ph_check from '~icons/ph/check';
 import ph_check_square from '~icons/ph/check-square';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
 import ph_circle_notch from '~icons/ph/circle-notch';
+import ph_circles_three from '~icons/ph/circles-three';
 import ph_clipboard from '~icons/ph/clipboard';
 import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_club from '~icons/ph/club';
+import ph_coin from '~icons/ph/coin';
 import ph_copy from '~icons/ph/copy';
 import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_corners_out from '~icons/ph/corners-out';
@@ -128,13 +130,13 @@ import ph_play from '~icons/ph/play';
 import ph_play_circle from '~icons/ph/play-circle';
 import ph_plus from '~icons/ph/plus';
 import ph_plus_circle from '~icons/ph/plus-circle';
+import ph_poker_chip from '~icons/ph/poker-chip';
 import ph_printer from '~icons/ph/printer';
 import ph_prohibit from '~icons/ph/prohibit';
 import ph_prohibit_inset from '~icons/ph/prohibit-inset';
 import ph_push_pin from '~icons/ph/push-pin';
 import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
-import ph_rows from '~icons/ph/rows';
 import ph_scales from '~icons/ph/scales';
 import ph_scroll from '~icons/ph/scroll';
 import ph_shapes from '~icons/ph/shapes';
@@ -163,7 +165,6 @@ import ph_star from '~icons/ph/star';
 import ph_sun from '~icons/ph/sun';
 import ph_sun_horizon from '~icons/ph/sun-horizon';
 import ph_swap from '~icons/ph/swap';
-import ph_table from '~icons/ph/table';
 import ph_tag from '~icons/ph/tag';
 import ph_tag_simple from '~icons/ph/tag-simple';
 import ph_text_aa from '~icons/ph/text-aa';
@@ -231,10 +232,12 @@ const icons: IconMap = {
 	'ph:check-square': ph_check_square,
 	'ph:circle-dashed': ph_circle_dashed,
 	'ph:circle-notch': ph_circle_notch,
+	'ph:circles-three': ph_circles_three,
 	'ph:clipboard': ph_clipboard,
 	'ph:clipboard-text': ph_clipboard_text,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:club': ph_club,
+	'ph:coin': ph_coin,
 	'ph:copy': ph_copy,
 	'ph:copy-simple': ph_copy_simple,
 	'ph:corners-out': ph_corners_out,
@@ -322,13 +325,13 @@ const icons: IconMap = {
 	'ph:play-circle': ph_play_circle,
 	'ph:plus': ph_plus,
 	'ph:plus-circle': ph_plus_circle,
+	'ph:poker-chip': ph_poker_chip,
 	'ph:printer': ph_printer,
 	'ph:prohibit': ph_prohibit,
 	'ph:prohibit-inset': ph_prohibit_inset,
 	'ph:push-pin': ph_push_pin,
 	'ph:qr-code': ph_qr_code,
 	'ph:question': ph_question,
-	'ph:rows': ph_rows,
 	'ph:scales': ph_scales,
 	'ph:scroll': ph_scroll,
 	'ph:shapes': ph_shapes,
@@ -357,7 +360,6 @@ const icons: IconMap = {
 	'ph:sun': ph_sun,
 	'ph:sun-horizon': ph_sun_horizon,
 	'ph:swap': ph_swap,
-	'ph:table': ph_table,
 	'ph:tag': ph_tag,
 	'ph:tag-simple': ph_tag_simple,
 	'ph:text-aa': ph_text_aa,

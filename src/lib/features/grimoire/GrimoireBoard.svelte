@@ -86,6 +86,7 @@
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
@@ -97,6 +98,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
+	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import EndGameFields from './EndGameFields.svelte';
@@ -592,6 +594,14 @@
 		sheetOpen = true;
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
+
+	// ── Notes (Trevor, 2026-10-19): the game's and every player's, from ⋯ or a pen mark ──
+	let notesOpen = $state(false);
+	let notesFocus = $state<SeatId | undefined>();
+	function openNotes(seatId?: SeatId) {
+		notesFocus = seatId;
+		notesOpen = true;
+	}
 	/**
 	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
 	 * "they chose to open reminder, not character").
@@ -876,6 +886,7 @@
 	let menuOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
+	let infoSheet = $state<ReturnType<typeof InfoTokensSheet>>();
 	/** Where closing the info sheet goes back to, when something other than the toolbar opened it. */
 	let infoReturn: (() => void) | undefined;
 	const infoCharacters = $derived(
@@ -894,7 +905,8 @@
 				pendingLeave = leave;
 				exitOpen = true;
 			},
-			(url) => url.pathname.startsWith(`/grimoire/${gameId}`)
+			// This board's screens, and the other boards and pages of its mode.
+			(url) => url.pathname.startsWith(`/grimoire/${gameId}`) || withinModeSession(gameId, url)
 		);
 		releaseGuard = release;
 		return release;
@@ -1286,7 +1298,8 @@
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
 					namePlace={namePlaces[i] ?? 'below'}
-					onTap={() => !arranging && openSeat(seat.seatId)}
+					onTap={(part) =>
+						!arranging && (part === 'note' ? openNotes(seat.seatId) : openSeat(seat.seatId))}
 				/>
 			</div>
 		{/each}
@@ -1540,6 +1553,7 @@
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
 			Demon bluffs
 		</Button>
+		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => openNotes())}>Notes</Button>
 		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
 			too, for when the corner has no room for the name. -->
 		{#if modeName}
@@ -1572,14 +1586,14 @@
 		     2026-10-18. -->
 		<Button
 			variant="quiet"
-			icon="settings"
+			icon="boardSettings"
 			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
 		>
 			Board
 		</Button>
 		<Button
 			variant="quiet"
-			icon="settings"
+			icon="tokenSettings"
 			onclick={() => fromMenu(() => settingsDialog.showOnly('tokens'))}
 		>
 			Tokens
@@ -1626,6 +1640,7 @@
 />
 
 <InfoTokensSheet
+	bind:this={infoSheet}
 	bind:open={infoOpen}
 	characters={infoCharacters}
 	inPlay={charactersInPlay(game)}
@@ -1697,6 +1712,8 @@
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
+<NotesSheet bind:open={notesOpen} {grimoire} focus={notesFocus} />
+
 <ExportGameDialog bind:open={exportOpen} load={exportGame} />
 
 <Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">
@@ -1748,7 +1765,9 @@
 			if (i >= 0) walk = { ...walk, index: i };
 		}
 	}}
-	onInfoTokens={() => {
+	onInfoTokens={(token) => {
+		// A card the step's text names opens over the step, which stays open under it.
+		if (token && infoSheet) return infoSheet.openWith(token);
 		// Closing the info sheet returns to this night step (Trevor, 2026-10-16).
 		infoReturn = () => (guideOpen = true);
 		infoOpen = true;
@@ -1906,9 +1925,18 @@
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
+	/*
+	 * A point on the board with its seat centred on it. No transform, so a slot makes no
+	 * stacking context of its own and every seat's name badge can sit above every token
+	 * (Trevor, 2026-10-19: when two tokens overlap the name stays visible).
+	 */
 	.slot {
 		position: absolute;
-		translate: -50% -50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 0;
+		height: 0;
 	}
 	/* While arranging, a press drags a seat instead of scrolling or zooming. */
 	.arranging {
@@ -2271,8 +2299,9 @@
 		width: 100%;
 		margin: 0;
 		border: 0;
-		/* Stronger than a plain border, so the sections read at a glance (Trevor, 2026-10-19). */
-		border-top: 0.125rem solid var(--on-surface-muted);
+		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
+		   2026-10-19). */
+		border-top: 0.125rem solid var(--border);
 	}
 	.rule-detail {
 		display: flex;

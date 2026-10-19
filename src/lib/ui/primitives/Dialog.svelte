@@ -97,10 +97,12 @@
 		<Dialog.Positioner style={layerStyle(layer, 'content')}>
 			<Dialog.Content data-size={size}>
 				<div class="head">
-					{#if lead}<span class="lead">{@render lead()}</span>{/if}
-					<Dialog.Title
-						>{#if heading}{@render heading()}{:else}{title}{/if}</Dialog.Title
-					>
+					<div class="titled" class:with-lead={!!lead}>
+						{#if lead}<span class="lead">{@render lead()}</span>{/if}
+						<Dialog.Title
+							>{#if heading}{@render heading()}{:else}{title}{/if}</Dialog.Title
+						>
+					</div>
 					{#if headActions}<span class="head-actions">{@render headActions()}</span>{/if}
 					{#if closeButton}
 						<!-- A plain button that sets `open`, not Ark's CloseTrigger: zag's own close runs a
@@ -233,17 +235,36 @@
 		justify-content: space-between;
 		gap: var(--space-3);
 	}
-	.lead,
 	.head-actions {
 		flex: none;
-	}
-	.head-actions {
 		display: flex;
 		align-items: center;
 	}
-	.head :global([data-part='title']) {
+	.titled {
 		flex: 1;
 		min-width: 0;
+	}
+	/*
+	 * Beside a lead, the lead and the title share the room evenly, each up to its full width,
+	 * so a short title stays on one line and a wide badge shrinks with its name ending in "…"
+	 * (CharacterBadge's inline ellipsis). A large Names in text size no longer squeezes the
+	 * title to a letter per line (Trevor, 2026-10-19). A row of flex items can't share that
+	 * way without also shrinking the title.
+	 */
+	.titled.with-lead {
+		display: grid;
+		grid-template-columns: minmax(var(--tap-target), auto) minmax(min-content, max-content);
+		justify-content: start;
+		align-items: center;
+		gap: var(--space-3);
+	}
+	.lead {
+		display: flex;
+		min-width: 0;
+	}
+	.lead > :global(.badge) {
+		min-width: 0;
+		max-width: 100%;
 	}
 	/*
 	 * Full and max dialogs keep the header in place and scroll what is under it, so no caller

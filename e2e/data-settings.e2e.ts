@@ -131,14 +131,28 @@ test('Select all clears settings and saved data, not other sites', async ({ page
 	expect(await page.evaluate(() => localStorage.getItem('someone-else'))).toBe('stays');
 });
 
-// Storage plan (Trevor, 2026-10-18): the app asks the browser to keep its data, and on iPhone
-// Safari, where everything is deleted after 7 days without a visit, offers Add to Home Screen.
-test('Data shows whether the browser keeps the data, and Add to Home Screen on iPhone Safari', async ({
+// Storage plan (Trevor, 2026-10-18): the app asks the browser to keep its data, always and with
+// no row in Settings (2026-10-19), and on iPhone Safari, where everything is deleted after 7 days
+// without a visit, offers Add to Home Screen.
+test('the browser is asked to keep the data, and Data offers Add to Home Screen on iPhone Safari', async ({
 	page
 }, testInfo) => {
+	await page.addInitScript(() => {
+		const storage = navigator.storage;
+		if (!storage) return;
+		const asked = { count: 0 };
+		Object.defineProperty(window, '__keepAsked', { value: asked });
+		storage.persisted = async () => false;
+		storage.persist = async () => (asked.count++, false);
+	});
 	await page.goto('/');
+	await expect
+		.poll(() =>
+			page.evaluate(() => (window as { __keepAsked?: { count: number } }).__keepAsked?.count ?? 1)
+		)
+		.toBeGreaterThan(0);
 	const dialog = await openData(page);
-	await expect(dialog.getByTestId('data-kept')).toHaveText(/^(Yes|No|Not shown by this browser)$/);
+	await expect(dialog.getByText('Kept by the browser')).toHaveCount(0);
 	const steps = dialog.getByTestId('home-screen-steps');
 	// The phone project is an iPhone 13 (Safari's user agent); the tablet is Android.
 	if (testInfo.project.name === 'phone') {
@@ -155,6 +169,31 @@ test('opened from the Home Screen, Add to Home Screen is not offered', async ({ 
 	);
 	await page.goto('/');
 	const dialog = await openData(page);
-	await expect(dialog.getByTestId('data-kept')).toBeVisible();
 	await expect(dialog.getByTestId('home-screen-steps')).toHaveCount(0);
+});
+
+test('the table scrolls under the sticky Data heading, never over it', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openData(page);
+	const table = dialog.getByTestId('storage-table');
+	await expect(table.getByRole('row').nth(1)).toBeVisible();
+	const heading = dialog.getByRole('heading', { name: 'Data', level: 2 });
+	// Scroll the section until the table's top sits halfway up the sticky heading row.
+	const covered = await heading.evaluate((h2, tableTestId) => {
+		const row = h2.parentElement!;
+		const content = row.parentElement!;
+		const tableBox = document.querySelector(`[data-testid="${tableTestId}"]`)!;
+		const rowBox = row.getBoundingClientRect();
+		content.scrollTop += tableBox.getBoundingClientRect().top - rowBox.top - rowBox.height / 2;
+		const after = row.getBoundingClientRect();
+		const top = tableBox.getBoundingClientRect().top;
+		const y = Math.max(top + 1, after.top + after.height / 2);
+		const points = [0.1, 0.5, 0.9].map((f) => after.left + after.width * f);
+		return {
+			under: top < after.bottom,
+			onTop: points.map((x) => row.contains(document.elementFromPoint(x, y)))
+		};
+	}, 'storage-table');
+	expect(covered.under).toBe(true);
+	expect(covered.onTop).toEqual([true, true, true]);
 });

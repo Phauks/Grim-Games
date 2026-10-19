@@ -2,10 +2,8 @@
 	import { copyText } from '#lib/ui/clipboard.ts';
 	import { downloadFile } from '#lib/ui/download.ts';
 	import { onMount } from 'svelte';
-	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { diagnosticsFileName, diagnosticsText } from './diagnostics.ts';
 	import { diagnosticsView, refreshDiagnostics } from './diagnostics-view.svelte.ts';
@@ -43,12 +41,7 @@
 	<div class="actions">
 		<Button variant="accent" disabled={!diagnostics} onclick={copy}>{t('errors.diag.copy')}</Button>
 		<Button disabled={!diagnostics} onclick={download}>{t('errors.diag.download')}</Button>
-		<Button
-			disabled={!diagnostics}
-			onclick={() => reportDialog.show({ kind: 'bug', details: text })}
-		>
-			<Icon name="report" />{t('errors.diag.report')}
-		</Button>
+		<!-- Report an issue moved up into About's main part (Trevor, 2026-10-19). -->
 	</div>
 
 	<section>

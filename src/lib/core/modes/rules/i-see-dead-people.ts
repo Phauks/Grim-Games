@@ -12,6 +12,9 @@ export const I_SEE_DEAD_PEOPLE: SpecialRule = {
 	format: SPECIAL_RULE_FORMAT,
 	id: 'i-see-dead-people',
 	name: 'I See Dead People',
+	// Our own draft (2026-10-19): shows once Trevor approves it (approved-about.ts).
+	about:
+		'Characters die as normal, but the Storyteller doesn’t announce deaths. Dead players can still nominate, and poisoned players don’t wake.',
 	sources: [{ title: 'I See Dead People (Beardy on the Clocktower)', url: PAGE }],
 	parts: {
 		// The author's rule, quoted.
