@@ -833,6 +833,26 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	await expect(page.getByTestId('setup-bluffs')).toHaveCount(0);
 });
 
+// Trevor, 2026-10-19: the bag's cog and Share sit on the Draw heading's line, at the right.
+test('Draw keeps its cog and Share on the heading line', async ({ page }) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	const heading = page.getByRole('heading', { name: 'Draw', level: 1 });
+	await expect(heading).toBeVisible();
+	const title = (await heading.boundingBox())!;
+	const buttons = page.locator('main header').getByRole('button');
+	await expect(buttons.first()).toBeVisible();
+	for (const button of await buttons.all()) {
+		const box = (await button.boundingBox())!;
+		const middle = box.y + box.height / 2;
+		expect(middle).toBeGreaterThan(title.y);
+		expect(middle).toBeLessThan(title.y + title.height);
+		expect(box.x).toBeGreaterThan(title.x);
+	}
+	await noSidewaysScroll(page);
+});
+
 test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 	// Trevor, 2026-10-18: the same Random button as setup's.
 	await selectionFor(page, 5);
