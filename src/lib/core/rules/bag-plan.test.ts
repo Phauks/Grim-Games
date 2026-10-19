@@ -17,6 +17,7 @@ import {
 	selectedIds,
 	selectionProblems,
 	validRandomSelection,
+	travellerRange,
 	type BagSelection
 } from './bag-plan.ts';
 import { scriptFacts } from './script-facts.ts';
@@ -257,6 +258,61 @@ describe('randomSelection', () => {
 		});
 		const travellers = Object.keys(selection).filter((id) => lookup(id)?.type === 'traveller');
 		expect(travellers).toHaveLength(2);
+	});
+
+	// https://beardytas.com/garden-of-djinn/stowed-away/: up to 2 Travellers in the bag, the
+	// other counts for that many fewer players.
+	it.each([
+		[0.1, 0],
+		[0.5, 1],
+		[0.9, 2]
+	])('with Stowed Away, a draw of %f puts %i Travellers in the bag', (first, expected) => {
+		const withTravellers = [...TB, ...script(['gunslinger', 'beggar', 'thief'])];
+		const input = {
+			players: 8,
+			scriptOrder: withTravellers.map((c) => c.id),
+			lookup
+		};
+		const selection = randomSelection({
+			...input,
+			selection: {},
+			scriptCharacters: withTravellers,
+			travellersInBag: 2,
+			random: sequence(first, 0.3, 0.6)
+		});
+		const travellers = Object.keys(selection).filter((id) => lookup(id)?.type === 'traveller');
+		expect(travellers).toHaveLength(expected);
+		const result = analyseSelection({ ...input, selection });
+		expect(result.dealt).toBe(8 - expected);
+		expect(result.warnings).toEqual([]);
+	});
+
+	it('with Stowed Away, Travellers already chosen count toward the 2', () => {
+		const withTravellers = [...TB, ...script(['gunslinger', 'beggar', 'thief'])];
+		const selection = randomSelection({
+			players: 8,
+			selection: pick('gunslinger', 'beggar'),
+			scriptCharacters: withTravellers,
+			scriptOrder: withTravellers.map((c) => c.id),
+			lookup,
+			travellersInBag: 2,
+			random: sequence(0.9, 0.3)
+		});
+		expect(selection.thief).toBeUndefined();
+	});
+});
+
+describe('travellerRange', () => {
+	// https://wiki.bloodontheclocktower.com/Setup: players beyond 15 are Travellers.
+	it('needs a Traveller for each player beyond 15', () => {
+		expect(travellerRange(10)).toEqual({ min: 0, max: 0 });
+		expect(travellerRange(17)).toEqual({ min: 2, max: 2 });
+	});
+
+	// https://beardytas.com/garden-of-djinn/stowed-away/
+	it('allows up to the rule’s Travellers in the bag', () => {
+		expect(travellerRange(8, 2)).toEqual({ min: 0, max: 2 });
+		expect(travellerRange(18, 2)).toEqual({ min: 3, max: 3 });
 	});
 });
 

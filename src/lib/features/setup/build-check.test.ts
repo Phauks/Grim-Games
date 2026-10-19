@@ -7,7 +7,12 @@ import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from '
 const data = committedGameData();
 const lookup = (id: string) => data.byId.get(id);
 
-function check(players: number, ids: string[], standIns: Record<string, string> = {}) {
+function check(
+	players: number,
+	ids: string[],
+	standIns: Record<string, string> = {},
+	travellerMax?: number
+) {
 	const selection: Record<string, number> = {};
 	for (const id of ids) selection[id] = (selection[id] ?? 0) + 1;
 	const scriptOrder = [...new Set(ids)];
@@ -20,10 +25,19 @@ function check(players: number, ids: string[], standIns: Record<string, string> 
 		random: () => 0
 	});
 	const travellers = ids.filter((id) => lookup(id)?.type === 'traveller').length;
-	return buildErrors({ analysis, issues: plan.issues, travellers });
+	return buildErrors({ analysis, issues: plan.issues, travellers, travellerMax });
 }
 
 describe('buildErrors', () => {
+	// https://beardytas.com/garden-of-djinn/stowed-away/: up to 2 Travellers in the bag.
+	it('flags more Travellers than a special rule lets into the bag', () => {
+		const six = ['washerwoman', 'empath', 'monk', 'butler', 'poisoner', 'imp'];
+		expect(check(8, [...six, 'scapegoat', 'gunslinger'], {}, 2)).toEqual([]);
+		expect(check(9, [...six, 'scapegoat', 'gunslinger', 'beggar'], {}, 2)).toContain(
+			'3 Travellers chosen; a special rule allows up to 2 in the bag.'
+		);
+	});
+
 	it('is empty for a clean selection', () => {
 		expect(check(5, ['washerwoman', 'empath', 'monk', 'poisoner', 'imp'])).toEqual([]);
 	});

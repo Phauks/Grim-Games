@@ -223,19 +223,36 @@ export function analyseSelection(input: SelectionAnalysisInput): SetupAnalysis {
 	});
 }
 
+/**
+ * How many Travellers a game may have: everyone beyond 15 joins as one
+ * (https://wiki.bloodontheclocktower.com/Setup), and a rule may let up to `inBag` more into
+ * the bag (Stowed Away), counted among the players.
+ */
+export function travellerRange(players: number, inBag = 0): { min: number; max: number } {
+	const min = Math.max(0, players - 15);
+	return { min, max: Math.max(min, inBag) };
+}
+
 export interface RandomSelectionInput extends Omit<SelectionAnalysisInput, 'selection'> {
 	/** The script's characters, in script order. */
 	scriptCharacters: readonly Character[];
 	/** Kept as they are; the rest is filled around them. */
 	selection: BagSelection;
 	random: () => number;
+	/**
+	 * A rule lets up to this many Travellers into the bag (Stowed Away): first 0 to this many
+	 * are picked at random, counting any already selected, and the rest is filled for that
+	 * many fewer players.
+	 */
+	travellersInBag?: number;
 }
 
 /**
  * Fills the selection up to the setup counts with random characters from the script,
  * keeping what is already selected: the Demon first, then Minions, then (with their setup
  * changes known) Outsiders and Townsfolk, then Travellers for players beyond the dealt
- * count. Where a modifier allows several counts, one is picked at random.
+ * count. Where a modifier allows several counts, one is picked at random. A rule that puts
+ * Travellers in the bag has them picked first.
  */
 export function randomSelection(input: RandomSelectionInput): Record<CharacterId, number> {
 	const selection: Record<CharacterId, number> = { ...input.selection };
@@ -246,6 +263,12 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 			selection[character.id] = 1;
 		}
 	};
+	const travellersSelected = () =>
+		input.scriptCharacters.filter((c) => c.type === 'traveller' && selection[c.id] > 0).length;
+	if (input.travellersInBag) {
+		const n = Math.floor(input.random() * (input.travellersInBag + 1));
+		take('traveller', n - travellersSelected());
+	}
 	const order: SeatedType[] = ['demon', 'minion', 'outsider', 'townsfolk'];
 	for (const type of order) {
 		const analysis = analyseSelection({ ...input, selection });
@@ -264,10 +287,7 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 		take(type, target - have);
 	}
 	const analysis = analyseSelection({ ...input, selection });
-	const travellers = input.scriptCharacters.filter(
-		(c) => c.type === 'traveller' && selection[c.id] > 0
-	).length;
-	take('traveller', Math.max(0, input.players - analysis.dealt - travellers));
+	take('traveller', Math.max(0, input.players - analysis.dealt - travellersSelected()));
 	return selection;
 }
 

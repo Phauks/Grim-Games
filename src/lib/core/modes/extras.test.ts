@@ -26,10 +26,12 @@ describe('rollExtras', () => {
 			expect(extras.length).toBeGreaterThanOrEqual(1);
 			expect(extras.length).toBeLessThanOrEqual(4);
 			for (const c of extras) {
-				expect(['townsfolk', 'outsider', 'minion']).toContain(c.type);
+				expect(['townsfolk', 'outsider', 'minion', 'demon']).toContain(c.type);
 				expect(tb.some((t) => t.id === c.id)).toBe(false);
 			}
-			expect(extras.filter((c) => c.type === 'minion').length).toBeLessThanOrEqual(1);
+			// One of each type (Trevor, 2026-10-19).
+			for (const type of ['townsfolk', 'outsider', 'minion', 'demon'])
+				expect(extras.filter((c) => c.type === type).length).toBeLessThanOrEqual(1);
 		}
 		expect([...seen].sort()).toEqual([1, 2, 3, 4]);
 	});

@@ -210,6 +210,44 @@ test('characters can be searched by name or ability', async ({ page }) => {
 	await expect(page.getByTestId('character-picker')).toHaveText('None');
 });
 
+// Trevor, 2026-10-19: with Stowed Away, "the 0-2 travelers should show themselves in the
+// calculation". Rule: https://beardytas.com/garden-of-djinn/stowed-away/
+test('Stowed Away: up to 2 Travellers count in the bag, the rest for fewer players', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: /^Special rules/ }).tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	await rules.getByText('Stowed Away', { exact: true }).tap();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	await page.goto(`/grimoire/${gameId}/setup`);
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+
+	// The rule's Travellers are part of setup, so their section starts open.
+	const header = page.getByRole('button', { name: 'Travellers', exact: true });
+	await expect(header).toHaveAttribute('aria-expanded', 'true');
+	const travellers = page.locator('[data-testid="setup-counts"] [data-type="traveller"]');
+	await expect(travellers).toContainText('0/ 0–2');
+	await expect(travellers).toHaveAttribute('data-ok', '');
+
+	// Two Travellers: the other counts are for 6 players (https://wiki.bloodontheclocktower.com/Setup).
+	await select(page, 'Scapegoat', 'Gunslinger');
+	await expect(travellers).toContainText('2/ 0–2');
+	await expect(travellers).toHaveAttribute('data-ok', '');
+	await expect(page.locator('[data-testid="setup-counts"] [data-type="townsfolk"]')).toContainText(
+		'/ 3'
+	);
+	// A third is more than the rule allows.
+	await select(page, 'Beggar');
+	await expect(travellers).not.toHaveAttribute('data-ok', '');
+	await noSidewaysScroll(page);
+});
+
 // Trevor, 2026-10-18: Travellers in the bag, the recommended ones listed first and every
 // other one found through a searchable dialog.
 test("Travellers can join the bag: the edition's are listed, the rest are a search away", async ({
