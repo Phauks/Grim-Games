@@ -12,6 +12,7 @@ import {
 	type Seat,
 	type SeatId
 } from '#lib/core/model/index.ts';
+import type { CharacterId } from '#lib/core/data/index.ts';
 
 export interface PublicSeat {
 	seatId: SeatId;
@@ -23,6 +24,13 @@ export interface PublicSeat {
 	 * looks like a death to everyone. Storyteller overrides are private and ignored.
 	 */
 	dead: boolean;
+	/**
+	 * A Traveller's character: Travellers tell the town who they are
+	 * (https://wiki.bloodontheclocktower.com/Travellers), so the players' script can show it
+	 * in play (Trevor, 2026-10-19). Never set for any other character, nor when the game's
+	 * mode keeps Travellers secret (Stowed Away).
+	 */
+	traveller?: CharacterId;
 	// No ghost votes: the Storyteller doesn't track them (Trevor, 2026-10-16); players keep
 	// their own on their phones.
 }
@@ -59,7 +67,14 @@ function appearsDead(seat: Seat): boolean {
 	);
 }
 
-export function publicProjection(game: Game): PublicGameState {
+/**
+ * @param publicTraveller Whether a character is a Traveller the town knows about: the
+ *   caller knows the character types and the game's mode. Left out, no character is shown.
+ */
+export function publicProjection(
+	game: Game,
+	publicTraveller?: (characterId: CharacterId) => boolean
+): PublicGameState {
 	return {
 		...(game.storytellerName ? { storytellerName: game.storytellerName } : {}),
 		seats: seatsInOrder(game).map((seat, i) => {
@@ -69,6 +84,8 @@ export function publicProjection(game: Game): PublicGameState {
 				dead: appearsDead(seat)
 			};
 			if (seat.playerName !== undefined) view.playerName = seat.playerName;
+			if (seat.characterId && publicTraveller?.(seat.characterId))
+				view.traveller = seat.characterId;
 			return view;
 		}),
 		today: {

@@ -7,6 +7,7 @@
  * phone sends changes the grimoire until the Storyteller approves it, and approving runs an
  * ordinary command, so it shows in History and can be rolled back.
  */
+import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import { toSavedGame } from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
@@ -188,7 +189,10 @@ export class RoomHost {
 				});
 			});
 			$effect(() => {
-				const state = publicProjection(game.game);
+				const state = publicProjection(
+					game.game,
+					publicTravellerTest(game.game.gameId, game.characters)
+				);
 				this.#publish({ gameId: game.game.gameId, state });
 			});
 			$effect(() => {

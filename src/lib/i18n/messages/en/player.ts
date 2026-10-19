@@ -50,6 +50,7 @@ export const player = {
 	'player.version': 'v{version}',
 	'player.print': 'Print script',
 	'player.storytellerIs': 'Storyteller: {name}',
+	'player.travellerInPlay': 'In play: {names}',
 	'player.printHere': 'Print our sheet',
 	'player.printScriptTool': 'Open in the official Script Tool',
 	'player.jinxedWith': 'Jinxed with {names}'

@@ -2249,6 +2249,33 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	).toBeVisible();
 });
 
+// Trevor, 2026-10-19: a Traveller in play shows on the script with its player, as the town
+// knows it (Travellers say who they are: https://wiki.bloodontheclocktower.com/Travellers).
+test('a Traveller in play is marked on the script with its player', async ({ page }) => {
+	await startGame(page);
+	await menu(page, 'Add seat');
+	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	const sheet = await openSeat(page, 9);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 9' })
+		.getByRole('button', { name: 'Thief, Recommended', exact: true })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: 'Decide later' })
+		.tap();
+	await closeSheet(page);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const script = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	const travellers = script.getByRole('button', { name: 'Recommended Travellers' });
+	await expect(travellers).toHaveAttribute('aria-expanded', 'true');
+	await expect(
+		script.locator('[data-character="thief"]').getByTestId('traveller-in-play')
+	).toHaveText('In play: Seat 9');
+	await expect(script.getByTestId('traveller-in-play')).toHaveCount(1);
+});
+
 test("the day's Announcements explain a kill that didn't happen", async ({ page }) => {
 	await startGame(page);
 	for (const [number, name] of [
