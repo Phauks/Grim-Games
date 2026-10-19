@@ -6,6 +6,9 @@
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import WithSavedGame from '#lib/features/game/WithSavedGame.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { drawLock } from '#lib/features/setup/draw-lock.svelte.ts';
+	import PinDialog from '#lib/features/setup/PinDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { Grimoire } from './grimoire.svelte.ts';
 	import GrimoireBoard from './GrimoireBoard.svelte';
@@ -17,6 +20,10 @@
 	let { gameId }: Props = $props();
 
 	let grimoire = $state<Grimoire>();
+	// While this game's draw is locked, players hold the phone: the board stays hidden behind
+	// the Storyteller PIN (Trevor, 2026-10-19).
+	const locked = $derived(drawLock.isLocked(gameId));
+	let pinOpen = $state(false);
 	// Badges on the board, night and day name the script's homebrew characters, not their ids.
 	provideCharacters(() => grimoire?.open.characters);
 
@@ -30,9 +37,25 @@
 
 <WithSavedGame {gameId} area="grimoire" {prepare}>
 	{#snippet children(board: Grimoire)}
-		<ErrorBoundary area="grimoire">
-			<GrimoireBoard grimoire={board} />
-		</ErrorBoundary>
+		{#if locked}
+			<main class="message locked" data-testid="board-locked">
+				<h1>{t('setup.lock.boardTitle')}</h1>
+				<p>{t('setup.lock.boardBody')}</p>
+				<div class="actions">
+					<Button href={resolve('/grimoire/[gameId]/draw', { gameId })} icon="back"
+						>{t('setup.lock.backToDraw')}</Button
+					>
+					<Button variant="accent" icon="lock" onclick={() => (pinOpen = true)}
+						>{t('setup.lock.unlock')}</Button
+					>
+				</div>
+			</main>
+			<PinDialog bind:open={pinOpen} {gameId} />
+		{:else}
+			<ErrorBoundary area="grimoire">
+				<GrimoireBoard grimoire={board} />
+			</ErrorBoundary>
+		{/if}
 	{/snippet}
 	{#snippet fallback({ kind, message })}
 		<main class="message">
@@ -49,5 +72,23 @@
 		max-width: calc(40 * var(--u));
 		margin: 0 auto;
 		padding: var(--space-5) var(--space-4);
+	}
+	.locked {
+		display: grid;
+		justify-items: center;
+		gap: var(--space-3);
+		text-align: center;
+	}
+	.locked h1 {
+		margin: 0;
+	}
+	.locked p {
+		margin: 0;
+	}
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--space-2);
 	}
 </style>
