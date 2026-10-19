@@ -486,7 +486,7 @@ test('a downloaded data file imports into another account, adding only what is m
 	};
 	let dialog = await importOnce();
 	const plan = dialog.getByTestId('import-plan');
-	await expect(plan.getByRole('row', { name: 'Scripts to add' })).toContainText('1');
+	await expect(plan.getByRole('row', { name: 'Items to add' })).toContainText('1');
 	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('0');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect.poll(() => profileScriptNames(second)).toEqual(['Storm Front']);
