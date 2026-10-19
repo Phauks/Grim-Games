@@ -18,6 +18,11 @@ import {
 } from '#lib/ui/token/token-appearance.ts';
 import type { Theme } from '#lib/ui/themes/types.ts';
 import { parseColors, type CustomColors } from '#lib/ui/themes/colors.ts';
+import {
+	DAY_SECONDS_PER_ALIVE,
+	DAY_SECONDS_PER_ALIVE_MAX,
+	DAY_SECONDS_PER_ALIVE_MIN
+} from '#lib/core/rules/day-timer.ts';
 
 /**
  * Per-device look-and-feel preferences (04-architecture.md §9). Separate from game state
@@ -61,6 +66,8 @@ export interface Preferences {
 	timerMode: TimerMode;
 	/** The device vibrates when the day timer runs out (Trevor, 2026-10-18). */
 	timerVibrate: boolean;
+	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
+	timerPerPlayer: number;
 }
 
 export const TIMER_MODES = ['down', 'up'] as const;
@@ -123,7 +130,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	ownWording: false,
 	timerSound: 'bell',
 	timerMode: 'down',
-	timerVibrate: true
+	timerVibrate: true,
+	timerPerPlayer: DAY_SECONDS_PER_ALIVE
 };
 
 /** Builds valid preferences from anything (old versions, hand edits, garbage). */
@@ -169,7 +177,13 @@ export function parsePreferences(raw: unknown): Preferences {
 		timerVibrate:
 			typeof input.timerVibrate === 'boolean'
 				? input.timerVibrate
-				: DEFAULT_PREFERENCES.timerVibrate
+				: DEFAULT_PREFERENCES.timerVibrate,
+		timerPerPlayer:
+			Number.isInteger(input.timerPerPlayer) &&
+			(input.timerPerPlayer as number) >= DAY_SECONDS_PER_ALIVE_MIN &&
+			(input.timerPerPlayer as number) <= DAY_SECONDS_PER_ALIVE_MAX
+				? (input.timerPerPlayer as number)
+				: DEFAULT_PREFERENCES.timerPerPlayer
 	};
 }
 
