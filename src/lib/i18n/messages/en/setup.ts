@@ -173,14 +173,12 @@ export const setup = {
 
 	'setup.draw': 'Draw',
 	'setup.draw.noBag': 'No bag. Select characters and build the bag first.',
-	'setup.draw.next': 'Next',
 	'setup.draw.bag': 'Bag',
 	'setup.draw.held': 'Held',
 	'setup.draw.tile': 'Tile {number}',
 	'setup.draw.tileHeld': 'Tile {number}, held by {seat}',
 	'setup.draw.tileDrawn': 'Tile {number}, drawn',
 	'setup.draw.everySeat': 'Every seat has a character',
-	'setup.draw.newSeat': 'A new seat',
 	'setup.draw.everySeatHint': 'Add a seat on the grimoire to draw for it.',
 
 	'setup.reveal.name': 'Name',
@@ -200,9 +198,15 @@ export const setup = {
 	'setup.lock.mismatch': 'The PINs are different.',
 	'setup.lock.enterTitle': 'Enter the Storyteller PIN',
 	'setup.lock.wrong': 'Wrong PIN.',
-	'setup.lock.wait': 'Try again in {seconds} s.',
+	'setup.lock.wait': {
+		one: 'Try again in {count} second.',
+		other: 'Try again in {count} seconds.'
+	},
 	'setup.lock.forgot': 'Forgot PIN',
-	'setup.lock.forgotCountdown': 'Unlocking in {seconds} s.',
+	'setup.lock.forgotCountdown': {
+		one: 'Unlocking in {count} second.',
+		other: 'Unlocking in {count} seconds.'
+	},
 	'setup.lock.keepLocked': 'Keep locked',
 	'setup.lock.handBack': 'Every tile is drawn. Hand the phone back to the Storyteller.',
 	'setup.lock.clear': 'Clear PIN',

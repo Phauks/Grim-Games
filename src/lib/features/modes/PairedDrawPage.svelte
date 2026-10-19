@@ -187,10 +187,6 @@
 					: t('modes.towns.drawSizes', { first: sizes[0], second: sizes[1] })}
 			</p>
 		{:else if pairs}
-			<p class="next">
-				<span class="label">{t('setup.draw.next')}</span>
-				<span data-testid="next-seat">{label(next)}</span>
-			</p>
 			<BagTiles
 				{slots}
 				{marks}
@@ -235,16 +231,6 @@
 <style>
 	p {
 		margin: 0;
-	}
-	.next {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		margin: var(--space-2) 0;
-	}
-	.next .label {
-		color: var(--on-surface-muted);
 	}
 	.done {
 		display: flex;

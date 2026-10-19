@@ -197,7 +197,8 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	// Nothing of the draft on the screen passed round the table (Trevor, 2026-10-19).
 	await expect(page.getByRole('group', { name: 'Open slots' })).toHaveCount(0);
 	await expect(page.getByText('Setup changes to apply by hand')).toHaveCount(0);
-	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
+	// No "Next: Seat 1": the draw order is never shown (Trevor, 2026-10-19).
+	await expect(page.getByTestId('next-seat')).toHaveCount(0);
 	await expect(bagTiles(page)).toHaveCount(5);
 	await drawTile(page);
 	await expect(rows(page)).toHaveCount(3);
@@ -209,7 +210,6 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	const kept: string[] = [];
 	for (let seat = 1; seat <= 5; seat++) {
 		if (seat > 1) {
-			await expect(page.getByTestId('next-seat')).toHaveText(`Seat ${seat}`);
 			await drawTile(page);
 		}
 		kept.push(await keepFirst(page));
@@ -284,9 +284,7 @@ test('Whale Buffet deals a type from the tile bag and each player chooses; the S
 	await expect(page.getByText(/^Choose a (Townsfolk|Minion|Demon)$/)).toBeVisible();
 	await expect(page.locator('button[data-character-id="drunk"]')).toHaveCount(0);
 	await keepFirst(page);
-	await expect(page.getByTestId('next-seat')).toHaveText('Seat 2');
 	await page.getByRole('button', { name: 'Choose again' }).tap();
-	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
 	// The tile stays in Seat 1's hand: tapping it reopens their choice.
 	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
 	await keepFirst(page);
@@ -343,7 +341,6 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await noSidewaysScroll(page);
 	await page.getByRole('button', { name: 'Draw', exact: true }).tap();
 	await expect(page).toHaveURL(/\/towns\/[\w-]+\/draw$/);
-	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
 	for (let n = 1; n <= 5; n++) {
 		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
 		const reveal = page.getByTestId('reveal');
@@ -355,7 +352,6 @@ test('Two games at once: one setup for both bags, then one token for both games'
 		await page.getByRole('button', { name: 'Confirm' }).tap();
 		await expect(reveal).toBeHidden();
 	}
-	await expect(page.getByTestId('next-seat')).toHaveText('None');
 	await page.getByRole('link', { name: 'Done' }).tap();
 	await expect(page).toHaveURL(/\/towns\/[\w-]+$/);
 	const towns = page.url();

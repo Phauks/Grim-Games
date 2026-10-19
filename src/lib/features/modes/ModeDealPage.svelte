@@ -217,10 +217,6 @@
 		</Button>
 	{/snippet}
 
-	<p class="next">
-		<span class="muted">{t('setup.draw.next')}</span>
-		<span data-testid="next-seat">{done ? t('common.none') : label(seatId)}</span>
-	</p>
 	<BagTiles {slots} {marks} seatLabel={label} onpick={draw} />
 
 	<div class="footer">
@@ -291,16 +287,6 @@
 />
 
 <style>
-	.muted {
-		color: var(--on-surface-muted);
-	}
-	.next {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		margin: var(--space-2) 0;
-	}
 	.footer {
 		display: flex;
 		justify-content: flex-end;
