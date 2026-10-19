@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import {
+		announceBounds,
 		announcedRange,
 		extraCandidates,
 		extraCounts,
@@ -24,6 +25,7 @@
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { readGameMode } from './game-mode-store.ts';
 	import { gameModeOf } from './game-mode.ts';
@@ -137,9 +139,21 @@
 	let picking = $state(false);
 	const choices = $derived(picking ? candidates(choosing) : []);
 
-	const range = $derived(announcedRange(extras.length));
 	/** How many in all the mode allows (Trevor, 2026-10-18: 1 to 4 for Infinite Possibilities). */
 	const total = $derived(extraTotal(mode));
+	/**
+	 * What to tell the table: any range that holds the real number (Trevor, 2026-10-19). Starts
+	 * one either side; the Storyteller's own pick is kept while it still holds the number.
+	 */
+	const bounds = $derived(announceBounds(extras.length, total));
+	let picked = $state<{ low?: number; high?: number }>({});
+	const range = $derived.by((): [number, number] => {
+		const [low, high] = announcedRange(extras.length, total);
+		return [
+			picked.low !== undefined && bounds.lows.includes(picked.low) ? picked.low : low,
+			picked.high !== undefined && bounds.highs.includes(picked.high) ? picked.high : high
+		];
+	});
 
 	/**
 	 * Puts the extras into the setup selection, taking out any earlier roll first: the setup
@@ -207,9 +221,25 @@
 	</ul>
 
 	{#if announce}
-		<p data-testid="extras-range">
-			{t('modes.extras.announce', { low: range[0], high: range[1] })}
-		</p>
+		<div class="announce" data-testid="extras-range">
+			<span>{t('modes.extras.announceLead')}</span>
+			<Select
+				label={t('modes.extras.announceLow')}
+				hideLabel
+				value={String(range[0])}
+				options={bounds.lows.map((n) => ({ value: String(n), label: String(n) }))}
+				onChange={(value) => (picked = { ...picked, low: Number(value) })}
+			/>
+			<span>{t('modes.extras.announceTo')}</span>
+			<Select
+				label={t('modes.extras.announceHigh')}
+				hideLabel
+				value={String(range[1])}
+				options={bounds.highs.map((n) => ({ value: String(n), label: String(n) }))}
+				onChange={(value) => (picked = { ...picked, high: Number(value) })}
+			/>
+			<span>{t('modes.extras.announceTail')}</span>
+		</div>
 	{/if}
 
 	<div class="next">
@@ -264,8 +294,11 @@
 	.muted {
 		color: var(--on-surface-muted);
 	}
-	p {
-		margin: 0;
+	.announce {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 	}
 	.next {
 		display: flex;

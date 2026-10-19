@@ -4,7 +4,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { announcedRange, extraCandidates, extraTotal, rollExtras } from './extras.ts';
+import {
+	announceBounds,
+	announcedRange,
+	extraCandidates,
+	extraTotal,
+	rollExtras
+} from './extras.ts';
 import { NO_RESTRICTIONS, runsPart } from './pool.ts';
 import { withRules } from './combine.ts';
 import { STANDARD } from './registry.ts';
@@ -49,10 +55,22 @@ describe('rollExtras', () => {
 	});
 });
 
+// Trevor (2026-10-19): with 2 hidden, "1-3, 1-4, 2-3, 2" are all true.
+describe('announceBounds', () => {
+	it('offers every range that holds the real number, within the mode', () => {
+		expect(announceBounds(2, { min: 1, max: 4 })).toEqual({ lows: [1, 2], highs: [2, 3, 4] });
+	});
+
+	it('still holds the real number when it is outside the mode', () => {
+		expect(announceBounds(0, { min: 1, max: 4 })).toEqual({ lows: [0], highs: [0, 1, 2, 3, 4] });
+	});
+});
+
 describe('announcedRange', () => {
-	it('is one either side, never below none', () => {
-		expect(announcedRange(2)).toEqual([1, 3]);
-		expect(announcedRange(0)).toEqual([0, 1]);
+	it('is one either side, within the mode', () => {
+		expect(announcedRange(2, { min: 1, max: 4 })).toEqual([1, 3]);
+		expect(announcedRange(4, { min: 1, max: 4 })).toEqual([3, 4]);
+		expect(announcedRange(1, { min: 1, max: 4 })).toEqual([1, 2]);
 	});
 });
 

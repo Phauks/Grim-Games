@@ -137,7 +137,12 @@ export const modes = {
 	'modes.extras.rollType': 'Roll a hidden {type}',
 	'modes.extras.choose': 'Choose a hidden {type}',
 	'modes.extras.clear': 'Clear the hidden {type}',
-	'modes.extras.announce': 'Tell the table: {low} to {high} hidden characters',
+	// Read as one sentence around the two drop-downs: "Tell the table: 1 to 3 hidden characters".
+	'modes.extras.announceLead': 'Tell the table:',
+	'modes.extras.announceTo': 'to',
+	'modes.extras.announceTail': 'hidden characters',
+	'modes.extras.announceLow': 'Fewest hidden characters to tell the table',
+	'modes.extras.announceHigh': 'Most hidden characters to tell the table',
 	'modes.extras.next': 'Choose characters',
 	'modes.deal.pageTitle': `Characters · ${APP_NAME}`,
 	'modes.deal.menu': 'Characters',
