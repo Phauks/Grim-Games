@@ -79,13 +79,14 @@ describe('wrangler.jsonc keeps every Durable Object and its data', () => {
 	});
 });
 
-// The shared data Worker holds accounts and share codes (wrangler.data.jsonc, Trevor 2026-10-19).
+// The shared data Worker holds accounts, share codes and reports (wrangler.data.jsonc, Trevor 2026-10-19).
 const DATA_KEPT = {
 	bindings: {
 		ACCOUNT_USERS: 'AccountUser',
 		ACCOUNT_EMAILS: 'AccountEmail',
 		ACCOUNT_NAMES: 'AccountName',
-		SHARED_SCRIPTS: 'SharedScript'
+		SHARED_SCRIPTS: 'SharedScript',
+		REPORTS: 'ReportBox'
 	} as Record<string, string>,
 	migrationTags: ['v1']
 };

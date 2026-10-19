@@ -1,6 +1,6 @@
 /**
- * The shared data Worker, `grim-games-data` (wrangler.data.jsonc): accounts and script share
- * codes for production and every preview of the app (worker/shared-data.ts). Live rooms and
+ * The shared data Worker, `grim-games-data` (wrangler.data.jsonc): accounts, script share
+ * codes, and reports with their admins, for production and every preview of the app (worker/shared-data.ts). Live rooms and
  * the script mirror stay in each build: a room only lasts one game and its protocol can
  * differ between builds, and the mirror is a cache.
  *
@@ -15,19 +15,23 @@ import {
 	localAccounts,
 	type AccountEnv
 } from './account/objects.ts';
+import { localReports, ReportBox, type ReportBoxEnv } from './report-box.ts';
 import { localShare, SharedScript, type ShareEnv } from './share.ts';
 import type { DataCall, DataKind } from './shared-data.ts';
 
-export { AccountEmail, AccountName, AccountUser, SharedScript };
+export { AccountEmail, AccountName, AccountUser, ReportBox, SharedScript };
 
-type DataEnv = Omit<AccountEnv, 'DATA'> & Pick<ShareEnv, 'SHARED_SCRIPTS'>;
+type DataEnv = Omit<AccountEnv, 'DATA'> &
+	Pick<ShareEnv, 'SHARED_SCRIPTS'> &
+	Pick<ReportBoxEnv, 'REPORTS'>;
 
 /** Each kind's class, and its object by key. */
 const kinds: Record<DataKind, [{ prototype: object }, (env: DataEnv, key: string) => unknown]> = {
 	user: [AccountUser, (env, key) => localAccounts(env).user(key)],
 	address: [AccountEmail, (env, key) => localAccounts(env).address(key)],
 	username: [AccountName, (env, key) => localAccounts(env).username(key)],
-	share: [SharedScript, localShare]
+	share: [SharedScript, localShare],
+	reports: [ReportBox, localReports]
 };
 
 /** The methods the app may call on each kind of object: its own, not the runtime's. */
