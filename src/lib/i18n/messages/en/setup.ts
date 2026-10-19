@@ -48,6 +48,10 @@ export const setup = {
 		one: '{count} Traveller chosen; expected {expected} for {players} players.',
 		other: '{count} Travellers chosen; expected {expected} for {players} players.'
 	},
+	'setup.errors.travellersInBag': {
+		one: '{count} Traveller chosen; a special rule allows up to {max} in the bag.',
+		other: '{count} Travellers chosen; a special rule allows up to {max} in the bag.'
+	},
 	'setup.replace.title': 'Replace the bag?',
 	'setup.leave.title': 'Leave the draw?',
 	'setup.leave.body': {

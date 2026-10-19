@@ -17,6 +17,7 @@
 		planBag,
 		scriptFacts,
 		selectedIds,
+		travellerRange,
 		isRuleCharacter,
 		validRandomSelection
 	} from '#lib/core/rules/index.ts';
@@ -43,6 +44,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
 	import { setupSelection } from './selection.svelte.ts';
+	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import { afterTownBag } from '#lib/features/modes/town-setup.ts';
 
 	interface Props {
@@ -213,13 +215,25 @@
 	const jinxes = $derived(facts?.jinxes ?? []);
 	const jinxed = $derived(new Set(jinxes.flatMap((j) => j.characters)));
 	const travellers = $derived(ids.filter((id) => lookup(id)?.type === 'traveller').length);
+	/**
+	 * Travellers a special rule lets into the bag (Stowed Away: up to 2, the other counts for
+	 * that many fewer players). Selected Travellers already lower the other counts.
+	 */
+	const travellersInBag = $derived(
+		game ? (gameModeOf(game.gameId)?.parts.travellers?.inBag ?? 0) : 0
+	);
+	const travellerLimits = $derived(
+		travellersInBag ? travellerRange(s.players, travellersInBag) : undefined
+	);
 	const warnings = $derived([
 		...setupWarningMessages(analysis.warnings, requirements, name),
 		...plan.issues.map((i) => i.message),
 		...jinxSetupWarnings(jinxes, ids, name).map((w) => w.message)
 	]);
 
-	const errors = $derived(buildErrors({ analysis, issues: plan.issues, travellers }));
+	const errors = $derived(
+		buildErrors({ analysis, issues: plan.issues, travellers, travellerMax: travellerLimits?.max })
+	);
 
 	// Copies only where a character's rules allow them (Village Idiot, Legion, or with the
 	// Pope or Atheist in play), never through a general switch (Trevor, 2026-10-15).
@@ -232,7 +246,8 @@
 
 	$effect(() => {
 		if (ready && travellersChosenAtStart === undefined)
-			travellersChosenAtStart = ids.some((id) => lookup(id)?.type === 'traveller');
+			travellersChosenAtStart =
+				travellersInBag > 0 || ids.some((id) => lookup(id)?.type === 'traveller');
 	});
 
 	function toggle(character: Character) {
@@ -317,7 +332,8 @@
 			// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one.
 			selection: {},
 			ruleCharacters: game?.ruleCharacters,
-			scriptCharacters: choices,
+			// A rule's Travellers come from the recommended ones: the script's and its edition's.
+			scriptCharacters: travellersInBag ? [...choices, ...editionTravellers] : choices,
 			scriptOrder,
 			lookup,
 			findByName,
@@ -325,7 +341,8 @@
 				data && script
 					? scriptFacts(script.characters, data.jinxes, script.homebrewJinxes).jinxes
 					: [],
-			random: Math.random
+			random: Math.random,
+			travellersInBag
 		});
 		if (result.ok) setupSelection.replace(result.selection);
 		else toast(t('setup.randomNone'), result.problems[0]);
@@ -343,7 +360,7 @@
 		<ErrorBoundary area="setup">
 			<PlayerCountSheet players={s.players} onChange={(n) => setupSelection.setPlayers(n)} />
 			<div class="counts">
-				<CountsBar {analysis} {travellers} />
+				<CountsBar {analysis} {travellers} {travellerLimits} />
 				<div class="find">
 					<CharacterSearchBox bind:query shortcut />
 					<div class="tools">

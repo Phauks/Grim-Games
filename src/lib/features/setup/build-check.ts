@@ -28,10 +28,17 @@ export interface BuildCheckInput {
 	issues: readonly BagIssue[];
 	/** Travellers selected. */
 	travellers: number;
+	/** The most Travellers a special rule lets into the bag (Stowed Away). */
+	travellerMax?: number;
 }
 
 /** The errors to confirm before building the bag, as messages; empty when it is clean. */
-export function buildErrors({ analysis, issues, travellers }: BuildCheckInput): string[] {
+export function buildErrors({
+	analysis,
+	issues,
+	travellers,
+	travellerMax
+}: BuildCheckInput): string[] {
 	const errors = [
 		...analysis.warnings.filter((w) => ERROR_WARNINGS.has(w.code)).map((w) => w.message),
 		...issues.filter((i) => ERROR_ISSUES.has(i.code)).map((i) => i.message)
@@ -45,6 +52,10 @@ export function buildErrors({ analysis, issues, travellers }: BuildCheckInput): 
 				players: analysis.players
 			})
 		);
+	}
+	// https://beardytas.com/garden-of-djinn/stowed-away/: "Up to 2 recommended travellers".
+	if (travellerMax !== undefined && travellers > travellerMax) {
+		errors.push(t('setup.errors.travellersInBag', { count: travellers, max: travellerMax }));
 	}
 	return errors;
 }
