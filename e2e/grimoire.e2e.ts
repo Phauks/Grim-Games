@@ -4331,3 +4331,35 @@ test('a Dead reminder put on a living player asks whether to mark them dead', as
 	);
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
+
+test('when the Imp kills itself, a living Minion is chosen to become the Imp', async ({ page }) => {
+	// Trevor (2026-10-19): the Imp's star pass (https://wiki.bloodontheclocktower.com/Imp).
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Chef'],
+		[3, 'Imp'],
+		[4, 'Poisoner']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 3' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
+	await expect(ask.getByRole('radio', { name: /Seat 4/, includeHidden: true })).toBeChecked();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 4: no name, Imp')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 3: no name, Imp')).toHaveAttribute('aria-label', /dead/);
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});
