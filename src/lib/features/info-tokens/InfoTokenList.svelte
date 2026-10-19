@@ -398,7 +398,12 @@
 
 <div class="sections">
 	{#if !only}
-		<Collapsible title={t('info-tokens.standard')} storageKey="info-tokens-standard" {level}>
+		<Collapsible
+			title={t('info-tokens.standard')}
+			storageKey="info-tokens-standard"
+			{level}
+			count={standard.length}
+		>
 			<ul class="cards">
 				{#each standard as token (token.id)}
 					<InfoTokenTile
@@ -413,7 +418,12 @@
 			</ul>
 		</Collapsible>
 		<!-- Trevor's own additions, apart from the base game's (2026-10-18). -->
-		<Collapsible title={t('info-tokens.extras')} storageKey="info-tokens-enhanced" {level}>
+		<Collapsible
+			title={t('info-tokens.extras')}
+			storageKey="info-tokens-enhanced"
+			{level}
+			count={extras.length}
+		>
 			<ul class="cards">
 				{#each extras as token (token.id)}
 					<InfoTokenTile
@@ -442,7 +452,12 @@
 		</Collapsible>
 	{/if}
 
-	<Collapsible title={t('info-tokens.custom')} storageKey="info-tokens-custom" {level}>
+	<Collapsible
+		title={t('info-tokens.custom')}
+		storageKey="info-tokens-custom"
+		{level}
+		count={custom.length}
+	>
 		<ul class="cards">
 			{#each custom as token (token.id)}
 				{@render customTile(token)}
