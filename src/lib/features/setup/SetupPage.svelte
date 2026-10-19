@@ -15,10 +15,10 @@
 		canDuplicate,
 		jinxSetupWarnings,
 		planBag,
-		randomSelection,
 		scriptFacts,
 		selectedIds,
-		isRuleCharacter
+		isRuleCharacter,
+		validRandomSelection
 	} from '#lib/core/rules/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -309,18 +309,26 @@
 		town?.seed?.();
 	}
 
+	// Random only shows a selection the setup check accepts (Trevor, 2026-10-19: "do not show
+	// an invalid draw"); when none fits, the selection stays and the toast says why.
 	function random() {
-		const selection = randomSelection({
+		const result = validRandomSelection({
 			players: s.players,
 			// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one.
 			selection: {},
+			ruleCharacters: game?.ruleCharacters,
 			scriptCharacters: choices,
 			scriptOrder,
 			lookup,
 			findByName,
+			jinxes:
+				data && script
+					? scriptFacts(script.characters, data.jinxes, script.homebrewJinxes).jinxes
+					: [],
 			random: Math.random
 		});
-		setupSelection.replace(selection);
+		if (result.ok) setupSelection.replace(result.selection);
+		else toast(t('setup.randomNone'), result.problems[0]);
 	}
 </script>
 
