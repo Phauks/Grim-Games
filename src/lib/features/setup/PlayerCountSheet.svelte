@@ -22,21 +22,24 @@
 </script>
 
 <section class="controls" aria-label={t('setup.players')}>
-	<div class="players">
-		<span>{t('setup.players')}</span>
-		<Stepper
-			value={players}
-			label={t('setup.players')}
-			lessLabel={t('setup.fewerPlayers')}
-			moreLabel={t('setup.morePlayers')}
-			{min}
-			{max}
-			onchange={set}
-			large
-			testid="player-count"
-		/>
-	</div>
+	<!-- One line (Trevor, 2026-10-18): the Setup sheet toggle, then Players beside its count. -->
 	<Collapsible title={t('setup.sheet')} level={3} storageKey="setup:sheet">
+		{#snippet aside()}
+			<div class="players">
+				<span>{t('setup.players')}</span>
+				<Stepper
+					value={players}
+					label={t('setup.players')}
+					lessLabel={t('setup.fewerPlayers')}
+					moreLabel={t('setup.morePlayers')}
+					{min}
+					{max}
+					onchange={set}
+					large
+					testid="player-count"
+				/>
+			</div>
+		{/snippet}
 		<SetupTable {players} onPick={set} />
 	</Collapsible>
 </section>
@@ -55,8 +58,5 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-	}
-	.players > span {
-		flex: 1;
 	}
 </style>
