@@ -2,7 +2,6 @@
 	import type { GameMode } from '#lib/core/modes/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
@@ -57,6 +56,13 @@
 
 <Dialog bind:open title={t('modes.add.title')}>
 	{#snippet headActions()}
+		<!-- Upload beside the guide in the header, so Cancel and Confirm share one row below
+			(Trevor, 2026-10-18: the three buttons took too much room). -->
+		<IconButton
+			icon="uploadFile"
+			label={t('modes.add.upload')}
+			onclick={() => fileInput?.click()}
+		/>
 		<IconButton icon="about" label={t('modes.guide.open')} onclick={() => (guide = true)} />
 	{/snippet}
 	<TextField
@@ -82,13 +88,7 @@
 			onCancel={() => (open = false)}
 			onConfirm={() => void save()}
 			disabled={text.trim() === ''}
-		>
-			{#snippet start()}
-				<Button variant="quiet" icon="uploadFile" onclick={() => fileInput?.click()}>
-					{t('modes.add.upload')}
-				</Button>
-			{/snippet}
-		</ModalActions>
+		/>
 	{/snippet}
 </Dialog>
 

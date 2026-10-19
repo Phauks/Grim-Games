@@ -15,6 +15,7 @@ export const scriptBuilder = {
 	'script-builder.download': 'Download script JSON',
 	'script-builder.open': 'Open a saved script',
 	'script-builder.openTitle': 'Open a saved script',
+	'script-builder.openPicked': 'Open in the Script builder',
 	'script-builder.openReplace': 'Open {name}?',
 	'script-builder.openReplaceBody': 'The characters and details on the builder are replaced.',
 	'script-builder.clear': 'Clear the script',

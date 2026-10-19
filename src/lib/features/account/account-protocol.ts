@@ -24,6 +24,12 @@ export const PASSWORD_MIN = 10;
 export const PASSWORD_MAX = 200;
 /** Wrong passwords allowed for one address per hour before it must wait or use a code. */
 export const MAX_PASSWORD_FAILURES = 10;
+/**
+ * The privacy policy's version: the date on the privacy page ("Last updated"), which shows
+ * this value. Creating an account means accepting it (Trevor, 2026-10-18); changing it asks
+ * every account to accept again at its next sign-in.
+ */
+export const PRIVACY_VERSION = '2026-10-18';
 /** Name of the HttpOnly session cookie. */
 export const SESSION_COOKIE = 'gg_session';
 
@@ -114,6 +120,8 @@ export type VerifyRequest = ({ code: string } | { token: string }) & {
 	email: string;
 	password?: string;
 	remember?: boolean;
+	/** The PRIVACY_VERSION the user accepted, when they were asked to. */
+	acceptPrivacy?: string;
 };
 
 /** `POST /api/auth/password` body: signing in with a password. */
@@ -121,6 +129,27 @@ export interface PasswordSignInRequest {
 	email: string;
 	password: string;
 	remember?: boolean;
+	acceptPrivacy?: string;
+}
+
+/**
+ * The 403 answer to a sign-in that needs the privacy policy accepted first: a new account,
+ * or one that accepted an older version. The code or link still works, so the same request
+ * is sent again with `acceptPrivacy`.
+ */
+export interface PrivacyRequired {
+	error: string;
+	privacy: { version: string; creating: boolean };
+}
+
+export function isPrivacyRequired(body: unknown): body is PrivacyRequired {
+	const privacy = (body as Partial<PrivacyRequired> | null)?.privacy;
+	return (
+		typeof privacy === 'object' &&
+		privacy !== null &&
+		typeof privacy.version === 'string' &&
+		typeof privacy.creating === 'boolean'
+	);
 }
 
 /** `PUT /api/account/password` body. */

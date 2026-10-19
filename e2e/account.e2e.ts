@@ -36,13 +36,24 @@ async function signOut(page: Page) {
 	await page.getByRole('button', { name: 'Sign out', exact: true }).tap();
 }
 
-async function signInWithCode(page: Page, email: string) {
+async function signInWithCode(page: Page, email: string, creating = true) {
 	await page.goto('/account');
 	await page.getByLabel('Email address').fill(email);
 	await page.getByRole('button', { name: 'Email me a code' }).tap();
 	await page.getByLabel(`Code sent to ${email}`).fill(await previewCode(page));
 	await page.getByRole('button', { name: 'Sign in' }).tap();
+	if (creating) await acceptPrivacy(page);
 	await expect(page.getByTestId('account-email')).toHaveText(email);
+	await expect(page.getByRole('alertdialog', { name: 'Privacy policy' })).toHaveCount(0);
+}
+
+/** A new account accepts the privacy policy before it is made (Trevor, 2026-10-18). */
+async function acceptPrivacy(page: Page) {
+	const dialog = page.getByRole('alertdialog', { name: 'Privacy policy' });
+	await expect(dialog).toContainText('To create your account, accept the Privacy policy.');
+	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await dialog.getByText('I accept the Privacy policy', { exact: true }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 }
 
 test('signing in with an emailed code, then signing out', async ({ page }) => {
@@ -54,8 +65,24 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	await page.getByRole('button', { name: 'Sign in' }).tap();
 	await expect(page.getByRole('status').filter({ hasText: 'not right' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Change email' }).tap();
-	await signInWithCode(page, email);
+	// A new account waits for the privacy policy; declining leaves the code still usable.
+	await page.getByLabel(`Code sent to ${email}`).fill(await previewCode(page));
+	await page.getByRole('button', { name: 'Sign in' }).tap();
+	const privacy = page.getByRole('alertdialog', { name: 'Privacy policy' });
+	await expect(privacy.getByRole('link', { name: 'Read the Privacy policy' })).toHaveAttribute(
+		'href',
+		'/privacy'
+	);
+	await privacy.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(
+		page.getByRole('status').filter({ hasText: 'needs the Privacy policy accepted' })
+	).toBeVisible();
+	await page.getByRole('button', { name: 'Sign in' }).tap();
+	await acceptPrivacy(page);
+	await expect(page.getByTestId('account-email')).toHaveText(email);
+	await signOut(page);
+	// Accepted once: signing in again doesn't ask.
+	await signInWithCode(page, email, false);
 	// The session survives a reload: it's a cookie the page can't read.
 	await page.reload();
 	await expect(page.getByTestId('account-email')).toHaveText(email);
@@ -65,9 +92,10 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	await expect(devices.getByText('(this device)')).toBeVisible();
 	// A rough place per device; the local server has none from Cloudflare, so None.
 	await expect(devices.getByText('Location').first()).toBeVisible();
-	await expect(
-		devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ })
-	).toBeDisabled();
+	const own = devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ });
+	await expect(own).toBeDisabled();
+	// Signing out is a text button, not the trash can (Trevor, 2026-10-18).
+	await expect(own).toHaveText('Sign out');
 	// Sign out other devices sits in the section's header; Delete account has a section of its own;
 	// signing out of this device is only in the header's account card.
 	await expect(page.getByRole('button', { name: 'Sign out other devices' })).toBeDisabled();
@@ -96,6 +124,7 @@ test('a sign-in link signs in and keeps its token out of the address', async ({
 	// Like tapping the link in an email: it opens in a new tab of the same browser.
 	const opened = await context.newPage();
 	await opened.goto(link);
+	await acceptPrivacy(opened);
 	await expect(opened.getByTestId('account-email')).toHaveText(email);
 	expect(opened.url()).not.toContain('signin=');
 });
@@ -271,6 +300,7 @@ test('creating an account with a password, then signing in with it', async ({ pa
 	await page.getByRole('button', { name: 'Create account' }).tap();
 	await page.getByLabel(`Code sent to ${email}`).fill(await previewCode(page));
 	await page.getByRole('button', { name: 'Sign in' }).tap();
+	await acceptPrivacy(page);
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 	await expect(page.getByTestId('account-password')).toHaveText('Set');
 	// Remember me is on by default: the cookie outlives the browser.
