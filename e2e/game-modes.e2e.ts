@@ -506,7 +506,7 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await dialog.getByTestId('mode-file').fill('{"format": 1, "id": "Bad Id"}');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(dialog.getByRole('status')).toContainText('id: must be lower-case');
-	await expect(dialog.getByRole('status')).toContainText('sources: must list at least one source');
+	await expect(dialog.getByRole('status')).toContainText('sources: must be a list of links');
 
 	const mine = {
 		format: 1,
