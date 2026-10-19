@@ -7,7 +7,7 @@
  * other, so a deletion that was waiting on it finishes before the app opens it again.
  */
 import { SYNC_DB } from '#lib/features/account/sync/sync-db.ts';
-import { DB_NAME as GAMES_DB } from '#lib/features/game/idb-store.ts';
+import { DB_NAME as GAMES_DB } from '#lib/features/game/db-name.ts';
 import { RUNTIME_CACHE } from '#lib/features/offline/cache-rules.ts';
 import { SCRIPTS_DB_NAME } from '#lib/features/scripts/script-library.ts';
 
