@@ -3719,13 +3719,17 @@ test('the seat last touched draws over the seats it overlaps, name and all', asy
 	const one = (await seat(1).boundingBox())!;
 	const two = (await seat(2).boundingBox())!;
 	// Seat 2, drawn after seat 1, goes just below it: its token covers seat 1's badge, but
-	// it is too far off seat 1 to be a drop that swaps their places.
-	const size = one.height;
+	// it is too far off seat 1 to be a drop that swaps their places (closer than 0.6 of a
+	// token). Measured on the token itself, as fonts change the button's box.
+	const size = await seatLabelled(page, 'Seat 1:').evaluate((el) =>
+		parseFloat(getComputedStyle(el).getPropertyValue('--size'))
+	);
 	const from = { x: two.x + two.width / 2, y: two.y + two.height / 2 };
 	const to = { x: one.x + one.width / 2, y: one.y + one.height / 2 + size * 0.7 };
 	await menu(page, 'Arrange seats');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar).toContainText('Arrange seats');
+	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
 	// Under load the first press can land before the seats take drags: drag until it moves.
 	await expect(async () => {
 		await page.mouse.move(from.x, from.y);
@@ -3733,7 +3737,17 @@ test('the seat last touched draws over the seats it overlaps, name and all', asy
 		await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
 		await page.mouse.move(to.x, to.y, { steps: 4 });
 		await page.mouse.up();
-		expect((await seat(2).boundingBox())!.x).toBeCloseTo(one.x, 0);
+		const at = (await seat(2).boundingBox())!.x;
+		// What took the press, if not the seat: shown in the log when the drag misses.
+		if (Math.abs(at - one.x) >= 0.5)
+			console.log(
+				'missed drag, pressed on:',
+				await page.evaluate(
+					({ x, y }) => document.elementFromPoint(x, y)?.outerHTML.slice(0, 200),
+					from
+				)
+			);
+		expect(at).toBeCloseTo(one.x, 0);
 	}).toPass();
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
