@@ -58,7 +58,14 @@
 		type KindFilter,
 		type LibraryItem
 	} from './library-items.ts';
-	import { byName, childFolders, folderPath, libraryKey } from './library-labels.ts';
+	import {
+		byName,
+		childFolders,
+		folderMoveProblem,
+		folderPath,
+		libraryKey
+	} from './library-labels.ts';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
 
 	/**
@@ -346,9 +353,16 @@
 
 	// ---- Moving: drag a row onto a folder ----
 
+	/** A drop onto a folder, from the table or the sidebar; a folder that can't go there stays. */
 	function move(source: DragSource, target: string | undefined) {
-		if (source.folder) libraryLabels.moveFolder(source.id, target);
-		else libraryLabels.setFolder(source.id, target);
+		if (!source.folder) {
+			libraryLabels.setFolder(source.id, target);
+			return;
+		}
+		const problem = folderMoveProblem(labels, source.id, target);
+		if (problem === 'inside') toast(t('library.moveInside', { name: source.label }));
+		else if (problem === 'nameTaken') toast(t('library.moveNameTaken', { name: source.label }));
+		else libraryLabels.moveFolder(source.id, target);
 	}
 
 	// ---- The open item ----
@@ -461,6 +475,7 @@
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
 					onnewfolder={() => (folderNaming = true)}
+					onmove={move}
 				/>
 			</div>
 		{:else}
@@ -473,6 +488,7 @@
 					bind:tags={tagFilter}
 					count={(f) => folderSize(items, labels, f)}
 					onnewfolder={() => (folderNaming = true)}
+					onmove={move}
 				/>
 			</PageSection>
 		{/if}

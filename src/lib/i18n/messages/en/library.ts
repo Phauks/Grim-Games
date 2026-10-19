@@ -79,6 +79,8 @@ export const library = {
 	'library.showFoldersIn': 'Folders in {name}',
 	'library.add': 'Add',
 	'library.nameTaken': 'That name is already used.',
+	'library.moveInside': '{name} can’t go inside itself.',
+	'library.moveNameTaken': 'There is already a folder called {name} there.',
 	'library.renameNamed': 'Rename {name}',
 	'library.deleteNamed': 'Delete {name}',
 	'library.renameTitle': 'Rename',

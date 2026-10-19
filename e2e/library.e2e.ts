@@ -480,6 +480,71 @@ test.describe('in a computer window', () => {
 		await noSidewaysScroll(page);
 	});
 
+	test('sidebar folders drag onto other folders, by mouse or touch, but never into themselves', async ({
+		page
+	}) => {
+		// Trevor (2026-10-18): "allow dragging and dropping folders in the left side bar".
+		await page.goto('/library');
+		await addStormFront(page);
+		await newFolder(page, 'Club night');
+		await newFolder(page, 'Done');
+		const folder = (name: string) =>
+			sidebar(page).getByRole('button', { name: new RegExp(`^${name}`) });
+		const top = sidebar(page).getByRole('button', { name: /^Library/ });
+
+		// A mouse drags Done into Club night: it nests, and its caret appears.
+		await folder('Done').hover();
+		await page.mouse.down();
+		await folder('Club night').hover({ force: true });
+		await expect(folder('Club night')).toHaveAttribute('data-drop-over', '');
+		await page.mouse.up();
+		await expect(
+			sidebar(page).getByRole('button', { name: 'Folders in Club night' })
+		).toBeVisible();
+		await expect(sidebar(page).locator('li.folder', { hasText: 'Done' })).toHaveCSS('--depth', '1');
+
+		// A held touch drags Club night onto Done, inside it: it stays put and says why.
+		const from = await folder('Club night').boundingBox();
+		const to = await folder('Done').boundingBox();
+		if (!from || !to) throw new Error('folders not laid out');
+		const cdp = await page.context().newCDPSession(page);
+		const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number, y: number) =>
+			cdp.send('Input.dispatchTouchEvent', {
+				type,
+				touchPoints: type === 'touchEnd' ? [] : [{ x, y }]
+			});
+		const start = { x: from.x + 40, y: from.y + from.height / 2 };
+		const end = { x: to.x + 60, y: to.y + to.height / 2 };
+		await touch('touchStart', start.x, start.y);
+		await page.waitForTimeout(600);
+		for (let i = 1; i <= 6; i++) {
+			await touch(
+				'touchMove',
+				start.x + ((end.x - start.x) * i) / 6,
+				start.y + ((end.y - start.y) * i) / 6
+			);
+		}
+		await touch('touchEnd', end.x, end.y);
+		await expect(page.getByText('Club night can’t go inside itself.')).toBeVisible();
+		await expect(sidebar(page).locator('li.folder', { hasText: 'Club night' })).toHaveCSS(
+			'--depth',
+			'0'
+		);
+		// The drag's release didn't open the folder either.
+		await expect(crumbs(page)).toHaveText('Library');
+
+		// Onto the Library at the top, Done comes back out.
+		await folder('Done').hover();
+		await page.mouse.down();
+		await top.hover({ force: true });
+		await expect(top).toHaveAttribute('data-drop-over', '');
+		await page.mouse.up();
+		await expect(sidebar(page).getByRole('button', { name: 'Folders in Club night' })).toHaveCount(
+			0
+		);
+		await expect(sidebar(page).locator('li.folder', { hasText: 'Done' })).toHaveCSS('--depth', '0');
+	});
+
 	test('Preview shows or hides the pane, and any item opens in a window', async ({ page }) => {
 		// Trevor (2026-10-18): "add a preview button ... regardless, you should be able to click
 		// into a file to see its contents in a modal".

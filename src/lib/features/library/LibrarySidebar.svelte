@@ -9,7 +9,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import GroupHead from './GroupHead.svelte';
 	import TagList from './TagList.svelte';
-	import { TOP_FOLDER } from './drag-to-folder.ts';
+	import { TOP_FOLDER, dragToFolder, type DragSource } from './drag-to-folder.ts';
 	import type { KindFilter } from './library-items.ts';
 	import { folderTree } from './library-labels.ts';
 	import { libraryLabels } from './library-labels.svelte.ts';
@@ -30,6 +30,8 @@
 		count: (folder: string | undefined) => number;
 		/** New folder, in the Folders heading (Trevor, 2026-10-18). */
 		onnewfolder: () => void;
+		/** A folder dragged onto another, or onto the top level (Trevor, 2026-10-18). */
+		onmove: (source: DragSource, target: string | undefined) => void;
 		/** False leaves out the Kinds list and Campaigns, for a browser of one kind of item. */
 		kinds?: boolean;
 	}
@@ -41,6 +43,7 @@
 		tags = $bindable([]),
 		count,
 		onnewfolder,
+		onmove,
 		kinds: showKinds = true
 	}: Props = $props();
 
@@ -146,6 +149,10 @@
 						data-drop-folder={folder.id}
 						aria-current={place === 'files' && current === folder.id ? 'location' : undefined}
 						onclick={() => openFolder(folder.id)}
+						use:dragToFolder={{
+							source: { id: folder.id, folder: true, label: folder.name },
+							onmove
+						}}
 					>
 						<Icon name="folder" />
 						<span class="name">{folder.name}</span>
