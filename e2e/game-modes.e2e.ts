@@ -1014,11 +1014,11 @@ test('each special rule takes its own line under the script name in the board co
 	const lines = corner.getByTestId('game-mode');
 	if (test.info().project.name === 'phone') {
 		// A phone's corner beside seat 5 has no room for the name and a rule line: the name
-		// hides, and the ⋯ menu's Game mode has the mode and its rules instead.
+		// hides, and the ⋯ menu's Game info has the mode and its rules instead.
 		await expect(corner).toBeHidden();
 		await page.getByRole('button', { name: 'More', exact: true }).tap();
 		await expect(
-			page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Game mode' })
+			page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Game info' })
 		).toBeVisible();
 		return;
 	}
