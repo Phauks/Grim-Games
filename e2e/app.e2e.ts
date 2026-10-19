@@ -82,6 +82,14 @@ test('the commit is a link; About is in Settings, not the footer', async ({ page
 	await expect(build.getByRole('button', { name: 'Report an issue' })).toBeVisible();
 });
 
+// Trevor (2026-10-19): a footer button switches between the beta and production builds. A local
+// build has no other build to open, so it shows none; build-switch.test.ts covers the hosts.
+test('a local build shows no switch to beta or production', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.getByTestId('build-info')).toBeVisible();
+	await expect(page.getByTestId('switch-build')).toHaveCount(0);
+});
+
 test('installs as a PWA and reopens offline', async ({ page, context }) => {
 	const manifest = await (await page.request.get('/manifest.webmanifest')).json();
 	expect(manifest.display).toBe('standalone');
