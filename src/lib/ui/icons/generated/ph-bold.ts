@@ -37,10 +37,12 @@ import ph_check_bold from '~icons/ph/check-bold';
 import ph_check_square_bold from '~icons/ph/check-square-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
 import ph_circle_notch_bold from '~icons/ph/circle-notch-bold';
+import ph_circles_three_bold from '~icons/ph/circles-three-bold';
 import ph_clipboard_bold from '~icons/ph/clipboard-bold';
 import ph_clipboard_text_bold from '~icons/ph/clipboard-text-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
+import ph_coin_bold from '~icons/ph/coin-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_corners_out_bold from '~icons/ph/corners-out-bold';
@@ -128,6 +130,7 @@ import ph_play_bold from '~icons/ph/play-bold';
 import ph_play_circle_bold from '~icons/ph/play-circle-bold';
 import ph_plus_bold from '~icons/ph/plus-bold';
 import ph_plus_circle_bold from '~icons/ph/plus-circle-bold';
+import ph_poker_chip_bold from '~icons/ph/poker-chip-bold';
 import ph_printer_bold from '~icons/ph/printer-bold';
 import ph_prohibit_bold from '~icons/ph/prohibit-bold';
 import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
@@ -229,10 +232,12 @@ const icons: IconMap = {
 	'ph:check-square-bold': ph_check_square_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
 	'ph:circle-notch-bold': ph_circle_notch_bold,
+	'ph:circles-three-bold': ph_circles_three_bold,
 	'ph:clipboard-bold': ph_clipboard_bold,
 	'ph:clipboard-text-bold': ph_clipboard_text_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
+	'ph:coin-bold': ph_coin_bold,
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:corners-out-bold': ph_corners_out_bold,
@@ -320,6 +325,7 @@ const icons: IconMap = {
 	'ph:play-circle-bold': ph_play_circle_bold,
 	'ph:plus-bold': ph_plus_bold,
 	'ph:plus-circle-bold': ph_plus_circle_bold,
+	'ph:poker-chip-bold': ph_poker_chip_bold,
 	'ph:printer-bold': ph_printer_bold,
 	'ph:prohibit-bold': ph_prohibit_bold,
 	'ph:prohibit-inset-bold': ph_prohibit_inset_bold,

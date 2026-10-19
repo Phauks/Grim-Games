@@ -1574,14 +1574,14 @@
 		     2026-10-18. -->
 		<Button
 			variant="quiet"
-			icon="settings"
+			icon="boardSettings"
 			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
 		>
 			Board
 		</Button>
 		<Button
 			variant="quiet"
-			icon="settings"
+			icon="tokenSettings"
 			onclick={() => fromMenu(() => settingsDialog.showOnly('tokens'))}
 		>
 			Tokens

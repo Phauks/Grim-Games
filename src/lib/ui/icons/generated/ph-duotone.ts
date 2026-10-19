@@ -37,10 +37,12 @@ import ph_check_duotone from '~icons/ph/check-duotone';
 import ph_check_square_duotone from '~icons/ph/check-square-duotone';
 import ph_circle_dashed_duotone from '~icons/ph/circle-dashed-duotone';
 import ph_circle_notch_duotone from '~icons/ph/circle-notch-duotone';
+import ph_circles_three_duotone from '~icons/ph/circles-three-duotone';
 import ph_clipboard_duotone from '~icons/ph/clipboard-duotone';
 import ph_clipboard_text_duotone from '~icons/ph/clipboard-text-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
 import ph_club_duotone from '~icons/ph/club-duotone';
+import ph_coin_duotone from '~icons/ph/coin-duotone';
 import ph_copy_duotone from '~icons/ph/copy-duotone';
 import ph_copy_simple_duotone from '~icons/ph/copy-simple-duotone';
 import ph_corners_out_duotone from '~icons/ph/corners-out-duotone';
@@ -128,6 +130,7 @@ import ph_play_duotone from '~icons/ph/play-duotone';
 import ph_play_circle_duotone from '~icons/ph/play-circle-duotone';
 import ph_plus_duotone from '~icons/ph/plus-duotone';
 import ph_plus_circle_duotone from '~icons/ph/plus-circle-duotone';
+import ph_poker_chip_duotone from '~icons/ph/poker-chip-duotone';
 import ph_printer_duotone from '~icons/ph/printer-duotone';
 import ph_prohibit_duotone from '~icons/ph/prohibit-duotone';
 import ph_prohibit_inset_duotone from '~icons/ph/prohibit-inset-duotone';
@@ -229,10 +232,12 @@ const icons: IconMap = {
 	'ph:check-square-duotone': ph_check_square_duotone,
 	'ph:circle-dashed-duotone': ph_circle_dashed_duotone,
 	'ph:circle-notch-duotone': ph_circle_notch_duotone,
+	'ph:circles-three-duotone': ph_circles_three_duotone,
 	'ph:clipboard-duotone': ph_clipboard_duotone,
 	'ph:clipboard-text-duotone': ph_clipboard_text_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
 	'ph:club-duotone': ph_club_duotone,
+	'ph:coin-duotone': ph_coin_duotone,
 	'ph:copy-duotone': ph_copy_duotone,
 	'ph:copy-simple-duotone': ph_copy_simple_duotone,
 	'ph:corners-out-duotone': ph_corners_out_duotone,
@@ -320,6 +325,7 @@ const icons: IconMap = {
 	'ph:play-circle-duotone': ph_play_circle_duotone,
 	'ph:plus-duotone': ph_plus_duotone,
 	'ph:plus-circle-duotone': ph_plus_circle_duotone,
+	'ph:poker-chip-duotone': ph_poker_chip_duotone,
 	'ph:printer-duotone': ph_printer_duotone,
 	'ph:prohibit-duotone': ph_prohibit_duotone,
 	'ph:prohibit-inset-duotone': ph_prohibit_inset_duotone,
