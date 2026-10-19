@@ -479,7 +479,7 @@
 				aria-label={ghostLabel}
 				title={ghostLabel}
 				onclick={() => openCount('ghostVotes', ghostLabel)}
-				><Icon name="ghostVote" />{ghostVotes}</button
+				><Icon name="ghostVote" weight="fill" />{ghostVotes}</button
 			>
 			<!--
 				Votes the first nominee needs to go on the block, from who is alive now, so a death
@@ -1072,6 +1072,10 @@
 	}
 	.private {
 		color: var(--on-surface-muted);
+	}
+	/* Only the words are italic; a character's name stays upright (Trevor, 2026-10-19). */
+	.private :global(.badge) {
+		font-style: normal;
 	}
 	.dont-announce {
 		justify-self: start;
