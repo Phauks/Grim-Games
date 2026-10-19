@@ -20,6 +20,7 @@
 		selectedIds,
 		isRuleCharacter
 	} from '#lib/core/rules/index.ts';
+	import { scriptMaxPlayers, teensyvilleWarnings } from '#lib/core/rules/teensyville.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -216,7 +217,8 @@
 	const warnings = $derived([
 		...setupWarningMessages(analysis.warnings, requirements, name),
 		...plan.issues.map((i) => i.message),
-		...jinxSetupWarnings(jinxes, ids, name).map((w) => w.message)
+		...jinxSetupWarnings(jinxes, ids, name).map((w) => w.message),
+		...(script ? teensyvilleWarnings(script.characters, s.players) : [])
 	]);
 
 	const errors = $derived(buildErrors({ analysis, issues: plan.issues, travellers }));
@@ -333,7 +335,11 @@
 		>{/snippet}
 	{#snippet side()}
 		<ErrorBoundary area="setup">
-			<PlayerCountSheet players={s.players} onChange={(n) => setupSelection.setPlayers(n)} />
+			<PlayerCountSheet
+				players={s.players}
+				onChange={(n) => setupSelection.setPlayers(n)}
+				maxPlayers={script ? scriptMaxPlayers(script.characters) : undefined}
+			/>
 			<div class="counts">
 				<CountsBar {analysis} {travellers} />
 				<div class="find">

@@ -882,3 +882,41 @@ test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 		expect(ids).not.toContain(id);
 	await noSidewaysScroll(page);
 });
+
+// Teensyville scripts are for 5 or 6 players (https://wiki.bloodontheclocktower.com/Teensyville):
+// larger counts are greyed out on New game and setup but stay pickable (Trevor, 2026-10-19).
+test('a Teensyville script greys out player counts above 6 but still allows them', async ({
+	page
+}) => {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste
+		.getByLabel('Script JSON')
+		.fill(
+			JSON.stringify([
+				{ id: '_meta', name: 'Tiny Town' },
+				...['washerwoman', 'chef', 'empath', 'monk', 'soldier', 'mayor'],
+				...['drunk', 'saint', 'poisoner', 'spy', 'imp', 'nodashii']
+			])
+		);
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText('Tiny Town');
+
+	await page.goto('/new');
+	await pickScript(page, 'Tiny Town');
+	const table = page.getByTestId('setup-table');
+	await expect(table.locator('thead th[data-too-many]')).toHaveCount(9);
+	await expect(table.locator('thead th[scope="col"]').nth(1)).not.toHaveAttribute('data-too-many');
+	// Still pickable: 8 players stays chosen.
+	await expect(page.getByTestId('player-count')).toHaveText('8');
+	for (let n = 8; n > 6; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.goto(`${new URL(page.url()).pathname}/setup`);
+	await expect(table.locator('thead th[data-too-many]')).toHaveCount(9);
+	await page.getByRole('button', { name: 'More players' }).tap();
+	await expect(page.getByTestId('player-count')).toHaveText('7');
+	await expect(page.getByText('This script is made for at most 6 players.')).toBeVisible();
+	await expect(page.getByTestId('setup-check')).toContainText('Teensyville');
+});

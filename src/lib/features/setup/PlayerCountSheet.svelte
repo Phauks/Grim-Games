@@ -4,6 +4,7 @@
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import SetupTable from './SetupTable.svelte';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS } from './selection.svelte.ts';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
 
 	/**
 	 * The player count with its stepper and the setup sheet under it, where tapping a column
@@ -19,6 +20,8 @@
 		/** Where the sheet's open state is kept; each town keeps its own. */
 		storageKey?: string;
 		testid?: string;
+		/** The most players the script is made for (Teensyville: 6); more are greyed out. */
+		maxPlayers?: number;
 	}
 
 	let {
@@ -28,10 +31,17 @@
 		max = MAX_SELECT_PLAYERS,
 		title,
 		storageKey = 'setup:sheet',
-		testid = 'player-count'
+		testid = 'player-count',
+		maxPlayers
 	}: Props = $props();
 
-	const set = (n: number) => onChange(Math.min(max, Math.max(min, n)));
+	function set(n: number) {
+		const next = Math.min(max, Math.max(min, n));
+		// Warns once on the way past the script's limit, never blocks.
+		if (maxPlayers !== undefined && next > maxPlayers && players <= maxPlayers)
+			toast(t('setup.tooManyPlayers'), t('setup.tooManyPlayersFor', { max: maxPlayers }));
+		onChange(next);
+	}
 </script>
 
 <section class="controls" aria-label={title ?? t('setup.players')}>
@@ -53,7 +63,7 @@
 				/>
 			</div>
 		{/snippet}
-		<SetupTable {players} onPick={set} />
+		<SetupTable {players} onPick={set} {maxPlayers} />
 	</Collapsible>
 </section>
 

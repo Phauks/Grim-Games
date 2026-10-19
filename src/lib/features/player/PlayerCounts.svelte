@@ -7,9 +7,11 @@
 	interface Props {
 		/** Players at the table, when known (the board): that column starts highlighted. */
 		players?: number;
+		/** The most players the script is made for (Teensyville: 6); more are greyed out. */
+		maxPlayers?: number;
 	}
 
-	let { players }: Props = $props();
+	let { players, maxPlayers }: Props = $props();
 	const counts = Array.from(
 		{ length: MAX_DEALT_PLAYERS - MIN_PLAYERS + 1 },
 		(_, i) => MIN_PLAYERS + i
@@ -38,4 +40,4 @@
 </script>
 
 <!-- The same setup sheet table as setup and New game (Trevor, 2026-10-17). -->
-<SetupTable players={highlighted} onPick={choose} />
+<SetupTable players={highlighted} onPick={choose} {maxPlayers} />
