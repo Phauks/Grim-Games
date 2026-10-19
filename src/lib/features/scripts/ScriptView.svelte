@@ -8,6 +8,7 @@
 		editionScript,
 		loadScript,
 		loadScriptText,
+		scriptToJson,
 		type GameData,
 		type LoadedScript
 	} from '#lib/core/data/index.ts';
@@ -227,12 +228,20 @@
 		];
 	});
 
+	// A script shares before it is saved (Trevor, 2026-10-19): an unsaved one shares what
+	// is shown, from its source (a BotC Scripts number, an edition) or as a share code.
 	const shareTarget = $derived.by(() => {
 		if (share) return share;
 		const s = shownSaved;
-		return isSaved && s && s.scriptId !== 'unsaved'
-			? () => shareTargetFor(s, location.origin)
-			: undefined;
+		if (isSaved && s && s.scriptId !== 'unsaved') return () => shareTargetFor(s, location.origin);
+		const shown = preview;
+		const source = shownSource;
+		if (!shown || !source) return undefined;
+		return () =>
+			shareTargetFor(
+				{ edition: shown.edition, json: scriptToJson(shown), source },
+				location.origin
+			);
 	});
 </script>
 
