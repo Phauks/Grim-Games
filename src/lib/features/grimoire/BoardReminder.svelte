@@ -26,7 +26,7 @@
 		/** "+3" style overflow marker instead of a token. */
 		more?: number;
 		/**
-		 * The generic reminder: a blank token with a dashed ring (Trevor, 2026-10-19: look C),
+		 * The generic reminder: a blank token, a dashed ring while it has no symbol (look C),
 		 * `label` its optional text.
 		 */
 		infinite?: boolean;
@@ -183,6 +183,7 @@
 	data-type={character?.type}
 	data-testid="board-reminder"
 	data-generic={infinite || undefined}
+	data-has-symbol={(infinite && !!symbol) || undefined}
 	data-pan={panX ? 'x' : undefined}
 	style:--d="{size}px"
 	aria-label={more
@@ -282,8 +283,9 @@
 	.reminder[data-type='loric'] {
 		--rim: var(--loric);
 	}
-	/* Look C (Trevor, 2026-10-19): a dashed ring inside the rim marks the generic reminder. */
-	.reminder[data-generic]::before {
+	/* Look C (Trevor, 2026-10-19): a dashed ring inside the rim marks the generic reminder,
+	   only while it is empty; once it carries a symbol the rim's colour says enough. */
+	.reminder[data-generic]:not([data-has-symbol])::before {
 		content: '';
 		position: absolute;
 		inset: 12%;
