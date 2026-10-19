@@ -13,6 +13,8 @@
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
+	import { gameLine } from '#lib/features/player/byline.ts';
+	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { roomHost } from './host.svelte.ts';
 
 	interface Props {
@@ -95,8 +97,21 @@
 
 	// Shared and copied text carries the code as well as the link, so it can be typed at /join
 	// if the link won't open. The link holds the code too, for apps that keep only the link.
+	// It names the game as its byline does (Trevor, 2026-10-19): script, version, author and
+	// Storyteller, each left out when unknown.
+	const gameText = $derived(
+		gameLine(scriptName, {
+			version: scriptVersion(undefined, game.game.script.meta),
+			author: game.game.script.meta?.author,
+			storyteller: game.game.storytellerName
+		})
+	);
 	const message = $derived(
-		host.code ? t('room.shareText', { code: formatRoomCode(host.code) }) : ''
+		!host.code
+			? ''
+			: gameText
+				? t('room.shareGameText', { game: gameText, code: formatRoomCode(host.code) })
+				: t('room.shareText', { code: formatRoomCode(host.code) })
 	);
 
 	function approve(request: RoomRequest) {
@@ -160,7 +175,11 @@
 				title={t('room.watch.title')}
 				qrLabel={t('room.watch.qrLabel')}
 				pending={t('room.watch.off')}
-				text={watchLink ? t('room.watch.shareText') : undefined}
+				text={!watchLink
+					? undefined
+					: gameText
+						? t('room.watch.shareGameText', { game: gameText })
+						: t('room.watch.shareText')}
 				qrCenter={logo || scriptName ? scriptCenter : undefined}
 				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 				qrCaption={t('room.watch.qrCaption')}

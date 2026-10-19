@@ -11,6 +11,7 @@
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import ScriptByline from './ScriptByline.svelte';
+	import { gameLine } from './byline.ts';
 
 	/**
 	 * /play's Room tab (Trevor, 2026-10-19): the live room this phone last joined, or the code
@@ -32,6 +33,24 @@
 	let joined = $state(false);
 	let sharing = $state(false);
 
+	// The Storyteller's name comes from the room; the share text names the game as its byline
+	// does (Trevor, 2026-10-19).
+	let storyteller = $state<string>();
+	const gameText = $derived(
+		gameLine(script?.name, {
+			version,
+			author: script?.meta.author,
+			storyteller
+		})
+	);
+	const shareText = $derived(
+		!code
+			? undefined
+			: gameText
+				? t('room.shareGameText', { game: gameText, code: formatRoomCode(code) })
+				: t('room.shareText', { code: formatRoomCode(code) })
+	);
+
 	const link = $derived(
 		code && joined ? `${location.origin}${resolve('/join/[code]', { code })}` : undefined
 	);
@@ -51,7 +70,12 @@
 		/>
 	</div>
 	{#key code}
-		<JoinPanel {code} onCode={(c) => (code = c)} onJoined={(j) => (joined = j)} />
+		<JoinPanel
+			{code}
+			onCode={(c) => (code = c)}
+			onJoined={(j) => (joined = j)}
+			onStoryteller={(name) => (storyteller = name)}
+		/>
 	{/key}
 </div>
 
@@ -64,7 +88,7 @@
 			qrLabel={t('room.qrLabel')}
 			pending={t('room.joining')}
 			code={{ label: t('room.joinCode'), value: code && formatRoomCode(code) }}
-			text={code ? t('room.shareText', { code: formatRoomCode(code) }) : undefined}
+			text={shareText}
 			qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 		>
 			{#snippet qrCenter()}

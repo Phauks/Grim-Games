@@ -116,7 +116,7 @@ test('Share and Copy link carry the room code as well as the link', async ({ pag
 			value: async (data: ShareData) => void (w.shared = data)
 		});
 	});
-	const board = await startGame(page);
+	const board = await startGame(page, 'Sam');
 	await page.goto(`${board}/room`);
 	// Read the code once the room is open: before that the share code isn't the room's yet.
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -134,6 +134,10 @@ test('Share and Copy link carry the room code as well as the link', async ({ pag
 	await page.getByRole('button', { name: 'Share', exact: true }).first().tap();
 	const shared = await page.evaluate(() => (window as unknown as { shared: ShareData }).shared);
 	expect(shared.text).toContain(spaced);
+	// The text names the game as its byline does (Trevor, 2026-10-19).
+	expect(shared.text).toContain(
+		`Join the game on ${APP_NAME}: Trouble Brewing by The Pandemonium Institute · Storyteller: Sam.`
+	);
 	expect(shared.url).toMatch(link);
 
 	await page.getByRole('button', { name: 'Copy link' }).first().tap();

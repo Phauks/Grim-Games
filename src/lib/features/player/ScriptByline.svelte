@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { bylineParts } from './byline.ts';
 
 	/**
 	 * Who wrote the script and which version it is (Trevor, 2026-10-17), and in a game who
@@ -15,13 +15,7 @@
 	}
 
 	let { author, version, storyteller, inline = false }: Props = $props();
-	const parts = $derived(
-		[
-			author?.trim() ? t('player.byAuthor', { author: author.trim() }) : undefined,
-			version?.trim() ? t('player.version', { version: version.trim() }) : undefined,
-			storyteller?.trim() ? t('player.storytellerIs', { name: storyteller.trim() }) : undefined
-		].filter((p) => p !== undefined)
-	);
+	const parts = $derived(bylineParts({ author, version, storyteller }));
 </script>
 
 {#if parts.length}

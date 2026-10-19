@@ -31,11 +31,13 @@
 		onCode?: (code: string) => void;
 		/** Told whether the phone is in a room (not the code form), for the page around it. */
 		onJoined?: (joined: boolean) => void;
+		/** Told the Storyteller's name the room gives, for the share text around it. */
+		onStoryteller?: (name: string | undefined) => void;
 		/** The room's script arrived ('' when it has no name). */
 		onScript?: (name: string) => void;
 	}
 
-	let { code, onCode, onJoined, onScript }: Props = $props();
+	let { code, onCode, onJoined, onScript, onStoryteller }: Props = $props();
 
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
@@ -78,6 +80,7 @@
 	});
 	const seats = $derived(view?.public?.seats ?? []);
 	const storyteller = $derived(view?.public?.storytellerName);
+	$effect(() => onStoryteller?.(storyteller));
 	const mine = $derived(view?.me.seatId);
 	// The seat this phone has, or asked for, is the one chosen when the room opens again.
 	const placed = $derived(
