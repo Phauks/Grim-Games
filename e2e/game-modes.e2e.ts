@@ -594,9 +594,11 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(extras.nth(1)).toContainText('Outsider');
 	await expect(extras.nth(2)).toContainText('Minion');
 	await expect(extras.nth(3)).toContainText('Demon');
-	await expect(page.getByTestId('extras-range')).toHaveText(
-		'Tell the table: 3 to 5 hidden characters'
-	);
+	// Any range that holds the real number, within 1 to 4 (Trevor, 2026-10-19).
+	const fewest = page.getByRole('combobox', { name: 'Fewest hidden characters to tell the table' });
+	const most = page.getByRole('combobox', { name: 'Most hidden characters to tell the table' });
+	await expect(fewest).toContainText('3');
+	await expect(most).toContainText('4');
 	// Rolling one again swaps it for another off-script character of the same type.
 	const reroll = extras.nth(0).getByRole('button', { name: /^Roll again instead of / });
 	const before = await reroll.getAttribute('aria-label');
@@ -614,9 +616,18 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await extras.nth(2).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
 	await expect(extras.nth(2)).toContainText('None');
 	await extras.nth(3).getByRole('button', { name: 'Clear the hidden Demon' }).tap();
-	await expect(page.getByTestId('extras-range')).toHaveText(
-		'Tell the table: 1 to 3 hidden characters'
-	);
+	await expect(fewest).toContainText('1');
+	await expect(most).toContainText('3');
+	// "The story teller puts in 2, any statement that includes 2 would be accurate 1-3, 1-4,
+	// 2-3, 2": the exact number, or a wider range.
+	await fewest.tap();
+	await page.getByRole('option', { name: '2', exact: true }).tap();
+	await most.tap();
+	await expect(page.getByRole('option')).toHaveText(['2', '3', '4']);
+	await page.getByRole('option', { name: '2', exact: true }).tap();
+	await expect(page.getByTestId('extras-range')).toContainText('Tell the table:');
+	await expect(fewest).toContainText('2');
+	await expect(most).toContainText('2');
 	await noSidewaysScroll(page);
 
 	await page.getByRole('button', { name: 'Choose characters' }).tap();
