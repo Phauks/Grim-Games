@@ -57,7 +57,8 @@
 		 * At the bank's right end (Trevor, 2026-10-18): Run Night Order, or End night while a
 		 * night is running. Always there, so the bank never moves.
 		 */
-		run?: { end: boolean; disabled: boolean; onclick: () => void };
+		/** `hint`: a count; each rise lights the button up for a moment (End night). */
+		run?: { end: boolean; disabled: boolean; onclick: () => void; hint?: number };
 	}
 
 	let {
@@ -221,6 +222,23 @@
 	 */
 	const loose = $derived(boardLooks.current.reminders === 'free');
 
+	// ── End night lights up when Next is tapped past the last step ──
+	let hinting = $state(false);
+	$effect(() => {
+		if (!run?.hint) return;
+		// Off for a frame first, so a second tap starts the pulse again.
+		hinting = false;
+		let off: ReturnType<typeof setTimeout> | undefined;
+		const on = requestAnimationFrame(() => {
+			hinting = true;
+			off = setTimeout(() => (hinting = false), 2000);
+		});
+		return () => {
+			cancelAnimationFrame(on);
+			clearTimeout(off);
+		};
+	});
+
 	// ── Drag a token from the bank onto a seat ──
 	let drag = $state<{ item: Item; at: SeatPoint } | undefined>();
 	function dragItem(item: Item, x: number, y: number, end: boolean) {
@@ -348,6 +366,7 @@
 			type="button"
 			class="run"
 			aria-label={run.end ? 'End night' : 'Run Night Order'}
+			data-hint={hinting ? '' : undefined}
 			disabled={run.disabled}
 			onclick={run.onclick}
 		>
@@ -508,6 +527,18 @@
 	.run :global(svg) {
 		width: 1.6em;
 		height: 1.6em;
+	}
+	/* Next past the last step points here (Trevor, 2026-10-19): a ring that pulses, or just
+	   shows under reduced motion (the duration tokens are 0ms then). */
+	.run[data-hint] {
+		outline: 0.2rem solid var(--on-accent);
+		outline-offset: -0.45rem;
+		animation: end-hint var(--duration-slow) ease-in-out 4 alternate;
+	}
+	@keyframes end-hint {
+		to {
+			outline-color: transparent;
+		}
 	}
 	.run:disabled {
 		background: none;
