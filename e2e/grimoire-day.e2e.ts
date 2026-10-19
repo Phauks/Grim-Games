@@ -388,6 +388,14 @@ test('the day view names a homebrew character by its script name', async ({ page
 		.getByRole('button', { name: 'Killed by the Demon' })
 		.tap();
 	const announcements = page.getByTestId('announcements');
+	// The words to say by seat, never the character; the character and cause only for the
+	// Storyteller, in italics (Trevor, 2026-10-19).
+	await expect(announcements.getByTestId('spoken')).toHaveText(
+		'The player in seat 1 died in the night.'
+	);
+	await expect(announcements.getByTestId('storyteller-only')).toHaveText(
+		/Spartacus.*, killed by the Demon/
+	);
 	await expect(announcements).toContainText('Spartacus');
 	await expect(announcements.locator('img')).toHaveCount(1);
 	await expect(day).not.toContainText('spartacusfallofrome');
@@ -516,4 +524,6 @@ test('holding the day timer or a new day resets it to the time per living player
 	day = page.getByRole('dialog', { name: 'Day 1' });
 	await expect(day.getByTestId('day-toolbar').getByRole('timer')).toHaveText('4:00');
 	await expect(day.getByRole('button', { name: 'Start timer' })).toBeEnabled();
+	// After a night with no deaths, that is the announcement (Trevor, 2026-10-19).
+	await expect(day.getByTestId('announcements')).toHaveText('Nobody died in the night.');
 });

@@ -29,6 +29,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CountDialog from './CountDialog.svelte';
+	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -273,11 +274,42 @@
 		}
 	}
 
-	function diedText(cause: DeathCause | undefined): string {
-		return cause === undefined
-			? t('day.diedNoCause')
-			: t('day.diedCause', { cause: causeLabel(cause) });
+	/**
+	 * Announcing a death (Trevor, 2026-10-19: "show the exact statement"): what to say, in
+	 * normal text, by seat and name and never by character; then for the Storyteller only,
+	 * in italics, the character and the cause.
+	 */
+	function spokenDeath(seatId: SeatId): string {
+		const seat = g.seating.indexOf(seatId) + 1;
+		const name = g.seats[seatId].playerName;
+		return name ? t('day.announce.died', { name, seat }) : t('day.announce.diedUnnamed', { seat });
 	}
+	function privateDeath(cause: DeathCause | undefined): string {
+		const how =
+			cause === undefined
+				? t('day.announce.noCause')
+				: cause === 'execution'
+					? t('day.announce.executed')
+					: cause === 'exile'
+						? t('day.announce.exiled')
+						: cause === 'demon'
+							? t('day.announce.demon')
+							: cause === 'other'
+								? t('day.announce.other')
+								: t('day.announce.killedBy', { killer: slot('cause') });
+		return t('day.announce.private', { character: slot('character'), how });
+	}
+	/** A dawn has come (End night), so "Nobody died in the night" means something. */
+	const dawned = $derived(
+		game.log.entries
+			.slice(0, game.log.cursor)
+			.some((e) => e.events.some((ev) => ev.type === 'DayStarted'))
+	);
+	/**
+	 * With "I See Dead People" on, deaths are never announced (World Cup thread, 2026-10-19):
+	 * the spoken line says so instead.
+	 */
+	const privateDeaths = $derived(gameModeOf(g.gameId)?.parts.deaths?.kind === 'private');
 
 	const reminders = $derived(
 		dayReminders(
@@ -492,21 +524,28 @@
 		<ul class="reminders" data-testid="announcements">
 			{#each died as death (death.seatId)}
 				{@const seat = g.seats[death.seatId]}
-				<li>
-					<CharacterEntry
-						characterId={seat.characterId}
-						alignment={seat.alignment}
-						playerName={game.seatName(seat.seatId)}
-						label={game.seatName(seat.seatId)}
+				<li class="death" data-seat={death.seatId}>
+					{#if privateDeaths}
+						<span class="dont-announce" data-testid="dont-announce">{t('day.announce.dont')}</span>
+					{:else}
+						<span class="spoken" data-testid="spoken">{spokenDeath(death.seatId)}</span>
+					{/if}
+					<em class="private" data-testid="storyteller-only"
+						><Sentence text={privateDeath(death.cause)}
+							>{#snippet fill(name)}{#if name === 'character'}{#if seat.characterId}<CharacterBadge
+											characterId={seat.characterId}
+											alignment={seat.alignment}
+											inline
+										/>{:else}{t('day.announce.noCharacter')}{/if}{:else}{@render badge(
+										death.cause
+									)}{/if}{/snippet}</Sentence
+						></em
 					>
-						<span class="sentence"
-							><Sentence text={diedText(death.cause)}
-								>{#snippet fill()}{@render badge(death.cause)}{/snippet}</Sentence
-							></span
-						>
-					</CharacterEntry>
 				</li>
 			{/each}
+			{#if died.length === 0 && dawned}
+				<li class="death"><span class="spoken">{t('day.announce.nobody')}</span></li>
+			{/if}
 			{#each announcers as a (a.character.id)}
 				<li data-character={a.character.id}>
 					<CharacterEntry
@@ -520,7 +559,7 @@
 					</CharacterEntry>
 				</li>
 			{/each}
-			{#if died.length === 0 && announcers.length === 0}
+			{#if died.length === 0 && !dawned && announcers.length === 0}
 				<li>{t('common.none')}</li>
 			{/if}
 		</ul>
@@ -1011,6 +1050,21 @@
 		/* A cool tint, unlike the parchment cause buttons. */
 		background: var(--good-wash);
 		border: 1px solid var(--good);
+	}
+	/* The words to say, then the Storyteller's own detail under them in italics. */
+	.death {
+		display: grid;
+		gap: var(--space-1);
+	}
+	.private {
+		color: var(--on-surface-muted);
+	}
+	.dont-announce {
+		justify-self: start;
+		padding: 0 var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		font-variant: small-caps;
 	}
 	.state {
 		margin: 0 0 var(--space-2);
