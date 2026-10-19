@@ -121,8 +121,9 @@
 					aria-current={place === 'files' && current === undefined ? 'location' : undefined}
 					onclick={() => openFolder(undefined)}
 				>
-					<Icon name="library" />
-					<span class="name">{t('library.heading')}</span>
+					<!-- Home, with the folder path's icon (Trevor, 2026-10-19: "to match"). -->
+					<Icon name="home" />
+					<span class="name">{t('library.home')}</span>
 					<span class="count">{count(undefined)}</span>
 				</button>
 			</li>

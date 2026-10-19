@@ -4,6 +4,8 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const library = {
 	'library.pageTitle': `Library · ${APP_NAME}`,
 	'library.heading': 'Library',
+	/** The Library's top level, in the sidebar and the folder path (Trevor, 2026-10-19). */
+	'library.home': 'Home',
 	'library.scripts': 'Scripts',
 	'library.characters': 'Characters',
 	'library.campaignStarted': 'Started',
