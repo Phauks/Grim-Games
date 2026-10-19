@@ -4,6 +4,7 @@
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { gameModeNames } from './game-mode-name.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -801,7 +802,7 @@
 			!placing &&
 			game.seating.some((id) => game.seats[id].characterId !== undefined)
 	);
-	function runNight() {
+	function runNight(): void {
 		const data = officialData.current;
 		if (!data) return;
 		grimoire.beginNight();
@@ -823,6 +824,64 @@
 				(grimoire.nightRunning && !preferences.current.assistance.nightWalkthrough))
 	);
 	let endNightOpen = $state(false);
+	let endDayOpen = $state(false);
+	/**
+	 * End day, from the bank or the day view (Trevor, 2026-10-18): the day's timer stops and
+	 * Dusk is ticked, which runs the rules checked at dusk (GameEndPrompt); the walk-through
+	 * starts on the board, where it is on.
+	 */
+	function endDay(): void {
+		if (liveDayTimer.running) liveDayTimer.toggle();
+		grimoire.beginNight();
+		const night = tonight(game);
+		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
+			grimoire.toggleNightStep(night, { id: 'dusk' });
+		if (preferences.current.assistance.nightWalkthrough) runNight();
+	}
+	/**
+	 * The bank's button follows the game (Trevor, 2026-10-19): Start game before the first
+	 * night, End night during a night, End day during a day; a walk-through stopped mid-night
+	 * offers Run night to pick it up again.
+	 */
+	const bankRun = $derived.by(() => {
+		if (nightOn)
+			return {
+				label: 'End night',
+				text: 'End night',
+				icon: 'day' as const,
+				disabled: grimoire.open.viewOnly,
+				onclick: () => {
+					endNightOpen = true;
+				},
+				hint: endHint
+			};
+		const walkthrough = preferences.current.assistance.nightWalkthrough;
+		if (grimoire.nightUnderway && walkthrough)
+			return {
+				label: 'Run Night Order',
+				text: 'Run night',
+				icon: 'night' as const,
+				disabled: !canRun,
+				onclick: runNight
+			};
+		if (game.pastDays.length === 0)
+			return {
+				label: 'Start game',
+				text: 'Start game',
+				icon: 'night' as const,
+				disabled: !canRun,
+				onclick: walkthrough ? runNight : endDay
+			};
+		return {
+			label: 'End day',
+			text: 'End day',
+			icon: 'night' as const,
+			disabled: !!ended || grimoire.open.viewOnly || arranging || !!placing,
+			onclick: () => {
+				endDayOpen = true;
+			}
+		};
+	});
 	function endNight() {
 		if (!grimoire.endNight()) return;
 		walk = undefined;
@@ -1502,16 +1561,7 @@
 				{ruleAt}
 				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
 				onHints={(h) => (trayHints = h)}
-				run={nightOn
-					? {
-							end: true,
-							disabled: grimoire.open.viewOnly,
-							onclick: () => (endNightOpen = true),
-							hint: endHint
-						}
-					: preferences.current.assistance.nightWalkthrough
-						? { end: false, disabled: !canRun, onclick: runNight }
-						: { end: true, disabled: true, onclick: () => {} }}
+				run={bankRun}
 			/>
 		{/if}
 
@@ -1718,6 +1768,9 @@
 	/>
 </ConfirmDialog>
 
+<!-- The same question as the day view's End day. -->
+<ConfirmDialog bind:open={endDayOpen} title={t('day.endDayConfirm')} onConfirm={endDay} />
+
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">
 		<dt>Now</dt>
@@ -1785,20 +1838,7 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet
-	bind:open={dayOpen}
-	game={grimoire.open}
-	onEndDay={() => {
-		// The day's timer stops and Dusk is ticked, which runs the rules checked at dusk
-		// (GameEndPrompt); the walk-through starts on the board, where it is on.
-		if (liveDayTimer.running) liveDayTimer.toggle();
-		grimoire.beginNight();
-		const night = tonight(game);
-		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
-			grimoire.toggleNightStep(night, { id: 'dusk' });
-		if (preferences.current.assistance.nightWalkthrough) runNight();
-	}}
-/>
+<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={endDay} />
 
 <GuidedStep
 	bind:open={guideOpen}

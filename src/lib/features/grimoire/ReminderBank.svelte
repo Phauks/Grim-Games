@@ -54,11 +54,19 @@
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
 		/**
-		 * At the bank's right end (Trevor, 2026-10-18): Run Night Order, or End night while a
-		 * night is running. Always there, so the bank never moves.
+		 * At the bank's right end (Trevor, 2026-10-18): the game's next phase (Start game, End
+		 * night, End day, or Run night to pick a stopped walk-through up). Always there, so the
+		 * bank never moves. `hint`: a count; each rise lights it up for a moment.
 		 */
-		/** `hint`: a count; each rise lights the button up for a moment (End night). */
-		run?: { end: boolean; disabled: boolean; onclick: () => void; hint?: number };
+		run?: {
+			/** Its accessible name, and the shorter words shown. */
+			label: string;
+			text: string;
+			icon: 'day' | 'night';
+			disabled: boolean;
+			onclick: () => void;
+			hint?: number;
+		};
 	}
 
 	let {
@@ -365,13 +373,13 @@
 		<button
 			type="button"
 			class="run"
-			aria-label={run.end ? 'End night' : 'Run Night Order'}
+			aria-label={run.label}
 			data-hint={hinting ? '' : undefined}
 			disabled={run.disabled}
 			onclick={run.onclick}
 		>
-			<Icon name={run.end ? 'day' : 'night'} />
-			<span>{run.end ? 'End night' : 'Run night'}</span>
+			<Icon name={run.icon} />
+			<span>{run.text}</span>
 		</button>
 	{/if}
 </div>
