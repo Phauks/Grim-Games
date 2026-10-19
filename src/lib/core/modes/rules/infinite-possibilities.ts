@@ -34,7 +34,18 @@ export const INFINITE_POSSIBILITIES: SpecialRule = {
 			count: { min: 1, max: 4 }
 		},
 		restricted: { banned: [], onlyFor: [] },
-		ruleChanges: [{ characters: ['summoner'] }],
-		information: [{ characters: [] }]
+		ruleChanges: [
+			{
+				characters: ['summoner'],
+				instructions:
+					'You decide whether a character may register as one from off the script. Don’t offer a Summoner extra Demons from off the script unless you announced them.'
+			}
+		],
+		information: [
+			{
+				characters: [],
+				instructions: 'You may tell the table a range for how many hidden extras are in play.'
+			}
+		]
 	}
 };

@@ -27,10 +27,21 @@ export const SUSHI_BUFFET: GameMode = {
 	],
 	parts: {
 		// Trevor, 2026-10-18, in the project chat.
-		bluffs: { kind: 'none' },
+		bluffs: { kind: 'none', instructions: 'Don’t show the Demon any bluffs.' },
 		pool: { kind: 'all-characters' },
 		restricted: { banned: [] },
-		setupModifiers: { kind: 'as-chosen' },
-		assignment: { kind: 'draft', offers: [3, 2, 1], recycleUnchosen: false, oneTypePerOffer: false }
+		setupModifiers: {
+			kind: 'as-chosen',
+			instructions:
+				'Apply a setup effect (such as the Baron’s extra Outsiders) when its character is drafted. If that count is already filled, you decide whether it still changes.'
+		},
+		assignment: {
+			kind: 'draft',
+			offers: [3, 2, 1],
+			recycleUnchosen: false,
+			oneTypePerOffer: false,
+			instructions:
+				'Each player in turn is offered 3 characters, of any types, and keeps one, or refuses them for 2 new ones, then for a last one. Characters not kept are discarded.'
+		}
 	}
 };

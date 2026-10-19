@@ -19,6 +19,11 @@ export const STOWED_AWAY: SpecialRule = {
 			'Up to 2 recommended travellers might be in the bag & the player count lowers accordingly.',
 			'Travellers are not announced, executions & exiles are equivalent.'
 		],
-		travellers: { inBag: 2, announced: false }
+		travellers: {
+			inBag: 2,
+			announced: false,
+			instructions:
+				'Put up to 2 Travellers in the bag, and set the other counts for that many fewer players. Don’t tell anyone who the Travellers are. Exiling a Traveller counts as an execution.'
+		}
 	}
 };

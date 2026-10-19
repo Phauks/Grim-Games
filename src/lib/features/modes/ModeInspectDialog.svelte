@@ -13,9 +13,11 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { fileNameFor } from '#lib/ui/download.ts';
 	import FileView from '#lib/ui/primitives/FileView.svelte';
+	import { shownParts } from './approved-about.ts';
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeValue from './ModeValue.svelte';
 	import { modeLabel } from './labels.ts';
+	import { showsOwnWording } from './own-wording.svelte.ts';
 
 	/**
 	 * Inspect (Trevor, 2026-10-17: "allow transparency and inspection for each aspect"): every
@@ -32,7 +34,7 @@
 
 	const isRule = $derived(mode.kind === 'special-rule');
 	const partNames = $derived<readonly (ModePart | RulePart)[]>(isRule ? RULE_PARTS : MODE_PARTS);
-	const parts = $derived<CombinedParts>(mode.parts);
+	const parts = $derived<CombinedParts>(shownParts(mode.id, mode.parts, showsOwnWording(mode)));
 	const unconfirmed = $derived<readonly string[]>(mode.unconfirmed ?? []);
 
 	type Status = 'standard' | 'runs' | 'storyteller' | 'unconfirmed';

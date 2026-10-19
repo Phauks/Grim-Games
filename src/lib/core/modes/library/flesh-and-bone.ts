@@ -32,9 +32,18 @@ export const FLESH_AND_BONE: GameMode = {
 		pool: { kind: 'campaign', startingScript: 'any' },
 		forced: {
 			inPlay: [],
-			homebrew: [{ title: 'Flesh and Bone (Fabled)', url: 'https://fleshandbone.app/' }]
+			homebrew: [{ title: 'Flesh and Bone (Fabled)', url: 'https://fleshandbone.app/' }],
+			instructions:
+				'Put the Flesh and Bone Fabled in play. It is homebrew, so its ability is on its own page, not in the app.'
 		},
-		ruleChanges: [{ characters: ['choirboy', 'huntsman'], cite: RULES }],
+		ruleChanges: [
+			{
+				characters: ['choirboy', 'huntsman'],
+				cite: RULES,
+				instructions:
+					'The Choirboy and Huntsman work differently once the King or Damsel is out of the campaign. The rules page says how.'
+			}
+		],
 		betweenGames: {
 			kind: 'campaign',
 			eliminate: 'every-executed',

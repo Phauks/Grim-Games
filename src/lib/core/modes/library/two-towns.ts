@@ -42,12 +42,31 @@ export const TWO_TOWNS: GameMode = {
 		},
 		counts: { kind: 'per-town', maxDifference: 1 },
 		forced: { inPlay: ['boomdandy', 'mayor'] },
-		ruleChanges: [{ characters: ['mayor', 'leviathan'] }],
-		information: [{ characters: [] }],
-		daySteps: [{ kind: 'town-representative', movesPerDay: [3, 2, 2, 1, 1] }],
+		ruleChanges: [
+			{
+				characters: ['mayor', 'leviathan'],
+				instructions: 'Read the Mayor and Leviathan jinx as being about the Mayor’s team.'
+			}
+		],
+		information: [
+			{
+				characters: [],
+				instructions: 'When evil takes over a town, a good player in that town learns it.'
+			}
+		],
+		daySteps: [
+			{
+				kind: 'town-representative',
+				movesPerDay: [3, 2, 2, 1, 1],
+				instructions:
+					'Each day the town nominates a representative, who sends players to the other town: 3 after day 1, 2 after days 2 and 3, and 1 after days 4 and 5.'
+			}
+		],
 		winConditions: {
 			kind: 'all-towns',
-			splitTiebreak: { afterDay: 5, together: ['boomdandy', 'mayor'], winner: 'evil' }
+			splitTiebreak: { afterDay: 5, together: ['boomdandy', 'mayor'], winner: 'evil' },
+			instructions:
+				'The game ends when both Demons are dead, and good wins, or after day 5. Then evil wins if both Demons are alive, or if one is and the living Boomdandy is in the same town as the living Mayor; otherwise good wins.'
 		},
 		// "Boomdandy and Mayor are guaranteed to be in play"; the Boomdandy is one of the
 		// Zombuul town's Minions, and the two "start in different towns" (rules FAQ).

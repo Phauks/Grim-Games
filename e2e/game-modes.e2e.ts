@@ -80,6 +80,10 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	for (const name of ['Atheist', 'Engineer', 'Pit-Hag'])
 		await expect(banned.getByRole('button', { name, exact: true })).toBeVisible();
 	await expect(dialog.locator('[data-part="assignment"]')).toContainText('Run by the Storyteller');
+	// Built-in Storyteller instructions wait for Trevor's approval, as descriptions do.
+	await expect(dialog.locator('[data-part="assignment"] [data-field="instructions"]')).toHaveCount(
+		0
+	);
 	await expect(dialog.locator('[data-part="towns"]')).toContainText('Standard');
 	// The mode file starts closed every time (Trevor, 2026-10-18).
 	await expect(dialog.locator('pre')).toBeHidden();
@@ -246,9 +250,17 @@ test('with our own wording on, each mode shows its About description', async ({ 
 		'Every character is on the script'
 	);
 	await page.getByRole('button', { name: 'Inspect Whale Buffet' }).tap();
-	await expect(
-		page.getByRole('dialog', { name: 'Whale Buffet' }).getByTestId('inspect-about')
-	).toContainText('Every character is on the script');
+	const dialog = page.getByRole('dialog', { name: 'Whale Buffet' });
+	await expect(dialog.getByTestId('inspect-about')).toContainText(
+		'Every character is on the script'
+	);
+	// So do the Storyteller instructions, first in each part the Storyteller runs.
+	await expect(dialog.locator('[data-part="assignment"] tr').first()).toContainText(
+		'Storyteller instructions'
+	);
+	await expect(dialog.locator('[data-part="assignment"] tr').first()).toContainText(
+		'On the first night each player chooses a character of that type.'
+	);
 });
 
 test('Whale Buffet deals a type from the tile bag and each player chooses; the Storyteller can ask for a new choice', async ({
@@ -491,6 +503,7 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 
 	const mine = {
 		format: 1,
+		revision: 8,
 		id: 'tiny-buffet',
 		name: 'Tiny Buffet',
 		sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
@@ -500,9 +513,27 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 			assignment: { kind: 'choose-own', when: 'first-night', reconsider: false }
 		}
 	};
+	// A part the Storyteller runs says what they do (Trevor, 2026-10-19).
+	await dialog.getByTestId('mode-file').fill(JSON.stringify(mine));
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(dialog.getByRole('status')).toContainText(
+		'parts.assignment.instructions: the Storyteller runs this part'
+	);
+	const instructions = 'Each player picks any character of the type they drew.';
+	mine.parts.assignment = {
+		...mine.parts.assignment,
+		instructions
+	} as typeof mine.parts.assignment;
 	await dialog.getByTestId('mode-file').fill(JSON.stringify(mine));
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(dialog).toHaveCount(0);
+	await panel.getByRole('button', { name: 'Inspect Tiny Buffet' }).tap();
+	const inspect = page.getByRole('dialog', { name: 'Tiny Buffet' });
+	await expect(inspect.locator('[data-part="assignment"] tr').first()).toHaveText(
+		`Storyteller instructions${instructions}`
+	);
+	await inspect.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(inspect).toHaveCount(0);
 	const modes = panel.getByRole('combobox', { name: 'Game mode' });
 	await expect(modes).toContainText('Tiny Buffet');
 	await expect(panel.getByRole('button', { name: /^Restricted characters/ })).toContainText('(1)');

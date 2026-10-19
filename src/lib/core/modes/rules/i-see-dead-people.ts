@@ -19,6 +19,10 @@ export const I_SEE_DEAD_PEOPLE: SpecialRule = {
 			"Characters die as normal but the storyteller doesn't announce deaths.",
 			"Dead players can nominate. Poisoned players don't wake up."
 		],
-		deaths: { kind: 'private' }
+		deaths: {
+			kind: 'private',
+			instructions:
+				'Don’t announce who has died. Dead players can still nominate, and poisoned players don’t wake.'
+		}
 	}
 };

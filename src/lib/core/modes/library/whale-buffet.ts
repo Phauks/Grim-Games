@@ -30,11 +30,31 @@ export const WHALE_BUFFET: GameMode = {
 			notChoosable: ['drunk', 'lunatic', 'marionette'],
 			onlyFor: [{ characterId: 'summoner', type: 'demon' }]
 		},
-		setupModifiers: { kind: 'only', characters: ['bountyhunter'] },
-		assignment: { kind: 'choose-own', when: 'first-night', reconsider: true },
-		duplicates: { kind: 'allowed', extrasMayBeDrunk: true },
-		information: [{ characters: [] }],
+		setupModifiers: {
+			kind: 'only',
+			characters: ['bountyhunter'],
+			instructions:
+				'Only the Bounty Hunter’s setup effect applies; for example, a Baron adds no Outsiders.'
+		},
+		assignment: {
+			kind: 'choose-own',
+			when: 'first-night',
+			reconsider: true,
+			instructions:
+				'The bag deals each player only a character type. On the first night each player chooses a character of that type. You may ask a player to reconsider their choice.'
+		},
+		duplicates: {
+			kind: 'allowed',
+			extrasMayBeDrunk: true,
+			instructions: 'Players may choose the same character. You may make the extra copies drunk.'
+		},
+		information: [
+			{
+				characters: [],
+				instructions: 'Evil learns which characters you asked a player to reconsider.'
+			}
+		],
 		// Trevor, 2026-10-18, in the project chat.
-		bluffs: { kind: 'none' }
+		bluffs: { kind: 'none', instructions: 'Don’t show the Demon any bluffs.' }
 	}
 };

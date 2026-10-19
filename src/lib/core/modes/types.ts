@@ -43,10 +43,16 @@ export const MODE_PARTS = [
 ] as const;
 export type ModePart = (typeof MODE_PARTS)[number];
 
-/** Fields every part carries: where its rule comes from. */
+/** Fields every part carries: where its rule comes from, and how the Storyteller runs it. */
 interface Cited {
 	/** The source for this part, when it is not the mode's first source. */
 	cite?: string;
+	/**
+	 * What the Storyteller does for this part when the app doesn't run it, so the file alone
+	 * says what a game needs (Trevor, 2026-10-19: the JSON should be "self-sufficient for the
+	 * storyteller"). Required on such parts from revision 8 (validate.ts).
+	 */
+	instructions?: string;
 }
 
 /** 1. Which characters the game is played with. */

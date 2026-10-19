@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { withRules } from './combine.ts';
 import { GAME_MODES, STANDARD, gameModeById } from './registry.ts';
-import { INFINITE_POSSIBILITIES } from './rules/index.ts';
+import { INFINITE_POSSIBILITIES, SPECIAL_RULES } from './rules/index.ts';
 import {
 	bannedIn,
 	choosableCharacters,
@@ -16,7 +16,7 @@ import {
 	modeScript,
 	runsPart
 } from './pool.ts';
-import { parseGameMode } from './validate.ts';
+import { INSTRUCTIONS_FROM_REVISION, parseGameMode, parseModeOrRule } from './validate.ts';
 import { MODE_PARTS } from './types.ts';
 
 const data = committedGameData();
@@ -70,6 +70,54 @@ describe('parseGameMode', () => {
 			'parts.restricted.banned[0]: unknown character nobody',
 			'parts.teleport: unknown part'
 		]);
+	});
+});
+
+describe('Storyteller instructions (Trevor, 2026-10-19: mode files "self-sufficient for the storyteller")', () => {
+	const at = (file: object, revision: number) =>
+		parseModeOrRule({ ...JSON.parse(JSON.stringify(file)), revision }, known);
+
+	it.each([...GAME_MODES, ...SPECIAL_RULES].map((m) => [m.id, m] as const))(
+		'%s says what the Storyteller does for every part the app doesn’t run',
+		(_id, m) => {
+			expect(at(m, INSTRUCTIONS_FROM_REVISION).ok).toBe(true);
+		}
+	);
+
+	it('are required from their revision on, and older files are read without them', () => {
+		const file = {
+			format: 1,
+			id: 'house',
+			name: 'House',
+			sources: [{ title: 'x', url: 'https://x.example' }],
+			parts: {
+				restricted: { banned: [] },
+				bluffs: { kind: 'none' },
+				ruleChanges: [{ characters: [], instructions: 'Ours.' }, { characters: [] }]
+			}
+		};
+		expect(at(file, INSTRUCTIONS_FROM_REVISION - 1).ok).toBe(true);
+		expect(at(file, INSTRUCTIONS_FROM_REVISION)).toEqual({
+			ok: false,
+			issues: [
+				'parts.bluffs.instructions: the Storyteller runs this part, so say what they do',
+				'parts.ruleChanges[1].instructions: the Storyteller runs this part, so say what they do'
+			]
+		});
+	});
+
+	it('are text', () => {
+		const file = {
+			format: 1,
+			id: 'house',
+			name: 'House',
+			sources: [{ title: 'x', url: 'https://x.example' }],
+			parts: { bluffs: { kind: 'none', instructions: ' ' } }
+		};
+		expect(parseGameMode(file)).toEqual({
+			ok: false,
+			issues: ['parts.bluffs.instructions: must be text']
+		});
 	});
 });
 

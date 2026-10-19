@@ -24,6 +24,11 @@
 	const isRecord = (v: unknown): v is Record<string, unknown> =>
 		typeof v === 'object' && v !== null && !Array.isArray(v);
 	const safeUrl = (url: string) => (/^https:\/\//.test(url) ? url : undefined);
+	/** A part's fields, its Storyteller instructions first: they say what the rest means for the game. */
+	const fields = (record: Record<string, unknown>) =>
+		Object.entries(record).sort(
+			([a], [b]) => Number(b === 'instructions') - Number(a === 'instructions')
+		);
 </script>
 
 <!-- eslint-disable svelte/no-navigation-without-resolve -- external https source links -->
@@ -55,8 +60,8 @@
 			2026-10-18: rows were hard to parse); a field inside a field is a table in its cell. -->
 		<table class="facts">
 			<tbody>
-				{#each Object.entries(value) as [key, inner] (key)}
-					<tr>
+				{#each fields(value) as [key, inner] (key)}
+					<tr data-field={key}>
 						<th scope="row">{fieldLabel(field, key)}</th>
 						<td>
 							{#if key === 'kind' && typeof inner === 'string'}
