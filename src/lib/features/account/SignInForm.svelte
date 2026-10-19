@@ -5,6 +5,7 @@
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { accountApi } from './account-api.ts';
 	import { account } from './account.svelte.ts';
+	import { withPrivacyConsent } from './privacy-consent.svelte.ts';
 	import {
 		checkPassword,
 		cleanEmail,
@@ -81,7 +82,11 @@
 		const address = typedEmail();
 		if (!address) return;
 		void run(async () =>
-			account.signedIn(await accountApi.signInWithPassword(address, password, remember))
+			account.signedIn(
+				await withPrivacyConsent((accepted) =>
+					accountApi.signInWithPassword(address, password, remember, accepted)
+				)
+			)
 		);
 	}
 
@@ -112,7 +117,9 @@
 		}
 		void run(async () =>
 			account.signedIn(
-				await accountApi.verifyCode(sentTo, typed, remember, creating ? password : undefined)
+				await withPrivacyConsent((accepted) =>
+					accountApi.verifyCode(sentTo, typed, remember, creating ? password : undefined, accepted)
+				)
 			)
 		);
 	}

@@ -3360,3 +3360,33 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 		page.locator('[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]')
 	).toHaveCount(1);
 });
+
+// Closing a step opened from the walk-through must not crash the dialog (Grimoire board,
+// 2026-10-18). On a phone the tap also opens a glossary word in the strip's text, and closing
+// the step closed that popover from inside zag, which crashed Svelte (null batch).
+test('a step opened from the walk-through closes cleanly', async ({ page }) => {
+	const errors: string[] = [];
+	page.on('pageerror', (error) => errors.push(error.message));
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Washerwoman');
+	await strip.locator('button.step').tap();
+	const step = page.getByRole('dialog', { name: 'Washerwoman' });
+	await expect(step).toBeVisible();
+	await step.getByRole('button', { name: 'Close' }).tap();
+	await expect(step).toBeHidden();
+	await expect(page.getByText("Couldn't show this part")).toHaveCount(0);
+	await expect(strip).toContainText('Washerwoman');
+	expect(errors).toEqual([]);
+});

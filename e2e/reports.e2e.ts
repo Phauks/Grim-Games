@@ -8,6 +8,10 @@ async function signIn(page: Page, email: string) {
 	const code = (await page.getByTestId('preview-code').locator('strong').textContent()) ?? '';
 	await page.getByLabel(`Code sent to ${email}`).fill(code);
 	await page.getByRole('button', { name: 'Sign in' }).tap();
+	// A new account accepts the privacy policy first.
+	const privacy = page.getByRole('alertdialog', { name: 'Privacy policy' });
+	await privacy.getByText('I accept the Privacy policy', { exact: true }).tap();
+	await privacy.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 }
 

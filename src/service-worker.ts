@@ -19,8 +19,11 @@ import {
 	type KeepOfflineMessage
 } from '#lib/features/offline/cache-rules.ts';
 import {
+	parseSizes,
 	percentDone,
 	PRECACHE_PROGRESS,
+	PRECACHE_SIZES_PATH,
+	totalBytes,
 	type PrecacheProgress
 } from '#lib/features/about/update-progress.ts';
 
@@ -62,15 +65,28 @@ async function refreshIcons(cache: Cache): Promise<void> {
  * (About's Check for updates shows it). Any file failing fails the install, as addAll did.
  */
 async function precache(cache: Cache): Promise<void> {
+	// The build's file sizes, so the page can say "2.4 MB of 6.1 MB"; without them, files only.
+	const sizes = parseSizes(
+		await fetch(PRECACHE_SIZES_PATH, { cache: 'no-store' })
+			.then((response) => (response.ok ? response.json() : {}))
+			.catch(() => ({}))
+	);
 	const total = ASSETS.length;
+	const allBytes = totalBytes(ASSETS, sizes);
 	let done = 0;
+	let bytes = 0;
 	let told = -1;
 	const tell = async () => {
+		const progress = {
+			done,
+			total,
+			...(allBytes === undefined ? {} : { bytes, totalBytes: allBytes })
+		};
 		// Each whole percent at most once, so a large build doesn't flood the pages.
-		const percent = percentDone({ done, total });
+		const percent = percentDone(progress);
 		if (percent === told) return;
 		told = percent;
-		const message: PrecacheProgress = { type: PRECACHE_PROGRESS, done, total };
+		const message: PrecacheProgress = { type: PRECACHE_PROGRESS, ...progress };
 		for (const client of await sw.clients.matchAll({ includeUncontrolled: true, type: 'window' }))
 			client.postMessage(message);
 	};
@@ -82,6 +98,7 @@ async function precache(cache: Cache): Promise<void> {
 		if (!response.ok) throw new Error(`${path}: ${response.status}`);
 		await cache.put(path, response);
 		done++;
+		bytes += sizes[path] ?? 0;
 		await tell();
 		await next();
 	};

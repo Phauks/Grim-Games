@@ -47,7 +47,11 @@ class CustomInfoTokens {
 	save(
 		text: string,
 		id?: string,
-		options: { characterIds?: readonly CharacterId[]; asks?: InfoTokenAsks } = {}
+		options: {
+			characterIds?: readonly CharacterId[];
+			asks?: InfoTokenAsks;
+			answerOnly?: boolean;
+		} = {}
 	): void {
 		const { characterIds = [] } = options;
 		const clean = text.trim().slice(0, MAX_CUSTOM_TEXT);
@@ -61,6 +65,7 @@ class CustomInfoTokens {
 			text: clean,
 			source: 'custom',
 			...(asks ? { asks } : {}),
+			...(asks?.value && options.answerOnly ? { answerOnly: true as const } : {}),
 			...(characterIds.length ? { characterIds: [...characterIds] } : {})
 		};
 		if (at >= 0) custom[at] = token;

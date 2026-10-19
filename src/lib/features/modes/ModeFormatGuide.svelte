@@ -11,6 +11,7 @@
 	} from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import FileView from '#lib/ui/primitives/FileView.svelte';
 	import { modeLabel } from './labels.ts';
 
 	/**
@@ -66,8 +67,13 @@
 		</p>
 		{#each GUIDE_INTRO as line (line)}<p>{line}</p>{/each}
 
-		<h3>{t('modes.guide.example')}</h3>
-		<pre>{minimal}</pre>
+		<FileView
+			title={t('modes.guide.example')}
+			text={minimal}
+			fileName="{MINIMAL_EXAMPLE.id}.json"
+			copyLabel={t('modes.copyFile')}
+			downloadLabel={t('modes.downloadFile')}
+		/>
 
 		<h3>{t('modes.guide.top')}</h3>
 		{@render fields(GUIDE_TOP)}
@@ -90,8 +96,13 @@
 			</section>
 		{/each}
 
-		<h3>{t('modes.guide.full')}</h3>
-		<pre>{full}</pre>
+		<FileView
+			title={t('modes.guide.full')}
+			text={full}
+			fileName="whale-buffet.json"
+			copyLabel={t('modes.copyFile')}
+			downloadLabel={t('modes.downloadFile')}
+		/>
 	</div>
 </Dialog>
 
@@ -150,17 +161,6 @@
 	}
 	.values {
 		display: block;
-	}
-	/* The example files wrap so they read whole on a phone, nothing scrolled off sideways. */
-	pre {
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-		tab-size: 2;
-		margin: 0;
-		padding: var(--space-2);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		font-size: 0.85rem;
 	}
 	code {
 		overflow-wrap: anywhere;
