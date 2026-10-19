@@ -1008,6 +1008,10 @@ test('a BotC Scripts result offers its other versions, and says when a newer one
 		.getByRole('dialog', { name: 'Print script' })
 		.getByRole('button', { name: 'Print our sheet' })
 		.tap();
+	await page
+		.getByRole('dialog', { name: 'Print our sheet' })
+		.getByRole('button', { name: 'Print', exact: true })
+		.tap();
 	// Printing first waits up to five seconds for the sheet and its icons, so poll longer than that.
 	await expect
 		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed), {

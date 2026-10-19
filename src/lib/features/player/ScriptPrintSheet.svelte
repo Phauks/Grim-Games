@@ -13,7 +13,11 @@
 	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
 	import { tick } from 'svelte';
-	import type { SheetDensity } from './player-settings.svelte.ts';
+	import {
+		PRINT_DEFAULTS,
+		type PrintSettings,
+		type SheetDensity
+	} from './player-settings.svelte.ts';
 
 	/**
 	 * The printed script: the sheet on the front, the night order and player counts on the
@@ -26,9 +30,11 @@
 	interface Props {
 		script: LoadedScript;
 		version?: string;
+		/** The reader's choices from the Print screen (Trevor, 2026-10-19). */
+		settings?: PrintSettings;
 	}
 
-	let { script, version }: Props = $props();
+	let { script, version, settings = PRINT_DEFAULTS }: Props = $props();
 
 	let numeric = $state<NumericNightOrder>();
 	$effect(() => {
@@ -84,7 +90,17 @@
 		await tick();
 		if (front) {
 			frontZoom = 1;
-			for (const [c, d] of LAYOUTS) {
+			// A fixed choice keeps only the layouts with it; Automatic tries them all.
+			const fixedColumns =
+				settings.columns === 'auto' ? undefined : settings.columns === 'one' ? 1 : 2;
+			const fixedDensity = settings.density === 'auto' ? undefined : settings.density;
+			const layouts = LAYOUTS.filter(
+				([c, d]) => (!fixedColumns || c === fixedColumns) && (!fixedDensity || d === fixedDensity)
+			);
+			const tried: readonly (readonly [1 | 2, SheetDensity])[] = layouts.length
+				? layouts
+				: [[fixedColumns ?? 2, fixedDensity ?? 'normal']];
+			for (const [c, d] of tried) {
 				columns = c;
 				density = d;
 				await tick();
@@ -100,10 +116,10 @@
 
 {#if data}
 	<article class="print-sheet" data-testid="print-sheet">
-		<section class="page front" bind:this={front} data-columns={columns}>
+		{#snippet frontSide()}
 			<!-- Night order down both sides, first night left (Ravenswood's idea, Trevor 2026-10-19). -->
-			<div class="fit with-strips" style:zoom={frontZoom}>
-				{#if nights[0]}<NightStrip night={nights[0]} />{/if}
+			<div class="fit" class:with-strips={settings.nightStrips} style:zoom={frontZoom}>
+				{#if settings.nightStrips && nights[0]}<NightStrip night={nights[0]} />{/if}
 				<div class="main">
 					<header>
 						<h1>{script.name}</h1>
@@ -112,26 +128,38 @@
 					<ScriptSheet
 						characters={sheetCharacters(script, data)}
 						jinxes={playerJinxes(script, data)}
+						showJinxes={settings.jinxes}
 						{density}
 						flat
 					/>
 				</div>
-				{#if nights[1]}<NightStrip night={nights[1]} />{/if}
+				{#if settings.nightStrips && nights[1]}<NightStrip night={nights[1]} />{/if}
 			</div>
+		{/snippet}
+		<section class="page front" bind:this={front} data-columns={columns}>
+			{@render frontSide()}
 		</section>
-		<section class="page back" bind:this={back}>
-			<div class="fit" style:zoom={backZoom}>
-				<!-- Title and player counts share the top, so both nights fit below them. -->
-				<header class="back-head">
-					<h1>{script.name}</h1>
-					<div class="counts">
-						<h2>{t('player.breakdown')}</h2>
-						<SetupTable />
-					</div>
-				</header>
-				<PlayerNightOrder {nights} flat />
-			</div>
-		</section>
+		<!-- One character sheet per player; each is the first one again. -->
+		{#each { length: settings.copies - 1 }, i (i)}
+			<section class="page front" data-columns={columns} data-copy>
+				{@render frontSide()}
+			</section>
+		{/each}
+		{#if settings.back}
+			<section class="page back" bind:this={back}>
+				<div class="fit" style:zoom={backZoom}>
+					<!-- Title and player counts share the top, so both nights fit below them. -->
+					<header class="back-head">
+						<h1>{script.name}</h1>
+						<div class="counts">
+							<h2>{t('player.breakdown')}</h2>
+							<SetupTable />
+						</div>
+					</header>
+					<PlayerNightOrder {nights} flat />
+				</div>
+			</section>
+		{/if}
 	</article>
 {/if}
 
