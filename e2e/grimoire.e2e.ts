@@ -1057,6 +1057,48 @@ test('the cause of death offers only characters that could have killed the playe
 	await expect(seatLabelled(page, 'Seat 2:').getByTestId('dead-mark')).toHaveCount(0);
 });
 
+test('the bank fades at an end with more tokens past it, and its captions stay inside the row', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): a cue that more reminders lie to the left or right, and "Other
+	// reminders" must not show until its line has scrolled clear of the Run night button.
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Librarian'],
+		[3, 'Investigator'],
+		[4, 'Fortune Teller']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const tray = page.getByRole('list', { name: 'Reminder bank' });
+	await expect(tray.getByRole('button', { name: 'Red Herring reminder' })).toBeAttached();
+	// Seven setup reminders run past the end: that end fades, the start does not.
+	await expect(tray).toHaveAttribute('data-more-end', 'true');
+	await expect(tray).not.toHaveAttribute('data-more-start');
+	const other = page.getByTestId('bank-other');
+	const inside = async () => {
+		const row = (await tray.boundingBox())!;
+		if ((await other.count()) === 0) return true;
+		const box = (await other.boundingBox())!;
+		return box.x + box.width <= row.x + row.width + 1;
+	};
+	expect(await inside()).toBe(true);
+
+	// Scrolled to the far end: the start fades instead, and the caption sits inside the row.
+	await tray.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+	await expect(tray).toHaveAttribute('data-more-start', 'true');
+	await expect(tray).not.toHaveAttribute('data-more-end');
+	await expect(other).toHaveText('Other reminders');
+	expect(await inside()).toBe(true);
+});
+
 test('the reminder bank holds setup reminders, placed by hand, then every reminder left', async ({
 	page
 }) => {
