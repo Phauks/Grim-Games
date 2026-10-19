@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { APP_NAME } from '#lib/core/app-name.ts';
+	import type { Component } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import favicon from '#lib/assets/favicon.svg';
@@ -7,8 +8,9 @@
 	import AppFooter from '#lib/features/about/AppFooter.svelte';
 	import UpdateBanner from '#lib/features/about/UpdateBanner.svelte';
 	import GlossaryPopover from '#lib/features/glossary/GlossaryPopover.svelte';
-	import SettingsModal from '#lib/features/settings/SettingsModal.svelte';
 	import { startAccount } from '#lib/features/account/start.ts';
+	import { reportError } from '#lib/features/errors/report.svelte.ts';
+	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { keepData } from '#lib/features/settings/data/keep-data.ts';
 	import AppHeader from '#lib/features/shell/AppHeader.svelte';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
@@ -44,6 +46,39 @@
 	// Asks the browser, silently, not to clear saved games and settings to free up space
 	// (Storage plan, Trevor 2026-10-18; always on, no setting, 2026-10-19).
 	$effect(() => keepData());
+
+	// Settings is the largest part of the app most visits never open, so it isn't loaded
+	// before the first paint: the browser fetches it when idle, or when Settings first opens
+	// (initial load review, /mnt/project-files/initial-load/findings.md).
+	let SettingsModal = $state<Component>();
+	let loadingSettings: Promise<unknown> | undefined;
+	function loadSettings(): Promise<unknown> {
+		loadingSettings ??= import('#lib/features/settings/SettingsModal.svelte').then(
+			(module) => (SettingsModal = module.default),
+			(error: unknown) => {
+				// Tried again next time (offline before the app was stored, say).
+				loadingSettings = undefined;
+				throw error;
+			}
+		);
+		return loadingSettings;
+	}
+	$effect(() => {
+		if (!settingsDialog.open) return;
+		loadSettings().catch((error) => {
+			settingsDialog.open = false;
+			reportError(error, { area: 'settings' });
+		});
+	});
+	$effect(() => {
+		const warm = () => void loadSettings().catch(() => {});
+		if ('requestIdleCallback' in window) {
+			const id = requestIdleCallback(warm, { timeout: 5000 });
+			return () => cancelIdleCallback(id);
+		}
+		const id = setTimeout(warm, 3000);
+		return () => clearTimeout(id);
+	});
 
 	// A game in progress or a bag draw asks before any navigation leaves it (shell.ts).
 	beforeNavigate((navigation) => {
