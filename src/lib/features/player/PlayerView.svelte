@@ -217,7 +217,7 @@
 					/>
 				{/if}
 			{/snippet}
-			{#snippet room()}<PlayerRoom />{/snippet}
+			{#snippet room()}<PlayerRoom {script} {version} />{/snippet}
 		</PlayerScriptTabs>
 	{/if}
 </Page>

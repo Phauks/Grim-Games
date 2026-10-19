@@ -688,8 +688,14 @@ test('the Room tab joins a live room in place, and the player moves between it a
 
 	// The room's own link and code, to pass on.
 	await room.getByRole('button', { name: 'Share room' }).tap();
-	const share = page.getByRole('dialog', { name: 'Share room' });
+	// The same share screen as the script's (Trevor, 2026-10-19): byline and logo in the QR.
+	const share = page.getByRole('dialog', { name: `Share Room ${shown}` });
 	await expect(share.getByTestId('share-code')).toHaveText(shown);
+	await expect(share).toContainText('by The Pandemonium Institute');
+	await expect(share.getByTestId('script-logo')).toHaveAttribute(
+		'data-logo',
+		'/data/logos/tb.webp'
+	);
 	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
 	await share.getByRole('button', { name: 'Close' }).tap();
 
