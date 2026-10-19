@@ -15,7 +15,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
+	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
 	import { backgroundFor, PRESETS, type BackgroundChoice } from './backgrounds.ts';
 	import { boardBackground } from './board-background.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
@@ -45,7 +45,9 @@
 	import {
 		dayNumber,
 		livingByTeam,
-		marksDeath,
+		promptApplies,
+		reminderPrompt,
+		type ReminderPrompt,
 		setupComplete,
 		diedSinceNewDay,
 		ON_DEATH,
@@ -960,30 +962,55 @@
 		};
 	});
 
-	// ── A death reminder on a living player (Trevor, 2026-10-19) ──
-	// "Dead" or "Died Today" put on someone still alive, by any route (bank, sheet, drag):
-	// ask whether to mark them dead. Moving one to another living seat asks too (a character
-	// has one "Dead" token). Reminders already where they were when the board opened never ask.
-	let deathSeen: Set<string> | undefined;
-	let deathAsk = $state<SeatId>();
-	let deathAskOpen = $state(false);
+	// ── Reminders that ask (Trevor, 2026-10-19) ──
+	// A reminder placed by any route (bank, sheet, drag) whose words change a player's state
+	// asks first: "Dead" or "Died Today" on a living player asks to mark them dead; "Alive" on a
+	// dead one asks to revive them. Which reminders ask is data (REMINDER_PROMPTS); each kind of
+	// question has its words and setting below. Moving one to another seat asks too.
+	// Reminders already where they were when the board opened never ask.
+	const PROMPTS: Record<
+		ReminderPrompt,
+		{ title: string; verb: string; after: string; setting: AssistKey; dead: boolean }
+	> = {
+		markDead: {
+			title: 'Mark dead?',
+			verb: 'Mark',
+			after: ' dead?',
+			setting: 'deathReminderAsk',
+			dead: true
+		},
+		revive: {
+			title: 'Revive?',
+			verb: 'Revive',
+			after: '?',
+			setting: 'reviveReminderAsk',
+			dead: false
+		}
+	};
+	let promptSeen: Set<string> | undefined;
+	let promptAsk = $state<{ seatId: SeatId; prompt: ReminderPrompt }>();
+	let promptAskOpen = $state(false);
 	$effect(() => {
-		const fresh: SeatId[] = [];
+		const fresh: { seatId: SeatId; prompt: ReminderPrompt }[] = [];
 		const now: string[] = [];
 		for (const seatId of game.seating) {
 			const seat = game.seats[seatId];
 			for (const reminder of seat.reminders) {
-				if (!marksDeath(reminder.label)) continue;
+				const prompt = reminderPrompt(reminder.label);
+				if (!prompt) continue;
 				const key = `${reminder.reminderId}@${seatId}`;
 				now.push(key);
-				if (deathSeen && !deathSeen.has(key) && !seat.dead) fresh.push(seatId);
+				if (promptSeen && !promptSeen.has(key) && promptApplies(prompt, !!seat.dead))
+					fresh.push({ seatId, prompt });
 			}
 		}
-		deathSeen = new Set(now);
-		if (!fresh.length || grimoire.open.viewOnly) return;
-		if (!untrack(() => preferences.current.assistance.deathReminderAsk)) return;
-		deathAsk = fresh[0];
-		deathAskOpen = true;
+		promptSeen = new Set(now);
+		if (grimoire.open.viewOnly) return;
+		const assistance = untrack(() => preferences.current.assistance);
+		const ask = fresh.find(({ prompt }) => assistance[PROMPTS[prompt].setting]);
+		if (!ask) return;
+		promptAsk = ask;
+		promptAskOpen = true;
 	});
 	function endNight() {
 		if (!grimoire.endNight()) return;
@@ -1872,30 +1899,34 @@
 />
 
 <!-- Like the day's End day, with its setting where it is used (Trevor, 2026-10-18). -->
-{#if deathAsk && game.seats[deathAsk]}
-	{@const asked = game.seats[deathAsk]}
+{#if promptAsk && game.seats[promptAsk.seatId]}
+	{@const { seatId, prompt } = promptAsk}
+	{@const ui = PROMPTS[prompt]}
+	{@const asked = game.seats[seatId]}
 	{@const askedId = asked.characterId}
+	{@const name = asked.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`}
 	<ConfirmDialog
-		bind:open={deathAskOpen}
-		title="Mark dead?"
-		onConfirm={() => deathAsk && grimoire.run({ type: 'SetDead', seatId: deathAsk, dead: true })}
+		bind:open={promptAskOpen}
+		title={ui.title}
+		onConfirm={() => grimoire.run({ type: 'SetDead', seatId, dead: ui.dead })}
 	>
 		{#snippet heading()}
-			Mark {#if askedId}<CharacterBadge
+			{ui.verb}
+			{#if askedId}<CharacterBadge
 					characterId={askedId}
 					character={characters.get(askedId)}
 					alignment={asked.alignment}
-					playerName={asked.playerName ?? `Seat ${game.seating.indexOf(deathAsk!) + 1}`}
+					playerName={name}
 					inline
-				/>{:else}{asked.playerName ?? `Seat ${game.seating.indexOf(deathAsk!) + 1}`}{/if} dead?
+				/>{:else}{name}{/if}{ui.after}
 		{/snippet}
 		<SettingToggle
-			label={ASSIST_LABELS.deathReminderAsk.label}
-			description={ASSIST_LABELS.deathReminderAsk.description}
-			checked={preferences.current.assistance.deathReminderAsk}
-			onChange={(deathReminderAsk) =>
+			label={ASSIST_LABELS[ui.setting].label}
+			description={ASSIST_LABELS[ui.setting].description}
+			checked={preferences.current.assistance[ui.setting]}
+			onChange={(on) =>
 				preferences.update({
-					assistance: { ...preferences.current.assistance, deathReminderAsk }
+					assistance: { ...preferences.current.assistance, [ui.setting]: on }
 				})}
 		/>
 	</ConfirmDialog>

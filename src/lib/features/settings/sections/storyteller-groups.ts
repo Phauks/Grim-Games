@@ -9,6 +9,7 @@ export const STORYTELLER_GROUPS = {
 		'preDayReminders',
 		'deathCause',
 		'deathReminderAsk',
+		'reviveReminderAsk',
 		'demonVotedButton',
 		'gameEndPrompts'
 	],

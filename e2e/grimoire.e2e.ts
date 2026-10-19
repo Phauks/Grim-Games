@@ -4439,3 +4439,46 @@ test('a player whose character changed since dawn is woken that night to learn i
 	await expect(strip).toContainText('Wake this player.');
 	await expect(strip).toContainText('You are');
 });
+
+test('an Alive reminder put on a dead player asks whether to revive them', async ({ page }) => {
+	// Trevor (2026-10-19): the same question as a Dead reminder, the other way round. The
+	// Shabaloth may bring back a player it killed (https://wiki.bloodontheclocktower.com/Shabaloth).
+	await startGame(page, 'Bad Moon Rising');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Shabaloth', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	const add = async (seat: number, label: 'Dead' | 'Alive') => {
+		const s = await openSeat(page, seat);
+		await s.getByRole('button', { name: 'Add reminder' }).tap();
+		const picker = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
+		await picker
+			.getByRole('group', { name: 'Shabaloth' })
+			.getByRole('button', { name: label === 'Dead' ? 'Dead, copy 1 of 2' : label, exact: true })
+			.tap();
+	};
+	await add(2, 'Dead');
+	await page
+		.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(seatLabelled(page, 'Seat 2: no name, no character, dead')).toBeAttached();
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+
+	await add(2, 'Alive');
+	const ask = page.getByRole('alertdialog', { name: 'Revive Seat 2?' });
+	await expect(ask).toBeVisible();
+	await expect(ask.getByText('Ask to revive', { exact: true })).toBeVisible();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(seatLabelled(page, 'Seat 2: no name, no character, 2 reminders')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 2:')).not.toHaveAttribute('aria-label', /dead/);
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});
