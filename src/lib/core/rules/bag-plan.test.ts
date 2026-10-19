@@ -191,6 +191,21 @@ describe('analyseSelection', () => {
 		expect(result.dealt).toBe(6);
 		expect(result.travellers).toBe(1);
 	});
+
+	// https://wiki.bloodontheclocktower.com/Bootlegger: the script's rules can change setup, as
+	// Binary Supernovae's "[+1 Demon]" does (https://beardytas.com/garden-of-djinn/binary-supernovae/).
+	it("applies a bracket in the script's rules, carried by the Bootlegger", () => {
+		const bootlegger = { ...lookup('bootlegger')!, ability: 'Two Demons. [+1 Demon]' };
+		const result = analyseSelection({
+			players: 7,
+			selection: pick('chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp', 'nodashii'),
+			ruleCharacters: ['bootlegger'],
+			scriptOrder: [...TB.map((c) => c.id), 'nodashii'],
+			lookup: (id) => (id === 'bootlegger' ? bootlegger : lookup(id))
+		});
+		expect(result.expected.demon).toEqual([2]);
+		expect(result.warnings).toEqual([]);
+	});
 });
 
 describe('randomSelection', () => {
