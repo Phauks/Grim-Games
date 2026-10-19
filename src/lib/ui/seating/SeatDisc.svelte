@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
+	import DeadBadge from './DeadBadge.svelte';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 
 	/**
@@ -53,16 +53,7 @@
 		>
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
 		{#if onToken}<PlayerNameMark {name} />{/if}
-		{#if dead}<span
-				class="skull"
-				data-testid="dead-mark"
-				data-vote={vote}
-				data-used-look={vote === 'used' ? usedVote : undefined}
-				>{#if vote}<Icon
-						name="ghostVote"
-						weight={vote === 'used' ? 'regular' : 'fill'}
-					/>{:else}<Icon name="dead" />{/if}</span
-			>{/if}
+		{#if dead}<DeadBadge {vote} usedLook={usedVote} testid="dead-mark" />{/if}
 		{#if marks}{@render marks()}{/if}
 	</span>
 	{#if !onToken}<span class="name" data-place={namePlace}>{name}</span>{/if}
@@ -103,49 +94,12 @@
 	.seat-disc[data-dead] .face {
 		filter: brightness(0.55);
 	}
-	/* One skull badge on the lower-left rim, half outside the token. */
-	.skull {
+	/* One badge on the lower-left rim, half outside the token. */
+	.disc :global(.dead-badge) {
 		position: absolute;
 		left: -10%;
 		bottom: -6%;
-		display: grid;
-		place-items: center;
-		width: calc(var(--size) * 0.38);
-		height: calc(var(--size) * 0.38);
-		border: calc(0.125 * var(--u)) solid var(--on-button);
-		border-radius: 50%;
-		background: var(--button);
-		color: var(--on-button);
-		box-shadow: var(--shadow);
-		--icon-size: calc(var(--size) * 0.26);
-	}
-	/*
-	 * With a ghost vote it is a ghost on a night-dark badge (Trevor, 2026-10-19: darker than
-	 * the skull), dark on every theme so it stands out from any token face.
-	 */
-	.skull[data-vote] {
-		border-color: rgb(232 222 200); /* colour-ok: the badge looks the same on every theme */
-		background: rgb(16 12 20); /* colour-ok: the badge looks the same on every theme */
-		color: rgb(244 236 218); /* colour-ok: the badge looks the same on every theme */
-	}
-	/* The ghost vote spent: a grey outline ghost. */
-	.skull[data-vote='used'] {
-		border-color: rgb(90 86 96); /* colour-ok: the badge looks the same on every theme */
-		color: rgb(130 126 136); /* colour-ok: the badge looks the same on every theme */
-	}
-	/* Or struck through: a red slash and rim over the grey ghost. */
-	.skull[data-used-look='struck'] {
-		overflow: hidden;
-		border-color: var(--evil);
-	}
-	.skull[data-used-look='struck']::before {
-		content: '';
-		position: absolute;
-		width: 140%;
-		height: 12%;
-		border-radius: 999em;
-		background: var(--evil);
-		transform: rotate(-45deg);
+		--badge-size: calc(var(--size) * 0.38);
 	}
 	/*
 	 * The player's name in its own badge (Trevor, 2026-10-16), neutral so it never reads as

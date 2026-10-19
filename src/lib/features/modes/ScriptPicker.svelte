@@ -30,11 +30,13 @@
 	 */
 	interface Props {
 		label: string;
+		/** Hide the label visually, under a section header that already names it. */
+		hideLabel?: boolean;
 		value: ScriptChoice;
 		onChange: (value: ScriptChoice) => void;
 	}
 
-	let { label, value, onChange }: Props = $props();
+	let { label, hideLabel, value, onChange }: Props = $props();
 
 	const CUSTOM = '__custom__';
 	const editions = OFFICIAL_EDITIONS.map((e) => ({ value: e.id as ScriptChoice, label: e.name }));
@@ -115,7 +117,13 @@
 </script>
 
 <div class="picker">
-	<ChoiceGroup {label} value={custom ? CUSTOM : value} options={choices} onChange={choose} />
+	<ChoiceGroup
+		{label}
+		{hideLabel}
+		value={custom ? CUSTOM : value}
+		options={choices}
+		onChange={choose}
+	/>
 	<div class="search">
 		<Combobox
 			label={t('modes.scriptSearch.label')}

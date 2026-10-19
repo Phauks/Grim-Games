@@ -19,6 +19,7 @@
 	import { startHref, startInMode } from '#lib/features/modes/start.ts';
 	import { NO_RESTRICTIONS, STANDARD, type SpecialRule } from '#lib/core/modes/index.ts';
 	import ScriptPicker from '#lib/features/modes/ScriptPicker.svelte';
+	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import {
 		loadScriptChoice,
 		type ScriptChoice
@@ -89,7 +90,9 @@
 	<GameModesPanel>
 		{#snippet standard(rules)}
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
-			<ScriptPicker label="Script" value={edition} onChange={(v) => (edition = v)} />
+			<PageSection title="Script">
+				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
+			</PageSection>
 			<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
 			<PlayerCountSheet {players} onChange={(n) => (players = n)} {maxPlayers} />
 			<Button variant="accent" icon="grimoire" disabled={starting} onclick={() => start(rules)}

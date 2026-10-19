@@ -6,6 +6,8 @@
 		title: string;
 		/** Keeps the title for screen readers only (the blank Home page). */
 		hideTitle?: boolean;
+		/** Before the title, in the same heading (the locked draw's script logo). */
+		lead?: Snippet;
 		/** `page`: the window's width up to --page-max. `text`: running text at --measure. */
 		width?: 'page' | 'text';
 		/** Buttons at the end of the title row; on a narrow page, in their own row under it. */
@@ -38,6 +40,7 @@
 	let {
 		title,
 		hideTitle = false,
+		lead,
 		width = 'page',
 		actions,
 		iconActions = false,
@@ -59,7 +62,9 @@
 <main class="page" data-width={width}>
 	<header class="head" class:visually-hidden={hideTitle}>
 		<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
-			<h1>{title}</h1>
+			<h1>
+				{#if lead}{@render lead()}{/if}{title}
+			</h1>
 			{#if actions}<div class="actions">{@render actions()}</div>{/if}
 		</div>
 		{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
@@ -103,6 +108,10 @@
 		gap: var(--space-2);
 	}
 	h1 {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-width: 0;
 		margin: 0;
 		font-size: var(--page-title-size);
 	}

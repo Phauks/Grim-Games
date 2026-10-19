@@ -31,6 +31,12 @@ export type DayEntryId = string;
 export interface Reminder {
 	characterId: CharacterId;
 	label: ReminderLabel;
+	/**
+	 * The seat whose copy of the character this token is, when the character is in play more
+	 * than once (Trevor, 2026-10-19: a good and an evil Imp each have their own tokens, in
+	 * their own colours). None when there is only one, or it isn't known.
+	 */
+	ownerSeatId?: SeatId;
 }
 
 /** A reminder token placed in the grimoire. It belongs to a seat and moves with it. */

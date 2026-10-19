@@ -268,10 +268,17 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 		)
 	).toBeLessThan(1);
 	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
+	// The sheet shows the board's badge (Trevor, 2026-10-19: one ghost vote look).
+	const sheetMark = ghost.getByTestId('sheet-ghost-vote');
+	await expect(sheetMark).toHaveAttribute('data-vote', 'unused');
+	await expect(sheetMark.locator('[data-icon="ph:ghost-fill"]')).toBeAttached();
 	await ghost.tap();
 	await expect(ghost).toHaveAttribute('aria-pressed', 'true');
 	await expect(ghost).toContainText('Used');
 	await expect(ghostMark).toHaveAttribute('data-vote', 'used');
+	await expect(sheetMark).toHaveAttribute('data-vote', 'used');
+	await expect(sheetMark).toHaveAttribute('data-used-look', 'hollow');
+	await expect(sheetMark.locator('[data-icon="ph:ghost"]')).toBeAttached();
 	await ghost.tap();
 	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
 	await expect(ghostMark).toHaveAttribute('data-vote', 'unused');
@@ -2202,6 +2209,10 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	// The same component as /play's Script tab (Trevor, 2026-10-16): 22 characters plus the
 	// edition's 5 recommended Travellers (wiki: Trouble Brewing).
 	await expect(sheet.locator('[data-character]')).toHaveCount(27);
+	// Like /play's title line (Trevor, 2026-10-19): who wrote it, Print and Share.
+	await expect(sheet.getByTestId('script-byline')).toHaveText('by The Pandemonium Institute');
+	for (const name of ['Print script', 'Share script'])
+		await expect(sheet.getByRole('button', { name })).toBeEnabled();
 	await expect(sheet.locator('[data-character="empath"]')).toContainText(
 		'Each night, you learn how many of your 2 alive neighbors'
 	);
@@ -3878,6 +3889,15 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 		'aria-label',
 		'Generic reminder'
 	);
+	// Captioned ∞ above its cell, like the bank's other stretches (Trevor, 2026-10-19).
+	const caption = page.getByTestId('bank-generic');
+	await expect(caption).toHaveText('∞');
+	const cell = (await bank.getByRole('button', { name: 'Generic reminder' }).boundingBox())!;
+	const mark = (await caption.boundingBox())!;
+	expect(mark.y + mark.height).toBeLessThanOrEqual(cell.y + 1);
+	// From the stretch's line, as the other captions are, so over the cell's start.
+	expect(mark.x).toBeLessThan(cell.x + cell.width / 2);
+	expect(mark.x + mark.width).toBeGreaterThan(cell.x);
 	await bank.getByRole('button', { name: 'Generic reminder' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Put ∞ on' })
@@ -4485,4 +4505,52 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 	await closeSheet(page);
 
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});
+
+test('two copies of a character each have their own reminders, in their own colour', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): a good Imp and an evil Imp. The Imp lists one "Dead" token
+	// (https://wiki.bloodontheclocktower.com/Imp), so each Imp has one, in its colour.
+	await startGame(page);
+	for (const number of [1, 3]) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name: 'Imp', exact: true })
+			.tap();
+		if (number === 3) {
+			await seatMenu(page, sheet, 'Change alignment');
+			await page
+				.getByRole('dialog', { name: 'Alignment' })
+				.getByRole('button', { name: 'Confirm' })
+				.tap();
+			await expect(sheet).toContainText(/Imp\s*Good · Seat 3/);
+		}
+		await closeSheet(page);
+	}
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	const dead = bank.locator('[data-testid="board-reminder"][aria-label="Dead reminder"]');
+	await expect(dead).toHaveCount(2);
+	await expect(dead.nth(0).locator('img')).toHaveAttribute('src', /imp_e\.webp$/);
+	await expect(dead.nth(1).locator('img')).toHaveAttribute('src', /imp_g\.webp$/);
+
+	// The good Imp's token keeps its colour on the board; the evil Imp's stays in the bank.
+	await dead.nth(1).tap();
+	await page
+		.getByRole('dialog', { name: 'Put Dead on' })
+		.getByRole('button', { name: /Seat 2 None/ })
+		.tap();
+	// A Dead reminder asks whether to mark the player dead; not this time.
+	await page
+		.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' })
+		.getByRole('button', { name: 'Cancel' })
+		.tap();
+	await expect(dead).toHaveCount(1);
+	await expect(dead.locator('img')).toHaveAttribute('src', /imp_e\.webp$/);
+	const all = page.locator('[data-testid="board-reminder"][aria-label="Dead reminder"] img');
+	await expect(all).toHaveCount(2);
+	const srcs = await all.evaluateAll((imgs) => imgs.map((i) => i.getAttribute('src') ?? ''));
+	expect(srcs.filter((src) => /imp_g\.webp$/.test(src))).toHaveLength(1);
 });
