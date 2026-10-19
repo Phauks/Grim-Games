@@ -41,6 +41,11 @@ export interface Preferences {
 	characterIconScale: IconScale;
 	/** How paragraphs of body text line up: ragged right, or justified to both edges. */
 	textAlign: TextAlign;
+	/**
+	 * Two fingers can zoom the page. Off by default (Trevor, 2026-10-19: two thumbs on the board
+	 * zoomed the app by accident); Text size enlarges everything instead.
+	 */
+	allowZoom: boolean;
 	iconSet: IconSetId | null;
 	iconOverrides: Partial<Record<IconSlot, string>>;
 	/** Character token and reminder token sizes, and any token colours the user changed. */
@@ -123,6 +128,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	iconScale: 1,
 	characterIconScale: 1,
 	textAlign: 'left',
+	allowZoom: false,
 	iconSet: null,
 	iconOverrides: {},
 	tokenAppearance: DEFAULT_TOKEN_APPEARANCE,
@@ -160,6 +166,8 @@ export function parsePreferences(raw: unknown): Preferences {
 		textAlign: (TEXT_ALIGNS as readonly unknown[]).includes(input.textAlign)
 			? (input.textAlign as TextAlign)
 			: DEFAULT_PREFERENCES.textAlign,
+		allowZoom:
+			typeof input.allowZoom === 'boolean' ? input.allowZoom : DEFAULT_PREFERENCES.allowZoom,
 		iconSet: isIconSetId(input.iconSet) ? input.iconSet : null,
 		iconOverrides,
 		tokenAppearance: parseTokenAppearance(input.tokenAppearance),

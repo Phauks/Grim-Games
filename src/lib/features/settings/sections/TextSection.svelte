@@ -9,6 +9,7 @@
 	} from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import FontPreview from './FontPreview.svelte';
 	import { TEXT_FONT_ROLES } from './font-roles.ts';
 	import RulesTermsSection from './RulesTermsSection.svelte';
@@ -39,5 +40,11 @@
 	defaultValue={DEFAULT_PREFERENCES.textAlign}
 	options={TEXT_ALIGNS.map((align) => ({ value: align, label: alignLabels[align] }))}
 	onChange={(textAlign) => preferences.update({ textAlign: textAlign as TextAlign })}
+/>
+<SettingToggle
+	label={t('settings.allowZoom')}
+	description={t('settings.allowZoomHelp')}
+	checked={preferences.current.allowZoom}
+	onChange={(allowZoom) => preferences.update({ allowZoom })}
 />
 <RulesTermsSection />
