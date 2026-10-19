@@ -26,6 +26,10 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
 	expect(code).toMatch(/^\d{6}$/);
+	// The icon beside the code copies the code alone, ungrouped (Trevor, 2026-10-19).
+	await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+	await page.getByRole('button', { name: 'Copy code' }).tap();
+	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(code);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
