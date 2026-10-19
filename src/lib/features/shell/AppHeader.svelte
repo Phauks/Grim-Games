@@ -29,7 +29,8 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
-		padding: env(safe-area-inset-top) var(--space-2) 0;
+		padding: env(safe-area-inset-top) max(var(--space-2), env(safe-area-inset-right)) 0
+			max(var(--space-2), env(safe-area-inset-left));
 		background: var(--surface);
 		border-bottom: 1px solid var(--border);
 	}

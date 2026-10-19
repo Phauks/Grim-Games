@@ -1873,7 +1873,7 @@
 		display: flex;
 		flex-direction: column;
 		/* Fills the screen: a game hides the app header and footer (route data). */
-		height: calc(100dvh - env(safe-area-inset-top));
+		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}
 	.toolbar {

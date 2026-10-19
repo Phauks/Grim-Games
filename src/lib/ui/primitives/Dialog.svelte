@@ -183,6 +183,7 @@
 			border: 0;
 			border-radius: 0;
 			padding-top: calc(var(--space-4) + env(safe-area-inset-top));
+			padding-bottom: env(safe-area-inset-bottom);
 		}
 	}
 	:global([data-scope='dialog'][data-part='positioner']:has([data-size='side'])) {
