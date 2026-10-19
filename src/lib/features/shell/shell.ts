@@ -16,6 +16,17 @@ export function showsAppShell(data: Record<string, unknown> | null | undefined):
 }
 
 /**
+ * A locked pass-the-phone draw (Trevor, 2026-10-19; draw-lock.svelte.ts) hides the header,
+ * sidebar and footer on that game's screens, so the only way out is its PIN. Elsewhere they
+ * show, and that game's board asks for the PIN.
+ */
+export function lockedDrawHidesShell(pathname: string, lockedGame: string | undefined): boolean {
+	if (!lockedGame) return false;
+	const game = `/grimoire/${lockedGame}`;
+	return pathname === game || pathname.startsWith(`${game}/`);
+}
+
+/**
  * Asks before leaving a screen where leaving would lose or interrupt something: a game in
  * progress (board), a bag draw (Character selection). The screen registers a guard while it
  * is open, which shows its own confirmation and calls `leave` on Confirm.
@@ -23,6 +34,11 @@ export function showsAppShell(data: Record<string, unknown> | null | undefined):
  * The root layout checks every navigation against it (`beforeNavigate`): the navigation menu,
  * in-page links and the browser's Back button all ask first. Navigations that stay inside the
  * screen (`within`, e.g. the board and its day screen) and closing the tab don't ask.
+ *
+ * Guards stack: the newest one asks, and removing it hands back to the one beneath. A locked
+ * bag draw sets a PIN guard over the draw's Confirm, and unlocking must leave the Confirm in
+ * place (pass-the-phone draw, Trevor 2026-10-19). A guard may show any dialog, such as the PIN
+ * dialog, and call `leave` once the person may go.
  */
 export type LeaveGuard = (leave: () => void) => void;
 
@@ -31,7 +47,9 @@ interface Registered {
 	within: (url: URL) => boolean;
 }
 
-let registered: Registered | null = null;
+const guards: Registered[] = [];
+/** The guard that asks now: the newest one still set. */
+const top = (): Registered | undefined => guards[guards.length - 1];
 // A one-shot pass for the confirmed leave's navigation, so it isn't asked about again.
 let confirmed = false;
 let passes = 0;
@@ -45,11 +63,13 @@ export function setLeaveGuard(
 	within: (url: URL) => boolean = () => false
 ): () => void {
 	const entry = { guard, within };
-	registered = entry;
+	guards.push(entry);
 	markGuarded(true);
 	return () => {
-		if (registered !== entry) return;
-		registered = null;
+		const at = guards.indexOf(entry);
+		if (at < 0) return;
+		guards.splice(at, 1);
+		if (guards.length > 0) return;
 		confirmed = false;
 		markGuarded(false);
 	};
@@ -63,6 +83,7 @@ function markGuarded(on: boolean): void {
 
 /** Runs `leave` now, or after the screen's confirmation when a guard is registered. */
 export function leaveTo(leave: () => void): void {
+	const registered = top();
 	if (!registered) return leave();
 	registered.guard(() => {
 		confirmed = true;
@@ -81,6 +102,7 @@ export function leaveTo(leave: () => void): void {
  * the tab, typing an address) can only show the browser's own prompt, so it never asks here.
  */
 export function mustAskBeforeLeaving(to: URL | null, type: string, from: URL): boolean {
+	const registered = top();
 	if (!registered || type === 'leave' || !to) return false;
 	if (confirmed) {
 		confirmed = false;
