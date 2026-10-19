@@ -3446,3 +3446,38 @@ test('a step opened from the walk-through closes cleanly', async ({ page }) => {
 	await expect(strip).toContainText('Washerwoman');
 	expect(errors).toEqual([]);
 });
+
+test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the Demon', async ({
+	page
+}) => {
+	// She becomes the Demon who died (https://wiki.bloodontheclocktower.com/Scarlet_Woman).
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Scarlet Woman'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await picker
+		.getByRole('group', { name: 'Scarlet Woman' })
+		.getByRole('button', { name: 'Is The Demon' })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Change into the Demon?' });
+	await expect(ask).toContainText(/Current character\s*Scarlet Woman/);
+	await expect(ask).toContainText(/New character\s*Imp/);
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await expect(sheet).toContainText(/Imp\s*Evil · Seat 1/);
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
+});
