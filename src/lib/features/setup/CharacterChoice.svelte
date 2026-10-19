@@ -18,6 +18,10 @@
 		offScript?: boolean;
 		/** One of the Demon's bluffs (Trevor, 2026-10-18): tagged, not chosen for the bag. */
 		bluff?: boolean;
+		/** Kept by Random (Trevor, 2026-10-19). */
+		locked?: boolean;
+		/** Locks or unlocks it; without it there is no lock (Fabled and Loric). */
+		onLock?: () => void;
 		onToggle: () => void;
 		onAddCopy: () => void;
 	}
@@ -29,6 +33,8 @@
 		jinxed,
 		offScript = false,
 		bluff = false,
+		locked = false,
+		onLock,
 		onToggle,
 		onAddCopy
 	}: Props = $props();
@@ -96,6 +102,19 @@
 			>
 		</span>
 	</button>
+	<!-- Always in place, disabled until selected, so selecting moves nothing. -->
+	{#if onLock}
+		<button
+			type="button"
+			class="lock"
+			aria-pressed={selected && locked}
+			aria-label={t('setup.lockFor', { name: character.name })}
+			title={t('setup.lockFor', { name: character.name })}
+			disabled={!selected}
+			data-testid="lock-character"
+			onclick={onLock}><Icon name="lock" /></button
+		>
+	{/if}
 	{#if duplicates}
 		<button
 			type="button"
@@ -268,5 +287,31 @@
 	}
 	.add:hover {
 		background: var(--surface-selected);
+	}
+	.lock {
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: var(--tap-target);
+		border: 0;
+		background: none;
+		color: var(--on-surface-muted);
+		cursor: pointer;
+		opacity: 0.45;
+		touch-action: manipulation;
+	}
+	.lock[aria-pressed='true'] {
+		color: var(--focus);
+		opacity: 1;
+	}
+	.lock:disabled {
+		opacity: 0.15;
+		cursor: default;
+	}
+	@media (hover: hover) {
+		.lock:not(:disabled):hover {
+			background: var(--surface-selected);
+			opacity: 1;
+		}
 	}
 </style>

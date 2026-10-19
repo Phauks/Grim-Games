@@ -314,8 +314,9 @@
 	function random() {
 		const result = validRandomSelection({
 			players: s.players,
-			// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one.
-			selection: {},
+			// A fresh draw on every tap (Trevor, 2026-10-16), not a top-up of the current one,
+			// except for the characters the Storyteller locked (Trevor, 2026-10-19).
+			selection: setupSelection.lockedSelection(),
 			ruleCharacters: game?.ruleCharacters,
 			scriptCharacters: choices,
 			scriptOrder,
@@ -328,7 +329,11 @@
 			random: Math.random
 		});
 		if (result.ok) setupSelection.replace(result.selection);
-		else toast(t('setup.randomNone'), result.problems[0]);
+		else
+			toast(
+				t(s.locked.length > 0 ? 'setup.randomNoneLocked' : 'setup.randomNone'),
+				result.problems[0]
+			);
 	}
 </script>
 
@@ -427,6 +432,10 @@
 					offScript={offScriptIds.has(character.id)}
 					bluff={bluffIds.has(character.id)}
 					onToggle={() => toggle(character)}
+					locked={s.locked.includes(character.id)}
+					onLock={isRuleCharacter(character.type)
+						? undefined
+						: () => setupSelection.toggleLock(character.id)}
 					onAddCopy={() =>
 						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
 				/>

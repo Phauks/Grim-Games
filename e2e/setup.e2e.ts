@@ -882,3 +882,30 @@ test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 		expect(ids).not.toContain(id);
 	await noSidewaysScroll(page);
 });
+
+test('locked characters stay in play through Random and are remembered', async ({ page }) => {
+	await selectionFor(page, 9);
+	const choice = (id: string) => page.locator(`.main[data-character-id="${id}"]`);
+	const row = (id: string) => page.locator('.choice', { has: choice(id) });
+	const lock = (id: string) => row(id).getByTestId('lock-character');
+	// Unselected: the lock is in place but can't be used.
+	await expect(lock('baron')).toBeDisabled();
+	for (const id of ['baron', 'drunk']) {
+		await choice(id).tap();
+		await lock(id).tap();
+		await expect(lock(id)).toHaveAttribute('aria-pressed', 'true');
+	}
+	for (let i = 0; i < 5; i++) {
+		await page.getByRole('button', { name: 'Random selection' }).tap();
+		for (const id of ['baron', 'drunk']) {
+			await expect(row(id)).toHaveAttribute('data-selected', '');
+			await expect(lock(id)).toHaveAttribute('aria-pressed', 'true');
+		}
+	}
+	await page.reload();
+	await expect(lock('drunk')).toHaveAttribute('aria-pressed', 'true');
+	// Deselecting unlocks.
+	await choice('baron').tap();
+	await expect(lock('baron')).toBeDisabled();
+	await expect(lock('baron')).toHaveAttribute('aria-pressed', 'false');
+});

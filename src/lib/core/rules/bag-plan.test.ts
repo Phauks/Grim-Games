@@ -364,6 +364,38 @@ describe('validRandomSelection', () => {
 		if (!result.ok) expect(result.problems.length).toBeGreaterThan(0);
 	});
 
+	// Trevor, 2026-10-19: locked characters stay in play through every Random.
+	it('keeps locked characters and stays valid around them', () => {
+		const characters = [...data.byId.values()].filter(
+			(c) => c.edition === 'tb' && c.type !== 'traveller'
+		);
+		const scriptOrder = characters.map((c) => c.id);
+		const locked = { baron: 1, drunk: 1, empath: 1 };
+		for (let i = 0; i < 60; i++) {
+			const input = { players: 9, scriptCharacters: characters, scriptOrder, lookup };
+			const result = validRandomSelection({ ...input, selection: locked, random: seeded(i + 3) });
+			expect(result.ok).toBe(true);
+			if (!result.ok) continue;
+			expect(result.selection).toMatchObject(locked);
+			expect(selectionProblems({ ...input, selection: result.selection })).toEqual([]);
+		}
+	});
+
+	it('says why when the locked characters make a valid selection impossible', () => {
+		const characters = [...data.byId.values()].filter((c) => c.edition === 'tb');
+		const result = validRandomSelection({
+			players: 7,
+			selection: { imp: 1, poisoner: 1, spy: 1 },
+			scriptCharacters: characters,
+			scriptOrder: characters.map((c) => c.id),
+			lookup,
+			random: seeded(1),
+			tries: 5
+		});
+		expect(result.ok).toBe(false);
+		if (!result.ok) expect(result.problems.length).toBeGreaterThan(0);
+	});
+
 	it('finds the Damsel for a Huntsman, or leaves the Huntsman out', () => {
 		const characters = script([
 			'huntsman',
