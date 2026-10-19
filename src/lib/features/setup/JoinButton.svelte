@@ -8,9 +8,10 @@
 
 	interface Props {
 		game: OpenGame;
+		disabled?: boolean;
 	}
 
-	let { game }: Props = $props();
+	let { game, disabled = false }: Props = $props();
 	let open = $state(false);
 </script>
 
@@ -22,6 +23,7 @@
 <IconButton
 	icon="share"
 	label={t('room.title')}
+	{disabled}
 	onpointerenter={prepareRoom}
 	onfocus={prepareRoom}
 	onpointerdown={prepareRoom}
