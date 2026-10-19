@@ -20,6 +20,7 @@
 	import { dismissedGameEnds } from './device-notes.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import { tonight } from './night-steps.ts';
+	import { tokenLabel } from './reminders.ts';
 
 	/**
 	 * When a game end condition is met (Trevor, 2026-10-18), list every one met, with what may
@@ -130,7 +131,7 @@
 				{#if h.rule === 'impaired'}
 					{@const s = game.seats[h.seats[0]]}
 					{#each s?.reminders.filter((r) => impairmentOfLabel(r.label) || r.label === 'No Ability') ?? [] as r (r.reminderId)}
-						<ReminderToken label={r.label} character={characters.get(r.characterId)} />
+						<ReminderToken label={tokenLabel(r)} character={characters.get(r.characterId)} />
 					{/each}
 				{:else}
 					{@render ability(h.characterId)}

@@ -59,6 +59,27 @@ function withoutLooseReminder(game: Game, reminderId: string): Game {
 	};
 }
 
+/** Changes one reminder wherever it is: on a seat, a Fabled or Loric, or loose. */
+function withReminder(
+	game: Game,
+	reminderId: string,
+	change: (reminder: ReminderInstance) => ReminderInstance
+): Game {
+	const each = (list: readonly ReminderInstance[]) =>
+		list.map((r) => (r.reminderId === reminderId ? change(r) : r));
+	const seat = seatHoldingReminder(game, reminderId);
+	if (seat) return updateSeat(game, seat.seatId, (s) => ({ ...s, reminders: each(s.reminders) }));
+	const held = ruleHoldingReminder(game, reminderId);
+	if (held)
+		return {
+			...game,
+			ruleReminders: { ...game.ruleReminders, [held.characterId]: each(held.reminders) }
+		};
+	if (looseReminder(game, reminderId))
+		return { ...game, looseReminders: each(game.looseReminders ?? []) };
+	return game;
+}
+
 /** Takes a reminder from its seat or Fabled or Loric; undefined when it is not on either. */
 function liftHeldReminder(
 	game: Game,
@@ -368,6 +389,10 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				looseReminders: [...(lifted.game.looseReminders ?? []), lifted.reminder]
 			};
 		}
+		case 'ReminderNoteSet':
+			return withReminder(game, event.reminderId, (r) =>
+				event.note === undefined ? omit(r, 'note') : { ...r, note: event.note }
+			);
 		case 'BluffsSet': {
 			const bluffs = game.bluffs.map((set) => [...set]);
 			if (event.set < 0 || event.set > bluffs.length) return game;

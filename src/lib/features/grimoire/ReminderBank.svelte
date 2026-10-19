@@ -15,8 +15,8 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import { bankReminders, byLabel, type StepReminders } from './reminders.ts';
-	import { scriptCharacterIds } from '#lib/core/model/index.ts';
+	import { bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
+	import { GENERIC_REMINDER_ID, scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import {
 		pendingTray,
@@ -157,7 +157,9 @@
 				now
 			}));
 		});
-		return only([...setup, ...rest]);
+		// Last: the generic ∞ reminder, as many as needed (Trevor, 2026-10-18).
+		const generic: Item = { key: 'generic', characterId: GENERIC_REMINDER_ID, label: '', count: 1 };
+		return only([...setup, ...rest, generic]);
 	});
 	/** "Only this character": the step's reminders alone, while a step is walked through. */
 	function only(list: Item[]): Item[] {
@@ -323,6 +325,7 @@
 					label={item.label}
 					character={characters.get(item.characterId)}
 					alignment={placingAlignment(game, item.characterId, characters)}
+					infinite={isGeneric(item)}
 					{size}
 					onTap={() => tap(item)}
 					onDrag={(x, y, end) => dragItem(item, x, y, end)}
@@ -360,6 +363,7 @@
 			label={drag.item.label}
 			character={characters.get(drag.item.characterId)}
 			alignment={placingAlignment(game, drag.item.characterId, characters)}
+			infinite={isGeneric(drag.item)}
 			{size}
 			disabled
 			onTap={() => {}}
@@ -380,7 +384,7 @@
 >
 	{#snippet heading()}
 		Put {#if choosing}<ReminderToken
-				label={choosing.label}
+				label={isGeneric(choosing) ? '∞' : choosing.label}
 				character={characters.get(choosing.characterId)}
 			/>{/if} on
 	{/snippet}

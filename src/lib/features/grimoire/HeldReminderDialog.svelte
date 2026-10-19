@@ -15,6 +15,8 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
+	import { isGeneric, tokenLabel } from './reminders.ts';
+	import ReminderNoteField from './ReminderNoteField.svelte';
 
 	/**
 	 * A reminder that is on no seat: one a Fabled or Loric holds, or one loose on the board
@@ -60,7 +62,7 @@
 <Dialog bind:open title="Reminder">
 	{#snippet heading()}
 		{#if reminder}<ReminderToken
-				label={reminder.label}
+				label={tokenLabel(reminder)}
 				character={source}
 				alignment={placingAlignment(game, reminder.characterId, characters)}
 			/>{:else}Reminder{/if}
@@ -73,6 +75,9 @@
 				inline
 			/>{:else}loose on the board{/if}
 	{/snippet}
+	{#if reminder && isGeneric(reminder)}
+		<ReminderNoteField {grimoire} {reminder} />
+	{/if}
 	{#if source}
 		<CharacterSummary character={source} reminders={false} />
 	{/if}
