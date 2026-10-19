@@ -4051,3 +4051,36 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 		'Poisoned: doesn’t wake (I See Dead People)'
 	);
 });
+
+// https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/: seat 7 is dealt a character
+// but no one plays it; its choices are arbitrary.
+test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: /^Special rules/ }).tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	await rules.getByText('The Ballad of Seat 7', { exact: true }).tap();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	for (const [number, name] of [
+		[6, 'Washerwoman'],
+		[7, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+
+	const strip = await walkTo(page, 'Washerwoman');
+	await expect(strip.getByTestId('step-empty-seat')).toHaveCount(0);
+	await walkTo(page, 'Empath');
+	await expect(strip.getByTestId('step-empty-seat')).toHaveText(
+		'No player: make its choices (The Ballad of Seat 7)'
+	);
+});

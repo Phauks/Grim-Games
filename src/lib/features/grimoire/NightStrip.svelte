@@ -31,10 +31,22 @@
 		 * don't wake), named by the rule. The board works it out, so night steps stay mode-free.
 		 */
 		asleepBy?: string;
+		/** A special rule leaves this step's seat to no one (The Ballad of Seat 7), named by the rule. */
+		emptySeatBy?: string;
 	}
 
-	let { grimoire, steps, night, index, onIndex, onOpen, onClose, onPastEnd, asleepBy }: Props =
-		$props();
+	let {
+		grimoire,
+		steps,
+		night,
+		index,
+		onIndex,
+		onOpen,
+		onClose,
+		onPastEnd,
+		asleepBy,
+		emptySeatBy
+	}: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const step = $derived(steps[index]);
@@ -87,6 +99,9 @@
 				<!-- Inside the strip's fixed height, which scrolls, so nothing outside moves. -->
 				{#if asleepBy}<span class="asleep" data-testid="step-asleep"
 						>Poisoned: doesn’t wake ({asleepBy})</span
+					>{/if}
+				{#if emptySeatBy}<span class="empty-seat" data-testid="step-empty-seat"
+						>No player: make its choices ({emptySeatBy})</span
 					>{/if}
 				<NightAlerts {grimoire} {step} compact />
 				<NightSuggested {grimoire} {step} compact />
@@ -218,6 +233,10 @@
 	}
 	.asleep {
 		color: var(--evil);
+		font-size: 0.9rem;
+	}
+	.empty-seat {
+		color: var(--on-surface-muted);
 		font-size: 0.9rem;
 	}
 	.text {
