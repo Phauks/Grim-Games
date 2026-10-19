@@ -1130,7 +1130,6 @@
 	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
 	 */
 	const modeNames = $derived(gameModeNames(game.gameId));
-	const modeName = $derived(modeNames.length ? modeNames.join(' + ') : undefined);
 	/**
 	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
 	 * says it once, in the mode's colour, rather than twice (Trevor, 2026-10-18).
