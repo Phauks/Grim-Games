@@ -159,6 +159,16 @@ test('several pads, each with its own title and paper', async ({ page }) => {
 	await expect(padRows(page)).toHaveCount(2);
 	await expect(padRows(page).first()).toContainText('Day 1');
 	await expect(padRows(page).nth(1)).toContainText('Untitled');
+	// Two to a row, even on a phone, each preview shaped like a phone's pad rather than a long
+	// strip of paper no one could write on (Trevor, 2026-10-19: "2x2 on mobile").
+	const [a, b] = [
+		(await padRows(page).first().boundingBox())!,
+		(await padRows(page).nth(1).boundingBox())!
+	];
+	expect(Math.abs(a.y - b.y)).toBeLessThan(1);
+	expect(b.x).toBeGreaterThan(a.x + a.width - 1);
+	const thumb = (await padRows(page).first().locator('canvas').boundingBox())!;
+	expect(thumb.height).toBeGreaterThan(thumb.width);
 
 	// Each keeps its own, across a reload too.
 	await page.waitForTimeout(500);
@@ -215,7 +225,7 @@ test('a hidden pad shows only its title in the list', async ({ page }) => {
 
 // The list preview fits what was drawn, centred, with no empty space beside it (Trevor,
 // 2026-10-18).
-test('a pad preview fits the drawing, centred in its row', async ({ page }) => {
+test('a pad preview fits the drawing, centred in its box', async ({ page }) => {
 	const { canvas } = await newPad(page);
 	const box = (await canvas.boundingBox())!;
 	// A tall box near the pad's left edge.
@@ -253,9 +263,11 @@ test('a pad preview fits the drawing, centred in its row', async ({ page }) => {
 			height: c.height
 		};
 	});
-	// As much room on each side, and the drawing fills the row's height.
+	// Centred both ways, and most of the preview's height: the preview is shaped like a phone's
+	// pad (Trevor, 2026-10-19), so the drawing is never stretched past the pad's own size.
 	expect(Math.abs(extent.left - extent.right)).toBeLessThanOrEqual(extent.height * 0.1);
-	expect(extent.top + extent.bottom).toBeLessThanOrEqual(extent.height * 0.2);
+	expect(Math.abs(extent.top - extent.bottom)).toBeLessThanOrEqual(extent.height * 0.1);
+	expect(extent.top + extent.bottom).toBeLessThanOrEqual(extent.height * 0.4);
 });
 
 test('once a pen is used, a resting palm does not draw', async ({ page }) => {
