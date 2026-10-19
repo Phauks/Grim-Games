@@ -4110,6 +4110,19 @@ test('the corner script name opens the game’s info, in a Standard game too', a
 	await expect(row('version')).toHaveText('None');
 });
 
+test('the corner’s Game info closes when a seat opens', async ({ page }) => {
+	// Trevor, 2026-10-19: "Game info popup should close if other item is opened like a character".
+	await startGame(page);
+	const corner = page.getByTestId('mode-menu');
+	// A phone before setup has no room for the corner name; Game info is then a ⋯ dialog.
+	if (!(await corner.isVisible())) return;
+	await corner.tap();
+	const info = page.getByRole('dialog', { name: 'Game info' });
+	await expect(info).toBeVisible();
+	await openSeat(page, 1);
+	await expect(info).toBeHidden();
+});
+
 test('Next on the last night step lights up End night', async ({ page }) => {
 	// Trevor (2026-10-19): Next past the end points at End night; it never ends the night.
 	await startGame(page);

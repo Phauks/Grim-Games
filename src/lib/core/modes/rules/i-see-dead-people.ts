@@ -25,7 +25,7 @@ export const I_SEE_DEAD_PEOPLE: SpecialRule = {
 		deaths: {
 			kind: 'private',
 			instructions:
-				'Don’t announce who has died. Dead players can still nominate, and poisoned players don’t wake.'
+				'Don’t announce who has died. Dead players can still nominate. Poisoned players don’t wake at night.'
 		}
 	}
 };

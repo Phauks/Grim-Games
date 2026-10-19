@@ -45,13 +45,15 @@ export const TWO_TOWNS: GameMode = {
 		ruleChanges: [
 			{
 				characters: ['mayor', 'leviathan'],
-				instructions: 'Read the Mayor and Leviathan jinx as being about the Mayor’s team.'
+				instructions:
+					'If the Leviathan and the Mayor are alive on day 5 and no execution occurs, good wins.'
 			}
 		],
 		information: [
 			{
 				characters: [],
-				instructions: 'When evil takes over a town, a good player in that town learns it.'
+				instructions:
+					'When evil outnumber the living good in a town, a good player in that town learns it.'
 			}
 		],
 		daySteps: [
@@ -59,7 +61,7 @@ export const TWO_TOWNS: GameMode = {
 				kind: 'town-representative',
 				movesPerDay: [3, 2, 2, 1, 1],
 				instructions:
-					'Each day the town nominates a representative, who sends players to the other town: 3 after day 1, 2 after days 2 and 3, and 1 after days 4 and 5.'
+					'Each day the town nominates a representative, who decides which players to send to the other town: 3 after day 1, 2 after days 2 and 3, and 1 after days 4 and 5.'
 			}
 		],
 		winConditions: {

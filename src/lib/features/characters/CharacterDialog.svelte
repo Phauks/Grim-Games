@@ -13,6 +13,7 @@
 	import WikiBox from './WikiBox.svelte';
 	import { wikiPageTitle, withoutRepeats, type WikiSection } from './wiki-page.ts';
 	import { wikiPages } from './wiki-page.svelte.ts';
+	import { provideShownCharacter } from './character-context.ts';
 
 	interface Props {
 		open?: boolean;
@@ -29,6 +30,7 @@
 	let { open = $bindable(false), character, icon: given, sourcePage }: Props = $props();
 	// Terms here open their popover, even when these details were opened from the Glossary.
 	clearTermHandler();
+	provideShownCharacter(() => character.id);
 	const wiki = $derived(wikiUrl(character));
 	// The whole wiki page, fetched live when the dialog opens (wiki-page.svelte.ts).
 	const title = $derived(wiki ? wikiPageTitle(wiki) : undefined);

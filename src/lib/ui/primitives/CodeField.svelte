@@ -24,8 +24,6 @@
 		clearLabel?: string;
 		/** Sits in the middle of its row, the boxes centred with the X beside them. */
 		centred?: boolean;
-		/** Shows a dot for each character, like a password (a PIN). */
-		masked?: boolean;
 		/**
 		 * Big boxes that share the row's width, for a page that is about the code (Join game;
 		 * Trevor, 2026-10-19: "make the number input bigger").
@@ -42,7 +40,6 @@
 		inputmode = 'numeric',
 		clearLabel,
 		centred = false,
-		masked = false,
 		large = false
 	}: Props = $props();
 
@@ -87,7 +84,7 @@
 				class:filled={i < value.length}
 				class:current={focused && i === current}
 				class:group-end={group !== undefined && (i + 1) % group === 0 && i + 1 < length}
-				>{masked && value[i] ? '•' : (value[i] ?? '')}</span
+				>{value[i] ?? ''}</span
 			>
 		{/each}
 	</span>
@@ -96,7 +93,7 @@
 		{id}
 		{value}
 		{inputmode}
-		autocomplete={masked ? 'off' : 'one-time-code'}
+		autocomplete="one-time-code"
 		autocapitalize="characters"
 		spellcheck="false"
 		enterkeyhint="go"

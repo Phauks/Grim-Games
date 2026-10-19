@@ -111,7 +111,8 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 	await replace.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(`${board}/draw`);
 	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(0);
-	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
+	// No "Next: Seat 1": the draw order is never shown (Trevor, 2026-10-19).
+	await expect(page.getByTestId('next-seat')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 
@@ -350,10 +351,8 @@ test('a bag with more tiles than seats draws the extra tiles to new seats', asyn
 		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
 		await page.getByRole('button', { name: 'Confirm' }).tap();
 	}
-	await expect(page.getByTestId('next-seat')).toHaveText('A new seat');
 	await page.getByRole('button', { name: 'Tile 21', exact: true }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByTestId('next-seat')).toHaveText('None');
 	await noSidewaysScroll(page);
 });
 
@@ -531,7 +530,6 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await expect(page).toHaveURL(/\/draw$/);
-	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
 	await expect(page.getByRole('list', { name: 'Bag' }).getByRole('listitem')).toHaveCount(5);
 
 	// Tile 1 to seat 1, with a name.
@@ -546,7 +544,6 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
-	await expect(page.getByTestId('next-seat')).toHaveText('Seat 2');
 
 	// A drawn tile is never put back: closing the reveal keeps it in seat 2's hand, even
 	// across a reload.
@@ -557,7 +554,6 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	await page.reload();
 	const held = page.getByRole('button', { name: 'Tile 2, held by Seat 2' });
 	await expect(held).toBeVisible();
-	await expect(page.getByTestId('next-seat')).toHaveText('Seat 3');
 	await held.tap();
 	await expect(page.getByRole('button', { name: 'Put back' })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Confirm' }).tap();
@@ -575,7 +571,6 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 		await page.getByRole('button', { name: 'Confirm' }).tap();
 	}
 	await expect(page.getByRole('button', { name: 'Add all' })).toHaveCount(0);
-	await expect(page.getByTestId('next-seat')).toHaveText('None');
 	await noSidewaysScroll(page);
 
 	// The last step is the board's setup reminders tray, not a list in the draw.
@@ -995,7 +990,7 @@ test('a locked draw asks for the PIN to leave and shows tokens only while held',
 	page
 }) => {
 	await lockedDraw(page);
-	await expect(page.getByRole('button', { name: 'Setup and bag draw' })).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Setup and bag draw' })).toHaveCount(0);
 	// No header, sidebar or footer to leave by while the phone is passed round.
 	await expect(page.getByRole('banner')).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
@@ -1040,12 +1035,12 @@ test('three wrong PINs make entry wait', async ({ page }) => {
 		await pin.getByRole('button', { name: 'Confirm' }).tap();
 		await expect(pin.getByLabel('PIN', { exact: true })).toHaveValue('');
 	}
-	await expect(pin.getByTestId('pin-message')).toHaveText(/^Try again in (30|29) s\.$/);
+	await expect(pin.getByTestId('pin-message')).toHaveText(/^Try again in (30|29) seconds\.$/);
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
 	await expect(pin.getByRole('button', { name: 'Confirm' })).toBeDisabled();
 	// Forgot PIN counts down where everyone can see it, and can be stopped.
 	await pin.getByRole('button', { name: 'Forgot PIN' }).tap();
-	await expect(pin.getByTestId('pin-message')).toHaveText(/^Unlocking in (60|59) s\.$/);
+	await expect(pin.getByTestId('pin-message')).toHaveText(/^Unlocking in (60|59) seconds\.$/);
 	await pin.getByRole('button', { name: 'Keep locked' }).tap();
 	await expect(pin.getByTestId('pin-message')).toHaveText(/^Try again in/);
 });
@@ -1096,4 +1091,28 @@ test('the board stays locked while the draw is, until the Storyteller PIN', asyn
 	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(locked).toHaveCount(0);
 	await expect(page.getByTestId('seat')).toHaveCount(5);
+});
+
+// Trevor, 2026-10-19: the setup check folds into one Verification section, and a chosen
+// character whose token stays out of the bag (the Drunk) is tagged by its check.
+test('Verification folds the setup check away, and the Drunk is tagged not in bag', async ({
+	page
+}) => {
+	await selectionFor(page, 7);
+	const check = page.getByTestId('setup-check');
+	const verification = check.getByRole('button', { name: 'Verification' });
+	await expect(check.getByRole('button', { name: 'Warnings' })).toBeVisible();
+	await verification.tap();
+	await expect(check.getByRole('button', { name: 'Warnings' })).toBeHidden();
+	await verification.tap();
+	await expect(check.getByRole('button', { name: 'Jinxes' })).toBeVisible();
+
+	const row = (id: string) =>
+		page.locator('.choice', { has: page.locator(`.main[data-character-id="${id}"]`) });
+	await page.locator('.main[data-character-id="drunk"]').tap();
+	await page.locator('.main[data-character-id="empath"]').tap();
+	await expect(row('drunk').getByTestId('not-in-bag')).toHaveText('Not in bag');
+	await expect(row('empath').getByTestId('not-in-bag')).toHaveCount(0);
+	await page.locator('.main[data-character-id="drunk"]').tap();
+	await expect(row('drunk').getByTestId('not-in-bag')).toHaveCount(0);
 });

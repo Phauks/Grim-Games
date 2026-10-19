@@ -26,7 +26,7 @@ export const STOWED_AWAY: SpecialRule = {
 			inBag: 2,
 			announced: false,
 			instructions:
-				'Put up to 2 Travellers in the bag, and set the other counts for that many fewer players. Don’t tell anyone who the Travellers are. Exiling a Traveller counts as an execution.'
+				'Put up to 2 Travellers in the bag, and set the player count for that many fewer players. Don’t announce who the Travellers are. Exiling a Traveller counts as an execution.'
 		}
 	}
 };
