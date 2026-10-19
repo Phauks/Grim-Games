@@ -16,7 +16,14 @@ export const APPROVED_ABOUT: Readonly<Record<string, string>> = {
 		'Two towns play side by side, each with its own Storyteller and script. Each day some players move to the other town. The game ends if both demons are killed, or 5 days pass. If both demons have been killed, good wins; if both demons are alive, evil wins; if one demon is dead and one is alive, the evil team wins if the boomdandy is alive and in the same town as the living mayor.',
 	specters: 'Spectators share one ability and vote during the game on how it is used.',
 	'infinite-possibilities':
-		'Any script, with 1-4 hidden extra characters from off the script that only their players know about. The Storyteller may tell the table a range of how many custom characters are in play.'
+		'Any script, with 1-4 hidden extra characters from off the script that only their players know about. The Storyteller may tell the table a range of how many custom characters are in play.',
+	// Approved 2026-10-19 ("rule descriptions were approved").
+	'seat-7':
+		'One seat is dealt a character as usual, but no one plays it. Its choices are arbitrary, and once per game the Storyteller may speak for it.',
+	'stowed-away':
+		'Up to 2 Travellers may be in the bag, with the other counts set for that many fewer players. No one is told who the Travellers are, and exiling one counts as an execution.',
+	'i-see-dead-people':
+		'Characters die as normal, but the Storyteller doesn’t announce deaths. Dead players can still nominate, and poisoned players don’t wake.'
 };
 
 /** Whether a built-in mode's description is the text Trevor approved. */
