@@ -95,6 +95,7 @@ export const settings = {
 	'settings.scriptLogoOpacity': 'Script logo opacity',
 	'settings.nameSize': 'Player name size',
 	'settings.nameOffset': 'Player name offset',
+	'settings.strikeUsedGhostVote': 'Strike through used ghost votes',
 	'settings.rulesAt': 'Location',
 	'settings.rulesAt.middle': 'Middle',
 	'settings.rulesAt.edge': 'Corner',

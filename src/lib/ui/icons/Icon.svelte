@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { resolveIcon, resolveIconSet } from '#lib/ui/preferences.ts';
-	import type { IconSlot } from './catalogue.ts';
+	import { resolveIcon, resolveIconBase, resolveIconSet } from '#lib/ui/preferences.ts';
+	import { withWeight, type IconSlot, type PhosphorWeight } from './catalogue.ts';
 	import IconGlyph from './IconGlyph.svelte';
 
 	interface Props {
@@ -9,12 +9,20 @@
 		name: IconSlot;
 		/** Accessible name; leave it out when a visible label sits next to the icon. */
 		label?: string;
+		/** A weight that carries meaning (solid vs outline), drawn whatever the user's icon set. */
+		weight?: PhosphorWeight;
 	}
 
-	let { name, label }: Props = $props();
+	let { name, label, weight }: Props = $props();
 
-	const id = $derived(resolveIcon(name, preferences.current, preferences.theme));
-	const set = $derived(resolveIconSet(preferences.current, preferences.theme));
+	const id = $derived(
+		weight
+			? withWeight(resolveIconBase(name, preferences.current, preferences.theme), weight)
+			: resolveIcon(name, preferences.current, preferences.theme)
+	);
+	const set = $derived(
+		weight ? (`ph-${weight}` as const) : resolveIconSet(preferences.current, preferences.theme)
+	);
 </script>
 
 <IconGlyph {id} {set} {label} />

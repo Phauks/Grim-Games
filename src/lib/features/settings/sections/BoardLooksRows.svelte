@@ -62,3 +62,9 @@
 	format={(offset) => intl.number(offset, { style: 'percent' })}
 	onChange={(nameOffset) => boardLooks.update({ nameOffset })}
 />
+<!-- A used ghost vote: grey outline ghost, or struck through in red (Trevor, 2026-10-19). -->
+<SettingToggle
+	label={t('settings.strikeUsedGhostVote')}
+	checked={boardLooks.current.usedGhostVote === 'struck'}
+	onChange={(struck) => boardLooks.update({ usedGhostVote: struck ? 'struck' : 'hollow' })}
+/>

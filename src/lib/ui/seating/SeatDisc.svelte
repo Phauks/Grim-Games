@@ -22,10 +22,12 @@
 		/** Marks drawn over or around the token (notes, extra claims, warnings). */
 		marks?: Snippet;
 		/**
-		 * A dead player's ghost vote, shown on the skull badge (Trevor, 2026-10-19: one badge
-		 * for both): filled while it is still there, hollow once used.
+		 * A dead player's ghost vote, which turns the skull badge into a ghost (Trevor,
+		 * 2026-10-19: one badge for both): a solid ghost while it is still there.
 		 */
 		vote?: 'unused' | 'used';
+		/** How a used ghost vote looks: a grey outline ghost, or struck through (Trevor, 2026-10-19). */
+		usedVote?: 'hollow' | 'struck';
 	}
 
 	let {
@@ -36,7 +38,8 @@
 		namePlace = 'below',
 		face,
 		marks,
-		vote
+		vote,
+		usedVote = 'hollow'
 	}: Props = $props();
 
 	/** The player's name is a badge on the token (Trevor, 2026-10-17); a seat with no character keeps the pill under it. */
@@ -50,8 +53,15 @@
 		>
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
 		{#if onToken}<PlayerNameMark {name} />{/if}
-		{#if dead}<span class="skull" data-testid="dead-mark" data-vote={vote}
-				><Icon name="dead" /></span
+		{#if dead}<span
+				class="skull"
+				data-testid="dead-mark"
+				data-vote={vote}
+				data-used-look={vote === 'used' ? usedVote : undefined}
+				>{#if vote}<Icon
+						name="ghostVote"
+						weight={vote === 'used' ? 'regular' : 'fill'}
+					/>{:else}<Icon name="dead" />{/if}</span
 			>{/if}
 		{#if marks}{@render marks()}{/if}
 	</span>
@@ -109,11 +119,33 @@
 		box-shadow: var(--shadow);
 		--icon-size: calc(var(--size) * 0.26);
 	}
-	/* The ghost vote spent: the badge goes hollow, like a vote token taken away. */
+	/*
+	 * With a ghost vote it is a ghost on a night-dark badge (Trevor, 2026-10-19: darker than
+	 * the skull), dark on every theme so it stands out from any token face.
+	 */
+	.skull[data-vote] {
+		border-color: rgb(232 222 200); /* colour-ok: the badge looks the same on every theme */
+		background: rgb(16 12 20); /* colour-ok: the badge looks the same on every theme */
+		color: rgb(244 236 218); /* colour-ok: the badge looks the same on every theme */
+	}
+	/* The ghost vote spent: a grey outline ghost. */
 	.skull[data-vote='used'] {
-		border-color: var(--on-surface-muted);
-		background: var(--surface);
-		color: var(--on-surface-muted);
+		border-color: rgb(90 86 96); /* colour-ok: the badge looks the same on every theme */
+		color: rgb(130 126 136); /* colour-ok: the badge looks the same on every theme */
+	}
+	/* Or struck through: a red slash and rim over the grey ghost. */
+	.skull[data-used-look='struck'] {
+		overflow: hidden;
+		border-color: var(--evil);
+	}
+	.skull[data-used-look='struck']::before {
+		content: '';
+		position: absolute;
+		width: 140%;
+		height: 12%;
+		border-radius: 999em;
+		background: var(--evil);
+		transform: rotate(-45deg);
 	}
 	/*
 	 * The player's name in its own badge (Trevor, 2026-10-16), neutral so it never reads as
