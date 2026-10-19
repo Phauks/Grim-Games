@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { normaliseRoomCode, ROOM_CODE_LENGTH } from '#lib/core/sync/room-code.ts';
+	import { formatRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '#lib/core/sync/room-code.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
@@ -12,6 +12,7 @@
 	import { forgetRoom, RoomPlayer } from './player.svelte.ts';
 	import { followRoomScript } from './room-script.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
+	import { recentRooms, rememberRoom } from './recent-rooms.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 
@@ -58,7 +59,9 @@
 		let cancelled = false;
 		void followRoomScript(sent)
 			.then((loaded) => {
-				if (!cancelled && loaded) onScript?.(loaded.name);
+				if (cancelled || !loaded) return;
+				onScript?.(loaded.name);
+				if (valid) rememberRoom(valid, loaded.name);
 			})
 			.catch(() => {});
 		return () => (cancelled = true);
@@ -76,6 +79,17 @@
 	const seats = $derived(view?.public?.seats ?? []);
 	const storyteller = $derived(view?.public?.storytellerName);
 	const mine = $derived(view?.me.seatId);
+	// The seat this phone has, or asked for, is the one chosen when the room opens again.
+	const placed = $derived(
+		view ? (view.request ? (view.request.seatId ?? '') : (mine ?? '')) : undefined
+	);
+	$effect(() => {
+		if (placed !== undefined) seat = placed;
+	});
+	/** Asking again for the seat and name this phone already has changes nothing. */
+	const unchanged = $derived(
+		!!view && !view.request && !!mine && seat === mine && name.trim() === view.me.name
+	);
 	const seatName = (seatId?: SeatId) => {
 		const s = seats.find((x) => x.seatId === seatId);
 		return s ? t('room.seatLower', { number: s.seatNumber }) : t('room.anySeatLower');
@@ -137,11 +151,33 @@
 					: ''
 	);
 
+	// The rooms this phone joined, read once so the list keeps its rows while each is looked up.
+	const recent = code === undefined ? recentRooms() : [];
+	let recentGames = $state<Record<string, GamePreview | null>>({});
+	$effect(() => {
+		if (recent.length === 0) return;
+		const abort = new AbortController();
+		for (const room of recent) {
+			fetchRoomPreview(room.code, abort.signal).then(
+				(game) => {
+					recentGames = { ...recentGames, [room.code]: game ?? null };
+					if (!game) forgetRoom(room.code);
+				},
+				() => {}
+			);
+		}
+		return () => abort.abort();
+	});
+
+	function openRoom(roomCode: string) {
+		if (onCode) onCode(roomCode);
+		else void goto(resolve('/join/[code]', { code: roomCode }));
+	}
+
 	function enterCode(event: SubmitEvent) {
 		event.preventDefault();
 		if (!lookup || !canJoin) return;
-		if (onCode) onCode(lookup.code);
-		else void goto(resolve('/join/[code]', { code: lookup.code }));
+		openRoom(lookup.code);
 	}
 
 	function ask(event: SubmitEvent) {
@@ -204,6 +240,40 @@
 			{t('room.join')}
 		</Button>
 	</form>
+	{#if recent.length > 0}
+		<PageSection title={t('room.yourGames')}>
+			<ul class="recent" data-testid="recent-rooms">
+				{#each recent as room (room.code)}
+					{@const game = recentGames[room.code]}
+					<li>
+						<button
+							type="button"
+							class="recent-game"
+							disabled={game === null}
+							onclick={() => openRoom(room.code)}
+						>
+							<ScriptLogo src={game?.logo} name={game?.name ?? room.script} class="recent-logo" />
+							<span class="recent-text">
+								<span class="recent-name"
+									>{(game?.name ?? room.script) || t('room.noScriptYet')}</span
+								>
+								<span class="recent-line"
+									>{game === null
+										? t('room.recentClosed', { code: formatRoomCode(room.code) })
+										: game?.storyteller
+											? t('room.recentLine', {
+													code: formatRoomCode(room.code),
+													name: game.storyteller
+												})
+											: formatRoomCode(room.code)}</span
+								>
+							</span>
+						</button>
+					</li>
+				{/each}
+			</ul>
+		</PageSection>
+	{/if}
 {:else}
 	<PageSection title={t('room.you')}>
 		<p class="summary" role="status" data-testid="join-status">{summary}</p>
@@ -241,7 +311,11 @@
 				</div>
 			</fieldset>
 			<div class="row">
-				<Button type="submit" variant="accent" disabled={!name.trim() || status !== 'open'}>
+				<Button
+					type="submit"
+					variant="accent"
+					disabled={!name.trim() || unchanged || status !== 'open'}
+				>
 					{t('room.ask')}
 				</Button>
 				<Button
@@ -371,6 +445,56 @@
 	}
 	.code-form :global(.button) {
 		min-width: calc(10 * var(--u));
+	}
+	.recent {
+		display: grid;
+		gap: var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	/* Two lines always, so a room's details arriving move nothing. */
+	.recent-game {
+		display: grid;
+		grid-template-columns: calc(2.5 * var(--u)) minmax(0, 1fr);
+		align-items: center;
+		gap: var(--space-3);
+		box-sizing: border-box;
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+	}
+	.recent-game:disabled {
+		cursor: default;
+		opacity: 0.55;
+	}
+	.recent-game :global(.recent-logo) {
+		width: calc(2.5 * var(--u));
+		height: calc(2.5 * var(--u));
+	}
+	.recent-text {
+		display: grid;
+		min-width: 0;
+	}
+	.recent-name,
+	.recent-line {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.recent-name {
+		font-family: var(--font-heading);
+		font-weight: var(--font-heading-weight);
+	}
+	.recent-line {
+		color: var(--on-surface-muted);
 	}
 	.problem,
 	.storyteller,
