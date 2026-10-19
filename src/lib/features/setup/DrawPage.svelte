@@ -137,7 +137,8 @@
 
 <Page title={t('setup.draw')} iconActions>
 	{#snippet actions()}
-		<SetupActions {port} disabled={locked} />
+		<!-- Locked: only the lock itself; Bag settings and Join can't be used (Trevor, 2026-10-19). -->
+		{#if !locked}<SetupActions {port} />{/if}
 		{#if game}
 			<IconButton
 				icon="lock"
@@ -153,20 +154,15 @@
 		{#if !game || !bag}
 			<p class="empty" data-testid="no-bag">{t('setup.draw.noBag')}</p>
 		{:else}
-			<p class="next">
-				{#if locked && inBag === 0}
-					<!-- Same line, so nothing moves: the draw is done, back to the Storyteller. -->
-					<span data-testid="hand-back">{t('setup.lock.handBack')}</span>
-				{:else}
-					<span class="label">{t('setup.draw.next')}</span>
-					<span data-testid="next-seat"
-						>{!next && slots.some((s) => s.state === 'in-bag')
-							? t('setup.draw.newSeat')
-							: label(next)}</span
-					>
-				{/if}
-			</p>
+			<!--
+				No "Next: Seat 5" (Trevor, 2026-10-19): the real draw order is never known, and the
+				Storyteller may want to hide it.
+			-->
 			<BagTiles {slots} {marks} seatLabel={label} onpick={(s) => draw(s.tileId, s.state)} />
+			<!-- Under the tiles, so nothing moves: the draw is done, back to the Storyteller. -->
+			{#if locked && inBag === 0}<p class="hand-back" data-testid="hand-back">
+					{t('setup.lock.handBack')}
+				</p>{/if}
 		{/if}
 	</ErrorBoundary>
 
@@ -211,15 +207,8 @@
 {/if}
 
 <style>
-	.next {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
+	.hand-back {
 		margin: var(--space-2) 0;
-	}
-	.next .label {
-		color: var(--on-surface-muted);
 	}
 	.empty {
 		margin: var(--space-4) 0;

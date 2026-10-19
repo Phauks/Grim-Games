@@ -92,9 +92,9 @@
 	/** One line of feedback, always the same height so nothing moves. */
 	const message = $derived(
 		forgotAt !== undefined
-			? t('setup.lock.forgotCountdown', { seconds: forgotSeconds })
+			? t('setup.lock.forgotCountdown', { count: forgotSeconds })
 			: waitSeconds > 0
-				? t('setup.lock.wait', { seconds: waitSeconds })
+				? t('setup.lock.wait', { count: waitSeconds })
 				: mismatch
 					? t('setup.lock.mismatch')
 					: wrong
@@ -114,7 +114,6 @@
 			id="draw-pin"
 			bind:value={pin}
 			length={PIN_LENGTH}
-			masked
 			centred
 			clearLabel={t('setup.lock.clear')}
 		/>
@@ -124,7 +123,6 @@
 				id="draw-pin-again"
 				bind:value={again}
 				length={PIN_LENGTH}
-				masked
 				centred
 				clearLabel={t('setup.lock.clear')}
 			/>
