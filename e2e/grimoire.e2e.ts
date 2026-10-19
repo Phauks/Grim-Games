@@ -234,12 +234,12 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await expect(revive).toContainText(/Now\s*Dead: Executed\s*Becomes\s*Alive/);
 	await revive.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
-	// The ghost vote can be marked used and given back (Trevor, 2026-10-17); used, its mark
-	// leaves the token.
+	// The ghost vote can be marked used and given back (Trevor, 2026-10-17); it shows on the
+	// skull badge (Trevor, 2026-10-19: one badge for both), hollow once used.
 	const ghostMark = page.locator(
-		'[data-testid="seat"][aria-label^="Seat 1:"] [data-testid="ghost-vote"]'
+		'[data-testid="seat"][aria-label^="Seat 1:"] [data-testid="dead-mark"]'
 	);
-	await expect(ghostMark).toBeAttached();
+	await expect(ghostMark).toHaveAttribute('data-vote', 'unused');
 	// One toggle, as wide as the Status button above it (Trevor, 2026-10-18).
 	const ghost = sheet.getByRole('button', { name: 'Ghost vote' });
 	const width = async (l: Locator) => (await l.boundingBox())!.width;
@@ -253,10 +253,10 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await ghost.tap();
 	await expect(ghost).toHaveAttribute('aria-pressed', 'true');
 	await expect(ghost).toContainText('Used');
-	await expect(ghostMark).toHaveCount(0);
+	await expect(ghostMark).toHaveAttribute('data-vote', 'used');
 	await ghost.tap();
 	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
-	await expect(ghostMark).toBeAttached();
+	await expect(ghostMark).toHaveAttribute('data-vote', 'unused');
 	// A good Imp: the token stays upright and takes the good colour (Trevor, 2026-10-18).
 	const impIcon = page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .token img');
 	const evilSrc = await impIcon.getAttribute('src');
@@ -1050,10 +1050,19 @@ test('the cause of death offers only characters that could have killed the playe
 	await expect(sheet.getByRole('button', { name: 'Status: Dead: Slayer' })).toBeVisible();
 	await closeSheet(page);
 
-	// Dead (Trevor, 2026-10-16): the token dimmed with a skull badge, and the ghost vote shown.
+	// Dead (Trevor, 2026-10-16): the token dimmed with a skull badge, which carries the ghost
+	// vote. Tapping the badge on the board spends it and gives it back, without opening the
+	// seat (Trevor, 2026-10-19).
 	const imp = seatLabelled(page, 'Seat 3:');
-	await expect(imp.getByTestId('dead-mark')).toBeVisible();
-	await expect(imp.getByTestId('ghost-vote')).toBeVisible();
+	const skull = imp.getByTestId('dead-mark');
+	await expect(skull).toBeVisible();
+	await expect(skull).toHaveAttribute('data-vote', 'unused');
+	await skull.tap();
+	await expect(skull).toHaveAttribute('data-vote', 'used');
+	await expect(imp).toHaveAttribute('aria-label', /dead, ghost vote used/);
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await skull.tap();
+	await expect(skull).toHaveAttribute('data-vote', 'unused');
 	await expect(seatLabelled(page, 'Seat 2:').getByTestId('dead-mark')).toHaveCount(0);
 });
 

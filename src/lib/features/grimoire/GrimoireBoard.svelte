@@ -1434,6 +1434,12 @@
 					namePlace={namePlaces[i] ?? 'below'}
 					onTap={(part) =>
 						!arranging && (part === 'note' ? editNote(seat.seatId) : openSeat(seat.seatId))}
+					onGhostVote={() =>
+						!arranging &&
+						grimoire.run({
+							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
+							seatId: seat.seatId
+						})}
 				/>
 			</div>
 		{/each}
