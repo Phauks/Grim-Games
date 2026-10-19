@@ -230,7 +230,12 @@ test('Diagnostics gathers build, device and problems on the device, without game
 	await refresh.tap();
 	await expect(panel).toHaveAttribute('aria-busy', 'false');
 
-	const report = panel.getByRole('button', { name: 'Report an issue' });
+	// Report an issue is in About's main part, above Advanced (Trevor, 2026-10-19).
+	await expect(panel.getByRole('button', { name: 'Report an issue' })).toHaveCount(0);
+	const report = page
+		.getByRole('dialog', { name: 'Settings' })
+		.getByRole('button', { name: 'Report an issue' });
+	expect((await report.boundingBox())!.y).toBeLessThan((await heading.boundingBox())!.y);
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	await report.tap();
 	const sent = await sendReport(page);

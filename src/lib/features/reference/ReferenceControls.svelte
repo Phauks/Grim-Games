@@ -31,14 +31,26 @@
 		/>
 	</div>
 	<div class="table-count">
-		<p class="count" aria-live="polite" data-testid="table-count">
-			{t('reference.tableCount', {
-				shown: query.tableShown,
-				total: entries.length,
-				filters:
-					filters === 0 ? t('reference.noFilters') : t('reference.filters', { count: filters })
-			})}
-		</p>
+		<!-- Sized for every row shown, so a search that shortens the count never lets the row
+		     reflow around it (the search's clear X moved, 2026-10-19). -->
+		<span class="count-box">
+			<p class="count" aria-live="polite" data-testid="table-count">
+				{t('reference.tableCount', {
+					shown: query.tableShown,
+					total: entries.length,
+					filters:
+						filters === 0 ? t('reference.noFilters') : t('reference.filters', { count: filters })
+				})}
+			</p>
+			<span class="count sizer" aria-hidden="true"
+				>{t('reference.tableCount', {
+					shown: entries.length,
+					total: entries.length,
+					filters:
+						filters === 0 ? t('reference.noFilters') : t('reference.filters', { count: filters })
+				})}</span
+			>
+		</span>
 		<!-- Clearing filters deletes nothing, so it is the clear-X, not the trash can. -->
 		<IconButton
 			icon="close"
@@ -80,6 +92,16 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+	}
+	.count-box {
+		display: grid;
+		justify-items: end;
+	}
+	.count-box > * {
+		grid-area: 1 / 1;
+	}
+	.sizer {
+		visibility: hidden;
 	}
 	.count {
 		margin: 0;

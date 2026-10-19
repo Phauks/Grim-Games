@@ -8,6 +8,7 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 
+	let { disabled = false }: { disabled?: boolean } = $props();
 	let open = $state(false);
 	const assistance = $derived(preferences.current.assistance);
 </script>
@@ -16,7 +17,12 @@
 	The setup and bag draw settings, reachable while dealing with the bag (Trevor, 2026-10-17).
 	The same stored values as Settings > Storyteller, so a change in one shows in the other.
 -->
-<IconButton icon="settings" label={t('settings.groupSetup')} onclick={() => (open = true)} />
+<IconButton
+	icon="settings"
+	label={t('settings.groupSetup')}
+	{disabled}
+	onclick={() => (open = true)}
+/>
 <Dialog bind:open title={t('settings.groupSetup')}>
 	<div class="settings" data-testid="bag-settings">
 		{#each STORYTELLER_GROUPS.setup as key (key)}

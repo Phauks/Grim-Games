@@ -53,8 +53,9 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: calc(0.5 * var(--u)) calc(1 * var(--u));
-		padding: calc(0.5 * var(--u)) calc(1 * var(--u))
-			calc(0.5 * var(--u) + env(safe-area-inset-bottom, 0px));
+		padding: calc(0.5 * var(--u)) max(calc(1 * var(--u)), env(safe-area-inset-right))
+			calc(0.5 * var(--u) + env(safe-area-inset-bottom, 0px))
+			max(calc(1 * var(--u)), env(safe-area-inset-left));
 		font-size: 0.8rem;
 		/* Meets the sidebar's dividing line (Trevor, 2026-10-16). */
 		border-top: 1px solid var(--border);

@@ -28,23 +28,18 @@ export const INFINITE_POSSIBILITIES: SpecialRule = {
 	parts: {
 		pool: {
 			kind: 'script-plus-hidden',
-			// Rows the Storyteller fills; 1 to 4 of them in all (Trevor, 2026-10-18).
-			extras: { townsfolk: 2, outsider: 1, minion: 1 },
+			// Rows the Storyteller fills; 1 to 4 of them in all (Trevor, 2026-10-18), one of each
+			// type (Trevor, 2026-10-19: "only 1 townsfolk custom and add 1 demon custom").
+			extras: { townsfolk: 1, outsider: 1, minion: 1, demon: 1 },
+			// The Storyteller may tell the table how many (the extras page offers a range).
 			announceRange: true,
 			count: { min: 1, max: 4 }
 		},
-		restricted: { banned: [], onlyFor: [] },
 		ruleChanges: [
 			{
 				characters: ['summoner'],
 				instructions:
 					'You decide whether a character may register as one from off the script. Don’t offer a Summoner extra Demons from off the script unless you announced them.'
-			}
-		],
-		information: [
-			{
-				characters: [],
-				instructions: 'You may tell the table a range for how many hidden extras are in play.'
 			}
 		]
 	}

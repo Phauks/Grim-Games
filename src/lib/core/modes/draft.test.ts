@@ -9,7 +9,6 @@ import {
 	canRefuse,
 	refuseOffer,
 	seatsLeft,
-	setSlots,
 	startDraft,
 	takeOffer,
 	type DraftConfig
@@ -47,8 +46,7 @@ describe('offers', () => {
 			tb.filter((c) => c.id !== 'baron'),
 			random
 		);
-		for (let n = 0; n < 20 && seatsLeft(s) > 0; n++)
-			s = takeOffer(s, s.offer[0], data.byId, random);
+		for (let n = 0; n < 20 && seatsLeft(s) > 0; n++) s = takeOffer(s, s.offer[0], random);
 		expect(s.picks).toHaveLength(7);
 		const byType = (type: string) =>
 			s.picks.filter((id) => data.byId.get(id)?.type === type).length;
@@ -77,7 +75,7 @@ describe('offers', () => {
 		let s = startDraft({ ...config, oneTypePerOffer: true }, baseCounts(8), tb, random);
 		for (let n = 0; n < 5; n++) {
 			expect(new Set(s.offer.map((id) => data.byId.get(id)?.type)).size).toBe(1);
-			s = takeOffer(s, s.offer[0], data.byId, random);
+			s = takeOffer(s, s.offer[0], random);
 		}
 	});
 
@@ -85,31 +83,30 @@ describe('offers', () => {
 		const random = seeded(5);
 		let s = startDraft({ ...config, recycleUnchosen: true }, baseCounts(7), tb, random);
 		const [kept, ...others] = s.offer;
-		s = takeOffer(s, kept, data.byId, random);
+		s = takeOffer(s, kept, random);
 		expect(s.discarded).toEqual([]);
 		for (const id of others) expect(s.pool).toContain(id);
 		expect(s.pool).not.toContain(kept);
 	});
 });
 
-describe('setup modifiers as drafted', () => {
-	it('Baron moves two Townsfolk slots to Outsiders (https://wiki.bloodontheclocktower.com/Baron)', () => {
+describe('setup modifiers in a draft', () => {
+	// Trevor, 2026-10-19: "There is no automatic changes of the count of players".
+	it('a drafted Baron changes no counts (https://wiki.bloodontheclocktower.com/Baron)', () => {
 		const random = seeded();
 		let s = startDraft(config, baseCounts(8), tb, random);
 		s = { ...s, offer: ['baron'] };
-		s = takeOffer(s, 'baron', data.byId, random);
-		expect(s.slots).toEqual({ townsfolk: 3, outsider: 3, minion: 0, demon: 1 });
+		s = takeOffer(s, 'baron', random);
+		expect(s.slots).toEqual({ townsfolk: 5, outsider: 1, minion: 0, demon: 1 });
 	});
 
-	it('a choice of changes waits for the Storyteller (https://wiki.bloodontheclocktower.com/Godfather)', () => {
+	it('a drafted Godfather changes no counts (https://wiki.bloodontheclocktower.com/Godfather)', () => {
 		const random = seeded();
 		const bmr = data.characters.filter((c) => c.edition === 'bmr');
 		let s = startDraft(config, baseCounts(8), bmr, random);
 		s = { ...s, offer: ['godfather'] };
-		s = takeOffer(s, 'godfather', data.byId, random);
-		expect(s.decisions).toEqual(['godfather']);
-		s = setSlots(s, { ...s.slots, outsider: 2, townsfolk: 4 }, random);
-		expect(s.slots.outsider).toBe(2);
+		s = takeOffer(s, 'godfather', random);
+		expect(s.slots).toEqual({ townsfolk: 5, outsider: 1, minion: 0, demon: 1 });
 		expect(s.offer.length).toBeGreaterThan(0);
 	});
 });

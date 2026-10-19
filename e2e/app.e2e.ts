@@ -194,3 +194,40 @@ test('a game in progress hides the header and footer, so a stray tap cannot leav
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 	await expect(page.getByRole('banner').getByRole('link', { name: APP_NAME })).toBeVisible();
 });
+
+// Trevor (2026-10-19): the phone's top and bottom bars match the palette. The page draws under
+// them (viewport-fit=cover) and the status bar takes the header's colour, in every theme.
+test("the phone's bars follow the header colour, custom colours included", async ({ page }) => {
+	const hex = (rgb: string) =>
+		'#' +
+		(rgb.match(/\d+/g) ?? [])
+			.slice(0, 3)
+			.map((n) => Number(n).toString(16).padStart(2, '0'))
+			.join('');
+	const barColours = () =>
+		page.evaluate(() => ({
+			meta: document.querySelector('meta[name="theme-color"]')?.getAttribute('content'),
+			header: getComputedStyle(document.querySelector('header')!).backgroundColor
+		}));
+
+	await page.goto('/');
+	await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
+		'content',
+		/viewport-fit=cover/
+	);
+	await expect(page.getByRole('banner')).toBeVisible();
+	const before = await barColours();
+	expect(before.meta).toBe(hex(before.header));
+
+	await page.evaluate(() =>
+		localStorage.setItem(
+			'grim-games:preferences:v1',
+			JSON.stringify({ colors: { '--surface': '#203040' } })
+		)
+	);
+	await page.reload();
+	await expect(page.getByRole('banner')).toBeVisible();
+	const after = await barColours();
+	expect(after.meta).toBe('#203040');
+	expect(hex(after.header)).toBe('#203040');
+});

@@ -117,3 +117,28 @@ export function infoTokens(
 ): InfoToken[] {
 	return [...STANDARD_INFO_TOKENS.filter((t) => !hidden.includes(t.id)), ...custom];
 }
+
+/** A card's words for matching: case, spaces and a closing "?" or "." don't count. */
+const cardWords = (text: string) =>
+	text
+		.toLowerCase()
+		.replace(/[?.!]+$/, '')
+		.replace(/\s+/g, ' ')
+		.trim();
+
+/**
+ * The info tokens a character's night text names, in the order it names them, each once.
+ * TPI's night text marks tokens as `*WORD*` (botc-release roles.json), info tokens among
+ * them: the Snake Charmer's "Show the *YOU ARE* & Demon tokens". The night step offers
+ * these ready to show (Trevor, 2026-10-19).
+ */
+export function infoTokensNamedIn(text: string | undefined): InfoToken[] {
+	if (!text) return [];
+	const found: InfoToken[] = [];
+	for (const match of text.matchAll(/\*([^*]+)\*/g)) {
+		const words = cardWords(match[1]);
+		const token = STANDARD_INFO_TOKENS.find((t) => cardWords(t.text) === words);
+		if (token && !found.includes(token)) found.push(token);
+	}
+	return found;
+}

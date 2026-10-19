@@ -152,6 +152,16 @@ describe('seats', () => {
 		);
 	});
 
+	it("keeps the Storyteller's general game notes, trimmed, undoable and clearable", () => {
+		const { session, ctx } = newGame(names);
+		const s = run(session, ctx, { type: 'SetGameNotes', notes: ' Ana asked about the Fang Gu\n' });
+		expect(s.game.notes).toBe('Ana asked about the Fang Gu');
+		expect('notes' in undo(s).game).toBe(false);
+		const same = dispatch(s, { type: 'SetGameNotes', notes: 'Ana asked about the Fang Gu' }, ctx);
+		expect(same.ok && codes(same)).toEqual(['no-change']);
+		expect('notes' in run(s, ctx, { type: 'SetGameNotes', notes: '  ' }).game).toBe(false);
+	});
+
 	it('moves the note with its player when seats swap', () => {
 		const { session, ctx, seats } = newGame(names);
 		const s = run(
