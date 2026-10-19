@@ -873,3 +873,28 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 		'Whale Buffet + Stowed Away + A Script of Infinite Possibilities'
 	);
 });
+
+test('Special rules sits under Game mode, and opening it closes the Game mode list', async ({
+	page
+}) => {
+	// Trevor, 2026-10-19: Special rules directly beneath Game mode; the Game mode list stayed
+	// open over the Special rules dialog.
+	await page.goto('/new');
+	const panel = modesPanel(page);
+	const modes = panel.getByRole('combobox', { name: 'Game mode' });
+	const rules = panel.getByRole('button', { name: /^Special rules/ });
+	const about = panel.getByTestId('mode-about');
+	const [modeBox, rulesBox, aboutBox] = await Promise.all(
+		[modes, rules, about].map((l) => l.boundingBox())
+	);
+	expect(rulesBox!.y).toBeGreaterThan(modeBox!.y);
+	expect(rulesBox!.y).toBeLessThan(aboutBox!.y);
+
+	await modes.tap();
+	await expect(page.getByRole('listbox')).toBeVisible();
+	// A tap that reaches the button without first closing the list, as on Trevor's phone.
+	await rules.evaluate((el: HTMLElement) => el.click());
+	await expect(page.getByRole('dialog', { name: 'Special rules' })).toBeVisible();
+	await expect(page.getByRole('listbox')).toBeHidden();
+	await noSidewaysScroll(page);
+});
