@@ -340,6 +340,13 @@ test('the header shares the script from an icon and has no Code button', async (
 	await expect(page.getByTestId('script-byline')).toHaveCount(0);
 	// Players are already in a script, so there is no code to enter here (Trevor, 2026-10-16).
 	await expect(page.getByRole('button', { name: 'Code', exact: true })).toHaveCount(0);
+	// Print and Share sit on the title's line, phones included (Trevor, 2026-10-19).
+	const title = await page.getByRole('heading', { name: 'Code Night', level: 1 }).boundingBox();
+	for (const name of ['Print script', 'Share script']) {
+		const icon = await page.getByRole('button', { name }).boundingBox();
+		expect(icon!.y).toBeLessThan(title!.y + title!.height);
+		expect(icon!.y + icon!.height).toBeGreaterThan(title!.y);
+	}
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Share Code Night' });
 	await expect(qr.getByTestId('share-url')).toHaveValue(/\/play#c=\d{6}$/);

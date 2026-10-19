@@ -168,7 +168,8 @@
 <!-- A shared link opened while /play is already showing changes only the hash. -->
 <svelte:window onhashchange={() => data && void openSharedLink()} />
 
-<Page title={script?.name ?? t('player.title')}>
+<!-- Print and Share stay on the title's line at every width (Trevor, 2026-10-19). -->
+<Page title={script?.name ?? t('player.title')} iconActions>
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. -->
 	{#snippet actions()}
