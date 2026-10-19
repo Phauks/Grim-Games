@@ -157,13 +157,14 @@
 </Select.Root>
 
 <style>
-	:global([data-scope='select'][data-part='label']) {
+	/* The label and list are shared with Combobox, the drop-down you can type into. */
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='label']) {
 		display: block;
 		margin-bottom: var(--space-2);
 		font-family: var(--font-control);
 		color: var(--on-surface-muted);
 	}
-	:global([data-scope='select'] .visually-hidden) {
+	:global(:is([data-scope='select'], [data-scope='combobox']) .visually-hidden) {
 		position: absolute;
 		width: 1px;
 		height: 1px;
@@ -214,10 +215,10 @@
 	:global([data-scope='select'][data-part='indicator'][data-state='open']) {
 		rotate: -90deg;
 	}
-	:global([data-scope='select'][data-part='positioner']) {
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='positioner']) {
 		z-index: var(--z-popover);
 	}
-	:global([data-scope='select'][data-part='content']) {
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='content']) {
 		max-height: min(60dvh, var(--available-height, 60dvh));
 		overflow-y: auto;
 		overscroll-behavior: contain;
@@ -229,7 +230,7 @@
 		box-shadow: var(--shadow);
 		outline: none;
 	}
-	:global([data-scope='select'][data-part='item']) {
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='item']) {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -242,34 +243,36 @@
 		touch-action: manipulation;
 	}
 	/* A group's heading: small and muted, like the field labels. */
-	:global([data-scope='select'][data-part='item-group-label']) {
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='item-group-label']) {
 		padding: var(--space-2) var(--space-3) var(--space-1);
 		font-family: var(--font-control);
 		font-size: 0.8rem;
 		color: var(--on-surface-muted);
 	}
-	:global([data-scope='select'][data-part='item'][data-highlighted]) {
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='item'][data-highlighted]) {
 		background: var(--surface-selected);
 	}
-	:global([data-scope='select'][data-part='item'][data-state='checked']) {
+	:global(
+		:is([data-scope='select'], [data-scope='combobox'])[data-part='item'][data-state='checked']
+	) {
 		box-shadow: inset 0 0 0 1px var(--choice-selected-border);
 	}
-	:global([data-scope='select'][data-part='item-text']) {
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='item-text']) {
 		display: grid;
 		min-width: 0;
 	}
-	:global([data-scope='select'][data-part='item-text'] small) {
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='item-text'] small) {
 		font-family: var(--font-body);
 		font-size: 0.8rem;
 		color: var(--on-surface-muted);
 	}
-	:global([data-scope='select'][data-part='item-indicator']) {
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='item-indicator']) {
 		display: grid;
 		flex: none;
 		color: var(--accent);
 	}
 	/* Only the chosen option shows its tick; the others keep the space, so labels line up. */
-	:global([data-scope='select'][data-part='item-indicator'][hidden]) {
+	:global(:is([data-scope='select'], [data-scope='combobox'])[data-part='item-indicator'][hidden]) {
 		visibility: hidden;
 	}
 </style>

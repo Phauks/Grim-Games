@@ -689,15 +689,20 @@ test('Play starts a new game with a found script, without saving it', async ({ p
 
 	// New game opens with it chosen (Trevor, 2026-10-17: the Library stays what was saved).
 	await expect(page).toHaveURL(/\/new$/);
+	// Found in the script search, beside the base three (Trevor, 2026-10-19).
 	const script = page.getByRole('radiogroup', { name: 'Script' });
-	await expect(script.getByRole('radio', { name: 'Big Town' })).toBeChecked();
+	const search = page.getByRole('combobox', { name: 'Find a script' });
+	await expect(search).toHaveValue('Big Town');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 
 	// Still offered after a reload, and never saved.
 	await page.goto('/new');
-	await expect(script.getByRole('radio', { name: 'Big Town' })).toHaveCount(1);
 	await expect(script.getByRole('radio', { name: 'Trouble Brewing' })).toBeChecked();
+	await expect(search).toHaveValue('');
+	await search.tap();
+	await expect(page.getByRole('option').filter({ hasText: 'Big Town' })).toHaveCount(1);
+	await page.keyboard.press('Escape');
 	await page.goto('/scripts');
 	await page.getByRole('button', { name: /^Big Town/ }).tap();
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'false');

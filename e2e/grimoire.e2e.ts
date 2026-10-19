@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { pickScript } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
 async function startGame(page: Page, script = 'Trouble Brewing') {
 	await page.goto('/new');
-	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script, { exact: true }).tap();
+	await pickScript(page, script);
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await expect(page.getByTestId('seat')).toHaveCount(8);

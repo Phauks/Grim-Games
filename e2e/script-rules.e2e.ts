@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { pickScript } from './new-game.ts';
 
 // A script's own rules (`_meta.bootlegger`) show on the Bootlegger, and a new game starts with
 // the script's Fabled and Loric in play (Trevor, 2026-10-18). The World Cup 2025 scripts carry
@@ -29,10 +30,7 @@ test("a script's rules show on the Bootlegger, and its Fabled and Loric start in
 	await expect(page.getByText(RULE)).toBeVisible();
 
 	await page.goto('/new');
-	await page
-		.getByRole('radiogroup', { name: 'Script' })
-		.getByText('Empty Chair', { exact: true })
-		.tap();
+	await pickScript(page, 'Empty Chair');
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 
