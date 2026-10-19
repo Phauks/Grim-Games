@@ -29,9 +29,28 @@ export function lastRoom(): string | undefined {
 	return readStoredText(LAST_ROOM_KEY);
 }
 
+/** The Storyteller's name in the last room, for /play's byline (Trevor, 2026-10-19). */
+const STORYTELLER_KEY = 'grim-games-room-storyteller';
+
+function storytellerOf(code: string | undefined): string | undefined {
+	const stored = readStored<{ code: string; name: string }>(STORYTELLER_KEY);
+	return code && stored?.code === code ? stored.name : undefined;
+}
+
+/** Who runs the game in the room this phone last joined, while it is remembered. */
+export const roomStoryteller = $state<{ name?: string }>({ name: storytellerOf(lastRoom()) });
+
+function setStoryteller(code: string, name: string | undefined): void {
+	if (roomStoryteller.name === name) return;
+	roomStoryteller.name = name;
+	writeStored(STORYTELLER_KEY, name ? { code, name } : undefined);
+}
+
 /** Forgets the last room when it is `code` (it closed, or refused this phone). */
 export function forgetRoom(code: string): void {
-	if (lastRoom() === code) writeStoredText(LAST_ROOM_KEY, undefined);
+	if (lastRoom() !== code) return;
+	writeStoredText(LAST_ROOM_KEY, undefined);
+	setStoryteller(code, undefined);
 }
 
 export class RoomPlayer {
@@ -48,8 +67,10 @@ export class RoomPlayer {
 			code,
 			{ type: 'hello', role: 'player', key: deviceKey(), protocol: ROOM_PROTOCOL },
 			(m) => {
-				if (m.type === 'player-view') this.view = m;
-				else if (m.type === 'script') this.script = m.script;
+				if (m.type === 'player-view') {
+					this.view = m;
+					setStoryteller(code, m.public?.storytellerName?.trim() || undefined);
+				} else if (m.type === 'script') this.script = m.script;
 			}
 		);
 	}

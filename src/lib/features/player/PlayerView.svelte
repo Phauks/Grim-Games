@@ -38,6 +38,7 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
 	import PlayerRoom from './PlayerRoom.svelte';
+	import { roomStoryteller } from '#lib/features/room/player.svelte.ts';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
 
@@ -177,7 +178,12 @@
 	{/snippet}
 	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). -->
 	{#snippet subtitle()}
-		<ScriptByline author={script?.meta.author} {version} inline />&nbsp;
+		<ScriptByline
+			author={script?.meta.author}
+			{version}
+			storyteller={roomStoryteller.name}
+			inline
+		/>&nbsp;
 	{/snippet}
 
 	{#if error}
