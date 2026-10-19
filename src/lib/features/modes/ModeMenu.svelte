@@ -28,6 +28,8 @@
 	import SpectersSheet from './SpectersSheet.svelte';
 	import { townGroupOf } from './town-groups.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
+	import NameDialog from '#lib/features/library/NameDialog.svelte';
+	import { MAX_STORYTELLER_NAME } from '#lib/features/game/storyteller-name.svelte.ts';
 
 	/**
 	 * The game's info and a game mode's own actions, on the board's corner script name (Trevor,
@@ -39,12 +41,15 @@
 	 */
 	interface Props {
 		game: Game;
-		/** The corner name, which opens the menu; without it the menu is a dialog opened by `open` (the board's ⋯, when the corner has no room for the name). */
+		/** The corner name, which opens the menu; without it the menu is a dialog opened by `open` (the board's ⋯, while the corner name is hidden). */
 		children?: Snippet;
 		open?: boolean;
+		/** Renames the Storyteller: their row is then tappable (Trevor, 2026-10-19: "edit storyteller name in bottom left"). */
+		onStorytellerName?: (name: string) => void;
 	}
 
-	let { game, children, open = $bindable(false) }: Props = $props();
+	let { game, children, open = $bindable(false), onStorytellerName }: Props = $props();
+	let renaming = $state(false);
 	const gameId = $derived(game.gameId);
 
 	const group = $derived(townGroupOf(gameId));
@@ -136,7 +141,17 @@
 			{#each info as row (row.key)}
 				<tr data-field={row.key}>
 					<th scope="row">{row.label}</th>
-					<td>{row.value?.trim() || none}</td>
+					<td>
+						{#if row.key === 'storyteller' && onStorytellerName}<Button
+								variant="quiet"
+								icon="rename"
+								data-testid="storyteller-edit"
+								onclick={() => {
+									open = false;
+									renaming = true;
+								}}>{row.value?.trim() || none}</Button
+							>{:else}{row.value?.trim() || none}{/if}
+					</td>
 				</tr>
 			{/each}
 		</tbody>
@@ -225,6 +240,16 @@
 {:else}
 	<Dialog bind:open title={t('modes.info.title')}>{@render actions()}</Dialog>
 {/if}
+{#if onStorytellerName}
+	<NameDialog
+		bind:open={renaming}
+		title={t('modes.info.storyteller')}
+		initial={game.storytellerName ?? ''}
+		maxlength={MAX_STORYTELLER_NAME}
+		blankName={() => ''}
+		onsave={onStorytellerName}
+	/>
+{/if}
 {#if inspected}<ModeInspectDialog bind:open={inspecting} mode={inspected} />{/if}
 {#if specters && mode}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
 
@@ -282,6 +307,11 @@
 	.info td {
 		padding-block: var(--space-1);
 		vertical-align: top;
+	}
+	/* The Storyteller's row is a button: its name, tapped to rename them. */
+	.info td :global(button) {
+		margin-block: calc(-1 * var(--space-1));
+		justify-content: flex-start;
 	}
 	.actions:empty {
 		display: none;

@@ -1,20 +1,19 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+import { nameStoryteller } from './new-game.ts';
 
 // Players' phones in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
 // seat and name, the Storyteller approves, and the seat is named in the grimoire.
 
 async function startGame(page: Page, storyteller?: string) {
 	await page.goto('/new');
-	if (storyteller !== undefined) {
-		await page.getByTestId('storyteller-name').fill(storyteller);
-	}
 	await page
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	if (storyteller !== undefined) await nameStoryteller(page, storyteller);
 	return new URL(page.url()).pathname;
 }
 

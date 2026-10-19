@@ -110,8 +110,6 @@
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
-	import NameDialog from '#lib/features/library/NameDialog.svelte';
-	import { MAX_STORYTELLER_NAME } from '#lib/features/game/storyteller-name.svelte.ts';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -1012,7 +1010,6 @@
 	);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
 	let menuOpen = $state(false);
-	let storytellerOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
 	let infoSheet = $state<ReturnType<typeof InfoTokensSheet>>();
@@ -1143,7 +1140,16 @@
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
+	/**
+	 * The corner name is hidden (switched off, or no room beside the seats): Game info is
+	 * then on the ⋯ menu instead, so a mode's actions stay in reach. Otherwise only the corner
+	 * has it (Trevor, 2026-10-19: "remove game info and storyteller" from the menu).
+	 */
+	const cornerHidden = $derived(
+		!(showTitle && game.script.meta?.name) || (width > 0 && corner < 2 * rootFont)
+	);
 	let modeMenuOpen = $state(false);
+	const renameStoryteller = (name: string) => grimoire.run({ type: 'SetStorytellerName', name });
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
 	function fromMenu(action: () => void) {
@@ -1633,7 +1639,7 @@
 				bind:clientHeight={titleH}
 			>
 				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
-				<ModeMenu {game}
+				<ModeMenu {game} onStorytellerName={renameStoryteller}
 					><span
 						class="script-name"
 						class:mode={modeInName}
@@ -1685,8 +1691,6 @@
 	</div>
 </div>
 
-<ModeMenu {game} bind:open={modeMenuOpen} />
-
 <!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
 <Dialog bind:open={menuOpen} title="Grimoire">
 	<div class="menu">
@@ -1699,15 +1703,11 @@
 		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => (notesOpen = true))}
 			>Notes</Button
 		>
-		<!-- Who runs the game, as typed on New game (Trevor, 2026-10-19). -->
-		<Button variant="quiet" icon="rename" onclick={() => fromMenu(() => (storytellerOpen = true))}>
-			Storyteller
-		</Button>
-		<!-- The game's info and a mode's own actions are on the corner name (ModeMenu, Trevor
-			2026-10-18, 2026-10-19); here too, for when the corner has no room for the name. -->
-		<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
-			Game info
-		</Button>
+		{#if cornerHidden}
+			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
+				Game info
+			</Button>
+		{/if}
 		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
 		     apart at the bottom (Trevor, 2026-10-18). -->
 		<hr class="menu-rule" />
@@ -1768,14 +1768,7 @@
 	</div>
 </Dialog>
 
-<NameDialog
-	bind:open={storytellerOpen}
-	title="Storyteller"
-	initial={game.storytellerName ?? ''}
-	maxlength={MAX_STORYTELLER_NAME}
-	blankName={() => ''}
-	onsave={(name) => grimoire.run({ type: 'SetStorytellerName', name })}
-/>
+<ModeMenu {game} bind:open={modeMenuOpen} onStorytellerName={renameStoryteller} />
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 <HeldReminderDialog
 	bind:this={heldDialog}

@@ -47,6 +47,11 @@
 	import { setupSelection } from './selection.svelte.ts';
 	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import { afterTownBag } from '#lib/features/modes/town-setup.ts';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import {
+		MAX_STORYTELLER_NAME,
+		storytellerName
+	} from '#lib/features/game/storyteller-name.svelte.ts';
 
 	interface Props {
 		port: SetupGamePort;
@@ -69,6 +74,20 @@
 		if (game) setupSelection.open(game.gameId, game.seating.length);
 	});
 	const s = $derived(setupSelection.state);
+
+	/**
+	 * Who runs the game, named here where the characters are picked rather than on New game
+	 * (Trevor, 2026-10-19). Saved to the game when the field is left or Enter is pressed, so
+	 * the game's history gets one entry, not one per letter; also kept as the next game's name.
+	 */
+	let storyteller = $state<string>();
+	const shownStoryteller = $derived(storyteller ?? game?.storytellerName ?? '');
+	function saveStoryteller() {
+		if (storyteller === undefined || !game) return;
+		const name = storyteller.trim();
+		if (name !== (game.storytellerName ?? '')) send({ type: 'SetStorytellerName', name });
+		storyteller = undefined;
+	}
 
 	const lookup = (id: CharacterId): Character | undefined => port.lookup?.get(id);
 	const findByName = (name: string) =>
@@ -365,6 +384,21 @@
 		>{/snippet}
 	{#snippet side()}
 		<ErrorBoundary area="setup">
+			<div class="storyteller" onfocusout={saveStoryteller}>
+				<TextField
+					label={t('modes.storytellerName')}
+					value={shownStoryteller}
+					maxlength={MAX_STORYTELLER_NAME}
+					autocomplete="off"
+					disabled={!game}
+					oninput={(v) => {
+						storyteller = v;
+						storytellerName.set(v);
+					}}
+					oncommit={saveStoryteller}
+					testid="storyteller-name"
+				/>
+			</div>
 			<PlayerCountSheet
 				players={s.players}
 				onChange={(n) => setupSelection.setPlayers(n)}

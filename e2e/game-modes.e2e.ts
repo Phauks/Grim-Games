@@ -761,14 +761,18 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await expect(shareCode).toHaveText(/^\s*\d{3}\s?\d{3}\s*$/);
 	const code = (await shareCode.textContent())!.replace(/\s/g, '');
 
-	// Specters opens over the board from the Game mode menu (Trevor, 2026-10-18: the grimoire
-	// stays in reach). Before setup the corner has no room for the name, so ⋯ has it too.
+	// Specters opens over the board from Game info (Trevor, 2026-10-18: the grimoire stays in
+	// reach). Where the corner has no room for the name before setup, ⋯ has Game info instead.
 	await page.goto(`/grimoire/${gameId}`);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Game info' })
-		.tap();
+	const more = page.getByRole('dialog', { name: 'Grimoire' });
+	const entry = more.getByRole('button', { name: 'Game info' });
+	if (await entry.count()) await entry.tap();
+	else {
+		await page.keyboard.press('Escape');
+		await expect(more).toBeHidden();
+		await page.getByTestId('mode-menu').tap();
+	}
 	await page
 		.getByRole('dialog', { name: 'Game info' })
 		.getByRole('button', { name: 'Specters vote and ability' })
@@ -1014,7 +1018,7 @@ test('each special rule takes its own line under the script name in the board co
 	const lines = corner.getByTestId('game-mode');
 	if (test.info().project.name === 'phone') {
 		// A phone's corner beside seat 5 has no room for the name and a rule line: the name
-		// hides, and the ⋯ menu's Game info has the mode and its rules instead.
+		// hides, and the ⋯ menu has Game info, with the mode and its rules, instead.
 		await expect(corner).toBeHidden();
 		await page.getByRole('button', { name: 'More', exact: true }).tap();
 		await expect(
