@@ -22,11 +22,13 @@
 		type Night,
 		validDeathCauses,
 		daySentence,
+		type DayCount,
 		type DayReminder,
 		type ValidDeathCause
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CountDialog from './CountDialog.svelte';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -320,6 +322,29 @@
 	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
 	const teams = $derived(livingByTeam(g));
 	const ghostVotes = $derived(ghostVotesLeft(g));
+	const aliveLabel = $derived(
+		t('day.aliveLabel', {
+			count: teams.alive,
+			total: g.seating.length,
+			good: teams.good,
+			evil: teams.evil
+		})
+	);
+	const goodLabel = $derived(t('day.goodLabel', { count: teams.good }));
+	const evilLabel = $derived(t('day.evilLabel', { count: teams.evil }));
+	const ghostLabel = $derived(t('day.ghostVotesLabel', { count: ghostVotes }));
+	const votesLabel = $derived(
+		t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })
+	);
+	// ── How a count was worked out, from tapping it ──
+	let countOpen = $state(false);
+	let countShown = $state<DayCount | 'votes'>();
+	let countTitle = $state('');
+	function openCount(count: DayCount | 'votes', title: string) {
+		countShown = count;
+		countTitle = title;
+		countOpen = true;
+	}
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
 	let toolbarSize = $state<ResizeObserverSize[]>();
 	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
@@ -398,61 +423,56 @@
 			or team colours; the words are in each one's accessible name.
 		-->
 		<div class="counts">
-			<span
+			<!-- Each one opens how it was worked out (Trevor, 2026-10-19). -->
+			<button
+				type="button"
 				class="badge"
-				role="note"
 				data-testid="alive-count"
-				aria-label={t('day.aliveLabel', {
-					count: teams.alive,
-					total: g.seating.length,
-					good: teams.good,
-					evil: teams.evil
-				})}
-				title={t('day.aliveLabel', {
-					count: teams.alive,
-					total: g.seating.length,
-					good: teams.good,
-					evil: teams.evil
-				})}
+				aria-label={aliveLabel}
+				title={aliveLabel}
+				onclick={() => openCount('alive', aliveLabel)}
 				><Icon name="alive" />{t('day.aliveBadge', {
 					count: teams.alive,
 					total: g.seating.length
-				})}</span
+				})}</button
 			>
-			<span
+			<button
+				type="button"
 				class="badge good"
 				data-testid="alive-good"
-				role="note"
-				aria-label={t('day.goodLabel', { count: teams.good })}
-				title={t('day.goodLabel', { count: teams.good })}>{teams.good}</span
+				aria-label={goodLabel}
+				title={goodLabel}
+				onclick={() => openCount('good', goodLabel)}>{teams.good}</button
 			>
-			<span
+			<button
+				type="button"
 				class="badge evil"
 				data-testid="alive-evil"
-				role="note"
-				aria-label={t('day.evilLabel', { count: teams.evil })}
-				title={t('day.evilLabel', { count: teams.evil })}>{teams.evil}</span
+				aria-label={evilLabel}
+				title={evilLabel}
+				onclick={() => openCount('evil', evilLabel)}>{teams.evil}</button
 			>
-			<span
+			<button
+				type="button"
 				class="badge"
-				role="note"
 				data-testid="ghost-votes"
-				aria-label={t('day.ghostVotesLabel', { count: ghostVotes })}
-				title={t('day.ghostVotesLabel', { count: ghostVotes })}
-				><Icon name="ghostVote" />{ghostVotes}</span
+				aria-label={ghostLabel}
+				title={ghostLabel}
+				onclick={() => openCount('ghostVotes', ghostLabel)}
+				><Icon name="ghostVote" />{ghostVotes}</button
 			>
 			<!--
 				Votes the first nominee needs to go on the block, from who is alive now, so a death
 				mid-day updates it. Nominations and votes are not tracked, so "more than the player
 				on the block" is left to the Storyteller.
 			-->
-			<span
+			<button
+				type="button"
 				class="badge votes"
-				role="note"
 				data-testid="votes-needed"
-				aria-label={t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })}
-				title={t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })}
-				><Icon name="vote" />{block.needed}</span
+				aria-label={votesLabel}
+				title={votesLabel}
+				onclick={() => openCount('votes', votesLabel)}><Icon name="vote" />{block.needed}</button
 			>
 		</div>
 	</div>
@@ -749,6 +769,8 @@
 	{/if}
 </ConfirmDialog>
 
+<CountDialog bind:open={countOpen} game={g} count={countShown} title={countTitle} />
+
 <style>
 	.panel {
 		display: grid;
@@ -952,12 +974,23 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
-	/* Team colour on the border only: the text stays readable on a phone (Trevor). */
+	.badge {
+		background: transparent;
+		color: inherit;
+		font-family: inherit;
+		cursor: pointer;
+	}
+	/* Filled in the team's colour, the number on top (Trevor, 2026-10-19). --on-good reads on
+	   both (badge-colours.test.ts). */
 	.badge.good {
 		border-color: var(--good);
+		background: var(--good);
+		color: var(--on-good);
 	}
 	.badge.evil {
 		border-color: var(--evil);
+		background: var(--evil);
+		color: var(--on-good);
 	}
 	.badge.votes {
 		border-color: var(--heading);
