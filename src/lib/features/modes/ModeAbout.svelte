@@ -1,9 +1,10 @@
 <script lang="ts">
-	import type { GameMode } from '#lib/core/modes/index.ts';
+	import type { GameMode, SpecialRule } from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { aboutApproved } from './approved-about.ts';
 	import { customModes } from './custom-modes.svelte.ts';
+	import { customRules } from './custom-rules.svelte.ts';
 	import ModeValue from './ModeValue.svelte';
 
 	/**
@@ -13,7 +14,8 @@
 	 * only where a source names them. `compact` keeps each row but the description to one line.
 	 */
 	interface Props {
-		mode: GameMode;
+		/** A game mode or a special rule: both carry the same About. */
+		mode: GameMode | SpecialRule;
 		compact?: boolean;
 	}
 
@@ -22,7 +24,9 @@
 	// A mode file someone added is their own wording; a built-in one shows once Trevor has
 	// approved its text, or with our own wording on.
 	const description = $derived(
-		customModes.list.some((m) => m.id === mode.id) ||
+		(mode.kind === 'special-rule' ? customRules.list : customModes.list).some(
+			(m) => m.id === mode.id
+		) ||
 			preferences.current.ownWording ||
 			aboutApproved(mode.id, mode.about)
 			? mode.about

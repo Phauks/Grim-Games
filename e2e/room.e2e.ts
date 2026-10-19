@@ -145,6 +145,43 @@ test('Join game in the menu takes a typed code, with spaces, and says when the r
 	await expect(page.getByRole('textbox', { name: 'Room code from the Storyteller' })).toBeVisible();
 });
 
+test('the room code goes in one box per digit, and takes no more than the code holds', async ({
+	page
+}) => {
+	// Trevor (2026-10-18): limit entry to the code's real length, with a box for each digit.
+	await page.goto('/join');
+	const field = page.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const boxes = page.locator('.code-field .box');
+	const join = page.getByRole('button', { name: 'Join', exact: true });
+	await expect(boxes).toHaveCount(6);
+	await field.tap();
+	await field.pressSequentially('48291');
+	await expect(boxes).toHaveText(['4', '8', '2', '9', '1', '']);
+	await expect(join).toBeDisabled();
+	// Letters are dropped, and a seventh digit doesn't fit.
+	await field.pressSequentially('x37');
+	await expect(boxes).toHaveText(['4', '8', '2', '9', '1', '3']);
+	await expect(field).toHaveValue('482913');
+	await expect(join).toBeEnabled();
+	// Backspace steps back one box.
+	await field.press('Backspace');
+	await expect(boxes).toHaveText(['4', '8', '2', '9', '1', '']);
+	// A pasted code fills every box, spaces and all.
+	await page.getByRole('button', { name: 'Clear' }).tap();
+	await expect(boxes).toHaveText(['', '', '', '', '', '']);
+	await field.focus();
+	await field.fill('482 913');
+	await expect(boxes).toHaveText(['4', '8', '2', '9', '1', '3']);
+	// The boxes fit beside each other on a phone, and the X sits after the last one.
+	const last = (await boxes.last().boundingBox())!;
+	const clear = (await page.getByRole('button', { name: 'Clear' }).boundingBox())!;
+	expect(clear.x).toBeGreaterThanOrEqual(last.x + last.width - 1);
+	expect(
+		new Set(await boxes.evaluateAll((b) => b.map((x) => Math.round(x.getBoundingClientRect().top))))
+			.size
+	).toBe(1);
+});
+
 test('the Worker refuses bad room requests', async ({ request }) => {
 	expect((await request.get('/api/room/ABCDEF')).status()).toBe(400);
 	expect((await request.post('/api/rooms', { data: { hostKeyHash: 'nope' } })).status()).toBe(400);

@@ -20,6 +20,7 @@
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
+	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import type { FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 	import { fetchSharedRef, shareTargetFor } from '#lib/features/scripts/share-codes.ts';
@@ -177,6 +178,7 @@
 			title={script?.name ?? 'Script'}
 			author={script?.meta.author}
 			{version}
+			logo={script ? scriptLogo(script) : undefined}
 			target={shareTarget}
 		/>
 	{/snippet}

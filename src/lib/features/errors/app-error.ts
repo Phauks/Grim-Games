@@ -35,12 +35,13 @@ export function scrubUrls(text: string): string {
 }
 
 /**
- * Room codes, share codes and account ids live in the path (/join/<code>, /api/room/<code>,
- * /api/share/<code>, /api/account/sessions/<id>, /api/account/docs/<kind>/<id>), so they
+ * Room codes, share codes, shared recap ids and account ids live in the path (/join/<code>,
+ * /api/room/<code>, /api/share/<code>, /recap/<id>, /api/recap/<id>,
+ * /api/account/sessions/<id>, /api/account/docs/<kind>/<id>), so they
  * are masked wherever a path appears, including the page a problem happened on.
  */
 const PATH_CODES =
-	/(\/(?:join|api\/room|api\/share|api\/account\/sessions|api\/account\/docs\/[\w-]+)\/)[^/\s?#)'"]+/g;
+	/(\/(?:join|api\/room|api\/share|recap|api\/recap|api\/account\/sessions|api\/account\/docs\/[\w-]+)\/)[^/\s?#)'"]+/g;
 
 export function maskPathCodes(text: string): string {
 	return text.replace(PATH_CODES, '$1••••');

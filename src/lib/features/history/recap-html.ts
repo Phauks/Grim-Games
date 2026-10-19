@@ -15,6 +15,7 @@
 import type { Alignment } from '#lib/core/data/types.ts';
 import type { SeatId } from '#lib/core/model/types.ts';
 import { PRINT_PALETTE } from '#lib/ui/themes/print.ts';
+import { IMAGE_DATA } from './recap-share-api.ts';
 
 export interface RecapCharacter {
 	name: string;
@@ -107,7 +108,7 @@ function seatRow(seat: RecapSeat): string {
 
 /** Image data URLs only: anything else stays out of the file. */
 const isImageData = (url: string | undefined): url is string =>
-	url !== undefined && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(url);
+	url !== undefined && IMAGE_DATA.test(url);
 
 /**
  * The recap as one HTML file. `image` is the grimoire as a data URL, left out unless

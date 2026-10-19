@@ -11,6 +11,7 @@ import {
 	labelUses,
 	libraryKey,
 	folderMoveProblem,
+	mergeLabels,
 	moveFolder,
 	parseLabels,
 	renameLabel,
@@ -251,5 +252,67 @@ describe('nested folders', () => {
 			);
 		expect(keys('club')).toEqual(['k1', 'k2']);
 		expect(keys('done')).toEqual(['k2']);
+	});
+});
+
+describe('mergeLabels (two devices changed the Library before syncing)', () => {
+	function start(): LibraryLabels {
+		let s = emptyLabels();
+		s = addLabel(s, 'tags', 'Favorite', 't1');
+		s = addLabel(s, 'folders', 'Club night', 'f1');
+		s = addLabel(s, 'folders', 'Done', 'f2');
+		s = setFolder(s, 'k1', 'f1');
+		s = toggleTag(s, 'k1', 't1');
+		return s;
+	}
+
+	it('keeps what each side added, and each side’s own renames and moves', () => {
+		const base = start();
+		let mine = addLabel(base, 'folders', 'Mine', 'f3');
+		mine = renameLabel(mine, 'folders', 'f1', 'Club nights');
+		let theirs = addLabel(base, 'tags', 'Theirs', 't2');
+		theirs = setFolder(theirs, 'k1', 'f2');
+		theirs = toggleTag(theirs, 'k2', 't2');
+		const merged = mergeLabels(base, mine, theirs);
+		expect(merged.folders.map((f) => f.name).sort()).toEqual(['Club nights', 'Done', 'Mine']);
+		expect(merged.tags.map((t) => t.name).sort()).toEqual(['Favorite', 'Theirs']);
+		expect(labelsFor(merged, 'k1')).toEqual({ tags: ['t1'], folder: 'f2' });
+		expect(labelsFor(merged, 'k2').tags).toEqual(['t2']);
+	});
+
+	it('a delete wins over an untouched item, but not over one the other side changed', () => {
+		const base = start();
+		const mine = deleteLabel(deleteLabel(base, 'folders', 'f2'), 'tags', 't1');
+		const theirs = renameLabel(base, 'tags', 't1', 'Favourite');
+		const merged = mergeLabels(base, mine, theirs);
+		expect(merged.folders.map((f) => f.id)).toEqual(['f1']);
+		expect(merged.tags).toEqual([{ id: 't1', name: 'Favourite' }]);
+	});
+
+	it('when both changed the same thing, this device’s change wins', () => {
+		const base = start();
+		const mine = renameLabel(base, 'folders', 'f1', 'Mine');
+		const theirs = renameLabel(base, 'folders', 'f1', 'Theirs');
+		expect(mergeLabels(base, mine, theirs).folders.find((f) => f.id === 'f1')?.name).toBe('Mine');
+	});
+
+	it('mends a loop made by two moves, and numbers a name made on both devices', () => {
+		const base = start();
+		const mine = moveFolder(base, 'f1', 'f2');
+		const theirs = addLabel(moveFolder(base, 'f2', 'f1'), 'folders', 'Club night', 'f9');
+		const merged = mergeLabels(base, mine, theirs);
+		// Every folder still reaches the top level.
+		for (const f of merged.folders) expect(folderPath(merged, f.id).length).toBeGreaterThan(0);
+		const top = merged.folders.filter((f) => !f.parent).map((f) => f.name);
+		expect(new Set(top).size).toBe(top.length);
+	});
+
+	it('with no shared starting copy, keeps everything from both', () => {
+		const mine = addLabel(emptyLabels(), 'folders', 'Club night', 'a');
+		const theirs = addLabel(emptyLabels(), 'folders', 'Club night', 'b');
+		expect(mergeLabels(undefined, mine, theirs).folders.map((f) => f.name)).toEqual([
+			'Club night',
+			'Club night 2'
+		]);
 	});
 });

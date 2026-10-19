@@ -404,3 +404,97 @@ export function byName(labels: readonly Label[]): Label[] {
 		a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true })
 	);
 }
+
+const sameValue = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+/** One value changed on two devices: the side that changed it wins; when both did, an edit beats a delete, then this device. */
+function pickChanged<T>(
+	base: T | undefined,
+	mine: T | undefined,
+	theirs: T | undefined
+): T | undefined {
+	if (sameValue(mine, base)) return theirs;
+	if (sameValue(theirs, base)) return mine;
+	return mine ?? theirs;
+}
+
+/** Keeps what both have, plus what either added; drops what either took away. */
+function mergeSet(
+	base: readonly string[],
+	mine: readonly string[],
+	theirs: readonly string[]
+): string[] {
+	const was = new Set(base);
+	const other = new Set(theirs);
+	const kept = mine.filter((x) => other.has(x) || !was.has(x));
+	return [...kept, ...theirs.filter((x) => !was.has(x) && !kept.includes(x))];
+}
+
+function mergeById(
+	base: readonly Label[],
+	mine: readonly Label[],
+	theirs: readonly Label[]
+): Label[] {
+	const byId = (list: readonly Label[]) => new Map(list.map((l) => [l.id, l]));
+	const [b, m, t] = [byId(base), byId(mine), byId(theirs)];
+	const ids = [...new Set([...m.keys(), ...t.keys(), ...b.keys()])];
+	return ids.flatMap((id) => {
+		const label = pickChanged(b.get(id), m.get(id), t.get(id));
+		return label ? [label] : [];
+	});
+}
+
+/** Two folders or tags side by side with one name (made on two devices): the later one gets a number. */
+function uniqueNames(labels: Label[], kind: LabelKind): Label[] {
+	const out: Label[] = [];
+	for (const label of labels) {
+		const near = kind === 'tags' ? out : out.filter((l) => l.parent === label.parent);
+		let name = label.name;
+		for (let n = 2; !nameFree(near, name); n++) name = `${label.name} ${n}`;
+		out.push(name === label.name ? label : { ...label, name });
+	}
+	return out;
+}
+
+/**
+ * Two devices' labels combined (account sync; agreed with the Accounts thread, 2026-10-18):
+ * folders, tags and each item's labels are merged one by one from `base`, the copy both
+ * started from (none when the account had none yet). A change on one side is kept; a delete
+ * wins only over something the other side left alone; when both changed the same thing, this
+ * device's change wins. Folder loops and names used twice are repaired.
+ */
+export function mergeLabels(
+	base: LibraryLabels | undefined,
+	mine: LibraryLabels,
+	theirs: LibraryLabels
+): LibraryLabels {
+	const b = base ?? emptyLabels();
+	const scripts: Record<string, ScriptLabels> = {};
+	const none: ScriptLabels = { tags: [] };
+	for (const key of new Set([...Object.keys(mine.scripts), ...Object.keys(theirs.scripts)])) {
+		const [was, m, t] = [
+			b.scripts[key] ?? none,
+			mine.scripts[key] ?? none,
+			theirs.scripts[key] ?? none
+		];
+		const folder = pickChanged(was.folder, m.folder, t.folder);
+		const name = pickChanged(was.name, m.name, t.name);
+		scripts[key] = {
+			tags: mergeSet(was.tags, m.tags, t.tags),
+			...(folder ? { folder } : {}),
+			...(name ? { name } : {})
+		};
+	}
+	const merged = parseLabels({
+		version: LIBRARY_LABELS_VERSION,
+		tags: mergeById(b.tags, mine.tags, theirs.tags),
+		folders: mergeById(b.folders, mine.folders, theirs.folders),
+		scripts
+	});
+	if (!merged) return mine;
+	return {
+		...merged,
+		tags: uniqueNames(merged.tags, 'tags'),
+		folders: uniqueNames(merged.folders, 'folders')
+	};
+}

@@ -14,6 +14,8 @@
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import PlayerCountSheet from '#lib/features/setup/PlayerCountSheet.svelte';
 	import GameModesPanel from '#lib/features/modes/GameModesPanel.svelte';
+	import { startHref, startInMode } from '#lib/features/modes/start.ts';
+	import { NO_RESTRICTIONS, STANDARD, type SpecialRule } from '#lib/core/modes/index.ts';
 	import ScriptPicker from '#lib/features/modes/ScriptPicker.svelte';
 	import {
 		loadScriptChoice,
@@ -32,11 +34,25 @@
 	let players = $state(8);
 	let starting = $state(false);
 
-	async function start() {
+	async function start(rules: readonly SpecialRule[]) {
 		starting = true;
 		try {
 			const data = await loadOfficialData();
-			const open = await OpenGame.create(data, toScript(loadScriptChoice(edition, data)), players);
+			const loaded = loadScriptChoice(edition, data);
+			if (rules.length) {
+				// Special rules on a Standard game: kept beside the game, as a mode's are.
+				const open = await startInMode({
+					modeId: STANDARD.id,
+					rules,
+					restrictions: NO_RESTRICTIONS,
+					data,
+					loaded,
+					create: (s) => OpenGame.create(data, s, players)
+				});
+				await goto(startHref(STANDARD.id, rules, open.game.gameId));
+				return;
+			}
+			const open = await OpenGame.create(data, toScript(loaded), players);
 			await goto(resolve('/grimoire/[gameId]', { gameId: open.game.gameId }));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
@@ -50,12 +66,12 @@
 <section>
 	<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
 	<GameModesPanel>
-		{#snippet standard()}
+		{#snippet standard(rules)}
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
 			<ScriptPicker label="Script" value={edition} onChange={(v) => (edition = v)} />
 			<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
 			<PlayerCountSheet {players} onChange={(n) => (players = n)} />
-			<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}
+			<Button variant="accent" icon="grimoire" disabled={starting} onclick={() => start(rules)}
 				>Start game</Button
 			>
 		{/snippet}

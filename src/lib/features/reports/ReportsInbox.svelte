@@ -10,7 +10,10 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
+	import type { ColumnFilter } from '#lib/ui/table/column-filter.ts';
 	import {
 		addAdmin,
 		deleteReport,
@@ -26,17 +29,22 @@
 		type ReportStatus
 	} from './reports-protocol.ts';
 
-	// Trevor's inbox for in-app reports, at /reports (not in the menu). A signed-in admin
-	// account opens it (Trevor, 2026-10-18); otherwise the Worker secret REPORTS_ADMIN_KEY,
-	// typed once and kept on this device only. The Worker checks both.
+	// In-app reports, at /reports. Admins triage them: a signed-in admin account (Trevor,
+	// 2026-10-18), or the Worker secret REPORTS_ADMIN_KEY, typed once and kept on this device
+	// only. Any other signed-in account reads the reports sent from an account and filters them
+	// by who sent them (Trevor, 2026-10-19). The Worker decides what each may see.
 
 	const KEY_STORAGE = 'grim-games:reports-admin-key';
-	type Filter = ReportStatus | 'all';
 
 	let key = $state('');
-	/** How this device reads reports: still checking, not allowed, an admin account, or the key. */
-	let access = $state<'checking' | 'none' | 'account' | 'key'>('checking');
+	/**
+	 * How this device reads reports: still checking, not allowed, a signed-in account that only
+	 * reads, an admin account, or the key.
+	 */
+	let access = $state<'checking' | 'none' | 'reader' | 'account' | 'key'>('checking');
 	const allowed = $derived(access === 'account' || access === 'key');
+	const reading = $derived(allowed || access === 'reader');
+	let onlyMine = $state(false);
 	let adminsOpen = $state(false);
 	let admins = $state<Admin[]>();
 	let newAdmin = $state('');
@@ -45,22 +53,70 @@
 	let keyForm = $state<HTMLFormElement>();
 	let wrongKey = $state(false);
 	let reports = $state<Report[]>();
-	let filter = $state<Filter>('new');
+	let columnFilters = $state<Partial<Record<Column, ColumnFilter>>>({});
 	let openId = $state<number>();
 	let dialogOpen = $state(false);
 	let confirmDelete = $state(false);
 
-	const shown = $derived((reports ?? []).filter((r) => filter === 'all' || r.status === filter));
+	const shown = $derived((reports ?? []).filter((r) => !onlyMine || r.mine));
 	const current = $derived(reports?.find((r) => r.id === openId));
 	const time = $derived(
 		new Intl.DateTimeFormat(locale.current, { dateStyle: 'medium', timeStyle: 'short' })
 	);
+	const day = $derived(new Intl.DateTimeFormat(locale.current, { dateStyle: 'short' }));
 	const statusOptions = $derived(
 		REPORT_STATUSES.map((value) => ({ value, label: t(`reports.status.${value}`) }))
 	);
-	const filters = $derived([
-		{ value: 'all' as Filter, label: t('reports.status.all') },
-		...statusOptions
+
+	/** What the open report was sent with is kept from readers other than its sender. */
+	const hidden = $derived(!allowed && !current?.mine);
+
+	/** Who sent it: their username, or why there is none. */
+	function reporter(report: Report): string {
+		if (report.reporter) return report.reporter;
+		return report.fromAccount ? t('reports.noUsername') : t('reports.signedOut');
+	}
+
+	type Column = 'id' | 'title' | 'kind' | 'reporter' | 'status' | 'sent';
+	const columns = $derived<DataColumn<Column, Report>[]>([
+		{ id: 'id', flush: true, label: '#', width: 'max(7%, 4.5rem)', wide: true, value: (r) => r.id },
+		{
+			id: 'title',
+			flush: true,
+			label: t('reports.summary'),
+			rowHeader: true,
+			value: (r) => r.title
+		},
+		{
+			id: 'kind',
+			flush: true,
+			label: t('reports.kind'),
+			width: '15%',
+			wide: true,
+			value: (r) => t(`reports.kind.${r.kind}`)
+		},
+		{
+			id: 'reporter',
+			flush: true,
+			label: t('reports.reporter'),
+			width: 'max(17%, 8.5rem)',
+			value: reporter
+		},
+		{
+			id: 'status',
+			flush: true,
+			label: t('reports.status'),
+			width: 'max(12%, 7rem)',
+			value: (r) => t(`reports.status.${r.status}`)
+		},
+		{
+			id: 'sent',
+			flush: true,
+			label: t('reports.sentAt'),
+			width: 'max(12%, 6.5rem)',
+			wide: true,
+			value: (r) => r.createdAt
+		}
 	]);
 
 	onMount(() => {
@@ -71,14 +127,18 @@
 	async function load() {
 		try {
 			let list = await listReports(key);
-			if (list === undefined && key) {
-				// A wrong or retired key: an admin account may still open the inbox.
+			if (key && !list?.admin) {
+				// A wrong or retired key: the account may still open the inbox.
 				wrongKey = true;
 				forget();
 				list = await listReports('');
 			}
-			reports = list;
-			access = list === undefined ? 'none' : key ? 'key' : 'account';
+			const first = access === 'checking' || access === 'none';
+			reports = list?.reports;
+			access = list === undefined ? 'none' : !list.admin ? 'reader' : key ? 'key' : 'account';
+			// Admins start on the reports still to triage (as before), readers on all of them.
+			if (first && allowed)
+				columnFilters = { status: { kind: 'pick', values: [t('reports.status.new')] } };
 		} catch {
 			if (access === 'checking') access = 'none';
 			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
@@ -144,14 +204,14 @@
 	}
 </script>
 
-<!-- Refresh, Admins, Forget key and the status filter are always there, disabled until the
-     inbox opens, so nothing moves when the list appears. -->
+<!-- Refresh, Admins, Forget key and Only mine are always there, disabled until they apply,
+     so nothing moves when the list appears. -->
 <Page title={t('reports.inbox')}>
 	{#snippet actions()}
 		<IconButton
 			icon="refresh"
 			label={t('errors.diag.refresh')}
-			disabled={!allowed}
+			disabled={!reading}
 			onclick={load}
 		/>
 		<Button variant="quiet" disabled={!allowed} onclick={openAdmins}>{t('reports.admins')}</Button>
@@ -160,13 +220,13 @@
 		>
 	{/snippet}
 	{#snippet toolbar()}
-		<Select
-			label={t('reports.status')}
-			hideLabel
-			disabled={!allowed}
-			value={filter}
-			options={filters}
-			onChange={(v) => (filter = v)}
+		<!-- Yourself as the reporter in one tap (Trevor, 2026-10-19); the Reporter column filters
+		     by anyone. The key has no account, so it has no reports of its own. -->
+		<Toggle
+			label={t('reports.onlyMine')}
+			checked={onlyMine}
+			disabled={access !== 'reader' && access !== 'account'}
+			onChange={(on) => (onlyMine = on)}
 		/>
 	{/snippet}
 	{#if access === 'checking'}
@@ -184,26 +244,44 @@
 			/>
 		</form>
 	{:else}
-		<ul class="list" aria-busy={reports === undefined} data-testid="reports">
-			{#each shown as report (report.id)}
-				<li>
-					<button
-						type="button"
-						class="row"
-						onclick={() => ((openId = report.id), (dialogOpen = true))}
-					>
-						<span class="id">#{report.id}</span>
-						<span class="kind">{t(`reports.kind.${report.kind}`)}</span>
-						<span class="title">{report.title}</span>
-						<span class="meta"
-							>{t(`reports.status.${report.status}`)} · {time.format(report.createdAt)}</span
-						>
-					</button>
-				</li>
-			{:else}
-				<li class="none">{t('common.none')}</li>
-			{/each}
-		</ul>
+		<DataTable
+			label={t('reports.inbox')}
+			{columns}
+			rows={shown}
+			key={(r) => String(r.id)}
+			bind:columnFilters
+			narrow="hide"
+			fit="container"
+			hideKey="reports"
+			pageSize={50}
+			empty={t('common.none')}
+			testid="reports"
+		>
+			{#snippet cell(report, column)}
+				<!-- Every cell opens the same report, so a tap anywhere on the row does; only the
+				     title is in the tab order. -->
+				<button
+					type="button"
+					class="open"
+					tabindex={column.id === 'title' ? undefined : -1}
+					onclick={() => ((openId = report.id), (dialogOpen = true))}
+				>
+					{#if column.id === 'id'}
+						#{report.id}
+					{:else if column.id === 'title'}
+						{report.title}
+					{:else if column.id === 'kind'}
+						{t(`reports.kind.${report.kind}`)}
+					{:else if column.id === 'reporter'}
+						{reporter(report)}
+					{:else if column.id === 'status'}
+						{t(`reports.status.${report.status}`)}
+					{:else}
+						{day.format(report.createdAt)}
+					{/if}
+				</button>
+			{/snippet}
+		</DataTable>
 	{/if}
 </Page>
 
@@ -216,23 +294,27 @@
 	{#if current}
 		<div class="report">
 			<p class="body">{current.body}</p>
+			<!-- Only admins change it; others see it in the same place, disabled. -->
 			<Select
 				label={t('reports.status')}
 				value={current.status}
 				options={statusOptions}
+				disabled={!allowed}
 				onChange={(v) => changeStatus(current, v)}
 			/>
 			<dl>
+				<dt>{t('reports.reporter')}</dt>
+				<dd>{reporter(current)}</dd>
 				<dt>{t('reports.sentAt')}</dt>
 				<dd>{time.format(current.createdAt)}</dd>
 				<dt>{t('reports.contact')}</dt>
-				<dd>{current.contact ?? t('common.none')}</dd>
+				<dd>{hidden ? t('reports.hidden') : (current.contact ?? t('common.none'))}</dd>
 				<dt>{t('reports.page')}</dt>
-				<dd>{current.page ?? t('common.none')}</dd>
+				<dd>{hidden ? t('reports.hidden') : (current.page ?? t('common.none'))}</dd>
 				<dt>{t('reports.build')}</dt>
-				<dd>{current.build ?? t('common.none')}</dd>
+				<dd>{hidden ? t('reports.hidden') : (current.build ?? t('common.none'))}</dd>
 				<dt>{t('reports.device')}</dt>
-				<dd>{current.device ?? t('common.none')}</dd>
+				<dd>{hidden ? t('reports.hidden') : (current.device ?? t('common.none'))}</dd>
 			</dl>
 			{#if current.details}
 				<h3>{t('reports.details')}</h3>
@@ -241,7 +323,11 @@
 		</div>
 	{/if}
 	{#snippet headActions()}
-		<DeleteButton label={t('reports.delete')} onclick={() => (confirmDelete = true)} />
+		<DeleteButton
+			label={t('reports.delete')}
+			disabled={!allowed}
+			onclick={() => (confirmDelete = true)}
+		/>
 	{/snippet}
 </Dialog>
 
@@ -294,41 +380,21 @@
 		gap: var(--space-2);
 		overflow-wrap: anywhere;
 	}
-	.list {
-		display: grid;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.row {
-		display: grid;
-		grid-template-columns: max-content 1fr;
-		gap: 0 var(--space-2);
+	.open {
 		width: 100%;
+		height: 100%;
 		min-height: var(--tap-target);
-		padding: var(--space-2);
+		padding: var(--space-1) var(--space-2);
 		border: 0;
-		border-bottom: 1px solid var(--border);
 		background: none;
 		color: inherit;
 		font: inherit;
 		text-align: start;
+		overflow-wrap: anywhere;
 		cursor: pointer;
 	}
-	.row:hover {
-		background: var(--surface-raised);
-	}
-	.id {
-		grid-row: span 2;
-		color: var(--on-surface-muted);
-	}
-	.kind,
-	.meta {
-		color: var(--on-surface-muted);
-		font-size: 0.8rem;
-	}
-	.title {
-		overflow-wrap: anywhere;
+	:global([data-testid='reports'] tr:has(.open:hover)) {
+		background: var(--surface-hover);
 	}
 	.none {
 		padding: var(--space-2);

@@ -1,5 +1,14 @@
 <script lang="ts">
-	import { MODE_PARTS, runsPart, type GameMode, type ModePart } from '#lib/core/modes/index.ts';
+	import {
+		MODE_PARTS,
+		RULE_PARTS,
+		runsPart,
+		type CombinedParts,
+		type GameMode,
+		type ModePart,
+		type RulePart,
+		type SpecialRule
+	} from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { fileNameFor } from '#lib/ui/download.ts';
@@ -11,20 +20,26 @@
 	/**
 	 * Inspect (Trevor, 2026-10-17: "allow transparency and inspection for each aspect"): every
 	 * part of a mode, what it is set to, its source and whether the app runs it, then the whole
-	 * mode file, which is also the format for writing a new mode.
+	 * mode file, which is also the format for writing a new mode. A special rule shows the
+	 * parts a rule can set, and its rule file.
 	 */
 	interface Props {
 		open: boolean;
-		mode: GameMode;
+		mode: GameMode | SpecialRule;
 	}
 
 	let { open = $bindable(), mode }: Props = $props();
 
+	const isRule = $derived(mode.kind === 'special-rule');
+	const partNames = $derived<readonly (ModePart | RulePart)[]>(isRule ? RULE_PARTS : MODE_PARTS);
+	const parts = $derived<CombinedParts>(mode.parts);
+	const unconfirmed = $derived<readonly string[]>(mode.unconfirmed ?? []);
+
 	type Status = 'standard' | 'runs' | 'storyteller' | 'unconfirmed';
-	function status(part: ModePart): Status {
-		if (mode.unconfirmed?.includes(part)) return 'unconfirmed';
-		if (mode.parts[part] === undefined) return 'standard';
-		return runsPart(mode, part) ? 'runs' : 'storyteller';
+	function status(part: ModePart | RulePart): Status {
+		if (unconfirmed.includes(part)) return 'unconfirmed';
+		if (parts[part] === undefined) return 'standard';
+		return runsPart({ parts }, part) ? 'runs' : 'storyteller';
 	}
 	const STATUS_LABEL = {
 		standard: 'modes.status.standard',
@@ -47,15 +62,15 @@
 		<section class="group" aria-labelledby="inspect-parts-title">
 			<h3 id="inspect-parts-title">{t('modes.parts')}</h3>
 			<ul class="parts" role="list">
-				{#each MODE_PARTS as part (part)}
+				{#each partNames as part (part)}
 					{@const s = status(part)}
 					<li data-part={part} data-status={s}>
 						<div class="head">
 							<span class="name">{modeLabel('part', part)}</span>
 							<span class="status">{t(STATUS_LABEL[s])}</span>
 						</div>
-						{#if mode.parts[part] !== undefined}
-							<div class="value"><ModeValue field={part} value={mode.parts[part]} /></div>
+						{#if parts[part] !== undefined}
+							<div class="value"><ModeValue field={part} value={parts[part]} /></div>
 						{/if}
 					</li>
 				{/each}
@@ -65,11 +80,11 @@
 		<!-- Starts closed: the file is for writing modes, rarely needed when inspecting (Trevor,
 			2026-10-18); shown as a file, with Copy and Download in its header. -->
 		<FileView
-			title={t('modes.file')}
+			title={t(isRule ? 'modes.ruleFile' : 'modes.file')}
 			text={file}
 			fileName={fileNameFor(mode.name, mode.id)}
-			copyLabel={t('modes.copyFile')}
-			downloadLabel={t('modes.downloadFile')}
+			copyLabel={t(isRule ? 'modes.copyRuleFile' : 'modes.copyFile')}
+			downloadLabel={t(isRule ? 'modes.downloadRuleFile' : 'modes.downloadFile')}
 			collapsible
 			testid="mode-file-view"
 		/>

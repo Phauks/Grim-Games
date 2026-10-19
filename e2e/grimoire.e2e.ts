@@ -1811,7 +1811,8 @@ test('History shows stats from ended games', async ({ page }) => {
 	await expect(page).toHaveURL(/\/history$/);
 });
 
-test('a finished game exports as a recap file and a grimoire image', async ({ page }) => {
+/** Ends a game as an Evil win, with the Imp in Seat 1 and a private note on that seat. */
+async function endWithNote(page: Page) {
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -1831,6 +1832,10 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('game-over')).toBeVisible();
+}
+
+test('a finished game exports as a recap file and a grimoire image', async ({ page }) => {
+	await endWithNote(page);
 
 	// Trevor, 2026-10-19: the history log, the final grimoire and the Storyteller's notes.
 	await menu(page, 'Export game');
@@ -1860,6 +1865,55 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	await page.goto('/history');
 	await page.getByRole('button', { name: /^Export Trouble Brewing ended/ }).tap();
 	await expect(page.getByRole('dialog', { name: 'Export game' })).toBeVisible();
+});
+
+test("a finished game is shared to the players' phones, without the notes", async ({
+	page,
+	context
+}) => {
+	await endWithNote(page);
+	await menu(page, 'Export game');
+	await page
+		.getByRole('dialog', { name: 'Export game' })
+		.getByRole('button', { name: 'Share', exact: true })
+		.tap();
+	// Trevor, 2026-10-19: "if the storyteller allows (allow them to denote what information
+	// to share)". The notes start off.
+	const dialog = page.getByRole('dialog', { name: 'Share with players' });
+	await expect(dialog.getByRole('checkbox', { name: 'Storyteller notes' })).not.toBeChecked();
+	await dialog.getByRole('button', { name: 'Share', exact: true }).tap();
+	const link = dialog.getByTestId('share-url');
+	await expect(link).toHaveValue(/\/recap\/[\w-]{22}$/);
+	const url = await link.inputValue();
+
+	// A player's phone opens the link.
+	const phone = await context.newPage();
+	await phone.goto(url);
+	const recap = phone.frameLocator('[data-testid="recap-frame"]');
+	await expect(recap.getByText('Evil won')).toBeVisible();
+	await expect(recap.getByText('Imp', { exact: true })).toBeVisible();
+	await expect(recap.locator('img')).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
+	await expect(recap.locator('body')).not.toContainText('Secret word: lantern');
+	const download = phone.waitForEvent('download');
+	await phone.getByRole('button', { name: 'Save', exact: true }).tap();
+	expect((await download).suggestedFilename()).toMatch(/^trouble-brewing-.*\.html$/);
+
+	// Reopening the dialog finds the same share; Stop sharing deletes it.
+	await page.keyboard.press('Escape');
+	await menu(page, 'Export game');
+	await page
+		.getByRole('dialog', { name: 'Export game' })
+		.getByRole('button', { name: 'Share', exact: true })
+		.tap();
+	await expect(link).toHaveValue(url);
+	await dialog.getByRole('button', { name: 'Stop sharing' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Stop sharing this game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(link).toHaveValue('');
+	await phone.reload();
+	await expect(phone.getByRole('alert')).toHaveText('This recap is no longer shared.');
 });
 
 /** Whether an element is fully inside the window. */
@@ -3446,4 +3500,82 @@ test('a step opened from the walk-through closes cleanly', async ({ page }) => {
 	await expect(page.getByText("Couldn't show this part")).toHaveCount(0);
 	await expect(strip).toContainText('Washerwoman');
 	expect(errors).toEqual([]);
+});
+
+test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the Demon', async ({
+	page
+}) => {
+	// She becomes the Demon who died (https://wiki.bloodontheclocktower.com/Scarlet_Woman).
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Scarlet Woman'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Reminders for Seat 1' });
+	await picker
+		.getByRole('group', { name: 'Scarlet Woman' })
+		.getByRole('button', { name: 'Is The Demon' })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Change into the Demon?' });
+	await expect(ask).toContainText(/Current character\s*Scarlet Woman/);
+	await expect(ask).toContainText(/New character\s*Imp/);
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(ask).toBeHidden();
+	await picker.getByRole('button', { name: 'Close' }).tap();
+	await expect(sheet).toContainText(/Imp\s*Evil · Seat 1/);
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
+});
+
+test('the night walk-through rises into place, and appears at once with reduced motion', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): a transition instead of appearing instantly; the shared `rise`.
+	await startGame(page);
+	// A character in play, so there is a night to run.
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await closeSheet(page);
+	// Counts the animations started on the strip, however fast the runner is: Svelte's
+	// transitions run through Element.animate.
+	await page.evaluate(() => {
+		const w = window as unknown as { stripAnimations: number };
+		w.stripAnimations = 0;
+		const animate = Element.prototype.animate;
+		Element.prototype.animate = function (...args) {
+			if (this.matches('[data-testid="night-strip"]')) w.stripAnimations++;
+			return animate.apply(this, args);
+		};
+	});
+	const animations = () =>
+		page.evaluate(() => (window as unknown as { stripAnimations: number }).stripAnimations);
+	const strip = page.getByTestId('night-strip');
+	await bankNight(page, 'Run Night Order').tap();
+	await expect(strip).toBeVisible();
+	await expect.poll(animations).toBeGreaterThan(0);
+
+	await page.getByRole('button', { name: 'Stop the walk-through' }).tap();
+	await expect(strip).toHaveCount(0);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.evaluate(
+		() => ((window as unknown as { stripAnimations: number }).stripAnimations = 0)
+	);
+	await bankNight(page, 'Run Night Order').tap();
+	await expect(strip).toBeVisible();
+	// No motion: the strip is there at once, fully shown.
+	await expect(strip).toHaveCSS('opacity', '1');
 });

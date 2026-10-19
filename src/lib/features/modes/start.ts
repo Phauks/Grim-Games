@@ -4,19 +4,24 @@ import {
 	inPlayFor,
 	modeScript,
 	STANDARD,
+	withRules,
+	type GameMode,
+	type SpecialRule,
 	type StorytellerRestrictions
 } from '#lib/core/modes/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import { findMode } from './custom-modes.svelte.ts';
-import { writeGameMode } from './game-mode-store.ts';
+import { readGameMode, writeGameMode } from './game-mode-store.ts';
 import { saveCampaign, type Campaign } from './campaigns.ts';
 import { seedInPlay } from './in-play.ts';
 import { saveTownGroup } from './town-groups.ts';
 
 interface StartInput<G> {
 	modeId: string;
+	/** The special rules chosen on top of the mode. */
+	rules: readonly SpecialRule[];
 	restrictions: StorytellerRestrictions;
 	data: GameData;
 	loaded: LoadedScript;
@@ -27,25 +32,47 @@ interface StartInput<G> {
 }
 
 /**
+ * A mode's script with the chosen rules: the combined pool's script, with each rule's own
+ * lines added to the script's Bootlegger lines so they show where a script's rules do.
+ */
+function rulesScript(
+	mode: GameMode,
+	rules: readonly SpecialRule[],
+	script: Script,
+	scriptCharacters: LoadedScript['characters'],
+	data: GameData,
+	restrictions: StorytellerRestrictions
+): Script {
+	const out = modeScript(mode, script, scriptCharacters, data.characters, restrictions);
+	const lines = rules.flatMap((rule) => rule.parts.text ?? []);
+	if (!lines.length) return out;
+	const meta = out.meta ?? { name: '' };
+	return { ...out, meta: { ...meta, bootlegger: [...(meta.bootlegger ?? []), ...lines] } };
+}
+
+/**
  * Starts a game in a mode: the game is created with the mode's script (its pool, less banned
- * and restricted characters, plus those it always puts on the script), and the mode is kept
- * beside the game on this device. A campaign mode (Flesh and Bone) also starts its campaign,
- * with this as its first game.
+ * and restricted characters, plus those it always puts on the script), and the mode and its
+ * special rules are kept beside the game on this device. A campaign mode (Flesh and Bone) also
+ * starts its campaign, with this as its first game.
  */
 export async function startInMode<
 	G extends { game: { gameId: GameId; seating: readonly unknown[]; script: Script } }
 >(input: StartInput<G>): Promise<G> {
-	const mode = findMode(input.modeId) ?? STANDARD;
-	const script = modeScript(
+	const base = findMode(input.modeId) ?? STANDARD;
+	const mode = withRules(base, input.rules);
+	const script = rulesScript(
 		mode,
+		input.rules,
 		toScript(input.loaded),
 		input.loaded.characters,
-		input.data.characters,
+		input.data,
 		input.restrictions
 	);
 	const open = await input.create(script);
 	writeGameMode(open.game.gameId, {
-		modeId: mode.id,
+		modeId: base.id,
+		rules: [...input.rules],
 		restrictions: input.restrictions,
 		...(input.roleRecycling !== undefined ? { roleRecycling: input.roleRecycling } : {})
 	});
@@ -53,7 +80,7 @@ export async function startInMode<
 	if (campaignRule(mode))
 		saveCampaign({
 			campaignId: crypto.randomUUID(),
-			modeId: mode.id,
+			modeId: base.id,
 			restrictions: input.restrictions,
 			games: [{ gameId: open.game.gameId, eliminated: [], script: open.game.script }],
 			createdAt: Date.now()
@@ -63,11 +90,15 @@ export async function startInMode<
 
 /**
  * Where a new game opens: the draft or choose screen for a mode that doesn't use the bag
- * (Sushi Buffet, Whale Buffet), the hidden characters for one that adds them (A Script of
- * Infinite Possibilities), otherwise the board.
+ * (Sushi Buffet, Whale Buffet), the hidden characters for one that adds them (the rule A Script
+ * of Infinite Possibilities), otherwise the board.
  */
-export function startHref(modeId: string, gameId: GameId): ResolvedPathname {
-	const mode = findMode(modeId) ?? STANDARD;
+export function startHref(
+	modeId: string,
+	rules: readonly SpecialRule[],
+	gameId: GameId
+): ResolvedPathname {
+	const mode = withRules(findMode(modeId) ?? STANDARD, rules);
 	const kind = mode.parts.assignment?.kind;
 	if (kind === 'draft' || kind === 'choose-own')
 		return resolve('/grimoire/[gameId]/deal', { gameId });
@@ -78,6 +109,7 @@ export function startHref(modeId: string, gameId: GameId): ResolvedPathname {
 
 interface TownsInput<G> {
 	modeId: string;
+	rules: readonly SpecialRule[];
 	restrictions: StorytellerRestrictions;
 	data: GameData;
 	/** One script per town. */
@@ -94,22 +126,28 @@ interface TownsInput<G> {
 export async function startTowns<G extends { game: { gameId: GameId } }>(
 	input: TownsInput<G>
 ): Promise<string> {
-	const mode = findMode(input.modeId) ?? STANDARD;
+	const base = findMode(input.modeId) ?? STANDARD;
+	const mode = withRules(base, input.rules);
 	const gameIds: GameId[] = [];
 	for (const [i, loaded] of input.scripts.entries()) {
-		const script = modeScript(
+		const script = rulesScript(
 			mode,
+			input.rules,
 			toScript(loaded),
 			loaded.characters,
-			input.data.characters,
+			input.data,
 			input.restrictions
 		);
 		const open = await input.create(script, input.sizes[i] ?? input.sizes[0]);
-		writeGameMode(open.game.gameId, { modeId: mode.id, restrictions: input.restrictions });
+		writeGameMode(open.game.gameId, {
+			modeId: base.id,
+			rules: [...input.rules],
+			restrictions: input.restrictions
+		});
 		gameIds.push(open.game.gameId);
 	}
 	const groupId = crypto.randomUUID();
-	saveTownGroup({ groupId, modeId: mode.id, gameIds, createdAt: Date.now() });
+	saveTownGroup({ groupId, modeId: base.id, gameIds, createdAt: Date.now() });
 	return groupId;
 }
 
@@ -144,7 +182,12 @@ export async function continueCampaign<
 		const to = open.game.seating[i];
 		if (playerName && to) open.run({ type: 'RenameSeat', seatId: to, playerName });
 	}
-	writeGameMode(open.game.gameId, { modeId: campaign.modeId, restrictions: campaign.restrictions });
+	writeGameMode(open.game.gameId, {
+		modeId: campaign.modeId,
+		// The rules carry over from the campaign's first game.
+		rules: readGameMode(campaign.games[0]?.gameId ?? '')?.rules ?? [],
+		restrictions: campaign.restrictions
+	});
 	saveCampaign({
 		...campaign,
 		games: [

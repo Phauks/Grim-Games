@@ -316,6 +316,7 @@
 			title={shownListing?.row.name || t('scripts.current.defaultName')}
 			author={preview?.meta.author}
 			version={shownVersion ?? preview?.meta.version}
+			logo={shownListing?.row.logo}
 			target={shareTarget}
 		/>
 		{@render extraActions?.()}

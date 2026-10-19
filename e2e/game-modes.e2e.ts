@@ -16,6 +16,26 @@ async function chooseMode(page: Page, name: string) {
 	await expect(modes).toContainText(name);
 }
 
+/**
+ * Special rules stack on any mode, Standard too (Trevor, 2026-10-18): switched on in their
+ * own dialog from New game.
+ */
+async function chooseRules(page: Page, ...names: string[]) {
+	await modesPanel(page)
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	for (const name of names) {
+		await dialog.getByText(name, { exact: true }).tap();
+		await expect(dialog.getByRole('checkbox', { name, includeHidden: true })).toBeChecked();
+	}
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
+	await expect(modesPanel(page).getByRole('button', { name: /^Special rules/ })).toHaveText(
+		`Special rules (${names.length})`
+	);
+}
+
 async function noSidewaysScroll(page: Page) {
 	const overflow = await page.evaluate(
 		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -210,7 +230,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	const record = await page.evaluate(
-		(id) => JSON.parse(localStorage.getItem(`grim-games:game-mode:v1:${id}`) ?? '{}'),
+		(id) => JSON.parse(localStorage.getItem(`grim-games:game-mode:v2:${id}`) ?? '{}'),
 		gameId
 	);
 	expect(record.roleRecycling).toBe(true);
@@ -507,7 +527,7 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	// A fixed random() keeps every row, so the roll is the same each run.
 	await page.addInitScript(() => (Math.random = () => 0.99));
 	await page.goto('/new');
-	await chooseMode(page, 'A Script of Infinite Possibilities');
+	await chooseRules(page, 'A Script of Infinite Possibilities');
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await panel.getByRole('button', { name: 'Start game' }).tap();
@@ -566,7 +586,7 @@ test('with no hidden character, Infinite Possibilities can’t go on to the setu
 	page
 }) => {
 	await page.goto('/new');
-	await chooseMode(page, 'A Script of Infinite Possibilities');
+	await chooseRules(page, 'A Script of Infinite Possibilities');
 	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/extras$/);
 	const extras = page.getByTestId('extras').locator('li');
@@ -672,7 +692,7 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 }, testInfo) => {
 	// Apparition, from https://www.youtube.com/watch?v=-R34QbIgDh8
 	await page.goto('/new');
-	await chooseMode(page, 'Specters');
+	await chooseRules(page, 'Specters');
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await panel.getByRole('button', { name: 'Start game' }).tap();
@@ -759,7 +779,7 @@ test('New game shows each script’s author and version under its name', async (
 	await expect(option).toContainText('by Test Author');
 	await expect(option).toContainText('2.1');
 	await page.keyboard.press('Escape');
-	await chooseMode(page, 'A Script of Infinite Possibilities');
+	await chooseMode(page, 'Flesh and Bone');
 	await page.getByRole('combobox', { name: 'Find a script' }).tap();
 	await expect(option).toContainText('by Test Author');
 });
@@ -780,4 +800,38 @@ test('any script beyond the base three is found by typing, or picked in the Libr
 	await page.goto('/new');
 	await page.getByRole('button', { name: 'Choose from the Library' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Choose from the Library' })).toBeVisible();
+});
+
+test('special rules stack on a mode: two at once, a conflict warns, and the game starts anyway', async ({
+	page
+}) => {
+	// Whale Buffet plays every character; Infinite Possibilities adds hidden extras to a
+	// script, so the two set the character pool differently (format-design.md: warn, never
+	// stop the game).
+	await page.goto('/new');
+	await chooseMode(page, 'Whale Buffet');
+	await chooseRules(page, 'Stowed Away', 'A Script of Infinite Possibilities');
+	await modesPanel(page)
+		.getByRole('button', { name: /^Special rules/ })
+		.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	await expect(dialog.getByTestId('rule-conflicts')).toContainText(
+		'Whale Buffet and A Script of Infinite Possibilities both set Character pool'
+	);
+	// Inspect shows a rule's own parts and its rule file.
+	await dialog.getByRole('button', { name: 'Inspect A Script of Infinite Possibilities' }).tap();
+	const inspect = page.getByRole('dialog', { name: 'A Script of Infinite Possibilities' });
+	await expect(inspect.locator('li[data-part="pool"]')).toHaveAttribute('data-status', 'runs');
+	await expect(inspect.getByRole('button', { name: 'Rule file', exact: true })).toBeVisible();
+	await inspect.getByRole('button', { name: 'Close' }).tap();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await noSidewaysScroll(page);
+
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
+	// The game is named for its mode and rules wherever it is listed.
+	await page.goto('/games');
+	await expect(page.getByTestId('game-mode').first()).toContainText(
+		'Whale Buffet + Stowed Away + A Script of Infinite Possibilities'
+	);
 });

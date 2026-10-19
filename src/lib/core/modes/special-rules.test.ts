@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { combineRules } from './combine.ts';
 import { GAME_MODES, STANDARD, gameModeById } from './registry.ts';
-import { SPECIAL_RULES } from './rules/index.ts';
+import { SPECIAL_RULES, upgradeModeChoice } from './rules/index.ts';
 import { SCRIPT_RULE_ID, scriptSpecialRule } from './script-rule.ts';
 import { SPECIAL_RULE_FORMAT, type SpecialRule } from './types.ts';
 import { parseGameMode, parseModeOrRule, parseSpecialRule } from './validate.ts';
@@ -189,5 +189,20 @@ describe("a script's own rule", () => {
 		expect(r?.parts).toEqual({ text: ['Seat 7 remains empty.'] });
 		expect(scriptSpecialRule({ name: 'x' })).toBeUndefined();
 		expect(scriptSpecialRule({ name: 'x', bootlegger: [' '] })).toBeUndefined();
+	});
+});
+
+describe('games saved in a mode that became a rule', () => {
+	// Trevor, 2026-10-18: Specters and Infinite Possibilities stack on a mode now.
+	it('read as Standard with that rule', () => {
+		expect(upgradeModeChoice('specters')).toEqual({ modeId: 'standard', ruleIds: ['specters'] });
+		expect(upgradeModeChoice('infinite-possibilities', ['seat-7'])).toEqual({
+			modeId: 'standard',
+			ruleIds: ['infinite-possibilities', 'seat-7']
+		});
+		expect(upgradeModeChoice('sushi-buffet', ['specters'])).toEqual({
+			modeId: 'sushi-buffet',
+			ruleIds: ['specters']
+		});
 	});
 });

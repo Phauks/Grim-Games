@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -27,6 +29,7 @@
 	import './profile-scripts.svelte.ts';
 	import SignInForm from './SignInForm.svelte';
 	import PrivacyConsent from './PrivacyConsent.svelte';
+	import FirstSignIn from './FirstSignIn.svelte';
 	import { withPrivacyConsent } from './privacy-consent.svelte.ts';
 	import { startAccount } from './start.ts';
 	import UsernameDialog from './UsernameDialog.svelte';
@@ -198,7 +201,8 @@
 			const plan = planImport(
 				syncing,
 				(kind) => accountSync.docs(kind),
-				() => crypto.randomUUID()
+				() => crypto.randomUUID(),
+				(kind) => accountSync.merger(kind)
 			);
 			importing = {
 				file: file.name,
@@ -274,11 +278,17 @@
 						onclick={() => (editPassword = true)}
 						disabled={busy}
 					/>
-					<!-- Set by admins in the reports inbox, not here. -->
+					<!-- Set by admins in the reports inbox, not here. Every account reads reports from here
+					     (Trevor, 2026-10-19); admins also have them in the menu. -->
 					<dt>{t('account.you.type')}</dt>
-					<dd class="wide" data-testid="account-type">
+					<dd data-testid="account-type">
 						{account.admin ? t('account.you.typeAdmin') : t('account.you.typeUser')}
 					</dd>
+					<IconButton
+						icon="report"
+						label={t('shell.navReports')}
+						onclick={() => goto(resolve('/reports'))}
+					/>
 					<!-- The account's own id: never changes, so it can't be edited. -->
 					<dt>{t('account.you.id')}</dt>
 					<dd data-testid="account-id">{account.user.id}</dd>
@@ -388,6 +398,7 @@
 </Page>
 
 <PrivacyConsent />
+<FirstSignIn />
 
 <ConfirmDialog
 	bind:open={confirmImport}
@@ -486,9 +497,6 @@
 	}
 	/* A value with no button after it. */
 	dd:last-child,
-	dd.wide {
-		grid-column: 2 / -1;
-	}
 	dt,
 	.muted {
 		color: var(--on-surface-muted);
