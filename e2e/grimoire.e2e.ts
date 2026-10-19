@@ -1203,7 +1203,20 @@ test('a dead player whose ability has ended moves their reminders to the end of 
 	expect(await after('No Ability reminder')).toBe(false);
 	expect(await after('Drunk reminder')).toBe(false);
 	await bank.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
-	await expect(page.getByTestId('bank-dead')).toHaveText('Dead players');
+	const deadCaption = page.getByTestId('bank-dead');
+	await expect(deadCaption).toHaveText('Dead players');
+	// Over its own one token: past its line, inside the row, clear of the ∞ caption (Trevor,
+	// 2026-10-19: it ran into Start game and over the ∞).
+	const caption = (await deadCaption.boundingBox())!;
+	const line = (await last.boundingBox())!;
+	const row = (await bank.boundingBox())!;
+	expect(caption.x).toBeGreaterThanOrEqual(line.x);
+	expect(caption.x + caption.width).toBeLessThanOrEqual(row.x + row.width + 1);
+	const generic = page.getByTestId('bank-generic');
+	if (await generic.count()) {
+		const mark = (await generic.boundingBox())!;
+		expect(mark.x + mark.width).toBeLessThanOrEqual(caption.x + 1);
+	}
 });
 
 test('the reminder bank holds setup reminders, placed by hand, then every reminder left', async ({

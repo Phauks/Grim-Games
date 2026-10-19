@@ -234,6 +234,7 @@
 	 * width.
 	 */
 	let bankEl = $state<HTMLElement>();
+	let list = $state<HTMLElement>();
 	const dividers = $state<Partial<Record<Group, HTMLElement>>>({});
 	const captionW = $state<Partial<Record<Group, number>>>({});
 	let scrolled = $state(0);
@@ -256,16 +257,41 @@
 			const divider = dividers[group];
 			if (!divider) return;
 			const line = start + divider.offsetLeft - scrolled;
-			// Once its line is in the row; never past the row's end, over the Run night button
-			// (Trevor, 2026-10-19), so a short last stretch has its caption drawn in from the end.
+			// Once all of it fits in the row, never past the row's end over the Run night button
+			// (Trevor, 2026-10-19: Dead players ran into Start game). Its stretch is at least as
+			// wide as it (`spacers`), so it always fits over its own tokens.
 			const end = start + row.clientWidth;
-			if (line >= end) return;
-			const left = Math.max(start, Math.min(line, end - (captionW[group] ?? 0)));
-			placed.push({ group, text, left: pct(left) });
+			if (line + gap + (captionW[group] ?? 0) > end) return;
+			placed.push({ group, text, left: pct(Math.max(start, line)) });
 		});
-		// A caption goes once the next one has reached it.
-		return placed.filter((c, i) => !placed[i + 1] || placed[i + 1].left > c.left + 0.5);
+		// A caption goes once the next one reaches it, so no two overlap (Trevor, 2026-10-19).
+		return placed.filter((c, i) => {
+			const next = placed[i + 1];
+			return !next || next.left >= c.left + pct(gap + (captionW[c.group] ?? 0));
+		});
 	});
+	/** The tray's gap, which is also each caption's inset from its line (both `--space-2`). */
+	const gap = $derived(list ? parseFloat(getComputedStyle(list).columnGap) || 0 : 0);
+	/** Each token's width in the bank, to size its stretch. */
+	const itemW = $state<Record<string, number>>({});
+	/**
+	 * Room added after a captioned stretch narrower than its caption, so the caption sits over
+	 * its own tokens (Trevor, 2026-10-19: Dead players over one token ran over the ∞). A margin
+	 * on the stretch's last token, so the list holds only tokens.
+	 */
+	const spacers = $derived.by(() => {
+		const out: Partial<Record<Group, number>> = {};
+		for (const group of Object.keys(CAPTIONS) as Group[]) {
+			const own = items.filter((i) => i.group === group);
+			const caption = captionW[group];
+			if (own.length === 0 || caption === undefined) continue;
+			const tokens = own.reduce((n, i) => n + (itemW[i.key] ?? 0), 0);
+			const room = caption - tokens - own.length * gap;
+			if (room > 0) out[group] = room;
+		}
+		return out;
+	});
+	const endsGroup = (i: number) => i === items.length - 1 || items[i + 1].group !== items[i].group;
 	/** More tokens off either end of the row: its edge fades (Trevor, 2026-10-19). */
 	let more = $state({ start: false, end: false });
 	function measure() {
@@ -282,7 +308,6 @@
 		return () => observer.disconnect();
 	});
 	// A new step's reminders are at the front, or ringed in place: show them.
-	let list = $state<HTMLElement>();
 	$effect(() => {
 		void focus;
 		void focusMode;
@@ -409,6 +434,7 @@
 <div class="bank" data-tray bind:this={bankEl}>
 	{#each captions as caption (caption.group)}<span
 			class="caption"
+			data-group={caption.group}
 			data-testid="bank-{caption.group}"
 			bind:offsetWidth={captionW[caption.group]}
 			style:left="{caption.left}%">{caption.text}</span
@@ -431,9 +457,13 @@
 					bind:this={dividers[item.group]}
 				></li>{/if}
 			<li
+				bind:offsetWidth={itemW[item.key]}
 				class:lifted={drag?.item.key === item.key && item.count === 1}
 				class:now={item.now}
 				class:dim={dimRest && !item.now}
+				style:margin-inline-end={endsGroup(i) && spacers[item.group]
+					? `${spacers[item.group]}px`
+					: undefined}
 			>
 				{#if item.count > 1}<span class="count" aria-label={`${item.count} copies`}
 						>×{item.count}</span
@@ -662,6 +692,14 @@
 		pointer-events: none;
 		transform: translateY(-50%);
 	}
+	/*
+	 * The ∞ as tall as the other captions' capitals (Trevor, 2026-10-19). Measured in Cinzel:
+	 * its ink is about 0.62 of a capital's height, so 1.6 times the size matches them.
+	 */
+	.caption[data-group='generic'] {
+		font-size: calc(0.65rem * 1.6);
+		letter-spacing: 0;
+	}
 	.tray {
 		flex: 1;
 		display: flex;
@@ -743,6 +781,9 @@
 		pointer-events: none;
 	}
 	/* Between the setup reminders and the rest, in All: a solid line (Trevor, 2026-10-16). */
+	.tray > li.spacer {
+		padding: 0;
+	}
 	.tray > li.divider {
 		align-self: stretch;
 		padding: 0;
