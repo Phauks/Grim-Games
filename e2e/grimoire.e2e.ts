@@ -3756,9 +3756,22 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await text.press('Enter');
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
-	await expect(
-		page.locator('[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]')
-	).toHaveCount(1);
+	const placed = page.locator(
+		'[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]'
+	);
+	await expect(placed).toHaveCount(1);
+	// A rim round the token and its words, like every other reminder (Trevor, 2026-10-19).
+	const colours = await placed.evaluate((el) => {
+		const css = getComputedStyle(el);
+		const label = el.querySelector('.label');
+		return {
+			rim: css.borderTopColor,
+			face: css.backgroundColor,
+			band: label ? getComputedStyle(label).boxShadow : ''
+		};
+	});
+	expect(colours.rim).not.toBe(colours.face);
+	expect(colours.band).toContain(colours.rim);
 });
 
 // Closing a step opened from the walk-through must not crash the dialog (Grimoire board,
