@@ -49,5 +49,7 @@ export const player = {
 	'player.byAuthor': 'by {author}',
 	'player.version': 'v{version}',
 	'player.print': 'Print script',
+	'player.printHere': 'Print our sheet',
+	'player.printScriptTool': 'Open in the official Script Tool',
 	'player.jinxedWith': 'Jinxed with {names}'
 } as const;
