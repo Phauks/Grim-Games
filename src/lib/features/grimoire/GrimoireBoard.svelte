@@ -40,6 +40,7 @@
 	} from '#lib/core/model/index.ts';
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import {
+		dayNumber,
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
@@ -865,6 +866,11 @@
 	);
 	/** The day timer is always on the board until the game ends (Trevor, 2026-10-17). */
 	const showTimer = $derived(!ended);
+	// A new day resets the day timer to the time per living player (Trevor, 2026-10-19).
+	$effect(() => {
+		const day = `${game.gameId}:${dayNumber(game)}`;
+		untrack(() => liveDayTimer.newDay(day, livingByTeam(game).alive));
+	});
 
 	// A Traveller's alignment by draw, kept here: setting it ends the step that opened it.
 	let drawFor = $state<SeatId | undefined>();

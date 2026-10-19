@@ -24,6 +24,8 @@ class LiveDayTimer {
 	#signalled = false;
 	/** The length was changed by hand, so it no longer follows the living players. */
 	#adjusted = false;
+	/** Which game and day the timer is for (`newDay`). */
+	#day: string | undefined;
 
 	get mode(): dayTimers.DayTimerMode {
 		return preferences.current.timerMode;
@@ -59,6 +61,18 @@ class LiveDayTimer {
 		if (this.fresh && !this.#adjusted && next.durationMs !== this.#timer.durationMs) {
 			this.#timer = next;
 		}
+	}
+
+	/**
+	 * Each new day starts the timer again, stopped, at the time per living player (Trevor,
+	 * 2026-10-19: "on new day, reset timer to new calculated amount"); a change by hand lasts
+	 * only for its day. `day` names the game and day; another game counts as a new day too.
+	 */
+	newDay(day: string, alive: number): void {
+		if (day === this.#day) return;
+		const first = this.#day === undefined;
+		this.#day = day;
+		if (!first) this.reset(alive);
 	}
 
 	toggle(): void {
