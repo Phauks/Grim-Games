@@ -41,6 +41,8 @@ export interface PublicDay {
 }
 
 export interface PublicGameState {
+	/** The Storyteller's name, when the game has one: the table already knows who runs it. */
+	storytellerName?: string;
 	/** In clockwise seating order. */
 	seats: PublicSeat[];
 	today: PublicDay;
@@ -59,6 +61,7 @@ function appearsDead(seat: Seat): boolean {
 
 export function publicProjection(game: Game): PublicGameState {
 	return {
+		...(game.storytellerName ? { storytellerName: game.storytellerName } : {}),
 		seats: seatsInOrder(game).map((seat, i) => {
 			const view: PublicSeat = {
 				seatId: seat.seatId,

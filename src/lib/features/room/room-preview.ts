@@ -10,6 +10,7 @@ export interface GamePreview {
 	name: string;
 	author?: string;
 	logo?: string;
+	storyteller?: string;
 	seats?: number;
 	seated?: number;
 }
@@ -34,6 +35,7 @@ export function toGamePreview(preview: RoomPreview): GamePreview | undefined {
 	if (script?.author) game.author = script.author;
 	const logo = editionLogo(edition?.id) ?? authorLogo(script?.logo);
 	if (logo) game.logo = logo;
+	if (preview.storyteller) game.storyteller = preview.storyteller;
 	if (preview.seats !== undefined) {
 		game.seats = preview.seats;
 		game.seated = preview.seated ?? 0;

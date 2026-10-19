@@ -21,6 +21,13 @@ describe('the game a room code opens', () => {
 		).toEqual({ name: 'Trouble Brewing', logo: '/data/logos/tb.webp', seats: 8, seated: 3 });
 	});
 
+	it("shows the Storyteller's name", () => {
+		expect(toGamePreview({ open: true, storyteller: 'Sam' })).toEqual({
+			name: '',
+			storyteller: 'Sam'
+		});
+	});
+
 	it("shows an author's https logo, and never another kind of link", () => {
 		const script = { name: 'Storm Front', author: 'Kim', official: false };
 		expect(

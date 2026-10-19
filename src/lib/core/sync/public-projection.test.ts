@@ -178,7 +178,17 @@ describe('publicProjection', () => {
 
 	it('leaves out names that are not set', () => {
 		const { session } = newGame(2);
-		expect(publicProjection(session.game).seats.every((s) => !('playerName' in s))).toBe(true);
+		const state = publicProjection(session.game);
+		expect(state.seats.every((s) => !('playerName' in s))).toBe(true);
+		expect('storytellerName' in state).toBe(false);
+	});
+
+	it("shows the Storyteller's name, which the table already knows", () => {
+		const { session, ctx } = newGame(2);
+		const named = run(session, ctx, { type: 'SetStorytellerName', name: 'Sam' });
+		expect(publicProjection(named.game).storytellerName).toBe('Sam');
+		const cleared = run(named, ctx, { type: 'SetStorytellerName' });
+		expect('storytellerName' in publicProjection(cleared.game)).toBe(false);
 	});
 });
 

@@ -52,6 +52,7 @@ export const room = {
 	'room.lookupFailed': 'Could not look this code up.',
 	'room.noScriptYet': 'No script yet',
 	'room.tableSize': '{seats} seats, {seated} taken',
+	'room.storytellerLine': 'Storyteller: {name}',
 	'room.you': 'You',
 	'room.joining': 'Joining the room…',
 	'room.playerOffline': 'Offline: reconnecting…',
