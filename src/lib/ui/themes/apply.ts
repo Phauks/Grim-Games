@@ -9,6 +9,7 @@ import {
 } from '#lib/ui/fonts/catalogue.ts';
 import { resolveFonts, type Preferences } from '#lib/ui/preferences.ts';
 import { tokenVariables } from '#lib/ui/token/token-appearance.ts';
+import { colorFor } from './colors.ts';
 import type { CssVariable, Theme } from './types.ts';
 
 let written: CssVariable[] = [];
@@ -53,6 +54,9 @@ export function applyAppearance(theme: Theme, prefs: Preferences, root = documen
 	root.dataset.theme = theme.id;
 	root.dataset.textAlign = prefs.textAlign;
 	root.style.colorScheme = theme.colorScheme;
+	// The phone's status bar (and an installed app's title bar) takes the header's colour.
+	const themeColor = root.ownerDocument.querySelector('meta[name="theme-color"]');
+	themeColor?.setAttribute('content', colorFor(theme, prefs.colors, '--surface'));
 	// Only the fonts in use are fetched; Settings loads the rest for its previews.
 	for (const font of new Set(Object.values(resolveFonts(prefs, theme)))) void loadFont(font);
 }

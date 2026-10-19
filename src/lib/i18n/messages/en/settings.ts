@@ -71,7 +71,7 @@ export const settings = {
 		'Changes the size of interface icons: header, settings, menus, buttons, and status markers such as dead or poisoned. Character icons, text and tokens stay the same.',
 	'settings.characterIconSize': 'Character icon size',
 	'settings.characterIconSizeHelp':
-		'Changes the size of character icons in lists, pickers and the day. Names in text and grimoire tokens have their own sizes in Tokens.',
+		'Changes the size of character icons in lists, pickers and the day. Names inside lines of text use Name icon size.',
 	'settings.tileLabels': 'Bag tile labels',
 	'settings.tileLabels.numbers': 'Numbers',
 	'settings.tileLabels.letters': 'Letters',

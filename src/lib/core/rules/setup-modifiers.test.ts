@@ -103,4 +103,21 @@ describe('bracket reader', () => {
 			ops: [{ values: [1] }]
 		});
 	});
+
+	// https://wiki.bloodontheclocktower.com/Bootlegger: the script's own rules, which may
+	// carry a setup bracket (Binary Supernovae's extra Demon).
+	it("applies a bracket in the Bootlegger's script rules and keeps its table note", () => {
+		const official = data.byId.get('bootlegger')!;
+		const bootlegger = { ...official, ability: 'Summoner only removes 1 Demon. [+1 Demon]' };
+		const modifier = setupModifierFor(bootlegger, byName);
+		expect(modifier?.ops).toEqual([{ kind: 'delta', type: 'demon', values: [1] }]);
+		expect(modifier?.notes).toEqual(
+			expect.arrayContaining([...(setupModifierFor(official)?.notes ?? [])])
+		);
+	});
+
+	it('leaves a Bootlegger without a bracket to the table', () => {
+		const official = data.byId.get('bootlegger')!;
+		expect(setupModifierFor(official)).toMatchObject({ source: 'table' });
+	});
 });

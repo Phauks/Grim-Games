@@ -34,6 +34,12 @@
 <!-- eslint-disable svelte/no-navigation-without-resolve -- external https source links -->
 {#if field === 'cite' && typeof value === 'string'}
 	<a href={safeUrl(value)} target="_blank" rel="noopener noreferrer">{t('modes.rules')}</a>
+{:else if field === 'inBag' && typeof value === 'number'}
+	<!-- "Up to" a number: Stowed Away is 0 to 2 Travellers in the bag (Trevor, 2026-10-19). -->
+	0–{value}
+{:else if field === 'text' && Array.isArray(value) && value.every((v) => typeof v === 'string')}
+	<!-- A rule's own text, quoted: its sentences run on, never labelled or comma-joined. -->
+	{value.join(' ')}
 {:else if Array.isArray(value) && value.length === 0}
 	{t('common.none')}
 {:else if CHARACTER_FIELDS.has(field) && Array.isArray(value)}

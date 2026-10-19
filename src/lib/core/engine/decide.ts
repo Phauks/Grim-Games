@@ -609,6 +609,17 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			return [event];
 		}
 
+		case 'SetGameNotes': {
+			const notes = command.notes?.trim() || undefined;
+			if (notes === game.notes) {
+				warn('no-change', 'the notes are unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'GameNotesSet' };
+			if (notes !== undefined) event.notes = notes;
+			return [event];
+		}
+
 		case 'AssignCharacter': {
 			const seat = seatOf(game, command.seatId);
 			const character = seatableCharacter(ctx, command.characterId);

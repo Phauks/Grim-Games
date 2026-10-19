@@ -36,8 +36,7 @@ export const resets = {
 			fonts: fontsWithout(TEXT_FONT_ROLES),
 			assistance: assistanceWith(['explainTerms'])
 		}),
-	icons: () =>
-		preferences.update(pick('iconSet', 'iconOverrides', 'iconScale', 'characterIconScale')),
+	icons: () => preferences.update(pick('iconSet', 'iconOverrides', 'iconScale')),
 	board: () => {
 		preferences.update({ assistance: assistanceWith(STORYTELLER_GROUPS.board) });
 		boardLooks.update(DEFAULT_BOARD_LOOKS);
@@ -45,7 +44,7 @@ export const resets = {
 	},
 	tokens: () =>
 		preferences.update({
-			...pick('tokenAppearance'),
+			...pick('tokenAppearance', 'characterIconScale'),
 			fonts: fontsWithout(TOKEN_FONT_ROLES)
 		}),
 	assistance: () =>
@@ -57,6 +56,7 @@ export const resets = {
 				'timerSound',
 				'timerMode',
 				'timerVibrate',
+				'timerKeepAwake',
 				'timerPerPlayer'
 			),
 			assistance: assistanceWith([

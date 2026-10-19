@@ -34,10 +34,13 @@ test('Demon voted feeds the Flowergirl, and there is no New day button', async (
 	// Nominations happen off the grimoire, so there is nothing to tap for them.
 	await expect(page.getByRole('radiogroup', { name: 'Tapping a player' })).toHaveCount(0);
 
-	await page.getByText('Demon voted', { exact: true }).tap();
+	// One tap in the pinned toolbar (Trevor, 2026-10-19), pressed until tapped again.
+	const voted = page.getByTestId('day-toolbar').getByRole('button', { name: 'Demon voted' });
+	await voted.tap();
+	await expect(voted).toHaveAttribute('aria-pressed', 'true');
 	await expect(
 		page.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })
-	).toBeChecked();
+	).toHaveCount(0);
 	await page.getByRole('button', { name: 'Night order', exact: true }).tap();
 	const flowergirl = await walkTo(page, 'Flowergirl');
 	await expect(flowergirl.getByRole('group', { name: 'Flowergirl answer' })).toContainText(

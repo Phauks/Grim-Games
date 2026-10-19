@@ -9,6 +9,8 @@ export const player = {
 	'player.tab.script': 'Script',
 	'player.tab.night': 'Night',
 	'player.tab.notes': 'Notes',
+	'player.tab.room': 'Room',
+	'player.shareRoom': 'Share room',
 	'player.sharedLinkFailed': 'Could not open the shared script',
 	'player.cannotSave': 'This browser cannot save',
 	'player.cannotSaveDetail': 'Notes are lost when the page closes.',

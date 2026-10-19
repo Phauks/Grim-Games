@@ -171,3 +171,29 @@ test('opened from the Home Screen, Add to Home Screen is not offered', async ({ 
 	const dialog = await openData(page);
 	await expect(dialog.getByTestId('home-screen-steps')).toHaveCount(0);
 });
+
+test('the table scrolls under the sticky Data heading, never over it', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openData(page);
+	const table = dialog.getByTestId('storage-table');
+	await expect(table.getByRole('row').nth(1)).toBeVisible();
+	const heading = dialog.getByRole('heading', { name: 'Data', level: 2 });
+	// Scroll the section until the table's top sits halfway up the sticky heading row.
+	const covered = await heading.evaluate((h2, tableTestId) => {
+		const row = h2.parentElement!;
+		const content = row.parentElement!;
+		const tableBox = document.querySelector(`[data-testid="${tableTestId}"]`)!;
+		const rowBox = row.getBoundingClientRect();
+		content.scrollTop += tableBox.getBoundingClientRect().top - rowBox.top - rowBox.height / 2;
+		const after = row.getBoundingClientRect();
+		const top = tableBox.getBoundingClientRect().top;
+		const y = Math.max(top + 1, after.top + after.height / 2);
+		const points = [0.1, 0.5, 0.9].map((f) => after.left + after.width * f);
+		return {
+			under: top < after.bottom,
+			onTop: points.map((x) => row.contains(document.elementFromPoint(x, y)))
+		};
+	}, 'storage-table');
+	expect(covered.under).toBe(true);
+	expect(covered.onTop).toEqual([true, true, true]);
+});

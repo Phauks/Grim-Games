@@ -2,9 +2,12 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- viewport-fit=cover: the page draws under the phone's status and navigation bars, and
+		     the header, footer and full-screen views pad by env(safe-area-inset-*). -->
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="text-scale" content="scale" />
-		<meta name="theme-color" content="#1c130e" />
+		<!-- The default theme's --surface; applyAppearance (ui/themes/apply.ts) follows the theme. -->
+		<meta name="theme-color" content="#140b0b" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
