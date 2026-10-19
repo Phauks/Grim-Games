@@ -197,6 +197,9 @@ test('a typed code shows the game it opens before the phone joins', async ({
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
 	await expect(phone.getByRole('heading', { level: 1 })).toHaveText(/^Room \d{3} \d{3}$/);
 	await expect(phone.getByTestId('room-storyteller')).toHaveText('Storyteller: Sam');
+	// The player's script names the Storyteller too (Trevor, 2026-10-19).
+	await phone.goto('/play');
+	await expect(phone.getByTestId('script-byline')).toContainText('Storyteller: Sam');
 	await phoneContext.close();
 });
 
