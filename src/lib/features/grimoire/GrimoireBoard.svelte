@@ -735,7 +735,12 @@
 	/** This game's ending, if it has ended (End game below). */
 	let endedRead = $state(0);
 	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
-	/** Tokens are still to be handed out: the bank's end cell says Set up until then. */
+	/**
+	 * Tokens are still to be handed out (Trevor, 2026-10-19: "if there are tokens still in the
+	 * bag ... it should be Set Up"): no character chosen yet, or a bag not fully drawn. The
+	 * bank's end cell says Set up until then. Characters put on seats by hand, with no bag,
+	 * leave Start game there, so a game with empty seats can still start (warn, never lock).
+	 */
 	const showSetup = $derived(
 		// Never while looking back through History (Trevor, 2026-10-18): it is read-only.
 		!ended &&
@@ -743,7 +748,8 @@
 			!setUp &&
 			!arranging &&
 			!placing &&
-			game.seating.some((id) => game.seats[id].characterId === undefined)
+			(Object.keys(game.bag?.tiles ?? {}).length > 0 ||
+				!game.seating.some((id) => game.seats[id].characterId !== undefined))
 	);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
