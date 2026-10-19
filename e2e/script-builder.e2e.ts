@@ -96,6 +96,51 @@ test('opens a saved script to edit it', async ({ page }) => {
 	await expect(page).toHaveURL(/\/build-script$/);
 });
 
+test.describe('in a computer window', () => {
+	test.use({ viewport: { width: 1440, height: 900 } });
+
+	test('Preview shows a saved script before opening it', async ({ page }) => {
+		// The Library's Preview, in its picker too (Trevor, 2026-10-18).
+		await page.goto('/build-script');
+		await page.getByRole('textbox', { name: 'Name' }).fill('Look first');
+		for (const name of ['Chef', 'Imp']) await character(page, name).click();
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+		await page.getByRole('button', { name: 'Clear the script' }).click();
+		await page
+			.getByRole('alertdialog', { name: 'Clear the script?' })
+			.getByRole('button', { name: 'Confirm' })
+			.click();
+
+		await page.getByRole('button', { name: 'Open a saved script' }).click();
+		const library = page.getByRole('dialog', { name: 'Open a saved script' });
+		const toggle = library.getByRole('button', { name: 'Preview', exact: true });
+		await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+		// A tap previews it beside the list; the builder is untouched until it's opened.
+		await library.getByText('Look first').click();
+		const pane = library.getByRole('region', { name: 'Look first' });
+		await expect(pane.getByTestId('script-sheet')).toContainText('Chef');
+		await expect(page.getByTestId('count-demon')).toHaveText('0');
+		await pane.getByRole('button', { name: 'Open in the Script builder' }).click();
+		await expect(library).toBeHidden();
+		await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Look first');
+		await expect(page.getByTestId('count-demon')).toHaveText('1');
+
+		// With Preview off, a tap opens it straight away.
+		await page.getByRole('button', { name: 'Clear the script' }).click();
+		await page
+			.getByRole('alertdialog', { name: 'Clear the script?' })
+			.getByRole('button', { name: 'Confirm' })
+			.click();
+		await page.getByRole('button', { name: 'Open a saved script' }).click();
+		await toggle.click();
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		await library.getByText('Look first').click();
+		await expect(library).toBeHidden();
+		await expect(page.getByTestId('count-demon')).toHaveText('1');
+	});
+});
+
 test('adds a homebrew character from a Homebrew Wiki collection, credited', async ({ page }) => {
 	// The Worker fetches the wiki; here its answers are stood in for, so the test needs no network.
 	await page.route('**/api/homebrew-wiki/collections', (route) =>
@@ -401,6 +446,9 @@ test('Show only selected lists just the chosen characters', async ({ page }) => 
 	await expect(only).toHaveAttribute('aria-pressed', 'true');
 	await expect(character(page, 'Washerwoman')).toHaveCount(0);
 	await expect(character(page, 'Chef')).toBeVisible();
+	// Each type's header says how many it lists (Trevor, 2026-10-19).
+	await expect(page.getByRole('button', { name: 'Townsfolk (2)', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Demons (1)', exact: true })).toBeVisible();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
 	await expect(character(page, 'Empath')).toBeVisible();
 	await expect(character(page, 'Chef')).toHaveCount(0);
@@ -471,10 +519,13 @@ test('Download shows the JSON first, with Copy and Download', async ({ page }) =
 	await character(page, 'Imp').tap();
 	await page.getByRole('button', { name: 'Download script JSON' }).tap();
 	const dialog = page.getByRole('dialog');
-	await expect(dialog.getByTestId('builder-json')).toContainText('"imp"');
-	await expect(dialog.getByRole('button', { name: 'Copy JSON' })).toBeVisible();
+	// The shared file view: the file's name, Copy and Download in its own header, line numbers.
+	const file = dialog.getByTestId('builder-json');
+	await expect(file).toContainText('"imp"');
+	await expect(file.locator('figcaption')).toContainText('script.json');
+	await expect(file.getByRole('button', { name: 'Copy JSON' })).toBeVisible();
 	const download = page.waitForEvent('download');
-	await dialog.getByRole('button', { name: 'Download script JSON' }).tap();
+	await file.getByRole('button', { name: 'Download script JSON' }).tap();
 	expect((await download).suggestedFilename()).toBe('script.json');
 });
 
@@ -483,7 +534,7 @@ test("each type's header stays pinned under the band while its characters scroll
 	page
 }) => {
 	await page.goto('/build-script');
-	const townsfolk = page.getByRole('button', { name: 'Townsfolk', exact: true });
+	const townsfolk = page.getByRole('button', { name: /^Townsfolk \(\d+\)$/ });
 	await expect(townsfolk).toBeVisible();
 	await page.evaluate(() => window.scrollBy(0, 900));
 	// Just under the band, whose last line is the search.

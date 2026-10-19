@@ -71,9 +71,15 @@
 		activeCharacters?: ReadonlySet<CharacterId>;
 		/** `custom`: only the user's own cards, e.g. in the Library (Trevor, 2026-10-16). */
 		only?: 'custom';
+		/**
+		 * The quick card opens from a button in the sheet's header, next to its X, instead of
+		 * its own section (Trevor, 2026-10-18); the sheet calls `openQuick`.
+		 */
+		quickInHeader?: boolean;
 	}
 
 	type InputKind = 'none' | InfoTokenValue['kind'];
+	type CharacterCount = 'none' | 'exact' | 'range';
 
 	let {
 		onchoose,
@@ -83,13 +89,19 @@
 		onadd,
 		characters = [],
 		activeCharacters,
-		only
+		only,
+		quickInHeader = false
 	}: Props = $props();
 
 	// No search: there are too few cards for it to help (Trevor, 2026-10-16).
-	const standard = STANDARD_INFO_TOKENS.filter((token) => !token.extra);
+	/** Alphabetical by their words, formatting and case ignored (Trevor, 2026-10-18: every list). */
+	const byWords = (a: string, b: string) =>
+		plainText(a).localeCompare(plainText(b), undefined, { sensitivity: 'base', numeric: true });
+	const alphabetical = <T extends { text: string }>(tokens: readonly T[]) =>
+		[...tokens].sort((a, b) => byWords(a.text, b.text));
+	const standard = alphabetical(STANDARD_INFO_TOKENS.filter((token) => !token.extra));
 	// Trevor's own additions, listed apart so they read as not the base game's (2026-10-18).
-	const extras = STANDARD_INFO_TOKENS.filter((token) => token.extra);
+	const extras = alphabetical(STANDARD_INFO_TOKENS.filter((token) => token.extra));
 
 	/**
 	 * A card that asks for something to fill in (words, a number or one of its answers) asks
@@ -137,7 +149,7 @@
 	let quickOpen = $state(false);
 	let quickAdds = $state(false);
 	let quickText = $state('');
-	function openQuick(add = false) {
+	export function openQuick(add = false) {
 		quickText = '';
 		quickAdds = add;
 		quickOpen = true;
@@ -157,15 +169,7 @@
 			return character ? [character] : [];
 		});
 
-	// Alphabetical by their words, formatting ignored (Trevor, 2026-10-16).
-	const sorted = $derived(
-		[...customInfoTokens.list].sort((a, b) =>
-			plainText(a.text).localeCompare(plainText(b.text), undefined, {
-				sensitivity: 'base',
-				numeric: true
-			})
-		)
-	);
+	const sorted = $derived(alphabetical(customInfoTokens.list));
 	// A card that belongs to characters sits under Character-Specific instead of Custom.
 	const custom = $derived(sorted.filter((token) => !token.characterIds?.length));
 	const tied = $derived(
@@ -175,7 +179,25 @@
 				(!activeCharacters || token.characterIds.some((id) => activeCharacters.has(id)))
 		)
 	);
-	const characterRows = $derived(characterCards ?? []);
+	/** Character cards and the Storyteller's own for characters, in one A–Z list. */
+	const characterSpecific = $derived(
+		[
+			...(characterCards ?? []).map((row) => ({
+				key: `card:${row.card.id}`,
+				words: t(row.card.titleKey),
+				tieBreak: row.character.name,
+				row,
+				token: undefined
+			})),
+			...tied.map((token) => ({
+				key: `custom:${token.id}`,
+				words: token.text,
+				tieBreak: '',
+				row: undefined,
+				token
+			}))
+		].sort((a, b) => byWords(a.words, b.words) || byWords(a.tieBreak, b.tieBreak))
+	);
 
 	let aboutOpen = $state(false);
 	let aboutAnchor = $state<HTMLElement>();
@@ -219,8 +241,12 @@
 		min: string;
 		max: string;
 		choices: string[];
+		/** How many characters it shows: none, an exact count, or a range (Trevor, 2026-10-18). */
+		count: CharacterCount;
+		/** The exact count, or a range's most. */
 		characters: number;
-		exactly: boolean;
+		/** A range's least. */
+		fewest: number;
 		notInPlay: boolean;
 		answerOnly: boolean;
 	}>(blankEditor());
@@ -241,8 +267,9 @@
 			min: '',
 			max: '',
 			choices: ['', ''],
-			characters: 0,
-			exactly: false,
+			count: 'none' as CharacterCount,
+			characters: 1,
+			fewest: 1,
 			notInPlay: false,
 			answerOnly: false
 		};
@@ -259,8 +286,9 @@
 			min: value?.kind === 'number' && value.min !== undefined ? String(value.min) : '',
 			max: value?.kind === 'number' && value.max !== undefined ? String(value.max) : '',
 			choices: value?.kind === 'choices' ? [...value.options] : ['', ''],
-			characters: token?.asks?.characters ?? 0,
-			exactly: token?.asks?.exactly === true,
+			count: countOf(token?.asks),
+			characters: token?.asks?.characters ?? 1,
+			fewest: token?.asks?.fewest ?? 1,
 			notInPlay: token?.asks?.notInPlay === true,
 			answerOnly: token?.answerOnly === true
 		};
@@ -284,6 +312,25 @@
 		editOpen = false;
 	}
 
+	/** A whole number as typed: digits, with a minus sign only in front. */
+	const wholeNumber = (text: string) =>
+		(text.trimStart().startsWith('-') ? '-' : '') + text.replace(/\D/g, '');
+
+	function countOf(asks: InfoTokenAsks | undefined): CharacterCount {
+		if (!asks?.characters) return 'none';
+		const from = asks.exactly ? asks.characters : (asks.fewest ?? 1);
+		return from < asks.characters ? 'range' : 'exact';
+	}
+
+	/** A range needs room for two numbers; switching keeps what was set where it can. */
+	function setCount(count: CharacterCount) {
+		editing.count = count;
+		if (count === 'range') {
+			editing.characters = Math.max(editing.characters, 2);
+			editing.fewest = Math.min(editing.fewest, editing.characters - 1);
+		}
+	}
+
 	/** What the editor's fields ask for; the store drops what can't be asked (one answer). */
 	function editorAsks(fields: typeof editing): InfoTokenAsks {
 		const whole = (text: string) => (/^-?\d+$/.test(text.trim()) ? Number(text) : undefined);
@@ -295,10 +342,13 @@
 					: fields.input === 'choices'
 						? { kind: 'choices', options: cleanChoices(fields.choices) }
 						: undefined;
+		const shows = fields.count !== 'none';
+		const range = fields.count === 'range' && fields.fewest < fields.characters;
 		return {
-			characters: fields.characters || undefined,
-			exactly: fields.exactly || undefined,
-			notInPlay: fields.notInPlay || undefined,
+			characters: shows ? fields.characters : undefined,
+			exactly: shows && !range ? true : undefined,
+			fewest: range && fields.fewest > 1 ? fields.fewest : undefined,
+			notInPlay: (shows && fields.notInPlay) || undefined,
 			value
 		};
 	}
@@ -377,15 +427,23 @@
 		</Collapsible>
 	{/if}
 
+	<!-- Not one of the saved cards, so in a space of its own (Trevor, 2026-10-18). -->
+	{#if !only && !quickInHeader}
+		<Collapsible title={t('info-tokens.quick')} storageKey="info-tokens-quick" {level}>
+			<ul class="cards">
+				<InfoTokenTile
+					text={t('info-tokens.quick')}
+					quick
+					asks={{ value: { kind: 'text' } }}
+					onchoose={() => openQuick()}
+					onadd={onadd && (() => openQuick(true))}
+				/>
+			</ul>
+		</Collapsible>
+	{/if}
+
 	<Collapsible title={t('info-tokens.custom')} storageKey="info-tokens-custom" {level}>
 		<ul class="cards">
-			<InfoTokenTile
-				text={t('info-tokens.quick')}
-				quick
-				asks={{ value: { kind: 'text' } }}
-				onchoose={() => openQuick()}
-				onadd={onadd && (() => openQuick(true))}
-			/>
 			{#each custom as token (token.id)}
 				{@render customTile(token)}
 			{/each}
@@ -421,23 +479,23 @@
 				</span>
 			{/snippet}
 			<ul class="cards">
-				{#each characterRows as row (row.card.id)}
-					{@const title = t(row.card.titleKey)}
-					<InfoTokenTile
-						text={title}
-						asks={{ value: { kind: 'text' } }}
-						aria-label={t('info-tokens.cardFor', { card: title, name: row.character.name })}
-						owners={[row.character]}
-						onchoose={() => fill(row)}
-						onadd={onadd && (() => fill(row, true))}
-					/>
-				{/each}
-				{#each tied as token (token.id)}
-					{@render customTile(token)}
-				{/each}
-				{#if characterRows.length === 0 && tied.length === 0}
+				{#each characterSpecific as item (item.key)}
+					{#if item.row}
+						{@const row = item.row}
+						<InfoTokenTile
+							text={item.words}
+							asks={{ value: { kind: 'text' } }}
+							aria-label={t('info-tokens.cardFor', { card: item.words, name: row.character.name })}
+							owners={[row.character]}
+							onchoose={() => fill(row)}
+							onadd={onadd && (() => fill(row, true))}
+						/>
+					{:else if item.token}
+						{@render customTile(item.token)}
+					{/if}
+				{:else}
 					<li class="none">{t('common.none')}</li>
-				{/if}
+				{/each}
 			</ul>
 		</Collapsible>
 	{/if}
@@ -595,8 +653,18 @@
 				/>
 				{#if editing.input === 'number'}
 					<div class="range">
-						<TextField label={t('info-tokens.min')} inputmode="numeric" bind:value={editing.min} />
-						<TextField label={t('info-tokens.max')} inputmode="numeric" bind:value={editing.max} />
+						<TextField
+							label={t('info-tokens.min')}
+							inputmode="numeric"
+							filter={wholeNumber}
+							bind:value={editing.min}
+						/>
+						<TextField
+							label={t('info-tokens.max')}
+							inputmode="numeric"
+							filter={wholeNumber}
+							bind:value={editing.max}
+						/>
 					</div>
 				{:else if editing.input === 'choices'}
 					<TextListField
@@ -616,28 +684,54 @@
 					disabled={editing.input === 'none'}
 					onChange={(checked) => (editing.answerOnly = checked)}
 				/>
-				<div class="count-field">
-					<span class="count-label">{t('info-tokens.askCharacters')}</span>
-					<Stepper
-						bind:value={editing.characters}
-						label={t('info-tokens.askCharacters')}
-						lessLabel={t('info-tokens.fewer')}
-						moreLabel={t('info-tokens.more')}
-						min={0}
-						max={MAX_ASKED_CHARACTERS}
-					/>
-				</div>
-				<!-- As "These characters are not in play": always that many, chosen from those not in play. -->
-				<Toggle
-					label={t('info-tokens.exactly')}
-					checked={editing.exactly && editing.characters > 0}
-					disabled={editing.characters === 0}
-					onChange={(checked) => (editing.exactly = checked)}
+				<!-- None, exact or a range, then its numbers, always in place (no reflow). -->
+				<Select
+					label={t('info-tokens.askCharacters')}
+					value={editing.count}
+					options={(['none', 'exact', 'range'] as const).map((value) => ({
+						value,
+						label: t(`info-tokens.characterCount.${value}`)
+					}))}
+					onChange={setCount}
 				/>
+				<div class="count-field">
+					{#if editing.count === 'range'}
+						<span class="count-label">{t('info-tokens.from')}</span>
+						<Stepper
+							bind:value={editing.fewest}
+							label={t('info-tokens.from')}
+							lessLabel={t('info-tokens.fewerFrom')}
+							moreLabel={t('info-tokens.moreFrom')}
+							min={1}
+							max={editing.characters - 1}
+						/>
+						<span class="count-label">{t('info-tokens.to')}</span>
+						<Stepper
+							bind:value={editing.characters}
+							label={t('info-tokens.to')}
+							lessLabel={t('info-tokens.fewer')}
+							moreLabel={t('info-tokens.more')}
+							min={editing.fewest + 1}
+							max={MAX_ASKED_CHARACTERS}
+						/>
+					{:else}
+						<span class="count-label">{t('info-tokens.howMany')}</span>
+						<Stepper
+							bind:value={editing.characters}
+							label={t('info-tokens.howMany')}
+							lessLabel={t('info-tokens.fewer')}
+							moreLabel={t('info-tokens.more')}
+							min={1}
+							max={MAX_ASKED_CHARACTERS}
+							disabled={editing.count === 'none'}
+						/>
+					{/if}
+				</div>
+				<!-- As "These characters are not in play": chosen from those not in play. -->
 				<Toggle
 					label={t('info-tokens.notInPlay')}
-					checked={editing.notInPlay && editing.characters > 0}
-					disabled={editing.characters === 0}
+					checked={editing.notInPlay && editing.count !== 'none'}
+					disabled={editing.count === 'none'}
 					onChange={(checked) => (editing.notInPlay = checked)}
 				/>
 				{#if characters.length > 0}
@@ -767,11 +861,11 @@
 		background: var(--surface, Canvas);
 		color: var(--on-surface);
 	}
+	/* The card fills the box, so if it must scroll its scrollbar is at the box's edge, not
+	   beside the centred text (Trevor, 2026-10-18). */
 	.preview-card {
 		height: 100%;
 		display: grid;
-		place-items: center;
-		padding: var(--space-2);
 	}
 	.range {
 		display: grid;
@@ -782,8 +876,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
+		gap: var(--space-2) var(--space-3);
 	}
 	.count-label {
 		font-weight: 600;

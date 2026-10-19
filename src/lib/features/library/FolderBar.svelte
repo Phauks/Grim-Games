@@ -4,6 +4,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -120,12 +121,15 @@
 				{#if here}
 					<button
 						type="button"
-						class="crumb"
+						class="crumb root"
 						data-drop-folder={TOP_FOLDER}
-						onclick={() => (current = undefined)}>{t('library.heading')}</button
+						title={t('library.heading')}
+						onclick={() => (current = undefined)}>{@render root()}</button
 					>
 				{:else}
-					<span class="crumb" aria-current="location">{t('library.heading')}</span>
+					<span class="crumb root" aria-current="location" title={t('library.heading')}
+						>{@render root()}</span
+					>
 				{/if}
 			</li>
 			{#each path as folder (folder.id)}
@@ -190,6 +194,11 @@
 		/>
 	</div>
 </div>
+
+<!-- The top level is a home icon, which saves room (Trevor, 2026-10-18); it still reads "Library". -->
+{#snippet root()}
+	<Icon name="home" /><span class="visually-hidden">{t('library.heading')}</span>
+{/snippet}
 
 <FolderNameDialog bind:open={nameOpen} folder={naming?.folder} parent={here?.id} />
 
@@ -269,6 +278,10 @@
 		font: inherit;
 		font-weight: 600;
 		overflow-wrap: anywhere;
+	}
+	.root {
+		justify-content: center;
+		min-width: var(--tap-target);
 	}
 	button.crumb {
 		color: var(--accent);

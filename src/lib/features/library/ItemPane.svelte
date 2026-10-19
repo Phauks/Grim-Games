@@ -6,6 +6,13 @@
 	export function setLibraryWindow(open: () => void) {
 		setContext(WINDOW, open);
 	}
+
+	const PICK = Symbol('library-pick');
+	type LibraryPick = { active: () => boolean; label: () => string; pick: () => void };
+	/** How a Library picker takes the previewed item (its button replaces "Open in a window"). */
+	export function setLibraryPick(pick: LibraryPick) {
+		setContext(PICK, pick);
+	}
 </script>
 
 <script lang="ts">
@@ -33,6 +40,7 @@
 
 	let { open = $bindable(false), title, inline, heading, headActions, children }: Props = $props();
 	const openWindow = getContext<(() => void) | undefined>(WINDOW);
+	const pick = getContext<LibraryPick | undefined>(PICK);
 </script>
 
 {#if inline}
@@ -50,7 +58,9 @@
 				</h2>
 				<div class="head-actions">
 					{@render headActions?.()}
-					{#if openWindow}
+					{#if pick?.active()}
+						<IconButton icon="open" label={pick.label()} onclick={pick.pick} />
+					{:else if openWindow}
 						<IconButton icon="openItem" label={t('library.openWindow')} onclick={openWindow} />
 					{/if}
 					<IconButton icon="close" label={t('common.close')} onclick={() => (open = false)} />

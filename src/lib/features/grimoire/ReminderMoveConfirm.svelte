@@ -13,7 +13,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { onBoard } from './reminders.ts';
+	import { onBoard, tokenLabel } from './reminders.ts';
 
 	/**
 	 * Moving a reminder that normally stays where it was put (an "Is The Drunk", a Poisoned
@@ -154,7 +154,7 @@
 		<p class="what">
 			<CharacterBadge characterId={pending.reminder.characterId} character={owner} inline />'s
 			<ReminderToken
-				label={pending.reminder.label}
+				label={tokenLabel(pending.reminder)}
 				character={owner}
 				alignment={placingAlignment(game, pending.reminder.characterId, characters)}
 			/> reminder

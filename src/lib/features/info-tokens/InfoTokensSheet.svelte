@@ -9,6 +9,7 @@
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { tokenTitle } from './token-title.ts';
 	import { characterCardsFor } from './character-cards.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
@@ -53,6 +54,7 @@
 		| { kind: 'sets'; token: InfoToken };
 
 	let view = $state<View>({ kind: 'list' });
+	let list = $state<ReturnType<typeof InfoTokenList>>();
 	let picked = $state<CharacterId[]>([]);
 
 	type Card = ChainCard;
@@ -161,9 +163,21 @@
 </script>
 
 <BottomSheet bind:open {title} height="85dvh" focusFirstField={false}>
+	<!-- The quick card, in the header next to the X (Trevor, 2026-10-18); kept in place on
+	     every view, usable on the list. -->
+	{#snippet actions()}
+		<IconButton
+			icon="quickCard"
+			label={t('info-tokens.quick')}
+			disabled={view.kind !== 'list'}
+			onclick={() => list?.openQuick()}
+		/>
+	{/snippet}
 	<ErrorBoundary area="info-tokens">
 		{#if view.kind === 'list'}
 			<InfoTokenList
+				bind:this={list}
+				quickInHeader
 				onchoose={(token, detail) => choose(token, false, detail)}
 				level={3}
 				{characterCards}

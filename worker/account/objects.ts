@@ -25,10 +25,14 @@ import {
 	SESSION_IDLE_MS,
 	SHORT_SESSION_IDLE_MS,
 	type AccountUser as User,
+	MAX_SYNC_BYTES,
 	type DevicePlace,
 	type DeviceSession,
 	type DocKind,
-	type ProfileDoc
+	type ProfileDoc,
+	type SyncRequest,
+	type SyncResponse,
+	type SyncResult
 } from '../../src/lib/features/account/account-protocol.ts';
 import { isLegacyAccountId, randomAccountId } from '../../src/lib/features/account/account-id.ts';
 import {
@@ -464,6 +468,22 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				body TEXT,
 				PRIMARY KEY (kind, id)
 			);
+			-- The account's change counter: a device asks for documents changed after a value.
+			CREATE TABLE IF NOT EXISTS sync_counter (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				value INTEGER NOT NULL
+			);
+			INSERT OR IGNORE INTO sync_counter (id, value) VALUES (1, 1);
+			-- The counter's value when each document last changed.
+			CREATE TABLE IF NOT EXISTS doc_seq (
+				kind TEXT NOT NULL,
+				id TEXT NOT NULL,
+				seq INTEGER NOT NULL,
+				PRIMARY KEY (kind, id)
+			);
+			CREATE INDEX IF NOT EXISTS doc_seq_by_seq ON doc_seq (seq);
+			-- Documents saved before the counter existed count as changed at 1.
+			INSERT OR IGNORE INTO doc_seq (kind, id, seq) SELECT kind, id, 1 FROM doc;
 		`);
 	}
 
@@ -751,6 +771,12 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			deleted ? 1 : 0,
 			text
 		);
+		const seq = this.sql
+			.exec<{ value: number }>(
+				'UPDATE sync_counter SET value = value + 1 WHERE id = 1 RETURNING value'
+			)
+			.one().value;
+		this.sql.exec('INSERT OR REPLACE INTO doc_seq (kind, id, seq) VALUES (?, ?, ?)', kind, id, seq);
 		return {
 			ok: true,
 			doc: {
@@ -762,6 +788,64 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				...(text === null ? {} : { body: JSON.parse(text) as unknown })
 			}
 		};
+	}
+
+	/**
+	 * Applies a device's queued changes in order (each as `putDoc`), then returns the
+	 * documents of `kinds` changed after `since`, oldest first, up to about MAX_SYNC_BYTES.
+	 */
+	async sync(request: SyncRequest, now: number): Promise<SyncResponse> {
+		const results: SyncResult[] = [];
+		for (const change of request.changes) {
+			const { kind, id } = change;
+			const result = await this.putDoc(
+				kind,
+				id,
+				change.baseRev,
+				change.body,
+				change.deleted === true,
+				now
+			);
+			results.push(
+				result.ok
+					? { kind, id, status: 'saved', doc: result.doc }
+					: result.reason === 'conflict'
+						? { kind, id, status: 'conflict', doc: result.doc }
+						: { kind, id, status: result.reason }
+			);
+		}
+		const changes: ProfileDoc[] = [];
+		let cursor = request.since;
+		let more = false;
+		if (request.kinds.length > 0) {
+			const rows = this.sql.exec<DocRow & { seq: number }>(
+				`SELECT d.kind, d.id, d.rev, d.updated_at, d.deleted, d.body, s.seq
+				FROM doc_seq s JOIN doc d ON d.kind = s.kind AND d.id = s.id
+				WHERE s.seq > ? AND s.kind IN (${request.kinds.map(() => '?').join(', ')})
+				ORDER BY s.seq`,
+				request.since,
+				...request.kinds
+			);
+			let bytes = 0;
+			for (const row of rows) {
+				bytes += (row.body?.length ?? 0) + 200;
+				// Always at least one, so a single large document still gets through.
+				if (changes.length > 0 && bytes > MAX_SYNC_BYTES) {
+					more = true;
+					break;
+				}
+				changes.push(toDoc(row));
+				cursor = row.seq;
+			}
+		}
+		if (!more) {
+			// Nothing further of these kinds: the device can start from the newest value.
+			cursor = Math.max(
+				cursor,
+				this.sql.exec<{ value: number }>('SELECT value FROM sync_counter WHERE id = 1').one().value
+			);
+		}
+		return { results, changes, cursor, more };
 	}
 
 	/** Everything stored for this user, for "Download my data". */

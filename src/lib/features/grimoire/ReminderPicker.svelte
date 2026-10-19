@@ -12,7 +12,8 @@
 		reminderCopies,
 		reminderCopiesLeft,
 		reminderGroups,
-		reminderKey
+		reminderKey,
+		tokenLabel
 	} from './reminders.ts';
 
 	interface Props {
@@ -163,7 +164,10 @@
 					aria-pressed="true"
 					onclick={() => onRemove(reminder.reminderId)}
 				>
-					<ReminderToken label={reminder.label} character={characters.get(reminder.characterId)} />
+					<ReminderToken
+						label={tokenLabel(reminder)}
+						character={characters.get(reminder.characterId)}
+					/>
 				</button>
 			{:else}
 				<span class="none">None</span>

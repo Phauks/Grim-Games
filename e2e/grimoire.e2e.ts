@@ -815,7 +815,8 @@ test('every reminder on a crowded seat is shown and can be dragged off', async (
 	await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0, { timeout: 15000 });
 
 	// Each one is on the board and on top where it sits, so a finger can take any of them.
-	const tokens = page.getByTestId('board-reminder');
+	// (The bank, under the board, keeps its generic ∞ reminder.)
+	const tokens = page.locator('[data-testid="board-reminder"]:not([data-tray] *)');
 	await expect(tokens).toHaveCount(7);
 	for (let i = 0; i < 7; i++) {
 		const box = (await tokens.nth(i).boundingBox())!;
@@ -3329,4 +3330,63 @@ test("a placed reminder's ⋯ duplicates it beside the original, marked as uncom
 	await expect(page.locator('.chip-slot[data-extra]')).toHaveCount(1);
 	// A new token: the bank keeps its Poisoned (Trevor, 2026-10-18).
 	await expect(inBank).toHaveCount(1);
+});
+
+test('the generic ∞ reminder is always in the bank and can carry a few words', async ({ page }) => {
+	await startGame(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	// Last in the bank, whatever is in play (Trevor, 2026-10-18).
+	await expect(bank.locator('> li').last().getByTestId('board-reminder')).toHaveAttribute(
+		'aria-label',
+		'Generic reminder'
+	);
+	await bank.getByRole('button', { name: 'Generic reminder' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Put ∞ on' })
+		.getByRole('button', { name: /Seat 1 None/ })
+		.tap();
+	await expect(seatLabelled(page, 'Seat 1: no name, no character, 1 reminder')).toBeAttached();
+	// Placing one never uses it up.
+	await expect(bank.getByRole('button', { name: 'Generic reminder' })).toHaveCount(1);
+
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Actions for ∞' }).tap();
+	const text = page.getByTestId('reminder-note');
+	await text.fill('Chose Sam');
+	await text.press('Enter');
+	await page.keyboard.press('Escape');
+	await closeSheet(page);
+	await expect(
+		page.locator('[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]')
+	).toHaveCount(1);
+});
+
+// Closing a step opened from the walk-through must not crash the dialog (Grimoire board,
+// 2026-10-18). On a phone the tap also opens a glossary word in the strip's text, and closing
+// the step closed that popover from inside zag, which crashed Svelte (null batch).
+test('a step opened from the walk-through closes cleanly', async ({ page }) => {
+	const errors: string[] = [];
+	page.on('pageerror', (error) => errors.push(error.message));
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Washerwoman'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Washerwoman');
+	await strip.locator('button.step').tap();
+	const step = page.getByRole('dialog', { name: 'Washerwoman' });
+	await expect(step).toBeVisible();
+	await step.getByRole('button', { name: 'Close' }).tap();
+	await expect(step).toBeHidden();
+	await expect(page.getByText("Couldn't show this part")).toHaveCount(0);
+	await expect(strip).toContainText('Washerwoman');
+	expect(errors).toEqual([]);
 });

@@ -598,3 +598,23 @@ test('Loric are green, Travellers purple in headings and split blue and red on c
 	expect(background).toContain(rgb(await token('--palette-blood-700')));
 	await chip.screenshot({ path: 'test-results/traveller-reminder.png' });
 });
+
+test('tapping a token opens that character, in cards and in the table', async ({ page }) => {
+	// Trevor (2026-10-19): "in character reference, allow clicking token icon in order to open
+	// glossary".
+	await page.goto('/reference');
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('Washerwoman');
+	await page.getByRole('button', { name: 'About the Washerwoman' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Washerwoman' });
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+
+	await page.getByRole('button', { name: 'Show as table' }).tap();
+	await page
+		.getByTestId('character-table')
+		.getByRole('button', { name: 'About the Washerwoman' })
+		.tap();
+	await expect(dialog).toBeVisible();
+});

@@ -1447,3 +1447,35 @@ test('rows scrolled under the table header stay under it', async ({ page }) => {
 		});
 	expect(over).toEqual([]);
 });
+
+test('turning on a source with a list kept from an earlier visit shows it, without an error', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): reading a kept list for the first time while the table worked out
+	// what to show wrote state there (svelte state_unsafe_mutation).
+	const errors: string[] = [];
+	page.on('pageerror', (error) => errors.push(error.message));
+	page.on('console', (message) => {
+		if (message.type() === 'error') errors.push(message.text());
+	});
+	const hamletScript = [
+		{ id: '_meta', name: 'Little Hamlet', author: 'TPI' },
+		'washerwoman',
+		'imp'
+	];
+	const kept = {
+		scripts: [{ section: 'recommended', link: scriptToolLink(hamletScript), json: hamletScript }]
+	};
+	await page.addInitScript(
+		(list) => localStorage.setItem('grim-games.curated-scripts', JSON.stringify(list)),
+		kept
+	);
+	await page.route('**/api/curated', (route) => route.fulfill({ json: kept }));
+	await page.goto('/scripts');
+	await expect(page.getByTestId('picker-status')).toHaveText('None');
+	await openSources(page);
+	await sourceMenu(page).getByText('Official custom scripts', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('table', { name: 'Scripts' })).toContainText('Little Hamlet');
+	expect(errors).toEqual([]);
+});
