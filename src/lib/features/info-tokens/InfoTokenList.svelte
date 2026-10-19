@@ -71,6 +71,11 @@
 		activeCharacters?: ReadonlySet<CharacterId>;
 		/** `custom`: only the user's own cards, e.g. in the Library (Trevor, 2026-10-16). */
 		only?: 'custom';
+		/**
+		 * The quick card opens from a button in the sheet's header, next to its X, instead of
+		 * its own section (Trevor, 2026-10-18); the sheet calls `openQuick`.
+		 */
+		quickInHeader?: boolean;
 	}
 
 	type InputKind = 'none' | InfoTokenValue['kind'];
@@ -84,7 +89,8 @@
 		onadd,
 		characters = [],
 		activeCharacters,
-		only
+		only,
+		quickInHeader = false
 	}: Props = $props();
 
 	// No search: there are too few cards for it to help (Trevor, 2026-10-16).
@@ -138,7 +144,7 @@
 	let quickOpen = $state(false);
 	let quickAdds = $state(false);
 	let quickText = $state('');
-	function openQuick(add = false) {
+	export function openQuick(add = false) {
 		quickText = '';
 		quickAdds = add;
 		quickOpen = true;
@@ -406,15 +412,23 @@
 		</Collapsible>
 	{/if}
 
+	<!-- Not one of the saved cards, so in a space of its own (Trevor, 2026-10-18). -->
+	{#if !only && !quickInHeader}
+		<Collapsible title={t('info-tokens.quick')} storageKey="info-tokens-quick" {level}>
+			<ul class="cards">
+				<InfoTokenTile
+					text={t('info-tokens.quick')}
+					quick
+					asks={{ value: { kind: 'text' } }}
+					onchoose={() => openQuick()}
+					onadd={onadd && (() => openQuick(true))}
+				/>
+			</ul>
+		</Collapsible>
+	{/if}
+
 	<Collapsible title={t('info-tokens.custom')} storageKey="info-tokens-custom" {level}>
 		<ul class="cards">
-			<InfoTokenTile
-				text={t('info-tokens.quick')}
-				quick
-				asks={{ value: { kind: 'text' } }}
-				onchoose={() => openQuick()}
-				onadd={onadd && (() => openQuick(true))}
-			/>
 			{#each custom as token (token.id)}
 				{@render customTile(token)}
 			{/each}

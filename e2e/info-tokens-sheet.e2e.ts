@@ -199,3 +199,13 @@ test('"not in play" on the info tokens page uses the bluff picker, with its filt
 		.evaluateAll((els) => els.map((el) => el.closest('[data-team]')?.getAttribute('data-team')));
 	expect(ids).toEqual(['good', 'good', 'good']);
 });
+
+test("the board sheet's quick card opens from its header, beside the X", async ({ page }) => {
+	await openSheet(page);
+	// Not in the list (Trevor, 2026-10-18).
+	await expect(page.getByRole('heading', { name: 'Quick card' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	await page.getByRole('textbox', { name: 'Text' }).fill('You may not speak');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(shown(page).getByRole('heading')).toHaveText('You may not speak');
+});
