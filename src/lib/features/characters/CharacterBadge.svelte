@@ -11,7 +11,7 @@
 	import CharacterDialog from './CharacterDialog.svelte';
 	import { prefetchWikiPage } from './wiki-page.svelte.ts';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
-	import { contextCharacters } from './character-context.ts';
+	import { contextCharacters, shownCharacter } from './character-context.ts';
 
 	interface Props {
 		characterId: CharacterId;
@@ -42,8 +42,11 @@
 		inline = false,
 		text,
 		character: given,
-		interactive = true
+		interactive: tappable = true
 	}: Props = $props();
+	// Inside this character's own details, its badge would only open them again.
+	const shown = shownCharacter();
+	const interactive = $derived(tappable && shown?.() !== characterId);
 	let open = $state(false);
 	// The dialog is only created on first tap: pages like /reference show hundreds of badges.
 	let used = $state(false);

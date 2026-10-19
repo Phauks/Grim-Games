@@ -169,3 +169,24 @@ test('the Jinxes section lists every TPI jinx under the other character', async 
 	expect(barBox.width).toBeGreaterThan(sectionBox.width - 2);
 	await expect(jinxes.locator('.entry .body').first()).not.toHaveCSS('padding-inline-start', '0px');
 });
+
+test("a character's own badge inside its details does not open them again", async ({ page }) => {
+	// Tapping it opened a second copy over the first: a flash, and one more close (Trevor,
+	// 2026-10-19). Other characters' badges there still open theirs.
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({
+			json: { parse: { text: '<h2>Summary</h2><p>The Alchemist is not the Boffin.</p>' } }
+		})
+	);
+	await page.goto('/reference');
+	await page.getByRole('searchbox').fill('Alchemist');
+	await page.getByRole('button', { name: 'About the Alchemist' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Alchemist' });
+	await expect(dialog).toContainText('is not the');
+	const own = dialog.locator('p .badge[data-character-id="alchemist"]').first();
+	await expect(own).toBeVisible();
+	await expect(own).not.toHaveRole('button');
+	await own.tap();
+	await expect(page.getByRole('dialog', { name: 'Alchemist' })).toHaveCount(1);
+	await expect(dialog.locator('p .badge[data-character-id="boffin"]').first()).toHaveRole('button');
+});
