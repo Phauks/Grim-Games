@@ -537,7 +537,7 @@
 								<ReminderToken
 									label={tokenLabel(reminder)}
 									character={characters.get(reminder.characterId)}
-									alignment={placingAlignment(game, reminder.characterId, characters)}
+									alignment={placingAlignment(game, reminder, characters)}
 								/>
 							</button>
 						</li>
@@ -627,7 +627,7 @@
 						<ReminderToken
 							label={tokenLabel(reminder)}
 							character={characters.get(reminder.characterId)}
-							alignment={placingAlignment(game, reminder.characterId, characters)}
+							alignment={placingAlignment(game, reminder, characters)}
 						/>
 						<span>on {@render seatBadge(on)}</span>
 					</li>
@@ -921,7 +921,7 @@
 		{#if movingReminder}<ReminderToken
 				label={tokenLabel(movingReminder)}
 				character={characters.get(movingReminder.characterId)}
-				alignment={placingAlignment(game, movingReminder.characterId, characters)}
+				alignment={placingAlignment(game, movingReminder, characters)}
 			/>{:else}Reminder{/if}
 	{/snippet}
 	{#snippet subtitle()}
@@ -989,7 +989,7 @@
 		Move {#if movingReminder}<ReminderToken
 				label={tokenLabel(movingReminder)}
 				character={characters.get(movingReminder.characterId)}
-				alignment={placingAlignment(game, movingReminder.characterId, characters)}
+				alignment={placingAlignment(game, movingReminder, characters)}
 			/>{:else}reminder{/if} to
 	{/snippet}
 </SeatChooser>

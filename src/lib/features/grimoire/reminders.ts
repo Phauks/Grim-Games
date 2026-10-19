@@ -16,7 +16,8 @@ import {
 	type Game,
 	type Reminder,
 	type ReminderId,
-	type ReminderInstance
+	type ReminderInstance,
+	type SeatId
 } from '#lib/core/model/index.ts';
 
 export interface ReminderGroup {
@@ -304,4 +305,69 @@ export function bankReminders(
 		}
 	}
 	return front ? [...out.filter((r) => r.now), ...out.filter((r) => !r.now)] : out;
+}
+
+/**
+ * The seats holding a character, in seating order: its token, or really being it (the
+ * Drunk's seat for the Drunk).
+ */
+export function holdersOf(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	return game.seating.filter(
+		(s) =>
+			game.seats[s].characterId === characterId ||
+			trueCharacter(game, s, characters) === characterId
+	);
+}
+
+/**
+ * Whose copies a reminder's tokens still in the bank are (Trevor, 2026-10-19: two Imps, one
+ * good and one evil, each have their own tokens in their own colour). With the character on
+ * one seat or none they belong to no one. Otherwise each seat holding it has the copies the
+ * character lists, less those it has on the board; a token placed before owners were kept
+ * counts against the first seat with one left. Any more than that (a copy the Storyteller
+ * added) go to the first seat, and any fewer come off the last.
+ */
+export function bankOwners(
+	game: Game,
+	characters: CharacterLookup,
+	reminder: Reminder,
+	left: number,
+	copies: ReadonlySet<ReminderId> = NO_COPIES
+): { ownerSeatId?: SeatId; count: number }[] {
+	const holders = holdersOf(game, reminder.characterId, characters);
+	const character = characters.get(reminder.characterId);
+	if (holders.length < 2 || !character) return [{ count: left }];
+	const listed = [...character.reminders, ...character.remindersGlobal].filter(
+		(l) => l === reminder.label
+	).length;
+	const quota = new Map(holders.map((s) => [s, Math.max(1, listed)]));
+	const key = reminderKey(reminder);
+	let unowned = 0;
+	for (const r of counted(game, copies)) {
+		if (reminderKey(r) !== key) continue;
+		const owner = r.ownerSeatId;
+		const own = owner === undefined ? undefined : quota.get(owner);
+		if (owner === undefined || own === undefined) unowned += 1;
+		else quota.set(owner, own - 1);
+	}
+	for (; unowned > 0; unowned--) {
+		const first = holders.find((s) => (quota.get(s) ?? 0) > 0);
+		if (first) quota.set(first, (quota.get(first) ?? 0) - 1);
+	}
+	const out = holders.map((ownerSeatId) => ({
+		ownerSeatId,
+		count: Math.max(0, quota.get(ownerSeatId) ?? 0)
+	}));
+	let extra = left - out.reduce((n, o) => n + o.count, 0);
+	if (extra > 0) out[0].count += extra;
+	for (let i = out.length - 1; extra < 0 && i >= 0; i--) {
+		const take = Math.min(out[i].count, -extra);
+		out[i].count -= take;
+		extra += take;
+	}
+	return out.filter((o) => o.count > 0);
 }
