@@ -2,6 +2,7 @@
 	import { copyText } from '#lib/ui/clipboard.ts';
 	import { downloadFile } from '#lib/ui/download.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { jsonLineTokens } from '#lib/ui/json-tokens.ts';
 	import IconButton from './IconButton.svelte';
 
 	/**
@@ -9,7 +10,8 @@
 	 * numbers and the works, standard component for all showcases"): a header bar with its name
 	 * and Copy and Download side by side, then the text with line numbers. The numbers are
 	 * drawn, not text, so selecting the file copies only the file. `collapsible` makes the
-	 * name the toggle, starting closed unless `open`.
+	 * name the toggle, starting closed unless `open`. A JSON file is coloured by kind of piece
+	 * (Trevor, 2026-10-19).
 	 */
 	interface Props {
 		title: string;
@@ -38,6 +40,7 @@
 
 	const NL = '\n';
 	const lines = $derived(text.split(NL));
+	const json = $derived(type === 'application/json');
 	const bodyId = $props.id();
 </script>
 
@@ -68,7 +71,13 @@
 		</span>
 	</figcaption>
 	<pre id={bodyId} class="body" hidden={!open}><code
-			>{#each lines as line, i (i)}<span class="line">{line}{NL}</span>{/each}</code
+			>{#each lines as line, i (i)}<span class="line"
+					><!-- One grid cell beside the number, however many coloured pieces. --><span
+						>{#if json}{#each jsonLineTokens(line) as token, j (j)}{#if token.kind === 'plain'}{token.text}{:else}<span
+										class={token.kind}>{token.text}</span
+									>{/if}{/each}{:else}{line}{/if}{NL}</span
+					></span
+				>{/each}</code
 		></pre>
 </figure>
 
@@ -149,5 +158,20 @@
 		color: var(--on-surface-muted);
 		text-align: end;
 		user-select: none;
+	}
+	.key {
+		color: var(--code-key);
+	}
+	.string {
+		color: var(--code-string);
+	}
+	.number {
+		color: var(--code-number);
+	}
+	.literal {
+		color: var(--code-literal);
+	}
+	.punctuation {
+		color: var(--code-punctuation);
 	}
 </style>

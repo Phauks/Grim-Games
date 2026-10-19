@@ -82,7 +82,15 @@ export const grimoire: Theme = {
 		'--button': 'var(--palette-ink-900)',
 		'--on-button': 'var(--palette-parchment-200)',
 		'--backdrop': 'rgb(0 0 0 / 0.55)',
-		'--shadow': '0 4px 12px rgb(0 0 0 / 0.6)'
+		'--shadow': '0 4px 12px rgb(0 0 0 / 0.6)',
+		// Coloured JSON (Trevor, 2026-10-19: "since mode files are json, please color
+		// appropriate fields"): names gold like headings, text green, numbers violet,
+		// true/false/null amber, brackets and commas muted.
+		'--code-key': 'var(--palette-gold-400)',
+		'--code-string': 'var(--palette-grass-400)',
+		'--code-number': 'var(--palette-violet-400)',
+		'--code-literal': 'var(--palette-amber-500)',
+		'--code-punctuation': 'var(--palette-parchment-500)'
 	},
 	components: {
 		'--seat-face':
