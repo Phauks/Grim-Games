@@ -24,6 +24,7 @@ export * from './night-text.ts';
 export * from './ability.ts';
 export * from './night-deaths.ts';
 export * from './death-causes.ts';
+export * from './death-reminders.ts';
 export * from './gained-abilities.ts';
 export * from './glossary.ts';
 export * from './reference-table.ts';

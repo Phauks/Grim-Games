@@ -4,6 +4,13 @@ import type { AssistKey } from '#lib/ui/assistance.ts';
 export const STORYTELLER_GROUPS = {
 	night: ['nightWalkthrough', 'nightGuide', 'nightAnswers', 'infoSuggestions'],
 	setup: ['setupReminders', 'rulesWarnings'],
-	day: ['dayAfterNight', 'preDayReminders', 'deathCause', 'demonVotedButton', 'gameEndPrompts'],
+	day: [
+		'dayAfterNight',
+		'preDayReminders',
+		'deathCause',
+		'deathReminderAsk',
+		'demonVotedButton',
+		'gameEndPrompts'
+	],
 	board: ['stackReminders', 'scriptTitle']
 } as const satisfies Record<string, readonly AssistKey[]>;

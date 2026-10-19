@@ -231,3 +231,27 @@ test("the phone's bars follow the header colour, custom colours included", async
 	expect(after.meta).toBe('#203040');
 	expect(hex(after.header)).toBe('#203040');
 });
+
+// Trevor (2026-10-19): on an iPhone the bars stayed flat --surface on the board, because a
+// home-screen app paints the body's fixed background only between them.
+test("the theme's backdrop is a fixed layer that reaches under the phone's bars", async ({
+	page
+}) => {
+	await page.goto('/');
+	await expect(page.getByRole('banner')).toBeVisible();
+	const looks = await page.evaluate(() => {
+		const layer = getComputedStyle(document.body, '::before');
+		return {
+			body: getComputedStyle(document.body).backgroundImage,
+			position: layer.position,
+			image: layer.backgroundImage,
+			zIndex: layer.zIndex,
+			height: parseFloat(layer.height)
+		};
+	});
+	expect(looks.body).toBe('none');
+	expect(looks.position).toBe('fixed');
+	expect(looks.image).toMatch(/gradient/);
+	expect(looks.zIndex).toBe('-1');
+	expect(looks.height).toBeGreaterThanOrEqual(page.viewportSize()!.height);
+});

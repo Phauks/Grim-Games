@@ -27,40 +27,85 @@ class UpdateChecker {
 	/** Refresh was tapped, so the new build taking over reloads the page instead of offering it. */
 	refreshing = false;
 
+	/** The download of each new build being followed, so a check and the watcher share one. */
+	#downloads = new WeakMap<ServiceWorker, Promise<UpdateCheck>>();
+	#watching = false;
+
 	async check(): Promise<UpdateCheck> {
 		this.result = 'checking';
 		this.percent = undefined;
 		this.bytes = undefined;
+		const found = await findUpdate();
+		return this.#finish(typeof found === 'string' ? found : await this.#follow(found));
+	}
+
+	/**
+	 * Follows the downloads the browser starts by itself (on launch, on return to the app, the
+	 * half-hourly check), so About shows one already under way without a tap on Check for
+	 * updates (Trevor, 2026-10-19).
+	 */
+	watch(registration: ServiceWorkerRegistration): void {
+		if (this.#watching) return;
+		this.#watching = true;
+		const container = navigator.serviceWorker;
 		// The new worker reports each file it stores (update-progress.ts).
-		const onMessage = (event: MessageEvent) => {
-			if (!isPrecacheProgress(event.data)) return;
+		container.addEventListener('message', (event: MessageEvent) => {
+			// The first install has nothing to replace, so it is not an update download.
+			if (!isPrecacheProgress(event.data) || !container.controller) return;
 			this.result = 'downloading';
 			this.percent = percentDone(event.data);
 			const { bytes, totalBytes } = event.data;
 			this.bytes =
 				bytes !== undefined && totalBytes ? { done: bytes, total: totalBytes } : undefined;
+		});
+		container.startMessages?.();
+		const follow = () => {
+			const next = registration.installing;
+			if (next && container.controller) void this.#follow(next).then((r) => this.#finish(r));
 		};
-		const container = 'serviceWorker' in navigator ? navigator.serviceWorker : undefined;
-		container?.addEventListener('message', onMessage);
-		container?.startMessages?.();
-		try {
-			this.result = await findUpdate(() => {
-				if (this.result === 'checking') this.result = 'downloading';
-			});
-		} finally {
-			container?.removeEventListener('message', onMessage);
-			this.percent = undefined;
-			this.bytes = undefined;
-		}
-		if (this.result === 'ready') {
+		follow();
+		registration.addEventListener('updatefound', follow);
+	}
+
+	/** Waits for a new build to be stored, showing Downloading meanwhile. */
+	#follow(next: ServiceWorker): Promise<UpdateCheck> {
+		const known = this.#downloads.get(next);
+		if (known) return known;
+		const isUpdate = () => !!navigator.serviceWorker.controller;
+		const download = (async (): Promise<UpdateCheck> => {
+			if (next.state === 'installing' || next.state === 'parsed') {
+				if (isUpdate() && this.result !== 'downloading') this.result = 'downloading';
+				const state = await new Promise<ServiceWorkerState>((done) => {
+					const onChange = () => {
+						if (next.state !== 'installing' && next.state !== 'parsed') {
+							next.removeEventListener('statechange', onChange);
+							done(next.state);
+						}
+					};
+					next.addEventListener('statechange', onChange);
+					onChange();
+				});
+				if (state === 'redundant') return 'failed';
+			}
+			return isUpdate() ? 'ready' : 'current';
+		})();
+		this.#downloads.set(next, download);
+		return download;
+	}
+
+	#finish(result: UpdateCheck): UpdateCheck {
+		this.result = result;
+		this.percent = undefined;
+		this.bytes = undefined;
+		if (result === 'ready') {
 			this.found++;
 			this.ready = true;
 		}
-		if (this.result === 'ready' || this.result === 'current') {
+		if (result === 'ready' || result === 'current') {
 			this.checkedAt = Date.now();
 			writeStoredText(CHECKED_KEY, String(this.checkedAt));
 		}
-		return this.result;
+		return result;
 	}
 
 	/**
@@ -84,36 +129,19 @@ function readCheckedAt(): number | undefined {
 	return Number.isFinite(at) && at > 0 ? at : undefined;
 }
 
-/** `onDownload` runs once a newer build has been found and is being stored. */
-async function findUpdate(onDownload: () => void): Promise<UpdateCheck> {
+/** The check's result, or the new build it found being stored. */
+async function findUpdate(): Promise<UpdateCheck | ServiceWorker> {
 	if (!('serviceWorker' in navigator)) return 'unsupported';
 	const registration = await navigator.serviceWorker.getRegistration().catch(() => undefined);
 	if (!registration) return 'unsupported';
 	// The first install has nothing to replace, so only a page with a controller can update.
-	const isUpdate = () => !!navigator.serviceWorker.controller;
-	if (registration.waiting) return isUpdate() ? 'ready' : 'current';
+	if (registration.waiting) return navigator.serviceWorker.controller ? 'ready' : 'current';
 	try {
 		await registration.update();
 	} catch {
 		return 'failed';
 	}
-	const next = registration.installing ?? registration.waiting;
-	if (!next) return 'current';
-	if (next.state !== 'installed') {
-		onDownload();
-		const state = await new Promise<ServiceWorkerState>((done) => {
-			const onChange = () => {
-				if (next.state === 'installed' || next.state === 'redundant') {
-					next.removeEventListener('statechange', onChange);
-					done(next.state);
-				}
-			};
-			next.addEventListener('statechange', onChange);
-			onChange();
-		});
-		if (state === 'redundant') return 'failed';
-	}
-	return isUpdate() ? 'ready' : 'current';
+	return registration.installing ?? registration.waiting ?? 'current';
 }
 
 export const updateCheck = new UpdateChecker();

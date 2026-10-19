@@ -46,8 +46,20 @@ body {
 	/* Header, page, footer: the footer stays at the bottom of short pages. */
 	display: flex;
 	flex-direction: column;
+	background: transparent;
+}
+/* The theme's backdrop, held still behind the page. An element, not the body's own fixed
+   background: an iPhone home-screen app paints a fixed body background only between the
+   status bar and the home bar, leaving both bars the flat --surface (Trevor, 2026-10-19).
+   It reaches past the safe areas too, in case the screen's viewport stops short of them. */
+body::before {
+	content: '';
+	position: fixed;
+	inset: calc(-1 * env(safe-area-inset-top)) calc(-1 * env(safe-area-inset-right))
+		calc(-1 * env(safe-area-inset-bottom)) calc(-1 * env(safe-area-inset-left));
+	z-index: -1;
 	background: var(--page-background);
-	background-attachment: fixed;
+	pointer-events: none;
 }
 
 h1,

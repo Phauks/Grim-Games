@@ -44,6 +44,7 @@
 	import {
 		dayNumber,
 		livingByTeam,
+		marksDeath,
 		setupComplete,
 		diedSinceNewDay,
 		ON_DEATH,
@@ -917,6 +918,32 @@
 				endDayOpen = true;
 			}
 		};
+	});
+
+	// ── A death reminder on a living player (Trevor, 2026-10-19) ──
+	// "Dead" or "Died Today" put on someone still alive, by any route (bank, sheet, drag):
+	// ask whether to mark them dead. Moving one to another living seat asks too (a character
+	// has one "Dead" token). Reminders already where they were when the board opened never ask.
+	let deathSeen: Set<string> | undefined;
+	let deathAsk = $state<SeatId>();
+	let deathAskOpen = $state(false);
+	$effect(() => {
+		const fresh: SeatId[] = [];
+		const now: string[] = [];
+		for (const seatId of game.seating) {
+			const seat = game.seats[seatId];
+			for (const reminder of seat.reminders) {
+				if (!marksDeath(reminder.label)) continue;
+				const key = `${reminder.reminderId}@${seatId}`;
+				now.push(key);
+				if (deathSeen && !deathSeen.has(key) && !seat.dead) fresh.push(seatId);
+			}
+		}
+		deathSeen = new Set(now);
+		if (!fresh.length || grimoire.open.viewOnly) return;
+		if (!untrack(() => preferences.current.assistance.deathReminderAsk)) return;
+		deathAsk = fresh[0];
+		deathAskOpen = true;
 	});
 	function endNight() {
 		if (!grimoire.endNight()) return;
@@ -1805,6 +1832,35 @@
 />
 
 <!-- Like the day's End day, with its setting where it is used (Trevor, 2026-10-18). -->
+{#if deathAsk && game.seats[deathAsk]}
+	{@const asked = game.seats[deathAsk]}
+	{@const askedId = asked.characterId}
+	<ConfirmDialog
+		bind:open={deathAskOpen}
+		title="Mark dead?"
+		onConfirm={() => deathAsk && grimoire.run({ type: 'SetDead', seatId: deathAsk, dead: true })}
+	>
+		{#snippet heading()}
+			Mark {#if askedId}<CharacterBadge
+					characterId={askedId}
+					character={characters.get(askedId)}
+					alignment={asked.alignment}
+					playerName={asked.playerName ?? `Seat ${game.seating.indexOf(deathAsk!) + 1}`}
+					inline
+				/>{:else}{asked.playerName ?? `Seat ${game.seating.indexOf(deathAsk!) + 1}`}{/if} dead?
+		{/snippet}
+		<SettingToggle
+			label={ASSIST_LABELS.deathReminderAsk.label}
+			description={ASSIST_LABELS.deathReminderAsk.description}
+			checked={preferences.current.assistance.deathReminderAsk}
+			onChange={(deathReminderAsk) =>
+				preferences.update({
+					assistance: { ...preferences.current.assistance, deathReminderAsk }
+				})}
+		/>
+	</ConfirmDialog>
+{/if}
+
 <ConfirmDialog bind:open={endNightOpen} title="End the night?" onConfirm={endNight}>
 	<SettingToggle
 		label={ASSIST_LABELS.dayAfterNight.label}
