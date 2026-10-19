@@ -507,7 +507,10 @@
 						usedLook={boardLooks.current.usedGhostVote}
 						testid="sheet-ghost-vote"
 					/>
-					{seat.dead ? (seat.ghostVoteUsed ? 'Used' : 'Not used') : 'None while alive'}
+					<!-- As wide as its longest words, so toggling moves only the text (Trevor, 2026-10-19). -->
+					<span class="ghost-text" data-reserve="None while alive"
+						>{seat.dead ? (seat.ghostVoteUsed ? 'Used' : 'Not used') : 'None while alive'}</span
+					>
 				</button>
 			</div>
 
@@ -1273,9 +1276,21 @@
 	.value.ghost {
 		--badge-size: calc(1.6 * var(--u));
 	}
+	/* Used is grey, like the spent ghost on the badge (Trevor, 2026-10-19: not red). */
 	.value.ghost[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--accent-wash);
+		border-color: var(--ghost-used-rim);
+		background: var(--ghost-used-wash);
+	}
+	.ghost-text {
+		display: inline-grid;
+		justify-items: start;
+		text-align: start;
+	}
+	.ghost-text::before {
+		content: attr(data-reserve);
+		height: 0;
+		overflow: hidden;
+		visibility: hidden;
 	}
 	h3 {
 		margin: var(--space-2) 0 0;
