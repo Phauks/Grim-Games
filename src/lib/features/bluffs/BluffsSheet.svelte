@@ -55,7 +55,7 @@
 	let picked = $state<CharacterId[]>([]);
 	let showOpen = $state(false);
 	let showing = $state<CharacterId[]>([]);
-	/** A later set's name, also editable where its characters are chosen (Trevor, 2026-10-17). */
+	/** A later set's name, edited where its characters are chosen (Trevor, 2026-10-17). */
 	let pickedName = $state('');
 
 	const notInPlay = STANDARD_INFO_TOKENS.find((t) => t.id === 'not-in-play')?.text ?? '';
@@ -86,23 +86,6 @@
 			max: BLUFFS_PER_SET
 		});
 
-	/** The set being renamed in place, and what has been typed (Trevor, 2026-10-17). */
-	let renaming = $state<number>();
-	let typedName = $state('');
-
-	function rename(index: number) {
-		renaming = index;
-		typedName = game.bluffNames?.[index] ?? '';
-	}
-
-	/** Enter or leaving the field saves; an empty name brings back the default. */
-	function finishRename() {
-		if (renaming === undefined) return;
-		const index = renaming;
-		renaming = undefined;
-		if (typedName.trim() !== (game.bluffNames?.[index] ?? ''))
-			run({ type: 'RenameBluffSet', set: index, name: typedName });
-	}
 	/** The Demon's bluffs must not be in play; other sets (the Lunatic's) may be. */
 	const blocks = (set: number) => set === DEMON_SET;
 	const pickedBlocked = $derived(
@@ -180,49 +163,37 @@
 					{@const ids = game.bluffs[index] ?? []}
 					{@const stale = blocks(index) && ids.some((id) => inPlay.has(id))}
 					<li class="set" data-testid="bluff-set" data-set={label(index)}>
+						<!-- The set's name, then its buttons on the same line (Trevor, 2026-10-19). -->
 						<div class="label-row">
-							{#if renaming === index}
-								<form
-									class="rename"
-									onsubmit={(event) => {
-										event.preventDefault();
-										finishRename();
-									}}
-								>
-									<ClearableField bind:value={typedName}>
-										<input
-											type="text"
-											aria-label={t('bluffs.setName')}
-											placeholder={defaultLabel(index)}
-											maxlength={MAX_BLUFF_SET_NAME}
-											autocomplete="off"
-											enterkeyhint="done"
-											{@attach (field) => field.focus()}
-											bind:value={typedName}
-											onkeydown={(event) => {
-												if (event.key === 'Escape') {
-													event.preventDefault();
-													event.stopPropagation();
-													renaming = undefined;
-												}
-											}}
-											onblur={finishRename}
-										/>
-									</ClearableField>
-								</form>
+							<span class="label">{label(index)}</span>
+							<span class="ink"
+								><IconButton
+									icon="rename"
+									label={t(stale ? 'bluffs.replaceNamed' : 'bluffs.chooseNamed', {
+										set: label(index)
+									})}
+									onclick={() => edit(index)}
+								/><IconButton
+									icon="showToPlayer"
+									label={t('bluffs.showNamed', { set: label(index) })}
+									disabled={ids.length === 0}
+									onclick={() => show(ids)}
+								/></span
+							>
+							{#if index === DEMON_SET}
+								<DeleteButton
+									label={t('bluffs.clearNamed', { set: label(index) })}
+									disabled={ids.length === 0}
+									onclick={() => set(index, [])}
+								/>
 							{:else}
-								<span class="label">{label(index)}</span>
-							{/if}
-							<!-- The Demon's set keeps its name; the others can be renamed. -->
-							{#if index !== DEMON_SET}
-								<span class="ink"
-									><IconButton
-										icon="rename"
-										label={t('bluffs.renameNamed', { set: label(index) })}
-										disabled={index >= game.bluffs.length || renaming === index}
-										onclick={() => rename(index)}
-									/></span
-								>
+								<DeleteButton
+									label={t('bluffs.deleteNamed', { set: label(index) })}
+									onclick={() => {
+										deleting = index;
+										deleteOpen = true;
+									}}
+								/>
 							{/if}
 						</div>
 						<ol class="rows">
@@ -247,31 +218,6 @@
 								</li>
 							{/each}
 						</ol>
-						<div class="actions">
-							<Button variant={stale ? 'accent' : 'quiet'} onclick={() => edit(index)}
-								>{t(stale ? 'bluffs.replace' : 'bluffs.choose')}</Button
-							>
-							<Button icon="forward" disabled={ids.length === 0} onclick={() => show(ids)}
-								>{t('bluffs.show')}</Button
-							>
-							<span>
-								{#if index === DEMON_SET}
-									<DeleteButton
-										label={t('bluffs.clearNamed', { set: label(index) })}
-										disabled={ids.length === 0}
-										onclick={() => set(index, [])}
-									/>
-								{:else}
-									<DeleteButton
-										label={t('bluffs.deleteNamed', { set: label(index) })}
-										onclick={() => {
-											deleting = index;
-											deleteOpen = true;
-										}}
-									/>
-								{/if}
-							</span>
-						</div>
 					</li>
 				{/each}
 			</ul>
@@ -413,13 +359,12 @@
 		flex: 1;
 		font-family: var(--font-heading);
 	}
-	/* The sheet is parchment: the pencil takes its ink colour. */
+	/* The sheet is parchment: the pencil and eye take its ink colour. */
+	.ink {
+		display: flex;
+	}
 	.ink :global(.icon-button) {
 		color: inherit;
-	}
-	.rename {
-		flex: 1;
-		min-width: 0;
 	}
 	.picked-name {
 		margin-bottom: var(--space-3);
@@ -462,11 +407,5 @@
 	.none {
 		padding-left: var(--space-2);
 		color: var(--on-surface-muted);
-	}
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-		justify-content: flex-end;
 	}
 </style>

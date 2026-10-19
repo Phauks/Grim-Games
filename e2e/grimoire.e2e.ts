@@ -2530,21 +2530,29 @@ test('an extra Demon bluff set can be renamed, and the name is kept with the gam
 		.getByRole('button', { name: /^Monk(, .*)?$/ })
 		.tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
-	// The Demon's set keeps its name (Trevor, 2026-10-17).
-	await expect(page.getByRole('button', { name: 'Rename the Demon bluffs' })).toHaveCount(0);
-
 	const set = page.getByTestId('bluff-set').nth(1);
-	const rename = () => set.getByRole('button', { name: /^Rename the .* bluffs$/ }).tap();
-	const field = set.getByRole('textbox', { name: 'Set name' });
-	await rename();
+	await expect(set).toHaveAttribute('data-set', 'Set 2');
+
+	// Renamed where its characters are chosen: the pencil on the set's name line (Trevor,
+	// 2026-10-19). The Demon's set keeps its name (Trevor, 2026-10-17).
+	const field = page.getByRole('textbox', { name: 'Set name' });
+	await page
+		.getByTestId('bluff-set')
+		.first()
+		.getByRole('button', { name: /^Choose the/ })
+		.tap();
+	await expect(field).toHaveCount(0);
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+	const edit = () => set.getByRole('button', { name: /^Choose the .* bluffs$/ }).tap();
+	await edit();
 	await field.fill('Legion');
 	await field.press('Enter');
 	await expect(set).toHaveAttribute('data-set', 'Legion');
 
-	// Esc leaves the name as it was.
-	await rename();
+	// Cancel leaves the name as it was.
+	await edit();
 	await field.fill('Something else');
-	await field.press('Escape');
+	await page.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(set).toHaveAttribute('data-set', 'Legion');
 
 	// Saved with the game.
@@ -2553,8 +2561,8 @@ test('an extra Demon bluff set can be renamed, and the name is kept with the gam
 	await expect(page.getByTestId('bluff-set').nth(1)).toHaveAttribute('data-set', 'Legion');
 
 	// Clearing the name brings back the default.
-	await rename();
-	await set.getByRole('button', { name: 'Clear' }).tap();
+	await edit();
+	await page.locator('form.picked-name').getByRole('button', { name: 'Clear' }).tap();
 	await field.press('Enter');
 	await expect(set).toHaveAttribute('data-set', 'Set 2');
 });

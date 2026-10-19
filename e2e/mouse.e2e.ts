@@ -4,7 +4,8 @@ import { expect, test, type Locator } from '@playwright/test';
 test.use({ viewport: { width: 1280, height: 720 }, hasTouch: false, isMobile: false });
 
 // Hovering tints a control over its own fill. Replacing the fill made the Demon bluffs
-// drop-down's light text vanish on the cream sheet (Trevor, 2026-10-18).
+// drop-down's light text vanish on the cream sheet (Trevor, 2026-10-18). That drop-down is
+// now a toggle, so the day timer sheet's sound drop-down stands in for it.
 test('hovering a drop-down keeps its fill', async ({ page }) => {
 	await page.goto('/new');
 	await page
@@ -12,14 +13,11 @@ test('hovering a drop-down keeps its fill', async ({ page }) => {
 		.getByText('Trouble Brewing', { exact: true })
 		.click();
 	await page.getByRole('button', { name: 'Start game' }).click();
-	await page.getByRole('button', { name: 'More', exact: true }).click();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Demon bluffs' })
-		.click();
-	await page.getByRole('button', { name: 'Choose' }).first().click();
+	await page.getByRole('button', { name: /^Day timer, .*open its controls$/ }).click();
 
-	const trigger = page.getByRole('combobox', { name: 'Characters' });
+	const trigger = page
+		.getByRole('dialog', { name: 'Day timer' })
+		.getByRole('combobox', { name: 'Timer sound' });
 	const fill = () => trigger.evaluate((el) => getComputedStyle(el).backgroundColor);
 	const before = await fill();
 	await trigger.hover();

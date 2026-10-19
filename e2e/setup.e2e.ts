@@ -855,23 +855,38 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	const choices = page.getByRole('group', { name: 'Bluff characters' });
 	// The characters chosen for the bag are marked as in play.
 	await expect(choices.getByRole('button', { name: /^Empath/ })).toContainText('In play');
-	for (const name of ['Chef', 'Soldier', 'Mayor'])
+	for (const name of ['Fortune Teller', 'Soldier', 'Ravenkeeper'])
 		await choices.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
+	// The chosen names wrap rather than running off a phone (Trevor, 2026-10-19).
+	const width = page.viewportSize()!.width;
+	for (const chip of await page.getByRole('list', { name: 'Chosen' }).getByRole('listitem').all())
+		expect((await chip.boundingBox())!.x + (await chip.boundingBox())!.width).toBeLessThanOrEqual(
+			width
+		);
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await page.keyboard.press('Escape');
-	for (const name of ['Chef', 'Soldier', 'Mayor']) await expect(bluffs).toContainText(name);
-	await expect(bluffs.getByRole('button', { name: 'Change' })).toBeEnabled();
+	// Each bluff like a character in the list: name and ability (Trevor, 2026-10-19).
+	for (const name of ['Fortune Teller', 'Soldier', 'Ravenkeeper'])
+		await expect(bluffs).toContainText(name);
+	await expect(bluffs).toContainText('You are safe from the Demon.');
+	// Change sits on the heading's line.
+	const change = bluffs.getByRole('button', { name: 'Change' });
+	await expect(change).toBeEnabled();
+	const title = (await bluffs.getByRole('heading', { name: 'Demon bluffs' }).boundingBox())!;
+	const button = (await change.boundingBox())!;
+	expect(button.y + button.height / 2).toBeGreaterThan(title.y);
+	expect(button.y + button.height / 2).toBeLessThan(title.y + title.height + button.height / 2);
 	// Each bluff is tagged in the list above, and stays out of the bag (Trevor, 2026-10-18).
 	await expect(page.getByTestId('bluff-tag')).toHaveCount(3);
-	await expect(choice(page, 'Chef')).toHaveAccessibleDescription('Demon bluff');
-	await expect(choice(page, 'Chef')).toHaveAttribute('aria-pressed', 'false');
+	await expect(choice(page, 'Soldier')).toHaveAccessibleDescription('Demon bluff');
+	await expect(choice(page, 'Soldier')).toHaveAttribute('aria-pressed', 'false');
 	await expect(choice(page, 'Empath').getByTestId('bluff-tag')).toHaveCount(0);
 	// A bluff then chosen for the bag is flagged, not dropped (warn, don't lock).
-	await choice(page, 'Chef').tap();
-	await expect(choice(page, 'Chef')).toHaveAccessibleDescription('Demon bluff, in play');
-	await expect(choice(page, 'Chef').getByTestId('bluff-tag')).toBeVisible();
-	await expect(bluffs).toContainText('Chef');
-	await choice(page, 'Chef').tap();
+	await choice(page, 'Soldier').tap();
+	await expect(choice(page, 'Soldier')).toHaveAccessibleDescription('Demon bluff, in play');
+	await expect(choice(page, 'Soldier').getByTestId('bluff-tag')).toBeVisible();
+	await expect(bluffs).toContainText('Soldier');
+	await choice(page, 'Soldier').tap();
 	await noSidewaysScroll(page);
 	// The Draw screen has none.
 	await page.getByRole('button', { name: 'Build bag' }).tap();
@@ -907,12 +922,13 @@ test('Random picks three Demon bluffs, none in play', async ({ page }) => {
 	await bluffs.getByRole('button', { name: 'Choose' }).tap();
 	await page.getByTestId('bluff-set').first().getByRole('button', { name: 'Choose' }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 0/3' })).toBeVisible();
-	// Trevor, 2026-10-18: the filter reads Good Characters or All Characters.
-	const filter = page.getByRole('combobox', { name: 'Characters' });
-	await expect(filter).toContainText('Good Characters');
-	await filter.tap();
-	await expect(page.getByRole('option', { name: 'All Characters' })).toBeVisible();
-	await page.keyboard.press('Escape');
+	// Trevor, 2026-10-19: good characters only, and a toggle hides those in play.
+	const choices = page.getByRole('group', { name: 'Bluff characters' });
+	await expect(choices.getByRole('button', { name: /^Poisoner/ })).toHaveCount(0);
+	await expect(choices.getByRole('button', { name: /^Empath/ })).toBeVisible();
+	await page.getByText('Not in play only', { exact: true }).tap();
+	await expect(choices.getByRole('button', { name: /^Empath/ })).toHaveCount(0);
+	await expect(choices.getByRole('button', { name: /^Chef/ })).toBeVisible();
 	await page.getByRole('button', { name: 'Random', exact: true }).tap();
 	await expect(page.getByRole('heading', { name: 'Demon bluffs · 3/3' })).toBeVisible();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
