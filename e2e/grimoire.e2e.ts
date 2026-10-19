@@ -1660,6 +1660,10 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	const suggested = (await openStep(page, 'Undertaker')).getByTestId('night-suggested');
 	await expect(suggested.locator('[data-character-id="imp"]').first()).toBeVisible();
 	await page.screenshot({ path: `test-results/undertaker-${test.info().project.name}.png` });
+	// A section under its own heading, not a box (Trevor, 2026-10-19).
+	await expect(suggested).toHaveAccessibleName('Valid Information');
+	await expect(suggested.getByRole('heading', { name: 'Valid Information' })).toBeVisible();
+	await expect(suggested).toHaveCSS('border-top-style', 'none');
 	// Whoever it names shows with their character (Trevor, 2026-10-17).
 	await expect(suggested.locator('.because')).toContainText('Seat 2');
 	await expect(suggested.locator('.because [data-character-id="imp"]').first()).toBeVisible();
@@ -3162,7 +3166,7 @@ test('an information step suggests every valid number, and no sets of players', 
 	await chef.getByRole('button', { name: 'Close' }).tap();
 	// The walk-through's one line counts them instead of naming one.
 	const strip = await walkTo(page, 'Chef');
-	await expect(strip.getByTestId('night-suggested')).toHaveText(/Suggested: 1 valid/);
+	await expect(strip.getByTestId('night-suggested')).toHaveText(/Valid Information: 1 valid/);
 });
 
 test('a number step offers the "Your number is" info token; a step icon opens its details', async ({

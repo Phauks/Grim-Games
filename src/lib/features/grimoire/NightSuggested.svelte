@@ -39,6 +39,7 @@
 	}
 
 	let { grimoire, step, compact = false, onShow, onShowNumber }: Props = $props();
+	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -224,7 +225,7 @@
 
 {#if compact}
 	{#if has}<span class="compact" data-testid="night-suggested"
-			>Suggested: {#if line.characterId}<CharacterBadge
+			>Valid Information: {#if line.characterId}<CharacterBadge
 					characterId={line.characterId}
 					character={characters.get(line.characterId)}
 					inline
@@ -232,8 +233,9 @@
 				/>{/if}{line.text}</span
 		>{/if}
 {:else if has && info}
-	<section class="suggested" aria-label="Suggested" data-testid="night-suggested">
-		<h3>Suggested</h3>
+	<!-- A plain section under its heading, like the step's others (Trevor, 2026-10-19). -->
+	<section aria-labelledby={headingId} data-testid="night-suggested">
+		<h3 id={headingId}>Valid Information</h3>
 		<ul>
 			{#if info.kind === 'answer'}
 				{#each info.answers as a (a.seatId)}{@render answer(a)}{/each}
@@ -388,17 +390,10 @@
 	.none {
 		margin: 0;
 	}
-	.suggested {
-		margin: var(--space-2) 0;
-		padding: var(--space-2);
-		border: 1px dashed var(--border);
-		border-radius: var(--radius-md);
-	}
+	/* The same heading as the step's Info token and Reminders (GuidedStep). */
 	h3 {
-		margin: 0 0 var(--space-1);
-		font-size: 0.85rem;
-		letter-spacing: 0.04em;
-		color: var(--on-surface-muted);
+		margin: var(--space-2) 0 var(--space-1);
+		font-size: 1rem;
 	}
 	ul {
 		display: grid;
