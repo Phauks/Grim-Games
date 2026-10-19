@@ -50,6 +50,7 @@ export const player = {
 	'player.version': 'v{version}',
 	'player.print': 'Print script',
 	'player.storytellerIs': 'Storyteller: {name}',
+	'player.travellerInPlay': 'In play: {names}',
 	'player.printHere': 'Print our sheet',
 	'player.printSettings': 'Print our sheet',
 	'player.printCopies': 'Character sheets',

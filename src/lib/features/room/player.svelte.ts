@@ -9,6 +9,7 @@ import { ROOM_PROTOCOL, type PlayerView } from '#lib/core/sync/room.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
 import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
+import { travellersInPlay, type TravellerInPlay } from '#lib/features/player/travellers-in-play.ts';
 
 const STORAGE_KEY = 'grim-games-room-player';
 
@@ -30,21 +31,33 @@ export function lastRoom(): string | undefined {
 	return readStoredText(LAST_ROOM_KEY);
 }
 
-/** The Storyteller's name in the last room, for /play's byline (Trevor, 2026-10-19). */
-const STORYTELLER_KEY = 'grim-games-room-storyteller';
+/**
+ * What /play shows from the room this phone last joined (Trevor, 2026-10-19): who runs the
+ * game, and the Travellers the town knows are in play. Kept on the device with the room's
+ * code, and forgotten with the room.
+ */
+const TABLE_KEY = 'grim-games-room-table';
 
-function storytellerOf(code: string | undefined): string | undefined {
-	const stored = readStored<{ code: string; name: string }>(STORYTELLER_KEY);
-	return code && stored?.code === code ? stored.name : undefined;
+export interface RoomTable {
+	storyteller?: string;
+	travellers?: TravellerInPlay[];
 }
 
-/** Who runs the game in the room this phone last joined, while it is remembered. */
-export const roomStoryteller = $state<{ name?: string }>({ name: storytellerOf(lastRoom()) });
+function storedTable(code: string | undefined): RoomTable {
+	const stored = readStored<RoomTable & { code: string }>(TABLE_KEY);
+	if (!code || stored?.code !== code) return {};
+	return { storyteller: stored.storyteller, travellers: stored.travellers };
+}
 
-function setStoryteller(code: string, name: string | undefined): void {
-	if (roomStoryteller.name === name) return;
-	roomStoryteller.name = name;
-	writeStored(STORYTELLER_KEY, name ? { code, name } : undefined);
+/** The last room's table, while it is remembered. */
+export const roomTable = $state<RoomTable>(storedTable(lastRoom()));
+
+function setTable(code: string, table: RoomTable): void {
+	if (JSON.stringify(table) === JSON.stringify($state.snapshot(roomTable))) return;
+	roomTable.storyteller = table.storyteller;
+	roomTable.travellers = table.travellers;
+	const empty = !table.storyteller && !table.travellers?.length;
+	writeStored(TABLE_KEY, empty ? undefined : { code, ...table });
 }
 
 /** Forgets the last room when it is `code` (it closed, or refused this phone). */
@@ -52,7 +65,7 @@ export function forgetRoom(code: string): void {
 	forgetRecentRoom(code);
 	if (lastRoom() !== code) return;
 	writeStoredText(LAST_ROOM_KEY, undefined);
-	setStoryteller(code, undefined);
+	setTable(code, {});
 }
 
 export class RoomPlayer {
@@ -72,7 +85,12 @@ export class RoomPlayer {
 			(m) => {
 				if (m.type === 'player-view') {
 					this.view = m;
-					setStoryteller(code, m.public?.storytellerName?.trim() || undefined);
+					const storyteller = m.public?.storytellerName?.trim();
+					const travellers = travellersInPlay(m.public?.seats ?? []);
+					setTable(code, {
+						...(storyteller ? { storyteller } : {}),
+						...(travellers.length ? { travellers } : {})
+					});
 				} else if (m.type === 'script') this.script = m.script;
 			}
 		);

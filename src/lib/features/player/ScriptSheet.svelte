@@ -15,6 +15,7 @@
 	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
 	import { groupByType } from './player-script.ts';
 	import { playerSettings, type SheetDensity } from './player-settings.svelte.ts';
+	import type { TravellerInPlay } from './travellers-in-play.ts';
 
 	interface Props {
 		/** What the sheet lists: the script's characters plus recommended Travellers. */
@@ -32,6 +33,8 @@
 		 * while none of theirs is in play, and open when one comes into play (Trevor, 2026-10-18).
 		 */
 		inPlay?: readonly string[];
+		/** Travellers the town knows are in play: each shows who plays it (Trevor, 2026-10-19). */
+		travellers?: readonly TravellerInPlay[];
 		/** False leaves the Jinxes section out (a printed sheet without them). */
 		showJinxes?: boolean;
 		/** Overrides the reader's density setting (printing picks whatever fits one page). */
@@ -44,10 +47,19 @@
 		players,
 		flat = false,
 		inPlay,
+		travellers,
 		showJinxes = true,
 		density: fixed
 	}: Props = $props();
-	const playing = $derived(inPlay && new Set(inPlay));
+	const playing = $derived(
+		inPlay || travellers
+			? new Set([...(inPlay ?? []), ...(travellers ?? []).map((p) => p.characterId)])
+			: undefined
+	);
+	const playersOf = (id: string) =>
+		(travellers ?? [])
+			.filter((p) => p.characterId === id)
+			.map((p) => p.playerName ?? t('common.seat', { number: p.seatNumber }));
 	const noJinxInPlay = $derived(
 		!!playing && !jinxes.some((j) => j.characters.every((id) => playing.has(id)))
 	);
@@ -70,6 +82,7 @@
 
 {#snippet row(c: Character)}
 	{@const own = jinxesOf[c.id]}
+	{@const who = playersOf(c.id)}
 	<li class="character" data-character={c.id}>
 		<span class="name">
 			<CharacterBadge characterId={c.id} character={c} inline={density !== 'normal'} />
@@ -93,6 +106,9 @@
 					{/each}
 				</button>
 			{/if}
+			{#if who.length}<span class="in-play" data-testid="traveller-in-play"
+					>{t('player.travellerInPlay', { names: who.join(', ') })}</span
+				>{/if}
 		</span>
 		<p class="ability"><GlossaryText text={c.ability} {names} /></p>
 	</li>
@@ -248,6 +264,15 @@
 		height: 1.6em;
 		border-radius: 50%;
 		background: var(--token-face);
+	}
+	.in-play {
+		padding: 0 0.5em;
+		border-radius: var(--radius-full);
+		background: var(--traveller-text);
+		color: var(--surface);
+		font-family: var(--font-control);
+		font-size: 0.75rem;
+		font-weight: 600;
 	}
 	.jinx-dialog {
 		grid-template-columns: minmax(0, 1fr);

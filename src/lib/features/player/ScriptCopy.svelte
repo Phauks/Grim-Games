@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { TravellerInPlay } from './travellers-in-play.ts';
 	import type { LoadedScript } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -21,21 +22,32 @@
 		byline?: boolean;
 		/** Characters on seats, in a game: Travellers and Jinxes start closed when none plays. */
 		inPlay?: readonly string[];
+		/** Travellers the town knows are in play, with their players (Trevor, 2026-10-19). */
+		travellers?: readonly TravellerInPlay[];
 	}
 
-	let { script, players, version, byline = true, inPlay }: Props = $props();
+	let { script, players, version, byline = true, inPlay, travellers }: Props = $props();
 
 	$effect(() => {
 		if (!officialData.current) void loadOfficialData();
 	});
 	const data = $derived(officialData.current);
-	const characters = $derived(data ? sheetCharacters(script, data) : []);
+	// A Traveller in play that the script doesn't list still shows, so its player is named.
+	const characters = $derived.by(() => {
+		if (!data) return [];
+		const listed = sheetCharacters(script, data);
+		const extra = (travellers ?? [])
+			.map((p) => p.characterId)
+			.filter((id, i, all) => all.indexOf(id) === i && !listed.some((c) => c.id === id))
+			.flatMap((id) => data.byId.get(id) ?? []);
+		return [...listed, ...extra];
+	});
 	const jinxes = $derived(data ? playerJinxes(script, data) : []);
 </script>
 
 {#if data}
 	{#if byline}<ScriptByline author={script.meta.author} {version} />{/if}
-	<ScriptSheet {characters} {jinxes} {players} {inPlay} />
+	<ScriptSheet {characters} {jinxes} {players} {inPlay} {travellers} />
 {:else}
 	<p class="muted">{t('player.loading')}</p>
 {/if}

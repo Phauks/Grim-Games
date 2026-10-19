@@ -12,6 +12,7 @@
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import { playerNight } from './player-script.ts';
 	import ScriptCopy from './ScriptCopy.svelte';
+	import type { TravellerInPlay } from './travellers-in-play.ts';
 
 	/**
 	 * The players' Script and Night tabs as one component: /play shows it, and so does the
@@ -24,6 +25,8 @@
 		players?: number;
 		/** Characters on seats, in a game: Travellers and Jinxes start closed when none plays. */
 		inPlay?: readonly string[];
+		/** Travellers the town knows are in play, with their players. */
+		travellers?: readonly TravellerInPlay[];
 		/** The player's own Notes tab (/play only). */
 		notes?: Snippet;
 		/** The live room this phone is in, or joining one (/play only). */
@@ -31,7 +34,15 @@
 		tab?: string;
 	}
 
-	let { script, players, inPlay, notes, room, tab = $bindable('script') }: Props = $props();
+	let {
+		script,
+		players,
+		inPlay,
+		travellers,
+		notes,
+		room,
+		tab = $bindable('script')
+	}: Props = $props();
 
 	let numeric = $state<NumericNightOrder>();
 	$effect(() => {
@@ -60,7 +71,7 @@
 			<!-- A crash in one tab replaces only that tab. -->
 			<ErrorBoundary area="play">
 				{#if value === 'script'}
-					<ScriptCopy {script} {players} {inPlay} byline={false} />
+					<ScriptCopy {script} {players} {inPlay} {travellers} byline={false} />
 				{:else if value === 'night'}
 					{#if data}<PlayerNightOrder {nights} />{:else}<p class="muted">
 							{t('player.loading')}

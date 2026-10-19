@@ -190,6 +190,21 @@ describe('publicProjection', () => {
 		const cleared = run(named, ctx, { type: 'SetStorytellerName' });
 		expect('storytellerName' in publicProjection(cleared.game)).toBe(false);
 	});
+
+	// Travellers tell the town who they are (https://wiki.bloodontheclocktower.com/Travellers).
+	it("shows a Traveller's character only when the caller says the town knows it", () => {
+		const s = busyGame();
+		const travellers = new Set(['beggar']);
+		const shown = publicProjection(s.game, (id) => travellers.has(id));
+		expect(shown.seats.flatMap((seat) => (seat.traveller ? [seat.traveller] : []))).toEqual([
+			'beggar'
+		]);
+		// Hidden Travellers (Stowed Away), or no answer: no character at all.
+		expect(publicProjection(s.game, () => false).seats.some((seat) => 'traveller' in seat)).toBe(
+			false
+		);
+		expect(publicProjection(s.game).seats.some((seat) => 'traveller' in seat)).toBe(false);
+	});
 });
 
 describe('NoopSyncProvider', () => {

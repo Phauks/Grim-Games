@@ -96,6 +96,11 @@
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
+	import {
+		publicTravellerTest,
+		travellersInPlay
+	} from '#lib/features/player/travellers-in-play.ts';
+	import { publicProjection } from '#lib/core/sync/public-projection.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import NotesSheet from './NotesSheet.svelte';
@@ -2067,6 +2072,9 @@
 				script={loadedScript}
 				players={game.seating.length}
 				inPlay={charactersInPlay(game)}
+				travellers={travellersInPlay(
+					publicProjection(game, publicTravellerTest(game.gameId, characters)).seats
+				)}
 			/>
 		{/if}
 	</div>
