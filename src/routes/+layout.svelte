@@ -60,7 +60,7 @@
 
 {#if shell}<AppHeader />{/if}
 <!-- Grows to fill the screen so the footer sits at the bottom on short pages. -->
-<div class="app-body">
+<div class="app-body" class:bare={!shell}>
 	{#if shell}<AppNav />{/if}
 	<div class="app-main">{@render children()}</div>
 </div>
@@ -78,6 +78,12 @@
 		display: flex;
 		flex: 1 0 auto;
 		min-width: 0;
+		/* Clear of a landscape phone's notch (viewport-fit=cover in app.html). */
+		padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+	}
+	/* No header or footer (a game): clear of the status and navigation bars here instead. */
+	.app-body.bare {
+		padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
 	}
 	.app-main {
 		flex: 1;
