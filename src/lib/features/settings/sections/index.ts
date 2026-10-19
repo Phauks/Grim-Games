@@ -27,7 +27,7 @@ registerSettingsSection({
 registerSettingsSection({
 	id: 'text',
 	label: { key: 'settings.sectionText' },
-	icon: 'appearance',
+	icon: 'fonts',
 	component: TextSection,
 	reset: resets.text,
 	order: 15
