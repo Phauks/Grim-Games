@@ -58,3 +58,31 @@ export function staleCaches(
 	if (previous) keep.add(previous);
 	return keys.filter((key) => key.startsWith(BUILD_CACHE_PREFIX) && !keep.has(key));
 }
+
+/**
+ * Each `static/` file's content hash, written by vite.config.ts (precacheSizes). A new build
+ * keeps the previous build's copy of a file whose hash is the same, instead of downloading
+ * it again (Trevor, 2026-10-19: updates "stutter and are somewhat slow").
+ */
+export const PRECACHE_HASHES_PATH = '/precache-hashes.json';
+
+export type FileHashes = Record<string, string>;
+
+/** The hashes file as read, keeping only string hashes. */
+export function parseHashes(raw: unknown): FileHashes {
+	const hashes: FileHashes = {};
+	if (!raw || typeof raw !== 'object') return hashes;
+	for (const [path, hash] of Object.entries(raw)) if (typeof hash === 'string') hashes[path] = hash;
+	return hashes;
+}
+
+/**
+ * True when a stored copy of a file from an earlier build is the same file. A build file's
+ * name carries a hash of its content (`/_app/immutable/`), so any copy under that name is it;
+ * other files only when the build and the previous one give the same content hash.
+ */
+export function unchanged(path: string, hashes: FileHashes, previous: FileHashes): boolean {
+	if (path.startsWith('/_app/immutable/')) return true;
+	const hash = hashes[path];
+	return hash !== undefined && hash === previous[path];
+}
