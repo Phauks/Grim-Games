@@ -3097,6 +3097,15 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 	expect(names.join(' ')).toMatch(
 		/^History Demon bluffs \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens .*\| End game$/
 	);
+	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
+	const line = await menu
+		.getByRole('separator')
+		.first()
+		.evaluate((hr) => getComputedStyle(hr).borderTopColor);
+	const border = await menu
+		.getByRole('button', { name: 'History' })
+		.evaluate((b) => getComputedStyle(b).boxShadow);
+	expect(border).toContain(line);
 });
 
 test('a Demon bluff in play can still be chosen, after a confirm', async ({ page }) => {

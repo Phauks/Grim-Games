@@ -2280,8 +2280,9 @@
 		width: 100%;
 		margin: 0;
 		border: 0;
-		/* Stronger than a plain border, so the sections read at a glance (Trevor, 2026-10-19). */
-		border-top: 0.125rem solid var(--on-surface-muted);
+		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
+		   2026-10-19). */
+		border-top: 0.125rem solid var(--border);
 	}
 	.rule-detail {
 		display: flex;
