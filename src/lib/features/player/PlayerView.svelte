@@ -39,6 +39,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
+	import PlayerRoom from './PlayerRoom.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
 
@@ -225,6 +226,7 @@
 					/>
 				{/if}
 			{/snippet}
+			{#snippet room()}<PlayerRoom />{/snippet}
 		</PlayerScriptTabs>
 	{/if}
 </Page>
