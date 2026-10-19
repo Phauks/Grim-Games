@@ -58,9 +58,18 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 		'Normal rules for Blood on the Clocktower'
 	);
 	await expect(page.getByTestId('player-count')).toHaveCount(1);
+	// Game mode, About and Script share the page's one section header (Trevor, 2026-10-19).
+	const headings = (names: string[]) =>
+		Promise.all(
+			names.map((name) =>
+				expect(modesPanel(page).getByRole('heading', { level: 2, name, exact: true })).toBeVisible()
+			)
+		);
+	await headings(['Game mode', 'About', 'Script']);
 	await chooseMode(page, 'Whale Buffet');
 	await expect(page.getByTestId('mode-about')).toBeVisible();
 	await expect(page.getByTestId('player-count')).toHaveCount(1);
+	await headings(['Game mode', 'About', 'Game mode settings', 'Script']);
 	await chooseMode(page, 'Standard');
 	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
 	await page.getByRole('button', { name: 'Start game' }).tap();
