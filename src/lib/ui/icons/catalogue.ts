@@ -199,6 +199,11 @@ export const TILE_SYMBOL_ICONS = [
 	'ph:umbrella'
 ] as const;
 
+/** Each slot's default base Iconify id, deduplicated and sorted: what most screens draw. */
+export function defaultIconIds(): string[] {
+	return [...new Set(iconSlots.map((slot) => ICON_SLOTS[slot].choices[0]))].sort();
+}
+
 /** Every base Iconify id offered by the catalogue, deduplicated and sorted. */
 export function catalogueIconIds(): string[] {
 	const ids = new Set<string>(TILE_SYMBOL_ICONS);
