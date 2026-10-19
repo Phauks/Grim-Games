@@ -41,6 +41,8 @@
 	import PlayerRoom from './PlayerRoom.svelte';
 	import { roomTable } from '#lib/features/room/player.svelte.ts';
 	import PlayerGrim from './PlayerGrim.svelte';
+	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
+	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
 
@@ -186,6 +188,8 @@
 
 <!-- Print and Share stay on the title's line at every width (Trevor, 2026-10-19). -->
 <Page title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))} iconActions>
+	<!-- No app header here, as on the board (Trevor, 2026-10-19): the sidebar is one tap away. -->
+	{#snippet start()}<NavMenuButton />{/snippet}
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. -->
 	{#snippet actions()}
@@ -253,6 +257,15 @@
 </Page>
 
 <!-- Overlays go beside the Page, not inside it. -->
+<!-- Leaving the script asks first (Trevor, 2026-10-19), but a room's link, a typed code and a
+     reload stay here: everything is already saved on the device. -->
+<LeaveGuard
+	when={!!script}
+	title={t('player.leaveTitle')}
+	body={t('player.leaveBody')}
+	within={(url) => url.pathname === resolve('/play') || url.pathname.startsWith(resolve('/join'))}
+	unload={false}
+/>
 <ScriptCheckDialog
 	bind:open={checkOpen}
 	result={checking}
