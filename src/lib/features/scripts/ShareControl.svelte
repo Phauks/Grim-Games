@@ -19,11 +19,13 @@
 		/** The script's author and version, shown under the dialog's title when known. */
 		author?: string;
 		version?: string;
+		/** The script's logo, for the middle of the QR code. */
+		logo?: string;
 		/** Makes the link; undefined disables the control (nothing to share yet). */
 		target: (() => Promise<ShareTarget>) | undefined;
 	}
 
-	let { what, title, author, version, target }: Props = $props();
+	let { what, title, author, version, logo, target }: Props = $props();
 	let open = $state(false);
 
 	/**
@@ -64,7 +66,7 @@
 
 <Dialog bind:open title={t('scripts.share.title', { title })}>
 	{#if target}
-		<SharePanel {title} {author} {version} target={madeTarget} />
+		<SharePanel {title} {author} {version} {logo} target={madeTarget} />
 	{/if}
 </Dialog>
 
