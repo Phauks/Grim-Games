@@ -94,6 +94,8 @@ export type Command =
 	| { type: 'LoosenReminder'; reminderId: ReminderId }
 	/** The Storyteller's text on a reminder; empty clears it. */
 	| { type: 'SetReminderNote'; reminderId: ReminderId; note?: string }
+	/** The generic reminder's middle symbol; none, or blank, clears it. */
+	| { type: 'SetReminderSymbol'; reminderId: ReminderId; symbol?: string }
 	/**
 	 * Places several reminders at once, such as the suggested setup reminders
 	 * (`setupReminders`, `placeableSetupReminders`). Each becomes a normal reminder that can

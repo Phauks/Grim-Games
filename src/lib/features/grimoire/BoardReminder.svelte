@@ -2,6 +2,10 @@
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
+	import IconGlyph from '#lib/ui/icons/IconGlyph.svelte';
+	import { ICON_SETS, withWeight } from '#lib/ui/icons/catalogue.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { resolveIconSet } from '#lib/ui/preferences.ts';
 
 	/**
 	 * A reminder token on the board, as in the physical grimoire: a round parchment token
@@ -20,8 +24,13 @@
 		alignment?: Alignment;
 		/** "+3" style overflow marker instead of a token. */
 		more?: number;
-		/** The generic reminder: ∞ in place of an icon, `label` its optional text. */
+		/**
+		 * The generic reminder: a blank token with a dashed ring (Trevor, 2026-10-19: look C),
+		 * `label` its optional text.
+		 */
 		infinite?: boolean;
+		/** The generic reminder's own symbol, an icon id or an emoji (Trevor, 2026-10-19: per token). */
+		symbol?: string;
 		disabled?: boolean;
 		onTap: () => void;
 		/** Pointer position in client px while dragging; `end` true when released. */
@@ -42,6 +51,7 @@
 		alignment,
 		more,
 		infinite = false,
+		symbol = '',
 		disabled = false,
 		onTap,
 		onDrag,
@@ -50,6 +60,8 @@
 	}: Props = $props();
 
 	const src = $derived(character ? iconUrl(character, alignment) : undefined);
+	const set = $derived(resolveIconSet(preferences.current, preferences.theme));
+	const weight = $derived(ICON_SETS.find((s) => s.id === set)?.weight ?? 'regular');
 
 	/** Pointer movement, in px, before a press becomes a drag. */
 	const SLOP = 8;
@@ -169,6 +181,7 @@
 	class="reminder"
 	data-type={character?.type}
 	data-testid="board-reminder"
+	data-generic={infinite || undefined}
 	data-pan={panX ? 'x' : undefined}
 	style:--d="{size}px"
 	aria-label={more
@@ -186,11 +199,11 @@
 	{#if more}
 		<span class="more">+{more}</span>
 	{:else}
-		{#if infinite}<span class="infinite" aria-hidden="true">∞</span>{:else if src}<img
-				{src}
-				alt=""
-				draggable="false"
-			/>{/if}
+		{#if infinite}{#if symbol.startsWith('ph:')}<span class="symbol" data-symbol={symbol}
+					><IconGlyph id={withWeight(symbol, weight)} {set} /></span
+				>{:else if symbol}<span class="symbol emoji" data-symbol={symbol} aria-hidden="true"
+					>{symbol}</span
+				>{/if}{:else if src}<img {src} alt="" draggable="false" />{/if}
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
 		{#if label}<span class="label">{label}</span>{/if}
 	{/if}
@@ -263,11 +276,28 @@
 	.reminder[data-type='loric'] {
 		--rim: var(--loric);
 	}
-	.infinite {
-		margin-top: -12%;
-		font-size: calc(var(--d) * 0.55);
-		line-height: 1;
+	/* Look C (Trevor, 2026-10-19): a dashed ring inside the rim marks the generic reminder. */
+	.reminder[data-generic]::before {
+		content: '';
+		position: absolute;
+		inset: 12%;
+		border: calc(var(--d) * 0.035) dashed var(--rim);
+		border-radius: 50%;
+		pointer-events: none;
+	}
+	.symbol {
+		display: grid;
+		place-items: center;
+		width: 46%;
+		height: 46%;
+		margin-top: -10%;
 		color: var(--on-reminder);
+		line-height: 1;
+		--icon-size: 100%;
+		--icon-scale: 1;
+	}
+	.emoji {
+		font-size: calc(var(--d) * 0.36);
 	}
 	img {
 		width: 84%;

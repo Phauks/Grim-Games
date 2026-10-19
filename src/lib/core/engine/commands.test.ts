@@ -761,6 +761,25 @@ describe('the generic reminder', () => {
 			'unknown-reminder'
 		);
 	});
+
+	it('takes its own symbol, and clears it when emptied', () => {
+		// Trevor (2026-10-19): each generic reminder carries the symbol chosen for it.
+		const { session, ctx, seats } = newGame(names);
+		const generic = { characterId: GENERIC_REMINDER_ID, label: '' };
+		const s = run(session, ctx, { type: 'AddReminder', seatId: seats[0], reminder: generic });
+		const id = s.game.seats[seats[0]].reminders[0].reminderId;
+		const marked = run(s, ctx, { type: 'SetReminderSymbol', reminderId: id, symbol: ' 🦉 ' });
+		expect(marked.game.seats[seats[0]].reminders[0].symbol).toBe('🦉');
+		expect(
+			warned(marked, ctx, { type: 'SetReminderSymbol', reminderId: id, symbol: '🦉' })
+		).toContain('no-change');
+		const cleared = run(marked, ctx, { type: 'SetReminderSymbol', reminderId: id });
+		expect(cleared.game.seats[seats[0]].reminders[0]).not.toHaveProperty('symbol');
+		expect(undo(cleared).game.seats[seats[0]].reminders[0].symbol).toBe('🦉');
+		expect(
+			refused(s, ctx, { type: 'SetReminderSymbol', reminderId: id, symbol: 'x'.repeat(40) })
+		).toBe('invalid-symbol');
+	});
 });
 
 describe('loose reminders', () => {

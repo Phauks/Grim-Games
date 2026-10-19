@@ -79,7 +79,8 @@ export type ErrorCode =
 	| 'unknown-entry'
 	| 'wrong-entry-kind'
 	| 'invalid-abnormal'
-	| 'invalid-prep-value';
+	| 'invalid-prep-value'
+	| 'invalid-symbol';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -132,6 +133,8 @@ export type Decision =
 export const BLUFFS_PER_SET = 3;
 /** Longest name a bluff set can have. */
 export const MAX_BLUFF_SET_NAME = 40;
+/** Longest generic reminder symbol, in UTF-16 units: one emoji, flags and joined ones too. */
+export const MAX_REMINDER_SYMBOL = 16;
 
 /** Base setup covers 5 to 15 players; more join as Travellers (https://wiki.bloodontheclocktower.com/Setup). */
 export const MIN_PLAYERS = 5;
@@ -924,6 +927,22 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			}
 			const event: GameEvent = { type: 'ReminderNoteSet', reminderId: command.reminderId };
 			if (note !== undefined) event.note = note;
+			return [event];
+		}
+
+		case 'SetReminderSymbol': {
+			const from = reminderHolder(game, command.reminderId);
+			if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+			const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
+			const symbol = command.symbol?.trim() || undefined;
+			if (symbol !== undefined && symbol.length > MAX_REMINDER_SYMBOL)
+				refuse('invalid-symbol', `a symbol is at most ${MAX_REMINDER_SYMBOL} characters`);
+			if (symbol === reminder.symbol) {
+				warn('no-change', 'the symbol is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'ReminderSymbolSet', reminderId: command.reminderId };
+			if (symbol !== undefined) event.symbol = symbol;
 			return [event];
 		}
 
