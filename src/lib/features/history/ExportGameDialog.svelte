@@ -9,11 +9,13 @@
 	import type { SeatLayout } from '#lib/ui/seating/seat-layout.ts';
 	import { buildRecap, type RecapSource } from './recap.ts';
 	import { recapHtml, type RecapParts } from './recap-html.ts';
+	import ShareRecapDialog from './ShareRecapDialog.svelte';
 
 	/**
 	 * Saves a finished game (Trevor, 2026-10-19): one HTML file with the history log, the
 	 * final grimoire and the Storyteller's notes, each part chosen here, or the grimoire on
-	 * its own as a PNG. The board's ⋯ menu and History open it.
+	 * its own as a PNG. The board's ⋯ menu and History open it, and Share passes the game on
+	 * to the players' phones (ShareRecapDialog).
 	 */
 	interface Props {
 		open: boolean;
@@ -25,6 +27,12 @@
 
 	let parts = $state<RecapParts>({ log: true, image: true, notes: true });
 	let busy = $state(false);
+	let shareOpen = $state(false);
+
+	function openShare() {
+		open = false;
+		shareOpen = true;
+	}
 
 	async function picture(source: RecapSource, layout: SeatLayout, caption: string) {
 		await document.fonts?.ready;
@@ -79,6 +87,9 @@
 		/>
 	</div>
 	{#snippet actions()}
+		<Button icon="share" variant="quiet" disabled={busy} onclick={openShare}>
+			{t('history.exportShare')}
+		</Button>
 		<Button icon="grimoire" variant="quiet" disabled={busy} onclick={() => run('image')}>
 			{t('history.exportPicture')}
 		</Button>
@@ -87,6 +98,8 @@
 		>
 	{/snippet}
 </Dialog>
+
+<ShareRecapDialog bind:open={shareOpen} {load} />
 
 <style>
 	.parts {

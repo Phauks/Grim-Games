@@ -76,6 +76,9 @@ export const account = {
 	'account.privacy.accept': 'I accept the Privacy policy',
 	'account.privacy.declined': 'Signing in needs the Privacy policy accepted.',
 	'account.offline': 'You are offline.',
+	'account.firstSync.title': "Add this device's data to your account?",
+	'account.firstSync.text': 'Nothing is deleted from this device or your account.',
+	'account.firstSync.script': { one: '{count} script', other: '{count} scripts' },
 	'account.sync.otherDevice': '{name} (other device)',
 
 	'account.devices.title': 'Signed-in devices',

@@ -18,9 +18,10 @@ const KEPT = {
 		ACCOUNT_EMAILS: 'AccountEmail',
 		ACCOUNT_NAMES: 'AccountName',
 		REPORTS: 'ReportBox',
-		SCRIPT_MIRROR: 'ScriptMirror'
+		SCRIPT_MIRROR: 'ScriptMirror',
+		RECAPS: 'SharedRecap'
 	} as Record<string, string>,
-	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6']
+	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7']
 };
 
 type Binding = { name: string; class_name: string };

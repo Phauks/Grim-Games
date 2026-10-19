@@ -149,6 +149,12 @@ test('scripts added on the device are saved to the profile', async ({ page }) =>
 	await expect(page.getByTestId('script-details-name')).toHaveText('Storm Front');
 
 	await signInWithCode(page, uniqueEmail('scripts'));
+	// The first sign-in on this device offers what it already has (sync plan step 2).
+	const offer = page.getByRole('alertdialog', { name: "Add this device's data to your account?" });
+	await expect(
+		offer.getByRole('checkbox', { name: '1 script', includeHidden: true })
+	).toBeChecked();
+	await offer.getByRole('button', { name: 'Confirm' }).tap();
 	await expect.poll(() => profileScriptNames(page)).toContain('Storm Front');
 	// The Account page no longer lists scripts.
 	await expect(page.getByTestId('profile-scripts')).toHaveCount(0);

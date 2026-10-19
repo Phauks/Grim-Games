@@ -3,7 +3,11 @@
 	import { resolve } from '$app/paths';
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
+	import { page } from '$app/state';
 	import { describeBuild, REPOSITORY_URL, shortCommit } from './report-issue.ts';
+	import { buildSwitch } from './build-switch.ts';
+
+	const other = $derived(buildSwitch(info, page.url));
 </script>
 
 <footer>
@@ -17,6 +21,20 @@
 			></span
 		>
 		<!-- Separators are hidden on narrow screens, where the links wrap and a dot would start a line. -->
+		{#if other}
+			<!-- Beside the build it switches from (Trevor, 2026-10-19). Each build is its own origin, so its device data is separate. -->
+			<span class="sep" aria-hidden="true">·</span>
+			<!-- An absolute link to the other build's host, so there is no app path to resolve. -->
+			<!-- eslint-disable svelte/no-navigation-without-resolve -->
+			<a
+				class="page"
+				href={other.href}
+				title={t('shell.switchBuildTitle')}
+				data-testid="switch-build"
+				>{other.to === 'beta' ? t('shell.switchToBeta') : t('shell.switchToProduction')}</a
+			>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+		{/if}
 		<span class="sep" aria-hidden="true">·</span>
 		<a class="page" href={resolve('/changelog')}>{t('shell.changelog')}</a>
 		<span class="sep" aria-hidden="true">·</span>

@@ -18,6 +18,8 @@ import { seatPoints, towardsMiddle, type SeatLayout } from '#lib/ui/seating/seat
 
 /** The picture's side, in canvas pixels: sharp enough to print. */
 const SIZE = 1600; /* px-ok: canvas pixels, not CSS */
+/** Keeps a shared recap's picture to a few hundred KB. */
+const JPEG_QUALITY = 0.85;
 
 function token(name: string, fallback: string): string {
 	const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -50,14 +52,16 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, width: number): st
 }
 
 /**
- * Draws the grimoire and returns it as a PNG. `caption` goes lower left, where the board
- * shows the script's name.
+ * Draws the grimoire and returns it as a PNG, or a JPEG (`type`) where size matters, as in
+ * a recap shared over our server. `caption` goes lower left, where the board shows the
+ * script's name.
  */
 export async function grimoireImage(
 	game: Game,
 	characters: CharacterLookup,
 	layout: SeatLayout,
-	caption: string
+	caption: string,
+	type: 'image/png' | 'image/jpeg' = 'image/png'
 ): Promise<Blob> {
 	const canvas = document.createElement('canvas');
 	canvas.width = SIZE;
@@ -182,7 +186,11 @@ export async function grimoireImage(
 	ctx.fillText(fitText(ctx, caption, SIZE * 0.9), SIZE * 0.03, SIZE * 0.97);
 
 	return new Promise((resolve, reject) =>
-		canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('no image'))), 'image/png')
+		canvas.toBlob(
+			(blob) => (blob ? resolve(blob) : reject(new Error('no image'))),
+			type,
+			JPEG_QUALITY
+		)
 	);
 }
 

@@ -4,10 +4,11 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { formatRoomCode, normaliseRoomCode } from '#lib/core/sync/room-code.ts';
+	import { formatRoomCode, normaliseRoomCode, ROOM_CODE_LENGTH } from '#lib/core/sync/room-code.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { RoomPlayer } from './player.svelte.ts';
 	import { followRoomScript } from './room-script.ts';
@@ -123,16 +124,7 @@
 		{/if}
 		<form class="code-form" onsubmit={enterCode}>
 			<label for="room-code">{t('room.codeLabel')}</label>
-			<ClearableField bind:value={typed}>
-				<input
-					id="room-code"
-					bind:value={typed}
-					inputmode="numeric"
-					autocomplete="off"
-					enterkeyhint="go"
-					maxlength="12"
-				/>
-			</ClearableField>
+			<CodeField id="room-code" bind:value={typed} length={ROOM_CODE_LENGTH} group={3} />
 			<Button type="submit" variant="accent" disabled={!normaliseRoomCode(typed)}>
 				{t('room.join')}
 			</Button>

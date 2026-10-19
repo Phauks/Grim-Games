@@ -31,6 +31,10 @@ export const shell = {
 	'shell.privacy': 'Privacy',
 	'shell.about': 'About',
 	'shell.reportIssue': 'Report an issue',
+	'shell.switchToBeta': 'Switch to beta',
+	'shell.switchToProduction': 'Switch to production',
+	'shell.switchBuildTitle':
+		'Opens this page on the other build. Each build keeps its own saved games, Library and settings on this device.',
 	'shell.aboutTitle': `About ${APP_NAME}`,
 	'shell.aboutIntro': 'A touch-first grimoire for Blood on the Clocktower Storytellers.',
 	'shell.aboutVersion': 'Version',

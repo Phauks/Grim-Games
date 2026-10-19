@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { GameMode } from '#lib/core/modes/index.ts';
+	import type { GameMode, SpecialRule } from '#lib/core/modes/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -8,18 +8,21 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import ModeFormatGuide from './ModeFormatGuide.svelte';
 	import { customModes } from './custom-modes.svelte.ts';
+	import { customRules } from './custom-rules.svelte.ts';
 
 	/**
 	 * Adds a mode file someone wrote, pasted or uploaded. Every problem is listed with its
 	 * path (parseGameMode), so a file can be fixed in one go. Copy a built-in mode's file from
-	 * Inspect to start from it.
+	 * Inspect to start from it. A file with "kind": "special-rule" is a special rule, filed with
+	 * the rules (Trevor, 2026-10-18: custom game modes and custom rules both).
 	 */
 	interface Props {
 		open?: boolean;
 		onadded: (mode: GameMode) => void;
+		onaddedrule?: (rule: SpecialRule) => void;
 	}
 
-	let { open = $bindable(false), onadded }: Props = $props();
+	let { open = $bindable(false), onadded, onaddedrule }: Props = $props();
 
 	let text = $state('');
 	let issues = $state<string[]>([]);
@@ -35,7 +38,29 @@
 
 	async function save() {
 		const data = await loadOfficialData();
-		const result = customModes.add(text, new Set(data.characters.map((c) => c.id)));
+		const known = new Set(data.characters.map((c) => c.id));
+		let value: unknown;
+		try {
+			value = JSON.parse(text);
+		} catch {
+			value = undefined;
+		}
+		if (
+			typeof value === 'object' &&
+			value !== null &&
+			'kind' in value &&
+			value.kind === 'special-rule'
+		) {
+			const result = customRules.add(value, known);
+			if (!result.ok) {
+				issues = result.issues;
+				return;
+			}
+			open = false;
+			onaddedrule?.(result.rule);
+			return;
+		}
+		const result = customModes.add(text, known);
 		if (!result.ok) {
 			issues = result.issues;
 			return;

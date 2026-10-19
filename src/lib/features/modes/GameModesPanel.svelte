@@ -11,7 +11,9 @@
 		NO_RESTRICTIONS,
 		STANDARD,
 		townSizes,
-		type GameMode
+		withRules,
+		type GameMode,
+		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -29,10 +31,13 @@
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import AddModeDialog from './AddModeDialog.svelte';
 	import { allModes, customModes, findMode } from './custom-modes.svelte.ts';
+	import { findRule } from './custom-rules.svelte.ts';
+	import { readGameMode } from './game-mode-store.ts';
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import ModeValue from './ModeValue.svelte';
 	import RestrictedDialog from './RestrictedDialog.svelte';
+	import SpecialRulesDialog from './SpecialRulesDialog.svelte';
 	import { loadLinkedScript, loadScriptChoice, scriptChoices } from './script-choices.svelte.ts';
 	import { campaigns } from './campaigns.ts';
 	import { continueCampaign, startHref, startInMode, startTowns } from './start.ts';
@@ -43,11 +48,14 @@
 	 * New game's Game modes area (Trevor, 2026-10-17: modes are their own area because they
 	 * differ so much). Each mode shows only what it needs: a script where it plays one, a
 	 * script per town where the Storyteller picks them, its own scripts where it has them, and
-	 * none where it plays every character.
+	 * none where it plays every character. Special rules stack on any mode, Standard too.
 	 */
 	interface Props {
-		/** New game's own Standard game: script, players and Start (Grimoire board thread). */
-		standard: Snippet;
+		/**
+		 * New game's own Standard game: script, players and Start (Grimoire board thread), given
+		 * the special rules chosen.
+		 */
+		standard: Snippet<[readonly SpecialRule[]]>;
 	}
 
 	let { standard }: Props = $props();
@@ -62,13 +70,19 @@
 	let adding = $state(false);
 	let deleting = $state(false);
 	const mode = $derived<GameMode>(findMode(modeId) ?? STANDARD);
-	const pool = $derived(mode.parts.pool);
-	const towns = $derived(mode.parts.towns);
+	/** The special rules chosen, in order (Trevor, 2026-10-18: rules stack on a mode). */
+	let ruleIds = $state<string[]>([]);
+	let choosingRules = $state(false);
+	const rules = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
+	/** The mode as it plays, with the rules folded in. */
+	const played = $derived(withRules(mode, rules));
+	const pool = $derived(played.parts.pool);
+	const towns = $derived(played.parts.towns);
 	let restrictions = $state(NO_RESTRICTIONS);
 	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
 	let roleRecycling = $state<boolean | undefined>();
 	const draft = $derived(
-		mode.parts.assignment?.kind === 'draft' ? mode.parts.assignment : undefined
+		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
 	);
 	let players = $state(8);
 	let starting = $state(false);
@@ -133,7 +147,7 @@
 	const maxPlayers = $derived(split > 1 ? MAX_PLAYERS * split : MAX_SEATS);
 	const total = $derived(Math.min(maxPlayers, Math.max(minPlayers, players)));
 	const sizes = $derived(split > 1 ? townSizes(total, split) : undefined);
-	const restrictedCount = $derived(bannedIn(mode, restrictions).size);
+	const restrictedCount = $derived(bannedIn(played, restrictions).size);
 
 	async function loadScripts(data: GameData): Promise<LoadedScript[]> {
 		if (pool?.kind === 'per-town' && pool.scripts.length > 0)
@@ -150,9 +164,9 @@
 			const scriptCharacters = [
 				...new Map(loaded.flatMap((l) => l.characters).map((c) => [c.id, c])).values()
 			];
-			restrictPool = modeCharacters(mode, scriptCharacters, data.characters, {
+			restrictPool = modeCharacters(played, scriptCharacters, data.characters, {
 				banned: [],
-				allowed: mode.parts.restricted?.banned ?? []
+				allowed: played.parts.restricted?.banned ?? []
 			});
 			restricting = true;
 		} catch (e) {
@@ -177,13 +191,16 @@
 					},
 					(name, number) => t('modes.campaign.scriptName', { name, number })
 				);
-				await goto(startHref(modeId, open.game.gameId));
+				await goto(
+					startHref(modeId, readGameMode(open.game.gameId)?.rules ?? [], open.game.gameId)
+				);
 				return;
 			}
 			const loaded = await loadScripts(data);
 			if (towns && towns.count > 1) {
 				const groupId = await startTowns({
 					modeId,
+					rules,
 					restrictions,
 					data,
 					scripts: loaded,
@@ -198,13 +215,14 @@
 			}
 			const open = await startInMode({
 				modeId,
+				rules,
 				restrictions,
 				data,
 				loaded: loaded[0],
 				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen } : {}),
 				create: (s) => OpenGame.create(data, s, total)
 			});
-			await goto(startHref(modeId, open.game.gameId));
+			await goto(startHref(modeId, rules, open.game.gameId));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {
@@ -246,9 +264,13 @@
 		<h3 id="mode-about-title">{t('modes.about')}</h3>
 		<ModeAbout {mode} compact />
 	</section>
+	<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18). -->
+	<Button icon="fabled" onclick={() => (choosingRules = true)}>
+		{t('modes.specialRulesButton', { count: rules.length })}
+	</Button>
 
 	{#if isStandard}
-		{@render standard()}
+		{@render standard(rules)}
 	{:else}
 		{#if ongoing.length > 0}
 			<Select
@@ -341,12 +363,20 @@
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
+<SpecialRulesDialog
+	bind:open={choosingRules}
+	{mode}
+	{ruleIds}
+	onChange={(ids) => (ruleIds = ids)}
+	onadd={() => (adding = true)}
+/>
 <AddModeDialog
 	bind:open={adding}
 	onadded={(m) => {
 		modeId = m.id;
 		restrictions = NO_RESTRICTIONS;
 	}}
+	onaddedrule={(r) => (ruleIds = [...ruleIds.filter((id) => id !== r.id), r.id])}
 />
 <ConfirmDialog
 	bind:open={deleting}

@@ -133,3 +133,8 @@ function joinForced(a: ForcedRule | undefined, b: ForcedRule): ForcedRule {
 		...(a.homebrew || b.homebrew ? { homebrew } : {})
 	};
 }
+
+/** The mode as the game plays it: its parts with the rules folded in (conflicts aside). */
+export function withRules(mode: GameMode, rules: readonly SpecialRule[]): GameMode {
+	return rules.length ? { ...mode, parts: combineRules(mode, rules).parts } : mode;
+}

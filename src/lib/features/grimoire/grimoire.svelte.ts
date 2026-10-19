@@ -1,5 +1,5 @@
 import type { Command } from '#lib/core/engine/index.ts';
-import type { Night } from '#lib/core/rules/index.ts';
+import { demonToBecome, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
@@ -12,7 +12,7 @@ import {
 	type SeatLayout,
 	type SeatPoint
 } from '#lib/ui/seating/seat-layout.ts';
-import type { ReminderId } from '#lib/core/model/index.ts';
+import type { Reminder, ReminderId } from '#lib/core/model/index.ts';
 import {
 	forgetUpsideDownMarks,
 	nightViews,
@@ -182,7 +182,38 @@ export class Grimoire {
 		}
 		if (misfit) toast('Note', misfit);
 		this.askAlignment(command);
+		this.askDemon(command);
 		return true;
+	}
+
+	/** The seat and reminder an AddReminder or MoveReminder just put down. */
+	private placed(command: Command): { seatId: SeatId; reminder: Reminder } | undefined {
+		if (command.type !== 'AddReminder' && command.type !== 'MoveReminder') return undefined;
+		const seatId = command.type === 'AddReminder' ? command.seatId : command.toSeatId;
+		const reminder = this.open.game.seats[seatId]?.reminders.find((r) =>
+			command.type === 'AddReminder'
+				? r.characterId === command.reminder.characterId && r.label === command.reminder.label
+				: r.reminderId === command.reminderId
+		);
+		return reminder ? { seatId, reminder } : undefined;
+	}
+
+	/**
+	 * A seat whose reminder says it became the Demon (the Scarlet Woman's "Is The Demon"):
+	 * the board offers to change its character to that Demon (Trevor, 2026-10-19).
+	 */
+	demonAsk = $state.raw<{ seatId: SeatId; characterId: CharacterId } | undefined>();
+
+	private askDemon(command: Command): void {
+		const placed = this.placed(command);
+		if (!placed) return;
+		const characterId = demonToBecome(
+			this.open.game,
+			placed.seatId,
+			placed.reminder,
+			this.open.characters
+		);
+		if (characterId) this.demonAsk = { seatId: placed.seatId, characterId };
 	}
 
 	/**
@@ -192,15 +223,11 @@ export class Grimoire {
 	alignmentAsk = $state.raw<{ seatId: SeatId; characterId: CharacterId } | undefined>();
 
 	private askAlignment(command: Command): void {
-		if (command.type !== 'AddReminder' && command.type !== 'MoveReminder') return;
+		const placed = this.placed(command);
+		if (!placed) return;
 		const game = this.open.game;
-		const seatId = command.type === 'AddReminder' ? command.seatId : command.toSeatId;
-		const reminder = game.seats[seatId]?.reminders.find((r) =>
-			command.type === 'AddReminder'
-				? r.characterId === command.reminder.characterId && r.label === command.reminder.label
-				: r.reminderId === command.reminderId
-		);
-		const source = reminder && replacedBy(reminder, this.open.characters);
+		const { seatId } = placed;
+		const source = replacedBy(placed.reminder, this.open.characters);
 		if (!source || (source.type !== 'minion' && source.type !== 'demon')) return;
 		if (alignmentOf(game, seatId) === 'evil') return;
 		this.alignmentAsk = { seatId, characterId: source.id };

@@ -13,9 +13,10 @@ import type { SavedScript, ScriptSource } from '#lib/features/scripts/saved-scri
 import { resolveLink } from '#lib/features/scripts/script-links.ts';
 import { account } from './account.svelte.ts';
 import type { ProfileDoc } from './account-protocol.ts';
+import { firstSignIn } from './first-sign-in.svelte.ts';
 import { accountSync } from './sync/sync.svelte.ts';
 import { libraryKey } from '#lib/features/library/library-labels.ts';
-import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 import {
 	differs,
 	findMatch,
@@ -47,46 +48,26 @@ function toEntries(docs: ProfileDoc[]): ProfileScriptEntry[] {
 
 const entries = $derived(toEntries(accountSync.docs('script')));
 
-const IMPORTED_KEY = 'grim-games:profile-scripts-imported';
-
-/** Whether this device's Recent scripts were already added to `userId`'s profile. */
-function importedFor(userId: string): boolean {
-	const ids = readStoredText(IMPORTED_KEY);
-	return ids === undefined ? false : ids.split(',').includes(userId);
-}
-
-function markImported(userId: string): void {
-	const ids = (readStoredText(IMPORTED_KEY) ?? '').split(',').filter(Boolean);
-	// No storage: the Recent list is offered again next time, which is harmless.
-	writeStoredText(IMPORTED_KEY, [...ids, userId].slice(-5).join(','));
-}
-
-/**
- * The first time a user signs in on this device, the scripts already in its Recent list are
- * added to their profile too, so "added scripts are in the profile" holds for scripts added
- * before signing in. Imported lazily: the Scripts feature imports this module.
- */
-async function importDeviceScripts(userId: string): Promise<void> {
-	if (importedFor(userId)) return;
+/** This device's Recent scripts, oldest first, so the profile's order matches the device's. */
+async function deviceScripts(): Promise<SavedScript[]> {
+	// Imported lazily: the Scripts feature imports this module.
 	const { recentScripts, restoreScripts } =
 		await import('#lib/features/scripts/current-script.svelte.ts');
 	await restoreScripts();
-	// The account's scripts first, so ones already there are matched instead of added again.
-	await accountSync.syncNow();
-	if (account.user?.id !== userId || !accountSync.pulled) return;
-	// Oldest first, so the profile's order matches the device's.
-	for (const saved of [...recentScripts.list].reverse()) {
-		if (account.user?.id !== userId) return;
-		await saveScriptToProfile(saved);
-	}
-	markImported(userId);
+	return [...recentScripts.list].reverse();
 }
 
-account.onChange((user) => {
-	if (user) {
-		void importDeviceScripts(user.id).catch((e) =>
-			reportError(e, { area: 'account', notify: false })
-		);
+// The first sign-in sheet offers the scripts this device had before signing in.
+firstSignIn.register('script', {
+	async count() {
+		const now = Date.now();
+		return (await deviceScripts()).filter((saved) => {
+			const script = fromSavedScript($state.snapshot(saved) as SavedScript, now);
+			return script && !findMatch(entries, script);
+		}).length;
+	},
+	async upload() {
+		for (const saved of await deviceScripts()) await saveScriptToProfile(saved);
 	}
 });
 
@@ -108,8 +89,8 @@ async function followRemovals(userId: string, now: { id: string; key: string }[]
 	const { gone, next } = removedElsewhere(seen, now);
 	// No storage: nothing is remembered, so nothing is ever taken off this device.
 	writeStored(SEEN_KEY, { userId, scripts: next } satisfies Seen);
-	// Until this device's Recent scripts have joined the profile, a missing one proves nothing.
-	if (gone.length === 0 || !importedFor(userId)) return;
+	// Only scripts the account had: what this device kept to itself is never touched.
+	if (gone.length === 0) return;
 	const { recentScripts, restoreScripts, forgetScript } =
 		await import('#lib/features/scripts/current-script.svelte.ts');
 	await restoreScripts();

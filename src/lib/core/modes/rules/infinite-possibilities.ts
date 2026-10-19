@@ -1,4 +1,4 @@
-import { GAME_MODE_FORMAT, type GameMode } from '../types.ts';
+import { SPECIAL_RULE_FORMAT, type SpecialRule } from '../types.ts';
 
 const POST = 'https://chillclocktower.com/2024/04/28/a-script-of-infinite-possibilities/';
 
@@ -10,10 +10,13 @@ const POST = 'https://chillclocktower.com/2024/04/28/a-script-of-infinite-possib
  * Storyteller may share a range of how many. Off-script registration is the Storyteller's
  * call, and a Summoner shouldn't be offered extra Demons unless announced. Trevor called it
  * "Script of Infinite Impossibilities" (2026-10-17), and on 2026-10-18 made it any script
- * with 1 to 4 hidden extras ("update game mode to match my description"). Source: POST.
+ * with 1 to 4 hidden extras ("update game mode to match my description"). A special rule
+ * since 2026-10-18 (Trevor: rules stack on a game mode); a mode that replaces the script's
+ * pool can't take it (combineRules warns). Source: POST.
  */
-export const INFINITE_POSSIBILITIES: GameMode = {
-	format: GAME_MODE_FORMAT,
+export const INFINITE_POSSIBILITIES: SpecialRule = {
+	kind: 'special-rule',
+	format: SPECIAL_RULE_FORMAT,
 	id: 'infinite-possibilities',
 	name: 'A Script of Infinite Possibilities',
 	about:
