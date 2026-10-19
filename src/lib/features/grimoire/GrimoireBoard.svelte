@@ -114,6 +114,7 @@
 	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
+	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
@@ -127,9 +128,11 @@
 		 * nothing to share or change, and leaving needs no asking.
 		 */
 		watching?: boolean;
+		/** The Storyteller's day timer, on a spectator's board. */
+		watchedTimer?: WatchedTimer;
 	}
 
-	let { grimoire, watching = false }: Props = $props();
+	let { grimoire, watching = false, watchedTimer }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
@@ -1789,7 +1792,12 @@
 		{#if showTimer}
 			<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. -->
 			<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
-				<DayTimer alive={livingByTeam(game).alive} variant="compact" readOnly={watching} />
+				<DayTimer
+					alive={livingByTeam(game).alive}
+					variant="compact"
+					readOnly={watching}
+					shown={watchedTimer}
+				/>
 			</div>
 		{/if}
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>

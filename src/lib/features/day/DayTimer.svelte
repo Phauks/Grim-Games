@@ -6,7 +6,8 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import DayTimer from './DayTimer.svelte';
-	import { liveDayTimer as timer } from './day-timer.svelte.ts';
+	import { liveDayTimer } from './day-timer.svelte.ts';
+	import type { WatchedTimer } from './watched-timer.svelte.ts';
 	import { hold } from '#lib/ui/hold.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { canVibrate, playTimerSound, vibrateTimer } from './timer-sound.ts';
@@ -33,11 +34,16 @@
 		 * be pressed, held or opened.
 		 */
 		readOnly?: boolean;
+		/** Shown instead of this device's timer: the Storyteller's, on a spectator's board. */
+		shown?: WatchedTimer;
 	}
 
-	let { alive, variant = 'full', soundButton = true, readOnly = false }: Props = $props();
+	let { alive, variant = 'full', soundButton = true, readOnly = false, shown }: Props = $props();
 
-	$effect(() => timer.follow(alive));
+	/** This device's timer, which every button works; `shown` only shows. */
+	const live = liveDayTimer;
+	const timer = $derived(shown ?? live);
+	$effect(() => live.follow(alive));
 
 	let soundOpen = $state(false);
 	let controlsOpen = $state(false);
@@ -73,7 +79,7 @@
 		description={canKeepAwake() ? undefined : t('day.timerKeepAwakeUnavailable')}
 		checked={canKeepAwake() && preferences.current.timerKeepAwake}
 		disabled={!canKeepAwake()}
-		onChange={(on) => timer.setKeepAwake(on)}
+		onChange={(on) => live.setKeepAwake(on)}
 	/>
 {/snippet}
 
@@ -87,7 +93,7 @@
 	data-done={timer.done ? '' : undefined}
 >
 	{#if variant === 'full'}
-		<IconButton icon="minus" label={t('day.timerLess')} onclick={() => timer.adjust(-1)} />
+		<IconButton icon="minus" label={t('day.timerLess')} onclick={() => live.adjust(-1)} />
 	{/if}
 	{#if variant === 'full'}
 		<!--
@@ -99,7 +105,7 @@
 			class="mode"
 			aria-label={timer.mode === 'down' ? t('day.timerSwitchToUp') : t('day.timerSwitchToDown')}
 			onclick={() => preferences.update({ timerMode: timer.mode === 'down' ? 'up' : 'down' })}
-			{@attach hold(() => timer.reset(alive))}
+			{@attach hold(() => live.reset(alive))}
 		>
 			<span class="caption" data-testid="timer-mode" aria-hidden="true"
 				>{timer.mode === 'down' ? t('day.timerModeDown') : t('day.timerModeUp')}</span
@@ -115,7 +121,7 @@
 			aria-label={t('day.timerOpen', { clock: timer.clock })}
 			disabled={readOnly}
 			onclick={() => (controlsOpen = true)}
-			{@attach hold(() => !readOnly && timer.reset(alive))}
+			{@attach hold(() => !readOnly && live.reset(alive))}
 		>
 			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
 				>{timer.clock}</span
@@ -123,20 +129,20 @@
 		</button>
 	{/if}
 	{#if variant === 'full'}
-		<IconButton icon="add" label={t('day.timerMore')} onclick={() => timer.adjust(1)} />
+		<IconButton icon="add" label={t('day.timerMore')} onclick={() => live.adjust(1)} />
 	{/if}
 	<IconButton
 		icon={timer.running ? 'timerPause' : 'timerStart'}
 		label={timer.running ? t('day.timerPause') : t('day.timerStart')}
 		disabled={readOnly || (!timer.running && !timer.startable)}
-		onclick={() => timer.toggle()}
+		onclick={() => live.toggle()}
 	/>
 	{#if variant === 'full'}
 		<IconButton
 			icon="reset"
 			label={t('day.timerReset')}
 			disabled={timer.fresh}
-			onclick={() => timer.reset(alive)}
+			onclick={() => live.reset(alive)}
 		/>
 		{#if soundButton}
 			<IconButton

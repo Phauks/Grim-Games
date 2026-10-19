@@ -9,6 +9,7 @@ import {
 	isFresh,
 	isOver,
 	isRunning,
+	parseSharedTimer,
 	pause,
 	remaining,
 	reset,
@@ -76,5 +77,27 @@ describe('day timer', () => {
 		// Counting up resumes past the target; counting down does not.
 		expect(start(t, 100_000, 'up').startedAt).toBe(100_000);
 		expect(start(t, 100_000, 'down')).toBe(t);
+	});
+});
+
+describe('the timer spectators see (Trevor, 2026-10-19)', () => {
+	it('keeps a running or paused timer and its mode', () => {
+		expect(
+			parseSharedTimer({ durationMs: 60_000, elapsedMs: 5_000, startedAt: 9, mode: 'up' })
+		).toEqual({ durationMs: 60_000, elapsedMs: 5_000, startedAt: 9, mode: 'up' });
+		expect(parseSharedTimer({ durationMs: 60_000, elapsedMs: 0, mode: 'down' })).toEqual({
+			durationMs: 60_000,
+			elapsedMs: 0,
+			mode: 'down'
+		});
+	});
+
+	it('drops anything malformed', () => {
+		expect(parseSharedTimer(undefined)).toBeUndefined();
+		expect(parseSharedTimer({ durationMs: -1, elapsedMs: 0, mode: 'down' })).toBeUndefined();
+		expect(parseSharedTimer({ durationMs: 1, elapsedMs: 0, mode: 'sideways' })).toBeUndefined();
+		expect(
+			parseSharedTimer({ durationMs: 1, elapsedMs: 0, startedAt: 'soon', mode: 'down' })
+		).toBeUndefined();
 	});
 });

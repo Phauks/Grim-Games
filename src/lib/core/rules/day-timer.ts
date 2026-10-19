@@ -98,3 +98,28 @@ export function formatClock(ms: number, round: 'up' | 'down' = 'up'): string {
 	const seconds = total % 60;
 	return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
+
+/**
+ * The Storyteller's timer as spectators get it (Trevor, 2026-10-19: "it should sync to the
+ * storyteller timer"). `startedAt` is the Storyteller's clock, so a viewer who joins mid-run
+ * still shows the right time, off only by how far apart the two devices' clocks are.
+ */
+export interface SharedDayTimer extends DayTimer {
+	mode: DayTimerMode;
+}
+
+/** A shared timer from the room, or undefined when it is missing or malformed. */
+export function parseSharedTimer(value: unknown): SharedDayTimer | undefined {
+	if (typeof value !== 'object' || value === null) return undefined;
+	const { durationMs, elapsedMs, startedAt, mode } = value as Record<string, unknown>;
+	const time = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0;
+	if (!time(durationMs) || !time(elapsedMs)) return undefined;
+	if (startedAt !== undefined && !time(startedAt)) return undefined;
+	if (!DAY_TIMER_MODES.includes(mode as DayTimerMode)) return undefined;
+	return {
+		durationMs,
+		elapsedMs,
+		...(startedAt === undefined ? {} : { startedAt }),
+		mode: mode as DayTimerMode
+	};
+}

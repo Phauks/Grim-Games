@@ -350,6 +350,22 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await sheet.getByRole('textbox', { name: 'Player name' }).press('Enter');
 	await expect(viewer.getByRole('button', { name: /^Seat 1: Alex/ })).toBeVisible();
 
+	// The viewer's timer follows the Storyteller's (Trevor, 2026-10-19).
+	await page.keyboard.press('Escape');
+	await expect(sheet).toHaveCount(0);
+	const watched = viewer.getByTestId('day-timer');
+	await expect(watched).not.toHaveAttribute('data-running');
+	await page.getByTestId('day-timer').getByRole('button', { name: 'Start timer' }).tap();
+	await expect(watched).toHaveAttribute('data-running', '');
+	const clock = watched.getByRole('timer');
+	const first = await clock.textContent();
+	await expect(clock).not.toHaveText(first ?? '');
+	await page.getByTestId('day-timer').getByRole('button', { name: 'Pause timer' }).tap();
+	await expect(watched).not.toHaveAttribute('data-running');
+	await expect(clock).toHaveText(
+		(await page.getByTestId('day-timer').getByRole('timer').textContent()) ?? ''
+	);
+
 	// Every open asks again.
 	await viewer.reload();
 	await expect(pledge).toBeVisible();
