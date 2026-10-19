@@ -46,8 +46,10 @@
 		setupComplete,
 		diedSinceNewDay,
 		ON_DEATH,
+		abilityState,
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
+	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -788,6 +790,24 @@
 	});
 	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
 	/**
+	 * The rule that keeps poisoned players asleep, if the game has one (I See Dead People,
+	 * https://beardytas.com/garden-of-djinn/i-see-dead-people/), and whether it applies to the
+	 * walk-through's step: every player who wakes for it is poisoned.
+	 */
+	const poisonedSleepRule = $derived(
+		readGameMode(game.gameId)?.rules.find((rule) => rule.parts.deaths?.kind === 'private')?.name
+	);
+	const walkAsleep = $derived.by(() => {
+		if (!poisonedSleepRule || !walkStep) return false;
+		const holders = stepHolders(game, walkStep, characters);
+		return (
+			holders.length > 0 &&
+			holders.every((seatId) =>
+				abilityState(game, seatId, characters).impairments.some((i) => i.reason === 'poisoned')
+			)
+		);
+	});
+	/**
 	 * Run Night Order in one tap, from the right end of the reminder bank (Trevor, 2026-10-18:
 	 * a change on the board itself, not a toolbar page). Always there while the walk-through
 	 * setting is on, so the bank never moves; usable once a seat has a character, empty seats
@@ -1521,6 +1541,7 @@
 				index={walk.index}
 				onIndex={(index) => walk && (walk = { ...walk, index })}
 				onPastEnd={() => endHint++}
+				asleepBy={walkAsleep ? poisonedSleepRule : undefined}
 				onOpen={(step) => {
 					if (!walk) return;
 					guided = { step, night: walk.night };
