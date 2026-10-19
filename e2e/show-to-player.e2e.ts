@@ -34,6 +34,40 @@ test('"You are" asks for a character, then shows its token and ability', async (
 	await expect(shown).toContainText('Each night, you learn how many of your 2 alive neighbors');
 });
 
+test('a shown token fits the screen at any token size', async ({ page }) => {
+	// Trevor (2026-10-19): at 150% the Sweetheart ran off the phone. Token size is for the board
+	// only now, so the player's view fits the token to the screen at the largest size too.
+	await page.goto('/info-tokens');
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Tokens' })
+		.tap();
+	await settings.getByRole('slider', { name: 'Character token size' }).fill('2');
+	await settings.getByRole('slider', { name: 'Reminder token size' }).fill('2');
+	await settings.getByRole('button', { name: 'Close' }).tap();
+
+	await page.getByRole('button', { name: 'You are', exact: true }).tap();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Sweetheart');
+	await page.getByRole('button', { name: 'Sweetheart', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+
+	const shown = page.getByTestId('show-to-player');
+	const token = shown.getByTestId('shown-character').locator('.token').first();
+	await expect(token).toBeVisible();
+	const viewport = page.viewportSize()!;
+	const box = (await token.boundingBox())!;
+	expect(box.x).toBeGreaterThanOrEqual(0);
+	expect(box.y).toBeGreaterThanOrEqual(0);
+	expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+	expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+	// At most three quarters of the width, as at 100% (ShownCard).
+	expect(box.width).toBeLessThanOrEqual(viewport.width * 0.75 + 1);
+	// Nothing in the player's view runs past the edge either.
+	expect(await shown.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+});
+
 test('a custom info token keeps its bold words and survives a reload', async ({ page }) => {
 	await page.goto('/info-tokens');
 	await page.getByRole('button', { name: 'New info token' }).tap();
