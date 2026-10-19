@@ -13,7 +13,7 @@ import {
 	type CharacterLookup,
 	type Game
 } from '#lib/core/model/index.ts';
-import { iconUrl } from '#lib/features/characters/icon-url.ts';
+import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
 import { seatPoints, towardsMiddle, type SeatLayout } from '#lib/ui/seating/seat-layout.ts';
 
 /** The picture's side, in canvas pixels: sharp enough to print. */
@@ -36,6 +36,14 @@ function loadImage(src: string | undefined): Promise<HTMLImageElement | undefine
 		img.onerror = () => resolve(undefined);
 		img.src = src;
 	});
+}
+
+/** A character's icon, or its fallback when a homebrew image won't load. */
+async function loadIcon(
+	src: string | undefined,
+	fallback: string | undefined
+): Promise<HTMLImageElement | undefined> {
+	return (await loadImage(src)) ?? loadImage(fallback);
 }
 
 function circle(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) {
@@ -109,14 +117,18 @@ export async function grimoireImage(
 		return { seatId, seat: game.seats[seatId], character, alignment };
 	});
 	const icons = await Promise.all(
-		seats.map((s) => loadImage(s.character ? iconUrl(s.character, s.alignment) : undefined))
+		seats.map((s) =>
+			s.character
+				? loadIcon(iconUrl(s.character, s.alignment), fallbackIconUrl(s.character, s.alignment))
+				: Promise.resolve(undefined)
+		)
 	);
 	const reminderIcons = await Promise.all(
 		seats.map((s) =>
 			Promise.all(
 				s.seat.reminders.map((rem) => {
 					const c = characters.get(rem.characterId);
-					return loadImage(c ? iconUrl(c) : undefined);
+					return c ? loadIcon(iconUrl(c), fallbackIconUrl(c)) : Promise.resolve(undefined);
 				})
 			)
 		)

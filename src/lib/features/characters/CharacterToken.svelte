@@ -3,7 +3,7 @@
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import { describeLeaves, type LeafMarks } from '#lib/ui/token/leaves.ts';
 	import TokenFace from '#lib/ui/token/TokenFace.svelte';
-	import { iconUrl } from './icon-url.ts';
+	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 
 	/**
@@ -41,6 +41,7 @@
 		setup: character.setup
 	});
 	const src = $derived(iconUrl(character, alignment));
+	const fallback = $derived(fallbackIconUrl(character, alignment));
 	/* eslint-disable grim/names-as-badges -- the token's accessible name */
 	const marks = $derived(
 		[
@@ -65,5 +66,13 @@
 
 <!-- The character token with its leaves (first night, other nights, reminders, setup). -->
 <!-- eslint-disable grim/names-as-badges -- the name printed on its own token (Settings > Tokens) -->
-<TokenFace {src} {label} {leaves} {size} {nightNumbers} name={named ? character.name : undefined} />
+<TokenFace
+	{src}
+	{fallback}
+	{label}
+	{leaves}
+	{size}
+	{nightNumbers}
+	name={named ? character.name : undefined}
+/>
 <!-- eslint-enable grim/names-as-badges -->

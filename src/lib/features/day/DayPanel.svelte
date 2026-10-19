@@ -36,7 +36,8 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import { iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
@@ -576,7 +577,13 @@
 						<!-- Icon two lines tall, character name above, player name below (Trevor). -->
 						<span class="seat-icon" aria-hidden="true"
 							><span class="face"
-								>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
+								>{#if icon}<img
+										src={icon}
+										alt=""
+										width="40"
+										height="40"
+										{@attach iconFallback(character && fallbackIconUrl(character, seat.alignment))}
+									/>{/if}</span
 							><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span><span
 								class="ghost-mark"
 								data-testid="ghost-mark"

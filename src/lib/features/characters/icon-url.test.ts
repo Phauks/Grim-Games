@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { iconUrl } from './icon-url.ts';
+import { fallbackIconUrl, iconUrl } from './icon-url.ts';
 
 const data = committedGameData();
 const get = (id: string) => data.byId.get(id)!;
@@ -35,5 +35,18 @@ describe('iconUrl (a reminder or token icon shows its player’s alignment)', ()
 		};
 		expect(iconUrl(homebrew)).toBe('/data/icons/generic/minion_e.webp');
 		expect(iconUrl(homebrew, 'good')).toBe('/data/icons/generic/minion_g.webp');
+	});
+	it('falls back to TPI’s generic icon when a homebrew image won’t load', () => {
+		const homebrew = {
+			...get('washerwoman'),
+			id: 'sample-homebrew',
+			edition: undefined,
+			image: 'https://example.invalid/missing.png'
+		};
+		expect(fallbackIconUrl(homebrew)).toBe('/data/icons/generic/townsfolk_g.webp');
+		expect(fallbackIconUrl(homebrew, 'evil')).toBe('/data/icons/generic/townsfolk_e.webp');
+	});
+	it('needs no fallback for official characters, whose icons ship with the app', () => {
+		expect(fallbackIconUrl(get('washerwoman'))).toBeUndefined();
 	});
 });
