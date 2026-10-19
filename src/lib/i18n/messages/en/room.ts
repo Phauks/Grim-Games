@@ -13,6 +13,7 @@ export const room = {
 	'room.copyLink': 'Copy link',
 	'room.share': 'Share',
 	'room.shareText': `Join the game on ${APP_NAME}. Room code: {code}`,
+	'room.shareGameText': `Join the game on ${APP_NAME}: {game}. Room code: {code}`,
 	'room.linkCopied': 'Link copied',
 	'room.copyFailed': 'Could not copy the link',
 	'room.copyFailedHint': 'Use the QR code instead.',
@@ -91,6 +92,7 @@ export const room = {
 	'room.watch.qrCaption': 'Spoilers',
 	'room.watch.off': 'Off',
 	'room.watch.shareText': 'Watch the grimoire. Never show it to a player.',
+	'room.watch.shareGameText': 'Watch the grimoire: {game}. Never show it to a player.',
 	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',
 	'room.watch.pledgeTitle': 'Before you watch',
 	'room.watch.pledgeLead':
