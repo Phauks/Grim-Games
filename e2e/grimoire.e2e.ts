@@ -1093,8 +1093,8 @@ test('the cause of death offers only characters that could have killed the playe
 test('the bank fades at an end with more tokens past it, and its captions stay inside the row', async ({
 	page
 }) => {
-	// Trevor (2026-10-19): a cue that more reminders lie to the left or right, and "Other
-	// reminders" must not show until its line has scrolled clear of the Run night button.
+	// Trevor (2026-10-19): a cue that more reminders lie to the left or right, and the
+	// "Reminders" caption must not show until its line has scrolled clear of the Run night button.
 	await startGame(page);
 	for (const [number, name] of [
 		[1, 'Washerwoman'],
@@ -1115,7 +1115,7 @@ test('the bank fades at an end with more tokens past it, and its captions stay i
 	// Seven setup reminders run past the end: that end fades, the start does not.
 	await expect(tray).toHaveAttribute('data-more-end', 'true');
 	await expect(tray).not.toHaveAttribute('data-more-start');
-	const other = page.getByTestId('bank-other');
+	const other = page.getByTestId('bank-reminders');
 	const inside = async () => {
 		const row = (await tray.boundingBox())!;
 		if ((await other.count()) === 0) return true;
@@ -1128,8 +1128,55 @@ test('the bank fades at an end with more tokens past it, and its captions stay i
 	await tray.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
 	await expect(tray).toHaveAttribute('data-more-start', 'true');
 	await expect(tray).not.toHaveAttribute('data-more-end');
-	await expect(other).toHaveText('Other reminders');
+	await expect(other).toHaveText('Reminders');
 	expect(await inside()).toBe(true);
+});
+
+test('a dead player whose ability has ended moves their reminders to the end of the bank', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): after Reminders and the ∞ cell, a Dead players stretch. A dead
+	// Witch curses no one (https://wiki.bloodontheclocktower.com/Witch); the Sweetheart's
+	// drunkenness starts with their death (https://wiki.bloodontheclocktower.com/Sweetheart),
+	// so theirs stays with the living.
+	await startGame(page, 'Sects & Violets');
+	for (const [number, name] of [
+		[1, 'Witch'],
+		[2, 'Seamstress'],
+		[3, 'Sweetheart']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	for (const number of [1, 3]) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+		await page
+			.getByRole('dialog', { name: `Status of Seat ${number}` })
+			.getByRole('button', { name: 'Executed' })
+			.tap();
+		await closeSheet(page);
+	}
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	const last = bank.locator('li.divider').last();
+	const after = (name: string) =>
+		last.evaluate(
+			(line, name) =>
+				[...line.parentElement!.children]
+					.slice([...line.parentElement!.children].indexOf(line) + 1)
+					.some((li) => li.querySelector(`[aria-label="${name}"]`)),
+			name
+		);
+	expect(await after('Cursed reminder')).toBe(true);
+	expect(await after('No Ability reminder')).toBe(false);
+	expect(await after('Drunk reminder')).toBe(false);
+	await bank.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+	await expect(page.getByTestId('bank-dead')).toHaveText('Dead players');
 });
 
 test('the reminder bank holds setup reminders, placed by hand, then every reminder left', async ({
@@ -1199,11 +1246,15 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
 	await expect(bank.getByRole('button', { name: 'Wrong reminder' })).toHaveCount(1);
 	await expect(bank.getByRole('button', { name: 'Townsfolk reminder' })).toHaveCount(0);
-	// The setup reminder still to place comes first, left of a dashed line.
-	await expect(bank.locator('li.divider')).toHaveCount(1);
-	await expect(bank.locator('li:has(+ li.divider)')).toContainText('Wrong');
+	// The setup reminder still to place comes first, left of a line, then the Reminders, then
+	// the generic ∞ in its own cell (Trevor, 2026-10-19).
+	await expect(bank.locator('li.divider')).toHaveCount(2);
+	await expect(bank.locator('li:has(+ li.divider)').first()).toContainText('Wrong');
+	await expect(
+		bank.locator('li.divider + li').last().getByRole('button', { name: 'Generic reminder' })
+	).toBeAttached();
 	await expect(page.getByTestId('bank-setup')).toHaveText('Setup');
-	await expect(page.getByTestId('bank-other')).toHaveText('Other reminders');
+	await expect(page.getByTestId('bank-reminders')).toHaveText('Reminders');
 
 	// From the seat sheet too: Return to reminder bank.
 	const sheet = await openSeat(page, 2);
