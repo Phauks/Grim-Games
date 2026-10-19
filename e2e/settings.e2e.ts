@@ -515,3 +515,36 @@ test('every theme colour is its own setting, warns on low contrast, and Reset Th
 	expect((await rootStyle(page, '--on-accent')).trim()).toBe(original);
 	await expect(warning).toHaveCount(0);
 });
+
+// Trevor (2026-10-19): two thumbs on the screen zoomed the whole app by accident. Pinch to zoom
+// is off by default and a switch in Settings > Text turns it back on.
+test('a pinch never zooms the app unless Pinch to zoom is on', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.getByRole('banner')).toBeVisible();
+	// Chromium's emulated touch pinch never zooms, even when allowed, so this pinches the way a
+	// trackpad does, which obeys the same viewport limits as Android. iOS ignores those limits;
+	// there base.css's touch-action and the cancelled gesture events stop it (not testable here).
+	const cdp = await page.context().newCDPSession(page);
+	const pinch = async () => {
+		await cdp.send('Input.synthesizePinchGesture', {
+			x: 150,
+			y: 300,
+			scaleFactor: 2,
+			gestureSourceType: 'mouse'
+		});
+		return page.evaluate(() => window.visualViewport?.scale ?? 1);
+	};
+	expect(await pinch()).toBe(1);
+	expect(await page.evaluate(() => getComputedStyle(document.documentElement).touchAction)).toBe(
+		'pan-x pan-y'
+	);
+
+	const dialog = await openSettings(page, 'Text');
+	const zoom = dialog.getByRole('checkbox', { name: 'Pinch to zoom', includeHidden: true });
+	await expect(zoom).not.toBeChecked();
+	await dialog.getByText('Pinch to zoom', { exact: true }).tap();
+	await expect(zoom).toBeChecked();
+	await dialog.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(dialog).toBeHidden();
+	expect(await pinch()).toBeGreaterThan(1.5);
+});

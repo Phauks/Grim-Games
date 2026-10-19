@@ -32,7 +32,7 @@ export const resets = {
 	theme: () => preferences.update(pick('themeId', 'colors')),
 	text: () =>
 		preferences.update({
-			...pick('textScale', 'textAlign'),
+			...pick('textScale', 'textAlign', 'allowZoom'),
 			fonts: fontsWithout(TEXT_FONT_ROLES),
 			assistance: assistanceWith(['explainTerms'])
 		}),

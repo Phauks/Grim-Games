@@ -43,6 +43,7 @@ describe('parsePreferences', () => {
 			iconScale: 1.5,
 			characterIconScale: 0.8,
 			textAlign: 'justify',
+			allowZoom: true,
 			iconSet: 'ph-fill',
 			iconOverrides: { dead: 'ph:cross' },
 			tokenAppearance: {
