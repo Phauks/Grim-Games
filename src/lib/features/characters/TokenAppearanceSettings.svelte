@@ -148,6 +148,14 @@
 		checked={value.setupFlower}
 		onChange={(setupFlower) => onChange({ ...value, setupFlower })}
 	/>
+	<!-- Always shown, disabled without the flower, so switching it never moves the settings below. -->
+	<SettingToggle
+		label={t('characters.setupMovesName')}
+		description={t('characters.setupMovesNameHelp')}
+		checked={value.setupMovesName}
+		disabled={!value.setupFlower}
+		onChange={(setupMovesName) => onChange({ ...value, setupMovesName })}
+	/>
 	{@render colourRow('face')}
 	{@render colourRow('rim')}
 	{@render colourRow('ink')}
@@ -199,20 +207,27 @@
      for in-line reminder tokens"). -->
 <SettingGroup title={t('characters.group.inText')} testid="in-text-preview">
 	{#snippet preview()}
-		<p class="preview in-text">
-			{#if sample}<CharacterBadge
-					characterId={sample.id}
-					character={sample}
-					inline
-					interactive={false}
-				/>
-				{t('characters.inTextPlaces')}
-				<ReminderToken
-					label={sample.reminders[0] ?? t('characters.previewReminder')}
-					character={sample}
-				/>
-				{t('characters.inTextOn', { player: t('characters.previewPlayer') })}{/if}
-		</p>
+		<!-- A list badge first, for Character icon size (lists, pickers and the day), then a
+		     line of text with a name and a reminder (Trevor, 2026-10-19). -->
+		<div class="preview in-text">
+			{#if sample}<span class="list-sample" data-testid="list-badge-sample"
+					><CharacterBadge characterId={sample.id} character={sample} interactive={false} /></span
+				>{/if}
+			<p class="line">
+				{#if sample}<CharacterBadge
+						characterId={sample.id}
+						character={sample}
+						inline
+						interactive={false}
+					/>
+					{t('characters.inTextPlaces')}
+					<ReminderToken
+						label={sample.reminders[0] ?? t('characters.previewReminder')}
+						character={sample}
+					/>
+					{t('characters.inTextOn', { player: t('characters.previewPlayer') })}{/if}
+			</p>
+		</div>
 	{/snippet}
 	<!-- Text, icon and badge sizes for each, none shared (Trevor, 2026-10-18). -->
 	<SettingSlider
@@ -315,13 +330,27 @@
 	.reminder-sample {
 		height: max(var(--sample), 3rem);
 	}
-	/* Room for the largest chip and badge at any Text size: no reflow. */
+	/*
+	 * Narrow, the box sits above its settings, so it keeps room for every size at its largest
+	 * (no reflow), measured at phone width. Wide, it sits beside them, so it fits what it shows
+	 * (Trevor, 2026-10-19: the box was far bigger than its sample).
+	 */
 	.in-text {
-		display: block;
-		/* Room for every in-text size at its largest: no reflow. */
-		height: 10rem;
-		margin: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		justify-content: center;
+		gap: var(--space-2);
+		height: 8.5rem;
 		white-space: normal;
+	}
+	@container (min-width: 26rem) {
+		.in-text {
+			height: auto;
+		}
+	}
+	.in-text .line {
+		margin: 0;
 		line-height: 2.2;
 	}
 	.disc {

@@ -106,7 +106,11 @@ test('reminder leaves and setup notation can be shown or hidden', async ({ page 
 	await dialog.getByText('Reminder leaves', { exact: true }).tap();
 	await expect(leaves).toHaveCount(0);
 	// The sample (Godfather) changes setup, so its flower follows the switch.
-	const flower = dialog.getByRole('checkbox', { name: 'Setup notation', includeHidden: true });
+	const flower = dialog.getByRole('checkbox', {
+		name: 'Setup notation',
+		exact: true,
+		includeHidden: true
+	});
 	const setupMark = preview.locator('[data-kind="setup"]');
 	await expect(flower).not.toBeChecked();
 	await expect(setupMark).toHaveCount(0);
@@ -119,6 +123,29 @@ test('reminder leaves and setup notation can be shown or hidden', async ({ page 
 	expect(saved).toMatchObject({ reminderLeaves: false, setupFlower: true });
 });
 
+test('the setup flower moves the name on the token only when asked', async ({ page }) => {
+	// Trevor (2026-10-19): the setup badge should not offset the name, unless a setting says so.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const preview = dialog.getByTestId('token-preview');
+	const moves = dialog.getByRole('checkbox', {
+		name: 'Setup notation moves name',
+		includeHidden: true
+	});
+	await expect(moves).toBeDisabled();
+	await dialog.getByText('Show character names on tokens', { exact: true }).tap();
+	// The name runs along this arc; with the flower in the way it ends sooner.
+	const arc = preview.locator('svg.marks path[id^="name-"]');
+	const end = () => arc.getAttribute('d');
+	const full = await end();
+	await dialog.getByText('Setup notation', { exact: true }).tap();
+	await expect(preview.locator('[data-kind="setup"]')).toHaveCount(1);
+	expect(await end()).toBe(full);
+	await expect(moves).toBeEnabled();
+	await dialog.getByText('Setup notation moves name', { exact: true }).tap();
+	await expect.poll(end).not.toBe(full);
+});
+
 test('names and reminders in text each have their own text, icon and badge sizes', async ({
 	page
 }) => {
@@ -126,7 +153,7 @@ test('names and reminders in text each have their own text, icon and badge sizes
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const preview = dialog.getByTestId('in-text-preview');
-	const name = preview.locator('.badge');
+	const name = preview.locator('.line .badge');
 	const nameIcon = name.locator('.icon');
 	const chip = preview.getByTestId('reminder-token');
 	const owner = chip.locator('img.owner');
@@ -509,4 +536,17 @@ test('the character name and reminder fonts are set beside their token previews'
 	await expect(dialog.getByRole('combobox', { name: 'Headings' })).toBeVisible();
 	await expect(dialog.getByRole('combobox', { name: 'Character names' })).toHaveCount(0);
 	await expect(dialog.getByRole('combobox', { name: 'Reminder tokens' })).toHaveCount(0);
+});
+
+test('character icon size shows on the list badge in the names in text preview', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): Character icon size sat in this box without changing anything in it.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const icon = dialog.getByTestId('list-badge-sample').locator('.icon');
+	const width = () => icon.evaluate((el) => el.getBoundingClientRect().width);
+	const before = await width();
+	await dialog.getByRole('slider', { name: 'Character icon size' }).fill('1.5');
+	await expect.poll(width).toBeGreaterThan(before);
 });

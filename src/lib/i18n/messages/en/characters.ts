@@ -84,6 +84,9 @@ export const characters = {
 		'Leaves across the top of a token, one per reminder token the character has.',
 	'characters.setupFlower': 'Setup notation',
 	'characters.setupFlowerHelp': 'A flower at the bottom right of characters that change setup.',
+	'characters.setupMovesName': 'Setup notation moves name',
+	'characters.setupMovesNameHelp':
+		'Shortens the name on the token so it stays clear of the flower.',
 	'characters.colour.reset': 'Reset',
 	'characters.colour.resetOne': 'Reset {colour}',
 	'characters.contrast.face': 'Text on tokens',
