@@ -26,6 +26,13 @@
 		flush?: boolean;
 		/** `narrow="stack"`: stays on the row's first line, beside the row header, unlabelled. */
 		stackHead?: boolean;
+		/**
+		 * `narrow="hide"`: a narrow table gives the first column the row's whole first line and
+		 * puts the `secondLine` columns side by side on a second line under it (Trevor,
+		 * 2026-10-19: Search's names were cut to three letters on a phone). Set it on every
+		 * column a narrow table keeps but the first.
+		 */
+		secondLine?: boolean;
 		/** With `resizeKey`: this column keeps its width (no drag handle). */
 		fixed?: boolean;
 		/** With `resizeKey`: the narrowest it can be dragged, in --u (default MIN_WIDTH). */
@@ -115,6 +122,8 @@
 		lazy?: boolean;
 		/** A row's height before it is drawn: rows off screen skip layout and paint. */
 		rowEstimate?: string;
+		/** The same for a narrow table's two-line rows (`secondLine`); one line more by default. */
+		twoLineRowEstimate?: string;
 		rowAttrs?: (row: T) => Record<string, string | undefined>;
 		/** Marks a row as the chosen one (e.g. the current script). */
 		rowSelected?: (row: T) => boolean;
@@ -160,6 +169,7 @@
 		fill = false,
 		lazy = false,
 		rowEstimate = '3rem',
+		twoLineRowEstimate = `calc(${rowEstimate} + 1.75rem)`,
 		rowAttrs,
 		rowSelected,
 		empty = 'None',
@@ -234,11 +244,15 @@
 			.map((_, i) => (i === 0 ? '0rem' : `calc(${tracks.slice(0, i).join(' + ')})`));
 	});
 	const mediumTemplate = $derived(tracks.filter((_, i) => !columns[i].wider).join(' '));
+	const secondLine = $derived(columns.filter((c) => c.secondLine && !c.wide && !c.wider));
+	// Two lines: the second line's tracks, its first column taking what the others leave.
 	const narrowTemplate = $derived(
-		columns
-			.filter((c) => !c.wide && !c.wider)
-			.map(track)
-			.join(' ')
+		secondLine.length > 0
+			? secondLine.map((c, i) => (i === 0 ? 'minmax(0, 1fr)' : track(c))).join(' ')
+			: columns
+					.filter((c) => !c.wide && !c.wider)
+					.map(track)
+					.join(' ')
 	);
 	// Filters of columns a narrow table drops; the first header offers them instead.
 	const movedFilters = $derived(columns.filter((c) => (c.wide || c.wider) && canFilter(c)));
@@ -555,6 +569,7 @@
 -->
 <div
 	class="data-table {narrow}"
+	class:two-line={narrow === 'hide' && secondLine.length > 0}
 	class:fit-content={fit === 'content'}
 	class:boxed
 	class:frameless
@@ -563,7 +578,8 @@
 	style:--columns={template}
 	style:--columns-medium={mediumTemplate}
 	style:--columns-narrow={narrowTemplate}
-	style:--row-estimate={rowEstimate}
+	style:--row-estimate-line={rowEstimate}
+	style:--row-estimate-two-line={twoLineRowEstimate}
 	{@attach fit === 'content' && watchWidth}
 >
 	<div
@@ -838,6 +854,9 @@
 	 * height. Only there: Search's rows on a phone didn't follow a swipe until the finger
 	 * lifted (Trevor, 2026-10-18), and light rows gain nothing from skipping.
 	 */
+	table {
+		--row-estimate: var(--row-estimate-line);
+	}
 	.lazy tbody tr {
 		content-visibility: auto;
 		contain-intrinsic-block-size: auto var(--row-estimate);
@@ -1127,6 +1146,17 @@
 		}
 		.hide .wide-only {
 			display: none;
+		}
+		/* `secondLine`: the first column has the first line to itself; the rest wrap under it. */
+		.two-line table {
+			--row-estimate: var(--row-estimate-two-line);
+		}
+		.two-line tr > :first-child {
+			grid-column: 1 / -1;
+		}
+		/* The second line sits close under the first: one row, not two. */
+		.two-line tbody td:not(:first-child) {
+			padding-top: 0;
 		}
 
 		/* `stack`: the same fields as the table, each with its label, one block per row. */
