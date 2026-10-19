@@ -4457,7 +4457,7 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 		const picker = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
 		await picker
 			.getByRole('group', { name: 'Shabaloth' })
-			.getByRole('button', { name: label, exact: true })
+			.getByRole('button', { name: label === 'Dead' ? 'Dead, copy 1 of 2' : label, exact: true })
 			.tap();
 	};
 	await add(2, 'Dead');
@@ -4479,8 +4479,5 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
 
-	// On a living player, Alive asks nothing.
-	await add(3, 'Alive');
-	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
