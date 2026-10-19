@@ -10,6 +10,7 @@ export const modes = {
 	'modes.storytellerName': 'Storyteller',
 	'modes.script': 'Script',
 	'modes.scriptSearch.label': 'Find a script',
+	'modes.scriptSearch.custom': 'Custom',
 	'modes.scriptSearch.placeholder': 'Find a script',
 	'modes.scriptSearch.recent': 'Recent',
 	'modes.scriptSearch.library': 'Library',
