@@ -4574,3 +4574,18 @@ test('two copies of a character each have their own reminders, in their own colo
 	const srcs = await all.evaluateAll((imgs) => imgs.map((i) => i.getAttribute('src') ?? ''));
 	expect(srcs.filter((src) => /imp_g\.webp$/.test(src))).toHaveLength(1);
 });
+
+test('an empty seat and a named one show their name in the same badge', async ({ page }) => {
+	// Trevor (2026-10-19): "an added empty seat looks slightly different ... consolidate".
+	await startGame(page);
+	const badge = (seat: number) =>
+		seatLabelled(page, `Seat ${seat}:`).getByTestId('token-player-name');
+	await expect(badge(1)).toHaveText('Seat 1');
+	const before = await badge(1).boundingBox();
+	const sheet = await openSeat(page, 1);
+	await nameSeat(sheet, 'Ana');
+	await closeSheet(page);
+	await expect(badge(1)).toHaveText('Ana');
+	expect((await badge(1).boundingBox())?.y).toBeCloseTo(before!.y, 0);
+	await expect(seatLabelled(page, 'Seat 1:').locator('.name')).toHaveCount(0);
+});

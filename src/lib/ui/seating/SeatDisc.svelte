@@ -16,8 +16,6 @@
 		name: string;
 		/** 1-based place in the seating order, shown when there is no face. */
 		number: number;
-		/** Which side of the token the name goes, so nothing covers it. */
-		namePlace?: 'below' | 'above' | 'left' | 'right';
 		face?: Snippet;
 		/** Marks drawn over or around the token (notes, extra claims, warnings). */
 		marks?: Snippet;
@@ -35,15 +33,11 @@
 		dead = false,
 		name,
 		number,
-		namePlace = 'below',
 		face,
 		marks,
 		vote,
 		usedVote = 'hollow'
 	}: Props = $props();
-
-	/** The player's name is a badge on the token (Trevor, 2026-10-17); a seat with no character keeps the pill under it. */
-	const onToken = $derived(face !== undefined);
 </script>
 
 <span class="seat-disc" data-dead={dead || undefined} style:--size="{size}px">
@@ -52,11 +46,11 @@
 			>{#if face}{@render face()}{:else}<span class="empty">{number}</span>{/if}</span
 		>
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
-		{#if onToken}<PlayerNameMark {name} />{/if}
+		<!-- One name badge for every seat, named or empty (Trevor, 2026-10-19). -->
+		<PlayerNameMark {name} />
 		{#if dead}<DeadBadge {vote} usedLook={usedVote} testid="dead-mark" />{/if}
 		{#if marks}{@render marks()}{/if}
 	</span>
-	{#if !onToken}<span class="name" data-place={namePlace}>{name}</span>{/if}
 </span>
 
 <style>
@@ -100,49 +94,6 @@
 		left: -10%;
 		bottom: -6%;
 		--badge-size: calc(var(--size) * 0.38);
-	}
-	/*
-	 * The player's name in its own badge (Trevor, 2026-10-16), neutral so it never reads as
-	 * a team, and readable on any background. Beneath the token unless that is covered;
-	 * a long name is cut short rather than widening the seat.
-	 */
-	.name {
-		position: absolute;
-		box-sizing: border-box;
-		max-width: 100%;
-		overflow: hidden;
-		padding: 0.15em 0.5em;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		box-shadow: var(--shadow);
-		font-family: var(--font-player);
-		font-size: calc(0.8rem * var(--name-scale, 1));
-		line-height: 1.2;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
-	.name[data-place='below'] {
-		top: calc(100% + 0.125 * var(--u));
-		left: 50%;
-		translate: -50% 0;
-	}
-	.name[data-place='above'] {
-		bottom: calc(100% + 0.125 * var(--u));
-		left: 50%;
-		translate: -50% 0;
-	}
-	.name[data-place='left'],
-	.name[data-place='right'] {
-		top: 50%;
-		translate: 0 -50%;
-	}
-	.name[data-place='left'] {
-		right: calc(50% + var(--size) / 2 + 0.125 * var(--u));
-	}
-	.name[data-place='right'] {
-		left: calc(50% + var(--size) / 2 + 0.125 * var(--u));
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.face {
