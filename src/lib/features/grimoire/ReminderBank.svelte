@@ -2,7 +2,7 @@
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
-	import { prepTextSegments, setupReminders } from '#lib/core/rules/index.ts';
+	import { deadCharacters, prepTextSegments, setupReminders } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -87,6 +87,18 @@
 	const characters = $derived(grimoire.open.characters);
 	const names = $derived(characterNames([...characters.values()]));
 
+	/**
+	 * The bank's stretches, left to right (Trevor, 2026-10-19): Setup (what the Storyteller
+	 * sees first), Reminders, the generic ∞ in a cell of its own, then the reminders of
+	 * characters whose players are all dead and whose ability ended with them.
+	 */
+	type Group = 'setup' | 'reminders' | 'generic' | 'dead';
+	const CAPTIONS: Partial<Record<Group, string>> = {
+		setup: 'Setup',
+		reminders: 'Reminders',
+		dead: 'Dead players'
+	};
+
 	/** One token in the bank: a setup suggestion, or a reminder still off the board. */
 	interface Item {
 		key: string;
@@ -97,6 +109,8 @@
 		setup?: TrayItem;
 		/** Used by the walked-through step tonight. */
 		now?: boolean;
+		/** Its stretch of the bank, each set off by a line. */
+		group: Group;
 	}
 
 	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list.
@@ -133,7 +147,8 @@
 					label,
 					count: 1,
 					setup: item,
-					now: nowFor(characterId, label)
+					now: nowFor(characterId, label),
+					group: 'setup'
 				});
 		}
 		// The setup reminders too (Trevor, 2026-10-17: the first night opens on Setup).
@@ -146,6 +161,7 @@
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
+		const dead = deadCharacters(game);
 		const rest = bankReminders(
 			game,
 			characters,
@@ -156,54 +172,79 @@
 			const key = `${characterId}:${label}`;
 			const n = left - (pending[key] ?? 0);
 			if (n <= 0) return [];
+			const group: Group = dead.has(characterId) ? 'dead' : 'reminders';
 			// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
-			if (stack) return [{ key: `bank:${key}`, characterId, label, count: n, now }];
+			if (stack) return [{ key: `bank:${key}`, characterId, label, count: n, now, group }];
 			return Array.from({ length: n }, (_, i) => ({
 				key: `bank:${key}:${i}`,
 				characterId,
 				label,
 				count: 1,
-				now
+				now,
+				group
 			}));
 		});
-		// Last: the generic ∞ reminder, as many as needed (Trevor, 2026-10-18).
-		const generic: Item = { key: 'generic', characterId: GENERIC_REMINDER_ID, label: '', count: 1 };
-		return only([...setup, ...rest, generic]);
+		// The generic ∞ reminder, as many as needed (Trevor, 2026-10-18), after the reminders.
+		const generic: Item = {
+			key: 'generic',
+			characterId: GENERIC_REMINDER_ID,
+			label: '',
+			count: 1,
+			group: 'generic'
+		};
+		return only([
+			...setup,
+			...rest.filter((i) => i.group === 'reminders'),
+			generic,
+			...rest.filter((i) => i.group === 'dead')
+		]);
 	});
 	/** "Only this character": the step's reminders alone, while a step is walked through. */
 	function only(list: Item[]): Item[] {
 		return focus && focusMode === 'only' ? list.filter((i) => i.now) : list;
 	}
 	const dimRest = $derived(focusMode === 'highlight' && items.some((i) => i.now));
-	/** The last setup reminder: a solid line follows it. */
-	const lastSetup = $derived(
-		items.some((i) => !i.setup) ? items.findLast((i) => i.setup)?.key : undefined
-	);
-	const hasSetup = $derived(items.some((i) => i.setup));
+	/** A solid line goes before each stretch but the first. */
+	const startsGroup = (i: number) => i > 0 && items[i - 1].group !== items[i].group;
 
 	/**
 	 * The captions on the bank's top edge, like the day timer's Timer and Stopwatch (Trevor,
-	 * 2026-10-18): "Setup" over the setup reminders, "Other reminders" from the line on, which
-	 * stays at the start once the line scrolls past. As shares of the bank's width.
+	 * 2026-10-18): one over each captioned stretch, from its line on, kept at the row's start
+	 * once the line scrolls past until the next caption reaches it. As shares of the bank's
+	 * width.
 	 */
 	let bankEl = $state<HTMLElement>();
-	let divider = $state<HTMLElement>();
+	const dividers = $state<Partial<Record<Group, HTMLElement>>>({});
+	const captionW = $state<Partial<Record<Group, number>>>({});
 	let scrolled = $state(0);
-	let otherW = $state(0);
-	const captions = $derived.by(() => {
+	const captions = $derived.by((): { group: Group; text: string; left: number }[] => {
 		void items;
-		if (!bankEl || !list) return { setup: 0, other: undefined as number | undefined };
+		const row = list;
+		if (!bankEl || !row) return [];
 		const width = bankEl.clientWidth || 1;
-		const start = list.offsetLeft;
-		const line = divider ? start + divider.offsetLeft - scrolled : undefined;
+		const start = row.offsetLeft;
 		const pct = (x: number) => (x / width) * 100;
-		// Only once the line has scrolled in far enough for the whole caption: never past the
-		// row's end, over the Run night button (Trevor, 2026-10-19).
-		const shown = line !== undefined && line + otherW <= start + list.clientWidth;
-		return {
-			setup: pct(start),
-			other: shown ? pct(Math.max(start, line)) : undefined
-		};
+		const placed: { group: Group; text: string; left: number }[] = [];
+		const groups = [...new Set(items.map((i) => i.group))];
+		groups.forEach((group, i) => {
+			const text = CAPTIONS[group];
+			if (!text) return;
+			if (i === 0) {
+				placed.push({ group, text, left: pct(start) });
+				return;
+			}
+			const divider = dividers[group];
+			if (!divider) return;
+			const line = start + divider.offsetLeft - scrolled;
+			// Once its line is in the row; never past the row's end, over the Run night button
+			// (Trevor, 2026-10-19), so a short last stretch has its caption drawn in from the end.
+			const end = start + row.clientWidth;
+			if (line >= end) return;
+			const left = Math.max(start, Math.min(line, end - (captionW[group] ?? 0)));
+			placed.push({ group, text, left: pct(left) });
+		});
+		// A caption goes once the next one has reached it.
+		return placed.filter((c, i) => !placed[i + 1] || placed[i + 1].left > c.left + 0.5);
 	});
 	/** More tokens off either end of the row: its edge fades (Trevor, 2026-10-19). */
 	let more = $state({ start: false, end: false });
@@ -220,11 +261,6 @@
 		measure();
 		return () => observer.disconnect();
 	});
-	/** "Setup" goes once the line has scrolled to the start. */
-	const setupShown = $derived(
-		hasSetup && (captions.other === undefined || captions.other > captions.setup + 0.5)
-	);
-
 	// A new step's reminders are at the front, or ringed in place: show them.
 	let list = $state<HTMLElement>();
 	$effect(() => {
@@ -343,15 +379,12 @@
 </script>
 
 <div class="bank" data-tray bind:this={bankEl}>
-	{#if setupShown}<span class="caption" data-testid="bank-setup" style:left="{captions.setup}%"
-			>Setup</span
-		>{/if}
-	{#if captions.other !== undefined}<span
+	{#each captions as caption (caption.group)}<span
 			class="caption"
-			data-testid="bank-other"
-			bind:offsetWidth={otherW}
-			style:left="{captions.other}%">Other reminders</span
-		>{/if}
+			data-testid="bank-{caption.group}"
+			bind:offsetWidth={captionW[caption.group]}
+			style:left="{caption.left}%">{caption.text}</span
+		>{/each}
 	<ul
 		class="tray"
 		bind:this={list}
@@ -363,7 +396,12 @@
 			measure();
 		}}
 	>
-		{#each items as item (item.key)}
+		{#each items as item, i (item.key)}
+			{#if startsGroup(i)}<li
+					class="divider"
+					aria-hidden="true"
+					bind:this={dividers[item.group]}
+				></li>{/if}
 			<li
 				class:lifted={drag?.item.key === item.key && item.count === 1}
 				class:now={item.now}
@@ -384,11 +422,6 @@
 					panX
 				/>
 			</li>
-			{#if item.key === lastSetup}<li
-					class="divider"
-					aria-hidden="true"
-					bind:this={divider}
-				></li>{/if}
 		{:else}
 			<li class="none">None</li>
 		{/each}
@@ -513,7 +546,13 @@
 				const s = shown?.suggestion;
 				shownOpen = false;
 				if (s) {
-					choosing = { key: shown!.key, characterId: s.characterId, label: s.label, count: 1 };
+					choosing = {
+						key: shown!.key,
+						characterId: s.characterId,
+						label: s.label,
+						count: 1,
+						group: 'setup'
+					};
 					chooserOpen = true;
 				}
 			}}>Choose seat</Button
