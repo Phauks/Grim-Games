@@ -104,6 +104,12 @@ test('an unknown address shows the Fool and ways out, without reporting an error
 			.boundingBox();
 		expect(box!.height).toBeGreaterThanOrEqual(44);
 	}
+	// Compact: the Fool, the joke and the ways out fit on one screen, with no sideways scroll.
+	const homeBox = await main.getByRole('link', { name: 'Home' }).boundingBox();
+	expect(homeBox!.y + homeBox!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+		true
+	);
 
 	// Report an issue opens the Report form, already titled; the address goes with it.
 	await main.getByRole('button', { name: 'Report an issue' }).tap();
