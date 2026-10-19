@@ -21,9 +21,23 @@
 		face?: Snippet;
 		/** Marks drawn over or around the token (notes, extra claims, warnings). */
 		marks?: Snippet;
+		/**
+		 * A dead player's ghost vote, shown on the skull badge (Trevor, 2026-10-19: one badge
+		 * for both): filled while it is still there, hollow once used.
+		 */
+		vote?: 'unused' | 'used';
 	}
 
-	let { size, dead = false, name, number, namePlace = 'below', face, marks }: Props = $props();
+	let {
+		size,
+		dead = false,
+		name,
+		number,
+		namePlace = 'below',
+		face,
+		marks,
+		vote
+	}: Props = $props();
 
 	/** The player's name is a badge on the token (Trevor, 2026-10-17); a seat with no character keeps the pill under it. */
 	const onToken = $derived(face !== undefined);
@@ -36,7 +50,9 @@
 		>
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
 		{#if onToken}<PlayerNameMark {name} />{/if}
-		{#if dead}<span class="skull" data-testid="dead-mark"><Icon name="dead" /></span>{/if}
+		{#if dead}<span class="skull" data-testid="dead-mark" data-vote={vote}
+				><Icon name="dead" /></span
+			>{/if}
 		{#if marks}{@render marks()}{/if}
 	</span>
 	{#if !onToken}<span class="name" data-place={namePlace}>{name}</span>{/if}
@@ -92,6 +108,12 @@
 		color: var(--on-button);
 		box-shadow: var(--shadow);
 		--icon-size: calc(var(--size) * 0.26);
+	}
+	/* The ghost vote spent: the badge goes hollow, like a vote token taken away. */
+	.skull[data-vote='used'] {
+		border-color: var(--on-surface-muted);
+		background: var(--surface);
+		color: var(--on-surface-muted);
 	}
 	/*
 	 * The player's name in its own badge (Trevor, 2026-10-16), neutral so it never reads as

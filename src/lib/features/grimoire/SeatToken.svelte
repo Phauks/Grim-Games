@@ -33,6 +33,8 @@
 		nightNumbers?: { first?: number; other?: number };
 		/** `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat). */
 		onTap: (part?: 'note') => void;
+		/** A tap on a dead player's skull badge: marks their ghost vote used, or gives it back. */
+		onGhostVote?: () => void;
 	}
 
 	let {
@@ -46,7 +48,8 @@
 		misfit = false,
 		namePlace = 'below',
 		nightNumbers,
-		onTap
+		onTap,
+		onGhostVote
 	}: Props = $props();
 
 	// The player's alignment is not the one their character type starts with (a good Minion,
@@ -62,7 +65,7 @@
 		[
 			`Seat ${number}: ${seat.playerName ?? 'no name'}`,
 			character?.name ?? 'no character',
-			seat.dead ? 'dead' : '',
+			seat.dead ? (seat.ghostVoteUsed ? 'dead, ghost vote used' : 'dead') : '',
 			// A Traveller has no starting alignment: always say it, or that it is not set yet.
 			character?.type === 'traveller'
 				? (seat.alignment ?? 'alignment not set')
@@ -88,7 +91,9 @@
 		if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) < TAP_SLOP) {
 			swallowNextClick(event.currentTarget);
 			const target = event.target instanceof Element ? event.target : null;
-			onTap(target?.closest('.mark.note') ? 'note' : undefined);
+			// The skull badge is the ghost vote's own switch (Trevor, 2026-10-19).
+			if (target?.closest('[data-testid="dead-mark"]') && onGhostVote) onGhostVote();
+			else onTap(target?.closest('.mark.note') ? 'note' : undefined);
 		}
 		down = null;
 	}
@@ -113,12 +118,6 @@
 	<!-- The Storyteller's note on this player, lower right (never shown to players). -->
 	{#if seat.note}<span class="mark note" data-testid="note-mark" title="Note"
 			><Icon name="pen" /></span
-		>{/if}
-	<!-- A dead player's ghost vote, upper left, until it is used. -->
-	{#if seat.dead && !seat.ghostVoteUsed}<span
-			class="vote"
-			data-testid="ghost-vote"
-			title="Ghost vote"><Icon name="ghostVote" /></span
 		>{/if}
 {/snippet}
 
@@ -145,6 +144,7 @@
 		{namePlace}
 		face={character ? face : undefined}
 		{marks}
+		vote={seat.dead ? (seat.ghostVoteUsed ? 'used' : 'unused') : undefined}
 	/>
 </button>
 
@@ -198,21 +198,16 @@
 		box-shadow: var(--shadow);
 		--icon-size: calc(max(1.125 * var(--u), calc(var(--size) * 0.3)) * 0.65);
 	}
-	.vote {
+	/* The skull badge takes a full-size tap of its own, for the ghost vote. */
+	.seat :global([data-testid='dead-mark'])::after {
+		content: '';
 		position: absolute;
-		top: -6%;
-		left: -6%;
-		display: grid;
-		place-items: center;
-		width: calc(1.25 * var(--u));
-		height: calc(1.25 * var(--u));
-		border-radius: 50%;
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		box-shadow: var(--shadow);
-		--icon-size: calc(0.875 * var(--u));
+		inset: 50% auto auto 50%;
+		width: var(--tap-target);
+		height: var(--tap-target);
+		translate: -50% -50%;
 	}
-	/* Upper right, so the ghost vote keeps the upper left. */
+	/* Upper right. */
 	.orphan {
 		right: -4%;
 		top: -4%;
