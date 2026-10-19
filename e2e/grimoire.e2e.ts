@@ -1572,13 +1572,13 @@ test('a joining Traveller draws their alignment, with the last mix remembered', 
 		const draw = page.getByRole('dialog', { name: 'Alignment draw' });
 		if (number === 9) {
 			// Each side's chance is shown to the Storyteller.
-			await expect(draw.getByTestId('evil-chance')).toHaveText('25%');
-			await expect(draw.getByTestId('good-chance')).toHaveText('75%');
+			await expect(draw.getByTestId('evil-chance')).toHaveText('Evil 1 · 25%');
+			await expect(draw.getByTestId('good-chance')).toHaveText('Good 3 · 75%');
 			// All evil: the player still feels they chose.
 			for (let n = 1; n < 4; n++) await draw.getByRole('button', { name: 'More evil' }).tap();
 		}
-		await expect(draw.getByTestId('evil-chance')).toHaveText('100%');
-		await expect(draw.getByTestId('good-chance')).toHaveText('0%');
+		await expect(draw.getByTestId('evil-chance')).toHaveText('Evil 4 · 100%');
+		await expect(draw.getByTestId('good-chance')).toHaveText('Good 0 · 0%');
 		await expect(draw.getByLabel('Evil tokens')).toHaveText('4');
 		await draw.getByRole('button', { name: 'Confirm' }).tap();
 		await page

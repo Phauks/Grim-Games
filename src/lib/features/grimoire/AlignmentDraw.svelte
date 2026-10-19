@@ -108,9 +108,26 @@
 						inline
 					/>{:else}{seatName(game, seatId)}{/if}
 			</p>
-			<dl class="counts">
-				<dt>Tokens</dt>
-				<dd>
+			<!--
+				One line with the mix and each side's chance (Trevor, 2026-10-19): Good on the left,
+				Evil on the right, a bar between them split by share. Fixed widths, so changing a
+				count moves nothing.
+			-->
+			<div class="mix" data-testid="draw-mix">
+				<span class="side" data-team="good" data-testid="good-chance"
+					>Good {count - evil} · {percent(count - evil)}</span
+				>
+				<span class="bar" aria-hidden="true">
+					<span class="part" data-team="good" style:flex-grow={count - evil}></span>
+					<span class="part" data-team="evil" style:flex-grow={evil}></span>
+				</span>
+				<span class="side end" data-team="evil" data-testid="evil-chance"
+					>Evil {evil} · {percent(evil)}</span
+				>
+			</div>
+			<div class="steppers">
+				<span class="stepper">
+					<span>Tokens</span>
 					<Stepper
 						bind:value={count}
 						label={t('setup.alignmentDraw.tokens')}
@@ -119,9 +136,9 @@
 						min={1}
 						max={MAX}
 					/>
-				</dd>
-				<dt>Evil</dt>
-				<dd>
+				</span>
+				<span class="stepper">
+					<span>Evil</span>
 					<Stepper
 						bind:value={evil}
 						label={t('setup.alignmentDraw.evilTokens')}
@@ -129,14 +146,8 @@
 						moreLabel={t('setup.alignmentDraw.moreEvil')}
 						max={count}
 					/>
-					<span class="chance" data-testid="evil-chance">{percent(evil)}</span>
-				</dd>
-				<dt>Good</dt>
-				<dd>
-					<output aria-label="Good tokens">{count - evil}</output>
-					<span class="chance" data-testid="good-chance">{percent(count - evil)}</span>
-				</dd>
-			</dl>
+				</span>
+			</div>
 		{:else}
 			<!-- The player's view: face-down tokens, the counts never shown. -->
 			<ol class="tiles" aria-label="Tokens">
@@ -178,30 +189,47 @@
 	.who {
 		margin: 0 0 var(--space-3);
 	}
-	.counts {
+	.mix {
 		display: grid;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: auto minmax(calc(3 * var(--u)), 1fr) auto;
 		align-items: center;
-		gap: var(--space-2) var(--space-3);
-		margin: 0;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-3);
+		font-variant-numeric: tabular-nums;
 	}
-	.counts dd {
+	/* Wide enough for "Good 8 · 100%", so a changing count never moves the bar. */
+	.side {
+		min-width: 12ch;
+		font-weight: 600;
+	}
+	.side.end {
+		text-align: end;
+	}
+	.bar {
+		display: flex;
+		height: 0.9rem;
+		overflow: hidden;
+		border-radius: var(--radius-pill, 999rem);
+		background: var(--surface-raised);
+	}
+	.part {
+		flex-basis: 0;
+	}
+	.part[data-team='good'] {
+		background: var(--good);
+	}
+	.part[data-team='evil'] {
+		background: var(--evil);
+	}
+	.steppers {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2) var(--space-4);
+	}
+	.stepper {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		margin: 0;
-	}
-	/* Wide enough for 100%, so a changing chance never moves anything. */
-	.chance {
-		min-width: 4ch;
-		color: var(--on-surface-muted);
-		font-variant-numeric: tabular-nums;
-		text-align: end;
-	}
-	output {
-		min-width: 2ch;
-		font: 700 1.3rem var(--font-control);
-		text-align: center;
 	}
 	/* The bag draw's face-down token look (features/setup DrawPage). */
 	.tiles {
