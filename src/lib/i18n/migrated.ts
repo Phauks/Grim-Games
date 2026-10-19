@@ -44,7 +44,6 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/lib/features/reference/CharacterReference.svelte',
 	'src/lib/features/reference/FieldValue.svelte',
 	'src/lib/features/reference/NightText.svelte',
-	'src/lib/features/reference/ReferenceCard.svelte',
 	'src/lib/features/reference/ReferencePage.svelte',
 	'src/lib/features/reference/ReminderSentence.svelte',
 	'src/lib/features/characters/CharacterBadge.svelte',

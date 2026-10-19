@@ -5,10 +5,7 @@ const width = (cell: Locator) => cell.evaluate((el) => el.getBoundingClientRect(
 
 async function openTable(page: Page) {
 	await page.goto('/reference');
-	// The view is remembered, so after a reload the table may already be on.
-	const toggle = page.getByRole('button', { name: 'Show as table' });
-	await expect(toggle).toBeVisible();
-	if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.tap();
+	// The table is the page's only view (Trevor, 2026-10-19).
 	const table = page.getByTestId('character-table');
 	await expect(table.locator('tbody tr')).toHaveCount(181);
 	return table;

@@ -3,6 +3,7 @@
  * plain text for the shared table's built-in filters (DataTable `value`): the same text each
  * cell shows (FieldValue.svelte), without its badges and chips.
  */
+import { characterIcons, type Character } from '#lib/core/data/index.ts';
 import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { characterCardsFor } from '#lib/features/info-tokens/character-cards.ts';
@@ -16,8 +17,12 @@ export function fieldFilterValue(entry: ReferenceEntry, field: FieldId): FilterV
 	switch (field) {
 		case 'edition':
 			return character.edition ? (EDITION_LABELS[character.edition] ?? character.edition) : '';
+		case 'icons':
+			return iconLabels(character);
 		case 'ability':
 			return character.ability;
+		case 'flavor':
+			return character.flavor ?? '';
 		case 'prep':
 			return setupPrep(character.id, character.name).map((step) => step.text);
 		case 'special':
@@ -29,4 +34,15 @@ export function fieldFilterValue(entry: ReferenceEntry, field: FieldId): FilterV
 		default:
 			return undefined;
 	}
+}
+
+/** Which icons a character has, by the alignment each shows (the Icons column). */
+function iconLabels(character: Character): string[] {
+	const set = characterIcons(character);
+	if (!set) return [];
+	return [
+		set.good && t('reference.iconGood'),
+		set.evil && t('reference.iconEvil'),
+		set.unaligned && t('reference.iconUnaligned')
+	].filter((label): label is string => !!label);
 }
