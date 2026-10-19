@@ -29,6 +29,11 @@
 		 * character, shown beside `shows`, with a label for each game.
 		 */
 		pair?: { shows: Character; labels: [string, string] };
+		/**
+		 * The locked pass-the-phone draw (Trevor, 2026-10-19): the token shows only while a
+		 * finger, mouse button or Space is held on it, so a neighbour can't glance at it.
+		 */
+		holdToReveal?: boolean;
 		onConfirm: (details: { playerName: string; alignment?: Alignment }) => void;
 	}
 
@@ -40,6 +45,7 @@
 		seatLabel,
 		playerName,
 		pair,
+		holdToReveal = false,
 		onConfirm
 	}: Props = $props();
 	const faces = $derived(
@@ -55,13 +61,28 @@
 	let alignment = $state<Alignment | ''>('');
 	/** False while the player still has to type their name to see the token. */
 	let revealed = $state(true);
+	/** Hold to reveal: held now, and seen at least once (Confirm waits for that). */
+	let held = $state(false);
+	let seen = $state(false);
 	$effect(() => {
 		if (open) {
 			name = playerName;
 			alignment = '';
 			revealed = !preferences.current.requireName || playerName.trim() !== '';
+			held = false;
+			seen = false;
 		}
 	});
+	const visible = $derived(revealed && (!holdToReveal || held));
+	const canConfirm = $derived(revealed && (!holdToReveal || seen));
+	function hold(on: boolean) {
+		held = on;
+		if (on) seen = true;
+	}
+	// The page hidden (another app, the lock button) hides the token again.
+	function onVisibility() {
+		if (document.visibilityState !== 'visible') held = false;
+	}
 
 	function confirm() {
 		onConfirm({ playerName: name, ...(alignment !== '' ? { alignment } : {}) });
@@ -73,12 +94,14 @@
 		const target = event.target as HTMLElement | null;
 		if (target?.closest('input, textarea, select, button, a, [role="radio"]')) return;
 		event.preventDefault();
-		if (revealed) confirm();
+		if (canConfirm) confirm();
+		else if (revealed) return;
 		else if (name.trim() !== '') revealed = true;
 	}
 </script>
 
 <svelte:window onkeydown={onWindowKey} />
+<svelte:document onvisibilitychange={onVisibility} />
 
 <!--
 	The player's own reveal. A drawn tile is never put back (Trevor, 2026-10-15): closing the
@@ -96,24 +119,56 @@
 			{#each faces as face, i (i)}
 				<div class="face" data-testid="reveal-face">
 					{#if face.label}<p class="town">{face.label}</p>{/if}
-					<div class="token">
-						{#if revealed}<CharacterToken
-								character={face.character}
-								size={pair ? 120 : 160}
-							/>{:else}<span class="hidden-token" data-testid="reveal-locked"
-								>{t('setup.reveal.locked')}</span
-							>{/if}
-					</div>
+					{#if holdToReveal && revealed}
+						<!-- Held down to show; let go (or lose the pointer) to hide again. -->
+						<button
+							type="button"
+							class="token hold"
+							data-testid="reveal-hold"
+							aria-pressed={held}
+							aria-label={t('setup.reveal.hold')}
+							onpointerdown={(e) => {
+								e.currentTarget.setPointerCapture?.(e.pointerId);
+								hold(true);
+							}}
+							onpointerup={() => hold(false)}
+							onpointercancel={() => hold(false)}
+							onlostpointercapture={() => hold(false)}
+							onkeydown={(e) => {
+								if (e.key === ' ' && !e.repeat) {
+									e.preventDefault();
+									hold(true);
+								}
+							}}
+							onkeyup={(e) => e.key === ' ' && hold(false)}
+							onblur={() => hold(false)}
+							oncontextmenu={(e) => e.preventDefault()}
+						>
+							{#if held}<CharacterToken
+									character={face.character}
+									size={pair ? 120 : 160}
+								/>{:else}<span class="hidden-token">{t('setup.reveal.hold')}</span>{/if}
+						</button>
+					{:else}
+						<div class="token">
+							{#if revealed}<CharacterToken
+									character={face.character}
+									size={pair ? 120 : 160}
+								/>{:else}<span class="hidden-token" data-testid="reveal-locked"
+									>{t('setup.reveal.locked')}</span
+								>{/if}
+						</div>
+					{/if}
 					<p class="name" data-testid="reveal-name">
-						{#if revealed}<CharacterBadge
+						{#if visible}<CharacterBadge
 								characterId={face.character.id}
 								character={face.character}
 								alignment={defaultAlignment(face.character.type)}
 								interactive={false}
 							/>{/if}
 					</p>
-					<p class="ability" class:concealed={!revealed}>
-						{revealed ? face.character.ability : ''}
+					<p class="ability" class:concealed={!visible}>
+						{visible ? face.character.ability : ''}
 					</p>
 				</div>
 			{/each}
@@ -135,7 +190,7 @@
 	</div>
 	{#snippet actions()}
 		{#if revealed}
-			<ModalActions onConfirm={confirm} />
+			<ModalActions onConfirm={confirm} disabled={!canConfirm} />
 		{:else}
 			<Button variant="accent" disabled={name.trim() === ''} onclick={() => (revealed = true)}
 				>{t('setup.reveal.reveal')}</Button
@@ -178,20 +233,32 @@
 		color: var(--on-surface-muted);
 	}
 	/*
-	 * The token takes the user's Character token size, so its box grows with it: nothing below
-	 * is ever covered. The locked face is the same size, so revealing moves nothing.
+	 * The token keeps one size (Character token size is for the board only, Trevor 2026-10-19).
+	 * The locked face is the same size, so revealing moves nothing.
 	 */
 	.token {
 		display: grid;
 		place-items: center;
-		min-width: calc(10 * var(--u) * var(--token-scale, 1));
-		min-height: calc(10 * var(--u) * var(--token-scale, 1));
+		min-width: calc(10 * var(--u));
+		min-height: calc(10 * var(--u));
+	}
+	/* The hold button is the token's own box: no button look, no text selection or callout. */
+	.hold {
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: none;
+		color: inherit;
+		touch-action: none;
+		user-select: none;
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
 	}
 	.hidden-token {
 		display: grid;
 		place-items: center;
-		width: calc(10 * var(--u) * var(--token-scale, 1));
-		height: calc(10 * var(--u) * var(--token-scale, 1));
+		width: calc(10 * var(--u));
+		height: calc(10 * var(--u));
 		padding: var(--space-3);
 		border-radius: 50%;
 		background: var(--token-face);

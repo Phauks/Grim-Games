@@ -15,6 +15,7 @@ import {
 	EVIL_INFO_MIN_PLAYERS,
 	hasEvilTeamInfo,
 	isTeensyvilleScript,
+	scriptMaxPlayers,
 	sheetCounts,
 	TEENSYVILLE_SHEET,
 	teensyvilleWarnings
@@ -53,6 +54,11 @@ describe('Teensyville sheets', () => {
 	it('advise against more than 6 players', () => {
 		expect(teensyvilleWarnings(teensy, 6)).toEqual([]);
 		expect(teensyvilleWarnings(teensy, 7)[0]).toContain('5 or 6 players');
+	});
+
+	it('are made for at most 6 players; other scripts name no limit', () => {
+		expect(scriptMaxPlayers(teensy)).toBe(6);
+		expect(scriptMaxPlayers(editionScript('tb', data)!.characters)).toBeUndefined();
 	});
 
 	it('deal the normal 5 and 6 player counts', () => {

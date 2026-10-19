@@ -15,8 +15,12 @@ import {
 	planBag,
 	randomSelection,
 	selectedIds,
+	selectionProblems,
+	validRandomSelection,
+	travellerRange,
 	type BagSelection
 } from './bag-plan.ts';
+import { scriptFacts } from './script-facts.ts';
 
 const data = committedGameData();
 const lookup = (id: string) => data.byId.get(id);
@@ -188,6 +192,21 @@ describe('analyseSelection', () => {
 		expect(result.dealt).toBe(6);
 		expect(result.travellers).toBe(1);
 	});
+
+	// https://wiki.bloodontheclocktower.com/Bootlegger: the script's rules can change setup, as
+	// Binary Supernovae's "[+1 Demon]" does (https://beardytas.com/garden-of-djinn/binary-supernovae/).
+	it("applies a bracket in the script's rules, carried by the Bootlegger", () => {
+		const bootlegger = { ...lookup('bootlegger')!, ability: 'Two Demons. [+1 Demon]' };
+		const result = analyseSelection({
+			players: 7,
+			selection: pick('chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp', 'nodashii'),
+			ruleCharacters: ['bootlegger'],
+			scriptOrder: [...TB.map((c) => c.id), 'nodashii'],
+			lookup: (id) => (id === 'bootlegger' ? bootlegger : lookup(id))
+		});
+		expect(result.expected.demon).toEqual([2]);
+		expect(result.warnings).toEqual([]);
+	});
 });
 
 describe('randomSelection', () => {
@@ -239,6 +258,61 @@ describe('randomSelection', () => {
 		});
 		const travellers = Object.keys(selection).filter((id) => lookup(id)?.type === 'traveller');
 		expect(travellers).toHaveLength(2);
+	});
+
+	// https://beardytas.com/garden-of-djinn/stowed-away/: up to 2 Travellers in the bag, the
+	// other counts for that many fewer players.
+	it.each([
+		[0.1, 0],
+		[0.5, 1],
+		[0.9, 2]
+	])('with Stowed Away, a draw of %f puts %i Travellers in the bag', (first, expected) => {
+		const withTravellers = [...TB, ...script(['gunslinger', 'beggar', 'thief'])];
+		const input = {
+			players: 8,
+			scriptOrder: withTravellers.map((c) => c.id),
+			lookup
+		};
+		const selection = randomSelection({
+			...input,
+			selection: {},
+			scriptCharacters: withTravellers,
+			travellersInBag: 2,
+			random: sequence(first, 0.3, 0.6)
+		});
+		const travellers = Object.keys(selection).filter((id) => lookup(id)?.type === 'traveller');
+		expect(travellers).toHaveLength(expected);
+		const result = analyseSelection({ ...input, selection });
+		expect(result.dealt).toBe(8 - expected);
+		expect(result.warnings).toEqual([]);
+	});
+
+	it('with Stowed Away, Travellers already chosen count toward the 2', () => {
+		const withTravellers = [...TB, ...script(['gunslinger', 'beggar', 'thief'])];
+		const selection = randomSelection({
+			players: 8,
+			selection: pick('gunslinger', 'beggar'),
+			scriptCharacters: withTravellers,
+			scriptOrder: withTravellers.map((c) => c.id),
+			lookup,
+			travellersInBag: 2,
+			random: sequence(0.9, 0.3)
+		});
+		expect(selection.thief).toBeUndefined();
+	});
+});
+
+describe('travellerRange', () => {
+	// https://wiki.bloodontheclocktower.com/Setup: players beyond 15 are Travellers.
+	it('needs a Traveller for each player beyond 15', () => {
+		expect(travellerRange(10)).toEqual({ min: 0, max: 0 });
+		expect(travellerRange(17)).toEqual({ min: 2, max: 2 });
+	});
+
+	// https://beardytas.com/garden-of-djinn/stowed-away/
+	it('allows up to the rule’s Travellers in the bag', () => {
+		expect(travellerRange(8, 2)).toEqual({ min: 0, max: 2 });
+		expect(travellerRange(18, 2)).toEqual({ min: 3, max: 3 });
 	});
 });
 
@@ -313,5 +387,111 @@ describe('the draw', () => {
 		);
 		expect([...truths].sort()).toEqual(['chef', 'drunk', 'imp', 'monk', 'poisoner']);
 		expect(session.game.bag!.order).toEqual([]);
+	});
+});
+
+// Trevor, 2026-10-19: Random never lands on a selection the page would warn about, whatever
+// the setup changes (https://wiki.bloodontheclocktower.com/Baron,
+// https://wiki.bloodontheclocktower.com/Huntsman) or exclusive jinxes in play.
+describe('validRandomSelection', () => {
+	const editions = ['tb', 'bmr', 'snv'] as const;
+	const seeded = (seed: number) => () => {
+		seed = (seed * 1664525 + 1013904223) % 4294967296;
+		return seed / 4294967296;
+	};
+	for (const edition of editions) {
+		const characters = [...data.byId.values()].filter(
+			(c) => c.edition === edition && c.type !== 'traveller'
+		);
+		const scriptOrder = characters.map((c) => c.id);
+		const jinxes = scriptFacts(characters, data.jinxes).jinxes;
+		it.each([5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])(
+			`${edition}: every random selection for %i players is valid`,
+			(players) => {
+				const random = seeded(players * 31 + edition.length);
+				for (let i = 0; i < 60; i++) {
+					const input = { players, scriptCharacters: characters, scriptOrder, lookup, jinxes };
+					const result = validRandomSelection({ ...input, selection: {}, random });
+					expect(result.ok).toBe(true);
+					if (result.ok)
+						expect(selectionProblems({ ...input, selection: result.selection })).toEqual([]);
+				}
+			}
+		);
+	}
+
+	it('says why instead of choosing when nothing fits', () => {
+		// Two Townsfolk and an Imp can't fill seven seats.
+		const result = validRandomSelection({
+			players: 7,
+			selection: {},
+			scriptCharacters: script(['washerwoman', 'chef', 'imp']),
+			scriptOrder: ['washerwoman', 'chef', 'imp'],
+			lookup,
+			random: sequence(0.3),
+			tries: 5
+		});
+		expect(result.ok).toBe(false);
+		if (!result.ok) expect(result.problems.length).toBeGreaterThan(0);
+	});
+
+	// Trevor, 2026-10-19: locked characters stay in play through every Random.
+	it('keeps locked characters and stays valid around them', () => {
+		const characters = [...data.byId.values()].filter(
+			(c) => c.edition === 'tb' && c.type !== 'traveller'
+		);
+		const scriptOrder = characters.map((c) => c.id);
+		const locked = { baron: 1, drunk: 1, empath: 1 };
+		for (let i = 0; i < 60; i++) {
+			const input = { players: 9, scriptCharacters: characters, scriptOrder, lookup };
+			const result = validRandomSelection({ ...input, selection: locked, random: seeded(i + 3) });
+			expect(result.ok).toBe(true);
+			if (!result.ok) continue;
+			expect(result.selection).toMatchObject(locked);
+			expect(selectionProblems({ ...input, selection: result.selection })).toEqual([]);
+		}
+	});
+
+	it('says why when the locked characters make a valid selection impossible', () => {
+		const characters = [...data.byId.values()].filter((c) => c.edition === 'tb');
+		const result = validRandomSelection({
+			players: 7,
+			selection: { imp: 1, poisoner: 1, spy: 1 },
+			scriptCharacters: characters,
+			scriptOrder: characters.map((c) => c.id),
+			lookup,
+			random: seeded(1),
+			tries: 5
+		});
+		expect(result.ok).toBe(false);
+		if (!result.ok) expect(result.problems.length).toBeGreaterThan(0);
+	});
+
+	it('finds the Damsel for a Huntsman, or leaves the Huntsman out', () => {
+		const characters = script([
+			'huntsman',
+			'chef',
+			'empath',
+			'monk',
+			'soldier',
+			'mayor',
+			'damsel',
+			'saint',
+			'poisoner',
+			'imp'
+		]);
+		const scriptOrder = characters.map((c) => c.id);
+		for (let i = 0; i < 40; i++) {
+			const result = validRandomSelection({
+				players: 6,
+				selection: {},
+				scriptCharacters: characters,
+				scriptOrder,
+				lookup,
+				random: seeded(i + 7)
+			});
+			expect(result.ok).toBe(true);
+			if (result.ok && result.selection.huntsman) expect(result.selection.damsel).toBe(1);
+		}
 	});
 });

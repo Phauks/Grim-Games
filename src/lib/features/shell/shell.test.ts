@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { leaveTo, mustAskBeforeLeaving, setLeaveGuard, showsAppShell } from './shell.ts';
+import {
+	leaveTo,
+	lockedDrawHidesShell,
+	mustAskBeforeLeaving,
+	setLeaveGuard,
+	showsAppShell
+} from './shell.ts';
 
 describe('showsAppShell', () => {
 	it("hides the header and footer only where the route's data says it is a game", () => {
@@ -7,6 +13,17 @@ describe('showsAppShell', () => {
 		expect(showsAppShell({ chrome: 'app' })).toBe(true);
 		expect(showsAppShell({})).toBe(true);
 		expect(showsAppShell(null)).toBe(true);
+	});
+});
+
+describe('lockedDrawHidesShell', () => {
+	it("hides the shell on the locked game's screens only", () => {
+		expect(lockedDrawHidesShell('/grimoire/g1/draw', 'g1')).toBe(true);
+		expect(lockedDrawHidesShell('/grimoire/g1', 'g1')).toBe(true);
+		expect(lockedDrawHidesShell('/grimoire/g10/draw', 'g1')).toBe(false);
+		expect(lockedDrawHidesShell('/grimoire/g2/draw', 'g1')).toBe(false);
+		expect(lockedDrawHidesShell('/', 'g1')).toBe(false);
+		expect(lockedDrawHidesShell('/grimoire/g1/draw', undefined)).toBe(false);
 	});
 });
 
@@ -72,5 +89,35 @@ describe('which navigations ask before leaving', () => {
 		expect(await navigation).toBe(false);
 		expect(mustAskBeforeLeaving(at('/'), 'goto', from)).toBe(true);
 		remove();
+	});
+});
+
+describe('stacked leave guards', () => {
+	it('asks the newest guard, and hands back to the one beneath when it is removed', () => {
+		const asked: string[] = [];
+		const removeConfirm = setLeaveGuard(() => asked.push('confirm'));
+		const removePin = setLeaveGuard(() => asked.push('pin'));
+		leaveTo(() => {});
+		expect(asked).toEqual(['pin']);
+
+		// Unlocking removes the PIN guard; the draw's Confirm still asks.
+		removePin();
+		leaveTo(() => {});
+		expect(asked).toEqual(['pin', 'confirm']);
+
+		removeConfirm();
+		let left = false;
+		leaveTo(() => (left = true));
+		expect(left).toBe(true);
+	});
+
+	it('keeps the newer guard when an older one is removed first', () => {
+		const asked: string[] = [];
+		const removeOlder = setLeaveGuard(() => asked.push('older'));
+		const removeNewer = setLeaveGuard(() => asked.push('newer'));
+		removeOlder();
+		leaveTo(() => {});
+		expect(asked).toEqual(['newer']);
+		removeNewer();
 	});
 });

@@ -26,10 +26,12 @@
 		inPlay?: readonly string[];
 		/** The player's own Notes tab (/play only). */
 		notes?: Snippet;
+		/** The live room this phone is in, or joining one (/play only). */
+		room?: Snippet;
 		tab?: string;
 	}
 
-	let { script, players, inPlay, notes, tab = $bindable('script') }: Props = $props();
+	let { script, players, inPlay, notes, room, tab = $bindable('script') }: Props = $props();
 
 	let numeric = $state<NumericNightOrder>();
 	$effect(() => {
@@ -47,7 +49,8 @@
 	const tabs = $derived([
 		{ value: 'script', label: t('player.tab.script') },
 		{ value: 'night', label: t('player.tab.night') },
-		...(notes ? [{ value: 'notes', label: t('player.tab.notes') }] : [])
+		...(notes ? [{ value: 'notes', label: t('player.tab.notes') }] : []),
+		...(room ? [{ value: 'room', label: t('player.tab.room') }] : [])
 	]);
 </script>
 
@@ -62,8 +65,10 @@
 					{#if data}<PlayerNightOrder {nights} />{:else}<p class="muted">
 							{t('player.loading')}
 						</p>{/if}
-				{:else if notes}
+				{:else if value === 'notes' && notes}
 					{@render notes()}
+				{:else if value === 'room' && room}
+					{@render room()}
 				{/if}
 			</ErrorBoundary>
 		</div>

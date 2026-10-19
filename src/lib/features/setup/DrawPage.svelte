@@ -19,6 +19,10 @@
 	import SetupActions from './SetupActions.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { remindersHref } from './setup-steps.ts';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
+	import { drawLock, keepScreenOn } from './draw-lock.svelte.ts';
+	import PinDialog from './PinDialog.svelte';
 
 	interface Props {
 		port: SetupGamePort;
@@ -44,6 +48,34 @@
 	let revealOpen = $state(false);
 	const tile = $derived(revealing && bag ? bag.tiles[revealing] : undefined);
 	const slot = $derived(slots.find((s) => s.tileId === revealing));
+
+	// ── The locked pass-the-phone draw (Trevor, 2026-10-19) ──
+	// While locked, leaving the draw asks for the Storyteller's PIN, the reveal shows the
+	// token only while it's held, and the screen stays on.
+	const locked = $derived(game ? drawLock.isLocked(game.gameId) : false);
+	let pinOpen = $state(false);
+	let pinMode = $state<'set' | 'unlock'>('set');
+	/** The way out the PIN was asked for, taken once it's right. */
+	let pending: (() => void) | undefined;
+	function askPin(mode: 'set' | 'unlock', leave?: () => void) {
+		pending = leave;
+		pinMode = mode;
+		pinOpen = true;
+	}
+	function pinDone() {
+		const leave = pending;
+		pending = undefined;
+		leave?.();
+	}
+	$effect(() => {
+		if (!locked) return;
+		const release = keepScreenOn();
+		const unguard = setLeaveGuard((leave) => askPin('unlock', leave));
+		return () => {
+			unguard();
+			release();
+		};
+	});
 
 	function send(command: Command): boolean {
 		const result = port.dispatch(command);
@@ -104,19 +136,35 @@
 <svelte:window onkeydown={onWindowKey} />
 
 <Page title={t('setup.draw')} iconActions>
-	{#snippet actions()}<SetupActions {port} />{/snippet}
+	{#snippet actions()}
+		<SetupActions {port} disabled={locked} />
+		{#if game}
+			<IconButton
+				icon="lock"
+				label={locked ? t('setup.lock.unlock') : t('setup.lock.lock')}
+				aria-pressed={locked}
+				data-testid="draw-lock"
+				onclick={() => askPin(locked ? 'unlock' : 'set')}
+			/>
+		{/if}
+	{/snippet}
 
 	<ErrorBoundary area="setup">
 		{#if !game || !bag}
 			<p class="empty" data-testid="no-bag">{t('setup.draw.noBag')}</p>
 		{:else}
 			<p class="next">
-				<span class="label">{t('setup.draw.next')}</span>
-				<span data-testid="next-seat"
-					>{!next && slots.some((s) => s.state === 'in-bag')
-						? t('setup.draw.newSeat')
-						: label(next)}</span
-				>
+				{#if locked && inBag === 0}
+					<!-- Same line, so nothing moves: the draw is done, back to the Storyteller. -->
+					<span data-testid="hand-back">{t('setup.lock.handBack')}</span>
+				{:else}
+					<span class="label">{t('setup.draw.next')}</span>
+					<span data-testid="next-seat"
+						>{!next && slots.some((s) => s.state === 'in-bag')
+							? t('setup.draw.newSeat')
+							: label(next)}</span
+					>
+				{/if}
 			</p>
 			<BagTiles {slots} {marks} seatLabel={label} onpick={(s) => draw(s.tileId, s.state)} />
 		{/if}
@@ -124,7 +172,7 @@
 
 	{#if game}
 		<LeaveGuard
-			when={inBag > 0}
+			when={inBag > 0 && !locked}
 			title={t('setup.leave.title')}
 			body={t('setup.leave.body', { count: inBag, total: slots.length })}
 		/>
@@ -152,9 +200,14 @@
 			needsAlignment={lookup.get(tile.grimoire)?.type === 'traveller'}
 			seatLabel={label(tile.drawnBySeat)}
 			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
+			holdToReveal={locked}
 			onConfirm={confirm}
 		/>
 	{/if}
+{/if}
+
+{#if game}
+	<PinDialog bind:open={pinOpen} gameId={game.gameId} mode={pinMode} onDone={pinDone} />
 {/if}
 
 <style>

@@ -13,7 +13,7 @@ export function hasSpectatorVote(gameId: GameId): boolean {
  * What the spectators' shared ability is this game, set by the Storyteller (Trevor,
  * 2026-10-18: "It may be a characters ability for a night, or it may be something totally
  * custom"). Kept on this device beside the game, versioned key; unset reads as the mode's
- * own (Apparition grants the Wizard).
+ * own (the Wizard's).
  */
 export type SpecterAbility =
 	{ kind: 'character'; characterId: CharacterId } | { kind: 'custom'; text: string };

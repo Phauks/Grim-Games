@@ -12,6 +12,7 @@ export const ASSIST_KEYS = [
 	'setupReminders',
 	'preDayReminders',
 	'deathCause',
+	'demonVotedButton',
 	'gameEndPrompts',
 	'dayAfterNight',
 	'rulesWarnings',
@@ -57,6 +58,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	deathCause: {
 		label: 'Ask how players died',
 		description: 'Offer a cause when you mark someone dead. You can always set it later.'
+	},
+	demonVotedButton: {
+		label: 'Demon voted button',
+		description:
+			'While a Flowergirl is in play, a Demon voted button at the top of the day, for her night answer.'
 	},
 	gameEndPrompts: {
 		label: 'Game end prompts',

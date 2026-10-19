@@ -37,10 +37,12 @@ import ph_check_thin from '~icons/ph/check-thin';
 import ph_check_square_thin from '~icons/ph/check-square-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
 import ph_circle_notch_thin from '~icons/ph/circle-notch-thin';
+import ph_circles_three_thin from '~icons/ph/circles-three-thin';
 import ph_clipboard_thin from '~icons/ph/clipboard-thin';
 import ph_clipboard_text_thin from '~icons/ph/clipboard-text-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_club_thin from '~icons/ph/club-thin';
+import ph_coin_thin from '~icons/ph/coin-thin';
 import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
 import ph_corners_out_thin from '~icons/ph/corners-out-thin';
@@ -128,6 +130,7 @@ import ph_play_thin from '~icons/ph/play-thin';
 import ph_play_circle_thin from '~icons/ph/play-circle-thin';
 import ph_plus_thin from '~icons/ph/plus-thin';
 import ph_plus_circle_thin from '~icons/ph/plus-circle-thin';
+import ph_poker_chip_thin from '~icons/ph/poker-chip-thin';
 import ph_printer_thin from '~icons/ph/printer-thin';
 import ph_prohibit_thin from '~icons/ph/prohibit-thin';
 import ph_prohibit_inset_thin from '~icons/ph/prohibit-inset-thin';
@@ -229,10 +232,12 @@ const icons: IconMap = {
 	'ph:check-square-thin': ph_check_square_thin,
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
 	'ph:circle-notch-thin': ph_circle_notch_thin,
+	'ph:circles-three-thin': ph_circles_three_thin,
 	'ph:clipboard-thin': ph_clipboard_thin,
 	'ph:clipboard-text-thin': ph_clipboard_text_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:club-thin': ph_club_thin,
+	'ph:coin-thin': ph_coin_thin,
 	'ph:copy-thin': ph_copy_thin,
 	'ph:copy-simple-thin': ph_copy_simple_thin,
 	'ph:corners-out-thin': ph_corners_out_thin,
@@ -320,6 +325,7 @@ const icons: IconMap = {
 	'ph:play-circle-thin': ph_play_circle_thin,
 	'ph:plus-thin': ph_plus_thin,
 	'ph:plus-circle-thin': ph_plus_circle_thin,
+	'ph:poker-chip-thin': ph_poker_chip_thin,
 	'ph:printer-thin': ph_printer_thin,
 	'ph:prohibit-thin': ph_prohibit_thin,
 	'ph:prohibit-inset-thin': ph_prohibit_inset_thin,

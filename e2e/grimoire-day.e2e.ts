@@ -445,3 +445,45 @@ test('End day closes the day and walks through tonight from Dusk', async ({ page
 			.getByRole('button', { name: 'End night', exact: true })
 	).toBeEnabled();
 });
+
+test('holding the day timer or a new day resets it to the time per living player', async ({
+	page
+}) => {
+	await startGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	let day = page.getByRole('dialog', { name: 'Day' });
+	const clock = day.getByTestId('day-toolbar').getByRole('timer');
+	await expect(clock).toHaveText('4:00');
+	// Changed by hand: that lasts for this day only.
+	await day.getByRole('button', { name: '30 seconds less' }).tap();
+	await expect(clock).toHaveText('3:30');
+	// Holding the clock resets it (Trevor, 2026-10-19); the hold is not also a tap.
+	const mode = day.getByTestId('timer-mode');
+	const caption = await mode.textContent();
+	await clock.hover();
+	await page.mouse.down();
+	await page.waitForTimeout(800);
+	await page.mouse.up();
+	await expect(clock).toHaveText('4:00');
+	await expect(mode).toHaveText(caption ?? '');
+	await day.getByRole('button', { name: '30 seconds less' }).tap();
+	await expect(clock).toHaveText('3:30');
+	await day.getByRole('button', { name: 'End day' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the day?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await page
+		.getByRole('list', { name: 'Reminder bank' })
+		.locator('..')
+		.getByRole('button', { name: 'End night', exact: true })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	// The day opens after End night; the timer starts again at 8 players' time (Trevor, 2026-10-19).
+	day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day.getByTestId('day-toolbar').getByRole('timer')).toHaveText('4:00');
+	await expect(day.getByRole('button', { name: 'Start timer' })).toBeEnabled();
+});

@@ -95,6 +95,8 @@ export function buildRecap(source: RecapSource): GameRecap {
 	}
 
 	const notes: GameRecap['notes'] = [];
+	const general = game.notes?.trim();
+	if (general) notes.push({ about: 'Game', text: general });
 	for (const seatId of game.seating) {
 		const note = game.seats[seatId].note?.trim();
 		if (note) notes.push({ about: seatName(game, seatId), text: note });

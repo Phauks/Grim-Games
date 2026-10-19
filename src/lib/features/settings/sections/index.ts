@@ -44,7 +44,7 @@ registerSettingsSection({
 	// Also opened on its own from the board's menu (Trevor, 2026-10-17).
 	id: 'board',
 	label: { key: 'settings.sectionBoard' },
-	icon: 'reminder',
+	icon: 'boardSettings',
 	component: BoardSection,
 	reset: resets.board,
 	order: 30
@@ -52,7 +52,7 @@ registerSettingsSection({
 registerSettingsSection({
 	id: 'tokens',
 	label: { key: 'settings.sectionTokens' },
-	icon: 'reminder',
+	icon: 'tokenSettings',
 	component: TokensSection,
 	reset: resets.tokens,
 	order: 32

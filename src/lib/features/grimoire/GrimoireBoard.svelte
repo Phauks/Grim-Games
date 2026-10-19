@@ -40,6 +40,7 @@
 	} from '#lib/core/model/index.ts';
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import {
+		dayNumber,
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
@@ -86,6 +87,7 @@
 	import PlayerScriptTabs from '#lib/features/player/PlayerScriptTabs.svelte';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import NotesSheet from './NotesSheet.svelte';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
@@ -97,6 +99,7 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
+	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import EndGameFields from './EndGameFields.svelte';
@@ -140,8 +143,8 @@
 		};
 	});
 	const layout = $derived(grimoire.layout);
-	// The token size setting is applied here, within the spacing, so seats never overlap; the
-	// tokens on the ring then draw at exactly this size (SeatToken resets --token-scale).
+	// The token size setting is applied here, within the spacing, so seats never overlap. It
+	// sizes the board only (Trevor, 2026-10-19): tokens elsewhere keep their own size.
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
@@ -523,7 +526,13 @@
 			y: ((event.clientY - rect.top) / rect.height) * 100
 		};
 	}
+	/**
+	 * The seat last touched draws over the others where tokens overlap, its name included
+	 * (Trevor, 2026-10-19). Only for this visit to the board: a reload goes back to seat order.
+	 */
+	let front = $state<SeatId | undefined>();
 	function dragStart(event: PointerEvent, seatId: SeatId, at: SeatPoint) {
+		front = seatId;
 		if (!arranging || drag || !board) return;
 		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 		const p = boardPoint(event);
@@ -594,6 +603,14 @@
 		sheetOpen = true;
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
+
+	// ── Notes (Trevor, 2026-10-19): the game's and every player's, from ⋯ or a pen mark ──
+	let notesOpen = $state(false);
+	let notesFocus = $state<SeatId | undefined>();
+	function openNotes(seatId?: SeatId) {
+		notesFocus = seatId;
+		notesOpen = true;
+	}
 	/**
 	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
 	 * "they chose to open reminder, not character").
@@ -857,6 +874,11 @@
 	);
 	/** The day timer is always on the board until the game ends (Trevor, 2026-10-17). */
 	const showTimer = $derived(!ended);
+	// A new day resets the day timer to the time per living player (Trevor, 2026-10-19).
+	$effect(() => {
+		const day = `${game.gameId}:${dayNumber(game)}`;
+		untrack(() => liveDayTimer.newDay(day, livingByTeam(game).alive));
+	});
 
 	// A Traveller's alignment by draw, kept here: setting it ends the step that opened it.
 	let drawFor = $state<SeatId | undefined>();
@@ -879,6 +901,7 @@
 	let storytellerOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
+	let infoSheet = $state<ReturnType<typeof InfoTokensSheet>>();
 	/** Where closing the info sheet goes back to, when something other than the toolbar opened it. */
 	let infoReturn: (() => void) | undefined;
 	const infoCharacters = $derived(
@@ -897,7 +920,8 @@
 				pendingLeave = leave;
 				exitOpen = true;
 			},
-			(url) => url.pathname.startsWith(`/grimoire/${gameId}`)
+			// This board's screens, and the other boards and pages of its mode.
+			(url) => url.pathname.startsWith(`/grimoire/${gameId}`) || withinModeSession(gameId, url)
 		);
 		releaseGuard = release;
 		return release;
@@ -1260,6 +1284,7 @@
 			<div
 				class="slot"
 				class:dragging={drag?.seatId === seat.seatId}
+				class:front={front === seat.seatId}
 				style:left="{at.x}%"
 				style:top="{at.y}%"
 				onpointerdown={(event) => dragStart(event, seat.seatId, at)}
@@ -1289,7 +1314,8 @@
 					misfit={misfits.has(seat.seatId)}
 					role={seatRole(seat.seatId)}
 					namePlace={namePlaces[i] ?? 'below'}
-					onTap={() => !arranging && openSeat(seat.seatId)}
+					onTap={(part) =>
+						!arranging && (part === 'note' ? openNotes(seat.seatId) : openSeat(seat.seatId))}
 				/>
 			</div>
 		{/each}
@@ -1543,6 +1569,7 @@
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
 			Demon bluffs
 		</Button>
+		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => openNotes())}>Notes</Button>
 		<!-- Who runs the game, as typed on New game (Trevor, 2026-10-19). -->
 		<Button variant="quiet" icon="rename" onclick={() => fromMenu(() => (storytellerOpen = true))}>
 			Storyteller
@@ -1577,14 +1604,14 @@
 		     2026-10-18. -->
 		<Button
 			variant="quiet"
-			icon="settings"
+			icon="boardSettings"
 			onclick={() => fromMenu(() => settingsDialog.showOnly('board'))}
 		>
 			Board
 		</Button>
 		<Button
 			variant="quiet"
-			icon="settings"
+			icon="tokenSettings"
 			onclick={() => fromMenu(() => settingsDialog.showOnly('tokens'))}
 		>
 			Tokens
@@ -1639,6 +1666,7 @@
 />
 
 <InfoTokensSheet
+	bind:this={infoSheet}
 	bind:open={infoOpen}
 	characters={infoCharacters}
 	inPlay={charactersInPlay(game)}
@@ -1710,6 +1738,8 @@
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
+<NotesSheet bind:open={notesOpen} {grimoire} focus={notesFocus} />
+
 <ExportGameDialog bind:open={exportOpen} load={exportGame} />
 
 <Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">
@@ -1761,7 +1791,9 @@
 			if (i >= 0) walk = { ...walk, index: i };
 		}
 	}}
-	onInfoTokens={() => {
+	onInfoTokens={(token) => {
+		// A card the step's text names opens over the step, which stays open under it.
+		if (token && infoSheet) return infoSheet.openWith(token);
 		// Closing the info sheet returns to this night step (Trevor, 2026-10-16).
 		infoReturn = () => (guideOpen = true);
 		infoOpen = true;
@@ -1867,7 +1899,7 @@
 		display: flex;
 		flex-direction: column;
 		/* Fills the screen: a game hides the app header and footer (route data). */
-		height: calc(100dvh - env(safe-area-inset-top));
+		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}
 	.toolbar {
@@ -1919,11 +1951,7 @@
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
-	/*
-	 * A point on the board with its seat centred on it. No transform, so a slot makes no
-	 * stacking context of its own and every seat's name badge can sit above every token
-	 * (Trevor, 2026-10-19: when two tokens overlap the name stays visible).
-	 */
+	/* A point on the board with its seat centred on it. */
 	.slot {
 		position: absolute;
 		display: flex;
@@ -1941,6 +1969,10 @@
 	}
 	.arranging .slot {
 		cursor: grab;
+	}
+	/* Above the other seats, still under the reminders (later in the page). */
+	.slot.front {
+		z-index: 1;
 	}
 	.slot.dragging {
 		z-index: 2;
@@ -2277,7 +2309,6 @@
 	}
 	.rule {
 		/* Sized from the seats, which already follow the token size setting. */
-		--token-scale: 1;
 		padding: 0;
 		border: 0;
 		border-radius: 50%;
@@ -2293,8 +2324,9 @@
 		width: 100%;
 		margin: 0;
 		border: 0;
-		/* Stronger than a plain border, so the sections read at a glance (Trevor, 2026-10-19). */
-		border-top: 0.125rem solid var(--on-surface-muted);
+		/* The menu buttons' border colour, thicker so the sections read at a glance (Trevor,
+		   2026-10-19). */
+		border-top: 0.125rem solid var(--border);
 	}
 	.rule-detail {
 		display: flex;
@@ -2332,7 +2364,6 @@
 		border: 0;
 		background: none;
 		cursor: pointer;
-		--token-scale: 1;
 	}
 	.rules-stack > :global(*:not(:first-child):not(.stack-count)) {
 		margin-inline-start: -60%;

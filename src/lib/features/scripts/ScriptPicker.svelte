@@ -507,9 +507,10 @@
 	);
 	/**
 	 * Name, Author, Source, Type and a character count for every source; Likes and No. while
-	 * BotC Scripts is on, the one source that has them (Trevor, 2026-10-17). Author and Type are
-	 * always columns of their own; Source, Chars, Likes and No. give way on phones (Likes and
-	 * No. already on a tablet), and their filters move into the Name header.
+	 * BotC Scripts is on, the one source that has them (Trevor, 2026-10-17). Source, Chars, Likes
+	 * and No. give way on phones (Likes and No. already on a tablet), and their filters move
+	 * into the Name header. On phones each row is two lines: the name across the whole row, then
+	 * Author and Type under it (Trevor, 2026-10-19).
 	 */
 	const columns = $derived<DataColumn<ColumnId, ScriptListing>[]>([
 		{
@@ -525,6 +526,7 @@
 			sortable: true,
 			// Room for the label, its sort arrows and its filter on one line, even on a phone.
 			width: 'max(22%, 9.5rem)',
+			secondLine: true,
 			filterable: true,
 			filtered: botcFilters.author !== ''
 		},
@@ -543,6 +545,7 @@
 			sortable: true,
 			// Label, sort arrows and filter side by side.
 			width: '7rem',
+			secondLine: true,
 			filterable: true,
 			filtered: botcFilters.type !== ''
 		},
@@ -990,6 +993,12 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+	/* A phone's second line (Author and Type) is text under the name; the row is the tap target. */
+	@container data-table (max-width: 40rem) {
+		.text {
+			min-height: auto;
+		}
 	}
 	.numeric {
 		justify-content: flex-end;

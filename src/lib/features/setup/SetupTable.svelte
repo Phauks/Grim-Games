@@ -16,9 +16,15 @@
 		players?: number;
 		/** Tapping anywhere in a column picks its count (Trevor, 2026-10-16 and 2026-10-17). */
 		onPick?: (players: number) => void;
+		/**
+		 * The most players the script is made for (Teensyville: 6). Larger counts are greyed
+		 * out but stay pickable (Trevor, 2026-10-19).
+		 */
+		maxPlayers?: number;
 	}
 
-	let { players, onPick }: Props = $props();
+	let { players, onPick, maxPlayers }: Props = $props();
+	const tooMany = (n: number) => maxPlayers !== undefined && n > maxPlayers;
 
 	const columns = Object.keys(BASE_DISTRIBUTION).map(Number);
 	// Beyond 15 the extra players are Travellers, so the 15 column still applies.
@@ -38,11 +44,18 @@
 		<tr>
 			<th scope="row">{t('setup.players')}</th>
 			{#each columns as n (n)}
-				<th scope="col" data-current={n === current ? '' : undefined}>
+				<th
+					scope="col"
+					data-current={n === current ? '' : undefined}
+					data-too-many={tooMany(n) ? '' : undefined}
+					title={tooMany(n) ? t('setup.tooManyPlayers') : undefined}
+				>
 					{#if onPick}
 						<button
 							type="button"
-							aria-label={t('common.players', { count: n })}
+							aria-label={tooMany(n)
+								? `${t('common.players', { count: n })}, ${t('setup.tooManyPlayers')}`
+								: t('common.players', { count: n })}
 							aria-pressed={n === current}
 							onclick={() => onPick(n)}>{n === MAX_DEALT_PLAYERS ? `${n}+` : n}</button
 						>
@@ -60,6 +73,7 @@
 					<td
 						data-current={n === current ? '' : undefined}
 						data-pick={onPick ? '' : undefined}
+						data-too-many={tooMany(n) ? '' : undefined}
 						onclick={() => onPick?.(n)}
 					>
 						{BASE_DISTRIBUTION[n][type]}
@@ -128,6 +142,11 @@
 		background: var(--accent);
 		color: var(--on-accent);
 		font-weight: 700;
+	}
+	/* More players than the script is made for: greyed, still pickable. */
+	[data-too-many]:not([data-current]) {
+		color: var(--on-surface-muted);
+		opacity: 0.45;
 	}
 	/* The chosen total in gold; its counts below stay red (Trevor, 2026-10-18). */
 	thead [data-current] {

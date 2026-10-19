@@ -62,6 +62,9 @@ export const settings = {
 	'settings.textAlign': 'Text alignment',
 	'settings.textAlignHelp':
 		'How paragraphs line up: ability text, night steps, notes and help text. Justified spreads each line to both edges. Headings, labels and buttons stay as they are.',
+	'settings.allowZoom': 'Pinch to zoom',
+	'settings.allowZoomHelp':
+		'Lets two fingers zoom in on the page. Leave it off so a pinch never zooms the app by accident; Text size makes text larger without zooming.',
 	'settings.alignLeft': 'Left aligned',
 	'settings.alignJustify': 'Justified',
 	// Named by the setting's label through aria-describedby, so it never matches the setting's name.
@@ -71,7 +74,7 @@ export const settings = {
 		'Changes the size of interface icons: header, settings, menus, buttons, and status markers such as dead or poisoned. Character icons, text and tokens stay the same.',
 	'settings.characterIconSize': 'Character icon size',
 	'settings.characterIconSizeHelp':
-		'Changes the size of character icons in lists, pickers and the day. Names in text and grimoire tokens have their own sizes in Tokens.',
+		'Changes the size of character icons in lists, pickers and the day. Names inside lines of text use Name icon size.',
 	'settings.tileLabels': 'Bag tile labels',
 	'settings.tileLabels.numbers': 'Numbers',
 	'settings.tileLabels.letters': 'Letters',

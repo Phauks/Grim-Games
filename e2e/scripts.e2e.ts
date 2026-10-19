@@ -747,6 +747,8 @@ test('Play starts a new game with a found script, without saving it', async ({ p
 	await page.goto('/new');
 	await expect(script.getByRole('radio', { name: 'Trouble Brewing' })).toBeChecked();
 	await expect(search).toHaveValue('');
+	await expect(search).toBeDisabled();
+	await script.getByText('Custom', { exact: true }).tap();
 	await search.tap();
 	await expect(page.getByRole('option').filter({ hasText: 'Big Town' })).toHaveCount(1);
 	await page.keyboard.press('Escape');
@@ -1361,6 +1363,54 @@ test('a narrow table keeps its header to the labels, with the dropped filters on
 			.map((b) => Math.round(b.getBoundingClientRect().top))
 	);
 	expect(new Set(tops).size).toBe(1);
+});
+
+test('on a phone each Search row is two lines: the whole name, then Author and Type', async ({
+	page
+}, testInfo) => {
+	test.skip(testInfo.project.name !== 'phone', 'only phones split rows');
+	const name = 'The Storm Front Over Ravenswood';
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name,
+						version: '1.0.0',
+						author: 'Andrew Nathenson',
+						type: 'Teensyville',
+						score: 5,
+						characters: [{ id: 'chef' }]
+					}
+				]
+			}
+		})
+	);
+	await page.goto('/scripts');
+	const table = page.getByRole('table', { name: 'Scripts' });
+	const row = table.locator('tbody tr').filter({ hasText: name });
+	await expect(row).toBeVisible();
+	// Trevor, 2026-10-19: names were cut to three letters ("One ...") beside Author and Type.
+	const title = row.locator('.title');
+	expect(await title.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+	const [nameCell, author, type] = await Promise.all(
+		['name', 'author', 'kind'].map((col) => row.locator(`[data-col="${col}"]`).boundingBox())
+	);
+	expect(author!.y).toBeGreaterThanOrEqual(nameCell!.y + nameCell!.height - 1);
+	expect(Math.round(type!.y)).toBe(Math.round(author!.y));
+	await expect(row.locator('[data-col="author"]')).toHaveText('Andrew Nathenson');
+	await expect(row.locator('[data-col="kind"]')).toHaveText('Teensyville');
+	// Author and Type keep their sort and filter.
+	await expect(table.getByRole('button', { name: 'Filter Author' })).toBeVisible();
+	await expect(table.getByRole('button', { name: 'Filter Type' })).toBeVisible();
+	await row.screenshot({ path: 'test-results/search-row-phone.png' });
+	await page.locator('main').screenshot({ path: 'test-results/search-phone.png' });
+	await noSidewaysScroll(page);
 });
 
 test('Sources: All Sources by default, each group behind its caret, every source a toggle', async ({
