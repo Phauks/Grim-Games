@@ -96,6 +96,8 @@
 	const CAPTIONS: Partial<Record<Group, string>> = {
 		setup: 'Setup',
 		reminders: 'Reminders',
+		// Over the generic reminder's cell (Trevor, 2026-10-19).
+		generic: '∞',
 		dead: 'Dead players'
 	};
 

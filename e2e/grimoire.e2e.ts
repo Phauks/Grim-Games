@@ -3885,6 +3885,15 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 		'aria-label',
 		'Generic reminder'
 	);
+	// Captioned ∞ above its cell, like the bank's other stretches (Trevor, 2026-10-19).
+	const caption = page.getByTestId('bank-generic');
+	await expect(caption).toHaveText('∞');
+	const cell = (await bank.getByRole('button', { name: 'Generic reminder' }).boundingBox())!;
+	const mark = (await caption.boundingBox())!;
+	expect(mark.y + mark.height).toBeLessThanOrEqual(cell.y + 1);
+	// From the stretch's line, as the other captions are, so over the cell's start.
+	expect(mark.x).toBeLessThan(cell.x + cell.width / 2);
+	expect(mark.x + mark.width).toBeGreaterThan(cell.x);
 	await bank.getByRole('button', { name: 'Generic reminder' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Put ∞ on' })
