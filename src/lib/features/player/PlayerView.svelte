@@ -39,6 +39,7 @@
 	import PlayerScriptTabs from './PlayerScriptTabs.svelte';
 	import PlayerRoom from './PlayerRoom.svelte';
 	import { roomTable } from '#lib/features/room/player.svelte.ts';
+	import PlayerGrim from './PlayerGrim.svelte';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
 
@@ -209,6 +210,7 @@
 	{:else}
 		<!-- The same tabs the board's Script button shows, plus the player's own Notes. -->
 		<PlayerScriptTabs {script} travellers={roomTable.travellers} bind:tab>
+			{#snippet grim()}<PlayerGrim {script} />{/snippet}
 			{#snippet notes()}
 				{#if !notebook}
 					<p class="muted">{t('player.loading')}</p>
