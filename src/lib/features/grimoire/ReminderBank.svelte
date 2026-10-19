@@ -54,10 +54,19 @@
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
 		/**
-		 * At the bank's right end (Trevor, 2026-10-18): Run Night Order, or End night while a
-		 * night is running. Always there, so the bank never moves.
+		 * At the bank's right end (Trevor, 2026-10-18): the game's next phase (Start game, End
+		 * night, End day, or Run night to pick a stopped walk-through up). Always there, so the
+		 * bank never moves. `hint`: a count; each rise lights it up for a moment.
 		 */
-		run?: { end: boolean; disabled: boolean; onclick: () => void };
+		run?: {
+			/** Its accessible name, and the shorter words shown. */
+			label: string;
+			text: string;
+			icon: 'day' | 'night';
+			disabled: boolean;
+			onclick: () => void;
+			hint?: number;
+		};
 	}
 
 	let {
@@ -180,6 +189,7 @@
 	let bankEl = $state<HTMLElement>();
 	let divider = $state<HTMLElement>();
 	let scrolled = $state(0);
+	let otherW = $state(0);
 	const captions = $derived.by(() => {
 		void items;
 		if (!bankEl || !list) return { setup: 0, other: undefined as number | undefined };
@@ -187,10 +197,28 @@
 		const start = list.offsetLeft;
 		const line = divider ? start + divider.offsetLeft - scrolled : undefined;
 		const pct = (x: number) => (x / width) * 100;
+		// Only once the line has scrolled in far enough for the whole caption: never past the
+		// row's end, over the Run night button (Trevor, 2026-10-19).
+		const shown = line !== undefined && line + otherW <= start + list.clientWidth;
 		return {
 			setup: pct(start),
-			other: line === undefined ? undefined : pct(Math.max(start, line))
+			other: shown ? pct(Math.max(start, line)) : undefined
 		};
+	});
+	/** More tokens off either end of the row: its edge fades (Trevor, 2026-10-19). */
+	let more = $state({ start: false, end: false });
+	function measure() {
+		if (!list) return;
+		const { scrollLeft, clientWidth, scrollWidth } = list;
+		more = { start: scrollLeft > 1, end: scrollLeft + clientWidth < scrollWidth - 1 };
+	}
+	$effect(() => {
+		void items;
+		if (!list) return;
+		const observer = new ResizeObserver(measure);
+		observer.observe(list);
+		measure();
+		return () => observer.disconnect();
 	});
 	/** "Setup" goes once the line has scrolled to the start. */
 	const setupShown = $derived(
@@ -220,6 +248,23 @@
 	 * token goes where it is dropped, seats are not marked, and a tap doesn't offer seats.
 	 */
 	const loose = $derived(boardLooks.current.reminders === 'free');
+
+	// ── End night lights up when Next is tapped past the last step ──
+	let hinting = $state(false);
+	$effect(() => {
+		if (!run?.hint) return;
+		// Off for a frame first, so a second tap starts the pulse again.
+		hinting = false;
+		let off: ReturnType<typeof setTimeout> | undefined;
+		const on = requestAnimationFrame(() => {
+			hinting = true;
+			off = setTimeout(() => (hinting = false), 2000);
+		});
+		return () => {
+			cancelAnimationFrame(on);
+			clearTimeout(off);
+		};
+	});
 
 	// ── Drag a token from the bank onto a seat ──
 	let drag = $state<{ item: Item; at: SeatPoint } | undefined>();
@@ -304,13 +349,19 @@
 	{#if captions.other !== undefined}<span
 			class="caption"
 			data-testid="bank-other"
+			bind:offsetWidth={otherW}
 			style:left="{captions.other}%">Other reminders</span
 		>{/if}
 	<ul
 		class="tray"
 		bind:this={list}
 		aria-label="Reminder bank"
-		onscroll={(e) => (scrolled = e.currentTarget.scrollLeft)}
+		data-more-start={more.start || undefined}
+		data-more-end={more.end || undefined}
+		onscroll={(e) => {
+			scrolled = e.currentTarget.scrollLeft;
+			measure();
+		}}
 	>
 		{#each items as item (item.key)}
 			<li
@@ -347,12 +398,13 @@
 		<button
 			type="button"
 			class="run"
-			aria-label={run.end ? 'End night' : 'Run Night Order'}
+			aria-label={run.label}
+			data-hint={hinting ? '' : undefined}
 			disabled={run.disabled}
 			onclick={run.onclick}
 		>
-			<Icon name={run.end ? 'day' : 'night'} />
-			<span>{run.end ? 'End night' : 'Run night'}</span>
+			<Icon name={run.icon} />
+			<span>{run.text}</span>
 		</button>
 	{/if}
 </div>
@@ -509,6 +561,18 @@
 		width: 1.6em;
 		height: 1.6em;
 	}
+	/* Next past the last step points here (Trevor, 2026-10-19): a ring that pulses, or just
+	   shows under reduced motion (the duration tokens are 0ms then). */
+	.run[data-hint] {
+		outline: 0.2rem solid var(--on-accent);
+		outline-offset: -0.45rem;
+		animation: end-hint var(--duration-slow) ease-in-out 4 alternate;
+	}
+	@keyframes end-hint {
+		to {
+			outline-color: transparent;
+		}
+	}
 	.run:disabled {
 		background: none;
 		color: var(--on-surface-muted);
@@ -549,6 +613,26 @@
 	}
 	.tray::-webkit-scrollbar {
 		display: none;
+	}
+	/* More tokens past an edge: that edge fades out, drawn over nothing so nothing moves. */
+	.tray {
+		--fade: calc(1.5 * var(--u));
+		--shown: rgb(0 0 0); /* colour-ok: a mask's opacity, not a colour */
+	}
+	.tray[data-more-start] {
+		mask-image: linear-gradient(to right, transparent, var(--shown) var(--fade));
+	}
+	.tray[data-more-end] {
+		mask-image: linear-gradient(to left, transparent, var(--shown) var(--fade));
+	}
+	.tray[data-more-start][data-more-end] {
+		mask-image: linear-gradient(
+			to right,
+			transparent,
+			var(--shown) var(--fade),
+			var(--shown) calc(100% - var(--fade)),
+			transparent
+		);
 	}
 	/* The walked-through step's reminders, at the front: a ring that hugs the round token. */
 	li.now > :global(.reminder) {

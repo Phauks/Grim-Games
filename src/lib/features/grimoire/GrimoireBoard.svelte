@@ -3,7 +3,8 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
-	import { gameModeName } from './game-mode-name.ts';
+	import { gameModeNames } from './game-mode-name.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -45,8 +46,10 @@
 		setupComplete,
 		diedSinceNewDay,
 		ON_DEATH,
+		abilityState,
 		stepNightNumbers
 	} from '#lib/core/rules/index.ts';
+	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -204,7 +207,7 @@
 	 * The script's name in the corner keeps clear of every seat and name (Trevor, 2026-10-18),
 	 * cut short with an ellipsis where it would reach one (always the lower left).
 	 */
-	const corner = $derived.by(() => {
+	const cornerFit = $derived.by(() => {
 		const boxes = shown.flatMap((p, i) => {
 			const c = toPx(p);
 			const name = nameBoxes[i]?.box;
@@ -214,8 +217,22 @@
 			return name ? [token, name] : [token];
 		});
 		// The name sits 4px (--space-1) in from the edges.
-		return cornerRoom(boxes, { width, height }, titleH + 4, 4 + 8);
+		const room = (h: number) => cornerRoom(boxes, { width, height }, h + 4, 4 + 8);
+		// A line per special rule (Trevor, 2026-10-19) when they all fit; otherwise one line,
+		// as before. Both heights come from what is shown now, so the choice never flip-flops.
+		const extra = Math.max(0, modeLines.length - 1) * (lineHs[0] ?? 0);
+		const stackedH = stackRules ? titleH : titleH + extra;
+		const stacked = room(stackedH);
+		if (extra > 0 && stacked >= 2 * rootFont) return { room: stacked, stack: true };
+		return { room: room(stackRules ? titleH - extra : titleH), stack: false };
 	});
+	/** Whether the rules show a line each now; follows cornerFit once the lines are measured. */
+	// eslint-disable-next-line svelte/prefer-writable-derived -- cornerFit reads it back, so a derived would be circular
+	let stackRules = $state(false);
+	$effect(() => {
+		stackRules = cornerFit.stack;
+	});
+	const corner = $derived(cornerFit.room);
 	/**
 	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
 	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
@@ -283,6 +300,8 @@
 	let timerW = $state(0);
 	let titleW = $state(0);
 	let titleH = $state(0);
+	/** The heights of the mode and rule lines under the script's name. */
+	let lineHs = $state<number[]>([]);
 	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
@@ -604,12 +623,15 @@
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
 
-	// ── Notes (Trevor, 2026-10-19): the game's and every player's, from ⋯ or a pen mark ──
+	// ── Notes (Trevor, 2026-10-19): the game's and every player's in ⋯ Notes ──
 	let notesOpen = $state(false);
-	let notesFocus = $state<SeatId | undefined>();
-	function openNotes(seatId?: SeatId) {
-		notesFocus = seatId;
-		notesOpen = true;
+	let notesSheet = $state<ReturnType<typeof NotesSheet>>();
+	/**
+	 * A seat's pen mark opens just that player's note, not the whole sheet (Trevor,
+	 * 2026-10-19: less to take in). After the tap's click, so it doesn't land in the field.
+	 */
+	function editNote(seatId: SeatId) {
+		setTimeout(() => notesSheet?.edit(seatId));
 	}
 	/**
 	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
@@ -770,6 +792,24 @@
 	});
 	const walkStep = $derived(walk ? walkSteps[walk.index] : undefined);
 	/**
+	 * The rule that keeps poisoned players asleep, if the game has one (I See Dead People,
+	 * https://beardytas.com/garden-of-djinn/i-see-dead-people/), and whether it applies to the
+	 * walk-through's step: every player who wakes for it is poisoned.
+	 */
+	const poisonedSleepRule = $derived(
+		readGameMode(game.gameId)?.rules.find((rule) => rule.parts.deaths?.kind === 'private')?.name
+	);
+	const walkAsleep = $derived.by(() => {
+		if (!poisonedSleepRule || !walkStep) return false;
+		const holders = stepHolders(game, walkStep, characters);
+		return (
+			holders.length > 0 &&
+			holders.every((seatId) =>
+				abilityState(game, seatId, characters).impairments.some((i) => i.reason === 'poisoned')
+			)
+		);
+	});
+	/**
 	 * Run Night Order in one tap, from the right end of the reminder bank (Trevor, 2026-10-18:
 	 * a change on the board itself, not a toolbar page). Always there while the walk-through
 	 * setting is on, so the bank never moves; usable once a seat has a character, empty seats
@@ -784,7 +824,7 @@
 			!placing &&
 			game.seating.some((id) => game.seats[id].characterId !== undefined)
 	);
-	function runNight() {
+	function runNight(): void {
 		const data = officialData.current;
 		if (!data) return;
 		grimoire.beginNight();
@@ -806,6 +846,64 @@
 				(grimoire.nightRunning && !preferences.current.assistance.nightWalkthrough))
 	);
 	let endNightOpen = $state(false);
+	let endDayOpen = $state(false);
+	/**
+	 * End day, from the bank or the day view (Trevor, 2026-10-18): the day's timer stops and
+	 * Dusk is ticked, which runs the rules checked at dusk (GameEndPrompt); the walk-through
+	 * starts on the board, where it is on.
+	 */
+	function endDay(): void {
+		if (liveDayTimer.running) liveDayTimer.toggle();
+		grimoire.beginNight();
+		const night = tonight(game);
+		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
+			grimoire.toggleNightStep(night, { id: 'dusk' });
+		if (preferences.current.assistance.nightWalkthrough) runNight();
+	}
+	/**
+	 * The bank's button follows the game (Trevor, 2026-10-19): Start game before the first
+	 * night, End night during a night, End day during a day; a walk-through stopped mid-night
+	 * offers Run night to pick it up again.
+	 */
+	const bankRun = $derived.by(() => {
+		if (nightOn)
+			return {
+				label: 'End night',
+				text: 'End night',
+				icon: 'day' as const,
+				disabled: grimoire.open.viewOnly,
+				onclick: () => {
+					endNightOpen = true;
+				},
+				hint: endHint
+			};
+		const walkthrough = preferences.current.assistance.nightWalkthrough;
+		if (grimoire.nightUnderway && walkthrough)
+			return {
+				label: 'Run Night Order',
+				text: 'Run night',
+				icon: 'night' as const,
+				disabled: !canRun,
+				onclick: runNight
+			};
+		if (game.pastDays.length === 0)
+			return {
+				label: 'Start game',
+				text: 'Start game',
+				icon: 'night' as const,
+				disabled: !canRun,
+				onclick: walkthrough ? runNight : endDay
+			};
+		return {
+			label: 'End day',
+			text: 'End day',
+			icon: 'night' as const,
+			disabled: !!ended || grimoire.open.viewOnly || arranging || !!placing,
+			onclick: () => {
+				endDayOpen = true;
+			}
+		};
+	});
 	function endNight() {
 		if (!grimoire.endNight()) return;
 		walk = undefined;
@@ -1015,19 +1113,24 @@
 	 * A game played in an alternative mode says so where the script's name is (Trevor,
 	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
 	 */
-	const modeName = $derived(gameModeName(game.gameId));
+	const modeNames = $derived(gameModeNames(game.gameId));
+	const modeName = $derived(modeNames.length ? modeNames.join(' + ') : undefined);
 	/**
 	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
 	 * says it once, in the mode's colour, rather than twice (Trevor, 2026-10-18).
 	 */
 	const modeInName = $derived(
-		!!modeName && (game.script.meta?.name ?? '').toLowerCase().startsWith(modeName.toLowerCase())
+		modeNames.length > 0 &&
+			(game.script.meta?.name ?? '').toLowerCase().startsWith(modeNames[0].toLowerCase())
 	);
-	const modeLabel = $derived(modeInName ? undefined : modeName);
+	/** The mode, then each special rule, a line each under the name (Trevor, 2026-10-19). */
+	const modeLines = $derived(modeInName ? modeNames.slice(1) : modeNames);
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
 	let modeMenuOpen = $state(false);
+	/** Counts Next taps past the walk-through's last step; each lights up End night. */
+	let endHint = $state(0);
 	function fromMenu(action: () => void) {
 		menuOpen = false;
 		action();
@@ -1315,7 +1418,7 @@
 					role={seatRole(seat.seatId)}
 					namePlace={namePlaces[i] ?? 'below'}
 					onTap={(part) =>
-						!arranging && (part === 'note' ? openNotes(seat.seatId) : openSeat(seat.seatId))}
+						!arranging && (part === 'note' ? editNote(seat.seatId) : openSeat(seat.seatId))}
 				/>
 			</div>
 		{/each}
@@ -1440,6 +1543,8 @@
 				night={walk.night}
 				index={walk.index}
 				onIndex={(index) => walk && (walk = { ...walk, index })}
+				onPastEnd={() => endHint++}
+				asleepBy={walkAsleep ? poisonedSleepRule : undefined}
 				onOpen={(step) => {
 					if (!walk) return;
 					guided = { step, night: walk.night };
@@ -1480,11 +1585,7 @@
 				{ruleAt}
 				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
 				onHints={(h) => (trayHints = h)}
-				run={nightOn
-					? { end: true, disabled: grimoire.open.viewOnly, onclick: () => (endNightOpen = true) }
-					: preferences.current.assistance.nightWalkthrough
-						? { end: false, disabled: !canRun, onclick: runNight }
-						: { end: true, disabled: true, onclick: () => {} }}
+				run={bankRun}
 			/>
 		{/if}
 
@@ -1517,11 +1618,15 @@
 						data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
 					></ModeMenu
 				>
-				<!-- The mode takes the author's line, so the corner never grows. -->
-				{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span
-					>{:else if game.script.meta?.author}<span class="author"
-						>by {game.script.meta.author}</span
-					>{/if}
+				<!-- The mode and rules take the author's line: a line each where the corner has room
+				     for them all (corner-room.ts), else one line joined with " + ". -->
+				{#each stackRules ? modeLines : modeLines.length ? [modeLines.join(' + ')] : [] as line, i (i)}<span
+						class="mode"
+						data-testid="game-mode"
+						bind:clientHeight={lineHs[i]}>{line}</span
+					>{:else}{#if game.script.meta?.author}<span class="author"
+							>by {game.script.meta.author}</span
+						>{/if}{/each}
 			</p>
 		{/if}
 		{#if showTimer}
@@ -1569,7 +1674,9 @@
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
 			Demon bluffs
 		</Button>
-		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => openNotes())}>Notes</Button>
+		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => (notesOpen = true))}
+			>Notes</Button
+		>
 		<!-- Who runs the game, as typed on New game (Trevor, 2026-10-19). -->
 		<Button variant="quiet" icon="rename" onclick={() => fromMenu(() => (storytellerOpen = true))}>
 			Storyteller
@@ -1697,6 +1804,9 @@
 	/>
 </ConfirmDialog>
 
+<!-- The same question as the day view's End day. -->
+<ConfirmDialog bind:open={endDayOpen} title={t('day.endDayConfirm')} onConfirm={endDay} />
+
 <ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
 	<dl class="change">
 		<dt>Now</dt>
@@ -1736,11 +1846,12 @@
 		sheetOpen = false;
 		onDraw(id);
 	}}
+	onNotes={(id) => notesSheet?.edit(id)}
 />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
-<NotesSheet bind:open={notesOpen} {grimoire} focus={notesFocus} />
+<NotesSheet bind:this={notesSheet} bind:open={notesOpen} {grimoire} />
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} />
 
@@ -1763,20 +1874,7 @@
 	<RoomPanel game={grimoire.open} />
 </Dialog>
 
-<DaySheet
-	bind:open={dayOpen}
-	game={grimoire.open}
-	onEndDay={() => {
-		// The day's timer stops and Dusk is ticked, which runs the rules checked at dusk
-		// (GameEndPrompt); the walk-through starts on the board, where it is on.
-		if (liveDayTimer.running) liveDayTimer.toggle();
-		grimoire.beginNight();
-		const night = tonight(game);
-		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
-			grimoire.toggleNightStep(night, { id: 'dusk' });
-		if (preferences.current.assistance.nightWalkthrough) runNight();
-	}}
-/>
+<DaySheet bind:open={dayOpen} game={grimoire.open} onEndDay={endDay} />
 
 <GuidedStep
 	bind:open={guideOpen}

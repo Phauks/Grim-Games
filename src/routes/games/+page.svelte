@@ -15,7 +15,7 @@
 	<title>Resume game · {APP_NAME}</title>
 </svelte:head>
 
-<Page title="Resume game">
+<Page title="Resume game" iconActions>
 	{#snippet actions()}
 		<DeleteButton
 			label="Delete all saved games"
