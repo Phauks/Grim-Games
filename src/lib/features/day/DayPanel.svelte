@@ -65,6 +65,13 @@
 	const g = $derived(game.game);
 	const seats = $derived(g.seating.map((id) => g.seats[id]));
 	const hasFlowergirl = $derived(seats.some((s) => s.characterId === 'flowergirl'));
+	/**
+	 * The Flowergirl learns each night whether the Demon voted today (Trevor, 2026-10-19:
+	 * "we need quick action in day for that"): one tap in the pinned toolbar. Today's mark is
+	 * the day log's, so it starts unset each new day and History can undo it.
+	 */
+	const demonVotedButton = $derived(hasFlowergirl && assistance.demonVotedButton);
+	const demonVoted = $derived(g.today.demonVoted === true);
 
 	// ── Players: tap one to mark a death (with its cause) or bring them back ──
 	// Nominations happen off the grimoire, so they are not tracked here (Trevor, 2026-10-16).
@@ -371,6 +378,17 @@
 	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
 	<div class="toolbar" data-testid="day-toolbar" bind:borderBoxSize={toolbarSize}>
 		<DayTimer alive={block.alive} />
+		{#if demonVotedButton}
+			<Chip
+				pressed={demonVoted}
+				data-testid="demon-voted"
+				onclick={() => game.run({ type: 'SetDemonVoted', voted: !demonVoted })}
+			>
+				<span class="tick" data-on={demonVoted || undefined}><Icon name="check" /></span>{t(
+					'day.demonVoted'
+				)}
+			</Chip>
+		{/if}
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
@@ -523,7 +541,7 @@
 				</button>
 			{/each}
 		</div>
-		{#if hasFlowergirl}
+		{#if hasFlowergirl && !assistance.demonVotedButton}
 			<div class="demon-voted">
 				<Toggle
 					label={t('day.demonVoted')}
