@@ -506,6 +506,13 @@ test('Print script prints the sheet, then the night order and player counts', as
 				fits: p.scrollHeight <= p.clientHeight + 1,
 				columns: p.dataset.columns
 			}));
+			// The front's night strips: each night's steps, as icons (Trevor, 2026-10-19).
+			(window as unknown as { strips: unknown }).strips = Object.fromEntries(
+				[...document.querySelectorAll<HTMLElement>('.front [data-night-strip]')].map((s) => [
+					s.dataset.nightStrip,
+					[...s.querySelectorAll<HTMLElement>('[data-step]')].map((li) => li.dataset.step)
+				])
+			);
 		};
 	});
 	await page.getByRole('button', { name: 'Print script' }).tap();
@@ -542,6 +549,12 @@ test('Print script prints the sheet, then the night order and player counts', as
 		'light'
 	);
 	await page.emulateMedia({ media: 'screen' });
+	const strips = await page.evaluate(
+		() => (window as unknown as { strips: Record<string, string[]> }).strips
+	);
+	expect(strips.first).toContain('washerwoman');
+	expect(strips.other).not.toContain('washerwoman');
+	expect(strips.other.length).toBeGreaterThan(0);
 	const pages = await page.evaluate(() => (window as unknown as { pages: unknown }).pages);
 	expect(pages).toEqual([
 		{ fits: true, columns: expect.stringMatching(/^[12]$/) },
