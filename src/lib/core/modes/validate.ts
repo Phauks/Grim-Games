@@ -148,8 +148,8 @@ function checkFile(
 	if (value.about !== undefined && typeof value.about !== 'string') add('about', 'must be text');
 	if (value.revision !== undefined && !Number.isInteger(value.revision))
 		add('revision', 'must be a whole number');
-	if (!Array.isArray(value.sources) || value.sources.length === 0)
-		add('sources', 'must list at least one source');
+	// A mode of one's own may have none (Trevor, 2026-10-19: no notes as a source).
+	if (!Array.isArray(value.sources)) add('sources', 'must be a list of links');
 	else
 		value.sources.forEach((s, i) => {
 			if (!isObject(s) || typeof s.title !== 'string' || typeof s.url !== 'string')

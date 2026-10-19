@@ -33,9 +33,13 @@ describe('shipped modes', () => {
 		expect(parseGameMode(JSON.parse(JSON.stringify(m)), known)).toEqual({ ok: true, mode: m });
 	});
 
-	it('have unique ids and every one links an https source', () => {
+	it('have unique ids and link only https sources', () => {
 		expect(new Set(GAME_MODES.map((m) => m.id)).size).toBe(GAME_MODES.length);
-		for (const m of GAME_MODES) expect(m.sources[0].url).toMatch(/^https:\/\//);
+		for (const m of GAME_MODES) for (const s of m.sources) expect(s.url).toMatch(/^https:\/\//);
+	});
+
+	it('Two games at once names no source (Trevor, 2026-10-19: his notes aren’t one)', () => {
+		expect(mode('two-games-at-once').sources).toEqual([]);
 	});
 
 	it('Standard changes nothing, so the app runs every part', () => {

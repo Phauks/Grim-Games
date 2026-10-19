@@ -21,7 +21,7 @@ import {
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 8;
+export const GAME_MODE_REVISION = 9;
 
 export interface GuideField {
 	name: string;
@@ -77,7 +77,7 @@ export const GUIDE_INTRO = [
 	'Start from a built-in mode: Inspect any mode on the Game modes tab shows its whole file.',
 	'Character ids are the official ones, lower case with no spaces or dashes (pithag, bountyhunter). Unknown ids are refused.',
 	'Every part is optional. A part left out is played as standard, and the app runs it. A part the app can’t run yet is shown in Inspect as run by the Storyteller.',
-	'Links must start with https://. A mode names its sources, and an author only with a link to a page that names them.'
+	'Links must start with https://. A mode names its sources, if a page describes it, and an author only with a link to a page that names them.'
 ];
 
 /** The fields of the mode object itself. */
@@ -120,7 +120,7 @@ export const GUIDE_TOP: GuideField[] = [
 		type: 'list of links',
 		required: true,
 		about:
-			'Where the rules come from, the rules page first: each { "title": "…", "url": "https://…" }. At least one.'
+			'Where the rules come from, the rules page first: each { "title": "…", "url": "https://…" }. May be [] for a mode of your own that no page describes.'
 	},
 	{
 		name: 'authors',
