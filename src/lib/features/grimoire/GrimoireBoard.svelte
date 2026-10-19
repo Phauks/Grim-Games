@@ -111,6 +111,7 @@
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
+	import StarPassPrompt from './StarPassPrompt.svelte';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -1804,6 +1805,7 @@
 	onMove={(id, to) => moveConfirm?.request(id, to)}
 />
 <AlignmentAsk {grimoire} />
+<StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <GameEndPrompt
 	{grimoire}
 	active={!ended && !grimoire.open.viewOnly}
