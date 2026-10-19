@@ -53,6 +53,19 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
 	await expect(phone.locator('ol li').nth(2)).toContainText('Alex');
 
+	// Coming back (Trevor, 2026-10-19: "it booted me out like I had not joined it yet"): Join
+	// game lists the room, and opening it shows the seat this phone already has.
+	await phone.goto('/join');
+	const recent = phone.getByTestId('recent-rooms').getByRole('button');
+	await expect(recent).toHaveCount(1);
+	await expect(recent).toContainText('Trouble Brewing');
+	await expect(recent).toContainText(`${code.slice(0, 3)} ${code.slice(3)}`);
+	await recent.tap();
+	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
+	await expect(phone.getByTestId('join-status')).toHaveText('You are in seat 3 as Alex.');
+	await expect(phone.getByRole('radio', { name: /^Seat 3/ })).toBeChecked();
+	await expect(phone.getByRole('button', { name: 'Ask the Storyteller' })).toBeDisabled();
+
 	// Approving named the seat on the board, as an ordinary change.
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
 	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex"]')).toBeVisible();
@@ -63,6 +76,9 @@ test('a phone joins, asks for a seat, and the Storyteller seats it', async ({
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Open a room' })).toBeVisible();
 	await expect(phone.getByRole('alert')).toHaveText('This room is closed, or the code is wrong.');
+	// A closed room leaves the list.
+	await phone.goto('/join');
+	await expect(phone.getByTestId('recent-rooms')).toHaveCount(0);
 	await phoneContext.close();
 });
 
