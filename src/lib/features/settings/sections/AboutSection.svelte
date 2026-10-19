@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { buildInfo as info } from '#lib/build-info.ts';
 	import { REPOSITORY_URL, shortCommit } from '#lib/features/about/report-issue.ts';
+	import UpdateChanges from '#lib/features/about/UpdateChanges.svelte';
 	import { updateCheck } from '#lib/features/about/update-check.svelte.ts';
 	import DiagnosticsPanel from '#lib/features/errors/DiagnosticsPanel.svelte';
 	import { diagnosticsText } from '#lib/features/errors/diagnostics.ts';
@@ -17,6 +18,7 @@
 	import { formatBytes } from '#lib/i18n/bytes.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 
 	const RESULT = {
@@ -29,6 +31,13 @@
 		unsupported: 'shell.updateUnsupported'
 	} as const;
 	const result = $derived(RESULT[updateCheck.result]);
+
+	// What the waiting build changed, here as on the update card, so About need not be left to
+	// see it (Trevor, 2026-10-19). In a dialog, so the version line never grows.
+	let changesOpen = $state(false);
+	$effect(() => {
+		if (updateCheck.ready) void updateCheck.loadChanges();
+	});
 
 	// Report an issue sits in About itself, not in Advanced (Trevor, 2026-10-19), and still
 	// attaches this device's diagnostics, gathering them first when Advanced was never opened.
@@ -93,6 +102,12 @@
 		<!-- Once a build is ready, Refresh moves onto it here too (Trevor, 2026-10-19). It takes the
 		     end of the same line, as tall as the check button, so only the status text gets shorter. -->
 		{#if updateCheck.ready}
+			<IconButton
+				icon="history"
+				label={t('shell.whatChanged')}
+				disabled={!updateCheck.changes}
+				onclick={() => (changesOpen = true)}
+			/>
 			<Button
 				variant="accent"
 				data-testid="update-refresh"
@@ -108,6 +123,11 @@
 		>
 	</dd>
 </dl>
+{#if updateCheck.changes}
+	<Dialog bind:open={changesOpen} title={t('shell.whatChanged')}>
+		<UpdateChanges changes={updateCheck.changes} />
+	</Dialog>
+{/if}
 <div class="report">
 	<Button onclick={() => void report()}><Icon name="report" />{t('errors.diag.report')}</Button>
 </div>

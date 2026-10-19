@@ -4,7 +4,16 @@
  * usual update card (UpdateBanner), so a running game is never interrupted.
  */
 import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
+import { buildInfo } from '#lib/build-info.ts';
 import { isPrecacheProgress, percentDone } from './update-progress.ts';
+import {
+	BUILD_NOTES_PATH,
+	changesSince,
+	compareUrl,
+	parseBuildNotes,
+	parseCompare,
+	type Changes
+} from './update-notes.ts';
 
 /** When this device last finished a check, so About can say "Checked 18:58". */
 const CHECKED_KEY = 'grim-games:update-checked';
@@ -26,6 +35,21 @@ class UpdateChecker {
 	ready = $state(false);
 	/** Refresh was tapped, so the new build taking over reloads the page instead of offering it. */
 	refreshing = false;
+	/**
+	 * What the waiting build changed, shown by the update card and About (Trevor, 2026-10-19:
+	 * "proffer the changes there"); null until fetched, or when offline.
+	 */
+	changes = $state<Changes | null>(null);
+	#loadingChanges: Promise<void> | undefined;
+
+	/** Fetches what the waiting build changed, once per page unless the last try failed. */
+	loadChanges(): Promise<void> {
+		this.#loadingChanges ??= fetchChanges().then((changes) => {
+			this.changes = changes;
+			if (!changes) this.#loadingChanges = undefined;
+		});
+		return this.#loadingChanges;
+	}
 
 	/** The download of each new build being followed, so a check and the watcher share one. */
 	#downloads = new WeakMap<ServiceWorker, Promise<UpdateCheck>>();
@@ -142,6 +166,32 @@ async function findUpdate(): Promise<UpdateCheck | ServiceWorker> {
 		return 'failed';
 	}
 	return registration.installing ?? registration.waiting ?? 'current';
+}
+
+/** The commits since the running build, from the newest build's notes, else GitHub. */
+async function fetchChanges(): Promise<Changes | null> {
+	try {
+		// Past every cache: the network has the newest build's notes, the one waiting.
+		const response = await fetch(BUILD_NOTES_PATH, { cache: 'no-store' });
+		const notes = response.ok ? parseBuildNotes(await response.json()) : null;
+		if (!notes) return null;
+		const fromNotes = changesSince(notes, buildInfo.commit);
+		return fromNotes.complete
+			? fromNotes
+			: ((await compareOnGitHub(buildInfo.commit, notes.commit)) ?? fromNotes);
+	} catch {
+		return null;
+	}
+}
+
+/** The commits between two builds from GitHub, or null if it can't be reached. */
+async function compareOnGitHub(running: string, next: string): Promise<Changes | null> {
+	try {
+		const response = await fetch(compareUrl(running, next));
+		return response.ok ? parseCompare(await response.json()) : null;
+	} catch {
+		return null;
+	}
 }
 
 export const updateCheck = new UpdateChecker();
