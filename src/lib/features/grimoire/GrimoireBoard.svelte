@@ -1244,6 +1244,7 @@
 				<BoardReminder
 					label={reminderWords(last)}
 					infinite={isGeneric(last)}
+					symbol={last.symbol}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last.characterId, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1507,6 +1508,7 @@
 						<BoardReminder
 							label={reminderWords(reminder)}
 							infinite={isGeneric(reminder)}
+							symbol={reminder.symbol}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 							size={chip}
@@ -1541,6 +1543,7 @@
 				<BoardReminder
 					label={reminderWords(reminder)}
 					infinite={isGeneric(reminder)}
+					symbol={reminder.symbol}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder.characterId, characters)}
 					size={chip}
@@ -1562,6 +1565,7 @@
 				<BoardReminder
 					label={reminderWords(heldDrag)}
 					infinite={isGeneric(heldDrag)}
+					symbol={heldDrag.symbol}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled

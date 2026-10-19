@@ -89,8 +89,8 @@ export function tileLetters(number: number): string {
 	return out;
 }
 
-/** Symbol and colour names have no placeholders. */
-const named = t as (key: MessageKey) => string;
+/** A tile mark's name in words; the catalog keys above take no parameters. */
+export const named = t as (key: MessageKey) => string;
 
 const text = (s: string): TileMark => ({ kind: 'text', text: s, name: s });
 
