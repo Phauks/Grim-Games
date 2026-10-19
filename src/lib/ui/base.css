@@ -61,6 +61,26 @@ body::before {
 	background: var(--page-background);
 	pointer-events: none;
 }
+/* A screen with no header or footer (a game): the backdrop fades to the theme's --surface at
+   the top and bottom edges. A phone's status and navigation bars take that flat colour (the
+   theme-color meta, apply.ts) and can't show a gradient, so they now run into the screen
+   instead of standing apart from it (Trevor, 2026-10-19, on a Pixel). */
+body:has(.app-body.bare)::before {
+	/* Solid over the bars themselves (the layer starts one inset above the screen), then fading. */
+	--edge-top: calc(2 * env(safe-area-inset-top));
+	--edge-bottom: calc(2 * env(safe-area-inset-bottom));
+	background:
+		linear-gradient(
+			var(--surface) var(--edge-top),
+			transparent calc(var(--edge-top) + 4 * var(--u))
+		),
+		linear-gradient(
+			to top,
+			var(--surface) var(--edge-bottom),
+			transparent calc(var(--edge-bottom) + 4 * var(--u))
+		),
+		var(--page-background);
+}
 
 h1,
 h2,
