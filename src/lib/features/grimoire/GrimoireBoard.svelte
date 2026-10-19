@@ -898,14 +898,6 @@
 	 * during a day; a walk-through stopped mid-night offers Run night to pick it up again.
 	 */
 	const bankRun = $derived.by(() => {
-		if (showSetup)
-			return {
-				label: 'Set up',
-				text: 'Set up',
-				icon: 'bag' as const,
-				disabled: false,
-				onclick: openSetup
-			};
 		if (nightOn)
 			return {
 				label: 'End night',
@@ -925,6 +917,16 @@
 				icon: 'night' as const,
 				disabled: !canRun,
 				onclick: runNight
+			};
+		// Set up stands in for Start game only: once a night or day is under way, the bank
+		// ends it, characters or not.
+		if (game.pastDays.length === 0 && showSetup)
+			return {
+				label: 'Set up',
+				text: 'Set up',
+				icon: 'bag' as const,
+				disabled: false,
+				onclick: openSetup
 			};
 		if (game.pastDays.length === 0)
 			return {
