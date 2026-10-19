@@ -324,7 +324,7 @@
 	}
 </script>
 
-<Page title={t('setup.characters')} sideFlow>
+<Page title={t('setup.characters')} sideFlow iconActions>
 	{#snippet actions()}<SetupActions {port} />{/snippet}
 	{#snippet subtitle()}<span class="script"
 			><span class="label">{t('setup.script')}</span>

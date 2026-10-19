@@ -10,6 +10,11 @@
 		width?: 'page' | 'text';
 		/** Buttons at the end of the title row; on a narrow page, in their own row under it. */
 		actions?: Snippet;
+		/**
+		 * The actions are a few icon buttons, small enough to stay at the end of the title's row
+		 * at every width (Trevor, 2026-10-19: the bag's cog and Share beside "Draw").
+		 */
+		iconActions?: boolean;
 		/** One muted line under the title (an author, a date, the script in play). */
 		subtitle?: Snippet;
 		/** One row under the title for search, filters and view switches. */
@@ -35,6 +40,7 @@
 		hideTitle = false,
 		width = 'page',
 		actions,
+		iconActions = false,
 		subtitle,
 		toolbar,
 		side,
@@ -52,7 +58,7 @@
 -->
 <main class="page" data-width={width}>
 	<header class="head" class:visually-hidden={hideTitle}>
-		<div class="title-row">
+		<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
 			<h1>{title}</h1>
 			{#if actions}<div class="actions">{@render actions()}</div>{/if}
 		</div>
@@ -105,6 +111,14 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2);
+	}
+	.title-row[data-icon-actions] {
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+	}
+	.title-row[data-icon-actions] .actions {
+		flex-wrap: nowrap;
+		justify-content: flex-end;
 	}
 	/* Wider pages: the actions sit at the end of the title's row; the title keeps 20u at least. */
 	@container page-head (min-width: 36rem) {
