@@ -36,6 +36,7 @@ import {
 	USERNAME_MAX,
 	USERNAME_MIN
 } from '../../src/lib/features/account/account-protocol.ts';
+import { EXPORT_FORMAT, EXPORT_VERSION } from '../../src/lib/features/account/import-file.ts';
 import {
 	changeEmailCode,
 	emailChangedNotice,
@@ -480,7 +481,13 @@ export async function handleAccount(
 		return json({ ok: true });
 	}
 	if (path === '/api/account/export' && method === 'GET') {
-		return json(await user.exportAll(), 200, {
+		// Named and versioned, so Import can tell it apart and read older files (import-file.ts).
+		const data = {
+			format: EXPORT_FORMAT,
+			version: EXPORT_VERSION,
+			...((await user.exportAll()) as object)
+		};
+		return json(data, 200, {
 			'Content-Disposition': 'attachment; filename="grim-games-account.json"'
 		});
 	}

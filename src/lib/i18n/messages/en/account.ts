@@ -90,6 +90,16 @@ export const account = {
 
 	'account.data.title': 'Your data',
 	'account.data.download': 'Download my data',
+	'account.data.import': 'Import data',
+	'account.import.title': 'Import data',
+	'account.import.text': 'From {file}. Nothing in your account is replaced.',
+	'account.import.add': 'Scripts to add',
+	'account.import.same': 'Already in your account',
+	'account.import.skipped': 'Not imported',
+	'account.import.notExport': 'This is not a Download my data file.',
+	'account.import.newer':
+		'This file is from a newer version of the app. Refresh the app, then try again.',
+	'account.import.done': { one: '{count} item imported', other: '{count} items imported' },
 	'account.data.delete': 'Delete account',
 	'account.data.confirmTitle': 'Delete your account?',
 	'account.data.confirmText':
