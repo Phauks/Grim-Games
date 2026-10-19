@@ -1177,10 +1177,12 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
 	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
 	await expect(actions).toContainText(/From\s*Washerwoman\s*· Seat 1\s*on\s*\S+\s*· Seat 2/);
-	// The list in the seat sheet says whose each reminder is too.
-	await expect(sheet.getByTestId('reminder-origin').first()).toContainText(
-		/Washerwoman\s*· Seat 1/
-	);
+	// In the seat sheet a reminder is just its token, tapped for these actions, delete among
+	// them (Trevor, 2026-10-19): no tick box, no owner, no ⋯.
+	await expect(actions.getByRole('button', { name: 'Remove reminder' })).toBeVisible();
+	const row = sheet.locator('ul.reminders > li').first();
+	await expect(row.locator('button')).toHaveCount(1);
+	await expect(row.getByTestId('reminder-origin')).toHaveCount(0);
 	await actions.getByRole('button', { name: 'Return to reminder bank' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Confirm change?' })
@@ -3757,9 +3759,22 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await text.press('Enter');
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
-	await expect(
-		page.locator('[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]')
-	).toHaveCount(1);
+	const placed = page.locator(
+		'[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]'
+	);
+	await expect(placed).toHaveCount(1);
+	// A rim round the token and its words, like every other reminder (Trevor, 2026-10-19).
+	const colours = await placed.evaluate((el) => {
+		const css = getComputedStyle(el);
+		const label = el.querySelector('.label');
+		return {
+			rim: css.borderTopColor,
+			face: css.backgroundColor,
+			band: label ? getComputedStyle(label).boxShadow : ''
+		};
+	});
+	expect(colours.rim).not.toBe(colours.face);
+	expect(colours.band).toContain(colours.rim);
 });
 
 // Closing a step opened from the walk-through must not crash the dialog (Grimoire board,
@@ -4097,5 +4112,38 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 	await walkTo(page, 'Empath');
 	await expect(strip.getByTestId('step-asleep')).toHaveText(
 		'Poisoned: doesn’t wake (I See Dead People)'
+	);
+});
+
+// https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/: seat 7 is dealt a character
+// but no one plays it; its choices are arbitrary.
+test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: /^Special rules/ }).tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	await rules.getByText('The Ballad of Seat 7', { exact: true }).tap();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	for (const [number, name] of [
+		[6, 'Washerwoman'],
+		[7, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+
+	const strip = await walkTo(page, 'Washerwoman');
+	await expect(strip.getByTestId('step-empty-seat')).toHaveCount(0);
+	await walkTo(page, 'Empath');
+	await expect(strip.getByTestId('step-empty-seat')).toHaveText(
+		'No player: make its choices (The Ballad of Seat 7)'
 	);
 });

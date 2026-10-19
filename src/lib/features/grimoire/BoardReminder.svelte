@@ -237,6 +237,11 @@
 	.reminder:disabled {
 		cursor: default;
 	}
+	/* A reminder of no character (the generic one) still has a rim round its token and words,
+	   in the token border colour (Trevor, 2026-10-19). */
+	.reminder:not([data-type]) {
+		--rim: var(--token-face-shade, var(--border));
+	}
 	.reminder[data-type='townsfolk'],
 	.reminder[data-type='outsider'] {
 		--rim: var(--good);
