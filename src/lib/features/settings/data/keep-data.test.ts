@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { askToKeepData, dataKept, needsHomeScreen } from './keep-data.ts';
+import { askToKeepData, keepData, needsHomeScreen } from './keep-data.ts';
 
 const IPHONE_SAFARI =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
@@ -48,7 +48,6 @@ describe('asking the browser to keep the data', () => {
 	it('says null when the browser cannot say, or fails', async () => {
 		stub(undefined);
 		expect(await askToKeepData()).toBeNull();
-		expect(await dataKept()).toBeNull();
 		stub({
 			persisted: async () => {
 				throw new Error('blocked');
@@ -56,12 +55,24 @@ describe('asking the browser to keep the data', () => {
 			persist: async () => true
 		});
 		expect(await askToKeepData()).toBeNull();
-		expect(await dataKept()).toBeNull();
 	});
 
 	it('a refusal reads as not kept', async () => {
 		stub({ persisted: async () => false, persist: async () => false });
 		expect(await askToKeepData()).toBe(false);
-		expect(await dataKept()).toBe(false);
+	});
+
+	it('asks at start and again when the app is installed, until stopped', async () => {
+		const persist = vi.fn(async () => false);
+		const listeners = new Map<string, () => void>();
+		stub({ persisted: async () => false, persist });
+		vi.stubGlobal('addEventListener', (type: string, fn: () => void) => listeners.set(type, fn));
+		vi.stubGlobal('removeEventListener', (type: string) => listeners.delete(type));
+		const stop = keepData();
+		await vi.waitFor(() => expect(persist).toHaveBeenCalledTimes(1));
+		listeners.get('appinstalled')?.();
+		await vi.waitFor(() => expect(persist).toHaveBeenCalledTimes(2));
+		stop();
+		expect(listeners.has('appinstalled')).toBe(false);
 	});
 });

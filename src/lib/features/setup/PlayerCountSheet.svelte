@@ -14,16 +14,29 @@
 		onChange: (players: number) => void;
 		min?: number;
 		max?: number;
+		/** The sheet's heading, and the section's name; one per town names its town. */
+		title?: string;
+		/** Where the sheet's open state is kept; each town keeps its own. */
+		storageKey?: string;
+		testid?: string;
 	}
 
-	let { players, onChange, min = MIN_SELECT_PLAYERS, max = MAX_SELECT_PLAYERS }: Props = $props();
+	let {
+		players,
+		onChange,
+		min = MIN_SELECT_PLAYERS,
+		max = MAX_SELECT_PLAYERS,
+		title,
+		storageKey = 'setup:sheet',
+		testid = 'player-count'
+	}: Props = $props();
 
 	const set = (n: number) => onChange(Math.min(max, Math.max(min, n)));
 </script>
 
-<section class="controls" aria-label={t('setup.players')}>
+<section class="controls" aria-label={title ?? t('setup.players')}>
 	<!-- One line (Trevor, 2026-10-18): the Setup sheet toggle, then Players beside its count. -->
-	<Collapsible title={t('setup.sheet')} level={3} storageKey="setup:sheet">
+	<Collapsible title={title ?? t('setup.sheet')} level={3} {storageKey}>
 		{#snippet aside()}
 			<div class="players">
 				<span>{t('setup.players')}</span>
@@ -36,7 +49,7 @@
 					{max}
 					onchange={set}
 					large
-					testid="player-count"
+					{testid}
 				/>
 			</div>
 		{/snippet}

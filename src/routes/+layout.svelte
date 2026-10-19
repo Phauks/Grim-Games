@@ -9,7 +9,7 @@
 	import GlossaryPopover from '#lib/features/glossary/GlossaryPopover.svelte';
 	import SettingsModal from '#lib/features/settings/SettingsModal.svelte';
 	import { startAccount } from '#lib/features/account/start.ts';
-	import { askToKeepData } from '#lib/features/settings/data/keep-data.ts';
+	import { keepData } from '#lib/features/settings/data/keep-data.ts';
 	import AppHeader from '#lib/features/shell/AppHeader.svelte';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
 	import NavDrawer from '#lib/features/shell/NavDrawer.svelte';
@@ -35,11 +35,9 @@
 		void startAccount();
 	});
 
-	// Asks the browser once, silently, not to clear saved games and settings to free up space
-	// (Storage plan, Trevor 2026-10-18). Settings > Data shows the answer.
-	$effect(() => {
-		void askToKeepData();
-	});
+	// Asks the browser, silently, not to clear saved games and settings to free up space
+	// (Storage plan, Trevor 2026-10-18; always on, no setting, 2026-10-19).
+	$effect(() => keepData());
 
 	// A game in progress or a bag draw asks before any navigation leaves it (shell.ts).
 	beforeNavigate((navigation) => {

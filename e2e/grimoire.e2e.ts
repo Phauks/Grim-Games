@@ -1125,7 +1125,7 @@ test('players rotate one seat, or are dragged to a new place in the order', asyn
 	await page.mouse.move(to.x, to.y, { steps: 4 });
 	await page.mouse.up();
 	await expect(seatLabelled(page, 'Seat 4: Ana')).toBeAttached();
-	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+	await toolbar.getByRole('button', { name: 'Done' }).tap();
 
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
@@ -1536,6 +1536,7 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 	const pick = page.getByRole('dialog', { name: 'Choose a token' });
 	// The counts are not shown to the player.
 	await expect(pick).not.toContainText('Evil');
+	await expect(pick).not.toContainText('%');
 	await pick.getByRole('button', { name: 'Token 3' }).tap();
 	const shown = page.getByRole('dialog', { name: 'Good' });
 	await expect(shown.getByRole('button', { name: 'Token 3: Good' })).toBeVisible();
@@ -1544,6 +1545,52 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toHaveAccessibleName(
 		/good/
 	);
+});
+
+// Trevor, 2026-10-19: a Traveller joining can draw their alignment straight away, and the
+// Storyteller sees each side's chance and their mix of tokens is remembered on the device.
+test('a joining Traveller draws their alignment, with the last mix remembered', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, after, name] of [
+		[9, 8, 'Thief'],
+		[10, 9, 'Beggar']
+	] as const) {
+		await menu(page, 'Add seat');
+		await page.getByRole('button', { name: `Place between Seat ${after} and Seat 1` }).tap();
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name: `${name}, Recommended`, exact: true })
+			.tap();
+		await page
+			.getByRole('dialog', { name: 'Alignment' })
+			.getByRole('button', { name: 'Draw' })
+			.tap();
+		const draw = page.getByRole('dialog', { name: 'Alignment draw' });
+		if (number === 9) {
+			// Each side's chance is shown to the Storyteller.
+			await expect(draw.getByTestId('evil-chance')).toHaveText('25%');
+			await expect(draw.getByTestId('good-chance')).toHaveText('75%');
+			// All evil: the player still feels they chose.
+			for (let n = 1; n < 4; n++) await draw.getByRole('button', { name: 'More evil' }).tap();
+		}
+		await expect(draw.getByTestId('evil-chance')).toHaveText('100%');
+		await expect(draw.getByTestId('good-chance')).toHaveText('0%');
+		await expect(draw.getByLabel('Evil tokens')).toHaveText('4');
+		await draw.getByRole('button', { name: 'Confirm' }).tap();
+		await page
+			.getByRole('dialog', { name: 'Choose a token' })
+			.getByRole('button', { name: 'Token 1' })
+			.tap();
+		const shown = page.getByRole('dialog', { name: 'Evil' });
+		await shown.getByRole('button', { name: 'Done' }).tap();
+		await expect(
+			page.getByRole('button', { name: new RegExp(`^Seat ${number}: no name, ${name}`) })
+		).toHaveAccessibleName(/evil/);
+	}
 });
 
 test("the Undertaker's step suggests the executed player's character", async ({ page }) => {
@@ -3581,4 +3628,54 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	await expect(strip).toBeVisible();
 	// No motion: the strip is there at once, fully shown.
 	await expect(strip).toHaveCSS('opacity', '1');
+});
+
+test('a seat dragged over another leaves both name badges readable', async ({ page }) => {
+	// Trevor (2026-10-19): when two tokens overlap, the name badge stays visible.
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Empath'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const seat = (n: number) => page.getByRole('button', { name: new RegExp(`^Seat ${n}:`) });
+	const one = (await seat(1).boundingBox())!;
+	const two = (await seat(2).boundingBox())!;
+	// Seat 2, drawn after seat 1, goes just below it: its token covers seat 1's badge, but
+	// it is too far off seat 1 to be a drop that swaps their places.
+	const size = one.height;
+	const from = { x: two.x + two.width / 2, y: two.y + two.height / 2 };
+	const to = { x: one.x + one.width / 2, y: one.y + one.height / 2 + size * 0.7 };
+	await menu(page, 'Arrange seats');
+	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(toolbar).toContainText('Arrange seats');
+	await page.mouse.move(from.x, from.y);
+	await page.mouse.down();
+	await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+	await page.mouse.move(to.x, to.y, { steps: 4 });
+	await page.mouse.up();
+	await toolbar.getByRole('button', { name: 'Done' }).tap();
+	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
+
+	// What is drawn on top at the middle of each badge is the badge's own pill. Badges let
+	// taps through to their token, so the probe makes just the pills hit-testable.
+	await page.addStyleTag({
+		content: '[data-testid="token-player-name"] > * { pointer-events: auto !important; }'
+	});
+	for (const n of [1, 2]) {
+		const badge = seatLabelled(page, `Seat ${n}:`).getByTestId('token-player-name');
+		const top = await badge.evaluate((svg) => {
+			const pill = svg.querySelector('rect')!.getBoundingClientRect();
+			const hit = document.elementFromPoint(pill.x + pill.width / 2, pill.y + pill.height / 2);
+			return hit?.closest('[data-testid="token-player-name"]') === svg;
+		});
+		expect(top, `Seat ${n}'s badge is on top`).toBe(true);
+	}
 });

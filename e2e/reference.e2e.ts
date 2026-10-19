@@ -1,5 +1,9 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
+
+/** A character's row in the Reference table, the page's only view (Trevor, 2026-10-19). */
+const rowOf = (page: Page, id: string) =>
+	page.getByTestId('character-table').locator(`tr[data-character="${id}"]`);
 
 test('the menu opens the character reference; the footer no longer links it', async ({ page }) => {
 	await page.goto('/');
@@ -17,10 +21,10 @@ test('the menu opens the character reference; the footer no longer links it', as
 
 test('searching shows everything the app uses for the Witch', async ({ page }) => {
 	await page.goto('/reference');
-	await expect(page.getByText(/^\s*181 of 181 characters\s*$/)).toBeVisible();
+	await expect(page.getByTestId('table-count')).toHaveText('181 of 181 · no filters');
 
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Witch');
-	const card = page.locator('[data-testid="reference-card"][data-character="witch"]');
+	const card = rowOf(page, 'witch');
 	await expect(card).toBeVisible();
 	await expect(card).toContainText('Each night, choose a player');
 	await expect(card.getByTestId('no-jinxes')).toBeVisible();
@@ -51,7 +55,7 @@ test('searching shows everything the app uses for the Witch', async ({ page }) =
 	await expect(
 		card.getByRole('img', { name: /Witch token: wakes on the first night/ })
 	).toBeVisible();
-	await expect(card).toContainText('Starting alignment Evil');
+	await expect(card.locator('[data-field="alignment"]')).toHaveText('Evil');
 	// Report a problem opens the in-app form as a rules report about this character.
 	await card.getByRole('button', { name: 'Report a problem' }).tap();
 	const form = page.getByRole('dialog', { name: 'Report' });
@@ -75,7 +79,6 @@ test('the filter chips are gone; the table sorts and filters by column', async (
 	await expect(page.getByRole('group', { name: 'Character types' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Demons', exact: true })).toHaveCount(0);
 
-	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	const rows = table.locator('tbody tr');
 	await expect(rows).toHaveCount(181);
@@ -127,63 +130,53 @@ test('the filter chips are gone; the table sorts and filters by column', async (
 	await expect(page.getByRole('button', { name: 'Clear filters' })).toBeDisabled();
 });
 
-test('the Witch row shows the same values as the Witch card', async ({ page }) => {
-	// Builds the full table (181 rows); slow on emulated devices when the whole suite runs.
-	test.slow();
+test('the Witch row shows every field, with its icons and flavour text', async ({ page }) => {
+	// Trevor (2026-10-19): "remove card mode ... verify we include all relevant info in the
+	// table". One cell per field (fields.ts); coverage.test.ts maps the data to them.
 	await page.goto('/reference');
-	const card = page.locator('[data-testid="reference-card"][data-character="witch"]');
-	// Card bodies and table rows are built as they come near the screen. Rows above can
-	// still grow while they build and push the Witch away, so scroll again until it is built.
-	const built = async (scope: typeof card) =>
-		expect(async () => {
-			await scope.scrollIntoViewIfNeeded();
-			await expect(scope.locator('[data-field="ability"]')).toBeAttached({ timeout: 2_000 });
-		}).toPass({ timeout: 30_000 });
-	await built(card);
-	const fields = [
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Witch');
+	const row = rowOf(page, 'witch');
+	await expect(row.locator('[data-field="ability"]')).toContainText('Each night, choose a player');
+	for (const field of [
+		'token',
 		'name',
 		'type',
 		'edition',
+		'icons',
 		'alignment',
 		'setup',
 		'prep',
 		'ability',
+		'flavor',
 		'tokens',
 		'special',
+		'cards',
 		'firstNight',
 		'otherNight',
 		'jinxes',
 		'preDay',
-		'problems',
-		'links'
-	];
-	const read = (scope: typeof card) =>
-		scope.evaluate(
-			(el, ids) =>
-				Object.fromEntries(
-					ids.map((id) => [
-						id,
-						(el.querySelector(`[data-field="${id}"]`)?.textContent ?? '')
-							.replace(/\s+/g, ' ')
-							.trim()
-					])
-				),
-			fields
-		);
-	const fromCard = await read(card);
-	expect(fromCard.ability).toContain('Each night, choose a player');
-	await expect(card.locator('[data-field="icons"] img')).toHaveCount(2);
-
-	await page.getByRole('button', { name: 'Show as table' }).tap();
-	const row = page.getByTestId('character-table').locator('tr[data-character="witch"]');
-	await built(row);
-	expect(await read(row)).toEqual(fromCard);
-	// The table shows the token (with its icon), not the icon pair (Trevor, 2026-10-16).
-	await expect(row.locator('[data-field="token"] .token')).toBeVisible();
-	await expect(row.locator('[data-field="icons"]')).toHaveCount(0);
+		'problems'
+	]) {
+		await expect(row.locator(`[data-field="${field}"]`), field).toHaveCount(1);
+	}
+	// The good and evil icons; the token shows only one.
+	await expect(row.locator('[data-field="icons"] img')).toHaveCount(2);
+	await expect(row.locator('[data-field="flavor"] q')).not.toBeEmpty();
 	await expect(
-		page.getByTestId('character-table').getByRole('columnheader', { name: /Icons/ })
+		page.getByTestId('character-table').getByRole('columnheader', { name: /Links/ })
 	).toHaveCount(0);
+});
+
+test('there is no card view', async ({ page }) => {
+	await page.goto('/reference');
+	await expect(page.getByTestId('character-table')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Show as table' })).toHaveCount(0);
+	await expect(page.getByTestId('reference-card')).toHaveCount(0);
+});
+
+test('a link to one character scrolls to its row', async ({ page }) => {
+	await page.goto('/reference#witch');
+	await expect(rowOf(page, 'witch')).toBeInViewport();
 });
 
 test('each :reminder: shows the token it means, and reviewed night text replaces TPI’s', async ({
@@ -195,14 +188,14 @@ test('each :reminder: shows the token it means, and reviewed night text replaces
 	// https://wiki.bloodontheclocktower.com/Pukka: the new target is poisoned; last night's
 	// target dies and their Poisoned token comes off.
 	await search.fill('Pukka');
-	const pukka = page.locator('[data-testid="reference-card"][data-character="pukka"]');
+	const pukka = rowOf(page, 'pukka');
 	const tokens = pukka.getByTestId('night-other').getByTestId('reminder-token');
 	await expect(tokens).toHaveText(['Poisoned', 'Dead', 'Poisoned']);
 	await expect(tokens.nth(2)).toHaveAttribute('title', 'Remove this token');
 
 	// https://wiki.bloodontheclocktower.com/Grandmother: Trevor's reviewed edits.
 	await search.fill('Grandmother');
-	const grandmother = page.locator('[data-testid="reference-card"][data-character="grandmother"]');
+	const grandmother = rowOf(page, 'grandmother');
 	await expect(grandmother.getByTestId('night-first').getByTestId('reminder-token')).toHaveText(
 		'Grandchild'
 	);
@@ -217,25 +210,15 @@ test('Info cards lists the info cards a character brings, or None', async ({ pag
 	await page.goto('/reference');
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
 	await search.fill('Mezepheles');
-	const card = page.locator('[data-testid="reference-card"][data-character="mezepheles"]');
+	const card = rowOf(page, 'mezepheles');
 	await expect(card.locator('[data-field="cards"]')).toContainText('Your Secret Word is');
 	await search.fill('Washerwoman');
-	const washerwoman = page.locator('[data-testid="reference-card"][data-character="washerwoman"]');
+	const washerwoman = rowOf(page, 'washerwoman');
 	await expect(washerwoman.locator('[data-field="cards"]')).toContainText('None');
-	await page.getByRole('button', { name: 'Show as table' }).tap();
-	await search.fill('Mezepheles');
-	await expect(
-		page
-			.getByTestId('character-table')
-			.locator('tr[data-character="mezepheles"] [data-field="cards"]')
-	).toHaveText('Your Secret Word is');
 });
 
-test('the table view is remembered and its night columns sort into night order', async ({
-	page
-}) => {
+test('the night columns sort into night order', async ({ page }) => {
 	await page.goto('/reference');
-	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	await expect(table).toBeVisible();
 	await expect(table.locator('tbody tr')).toHaveCount(181);
@@ -304,24 +287,21 @@ test('the Reference has no token key (Trevor, 2026-10-18)', async ({ page }) => 
 	await expect(page.getByRole('button', { name: 'Token key' })).toHaveCount(0);
 });
 
-test('cards and rows far below the screen are built only when scrolled near', async ({ page }) => {
+test('rows far below the screen are built only when scrolled near', async ({ page }) => {
 	await page.goto('/reference');
-	const last = page.locator('[data-testid="reference-card"]').last();
+	const last = page.getByTestId('character-table').locator('tbody tr').last();
 	await expect(last).toBeAttached();
-	await expect(last.locator('[data-row]')).toHaveCount(0);
+	await expect(last.locator('td')).toHaveCount(0);
 	await last.scrollIntoViewIfNeeded();
-	await expect(last.locator('[data-row]').first()).toBeVisible();
+	await expect(last.locator('td').first()).toBeVisible();
 });
 
-test('character names are game badges and reminders are smaller token chips', async ({ page }) => {
+test('characters in night text are game badges and reminders are smaller token chips', async ({
+	page
+}) => {
 	await page.goto('/reference');
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Witch');
-	const card = page.locator('[data-testid="reference-card"][data-character="witch"]');
-	// The card's title is the game's own badge, not a separate heading.
-	await expect(card.locator('[data-field="name"] button.badge')).toHaveAttribute(
-		'data-team',
-		'evil'
-	);
+	const card = rowOf(page, 'witch');
 	const night = card.getByTestId('night-other');
 	// "The Witch chooses a player." draws the Witch as a badge inside the sentence.
 	const badge = night.locator('button.badge[data-character-id="witch"]');
@@ -340,7 +320,7 @@ test('character names are game badges and reminders are smaller token chips', as
 test('prep steps show tokens as reminder chips', async ({ page }) => {
 	await page.goto('/reference');
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Fortune Teller');
-	const card = page.locator('[data-testid="reference-card"][data-character="fortuneteller"]');
+	const card = rowOf(page, 'fortuneteller');
 	const prep = card.locator('[data-field="prep"]');
 	await expect(prep).toContainText('Choose a good player as the');
 	await expect(prep.getByTestId('reminder-token')).toHaveText('Red Herring');
@@ -352,7 +332,6 @@ test('on a phone the tables stack into labelled rows instead of scrolling sidewa
 }) => {
 	test.skip(test.info().project.name !== 'phone', 'phones stack; wider screens keep the table');
 	await page.goto('/reference');
-	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	const witch = table.locator('tr[data-character="witch"]');
 	await witch.scrollIntoViewIfNeeded();
@@ -377,7 +356,7 @@ test('on a phone the tables stack into labelled rows instead of scrolling sidewa
 test('"/" jumps to the search field and Esc clears it', async ({ page }) => {
 	await page.goto('/reference');
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
-	await expect(page.getByText(/^\d+ of \d+ characters$/)).toBeVisible();
+	await expect(page.getByTestId('table-count')).toHaveText(/^\d+ of \d+/);
 	await page.locator('h1').click();
 	await page.keyboard.press('/');
 	await expect(search).toBeFocused();
@@ -389,76 +368,22 @@ test('"/" jumps to the search field and Esc clears it', async ({ page }) => {
 	await expect(search).toBeFocused();
 });
 
-test('on a wide screen a card is long, with its fields side by side', async ({ page }) => {
-	// Trevor (2026-10-16): "on desktop, my preference is longer".
-	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto('/reference');
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Steward');
-	const card = page.locator('[data-testid="reference-card"][data-character="steward"]');
-	const setup = (await card.locator('[data-row="setup"]').boundingBox())!;
-	const alignment = (await card.locator('[data-row="alignment"]').boundingBox())!;
-	const ability = (await card.locator('[data-row="ability"]').boundingBox())!;
-	expect(Math.abs(setup.y - alignment.y)).toBeLessThan(2);
-	expect(setup.x).toBeGreaterThan(alignment.x + alignment.width - 1);
-	expect(ability.y).toBeLessThan(alignment.y);
-});
-
-test('each character type folds under its caret, a search opens it, and it stays folded', async ({
-	page
-}) => {
-	// Trevor (2026-10-16): "make character types carrot menus in reference".
-	await page.goto('/reference');
-	const townsfolk = page.getByRole('button', { name: 'Townsfolk', exact: true });
-	const steward = page.locator('[data-testid="reference-card"][data-character="steward"]');
-	await expect(townsfolk).toHaveAttribute('aria-expanded', 'true');
-	await expect(steward).toBeVisible();
-	await townsfolk.tap();
-	await expect(townsfolk).toHaveAttribute('aria-expanded', 'false');
-	await expect(steward).toBeHidden();
-	await expect(page.getByRole('button', { name: 'Minions', exact: true })).toHaveAttribute(
-		'aria-expanded',
-		'true'
-	);
-
-	const search = page.getByRole('searchbox', { name: 'Search characters' });
-	await search.fill('Steward');
-	await expect(steward).toBeVisible();
-	await search.fill('');
-	await expect(steward).toBeHidden();
-
-	await page.reload();
-	await expect(townsfolk).toHaveAttribute('aria-expanded', 'false');
-});
-
-test('jinxes start folded on cards and in the table; Wiki and Report sit by the name', async ({
-	page
-}) => {
-	// Trevor (2026-10-16): "start jinxes collapsed for table and card view"; "move report and
-	// wiki to under the name in table, or the top of the card".
+test('jinxes start folded; Wiki and Report sit under the name', async ({ page }) => {
+	// Trevor (2026-10-16): "start jinxes collapsed"; "move report and wiki to under the name in
+	// table".
 	await page.goto('/reference');
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Alchemist');
-	const card = page.locator('[data-testid="reference-card"][data-character="alchemist"]');
-	const toggle = card.getByTestId('jinx-toggle');
+	const row = rowOf(page, 'alchemist');
+	const toggle = row.getByTestId('jinx-toggle');
 	await expect(toggle).toHaveAttribute('aria-expanded', 'false');
 	await expect(toggle).toHaveText(/^\d+ jinxes$/);
-	await expect(card.locator('.jinx')).toHaveCount(0);
+	await expect(row.locator('.jinx')).toHaveCount(0);
 	await toggle.tap();
 	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-	await expect(card.locator('.jinx').first()).toBeVisible();
-	await expect(card.locator('header').getByRole('link', { name: 'Wiki' })).toBeVisible();
-	await expect(
-		card.locator('header').getByRole('button', { name: 'Report a problem' })
-	).toBeVisible();
-
-	await page.getByRole('button', { name: 'Show as table' }).tap();
-	const row = page.getByTestId('character-table').locator('tr[data-character="alchemist"]');
-	await expect(row.getByTestId('jinx-toggle')).toHaveAttribute('aria-expanded', 'false');
+	await expect(row.locator('.jinx').first()).toBeVisible();
 	const name = row.locator('[data-field="name"]');
 	await expect(name.getByRole('link', { name: 'Wiki' })).toBeVisible();
 	await expect(name.getByRole('button', { name: 'Report a problem' })).toBeVisible();
-	await expect(
-		page.getByTestId('character-table').getByRole('columnheader', { name: /Links/ })
-	).toHaveCount(0);
 });
 
 test('reminder tokens show their copies and whether setup places them; the table filters by it', async ({
@@ -468,18 +393,14 @@ test('reminder tokens show their copies and whether setup places them; the table
 	await page.goto('/reference');
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
 	await search.fill('No Dashii');
-	const tokens = page
-		.locator('[data-testid="reference-card"][data-character="nodashii"]')
-		.locator('[data-row="tokens"]')
+	const tokens = rowOf(page, 'nodashii')
+		.locator('[data-field="tokens"]')
 		.getByTestId('reminder-token');
 	// TPI lists Poisoned twice; setup poisons both of its Townsfolk neighbours.
 	await expect(tokens).toHaveText(['Dead', 'Poisoned×2']);
 	// Beside each chip: when it goes down, and who it may go on (Trevor, 2026-10-18), read from
 	// the board's own placement rules. The chips carry the No Dashii's icon, not a setup flower.
-	const rowsOf = (id: string) =>
-		page
-			.locator(`[data-testid="reference-card"][data-character="${id}"]`)
-			.locator('[data-row="tokens"] .token-row');
+	const rowsOf = (id: string) => rowOf(page, id).locator('[data-field="tokens"] .token-row');
 	await expect(rowsOf('nodashii')).toHaveText([
 		'DeadGoes on: Any player',
 		'Poisoned×2Placed at setup · Goes on: Townsfolk, nearest each side'
@@ -493,7 +414,6 @@ test('reminder tokens show their copies and whether setup places them; the table
 	]);
 
 	await search.fill('');
-	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	await table.getByRole('button', { name: 'Filter Tokens', exact: true }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Filter Tokens' });
@@ -507,7 +427,6 @@ test('reminder tokens show their copies and whether setup places them; the table
 test('the table filters characters by edition', async ({ page }) => {
 	// Trevor (2026-10-18): "allow filtering by edition".
 	await page.goto('/reference');
-	await page.getByRole('button', { name: 'Show as table' }).tap();
 	const table = page.getByTestId('character-table');
 	await table.getByRole('button', { name: 'Filter Edition', exact: true }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Filter Edition' });
@@ -523,24 +442,6 @@ test('the table filters characters by edition', async ({ page }) => {
 	await expect(table.locator('tr[data-character="vortox"]')).toHaveCount(1);
 });
 
-test('the table toggle sits on the search line', async ({ page }) => {
-	// Trevor (2026-10-18): "put table/cards in the same line as the search".
-	await page.goto('/reference');
-	const toggle = page.getByRole('button', { name: 'Show as table' });
-	const sameLine = async (field: ReturnType<typeof page.getByRole>) => {
-		const a = (await field.boundingBox())!;
-		const b = (await toggle.boundingBox())!;
-		expect(Math.abs(a.y + a.height / 2 - (b.y + b.height / 2))).toBeLessThan(a.height / 2);
-		expect(b.x).toBeGreaterThan(a.x);
-	};
-	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-	await sameLine(page.getByRole('searchbox', { name: 'Search characters' }));
-	await toggle.tap();
-	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-	await expect(page.getByTestId('character-table')).toBeVisible();
-	await sameLine(page.getByRole('searchbox', { name: 'Search characters' }));
-});
-
 test('the search and its controls sit in the page header', async ({ page }) => {
 	// Trevor (2026-10-18): "move the search bar and controls in character reference in-line
 	// with the header to save space".
@@ -548,34 +449,25 @@ test('the search and its controls sit in the page header', async ({ page }) => {
 	const header = page.locator('main header');
 	const search = header.getByRole('searchbox', { name: 'Search characters' });
 	await expect(search).toBeVisible();
-	await expect(header.getByRole('button', { name: 'Show as table' })).toBeVisible();
 	const title = (await header.getByRole('heading', { level: 1 }).boundingBox())!;
 	const field = (await search.boundingBox())!;
 	if ((page.viewportSize()?.width ?? 0) >= 640) {
-		// Wide enough: on the title's own row, after it.
-		expect(Math.abs(field.y + field.height / 2 - (title.y + title.height / 2))).toBeLessThan(
-			field.height / 2
-		);
+		// Wide enough: on the title's own row, after it (the count may wrap under the search).
+		expect(field.y).toBeLessThan(title.y + title.height);
+		expect(field.y + field.height).toBeGreaterThan(title.y);
 		expect(field.x).toBeGreaterThan(title.x + title.width);
 	} else {
 		// A phone: the row under the title, still inside the header.
 		expect(field.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
 	}
 	// The table's count and Clear filters join the same header.
-	await header.getByRole('button', { name: 'Show as table' }).tap();
 	await expect(header.getByTestId('table-count')).toBeVisible();
 	await expect(header.getByRole('button', { name: 'Clear filters' })).toBeVisible();
 });
 
-test('Loric are green, Travellers purple in headings and split blue and red on chips', async ({
-	page
-}) => {
-	// Trevor (2026-10-18): "Associate Lorics with their proper green color. Assign travellers
-	// with their proper red/blue color, but ... Purple for their headers".
+test('Traveller reminders are split blue and red', async ({ page }) => {
+	// Trevor (2026-10-18): "Assign travellers with their proper red/blue color".
 	await page.goto('/reference');
-	const heading = (name: string) =>
-		page.getByRole('button', { name: new RegExp(`^${name}`) }).first();
-	const colour = (el: ReturnType<typeof heading>) => el.evaluate((e) => getComputedStyle(e).color);
 	const token = (name: string) =>
 		page.evaluate(
 			(n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(),
@@ -583,14 +475,9 @@ test('Loric are green, Travellers purple in headings and split blue and red on c
 		);
 	const rgb = (hex: string) =>
 		`rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
-	await expect(heading('Travellers')).toBeVisible();
-	expect(await colour(heading('Travellers'))).toBe(rgb(await token('--palette-violet-400')));
-	expect(await colour(heading('Loric'))).toBe(rgb(await token('--palette-grass-400')));
-
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Bureaucrat');
-	const chip = page
-		.locator('[data-testid="reference-card"][data-character="bureaucrat"]')
-		.locator('[data-row="tokens"]')
+	const chip = rowOf(page, 'bureaucrat')
+		.locator('[data-field="tokens"]')
 		.getByTestId('reminder-token')
 		.first();
 	const background = await chip.evaluate((e) => getComputedStyle(e).backgroundImage);
@@ -599,22 +486,12 @@ test('Loric are green, Travellers purple in headings and split blue and red on c
 	await chip.screenshot({ path: 'test-results/traveller-reminder.png' });
 });
 
-test('tapping a token opens that character, in cards and in the table', async ({ page }) => {
+test('tapping a token opens that character', async ({ page }) => {
 	// Trevor (2026-10-19): "in character reference, allow clicking token icon in order to open
 	// glossary".
 	await page.goto('/reference');
 	const search = page.getByRole('searchbox', { name: 'Search characters' });
 	await search.fill('Washerwoman');
-	await page.getByRole('button', { name: 'About the Washerwoman' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Washerwoman' });
-	await expect(dialog).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(dialog).toBeHidden();
-
-	await page.getByRole('button', { name: 'Show as table' }).tap();
-	await page
-		.getByTestId('character-table')
-		.getByRole('button', { name: 'About the Washerwoman' })
-		.tap();
-	await expect(dialog).toBeVisible();
+	await rowOf(page, 'washerwoman').getByRole('button', { name: 'About the Washerwoman' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Washerwoman' })).toBeVisible();
 });

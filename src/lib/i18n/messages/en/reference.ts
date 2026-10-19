@@ -4,16 +4,11 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const reference = {
 	'reference.pageTitle': `Character reference · ${APP_NAME}`,
 	'reference.title': 'Character reference',
-	'reference.showAsTable': 'Show as table',
 	'reference.aboutCharacter': 'About the {name}',
 	'reference.loadError': 'Could not load the character data: {error}',
 	'reference.loading': 'Loading characters…',
 	'reference.searchLabel': 'Search characters',
 	'reference.searchPlaceholder': 'Search name, ability or reminder',
-	'reference.count': {
-		one: '{shown} of {count} character',
-		other: '{shown} of {count} characters'
-	},
 	'reference.tableCount': '{shown} of {total} · {filters}',
 	'reference.noFilters': 'no filters',
 	'reference.filters': { one: '{count} filter', other: '{count} filters' },
@@ -26,6 +21,7 @@ export const reference = {
 	'reference.field.type': 'Type',
 	'reference.field.edition': 'Edition',
 	'reference.field.icons': 'Icons',
+	'reference.field.flavor': 'Flavour text',
 	'reference.field.alignment': 'Starting alignment',
 	'reference.field.setup': 'Setup',
 	'reference.field.prep': 'Prep',
@@ -38,7 +34,6 @@ export const reference = {
 	'reference.field.jinxes': 'Jinxes',
 	'reference.field.preDay': 'Pre-day',
 	'reference.field.problems': 'Possible problems',
-	'reference.field.links': 'Links',
 	'reference.presence.wakes': 'Wakes',
 	'reference.presence.notWakes': 'Doesn’t wake',
 	'reference.presence.tokens': 'Has tokens',
