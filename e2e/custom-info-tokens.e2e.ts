@@ -164,7 +164,10 @@ test('each tile says what it will ask for before it is tapped', async ({ page })
 	await page.goto('/info-tokens');
 	// Icons, each named by its words (Trevor, 2026-10-18), the quick card marked apart.
 	const asks = (name: string) =>
-		page.getByRole('button', { name, exact: true }).getByTestId('info-token-asks');
+		page
+			.locator('ul.cards')
+			.getByRole('button', { name, exact: true })
+			.getByTestId('info-token-asks');
 	// Always the three bluffs (Trevor, 2026-10-18).
 	await expect(asks('These characters are not in play')).toHaveText('3');
 	await expect(asks('These characters are not in play').getByRole('img')).toHaveAccessibleName(
@@ -320,7 +323,17 @@ test("Trevor's Enhanced tokens sit apart, and the number can be stepped or typed
 
 test('a quick card is shown once and never saved', async ({ page }) => {
 	await page.goto('/info-tokens');
-	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	// In a section of its own, not among the saved cards (Trevor, 2026-10-18).
+	const own = page
+		.locator('section.collapsible')
+		.filter({ has: page.getByRole('heading', { name: 'Quick card' }) });
+	const custom = page
+		.locator('section.collapsible')
+		.filter({ has: page.getByRole('heading', { name: 'Custom' }) });
+	await expect(custom.locator('ul.cards').getByRole('button', { name: 'Quick card' })).toHaveCount(
+		0
+	);
+	await own.locator('ul.cards').getByRole('button', { name: 'Quick card', exact: true }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You may not speak');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
@@ -424,4 +437,22 @@ test("the example card fills its box, and the page doesn't scroll behind a shown
 		.getByRole('button', { name: 'Close' })
 		.tap();
 	await expect(page.locator('html')).not.toHaveCSS('overflow', 'hidden');
+});
+
+test('every section lists its cards A to Z', async ({ page }) => {
+	await page.goto('/info-tokens');
+	// Trevor (2026-10-18): built-in and custom alike, by their words.
+	await expect(page.getByRole('button', { name: 'This is the Demon', exact: true })).toBeVisible();
+	for (const heading of ['Standard', 'Enhanced']) {
+		const names = await page
+			.locator('section.collapsible')
+			.filter({ has: page.getByRole('heading', { name: heading }) })
+			.locator('button.card')
+			.allTextContents();
+		const words = names.map((name) => name.trim());
+		expect(words.length).toBeGreaterThan(1);
+		expect(words).toEqual(
+			[...words].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+		);
+	}
 });
