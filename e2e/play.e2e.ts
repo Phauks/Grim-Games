@@ -213,6 +213,14 @@ test("the night order shows who wakes, with TPI's night text", async ({ page }) 
 	await expect(minionInfo).toContainText('Minion info');
 	await expect(minionInfo.locator('.token[data-marker="minioninfo"]')).toBeVisible();
 	const poisoner = first.locator('li[data-step="poisoner"]');
+	// Every step's number sits level with the middle of its icon, however long the text, and
+	// a line runs between steps (Trevor, 2026-10-19).
+	for (const step of [minionInfo, poisoner]) {
+		const num = (await step.locator(':scope > .num').boundingBox())!;
+		const icon = (await step.locator(':scope > .icon').boundingBox())!;
+		expect(Math.abs(num.y + num.height / 2 - (icon.y + icon.height / 2))).toBeLessThan(1);
+	}
+	expect(await poisoner.evaluate((li) => getComputedStyle(li).borderTopStyle)).toBe('solid');
 	// Icon two lines tall, the name beside it, and tapping the name shows the ability.
 	await poisoner.locator('button.name').tap();
 	const dialog = page.getByRole('dialog', { name: 'Poisoner' });
