@@ -48,9 +48,11 @@
 		open: boolean;
 		grimoire: Grimoire;
 		seatId: SeatId | undefined;
+		/** Opens the alignment draw for a seat, kept by the board (Trevor, 2026-10-19). */
+		onDraw?: (seatId: SeatId) => void;
 	}
 
-	let { open = $bindable(), grimoire, seatId }: Props = $props();
+	let { open = $bindable(), grimoire, seatId, onDraw }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -257,6 +259,13 @@
 		else if (seatId && alignment && alignment !== seat?.alignment)
 			grimoire.run({ type: 'SetAlignment', seatId, alignment });
 		alignmentFor = undefined;
+	}
+
+	/** Assigns the Traveller with no alignment yet, then opens the draw for the seat. */
+	function drawAlignment() {
+		const id = seatId;
+		pickAlignment(undefined);
+		if (id) onDraw?.(id);
 	}
 
 	// ── The Apprentice ──
@@ -752,6 +761,8 @@
 		<div class="choices">
 			<Button onclick={() => pickAlignment('good')}>Good</Button>
 			<Button onclick={() => pickAlignment('evil')}>Evil</Button>
+			<!-- The Traveller draws it from face-down tokens (Trevor, 2026-10-19). -->
+			{#if onDraw}<Button onclick={drawAlignment}>Draw</Button>{/if}
 			<!-- Often chosen later: the night order asks for it first (Trevor, 2026-10-16). -->
 			<Button variant="quiet" onclick={() => pickAlignment(undefined)}>Decide later</Button>
 		</div>
