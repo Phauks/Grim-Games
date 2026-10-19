@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { seatsInOrder, type SeatId } from '#lib/core/model/index.ts';
+	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import type { RoomMember, RoomRequest } from '#lib/core/sync/room.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -9,6 +10,8 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import ScriptQrCenter from '#lib/features/scripts/ScriptQrCenter.svelte';
 	import { roomHost } from './host.svelte.ts';
 
 	interface Props {
@@ -62,6 +65,15 @@
 						: t('room.offline')
 	);
 
+	// The game's script in the middle of the QR: its logo, or its name (Trevor, 2026-10-19).
+	// A script with neither leaves the middle as plain code.
+	const loadedScript = $derived(
+		officialData.current ? fromScript(game.game.script, officialData.current).script : undefined
+	);
+	const scriptName = $derived(loadedScript?.name ?? game.game.script.meta?.name ?? '');
+	const logo = $derived(loadedScript && scriptLogo(loadedScript));
+	let logoFailed = $state(false);
+
 	function seatFor(request: RoomRequest): SeatId | '' {
 		return chosen[request.requestId] ?? request.seatId ?? '';
 	}
@@ -90,6 +102,10 @@
 	Players' phones: the room code and QR, requests from phones to approve, and who is in
 	the room. Approving a seat names it on the board (a normal, undoable change).
 -->
+{#snippet scriptCenter()}
+	<ScriptQrCenter {logo} name={scriptName} bind:failed={logoFailed} />
+{/snippet}
+
 <!-- Laid out the same before the room opens, so the code and QR arrive without a reflow. -->
 <div class="layout">
 	<section class="join">
@@ -100,6 +116,8 @@
 			pending={host.problem ? t('room.openFailed') : t('room.openingRoom')}
 			code={{ label: t('room.joinCode'), value: host.code && formatRoomCode(host.code) }}
 			text={message || undefined}
+			qrCenter={logo || scriptName ? scriptCenter : undefined}
+			qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
 		>
 			{#snippet actions()}
 				{#if host.code}

@@ -103,6 +103,10 @@ test('Share and Copy link carry the room code as well as the link', async ({ pag
 	expect(code).toMatch(/^\d{6}$/);
 	const spaced = `${code.slice(0, 3)} ${code.slice(3)}`;
 	const link = new RegExp(`/join/${code}$`);
+	// The game's script logo sits in the middle of the join QR (Trevor, 2026-10-19).
+	const qr = page.getByRole('img', { name: 'QR code to join the room' });
+	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
+	await expect(qr.getByTestId('qr-name')).toHaveCount(0);
 
 	await page.getByRole('button', { name: 'Share' }).tap();
 	const shared = await page.evaluate(() => (window as unknown as { shared: ShareData }).shared);
