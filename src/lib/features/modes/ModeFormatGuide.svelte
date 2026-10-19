@@ -10,7 +10,14 @@
 		type GuideField
 	} from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import ContentsLayout, { type ContentsItem } from '#lib/ui/layout/ContentsLayout.svelte';
+	import { downloadFile } from '#lib/ui/download.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import FileView from '#lib/ui/primitives/FileView.svelte';
+	import { guideText, type GuideFormat } from './guide-export.ts';
 	import { modeLabel } from './labels.ts';
 
 	/**
@@ -25,85 +32,149 @@
 	let { open = $bindable(false) }: Props = $props();
 
 	const full = JSON.stringify(gameModeById('whale-buffet'), null, 2);
+
+	const items: ContentsItem[] = [
+		{ id: 'overview', label: t('modes.guide.overview') },
+		{ id: 'top', label: t('modes.guide.top') },
+		...GUIDE_PARTS.map((p) => ({ id: `part:${p.part}`, label: modeLabel('part', p.part) })),
+		{ id: 'full', label: t('modes.guide.full') }
+	];
+	// Opens on the overview; on a phone, Back shows the list of sections.
+	let current = $state<string | undefined>('overview');
+	const part = $derived(GUIDE_PARTS.find((p) => `part:${p.part}` === current));
+
+	let choosing = $state(false);
+	let downloadAnchor = $state<HTMLElement>();
+	function save(format: GuideFormat) {
+		choosing = false;
+		downloadFile(
+			`writing-a-mode-file.${format}`,
+			guideText(format),
+			format === 'md' ? 'text/markdown' : 'text/plain'
+		);
+	}
 	const minimal = JSON.stringify(MINIMAL_EXAMPLE, null, 2);
 </script>
 
 {#snippet fields(list: GuideField[])}
 	{#if list.length > 0}
-		<dl class="fields">
-			{#each list as f (f.name)}
-				<dt>
-					<code>{f.name}</code>
-					<span class="muted">
-						{f.type} · {f.required ? t('modes.guide.required') : t('modes.guide.optional')}
-					</span>
-				</dt>
-				<dd>
-					{f.about}
-					{#if f.values}
-						<span class="values">
-							{t('modes.guide.values')}
-							{#each f.values as v, i (v)}<code>{v}</code>{i < f.values.length - 1
-									? ', '
-									: ''}{/each}
-						</span>
-					{/if}
-				</dd>
-			{/each}
-		</dl>
+		<!-- A table, field by field (Trevor, 2026-10-18: rows were hard to parse). -->
+		<table class="fields">
+			<tbody>
+				{#each list as f (f.name)}
+					<tr>
+						<th scope="row">
+							<code>{f.name}</code>
+							<span class="muted">
+								{f.type} · {f.required ? t('modes.guide.required') : t('modes.guide.optional')}
+							</span>
+						</th>
+						<td>
+							{f.about}
+							{#if f.values}
+								<span class="values">
+									{t('modes.guide.values')}
+									{#each f.values as v, i (v)}<code>{v}</code>{i < f.values.length - 1
+											? ', '
+											: ''}{/each}
+								</span>
+							{/if}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	{/if}
 {/snippet}
 
 <Dialog bind:open title={t('modes.guide.title')} size="full">
-	<div class="guide" data-testid="mode-guide">
-		<p data-testid="mode-guide-version">
-			{t('modes.guide.version', { format: GAME_MODE_FORMAT, revision: GAME_MODE_REVISION })}
-		</p>
-		{#each GUIDE_INTRO as line (line)}<p>{line}</p>{/each}
-
-		<h3>{t('modes.guide.example')}</h3>
-		<pre>{minimal}</pre>
-
-		<h3>{t('modes.guide.top')}</h3>
-		{@render fields(GUIDE_TOP)}
-
-		<h3>{t('modes.guide.parts')}</h3>
-		<p>{t('modes.guide.cite')}</p>
-		{#each GUIDE_PARTS as p (p.part)}
-			<section class="part" data-part={p.part}>
-				<h4>{modeLabel('part', p.part)} <code>{p.part}</code></h4>
-				<p>
-					{p.about}
-					<span class="muted">{p.list ? t('modes.guide.list') : t('modes.guide.object')}</span>
+	{#snippet headActions()}
+		<span bind:this={downloadAnchor}>
+			<IconButton
+				icon="download"
+				label={t('modes.guide.download')}
+				onclick={() => (choosing = !choosing)}
+			/>
+		</span>
+	{/snippet}
+	<!-- Sections listed on the left, the chosen one on the right (Trevor, 2026-10-18: "a two
+		section modal"); on a phone the list comes first and a section slides in over it. -->
+	<ContentsLayout
+		label={t('modes.guide.sections')}
+		{items}
+		{current}
+		onSelect={(id) => (current = id)}
+		home={current === undefined}
+		paneAtHome={false}
+		backLabel={t('modes.guide.sections')}
+		onBack={() => (current = undefined)}
+	>
+		<div class="guide" data-testid="mode-guide">
+			{#if current === 'overview'}
+				<h3>{t('modes.guide.overview')}</h3>
+				<p data-testid="mode-guide-version">
+					{t('modes.guide.version', { format: GAME_MODE_FORMAT, revision: GAME_MODE_REVISION })}
 				</p>
-				{@render fields(p.fields)}
-				{#each p.kinds as k (k.kind)}
-					<h5><code>"kind": "{k.kind}"</code></h5>
-					<p>{k.about}</p>
-					{@render fields(k.fields)}
-				{/each}
-			</section>
-		{/each}
-
-		<h3>{t('modes.guide.full')}</h3>
-		<pre>{full}</pre>
-	</div>
+				{#each GUIDE_INTRO as line (line)}<p>{line}</p>{/each}
+				<FileView
+					title={t('modes.guide.example')}
+					text={minimal}
+					fileName="{MINIMAL_EXAMPLE.id}.json"
+					copyLabel={t('modes.copyFile')}
+					downloadLabel={t('modes.downloadFile')}
+				/>
+			{:else if current === 'top'}
+				<h3>{t('modes.guide.top')}</h3>
+				{@render fields(GUIDE_TOP)}
+			{:else if current === 'full'}
+				<h3>{t('modes.guide.full')}</h3>
+				<FileView
+					title={t('modes.guide.full')}
+					text={full}
+					fileName="whale-buffet.json"
+					copyLabel={t('modes.copyFile')}
+					downloadLabel={t('modes.downloadFile')}
+				/>
+			{:else if part}
+				<section class="part" data-part={part.part}>
+					<h3>{modeLabel('part', part.part)} <code>{part.part}</code></h3>
+					<p>
+						{part.about}
+						<span class="muted">{part.list ? t('modes.guide.list') : t('modes.guide.object')}</span>
+					</p>
+					<p class="muted">{t('modes.guide.cite')}</p>
+					{@render fields(part.fields)}
+					{#each part.kinds as k (k.kind)}
+						<h4><code>"kind": "{k.kind}"</code></h4>
+						<p>{k.about}</p>
+						{@render fields(k.fields)}
+					{/each}
+				</section>
+			{/if}
+		</div>
+	</ContentsLayout>
 </Dialog>
+<Popover bind:open={choosing} title={t('modes.guide.download')} anchor={downloadAnchor}>
+	<div class="formats">
+		<Button icon="download" onclick={() => save('md')}>{t('modes.guide.downloadMd')}</Button>
+		<Button icon="download" onclick={() => save('txt')}>{t('modes.guide.downloadTxt')}</Button>
+	</div>
+</Popover>
 
 <style>
 	.guide {
 		display: grid;
 		align-content: start;
 		gap: var(--space-2);
-		flex: 1;
-		min-height: 0;
-		overflow-y: auto;
+	}
+	.formats {
+		display: grid;
+		gap: var(--space-1);
 	}
 	p,
 	h3,
 	h4,
-	h5,
-	dl {
+	h5 {
 		margin: 0;
 	}
 	h3 {
@@ -124,27 +195,28 @@
 		border-radius: var(--radius-sm);
 	}
 	.fields {
-		display: grid;
-		gap: var(--space-1) var(--space-3);
+		width: 100%;
+		border-collapse: collapse;
+		table-layout: fixed;
 	}
-	dt {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
+	.fields th,
+	.fields td {
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid var(--border);
+		text-align: start;
+		vertical-align: top;
+		overflow-wrap: anywhere;
 	}
-	dd {
-		margin: 0 0 var(--space-2);
+	.fields th {
+		width: 35%;
+		font-weight: normal;
+	}
+	.fields th .muted {
+		display: block;
+		font-size: 0.9em;
 	}
 	.values {
 		display: block;
-	}
-	pre {
-		overflow-x: auto;
-		margin: 0;
-		padding: var(--space-2);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
-		font-size: 0.85rem;
 	}
 	code {
 		overflow-wrap: anywhere;

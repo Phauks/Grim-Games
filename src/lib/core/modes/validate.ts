@@ -5,12 +5,22 @@
  */
 import { isObject } from '#lib/core/data/validate.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { CAMPAIGN_ENDS, GAME_MODE_FORMAT, MODE_PARTS, type GameMode } from './types.ts';
+import { SEATED_TYPES } from '#lib/core/rules/distribution.ts';
+import {
+	CAMPAIGN_ENDS,
+	GAME_MODE_FORMAT,
+	MODE_PARTS,
+	RULE_PARTS,
+	SPECIAL_RULE_FORMAT,
+	type GameMode,
+	type ModePart,
+	type SpecialRule
+} from './types.ts';
 
 export type ParsedMode = { ok: true; mode: GameMode } | { ok: false; issues: string[] };
 
 /** The `kind` values each behaviour part accepts. */
-export const KINDS: Partial<Record<(typeof MODE_PARTS)[number], readonly string[]>> = {
+export const KINDS: Partial<Record<(typeof RULE_PARTS)[number] | ModePart, readonly string[]>> = {
 	pool: ['script', 'all-characters', 'script-plus-hidden', 'campaign', 'per-town'],
 	counts: ['standard', 'per-town'],
 	setupModifiers: ['standard', 'only', 'as-chosen'],
@@ -19,17 +29,111 @@ export const KINDS: Partial<Record<(typeof MODE_PARTS)[number], readonly string[
 	bluffs: ['standard', 'none'],
 	daySteps: ['town-representative', 'spectator-vote'],
 	winConditions: ['standard', 'all-towns'],
-	betweenGames: ['campaign']
+	betweenGames: ['campaign'],
+	seats: ['storyteller-seat'],
+	deaths: ['private'],
+	nightSteps: ['wake']
 };
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>): ParsedMode {
+	if (!isObject(value)) return { ok: false, issues: ['(root): must be an object'] };
 	const issues: string[] = [];
 	const add = (path: string, message: string) => issues.push(`${path}: ${message}`);
-	if (!isObject(value)) return { ok: false, issues: ['(root): must be an object'] };
-
+	if (value.kind !== undefined && value.kind !== 'game-mode') add('kind', 'must be game-mode');
 	if (value.format !== GAME_MODE_FORMAT) add('format', `must be ${GAME_MODE_FORMAT}`);
+	checkFile(value, MODE_PARTS, add, known);
+	return issues.length > 0
+		? { ok: false, issues }
+		: { ok: true, mode: value as unknown as GameMode };
+}
+
+export type ParsedRule = { ok: true; rule: SpecialRule } | { ok: false; issues: string[] };
+
+/** Why a special rule can't set a game mode part: it would replace, not add to, the game. */
+const MODE_ONLY: Partial<Record<ModePart, string>> = {
+	counts: 'a special rule changes counts with countChanges',
+	assignment: 'only a game mode changes how characters are dealt',
+	towns: 'only a game mode adds towns',
+	betweenGames: 'only a game mode links games'
+};
+
+/** Reads a special rule from JSON, listing every problem as `parseGameMode` does. */
+export function parseSpecialRule(value: unknown, known?: ReadonlySet<CharacterId>): ParsedRule {
+	if (!isObject(value)) return { ok: false, issues: ['(root): must be an object'] };
+	const issues: string[] = [];
+	const add = (path: string, message: string) => issues.push(`${path}: ${message}`);
+	if (value.kind !== 'special-rule') add('kind', 'must be special-rule');
+	if (value.format !== SPECIAL_RULE_FORMAT) add('format', `must be ${SPECIAL_RULE_FORMAT}`);
+	const parts = isObject(value.parts) ? value.parts : {};
+	for (const key of Object.keys(parts)) {
+		const reason = MODE_ONLY[key as ModePart];
+		if (reason) add(`parts.${key}`, reason);
+	}
+	if (isObject(parts.pool) && parts.pool.kind !== 'script-plus-hidden')
+		add('parts.pool.kind', 'a special rule can only add hidden characters to the script');
+	if (parts.text !== undefined && !isTextList(parts.text))
+		add('parts.text', 'must be a list of lines');
+	if (parts.countChanges !== undefined) checkCountChanges(parts.countChanges, add);
+	if (isObject(parts.travellers)) {
+		if (!Number.isInteger(parts.travellers.inBag) || (parts.travellers.inBag as number) < 0)
+			add('parts.travellers.inBag', 'must be a whole number');
+		if (typeof parts.travellers.announced !== 'boolean')
+			add('parts.travellers.announced', 'must be true or false');
+	}
+	if (
+		isObject(parts.seats) &&
+		(!Number.isInteger(parts.seats.count) || (parts.seats.count as number) < 1)
+	)
+		add('parts.seats.count', 'must be a whole number of at least 1');
+	if (value.conflictsWith !== undefined) {
+		const c = value.conflictsWith;
+		if (!isObject(c) || [c.modes, c.rules].some((l) => l !== undefined && !isTextList(l)))
+			add('conflictsWith', 'must list modes and rules by id');
+	}
+	checkFile(value, RULE_PARTS, add, known);
+	return issues.length > 0
+		? { ok: false, issues }
+		: { ok: true, rule: value as unknown as SpecialRule };
+}
+
+/** Reads either kind of file; one without `kind` is a game mode. */
+export function parseModeOrRule(
+	value: unknown,
+	known?: ReadonlySet<CharacterId>
+): ParsedMode | ParsedRule {
+	return isObject(value) && value.kind === 'special-rule'
+		? parseSpecialRule(value, known)
+		: parseGameMode(value, known);
+}
+
+const isTextList = (value: unknown): boolean =>
+	Array.isArray(value) && value.every((line) => typeof line === 'string');
+
+function checkCountChanges(value: unknown, add: (path: string, message: string) => void) {
+	if (!Array.isArray(value)) return add('parts.countChanges', 'must be a list of changes');
+	value.forEach((op, i) => {
+		const at = `parts.countChanges[${i}]`;
+		if (!isObject(op) || !['delta', 'set', 'any'].includes(op.kind as string))
+			return add(`${at}.kind`, 'must be one of delta, set, any');
+		if (!(SEATED_TYPES as readonly unknown[]).includes(op.type))
+			add(`${at}.type`, `must be one of ${SEATED_TYPES.join(', ')}`);
+		if (op.kind !== 'any' && op.values !== 'most') {
+			const values = op.values;
+			if (!Array.isArray(values) || !values.length || values.some((n) => !Number.isInteger(n)))
+				add(`${at}.values`, 'must be a list of whole numbers');
+		}
+	});
+}
+
+/** The header and parts both kinds share; `allowed` is the parts this kind may set. */
+function checkFile(
+	value: Record<string, unknown>,
+	allowed: readonly string[],
+	add: (path: string, message: string) => void,
+	known: ReadonlySet<CharacterId> | undefined
+) {
 	if (typeof value.id !== 'string' || !ID.test(value.id))
 		add('id', 'must be lower-case letters, digits and dashes');
 	if (typeof value.name !== 'string' || !value.name.trim()) add('name', 'must be a name');
@@ -57,8 +161,7 @@ export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>):
 		if (!Array.isArray(value.unconfirmed)) add('unconfirmed', 'must be a list of parts');
 		else
 			value.unconfirmed.forEach((p, i) => {
-				if (!(MODE_PARTS as readonly unknown[]).includes(p))
-					add(`unconfirmed[${i}]`, `unknown part ${String(p)}`);
+				if (!allowed.includes(p as string)) add(`unconfirmed[${i}]`, `unknown part ${String(p)}`);
 			});
 	}
 
@@ -67,11 +170,13 @@ export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>):
 	else {
 		for (const [key, part] of Object.entries(parts)) {
 			const path = `parts.${key}`;
-			if (!(MODE_PARTS as readonly string[]).includes(key)) {
-				add(path, 'unknown part');
+			if (!allowed.includes(key)) {
+				if (!(key in MODE_ONLY)) add(path, 'unknown part');
 				continue;
 			}
 			const kinds = KINDS[key as keyof typeof KINDS];
+			// Plain lists of lines and count changes are checked by their kind's parser.
+			if (key === 'text' || key === 'countChanges') continue;
 			for (const [i, item] of (Array.isArray(part) ? part : [part]).entries()) {
 				const at = Array.isArray(part) ? `${path}[${i}]` : path;
 				if (!isObject(item)) {
@@ -101,9 +206,6 @@ export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>):
 			}
 		}
 	}
-	return issues.length > 0
-		? { ok: false, issues }
-		: { ok: true, mode: value as unknown as GameMode };
 }
 
 /** Fields holding character ids, with their paths. */

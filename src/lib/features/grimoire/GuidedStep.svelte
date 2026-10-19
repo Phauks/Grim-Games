@@ -4,7 +4,7 @@
 	import StepAfflictions from './StepAfflictions.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import { TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
@@ -19,9 +19,10 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { seatName, stepHolders, stepName } from './night-steps.ts';
+	import { givesNumber, seatName, stepHolders, stepName } from './night-steps.ts';
 	import { reminderCopies, reminderKey } from './reminders.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
@@ -90,7 +91,7 @@
 	 * The character's own reminder tokens, one row per copy the game has (the Mathematician's
 	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
 	 */
-	const total = $derived(reminderCopies(game, characters));
+	const total = $derived(reminderCopies(game, characters, grimoire.copies));
 	const rows = $derived.by(() => {
 		const character = step?.character;
 		if (!character) return [];
@@ -148,6 +149,24 @@
 		shownId ? characters.get(shownId) : (step?.character ?? undefined)
 	);
 	const done = $derived(step ? grimoire.isNightStepDone(night, step) : false);
+
+	/**
+	 * A step that gives a number offers the "Your number is" info token (Trevor, 2026-10-18),
+	 * starting at the suggested number when the game knows one.
+	 */
+	const numberCard = STANDARD_INFO_TOKENS.find((t) => t.id === 'number')?.text ?? '';
+	const numberStep = $derived(!!step && givesNumber(step));
+	let number = $state(0);
+	$effect.pre(() => {
+		const answer = step?.info?.kind === 'answer' ? step.info.answers[0] : undefined;
+		number = answer?.kind === 'number' ? answer.value : 0;
+	});
+	function showNumber(n: number) {
+		// Over the open step, as with a suggestion's Show to player.
+		shownId = undefined;
+		shownCard = { title: numberCard, detail: String(n) };
+		showOpen = true;
+	}
 </script>
 
 <Dialog bind:open title={step ? stepName(step) : 'Night step'} size="full">
@@ -174,7 +193,7 @@
 		{#if step}
 			<div class="head">
 				<span class="icon">
-					<StepIcon {step} size={56} />
+					<StepIcon {step} size={56} details />
 				</span>
 				<div class="head-text">
 					<p class="who">
@@ -202,13 +221,33 @@
 			<NightSuggested
 				{grimoire}
 				{step}
+				onShowNumber={numberStep ? showNumber : undefined}
 				onShow={(id) => {
-					open = false;
+					// Over the open step: closing the step in the same update threw inside the
+					// dialog library (an effect scheduled outside a batch, from the Undertaker's
+					// suggestion opened from the walk-through).
 					shownCard = undefined;
 					shownId = id;
 					showOpen = true;
 				}}
 			/>
+			{#if numberStep}
+				<h3>Info token</h3>
+				<div class="number" data-testid="step-number">
+					<span class="card-text">{numberCard}</span>
+					<Stepper
+						bind:value={number}
+						label={numberCard}
+						lessLabel="Lower number"
+						moreLabel="Higher number"
+						min={0}
+						max={Math.max(game.seating.length, 1)}
+						typeable
+						oncommit={() => showNumber(number)}
+					/>
+					<Button variant="quiet" onclick={() => showNumber(number)}>Show to player</Button>
+				</div>
+			{/if}
 			<!-- Every card Minion info or Demon info can show (Trevor, 2026-10-18). -->
 			{#if step.id === 'minioninfo' || step.id === 'demoninfo'}
 				<EvilInfoCards
@@ -345,6 +384,16 @@
 		height: calc(3.5 * var(--u));
 		--icon-size: calc(2.25 * var(--u));
 		color: var(--heading);
+	}
+	.number {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
+	}
+	.card-text {
+		font-weight: 600;
 	}
 	.head-text {
 		flex: 1;

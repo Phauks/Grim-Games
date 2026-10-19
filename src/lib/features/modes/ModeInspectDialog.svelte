@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { copyText } from '#lib/ui/clipboard.ts';
 	import { MODE_PARTS, runsPart, type GameMode, type ModePart } from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { fileNameFor } from '#lib/ui/download.ts';
+	import FileView from '#lib/ui/primitives/FileView.svelte';
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeValue from './ModeValue.svelte';
 	import { modeLabel } from './labels.ts';
@@ -34,11 +33,6 @@
 		unconfirmed: 'modes.status.unconfirmed'
 	} as const;
 	const file = $derived(JSON.stringify(mode, null, '\t'));
-
-	async function copy() {
-		// Clipboard blocked: the file is still shown to select by hand.
-		await copyText(file);
-	}
 </script>
 
 <Dialog bind:open title={mode.name} size="full">
@@ -68,12 +62,17 @@
 			</ul>
 		</section>
 
-		<Collapsible title={t('modes.file')} level={3} storageKey="mode-file">
-			{#snippet aside()}
-				<IconButton icon="copy" label={t('modes.copyFile')} onclick={copy} />
-			{/snippet}
-			<pre><code>{file}</code></pre>
-		</Collapsible>
+		<!-- Starts closed: the file is for writing modes, rarely needed when inspecting (Trevor,
+			2026-10-18); shown as a file, with Copy and Download in its header. -->
+		<FileView
+			title={t('modes.file')}
+			text={file}
+			fileName={fileNameFor(mode.name, mode.id)}
+			copyLabel={t('modes.copyFile')}
+			downloadLabel={t('modes.downloadFile')}
+			collapsible
+			testid="mode-file-view"
+		/>
 	</div>
 </Dialog>
 
@@ -141,13 +140,5 @@
 	}
 	li[data-status='unconfirmed'] .status {
 		color: var(--evil);
-	}
-	pre {
-		max-height: 60vh;
-		margin: 0;
-		overflow: auto;
-		font-size: 0.85rem;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
 	}
 </style>

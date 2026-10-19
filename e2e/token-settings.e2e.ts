@@ -31,7 +31,7 @@ test('token and reminder sizes apply to the tokens and stay after a reload', asy
 	await dialog.getByRole('slider', { name: 'Character token size' }).fill('1.5');
 	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('1.5');
 	// Reminder chips in text have their own size (Trevor, 2026-10-18).
-	await dialog.getByRole('slider', { name: 'Reminder size in text' }).fill('1.5');
+	await dialog.getByRole('slider', { name: 'Reminder text size' }).fill('1.5');
 	await expect(dialog).toContainText('150%');
 	expect(await rootStyle(page, '--token-scale')).toBe('1.5');
 	expect(await rootStyle(page, '--reminder-scale')).toBe('1.5');
@@ -59,11 +59,92 @@ test('a token colour can be changed, warns when hard to read, and resets', async
 	await dialog.getByLabel('Token text', { exact: true }).fill('#eeeeee');
 	await expect(contrast).toContainText('hard to read');
 	expect((await contrast.boundingBox())!.height).toBeCloseTo(box.height, 0);
-	expect(await rootStyle(page, '--on-reminder')).toBe('#eeeeee');
+	expect(await rootStyle(page, '--on-token')).toBe('#eeeeee');
+	// Reminder text is its own colour (Trevor, 2026-10-18).
+	expect(await rootStyle(page, '--on-reminder')).not.toBe('#eeeeee');
 
 	await reset.tap();
 	await expect(contrast).not.toContainText('hard to read');
-	expect(await rootStyle(page, '--on-reminder')).not.toBe('#eeeeee');
+	expect(await rootStyle(page, '--on-token')).not.toBe('#eeeeee');
+});
+
+test('border, reminder text and reminder text band are colours of their own', async ({ page }) => {
+	// Trevor (2026-10-18): the border is separate from the fill, reminder text from token
+	// text, and the band behind a reminder's words from its face.
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	await dialog.getByLabel('Token border', { exact: true }).fill('#224466');
+	expect(await rootStyle(page, '--token-face-shade')).toBe('#224466');
+	expect(await rootStyle(page, '--token-face')).not.toBe('#224466');
+	await dialog.getByLabel('Reminder text', { exact: true }).fill('#663322');
+	expect(await rootStyle(page, '--on-reminder')).toBe('#663322');
+	expect(await rootStyle(page, '--on-token')).not.toBe('#663322');
+	const label = dialog.getByTestId('reminder-preview').locator('.label');
+	const face = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
+	await dialog.getByLabel('Reminder text band', { exact: true }).fill('#336622');
+	await expect
+		.poll(() => label.evaluate((el) => getComputedStyle(el).backgroundColor))
+		.not.toBe(face);
+	expect(await rootStyle(page, '--reminder-label-face')).toBe('#336622');
+	expect(await rootStyle(page, '--reminder-face')).not.toBe('#336622');
+});
+
+test('reminder leaves and setup notation can be shown or hidden', async ({ page }) => {
+	// Trevor (2026-10-18): "add option to show or hide Reminder Leaves and Setup Notation".
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const preview = dialog.getByTestId('token-preview');
+	const leaves = preview.locator('.leaf[data-kind="reminder"]');
+	await expect.poll(() => leaves.count()).toBeGreaterThan(0);
+	await dialog.getByText('Reminder leaves', { exact: true }).tap();
+	await expect(leaves).toHaveCount(0);
+	// The Fortune Teller changes no setup, so the switch is checked against the saved value.
+	const flower = dialog.getByRole('checkbox', { name: 'Setup notation', includeHidden: true });
+	await expect(flower).not.toBeChecked();
+	await dialog.getByText('Setup notation', { exact: true }).tap();
+	await expect(flower).toBeChecked();
+	const saved = await page.evaluate(
+		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
+	);
+	expect(saved).toMatchObject({ reminderLeaves: false, setupFlower: true });
+});
+
+test('names and reminders in text each have their own text, icon and badge sizes', async ({
+	page
+}) => {
+	// Trevor (2026-10-18): "they are all different to me, and different from each other".
+	await page.goto('/');
+	const dialog = await openTokens(page);
+	const preview = dialog.getByTestId('in-text-preview');
+	const name = preview.locator('.badge');
+	const nameIcon = name.locator('.icon');
+	const chip = preview.getByTestId('reminder-token');
+	const owner = chip.locator('img.owner');
+	const size = async (l: typeof name) => (await l.boundingBox())!;
+	const [n0, i0, c0, o0] = [
+		await size(name),
+		await size(nameIcon),
+		await size(chip),
+		await size(owner)
+	];
+	// The badge alone grows round the same name and icon.
+	await dialog.getByRole('slider', { name: 'Name badge size' }).fill('2');
+	await expect.poll(async () => (await size(name)).height).toBeGreaterThan(n0.height * 1.7);
+	expect((await size(nameIcon)).height).toBeCloseTo(i0.height, 0);
+	await dialog.getByRole('slider', { name: 'Name icon size' }).fill('2');
+	await expect.poll(async () => (await size(nameIcon)).height).toBeGreaterThan(i0.height * 1.8);
+	expect((await size(owner)).height).toBeCloseTo(o0.height, 0);
+	const fontSize = () =>
+		name.locator('.name').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+	const f0 = await fontSize();
+	await dialog.getByRole('slider', { name: 'Name text size' }).fill('1.5');
+	await expect.poll(fontSize).toBeCloseTo(f0 * 1.5, 0);
+	await dialog.getByRole('slider', { name: 'Reminder icon size' }).fill('0.5');
+	await expect.poll(async () => (await size(owner)).height).toBeLessThan(o0.height * 0.6);
+	await dialog.getByRole('slider', { name: 'Reminder badge size' }).fill('2');
+	await expect.poll(async () => (await size(chip)).height).toBeGreaterThan(c0.height * 1.3);
+	expect(await rootStyle(page, '--inline-name-text')).toBe('1.5');
+	expect(await rootStyle(page, '--inline-reminder-badge')).toBe('2');
 });
 
 test('character names on grimoire tokens are off by default and shown when switched on', async ({
@@ -187,9 +268,7 @@ test('each preview box stays in view only while its own settings scroll', async 
 	expect(c.y + c.height).toBeLessThanOrEqual(r.y + 1);
 });
 
-test('reminders in text have their own size and can show a dot instead of the icon', async ({
-	page
-}) => {
+test("reminders in text have their own size and always show the owner's icon", async ({ page }) => {
 	// Trevor (2026-10-18): "add the settings for in-line reminder tokens".
 	await page.goto('/');
 	const dialog = await openTokens(page);
@@ -197,15 +276,14 @@ test('reminders in text have their own size and can show a dot instead of the ic
 	const owner = chip.locator('img.owner');
 	await expect(owner).toBeVisible();
 	const before = (await chip.boundingBox())!.height;
-	await dialog.getByRole('slider', { name: 'Reminder size in text' }).fill('1.5');
+	await dialog.getByRole('slider', { name: 'Reminder text size' }).fill('1.5');
 	await expect.poll(async () => (await chip.boundingBox())!.height).toBeGreaterThan(before * 1.3);
 	// The board's Reminder token size leaves it as it is.
 	const after = (await chip.boundingBox())!.height;
 	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('2');
 	expect((await chip.boundingBox())!.height).toBeCloseTo(after, 0);
-	await dialog.getByText("Owner's icon on reminders in text", { exact: true }).tap();
-	await expect(owner).toBeHidden();
-	expect(await rootStyle(page, '--inline-reminder-dot')).toBe('block');
+	// Always the owner's icon, never a dot (Trevor, 2026-10-18).
+	await expect(owner).toBeVisible();
 });
 
 test('the preview draws the reminder as the board does, at the board size', async ({ page }) => {

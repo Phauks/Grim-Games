@@ -5,15 +5,21 @@ import { t } from '#lib/i18n/locale.svelte.ts';
  * character acts on the first night, one on the right when it acts on other nights, and
  * leaves across the top, one per reminder token
  * (rulebook; https://wiki.bloodontheclocktower.com/Setup for the top leaves). Every mark sits
- * inside the token. A setup change has no mark (Trevor, 2026-10-18: the flower is gone; the
- * Reference says it in words). Our own simple drawing, not TPI's artwork.
+ * inside the token. A character that changes setup can show a flower at the bottom right
+ * (Settings > Tokens, off by default: Trevor 2026-10-18). Our own simple drawing, not TPI's
+ * artwork.
  */
 export interface LeafMarks {
 	firstNight: boolean;
 	otherNight: boolean;
 	/** Reminder tokens the character has. */
 	reminders: number;
+	/** Changes setup ([bracketed] ability text). */
+	setup?: boolean;
 }
+
+/** Where the setup flower sits: bottom right, inside the face. */
+export const FLOWER_ANGLE = 45;
 
 export interface Leaf {
 	/** Degrees clockwise from 3 o'clock: -90 is the top, 180 the left, 0 the right. */

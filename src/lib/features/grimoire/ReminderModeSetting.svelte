@@ -1,3 +1,7 @@
+<script lang="ts" module>
+	export const REMINDER_MODE_LABEL = 'Reminders';
+</script>
+
 <script lang="ts">
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -9,6 +13,12 @@
 	 * and lists what changes; turning it off lays seat reminders out around their seats again,
 	 * and marks the loose ones on the board, which belong to no seat (Trevor, 2026-10-18).
 	 */
+	interface Props {
+		/** A visible label elsewhere (Settings' row, name left of the control). */
+		labelledBy?: string;
+	}
+
+	let { labelledBy }: Props = $props();
 	let confirmOpen = $state(false);
 
 	function choose(mode: 'seat' | 'free') {
@@ -18,7 +28,8 @@
 </script>
 
 <Select
-	label="Reminders"
+	label={REMINDER_MODE_LABEL}
+	{labelledBy}
 	value={boardLooks.current.reminders}
 	options={[
 		{ value: 'seat', label: 'Held by seat' },

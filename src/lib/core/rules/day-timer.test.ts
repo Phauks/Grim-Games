@@ -23,6 +23,13 @@ describe('day timer', () => {
 		expect(dayTimer(0).durationMs).toBe(30_000);
 	});
 
+	it('starts at the chosen time per living player (Trevor, 2026-10-19)', () => {
+		expect(dayTimer(10, 45).durationMs).toBe(450_000);
+		expect(formatClock(dayTimer(10, 45).durationMs)).toBe('7:30');
+		// Never shorter than one step.
+		expect(dayTimer(1, 5).durationMs).toBe(30_000);
+	});
+
 	it('counts down while running, holds while paused, and resets', () => {
 		let t = start(dayTimer(2), 1_000);
 		expect(isRunning(t)).toBe(true);

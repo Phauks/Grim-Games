@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Character, GameData, LoadedScript } from '#lib/core/data/index.ts';
-	import { MAX_PLAYERS, MIN_PLAYERS } from '#lib/core/engine/index.ts';
+	import { MAX_PLAYERS, MAX_SEATS, MIN_PLAYERS } from '#lib/core/engine/index.ts';
 	import {
 		bannedIn,
 		campaignRule,
@@ -22,7 +22,9 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import ScriptChoiceLabel from '#lib/features/scripts/ScriptChoiceLabel.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import AddModeDialog from './AddModeDialog.svelte';
@@ -34,6 +36,8 @@
 	import { loadLinkedScript, loadScriptChoice, scriptChoices } from './script-choices.svelte.ts';
 	import { campaigns } from './campaigns.ts';
 	import { continueCampaign, startHref, startInMode, startTowns } from './start.ts';
+	import { townGroup } from './town-groups.ts';
+	import { townSetupHref } from './town-setup.ts';
 
 	/**
 	 * New game's Game modes area (Trevor, 2026-10-17: modes are their own area because they
@@ -61,6 +65,11 @@
 	const pool = $derived(mode.parts.pool);
 	const towns = $derived(mode.parts.towns);
 	let restrictions = $state(NO_RESTRICTIONS);
+	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
+	let roleRecycling = $state<boolean | undefined>();
+	const draft = $derived(
+		mode.parts.assignment?.kind === 'draft' ? mode.parts.assignment : undefined
+	);
 	let players = $state(8);
 	let starting = $state(false);
 	let inspecting = $state(false);
@@ -117,10 +126,11 @@
 					: 'per-town'
 				: 'one'
 	);
-	// Separate towns each need a full game's players (5 to 15).
+	// Separate towns each need a full game's players (5 to 15); one town goes up to the
+	// game's seat limit, like character selection (Trevor, 2026-10-18).
 	const split = $derived(towns && !towns.samePlayers ? towns.count : 1);
 	const minPlayers = $derived(MIN_PLAYERS * split);
-	const maxPlayers = $derived(MAX_PLAYERS * split);
+	const maxPlayers = $derived(split > 1 ? MAX_PLAYERS * split : MAX_SEATS);
 	const total = $derived(Math.min(maxPlayers, Math.max(minPlayers, players)));
 	const sizes = $derived(split > 1 ? townSizes(total, split) : undefined);
 	const restrictedCount = $derived(bannedIn(mode, restrictions).size);
@@ -180,7 +190,10 @@
 					sizes: sizes ?? Array.from({ length: towns.count }, () => total),
 					create: (s, n) => OpenGame.create(data, s, n)
 				});
-				await goto(resolve('/towns/[groupId]', { groupId }));
+				// Straight into town 1's setup; each bag built opens the next (Trevor, 2026-10-18).
+				const group = townGroup(groupId);
+				if (group) await goto(townSetupHref(group, 0, sizes?.[0] ?? total));
+				else await goto(resolve('/towns/[groupId]', { groupId }));
 				return;
 			}
 			const open = await startInMode({
@@ -188,6 +201,7 @@
 				restrictions,
 				data,
 				loaded: loaded[0],
+				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen } : {}),
 				create: (s) => OpenGame.create(data, s, total)
 			});
 			await goto(startHref(modeId, open.game.gameId));
@@ -209,22 +223,17 @@
 			onChange={(v) => {
 				modeId = v;
 				restrictions = NO_RESTRICTIONS;
+				roleRecycling = undefined;
 				campaignId = 'new';
 			}}
 		/>
-	</div>
-	<!-- Each mode's About, one line a row so switching modes moves nothing (Trevor, 2026-10-18). -->
-	{#if !isStandard}
-		<section class="about" aria-labelledby="mode-about-title">
-			<h3 id="mode-about-title">{t('modes.about')}</h3>
-			<ModeAbout {mode} compact />
-		</section>
-	{/if}
-	<div class="tools">
-		<Button icon="info" onclick={() => (inspecting = true)}>
-			{t('modes.inspect', { name: mode.name })}
-		</Button>
-		<Button icon="add" onclick={() => (adding = true)}>{t('modes.add.button')}</Button>
+		<!-- Inspect and Add mode beside the drop-down they act on (Trevor, 2026-10-18). -->
+		<IconButton
+			icon="info"
+			label={t('modes.inspect', { name: mode.name })}
+			onclick={() => (inspecting = true)}
+		/>
+		<IconButton icon="add" label={t('modes.add.button')} onclick={() => (adding = true)} />
 		<!-- Always there, so nothing moves; only a mode added on this device can go. -->
 		<DeleteButton
 			label={t('modes.add.delete', { name: mode.name })}
@@ -232,6 +241,11 @@
 			onclick={() => (deleting = true)}
 		/>
 	</div>
+	<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
+	<section class="about" aria-labelledby="mode-about-title">
+		<h3 id="mode-about-title">{t('modes.about')}</h3>
+		<ModeAbout {mode} compact />
+	</section>
 
 	{#if isStandard}
 		{@render standard()}
@@ -310,6 +324,13 @@
 			</p>
 		{/if}
 
+		{#if draft}
+			<Toggle
+				label={t('modes.roleRecycling')}
+				checked={roleRecycling ?? draft.recycleUnchosen}
+				onChange={(on) => (roleRecycling = on)}
+			/>
+		{/if}
 		<Button icon="restricted" onclick={openRestricted}>
 			{t('modes.restrictedButton', { count: restrictedCount })}
 		</Button>
@@ -352,13 +373,20 @@
 	}
 	.modes {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
 	}
-	.tools {
+	/* The drop-down takes the row, the icon buttons their own size; a long mode name is cut
+	   in the drop-down, never the page. */
+	.pick {
+		min-width: 0;
 		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
+		align-items: flex-end;
+		gap: var(--space-1);
+	}
+	.pick > :global(:first-child) {
+		flex: 1;
+		min-width: 0;
 	}
 	.fixed {
 		display: grid;

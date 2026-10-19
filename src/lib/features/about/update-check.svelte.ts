@@ -4,11 +4,13 @@
  * usual update card (UpdateBanner), so a running game is never interrupted.
  */
 import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
+import { isPrecacheProgress, percentDone } from './update-progress.ts';
 
 /** When this device last finished a check, so About can say "Checked 18:58". */
 const CHECKED_KEY = 'grim-games:update-checked';
 
-export type UpdateCheck = 'idle' | 'checking' | 'current' | 'ready' | 'failed' | 'unsupported';
+export type UpdateCheck =
+	'idle' | 'checking' | 'downloading' | 'current' | 'ready' | 'failed' | 'unsupported';
 
 class UpdateChecker {
 	result = $state<UpdateCheck>('idle');
@@ -16,10 +18,36 @@ class UpdateChecker {
 	found = $state(0);
 	/** Milliseconds since 1970 of the last finished check on this device, if any. */
 	checkedAt = $state(readCheckedAt());
+	/** While downloading: whole percent of the new build stored, once the worker says. */
+	percent = $state<number | undefined>();
+	/** While downloading: bytes stored and the build's total, when the build published sizes. */
+	bytes = $state<{ done: number; total: number } | undefined>();
 
 	async check(): Promise<UpdateCheck> {
 		this.result = 'checking';
-		this.result = await findUpdate();
+		this.percent = undefined;
+		this.bytes = undefined;
+		// The new worker reports each file it stores (update-progress.ts).
+		const onMessage = (event: MessageEvent) => {
+			if (!isPrecacheProgress(event.data)) return;
+			this.result = 'downloading';
+			this.percent = percentDone(event.data);
+			const { bytes, totalBytes } = event.data;
+			this.bytes =
+				bytes !== undefined && totalBytes ? { done: bytes, total: totalBytes } : undefined;
+		};
+		const container = 'serviceWorker' in navigator ? navigator.serviceWorker : undefined;
+		container?.addEventListener('message', onMessage);
+		container?.startMessages?.();
+		try {
+			this.result = await findUpdate(() => {
+				if (this.result === 'checking') this.result = 'downloading';
+			});
+		} finally {
+			container?.removeEventListener('message', onMessage);
+			this.percent = undefined;
+			this.bytes = undefined;
+		}
 		if (this.result === 'ready') this.found++;
 		if (this.result === 'ready' || this.result === 'current') {
 			this.checkedAt = Date.now();
@@ -34,7 +62,8 @@ function readCheckedAt(): number | undefined {
 	return Number.isFinite(at) && at > 0 ? at : undefined;
 }
 
-async function findUpdate(): Promise<UpdateCheck> {
+/** `onDownload` runs once a newer build has been found and is being stored. */
+async function findUpdate(onDownload: () => void): Promise<UpdateCheck> {
 	if (!('serviceWorker' in navigator)) return 'unsupported';
 	const registration = await navigator.serviceWorker.getRegistration().catch(() => undefined);
 	if (!registration) return 'unsupported';
@@ -49,6 +78,7 @@ async function findUpdate(): Promise<UpdateCheck> {
 	const next = registration.installing ?? registration.waiting;
 	if (!next) return 'current';
 	if (next.state !== 'installed') {
+		onDownload();
 		const state = await new Promise<ServiceWorkerState>((done) => {
 			const onChange = () => {
 				if (next.state === 'installed' || next.state === 'redundant') {

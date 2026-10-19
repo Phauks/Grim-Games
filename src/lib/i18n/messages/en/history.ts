@@ -30,5 +30,11 @@ export const history = {
 	'history.filterLabel': 'Filter {column}',
 	'history.allTypes': 'All types',
 	'history.noMatch': 'None match.',
-	'history.byAuthor': 'by {author}'
+	'history.byAuthor': 'by {author}',
+	'history.exportTitle': 'Export game',
+	'history.exportLog': 'History',
+	'history.exportImage': 'Grimoire',
+	'history.exportNotes': 'Storyteller notes',
+	'history.exportPicture': 'Image',
+	'history.exportDownload': 'Download'
 } as const;

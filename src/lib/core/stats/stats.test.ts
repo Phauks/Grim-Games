@@ -121,19 +121,24 @@ describe('deriveGameRecord: how the game was won', () => {
 	it('records a usual end when the Demon is executed', () => {
 		const saved = fiveGame((seats) => ({ type: 'Execute', seatId: seats[0] }));
 		const r = deriveGameRecord(saved, { endedAt: 2, winner: 'good' }, gameData);
-		expect(r.endRule).toBe('demon-dead');
+		expect(r.endReason).toBe('demon-dead');
 	});
 
 	it('records the Saint as an alternate win condition', () => {
 		const saved = fiveGame((seats) => ({ type: 'Execute', seatId: seats[1] }));
 		const r = deriveGameRecord(saved, { endedAt: 2, winner: 'evil' }, gameData);
-		expect(r.endRule).toBe('saint');
+		expect(r.endReason).toBe('character:saint');
 	});
 
 	it('records the Storyteller’s call when no checked rule gave the winner', () => {
 		const r = deriveGameRecord(fiveGame(), { endedAt: 2, winner: 'evil' }, gameData);
-		expect(r.endRule).toBe('storyteller');
-		expect(deriveGameRecord(fiveGame(), { endedAt: 2 }, gameData).endRule).toBeUndefined();
+		expect(r.endReason).toBe('other');
+		expect(deriveGameRecord(fiveGame(), { endedAt: 2 }, gameData).endReason).toBeUndefined();
+	});
+
+	it('keeps the reason End game saved over what the grimoire shows', () => {
+		const ending = { endedAt: 2, winner: 'evil', reason: 'character:klutz' } as const;
+		expect(deriveGameRecord(fiveGame(), ending, gameData).endReason).toBe('character:klutz');
 	});
 
 	it('notes when exactly 3 players were alive', () => {
@@ -179,7 +184,7 @@ describe('historyStats', () => {
 		gameId: 'a',
 		endedAt: 2,
 		winner: 'evil',
-		endRule: 'two-alive',
+		endReason: 'two-alive',
 		finalThree: true,
 		days: 4,
 		seats: [
@@ -207,7 +212,7 @@ describe('historyStats', () => {
 		gameId: 'b',
 		endedAt: 1,
 		winner: 'good',
-		endRule: 'mayor',
+		endReason: 'character:mayor',
 		days: 2,
 		script: { name: 'Sects & Violets', author: 'TPI' },
 		seats: [

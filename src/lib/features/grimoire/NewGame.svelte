@@ -8,7 +8,6 @@
 		toScript,
 		type OfficialEditionId
 	} from '#lib/core/data/index.ts';
-	import { MAX_PLAYERS, MIN_PLAYERS } from '#lib/core/engine/index.ts';
 	import {
 		QUICK_PLAY_ID,
 		quickPlayScript,
@@ -93,12 +92,7 @@
 				{/snippet}
 			</ChoiceGroup>
 			<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
-			<PlayerCountSheet
-				{players}
-				min={MIN_PLAYERS}
-				max={MAX_PLAYERS}
-				onChange={(n) => (players = n)}
-			/>
+			<PlayerCountSheet {players} onChange={(n) => (players = n)} />
 			<Button variant="accent" icon="grimoire" disabled={starting} onclick={start}
 				>Start game</Button
 			>

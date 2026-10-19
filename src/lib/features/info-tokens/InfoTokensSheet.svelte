@@ -1,6 +1,5 @@
 <script lang="ts">
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
@@ -10,13 +9,12 @@
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { plainText } from './bold.ts';
 	import { tokenTitle } from './token-title.ts';
-	import { pickMax } from './pick.ts';
 	import { characterCardsFor } from './character-cards.ts';
 	import InfoTokenList from './InfoTokenList.svelte';
+	import ChainBar from './ChainBar.svelte';
+	import type { ChainCard } from './chain.ts';
 
 	interface Props {
 		open?: boolean;
@@ -28,7 +26,7 @@
 		 */
 		bluffSets?: readonly ShowableBluffSet[];
 		/**
-		 * Characters on a seat. Character Specific cards load only for these (Trevor,
+		 * Characters on a seat. Character-Specific cards load only for these (Trevor,
 		 * 2026-10-16); without it, for every character given.
 		 */
 		inPlay?: readonly CharacterId[];
@@ -56,14 +54,10 @@
 		| { kind: 'sets'; token: InfoToken };
 
 	let view = $state<View>({ kind: 'list' });
+	let list = $state<ReturnType<typeof InfoTokenList>>();
 	let picked = $state<CharacterId[]>([]);
 
-	interface Card {
-		text: string;
-		characterIds: CharacterId[];
-		/** What the Storyteller filled in, e.g. the Mezepheles's secret word. */
-		detail?: string;
-	}
+	type Card = ChainCard;
 
 	/**
 	 * Tapping a card shows it at once; its + adds it to the cards shown together (Trevor,
@@ -77,8 +71,6 @@
 	let shown = $state<Card[]>([]);
 
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
-	const names = (ids: readonly CharacterId[]) =>
-		ids.map((id) => byId.get(id)?.name ?? id).join(', ');
 	const known = (ids: readonly CharacterId[]) =>
 		ids.flatMap((id) => {
 			const character = byId.get(id);
@@ -101,24 +93,6 @@
 			})
 		}))
 	);
-	/** A filled-in card's words and answer; the Number card is only its number. */
-	const detailLabel = (card: Card) =>
-		plainText(card.text) ? `${plainText(card.text)}: ${card.detail}` : (card.detail ?? '');
-	const chainLabel = (card: Card) =>
-		card.detail
-			? detailLabel(card)
-			: card.characterIds.length
-				? `${plainText(card.text)} (${names(card.characterIds)})`
-				: plainText(card.text);
-
-	/** Moves a chain card one place up (-1) or down (1). */
-	function move(index: number, by: -1 | 1) {
-		const to = index + by;
-		if (to < 0 || to >= chainCards.length) return;
-		const next = [...chainCards];
-		[next[index], next[to]] = [next[to], next[index]];
-		chainCards = next;
-	}
 	const title = $derived(view.kind === 'list' ? t('info-tokens.title') : tokenTitle(view.token));
 
 	// Each time the sheet opens it starts at the list.
@@ -156,7 +130,7 @@
 				return;
 			}
 		}
-		if (token.shows === 'characters') {
+		if (token.asks?.characters) {
 			picked = [];
 			view = { kind: 'characters', token };
 			return;
@@ -189,9 +163,21 @@
 </script>
 
 <BottomSheet bind:open {title} height="85dvh" focusFirstField={false}>
+	<!-- The quick card, in the header next to the X (Trevor, 2026-10-18); kept in place on
+	     every view, usable on the list. -->
+	{#snippet actions()}
+		<IconButton
+			icon="quickCard"
+			label={t('info-tokens.quick')}
+			disabled={view.kind !== 'list'}
+			onclick={() => list?.openQuick()}
+		/>
+	{/snippet}
 	<ErrorBoundary area="info-tokens">
 		{#if view.kind === 'list'}
 			<InfoTokenList
+				bind:this={list}
+				quickInHeader
 				onchoose={(token, detail) => choose(token, false, detail)}
 				level={3}
 				{characterCards}
@@ -203,87 +189,21 @@
 					use(title, [], detail);
 				}}
 			/>
-			{#if chainCards.length > 0}
-				<div class="chain" role="group" aria-label={t('info-tokens.toShow')}>
-					{#if chainCards.length > 0}
-						<ol class="chain-list" data-testid="chain-list">
-							{#each chainCards as card, i (card)}
-								{@const name = chainLabel(card)}
-								<li>
-									<!-- The chosen characters wrap under the card's words, so the row keeps its width (Trevor, 2026-10-17). -->
-									<span class="chain-card">
-										<span class="chain-text"
-											>{i + 1}. {card.detail ? detailLabel(card) : plainText(card.text)}</span
-										>
-										{#if card.characterIds.length > 0}
-											<span class="badges">
-												{#each known(card.characterIds) as character (character.id)}
-													<CharacterBadge
-														characterId={character.id}
-														{character}
-														interactive={false}
-													/>
-												{/each}
-											</span>
-										{/if}
-									</span>
-									<span class="chain-buttons">
-										<span class="up">
-											<IconButton
-												icon="expand"
-												label={t('info-tokens.moveUp', { name })}
-												disabled={i === 0}
-												onclick={() => move(i, -1)}
-											/>
-										</span>
-										<IconButton
-											icon="expand"
-											label={t('info-tokens.moveDown', { name })}
-											disabled={i === chainCards.length - 1}
-											onclick={() => move(i, 1)}
-										/>
-										<span>
-											<DeleteButton
-												label={t('info-tokens.removeFromChain', { name })}
-												onclick={() => (chainCards = chainCards.filter((_, j) => j !== i))}
-											/>
-										</span>
-									</span>
-								</li>
-							{/each}
-						</ol>
-					{/if}
-					<div class="chain-actions">
-						<span>
-							<DeleteButton
-								label={t('info-tokens.clearChain')}
-								disabled={chainCards.length === 0}
-								onclick={() => (chainCards = [])}
-							/>
-						</span>
-						<Button
-							variant="accent"
-							icon="forward"
-							disabled={chainCards.length === 0}
-							onclick={() => show(chainCards)}
-							>{t('info-tokens.showCards', { count: chainCards.length })}</Button
-						>
-					</div>
-				</div>
-			{/if}
+			<ChainBar bind:cards={chainCards} {characters} onshow={() => show(chainCards)} />
 		{:else if view.kind === 'characters'}
 			{@const token = view.token}
 			<CharacterPicker
 				{characters}
 				bind:selected={picked}
-				max={pickMax(token.id)}
+				max={token.asks?.characters ?? 1}
 				label={t('info-tokens.characters')}
 				inPlay={inPlay && new Set(inPlay)}
-				notInPlay={token.id === 'not-in-play'}
+				notInPlay={token.asks?.notInPlay === true}
 			/>
 			<ModalActions
 				onCancel={() => (view = { kind: 'list' })}
 				onConfirm={() => use(token.text, picked)}
+				disabled={picked.length === 0}
 			/>
 		{:else}
 			{@const token = view.token}
@@ -312,70 +232,12 @@
 </BottomSheet>
 
 <style>
-	/* Lives in a sheet, so it follows the sheet's colours rather than the page's. */
-	/* Sits over the bottom of the list, so adding cards never moves the cards above. */
-	.chain {
-		position: sticky;
-		bottom: 0;
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-1);
-		margin-top: var(--space-3);
-		padding: var(--space-2) 0;
-		border-top: 1px solid var(--border);
-		background: var(--sheet-background);
-	}
-	.chain-list {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.chain-list li {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-	}
-	.chain-card {
-		display: grid;
-		flex: 1;
-		min-width: 0;
-		gap: var(--space-1);
-	}
-	.chain-text {
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
-	/* Chosen characters wrap onto new lines rather than widening the row. */
+	/* A bluff set's characters wrap onto new lines rather than widening the row. */
 	.badges {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1);
 		min-width: 0;
-	}
-	.badges > :global(*) {
-		max-width: 100%;
-	}
-	/* The bin and Show on one line, the bin set apart at the start. */
-	.chain-actions {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-	}
-	.chain-buttons {
-		display: flex;
-		flex: none;
-	}
-	/* The same caret as the sections, turned to point up. */
-	.up :global(.icon) {
-		rotate: 180deg;
-	}
-	.chain-buttons :global(.icon-button) {
-		color: inherit;
 	}
 	.sets {
 		display: grid;

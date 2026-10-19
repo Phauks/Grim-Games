@@ -13,8 +13,11 @@ import {
 	parseReminderKey,
 	reminderCopiesLeft,
 	reminderGroups,
-	reminderKey
+	reminderKey,
+	isGeneric,
+	tokenLabel
 } from './reminders.ts';
+import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -142,6 +145,29 @@ describe('reminderCopiesLeft', () => {
 		expect(reminderCopies(g, characters).get(key)).toBe(2);
 		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
 	});
+	// Trevor (2026-10-18): Duplicate reminder makes a new token; it never takes the bank's.
+	it("leaves the bank's copies alone for a duplicate, which is always extra", () => {
+		let g = game();
+		const key = reminderKey({ characterId: 'poisoner', label: 'Poisoned' });
+		const run = (command: Parameters<typeof dispatch>[1]) => {
+			const result = dispatch({ log: { entries: [], cursor: 0 }, game: g }, command, ctx);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		};
+		// A second Poisoner: the game gives two Poisoned tokens.
+		run({ type: 'AssignCharacter', seatId: g.seating[3], characterId: 'poisoner' });
+		const poisoned = { characterId: 'poisoner', label: 'Poisoned' };
+		run({ type: 'AddReminder', seatId: g.seating[2], reminder: poisoned });
+		run({ type: 'AddReminder', seatId: g.seating[2], reminder: poisoned });
+		const copy = g.seats[g.seating[2]].reminders.at(-1)!.reminderId;
+		const copies = new Set([copy]);
+		expect(reminderCopiesLeft(g, characters).get(key)).toBe(0);
+		expect(reminderCopiesLeft(g, characters, copies).get(key)).toBe(1);
+		expect(bankReminders(g, characters, undefined, true, copies)).toContainEqual(
+			expect.objectContaining({ ...poisoned, left: 1 })
+		);
+		expect(extraReminders(g, characters, copies)).toEqual(copies);
+	});
 });
 
 describe('canAddCopy', () => {
@@ -246,5 +272,32 @@ describe('extraReminders', () => {
 			ids.push(g.seats[seatId].reminders.at(-1)!.reminderId);
 		}
 		expect([...extraReminders(g, characters)]).toEqual([ids[1]]);
+	});
+});
+
+describe('the generic reminder', () => {
+	// Trevor (2026-10-18): a plain ∞ reminder, as many as needed, with optional text.
+	it('is never counted or marked as an extra copy, and shows its text or ∞', () => {
+		let g = game();
+		for (const seatId of g.seating.slice(0, 3)) {
+			const result = dispatch(
+				{ log: { entries: [], cursor: 0 }, game: g },
+				{ type: 'AddReminder', seatId, reminder: { characterId: GENERIC_REMINDER_ID, label: '' } },
+				ctx
+			);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		}
+		expect(extraReminders(g, characters).size).toBe(0);
+		expect(
+			reminderCopiesLeft(g, characters).has(
+				reminderKey({ characterId: GENERIC_REMINDER_ID, label: '' })
+			)
+		).toBe(false);
+		const [placed] = g.seats[g.seating[0]].reminders;
+		expect(isGeneric(placed)).toBe(true);
+		expect(tokenLabel(placed)).toBe('∞');
+		expect(tokenLabel({ ...placed, note: 'Chose Sam' })).toBe('Chose Sam');
+		expect(tokenLabel({ characterId: 'poisoner', label: 'Poisoned' } as never)).toBe('Poisoned');
 	});
 });

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
 	describeDevice,
+	readPlace,
+	parseSyncRequest,
+	MAX_SYNC_CHANGES,
 	checkPassword,
 	cleanEmail,
 	normaliseCode,
@@ -77,5 +80,55 @@ describe('account protocol', () => {
 			)
 		).toBe('Safari on iPhone');
 		expect(describeDevice(null)).toBe('Unknown device');
+	});
+});
+
+describe('readPlace', () => {
+	it("keeps only the city and country from Cloudflare's request data", () => {
+		expect(
+			readPlace({ city: ' Austin ', country: 'US', region: 'Texas', latitude: '30.2' })
+		).toEqual({ city: 'Austin', country: 'US' });
+		expect(readPlace({ country: 'GB' })).toEqual({ country: 'GB' });
+	});
+	it('is undefined without a place, as in local development', () => {
+		expect(readPlace(undefined)).toBeUndefined();
+		expect(readPlace({})).toBeUndefined();
+		expect(readPlace({ city: '', country: 'not a code' })).toBeUndefined();
+	});
+});
+
+describe('parseSyncRequest', () => {
+	it('takes changes and deletes for known kinds', () => {
+		expect(
+			parseSyncRequest({
+				since: 3,
+				kinds: ['script', 'script'],
+				changes: [
+					{ kind: 'script', id: 'a-1', baseRev: 0, body: { name: 'x' } },
+					{ kind: 'script', id: 'b', baseRev: 2, deleted: true, body: 'ignored' }
+				]
+			})
+		).toEqual({
+			since: 3,
+			kinds: ['script'],
+			changes: [
+				{ kind: 'script', id: 'a-1', baseRev: 0, body: { name: 'x' } },
+				{ kind: 'script', id: 'b', baseRev: 2, deleted: true }
+			]
+		});
+	});
+	it('refuses anything malformed', () => {
+		const ok = { since: 0, kinds: ['script'], changes: [] };
+		expect(parseSyncRequest(ok)).toEqual(ok);
+		expect(parseSyncRequest(null)).toBeUndefined();
+		expect(parseSyncRequest({ ...ok, since: -1 })).toBeUndefined();
+		expect(parseSyncRequest({ ...ok, kinds: ['nope'] })).toBeUndefined();
+		const change = { kind: 'script', id: 'a', baseRev: 0, body: 1 };
+		expect(parseSyncRequest({ ...ok, changes: [{ ...change, id: 'a/b' }] })).toBeUndefined();
+		expect(parseSyncRequest({ ...ok, changes: [{ ...change, baseRev: 1.5 }] })).toBeUndefined();
+		expect(parseSyncRequest({ ...ok, changes: [{ ...change, body: undefined }] })).toBeUndefined();
+		expect(
+			parseSyncRequest({ ...ok, changes: Array(MAX_SYNC_CHANGES + 1).fill(change) })
+		).toBeUndefined();
 	});
 });

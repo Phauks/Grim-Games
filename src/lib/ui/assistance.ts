@@ -13,6 +13,7 @@ export const ASSIST_KEYS = [
 	'preDayReminders',
 	'deathCause',
 	'gameEndPrompts',
+	'dayAfterNight',
 	'rulesWarnings',
 	'stackReminders',
 	'scriptTitle',
@@ -61,6 +62,10 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Game end prompts',
 		description:
 			'When a win condition is met, such as the Saint executed, list why and offer to end the game.'
+	},
+	dayAfterNight: {
+		label: 'Open the day after End night',
+		description: 'Open Day View'
 	},
 	rulesWarnings: {
 		label: 'Setup and jinx warnings',

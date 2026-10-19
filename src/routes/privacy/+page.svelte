@@ -5,6 +5,14 @@
 	import { resolve } from '$app/paths';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
+	import { PRIVACY_VERSION } from '#lib/features/account/account-protocol.ts';
+
+	const updated = new Date(`${PRIVACY_VERSION}T00:00:00Z`).toLocaleDateString('en-GB', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+		timeZone: 'UTC'
+	});
 </script>
 
 <svelte:head>
@@ -13,7 +21,8 @@
 
 <!-- One column across the page width, not a narrow reading strip (Trevor, 2026-10-16). -->
 <Page title="Privacy policy">
-	{#snippet subtitle()}Last updated 18 October 2026{/snippet}
+	<!-- The date is the policy's version: changing it asks every account to accept again. -->
+	{#snippet subtitle()}Last updated {updated}{/snippet}
 	<PageSection title="Summary">
 		<p>
 			{APP_NAME} has no analytics, no advertising and no tracking cookies. Your games and settings stay
@@ -28,6 +37,10 @@
 				including pictures you add (IndexedDB).
 			</li>
 			<li>Your 20 most recently loaded scripts (IndexedDB).</li>
+			<li>
+				While you are signed in, a copy of your account's scripts and any changes still waiting to
+				reach it, so they work offline (IndexedDB).
+			</li>
 			<li>
 				Your settings and screen choices, such as theme, fonts, text size, language, column widths
 				and how you last viewed the <a href={resolve('/reference')}>Reference</a> page; your Library tags
@@ -51,9 +64,10 @@
 		</ul>
 		<p>
 			None of this is sent to us, apart from a script you share, a live room's public table, a
-			report you send, and your scripts if you sign in (below). Clearing this site's data in your
-			browser deletes it all. Settings, Data lets you clear parts of it, and Reset settings resets
-			your settings.
+			report you send, and your scripts if you sign in (below). When the app opens it asks your
+			browser to keep this data rather than clear it to free up space; Settings, Data shows the
+			answer. Clearing this site's data in your browser deletes it all. Settings, Data lets you
+			clear parts of it, and Reset settings resets your settings.
 		</p>
 	</PageSection>
 	<PageSection title="Shared scripts">
@@ -109,12 +123,14 @@
 		</p>
 		<ul>
 			<li>Your email address.</li>
+			<li>Which version of this policy you accepted, and when.</li>
 			<li>
 				Your sign-in sessions: a random token, stored only as a hash, with a short device
-				description such as "Chrome on Android" and when the session was created and last used. A
-				session ends when you sign out, or after 180 days unused. "Remember me" keeps you signed in
-				on that device; without it, the session ends when the browser closes, or after 12 hours
-				unused.
+				description such as "Chrome on Android", the rough place it was last used from (the city and
+				country Cloudflare estimates from your IP address; the address itself is not kept), and when
+				the session was created and last used. A session ends when you sign out, or after 180 days
+				unused. "Remember me" keeps you signed in on that device; without it, the session ends when
+				the browser closes, or after 12 hours unused.
 			</li>
 			<li>
 				Your password, only if you choose to set one (passwords are optional; a sign-in code always
@@ -127,7 +143,9 @@
 			</li>
 			<li>
 				Your scripts: every script you add while signed in, and, the first time you sign in on a
-				device, the scripts already in its Recent list. You can remove them on the Account page.
+				device, the scripts already in its Recent list. Every device you sign in on keeps them in
+				step; you can remove them on the Account page, or stop a device syncing them in Settings,
+				Data.
 			</li>
 		</ul>
 		<p>

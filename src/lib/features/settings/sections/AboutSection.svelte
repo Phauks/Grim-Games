@@ -6,12 +6,14 @@
 	import RefreshDiagnostics from '#lib/features/errors/RefreshDiagnostics.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import { ADVANCED_KEY } from './about-advanced.ts';
+	import { formatBytes } from '#lib/i18n/bytes.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 
 	const RESULT = {
 		idle: '',
 		checking: 'shell.updateChecking',
+		downloading: 'shell.updateDownloading',
 		current: 'shell.updateCurrent',
 		ready: 'shell.updateFound',
 		failed: 'shell.updateCheckFailed',
@@ -28,16 +30,31 @@
 		);
 		return t('shell.updateCheckedAt', { time });
 	}
+	// While a check runs, only where it has got: checking, then the download (Trevor,
+	// 2026-10-18: "give status of download"), then the usual "Checked … · Update ready".
 	const status = $derived(
 		updateCheck.result === 'checking'
 			? t('shell.updateChecking')
-			: [updateCheck.checkedAt ? checkedText(updateCheck.checkedAt) : '', result ? t(result) : '']
-					.filter(Boolean)
-					.join(' · ')
+			: updateCheck.result === 'downloading'
+				? updateCheck.percent === undefined
+					? t('shell.updateDownloading')
+					: updateCheck.bytes
+						? // Sizes too (Trevor, 2026-10-18): "2.4 MB of 6.1 MB · 39%".
+							t('shell.updateDownloadingSize', {
+								done: formatBytes(updateCheck.bytes.done),
+								total: formatBytes(updateCheck.bytes.total),
+								percent: intl.number(updateCheck.percent / 100, { style: 'percent' })
+							})
+						: t('shell.updateDownloadingPercent', {
+								percent: intl.number(updateCheck.percent / 100, { style: 'percent' })
+							})
+				: [updateCheck.checkedAt ? checkedText(updateCheck.checkedAt) : '', result ? t(result) : '']
+						.filter(Boolean)
+						.join(' · ')
 	);
 </script>
 
-<!-- The one About in the app (Trevor, 2026-10-16: About lives in Settings; the footer opens it). -->
+<!-- The one About in the app (Trevor, 2026-10-16: About lives in Settings; 2026-10-18: only there, not the footer). -->
 <p>{t('shell.aboutIntro')}</p>
 <dl>
 	<dt>{t('shell.aboutVersion')}</dt>
@@ -48,7 +65,7 @@
 		<IconButton
 			icon="refresh"
 			label={t('shell.checkUpdates')}
-			disabled={updateCheck.result === 'checking'}
+			disabled={updateCheck.result === 'checking' || updateCheck.result === 'downloading'}
 			onclick={() => void updateCheck.check()}
 		/>
 		<span class="result" role="status" data-testid="update-check-result">{status}</span>

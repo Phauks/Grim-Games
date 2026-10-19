@@ -67,7 +67,8 @@ test("each card's + adds it to cards shown together, which can be reordered", as
 	// A madness card of the Storyteller's own that asks for a character.
 	await page.getByRole('button', { name: 'New info token' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You are **mad** that you are');
-	await page.getByText('Show with characters').tap();
+	await page.getByRole('combobox', { name: 'Characters to show' }).tap();
+	await page.getByRole('option', { name: 'Exactly', exact: true }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	// No mode switch: a tap shows a card, its + adds it (Trevor, 2026-10-16).
@@ -130,7 +131,7 @@ test('character cards load only for characters on the script', async ({ page }) 
 	await expect(
 		page
 			.getByRole('dialog', { name: 'Info tokens' })
-			.getByRole('button', { name: 'Character Specific', exact: true })
+			.getByRole('button', { name: 'Character-Specific', exact: true })
 	).toBeVisible();
 	await expect(page.getByRole('button', { name: /^Your Secret Word/ })).toHaveCount(0);
 });
@@ -197,4 +198,14 @@ test('"not in play" on the info tokens page uses the bluff picker, with its filt
 		.locator('[data-character-id]')
 		.evaluateAll((els) => els.map((el) => el.closest('[data-team]')?.getAttribute('data-team')));
 	expect(ids).toEqual(['good', 'good', 'good']);
+});
+
+test("the board sheet's quick card opens from its header, beside the X", async ({ page }) => {
+	await openSheet(page);
+	// Not in the list (Trevor, 2026-10-18).
+	await expect(page.getByRole('heading', { name: 'Quick card' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	await page.getByRole('textbox', { name: 'Text' }).fill('You may not speak');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(shown(page).getByRole('heading')).toHaveText('You may not speak');
 });

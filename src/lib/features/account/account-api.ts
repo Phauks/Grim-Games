@@ -11,6 +11,8 @@ import type {
 	PutDocRequest,
 	SessionInfo,
 	StartResponse,
+	SyncRequest,
+	SyncResponse,
 	UserResponse
 } from './account-protocol.ts';
 
@@ -60,12 +62,29 @@ export const accountApi = {
 	session: () => call<SessionInfo>('/api/auth/session'),
 	start: (email: string) => call<StartResponse>('/api/auth/start', 'POST', { email }),
 	/** `password` becomes the account's (signing up, or replacing a forgotten one). */
-	verifyCode: (email: string, code: string, remember: boolean, password?: string) =>
-		call<SessionInfo>('/api/auth/verify', 'POST', { email, code, remember, password }),
-	signInWithPassword: (email: string, password: string, remember: boolean) =>
-		call<SessionInfo>('/api/auth/password', 'POST', { email, password, remember }),
-	verifyLink: (email: string, token: string) =>
-		call<SessionInfo>('/api/auth/verify', 'POST', { email, token }),
+	verifyCode: (
+		email: string,
+		code: string,
+		remember: boolean,
+		password?: string,
+		acceptPrivacy?: string
+	) =>
+		call<SessionInfo>('/api/auth/verify', 'POST', {
+			email,
+			code,
+			remember,
+			password,
+			acceptPrivacy
+		}),
+	signInWithPassword: (
+		email: string,
+		password: string,
+		remember: boolean,
+		acceptPrivacy?: string
+	) =>
+		call<SessionInfo>('/api/auth/password', 'POST', { email, password, remember, acceptPrivacy }),
+	verifyLink: (email: string, token: string, acceptPrivacy?: string) =>
+		call<SessionInfo>('/api/auth/verify', 'POST', { email, token, acceptPrivacy }),
 	signOut: () => call<{ ok: true }>('/api/auth/sign-out', 'POST'),
 	sessions: () =>
 		call<{ sessions: DeviceSession[] }>('/api/account/sessions').then((r) => r.sessions),
@@ -87,6 +106,8 @@ export const accountApi = {
 	deleteAccount: () => call<{ ok: true }>('/api/account', 'DELETE'),
 	listDocs: <T>(kind: DocKind) =>
 		call<{ docs: ProfileDoc<T>[] }>(`/api/account/docs/${kind}`).then((r) => r.docs),
+	/** Pushes queued changes and pulls what changed since `since`, in one request. */
+	sync: (request: SyncRequest) => call<SyncResponse>('/api/account/sync', 'POST', request),
 	putDoc: <T>(kind: DocKind, id: string, request: PutDocRequest) =>
 		call<ProfileDoc<T>>(`/api/account/docs/${kind}/${encodeURIComponent(id)}`, 'PUT', request)
 };

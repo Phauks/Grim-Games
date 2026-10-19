@@ -21,25 +21,25 @@ const STORAGE_KEY = 'grim-games.collection-carousel';
 
 export type CollectionStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-let list = $state.raw<CollectionScript[]>([]);
-let status = $state<CollectionStatus>('idle');
-let restored = false;
-let loading: Promise<void> | undefined;
-
-function restore(): void {
-	if (restored) return;
-	restored = true;
+/**
+ * The copy kept on the device, read once when the module loads: reading it lazily from the
+ * list's getter wrote state while a derived value was being worked out (Trevor, 2026-10-19).
+ */
+function restored(): CollectionScript[] {
 	try {
-		const saved = readCollectionList(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null'));
-		if (saved?.length) list = saved;
+		return readCollectionList(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')) ?? [];
 	} catch {
 		// No storage, or an unreadable copy: fetched again when needed.
+		return [];
 	}
 }
 
+let list = $state.raw<CollectionScript[]>(restored());
+let status = $state<CollectionStatus>('idle');
+let loading: Promise<void> | undefined;
+
 export const collectionScripts = {
 	get list(): CollectionScript[] {
-		restore();
 		return list;
 	},
 	get status(): CollectionStatus {
@@ -48,7 +48,6 @@ export const collectionScripts = {
 
 	/** Fetches the list once per page visit; later calls reuse it. */
 	load(): Promise<void> {
-		restore();
 		if (status === 'ready') return Promise.resolve();
 		loading ??= (async () => {
 			status = 'loading';

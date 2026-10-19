@@ -7,6 +7,7 @@
  * All live in localStorage with a version in the key, and anything unreadable is ignored.
  */
 import type { GameId } from '#lib/core/model/index.ts';
+import { parseEndReason, type EndReason } from '#lib/core/rules/end-reason.ts';
 import {
 	DEFAULT_SEAT_LAYOUT,
 	isDefaultLayout,
@@ -150,6 +151,31 @@ export const reminderSpots = {
 	}
 };
 
+const COPIES_KEY = (gameId: GameId) => `grim-games:reminder-copies:v1:${gameId}`;
+
+/**
+ * Reminders made with ⋯ > Duplicate reminder on this device, by reminder id: new tokens
+ * beyond the game's, so they never use up the bank's copies (Trevor, 2026-10-18).
+ */
+export const reminderCopyIds = {
+	read(gameId: GameId): Set<string> {
+		try {
+			const raw: unknown = JSON.parse(globalThis.localStorage?.getItem(COPIES_KEY(gameId)) ?? '[]');
+			return new Set(Array.isArray(raw) ? raw.filter((id) => typeof id === 'string') : []);
+		} catch {
+			return new Set();
+		}
+	},
+	write(gameId: GameId, ids: ReadonlySet<string>): void {
+		try {
+			if (ids.size === 0) globalThis.localStorage?.removeItem(COPIES_KEY(gameId));
+			else globalThis.localStorage?.setItem(COPIES_KEY(gameId), JSON.stringify([...ids]));
+		} catch {
+			// Storage full or blocked: the marks last until the page is closed.
+		}
+	}
+};
+
 const NIGHT_KEY = (gameId: GameId) => `grim-games:night:v1:${gameId}`;
 
 /**
@@ -210,10 +236,14 @@ export const nightViews = {
 
 const ENDED_KEY = 'grim-games:ended-games:v1';
 
-/** A game the Storyteller ended (Trevor, 2026-10-16), and which team won if recorded. */
+/**
+ * A game the Storyteller ended (Trevor, 2026-10-16), which team won if recorded, and how
+ * (Trevor, 2026-10-18; absent for games ended before End game asked).
+ */
 export interface EndedGame {
 	endedAt: number;
 	winner?: 'good' | 'evil';
+	reason?: EndReason;
 }
 
 function readEnded(): Record<string, EndedGame> {
@@ -226,6 +256,8 @@ function readEnded(): Record<string, EndedGame> {
 			if (!e || typeof e.endedAt !== 'number') continue;
 			out[id] = { endedAt: e.endedAt };
 			if (e.winner === 'good' || e.winner === 'evil') out[id].winner = e.winner;
+			const reason = out[id].winner ? parseEndReason(e.reason) : undefined;
+			if (reason) out[id].reason = reason;
 		}
 		return out;
 	} catch {
@@ -247,10 +279,14 @@ function writeEnded(all: Record<string, EndedGame>): void {
  */
 export const endedGames = {
 	read: readEnded,
-	end(gameId: GameId, winner?: 'good' | 'evil'): void {
+	end(gameId: GameId, winner?: 'good' | 'evil', reason?: EndReason): void {
 		writeEnded({
 			...readEnded(),
-			[gameId]: { endedAt: Date.now(), ...(winner ? { winner } : {}) }
+			[gameId]: {
+				endedAt: Date.now(),
+				...(winner ? { winner } : {}),
+				...(winner && reason ? { reason } : {})
+			}
 		});
 	},
 	reopen(gameId: GameId): void {

@@ -24,6 +24,12 @@ export const PASSWORD_MIN = 10;
 export const PASSWORD_MAX = 200;
 /** Wrong passwords allowed for one address per hour before it must wait or use a code. */
 export const MAX_PASSWORD_FAILURES = 10;
+/**
+ * The privacy policy's version: the date on the privacy page ("Last updated"), which shows
+ * this value. Creating an account means accepting it (Trevor, 2026-10-18); changing it asks
+ * every account to accept again at its next sign-in.
+ */
+export const PRIVACY_VERSION = '2026-10-18';
 /** Name of the HttpOnly session cookie. */
 export const SESSION_COOKIE = 'gg_session';
 
@@ -114,6 +120,8 @@ export type VerifyRequest = ({ code: string } | { token: string }) & {
 	email: string;
 	password?: string;
 	remember?: boolean;
+	/** The PRIVACY_VERSION the user accepted, when they were asked to. */
+	acceptPrivacy?: string;
 };
 
 /** `POST /api/auth/password` body: signing in with a password. */
@@ -121,6 +129,27 @@ export interface PasswordSignInRequest {
 	email: string;
 	password: string;
 	remember?: boolean;
+	acceptPrivacy?: string;
+}
+
+/**
+ * The 403 answer to a sign-in that needs the privacy policy accepted first: a new account,
+ * or one that accepted an older version. The code or link still works, so the same request
+ * is sent again with `acceptPrivacy`.
+ */
+export interface PrivacyRequired {
+	error: string;
+	privacy: { version: string; creating: boolean };
+}
+
+export function isPrivacyRequired(body: unknown): body is PrivacyRequired {
+	const privacy = (body as Partial<PrivacyRequired> | null)?.privacy;
+	return (
+		typeof privacy === 'object' &&
+		privacy !== null &&
+		typeof privacy.version === 'string' &&
+		typeof privacy.creating === 'boolean'
+	);
 }
 
 /** `PUT /api/account/password` body. */
@@ -135,6 +164,29 @@ export interface DeviceSession {
 	createdAt: number;
 	lastSeenAt: number;
 	current: boolean;
+	/** Where it was last used, roughly: Cloudflare's guess from the IP, which is never stored. */
+	city?: string;
+	/** ISO 3166-1 alpha-2, as Cloudflare gives it. */
+	country?: string;
+}
+
+/** A request's approximate place, as stored for the signed-in devices list. */
+export interface DevicePlace {
+	city?: string;
+	country?: string;
+}
+
+/**
+ * The approximate place from a Worker request's `cf` object (city and country only; the IP
+ * itself is never kept). Undefined when Cloudflare gave neither, as in local development.
+ */
+export function readPlace(cf: unknown): DevicePlace | undefined {
+	if (typeof cf !== 'object' || cf === null) return undefined;
+	const { city, country } = cf as Record<string, unknown>;
+	const place: DevicePlace = {};
+	if (typeof city === 'string' && city.trim()) place.city = city.trim().slice(0, 60);
+	if (typeof country === 'string' && /^[A-Z][A-Z0-9]$/.test(country)) place.country = country;
+	return place.city || place.country ? place : undefined;
 }
 
 /** A stored profile document. `body` is absent once deleted (a tombstone). */
@@ -156,6 +208,69 @@ export interface PutDocRequest {
 	baseRev: number;
 	body?: unknown;
 	deleted?: boolean;
+}
+
+/** One change a device sends in a sync: a new body, or a delete (as in `PutDocRequest`). */
+export interface SyncChange {
+	kind: DocKind;
+	id: string;
+	baseRev: number;
+	body?: unknown;
+	deleted?: boolean;
+}
+
+/**
+ * `POST /api/account/sync`: the device's queued changes, and the change counter it last saw
+ * (0 the first time). One request pushes and pulls, so it costs one Durable Object call.
+ */
+export interface SyncRequest {
+	since: number;
+	changes: SyncChange[];
+	/** The kinds this device syncs; others aren't sent back. */
+	kinds: DocKind[];
+}
+
+/** What happened to one pushed change. `doc` is the saved copy, or the server's on a conflict. */
+export type SyncResult =
+	| { kind: DocKind; id: string; status: 'saved' | 'conflict'; doc: ProfileDoc }
+	| { kind: DocKind; id: string; status: 'too-large' | 'too-many' };
+
+export interface SyncResponse {
+	results: SyncResult[];
+	/** Documents of `kinds` changed after `since`, oldest change first. */
+	changes: ProfileDoc[];
+	/** The counter to send as `since` next time. */
+	cursor: number;
+	/** More changes are waiting: ask again with `cursor`. */
+	more: boolean;
+}
+
+/** Changes in one sync request; a device with more sends them in several. */
+export const MAX_SYNC_CHANGES = 50;
+/** Rough cap on the JSON in one sync request or response, below Workers' message limits. */
+export const MAX_SYNC_BYTES = 4_000_000;
+
+/** A sync request as sent, or undefined when it isn't one. */
+export function parseSyncRequest(input: unknown): SyncRequest | undefined {
+	if (typeof input !== 'object' || input === null) return undefined;
+	const { since, changes, kinds } = input as Record<string, unknown>;
+	if (typeof since !== 'number' || !Number.isInteger(since) || since < 0) return undefined;
+	if (!Array.isArray(changes) || changes.length > MAX_SYNC_CHANGES) return undefined;
+	if (!Array.isArray(kinds) || !kinds.every((k) => typeof k === 'string' && isDocKind(k))) {
+		return undefined;
+	}
+	const parsed: SyncChange[] = [];
+	for (const change of changes as unknown[]) {
+		if (typeof change !== 'object' || change === null) return undefined;
+		const { kind, id, baseRev, body, deleted } = change as Record<string, unknown>;
+		if (typeof kind !== 'string' || !isDocKind(kind)) return undefined;
+		if (typeof id !== 'string' || !isDocId(id)) return undefined;
+		if (typeof baseRev !== 'number' || !Number.isInteger(baseRev) || baseRev < 0) return undefined;
+		if (deleted === true) parsed.push({ kind, id, baseRev, deleted: true });
+		else if (body !== undefined) parsed.push({ kind, id, baseRev, body });
+		else return undefined;
+	}
+	return { since, changes: parsed, kinds: [...new Set(kinds as DocKind[])] };
 }
 
 export interface ApiError {

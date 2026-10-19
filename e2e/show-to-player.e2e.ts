@@ -23,7 +23,7 @@ test('an info token is shown full screen and only the close button hides it', as
 
 test('"You are" asks for a character, then shows its token and ability', async ({ page }) => {
 	await page.goto('/info-tokens');
-	await page.getByRole('button', { name: 'You are' }).tap();
+	await page.getByRole('button', { name: 'You are', exact: true }).tap();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
 	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
@@ -177,13 +177,15 @@ test("a character's own card is filled in and shown, e.g. the Mezepheles's secre
 }) => {
 	await page.goto('/info-tokens');
 	// The section says, in a popover, that these cards are only used while the character is in play.
-	await page.getByRole('button', { name: 'About Character Specific cards' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Character Specific' })).toContainText(
+	await page.getByRole('button', { name: 'About Character-Specific cards' }).tap();
+	await expect(page.getByRole('dialog', { name: 'Character-Specific' })).toContainText(
 		'Only used while the character is in play.'
 	);
 	await page.keyboard.press('Escape');
-	await page.getByRole('button', { name: 'Your Secret Word is (Mezepheles)' }).tap();
-	const dialog = page.getByRole('dialog', { name: /^Your Secret Word is \(\s*Mezepheles\s*\)$/ });
+	await page.getByRole('button', { name: 'Your Secret Word is (Mezepheles)', exact: true }).tap();
+	// The card's words as the title, its character below, no brackets (Trevor, 2026-10-18).
+	const dialog = page.getByRole('dialog', { name: /Mezepheles\s*Your Secret Word is$/ });
+	await expect(dialog).toContainText('Mezepheles');
 	await dialog.getByRole('textbox', { name: 'Word' }).fill('lantern');
 	await dialog.getByRole('textbox', { name: 'Word' }).press('Enter');
 	const shown = page.locator('[data-testid="show-to-player"][open]');
@@ -191,7 +193,7 @@ test("a character's own card is filled in and shown, e.g. the Mezepheles's secre
 	await expect(shown).toContainText('lantern');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	// The word is kept for the next time.
-	await page.getByRole('button', { name: 'Your Secret Word is (Mezepheles)' }).tap();
+	await page.getByRole('button', { name: 'Your Secret Word is (Mezepheles)', exact: true }).tap();
 	await expect(dialog.getByRole('textbox', { name: 'Word' })).toHaveValue('lantern');
 });
 

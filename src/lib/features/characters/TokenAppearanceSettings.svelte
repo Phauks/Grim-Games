@@ -33,15 +33,13 @@
 		value: TokenAppearance;
 		theme: Theme;
 		onChange: (value: TokenAppearance) => void;
-		/** More settings for names and reminders in text, shown in that group's box. */
-		inText?: Snippet;
 		/** The Character names font, first in the character token's box. */
 		characterFont?: Snippet;
 		/** The Reminder tokens font, first in the reminder token's box. */
 		reminderFont?: Snippet;
 	}
 
-	let { value, theme, onChange, inText, characterFont, reminderFont }: Props = $props();
+	let { value, theme, onChange, characterFont, reminderFont }: Props = $props();
 
 	onMount(() => void loadOfficialData());
 	const sample = $derived(officialData.current?.byId.get('fortuneteller'));
@@ -89,7 +87,10 @@
 <SettingGroup title={t('characters.group.token')} testid="token-preview">
 	{#snippet preview()}
 		<div class="preview token-sample" style:--sample="{largest}px">
-			{#if sample}<span class="disc" style:--name-scale={boardLooks.current.nameSize}
+			{#if sample}<span
+					class="disc"
+					style:--name-scale={boardLooks.current.nameSize}
+					style:--name-offset={boardLooks.current.nameOffset}
 					><CharacterToken
 						character={sample}
 						size={tokenSize}
@@ -129,8 +130,21 @@
 		defaultValue={1}
 		onChange={(nightBadgeScale) => onChange({ ...value, nightBadgeScale })}
 	/>
-	{@render colourRow(TOKEN_COLOURS[0])}
-	{@render colourRow(TOKEN_COLOURS[2])}
+	<SettingToggle
+		label={t('characters.reminderLeaves')}
+		description={t('characters.reminderLeavesHelp')}
+		checked={value.reminderLeaves}
+		onChange={(reminderLeaves) => onChange({ ...value, reminderLeaves })}
+	/>
+	<SettingToggle
+		label={t('characters.setupFlower')}
+		description={t('characters.setupFlowerHelp')}
+		checked={value.setupFlower}
+		onChange={(setupFlower) => onChange({ ...value, setupFlower })}
+	/>
+	{@render colourRow('face')}
+	{@render colourRow('rim')}
+	{@render colourRow('ink')}
 	{@render contrastRow('characters.contrast.face', contrast.face)}
 </SettingGroup>
 
@@ -169,7 +183,9 @@
 		checked={value.reminderLabelWrap}
 		onChange={(reminderLabelWrap) => onChange({ ...value, reminderLabelWrap })}
 	/>
-	{@render colourRow(TOKEN_COLOURS[1])}
+	{@render colourRow('reminder')}
+	{@render colourRow('reminderLabel')}
+	{@render colourRow('reminderInk')}
 	{@render contrastRow('characters.contrast.reminder', contrast.reminder)}
 </SettingGroup>
 
@@ -192,7 +208,31 @@
 				{t('characters.inTextOn', { player: t('characters.previewPlayer') })}{/if}
 		</p>
 	{/snippet}
-	{@render inText?.()}
+	<!-- Text, icon and badge sizes for each, none shared (Trevor, 2026-10-18). -->
+	<SettingSlider
+		label={t('characters.inlineNameTextSize')}
+		description={t('characters.inlineNameTextSizeHelp')}
+		value={value.inlineNameTextScale}
+		{...TOKEN_SCALE}
+		defaultValue={1}
+		onChange={(inlineNameTextScale) => onChange({ ...value, inlineNameTextScale })}
+	/>
+	<SettingSlider
+		label={t('characters.inlineNameIconSize')}
+		description={t('characters.inlineNameIconSizeHelp')}
+		value={value.inlineNameIconScale}
+		{...TOKEN_SCALE}
+		defaultValue={1}
+		onChange={(inlineNameIconScale) => onChange({ ...value, inlineNameIconScale })}
+	/>
+	<SettingSlider
+		label={t('characters.inlineNameBadgeSize')}
+		description={t('characters.inlineNameBadgeSizeHelp')}
+		value={value.inlineNameBadgeScale}
+		{...TOKEN_SCALE}
+		defaultValue={1}
+		onChange={(inlineNameBadgeScale) => onChange({ ...value, inlineNameBadgeScale })}
+	/>
 	<SettingSlider
 		label={t('characters.inlineReminderSize')}
 		description={t('characters.inlineReminderSizeHelp')}
@@ -201,15 +241,26 @@
 		defaultValue={1}
 		onChange={(inlineReminderScale) => onChange({ ...value, inlineReminderScale })}
 	/>
-	<SettingToggle
-		label={t('characters.inlineReminderIcons')}
-		description={t('characters.inlineReminderIconsHelp')}
-		checked={value.inlineReminderIcons}
-		onChange={(inlineReminderIcons) => onChange({ ...value, inlineReminderIcons })}
+	<SettingSlider
+		label={t('characters.inlineReminderIconSize')}
+		description={t('characters.inlineReminderIconSizeHelp')}
+		value={value.inlineReminderIconScale}
+		{...TOKEN_SCALE}
+		defaultValue={1}
+		onChange={(inlineReminderIconScale) => onChange({ ...value, inlineReminderIconScale })}
+	/>
+	<SettingSlider
+		label={t('characters.inlineReminderBadgeSize')}
+		description={t('characters.inlineReminderBadgeSizeHelp')}
+		value={value.inlineReminderBadgeScale}
+		{...TOKEN_SCALE}
+		defaultValue={1}
+		onChange={(inlineReminderBadgeScale) => onChange({ ...value, inlineReminderBadgeScale })}
 	/>
 </SettingGroup>
 
-{#snippet colourRow(colour: (typeof TOKEN_COLOURS)[number])}
+{#snippet colourRow(key: TokenColour)}
+	{@const colour = TOKEN_COLOURS.find((c) => c.key === key)!}
 	<SettingRow label={t(colour.label)} description={t(colour.description)}>
 		{#snippet control(labelId)}
 			<div class="colour">
@@ -260,8 +311,8 @@
 	/* Room for the largest chip and badge at any Text size: no reflow. */
 	.in-text {
 		display: block;
-		height: auto;
-		min-height: 5.5rem;
+		/* Room for every in-text size at its largest: no reflow. */
+		height: 10rem;
 		margin: 0;
 		white-space: normal;
 		line-height: 2.2;

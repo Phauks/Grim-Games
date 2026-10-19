@@ -21,12 +21,19 @@ import {
 	MAX_DOC_BYTES,
 	MAX_DOCS_PER_KIND,
 	MAX_PASSWORD_FAILURES,
+	normaliseEmail,
+	PRIVACY_VERSION,
 	SESSION_IDLE_MS,
 	SHORT_SESSION_IDLE_MS,
 	type AccountUser as User,
+	MAX_SYNC_BYTES,
+	type DevicePlace,
 	type DeviceSession,
 	type DocKind,
-	type ProfileDoc
+	type ProfileDoc,
+	type SyncRequest,
+	type SyncResponse,
+	type SyncResult
 } from '../../src/lib/features/account/account-protocol.ts';
 import { isLegacyAccountId, randomAccountId } from '../../src/lib/features/account/account-id.ts';
 import {
@@ -38,21 +45,95 @@ import {
 	sha256
 } from './crypto.ts';
 
+/**
+ * Where accounts live. With `ACCOUNTS` bound, they are the shared accounts Worker's
+ * (`worker/accounts-service.ts`, Trevor 2026-10-18: "i want to share one set of accounts"),
+ * reached the same way from production and from every preview. Without it, this Worker's own
+ * objects hold them, as before; they stay bound either way, so their data is never deleted.
+ */
 export interface AccountEnv {
 	ACCOUNT_USERS: DurableObjectNamespace<AccountUser>;
 	ACCOUNT_EMAILS: DurableObjectNamespace<AccountEmail>;
 	ACCOUNT_NAMES: DurableObjectNamespace<AccountName>;
+	ACCOUNTS?: AccountsBinding;
 }
 
+/** One method call on one account object, forwarded to the shared accounts Worker. */
+export interface AccountCall {
+	kind: 'user' | 'address' | 'username';
+	key: string;
+	method: string;
+	args: unknown[];
+}
+
+/** What the shared accounts Worker offers over its service binding. */
+export interface AccountsBinding {
+	call(request: AccountCall): Promise<unknown>;
+}
+
+/** The three kinds of account object, by the key each is found by. */
+interface AccountObjects {
+	user(userId: string): DurableObjectStub<AccountUser>;
+	/** Not `email`: that name is a Worker's handler for incoming mail. */
+	address(key: string): DurableObjectStub<AccountEmail>;
+	username(key: string): DurableObjectStub<AccountName>;
+}
+
+/** This Worker's own account objects, which the shared accounts Worker also uses. */
+export const localAccounts = (env: AccountEnv): AccountObjects => ({
+	/**
+	 * New accounts are named by their word-chain id; accounts made before those keep the hex
+	 * id of a `newUniqueId()` object, which stays valid.
+	 */
+	user(userId) {
+		const users = env.ACCOUNT_USERS;
+		return users.get(
+			isLegacyAccountId(userId) ? users.idFromString(userId) : users.idFromName(userId)
+		);
+	},
+	address: (key) => env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(key)),
+	username: (key) => env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(key))
+});
+
 /**
- * The Durable Object of an account. New accounts are named by their word-chain id; accounts
- * made before those keep the hex id of a `newUniqueId()` object, which stays valid.
+ * Stands in for a stub of the shared accounts Worker's object: each method call goes over
+ * the binding by name, with plain data in and out, as calls to a stub do.
  */
+function remote<T>(binding: AccountsBinding, kind: AccountCall['kind'], key: string): T {
+	return new Proxy(
+		{},
+		{
+			get: (_target, method) =>
+				typeof method === 'string' && method !== 'then'
+					? (...args: unknown[]) => binding.call({ kind, key, method, args })
+					: undefined
+		}
+	) as T;
+}
+
+function accounts(env: AccountEnv): AccountObjects {
+	const binding = env.ACCOUNTS;
+	if (!binding) return localAccounts(env);
+	return {
+		user: (userId) => remote(binding, 'user', userId),
+		address: (key) => remote(binding, 'address', key),
+		username: (key) => remote(binding, 'username', key)
+	};
+}
+
+/** The Durable Object of an account. */
 export function userStub(env: AccountEnv, userId: string): DurableObjectStub<AccountUser> {
-	const users = env.ACCOUNT_USERS;
-	return users.get(
-		isLegacyAccountId(userId) ? users.idFromString(userId) : users.idFromName(userId)
-	);
+	return accounts(env).user(userId);
+}
+
+/** The record of one email address: its sign-in codes and which account it belongs to. */
+export function emailStub(env: AccountEnv, email: string): DurableObjectStub<AccountEmail> {
+	return accounts(env).address(normaliseEmail(email) ?? email);
+}
+
+/** Who holds a username (`usernameKey`). */
+export function nameStub(env: AccountEnv, key: string): DurableObjectStub<AccountName> {
+	return accounts(env).username(key);
 }
 
 /** A new salt and the password's hash with it. */
@@ -77,7 +158,9 @@ export interface PasswordHash {
 
 export type VerifyResult =
 	| { ok: true; userId: string; created: boolean }
-	| { ok: false; reason: 'expired' | 'wrong' | 'too-many' };
+	| { ok: false; reason: 'expired' | 'wrong' | 'too-many' }
+	/** The code is right but the privacy policy must be accepted first; the code still works. */
+	| { ok: false; reason: 'privacy'; creating: boolean };
 
 export type ChangeStartResult = { ok: true; code: string } | { ok: false; reason: 'rate-limited' };
 
@@ -233,16 +316,19 @@ export class AccountEmail extends DurableObject<AccountEnv> {
 	verify(
 		email: string,
 		proof: { code: string } | { token: string },
-		now: number
+		now: number,
+		/** The privacy policy version the user accepted on this request, if any. */
+		accepted?: string
 	): Promise<VerifyResult> {
 		// One at a time, so two devices finishing at once can't make two users.
-		return this.ctx.blockConcurrencyWhile(() => this.check(email, proof, now));
+		return this.ctx.blockConcurrencyWhile(() => this.check(email, proof, now, accepted));
 	}
 
 	private async check(
 		email: string,
 		proof: { code: string } | { token: string },
-		now: number
+		now: number,
+		accepted?: string
 	): Promise<VerifyResult> {
 		const row = this.sql
 			.exec<{ code_hash: string; token_hash: string; expires_at: number; attempts: number }>(
@@ -266,13 +352,26 @@ export class AccountEmail extends DurableObject<AccountEnv> {
 			this.sql.exec('UPDATE pending SET attempts = ? WHERE id = 1', attempts);
 			return { ok: false, reason: 'wrong' };
 		}
+		const owner = this.owner();
+		// Asked before the code is used up, so the same code works once the policy is accepted.
+		if (accepted !== PRIVACY_VERSION) {
+			if (!owner) return { ok: false, reason: 'privacy', creating: true };
+			if ((await userStub(this.env, owner).privacyVersion()) !== PRIVACY_VERSION) {
+				return { ok: false, reason: 'privacy', creating: false };
+			}
+		}
 		this.sql.exec('DELETE FROM pending');
 
-		const owner = this.owner();
-		if (owner) return { ok: true, userId: owner, created: false };
+		if (owner) {
+			if (accepted === PRIVACY_VERSION)
+				await userStub(this.env, owner).acceptPrivacy(accepted, now);
+			return { ok: true, userId: owner, created: false };
+		}
 		// A new id, picked again in the rare case it is already some account's.
 		let userId = randomAccountId();
-		while (!(await userStub(this.env, userId).init(userId, email, now))) userId = randomAccountId();
+		while (!(await userStub(this.env, userId).init(userId, email, now, PRIVACY_VERSION))) {
+			userId = randomAccountId();
+		}
 		this.sql.exec('INSERT INTO owner (id, user_id) VALUES (1, ?)', userId);
 		return { ok: true, userId, created: true };
 	}
@@ -405,6 +504,12 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			);
 			-- Sessions made without "Remember me": they end after a shorter time unused.
 			CREATE TABLE IF NOT EXISTS short_session (id TEXT PRIMARY KEY);
+			-- Where each session was last used, roughly (Cloudflare's city and country; no IP).
+			CREATE TABLE IF NOT EXISTS session_place (
+				id TEXT PRIMARY KEY,
+				city TEXT,
+				country TEXT
+			);
 			-- The password's PBKDF2-SHA256 hash and salt; no row means sign-in by emailed code only.
 			CREATE TABLE IF NOT EXISTS password (
 				id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -417,6 +522,12 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			CREATE TABLE IF NOT EXISTS username (
 				id INTEGER PRIMARY KEY CHECK (id = 1),
 				name TEXT NOT NULL
+			);
+			-- Which privacy policy version the user accepted, and when (Trevor, 2026-10-18).
+			CREATE TABLE IF NOT EXISTS privacy (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				version TEXT NOT NULL,
+				accepted_at INTEGER NOT NULL
 			);
 			-- The profile icon: an official character's id (Trevor, 2026-10-18), never an image.
 			CREATE TABLE IF NOT EXISTS icon (
@@ -432,6 +543,22 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				body TEXT,
 				PRIMARY KEY (kind, id)
 			);
+			-- The account's change counter: a device asks for documents changed after a value.
+			CREATE TABLE IF NOT EXISTS sync_counter (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				value INTEGER NOT NULL
+			);
+			INSERT OR IGNORE INTO sync_counter (id, value) VALUES (1, 1);
+			-- The counter's value when each document last changed.
+			CREATE TABLE IF NOT EXISTS doc_seq (
+				kind TEXT NOT NULL,
+				id TEXT NOT NULL,
+				seq INTEGER NOT NULL,
+				PRIMARY KEY (kind, id)
+			);
+			CREATE INDEX IF NOT EXISTS doc_seq_by_seq ON doc_seq (seq);
+			-- Documents saved before the counter existed count as changed at 1.
+			INSERT OR IGNORE INTO doc_seq (kind, id, seq) SELECT kind, id, 1 FROM doc;
 		`);
 	}
 
@@ -516,19 +643,51 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		);
 	}
 
-	/** Makes the account. False when this id already belongs to one (the caller picks another). */
-	async init(accountId: string, email: string, now: number): Promise<boolean> {
+	/**
+	 * Makes the account, with the privacy policy version accepted to make it. False when this
+	 * id already belongs to one (the caller picks another).
+	 */
+	async init(accountId: string, email: string, now: number, privacy: string): Promise<boolean> {
 		if (this.user()) return false;
 		this.sql.exec('INSERT INTO account (id, account_id) VALUES (1, ?)', accountId);
 		this.sql.exec('INSERT INTO profile (id, email, created_at) VALUES (1, ?, ?)', email, now);
+		await this.acceptPrivacy(privacy, now);
 		return true;
+	}
+
+	/** The privacy policy version this user last accepted; undefined for older accounts. */
+	async privacyVersion(): Promise<string | undefined> {
+		return this.privacy()?.version;
+	}
+
+	async acceptPrivacy(version: string, now: number): Promise<void> {
+		this.sql.exec(
+			`INSERT INTO privacy (id, version, accepted_at) VALUES (1, ?, ?)
+			 ON CONFLICT (id) DO UPDATE SET version = excluded.version, accepted_at = excluded.accepted_at`,
+			version,
+			now
+		);
+	}
+
+	private privacy(): { version: string; acceptedAt: number } | undefined {
+		const row = this.sql
+			.exec<{ version: string; accepted_at: number }>(
+				'SELECT version, accepted_at FROM privacy WHERE id = 1'
+			)
+			.toArray()[0];
+		return row && { version: row.version, acceptedAt: row.accepted_at };
 	}
 
 	/**
 	 * Starts a session; the cookie value is `<user id>.<secret>`. Without `remember` it ends
 	 * after SHORT_SESSION_IDLE_MS unused (and its cookie when the browser closes).
 	 */
-	async createSession(device: string, now: number, remember = true): Promise<string> {
+	async createSession(
+		device: string,
+		now: number,
+		remember = true,
+		place?: DevicePlace
+	): Promise<string> {
 		const secret = randomToken();
 		const id = randomToken(9);
 		this.sql.exec(
@@ -540,6 +699,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			now
 		);
 		if (!remember) this.sql.exec('INSERT INTO short_session (id) VALUES (?)', id);
+		if (place) this.setPlace(id, place);
 		return `${this.accountId()}.${secret}`;
 	}
 
@@ -549,7 +709,11 @@ export class AccountUser extends DurableObject<AccountEnv> {
 	}
 
 	/** The signed-in user for a session secret, or undefined when it isn't (or no longer) valid. */
-	async authenticate(secret: string, now: number): Promise<Authenticated | undefined> {
+	async authenticate(
+		secret: string,
+		now: number,
+		place?: DevicePlace
+	): Promise<Authenticated | undefined> {
 		const user = this.user();
 		if (!user) return undefined;
 		this.sql.exec('DELETE FROM session WHERE last_seen_at < ?', now - SESSION_IDLE_MS);
@@ -558,6 +722,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			now - SHORT_SESSION_IDLE_MS
 		);
 		this.sql.exec('DELETE FROM short_session WHERE id NOT IN (SELECT id FROM session)');
+		this.sql.exec('DELETE FROM session_place WHERE id NOT IN (SELECT id FROM session)');
 		const hash = await sha256(`session:${secret}`);
 		const row = this.sql
 			.exec<{ id: string; last_seen_at: number }>(
@@ -568,6 +733,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		if (!row) return undefined;
 		if (now - row.last_seen_at > SEEN_GRANULARITY_MS) {
 			this.sql.exec('UPDATE session SET last_seen_at = ? WHERE id = ?', now, row.id);
+			if (place) this.setPlace(row.id, place);
 		}
 		const short = this.sql
 			.exec<{ n: number }>('SELECT COUNT(*) AS n FROM short_session WHERE id = ?', row.id)
@@ -575,10 +741,27 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		return { user, sessionId: row.id, remember: short === 0 };
 	}
 
+	private setPlace(id: string, { city, country }: DevicePlace): void {
+		this.sql.exec(
+			'INSERT OR REPLACE INTO session_place (id, city, country) VALUES (?, ?, ?)',
+			id,
+			city ?? null,
+			country ?? null
+		);
+	}
+
 	async sessions(currentId: string): Promise<DeviceSession[]> {
 		return this.sql
-			.exec<{ id: string; device: string; created_at: number; last_seen_at: number }>(
-				'SELECT id, device, created_at, last_seen_at FROM session ORDER BY last_seen_at DESC'
+			.exec<{
+				id: string;
+				device: string;
+				created_at: number;
+				last_seen_at: number;
+				city: string | null;
+				country: string | null;
+			}>(
+				`SELECT s.id, s.device, s.created_at, s.last_seen_at, p.city, p.country
+				FROM session s LEFT JOIN session_place p ON p.id = s.id ORDER BY s.last_seen_at DESC`
 			)
 			.toArray()
 			.map((row) => ({
@@ -586,7 +769,9 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				device: row.device,
 				createdAt: row.created_at,
 				lastSeenAt: row.last_seen_at,
-				current: row.id === currentId
+				current: row.id === currentId,
+				...(row.city ? { city: row.city } : {}),
+				...(row.country ? { country: row.country } : {})
 			}));
 	}
 
@@ -661,6 +846,12 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			deleted ? 1 : 0,
 			text
 		);
+		const seq = this.sql
+			.exec<{ value: number }>(
+				'UPDATE sync_counter SET value = value + 1 WHERE id = 1 RETURNING value'
+			)
+			.one().value;
+		this.sql.exec('INSERT OR REPLACE INTO doc_seq (kind, id, seq) VALUES (?, ?, ?)', kind, id, seq);
 		return {
 			ok: true,
 			doc: {
@@ -674,20 +865,79 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		};
 	}
 
+	/**
+	 * Applies a device's queued changes in order (each as `putDoc`), then returns the
+	 * documents of `kinds` changed after `since`, oldest first, up to about MAX_SYNC_BYTES.
+	 */
+	async sync(request: SyncRequest, now: number): Promise<SyncResponse> {
+		const results: SyncResult[] = [];
+		for (const change of request.changes) {
+			const { kind, id } = change;
+			const result = await this.putDoc(
+				kind,
+				id,
+				change.baseRev,
+				change.body,
+				change.deleted === true,
+				now
+			);
+			results.push(
+				result.ok
+					? { kind, id, status: 'saved', doc: result.doc }
+					: result.reason === 'conflict'
+						? { kind, id, status: 'conflict', doc: result.doc }
+						: { kind, id, status: result.reason }
+			);
+		}
+		const changes: ProfileDoc[] = [];
+		let cursor = request.since;
+		let more = false;
+		if (request.kinds.length > 0) {
+			const rows = this.sql.exec<DocRow & { seq: number }>(
+				`SELECT d.kind, d.id, d.rev, d.updated_at, d.deleted, d.body, s.seq
+				FROM doc_seq s JOIN doc d ON d.kind = s.kind AND d.id = s.id
+				WHERE s.seq > ? AND s.kind IN (${request.kinds.map(() => '?').join(', ')})
+				ORDER BY s.seq`,
+				request.since,
+				...request.kinds
+			);
+			let bytes = 0;
+			for (const row of rows) {
+				bytes += (row.body?.length ?? 0) + 200;
+				// Always at least one, so a single large document still gets through.
+				if (changes.length > 0 && bytes > MAX_SYNC_BYTES) {
+					more = true;
+					break;
+				}
+				changes.push(toDoc(row));
+				cursor = row.seq;
+			}
+		}
+		if (!more) {
+			// Nothing further of these kinds: the device can start from the newest value.
+			cursor = Math.max(
+				cursor,
+				this.sql.exec<{ value: number }>('SELECT value FROM sync_counter WHERE id = 1').one().value
+			);
+		}
+		return { results, changes, cursor, more };
+	}
+
 	/** Everything stored for this user, for "Download my data". */
 	async exportAll(): Promise<{
 		user: User | undefined;
+		privacy: { version: string; acceptedAt: number } | undefined;
 		sessions: Omit<DeviceSession, 'current'>[];
 		docs: ProfileDoc[];
 	}> {
 		return {
 			user: this.user(),
-			sessions: (await this.sessions('')).map(({ id, device, createdAt, lastSeenAt }) => ({
-				id,
-				device,
-				createdAt,
-				lastSeenAt
-			})),
+			privacy: this.privacy(),
+			sessions: (await this.sessions('')).map((session) => {
+				const { current, ...stored } = session;
+				void current;
+				return stored;
+			}),
 			docs: this.sql
 				.exec<DocRow>(
 					'SELECT kind, id, rev, updated_at, deleted, body FROM doc WHERE deleted = 0 ORDER BY kind, updated_at DESC'

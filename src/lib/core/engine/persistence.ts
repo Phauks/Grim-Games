@@ -11,10 +11,12 @@
  * add a fixture of the old shape to `persistence.test.ts`.
  */
 import { APP_NAME } from '#lib/core/app-name.ts';
+import { scriptLogo } from '#lib/core/data/script-logo.ts';
+import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 8;
+export const SAVED_GAME_VERSION = 9;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -30,6 +32,8 @@ export interface SavedGameSummary {
 	savedAt: number;
 	createdAt: number;
 	scriptName?: string;
+	/** The script's logo (`scriptLogo`), for the list (Trevor, 2026-10-18); read from the save, not stored. */
+	scriptLogo?: string;
 	seatCount: number;
 	/**
 	 * How far the game has got, for the saved games list: `setup` until a seat has a
@@ -129,6 +133,14 @@ const migrateV6toV7: Migration = (doc) => ({ ...doc, schemaVersion: 7 });
  */
 const migrateV7toV8: Migration = (doc) => ({ ...doc, schemaVersion: 8 });
 
+/**
+ * Version 9 (2026-10-18) added the Storyteller's text on a reminder (`ReminderInstance.note`,
+ * the `ReminderNoteSet` event), for the generic ∞ reminder. The log needs no change: an
+ * older game has no notes. The bump makes older builds refuse a version 9 save instead of
+ * failing on the unknown event.
+ */
+const migrateV8toV9: Migration = (doc) => ({ ...doc, schemaVersion: 9 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -137,7 +149,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	4: migrateV4toV5,
 	5: migrateV5toV6,
 	6: migrateV6toV7,
-	7: migrateV7toV8
+	7: migrateV7toV8,
+	8: migrateV8toV9
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
@@ -241,6 +254,13 @@ export function summariseSavedGame(saved: SavedGame): SavedGameSummary {
 	}
 	if (assigned || days > 0) summary.stage = { kind: 'day', day: days + 1 };
 	if (script?.meta?.name) summary.scriptName = script.meta.name;
+	const logo =
+		script &&
+		scriptLogo({
+			edition: scriptEdition(script)?.id,
+			meta: { ...script.meta, name: script.meta?.name ?? '' }
+		});
+	if (logo) summary.scriptLogo = logo;
 	summary.seatCount = seats;
 	return summary;
 }

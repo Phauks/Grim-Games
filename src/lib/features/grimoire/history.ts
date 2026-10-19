@@ -263,6 +263,13 @@ function describeEvent(
 				{ kind: 'reminder', label: event.reminder.label, characterId: event.reminder.characterId },
 				text(' put on the board, not on a player')
 			];
+		case 'ReminderNoteSet': {
+			const r = reminderOn(before, event.reminderId) ?? ruleReminderOn(before, event.reminderId);
+			const what: HistoryPart = r
+				? { kind: 'reminder', label: r.label, characterId: r.characterId }
+				: text('a reminder');
+			return event.note ? [text('Wrote on '), what] : [text('Cleared the text on '), what];
+		}
 		case 'ReminderLoosened': {
 			const r = reminderOn(before, event.reminderId) ?? ruleReminderOn(before, event.reminderId);
 			if (!r) return [text('Took a reminder off its holder')];

@@ -16,23 +16,21 @@ import {
 	type Game,
 	type SeatId
 } from '#lib/core/model/index.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { detectedEndReason, type EndReason } from '#lib/core/rules/end-reason.ts';
 import {
 	GAME_RECORD_VERSION,
 	type GameRecord,
 	type RecordCharacter,
 	type RecordDay,
-	type RecordEndRule,
 	type RecordRole
 } from './record.ts';
-
-/** The usual ends: the Demon died, or just 2 players live. */
-const USUAL_ENDS: readonly RecordEndRule[] = ['demon-dead', 'two-alive'];
 
 /** What ending the game recorded on this device (`endedGames` in the grimoire). */
 export interface GameEnding {
 	endedAt: number;
 	winner?: Alignment;
+	/** How it was won, as End game saved it; games ended before it was asked have none. */
+	reason?: EndReason;
 }
 
 function snapshot(game: Game, characters: CharacterLookup): Map<SeatId, RecordCharacter> {
@@ -49,16 +47,6 @@ function snapshot(game: Game, characters: CharacterLookup): Map<SeatId, RecordCh
 function aliveCount(game: Game, characters: CharacterLookup): number {
 	return game.seating.filter((id) => isAliveForWin(game, id) && !isTraveller(game, id, characters))
 		.length;
-}
-
-/**
- * Which rule gave the recorded winner: a usual end if one did, else the first other rule
- * that did, else the Storyteller's own call. Checked with today's day over, since the game
- * was ended then.
- */
-function endRule(game: Game, characters: CharacterLookup, winner: Alignment): RecordEndRule {
-	const ends = gameEnds(game, characters, { dayEnded: true }).filter((e) => e.winner === winner);
-	return ends.find((e) => USUAL_ENDS.includes(e.rule))?.rule ?? ends[0]?.rule ?? 'storyteller';
 }
 
 function recordDay(log: DayLog, day: number): RecordDay {
@@ -152,7 +140,7 @@ export function deriveGameRecord(
 	if (game.script.meta?.author) record.script.author = game.script.meta.author;
 	if (ending.winner) {
 		record.winner = ending.winner;
-		record.endRule = endRule(game, characters, ending.winner);
+		record.endReason = ending.reason ?? detectedEndReason(game, characters, ending.winner);
 	}
 	return record;
 }

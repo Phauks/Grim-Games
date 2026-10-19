@@ -7,15 +7,71 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import { errorDetails, type AppError } from './app-error.ts';
 	import { errorLog } from './report.svelte.ts';
 
-	// The corner card plus the details dialog; mounted once by install.ts, outside the layout.
+	// The corner card plus every problem on this device in one table (Trevor, 2026-10-18); a
+	// row opens its details over it. Mounted once by install.ts, outside the layout.
 
 	let confirmClear = $state(false);
+	let openKey = $state<string>();
+	let detailsOpen = $state(false);
 	const latest = $derived(errorLog.entries.find((e) => e.key === errorLog.unseen[0]));
-	const time = $derived(new Intl.DateTimeFormat(locale.current, { timeStyle: 'short' }));
+	const current = $derived(errorLog.entries.find((e) => e.key === openKey));
+	const time = $derived(
+		new Intl.DateTimeFormat(locale.current, { dateStyle: 'short', timeStyle: 'short' })
+	);
+	const clock = $derived(new Intl.DateTimeFormat(locale.current, { timeStyle: 'short' }));
+	const day = $derived(new Intl.DateTimeFormat(locale.current, { dateStyle: 'short' }));
+	/** The table's Last seen: the time for today's problems, else the date (details have both). */
+	function seen(at: number): string {
+		return new Date(at).toDateString() === new Date().toDateString()
+			? clock.format(at)
+			: day.format(at);
+	}
+
+	type Column = 'problem' | 'area' | 'page' | 'last' | 'count';
+	const columns = $derived<DataColumn<Column, AppError>[]>([
+		{
+			id: 'problem',
+			label: t('errors.problem'),
+			rowHeader: true,
+			flush: true,
+			value: (e) => `${e.name}: ${e.message}`
+		},
+		{
+			id: 'area',
+			flush: true,
+			label: t('errors.area'),
+			width: '14%',
+			wide: true,
+			value: (e) => e.area
+		},
+		{
+			id: 'page',
+			flush: true,
+			label: t('errors.page'),
+			width: '16%',
+			wide: true,
+			value: (e) => e.page
+		},
+		{ id: 'last', flush: true, label: t('errors.lastSeen'), width: '24%', value: (e) => e.lastAt },
+		{
+			id: 'count',
+			flush: true,
+			label: t('errors.times'),
+			width: '16%',
+			align: 'end',
+			value: (e) => e.count
+		}
+	]);
+
+	function open(error: AppError) {
+		openKey = error.key;
+		detailsOpen = true;
+	}
 
 	function report(error: AppError) {
 		reportDialog.show({
@@ -25,8 +81,8 @@
 		});
 	}
 
-	async function copy(error: AppError) {
-		await copyText(errorDetails(error), {
+	async function copy(errors: AppError[]) {
+		await copyText(errors.map(errorDetails).join('\n\n'), {
 			copied: [t('errors.copied'), t('errors.copiedDetail')],
 			failed: [t('errors.copyFailed'), t('errors.copyFailedDetail')]
 		});
@@ -50,45 +106,83 @@
 	</div>
 {/if}
 
-<Dialog bind:open={errorLog.open} title={t('errors.dialogTitle')}>
-	{#if errorLog.entries.length === 0}
-		<p class="none">{t('common.none')}</p>
-	{:else}
-		<ol class="log">
-			{#each errorLog.entries as error (error.key)}
-				<li>
-					<p class="message"><strong>{error.name}</strong>: {error.message}</p>
-					<p class="meta">
-						{error.count > 1
-							? t('errors.metaRepeated', {
-									area: error.area,
-									page: error.page,
-									time: time.format(error.lastAt),
-									count: error.count
-								})
-							: t('errors.meta', {
-									area: error.area,
-									page: error.page,
-									time: time.format(error.lastAt)
-								})}
-					</p>
-					<div class="row-actions">
-						<Button variant="quiet" onclick={() => copy(error)}>{t('errors.copy')}</Button>
-						<Button variant="quiet" onclick={() => report(error)}
-							><Icon name="report" />{t('errors.report')}</Button
-						>
-					</div>
-				</li>
-			{/each}
-		</ol>
-	{/if}
-	<!-- The trash sits beside the X (Trevor, 2026-10-17). -->
+<Dialog bind:open={errorLog.open} title={t('errors.dialogTitle')} size="full">
+	<DataTable
+		label={t('errors.dialogTitle')}
+		{columns}
+		rows={errorLog.entries}
+		key={(e) => e.key}
+		narrow="hide"
+		fit="container"
+		hideKey="error-log"
+		testid="problems"
+	>
+		{#snippet cell(error, column)}
+			<!-- Every cell is a button for the same problem, so a tap anywhere on the row opens
+			     its details; only the first is in the tab order. -->
+			<button
+				type="button"
+				class="open"
+				class:end={column.align === 'end'}
+				tabindex={column.id === 'problem' ? undefined : -1}
+				onclick={() => open(error)}
+			>
+				{#if column.id === 'problem'}
+					<strong>{error.name}</strong>: {error.message}
+				{:else if column.id === 'area'}
+					{error.area}
+				{:else if column.id === 'page'}
+					{error.page}
+				{:else if column.id === 'last'}
+					{seen(error.lastAt)}
+				{:else}
+					{error.count}
+				{/if}
+			</button>
+		{/snippet}
+	</DataTable>
+	<!-- Copy and the trash sit beside the X (Trevor, 2026-10-17). -->
 	{#snippet headActions()}
+		<IconButton
+			icon="copy"
+			label={t('errors.copyAll')}
+			disabled={errorLog.entries.length === 0}
+			onclick={() => copy(errorLog.entries)}
+		/>
 		<DeleteButton
 			label={t('errors.clear')}
 			disabled={errorLog.entries.length === 0}
 			onclick={() => (confirmClear = true)}
 		/>
+	{/snippet}
+</Dialog>
+
+<Dialog bind:open={detailsOpen} title={current ? current.name : t('errors.dialogTitle')}>
+	{#if current}
+		<p class="message">{current.message}</p>
+		<dl class="facts">
+			<dt>{t('errors.area')}</dt>
+			<dd>{current.area}</dd>
+			<dt>{t('errors.page')}</dt>
+			<dd>{current.page}</dd>
+			<dt>{t('errors.firstSeen')}</dt>
+			<dd>{time.format(current.firstAt)}</dd>
+			<dt>{t('errors.lastSeen')}</dt>
+			<dd>{time.format(current.lastAt)}</dd>
+			<dt>{t('errors.times')}</dt>
+			<dd>{current.count}</dd>
+		</dl>
+		{#if current.stack}
+			<pre class="stack">{current.stack}</pre>
+		{/if}
+	{/if}
+	{#snippet actions()}
+		<Button variant="quiet" disabled={!current} onclick={() => current && copy([current])}
+			>{t('errors.copy')}</Button
+		>
+		<Button variant="quiet" disabled={!current} onclick={() => current && report(current)}
+			><Icon name="report" />{t('errors.report')}</Button
+		>
 	{/snippet}
 </Dialog>
 
@@ -138,36 +232,50 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
+	.open {
+		width: 100%;
+		height: 100%;
+		min-height: var(--tap-target);
+		padding: var(--space-1) var(--space-2);
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		overflow-wrap: anywhere;
+		cursor: pointer;
 	}
-	.log {
-		display: grid;
-		gap: var(--space-3);
-		max-height: 60vh;
-		margin: 0;
-		padding: 0;
-		overflow-y: auto;
-		list-style: none;
+	.open.end {
+		text-align: end;
 	}
-	.log li {
-		display: grid;
-		gap: var(--space-1);
-		padding-bottom: var(--space-3);
-		border-bottom: 1px solid var(--border);
+	:global([data-testid='problems'] tr:has(.open:hover)) {
+		background: var(--surface-hover);
 	}
-	.message,
-	.meta {
+	.message {
 		margin: 0;
 		overflow-wrap: anywhere;
 	}
-	.meta {
-		color: var(--on-surface-muted);
-		font-size: 0.8rem;
+	.facts {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: var(--space-1) var(--space-3);
+		margin: var(--space-3) 0 0;
 	}
-	.row-actions {
-		display: flex;
-		gap: var(--space-2);
+	.facts dt {
+		color: var(--on-surface-muted);
+	}
+	.facts dd {
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+	.stack {
+		margin: var(--space-3) 0 0;
+		padding: var(--space-2);
+		overflow-x: auto;
+		border-radius: var(--radius-md);
+		background: var(--surface);
+		font-size: 0.75rem;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 	}
 </style>

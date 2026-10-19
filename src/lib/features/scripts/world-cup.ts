@@ -37,6 +37,14 @@ export interface WorldCupEntry {
 	/** Empty where BotC Scripts names no author. */
 	author: string;
 	stage: WorldCupStage;
+	/**
+	 * The script's logo when its BotC Scripts JSON may lack one: TPI hosts every 2025 finalist's
+	 * logo at release.botc.app/wc25/<key>/logo.webp, the address its own copy of the script
+	 * (wc25/<key>/script.json in TPI's botc-release repository) names in `_meta.logo`
+	 * (findings: /mnt/project-files/script-logos/missing-logos.md). Loaded from there at
+	 * runtime, never copied.
+	 */
+	logo?: string;
 }
 
 export interface WorldCup {
@@ -50,8 +58,12 @@ const entry = (
 	scriptId: number,
 	name: string,
 	author: string,
-	stage: WorldCupStage
-): WorldCupEntry => ({ scriptId, name, author, stage });
+	stage: WorldCupStage,
+	logo?: string
+): WorldCupEntry => ({ scriptId, name, author, stage, ...(logo ? { logo } : {}) });
+
+/** TPI's logo for a 2025 finalist, by its folder on release.botc.app. */
+const wc25Logo = (key: string) => `https://release.botc.app/wc25/${key}/logo.webp`;
 
 export const WORLD_CUPS: Record<WorldCupYear, WorldCup> = {
 	'2023': {
@@ -82,22 +94,34 @@ export const WORLD_CUPS: Record<WorldCupYear, WorldCup> = {
 		year: '2025',
 		page: 'https://botcscripts.com/collection/61',
 		entries: [
-			entry(6687, 'The Ballad of Seat 7', 'TrashWarlock', 'winner'),
-			entry(6716, "Buyer's Remorse", 'Mist', 'semiFinal'),
-			entry(6714, 'Stowed Away', 'Caffeine', 'semiFinal'),
-			entry(6717, 'The Phantom Detectives', 'Schnauzer', 'semiFinal'),
-			entry(6705, 'Trained Killer', 'Ekin', 'quarterFinal'),
-			entry(6146, "The Djinn's Bargain", 'phillyCHEEEEEZ', 'quarterFinal'),
-			entry(6457, 'Binary Supernovae', 'Hystrex', 'quarterFinal'),
-			entry(6026, 'The River Styx', 'Rhea', 'finalist'),
-			entry(6407, 'Witch Hunt', 'Nick B', 'finalist'),
-			entry(6741, 'One Day More', 'Robe', 'finalist'),
-			entry(6742, 'Council of the Dead', 'Ember', 'finalist'),
-			entry(6799, 'I see dead people', 'A Terrifying Wizard', 'finalist'),
-			entry(6707, 'This Is Not My Beautiful House', 'JC', 'finalist'),
-			entry(6773, 'The Warrens', 'Zets', 'finalist'),
-			entry(6779, 'Show Me Wonders', 'DinosaurSatan', 'finalist'),
-			entry(6679, 'Off to see the Wizard', 'CrispyDuck', 'finalist')
+			entry(6687, 'The Ballad of Seat 7', 'TrashWarlock', 'winner', wc25Logo('seat7')),
+			entry(6716, "Buyer's Remorse", 'Mist', 'semiFinal', wc25Logo('buyersremorse')),
+			entry(6714, 'Stowed Away', 'Caffeine', 'semiFinal', wc25Logo('stowedaway')),
+			entry(
+				6717,
+				'The Phantom Detectives',
+				'Schnauzer',
+				'semiFinal',
+				wc25Logo('phantomdetectives')
+			),
+			entry(6705, 'Trained Killer', 'Ekin', 'quarterFinal', wc25Logo('trainedkiller')),
+			entry(
+				6146,
+				"The Djinn's Bargain",
+				'phillyCHEEEEEZ',
+				'quarterFinal',
+				wc25Logo('djinnsbargain')
+			),
+			entry(6457, 'Binary Supernovae', 'Hystrex', 'quarterFinal', wc25Logo('binarysupernovae')),
+			entry(6026, 'The River Styx', 'Rhea', 'finalist', wc25Logo('riverstyx')),
+			entry(6407, 'Witch Hunt', 'Nick B', 'finalist', wc25Logo('witchhunt')),
+			entry(6741, 'One Day More', 'Robe', 'finalist', wc25Logo('1daymore')),
+			entry(6742, 'Council of the Dead', 'Ember', 'finalist', wc25Logo('deadcouncil')),
+			entry(6799, 'I see dead people', 'A Terrifying Wizard', 'finalist', wc25Logo('deadpeople')),
+			entry(6707, 'This Is Not My Beautiful House', 'JC', 'finalist', wc25Logo('beautifulhouse')),
+			entry(6773, 'The Warrens', 'Zets', 'finalist', wc25Logo('warrens')),
+			entry(6779, 'Show Me Wonders', 'DinosaurSatan', 'finalist', wc25Logo('wonders')),
+			entry(6679, 'Off to see the Wizard', 'CrispyDuck', 'finalist', wc25Logo('offwizard'))
 		]
 	}
 };
@@ -125,4 +149,19 @@ export function readWorldCupAnswer(body: unknown): StoredWorldCupScript[] | unde
 			? [{ scriptId, version, json }]
 			: [];
 	});
+}
+
+/**
+ * The script JSON with the entry's logo in its `_meta` when the JSON names none; unchanged
+ * otherwise, so an author's own logo always wins.
+ */
+export function withEntryLogo(json: unknown[], logo: string | undefined): unknown[] {
+	if (!logo) return json;
+	const at = json.findIndex(
+		(item) => typeof item === 'object' && item !== null && (item as { id?: unknown }).id === '_meta'
+	);
+	if (at < 0) return [{ id: '_meta', logo }, ...json];
+	const meta = json[at] as Record<string, unknown>;
+	if (typeof meta.logo === 'string' && meta.logo.trim()) return json;
+	return json.map((item, i) => (i === at ? { ...meta, logo } : item));
 }

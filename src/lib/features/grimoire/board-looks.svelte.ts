@@ -7,7 +7,7 @@
  * - where the Fabled and Loric sit (large in the middle, or small in the top left corner) and
  *   whether they are grouped as one stack (Trevor, 2026-10-17: two choices);
  * - the script's logo faint in the middle of the board, and how faint (Trevor, 2026-10-18);
- * - how big each seat's player name badge is;
+ * - how big each seat's player name badge is, and how far below the token it sits;
  * - whether reminders are held by their seat or stay where they are dropped.
  */
 export interface BoardLooks {
@@ -24,6 +24,11 @@ export interface BoardLooks {
 	/** The player name badge's size, as a multiple of its usual size. */
 	nameSize: number;
 	/**
+	 * How far the player name badge moves down from the token's rim, as a share of the
+	 * token's size (Trevor, 2026-10-18: clear of the character name on the token).
+	 */
+	nameOffset: number;
+	/**
 	 * 'seat': reminders sit around their seat, laid out so none overlap. 'free' (Trevor,
 	 * 2026-10-17, "nonsticky"): a reminder stays where it is dropped; it still belongs to a seat.
 	 */
@@ -32,6 +37,8 @@ export interface BoardLooks {
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
 export const NAME_SIZE = { min: 0.6, max: 1.6, step: 0.1 } as const;
+/** How far the badge can move down, from on the rim to clear of the token's name. */
+export const NAME_OFFSET = { min: 0, max: 0.3, step: 0.02 } as const;
 
 /** The script logo's opacity range: never fully invisible while it is switched on. */
 export const LOGO_OPACITY = { min: 0.05, max: 1, step: 0.05 } as const;
@@ -44,6 +51,7 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	rulesAt: 'middle',
 	rulesGrouped: false,
 	nameSize: 1,
+	nameOffset: 0,
 	reminders: 'seat'
 };
 const KEY = 'grim.boardLooks';
@@ -53,6 +61,7 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 	const value = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
 	const strength = Number(value.vignetteStrength);
 	const nameSize = Number(value.nameSize);
+	const nameOffset = Number(value.nameOffset);
 	const logoOpacity = Number(value.logoOpacity);
 	return {
 		vignette: value.vignette !== false,
@@ -69,6 +78,9 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		nameSize: Number.isFinite(nameSize)
 			? Math.min(NAME_SIZE.max, Math.max(NAME_SIZE.min, nameSize))
 			: DEFAULT_BOARD_LOOKS.nameSize,
+		nameOffset: Number.isFinite(nameOffset)
+			? Math.min(NAME_OFFSET.max, Math.max(NAME_OFFSET.min, nameOffset))
+			: DEFAULT_BOARD_LOOKS.nameOffset,
 		reminders: value.reminders === 'free' ? 'free' : 'seat'
 	};
 }

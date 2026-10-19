@@ -405,7 +405,27 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 	await expect(page.getByTestId('day-toolbar').getByTestId('timer-mode')).toHaveText('Stopwatch');
 });
 
-test('End day closes the day and opens tonight’s night order at Dusk', async ({ page }) => {
+test('the time per living player is set on the timer and starts it at that much', async ({
+	page
+}) => {
+	await startGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	await expect(timer.getByRole('timer')).toHaveText('4:00');
+	// Trevor (2026-10-19): a setting, 30 seconds by default, on the timer and in Settings.
+	await timer.getByRole('button', { name: /^Timer sound/ }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Timer sound' });
+	const seconds = sheet.getByTestId('timer-per-player');
+	await expect(seconds).toHaveValue('30');
+	await seconds.fill('45');
+	await seconds.press('Enter');
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	// 8 living players at 45 seconds each.
+	await expect(timer.getByRole('timer')).toHaveText('6:00');
+});
+
+test('End day closes the day and walks through tonight from Dusk', async ({ page }) => {
 	await startGame(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	const day = page.getByRole('dialog', { name: 'Day' });
@@ -414,10 +434,13 @@ test('End day closes the day and opens tonight’s night order at Dusk', async (
 	const confirm = page.getByRole('alertdialog', { name: 'End the day?' });
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(day).toBeHidden();
-	const night = page.getByRole('dialog', { name: 'Night order' });
-	await expect(night).toBeVisible();
-	await expect(night.getByRole('button', { name: 'Done: Dusk' })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	// Dusk is ticked, so the night runs: the walk-through is on the board (the night order left
+	// it, Trevor 2026-10-18) and the bank's button is End night.
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(
+		page
+			.getByRole('list', { name: 'Reminder bank' })
+			.locator('..')
+			.getByRole('button', { name: 'End night', exact: true })
+	).toBeEnabled();
 });

@@ -34,6 +34,11 @@
 		 * that fills the space and handles its own scrolling or panning (the scratch pad).
 		 */
 		scroll?: boolean;
+		/**
+		 * Asked when ✕, Escape or a tap outside would close it; false keeps it open (a form
+		 * with unsaved changes asks first).
+		 */
+		beforeClose?: () => boolean;
 	}
 
 	let {
@@ -49,7 +54,8 @@
 		subtitle,
 		headActions,
 		closeButton = true,
-		scroll = true
+		scroll = true,
+		beforeClose
 	}: Props = $props();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit
@@ -61,9 +67,31 @@
 		layer = taken.layer;
 		return taken.close;
 	});
+
+	/**
+	 * The overlay under this one closed. Zag would close this one from inside that close, with
+	 * a flushSync that crashes Svelte 5.57 (null batch), so close it just after, through `open`.
+	 */
+	function dismissedByParent(event: { preventDefault(): void }) {
+		event.preventDefault();
+		queueMicrotask(() => (open = false));
+	}
+
+	/** Keeps the dialog open when `beforeClose` says no. */
+	function guard(event: { preventDefault(): void }) {
+		if (beforeClose?.() === false) event.preventDefault();
+	}
 </script>
 
-<Dialog.Root bind:open {role} lazyMount unmountOnExit>
+<Dialog.Root
+	bind:open
+	{role}
+	lazyMount
+	unmountOnExit
+	onEscapeKeyDown={guard}
+	onInteractOutside={guard}
+	onRequestDismiss={dismissedByParent}
+>
 	<Portal>
 		<Dialog.Backdrop style={layerStyle(layer, 'backdrop')} />
 		<Dialog.Positioner style={layerStyle(layer, 'content')}>
@@ -75,7 +103,17 @@
 					>
 					{#if headActions}<span class="head-actions">{@render headActions()}</span>{/if}
 					{#if closeButton}
-						<Dialog.CloseTrigger aria-label="Close"><Icon name="close" /></Dialog.CloseTrigger>
+						<!-- A plain button that sets `open`, not Ark's CloseTrigger: zag's own close runs a
+						     flushSync that can crash Svelte 5.57 (null batch) about one close in three. -->
+						<button
+							type="button"
+							data-scope="dialog"
+							data-part="close-trigger"
+							aria-label="Close"
+							onclick={() => {
+								if (beforeClose?.() !== false) open = false;
+							}}><Icon name="close" /></button
+						>
 					{/if}
 				</div>
 				{#if subtitle}<Dialog.Description>{@render subtitle()}</Dialog.Description
@@ -183,9 +221,11 @@
 	:global([data-scope='dialog'][data-part='close-trigger']) {
 		display: grid;
 		place-items: center;
-		min-width: var(--tap-target);
+		flex: none;
+		padding: 0;
 		border: 0;
-		background: none;
+		/* Not `background: none`: that would reset the shared hover tint (base.css). */
+		background-color: transparent;
 	}
 	.head {
 		display: flex;

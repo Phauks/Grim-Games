@@ -46,7 +46,14 @@ test('an uncaught error shows the corner card, and Details offers a scrubbed rep
 	const dialog = page.getByRole('dialog', { name: 'Problems on this device' });
 	await expect(dialog).toBeVisible();
 	await expect(dialog).toContainText('test failure at example.com/room');
-	const report = dialog.getByRole('button', { name: 'Report' });
+	// A row opens that problem's details over the list.
+	await dialog
+		.getByTestId('problems')
+		.getByRole('button', { name: /test failure/ })
+		.tap();
+	const details = page.getByRole('dialog', { name: 'Error' });
+	await expect(details).toContainText('test failure at example.com/room');
+	const report = details.getByRole('button', { name: 'Report' });
 	expect((await report.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	// Report opens the in-app form as a bug, with the problem's details to send along.
 	await report.tap();
@@ -80,10 +87,40 @@ test('dismissing the card keeps the page as it was', async ({ page }) => {
 	await expect(card).toBeHidden();
 });
 
-test('an unknown address shows Page not found without reporting an error', async ({ page }) => {
+test('an unknown address shows the Fool and ways out, without reporting an error', async ({
+	page
+}) => {
+	await page.goto('/library');
 	await page.goto('/no-such-page');
 	await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+	const main = page.locator('main.page');
+	const notFound = page.getByTestId('not-found');
+	await expect(notFound.getByRole('img', { name: 'Fool' })).toBeVisible();
+	await expect(notFound).toContainText("The first time you visit this page, it doesn't exist.");
 	await expect(page.getByTestId('error-notice')).toBeHidden();
+	for (const name of ['Library', 'Report an issue', 'Home']) {
+		const box = await main
+			.getByRole(name === 'Report an issue' ? 'button' : 'link', { name })
+			.boundingBox();
+		expect(box!.height).toBeGreaterThanOrEqual(44);
+	}
+	// Compact: the Fool, the joke and the ways out fit on one screen, with no sideways scroll.
+	const homeBox = await main.getByRole('link', { name: 'Home' }).boundingBox();
+	expect(homeBox!.y + homeBox!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+		true
+	);
+
+	// Report an issue opens the Report form, already titled; the address goes with it.
+	await main.getByRole('button', { name: 'Report an issue' }).tap();
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await expect(form.getByRole('textbox', { name: 'Title' })).toHaveValue('Page not found');
+	await expect(form).toContainText('/no-such-page');
+	await form.getByRole('button', { name: 'Cancel' }).tap();
+
+	await main.getByRole('link', { name: 'Library' }).tap();
+	await expect(page).toHaveURL(/\/library$/);
+	await page.goto('/no-such-page');
 	await page.getByRole('link', { name: 'Home' }).tap();
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
 });
@@ -208,6 +245,31 @@ test('Diagnostics gathers build, device and problems on the device, without game
 	expect(download.suggestedFilename()).toMatch(
 		/^grim-games-diagnostics-\d{4}-\d{2}-\d{2}-\d{6}\.txt$/
 	);
+});
+
+test('every problem on this device is in one table, repeats counted', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
+	await page.evaluate(() => {
+		for (const message of ['first problem', 'second problem', 'second problem']) {
+			setTimeout(() => {
+				throw new Error(message);
+			});
+		}
+	});
+	await expect(page.getByTestId('error-notice')).toContainText('second problem');
+	await page.getByTestId('error-notice').getByRole('button', { name: 'Details' }).tap();
+	const table = page
+		.getByRole('dialog', { name: 'Problems on this device' })
+		.getByTestId('problems');
+	const second = table.getByRole('row', { name: /second problem/ });
+	await expect(table.getByRole('row', { name: /first problem/ })).toBeVisible();
+	await expect(second.getByRole('cell').last()).toHaveText('2');
+	// The whole row is the tap target, at least 44px tall.
+	const box = (await second.boundingBox())!;
+	expect(box.height).toBeGreaterThanOrEqual(44);
+	await page.touchscreen.tap(box.x + box.width - 4, box.y + box.height / 2);
+	await expect(page.getByRole('dialog', { name: 'Error' })).toContainText('second problem');
 });
 
 test('Clear problems is a trash can beside the X and asks first', async ({ page }) => {

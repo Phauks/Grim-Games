@@ -66,8 +66,16 @@ test('opens a saved script to edit it', async ({ page }) => {
 		.tap();
 	await expect(page.getByTestId('count-demon')).toHaveText('0');
 
+	// The Library's file manager, scripts only (Trevor, 2026-10-18), not a bare list.
 	await page.getByRole('button', { name: 'Open a saved script' }).tap();
-	await page.getByRole('dialog', { name: 'Open a saved script' }).getByText('Reopen me').tap();
+	const library = page.getByRole('dialog', { name: 'Open a saved script' });
+	await expect(library.getByTestId('library-table')).toBeVisible();
+	await expect(library.getByRole('heading', { name: 'Kinds' })).toHaveCount(0);
+	// The search sits behind its button beside the folder controls (Trevor, 2026-10-18).
+	await library.getByRole('button', { name: 'Search the Library' }).tap();
+	await library.getByRole('searchbox', { name: 'Search the Library' }).fill('reopen');
+	await library.getByText('Reopen me').tap();
+	await expect(library).toBeHidden();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 	await expect(page.getByTestId('count-demon')).toHaveText('1');
 	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Reopen me');
@@ -86,6 +94,51 @@ test('opens a saved script to edit it', async ({ page }) => {
 	await page.goto(`/build-script#edit=${id}`);
 	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Reopen me');
 	await expect(page).toHaveURL(/\/build-script$/);
+});
+
+test.describe('in a computer window', () => {
+	test.use({ viewport: { width: 1440, height: 900 } });
+
+	test('Preview shows a saved script before opening it', async ({ page }) => {
+		// The Library's Preview, in its picker too (Trevor, 2026-10-18).
+		await page.goto('/build-script');
+		await page.getByRole('textbox', { name: 'Name' }).fill('Look first');
+		for (const name of ['Chef', 'Imp']) await character(page, name).click();
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+		await page.getByRole('button', { name: 'Clear the script' }).click();
+		await page
+			.getByRole('alertdialog', { name: 'Clear the script?' })
+			.getByRole('button', { name: 'Confirm' })
+			.click();
+
+		await page.getByRole('button', { name: 'Open a saved script' }).click();
+		const library = page.getByRole('dialog', { name: 'Open a saved script' });
+		const toggle = library.getByRole('button', { name: 'Preview', exact: true });
+		await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+		// A tap previews it beside the list; the builder is untouched until it's opened.
+		await library.getByText('Look first').click();
+		const pane = library.getByRole('region', { name: 'Look first' });
+		await expect(pane.getByTestId('script-sheet')).toContainText('Chef');
+		await expect(page.getByTestId('count-demon')).toHaveText('0');
+		await pane.getByRole('button', { name: 'Open in the Script builder' }).click();
+		await expect(library).toBeHidden();
+		await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Look first');
+		await expect(page.getByTestId('count-demon')).toHaveText('1');
+
+		// With Preview off, a tap opens it straight away.
+		await page.getByRole('button', { name: 'Clear the script' }).click();
+		await page
+			.getByRole('alertdialog', { name: 'Clear the script?' })
+			.getByRole('button', { name: 'Confirm' })
+			.click();
+		await page.getByRole('button', { name: 'Open a saved script' }).click();
+		await toggle.click();
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		await library.getByText('Look first').click();
+		await expect(library).toBeHidden();
+		await expect(page.getByTestId('count-demon')).toHaveText('1');
+	});
 });
 
 test('adds a homebrew character from a Homebrew Wiki collection, credited', async ({ page }) => {
@@ -115,11 +168,9 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 		await route.continue();
 	});
 	await page.goto('/build-script');
-	const collection = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
-	await expect(collection).toBeVisible();
 	await page.getByRole('combobox', { name: 'Characters from' }).tap();
 	await page.getByRole('option', { name: 'Homebrew Wiki', exact: true }).tap();
-	await expect(collection).toContainText('Temple Fair');
+	await expect(page.getByTestId('builder-collection')).toHaveText('Temple Fair');
 	await character(page, 'Lantern, By DJ').tap();
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 	await expect(page.getByTestId('homebrew-count')).toHaveText('1');
@@ -140,8 +191,12 @@ test('adds a homebrew character from a Homebrew Wiki collection, credited', asyn
 });
 
 // Trevor (2026-10-17): characters from several collections are hard to reach while they
-// only show under their own collection, so "On script" lists every chosen one together.
-test('On script lists the chosen characters from every source together', async ({ page }) => {
+// only show under their own collection, so the chosen ones are listed together. This was the
+// "On script" source; on 2026-10-18 it became Show only selected, a state and not a source.
+// The collections are a search with a list (Trevor, 2026-10-18), not a drop-down.
+test('Show only selected lists the chosen characters from every source together', async ({
+	page
+}) => {
 	const collection = (id: string, name: string, character: string, creator: string) => ({
 		script: [
 			{ id: '_meta', name },
@@ -167,17 +222,19 @@ test('On script lists the chosen characters from every source together', async (
 	await character(page, 'Chef').tap();
 	await page.getByRole('combobox', { name: 'Characters from' }).tap();
 	await page.getByRole('option', { name: 'Homebrew Wiki', exact: true }).tap();
-	const picked = page.getByRole('combobox', { name: 'Homebrew Wiki collection' });
-	await expect(picked).toContainText('Temple Fair');
+	const picked = page.getByTestId('builder-collection');
+	await expect(picked).toHaveText('Temple Fair');
 	await character(page, 'Lantern, By DJ').tap();
 	await picked.tap();
-	await page.getByRole('option', { name: 'Night Market' }).tap();
+	const collections = page.getByRole('dialog', { name: 'Homebrew Wiki collection' });
+	await collections.getByRole('searchbox', { name: 'Search collections' }).fill('night');
+	await expect(collections.getByRole('button', { name: 'Temple Fair' })).toHaveCount(0);
+	await collections.getByRole('button', { name: 'Night Market' }).tap();
+	await expect(picked).toHaveText('Night Market');
 	await character(page, 'Peddler, By Ana').tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('3');
 
-	await page.getByRole('combobox', { name: 'Characters from' }).tap();
-	await page.getByRole('option', { name: 'On script', exact: true }).tap();
-	await expect(page.getByRole('listbox')).toBeHidden();
+	await page.getByRole('button', { name: 'Show only selected' }).tap();
 	// The page still fits a phone without scrolling sideways.
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
 		true
@@ -201,8 +258,13 @@ test('editing a built script keeps its Library folder, and Save as new keeps the
 }) => {
 	const libraryRows = () =>
 		page.getByTestId('library-table').getByRole('button', { name: /^Edited here/ });
-	const search = () =>
-		page.getByRole('searchbox', { name: 'Search the Library' }).fill('Edited here');
+	// The Library's search opens from its button (Trevor, 2026-10-18), unless left open.
+	const search = async () => {
+		const box = page.getByRole('searchbox', { name: 'Search the Library' });
+		if (!(await box.isVisible()))
+			await page.getByRole('button', { name: 'Search the Library' }).tap();
+		await box.fill('Edited here');
+	};
 	await page.goto('/build-script');
 	await page.getByRole('textbox', { name: 'Name' }).fill('Edited here');
 	for (const name of ['Chef', 'Imp']) await character(page, name).tap();
@@ -384,6 +446,9 @@ test('Show only selected lists just the chosen characters', async ({ page }) => 
 	await expect(only).toHaveAttribute('aria-pressed', 'true');
 	await expect(character(page, 'Washerwoman')).toHaveCount(0);
 	await expect(character(page, 'Chef')).toBeVisible();
+	// Each type's header says how many it lists (Trevor, 2026-10-19).
+	await expect(page.getByRole('button', { name: 'Townsfolk (2)', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Demons (1)', exact: true })).toBeVisible();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
 	await expect(character(page, 'Empath')).toBeVisible();
 	await expect(character(page, 'Chef')).toHaveCount(0);
@@ -409,4 +474,92 @@ test('the counts split by kind, and the search reads as text', async ({ page }) 
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
 		page.viewportSize()!.width
 	);
+});
+
+// Trevor, 2026-10-18: Official splits into the base three and Carousel, in the collection's
+// place, so nothing moves.
+test('Official lists the base three, Carousel, or both', async ({ page }) => {
+	await page.goto('/build-script');
+	const editions = page.getByRole('combobox', { name: 'Official editions' });
+	await expect(character(page, 'Chef')).toBeVisible();
+	await expect(character(page, 'Noble')).toBeVisible();
+	await editions.tap();
+	await page.getByRole('option', { name: 'Base three', exact: true }).tap();
+	await expect(character(page, 'Noble')).toHaveCount(0);
+	await expect(character(page, 'Chef')).toBeVisible();
+	await editions.tap();
+	await page.getByRole('option', { name: 'Carousel', exact: true }).tap();
+	await expect(character(page, 'Chef')).toHaveCount(0);
+	await expect(character(page, 'Noble')).toBeVisible();
+});
+
+// Trevor, 2026-10-18: a full or Teensyville script, and the counts each usually has
+// (13/4/4/4 from TPI's "Behind the Curtain #6"; 6/2/2/2 from the wiki's Teensyville page).
+test('the counts show what a full or Teensyville script usually has', async ({ page }) => {
+	await page.goto('/build-script');
+	await character(page, 'Chef').tap();
+	await expect(page.getByTestId('expected-townsfolk')).toHaveText('/13');
+	await expect(page.getByTestId('expected-demon')).toHaveText('/4');
+	await expect(page.getByTestId('expected-traveller')).toHaveCount(0);
+	await page.getByText('Teensyville', { exact: true }).tap();
+	await expect(
+		page.getByRole('checkbox', { name: 'Teensyville', includeHidden: true })
+	).toBeChecked();
+	await expect(page.getByTestId('expected-townsfolk')).toHaveText('/6');
+	await expect(page.getByTestId('expected-outsider')).toHaveText('/2');
+	await expect(page.getByTestId('expected-demon')).toHaveText('/2');
+	// Remembered with the builder.
+	await page.reload();
+	await expect(page.getByTestId('expected-townsfolk')).toHaveText('/6');
+});
+
+// Trevor, 2026-10-18: see the script's JSON before downloading it; Save sits in the header.
+test('Download shows the JSON first, with Copy and Download', async ({ page }) => {
+	await page.goto('/build-script');
+	await character(page, 'Imp').tap();
+	await page.getByRole('button', { name: 'Download script JSON' }).tap();
+	const dialog = page.getByRole('dialog');
+	// The shared file view: the file's name, Copy and Download in its own header, line numbers.
+	const file = dialog.getByTestId('builder-json');
+	await expect(file).toContainText('"imp"');
+	await expect(file.locator('figcaption')).toContainText('script.json');
+	await expect(file.getByRole('button', { name: 'Copy JSON' })).toBeVisible();
+	const download = page.waitForEvent('download');
+	await file.getByRole('button', { name: 'Download script JSON' }).tap();
+	expect((await download).suggestedFilename()).toBe('script.json');
+});
+
+// Trevor, 2026-10-18: the type being scrolled through stays pinned under the search band.
+test("each type's header stays pinned under the band while its characters scroll", async ({
+	page
+}) => {
+	await page.goto('/build-script');
+	const townsfolk = page.getByRole('button', { name: /^Townsfolk \(\d+\)$/ });
+	await expect(townsfolk).toBeVisible();
+	await page.evaluate(() => window.scrollBy(0, 900));
+	// Just under the band, whose last line is the search.
+	const search = (await page.getByRole('searchbox', { name: 'Search characters' }).boundingBox())!;
+	const head = (await townsfolk.boundingBox())!;
+	expect(head.y).toBeGreaterThanOrEqual(search.y + search.height);
+	expect(head.y).toBeLessThan(search.y + search.height + 40);
+	// Closing it there keeps its header in view.
+	await townsfolk.tap();
+	await expect(townsfolk).toHaveAttribute('aria-expanded', 'false');
+	await expect(townsfolk).toBeInViewport();
+	await townsfolk.tap();
+});
+
+// Trevor, 2026-10-18: any character's page opens from its token, as in setup.
+test("a character's token opens its page, and the row still chooses it", async ({ page }) => {
+	await page.goto('/build-script');
+	await page.getByRole('button', { name: 'About the Chef' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Chef' });
+	await expect(dialog.getByRole('link', { name: 'Open wiki' })).toHaveAttribute(
+		'href',
+		/wiki\.bloodontheclocktower\.com\/Chef/
+	);
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
+	await character(page, 'Chef').tap();
+	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 });

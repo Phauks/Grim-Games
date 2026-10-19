@@ -11,21 +11,22 @@ const STORAGE_KEY = 'grim-games.curated-scripts';
 
 export type CuratedStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-let list = $state.raw<CuratedScript[]>([]);
-let status = $state<CuratedStatus>('idle');
-let restored = false;
-let loading: Promise<void> | undefined;
-
-function restore(): void {
-	if (restored) return;
-	restored = true;
+/**
+ * The copy kept on the device, read once when the module loads: reading it lazily from the
+ * list's getter wrote state while a derived value was being worked out (Trevor, 2026-10-19).
+ */
+function restored(): CuratedScript[] {
 	try {
-		const saved = readCuratedList(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null'));
-		if (saved?.length) list = saved;
+		return readCuratedList(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')) ?? [];
 	} catch {
 		// No storage, or an unreadable copy: fetched again when needed.
+		return [];
 	}
 }
+
+let list = $state.raw<CuratedScript[]>(restored());
+let status = $state<CuratedStatus>('idle');
+let loading: Promise<void> | undefined;
 
 function keep(scripts: CuratedScript[]): void {
 	try {
@@ -37,7 +38,6 @@ function keep(scripts: CuratedScript[]): void {
 
 export const curatedScripts = {
 	get list(): CuratedScript[] {
-		restore();
 		return list;
 	},
 	get status(): CuratedStatus {
@@ -46,7 +46,6 @@ export const curatedScripts = {
 
 	/** Fetches the list once per page visit; later calls reuse it. */
 	load(): Promise<void> {
-		restore();
 		if (status === 'ready') return Promise.resolve();
 		loading ??= (async () => {
 			status = 'loading';

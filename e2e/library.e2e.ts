@@ -48,6 +48,14 @@ async function newFolder(page: Page, name: string) {
 	await expect(dialog).toHaveCount(0);
 }
 
+/** The search opens from its button beside the folder controls (Trevor, 2026-10-18). */
+async function search(page: Page, text: string) {
+	const box = page.getByRole('searchbox', { name: 'Search the Library' });
+	if (!(await box.isVisible()))
+		await page.getByRole('button', { name: 'Search the Library' }).tap();
+	await box.fill(text);
+}
+
 async function noSidewaysScroll(page: Page) {
 	const overflow = await page.evaluate(
 		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -70,14 +78,14 @@ test('scripts sit in folders like files, and folders open, nest, move and delete
 	// A new folder is listed where it was made, not opened (Trevor, 2026-10-18); the
 	// breadcrumb leads back.
 	await newFolder(page, 'Club night');
-	await expect(crumbs(page)).toHaveText('Library');
+	await expect(crumbs(page)).toHaveText('Home');
 	await row(page, 'Club night').tap();
-	await expect(crumbs(page)).toHaveText(/Library\s*\/\s*Club night/);
+	await expect(crumbs(page)).toHaveText(/Home\s*\/\s*Club night/);
 	await expect(table(page)).toContainText('None');
 	await newFolder(page, 'Teensy');
-	await expect(crumbs(page)).toHaveText(/Library\s*\/\s*Club night$/);
+	await expect(crumbs(page)).toHaveText(/Home\s*\/\s*Club night$/);
 	await expect(row(page, 'Teensy')).toBeVisible();
-	await crumbs(page).getByRole('button', { name: 'Library' }).tap();
+	await crumbs(page).getByRole('button', { name: 'Home' }).tap();
 	await expect(row(page, 'Club night')).toContainText('1 item');
 	// The sidebar lists every folder with what it holds, and folders inside one fold away.
 	await expect(sidebar(page).getByRole('button', { name: 'Teensy' })).toBeVisible();
@@ -100,8 +108,8 @@ test('scripts sit in folders like files, and folders open, nest, move and delete
 	await expect(row(page)).toBeVisible();
 
 	// Search finds items in every folder and says where each one is.
-	await crumbs(page).getByRole('button', { name: 'Library' }).tap();
-	await page.getByPlaceholder('Name, author, character or ability').fill('washerwoman');
+	await crumbs(page).getByRole('button', { name: 'Home' }).tap();
+	await search(page, 'washerwoman');
 	await expect(row(page)).toContainText('Club night / Teensy');
 	await page.getByRole('searchbox', { name: 'Search the Library' }).fill('');
 
@@ -119,16 +127,16 @@ test('scripts sit in folders like files, and folders open, nest, move and delete
 	const move = page.getByRole('dialog', { name: 'Move Small games' });
 	await move.getByRole('combobox', { name: 'Move to' }).tap();
 	await expect(page.getByRole('option', { name: 'Club night / Small games' })).toHaveCount(0);
-	await page.getByRole('option', { name: 'Library', exact: true }).tap();
+	await page.getByRole('option', { name: 'Home', exact: true }).tap();
 	await move.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(crumbs(page)).toHaveText(/Library\s*\/\s*Small games$/);
+	await expect(crumbs(page)).toHaveText(/Home\s*\/\s*Small games$/);
 
 	// Deleting a folder asks, and what it held moves up a level.
 	await page.getByRole('button', { name: 'Delete Small games' }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Delete folder?' });
-	await expect(confirm).toContainText('What it holds moves to Library.');
+	await expect(confirm).toContainText('What it holds moves to Home.');
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(crumbs(page)).toHaveText('Library');
+	await expect(crumbs(page)).toHaveText('Home');
 	await expect(row(page)).toBeVisible();
 	await expect(row(page, 'Club night')).toContainText('0 items');
 });
@@ -224,13 +232,13 @@ test('a saved script can be renamed in the Library and still knows where it came
 	await page.reload();
 	await expect(row(page, 'Club storm')).toBeVisible();
 	// Its own name still finds it.
-	await page.getByRole('searchbox', { name: 'Search the Library' }).fill('storm front');
+	await search(page, 'storm front');
 	await expect(row(page, 'Club storm')).toBeVisible();
 
 	// Empty Campaigns look like the rest: the same table, saying None (Trevor, 2026-10-18).
 	await sidebar(page).getByRole('button', { name: 'Campaigns' }).tap();
 	await expect(page.getByTestId('library-campaigns').getByRole('table')).toContainText('None');
-	await expect(page.getByRole('searchbox', { name: 'Search the Library' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Search the Library' })).toBeVisible();
 });
 
 test('a script added inside an open folder goes in that folder', async ({ page }) => {
@@ -239,7 +247,7 @@ test('a script added inside an open folder goes in that folder', async ({ page }
 	await row(page, 'Club night').tap();
 	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
 	await expect(row(page)).toBeVisible();
-	await crumbs(page).getByRole('button', { name: 'Library' }).tap();
+	await crumbs(page).getByRole('button', { name: 'Home' }).tap();
 	await expect(row(page)).toHaveCount(0);
 });
 
@@ -336,11 +344,12 @@ test('characters and character collections are Library items too', async ({ page
 	await expect(row(page, 'Lamp set')).toHaveCount(0);
 	await expect(row(page, 'Lamp Lighter')).toBeVisible();
 
-	// A character opens in the Character builder from its header.
+	// A character opens in the Character builder, over the Library, from its header.
 	await row(page, 'Lamp Lighter').tap();
-	await character.getByRole('button', { name: 'Edit in Character builder' }).tap();
-	await expect(page).toHaveURL(/\/build-character$/);
-	await expect(page.getByTestId('character-name')).toHaveValue('Lamp Lighter');
+	await character.getByRole('button', { name: 'Edit character' }).tap();
+	const builder = page.getByRole('dialog', { name: 'Edit character' });
+	await expect(builder.getByTestId('character-name')).toHaveValue('Lamp Lighter');
+	await expect(page).toHaveURL(/\/library/);
 });
 
 test('a script saved without a name is named after the time it was saved', async ({ page }) => {
@@ -470,6 +479,152 @@ test.describe('in a computer window', () => {
 		await expect(row(page)).toBeVisible();
 		await noSidewaysScroll(page);
 	});
+
+	test('sidebar folders drag onto other folders, by mouse or touch, but never into themselves', async ({
+		page
+	}) => {
+		// Trevor (2026-10-18): "allow dragging and dropping folders in the left side bar".
+		await page.goto('/library');
+		await addStormFront(page);
+		await newFolder(page, 'Club night');
+		await newFolder(page, 'Done');
+		const folder = (name: string) =>
+			sidebar(page).getByRole('button', { name: new RegExp(`^${name}`) });
+		const top = sidebar(page).getByRole('button', { name: /^Home/ });
+
+		// A mouse drags Done into Club night: it nests, and its caret appears.
+		await folder('Done').hover();
+		await page.mouse.down();
+		await folder('Club night').hover({ force: true });
+		await expect(folder('Club night')).toHaveAttribute('data-drop-over', '');
+		await page.mouse.up();
+		await expect(
+			sidebar(page).getByRole('button', { name: 'Folders in Club night' })
+		).toBeVisible();
+		await expect(sidebar(page).locator('li.folder', { hasText: 'Done' })).toHaveCSS('--depth', '1');
+
+		// A held touch drags Club night onto Done, inside it: it stays put and says why.
+		const from = await folder('Club night').boundingBox();
+		const to = await folder('Done').boundingBox();
+		if (!from || !to) throw new Error('folders not laid out');
+		const cdp = await page.context().newCDPSession(page);
+		const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number, y: number) =>
+			cdp.send('Input.dispatchTouchEvent', {
+				type,
+				touchPoints: type === 'touchEnd' ? [] : [{ x, y }]
+			});
+		const start = { x: from.x + 40, y: from.y + from.height / 2 };
+		const end = { x: to.x + 60, y: to.y + to.height / 2 };
+		await touch('touchStart', start.x, start.y);
+		await page.waitForTimeout(600);
+		for (let i = 1; i <= 6; i++) {
+			await touch(
+				'touchMove',
+				start.x + ((end.x - start.x) * i) / 6,
+				start.y + ((end.y - start.y) * i) / 6
+			);
+		}
+		await touch('touchEnd', end.x, end.y);
+		await expect(page.getByText('Club night can’t go inside itself.')).toBeVisible();
+		await expect(sidebar(page).locator('li.folder', { hasText: 'Club night' })).toHaveCSS(
+			'--depth',
+			'0'
+		);
+		// The drag's release didn't open the folder either.
+		await expect(crumbs(page)).toHaveText('Home');
+
+		// Onto the Library at the top, Done comes back out.
+		await folder('Done').hover();
+		await page.mouse.down();
+		await top.hover({ force: true });
+		await expect(top).toHaveAttribute('data-drop-over', '');
+		await page.mouse.up();
+		await expect(sidebar(page).getByRole('button', { name: 'Folders in Club night' })).toHaveCount(
+			0
+		);
+		await expect(sidebar(page).locator('li.folder', { hasText: 'Done' })).toHaveCSS('--depth', '0');
+	});
+
+	test('Preview shows or hides the pane, and any item opens in a window', async ({ page }) => {
+		// Trevor (2026-10-18): "add a preview button ... regardless, you should be able to click
+		// into a file to see its contents in a modal".
+		await page.goto('/library');
+		await addStormFront(page);
+		const toggle = page.getByRole('button', { name: 'Preview', exact: true });
+		await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+		// One line of headers beside the pane (Trevor's screenshot had Tags wrapping under).
+		// (A narrow table's own row of moved filters, `th.moved`, sits under it by design.)
+		const tops = await table(page)
+			.locator('thead th:not(.moved)')
+			.evaluateAll((cells) =>
+				cells.flatMap((c) => {
+					const box = c.getBoundingClientRect();
+					return box.width > 0 ? [Math.round(box.top)] : [];
+				})
+			);
+		expect(new Set(tops).size).toBe(1);
+
+		// From the preview, Open puts the same item in a window; closing it keeps the preview.
+		await pane(page, 'Storm Front').getByRole('button', { name: 'Open in a window' }).click();
+		const window = page.getByRole('dialog', { name: 'Storm Front' });
+		await expect(window.getByTestId('script-sheet')).toContainText('Washerwoman');
+		await window.getByRole('button', { name: 'Close' }).click();
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+		await expect(page.getByRole('region', { name: 'Storm Front' })).toBeVisible();
+		// A double-click opens the window too.
+		await row(page).dblclick();
+		await expect(window).toBeVisible();
+		await window.getByRole('button', { name: 'Close' }).click();
+
+		// Off: no pane, the list takes the room, and a tap opens the window. Remembered.
+		const listWidth = await table(page).evaluate((t) => t.getBoundingClientRect().width);
+		await toggle.click();
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		await expect(page.getByTestId('library-pane')).toHaveCount(0);
+		expect(await table(page).evaluate((t) => t.getBoundingClientRect().width)).toBeGreaterThan(
+			listWidth
+		);
+		await page.reload();
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		await row(page).click();
+		await expect(window.getByTestId('script-sheet')).toContainText('Washerwoman');
+		await window.getByRole('button', { name: 'Close' }).click();
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+		await toggle.click();
+		await expect(page.getByTestId('library-pane')).toBeVisible();
+	});
+});
+
+test('search opens from its button over the folder path, and folds away', async ({ page }) => {
+	// Trevor (2026-10-18): "move search next to the pencil icon, when clicked, expand".
+	await page.goto('/library');
+	await (await addStormFront(page)).getByRole('button', { name: 'Close' }).tap();
+	const button = page.getByRole('button', { name: 'Search the Library' });
+	const box = page.getByRole('searchbox', { name: 'Search the Library' });
+	await expect(box).toBeHidden();
+	// Where nothing fits beside the list, items always open in a window: Preview rests.
+	await expect(page.getByRole('button', { name: 'Preview', exact: true })).toBeDisabled();
+	const listTop = () => table(page).evaluate((t) => t.getBoundingClientRect().top + scrollY);
+	const before = await listTop();
+
+	await button.tap();
+	await expect(box).toBeFocused();
+	await box.fill('nothing like it');
+	await expect(table(page)).toContainText('None');
+	// Opened in the path's place: the list doesn't move.
+	expect(await listTop()).toBe(before);
+	// A typed search stays open and marks the button.
+	await page.getByRole('heading', { level: 1 }).tap();
+	await expect(box).toBeVisible();
+	await expect(button).toHaveAttribute('aria-pressed', 'true');
+	// Esc clears it (as every search field does), then a second Esc folds it away.
+	await box.press('Escape');
+	await expect(box).toHaveValue('');
+	await box.press('Escape');
+	await expect(box).toBeHidden();
+	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	await expect(row(page)).toBeVisible();
+	await expect(crumbs(page)).toHaveText('Home');
 });
 
 test('a script shows the same details as in Search, and plays from there', async ({ page }) => {
@@ -587,7 +742,10 @@ test('a saved BotC Scripts script still offers its other versions', async ({ pag
 		});
 	});
 
-	// Saved from Search at 1.0.0.
+	// Saved from Search at 1.0.0, searching BotC Scripts alone (the other sources aren't routed).
+	await page.addInitScript(() =>
+		localStorage.setItem('grim-games:scripts:sources', JSON.stringify(['botc']))
+	);
 	await page.goto('/scripts');
 	await page
 		.getByRole('table', { name: 'Scripts' })

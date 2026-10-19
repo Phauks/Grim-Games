@@ -10,9 +10,10 @@ import { t } from '#lib/i18n/locale.svelte.ts';
 import { fetchLinkTarget, type FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 import type { SavedScript, ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 import { resolveLink } from '#lib/features/scripts/script-links.ts';
-import { AccountApiError, accountApi } from './account-api.ts';
 import { account } from './account.svelte.ts';
 import type { ProfileDoc } from './account-protocol.ts';
+import { accountSync } from './sync/sync.svelte.ts';
+import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 import {
 	differs,
 	findMatch,
@@ -24,43 +25,37 @@ import {
 
 export type ProfileScriptsStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-let entries = $state.raw<ProfileScriptEntry[]>([]);
-let status = $state<ProfileScriptsStatus>('idle');
-let error = $state<string | undefined>(undefined);
-let loading: Promise<void> | undefined;
-let loadedFor: string | undefined;
+// When both devices changed a script, this device's version is kept beside it, renamed.
+accountSync.register('script', {
+	copy: (body) => {
+		const script = migrateProfileScript(body);
+		return script
+			? { ...script, name: t('account.sync.otherDevice', { name: script.name }) }
+			: body;
+	}
+});
 
 function toEntries(docs: ProfileDoc[]): ProfileScriptEntry[] {
 	return docs.flatMap((doc) => {
-		if (doc.deleted) return [];
 		const script = migrateProfileScript(doc.body);
 		return script ? [{ id: doc.id, rev: doc.rev, updatedAt: doc.updatedAt, script }] : [];
 	});
 }
 
-function replace(doc: ProfileDoc): void {
-	const rest = entries.filter((entry) => entry.id !== doc.id);
-	entries = [...toEntries([doc]), ...rest].sort((a, b) => b.updatedAt - a.updatedAt);
-}
+const entries = $derived(toEntries(accountSync.docs('script')));
 
 const IMPORTED_KEY = 'grim-games:profile-scripts-imported';
 
 /** Whether this device's Recent scripts were already added to `userId`'s profile. */
 function importedFor(userId: string): boolean {
-	try {
-		return (localStorage.getItem(IMPORTED_KEY) ?? '').split(',').includes(userId);
-	} catch {
-		return true;
-	}
+	const ids = readStoredText(IMPORTED_KEY);
+	return ids === undefined ? false : ids.split(',').includes(userId);
 }
 
 function markImported(userId: string): void {
-	try {
-		const ids = (localStorage.getItem(IMPORTED_KEY) ?? '').split(',').filter(Boolean);
-		localStorage.setItem(IMPORTED_KEY, [...ids, userId].slice(-5).join(','));
-	} catch {
-		// No storage: the Recent list is offered again next time, which is harmless.
-	}
+	const ids = (readStoredText(IMPORTED_KEY) ?? '').split(',').filter(Boolean);
+	// No storage: the Recent list is offered again next time, which is harmless.
+	writeStoredText(IMPORTED_KEY, [...ids, userId].slice(-5).join(','));
 }
 
 /**
@@ -73,89 +68,61 @@ async function importDeviceScripts(userId: string): Promise<void> {
 	const { recentScripts, restoreScripts } =
 		await import('#lib/features/scripts/current-script.svelte.ts');
 	await restoreScripts();
+	// The account's scripts first, so ones already there are matched instead of added again.
+	await accountSync.syncNow();
+	if (account.user?.id !== userId || !accountSync.pulled) return;
 	// Oldest first, so the profile's order matches the device's.
 	for (const saved of [...recentScripts.list].reverse()) {
 		if (account.user?.id !== userId) return;
 		await saveScriptToProfile(saved);
 	}
-	if (profileScripts.status === 'ready') markImported(userId);
+	markImported(userId);
 }
 
 account.onChange((user) => {
-	entries = [];
-	loadedFor = undefined;
-	status = 'idle';
 	if (user) {
-		void profileScripts
-			.refresh()
-			.then(() => importDeviceScripts(user.id))
-			.catch((e) => reportError(e, { area: 'account', notify: false }));
+		void importDeviceScripts(user.id).catch((e) =>
+			reportError(e, { area: 'account', notify: false })
+		);
 	}
 });
 
-/** Saves a document; on a conflict, takes the server's copy and tries once more. */
-async function put(
-	id: string,
-	baseRev: number,
-	script: ProfileScript | undefined,
-	retry = true
-): Promise<void> {
-	try {
-		const doc = await accountApi.putDoc<ProfileScript>(
-			'script',
-			id,
-			script ? { baseRev, body: script } : { baseRev, deleted: true }
-		);
-		replace(doc);
-	} catch (e) {
-		if (retry && e instanceof AccountApiError && e.status === 409) {
-			const server = e.body as ProfileDoc;
-			replace(server);
-			return put(id, server.rev, script, false);
-		}
-		throw e;
-	}
+/** Saves a script (undefined removes it); the change reaches the account in the background. */
+function put(id: string, script: ProfileScript | undefined): Promise<void> {
+	return script ? accountSync.save('script', id, script) : accountSync.remove('script', id);
 }
 
 export const profileScripts = {
 	get list(): ProfileScriptEntry[] {
 		return entries;
 	},
+	/**
+	 * What the list can show: loading until this device has the account's scripts, an error
+	 * only when it has none to show yet (offline or failing, the saved copy is still shown).
+	 */
 	get status(): ProfileScriptsStatus {
-		return status;
+		if (!account.user) return 'idle';
+		if (accountSync.pulled) return 'ready';
+		return accountSync.status === 'error' || accountSync.status === 'offline' ? 'error' : 'loading';
 	},
 	get error(): string | undefined {
-		return error;
+		return (
+			accountSync.error ?? (accountSync.status === 'offline' ? t('account.offline') : undefined)
+		);
 	},
 
-	/** Loads the profile's scripts from the server. */
+	/** Sends this device's changes and fetches the account's scripts now. */
 	refresh(): Promise<void> {
-		const user = account.user;
-		if (!user) return Promise.resolve();
-		loading ??= (async () => {
-			status = 'loading';
-			try {
-				entries = toEntries(await accountApi.listDocs('script'));
-				loadedFor = user.id;
-				status = 'ready';
-				error = undefined;
-			} catch (e) {
-				status = 'error';
-				error = e instanceof Error ? e.message : String(e);
-				if (!(e instanceof AccountApiError)) reportError(e, { area: 'account', notify: false });
-			}
-		})().finally(() => (loading = undefined));
-		return loading;
+		return accountSync.syncNow();
 	},
 
 	/** Stops following the online version: the script becomes a local copy. */
 	async unlink(entry: ProfileScriptEntry): Promise<void> {
-		await put(entry.id, entry.rev, { ...entry.script, online: false });
+		await put(entry.id, { ...entry.script, online: false });
 	},
 
 	async remove(entry: ProfileScriptEntry): Promise<void> {
-		await put(entry.id, entry.rev, undefined);
-		entries = entries.filter((other) => other.id !== entry.id);
+		await put(entry.id, undefined);
 	},
 
 	/**
@@ -194,7 +161,7 @@ export const profileScripts = {
 
 	/** Saves the newer version found by `checkForUpdate`. */
 	async applyUpdate(entry: ProfileScriptEntry, next: ProfileScript): Promise<void> {
-		await put(entry.id, entry.rev, next);
+		await put(entry.id, next);
 	}
 };
 
@@ -213,13 +180,13 @@ export async function saveScriptToProfile(saved: SavedScript): Promise<void> {
 		if (!user) return;
 		const script = fromSavedScript($state.snapshot(saved) as SavedScript, Date.now());
 		if (!script) return;
-		if (loadedFor !== user.id) await profileScripts.refresh();
-		if (loadedFor !== user.id) return;
+		await accountSync.whenReady();
+		if (account.user?.id !== user.id) return;
 		const match = findMatch(entries, script);
-		if (!match) return await put(crypto.randomUUID(), 0, script);
+		if (!match) return await put(crypto.randomUUID(), script);
 		if (!differs(match.script, script)) return;
 		// Keep the user's online/local choice and when it was first added.
-		await put(match.id, match.rev, {
+		await put(match.id, {
 			...script,
 			online: match.script.online,
 			addedAt: match.script.addedAt

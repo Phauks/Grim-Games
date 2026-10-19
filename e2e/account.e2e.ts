@@ -30,13 +30,30 @@ async function previewCode(page: Page): Promise<string> {
 	return code;
 }
 
-async function signInWithCode(page: Page, email: string) {
+/** Sign out lives in the header's account card, not on the Account page (Trevor, 2026-10-18). */
+async function signOut(page: Page) {
+	await page.getByRole('button', { name: /^Account: signed in as / }).tap();
+	await page.getByRole('button', { name: 'Sign out', exact: true }).tap();
+}
+
+async function signInWithCode(page: Page, email: string, creating = true) {
 	await page.goto('/account');
 	await page.getByLabel('Email address').fill(email);
 	await page.getByRole('button', { name: 'Email me a code' }).tap();
 	await page.getByLabel(`Code sent to ${email}`).fill(await previewCode(page));
 	await page.getByRole('button', { name: 'Sign in' }).tap();
+	if (creating) await acceptPrivacy(page);
 	await expect(page.getByTestId('account-email')).toHaveText(email);
+	await expect(page.getByRole('alertdialog', { name: 'Privacy policy' })).toHaveCount(0);
+}
+
+/** A new account accepts the privacy policy before it is made (Trevor, 2026-10-18). */
+async function acceptPrivacy(page: Page) {
+	const dialog = page.getByRole('alertdialog', { name: 'Privacy policy' });
+	await expect(dialog).toContainText('To create your account, accept the Privacy policy.');
+	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await dialog.getByText('I accept the Privacy policy', { exact: true }).tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 }
 
 test('signing in with an emailed code, then signing out', async ({ page }) => {
@@ -48,8 +65,24 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	await page.getByRole('button', { name: 'Sign in' }).tap();
 	await expect(page.getByRole('status').filter({ hasText: 'not right' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Change email' }).tap();
-	await signInWithCode(page, email);
+	// A new account waits for the privacy policy; declining leaves the code still usable.
+	await page.getByLabel(`Code sent to ${email}`).fill(await previewCode(page));
+	await page.getByRole('button', { name: 'Sign in' }).tap();
+	const privacy = page.getByRole('alertdialog', { name: 'Privacy policy' });
+	await expect(privacy.getByRole('link', { name: 'Read the Privacy policy' })).toHaveAttribute(
+		'href',
+		'/privacy'
+	);
+	await privacy.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(
+		page.getByRole('status').filter({ hasText: 'needs the Privacy policy accepted' })
+	).toBeVisible();
+	await page.getByRole('button', { name: 'Sign in' }).tap();
+	await acceptPrivacy(page);
+	await expect(page.getByTestId('account-email')).toHaveText(email);
+	await signOut(page);
+	// Accepted once: signing in again doesn't ask.
+	await signInWithCode(page, email, false);
 	// The session survives a reload: it's a cookie the page can't read.
 	await page.reload();
 	await expect(page.getByTestId('account-email')).toHaveText(email);
@@ -57,11 +90,19 @@ test('signing in with an emailed code, then signing out', async ({ page }) => {
 	// Devices are a table; this device can't be signed out from its own row.
 	const devices = page.getByTestId('devices-table');
 	await expect(devices.getByText('(this device)')).toBeVisible();
-	await expect(
-		devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ })
-	).toBeDisabled();
+	// A rough place per device; the local server has none from Cloudflare, so None.
+	await expect(devices.getByText('Location').first()).toBeVisible();
+	const own = devices.getByRole('button', { name: /^Sign out .*\(this device\)$/ });
+	await expect(own).toBeDisabled();
+	// Signing out is a text button, not the trash can (Trevor, 2026-10-18).
+	await expect(own).toHaveText('Sign out');
+	// Sign out other devices sits in the section's header; Delete account has a section of its own;
+	// signing out of this device is only in the header's account card.
+	await expect(page.getByRole('button', { name: 'Sign out other devices' })).toBeDisabled();
+	await expect(page.getByRole('heading', { name: 'Delete account' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toHaveCount(0);
 
-	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signOut(page);
 	await expect(page.getByLabel('Email address')).toBeVisible();
 });
 
@@ -83,6 +124,7 @@ test('a sign-in link signs in and keeps its token out of the address', async ({
 	// Like tapping the link in an email: it opens in a new tab of the same browser.
 	const opened = await context.newPage();
 	await opened.goto(link);
+	await acceptPrivacy(opened);
 	await expect(opened.getByTestId('account-email')).toHaveText(email);
 	expect(opened.url()).not.toContain('signin=');
 });
@@ -119,12 +161,91 @@ test('scripts added on the device are saved to the profile', async ({ page }) =>
 		.getByLabel('Script JSON')
 		.fill(JSON.stringify([{ id: '_meta', name: 'Second Wind' }, ...homebrew.slice(1)]));
 	const saving = page.waitForResponse(
-		(r) => r.url().includes('/api/account/docs/script/') && r.request().method() === 'PUT'
+		(r) => r.url().endsWith('/api/account/sync') && r.request().method() === 'POST'
 	);
 	await again.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('script-details-name')).toHaveText('Second Wind');
 	expect((await saving).status()).toBe(200);
 	await expect.poll(() => profileScriptNames(page)).toContain('Second Wind');
+});
+
+/** Adds a pasted script in the Library. */
+async function addScript(page: Page, name: string) {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste
+		.getByLabel('Script JSON')
+		.fill(JSON.stringify([{ id: '_meta', name }, ...homebrew.slice(1)]));
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText(name);
+}
+
+const libraryRow = (page: Page, name: string) =>
+	page.getByTestId('library-table').getByRole('button', { name: new RegExp(`^${name}`) });
+
+async function scriptsSwitch(page: Page) {
+	await page.getByRole('banner').getByRole('button', { name: 'Settings' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	await dialog
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Data' })
+		.tap();
+	return {
+		dialog,
+		input: dialog.getByRole('checkbox', {
+			name: 'Sync scripts with your account',
+			includeHidden: true
+		}),
+		label: dialog.getByText('Sync scripts with your account', { exact: true })
+	};
+}
+
+// Account sync (Storage thread's plan, Trevor 2026-10-18): one account, two devices, kept in step.
+test('scripts sync between two devices, unless a device turns it off', async ({
+	page,
+	browser
+}, testInfo) => {
+	const email = uniqueEmail('sync');
+	const other = await browser.newContext({ ...testInfo.project.use });
+	const second = await other.newPage();
+	const part = () => Math.floor(Math.random() * 254) + 1;
+	await second.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
+
+	await signInWithCode(page, email);
+	await addScript(page, 'Storm Front');
+	await expect.poll(() => profileScriptNames(page)).toContain('Storm Front');
+
+	// The second device gets it when it signs in, without adding anything itself.
+	await signInWithCode(second, email, false);
+	await second.goto('/library');
+	await expect(libraryRow(second, 'Storm Front')).toBeVisible();
+
+	// And sends its own back.
+	await addScript(second, 'Second Wind');
+	await expect.poll(() => profileScriptNames(second)).toContain('Second Wind');
+	await page.goto('/library');
+	await expect(libraryRow(page, 'Second Wind')).toBeVisible();
+
+	// Switched off on the second device: it no longer takes the first device's changes.
+	await second.goto('/');
+	const off = await scriptsSwitch(second);
+	await expect(off.input).toBeChecked();
+	await off.label.tap();
+	await expect(off.input).not.toBeChecked();
+	await addScript(page, 'Third Rain');
+	await expect.poll(() => profileScriptNames(page)).toContain('Third Rain');
+	await second.goto('/library');
+	await expect(libraryRow(second, 'Second Wind')).toBeVisible();
+	await expect(libraryRow(second, 'Third Rain')).toHaveCount(0);
+
+	// Back on: it catches up on everything it skipped.
+	const on = await scriptsSwitch(second);
+	await on.label.tap();
+	await expect(on.input).toBeChecked();
+	await second.goto('/library');
+	await expect(libraryRow(second, 'Third Rain')).toBeVisible();
+	await other.close();
 });
 
 test('deleting the account signs out and removes it', async ({ page }) => {
@@ -195,7 +316,7 @@ test('the account id is a chain of words that stays when the username and email 
 	await expect(page.getByTestId('account-id')).toHaveText(id);
 
 	// The old address no longer signs in to this account: it makes a new one.
-	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signOut(page);
 	await signInWithCode(page, email);
 	expect(await idOf()).not.toBe(id);
 	await expect(page.getByTestId('account-username')).toHaveText('None');
@@ -258,12 +379,13 @@ test('creating an account with a password, then signing in with it', async ({ pa
 	await page.getByRole('button', { name: 'Create account' }).tap();
 	await page.getByLabel(`Code sent to ${email}`).fill(await previewCode(page));
 	await page.getByRole('button', { name: 'Sign in' }).tap();
+	await acceptPrivacy(page);
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 	await expect(page.getByTestId('account-password')).toHaveText('Set');
 	// Remember me is on by default: the cookie outlives the browser.
 	expect((await sessionCookie(page))?.expires).toBeGreaterThan(Date.now() / 1000 + 86400);
 
-	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signOut(page);
 	// A wrong password and an unknown address get the same answer.
 	await page.getByLabel('Email address').fill(email.toLowerCase());
 	await page.getByLabel('Password', { exact: true }).fill('not the password');
@@ -303,7 +425,7 @@ test('a code-only account can set a password in Account settings', async ({ page
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('account-password')).toHaveText('Set');
 
-	await page.getByRole('button', { name: 'Sign out', exact: true }).first().tap();
+	await signOut(page);
 	await page.getByLabel('Email address').fill(email);
 	await page.getByLabel('Password', { exact: true }).fill('a much longer password');
 	await page.getByRole('button', { name: 'Sign in' }).tap();
@@ -330,4 +452,42 @@ test('the profile icon is picked from the characters and shows in the header', a
 	await page.getByRole('button', { name: 'Change icon' }).tap();
 	await dialog.getByRole('button', { name: 'None' }).tap();
 	await expect(header.getByTestId('profile-icon')).not.toHaveAttribute('data-icon');
+});
+
+// Trevor (2026-10-18): what Download my data saves, Import data reads back in.
+test('a downloaded data file imports into another account, adding only what is missing', async ({
+	page,
+	browser
+}, testInfo) => {
+	await signInWithCode(page, uniqueEmail('export'));
+	await addScript(page, 'Storm Front');
+	await expect.poll(() => profileScriptNames(page)).toContain('Storm Front');
+	await page.goto('/account');
+	const downloading = page.waitForEvent('download');
+	await page.getByRole('button', { name: 'Download my data' }).tap();
+	const file = testInfo.outputPath('my-data.json');
+	await (await downloading).saveAs(file);
+
+	// Another account on another device, which has never seen the script.
+	const other = await browser.newContext({ ...testInfo.project.use });
+	const second = await other.newPage();
+	const part = () => Math.floor(Math.random() * 254) + 1;
+	await second.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
+	await signInWithCode(second, uniqueEmail('import'));
+	const importOnce = async () => {
+		await second.locator('input[type="file"][aria-label="Import data"]').setInputFiles(file);
+		return second.getByRole('alertdialog', { name: 'Import data' });
+	};
+	let dialog = await importOnce();
+	const plan = dialog.getByTestId('import-plan');
+	await expect(plan.getByRole('row', { name: 'Scripts to add' })).toContainText('1');
+	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('0');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect.poll(() => profileScriptNames(second)).toEqual(['Storm Front']);
+
+	// The same file again has nothing to add.
+	dialog = await importOnce();
+	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('1');
+	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await other.close();
 });

@@ -2,13 +2,12 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { buildInfo as info } from '#lib/build-info.ts';
-	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import { describeBuild, REPOSITORY_URL, shortCommit } from './report-issue.ts';
 </script>
 
 <footer>
-	<!-- Every text link on the right (the CCC logo is at the bottom of the menu, Trevor 2026-10-17). Fixed-size line: more build detail lives in Settings > About and Diagnostics, never inline (no reflow). -->
+	<!-- Every text link on the right (the CCC logo is at the bottom of the menu, Trevor 2026-10-17). Fixed-size line: more build detail lives in Settings > About and Diagnostics, never inline (no reflow). About is reached from Settings only (Trevor, 2026-10-18). -->
 	<p class="build" title={describeBuild(info)} data-testid="build-info">
 		<span class="nowrap"
 			>v{info.version} ·
@@ -23,11 +22,7 @@
 		<span class="sep" aria-hidden="true">·</span>
 		<a class="page" href={resolve('/privacy')}>{t('shell.privacy')}</a>
 		<span class="sep" aria-hidden="true">·</span>
-		<button type="button" class="about" onclick={() => settingsDialog.show('about')}
-			>{t('shell.about')}</button
-		>
-		<span class="sep" aria-hidden="true">·</span>
-		<button type="button" class="about" onclick={() => reportDialog.show()}
+		<button type="button" class="text-button" onclick={() => reportDialog.show()}
 			>{t('shell.reportIssue')}</button
 		>
 	</p>
@@ -82,7 +77,7 @@
 		min-height: var(--tap-target);
 		padding: 0 calc(0.25 * var(--u));
 	}
-	.about {
+	.text-button {
 		min-height: var(--tap-target);
 		padding: 0 calc(0.25 * var(--u));
 		border: 0;

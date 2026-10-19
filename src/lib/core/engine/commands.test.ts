@@ -7,6 +7,7 @@ import {
 	testScript
 } from '#lib/core/model/fixtures.test-support.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/index.ts';
+import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 import type { Command } from './commands.ts';
 import { decide } from './decide.ts';
 import { createGame, dispatch, redo, undo, type GameSession } from './log.ts';
@@ -697,6 +698,58 @@ describe('reminders on Fabled and Loric', () => {
 	it('reads an older game without rule reminders', () => {
 		const { session } = newGame(names);
 		expect(session.game.ruleReminders).toBeUndefined();
+	});
+});
+
+describe('the generic reminder', () => {
+	// Trevor (2026-10-18): a plain ∞ reminder, as many as needed, with optional text, instead
+	// of a custom reminder. It belongs to no character, so it fits anywhere without a warning.
+	it('goes anywhere, takes text, and clears it when emptied', () => {
+		const { session, ctx, seats } = newGame(names);
+		const generic = { characterId: GENERIC_REMINDER_ID, label: '' };
+		expect(
+			warned(session, ctx, { type: 'AddReminder', seatId: seats[0], reminder: generic })
+		).toEqual([]);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AddRuleCharacter', characterId: 'angel' },
+			{ type: 'AddReminder', seatId: seats[0], reminder: generic },
+			{ type: 'AddRuleReminder', characterId: 'angel', reminder: generic },
+			{ type: 'PlaceLooseReminder', reminder: generic }
+		);
+		const onSeat = s.game.seats[seats[0]].reminders[0];
+		const onAngel = s.game.ruleReminders!.angel[0];
+		const loose = s.game.looseReminders![0];
+
+		const noted = run(
+			s,
+			ctx,
+			{ type: 'SetReminderNote', reminderId: onSeat.reminderId, note: '  Chose Sam  ' },
+			{ type: 'SetReminderNote', reminderId: onAngel.reminderId, note: 'Day 2' },
+			{ type: 'SetReminderNote', reminderId: loose.reminderId, note: 'Vote' }
+		);
+		expect(noted.game.seats[seats[0]].reminders[0].note).toBe('Chose Sam');
+		expect(noted.game.ruleReminders!.angel[0].note).toBe('Day 2');
+		expect(noted.game.looseReminders![0].note).toBe('Vote');
+		expect(
+			warned(noted, ctx, {
+				type: 'SetReminderNote',
+				reminderId: onSeat.reminderId,
+				note: 'Chose Sam'
+			})
+		).toContain('no-change');
+
+		const cleared = run(noted, ctx, {
+			type: 'SetReminderNote',
+			reminderId: onSeat.reminderId,
+			note: '   '
+		});
+		expect(cleared.game.seats[seats[0]].reminders[0]).not.toHaveProperty('note');
+		expect(undo(cleared).game.seats[seats[0]].reminders[0].note).toBe('Chose Sam');
+		expect(refused(cleared, ctx, { type: 'SetReminderNote', reminderId: 'nope', note: 'x' })).toBe(
+			'unknown-reminder'
+		);
 	});
 });
 

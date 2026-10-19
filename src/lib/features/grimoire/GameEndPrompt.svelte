@@ -6,6 +6,7 @@
 		gameEnds,
 		promptable,
 		suggestedWinner,
+		type EndReason,
 		type GameEnd,
 		type GameHold
 	} from '#lib/core/rules/index.ts';
@@ -14,11 +15,12 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { dismissedGameEnds } from './device-notes.ts';
+	import EndGameFields from './EndGameFields.svelte';
 	import { tonight } from './night-steps.ts';
+	import { tokenLabel } from './reminders.ts';
 
 	/**
 	 * When a game end condition is met (Trevor, 2026-10-18), list every one met, with what may
@@ -32,7 +34,7 @@
 		grimoire: Grimoire;
 		/** False once the game has ended. */
 		active: boolean;
-		onEnd: (winner: Alignment | undefined) => void;
+		onEnd: (winner: Alignment | undefined, reason: EndReason | undefined) => void;
 	}
 
 	let { grimoire, active, onEnd }: Props = $props();
@@ -64,7 +66,8 @@
 	$effect(() => dismissedGameEnds.write(game.gameId, dismissed));
 	let shown = $state<GameEnd[]>([]);
 	let open = $state(false);
-	let winner = $state<Alignment | 'none'>('none');
+	let winner = $state<Alignment | undefined>();
+	let reason = $state<EndReason | undefined>();
 
 	// A condition that stops holding can prompt again if it comes back.
 	$effect(() => {
@@ -85,13 +88,13 @@
 		}
 		if (!promptable(ends).some((e) => !dismissed.includes(dismissKey(e)))) return;
 		shown = ends;
-		winner = suggestedWinner(ends) ?? 'none';
+		winner = suggestedWinner(ends);
 		open = true;
 	});
 
 	function confirm() {
 		ending = true;
-		onEnd(winner === 'none' ? undefined : winner);
+		onEnd(winner, winner ? reason : undefined);
 	}
 
 	const teamText = (team: Alignment) => (team === 'good' ? 'Good wins' : 'Evil wins');
@@ -128,7 +131,7 @@
 				{#if h.rule === 'impaired'}
 					{@const s = game.seats[h.seats[0]]}
 					{#each s?.reminders.filter((r) => impairmentOfLabel(r.label) || r.label === 'No Ability') ?? [] as r (r.reminderId)}
-						<ReminderToken label={r.label} character={characters.get(r.characterId)} />
+						<ReminderToken label={tokenLabel(r)} character={characters.get(r.characterId)} />
 					{/each}
 				{:else}
 					{@render ability(h.characterId)}
@@ -202,16 +205,7 @@
 		{/each}
 	</ul>
 	<div class="winner">
-		<Select
-			label="Winner"
-			value={winner}
-			options={[
-				{ value: 'good', label: 'Good' },
-				{ value: 'evil', label: 'Evil' },
-				{ value: 'none', label: 'Not recorded' }
-			]}
-			onChange={(team) => (winner = team)}
-		/>
+		<EndGameFields {grimoire} bind:winner bind:reason {dayEnded} />
 	</div>
 </ConfirmDialog>
 

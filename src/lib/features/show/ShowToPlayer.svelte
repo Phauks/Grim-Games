@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { plainText } from '#lib/features/info-tokens/bold.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import ShownCard from './ShownCard.svelte';
@@ -116,9 +117,7 @@
 	}}
 >
 	{#if open}
-		<button type="button" class="close" aria-label={t('common.close')} onclick={close}>
-			<Icon name="close" />
-		</button>
+		<span class="close"><IconButton icon="close" label={t('common.close')} onclick={close} /></span>
 		<!--
 			A crash inside is caught here, inside the opaque dialog, so the fallback is still
 			full screen and the grimoire never shows through; the close button stays above it.
@@ -193,6 +192,9 @@
 <style>
 	/* The page's colours, not a sheet's, even when opened from inside one. */
 	.show {
+		/* Opened over a modal dialog (a night step), which turns off pointer events on the
+		   page: this view is in the top layer and must still take taps. */
+		pointer-events: auto;
 		--surface: var(--player-view-surface);
 		--surface-raised: var(--player-view-raised);
 		--surface-selected: var(--player-view-selected);
@@ -212,6 +214,11 @@
 		color: var(--on-surface);
 		overscroll-behavior: none;
 	}
+	/* The page under it stops scrolling while it is open, so the page's scrollbar never
+	   shows beside the player's view (Trevor, 2026-10-18). Wherever it opens from. */
+	:global(html:has(dialog.show[open])) {
+		overflow: hidden;
+	}
 	.show::backdrop {
 		background: var(--surface, Canvas);
 	}
@@ -220,19 +227,11 @@
 		top: calc(var(--space-2) + env(safe-area-inset-top));
 		right: calc(var(--space-2) + env(safe-area-inset-right));
 		z-index: 1;
-		display: grid;
-		place-items: center;
-		width: var(--tap-target);
-		height: var(--tap-target);
-		border: 0;
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		cursor: pointer;
 		--icon-size: calc(1.5 * var(--u));
 	}
-	.close:hover {
-		background: var(--surface-selected);
+	/* Raised so it shows over a card; the hover tint is the shared one, over this fill. */
+	.close :global(.icon-button) {
+		background-color: var(--surface-raised);
 	}
 	.failed {
 		margin: auto 0;

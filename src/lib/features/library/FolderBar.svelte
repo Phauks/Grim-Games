@@ -4,8 +4,11 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import { tick } from 'svelte';
 	import FolderNameDialog from './FolderNameDialog.svelte';
 	import { TOP_FOLDER } from './drag-to-folder.ts';
 	import {
@@ -26,9 +29,33 @@
 		current?: string;
 		/** A search or filter shows items from every folder: the folder controls rest. */
 		searching: boolean;
+		/** The Library's search, behind a button beside the folder controls (Trevor, 2026-10-18). */
+		term?: string;
 	}
 
-	let { current = $bindable(), searching }: Props = $props();
+	let { current = $bindable(), searching, term = $bindable('') }: Props = $props();
+
+	/*
+	 * The search opens over the path, in the same row, so nothing moves (no reflow) and the
+	 * list keeps the height a second toolbar row took. It folds away again when emptied and
+	 * left, or with Esc (the field's own first Esc clears it); a search left typed keeps it open
+	 * and the button pressed.
+	 */
+	let searchOpen = $state(!!term);
+	let searchBox = $state<HTMLElement>();
+	async function openSearch() {
+		searchOpen = true;
+		await tick();
+		searchBox?.querySelector('input')?.focus();
+	}
+	function closeSearch() {
+		term = '';
+		searchOpen = false;
+	}
+	function onSearchFocusOut(event: FocusEvent) {
+		if (searchBox?.contains(event.relatedTarget as Node | null)) return;
+		if (!term) searchOpen = false;
+	}
 
 	const labels = $derived(libraryLabels.state);
 	const path = $derived(folderPath(labels, current));
@@ -58,7 +85,7 @@
 		if (!here) return [];
 		const inside = folderAndDescendants(labels, here.id);
 		return [
-			{ value: TOP, label: t('library.heading') },
+			{ value: TOP, label: t('library.home') },
 			...folderTree(labels)
 				.filter(({ folder }) => !inside.has(folder.id))
 				.map(({ folder }) => ({ value: folder.id, label: pathName(folder.id) }))
@@ -88,18 +115,21 @@
 </script>
 
 <div class="bar">
-	<nav aria-label={t('library.folderPath')} class="crumbs">
+	<nav aria-label={t('library.folderPath')} class="crumbs" inert={searchOpen}>
 		<ol>
 			<li>
 				{#if here}
 					<button
 						type="button"
-						class="crumb"
+						class="crumb root"
 						data-drop-folder={TOP_FOLDER}
-						onclick={() => (current = undefined)}>{t('library.heading')}</button
+						title={t('library.home')}
+						onclick={() => (current = undefined)}>{@render root()}</button
 					>
 				{:else}
-					<span class="crumb" aria-current="location">{t('library.heading')}</span>
+					<span class="crumb root" aria-current="location" title={t('library.home')}
+						>{@render root()}</span
+					>
 				{/if}
 			</li>
 			{#each path as folder (folder.id)}
@@ -119,7 +149,31 @@
 			{/each}
 		</ol>
 	</nav>
+	<!-- Always there, out of sight when folded, so the row is the same height either way. -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="search"
+		inert={!searchOpen}
+		bind:this={searchBox}
+		onfocusout={onSearchFocusOut}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') closeSearch();
+		}}
+	>
+		<SearchField
+			bind:value={term}
+			label={t('library.search')}
+			placeholder={t('library.searchPlaceholder')}
+		/>
+	</div>
 	<div class="actions">
+		<IconButton
+			icon="search"
+			label={t('library.search')}
+			aria-expanded={searchOpen}
+			aria-pressed={!!term}
+			onclick={() => (searchOpen ? closeSearch() : void openSearch())}
+		/>
 		<!-- Always rendered, so nothing moves when a folder opens; usable inside a folder only. -->
 		<IconButton
 			icon="rename"
@@ -140,6 +194,11 @@
 		/>
 	</div>
 </div>
+
+<!-- The top level is a home icon, which saves room (Trevor, 2026-10-18); it reads "Home". -->
+{#snippet root()}
+	<Icon name="home" /><span class="visually-hidden">{t('library.home')}</span>
+{/snippet}
 
 <FolderNameDialog bind:open={nameOpen} folder={naming?.folder} parent={here?.id} />
 
@@ -168,23 +227,28 @@
 		<p>
 			{t('library.deleteFolderBody', {
 				name: here.name,
-				parent: here.parent ? pathName(here.parent) : t('library.heading')
+				parent: here.parent ? pathName(here.parent) : t('library.home')
 			})}
 		</p>
 	{/if}
 </ConfirmDialog>
 
 <style>
+	/* The path and, when open, the search share the first cell; the buttons sit after them. */
 	.bar {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-2);
 	}
-	.crumbs {
+	.crumbs,
+	.search {
+		grid-area: 1 / 1;
 		min-width: 0;
-		flex: 1 1 auto;
+	}
+	.crumbs[inert],
+	.search[inert] {
+		visibility: hidden;
 	}
 	ol {
 		margin: 0;
@@ -214,6 +278,10 @@
 		font: inherit;
 		font-weight: 600;
 		overflow-wrap: anywhere;
+	}
+	.root {
+		justify-content: center;
+		min-width: var(--tap-target);
 	}
 	button.crumb {
 		color: var(--accent);

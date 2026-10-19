@@ -8,8 +8,11 @@
  */
 import {
 	describeDevice,
+	readPlace,
 	isDocId,
 	isDocKind,
+	parseSyncRequest,
+	MAX_SYNC_BYTES,
 	normaliseCode,
 	checkPassword,
 	cleanEmail,
@@ -18,18 +21,22 @@ import {
 	normaliseUsername,
 	PASSWORD_MAX,
 	PASSWORD_MIN,
+	PRIVACY_VERSION,
 	SESSION_COOKIE,
 	SESSION_IDLE_MS,
 	signInHash,
 	type ApiError,
+	type PrivacyRequired,
 	type PutDocRequest,
 	type SessionInfo,
+	type SyncResponse,
 	type StartResponse,
 	type UserResponse,
 	usernameKey,
 	USERNAME_MAX,
 	USERNAME_MIN
 } from '../../src/lib/features/account/account-protocol.ts';
+import { EXPORT_FORMAT, EXPORT_VERSION } from '../../src/lib/features/account/import-file.ts';
 import {
 	changeEmailCode,
 	emailChangedNotice,
@@ -42,6 +49,8 @@ import { isAdmin, type AdminsEnv } from '../admins.ts';
 import { passwordHash } from './crypto.ts';
 import {
 	hashPassword,
+	emailStub,
+	nameStub,
 	userStub,
 	type AccountEnv,
 	type AccountUser,
@@ -83,8 +92,21 @@ function signedInCookie(value: string, remember: boolean): string {
 const clearCookie = sessionCookie('', 0);
 
 /** The record for an address. Addresses are looked up lower-cased, so case never splits one. */
-function emailStub(env: AccountEnv, email: string) {
-	return env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(normaliseEmail(email) ?? email));
+
+/** The policy version the request accepted: only the current one counts. */
+function acceptedPrivacy(body: Record<string, unknown> | undefined): string | undefined {
+	return body?.acceptPrivacy === PRIVACY_VERSION ? PRIVACY_VERSION : undefined;
+}
+
+/** Signing in waits for the privacy policy to be accepted (Trevor, 2026-10-18). */
+function privacyRequired(creating: boolean): Response {
+	return json(
+		{
+			error: 'Accept the privacy policy to continue.',
+			privacy: { version: PRIVACY_VERSION, creating }
+		} satisfies PrivacyRequired,
+		403
+	);
 }
 
 /** Starts a session for `userId` and answers with the signed-in user and its cookie. */
@@ -100,7 +122,8 @@ async function signIn(
 	const cookie = await user.createSession(
 		describeDevice(request.headers.get('User-Agent')),
 		now,
-		remember
+		remember,
+		readPlace(request.cf)
 	);
 	const signedIn = await user.authenticate(cookie.split('.')[1], now);
 	return json(
@@ -137,7 +160,7 @@ export async function getUser(
 	} catch {
 		return undefined;
 	}
-	const found = await stub.authenticate(match[2], Date.now());
+	const found = await stub.authenticate(match[2], Date.now(), readPlace(request.cf));
 	return found && { ...found, userId: match[1] };
 }
 
@@ -147,9 +170,12 @@ function sameOriginJson(request: Request, url: URL): boolean {
 	return (request.headers.get('Content-Type') ?? '').startsWith('application/json');
 }
 
-async function readBody(request: Request): Promise<Record<string, unknown> | undefined> {
+async function readBody(
+	request: Request,
+	maxLength = 1_100_000
+): Promise<Record<string, unknown> | undefined> {
 	const text = await request.text();
-	if (text.length > 1_100_000) return undefined;
+	if (text.length > maxLength) return undefined;
 	try {
 		const body: unknown = JSON.parse(text || '{}');
 		return typeof body === 'object' && body !== null && !Array.isArray(body)
@@ -206,8 +232,10 @@ async function verify(request: Request, env: Env, url: URL): Promise<Response> {
 	const result = await emailStub(env, email).verify(
 		email,
 		code ? { code } : { token: token! },
-		now
+		now,
+		acceptedPrivacy(body)
 	);
+	if (!result.ok && result.reason === 'privacy') return privacyRequired(result.creating);
 	if (!result.ok) {
 		const message = {
 			expired: 'This code has expired. Send a new one.',
@@ -256,6 +284,10 @@ async function passwordSignIn(request: Request, env: Env, url: URL): Promise<Res
 		await record.passwordFailed(now);
 		return fail(401, WRONG_PASSWORD);
 	}
+	const user = userStub(env, userId);
+	const accepted = acceptedPrivacy(body);
+	if (accepted) await user.acceptPrivacy(accepted, now);
+	else if ((await user.privacyVersion()) !== PRIVACY_VERSION) return privacyRequired(false);
 	return signIn(request, env, url, userId, body?.remember !== false, now);
 }
 
@@ -367,15 +399,13 @@ async function setUsername(
 	const key = usernameKey(name);
 	const oldKey = auth.user.username === null ? undefined : usernameKey(auth.user.username);
 	if (key !== oldKey) {
-		const claimed = await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(key)).claim(
-			auth.userId
-		);
+		const claimed = await nameStub(env, key).claim(auth.userId);
 		if (!claimed) return fail(409, 'That username is taken.');
 	}
 	const user = userStub(env, auth.userId);
 	const changed = await user.setUsername(name);
 	if (oldKey !== undefined && oldKey !== key) {
-		await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(oldKey)).release(auth.userId);
+		await nameStub(env, oldKey).release(auth.userId);
 	}
 	return json({ user: changed.user! } satisfies UserResponse);
 }
@@ -451,7 +481,13 @@ export async function handleAccount(
 		return json({ ok: true });
 	}
 	if (path === '/api/account/export' && method === 'GET') {
-		return json(await user.exportAll(), 200, {
+		// Named and versioned, so Import can tell it apart and read older files (import-file.ts).
+		const data = {
+			format: EXPORT_FORMAT,
+			version: EXPORT_VERSION,
+			...((await user.exportAll()) as object)
+		};
+		return json(data, 200, {
 			'Content-Disposition': 'attachment; filename="grim-games-account.json"'
 		});
 	}
@@ -461,11 +497,17 @@ export async function handleAccount(
 			await emailStub(env, email).forget(auth.userId);
 		}
 		if (username) {
-			await env.ACCOUNT_NAMES.get(env.ACCOUNT_NAMES.idFromName(usernameKey(username))).release(
-				auth.userId
-			);
+			await nameStub(env, usernameKey(username)).release(auth.userId);
 		}
 		return json({ ok: true }, 200, { 'Set-Cookie': clearCookie });
+	}
+
+	if (path === '/api/account/sync' && method === 'POST') {
+		const body = await readBody(request, MAX_SYNC_BYTES);
+		const sync = body && parseSyncRequest(body);
+		if (!sync) return fail(400, 'Bad sync request.');
+		// Workers RPC typing can't express `unknown` bodies, so the result is restated here.
+		return json((await user.sync(sync, Date.now())) as unknown as SyncResponse);
 	}
 
 	const docs = /^\/api\/account\/docs\/([a-z]+)(?:\/([^/]+))?$/.exec(path);

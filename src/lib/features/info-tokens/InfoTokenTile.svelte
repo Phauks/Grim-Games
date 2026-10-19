@@ -2,6 +2,9 @@
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
+	import type { InfoTokenAsks } from '#lib/core/data/info-tokens.ts';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { askBadges } from './asks.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { plainText } from './bold.ts';
@@ -19,34 +22,75 @@
 		onadd?: () => void;
 		/** Buttons only some cards have (Edit and Delete on the Storyteller's own). */
 		actions?: Snippet;
+		/** What it asks for when shown, as icons in its corner (Trevor, 2026-10-18). */
+		asks?: InfoTokenAsks;
+		/** The quick card: used once, never saved, so it looks apart (Trevor, 2026-10-18). */
+		quick?: boolean;
 	}
 
-	let { text, 'aria-label': label, owners = [], onchoose, onadd, actions }: Props = $props();
+	let {
+		text,
+		'aria-label': label,
+		owners = [],
+		onchoose,
+		onadd,
+		actions,
+		asks,
+		quick = false
+	}: Props = $props();
 
 	const name = $derived(label ?? plainText(text));
+	const badges = $derived([
+		...(quick ? [{ icon: 'quickCard' as const, label: t('info-tokens.quickAbout') }] : []),
+		...askBadges(asks)
+	]);
+	// Read as the card's words, then its characters, though the characters show first.
+	const spoken = $derived(
+		owners.length
+			? // eslint-disable-next-line grim/names-as-badges -- the button's spoken name, never shown; the badges show
+				t('info-tokens.cardFor', { card: name, name: owners.map((o) => o.name).join(', ') })
+			: name
+	);
+	const id = $props.id();
 </script>
 
 <!--
 	One card tile, the same for standard, custom and character cards (Trevor, 2026-10-16):
 	only the extras differ, and they sit beside the shared card.
 -->
-<li class="tile">
+<li class="tile" class:quick>
 	<button
 		type="button"
 		class="card"
 		class:owned={owners.length > 0}
-		aria-label={label}
+		data-asks={badges.length || undefined}
+		aria-label={label ?? (badges.length || owners.length ? spoken : undefined)}
+		aria-describedby={badges.length ? `${id}-asks` : undefined}
 		onclick={onchoose}
 	>
-		<!-- One inline box, so the card's flex layout keeps the spaces between runs. -->
-		<span class="text"><InfoTokenText {text} /></span>
+		<!-- The character first, then the card's words (Trevor, 2026-10-18). -->
 		{#if owners.length > 0}
 			<span class="owners">
 				{#each owners.slice(0, 2) as owner (owner.id)}<CharacterBadge
 						characterId={owner.id}
 						character={owner}
+						inline
 						interactive={false}
 					/>{/each}{#if owners.length > 2}<span class="more">+{owners.length - 2}</span>{/if}
+			</span>
+		{/if}
+		<!-- One inline box, so the card's flex layout keeps the spaces between runs. -->
+		<span class="text"><InfoTokenText {text} /></span>
+		<!-- Before the tap, what the card will ask for: icons, each named by its words. -->
+		{#if badges.length}
+			<span class="asks" id="{id}-asks" data-testid="info-token-asks">
+				{#each badges as badge (badge.icon)}
+					<span class="ask" role="img" aria-label={badge.label} title={badge.label}
+						><Icon name={badge.icon} />{#if badge.count}<span class="count" aria-hidden="true"
+								>{badge.count}</span
+							>{/if}</span
+					>
+				{/each}
 			</span>
 		{/if}
 	</button>
@@ -108,6 +152,7 @@
 		}
 	}
 	.card {
+		position: relative;
 		flex: 1;
 		min-width: 0;
 		display: flex;
@@ -123,7 +168,35 @@
 		overflow-wrap: anywhere;
 		cursor: pointer;
 	}
-	/* A card that belongs to characters: its text, then the characters. */
+	/* A card that belongs to characters: the characters, then its text. */
+	/* Room for the corner icons, the same on every tile that has them, so nothing moves. */
+	.card[data-asks] {
+		padding-inline-end: calc(var(--tap-target) + var(--space-2));
+	}
+	/* The quick card is not one of the saved ones: an accent edge, dashed like a draft. */
+	.tile.quick {
+		border: 2px dashed var(--accent);
+	}
+	/* The corner icons sit over the card's top end. */
+	.asks {
+		position: absolute;
+		inset-block-start: var(--space-1);
+		inset-inline-end: var(--space-1);
+		display: flex;
+		gap: var(--space-1);
+		font-size: 0.85rem;
+		line-height: 1;
+		opacity: 0.8;
+	}
+	.ask {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.1em;
+	}
+	.count {
+		font-family: var(--font-body);
+		font-weight: 600;
+	}
 	.card.owned {
 		flex-direction: column;
 		align-items: flex-start;
@@ -139,6 +212,11 @@
 		-webkit-line-clamp: 3;
 		line-clamp: 3;
 		overflow: hidden;
+	}
+	/* Text and its characters share the tile's height: two lines, then the badges. */
+	.card.owned .text {
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
 	}
 	.owners {
 		display: flex;

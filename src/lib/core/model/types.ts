@@ -36,7 +36,15 @@ export interface Reminder {
 /** A reminder token placed in the grimoire. It belongs to a seat and moves with it. */
 export interface ReminderInstance extends Reminder {
 	reminderId: ReminderId;
+	/** The Storyteller's own words on it; only the generic ∞ reminder has one so far. */
+	note?: string;
 }
+
+/**
+ * The generic ∞ reminder's `characterId` (Trevor, 2026-10-18: one plain reminder, as many as
+ * needed, with optional text, instead of a custom reminder). It belongs to no character.
+ */
+export const GENERIC_REMINDER_ID = 'generic';
 
 /**
  * What a Storyteller override replaces. Overrides win over anything the rules conclude:

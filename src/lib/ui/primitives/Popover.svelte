@@ -19,6 +19,16 @@
 	}
 
 	let { open = $bindable(false), title, anchor, keepOpenOn, children }: Props = $props();
+
+	/**
+	 * An overlay under this one closed (a step dialog with a glossary word open in it). Zag
+	 * would close this one from inside that close, with a flushSync that crashes Svelte 5.57
+	 * (null batch), so close it ourselves just after, through `open`.
+	 */
+	function dismissedByParent(event: { preventDefault(): void }) {
+		event.preventDefault();
+		queueMicrotask(() => (open = false));
+	}
 </script>
 
 <!--
@@ -37,6 +47,7 @@
 		getAnchorElement: () => anchor ?? null
 	}}
 	finalFocusEl={() => anchor ?? null}
+	onRequestDismiss={dismissedByParent}
 	onInteractOutside={(event) => {
 		const target = event.detail.originalEvent.target;
 		if (target instanceof Element && (anchor?.contains(target) || keepOpenOn?.(target))) {
@@ -91,11 +102,11 @@
 		display: grid;
 		place-items: center;
 		flex: none;
-		width: var(--tap-target);
-		height: var(--tap-target);
+		padding: 0;
 		margin-right: calc(var(--space-2) * -1);
 		border: 0;
-		background: none;
+		/* Not `background: none`: that would reset the shared hover tint (base.css). */
+		background-color: transparent;
 		color: inherit;
 		cursor: pointer;
 		--icon-size: 1.25rem;

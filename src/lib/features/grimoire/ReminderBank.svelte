@@ -15,10 +15,9 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import { bankReminders, byLabel, type StepReminders } from './reminders.ts';
-	import { scriptCharacterIds } from '#lib/core/model/index.ts';
+	import { bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
+	import { GENERIC_REMINDER_ID, scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
-	import type { BankView } from './setup-tray.ts';
 	import {
 		pendingTray,
 		trayItems,
@@ -39,8 +38,6 @@
 		board: HTMLElement | undefined;
 		/** Token diameter in px. */
 		size: number;
-		view: BankView;
-		onView: (view: BankView) => void;
 		/** The character whose night step is being walked through. */
 		focus?: StepReminders;
 		/** How `focus` is shown (step-focus.svelte.ts). */
@@ -67,8 +64,6 @@
 		grimoire,
 		board,
 		size,
-		view,
-		onView,
 		focus,
 		focusMode = 'front',
 		seatAt,
@@ -134,41 +129,72 @@
 		}
 		// The setup reminders too (Trevor, 2026-10-17: the first night opens on Setup).
 		if (focusMode === 'front') setup.sort((a, b) => Number(!!b.now) - Number(!!a.now));
-		if (view === 'setup') return only(setup);
-		// All (Trevor, 2026-10-16): the setup reminders still to place come first, on the
-		// left of a solid line, then every other copy still off the board.
+		// The setup reminders still to place come first, captioned "Setup" (Trevor, 2026-10-18:
+		// no Setup/All switch), then a solid line and every other copy still off the board.
 		const pending: Record<string, number> = {};
 		for (const item of setupItems) {
 			// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
 			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 			pending[k] = (pending[k] ?? 0) + 1;
 		}
-		const rest = bankReminders(game, characters, focus, focusMode === 'front').flatMap(
-			({ characterId, label, left, now }) => {
-				const key = `${characterId}:${label}`;
-				const n = left - (pending[key] ?? 0);
-				if (n <= 0) return [];
-				// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
-				if (stack) return [{ key: `bank:${key}`, characterId, label, count: n, now }];
-				return Array.from({ length: n }, (_, i) => ({
-					key: `bank:${key}:${i}`,
-					characterId,
-					label,
-					count: 1,
-					now
-				}));
-			}
-		);
-		return only([...setup, ...rest]);
+		const rest = bankReminders(
+			game,
+			characters,
+			focus,
+			focusMode === 'front',
+			grimoire.copies
+		).flatMap(({ characterId, label, left, now }) => {
+			const key = `${characterId}:${label}`;
+			const n = left - (pending[key] ?? 0);
+			if (n <= 0) return [];
+			// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
+			if (stack) return [{ key: `bank:${key}`, characterId, label, count: n, now }];
+			return Array.from({ length: n }, (_, i) => ({
+				key: `bank:${key}:${i}`,
+				characterId,
+				label,
+				count: 1,
+				now
+			}));
+		});
+		// Last: the generic ∞ reminder, as many as needed (Trevor, 2026-10-18).
+		const generic: Item = { key: 'generic', characterId: GENERIC_REMINDER_ID, label: '', count: 1 };
+		return only([...setup, ...rest, generic]);
 	});
 	/** "Only this character": the step's reminders alone, while a step is walked through. */
 	function only(list: Item[]): Item[] {
 		return focus && focusMode === 'only' ? list.filter((i) => i.now) : list;
 	}
 	const dimRest = $derived(focusMode === 'highlight' && items.some((i) => i.now));
-	/** In All, the last setup reminder: a solid line follows it. */
+	/** The last setup reminder: a solid line follows it. */
 	const lastSetup = $derived(
-		view === 'all' && items.some((i) => !i.setup) ? items.findLast((i) => i.setup)?.key : undefined
+		items.some((i) => !i.setup) ? items.findLast((i) => i.setup)?.key : undefined
+	);
+	const hasSetup = $derived(items.some((i) => i.setup));
+
+	/**
+	 * The captions on the bank's top edge, like the day timer's Timer and Stopwatch (Trevor,
+	 * 2026-10-18): "Setup" over the setup reminders, "Other reminders" from the line on, which
+	 * stays at the start once the line scrolls past. As shares of the bank's width.
+	 */
+	let bankEl = $state<HTMLElement>();
+	let divider = $state<HTMLElement>();
+	let scrolled = $state(0);
+	const captions = $derived.by(() => {
+		void items;
+		if (!bankEl || !list) return { setup: 0, other: undefined as number | undefined };
+		const width = bankEl.clientWidth || 1;
+		const start = list.offsetLeft;
+		const line = divider ? start + divider.offsetLeft - scrolled : undefined;
+		const pct = (x: number) => (x / width) * 100;
+		return {
+			setup: pct(start),
+			other: line === undefined ? undefined : pct(Math.max(start, line))
+		};
+	});
+	/** "Setup" goes once the line has scrolled to the start. */
+	const setupShown = $derived(
+		hasSetup && (captions.other === undefined || captions.other > captions.setup + 0.5)
 	);
 
 	// A new step's reminders are at the front, or ringed in place: show them.
@@ -271,23 +297,20 @@
 	}
 </script>
 
-<div class="bank" data-tray>
-	<!-- One button that switches the view (Trevor kept it, 2026-10-17), rounded on the left
-	     like the box it sits in. -->
-	<button
-		type="button"
-		class="view"
-		aria-label={view === 'setup'
-			? 'Showing setup reminders; show all reminders'
-			: 'Showing all reminders; show setup reminders'}
-		onclick={() => onView(view === 'setup' ? 'all' : 'setup')}
-	>
-		{view === 'setup' ? 'Setup' : 'All'}
-	</button>
+<div class="bank" data-tray bind:this={bankEl}>
+	{#if setupShown}<span class="caption" data-testid="bank-setup" style:left="{captions.setup}%"
+			>Setup</span
+		>{/if}
+	{#if captions.other !== undefined}<span
+			class="caption"
+			data-testid="bank-other"
+			style:left="{captions.other}%">Other reminders</span
+		>{/if}
 	<ul
 		class="tray"
 		bind:this={list}
-		aria-label={view === 'setup' ? 'Setup reminders' : 'Reminder bank'}
+		aria-label="Reminder bank"
+		onscroll={(e) => (scrolled = e.currentTarget.scrollLeft)}
 	>
 		{#each items as item (item.key)}
 			<li
@@ -302,6 +325,7 @@
 					label={item.label}
 					character={characters.get(item.characterId)}
 					alignment={placingAlignment(game, item.characterId, characters)}
+					infinite={isGeneric(item)}
 					{size}
 					onTap={() => tap(item)}
 					onDrag={(x, y, end) => dragItem(item, x, y, end)}
@@ -309,13 +333,17 @@
 					panX
 				/>
 			</li>
-			{#if item.key === lastSetup}<li class="divider" aria-hidden="true"></li>{/if}
+			{#if item.key === lastSetup}<li
+					class="divider"
+					aria-hidden="true"
+					bind:this={divider}
+				></li>{/if}
 		{:else}
 			<li class="none">None</li>
 		{/each}
 	</ul>
 	{#if run}
-		<!-- Rounded on the right like the box, mirroring the view switch on the left. -->
+		<!-- Rounded on the right like the box. -->
 		<button
 			type="button"
 			class="run"
@@ -335,6 +363,7 @@
 			label={drag.item.label}
 			character={characters.get(drag.item.characterId)}
 			alignment={placingAlignment(game, drag.item.characterId, characters)}
+			infinite={isGeneric(drag.item)}
 			{size}
 			disabled
 			onTap={() => {}}
@@ -355,7 +384,7 @@
 >
 	{#snippet heading()}
 		Put {#if choosing}<ReminderToken
-				label={choosing.label}
+				label={isGeneric(choosing) ? '∞' : choosing.label}
 				character={characters.get(choosing.characterId)}
 			/>{/if} on
 	{/snippet}
@@ -485,28 +514,21 @@
 		color: var(--on-surface-muted);
 		cursor: default;
 	}
-	.view {
-		flex: none;
-		align-self: stretch;
-		/* Fits "Setup" or "All", so switching never moves the tokens (Trevor, 2026-10-16). */
-		width: 4.5rem;
-		padding: 0 var(--space-2);
-		border: 0;
-		border-inline-end: 1px solid var(--border);
-		/* Follows the bank's rounded corners on the left (Trevor, 2026-10-17). */
-		border-start-start-radius: calc(var(--radius-md) - 1px);
-		border-end-start-radius: calc(var(--radius-md) - 1px);
-		background: none;
-		color: var(--on-surface);
-		font: 600 0.85rem var(--font-control);
-		cursor: pointer;
-	}
-	/* Only with a mouse: on a touchscreen :hover stays after a tap until the next one, so the
-	   button looked different until then (Trevor, 2026-10-18). */
-	@media (hover: hover) {
-		.view:hover {
-			background: var(--surface-selected);
-		}
+	/* Cut into the bank's top edge, like the day timer's mode (DayTimer .caption). */
+	.caption {
+		position: absolute;
+		top: 0;
+		z-index: 3;
+		margin-left: var(--space-2);
+		padding: 0 var(--space-1);
+		background: var(--board-bar-background);
+		color: var(--on-surface-muted);
+		font: 600 0.65rem / 1 var(--font-control);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		pointer-events: none;
+		transform: translateY(-50%);
 	}
 	.tray {
 		flex: 1;

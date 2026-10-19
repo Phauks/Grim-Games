@@ -26,6 +26,7 @@ import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_bookmarks_simple from '~icons/ph/bookmarks-simple';
 import ph_books from '~icons/ph/books';
 import ph_bug from '~icons/ph/bug';
+import ph_calculator from '~icons/ph/calculator';
 import ph_caret_circle_down from '~icons/ph/caret-circle-down';
 import ph_caret_down from '~icons/ph/caret-down';
 import ph_caret_left from '~icons/ph/caret-left';
@@ -40,7 +41,6 @@ import ph_clipboard from '~icons/ph/clipboard';
 import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_club from '~icons/ph/club';
-import ph_columns from '~icons/ph/columns';
 import ph_copy from '~icons/ph/copy';
 import ph_copy_simple from '~icons/ph/copy-simple';
 import ph_corners_out from '~icons/ph/corners-out';
@@ -71,6 +71,7 @@ import ph_flower from '~icons/ph/flower';
 import ph_folder from '~icons/ph/folder';
 import ph_folder_open from '~icons/ph/folder-open';
 import ph_folder_simple from '~icons/ph/folder-simple';
+import ph_frame_corners from '~icons/ph/frame-corners';
 import ph_funnel from '~icons/ph/funnel';
 import ph_gear from '~icons/ph/gear';
 import ph_gear_six from '~icons/ph/gear-six';
@@ -83,6 +84,7 @@ import ph_hand_palm from '~icons/ph/hand-palm';
 import ph_hand_pointing from '~icons/ph/hand-pointing';
 import ph_handbag from '~icons/ph/handbag';
 import ph_hard_drives from '~icons/ph/hard-drives';
+import ph_hash from '~icons/ph/hash';
 import ph_heart from '~icons/ph/heart';
 import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_hexagon from '~icons/ph/hexagon';
@@ -102,6 +104,7 @@ import ph_link_simple_break from '~icons/ph/link-simple-break';
 import ph_list from '~icons/ph/list';
 import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_list_checks from '~icons/ph/list-checks';
+import ph_list_dashes from '~icons/ph/list-dashes';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_lock from '~icons/ph/lock';
 import ph_lock_simple from '~icons/ph/lock-simple';
@@ -140,9 +143,11 @@ import ph_shield from '~icons/ph/shield';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
 import ph_shuffle from '~icons/ph/shuffle';
+import ph_sidebar_simple from '~icons/ph/sidebar-simple';
 import ph_sign_in from '~icons/ph/sign-in';
 import ph_skull from '~icons/ph/skull';
 import ph_sliders from '~icons/ph/sliders';
+import ph_sliders_horizontal from '~icons/ph/sliders-horizontal';
 import ph_smiley from '~icons/ph/smiley';
 import ph_smiley_angry from '~icons/ph/smiley-angry';
 import ph_snowflake from '~icons/ph/snowflake';
@@ -153,6 +158,7 @@ import ph_sparkle from '~icons/ph/sparkle';
 import ph_speaker_high from '~icons/ph/speaker-high';
 import ph_spinner from '~icons/ph/spinner';
 import ph_square from '~icons/ph/square';
+import ph_square_split_horizontal from '~icons/ph/square-split-horizontal';
 import ph_star from '~icons/ph/star';
 import ph_sun from '~icons/ph/sun';
 import ph_sun_horizon from '~icons/ph/sun-horizon';
@@ -162,6 +168,7 @@ import ph_tag from '~icons/ph/tag';
 import ph_tag_simple from '~icons/ph/tag-simple';
 import ph_text_aa from '~icons/ph/text-aa';
 import ph_text_t from '~icons/ph/text-t';
+import ph_textbox from '~icons/ph/textbox';
 import ph_timer from '~icons/ph/timer';
 import ph_tote from '~icons/ph/tote';
 import ph_trash from '~icons/ph/trash';
@@ -213,6 +220,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple': ph_bookmarks_simple,
 	'ph:books': ph_books,
 	'ph:bug': ph_bug,
+	'ph:calculator': ph_calculator,
 	'ph:caret-circle-down': ph_caret_circle_down,
 	'ph:caret-down': ph_caret_down,
 	'ph:caret-left': ph_caret_left,
@@ -227,7 +235,6 @@ const icons: IconMap = {
 	'ph:clipboard-text': ph_clipboard_text,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:club': ph_club,
-	'ph:columns': ph_columns,
 	'ph:copy': ph_copy,
 	'ph:copy-simple': ph_copy_simple,
 	'ph:corners-out': ph_corners_out,
@@ -258,6 +265,7 @@ const icons: IconMap = {
 	'ph:folder': ph_folder,
 	'ph:folder-open': ph_folder_open,
 	'ph:folder-simple': ph_folder_simple,
+	'ph:frame-corners': ph_frame_corners,
 	'ph:funnel': ph_funnel,
 	'ph:gear': ph_gear,
 	'ph:gear-six': ph_gear_six,
@@ -270,6 +278,7 @@ const icons: IconMap = {
 	'ph:hand-pointing': ph_hand_pointing,
 	'ph:handbag': ph_handbag,
 	'ph:hard-drives': ph_hard_drives,
+	'ph:hash': ph_hash,
 	'ph:heart': ph_heart,
 	'ph:heartbeat': ph_heartbeat,
 	'ph:hexagon': ph_hexagon,
@@ -289,6 +298,7 @@ const icons: IconMap = {
 	'ph:list': ph_list,
 	'ph:list-bullets': ph_list_bullets,
 	'ph:list-checks': ph_list_checks,
+	'ph:list-dashes': ph_list_dashes,
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:lock': ph_lock,
 	'ph:lock-simple': ph_lock_simple,
@@ -327,9 +337,11 @@ const icons: IconMap = {
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,
 	'ph:shuffle': ph_shuffle,
+	'ph:sidebar-simple': ph_sidebar_simple,
 	'ph:sign-in': ph_sign_in,
 	'ph:skull': ph_skull,
 	'ph:sliders': ph_sliders,
+	'ph:sliders-horizontal': ph_sliders_horizontal,
 	'ph:smiley': ph_smiley,
 	'ph:smiley-angry': ph_smiley_angry,
 	'ph:snowflake': ph_snowflake,
@@ -340,6 +352,7 @@ const icons: IconMap = {
 	'ph:speaker-high': ph_speaker_high,
 	'ph:spinner': ph_spinner,
 	'ph:square': ph_square,
+	'ph:square-split-horizontal': ph_square_split_horizontal,
 	'ph:star': ph_star,
 	'ph:sun': ph_sun,
 	'ph:sun-horizon': ph_sun_horizon,
@@ -349,6 +362,7 @@ const icons: IconMap = {
 	'ph:tag-simple': ph_tag_simple,
 	'ph:text-aa': ph_text_aa,
 	'ph:text-t': ph_text_t,
+	'ph:textbox': ph_textbox,
 	'ph:timer': ph_timer,
 	'ph:tote': ph_tote,
 	'ph:trash': ph_trash,

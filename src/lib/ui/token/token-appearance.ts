@@ -15,16 +15,40 @@ export const TOKEN_COLOURS = [
 		variables: ['--token-face']
 	},
 	{
+		// The line round the face, separate from its fill (Trevor, 2026-10-18).
+		key: 'rim',
+		label: 'characters.colour.rim',
+		description: 'characters.colour.rimHelp',
+		variables: ['--token-face-shade']
+	},
+	{
 		key: 'reminder',
 		label: 'characters.colour.reminder',
 		description: 'characters.colour.reminderHelp',
 		variables: ['--reminder-face']
 	},
 	{
+		// The band behind a reminder's words, separate from its face (Trevor, 2026-10-18).
+		// Unset, it follows the face.
+		key: 'reminderLabel',
+		label: 'characters.colour.reminderLabel',
+		description: 'characters.colour.reminderLabelHelp',
+		variables: ['--reminder-label-face'],
+		follows: 'reminder'
+	},
+	{
 		key: 'ink',
 		label: 'characters.colour.ink',
 		description: 'characters.colour.inkHelp',
-		variables: ['--on-token', '--on-reminder']
+		variables: ['--on-token']
+	},
+	{
+		// Its own text colour (Trevor, 2026-10-18: "should be different from character token
+		// text color"). Saved settings from before take the character token's.
+		key: 'reminderInk',
+		label: 'characters.colour.reminderInk',
+		description: 'characters.colour.reminderInkHelp',
+		variables: ['--on-reminder']
 	}
 ] as const satisfies readonly {
 	key: string;
@@ -32,6 +56,8 @@ export const TOKEN_COLOURS = [
 	label: PlainMessageKey;
 	description: PlainMessageKey;
 	variables: readonly CssVariable[];
+	/** Not a theme colour: unset, it shows as this colour does. */
+	follows?: string;
 }[];
 
 export type TokenColour = (typeof TOKEN_COLOURS)[number]['key'];
@@ -85,8 +111,21 @@ export interface TokenAppearance {
 	 * "add the settings for in-line reminder tokens"). Earlier they followed reminderScale.
 	 */
 	inlineReminderScale: number;
-	/** The owner's icon on those chips; off, a dot in the type's colour. */
-	inlineReminderIcons: boolean;
+	/** The owner's icon on those chips. */
+	inlineReminderIconScale: number;
+	/** The chip itself round its words and icon. */
+	inlineReminderBadgeScale: number;
+	/**
+	 * Character names inside lines of text: the name's text, its icon and the badge round
+	 * them, each on its own (Trevor, 2026-10-18: "they are all different to me").
+	 */
+	inlineNameTextScale: number;
+	inlineNameIconScale: number;
+	inlineNameBadgeScale: number;
+	/** The top leaves that count a character's reminder tokens (Trevor, 2026-10-18). */
+	reminderLeaves: boolean;
+	/** The setup flower at the bottom right of a character that changes setup; off by default. */
+	setupFlower: boolean;
 }
 
 export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
@@ -99,7 +138,13 @@ export const DEFAULT_TOKEN_APPEARANCE: TokenAppearance = {
 	reminderLabelWidth: 1.5,
 	reminderLabelWrap: false,
 	inlineReminderScale: 1,
-	inlineReminderIcons: true
+	inlineReminderIconScale: 1,
+	inlineReminderBadgeScale: 1,
+	inlineNameTextScale: 1,
+	inlineNameIconScale: 1,
+	inlineNameBadgeScale: 1,
+	reminderLeaves: true,
+	setupFlower: false
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -116,6 +161,10 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		const value = saved[key];
 		if (typeof value === 'string' && HEX.test(value)) colours[key] = value.toLowerCase();
 	}
+	// One text colour covered both kinds of token before 2026-10-18. Settings saved since then
+	// always carry reminderLeaves, which came in the same change.
+	if (colours.ink && !colours.reminderInk && input.reminderLeaves === undefined)
+		colours.reminderInk = colours.ink;
 	return {
 		colours,
 		tokenScale: parseScale(input.tokenScale),
@@ -128,7 +177,15 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
 		reminderLabelWidth: parseLabelWidth(input.reminderLabelWidth),
 		reminderLabelWrap: input.reminderLabelWrap === true,
 		inlineReminderScale: parseScale(input.inlineReminderScale),
-		inlineReminderIcons: input.inlineReminderIcons !== false
+		inlineReminderIconScale: parseScale(input.inlineReminderIconScale),
+		inlineReminderBadgeScale: parseScale(input.inlineReminderBadgeScale),
+		inlineNameTextScale: parseScale(input.inlineNameTextScale),
+		inlineNameIconScale: parseScale(input.inlineNameIconScale),
+		inlineNameBadgeScale: parseScale(input.inlineNameBadgeScale),
+		// Earlier builds' `inlineReminderIcons` is dropped: chips in text always show the
+		// owner's icon (Trevor, 2026-10-18).
+		reminderLeaves: input.reminderLeaves !== false,
+		setupFlower: input.setupFlower === true
 	};
 }
 
@@ -136,9 +193,9 @@ export function parseTokenAppearance(raw: unknown): TokenAppearance {
  * The CSS variables to write after the theme's: the sizes (`--token-scale`,
  * `--reminder-scale`, `--night-badge-scale`) and reminder words (`--reminder-label-width`,
  * `--reminder-label-wrap`, a white-space value, and `--reminder-label-min`, so wrapped
- * words never get cut), reminders in text (`--inline-reminder-scale`, and display values
- * `--inline-reminder-owner` and `--inline-reminder-dot` for icon or dot) always, and each
- * changed colour.
+ * words never get cut), names and reminders in text (`--inline-reminder-scale`, the words, `--inline-reminder-icon`,
+ * `--inline-reminder-badge`, `--inline-name-text`, `--inline-name-icon`, `--inline-name-badge`)
+ * always, and each changed colour.
  */
 export function tokenVariables(appearance: TokenAppearance): Record<CssVariable, string> {
 	const variables: Record<CssVariable, string> = {
@@ -149,8 +206,11 @@ export function tokenVariables(appearance: TokenAppearance): Record<CssVariable,
 		'--reminder-label-wrap': appearance.reminderLabelWrap ? 'normal' : 'nowrap',
 		'--reminder-label-min': appearance.reminderLabelWrap ? 'min-content' : '0',
 		'--inline-reminder-scale': String(appearance.inlineReminderScale),
-		'--inline-reminder-owner': appearance.inlineReminderIcons ? 'inline' : 'none',
-		'--inline-reminder-dot': appearance.inlineReminderIcons ? 'none' : 'block'
+		'--inline-reminder-icon': String(appearance.inlineReminderIconScale),
+		'--inline-reminder-badge': String(appearance.inlineReminderBadgeScale),
+		'--inline-name-text': String(appearance.inlineNameTextScale),
+		'--inline-name-icon': String(appearance.inlineNameIconScale),
+		'--inline-name-badge': String(appearance.inlineNameBadgeScale)
 	};
 	for (const { key, variables: names } of TOKEN_COLOURS) {
 		const value = appearance.colours[key];
@@ -163,7 +223,9 @@ export function tokenVariables(appearance: TokenAppearance): Record<CssVariable,
 export function tokenColour(key: TokenColour, appearance: TokenAppearance, theme: Theme): string {
 	const chosen = appearance.colours[key];
 	if (chosen) return chosen;
-	const variable = TOKEN_COLOURS.find((c) => c.key === key)!.variables[0];
+	const colour: (typeof TOKEN_COLOURS)[number] = TOKEN_COLOURS.find((c) => c.key === key)!;
+	if ('follows' in colour) return tokenColour(colour.follows, appearance, theme);
+	const variable = colour.variables[0];
 	return resolveToken(variable, { ...theme.palette, ...theme.tokens });
 }
 
@@ -175,9 +237,19 @@ export function tokenContrast(
 	appearance: TokenAppearance,
 	theme: Theme
 ): { face: number; reminder: number } {
-	const ink = tokenColour('ink', appearance, theme);
 	return {
-		face: contrastRatio(ink, tokenColour('face', appearance, theme)),
-		reminder: contrastRatio(ink, tokenColour('reminder', appearance, theme))
+		face: contrastRatio(
+			tokenColour('ink', appearance, theme),
+			tokenColour('face', appearance, theme)
+		),
+		// The words sit on the band on the board and on the face in text: the worse of the two.
+		reminder: Math.min(
+			...(['reminderLabel', 'reminder'] as const).map((key) =>
+				contrastRatio(
+					tokenColour('reminderInk', appearance, theme),
+					tokenColour(key, appearance, theme)
+				)
+			)
+		)
 	};
 }

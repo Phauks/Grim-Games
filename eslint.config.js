@@ -76,7 +76,8 @@ export default defineConfig(
 		}
 	},
 	{
-		// Features reach Ark UI only through our own wrappers in src/lib/ui/primitives.
+		// Features reach Ark UI only through our own wrappers in src/lib/ui/primitives, and
+		// motion only through ui/motion.ts.
 		files: ['src/lib/features/**', 'src/routes/**'],
 		rules: {
 			'no-restricted-imports': [
@@ -86,6 +87,10 @@ export default defineConfig(
 						{
 							group: ['@ark-ui/*'],
 							message: 'Use the wrappers in #lib/ui/primitives instead of Ark UI directly.'
+						},
+						{
+							group: ['svelte/transition', 'animejs', 'animejs/*'],
+							message: 'Use rise and duration from #lib/ui/motion.ts so motion shares the tokens.'
 						}
 					]
 				}
@@ -104,6 +109,10 @@ export default defineConfig(
 						{
 							group: ['@ark-ui/*'],
 							message: 'Use the wrappers in #lib/ui/primitives instead of Ark UI directly.'
+						},
+						{
+							group: ['svelte/transition', 'animejs', 'animejs/*'],
+							message: 'Use rise and duration from #lib/ui/motion.ts so motion shares the tokens.'
 						},
 						{
 							group: [
@@ -190,11 +199,24 @@ export default defineConfig(
 		rules: { 'grim/text-field': 'error' }
 	},
 	{
-		// Every delete, remove or clear is the red trash can (Trevor, 2026-10-17).
+		// Every delete, remove or clear is the red trash can (Trevor, 2026-10-17). Account
+		// settings is exempt (Trevor, 2026-10-18): signing out is a text button, and Delete account
+		// a labelled red button.
 		files: ['src/**/*.svelte'],
-		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		ignores: [
+			'src/lib/features/spikes/**',
+			'src/routes/spikes/**',
+			'src/lib/features/account/AccountPage.svelte'
+		],
 		plugins: { grim },
 		rules: { 'grim/delete-button': 'error' }
+	},
+	{
+		// Every close or clear X is the round IconButton (Trevor, 2026-10-18).
+		files: ['src/**/*.svelte'],
+		ignores: ['src/lib/ui/primitives/**', 'src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: { 'grim/close-button': 'error' }
 	},
 	{
 		// Decision modals end in Cancel and Confirm, bottom right (Trevor, 2026-10-17).

@@ -3,12 +3,17 @@
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { account } from '#lib/features/account/account.svelte.ts';
+	import { DOC_KINDS, type DocKind } from '#lib/features/account/account-protocol.ts';
+	import { accountSync } from '#lib/features/account/sync/sync.svelte.ts';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
-	import { intl, t } from '#lib/i18n/locale.svelte.ts';
+	import { formatBytes } from '#lib/i18n/bytes.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import { reloadApp, storageUse } from '../data/device-data.ts';
+	import { dataKept, needsHomeScreen, thisBrowser } from '../data/keep-data.ts';
 	import {
 		clearItems,
 		measureStorage,
@@ -24,6 +29,8 @@
 	const text = (key: string): string => (t as (key: MessageKey) => string)(key as MessageKey);
 	const itemName = (id: StorageItemId) => text(`settings.storage.${id}`);
 	const itemHelp = (id: StorageItemId) => text(`settings.storage.${id}Help`);
+	const syncLabel = (kind: DocKind) => text(`settings.sync.${kind}`);
+	const signedIn = $derived(account.status === 'signed-in');
 
 	// Rows are in place before they are measured, so nothing moves when the sizes arrive.
 	let items = $state<StorageItem[]>(
@@ -36,7 +43,13 @@
 	let confirmOpen = $state(false);
 	let working = $state(false);
 
+	// Whether the browser promised to keep the data (asked at startup, +layout.svelte).
+	let kept = $state<boolean | null | undefined>(undefined);
+	// Known before the first render, so the row never appears after the rest.
+	const homeScreen = needsHomeScreen(thisBrowser());
+
 	onMount(() => {
+		void dataKept().then((value) => (kept = value));
 		void measureStorage().then((value) => {
 			items = value;
 			measured = true;
@@ -102,10 +115,7 @@
 	function size(bytes: number | null | undefined, ready = measured): string {
 		if (!ready || bytes === undefined) return '…';
 		if (bytes === null) return t('settings.storageUnknown');
-		const mb = bytes / 1_000_000;
-		return mb >= 0.1
-			? intl.number(mb, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1 })
-			: intl.number(bytes / 1000, { style: 'unit', unit: 'kilobyte', maximumFractionDigits: 0 });
+		return formatBytes(bytes);
 	}
 
 	async function confirm() {
@@ -118,7 +128,47 @@
 	}
 </script>
 
-<SettingRow label={t('settings.storageUsed')} description={t('settings.storageUsedHelp')}>
+<SettingRow label={t('settings.dataKept')} description={t('settings.dataKeptHelp')}>
+	{#snippet control()}
+		<span class="kept" data-testid="data-kept"
+			>{kept === undefined
+				? '…'
+				: kept === null
+					? t('settings.storageUnknown')
+					: kept
+						? t('settings.dataKeptYes')
+						: t('settings.dataKeptNo')}</span
+		>
+	{/snippet}
+</SettingRow>
+{#if homeScreen}
+	<!-- Safari only; a row here, never a banner or popup (Trevor bars both). -->
+	<SettingRow
+		layout="stacked"
+		label={t('settings.homeScreen')}
+		description={t('settings.homeScreenHelp')}
+	>
+		{#snippet control()}
+			<p class="steps" data-testid="home-screen-steps">{t('settings.homeScreenSteps')}</p>
+		{/snippet}
+	</SettingRow>
+{/if}
+<!-- What this device keeps in step with the account (account sync, Trevor 2026-10-18). -->
+{#each DOC_KINDS as kind (kind)}
+	<SettingToggle
+		label={syncLabel(kind)}
+		description={signedIn ? undefined : t('settings.syncSignedOut')}
+		checked={signedIn && accountSync.enabled(kind)}
+		disabled={!signedIn}
+		onChange={(on) => void accountSync.setEnabled(kind, on)}
+	/>
+{/each}
+
+<SettingRow
+	layout="stacked"
+	label={t('settings.storageUsed')}
+	description={t('settings.storageUsedHelp')}
+>
 	{#snippet control()}
 		<div class="tools">
 			<label class="all">
@@ -188,6 +238,12 @@
 </ConfirmDialog>
 
 <style>
+	.kept {
+		font-weight: 600;
+	}
+	.steps {
+		margin: 0;
+	}
 	.tools {
 		display: flex;
 		align-items: center;

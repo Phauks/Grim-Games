@@ -98,5 +98,13 @@ export const intl = {
 		new Intl.DateTimeFormat(locale.current, options).format(value),
 	relative: (value: number, unit: Intl.RelativeTimeFormatUnit) =>
 		new Intl.RelativeTimeFormat(locale.current, { numeric: 'auto' }).format(value, unit),
-	compare: (a: string, b: string) => a.localeCompare(b, locale.current)
+	compare: (a: string, b: string) => a.localeCompare(b, locale.current),
+	/** A country or region's name from its ISO code ("US" → "United States"); the code if unknown. */
+	region: (code: string) => {
+		try {
+			return new Intl.DisplayNames(locale.current, { type: 'region' }).of(code) ?? code;
+		} catch {
+			return code;
+		}
+	}
 };

@@ -9,9 +9,9 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { fly } from 'svelte/transition';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { rise } from '#lib/ui/motion.ts';
 	import BackButton from '#lib/ui/primitives/BackButton.svelte';
 
 	interface Props {
@@ -47,14 +47,10 @@
 		children
 	}: Props = $props();
 
-	const reduceMotion =
-		typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 	let width = $state(0);
 	/** Two panes from 40rem of width (the container query below), so nothing slides there. */
 	const slides = $derived(
-		!reduceMotion &&
-			width > 0 &&
-			width < 40 * parseFloat(getComputedStyle(document.documentElement).fontSize)
+		width > 0 && width < 40 * parseFloat(getComputedStyle(document.documentElement).fontSize)
 	);
 	let direction = $state(1);
 	// Another item's text always starts at its top; the list keeps its own scroll (Trevor,
@@ -113,7 +109,10 @@
 		{/if}
 		<div class="pane" bind:this={paneEl}>
 			{#key current}
-				<div class="view" in:fly={{ x: slides ? direction * 48 : 0, duration: slides ? 200 : 0 }}>
+				<div
+					class="view"
+					in:rise={{ x: `${direction * 3}rem`, y: 0, speed: slides ? 'normal' : 'none' }}
+				>
 					{#if !home}
 						<BackButton class="back" label={backLabel} onclick={back} />
 					{/if}

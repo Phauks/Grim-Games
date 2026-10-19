@@ -26,7 +26,13 @@ export interface TileSpec {
 }
 
 export type Command =
-	| { type: 'CreateGame'; script: Script; playerCount: number }
+	| {
+			type: 'CreateGame';
+			script: Script;
+			playerCount: number;
+			/** Fabled and Loric in play from the start; the script's own when absent. */
+			ruleCharacters?: CharacterId[];
+	  }
 	/**
 	 * Replaces the script mid-game (08-script-loading.md §5.6). Seats, reminders, bluffs and
 	 * the bag keep their characters; any that are not on the new script are only warned about.
@@ -80,6 +86,8 @@ export type Command =
 	| { type: 'PlaceLooseReminder'; reminder: Reminder }
 	/** Takes a reminder off its seat or Fabled or Loric and leaves it loose on the board. */
 	| { type: 'LoosenReminder'; reminderId: ReminderId }
+	/** The Storyteller's text on a reminder; empty clears it. */
+	| { type: 'SetReminderNote'; reminderId: ReminderId; note?: string }
 	/**
 	 * Places several reminders at once, such as the suggested setup reminders
 	 * (`setupReminders`, `placeableSetupReminders`). Each becomes a normal reminder that can
