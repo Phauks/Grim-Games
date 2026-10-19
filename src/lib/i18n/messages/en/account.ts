@@ -96,7 +96,7 @@ export const account = {
 	'account.data.import': 'Import data',
 	'account.import.title': 'Import data',
 	'account.import.text': 'From {file}. Nothing in your account is replaced.',
-	'account.import.add': 'Scripts to add',
+	'account.import.add': 'Items to add',
 	'account.import.same': 'Already in your account',
 	'account.import.skipped': 'Not imported',
 	'account.import.notExport': 'This is not a Download my data file.',
