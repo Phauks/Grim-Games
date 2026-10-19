@@ -21,6 +21,7 @@ import {
 	type SharedGrimoire,
 	type VoteTally
 } from '#lib/core/sync/room.ts';
+import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import {
 	reminderCopyIds,
@@ -185,7 +186,8 @@ export class RoomHost {
 				const saved = toSavedGame(game.session, Date.now());
 				this.#queueGrimoire({
 					saved: saved as unknown as Record<string, unknown>,
-					...(notes?.() ?? storedNotes(game.game.gameId))
+					...(notes?.() ?? storedNotes(game.game.gameId)),
+					timer: liveDayTimer.shared
 				});
 			});
 			$effect(() => {

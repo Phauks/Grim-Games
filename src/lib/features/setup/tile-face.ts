@@ -1,5 +1,5 @@
 export type { TileFace } from '#lib/ui/preferences.ts';
-import type { TileFace } from '#lib/ui/preferences.ts';
+import { TILE_FACES, type TileFace } from '#lib/ui/preferences.ts';
 import type { MessageKey } from '#lib/i18n/catalog.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { TILE_SYMBOL_ICONS } from '#lib/ui/icons/catalogue.ts';
@@ -89,8 +89,45 @@ export function tileLetters(number: number): string {
 	return out;
 }
 
+const ROMAN: readonly [number, string][] = [
+	[1000, 'M'],
+	[900, 'CM'],
+	[500, 'D'],
+	[400, 'CD'],
+	[100, 'C'],
+	[90, 'XC'],
+	[50, 'L'],
+	[40, 'XL'],
+	[10, 'X'],
+	[9, 'IX'],
+	[5, 'V'],
+	[4, 'IV'],
+	[1, 'I']
+];
+
+/** I, II … IX, X …: the Roman numeral for the 1-based tile `number` (Trevor, 2026-10-19). */
+export function tileRoman(number: number): string {
+	let n = number;
+	let out = '';
+	for (const [value, numeral] of ROMAN) {
+		while (n >= value) {
+			out += numeral;
+			n -= value;
+		}
+	}
+	return out;
+}
+
 /** A tile mark's name in words; the catalog keys above take no parameters. */
 export const named = t as (key: MessageKey) => string;
+
+/** The Bag tile labels drop-down, the same in Settings and the bag's own settings. */
+export function tileFaceOptions(): { value: TileFace; label: string }[] {
+	return TILE_FACES.map((value) => ({
+		value,
+		label: named(`settings.tileLabels.${value}` as MessageKey)
+	}));
+}
 
 const text = (s: string): TileMark => ({ kind: 'text', text: s, name: s });
 
@@ -138,7 +175,8 @@ function seeded(seed: string): () => number {
 
 /**
  * Random: every mark of every kind for a bag of `size`, shuffled with `seed` (the game), then
- * one per tile. Marks of different kinds never clash ("1" is a number, "A" a letter).
+ * one per tile. Marks of different kinds never clash ("1" is a number, "A" a letter), so
+ * Roman numerals stay out: "I", "V" and "X" are letters too.
  */
 function randomMarks(size: number, seed: string): TileMark[] {
 	const pool: TileMark[] = [];
@@ -160,6 +198,7 @@ export function tileMarks(size: number, face: TileFace, seed: string): TileMark[
 	return Array.from({ length: size }, (_, i) => {
 		const n = i + 1;
 		if (face === 'letters') return text(tileLetters(n));
+		if (face === 'roman') return text(tileRoman(n));
 		if (face === 'symbols') return symbol(n);
 		if (face === 'colours') return colour(n);
 		if (face === 'emoji') return emoji(n);

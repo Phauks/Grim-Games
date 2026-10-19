@@ -190,8 +190,13 @@ test('First night and Other nights each close from their header, remembered', as
 	const other = page.getByRole('button', { name: 'Other nights' });
 	await expect(first).toHaveAttribute('aria-expanded', 'true');
 	await expect(other).toHaveAttribute('aria-expanded', 'true');
+	// A closed section shows how many it holds (Trevor, 2026-10-19): here, who wakes.
+	const waking = await page.locator('section[data-night="first"] li:has(button.name)').count();
+	expect(waking).toBeGreaterThan(0);
+	await expect(first.getByTestId('section-count')).toHaveCount(0);
 	await first.tap();
 	await expect(first).toHaveAttribute('aria-expanded', 'false');
+	await expect(first.getByTestId('section-count')).toHaveText(String(waking));
 	await expect(page.locator('section[data-night="first"] li[data-step="poisoner"]')).toBeHidden();
 	await expect(page.locator('section[data-night="other"] li[data-step="poisoner"]')).toBeVisible();
 	await page.reload();
@@ -208,6 +213,14 @@ test("the night order shows who wakes, with TPI's night text", async ({ page }) 
 	await expect(minionInfo).toContainText('Minion info');
 	await expect(minionInfo.locator('.token[data-marker="minioninfo"]')).toBeVisible();
 	const poisoner = first.locator('li[data-step="poisoner"]');
+	// Every step's number sits level with the middle of its icon, however long the text, and
+	// a line runs between steps (Trevor, 2026-10-19).
+	for (const step of [minionInfo, poisoner]) {
+		const num = (await step.locator(':scope > .num').boundingBox())!;
+		const icon = (await step.locator(':scope > .icon').boundingBox())!;
+		expect(Math.abs(num.y + num.height / 2 - (icon.y + icon.height / 2))).toBeLessThan(1);
+	}
+	expect(await poisoner.evaluate((li) => getComputedStyle(li).borderTopStyle)).toBe('solid');
 	// Icon two lines tall, the name beside it, and tapping the name shows the ability.
 	await poisoner.locator('button.name').tap();
 	const dialog = page.getByRole('dialog', { name: 'Poisoner' });

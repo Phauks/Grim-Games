@@ -72,7 +72,12 @@
 				<h2>{title}</h2>
 				{@render list()}
 			{:else}
-				<Collapsible {title} storageKey="play:night-{n.night}">{@render list()}</Collapsible>
+				<Collapsible
+					{title}
+					storageKey="play:night-{n.night}"
+					count={n.entries.filter((e) => e.kind === 'character').length}
+					>{@render list()}</Collapsible
+				>
 			{/if}
 		</section>
 	{/each}
@@ -104,18 +109,27 @@
 		list-style: none;
 	}
 	ol {
-		gap: var(--space-2);
+		gap: 0;
 	}
+	/* A clear line between steps (Trevor, 2026-10-19), with room above and below it. */
 	li {
 		display: grid;
 		grid-template-columns: 2ch calc(3 * var(--u)) minmax(0, 1fr);
 		column-gap: var(--space-2);
 		align-items: start;
+		padding-block: var(--space-2);
 	}
+	li + li {
+		border-top: 1px solid var(--border);
+	}
+	/* Level with the middle of its icon on every step, however long the text (Trevor). */
 	.num {
 		grid-row: span 2;
-		align-self: center;
-		text-align: right;
+		align-self: start;
+		display: grid;
+		align-items: center;
+		justify-items: end;
+		height: calc(3 * var(--u));
 		color: var(--on-surface-muted);
 		font-variant-numeric: tabular-nums;
 	}

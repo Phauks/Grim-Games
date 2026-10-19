@@ -66,6 +66,8 @@ export interface SharedGrimoire {
 	layout?: unknown;
 	reminderSpots?: unknown;
 	copies?: unknown;
+	/** The day timer as it is on that device (`SharedDayTimer`), so spectators see it run. */
+	timer?: unknown;
 }
 
 /** A whole game's history with a homebrew script: well above `MAX_SCRIPT_BYTES`. */

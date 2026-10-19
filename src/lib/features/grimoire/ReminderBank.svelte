@@ -15,7 +15,13 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import { bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
+	import {
+		bankOwners,
+		bankReminders,
+		byLabel,
+		isGeneric,
+		type StepReminders
+	} from './reminders.ts';
 	import { GENERIC_REMINDER_ID, scriptCharacterIds } from '#lib/core/model/index.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import {
@@ -58,6 +64,8 @@
 		 * End night, End day, or Run night to pick a stopped walk-through up). Always there, so the
 		 * bank never moves. `hint`: a count; each rise lights it up for a moment.
 		 */
+		/** A spectator's board (Trevor, 2026-10-19): every token shown, none taken. */
+		disabled?: boolean;
 		run?: {
 			/** Its accessible name, and the shorter words shown. */
 			label: string;
@@ -80,7 +88,8 @@
 		ruleAt,
 		onRule,
 		onHints,
-		run
+		run,
+		disabled = false
 	}: Props = $props();
 
 	const game = $derived(grimoire.game);
@@ -96,6 +105,8 @@
 	const CAPTIONS: Partial<Record<Group, string>> = {
 		setup: 'Setup',
 		reminders: 'Reminders',
+		// Over the generic reminder's cell (Trevor, 2026-10-19).
+		generic: '∞',
 		dead: 'Dead players'
 	};
 
@@ -107,6 +118,8 @@
 		/** Shown once with ×count when "Stack duplicate reminders" is on. */
 		count: number;
 		setup?: TrayItem;
+		/** Whose copy it is, when its character is on more than one seat (`bankOwners`). */
+		ownerSeatId?: SeatId;
 		/** Used by the walked-through step tonight. */
 		now?: boolean;
 		/** Its stretch of the bank, each set off by a line. */
@@ -173,16 +186,23 @@
 			const n = left - (pending[key] ?? 0);
 			if (n <= 0) return [];
 			const group: Group = dead.has(characterId) ? 'dead' : 'reminders';
-			// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
-			if (stack) return [{ key: `bank:${key}`, characterId, label, count: n, now, group }];
-			return Array.from({ length: n }, (_, i) => ({
-				key: `bank:${key}:${i}`,
-				characterId,
-				label,
-				count: 1,
-				now,
-				group
-			}));
+			// Each seat's own copies, when the character is on more than one (Trevor, 2026-10-19).
+			const owners = bankOwners(game, characters, { characterId, label }, n, grimoire.copies);
+			return owners.flatMap(({ ownerSeatId, count }) => {
+				const k = ownerSeatId === undefined ? key : `${key}:${ownerSeatId}`;
+				// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
+				if (stack)
+					return [{ key: `bank:${k}`, characterId, label, ownerSeatId, count, now, group }];
+				return Array.from({ length: count }, (_, i) => ({
+					key: `bank:${k}:${i}`,
+					characterId,
+					label,
+					ownerSeatId,
+					count: 1,
+					now,
+					group
+				}));
+			});
 		});
 		// The generic ∞ reminder, as many as needed (Trevor, 2026-10-18), after the reminders.
 		const generic: Item = {
@@ -274,9 +294,13 @@
 		game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
 	const seatsFor = (item: Item) => (item.setup ? traySeats(item.setup.suggestion) : []);
 
-	function place(item: Pick<Item, 'characterId' | 'label'>, seatId: SeatId) {
-		const { characterId, label } = item;
-		return grimoire.run({ type: 'AddReminder', seatId, reminder: { characterId, label } });
+	function place(item: Pick<Item, 'characterId' | 'label' | 'ownerSeatId'>, seatId: SeatId) {
+		const { characterId, label, ownerSeatId } = item;
+		return grimoire.run({
+			type: 'AddReminder',
+			seatId,
+			reminder: { characterId, label, ownerSeatId }
+		});
 	}
 
 	/**
@@ -324,7 +348,11 @@
 		}
 		drag = undefined;
 		onHints({ seats: [] });
-		const reminder = { characterId: item.characterId, label: item.label };
+		const reminder = {
+			characterId: item.characterId,
+			label: item.label,
+			ownerSeatId: item.ownerSeatId
+		};
 		// On a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
 		const rule = ruleAt(x, y, reminder);
 		if (rule) return onRule(reminder, rule);
@@ -413,9 +441,10 @@
 				<BoardReminder
 					label={item.label}
 					character={characters.get(item.characterId)}
-					alignment={placingAlignment(game, item.characterId, characters)}
+					alignment={placingAlignment(game, item, characters)}
 					infinite={isGeneric(item)}
 					{size}
+					{disabled}
 					onTap={() => tap(item)}
 					onDrag={(x, y, end) => dragItem(item, x, y, end)}
 					onCancel={cancelDrag}
@@ -447,7 +476,7 @@
 		<BoardReminder
 			label={drag.item.label}
 			character={characters.get(drag.item.characterId)}
-			alignment={placingAlignment(game, drag.item.characterId, characters)}
+			alignment={placingAlignment(game, drag.item, characters)}
 			infinite={isGeneric(drag.item)}
 			{size}
 			disabled

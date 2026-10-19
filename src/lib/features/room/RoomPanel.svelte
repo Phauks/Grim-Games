@@ -161,6 +161,9 @@
 				qrLabel={t('room.watch.qrLabel')}
 				pending={t('room.watch.off')}
 				text={watchLink ? t('room.watch.shareText') : undefined}
+				qrCenter={logo || scriptName ? scriptCenter : undefined}
+				qrCenterShape={logo && !logoFailed ? 'square' : 'wide'}
+				qrCaption={t('room.watch.qrCaption')}
 			/>
 			<p class="status" role="status">{host.grimoireTooLarge ? t('room.watch.tooLarge') : ''}</p>
 		</div>

@@ -64,7 +64,7 @@
 		{#if reminder}<ReminderToken
 				label={tokenLabel(reminder)}
 				character={source}
-				alignment={placingAlignment(game, reminder.characterId, characters)}
+				alignment={placingAlignment(game, reminder, characters)}
 			/>{:else}Reminder{/if}
 	{/snippet}
 	{#snippet subtitle()}
@@ -112,7 +112,7 @@
 		Move {#if reminder}<ReminderToken
 				label={tokenLabel(reminder)}
 				character={source}
-				alignment={placingAlignment(game, reminder.characterId, characters)}
+				alignment={placingAlignment(game, reminder, characters)}
 			/>{:else}reminder{/if} to
 	{/snippet}
 </SeatChooser>

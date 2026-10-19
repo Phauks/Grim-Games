@@ -346,14 +346,7 @@
 	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
 	const teams = $derived(livingByTeam(g));
 	const ghostVotes = $derived(ghostVotesLeft(g));
-	const aliveLabel = $derived(
-		t('day.aliveLabel', {
-			count: teams.alive,
-			total: g.seating.length,
-			good: teams.good,
-			evil: teams.evil
-		})
-	);
+	const aliveLabel = $derived(t('day.aliveLabel', { count: teams.alive, total: g.seating.length }));
 	const goodLabel = $derived(t('day.goodLabel', { count: teams.good }));
 	const evilLabel = $derived(t('day.evilLabel', { count: teams.evil }));
 	const ghostLabel = $derived(t('day.ghostVotesLabel', { count: ghostVotes }));
@@ -486,7 +479,7 @@
 				aria-label={ghostLabel}
 				title={ghostLabel}
 				onclick={() => openCount('ghostVotes', ghostLabel)}
-				><Icon name="ghostVote" />{ghostVotes}</button
+				><Icon name="ghostVote" weight="fill" />{ghostVotes}</button
 			>
 			<!--
 				Votes the first nominee needs to go on the block, from who is alive now, so a death
@@ -560,7 +553,7 @@
 		</ul>
 	</Collapsible>
 
-	<Collapsible title={t('day.players')} storageKey="day.players">
+	<Collapsible title={t('day.players')} storageKey="day.players" count={seats.length}>
 		<div class="seats">
 			{#each seats as seat (seat.seatId)}
 				{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
@@ -618,7 +611,11 @@
 	{#if assistance.preDayReminders}
 		<!-- Each group is its own section; no "Today" wrapper (Trevor, 2026-10-17). -->
 		{#each reminders.groups as group (group.group)}
-			<Collapsible title={group.title} storageKey={`day.group.${group.group}`}>
+			<Collapsible
+				title={group.title}
+				storageKey={`day.group.${group.group}`}
+				count={group.reminders.length}
+			>
 				<ul class="reminders">
 					{#each group.reminders as reminder (reminder.key)}
 						{@const head =
@@ -1030,14 +1027,16 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
+	/* Every count is filled, the number on top (Trevor, 2026-10-19): the team counts in their
+	   team's colour, the others in the selected-surface colour. --on-good reads on both teams
+	   (badge-colours.test.ts); --on-surface on --surface-selected is a theme contrast pair. */
 	.badge {
-		background: transparent;
-		color: inherit;
+		border-color: var(--surface-selected);
+		background: var(--surface-selected);
+		color: var(--on-surface);
 		font-family: inherit;
 		cursor: pointer;
 	}
-	/* Filled in the team's colour, the number on top (Trevor, 2026-10-19). --on-good reads on
-	   both (badge-colours.test.ts). */
 	.badge.good {
 		border-color: var(--good);
 		background: var(--good);
@@ -1049,8 +1048,6 @@
 		color: var(--on-good);
 	}
 	.badge.votes {
-		border-color: var(--heading);
-		color: var(--heading);
 		font-family: var(--font-control);
 	}
 	.causes {
@@ -1075,6 +1072,10 @@
 	}
 	.private {
 		color: var(--on-surface-muted);
+	}
+	/* Only the words are italic; a character's name stays upright (Trevor, 2026-10-19). */
+	.private :global(.badge) {
+		font-style: normal;
 	}
 	.dont-announce {
 		justify-self: start;

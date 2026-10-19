@@ -23,6 +23,10 @@
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { drawLock, keepScreenOn } from './draw-lock.svelte.ts';
 	import PinDialog from './PinDialog.svelte';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
+	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { onMount } from 'svelte';
 
 	interface Props {
 		port: SetupGamePort;
@@ -53,6 +57,13 @@
 	// While locked, leaving the draw asks for the Storyteller's PIN, the reveal shows the
 	// token only while it's held, and the screen stays on.
 	const locked = $derived(game ? drawLock.isLocked(game.gameId) : false);
+	// Locked, the title is the script, logo and name, in place of "Draw" (Trevor, 2026-10-19).
+	onMount(() => void loadOfficialData());
+	const script = $derived(
+		game && officialData.current ? fromScript(game.script, officialData.current).script : undefined
+	);
+	const logo = $derived(script && scriptLogo(script));
+	const title = $derived((locked && script?.meta.name) || t('setup.draw'));
 	let pinOpen = $state(false);
 	let pinMode = $state<'set' | 'unlock'>('set');
 	/** The way out the PIN was asked for, taken once it's right. */
@@ -135,7 +146,10 @@
 
 <svelte:window onkeydown={onWindowKey} />
 
-<Page title={t('setup.draw')} iconActions>
+<Page {title} iconActions>
+	{#snippet lead()}
+		{#if locked && logo}<ScriptLogo src={logo} class="draw-title-logo" />{/if}
+	{/snippet}
 	{#snippet actions()}
 		<!-- Locked: only the lock itself; Bag settings and Join can't be used (Trevor, 2026-10-19). -->
 		{#if !locked}<SetupActions {port} />{/if}
@@ -172,17 +186,18 @@
 			title={t('setup.leave.title')}
 			body={t('setup.leave.body', { count: inBag, total: slots.length })}
 		/>
-		<SetupNav
-			backHref={resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })}
-			backLabel={t('setup.step.characters')}
-		>
-			{#snippet next()}
-				<!-- Done: the board, with its setup reminders tray open. -->
-				<Button variant="accent" icon="forward" href={remindersHref(game.gameId)}
-					>{t('setup.grimoire')}</Button
-				>
-			{/snippet}
-		</SetupNav>
+		<!-- Locked: no way back to the characters or on to the board (Trevor, 2026-10-19). -->
+		{#if !locked}<SetupNav
+				backHref={resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })}
+				backLabel={t('setup.step.characters')}
+			>
+				{#snippet next()}
+					<!-- Done: the board, with its setup reminders tray open. -->
+					<Button variant="accent" icon="forward" href={remindersHref(game.gameId)}
+						>{t('setup.grimoire')}</Button
+					>
+				{/snippet}
+			</SetupNav>{/if}
 	{/if}
 </Page>
 
@@ -207,6 +222,10 @@
 {/if}
 
 <style>
+	:global(.draw-title-logo) {
+		width: 1.5em;
+		height: 1.5em;
+	}
 	.hand-back {
 		margin: var(--space-2) 0;
 	}

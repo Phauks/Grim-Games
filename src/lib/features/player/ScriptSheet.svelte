@@ -127,14 +127,21 @@
 {/snippet}
 
 <!-- On screen every section closes from its header (Trevor); in print each is a plain heading. -->
-{#snippet section(title: string, key: string, body: Snippet, tone?: TypeTone, empty = false)}
+{#snippet section(
+	title: string,
+	key: string,
+	body: Snippet,
+	tone?: TypeTone,
+	empty = false,
+	count?: number
+)}
 	{#if flat}
 		<section data-tone={tone}>
 			<h2>{title}</h2>
 			{@render body()}
 		</section>
 	{:else}
-		<Collapsible {title} storageKey={key} {tone} {empty}>{@render body()}</Collapsible>
+		<Collapsible {title} storageKey={key} {tone} {empty} {count}>{@render body()}</Collapsible>
 	{/if}
 {/snippet}
 
@@ -150,7 +157,8 @@
 			`play:${group.type}`,
 			list,
 			typeTone(group.type),
-			group.type === 'traveller' && !!playing && !group.characters.some((c) => playing.has(c.id))
+			group.type === 'traveller' && !!playing && !group.characters.some((c) => playing.has(c.id)),
+			group.characters.length
 		)}
 	{/each}
 
@@ -163,7 +171,14 @@
 			<p class="none" data-testid="no-jinxes">{t('common.none')}</p>
 		{/if}
 	{/snippet}
-	{@render section(t('player.jinxes'), 'play:jinxes', jinxList, undefined, noJinxInPlay)}
+	{@render section(
+		t('player.jinxes'),
+		'play:jinxes',
+		jinxList,
+		undefined,
+		noJinxInPlay,
+		jinxes.length
+	)}
 
 	{#if !flat}
 		{#snippet breakdown()}<PlayerCounts
