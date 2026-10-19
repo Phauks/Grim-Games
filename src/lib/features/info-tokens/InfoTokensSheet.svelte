@@ -162,7 +162,7 @@
 	}
 </script>
 
-<BottomSheet bind:open {title} height="85dvh" focusFirstField={false}>
+<BottomSheet bind:open {title} height="85dvh">
 	<!-- The quick card, in the header next to the X (Trevor, 2026-10-18); kept in place on
 	     every view, usable on the list. -->
 	{#snippet actions()}
