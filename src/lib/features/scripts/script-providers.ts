@@ -11,6 +11,7 @@ import {
 	editionScript,
 	loadScript,
 	OFFICIAL_EDITIONS,
+	scriptToJson,
 	type GameData
 } from '#lib/core/data/index.ts';
 import type { ProfileScriptEntry } from '#lib/features/account/profile-scripts.ts';
@@ -53,7 +54,10 @@ export type LoadTarget =
 export interface ScriptListing {
 	row: PickerRow;
 	target: LoadTarget;
-	/** What the script is, to mark the current one; undefined when it can't be known yet. */
+	/**
+	 * What the script is, to mark the current one; undefined when it can't be known yet. JSON
+	 * is as saving writes it (`scriptToJson`), so a saved copy matches the row it came from.
+	 */
 	identity?: Pick<SavedScript, 'edition' | 'json'>;
 	/** Set for Recent rows, which can be removed. */
 	saved?: SavedScript;
@@ -148,7 +152,7 @@ function curatedListings(id: 'curated' | 'month'): LocalProvider['listings'] {
 									? { kind: 'botcscripts', ...entry.botc }
 									: { kind: 'link', url: entry.link, page: CURATED_PAGE }
 							},
-							identity: { json: entry.json }
+							identity: { json: scriptToJson(script) }
 						}
 					]
 				: [];
@@ -186,7 +190,7 @@ export const collectionProvider: LocalProvider = {
 								json: entry.json,
 								source: { kind: 'link', url: entry.link, page: entry.page }
 							},
-							identity: { json: entry.json }
+							identity: { json: scriptToJson(script) }
 						}
 					]
 				: [];
@@ -225,7 +229,7 @@ function worldCupProvider(year: WorldCupYear): LocalProvider {
 							json,
 							source: { kind: 'botcscripts', scriptId: entry.scriptId, version }
 						},
-						identity: { json }
+						identity: { json: scriptToJson(script) }
 					}
 				];
 			})
@@ -298,7 +302,7 @@ export const profileProvider: LocalProvider = {
 								page: sourcePage(entry.script.source)
 							},
 							target: { kind: 'json', json: entry.script.json, source: entry.script.source },
-							identity: { json: entry.script.json }
+							identity: { json: scriptToJson(script) }
 						}
 					]
 				: [];

@@ -145,9 +145,17 @@ test('Save is one toggle: un-saving asks first, and the script stays shown', asy
 	await expect(sheet).toContainText('Storm Warden');
 	await expect(sheet).toContainText('they are safe from the Demon tonight');
 	await expect(sheet.getByRole('button', { name: 'Townsfolk', exact: true })).toBeVisible();
+	// Its source stays Official, saved or not: the Save toggle shows it is saved (Trevor,
+	// 2026-10-19).
+	const rows = page.getByRole('row').filter({ hasText: 'Storm Front' });
+	await expect(rows).toHaveCount(1);
+	await expect(rows).toContainText('Official');
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'false');
 	await saveToggle(page).tap();
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
+	await expect(rows).toHaveCount(1);
+	await expect(rows).toContainText('Official');
+	await expect(rows).not.toContainText('Saved');
 	await noSidewaysScroll(page);
 
 	const size = async () => {
@@ -161,6 +169,8 @@ test('Save is one toggle: un-saving asks first, and the script stays shown', asy
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'false');
 	expect(await size()).toEqual(before);
 	await expect(detailsName(page)).toHaveText('Storm Front');
+	await expect(rows).toHaveCount(1);
+	await expect(rows).toContainText('Official');
 	await expect(details(page).getByRole('button', { name: 'Share script' })).toBeEnabled();
 
 	// Saved again from the same details.
@@ -699,10 +709,11 @@ test("the official site's custom scripts are a source of their own, and saved", 
 
 	await pick(page, 'Little Hamlet');
 	await expect(detailsName(page)).toHaveText('Little Hamlet');
-	// Its Source opens the official page that lists it, not just a site.
-	await expect(
-		details(page).getByRole('link', { name: 'Official custom scripts' })
-	).toHaveAttribute('href', 'https://bloodontheclocktower.com/pages/custom-scripts');
+	// Its Source, the section it is listed in, opens the official page that lists it.
+	await expect(details(page).getByRole('link', { name: 'Teensyville' })).toHaveAttribute(
+		'href',
+		'https://bloodontheclocktower.com/pages/custom-scripts'
+	);
 	// Not saved, yet shown as the players' script, abilities and all.
 	await expect(page.getByTestId('script-sheet')).toContainText('pairs of evil players');
 	// Script checks: characters per type, no setup changes, nothing missing.
@@ -1151,13 +1162,12 @@ test('the BOTC HomeBrew Wiki is a source: each script loads when opened and link
 	await expect(page.getByTestId('script-sheet')).toContainText('Quarry Warden');
 	await expect(page.getByTestId('script-sheet')).toContainText('nearest Minion');
 	expect(asked).toEqual(['stone-and-salt']);
-	// Saved, it is credited to the wiki and still links to its page; nothing is fetched again.
+	// Saved, its Source is unchanged and still links to its page; nothing is fetched again.
 	await saveToggle(page).tap();
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
-	await expect(details(page).getByRole('link', { name: 'BOTC HomeBrew Wiki' })).toHaveAttribute(
-		'href',
-		'https://botchomebrew.wiki/s/stone-and-salt'
-	);
+	await expect(
+		details(page).getByRole('link', { name: 'HomeBrew Wiki', exact: true })
+	).toHaveAttribute('href', 'https://botchomebrew.wiki/s/stone-and-salt');
 	expect(asked).toEqual(['stone-and-salt']);
 	await noSidewaysScroll(page);
 });
@@ -1654,4 +1664,41 @@ test('turning on a source with a list kept from an earlier visit shows it, witho
 	await page.keyboard.press('Escape');
 	await expect(page.getByRole('table', { name: 'Scripts' })).toContainText('Little Hamlet');
 	expect(errors).toEqual([]);
+});
+
+test('saving and un-saving an official script leaves its source as it was', async ({ page }) => {
+	// Written as the official site writes them: objects and old ids, which saving rewrites.
+	const json = [
+		{ id: '_meta', name: 'Probe Script', author: 'Someone' },
+		{ id: 'washerwoman' },
+		'librarian',
+		'fortune_teller',
+		{ id: 'imp' }
+	];
+	await page.route('**/api/curated', (route) =>
+		route.fulfill({
+			json: { scripts: [{ section: 'recommended', link: scriptToolLink(json), json }] }
+		})
+	);
+	await page.goto('/scripts');
+	await chooseSource(page, 'Official custom scripts');
+	await page.getByRole('button', { name: /^Probe Script/ }).tap();
+	// The heading and every fact above the characters (Source among them).
+	const summary = async () => {
+		const text = await page.getByTestId('script-details').innerText();
+		return text.slice(0, text.indexOf('Characters'));
+	};
+	await expect(details(page).getByRole('link', { name: 'Recommended' })).toBeVisible();
+	const before = await summary();
+	expect(before).toContain('Official');
+
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
+	await expect.poll(summary).toBe(before);
+	await expect(page.getByRole('row').filter({ hasText: 'Probe Script' })).toHaveCount(1);
+
+	await saveToggle(page).tap();
+	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'false');
+	await expect.poll(summary).toBe(before);
 });

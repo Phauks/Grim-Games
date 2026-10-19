@@ -206,11 +206,14 @@
 	const facts = $derived.by((): ScriptFact[] => {
 		const row = shownListing?.row;
 		const none = t('common.none');
-		const source: ScriptSource | undefined =
-			shownSaved?.source ??
-			(row?.source === 'botc' && row.number !== undefined
+		const rowSource: ScriptSource | undefined =
+			row?.source === 'botc' && row.number !== undefined
 				? { kind: 'botcscripts', scriptId: row.number, version: row.version ?? '' }
-				: undefined);
+				: undefined;
+		// A Search row keeps its own Source, saved or not (Trevor, 2026-10-19: the Save toggle
+		// already shows it is saved); a Library row shows where its script came from.
+		const fromLibrary = !row || row.source === 'recent' || row.source === 'profile';
+		const source = fromLibrary ? (shownSaved?.source ?? rowSource) : rowSource;
 		// The Source opens the script's own page where it came from (Trevor, 2026-10-16).
 		const page = (source && sourcePage(source)) ?? row?.page;
 		return [
