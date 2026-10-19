@@ -190,9 +190,15 @@ export default defineConfig(
 		rules: { 'grim/text-field': 'error' }
 	},
 	{
-		// Every delete, remove or clear is the red trash can (Trevor, 2026-10-17).
+		// Every delete, remove or clear is the red trash can (Trevor, 2026-10-17). Account
+		// settings is exempt (Trevor, 2026-10-18): signing out is a text button, and Delete account
+		// a labelled red button.
 		files: ['src/**/*.svelte'],
-		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		ignores: [
+			'src/lib/features/spikes/**',
+			'src/routes/spikes/**',
+			'src/lib/features/account/AccountPage.svelte'
+		],
 		plugins: { grim },
 		rules: { 'grim/delete-button': 'error' }
 	},

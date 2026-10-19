@@ -60,12 +60,29 @@ export const accountApi = {
 	session: () => call<SessionInfo>('/api/auth/session'),
 	start: (email: string) => call<StartResponse>('/api/auth/start', 'POST', { email }),
 	/** `password` becomes the account's (signing up, or replacing a forgotten one). */
-	verifyCode: (email: string, code: string, remember: boolean, password?: string) =>
-		call<SessionInfo>('/api/auth/verify', 'POST', { email, code, remember, password }),
-	signInWithPassword: (email: string, password: string, remember: boolean) =>
-		call<SessionInfo>('/api/auth/password', 'POST', { email, password, remember }),
-	verifyLink: (email: string, token: string) =>
-		call<SessionInfo>('/api/auth/verify', 'POST', { email, token }),
+	verifyCode: (
+		email: string,
+		code: string,
+		remember: boolean,
+		password?: string,
+		acceptPrivacy?: string
+	) =>
+		call<SessionInfo>('/api/auth/verify', 'POST', {
+			email,
+			code,
+			remember,
+			password,
+			acceptPrivacy
+		}),
+	signInWithPassword: (
+		email: string,
+		password: string,
+		remember: boolean,
+		acceptPrivacy?: string
+	) =>
+		call<SessionInfo>('/api/auth/password', 'POST', { email, password, remember, acceptPrivacy }),
+	verifyLink: (email: string, token: string, acceptPrivacy?: string) =>
+		call<SessionInfo>('/api/auth/verify', 'POST', { email, token, acceptPrivacy }),
 	signOut: () => call<{ ok: true }>('/api/auth/sign-out', 'POST'),
 	sessions: () =>
 		call<{ sessions: DeviceSession[] }>('/api/account/sessions').then((r) => r.sessions),

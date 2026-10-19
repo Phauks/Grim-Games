@@ -216,10 +216,12 @@ test('a check that finds a build shows its download, then Update ready', async (
 		});
 		// The test drives the new worker: progress messages, then installed.
 		Object.assign(window, {
-			swProgress: (done: number, total: number) =>
+			swProgress: (done: number, total: number, bytes?: number, totalBytes?: number) =>
 				listeners.forEach((listener) =>
 					listener(
-						new MessageEvent('message', { data: { type: 'PRECACHE_PROGRESS', done, total } })
+						new MessageEvent('message', {
+							data: { type: 'PRECACHE_PROGRESS', done, total, bytes, totalBytes }
+						})
 					)
 				),
 			swInstalled: () => {
@@ -243,6 +245,14 @@ test('a check that finds a build shows its download, then Update ready', async (
 	);
 	await expect(result).toHaveText('Downloading update… 40%');
 	// In place, on the version's line: nothing moves.
+	expect((await result.boundingBox())!.y).toBeCloseTo(box!.y, 0);
+	// With the build's sizes, the sizes too (Trevor, 2026-10-18: "show size of update as well").
+	await page.evaluate(() =>
+		(
+			window as unknown as { swProgress: (d: number, t: number, b: number, tb: number) => void }
+		).swProgress(3, 5, 2_400_000, 6_100_000)
+	);
+	await expect(result).toHaveText('Downloading update… 2.4 MB of 6.1 MB · 39%');
 	expect((await result.boundingBox())!.y).toBeCloseTo(box!.y, 0);
 	await page.evaluate(() => (window as unknown as { swInstalled: () => void }).swInstalled());
 	await expect(result).toHaveText(/ · Update ready$/);

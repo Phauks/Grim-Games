@@ -25,6 +25,11 @@ export interface InfoTokenAsks {
 	characters?: number;
 	/** Always exactly `characters`, never fewer: the Demon's three bluffs. */
 	exactly?: true;
+	/**
+	 * The characters are ones not in play: the picker offers the Good / All filter and
+	 * Random, and never picks one in play (the Demon's bluffs).
+	 */
+	notInPlay?: true;
 	value?: InfoTokenValue;
 }
 
@@ -53,7 +58,7 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 		id: 'not-in-play',
 		text: 'These characters are not in play',
 		source: 'standard',
-		asks: { characters: 3, exactly: true }
+		asks: { characters: 3, exactly: true, notInPlay: true }
 	},
 	{ id: 'you-are', text: 'You are', source: 'standard', asks: { characters: 1 } },
 	// May name several, such as the Dreamer's good and evil pair (Trevor, 2026-10-16).
@@ -94,6 +99,9 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	},
 	{ id: 'what-are-you-bluffing', text: 'What are you bluffing?', source: 'standard', extra: true },
 	{ id: 'use-your-ability', text: 'Use your ability?', source: 'standard', extra: true },
+	// Asks the player to choose; nothing is filled in (Trevor, 2026-10-18).
+	{ id: 'select-a-player', text: 'Select a player', source: 'standard', extra: true },
+	{ id: 'select-a-character', text: 'Select a character', source: 'standard', extra: true },
 	{ id: 'choose-again', text: 'Please choose again', source: 'standard', extra: true }
 ];
 
