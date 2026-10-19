@@ -428,7 +428,8 @@
 		selected = listing;
 		setPending(listing.row.key, true);
 		try {
-			await loadTarget(listing.target);
+			// Saving leaves Play and the rows alone (Trevor, 2026-10-19: they flashed).
+			await loadTarget(listing.target, { quiet: true });
 		} finally {
 			setPending(listing.row.key, undefined);
 		}
@@ -647,9 +648,10 @@
 		}
 	}
 
-	async function run(task: () => Promise<FetchedScript>) {
+	/** `quiet` skips `busy`, for a script that is already shown (Save). */
+	async function run(task: () => Promise<FetchedScript>, { quiet = false } = {}) {
 		clearError();
-		busy = true;
+		if (!quiet) busy = true;
 		try {
 			await settle(await task());
 		} catch (e) {
@@ -657,12 +659,12 @@
 			if (!(e instanceof ScriptFetchError)) reportError(e, { area: 'scripts', notify: false });
 			error = errorMessage(e);
 		} finally {
-			busy = false;
+			if (!quiet) busy = false;
 		}
 	}
 
 	/** Loads a row's script: built in, saved, carried in the row, or fetched. */
-	async function loadTarget(target: LoadTarget) {
+	async function loadTarget(target: LoadTarget, options: { quiet?: boolean } = {}) {
 		switch (target.kind) {
 			case 'edition': {
 				const script = editionScript(target.edition, await loadOfficialData());
@@ -675,13 +677,14 @@
 				return;
 			}
 			case 'json':
-				return run(() =>
-					Promise.resolve({ text: JSON.stringify(target.json), source: target.source })
+				return run(
+					() => Promise.resolve({ text: JSON.stringify(target.json), source: target.source }),
+					options
 				);
 			case 'botcscripts':
 			case 'homebrew':
 			case 'bloodstar':
-				return run(() => fetchRemote(target));
+				return run(() => fetchRemote(target), options);
 		}
 	}
 

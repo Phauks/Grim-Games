@@ -161,7 +161,7 @@ test('Save is one toggle: un-saving asks first, and the script stays shown', asy
 	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'false');
 	expect(await size()).toEqual(before);
 	await expect(detailsName(page)).toHaveText('Storm Front');
-	await expect(details(page).getByRole('button', { name: 'Share script' })).toBeDisabled();
+	await expect(details(page).getByRole('button', { name: 'Share script' })).toBeEnabled();
 
 	// Saved again from the same details.
 	await saveToggle(page).tap();
@@ -1266,6 +1266,80 @@ test('Upload File in the Add script dialog adds the chosen file straight away', 
 	});
 	await expect(dialog).toBeHidden();
 	await expect(detailsName(page)).toHaveText('Storm Front');
+});
+
+test('a Search script shares before it is saved, and Save changes nothing but itself', async ({
+	page
+}) => {
+	const content = [{ id: '_meta', name: 'Storm Front', author: 'Trevor' }, ...homebrew.slice(1)];
+	await page.route(/\/api\/botcscripts\/search\?/, (route) =>
+		route.fulfill({
+			json: {
+				page: 1,
+				count: 1,
+				hasMore: false,
+				results: [
+					{
+						scriptId: 1900,
+						versionId: 900,
+						name: 'Storm Front',
+						version: '1.0.0',
+						author: 'Trevor',
+						type: 'Full',
+						score: 5,
+						characters: [{ id: 'chef' }, { id: 'imp' }]
+					}
+				]
+			}
+		})
+	);
+	await page.route('**/api/botcscripts/versions/1900', (route) =>
+		route.fulfill({ json: { scriptId: 1900, latest: '1.0.0', versions: ['1.0.0'] } })
+	);
+	await page.route(/\/api\/botcscripts\/(version\/900|script\/1900\/1\.0\.0)$/, (route) =>
+		route.fulfill({
+			json: {
+				scriptId: 1900,
+				versionId: 900,
+				name: 'Storm Front',
+				version: '1.0.0',
+				author: 'Trevor',
+				content
+			}
+		})
+	);
+	await page.goto('/scripts');
+	await page.getByRole('button', { name: /^Storm Front/ }).tap();
+	const top = details(page).getByTestId('script-details-top');
+	await expect(top.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+	// Share is for any shown script, saved or not (Trevor, 2026-10-19).
+	await expect(top.getByRole('button', { name: 'Share script' })).toBeEnabled();
+	// Saving left Play, Print and Share flashing off and on (Trevor, 2026-10-19).
+	await top.evaluate((el) => {
+		const seen: string[] = [];
+		(window as unknown as { seen: string[] }).seen = seen;
+		new MutationObserver((records) => {
+			for (const r of records) {
+				const target = r.target as Element;
+				const name = target.getAttribute?.('aria-label') ?? target.nodeName;
+				if (r.type === 'attributes') seen.push(`${name} ${r.attributeName}`);
+				else if (r.addedNodes.length || r.removedNodes.length) seen.push(`${name} children`);
+			}
+		}).observe(el, {
+			attributes: true,
+			attributeFilter: ['disabled', 'aria-disabled', 'data-disabled'],
+			childList: true,
+			subtree: true
+		});
+	});
+	await saveToggle(page).tap();
+	await expect(saveToggle(page)).toHaveAttribute('aria-pressed', 'true');
+	await page.waitForTimeout(300);
+	expect(await page.evaluate(() => (window as unknown as { seen: string[] }).seen)).toEqual([]);
+	await top.getByRole('button', { name: 'Share script' }).tap();
+	await expect(
+		page.getByRole('dialog', { name: 'Share Storm Front' }).getByTestId('share-url')
+	).toHaveValue(/#/);
 });
 
 test('Save in a Search script header puts the script in the Library', async ({ page }) => {
