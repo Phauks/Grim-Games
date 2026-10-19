@@ -30,11 +30,13 @@
 	 */
 	interface Props {
 		label: string;
+		/** Hide the label visually, under a section header that already names it. */
+		hideLabel?: boolean;
 		value: ScriptChoice;
 		onChange: (value: ScriptChoice) => void;
 	}
 
-	let { label, value, onChange }: Props = $props();
+	let { label, hideLabel, value, onChange }: Props = $props();
 
 	const CUSTOM = '__custom__';
 	const editions = OFFICIAL_EDITIONS.map((e) => ({ value: e.id as ScriptChoice, label: e.name }));
@@ -85,7 +87,14 @@
 		}))
 	);
 	// A copy of a listed version shows as that version.
-	const versionValue = $derived(versioned.find((o) => o.version === chosen?.version)?.value);
+	const listedVersion = $derived(versioned.find((o) => o.version === chosen?.version)?.value);
+	// A custom script without a version says N/A (Trevor, 2026-10-19), not "None".
+	const NO_VERSION = '__no-version__';
+	const noVersion = $derived(custom && chosen !== undefined && versions.length === 0);
+	const versionOptions = $derived(
+		noVersion ? [{ value: NO_VERSION, label: t('modes.scriptSearch.noVersion') }] : versions
+	);
+	const versionValue = $derived(noVersion ? NO_VERSION : listedVersion);
 	let browsing = $state(false);
 	let libraryBrowser = $state<LibraryBrowser>();
 
@@ -108,7 +117,13 @@
 </script>
 
 <div class="picker">
-	<ChoiceGroup {label} value={custom ? CUSTOM : value} options={choices} onChange={choose} />
+	<ChoiceGroup
+		{label}
+		{hideLabel}
+		value={custom ? CUSTOM : value}
+		options={choices}
+		onChange={choose}
+	/>
 	<div class="search">
 		<Combobox
 			label={t('modes.scriptSearch.label')}
@@ -139,8 +154,8 @@
 				label={t('modes.scriptSearch.version')}
 				hideLabel
 				value={versionValue}
-				options={versions}
-				{onChange}
+				options={versionOptions}
+				onChange={(v) => v !== NO_VERSION && onChange(v)}
 				disabled={!custom || versions.length < 2}
 			/>
 		</span>

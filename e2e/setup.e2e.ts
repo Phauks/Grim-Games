@@ -412,6 +412,9 @@ test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, 
 		await page.keyboard.press('Escape');
 	}
 	const bag = page.getByRole('list', { name: 'Bag' }).getByRole('button');
+	// Roman numerals (Trevor, 2026-10-19).
+	await choose('Roman numerals');
+	await expect(page.getByRole('button', { name: 'Tile IV', exact: true })).toHaveText('IV');
 	await choose('Symbols');
 	await expect(page.getByRole('button', { name: 'Tile Star', exact: true })).toBeVisible();
 	await expect(bag.first().locator('[data-kind="symbol"] svg')).toBeVisible();
@@ -1002,11 +1005,16 @@ async function lockedDraw(page: Page) {
 	await lockDraw(page);
 }
 
-test('a locked draw asks for the PIN to leave and shows tokens only while held', async ({
+test('a locked draw asks for the PIN to unlock and shows tokens only while held', async ({
 	page
 }) => {
 	await lockedDraw(page);
 	await expect(page.getByRole('button', { name: 'Setup and bag draw' })).toHaveCount(0);
+	// Locked: the script's logo and name in place of "Draw", and no Characters or Grimoire.
+	const title = page.getByRole('heading', { level: 1 });
+	await expect(title).toHaveText('Trouble Brewing');
+	await expect(title.getByTestId('script-logo')).toHaveCount(1);
+	await expect(page.locator('.setup-nav')).toHaveCount(0);
 	// No header, sidebar or footer to leave by while the phone is passed round.
 	await expect(page.getByRole('banner')).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
@@ -1027,15 +1035,22 @@ test('a locked draw asks for the PIN to leave and shows tokens only while held',
 	await page.reload();
 	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
 
-	// Leaving asks for the PIN; a wrong one keeps the draw.
-	await page.locator('.setup-nav').getByRole('link', { name: 'Characters' }).tap();
+	// Unlocking asks for the PIN; a wrong one keeps the draw locked.
+	await page.getByTestId('draw-lock').tap();
 	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
 	await pin.getByLabel('PIN', { exact: true }).fill('1111');
 	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(pin.getByTestId('pin-message')).toHaveText('Wrong PIN.');
-	await expect(page).toHaveURL(/\/draw$/);
+	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
 	await pin.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(title).toHaveText('Draw');
+	await page.locator('.setup-nav').getByRole('link', { name: 'Characters' }).tap();
+	// Unlocked, tiles still in the bag ask the usual question.
+	await page
+		.getByRole('alertdialog', { name: 'Leave the draw?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
 	// Unlocked: the header is back.
 	await expect(page.getByRole('banner')).toBeVisible();

@@ -59,6 +59,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByTestId('alive-evil')).toHaveText('0');
 	// Ghost votes still to use sit beside the living (Trevor, 2026-10-17).
 	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
+	// The ghost is filled, like an unused ghost vote on the board (Trevor, 2026-10-19).
+	await expect(page.getByTestId('ghost-votes').locator('[data-icon$="-fill"]')).toHaveCount(1);
 	// Nothing at the sides is cut off by a box that clips its overflow (Trevor, 2026-10-18).
 	for (const id of ['alive-count', 'votes-needed']) {
 		const clipped = await page.getByTestId(id).evaluate((el) => {
@@ -143,7 +145,12 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 		await expect(table).toBeHidden();
 	};
 	await page.getByTestId('alive-count').tap();
-	await expect(page.getByRole('dialog', { name: /^7 of 8 players alive/ })).toBeVisible();
+	// The team split is left to the team counts (Trevor, 2026-10-19).
+	await expect(page.getByRole('dialog', { name: '7 of 8 players alive' })).toBeVisible();
+	// The total reads as a sum, bold.
+	expect(
+		await table.locator('tfoot td').evaluate((el) => Number(getComputedStyle(el).fontWeight))
+	).toBeGreaterThanOrEqual(700);
 	await expect(table.locator('tbody tr')).toHaveCount(8);
 	await expect(table.locator('tr[data-seat]:not([data-counts])')).toHaveText(/Seat 2.*Dead/);
 	await expect(table.locator('tfoot')).toHaveText(/Total\s*7/);
@@ -160,8 +167,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await page.getByTestId('alive-evil').tap();
 	await expect(table.locator('tbody')).toHaveText('None');
 	await closeCount();
-	// The team counts are filled in their colour, the number on top (Trevor, 2026-10-19).
-	for (const id of ['alive-good', 'alive-evil']) {
+	// Every count is filled, the number on top: the teams in their colour (Trevor, 2026-10-19).
+	for (const id of ['alive-count', 'alive-good', 'alive-evil', 'ghost-votes', 'votes-needed']) {
 		const fill = await page.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
 		expect(fill, id).not.toBe('rgba(0, 0, 0, 0)');
 	}
@@ -397,6 +404,11 @@ test('the day view names a homebrew character by its script name', async ({ page
 		/Spartacus.*, killed by the Demon/
 	);
 	await expect(announcements).toContainText('Spartacus');
+	// The words are italic; the character's name stays upright (Trevor, 2026-10-19).
+	await expect(announcements.getByTestId('storyteller-only').locator('.badge')).toHaveCSS(
+		'font-style',
+		'normal'
+	);
 	await expect(announcements.locator('img')).toHaveCount(1);
 	await expect(day).not.toContainText('spartacusfallofrome');
 });

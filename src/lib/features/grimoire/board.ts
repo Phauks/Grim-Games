@@ -191,13 +191,18 @@ export function warningText(warning: EngineWarning): string | undefined {
  * The alignment of the player whose character a reminder belongs to (Trevor, 2026-10-16):
  * its icon is drawn in that colour, so a turned-evil good player's reminders are red. The
  * seat with that token, else the seat that really is that character (the Drunk); unknown
- * when nobody holds it, and the icon then follows the character type.
+ * when nobody holds it, and the icon then follows the character type. A token that is one
+ * seat's copy of a character in play twice (`ownerSeatId`) takes that seat's colour (Trevor,
+ * 2026-10-19: a good and an evil Imp each have their own colour of tokens).
  */
 export function placingAlignment(
 	game: Game,
-	characterId: CharacterId,
+	of: CharacterId | Pick<Reminder, 'characterId' | 'ownerSeatId'>,
 	characters: CharacterLookup
 ): Alignment | undefined {
+	const characterId = typeof of === 'string' ? of : of.characterId;
+	const owner = typeof of === 'string' ? undefined : of.ownerSeatId;
+	if (owner !== undefined && Object.hasOwn(game.seats, owner)) return game.seats[owner].alignment;
 	const holder =
 		game.seating.find((s) => game.seats[s].characterId === characterId) ??
 		game.seating.find((s) => trueCharacter(game, s, characters) === characterId);

@@ -58,9 +58,18 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 		'Normal rules for Blood on the Clocktower'
 	);
 	await expect(page.getByTestId('player-count')).toHaveCount(1);
+	// Game mode, About and Script share the page's one section header (Trevor, 2026-10-19).
+	const headings = (names: string[]) =>
+		Promise.all(
+			names.map((name) =>
+				expect(modesPanel(page).getByRole('heading', { level: 2, name, exact: true })).toBeVisible()
+			)
+		);
+	await headings(['Game mode', 'About', 'Script']);
 	await chooseMode(page, 'Whale Buffet');
 	await expect(page.getByTestId('mode-about')).toBeVisible();
 	await expect(page.getByTestId('player-count')).toHaveCount(1);
+	await headings(['Game mode', 'About', 'Game mode settings', 'Script']);
 	await chooseMode(page, 'Standard');
 	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
 	await page.getByRole('button', { name: 'Start game' }).tap();
@@ -893,6 +902,34 @@ test('New game shows each script’s author under its name, and its versions in 
 	await custom.tap();
 	await page.getByRole('combobox', { name: 'Find a script' }).tap();
 	await expect(option).toContainText('by Test Author');
+});
+
+test('a custom script without a version shows N/A as its version', async ({ page }) => {
+	// Trevor, 2026-10-19: N/A in the version drop-down, not an empty one.
+	await page.addInitScript(() => {
+		localStorage.setItem(
+			'grim-games:scripts:quick-play',
+			JSON.stringify({
+				schemaVersion: 1,
+				scriptId: 'quick-play',
+				name: 'No Version Test',
+				json: [{ id: '_meta', name: 'No Version Test' }, 'washerwoman', 'imp'],
+				source: { kind: 'file', fileName: 'no-version.json' },
+				addedAt: 1,
+				lastUsedAt: 1,
+				revision: 1
+			})
+		);
+	});
+	await page.goto('/new');
+	const version = page.getByRole('combobox', { name: 'Script version' });
+	await expect(version).not.toContainText('N/A');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Custom', { exact: true }).tap();
+	await expect(page.getByRole('combobox', { name: 'Find a script' })).toHaveValue(
+		'No Version Test'
+	);
+	await expect(version).toHaveText('N/A');
+	await expect(version).toBeDisabled();
 });
 
 test('any script beyond the base three is found by typing, or picked in the Library', async ({

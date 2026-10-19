@@ -7,6 +7,7 @@ import type { Script } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { ROOM_PROTOCOL, type PlayerView } from '#lib/core/sync/room.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
+import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 
 const STORAGE_KEY = 'grim-games-room-player';
@@ -48,6 +49,7 @@ function setStoryteller(code: string, name: string | undefined): void {
 
 /** Forgets the last room when it is `code` (it closed, or refused this phone). */
 export function forgetRoom(code: string): void {
+	forgetRecentRoom(code);
 	if (lastRoom() !== code) return;
 	writeStoredText(LAST_ROOM_KEY, undefined);
 	setStoryteller(code, undefined);
@@ -63,6 +65,7 @@ export class RoomPlayer {
 	constructor(code: string) {
 		this.code = code;
 		writeStoredText(LAST_ROOM_KEY, code);
+		rememberRoom(code);
 		this.#socket = new RoomSocket(
 			code,
 			{ type: 'hello', role: 'player', key: deviceKey(), protocol: ROOM_PROTOCOL },

@@ -22,6 +22,7 @@
 	import PlayerCountSheet from '#lib/features/setup/PlayerCountSheet.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
@@ -262,119 +263,133 @@
 	}
 </script>
 
+<!-- Game mode, About, Game mode settings and Script each sit under the one PageSection
+	header (Trevor, 2026-10-19: "should all share the common header"). -->
 <div class="modes">
-	<div class="pick">
-		<!-- One drop-down for the mode (Trevor, 2026-10-18: "a dropdown, not buttons"). -->
-		<Select
-			label={t('modes.label')}
-			value={modeId}
-			options={modes.map((m) => ({ value: m.id, label: m.name }))}
-			onChange={(v) => {
-				modeId = v;
-				restrictions = NO_RESTRICTIONS;
-				roleRecycling = undefined;
-				campaignId = 'new';
-			}}
-		/>
-		<!-- Inspect and Add mode beside the drop-down they act on (Trevor, 2026-10-18). -->
-		<IconButton
-			icon="info"
-			label={t('modes.inspect', { name: mode.name })}
-			onclick={() => (inspecting = true)}
-		/>
-		<IconButton icon="add" label={t('modes.add.button')} onclick={() => (adding = true)} />
-		<!-- Always there, so nothing moves; only a mode added on this device can go. -->
-		<DeleteButton
-			label={t('modes.add.delete', { name: mode.name })}
-			disabled={!custom}
-			onclick={() => (deleting = true)}
-		/>
-	</div>
-	<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18), directly under
+	<PageSection title={t('modes.label')}>
+		<div class="pick">
+			<!-- One drop-down for the mode (Trevor, 2026-10-18: "a dropdown, not buttons"). -->
+			<Select
+				label={t('modes.label')}
+				hideLabel
+				value={modeId}
+				options={modes.map((m) => ({ value: m.id, label: m.name }))}
+				onChange={(v) => {
+					modeId = v;
+					restrictions = NO_RESTRICTIONS;
+					roleRecycling = undefined;
+					campaignId = 'new';
+				}}
+			/>
+			<!-- Inspect and Add mode beside the drop-down they act on (Trevor, 2026-10-18). -->
+			<IconButton
+				icon="info"
+				label={t('modes.inspect', { name: mode.name })}
+				onclick={() => (inspecting = true)}
+			/>
+			<IconButton icon="add" label={t('modes.add.button')} onclick={() => (adding = true)} />
+			<!-- Always there, so nothing moves; only a mode added on this device can go. -->
+			<DeleteButton
+				label={t('modes.add.delete', { name: mode.name })}
+				disabled={!custom}
+				onclick={() => (deleting = true)}
+			/>
+		</div>
+		<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18), directly under
 		the mode they stack on (2026-10-19). -->
-	<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
-		{t('modes.specialRulesButton', { count: rules.length })}
-	</Button>
+		<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
+			{t('modes.specialRulesButton', { count: rules.length })}
+		</Button>
+	</PageSection>
 	<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
-	<section class="about" aria-labelledby="mode-about-title">
-		<h3 id="mode-about-title">{t('modes.about')}</h3>
+	<PageSection title={t('modes.about')}>
 		<ModeAbout {mode} compact />
-	</section>
+	</PageSection>
 
 	{#if isStandard}
 		{@render standard(rules)}
 	{:else}
-		<section class="settings" aria-labelledby="mode-settings-title" data-testid="mode-settings">
-			<h3 id="mode-settings-title">{t('modes.settings')}</h3>
-			{#if ongoing.length > 0}
-				<SettingSelect
-					label={t('modes.campaign.choose')}
-					description={t('modes.campaign.chooseHint')}
-					value={campaignId}
-					options={[
-						{ value: 'new', label: t('modes.campaign.new') },
-						...ongoing.map((c) => ({
-							value: c.campaignId,
-							label: t('modes.campaign.ongoing', {
-								name: c.games[0]?.script?.meta?.name ?? mode.name,
-								date: new Date(c.createdAt).toLocaleDateString()
-							}),
-							description: t('library.campaignVersions', { count: c.games.length })
-						}))
-					]}
-					onChange={(v) => (campaignId = v)}
-				/>
-			{/if}
-			{#if continuing}
-				<SettingSelect
-					label={t('modes.campaign.version')}
-					value={versionValue}
-					options={versions}
-					onChange={(v) => (version = v)}
-				/>
-			{/if}
-			{#if draft}
-				<SettingToggle
-					label={t('modes.roleRecycling')}
-					description={t('modes.roleRecyclingHint')}
-					checked={roleRecycling ?? draft.recycleUnchosen}
-					onChange={(on) => (roleRecycling = on)}
-				/>
-			{/if}
-			<div class="setting">
-				<Button variant="field" icon="restricted" onclick={openRestricted}>
-					{t('modes.restrictedButton', { count: restrictedCount })}
-				</Button>
-				<p class="description">{t('modes.restrictedHint')}</p>
-			</div>
-		</section>
+		<div class="settings" data-testid="mode-settings">
+			<PageSection title={t('modes.settings')}>
+				{#if ongoing.length > 0}
+					<SettingSelect
+						label={t('modes.campaign.choose')}
+						description={t('modes.campaign.chooseHint')}
+						value={campaignId}
+						options={[
+							{ value: 'new', label: t('modes.campaign.new') },
+							...ongoing.map((c) => ({
+								value: c.campaignId,
+								label: t('modes.campaign.ongoing', {
+									name: c.games[0]?.script?.meta?.name ?? mode.name,
+									date: new Date(c.createdAt).toLocaleDateString()
+								}),
+								description: t('library.campaignVersions', { count: c.games.length })
+							}))
+						]}
+						onChange={(v) => (campaignId = v)}
+					/>
+				{/if}
+				{#if continuing}
+					<SettingSelect
+						label={t('modes.campaign.version')}
+						value={versionValue}
+						options={versions}
+						onChange={(v) => (version = v)}
+					/>
+				{/if}
+				{#if draft}
+					<SettingToggle
+						label={t('modes.roleRecycling')}
+						description={t('modes.roleRecyclingHint')}
+						checked={roleRecycling ?? draft.recycleUnchosen}
+						onChange={(on) => (roleRecycling = on)}
+					/>
+				{/if}
+				<div class="setting">
+					<Button variant="field" icon="restricted" onclick={openRestricted}>
+						{t('modes.restrictedButton', { count: restrictedCount })}
+					</Button>
+					<p class="description">{t('modes.restrictedHint')}</p>
+				</div>
+			</PageSection>
+		</div>
 
 		{#if continuing}
 			<!-- The campaign's saved version is its script. -->
-		{:else if scriptKind === 'one'}
-			<ScriptPicker label={t('modes.script')} value={script} onChange={(v) => (script = v)} />
-		{:else if scriptKind === 'per-town'}
-			{#each Array.from({ length: towns?.count ?? 2 }, (_, i) => i) as i (i)}
-				<Select
-					label={t('modes.townScript', { number: i + 1 })}
-					value={townScripts[i] ?? 'tb'}
-					options={choices.map((c) => ({
-						value: c.value,
-						label: c.label,
-						...(c.author || c.version ? { description: byline(c) } : {})
-					}))}
-					onChange={(v) => (townScripts[i] = v)}
-				/>
-			{/each}
-		{:else if scriptKind === 'fixed' && pool?.kind === 'per-town'}
-			<dl class="fixed">
-				{#each pool.scripts as link, i (link.url)}
-					<dt>{t('modes.townScript', { number: i + 1 })}</dt>
-					<dd><ModeValue field="script" value={link} /></dd>
-				{/each}
-			</dl>
 		{:else}
-			<p class="muted">{t('modes.everyCharacter')}</p>
+			<PageSection title={t('modes.script')}>
+				{#if scriptKind === 'one'}
+					<ScriptPicker
+						label={t('modes.script')}
+						hideLabel
+						value={script}
+						onChange={(v) => (script = v)}
+					/>
+				{:else if scriptKind === 'per-town'}
+					{#each Array.from({ length: towns?.count ?? 2 }, (_, i) => i) as i (i)}
+						<Select
+							label={t('modes.townScript', { number: i + 1 })}
+							value={townScripts[i] ?? 'tb'}
+							options={choices.map((c) => ({
+								value: c.value,
+								label: c.label,
+								...(c.author || c.version ? { description: byline(c) } : {})
+							}))}
+							onChange={(v) => (townScripts[i] = v)}
+						/>
+					{/each}
+				{:else if scriptKind === 'fixed' && pool?.kind === 'per-town'}
+					<dl class="fixed">
+						{#each pool.scripts as link, i (link.url)}
+							<dt>{t('modes.townScript', { number: i + 1 })}</dt>
+							<dd><ModeValue field="script" value={link} /></dd>
+						{/each}
+					</dl>
+				{:else}
+					<p class="muted">{t('modes.everyCharacter')}</p>
+				{/if}
+			</PageSection>
 		{/if}
 
 		<!-- The same count and setup sheet as Standard (Trevor, 2026-10-18), once per town
@@ -450,11 +465,6 @@
 />
 
 <style>
-	.about h3,
-	.settings h3 {
-		margin: 0;
-		font-size: 1.05rem;
-	}
 	/* Each setting has its description under it, always there (Trevor, 2026-10-19). */
 	.setting {
 		display: grid;
@@ -465,7 +475,7 @@
 	.setting {
 		border-top: 1px solid var(--border);
 	}
-	.settings h3 + .setting {
+	.setting:first-child {
 		border-top: 0;
 	}
 	.description {
