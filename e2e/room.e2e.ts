@@ -4,8 +4,11 @@ import { APP_NAME } from '../src/lib/core/app-name.ts';
 // Players' phones in a live room (07-accounts-and-multi-device.md §4.2): a phone asks for a
 // seat and name, the Storyteller approves, and the seat is named in the grimoire.
 
-async function startGame(page: Page) {
+async function startGame(page: Page, storyteller?: string) {
 	await page.goto('/new');
+	if (storyteller !== undefined) {
+		await page.getByTestId('storyteller-name').fill(storyteller);
+	}
 	await page
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
@@ -142,7 +145,7 @@ test('a typed code shows the game it opens before the phone joins', async ({
 	browser
 }, testInfo) => {
 	// Trevor (2026-10-19): "you type in the code, and then it shows you what game you will be joining".
-	const board = await startGame(page);
+	const board = await startGame(page, 'Sam');
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
@@ -163,6 +166,7 @@ test('a typed code shows the game it opens before the phone joins', async ({
 		'/data/logos/tb.webp'
 	);
 	await expect(preview).toContainText('8 seats, 0 taken');
+	await expect(preview.getByTestId('game-storyteller')).toHaveText('Storyteller: Sam');
 	// The game fills space kept for it: nothing moves.
 	expect((await preview.boundingBox())!.height).toBeCloseTo(before.height, 0);
 	// The code boxes sit in the middle of the page.
@@ -176,6 +180,7 @@ test('a typed code shows the game it opens before the phone joins', async ({
 	await join.tap();
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
 	await expect(phone.getByRole('heading', { level: 1 })).toHaveText(/^Room \d{3} \d{3}$/);
+	await expect(phone.getByTestId('room-storyteller')).toHaveText('Storyteller: Sam');
 	await phoneContext.close();
 });
 
