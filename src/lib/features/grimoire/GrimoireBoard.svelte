@@ -141,8 +141,8 @@
 		};
 	});
 	const layout = $derived(grimoire.layout);
-	// The token size setting is applied here, within the spacing, so seats never overlap; the
-	// tokens on the ring then draw at exactly this size (SeatToken resets --token-scale).
+	// The token size setting is applied here, within the spacing, so seats never overlap. It
+	// sizes the board only (Trevor, 2026-10-19): tokens elsewhere keep their own size.
 	const tokenScale = $derived(preferences.current.tokenAppearance.tokenScale);
 	const reminderScale = $derived(preferences.current.tokenAppearance.reminderScale);
 	const size = $derived(seatTokenSize(game.seating, layout, { width, height }, tokenScale));
@@ -2296,7 +2296,6 @@
 	}
 	.rule {
 		/* Sized from the seats, which already follow the token size setting. */
-		--token-scale: 1;
 		padding: 0;
 		border: 0;
 		border-radius: 50%;
@@ -2352,7 +2351,6 @@
 		border: 0;
 		background: none;
 		cursor: pointer;
-		--token-scale: 1;
 	}
 	.rules-stack > :global(*:not(:first-child):not(.stack-count)) {
 		margin-inline-start: -60%;

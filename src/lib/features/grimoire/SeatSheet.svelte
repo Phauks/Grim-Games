@@ -970,7 +970,16 @@
 		if (moving) moveConfirm?.request(moving, toSeatId);
 		moving = undefined;
 	}}
-/>
+>
+	<!-- It says which reminder moves (Trevor, 2026-10-19). -->
+	{#snippet heading()}
+		Move {#if movingReminder}<ReminderToken
+				label={tokenLabel(movingReminder)}
+				character={characters.get(movingReminder.characterId)}
+				alignment={placingAlignment(game, movingReminder.characterId, characters)}
+			/>{:else}reminder{/if} to
+	{/snippet}
+</SeatChooser>
 
 <ConfirmDialog
 	bind:open={removeOpen}

@@ -289,12 +289,13 @@
 		gap: var(--space-1);
 		padding: var(--space-1) 0;
 	}
-	/* Big, easy targets (Trevor, 2026-10-16), following the Reminder size setting. */
+	/* Big, easy targets (Trevor, 2026-10-16). The Reminder size setting is for the board only
+	   (Trevor, 2026-10-19), so a sheet never outgrows the screen. */
 	.chip {
 		display: inline-grid;
 		place-items: center;
-		min-width: calc(3.25 * var(--u) * var(--reminder-scale, 1));
-		min-height: calc(3.25 * var(--u) * var(--reminder-scale, 1));
+		min-width: calc(3.25 * var(--u));
+		min-height: calc(3.25 * var(--u));
 		padding: 0 calc(0.125 * var(--u));
 		border: 0;
 		background: none;
@@ -304,7 +305,7 @@
 		position: relative;
 	}
 	.holder {
-		max-width: calc(5 * var(--u) * var(--reminder-scale, 1));
+		max-width: calc(5 * var(--u));
 		min-height: 1.5em;
 		padding: 0 0.5em;
 		overflow: hidden;
@@ -351,9 +352,9 @@
 	}
 	.chip > :global(.reminder) {
 		padding: 0.45em 0.7em 0.45em 0.45em;
-		font-size: calc(1rem * var(--reminder-scale, 1));
+		font-size: 1rem;
 	}
 	.recent {
-		height: calc(3.25 * var(--u) * var(--reminder-scale, 1));
+		height: calc(3.25 * var(--u));
 	}
 </style>

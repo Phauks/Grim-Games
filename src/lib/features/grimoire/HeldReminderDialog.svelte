@@ -106,7 +106,16 @@
 		open = false;
 		if (shown) onMove(shown, toSeatId);
 	}}
-/>
+>
+	<!-- It says which reminder moves (Trevor, 2026-10-19). -->
+	{#snippet heading()}
+		Move {#if reminder}<ReminderToken
+				label={tokenLabel(reminder)}
+				character={source}
+				alignment={placingAlignment(game, reminder.characterId, characters)}
+			/>{:else}reminder{/if} to
+	{/snippet}
+</SeatChooser>
 
 <style>
 	.menu {

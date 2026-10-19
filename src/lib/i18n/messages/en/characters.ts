@@ -29,9 +29,9 @@ export const characters = {
 	'characters.previewReminder': 'Poisoned',
 	'characters.tokenSize': 'Character token size',
 	'characters.tokenSizeHelp':
-		'Character tokens on the board, reference cards and setup. Text size and Icon size stay the same.',
+		'Character tokens on the grimoire board. Tokens elsewhere, Text size and Icon size stay the same.',
 	'characters.reminderSize': 'Reminder token size',
-	'characters.reminderSizeHelp': 'Reminder tokens wherever they show.',
+	'characters.reminderSizeHelp': 'Reminder tokens on the grimoire board.',
 	'characters.boardNames': 'Show character names on tokens',
 	'characters.boardNamesHelp':
 		'Writes each character’s name on its token: on the grimoire board, in Show to player and in the seat sheet. Small icons in lists stay plain.',

@@ -132,7 +132,6 @@
 	data-testid="seat"
 	aria-label={label}
 	style:--size="{size}px"
-	style:--token-scale="1"
 	onpointerdown={(event) => (down = { x: event.clientX, y: event.clientY })}
 	onpointerup={pointerup}
 	onpointercancel={() => (down = null)}
