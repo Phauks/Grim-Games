@@ -4,10 +4,9 @@
  * ask too (Trevor, 2026-10-18: Account settings shows User or Admin) without importing it.
  */
 import { emailSender, type EmailEnv } from './account/email.ts';
-import type { ReportBox } from './reports.ts';
+import { reportBox, type ReportBoxEnv } from './report-box.ts';
 
-export interface AdminsEnv extends EmailEnv {
-	REPORTS: DurableObjectNamespace<ReportBox>;
+export interface AdminsEnv extends EmailEnv, ReportBoxEnv {
 	/**
 	 * "on" only in the local e2e server: trusts sign-ins whose code is shown on screen. Admin
 	 * accounts otherwise count only where sign-in codes really go by email, since a preview
@@ -24,5 +23,5 @@ export function adminSignInTrusted(env: AdminsEnv, url: URL): boolean {
 /** Whether `userId` is an admin on this site (false where sign-in can't be trusted). */
 export async function isAdmin(env: AdminsEnv, url: URL, userId: string): Promise<boolean> {
 	if (!adminSignInTrusted(env, url)) return false;
-	return env.REPORTS.get(env.REPORTS.idFromName('all')).isAdmin(userId);
+	return reportBox(env).isAdmin(userId);
 }
