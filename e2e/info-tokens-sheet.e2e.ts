@@ -209,3 +209,18 @@ test("the board sheet's quick card opens from its header, beside the X", async (
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(shown(page).getByRole('heading')).toHaveText('You may not speak');
 });
+
+test('opening a card that asks for characters leaves the keyboard closed', async ({ page }) => {
+	// Sheets never focus a field when they open (Trevor, 2026-10-19).
+	await openSheet(page);
+	await page.getByRole('button', { name: 'You are', exact: true }).tap();
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await expect(search).toBeVisible();
+	await expect(search).not.toBeFocused();
+
+	// The same on the Info tokens page.
+	await page.goto('/info-tokens');
+	await page.getByRole('button', { name: 'You are', exact: true }).tap();
+	await expect(search).toBeVisible();
+	await expect(search).not.toBeFocused();
+});

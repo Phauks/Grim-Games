@@ -18,7 +18,8 @@
 import type { Character, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
-import { analyseSetup, type SetupAnalysis } from './setup.ts';
+import { analyseSetup, type SetupAnalysis, type SetupWarning } from './setup.ts';
+import { jinxSetupWarnings, type ScriptJinx } from './jinxes.ts';
 import {
 	canDuplicate,
 	isBagDisabled,
@@ -268,6 +269,74 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 	).length;
 	take('traveller', Math.max(0, input.players - analysis.dealt - travellers));
 	return selection;
+}
+
+/** Setup warnings that make a selection wrong for its table (the page's build errors). */
+const INVALID: ReadonlySet<SetupWarning['code']> = new Set([
+	'count-mismatch',
+	'total-mismatch',
+	'missing-required',
+	'duplicate'
+]);
+
+export interface SelectionCheckInput extends SelectionAnalysisInput {
+	scriptCharacters: readonly Character[];
+	/** The script's jinxes: one that forbids both characters makes the pair invalid. */
+	jinxes?: readonly ScriptJinx[];
+}
+
+/**
+ * Why a selection is wrong for the table, empty when it is valid: the counts (with every
+ * setup change), required characters (the Huntsman's Damsel), copies, a Demon stand-in the
+ * Lunatic can't have, Travellers for players beyond 15, and jinxed pairs that can't both be
+ * in play. The same checks the Characters page asks to confirm before building the bag,
+ * except the player count itself, which no selection can change.
+ */
+export function selectionProblems(input: SelectionCheckInput): string[] {
+	const analysis = analyseSelection(input);
+	const plan = planBag({
+		selection: input.selection,
+		scriptCharacters: input.scriptCharacters,
+		lookup: input.lookup
+	});
+	const ids = selectedIds(input.selection, input.scriptOrder);
+	const travellers = ids.filter((id) => input.lookup(id)?.type === 'traveller').length;
+	return [
+		...analysis.warnings.filter((w) => INVALID.has(w.code)).map((w) => w.message),
+		...plan.issues
+			.filter((i) => i.code === 'no-stand-in' || i.code === 'unknown-character')
+			.map((i) => i.message),
+		...(travellers < analysis.travellers
+			? [`${analysis.travellers} Travellers needed; ${travellers} chosen.`]
+			: []),
+		...jinxSetupWarnings(input.jinxes ?? [], ids, (id) => input.lookup(id)?.name ?? id).map(
+			(w) => w.message
+		)
+	];
+}
+
+export type RandomResult =
+	{ ok: true; selection: Record<CharacterId, number> } | { ok: false; problems: string[] };
+
+/** Random selections tried before saying none fits. */
+const RANDOM_TRIES = 300;
+
+/**
+ * A random selection that is valid for the table (Trevor, 2026-10-19: "do not show an
+ * invalid draw"): `randomSelection` is tried until `selectionProblems` finds nothing. When
+ * no try fits (the kept characters or the script make it impossible), the problems of the
+ * last try say why, and nothing is chosen.
+ */
+export function validRandomSelection(
+	input: RandomSelectionInput & { jinxes?: readonly ScriptJinx[]; tries?: number }
+): RandomResult {
+	let problems: string[] = [];
+	for (let i = 0; i < (input.tries ?? RANDOM_TRIES); i++) {
+		const selection = randomSelection(input);
+		problems = selectionProblems({ ...input, selection });
+		if (problems.length === 0) return { ok: true, selection };
+	}
+	return { ok: false, problems };
 }
 
 /**

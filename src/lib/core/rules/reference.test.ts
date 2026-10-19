@@ -10,7 +10,6 @@ import {
 	characterReference,
 	compareNightOrders,
 	fullNightOrder,
-	groupByType,
 	matchesReference,
 	referenceText,
 	sheetPosition
@@ -23,17 +22,9 @@ const entry = (id: string) => entries.find((e) => e.character.id === id)!;
 const name = (id: string) => data.byId.get(id)?.name ?? id;
 
 describe('characterReference', () => {
-	it('has every official character once, grouped in TPI type order', () => {
+	it('has every official character once', () => {
 		expect(entries).toHaveLength(data.characters.length);
-		expect(groupByType(entries).map((g) => g.type)).toEqual([
-			'townsfolk',
-			'outsider',
-			'minion',
-			'demon',
-			'traveller',
-			'fabled',
-			'loric'
-		]);
+		expect(new Set(entries.map((e) => e.character.id)).size).toBe(entries.length);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Grandmother (Trevor's reviewed night text)

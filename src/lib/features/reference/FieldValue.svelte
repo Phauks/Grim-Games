@@ -43,11 +43,9 @@
 		onExplain: (title: string, text: string, character?: Character) => void;
 		/** Token size in px (fixed, so nothing reflows). */
 		tokenSize?: number;
-		/** The name as plain text, not a badge: the table is pure information (Trevor, 2026-10-16). */
-		plainName?: boolean;
 	}
 
-	let { field, entry, onExplain, tokenSize = 56, plainName = false }: Props = $props();
+	let { field, entry, onExplain, tokenSize = 56 }: Props = $props();
 	// The token opens the character's details, as its badge does (Trevor, 2026-10-19). The
 	// dialog is only created on first tap: the page shows hundreds of tokens.
 	let detailsOpen = $state(false);
@@ -131,8 +129,7 @@
 	</span>
 {/snippet}
 
-<!-- Wiki and Report as icon links: under the name in the table, at the top of a card
-     (Trevor, 2026-10-16). -->
+<!-- Wiki and Report as icon links under the name (Trevor, 2026-10-16). -->
 <!-- eslint-disable svelte/no-navigation-without-resolve -- external links, not app routes -->
 {#snippet links()}
 	<span class="links">
@@ -184,12 +181,9 @@
 				{character}
 				icon={iconUrl(character)}
 			/>{/if}
-	{:else if field === 'name' && plainName}
+	{:else if field === 'name'}
 		<!-- eslint-disable-next-line grim/names-as-badges -- Reference table cells are plain information (Trevor, 2026-10-16) -->
 		<span class="block">{character.name}</span>{@render links()}
-	{:else if field === 'name'}
-		<!-- The same badge the game uses: icon, type colour and name (Trevor, 2026-10-15). -->
-		<CharacterBadge characterId={character.id} />
 	{:else if field === 'type'}
 		{TYPE_LABELS[character.type]}
 	{:else if field === 'edition'}
@@ -212,6 +206,8 @@
 				>{/if}{:else}{t('common.none')}{/if}
 	{:else if field === 'ability'}
 		<span class="ability"><GlossaryText text={character.ability} names={[character.name]} /></span>
+	{:else if field === 'flavor'}
+		{#if character.flavor}<q class="flavor">{character.flavor}</q>{:else}{t('common.none')}{/if}
 	{:else if field === 'tokens'}
 		<span class="tokens"
 			>{#each entry.tokens as token, i (i)}{@const note = tokenNote(token)}<span class="token-row"
@@ -316,8 +312,6 @@
 				{#each entry.problems as problem (problem)}<li>{problem}</li>{/each}
 			</ul>
 		{:else}{t('common.none')}{/if}
-	{:else if field === 'links'}
-		{@render links()}
 	{/if}
 </span>
 
@@ -337,6 +331,9 @@
 		background: none;
 		color: inherit;
 		cursor: pointer;
+	}
+	.flavor {
+		font-style: italic;
 	}
 	.small {
 		font-size: 0.8rem;

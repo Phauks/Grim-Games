@@ -86,7 +86,8 @@ for (const size of SIZES) {
 		await page.goto('/reference');
 		await page.getByRole('searchbox', { name: 'Search characters' }).fill('Poisoner');
 		await page
-			.locator('[data-testid="reference-card"][data-character="poisoner"]')
+			.getByTestId('character-table')
+			.locator('tr[data-character="poisoner"]')
 			.getByRole('button', { name: 'poisoned: explain rules term' })
 			.tap();
 		await page

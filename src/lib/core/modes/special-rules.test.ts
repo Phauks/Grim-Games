@@ -31,6 +31,11 @@ describe('reading a special rule file', () => {
 			expect(parseSpecialRule(r, known), r.id).toEqual({ ok: true, rule: r });
 	});
 
+	it('gives every library rule a description for the picker (Trevor, 2026-10-19)', () => {
+		const missing = SPECIAL_RULES.filter((rule) => !rule.about?.trim()).map((rule) => rule.id);
+		expect(missing).toEqual([]);
+	});
+
 	it('refuses the parts only a game mode sets, saying why', () => {
 		const parsed = parseSpecialRule({
 			...rule('x', {}),

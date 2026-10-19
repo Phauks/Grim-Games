@@ -32,8 +32,9 @@
 		subtitle?: Snippet;
 		children: Snippet;
 		/**
-		 * False: opening the sheet doesn't focus its first field, so a phone's keyboard stays
-		 * closed until a field is tapped (Trevor, 2026-10-16).
+		 * Off by default: sheets never focus a field when they open, so a phone's keyboard
+		 * stays closed until a field is tapped (Trevor, 2026-10-16 and 2026-10-19: "we don't
+		 * always need keyboard"). True only where typing is the sheet's whole point.
 		 */
 		focusFirstField?: boolean;
 	}
@@ -52,7 +53,7 @@
 		titleEnd,
 		subtitle,
 		children,
-		focusFirstField = true
+		focusFirstField = false
 	}: Props = $props();
 
 	// Drawn above every overlay opened before it (layers.ts); kept after closing so the exit

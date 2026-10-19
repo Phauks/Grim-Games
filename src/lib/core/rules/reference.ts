@@ -9,7 +9,6 @@ import type { GameData } from '#lib/core/data/game-data.ts';
 import { jinxesFor } from '#lib/core/data/jinxes.ts';
 import type { NumericNightOrder } from '#lib/core/data/night-order-numeric.ts';
 import {
-	CHARACTER_TYPES,
 	type Alignment,
 	type Character,
 	type CharacterId,
@@ -447,16 +446,6 @@ export function matchesReference(entry: ReferenceEntry, query: ReferenceQuery): 
 		].join(' ')
 	);
 	return words.every((w) => haystack.includes(w));
-}
-
-/** Entries grouped by character type, in TPI's type order; empty types left out. */
-export function groupByType(
-	entries: readonly ReferenceEntry[]
-): { type: CharacterType; entries: ReferenceEntry[] }[] {
-	return CHARACTER_TYPES.map((type) => ({
-		type,
-		entries: entries.filter((e) => e.character.type === type)
-	})).filter((g) => g.entries.length > 0);
 }
 
 /**

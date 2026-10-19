@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { TABLE_COLUMNS } from '#lib/core/rules/reference-table.ts';
-import { cardFieldIds, FIELD_IDS, REFERENCE_FIELDS, tableFieldIds } from './fields.ts';
+import { FIELD_IDS, REFERENCE_FIELDS, tableFieldIds } from './fields.ts';
 
 describe('reference fields', () => {
-	it('gives the card and the table exactly the same fields', () => {
-		expect([...cardFieldIds()].sort()).toEqual([...tableFieldIds()].sort());
-		expect(new Set(tableFieldIds())).toEqual(new Set(FIELD_IDS));
+	it('shows every field as a table column', () => {
+		expect(tableFieldIds()).toEqual([...FIELD_IDS]);
 		expect(REFERENCE_FIELDS.map((f) => f.id)).toEqual([...FIELD_IDS]);
 	});
 

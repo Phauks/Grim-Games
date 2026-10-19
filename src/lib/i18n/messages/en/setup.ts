@@ -24,6 +24,7 @@ export const setup = {
 	'setup.morePlayers': 'More players',
 	'setup.sheet': 'Setup sheet',
 	'setup.random': 'Random selection',
+	'setup.randomNone': 'No valid selection fits this script and player count',
 	'setup.clearSelection': 'Clear selection',
 	'setup.buildBag': 'Build bag',
 	'setup.continueDraw': 'Continue draw',

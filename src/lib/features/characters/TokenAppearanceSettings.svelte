@@ -37,9 +37,11 @@
 		characterFont?: Snippet;
 		/** The Reminder tokens font, first in the reminder token's box. */
 		reminderFont?: Snippet;
+		/** Character icons in lists, pickers and the day, after the name sizes in the in-text box. */
+		characterIconSize?: Snippet;
 	}
 
-	let { value, theme, onChange, characterFont, reminderFont }: Props = $props();
+	let { value, theme, onChange, characterFont, reminderFont, characterIconSize }: Props = $props();
 
 	onMount(() => void loadOfficialData());
 	const sample = $derived(officialData.current?.byId.get('fortuneteller'));
@@ -233,6 +235,7 @@
 		defaultValue={1}
 		onChange={(inlineNameBadgeScale) => onChange({ ...value, inlineNameBadgeScale })}
 	/>
+	{@render characterIconSize?.()}
 	<SettingSlider
 		label={t('characters.inlineReminderSize')}
 		description={t('characters.inlineReminderSizeHelp')}

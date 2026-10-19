@@ -14,7 +14,6 @@
 	import CharacterReference from './CharacterReference.svelte';
 	import { ReferenceQuery } from './query.svelte.ts';
 	import ReferenceControls from './ReferenceControls.svelte';
-	import { referenceView } from './view-mode.svelte.ts';
 
 	let data = $state<GameData>();
 	let numeric = $state<NumericNightOrder>();
@@ -53,7 +52,7 @@
 	<!-- The search and its controls sit in the title's row, to save a row (Trevor, 2026-10-18).
 		They show while the data loads too, so the row never changes height. -->
 	{#snippet actions()}
-		<ReferenceControls {entries} view={referenceView.current} {query} />
+		<ReferenceControls {entries} {query} />
 	{/snippet}
 	<!-- One view: the table's night columns sort by night order, so no Night order tab
 		(Trevor, 2026-10-18). -->
@@ -64,7 +63,7 @@
 			<!-- Reserved space while the data loads, so nothing below jumps. -->
 			<div class="loading" aria-busy="true">{t('reference.loading')}</div>
 		{:else}
-			<CharacterReference {entries} view={referenceView.current} {query} />
+			<CharacterReference {entries} {query} />
 		{/if}
 	</ErrorBoundary>
 </Page>

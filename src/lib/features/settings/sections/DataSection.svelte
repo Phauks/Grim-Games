@@ -13,7 +13,7 @@
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import { reloadApp, storageUse } from '../data/device-data.ts';
-	import { dataKept, needsHomeScreen, thisBrowser } from '../data/keep-data.ts';
+	import { needsHomeScreen, thisBrowser } from '../data/keep-data.ts';
 	import {
 		clearItems,
 		measureStorage,
@@ -43,13 +43,10 @@
 	let confirmOpen = $state(false);
 	let working = $state(false);
 
-	// Whether the browser promised to keep the data (asked at startup, +layout.svelte).
-	let kept = $state<boolean | null | undefined>(undefined);
 	// Known before the first render, so the row never appears after the rest.
 	const homeScreen = needsHomeScreen(thisBrowser());
 
 	onMount(() => {
-		void dataKept().then((value) => (kept = value));
 		void measureStorage().then((value) => {
 			items = value;
 			measured = true;
@@ -128,19 +125,6 @@
 	}
 </script>
 
-<SettingRow label={t('settings.dataKept')} description={t('settings.dataKeptHelp')}>
-	{#snippet control()}
-		<span class="kept" data-testid="data-kept"
-			>{kept === undefined
-				? '…'
-				: kept === null
-					? t('settings.storageUnknown')
-					: kept
-						? t('settings.dataKeptYes')
-						: t('settings.dataKeptNo')}</span
-		>
-	{/snippet}
-</SettingRow>
 {#if homeScreen}
 	<!-- Safari only; a row here, never a banner or popup (Trevor bars both). -->
 	<SettingRow
@@ -238,9 +222,6 @@
 </ConfirmDialog>
 
 <style>
-	.kept {
-		font-weight: 600;
-	}
 	.steps {
 		margin: 0;
 	}
