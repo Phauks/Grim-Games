@@ -100,6 +100,8 @@
 	import { extraReminders, onBoard } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import EndGameFields from './EndGameFields.svelte';
+	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
+	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 
 	interface Props {
@@ -820,6 +822,23 @@
 		endedRead += 1;
 		if (roomHost().code) roomHost().close();
 	}
+	// A finished game can be saved as a recap (Trevor, 2026-10-19), as it was when it ended.
+	let exportOpen = $state(false);
+	const exportGame = async () => {
+		const session = grimoire.open.session;
+		const cursor = grimoire.open.savedCursor;
+		return {
+			source: {
+				game: gameAt(session.log.entries, cursor) ?? game,
+				entries: session.log.entries,
+				cursor,
+				characters,
+				winner: ended?.winner,
+				reason: ended?.reason
+			},
+			layout
+		};
+	};
 	// Reopening puts it back in Resume game.
 	let reopenOpen = $state(false);
 	function reopenGame() {
@@ -1569,6 +1588,9 @@
 		<hr class="menu-rule" />
 		<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
 		{#if ended}
+			<Button variant="quiet" icon="download" onclick={() => fromMenu(() => (exportOpen = true))}>
+				Export game
+			</Button>
 			<Button variant="quiet" icon="undo" onclick={() => fromMenu(() => (reopenOpen = true))}>
 				Reopen game
 			</Button>
@@ -1660,6 +1682,8 @@
 <SeatSheet bind:this={seatSheet} bind:open={sheetOpen} {grimoire} seatId={selected} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
+
+<ExportGameDialog bind:open={exportOpen} load={exportGame} />
 
 <Dialog bind:open={scriptOpen} title={game.script.meta?.name || 'Script'} size="max">
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
