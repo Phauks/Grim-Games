@@ -79,14 +79,16 @@
 	:global(.qr [data-part='pattern']) {
 		fill: currentColor;
 	}
-	/* Under 7% of the area either way, well inside what the highest correction recovers and
-	   clear of the corner squares. */
+	/* A logo 30% wide (Trevor, 2026-10-19: logos should be expressive). Opaque middles stop
+	   scanning at about 42% wide in sharp images, but small or blurry codes on a phone camera
+	   started failing past 30% (32%: half as often; 36%: a quarter). The name's wide box
+	   stays under 7% of the area: text lost scans even at the logo's 30%. */
 	:global(.qr .qr-center[data-part='overlay']) {
 		box-sizing: border-box;
 		display: grid;
 		place-items: center;
-		width: 26%;
-		height: 26%;
+		width: 30%;
+		height: 30%;
 		padding: 1.5%;
 		border-radius: var(--radius-sm);
 		background: var(--token-face);

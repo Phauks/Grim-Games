@@ -12,6 +12,8 @@ export const modes = {
 	'modes.info.author': 'Author',
 	'modes.info.version': 'Version',
 	'modes.info.storyteller': 'Storyteller',
+	'modes.info.players': 'Players',
+	'modes.info.edit': 'Edit game info',
 	'modes.info.rules': 'Special rules',
 	'modes.storytellerName': 'Storyteller',
 	'modes.script': 'Script',

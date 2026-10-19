@@ -406,7 +406,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	const board = page.url();
 	await page.getByTestId('mode-menu').tap();
-	const menu = page.getByRole('dialog', { name: 'Game info' });
+	const menu = page.getByRole('dialog', { name: 'Game info', exact: true });
 	await expect(menu.getByRole('button', { name: 'Town 1 · Trouble Brewing' })).toHaveAttribute(
 		'aria-current',
 		'page'
@@ -421,7 +421,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	await page.getByTestId('mode-menu').tap();
 	await page
-		.getByRole('dialog', { name: 'Game info' })
+		.getByRole('dialog', { name: 'Game info', exact: true })
 		.getByRole('button', { name: 'Towns' })
 		.tap();
 	await expect(page).toHaveURL(towns);
@@ -808,7 +808,7 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 		await page.getByTestId('mode-menu').tap();
 	}
 	await page
-		.getByRole('dialog', { name: 'Game info' })
+		.getByRole('dialog', { name: 'Game info', exact: true })
 		.getByRole('button', { name: 'Specters vote and ability' })
 		.tap();
 	const sheet = page.getByRole('dialog', { name: 'Specters vote and ability' });

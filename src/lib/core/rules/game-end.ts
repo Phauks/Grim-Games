@@ -593,3 +593,19 @@ export function suggestedWinner(ends: readonly GameEnd[]): Alignment | undefined
 	const winners = new Set(ends.map((e) => e.winner));
 	return winners.size === 1 ? ends[0].winner : undefined;
 }
+
+/**
+ * The Imp killed itself with a Minion alive (https://wiki.bloodontheclocktower.com/Imp): the
+ * living Minions who may become the Imp, and the Scarlet Woman when her ability makes it
+ * hers (https://wiki.bloodontheclocktower.com/Scarlet_Woman). Undefined once a Demon lives.
+ */
+export function starPass(
+	game: Game,
+	characters: CharacterLookup
+): { minions: SeatId[]; preferred?: SeatId } | undefined {
+	const holds = demonDead(game, characters).flatMap((end) => end.holds);
+	const imp = holds.find((h) => h.rule === 'imp');
+	if (!imp) return undefined;
+	const woman = holds.find((h) => h.rule === 'scarlet-woman')?.seats[0];
+	return { minions: imp.seats, preferred: woman && imp.seats.includes(woman) ? woman : undefined };
+}

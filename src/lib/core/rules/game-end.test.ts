@@ -8,7 +8,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { gameEnds, promptable, suggestedWinner, type GameEndOptions } from './game-end.ts';
+import {
+	gameEnds,
+	promptable,
+	starPass,
+	suggestedWinner,
+	type GameEndOptions
+} from './game-end.ts';
 
 type Step = Command | ((s: string[]) => Command);
 
@@ -208,6 +214,31 @@ describe('Imp (https://wiki.bloodontheclocktower.com/Imp)', () => {
 	it('killing itself with a Minion alive: a Minion may become the Imp', () => {
 		const { ends: e, seats } = ends(TB, [dead(6, 'imp')]);
 		expect(e).toMatchObject([{ rule: 'demon-dead', holds: [{ rule: 'imp', seats: [seats[5]] }] }]);
+	});
+
+	it('offers the star pass to the living Minions, the Scarlet Woman first', () => {
+		const { session, seats } = castGame(TB, dead(6, 'imp'));
+		expect(starPass(session.game, characters)).toEqual({ minions: [seats[5]] });
+		// Executed, or with no Minion alive, there is no star pass.
+		expect(starPass(castGame(TB, execute(6)).session.game, characters)).toBeUndefined();
+		expect(
+			starPass(castGame(TB, dead(5), dead(6, 'imp')).session.game, characters)
+		).toBeUndefined();
+		// With 5 or more alive, the Scarlet Woman becomes the Demon
+		// (https://wiki.bloodontheclocktower.com/Scarlet_Woman).
+		const cast = ['chef', 'empath', 'monk', 'mayor', 'poisoner', 'scarletwoman', 'imp'];
+		const sw = castGame(cast, dead(6, 'imp'));
+		expect(starPass(sw.session.game, characters)).toEqual({
+			minions: [sw.seats[4], sw.seats[5]],
+			preferred: sw.seats[5]
+		});
+		// Once a Minion is the Imp, a Demon lives again.
+		const passed = castGame(TB, dead(6, 'imp'), (s) => ({
+			type: 'AssignCharacter',
+			seatId: s[5],
+			characterId: 'imp'
+		}));
+		expect(starPass(passed.session.game, characters)).toBeUndefined();
 	});
 });
 

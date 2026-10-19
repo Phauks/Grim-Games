@@ -16,8 +16,9 @@ import {
 	type SavedGameSummary,
 	type UnreadableGame
 } from '#lib/core/engine/index.ts';
+import { DB_NAME } from './db-name.ts';
 
-export const DB_NAME = 'grim-games';
+export { DB_NAME };
 export const DB_VERSION = 1;
 const GAMES = 'games';
 
