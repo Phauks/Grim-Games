@@ -96,13 +96,18 @@ test('reminder leaves and setup notation can be shown or hidden', async ({ page 
 	const preview = dialog.getByTestId('token-preview');
 	const leaves = preview.locator('.leaf[data-kind="reminder"]');
 	await expect.poll(() => leaves.count()).toBeGreaterThan(0);
+	// Both nights' leaves too (Trevor, 2026-10-19: the sample wakes on both kinds of night).
+	await expect(preview.locator('.leaf[data-kind="night"]')).toHaveCount(2);
 	await dialog.getByText('Reminder leaves', { exact: true }).tap();
 	await expect(leaves).toHaveCount(0);
-	// The Fortune Teller changes no setup, so the switch is checked against the saved value.
+	// The sample (Godfather) changes setup, so its flower follows the switch.
 	const flower = dialog.getByRole('checkbox', { name: 'Setup notation', includeHidden: true });
+	const setupMark = preview.locator('[data-kind="setup"]');
 	await expect(flower).not.toBeChecked();
+	await expect(setupMark).toHaveCount(0);
 	await dialog.getByText('Setup notation', { exact: true }).tap();
 	await expect(flower).toBeChecked();
+	await expect(setupMark).toHaveCount(1);
 	const saved = await page.evaluate(
 		() => JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').tokenAppearance
 	);
@@ -292,7 +297,7 @@ test('the preview draws the reminder as the board does, at the board size', asyn
 	const dialog = await openTokens(page);
 	const preview = dialog.getByTestId('reminder-preview');
 	const reminder = preview.getByTestId('board-reminder');
-	await expect(reminder).toHaveAttribute('aria-label', 'Red Herring reminder');
+	await expect(reminder).toHaveAttribute('aria-label', 'Died Today reminder');
 	await expect(preview.getByTestId('reminder-token')).toHaveCount(0);
 	const before = (await reminder.boundingBox())!.width;
 	await dialog.getByRole('slider', { name: 'Reminder token size' }).fill('1.5');
@@ -413,14 +418,15 @@ test('the token preview draws at the size the board gives its tokens', async ({ 
 });
 
 test('reminder words can run wider or wrap instead of ending in "…"', async ({ page }) => {
-	// Trevor (2026-10-17): "red he..." on the Red Herring reminder.
+	// Trevor (2026-10-17): "red he..." on the Red Herring reminder; the sample is now the
+	// Godfather's Died Today.
 	await page.goto('/');
 	const dialog = await openTokens(page);
 	const label = dialog
 		.getByTestId('reminder-preview')
 		.getByTestId('board-reminder')
 		.locator('.label');
-	await expect(label).toHaveText('Red Herring');
+	await expect(label).toHaveText('Died Today');
 	const cut = () => label.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
 	const lines = () =>
 		label.evaluate((el) =>
