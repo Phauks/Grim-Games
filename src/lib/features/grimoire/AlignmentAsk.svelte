@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { seatNumber } from '#lib/core/model/index.ts';
+	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -8,7 +8,9 @@
 	 * Marking a player as truly an evil character (the Marionette's "Is The Marionette",
 	 * https://wiki.bloodontheclocktower.com/Marionette) asks whether to make them evil
 	 * (Trevor, 2026-10-17), wherever the reminder was placed from. Cancel leaves the
-	 * alignment as it is.
+	 * alignment as it is. The same for a reminder that says the player became the Demon (the
+	 * Scarlet Woman's "Is The Demon", https://wiki.bloodontheclocktower.com/Scarlet_Woman;
+	 * Trevor, 2026-10-19): it asks whether to change their character to that Demon.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -18,11 +20,32 @@
 
 	const ask = $derived(grimoire.alignmentAsk);
 	const seat = $derived(ask ? grimoire.game.seats[ask.seatId] : undefined);
-	const label = $derived.by(() => {
-		if (!ask || !seat) return '';
-		const n = seatNumber(grimoire.game, ask.seatId);
-		return seat.playerName ? `Seat ${n} (${seat.playerName})` : `Seat ${n}`;
+	function seatName(seatId: SeatId): string {
+		const n = seatNumber(grimoire.game, seatId);
+		const name = grimoire.game.seats[seatId]?.playerName;
+		return name ? `Seat ${n} (${name})` : `Seat ${n}`;
+	}
+	const label = $derived(ask ? seatName(ask.seatId) : '');
+
+	const demon = $derived(grimoire.demonAsk);
+	const demonSeat = $derived(demon ? grimoire.game.seats[demon.seatId] : undefined);
+	let demonOpen = $state(false);
+	$effect(() => {
+		if (demon) demonOpen = true;
 	});
+	$effect(() => {
+		if (!demonOpen) grimoire.demonAsk = undefined;
+	});
+	function becomeDemon() {
+		if (demon)
+			grimoire.run({
+				type: 'AssignCharacter',
+				seatId: demon.seatId,
+				characterId: demon.characterId,
+				alignment: 'evil'
+			});
+		grimoire.demonAsk = undefined;
+	}
 
 	let open = $state(false);
 	$effect(() => {
@@ -64,6 +87,38 @@
 				>
 			</dd>
 			<dt>New alignment</dt>
+			<dd><strong class="team" data-team="evil">Evil</strong></dd>
+		</dl>
+	{/if}
+</ConfirmDialog>
+
+<ConfirmDialog
+	bind:open={demonOpen}
+	title="Change into the Demon?"
+	onConfirm={becomeDemon}
+	onCancel={() => (grimoire.demonAsk = undefined)}
+>
+	{#if demon && demonSeat}
+		<dl class="change">
+			<dt>Player</dt>
+			<dd><strong>{seatName(demon.seatId)}</strong></dd>
+			<dt>Current character</dt>
+			<dd>
+				{#if demonSeat.characterId}<CharacterBadge
+						characterId={demonSeat.characterId}
+						character={grimoire.open.characters.get(demonSeat.characterId)}
+						inline
+					/>{:else}None{/if}
+			</dd>
+			<dt>New character</dt>
+			<dd>
+				<CharacterBadge
+					characterId={demon.characterId}
+					character={grimoire.open.characters.get(demon.characterId)}
+					inline
+				/>
+			</dd>
+			<dt>Alignment</dt>
 			<dd><strong class="team" data-team="evil">Evil</strong></dd>
 		</dl>
 	{/if}
