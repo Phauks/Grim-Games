@@ -33,6 +33,7 @@
 		looseReminders,
 		ruleReminders,
 		scriptCharacterIds,
+		seatNumber,
 		trueCharacter,
 		type Reminder,
 		type ReminderInstance,
@@ -808,6 +809,21 @@
 		);
 	});
 	/**
+	 * The rule that leaves seat 7 to no one, if the game has one (The Ballad of Seat 7,
+	 * https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/), and whether that seat wakes
+	 * for the walk-through's step: the Storyteller makes its choices.
+	 */
+	const emptySeatRule = $derived(
+		readGameMode(game.gameId)?.rules.find(
+			(rule) => rule.parts.seats?.kind === 'storyteller-seat' && rule.parts.seats.count > 0
+		)?.name
+	);
+	const walkEmptySeat = $derived(
+		!!emptySeatRule &&
+			!!walkStep &&
+			stepHolders(game, walkStep, characters).some((seatId) => seatNumber(game, seatId) === 7)
+	);
+	/**
 	 * Run Night Order in one tap, from the right end of the reminder bank (Trevor, 2026-10-18:
 	 * a change on the board itself, not a toolbar page). Always there while the walk-through
 	 * setting is on, so the bank never moves; usable once a seat has a character, empty seats
@@ -1542,6 +1558,7 @@
 				onIndex={(index) => walk && (walk = { ...walk, index })}
 				onPastEnd={() => endHint++}
 				asleepBy={walkAsleep ? poisonedSleepRule : undefined}
+				emptySeatBy={walkEmptySeat ? emptySeatRule : undefined}
 				onOpen={(step) => {
 					if (!walk) return;
 					guided = { step, night: walk.night };
