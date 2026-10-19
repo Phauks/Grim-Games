@@ -42,6 +42,11 @@
 	import { continueCampaign, startHref, startInMode, startTowns } from './start.ts';
 	import { townGroup } from './town-groups.ts';
 	import { townSetupHref } from './town-setup.ts';
+	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import {
+		MAX_STORYTELLER_NAME,
+		storytellerName
+	} from '#lib/features/game/storyteller-name.svelte.ts';
 
 	/**
 	 * New game's Game modes area (Trevor, 2026-10-17: modes are their own area because they
@@ -63,6 +68,7 @@
 
 	// Standard first, then every mode (Trevor, 2026-10-18: one screen, modes in a drop-down).
 	const modes = $derived([STANDARD, ...allModes().filter((m) => m.id !== STANDARD.id)]);
+	const storyteller = $derived(storytellerName.current);
 	let modeId = $state(STANDARD.id);
 	const isStandard = $derived(modeId === STANDARD.id);
 	const custom = $derived(customModes.list.some((m) => m.id === modeId));
@@ -207,7 +213,15 @@
 						campaign: continuing,
 						script,
 						...(previous ? { latest: previous } : {}),
-						create: (s) => OpenGame.create(data, s, previous?.game.seating.length ?? total)
+						create: (s) =>
+							OpenGame.create(
+								data,
+								s,
+								previous?.game.seating.length ?? total,
+								undefined,
+								undefined,
+								storyteller
+							)
 					},
 					(name, number) => t('modes.campaign.scriptName', { name, number })
 				);
@@ -225,7 +239,7 @@
 					data,
 					scripts: loaded,
 					sizes: sizes ?? Array.from({ length: towns.count }, () => total),
-					create: (s, n) => OpenGame.create(data, s, n)
+					create: (s, n) => OpenGame.create(data, s, n, undefined, undefined, storyteller)
 				});
 				// Straight into town 1's setup; each bag built opens the next (Trevor, 2026-10-18).
 				const group = townGroup(groupId);
@@ -240,7 +254,7 @@
 				data,
 				loaded: loaded[0],
 				...(draft ? { roleRecycling: roleRecycling ?? draft.recycleUnchosen } : {}),
-				create: (s) => OpenGame.create(data, s, total)
+				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
 			await goto(startHref(modeId, rules, open.game.gameId));
 		} catch (e) {
@@ -252,6 +266,15 @@
 </script>
 
 <div class="modes">
+	<!-- Who runs the game, saved with it to show players (Trevor, 2026-10-19); empty is none. -->
+	<TextField
+		label={t('modes.storytellerName')}
+		value={storyteller}
+		maxlength={MAX_STORYTELLER_NAME}
+		autocomplete="off"
+		oninput={(v) => storytellerName.set(v)}
+		testid="storyteller-name"
+	/>
 	<div class="pick">
 		<!-- One drop-down for the mode (Trevor, 2026-10-18: "a dropdown, not buttons"). -->
 		<Select

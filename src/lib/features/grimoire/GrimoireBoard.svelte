@@ -110,6 +110,8 @@
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import GameEndPrompt from './GameEndPrompt.svelte';
+	import NameDialog from '#lib/features/library/NameDialog.svelte';
+	import { MAX_STORYTELLER_NAME } from '#lib/features/game/storyteller-name.svelte.ts';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -1010,6 +1012,7 @@
 	);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
 	let menuOpen = $state(false);
+	let storytellerOpen = $state(false);
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
 	let infoOpen = $state(false);
 	let infoSheet = $state<ReturnType<typeof InfoTokensSheet>>();
@@ -1691,6 +1694,10 @@
 		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => (notesOpen = true))}
 			>Notes</Button
 		>
+		<!-- Who runs the game, as typed on New game (Trevor, 2026-10-19). -->
+		<Button variant="quiet" icon="rename" onclick={() => fromMenu(() => (storytellerOpen = true))}>
+			Storyteller
+		</Button>
 		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
 			too, for when the corner has no room for the name. -->
 		{#if modeName}
@@ -1758,6 +1765,14 @@
 	</div>
 </Dialog>
 
+<NameDialog
+	bind:open={storytellerOpen}
+	title="Storyteller"
+	initial={game.storytellerName ?? ''}
+	maxlength={MAX_STORYTELLER_NAME}
+	blankName={() => ''}
+	onsave={(name) => grimoire.run({ type: 'SetStorytellerName', name })}
+/>
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 <HeldReminderDialog
 	bind:this={heldDialog}

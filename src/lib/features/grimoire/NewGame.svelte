@@ -11,6 +11,7 @@
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
+	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import PlayerCountSheet from '#lib/features/setup/PlayerCountSheet.svelte';
@@ -51,6 +52,7 @@
 		try {
 			const data = await loadOfficialData();
 			const loaded = loadScriptChoice(edition, data);
+			const storyteller = storytellerName.current;
 			if (rules.length) {
 				// Special rules on a Standard game: kept beside the game, as a mode's are.
 				const open = await startInMode({
@@ -59,12 +61,19 @@
 					restrictions: NO_RESTRICTIONS,
 					data,
 					loaded,
-					create: (s) => OpenGame.create(data, s, players)
+					create: (s) => OpenGame.create(data, s, players, undefined, undefined, storyteller)
 				});
 				await goto(startHref(STANDARD.id, rules, open.game.gameId));
 				return;
 			}
-			const open = await OpenGame.create(data, toScript(loaded), players);
+			const open = await OpenGame.create(
+				data,
+				toScript(loaded),
+				players,
+				undefined,
+				undefined,
+				storyteller
+			);
 			await goto(resolve('/grimoire/[gameId]', { gameId: open.game.gameId }));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });

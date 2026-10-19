@@ -240,7 +240,14 @@
 					})
 				]
 			};
-			const open = await OpenGame.create(data, script, current.game.seating.length);
+			const open = await OpenGame.create(
+				data,
+				script,
+				current.game.seating.length,
+				undefined,
+				undefined,
+				current.game.storytellerName
+			);
 			// The same players play on: names carry over seat by seat.
 			for (const [i, seatId] of current.game.seating.entries()) {
 				const name = current.game.seats[seatId]?.playerName;

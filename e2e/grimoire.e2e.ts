@@ -3303,13 +3303,14 @@ test('the board menu sets the seats, the settings and End game apart with lines'
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Trevor (2026-10-18, 2026-10-19): game actions, the seats, the settings, then End game.
+	// Storyteller names who runs the game (Trevor, 2026-10-19).
 	await expect(menu.getByRole('separator')).toHaveCount(3);
 	const items = menu.locator('.menu > :is(button, hr), .menu > .menu-nav > button');
 	const names = await items.evaluateAll((els) =>
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
 	expect(names.join(' ')).toMatch(
-		/^History Demon bluffs Notes \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens .*\| End game$/
+		/^History Demon bluffs Notes Storyteller \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens .*\| End game$/
 	);
 	// The lines take the buttons' border colour (Trevor, 2026-10-19), only thicker.
 	const line = await menu
@@ -3995,6 +3996,30 @@ test('a big name badge beside a dialog title shrinks instead of squeezing the ti
 	const close = await menu.getByRole('button', { name: 'Close' }).boundingBox();
 	expect(badge!.x).toBeGreaterThanOrEqual(head!.x - 1);
 	expect(badge!.x + badge!.width).toBeLessThanOrEqual(close!.x);
+});
+
+test('the Storyteller’s name is typed on New game, kept for next time, and changed from the menu', async ({
+	page
+}) => {
+	// Trevor, 2026-10-19: "Add in new game the ability to put in the storyteller name".
+	await page.goto('/new');
+	const field = page.getByRole('textbox', { name: 'Storyteller' });
+	await expect(field).toHaveValue('');
+	await field.fill('Trev');
+	await startGame(page);
+	await menu(page, 'Storyteller');
+	const dialog = page.getByRole('dialog', { name: 'Storyteller' });
+	const name = dialog.getByRole('textbox', { name: 'Name' });
+	await expect(name).toHaveValue('Trev');
+	await name.fill('Sam');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(dialog).toBeHidden();
+	await page.reload();
+	await menu(page, 'Storyteller');
+	await expect(name).toHaveValue('Sam');
+	// New game offers the name typed there last.
+	await page.goto('/new');
+	await expect(field).toHaveValue('Trev');
 });
 
 test('Next on the last night step lights up End night', async ({ page }) => {

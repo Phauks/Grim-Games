@@ -180,6 +180,7 @@ function createGame(command: CommandOf<'CreateGame'>, ctx: EngineContext, warn: 
 		);
 	}
 	const seatIds = Array.from({ length: playerCount }, () => ctx.newId());
+	const storytellerName = command.storytellerName?.trim();
 	return [
 		{
 			type: 'GameCreated',
@@ -192,7 +193,9 @@ function createGame(command: CommandOf<'CreateGame'>, ctx: EngineContext, warn: 
 		...startingRules(command, ctx).map((characterId): GameEvent => ({
 			type: 'RuleCharacterAdded',
 			characterId
-		}))
+		})),
+		// In the creation entry, so undo never takes the name away.
+		...(storytellerName ? [{ type: 'StorytellerNameSet' as const, name: storytellerName }] : [])
 	];
 }
 
@@ -594,6 +597,17 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			}
 			const event: GameEvent = { type: 'SeatRenamed', seatId: seat.seatId };
 			if (playerName !== undefined) event.playerName = playerName;
+			return [event];
+		}
+
+		case 'SetStorytellerName': {
+			const name = command.name?.trim() || undefined;
+			if (name === game.storytellerName) {
+				warn('no-change', 'the name is unchanged');
+				return [];
+			}
+			const event: GameEvent = { type: 'StorytellerNameSet' };
+			if (name !== undefined) event.name = name;
 			return [event];
 		}
 

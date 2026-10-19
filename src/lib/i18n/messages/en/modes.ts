@@ -7,6 +7,7 @@ import { APP_NAME } from '#lib/core/app-name.ts';
  */
 export const modes = {
 	'modes.label': 'Game mode',
+	'modes.storytellerName': 'Storyteller',
 	'modes.script': 'Script',
 	'modes.scriptSearch.label': 'Find a script',
 	'modes.scriptSearch.custom': 'Custom',

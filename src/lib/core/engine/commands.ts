@@ -32,6 +32,8 @@ export type Command =
 			playerCount: number;
 			/** Fabled and Loric in play from the start; the script's own when absent. */
 			ruleCharacters?: CharacterId[];
+			/** Who runs the game (Trevor, 2026-10-19); empty or missing means none. */
+			storytellerName?: string;
 	  }
 	/**
 	 * Replaces the script mid-game (08-script-loading.md §5.6). Seats, reminders, bluffs and
@@ -43,6 +45,8 @@ export type Command =
 	| { type: 'RemoveSeat'; seatId: SeatId }
 	/** An empty or missing name clears it. */
 	| { type: 'RenameSeat'; seatId: SeatId; playerName?: string }
+	/** The Storyteller's name, shown to players; an empty or missing name clears it. */
+	| { type: 'SetStorytellerName'; name?: string }
 	/** The Storyteller's private note on a seat. Trimmed; an empty or missing note clears it. */
 	| { type: 'SetSeatNote'; seatId: SeatId; note?: string }
 	/** The game's general notes; no `notes` or blank text clears them. */
