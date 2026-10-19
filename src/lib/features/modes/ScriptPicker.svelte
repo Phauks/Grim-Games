@@ -6,6 +6,7 @@
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import LibraryBrowser, { type LibraryPick } from '#lib/features/library/LibraryBrowser.svelte';
 	import PreviewToggle from '#lib/features/library/PreviewToggle.svelte';
+	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { chooseScript, currentScript } from '#lib/features/scripts/current-script.svelte.ts';
 	import { reloadSavedScript } from '#lib/features/scripts/saved-scripts.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -19,7 +20,8 @@
 	 * Choosing the script on New game with any number of scripts (Trevor, 2026-10-19, mockup
 	 * "Script picker"): the base three stay one tap away, every other script is found by
 	 * typing its name or author, and the Library button opens the Library to pick from.
-	 * Choosing one kind of script unselects the other.
+	 * Choosing one kind of script unselects the other. The chosen script's author and version
+	 * show under it (Trevor, 2026-10-19), on a line kept in place so nothing moves.
 	 */
 	interface Props {
 		label: string;
@@ -52,6 +54,7 @@
 			...(o.group ? { group: t(GROUP[o.group]) } : {})
 		}))
 	);
+	const chosen = $derived(others.find((o) => o.value === value));
 	let browsing = $state(false);
 	let libraryBrowser = $state<LibraryBrowser>();
 
@@ -97,6 +100,9 @@
 			onclick={() => (browsing = true)}
 		/>
 	</div>
+	<p class="chosen" data-testid="chosen-script">
+		<ScriptByline author={chosen?.author} version={chosen?.version} inline />
+	</p>
 </div>
 
 <!-- The Library's own file manager, scripts only, as the Script builder opens it. -->
@@ -127,6 +133,10 @@
 	.search > :global(:first-child) {
 		flex: 1;
 		min-width: 0;
+	}
+	.chosen {
+		margin: 0;
+		min-height: 1.5em;
 	}
 	.library {
 		display: grid;
