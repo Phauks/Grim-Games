@@ -76,7 +76,8 @@ export default defineConfig(
 		}
 	},
 	{
-		// Features reach Ark UI only through our own wrappers in src/lib/ui/primitives.
+		// Features reach Ark UI only through our own wrappers in src/lib/ui/primitives, and
+		// motion only through ui/motion.ts.
 		files: ['src/lib/features/**', 'src/routes/**'],
 		rules: {
 			'no-restricted-imports': [
@@ -86,6 +87,10 @@ export default defineConfig(
 						{
 							group: ['@ark-ui/*'],
 							message: 'Use the wrappers in #lib/ui/primitives instead of Ark UI directly.'
+						},
+						{
+							group: ['svelte/transition', 'animejs', 'animejs/*'],
+							message: 'Use rise and duration from #lib/ui/motion.ts so motion shares the tokens.'
 						}
 					]
 				}
@@ -104,6 +109,10 @@ export default defineConfig(
 						{
 							group: ['@ark-ui/*'],
 							message: 'Use the wrappers in #lib/ui/primitives instead of Ark UI directly.'
+						},
+						{
+							group: ['svelte/transition', 'animejs', 'animejs/*'],
+							message: 'Use rise and duration from #lib/ui/motion.ts so motion shares the tokens.'
 						},
 						{
 							group: [
