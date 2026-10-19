@@ -233,3 +233,55 @@ test('Open Glossary shows every entry beside the tapped one, searchable, with th
 	).toHaveText('Sample wording for dead.');
 	await expect(entry.getByRole('heading', { name: 'Alive' })).toBeVisible();
 });
+
+test('the Glossary keeps its text and boxes clear of the scrollbar', async ({ page }, testInfo) => {
+	// Enough entries that the list scrolls, each with wording long enough to wrap.
+	const names = Array.from({ length: 40 }, (_, i) => `Term ${String(i).padStart(2, '0')}`);
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({
+			json: {
+				parse: {
+					text: [
+						'<p><b>Poisoned:</b> ' + 'Sample wording that wraps across lines. '.repeat(40) + '</p>',
+						...names.map((name) => `<p><b>${name}:</b> Sample wording.</p>`)
+					].join('')
+				}
+			}
+		})
+	);
+	const card = await poisonerCard(page);
+	await card.getByRole('button', { name: 'poisoned: explain rules term' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Poisoned' })
+		.getByRole('button', { name: 'Open Glossary' })
+		.tap();
+	const glossary = page.getByRole('dialog', { name: 'Glossary' });
+	const entry = glossary.getByTestId('glossary-entry');
+	await expect(entry.getByRole('heading', { name: 'Poisoned' })).toBeVisible();
+
+	/** Space between the element's right edge and the inside right edge of what scrolls it. */
+	const room = (selector: string) =>
+		glossary
+			.locator(selector)
+			.first()
+			.evaluate((el) => {
+				let scroller = el.parentElement!;
+				while (!['auto', 'scroll'].includes(getComputedStyle(scroller).overflowY))
+					scroller = scroller.parentElement!;
+				const box = scroller.getBoundingClientRect();
+				// clientWidth leaves out a scrollbar that takes room; a phone's is drawn over the content.
+				return (
+					box.left + scroller.clientLeft + scroller.clientWidth - el.getBoundingClientRect().right
+				);
+			});
+	// The entry's text (a scrollbar on a phone is drawn about this wide over the content).
+	expect(await room('[data-testid="wiki-definition"]')).toBeGreaterThanOrEqual(6);
+
+	if (testInfo.project.name === 'phone')
+		await glossary.getByRole('button', { name: 'Glossary', exact: true }).tap();
+	const list = glossary.getByRole('navigation', { name: 'Glossary entries' });
+	await expect(list).toBeVisible();
+	// The search box and the entries' boxes.
+	expect(await room('nav input')).toBeGreaterThanOrEqual(6);
+	expect(await room('nav li button')).toBeGreaterThanOrEqual(6);
+});
