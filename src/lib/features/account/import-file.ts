@@ -60,11 +60,16 @@ export interface ImportPlan {
 
 const sameBody = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** What importing `docs` into an account that holds `existing` would do. */
+/**
+ * What importing `docs` into an account that holds `existing` would do. A kind with a
+ * `merge` (Library labels: one document per account) is combined with the item of the same
+ * id rather than added beside it.
+ */
 export function planImport(
 	docs: readonly ImportDoc[],
 	existing: (kind: DocKind) => readonly ProfileDoc[],
-	newId: () => string
+	newId: () => string,
+	merge?: (kind: DocKind) => ((mine: unknown, theirs: unknown) => unknown) | undefined
 ): ImportPlan {
 	const add: ImportDoc[] = [];
 	let same = 0;
@@ -72,6 +77,14 @@ export function planImport(
 		const have = existing(doc.kind);
 		if (have.some((other) => sameBody(other.body, doc.body))) {
 			same++;
+			continue;
+		}
+		const combine = merge?.(doc.kind);
+		const mine = combine && have.find((other) => other.id === doc.id);
+		if (combine && mine) {
+			const body = combine(mine.body, doc.body);
+			if (sameBody(body, mine.body)) same++;
+			else add.push({ ...doc, body });
 			continue;
 		}
 		const taken = have.some((other) => other.id === doc.id) || add.some((a) => a.id === doc.id);

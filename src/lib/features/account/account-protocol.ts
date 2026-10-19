@@ -34,7 +34,7 @@ export const PRIVACY_VERSION = '2026-10-19';
 export const SESSION_COOKIE = 'gg_session';
 
 /** Kinds of documents kept in a profile. Saved games come later (ROADMAP 0.99). */
-export const DOC_KINDS = ['script'] as const;
+export const DOC_KINDS = ['script', 'library-labels', 'collection'] as const;
 export type DocKind = (typeof DOC_KINDS)[number];
 /** A profile document's body as JSON text. Scripts are a few KB. */
 export const MAX_DOC_BYTES = 1_000_000;

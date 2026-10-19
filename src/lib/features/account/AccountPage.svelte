@@ -201,7 +201,8 @@
 			const plan = planImport(
 				syncing,
 				(kind) => accountSync.docs(kind),
-				() => crypto.randomUUID()
+				() => crypto.randomUUID(),
+				(kind) => accountSync.merger(kind)
 			);
 			importing = {
 				file: file.name,

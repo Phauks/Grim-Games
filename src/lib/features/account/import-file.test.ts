@@ -67,4 +67,30 @@ describe('planImport', () => {
 			]
 		});
 	});
+	it('combines a kind that merges with the item of the same id instead of adding a copy', () => {
+		const existing = [{ ...doc('labels', { tags: ['a'] }), kind: 'library-labels' as const }];
+		const union = (mine: unknown, theirs: unknown) => ({
+			tags: [
+				...new Set([...(mine as { tags: string[] }).tags, ...(theirs as { tags: string[] }).tags])
+			]
+		});
+		const merge = (kind: string) => (kind === 'library-labels' ? union : undefined);
+		const add = planImport(
+			[{ kind: 'library-labels', id: 'labels', body: { tags: ['b'] } }],
+			() => existing,
+			ids(),
+			merge
+		);
+		expect(add).toEqual({
+			same: 0,
+			add: [{ kind: 'library-labels', id: 'labels', body: { tags: ['a', 'b'] } }]
+		});
+		const nothing = planImport(
+			[{ kind: 'library-labels', id: 'labels', body: { tags: [] } }],
+			() => existing,
+			ids(),
+			merge
+		);
+		expect(nothing).toEqual({ same: 1, add: [] });
+	});
 });

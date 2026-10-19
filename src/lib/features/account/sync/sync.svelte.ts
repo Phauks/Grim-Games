@@ -265,6 +265,11 @@ export const accountSync = {
 	get kinds(): DocKind[] {
 		return [...kinds.keys()];
 	},
+	/** The kind's `merge` for two copies with no common base, if it combines rather than keeps both. */
+	merger(kind: DocKind): ((mine: unknown, theirs: unknown) => unknown) | undefined {
+		const merge = kinds.get(kind)?.merge;
+		return merge && ((mine, theirs) => merge(undefined, mine, theirs));
+	},
 	/** The kind's items on this device (deleted ones left out), newest change first. */
 	docs<T = unknown>(kind: DocKind): ProfileDoc<T>[] {
 		return (visible.get(kind) ?? []) as ProfileDoc<T>[];
