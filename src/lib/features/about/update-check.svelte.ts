@@ -22,6 +22,10 @@ class UpdateChecker {
 	percent = $state<number | undefined>();
 	/** While downloading: bytes stored and the build's total, when the build published sizes. */
 	bytes = $state<{ done: number; total: number } | undefined>();
+	/** A newer build is stored and waits for Refresh, found by a check here or by the update card. */
+	ready = $state(false);
+	/** Refresh was tapped, so the new build taking over reloads the page instead of offering it. */
+	refreshing = false;
 
 	async check(): Promise<UpdateCheck> {
 		this.result = 'checking';
@@ -48,12 +52,30 @@ class UpdateChecker {
 			this.percent = undefined;
 			this.bytes = undefined;
 		}
-		if (this.result === 'ready') this.found++;
+		if (this.result === 'ready') {
+			this.found++;
+			this.ready = true;
+		}
 		if (this.result === 'ready' || this.result === 'current') {
 			this.checkedAt = Date.now();
 			writeStoredText(CHECKED_KEY, String(this.checkedAt));
 		}
 		return this.result;
+	}
+
+	/**
+	 * Moves this page onto the waiting build: the update card's Refresh and About's (Trevor,
+	 * 2026-10-19: "once update has been loaded from about, also add a refresh button there").
+	 */
+	async refresh(): Promise<void> {
+		const container = 'serviceWorker' in navigator ? navigator.serviceWorker : undefined;
+		const registration = await container?.getRegistration?.().catch(() => undefined);
+		const waiting = registration?.waiting;
+		// Nothing waiting: Refresh in another tab already activated it, so only this page is behind.
+		if (!container || !waiting) return location.reload();
+		this.refreshing = true;
+		container.addEventListener('controllerchange', () => location.reload(), { once: true });
+		waiting.postMessage({ type: 'SKIP_WAITING' });
 	}
 }
 
