@@ -96,6 +96,51 @@ test('opens a saved script to edit it', async ({ page }) => {
 	await expect(page).toHaveURL(/\/build-script$/);
 });
 
+test.describe('in a computer window', () => {
+	test.use({ viewport: { width: 1440, height: 900 } });
+
+	test('Preview shows a saved script before opening it', async ({ page }) => {
+		// The Library's Preview, in its picker too (Trevor, 2026-10-18).
+		await page.goto('/build-script');
+		await page.getByRole('textbox', { name: 'Name' }).fill('Look first');
+		for (const name of ['Chef', 'Imp']) await character(page, name).click();
+		await page.getByRole('button', { name: 'Save', exact: true }).click();
+		await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+		await page.getByRole('button', { name: 'Clear the script' }).click();
+		await page
+			.getByRole('alertdialog', { name: 'Clear the script?' })
+			.getByRole('button', { name: 'Confirm' })
+			.click();
+
+		await page.getByRole('button', { name: 'Open a saved script' }).click();
+		const library = page.getByRole('dialog', { name: 'Open a saved script' });
+		const toggle = library.getByRole('button', { name: 'Preview', exact: true });
+		await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+		// A tap previews it beside the list; the builder is untouched until it's opened.
+		await library.getByText('Look first').click();
+		const pane = library.getByRole('region', { name: 'Look first' });
+		await expect(pane.getByTestId('script-sheet')).toContainText('Chef');
+		await expect(page.getByTestId('count-demon')).toHaveText('0');
+		await pane.getByRole('button', { name: 'Open in the Script builder' }).click();
+		await expect(library).toBeHidden();
+		await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Look first');
+		await expect(page.getByTestId('count-demon')).toHaveText('1');
+
+		// With Preview off, a tap opens it straight away.
+		await page.getByRole('button', { name: 'Clear the script' }).click();
+		await page
+			.getByRole('alertdialog', { name: 'Clear the script?' })
+			.getByRole('button', { name: 'Confirm' })
+			.click();
+		await page.getByRole('button', { name: 'Open a saved script' }).click();
+		await toggle.click();
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		await library.getByText('Look first').click();
+		await expect(library).toBeHidden();
+		await expect(page.getByTestId('count-demon')).toHaveText('1');
+	});
+});
+
 test('adds a homebrew character from a Homebrew Wiki collection, credited', async ({ page }) => {
 	// The Worker fetches the wiki; here its answers are stood in for, so the test needs no network.
 	await page.route('**/api/homebrew-wiki/collections', (route) =>
