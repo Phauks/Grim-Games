@@ -233,14 +233,14 @@
 		color: var(--on-surface-muted);
 	}
 	/*
-	 * The token takes the user's Character token size, so its box grows with it: nothing below
-	 * is ever covered. The locked face is the same size, so revealing moves nothing.
+	 * The token keeps one size (Character token size is for the board only, Trevor 2026-10-19).
+	 * The locked face is the same size, so revealing moves nothing.
 	 */
 	.token {
 		display: grid;
 		place-items: center;
-		min-width: calc(10 * var(--u) * var(--token-scale, 1));
-		min-height: calc(10 * var(--u) * var(--token-scale, 1));
+		min-width: calc(10 * var(--u));
+		min-height: calc(10 * var(--u));
 	}
 	/* The hold button is the token's own box: no button look, no text selection or callout. */
 	.hold {
@@ -257,8 +257,8 @@
 	.hidden-token {
 		display: grid;
 		place-items: center;
-		width: calc(10 * var(--u) * var(--token-scale, 1));
-		height: calc(10 * var(--u) * var(--token-scale, 1));
+		width: calc(10 * var(--u));
+		height: calc(10 * var(--u));
 		padding: var(--space-3);
 		border-radius: 50%;
 		background: var(--token-face);

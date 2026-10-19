@@ -326,7 +326,6 @@
 	}
 	.disc {
 		/* Drawn at the board's size, which already includes Token size (as SeatToken). */
-		--token-scale: 1;
 		position: relative;
 		display: inline-block;
 		line-height: 0;

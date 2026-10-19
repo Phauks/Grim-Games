@@ -70,13 +70,9 @@
 	const pathId = $props.id();
 </script>
 
-<!-- The user's Character token size (--token-scale, Settings) scales every token. -->
-<span
-	class="token"
-	role="img"
-	aria-label={label}
-	style:--token-size="calc({size}px * var(--token-scale, 1))"
->
+<!-- Drawn at the size given: the Character token size setting only sizes the board's seats
+     (Trevor, 2026-10-19), which pass it in. -->
+<span class="token" role="img" aria-label={label} style:--token-size="{size}px">
 	<svg viewBox="0 0 100 100" aria-hidden="true">
 		<circle class="face" cx="50" cy="50" r="48" />
 	</svg>

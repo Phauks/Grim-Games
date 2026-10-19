@@ -561,7 +561,7 @@ test("reminders: add several from the picker, this seat's first, then move and r
 		.getByRole('button', { name: 'Move to another seat' })
 		.tap();
 	await page
-		.getByRole('dialog', { name: 'Move reminder to' })
+		.getByRole('dialog', { name: 'Move Poisoned to' })
 		.getByRole('button', { name: /^3/ })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
@@ -1497,7 +1497,7 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 		.getByRole('button', { name: 'Move to another seat' })
 		.tap();
 	await page
-		.getByRole('dialog', { name: 'Move reminder to' })
+		.getByRole('dialog', { name: 'Move Is The Drunk to' })
 		.getByRole('button', { name: /^3/ })
 		.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
@@ -1513,7 +1513,7 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 		.getByRole('button', { name: 'Move to another seat' })
 		.tap();
 	await page
-		.getByRole('dialog', { name: 'Move reminder to' })
+		.getByRole('dialog', { name: 'Move Is The Drunk to' })
 		.getByRole('button', { name: /^3/ })
 		.tap();
 	await page
@@ -2806,7 +2806,7 @@ test('a reminder put down in the open belongs to no one, and can go back on a se
 	await expect(dialog).toContainText(/From\s*Poisoner\s*loose on the board/);
 	await dialog.getByRole('button', { name: 'Move to a seat' }).tap();
 	await page
-		.getByRole('dialog', { name: 'Move reminder to' })
+		.getByRole('dialog', { name: 'Move Poisoned to' })
 		.getByRole('button', { name: /Seat 3/ })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
