@@ -40,6 +40,8 @@
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { seatChanges } from './history.ts';
+	import DeadBadge from '#lib/ui/seating/DeadBadge.svelte';
+	import { boardLooks } from './board-looks.svelte.ts';
 	import { isGeneric, tokenLabel } from './reminders.ts';
 	import ReminderNoteField from './ReminderNoteField.svelte';
 
@@ -499,7 +501,12 @@
 							seatId: seat.seatId
 						})}
 				>
-					<Icon name="ghostVote" />
+					<!-- The board's badge (Trevor, 2026-10-19: one ghost vote look in and out of the sheet). -->
+					<DeadBadge
+						vote={seat.ghostVoteUsed ? 'used' : 'unused'}
+						usedLook={boardLooks.current.usedGhostVote}
+						testid="sheet-ghost-vote"
+					/>
 					{seat.dead ? (seat.ghostVoteUsed ? 'Used' : 'Not used') : 'None while alive'}
 				</button>
 			</div>
@@ -1263,6 +1270,9 @@
 		width: min(70%, 16rem);
 	}
 	/* Used shows whatever has focus (Trevor, 2026-10-18). */
+	.value.ghost {
+		--badge-size: calc(1.6 * var(--u));
+	}
 	.value.ghost[aria-pressed='true'] {
 		border-color: var(--accent);
 		background: var(--accent-wash);
