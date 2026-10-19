@@ -2977,17 +2977,21 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 	await expect(details).toBeVisible();
 });
 
-test('the board menu sets the settings and End game apart with lines', async ({ page }) => {
+test('the board menu sets the seats, the settings and End game apart with lines', async ({
+	page
+}) => {
 	await startGame(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	// Trevor (2026-10-18): game actions, then settings, then End game on its own.
-	await expect(menu.getByRole('separator')).toHaveCount(2);
+	// Trevor (2026-10-18, 2026-10-19): game actions, the seats, the settings, then End game.
+	await expect(menu.getByRole('separator')).toHaveCount(3);
 	const items = menu.locator('.menu > :is(button, hr), .menu > .menu-nav > button');
 	const names = await items.evaluateAll((els) =>
 		els.map((e) => (e.tagName === 'HR' ? '|' : (e.textContent ?? '').trim()))
 	);
-	expect(names.join(' ')).toMatch(/Arrange seats \| Board Tokens .*\| End game$/);
+	expect(names.join(' ')).toMatch(
+		/^History Demon bluffs \| Add seat Add Fabled or Loric Arrange seats \| Board Tokens .*\| End game$/
+	);
 });
 
 test('a Demon bluff in play can still be chosen, after a confirm', async ({ page }) => {

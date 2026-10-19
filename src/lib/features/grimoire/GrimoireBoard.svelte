@@ -1537,6 +1537,19 @@
 		<Button variant="quiet" icon="history" onclick={() => fromMenu(() => (historyOpen = true))}>
 			History
 		</Button>
+		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
+			Demon bluffs
+		</Button>
+		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
+			too, for when the corner has no room for the name. -->
+		{#if modeName}
+			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
+				Game mode
+			</Button>
+		{/if}
+		<!-- Lines set the seats, then the settings, apart from the rest of the game, and End game
+		     apart at the bottom (Trevor, 2026-10-18). -->
+		<hr class="menu-rule" />
 		<Button
 			variant="quiet"
 			icon="add"
@@ -1551,21 +1564,9 @@
 		<Button variant="quiet" icon="fabled" onclick={() => fromMenu(() => (ruleOpen = true))}>
 			Add Fabled or Loric
 		</Button>
-		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
-			Demon bluffs
-		</Button>
 		<Button variant="quiet" icon="arrange" onclick={() => fromMenu(startArranging)}>
 			Arrange seats
 		</Button>
-		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
-			too, for when the corner has no room for the name. -->
-		{#if modeName}
-			<Button variant="quiet" icon="info" onclick={() => fromMenu(() => (modeMenuOpen = true))}>
-				Game mode
-			</Button>
-		{/if}
-		<!-- Lines set the settings apart from what changes the game, and End game apart at the
-		     bottom (Trevor, 2026-10-18). -->
 		<hr class="menu-rule" />
 		<!-- Board and token settings over the board (Trevor, 2026-10-17); two sections since
 		     2026-10-18. -->
@@ -2261,7 +2262,8 @@
 		width: 100%;
 		margin: 0;
 		border: 0;
-		border-top: 1px solid var(--border);
+		/* Stronger than a plain border, so the sections read at a glance (Trevor, 2026-10-19). */
+		border-top: 0.125rem solid var(--on-surface-muted);
 	}
 	.rule-detail {
 		display: flex;
