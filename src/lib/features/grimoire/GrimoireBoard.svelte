@@ -1683,7 +1683,7 @@
 				bind:clientHeight={titleH}
 			>
 				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
-				<ModeMenu {game} onEdit={editGameInfo}
+				<ModeMenu {game} onEdit={watching ? undefined : editGameInfo}
 					><span
 						class="script-name"
 						class:mode={modeInName}
@@ -1812,7 +1812,7 @@
 	</div>
 </Dialog>
 
-<ModeMenu {game} bind:open={modeMenuOpen} onEdit={editGameInfo} />
+<ModeMenu {game} bind:open={modeMenuOpen} onEdit={watching ? undefined : editGameInfo} />
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 <HeldReminderDialog
 	bind:this={heldDialog}

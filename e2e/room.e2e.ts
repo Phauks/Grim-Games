@@ -315,6 +315,14 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	const toolbar = viewer.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByRole('button', { name: 'Share', exact: true })).toHaveCount(0);
 	await expect(toolbar.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
+	// Game info, from the corner where it shows, has no pencil for a viewer.
+	const corner = viewer.getByTestId('mode-menu');
+	if (await corner.isVisible()) {
+		await corner.tap();
+		await expect(viewer.getByRole('dialog', { name: 'Game info', exact: true })).toBeVisible();
+		await expect(viewer.getByTestId('game-info-edit')).toHaveCount(0);
+		await viewer.keyboard.press('Escape');
+	}
 
 	// The Storyteller's changes show live.
 	await page.goto(board);
