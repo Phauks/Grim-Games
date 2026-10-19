@@ -22,11 +22,14 @@
 		type Night,
 		validDeathCauses,
 		daySentence,
+		type DayCount,
 		type DayReminder,
 		type ValidDeathCause
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CountDialog from './CountDialog.svelte';
+	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -271,11 +274,42 @@
 		}
 	}
 
-	function diedText(cause: DeathCause | undefined): string {
-		return cause === undefined
-			? t('day.diedNoCause')
-			: t('day.diedCause', { cause: causeLabel(cause) });
+	/**
+	 * Announcing a death (Trevor, 2026-10-19: "show the exact statement"): what to say, in
+	 * normal text, by seat and name and never by character; then for the Storyteller only,
+	 * in italics, the character and the cause.
+	 */
+	function spokenDeath(seatId: SeatId): string {
+		const seat = g.seating.indexOf(seatId) + 1;
+		const name = g.seats[seatId].playerName;
+		return name ? t('day.announce.died', { name, seat }) : t('day.announce.diedUnnamed', { seat });
 	}
+	function privateDeath(cause: DeathCause | undefined): string {
+		const how =
+			cause === undefined
+				? t('day.announce.noCause')
+				: cause === 'execution'
+					? t('day.announce.executed')
+					: cause === 'exile'
+						? t('day.announce.exiled')
+						: cause === 'demon'
+							? t('day.announce.demon')
+							: cause === 'other'
+								? t('day.announce.other')
+								: t('day.announce.killedBy', { killer: slot('cause') });
+		return t('day.announce.private', { character: slot('character'), how });
+	}
+	/** A dawn has come (End night), so "Nobody died in the night" means something. */
+	const dawned = $derived(
+		game.log.entries
+			.slice(0, game.log.cursor)
+			.some((e) => e.events.some((ev) => ev.type === 'DayStarted'))
+	);
+	/**
+	 * With "I See Dead People" on, deaths are never announced (World Cup thread, 2026-10-19):
+	 * the spoken line says so instead.
+	 */
+	const privateDeaths = $derived(gameModeOf(g.gameId)?.parts.deaths?.kind === 'private');
 
 	const reminders = $derived(
 		dayReminders(
@@ -320,6 +354,29 @@
 	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
 	const teams = $derived(livingByTeam(g));
 	const ghostVotes = $derived(ghostVotesLeft(g));
+	const aliveLabel = $derived(
+		t('day.aliveLabel', {
+			count: teams.alive,
+			total: g.seating.length,
+			good: teams.good,
+			evil: teams.evil
+		})
+	);
+	const goodLabel = $derived(t('day.goodLabel', { count: teams.good }));
+	const evilLabel = $derived(t('day.evilLabel', { count: teams.evil }));
+	const ghostLabel = $derived(t('day.ghostVotesLabel', { count: ghostVotes }));
+	const votesLabel = $derived(
+		t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })
+	);
+	// ── How a count was worked out, from tapping it ──
+	let countOpen = $state(false);
+	let countShown = $state<DayCount | 'votes'>();
+	let countTitle = $state('');
+	function openCount(count: DayCount | 'votes', title: string) {
+		countShown = count;
+		countTitle = title;
+		countOpen = true;
+	}
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
 	let toolbarSize = $state<ResizeObserverSize[]>();
 	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
@@ -398,61 +455,56 @@
 			or team colours; the words are in each one's accessible name.
 		-->
 		<div class="counts">
-			<span
+			<!-- Each one opens how it was worked out (Trevor, 2026-10-19). -->
+			<button
+				type="button"
 				class="badge"
-				role="note"
 				data-testid="alive-count"
-				aria-label={t('day.aliveLabel', {
-					count: teams.alive,
-					total: g.seating.length,
-					good: teams.good,
-					evil: teams.evil
-				})}
-				title={t('day.aliveLabel', {
-					count: teams.alive,
-					total: g.seating.length,
-					good: teams.good,
-					evil: teams.evil
-				})}
+				aria-label={aliveLabel}
+				title={aliveLabel}
+				onclick={() => openCount('alive', aliveLabel)}
 				><Icon name="alive" />{t('day.aliveBadge', {
 					count: teams.alive,
 					total: g.seating.length
-				})}</span
+				})}</button
 			>
-			<span
+			<button
+				type="button"
 				class="badge good"
 				data-testid="alive-good"
-				role="note"
-				aria-label={t('day.goodLabel', { count: teams.good })}
-				title={t('day.goodLabel', { count: teams.good })}>{teams.good}</span
+				aria-label={goodLabel}
+				title={goodLabel}
+				onclick={() => openCount('good', goodLabel)}>{teams.good}</button
 			>
-			<span
+			<button
+				type="button"
 				class="badge evil"
 				data-testid="alive-evil"
-				role="note"
-				aria-label={t('day.evilLabel', { count: teams.evil })}
-				title={t('day.evilLabel', { count: teams.evil })}>{teams.evil}</span
+				aria-label={evilLabel}
+				title={evilLabel}
+				onclick={() => openCount('evil', evilLabel)}>{teams.evil}</button
 			>
-			<span
+			<button
+				type="button"
 				class="badge"
-				role="note"
 				data-testid="ghost-votes"
-				aria-label={t('day.ghostVotesLabel', { count: ghostVotes })}
-				title={t('day.ghostVotesLabel', { count: ghostVotes })}
-				><Icon name="ghostVote" />{ghostVotes}</span
+				aria-label={ghostLabel}
+				title={ghostLabel}
+				onclick={() => openCount('ghostVotes', ghostLabel)}
+				><Icon name="ghostVote" />{ghostVotes}</button
 			>
 			<!--
 				Votes the first nominee needs to go on the block, from who is alive now, so a death
 				mid-day updates it. Nominations and votes are not tracked, so "more than the player
 				on the block" is left to the Storyteller.
 			-->
-			<span
+			<button
+				type="button"
 				class="badge votes"
-				role="note"
 				data-testid="votes-needed"
-				aria-label={t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })}
-				title={t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })}
-				><Icon name="vote" />{block.needed}</span
+				aria-label={votesLabel}
+				title={votesLabel}
+				onclick={() => openCount('votes', votesLabel)}><Icon name="vote" />{block.needed}</button
 			>
 		</div>
 	</div>
@@ -472,21 +524,28 @@
 		<ul class="reminders" data-testid="announcements">
 			{#each died as death (death.seatId)}
 				{@const seat = g.seats[death.seatId]}
-				<li>
-					<CharacterEntry
-						characterId={seat.characterId}
-						alignment={seat.alignment}
-						playerName={game.seatName(seat.seatId)}
-						label={game.seatName(seat.seatId)}
+				<li class="death" data-seat={death.seatId}>
+					{#if privateDeaths}
+						<span class="dont-announce" data-testid="dont-announce">{t('day.announce.dont')}</span>
+					{:else}
+						<span class="spoken" data-testid="spoken">{spokenDeath(death.seatId)}</span>
+					{/if}
+					<em class="private" data-testid="storyteller-only"
+						><Sentence text={privateDeath(death.cause)}
+							>{#snippet fill(name)}{#if name === 'character'}{#if seat.characterId}<CharacterBadge
+											characterId={seat.characterId}
+											alignment={seat.alignment}
+											inline
+										/>{:else}{t('day.announce.noCharacter')}{/if}{:else}{@render badge(
+										death.cause
+									)}{/if}{/snippet}</Sentence
+						></em
 					>
-						<span class="sentence"
-							><Sentence text={diedText(death.cause)}
-								>{#snippet fill()}{@render badge(death.cause)}{/snippet}</Sentence
-							></span
-						>
-					</CharacterEntry>
 				</li>
 			{/each}
+			{#if died.length === 0 && dawned}
+				<li class="death"><span class="spoken">{t('day.announce.nobody')}</span></li>
+			{/if}
 			{#each announcers as a (a.character.id)}
 				<li data-character={a.character.id}>
 					<CharacterEntry
@@ -500,7 +559,7 @@
 					</CharacterEntry>
 				</li>
 			{/each}
-			{#if died.length === 0 && announcers.length === 0}
+			{#if died.length === 0 && !dawned && announcers.length === 0}
 				<li>{t('common.none')}</li>
 			{/if}
 		</ul>
@@ -749,6 +808,8 @@
 	{/if}
 </ConfirmDialog>
 
+<CountDialog bind:open={countOpen} game={g} count={countShown} title={countTitle} />
+
 <style>
 	.panel {
 		display: grid;
@@ -952,12 +1013,23 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
-	/* Team colour on the border only: the text stays readable on a phone (Trevor). */
+	.badge {
+		background: transparent;
+		color: inherit;
+		font-family: inherit;
+		cursor: pointer;
+	}
+	/* Filled in the team's colour, the number on top (Trevor, 2026-10-19). --on-good reads on
+	   both (badge-colours.test.ts). */
 	.badge.good {
 		border-color: var(--good);
+		background: var(--good);
+		color: var(--on-good);
 	}
 	.badge.evil {
 		border-color: var(--evil);
+		background: var(--evil);
+		color: var(--on-good);
 	}
 	.badge.votes {
 		border-color: var(--heading);
@@ -978,6 +1050,21 @@
 		/* A cool tint, unlike the parchment cause buttons. */
 		background: var(--good-wash);
 		border: 1px solid var(--good);
+	}
+	/* The words to say, then the Storyteller's own detail under them in italics. */
+	.death {
+		display: grid;
+		gap: var(--space-1);
+	}
+	.private {
+		color: var(--on-surface-muted);
+	}
+	.dont-announce {
+		justify-self: start;
+		padding: 0 var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		font-variant: small-caps;
 	}
 	.state {
 		margin: 0 0 var(--space-2);

@@ -397,3 +397,22 @@ test('About offers Refresh when the update card already found a build', async ({
 	const dialog = await openAbout(page);
 	await expect(dialog.getByTestId('update-refresh')).toHaveText('Refresh');
 });
+
+// Trevor (2026-10-19): "we should also proffer the changes there [About], just as we do on the
+// main screen. so you don't have to back out to see the changes."
+test('About shows what a ready build changed, in a dialog', async ({ page, request }) => {
+	const running = await (await request.get('/build-notes.json')).json();
+	const newer = [{ sha: 'c'.repeat(40), subject: 'A change worth seeing' }];
+	await page.route('**/build-notes.json', (route) =>
+		route.fulfill({ json: { commit: newer[0].sha, commits: [...newer, ...running.commits] } })
+	);
+	await fakeServiceWorker(page, true);
+	await page.goto('/');
+	const settings = await openAbout(page);
+	const whatChanged = settings.getByRole('button', { name: 'What changed', exact: true });
+	await expect(whatChanged).toBeEnabled();
+	expect((await whatChanged.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+	await whatChanged.tap();
+	const dialog = page.getByRole('dialog', { name: 'What changed' });
+	await expect(dialog.getByRole('listitem')).toHaveText([/^ccccccc\s+A change worth seeing$/]);
+});

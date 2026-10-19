@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	scriptToolLink,
 	decodeScriptToolPayload,
 	readCuratedPage,
 	scriptToolPayload,
@@ -71,5 +72,16 @@ describe('readCuratedPage', () => {
 
 	it('finds nothing on a page without links', () => {
 		expect(readCuratedPage('<h2>Scripts</h2><p>None yet</p>')).toEqual([]);
+	});
+});
+
+describe('scriptToolLink', () => {
+	it('round-trips through the reader', async () => {
+		const json = JSON.stringify([{ id: '_meta', name: 'Ünïcode & Friends' }, 'chef', 'imp']);
+		const link = await scriptToolLink(json);
+		expect(link.startsWith('https://script.bloodontheclocktower.com/?script=')).toBe(true);
+		const payload = scriptToolPayload(link);
+		expect(payload).toBeDefined();
+		expect(await decodeScriptToolPayload(payload!)).toBe(json);
 	});
 });

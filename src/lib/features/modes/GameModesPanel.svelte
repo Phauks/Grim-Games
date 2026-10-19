@@ -328,7 +328,6 @@
 			{#if continuing}
 				<SettingSelect
 					label={t('modes.campaign.version')}
-					description={t('modes.campaign.versionHint')}
 					value={versionValue}
 					options={versions}
 					onChange={(v) => (version = v)}

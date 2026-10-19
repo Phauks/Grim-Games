@@ -108,6 +108,11 @@ export interface NightStep {
 	 * (`withTravellerAlignmentStep`).
 	 */
 	travellers?: string[];
+	/**
+	 * On a step that wakes a player whose character changed since dawn: the seat and its new
+	 * character (`withCharacterChangeSteps`).
+	 */
+	changed?: { seatId: string; characterId: CharacterId };
 }
 
 export interface OmittedStep {

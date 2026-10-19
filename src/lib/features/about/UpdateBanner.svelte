@@ -1,19 +1,10 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
-	import { buildInfo } from '#lib/build-info.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import { REPOSITORY_URL } from './report-issue.ts';
+	import UpdateChanges from './UpdateChanges.svelte';
 	import { updateCheck } from './update-check.svelte.ts';
-	import {
-		BUILD_NOTES_PATH,
-		changesSince,
-		compareUrl,
-		parseBuildNotes,
-		parseCompare,
-		type Changes
-	} from './update-notes.ts';
 
 	// How often an open app checks for a new build (a game can run for hours).
 	const CHECK_EVERY_MS = 30 * 60 * 1000;
@@ -23,8 +14,8 @@
 	// Another tab tapped Refresh: the new build is active here too, but this page still runs
 	// the old one until it reloads.
 	let activated = $state(false);
-	// What the waiting build changed; null until fetched, or when offline.
-	let changes = $state<Changes | null>(null);
+	// What the waiting build changed (update-check.svelte.ts), shared with About.
+	const changes = $derived(updateCheck.changes);
 	let changesOpen = $state(false);
 	const listId = $props.id();
 	const toggleLabel = $derived(
@@ -35,33 +26,8 @@
 				: t('shell.whatChanged')
 	);
 
-	async function loadChanges() {
-		try {
-			// Past every cache: the network has the newest build's notes, the one waiting.
-			const response = await fetch(BUILD_NOTES_PATH, { cache: 'no-store' });
-			const notes = response.ok ? parseBuildNotes(await response.json()) : null;
-			if (!notes) return void (changes = null);
-			const fromNotes = changesSince(notes, buildInfo.commit);
-			changes = fromNotes.complete
-				? fromNotes
-				: ((await compareOnGitHub(buildInfo.commit, notes.commit)) ?? fromNotes);
-		} catch {
-			changes = null;
-		}
-	}
-
-	/** The commits between two builds from GitHub, or null if it can't be reached. */
-	async function compareOnGitHub(running: string, next: string): Promise<Changes | null> {
-		try {
-			const response = await fetch(compareUrl(running, next));
-			return response.ok ? parseCompare(await response.json()) : null;
-		} catch {
-			return null;
-		}
-	}
-
 	$effect(() => {
-		if (waiting || activated) void loadChanges();
+		if (waiting || activated) void updateCheck.loadChanges();
 	});
 	// About offers Refresh too once a build is ready, however it was found.
 	$effect(() => {
@@ -156,23 +122,7 @@
 			{toggleLabel}
 		</button>
 		<div id={listId} class="changes" hidden={!changesOpen || !changes}>
-			{#if changes && changes.commits.length > 0}
-				<ul>
-					{#each changes.commits as commit (commit.sha)}
-						<li>
-							<!-- External GitHub link, not an app route. -->
-							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-							<a href="{REPOSITORY_URL}/commit/{commit.sha}" target="_blank" rel="noopener">
-								<span class="sha">{commit.sha.slice(0, 7)}</span>
-								<span>{commit.subject}</span>
-							</a>
-						</li>
-					{/each}
-				</ul>
-				{#if !changes.complete}<p class="more">{t('shell.olderChanges')}</p>{/if}
-			{:else}
-				<p class="more">{t('common.none')}</p>
-			{/if}
+			{#if changes}<UpdateChanges {changes} />{/if}
 		</div>
 	</div>
 {/if}
@@ -247,31 +197,6 @@
 		overflow-y: auto;
 		font-size: 0.8rem;
 		line-height: 1.35;
-	}
-	.changes ul {
-		display: flex;
-		flex-direction: column;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	/* The whole row is the link, so each commit is one comfortable tap. */
-	.changes a {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		color: inherit;
-		text-decoration: none;
-	}
-	.sha {
-		text-decoration: underline;
-		font-variant-numeric: tabular-nums;
-	}
-	.more {
-		margin: var(--space-1) 0 0;
-		color: var(--on-surface-muted);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.caret {

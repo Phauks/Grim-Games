@@ -3882,12 +3882,23 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	const text = page.getByTestId('reminder-note');
 	await text.fill('Chose Sam');
 	await text.press('Enter');
+	// Its own symbol (Trevor, 2026-10-19: chosen per token); none by default.
+	await page.getByRole('combobox', { name: 'Symbol' }).tap();
+	await page.getByRole('option', { name: 'Owl', exact: true }).tap();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
 	const placed = page.locator(
 		'[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]'
 	);
 	await expect(placed).toHaveCount(1);
+	// Look C: a dashed ring inside the rim, the chosen symbol in the middle; the bank's stays blank.
+	await expect(placed.locator('[data-symbol="🦉"]')).toBeVisible();
+	expect(await placed.evaluate((el) => getComputedStyle(el, '::before').borderStyle)).toBe(
+		'dashed'
+	);
+	await expect(
+		bank.getByRole('button', { name: 'Generic reminder' }).locator('[data-symbol]')
+	).toHaveCount(0);
 	// A rim round the token and its words, like every other reminder (Trevor, 2026-10-19).
 	const colours = await placed.evaluate((el) => {
 		const css = getComputedStyle(el);

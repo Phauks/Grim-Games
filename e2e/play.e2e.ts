@@ -509,6 +509,23 @@ test('Print script prints the sheet, then the night order and player counts', as
 		};
 	});
 	await page.getByRole('button', { name: 'Print script' }).tap();
+	// Print offers the ways to print (Trevor, 2026-10-19): TPI's Script Tool by a plain link
+	// carrying this script, and our own sheet.
+	const routes = page.getByRole('dialog', { name: 'Print script' });
+	const tool = routes.getByRole('link', { name: 'Open in the official Script Tool' });
+	await expect(tool).toHaveAttribute(
+		'href',
+		/^https:\/\/script\.bloodontheclocktower\.com\/\?script=/
+	);
+	const href = (await tool.getAttribute('href'))!;
+	const json = await page.evaluate(async (link) => {
+		const payload = decodeURIComponent(new URL(link).searchParams.get('script')!);
+		const bytes = Uint8Array.from(atob(payload), (c) => c.charCodeAt(0));
+		const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+		return new Response(stream).text();
+	}, href);
+	expect(json).toContain('washerwoman');
+	await routes.getByRole('button', { name: 'Print our sheet' }).tap();
 	// Printing first waits up to five seconds for the sheet and its icons, so poll longer than that.
 	await expect
 		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed), {

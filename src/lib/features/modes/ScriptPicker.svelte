@@ -7,6 +7,7 @@
 	import LibraryBrowser, { type LibraryPick } from '#lib/features/library/LibraryBrowser.svelte';
 	import PreviewToggle from '#lib/features/library/PreviewToggle.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { chooseScript, currentScript } from '#lib/features/scripts/current-script.svelte.ts';
 	import { reloadSavedScript } from '#lib/features/scripts/saved-scripts.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -15,6 +16,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { searchableScripts, type ScriptChoice } from './script-choices.svelte.ts';
+	import { scriptVersions } from './script-versions.ts';
 
 	/**
 	 * Choosing the script on New game with any number of scripts (Trevor, 2026-10-19, mockup
@@ -22,8 +24,9 @@
 	 * typing its name or author, and the Library button opens the Library to pick from.
 	 * Choosing one kind of script unselects the other. The search and the Library button are
 	 * for Custom, beside the base three, and stay disabled in place until it is chosen
-	 * (Trevor, 2026-10-19), so nothing moves. The chosen script's author and version
-	 * show under it (Trevor, 2026-10-19), on a line kept in place so nothing moves.
+	 * (Trevor, 2026-10-19), so nothing moves. Under them, on a line kept in place, the
+	 * chosen script's versions are a drop-down (empty when it has none) beside its author
+	 * (Trevor, 2026-10-19).
 	 */
 	interface Props {
 		label: string;
@@ -74,6 +77,15 @@
 		}))
 	);
 	const chosen = $derived(others.find((o) => o.value === value));
+	const versioned = $derived(scriptVersions(others, chosen));
+	const versions = $derived(
+		versioned.map((o) => ({
+			value: o.value,
+			label: t('player.version', { version: o.version ?? '' })
+		}))
+	);
+	// A copy of a listed version shows as that version.
+	const versionValue = $derived(versioned.find((o) => o.version === chosen?.version)?.value);
 	let browsing = $state(false);
 	let libraryBrowser = $state<LibraryBrowser>();
 
@@ -121,9 +133,19 @@
 			onclick={() => (browsing = true)}
 		/>
 	</div>
-	<p class="chosen" data-testid="chosen-script">
-		<ScriptByline author={chosen?.author} version={chosen?.version} inline />
-	</p>
+	<div class="chosen" data-testid="chosen-script">
+		<span class="version">
+			<Select
+				label={t('modes.scriptSearch.version')}
+				hideLabel
+				value={versionValue}
+				options={versions}
+				{onChange}
+				disabled={!custom || versions.length < 2}
+			/>
+		</span>
+		<ScriptByline author={chosen?.author} inline />
+	</div>
 </div>
 
 <!-- The Library's own file manager, scripts only, as the Script builder opens it. -->
@@ -156,8 +178,14 @@
 		min-width: 0;
 	}
 	.chosen {
-		margin: 0;
-		min-height: 1.5em;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-width: 0;
+	}
+	.version {
+		flex: 0 0 auto;
+		width: calc(9 * var(--u));
 	}
 	.library {
 		display: grid;

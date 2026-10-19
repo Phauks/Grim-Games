@@ -12,7 +12,7 @@
 
 	let { id, set, label }: Props = $props();
 
-	$effect(() => iconSets.load(set));
+	$effect(() => iconSets.load(set, id));
 
 	const Glyph = $derived(iconSets.get(set)?.[id]);
 </script>
