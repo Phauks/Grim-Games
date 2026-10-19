@@ -23,7 +23,6 @@
 		validDeathCauses,
 		daySentence,
 		type DayCount,
-		type DayReminder,
 		type ValidDeathCause
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -317,14 +316,6 @@
 		)
 	);
 
-	/** The seat a reminder is about: its own character's badge. */
-	function seatOf(reminder: DayReminder): SeatId | undefined {
-		const self = reminder.segments.find(
-			(s) => s.kind === 'character' && s.ref.characterId === reminder.characterId
-		);
-		return self?.kind === 'character' ? self.ref.seatId : undefined;
-	}
-
 	function used(seatId: SeatId, characterId: CharacterId): boolean {
 		return (
 			g.today.entries.some(
@@ -402,33 +393,36 @@
 	});
 </script>
 
-{#snippet actions(characterId: CharacterId | undefined, seatId: SeatId | undefined)}
+<!--
+	A player's day buttons sit in their own tile under Players, beside their character and
+	name (Trevor, 2026-10-19, option B): Used for a once-per-game day ability, and Guesses for
+	the Juggler, whose guesses feed his night answer. Day notes are gone (Trevor, 2026-10-19).
+-->
+{#snippet tileActions(characterId: CharacterId | undefined, seatId: SeatId)}
 	<!-- eslint-disable grim/names-as-badges -- accessible names (aria-label) only -->
-	{@const who = seatId
-		? t('day.who', { character: game.characterName(characterId), seat: game.seatName(seatId) })
-		: game.characterName(characterId)}
+	{@const who = t('day.who', {
+		character: game.characterName(characterId),
+		seat: game.seatName(seatId)
+	})}
 	<!-- eslint-enable grim/names-as-badges -->
-	<span class="row-actions">
-		{#if characterId && seatId && isOnceOnlyDayAbility(characterId)}
-			{@const isUsed = used(seatId, characterId)}
-			<Chip
-				pressed={isUsed}
-				aria-label={t('day.usedLabel', { who })}
-				onclick={() => (isUsed ? askUnmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
-			>
-				<span class="tick" data-on={isUsed || undefined}><Icon name="check" /></span>{t('day.used')}
-			</Chip>
-		{/if}
-		{#if characterId}
-			<Chip
-				marked={hasNote({ characterId, seatId })}
-				aria-label={t('day.noteLabel', { who })}
-				onclick={() => openNote({ characterId, seatId })}
-			>
-				<Icon name="notes" />{t('day.note')}
-			</Chip>
-		{/if}
-	</span>
+	{#if characterId && isOnceOnlyDayAbility(characterId)}
+		{@const isUsed = used(seatId, characterId)}
+		<Chip
+			pressed={isUsed}
+			aria-label={t('day.usedLabel', { who })}
+			onclick={() => (isUsed ? askUnmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
+		>
+			<span class="tick" data-on={isUsed || undefined}><Icon name="check" /></span>{t('day.used')}
+		</Chip>
+	{:else if characterId === 'juggler'}
+		<Chip
+			marked={hasNote({ characterId, seatId })}
+			aria-label={t('day.guessesLabel', { who })}
+			onclick={() => openNote({ characterId, seatId })}
+		>
+			{t('day.guesses')}
+		</Chip>
+	{/if}
 {/snippet}
 
 <div class="panel" style:--toolbar-height={`${toolbarHeight}px`}>
@@ -571,33 +565,36 @@
 				{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
 				{@const icon = character && iconUrl(character, seat.alignment)}
 				{@const ghost = registersAsDead(g, seat.seatId) && !seat.ghostVoteUsed}
-				<button
-					type="button"
-					class="seat"
-					aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
-					data-dead={seat.dead}
-					onclick={() => tapSeat(seat.seatId)}
-				>
-					<!-- Icon two lines tall, character name above, player name below (Trevor). -->
-					<span class="seat-icon" aria-hidden="true"
-						><span class="face"
-							>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
-						><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span><span
-							class="ghost-mark"
-							data-testid="ghost-mark"
-							data-shown={ghost}
-							title={t('day.hasGhostVote')}><Icon name="ghostVote" /></span
-						></span
+				<div class="tile" data-team={seat.alignment ?? 'neutral'} data-dead={seat.dead}>
+					<button
+						type="button"
+						class="seat"
+						aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
+						data-dead={seat.dead}
+						onclick={() => tapSeat(seat.seatId)}
 					>
-					<span class="seat-text">
-						<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
-						<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
-							>{character?.name ?? t('day.noCharacter')}</span
+						<!-- Icon two lines tall, character name above, player name below (Trevor). -->
+						<span class="seat-icon" aria-hidden="true"
+							><span class="face"
+								>{#if icon}<img src={icon} alt="" width="40" height="40" />{/if}</span
+							><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span><span
+								class="ghost-mark"
+								data-testid="ghost-mark"
+								data-shown={ghost}
+								title={t('day.hasGhostVote')}><Icon name="ghostVote" /></span
+							></span
 						>
-						<!-- eslint-enable grim/names-as-badges -->
-						<span class="seat-player">{game.seatName(seat.seatId)}</span>
-					</span>
-				</button>
+						<span class="seat-text">
+							<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
+							<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
+								>{character?.name ?? t('day.noCharacter')}</span
+							>
+							<!-- eslint-enable grim/names-as-badges -->
+							<span class="seat-player">{game.seatName(seat.seatId)}</span>
+						</span>
+					</button>
+					{@render tileActions(seat.characterId, seat.seatId)}
+				</div>
 			{/each}
 		</div>
 		{#if hasFlowergirl && !assistance.demonVotedButton}
@@ -655,7 +652,6 @@
 										{/if}
 									{/each}
 								</span>
-								{@render actions(reminder.characterId, seatOf(reminder))}
 							</CharacterEntry>
 						</li>
 					{/each}
@@ -663,7 +659,7 @@
 			</Collapsible>
 		{/each}
 	{:else}
-		<Collapsible title={t('day.abilitiesAndNotes')} storageKey="day.abilities">
+		<Collapsible title={t('day.abilities')} storageKey="day.abilities">
 			<ul class="reminders">
 				{#each seats as seat (seat.seatId)}
 					{#if seat.characterId}
@@ -674,7 +670,6 @@
 								playerName={seat.playerName}
 							>
 								{@render ability(seat.characterId)}
-								{@render actions(seat.characterId, seat.seatId)}
 							</CharacterEntry>
 						</li>
 					{/if}
@@ -828,9 +823,29 @@
 	}
 	.seats {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(10 * var(--u))), 1fr));
+		/* Always at least two columns, so a tile with a day button can take two of them. */
+		grid-template-columns: repeat(
+			auto-fill,
+			minmax(min(calc(50% - var(--space-1) / 2), calc(10 * var(--u))), 1fr)
+		);
 		gap: var(--space-1);
 		touch-action: manipulation;
+	}
+	/* The tile: the player button, and their day button beside it on the same line. */
+	.tile {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-1);
+		min-width: 0;
+		padding-right: var(--space-1);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
+	}
+	/* A day button needs room beside the names: the tile takes two columns. */
+	.tile:has(:global(.chip)) {
+		grid-column: span 2;
 	}
 	.seat {
 		display: grid;
@@ -841,9 +856,9 @@
 		gap: var(--space-2);
 		min-height: var(--tap-target);
 		padding: var(--space-1);
-		border: 1px solid var(--border);
+		border: none;
 		border-radius: var(--radius-md);
-		background: var(--surface-raised);
+		background: transparent;
 		color: var(--on-surface);
 		font: inherit;
 		text-align: start;
@@ -878,10 +893,10 @@
 		font-weight: var(--font-character-weight, 600);
 	}
 	/* Alignment as the rim colour, so names keep full contrast. */
-	.seat:has(.seat-character[data-team='good']) {
+	.tile[data-team='good'] {
 		border-left: 4px solid var(--good);
 	}
-	.seat:has(.seat-character[data-team='evil']) {
+	.tile[data-team='evil'] {
 		border-left: 4px solid var(--evil);
 	}
 	.seat-player {
@@ -974,11 +989,6 @@
 		margin: 0;
 		font-family: var(--font-ability);
 		font-size: 0.9rem;
-	}
-	.row-actions {
-		display: inline-flex;
-		gap: var(--space-2);
-		margin-left: auto;
 	}
 	/* The tick is always laid out, so pressing Used never changes the chip's width. */
 	.tick {

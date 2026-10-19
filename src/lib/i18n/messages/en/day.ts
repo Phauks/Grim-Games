@@ -8,7 +8,7 @@ export const day = {
 	'day.players': 'Players',
 	'day.seatButton': 'Seat: {name}',
 	'day.demonVoted': 'Demon voted',
-	'day.abilitiesAndNotes': 'Abilities and notes',
+	'day.abilities': 'Abilities',
 	'day.votesBadgeLabel': {
 		one: '{count} vote puts the first nominee on the block ({alive} alive)',
 		other: '{count} votes put the first nominee on the block ({alive} alive)'
@@ -17,7 +17,8 @@ export const day = {
 	'day.used': 'Used',
 	'day.usedLabel': 'Used: {who}',
 	'day.note': 'Note',
-	'day.noteLabel': 'Note: {who}',
+	'day.guesses': 'Guesses',
+	'day.guessesLabel': 'Guesses: {who}',
 	'day.markUsedTitle': 'Mark {who} as used?',
 	'day.markUsedNow': '{who} has not used their ability.',
 	'day.markUsedAfter': '{who} has used their ability.',
