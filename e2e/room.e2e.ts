@@ -332,10 +332,23 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await expect(pledge.getByTestId('watch-pledge').getByRole('listitem')).toHaveCount(3);
 	await pledge.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(viewer.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
-	// Nothing to share or change from here.
+	// Every control that changes the game is there but disabled (Trevor, 2026-10-19), so
+	// nothing invites a try; what only reads still opens. The board says it is view-only.
 	const toolbar = viewer.getByRole('toolbar', { name: 'Grimoire' });
-	await expect(toolbar.getByRole('button', { name: 'Share', exact: true })).toHaveCount(0);
-	await expect(toolbar.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
+	await expect(toolbar.getByTestId('view-only')).toHaveText('View-Only');
+	for (const name of ['Day', 'Info tokens', 'Share', 'More'])
+		await expect(toolbar.getByRole('button', { name, exact: true })).toBeDisabled();
+	await expect(toolbar.getByRole('button', { name: 'Script', exact: true })).toBeEnabled();
+	const timer = viewer.getByTestId('day-timer');
+	await expect(timer).toBeVisible();
+	for (const button of await timer.getByRole('button').all()) await expect(button).toBeDisabled();
+	await viewer.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await expect(
+		viewer.locator(
+			'[data-part="content"][data-state="open"]:is([data-scope="dialog"], [data-scope="drawer"])'
+		)
+	).toHaveCount(0);
+	await expect(viewer.getByText('Only the Storyteller can change this game.')).toHaveCount(0);
 	// Game info, from the corner where it shows, has no pencil for a viewer.
 	const corner = viewer.getByTestId('mode-menu');
 	if (await corner.isVisible()) {
@@ -353,6 +366,38 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	await sheet.getByRole('textbox', { name: 'Player name' }).fill('Alex');
 	await sheet.getByRole('textbox', { name: 'Player name' }).press('Enter');
 	await expect(viewer.getByRole('button', { name: /^Seat 1: Alex/ })).toBeVisible();
+
+	// The viewer's timer follows the Storyteller's (Trevor, 2026-10-19).
+	await page.keyboard.press('Escape');
+	await expect(sheet).toHaveCount(0);
+	const watched = viewer.getByTestId('day-timer');
+	await expect(watched).not.toHaveAttribute('data-running');
+	await page.getByTestId('day-timer').getByRole('button', { name: 'Start timer' }).tap();
+	await expect(watched).toHaveAttribute('data-running', '');
+	const clock = watched.getByRole('timer');
+	const first = await clock.textContent();
+	await expect(clock).not.toHaveText(first ?? '');
+	await page.getByTestId('day-timer').getByRole('button', { name: 'Pause timer' }).tap();
+	await expect(watched).not.toHaveAttribute('data-running');
+	await expect(clock).toHaveText(
+		(await page.getByTestId('day-timer').getByRole('timer').textContent()) ?? ''
+	);
+
+	// A seat opens its character to read, never the seat sheet.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+	await page
+		.getByRole('dialog', { name: /^Character for / })
+		.getByRole('button', { name: 'Washerwoman', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(viewer.getByRole('button', { name: /^Seat 1: Alex.*Washerwoman/ })).toBeVisible();
+	await viewer.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await expect(viewer.getByRole('dialog', { name: 'Washerwoman' })).toBeVisible();
+	await expect(
+		viewer.locator('[data-scope="drawer"][data-part="content"][data-state="open"]')
+	).toHaveCount(0);
+	await viewer.keyboard.press('Escape');
 
 	// Every open asks again.
 	await viewer.reload();

@@ -13,6 +13,8 @@
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { parseReminderCopyIds, parseReminderSpots } from '#lib/features/grimoire/device-notes.ts';
 	import { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
+	import { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
+	import { dayTimers } from '#lib/core/rules/index.ts';
 	import GrimoireBoard from '#lib/features/grimoire/GrimoireBoard.svelte';
 	import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -36,11 +38,16 @@
 	let viewer = $state.raw<RoomViewer>();
 	let board = $state.raw<Grimoire>();
 	let problem = $state<string>();
+	/** The Storyteller's day timer, which only shows here. */
+	const timer = new WatchedTimer();
 
 	onMount(() => {
 		key = viewerKeyFrom(location.hash);
 		pledgeOpen = !!room && !!key;
-		return () => viewer?.stop();
+		return () => {
+			viewer?.stop();
+			timer.stop();
+		};
 	});
 
 	provideCharacters(() => board?.open.characters);
@@ -66,6 +73,7 @@
 			next.layout = parseSeatLayout(shared.layout);
 			next.reminderSpots = parseReminderSpots(shared.reminderSpots);
 			next.copies = parseReminderCopyIds(shared.copies);
+			timer.set(dayTimers.parseSharedTimer(shared.timer));
 			board = next;
 			problem = undefined;
 		} catch (e) {
@@ -95,7 +103,7 @@
 
 {#if showBoard && board}
 	<ErrorBoundary area="grimoire">
-		<GrimoireBoard grimoire={board} watching />
+		<GrimoireBoard grimoire={board} watching watchedTimer={timer.known ? timer : undefined} />
 	</ErrorBoundary>
 {:else}
 	<main class="message" data-testid="watch-status">

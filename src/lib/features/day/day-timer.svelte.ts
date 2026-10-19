@@ -50,6 +50,13 @@ class LiveDayTimer {
 	get fresh(): boolean {
 		return isFresh(this.#timer);
 	}
+	/**
+	 * What spectators get (`WatchedTimer`). Reads only the timer and its mode, not the ticking
+	 * clock, so the room hears of a start, pause or change, not every second.
+	 */
+	get shared(): dayTimers.SharedDayTimer {
+		return { ...this.#timer, mode: this.mode };
+	}
 	/** Start is possible: not running, and counting up or with time left. */
 	get startable(): boolean {
 		return !this.running && (this.mode === 'up' || !this.done);

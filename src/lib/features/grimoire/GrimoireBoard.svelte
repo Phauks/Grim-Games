@@ -114,6 +114,7 @@
 	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
+	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
@@ -127,9 +128,11 @@
 		 * nothing to share or change, and leaving needs no asking.
 		 */
 		watching?: boolean;
+		/** The Storyteller's day timer, on a spectator's board. */
+		watchedTimer?: WatchedTimer;
 	}
 
-	let { grimoire, watching = false }: Props = $props();
+	let { grimoire, watching = false, watchedTimer }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
@@ -638,6 +641,16 @@
 		sheetOpen = true;
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
+	/**
+	 * A spectator reads, never changes (Trevor, 2026-10-19): a seat opens its character's
+	 * details, as a Fabled or Loric does, not the seat sheet.
+	 */
+	function readCharacter(id: CharacterId | undefined) {
+		const character = id ? characters.get(id) : undefined;
+		if (!character) return;
+		ruleDetails = character;
+		ruleDetailsOpen = true;
+	}
 
 	// ── Notes (Trevor, 2026-10-19): the game's and every player's in ⋯ Notes ──
 	let notesOpen = $state(false);
@@ -1318,7 +1331,7 @@
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
-					disabled={arranging}
+					disabled={arranging || watching}
 					onTap={() => heldDialog?.show(last.reminderId)}
 					onDrag={(x, y, end) => dragReminder(last.reminderId, undefined, x, y, end)}
 					onCancel={() => (reminderDrag = undefined)}
@@ -1331,7 +1344,7 @@
 						character={undefined}
 						more={held.length - 1}
 						size={Math.round(chip * 0.7)}
-						disabled={arranging}
+						disabled={arranging || watching}
 						onTap={onMore}
 					/>
 				</span>
@@ -1350,6 +1363,7 @@
 				type="button"
 				class="held-chip"
 				aria-label={reminder.label}
+				disabled={watching}
 				onclick={() => heldDialog?.show(reminder.reminderId)}
 			>
 				<ReminderToken
@@ -1459,36 +1473,50 @@
 		{:else}
 			<!-- The app's navigation; on the narrowest phones it is in More instead. -->
 			<span class="nav-menu" class:watching><NavMenuButton /></span>
-			<!-- Icons on phones; with their words on wider screens, where there is room. -->
-			<span class="spacer"></span>
-			<Button variant="quiet" icon="day" aria-label="Day" onclick={() => (dayOpen = true)}
-				><span class="tool-label">Day</span></Button
+			<!-- Icons on phones; with their words on wider screens, where there is room. A
+			     spectator's board says what it is in that room (Trevor, 2026-10-19). -->
+			<span class="spacer"
+				>{#if watching}<span class="view-only" data-testid="view-only">View-Only</span>{/if}</span
 			>
-			<Button variant="quiet" icon="info" aria-label="Info tokens" onclick={() => (infoOpen = true)}
-				><span class="tool-label">Info tokens</span></Button
+			<!-- A spectator sees every control the Storyteller does, disabled (Trevor, 2026-10-19):
+			     nothing opens, so nothing invites a try. Script only shows the players' copy. -->
+			<Button
+				variant="quiet"
+				icon="day"
+				aria-label="Day"
+				disabled={watching}
+				onclick={() => (dayOpen = true)}><span class="tool-label">Day</span></Button
+			>
+			<Button
+				variant="quiet"
+				icon="info"
+				aria-label="Info tokens"
+				disabled={watching}
+				onclick={() => (infoOpen = true)}><span class="tool-label">Info tokens</span></Button
 			>
 			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). Pointing at, focusing or
 			     pressing it starts opening the room, so the code and QR are ready. -->
-			{#if !watching}
-				<Button
-					variant="quiet"
-					icon="share"
-					aria-label="Share"
-					onpointerenter={prepareRoom}
-					onfocus={prepareRoom}
-					onpointerdown={prepareRoom}
-					onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
-				>
-			{/if}
+			<Button
+				variant="quiet"
+				icon="share"
+				aria-label="Share"
+				disabled={watching}
+				onpointerenter={prepareRoom}
+				onfocus={prepareRoom}
+				onpointerdown={prepareRoom}
+				onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
+			>
 			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16). -->
 			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
 				><span class="tool-label">Script</span></Button
 			>
-			{#if !watching}
-				<Button variant="quiet" icon="more" aria-label="More" onclick={() => (menuOpen = true)}
-					><span class="tool-label">More</span></Button
-				>
-			{/if}
+			<Button
+				variant="quiet"
+				icon="more"
+				aria-label="More"
+				disabled={watching}
+				onclick={() => (menuOpen = true)}><span class="tool-label">More</span></Button
+			>
 		{/if}
 	</div>
 
@@ -1547,9 +1575,15 @@
 					role={seatRole(seat.seatId)}
 					namePlace={namePlaces[i] ?? 'below'}
 					onTap={(part) =>
-						!arranging && (part === 'note' ? editNote(seat.seatId) : openSeat(seat.seatId))}
+						!arranging &&
+						(watching
+							? readCharacter(seat.characterId)
+							: part === 'note'
+								? editNote(seat.seatId)
+								: openSeat(seat.seatId))}
 					onGhostVote={() =>
 						!arranging &&
+						!watching &&
 						grimoire.run({
 							type: seat.ghostVoteUsed ? 'RestoreGhostVote' : 'SpendGhostVote',
 							seatId: seat.seatId
@@ -1586,7 +1620,7 @@
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
-							disabled={arranging}
+							disabled={arranging || watching}
 							onTap={() => openReminder(seat.seatId, reminder.reminderId)}
 							onDrag={(x, y, end) => dragReminder(reminder.reminderId, seat.seatId, x, y, end)}
 							onCancel={() => (reminderDrag = undefined)}
@@ -1621,7 +1655,7 @@
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
-					disabled={arranging}
+					disabled={arranging || watching}
 					onTap={() => heldDialog?.show(reminder.reminderId)}
 					onDrag={(x, y, end) => dragReminder(reminder.reminderId, undefined, x, y, end)}
 					onCancel={() => (reminderDrag = undefined)}
@@ -1702,6 +1736,7 @@
 						class="game-over"
 						data-testid="game-over"
 						data-team={ended.winner}
+						disabled={watching}
 						onclick={() => (reopenOpen = true)}
 					>
 						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
@@ -1725,6 +1760,7 @@
 				onRule={(reminder, characterId) => moveConfirm?.requestRule(reminder, characterId)}
 				onHints={(h) => (trayHints = h)}
 				run={bankRun}
+				disabled={watching}
 			/>
 		{/if}
 
@@ -1771,7 +1807,12 @@
 		{#if showTimer}
 			<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. -->
 			<div class="board-timer" bind:clientWidth={timerW} bind:clientHeight={timerH}>
-				<DayTimer alive={livingByTeam(game).alive} variant="compact" />
+				<DayTimer
+					alive={livingByTeam(game).alive}
+					variant="compact"
+					readOnly={watching}
+					shown={watchedTimer}
+				/>
 			</div>
 		{/if}
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
@@ -2098,7 +2139,11 @@
 	<RulesAtSetting />
 	{#snippet headActions()}
 		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
-		<DeleteButton label="Remove from the game" onclick={() => (ruleRemoveOpen = true)} />
+		<DeleteButton
+			label="Remove from the game"
+			disabled={watching}
+			onclick={() => (ruleRemoveOpen = true)}
+		/>
 	{/snippet}
 </Dialog>
 
@@ -2118,6 +2163,7 @@
 					</div>
 					<DeleteButton
 						label={removeRuleLabel(character.name)}
+						disabled={watching}
 						onclick={() => {
 							ruleShown = id;
 							ruleRemoveOpen = true;
@@ -2406,6 +2452,17 @@
 	}
 	.spacer {
 		flex: 1;
+		min-width: 0;
+		text-align: center;
+	}
+	.view-only {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--evil);
+		font-family: var(--font-heading);
+		font-weight: 700;
 	}
 	.corner-title {
 		position: absolute;
