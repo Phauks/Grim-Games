@@ -4382,3 +4382,48 @@ test('when the Imp kills itself, a living Minion is chosen to become the Imp', a
 	await expect(seatLabelled(page, 'Seat 3: no name, Imp')).toHaveAttribute('aria-label', /dead/);
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
+
+test('a player whose character changed since dawn is woken that night to learn it', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		if (number === 1) await nameSeat(sheet, 'Sam');
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for ${number === 1 ? 'Sam' : 'Seat 2'}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await endNight(page);
+	await page.getByRole('dialog', { name: 'Day 1' }).getByRole('button', { name: 'Close' }).tap();
+
+	// The Poisoner becomes the Imp (https://wiki.bloodontheclocktower.com/Imp: the new Imp is
+	// woken and shown the Imp token).
+	const sheet = await openSeat(page, 1);
+	await seatMenu(page, sheet, 'Change character');
+	await page
+		.getByRole('dialog', { name: 'Character for Sam' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'Change character?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	const strip = await walkTo(page, 'Dusk');
+	for (let i = 0; i < 30 && !(await lastStep(strip)); i++)
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip.locator('.step .name strong')).toHaveText('Imp');
+	await expect(strip).toContainText('Sam');
+	await expect(strip).toContainText('Wake this player.');
+	await expect(strip).toContainText('You are');
+});
