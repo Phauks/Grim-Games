@@ -44,13 +44,17 @@
 	let { value, theme, onChange, characterFont, reminderFont, characterIconSize }: Props = $props();
 
 	onMount(() => void loadOfficialData());
-	const sample = $derived(officialData.current?.byId.get('fortuneteller'));
+	// A character with every marking, so each leaf setting shows (Trevor, 2026-10-19: "a setup,
+	// reminder token, and operate in both types of nights"): the Godfather. "Died Today" is
+	// also long enough to show the reminder word settings.
+	const SAMPLE_ID = 'godfather';
+	const sample = $derived(officialData.current?.byId.get(SAMPLE_ID));
 	// The sample as the only character in play (Trevor, 2026-10-17: "a low number (1) (1),
 	// not absolute"): 1 on each night it wakes.
 	const sampleNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || !value.nightNumbers) return undefined;
-		const { first, other } = sheetNumbersFor(data.nightSheet, 'fortuneteller');
+		const { first, other } = sheetNumbersFor(data.nightSheet, SAMPLE_ID);
 		return { first: first && 1, other: other && 1 };
 	});
 	const contrast = $derived(tokenContrast(value, theme));
