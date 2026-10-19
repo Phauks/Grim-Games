@@ -12,6 +12,9 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { RoomPlayer } from './player.svelte.ts';
 	import { followRoomScript } from './room-script.ts';
+	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
+	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 
 	interface Props {
 		/** The code from the link; undefined on /join, where it is typed. */
@@ -79,10 +82,46 @@
 		seenVote = id;
 	});
 
+	// Once all six digits are in, the page shows which game the code opens (Trevor,
+	// 2026-10-19), so a mistyped code is caught before joining.
+	const typedCode = $derived(code === undefined ? normaliseRoomCode(typed) : null);
+	let lookup = $state.raw<
+		| { code: string; state: 'looking' }
+		| { code: string; state: 'found'; game: GamePreview }
+		| { code: string; state: 'none' | 'failed' }
+	>();
+	$effect(() => {
+		const c = typedCode;
+		if (!c) {
+			lookup = undefined;
+			return;
+		}
+		const abort = new AbortController();
+		lookup = { code: c, state: 'looking' };
+		fetchRoomPreview(c, abort.signal).then(
+			(game) => (lookup = game ? { code: c, state: 'found', game } : { code: c, state: 'none' }),
+			() => {
+				if (!abort.signal.aborted) lookup = { code: c, state: 'failed' };
+			}
+		);
+		return () => abort.abort();
+	});
+	const found = $derived(lookup?.state === 'found' ? lookup.game : undefined);
+	/** Joining goes ahead when the lookup fails (offline Worker, too many tries): the room page says why. */
+	const canJoin = $derived(lookup?.state === 'found' || lookup?.state === 'failed');
+	const lookupText = $derived(
+		lookup?.state === 'looking'
+			? t('room.lookingUp')
+			: lookup?.state === 'none'
+				? t('room.noGame')
+				: lookup?.state === 'failed'
+					? t('room.lookupFailed')
+					: ''
+	);
+
 	function enterCode(event: SubmitEvent) {
 		event.preventDefault();
-		const c = normaliseRoomCode(typed);
-		if (c) void goto(resolve('/join/[code]', { code: c }));
+		if (lookup && canJoin) void goto(resolve('/join/[code]', { code: lookup.code }));
 	}
 
 	function ask(event: SubmitEvent) {
@@ -124,8 +163,31 @@
 		{/if}
 		<form class="code-form" onsubmit={enterCode}>
 			<label for="room-code">{t('room.codeLabel')}</label>
-			<CodeField id="room-code" bind:value={typed} length={ROOM_CODE_LENGTH} group={3} />
-			<Button type="submit" variant="accent" disabled={!normaliseRoomCode(typed)}>
+			<CodeField id="room-code" bind:value={typed} length={ROOM_CODE_LENGTH} group={3} centred />
+			<!-- Always this size, so the game arriving moves nothing. -->
+			<section
+				class="game"
+				class:found={!!found}
+				aria-label={t('room.gameToJoin')}
+				aria-live="polite"
+				data-testid="room-preview"
+			>
+				<ScriptLogo src={found?.logo} name={found?.name} class="game-logo" />
+				<div class="game-text">
+					{#if found}
+						<p class="game-name">{found.name || t('room.noScriptYet')}</p>
+						<ScriptByline author={found.author} inline />
+						{#if found.seats !== undefined}
+							<span class="game-table"
+								>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
+							>
+						{/if}
+					{:else}
+						<p class="game-status" role="status">{lookupText}</p>
+					{/if}
+				</div>
+			</section>
+			<Button type="submit" variant="accent" disabled={!canJoin}>
 				{t('room.join')}
 			</Button>
 		</form>
@@ -237,8 +299,63 @@
 		align-content: start;
 		min-width: 0;
 	}
+	/* The code, the game it opens and Join, down the middle of the page. */
 	.code-form {
+		justify-items: center;
+		gap: var(--space-4);
+		width: 100%;
 		max-width: calc(28 * var(--u));
+		margin-inline: auto;
+		padding-block: var(--space-4);
+		text-align: center;
+	}
+	.code-form label {
+		font-size: 1.1rem;
+	}
+	.game {
+		display: grid;
+		grid-template-columns: calc(4.5 * var(--u)) minmax(0, 1fr);
+		align-items: center;
+		gap: var(--space-3);
+		box-sizing: border-box;
+		width: 100%;
+		/* Room for the name, the author and the table, so none of them moves the page. */
+		min-height: calc(7.5 * var(--u));
+		padding: var(--space-3);
+		border: 1px dashed var(--border);
+		border-radius: var(--radius-md);
+		text-align: start;
+	}
+	.game.found {
+		border-style: solid;
+		background: var(--surface-raised);
+	}
+	.game :global(.game-logo) {
+		width: calc(4.5 * var(--u));
+		height: calc(4.5 * var(--u));
+	}
+	.game-text {
+		display: grid;
+		gap: var(--space-1);
+		min-width: 0;
+	}
+	.game-name {
+		margin: 0;
+		overflow: hidden;
+		font-family: var(--font-heading);
+		font-weight: var(--font-heading-weight);
+		font-size: 1.3rem;
+		line-height: 1.2;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.game-table,
+	.game-status {
+		margin: 0;
+		color: var(--on-surface-muted);
+	}
+	.code-form :global(.button) {
+		min-width: calc(10 * var(--u));
 	}
 	.problem,
 	.none {

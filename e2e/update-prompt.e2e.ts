@@ -258,3 +258,75 @@ test('a check that finds a build shows its download, then Update ready', async (
 	await expect(result).toHaveText(/ · Update ready$/);
 	await expect(page.getByTestId('update-banner')).toBeVisible();
 });
+
+// Trevor (2026-10-19): "once update has been loaded from about, also add a refresh button there".
+test('About offers Refresh once a build is ready, and it moves onto the new build', async ({
+	page
+}) => {
+	await page.addInitScript(() => {
+		const seen: unknown[] = [];
+		const listeners: Array<() => void> = [];
+		const active = { state: 'activated', postMessage() {}, addEventListener() {} };
+		const waiting = {
+			state: 'installed',
+			postMessage: (message: unknown) => {
+				seen.push(message);
+				// The new build takes over, as the real worker does after SKIP_WAITING.
+				registration.waiting = null;
+				listeners.splice(0).forEach((listener) => listener());
+			},
+			addEventListener() {}
+		};
+		const registration = {
+			waiting: null as unknown,
+			installing: null,
+			active,
+			addEventListener() {},
+			update: () => {
+				// Only the first page load finds the build; the reload runs it.
+				if (!sessionStorage.getItem('refreshed')) registration.waiting = waiting;
+				return Promise.resolve();
+			}
+		};
+		Object.defineProperty(navigator, 'serviceWorker', {
+			value: {
+				controller: active,
+				ready: Promise.resolve(registration),
+				register: () => Promise.resolve(registration),
+				getRegistration: () => Promise.resolve(registration),
+				addEventListener: (type: string, listener: () => void) => {
+					if (type === 'controllerchange') listeners.push(listener);
+				},
+				removeEventListener() {}
+			}
+		});
+		(window as unknown as { seen: unknown[] }).seen = seen;
+	});
+	await page.goto('/');
+	const dialog = await openAbout(page);
+	const refresh = dialog.getByTestId('update-refresh');
+	const check = dialog.getByRole('button', { name: 'Check for updates' });
+	await expect(refresh).toHaveCount(0);
+	const before = await check.boundingBox();
+
+	await check.tap();
+	await expect(dialog.getByTestId('update-check-result')).toHaveText(/ · Update ready$/);
+	await expect(refresh).toBeVisible();
+	// It shares the version's line, so nothing below moves.
+	expect(await check.boundingBox()).toEqual(before);
+	expect((await refresh.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+
+	await page.evaluate(() => sessionStorage.setItem('refreshed', '1'));
+	const reloaded = page.waitForEvent('load');
+	await refresh.tap();
+	await reloaded;
+	await expect(page.getByTestId('update-banner')).toHaveCount(0);
+});
+
+test('About offers Refresh when the update card already found a build', async ({ page }) => {
+	await fakeServiceWorker(page, true);
+	await page.goto('/');
+	await expect(page.getByTestId('update-banner')).toBeVisible();
+	const dialog = await openAbout(page);
+	await expect(dialog.getByTestId('update-refresh')).toHaveText('Refresh');
+});
