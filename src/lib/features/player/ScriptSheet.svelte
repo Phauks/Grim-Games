@@ -4,7 +4,8 @@
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { ScriptJinx } from '#lib/core/rules/jinxes.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
@@ -76,7 +77,9 @@
 				>
 					{#each partners as p (p.id)}
 						{@const src = iconUrl(p)}
-						{#if src}<img {src} alt="" />{:else}<span class="dot"></span>{/if}
+						{#if src}<img {src} alt="" {@attach iconFallback(fallbackIconUrl(p))} />{:else}<span
+								class="dot"
+							></span>{/if}
 					{/each}
 				</button>
 			{/if}

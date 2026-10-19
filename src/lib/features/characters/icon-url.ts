@@ -28,6 +28,20 @@ export function iconUrl(character: Character, alignment?: Alignment): string | u
 		);
 		if (own) return own;
 	}
+	return tpiIcon(character, team);
+}
+
+/**
+ * What to show instead when a homebrew character's own image fails to load (a dead link, or
+ * offline): TPI's generic icon for its type, as when it has no image (Trevor, 2026-10-19).
+ * Undefined for official characters, whose icons ship with the app.
+ */
+export function fallbackIconUrl(character: Character, alignment?: Alignment): string | undefined {
+	if (character.edition) return undefined;
+	return tpiIcon(character, alignment ?? defaultAlignment(character.type));
+}
+
+function tpiIcon(character: Character, team: Alignment | undefined): string | undefined {
 	const icons = characterIcons(character) ?? genericIcons(character.type);
 	const file =
 		(team === 'evil' ? icons.evil : team === 'good' ? icons.good : undefined) ??

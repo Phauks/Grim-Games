@@ -3,7 +3,8 @@
 	import type { Character } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
-	import { iconUrl } from './icon-url.ts';
+	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
+	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import ReminderToken from './ReminderToken.svelte';
 
 	/**
@@ -43,7 +44,13 @@
 
 <header class="character">
 	<span class="icon"
-		>{#if icon}<img src={icon} alt="" width="64" height="64" />{/if}</span
+		>{#if icon}<img
+				src={icon}
+				alt=""
+				width="64"
+				height="64"
+				{@attach iconFallback(fallbackIconUrl(character))}
+			/>{/if}</span
 	>
 	<div>
 		<p class="type">{source === typeLabel ? typeLabel : `${typeLabel} · ${source}`}</p>

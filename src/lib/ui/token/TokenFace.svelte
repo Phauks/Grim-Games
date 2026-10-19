@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { FLOWER_ANGLE, leafLayout, type LeafMarks } from './leaves.ts';
+	import { iconFallback } from './icon-fallback.ts';
 
 	interface Props {
 		/** Icon image URL; the face stays (empty) when there is none. */
 		src?: string;
+		/** Shown instead if `src` fails to load (a homebrew image's dead link, or offline). */
+		fallback?: string;
 		/** Accessible name: the character and what the leaves say. */
 		label: string;
 		leaves: LeafMarks;
@@ -19,7 +22,7 @@
 		nightNumbers?: { first?: number; other?: number };
 	}
 
-	let { src, label, leaves, size = 56, name, nightNumbers }: Props = $props();
+	let { src, fallback, label, leaves, size = 56, name, nightNumbers }: Props = $props();
 	// Each badge sits on the middle of its leaf (the leaf runs from the rim inwards). The
 	// user's Night order badge size (--night-badge-scale) scales it about that point.
 	const badges = $derived(
@@ -77,7 +80,14 @@
 		<circle class="face" cx="50" cy="50" r="48" />
 	</svg>
 	<!-- The icon fills most of the face, as on a real token (Trevor, 2026-10-16). -->
-	{#if src}<img {src} alt="" width={size} height={size} loading="lazy" />{/if}
+	{#if src}<img
+			{src}
+			alt=""
+			width={size}
+			height={size}
+			loading="lazy"
+			{@attach iconFallback(fallback)}
+		/>{/if}
 	<!-- Leaves are drawn over the icon, so they always show. -->
 	<svg class="marks" viewBox="0 0 100 100" aria-hidden="true">
 		{#each layout as leaf, i (i)}

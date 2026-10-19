@@ -7,7 +7,8 @@
 		type CharacterId,
 		type CharacterName
 	} from '#lib/core/data/index.ts';
-	import { iconUrl } from './icon-url.ts';
+	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
+	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import CharacterDialog from './CharacterDialog.svelte';
 	import { prefetchWikiPage } from './wiki-page.svelte.ts';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
@@ -71,13 +72,20 @@
 				: 'neutral')
 	);
 	const icon = $derived(character && iconUrl(character, alignment));
+	const fallback = $derived(character && fallbackIconUrl(character, alignment));
 	const label = $derived(text ?? character?.name ?? characterId);
 </script>
 
 {#snippet face()}
 	<!-- Fixed-size icon slot so the badge never changes size when data or icons arrive. -->
 	<span class="icon"
-		>{#if icon}<img src={icon} alt="" width="28" height="28" />{/if}</span
+		>{#if icon}<img
+				src={icon}
+				alt=""
+				width="28"
+				height="28"
+				{@attach iconFallback(fallback)}
+			/>{/if}</span
 	>
 	<span class="name">{label}</span>
 	{#if playerName}<span class="player">· {playerName}</span>{/if}

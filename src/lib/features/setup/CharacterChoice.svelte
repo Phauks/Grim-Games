@@ -3,7 +3,8 @@
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
-	import { iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import { prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { isBagDisabled } from '#lib/core/rules/bag-characters.ts';
@@ -102,10 +103,12 @@
 				>{#each jinxedWith as p (p.id)}{@const src = iconUrl(
 						p,
 						defaultAlignment(p.type)
-					)}{#if src}<img {src} alt="" data-partner={p.id} />{:else}<span
-							class="dot"
+					)}{#if src}<img
+							{src}
+							alt=""
 							data-partner={p.id}
-						></span>{/if}{/each}</span
+							{@attach iconFallback(fallbackIconUrl(p))}
+						/>{:else}<span class="dot" data-partner={p.id}></span>{/if}{/each}</span
 			>
 			<span class="copies">{copies > 1 ? `×${copies}` : ''}</span>
 			<!--

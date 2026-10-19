@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character, CharacterType, ReminderLabel } from '#lib/core/data/index.ts';
-	import { iconUrl } from './icon-url.ts';
+	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
+	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 
 	interface Props {
 		/** The token's text; leave out for "a reminder" when it is not known which. */
@@ -57,7 +58,12 @@
 	data-done={done || undefined}
 	data-icon={icon ? '' : undefined}
 	title={title ?? character?.name}
-	>{#if icon}<img class="owner" src={icon} alt="" />{/if}<span class="words"
+	>{#if icon}<img
+			class="owner"
+			src={icon}
+			alt=""
+			{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
+		/>{/if}<span class="words"
 		>{label ?? t('characters.reminder')}{#if count > 1}<span class="count">×{count}</span
 			>{/if}{#if done}<span class="tick" aria-label={t('characters.reminderPlaced')}>✓</span
 			>{/if}</span

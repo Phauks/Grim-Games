@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
-	import { iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
+	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
 
 	/**
@@ -190,6 +191,7 @@
 				{src}
 				alt=""
 				draggable="false"
+				{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
 			/>{/if}
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
 		{#if label}<span class="label">{label}</span>{/if}
