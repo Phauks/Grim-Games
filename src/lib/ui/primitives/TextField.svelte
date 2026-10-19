@@ -28,6 +28,11 @@
 		spellcheck?: boolean;
 		/** A multi-line field that fills the height its parent gives it, instead of `rows`. */
 		grow?: boolean;
+		/**
+		 * A multi-line field with no resize grip that grows with its text from `rows` up, and
+		 * scrolls past most of the screen's height (seat notes: Trevor, 2026-10-19).
+		 */
+		autogrow?: boolean;
 		placeholder?: string;
 		maxlength?: number;
 		required?: boolean;
@@ -61,6 +66,7 @@
 		enterkeyhint = 'done',
 		spellcheck,
 		grow = false,
+		autogrow = false,
 		placeholder,
 		maxlength,
 		required = false,
@@ -75,6 +81,16 @@
 		plain = false
 	}: Props = $props();
 
+	let area = $state<HTMLTextAreaElement>();
+	$effect(() => {
+		void value;
+		if (!autogrow || !area) return;
+		// Back to `rows` first, so deleting text shrinks it again.
+		area.style.height = '';
+		const border = area.offsetHeight - area.clientHeight;
+		area.style.height = `${Math.max(area.scrollHeight + border, area.offsetHeight)}px`;
+	});
+
 	function onkeydown(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
 		if (event.key !== 'Enter' || event.isComposing) return;
 		event.preventDefault();
@@ -82,10 +98,18 @@
 	}
 </script>
 
-<label class={['text-field', grow && multiline && 'grow', plain && 'plain']}>
+<label
+	class={[
+		'text-field',
+		grow && multiline && 'grow',
+		autogrow && multiline && 'autogrow',
+		plain && 'plain'
+	]}
+>
 	<span class={hideLabel ? 'visually-hidden' : 'label'}>{label}</span>
 	{#if multiline}
 		<textarea
+			bind:this={area}
 			bind:value
 			{rows}
 			{placeholder}
@@ -161,6 +185,10 @@
 	}
 	.grow textarea {
 		height: 100%;
+		resize: none;
+	}
+	.autogrow textarea {
+		max-height: 60dvh;
 		resize: none;
 	}
 	.plain,

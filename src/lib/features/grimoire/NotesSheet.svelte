@@ -64,7 +64,7 @@
 			? ''
 			: editing === 'game'
 				? 'Game notes'
-				: `Notes for ${seatLabel(game, editing)}`
+				: `Note: ${game.seats[editing]?.playerName ?? `Seat ${game.seating.indexOf(editing) + 1}`}`
 	);
 </script>
 
@@ -116,8 +116,7 @@
 </BottomSheet>
 
 {#snippet seatCharacter()}
-	<!-- A player's note says whose it is: seat and name in the title, character here
-	     (Trevor, 2026-10-19). -->
+	<!-- "Note: Ana", then her character on its own line (Trevor, 2026-10-19). -->
 	{@const seat = editing && editing !== 'game' ? game.seats[editing] : undefined}
 	{#if seat?.characterId}
 		<CharacterBadge
@@ -136,19 +135,27 @@
 	title={editTitle}
 	subtitle={editing === undefined || editing === 'game' ? undefined : seatCharacter}
 >
-	<!-- Several lines: Enter starts a new line. Kept on close. Never shown to players. -->
-	<TextField
-		label={editTitle}
-		hideLabel
-		multiline
-		rows={5}
-		bind:value={draft}
-		disabled={viewOnly}
-		testid="note-editor"
-	/>
+	<!-- Several lines: Enter starts a new line, and the field grows with them. Kept on
+	     close. Never shown to players. -->
+	<div class="editor">
+		<TextField
+			label={editTitle}
+			hideLabel
+			multiline
+			rows={5}
+			bind:value={draft}
+			disabled={viewOnly}
+			testid="note-editor"
+			autogrow
+		/>
+	</div>
 </Dialog>
 
 <style>
+	/* Room between the character badge above and the field (Trevor, 2026-10-19). */
+	.editor {
+		padding-top: var(--space-3);
+	}
 	.notes {
 		display: grid;
 		gap: var(--space-4);
