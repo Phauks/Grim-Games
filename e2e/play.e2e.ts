@@ -183,6 +183,23 @@ test('tapping a player count highlights its column, and it is remembered', async
 	await expect(seven).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('First night and Other nights each close from their header, remembered', async ({ page }) => {
+	// Trevor, 2026-10-19: both nights collapsible.
+	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
+	const first = page.getByRole('button', { name: 'First night' });
+	const other = page.getByRole('button', { name: 'Other nights' });
+	await expect(first).toHaveAttribute('aria-expanded', 'true');
+	await expect(other).toHaveAttribute('aria-expanded', 'true');
+	await first.tap();
+	await expect(first).toHaveAttribute('aria-expanded', 'false');
+	await expect(page.locator('section[data-night="first"] li[data-step="poisoner"]')).toBeHidden();
+	await expect(page.locator('section[data-night="other"] li[data-step="poisoner"]')).toBeVisible();
+	await page.reload();
+	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
+	await expect(first).toHaveAttribute('aria-expanded', 'false');
+	await expect(other).toHaveAttribute('aria-expanded', 'true');
+});
+
 test("the night order shows who wakes, with TPI's night text", async ({ page }) => {
 	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
 	const first = page.locator('section[data-night="first"]');
