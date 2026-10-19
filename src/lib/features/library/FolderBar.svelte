@@ -85,7 +85,7 @@
 		if (!here) return [];
 		const inside = folderAndDescendants(labels, here.id);
 		return [
-			{ value: TOP, label: t('library.heading') },
+			{ value: TOP, label: t('library.home') },
 			...folderTree(labels)
 				.filter(({ folder }) => !inside.has(folder.id))
 				.map(({ folder }) => ({ value: folder.id, label: pathName(folder.id) }))
@@ -123,11 +123,11 @@
 						type="button"
 						class="crumb root"
 						data-drop-folder={TOP_FOLDER}
-						title={t('library.heading')}
+						title={t('library.home')}
 						onclick={() => (current = undefined)}>{@render root()}</button
 					>
 				{:else}
-					<span class="crumb root" aria-current="location" title={t('library.heading')}
+					<span class="crumb root" aria-current="location" title={t('library.home')}
 						>{@render root()}</span
 					>
 				{/if}
@@ -195,9 +195,9 @@
 	</div>
 </div>
 
-<!-- The top level is a home icon, which saves room (Trevor, 2026-10-18); it still reads "Library". -->
+<!-- The top level is a home icon, which saves room (Trevor, 2026-10-18); it reads "Home". -->
 {#snippet root()}
-	<Icon name="home" /><span class="visually-hidden">{t('library.heading')}</span>
+	<Icon name="home" /><span class="visually-hidden">{t('library.home')}</span>
 {/snippet}
 
 <FolderNameDialog bind:open={nameOpen} folder={naming?.folder} parent={here?.id} />
@@ -227,7 +227,7 @@
 		<p>
 			{t('library.deleteFolderBody', {
 				name: here.name,
-				parent: here.parent ? pathName(here.parent) : t('library.heading')
+				parent: here.parent ? pathName(here.parent) : t('library.home')
 			})}
 		</p>
 	{/if}

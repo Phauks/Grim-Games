@@ -254,6 +254,23 @@ export function folderAndDescendants(state: LibraryLabels, id: string): Set<stri
  * Moves a folder into another (or to the top level). Refused when the target is the folder
  * itself or inside it, or already holds a folder of that name.
  */
+/**
+ * Why a folder can't move into `parent` (the top level when none): a folder can't go inside
+ * itself or one of its own folders, and two folders side by side never share a name. Undefined
+ * when it can, or when it is already there.
+ */
+export function folderMoveProblem(
+	state: LibraryLabels,
+	id: string,
+	parent: string | undefined
+): 'inside' | 'nameTaken' | undefined {
+	const folder = state.folders.find((f) => f.id === id);
+	if (!folder || folder.parent === parent) return undefined;
+	if (parent !== undefined && folderAndDescendants(state, id).has(parent)) return 'inside';
+	if (!nameFree(siblings(state, 'folders', parent), folder.name, id)) return 'nameTaken';
+	return undefined;
+}
+
 export function moveFolder(
 	state: LibraryLabels,
 	id: string,
