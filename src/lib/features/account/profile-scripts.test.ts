@@ -7,6 +7,7 @@ import {
 	fromSavedScript,
 	migrateProfileScript,
 	onlineSourceLabel,
+	removedElsewhere,
 	type ProfileScript,
 	type ProfileScriptEntry
 } from './profile-scripts.ts';
@@ -112,5 +113,28 @@ describe('profile scripts', () => {
 			'pastebin.com'
 		);
 		expect(onlineSourceLabel({ kind: 'paste' })).toBe('None');
+	});
+});
+
+describe('removedElsewhere', () => {
+	it('finds scripts taken out of the profile since this device last looked', () => {
+		const seen = { a: 'json:one', b: 'json:two' };
+		expect(removedElsewhere(seen, [{ id: 'a', key: 'json:one' }])).toEqual({
+			gone: ['json:two'],
+			next: { a: 'json:one' }
+		});
+	});
+	it('remembers new and changed scripts without calling them gone', () => {
+		const seen = { a: 'json:one' };
+		expect(
+			removedElsewhere(seen, [
+				{ id: 'a', key: 'json:one-edited' },
+				{ id: 'c', key: 'json:three' }
+			])
+		).toEqual({ gone: [], next: { a: 'json:one-edited', c: 'json:three' } });
+	});
+	it('keeps a script whose content is still in the profile under another id', () => {
+		const seen = { a: 'json:one', b: 'json:one' };
+		expect(removedElsewhere(seen, [{ id: 'b', key: 'json:one' }]).gone).toEqual([]);
 	});
 });

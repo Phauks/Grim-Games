@@ -93,6 +93,23 @@ export function findMatch(
 	);
 }
 
+/**
+ * Which scripts another device took out of the profile (Library sync, 2026-10-19): `seen` is
+ * each profile script's id and content key as this device last saw them, `now` the profile's
+ * scripts now. Returns the content keys whose script is gone, and what to remember next.
+ */
+export function removedElsewhere(
+	seen: Readonly<Record<string, string>>,
+	now: readonly { id: string; key: string }[]
+): { gone: string[]; next: Record<string, string> } {
+	const next = Object.fromEntries(now.map(({ id, key }) => [id, key]));
+	const kept = new Set(now.map(({ key }) => key));
+	const gone = Object.entries(seen)
+		.filter(([id, key]) => !(id in next) && !kept.has(key))
+		.map(([, key]) => key);
+	return { gone: [...new Set(gone)], next };
+}
+
 /** Whether saving `next` over `current` would change anything. */
 export function differs(current: ProfileScript, next: ProfileScript): boolean {
 	return (

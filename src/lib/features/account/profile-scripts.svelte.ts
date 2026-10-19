@@ -3,6 +3,7 @@
  * `saveScriptToProfile` whenever a script is added on this device; the Account page lists,
  * checks, unlinks and removes them.
  */
+import { untrack } from 'svelte';
 import { loadScript, scriptToJson } from '#lib/core/data/index.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -14,11 +15,14 @@ import { account } from './account.svelte.ts';
 import type { ProfileDoc } from './account-protocol.ts';
 import { firstSignIn } from './first-sign-in.svelte.ts';
 import { accountSync } from './sync/sync.svelte.ts';
+import { libraryKey } from '#lib/features/library/library-labels.ts';
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 import {
 	differs,
 	findMatch,
 	fromSavedScript,
 	migrateProfileScript,
+	removedElsewhere,
 	type ProfileScript,
 	type ProfileScriptEntry
 } from './profile-scripts.ts';
@@ -66,6 +70,51 @@ firstSignIn.register('script', {
 		for (const saved of await deviceScripts()) await saveScriptToProfile(saved);
 	}
 });
+
+const SEEN_KEY = 'grim-games:profile-scripts-seen';
+
+interface Seen {
+	userId: string;
+	/** Each profile script's id and content key (`libraryKey`) when last seen here. */
+	scripts: Record<string, string>;
+}
+
+/**
+ * Library and profile scripts are one list (sync plan, Trevor 2026-10-18): a script removed
+ * on another device also leaves this device's Recent list, so the Library doesn't keep it.
+ */
+async function followRemovals(userId: string, now: { id: string; key: string }[]): Promise<void> {
+	const stored = readStored<Seen>(SEEN_KEY);
+	const seen = stored?.userId === userId && stored.scripts ? stored.scripts : {};
+	const { gone, next } = removedElsewhere(seen, now);
+	// No storage: nothing is remembered, so nothing is ever taken off this device.
+	writeStored(SEEN_KEY, { userId, scripts: next } satisfies Seen);
+	// Only scripts the account had: what this device kept to itself is never touched.
+	if (gone.length === 0) return;
+	const { recentScripts, restoreScripts, forgetScript } =
+		await import('#lib/features/scripts/current-script.svelte.ts');
+	await restoreScripts();
+	for (const saved of recentScripts.list) {
+		if (account.user?.id !== userId) return;
+		if (!saved.edition && gone.includes(libraryKey(saved))) await forgetScript(saved.scriptId);
+	}
+}
+
+if (typeof window !== 'undefined') {
+	$effect.root(() => {
+		$effect(() => {
+			const user = account.user;
+			if (!user || !accountSync.ready || !accountSync.pulled) return;
+			if (!accountSync.enabled('script')) return;
+			const now = entries.map((e) => ({ id: e.id, key: libraryKey({ json: e.script.json }) }));
+			untrack(() => {
+				void followRemovals(user.id, now).catch((e) =>
+					reportError(e, { area: 'account', notify: false })
+				);
+			});
+		});
+	});
+}
 
 /** Saves a script (undefined removes it); the change reaches the account in the background. */
 function put(id: string, script: ProfileScript | undefined): Promise<void> {
