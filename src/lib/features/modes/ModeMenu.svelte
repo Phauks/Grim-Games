@@ -18,19 +18,19 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { onLayerOpen } from '#lib/ui/primitives/layers.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { campaignOf } from './campaigns.ts';
 	import { findMode } from './custom-modes.svelte.ts';
 	import { readGameMode } from './game-mode-store.ts';
 	import { seedInPlay } from './in-play.ts';
+	import GameInfoEditDialog, { type GameInfoChanges } from './GameInfoEditDialog.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import { hasSpectatorVote } from './specters.ts';
 	import SpectersSheet from './SpectersSheet.svelte';
 	import { townGroupOf } from './town-groups.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
-	import NameDialog from '#lib/features/library/NameDialog.svelte';
-	import { MAX_STORYTELLER_NAME } from '#lib/features/game/storyteller-name.svelte.ts';
 
 	/**
 	 * The game's info and a game mode's own actions, on the board's corner script name (Trevor,
@@ -46,11 +46,12 @@
 		children?: Snippet;
 		open?: boolean;
 		/** Renames the Storyteller: their row is then tappable (Trevor, 2026-10-19: "edit storyteller name in bottom left"). */
-		onStorytellerName?: (name: string) => void;
+		/** Saves the Game info pencil's changes; without it Game info has no pencil. */
+		onEdit?: (changes: GameInfoChanges) => void;
 	}
 
-	let { game, children, open = $bindable(false), onStorytellerName }: Props = $props();
-	let renaming = $state(false);
+	let { game, children, open = $bindable(false), onEdit }: Props = $props();
+	let editing = $state(false);
 	const gameId = $derived(game.gameId);
 	// The corner's popover closes when a seat's sheet or another overlay opens over the board
 	// (Trevor, 2026-10-19: "Game info popup should close if other item is opened like a
@@ -80,6 +81,7 @@
 			value: scriptVersion(undefined, game.script.meta)
 		},
 		{ key: 'storyteller', label: t('modes.info.storyteller'), value: game.storytellerName },
+		{ key: 'players', label: t('modes.info.players'), value: String(game.seating.length) },
 		{ key: 'mode', label: t('modes.label'), value: (base ?? STANDARD).name },
 		{
 			key: 'rules',
@@ -148,17 +150,7 @@
 			{#each info as row (row.key)}
 				<tr data-field={row.key}>
 					<th scope="row">{row.label}</th>
-					<td>
-						{#if row.key === 'storyteller' && onStorytellerName}<Button
-								variant="quiet"
-								icon="rename"
-								data-testid="storyteller-edit"
-								onclick={() => {
-									open = false;
-									renaming = true;
-								}}>{row.value?.trim() || none}</Button
-							>{:else}{row.value?.trim() || none}{/if}
-					</td>
+					<td>{row.value?.trim() || none}</td>
 				</tr>
 			{/each}
 		</tbody>
@@ -242,19 +234,29 @@
 		{/each}
 	</div>
 {/snippet}
+{#snippet edit()}
+	{#if onEdit}<IconButton
+			icon="rename"
+			label={t('modes.info.edit')}
+			data-testid="game-info-edit"
+			onclick={() => {
+				open = false;
+				editing = true;
+			}}
+		/>{/if}
+{/snippet}
 {#if children}
-	<Popover bind:open title={t('modes.info.title')} {anchor}>{@render actions()}</Popover>
+	<Popover bind:open title={t('modes.info.title')} {anchor} headActions={edit}
+		>{@render actions()}</Popover
+	>
 {:else}
-	<Dialog bind:open title={t('modes.info.title')}>{@render actions()}</Dialog>
+	<Dialog bind:open title={t('modes.info.title')} headActions={edit}>{@render actions()}</Dialog>
 {/if}
-{#if onStorytellerName}
-	<NameDialog
-		bind:open={renaming}
-		title={t('modes.info.storyteller')}
-		initial={game.storytellerName ?? ''}
-		maxlength={MAX_STORYTELLER_NAME}
-		blankName={() => ''}
-		onsave={onStorytellerName}
+{#if onEdit}
+	<GameInfoEditDialog
+		bind:open={editing}
+		initial={{ storytellerName: game.storytellerName ?? '' }}
+		onsave={onEdit}
 	/>
 {/if}
 {#if inspected}<ModeInspectDialog bind:open={inspecting} mode={inspected} />{/if}
@@ -316,10 +318,6 @@
 		vertical-align: top;
 	}
 	/* The Storyteller's row is a button: its name, tapped to rename them. */
-	.info td :global(button) {
-		margin-block: calc(-1 * var(--space-1));
-		justify-content: flex-start;
-	}
 	.actions:empty {
 		display: none;
 	}

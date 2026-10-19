@@ -506,9 +506,33 @@ test('Print script prints the sheet, then the night order and player counts', as
 				fits: p.scrollHeight <= p.clientHeight + 1,
 				columns: p.dataset.columns
 			}));
+			// The front's night strips: each night's steps, as icons (Trevor, 2026-10-19).
+			(window as unknown as { strips: unknown }).strips = Object.fromEntries(
+				[...document.querySelectorAll<HTMLElement>('.front [data-night-strip]')].map((s) => [
+					s.dataset.nightStrip,
+					[...s.querySelectorAll<HTMLElement>('[data-step]')].map((li) => li.dataset.step)
+				])
+			);
 		};
 	});
 	await page.getByRole('button', { name: 'Print script' }).tap();
+	// Print offers the ways to print (Trevor, 2026-10-19): TPI's Script Tool by a plain link
+	// carrying this script, and our own sheet.
+	const routes = page.getByRole('dialog', { name: 'Print script' });
+	const tool = routes.getByRole('link', { name: 'Open in the official Script Tool' });
+	await expect(tool).toHaveAttribute(
+		'href',
+		/^https:\/\/script\.bloodontheclocktower\.com\/\?script=/
+	);
+	const href = (await tool.getAttribute('href'))!;
+	const json = await page.evaluate(async (link) => {
+		const payload = decodeURIComponent(new URL(link).searchParams.get('script')!);
+		const bytes = Uint8Array.from(atob(payload), (c) => c.charCodeAt(0));
+		const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+		return new Response(stream).text();
+	}, href);
+	expect(json).toContain('washerwoman');
+	await routes.getByRole('button', { name: 'Print our sheet' }).tap();
 	// Printing first waits up to five seconds for the sheet and its icons, so poll longer than that.
 	await expect
 		.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed), {
@@ -525,6 +549,12 @@ test('Print script prints the sheet, then the night order and player counts', as
 		'light'
 	);
 	await page.emulateMedia({ media: 'screen' });
+	const strips = await page.evaluate(
+		() => (window as unknown as { strips: Record<string, string[]> }).strips
+	);
+	expect(strips.first).toContain('washerwoman');
+	expect(strips.other).not.toContain('washerwoman');
+	expect(strips.other.length).toBeGreaterThan(0);
 	const pages = await page.evaluate(() => (window as unknown as { pages: unknown }).pages);
 	expect(pages).toEqual([
 		{ fits: true, columns: expect.stringMatching(/^[12]$/) },

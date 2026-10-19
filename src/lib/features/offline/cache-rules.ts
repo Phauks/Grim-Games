@@ -29,6 +29,8 @@ const OTHER_SUBSETS = /-(cyrillic|cyrillic-ext|greek|greek-ext|vietnamese)-[^/]*
 
 /** True for a build file the service worker should store at install time. */
 export function precached(path: string): boolean {
+	// Cloudflare reads the headers file and never serves it.
+	if (path === '/_headers') return false;
 	if (ICONS.test(path)) return false;
 	if (path.endsWith('.woff')) return false;
 	return !OTHER_SUBSETS.test(path);

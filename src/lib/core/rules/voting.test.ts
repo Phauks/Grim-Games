@@ -5,7 +5,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
-import { blockThreshold, ghostVotesLeft, livingByTeam } from './voting.ts';
+import {
+	blockThreshold,
+	counts,
+	ghostVotesLeft,
+	livingByTeam,
+	seatsBehind,
+	type DayCount
+} from './voting.ts';
 
 describe('blockThreshold', () => {
 	it('is half the living players, rounded up', () => {
@@ -51,5 +58,34 @@ describe('ghostVotesLeft', () => {
 			{ type: 'SpendGhostVote', seatId: seats[1] }
 		).game;
 		expect(ghostVotesLeft(g)).toBe(1);
+	});
+});
+
+describe('seatsBehind', () => {
+	it('lists the seats each day count is made of, and counts the same number', () => {
+		const { session, ctx, seats } = newGame(5);
+		const g = run(
+			session,
+			ctx,
+			...['imp', 'chef', 'empath', 'poisoner'].map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			})),
+			{ type: 'SetDead', seatId: seats[1], dead: true },
+			{ type: 'SetDead', seatId: seats[2], dead: true },
+			{ type: 'SpendGhostVote', seatId: seats[2] }
+		).game;
+		expect(seatsBehind(g, 'alive')).toEqual(seats);
+		expect(seatsBehind(g, 'good')).toEqual([]);
+		expect(seatsBehind(g, 'evil')).toEqual([seats[0], seats[3]]);
+		expect(seatsBehind(g, 'ghostVotes')).toEqual([seats[1], seats[2]]);
+		const total = (count: DayCount) =>
+			seatsBehind(g, count).filter((s) => counts(g, count, s)).length;
+		const teams = livingByTeam(g);
+		expect(total('alive')).toBe(teams.alive);
+		expect(total('good')).toBe(teams.good);
+		expect(total('evil')).toBe(teams.evil);
+		expect(total('ghostVotes')).toBe(ghostVotesLeft(g));
 	});
 });

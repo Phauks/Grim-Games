@@ -65,10 +65,14 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
 }
 
 /**
- * The reminder bank's phase button, at its right end (Trevor, 2026-10-19): Start game, End
- * night, End day, or Run night (Run Night Order) for a walk-through stopped mid-night.
+ * The reminder bank's phase button, at its right end (Trevor, 2026-10-19): Set up while
+ * tokens are still to be handed out, Start game, End night, End day, or Run night (Run Night
+ * Order) for a walk-through stopped mid-night.
  */
-const bankNight = (page: Page, name: 'Start game' | 'Run Night Order' | 'End night' | 'End day') =>
+const bankNight = (
+	page: Page,
+	name: 'Set up' | 'Start game' | 'Run Night Order' | 'End night' | 'End day'
+) =>
 	page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -523,7 +527,11 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 }) => {
 	await startGame(page);
 	const board = page.url();
-	await page.getByRole('button', { name: 'Set up' }).tap();
+	// Set up is the bank's end cell while tokens are still to be handed out (Trevor,
+	// 2026-10-19: "a lot of the game flow comes from that button"), and nowhere else.
+	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(1);
+	await expect(bankNight(page, 'Start game')).toHaveCount(0);
+	await bankNight(page, 'Set up').tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// The last setup step opens the board, whose bank starts with the setup reminders.
 	await page.goto(`${board}#setup-reminders`);
@@ -783,10 +791,13 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
 		/Drunk moved from\s+Sailor.* to Seat 3/
 	);
-	// Filtered by a character (Trevor, 2026-10-16): only entries naming the Sailor.
+	// Filtered by player (Trevor, 2026-10-19): only entries naming Seat 1, the Sailor's seat;
+	// the Drunk reminder's own character is no filter.
 	const history = page.getByRole('dialog', { name: 'History' });
 	const filter = history.getByRole('group', { name: 'Show changes for' });
-	await filter.getByRole('button', { name: 'Sailor' }).tap();
+	await expect(filter.getByRole('button', { name: 'Sailor' })).toHaveCount(0);
+	await expect(filter.getByRole('button', { name: 'Seat 3' })).toBeVisible();
+	await filter.getByRole('button', { name: 'Seat 1', exact: true }).tap();
 	await expect(filter.getByRole('button', { name: 'All' })).toHaveAttribute(
 		'aria-pressed',
 		'false'
@@ -979,8 +990,10 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	await expect(share.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');
-	// The link is the room's: phones that join get the script, names and deaths only.
-	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join/${code}$`));
+	// The link is the room's: phones that join get the script, names and deaths only. The
+	// view-only grimoire link comes after it, off.
+	await expect(share.getByTestId('share-url').first()).toHaveValue(new RegExp(`/join/${code}$`));
+	await expect(share.getByTestId('watch-link').getByTestId('share-url')).toHaveValue('');
 	expect(page.url()).toBe(url);
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	await expect(share).toBeHidden();
@@ -3648,14 +3661,16 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const board = page.url();
-	// Always in place, so the bank never moves; usable once a seat has a token.
+	// Always in place, so the bank never moves: Set up until the tokens are handed out
+	// (Trevor, 2026-10-19), then Start game.
 	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
 	const button = (name: string) => bank.getByRole('button', { name, exact: true });
 	const start = button('Start game');
 	const run = button('Run Night Order');
 	const end = button('End night');
 	const endDay = button('End day');
-	await expect(start).toBeDisabled();
+	await expect(button('Set up')).toBeEnabled();
+	await expect(start).toHaveCount(0);
 	await page.goto(`${new URL(board).pathname}/setup`);
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Chef', 'Fortune Teller', 'Poisoner', 'Imp'])
 		await page.getByRole('button', { name, exact: true }).first().tap();
@@ -3877,12 +3892,23 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	const text = page.getByTestId('reminder-note');
 	await text.fill('Chose Sam');
 	await text.press('Enter');
+	// Its own symbol (Trevor, 2026-10-19: chosen per token); none by default.
+	await page.getByRole('combobox', { name: 'Symbol' }).tap();
+	await page.getByRole('option', { name: 'Owl', exact: true }).tap();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
 	const placed = page.locator(
 		'[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]'
 	);
 	await expect(placed).toHaveCount(1);
+	// Look C: a dashed ring inside the rim, the chosen symbol in the middle; the bank's stays blank.
+	await expect(placed.locator('[data-symbol="🦉"]')).toBeVisible();
+	expect(await placed.evaluate((el) => getComputedStyle(el, '::before').borderStyle)).toBe(
+		'dashed'
+	);
+	await expect(
+		bank.getByRole('button', { name: 'Generic reminder' }).locator('[data-symbol]')
+	).toHaveCount(0);
 	// A rim round the token and its words, like every other reminder (Trevor, 2026-10-19).
 	const colours = await placed.evaluate((el) => {
 		const css = getComputedStyle(el);
@@ -4144,10 +4170,13 @@ test('the Storyteller is named on the Characters screen and renamed from the cor
 	await page.keyboard.press('Escape');
 	await expect(more).toBeHidden();
 	await openGameInfo(page);
-	const info = page.getByRole('dialog', { name: 'Game info' });
-	await info.getByTestId('storyteller-edit').tap();
-	const dialog = page.getByRole('dialog', { name: 'Storyteller' });
-	const name = dialog.getByRole('textbox', { name: 'Name' });
+	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
+	// One pencil in Game info's header edits what can change (Trevor, 2026-10-19).
+	await expect(info.locator('tr[data-field="storyteller"] button')).toHaveCount(0);
+	await info.getByTestId('game-info-edit').tap();
+	await expect(info).toBeHidden();
+	const dialog = page.getByRole('dialog', { name: 'Edit game info' });
+	const name = dialog.getByRole('textbox', { name: 'Storyteller' });
 	await expect(name).toHaveValue('Trev');
 	await name.fill('Sam');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
@@ -4165,11 +4194,13 @@ test('the corner script name opens the game’s info, in a Standard game too', a
 	// Trevor, 2026-10-19: "Allow tapping on the script name ... even in normal mode".
 	await startGame(page);
 	await nameStoryteller(page, 'Trev');
-	const dialog = page.getByRole('dialog', { name: 'Game info' });
+	const dialog = page.getByRole('dialog', { name: 'Game info', exact: true });
 	const row = (field: string) => dialog.locator(`tr[data-field="${field}"] td`);
 	await openGameInfo(page);
 	await expect(row('script')).toHaveText('Trouble Brewing');
 	await expect(row('storyteller')).toHaveText('Trev');
+	// Trevor, 2026-10-19: "In Game info, include player count as well".
+	await expect(row('players')).toHaveText(String(await page.getByTestId('seat').count()));
 	await expect(row('mode')).toHaveText('Standard');
 	await expect(row('rules')).toHaveText('None');
 	await expect(row('version')).toHaveText('None');
@@ -4182,7 +4213,7 @@ test('the corner’s Game info closes when a seat opens', async ({ page }) => {
 	// A phone before setup has no room for the corner name; Game info is then a ⋯ dialog.
 	if (!(await corner.isVisible())) return;
 	await corner.tap();
-	const info = page.getByRole('dialog', { name: 'Game info' });
+	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
 	await expect(info).toBeVisible();
 	await openSeat(page, 1);
 	await expect(info).toBeHidden();
@@ -4362,4 +4393,49 @@ test('when the Imp kills itself, a living Minion is chosen to become the Imp', a
 	await expect(seatLabelled(page, 'Seat 4: no name, Imp')).toBeAttached();
 	await expect(seatLabelled(page, 'Seat 3: no name, Imp')).toHaveAttribute('aria-label', /dead/);
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});
+
+test('a player whose character changed since dawn is woken that night to learn it', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		if (number === 1) await nameSeat(sheet, 'Sam');
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for ${number === 1 ? 'Sam' : 'Seat 2'}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await endNight(page);
+	await page.getByRole('dialog', { name: 'Day 1' }).getByRole('button', { name: 'Close' }).tap();
+
+	// The Poisoner becomes the Imp (https://wiki.bloodontheclocktower.com/Imp: the new Imp is
+	// woken and shown the Imp token).
+	const sheet = await openSeat(page, 1);
+	await seatMenu(page, sheet, 'Change character');
+	await page
+		.getByRole('dialog', { name: 'Character for Sam' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'Change character?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await closeSheet(page);
+
+	const strip = await walkTo(page, 'Dusk');
+	for (let i = 0; i < 30 && !(await lastStep(strip)); i++)
+		await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip.locator('.step .name strong')).toHaveText('Imp');
+	await expect(strip).toContainText('Sam');
+	await expect(strip).toContainText('Wake this player.');
+	await expect(strip).toContainText('You are');
 });

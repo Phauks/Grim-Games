@@ -8,16 +8,24 @@
  * ordinary command, so it shows in History and can be rolled back.
  */
 import type { Script } from '#lib/core/data/index.ts';
-import type { SeatId } from '#lib/core/model/index.ts';
+import { toSavedGame } from '#lib/core/engine/index.ts';
+import type { GameId, SeatId } from '#lib/core/model/index.ts';
 import { publicProjection, type PublicGameState } from '#lib/core/sync/public-projection.ts';
 import {
+	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
 	type RoomMember,
 	type RoomRequest,
 	type ServerMessage,
+	type SharedGrimoire,
 	type VoteTally
 } from '#lib/core/sync/room.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
+import {
+	reminderCopyIds,
+	reminderSpots,
+	seatLayouts
+} from '#lib/features/grimoire/device-notes.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { randomKey, RoomSocket, sha256Hex } from './room-socket.svelte.ts';
 
@@ -26,7 +34,23 @@ const STORAGE_KEY = 'grim-games-room-host';
 interface StoredRoom {
 	code: string;
 	key: string;
+	/** The key in the view-only grimoire link, while it is on. */
+	viewerKey?: string;
 }
+
+/** The board's own notes a viewer needs to draw the grimoire as this device does. */
+export type BoardNotes = Pick<SharedGrimoire, 'layout' | 'reminderSpots' | 'copies'>;
+
+function storedNotes(gameId: GameId): BoardNotes {
+	return {
+		layout: seatLayouts.read(gameId),
+		reminderSpots: reminderSpots.read(gameId),
+		copies: [...reminderCopyIds.read(gameId)]
+	};
+}
+
+/** Changes are gathered for this long before the grimoire is sent to viewers again. */
+const GRIMOIRE_DELAY_MS = 300;
 
 export class RoomHost {
 	code = $state<string>();
@@ -38,6 +62,17 @@ export class RoomHost {
 	problem = $state(false);
 	/** True while a room is being opened. */
 	opening = $state(false);
+	/**
+	 * The key in the view-only grimoire link while the Storyteller has it on (Specters,
+	 * Trevor 2026-10-18). Viewers see everything, so it is off until turned on, and turning
+	 * it on again makes a new link.
+	 */
+	viewerKey = $state<string>();
+	/** True when the grimoire is too large to send to viewers. */
+	grimoireTooLarge = $state(false);
+	#viewerKeyHash: string | undefined;
+	#grimoire: SharedGrimoire | undefined;
+	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
 	#socket = $state.raw<RoomSocket>();
 	#game: OpenGame | undefined;
@@ -47,7 +82,10 @@ export class RoomHost {
 
 	constructor() {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
-		if (stored?.code && stored.key) this.#connect(stored);
+		if (stored?.code && stored.key) {
+			if (stored.viewerKey) void this.#useViewerKey(stored.viewerKey);
+			this.#connect(stored);
+		}
 	}
 
 	get status() {
@@ -96,6 +134,34 @@ export class RoomHost {
 		}
 	}
 
+	/** Turns the view-only grimoire link on, with a new key, or off for every viewer. */
+	async setViewers(on: boolean): Promise<void> {
+		if (on === !!this.viewerKey) return;
+		const stored = readStored<StoredRoom>(STORAGE_KEY);
+		if (!stored) return;
+		if (on) {
+			const key = randomKey();
+			writeStored(STORAGE_KEY, { ...stored, viewerKey: key });
+			await this.#useViewerKey(key);
+		} else {
+			const { viewerKey: _off, ...rest } = stored;
+			void _off;
+			writeStored(STORAGE_KEY, rest);
+			this.viewerKey = undefined;
+			this.#viewerKeyHash = undefined;
+			this.#socket?.send({ type: 'viewers', keyHash: null });
+		}
+	}
+
+	async #useViewerKey(key: string): Promise<void> {
+		this.viewerKey = key;
+		const hash = await sha256Hex(key);
+		if (this.viewerKey !== key) return;
+		this.#viewerKeyHash = hash;
+		this.#socket?.send({ type: 'viewers', keyHash: hash });
+		this.#sendGrimoire();
+	}
+
 	/** Deletes the room for everyone in it. */
 	close(): void {
 		this.#socket?.send({ type: 'close' });
@@ -107,11 +173,20 @@ export class RoomHost {
 	 * device. Any open game will do, including one still in setup: phones get the script as
 	 * soon as they join, before anyone has a seat.
 	 */
-	attach(game: OpenGame): void {
+	attach(game: OpenGame, notes?: () => BoardNotes): void {
 		if (this.#game === game) return;
 		this.#stopWatching?.();
 		this.#game = game;
 		this.#stopWatching = $effect.root(() => {
+			// The whole grimoire, for the view-only link while it is on.
+			$effect(() => {
+				if (!this.viewerKey) return;
+				const saved = toSavedGame(game.session, Date.now());
+				this.#queueGrimoire({
+					saved: saved as unknown as Record<string, unknown>,
+					...(notes?.() ?? storedNotes(game.game.gameId))
+				});
+			});
 			$effect(() => {
 				const state = publicProjection(game.game);
 				this.#publish({ gameId: game.game.gameId, state });
@@ -181,6 +256,19 @@ export class RoomHost {
 		}
 	}
 
+	#queueGrimoire(grimoire: SharedGrimoire): void {
+		this.#grimoire = grimoire;
+		clearTimeout(this.#grimoireTimer);
+		this.#grimoireTimer = setTimeout(() => this.#sendGrimoire(), GRIMOIRE_DELAY_MS);
+	}
+
+	#sendGrimoire(): void {
+		if (!this.#grimoire || !this.#viewerKeyHash) return;
+		const message = { type: 'grimoire', grimoire: this.#grimoire } as const;
+		this.grimoireTooLarge = JSON.stringify(message).length > MAX_GRIMOIRE_BYTES;
+		if (!this.grimoireTooLarge) this.#socket?.send(message);
+	}
+
 	#publish(published: { gameId: string; state: PublicGameState }): void {
 		this.#published = published;
 		this.#resend();
@@ -189,6 +277,12 @@ export class RoomHost {
 	#resend(): void {
 		if (this.#published) this.#socket?.send({ type: 'publish', ...this.#published });
 		if (this.#script) this.#socket?.send({ type: 'script', script: this.#script });
+		// While a stored key's hash is still being worked out, say nothing about viewers.
+		if (!this.viewerKey) this.#socket?.send({ type: 'viewers', keyHash: null });
+		else if (this.#viewerKeyHash) {
+			this.#socket?.send({ type: 'viewers', keyHash: this.#viewerKeyHash });
+			this.#sendGrimoire();
+		}
 	}
 
 	#forget(): void {
@@ -198,6 +292,10 @@ export class RoomHost {
 		this.members = [];
 		this.requests = [];
 		this.vote = undefined;
+		this.viewerKey = undefined;
+		this.#viewerKeyHash = undefined;
+		this.#grimoire = undefined;
+		clearTimeout(this.#grimoireTimer);
 		writeStored(STORAGE_KEY, undefined);
 	}
 }
@@ -216,6 +314,6 @@ export function prepareRoom(): void {
 }
 
 /** Called wherever a game is open on the Storyteller's device, so phones follow it live. */
-export function attachRoom(game: OpenGame): void {
-	roomHost().attach(game);
+export function attachRoom(game: OpenGame, notes?: () => BoardNotes): void {
+	roomHost().attach(game, notes);
 }

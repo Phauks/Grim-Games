@@ -10,7 +10,7 @@ import {
 } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { historyItems, seatChanges } from './history.ts';
+import { historyItems, itemSeats, seatChanges } from './history.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -32,6 +32,8 @@ function play(...commands: ((s: GameSession) => Command)[]): GameSession {
 
 const first = (s: GameSession) => s.game.seating[0];
 const second = (s: GameSession) => s.game.seating[1];
+const named = (s: GameSession, name: string) =>
+	s.game.seating.find((id) => s.game.seats[id].playerName === name)!;
 
 describe('historyItems', () => {
 	// Trevor (2026-10-18): drawing a token and confirming it are one line, and one step.
@@ -50,14 +52,14 @@ describe('historyItems', () => {
 		const items = historyItems(session.log.entries, session.log.cursor, characters);
 		expect(items.map((i) => i.cursor)).toEqual([4, 2, 1]);
 		expect(items[0].parts).toEqual([
-			{ kind: 'text', text: 'Seat 1' },
+			{ kind: 'text', text: 'Seat 1', seats: [first(session)] },
 			{ kind: 'text', text: ' drew ' },
 			{ kind: 'character', characterId: 'chef' }
 		]);
 		// Not yet confirmed: the draw has its own line.
 		const drawn = historyItems(session.log.entries.slice(0, 3), 3, characters);
 		expect(drawn[0].parts).toEqual([
-			{ kind: 'text', text: 'Seat 1' },
+			{ kind: 'text', text: 'Seat 1', seats: [first(session)] },
 			{ kind: 'text', text: ' drew a token' }
 		]);
 	});
@@ -68,15 +70,16 @@ describe('historyItems', () => {
 			(s) => ({ type: 'SwapSeats', seatA: first(s), seatB: second(s) })
 		);
 		const items = historyItems(session.log.entries, session.log.cursor, characters);
+		const ana = named(session, 'Ana');
 		expect(items.map((i) => i.cursor)).toEqual([4, 3, 2, 1]);
 		expect(items[0].parts).toEqual([
 			{ kind: 'text', text: 'Swapped ' },
-			{ kind: 'seat', name: 'Ana', characterId: 'imp', alignment: 'evil' },
+			{ kind: 'seat', seatId: ana, name: 'Ana', characterId: 'imp', alignment: 'evil' },
 			{ kind: 'text', text: ' and ' },
-			{ kind: 'seat', name: 'Seat 2' }
+			{ kind: 'seat', seatId: first(session), name: 'Seat 2' }
 		]);
 		expect(items[1].parts).toEqual([
-			{ kind: 'text', text: 'Ana' },
+			{ kind: 'text', text: 'Ana', seats: [ana] },
 			{ kind: 'text', text: ' is ' },
 			{ kind: 'character', characterId: 'imp' }
 		]);
@@ -101,7 +104,7 @@ describe('historyItems', () => {
 		const [moved, rotated] = historyItems(session.log.entries, session.log.cursor, characters);
 		expect(rotated.parts).toEqual([{ kind: 'text', text: 'Rotated the seats clockwise' }]);
 		expect(moved.parts).toEqual([
-			{ kind: 'seat', name: 'Ana' },
+			{ kind: 'seat', seatId: named(session, 'Ana'), name: 'Ana' },
 			{ kind: 'text', text: ' moved to seat 4' }
 		]);
 	});
@@ -114,8 +117,32 @@ describe('historyItems', () => {
 			() => ({ type: 'SetDemonVoted', voted: true })
 		);
 		const [voted, nominated] = historyItems(session.log.entries, session.log.cursor, characters);
-		expect(nominated.parts).toEqual([{ kind: 'text', text: 'Ana nominated Ben' }]);
+		expect(nominated.parts).toEqual([
+			{ kind: 'text', text: 'Ana nominated Ben', seats: [first(session), second(session)] }
+		]);
 		expect(voted.parts).toEqual([{ kind: 'text', text: 'Demon voted' }]);
+	});
+});
+
+describe('itemSeats', () => {
+	// Trevor (2026-10-19): a Mayor turned Imp, beside an Imp, is filtered as two players.
+	it('names the seats an entry is about, whatever character each had', () => {
+		const session = play(
+			(s) => ({ type: 'AssignCharacter', seatId: first(s), characterId: 'mayor' }),
+			(s) => ({ type: 'AssignCharacter', seatId: second(s), characterId: 'imp' }),
+			(s) => ({ type: 'AssignCharacter', seatId: first(s), characterId: 'imp' }),
+			(s) => ({ type: 'SwapSeats', seatA: first(s), seatB: second(s) })
+		);
+		const [swapped, turned, imp, mayor] = historyItems(
+			session.log.entries,
+			session.log.cursor,
+			characters
+		);
+		const [a, b] = [second(session), first(session)];
+		expect(itemSeats(mayor)).toEqual([a]);
+		expect(itemSeats(imp)).toEqual([b]);
+		expect(itemSeats(turned)).toEqual([a]);
+		expect(itemSeats(swapped)).toEqual([a, b]);
 	});
 });
 

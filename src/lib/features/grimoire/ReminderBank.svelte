@@ -54,15 +54,15 @@
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
 		/**
-		 * At the bank's right end (Trevor, 2026-10-18): the game's next phase (Start game, End
-		 * night, End day, or Run night to pick a stopped walk-through up). Always there, so the
+		 * At the bank's right end (Trevor, 2026-10-18): the game's next phase (Set up, Start game,
+		 * End night, End day, or Run night to pick a stopped walk-through up). Always there, so the
 		 * bank never moves. `hint`: a count; each rise lights it up for a moment.
 		 */
 		run?: {
 			/** Its accessible name, and the shorter words shown. */
 			label: string;
 			text: string;
-			icon: 'day' | 'night';
+			icon: 'bag' | 'day' | 'night';
 			disabled: boolean;
 			onclick: () => void;
 			hint?: number;

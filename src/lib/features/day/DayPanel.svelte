@@ -22,11 +22,13 @@
 		type Night,
 		validDeathCauses,
 		daySentence,
-		type DayReminder,
+		type DayCount,
 		type ValidDeathCause
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CountDialog from './CountDialog.svelte';
+	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -272,25 +274,48 @@
 		}
 	}
 
-	function diedText(cause: DeathCause | undefined): string {
-		return cause === undefined
-			? t('day.diedNoCause')
-			: t('day.diedCause', { cause: causeLabel(cause) });
+	/**
+	 * Announcing a death (Trevor, 2026-10-19: "show the exact statement"): what to say, in
+	 * normal text, by seat and name and never by character; then for the Storyteller only,
+	 * in italics, the character and the cause.
+	 */
+	function spokenDeath(seatId: SeatId): string {
+		const seat = g.seating.indexOf(seatId) + 1;
+		const name = g.seats[seatId].playerName;
+		return name ? t('day.announce.died', { name, seat }) : t('day.announce.diedUnnamed', { seat });
 	}
+	function privateDeath(cause: DeathCause | undefined): string {
+		const how =
+			cause === undefined
+				? t('day.announce.noCause')
+				: cause === 'execution'
+					? t('day.announce.executed')
+					: cause === 'exile'
+						? t('day.announce.exiled')
+						: cause === 'demon'
+							? t('day.announce.demon')
+							: cause === 'other'
+								? t('day.announce.other')
+								: t('day.announce.killedBy', { killer: slot('cause') });
+		return t('day.announce.private', { character: slot('character'), how });
+	}
+	/** A dawn has come (End night), so "Nobody died in the night" means something. */
+	const dawned = $derived(
+		game.log.entries
+			.slice(0, game.log.cursor)
+			.some((e) => e.events.some((ev) => ev.type === 'DayStarted'))
+	);
+	/**
+	 * With "I See Dead People" on, deaths are never announced (World Cup thread, 2026-10-19):
+	 * the spoken line says so instead.
+	 */
+	const privateDeaths = $derived(gameModeOf(g.gameId)?.parts.deaths?.kind === 'private');
 
 	const reminders = $derived(
 		dayReminders(
 			dayStateFromGame(atDayStart(g), (id) => game.characters.get(id), undefined, game.characters)
 		)
 	);
-
-	/** The seat a reminder is about: its own character's badge. */
-	function seatOf(reminder: DayReminder): SeatId | undefined {
-		const self = reminder.segments.find(
-			(s) => s.kind === 'character' && s.ref.characterId === reminder.characterId
-		);
-		return self?.kind === 'character' ? self.ref.seatId : undefined;
-	}
 
 	function used(seatId: SeatId, characterId: CharacterId): boolean {
 		return (
@@ -321,6 +346,29 @@
 	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
 	const teams = $derived(livingByTeam(g));
 	const ghostVotes = $derived(ghostVotesLeft(g));
+	const aliveLabel = $derived(
+		t('day.aliveLabel', {
+			count: teams.alive,
+			total: g.seating.length,
+			good: teams.good,
+			evil: teams.evil
+		})
+	);
+	const goodLabel = $derived(t('day.goodLabel', { count: teams.good }));
+	const evilLabel = $derived(t('day.evilLabel', { count: teams.evil }));
+	const ghostLabel = $derived(t('day.ghostVotesLabel', { count: ghostVotes }));
+	const votesLabel = $derived(
+		t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })
+	);
+	// ── How a count was worked out, from tapping it ──
+	let countOpen = $state(false);
+	let countShown = $state<DayCount | 'votes'>();
+	let countTitle = $state('');
+	function openCount(count: DayCount | 'votes', title: string) {
+		countShown = count;
+		countTitle = title;
+		countOpen = true;
+	}
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
 	let toolbarSize = $state<ResizeObserverSize[]>();
 	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
@@ -346,33 +394,36 @@
 	});
 </script>
 
-{#snippet actions(characterId: CharacterId | undefined, seatId: SeatId | undefined)}
+<!--
+	A player's day buttons sit in their own tile under Players, beside their character and
+	name (Trevor, 2026-10-19, option B): Used for a once-per-game day ability, and Guesses for
+	the Juggler, whose guesses feed his night answer. Day notes are gone (Trevor, 2026-10-19).
+-->
+{#snippet tileActions(characterId: CharacterId | undefined, seatId: SeatId)}
 	<!-- eslint-disable grim/names-as-badges -- accessible names (aria-label) only -->
-	{@const who = seatId
-		? t('day.who', { character: game.characterName(characterId), seat: game.seatName(seatId) })
-		: game.characterName(characterId)}
+	{@const who = t('day.who', {
+		character: game.characterName(characterId),
+		seat: game.seatName(seatId)
+	})}
 	<!-- eslint-enable grim/names-as-badges -->
-	<span class="row-actions">
-		{#if characterId && seatId && isOnceOnlyDayAbility(characterId)}
-			{@const isUsed = used(seatId, characterId)}
-			<Chip
-				pressed={isUsed}
-				aria-label={t('day.usedLabel', { who })}
-				onclick={() => (isUsed ? askUnmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
-			>
-				<span class="tick" data-on={isUsed || undefined}><Icon name="check" /></span>{t('day.used')}
-			</Chip>
-		{/if}
-		{#if characterId}
-			<Chip
-				marked={hasNote({ characterId, seatId })}
-				aria-label={t('day.noteLabel', { who })}
-				onclick={() => openNote({ characterId, seatId })}
-			>
-				<Icon name="notes" />{t('day.note')}
-			</Chip>
-		{/if}
-	</span>
+	{#if characterId && isOnceOnlyDayAbility(characterId)}
+		{@const isUsed = used(seatId, characterId)}
+		<Chip
+			pressed={isUsed}
+			aria-label={t('day.usedLabel', { who })}
+			onclick={() => (isUsed ? askUnmarkUsed(seatId, characterId) : askUsed(seatId, characterId))}
+		>
+			<span class="tick" data-on={isUsed || undefined}><Icon name="check" /></span>{t('day.used')}
+		</Chip>
+	{:else if characterId === 'juggler'}
+		<Chip
+			marked={hasNote({ characterId, seatId })}
+			aria-label={t('day.guessesLabel', { who })}
+			onclick={() => openNote({ characterId, seatId })}
+		>
+			{t('day.guesses')}
+		</Chip>
+	{/if}
 {/snippet}
 
 <div class="panel" style:--toolbar-height={`${toolbarHeight}px`}>
@@ -399,61 +450,56 @@
 			or team colours; the words are in each one's accessible name.
 		-->
 		<div class="counts">
-			<span
+			<!-- Each one opens how it was worked out (Trevor, 2026-10-19). -->
+			<button
+				type="button"
 				class="badge"
-				role="note"
 				data-testid="alive-count"
-				aria-label={t('day.aliveLabel', {
-					count: teams.alive,
-					total: g.seating.length,
-					good: teams.good,
-					evil: teams.evil
-				})}
-				title={t('day.aliveLabel', {
-					count: teams.alive,
-					total: g.seating.length,
-					good: teams.good,
-					evil: teams.evil
-				})}
+				aria-label={aliveLabel}
+				title={aliveLabel}
+				onclick={() => openCount('alive', aliveLabel)}
 				><Icon name="alive" />{t('day.aliveBadge', {
 					count: teams.alive,
 					total: g.seating.length
-				})}</span
+				})}</button
 			>
-			<span
+			<button
+				type="button"
 				class="badge good"
 				data-testid="alive-good"
-				role="note"
-				aria-label={t('day.goodLabel', { count: teams.good })}
-				title={t('day.goodLabel', { count: teams.good })}>{teams.good}</span
+				aria-label={goodLabel}
+				title={goodLabel}
+				onclick={() => openCount('good', goodLabel)}>{teams.good}</button
 			>
-			<span
+			<button
+				type="button"
 				class="badge evil"
 				data-testid="alive-evil"
-				role="note"
-				aria-label={t('day.evilLabel', { count: teams.evil })}
-				title={t('day.evilLabel', { count: teams.evil })}>{teams.evil}</span
+				aria-label={evilLabel}
+				title={evilLabel}
+				onclick={() => openCount('evil', evilLabel)}>{teams.evil}</button
 			>
-			<span
+			<button
+				type="button"
 				class="badge"
-				role="note"
 				data-testid="ghost-votes"
-				aria-label={t('day.ghostVotesLabel', { count: ghostVotes })}
-				title={t('day.ghostVotesLabel', { count: ghostVotes })}
-				><Icon name="ghostVote" />{ghostVotes}</span
+				aria-label={ghostLabel}
+				title={ghostLabel}
+				onclick={() => openCount('ghostVotes', ghostLabel)}
+				><Icon name="ghostVote" />{ghostVotes}</button
 			>
 			<!--
 				Votes the first nominee needs to go on the block, from who is alive now, so a death
 				mid-day updates it. Nominations and votes are not tracked, so "more than the player
 				on the block" is left to the Storyteller.
 			-->
-			<span
+			<button
+				type="button"
 				class="badge votes"
-				role="note"
 				data-testid="votes-needed"
-				aria-label={t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })}
-				title={t('day.votesBadgeLabel', { count: block.needed, alive: block.alive })}
-				><Icon name="vote" />{block.needed}</span
+				aria-label={votesLabel}
+				title={votesLabel}
+				onclick={() => openCount('votes', votesLabel)}><Icon name="vote" />{block.needed}</button
 			>
 		</div>
 	</div>
@@ -473,21 +519,28 @@
 		<ul class="reminders" data-testid="announcements">
 			{#each died as death (death.seatId)}
 				{@const seat = g.seats[death.seatId]}
-				<li>
-					<CharacterEntry
-						characterId={seat.characterId}
-						alignment={seat.alignment}
-						playerName={game.seatName(seat.seatId)}
-						label={game.seatName(seat.seatId)}
+				<li class="death" data-seat={death.seatId}>
+					{#if privateDeaths}
+						<span class="dont-announce" data-testid="dont-announce">{t('day.announce.dont')}</span>
+					{:else}
+						<span class="spoken" data-testid="spoken">{spokenDeath(death.seatId)}</span>
+					{/if}
+					<em class="private" data-testid="storyteller-only"
+						><Sentence text={privateDeath(death.cause)}
+							>{#snippet fill(name)}{#if name === 'character'}{#if seat.characterId}<CharacterBadge
+											characterId={seat.characterId}
+											alignment={seat.alignment}
+											inline
+										/>{:else}{t('day.announce.noCharacter')}{/if}{:else}{@render badge(
+										death.cause
+									)}{/if}{/snippet}</Sentence
+						></em
 					>
-						<span class="sentence"
-							><Sentence text={diedText(death.cause)}
-								>{#snippet fill()}{@render badge(death.cause)}{/snippet}</Sentence
-							></span
-						>
-					</CharacterEntry>
 				</li>
 			{/each}
+			{#if died.length === 0 && dawned}
+				<li class="death"><span class="spoken">{t('day.announce.nobody')}</span></li>
+			{/if}
 			{#each announcers as a (a.character.id)}
 				<li data-character={a.character.id}>
 					<CharacterEntry
@@ -501,7 +554,7 @@
 					</CharacterEntry>
 				</li>
 			{/each}
-			{#if died.length === 0 && announcers.length === 0}
+			{#if died.length === 0 && !dawned && announcers.length === 0}
 				<li>{t('common.none')}</li>
 			{/if}
 		</ul>
@@ -513,39 +566,42 @@
 				{@const character = seat.characterId ? game.characters.get(seat.characterId) : undefined}
 				{@const icon = character && iconUrl(character, seat.alignment)}
 				{@const ghost = registersAsDead(g, seat.seatId) && !seat.ghostVoteUsed}
-				<button
-					type="button"
-					class="seat"
-					aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
-					data-dead={seat.dead}
-					onclick={() => tapSeat(seat.seatId)}
-				>
-					<!-- Icon two lines tall, character name above, player name below (Trevor). -->
-					<span class="seat-icon" aria-hidden="true"
-						><span class="face"
-							>{#if icon}<img
-									src={icon}
-									alt=""
-									width="40"
-									height="40"
-									{@attach iconFallback(character && fallbackIconUrl(character, seat.alignment))}
-								/>{/if}</span
-						><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span><span
-							class="ghost-mark"
-							data-testid="ghost-mark"
-							data-shown={ghost}
-							title={t('day.hasGhostVote')}><Icon name="ghostVote" /></span
-						></span
+				<div class="tile" data-team={seat.alignment ?? 'neutral'} data-dead={seat.dead}>
+					<button
+						type="button"
+						class="seat"
+						aria-label={t('day.seatButton', { name: game.seatName(seat.seatId) })}
+						data-dead={seat.dead}
+						onclick={() => tapSeat(seat.seatId)}
 					>
-					<span class="seat-text">
-						<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
-						<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
-							>{character?.name ?? t('day.noCharacter')}</span
+						<!-- Icon two lines tall, character name above, player name below (Trevor). -->
+						<span class="seat-icon" aria-hidden="true"
+							><span class="face"
+								>{#if icon}<img
+										src={icon}
+										alt=""
+										width="40"
+										height="40"
+										{@attach iconFallback(character && fallbackIconUrl(character, seat.alignment))}
+									/>{/if}</span
+							><span class="skull" data-testid="dead-mark"><Icon name="dead" /></span><span
+								class="ghost-mark"
+								data-testid="ghost-mark"
+								data-shown={ghost}
+								title={t('day.hasGhostVote')}><Icon name="ghostVote" /></span
+							></span
 						>
-						<!-- eslint-enable grim/names-as-badges -->
-						<span class="seat-player">{game.seatName(seat.seatId)}</span>
-					</span>
-				</button>
+						<span class="seat-text">
+							<!-- eslint-disable grim/names-as-badges -- caption beside its own icon -->
+							<span class="seat-character" data-team={seat.alignment ?? 'neutral'}
+								>{character?.name ?? t('day.noCharacter')}</span
+							>
+							<!-- eslint-enable grim/names-as-badges -->
+							<span class="seat-player">{game.seatName(seat.seatId)}</span>
+						</span>
+					</button>
+					{@render tileActions(seat.characterId, seat.seatId)}
+				</div>
 			{/each}
 		</div>
 		{#if hasFlowergirl && !assistance.demonVotedButton}
@@ -603,7 +659,6 @@
 										{/if}
 									{/each}
 								</span>
-								{@render actions(reminder.characterId, seatOf(reminder))}
 							</CharacterEntry>
 						</li>
 					{/each}
@@ -611,7 +666,7 @@
 			</Collapsible>
 		{/each}
 	{:else}
-		<Collapsible title={t('day.abilitiesAndNotes')} storageKey="day.abilities">
+		<Collapsible title={t('day.abilities')} storageKey="day.abilities">
 			<ul class="reminders">
 				{#each seats as seat (seat.seatId)}
 					{#if seat.characterId}
@@ -622,7 +677,6 @@
 								playerName={seat.playerName}
 							>
 								{@render ability(seat.characterId)}
-								{@render actions(seat.characterId, seat.seatId)}
 							</CharacterEntry>
 						</li>
 					{/if}
@@ -756,6 +810,8 @@
 	{/if}
 </ConfirmDialog>
 
+<CountDialog bind:open={countOpen} game={g} count={countShown} title={countTitle} />
+
 <style>
 	.panel {
 		display: grid;
@@ -774,9 +830,29 @@
 	}
 	.seats {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(10 * var(--u))), 1fr));
+		/* Always at least two columns, so a tile with a day button can take two of them. */
+		grid-template-columns: repeat(
+			auto-fill,
+			minmax(min(calc(50% - var(--space-1) / 2), calc(10 * var(--u))), 1fr)
+		);
 		gap: var(--space-1);
 		touch-action: manipulation;
+	}
+	/* The tile: the player button, and their day button beside it on the same line. */
+	.tile {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-1);
+		min-width: 0;
+		padding-right: var(--space-1);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
+	}
+	/* A day button needs room beside the names: the tile takes two columns. */
+	.tile:has(:global(.chip)) {
+		grid-column: span 2;
 	}
 	.seat {
 		display: grid;
@@ -787,9 +863,9 @@
 		gap: var(--space-2);
 		min-height: var(--tap-target);
 		padding: var(--space-1);
-		border: 1px solid var(--border);
+		border: none;
 		border-radius: var(--radius-md);
-		background: var(--surface-raised);
+		background: transparent;
 		color: var(--on-surface);
 		font: inherit;
 		text-align: start;
@@ -824,10 +900,10 @@
 		font-weight: var(--font-character-weight, 600);
 	}
 	/* Alignment as the rim colour, so names keep full contrast. */
-	.seat:has(.seat-character[data-team='good']) {
+	.tile[data-team='good'] {
 		border-left: 4px solid var(--good);
 	}
-	.seat:has(.seat-character[data-team='evil']) {
+	.tile[data-team='evil'] {
 		border-left: 4px solid var(--evil);
 	}
 	.seat-player {
@@ -921,11 +997,6 @@
 		font-family: var(--font-ability);
 		font-size: 0.9rem;
 	}
-	.row-actions {
-		display: inline-flex;
-		gap: var(--space-2);
-		margin-left: auto;
-	}
 	/* The tick is always laid out, so pressing Used never changes the chip's width. */
 	.tick {
 		display: inline-grid;
@@ -959,12 +1030,23 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
-	/* Team colour on the border only: the text stays readable on a phone (Trevor). */
+	.badge {
+		background: transparent;
+		color: inherit;
+		font-family: inherit;
+		cursor: pointer;
+	}
+	/* Filled in the team's colour, the number on top (Trevor, 2026-10-19). --on-good reads on
+	   both (badge-colours.test.ts). */
 	.badge.good {
 		border-color: var(--good);
+		background: var(--good);
+		color: var(--on-good);
 	}
 	.badge.evil {
 		border-color: var(--evil);
+		background: var(--evil);
+		color: var(--on-good);
 	}
 	.badge.votes {
 		border-color: var(--heading);
@@ -985,6 +1067,21 @@
 		/* A cool tint, unlike the parchment cause buttons. */
 		background: var(--good-wash);
 		border: 1px solid var(--good);
+	}
+	/* The words to say, then the Storyteller's own detail under them in italics. */
+	.death {
+		display: grid;
+		gap: var(--space-1);
+	}
+	.private {
+		color: var(--on-surface-muted);
+	}
+	.dont-announce {
+		justify-self: start;
+		padding: 0 var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		font-variant: small-caps;
 	}
 	.state {
 		margin: 0 0 var(--space-2);

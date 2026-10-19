@@ -56,11 +56,11 @@
 		name && name.length * fontSize * 0.62 > room ? room : undefined;
 
 	// Edge: along the bottom inside the rim, clear of the side leaves (at 180° and 0°). With
-	// the setup flower (at 45°) it stops short of the flower. The top of the rim belongs to the
-	// reminder leaves.
+	// the setup flower (at 45°) it stops short of the flower only when Settings > Tokens says so
+	// (off by default, Trevor 2026-10-19). The top of the rim belongs to the reminder leaves.
 	const EDGE_R = 37;
 	const EDGE_FROM = 150;
-	const edgeTo = $derived(flower ? 68 : 30);
+	const edgeTo = $derived(flower && appearance.setupMovesName ? 68 : 30);
 	const edgePath = $derived.by(() => {
 		const point = (degrees: number) => {
 			const a = (degrees * Math.PI) / 180;

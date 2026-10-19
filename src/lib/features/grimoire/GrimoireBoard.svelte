@@ -6,6 +6,7 @@
 	import { gameModeNames } from './game-mode-name.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
+	import { changedCharacters } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames } from './device-notes.ts';
@@ -103,6 +104,7 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
+	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
@@ -115,9 +117,14 @@
 
 	interface Props {
 		grimoire: Grimoire;
+		/**
+		 * Someone else's grimoire through the view-only link (Specters, Trevor 2026-10-18):
+		 * nothing to share or change, and leaving needs no asking.
+		 */
+		watching?: boolean;
 	}
 
-	let { grimoire }: Props = $props();
+	let { grimoire, watching = false }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.
@@ -244,6 +251,9 @@
 	 * Whether a step wakes anyone tonight: a step for no player (Dusk, Dawn), or one with a
 	 * living player, or one dead tonight whose ability is set off by dying (the Ravenkeeper's).
 	 */
+	/** Players whose character changed since dawn: tonight wakes them to learn it. */
+	const changed = $derived(changedCharacters(grimoire.open.session.log, game));
+
 	const diedTonight = $derived.by(() => {
 		const { entries, cursor } = grimoire.open.session.log;
 		return diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
@@ -263,8 +273,8 @@
 		if (!data || !preferences.current.tokenAppearance.nightNumbers) return undefined;
 		const counts = wakes;
 		return {
-			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data), counts),
-			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data), counts)
+			first: stepNightNumbers(boardNightSteps(game, characters, 'first', data, changed), counts),
+			other: stepNightNumbers(boardNightSteps(game, characters, 'other', data, changed), counts)
 		};
 	});
 	/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
@@ -734,7 +744,12 @@
 	/** This game's ending, if it has ended (End game below). */
 	let endedRead = $state(0);
 	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
-	/** Characters and Bag draw show in the middle until the game is set up, then go. */
+	/**
+	 * Tokens are still to be handed out (Trevor, 2026-10-19: "if there are tokens still in the
+	 * bag ... it should be Set Up"): no character chosen yet, or a bag not fully drawn. The
+	 * bank's end cell says Set up until then. Characters put on seats by hand, with no bag,
+	 * leave Start game there, so a game with empty seats can still start (warn, never lock).
+	 */
 	const showSetup = $derived(
 		// Never while looking back through History (Trevor, 2026-10-18): it is read-only.
 		!ended &&
@@ -742,7 +757,8 @@
 			!setUp &&
 			!arranging &&
 			!placing &&
-			game.seating.some((id) => game.seats[id].characterId === undefined)
+			(Object.keys(game.bag?.tiles ?? {}).length > 0 ||
+				!game.seating.some((id) => game.seats[id].characterId !== undefined))
 	);
 	let bluffsOpen = $state(false);
 	let historyOpen = $state(false);
@@ -761,14 +777,16 @@
 	// off by dying tonight; the night order sheet still lists every step, to open by hand.
 	const walkSteps = $derived.by(() => {
 		const data = officialData.current;
-		return walk && data ? boardNightSteps(game, characters, walk.night, data).filter(wakes) : [];
+		return walk && data
+			? boardNightSteps(game, characters, walk.night, data, changed).filter(wakes)
+			: [];
 	});
 	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
 	const guidedSteps = $derived.by(() => {
 		const data = officialData.current;
 		if (!guided || !data) return [];
 		const open = guided.step.id;
-		return boardNightSteps(game, characters, guided.night, data).filter(
+		return boardNightSteps(game, characters, guided.night, data, changed).filter(
 			(s) => s.id === open || wakes(s)
 		);
 	});
@@ -779,7 +797,9 @@
 		if (!guidedPending || !data) return;
 		const { night, stepId } = guidedPending;
 		guidedPending = undefined;
-		const step = boardNightSteps(game, characters, night, data).find((s) => s.id === stepId);
+		const step = boardNightSteps(game, characters, night, data, changed).find(
+			(s) => s.id === stepId
+		);
 		if (step) {
 			guided = { step, night };
 			guideOpen = true;
@@ -845,7 +865,7 @@
 		if (!data) return;
 		grimoire.beginNight();
 		const night = tonight(game);
-		const steps = boardNightSteps(game, characters, night, data).filter(wakes);
+		const steps = boardNightSteps(game, characters, night, data, changed).filter(wakes);
 		const next = steps.findIndex((step) => !grimoire.isNightStepDone(night, step));
 		walk = { night, index: Math.max(0, next) };
 	}
@@ -876,10 +896,19 @@
 			grimoire.toggleNightStep(night, { id: 'dusk' });
 		if (preferences.current.assistance.nightWalkthrough) runNight();
 	}
+	/** Setup's next step: Characters, or the bag draw once they are chosen. */
+	function openSetup() {
+		goto(
+			currentSetupStep(game) === 'draw'
+				? resolve('/grimoire/[gameId]/draw', { gameId: game.gameId })
+				: resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })
+		);
+	}
 	/**
-	 * The bank's button follows the game (Trevor, 2026-10-19): Start game before the first
-	 * night, End night during a night, End day during a day; a walk-through stopped mid-night
-	 * offers Run night to pick it up again.
+	 * The bank's button follows the game (Trevor, 2026-10-19): Set up while tokens are still
+	 * to be handed out (the game flow comes from this one button; the board has no other Set
+	 * up button), then Start game before the first night, End night during a night, End day
+	 * during a day; a walk-through stopped mid-night offers Run night to pick it up again.
 	 */
 	const bankRun = $derived.by(() => {
 		if (nightOn)
@@ -901,6 +930,16 @@
 				icon: 'night' as const,
 				disabled: !canRun,
 				onclick: runNight
+			};
+		// Set up stands in for Start game only: once a night or day is under way, the bank
+		// ends it, characters or not.
+		if (game.pastDays.length === 0 && showSetup)
+			return {
+				label: 'Set up',
+				text: 'Set up',
+				icon: 'bag' as const,
+				disabled: false,
+				onclick: openSetup
 			};
 		if (game.pastDays.length === 0)
 			return {
@@ -1053,6 +1092,7 @@
 	let pendingLeave: (() => void) | undefined;
 	let releaseGuard: (() => void) | undefined;
 	$effect(() => {
+		if (watching) return;
 		const gameId = game.gameId;
 		const release = setLeaveGuard(
 			(leave) => {
@@ -1073,6 +1113,7 @@
 	let trapped = false;
 	// After the setup and day hash handling below, which replaces the entry's state.
 	onMount(() => {
+		if (watching) return;
 		setTimeout(() => {
 			if (!page.state.inGame) pushState('', { inGame: true });
 			trapped = true;
@@ -1177,7 +1218,11 @@
 		!(showTitle && game.script.meta?.name) || (width > 0 && corner < 2 * rootFont)
 	);
 	let modeMenuOpen = $state(false);
-	const renameStoryteller = (name: string) => grimoire.run({ type: 'SetStorytellerName', name });
+	/** Game info's pencil: only what changed becomes a command, so undo stays meaningful. */
+	function editGameInfo(changes: GameInfoChanges) {
+		if (changes.storytellerName !== (game.storytellerName ?? ''))
+			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
+	}
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	let endHint = $state(0);
 	function fromMenu(action: () => void) {
@@ -1239,6 +1284,7 @@
 				<BoardReminder
 					label={reminderWords(last)}
 					infinite={isGeneric(last)}
+					symbol={last.symbol}
 					character={characters.get(last.characterId)}
 					alignment={placingAlignment(game, last.characterId, characters)}
 					size={Math.round(chip * 0.7)}
@@ -1382,7 +1428,7 @@
 			<Button variant="quiet" icon="close" onclick={() => (placing = undefined)}>Cancel</Button>
 		{:else}
 			<!-- The app's navigation; on the narrowest phones it is in More instead. -->
-			<span class="nav-menu"><NavMenuButton /></span>
+			<span class="nav-menu" class:watching><NavMenuButton /></span>
 			<!-- Icons on phones; with their words on wider screens, where there is room. -->
 			<span class="spacer"></span>
 			<Button variant="quiet" icon="day" aria-label="Day" onclick={() => (dayOpen = true)}
@@ -1393,22 +1439,26 @@
 			>
 			<!-- Sharing is never hidden in the menu (Trevor, 2026-10-16). Pointing at, focusing or
 			     pressing it starts opening the room, so the code and QR are ready. -->
-			<Button
-				variant="quiet"
-				icon="share"
-				aria-label="Share"
-				onpointerenter={prepareRoom}
-				onfocus={prepareRoom}
-				onpointerdown={prepareRoom}
-				onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
-			>
+			{#if !watching}
+				<Button
+					variant="quiet"
+					icon="share"
+					aria-label="Share"
+					onpointerenter={prepareRoom}
+					onfocus={prepareRoom}
+					onpointerdown={prepareRoom}
+					onclick={() => (phonesOpen = true)}><span class="tool-label">Share</span></Button
+				>
+			{/if}
 			<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16). -->
 			<Button variant="quiet" icon="script" aria-label="Script" onclick={() => (scriptOpen = true)}
 				><span class="tool-label">Script</span></Button
 			>
-			<Button variant="quiet" icon="more" aria-label="More" onclick={() => (menuOpen = true)}
-				><span class="tool-label">More</span></Button
-			>
+			{#if !watching}
+				<Button variant="quiet" icon="more" aria-label="More" onclick={() => (menuOpen = true)}
+					><span class="tool-label">More</span></Button
+				>
+			{/if}
 		{/if}
 	</div>
 
@@ -1502,6 +1552,7 @@
 						<BoardReminder
 							label={reminderWords(reminder)}
 							infinite={isGeneric(reminder)}
+							symbol={reminder.symbol}
 							character={characters.get(reminder.characterId)}
 							alignment={placingAlignment(game, reminder.characterId, characters)}
 							size={chip}
@@ -1536,6 +1587,7 @@
 				<BoardReminder
 					label={reminderWords(reminder)}
 					infinite={isGeneric(reminder)}
+					symbol={reminder.symbol}
 					character={characters.get(reminder.characterId)}
 					alignment={placingAlignment(game, reminder.characterId, characters)}
 					size={chip}
@@ -1557,6 +1609,7 @@
 				<BoardReminder
 					label={reminderWords(heldDrag)}
 					infinite={isGeneric(heldDrag)}
+					symbol={heldDrag.symbol}
 					character={characters.get(heldDrag.characterId)}
 					size={chip}
 					disabled
@@ -1667,7 +1720,7 @@
 				bind:clientHeight={titleH}
 			>
 				<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
-				<ModeMenu {game} onStorytellerName={renameStoryteller}
+				<ModeMenu {game} onEdit={watching ? undefined : editGameInfo}
 					><span
 						class="script-name"
 						class:mode={modeInName}
@@ -1693,21 +1746,6 @@
 		{/if}
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
-			{#if showSetup}
-				<div class="setup">
-					<!-- One setup flow (Trevor, 2026-10-16): Characters, Draw, then the reminders. -->
-					<Button
-						variant="accent"
-						icon="bag"
-						onclick={() =>
-							goto(
-								currentSetupStep(game) === 'draw'
-									? resolve('/grimoire/[gameId]/draw', { gameId: game.gameId })
-									: resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })
-							)}>Set up</Button
-					>
-				</div>
-			{/if}
 			{#if boardLooks.current.rulesAt === 'middle'}
 				{#if boardLooks.current.rulesGrouped && game.ruleCharacters.length > 0}
 					{@render rulesStack(Math.round(size * 0.8))}
@@ -1796,7 +1834,7 @@
 	</div>
 </Dialog>
 
-<ModeMenu {game} bind:open={modeMenuOpen} onStorytellerName={renameStoryteller} />
+<ModeMenu {game} bind:open={modeMenuOpen} onEdit={watching ? undefined : editGameInfo} />
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 <HeldReminderDialog
 	bind:this={heldDialog}
@@ -2228,22 +2266,11 @@
 		gap: var(--space-2);
 		max-width: 50%;
 	}
-	.setup {
-		display: grid;
-		gap: var(--space-2);
-	}
 	.script-scroll {
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-	}
-	/* The main action on a board that isn't set up yet (Trevor, 2026-10-16): large. */
-	.setup :global(.button) {
-		min-height: calc(2 * var(--tap-target));
-		padding-inline: var(--space-5);
-		font-size: 1.35rem;
-		--icon-size: 1.6rem;
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.backdrop {
@@ -2378,7 +2405,8 @@
 		display: none;
 	}
 	@media (max-width: 359.98px) {
-		.nav-menu {
+		/* Without More, a viewer's navigation stays on the toolbar. */
+		.nav-menu:not(.watching) {
 			display: none;
 		}
 		.menu-nav {

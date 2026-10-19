@@ -38,6 +38,11 @@ export interface ReminderInstance extends Reminder {
 	reminderId: ReminderId;
 	/** The Storyteller's own words on it; only the generic ∞ reminder has one so far. */
 	note?: string;
+	/**
+	 * What the generic reminder shows in its middle (Trevor, 2026-10-19: chosen per token): a
+	 * symbol's icon id or an emoji. None shows a blank token.
+	 */
+	symbol?: string;
 }
 
 /**

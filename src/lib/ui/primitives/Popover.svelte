@@ -15,10 +15,19 @@
 		anchor?: HTMLElement;
 		/** Taps on these elements do not dismiss it (another trigger that will switch it). */
 		keepOpenOn?: (target: Element) => boolean;
+		/** Extra icon buttons in the header, just before Close, as Dialog's. */
+		headActions?: Snippet;
 		children: Snippet;
 	}
 
-	let { open = $bindable(false), title, anchor, keepOpenOn, children }: Props = $props();
+	let {
+		open = $bindable(false),
+		title,
+		anchor,
+		keepOpenOn,
+		headActions,
+		children
+	}: Props = $props();
 
 	/**
 	 * An overlay under this one closed (a step dialog with a glossary word open in it). Zag
@@ -60,6 +69,7 @@
 			<Popover.Content aria-label={title}>
 				<div class="head">
 					<Popover.Title>{title}</Popover.Title>
+					{#if headActions}<span class="head-actions">{@render headActions()}</span>{/if}
 					<Popover.CloseTrigger aria-label="Close"><Icon name="close" /></Popover.CloseTrigger>
 				</div>
 				{@render children()}
@@ -110,6 +120,10 @@
 		color: inherit;
 		cursor: pointer;
 		--icon-size: 1.25rem;
+	}
+	.head-actions {
+		display: flex;
+		margin-left: auto;
 	}
 	.head {
 		display: flex;

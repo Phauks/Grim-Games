@@ -9,6 +9,7 @@
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import { playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
+	import NightStrip from './NightStrip.svelte';
 	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
 	import { tick } from 'svelte';
@@ -100,17 +101,22 @@
 {#if data}
 	<article class="print-sheet" data-testid="print-sheet">
 		<section class="page front" bind:this={front} data-columns={columns}>
-			<div class="fit" style:zoom={frontZoom}>
-				<header>
-					<h1>{script.name}</h1>
-					<ScriptByline author={script.meta.author} {version} />
-				</header>
-				<ScriptSheet
-					characters={sheetCharacters(script, data)}
-					jinxes={playerJinxes(script, data)}
-					{density}
-					flat
-				/>
+			<!-- Night order down both sides, first night left (Ravenswood's idea, Trevor 2026-10-19). -->
+			<div class="fit with-strips" style:zoom={frontZoom}>
+				{#if nights[0]}<NightStrip night={nights[0]} />{/if}
+				<div class="main">
+					<header>
+						<h1>{script.name}</h1>
+						<ScriptByline author={script.meta.author} {version} />
+					</header>
+					<ScriptSheet
+						characters={sheetCharacters(script, data)}
+						jinxes={playerJinxes(script, data)}
+						{density}
+						flat
+					/>
+				</div>
+				{#if nights[1]}<NightStrip night={nights[1]} />{/if}
 			</div>
 		</section>
 		<section class="page back" bind:this={back}>
@@ -201,6 +207,12 @@
 	.back :global(.count) {
 		min-width: 0;
 		min-height: 0;
+	}
+	.with-strips {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		gap: var(--space-2);
+		align-items: start;
 	}
 	header {
 		margin-bottom: var(--space-3);

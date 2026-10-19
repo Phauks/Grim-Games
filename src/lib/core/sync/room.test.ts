@@ -7,6 +7,7 @@ import {
 	closeVote,
 	hostView,
 	isScript,
+	isSharedGrimoire,
 	join,
 	MAX_MEMBERS,
 	MIN_ROOM_PROTOCOL,
@@ -19,6 +20,7 @@ import {
 	resolve,
 	ROOM_PROTOCOL,
 	roomPreview,
+	setViewers,
 	supportsProtocol,
 	unseat,
 	type RoomState
@@ -270,5 +272,36 @@ describe('a spectators’ vote', () => {
 		const open = openVote(roomWith('x'), 'v1', ['a']);
 		expect(publish(open, 'g1', table('a', 'b')).vote).toBeDefined();
 		expect(publish(open, 'g2', table('a', 'b')).vote).toBeUndefined();
+	});
+});
+
+describe('the view-only grimoire link', () => {
+	const hash = 'a'.repeat(64);
+
+	it('is turned on with a key hash and off with null', () => {
+		const on = setViewers(newRoom('host'), hash);
+		expect(on.viewerKeyHash).toBe(hash);
+		expect('viewerKeyHash' in setViewers(on, null)).toBe(false);
+	});
+
+	it('ignores anything that is not a SHA-256 hash', () => {
+		const on = setViewers(newRoom('host'), hash);
+		expect(setViewers(on, 'short')).toBe(on);
+		expect(setViewers(on, 42)).toBe(on);
+		expect(setViewers(on, undefined)).toBe(on);
+	});
+
+	it('never shows in what phones see before or after joining', () => {
+		const room = setViewers(roomWith('alex'), hash);
+		expect(JSON.stringify(roomPreview(room))).not.toContain(hash);
+		expect(JSON.stringify(playerView(room, 'alex'))).not.toContain(hash);
+		expect(JSON.stringify(hostView(room))).not.toContain(hash);
+	});
+
+	it('relays a grimoire only when it carries a saved game', () => {
+		expect(isSharedGrimoire({ saved: { schemaVersion: 11 } })).toBe(true);
+		expect(isSharedGrimoire({ saved: [] })).toBe(false);
+		expect(isSharedGrimoire({})).toBe(false);
+		expect(isSharedGrimoire(null)).toBe(false);
 	});
 });

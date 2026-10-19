@@ -106,25 +106,29 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	);
 });
 
-test('any reminder takes an optional long note in a sheet', async ({ page }) => {
+test("day notes are gone; a player's day button sits in their tile", async ({ page }) => {
+	// Trevor, 2026-10-19: no notes in the day view, and the buttons beside each player (B).
 	await loaded(page);
-	await page.getByRole('button', { name: 'Note: Gossip (Dev)' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Note: Gossip · Dev' });
-	const text = `Said: “Eve is the Witch.”\n\n${'They were very sure of it. '.repeat(40)}`;
-	await sheet.getByTestId('note-text').fill(text);
-	await sheet.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(sheet).toBeHidden();
-	const note = page.getByRole('button', { name: 'Note: Gossip (Dev)' });
-	await expect(note).toHaveAttribute('data-marked', 'true');
-	// Reopening shows the whole note (there is no log on the day page).
-	await note.tap();
-	await expect(sheet.getByTestId('note-text')).toHaveValue(text);
+	await sampleGame(page, 'Trouble Brewing');
+	await expect(page.getByRole('button', { name: /^Note: / })).toHaveCount(0);
+	const tile = page
+		.locator('.tile')
+		.filter({ has: page.getByRole('button', { name: 'Seat: Ben' }) });
+	await expect(tile.getByRole('button', { name: 'Used: Slayer (Ben)' })).toBeVisible();
+	const player = await place(tile.getByRole('button', { name: 'Seat: Ben' }));
+	const used = await place(tile.getByRole('button', { name: 'Used: Slayer (Ben)' }));
+	// On the same line as the character and player name.
+	expect(Math.abs(used.y + used.height / 2 - (player.y + player.height / 2))).toBeLessThan(4);
+	await page
+		.locator('.seats')
+		.screenshot({ path: `test-results/day-tiles-${test.info().project.name}.png` });
 });
 
 test("the Juggler's note keeps a guess for each player", async ({ page }) => {
 	await loaded(page);
 	await sampleGame(page, 'Sects & Violets');
-	await page.getByRole('button', { name: /^Note: Juggler/ }).tap();
+	// His guesses have their own button in his tile (Trevor, 2026-10-19).
+	await page.getByRole('button', { name: /^Guesses: Juggler/ }).tap();
 	const sheet = page.getByRole('dialog', { name: /^Note: Juggler/ });
 	const guess = sheet.getByRole('combobox', { name: 'Guess for Ana' });
 	await expect(guess).toHaveText('No guess');
@@ -133,7 +137,7 @@ test("the Juggler's note keeps a guess for each player", async ({ page }) => {
 	await expect(guess).toHaveText('Witch');
 	await sheet.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(sheet).toBeHidden();
-	await page.getByRole('button', { name: /^Note: Juggler/ }).tap();
+	await page.getByRole('button', { name: /^Guesses: Juggler/ }).tap();
 	await expect(guess).toHaveText('Witch');
 });
 
@@ -154,7 +158,7 @@ test('with help switched off the night is a checklist with no worked-out answers
 	await expect(settings).toBeHidden();
 
 	// Pre-day reminders are off, but Used, notes and the players stay.
-	await expect(page.getByRole('heading', { name: 'Abilities and notes' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Abilities' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Seat: Eve' })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Night order', exact: true }).tap();

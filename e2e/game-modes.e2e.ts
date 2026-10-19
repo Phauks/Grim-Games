@@ -78,7 +78,10 @@ test('a mode’s own settings sit under Game mode settings, each with its descri
 	const settings = page.getByTestId('mode-settings');
 	await expect(settings.getByRole('heading', { name: 'Game mode settings' })).toBeVisible();
 	await expect(settings.getByRole('checkbox', { name: 'Role Recycling' })).toBeVisible();
-	await expect(settings).toContainText('go back into the pool');
+	// A setting is on or off, so its description says what it does (Trevor, 2026-10-19).
+	await expect(settings).toContainText(
+		'Declined characters return to character pool for future players.'
+	);
 	await expect(settings.getByRole('button', { name: /^Restricted characters/ })).toBeVisible();
 	await expect(settings).toContainText('Characters kept out of this game.');
 	// Above the setup sheet.
@@ -403,7 +406,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	const board = page.url();
 	await page.getByTestId('mode-menu').tap();
-	const menu = page.getByRole('dialog', { name: 'Game info' });
+	const menu = page.getByRole('dialog', { name: 'Game info', exact: true });
 	await expect(menu.getByRole('button', { name: 'Town 1 · Trouble Brewing' })).toHaveAttribute(
 		'aria-current',
 		'page'
@@ -418,7 +421,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await expect(page.getByText('Ana', { exact: true }).first()).toBeVisible();
 	await page.getByTestId('mode-menu').tap();
 	await page
-		.getByRole('dialog', { name: 'Game info' })
+		.getByRole('dialog', { name: 'Game info', exact: true })
 		.getByRole('button', { name: 'Towns' })
 		.tap();
 	await expect(page).toHaveURL(towns);
@@ -805,7 +808,7 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 		await page.getByTestId('mode-menu').tap();
 	}
 	await page
-		.getByRole('dialog', { name: 'Game info' })
+		.getByRole('dialog', { name: 'Game info', exact: true })
 		.getByRole('button', { name: 'Specters vote and ability' })
 		.tap();
 	const sheet = page.getByRole('dialog', { name: 'Specters vote and ability' });
@@ -846,7 +849,9 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await phoneContext.close();
 });
 
-test('New game shows each script’s author and version under its name', async ({ page }) => {
+test('New game shows each script’s author under its name, and its versions in a drop-down', async ({
+	page
+}) => {
 	await page.addInitScript(() => {
 		localStorage.setItem(
 			'grim-games:scripts:quick-play',
@@ -867,11 +872,16 @@ test('New game shows each script’s author and version under its name', async (
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Custom', { exact: true });
 	// Under the picker once chosen, on a line that was already there (Trevor, 2026-10-19):
-	// Custom chooses the most recent custom script.
+	// Custom chooses the most recent custom script. Its version is a drop-down, empty and
+	// disabled until then.
 	const line = page.getByTestId('chosen-script');
+	const version = page.getByRole('combobox', { name: 'Script version' });
+	await expect(version).toBeDisabled();
+	await expect(version).not.toContainText('v');
 	const before = await line.boundingBox();
 	await custom.tap();
-	await expect(page.getByTestId('script-byline')).toHaveText('by Test Author · v2.1');
+	await expect(page.getByTestId('script-byline')).toHaveText('by Test Author');
+	await expect(version).toContainText('v2.1');
 	expect((await line.boundingBox())?.height).toBe(before?.height);
 	// In the script search's list too, on Standard and in a mode alike.
 	const option = page.getByRole('option').filter({ hasText: 'Byline Test' });
@@ -970,8 +980,8 @@ test('Special rules sits under Game mode, and opening it closes the Game mode li
 });
 
 test('each special rule shows its description under its switch', async ({ page }) => {
-	// Trevor, 2026-10-19: descriptions when toggling, the rest behind Inspect. Specters'
-	// description is approved; one not yet approved shows the author's own rule text.
+	// Trevor, 2026-10-19: descriptions when toggling, the rest behind Inspect. Only approved
+	// descriptions show (I See Dead People's was approved the same day).
 	await page.goto('/new');
 	await modesPanel(page)
 		.getByRole('button', { name: /^Special rules/ })
@@ -984,7 +994,9 @@ test('each special rule shows its description under its switch', async ({ page }
 	);
 	await expect(
 		rows.filter({ hasText: 'I See Dead People' }).getByTestId('rule-description')
-	).toContainText("doesn't announce deaths");
+	).toHaveText(
+		'Characters die as normal, but the Storyteller doesn’t announce deaths. Dead players can still nominate, and poisoned players don’t wake.'
+	);
 	await noSidewaysScroll(page);
 });
 
@@ -1065,4 +1077,27 @@ test('each special rule takes its own line under the script name in the board co
 	];
 	expect(second.y).toBeGreaterThanOrEqual(first.y + first.height - 1);
 	await expect(page.getByTestId('script-title')).not.toContainText('+');
+});
+
+test('with I See Dead People a death is marked not to announce, its detail kept for the Storyteller', async ({
+	page
+}) => {
+	// World Cup thread (2026-10-19): the rule hides deaths, so the day says not to announce.
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await chooseRules(page, 'I See Dead People');
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await page.getByRole('button', { name: 'Seat: Seat 1' }).tap();
+	await page
+		.getByRole('dialog', { name: 'How did Seat 1 die?' })
+		.getByRole('button', { name: 'Killed by the Demon' })
+		.tap();
+	const announcements = page.getByTestId('announcements');
+	await expect(announcements.getByTestId('dont-announce')).toHaveText('Don’t announce');
+	await expect(announcements.getByTestId('spoken')).toHaveCount(0);
+	await expect(announcements.getByTestId('storyteller-only')).toHaveText(
+		'No character, killed by the Demon'
+	);
 });

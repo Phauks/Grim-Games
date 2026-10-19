@@ -28,9 +28,15 @@
 	provideCharacters(() => grimoire?.open.characters);
 
 	function prepare(open: OpenGame) {
-		// Phones in this device's live room follow the open game (a no-op without a room).
-		attachRoom(open);
-		grimoire = new Grimoire(open);
+		const board = new Grimoire(open);
+		// Phones in this device's live room follow the open game (a no-op without a room), and
+		// viewers of the view-only link see this board's seats and reminders where they are.
+		attachRoom(open, () => ({
+			layout: board.layout,
+			reminderSpots: board.reminderSpots,
+			copies: [...board.copies]
+		}));
+		grimoire = board;
 		return grimoire;
 	}
 </script>

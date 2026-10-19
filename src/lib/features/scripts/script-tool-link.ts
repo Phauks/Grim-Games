@@ -74,6 +74,19 @@ export async function decodeScriptToolPayload(payload: string): Promise<string> 
 	return text;
 }
 
+/**
+ * A Script Tool link that opens this script there: the JSON gzipped, base64-encoded and
+ * URL-encoded, as the tool's own links are. A plain link is the only way we hand a script to
+ * the tool (TPI's terms; print-routes.md §C). The script sits in TPI's query string, never ours.
+ */
+export async function scriptToolLink(json: string): Promise<string> {
+	const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'));
+	const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+	let binary = '';
+	for (const b of bytes) binary += String.fromCharCode(b);
+	return `https://${SCRIPT_TOOL_HOST}/?script=${encodeURIComponent(btoa(binary))}`;
+}
+
 /** One script listed on the official Scripts page. */
 export interface CuratedLink {
 	/** The page section it is listed under: a `CuratedSection` id, or the heading as written. */

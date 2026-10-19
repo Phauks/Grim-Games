@@ -62,7 +62,8 @@ describe('parsePreferences', () => {
 				inlineNameIconScale: 0.9,
 				inlineNameBadgeScale: 2,
 				reminderLeaves: false,
-				setupFlower: true
+				setupFlower: true,
+				setupMovesName: false
 			},
 			colors: {},
 			assistance: { ...DEFAULT_ASSISTANCE, nightWalkthrough: false },

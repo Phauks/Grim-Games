@@ -255,3 +255,30 @@ test("the theme's backdrop is a fixed layer that reaches under the phone's bars"
 	expect(looks.zIndex).toBe('-1');
 	expect(looks.height).toBeGreaterThanOrEqual(page.viewportSize()!.height);
 });
+
+// Trevor (2026-10-19, on a Pixel): with no header, the bars (flat theme-color) stood apart from
+// the board's backdrop. On a game screen the backdrop fades to --surface at the top and bottom.
+test("a game screen's backdrop fades into the phone's bars", async ({ page }) => {
+	const layer = () =>
+		page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage);
+	await page.goto('/');
+	await expect(page.getByRole('banner')).toBeVisible();
+	expect((await layer()).match(/linear-gradient/g)).toBeNull();
+
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await page.getByRole('button', { name: 'Start game' }).tap();
+	await expect(page.getByRole('banner')).toHaveCount(0);
+	const surface = await page.evaluate(() => {
+		const probe = document.createElement('i');
+		probe.style.color = 'var(--surface)';
+		document.body.append(probe);
+		const colour = getComputedStyle(probe).color;
+		probe.remove();
+		return colour;
+	});
+	const image = await layer();
+	expect(image.match(/linear-gradient/g)).toHaveLength(2);
+	expect(image).toContain(surface);
+	expect(image).toMatch(/radial-gradient/);
+});

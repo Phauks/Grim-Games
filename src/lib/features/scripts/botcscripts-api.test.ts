@@ -17,6 +17,8 @@ import {
 	readProxiedVersion,
 	readVersion,
 	scriptPageUrl,
+	scriptPdfUrl,
+	pageHasPdf,
 	editionFilter,
 	readCharacterEditions,
 	type BotcEditionGroup,
@@ -141,6 +143,19 @@ describe('API responses', () => {
 		expect(readProxiedVersion(version)).toEqual(version);
 		expect(readProxiedVersion({ ...version, content: 'chef' })).toBeUndefined();
 		expect(readProxiedVersion({ error: 'nope' })).toBeUndefined();
+		// An uploaded PDF, and only a plain yes counts.
+		expect(readProxiedVersion({ ...version, pdf: true })).toEqual({ ...version, pdf: true });
+		expect(readProxiedVersion({ ...version, pdf: 'yes' })).toEqual(version);
+	});
+
+	it("finds a version's uploaded PDF from the link on its page", () => {
+		expect(scriptPdfUrl(12, '1.1.0')).toBe('https://botcscripts.com/script/12/1.1.0/download_pdf');
+		const page = '<a class="btn btn-primary" href="/script/12/1.1.0/download_pdf">Download PDF</a>';
+		expect(pageHasPdf(page, 12, '1.1.0')).toBe(true);
+		expect(pageHasPdf(page, 12, '1.0.0')).toBe(false);
+		expect(pageHasPdf('<a href="/script/12/1.1.0/download_json">JSON</a>', 12, '1.1.0')).toBe(
+			false
+		);
 	});
 
 	it('links to the script page', () => {
