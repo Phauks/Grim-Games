@@ -289,7 +289,8 @@ export const accountSync = {
 		return user ? load(user.id) : Promise.resolve();
 	},
 	save(kind: DocKind, id: string, body: unknown): Promise<void> {
-		return queue(kind, id, body ?? null);
+		// A body from component state is a proxy, which IndexedDB can't store.
+		return queue(kind, id, $state.snapshot(body) ?? null);
 	},
 	remove(kind: DocKind, id: string): Promise<void> {
 		return queue(kind, id, undefined);

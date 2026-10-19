@@ -453,3 +453,41 @@ test('the profile icon is picked from the characters and shows in the header', a
 	await dialog.getByRole('button', { name: 'None' }).tap();
 	await expect(header.getByTestId('profile-icon')).not.toHaveAttribute('data-icon');
 });
+
+// Trevor (2026-10-18): what Download my data saves, Import data reads back in.
+test('a downloaded data file imports into another account, adding only what is missing', async ({
+	page,
+	browser
+}, testInfo) => {
+	await signInWithCode(page, uniqueEmail('export'));
+	await addScript(page, 'Storm Front');
+	await expect.poll(() => profileScriptNames(page)).toContain('Storm Front');
+	await page.goto('/account');
+	const downloading = page.waitForEvent('download');
+	await page.getByRole('button', { name: 'Download my data' }).tap();
+	const file = testInfo.outputPath('my-data.json');
+	await (await downloading).saveAs(file);
+
+	// Another account on another device, which has never seen the script.
+	const other = await browser.newContext({ ...testInfo.project.use });
+	const second = await other.newPage();
+	const part = () => Math.floor(Math.random() * 254) + 1;
+	await second.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
+	await signInWithCode(second, uniqueEmail('import'));
+	const importOnce = async () => {
+		await second.locator('input[type="file"][aria-label="Import data"]').setInputFiles(file);
+		return second.getByRole('alertdialog', { name: 'Import data' });
+	};
+	let dialog = await importOnce();
+	const plan = dialog.getByTestId('import-plan');
+	await expect(plan.getByRole('row', { name: 'Scripts to add' })).toContainText('1');
+	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('0');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect.poll(() => profileScriptNames(second)).toEqual(['Storm Front']);
+
+	// The same file again has nothing to add.
+	dialog = await importOnce();
+	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('1');
+	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await other.close();
+});
