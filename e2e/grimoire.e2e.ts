@@ -65,10 +65,14 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
 }
 
 /**
- * The reminder bank's phase button, at its right end (Trevor, 2026-10-19): Start game, End
- * night, End day, or Run night (Run Night Order) for a walk-through stopped mid-night.
+ * The reminder bank's phase button, at its right end (Trevor, 2026-10-19): Set up while
+ * tokens are still to be handed out, Start game, End night, End day, or Run night (Run Night
+ * Order) for a walk-through stopped mid-night.
  */
-const bankNight = (page: Page, name: 'Start game' | 'Run Night Order' | 'End night' | 'End day') =>
+const bankNight = (
+	page: Page,
+	name: 'Set up' | 'Start game' | 'Run Night Order' | 'End night' | 'End day'
+) =>
 	page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -523,7 +527,11 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 }) => {
 	await startGame(page);
 	const board = page.url();
-	await page.getByRole('button', { name: 'Set up' }).tap();
+	// Set up is the bank's end cell while tokens are still to be handed out (Trevor,
+	// 2026-10-19: "a lot of the game flow comes from that button"), and nowhere else.
+	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(1);
+	await expect(bankNight(page, 'Start game')).toHaveCount(0);
+	await bankNight(page, 'Set up').tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// The last setup step opens the board, whose bank starts with the setup reminders.
 	await page.goto(`${board}#setup-reminders`);

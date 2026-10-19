@@ -735,7 +735,7 @@
 	/** This game's ending, if it has ended (End game below). */
 	let endedRead = $state(0);
 	const ended = $derived((void endedRead, endedGames.read()[game.gameId]));
-	/** Characters and Bag draw show in the middle until the game is set up, then go. */
+	/** Tokens are still to be handed out: the bank's end cell says Set up until then. */
 	const showSetup = $derived(
 		// Never while looking back through History (Trevor, 2026-10-18): it is read-only.
 		!ended &&
@@ -877,12 +877,29 @@
 			grimoire.toggleNightStep(night, { id: 'dusk' });
 		if (preferences.current.assistance.nightWalkthrough) runNight();
 	}
+	/** Setup's next step: Characters, or the bag draw once they are chosen. */
+	function openSetup() {
+		goto(
+			currentSetupStep(game) === 'draw'
+				? resolve('/grimoire/[gameId]/draw', { gameId: game.gameId })
+				: resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })
+		);
+	}
 	/**
-	 * The bank's button follows the game (Trevor, 2026-10-19): Start game before the first
-	 * night, End night during a night, End day during a day; a walk-through stopped mid-night
-	 * offers Run night to pick it up again.
+	 * The bank's button follows the game (Trevor, 2026-10-19): Set up while tokens are still
+	 * to be handed out (the game flow comes from this one button; the board has no other Set
+	 * up button), then Start game before the first night, End night during a night, End day
+	 * during a day; a walk-through stopped mid-night offers Run night to pick it up again.
 	 */
 	const bankRun = $derived.by(() => {
+		if (showSetup)
+			return {
+				label: 'Set up',
+				text: 'Set up',
+				icon: 'bag' as const,
+				disabled: false,
+				onclick: openSetup
+			};
 		if (nightOn)
 			return {
 				label: 'End night',
@@ -1702,21 +1719,6 @@
 		{/if}
 		<div class="centre" bind:clientWidth={centreW} bind:clientHeight={centreH}>
 			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
-			{#if showSetup}
-				<div class="setup">
-					<!-- One setup flow (Trevor, 2026-10-16): Characters, Draw, then the reminders. -->
-					<Button
-						variant="accent"
-						icon="bag"
-						onclick={() =>
-							goto(
-								currentSetupStep(game) === 'draw'
-									? resolve('/grimoire/[gameId]/draw', { gameId: game.gameId })
-									: resolve('/grimoire/[gameId]/setup', { gameId: game.gameId })
-							)}>Set up</Button
-					>
-				</div>
-			{/if}
 			{#if boardLooks.current.rulesAt === 'middle'}
 				{#if boardLooks.current.rulesGrouped && game.ruleCharacters.length > 0}
 					{@render rulesStack(Math.round(size * 0.8))}
@@ -2237,22 +2239,11 @@
 		gap: var(--space-2);
 		max-width: 50%;
 	}
-	.setup {
-		display: grid;
-		gap: var(--space-2);
-	}
 	.script-scroll {
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-	}
-	/* The main action on a board that isn't set up yet (Trevor, 2026-10-16): large. */
-	.setup :global(.button) {
-		min-height: calc(2 * var(--tap-target));
-		padding-inline: var(--space-5);
-		font-size: 1.35rem;
-		--icon-size: 1.6rem;
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.backdrop {
