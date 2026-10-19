@@ -3,7 +3,7 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
-	import { gameModeName } from './game-mode-name.ts';
+	import { gameModeNames } from './game-mode-name.ts';
 	import { boardNightSteps, stepHolders, tonight } from './night-steps.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -202,7 +202,7 @@
 	 * The script's name in the corner keeps clear of every seat and name (Trevor, 2026-10-18),
 	 * cut short with an ellipsis where it would reach one (always the lower left).
 	 */
-	const corner = $derived.by(() => {
+	const cornerFit = $derived.by(() => {
 		const boxes = shown.flatMap((p, i) => {
 			const c = toPx(p);
 			const name = nameBoxes[i]?.box;
@@ -212,8 +212,22 @@
 			return name ? [token, name] : [token];
 		});
 		// The name sits 4px (--space-1) in from the edges.
-		return cornerRoom(boxes, { width, height }, titleH + 4, 4 + 8);
+		const room = (h: number) => cornerRoom(boxes, { width, height }, h + 4, 4 + 8);
+		// A line per special rule (Trevor, 2026-10-19) when they all fit; otherwise one line,
+		// as before. Both heights come from what is shown now, so the choice never flip-flops.
+		const extra = Math.max(0, modeLines.length - 1) * (lineHs[0] ?? 0);
+		const stackedH = stackRules ? titleH : titleH + extra;
+		const stacked = room(stackedH);
+		if (extra > 0 && stacked >= 2 * rootFont) return { room: stacked, stack: true };
+		return { room: room(stackRules ? titleH - extra : titleH), stack: false };
 	});
+	/** Whether the rules show a line each now; follows cornerFit once the lines are measured. */
+	// eslint-disable-next-line svelte/prefer-writable-derived -- cornerFit reads it back, so a derived would be circular
+	let stackRules = $state(false);
+	$effect(() => {
+		stackRules = cornerFit.stack;
+	});
+	const corner = $derived(cornerFit.room);
 	/**
 	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
 	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
@@ -281,6 +295,8 @@
 	let timerW = $state(0);
 	let titleW = $state(0);
 	let titleH = $state(0);
+	/** The heights of the mode and rule lines under the script's name. */
+	let lineHs = $state<number[]>([]);
 	let timerH = $state(0);
 	let centreH = $state(0);
 	let tapPx = $state(0);
@@ -1015,15 +1031,18 @@
 	 * A game played in an alternative mode says so where the script's name is (Trevor,
 	 * 2026-10-18), in its own colour; the mode is the game modes thread's (game-mode-store).
 	 */
-	const modeName = $derived(gameModeName(game.gameId));
+	const modeNames = $derived(gameModeNames(game.gameId));
+	const modeName = $derived(modeNames.length ? modeNames.join(' + ') : undefined);
 	/**
 	 * A town's script is named after its mode ("Two Towns and a Boomdandy 1"): the name then
 	 * says it once, in the mode's colour, rather than twice (Trevor, 2026-10-18).
 	 */
 	const modeInName = $derived(
-		!!modeName && (game.script.meta?.name ?? '').toLowerCase().startsWith(modeName.toLowerCase())
+		modeNames.length > 0 &&
+			(game.script.meta?.name ?? '').toLowerCase().startsWith(modeNames[0].toLowerCase())
 	);
-	const modeLabel = $derived(modeInName ? undefined : modeName);
+	/** The mode, then each special rule, a line each under the name (Trevor, 2026-10-19). */
+	const modeLines = $derived(modeInName ? modeNames.slice(1) : modeNames);
 	const showTitle = $derived(
 		preferences.current.assistance.scriptTitle && !game.script.meta?.hideTitle
 	);
@@ -1517,11 +1536,15 @@
 						data-testid={modeInName ? 'game-mode' : undefined}>{game.script.meta.name}</span
 					></ModeMenu
 				>
-				<!-- The mode takes the author's line, so the corner never grows. -->
-				{#if modeLabel}<span class="mode" data-testid="game-mode">{modeLabel}</span
-					>{:else if game.script.meta?.author}<span class="author"
-						>by {game.script.meta.author}</span
-					>{/if}
+				<!-- The mode and rules take the author's line: a line each where the corner has room
+				     for them all (corner-room.ts), else one line joined with " + ". -->
+				{#each stackRules ? modeLines : modeLines.length ? [modeLines.join(' + ')] : [] as line, i (i)}<span
+						class="mode"
+						data-testid="game-mode"
+						bind:clientHeight={lineHs[i]}>{line}</span
+					>{:else}{#if game.script.meta?.author}<span class="author"
+							>by {game.script.meta.author}</span
+						>{/if}{/each}
 			</p>
 		{/if}
 		{#if showTimer}

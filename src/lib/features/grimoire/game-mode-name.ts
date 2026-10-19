@@ -10,9 +10,17 @@ import { findMode } from '#lib/features/modes/custom-modes.svelte.ts';
 import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 
 export function gameModeName(gameId: GameId): string | undefined {
-	const record = readGameMode(gameId);
-	if (!record) return undefined;
-	const mode = record.modeId !== STANDARD.id ? findMode(record.modeId)?.name : undefined;
-	const names = [...(mode ? [mode] : []), ...record.rules.map((r) => r.name)];
+	const names = gameModeNames(gameId);
 	return names.length ? names.join(' + ') : undefined;
+}
+
+/**
+ * The same names one by one: the mode first, if it isn't Standard, then each special rule.
+ * The board's corner gives each its own line (Trevor, 2026-10-19).
+ */
+export function gameModeNames(gameId: GameId): string[] {
+	const record = readGameMode(gameId);
+	if (!record) return [];
+	const mode = record.modeId !== STANDARD.id ? findMode(record.modeId)?.name : undefined;
+	return [...(mode ? [mode] : []), ...record.rules.map((r) => r.name)];
 }
