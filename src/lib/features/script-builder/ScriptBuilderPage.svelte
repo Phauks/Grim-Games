@@ -46,6 +46,7 @@
 	import OpenSavedDialog from '#lib/ui/builder/OpenSavedDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import LibraryBrowser from '#lib/features/library/LibraryBrowser.svelte';
+	import PreviewToggle from '#lib/features/library/PreviewToggle.svelte';
 	import type { ScriptRow } from '#lib/features/library/ScriptPane.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
@@ -94,6 +95,7 @@
 	let saving = $state(false);
 	let clearOpen = $state(false);
 	let openOpen = $state(false);
+	let libraryBrowser = $state<LibraryBrowser>();
 	/** A script waiting to replace the builder's changes once confirmed. */
 	let replacing = $state.raw<{ name: string; fill: () => void }>();
 	let replaceOpen = $state(false);
@@ -724,9 +726,12 @@
 
 <!-- The Library's file manager, scripts only (Trevor, 2026-10-18), not a bare list. -->
 <Dialog bind:open={openOpen} title={t('script-builder.openTitle')} size="max">
+	{#snippet headActions()}<PreviewToggle browser={libraryBrowser} />{/snippet}
 	<div class="library" data-testid="builder-saved-list">
 		<LibraryBrowser
+			bind:this={libraryBrowser}
 			kind="script"
+			pickLabel={t('script-builder.openPicked')}
 			onpick={(pick) => pick.kind === 'script' && pickScript(pick.script)}
 		/>
 	</div>

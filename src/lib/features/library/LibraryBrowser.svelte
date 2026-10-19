@@ -41,7 +41,7 @@
 	import CollectionPane from './CollectionPane.svelte';
 	import FolderBar from './FolderBar.svelte';
 	import FolderNameDialog from './FolderNameDialog.svelte';
-	import ItemPane, { setLibraryWindow } from './ItemPane.svelte';
+	import ItemPane, { setLibraryPick, setLibraryWindow } from './ItemPane.svelte';
 	import LibrarySidebar, { type Place } from './LibrarySidebar.svelte';
 	import NameDialog from './NameDialog.svelte';
 	import { timestampName } from '#lib/core/timestamp-name.ts';
@@ -78,16 +78,19 @@
 	 * The Library page, and a picker elsewhere (Trevor, 2026-10-18: the Script builder's
 	 * "Open a saved script" opens the file manager in a modal): `kind` keeps it to one kind of
 	 * item, without the Kinds list, Campaigns or a Kind column, and `onpick` gets the tapped
-	 * item instead of the pane.
+	 * item instead of the pane. With Preview on, a tap shows the item beside the list and the
+	 * pane's `pickLabel` button (or a double-click) hands it over.
 	 */
 	interface Props {
 		/** Only this kind of item. */
 		kind?: ItemKind;
-		/** Tapping an item hands it here instead of opening it in the pane. */
+		/** Tapping an item (with Preview off) hands it here instead of opening it in the pane. */
 		onpick?: (pick: LibraryPick) => void;
+		/** The previewed item's button that hands it to `onpick`. */
+		pickLabel?: string;
 	}
 
-	let { kind: onlyKind, onpick }: Props = $props();
+	let { kind: onlyKind, onpick, pickLabel }: Props = $props();
 
 	let data = $state.raw<GameData>();
 
@@ -113,18 +116,18 @@
 	 * Preview (Trevor, 2026-10-18): on, the open item shows beside the list; off, the list takes
 	 * the room and an item opens in a window over the page. Remembered on this device. Where
 	 * nothing fits beside the list, items always open in a window, so the Library's button
-	 * rests; a picker never previews.
+	 * rests; a picker previews too.
 	 */
 	const PREVIEW_KEY = 'grim-games:library-preview';
 	let preview = $state(readStored<boolean>(PREVIEW_KEY) !== false);
-	const previewing = $derived(roomy.current && !onpick && preview);
+	const previewing = $derived(roomy.current && preview);
 	/** Whether the item shows beside the list now (the Preview button's pressed state). */
 	export function isPreviewing() {
 		return previewing;
 	}
 	/** Whether there is room for Preview at all. */
 	export function canPreview() {
-		return roomy.current && !onpick;
+		return roomy.current;
 	}
 	export function togglePreview() {
 		preview = !preview;
@@ -396,6 +399,12 @@
 		windowOpen = true;
 	}
 	setLibraryWindow(() => (windowOpen = true));
+	// A picker has no window: its previewed item is handed over instead.
+	setLibraryPick({
+		active: () => !!onpick,
+		label: () => pickLabel ?? t('library.pick'),
+		pick: () => pick(openKey)
+	});
 	const isOpen = (inline: boolean) => paneOpen.open && (inline || !previewing || windowOpen);
 	function setOpen(inline: boolean, value: boolean) {
 		if (!inline && previewing) windowOpen = value;
@@ -409,16 +418,22 @@
 		if (row.kind === 'folder') {
 			currentFolder = row.folderId;
 			term = '';
-		} else if (onpick) {
-			const script = scripts.find((s) => s.key === row.key);
-			const saved = characters.find(({ saved }) => characterKey(saved.savedId) === row.key)?.saved;
-			const collection = characterCollections.list.find((c) => collectionKey(c.id) === row.key);
-			if (script) onpick({ kind: 'script', script });
-			else if (saved) onpick({ kind: 'character', saved });
-			else if (collection) onpick({ kind: 'collection', collection });
+		} else if (onpick && !previewing) {
+			pick(row.key);
 		} else {
 			openKey = row.key;
 		}
+	}
+
+	/** Hands the item to the picker's `onpick`. */
+	function pick(key: string | undefined) {
+		if (!onpick || !key) return;
+		const script = scripts.find((s) => s.key === key);
+		const saved = characters.find(({ saved }) => characterKey(saved.savedId) === key)?.saved;
+		const collection = characterCollections.list.find((c) => collectionKey(c.id) === key);
+		if (script) onpick({ kind: 'script', script });
+		else if (saved) onpick({ kind: 'character', saved });
+		else if (collection) onpick({ kind: 'collection', collection });
 	}
 
 	/** An item that changed kind opens as its new self. */
@@ -578,7 +593,7 @@
 			data-drop-folder={row.folderId}
 			data-kind={row.kind}
 			onclick={() => activate(row)}
-			ondblclick={() => !onpick && row.kind !== 'folder' && openWindow(row.key)}
+			ondblclick={() => row.kind !== 'folder' && (onpick ? pick(row.key) : openWindow(row.key))}
 			use:dragToFolder={{
 				source: {
 					id: row.folderId ?? row.key,

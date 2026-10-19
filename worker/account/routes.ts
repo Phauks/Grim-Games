@@ -19,10 +19,12 @@ import {
 	normaliseUsername,
 	PASSWORD_MAX,
 	PASSWORD_MIN,
+	PRIVACY_VERSION,
 	SESSION_COOKIE,
 	SESSION_IDLE_MS,
 	signInHash,
 	type ApiError,
+	type PrivacyRequired,
 	type PutDocRequest,
 	type SessionInfo,
 	type StartResponse,
@@ -86,6 +88,22 @@ const clearCookie = sessionCookie('', 0);
 /** The record for an address. Addresses are looked up lower-cased, so case never splits one. */
 function emailStub(env: AccountEnv, email: string) {
 	return env.ACCOUNT_EMAILS.get(env.ACCOUNT_EMAILS.idFromName(normaliseEmail(email) ?? email));
+}
+
+/** The policy version the request accepted: only the current one counts. */
+function acceptedPrivacy(body: Record<string, unknown> | undefined): string | undefined {
+	return body?.acceptPrivacy === PRIVACY_VERSION ? PRIVACY_VERSION : undefined;
+}
+
+/** Signing in waits for the privacy policy to be accepted (Trevor, 2026-10-18). */
+function privacyRequired(creating: boolean): Response {
+	return json(
+		{
+			error: 'Accept the privacy policy to continue.',
+			privacy: { version: PRIVACY_VERSION, creating }
+		} satisfies PrivacyRequired,
+		403
+	);
 }
 
 /** Starts a session for `userId` and answers with the signed-in user and its cookie. */
@@ -208,8 +226,10 @@ async function verify(request: Request, env: Env, url: URL): Promise<Response> {
 	const result = await emailStub(env, email).verify(
 		email,
 		code ? { code } : { token: token! },
-		now
+		now,
+		acceptedPrivacy(body)
 	);
+	if (!result.ok && result.reason === 'privacy') return privacyRequired(result.creating);
 	if (!result.ok) {
 		const message = {
 			expired: 'This code has expired. Send a new one.',
@@ -258,6 +278,10 @@ async function passwordSignIn(request: Request, env: Env, url: URL): Promise<Res
 		await record.passwordFailed(now);
 		return fail(401, WRONG_PASSWORD);
 	}
+	const user = userStub(env, userId);
+	const accepted = acceptedPrivacy(body);
+	if (accepted) await user.acceptPrivacy(accepted, now);
+	else if ((await user.privacyVersion()) !== PRIVACY_VERSION) return privacyRequired(false);
 	return signIn(request, env, url, userId, body?.remember !== false, now);
 }
 

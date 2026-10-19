@@ -5,6 +5,14 @@
 	import { resolve } from '$app/paths';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
+	import { PRIVACY_VERSION } from '#lib/features/account/account-protocol.ts';
+
+	const updated = new Date(`${PRIVACY_VERSION}T00:00:00Z`).toLocaleDateString('en-GB', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+		timeZone: 'UTC'
+	});
 </script>
 
 <svelte:head>
@@ -13,7 +21,8 @@
 
 <!-- One column across the page width, not a narrow reading strip (Trevor, 2026-10-16). -->
 <Page title="Privacy policy">
-	{#snippet subtitle()}Last updated 18 October 2026{/snippet}
+	<!-- The date is the policy's version: changing it asks every account to accept again. -->
+	{#snippet subtitle()}Last updated {updated}{/snippet}
 	<PageSection title="Summary">
 		<p>
 			{APP_NAME} has no analytics, no advertising and no tracking cookies. Your games and settings stay
@@ -110,6 +119,7 @@
 		</p>
 		<ul>
 			<li>Your email address.</li>
+			<li>Which version of this policy you accepted, and when.</li>
 			<li>
 				Your sign-in sessions: a random token, stored only as a hash, with a short device
 				description such as "Chrome on Android", the rough place it was last used from (the city and
