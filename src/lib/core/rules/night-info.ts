@@ -1269,7 +1269,8 @@ export function withNightInfo<T extends NightStep>(
 		characters
 	);
 	return all.map((step) => {
-		if (!step.character) return step;
+		// A wake step for a changed character shows the player; it works out nothing.
+		if (!step.character || step.changed) return step;
 		const gained = step.gained;
 		const seats = gained
 			? [gained.seatId]

@@ -39,5 +39,6 @@ export * from './night-alerts.ts';
 export * from './night-numbers.ts';
 export * from './game-end.ts';
 export * from './becomes-demon.ts';
+export * from './character-changes.ts';
 export * from './end-reason.ts';
 export * from './ability-parts.ts';
