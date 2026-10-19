@@ -4,6 +4,7 @@ import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index
 import { characterLookup } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
+	bankOwners,
 	bankReminders,
 	byLabel,
 	canAddCopy,
@@ -17,6 +18,7 @@ import {
 	isGeneric,
 	tokenLabel
 } from './reminders.ts';
+import { placingAlignment } from './board.ts';
 import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 
 const data = committedGameData();
@@ -299,5 +301,53 @@ describe('the generic reminder', () => {
 		expect(tokenLabel(placed)).toBe('∞');
 		expect(tokenLabel({ ...placed, note: 'Chose Sam' })).toBe('Chose Sam');
 		expect(tokenLabel({ characterId: 'poisoner', label: 'Poisoned' } as never)).toBe('Poisoned');
+	});
+});
+
+describe('bankOwners', () => {
+	// Trevor (2026-10-19): two Imps, one good and one evil, each have their own "Dead" token,
+	// in their own colour (https://wiki.bloodontheclocktower.com/Imp lists one "Dead" token).
+	it("gives each seat holding the character its own copies, in that seat's colour", () => {
+		let g = game();
+		const run = (command: Parameters<typeof dispatch>[1]) => {
+			const result = dispatch({ log: { entries: [], cursor: 0 }, game: g }, command, ctx);
+			if (!result.ok) throw new Error(result.error.message);
+			g = result.session.game;
+		};
+		const [, evil, , good] = g.seating;
+		run({ type: 'AssignCharacter', seatId: evil, characterId: 'imp' });
+		run({ type: 'AssignCharacter', seatId: good, characterId: 'imp' });
+		run({ type: 'SetAlignment', seatId: good, alignment: 'good' });
+		const dead = { characterId: 'imp', label: 'Dead' } as const;
+		const left = () => reminderCopiesLeft(g, characters).get(reminderKey(dead)) ?? 0;
+		expect(bankOwners(g, characters, dead, left())).toEqual([
+			{ ownerSeatId: evil, count: 1 },
+			{ ownerSeatId: good, count: 1 }
+		]);
+		expect(placingAlignment(g, { ...dead, ownerSeatId: good }, characters)).toBe('good');
+		expect(placingAlignment(g, { ...dead, ownerSeatId: evil }, characters)).toBe('evil');
+
+		// The good Imp's token is placed: only the evil Imp's is left, and the placed one keeps
+		// its owner.
+		run({ type: 'AddReminder', seatId: g.seating[4], reminder: { ...dead, ownerSeatId: good } });
+		expect(g.seats[g.seating[4]].reminders[0].ownerSeatId).toBe(good);
+		expect(bankOwners(g, characters, dead, left())).toEqual([{ ownerSeatId: evil, count: 1 }]);
+	});
+	it('belongs to no one with the character on one seat, and drops an unknown owner', () => {
+		let g = game();
+		const poisoned = { characterId: 'poisoner', label: 'Poisoned' } as const;
+		expect(bankOwners(g, characters, poisoned, 1)).toEqual([{ count: 1 }]);
+		const result = dispatch(
+			{ log: { entries: [], cursor: 0 }, game: g },
+			{
+				type: 'AddReminder',
+				seatId: g.seating[2],
+				reminder: { ...poisoned, ownerSeatId: 'no-such-seat' }
+			},
+			ctx
+		);
+		if (!result.ok) throw new Error(result.error.message);
+		g = result.session.game;
+		expect(g.seats[g.seating[2]].reminders[0]).not.toHaveProperty('ownerSeatId');
 	});
 });

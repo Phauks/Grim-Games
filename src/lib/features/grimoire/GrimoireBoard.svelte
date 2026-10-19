@@ -1313,7 +1313,7 @@
 					infinite={isGeneric(last)}
 					symbol={last.symbol}
 					character={characters.get(last.characterId)}
-					alignment={placingAlignment(game, last.characterId, characters)}
+					alignment={placingAlignment(game, last, characters)}
 					size={Math.round(chip * 0.7)}
 					disabled={arranging}
 					onTap={() => heldDialog?.show(last.reminderId)}
@@ -1352,7 +1352,7 @@
 				<ReminderToken
 					label={tokenLabel(reminder)}
 					character={characters.get(reminder.characterId)}
-					alignment={placingAlignment(game, reminder.characterId, characters)}
+					alignment={placingAlignment(game, reminder, characters)}
 				/>
 			</button>
 		{/each}
@@ -1581,7 +1581,7 @@
 							infinite={isGeneric(reminder)}
 							symbol={reminder.symbol}
 							character={characters.get(reminder.characterId)}
-							alignment={placingAlignment(game, reminder.characterId, characters)}
+							alignment={placingAlignment(game, reminder, characters)}
 							size={chip}
 							disabled={arranging}
 							onTap={() => openReminder(seat.seatId, reminder.reminderId)}
@@ -1616,7 +1616,7 @@
 					infinite={isGeneric(reminder)}
 					symbol={reminder.symbol}
 					character={characters.get(reminder.characterId)}
-					alignment={placingAlignment(game, reminder.characterId, characters)}
+					alignment={placingAlignment(game, reminder, characters)}
 					size={chip}
 					disabled={arranging}
 					onTap={() => heldDialog?.show(reminder.reminderId)}
@@ -1661,7 +1661,7 @@
 				<ReminderToken
 					label={tokenLabel(r)}
 					character={characters.get(r.characterId)}
-					alignment={placingAlignment(game, r.characterId, characters)}
+					alignment={placingAlignment(game, r, characters)}
 				/>, from <ReminderOrigin
 					{game}
 					{characters}

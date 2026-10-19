@@ -295,6 +295,17 @@ function alignmentFromCharacters(
 	return defaultAlignment(token.type);
 }
 
+/**
+ * The reminder a command asks for: its character and words, and whose copy it is when that
+ * seat is still in the game (an unknown seat is dropped, not refused).
+ */
+function reminderFrom(game: Game, reminder: Reminder): Reminder {
+	const { characterId, label, ownerSeatId } = reminder;
+	return ownerSeatId !== undefined && Object.hasOwn(game.seats, ownerSeatId)
+		? { characterId, label, ownerSeatId }
+		: { characterId, label };
+}
+
 function checkReminder(game: Game, reminder: Reminder, ctx: EngineContext, warn: Warn): void {
 	// The generic ∞ reminder belongs to no character and may be placed anywhere.
 	if (reminder.characterId === GENERIC_REMINDER_ID) return;
@@ -809,10 +820,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 
 		case 'AddReminder': {
 			const seat = seatOf(game, command.seatId);
-			const reminder: Reminder = {
-				characterId: command.reminder.characterId,
-				label: command.reminder.label
-			};
+			const reminder: Reminder = reminderFrom(game, command.reminder);
 			checkReminder(game, reminder, ctx, warn);
 			const replaces = replacedBy(reminder, ctx.characters);
 			if (replaces && seat.alignment !== undefined) {
@@ -840,10 +848,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 				return [];
 			}
 			return command.placements.map((p, i): GameEvent => {
-				const reminder: Reminder = {
-					characterId: p.reminder.characterId,
-					label: p.reminder.label
-				};
+				const reminder: Reminder = reminderFrom(game, p.reminder);
 				checkReminder(game, reminder, ctx, warn);
 				return {
 					type: 'ReminderAdded',
@@ -882,10 +887,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 
 		case 'AddRuleReminder': {
 			const holder = ruleHolderOf(game, ctx, command.characterId);
-			const reminder: Reminder = {
-				characterId: command.reminder.characterId,
-				label: command.reminder.label
-			};
+			const reminder: Reminder = reminderFrom(game, command.reminder);
 			checkReminder(game, reminder, ctx, warn);
 			warnIfNotRuleReminder(reminder, ctx, warn);
 			return [
@@ -947,10 +949,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 		}
 
 		case 'PlaceLooseReminder': {
-			const reminder: Reminder = {
-				characterId: command.reminder.characterId,
-				label: command.reminder.label
-			};
+			const reminder: Reminder = reminderFrom(game, command.reminder);
 			checkReminder(game, reminder, ctx, warn);
 			return [{ type: 'LooseReminderPlaced', reminder: { reminderId: ctx.newId(), ...reminder } }];
 		}
@@ -1387,10 +1386,7 @@ function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn)
 			const text = typeof command.text === 'string' ? command.text.trim() : '';
 			const placements = (command.reminders ?? []).map((p) => {
 				const target = seatOf(game, p.seatId);
-				const reminder: Reminder = {
-					characterId: p.reminder.characterId,
-					label: p.reminder.label
-				};
+				const reminder: Reminder = reminderFrom(game, p.reminder);
 				checkReminder(game, reminder, ctx, warn);
 				return { seatId: target.seatId, reminder: { reminderId: ctx.newId(), ...reminder } };
 			});

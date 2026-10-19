@@ -4498,3 +4498,51 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
+
+test('two copies of a character each have their own reminders, in their own colour', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): a good Imp and an evil Imp. The Imp lists one "Dead" token
+	// (https://wiki.bloodontheclocktower.com/Imp), so each Imp has one, in its colour.
+	await startGame(page);
+	for (const number of [1, 3]) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name: 'Imp', exact: true })
+			.tap();
+		if (number === 3) {
+			await seatMenu(page, sheet, 'Change alignment');
+			await page
+				.getByRole('dialog', { name: 'Alignment' })
+				.getByRole('button', { name: 'Confirm' })
+				.tap();
+			await expect(sheet).toContainText(/Imp\s*Good · Seat 3/);
+		}
+		await closeSheet(page);
+	}
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	const dead = bank.locator('[data-testid="board-reminder"][aria-label="Dead reminder"]');
+	await expect(dead).toHaveCount(2);
+	await expect(dead.nth(0).locator('img')).toHaveAttribute('src', /imp_e\.webp$/);
+	await expect(dead.nth(1).locator('img')).toHaveAttribute('src', /imp_g\.webp$/);
+
+	// The good Imp's token keeps its colour on the board; the evil Imp's stays in the bank.
+	await dead.nth(1).tap();
+	await page
+		.getByRole('dialog', { name: 'Put Dead on' })
+		.getByRole('button', { name: /Seat 2 None/ })
+		.tap();
+	// A Dead reminder asks whether to mark the player dead; not this time.
+	await page
+		.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' })
+		.getByRole('button', { name: 'Cancel' })
+		.tap();
+	await expect(dead).toHaveCount(1);
+	await expect(dead.locator('img')).toHaveAttribute('src', /imp_e\.webp$/);
+	const all = page.locator('[data-testid="board-reminder"][aria-label="Dead reminder"] img');
+	await expect(all).toHaveCount(2);
+	const srcs = await all.evaluateAll((imgs) => imgs.map((i) => i.getAttribute('src') ?? ''));
+	expect(srcs.filter((src) => /imp_g\.webp$/.test(src))).toHaveLength(1);
+});

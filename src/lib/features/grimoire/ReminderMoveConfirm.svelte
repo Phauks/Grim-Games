@@ -156,7 +156,7 @@
 			<ReminderToken
 				label={tokenLabel(pending.reminder)}
 				character={owner}
-				alignment={placingAlignment(game, pending.reminder.characterId, characters)}
+				alignment={placingAlignment(game, pending.reminder, characters)}
 			/> reminder
 		</p>
 		<dl class="change">
