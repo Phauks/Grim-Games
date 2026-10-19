@@ -18,6 +18,7 @@ import {
 	request,
 	resolve,
 	ROOM_PROTOCOL,
+	roomPreview,
 	supportsProtocol,
 	unseat,
 	type RoomState
@@ -169,6 +170,49 @@ describe('the script a room relays', () => {
 		expect(isScript({ entries: [{ kind: 'official' }] })).toBe(false);
 		expect(isScript({ entries: [{ kind: 'custom', character: null }] })).toBe(false);
 		expect(isScript({ entries: ['washerwoman'] })).toBe(false);
+	});
+});
+
+describe('what a phone sees before it joins', () => {
+	it('says only that there is no room when there is none', () => {
+		expect(roomPreview(undefined, { entries: [] })).toEqual({ open: false });
+	});
+
+	it('shows an open room before the Storyteller has sent anything', () => {
+		expect(roomPreview(newRoom('hash'))).toEqual({ open: true });
+	});
+
+	it("shows the script's name, author and logo, and the table's size", () => {
+		let room = roomWith('m1', 'm2');
+		room = resolve(request(room, 'm1', { name: 'Ana', seatId: s('b') }, 1, 'r1'), 'r1', true);
+		expect(
+			roomPreview(room, {
+				meta: { name: 'Storm Front', author: 'Kim', logo: 'https://logo.example/s.png' },
+				entries: [
+					{ kind: 'official', id: 'washerwoman' },
+					{ kind: 'custom', character: { id: 'x' } as never }
+				]
+			})
+		).toEqual({
+			open: true,
+			script: {
+				name: 'Storm Front',
+				author: 'Kim',
+				logo: 'https://logo.example/s.png',
+				official: false
+			},
+			seats: 3,
+			seated: 1
+		});
+	});
+
+	it('marks a script with no characters of its own as official', () => {
+		expect(
+			roomPreview(newRoom('hash'), {
+				meta: { name: 'Trouble Brewing' },
+				entries: [{ kind: 'official', id: 'washerwoman' }]
+			}).script
+		).toEqual({ name: 'Trouble Brewing', official: true });
 	});
 });
 

@@ -13,6 +13,8 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { fileNameFor } from '#lib/ui/download.ts';
 	import FileView from '#lib/ui/primitives/FileView.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { readStored, writeStored } from '#lib/ui/stored.ts';
 	import { shownParts } from './approved-about.ts';
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeValue from './ModeValue.svelte';
@@ -50,6 +52,16 @@
 		unconfirmed: 'modes.status.unconfirmed'
 	} as const;
 	const file = $derived(JSON.stringify(mode, null, '\t'));
+
+	/**
+	 * Only the parts this mode changes (Trevor, 2026-10-19: "only show items that have
+	 * changed"). On until turned off, and remembered on this device.
+	 */
+	const CHANGED_KEY = 'grim-games:mode-inspect-changed-only';
+	let changedOnly = $state(readStored<boolean>(CHANGED_KEY) !== false);
+	const shown = $derived(
+		changedOnly ? partNames.filter((part) => status(part) !== 'standard') : partNames
+	);
 </script>
 
 <Dialog bind:open title={mode.name} size="full">
@@ -62,9 +74,19 @@
 		</section>
 
 		<section class="group" aria-labelledby="inspect-parts-title">
-			<h3 id="inspect-parts-title">{t('modes.parts')}</h3>
+			<div class="title">
+				<h3 id="inspect-parts-title">{t('modes.parts')}</h3>
+				<Toggle
+					label={t('modes.changedOnly')}
+					checked={changedOnly}
+					onChange={(on) => {
+						changedOnly = on;
+						writeStored(CHANGED_KEY, on);
+					}}
+				/>
+			</div>
 			<ul class="parts" role="list">
-				{#each partNames as part (part)}
+				{#each shown as part (part)}
 					{@const s = status(part)}
 					<li data-part={part} data-status={s}>
 						<div class="head">
@@ -75,6 +97,8 @@
 							<div class="value"><ModeValue field={part} value={parts[part]} /></div>
 						{/if}
 					</li>
+				{:else}
+					<li class="none">{t('common.none')}</li>
 				{/each}
 			</ul>
 		</section>
@@ -117,6 +141,22 @@
 		padding-bottom: var(--space-1);
 		border-bottom: 2px solid var(--border);
 		font-size: 1.05rem;
+	}
+	/* The parts heading with its Changed only switch on the right, sharing the rule under it. */
+	.title {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		border-bottom: 2px solid var(--border);
+	}
+	.title h3 {
+		padding-bottom: 0;
+		border-bottom: 0;
+	}
+	.parts li.none {
+		padding: var(--space-1) var(--space-3);
+		color: var(--on-surface-muted);
 	}
 	.parts {
 		display: grid;

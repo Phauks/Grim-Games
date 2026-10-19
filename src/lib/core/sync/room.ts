@@ -151,6 +151,47 @@ export type ServerMessage =
 export type RefusedReason = 'no-room' | 'not-host' | 'room-full' | 'too-old';
 
 /**
+ * What a phone sees of a room before it joins, from `GET /api/room/<code>` (Trevor,
+ * 2026-10-19: type the code "and then it shows you what game you will be joining"). Only
+ * what joining would show anyway: the script's name, author and logo, and the table's size.
+ */
+export interface RoomPreview {
+	open: boolean;
+	/** Once the Storyteller's device has sent the script. */
+	script?: {
+		name: string;
+		author?: string;
+		/** The author's `_meta.logo`, as given; the phone checks it before showing it. */
+		logo?: string;
+		/** No characters of its own, so an edition's name means that edition (and its logo). */
+		official: boolean;
+	};
+	/** Seats at the table, once the Storyteller's device has published it. */
+	seats?: number;
+	/** Seats someone in the room sits in. */
+	seated?: number;
+}
+
+export function roomPreview(room: RoomState | undefined, script?: Script): RoomPreview {
+	if (!room) return { open: false };
+	const preview: RoomPreview = { open: true };
+	if (script) {
+		const { name = '', author, logo } = script.meta ?? {};
+		preview.script = {
+			name,
+			...(author ? { author } : {}),
+			...(typeof logo === 'string' && logo ? { logo } : {}),
+			official: script.entries.every((e) => e.kind === 'official')
+		};
+	}
+	if (room.public) {
+		preview.seats = room.public.seats.length;
+		preview.seated = room.members.filter((m) => m.seatId).length;
+	}
+	return preview;
+}
+
+/**
  * A light shape check of a script from the Storyteller's device: the room only stores and
  * relays it, and each phone loads it through its own script loader.
  */

@@ -84,6 +84,9 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	await expect(dialog.locator('[data-part="assignment"] [data-field="instructions"]')).toHaveCount(
 		0
 	);
+	// Only the parts the mode changes, until Changed only is turned off (Trevor, 2026-10-19).
+	await expect(dialog.locator('[data-part="towns"]')).toHaveCount(0);
+	await dialog.getByText('Changed only', { exact: true }).tap();
 	await expect(dialog.locator('[data-part="towns"]')).toContainText('Standard');
 	// The mode file starts closed every time (Trevor, 2026-10-18).
 	await expect(dialog.locator('pre')).toBeHidden();
@@ -110,6 +113,10 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	await scroll.evaluate((el) => el.scrollTo(0, el.scrollHeight));
 	expect(await scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	await noSidewaysScroll(page);
+	// The choice is remembered.
+	await dialog.getByRole('button', { name: 'Close' }).first().tap();
+	await page.getByRole('button', { name: 'Inspect Whale Buffet' }).tap();
+	await expect(dialog.locator('[data-part="towns"]')).toContainText('Standard');
 });
 
 test('restricted characters stay out of the game, and the mode’s bans can be lifted', async ({
@@ -499,7 +506,7 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await dialog.getByTestId('mode-file').fill('{"format": 1, "id": "Bad Id"}');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(dialog.getByRole('status')).toContainText('id: must be lower-case');
-	await expect(dialog.getByRole('status')).toContainText('sources: must list at least one source');
+	await expect(dialog.getByRole('status')).toContainText('sources: must be a list of links');
 
 	const mine = {
 		format: 1,
@@ -865,4 +872,29 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 	await expect(page.getByTestId('game-mode').first()).toContainText(
 		'Whale Buffet + Stowed Away + A Script of Infinite Possibilities'
 	);
+});
+
+test('Special rules sits under Game mode, and opening it closes the Game mode list', async ({
+	page
+}) => {
+	// Trevor, 2026-10-19: Special rules directly beneath Game mode; the Game mode list stayed
+	// open over the Special rules dialog.
+	await page.goto('/new');
+	const panel = modesPanel(page);
+	const modes = panel.getByRole('combobox', { name: 'Game mode' });
+	const rules = panel.getByRole('button', { name: /^Special rules/ });
+	const about = panel.getByTestId('mode-about');
+	const [modeBox, rulesBox, aboutBox] = await Promise.all(
+		[modes, rules, about].map((l) => l.boundingBox())
+	);
+	expect(rulesBox!.y).toBeGreaterThan(modeBox!.y);
+	expect(rulesBox!.y).toBeLessThan(aboutBox!.y);
+
+	await modes.tap();
+	await expect(page.getByRole('listbox')).toBeVisible();
+	// A tap that reaches the button without first closing the list, as on Trevor's phone.
+	await rules.evaluate((el: HTMLElement) => el.click());
+	await expect(page.getByRole('dialog', { name: 'Special rules' })).toBeVisible();
+	await expect(page.getByRole('listbox')).toBeHidden();
+	await noSidewaysScroll(page);
 });

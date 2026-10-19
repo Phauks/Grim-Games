@@ -23,8 +23,6 @@
 	// Another tab tapped Refresh: the new build is active here too, but this page still runs
 	// the old one until it reloads.
 	let activated = $state(false);
-	// Set only when the user taps Refresh, so the first install's clients.claim() never reloads.
-	let refreshRequested = false;
 	// What the waiting build changed; null until fetched, or when offline.
 	let changes = $state<Changes | null>(null);
 	let changesOpen = $state(false);
@@ -65,6 +63,10 @@
 	$effect(() => {
 		if (waiting || activated) void loadChanges();
 	});
+	// About offers Refresh too once a build is ready, however it was found.
+	$effect(() => {
+		if (waiting || activated) updateCheck.ready = true;
+	});
 
 	// Check for updates in About found a build: show the card again, even after Later.
 	$effect(() => {
@@ -98,7 +100,8 @@
 		navigator.serviceWorker.ready.then(watch);
 		let hadController = !!navigator.serviceWorker.controller;
 		const onControllerChange = () => {
-			if (refreshRequested) return location.reload();
+			// Refresh was tapped here or in About; updateCheck.refresh reloads the page.
+			if (updateCheck.refreshing) return;
 			// A first install claims the page too; only a page that had a controller is behind.
 			if (hadController) {
 				activated = true;
@@ -122,8 +125,7 @@
 
 	function refresh() {
 		if (activated) return location.reload();
-		refreshRequested = true;
-		waiting?.postMessage({ type: 'SKIP_WAITING' });
+		void updateCheck.refresh();
 	}
 </script>
 

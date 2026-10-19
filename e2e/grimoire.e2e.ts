@@ -1536,6 +1536,7 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 	const pick = page.getByRole('dialog', { name: 'Choose a token' });
 	// The counts are not shown to the player.
 	await expect(pick).not.toContainText('Evil');
+	await expect(pick).not.toContainText('%');
 	await pick.getByRole('button', { name: 'Token 3' }).tap();
 	const shown = page.getByRole('dialog', { name: 'Good' });
 	await expect(shown.getByRole('button', { name: 'Token 3: Good' })).toBeVisible();
@@ -1544,6 +1545,52 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toHaveAccessibleName(
 		/good/
 	);
+});
+
+// Trevor, 2026-10-19: a Traveller joining can draw their alignment straight away, and the
+// Storyteller sees each side's chance and their mix of tokens is remembered on the device.
+test('a joining Traveller draws their alignment, with the last mix remembered', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, after, name] of [
+		[9, 8, 'Thief'],
+		[10, 9, 'Beggar']
+	] as const) {
+		await menu(page, 'Add seat');
+		await page.getByRole('button', { name: `Place between Seat ${after} and Seat 1` }).tap();
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name: `${name}, Recommended`, exact: true })
+			.tap();
+		await page
+			.getByRole('dialog', { name: 'Alignment' })
+			.getByRole('button', { name: 'Draw' })
+			.tap();
+		const draw = page.getByRole('dialog', { name: 'Alignment draw' });
+		if (number === 9) {
+			// Each side's chance is shown to the Storyteller.
+			await expect(draw.getByTestId('evil-chance')).toHaveText('25%');
+			await expect(draw.getByTestId('good-chance')).toHaveText('75%');
+			// All evil: the player still feels they chose.
+			for (let n = 1; n < 4; n++) await draw.getByRole('button', { name: 'More evil' }).tap();
+		}
+		await expect(draw.getByTestId('evil-chance')).toHaveText('100%');
+		await expect(draw.getByTestId('good-chance')).toHaveText('0%');
+		await expect(draw.getByLabel('Evil tokens')).toHaveText('4');
+		await draw.getByRole('button', { name: 'Confirm' }).tap();
+		await page
+			.getByRole('dialog', { name: 'Choose a token' })
+			.getByRole('button', { name: 'Token 1' })
+			.tap();
+		const shown = page.getByRole('dialog', { name: 'Evil' });
+		await shown.getByRole('button', { name: 'Done' }).tap();
+		await expect(
+			page.getByRole('button', { name: new RegExp(`^Seat ${number}: no name, ${name}`) })
+		).toHaveAccessibleName(/evil/);
+	}
 });
 
 test("the Undertaker's step suggests the executed player's character", async ({ page }) => {

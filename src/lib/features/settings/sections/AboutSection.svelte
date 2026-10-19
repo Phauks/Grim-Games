@@ -8,6 +8,7 @@
 	import { ADVANCED_KEY } from './about-advanced.ts';
 	import { formatBytes } from '#lib/i18n/bytes.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 
 	const RESULT = {
@@ -69,6 +70,15 @@
 			onclick={() => void updateCheck.check()}
 		/>
 		<span class="result" role="status" data-testid="update-check-result">{status}</span>
+		<!-- Once a build is ready, Refresh moves onto it here too (Trevor, 2026-10-19). It takes the
+		     end of the same line, as tall as the check button, so only the status text gets shorter. -->
+		{#if updateCheck.ready}
+			<Button
+				variant="accent"
+				data-testid="update-refresh"
+				onclick={() => void updateCheck.refresh()}>{t('shell.updateRefresh')}</Button
+			>
+		{/if}
 	</dd>
 	<dt>{t('shell.aboutCommit')}</dt>
 	<dd>

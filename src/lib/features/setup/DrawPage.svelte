@@ -103,7 +103,7 @@
 
 <svelte:window onkeydown={onWindowKey} />
 
-<Page title={t('setup.draw')}>
+<Page title={t('setup.draw')} iconActions>
 	{#snippet actions()}<SetupActions {port} />{/snippet}
 
 	<ErrorBoundary area="setup">

@@ -278,7 +278,10 @@ export interface GameMode {
 	name: string;
 	/** Other names it goes by (searched, shown in Inspect). */
 	aliases?: string[];
-	/** Where its rules come from, the rules page first. Every mode credits its source. */
+	/**
+	 * Where its rules come from, the rules page first. Empty for a mode no page describes
+	 * (Trevor, 2026-10-19: his own notes are not a source).
+	 */
 	sources: SourceLink[];
 	/**
 	 * Who made the mode, each linked to a page that names them as its author (Trevor,

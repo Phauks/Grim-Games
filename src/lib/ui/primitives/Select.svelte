@@ -2,6 +2,7 @@
 	import { createListCollection, Select } from '@ark-ui/svelte/select';
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { onLayerOpen } from './layers.ts';
 
 	interface Option {
 		value: T;
@@ -59,6 +60,10 @@
 	}: Props = $props();
 
 	let open = $state(false);
+	// A dialog or sheet opening over the page closes the list, so it never stays on top of it.
+	$effect(() => {
+		if (open) return onLayerOpen(() => (open = false));
+	});
 
 	function change(next: T[]) {
 		if (action && next.includes(action.value)) {

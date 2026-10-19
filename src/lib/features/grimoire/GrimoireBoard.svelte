@@ -1684,7 +1684,16 @@
 	</div>
 </ConfirmDialog>
 
-<SeatSheet bind:this={seatSheet} bind:open={sheetOpen} {grimoire} seatId={selected} />
+<SeatSheet
+	bind:this={seatSheet}
+	bind:open={sheetOpen}
+	{grimoire}
+	seatId={selected}
+	onDraw={(id) => {
+		sheetOpen = false;
+		onDraw(id);
+	}}
+/>
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
