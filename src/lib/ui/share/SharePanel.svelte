@@ -32,10 +32,22 @@
 		/** Drawn in the middle of the QR code, e.g. the script's logo (see `QrCode`). */
 		qrCenter?: Snippet;
 		qrCenterShape?: 'square' | 'wide';
+		/** A short warning on the QR's bottom edge (`QrCode`'s `caption`). */
+		qrCaption?: string;
 	}
 
-	let { url, title, qrLabel, pending, code, text, actions, qrCenter, qrCenterShape }: Props =
-		$props();
+	let {
+		url,
+		title,
+		qrLabel,
+		pending,
+		code,
+		text,
+		actions,
+		qrCenter,
+		qrCenterShape,
+		qrCaption
+	}: Props = $props();
 	const id = $props.id();
 	const urlId = `${id}-url`;
 	const codeId = `${id}-code`;
@@ -101,7 +113,13 @@
 	{/if}
 	<div class="qr">
 		{#if url && fitsQrCode(url)}
-			<QrCode value={url} label={qrLabel} center={qrCenter} centerShape={qrCenterShape} />
+			<QrCode
+				value={url}
+				label={qrLabel}
+				center={qrCenter}
+				centerShape={qrCenterShape}
+				caption={qrCaption}
+			/>
 		{:else}
 			<p class="placeholder" aria-busy={!url}>{url ? t('share.tooLong') : pending}</p>
 		{/if}

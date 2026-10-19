@@ -37,9 +37,14 @@
 		center?: Snippet;
 		/** `wide` for a line of text such as a name; `square` (the default) for a picture. */
 		centerShape?: 'square' | 'wide';
+		/**
+		 * A short warning across the bottom edge, in the quiet zone so it never covers the code
+		 * (Trevor, 2026-10-19: the view-only grimoire link says it shows spoilers).
+		 */
+		caption?: string;
 	}
 
-	let { value, label, center, centerShape = 'square' }: Props = $props();
+	let { value, label, center, centerShape = 'square', caption }: Props = $props();
 	const centred = $derived(!!center && fitsCentredQrCode(value));
 </script>
 
@@ -59,6 +64,7 @@
 			>{@render center()}</QrCode.Overlay
 		>
 	{/if}
+	{#if caption}<span class="qr-caption" data-testid="qr-caption">{caption}</span>{/if}
 </QrCode.Root>
 
 <style>
@@ -70,6 +76,24 @@
 		border-radius: var(--radius-md);
 		background: var(--token-face);
 		color: var(--on-token);
+	}
+	:global(.qr[data-scope='qr-code']:has(.qr-caption)) {
+		position: relative;
+		/* Room below for the caption's lower half. */
+		margin-bottom: 0.8em;
+	}
+	.qr-caption {
+		position: absolute;
+		bottom: 0;
+		left: 50%;
+		transform: translate(-50%, 50%);
+		padding: 0.1em 0.7em;
+		border-radius: var(--radius-sm);
+		background: var(--evil);
+		color: var(--on-evil);
+		font-weight: 700;
+		line-height: 1.4;
+		white-space: nowrap;
 	}
 	:global(.qr [data-part='frame']) {
 		display: block;
