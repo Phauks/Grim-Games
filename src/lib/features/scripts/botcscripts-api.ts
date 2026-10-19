@@ -29,6 +29,8 @@ export interface BotcScriptsVersion {
 	author: string;
 	/** The script JSON, exactly as uploaded. */
 	content: unknown;
+	/** Whether the author uploaded a PDF of this version (`scriptPdfUrl`). */
+	pdf?: boolean;
 }
 
 const ID = /^\d{1,9}$/;
@@ -95,6 +97,16 @@ export function parseProxyPath(pathname: string): BotcScriptsRef | undefined {
 /** The public page for a script, for "from BotC Scripts" links. */
 export function scriptPageUrl(scriptId: number, version?: string): string {
 	return `${BOTC_SCRIPTS_ORIGIN}/script/${scriptId}${version ? `/${encodeURIComponent(version)}` : ''}`;
+}
+
+/** Where the site serves a version's uploaded PDF; it errors when there is none. */
+export function scriptPdfUrl(scriptId: number, version: string): string {
+	return `${scriptPageUrl(scriptId, version)}/download_pdf`;
+}
+
+/** Whether a version's page offers its uploaded PDF (the page links it only then). */
+export function pageHasPdf(html: string, scriptId: number, version: string): boolean {
+	return html.includes(`/script/${scriptId}/${encodeURIComponent(version)}/download_pdf"`);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -195,7 +207,15 @@ export function readProxiedVersion(json: unknown): BotcScriptsVersion | undefine
 		return undefined;
 	}
 	if (!Array.isArray(content) && !isObject(content)) return undefined;
-	return { scriptId, versionId, name, version, author, content };
+	return {
+		scriptId,
+		versionId,
+		name,
+		version,
+		author,
+		content,
+		...(json.pdf === true ? { pdf: true } : {})
+	};
 }
 
 /** One character entry of a search result, as the script lists it. */

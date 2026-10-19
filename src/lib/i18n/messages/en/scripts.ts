@@ -56,6 +56,7 @@ export const scripts = {
 	'scripts.worldCup.finalist': 'Finalist',
 	'scripts.kind.Full': 'Full',
 	'scripts.kind.Teensyville': 'Teensyville',
+	'scripts.print.sourcePdf': 'Script PDF',
 	'scripts.sourceLabel.official': 'Official',
 	'scripts.sourceLabel.curated': 'Official',
 	'scripts.sourceLabel.month': 'Script of the Month',

@@ -8,6 +8,7 @@ import {
 	proxyPath,
 	readProxiedSearchPage,
 	readProxiedVersion,
+	scriptPdfUrl,
 	searchPath,
 	type BotcScriptsQuery,
 	type BotcScriptsRef,
@@ -36,6 +37,8 @@ export class ScriptFetchError extends Error {
 export interface FetchedScript {
 	text: string;
 	source: ScriptSource;
+	/** A PDF of the script its source publishes, for Print: linked, never copied. */
+	pdf?: string;
 }
 
 const tooLarge = () => new ScriptFetchError(t('scripts.error.tooLarge'));
@@ -89,7 +92,8 @@ async function fetchBotcScripts(ref: BotcScriptsRef): Promise<FetchedScript> {
 	if (!version) throw new ScriptFetchError(t('scripts.error.botcUnexpected'));
 	return {
 		text: JSON.stringify(version.content),
-		source: { kind: 'botcscripts', scriptId: version.scriptId, version: version.version }
+		source: { kind: 'botcscripts', scriptId: version.scriptId, version: version.version },
+		...(version.pdf ? { pdf: scriptPdfUrl(version.scriptId, version.version) } : {})
 	};
 }
 
