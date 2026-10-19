@@ -2077,7 +2077,7 @@ async function endWithNote(page: Page) {
 	await closeSheet(page);
 	await menu(page, 'Notes');
 	await page.getByRole('button', { name: 'Notes for Seat 1: None' }).tap();
-	const notes = page.getByRole('dialog', { name: 'Notes for Seat 1' });
+	const notes = page.getByRole('dialog', { name: 'Note: Seat 1' });
 	await notes.getByRole('textbox').tap();
 	await page.keyboard.type('Secret word: lantern');
 	await notes.getByRole('button', { name: 'Close' }).tap();
@@ -2296,9 +2296,9 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	const notes = sheet.getByRole('button', { name: /^Notes for Seat 1 \(Ana\):/ });
 	await expect(notes).toHaveAccessibleName('Notes for Seat 1 (Ana): None');
 	await notes.tap();
-	const dialog = page.getByRole('dialog', { name: 'Notes for Seat 1 (Ana)' });
+	// "Note: Ana", the character on the next line (Trevor, 2026-10-19).
+	const dialog = page.getByRole('dialog', { name: 'Note: Ana' });
 	const field = dialog.getByRole('textbox');
-	// Whose note it is: seat and name in the title, the character under it (Trevor, 2026-10-19).
 	await expect(dialog.getByText('None', { exact: true })).toBeVisible();
 	// Nothing grabs focus (and the keyboard) when it opens; Enter starts a new line.
 	await expect(field).not.toBeFocused();
@@ -2307,6 +2307,12 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('Amnesiac: learns a Minion');
 	await expect(dialog).toBeVisible();
+	// No resize grip; the field grows with its lines instead (Trevor, 2026-10-19).
+	await expect(field).toHaveCSS('resize', 'none');
+	const height = (await field.boundingBox())?.height ?? 0;
+	for (let i = 0; i < 6; i++) await page.keyboard.press('Enter');
+	expect((await field.boundingBox())?.height ?? 0).toBeGreaterThan(height);
+	for (let i = 0; i < 6; i++) await page.keyboard.press('Backspace');
 	// No Save or Cancel (Trevor, 2026-10-17): closing it any way keeps the note.
 	await expect(dialog.getByRole('button', { name: 'Save' })).toHaveCount(0);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
