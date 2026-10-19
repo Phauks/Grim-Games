@@ -945,6 +945,10 @@ test('a locked draw asks for the PIN to leave and shows tokens only while held',
 }) => {
 	await lockedDraw(page);
 	await expect(page.getByRole('button', { name: 'Setup and bag draw' })).toBeDisabled();
+	// No header, sidebar or footer to leave by while the phone is passed round.
+	await expect(page.getByRole('banner')).toHaveCount(0);
+	await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
+	await expect(page.getByRole('contentinfo')).toHaveCount(0);
 
 	await page.getByRole('button', { name: /^Tile 1/ }).tap();
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
@@ -971,6 +975,8 @@ test('a locked draw asks for the PIN to leave and shows tokens only while held',
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
 	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+	// Unlocked: the header is back.
+	await expect(page.getByRole('banner')).toBeVisible();
 	await noSidewaysScroll(page);
 });
 
