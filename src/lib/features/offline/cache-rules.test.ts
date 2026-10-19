@@ -25,6 +25,10 @@ describe('precached', () => {
 		expect(precached('/_app/immutable/assets/inter-cyrillic-ext-400-normal.x1.woff2')).toBe(false);
 		expect(precached('/_app/immutable/assets/inter-vietnamese-400-normal.x1.woff2')).toBe(false);
 	});
+
+	it('leaves out the Cloudflare headers file, which is never served', () => {
+		expect(precached('/_headers')).toBe(false);
+	});
 });
 
 describe('cachedOnUse', () => {
