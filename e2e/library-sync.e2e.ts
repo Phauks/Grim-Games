@@ -30,6 +30,14 @@ async function signIn(page: Page, email: string, creating: boolean) {
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 }
 
+/** The first sign-in sheet (Accounts' sync plan step 2): Confirm adds, Cancel keeps it here. */
+async function answerSheet(page: Page, offered: string, add: boolean) {
+	const sheet = page.getByRole('alertdialog', { name: "Add this device's data to your account?" });
+	await expect(sheet.getByRole('checkbox', { name: offered, includeHidden: true })).toBeChecked();
+	await sheet.getByRole('button', { name: add ? 'Confirm' : 'Cancel' }).tap();
+	await expect(sheet).toBeHidden();
+}
+
 const row = (page: Page, name: string) =>
 	page.getByTestId('library-table').getByRole('button', { name: new RegExp(`^${name}`) });
 
@@ -64,7 +72,7 @@ test('Library folders and collections follow the account to another device', asy
 	await page.goto('/library');
 	await newFolder(page, 'Club night');
 	await signIn(page, email, true);
-	// The Library joins the account when it is next open.
+	await answerSheet(page, '1 Library folder, tag or name', true);
 	await page.goto('/library');
 	await expect(row(page, 'Club night')).toBeVisible();
 
@@ -72,6 +80,7 @@ test('Library folders and collections follow the account to another device', asy
 	await second.goto('/library');
 	await newFolder(second, 'Teensy');
 	await signIn(second, email, false);
+	await answerSheet(second, '1 Library folder, tag or name', true);
 	await eventually(second, async () => {
 		await expect(row(second, 'Club night')).toBeVisible({ timeout: 2000 });
 		await expect(row(second, 'Teensy')).toBeVisible();

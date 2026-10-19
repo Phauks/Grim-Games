@@ -1,13 +1,16 @@
 import { untrack } from 'svelte';
 import { account } from '#lib/features/account/account.svelte.ts';
+import { firstSignIn } from '#lib/features/account/first-sign-in.svelte.ts';
 import { accountSync } from '#lib/features/account/sync/sync.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { writeStored } from '#lib/ui/stored.ts';
 import { linkedTo, markLinked } from './library-sync.ts';
 import {
 	addLabel,
 	deleteLabel,
 	emptyLabels,
 	labelsFor,
+	labelsToOffer,
 	mergeLabels,
 	moveFolder,
 	parseLabels,
@@ -30,6 +33,8 @@ export const LIBRARY_STORAGE_KEY = 'grim-games:library';
 const KIND = 'library-labels';
 const DOC_ID = 'labels';
 const LINKED_KEY = 'grim-games:library-labels-linked';
+/** This device's labels from before it followed an account whose sheet said no (kept, not deleted). */
+const SET_ASIDE_KEY = 'grim-games:library-labels-before-sync';
 
 accountSync.register(KIND, {
 	merge: (base, mine, theirs) => {
@@ -96,6 +101,41 @@ class Labels {
 		});
 	}
 
+	/** The account's copy on this device: undefined when it has none, null when unreadable. */
+	#theirs(): LibraryLabels | undefined | null {
+		const body = accountSync.docs(KIND).find((d) => d.id === DOC_ID)?.body;
+		return body === undefined ? undefined : (parseLabels(body) ?? null);
+	}
+
+	/** What the first sign-in sheet offers: this device's labels the account doesn't have. */
+	offerCount(): number {
+		const theirs = this.#theirs();
+		return theirs === null ? 0 : labelsToOffer(this.#state, theirs);
+	}
+
+	/** The sheet said yes: this device's labels and the account's are merged. */
+	join(userId: string): void {
+		const theirs = this.#theirs();
+		if (theirs === null) return;
+		const merged = theirs ? mergeLabels(undefined, this.#state, theirs) : this.#state;
+		this.#save(merged, { fromAccount: true });
+		// Nothing here yet and nothing in the account: no empty document is made.
+		const blank = !theirs && JSON.stringify(merged) === JSON.stringify(emptyLabels());
+		if (!blank && (!theirs || JSON.stringify(theirs) !== JSON.stringify(merged))) {
+			this.#push(merged);
+		}
+		markLinked(LINKED_KEY, userId);
+	}
+
+	/** The sheet said no: this device's labels are set aside and the account's are shown. */
+	setAside(userId: string): void {
+		const theirs = this.#theirs();
+		if (theirs === null) return;
+		if (this.#stored.writable && !writeStored(SET_ASIDE_KEY, this.#state)) return;
+		this.#save(theirs ?? emptyLabels(), { fromAccount: true });
+		markLinked(LINKED_KEY, userId);
+	}
+
 	/** Keeps this device in step with the signed-in account's copy (`body`, if it has one). */
 	#follow(userId: string, body: unknown, pulled: boolean): void {
 		const theirs = body === undefined ? undefined : parseLabels(body);
@@ -103,14 +143,10 @@ class Labels {
 			// Until the account's copy has been fetched, an empty account can't be told apart.
 			if (!pulled) return;
 			if (body !== undefined && !theirs) return;
-			const merged = theirs ? mergeLabels(undefined, this.#state, theirs) : this.#state;
-			this.#save(merged, { fromAccount: true });
-			// Nothing here yet and nothing in the account: no empty document is made.
-			const blank = !theirs && JSON.stringify(merged) === JSON.stringify(emptyLabels());
-			if (!blank && (!theirs || JSON.stringify(theirs) !== JSON.stringify(merged))) {
-				this.#push(merged);
-			}
-			markLinked(LINKED_KEY, userId);
+			// Something to add waits for the first sign-in sheet's answer (Accounts, 2026-10-19),
+			// unless the sheet was answered before it offered labels.
+			if (this.offerCount() > 0 && !firstSignIn.answered(userId)) return;
+			this.join(userId);
 			return;
 		}
 		if (theirs && JSON.stringify(theirs) !== JSON.stringify(this.#state)) {
@@ -121,8 +157,10 @@ class Labels {
 	#save(next: LibraryLabels, { fromAccount = false } = {}): void {
 		if (next === this.#state) return;
 		this.#state = next;
-		if (!fromAccount && account.user && this.#stored.writable && accountSync.enabled(KIND)) {
-			this.#push(next);
+		const user = account.user;
+		// Before this device has joined the account, its changes stay here.
+		if (!fromAccount && user && this.#stored.writable && accountSync.enabled(KIND)) {
+			if (linkedTo(LINKED_KEY, user.id)) this.#push(next);
 		}
 		if (!this.#stored.writable) return;
 		try {
@@ -174,3 +212,15 @@ class Labels {
 }
 
 export const libraryLabels = new Labels();
+
+firstSignIn.register(KIND, {
+	async count() {
+		return libraryLabels.offerCount();
+	},
+	async upload() {
+		if (account.user) libraryLabels.join(account.user.id);
+	},
+	async skip() {
+		if (account.user) libraryLabels.setAside(account.user.id);
+	}
+});

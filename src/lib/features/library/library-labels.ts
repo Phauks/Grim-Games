@@ -498,3 +498,17 @@ export function mergeLabels(
 		folders: uniqueNames(merged.folders, 'folders')
 	};
 }
+
+/**
+ * How many of this device's folders, tags and item labels the account's copy doesn't have:
+ * what the first sign-in sheet offers to add (Accounts thread, 2026-10-19).
+ */
+export function labelsToOffer(mine: LibraryLabels, theirs: LibraryLabels | undefined): number {
+	const has = (list: Label[] | undefined, id: string) => !!list?.some((l) => l.id === id);
+	const folders = mine.folders.filter((f) => !has(theirs?.folders, f.id)).length;
+	const tags = mine.tags.filter((tag) => !has(theirs?.tags, tag.id)).length;
+	const items = Object.entries(mine.scripts).filter(
+		([key, labels]) => JSON.stringify(theirs?.scripts[key]) !== JSON.stringify(labels)
+	).length;
+	return folders + tags + items;
+}
