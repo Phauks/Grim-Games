@@ -17,6 +17,17 @@ async function select(page: Page, word: string) {
 	}, word);
 }
 
+/** The colours open from the Colour button, beside Bold, Italic and Underline (Trevor, 2026-10-18). */
+async function ink(page: Page, colour: string) {
+	await page.getByRole('button', { name: 'Colour', exact: true }).tap();
+	await page.getByRole('button', { name: colour, exact: true }).tap();
+}
+
+async function characterCount(page: Page, count: 'None' | 'Exactly' | 'Range') {
+	await page.getByRole('combobox', { name: 'Characters to show' }).tap();
+	await page.getByRole('option', { name: count, exact: true }).tap();
+}
+
 async function newCard(page: Page, text: string) {
 	await page.getByRole('button', { name: 'New info token' }).tap();
 	await page.getByRole('textbox', { name: 'Text' }).fill(text);
@@ -50,9 +61,15 @@ test('Bold, Italic, Underline and Colour each apply at once, in the editor, prev
 	await expect(preview.locator('u')).toHaveText('are');
 
 	await select(page, 'You');
-	await page.getByRole('button', { name: 'Red' }).tap();
-	await expect(page.getByRole('button', { name: 'Red' })).toHaveAttribute('aria-pressed', 'true');
+	await ink(page, 'Red');
 	await expect(preview.locator('[data-ink="red"]')).toHaveText('You');
+	// Reopened, the colours show the one at the caret.
+	await page.getByRole('button', { name: 'Colour', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Red', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await page.getByRole('button', { name: 'Red', exact: true }).tap();
 
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const tile = page.getByRole('button', { name: 'You are cursed today', exact: true });
@@ -191,10 +208,12 @@ test("a custom card's answers, number range and characters are each set on their
 
 	await newCard(page, 'You saw this many');
 	await fillIn(page, 'Number');
-	await page.getByRole('textbox', { name: 'Lowest' }).fill('1');
+	// Numbers only: letters typed are dropped (Trevor, 2026-10-18).
+	await page.getByRole('textbox', { name: 'Lowest' }).pressSequentially('a1b');
+	await expect(page.getByRole('textbox', { name: 'Lowest' })).toHaveValue('1');
 	await page.getByRole('textbox', { name: 'Highest' }).fill('3');
-	await page.getByRole('button', { name: 'More characters' }).tap();
-	await page.getByRole('button', { name: 'More characters' }).tap();
+	// A range of characters: from 1 to 2 (Trevor, 2026-10-18: exact, or range).
+	await characterCount(page, 'Range');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const counted = page.getByRole('button', { name: 'You saw this many', exact: true });
 	await expect(counted.getByRole('img').first()).toHaveAccessibleName(
@@ -225,18 +244,13 @@ test('a saved colour can be changed and cleared, with bold kept', async ({ page 
 
 	// Change part of the red words to blue.
 	await select(page, 'mad');
-	await page.getByRole('button', { name: 'Blue' }).tap();
-	await expect(page.getByRole('button', { name: 'Blue' })).toHaveAttribute('aria-pressed', 'true');
+	await ink(page, 'Blue');
 	await expect(preview.locator('[data-ink="blue"]')).toHaveText('mad');
 	await expect(preview.locator('[data-ink="red"]')).toHaveText('very ');
 
 	// Clear the colour from the bold word; it stays bold.
 	await select(page, 'very');
-	await page.getByRole('button', { name: 'Text colour' }).tap();
-	await expect(page.getByRole('button', { name: 'Text colour' })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	await ink(page, 'Text colour');
 	await expect(preview.locator('[data-ink="red"]')).toHaveCount(0);
 	await expect(preview.locator('strong')).toHaveText('very');
 
@@ -249,7 +263,7 @@ test('a saved colour can be changed and cleared, with bold kept', async ({ page 
 	// Reopened, the field shows what was saved, and recolouring again works.
 	await page.getByRole('button', { name: 'Edit You are very mad today' }).tap();
 	await select(page, 'mad');
-	await page.getByRole('button', { name: 'Green' }).tap();
+	await ink(page, 'Green');
 	await expect(preview.locator('[data-ink="green"]')).toHaveText('mad');
 	await expect(preview.locator('[data-ink="blue"]')).toHaveCount(0);
 });
@@ -267,6 +281,8 @@ test("Trevor's Enhanced tokens sit apart, and the number can be stepped or typed
 		'True/False',
 		'What are you bluffing?',
 		'Use your ability?',
+		'Select a player',
+		'Select a character',
 		'Please choose again'
 	])
 		await expect(enhanced.getByRole('button', { name, exact: true })).toBeVisible();
@@ -286,6 +302,9 @@ test("Trevor's Enhanced tokens sit apart, and the number can be stepped or typed
 	await enhanced.getByRole('button', { name: 'Your number is', exact: true }).tap();
 	const field = page.getByRole('textbox', { name: 'Your number is' });
 	await field.fill('12');
+	// Letters are dropped as they are typed (Trevor, 2026-10-18).
+	await field.pressSequentially('x');
+	await expect(field).toHaveValue('12');
 	await field.press('Enter');
 	await expect(shown.locator('.detail')).toHaveText('12');
 	await shown.getByRole('button', { name: 'Close' }).tap();
@@ -311,4 +330,98 @@ test('a quick card is shown once and never saved', async ({ page }) => {
 	expect(
 		await page.evaluate(() => localStorage.getItem('grim-games:info-tokens') ?? '')
 	).not.toContain('You may not speak');
+});
+
+test('the Info tokens page shows several cards together, like the board sheet', async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	// Each card's + adds it; then all are shown in order (Trevor, 2026-10-18).
+	await page.getByRole('button', { name: 'Add This is the Demon to the cards to show' }).tap();
+	await page.getByRole('button', { name: 'Add You are to the cards to show' }).tap();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
+	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const list = page.getByTestId('chain-list');
+	await expect(list.getByRole('listitem')).toHaveCount(2);
+	await expect(list.getByRole('listitem').last()).toContainText('2. You are');
+	await page.getByRole('button', { name: 'Show 2 cards' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('heading').first()).toHaveText('This is the Demon');
+});
+
+test('a custom card can do what the built-in ones do: exactly, not in play, answer only', async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	// Like "These characters are not in play" (Trevor, 2026-10-18).
+	await newCard(page, 'Your bluffs are');
+	await characterCount(page, 'Exactly');
+	for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'More characters' }).tap();
+	await page.getByText('Only characters not in play').tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const bluffs = page.getByRole('button', { name: 'Your bluffs are', exact: true });
+	await expect(bluffs.getByTestId('info-token-asks')).toHaveText('3');
+	await bluffs.tap();
+	await expect(page.getByRole('button', { name: 'Random', exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+
+	// Like Yes/No: only the answer is shown.
+	await newCard(page, 'Heads or tails');
+	await fillIn(page, 'Choices');
+	await page.getByRole('textbox', { name: 'Answer 1' }).fill('Heads');
+	await page.getByRole('textbox', { name: 'Answer 2' }).fill('Tails');
+	await page.getByText('Show only the answer').tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await page.getByRole('button', { name: 'Heads or tails', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.locator('.detail')).toHaveText('Heads');
+	await expect(shown.locator('h2.title')).toHaveCount(0);
+});
+
+test('a range of characters can start above one, and is kept', async ({ page }) => {
+	await page.goto('/info-tokens');
+	await newCard(page, 'Two of these are');
+	await characterCount(page, 'Range');
+	// From 1 to 2; raise the most to 4, then the least to 2.
+	for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'More characters' }).tap();
+	await page.getByRole('button', { name: 'Higher From' }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const tile = page.getByRole('button', { name: 'Two of these are', exact: true });
+	await expect(tile.getByRole('img')).toHaveAccessibleName('Asks for 2 to 4 characters');
+	await page.reload();
+	await page.getByRole('button', { name: 'Edit Two of these are' }).tap();
+	await expect(page.getByRole('combobox', { name: 'Characters to show' })).toContainText('Range');
+	await expect(page.getByLabel('From', { exact: true })).toHaveText('2');
+	await expect(page.getByLabel('To', { exact: true })).toHaveText('4');
+});
+
+test("the example card fills its box, and the page doesn't scroll behind a shown card", async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	await newCard(page, 'A card with a great many words on it, to fill the example box right up');
+	// Any scrollbar is the box's own, at its edge (Trevor, 2026-10-18).
+	const preview = page.getByRole('figure', { name: 'Preview' });
+	const [box, card] = await Promise.all([
+		preview.boundingBox(),
+		preview.locator('.content').boundingBox()
+	]);
+	expect(card?.width).toBeCloseTo(box?.width ?? 0, -1);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+
+	await page
+		.getByRole('button', {
+			name: 'A card with a great many words on it, to fill the example box right up',
+			exact: true
+		})
+		.tap();
+	await expect(page.locator('[data-testid="show-to-player"][open]')).toBeVisible();
+	await expect(page.locator('html')).toHaveCSS('overflow', 'hidden');
+	await page
+		.locator('[data-testid="show-to-player"][open]')
+		.getByRole('button', { name: 'Close' })
+		.tap();
+	await expect(page.locator('html')).not.toHaveCSS('overflow', 'hidden');
 });

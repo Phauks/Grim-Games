@@ -33,6 +33,7 @@ export const library = {
 	'library.pane': 'Open item',
 	'library.preview': 'Preview',
 	'library.openWindow': 'Open in a window',
+	'library.pick': 'Choose',
 	'library.paneEmpty': 'None',
 	'library.newCollection': 'New collection',
 	'library.chooseCharacters': 'Choose characters',

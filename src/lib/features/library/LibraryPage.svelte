@@ -4,6 +4,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import LibraryBrowser from './LibraryBrowser.svelte';
+	import PreviewToggle from './PreviewToggle.svelte';
 
 	/** The Library: the file manager (`LibraryBrowser`) under its title row. */
 	let browser = $state<LibraryBrowser>();
@@ -17,13 +18,7 @@
 			label={t('library.newCollection')}
 			onclick={() => browser?.newCollection()}
 		/>
-		<IconButton
-			icon="preview"
-			label={t('library.preview')}
-			aria-pressed={browser?.isPreviewing() ?? false}
-			disabled={!browser?.canPreview()}
-			onclick={() => browser?.togglePreview()}
-		/>
+		<PreviewToggle {browser} />
 		<!-- Adding scripts lives here, not on Search (Trevor, 2026-10-17). -->
 		<AddScript onsaved={() => browser?.openAdded()} />
 	{/snippet}

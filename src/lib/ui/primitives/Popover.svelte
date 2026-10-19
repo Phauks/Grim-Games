@@ -19,6 +19,16 @@
 	}
 
 	let { open = $bindable(false), title, anchor, keepOpenOn, children }: Props = $props();
+
+	/**
+	 * An overlay under this one closed (a step dialog with a glossary word open in it). Zag
+	 * would close this one from inside that close, with a flushSync that crashes Svelte 5.57
+	 * (null batch), so close it ourselves just after, through `open`.
+	 */
+	function dismissedByParent(event: { preventDefault(): void }) {
+		event.preventDefault();
+		queueMicrotask(() => (open = false));
+	}
 </script>
 
 <!--
@@ -37,6 +47,7 @@
 		getAnchorElement: () => anchor ?? null
 	}}
 	finalFocusEl={() => anchor ?? null}
+	onRequestDismiss={dismissedByParent}
 	onInteractOutside={(event) => {
 		const target = event.detail.originalEvent.target;
 		if (target instanceof Element && (anchor?.contains(target) || keepOpenOn?.(target))) {

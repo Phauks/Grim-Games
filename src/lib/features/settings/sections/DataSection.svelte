@@ -4,7 +4,8 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
-	import { intl, t } from '#lib/i18n/locale.svelte.ts';
+	import { formatBytes } from '#lib/i18n/bytes.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
@@ -109,10 +110,7 @@
 	function size(bytes: number | null | undefined, ready = measured): string {
 		if (!ready || bytes === undefined) return '…';
 		if (bytes === null) return t('settings.storageUnknown');
-		const mb = bytes / 1_000_000;
-		return mb >= 0.1
-			? intl.number(mb, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1 })
-			: intl.number(bytes / 1000, { style: 'unit', unit: 'kilobyte', maximumFractionDigits: 0 });
+		return formatBytes(bytes);
 	}
 
 	async function confirm() {

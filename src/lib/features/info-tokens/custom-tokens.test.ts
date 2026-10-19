@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_ASKED_CHARACTERS } from '#lib/core/data/info-tokens.ts';
+import { MAX_ASKED_CHARACTERS, STANDARD_INFO_TOKENS } from '#lib/core/data/info-tokens.ts';
 import { MAX_CHOICES, parseAsks, parseStoredInfoTokens } from './custom-tokens.ts';
 
 describe('stored custom info tokens', () => {
@@ -103,4 +103,68 @@ describe('what a custom card asks for', () => {
 			options: many.slice(0, MAX_CHOICES)
 		});
 	});
+});
+
+describe('custom cards match the built-in ones', () => {
+	it('keeps exactly, not in play and answer only, each only where it means something', () => {
+		const parsed = parseStoredInfoTokens({
+			version: 3,
+			custom: [
+				{
+					id: 'a',
+					text: 'Your bluffs',
+					asks: { characters: 3, exactly: true, notInPlay: true }
+				},
+				{
+					id: 'b',
+					text: 'Heads/Tails',
+					asks: { value: { kind: 'choices', options: ['Heads', 'Tails'] } },
+					answerOnly: true
+				},
+				{ id: 'c', text: 'Plain', asks: { exactly: true, notInPlay: true }, answerOnly: true }
+			]
+		});
+		expect(parsed.custom[0].asks).toEqual({ characters: 3, exactly: true, notInPlay: true });
+		expect(parsed.custom[1].answerOnly).toBe(true);
+		expect(parsed.custom[2]).not.toHaveProperty('asks');
+		expect(parsed.custom[2]).not.toHaveProperty('answerOnly');
+	});
+});
+
+describe('a card shows an exact count of characters or a range', () => {
+	// Trevor (2026-10-18): "it should be exact, or range".
+	it('keeps a range from more than one, below the most, and never with exactly', () => {
+		const parsed = parseStoredInfoTokens({
+			version: 3,
+			custom: [
+				{ id: 'a', text: 'Two to four', asks: { characters: 4, fewest: 2 } },
+				{ id: 'b', text: 'Too few', asks: { characters: 4, fewest: 1 } },
+				{ id: 'c', text: 'Too many', asks: { characters: 4, fewest: 4 } },
+				{ id: 'd', text: 'Exact', asks: { characters: 4, fewest: 2, exactly: true } },
+				{ id: 'e', text: 'Not whole', asks: { characters: 4, fewest: 2.5 } }
+			]
+		});
+		expect(parsed.custom.map((card) => card.asks)).toEqual([
+			{ characters: 4, fewest: 2 },
+			{ characters: 4 },
+			{ characters: 4 },
+			{ characters: 4, exactly: true },
+			{ characters: 4 }
+		]);
+	});
+});
+
+describe('a custom card can be any built-in card', () => {
+	// Trevor (2026-10-18): a custom token can do at least everything a built-in one does.
+	it.each(STANDARD_INFO_TOKENS.map((token) => [token.text, token] as const))(
+		'%s survives being saved as a custom card',
+		(_text, token) => {
+			const parsed = parseStoredInfoTokens({
+				version: 3,
+				custom: [{ ...token, text: token.text, source: 'custom' }]
+			});
+			expect(parsed.custom[0].asks).toEqual(token.asks);
+			expect(parsed.custom[0].answerOnly).toEqual(token.answerOnly);
+		}
+	);
 });

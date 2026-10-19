@@ -20,6 +20,8 @@ describe('info tokens', () => {
 			'True/False',
 			'What are you bluffing?',
 			'Use your ability?',
+			'Select a player',
+			'Select a character',
 			'Please choose again'
 		]);
 		const firstExtra = STANDARD_INFO_TOKENS.findIndex((t) => t.extra);
@@ -38,7 +40,7 @@ describe('info tokens', () => {
 	it('asks for exactly the three bluffs with "not in play", and one character with "You are"', () => {
 		// https://wiki.bloodontheclocktower.com/Glossary: the Demon is shown 3 not-in-play good
 		// characters; https://wiki.bloodontheclocktower.com/Snitch: each Minion learns 3 too.
-		expect(byId('not-in-play')?.asks).toEqual({ characters: 3, exactly: true });
+		expect(byId('not-in-play')?.asks).toEqual({ characters: 3, exactly: true, notInPlay: true });
 		expect(byId('you-are')?.asks).toEqual({ characters: 1 });
 	});
 
