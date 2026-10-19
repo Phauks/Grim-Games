@@ -32,6 +32,10 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 	await expect(page.getByRole('tab')).toHaveCount(0);
 	// Standard has its About too, crediting The Pandemonium Institute (Trevor, 2026-10-18).
 	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
+	// Trevor's own wording (2026-10-19), so it shows without our own wording on.
+	await expect(page.getByTestId('inspect-about')).toHaveText(
+		'Normal rules for Blood on the Clocktower'
+	);
 	await expect(page.getByTestId('player-count')).toHaveCount(1);
 	await chooseMode(page, 'Whale Buffet');
 	await expect(page.getByTestId('mode-about')).toBeVisible();
