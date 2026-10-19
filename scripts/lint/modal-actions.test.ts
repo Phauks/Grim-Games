@@ -19,7 +19,7 @@ async function problems(template: string) {
 ${template}
 `;
 	const [result] = await eslint.lintText(code, {
-		filePath: 'src/lib/features/reference/ReferenceCard.svelte'
+		filePath: 'src/lib/features/reference/CharacterTable.svelte'
 	});
 	return result.messages.filter((m) => m.ruleId === 'grim/modal-actions').length;
 }
