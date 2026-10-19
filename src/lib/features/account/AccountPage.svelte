@@ -27,6 +27,7 @@
 	import './profile-scripts.svelte.ts';
 	import SignInForm from './SignInForm.svelte';
 	import PrivacyConsent from './PrivacyConsent.svelte';
+	import FirstSignIn from './FirstSignIn.svelte';
 	import { withPrivacyConsent } from './privacy-consent.svelte.ts';
 	import { startAccount } from './start.ts';
 	import UsernameDialog from './UsernameDialog.svelte';
@@ -388,6 +389,7 @@
 </Page>
 
 <PrivacyConsent />
+<FirstSignIn />
 
 <ConfirmDialog
 	bind:open={confirmImport}

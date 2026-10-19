@@ -142,10 +142,10 @@
 				never an image.
 			</li>
 			<li>
-				Your scripts: every script you add while signed in, and, the first time you sign in on a
-				device, the scripts already in its Recent list. Every device you sign in on keeps them in
-				step; you can remove them on the Account page, or stop a device syncing them in Settings,
-				Data.
+				Your scripts: every script you add while signed in, and, if you choose to when you first
+				sign in on a device, the scripts already in its Recent list. Every device you sign in on
+				keeps them in step; you can remove them on the Account page, or stop a device syncing them
+				in Settings, Data.
 			</li>
 		</ul>
 		<p>
