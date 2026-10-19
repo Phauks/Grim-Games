@@ -89,7 +89,11 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius-sm);
 	}
+	/* Copy and Download stay in reach while a long file scrolls under them. */
 	.head {
+		position: sticky;
+		top: 0;
+		z-index: 1;
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);

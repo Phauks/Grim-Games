@@ -37,17 +37,18 @@ export function askBadges(asks: InfoTokenAsks | undefined): AskBadge[] {
 			icon: 'asksChoices',
 			label: t('info-tokens.asks.choices', { options: value.options.join(', ') })
 		});
-	if (asks?.characters)
+	if (asks?.characters) {
+		// Exact, or a range: at least one, up to the most it allows (Trevor, 2026-10-18:
+		// "This player is" is 1–3).
+		const from = asks.exactly ? asks.characters : (asks.fewest ?? 1);
 		badges.push({
 			icon: 'asksCharacters',
-			label: t(
-				asks.exactly ? 'info-tokens.asks.charactersExactly' : 'info-tokens.asks.characters',
-				{
-					count: asks.characters
-				}
-			),
-			// At least one, up to the most it allows (Trevor, 2026-10-18: "This player is" is 1–3).
-			count: asks.characters > 1 && !asks.exactly ? `1–${asks.characters}` : String(asks.characters)
+			label:
+				from < asks.characters
+					? t('info-tokens.asks.charactersRange', { from, count: asks.characters })
+					: t('info-tokens.asks.charactersExactly', { count: asks.characters }),
+			count: from < asks.characters ? `${from}–${asks.characters}` : String(asks.characters)
 		});
+	}
 	return badges;
 }

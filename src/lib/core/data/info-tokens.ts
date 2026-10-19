@@ -26,6 +26,11 @@ export interface InfoTokenAsks {
 	/** Always exactly `characters`, never fewer: the Demon's three bluffs. */
 	exactly?: true;
 	/**
+	 * A range's lowest, when above 1: from this many up to `characters` (Trevor, 2026-10-18:
+	 * a count is exact or a range). Never set with `exactly`.
+	 */
+	fewest?: number;
+	/**
 	 * The characters are ones not in play: the picker offers the Good / All filter and
 	 * Random, and never picks one in play (the Demon's bluffs).
 	 */

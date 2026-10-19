@@ -38,6 +38,8 @@
 		/** Enter in a single-line field; it blurs the field afterwards unless this returns false. */
 		oncommit?: () => boolean | void;
 		oninput?: (value: string) => void;
+		/** Keeps only what it returns as the field is typed in (numbers: digits only). */
+		filter?: (value: string) => string;
 		/** A single-line field's one extra icon button, just before its X (ClearableField `end`). */
 		end?: Snippet;
 		testid?: string;
@@ -67,6 +69,7 @@
 		hideLabel = false,
 		oncommit,
 		oninput,
+		filter,
 		end,
 		testid,
 		plain = false
@@ -110,7 +113,14 @@
 				aria-invalid={invalid || undefined}
 				data-testid={testid}
 				{onkeydown}
-				oninput={(e) => oninput?.(e.currentTarget.value)}
+				oninput={(e) => {
+					if (filter) {
+						const kept = filter(e.currentTarget.value);
+						e.currentTarget.value = kept;
+						value = kept;
+					}
+					oninput?.(e.currentTarget.value);
+				}}
 			/>
 		</ClearableField>
 	{/if}

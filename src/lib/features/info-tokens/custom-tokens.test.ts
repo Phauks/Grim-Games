@@ -131,6 +131,29 @@ describe('custom cards match the built-in ones', () => {
 	});
 });
 
+describe('a card shows an exact count of characters or a range', () => {
+	// Trevor (2026-10-18): "it should be exact, or range".
+	it('keeps a range from more than one, below the most, and never with exactly', () => {
+		const parsed = parseStoredInfoTokens({
+			version: 3,
+			custom: [
+				{ id: 'a', text: 'Two to four', asks: { characters: 4, fewest: 2 } },
+				{ id: 'b', text: 'Too few', asks: { characters: 4, fewest: 1 } },
+				{ id: 'c', text: 'Too many', asks: { characters: 4, fewest: 4 } },
+				{ id: 'd', text: 'Exact', asks: { characters: 4, fewest: 2, exactly: true } },
+				{ id: 'e', text: 'Not whole', asks: { characters: 4, fewest: 2.5 } }
+			]
+		});
+		expect(parsed.custom.map((card) => card.asks)).toEqual([
+			{ characters: 4, fewest: 2 },
+			{ characters: 4 },
+			{ characters: 4 },
+			{ characters: 4, exactly: true },
+			{ characters: 4 }
+		]);
+	});
+});
+
 describe('a custom card can be any built-in card', () => {
 	// Trevor (2026-10-18): a custom token can do at least everything a built-in one does.
 	it.each(STANDARD_INFO_TOKENS.map((token) => [token.text, token] as const))(
