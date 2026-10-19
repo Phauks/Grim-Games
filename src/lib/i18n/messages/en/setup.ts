@@ -14,6 +14,8 @@ export const setup = {
 	'setup.characters': 'Characters',
 	'setup.script': 'Script',
 	'setup.players': 'Players',
+	'setup.tooManyPlayers': 'Too many players for this script',
+	'setup.tooManyPlayersFor': 'This script is made for at most {max} players.',
 	'setup.fewerPlayers': 'Fewer players',
 	'setup.alignmentDraw.tokens': 'Tokens',
 	'setup.alignmentDraw.fewerTokens': 'Fewer tokens',

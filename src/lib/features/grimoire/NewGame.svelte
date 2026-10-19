@@ -8,7 +8,8 @@
 		quickPlayScript,
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
-	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -25,6 +26,7 @@
 	/** New game (its own screen, Trevor 2026-10-16): script, player count and the count table. */
 	onMount(() => {
 		void restoreScripts();
+		void loadOfficialData();
 		// Play on the Search page opens New game with that script chosen.
 		if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
 	});
@@ -33,6 +35,16 @@
 	let edition = $state<ScriptChoice>('tb');
 	let players = $state(8);
 	let starting = $state(false);
+	/** Teensyville scripts grey out counts above 6 (Trevor, 2026-10-19). */
+	const maxPlayers = $derived.by(() => {
+		const data = officialData.current;
+		if (!data) return undefined;
+		try {
+			return scriptMaxPlayers(loadScriptChoice(edition, data).characters);
+		} catch {
+			return undefined;
+		}
+	});
 
 	async function start(rules: readonly SpecialRule[]) {
 		starting = true;
@@ -70,7 +82,7 @@
 			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
 			<ScriptPicker label="Script" value={edition} onChange={(v) => (edition = v)} />
 			<!-- The same count and setup sheet as character selection (Trevor, 2026-10-17). -->
-			<PlayerCountSheet {players} onChange={(n) => (players = n)} />
+			<PlayerCountSheet {players} onChange={(n) => (players = n)} {maxPlayers} />
 			<Button variant="accent" icon="grimoire" disabled={starting} onclick={() => start(rules)}
 				>Start game</Button
 			>

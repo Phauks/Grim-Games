@@ -37,6 +37,14 @@ export function isTeensyvilleScript(characters: readonly Character[]): boolean {
 	return SEATED_TYPES.every((t) => counts[t] === TEENSYVILLE_SHEET[t]);
 }
 
+/**
+ * The most players the script is made for, when it says: 6 for a Teensyville script, else
+ * none. Larger counts are greyed out but stay pickable (Trevor, 2026-10-19).
+ */
+export function scriptMaxPlayers(characters: readonly Character[]): number | undefined {
+	return isTeensyvilleScript(characters) ? TEENSYVILLE_MAX_PLAYERS : undefined;
+}
+
 /** Advice for playing a script at a player count (never blocks). */
 export function teensyvilleWarnings(characters: readonly Character[], players: number): string[] {
 	const warnings: string[] = [];

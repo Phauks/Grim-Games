@@ -11,6 +11,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Snippet } from 'svelte';
 	import PlayerCounts from './PlayerCounts.svelte';
+	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
 	import { groupByType } from './player-script.ts';
 	import { playerSettings, type SheetDensity } from './player-settings.svelte.ts';
 
@@ -139,7 +140,10 @@
 	{@render section(t('player.jinxes'), 'play:jinxes', jinxList, undefined, noJinxInPlay)}
 
 	{#if !flat}
-		{#snippet breakdown()}<PlayerCounts {players} />{/snippet}
+		{#snippet breakdown()}<PlayerCounts
+				{players}
+				maxPlayers={scriptMaxPlayers(characters)}
+			/>{/snippet}
 		{@render section(t('player.breakdown'), 'play:breakdown', breakdown)}
 	{/if}
 </div>
