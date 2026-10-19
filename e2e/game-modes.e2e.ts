@@ -81,8 +81,12 @@ test('Inspect shows every part of a mode with its status and the mode file', asy
 	for (const name of ['Atheist', 'Engineer', 'Pit-Hag'])
 		await expect(banned.getByRole('button', { name, exact: true })).toBeVisible();
 	await expect(dialog.locator('[data-part="assignment"]')).toContainText('Run by the Storyteller');
-	// Built-in Storyteller instructions wait for Trevor's approval, as descriptions do.
-	await expect(dialog.locator('[data-part="assignment"] [data-field="instructions"]')).toHaveCount(
+	// Built-in Storyteller instructions show once Trevor approves them, as descriptions do
+	// (2026-10-19); the line he took out, about who is asked to reconsider, stays hidden.
+	await expect(
+		dialog.locator('[data-part="assignment"] [data-field="instructions"]')
+	).toContainText('You may ask a player to reconsider their choice.');
+	await expect(dialog.locator('[data-part="information"] [data-field="instructions"]')).toHaveCount(
 		0
 	);
 	// Only the parts the mode changes, until Changed only is turned off (Trevor, 2026-10-19).

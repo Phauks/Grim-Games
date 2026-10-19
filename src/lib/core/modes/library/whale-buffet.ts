@@ -55,6 +55,6 @@ export const WHALE_BUFFET: GameMode = {
 			}
 		],
 		// Trevor, 2026-10-18, in the project chat.
-		bluffs: { kind: 'none', instructions: 'Don’t show the Demon any bluffs.' }
+		bluffs: { kind: 'none', instructions: 'The Demon receives no bluffs.' }
 	}
 };

@@ -28,7 +28,7 @@ export const SUSHI_BUFFET: GameMode = {
 	],
 	parts: {
 		// Trevor, 2026-10-18, in the project chat.
-		bluffs: { kind: 'none', instructions: 'Don’t show the Demon any bluffs.' },
+		bluffs: { kind: 'none', instructions: 'The Demon receives no bluffs.' },
 		pool: { kind: 'all-characters' },
 		setupModifiers: {
 			kind: 'only',
@@ -42,7 +42,7 @@ export const SUSHI_BUFFET: GameMode = {
 			recycleUnchosen: false,
 			oneTypePerOffer: false,
 			instructions:
-				'Each player in turn is offered 3 characters, of any types, and keeps one, or refuses them for 2 new ones, then for a last one. Characters not kept are discarded.'
+				'Each player is offered 3 characters, of any types, and keeps one, or refuses them for 2 new ones, then for a last one. Characters not selected may be recycled; that is the Storyteller’s choice.'
 		}
 	}
 };
