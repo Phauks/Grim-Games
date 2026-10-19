@@ -801,7 +801,7 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 	await dialog.getByRole('button', { name: 'Inspect A Script of Infinite Possibilities' }).tap();
 	const inspect = page.getByRole('dialog', { name: 'A Script of Infinite Possibilities' });
 	await expect(inspect.locator('li[data-part="pool"]')).toHaveAttribute('data-status', 'runs');
-	await expect(inspect.getByRole('button', { name: 'Rule file' })).toBeVisible();
+	await expect(inspect.getByRole('button', { name: 'Rule file', exact: true })).toBeVisible();
 	await inspect.getByRole('button', { name: 'Close' }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await noSidewaysScroll(page);
