@@ -3759,8 +3759,8 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	await expect(strip).toHaveCSS('opacity', '1');
 });
 
-test('a seat dragged over another leaves both name badges readable', async ({ page }) => {
-	// Trevor (2026-10-19): when two tokens overlap, the name badge stays visible.
+test('the seat last touched draws over the seats it overlaps, name and all', async ({ page }) => {
+	// Trevor (2026-10-19): where tokens overlap, the one last touched is on top.
 	await startGame(page);
 	for (const [number, name] of [
 		[1, 'Empath'],
@@ -3778,35 +3778,60 @@ test('a seat dragged over another leaves both name badges readable', async ({ pa
 	const one = (await seat(1).boundingBox())!;
 	const two = (await seat(2).boundingBox())!;
 	// Seat 2, drawn after seat 1, goes just below it: its token covers seat 1's badge, but
-	// it is too far off seat 1 to be a drop that swaps their places.
-	const size = one.height;
+	// it is too far off seat 1 to be a drop that swaps their places (closer than 0.6 of a
+	// token). Measured on the token itself, as fonts change the button's box.
+	const size = await seatLabelled(page, 'Seat 1:').evaluate((el) =>
+		parseFloat(getComputedStyle(el).getPropertyValue('--size'))
+	);
 	const from = { x: two.x + two.width / 2, y: two.y + two.height / 2 };
 	const to = { x: one.x + one.width / 2, y: one.y + one.height / 2 + size * 0.7 };
 	await menu(page, 'Arrange seats');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar).toContainText('Arrange seats');
-	await page.mouse.move(from.x, from.y);
-	await page.mouse.down();
-	await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
-	await page.mouse.move(to.x, to.y, { steps: 4 });
-	await page.mouse.up();
+	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
+	// Under load the first press can land before the seats take drags: drag until it moves.
+	await expect(async () => {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+		await page.mouse.move(to.x, to.y, { steps: 4 });
+		await page.mouse.up();
+		const at = (await seat(2).boundingBox())!.x;
+		// What took the press, if not the seat: shown in the log when the drag misses.
+		if (Math.abs(at - one.x) >= 0.5)
+			console.log(
+				'missed drag, pressed on:',
+				await page.evaluate(
+					({ x, y }) => document.elementFromPoint(x, y)?.outerHTML.slice(0, 200),
+					from
+				)
+			);
+		expect(at).toBeCloseTo(one.x, 0);
+	}).toPass();
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
 
-	// What is drawn on top at the middle of each badge is the badge's own pill. Badges let
+	// What is drawn on top at the middle of a badge: its own pill, or another seat. Badges let
 	// taps through to their token, so the probe makes just the pills hit-testable.
 	await page.addStyleTag({
 		content: '[data-testid="token-player-name"] > * { pointer-events: auto !important; }'
 	});
-	for (const n of [1, 2]) {
-		const badge = seatLabelled(page, `Seat ${n}:`).getByTestId('token-player-name');
-		const top = await badge.evaluate((svg) => {
-			const pill = svg.querySelector('rect')!.getBoundingClientRect();
-			const hit = document.elementFromPoint(pill.x + pill.width / 2, pill.y + pill.height / 2);
-			return hit?.closest('[data-testid="token-player-name"]') === svg;
-		});
-		expect(top, `Seat ${n}'s badge is on top`).toBe(true);
-	}
+	const onTop = (n: number) =>
+		seatLabelled(page, `Seat ${n}:`)
+			.getByTestId('token-player-name')
+			.evaluate((svg) => {
+				const pill = svg.querySelector('rect')!.getBoundingClientRect();
+				const hit = document.elementFromPoint(pill.x + pill.width / 2, pill.y + pill.height / 2);
+				return hit?.closest('[data-testid="token-player-name"]') === svg;
+			});
+	// Seat 2 was dragged last: it covers seat 1's name. Polled, as the seat may still be
+	// gliding into place.
+	await expect.poll(() => onTop(2)).toBe(true);
+	await expect.poll(() => onTop(1)).toBe(false);
+	// Tapping seat 1 brings it to the front, its name with it.
+	await openSeat(page, 1);
+	await closeSheet(page);
+	await expect.poll(() => onTop(1)).toBe(true);
 });
 
 test('a big name badge beside a dialog title shrinks instead of squeezing the title', async ({
