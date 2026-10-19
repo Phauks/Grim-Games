@@ -66,6 +66,11 @@
 		 */
 		/** A spectator's board (Trevor, 2026-10-19): every token shown, none taken. */
 		disabled?: boolean;
+		/**
+		 * While a seat's token is held (Trevor, 2026-10-19): whether a token is one of its
+		 * character's; those light up and the rest dim.
+		 */
+		lit?: (item: Pick<Reminder, 'characterId' | 'ownerSeatId'>) => boolean;
 		run?: {
 			/** Its accessible name, and the shorter words shown. */
 			label: string;
@@ -83,6 +88,7 @@
 		size,
 		focus,
 		focusMode = 'front',
+		lit,
 		seatAt,
 		spotAllowed,
 		ruleAt,
@@ -459,8 +465,9 @@
 			<li
 				bind:offsetWidth={itemW[item.key]}
 				class:lifted={drag?.item.key === item.key && item.count === 1}
-				class:now={item.now}
-				class:dim={dimRest && !item.now}
+				class:now={item.now || lit?.(item)}
+				class:dim={lit ? !lit(item) : dimRest && !item.now}
+				data-lit={lit?.(item) || undefined}
 				style:margin-inline-end={endsGroup(i) && spacers[item.group]
 					? `${spacers[item.group]}px`
 					: undefined}
@@ -781,9 +788,6 @@
 		pointer-events: none;
 	}
 	/* Between the setup reminders and the rest, in All: a solid line (Trevor, 2026-10-16). */
-	.tray > li.spacer {
-		padding: 0;
-	}
 	.tray > li.divider {
 		align-self: stretch;
 		padding: 0;

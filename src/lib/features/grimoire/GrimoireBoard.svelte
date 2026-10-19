@@ -117,7 +117,14 @@
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
-	import { extraReminders, isGeneric, onBoard, reminderWords, tokenLabel } from './reminders.ts';
+	import {
+		extraReminders,
+		isGeneric,
+		isSeatsReminder,
+		onBoard,
+		reminderWords,
+		tokenLabel
+	} from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import EndGameFields from './EndGameFields.svelte';
@@ -635,6 +642,15 @@
 		if (!step) return;
 		event.preventDefault();
 		grimoire.setLayout(withPlaced(layout, seatId, { x: at.x + step[0], y: at.y + step[1] }));
+	}
+
+	/**
+	 * The seat whose token is held down (Trevor, 2026-10-19): its character's reminders light
+	 * up, on the board and in the bank, and everything else dims until it is let go.
+	 */
+	let holding = $state<SeatId | undefined>();
+	function lit(reminder: Pick<Reminder, 'characterId' | 'ownerSeatId'>): boolean {
+		return holding !== undefined && isSeatsReminder(game, reminder, holding, characters);
 	}
 
 	// ── Seat sheet ──
@@ -1549,6 +1565,7 @@
 				class="slot"
 				class:dragging={drag?.seatId === seat.seatId}
 				class:front={front === seat.seatId}
+				class:dim={holding !== undefined && holding !== seat.seatId}
 				style:left="{at.x}%"
 				style:top="{at.y}%"
 				onpointerdown={(event) => dragStart(event, seat.seatId, at)}
@@ -1584,6 +1601,7 @@
 							: part === 'note'
 								? editNote(seat.seatId)
 								: openSeat(seat.seatId))}
+					onHold={arranging ? undefined : (on) => (holding = on ? seat.seatId : undefined)}
 					onGhostVote={() =>
 						!arranging &&
 						!watching &&
@@ -1613,6 +1631,9 @@
 						class:extra={extras.has(reminder.reminderId)}
 						data-extra={extras.has(reminder.reminderId) ? '' : undefined}
 						class:now={walkOn(reminder)}
+						class:lit={lit(reminder)}
+						class:dim={holding !== undefined && !lit(reminder)}
+						data-lit={lit(reminder) || undefined}
 						style:left="{p.x}%"
 						style:top="{p.y}%"
 					>
@@ -1648,6 +1669,9 @@
 				class:unassigned={!looseMode}
 				data-unassigned={looseMode ? undefined : ''}
 				class:now={walkOn(reminder)}
+				class:lit={lit(reminder)}
+				class:dim={holding !== undefined && !lit(reminder)}
+				data-lit={lit(reminder) || undefined}
 				style:left="{p.x}%"
 				style:top="{p.y}%"
 			>
@@ -1764,6 +1788,7 @@
 				onHints={(h) => (trayHints = h)}
 				run={bankRun}
 				disabled={watching}
+				lit={holding === undefined ? undefined : lit}
 			/>
 		{/if}
 
@@ -2350,6 +2375,15 @@
 	.chip-slot.now > :global(.reminder) {
 		outline: 0.2rem solid var(--accent);
 		outline-offset: 0.15rem;
+	}
+	/* A held seat's reminders (Trevor, 2026-10-19): the step ring; the rest fade. */
+	.chip-slot.lit > :global(.reminder) {
+		outline: 0.2rem solid var(--accent);
+		outline-offset: 0.15rem;
+	}
+	.slot.dim,
+	.chip-slot.dim {
+		opacity: 0.35;
 	}
 	.chip-slot.dragging {
 		z-index: 3;

@@ -4627,3 +4627,64 @@ test('an empty seat and a named one show their name in the same badge', async ({
 	expect((await badge(1).boundingBox())?.y).toBeCloseTo(before!.y, 0);
 	await expect(seatLabelled(page, 'Seat 1:').locator('.name')).toHaveCount(0);
 });
+
+test("holding a seat's token lights its character's reminders and dims the rest", async ({
+	page
+}) => {
+	// Trevor (2026-10-19): holding a token on the grimoire highlights the reminder tokens
+	// assigned to that character. Two Imps, so only the held one's "Dead" token lights.
+	await startGame(page);
+	for (const number of [1, 3]) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name: 'Imp', exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	const dead = bank.locator('[data-testid="board-reminder"][aria-label="Dead reminder"]');
+	await expect(dead).toHaveCount(2);
+	// Seat 3's copy onto Seat 2; Seat 1's stays in the bank.
+	await dead.nth(1).tap();
+	await page
+		.getByRole('dialog', { name: 'Put Dead on' })
+		.getByRole('button', { name: /Seat 2 None/ })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' })
+		.getByRole('button', { name: 'Cancel' })
+		.tap();
+	await expect(page.getByRole('alertdialog')).toBeHidden();
+	const placed = page.locator('.chip-slot[data-seat="2"]');
+	await expect(placed).toHaveCount(1);
+
+	const seat = async (number: number) =>
+		(await page.getByRole('button', { name: new RegExp(`^Seat ${number}:`) }).boundingBox())!;
+	const lit = page.locator('[data-lit]');
+	const deadCell = bank.locator('li', { has: page.locator('[aria-label="Dead reminder"]') });
+	// Seat 3 held: its token on Seat 2 lights, the bank's other Imp token and other seats dim.
+	const three = await seat(3);
+	await page.mouse.move(three.x + three.width / 2, three.y + three.height / 2);
+	await page.mouse.down();
+	await expect(placed).toHaveAttribute('data-lit', 'true');
+	await expect(lit).toHaveCount(1);
+	await expect(deadCell).toHaveClass(/dim/);
+	await expect(page.locator('.slot.dim')).toHaveCount(7);
+	await page.mouse.up();
+	// Let go: nothing lit or dimmed, and the hold opened nothing.
+	await expect(lit).toHaveCount(0);
+	await expect(page.locator('.slot.dim')).toHaveCount(0);
+	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
+
+	// Seat 1 held: only its token, still in the bank, lights.
+	const one = await seat(1);
+	await page.mouse.move(one.x + one.width / 2, one.y + one.height / 2);
+	await page.mouse.down();
+	await expect(deadCell).toHaveAttribute('data-lit', 'true');
+	await expect(placed).toHaveClass(/dim/);
+	await page.mouse.up();
+	await expect(lit).toHaveCount(0);
+	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
+});

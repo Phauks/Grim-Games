@@ -324,6 +324,22 @@ export function holdersOf(
 }
 
 /**
+ * Whether a reminder is one a seat's character put down (Trevor, 2026-10-19: holding a token
+ * on the board lights the reminder tokens assigned to that character). A reminder that knows
+ * its owner belongs to that seat only; one placed before owners were kept belongs to every
+ * seat holding its character.
+ */
+export function isSeatsReminder(
+	game: Game,
+	reminder: Pick<Reminder, 'characterId' | 'ownerSeatId'>,
+	seatId: SeatId,
+	characters: CharacterLookup
+): boolean {
+	if (reminder.ownerSeatId !== undefined) return reminder.ownerSeatId === seatId;
+	return holdersOf(game, reminder.characterId, characters).includes(seatId);
+}
+
+/**
  * Whose copies a reminder's tokens still in the bank are (Trevor, 2026-10-19: two Imps, one
  * good and one evil, each have their own tokens in their own colour). With the character on
  * one seat or none they belong to no one. Otherwise each seat holding it has the copies the
