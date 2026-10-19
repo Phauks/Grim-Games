@@ -233,7 +233,19 @@
 			: []
 	);
 	const jinxes = $derived(facts?.jinxes ?? []);
-	const jinxed = $derived(new Set(jinxes.flatMap((j) => j.characters)));
+	// Each selected character's selected jinx partners, shown by their icons (Trevor, 2026-10-19).
+	const jinxPartners = $derived.by(() => {
+		const of: Record<string, Character[]> = {};
+		for (const [a, b] of jinxes.map((j) => j.characters)) {
+			const ca = lookup(a);
+			const cb = lookup(b);
+			if (ca && cb) {
+				(of[a] ??= []).push(cb);
+				(of[b] ??= []).push(ca);
+			}
+		}
+		return of;
+	});
 	const travellers = $derived(ids.filter((id) => lookup(id)?.type === 'traveller').length);
 	/**
 	 * Travellers a special rule lets into the bag (Stowed Away: up to 2, the other counts for
@@ -485,7 +497,7 @@
 							: 0
 						: (s.selection[character.id] ?? 0)}
 					duplicates={!isRuleCharacter(character.type) && canDuplicate(character, inPlay)}
-					jinxed={jinxed.has(character.id)}
+					jinxedWith={jinxPartners[character.id]}
 					offScript={offScriptIds.has(character.id)}
 					bluff={bluffIds.has(character.id)}
 					onToggle={() => toggle(character)}
