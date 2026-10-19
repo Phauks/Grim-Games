@@ -193,6 +193,9 @@ test('Sushi Buffet drafts seat by seat from the tile bag: offers of 3, 2 and 1, 
 	await expect(page.getByRole('heading', { name: 'Draft', level: 1 })).toBeVisible();
 	// No count of seats left (Trevor, 2026-10-18).
 	await expect(page.getByTestId('seats-left')).toHaveCount(0);
+	// Nothing of the draft on the screen passed round the table (Trevor, 2026-10-19).
+	await expect(page.getByRole('group', { name: 'Open slots' })).toHaveCount(0);
+	await expect(page.getByText('Setup changes to apply by hand')).toHaveCount(0);
 	await expect(page.getByTestId('next-seat')).toHaveText('Seat 1');
 	await expect(bagTiles(page)).toHaveCount(5);
 	await drawTile(page);

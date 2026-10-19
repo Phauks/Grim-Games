@@ -3,8 +3,9 @@ import { GAME_MODE_FORMAT, type GameMode } from '../types.ts';
 /**
  * Sushi Buffet: each player in turn is offered a few characters and keeps one; refusing an offer brings a smaller one (Grimbits' draft tool,
  * https://grimbits.com/draft-buffet/). The tool's options are the defaults here: offers of
- * 3 → 2 → 1, unchosen characters discarded, offers may mix types. Setup modifiers apply as
- * they are drafted, the Storyteller deciding once a count is set. Played example with
+ * 3 → 2 → 1, unchosen characters discarded, offers may mix types. The draft keeps the setup
+ * sheet's counts for the player count: no drafted character changes them (Trevor,
+ * 2026-10-19, "There is no automatic changes of the count of players"). Played example with
  * Pit-Hag and Philosopher banned:
  * https://ekins.blog/2026/05/02/final-3-con-2026-part-1/. Grimbits is the only Sushi
  * Buffet tool found (searched 2026-10-17; https://beardytas.com/resources/ lists it as the
@@ -30,9 +31,10 @@ export const SUSHI_BUFFET: GameMode = {
 		bluffs: { kind: 'none', instructions: 'Don’t show the Demon any bluffs.' },
 		pool: { kind: 'all-characters' },
 		setupModifiers: {
-			kind: 'as-chosen',
+			kind: 'only',
+			characters: [],
 			instructions:
-				'Apply a setup effect (such as the Baron’s extra Outsiders) when its character is drafted. If that count is already filled, you decide whether it still changes.'
+				'Drafted characters never change the counts: the draft keeps the setup sheet’s counts for the player count, so a Baron adds no Outsiders.'
 		},
 		assignment: {
 			kind: 'draft',

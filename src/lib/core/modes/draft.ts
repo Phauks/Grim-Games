@@ -5,16 +5,13 @@
  * back in the pool when `recycleUnchosen` is set. Only types with an open slot are offered,
  * so every pick fits the setup counts. Rules: https://grimbits.com/draft-buffet/.
  *
- * Setup modifiers apply as each is drafted (setupModifiers `as-chosen`): a single change
- * ("+2 Outsiders") moves slots between Townsfolk and that type at once; any other ("+1 or
- * −1", "[No Demon]") is listed in `decisions` for the Storyteller, who sets the slots with
- * `setSlots` (the Storyteller can override anything).
+ * The slots are the counts the draft starts with; no drafted character changes them (Trevor,
+ * 2026-10-19: "There is no automatic changes of the count of players").
  *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
-import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 
 export interface DraftConfig {
 	offers: number[];
@@ -36,8 +33,6 @@ export interface DraftState {
 	offer: CharacterId[];
 	/** Which of `config.offers` the current offer is. */
 	offerIndex: number;
-	/** Drafted setup modifiers the Storyteller applies by hand. */
-	decisions: CharacterId[];
 }
 
 type Random = () => number;
@@ -60,8 +55,7 @@ export function startDraft(
 		discarded: [],
 		picks: [],
 		offer: [],
-		offerIndex: 0,
-		decisions: []
+		offerIndex: 0
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
 }
@@ -85,12 +79,7 @@ export function refuseOffer(state: DraftState, random: Random): DraftState {
 }
 
 /** The player keeps `id` from the offer; the next seat gets a fresh offer. */
-export function takeOffer(
-	state: DraftState,
-	id: CharacterId,
-	characters: ReadonlyMap<CharacterId, Character>,
-	random: Random
-): DraftState {
+export function takeOffer(state: DraftState, id: CharacterId, random: Random): DraftState {
 	if (!state.offer.includes(id)) return state;
 	const type = state.types[id];
 	let next = setAside(
@@ -104,17 +93,7 @@ export function takeOffer(
 		slots: { ...next.slots, [type]: next.slots[type] - 1 },
 		offerIndex: 0
 	};
-	next = applyModifier(next, id, characters);
 	return withOffer(next, state.config.offers[0] ?? 1, random);
-}
-
-/** The Storyteller sets the open slots; a fresh offer follows if the current one no longer fits. */
-export function setSlots(state: DraftState, slots: TypeCounts, random: Random): DraftState {
-	const next = { ...state, slots: { ...slots } };
-	const fits = state.offer.every((id) => next.slots[state.types[id]] > 0);
-	return fits && state.offer.length > 0
-		? next
-		: withOffer(next, state.config.offers[state.offerIndex] ?? 1, random);
 }
 
 function setAside(state: DraftState, ids: readonly CharacterId[]): DraftState {
@@ -127,37 +106,6 @@ function setAside(state: DraftState, ids: readonly CharacterId[]): DraftState {
 	};
 }
 
-function applyModifier(
-	state: DraftState,
-	id: CharacterId,
-	characters: ReadonlyMap<CharacterId, Character>
-): DraftState {
-	const character = characters.get(id);
-	const modifier = character ? setupModifierFor(character) : undefined;
-	if (!modifier || modifier.ops.length === 0) return state;
-	const [op] = modifier.ops;
-	const single =
-		modifier.ops.length === 1 &&
-		op.kind === 'delta' &&
-		op.values.length === 1 &&
-		op.type !== 'townsfolk' &&
-		state.slots.townsfolk >= op.values[0] &&
-		state.slots[op.type] + op.values[0] >= 0;
-	if (single && op.kind === 'delta') {
-		const n = op.values[0];
-		return {
-			...state,
-			slots: {
-				...state.slots,
-				[op.type]: state.slots[op.type] + n,
-				townsfolk: state.slots.townsfolk - n
-			}
-		};
-	}
-	return { ...state, decisions: [...state.decisions, id] };
-}
-
-/** Up to `size` characters from the pool whose type has an open slot. */
 /**
  * The state with a fresh offer of up to `size`. When discards have used up every character
  * of a type that still has open slots, those discards go back in the pool first, so the
