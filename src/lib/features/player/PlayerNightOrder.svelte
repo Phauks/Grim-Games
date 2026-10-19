@@ -7,13 +7,16 @@
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import type { PlayerNight } from './player-script.ts';
 
 	interface Props {
 		nights: readonly PlayerNight[];
+		/** Plain headings, for print; on screen each night closes from its header. */
+		flat?: boolean;
 	}
 
-	let { nights }: Props = $props();
+	let { nights, flat = false }: Props = $props();
 
 	// Tapping a character's icon or name shows its ability and wiki link, like a badge.
 	let shown = $state<Character>();
@@ -27,10 +30,8 @@
 <!-- Who wakes, in order, with TPI's night text (Trevor, 2026-10-15). -->
 <div class="nights">
 	{#each nights as n (n.night)}
-		<section aria-labelledby="night-{n.night}" data-night={n.night}>
-			<h2 id="night-{n.night}">
-				{n.night === 'first' ? t('player.firstNight') : t('player.otherNights')}
-			</h2>
+		{@const title = n.night === 'first' ? t('player.firstNight') : t('player.otherNights')}
+		{#snippet list()}
 			<ol>
 				{#each n.entries as entry, i (i)}
 					<!-- Icon two lines tall; name on the first line, TPI's text beneath (Trevor). -->
@@ -64,6 +65,15 @@
 					</li>
 				{/each}
 			</ol>
+		{/snippet}
+		<!-- Each night closes from its header on screen, remembered here (Trevor, 2026-10-19). -->
+		<section data-night={n.night}>
+			{#if flat}
+				<h2>{title}</h2>
+				{@render list()}
+			{:else}
+				<Collapsible {title} storageKey="play:night-{n.night}">{@render list()}</Collapsible>
+			{/if}
 		</section>
 	{/each}
 </div>
