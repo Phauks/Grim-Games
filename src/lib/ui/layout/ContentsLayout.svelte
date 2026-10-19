@@ -138,6 +138,7 @@
 		gap: var(--space-4);
 		height: 100%;
 		padding-top: var(--space-3);
+		padding-inline-end: var(--scrollbar-room);
 		overflow: hidden auto;
 		overscroll-behavior: contain;
 	}
@@ -208,10 +209,12 @@
 			grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
 			grid-template-rows: 100%;
 			grid-template-areas: 'nav pane';
+			padding-inline-end: 0;
 			overflow: hidden;
 		}
 		.layout:has(.nav) .nav,
 		.layout:has(.nav) .pane {
+			padding-inline-end: var(--scrollbar-room);
 			overflow: hidden auto;
 			overscroll-behavior: contain;
 		}
