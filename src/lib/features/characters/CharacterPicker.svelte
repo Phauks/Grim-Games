@@ -84,6 +84,8 @@
 		 * with the page under a sticky band: a CSS length, e.g. the band's bottom edge.
 		 */
 		pinTop?: string;
+		/** Each type's header ends with how many it lists, "Townsfolk (13)" (Script builder, Trevor 2026-10-19). */
+		counts?: boolean;
 	}
 
 	let {
@@ -107,7 +109,8 @@
 		closedTypes = [],
 		groupAside,
 		onInfo,
-		pinTop
+		pinTop,
+		counts = false
 	}: Props = $props();
 
 	// A pinned header closed while pinned leaves its type's top above the window: keep the
@@ -231,7 +234,12 @@
 		{/if}
 		{#each groups as group (group.type)}
 			<Collapsible
-				title={TYPE_PLURALS[group.type]}
+				title={counts
+					? t('picker.typeCount', {
+							type: TYPE_PLURALS[group.type],
+							count: group.characters.length
+						})
+					: TYPE_PLURALS[group.type]}
 				level={3}
 				tone={typeTone(group.type)}
 				storageKey="{collapsibleKey}:{group.type}"

@@ -687,6 +687,7 @@
 				surface="page"
 				contained={false}
 				types={TYPES}
+				counts
 				marker={source === 'official' && !selectedOnly ? undefined : creatorOf}
 				pinTop="calc(var(--tap-target) + env(safe-area-inset-top) + {Math.max(
 					0,

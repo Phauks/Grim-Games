@@ -446,6 +446,9 @@ test('Show only selected lists just the chosen characters', async ({ page }) => 
 	await expect(only).toHaveAttribute('aria-pressed', 'true');
 	await expect(character(page, 'Washerwoman')).toHaveCount(0);
 	await expect(character(page, 'Chef')).toBeVisible();
+	// Each type's header says how many it lists (Trevor, 2026-10-19).
+	await expect(page.getByRole('button', { name: 'Townsfolk (2)', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Demons (1)', exact: true })).toBeVisible();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
 	await expect(character(page, 'Empath')).toBeVisible();
 	await expect(character(page, 'Chef')).toHaveCount(0);
@@ -531,7 +534,7 @@ test("each type's header stays pinned under the band while its characters scroll
 	page
 }) => {
 	await page.goto('/build-script');
-	const townsfolk = page.getByRole('button', { name: 'Townsfolk', exact: true });
+	const townsfolk = page.getByRole('button', { name: /^Townsfolk \(\d+\)$/ });
 	await expect(townsfolk).toBeVisible();
 	await page.evaluate(() => window.scrollBy(0, 900));
 	// Just under the band, whose last line is the search.
