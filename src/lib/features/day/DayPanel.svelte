@@ -346,14 +346,7 @@
 	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
 	const teams = $derived(livingByTeam(g));
 	const ghostVotes = $derived(ghostVotesLeft(g));
-	const aliveLabel = $derived(
-		t('day.aliveLabel', {
-			count: teams.alive,
-			total: g.seating.length,
-			good: teams.good,
-			evil: teams.evil
-		})
-	);
+	const aliveLabel = $derived(t('day.aliveLabel', { count: teams.alive, total: g.seating.length }));
 	const goodLabel = $derived(t('day.goodLabel', { count: teams.good }));
 	const evilLabel = $derived(t('day.evilLabel', { count: teams.evil }));
 	const ghostLabel = $derived(t('day.ghostVotesLabel', { count: ghostVotes }));
@@ -1030,14 +1023,16 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
+	/* Every count is filled, the number on top (Trevor, 2026-10-19): the team counts in their
+	   team's colour, the others in the selected-surface colour. --on-good reads on both teams
+	   (badge-colours.test.ts); --on-surface on --surface-selected is a theme contrast pair. */
 	.badge {
-		background: transparent;
-		color: inherit;
+		border-color: var(--surface-selected);
+		background: var(--surface-selected);
+		color: var(--on-surface);
 		font-family: inherit;
 		cursor: pointer;
 	}
-	/* Filled in the team's colour, the number on top (Trevor, 2026-10-19). --on-good reads on
-	   both (badge-colours.test.ts). */
 	.badge.good {
 		border-color: var(--good);
 		background: var(--good);
@@ -1049,8 +1044,6 @@
 		color: var(--on-good);
 	}
 	.badge.votes {
-		border-color: var(--heading);
-		color: var(--heading);
 		font-family: var(--font-control);
 	}
 	.causes {

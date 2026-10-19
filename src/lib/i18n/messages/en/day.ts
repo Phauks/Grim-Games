@@ -74,7 +74,7 @@ export const day = {
 	'day.timerSound.buzzer': 'Buzzer',
 	'day.timerSound.none': 'None',
 	'day.aliveBadge': '{count}/{total}',
-	'day.aliveLabel': '{count} of {total} players alive: {good} good, {evil} evil',
+	'day.aliveLabel': '{count} of {total} players alive',
 	'day.goodLabel': '{count} good alive',
 	'day.evilLabel': '{count} evil alive',
 	'day.hasGhostVote': 'Has a ghost vote',

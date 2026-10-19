@@ -143,7 +143,12 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 		await expect(table).toBeHidden();
 	};
 	await page.getByTestId('alive-count').tap();
-	await expect(page.getByRole('dialog', { name: /^7 of 8 players alive/ })).toBeVisible();
+	// The team split is left to the team counts (Trevor, 2026-10-19).
+	await expect(page.getByRole('dialog', { name: '7 of 8 players alive' })).toBeVisible();
+	// The total reads as a sum, bold.
+	expect(
+		await table.locator('tfoot td').evaluate((el) => Number(getComputedStyle(el).fontWeight))
+	).toBeGreaterThanOrEqual(700);
 	await expect(table.locator('tbody tr')).toHaveCount(8);
 	await expect(table.locator('tr[data-seat]:not([data-counts])')).toHaveText(/Seat 2.*Dead/);
 	await expect(table.locator('tfoot')).toHaveText(/Total\s*7/);
@@ -160,8 +165,8 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await page.getByTestId('alive-evil').tap();
 	await expect(table.locator('tbody')).toHaveText('None');
 	await closeCount();
-	// The team counts are filled in their colour, the number on top (Trevor, 2026-10-19).
-	for (const id of ['alive-good', 'alive-evil']) {
+	// Every count is filled, the number on top: the teams in their colour (Trevor, 2026-10-19).
+	for (const id of ['alive-count', 'alive-good', 'alive-evil', 'ghost-votes', 'votes-needed']) {
 		const fill = await page.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
 		expect(fill, id).not.toBe('rgba(0, 0, 0, 0)');
 	}

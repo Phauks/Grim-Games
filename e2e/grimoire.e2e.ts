@@ -268,10 +268,17 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 		)
 	).toBeLessThan(1);
 	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
+	// The sheet shows the board's badge (Trevor, 2026-10-19: one ghost vote look).
+	const sheetMark = ghost.getByTestId('sheet-ghost-vote');
+	await expect(sheetMark).toHaveAttribute('data-vote', 'unused');
+	await expect(sheetMark.locator('[data-icon="ph:ghost-fill"]')).toBeAttached();
 	await ghost.tap();
 	await expect(ghost).toHaveAttribute('aria-pressed', 'true');
 	await expect(ghost).toContainText('Used');
 	await expect(ghostMark).toHaveAttribute('data-vote', 'used');
+	await expect(sheetMark).toHaveAttribute('data-vote', 'used');
+	await expect(sheetMark).toHaveAttribute('data-used-look', 'hollow');
+	await expect(sheetMark.locator('[data-icon="ph:ghost"]')).toBeAttached();
 	await ghost.tap();
 	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
 	await expect(ghostMark).toHaveAttribute('data-vote', 'unused');
