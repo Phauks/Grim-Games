@@ -117,3 +117,46 @@ test("a homebrew character's good and evil images are stored with the script", a
 		.toBe(true);
 	await context.setOffline(false);
 });
+
+// Trevor (2026-10-19): updates "stutter and are somewhat slow", as each one downloaded the whole
+// build. A new build copies the files the previous one holds unchanged and downloads the rest.
+test('an update downloads only the files that changed', async ({ page, context }) => {
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+	const before = await cachedPaths(page);
+	const [oldBuild] = Object.keys(before).filter((name) => name !== 'grim-games-runtime-v1');
+	expect(before[oldBuild]).toContain('/precache-hashes.json');
+
+	// Pretend the stored build is an older one: move it under another name, then install
+	// this build again (a new script address) as if it were the next.
+	await page.evaluate(async (name) => {
+		const old = await caches.open('grim-games-older');
+		const current = await caches.open(name);
+		for (const request of await current.keys())
+			await old.put(request, (await current.match(request))!);
+		await caches.delete(name);
+		const runtime = await caches.open('grim-games-runtime-v1');
+		await runtime.put('/__active-build', new Response('grim-games-older'));
+	}, oldBuild);
+	const downloaded: string[] = [];
+	context.on('request', (request) => {
+		if (request.serviceWorker()) downloaded.push(new URL(request.url()).pathname);
+	});
+	await page.evaluate(async () => {
+		const registration = await navigator.serviceWorker.register('/service-worker.js?next');
+		const next = registration.installing;
+		if (!next) throw new Error('no new build found');
+		await new Promise<void>((done) =>
+			next.addEventListener('statechange', () => next.state === 'installed' && done())
+		);
+	});
+
+	const after = await cachedPaths(page);
+	// Every file of the build is stored again...
+	expect(after[oldBuild]).toEqual(expect.arrayContaining(before[oldBuild]));
+	// ...but only the page itself came over the network.
+	expect(downloaded.filter((path) => path.startsWith('/_app/immutable/'))).toEqual([]);
+	expect(downloaded).not.toContain('/data/roles.json');
+	expect(downloaded).toContain('/');
+});

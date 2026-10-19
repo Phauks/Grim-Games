@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { cachedOnUse, precached, RUNTIME_CACHE, staleCaches } from './cache-rules.ts';
+import {
+	cachedOnUse,
+	parseHashes,
+	precached,
+	RUNTIME_CACHE,
+	staleCaches,
+	unchanged
+} from './cache-rules.ts';
 
 describe('precached', () => {
 	it('keeps what a game needs at install', () => {
@@ -42,5 +49,29 @@ describe('staleCaches', () => {
 
 	it('leaves caches that are not ours', () => {
 		expect(staleCaches(['other-app'], 'grim-games-c', undefined)).toEqual([]);
+	});
+});
+
+describe('unchanged', () => {
+	it('keeps any copy of a build file, since its name carries its content hash', () => {
+		expect(unchanged('/_app/immutable/chunks/abc.js', {}, {})).toBe(true);
+	});
+
+	it('keeps other files only when both builds give the same hash', () => {
+		expect(
+			unchanged('/data/roles.json', { '/data/roles.json': 'a' }, { '/data/roles.json': 'a' })
+		).toBe(true);
+		expect(
+			unchanged('/data/roles.json', { '/data/roles.json': 'b' }, { '/data/roles.json': 'a' })
+		).toBe(false);
+		expect(unchanged('/data/roles.json', { '/data/roles.json': 'a' }, {})).toBe(false);
+		expect(unchanged('/', {}, {})).toBe(false);
+	});
+});
+
+describe('parseHashes', () => {
+	it('keeps only string hashes', () => {
+		expect(parseHashes({ '/a.json': 'x1', '/b.json': 3 })).toEqual({ '/a.json': 'x1' });
+		expect(parseHashes(null)).toEqual({});
 	});
 });
