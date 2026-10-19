@@ -303,6 +303,11 @@ test('a spectator watches the whole grimoire through the view-only link, after p
 	// The key is in the hash, which never reaches the server.
 	await expect(url).toHaveValue(/\/watch\/\d{6}#[0-9a-f]{64}$/);
 	const link = await url.inputValue();
+	// Its QR carries the script's logo, like the join QR, and says it shows spoilers so no
+	// player scans it by mistake (Trevor, 2026-10-19).
+	const qr = watch.getByRole('img', { name: 'QR code to watch the grimoire' });
+	await expect(qr.getByTestId('script-logo')).toHaveAttribute('data-logo', '/data/logos/tb.webp');
+	await expect(qr.getByTestId('qr-caption')).toHaveText('Spoilers');
 
 	const viewerContext = await browser.newContext({ ...testInfo.project.use });
 	const viewer = await viewerContext.newPage();

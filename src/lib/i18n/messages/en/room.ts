@@ -82,6 +82,7 @@ export const room = {
 	'room.watch.hint':
 		'Spectators with this link see the whole grimoire live, after promising not to spoil the game. Each new link stops the last one.',
 	'room.watch.qrLabel': 'QR code to watch the grimoire',
+	'room.watch.qrCaption': 'Spoilers',
 	'room.watch.off': 'Off',
 	'room.watch.shareText': 'Watch the grimoire. Never show it to a player.',
 	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',
