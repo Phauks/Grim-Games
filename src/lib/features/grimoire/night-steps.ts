@@ -6,6 +6,7 @@
 import {
 	isSeatable,
 	type Character,
+	type CharacterId,
 	type GameData,
 	type NightMarker
 } from '#lib/core/data/index.ts';
@@ -19,6 +20,7 @@ import {
 	MARKER_TEXT,
 	nightOrder,
 	TRAVELLER_ALIGNMENT_STEP,
+	withCharacterChangeSteps,
 	withNightInfo,
 	type Night,
 	type NightStep
@@ -29,7 +31,9 @@ export function boardNightSteps(
 	game: Game,
 	characters: CharacterLookup,
 	night: Night,
-	data: GameData
+	data: GameData,
+	/** Seats whose character changed since dawn (`changedCharacters`): each wakes tonight. */
+	changes: readonly { seatId: SeatId; characterId: CharacterId }[] = []
 ): NightStep[] {
 	// Players wake by the token they hold (a Drunk wakes as their Townsfolk).
 	const inPlay: Character[] = [];
@@ -51,7 +55,10 @@ export function boardNightSteps(
 	// What the game says for each step (suggested answers, impairments), a step for each
 	// gained ability, and a step to choose any Traveller's alignment still unset. No Dawn step:
 	// the board's End night button ends the night (Trevor, 2026-10-18).
-	return duskToDawn(withNightInfo(steps, game, characters, night)).filter((s) => s.id !== 'dawn');
+	// A player whose character changed since dawn wakes before Dawn to learn it; changes only
+	// count after the first New day, so only other nights have them.
+	const woken = night === 'other' ? withCharacterChangeSteps(steps, changes, characters) : steps;
+	return duskToDawn(withNightInfo(woken, game, characters, night)).filter((s) => s.id !== 'dawn');
 }
 
 /**
@@ -102,6 +109,7 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 			return id !== undefined && characters.get(id)?.type === wakes;
 		});
 	}
+	if (step.changed) return [step.changed.seatId];
 	const id = step.character?.id;
 	return id ? game.seating.filter((s) => game.seats[s].characterId === id) : [];
 }
