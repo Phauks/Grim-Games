@@ -437,7 +437,24 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await chooseMode(page, 'Two Towns and a Boomdandy');
 	const panel = modesPanel(page);
 	await expect(panel.getByRole('link', { name: /Zombuul/ })).toBeVisible();
-	await expect(panel.getByTestId('town-sizes')).toHaveText('Town 1: 5 players · Town 2: 5 players');
+	// Each town sets its own count on its own setup sheet (Trevor, 2026-10-19), split evenly
+	// to start; towns further apart than the rules allow warn, and never block.
+	await expect(panel.getByTestId('player-count')).toHaveCount(0);
+	await expect(panel.getByTestId('town-1-player-count')).toHaveText('5');
+	await expect(panel.getByTestId('town-2-player-count')).toHaveText('5');
+	await expect(panel.getByRole('heading', { name: 'Town 2 setup sheet' })).toBeVisible();
+	const warning = panel.getByTestId('town-sizes-warning');
+	const town2 = panel.getByRole('region', { name: 'Town 2 setup sheet' });
+	await town2.getByRole('button', { name: 'More players' }).tap();
+	await expect(panel.getByTestId('town-2-player-count')).toHaveText('6');
+	await expect(warning).toBeHidden();
+	await town2.getByRole('button', { name: 'More players' }).tap();
+	await expect(warning).toBeVisible();
+	await expect(warning).toHaveText('The towns’ player counts differ by more than 1.');
+	await town2.getByRole('button', { name: 'Fewer players' }).tap();
+	await town2.getByRole('button', { name: 'Fewer players' }).tap();
+	await expect(panel.getByTestId('town-2-player-count')).toHaveText('5');
+	await expect(panel.getByTestId('town-1-player-count')).toHaveText('5');
 	await panel.getByRole('button', { name: 'Start game' }).tap();
 
 	// "Boomdandy and Mayor are guaranteed to be in play": the Boomdandy in the Zombuul town,
