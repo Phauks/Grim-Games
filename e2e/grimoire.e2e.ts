@@ -65,10 +65,14 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
 }
 
 /**
- * The reminder bank's phase button, at its right end (Trevor, 2026-10-19): Start game, End
- * night, End day, or Run night (Run Night Order) for a walk-through stopped mid-night.
+ * The reminder bank's phase button, at its right end (Trevor, 2026-10-19): Set up while
+ * tokens are still to be handed out, Start game, End night, End day, or Run night (Run Night
+ * Order) for a walk-through stopped mid-night.
  */
-const bankNight = (page: Page, name: 'Start game' | 'Run Night Order' | 'End night' | 'End day') =>
+const bankNight = (
+	page: Page,
+	name: 'Set up' | 'Start game' | 'Run Night Order' | 'End night' | 'End day'
+) =>
 	page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -523,7 +527,11 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 }) => {
 	await startGame(page);
 	const board = page.url();
-	await page.getByRole('button', { name: 'Set up' }).tap();
+	// Set up is the bank's end cell while tokens are still to be handed out (Trevor,
+	// 2026-10-19: "a lot of the game flow comes from that button"), and nowhere else.
+	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(1);
+	await expect(bankNight(page, 'Start game')).toHaveCount(0);
+	await bankNight(page, 'Set up').tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// The last setup step opens the board, whose bank starts with the setup reminders.
 	await page.goto(`${board}#setup-reminders`);
@@ -3653,14 +3661,16 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const board = page.url();
-	// Always in place, so the bank never moves; usable once a seat has a token.
+	// Always in place, so the bank never moves: Set up until the tokens are handed out
+	// (Trevor, 2026-10-19), then Start game.
 	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
 	const button = (name: string) => bank.getByRole('button', { name, exact: true });
 	const start = button('Start game');
 	const run = button('Run Night Order');
 	const end = button('End night');
 	const endDay = button('End day');
-	await expect(start).toBeDisabled();
+	await expect(button('Set up')).toBeEnabled();
+	await expect(start).toHaveCount(0);
 	await page.goto(`${new URL(board).pathname}/setup`);
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Chef', 'Fortune Teller', 'Poisoner', 'Imp'])
 		await page.getByRole('button', { name, exact: true }).first().tap();
