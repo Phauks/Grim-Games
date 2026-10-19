@@ -8,6 +8,7 @@ export * from './setup-modifiers.ts';
 export * from './setup.ts';
 export * from './jinxes.ts';
 export * from './script-rules.ts';
+export * from './draw-lock.ts';
 export * from './script-facts.ts';
 export * from './script-builder.ts';
 export * from './character-builder.ts';

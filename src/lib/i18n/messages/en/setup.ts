@@ -179,5 +179,22 @@ export const setup = {
 	'setup.reveal.alignment': 'Alignment',
 	'setup.reveal.good': 'Good',
 	'setup.reveal.evil': 'Evil',
-	'setup.reveal.reveal': 'Reveal'
+	'setup.reveal.reveal': 'Reveal',
+	'setup.reveal.hold': 'Hold to see your character',
+
+	'setup.lock.lock': 'Lock the draw',
+	'setup.lock.unlock': 'Unlock the draw',
+	'setup.lock.setTitle': 'Lock the draw',
+	'setup.lock.setBody': 'Players can draw, but leaving the draw needs this PIN.',
+	'setup.lock.pin': 'PIN',
+	'setup.lock.again': 'PIN again',
+	'setup.lock.mismatch': 'The PINs are different.',
+	'setup.lock.enterTitle': 'Enter the Storyteller PIN',
+	'setup.lock.wrong': 'Wrong PIN.',
+	'setup.lock.wait': 'Try again in {seconds} s.',
+	'setup.lock.forgot': 'Forgot PIN',
+	'setup.lock.forgotCountdown': 'Unlocking in {seconds} s.',
+	'setup.lock.keepLocked': 'Keep locked',
+	'setup.lock.handBack': 'Every tile is drawn. Hand the phone back to the Storyteller.',
+	'setup.lock.clear': 'Clear PIN'
 } as const;

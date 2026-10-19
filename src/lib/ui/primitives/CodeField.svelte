@@ -24,6 +24,8 @@
 		clearLabel?: string;
 		/** Sits in the middle of its row, the boxes centred with the X beside them. */
 		centred?: boolean;
+		/** Shows a dot for each character, like a password (a PIN). */
+		masked?: boolean;
 	}
 
 	let {
@@ -34,7 +36,8 @@
 		id,
 		inputmode = 'numeric',
 		clearLabel,
-		centred = false
+		centred = false,
+		masked = false
 	}: Props = $props();
 
 	let focused = $state(false);
@@ -76,7 +79,7 @@
 				class:filled={i < value.length}
 				class:current={focused && i === current}
 				class:group-end={group !== undefined && (i + 1) % group === 0 && i + 1 < length}
-				>{value[i] ?? ''}</span
+				>{masked && value[i] ? '•' : (value[i] ?? '')}</span
 			>
 		{/each}
 	</span>
@@ -85,7 +88,7 @@
 		{id}
 		{value}
 		{inputmode}
-		autocomplete="one-time-code"
+		autocomplete={masked ? 'off' : 'one-time-code'}
 		autocapitalize="characters"
 		spellcheck="false"
 		enterkeyhint="go"
