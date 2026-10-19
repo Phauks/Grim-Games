@@ -271,6 +271,11 @@ export interface Game {
 	 * Private: never in the public projection. Absent until one is set.
 	 */
 	prepValues?: Record<string, string>;
+	/**
+	 * The Storyteller's notes on the game as a whole (Trevor, 2026-10-19), beside each seat's
+	 * own note. Private: never in the public projection. Absent until written.
+	 */
+	notes?: string;
 	/** The current day log, since the last "New day". */
 	today: DayLog;
 	/** Earlier day logs, oldest first, closed by "New day". */
