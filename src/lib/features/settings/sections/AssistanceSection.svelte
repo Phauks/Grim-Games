@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tileFaceOptions } from '#lib/features/setup/tile-face.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
@@ -33,14 +34,7 @@
 <SettingSelect
 	label={t('settings.tileLabels')}
 	value={preferences.current.tileFace}
-	options={[
-		{ value: 'numbers', label: t('settings.tileLabels.numbers') },
-		{ value: 'letters', label: t('settings.tileLabels.letters') },
-		{ value: 'symbols', label: t('settings.tileLabels.symbols') },
-		{ value: 'colours', label: t('settings.tileLabels.colours') },
-		{ value: 'emoji', label: t('settings.tileLabels.emoji') },
-		{ value: 'random', label: t('settings.tileLabels.random') }
-	]}
+	options={tileFaceOptions()}
 	defaultValue="numbers"
 	onChange={(tileFace) => preferences.update({ tileFace })}
 />

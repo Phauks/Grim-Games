@@ -88,7 +88,15 @@ export type TimerSound = (typeof TIMER_SOUNDS)[number];
  * Numbers or letters (Trevor, 2026-10-16). The random symbols this replaced read back as
  * the default, numbers.
  */
-export const TILE_FACES = ['numbers', 'letters', 'symbols', 'colours', 'emoji', 'random'] as const;
+export const TILE_FACES = [
+	'numbers',
+	'letters',
+	'roman',
+	'symbols',
+	'colours',
+	'emoji',
+	'random'
+] as const;
 export type TileFace = (typeof TILE_FACES)[number];
 
 /** A size as a fraction of normal (1 = 100%), chosen on a slider (Trevor, 2026-10-16). */

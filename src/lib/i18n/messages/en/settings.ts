@@ -78,6 +78,7 @@ export const settings = {
 	'settings.tileLabels': 'Bag tile labels',
 	'settings.tileLabels.numbers': 'Numbers',
 	'settings.tileLabels.letters': 'Letters',
+	'settings.tileLabels.roman': 'Roman numerals',
 	'settings.tileLabels.symbols': 'Symbols',
 	'settings.tileLabels.colours': 'Colours',
 	'settings.tileLabels.emoji': 'Emoji',
