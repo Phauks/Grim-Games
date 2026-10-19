@@ -4438,6 +4438,7 @@ test('a player whose character changed since dawn is woken that night to learn i
 	await expect(strip).toContainText('Sam');
 	await expect(strip).toContainText('Wake this player.');
 	await expect(strip).toContainText('You are');
+});
 
 test('an Alive reminder put on a dead player asks whether to revive them', async ({ page }) => {
 	// Trevor (2026-10-19): the same question as a Dead reminder, the other way round. The
