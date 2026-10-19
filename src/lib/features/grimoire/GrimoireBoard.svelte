@@ -602,12 +602,15 @@
 	}
 	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
 
-	// ── Notes (Trevor, 2026-10-19): the game's and every player's, from ⋯ or a pen mark ──
+	// ── Notes (Trevor, 2026-10-19): the game's and every player's in ⋯ Notes ──
 	let notesOpen = $state(false);
-	let notesFocus = $state<SeatId | undefined>();
-	function openNotes(seatId?: SeatId) {
-		notesFocus = seatId;
-		notesOpen = true;
+	let notesSheet = $state<ReturnType<typeof NotesSheet>>();
+	/**
+	 * A seat's pen mark opens just that player's note, not the whole sheet (Trevor,
+	 * 2026-10-19: less to take in). After the tap's click, so it doesn't land in the field.
+	 */
+	function editNote(seatId: SeatId) {
+		setTimeout(() => notesSheet?.edit(seatId));
 	}
 	/**
 	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
@@ -1312,7 +1315,7 @@
 					role={seatRole(seat.seatId)}
 					namePlace={namePlaces[i] ?? 'below'}
 					onTap={(part) =>
-						!arranging && (part === 'note' ? openNotes(seat.seatId) : openSeat(seat.seatId))}
+						!arranging && (part === 'note' ? editNote(seat.seatId) : openSeat(seat.seatId))}
 				/>
 			</div>
 		{/each}
@@ -1566,7 +1569,9 @@
 		<Button variant="quiet" icon="demon" onclick={() => fromMenu(() => (bluffsOpen = true))}>
 			Demon bluffs
 		</Button>
-		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => openNotes())}>Notes</Button>
+		<Button variant="quiet" icon="notes" onclick={() => fromMenu(() => (notesOpen = true))}
+			>Notes</Button
+		>
 		<!-- A game mode's own actions are on the corner name (ModeMenu, Trevor 2026-10-18); here
 			too, for when the corner has no room for the name. -->
 		{#if modeName}
@@ -1721,11 +1726,12 @@
 		sheetOpen = false;
 		onDraw(id);
 	}}
+	onNotes={(id) => notesSheet?.edit(id)}
 />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
 
-<NotesSheet bind:open={notesOpen} {grimoire} focus={notesFocus} />
+<NotesSheet bind:this={notesSheet} bind:open={notesOpen} {grimoire} />
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} />
 
