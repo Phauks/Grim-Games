@@ -1929,6 +1929,10 @@ test('History shows stats from ended games', async ({ page }) => {
 		.getByRole('button', { name: 'Scarlet Woman', exact: true })
 		.tap();
 	await closeSheet(page);
+	await menu(page, 'Storyteller');
+	const storyteller = page.getByRole('dialog', { name: 'Storyteller' });
+	await storyteller.getByRole('textbox', { name: 'Name' }).fill('Sam');
+	await storyteller.getByRole('button', { name: 'Confirm' }).tap();
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
@@ -1953,6 +1957,8 @@ test('History shows stats from ended games', async ({ page }) => {
 	await expect(summary).toContainText(/Final 3, good won\s*\d+\s*\((\d+%|None)\)/);
 	const scripts = page.getByTestId('history-scripts');
 	await expect(scripts).toContainText(/Trouble Brewing/);
+	// Who ran each game (Trevor, 2026-10-19: the Storyteller's name).
+	await expect(page.getByTestId('history-storytellers')).toContainText(/Sam\s*1\s*1\s*0/);
 	// A long name stays inside its badge, even in a phone's narrow column (Trevor, 2026-10-18:
 	// names ran out of their badges over the next column).
 	const badge = page
@@ -2015,6 +2021,7 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	expect(recap.text).toContain('Evil won');
 	expect(recap.text).toContain('Imp');
 	expect(recap.text).toContain('Secret word: lantern');
+	expect(recap.text).toContain('Storyteller: None');
 	expect(recap.text).toMatch(/<img src="data:image\/png;base64,/);
 	// Each part can be left out: private notes stay off a copy for others.
 	await dialog.getByText('Storyteller notes', { exact: true }).tap();

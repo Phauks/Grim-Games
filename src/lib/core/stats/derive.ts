@@ -138,6 +138,8 @@ export function deriveGameRecord(
 	};
 	if (game.script.meta?.name) record.script.name = game.script.meta.name;
 	if (game.script.meta?.author) record.script.author = game.script.meta.author;
+	const storyteller = game.storytellerName?.trim();
+	if (storyteller) record.storyteller = storyteller;
 	if (ending.winner) {
 		record.winner = ending.winner;
 		record.endReason = ending.reason ?? detectedEndReason(game, characters, ending.winner);
