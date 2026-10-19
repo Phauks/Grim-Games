@@ -3659,14 +3659,16 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const board = page.url();
-	// Always in place, so the bank never moves; usable once a seat has a token.
+	// Always in place, so the bank never moves: Set up until the tokens are handed out
+	// (Trevor, 2026-10-19), then Start game.
 	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
 	const button = (name: string) => bank.getByRole('button', { name, exact: true });
 	const start = button('Start game');
 	const run = button('Run Night Order');
 	const end = button('End night');
 	const endDay = button('End day');
-	await expect(start).toBeDisabled();
+	await expect(button('Set up')).toBeEnabled();
+	await expect(start).toHaveCount(0);
 	await page.goto(`${new URL(board).pathname}/setup`);
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Chef', 'Fortune Teller', 'Poisoner', 'Imp'])
 		await page.getByRole('button', { name, exact: true }).first().tap();
