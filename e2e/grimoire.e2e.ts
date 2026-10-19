@@ -3549,17 +3549,32 @@ test('the night walk-through rises into place, and appears at once with reduced 
 		.getByRole('button', { name: 'Empath', exact: true })
 		.tap();
 	await closeSheet(page);
+	// Counts the animations started on the strip, however fast the runner is: Svelte's
+	// transitions run through Element.animate.
+	await page.evaluate(() => {
+		const w = window as unknown as { stripAnimations: number };
+		w.stripAnimations = 0;
+		const animate = Element.prototype.animate;
+		Element.prototype.animate = function (...args) {
+			if (this.matches('[data-testid="night-strip"]')) w.stripAnimations++;
+			return animate.apply(this, args);
+		};
+	});
+	const animations = () =>
+		page.evaluate(() => (window as unknown as { stripAnimations: number }).stripAnimations);
 	const strip = page.getByTestId('night-strip');
-	const animating = () =>
-		strip.evaluate((el) => el.getAnimations().length > 0 || el.style.animation !== '');
 	await bankNight(page, 'Run Night Order').tap();
-	expect(await animating()).toBe(true);
 	await expect(strip).toBeVisible();
-	await expect.poll(animating).toBe(false);
+	await expect.poll(animations).toBeGreaterThan(0);
 
 	await page.getByRole('button', { name: 'Stop the walk-through' }).tap();
 	await expect(strip).toHaveCount(0);
 	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.evaluate(
+		() => ((window as unknown as { stripAnimations: number }).stripAnimations = 0)
+	);
 	await bankNight(page, 'Run Night Order').tap();
-	expect(await animating()).toBe(false);
+	await expect(strip).toBeVisible();
+	// No motion: the strip is there at once, fully shown.
+	await expect(strip).toHaveCSS('opacity', '1');
 });
