@@ -50,8 +50,11 @@ async function seatMenu(page: Page, sheet: Sheet, action: string) {
 	await page.getByRole('dialog').getByRole('button', { name: action }).last().tap();
 }
 
-/** The reminder bank's Run night (Run Night Order) or End night, at its right end. */
-const bankNight = (page: Page, name: 'Run Night Order' | 'End night') =>
+/**
+ * The reminder bank's phase button, at its right end (Trevor, 2026-10-19): Start game, End
+ * night, End day, or Run night (Run Night Order) for a walk-through stopped mid-night.
+ */
+const bankNight = (page: Page, name: 'Start game' | 'Run Night Order' | 'End night' | 'End day') =>
 	page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -71,7 +74,19 @@ async function walkTo(page: Page, title: string) {
 	const strip = page.getByTestId('night-strip');
 	// A step closing hides the board from the a11y tree for a moment; wait it out.
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
-	if (!(await strip.isVisible())) await bankNight(page, 'Run Night Order').tap();
+	if (!(await strip.isVisible())) {
+		const start = page
+			.getByRole('list', { name: 'Reminder bank' })
+			.locator('..')
+			.getByRole('button', { name: /^(Start game|Run Night Order|End day)$/ });
+		const day = (await start.getAttribute('aria-label')) === 'End day';
+		await start.tap();
+		if (day)
+			await page
+				.getByRole('alertdialog', { name: 'End the day?' })
+				.getByRole('button', { name: 'Confirm', exact: true })
+				.tap();
+	}
 	const name = strip.locator('.step .name strong');
 	await expect(name).toBeVisible();
 	for (const way of ['Next step', 'Previous step']) {
@@ -897,9 +912,10 @@ test('the night order is walked through from the bank, and End night starts the 
 	await page.keyboard.press('Escape');
 	await expect(boardTimer).toBeVisible();
 	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
-	// Day has come: the button can't start another day; Run night starts the next night.
+	// Day has come: the button can't start another day; End day starts the next night
+	// (Trevor, 2026-10-19).
 	await expect(bankNight(page, 'End night')).toHaveCount(0);
-	await expect(bankNight(page, 'Run Night Order')).toBeEnabled();
+	await expect(bankNight(page, 'End day')).toBeEnabled();
 });
 
 test('a night step offers the info tokens its text names', async ({ page }) => {
@@ -983,7 +999,7 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 	await closeSheet(page);
 
 	// The night starts by asking for it, after Dusk (core withTravellerAlignmentStep).
-	await bankNight(page, 'Run Night Order').tap();
+	await bankNight(page, 'Start game').tap();
 	const strip = page.getByTestId('night-strip');
 	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
 	await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -2876,7 +2892,7 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 			.tap();
 		await closeSheet(page);
 	}
-	await bankNight(page, 'Run Night Order').tap();
+	await bankNight(page, 'Start game').tap();
 	const strip = page.getByTestId('night-strip');
 	for (let i = 0; i < 6 && !(await strip.textContent())?.includes('Poisoner'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -2987,7 +3003,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 			.tap();
 		await closeSheet(page);
 	}
-	await bankNight(page, 'Run Night Order').tap();
+	await bankNight(page, 'Start game').tap();
 	const strip = page.getByTestId('night-strip');
 	for (let i = 0; i < 8 && !(await strip.textContent())?.includes('Merch'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -3327,7 +3343,11 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	// Trevor (2026-10-18): "If character is dead do not show them in assisted night order."
 	// The Ravenkeeper still wakes on the night they die
 	// (https://wiki.bloodontheclocktower.com/Ravenkeeper).
-	await bankNight(page, 'Run Night Order').tap();
+	await bankNight(page, 'End day').tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the day?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 	const strip = page.getByTestId('night-strip');
 	const names: string[] = [];
 	for (let i = 0; i < 12; i++) {
@@ -3454,7 +3474,7 @@ test('a reminder in hand marks its source seat, the seats it fits, or both', asy
 	await expect(page.locator('[data-testid="seat"][data-role]')).toHaveCount(0);
 });
 
-test('Run Night Order starts in one tap from the end of the reminder bank, then ends the night', async ({
+test('the bank button starts the game, ends each night and day, and resumes a stopped night', async ({
 	page
 }) => {
 	await page.goto('/new');
@@ -3463,12 +3483,14 @@ test('Run Night Order starts in one tap from the end of the reminder bank, then 
 	await page.getByRole('button', { name: 'Start game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const board = page.url();
-	// Always in place, so the bank never moves; usable once every seat has a token.
-	const run = page
-		.getByRole('list', { name: 'Reminder bank' })
-		.locator('..')
-		.getByRole('button', { name: 'Run Night Order' });
-	await expect(run).toBeDisabled();
+	// Always in place, so the bank never moves; usable once a seat has a token.
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	const button = (name: string) => bank.getByRole('button', { name, exact: true });
+	const start = button('Start game');
+	const run = button('Run Night Order');
+	const end = button('End night');
+	const endDay = button('End day');
+	await expect(start).toBeDisabled();
 	await page.goto(`${new URL(board).pathname}/setup`);
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Chef', 'Fortune Teller', 'Poisoner', 'Imp'])
 		await page.getByRole('button', { name, exact: true }).first().tap();
@@ -3479,19 +3501,17 @@ test('Run Night Order starts in one tap from the end of the reminder bank, then 
 	}
 	await page.goto(board);
 	await expect(page.getByTestId('seat')).toHaveCount(7);
-	// Trevor (2026-10-18): one tap, at the right end of the reminder bank.
-	await run.tap();
+	// Trevor (2026-10-19): Start game before the first night, in one tap.
+	await start.tap();
 	const strip = page.getByTestId('night-strip');
 	await expect(strip).toBeVisible();
 	// While a night runs it is End night, in the same place (Trevor, 2026-10-18).
-	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
-	const end = bank.getByRole('button', { name: 'End night', exact: true });
-	await expect(run).toHaveCount(0);
+	await expect(start).toHaveCount(0);
 	await expect(end).toBeEnabled();
+	// Stopped before anything is done, it is Start game again.
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
-	await expect(run).toBeEnabled();
+	await start.tap();
 	// Stopped mid-night, Run night picks the walk-through up again, past the steps done.
-	await run.tap();
 	await strip.getByRole('button', { name: 'Next step' }).tap();
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
 	await run.tap();
@@ -3503,11 +3523,17 @@ test('Run Night Order starts in one tap from the end of the reminder bank, then 
 		.tap();
 	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
 	await page.keyboard.press('Escape');
-	await expect(run).toBeEnabled();
+	// The day: End day, which asks, then starts the next night (Trevor, 2026-10-19).
+	await expect(run).toHaveCount(0);
+	await endDay.tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the day?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(strip).toBeVisible();
 
 	// With "Open the day after End night" off, set in the confirm itself, the Storyteller stays
 	// on the grimoire (Trevor, 2026-10-18).
-	await run.tap();
 	await strip.getByRole('button', { name: 'Next step' }).tap();
 	await end.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'End the night?' });
@@ -3518,7 +3544,7 @@ test('Run Night Order starts in one tap from the end of the reminder bank, then 
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(confirm).toHaveCount(0);
 	await expect(page.getByRole('dialog', { name: 'Day 2' })).toHaveCount(0);
-	await expect(run).toBeEnabled();
+	await expect(endDay).toBeEnabled();
 });
 
 // https://wiki.bloodontheclocktower.com/Investigator: the Minion shown is another player; the
@@ -3785,7 +3811,7 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	const animations = () =>
 		page.evaluate(() => (window as unknown as { stripAnimations: number }).stripAnimations);
 	const strip = page.getByTestId('night-strip');
-	await bankNight(page, 'Run Night Order').tap();
+	await bankNight(page, 'Start game').tap();
 	await expect(strip).toBeVisible();
 	await expect.poll(animations).toBeGreaterThan(0);
 
@@ -3795,7 +3821,7 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	await page.evaluate(
 		() => ((window as unknown as { stripAnimations: number }).stripAnimations = 0)
 	);
-	await bankNight(page, 'Run Night Order').tap();
+	await bankNight(page, 'Start game').tap();
 	await expect(strip).toBeVisible();
 	// No motion: the strip is there at once, fully shown.
 	await expect(strip).toHaveCSS('opacity', '1');
@@ -3926,7 +3952,7 @@ test('Next on the last night step lights up End night', async ({ page }) => {
 		.getByRole('button', { name: 'Empath', exact: true })
 		.tap();
 	await closeSheet(page);
-	await bankNight(page, 'Run Night Order').tap();
+	await bankNight(page, 'Start game').tap();
 	const strip = page.getByTestId('night-strip');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++) await next.tap();

@@ -118,6 +118,19 @@ export class Grimoire {
 	}
 
 	/**
+	 * Tonight's night has begun: a step of it is ticked and no new day has started since.
+	 * The bank's button then picks the walk-through up again (Run night) rather than offering
+	 * Start game or End day.
+	 */
+	get nightUnderway(): boolean {
+		const today = `${this.game.pastDays.length}:`;
+		return (
+			this.nightDay === this.game.pastDays.length &&
+			this.nightDone.some((key) => key.startsWith(today))
+		);
+	}
+
+	/**
 	 * Ends tonight's night and starts a new day, from the board's End night button (Trevor,
 	 * 2026-10-18; it replaces ticking Dawn). Once a night; History's Restore undoes it.
 	 */
