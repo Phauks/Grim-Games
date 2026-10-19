@@ -3688,3 +3688,43 @@ test('a seat dragged over another leaves both name badges readable', async ({ pa
 		expect(top, `Seat ${n}'s badge is on top`).toBe(true);
 	}
 });
+
+test('a big name badge beside a dialog title shrinks instead of squeezing the title', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): at 150% names in text the seat menu read "S-E-A-T 8" down the side.
+	await page.addInitScript(() => {
+		const key = 'grim-games:preferences:v1';
+		const saved = JSON.parse(localStorage.getItem(key) ?? '{}');
+		saved.tokenAppearance = {
+			...saved.tokenAppearance,
+			inlineNameTextScale: 1.5,
+			inlineNameIconScale: 1.5,
+			inlineNameBadgeScale: 1.5
+		};
+		localStorage.setItem(key, JSON.stringify(saved));
+	});
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	const menu = page.getByRole('dialog', { name: 'Seat 1' });
+	const title = menu.locator('[data-part="title"]');
+	await expect(title).toHaveText('Seat 1');
+	// One line: no word is broken across lines, so the title is no taller than its line.
+	const { height, line } = await title.evaluate((el) => ({
+		height: el.getBoundingClientRect().height,
+		line: parseFloat(getComputedStyle(el).fontSize) * 1.6
+	}));
+	expect(height).toBeLessThanOrEqual(line);
+	// The badge stays in the header, beside the title and the ✕, not over them.
+	const head = await menu.locator('.head').boundingBox();
+	const badge = await menu.locator('.lead').boundingBox();
+	const close = await menu.getByRole('button', { name: 'Close' }).boundingBox();
+	expect(badge!.x).toBeGreaterThanOrEqual(head!.x - 1);
+	expect(badge!.x + badge!.width).toBeLessThanOrEqual(close!.x);
+});
