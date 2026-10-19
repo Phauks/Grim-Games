@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { rise } from '#lib/ui/motion.ts';
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
 	import NightSuggested from './NightSuggested.svelte';
@@ -43,7 +44,16 @@
 	}
 </script>
 
-<section class="strip" aria-label="Night walk-through" data-testid="night-strip">
+<!-- Rises into place under the board rather than appearing at once (Trevor, 2026-10-19); it is
+     positioned over the space below, so nothing moves. `global`: it plays when the board's
+     walk-through starts or ends, not only inside this component. -->
+<section
+	class="strip"
+	aria-label="Night walk-through"
+	data-testid="night-strip"
+	in:rise|global
+	out:rise|global={{ speed: 'fast' }}
+>
 	<IconButton
 		icon="back"
 		label="Previous step"

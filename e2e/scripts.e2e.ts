@@ -359,7 +359,11 @@ test('a saved script is shared by QR code and link, with no code to type', async
 	// One screen: QR code and link.
 	await script.getByRole('button', { name: 'Share script' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Share Storm Front' });
-	await expect(dialog.getByRole('img', { name: 'QR code for Storm Front' })).toBeVisible();
+	const qr = dialog.getByRole('img', { name: 'QR code for Storm Front' });
+	await expect(qr).toBeVisible();
+	// No logo: the script's name sits in the middle of the QR code (Trevor, 2026-10-19).
+	await expect(qr.getByTestId('qr-name')).toHaveText('Storm Front');
+	await expect(qr.getByTestId('script-logo')).toHaveCount(0);
 	await expect(dialog.getByTestId('share-url')).toHaveValue(/\/play#c=\d{6}$/);
 	await expect(dialog.getByTestId('share-digits')).toHaveCount(0);
 	// One icon beside the link copies it; no success popup.
@@ -384,6 +388,49 @@ test('a saved script is shared by QR code and link, with no code to type', async
 	const other = await context.newPage();
 	await other.goto(new URL(link).pathname + new URL(link).hash);
 	await expect(other.getByRole('heading', { name: 'Storm Front', level: 1 })).toBeVisible();
+});
+
+test("a script's logo sits in the middle of its QR code, and its name if the logo fails", async ({
+	page
+}) => {
+	const logo = 'https://logos.example/storm-front.svg';
+	const missing = 'https://logos.example/missing.svg';
+	await page.route(logo, (route) =>
+		route.fulfill({
+			contentType: 'image/svg+xml',
+			body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5"/></svg>'
+		})
+	);
+	await page.route(missing, (route) => route.abort());
+	const share = async (name: string, logoLink: string) => {
+		await page.goto('/library');
+		await page.getByLabel('Script file').setInputFiles({
+			name: 'script.json',
+			mimeType: 'application/json',
+			buffer: Buffer.from(
+				JSON.stringify([
+					{ id: '_meta', name, author: 'Trevor', logo: logoLink },
+					...homebrew.slice(1)
+				])
+			)
+		});
+		await added(page, name).getByRole('button', { name: 'Share script' }).tap();
+		return page
+			.getByRole('dialog', { name: `Share ${name}` })
+			.getByRole('img', { name: `QR code for ${name}` });
+	};
+
+	const qr = await share('Storm Front', logo);
+	const center = qr.getByTestId('qr-center');
+	await expect(center.getByTestId('script-logo')).toHaveAttribute('data-logo', logo);
+	await expect(center.getByTestId('qr-name')).toHaveCount(0);
+	// The middle covers under 7% of the code, so it still scans at the highest correction.
+	const [code, middle] = await Promise.all([qr.boundingBox(), center.boundingBox()]);
+	expect((middle!.width * middle!.height) / (code!.width * code!.height)).toBeLessThan(0.07);
+
+	// A logo that fails to load leaves the name instead, never an empty square.
+	const broken = await share('Calm Front', missing);
+	await expect(broken.getByTestId('qr-name')).toHaveText('Calm Front');
 });
 
 test('dropping a script file anywhere on the Library saves it; Search takes no drops', async ({

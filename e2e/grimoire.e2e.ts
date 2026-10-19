@@ -3535,3 +3535,46 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
 });
+
+test('the night walk-through rises into place, and appears at once with reduced motion', async ({
+	page
+}) => {
+	// Trevor (2026-10-19): a transition instead of appearing instantly; the shared `rise`.
+	await startGame(page);
+	// A character in play, so there is a night to run.
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await closeSheet(page);
+	// Counts the animations started on the strip, however fast the runner is: Svelte's
+	// transitions run through Element.animate.
+	await page.evaluate(() => {
+		const w = window as unknown as { stripAnimations: number };
+		w.stripAnimations = 0;
+		const animate = Element.prototype.animate;
+		Element.prototype.animate = function (...args) {
+			if (this.matches('[data-testid="night-strip"]')) w.stripAnimations++;
+			return animate.apply(this, args);
+		};
+	});
+	const animations = () =>
+		page.evaluate(() => (window as unknown as { stripAnimations: number }).stripAnimations);
+	const strip = page.getByTestId('night-strip');
+	await bankNight(page, 'Run Night Order').tap();
+	await expect(strip).toBeVisible();
+	await expect.poll(animations).toBeGreaterThan(0);
+
+	await page.getByRole('button', { name: 'Stop the walk-through' }).tap();
+	await expect(strip).toHaveCount(0);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.evaluate(
+		() => ((window as unknown as { stripAnimations: number }).stripAnimations = 0)
+	);
+	await bankNight(page, 'Run Night Order').tap();
+	await expect(strip).toBeVisible();
+	// No motion: the strip is there at once, fully shown.
+	await expect(strip).toHaveCSS('opacity', '1');
+});

@@ -14,9 +14,11 @@
 		name?: string;
 		/** Sizes the box; the logo fits inside it, keeping its shape. */
 		class?: string;
+		/** Told when the link fails, e.g. to show the name instead. */
+		onfail?: () => void;
 	}
 
-	let { src, name = '', class: className = '' }: Props = $props();
+	let { src, name = '', class: className = '', onfail }: Props = $props();
 
 	let failed = $state(false);
 	$effect(() => {
@@ -39,7 +41,10 @@
 			decoding="async"
 			referrerpolicy="no-referrer"
 			draggable="false"
-			onerror={() => (failed = true)}
+			onerror={() => {
+				failed = true;
+				onfail?.();
+			}}
 		/>
 	{/if}
 </span>

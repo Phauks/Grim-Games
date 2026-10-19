@@ -102,3 +102,62 @@ test('Library folders and collections follow the account to another device', asy
 	await expect(row(page, 'Club night')).toBeVisible();
 	await other.close();
 });
+
+const stormFront = [
+	{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
+	'washerwoman',
+	'chef',
+	'saint',
+	'poisoner',
+	'imp'
+];
+
+async function addScript(page: Page, name = 'Storm Front') {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	const json = [{ ...(stormFront[0] as object), name }, ...stormFront.slice(1)];
+	await paste.getByLabel('Script JSON').fill(JSON.stringify(json));
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText(name);
+}
+
+// Library and profile scripts are one list (sync plan, Trevor 2026-10-18).
+test('a script removed from the Library on one device leaves the other too', async ({
+	page,
+	browser
+}, testInfo) => {
+	test.setTimeout(120_000);
+	const email = `scripts-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+	const other = await browser.newContext({ ...testInfo.project.use });
+	const second = await other.newPage();
+	await second.setExtraHTTPHeaders({ 'CF-Connecting-IP': ip() });
+
+	// Both devices added the same script, so each has it in its own Recent list.
+	await signIn(page, email, true);
+	await addScript(page);
+	await signIn(second, email, false);
+	await addScript(second);
+	// Only on the second device, so its Library can be seen to have loaded.
+	await addScript(second, 'Second Wind');
+	await second.goto('/library');
+	await expect(row(second, 'Storm Front')).toBeVisible();
+
+	await page.goto('/library');
+	await row(page, 'Storm Front').dblclick();
+	const pane = page
+		.getByRole('dialog', { name: 'Storm Front' })
+		.or(page.getByRole('region', { name: 'Storm Front' }));
+	await pane.getByRole('button', { name: 'Remove script' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Remove script?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(row(page, 'Storm Front')).toHaveCount(0);
+
+	await eventually(second, async () => {
+		await expect(row(second, 'Second Wind')).toBeVisible();
+		await expect(row(second, 'Storm Front')).toHaveCount(0, { timeout: 2000 });
+	});
+	await other.close();
+});

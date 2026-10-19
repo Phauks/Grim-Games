@@ -9,9 +9,12 @@ import {
 	SHARE_TTL_MS,
 	type CreatedShare
 } from '../src/lib/features/scripts/share-codes-api.ts';
+import { remote, type DataBinding } from './shared-data.ts';
 
 export interface ShareEnv {
 	SHARED_SCRIPTS: DurableObjectNamespace<SharedScript>;
+	/** Shared with production and every preview when bound (worker/shared-data.ts). */
+	DATA?: DataBinding;
 	/** Per-address limits, so codes can't be found by trying many (wrangler.jsonc). */
 	SHARE_LOOKUPS: RateLimit;
 	SHARE_CREATES: RateLimit;
@@ -107,6 +110,14 @@ export async function allowed(env: ShareEnv, limiter: RateLimit, caller: string)
 }
 
 /** Handles `/api/share` and `/api/share/<code>`. */
+/** The shared script stored under `code`: the shared data Worker's when bound, else this one's. */
+export function shareStub(env: ShareEnv, code: string): DurableObjectStub<SharedScript> {
+	return env.DATA ? remote(env.DATA, 'share', code) : localShare(env, code);
+}
+
+export const localShare = (env: Pick<ShareEnv, 'SHARED_SCRIPTS'>, code: string) =>
+	env.SHARED_SCRIPTS.get(env.SHARED_SCRIPTS.idFromName(code));
+
 export async function handleShare(request: Request, env: ShareEnv): Promise<Response> {
 	const url = new URL(request.url);
 	// Rate limits key on the caller's address; it is not stored or logged by us.
@@ -121,7 +132,7 @@ export async function handleShare(request: Request, env: ShareEnv): Promise<Resp
 		const deleteKeyHash = await hashKey(deleteKey);
 		for (let i = 0; i < CREATE_ATTEMPTS; i++) {
 			const code = makeDigitCode(SHARE_CODE_DIGITS);
-			const stub = env.SHARED_SCRIPTS.get(env.SHARED_SCRIPTS.idFromName(code));
+			const stub = shareStub(env, code);
 			if (await stub.create(json, deleteKeyHash)) {
 				return Response.json({ code, deleteKey } satisfies CreatedShare, {
 					status: 201,
@@ -134,7 +145,7 @@ export async function handleShare(request: Request, env: ShareEnv): Promise<Resp
 
 	const code = parseShareCodePath(url.pathname);
 	if (!code) return text('Not found', 404);
-	const stub = () => env.SHARED_SCRIPTS.get(env.SHARED_SCRIPTS.idFromName(code));
+	const stub = () => shareStub(env, code);
 
 	if (request.method === 'GET') {
 		if (!(await allowed(env, env.SHARE_LOOKUPS, caller))) return text('Slow down', 429);
