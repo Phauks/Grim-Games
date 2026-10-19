@@ -1066,3 +1066,26 @@ test('each special rule takes its own line under the script name in the board co
 	expect(second.y).toBeGreaterThanOrEqual(first.y + first.height - 1);
 	await expect(page.getByTestId('script-title')).not.toContainText('+');
 });
+
+test('with I See Dead People a death is marked not to announce, its detail kept for the Storyteller', async ({
+	page
+}) => {
+	// World Cup thread (2026-10-19): the rule hides deaths, so the day says not to announce.
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await chooseRules(page, 'I See Dead People');
+	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await page.getByRole('button', { name: 'Seat: Seat 1' }).tap();
+	await page
+		.getByRole('dialog', { name: 'How did Seat 1 die?' })
+		.getByRole('button', { name: 'Killed by the Demon' })
+		.tap();
+	const announcements = page.getByTestId('announcements');
+	await expect(announcements.getByTestId('dont-announce')).toHaveText('Don’t announce');
+	await expect(announcements.getByTestId('spoken')).toHaveCount(0);
+	await expect(announcements.getByTestId('storyteller-only')).toHaveText(
+		'No character, killed by the Demon'
+	);
+});
